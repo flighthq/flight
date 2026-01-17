@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "packages/stage"
+    }
+  ],
+  "compilerOptions": {
+    "composite": true
+  }
+}
