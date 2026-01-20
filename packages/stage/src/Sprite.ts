@@ -9,4 +9,9 @@ export class Sprite
     }
 }
 
+export function create()
+{
+    return new Sprite();
+}
+
 export default Sprite;

@@ -19,7 +19,10 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "clean": "tsc -b --clean"
+    "clean": "tsc -b --clean",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:run": "vitest run"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
