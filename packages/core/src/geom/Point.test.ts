@@ -55,6 +55,35 @@ describe('Point', () =>
         });
     });
 
+    describe('lengthSquared', () =>
+    {
+        it('returns the square of the length', () =>
+        {
+            pt.x = 3;
+            pt.y = 4;
+            expect(pt.lengthSquared).toBe(9 + 16);  // 3^2 + 4^2 = 9 + 16 = 25
+        });
+
+        it('returns 0 for the origin (0, 0)', () =>
+        {
+            expect(pt.lengthSquared).toBe(0);
+        });
+
+        it('handles negative values correctly', () =>
+        {
+            pt.x = -3;
+            pt.y = -4;
+            expect(pt.lengthSquared).toBe(9 + 16);  // 9 + 16 = 25
+        });
+
+        it('handles non-integer values', () =>
+        {
+            pt.x = 2.5;
+            pt.y = 4.5;
+            expect(pt.lengthSquared).toBe(2.5 * 2.5 + 4.5 * 4.5);  // 6.25 + 20.25 = 26.5
+        });
+    });
+
     // Methods
 
     describe('add', () =>

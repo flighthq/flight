@@ -6,6 +6,7 @@
  * Invariants:
  * 
  * - `length = Math.sqrt(x ** 2 + y ** 2)`
+ * - `length = x ** 2 + y ** 2`
  * 
  * @see Rectangle
  * @see Matrix
@@ -28,7 +29,12 @@ export class Point
 
     get length(): number
     {
-        return Math.sqrt(this.x ** 2 + this.y ** 2);
+        return Math.sqrt(this.lengthSquared);
+    }
+
+    get lengthSquared(): number
+    {
+        return this.x ** 2 + this.y ** 2;
     }
 }
 
