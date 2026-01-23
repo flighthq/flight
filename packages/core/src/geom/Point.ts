@@ -29,7 +29,7 @@ export class Point
 
     get length(): number
     {
-        return Math.sqrt(this.lengthSquared);
+        return Math.sqrt(this.x ** 2 + this.y ** 2);
     }
 
     get lengthSquared(): number
