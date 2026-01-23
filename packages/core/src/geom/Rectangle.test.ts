@@ -195,31 +195,70 @@ describe('Rectangle', () =>
     {
         it('returns true if rectangle is fully inside', () =>
         {
+            // r: 0,0,10,10
+            // r2: 2,2,5,5 fully inside r
+            r2.x = 2;
+            r2.y = 2;
+            r2.width = 5;
+            r2.height = 5;
             expect(containsRect(r, r2)).toBe(true);
         });
 
         it('returns false if rectangle partially outside', () =>
         {
-            r2.x = -5;
+            r2.x = -1; // partially outside on the left
+            r2.y = 2;
+            r2.width = 5;
+            r2.height = 5;
             expect(containsRect(r, r2)).toBe(false);
         });
 
-        it('works with flipped rectangle', () =>
+        it('works with flipped rectangle fully inside', () =>
         {
-            r2.width = -3;
-            r2.height = -4;
+            // Flipped rectangle: width and height negative
             r2.x = 5;
             r2.y = 6;
+            r2.width = -3;  // left edge at 2
+            r2.height = -4; // top edge at 2
             expect(containsRect(r, r2)).toBe(true);
         });
 
         it('returns false if flipped rectangle exceeds bounds', () =>
         {
-            r2.width = -20;
-            r2.height = -20;
+            // Flipped rectangle exceeding bounds on left/top
             r2.x = 15;
             r2.y = 15;
+            r2.width = -20; // left edge at -5
+            r2.height = -20; // top edge at -5
             expect(containsRect(r, r2)).toBe(false);
+        });
+
+        it('works if flipped rectangle exactly fits inside', () =>
+        {
+            // Flipped rectangle with exact bounds
+            r2.x = 10;
+            r2.y = 10;
+            r2.width = -10; // left edge 0
+            r2.height = -10; // top edge 0
+            expect(containsRect(r, r2)).toBe(true);
+        });
+
+        it('returns false if zero-size rectangle outside', () =>
+        {
+            r2.x = 20;
+            r2.y = 20;
+            r2.width = 0;
+            r2.height = 0;
+            expect(containsRect(r, r2)).toBe(false);
+        });
+
+        it('returns true if zero-size rectangle exactly on a corner', () =>
+        {
+            r2.x = 0;
+            r2.y = 0;
+            r2.width = 0;
+            r2.height = 0;
+            expect(containsRect(r, r2)).toBe(true);
         });
     });
 

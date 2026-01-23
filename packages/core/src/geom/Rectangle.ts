@@ -130,7 +130,12 @@ export function clone(source: Rectangle): Rectangle
 
 export function contains(source: Rectangle, x: number, y: number): boolean
 {
-    return x >= source.x && y >= source.y && x < source.right && y < source.bottom;
+    const x0 = Math.min(source.x, source.right);
+    const x1 = Math.max(source.x, source.right);
+    const y0 = Math.min(source.y, source.bottom);
+    const y1 = Math.max(source.y, source.bottom);
+
+    return x >= x0 && x < x1 && y >= y0 && y < y1;
 }
 
 export function containsPoint(source: Rectangle, point: Point): boolean
@@ -140,14 +145,18 @@ export function containsPoint(source: Rectangle, point: Point): boolean
 
 export function containsRect(source: Rectangle, other: Rectangle): boolean
 {
-    if (other.width <= 0 || other.height <= 0)
-    {
-        return other.x > source.x && other.y > source.y && other.right < source.right && other.bottom < source.bottom;
-    }
-    else
-    {
-        return other.x >= source.x && other.y >= source.y && other.right <= source.right && other.bottom <= source.bottom;
-    }
+    const sx0 = Math.min(source.x, source.right);
+    const sx1 = Math.max(source.x, source.right);
+    const sy0 = Math.min(source.y, source.bottom);
+    const sy1 = Math.max(source.y, source.bottom);
+
+    const ox0 = Math.min(other.x, other.right);
+    const ox1 = Math.max(other.x, other.right);
+    const oy0 = Math.min(other.y, other.bottom);
+    const oy1 = Math.max(other.y, other.bottom);
+
+    // A rectangle contains another if all corners are inside (exclusive right/bottom)
+    return ox0 >= sx0 && oy0 >= sy0 && ox1 <= sx1 && oy1 <= sy1;
 }
 
 export function copyFrom(target: Rectangle, source: Rectangle): void
@@ -232,7 +241,7 @@ export function intersects(source: Rectangle, other: Rectangle): boolean
 
 export function isEmpty(source: Rectangle): boolean
 {
-    return (source.width <= 0 || source.height <= 0);
+    return source.width === 0 || source.height === 0;
 }
 
 export function offset(target: Rectangle, dx: number, dy: number): void
@@ -263,26 +272,27 @@ export function setTo(target: Rectangle, x: number, y: number, width: number, he
 export function union(source: Rectangle, other: Rectangle, target?: Rectangle): Rectangle
 {
     target = target ?? new Rectangle();
-    if (source.width == 0 || source.height == 0)
-    {
-        copyFrom(target, other);
-        return target;
-    }
-    else if (other.width == 0 || other.height == 0)
-    {
-        copyFrom(target, source);
-        return target;
-    }
 
-    var x0 = source.x > other.x ? other.x : source.x;
-    var x1 = source.right < other.right ? other.right : source.right;
-    var y0 = source.y > other.y ? other.y : source.y;
-    var y1 = source.bottom < other.bottom ? other.bottom : source.bottom;
+    const sourceLeft = Math.min(source.x, source.x + source.width);
+    const sourceRight = Math.max(source.x, source.x + source.width);
+    const sourceTop = Math.min(source.y, source.y + source.height);
+    const sourceBottom = Math.max(source.y, source.y + source.height);
+
+    const otherLeft = Math.min(other.x, other.x + other.width);
+    const otherRight = Math.max(other.x, other.x + other.width);
+    const otherTop = Math.min(other.y, other.y + other.height);
+    const otherBottom = Math.max(other.y, other.y + other.height);
+
+    const x0 = Math.min(sourceLeft, otherLeft);
+    const x1 = Math.max(sourceRight, otherRight);
+    const y0 = Math.min(sourceTop, otherTop);
+    const y1 = Math.max(sourceBottom, otherBottom);
 
     target.x = x0;
     target.y = y0;
     target.width = x1 - x0;
     target.height = y1 - y0;
+
     return target;
 }
 
