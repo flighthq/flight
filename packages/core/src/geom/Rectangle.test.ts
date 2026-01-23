@@ -1,4 +1,4 @@
-import { Rectangle, clone, contains, containsPoint, containsRect, copyFrom, create, inflate, inflatePoint, intersection, intersects, isEmpty, offset, offsetPoint, setEmpty, setTo, union } from './Rectangle.js';
+import { Rectangle, clone, contains, containsPoint, containsRect, copyFrom, create, equals, inflate, inflatePoint, intersection, intersects, isEmpty, offset, offsetPoint, setEmpty, setTo, union } from './Rectangle.js';
 import { Point } from './Point.js';
 
 describe('Rectangle', () =>
