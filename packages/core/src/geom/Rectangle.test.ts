@@ -161,6 +161,13 @@ describe('Rectangle', () =>
             const c = clone(r);
             expect(equals(r, c)).toBe(true);
         });
+
+        it('clone does not affect original rectangle', () =>
+        {
+            const c = clone(r);
+            c.x = 100;
+            expect(r.x).not.toBe(c.x); // Original should remain unchanged
+        });
     });
 
     describe('contains', () =>
@@ -269,6 +276,21 @@ describe('Rectangle', () =>
             copyFrom(r2, r);
             expect(equals(r, r2)).toBe(true);
         });
+
+        describe('copyFrom with same rectangle as source and target', () =>
+        {
+            it('does not change the original values if source and target are the same', () =>
+            {
+                const r1 = new Rectangle(0, 0, 10, 10);
+                copyFrom(r1, r1); // r1 is both source and target
+
+                // Ensure no changes occur
+                expect(r1.x).toBe(0);
+                expect(r1.y).toBe(0);
+                expect(r1.width).toBe(10);
+                expect(r1.height).toBe(10);
+            });
+        });
     });
 
     describe('equals', () =>
@@ -303,6 +325,37 @@ describe('Rectangle', () =>
             const r3 = new Rectangle(20, 20, 5, 5);
             const result = intersection(r, r3);
             expect(isEmpty(result)).toBe(true);
+        });
+
+        describe('intersection with same rectangle as target', () =>
+        {
+            it('correctly modifies the original rectangle when intersection is empty', () =>
+            {
+                const r1 = new Rectangle(0, 0, 10, 10);
+                const r2 = new Rectangle(20, 20, 5, 5);
+                const result = intersection(r1, r2, r1);  // r1 is both source and target
+
+                // Ensure the result is empty (since no intersection)
+                expect(result.width).toBe(0);
+                expect(result.height).toBe(0);
+
+                // Ensure r1 is also modified correctly (should be set to empty)
+                expect(r1.width).toBe(0);  // r1's width should be 0
+                expect(r1.height).toBe(0); // r1's height should be 0
+            });
+
+            it('correctly modifies the target when intersection occurs', () =>
+            {
+                const r1 = new Rectangle(0, 0, 10, 10);
+                const r2 = new Rectangle(5, 5, 10, 10);
+                const result = intersection(r1, r2, r1);  // r1 is both source and target
+
+                // Ensure r1 is correctly modified
+                expect(result.width).toBe(5);  // Correct intersection width
+                expect(result.height).toBe(5); // Correct intersection height
+                expect(r1.width).toBe(5);      // Ensure r1 got updated
+                expect(r1.height).toBe(5);     // Ensure r1 got updated
+            });
         });
     });
 
@@ -346,6 +399,19 @@ describe('Rectangle', () =>
             expect(r.x).toBe(5);
             expect(r.y).toBe(10);
         });
+
+        describe('offset with same rectangle as source and target', () =>
+        {
+            it('correctly offsets the rectangle when it is both source and target', () =>
+            {
+                const r1 = new Rectangle(0, 0, 10, 10);
+                offset(r1, 5, 10);  // r1 is both source and target
+
+                // Ensure r1 is correctly offset
+                expect(r1.x).toBe(5);
+                expect(r1.y).toBe(10);
+            });
+        });
     });
 
     describe('offsetPoint', () =>
@@ -367,6 +433,21 @@ describe('Rectangle', () =>
             expect(r.y).toBe(-3);
             expect(r.width).toBe(14);
             expect(r.height).toBe(26);
+        });
+
+        describe('inflate with same rectangle as source and target', () =>
+        {
+            it('correctly inflates the rectangle when it is both source and target', () =>
+            {
+                const r1 = new Rectangle(0, 0, 10, 10);
+                inflate(r1, 2, 3);  // r1 is both source and target
+
+                // Ensure r1 is correctly inflated
+                expect(r1.x).toBe(-2);
+                expect(r1.y).toBe(-3);
+                expect(r1.width).toBe(14);
+                expect(r1.height).toBe(16);
+            });
         });
     });
 
@@ -406,6 +487,16 @@ describe('Rectangle', () =>
         });
     });
 
+    describe('toString', () =>
+    {
+        it('returns the correct string representation', () =>
+        {
+            const rect = new Rectangle(1, 2, 3, 4);
+            expect(rect.toString()).toBe('(x=1, y=2, width=3, height=4)');
+        });
+
+    });
+
     describe('union', () =>
     {
         it('returns union of two rectangles', () =>
@@ -433,6 +524,35 @@ describe('Rectangle', () =>
             expect(u.y).toBe(0);
             expect(u.width).toBe(15);
             expect(u.height).toBe(20);
+        });
+
+        describe('union with same rectangle as target', () =>
+        {
+            it('correctly modifies the target when union occurs', () =>
+            {
+                const r1 = new Rectangle(0, 0, 10, 10);
+                const r2 = new Rectangle(5, 5, 10, 10);
+                const result = union(r1, r2, r1);  // r1 is both source and target
+
+                // Ensure r1 is correctly updated
+                expect(result.width).toBe(15);  // Correct union width
+                expect(result.height).toBe(15); // Correct union height
+                expect(r1.width).toBe(15);      // r1 should be updated
+                expect(r1.height).toBe(15);     // r1 should be updated
+            });
+
+            it('correctly handles union of non-overlapping rectangles', () =>
+            {
+                const r1 = new Rectangle(0, 0, 10, 10);
+                const r2 = new Rectangle(20, 20, 5, 5);
+                const result = union(r1, r2, r1);  // r1 is both source and target
+
+                // Ensure r1 is correctly updated
+                expect(result.width).toBe(25);   // Correct union width
+                expect(result.height).toBe(25);  // Correct union height
+                expect(r1.width).toBe(25);       // r1 should be updated
+                expect(r1.height).toBe(25);      // r1 should be updated
+            });
         });
     });
 });

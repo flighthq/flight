@@ -123,6 +123,17 @@ describe('Point', () =>
             expect(pt.x).toBe(8);
             expect(pt.y).toBe(17);
         });
+
+        it('mutates the target correctly when it is one of the operands', () =>
+        {
+            pt.x = 2; pt.y = 10;
+            pt2.x = 4; pt2.y = 20;
+
+            const result = add(pt, pt2, pt); // target is pt
+            expect(result).toBe(pt);
+            expect(pt.x).toBe(6);
+            expect(pt.y).toBe(30);
+        });
     });
 
     describe('clone', () =>
@@ -254,6 +265,15 @@ describe('Point', () =>
             expect(target.y).toBe(60);
         });
 
+        it('handles extreme extrapolation values for t', () =>
+        {
+            pt.x = 0; pt.y = 0;
+            pt2.x = 100; pt2.y = 100;
+
+            const result = lerp(pt, pt2, 1000);
+            expect(result.x).toBe(100000);
+            expect(result.y).toBe(100000);
+        });
     });
 
     describe('normalize', () =>
@@ -305,6 +325,13 @@ describe('Point', () =>
             expect(result.length).toBeCloseTo(10); // length is magnitude
         });
 
+        it('handles very small vectors correctly', () =>
+        {
+            const pt = new Point(0.0001, 0.0001);
+            const result = normalize(pt, 1);
+            expect(result.x).toBeCloseTo(0.7071, 4);
+            expect(result.y).toBeCloseTo(0.7071, 4);
+        });
     });
 
     describe('offset', () =>
@@ -404,6 +431,15 @@ describe('Point', () =>
             expect(pt.x).toBe(2);
             expect(pt.y).toBe(10);
         });
+
+        it('sets both coordinates to zero correctly', () =>
+        {
+            pt.x = 1;
+            pt.y = 2;
+            setTo(pt, 0, 0);
+            expect(pt.x).toBe(0);
+            expect(pt.y).toBe(0);
+        });
     });
 
     describe('subtract', () =>
@@ -469,6 +505,16 @@ describe('Point', () =>
             result = subtract(pt2, pt);
             expect(result.x).toBe(5);
             expect(result.y).toBe(10);
+        });
+
+        it('works with very small values and results near zero', () =>
+        {
+            pt.x = 0.0001; pt.y = 0.0001;
+            pt2.x = 0.0001; pt2.y = 0.0001;
+
+            const result = subtract(pt, pt2);
+            expect(result.x).toBeCloseTo(0);
+            expect(result.y).toBeCloseTo(0);
         });
     });
 

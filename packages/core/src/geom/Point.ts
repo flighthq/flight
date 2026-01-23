@@ -71,7 +71,7 @@ export function distance(a: Point, b: Point): number
 
 export function equals(a: Point, b: Point): boolean
 {
-    return (a == b) || (a.x === b.x && a.y === b.y);
+    return (a === b) || (a.x === b.x && a.y === b.y);
 }
 
 /**
