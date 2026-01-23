@@ -2,8 +2,29 @@ import { Vector3D, add, clone, copyFrom, crossProduct, decrementBy, distance, di
 
 describe('Vector3D', () =>
 {
+    // Constructor
+
+    describe('constructor', () =>
+    {
+        it('creates a new Vector3D with default values', () =>
+        {
+            const v = new Vector3D();
+            expect(v.x).toBe(0);
+            expect(v.y).toBe(0);
+            expect(v.z).toBe(0);
+        });
+
+        it('creates a new Vector3D with specified values', () =>
+        {
+            const v = new Vector3D(1, 2, 3);
+            expect(v.x).toBe(1);
+            expect(v.y).toBe(2);
+            expect(v.z).toBe(3);
+        });
+    });
 
     // Properties
+
     describe('length', () =>
     {
         it('returns the length of the vector', () =>
@@ -55,27 +76,8 @@ describe('Vector3D', () =>
         });
     });
 
-    // Constructor
-    describe('constructor', () =>
-    {
-        it('creates a new Vector3D with default values', () =>
-        {
-            const v = new Vector3D();
-            expect(v.x).toBe(0);
-            expect(v.y).toBe(0);
-            expect(v.z).toBe(0);
-        });
-
-        it('creates a new Vector3D with specified values', () =>
-        {
-            const v = new Vector3D(1, 2, 3);
-            expect(v.x).toBe(1);
-            expect(v.y).toBe(2);
-            expect(v.z).toBe(3);
-        });
-    });
-
     // Methods
+
     describe('add', () =>
     {
         it('returns a new vector when no target is passed', () =>
