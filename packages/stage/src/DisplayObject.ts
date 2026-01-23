@@ -22,16 +22,16 @@ export class DisplayObject
     // protected __scroll9Grid: Rectangle = null;
     protected __scaleX: number = 0;
     protected __scaleY: number = 0;
+    protected __transform: any/*Matrix*/ = { tx: 0, ty: 0 };
+    protected __transformDirty: boolean = false;
     // protected __scrollRect: Rectangle = null;
     // protected __shader: Shader | null = null;
     // protected __stage: Stage | null = null;
     // protected __transform: Transform = new Transform();
     protected __updateQueueFlag: boolean = false;
     protected __width: number = 0;
+    protected __worldTransformInvalid: boolean = false;
     protected __visible: boolean = true;
-    protected __x: number = 0;
-    protected __y: number = 0;
-
 
     constructor()
     {
@@ -53,6 +53,22 @@ export class DisplayObject
         if (!this.__renderDirty)
         {
             this.__renderDirty = true;
+            this.__setParentRenderDirty();
+        }
+
+        if (DisplayObject.openfl_enable_experimental_update_queue && !DisplayObject.openfl_dom)
+        {
+            this.__setUpdateQueueFlag();
+        }
+    }
+
+    protected __setTransformDirty(): void
+    {
+        if (!this.__transformDirty)
+        {
+            this.__transformDirty = true;
+
+            this.__setWorldTransformInvalid();
             this.__setParentRenderDirty();
         }
         if (DisplayObject.openfl_enable_experimental_update_queue && !DisplayObject.openfl_dom)
@@ -78,7 +94,13 @@ export class DisplayObject
         }
     }
 
+    protected __setWorldTransformInvalid(): void
+    {
+        this.__worldTransformInvalid = true;
+    }
+
     // Getter & Setters
+
     get alpha(): number
     {
         return this.__alpha;
@@ -276,16 +298,6 @@ export class DisplayObject
     //     this.__transform = value;
     // }
 
-    get width(): number
-    {
-        return this.__width;
-    }
-
-    set width(value: number)
-    {
-        this.__width = value;
-    }
-
     get visible(): boolean
     {
         return this.__visible;
@@ -296,24 +308,52 @@ export class DisplayObject
         this.__visible = value;
     }
 
+    get width(): number
+    {
+        return this.__width;
+    }
+
+    set width(value: number)
+    {
+        // var rect = Rectangle.__pool.get();
+        // var matrix = Matrix.__pool.get();
+        // matrix.identity();
+
+        // this.__getBounds(rect, matrix);
+
+        // if (value != rect.width)
+        // {
+        // 	this.scaleX = value / rect.width;
+        // }
+        // else
+        // {
+        // 	this.scaleX = 1;
+        // }
+
+        // Rectangle.__pool.release(rect);
+        // Matrix.__pool.release(matrix);
+    }
+
     get x(): number
     {
-        return this.__x;
+        return this.__transform.tx;
     }
 
     set x(value: number)
     {
-        this.__x = value;
+        if (value != this.__transform.tx) this.__setTransformDirty();
+        this.__transform.tx = value;
     }
 
     get y(): number
     {
-        return this.__y;
+        return this.__transform.ty;
     }
 
     set y(value: number)
     {
-        this.__y = value;
+        if (value != this.__transform.ty) this.__setTransformDirty();
+        this.__transform.ty = value;
     }
 }
 

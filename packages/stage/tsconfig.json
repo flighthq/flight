@@ -10,7 +10,6 @@
     "sourceMap": true
   },
   "include": [
-    "src",
-    "test/Sprite.test.ts"
+    "src"
   ]
 }

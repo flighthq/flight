@@ -1,1 +1,2 @@
-export { Sprite } from "./Sprite.js";
+export * from "./DisplayObject.js";
+export * from "./Sprite.js";

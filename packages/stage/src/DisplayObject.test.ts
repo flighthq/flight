@@ -42,7 +42,7 @@ describe('DisplayObject', () =>
 
     describe('alpha', () =>
     {
-        it('should mark renderDirty if changed', () => 
+        it('should mark render dirty if changed', () => 
         {
             expect(displayObject.alpha).toBe(1.0);
             expect(displayObject.__renderDirty).toBe(false);
@@ -50,6 +50,32 @@ describe('DisplayObject', () =>
             expect(displayObject.__renderDirty).toBe(false);
             displayObject.alpha = 0;
             expect(displayObject.__renderDirty).toBe(true);
+        });
+    });
+
+    describe('x', () =>
+    {
+        it('should mark transform dirty if changed', () => 
+        {
+            expect(displayObject.x).toBe(0);
+            expect(displayObject.__transformDirty).toBe(false);
+            displayObject.x = 0;
+            expect(displayObject.__transformDirty).toBe(false);
+            displayObject.x = 1;
+            expect(displayObject.__transformDirty).toBe(true);
+        });
+    });
+
+    describe('y', () =>
+    {
+        it('should mark transform dirty if changed', () => 
+        {
+            expect(displayObject.y).toBe(0);
+            expect(displayObject.__transformDirty).toBe(false);
+            displayObject.y = 0;
+            expect(displayObject.__transformDirty).toBe(false);
+            displayObject.y = 1;
+            expect(displayObject.__transformDirty).toBe(true);
         });
     });
 });

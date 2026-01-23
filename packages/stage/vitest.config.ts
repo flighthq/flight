@@ -6,7 +6,7 @@ export default mergeConfig(
     defineConfig({
         test: {
             name: 'stage',
-            include: ['tests/**/*.test.ts'],
+            include: ['src/**/*.test.ts'],
         },
     }),
 );
