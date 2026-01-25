@@ -1,18 +1,55 @@
 {
   "compilerOptions": {
+    /* Language and module settings */
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "strict": true,
     "noImplicitOverride": true,
     "useDefineForClassFields": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    /* Source maps & declarations */
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
+    /* Root & paths (optional fallback for VSCode, can be removed if using references only) */
+    "baseUrl": ".",
+    "paths": {
+      "@flight/core": [
+        "packages/core/src/index.ts"
+      ],
+      "@flight/core/*": [
+        "packages/core/src/*"
+      ],
+      "@flight/stage": [
+        "packages/stage/src/index.ts"
+      ],
+      "@flight/stage/*": [
+        "packages/stage/src/*"
+      ],
+      "@flight/render": [
+        "packages/stage/src/index.ts"
+      ],
+      "@flight/render/*": [
+        "packages/stage/src/*"
+      ]
+    },
+    /* Type support */
     "types": [
       "vitest/globals"
     ]
-  }
+  },
+  /* Include all source files in packages by default */
+  "include": [
+    "packages/*/src"
+  ],
+  "exclude": [
+    "**/*.test.*",
+    "**/__tests__/**",
+    "node_modules",
+    "dist"
+  ],
+  /* Enable strict project references (child packages will define 'composite: true') */
+  "composite": false
 }
