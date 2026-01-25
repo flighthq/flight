@@ -1,5 +1,5 @@
-import { Rectangle, clone, contains, containsPoint, containsRect, copyFrom, create, equals, inflate, inflatePoint, intersection, intersects, isEmpty, offset, offsetPoint, setEmpty, setTo, union } from './Rectangle.js';
-import { Point } from './Point.js';
+import Rectangle from './Rectangle.js';
+import Point from './Point.js';
 
 describe('Rectangle', () =>
 {
@@ -14,11 +14,11 @@ describe('Rectangle', () =>
 
     // Constructor
 
-    describe('create', () =>
+    describe('constructor', () =>
     {
         it('initializes with default values', () =>
         {
-            const rect = create();
+            const rect = new Rectangle();
             expect(rect.x).toBe(0);
             expect(rect.y).toBe(0);
             expect(rect.width).toBe(0);
@@ -27,7 +27,7 @@ describe('Rectangle', () =>
 
         it('initializes with specified values', () =>
         {
-            const rect = create(1, 2, 3, 4);
+            const rect = new Rectangle(1, 2, 3, 4);
             expect(rect.x).toBe(1);
             expect(rect.y).toBe(2);
             expect(rect.width).toBe(3);
@@ -158,13 +158,13 @@ describe('Rectangle', () =>
     {
         it('clone creates a copy', () =>
         {
-            const c = clone(r);
-            expect(equals(r, c)).toBe(true);
+            const c = Rectangle.clone(r);
+            expect(Rectangle.equals(r, c)).toBe(true);
         });
 
         it('clone does not affect original rectangle', () =>
         {
-            const c = clone(r);
+            const c = Rectangle.clone(r);
             c.x = 100;
             expect(r.x).not.toBe(c.x); // Original should remain unchanged
         });
@@ -174,19 +174,19 @@ describe('Rectangle', () =>
     {
         it('returns true for a point inside', () =>
         {
-            expect(contains(r, 5, 10)).toBe(true);
+            expect(Rectangle.contains(r, 5, 10)).toBe(true);
         });
 
         it('returns false for a point outside', () =>
         {
-            expect(contains(r, -1, 0)).toBe(false);
+            expect(Rectangle.contains(r, -1, 0)).toBe(false);
         });
 
         it('works with flipped rectangle', () =>
         {
             r.width = -10;
             r.height = -20;
-            expect(contains(r, -5, -10)).toBe(true);
+            expect(Rectangle.contains(r, -5, -10)).toBe(true);
         });
     });
 
@@ -194,7 +194,7 @@ describe('Rectangle', () =>
     {
         it('delegates to contains', () =>
         {
-            expect(containsPoint(r, new Point(5, 10))).toBe(true);
+            expect(Rectangle.containsPoint(r, new Point(5, 10))).toBe(true);
         });
     });
 
@@ -208,7 +208,7 @@ describe('Rectangle', () =>
             r2.y = 2;
             r2.width = 5;
             r2.height = 5;
-            expect(containsRect(r, r2)).toBe(true);
+            expect(Rectangle.containsRect(r, r2)).toBe(true);
         });
 
         it('returns false if rectangle partially outside', () =>
@@ -217,7 +217,7 @@ describe('Rectangle', () =>
             r2.y = 2;
             r2.width = 5;
             r2.height = 5;
-            expect(containsRect(r, r2)).toBe(false);
+            expect(Rectangle.containsRect(r, r2)).toBe(false);
         });
 
         it('works with flipped rectangle fully inside', () =>
@@ -227,7 +227,7 @@ describe('Rectangle', () =>
             r2.y = 6;
             r2.width = -3;  // left edge at 2
             r2.height = -4; // top edge at 2
-            expect(containsRect(r, r2)).toBe(true);
+            expect(Rectangle.containsRect(r, r2)).toBe(true);
         });
 
         it('returns false if flipped rectangle exceeds bounds', () =>
@@ -237,7 +237,7 @@ describe('Rectangle', () =>
             r2.y = 15;
             r2.width = -20; // left edge at -5
             r2.height = -20; // top edge at -5
-            expect(containsRect(r, r2)).toBe(false);
+            expect(Rectangle.containsRect(r, r2)).toBe(false);
         });
 
         it('works if flipped rectangle exactly fits inside', () =>
@@ -247,7 +247,7 @@ describe('Rectangle', () =>
             r2.y = 10;
             r2.width = -10; // left edge 0
             r2.height = -10; // top edge 0
-            expect(containsRect(r, r2)).toBe(true);
+            expect(Rectangle.containsRect(r, r2)).toBe(true);
         });
 
         it('returns false if zero-size rectangle outside', () =>
@@ -256,7 +256,7 @@ describe('Rectangle', () =>
             r2.y = 20;
             r2.width = 0;
             r2.height = 0;
-            expect(containsRect(r, r2)).toBe(false);
+            expect(Rectangle.containsRect(r, r2)).toBe(false);
         });
 
         it('returns true if zero-size rectangle exactly on a corner', () =>
@@ -265,7 +265,7 @@ describe('Rectangle', () =>
             r2.y = 0;
             r2.width = 0;
             r2.height = 0;
-            expect(containsRect(r, r2)).toBe(true);
+            expect(Rectangle.containsRect(r, r2)).toBe(true);
         });
     });
 
@@ -273,8 +273,8 @@ describe('Rectangle', () =>
     {
         it('copyFrom copies values', () =>
         {
-            copyFrom(r2, r);
-            expect(equals(r, r2)).toBe(true);
+            Rectangle.copyFrom(r2, r);
+            expect(Rectangle.equals(r, r2)).toBe(true);
         });
 
         describe('copyFrom with same rectangle as source and target', () =>
@@ -282,7 +282,7 @@ describe('Rectangle', () =>
             it('does not change the original values if source and target are the same', () =>
             {
                 const r1 = new Rectangle(0, 0, 10, 10);
-                copyFrom(r1, r1); // r1 is both source and target
+                Rectangle.copyFrom(r1, r1); // r1 is both source and target
 
                 // Ensure no changes occur
                 expect(r1.x).toBe(0);
@@ -297,14 +297,14 @@ describe('Rectangle', () =>
     {
         it('returns true for identical rectangles', () =>
         {
-            expect(equals(r, r)).toBe(true);
-            expect(equals(r, clone(r))).toBe(true);
+            expect(Rectangle.equals(r, r)).toBe(true);
+            expect(Rectangle.equals(r, Rectangle.clone(r))).toBe(true);
         });
 
         it('returns false for different rectangles', () =>
         {
             r2.x = 1;
-            expect(equals(r, r2)).toBe(false);
+            expect(Rectangle.equals(r, r2)).toBe(false);
         });
     });
 
@@ -313,7 +313,7 @@ describe('Rectangle', () =>
         it('returns intersection rectangle', () =>
         {
             const r3 = new Rectangle(5, 10, 10, 10);
-            const result = intersection(r, r3);
+            const result = Rectangle.intersection(r, r3);
             expect(result.x).toBe(5);
             expect(result.y).toBe(10);
             expect(result.width).toBe(5);
@@ -323,8 +323,8 @@ describe('Rectangle', () =>
         it('returns empty rectangle if no intersection', () =>
         {
             const r3 = new Rectangle(20, 20, 5, 5);
-            const result = intersection(r, r3);
-            expect(isEmpty(result)).toBe(true);
+            const result = Rectangle.intersection(r, r3);
+            expect(Rectangle.isEmpty(result)).toBe(true);
         });
 
         describe('intersection with same rectangle as target', () =>
@@ -333,7 +333,7 @@ describe('Rectangle', () =>
             {
                 const r1 = new Rectangle(0, 0, 10, 10);
                 const r2 = new Rectangle(20, 20, 5, 5);
-                const result = intersection(r1, r2, r1);  // r1 is both source and target
+                const result = Rectangle.intersection(r1, r2, r1);  // r1 is both source and target
 
                 // Ensure the result is empty (since no intersection)
                 expect(result.width).toBe(0);
@@ -348,7 +348,7 @@ describe('Rectangle', () =>
             {
                 const r1 = new Rectangle(0, 0, 10, 10);
                 const r2 = new Rectangle(5, 5, 10, 10);
-                const result = intersection(r1, r2, r1);  // r1 is both source and target
+                const result = Rectangle.intersection(r1, r2, r1);  // r1 is both source and target
 
                 // Ensure r1 is correctly modified
                 expect(result.width).toBe(5);  // Correct intersection width
@@ -364,13 +364,13 @@ describe('Rectangle', () =>
         it('returns true if rectangles overlap', () =>
         {
             const r3 = new Rectangle(5, 10, 10, 10);
-            expect(intersects(r, r3)).toBe(true);
+            expect(Rectangle.intersects(r, r3)).toBe(true);
         });
 
         it('returns false if rectangles do not overlap', () =>
         {
             const r3 = new Rectangle(20, 20, 5, 5);
-            expect(intersects(r, r3)).toBe(false);
+            expect(Rectangle.intersects(r, r3)).toBe(false);
         });
     });
 
@@ -379,15 +379,15 @@ describe('Rectangle', () =>
     {
         it('returns true only for zero width or height', () =>
         {
-            expect(isEmpty(r)).toBe(false);
+            expect(Rectangle.isEmpty(r)).toBe(false);
             r.width = 0;
-            expect(isEmpty(r)).toBe(true);
+            expect(Rectangle.isEmpty(r)).toBe(true);
             r.width = 10;
             r.height = 0;
-            expect(isEmpty(r)).toBe(true);
+            expect(Rectangle.isEmpty(r)).toBe(true);
             r.width = -5;
             r.height = -5;
-            expect(isEmpty(r)).toBe(false); // flipped rectangles are valid
+            expect(Rectangle.isEmpty(r)).toBe(false); // flipped rectangles are valid
         });
     });
 
@@ -395,7 +395,7 @@ describe('Rectangle', () =>
     {
         it('offset moves rectangle', () =>
         {
-            offset(r, 5, 10);
+            Rectangle.offset(r, 5, 10);
             expect(r.x).toBe(5);
             expect(r.y).toBe(10);
         });
@@ -405,7 +405,7 @@ describe('Rectangle', () =>
             it('correctly offsets the rectangle when it is both source and target', () =>
             {
                 const r1 = new Rectangle(0, 0, 10, 10);
-                offset(r1, 5, 10);  // r1 is both source and target
+                Rectangle.offset(r1, 5, 10);  // r1 is both source and target
 
                 // Ensure r1 is correctly offset
                 expect(r1.x).toBe(5);
@@ -418,7 +418,7 @@ describe('Rectangle', () =>
     {
         it('offsetPoint moves rectangle by Point', () =>
         {
-            offsetPoint(r, new Point(3, 4));
+            Rectangle.offsetPoint(r, new Point(3, 4));
             expect(r.x).toBe(3);
             expect(r.y).toBe(4);
         });
@@ -428,7 +428,7 @@ describe('Rectangle', () =>
     {
         it('inflates rectangle by dx/dy', () =>
         {
-            inflate(r, 2, 3);
+            Rectangle.inflate(r, 2, 3);
             expect(r.x).toBe(-2);
             expect(r.y).toBe(-3);
             expect(r.width).toBe(14);
@@ -440,7 +440,7 @@ describe('Rectangle', () =>
             it('correctly inflates the rectangle when it is both source and target', () =>
             {
                 const r1 = new Rectangle(0, 0, 10, 10);
-                inflate(r1, 2, 3);  // r1 is both source and target
+                Rectangle.inflate(r1, 2, 3);  // r1 is both source and target
 
                 // Ensure r1 is correctly inflated
                 expect(r1.x).toBe(-2);
@@ -455,7 +455,7 @@ describe('Rectangle', () =>
     {
         it('inflates rectangle by Point', () =>
         {
-            inflatePoint(r, new Point(1, 2));
+            Rectangle.inflatePoint(r, new Point(1, 2));
             expect(r.x).toBe(-1);
             expect(r.y).toBe(-2);
             expect(r.width).toBe(12);
@@ -467,7 +467,7 @@ describe('Rectangle', () =>
     {
         it('sets rectangle to zero', () =>
         {
-            setEmpty(r);
+            Rectangle.setEmpty(r);
             expect(r.x).toBe(0);
             expect(r.y).toBe(0);
             expect(r.width).toBe(0);
@@ -479,7 +479,7 @@ describe('Rectangle', () =>
     {
         it('sets rectangle to specified values', () =>
         {
-            setTo(r, 1, 2, 3, 4);
+            Rectangle.setTo(r, 1, 2, 3, 4);
             expect(r.x).toBe(1);
             expect(r.y).toBe(2);
             expect(r.width).toBe(3);
@@ -502,7 +502,7 @@ describe('Rectangle', () =>
         it('returns union of two rectangles', () =>
         {
             const r3 = new Rectangle(5, 15, 10, 10);
-            const u = union(r, r3);
+            const u = Rectangle.union(r, r3);
             expect(u.x).toBe(0);
             expect(u.y).toBe(0);
             expect(u.width).toBe(15);
@@ -512,14 +512,14 @@ describe('Rectangle', () =>
         it('union works with zero-width rectangle', () =>
         {
             const r3 = new Rectangle(5, 15, 0, 0);
-            const u = union(r, r3);
-            expect(equals(u, r)).toBe(true);
+            const u = Rectangle.union(r, r3);
+            expect(Rectangle.equals(u, r)).toBe(true);
         });
 
         it('union works with flipped rectangles', () =>
         {
             const r3 = new Rectangle(15, 20, -10, -10);
-            const u = union(r, r3);
+            const u = Rectangle.union(r, r3);
             expect(u.x).toBe(0);
             expect(u.y).toBe(0);
             expect(u.width).toBe(15);
@@ -532,7 +532,7 @@ describe('Rectangle', () =>
             {
                 const r1 = new Rectangle(0, 0, 10, 10);
                 const r2 = new Rectangle(5, 5, 10, 10);
-                const result = union(r1, r2, r1);  // r1 is both source and target
+                const result = Rectangle.union(r1, r2, r1);  // r1 is both source and target
 
                 // Ensure r1 is correctly updated
                 expect(result.width).toBe(15);  // Correct union width
@@ -545,7 +545,7 @@ describe('Rectangle', () =>
             {
                 const r1 = new Rectangle(0, 0, 10, 10);
                 const r2 = new Rectangle(20, 20, 5, 5);
-                const result = union(r1, r2, r1);  // r1 is both source and target
+                const result = Rectangle.union(r1, r2, r1);  // r1 is both source and target
 
                 // Ensure r1 is correctly updated
                 expect(result.width).toBe(25);   // Correct union width
