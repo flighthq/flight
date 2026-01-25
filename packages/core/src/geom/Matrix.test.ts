@@ -1,10 +1,11 @@
-import { Matrix, create, concat, copyFrom, copyColumnFrom, copyColumnTo, copyRowFrom, copyRowTo, deltaTransformPoint, inverseTransformPoint, invert, rotate, scale, setTo, transformPoint, translate, identity, createBox, createGradientBox, equals, clone } from './Matrix';
-import { Vector3D } from './Vector3D';
-import { Point } from './Point';
+import Matrix from './Matrix.js';
+import Vector3D from './Vector3D.js';
+import Point from './Point.js';
 
 describe('Matrix', () =>
 {
     // Constructor
+
     describe('Constructor', () =>
     {
         it('should initialize matrix with provided values', () =>
@@ -31,6 +32,7 @@ describe('Matrix', () =>
     });
 
     // Properties
+
     describe('a', () =>
     {
         it('should have default value of 1', () =>
@@ -95,26 +97,12 @@ describe('Matrix', () =>
         });
     });
 
-    describe('create', () =>
-    {
-        it('should create a matrix with specified values', () =>
-        {
-            const m = create(2, 3, 4, 5, 6, 7);
-            expect(m.a).toBe(2);
-            expect(m.b).toBe(3);
-            expect(m.c).toBe(4);
-            expect(m.d).toBe(5);
-            expect(m.tx).toBe(6);
-            expect(m.ty).toBe(7);
-        });
-    });
-
     describe('clone', () =>
     {
         it('should clone the matrix correctly', () =>
         {
             const m1 = new Matrix(2, 3, 4, 5, 6, 7);
-            const m2 = clone(m1);
+            const m2 = Matrix.clone(m1);
             expect(m2.a).toBe(2);
             expect(m2.b).toBe(3);
             expect(m2.c).toBe(4);
@@ -126,12 +114,11 @@ describe('Matrix', () =>
 
     describe('concat', () =>
     {
-
         it('should concatenate two matrices', () =>
         {
             const m1 = new Matrix(1, 0, 0, 1, 0, 0);
             const m2 = new Matrix(1, 2, 3, 4, 5, 6);
-            concat(m1, m2);
+            Matrix.concat(m1, m2);
             expect(m1.a).toBe(1);
             expect(m1.b).toBe(2);
             expect(m1.c).toBe(3);
@@ -144,7 +131,7 @@ describe('Matrix', () =>
         {
             const m1 = new Matrix(1, 0, 0, 1, 0, 0);
             const m2 = new Matrix(1, 0, 0, 1, 0, 0);
-            concat(m1, m2);
+            Matrix.concat(m1, m2);
             expect(m1.a).toBe(1);
             expect(m1.b).toBe(0);
             expect(m1.c).toBe(0);
@@ -157,7 +144,7 @@ describe('Matrix', () =>
         {
             const m1 = new Matrix(2, 0, 0, 2, 0, 0);
             const m2 = new Matrix(-1, 0, 0, -1, 0, 0);
-            concat(m1, m2);
+            Matrix.concat(m1, m2);
             expect(m1.a).toBe(-2);
             expect(m1.b).toBe(0);
             expect(m1.c).toBe(0);
@@ -170,7 +157,7 @@ describe('Matrix', () =>
         {
             const m1 = new Matrix(2, 0, 0, 2, 0, 0); // Scale
             const m2 = new Matrix(1, 0, 0, 1, 3, 4); // Translate
-            concat(m1, m2);
+            Matrix.concat(m1, m2);
             expect(m1.a).toBe(2);
             expect(m1.b).toBe(0);
             expect(m1.c).toBe(0);
@@ -184,7 +171,7 @@ describe('Matrix', () =>
             const m1 = new Matrix(1, 0, 0, 1, 0, 0); // Identity matrix
             const angle = Math.PI / 4; // 45 degrees rotation
             const m2 = new Matrix(Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0); // Rotation matrix
-            concat(m1, m2);
+            Matrix.concat(m1, m2);
             expect(m1.a).toBeCloseTo(Math.cos(angle), 5);
             expect(m1.b).toBeCloseTo(Math.sin(angle), 5);
             expect(m1.c).toBeCloseTo(-Math.sin(angle), 5);
@@ -197,7 +184,7 @@ describe('Matrix', () =>
         {
             const m1 = new Matrix(1, 0, 0, 1, 0, 0);
             const m2 = new Matrix(1, 0, 0, 1, 5, 5);
-            concat(m1, m2);
+            Matrix.concat(m1, m2);
             expect(m1.a).toBe(1);
             expect(m1.b).toBe(0);
             expect(m1.c).toBe(0);
@@ -210,7 +197,7 @@ describe('Matrix', () =>
         {
             const m1 = new Matrix(1, 0, 0, 2, 0, 0); // Scaling by 2 along Y-axis
             const m2 = new Matrix(2, 0, 0, 1, 0, 0); // Scaling by 2 along X-axis
-            concat(m1, m2);
+            Matrix.concat(m1, m2);
             expect(m1.a).toBe(2);
             expect(m1.b).toBe(0);
             expect(m1.c).toBe(0);
@@ -223,7 +210,7 @@ describe('Matrix', () =>
         {
             const m1 = new Matrix(1, 0, 0, 1, 1, 1); // Translation by (1, 1)
             const m2 = new Matrix(1, 0, 0, 1, 2, 3); // Translation by (2, 3)
-            concat(m1, m2);
+            Matrix.concat(m1, m2);
             expect(m1.tx).toBe(3);  // 1 + 2
             expect(m1.ty).toBe(4);  // 1 + 3
         });
@@ -232,7 +219,7 @@ describe('Matrix', () =>
         {
             const m1 = new Matrix(2, 0, 0, 2, 3, 4); // Scale by 2 and translate by (3, 4)
             const m2 = new Matrix(0.5, 0, 0, 0.5, -3, -4); // Inverse of m1
-            concat(m1, m2); // Concatenate m1 with its inverse
+            Matrix.concat(m1, m2); // Concatenate m1 with its inverse
 
             // The result should be the identity matrix with translation adjustments
             expect(m1.a).toBe(1);  // The scaling should be undone, so a = 1
@@ -247,7 +234,7 @@ describe('Matrix', () =>
         {
             const m1 = new Matrix(1, 0, 0, 1, 0, 0);
             const m2 = new Matrix(-1, 0, 0, -1, -2, -3); // Negative scale and translation
-            concat(m1, m2);
+            Matrix.concat(m1, m2);
             expect(m1.a).toBe(-1);
             expect(m1.b).toBe(0);
             expect(m1.c).toBe(0);
@@ -263,7 +250,7 @@ describe('Matrix', () =>
         {
             const m1 = new Matrix(2, 3, 4, 5, 6, 7);
             const m2 = new Matrix();
-            copyFrom(m2, m1);
+            Matrix.copyFrom(m2, m1);
             expect(m2.a).toBe(2);
             expect(m2.b).toBe(3);
             expect(m2.c).toBe(4);
@@ -279,7 +266,7 @@ describe('Matrix', () =>
         {
             const m = new Matrix();
             const v = new Vector3D(1, 2, 0);
-            copyColumnFrom(m, 0, v); // column 0
+            Matrix.copyColumnFrom(m, 0, v); // column 0
             expect(m.a).toBe(1);
             expect(m.b).toBe(2);
         });
@@ -291,7 +278,7 @@ describe('Matrix', () =>
         {
             const m = new Matrix(1, 2, 3, 4, 5, 6);
             const v = new Vector3D();
-            copyColumnTo(m, 0, v); // column 0
+            Matrix.copyColumnTo(m, 0, v); // column 0
             expect(v.x).toBe(1);
             expect(v.y).toBe(2);
             expect(v.z).toBe(0);
@@ -304,7 +291,7 @@ describe('Matrix', () =>
         {
             const m = new Matrix();
             const v = new Vector3D(1, 2, 3);
-            copyRowFrom(m, 0, v); // row 0
+            Matrix.copyRowFrom(m, 0, v); // row 0
             expect(m.a).toBe(1);
             expect(m.c).toBe(2);
             expect(m.tx).toBe(3);
@@ -317,7 +304,7 @@ describe('Matrix', () =>
         {
             const m = new Matrix(1, 2, 3, 4, 5, 6);
             const v = new Vector3D();
-            copyRowTo(m, 0, v); // row 0
+            Matrix.copyRowTo(m, 0, v); // row 0
             expect(v.x).toBe(1); // m.a
             expect(v.y).toBe(3); // m.c
             expect(v.z).toBe(5); // m.tx
@@ -330,7 +317,7 @@ describe('Matrix', () =>
         {
             const m = new Matrix(2, 0, 0, 2, 0, 0);
             const p = new Point(1, 1);
-            const transformedPoint = deltaTransformPoint(m, p);
+            const transformedPoint = Matrix.deltaTransformPoint(m, p);
             expect(transformedPoint.x).toBe(2);
             expect(transformedPoint.y).toBe(2);
         });
@@ -342,7 +329,7 @@ describe('Matrix', () =>
         {
             const m = new Matrix(2, 0, 0, 2, 0, 0);
             const p = new Point(2, 2);
-            const transformedPoint = inverseTransformPoint(m, p);
+            const transformedPoint = Matrix.inverseTransformPoint(m, p);
             expect(transformedPoint.x).toBe(1);
             expect(transformedPoint.y).toBe(1);
         });
@@ -356,7 +343,7 @@ describe('Matrix', () =>
             const m = new Matrix(2, 0, 0, 2, 5, 3);
 
             // Apply inversion
-            invert(m);
+            Matrix.invert(m);
 
             // Expected inverse matrix:
             // Scaling should be 0.5 (inverse of 2)
@@ -377,7 +364,7 @@ describe('Matrix', () =>
         it('should rotate the matrix correctly', () =>
         {
             const m = new Matrix(1, 0, 0, 1, 0, 0);
-            rotate(m, Math.PI / 2); // 90 degrees
+            Matrix.rotate(m, Math.PI / 2); // 90 degrees
             expect(m.a).toBeCloseTo(0);
             expect(m.b).toBeCloseTo(1);
             expect(m.c).toBeCloseTo(-1);
@@ -390,7 +377,7 @@ describe('Matrix', () =>
         it('should scale the matrix correctly', () =>
         {
             const m = new Matrix();
-            scale(m, 2, 3);
+            Matrix.scale(m, 2, 3);
             expect(m.a).toBe(2);
             expect(m.d).toBe(3);
         });
@@ -402,7 +389,7 @@ describe('Matrix', () =>
         {
             const m = new Matrix(1, 0, 0, 1, 10, 20);
             const p = new Point(1, 1);
-            const transformedPoint = transformPoint(m, p);
+            const transformedPoint = Matrix.transformPoint(m, p);
             expect(transformedPoint.x).toBe(11);
             expect(transformedPoint.y).toBe(21);
         });
@@ -413,7 +400,7 @@ describe('Matrix', () =>
         it('should translate the matrix correctly', () =>
         {
             const m = new Matrix();
-            translate(m, 10, 20);
+            Matrix.translate(m, 10, 20);
             expect(m.tx).toBe(10);
             expect(m.ty).toBe(20);
         });

@@ -1,13 +1,12 @@
-export class DisplayObject
-{
-    protected static openfl_enable_experimental_update_queue: boolean = false;
-    protected static openfl_dom: boolean = false;
-    protected static __updateQueue: WeakSet<DisplayObject> = new WeakSet();
+import { Matrix } from '@flight/core';
+import { Rectangle } from '@flight/core';
 
+export default class DisplayObject
+{
     protected __alpha: number = 1.0;
     // protected __blendMode: BlendMode = BlendMode.NORMAL;
     protected __cacheAsBitmap: boolean = false;
-    // protected __cacheAsBitmapMatrix: Matrix = null;
+    protected __cacheAsBitmapMatrix: Matrix = null;
     // protected __filters: BitmapFilter[] = null;
     protected __height: number = 0;
     // protected __loaderInfo: LoaderInfo | null = null;
@@ -19,18 +18,16 @@ export class DisplayObject
     protected __renderParent: DisplayObject | null = null;
     protected __root: DisplayObject | null = null;
     protected __rotation: number = 0;
-    // protected __scroll9Grid: Rectangle = null;
+    protected __scroll9Grid: Rectangle = null;
     protected __scaleX: number = 0;
     protected __scaleY: number = 0;
     protected __transform: any/*Matrix*/ = { tx: 0, ty: 0 };
     protected __transformDirty: boolean = false;
-    // protected __scrollRect: Rectangle = null;
+    protected __scrollRect: Rectangle = null;
     // protected __shader: Shader | null = null;
     // protected __stage: Stage | null = null;
     // protected __transform: Transform = new Transform();
-    protected __updateQueueFlag: boolean = false;
     protected __width: number = 0;
-    protected __worldTransformInvalid: boolean = false;
     protected __visible: boolean = true;
 
     constructor()
@@ -38,28 +35,18 @@ export class DisplayObject
 
     }
 
-    protected __setParentRenderDirty(): void
-    {
-        var renderParent = this.__renderParent != null ? this.__renderParent : this.__parent;
-        if (renderParent != null && !renderParent.__renderDirty)
-        {
-            renderParent.__renderDirty = true;
-            renderParent.__setParentRenderDirty();
-        }
-    }
-
     protected __setRenderDirty(): void
     {
         if (!this.__renderDirty)
         {
             this.__renderDirty = true;
-            this.__setParentRenderDirty();
+            //this.__setParentRenderDirty();
         }
 
-        if (DisplayObject.openfl_enable_experimental_update_queue && !DisplayObject.openfl_dom)
-        {
-            this.__setUpdateQueueFlag();
-        }
+        // if (DisplayObject.openfl_enable_experimental_update_queue && !DisplayObject.openfl_dom)
+        // {
+        //     this.__setUpdateQueueFlag();
+        // }
     }
 
     protected __setTransformDirty(): void
@@ -68,38 +55,34 @@ export class DisplayObject
         {
             this.__transformDirty = true;
 
-            this.__setWorldTransformInvalid();
-            this.__setParentRenderDirty();
+            // this.__setWorldTransformInvalid();
+            //this.__setParentRenderDirty();
         }
-        if (DisplayObject.openfl_enable_experimental_update_queue && !DisplayObject.openfl_dom)
-        {
-            this.__setUpdateQueueFlag();
-        }
+
+        // if (DisplayObject.openfl_enable_experimental_update_queue && !DisplayObject.openfl_dom)
+        // {
+        //     this.__setUpdateQueueFlag();
+        // }
     }
 
-    protected __setUpdateQueueFlag(add: boolean = true): void
-    {
-        if (add)
-        {
-            if (!this.__updateQueueFlag)
-            {
-                this.__updateQueueFlag = true;
-                DisplayObject.__updateQueue.add(this);
-            }
-        }
-        else
-        {
-            this.__updateQueueFlag = false;
-            DisplayObject.__updateQueue.delete(this);
-        }
-    }
+    // protected __setUpdateQueueFlag(add: boolean = true): void
+    // {
+    //     if (add)
+    //     {
+    //         if (!this.__updateQueueFlag)
+    //         {
+    //             this.__updateQueueFlag = true;
+    //             DisplayObject.__updateQueue.add(this);
+    //         }
+    //     }
+    //     else
+    //     {
+    //         this.__updateQueueFlag = false;
+    //         DisplayObject.__updateQueue.delete(this);
+    //     }
+    // }
 
-    protected __setWorldTransformInvalid(): void
-    {
-        this.__worldTransformInvalid = true;
-    }
-
-    // Getter & Setters
+    // Get & Set Methods
 
     get alpha(): number
     {
@@ -356,5 +339,3 @@ export class DisplayObject
         this.__transform.ty = value;
     }
 }
-
-export default DisplayObject;

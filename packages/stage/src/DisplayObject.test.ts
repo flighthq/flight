@@ -1,5 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { DisplayObject } from '../src/DisplayObject.js';
+import DisplayObject from './DisplayObject.js';
 
 describe('DisplayObject', () =>
 {

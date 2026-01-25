@@ -1,17 +1,9 @@
-export class Sprite
-{
-    x: number = 0;
-    y: number = 0;
+import DisplayObject from "./DisplayObject.js";
 
+export default class Sprite extends DisplayObject
+{
     constructor()
     {
-
+        super();
     }
 }
-
-export function create()
-{
-    return new Sprite();
-}
-
-export default Sprite;

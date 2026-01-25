@@ -1,4 +1,4 @@
-import { Vector3D, add, clone, copyFrom, crossProduct, decrementBy, distance, distanceSquared, dotProduct, equals, incrementBy, negate, normalize, project, scaleBy, setTo, subtract } from './Vector3D';
+import Vector3D from './Vector3D';
 
 describe('Vector3D', () =>
 {
@@ -84,7 +84,7 @@ describe('Vector3D', () =>
         {
             const a = new Vector3D(1, 2, 3);
             const b = new Vector3D(4, 5, 6);
-            const result = add(a, b);
+            const result = Vector3D.add(a, b);
             expect(result.x).toBe(5);
             expect(result.y).toBe(7);
             expect(result.z).toBe(9);
@@ -93,7 +93,7 @@ describe('Vector3D', () =>
         it('modifies target when same object is passed as target', () =>
         {
             const a = new Vector3D(1, 2, 3);
-            add(a, a, a);  // passing the same object as both source and target
+            Vector3D.add(a, a, a);  // passing the same object as both source and target
             expect(a.x).toBe(2);
             expect(a.y).toBe(4);
             expect(a.z).toBe(6);
@@ -105,7 +105,7 @@ describe('Vector3D', () =>
         it('creates a new independent vector', () =>
         {
             const original = new Vector3D(1, 2, 3);
-            const cloned = clone(original);
+            const cloned = Vector3D.clone(original);
             expect(cloned).not.toBe(original); // ensures a new instance
             expect(cloned.x).toBe(1);
             expect(cloned.y).toBe(2);
@@ -119,7 +119,7 @@ describe('Vector3D', () =>
         {
             const source = new Vector3D(1, 2, 3);
             const target = new Vector3D();
-            copyFrom(target, source);
+            Vector3D.copyFrom(target, source);
             expect(target.x).toBe(1);
             expect(target.y).toBe(2);
             expect(target.z).toBe(3);
@@ -128,7 +128,7 @@ describe('Vector3D', () =>
         it('does not affect source when same object is used for input and output', () =>
         {
             const vector = new Vector3D(1, 2, 3);
-            copyFrom(vector, vector);
+            Vector3D.copyFrom(vector, vector);
             expect(vector.x).toBe(1);
             expect(vector.y).toBe(2);
             expect(vector.z).toBe(3);
@@ -141,7 +141,7 @@ describe('Vector3D', () =>
         {
             const a = new Vector3D(1, 0, 0);
             const b = new Vector3D(0, 1, 0);
-            const result = crossProduct(a, b);
+            const result = Vector3D.crossProduct(a, b);
             expect(result.x).toBe(0);
             expect(result.y).toBe(0);
             expect(result.z).toBe(1);
@@ -151,7 +151,7 @@ describe('Vector3D', () =>
         {
             const a = new Vector3D(1, 0, 0);
             const b = new Vector3D(0, 1, 0);
-            crossProduct(a, b, a);  // passing the same object as both source and target
+            Vector3D.crossProduct(a, b, a);  // passing the same object as both source and target
             expect(a.x).toBe(0);
             expect(a.y).toBe(0);
             expect(a.z).toBe(1);
@@ -163,7 +163,7 @@ describe('Vector3D', () =>
         it('modifies target when same object is passed as target', () =>
         {
             const a = new Vector3D(5, 5, 5);
-            decrementBy(a, a);  // passing the same object as both source and target
+            Vector3D.decrementBy(a, a);  // passing the same object as both source and target
             expect(a.x).toBe(0);
             expect(a.y).toBe(0);
             expect(a.z).toBe(0);
@@ -176,7 +176,7 @@ describe('Vector3D', () =>
         {
             const a = new Vector3D(1, 1, 1);
             const b = new Vector3D(4, 5, 6);
-            expect(distance(a, b)).toBeCloseTo(7.071068, 5);
+            expect(Vector3D.distance(a, b)).toBeCloseTo(7.071068, 5);
         });
     });
 
@@ -186,7 +186,7 @@ describe('Vector3D', () =>
         {
             const a = new Vector3D(1, 1, 1);
             const b = new Vector3D(4, 5, 6);
-            expect(distanceSquared(a, b)).toBe(50);
+            expect(Vector3D.distanceSquared(a, b)).toBe(50);
         });
     });
 
@@ -196,7 +196,7 @@ describe('Vector3D', () =>
         {
             const a = new Vector3D(1, 2, 3);
             const b = new Vector3D(4, 5, 6);
-            expect(dotProduct(a, b)).toBe(32); // 1*4 + 2*5 + 3*6
+            expect(Vector3D.dotProduct(a, b)).toBe(32); // 1*4 + 2*5 + 3*6
         });
     });
 
@@ -206,14 +206,14 @@ describe('Vector3D', () =>
         {
             const a = new Vector3D(1, 2, 3);
             const b = new Vector3D(1, 2, 3);
-            expect(equals(a, b)).toBe(true);
+            expect(Vector3D.equals(a, b)).toBe(true);
         });
 
         it('returns false if vectors are not equal', () =>
         {
             const a = new Vector3D(1, 2, 3);
             const b = new Vector3D(4, 5, 6);
-            expect(equals(a, b)).toBe(false);
+            expect(Vector3D.equals(a, b)).toBe(false);
         });
     });
 
@@ -222,7 +222,7 @@ describe('Vector3D', () =>
         it('modifies target when same object is passed as target', () =>
         {
             const a = new Vector3D(1, 1, 1);
-            incrementBy(a, a);  // passing the same object as both source and target
+            Vector3D.incrementBy(a, a);  // passing the same object as both source and target
             expect(a.x).toBe(2);
             expect(a.y).toBe(2);
             expect(a.z).toBe(2);
@@ -234,7 +234,7 @@ describe('Vector3D', () =>
         it('inverts the values of the vector components', () =>
         {
             const v = new Vector3D(1, -2, 3);
-            negate(v);
+            Vector3D.negate(v);
             expect(v.x).toBe(-1);
             expect(v.y).toBe(2);
             expect(v.z).toBe(-3);
@@ -243,7 +243,7 @@ describe('Vector3D', () =>
         it('modifies target when same object is passed as target', () =>
         {
             const v = new Vector3D(1, -2, 3);
-            negate(v);
+            Vector3D.negate(v);
             expect(v.x).toBe(-1);
             expect(v.y).toBe(2);
             expect(v.z).toBe(-3);
@@ -255,7 +255,7 @@ describe('Vector3D', () =>
         it('normalizes the vector', () =>
         {
             const v = new Vector3D(3, 4, 0);
-            const length = normalize(v);
+            const length = Vector3D.normalize(v);
             expect(v.x).toBeCloseTo(0.6, 5);
             expect(v.y).toBeCloseTo(0.8, 5);
             expect(v.z).toBe(0);
@@ -265,7 +265,7 @@ describe('Vector3D', () =>
         it('modifies target when same object is passed as target', () =>
         {
             const v = new Vector3D(3, 4, 0);
-            const length = normalize(v);
+            const length = Vector3D.normalize(v);
             expect(v.x).toBeCloseTo(0.6, 5);
             expect(v.y).toBeCloseTo(0.8, 5);
             expect(v.z).toBe(0);
@@ -279,7 +279,7 @@ describe('Vector3D', () =>
         {
             const v = new Vector3D(10, 20, 30);
             v.w = 5;
-            project(v);
+            Vector3D.project(v);
             expect(v.x).toBe(2);
             expect(v.y).toBe(4);
             expect(v.z).toBe(6);
@@ -291,7 +291,7 @@ describe('Vector3D', () =>
         it('scales the vector by a scalar', () =>
         {
             const v = new Vector3D(1, 1, 1);
-            scaleBy(v, 2);
+            Vector3D.scaleBy(v, 2);
             expect(v.x).toBe(2);
             expect(v.y).toBe(2);
             expect(v.z).toBe(2);
@@ -300,7 +300,7 @@ describe('Vector3D', () =>
         it('modifies target when same object is passed as target', () =>
         {
             const v = new Vector3D(1, 1, 1);
-            scaleBy(v, 2);
+            Vector3D.scaleBy(v, 2);
             expect(v.x).toBe(2);
             expect(v.y).toBe(2);
             expect(v.z).toBe(2);
@@ -312,7 +312,7 @@ describe('Vector3D', () =>
         it('sets the values of the vector', () =>
         {
             const v = new Vector3D();
-            setTo(v, 5, 10, 15);
+            Vector3D.setTo(v, 5, 10, 15);
             expect(v.x).toBe(5);
             expect(v.y).toBe(10);
             expect(v.z).toBe(15);
@@ -321,7 +321,7 @@ describe('Vector3D', () =>
         it('modifies target when same object is passed as target', () =>
         {
             const v = new Vector3D(1, 2, 3);
-            setTo(v, 5, 10, 15);
+            Vector3D.setTo(v, 5, 10, 15);
             expect(v.x).toBe(5);
             expect(v.y).toBe(10);
             expect(v.z).toBe(15);
@@ -334,7 +334,7 @@ describe('Vector3D', () =>
         {
             const a = new Vector3D(4, 5, 6);
             const b = new Vector3D(1, 2, 3);
-            const result = subtract(a, b);
+            const result = Vector3D.subtract(a, b);
             expect(result.x).toBe(3);
             expect(result.y).toBe(3);
             expect(result.z).toBe(3);
@@ -343,7 +343,7 @@ describe('Vector3D', () =>
         it('modifies target when same object is passed as target', () =>
         {
             const a = new Vector3D(4, 5, 6);
-            subtract(a, a, a);  // passing the same object as both source and target
+            Vector3D.subtract(a, a, a);  // passing the same object as both source and target
             expect(a.x).toBe(0);
             expect(a.y).toBe(0);
             expect(a.z).toBe(0);
