@@ -6,7 +6,7 @@ export default class DisplayObject
     protected __alpha: number = 1.0;
     // protected __blendMode: BlendMode = BlendMode.NORMAL;
     protected __cacheAsBitmap: boolean = false;
-    protected __cacheAsBitmapMatrix: Matrix = null;
+    protected __cacheAsBitmapMatrix: Matrix | null = null;
     // protected __filters: BitmapFilter[] = null;
     protected __height: number = 0;
     // protected __loaderInfo: LoaderInfo | null = null;
@@ -18,12 +18,12 @@ export default class DisplayObject
     protected __renderParent: DisplayObject | null = null;
     protected __root: DisplayObject | null = null;
     protected __rotation: number = 0;
-    protected __scroll9Grid: Rectangle = null;
+    protected __scroll9Grid: Rectangle | null = null;
     protected __scaleX: number = 0;
     protected __scaleY: number = 0;
     protected __transform: any/*Matrix*/ = { tx: 0, ty: 0 };
     protected __transformDirty: boolean = false;
-    protected __scrollRect: Rectangle = null;
+    protected __scrollRect: Rectangle | null = null;
     // protected __shader: Shader | null = null;
     // protected __stage: Stage | null = null;
     // protected __transform: Transform = new Transform();
