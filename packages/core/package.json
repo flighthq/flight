@@ -1,5 +1,5 @@
 {
-  "name": "@flight/core",
+  "name": "@flighthq/core",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
