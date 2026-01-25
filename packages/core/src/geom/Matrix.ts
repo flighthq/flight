@@ -239,8 +239,10 @@ export default class Matrix
         return targetPoint;
     }
 
-    static equals(source: Matrix, other: Matrix, includeTranslation: boolean = true): boolean
+    static equals(source: Matrix | null | undefined, other: Matrix | null | undefined, includeTranslation: boolean = true): boolean
     {
+        if (source == other) return true;
+        if (!source || !other) return false;
         return ((!includeTranslation || (source.tx == other.tx && source.ty == other.ty)) && source.a == other.a && source.b == other.b && source.c == other.c && source.d == other.d);
     }
 

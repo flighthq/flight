@@ -323,6 +323,60 @@ describe('Matrix', () =>
         });
     });
 
+    describe('equals', () =>
+    {
+        it('should return false if one matrix is null and the other is not', () =>
+        {
+            const mat1 = new Matrix();
+            expect(Matrix.equals(mat1, null)).toBe(false);
+        });
+
+        it('should return false if one matrix is undefined and the other is not', () =>
+        {
+            const mat1 = new Matrix();
+            expect(Matrix.equals(mat1, undefined)).toBe(false);
+        });
+
+        it('should return true if both matrix objects are null', () =>
+        {
+            expect(Matrix.equals(null, null)).toBe(true);
+        });
+
+        it('should return true if both matrix objects are undefined', () =>
+        {
+            expect(Matrix.equals(undefined, undefined)).toBe(true);
+        });
+
+        it('should return true if one matrix object is undefined and the other is null', () =>
+        {
+            expect(Matrix.equals(undefined, undefined)).toBe(true);
+        });
+
+        it('should return false if both matrix objects are defined and have different values', () =>
+        {
+            const mat1 = new Matrix();
+            const mat2 = new Matrix();
+            mat2.a = 2;
+            expect(Matrix.equals(mat1, mat2)).toBe(false);
+        });
+
+        it('should allow differences in translation if includeTranslation is false', () =>
+        {
+            const mat1 = new Matrix();
+            const mat2 = new Matrix();
+            mat2.tx = 100;
+            expect(Matrix.equals(mat1, mat2, false)).toBe(true);
+        });
+
+        it('should not allow differences in translation if includeTranslation is true', () =>
+        {
+            const mat1 = new Matrix();
+            const mat2 = new Matrix();
+            mat2.tx = 100;
+            expect(Matrix.equals(mat1, mat2, true)).toBe(false);
+        });
+    });
+
     describe('inverseTransformPoint', () =>
     {
         it('should apply inverse transformation to a point', () =>
