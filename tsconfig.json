@@ -1,11 +1,21 @@
 {
-  "files": [],
-  "references": [
-    {
-      "path": "packages/stage"
-    }
-  ],
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "composite": true
-  }
+    "composite": true,
+    "noEmit": false, // Allow emitting files during build
+    "outDir": "dist", // Output directory for build
+    "declaration": true, // Generate .d.ts files for distribution
+    "declarationMap": true, // Generate declaration maps for debugging
+    "sourceMap": true // Generate source maps for JS files
+  },
+  "include": [
+    "packages/*/src/**/*.ts",
+    "packages/*/src/**/*.test.ts", // Include test files here
+    "packages/*/src/**/*.spec.ts",
+    "packages/*/__tests__/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

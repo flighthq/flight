@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    /* Language and module settings */
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
@@ -9,47 +8,40 @@
     "useDefineForClassFields": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    /* Source maps & declarations */
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    /* Root & paths (optional fallback for VSCode, can be removed if using references only) */
+    "composite": true,
     "baseUrl": ".",
     "paths": {
-      "@flight/core": [
+      "@flighthq/core": [
         "packages/core/src/index.ts"
       ],
-      "@flight/core/*": [
+      "@flighthq/core/*": [
         "packages/core/src/*"
       ],
-      "@flight/stage": [
+      "@flighthq/stage": [
         "packages/stage/src/index.ts"
       ],
-      "@flight/stage/*": [
+      "@flighthq/stage/*": [
         "packages/stage/src/*"
       ],
-      "@flight/render": [
-        "packages/stage/src/index.ts"
+      "@flighthq/render": [
+        "packages/render/src/index.ts"
       ],
-      "@flight/render/*": [
-        "packages/stage/src/*"
+      "@flighthq/render/*": [
+        "packages/render/src/*"
       ]
     },
-    /* Type support */
     "types": [
       "vitest/globals"
-    ]
+    ] // Include Vitest globals for type-checking
   },
-  /* Include all source files in packages by default */
   "include": [
     "packages/*/src"
   ],
   "exclude": [
-    "**/*.test.*",
-    "**/__tests__/**",
     "node_modules",
     "dist"
-  ],
-  /* Enable strict project references (child packages will define 'composite: true') */
-  "composite": false
+  ]
 }
