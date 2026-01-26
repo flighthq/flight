@@ -1,7 +1,12 @@
 {
-  "editor.formatOnSave": true,
+  "editor.formatOnSave": true, // Enable auto-formatting on save (Prettier or other formatters)
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
+    "source.fixAll": "always" // Automatically fix all linting issues (including ESLint fixes)
   },
-  "eslint.validate": ["typescript"]
+  "eslint.validate": [
+    "javascript", // Add JavaScript files
+    "javascriptreact", // Add React JavaScript files
+    "typescript", // TypeScript files
+    "typescriptreact" // React TypeScript files
+  ]
 }
