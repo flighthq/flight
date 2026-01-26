@@ -1,5 +1,5 @@
+import type { Rectangle } from '@flighthq/core';
 import { Matrix } from '@flighthq/core';
-import { Rectangle } from '@flighthq/core';
 
 export default class DisplayObject
 {

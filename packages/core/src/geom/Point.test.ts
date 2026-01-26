@@ -208,8 +208,8 @@ describe('Point', () =>
     describe('lerp', () =>
     {
         const cases = [
-            { t: 0, expected: (a: number, b: number) => a },
-            { t: 1, expected: (a: number, b: number) => b },
+            { t: 0, expected: (a: number, _: number) => a },
+            { t: 1, expected: (_: number, b: number) => b },
             { t: 0.5, expected: (a: number, b: number) => (a + b) / 2 },
             { t: 10, expected: (a: number, b: number) => a + (b - a) * 10 },
             { t: -1, expected: (a: number, b: number) => a + (b - a) * -1 },

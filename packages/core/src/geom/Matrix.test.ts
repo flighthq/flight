@@ -1,6 +1,6 @@
 import Matrix from './Matrix.js';
-import Vector3D from './Vector3D.js';
 import Point from './Point.js';
+import Vector3D from './Vector3D.js';
 
 describe('Matrix', () =>
 {

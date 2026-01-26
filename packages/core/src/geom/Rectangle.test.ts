@@ -1,5 +1,5 @@
-import Rectangle from './Rectangle.js';
 import Point from './Point.js';
+import Rectangle from './Rectangle.js';
 
 describe('Rectangle', () =>
 {
