@@ -1,4 +1,4 @@
-import type { Rectangle } from '@flighthq/core';
+import { Rectangle } from '@flighthq/core';
 import { Matrix } from '@flighthq/core';
 
 export default class DisplayObject
@@ -18,10 +18,12 @@ export default class DisplayObject
     protected __renderParent: DisplayObject | null = null;
     protected __root: DisplayObject | null = null;
     protected __rotation: number = 0;
+    protected __rotationCosine: number = 1;
+    protected __rotationSine: number = 0;
     protected __scale9Grid: Rectangle | null = null;
     protected __scaleX: number = 0;
     protected __scaleY: number = 0;
-    protected __transform: any/*Matrix*/ = { tx: 0, ty: 0 };
+    protected __transform: Matrix = new Matrix();
     protected __transformDirty: boolean = false;
     protected __scrollRect: Rectangle | null = null;
     // protected __shader: Shader | null = null;
@@ -236,38 +238,37 @@ export default class DisplayObject
 
     set mask(value: DisplayObject | null)
     {
-        // if (value == __mask)
+        if (value === this.__mask)
+        {
+            return;
+        }
+
+        if (value !== this.__mask)
+        {
+            this.__setTransformDirty();
+            this.__setRenderDirty();
+        }
+
+        if (this.__mask !== null)
+        {
+            // this.__mask.__isMask = false;
+            // this.__mask.__maskTarget = null;
+            this.__mask.__setTransformDirty();
+            this.__mask.__setRenderDirty();
+        }
+
+        if (value !== null)
+        {
+            // value.__isMask = true;
+            // value.__maskTarget = this;
+            // value.__setWorldTransformInvalid();
+        }
+
+        // if (this.__cacheBitmap !== null && this.__cacheBitmap.mask != value)
         // {
-        //     return value;
+        //     this.__cacheBitmap.mask = value;
         // }
 
-        // if (value != __mask)
-        // {
-        //     __setTransformDirty();
-        //     __setRenderDirty();
-        // }
-
-        // if (__mask != null)
-        // {
-        //     __mask.__isMask = false;
-        //     __mask.__maskTarget = null;
-        //     __mask.__setTransformDirty();
-        //     __mask.__setRenderDirty();
-        // }
-
-        // if (value != null)
-        // {
-        //     value.__isMask = true;
-        //     value.__maskTarget = this;
-        //     value.__setWorldTransformInvalid();
-        // }
-
-        // if (__cacheBitmap != null && __cacheBitmap.mask != value)
-        // {
-        //     __cacheBitmap.mask = value;
-        // }
-
-        // return __mask = value;
         this.__mask = value;
     }
 
@@ -330,33 +331,30 @@ export default class DisplayObject
 
     set rotation(value: number)
     {
-        // if (value != __rotation)
-        // {
-        //     value = value % 360.0;
-        //     if (value > 180.0)
-        //     {
-        //         value -= 360.0;
-        //     }
-        //     else if (value < -180.0)
-        //     {
-        //         value += 360.0;
-        //     }
+        if (value != this.__rotation)
+        {
+            value = value % 360.0;
+            if (value > 180.0)
+            {
+                value -= 360.0;
+            }
+            else if (value < -180.0)
+            {
+                value += 360.0;
+            }
 
-        //     __rotation = value;
-        //     var radians = __rotation * (Math.PI / 180);
-        //     __rotationSine = Math.sin(radians);
-        //     __rotationCosine = Math.cos(radians);
+            this.__rotation = value;
+            const radians = this.__rotation * (Math.PI / 180);
+            this.__rotationSine = Math.sin(radians);
+            this.__rotationCosine = Math.cos(radians);
 
-        //     __transform.a = __rotationCosine * __scaleX;
-        //     __transform.b = __rotationSine * __scaleX;
-        //     __transform.c = -__rotationSine * __scaleY;
-        //     __transform.d = __rotationCosine * __scaleY;
+            this.__transform.a = this.__rotationCosine * this.__scaleX;
+            this.__transform.b = this.__rotationSine * this.__scaleX;
+            this.__transform.c = -this.__rotationSine * this.__scaleY;
+            this.__transform.d = this.__rotationCosine * this.__scaleY;
 
-        //     __setTransformDirty();
-        // }
-
-        // return value;
-        this.__rotation = value;
+            this.__setTransformDirty();
+        }
     }
 
     get scale9Grid(): Rectangle | null
@@ -372,23 +370,20 @@ export default class DisplayObject
 
     set scroll9Grid(value: Rectangle | null)
     {
-        // if (value == null && __scale9Grid == null) return value;
-        // if (value != null && __scale9Grid != null && __scale9Grid.equals(value)) return value;
+        if (value === null && this.__scale9Grid === null) return;
+        if (value !== null && this.__scale9Grid !== null && Rectangle.equals(this.__scale9Grid, value)) return;
 
-        // if (value != null)
-        // {
-        //     if (__scale9Grid == null) __scale9Grid = new Rectangle();
-        //     __scale9Grid.copyFrom(value);
-        // }
-        // else
-        // {
-        //     __scale9Grid = null;
-        // }
+        if (value != null)
+        {
+            if (this.__scale9Grid === null) this.__scale9Grid = new Rectangle();
+            Rectangle.copyFrom(this.__scale9Grid, value);
+        }
+        else
+        {
+            this.__scale9Grid = null;
+        }
 
-        // __setRenderDirty();
-
-        // return value;
-        this.__scale9Grid = value;
+        this.__setRenderDirty();
     }
 
     get scaleX(): number
@@ -398,30 +393,29 @@ export default class DisplayObject
 
     set scaleX(value: number)
     {
-        // if (value != __scaleX)
-        // {
-        //     __scaleX = value;
+        if (value !== this.__scaleX)
+        {
+            this.__scaleX = value;
 
-        //     if (__transform.b == 0)
-        //     {
-        //         if (value != __transform.a) __setTransformDirty();
-        //         __transform.a = value;
-        //     }
-        //     else
-        //     {
-        //         var a = __rotationCosine * value;
-        //         var b = __rotationSine * value;
+            if (this.__transform.b === 0)
+            {
+                if (value !== this.__transform.a) this.__setTransformDirty();
+                this.__transform.a = value;
+            }
+            else
+            {
+                const a = this.__rotationCosine * value;
+                const b = this.__rotationSine * value;
 
-        //         if (__transform.a != a || __transform.b != b)
-        //         {
-        //             __setTransformDirty();
-        //         }
+                if (this.__transform.a !== a || this.__transform.b !== b)
+                {
+                    this.__setTransformDirty();
+                }
 
-        //         __transform.a = a;
-        //         __transform.b = b;
-        //     }
-        // }
-        this.__scaleX = value;
+                this.__transform.a = a;
+                this.__transform.b = b;
+            }
+        }
     }
 
     get scaleY(): number
@@ -431,30 +425,29 @@ export default class DisplayObject
 
     set scaleY(value: number)
     {
-        // if (value != __scaleY)
-        // {
-        //     __scaleY = value;
+        if (value != this.__scaleY)
+        {
+            this.__scaleY = value;
 
-        //     if (__transform.c == 0)
-        //     {
-        //         if (value != __transform.d) __setTransformDirty();
-        //         __transform.d = value;
-        //     }
-        //     else
-        //     {
-        //         var c = -__rotationSine * value;
-        //         var d = __rotationCosine * value;
+            if (this.__transform.c === 0)
+            {
+                if (value !== this.__transform.d) this.__setTransformDirty();
+                this.__transform.d = value;
+            }
+            else
+            {
+                const c = -this.__rotationSine * value;
+                const d = this.__rotationCosine * value;
 
-        //         if (__transform.d != d || __transform.c != c)
-        //         {
-        //             __setTransformDirty();
-        //         }
+                if (this.__transform.d !== d || this.__transform.c !== c)
+                {
+                    this.__setTransformDirty();
+                }
 
-        //         __transform.c = c;
-        //         __transform.d = d;
-        //     }
-        // }
-        this.__scaleY = value;
+                this.__transform.c = c;
+                this.__transform.d = d;
+            }
+        }
     }
 
     get scrollRect(): Rectangle | null
@@ -470,20 +463,20 @@ export default class DisplayObject
 
     set scrollRect(value: Rectangle | null)
     {
-        // if (value == null && __scrollRect == null) return value;
-        // if (value != null && __scrollRect != null && __scrollRect.equals(value)) return value;
+        if (value === null && this.__scrollRect === null) return;
+        if (value !== null && this.__scrollRect !== null && Rectangle.equals(this.__scrollRect, value)) return;
 
-        // if (value != null)
-        // {
-        //     if (__scrollRect == null) __scrollRect = new Rectangle();
-        //     __scrollRect.copyFrom(value);
-        // }
-        // else
-        // {
-        //     __scrollRect = null;
-        // }
+        if (value !== null)
+        {
+            if (this.__scrollRect === null) this.__scrollRect = new Rectangle();
+            Rectangle.copyFrom(this.__scrollRect, value);
+        }
+        else
+        {
+            this.__scrollRect = null;
+        }
 
-        // __setTransformDirty();
+        this.__setTransformDirty();
 
         // if (__supportDOM)
         // {
