@@ -1,4 +1,5 @@
 import Point from './Point.js';
+import Rectangle from './Rectangle.js';
 import type Vector3D from './Vector3D.js';
 
 /**
@@ -10,6 +11,7 @@ import type Vector3D from './Vector3D.js';
  * @see Point
  * @see Vector3D
  * @see Transform
+ * @see Rectangle
  */
 export default class Matrix
 {
@@ -409,6 +411,59 @@ export default class Matrix
         targetPoint.x = sourcePoint.x * sourceMatrix.a + sourcePoint.y * sourceMatrix.c + sourceMatrix.tx;
         targetPoint.y = sourcePoint.x * sourceMatrix.b + sourcePoint.y * sourceMatrix.d + sourceMatrix.ty;
         return targetPoint;
+    }
+
+    /**
+     * Applies a 2D affine transform to a given rectangle and updates it
+     * to the axis-aligned bounding box of the transformed rectangle.
+     *
+     * This accounts for translation, rotation, scaling, and skew
+     * from the given matrix.
+     *
+     * If you do not provide a targetRect, a new Rectangle() will be created
+     **/
+    static transformRect(sourceMatrix: Matrix, sourceRect: Rectangle, targetRect?: Rectangle): Rectangle
+    {
+        targetRect = targetRect ?? new Rectangle();
+
+        const { a, b, c, d } = sourceMatrix;
+        const { x, y, width, height } = sourceRect;
+
+        let tx0 = a * x + c * y;
+        let tx1 = tx0;
+        let ty0 = b * x + d * y;
+        let ty1 = ty0;
+
+        let tx = a * (x + width) + c * y;
+        let ty = b * (x + width) + d * y;
+
+        if (tx < tx0) tx0 = tx;
+        if (ty < ty0) ty0 = ty;
+        if (tx > tx1) tx1 = tx;
+        if (ty > ty1) ty1 = ty;
+
+        tx = a * (x + width) + c * (y + height);
+        ty = b * (x + width) + d * (y + height);
+
+        if (tx < tx0) tx0 = tx;
+        if (ty < ty0) ty0 = ty;
+        if (tx > tx1) tx1 = tx;
+        if (ty > ty1) ty1 = ty;
+
+        tx = a * x + c * (y + height);
+        ty = b * x + d * (y + height);
+
+        if (tx < tx0) tx0 = tx;
+        if (ty < ty0) ty0 = ty;
+        if (tx > tx1) tx1 = tx;
+        if (ty > ty1) ty1 = ty;
+
+        targetRect.x = tx0 + sourceMatrix.tx;
+        targetRect.y = ty0 + sourceMatrix.ty;
+        targetRect.width = tx1 - tx0;
+        targetRect.height = ty1 - ty0;
+
+        return targetRect;
     }
 
     /**

@@ -1,5 +1,6 @@
 import Matrix from './Matrix.js';
 import Point from './Point.js';
+import Rectangle from './Rectangle';
 import Vector3D from './Vector3D.js';
 
 describe('Matrix', () =>
@@ -448,6 +449,92 @@ describe('Matrix', () =>
             expect(transformedPoint.y).toBe(21);
         });
     });
+
+    describe('transformRect', () =>
+    {
+        it('should return the same rectangle for identity matrix', () =>
+        {
+            const rect = new Rectangle(0, 0, 10, 20);
+            const matrix = new Matrix(); // identity by default
+            const transformed = Matrix.transformRect(matrix, rect);
+            expect(transformed.x).toBeCloseTo(0);
+            expect(transformed.y).toBeCloseTo(0);
+            expect(transformed.width).toBeCloseTo(10);
+            expect(transformed.height).toBeCloseTo(20);
+        });
+
+        it('should apply translation correctly', () =>
+        {
+            const rect = new Rectangle(0, 0, 10, 20);
+            const matrix = new Matrix();
+            matrix.tx = 5;
+            matrix.ty = 7;
+            const transformed = Matrix.transformRect(matrix, rect);
+            expect(transformed.x).toBeCloseTo(5);
+            expect(transformed.y).toBeCloseTo(7);
+            expect(transformed.width).toBeCloseTo(10);
+            expect(transformed.height).toBeCloseTo(20);
+        });
+
+        it('should apply uniform scaling correctly', () =>
+        {
+            const rect = new Rectangle(0, 0, 10, 20);
+            const matrix = new Matrix();
+            matrix.a = 2; // scaleX
+            matrix.d = 3; // scaleY
+            const transformed = Matrix.transformRect(matrix, rect);
+            expect(transformed.x).toBeCloseTo(0);
+            expect(transformed.y).toBeCloseTo(0);
+            expect(transformed.width).toBeCloseTo(20);
+            expect(transformed.height).toBeCloseTo(60);
+        });
+
+        it('should handle rotation correctly', () =>
+        {
+            const rect = new Rectangle(0, 0, 10, 20);
+            const matrix = new Matrix();
+            const angle = Math.PI / 2; // 90 degrees
+            matrix.a = Math.cos(angle);
+            matrix.b = Math.sin(angle);
+            matrix.c = -Math.sin(angle);
+            matrix.d = Math.cos(angle);
+
+            const transformed = Matrix.transformRect(matrix, rect);
+            // After 90° rotation, width and height swap in axis-aligned bounding box
+            expect(transformed.width).toBeCloseTo(20);
+            expect(transformed.height).toBeCloseTo(10);
+        });
+
+        it('should handle skew correctly', () =>
+        {
+            const rect = new Rectangle(0, 0, 10, 10);
+            const matrix = new Matrix();
+            matrix.c = 1; // skew X
+            matrix.b = 0.5; // skew Y
+
+            const transformed = Matrix.transformRect(matrix, rect);
+            // For 10x10, transformed width and height increase due to skew
+            expect(transformed.width).toBeCloseTo(10 + 10 * 1); // 20
+            expect(transformed.height).toBeCloseTo(10 + 10 * 0.5); // 15
+        });
+
+        it('should write to targetRect if provided', () =>
+        {
+            const rect = new Rectangle(0, 0, 10, 10);
+            const target = new Rectangle();
+            const matrix = new Matrix();
+            matrix.tx = 5;
+            matrix.ty = 7;
+
+            const result = Matrix.transformRect(matrix, rect, target);
+            expect(result).toBe(target); // must return the same object
+            expect(target.x).toBeCloseTo(5);
+            expect(target.y).toBeCloseTo(7);
+            expect(target.width).toBeCloseTo(10);
+            expect(target.height).toBeCloseTo(10);
+        });
+    });
+
 
     describe('translate', () =>
     {
