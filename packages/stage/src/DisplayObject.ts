@@ -1,21 +1,32 @@
 import { Rectangle } from '@flighthq/core';
 import { Matrix } from '@flighthq/core';
+import RectanglePool from '@flighthq/core/geom/RectanglePool.js';
 
-export default class DisplayObject
+import type { BitmapDrawable } from './BitmapDrawable.js';
+import { BlendMode } from './BlendMode.js';
+import { DirtyFlags } from './DirtyFlags.js';
+import BitmapFilter from './filters/BitmapFilter.js';
+import type LoaderInfo from './LoaderInfo.js';
+import type Shader from './Shader.js';
+import type Stage from './Stage.js';
+import type Transform from './Transform.js';
+import UpdateQueue from './UpdateQueue.js';
+
+export default class DisplayObject implements BitmapDrawable
 {
     protected __alpha: number = 1.0;
-    // protected __blendMode: BlendMode = BlendMode.NORMAL;
+    protected __blendMode: BlendMode = BlendMode.Normal;
+    protected __bounds: Rectangle = new Rectangle();
     protected __cacheAsBitmap: boolean = false;
     protected __cacheAsBitmapMatrix: Matrix | null = null;
-    // protected __filters: BitmapFilter[] = null;
+    protected __filters: BitmapFilter[] | null = null;
+    protected __dirtyFlags: DirtyFlags = DirtyFlags.None;
     protected __height: number = 0;
-    // protected __loaderInfo: LoaderInfo | null = null;
+    protected __loaderInfo: LoaderInfo | null = null;
     protected __mask: DisplayObject | null = null;
     protected __name: string | null = null;
     protected __opaqueBackground: number | null = null;
     protected __parent: DisplayObject | null = null;
-    protected __renderDirty: boolean = false;
-    protected __renderParent: DisplayObject | null = null;
     protected __root: DisplayObject | null = null;
     protected __rotation: number = 0;
     protected __rotationCosine: number = 1;
@@ -24,11 +35,10 @@ export default class DisplayObject
     protected __scaleX: number = 0;
     protected __scaleY: number = 0;
     protected __transform: Matrix = new Matrix();
-    protected __transformDirty: boolean = false;
+    protected __transformObject: Transform | null = null;
     protected __scrollRect: Rectangle | null = null;
-    // protected __shader: Shader | null = null;
-    // protected __stage: Stage | null = null;
-    // protected __transform: Transform = new Transform();
+    protected __shader: Shader | null = null;
+    protected __stage: Stage | null = null;
     protected __width: number = 0;
     protected __visible: boolean = true;
 
@@ -37,52 +47,24 @@ export default class DisplayObject
 
     }
 
-    protected __setRenderDirty(): void
+    /**
+     * Calling `invalidate()` signals that the current object has changed and
+     * should be redrawn the next time it is eligible to be rendered.
+     */
+    static invalidate(target: DisplayObject, flags: DirtyFlags = DirtyFlags.Render): void
     {
-        if (!this.__renderDirty)
-        {
-            this.__renderDirty = true;
-            //this.__setParentRenderDirty();
-        }
+        const nextFlags = target.__dirtyFlags | flags;
+        if (nextFlags === target.__dirtyFlags) return;
 
-        // if (DisplayObject.openfl_enable_experimental_update_queue && !DisplayObject.openfl_dom)
-        // {
-        //     this.__setUpdateQueueFlag();
-        // }
+        target.__dirtyFlags = nextFlags;
+
+        UpdateQueue.add(target);
     }
 
-    protected __setTransformDirty(): void
+    static __updateBounds(source: DisplayObject): void
     {
-        if (!this.__transformDirty)
-        {
-            this.__transformDirty = true;
-
-            // this.__setWorldTransformInvalid();
-            //this.__setParentRenderDirty();
-        }
-
-        // if (DisplayObject.openfl_enable_experimental_update_queue && !DisplayObject.openfl_dom)
-        // {
-        //     this.__setUpdateQueueFlag();
-        // }
+        // TODO
     }
-
-    // protected __setUpdateQueueFlag(add: boolean = true): void
-    // {
-    //     if (add)
-    //     {
-    //         if (!this.__updateQueueFlag)
-    //         {
-    //             this.__updateQueueFlag = true;
-    //             DisplayObject.__updateQueue.add(this);
-    //         }
-    //     }
-    //     else
-    //     {
-    //         this.__updateQueueFlag = false;
-    //         DisplayObject.__updateQueue.delete(this);
-    //     }
-    // }
 
     // Get & Set Methods
 
@@ -96,40 +78,36 @@ export default class DisplayObject
         if (value > 1.0) value = 1.0;
         if (value < 0.0) value = 0.0;
 
-        if (!this.__renderDirty && value !== this.__alpha && !this.__cacheAsBitmap) 
-        {
-            this.__setRenderDirty();
-        }
+        if (value === this.__alpha) return;
+
         this.__alpha = value;
+        DisplayObject.invalidate(this, DirtyFlags.Appearance);
     }
 
-    // get blendMode(): BlendMode
-    // {
-    //     return this.__blendMode;
-    // }
+    get blendMode(): BlendMode
+    {
+        return this.__blendMode;
+    }
 
-    // set blendMode(value: BlendMode)
-    // {
-    //     if (value == null) value = NORMAL;
+    set blendMode(value: BlendMode)
+    {
+        if (value === this.__blendMode) return;
 
-    // 	if (value != __blendMode) __setRenderDirty();
-    // 	return __blendMode = value;
-    // }
+        this.__blendMode = value;
+        DisplayObject.invalidate(this, DirtyFlags.Appearance);
+    }
 
     get cacheAsBitmap(): boolean
     {
-        // return (__filters == null ? __cacheAsBitmap : true);
-        return this.__cacheAsBitmap;
+        return (this.__filters === null ? this.__cacheAsBitmap : true);
     }
 
     set cacheAsBitmap(value: boolean)
     {
-        if (!this.__renderDirty && value != this.__cacheAsBitmap)
-        {
-            this.__setRenderDirty();
-        }
+        if (value === this.__cacheAsBitmap) return;
 
         this.__cacheAsBitmap = value;
+        DisplayObject.invalidate(this, DirtyFlags.CacheAsBitmap);
     }
 
     get cacheAsBitmapMatrix(): Matrix | null
@@ -139,61 +117,68 @@ export default class DisplayObject
 
     set cacheAsBitmapMatrix(value: Matrix | null)
     {
-        if (!this.__renderDirty && !Matrix.equals(value, this.__cacheAsBitmapMatrix))
+        if (Matrix.equals(value, this.__cacheAsBitmapMatrix)) return;
+
+        if (value !== null)
         {
-            this.__setRenderDirty();
+            if (this.__cacheAsBitmapMatrix === null)
+            {
+                this.__cacheAsBitmapMatrix = Matrix.clone(value);
+            }
+            else
+            {
+                Matrix.copyFrom(this.__cacheAsBitmapMatrix, value);
+            }
         }
-        this.__cacheAsBitmapMatrix = (value !== null ? Matrix.clone(value) : value);
+        else
+        {
+            this.__cacheAsBitmapMatrix = null;
+        }
+
+        DisplayObject.invalidate(this, DirtyFlags.CacheAsBitmap);
     }
 
-    // get filters(): BitmapFilter[]
-    // {
-    //     if (__filters == null)
-    //     {
-    //         return new Array();
-    //     }
-    //     else
-    //     {
-    //         return __filters.copy();
-    //     }
-    // }
+    get filters(): BitmapFilter[]
+    {
+        if (this.__filters === null)
+        {
+            return new Array();
+        }
+        else
+        {
+            return this.__filters.slice();
+        }
+    }
 
-    // set filters(value: BitmapFilter[])
-    // {
-    //     if (value != null && value.length > 0)
-    //     {
-    //         var clonedFilters:Array<BitmapFilter> = [];
+    set filters(value: BitmapFilter[] | null)
+    {
+        if ((value === null || value.length == 0) && this.__filters === null) return;
 
-    //         for (filter in value)
-    //         {
-    //             var clonedFilter:BitmapFilter = filter.clone();
+        if (value !== null)
+        {
+            this.__filters = value.map((filter) =>
+            {
+                return BitmapFilter.clone(filter);
+            });
+        }
+        else
+        {
+            this.__filters = null;
+        }
 
-    //             clonedFilter.__renderDirty = true;
-    //             clonedFilters.push(clonedFilter);
-    //         }
-
-    //         __filters = clonedFilters;
-    //         // __updateFilters = true;
-    //         __setRenderDirty();
-    //     }
-    //     else if (__filters != null)
-    //     {
-    //         __filters = null;
-    //         // __updateFilters = false;
-    //         __setRenderDirty();
-    //     }
-
-    //     return value;
-    // }
+        DisplayObject.invalidate(this, DirtyFlags.CacheAsBitmap);
+    }
 
     get height(): number
     {
-        // var rect = Rectangle.__pool.get();
-        // __getLocalBounds(rect);
-        // var height = rect.height;
-        // Rectangle.__pool.release(rect);
-        // return height;
-        return this.__height;
+        if ((this.__dirtyFlags & DirtyFlags.Bounds) !== 0)
+        {
+            const rect = RectanglePool.get();
+            DisplayObject.__getLocalBounds(this, rect);
+            RectanglePool.release(rect);
+        }
+
+        return this.__bounds.height;
     }
 
     set height(value: number)
@@ -245,6 +230,7 @@ export default class DisplayObject
 
         if (value !== this.__mask)
         {
+            invalidate(this,);
             this.__setTransformDirty();
             this.__setRenderDirty();
         }
@@ -452,13 +438,12 @@ export default class DisplayObject
 
     get scrollRect(): Rectangle | null
     {
-        // if (__scrollRect == null)
-        // {
-        //     return null;
-        // }
+        if (this.__scrollRect === null)
+        {
+            return null;
+        }
 
-        // return __scrollRect.clone();
-        return this.__scrollRect;
+        return Rectangle.clone(this.__scrollRect);
     }
 
     set scrollRect(value: Rectangle | null)
