@@ -1,6 +1,7 @@
 import { Matrix } from '@flighthq/core';
 import { Rectangle } from '@flighthq/core';
 
+import { DirtyFlags } from './DirtyFlags.js';
 import DisplayObject from './DisplayObject.js';
 
 describe('DisplayObject', () =>
@@ -12,211 +13,320 @@ describe('DisplayObject', () =>
         displayObject = new (DisplayObject as any)();
     });
 
-    function getRenderDirty(displayObject: DisplayObject): boolean
+    function getDirtyFlags(displayObject: DisplayObject): DirtyFlags
     {
-        // @ts-expect-error:
-        return displayObject.__renderDirty;
+        // @ts-expect-error
+        return displayObject.__dirtyFlags;
     }
 
-    function getTransformDirty(displayObject: DisplayObject): boolean
+    function getLocalTransform(displayObject: DisplayObject): Matrix
     {
-        // @ts-expect-error:
-        return displayObject.__transformDirty;
+        // @ts-expect-error
+        DisplayObject.__updateLocalTransform(displayObject);
+        // @ts-expect-error
+        return displayObject.__localTransform;
     }
 
     // Constructor
 
-    it('makes an instance with default values', () =>
+    describe('constructor', () =>
     {
-        expect(displayObject).toBeInstanceOf(DisplayObject);
-        expect(displayObject.alpha).toBe(1);
-        expect(displayObject.cacheAsBitmap).toBe(false);
-        expect(displayObject.height).toBe(0);
-        expect(displayObject.mask).toBeNull();
-        expect(displayObject.name).toBeNull();
-        expect(displayObject.opaqueBackground).toBeNull();
-        expect(displayObject.parent).toBeNull();
-        expect(displayObject.root).toBeNull();
-        expect(displayObject.rotation).toBe(0);
-        expect(displayObject.scaleX).toBe(0);
-        expect(displayObject.scaleY).toBe(0);
-        expect(displayObject.visible).toBe(true);
-        expect(displayObject.width).toBe(0);
-        expect(displayObject.x).toBe(0);
-        expect(displayObject.y).toBe(0);
+        it('initializes default values', () =>
+        {
+            expect(displayObject.alpha).toBe(1);
+            expect(displayObject.cacheAsBitmap).toBe(false);
+            expect(displayObject.height).toBe(0);
+            expect(displayObject.mask).toBeNull();
+            expect(displayObject.name).toBeNull();
+            expect(displayObject.opaqueBackground).toBeNull();
+            expect(displayObject.parent).toBeNull();
+            expect(displayObject.root).toBeNull();
+            expect(displayObject.rotation).toBe(0);
+            expect(displayObject.scaleX).toBe(1);
+            expect(displayObject.scaleY).toBe(1);
+            expect(displayObject.visible).toBe(true);
+            expect(displayObject.width).toBe(0);
+            expect(displayObject.x).toBe(0);
+            expect(displayObject.y).toBe(0);
+        });
     });
 
     // Properties
 
     describe('alpha', () =>
     {
-        it('should mark render dirty if changed', () =>
+        it('clamps values between 0 and 1', () =>
         {
-            expect(displayObject.alpha).toBe(1.0);
-            expect(getRenderDirty(displayObject)).toBe(false);
+            displayObject.alpha = 2;
+            expect(displayObject.alpha).toBe(1);
 
+            displayObject.alpha = -1;
+            expect(displayObject.alpha).toBe(0);
+        });
+
+        it('marks appearance dirty when changed', () =>
+        {
+            displayObject.alpha = 0.5;
+            expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Appearance);
+        });
+
+        it('does not mark dirty when unchanged', () =>
+        {
             displayObject.alpha = 1;
-            expect(getRenderDirty(displayObject)).toBe(false);
-
-            displayObject.alpha = 0;
-            expect(getRenderDirty(displayObject)).toBe(true);
+            expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.None);
         });
     });
 
     describe('cacheAsBitmap', () =>
     {
-        it('should mark render dirty if changed', () =>
+        it('marks cacheAsBitmap dirty when toggled', () =>
         {
-            expect(displayObject.cacheAsBitmap).toBe(false);
-            expect(getRenderDirty(displayObject)).toBe(false);
-
             displayObject.cacheAsBitmap = true;
-            expect(getRenderDirty(displayObject)).toBe(true);
+            expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.CacheAsBitmap);
 
             displayObject.cacheAsBitmap = false;
-            expect(getRenderDirty(displayObject)).toBe(true);
+            expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.CacheAsBitmap);
         });
     });
 
     describe('cacheAsBitmapMatrix', () =>
     {
-        it('should mark render dirty if matrix changes', () =>
+        it('does not dirty transform if cacheAsBitmap is false', () =>
         {
-            const matrix1 = new Matrix();
-            const matrix2 = new Matrix();
+            displayObject.cacheAsBitmapMatrix = new Matrix();
+            expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.None);
+        });
 
-            displayObject.cacheAsBitmapMatrix = matrix1;
-            expect(getRenderDirty(displayObject)).toBe(true);
+        it('marks transform dirty when cacheAsBitmap is true and matrix changes', () =>
+        {
+            displayObject.cacheAsBitmap = true;
+            displayObject.cacheAsBitmapMatrix = new Matrix(2, 0, 0, 2);
 
-            displayObject.cacheAsBitmapMatrix = matrix2;
-            expect(getRenderDirty(displayObject)).toBe(true);
+            expect(DirtyFlags.has(getDirtyFlags(displayObject), DirtyFlags.Transform)).toBe(true);
+        });
+
+        it('does not dirty transform if matrix values are equal', () =>
+        {
+            const m = new Matrix();
+
+            displayObject.cacheAsBitmapMatrix = m;
+            displayObject.cacheAsBitmap = true;
+            displayObject.cacheAsBitmapMatrix = m;
+
+            expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.CacheAsBitmap);
         });
     });
 
     describe('mask', () =>
     {
-        it('should set mask and mark render and transform dirty', () =>
+        it('sets and clears bidirectional mask relationship', () =>
         {
-            const maskObject = new DisplayObject();
+            const mask = new DisplayObject();
 
-            expect(displayObject.mask).toBeNull();
-            expect(getRenderDirty(displayObject)).toBe(false);
-            expect(getTransformDirty(displayObject)).toBe(false);
+            displayObject.mask = mask;
+            // @ts-expect-error
+            expect(mask.__maskedObject).toBe(displayObject);
 
-            displayObject.mask = maskObject;
-            expect(displayObject.mask).toBe(maskObject);
-            expect(getRenderDirty(displayObject)).toBe(true);
-            expect(getTransformDirty(displayObject)).toBe(true);
+            displayObject.mask = null;
+            // @ts-expect-error
+            expect(mask.__maskedObject).toBeNull();
+        });
+
+        it('marks clip dirty when changed', () =>
+        {
+            displayObject.mask = new DisplayObject();
+            expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Clip);
         });
     });
 
     describe('rotation', () =>
     {
-        it('should mark transform dirty if changed', () =>
+        it('normalizes values into [-180, 180]', () =>
         {
-            expect(displayObject.rotation).toBe(0);
-            expect(getTransformDirty(displayObject)).toBe(false);
+            displayObject.rotation = 450;
+            expect(displayObject.rotation).toBe(90);
 
+            displayObject.rotation = -270;
+            expect(displayObject.rotation).toBe(90);
+        });
+
+        it('uses fast cardinal sin/cos paths', () =>
+        {
+            displayObject.rotation = 90;
+            // @ts-expect-error
+            expect(displayObject.__rotationSine).toBe(1);
+            // @ts-expect-error
+            expect(displayObject.__rotationCosine).toBe(0);
+        });
+
+        it('marks transform dirty when changed', () =>
+        {
             displayObject.rotation = 45;
-            expect(getTransformDirty(displayObject)).toBe(true);
-
-            displayObject.rotation = 0;
-            expect(getTransformDirty(displayObject)).toBe(true);
+            expect(getDirtyFlags(displayObject)).toBe(
+                DirtyFlags.Transform | DirtyFlags.TransformedBounds
+            );
         });
     });
 
-    describe('scaleX and scaleY', () =>
+    describe('scaleX', () =>
     {
-        it('should mark transform dirty if scale changes', () =>
+        it('marks transform dirty when changed', () =>
         {
-            expect(displayObject.scaleX).toBe(0);
-            expect(displayObject.scaleY).toBe(0);
-            expect(getTransformDirty(displayObject)).toBe(false);
-
             displayObject.scaleX = 2;
-            displayObject.scaleY = 2;
-            expect(getTransformDirty(displayObject)).toBe(true);
 
-            displayObject.scaleX = 1;
-            displayObject.scaleY = 1;
-            expect(getTransformDirty(displayObject)).toBe(true);
+            expect(getDirtyFlags(displayObject)).toBe(
+                DirtyFlags.Transform | DirtyFlags.TransformedBounds
+            );
+        });
+
+        it('correctly affects local transform with rotation', () =>
+        {
+            displayObject.rotation = 90;
+            displayObject.scaleX = 2;
+
+            const m = getLocalTransform(displayObject);
+            expect(m.a).toBe(0);
+            expect(m.b).toBe(2);
+            expect(m.c).toBe(-1);
+            expect(m.d).toBe(0);
         });
     });
 
-    describe('visible', () =>
+    describe('scaleY', () =>
     {
-        it('should mark render dirty if changed', () =>
+        it('marks transform dirty when changed', () =>
         {
-            expect(displayObject.visible).toBe(true);
-            expect(getRenderDirty(displayObject)).toBe(false);
+            displayObject.scaleY = 3;
 
-            displayObject.visible = false;
-            expect(getRenderDirty(displayObject)).toBe(true);
-
-            displayObject.visible = true;
-            expect(getRenderDirty(displayObject)).toBe(true);
+            expect(getDirtyFlags(displayObject)).toBe(
+                DirtyFlags.Transform | DirtyFlags.TransformedBounds
+            );
         });
-    });
 
-    describe('name', () =>
-    {
-        it('should set and get name correctly', () =>
+        it('correctly affects local transform with rotation', () =>
         {
-            expect(displayObject.name).toBeNull();
+            displayObject.rotation = 90;
+            displayObject.scaleY = 3;
 
-            displayObject.name = 'TestObject';
-            expect(displayObject.name).toBe('TestObject');
-
-            displayObject.name = null;
-            expect(displayObject.name).toBeNull();
+            const m = getLocalTransform(displayObject);
+            expect(m.a).toBe(0);
+            expect(m.b).toBe(1);
+            expect(m.c).toBe(-3);
+            expect(m.d).toBe(0);
         });
     });
 
     describe('scrollRect', () =>
     {
-        it('should set scrollRect and mark transform dirty', () =>
+        it('marks clip dirty when changed', () =>
         {
-            const rect = new Rectangle();
-            expect(displayObject.scrollRect).toBeNull();
-            expect(getTransformDirty(displayObject)).toBe(false);
+            displayObject.scrollRect = new Rectangle();
+            expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Clip);
+        });
+    });
 
-            displayObject.scrollRect = rect;
-            expect(displayObject.scrollRect).toBe(rect);
-            expect(getTransformDirty(displayObject)).toBe(true);
+    describe('visible', () =>
+    {
+        it('marks appearance dirty when changed', () =>
+        {
+            displayObject.visible = false;
+            expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Appearance);
+        });
+    });
 
-            displayObject.scrollRect = null;
-            expect(displayObject.scrollRect).toBeNull();
-            expect(getTransformDirty(displayObject)).toBe(true);
+    describe('width', () =>
+    {
+        describe('transformed bounds', () =>
+        {
+            it('clears transformed bounds dirty flag on width read', () =>
+            {
+                displayObject.scaleX = 2;
+                void displayObject.width;
+
+                expect(getDirtyFlags(displayObject) & DirtyFlags.TransformedBounds).toBe(0);
+            });
+
+            it('re-dirties transformed bounds after transform change', () =>
+            {
+                void displayObject.width;
+                displayObject.x = 10;
+
+                expect(getDirtyFlags(displayObject) & DirtyFlags.TransformedBounds).toBeTruthy();
+            });
         });
     });
 
     describe('x', () =>
     {
-        it('should mark transform dirty if changed', () =>
+        it('converts NaN to 0', () =>
         {
+            displayObject.x = NaN;
             expect(displayObject.x).toBe(0);
-            expect(getTransformDirty(displayObject)).toBe(false);
+        });
 
-            displayObject.x = 0;
-            expect(getTransformDirty(displayObject)).toBe(false);
+        it('marks transform dirty when changed', () =>
+        {
+            displayObject.x = 10;
+            expect(getDirtyFlags(displayObject)).toBe(
+                DirtyFlags.Transform | DirtyFlags.TransformedBounds
+            );
+        });
 
-            displayObject.x = 1;
-            expect(getTransformDirty(displayObject)).toBe(true);
+        it('updates translation in local transform', () =>
+        {
+            displayObject.x = 5;
+            const m = getLocalTransform(displayObject);
+            expect(m.tx).toBe(5);
         });
     });
 
     describe('y', () =>
     {
-        it('should mark transform dirty if changed', () =>
+        it('converts NaN to 0', () =>
         {
+            displayObject.y = NaN;
             expect(displayObject.y).toBe(0);
-            expect(getTransformDirty(displayObject)).toBe(false);
+        });
 
-            displayObject.y = 0;
-            expect(getTransformDirty(displayObject)).toBe(false);
+        it('marks transform dirty when changed', () =>
+        {
+            displayObject.y = 20;
+            expect(getDirtyFlags(displayObject)).toBe(
+                DirtyFlags.Transform | DirtyFlags.TransformedBounds
+            );
+        });
 
-            displayObject.y = 1;
-            expect(getTransformDirty(displayObject)).toBe(true);
+        it('updates translation in local transform', () =>
+        {
+            displayObject.y = 7;
+            const m = getLocalTransform(displayObject);
+            expect(m.ty).toBe(7);
+        });
+    });
+
+    // Methods
+
+    describe('invalidate', () =>
+    {
+        describe('dirty flag propagation', () =>
+        {
+            it('transform invalidation also dirties transformed bounds', () =>
+            {
+                displayObject.rotation = 45;
+
+                expect(getDirtyFlags(displayObject)).toBe(
+                    DirtyFlags.Transform | DirtyFlags.TransformedBounds
+                );
+            });
+
+            it('bounds invalidation also dirties transformed bounds', () =>
+            {
+                DisplayObject.invalidate(displayObject, DirtyFlags.Bounds);
+
+                expect(getDirtyFlags(displayObject)).toBe(
+                    DirtyFlags.Bounds | DirtyFlags.TransformedBounds
+                );
+            });
         });
     });
 });

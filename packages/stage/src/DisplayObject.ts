@@ -1,6 +1,5 @@
 import { Rectangle } from '@flighthq/core';
 import { Matrix } from '@flighthq/core';
-import RectanglePool from '@flighthq/core/geom/RectanglePool.js';
 
 import type { BitmapDrawable } from './BitmapDrawable.js';
 import { BlendMode } from './BlendMode.js';
@@ -9,38 +8,41 @@ import BitmapFilter from './filters/BitmapFilter.js';
 import type LoaderInfo from './LoaderInfo.js';
 import type Shader from './Shader.js';
 import type Stage from './Stage.js';
-import type Transform from './Transform.js';
-import UpdateQueue from './UpdateQueue.js';
+import Transform from './Transform.js';
 
 export default class DisplayObject implements BitmapDrawable
 {
     protected __alpha: number = 1.0;
     protected __blendMode: BlendMode = BlendMode.Normal;
-    protected __bounds: Rectangle = new Rectangle();
     protected __cacheAsBitmap: boolean = false;
     protected __cacheAsBitmapMatrix: Matrix | null = null;
     protected __filters: BitmapFilter[] | null = null;
     protected __dirtyFlags: DirtyFlags = DirtyFlags.None;
     protected __height: number = 0;
     protected __loaderInfo: LoaderInfo | null = null;
+    protected __localBounds: Rectangle = new Rectangle();
+    protected __localTransform: Matrix = new Matrix();
     protected __mask: DisplayObject | null = null;
+    protected __maskedObject: DisplayObject | null = null;
     protected __name: string | null = null;
     protected __opaqueBackground: number | null = null;
     protected __parent: DisplayObject | null = null;
     protected __root: DisplayObject | null = null;
-    protected __rotation: number = 0;
+    protected __rotationAngle: number = 0;
     protected __rotationCosine: number = 1;
     protected __rotationSine: number = 0;
     protected __scale9Grid: Rectangle | null = null;
-    protected __scaleX: number = 0;
-    protected __scaleY: number = 0;
-    protected __transform: Matrix = new Matrix();
-    protected __transformObject: Transform | null = null;
+    protected __scaleX: number = 1;
+    protected __scaleY: number = 1;
     protected __scrollRect: Rectangle | null = null;
     protected __shader: Shader | null = null;
     protected __stage: Stage | null = null;
+    protected __transform: Transform | null = null;
+    protected __transformedBounds: Rectangle = new Rectangle();
     protected __width: number = 0;
     protected __visible: boolean = true;
+    protected __x: number = 0;
+    protected __y: number = 0;
 
     constructor()
     {
@@ -53,17 +55,59 @@ export default class DisplayObject implements BitmapDrawable
      */
     static invalidate(target: DisplayObject, flags: DirtyFlags = DirtyFlags.Render): void
     {
-        const nextFlags = target.__dirtyFlags | flags;
-        if (nextFlags === target.__dirtyFlags) return;
+        if ((target.__dirtyFlags & flags) === flags) return;
 
-        target.__dirtyFlags = nextFlags;
+        target.__dirtyFlags |= flags;
 
-        UpdateQueue.add(target);
+        if ((flags & DirtyFlags.Transform) !== 0)
+        {
+            // If transform changed, transformed bounds must also be updated
+            target.__dirtyFlags |= DirtyFlags.TransformedBounds;
+        }
+
+        if ((flags & DirtyFlags.Bounds) !== 0)
+        {
+            // Changing local bounds also requires transformed bounds update
+            target.__dirtyFlags |= DirtyFlags.TransformedBounds;
+        }
     }
 
-    static __updateBounds(source: DisplayObject): void
+    private static __updateLocalBounds(target: DisplayObject): void
     {
-        // TODO
+        if ((target.__dirtyFlags & DirtyFlags.Bounds) === 0) return;
+
+        // TODO, update __localBounds
+
+        Matrix.transformRect(target.__localTransform, target.__transformedBounds, target.__transformedBounds);
+
+        target.__dirtyFlags &= ~DirtyFlags.Bounds;
+    }
+
+    private static __updateLocalTransform(target: DisplayObject): void
+    {
+        if ((target.__dirtyFlags & DirtyFlags.Transform) === 0) return;
+
+        const matrix = target.__localTransform;
+        matrix.a = target.__rotationCosine * target.__scaleX;
+        matrix.b = target.__rotationSine * target.__scaleX;
+        matrix.c = -target.__rotationSine * target.__scaleY;
+        matrix.d = target.__rotationCosine * target.__scaleY;
+        matrix.tx = target.__x;
+        matrix.ty = target.__y;
+
+        target.__dirtyFlags &= ~DirtyFlags.Transform;
+    }
+
+    private static __updateTransformedBounds(target: DisplayObject): void
+    {
+        if ((target.__dirtyFlags & DirtyFlags.TransformedBounds) === 0) return;
+
+        this.__updateLocalBounds(target);
+        this.__updateLocalTransform(target);
+
+        Matrix.transformRect(target.__localTransform, target.__transformedBounds, target.__transformedBounds);
+
+        target.__dirtyFlags &= ~DirtyFlags.TransformedBounds;
     }
 
     // Get & Set Methods
@@ -81,6 +125,7 @@ export default class DisplayObject implements BitmapDrawable
         if (value === this.__alpha) return;
 
         this.__alpha = value;
+
         DisplayObject.invalidate(this, DirtyFlags.Appearance);
     }
 
@@ -94,6 +139,7 @@ export default class DisplayObject implements BitmapDrawable
         if (value === this.__blendMode) return;
 
         this.__blendMode = value;
+
         DisplayObject.invalidate(this, DirtyFlags.Appearance);
     }
 
@@ -107,6 +153,7 @@ export default class DisplayObject implements BitmapDrawable
         if (value === this.__cacheAsBitmap) return;
 
         this.__cacheAsBitmap = value;
+
         DisplayObject.invalidate(this, DirtyFlags.CacheAsBitmap);
     }
 
@@ -135,7 +182,10 @@ export default class DisplayObject implements BitmapDrawable
             this.__cacheAsBitmapMatrix = null;
         }
 
-        DisplayObject.invalidate(this, DirtyFlags.CacheAsBitmap);
+        if (this.__cacheAsBitmap)
+        {
+            DisplayObject.invalidate(this, DirtyFlags.Transform);
+        }
     }
 
     get filters(): BitmapFilter[]
@@ -171,50 +221,28 @@ export default class DisplayObject implements BitmapDrawable
 
     get height(): number
     {
-        if ((this.__dirtyFlags & DirtyFlags.Bounds) !== 0)
-        {
-            const rect = RectanglePool.get();
-            DisplayObject.__getLocalBounds(this, rect);
-            RectanglePool.release(rect);
-        }
-
-        return this.__bounds.height;
+        DisplayObject.__updateTransformedBounds(this);
+        return this.__transformedBounds.height;
     }
 
     set height(value: number)
     {
-        // var rect = Rectangle.__pool.get();
-        // var matrix = Matrix.__pool.get();
-        // matrix.identity();
+        DisplayObject.__updateLocalBounds(this);
 
-        // __getBounds(rect, matrix);
+        if (this.__localBounds.height === 0) return;
 
-        // if (value != rect.height)
-        // {
-        //     scaleY = value / rect.height;
-        // }
-        // else
-        // {
-        //     scaleY = 1;
-        // }
-
-        // Rectangle.__pool.release(rect);
-        // Matrix.__pool.release(matrix);
-
-        // return value;
-        this.__height = value;
+        // Invalidation (if necessary) occurs in scaleY setter
+        this.scaleY = value / this.__localBounds.height;
     }
 
-    // get loaderInfo(): LoaderInfo
-    // {
-    //     if (stage != null)
-    //     {
-    //         return Lib.current.__loaderInfo;
-    //     }
+    get loaderInfo(): LoaderInfo | null
+    {
+        // If loaderInfo was set by a Loader, return
+        if (this.__loaderInfo !== null) return this.__loaderInfo;
 
-    //     return null;
-    //     return this.__loaderInfo;
-    // }
+        // Otherwise return info of root
+        return this.root?.__loaderInfo ?? null;
+    }
 
     get mask(): DisplayObject | null
     {
@@ -223,57 +251,21 @@ export default class DisplayObject implements BitmapDrawable
 
     set mask(value: DisplayObject | null)
     {
-        if (value === this.__mask)
-        {
-            return;
-        }
-
-        if (value !== this.__mask)
-        {
-            invalidate(this,);
-            this.__setTransformDirty();
-            this.__setRenderDirty();
-        }
+        if (value === this.__mask) return;
 
         if (this.__mask !== null)
         {
-            // this.__mask.__isMask = false;
-            // this.__mask.__maskTarget = null;
-            this.__mask.__setTransformDirty();
-            this.__mask.__setRenderDirty();
+            this.__mask.__maskedObject = null;
         }
 
         if (value !== null)
         {
-            // value.__isMask = true;
-            // value.__maskTarget = this;
-            // value.__setWorldTransformInvalid();
+            value.__maskedObject = this;
         }
 
-        // if (this.__cacheBitmap !== null && this.__cacheBitmap.mask != value)
-        // {
-        //     this.__cacheBitmap.mask = value;
-        // }
-
         this.__mask = value;
-    }
 
-    get mouseX(): number
-    {
-        // var mouseX = (stage != null ? stage.__mouseX : Lib.current.stage.__mouseX);
-        // var mouseY = (stage != null ? stage.__mouseY : Lib.current.stage.__mouseY);
-
-        // return __getRenderTransform().__transformInverseX(mouseX, mouseY);
-        return 0;
-    }
-
-    get mouseY(): number
-    {
-        // var mouseX = (stage != null ? stage.__mouseX : Lib.current.stage.__mouseX);
-        // var mouseY = (stage != null ? stage.__mouseY : Lib.current.stage.__mouseY);
-
-        // return __getRenderTransform().__transformInverseY(mouseX, mouseY);
-        return 0;
+        DisplayObject.invalidate(this, DirtyFlags.Clip);
     }
 
     get name(): string | null
@@ -293,7 +285,11 @@ export default class DisplayObject implements BitmapDrawable
 
     set opaqueBackground(value: number | null)
     {
+        if (value === this.__opaqueBackground) return;
+
         this.__opaqueBackground = value;
+
+        DisplayObject.invalidate(this, DirtyFlags.Appearance);
     }
 
     get parent(): DisplayObject | null
@@ -303,55 +299,58 @@ export default class DisplayObject implements BitmapDrawable
 
     get root(): DisplayObject | null
     {
-        // if (stage != null)
-        // {
-        //     return Lib.current;
-        // }
         return this.__root;
     }
 
     get rotation(): number
     {
-        return this.__rotation;
+        return this.__rotationAngle;
     }
 
     set rotation(value: number)
     {
-        if (value != this.__rotation)
+        if (value === this.__rotationAngle) return;
+
+        // Normalize from -180 to 180
+        value = value % 360.0;
+        if (value > 180.0)
         {
-            value = value % 360.0;
-            if (value > 180.0)
-            {
-                value -= 360.0;
-            }
-            else if (value < -180.0)
-            {
-                value += 360.0;
-            }
-
-            this.__rotation = value;
-            const radians = this.__rotation * (Math.PI / 180);
-            this.__rotationSine = Math.sin(radians);
-            this.__rotationCosine = Math.cos(radians);
-
-            this.__transform.a = this.__rotationCosine * this.__scaleX;
-            this.__transform.b = this.__rotationSine * this.__scaleX;
-            this.__transform.c = -this.__rotationSine * this.__scaleY;
-            this.__transform.d = this.__rotationCosine * this.__scaleY;
-
-            this.__setTransformDirty();
+            value -= 360.0;
         }
+        else if (value < -180.0)
+        {
+            value += 360.0;
+        }
+
+        // Use fast cardinal values, or lookup
+        const DEG_TO_RAD = Math.PI / 180;
+        let sin, cos;
+        if (value === 0) { sin = 0; cos = 1; }
+        else if (value === 90) { sin = 1; cos = 0; }
+        else if (value === -90) { sin = -1; cos = 0; }
+        else if (value === 180 || value === -180) { sin = 0; cos = -1; }
+        else
+        {
+            const rad = value * DEG_TO_RAD;
+            sin = Math.sin(rad);
+            cos = Math.cos(rad);
+        }
+
+        this.__rotationAngle = value;
+        this.__rotationSine = sin;
+        this.__rotationCosine = cos;
+
+        DisplayObject.invalidate(this, DirtyFlags.Transform);
     }
 
     get scale9Grid(): Rectangle | null
     {
-        // if (__scale9Grid == null)
-        // {
-        //     return null;
-        // }
+        if (this.__scale9Grid == null)
+        {
+            return null;
+        }
 
-        // return __scale9Grid.clone();
-        return this.__scale9Grid;
+        return Rectangle.clone(this.__scale9Grid);
     }
 
     set scroll9Grid(value: Rectangle | null)
@@ -369,7 +368,7 @@ export default class DisplayObject implements BitmapDrawable
             this.__scale9Grid = null;
         }
 
-        this.__setRenderDirty();
+        DisplayObject.invalidate(this, DirtyFlags.Appearance | DirtyFlags.Bounds | DirtyFlags.Clip | DirtyFlags.Transform);
     }
 
     get scaleX(): number
@@ -379,29 +378,11 @@ export default class DisplayObject implements BitmapDrawable
 
     set scaleX(value: number)
     {
-        if (value !== this.__scaleX)
-        {
-            this.__scaleX = value;
+        if (value === this.__scaleX) return;
 
-            if (this.__transform.b === 0)
-            {
-                if (value !== this.__transform.a) this.__setTransformDirty();
-                this.__transform.a = value;
-            }
-            else
-            {
-                const a = this.__rotationCosine * value;
-                const b = this.__rotationSine * value;
+        this.__scaleX = value;
 
-                if (this.__transform.a !== a || this.__transform.b !== b)
-                {
-                    this.__setTransformDirty();
-                }
-
-                this.__transform.a = a;
-                this.__transform.b = b;
-            }
-        }
+        DisplayObject.invalidate(this, DirtyFlags.Transform);
     }
 
     get scaleY(): number
@@ -411,29 +392,11 @@ export default class DisplayObject implements BitmapDrawable
 
     set scaleY(value: number)
     {
-        if (value != this.__scaleY)
-        {
-            this.__scaleY = value;
+        if (value === this.__scaleY) return;
 
-            if (this.__transform.c === 0)
-            {
-                if (value !== this.__transform.d) this.__setTransformDirty();
-                this.__transform.d = value;
-            }
-            else
-            {
-                const c = -this.__rotationSine * value;
-                const d = this.__rotationCosine * value;
+        this.__scaleY = value;
 
-                if (this.__transform.d !== d || this.__transform.c !== c)
-                {
-                    this.__setTransformDirty();
-                }
-
-                this.__transform.c = c;
-                this.__transform.d = d;
-            }
-        }
+        DisplayObject.invalidate(this, DirtyFlags.Transform);
     }
 
     get scrollRect(): Rectangle | null
@@ -461,74 +424,69 @@ export default class DisplayObject implements BitmapDrawable
             this.__scrollRect = null;
         }
 
-        this.__setTransformDirty();
-
-        // if (__supportDOM)
-        // {
-        //     __setRenderDirty();
-        // }
         this.__scrollRect = value;
+
+        DisplayObject.invalidate(this, DirtyFlags.Clip);
     }
 
-    // get shader(): Shader | null
-    // {
-    //     return this.__shader;
-    // }
+    get shader(): Shader | null
+    {
+        return this.__shader;
+    }
 
-    // set shader(value: Shader | null)
-    // {
-    //     __shader = value;
-    //     __setRenderDirty();
-    //     this.__shader = value;
-    // }
+    set shader(value: Shader | null)
+    {
+        if (value === this.shader) return;
 
-    // get stage(): Stage | null
-    // {
-    //     return this.__stage;
-    // }
+        this.__shader = value;
 
-    // get transform(): Transform
-    // {
-    //     if (__objectTransform == null)
-    //     {
-    //         __objectTransform = new Transform(this);
-    //     }
+        DisplayObject.invalidate(this, DirtyFlags.Appearance);
+    }
 
-    //     return __objectTransform;
-    //     return this.__transform;
-    // }
+    get stage(): Stage | null
+    {
+        return this.__stage;
+    }
 
-    // set transform(value: Transform)
-    // {
-    //     if (value == null)
-    //     {
-    //         throw new TypeError("Parameter transform must be non-null.");
-    //     }
+    get transform(): Transform
+    {
+        if (this.__transform === null)
+        {
+            this.__transform = new Transform(this);
+        }
 
-    //     if (__objectTransform == null)
-    //     {
-    //         __objectTransform = new Transform(this);
-    //     }
+        return this.__transform;
+    }
 
-    //     __setTransformDirty();
+    set transform(value: Transform)
+    {
+        if (value === null)
+        {
+            throw new TypeError("Parameter transform must be non-null.");
+        }
 
-    //     if (value.__hasMatrix)
-    //     {
-    //         var other = value.__displayObject.__transform;
-    //         __objectTransform.__setTransform(other.a, other.b, other.c, other.d, other.tx, other.ty);
-    //     }
-    //     else
-    //     {
-    //         __objectTransform.__hasMatrix = false;
-    //     }
+        if (this.__transform === null)
+        {
+            this.__transform = new Transform(this);
+        }
 
-    //     if (!__objectTransform.__colorTransform.__equals(value.__colorTransform, true)
-    //         || (!cacheAsBitmap && __objectTransform.__colorTransform.alphaMultiplier != value.__colorTransform.alphaMultiplier))
-    //     {
-    //         __objectTransform.__colorTransform.__copyFrom(value.colorTransform);
-    //         __setRenderDirty();
-    //     }
-    // }
+        // if (value.__hasMatrix)
+        // {
+        //     var other = value.__displayObject.__transform;
+        //     __objectTransform.__setTransform(other.a, other.b, other.c, other.d, other.tx, other.ty);
+        // }
+        // else
+        // {
+        //     __objectTransform.__hasMatrix = false;
+        // }
+
+        // if (!__objectTransform.__colorTransform.__equals(value.__colorTransform, true)
+        //     || (!cacheAsBitmap && __objectTransform.__colorTransform.alphaMultiplier != value.__colorTransform.alphaMultiplier))
+        // {
+        //     __objectTransform.__colorTransform.__copyFrom(value.colorTransform);
+        //     __setRenderDirty();
+        // }
+    }
 
     get visible(): boolean
     {
@@ -537,71 +495,54 @@ export default class DisplayObject implements BitmapDrawable
 
     set visible(value: boolean)
     {
-        if (!this.__renderDirty && value !== this.__visible)
-        {
-            this.__setRenderDirty();
-        }
+        if (value === this.__visible) return;
         this.__visible = value;
+        DisplayObject.invalidate(this, DirtyFlags.Appearance);
     }
 
     get width(): number
     {
-        // var rect = Rectangle.__pool.get();
-        // __getLocalBounds(rect);
-        // var width = rect.width;
-        // Rectangle.__pool.release(rect);
-        // return width;
-        return this.__width;
+        DisplayObject.__updateTransformedBounds(this);
+        return this.__transformedBounds.width;
     }
 
     set width(value: number)
     {
-        // var rect = Rectangle.__pool.get();
-        // var matrix = Matrix.__pool.get();
-        // matrix.identity();
+        DisplayObject.__updateLocalBounds(this);
 
-        // this.__getBounds(rect, matrix);
+        if (this.__localBounds.width === 0) return;
 
-        // if (value != rect.width)
-        // {
-        // 	this.scaleX = value / rect.width;
-        // }
-        // else
-        // {
-        // 	this.scaleX = 1;
-        // }
-
-        // Rectangle.__pool.release(rect);
-        // Matrix.__pool.release(matrix);
+        // Invalidation (if necessary) occurs in scaleX setter
+        this.scaleX = value / this.__localBounds.width;
     }
 
     get x(): number
     {
-        return this.__transform.tx;
+        return this.__x;
     }
 
     set x(value: number)
     {
-        if (value !== value) value = 0.0; // Flash converts NaN to 0.0
-        if (!this.__transformDirty && value !== this.__transform.tx)
-        {
-            this.__setTransformDirty();
-        }
-        this.__transform.tx = value;
+        if (value !== value) value = 0; // Flash converts NaN to 0
+        if (value === this.__x) return;
+
+        this.__x = value;
+
+        DisplayObject.invalidate(this, DirtyFlags.Transform);
     }
 
     get y(): number
     {
-        return this.__transform.ty;
+        return this.__y;
     }
 
     set y(value: number)
     {
-        if (value !== value) value = 0.0; // Flash converts NaN to 0.0
-        if (!this.__transformDirty && value !== this.__transform.ty)
-        {
-            this.__setTransformDirty();
-        }
-        this.__transform.ty = value;
+        if (value !== value) value = 0; // Flash converts NaN to 0
+        if (value === this.__y) return;
+
+        this.__y = value;
+
+        DisplayObject.invalidate(this, DirtyFlags.Transform);
     }
 }

@@ -62,7 +62,7 @@ export enum DirtyFlags
      *  - scrollRect
      *  - mask
      */
-    Clipping = 1 << 3,
+    Clip = 1 << 3,
 
     /**
      * Cached rendering state has changed.
@@ -84,6 +84,10 @@ export enum DirtyFlags
      * affect traversal and cached bounds.
      */
     Children = 1 << 5,
+
+    TransformedBounds = 1 << 6,
+
+    Render = Transform | Appearance | Clip
 }
 
 export namespace DirtyFlags
