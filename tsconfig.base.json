@@ -20,17 +20,17 @@
       "@flighthq/core/*": [
         "packages/core/src/*"
       ],
-      "@flighthq/stage": [
-        "packages/stage/src/index.ts"
-      ],
-      "@flighthq/stage/*": [
-        "packages/stage/src/*"
-      ],
       "@flighthq/render": [
         "packages/render/src/index.ts"
       ],
       "@flighthq/render/*": [
         "packages/render/src/*"
+      ],
+      "@flighthq/scene": [
+        "packages/scene/src/index.ts"
+      ],
+      "@flighthq/scene/*": [
+        "packages/scene/src/*"
       ]
     },
     "types": [
