@@ -89,6 +89,7 @@ describe('Matrix', () =>
     });
 
     // Methods
+
     describe('toString', () =>
     {
         it('should return the correct matrix string representation', () =>
