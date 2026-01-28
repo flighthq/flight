@@ -14,34 +14,15 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
-      "@flighthq/core": [
-        "packages/core/src/index.ts"
-      ],
-      "@flighthq/core/*": [
-        "packages/core/src/*"
-      ],
-      "@flighthq/render": [
-        "packages/render/src/index.ts"
-      ],
-      "@flighthq/render/*": [
-        "packages/render/src/*"
-      ],
-      "@flighthq/scene": [
-        "packages/scene/src/index.ts"
-      ],
-      "@flighthq/scene/*": [
-        "packages/scene/src/*"
-      ]
+      "@flighthq/core": ["packages/core/src/index.ts"],
+      "@flighthq/core/*": ["packages/core/src/*"],
+      "@flighthq/render": ["packages/render/src/index.ts"],
+      "@flighthq/render/*": ["packages/render/src/*"],
+      "@flighthq/scene": ["packages/scene/src/index.ts"],
+      "@flighthq/scene/*": ["packages/scene/src/*"]
     },
-    "types": [
-      "vitest/globals"
-    ] // Include Vitest globals for type-checking
+    "types": ["vitest/globals"] // Include Vitest globals for type-checking
   },
-  "include": [
-    "packages/*/src"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["packages/*/src"],
+  "exclude": ["node_modules", "dist"]
 }

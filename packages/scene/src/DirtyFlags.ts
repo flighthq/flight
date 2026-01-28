@@ -1,5 +1,4 @@
-export enum DirtyFlags
-{
+export enum DirtyFlags {
   None = 0,
 
   /**
@@ -90,36 +89,30 @@ export enum DirtyFlags
   Render = Transform | Appearance | Clip,
 }
 
-export namespace DirtyFlags
-{
+export namespace DirtyFlags {
   /**
    * Returns true if any test flags are set
    */
-  export function any(flags: DirtyFlags, test: DirtyFlags): boolean
-  {
+  export function any(flags: DirtyFlags, test: DirtyFlags): boolean {
     return (flags & test) !== 0;
   }
 
   /**
    * Returns true if all test flags are set
    */
-  export function has(flags: DirtyFlags, test: DirtyFlags): boolean
-  {
+  export function has(flags: DirtyFlags, test: DirtyFlags): boolean {
     return (flags & test) === test;
   }
 
-  export function add(flags: DirtyFlags, add: DirtyFlags): DirtyFlags
-  {
+  export function add(flags: DirtyFlags, add: DirtyFlags): DirtyFlags {
     return flags | add;
   }
 
-  export function remove(flags: DirtyFlags, remove: DirtyFlags): DirtyFlags
-  {
+  export function remove(flags: DirtyFlags, remove: DirtyFlags): DirtyFlags {
     return flags & ~remove;
   }
 
-  export function clear(): DirtyFlags
-  {
+  export function clear(): DirtyFlags {
     return DirtyFlags.None;
   }
 }
