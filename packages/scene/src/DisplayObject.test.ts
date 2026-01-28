@@ -604,6 +604,7 @@ describe('DisplayObject', () => {
 
       beforeEach(() => {
         obj = new DisplayObject();
+        // @ts-expect-error: protected
         obj.__parent = new DisplayObject(); // fake parent so transforms update
         obj.x = 10;
         obj.y = 20;
@@ -630,7 +631,7 @@ describe('DisplayObject', () => {
       });
 
       it('updates the world transform before conversion', () => {
-        // ignore @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line
         const spy = vi.spyOn(DisplayObject as any, '__updateWorldTransform');
 
         DisplayObject.globalToLocalTo(new Point(), obj, new Point());
@@ -649,12 +650,14 @@ describe('DisplayObject', () => {
       a = new DisplayObject();
       b = new DisplayObject();
 
+      // @ts-expect-error: protected
       a.__parent = new DisplayObject();
+      // @ts-expect-error: protected
       b.__parent = new DisplayObject();
 
       // Simple local bounds
-      a.__localBounds = new Rectangle(0, 0, 10, 10);
-      b.__localBounds = new Rectangle(0, 0, 10, 10);
+      Rectangle.setTo(getLocalBounds(a), 0, 0, 10, 10);
+      Rectangle.setTo(getLocalBounds(b), 0, 0, 10, 10);
 
       // Position b to overlap a
       a.x = 0;
@@ -680,6 +683,7 @@ describe('DisplayObject', () => {
     });
 
     it('returns false if either object has no parent', () => {
+      // @ts-expect-error: protected
       b.__parent = null;
 
       const result = DisplayObject.hitTestObject(a, b);
@@ -695,6 +699,59 @@ describe('DisplayObject', () => {
 
       const result = DisplayObject.hitTestObject(a, b);
       expect(result).toBe(true);
+    });
+  });
+
+  describe('hitTestPoint', () => {
+    let obj: DisplayObject;
+
+    beforeEach(() => {
+      obj = new DisplayObject();
+      obj.visible = true;
+      obj.opaqueBackground = 0xff0000;
+      // set a simple local bounds rectangle
+      Rectangle.setTo(getLocalBounds(obj), 0, 0, 100, 100);
+    });
+
+    it('returns true for point inside bounds', () => {
+      const result = DisplayObject.hitTestPoint(obj, 50, 50);
+      expect(result).toBe(true);
+    });
+
+    it('returns false for point outside bounds', () => {
+      const result = DisplayObject.hitTestPoint(obj, 200, 200);
+      expect(result).toBe(false);
+    });
+
+    it('returns false if object is not visible', () => {
+      obj.visible = false;
+      const result = DisplayObject.hitTestPoint(obj, 50, 50);
+      expect(result).toBe(false);
+    });
+
+    it('returns false if object has no opaqueBackground', () => {
+      obj.opaqueBackground = null;
+      const result = DisplayObject.hitTestPoint(obj, 50, 50);
+      expect(result).toBe(false);
+    });
+
+    it('respects world transform', () => {
+      obj.x = 100;
+      obj.y = 100;
+      const inside = DisplayObject.hitTestPoint(obj, 150, 150);
+      const outside = DisplayObject.hitTestPoint(obj, 50, 50);
+
+      expect(inside).toBe(true);
+      expect(outside).toBe(false);
+    });
+
+    it('works with the default shapeFlag param', () => {
+      // should ignore _shapeFlag in base DisplayObject
+      const result = DisplayObject.hitTestPoint(obj, 50, 50);
+      expect(result).toBe(true);
+
+      const resultExplicit = DisplayObject.hitTestPoint(obj, 50, 50, true);
+      expect(resultExplicit).toBe(true);
     });
   });
 
