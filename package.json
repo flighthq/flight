@@ -6,13 +6,15 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "tsc -b",
-    "clean": "tsc -b --clean",
+    "build": "npm run build --workspaces",
+    "clean": "npm run clean --workspaces",
     "lint": "eslint -c eslint.config.js",
     "lint:fix": "eslint -c eslint.config.js --fix",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "test": "npm run test:run --workspaces"
+    "test": "npm run test:run --workspaces",
+    "test:core": "npm run test -w packages/core",
+    "test:scene": "npm run test -w packages/scene"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
