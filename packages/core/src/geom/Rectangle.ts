@@ -18,28 +18,24 @@ import Point from './Point.js';
  * 
  * @see Point
  */
-export default class Rectangle
-{
+export default class Rectangle {
     x: number = 0;
     y: number = 0;
     width: number = 0;
     height: number = 0;
 
-    constructor(x?: number, y?: number, width?: number, height?: number)
-    {
+    constructor(x?: number, y?: number, width?: number, height?: number) {
         if (x !== undefined) this.x = x;
         if (y !== undefined) this.y = y;
         if (width !== undefined) this.width = width;
         if (height !== undefined) this.height = height;
     }
 
-    static clone(source: Rectangle): Rectangle
-    {
+    static clone(source: Rectangle): Rectangle {
         return new Rectangle(source.x, source.y, source.width, source.height);
     }
 
-    static contains(source: Rectangle, x: number, y: number): boolean
-    {
+    static contains(source: Rectangle, x: number, y: number): boolean {
         const x0 = Math.min(source.x, source.right);
         const x1 = Math.max(source.x, source.right);
         const y0 = Math.min(source.y, source.bottom);
@@ -48,13 +44,11 @@ export default class Rectangle
         return x >= x0 && x < x1 && y >= y0 && y < y1;
     }
 
-    static containsPoint(source: Rectangle, point: Point): boolean
-    {
+    static containsPoint(source: Rectangle, point: Point): boolean {
         return Rectangle.contains(source, point.x, point.y);
     }
 
-    static containsRect(source: Rectangle, other: Rectangle): boolean
-    {
+    static containsRect(source: Rectangle, other: Rectangle): boolean {
         const sx0 = Math.min(source.x, source.right);
         const sx1 = Math.max(source.x, source.right);
         const sy0 = Math.min(source.y, source.bottom);
@@ -69,10 +63,8 @@ export default class Rectangle
         return ox0 >= sx0 && oy0 >= sy0 && ox1 <= sx1 && oy1 <= sy1;
     }
 
-    static copyFrom(target: Rectangle, source: Rectangle): void
-    {
-        if (target != source)
-        {
+    static copyFrom(target: Rectangle, source: Rectangle): void {
+        if (target != source) {
             target.x = source.x;
             target.y = source.y;
             target.width = source.width;
@@ -80,48 +72,33 @@ export default class Rectangle
         }
     }
 
-    static equals(source: Rectangle, other: Rectangle): boolean
-    {
-        if (other === source)
-        {
+    static equals(source: Rectangle, other: Rectangle): boolean {
+        if (other === source) {
             return true;
         }
-        else
-        {
+        else {
             return source.x === other.x && source.y === other.y && source.width === other.width && source.height === other.height;
         }
     }
 
-    static inflate(target: Rectangle, dx: number, dy: number): void
-    {
+    static inflate(target: Rectangle, dx: number, dy: number): void {
         target.x -= dx;
         target.width += dx * 2;
         target.y -= dy;
         target.height += dy * 2;
     }
 
-    static inflatePoint(target: Rectangle, point: Point): void
-    {
+    static inflatePoint(target: Rectangle, point: Point): void {
         Rectangle.inflate(target, point.x, point.y);
     }
 
-    static intersection(source: Rectangle, other: Rectangle, target?: Rectangle): Rectangle
-    {
-        target = target ?? new Rectangle();
-        var x0 = source.x < other.x ? other.x : source.x;
-        var x1 = source.right > other.right ? other.right : source.right;
+    static intersection(a: Rectangle, b: Rectangle, target: Rectangle = new Rectangle()): Rectangle {
+        const x0 = Math.max(a.minX, b.minX);
+        const x1 = Math.min(a.maxX, b.maxX);
+        const y0 = Math.max(a.minY, b.minY);
+        const y1 = Math.min(a.maxY, b.maxY);
 
-        if (x1 <= x0)
-        {
-            Rectangle.setEmpty(target);
-            return target;
-        }
-
-        var y0 = source.y < other.y ? other.y : source.y;
-        var y1 = source.bottom > other.bottom ? other.bottom : source.bottom;
-
-        if (y1 <= y0)
-        {
+        if (x1 <= x0 || y1 <= y0) {
             Rectangle.setEmpty(target);
             return target;
         }
@@ -133,59 +110,60 @@ export default class Rectangle
         return target;
     }
 
-    static intersects(source: Rectangle, other: Rectangle): boolean
-    {
-        var x0 = source.x < other.x ? other.x : source.x;
-        var x1 = source.right > other.right ? other.right : source.right;
-
-        if (x1 <= x0)
-        {
-            return false;
-        }
-
-        var y0 = source.y < other.y ? other.y : source.y;
-        var y1 = source.bottom > other.bottom ? other.bottom : source.bottom;
-
-        return y1 > y0;
+    static intersects(a: Rectangle, b: Rectangle): boolean {
+        return !(
+            a.maxX <= b.minX ||
+            a.minX >= b.maxX ||
+            a.maxY <= b.minY ||
+            a.minY >= b.maxY
+        );
     }
 
-    static isEmpty(source: Rectangle): boolean
-    {
+    /**
+     * Returns true if width or height is 0
+     * 
+     * Note: Negative width or height is considered valid
+     */
+    static isEmpty(source: Rectangle): boolean {
         return source.width === 0 || source.height === 0;
     }
 
-    static offset(target: Rectangle, dx: number, dy: number): void
-    {
+    static normalized(source: Rectangle, target?: Rectangle): Rectangle {
+        target = target ?? new Rectangle();
+        const { minX, maxX, minY, maxY } = source;
+        target.x = minX;
+        target.y = minY;
+        target.width = maxX - minX;
+        target.height = maxY - minY;
+        return target;
+    }
+
+    static offset(target: Rectangle, dx: number, dy: number): void {
         target.x += dx;
         target.y += dy;
     }
 
-    static offsetPoint(target: Rectangle, point: Point): void
-    {
+    static offsetPoint(target: Rectangle, point: Point): void {
         target.x += point.x;
         target.y += point.y;
     }
 
-    static setEmpty(target: Rectangle): void
-    {
+    static setEmpty(target: Rectangle): void {
         target.x = target.y = target.width = target.height = 0;
     }
 
-    static setTo(target: Rectangle, x: number, y: number, width: number, height: number): void
-    {
+    static setTo(target: Rectangle, x: number, y: number, width: number, height: number): void {
         target.x = x;
         target.y = y;
         target.width = width;
         target.height = height;
     }
 
-    toString(): string
-    {
+    toString(): string {
         return `(x=${this.x}, y=${this.y}, width=${this.width}, height=${this.height})`;
     }
 
-    static union(source: Rectangle, other: Rectangle, target?: Rectangle): Rectangle
-    {
+    static union(source: Rectangle, other: Rectangle, target?: Rectangle): Rectangle {
         target = target ?? new Rectangle();
 
         const sourceLeft = Math.min(source.x, source.x + source.width);
@@ -214,67 +192,72 @@ export default class Rectangle
     // Get & Set Methods
 
 
-    get bottom(): number
-    {
+    get bottom(): number {
         return this.y + this.height;
     }
 
     /**
      * Returns new Point object with bottom-right coordinates
      */
-    get bottomRight(): Point
-    {
+    get bottomRight(): Point {
         return new Point(this.x + this.width, this.y + this.height);
     }
 
-    set bottomRight(value: Point)
-    {
+    set bottomRight(value: Point) {
         this.width = value.x - this.x;
         this.height = value.y - this.y;
     }
 
-    get left(): number
-    {
+    get isFlippedX(): boolean { return this.width < 0; }
+    get isFlippedY(): boolean { return this.height < 0; }
+
+    get left(): number {
         return this.x;
     }
 
-    set left(value: number)
-    {
+    set left(value: number) {
         this.width -= value - this.x;
         this.x = value;
     }
 
-    get right(): number
-    {
+    get minX(): number { return Math.min(this.x, this.right); }
+    get maxX(): number { return Math.max(this.x, this.right); }
+    get minY(): number { return Math.min(this.y, this.bottom); }
+    get maxY(): number { return Math.max(this.y, this.bottom); }
+
+    get normalizedTopLeft(): Point {
+        return new Point(this.minX, this.minY);
+    }
+
+    get normalizedBottomRight(): Point {
+        return new Point(this.maxX, this.maxY);
+    }
+
+    get right(): number {
         return this.x + this.width;
     }
 
-    set right(value: number)
-    {
+    set right(value: number) {
         this.width = value - this.x;
     }
 
     /**
      * Returns new Point object set to width and height
      */
-    get size(): Point
-    {
+    get size(): Point {
         return new Point(this.width, this.height);
     }
 
-    set size(value: Point)
-    {
+    set size(value: Point) {
         this.width = value.x;
         this.height = value.y;
     }
 
-    get top(): number
-    {
+    get top(): number {
         return this.y;
     }
 
-    set top(value: number)
-    {
+    set top(value: number) {
         this.height -= value - this.y;
         this.y = value;
     }
@@ -282,13 +265,11 @@ export default class Rectangle
     /**
      * Returns new Point object with top-left coordinates
      */
-    get topLeft(): Point
-    {
+    get topLeft(): Point {
         return new Point(this.x, this.y);
     }
 
-    set topLeft(value: Point)
-    {
+    set topLeft(value: Point) {
         this.x = value.x;
         this.y = value.y;
     }
