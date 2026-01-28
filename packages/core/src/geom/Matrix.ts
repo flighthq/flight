@@ -44,80 +44,80 @@ export default class Matrix {
    * @see multiply
    */
   static concat(target: Matrix, source: Matrix): void {
-    return this.multiply(target, source, target);
+    return this.multiply(target, target, source);
   }
 
-  static copyColumnFrom(target: Matrix, column: number, source: Vector3D): void {
+  static copyColumnFrom(out: Matrix, column: number, source: Vector3D): void {
     if (column > 2) {
       throw 'Column ' + column + ' out of bounds (2)';
     } else if (column === 0) {
-      target.a = source.x;
-      target.b = source.y;
+      out.a = source.x;
+      out.b = source.y;
     } else if (column === 1) {
-      target.c = source.x;
-      target.d = source.y;
+      out.c = source.x;
+      out.d = source.y;
     } else {
-      target.tx = source.x;
-      target.ty = source.y;
+      out.tx = source.x;
+      out.ty = source.y;
     }
   }
 
-  static copyColumnTo(source: Matrix, column: number, target: Vector3D): void {
+  static copyColumnTo(out: Vector3D, column: number, source: Matrix): void {
     if (column > 2) {
       throw 'Column ' + column + ' out of bounds (2)';
     } else if (column === 0) {
-      target.x = source.a;
-      target.y = source.b;
-      target.z = 0;
+      out.x = source.a;
+      out.y = source.b;
+      out.z = 0;
     } else if (column === 1) {
-      target.x = source.c;
-      target.y = source.d;
-      target.z = 0;
+      out.x = source.c;
+      out.y = source.d;
+      out.z = 0;
     } else {
-      target.x = source.tx;
-      target.y = source.ty;
-      target.z = 1;
+      out.x = source.tx;
+      out.y = source.ty;
+      out.z = 1;
     }
   }
 
-  static copyFrom(target: Matrix, source: Matrix): void {
-    target.a = source.a;
-    target.b = source.b;
-    target.c = source.c;
-    target.d = source.d;
-    target.tx = source.tx;
-    target.ty = source.ty;
+  static copyFrom(out: Matrix, source: Matrix): void {
+    out.a = source.a;
+    out.b = source.b;
+    out.c = source.c;
+    out.d = source.d;
+    out.tx = source.tx;
+    out.ty = source.ty;
   }
 
-  static copyRowFrom(target: Matrix, row: number, source: Vector3D): void {
+  static copyRowFrom(out: Matrix, row: number, source: Vector3D): void {
     if (row > 2) {
       throw 'Row ' + row + ' out of bounds (2)';
     } else if (row === 0) {
-      target.a = source.x;
-      target.c = source.y;
-      target.tx = source.z;
+      out.a = source.x;
+      out.c = source.y;
+      out.tx = source.z;
     } else if (row === 1) {
-      target.b = source.x;
-      target.d = source.y;
-      target.ty = source.z;
+      out.b = source.x;
+      out.d = source.y;
+      out.ty = source.z;
     }
   }
 
-  static copyRowTo(target: Matrix, row: number, source: Vector3D): void {
+  static copyRowTo(out: Vector3D, row: number, source: Matrix): void {
     if (row > 2) {
       throw 'Row ' + row + ' out of bounds (2)';
     } else if (row === 0) {
-      source.x = target.a;
-      source.y = target.c;
-      source.z = target.tx;
+      out.x = source.a;
+      out.y = source.c;
+      out.z = source.tx;
     } else if (row === 1) {
-      source.x = target.b;
-      source.y = target.d;
-      source.z = target.ty;
+      out.x = source.b;
+      out.y = source.d;
+      out.z = source.ty;
     } else {
-      source.x = 0;
-      source.y = 0;
-      source.z = 1;
+      out.x = 0;
+      out.y = 0;
+      out.z = 1;
     }
   }
 
@@ -127,7 +127,7 @@ export default class Matrix {
    * `translate()` in succession.
    **/
   static createBox(
-    target: Matrix,
+    out: Matrix,
     scaleX: number,
     scaleY: number,
     rotation: number = 0,
@@ -143,19 +143,19 @@ export default class Matrix {
       const cos = Math.cos(rotation);
       const sin = Math.sin(rotation);
 
-      target.a = cos * scaleX;
-      target.b = sin * scaleY;
-      target.c = -sin * scaleX;
-      target.d = cos * scaleY;
+      out.a = cos * scaleX;
+      out.b = sin * scaleY;
+      out.c = -sin * scaleX;
+      out.d = cos * scaleY;
     } else {
-      target.a = scaleX;
-      target.b = 0;
-      target.c = 0;
-      target.d = scaleY;
+      out.a = scaleX;
+      out.b = 0;
+      out.c = 0;
+      out.d = scaleY;
     }
 
-    target.tx = tx;
-    target.ty = ty;
+    out.tx = tx;
+    out.ty = ty;
   }
 
   /**
@@ -165,32 +165,32 @@ export default class Matrix {
    * pair and the `tx`/`ty` values are offset by half the width and height.
    **/
   static createGradientBox(
-    target: Matrix,
+    out: Matrix,
     width: number,
     height: number,
     rotation: number = 0,
     tx: number = 0,
     ty: number = 0,
   ): void {
-    target.a = width / 1638.4;
-    target.d = height / 1638.4;
+    out.a = width / 1638.4;
+    out.d = height / 1638.4;
 
     // rotation is clockwise
     if (rotation !== 0) {
       const cos = Math.cos(rotation);
       const sin = Math.sin(rotation);
 
-      target.b = sin * target.d;
-      target.c = -sin * target.a;
-      target.a *= cos;
-      target.d *= cos;
+      out.b = sin * out.d;
+      out.c = -sin * out.a;
+      out.a *= cos;
+      out.d *= cos;
     } else {
-      target.b = 0;
-      target.c = 0;
+      out.b = 0;
+      out.c = 0;
     }
 
-    target.tx = tx + width / 2;
-    target.ty = ty + height / 2;
+    out.tx = tx + width / 2;
+    out.ty = ty + height / 2;
   }
 
   /**
@@ -201,15 +201,16 @@ export default class Matrix {
    * does not consider the translation parameters `tx` and
    * `ty`.
    *
-   * If you do not provide a targetPoint, a new Point() will be created
+   * Returns a new Point() with the result.
+   * @see deltaTransformXY
    **/
-  static deltaTransformPoint(sourceMatrix: Matrix, sourcePoint: Point, targetPoint?: Point): Point {
-    targetPoint = targetPoint ?? new Point();
-    this.deltaTransformXY(sourceMatrix, sourcePoint.x, sourcePoint.y, targetPoint);
-    return targetPoint;
+  static deltaTransformPoint(matrix: Matrix, point: Point): Point {
+    const out = new Point();
+    this.deltaTransformXY(out, matrix, point.x, point.y);
+    return out;
   }
 
-  static deltaTransformXY(source: Matrix, x: number, y: number, out: Point): void {
+  static deltaTransformXY(out: Point, source: Matrix, x: number, y: number): void {
     out.x = x * source.a + y * source.c;
     out.y = x * source.b + y * source.d;
   }
@@ -237,28 +238,29 @@ export default class Matrix {
    * After calling the `identity()` method, the resulting matrix has the
    * following properties: `a`=1, `b`=0, `c`=0, `d`=1, `tx`=0, `ty`=0.
    **/
-  static identity(target: Matrix): void {
-    target.a = 1;
-    target.b = 0;
-    target.c = 0;
-    target.d = 1;
-    target.tx = 0;
-    target.ty = 0;
+  static identity(out: Matrix): void {
+    out.a = 1;
+    out.b = 0;
+    out.c = 0;
+    out.d = 1;
+    out.tx = 0;
+    out.ty = 0;
   }
 
   /**
    * Use an inverse of the source matrix to transform
    * a given point.
    *
-   * If you do not provide a targetPoint, a new Point() will be created
+   * Returns a new Point() with the result.
+   * @see inverseTransformXY
    */
-  static inverseTransformPoint(sourceMatrix: Matrix, sourcePoint: Point, targetPoint?: Point): Point {
-    targetPoint = targetPoint ?? new Point();
-    this.inverseTransformXY(sourceMatrix, sourcePoint.x, sourcePoint.y, targetPoint);
-    return targetPoint;
+  static inverseTransformPoint(matrix: Matrix, point: Point): Point {
+    const out = new Point();
+    this.inverseTransformXY(out, matrix, point.x, point.y);
+    return out;
   }
 
-  static inverseTransformXY(source: Matrix, x: number, y: number, out: Point): void {
+  static inverseTransformXY(out: Point, source: Matrix, x: number, y: number): void {
     const norm = source.a * source.d - source.b * source.c;
     if (norm === 0) {
       out.x = -source.tx;
@@ -275,7 +277,7 @@ export default class Matrix {
    *
    * Translation (tx, ty) is applied after the linear transformation (scale/rotation/shear) is inverted.
    */
-  static inverse(source: Matrix, out: Matrix): void {
+  static inverse(out: Matrix, source: Matrix): void {
     const det = source.a * source.d - source.b * source.c;
     if (det === 0) {
       out.a = out.b = out.c = out.d = 0;
@@ -300,9 +302,9 @@ export default class Matrix {
    * an inverted matrix to an object to undo the transformation performed when
    * applying the original matrix.
    **/
-  static invert(source: Matrix): Matrix {
-    Matrix.inverse(source, source);
-    return source;
+  static invert(target: Matrix): Matrix {
+    Matrix.inverse(target, target);
+    return target;
   }
 
   /**
@@ -310,7 +312,7 @@ export default class Matrix {
    *
    * out = a * b
    */
-  static multiply(a: Matrix, b: Matrix, out: Matrix): void {
+  static multiply(out: Matrix, a: Matrix, b: Matrix): void {
     const a1 = a.a * b.a + a.b * b.c;
     out.b = a.a * b.b + a.b * b.d;
     out.a = a1;
@@ -328,16 +330,17 @@ export default class Matrix {
    * Applies a rotation transformation in-place to the Matrix object.
    * The `rotate()` method alters the `a`, `b`, `c`, and `d` properties of
    * the Matrix object.
+   * @see rotateTo
    **/
   static rotate(target: Matrix, theta: number): void {
-    this.rotateTo(target, theta, target);
+    this.rotateTo(target, target, theta);
   }
 
   /**
    * Applies a rotation transformation to the given Matrix object
    * and writes the result to out.
    **/
-  static rotateTo(source: Matrix, theta: number, out: Matrix): void {
+  static rotateTo(out: Matrix, source: Matrix, theta: number): void {
     /**
       Rotate object "after" other transforms
 
@@ -372,16 +375,17 @@ export default class Matrix {
    *
    * The `scale()` method alters the `a` and `d` properties of the Matrix
    * object.
+   * @see scaleXY
    **/
   static scale(target: Matrix, sx: number, sy: number): void {
-    this.scaleXY(target, sx, sy, target);
+    this.scaleXY(target, target, sx, sy);
   }
 
   /**
    * Applies a scaling transformation to the matrix. The _x_ axis is
    * multiplied by `sx`, and the _y_ axis it is multiplied by `sy`.
    **/
-  static scaleXY(source: Matrix, sx: number, sy: number, out: Matrix): void {
+  static scaleXY(out: Matrix, source: Matrix, sx: number, sy: number): void {
     /*
       Scale object "after" other transforms
 
@@ -397,13 +401,13 @@ export default class Matrix {
     out.ty = source.ty * sy;
   }
 
-  static setTo(target: Matrix, a: number, b: number, c: number, d: number, tx: number, ty: number): void {
-    target.a = a;
-    target.b = b;
-    target.c = c;
-    target.d = d;
-    target.tx = tx;
-    target.ty = ty;
+  static setTo(out: Matrix, a: number, b: number, c: number, d: number, tx: number, ty: number): void {
+    out.a = a;
+    out.b = b;
+    out.c = c;
+    out.d = d;
+    out.tx = tx;
+    out.ty = ty;
   }
 
   toString(): string {
@@ -419,7 +423,7 @@ export default class Matrix {
    * This accounts for translation, rotation, scaling, and skew
    * from the source matrix.
    **/
-  static transformAABB(source: Matrix, ax: number, ay: number, bx: number, by: number, out: Rectangle): void {
+  static transformAABB(out: Rectangle, source: Matrix, ax: number, ay: number, bx: number, by: number): void {
     const { a, b, c, d } = source;
 
     let tx0 = a * ax + c * ay;
@@ -460,12 +464,13 @@ export default class Matrix {
   /**
    * Transforms a point using the given matrix.
    *
-   * If you do not provide a targetPoint, a new Point() will be created
+   * Returns a new Point() with the result.
+   * @see transformXY
    */
-  static transformPoint(sourceMatrix: Matrix, sourcePoint: Point, targetPoint?: Point): Point {
-    targetPoint = targetPoint ?? new Point();
-    this.transformXY(sourceMatrix, sourcePoint.x, sourcePoint.y, targetPoint);
-    return targetPoint;
+  static transformPoint(matrix: Matrix, point: Point): Point {
+    const out = new Point();
+    this.transformXY(out, matrix, point.x, point.y);
+    return out;
   }
 
   /**
@@ -475,18 +480,32 @@ export default class Matrix {
    * This accounts for translation, rotation, scaling, and skew
    * from the given matrix.
    *
-   * If you do not provide a targetRect, a new Rectangle() will be created
+   * Returns a new Rectangle() with the result.
+   * @see transformRectTo
+   * @see transformAABB
    **/
-  static transformRect(sourceMatrix: Matrix, sourceRect: Rectangle, targetRect?: Rectangle): Rectangle {
-    targetRect = targetRect ?? new Rectangle();
-    this.transformAABB(sourceMatrix, sourceRect.x, sourceRect.y, sourceRect.right, sourceRect.bottom, targetRect);
-    return targetRect;
+  static transformRect(matrix: Matrix, rect: Rectangle): Rectangle {
+    return this.transformRectTo(new Rectangle(), matrix, rect);
+  }
+
+  /**
+   * Applies a 2D affine transform to a given rectangle and updates it
+   * to the axis-aligned bounding box of the transformed rectangle.
+   *
+   * This accounts for translation, rotation, scaling, and skew
+   * from the given matrix.
+   *
+   * @see transformAABB
+   */
+  static transformRectTo(out: Rectangle, matrix: Matrix, source: Rectangle): Rectangle {
+    this.transformAABB(out, matrix, source.x, source.y, source.right, source.bottom);
+    return out;
   }
 
   /**
    * Transforms an (x, y) point using the given matrix.
    */
-  static transformXY(source: Matrix, x: number, y: number, out: Point): void {
+  static transformXY(out: Point, source: Matrix, x: number, y: number): void {
     out.x = x * source.a + y * source.c + source.tx;
     out.y = x * source.b + y * source.d + source.ty;
   }
@@ -495,8 +514,8 @@ export default class Matrix {
    * Translates the matrix along the _x_ and _y_ axes, as specified
    * by the `dx` and `dy` parameters.
    **/
-  static translate(target: Matrix, dx: number, dy: number): void {
-    target.tx += dx;
-    target.ty += dy;
+  static translate(out: Matrix, dx: number, dy: number): void {
+    out.tx += dx;
+    out.ty += dy;
   }
 }
