@@ -50,10 +50,10 @@ export default class Matrix {
   static copyColumnFrom(target: Matrix, column: number, source: Vector3D): void {
     if (column > 2) {
       throw 'Column ' + column + ' out of bounds (2)';
-    } else if (column == 0) {
+    } else if (column === 0) {
       target.a = source.x;
       target.b = source.y;
-    } else if (column == 1) {
+    } else if (column === 1) {
       target.c = source.x;
       target.d = source.y;
     } else {
@@ -65,11 +65,11 @@ export default class Matrix {
   static copyColumnTo(source: Matrix, column: number, target: Vector3D): void {
     if (column > 2) {
       throw 'Column ' + column + ' out of bounds (2)';
-    } else if (column == 0) {
+    } else if (column === 0) {
       target.x = source.a;
       target.y = source.b;
       target.z = 0;
-    } else if (column == 1) {
+    } else if (column === 1) {
       target.x = source.c;
       target.y = source.d;
       target.z = 0;
@@ -92,11 +92,11 @@ export default class Matrix {
   static copyRowFrom(target: Matrix, row: number, source: Vector3D): void {
     if (row > 2) {
       throw 'Row ' + row + ' out of bounds (2)';
-    } else if (row == 0) {
+    } else if (row === 0) {
       target.a = source.x;
       target.c = source.y;
       target.tx = source.z;
-    } else if (row == 1) {
+    } else if (row === 1) {
       target.b = source.x;
       target.d = source.y;
       target.ty = source.z;
@@ -106,11 +106,11 @@ export default class Matrix {
   static copyRowTo(target: Matrix, row: number, source: Vector3D): void {
     if (row > 2) {
       throw 'Row ' + row + ' out of bounds (2)';
-    } else if (row == 0) {
+    } else if (row === 0) {
       source.x = target.a;
       source.y = target.c;
       source.z = target.tx;
-    } else if (row == 1) {
+    } else if (row === 1) {
       source.x = target.b;
       source.y = target.d;
       source.z = target.ty;
@@ -139,7 +139,7 @@ export default class Matrix {
     // scale (scaleX, scaleY);
     // translate (tx, ty);
 
-    if (rotation != 0) {
+    if (rotation !== 0) {
       const cos = Math.cos(rotation);
       const sin = Math.sin(rotation);
 
@@ -176,7 +176,7 @@ export default class Matrix {
     target.d = height / 1638.4;
 
     // rotation is clockwise
-    if (rotation != 0) {
+    if (rotation !== 0) {
       const cos = Math.cos(rotation);
       const sin = Math.sin(rotation);
 
@@ -219,14 +219,14 @@ export default class Matrix {
     other: Matrix | null | undefined,
     includeTranslation: boolean = true,
   ): boolean {
-    if (source == other) return true;
+    if (source === other) return true;
     if (!source || !other) return false;
     return (
-      (!includeTranslation || (source.tx == other.tx && source.ty == other.ty)) &&
-      source.a == other.a &&
-      source.b == other.b &&
-      source.c == other.c &&
-      source.d == other.d
+      (!includeTranslation || (source.tx === other.tx && source.ty === other.ty)) &&
+      source.a === other.a &&
+      source.b === other.b &&
+      source.c === other.c &&
+      source.d === other.d
     );
   }
 
@@ -260,7 +260,7 @@ export default class Matrix {
 
   static inverseTransformXY(source: Matrix, x: number, y: number, out: Point): void {
     const norm = source.a * source.d - source.b * source.c;
-    if (norm == 0) {
+    if (norm === 0) {
       out.x = -source.tx;
       out.y = -source.ty;
     } else {
