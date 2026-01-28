@@ -11,6 +11,8 @@ import type Stage from './Stage.js';
 import Transform from './Transform.js';
 
 export default class DisplayObject implements BitmapDrawable {
+  static __tempPoint: Point = new Point();
+
   protected __alpha: number = 1.0;
   protected __blendMode: BlendMode = BlendMode.Normal;
   protected __cacheAsBitmap: boolean = false;
@@ -148,6 +150,22 @@ export default class DisplayObject implements BitmapDrawable {
       return result;
     }
     return false;
+  }
+
+  /**
+		Evaluates the display object to see if it overlaps or intersects with the
+		point specified by the `x` and `y` parameters in world coordinates.
+
+    @param shapeFlag Whether to check against the actual pixels of the object
+						(`true`) or the bounding box
+						(`false`).
+	**/
+  static hitTestPoint(source: DisplayObject, x: number, y: number, _shapeFlag: boolean = false): boolean {
+    if (!source.__visible || source.__opaqueBackground === null) return false;
+    this.__updateWorldTransform(source);
+    Matrix.inverseTransformXY(this.__tempPoint, source.__worldTransform, x, y);
+    this.__updateLocalBounds(source);
+    return Rectangle.contains(source.__localBounds, this.__tempPoint.x, this.__tempPoint.y);
   }
 
   /**
