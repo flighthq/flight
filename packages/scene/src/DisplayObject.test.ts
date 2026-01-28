@@ -770,4 +770,88 @@ describe('DisplayObject', () => {
       });
     });
   });
+
+  describe('localToGlobal', () => {
+    let obj: DisplayObject;
+
+    beforeEach(() => {
+      obj = new DisplayObject();
+    });
+
+    it('returns a new point', () => {
+      const local = new Point(10, 20);
+      const global = DisplayObject.localToGlobal(obj, local);
+
+      expect(global).toBeInstanceOf(Point);
+      expect(global).not.toBe(local); // new instance
+    });
+
+    it('converts identity correctly', () => {
+      const local = new Point(10, 20);
+      const global = DisplayObject.localToGlobal(obj, local);
+
+      expect(global.x).toBe(10);
+      expect(global.y).toBe(20);
+    });
+
+    it('respects world transform', () => {
+      // translate +100,+50
+      obj.x = 100;
+      obj.y = 50;
+
+      const local = new Point(10, 20);
+      const global = DisplayObject.localToGlobal(obj, local);
+
+      expect(global.x).toBe(110); // 100 + 10
+      expect(global.y).toBe(70); // 50 + 20
+    });
+  });
+
+  describe('localToGlobalTo', () => {
+    let obj: DisplayObject;
+
+    beforeEach(() => {
+      obj = new DisplayObject();
+    });
+
+    it('localToGlobalTo writes to out parameter', () => {
+      const local = new Point(5, 5);
+      const out = new Point();
+
+      DisplayObject.localToGlobalTo(out, obj, local);
+
+      expect(out.x).toBe(5);
+      expect(out.y).toBe(5);
+      expect(out).not.toBe(local); // out is a separate object
+    });
+
+    it('respects world transform', () => {
+      obj.x = 50;
+      obj.y = 30;
+
+      const local = new Point(10, 20);
+      const out = new Point();
+
+      DisplayObject.localToGlobalTo(out, obj, local);
+
+      expect(out.x).toBe(60); // 50 + 10
+      expect(out.y).toBe(50); // 30 + 20
+    });
+
+    it('produces independent results from multiple points', () => {
+      obj.x = 1;
+      obj.y = 2;
+
+      const p1 = new Point(1, 1);
+      const p2 = new Point(2, 2);
+
+      const g1 = DisplayObject.localToGlobal(obj, p1);
+      const g2 = DisplayObject.localToGlobal(obj, p2);
+
+      expect(g1.x).toBe(2);
+      expect(g1.y).toBe(3);
+      expect(g2.x).toBe(3);
+      expect(g2.y).toBe(4);
+    });
+  });
 });

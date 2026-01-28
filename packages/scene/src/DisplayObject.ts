@@ -190,6 +190,28 @@ export default class DisplayObject implements BitmapDrawable {
     }
   }
 
+  /**
+   * Converts the `point` object from the display object's (local)
+   * coordinates to world coordinates.
+   *
+   * Returns a new Point()
+   * @see localToGlobalTo
+   **/
+  static localToGlobal(source: DisplayObject, point: Point): Point {
+    const out = new Point();
+    this.localToGlobalTo(out, source, point);
+    return out;
+  }
+
+  /**
+   * Converts the `point` object from the display object's (local)
+   * coordinates to world coordinates.
+   **/
+  static localToGlobalTo(out: Point, source: DisplayObject, point: Point): void {
+    this.__updateWorldTransform(source);
+    Matrix.transformXY(out, source.__worldTransform, point.x, point.y);
+  }
+
   private static __updateLocalBounds(target: DisplayObject): void {
     if ((target.__dirtyFlags & DirtyFlags.Bounds) === 0) return;
 
