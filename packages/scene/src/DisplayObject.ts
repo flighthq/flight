@@ -1,4 +1,4 @@
-import { Rectangle } from '@flighthq/core';
+import { MatrixPool, Rectangle } from '@flighthq/core';
 import { Matrix } from '@flighthq/core';
 
 import type { BitmapDrawable } from './BitmapDrawable.js';
@@ -21,11 +21,13 @@ export default class DisplayObject implements BitmapDrawable {
   protected __loaderInfo: LoaderInfo | null = null;
   protected __localBounds: Rectangle = new Rectangle();
   protected __localTransform: Matrix = new Matrix();
+  protected __localTransformID: number = 0;
   protected __mask: DisplayObject | null = null;
   protected __maskedObject: DisplayObject | null = null;
   protected __name: string | null = null;
   protected __opaqueBackground: number | null = null;
   protected __parent: DisplayObject | null = null;
+  protected __parentTransformID: number = 0;
   protected __root: DisplayObject | null = null;
   protected __rotationAngle: number = 0;
   protected __rotationCosine: number = 1;
@@ -39,11 +41,37 @@ export default class DisplayObject implements BitmapDrawable {
   protected __transform: Transform | null = null;
   protected __transformedBounds: Rectangle = new Rectangle();
   protected __width: number = 0;
+  protected __worldTransform: Matrix = new Matrix();
+  protected __worldTransformID: number = 0;
   protected __visible: boolean = true;
   protected __x: number = 0;
   protected __y: number = 0;
 
   constructor() {}
+
+  /**
+   * Returns a rectangle that defines the area of the display object relative
+   * to the coordinate system of the `targetCoordinateSpace` object.
+   **/
+  static getBounds(source: DisplayObject, targetCoordinateSpace: DisplayObject, targetRect?: Rectangle): Rectangle {
+    targetRect = targetRect ?? new Rectangle();
+
+    if (source !== targetCoordinateSpace) DisplayObject.__updateWorldTransform(source);
+    DisplayObject.__updateWorldTransform(targetCoordinateSpace);
+    DisplayObject.__updateLocalBounds(source);
+
+    if (targetCoordinateSpace !== source) {
+      const tempMatrix = MatrixPool.get();
+      Matrix.inverse(targetCoordinateSpace.__worldTransform, tempMatrix);
+      Matrix.multiply(tempMatrix, source.__worldTransform, tempMatrix);
+      Matrix.transformRect(tempMatrix, source.__localBounds, targetRect);
+      MatrixPool.release(tempMatrix);
+    } else {
+      Rectangle.copyFrom(targetRect, source.__localBounds);
+    }
+
+    return targetRect;
+  }
 
   /**
    * Calling `invalidate()` signals that the current object has changed and
@@ -57,6 +85,7 @@ export default class DisplayObject implements BitmapDrawable {
     if ((flags & DirtyFlags.Transform) !== 0) {
       // If transform changed, transformed bounds must also be updated
       target.__dirtyFlags |= DirtyFlags.TransformedBounds;
+      target.__localTransformID++;
     }
 
     if ((flags & DirtyFlags.Bounds) !== 0) {
@@ -69,8 +98,6 @@ export default class DisplayObject implements BitmapDrawable {
     if ((target.__dirtyFlags & DirtyFlags.Bounds) === 0) return;
 
     // TODO, update __localBounds
-
-    Matrix.transformRect(target.__localTransform, target.__transformedBounds, target.__transformedBounds);
 
     target.__dirtyFlags &= ~DirtyFlags.Bounds;
   }
@@ -98,6 +125,29 @@ export default class DisplayObject implements BitmapDrawable {
     Matrix.transformRect(target.__localTransform, target.__transformedBounds, target.__transformedBounds);
 
     target.__dirtyFlags &= ~DirtyFlags.TransformedBounds;
+  }
+
+  private static __updateWorldTransform(target: DisplayObject): void {
+    // Ensure local transform is accurate
+    DisplayObject.__updateLocalTransform(target);
+
+    // Recursively allow parents to update if out-of-date
+    if (target.__parent !== null) {
+      DisplayObject.__updateWorldTransform(target.__parent);
+    }
+
+    const parentTransformID = target.__parent !== null ? target.__parent.__worldTransformID : 0;
+
+    // Update if local transform changed or parent world transform changed
+    if (target.__worldTransformID !== target.__localTransformID || target.__parentTransformID !== parentTransformID) {
+      if (target.__parent !== null) {
+        Matrix.multiply(target.__parent.__worldTransform, target.__localTransform, target.__worldTransform);
+      } else {
+        Matrix.copyFrom(target.__worldTransform, target.__localTransform);
+      }
+      target.__parentTransformID = parentTransformID;
+      target.__worldTransformID = target.__localTransformID;
+    }
   }
 
   // Get & Set Methods
