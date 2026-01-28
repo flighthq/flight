@@ -237,6 +237,28 @@ describe('Matrix', () => {
       expect(m.a).toBe(1);
       expect(m.b).toBe(2);
     });
+
+    it('should copy column 1 (c, d)', () => {
+      const m = new Matrix();
+      const v = new Vector3D(3, 4, 0);
+      Matrix.copyColumnFrom(m, 1, v);
+      expect(m.c).toBe(3);
+      expect(m.d).toBe(4);
+    });
+
+    it('should copy column 2 (tx, ty)', () => {
+      const m = new Matrix();
+      const v = new Vector3D(5, 6, 0);
+      Matrix.copyColumnFrom(m, 2, v);
+      expect(m.tx).toBe(5);
+      expect(m.ty).toBe(6);
+    });
+
+    it('should throw when column is greater than 2', () => {
+      const m = new Matrix();
+      const v = new Vector3D();
+      expect(() => Matrix.copyColumnFrom(m, 3, v)).toThrow();
+    });
   });
 
   describe('copyColumnTo', () => {
@@ -247,6 +269,30 @@ describe('Matrix', () => {
       expect(v.x).toBe(1);
       expect(v.y).toBe(2);
       expect(v.z).toBe(0);
+    });
+
+    it('should copy column 1 into Vector3D', () => {
+      const m = new Matrix(0, 0, 3, 4, 0, 0);
+      const v = new Vector3D();
+      Matrix.copyColumnTo(m, 1, v);
+      expect(v.x).toBe(3);
+      expect(v.y).toBe(4);
+      expect(v.z).toBe(0);
+    });
+
+    it('should copy column 2 into Vector3D and set z to 1', () => {
+      const m = new Matrix(0, 0, 0, 0, 7, 8);
+      const v = new Vector3D();
+      Matrix.copyColumnTo(m, 2, v);
+      expect(v.x).toBe(7);
+      expect(v.y).toBe(8);
+      expect(v.z).toBe(1);
+    });
+
+    it('should throw when column is greater than 2', () => {
+      const m = new Matrix();
+      const v = new Vector3D();
+      expect(() => Matrix.copyColumnTo(m, 3, v)).toThrow();
     });
   });
 
@@ -259,6 +305,21 @@ describe('Matrix', () => {
       expect(m.c).toBe(2);
       expect(m.tx).toBe(3);
     });
+
+    it('should copy row 1 (b, d, ty)', () => {
+      const m = new Matrix();
+      const v = new Vector3D(2, 4, 6);
+      Matrix.copyRowFrom(m, 1, v);
+      expect(m.b).toBe(2);
+      expect(m.d).toBe(4);
+      expect(m.ty).toBe(6);
+    });
+
+    it('should throw when row is greater than 2', () => {
+      const m = new Matrix();
+      const v = new Vector3D();
+      expect(() => Matrix.copyRowFrom(m, 3, v)).toThrow();
+    });
   });
 
   describe('copyRowTo', () => {
@@ -270,6 +331,24 @@ describe('Matrix', () => {
       expect(v.y).toBe(3); // m.c
       expect(v.z).toBe(5); // m.tx
     });
+
+    it('should copy row 1 (b, d, ty)', () => {
+      const m = new Matrix(1, 2, 3, 4, 5, 6);
+      const v = new Vector3D();
+      Matrix.copyRowTo(m, 1, v);
+      expect(v.x).toBe(2);
+      expect(v.y).toBe(4);
+      expect(v.z).toBe(6);
+    });
+
+    it('should return (0, 0, 1) for row 2', () => {
+      const m = new Matrix();
+      const v = new Vector3D();
+      Matrix.copyRowTo(m, 2, v);
+      expect(v.x).toBe(0);
+      expect(v.y).toBe(0);
+      expect(v.z).toBe(1);
+    });
   });
 
   describe('deltaTransformPoint', () => {
@@ -277,6 +356,16 @@ describe('Matrix', () => {
       const m = new Matrix(2, 0, 0, 2, 0, 0);
       const p = new Point(1, 1);
       const transformedPoint = Matrix.deltaTransformPoint(m, p);
+      expect(transformedPoint.x).toBe(2);
+      expect(transformedPoint.y).toBe(2);
+    });
+  });
+
+  describe('deltaTransformXY', () => {
+    it('should apply delta transformation to a point', () => {
+      const m = new Matrix(2, 0, 0, 2, 0, 0);
+      const transformedPoint = new Point();
+      Matrix.deltaTransformXY(m, 1, 1, transformedPoint);
       expect(transformedPoint.x).toBe(2);
       expect(transformedPoint.y).toBe(2);
     });
@@ -337,6 +426,64 @@ describe('Matrix', () => {
     });
   });
 
+  describe('inverseTransformXY', () => {
+    it('should apply inverse transformation to a point', () => {
+      const m = new Matrix(2, 0, 0, 2, 0, 0);
+      let transformedPoint = new Point();
+      Matrix.inverseTransformXY(m, 2, 2, transformedPoint);
+      expect(transformedPoint.x).toBe(1);
+      expect(transformedPoint.y).toBe(1);
+    });
+
+    it('should handle singular matrices', () => {
+      const m = new Matrix(1, 2, 2, 4, 10, 20); // determinant = 0
+      const out = new Point();
+
+      Matrix.inverseTransformXY(m, 5, 5, out);
+
+      expect(out.x).toBe(-10);
+      expect(out.y).toBe(-20);
+    });
+  });
+
+  describe('inverse', () => {
+    it('should invert the matrix correctly', () => {
+      // Create a matrix with scaling of 2 and translation of (5, 3)
+      const m = new Matrix(2, 0, 0, 2, 5, 3);
+
+      // Apply inversion
+      let out = new Matrix();
+      Matrix.inverse(m, out);
+
+      // Expected inverse matrix:
+      // Scaling should be 0.5 (inverse of 2)
+      // Translation should be -2.5 (inverse of 5 scaled by 0.5) and -1.5 (inverse of 3 scaled by 0.5)
+
+      // Assert the inverse matrix values
+      expect(out.a).toBeCloseTo(0.5); // Inverse scaling on x
+      expect(out.b).toBeCloseTo(0); // No shear on x
+      expect(out.c).toBeCloseTo(0); // No shear on y
+      expect(out.d).toBeCloseTo(0.5); // Inverse scaling on y
+      expect(out.tx).toBeCloseTo(-2.5); // Inverse translation on x
+      expect(out.ty).toBeCloseTo(-1.5); // Inverse translation on y
+    });
+
+    it('should not depend on initial out matrix values', () => {
+      const source = new Matrix(2, 1, 3, 4, 5, 6);
+      const out = new Matrix(9, 9, 9, 9, 9, 9);
+
+      Matrix.inverse(source, out);
+
+      const result = new Matrix();
+      Matrix.multiply(source, out, result);
+
+      expect(result.a).toBeCloseTo(1);
+      expect(result.b).toBeCloseTo(0);
+      expect(result.c).toBeCloseTo(0);
+      expect(result.d).toBeCloseTo(1);
+    });
+  });
+
   describe('invert', () => {
     it('should invert the matrix correctly', () => {
       // Create a matrix with scaling of 2 and translation of (5, 3)
@@ -359,6 +506,34 @@ describe('Matrix', () => {
     });
   });
 
+  describe('multiply', () => {
+    it('should support out === a', () => {
+      const a = new Matrix(2, 0, 0, 2, 0, 0);
+      const b = new Matrix(1, 0, 0, 1, 5, 5);
+      Matrix.multiply(a, b, a);
+      expect(a.tx).toBe(5);
+      expect(a.ty).toBe(5);
+    });
+
+    it('should support out === b', () => {
+      const a = new Matrix(2, 0, 0, 2, 0, 0);
+      const b = new Matrix(1, 0, 0, 1, 3, 4);
+      Matrix.multiply(a, b, b);
+      expect(b.a).toBe(2);
+      expect(b.d).toBe(2);
+      expect(b.tx).toBe(3);
+      expect(b.ty).toBe(4);
+    });
+
+    it('should multiply identity correctly', () => {
+      const a = new Matrix();
+      const b = new Matrix(2, 3, 4, 5, 6, 7);
+      const out = new Matrix();
+      Matrix.multiply(a, b, out);
+      expect(Matrix.equals(out, b)).toBe(true);
+    });
+  });
+
   describe('rotate', () => {
     it('should rotate the matrix correctly', () => {
       const m = new Matrix(1, 0, 0, 1, 0, 0);
@@ -370,12 +545,110 @@ describe('Matrix', () => {
     });
   });
 
+  describe('rotateTo', () => {
+    it('should write rotated result to out without modifying source', () => {
+      const src = new Matrix(1, 0, 0, 1, 10, 0);
+      const out = new Matrix();
+      Matrix.rotateTo(src, Math.PI / 2, out);
+      expect(src.tx).toBe(10);
+      expect(out.tx).toBeCloseTo(0);
+    });
+
+    it('should support out === source', () => {
+      const m = new Matrix(1, 0, 0, 1, 0, 0);
+      Matrix.rotateTo(m, Math.PI, m);
+      expect(m.a).toBeCloseTo(-1);
+      expect(m.d).toBeCloseTo(-1);
+    });
+  });
+
   describe('scale', () => {
     it('should scale the matrix correctly', () => {
       const m = new Matrix();
       Matrix.scale(m, 2, 3);
       expect(m.a).toBe(2);
       expect(m.d).toBe(3);
+    });
+  });
+
+  describe('scaleXY', () => {
+    it('should write scaled result to out without modifying source', () => {
+      const src = new Matrix(2, 0, 0, 2, 5, 6);
+      const out = new Matrix();
+      Matrix.scaleXY(src, 2, 3, out);
+      expect(src.a).toBe(2);
+      expect(out.a).toBe(4);
+      expect(out.d).toBe(6);
+    });
+
+    it('should support out === source', () => {
+      const m = new Matrix(1, 0, 0, 1, 1, 1);
+      Matrix.scaleXY(m, 2, 3, m);
+      expect(m.a).toBe(2);
+      expect(m.d).toBe(3);
+      expect(m.tx).toBe(2);
+      expect(m.ty).toBe(3);
+    });
+  });
+
+  describe('setTo', () => {
+    it('should assign all matrix fields', () => {
+      const m = new Matrix();
+      Matrix.setTo(m, 1, 2, 3, 4, 5, 6);
+      expect(m.toString()).toBe('matrix(1, 2, 3, 4, 5, 6)');
+    });
+  });
+
+  describe('transformAABB', () => {
+    it('should work when ax > bx or ay > by (flipped input)', () => {
+      const m = new Matrix();
+      const out = new Rectangle();
+      Matrix.transformAABB(m, 10, 10, 0, 0, out);
+      expect(out.x).toBe(0);
+      expect(out.y).toBe(0);
+      expect(out.width).toBe(10);
+      expect(out.height).toBe(10);
+    });
+
+    it('should handle negative scaling', () => {
+      const m = new Matrix(-1, 0, 0, -1, 0, 0);
+      const out = new Rectangle();
+      Matrix.transformAABB(m, 0, 0, 10, 10, out);
+      expect(out.width).toBe(10);
+      expect(out.height).toBe(10);
+    });
+
+    it('should handle rotation', () => {
+      const m = new Matrix();
+      Matrix.rotate(m, Math.PI / 2);
+      const out = new Rectangle();
+      Matrix.transformAABB(m, 0, 0, 10, 20, out);
+      expect(out.width).toBeCloseTo(20);
+      expect(out.height).toBeCloseTo(10);
+    });
+
+    it('should handle flipped input coordinates', () => {
+      const rect = new Rectangle(10, 20, -10, -20);
+      const matrix = new Matrix();
+
+      const out = new Rectangle();
+      Matrix.transformAABB(matrix, rect.x, rect.y, rect.right, rect.bottom, out);
+
+      expect(out.x).toBeCloseTo(0);
+      expect(out.y).toBeCloseTo(0);
+      expect(out.width).toBeCloseTo(10);
+      expect(out.height).toBeCloseTo(20);
+    });
+
+    it('should handle negative scaling (mirroring)', () => {
+      const rect = new Rectangle(0, 0, 10, 20);
+      const matrix = new Matrix(-1, 0, 0, -1, 0, 0);
+
+      const out = new Rectangle();
+      Matrix.transformAABB(matrix, rect.x, rect.y, rect.right, rect.bottom, out);
+
+      expect(out.width).toBeCloseTo(10);
+      expect(out.height).toBeCloseTo(20);
     });
   });
 
@@ -464,6 +737,25 @@ describe('Matrix', () => {
       expect(target.y).toBeCloseTo(7);
       expect(target.width).toBeCloseTo(10);
       expect(target.height).toBeCloseTo(10);
+    });
+  });
+
+  describe('transformXY', () => {
+    it('should correctly transform coordinates with translation', () => {
+      const m = new Matrix(1, 0, 0, 1, 5, 6);
+      const p = new Point();
+      Matrix.transformXY(m, 1, 2, p);
+      expect(p.x).toBe(6);
+      expect(p.y).toBe(8);
+    });
+
+    it('should handle rotation correctly', () => {
+      const m = new Matrix();
+      Matrix.rotate(m, Math.PI / 2);
+      const p = new Point();
+      Matrix.transformXY(m, 1, 0, p);
+      expect(p.x).toBeCloseTo(0);
+      expect(p.y).toBeCloseTo(1);
     });
   });
 
