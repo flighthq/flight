@@ -31,21 +31,20 @@ export default class Matrix {
   }
 
   static clone(source: Matrix): Matrix {
-    return new Matrix(source.a, source.b, source.c, source.d, source.tx, source.ty);
+    const m = new Matrix();
+    this.copyFrom(m, source);
+    return m;
   }
 
+  /**
+   * Multiplies target by source, applying the result to target
+   *
+   * target *= source
+   *
+   * @see multiply
+   */
   static concat(target: Matrix, source: Matrix): void {
-    const a1 = target.a * source.a + target.b * source.c;
-    target.b = target.a * source.b + target.b * source.d;
-    target.a = a1;
-
-    const c1 = target.c * source.a + target.d * source.c;
-    target.d = target.c * source.b + target.d * source.d;
-    target.c = c1;
-
-    const tx1 = target.tx * source.a + target.ty * source.c + source.tx;
-    target.ty = target.tx * source.b + target.ty * source.d + source.ty;
-    target.tx = tx1;
+    return this.multiply(target, source, target);
   }
 
   static copyColumnFrom(target: Matrix, column: number, source: Vector3D): void {
@@ -206,9 +205,13 @@ export default class Matrix {
    **/
   static deltaTransformPoint(sourceMatrix: Matrix, sourcePoint: Point, targetPoint?: Point): Point {
     targetPoint = targetPoint ?? new Point();
-    targetPoint.x = sourcePoint.x * sourceMatrix.a + sourcePoint.y * sourceMatrix.c;
-    targetPoint.y = sourcePoint.x * sourceMatrix.b + sourcePoint.y * sourceMatrix.d;
+    this.deltaTransformXY(sourceMatrix, sourcePoint.x, sourcePoint.y, targetPoint);
     return targetPoint;
+  }
+
+  static deltaTransformXY(source: Matrix, x: number, y: number, out: Point): void {
+    out.x = x * source.a + y * source.c;
+    out.y = x * source.b + y * source.d;
   }
 
   static equals(
@@ -251,22 +254,45 @@ export default class Matrix {
    */
   static inverseTransformPoint(sourceMatrix: Matrix, sourcePoint: Point, targetPoint?: Point): Point {
     targetPoint = targetPoint ?? new Point();
-    const norm = sourceMatrix.a * sourceMatrix.d - sourceMatrix.b * sourceMatrix.c;
-
-    if (norm == 0) {
-      targetPoint.x = -sourceMatrix.tx;
-      targetPoint.y = -sourceMatrix.ty;
-    } else {
-      const px =
-        (1.0 / norm) *
-        (sourceMatrix.c * (sourceMatrix.ty - sourcePoint.y) + sourceMatrix.d * (sourcePoint.x - sourceMatrix.tx));
-      targetPoint.y =
-        (1.0 / norm) *
-        (sourceMatrix.a * (sourcePoint.y - sourceMatrix.ty) + sourceMatrix.b * (sourceMatrix.tx - sourcePoint.x));
-      targetPoint.x = px;
-    }
-
+    this.inverseTransformXY(sourceMatrix, sourcePoint.x, sourcePoint.y, targetPoint);
     return targetPoint;
+  }
+
+  static inverseTransformXY(source: Matrix, x: number, y: number, out: Point): void {
+    const norm = source.a * source.d - source.b * source.c;
+    if (norm == 0) {
+      out.x = -source.tx;
+      out.y = -source.ty;
+    } else {
+      const px = (1.0 / norm) * (source.c * (source.ty - y) + source.d * (x - source.tx));
+      out.y = (1.0 / norm) * (source.a * (y - source.ty) + source.b * (source.tx - x));
+      out.x = px;
+    }
+  }
+
+  /**
+   * Computes the inverse of a 2D affine matrix and writes it to out.
+   *
+   * Translation (tx, ty) is applied after the linear transformation (scale/rotation/shear) is inverted.
+   */
+  static inverse(source: Matrix, out: Matrix): void {
+    const det = source.a * source.d - source.b * source.c;
+    if (det === 0) {
+      out.a = out.b = out.c = out.d = 0;
+      out.tx = -source.tx;
+      out.ty = -source.ty;
+    } else {
+      const invDet = 1.0 / det;
+      const a1 = source.d * invDet;
+      out.d = source.a * invDet;
+      out.a = a1;
+      out.b = -source.b * invDet;
+      out.c = -source.c * invDet;
+
+      const tx1 = -out.a * source.tx - out.c * source.ty;
+      out.ty = -out.b * source.tx - out.d * source.ty;
+      out.tx = tx1;
+    }
   }
 
   /**
@@ -274,87 +300,101 @@ export default class Matrix {
    * an inverted matrix to an object to undo the transformation performed when
    * applying the original matrix.
    **/
-  static invert(target: Matrix): Matrix {
-    let norm = target.a * target.d - target.b * target.c;
-
-    if (norm == 0) {
-      target.a = target.b = target.c = target.d = 0;
-      target.tx = -target.tx;
-      target.ty = -target.ty;
-    } else {
-      norm = 1.0 / norm;
-      const a1 = target.d * norm;
-      target.d = target.a * norm;
-      target.a = a1;
-      target.b *= -norm;
-      target.c *= -norm;
-
-      const tx1 = -target.a * target.tx - target.c * target.ty;
-      target.ty = -target.b * target.tx - target.d * target.ty;
-      target.tx = tx1;
-    }
-
-    return target;
+  static invert(source: Matrix): Matrix {
+    Matrix.inverse(source, source);
+    return source;
   }
 
   /**
-   * Applies a rotation transformation to the Matrix object.
+   * Multiplies a by b and writes the result to out
+   *
+   * out = a * b
+   */
+  static multiply(a: Matrix, b: Matrix, out: Matrix): void {
+    const a1 = a.a * b.a + a.b * b.c;
+    out.b = a.a * b.b + a.b * b.d;
+    out.a = a1;
+
+    const c1 = a.c * b.a + a.d * b.c;
+    out.d = a.c * b.b + a.d * b.d;
+    out.c = c1;
+
+    const tx1 = a.tx * b.a + a.ty * b.c + b.tx;
+    out.ty = a.tx * b.b + a.ty * b.d + b.ty;
+    out.tx = tx1;
+  }
+
+  /**
+   * Applies a rotation transformation in-place to the Matrix object.
    * The `rotate()` method alters the `a`, `b`, `c`, and `d` properties of
    * the Matrix object.
    **/
   static rotate(target: Matrix, theta: number): void {
+    this.rotateTo(target, theta, target);
+  }
+
+  /**
+   * Applies a rotation transformation to the given Matrix object
+   * and writes the result to out.
+   **/
+  static rotateTo(source: Matrix, theta: number, out: Matrix): void {
     /**
-            Rotate object "after" other transforms
-    
-            [  a  b   0 ][  ma mb  0 ]
-            [  c  d   0 ][  mc md  0 ]
-            [  tx ty  1 ][  mtx mty 1 ]
-    
-            ma = md = cos
-            mb = sin
-            mc = -sin
-            mtx = my = 0
-        **/
+      Rotate object "after" other transforms
 
+      [  a  b   0 ][  ma mb  0 ]
+      [  c  d   0 ][  mc md  0 ]
+      [  tx ty  1 ][  mtx mty 1 ]
+
+      ma = md = cos
+      mb = sin
+      mc = -sin
+      mtx = my = 0
+    **/
     const cos = Math.cos(theta);
-
     const sin = Math.sin(theta);
 
-    const a1 = target.a * cos - target.b * sin;
-    target.b = target.a * sin + target.b * cos;
-    target.a = a1;
+    var a1 = source.a * cos - source.b * sin;
+    out.b = source.a * sin + source.b * cos;
+    out.a = a1;
 
-    const c1 = target.c * cos - target.d * sin;
-    target.d = target.c * sin + target.d * cos;
-    target.c = c1;
+    var c1 = source.c * cos - source.d * sin;
+    out.d = source.c * sin + source.d * cos;
+    out.c = c1;
 
-    const tx1 = target.tx * cos - target.ty * sin;
-    target.ty = target.tx * sin + target.ty * cos;
-    target.tx = tx1;
+    var tx1 = source.tx * cos - source.ty * sin;
+    out.ty = source.tx * sin + source.ty * cos;
+    out.tx = tx1;
   }
 
   /**
    * Applies a scaling transformation to the matrix. The _x_ axis is
    * multiplied by `sx`, and the _y_ axis it is multiplied by `sy`.
+   *
    * The `scale()` method alters the `a` and `d` properties of the Matrix
    * object.
    **/
   static scale(target: Matrix, sx: number, sy: number): void {
-    /*
-    
-            Scale object "after" other transforms
-    
-            [  a  b   0 ][  sx  0   0 ]
-            [  c  d   0 ][  0   sy  0 ]
-            [  tx ty  1 ][  0   0   1 ]
-        **/
+    this.scaleXY(target, sx, sy, target);
+  }
 
-    target.a *= sx;
-    target.b *= sy;
-    target.c *= sx;
-    target.d *= sy;
-    target.tx *= sx;
-    target.ty *= sy;
+  /**
+   * Applies a scaling transformation to the matrix. The _x_ axis is
+   * multiplied by `sx`, and the _y_ axis it is multiplied by `sy`.
+   **/
+  static scaleXY(source: Matrix, sx: number, sy: number, out: Matrix): void {
+    /*
+      Scale object "after" other transforms
+
+      [  a  b   0 ][  sx  0   0 ]
+      [  c  d   0 ][  0   sy  0 ]
+      [  tx ty  1 ][  0   0   1 ]
+    **/
+    out.a = source.a * sx;
+    out.b = source.b * sy;
+    out.c = source.c * sx;
+    out.d = source.d * sy;
+    out.tx = source.tx * sx;
+    out.ty = source.ty * sy;
   }
 
   static setTo(target: Matrix, a: number, b: number, c: number, d: number, tx: number, ty: number): void {
@@ -371,14 +411,60 @@ export default class Matrix {
   }
 
   /**
+   * Transforms an axis-aligned bounding box defined by two opposite corners
+   * (ax, ay) and (bx, by) into a world-space axis-aligned bounding box.
+   *
+   * The input points may be in any order (min/max not required).
+   *
+   * This accounts for translation, rotation, scaling, and skew
+   * from the source matrix.
+   **/
+  static transformAABB(source: Matrix, ax: number, ay: number, bx: number, by: number, out: Rectangle): void {
+    const { a, b, c, d } = source;
+
+    let tx0 = a * ax + c * ay;
+    let tx1 = tx0;
+    let ty0 = b * ax + d * ay;
+    let ty1 = ty0;
+
+    let tx = a * bx + c * ay;
+    let ty = b * bx + d * ay;
+
+    if (tx < tx0) tx0 = tx;
+    if (ty < ty0) ty0 = ty;
+    if (tx > tx1) tx1 = tx;
+    if (ty > ty1) ty1 = ty;
+
+    tx = a * bx + c * by;
+    ty = b * bx + d * by;
+
+    if (tx < tx0) tx0 = tx;
+    if (ty < ty0) ty0 = ty;
+    if (tx > tx1) tx1 = tx;
+    if (ty > ty1) ty1 = ty;
+
+    tx = a * ax + c * by;
+    ty = b * ax + d * by;
+
+    if (tx < tx0) tx0 = tx;
+    if (ty < ty0) ty0 = ty;
+    if (tx > tx1) tx1 = tx;
+    if (ty > ty1) ty1 = ty;
+
+    out.x = tx0 + source.tx;
+    out.y = ty0 + source.ty;
+    out.width = tx1 - tx0;
+    out.height = ty1 - ty0;
+  }
+
+  /**
    * Transforms a point using the given matrix.
    *
    * If you do not provide a targetPoint, a new Point() will be created
    */
   static transformPoint(sourceMatrix: Matrix, sourcePoint: Point, targetPoint?: Point): Point {
     targetPoint = targetPoint ?? new Point();
-    targetPoint.x = sourcePoint.x * sourceMatrix.a + sourcePoint.y * sourceMatrix.c + sourceMatrix.tx;
-    targetPoint.y = sourcePoint.x * sourceMatrix.b + sourcePoint.y * sourceMatrix.d + sourceMatrix.ty;
+    this.transformXY(sourceMatrix, sourcePoint.x, sourcePoint.y, targetPoint);
     return targetPoint;
   }
 
@@ -393,45 +479,16 @@ export default class Matrix {
    **/
   static transformRect(sourceMatrix: Matrix, sourceRect: Rectangle, targetRect?: Rectangle): Rectangle {
     targetRect = targetRect ?? new Rectangle();
-
-    const { a, b, c, d } = sourceMatrix;
-    const { x, y, width, height } = sourceRect;
-
-    let tx0 = a * x + c * y;
-    let tx1 = tx0;
-    let ty0 = b * x + d * y;
-    let ty1 = ty0;
-
-    let tx = a * (x + width) + c * y;
-    let ty = b * (x + width) + d * y;
-
-    if (tx < tx0) tx0 = tx;
-    if (ty < ty0) ty0 = ty;
-    if (tx > tx1) tx1 = tx;
-    if (ty > ty1) ty1 = ty;
-
-    tx = a * (x + width) + c * (y + height);
-    ty = b * (x + width) + d * (y + height);
-
-    if (tx < tx0) tx0 = tx;
-    if (ty < ty0) ty0 = ty;
-    if (tx > tx1) tx1 = tx;
-    if (ty > ty1) ty1 = ty;
-
-    tx = a * x + c * (y + height);
-    ty = b * x + d * (y + height);
-
-    if (tx < tx0) tx0 = tx;
-    if (ty < ty0) ty0 = ty;
-    if (tx > tx1) tx1 = tx;
-    if (ty > ty1) ty1 = ty;
-
-    targetRect.x = tx0 + sourceMatrix.tx;
-    targetRect.y = ty0 + sourceMatrix.ty;
-    targetRect.width = tx1 - tx0;
-    targetRect.height = ty1 - ty0;
-
+    this.transformAABB(sourceMatrix, sourceRect.x, sourceRect.y, sourceRect.right, sourceRect.bottom, targetRect);
     return targetRect;
+  }
+
+  /**
+   * Transforms an (x, y) point using the given matrix.
+   */
+  static transformXY(source: Matrix, x: number, y: number, out: Point): void {
+    out.x = x * source.a + y * source.c + source.tx;
+    out.y = x * source.b + y * source.d + source.ty;
   }
 
   /**
