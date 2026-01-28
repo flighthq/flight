@@ -57,9 +57,9 @@ export default class Vector3D
     **/
     static angleBetween(a: Vector3D, b: Vector3D): number
     {
-        var la = a.length;
-        var lb = b.length;
-        var dot = Vector3D.dotProduct(a, b);
+        const la = a.length;
+        const lb = b.length;
+        let dot = Vector3D.dotProduct(a, b);
 
         if (la != 0)
         {

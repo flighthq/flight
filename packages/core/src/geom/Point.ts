@@ -43,8 +43,8 @@ export default class Point
 
     static distance(a: Point, b: Point): number
     {
-        var dx = a.x - b.x;
-        var dy = a.y - b.y;
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
         return Math.sqrt(dx * dx + dy * dy);
     }
 

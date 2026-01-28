@@ -191,7 +191,6 @@ export default class Rectangle {
 
     // Get & Set Methods
 
-
     get bottom(): number {
         return this.y + this.height;
     }
