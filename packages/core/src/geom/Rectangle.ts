@@ -40,7 +40,6 @@ export default class Rectangle {
     const x1 = Math.max(source.x, source.right);
     const y0 = Math.min(source.y, source.bottom);
     const y1 = Math.max(source.y, source.bottom);
-
     return x >= x0 && x < x1 && y >= y0 && y < y1;
   }
 
@@ -77,10 +76,7 @@ export default class Rectangle {
       return true;
     } else {
       return (
-        source.x === other.x &&
-        source.y === other.y &&
-        source.width === other.width &&
-        source.height === other.height
+        source.x === other.x && source.y === other.y && source.width === other.width && source.height === other.height
       );
     }
   }

@@ -249,11 +249,7 @@ export default class Matrix {
    *
    * If you do not provide a targetPoint, a new Point() will be created
    */
-  static inverseTransformPoint(
-    sourceMatrix: Matrix,
-    sourcePoint: Point,
-    targetPoint?: Point,
-  ): Point {
+  static inverseTransformPoint(sourceMatrix: Matrix, sourcePoint: Point, targetPoint?: Point): Point {
     targetPoint = targetPoint ?? new Point();
     const norm = sourceMatrix.a * sourceMatrix.d - sourceMatrix.b * sourceMatrix.c;
 
@@ -263,12 +259,10 @@ export default class Matrix {
     } else {
       const px =
         (1.0 / norm) *
-        (sourceMatrix.c * (sourceMatrix.ty - sourcePoint.y) +
-          sourceMatrix.d * (sourcePoint.x - sourceMatrix.tx));
+        (sourceMatrix.c * (sourceMatrix.ty - sourcePoint.y) + sourceMatrix.d * (sourcePoint.x - sourceMatrix.tx));
       targetPoint.y =
         (1.0 / norm) *
-        (sourceMatrix.a * (sourcePoint.y - sourceMatrix.ty) +
-          sourceMatrix.b * (sourceMatrix.tx - sourcePoint.x));
+        (sourceMatrix.a * (sourcePoint.y - sourceMatrix.ty) + sourceMatrix.b * (sourceMatrix.tx - sourcePoint.x));
       targetPoint.x = px;
     }
 
@@ -363,15 +357,7 @@ export default class Matrix {
     target.ty *= sy;
   }
 
-  static setTo(
-    target: Matrix,
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-    tx: number,
-    ty: number,
-  ): void {
+  static setTo(target: Matrix, a: number, b: number, c: number, d: number, tx: number, ty: number): void {
     target.a = a;
     target.b = b;
     target.c = c;
@@ -391,10 +377,8 @@ export default class Matrix {
    */
   static transformPoint(sourceMatrix: Matrix, sourcePoint: Point, targetPoint?: Point): Point {
     targetPoint = targetPoint ?? new Point();
-    targetPoint.x =
-      sourcePoint.x * sourceMatrix.a + sourcePoint.y * sourceMatrix.c + sourceMatrix.tx;
-    targetPoint.y =
-      sourcePoint.x * sourceMatrix.b + sourcePoint.y * sourceMatrix.d + sourceMatrix.ty;
+    targetPoint.x = sourcePoint.x * sourceMatrix.a + sourcePoint.y * sourceMatrix.c + sourceMatrix.tx;
+    targetPoint.y = sourcePoint.x * sourceMatrix.b + sourcePoint.y * sourceMatrix.d + sourceMatrix.ty;
     return targetPoint;
   }
 
@@ -407,11 +391,7 @@ export default class Matrix {
    *
    * If you do not provide a targetRect, a new Rectangle() will be created
    **/
-  static transformRect(
-    sourceMatrix: Matrix,
-    sourceRect: Rectangle,
-    targetRect?: Rectangle,
-  ): Rectangle {
+  static transformRect(sourceMatrix: Matrix, sourceRect: Rectangle, targetRect?: Rectangle): Rectangle {
     targetRect = targetRect ?? new Rectangle();
 
     const { a, b, c, d } = sourceMatrix;

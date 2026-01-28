@@ -146,14 +146,7 @@ describe('Matrix', () => {
     it('should handle rotation transformation', () => {
       const m1 = new Matrix(1, 0, 0, 1, 0, 0); // Identity matrix
       const angle = Math.PI / 4; // 45 degrees rotation
-      const m2 = new Matrix(
-        Math.cos(angle),
-        Math.sin(angle),
-        -Math.sin(angle),
-        Math.cos(angle),
-        0,
-        0,
-      ); // Rotation matrix
+      const m2 = new Matrix(Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0); // Rotation matrix
       Matrix.concat(m1, m2);
       expect(m1.a).toBeCloseTo(Math.cos(angle), 5);
       expect(m1.b).toBeCloseTo(Math.sin(angle), 5);

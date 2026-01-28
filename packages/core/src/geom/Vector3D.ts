@@ -176,12 +176,7 @@ export default class Vector3D {
    * The two Vector3D objects are nearly equal if the value of all the elements of the two
    * vertices are equal, or the result of the comparison is within the tolerance range.
    **/
-  static nearEquals(
-    a: Vector3D,
-    b: Vector3D,
-    tolerance: number,
-    compareW: boolean = false,
-  ): boolean {
+  static nearEquals(a: Vector3D, b: Vector3D, tolerance: number, compareW: boolean = false): boolean {
     return (
       Math.abs(a.x - b.x) < tolerance &&
       Math.abs(a.y - b.y) < tolerance &&

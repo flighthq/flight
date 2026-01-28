@@ -140,9 +140,7 @@ describe('DisplayObject', () => {
 
     it('marks transform dirty when changed', () => {
       displayObject.rotation = 45;
-      expect(getDirtyFlags(displayObject)).toBe(
-        DirtyFlags.Transform | DirtyFlags.TransformedBounds,
-      );
+      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
     });
   });
 
@@ -150,9 +148,7 @@ describe('DisplayObject', () => {
     it('marks transform dirty when changed', () => {
       displayObject.scaleX = 2;
 
-      expect(getDirtyFlags(displayObject)).toBe(
-        DirtyFlags.Transform | DirtyFlags.TransformedBounds,
-      );
+      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
     });
 
     it('correctly affects local transform with rotation', () => {
@@ -171,9 +167,7 @@ describe('DisplayObject', () => {
     it('marks transform dirty when changed', () => {
       displayObject.scaleY = 3;
 
-      expect(getDirtyFlags(displayObject)).toBe(
-        DirtyFlags.Transform | DirtyFlags.TransformedBounds,
-      );
+      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
     });
 
     it('correctly affects local transform with rotation', () => {
@@ -228,9 +222,7 @@ describe('DisplayObject', () => {
 
     it('marks transform dirty when changed', () => {
       displayObject.x = 10;
-      expect(getDirtyFlags(displayObject)).toBe(
-        DirtyFlags.Transform | DirtyFlags.TransformedBounds,
-      );
+      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
     });
 
     it('updates translation in local transform', () => {
@@ -248,9 +240,7 @@ describe('DisplayObject', () => {
 
     it('marks transform dirty when changed', () => {
       displayObject.y = 20;
-      expect(getDirtyFlags(displayObject)).toBe(
-        DirtyFlags.Transform | DirtyFlags.TransformedBounds,
-      );
+      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
     });
 
     it('updates translation in local transform', () => {
@@ -267,9 +257,7 @@ describe('DisplayObject', () => {
       it('transform invalidation also dirties transformed bounds', () => {
         displayObject.rotation = 45;
 
-        expect(getDirtyFlags(displayObject)).toBe(
-          DirtyFlags.Transform | DirtyFlags.TransformedBounds,
-        );
+        expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
       });
 
       it('bounds invalidation also dirties transformed bounds', () => {

@@ -38,8 +38,6 @@ describe('DirtyFlags enum', () => {
     let flags = DirtyFlags.Render | DirtyFlags.Children; // 31
     flags &= ~DirtyFlags.Clip; // Remove Clip (4)
     expect((flags & DirtyFlags.Clip) !== 0).toBe(false);
-    expect(flags).toBe(
-      DirtyFlags.Transform | DirtyFlags.Appearance | DirtyFlags.CacheAsBitmap | DirtyFlags.Children,
-    ); // 27
+    expect(flags).toBe(DirtyFlags.Transform | DirtyFlags.Appearance | DirtyFlags.CacheAsBitmap | DirtyFlags.Children); // 27
   });
 });
