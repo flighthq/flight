@@ -35,9 +35,14 @@ describe('DirtyFlags enum', () => {
   });
 
   it('should correctly unset a flag', () => {
-    let flags = DirtyFlags.Render | DirtyFlags.Children; // 31
-    flags &= ~DirtyFlags.Clip; // Remove Clip (4)
+    let flags =
+      DirtyFlags.Transform |
+      DirtyFlags.Appearance |
+      DirtyFlags.CacheAsBitmap |
+      DirtyFlags.Children |
+      DirtyFlags.Children;
+    flags &= ~DirtyFlags.Clip;
     expect((flags & DirtyFlags.Clip) !== 0).toBe(false);
-    expect(flags).toBe(DirtyFlags.Transform | DirtyFlags.Appearance | DirtyFlags.CacheAsBitmap | DirtyFlags.Children); // 27
+    expect(flags).toBe(DirtyFlags.Transform | DirtyFlags.Appearance | DirtyFlags.CacheAsBitmap | DirtyFlags.Children);
   });
 });
