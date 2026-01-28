@@ -303,7 +303,7 @@ export default class Matrix {
    * applying the original matrix.
    **/
   static invert(target: Matrix): Matrix {
-    Matrix.inverse(target, target);
+    this.inverse(target, target);
     return target;
   }
 

@@ -50,7 +50,7 @@ export default class Point {
    * @legacy Like lerp, except argument order is reversed
    */
   static interpolate(end: Point, start: Point, t: number, target?: Point): Point {
-    return Point.lerp(start, end, t, target);
+    return this.lerp(start, end, t, target);
   }
 
   /**
