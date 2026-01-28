@@ -1,4 +1,4 @@
-import { MatrixPool, Rectangle } from '@flighthq/core';
+import { MatrixPool, Point, Rectangle, RectanglePool } from '@flighthq/core';
 import { Matrix } from '@flighthq/core';
 
 import type { BitmapDrawable } from './BitmapDrawable.js';
@@ -57,21 +57,21 @@ export default class DisplayObject implements BitmapDrawable {
    * Returns a new Rectangle().
    * @see getBoundsTo
    **/
-  static getBounds(source: DisplayObject, targetCoordinateSpace: DisplayObject, targetRect?: Rectangle): Rectangle {
-    targetRect = targetRect ?? new Rectangle();
-    this.getBoundsTo(targetRect, source, targetCoordinateSpace);
-    return targetRect;
+  static getBounds(source: DisplayObject, targetCoordinateSpace: DisplayObject | null): Rectangle {
+    const out = new Rectangle();
+    this.getBoundsTo(out, source, targetCoordinateSpace);
+    return out;
   }
 
   /**
    * Writes the rectangle that defines the area of the display object relative
    * to the coordinate system of the `targetCoordinateSpace` object to out.
    **/
-  static getBoundsTo(out: Rectangle, source: DisplayObject, targetCoordinateSpace: DisplayObject): void {
-    if (source !== targetCoordinateSpace) DisplayObject.__updateWorldTransform(source);
-    DisplayObject.__updateWorldTransform(targetCoordinateSpace);
-    DisplayObject.__updateLocalBounds(source);
-    if (targetCoordinateSpace !== source) {
+  static getBoundsTo(out: Rectangle, source: DisplayObject, targetCoordinateSpace: DisplayObject | null): void {
+    if (source !== targetCoordinateSpace) this.__updateWorldTransform(source);
+    if (targetCoordinateSpace !== null && targetCoordinateSpace !== source) {
+      this.__updateWorldTransform(targetCoordinateSpace);
+      this.__updateLocalBounds(source);
       const transform = MatrixPool.get();
       Matrix.inverse(transform, targetCoordinateSpace.__worldTransform);
       Matrix.multiply(transform, transform, source.__worldTransform);
@@ -80,6 +80,74 @@ export default class DisplayObject implements BitmapDrawable {
     } else {
       Rectangle.copyFrom(out, source.__localBounds);
     }
+  }
+
+  /**
+   * Returns a rectangle that defines the boundary of the display object, based
+   * on the coordinate system defined by the `targetCoordinateSpace`
+   * parameter, excluding any strokes on shapes. The values that the
+   * `getRect()` method returns are the same or smaller than those
+   * returned by the `getBounds()` method.
+   *
+   * Returns a new Rectangle().
+   * @see getRectTo
+   **/
+  static getRect(source: DisplayObject, targetCoordinateSpace: DisplayObject | null): Rectangle {
+    const out = new Rectangle();
+    this.getRectTo(out, source, targetCoordinateSpace);
+    return out;
+  }
+
+  /**
+   * Returns a rectangle that defines the boundary of the display object, based
+   * on the coordinate system defined by the `targetCoordinateSpace`
+   * parameter, excluding any strokes on shapes. The values that the
+   * `getRect()` method returns are the same or smaller than those
+   * returned by the `getBounds()` method.
+   **/
+  static getRectTo(out: Rectangle, source: DisplayObject, targetCoordinateSpace: DisplayObject | null): void {
+    // TODO: Fill bounds only
+    this.getBoundsTo(out, source, targetCoordinateSpace);
+  }
+
+  /**
+   * Converts the `point` object from the Stage (global) coordinates
+   * to the display object's (local) coordinates.
+   *
+   * Returns a new Point()
+   * @see globalToLocalTo
+   **/
+  static globalToLocal(source: DisplayObject, pos: Point): Point {
+    const out = new Point();
+    this.globalToLocalTo(out, source, pos);
+    return out;
+  }
+
+  /**
+   * Converts the `point` object from the Stage (global) coordinates
+   * to the display object's (local) coordinates.
+   **/
+  static globalToLocalTo(out: Point, source: DisplayObject, pos: Point): void {
+    this.__updateWorldTransform(source);
+    Matrix.inverseTransformXY(out, source.__worldTransform, pos.x, pos.y);
+  }
+
+  /**
+   * Evaluates the bounding box of the display object to see if it overlaps or
+   * intersects with the bounding box of the `obj` display object.
+   **/
+  static hitTestObject(source: DisplayObject, other: DisplayObject): boolean {
+    if (other.__parent !== null && source.__parent !== null) {
+      this.__updateLocalBounds(source);
+      const sourceBounds = source.__localBounds;
+      const otherBounds = RectanglePool.get();
+      // compare other in source's coordinate space
+      this.getBoundsTo(otherBounds, other, source);
+      const result = Rectangle.intersects(sourceBounds, otherBounds);
+      RectanglePool.release(otherBounds);
+      return result;
+    }
+    return false;
   }
 
   /**
@@ -140,13 +208,13 @@ export default class DisplayObject implements BitmapDrawable {
   private static __updateWorldTransform(target: DisplayObject): void {
     // Recursively allow parents to update if out-of-date
     if (target.__parent !== null) {
-      DisplayObject.__updateWorldTransform(target.__parent);
+      this.__updateWorldTransform(target.__parent);
     }
     const parentTransformID = target.__parent !== null ? target.__parent.__worldTransformID : 0;
     // Update if local transform ID or parent world transform ID changed
     if (target.__worldTransformID !== target.__localTransformID || target.__parentTransformID !== parentTransformID) {
       // Ensure local transform is accurate
-      DisplayObject.__updateLocalTransform(target);
+      this.__updateLocalTransform(target);
       if (target.__parent !== null) {
         Matrix.multiply(target.__worldTransform, target.__parent.__worldTransform, target.__localTransform);
       } else {
