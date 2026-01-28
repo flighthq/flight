@@ -54,6 +54,6 @@ describe('RectanglePool', () => {
   });
 
   test('release() handles null safely', () => {
-    expect(() => RectanglePool.release(null as any)).not.toThrow();
+    expect(() => RectanglePool.release(null as unknown as Rectangle)).not.toThrow();
   });
 });
