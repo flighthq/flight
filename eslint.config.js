@@ -7,6 +7,9 @@ import prettierConfig from 'eslint-config-prettier/flat';
 
 export default [
   {
+    ignores: ['**/dist/**', '**/build/**', '**/coverage/**', '**/node_modules/**'],
+  },
+  {
     files: ['**/*.{ts,tsx}'],
 
     languageOptions: {
