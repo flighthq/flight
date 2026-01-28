@@ -1,6 +1,5 @@
-import type { DirtyFlags } from "./DirtyFlags";
+import type { DirtyFlags } from './DirtyFlags';
 
-export interface Renderable
-{
-    readonly __dirtyFlags: DirtyFlags;
+export interface Renderable {
+  readonly __dirtyFlags: DirtyFlags;
 }

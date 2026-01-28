@@ -1,4 +1,1 @@
-export default class Stage
-{
-
-}
+export default class Stage {}

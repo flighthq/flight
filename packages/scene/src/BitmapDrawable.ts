@@ -1,4 +1,1 @@
-export interface BitmapDrawable
-{
-
-}
+export interface BitmapDrawable { }

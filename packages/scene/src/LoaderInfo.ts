@@ -1,4 +1,1 @@
-export default class LoaderInfo
-{
-
-}
+export default class LoaderInfo {}

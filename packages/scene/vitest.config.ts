@@ -3,11 +3,11 @@ import { defineConfig, mergeConfig } from 'vitest/config';
 import baseConfig from '../../vitest.config.base.js';
 
 export default mergeConfig(
-    baseConfig,
-    defineConfig({
-        test: {
-            name: '@flighthq/scene',
-            include: ['src/**/*.test.ts'],
-        },
-    }),
+  baseConfig,
+  defineConfig({
+    test: {
+      name: '@flighthq/scene',
+      include: ['src/**/*.test.ts'],
+    },
+  }),
 );

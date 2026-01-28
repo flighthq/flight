@@ -1,4 +1,1 @@
-export default class Shader
-{
-
-}
+export default class Shader {}
