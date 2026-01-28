@@ -1,36 +1,38 @@
 {
-    "name": "flight",
-    "private": true,
-    "type": "module",
-    "workspaces": [
-        "packages/*"
-    ],
-    "scripts": {
-        "build": "tsc -b",
-        "clean": "tsc -b --clean",
-        "lint": "eslint -c eslint.config.js",
-        "lint:fix": "eslint -c eslint.config.js --fix",
-        "test": "npm run test:run --workspaces"
-    },
-    "devDependencies": {
-        "@testing-library/dom": "^10.4.1",
-        "@testing-library/jest-dom": "^6.9.1",
-        "@typescript-eslint/eslint-plugin": "^8.53.0",
-        "@typescript-eslint/parser": "^8.53.0",
-        "@vitest/coverage-v8": "^4.0.17",
-        "eslint": "^9.39.2",
-        "eslint-config-prettier": "^10.1.8",
-        "eslint-define-config": "^2.1.0",
-        "eslint-import-resolver-typescript": "^4.4.4",
-        "eslint-plugin-import": "^2.32.0",
-        "eslint-plugin-prettier": "^5.5.5",
-        "eslint-plugin-simple-import-sort": "^12.1.1",
-        "eslint-plugin-unicorn": "^62.0.0",
-        "jsdom": "^27.4.0",
-        "prettier": "3.8.1",
-        "typescript": "^5.3.0",
-        "typescript-eslint": "^8.53.0",
-        "vite-tsconfig-paths": "^6.0.4",
-        "vitest": "^4.0.17"
-    }
+  "name": "flight",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "lint": "eslint -c eslint.config.js",
+    "lint:fix": "eslint -c eslint.config.js --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "test": "npm run test:run --workspaces"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@typescript-eslint/eslint-plugin": "^8.53.0",
+    "@typescript-eslint/parser": "^8.53.0",
+    "@vitest/coverage-v8": "^4.0.17",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-define-config": "^2.1.0",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-unicorn": "^62.0.0",
+    "jsdom": "^27.4.0",
+    "prettier": "3.8.1",
+    "typescript": "^5.3.0",
+    "typescript-eslint": "^8.53.0",
+    "vite-tsconfig-paths": "^6.0.4",
+    "vitest": "^4.0.17"
+  }
 }

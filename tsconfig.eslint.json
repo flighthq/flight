@@ -1,19 +1,10 @@
 {
-    "extends": "./tsconfig.base.json",
-    "compilerOptions": {
-        "noEmit": true, // Prevent emitting JS files during linting
-        "allowJs": true, // Allows JS files to be linted
-        "skipLibCheck": true // Skips type checking of declaration files (.d.ts)
-    },
-    "include": [
-        "**/*.ts",
-        "**/*.tsx",
-        "**/*.js",
-        "**/*.jsx"
-    ],
-    "exclude": [
-        "node_modules",
-        "dist",
-        "coverage"
-    ]
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true, // Prevent emitting JS files during linting
+    "allowJs": true, // Allows JS files to be linted
+    "skipLibCheck": true // Skips type checking of declaration files (.d.ts)
+  },
+  "include": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+  "exclude": ["node_modules", "dist", "coverage"]
 }
