@@ -17,6 +17,13 @@ describe('DisplayObject', () => {
     return displayObject.__dirtyFlags;
   }
 
+  function getLocalBounds(displayObject: DisplayObject): Rectangle {
+    // @ts-expect-error: protected
+    DisplayObject.__updateLocalBounds(displayObject);
+    // @ts-expect-error: protected
+    return displayObject.__localBounds;
+  }
+
   function getLocalTransform(displayObject: DisplayObject): Matrix {
     // @ts-expect-error: protected
     DisplayObject.__updateLocalTransform(displayObject);
@@ -251,6 +258,88 @@ describe('DisplayObject', () => {
   });
 
   // Methods
+
+  describe('getBounds', () => {
+    let root: DisplayObject;
+    let child: DisplayObject;
+    let grandChild: DisplayObject;
+
+    beforeEach(() => {
+      root = new DisplayObject();
+      child = new DisplayObject();
+      grandChild = new DisplayObject();
+
+      // fake hierarchy
+      // @ts-expect-error: protected
+      child.__parent = root;
+      // @ts-expect-error: protected
+      grandChild.__parent = child;
+
+      // fake local bounds
+      Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
+      Rectangle.setTo(getLocalBounds(child), 10, 20, 50, 50);
+      Rectangle.setTo(getLocalBounds(grandChild), 5, 5, 10, 10);
+    });
+
+    it('should return local bounds when targetCoordinateSpace is self', () => {
+      const bounds = DisplayObject.getBounds(child, child);
+      expect(bounds).toEqual(getLocalBounds(child));
+    });
+
+    it('should compute bounds relative to parent', () => {
+      const bounds = DisplayObject.getBounds(child, root);
+      expect(bounds.x).toBeCloseTo(10);
+      expect(bounds.y).toBeCloseTo(20);
+      expect(bounds.width).toBeCloseTo(50);
+      expect(bounds.height).toBeCloseTo(50);
+    });
+
+    it('should compute bounds relative to nested child', () => {
+      const bounds = DisplayObject.getBounds(root, grandChild);
+      expect(bounds.width).toBeGreaterThan(0);
+      expect(bounds.height).toBeGreaterThan(0);
+      // exact numbers depend on transforms
+    });
+
+    it('should account for scaling in parent transforms', () => {
+      // child is 50x50, should be 100x150 now in parent coordinate space
+      child.scaleX = 2;
+      child.scaleY = 3;
+
+      const bounds = DisplayObject.getBounds(child, root);
+
+      expect(bounds.width).toBeCloseTo(50 * 2);
+      expect(bounds.height).toBeCloseTo(50 * 3);
+    });
+
+    it('should account for translation in parent transforms', () => {
+      child.x = 5;
+      child.y = 7;
+
+      const bounds = DisplayObject.getBounds(grandChild, root);
+
+      // grandChild localBounds at (5,5) with no scaling
+      expect(bounds.x).toBeCloseTo(5 + 5); // parent offset + grandChild offset
+      expect(bounds.y).toBeCloseTo(7 + 5);
+    });
+
+    it('should write into a provided target rectangle', () => {
+      const targetRect = new Rectangle();
+      const bounds = DisplayObject.getBounds(child, root, targetRect);
+
+      expect(bounds).toBe(targetRect); // same object reused
+      expect(bounds.x).toBeCloseTo(10);
+      expect(bounds.y).toBeCloseTo(20);
+    });
+
+    it('should handle rotation', () => {
+      child.rotation = 90;
+
+      const bounds = DisplayObject.getBounds(child, root);
+      expect(bounds.width).toBeCloseTo(50); // roughly unchanged
+      expect(bounds.height).toBeCloseTo(50);
+    });
+  });
 
   describe('invalidate', () => {
     describe('dirty flag propagation', () => {
