@@ -39,15 +39,15 @@ export default class Matrix
 
     static concat(target: Matrix, source: Matrix): void
     {
-        var a1 = target.a * source.a + target.b * source.c;
+        const a1 = target.a * source.a + target.b * source.c;
         target.b = target.a * source.b + target.b * source.d;
         target.a = a1;
 
-        var c1 = target.c * source.a + target.d * source.c;
+        const c1 = target.c * source.a + target.d * source.c;
         target.d = target.c * source.b + target.d * source.d;
         target.c = c1;
 
-        var tx1 = target.tx * source.a + target.ty * source.c + source.tx;
+        const tx1 = target.tx * source.a + target.ty * source.c + source.tx;
         target.ty = target.tx * source.b + target.ty * source.d + source.ty;
         target.tx = tx1;
     }
@@ -171,8 +171,8 @@ export default class Matrix
 
         if (rotation != 0)
         {
-            var cos = Math.cos(rotation);
-            var sin = Math.sin(rotation);
+            const cos = Math.cos(rotation);
+            const sin = Math.sin(rotation);
 
             target.a = cos * scaleX;
             target.b = sin * scaleY;
@@ -205,8 +205,8 @@ export default class Matrix
         // rotation is clockwise
         if (rotation != 0)
         {
-            var cos = Math.cos(rotation);
-            var sin = Math.sin(rotation);
+            const cos = Math.cos(rotation);
+            const sin = Math.sin(rotation);
 
             target.b = sin * target.d;
             target.c = -sin * target.a;
@@ -274,7 +274,7 @@ export default class Matrix
     static inverseTransformPoint(sourceMatrix: Matrix, sourcePoint: Point, targetPoint?: Point): Point
     {
         targetPoint = targetPoint ?? new Point();
-        var norm = sourceMatrix.a * sourceMatrix.d - sourceMatrix.b * sourceMatrix.c;
+        const norm = sourceMatrix.a * sourceMatrix.d - sourceMatrix.b * sourceMatrix.c;
 
         if (norm == 0)
         {
@@ -283,7 +283,7 @@ export default class Matrix
         }
         else
         {
-            var px = (1.0 / norm) * (sourceMatrix.c * (sourceMatrix.ty - sourcePoint.y) + sourceMatrix.d * (sourcePoint.x - sourceMatrix.tx));
+            const px = (1.0 / norm) * (sourceMatrix.c * (sourceMatrix.ty - sourcePoint.y) + sourceMatrix.d * (sourcePoint.x - sourceMatrix.tx));
             targetPoint.y = (1.0 / norm) * (sourceMatrix.a * (sourcePoint.y - sourceMatrix.ty) + sourceMatrix.b * (sourceMatrix.tx - sourcePoint.x));
             targetPoint.x = px;
         }
@@ -298,7 +298,7 @@ export default class Matrix
     **/
     static invert(target: Matrix): Matrix
     {
-        var norm = target.a * target.d - target.b * target.c;
+        let norm = target.a * target.d - target.b * target.c;
 
         if (norm == 0)
         {
@@ -309,13 +309,13 @@ export default class Matrix
         else
         {
             norm = 1.0 / norm;
-            var a1 = target.d * norm;
+            const a1 = target.d * norm;
             target.d = target.a * norm;
             target.a = a1;
             target.b *= -norm;
             target.c *= -norm;
 
-            var tx1 = -target.a * target.tx - target.c * target.ty;
+            const tx1 = -target.a * target.tx - target.c * target.ty;
             target.ty = -target.b * target.tx - target.d * target.ty;
             target.tx = tx1;
         }
@@ -343,19 +343,19 @@ export default class Matrix
             mtx = my = 0
         **/
 
-        var cos = Math.cos(theta);
+        const cos = Math.cos(theta);
 
-        var sin = Math.sin(theta);
+        const sin = Math.sin(theta);
 
-        var a1 = target.a * cos - target.b * sin;
+        const a1 = target.a * cos - target.b * sin;
         target.b = target.a * sin + target.b * cos;
         target.a = a1;
 
-        var c1 = target.c * cos - target.d * sin;
+        const c1 = target.c * cos - target.d * sin;
         target.d = target.c * sin + target.d * cos;
         target.c = c1;
 
-        var tx1 = target.tx * cos - target.ty * sin;
+        const tx1 = target.tx * cos - target.ty * sin;
         target.ty = target.tx * sin + target.ty * cos;
         target.tx = tx1;
     }

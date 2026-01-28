@@ -10,8 +10,7 @@ import type Shader from './Shader.js';
 import type Stage from './Stage.js';
 import Transform from './Transform.js';
 
-export default class DisplayObject implements BitmapDrawable
-{
+export default class DisplayObject implements BitmapDrawable {
     protected __alpha: number = 1.0;
     protected __blendMode: BlendMode = BlendMode.Normal;
     protected __cacheAsBitmap: boolean = false;
@@ -44,8 +43,7 @@ export default class DisplayObject implements BitmapDrawable
     protected __x: number = 0;
     protected __y: number = 0;
 
-    constructor()
-    {
+    constructor() {
 
     }
 
@@ -53,27 +51,23 @@ export default class DisplayObject implements BitmapDrawable
      * Calling `invalidate()` signals that the current object has changed and
      * should be redrawn the next time it is eligible to be rendered.
      */
-    static invalidate(target: DisplayObject, flags: DirtyFlags = DirtyFlags.Render): void
-    {
+    static invalidate(target: DisplayObject, flags: DirtyFlags = DirtyFlags.Render): void {
         if ((target.__dirtyFlags & flags) === flags) return;
 
         target.__dirtyFlags |= flags;
 
-        if ((flags & DirtyFlags.Transform) !== 0)
-        {
+        if ((flags & DirtyFlags.Transform) !== 0) {
             // If transform changed, transformed bounds must also be updated
             target.__dirtyFlags |= DirtyFlags.TransformedBounds;
         }
 
-        if ((flags & DirtyFlags.Bounds) !== 0)
-        {
+        if ((flags & DirtyFlags.Bounds) !== 0) {
             // Changing local bounds also requires transformed bounds update
             target.__dirtyFlags |= DirtyFlags.TransformedBounds;
         }
     }
 
-    private static __updateLocalBounds(target: DisplayObject): void
-    {
+    private static __updateLocalBounds(target: DisplayObject): void {
         if ((target.__dirtyFlags & DirtyFlags.Bounds) === 0) return;
 
         // TODO, update __localBounds
@@ -83,8 +77,7 @@ export default class DisplayObject implements BitmapDrawable
         target.__dirtyFlags &= ~DirtyFlags.Bounds;
     }
 
-    private static __updateLocalTransform(target: DisplayObject): void
-    {
+    private static __updateLocalTransform(target: DisplayObject): void {
         if ((target.__dirtyFlags & DirtyFlags.Transform) === 0) return;
 
         const matrix = target.__localTransform;
@@ -98,8 +91,7 @@ export default class DisplayObject implements BitmapDrawable
         target.__dirtyFlags &= ~DirtyFlags.Transform;
     }
 
-    private static __updateTransformedBounds(target: DisplayObject): void
-    {
+    private static __updateTransformedBounds(target: DisplayObject): void {
         if ((target.__dirtyFlags & DirtyFlags.TransformedBounds) === 0) return;
 
         this.__updateLocalBounds(target);
@@ -112,13 +104,11 @@ export default class DisplayObject implements BitmapDrawable
 
     // Get & Set Methods
 
-    get alpha(): number
-    {
+    get alpha(): number {
         return this.__alpha;
     }
 
-    set alpha(value: number)
-    {
+    set alpha(value: number) {
         if (value > 1.0) value = 1.0;
         if (value < 0.0) value = 0.0;
 
@@ -129,13 +119,11 @@ export default class DisplayObject implements BitmapDrawable
         DisplayObject.invalidate(this, DirtyFlags.Appearance);
     }
 
-    get blendMode(): BlendMode
-    {
+    get blendMode(): BlendMode {
         return this.__blendMode;
     }
 
-    set blendMode(value: BlendMode)
-    {
+    set blendMode(value: BlendMode) {
         if (value === this.__blendMode) return;
 
         this.__blendMode = value;
@@ -143,13 +131,11 @@ export default class DisplayObject implements BitmapDrawable
         DisplayObject.invalidate(this, DirtyFlags.Appearance);
     }
 
-    get cacheAsBitmap(): boolean
-    {
+    get cacheAsBitmap(): boolean {
         return (this.__filters === null ? this.__cacheAsBitmap : true);
     }
 
-    set cacheAsBitmap(value: boolean)
-    {
+    set cacheAsBitmap(value: boolean) {
         if (value === this.__cacheAsBitmap) return;
 
         this.__cacheAsBitmap = value;
@@ -157,76 +143,60 @@ export default class DisplayObject implements BitmapDrawable
         DisplayObject.invalidate(this, DirtyFlags.CacheAsBitmap);
     }
 
-    get cacheAsBitmapMatrix(): Matrix | null
-    {
+    get cacheAsBitmapMatrix(): Matrix | null {
         return this.__cacheAsBitmapMatrix;
     }
 
-    set cacheAsBitmapMatrix(value: Matrix | null)
-    {
+    set cacheAsBitmapMatrix(value: Matrix | null) {
         if (Matrix.equals(value, this.__cacheAsBitmapMatrix)) return;
 
-        if (value !== null)
-        {
-            if (this.__cacheAsBitmapMatrix === null)
-            {
+        if (value !== null) {
+            if (this.__cacheAsBitmapMatrix === null) {
                 this.__cacheAsBitmapMatrix = Matrix.clone(value);
             }
-            else
-            {
+            else {
                 Matrix.copyFrom(this.__cacheAsBitmapMatrix, value);
             }
         }
-        else
-        {
+        else {
             this.__cacheAsBitmapMatrix = null;
         }
 
-        if (this.__cacheAsBitmap)
-        {
+        if (this.__cacheAsBitmap) {
             DisplayObject.invalidate(this, DirtyFlags.Transform);
         }
     }
 
-    get filters(): BitmapFilter[]
-    {
-        if (this.__filters === null)
-        {
-            return new Array();
+    get filters(): BitmapFilter[] {
+        if (this.__filters === null) {
+            return [];
         }
-        else
-        {
+        else {
             return this.__filters.slice();
         }
     }
 
-    set filters(value: BitmapFilter[] | null)
-    {
+    set filters(value: BitmapFilter[] | null) {
         if ((value === null || value.length == 0) && this.__filters === null) return;
 
-        if (value !== null)
-        {
-            this.__filters = value.map((filter) =>
-            {
+        if (value !== null) {
+            this.__filters = value.map((filter) => {
                 return BitmapFilter.clone(filter);
             });
         }
-        else
-        {
+        else {
             this.__filters = null;
         }
 
         DisplayObject.invalidate(this, DirtyFlags.CacheAsBitmap);
     }
 
-    get height(): number
-    {
+    get height(): number {
         DisplayObject.__updateTransformedBounds(this);
         return this.__transformedBounds.height;
     }
 
-    set height(value: number)
-    {
+    set height(value: number) {
         DisplayObject.__updateLocalBounds(this);
 
         if (this.__localBounds.height === 0) return;
@@ -235,8 +205,7 @@ export default class DisplayObject implements BitmapDrawable
         this.scaleY = value / this.__localBounds.height;
     }
 
-    get loaderInfo(): LoaderInfo | null
-    {
+    get loaderInfo(): LoaderInfo | null {
         // If loaderInfo was set by a Loader, return
         if (this.__loaderInfo !== null) return this.__loaderInfo;
 
@@ -244,22 +213,18 @@ export default class DisplayObject implements BitmapDrawable
         return this.root?.__loaderInfo ?? null;
     }
 
-    get mask(): DisplayObject | null
-    {
+    get mask(): DisplayObject | null {
         return this.__mask;
     }
 
-    set mask(value: DisplayObject | null)
-    {
+    set mask(value: DisplayObject | null) {
         if (value === this.__mask) return;
 
-        if (this.__mask !== null)
-        {
+        if (this.__mask !== null) {
             this.__mask.__maskedObject = null;
         }
 
-        if (value !== null)
-        {
+        if (value !== null) {
             value.__maskedObject = this;
         }
 
@@ -268,23 +233,19 @@ export default class DisplayObject implements BitmapDrawable
         DisplayObject.invalidate(this, DirtyFlags.Clip);
     }
 
-    get name(): string | null
-    {
+    get name(): string | null {
         return this.__name;
     }
 
-    set name(value: string | null)
-    {
+    set name(value: string | null) {
         this.__name = value;
     }
 
-    get opaqueBackground(): number | null
-    {
+    get opaqueBackground(): number | null {
         return this.__opaqueBackground;
     }
 
-    set opaqueBackground(value: number | null)
-    {
+    set opaqueBackground(value: number | null) {
         if (value === this.__opaqueBackground) return;
 
         this.__opaqueBackground = value;
@@ -292,33 +253,27 @@ export default class DisplayObject implements BitmapDrawable
         DisplayObject.invalidate(this, DirtyFlags.Appearance);
     }
 
-    get parent(): DisplayObject | null
-    {
+    get parent(): DisplayObject | null {
         return this.__parent;
     }
 
-    get root(): DisplayObject | null
-    {
+    get root(): DisplayObject | null {
         return this.__root;
     }
 
-    get rotation(): number
-    {
+    get rotation(): number {
         return this.__rotationAngle;
     }
 
-    set rotation(value: number)
-    {
+    set rotation(value: number) {
         if (value === this.__rotationAngle) return;
 
         // Normalize from -180 to 180
         value = value % 360.0;
-        if (value > 180.0)
-        {
+        if (value > 180.0) {
             value -= 360.0;
         }
-        else if (value < -180.0)
-        {
+        else if (value < -180.0) {
             value += 360.0;
         }
 
@@ -329,8 +284,7 @@ export default class DisplayObject implements BitmapDrawable
         else if (value === 90) { sin = 1; cos = 0; }
         else if (value === -90) { sin = -1; cos = 0; }
         else if (value === 180 || value === -180) { sin = 0; cos = -1; }
-        else
-        {
+        else {
             const rad = value * DEG_TO_RAD;
             sin = Math.sin(rad);
             cos = Math.cos(rad);
@@ -343,41 +297,34 @@ export default class DisplayObject implements BitmapDrawable
         DisplayObject.invalidate(this, DirtyFlags.Transform);
     }
 
-    get scale9Grid(): Rectangle | null
-    {
-        if (this.__scale9Grid == null)
-        {
+    get scale9Grid(): Rectangle | null {
+        if (this.__scale9Grid == null) {
             return null;
         }
 
         return Rectangle.clone(this.__scale9Grid);
     }
 
-    set scroll9Grid(value: Rectangle | null)
-    {
+    set scroll9Grid(value: Rectangle | null) {
         if (value === null && this.__scale9Grid === null) return;
         if (value !== null && this.__scale9Grid !== null && Rectangle.equals(this.__scale9Grid, value)) return;
 
-        if (value != null)
-        {
+        if (value != null) {
             if (this.__scale9Grid === null) this.__scale9Grid = new Rectangle();
             Rectangle.copyFrom(this.__scale9Grid, value);
         }
-        else
-        {
+        else {
             this.__scale9Grid = null;
         }
 
         DisplayObject.invalidate(this, DirtyFlags.Appearance | DirtyFlags.Bounds | DirtyFlags.Clip | DirtyFlags.Transform);
     }
 
-    get scaleX(): number
-    {
+    get scaleX(): number {
         return this.__scaleX;
     }
 
-    set scaleX(value: number)
-    {
+    set scaleX(value: number) {
         if (value === this.__scaleX) return;
 
         this.__scaleX = value;
@@ -385,13 +332,11 @@ export default class DisplayObject implements BitmapDrawable
         DisplayObject.invalidate(this, DirtyFlags.Transform);
     }
 
-    get scaleY(): number
-    {
+    get scaleY(): number {
         return this.__scaleY;
     }
 
-    set scaleY(value: number)
-    {
+    set scaleY(value: number) {
         if (value === this.__scaleY) return;
 
         this.__scaleY = value;
@@ -399,28 +344,23 @@ export default class DisplayObject implements BitmapDrawable
         DisplayObject.invalidate(this, DirtyFlags.Transform);
     }
 
-    get scrollRect(): Rectangle | null
-    {
-        if (this.__scrollRect === null)
-        {
+    get scrollRect(): Rectangle | null {
+        if (this.__scrollRect === null) {
             return null;
         }
 
         return Rectangle.clone(this.__scrollRect);
     }
 
-    set scrollRect(value: Rectangle | null)
-    {
+    set scrollRect(value: Rectangle | null) {
         if (value === null && this.__scrollRect === null) return;
         if (value !== null && this.__scrollRect !== null && Rectangle.equals(this.__scrollRect, value)) return;
 
-        if (value !== null)
-        {
+        if (value !== null) {
             if (this.__scrollRect === null) this.__scrollRect = new Rectangle();
             Rectangle.copyFrom(this.__scrollRect, value);
         }
-        else
-        {
+        else {
             this.__scrollRect = null;
         }
 
@@ -429,13 +369,11 @@ export default class DisplayObject implements BitmapDrawable
         DisplayObject.invalidate(this, DirtyFlags.Clip);
     }
 
-    get shader(): Shader | null
-    {
+    get shader(): Shader | null {
         return this.__shader;
     }
 
-    set shader(value: Shader | null)
-    {
+    set shader(value: Shader | null) {
         if (value === this.shader) return;
 
         this.__shader = value;
@@ -443,30 +381,24 @@ export default class DisplayObject implements BitmapDrawable
         DisplayObject.invalidate(this, DirtyFlags.Appearance);
     }
 
-    get stage(): Stage | null
-    {
+    get stage(): Stage | null {
         return this.__stage;
     }
 
-    get transform(): Transform
-    {
-        if (this.__transform === null)
-        {
+    get transform(): Transform {
+        if (this.__transform === null) {
             this.__transform = new Transform(this);
         }
 
         return this.__transform;
     }
 
-    set transform(value: Transform)
-    {
-        if (value === null)
-        {
+    set transform(value: Transform) {
+        if (value === null) {
             throw new TypeError("Parameter transform must be non-null.");
         }
 
-        if (this.__transform === null)
-        {
+        if (this.__transform === null) {
             this.__transform = new Transform(this);
         }
 
@@ -488,26 +420,22 @@ export default class DisplayObject implements BitmapDrawable
         // }
     }
 
-    get visible(): boolean
-    {
+    get visible(): boolean {
         return this.__visible;
     }
 
-    set visible(value: boolean)
-    {
+    set visible(value: boolean) {
         if (value === this.__visible) return;
         this.__visible = value;
         DisplayObject.invalidate(this, DirtyFlags.Appearance);
     }
 
-    get width(): number
-    {
+    get width(): number {
         DisplayObject.__updateTransformedBounds(this);
         return this.__transformedBounds.width;
     }
 
-    set width(value: number)
-    {
+    set width(value: number) {
         DisplayObject.__updateLocalBounds(this);
 
         if (this.__localBounds.width === 0) return;
@@ -516,13 +444,11 @@ export default class DisplayObject implements BitmapDrawable
         this.scaleX = value / this.__localBounds.width;
     }
 
-    get x(): number
-    {
+    get x(): number {
         return this.__x;
     }
 
-    set x(value: number)
-    {
+    set x(value: number) {
         if (value !== value) value = 0; // Flash converts NaN to 0
         if (value === this.__x) return;
 
@@ -531,13 +457,11 @@ export default class DisplayObject implements BitmapDrawable
         DisplayObject.invalidate(this, DirtyFlags.Transform);
     }
 
-    get y(): number
-    {
+    get y(): number {
         return this.__y;
     }
 
-    set y(value: number)
-    {
+    set y(value: number) {
         if (value !== value) value = 0; // Flash converts NaN to 0
         if (value === this.__y) return;
 

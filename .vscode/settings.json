@@ -1,12 +1,15 @@
 {
-  "editor.formatOnSave": true, // Enable auto-formatting on save (Prettier or other formatters)
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.codeActionsOnSave": {
-    "source.fixAll": "always" // Automatically fix all linting issues (including ESLint fixes)
+    "source.fixAll": "always"
   },
   "eslint.validate": [
-    "javascript", // Add JavaScript files
-    "javascriptreact", // Add React JavaScript files
-    "typescript", // TypeScript files
-    "typescriptreact" // React TypeScript files
-  ]
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "prettier.configPath": ".prettierrc.json",
+  "prettier.bracketSameLine": false
 }

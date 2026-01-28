@@ -23,6 +23,7 @@
         "eslint-define-config": "^2.1.0",
         "eslint-import-resolver-typescript": "^4.4.4",
         "eslint-plugin-import": "^2.32.0",
+        "eslint-plugin-prettier": "^5.5.5",
         "eslint-plugin-simple-import-sort": "^12.1.1",
         "eslint-plugin-unicorn": "^62.0.0",
         "jsdom": "^27.4.0",
