@@ -44,7 +44,7 @@ export default class Rectangle {
   }
 
   static containsPoint(source: Rectangle, point: Point): boolean {
-    return Rectangle.contains(source, point.x, point.y);
+    return this.contains(source, point.x, point.y);
   }
 
   static containsRect(source: Rectangle, other: Rectangle): boolean {
@@ -89,7 +89,7 @@ export default class Rectangle {
   }
 
   static inflatePoint(target: Rectangle, point: Point): void {
-    Rectangle.inflate(target, point.x, point.y);
+    this.inflate(target, point.x, point.y);
   }
 
   static intersection(a: Rectangle, b: Rectangle, target: Rectangle = new Rectangle()): Rectangle {
@@ -99,7 +99,7 @@ export default class Rectangle {
     const y1 = Math.min(a.maxY, b.maxY);
 
     if (x1 <= x0 || y1 <= y0) {
-      Rectangle.setEmpty(target);
+      this.setEmpty(target);
       return target;
     }
 
