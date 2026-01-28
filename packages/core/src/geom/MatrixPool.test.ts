@@ -56,6 +56,6 @@ describe('MatrixPool', () => {
   });
 
   test('release() handles null safely', () => {
-    expect(() => MatrixPool.release(null as any)).not.toThrow();
+    expect(() => MatrixPool.release(null as unknown as Matrix)).not.toThrow();
   });
 });

@@ -8,18 +8,19 @@ describe('DisplayObject', () => {
   let displayObject: DisplayObject;
 
   beforeEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     displayObject = new (DisplayObject as any)();
   });
 
   function getDirtyFlags(displayObject: DisplayObject): DirtyFlags {
-    // @ts-expect-error
+    // @ts-expect-error: protected
     return displayObject.__dirtyFlags;
   }
 
   function getLocalTransform(displayObject: DisplayObject): Matrix {
-    // @ts-expect-error
+    // @ts-expect-error: protected
     DisplayObject.__updateLocalTransform(displayObject);
-    // @ts-expect-error
+    // @ts-expect-error: protected
     return displayObject.__localTransform;
   }
 
@@ -106,11 +107,11 @@ describe('DisplayObject', () => {
       const mask = new DisplayObject();
 
       displayObject.mask = mask;
-      // @ts-expect-error
+      // @ts-expect-error: protected
       expect(mask.__maskedObject).toBe(displayObject);
 
       displayObject.mask = null;
-      // @ts-expect-error
+      // @ts-expect-error: protected
       expect(mask.__maskedObject).toBeNull();
     });
 
@@ -131,9 +132,9 @@ describe('DisplayObject', () => {
 
     it('uses fast cardinal sin/cos paths', () => {
       displayObject.rotation = 90;
-      // @ts-expect-error
+      // @ts-expect-error: protected
       expect(displayObject.__rotationSine).toBe(1);
-      // @ts-expect-error
+      // @ts-expect-error: protected
       expect(displayObject.__rotationCosine).toBe(0);
     });
 

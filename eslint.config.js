@@ -35,6 +35,8 @@ export default [
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/no-empty-object-type': ['error', { allowInterfaces: 'always' }],
+      '@typescript-eslint/no-namespace': 'off',
 
       // General
       'no-console': 'warn',
@@ -44,7 +46,7 @@ export default [
       'simple-import-sort/exports': 'error',
       'import/no-unresolved': 'error',
 
-      // Unicorn (tasteful subset)
+      // Unicorn
       'unicorn/prefer-module': 'error',
     },
 
