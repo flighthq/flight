@@ -57,11 +57,11 @@ describe('DisplayObjectContainer', () => {
     });
 
     it('throws if child is null', () => {
-      expect(() => DisplayObjectContainer.addChild(container, null as any)).toThrow(TypeError);
+      expect(() => DisplayObjectContainer.addChild(container, null as any)).toThrow(TypeError); // eslint-disable-line
     });
 
     it('throws if child is the same as target', () => {
-      expect(() => DisplayObjectContainer.addChild(container, container as any)).toThrow(TypeError);
+      expect(() => DisplayObjectContainer.addChild(container, container as any)).toThrow(TypeError); // eslint-disable-line
     });
 
     it('throws if index is out of bounds', () => {
@@ -113,7 +113,7 @@ describe('DisplayObjectContainer', () => {
     });
 
     it('removeChild is safe when child is null', () => {
-      expect(() => DisplayObjectContainer.removeChild(container, null as any)).not.toThrow();
+      expect(() => DisplayObjectContainer.removeChild(container, null as any)).not.toThrow(); // eslint-disable-line
     });
   });
 });
