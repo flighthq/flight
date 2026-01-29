@@ -3,6 +3,7 @@ import { Rectangle } from '@flighthq/math';
 
 import { DirtyFlags } from './DirtyFlags.js';
 import DisplayObject from './DisplayObject.js';
+import { internal } from './internal/DisplayObject.js';
 
 describe('DisplayObject', () => {
   let displayObject: DisplayObject;
@@ -12,23 +13,16 @@ describe('DisplayObject', () => {
     displayObject = new (DisplayObject as any)();
   });
 
-  function getDirtyFlags(displayObject: DisplayObject): DirtyFlags {
-    // @ts-expect-error: protected
-    return displayObject.__dirtyFlags;
-  }
-
   function getLocalBounds(displayObject: DisplayObject): Rectangle {
     // @ts-expect-error: protected
     DisplayObject.__updateLocalBounds(displayObject);
-    // @ts-expect-error: protected
-    return displayObject.__localBounds;
+    return displayObject[internal._localBounds];
   }
 
   function getLocalTransform(displayObject: DisplayObject): Matrix2D {
     // @ts-expect-error: protected
     DisplayObject.__updateLocalTransform(displayObject);
-    // @ts-expect-error: protected
-    return displayObject.__localTransform;
+    return displayObject[internal._localTransform];
   }
 
   // Constructor
@@ -66,36 +60,36 @@ describe('DisplayObject', () => {
 
     it('marks appearance dirty when changed', () => {
       displayObject.alpha = 0.5;
-      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Appearance);
+      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Appearance);
     });
 
     it('does not mark dirty when unchanged', () => {
       displayObject.alpha = 1;
-      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.None);
+      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.None);
     });
   });
 
   describe('cacheAsBitmap', () => {
     it('marks cacheAsBitmap dirty when toggled', () => {
       displayObject.cacheAsBitmap = true;
-      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.CacheAsBitmap);
+      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.CacheAsBitmap);
 
       displayObject.cacheAsBitmap = false;
-      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.CacheAsBitmap);
+      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.CacheAsBitmap);
     });
   });
 
   describe('cacheAsBitmapMatrix', () => {
     it('does not dirty transform if cacheAsBitmap is false', () => {
       displayObject.cacheAsBitmapMatrix = new Matrix2D();
-      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.None);
+      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.None);
     });
 
     it('marks transform dirty when cacheAsBitmap is true and matrix changes', () => {
       displayObject.cacheAsBitmap = true;
       displayObject.cacheAsBitmapMatrix = new Matrix2D(2, 0, 0, 2);
 
-      expect(DirtyFlags.has(getDirtyFlags(displayObject), DirtyFlags.Transform)).toBe(true);
+      expect(DirtyFlags.has(displayObject[internal._dirtyFlags], DirtyFlags.Transform)).toBe(true);
     });
 
     it('does not dirty transform if matrix values are equal', () => {
@@ -105,7 +99,7 @@ describe('DisplayObject', () => {
       displayObject.cacheAsBitmap = true;
       displayObject.cacheAsBitmapMatrix = m;
 
-      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.CacheAsBitmap);
+      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.CacheAsBitmap);
     });
   });
 
@@ -114,17 +108,15 @@ describe('DisplayObject', () => {
       const mask = new DisplayObject();
 
       displayObject.mask = mask;
-      // @ts-expect-error: protected
-      expect(mask.__maskedObject).toBe(displayObject);
+      expect(mask[internal._maskedObject]).toBe(displayObject);
 
       displayObject.mask = null;
-      // @ts-expect-error: protected
-      expect(mask.__maskedObject).toBeNull();
+      expect(mask[internal._maskedObject]).toBeNull();
     });
 
     it('marks clip dirty when changed', () => {
       displayObject.mask = new DisplayObject();
-      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Clip);
+      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Clip);
     });
   });
 
@@ -139,15 +131,13 @@ describe('DisplayObject', () => {
 
     it('uses fast cardinal sin/cos paths', () => {
       displayObject.rotation = 90;
-      // @ts-expect-error: protected
-      expect(displayObject.__rotationSine).toBe(1);
-      // @ts-expect-error: protected
-      expect(displayObject.__rotationCosine).toBe(0);
+      expect(displayObject[internal._rotationSine]).toBe(1);
+      expect(displayObject[internal._rotationCosine]).toBe(0);
     });
 
     it('marks transform dirty when changed', () => {
       displayObject.rotation = 45;
-      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
+      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
     });
   });
 
@@ -155,7 +145,7 @@ describe('DisplayObject', () => {
     it('marks transform dirty when changed', () => {
       displayObject.scaleX = 2;
 
-      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
+      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
     });
 
     it('correctly affects local transform with rotation', () => {
@@ -174,7 +164,7 @@ describe('DisplayObject', () => {
     it('marks transform dirty when changed', () => {
       displayObject.scaleY = 3;
 
-      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
+      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
     });
 
     it('correctly affects local transform with rotation', () => {
@@ -192,14 +182,14 @@ describe('DisplayObject', () => {
   describe('scrollRect', () => {
     it('marks clip dirty when changed', () => {
       displayObject.scrollRect = new Rectangle();
-      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Clip);
+      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Clip);
     });
   });
 
   describe('visible', () => {
     it('marks appearance dirty when changed', () => {
       displayObject.visible = false;
-      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Appearance);
+      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Appearance);
     });
   });
 
@@ -209,14 +199,14 @@ describe('DisplayObject', () => {
         displayObject.scaleX = 2;
         void displayObject.width;
 
-        expect(getDirtyFlags(displayObject) & DirtyFlags.TransformedBounds).toBe(0);
+        expect(displayObject[internal._dirtyFlags] & DirtyFlags.TransformedBounds).toBe(0);
       });
 
       it('re-dirties transformed bounds after transform change', () => {
         void displayObject.width;
         displayObject.x = 10;
 
-        expect(getDirtyFlags(displayObject) & DirtyFlags.TransformedBounds).toBeTruthy();
+        expect(displayObject[internal._dirtyFlags] & DirtyFlags.TransformedBounds).toBeTruthy();
       });
     });
   });
@@ -229,7 +219,7 @@ describe('DisplayObject', () => {
 
     it('marks transform dirty when changed', () => {
       displayObject.x = 10;
-      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
+      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
     });
 
     it('updates translation in local transform', () => {
@@ -247,7 +237,7 @@ describe('DisplayObject', () => {
 
     it('marks transform dirty when changed', () => {
       displayObject.y = 20;
-      expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
+      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
     });
 
     it('updates translation in local transform', () => {
@@ -270,10 +260,8 @@ describe('DisplayObject', () => {
       grandChild = new DisplayObject();
 
       // fake hierarchy
-      // @ts-expect-error: protected
-      child.__parent = root;
-      // @ts-expect-error: protected
-      grandChild.__parent = child;
+      child[internal._parent] = root as any; // eslint-disable-line
+      grandChild[internal._parent] = child as any; // eslint-disable-line
 
       // fake local bounds
       Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
@@ -343,10 +331,8 @@ describe('DisplayObject', () => {
       grandChild = new DisplayObject();
 
       // fake hierarchy
-      // @ts-expect-error: protected
-      child.__parent = root;
-      // @ts-expect-error: protected
-      grandChild.__parent = child;
+      child[internal._parent] = root as any; // eslint-disable-line
+      grandChild[internal._parent] = child as any; // eslint-disable-line
 
       // fake local bounds
       Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
@@ -422,10 +408,8 @@ describe('DisplayObject', () => {
       grandChild = new DisplayObject();
 
       // fake hierarchy
-      // @ts-expect-error: protected
-      child.__parent = root;
-      // @ts-expect-error: protected
-      grandChild.__parent = child;
+      child[internal._parent] = root as any; // eslint-disable-line
+      grandChild[internal._parent] = child as any; // eslint-disable-line
 
       // fake local bounds
       Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
@@ -495,10 +479,8 @@ describe('DisplayObject', () => {
       grandChild = new DisplayObject();
 
       // fake hierarchy
-      // @ts-expect-error: protected
-      child.__parent = root;
-      // @ts-expect-error: protected
-      grandChild.__parent = child;
+      child[internal._parent] = root as any; // eslint-disable-line
+      grandChild[internal._parent] = child as any; // eslint-disable-line
 
       // fake local bounds
       Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
@@ -568,8 +550,8 @@ describe('DisplayObject', () => {
 
     beforeEach(() => {
       obj = new DisplayObject();
-      // @ts-expect-error: protected
-      obj.__parent = new DisplayObject(); // fake parent so transforms update
+      // fake parent
+      obj[internal._parent] = new DisplayObject() as any; // eslint-disable-line
       obj.x = 10;
       obj.y = 20;
       obj.scaleX = 2;
@@ -604,8 +586,8 @@ describe('DisplayObject', () => {
 
       beforeEach(() => {
         obj = new DisplayObject();
-        // @ts-expect-error: protected
-        obj.__parent = new DisplayObject(); // fake parent so transforms update
+        // fake parent
+        obj[internal._parent] = new DisplayObject() as any; // eslint-disable-line
         obj.x = 10;
         obj.y = 20;
         obj.scaleX = 2;
@@ -650,10 +632,9 @@ describe('DisplayObject', () => {
       a = new DisplayObject();
       b = new DisplayObject();
 
-      // @ts-expect-error: protected
-      a.__parent = new DisplayObject();
-      // @ts-expect-error: protected
-      b.__parent = new DisplayObject();
+      // fake parent
+      a[internal._parent] = new DisplayObject() as any; // eslint-disable-line
+      b[internal._parent] = new DisplayObject() as any; // eslint-disable-line
 
       // Simple local bounds
       Rectangle.setTo(getLocalBounds(a), 0, 0, 10, 10);
@@ -683,8 +664,7 @@ describe('DisplayObject', () => {
     });
 
     it('returns false if either object has no parent', () => {
-      // @ts-expect-error: protected
-      b.__parent = null;
+      b[internal._parent] = null;
 
       const result = DisplayObject.hitTestObject(a, b);
       expect(result).toBe(false);
@@ -760,13 +740,13 @@ describe('DisplayObject', () => {
       it('transform invalidation also dirties transformed bounds', () => {
         displayObject.rotation = 45;
 
-        expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
+        expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
       });
 
       it('bounds invalidation also dirties transformed bounds', () => {
         DisplayObject.invalidate(displayObject, DirtyFlags.Bounds);
 
-        expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.Bounds | DirtyFlags.TransformedBounds);
+        expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Bounds | DirtyFlags.TransformedBounds);
       });
     });
   });
