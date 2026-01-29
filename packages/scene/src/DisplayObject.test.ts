@@ -3,7 +3,7 @@ import { Rectangle } from '@flighthq/math';
 
 import { DirtyFlags } from './DirtyFlags.js';
 import DisplayObject from './DisplayObject.js';
-import { internal } from './internal/DisplayObject.js';
+import { internal as $ } from './internal/DisplayObject.js';
 
 describe('DisplayObject', () => {
   let displayObject: DisplayObject;
@@ -16,13 +16,13 @@ describe('DisplayObject', () => {
   function getLocalBounds(displayObject: DisplayObject): Rectangle {
     // @ts-expect-error: protected
     DisplayObject.__updateLocalBounds(displayObject);
-    return displayObject[internal._localBounds];
+    return displayObject[$._localBounds];
   }
 
   function getLocalTransform(displayObject: DisplayObject): Matrix2D {
     // @ts-expect-error: protected
     DisplayObject.__updateLocalTransform(displayObject);
-    return displayObject[internal._localTransform];
+    return displayObject[$._localTransform];
   }
 
   // Constructor
@@ -60,36 +60,36 @@ describe('DisplayObject', () => {
 
     it('marks appearance dirty when changed', () => {
       displayObject.alpha = 0.5;
-      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Appearance);
+      expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.Appearance);
     });
 
     it('does not mark dirty when unchanged', () => {
       displayObject.alpha = 1;
-      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.None);
+      expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.None);
     });
   });
 
   describe('cacheAsBitmap', () => {
     it('marks cacheAsBitmap dirty when toggled', () => {
       displayObject.cacheAsBitmap = true;
-      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.CacheAsBitmap);
+      expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.CacheAsBitmap);
 
       displayObject.cacheAsBitmap = false;
-      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.CacheAsBitmap);
+      expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.CacheAsBitmap);
     });
   });
 
   describe('cacheAsBitmapMatrix', () => {
     it('does not dirty transform if cacheAsBitmap is false', () => {
       displayObject.cacheAsBitmapMatrix = new Matrix2D();
-      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.None);
+      expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.None);
     });
 
     it('marks transform dirty when cacheAsBitmap is true and matrix changes', () => {
       displayObject.cacheAsBitmap = true;
       displayObject.cacheAsBitmapMatrix = new Matrix2D(2, 0, 0, 2);
 
-      expect(DirtyFlags.has(displayObject[internal._dirtyFlags], DirtyFlags.Transform)).toBe(true);
+      expect(DirtyFlags.has(displayObject[$._dirtyFlags], DirtyFlags.Transform)).toBe(true);
     });
 
     it('does not dirty transform if matrix values are equal', () => {
@@ -99,7 +99,7 @@ describe('DisplayObject', () => {
       displayObject.cacheAsBitmap = true;
       displayObject.cacheAsBitmapMatrix = m;
 
-      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.CacheAsBitmap);
+      expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.CacheAsBitmap);
     });
   });
 
@@ -108,15 +108,15 @@ describe('DisplayObject', () => {
       const mask = new DisplayObject();
 
       displayObject.mask = mask;
-      expect(mask[internal._maskedObject]).toBe(displayObject);
+      expect(mask[$._maskedObject]).toBe(displayObject);
 
       displayObject.mask = null;
-      expect(mask[internal._maskedObject]).toBeNull();
+      expect(mask[$._maskedObject]).toBeNull();
     });
 
     it('marks clip dirty when changed', () => {
       displayObject.mask = new DisplayObject();
-      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Clip);
+      expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.Clip);
     });
   });
 
@@ -131,13 +131,13 @@ describe('DisplayObject', () => {
 
     it('uses fast cardinal sin/cos paths', () => {
       displayObject.rotation = 90;
-      expect(displayObject[internal._rotationSine]).toBe(1);
-      expect(displayObject[internal._rotationCosine]).toBe(0);
+      expect(displayObject[$._rotationSine]).toBe(1);
+      expect(displayObject[$._rotationCosine]).toBe(0);
     });
 
     it('marks transform dirty when changed', () => {
       displayObject.rotation = 45;
-      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
+      expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
     });
   });
 
@@ -145,7 +145,7 @@ describe('DisplayObject', () => {
     it('marks transform dirty when changed', () => {
       displayObject.scaleX = 2;
 
-      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
+      expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
     });
 
     it('correctly affects local transform with rotation', () => {
@@ -164,7 +164,7 @@ describe('DisplayObject', () => {
     it('marks transform dirty when changed', () => {
       displayObject.scaleY = 3;
 
-      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
+      expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
     });
 
     it('correctly affects local transform with rotation', () => {
@@ -182,14 +182,14 @@ describe('DisplayObject', () => {
   describe('scrollRect', () => {
     it('marks clip dirty when changed', () => {
       displayObject.scrollRect = new Rectangle();
-      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Clip);
+      expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.Clip);
     });
   });
 
   describe('visible', () => {
     it('marks appearance dirty when changed', () => {
       displayObject.visible = false;
-      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Appearance);
+      expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.Appearance);
     });
   });
 
@@ -199,14 +199,14 @@ describe('DisplayObject', () => {
         displayObject.scaleX = 2;
         void displayObject.width;
 
-        expect(displayObject[internal._dirtyFlags] & DirtyFlags.TransformedBounds).toBe(0);
+        expect(displayObject[$._dirtyFlags] & DirtyFlags.TransformedBounds).toBe(0);
       });
 
       it('re-dirties transformed bounds after transform change', () => {
         void displayObject.width;
         displayObject.x = 10;
 
-        expect(displayObject[internal._dirtyFlags] & DirtyFlags.TransformedBounds).toBeTruthy();
+        expect(displayObject[$._dirtyFlags] & DirtyFlags.TransformedBounds).toBeTruthy();
       });
     });
   });
@@ -219,7 +219,7 @@ describe('DisplayObject', () => {
 
     it('marks transform dirty when changed', () => {
       displayObject.x = 10;
-      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
+      expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
     });
 
     it('updates translation in local transform', () => {
@@ -237,7 +237,7 @@ describe('DisplayObject', () => {
 
     it('marks transform dirty when changed', () => {
       displayObject.y = 20;
-      expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
+      expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
     });
 
     it('updates translation in local transform', () => {
@@ -260,8 +260,8 @@ describe('DisplayObject', () => {
       grandChild = new DisplayObject();
 
       // fake hierarchy
-      child[internal._parent] = root as any; // eslint-disable-line
-      grandChild[internal._parent] = child as any; // eslint-disable-line
+      child[$._parent] = root as any; // eslint-disable-line
+      grandChild[$._parent] = child as any; // eslint-disable-line
 
       // fake local bounds
       Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
@@ -331,8 +331,8 @@ describe('DisplayObject', () => {
       grandChild = new DisplayObject();
 
       // fake hierarchy
-      child[internal._parent] = root as any; // eslint-disable-line
-      grandChild[internal._parent] = child as any; // eslint-disable-line
+      child[$._parent] = root as any; // eslint-disable-line
+      grandChild[$._parent] = child as any; // eslint-disable-line
 
       // fake local bounds
       Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
@@ -408,8 +408,8 @@ describe('DisplayObject', () => {
       grandChild = new DisplayObject();
 
       // fake hierarchy
-      child[internal._parent] = root as any; // eslint-disable-line
-      grandChild[internal._parent] = child as any; // eslint-disable-line
+      child[$._parent] = root as any; // eslint-disable-line
+      grandChild[$._parent] = child as any; // eslint-disable-line
 
       // fake local bounds
       Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
@@ -479,8 +479,8 @@ describe('DisplayObject', () => {
       grandChild = new DisplayObject();
 
       // fake hierarchy
-      child[internal._parent] = root as any; // eslint-disable-line
-      grandChild[internal._parent] = child as any; // eslint-disable-line
+      child[$._parent] = root as any; // eslint-disable-line
+      grandChild[$._parent] = child as any; // eslint-disable-line
 
       // fake local bounds
       Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
@@ -551,7 +551,7 @@ describe('DisplayObject', () => {
     beforeEach(() => {
       obj = new DisplayObject();
       // fake parent
-      obj[internal._parent] = new DisplayObject() as any; // eslint-disable-line
+      obj[$._parent] = new DisplayObject() as any; // eslint-disable-line
       obj.x = 10;
       obj.y = 20;
       obj.scaleX = 2;
@@ -587,7 +587,7 @@ describe('DisplayObject', () => {
       beforeEach(() => {
         obj = new DisplayObject();
         // fake parent
-        obj[internal._parent] = new DisplayObject() as any; // eslint-disable-line
+        obj[$._parent] = new DisplayObject() as any; // eslint-disable-line
         obj.x = 10;
         obj.y = 20;
         obj.scaleX = 2;
@@ -633,8 +633,8 @@ describe('DisplayObject', () => {
       b = new DisplayObject();
 
       // fake parent
-      a[internal._parent] = new DisplayObject() as any; // eslint-disable-line
-      b[internal._parent] = new DisplayObject() as any; // eslint-disable-line
+      a[$._parent] = new DisplayObject() as any; // eslint-disable-line
+      b[$._parent] = new DisplayObject() as any; // eslint-disable-line
 
       // Simple local bounds
       Rectangle.setTo(getLocalBounds(a), 0, 0, 10, 10);
@@ -664,7 +664,7 @@ describe('DisplayObject', () => {
     });
 
     it('returns false if either object has no parent', () => {
-      b[internal._parent] = null;
+      b[$._parent] = null;
 
       const result = DisplayObject.hitTestObject(a, b);
       expect(result).toBe(false);
@@ -740,13 +740,13 @@ describe('DisplayObject', () => {
       it('transform invalidation also dirties transformed bounds', () => {
         displayObject.rotation = 45;
 
-        expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
+        expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.Transform | DirtyFlags.TransformedBounds);
       });
 
       it('bounds invalidation also dirties transformed bounds', () => {
         DisplayObject.invalidate(displayObject, DirtyFlags.Bounds);
 
-        expect(displayObject[internal._dirtyFlags]).toBe(DirtyFlags.Bounds | DirtyFlags.TransformedBounds);
+        expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.Bounds | DirtyFlags.TransformedBounds);
       });
     });
   });
