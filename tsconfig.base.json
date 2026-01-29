@@ -16,6 +16,8 @@
     "paths": {
       "@flighthq/core": ["packages/core/src/index.ts"],
       "@flighthq/core/*": ["packages/core/src/*"],
+      "@flighthq/math": ["packages/math/src/index.ts"],
+      "@flighthq/math/*": ["packages/math/src/*"],
       "@flighthq/render": ["packages/render/src/index.ts"],
       "@flighthq/render/*": ["packages/render/src/*"],
       "@flighthq/scene": ["packages/scene/src/index.ts"],

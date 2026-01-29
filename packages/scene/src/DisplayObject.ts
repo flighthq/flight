@@ -1,5 +1,5 @@
-import { MatrixPool, Point, Rectangle, RectanglePool } from '@flighthq/core';
-import { Matrix } from '@flighthq/core';
+import { MatrixPool, Point, Rectangle, RectanglePool } from '@flighthq/math';
+import { Matrix } from '@flighthq/math';
 
 import type { BitmapDrawable } from './BitmapDrawable.js';
 import { BlendMode } from './BlendMode.js';

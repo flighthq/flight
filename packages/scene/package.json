@@ -9,6 +9,14 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./DisplayObject": {
+      "types": "./dist/DisplayObject.d.ts",
+      "default": "./dist/DisplayObject.js"
+    },
+    "./DisplayObjectContainer": {
+      "types": "./dist/DisplayObjectContainer.d.ts",
+      "default": "./dist/DisplayObjectContainer.js"
+    },
     "./Sprite": {
       "types": "./dist/Sprite.d.ts",
       "default": "./dist/Sprite.js"

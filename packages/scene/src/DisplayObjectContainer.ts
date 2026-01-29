@@ -46,7 +46,7 @@ export default class DisplayObjectContainer extends DisplayObject {
     }
 
     target.__children.splice(index, 0, child);
-    child.__parent = target;
+    (child as any).__parent = target;
     DisplayObject.invalidate(target, DirtyFlags.Children);
     return child;
   }
@@ -68,7 +68,7 @@ export default class DisplayObjectContainer extends DisplayObject {
         // }
       }
 
-      child.__parent = null;
+      (child as any).__parent = null;
       const i = target.__children.indexOf(child);
       if (i !== -1) {
         target.__children.splice(i, 1);

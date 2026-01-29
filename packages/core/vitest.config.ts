@@ -6,7 +6,6 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      name: '@flighthq/core',
       include: ['src/**/*.test.ts'],
     },
   }),

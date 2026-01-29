@@ -14,6 +14,7 @@
     "format:check": "prettier . --check",
     "test": "npm run test:run --workspaces",
     "test:core": "npm run test -w packages/core",
+    "test:math": "npm run test -w packages/math",
     "test:scene": "npm run test -w packages/scene"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
-import { Matrix, Point } from '@flighthq/core';
-import { Rectangle } from '@flighthq/core';
+import { Matrix, Point } from '@flighthq/math';
+import { Rectangle } from '@flighthq/math';
 
 import { DirtyFlags } from './DirtyFlags.js';
 import DisplayObject from './DisplayObject.js';
