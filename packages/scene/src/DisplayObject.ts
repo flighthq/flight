@@ -1,55 +1,55 @@
-import { Matrix2DPool, Point, Rectangle, RectanglePool } from '@flighthq/math';
-import { Matrix2D } from '@flighthq/math';
+import { Matrix2D, Matrix2DPool, Point, Rectangle, RectanglePool } from '@flighthq/math';
 
 import type { BitmapDrawable } from './BitmapDrawable.js';
 import { BlendMode } from './BlendMode.js';
 import { DirtyFlags } from './DirtyFlags.js';
 import type DisplayObjectContainer from './DisplayObjectContainer.js';
 import BitmapFilter from './filters/BitmapFilter.js';
+import { internal } from './internal/DisplayObject.js';
 import type LoaderInfo from './LoaderInfo.js';
 import type Shader from './Shader.js';
 import type Stage from './Stage.js';
 import Transform from './Transform.js';
 
 export default class DisplayObject implements BitmapDrawable {
-  static __tempPoint: Point = new Point();
+  private static __tempPoint: Point = new Point();
 
-  protected __alpha: number = 1.0;
-  protected __blendMode: BlendMode = BlendMode.Normal;
-  protected __cacheAsBitmap: boolean = false;
-  protected __cacheAsBitmapMatrix: Matrix2D | null = null;
-  protected __filters: BitmapFilter[] | null = null;
-  protected __dirtyFlags: DirtyFlags = DirtyFlags.None;
-  protected __height: number = 0;
-  protected __loaderInfo: LoaderInfo | null = null;
-  protected __localBounds: Rectangle = new Rectangle();
-  protected __localBoundsID: number = 0;
-  protected __localTransform: Matrix2D = new Matrix2D();
-  protected __localTransformID: number = 0;
-  protected __mask: DisplayObject | null = null;
-  protected __maskedObject: DisplayObject | null = null;
-  protected __name: string | null = null;
-  protected __opaqueBackground: number | null = null;
-  protected __parent: DisplayObjectContainer | null = null;
-  protected __parentTransformID: number = 0;
-  protected __root: DisplayObjectContainer | null = null;
-  protected __rotationAngle: number = 0;
-  protected __rotationCosine: number = 1;
-  protected __rotationSine: number = 0;
-  protected __scale9Grid: Rectangle | null = null;
-  protected __scaleX: number = 1;
-  protected __scaleY: number = 1;
-  protected __scrollRect: Rectangle | null = null;
-  protected __shader: Shader | null = null;
-  protected __stage: Stage | null = null;
-  protected __transform: Transform | null = null;
-  protected __transformedBounds: Rectangle = new Rectangle();
-  protected __width: number = 0;
-  protected __worldTransform: Matrix2D = new Matrix2D();
-  protected __worldTransformID: number = 0;
-  protected __visible: boolean = true;
-  protected __x: number = 0;
-  protected __y: number = 0;
+  [internal._alpha]: number = 1;
+  [internal._blendMode]: BlendMode = BlendMode.Normal;
+  [internal._cacheAsBitmap]: boolean = false;
+  [internal._cacheAsBitmapMatrix]: Matrix2D | null = null;
+  [internal._dirtyFlags]: DirtyFlags = DirtyFlags.None;
+  [internal._filters]: BitmapFilter[] | null = null;
+  [internal._height]: number = 0;
+  [internal._localBounds]: Rectangle = new Rectangle();
+  [internal._localBoundsID]: number = 0;
+  [internal._localTransform]: Matrix2D = new Matrix2D();
+  [internal._localTransformID]: number = 0;
+  [internal._loaderInfo]: LoaderInfo | null = null;
+  [internal._mask]: DisplayObject | null = null;
+  [internal._maskedObject]: DisplayObject | null = null;
+  [internal._name]: string | null = null;
+  [internal._opaqueBackground]: number | null = null;
+  [internal._parent]: DisplayObjectContainer | null = null;
+  [internal._parentTransformID]: number = 0;
+  [internal._root]: DisplayObjectContainer | null = null;
+  [internal._rotationAngle]: number = 0;
+  [internal._rotationCosine]: number = 1;
+  [internal._rotationSine]: number = 0;
+  [internal._scale9Grid]: Rectangle | null = null;
+  [internal._scaleX]: number = 1;
+  [internal._scaleY]: number = 1;
+  [internal._scrollRect]: Rectangle | null = null;
+  [internal._shader]: Shader | null = null;
+  [internal._stage]: Stage | null = null;
+  [internal._transform]: Transform | null = null;
+  [internal._transformedBounds]: Rectangle = new Rectangle();
+  [internal._width]: number = 0;
+  [internal._worldTransform]: Matrix2D = new Matrix2D();
+  [internal._worldTransformID]: number = 0;
+  [internal._visible]: boolean = true;
+  [internal._x]: number = 0;
+  [internal._y]: number = 0;
 
   constructor() {}
 
@@ -76,12 +76,12 @@ export default class DisplayObject implements BitmapDrawable {
       this.__updateWorldTransform(targetCoordinateSpace);
       this.__updateLocalBounds(source);
       const transform = Matrix2DPool.get();
-      Matrix2D.inverse(transform, targetCoordinateSpace.__worldTransform);
-      Matrix2D.multiply(transform, transform, source.__worldTransform);
-      Matrix2D.transformRectTo(out, transform, source.__localBounds);
+      Matrix2D.inverse(transform, targetCoordinateSpace[internal._worldTransform]);
+      Matrix2D.multiply(transform, transform, source[internal._worldTransform]);
+      Matrix2D.transformRectTo(out, transform, source[internal._localBounds]);
       Matrix2DPool.release(transform);
     } else {
-      Rectangle.copyFrom(out, source.__localBounds);
+      Rectangle.copyFrom(out, source[internal._localBounds]);
     }
   }
 
@@ -132,7 +132,7 @@ export default class DisplayObject implements BitmapDrawable {
    **/
   static globalToLocalTo(out: Point, source: DisplayObject, pos: Point): void {
     this.__updateWorldTransform(source);
-    Matrix2D.inverseTransformXY(out, source.__worldTransform, pos.x, pos.y);
+    Matrix2D.inverseTransformXY(out, source[internal._worldTransform], pos.x, pos.y);
   }
 
   /**
@@ -140,9 +140,9 @@ export default class DisplayObject implements BitmapDrawable {
    * intersects with the bounding box of the `obj` display object.
    **/
   static hitTestObject(source: DisplayObject, other: DisplayObject): boolean {
-    if (other.__parent !== null && source.__parent !== null) {
+    if (other[internal._parent] !== null && source[internal._parent] !== null) {
       this.__updateLocalBounds(source);
-      const sourceBounds = source.__localBounds;
+      const sourceBounds = source[internal._localBounds];
       const otherBounds = RectanglePool.get();
       // compare other in source's coordinate space
       this.getBoundsTo(otherBounds, other, source);
@@ -162,11 +162,11 @@ export default class DisplayObject implements BitmapDrawable {
 						(`false`).
 	**/
   static hitTestPoint(source: DisplayObject, x: number, y: number, _shapeFlag: boolean = false): boolean {
-    if (!source.__visible || source.__opaqueBackground === null) return false;
+    if (!source[internal._visible] || source[internal._opaqueBackground] === null) return false;
     this.__updateWorldTransform(source);
-    Matrix2D.inverseTransformXY(this.__tempPoint, source.__worldTransform, x, y);
+    Matrix2D.inverseTransformXY(this.__tempPoint, source[internal._worldTransform], x, y);
     this.__updateLocalBounds(source);
-    return Rectangle.contains(source.__localBounds, this.__tempPoint.x, this.__tempPoint.y);
+    return Rectangle.contains(source[internal._localBounds], this.__tempPoint.x, this.__tempPoint.y);
   }
 
   /**
@@ -174,20 +174,20 @@ export default class DisplayObject implements BitmapDrawable {
    * should be redrawn the next time it is eligible to be rendered.
    */
   static invalidate(target: DisplayObject, flags: DirtyFlags = DirtyFlags.Render): void {
-    if ((target.__dirtyFlags & flags) === flags) return;
+    if ((target[internal._dirtyFlags] & flags) === flags) return;
 
-    target.__dirtyFlags |= flags;
+    target[internal._dirtyFlags] |= flags;
 
     if ((flags & DirtyFlags.Transform) !== 0) {
       // If transform changed, transformed bounds must also be updated
-      target.__dirtyFlags |= DirtyFlags.TransformedBounds;
-      target.__localTransformID++;
+      target[internal._dirtyFlags] |= DirtyFlags.TransformedBounds;
+      target[internal._localTransformID]++;
     }
 
     if ((flags & DirtyFlags.Bounds) !== 0) {
       // Changing local bounds also requires transformed bounds update
-      target.__dirtyFlags |= DirtyFlags.TransformedBounds;
-      target.__localBoundsID++;
+      target[internal._dirtyFlags] |= DirtyFlags.TransformedBounds;
+      target[internal._localBoundsID]++;
     }
   }
 
@@ -210,135 +210,148 @@ export default class DisplayObject implements BitmapDrawable {
    **/
   static localToGlobalTo(out: Point, source: DisplayObject, point: Point): void {
     this.__updateWorldTransform(source);
-    Matrix2D.transformXY(out, source.__worldTransform, point.x, point.y);
+    Matrix2D.transformXY(out, source[internal._worldTransform], point.x, point.y);
   }
 
-  private static __updateLocalBounds(target: DisplayObject): void {
-    if ((target.__dirtyFlags & DirtyFlags.Bounds) === 0) return;
+  protected static __updateLocalBounds(target: DisplayObject): void {
+    if ((target[internal._dirtyFlags] & DirtyFlags.Bounds) === 0) return;
 
     // TODO, update __localBounds
 
-    target.__dirtyFlags &= ~DirtyFlags.Bounds;
+    target[internal._dirtyFlags] &= ~DirtyFlags.Bounds;
   }
 
-  private static __updateLocalTransform(target: DisplayObject): void {
-    if ((target.__dirtyFlags & DirtyFlags.Transform) === 0) return;
+  protected static __updateLocalTransform(target: DisplayObject): void {
+    if ((target[internal._dirtyFlags] & DirtyFlags.Transform) === 0) return;
 
-    const matrix = target.__localTransform;
-    matrix.a = target.__rotationCosine * target.__scaleX;
-    matrix.b = target.__rotationSine * target.__scaleX;
-    matrix.c = -target.__rotationSine * target.__scaleY;
-    matrix.d = target.__rotationCosine * target.__scaleY;
-    matrix.tx = target.__x;
-    matrix.ty = target.__y;
+    const matrix = target[internal._localTransform];
+    matrix.a = target[internal._rotationCosine] * target[internal._scaleX];
+    matrix.b = target[internal._rotationSine] * target[internal._scaleX];
+    matrix.c = -target[internal._rotationSine] * target[internal._scaleY];
+    matrix.d = target[internal._rotationCosine] * target[internal._scaleY];
+    matrix.tx = target[internal._x];
+    matrix.ty = target[internal._y];
 
-    target.__dirtyFlags &= ~DirtyFlags.Transform;
+    target[internal._dirtyFlags] &= ~DirtyFlags.Transform;
   }
 
-  private static __updateTransformedBounds(target: DisplayObject): void {
-    if ((target.__dirtyFlags & DirtyFlags.TransformedBounds) === 0) return;
+  protected static __updateTransformedBounds(target: DisplayObject): void {
+    if ((target[internal._dirtyFlags] & DirtyFlags.TransformedBounds) === 0) return;
 
     this.__updateLocalBounds(target);
     this.__updateLocalTransform(target);
 
-    Matrix2D.transformRectTo(target.__transformedBounds, target.__localTransform, target.__localBounds);
+    Matrix2D.transformRectTo(
+      target[internal._transformedBounds],
+      target[internal._localTransform],
+      target[internal._localBounds],
+    );
 
-    target.__dirtyFlags &= ~DirtyFlags.TransformedBounds;
+    target[internal._dirtyFlags] &= ~DirtyFlags.TransformedBounds;
   }
 
-  private static __updateWorldTransform(target: DisplayObject): void {
+  protected static __updateWorldTransform(target: DisplayObject): void {
     // Recursively allow parents to update if out-of-date
-    if (target.__parent !== null) {
-      this.__updateWorldTransform(target.__parent);
+    const parent = target[internal._parent];
+    if (parent !== null) {
+      this.__updateWorldTransform(parent);
     }
-    const parentTransformID = target.__parent !== null ? target.__parent.__worldTransformID : 0;
+    const parentTransformID = parent !== null ? parent[internal._worldTransformID] : 0;
     // Update if local transform ID or parent world transform ID changed
-    if (target.__worldTransformID !== target.__localTransformID || target.__parentTransformID !== parentTransformID) {
+    if (
+      target[internal._worldTransformID] !== target[internal._localTransformID] ||
+      target[internal._parentTransformID] !== parentTransformID
+    ) {
       // Ensure local transform is accurate
       this.__updateLocalTransform(target);
-      if (target.__parent !== null) {
-        Matrix2D.multiply(target.__worldTransform, target.__parent.__worldTransform, target.__localTransform);
+      if (parent !== null) {
+        Matrix2D.multiply(
+          target[internal._worldTransform],
+          parent[internal._worldTransform],
+          target[internal._localTransform],
+        );
       } else {
-        Matrix2D.copyFrom(target.__worldTransform, target.__localTransform);
+        Matrix2D.copyFrom(target[internal._worldTransform], target[internal._localTransform]);
       }
-      target.__parentTransformID = parentTransformID;
-      target.__worldTransformID = target.__localTransformID;
+      target[internal._parentTransformID] = parentTransformID;
+      target[internal._worldTransformID] = target[internal._localTransformID];
     }
   }
 
   // Get & Set Methods
 
   get alpha(): number {
-    return this.__alpha;
+    return this[internal._alpha];
   }
 
   set alpha(value: number) {
     if (value > 1.0) value = 1.0;
     if (value < 0.0) value = 0.0;
-    if (value === this.__alpha) return;
-    this.__alpha = value;
+    if (value === this[internal._alpha]) return;
+    this[internal._alpha] = value;
     DisplayObject.invalidate(this, DirtyFlags.Appearance);
   }
 
   get blendMode(): BlendMode {
-    return this.__blendMode;
+    return this[internal._blendMode];
   }
 
   set blendMode(value: BlendMode) {
-    if (value === this.__blendMode) return;
-    this.__blendMode = value;
+    if (value === this[internal._blendMode]) return;
+    this[internal._blendMode] = value;
     DisplayObject.invalidate(this, DirtyFlags.Appearance);
   }
 
   get cacheAsBitmap(): boolean {
-    return this.__filters === null ? this.__cacheAsBitmap : true;
+    return this[internal._filters] === null ? this[internal._cacheAsBitmap] : true;
   }
 
   set cacheAsBitmap(value: boolean) {
-    if (value === this.__cacheAsBitmap) return;
-    this.__cacheAsBitmap = value;
+    if (value === this[internal._cacheAsBitmap]) return;
+    this[internal._cacheAsBitmap] = value;
     DisplayObject.invalidate(this, DirtyFlags.CacheAsBitmap);
   }
 
   get cacheAsBitmapMatrix(): Matrix2D | null {
-    return this.__cacheAsBitmapMatrix;
+    return this[internal._cacheAsBitmapMatrix];
   }
 
   set cacheAsBitmapMatrix(value: Matrix2D | null) {
-    if (Matrix2D.equals(this.__cacheAsBitmapMatrix, value)) return;
+    if (Matrix2D.equals(this[internal._cacheAsBitmapMatrix], value)) return;
 
     if (value !== null) {
-      if (this.__cacheAsBitmapMatrix === null) {
-        this.__cacheAsBitmapMatrix = Matrix2D.clone(value);
+      if (this[internal._cacheAsBitmapMatrix] === null) {
+        this[internal._cacheAsBitmapMatrix] = Matrix2D.clone(value);
       } else {
-        Matrix2D.copyFrom(this.__cacheAsBitmapMatrix, value);
+        Matrix2D.copyFrom(this[internal._cacheAsBitmapMatrix] as Matrix2D, value);
       }
     } else {
-      this.__cacheAsBitmapMatrix = null;
+      this[internal._cacheAsBitmapMatrix] = null;
     }
 
-    if (this.__cacheAsBitmap) {
+    if (this[internal._cacheAsBitmap]) {
       DisplayObject.invalidate(this, DirtyFlags.Transform);
     }
   }
 
   get filters(): BitmapFilter[] {
-    if (this.__filters === null) {
+    const filters = this[internal._filters];
+    if (filters === null) {
       return [];
     } else {
-      return this.__filters.slice();
+      return filters.slice();
     }
   }
 
   set filters(value: BitmapFilter[] | null) {
-    if ((value === null || value.length == 0) && this.__filters === null) return;
+    if ((value === null || value.length == 0) && this[internal._filters] === null) return;
 
     if (value !== null) {
-      this.__filters = value.map((filter) => {
+      this[internal._filters] = value.map((filter) => {
         return BitmapFilter.clone(filter);
       });
     } else {
-      this.__filters = null;
+      this[internal._filters] = null;
     }
 
     DisplayObject.invalidate(this, DirtyFlags.CacheAsBitmap);
@@ -346,73 +359,73 @@ export default class DisplayObject implements BitmapDrawable {
 
   get height(): number {
     DisplayObject.__updateTransformedBounds(this);
-    return this.__transformedBounds.height;
+    return this[internal._transformedBounds].height;
   }
 
   set height(value: number) {
     DisplayObject.__updateLocalBounds(this);
-    if (this.__localBounds.height === 0) return;
+    if (this[internal._localBounds].height === 0) return;
     // Invalidation (if necessary) occurs in scaleY setter
-    this.scaleY = value / this.__localBounds.height;
+    this.scaleY = value / this[internal._localBounds].height;
   }
 
   get loaderInfo(): LoaderInfo | null {
     // If loaderInfo was set by a Loader, return
-    if (this.__loaderInfo !== null) return this.__loaderInfo;
+    if (this[internal._loaderInfo] !== null) return this[internal._loaderInfo];
     // Otherwise return info of root
-    return this.root?.__loaderInfo ?? null;
+    return this.root ? this.root[internal._loaderInfo] : null;
   }
 
   get mask(): DisplayObject | null {
-    return this.__mask;
+    return this[internal._mask];
   }
 
   set mask(value: DisplayObject | null) {
-    if (value === this.__mask) return;
+    if (value === this[internal._mask]) return;
 
-    if (this.__mask !== null) {
-      this.__mask.__maskedObject = null;
+    if (this[internal._mask] !== null) {
+      (this[internal._mask] as DisplayObject)[internal._maskedObject] = null;
     }
     if (value !== null) {
-      value.__maskedObject = this;
+      value[internal._maskedObject] = this;
     }
 
-    this.__mask = value;
+    this[internal._mask] = value;
     DisplayObject.invalidate(this, DirtyFlags.Clip);
   }
 
   get name(): string | null {
-    return this.__name;
+    return this[internal._name];
   }
 
   set name(value: string | null) {
-    this.__name = value;
+    this[internal._name] = value;
   }
 
   get opaqueBackground(): number | null {
-    return this.__opaqueBackground;
+    return this[internal._opaqueBackground];
   }
 
   set opaqueBackground(value: number | null) {
-    if (value === this.__opaqueBackground) return;
-    this.__opaqueBackground = value;
+    if (value === this[internal._opaqueBackground]) return;
+    this[internal._opaqueBackground] = value;
     DisplayObject.invalidate(this, DirtyFlags.Appearance);
   }
 
   get parent(): DisplayObjectContainer | null {
-    return this.__parent;
+    return this[internal._parent];
   }
 
   get root(): DisplayObjectContainer | null {
-    return this.__root;
+    return this[internal._root];
   }
 
   get rotation(): number {
-    return this.__rotationAngle;
+    return this[internal._rotationAngle];
   }
 
   set rotation(value: number) {
-    if (value === this.__rotationAngle) return;
+    if (value === this[internal._rotationAngle]) return;
 
     // Normalize from -180 to 180
     value = value % 360.0;
@@ -443,94 +456,104 @@ export default class DisplayObject implements BitmapDrawable {
       cos = Math.cos(rad);
     }
 
-    this.__rotationAngle = value;
-    this.__rotationSine = sin;
-    this.__rotationCosine = cos;
+    this[internal._rotationAngle] = value;
+    this[internal._rotationSine] = sin;
+    this[internal._rotationCosine] = cos;
     DisplayObject.invalidate(this, DirtyFlags.Transform);
   }
 
   get scale9Grid(): Rectangle | null {
-    if (this.__scale9Grid == null) {
+    if (this[internal._scale9Grid] === null) {
       return null;
     }
-    return Rectangle.clone(this.__scale9Grid);
+    return Rectangle.clone(this[internal._scale9Grid] as Rectangle);
   }
 
   set scroll9Grid(value: Rectangle | null) {
-    if (value === null && this.__scale9Grid === null) return;
-    if (value !== null && this.__scale9Grid !== null && Rectangle.equals(this.__scale9Grid, value)) return;
+    if (value === null && this[internal._scale9Grid] === null) return;
+    if (
+      value !== null &&
+      this[internal._scale9Grid] !== null &&
+      Rectangle.equals(this[internal._scale9Grid] as Rectangle, value)
+    )
+      return;
 
     if (value != null) {
-      if (this.__scale9Grid === null) this.__scale9Grid = new Rectangle();
-      Rectangle.copyFrom(this.__scale9Grid, value);
+      if (this[internal._scale9Grid] === null) this[internal._scale9Grid] = new Rectangle();
+      Rectangle.copyFrom(this[internal._scale9Grid] as Rectangle, value);
     } else {
-      this.__scale9Grid = null;
+      this[internal._scale9Grid] = null;
     }
 
     DisplayObject.invalidate(this, DirtyFlags.Appearance | DirtyFlags.Bounds | DirtyFlags.Clip | DirtyFlags.Transform);
   }
 
   get scaleX(): number {
-    return this.__scaleX;
+    return this[internal._scaleX];
   }
 
   set scaleX(value: number) {
-    if (value === this.__scaleX) return;
-    this.__scaleX = value;
+    if (value === this[internal._scaleX]) return;
+    this[internal._scaleX] = value;
     DisplayObject.invalidate(this, DirtyFlags.Transform);
   }
 
   get scaleY(): number {
-    return this.__scaleY;
+    return this[internal._scaleY];
   }
 
   set scaleY(value: number) {
-    if (value === this.__scaleY) return;
-    this.__scaleY = value;
+    if (value === this[internal._scaleY]) return;
+    this[internal._scaleY] = value;
     DisplayObject.invalidate(this, DirtyFlags.Transform);
   }
 
   get scrollRect(): Rectangle | null {
-    if (this.__scrollRect === null) {
+    if (this[internal._scrollRect] === null) {
       return null;
     }
-    return Rectangle.clone(this.__scrollRect);
+    return Rectangle.clone(this[internal._scrollRect] as Rectangle);
   }
 
   set scrollRect(value: Rectangle | null) {
-    if (value === null && this.__scrollRect === null) return;
-    if (value !== null && this.__scrollRect !== null && Rectangle.equals(this.__scrollRect, value)) return;
+    if (value === null && this[internal._scrollRect] === null) return;
+    if (
+      value !== null &&
+      this[internal._scrollRect] !== null &&
+      Rectangle.equals(this[internal._scrollRect] as Rectangle, value)
+    )
+      return;
 
     if (value !== null) {
-      if (this.__scrollRect === null) this.__scrollRect = new Rectangle();
-      Rectangle.copyFrom(this.__scrollRect, value);
+      if (this[internal._scrollRect] === null) this[internal._scrollRect] = new Rectangle();
+      Rectangle.copyFrom(this[internal._scrollRect] as Rectangle, value);
     } else {
-      this.__scrollRect = null;
+      this[internal._scrollRect] = null;
     }
 
-    this.__scrollRect = value;
+    this[internal._scrollRect] = value;
     DisplayObject.invalidate(this, DirtyFlags.Clip);
   }
 
   get shader(): Shader | null {
-    return this.__shader;
+    return this[internal._shader];
   }
 
   set shader(value: Shader | null) {
     if (value === this.shader) return;
-    this.__shader = value;
+    this[internal._shader] = value;
     DisplayObject.invalidate(this, DirtyFlags.Appearance);
   }
 
   get stage(): Stage | null {
-    return this.__stage;
+    return this[internal._stage];
   }
 
   get transform(): Transform {
-    if (this.__transform === null) {
-      this.__transform = new Transform(this);
+    if (this[internal._transform] === null) {
+      this[internal._transform] = new Transform(this);
     }
-    return this.__transform;
+    return this[internal._transform] as Transform;
   }
 
   set transform(value: Transform) {
@@ -538,8 +561,8 @@ export default class DisplayObject implements BitmapDrawable {
       throw new TypeError('Parameter transform must be non-null.');
     }
 
-    if (this.__transform === null) {
-      this.__transform = new Transform(this);
+    if (this[internal._transform] === null) {
+      this[internal._transform] = new Transform(this);
     }
 
     // if (value.__hasMatrix2D)
@@ -561,46 +584,46 @@ export default class DisplayObject implements BitmapDrawable {
   }
 
   get visible(): boolean {
-    return this.__visible;
+    return this[internal._visible];
   }
 
   set visible(value: boolean) {
-    if (value === this.__visible) return;
-    this.__visible = value;
+    if (value === this[internal._visible]) return;
+    this[internal._visible] = value;
     DisplayObject.invalidate(this, DirtyFlags.Appearance);
   }
 
   get width(): number {
     DisplayObject.__updateTransformedBounds(this);
-    return this.__transformedBounds.width;
+    return this[internal._transformedBounds].width;
   }
 
   set width(value: number) {
     DisplayObject.__updateLocalBounds(this);
-    if (this.__localBounds.width === 0) return;
+    if (this[internal._localBounds].width === 0) return;
     // Invalidation (if necessary) occurs in scaleX setter
-    this.scaleX = value / this.__localBounds.width;
+    this.scaleX = value / this[internal._localBounds].width;
   }
 
   get x(): number {
-    return this.__x;
+    return this[internal._x];
   }
 
   set x(value: number) {
     if (value !== value) value = 0; // Flash converts NaN to 0
-    if (value === this.__x) return;
-    this.__x = value;
+    if (value === this[internal._x]) return;
+    this[internal._x] = value;
     DisplayObject.invalidate(this, DirtyFlags.Transform);
   }
 
   get y(): number {
-    return this.__y;
+    return this[internal._y];
   }
 
   set y(value: number) {
     if (value !== value) value = 0; // Flash converts NaN to 0
-    if (value === this.__y) return;
-    this.__y = value;
+    if (value === this[internal._y]) return;
+    this[internal._y] = value;
     DisplayObject.invalidate(this, DirtyFlags.Transform);
   }
 }
