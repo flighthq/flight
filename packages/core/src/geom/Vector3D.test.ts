@@ -73,10 +73,22 @@ describe('Vector3D', () => {
       expect(result.y).toBe(7);
       expect(result.z).toBe(9);
     });
+  });
+
+  describe('addTo', () => {
+    it('returns a new vector when no target is passed', () => {
+      const a = new Vector3D(1, 2, 3);
+      const b = new Vector3D(4, 5, 6);
+      const result = new Vector3D();
+      Vector3D.addTo(result, a, b);
+      expect(result.x).toBe(5);
+      expect(result.y).toBe(7);
+      expect(result.z).toBe(9);
+    });
 
     it('modifies target when same object is passed as target', () => {
       const a = new Vector3D(1, 2, 3);
-      Vector3D.add(a, a, a); // passing the same object as both source and target
+      Vector3D.addTo(a, a, a); // passing the same object as both source and target
       expect(a.x).toBe(2);
       expect(a.y).toBe(4);
       expect(a.z).toBe(6);
@@ -98,7 +110,7 @@ describe('Vector3D', () => {
     it('copies values from source to target', () => {
       const source = new Vector3D(1, 2, 3);
       const target = new Vector3D();
-      Vector3D.copyFrom(target, source);
+      Vector3D.copyFrom(source, target);
       expect(target.x).toBe(1);
       expect(target.y).toBe(2);
       expect(target.z).toBe(3);
@@ -107,6 +119,25 @@ describe('Vector3D', () => {
     it('does not affect source when same object is used for input and output', () => {
       const vector = new Vector3D(1, 2, 3);
       Vector3D.copyFrom(vector, vector);
+      expect(vector.x).toBe(1);
+      expect(vector.y).toBe(2);
+      expect(vector.z).toBe(3);
+    });
+  });
+
+  describe('copyTo', () => {
+    it('copies values from source to target', () => {
+      const source = new Vector3D(1, 2, 3);
+      const target = new Vector3D();
+      Vector3D.copyTo(target, source);
+      expect(target.x).toBe(1);
+      expect(target.y).toBe(2);
+      expect(target.z).toBe(3);
+    });
+
+    it('does not affect source when same object is used for input and output', () => {
+      const vector = new Vector3D(1, 2, 3);
+      Vector3D.copyTo(vector, vector);
       expect(vector.x).toBe(1);
       expect(vector.y).toBe(2);
       expect(vector.z).toBe(3);
@@ -122,11 +153,23 @@ describe('Vector3D', () => {
       expect(result.y).toBe(0);
       expect(result.z).toBe(1);
     });
+  });
+
+  describe('crossProductTo', () => {
+    it('returns the cross product of two vectors', () => {
+      const a = new Vector3D(1, 0, 0);
+      const b = new Vector3D(0, 1, 0);
+      const result = new Vector3D();
+      Vector3D.crossProductTo(result, a, b);
+      expect(result.x).toBe(0);
+      expect(result.y).toBe(0);
+      expect(result.z).toBe(1);
+    });
 
     it('modifies target when same object is passed as target', () => {
       const a = new Vector3D(1, 0, 0);
       const b = new Vector3D(0, 1, 0);
-      Vector3D.crossProduct(a, b, a); // passing the same object as both source and target
+      Vector3D.crossProductTo(a, a, b); // passing the same object as both source and target
       expect(a.x).toBe(0);
       expect(a.y).toBe(0);
       expect(a.z).toBe(1);
@@ -140,6 +183,17 @@ describe('Vector3D', () => {
       expect(a.x).toBe(0);
       expect(a.y).toBe(0);
       expect(a.z).toBe(0);
+    });
+  });
+
+  describe('decrementTo', () => {
+    it('modifies target when same object is passed as target', () => {
+      const a = new Vector3D(5, 5, 5);
+      const result = new Vector3D(1, 1, 1);
+      Vector3D.decrementTo(result, a, a); // passing the same object as both source and target
+      expect(result.x).toBe(0);
+      expect(result.y).toBe(0);
+      expect(result.z).toBe(0);
     });
   });
 
@@ -191,6 +245,17 @@ describe('Vector3D', () => {
     });
   });
 
+  describe('incrementTo', () => {
+    it('modifies target when same object is passed as target', () => {
+      const a = new Vector3D(1, 1, 1);
+      const result = new Vector3D();
+      Vector3D.incrementTo(result, a, a); // passing the same object as both source and target
+      expect(result.x).toBe(2);
+      expect(result.y).toBe(2);
+      expect(result.z).toBe(2);
+    });
+  });
+
   describe('negate', () => {
     it('inverts the values of the vector components', () => {
       const v = new Vector3D(1, -2, 3);
@@ -206,6 +271,26 @@ describe('Vector3D', () => {
       expect(v.x).toBe(-1);
       expect(v.y).toBe(2);
       expect(v.z).toBe(-3);
+    });
+  });
+
+  describe('negateTo', () => {
+    it('inverts the values of the vector components', () => {
+      const v = new Vector3D(1, -2, 3);
+      const result = new Vector3D();
+      Vector3D.negateTo(result, v);
+      expect(result.x).toBe(-1);
+      expect(result.y).toBe(2);
+      expect(result.z).toBe(-3);
+    });
+
+    it('modifies target when same object is passed as target', () => {
+      const v = new Vector3D(1, -2, 3);
+      const result = new Vector3D();
+      Vector3D.negateTo(result, v);
+      expect(result.x).toBe(-1);
+      expect(result.y).toBe(2);
+      expect(result.z).toBe(-3);
     });
   });
 
@@ -229,6 +314,28 @@ describe('Vector3D', () => {
     });
   });
 
+  describe('normalizeTo', () => {
+    it('normalizes the vector', () => {
+      const v = new Vector3D(3, 4, 0);
+      const result = new Vector3D();
+      const length = Vector3D.normalizeTo(result, v);
+      expect(result.x).toBeCloseTo(0.6, 5);
+      expect(result.y).toBeCloseTo(0.8, 5);
+      expect(result.z).toBe(0);
+      expect(length).toBe(5);
+    });
+
+    it('modifies target when same object is passed as target', () => {
+      const v = new Vector3D(3, 4, 0);
+      const result = new Vector3D();
+      const length = Vector3D.normalizeTo(result, v);
+      expect(result.x).toBeCloseTo(0.6, 5);
+      expect(result.y).toBeCloseTo(0.8, 5);
+      expect(result.z).toBe(0);
+      expect(length).toBe(5);
+    });
+  });
+
   describe('project', () => {
     it('modifies target when same object is passed as target', () => {
       const v = new Vector3D(10, 20, 30);
@@ -237,6 +344,18 @@ describe('Vector3D', () => {
       expect(v.x).toBe(2);
       expect(v.y).toBe(4);
       expect(v.z).toBe(6);
+    });
+  });
+
+  describe('projectTo', () => {
+    it('modifies target when same object is passed as target', () => {
+      const v = new Vector3D(10, 20, 30);
+      v.w = 5;
+      const result = new Vector3D();
+      Vector3D.projectTo(result, v);
+      expect(result.x).toBe(2);
+      expect(result.y).toBe(4);
+      expect(result.z).toBe(6);
     });
   });
 
@@ -255,6 +374,26 @@ describe('Vector3D', () => {
       expect(v.x).toBe(2);
       expect(v.y).toBe(2);
       expect(v.z).toBe(2);
+    });
+  });
+
+  describe('scaleTo', () => {
+    it('scales the vector by a scalar', () => {
+      const v = new Vector3D(1, 1, 1);
+      const result = new Vector3D();
+      Vector3D.scaleTo(result, v, 2);
+      expect(result.x).toBe(2);
+      expect(result.y).toBe(2);
+      expect(result.z).toBe(2);
+    });
+
+    it('modifies target when same object is passed as target', () => {
+      const v = new Vector3D(1, 1, 1);
+      const result = new Vector3D();
+      Vector3D.scaleTo(result, v, 2);
+      expect(result.x).toBe(2);
+      expect(result.y).toBe(2);
+      expect(result.z).toBe(2);
     });
   });
 
@@ -285,13 +424,26 @@ describe('Vector3D', () => {
       expect(result.y).toBe(3);
       expect(result.z).toBe(3);
     });
+  });
+
+  describe('subtractTo', () => {
+    it('returns a new vector when no target is passed', () => {
+      const a = new Vector3D(4, 5, 6);
+      const b = new Vector3D(1, 2, 3);
+      const result = new Vector3D();
+      Vector3D.subtractTo(result, a, b);
+      expect(result.x).toBe(3);
+      expect(result.y).toBe(3);
+      expect(result.z).toBe(3);
+    });
 
     it('modifies target when same object is passed as target', () => {
       const a = new Vector3D(4, 5, 6);
-      Vector3D.subtract(a, a, a); // passing the same object as both source and target
-      expect(a.x).toBe(0);
-      expect(a.y).toBe(0);
-      expect(a.z).toBe(0);
+      const result = new Vector3D();
+      Vector3D.subtractTo(result, a, a); // passing the same object as both source and target
+      expect(result.x).toBe(0);
+      expect(result.y).toBe(0);
+      expect(result.z).toBe(0);
     });
   });
 });

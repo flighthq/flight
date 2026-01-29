@@ -37,14 +37,27 @@ export default class Vector3D {
    *
    * The w component is ignored.
    *
-   * If target is not specified, a new Vector3D is returned
+   * A new Vector3D is returned.
+   * @see addTo
    */
-  static add(a: Vector3D, b: Vector3D, target?: Vector3D): Vector3D {
-    target = target ?? new Vector3D();
-    target.x = a.x + b.x;
-    target.y = a.y + b.y;
-    target.z = a.z + b.z;
-    return target;
+  static add(a: Vector3D, b: Vector3D): Vector3D {
+    const out = new Vector3D();
+    out.x = a.x + b.x;
+    out.y = a.y + b.y;
+    out.z = a.z + b.z;
+    return out;
+  }
+
+  /**
+   * Adds the x, y and z components of two vector objects
+   * and writes to out.
+   *
+   * The w component is ignored.
+   */
+  static addTo(out: Vector3D, a: Vector3D, b: Vector3D): void {
+    out.x = a.x + b.x;
+    out.y = a.y + b.y;
+    out.z = a.z + b.z;
   }
 
   /**
@@ -57,11 +70,11 @@ export default class Vector3D {
     const lb = b.length;
     let dot = this.dotProduct(a, b);
 
-    if (la != 0) {
+    if (la !== 0) {
       dot /= la;
     }
 
-    if (lb != 0) {
+    if (lb !== 0) {
       dot /= lb;
     }
 
@@ -77,10 +90,21 @@ export default class Vector3D {
    *
    * The w component is ignored.
    */
-  static copyFrom(target: Vector3D, source: Vector3D): void {
-    target.x = source.x;
-    target.y = source.y;
-    target.z = source.z;
+  static copyFrom(source: Vector3D, out: Vector3D): void {
+    out.x = source.x;
+    out.y = source.y;
+    out.z = source.z;
+  }
+
+  /**
+   * Copies the x, y and z components of another vector.
+   *
+   * The w component is ignored.
+   */
+  static copyTo(out: Vector3D, source: Vector3D): void {
+    out.x = source.x;
+    out.y = source.y;
+    out.z = source.z;
   }
 
   /**
@@ -90,18 +114,30 @@ export default class Vector3D {
    *
    * The w component is written to 1.
    *
-   * If target is not specified, a new Vector3D is returned
+   * A new Vector3D is returned.
+   * @see crossProductTo
    **/
-  static crossProduct(source: Vector3D, other: Vector3D, target?: Vector3D): Vector3D {
-    target = target ?? new Vector3D();
+  static crossProduct(source: Vector3D, other: Vector3D): Vector3D {
+    const out = new Vector3D();
+    this.crossProductTo(out, source, other);
+    return out;
+  }
+
+  /**
+   * Writes a Vector3D object that is perpendicular (at a right angle) to the
+   * current Vector3D and another Vector3D object. If the returned Vector3D object's
+   * coordinates are (0,0,0), then the two Vector3D objects are parallel to each other.
+   *
+   * The w component is written to 1.
+   **/
+  static crossProductTo(out: Vector3D, source: Vector3D, other: Vector3D): void {
     const x = source.y * other.z - source.z * other.y;
     const y = source.z * other.x - source.x * other.z;
     const z = source.x * other.y - source.y * other.x;
-    target.x = x;
-    target.y = y;
-    target.z = z;
-    target.w = 1;
-    return target;
+    out.x = x;
+    out.y = y;
+    out.z = z;
+    out.w = 1;
   }
 
   /**
@@ -114,6 +150,12 @@ export default class Vector3D {
     target.x -= source.x;
     target.y -= source.y;
     target.z -= source.z;
+  }
+
+  static decrementTo(out: Vector3D, a: Vector3D, b: Vector3D): void {
+    out.x = a.x - b.x;
+    out.y = a.y - b.y;
+    out.z = a.z - b.z;
   }
 
   /**
@@ -169,6 +211,12 @@ export default class Vector3D {
     target.z += source.z;
   }
 
+  static incrementTo(out: Vector3D, a: Vector3D, b: Vector3D): void {
+    out.x = a.x + b.x;
+    out.y = a.y + b.y;
+    out.z = a.z + b.z;
+  }
+
   /**
    * Compares the elements of the current Vector3D object with the elements of a
    * specified Vector3D object to determine whether they are nearly equal.
@@ -196,6 +244,12 @@ export default class Vector3D {
     target.z *= -1;
   }
 
+  static negateTo(out: Vector3D, source: Vector3D): void {
+    out.x = source.x * -1;
+    out.y = source.y * -1;
+    out.z = source.z * -1;
+  }
+
   /**
    * Converts a Vector3D object to a unit vector by dividing the first three elements
    * (x, y, z) by the length of the vector.
@@ -205,10 +259,22 @@ export default class Vector3D {
   static normalize(target: Vector3D): number {
     const l = target.length;
 
-    if (l != 0) {
+    if (l !== 0) {
       target.x /= l;
       target.y /= l;
       target.z /= l;
+    }
+
+    return l;
+  }
+
+  static normalizeTo(out: Vector3D, source: Vector3D): number {
+    const l = source.length;
+
+    if (l !== 0) {
+      out.x = source.x / l;
+      out.y = source.y / l;
+      out.z = source.z / l;
     }
 
     return l;
@@ -224,6 +290,12 @@ export default class Vector3D {
     target.z /= target.w;
   }
 
+  static projectTo(out: Vector3D, source: Vector3D): void {
+    out.x = source.x / source.w;
+    out.y = source.y / source.w;
+    out.z = source.z / source.w;
+  }
+
   /**
    * Scales the current Vector3D object by a scalar, a magnitude. The Vector3D object's
    * x, y, and z elements are multiplied by the provided scalar number.
@@ -236,16 +308,22 @@ export default class Vector3D {
     target.z *= scalar;
   }
 
+  static scaleTo(out: Vector3D, source: Vector3D, scalar: number): void {
+    out.x = source.x * scalar;
+    out.y = source.y * scalar;
+    out.z = source.z * scalar;
+  }
+
   /**
    * Sets the members of Vector3D to the specified values
    *
    * If you do not pass a w value, the w component will be ignored.
    **/
-  static setTo(target: Vector3D, x: number, y: number, z: number, w?: number): void {
-    target.x = x;
-    target.y = y;
-    target.z = z;
-    if (w !== undefined) target.w = w;
+  static setTo(out: Vector3D, x: number, y: number, z: number, w?: number): void {
+    out.x = x;
+    out.y = y;
+    out.z = z;
+    if (w !== undefined) out.w = w;
   }
 
   /**
@@ -253,15 +331,19 @@ export default class Vector3D {
    * from the values of the x, y, and z elements of another Vector3D object.
    *
    * The w component is ignored.
-   *
-   * If target is not specified, a new Vector3D will be returned.
    **/
-  static subtract(source: Vector3D, other: Vector3D, target?: Vector3D): Vector3D {
-    target = target ?? new Vector3D();
-    target.x = source.x - other.x;
-    target.y = source.y - other.y;
-    target.z = source.z - other.z;
-    return target;
+  static subtract(source: Vector3D, other: Vector3D): Vector3D {
+    const out = new Vector3D();
+    out.x = source.x - other.x;
+    out.y = source.y - other.y;
+    out.z = source.z - other.z;
+    return out;
+  }
+
+  static subtractTo(out: Vector3D, source: Vector3D, other: Vector3D): void {
+    out.x = source.x - other.x;
+    out.y = source.y - other.y;
+    out.z = source.z - other.z;
   }
 
   toString(): string {
