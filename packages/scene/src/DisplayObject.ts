@@ -4,6 +4,7 @@ import { Matrix } from '@flighthq/core';
 import type { BitmapDrawable } from './BitmapDrawable.js';
 import { BlendMode } from './BlendMode.js';
 import { DirtyFlags } from './DirtyFlags.js';
+import type DisplayObjectContainer from './DisplayObjectContainer.js';
 import BitmapFilter from './filters/BitmapFilter.js';
 import type LoaderInfo from './LoaderInfo.js';
 import type Shader from './Shader.js';
@@ -29,9 +30,9 @@ export default class DisplayObject implements BitmapDrawable {
   protected __maskedObject: DisplayObject | null = null;
   protected __name: string | null = null;
   protected __opaqueBackground: number | null = null;
-  protected __parent: DisplayObject | null = null;
+  protected __parent: DisplayObjectContainer | null = null;
   protected __parentTransformID: number = 0;
-  protected __root: DisplayObject | null = null;
+  protected __root: DisplayObjectContainer | null = null;
   protected __rotationAngle: number = 0;
   protected __rotationCosine: number = 1;
   protected __rotationSine: number = 0;
@@ -398,11 +399,11 @@ export default class DisplayObject implements BitmapDrawable {
     DisplayObject.invalidate(this, DirtyFlags.Appearance);
   }
 
-  get parent(): DisplayObject | null {
+  get parent(): DisplayObjectContainer | null {
     return this.__parent;
   }
 
-  get root(): DisplayObject | null {
+  get root(): DisplayObjectContainer | null {
     return this.__root;
   }
 
