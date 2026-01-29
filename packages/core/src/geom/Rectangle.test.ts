@@ -312,22 +312,38 @@ describe('Rectangle', () => {
   });
 
   describe('copyFrom', () => {
-    it('copyFrom copies values', () => {
+    it('copies values', () => {
       Rectangle.copyFrom(r2, r);
       expect(Rectangle.equals(r, r2)).toBe(true);
     });
 
-    describe('copyFrom with same rectangle as source and target', () => {
-      it('does not change the original values if source and target are the same', () => {
-        const r1 = new Rectangle(0, 0, 10, 10);
-        Rectangle.copyFrom(r1, r1); // r1 is both source and target
+    it('does not change the original values if source and target are the same', () => {
+      const r1 = new Rectangle(0, 0, 10, 10);
+      Rectangle.copyFrom(r1, r1); // r1 is both source and target
 
-        // Ensure no changes occur
-        expect(r1.x).toBe(0);
-        expect(r1.y).toBe(0);
-        expect(r1.width).toBe(10);
-        expect(r1.height).toBe(10);
-      });
+      // Ensure no changes occur
+      expect(r1.x).toBe(0);
+      expect(r1.y).toBe(0);
+      expect(r1.width).toBe(10);
+      expect(r1.height).toBe(10);
+    });
+  });
+
+  describe('copyTo', () => {
+    it('copies values', () => {
+      Rectangle.copyTo(r, r2);
+      expect(Rectangle.equals(r, r2)).toBe(true);
+    });
+
+    it('does not change the original values if source and target are the same', () => {
+      const r1 = new Rectangle(0, 0, 10, 10);
+      Rectangle.copyTo(r1, r1); // r1 is both source and target
+
+      // Ensure no changes occur
+      expect(r1.x).toBe(0);
+      expect(r1.y).toBe(0);
+      expect(r1.width).toBe(10);
+      expect(r1.height).toBe(10);
     });
   });
 
@@ -358,33 +374,52 @@ describe('Rectangle', () => {
       const result = Rectangle.intersection(r, r3);
       expect(Rectangle.isEmpty(result)).toBe(true);
     });
+  });
 
-    describe('intersection with same rectangle as target', () => {
-      it('correctly modifies the original rectangle when intersection is empty', () => {
-        const r1 = new Rectangle(0, 0, 10, 10);
-        const r2 = new Rectangle(20, 20, 5, 5);
-        const result = Rectangle.intersection(r1, r2, r1); // r1 is both source and target
+  describe('intersectionTo', () => {
+    it('returns intersection rectangle', () => {
+      const r3 = new Rectangle(5, 10, 10, 10);
+      const result = new Rectangle();
+      Rectangle.intersectionTo(result, r, r3);
+      expect(result.x).toBe(5);
+      expect(result.y).toBe(10);
+      expect(result.width).toBe(5);
+      expect(result.height).toBe(10);
+    });
 
-        // Ensure the result is empty (since no intersection)
-        expect(result.width).toBe(0);
-        expect(result.height).toBe(0);
+    it('returns empty rectangle if no intersection', () => {
+      const r3 = new Rectangle(20, 20, 5, 5);
+      const result = new Rectangle();
+      Rectangle.intersectionTo(result, r, r3);
+      expect(Rectangle.isEmpty(result)).toBe(true);
+    });
 
-        // Ensure r1 is also modified correctly (should be set to empty)
-        expect(r1.width).toBe(0); // r1's width should be 0
-        expect(r1.height).toBe(0); // r1's height should be 0
-      });
+    it('correctly modifies the original rectangle when intersection is empty', () => {
+      const r1 = new Rectangle(0, 0, 10, 10);
+      const r2 = new Rectangle(20, 20, 5, 5);
+      const result = r1;
+      Rectangle.intersectionTo(r1, r1, r2); // r1 is both source and target
 
-      it('correctly modifies the target when intersection occurs', () => {
-        const r1 = new Rectangle(0, 0, 10, 10);
-        const r2 = new Rectangle(5, 5, 10, 10);
-        const result = Rectangle.intersection(r1, r2, r1); // r1 is both source and target
+      // Ensure the result is empty (since no intersection)
+      expect(result.width).toBe(0);
+      expect(result.height).toBe(0);
 
-        // Ensure r1 is correctly modified
-        expect(result.width).toBe(5); // Correct intersection width
-        expect(result.height).toBe(5); // Correct intersection height
-        expect(r1.width).toBe(5); // Ensure r1 got updated
-        expect(r1.height).toBe(5); // Ensure r1 got updated
-      });
+      // Ensure r1 is also modified correctly (should be set to empty)
+      expect(r1.width).toBe(0); // r1's width should be 0
+      expect(r1.height).toBe(0); // r1's height should be 0
+    });
+
+    it('correctly modifies the target when intersection occurs', () => {
+      const r1 = new Rectangle(0, 0, 10, 10);
+      const r2 = new Rectangle(5, 5, 10, 10);
+      const result = r1;
+      Rectangle.intersectionTo(r1, r1, r2); // r1 is both source and target
+
+      // Ensure r1 is correctly modified
+      expect(result.width).toBe(5); // Correct intersection width
+      expect(result.height).toBe(5); // Correct intersection height
+      expect(r1.width).toBe(5); // Ensure r1 got updated
+      expect(r1.height).toBe(5); // Ensure r1 got updated
     });
   });
 
@@ -420,24 +455,40 @@ describe('Rectangle', () => {
       expect(r.x).toBe(5);
       expect(r.y).toBe(10);
     });
+  });
 
-    describe('offset with same rectangle as source and target', () => {
-      it('correctly offsets the rectangle when it is both source and target', () => {
-        const r1 = new Rectangle(0, 0, 10, 10);
-        Rectangle.offset(r1, 5, 10); // r1 is both source and target
+  describe('offsetTo', () => {
+    it('moves rectangle', () => {
+      const result = new Rectangle();
+      Rectangle.offsetTo(result, r, 5, 10);
+      expect(result.x).toBe(5);
+      expect(result.y).toBe(10);
+    });
 
-        // Ensure r1 is correctly offset
-        expect(r1.x).toBe(5);
-        expect(r1.y).toBe(10);
-      });
+    it('correctly offsets the rectangle when it is both source and target', () => {
+      const r1 = new Rectangle(0, 0, 10, 10);
+      Rectangle.offsetTo(r1, r1, 5, 10); // r1 is both source and target
+
+      // Ensure r1 is correctly offset
+      expect(r1.x).toBe(5);
+      expect(r1.y).toBe(10);
     });
   });
 
   describe('offsetPoint', () => {
-    it('offsetPoint moves rectangle by Point', () => {
+    it('moves rectangle by Point', () => {
       Rectangle.offsetPoint(r, new Point(3, 4));
       expect(r.x).toBe(3);
       expect(r.y).toBe(4);
+    });
+  });
+
+  describe('offsetPointTo', () => {
+    it('moves rectangle by Point', () => {
+      const result = new Point();
+      Rectangle.offsetPointTo(result, r, new Point(3, 4));
+      expect(result.x).toBe(3);
+      expect(result.y).toBe(4);
     });
   });
 
@@ -449,18 +500,28 @@ describe('Rectangle', () => {
       expect(r.width).toBe(14);
       expect(r.height).toBe(26);
     });
+  });
 
-    describe('inflate with same rectangle as source and target', () => {
-      it('correctly inflates the rectangle when it is both source and target', () => {
-        const r1 = new Rectangle(0, 0, 10, 10);
-        Rectangle.inflate(r1, 2, 3); // r1 is both source and target
+  describe('inflateTo', () => {
+    it('inflates rectangle by dx/dy', () => {
+      const result = new Rectangle();
+      Rectangle.inflateTo(result, r, 2, 3);
+      expect(result).not.toBe(r);
+      expect(result.x).toBe(-2);
+      expect(result.y).toBe(-3);
+      expect(result.width).toBe(14);
+      expect(result.height).toBe(26);
+    });
 
-        // Ensure r1 is correctly inflated
-        expect(r1.x).toBe(-2);
-        expect(r1.y).toBe(-3);
-        expect(r1.width).toBe(14);
-        expect(r1.height).toBe(16);
-      });
+    it('correctly inflates the rectangle when it is both source and target', () => {
+      const r1 = new Rectangle(0, 0, 10, 10);
+      Rectangle.inflateTo(r1, r1, 2, 3); // r1 is both source and target
+
+      // Ensure r1 is correctly inflated
+      expect(r1.x).toBe(-2);
+      expect(r1.y).toBe(-3);
+      expect(r1.width).toBe(14);
+      expect(r1.height).toBe(16);
     });
   });
 
@@ -471,6 +532,18 @@ describe('Rectangle', () => {
       expect(r.y).toBe(-2);
       expect(r.width).toBe(12);
       expect(r.height).toBe(24);
+    });
+  });
+
+  describe('inflatePointTo', () => {
+    it('inflates rectangle by Point', () => {
+      const result = new Rectangle();
+      Rectangle.inflatePointTo(result, r, new Point(1, 2));
+      expect(result).not.toBe(r);
+      expect(result.x).toBe(-1);
+      expect(result.y).toBe(-2);
+      expect(result.width).toBe(12);
+      expect(result.height).toBe(24);
     });
   });
 
@@ -489,6 +562,30 @@ describe('Rectangle', () => {
 
     it('normalized of positive rectangle equals original', () => {
       const n = Rectangle.normalized(r);
+      expect(n.x).toBe(r.x);
+      expect(n.y).toBe(r.y);
+      expect(n.width).toBe(r.width);
+      expect(n.height).toBe(r.height);
+    });
+  });
+
+  describe('normalizedTo', () => {
+    it('returns rectangle with positive width and height', () => {
+      r.x = 10;
+      r.y = 20;
+      r.width = -5;
+      r.height = -15;
+      const n = new Rectangle();
+      Rectangle.normalizedTo(n, r);
+      expect(n.x).toBe(5);
+      expect(n.y).toBe(5);
+      expect(n.width).toBe(5);
+      expect(n.height).toBe(15);
+    });
+
+    it('normalized of positive rectangle equals original', () => {
+      const n = new Rectangle();
+      Rectangle.normalizedTo(n, r);
       expect(n.x).toBe(r.x);
       expect(n.y).toBe(r.y);
       expect(n.width).toBe(r.width);
@@ -547,31 +644,60 @@ describe('Rectangle', () => {
       expect(u.width).toBe(15);
       expect(u.height).toBe(20);
     });
+  });
 
-    describe('union with same rectangle as target', () => {
-      it('correctly modifies the target when union occurs', () => {
-        const r1 = new Rectangle(0, 0, 10, 10);
-        const r2 = new Rectangle(5, 5, 10, 10);
-        const result = Rectangle.union(r1, r2, r1); // r1 is both source and target
+  describe('unionTo', () => {
+    it('returns union of two rectangles', () => {
+      const r3 = new Rectangle(5, 15, 10, 10);
+      const u = new Rectangle();
+      Rectangle.unionTo(u, r, r3);
+      expect(u.x).toBe(0);
+      expect(u.y).toBe(0);
+      expect(u.width).toBe(15);
+      expect(u.height).toBe(25);
+    });
 
-        // Ensure r1 is correctly updated
-        expect(result.width).toBe(15); // Correct union width
-        expect(result.height).toBe(15); // Correct union height
-        expect(r1.width).toBe(15); // r1 should be updated
-        expect(r1.height).toBe(15); // r1 should be updated
-      });
+    it('union works with zero-width rectangle', () => {
+      const r3 = new Rectangle(5, 15, 0, 0);
+      const u = new Rectangle();
+      Rectangle.unionTo(u, r, r3);
+      expect(Rectangle.equals(u, r)).toBe(true);
+    });
 
-      it('correctly handles union of non-overlapping rectangles', () => {
-        const r1 = new Rectangle(0, 0, 10, 10);
-        const r2 = new Rectangle(20, 20, 5, 5);
-        const result = Rectangle.union(r1, r2, r1); // r1 is both source and target
+    it('union works with flipped rectangles', () => {
+      const r3 = new Rectangle(15, 20, -10, -10);
+      const u = new Rectangle();
+      Rectangle.unionTo(u, r, r3);
+      expect(u.x).toBe(0);
+      expect(u.y).toBe(0);
+      expect(u.width).toBe(15);
+      expect(u.height).toBe(20);
+    });
 
-        // Ensure r1 is correctly updated
-        expect(result.width).toBe(25); // Correct union width
-        expect(result.height).toBe(25); // Correct union height
-        expect(r1.width).toBe(25); // r1 should be updated
-        expect(r1.height).toBe(25); // r1 should be updated
-      });
+    it('correctly modifies the target when union occurs', () => {
+      const r1 = new Rectangle(0, 0, 10, 10);
+      const r2 = new Rectangle(5, 5, 10, 10);
+      const result = r1;
+      Rectangle.unionTo(r1, r1, r2); // r1 is both source and target
+
+      // Ensure r1 is correctly updated
+      expect(result.width).toBe(15); // Correct union width
+      expect(result.height).toBe(15); // Correct union height
+      expect(r1.width).toBe(15); // r1 should be updated
+      expect(r1.height).toBe(15); // r1 should be updated
+    });
+
+    it('correctly handles union of non-overlapping rectangles', () => {
+      const r1 = new Rectangle(0, 0, 10, 10);
+      const r2 = new Rectangle(20, 20, 5, 5);
+      const result = r1;
+      Rectangle.unionTo(r1, r1, r2); // r1 is both source and target
+
+      // Ensure r1 is correctly updated
+      expect(result.width).toBe(25); // Correct union width
+      expect(result.height).toBe(25); // Correct union height
+      expect(r1.width).toBe(25); // r1 should be updated
+      expect(r1.height).toBe(25); // r1 should be updated
     });
   });
 });
