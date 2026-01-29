@@ -8,7 +8,15 @@ import Point from './Point.js';
  *
  * - `bottom = y + height`
  * - `bottomRight = new Point(x + width, y + height)`
+ * - `isFlippedX = width < 0`
+ * - `isFlippedY = height < 0`
  * - `left = x`
+ * - `maxX = Math.max(x, right)`
+ * - `maxY = Math.max(y, bottom)`
+ * - `minX = Math.min(x, right)`
+ * - `minY = Math.min(y, bottom)`
+ * - `normalizedTopLeft = new Point(minX, minY)`
+ * - `normalizedBottomRight = new Point(maxX, maxY)`
  * - `right = x + width`
  * - `size = new Point(width, height)`
  * - `top = y`
@@ -262,22 +270,25 @@ export default class Rectangle {
   get minX(): number {
     return Math.min(this.x, this.right);
   }
-  get maxX(): number {
-    return Math.max(this.x, this.right);
-  }
+
   get minY(): number {
     return Math.min(this.y, this.bottom);
   }
+
+  get maxX(): number {
+    return Math.max(this.x, this.right);
+  }
+
   get maxY(): number {
     return Math.max(this.y, this.bottom);
   }
 
-  get normalizedTopLeft(): Point {
-    return new Point(this.minX, this.minY);
-  }
-
   get normalizedBottomRight(): Point {
     return new Point(this.maxX, this.maxY);
+  }
+
+  get normalizedTopLeft(): Point {
+    return new Point(this.minX, this.minY);
   }
 
   get right(): number {
