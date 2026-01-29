@@ -286,7 +286,7 @@ describe('DisplayObjectContainer', () => {
 
   // Inherited aliases
 
-  it('forwards static methods to DisplayObject', () => {
+  it('forwards static methods', () => {
     expect(DisplayObjectContainer.getBounds).toBe(DisplayObject.getBounds);
     expect(DisplayObjectContainer.getBoundsTo).toBe(DisplayObject.getBoundsTo);
     expect(DisplayObjectContainer.getRect).toBe(DisplayObject.getRect);
