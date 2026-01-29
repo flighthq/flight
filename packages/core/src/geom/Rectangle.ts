@@ -62,12 +62,21 @@ export default class Rectangle {
     return ox0 >= sx0 && oy0 >= sy0 && ox1 <= sx1 && oy1 <= sy1;
   }
 
-  static copyFrom(target: Rectangle, source: Rectangle): void {
-    if (target != source) {
-      target.x = source.x;
-      target.y = source.y;
-      target.width = source.width;
-      target.height = source.height;
+  static copyFrom(source: Rectangle, out: Rectangle): void {
+    if (out !== source) {
+      out.x = source.x;
+      out.y = source.y;
+      out.width = source.width;
+      out.height = source.height;
+    }
+  }
+
+  static copyTo(out: Rectangle, source: Rectangle): void {
+    if (out !== source) {
+      out.x = source.x;
+      out.y = source.y;
+      out.width = source.width;
+      out.height = source.height;
     }
   }
 
@@ -92,22 +101,38 @@ export default class Rectangle {
     this.inflate(target, point.x, point.y);
   }
 
-  static intersection(a: Rectangle, b: Rectangle, target: Rectangle = new Rectangle()): Rectangle {
+  static inflatePointTo(out: Rectangle, target: Rectangle, point: Point): void {
+    this.inflateTo(out, target, point.x, point.y);
+  }
+
+  static inflateTo(out: Rectangle, source: Rectangle, dx: number, dy: number): void {
+    out.x = source.x - dx;
+    out.width = source.width + dx * 2;
+    out.y = source.y - dy;
+    out.height = source.height + dy * 2;
+  }
+
+  static intersection(a: Rectangle, b: Rectangle): Rectangle {
+    const out = new Rectangle();
+    this.intersectionTo(out, a, b);
+    return out;
+  }
+
+  static intersectionTo(out: Rectangle, a: Rectangle, b: Rectangle): void {
     const x0 = Math.max(a.minX, b.minX);
     const x1 = Math.min(a.maxX, b.maxX);
     const y0 = Math.max(a.minY, b.minY);
     const y1 = Math.min(a.maxY, b.maxY);
 
     if (x1 <= x0 || y1 <= y0) {
-      this.setEmpty(target);
-      return target;
+      this.setEmpty(out);
+      return;
     }
 
-    target.x = x0;
-    target.y = y0;
-    target.width = x1 - x0;
-    target.height = y1 - y0;
-    return target;
+    out.x = x0;
+    out.y = y0;
+    out.width = x1 - x0;
+    out.height = y1 - y0;
   }
 
   static intersects(a: Rectangle, b: Rectangle): boolean {
@@ -123,14 +148,18 @@ export default class Rectangle {
     return source.width === 0 || source.height === 0;
   }
 
-  static normalized(source: Rectangle, target?: Rectangle): Rectangle {
-    target = target ?? new Rectangle();
+  static normalized(source: Rectangle): Rectangle {
+    const out = new Rectangle();
+    this.normalizedTo(out, source);
+    return out;
+  }
+
+  static normalizedTo(out: Rectangle, source: Rectangle): void {
     const { minX, maxX, minY, maxY } = source;
-    target.x = minX;
-    target.y = minY;
-    target.width = maxX - minX;
-    target.height = maxY - minY;
-    return target;
+    out.x = minX;
+    out.y = minY;
+    out.width = maxX - minX;
+    out.height = maxY - minY;
   }
 
   static offset(target: Rectangle, dx: number, dy: number): void {
@@ -143,24 +172,38 @@ export default class Rectangle {
     target.y += point.y;
   }
 
-  static setEmpty(target: Rectangle): void {
-    target.x = target.y = target.width = target.height = 0;
+  static offsetPointTo(out: Point, target: Rectangle, point: Point): void {
+    out.x = target.x + point.x;
+    out.y = target.y + point.y;
   }
 
-  static setTo(target: Rectangle, x: number, y: number, width: number, height: number): void {
-    target.x = x;
-    target.y = y;
-    target.width = width;
-    target.height = height;
+  static offsetTo(out: Rectangle, target: Rectangle, dx: number, dy: number): void {
+    out.x = target.x + dx;
+    out.y = target.y + dy;
+  }
+
+  static setEmpty(out: Rectangle): void {
+    out.x = out.y = out.width = out.height = 0;
+  }
+
+  static setTo(out: Rectangle, x: number, y: number, width: number, height: number): void {
+    out.x = x;
+    out.y = y;
+    out.width = width;
+    out.height = height;
   }
 
   toString(): string {
     return `(x=${this.x}, y=${this.y}, width=${this.width}, height=${this.height})`;
   }
 
-  static union(source: Rectangle, other: Rectangle, target?: Rectangle): Rectangle {
-    target = target ?? new Rectangle();
+  static union(source: Rectangle, other: Rectangle): Rectangle {
+    const out = new Rectangle();
+    this.unionTo(out, source, other);
+    return out;
+  }
 
+  static unionTo(out: Rectangle, source: Rectangle, other: Rectangle): void {
     const sourceLeft = Math.min(source.x, source.x + source.width);
     const sourceRight = Math.max(source.x, source.x + source.width);
     const sourceTop = Math.min(source.y, source.y + source.height);
@@ -176,12 +219,10 @@ export default class Rectangle {
     const y0 = Math.min(sourceTop, otherTop);
     const y1 = Math.max(sourceBottom, otherBottom);
 
-    target.x = x0;
-    target.y = y0;
-    target.width = x1 - x0;
-    target.height = y1 - y0;
-
-    return target;
+    out.x = x0;
+    out.y = y0;
+    out.width = x1 - x0;
+    out.height = y1 - y0;
   }
 
   // Get & Set Methods
