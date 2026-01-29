@@ -102,17 +102,13 @@ export default class DisplayObjectContainer extends DisplayObject {
    * garbage collected if no other references to the children exist.
    **/
   static removeChildren(target: DisplayObjectContainer, beginIndex: number = 0, endIndex?: number): void {
+    if (beginIndex > target.__children.length - 1) return;
+
     if (endIndex === undefined) {
       endIndex = target.__children.length - 1;
-
-      if (endIndex < 0) {
-        return;
-      }
     }
 
-    if (beginIndex > target.__children.length - 1) {
-      return;
-    } else if (endIndex < beginIndex || beginIndex < 0 || endIndex > target.__children.length) {
+    if (endIndex < beginIndex || beginIndex < 0 || endIndex > target.__children.length) {
       throw new RangeError('The supplied index is out of bounds.');
     }
 
@@ -165,6 +161,13 @@ export default class DisplayObjectContainer extends DisplayObject {
    * the display object container remain in the same index positions.
    **/
   static swapChildrenAt(target: DisplayObjectContainer, index1: number, index2: number): void {
+    const len = target.__children.length;
+    if (index1 < 0 || index2 < 0 || index1 >= len || index2 >= len) {
+      throw new RangeError('The supplied index is out of bounds.');
+    }
+
+    if (index1 === index2) return;
+
     const swap: DisplayObject = target.__children[index1];
     target.__children[index1] = target.__children[index2];
     target.__children[index2] = swap;
