@@ -1,25 +1,25 @@
-import Matrix from './Matrix.js';
+import Matrix2D from './Matrix2D.js';
 
-export default class MatrixPool {
-  private static pool: Matrix[] = [];
+export default class Matrix2DPool {
+  private static pool: Matrix2D[] = [];
 
   static clear(): void {
     this.pool.length = 0;
   }
 
-  static get(): Matrix {
-    let m: Matrix;
+  static get(): Matrix2D {
+    let m: Matrix2D;
 
     if (this.pool.length > 0) {
-      m = this.pool.pop() as Matrix;
+      m = this.pool.pop() as Matrix2D;
     } else {
-      m = new Matrix();
+      m = new Matrix2D();
     }
 
     return m;
   }
 
-  static getIdentity(): Matrix {
+  static getIdentity(): Matrix2D {
     const m = this.get();
     m.a = 1;
     m.b = 0;
@@ -30,7 +30,7 @@ export default class MatrixPool {
     return m;
   }
 
-  static release(m: Matrix): void {
+  static release(m: Matrix2D): void {
     if (!m) return;
     this.pool.push(m);
   }

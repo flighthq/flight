@@ -9,13 +9,13 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./Matrix": {
-      "types": "./dist/Matrix.d.ts",
-      "default": "./dist/Matrix.js"
+    "./Matrix2D": {
+      "types": "./dist/Matrix2D.d.ts",
+      "default": "./dist/Matrix2D.js"
     },
-    "./MatrixPool": {
-      "types": "./dist/MatrixPool.d.ts",
-      "default": "./dist/MatrixPool.js"
+    "./Matrix2DPool": {
+      "types": "./dist/Matrix2DPool.d.ts",
+      "default": "./dist/Matrix2DPool.js"
     },
     "./Point": {
       "types": "./dist/Point.d.ts",

@@ -1,18 +1,18 @@
-import Matrix from './Matrix.js';
-import MatrixPool from './MatrixPool.js';
+import Matrix2D from './Matrix2D.js';
+import Matrix2DPool from './Matrix2DPool.js';
 
-describe('MatrixPool', () => {
+describe('Matrix2DPool', () => {
   beforeEach(() => {
-    MatrixPool.clear();
+    Matrix2DPool.clear();
   });
 
-  test('get() returns a new Matrix when pool is empty', () => {
-    const m = MatrixPool.get();
-    expect(m).toBeInstanceOf(Matrix);
+  test('get() returns a new Matrix2D when pool is empty', () => {
+    const m = Matrix2DPool.get();
+    expect(m).toBeInstanceOf(Matrix2D);
   });
 
   test('getIdentity() returns a matrix set to identity', () => {
-    const m = MatrixPool.getIdentity();
+    const m = Matrix2DPool.getIdentity();
     expect(m.a).toBe(1);
     expect(m.b).toBe(0);
     expect(m.c).toBe(0);
@@ -22,20 +22,20 @@ describe('MatrixPool', () => {
   });
 
   test('released matrices are reused by get()', () => {
-    const m1 = MatrixPool.get();
-    MatrixPool.release(m1);
+    const m1 = Matrix2DPool.get();
+    Matrix2DPool.release(m1);
 
-    const m2 = MatrixPool.get();
+    const m2 = Matrix2DPool.get();
     expect(m2).toBe(m1); // same reference
   });
 
   test('getIdentity() resets released matrix to identity', () => {
-    const m1 = MatrixPool.get();
+    const m1 = Matrix2DPool.get();
     m1.a = 5;
     m1.tx = 10;
 
-    MatrixPool.release(m1);
-    const m2 = MatrixPool.getIdentity();
+    Matrix2DPool.release(m1);
+    const m2 = Matrix2DPool.getIdentity();
 
     expect(m2).toBe(m1);
     expect(m2.a).toBe(1);
@@ -47,15 +47,15 @@ describe('MatrixPool', () => {
   });
 
   test('clear() empties the pool', () => {
-    const m = MatrixPool.get();
-    MatrixPool.release(m);
-    MatrixPool.clear();
+    const m = Matrix2DPool.get();
+    Matrix2DPool.release(m);
+    Matrix2DPool.clear();
 
-    const m2 = MatrixPool.get();
+    const m2 = Matrix2DPool.get();
     expect(m2).not.toBe(m); // pool was cleared, new instance
   });
 
   test('release() handles null safely', () => {
-    expect(() => MatrixPool.release(null as unknown as Matrix)).not.toThrow();
+    expect(() => Matrix2DPool.release(null as unknown as Matrix2D)).not.toThrow();
   });
 });

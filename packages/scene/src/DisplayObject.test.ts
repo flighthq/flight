@@ -1,4 +1,4 @@
-import { Matrix, Point } from '@flighthq/math';
+import { Matrix2D, Point } from '@flighthq/math';
 import { Rectangle } from '@flighthq/math';
 
 import { DirtyFlags } from './DirtyFlags.js';
@@ -24,7 +24,7 @@ describe('DisplayObject', () => {
     return displayObject.__localBounds;
   }
 
-  function getLocalTransform(displayObject: DisplayObject): Matrix {
+  function getLocalTransform(displayObject: DisplayObject): Matrix2D {
     // @ts-expect-error: protected
     DisplayObject.__updateLocalTransform(displayObject);
     // @ts-expect-error: protected
@@ -87,19 +87,19 @@ describe('DisplayObject', () => {
 
   describe('cacheAsBitmapMatrix', () => {
     it('does not dirty transform if cacheAsBitmap is false', () => {
-      displayObject.cacheAsBitmapMatrix = new Matrix();
+      displayObject.cacheAsBitmapMatrix = new Matrix2D();
       expect(getDirtyFlags(displayObject)).toBe(DirtyFlags.None);
     });
 
     it('marks transform dirty when cacheAsBitmap is true and matrix changes', () => {
       displayObject.cacheAsBitmap = true;
-      displayObject.cacheAsBitmapMatrix = new Matrix(2, 0, 0, 2);
+      displayObject.cacheAsBitmapMatrix = new Matrix2D(2, 0, 0, 2);
 
       expect(DirtyFlags.has(getDirtyFlags(displayObject), DirtyFlags.Transform)).toBe(true);
     });
 
     it('does not dirty transform if matrix values are equal', () => {
-      const m = new Matrix();
+      const m = new Matrix2D();
 
       displayObject.cacheAsBitmapMatrix = m;
       displayObject.cacheAsBitmap = true;

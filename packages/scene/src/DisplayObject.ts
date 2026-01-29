@@ -1,5 +1,5 @@
-import { MatrixPool, Point, Rectangle, RectanglePool } from '@flighthq/math';
-import { Matrix } from '@flighthq/math';
+import { Matrix2DPool, Point, Rectangle, RectanglePool } from '@flighthq/math';
+import { Matrix2D } from '@flighthq/math';
 
 import type { BitmapDrawable } from './BitmapDrawable.js';
 import { BlendMode } from './BlendMode.js';
@@ -17,14 +17,14 @@ export default class DisplayObject implements BitmapDrawable {
   protected __alpha: number = 1.0;
   protected __blendMode: BlendMode = BlendMode.Normal;
   protected __cacheAsBitmap: boolean = false;
-  protected __cacheAsBitmapMatrix: Matrix | null = null;
+  protected __cacheAsBitmapMatrix: Matrix2D | null = null;
   protected __filters: BitmapFilter[] | null = null;
   protected __dirtyFlags: DirtyFlags = DirtyFlags.None;
   protected __height: number = 0;
   protected __loaderInfo: LoaderInfo | null = null;
   protected __localBounds: Rectangle = new Rectangle();
   protected __localBoundsID: number = 0;
-  protected __localTransform: Matrix = new Matrix();
+  protected __localTransform: Matrix2D = new Matrix2D();
   protected __localTransformID: number = 0;
   protected __mask: DisplayObject | null = null;
   protected __maskedObject: DisplayObject | null = null;
@@ -45,7 +45,7 @@ export default class DisplayObject implements BitmapDrawable {
   protected __transform: Transform | null = null;
   protected __transformedBounds: Rectangle = new Rectangle();
   protected __width: number = 0;
-  protected __worldTransform: Matrix = new Matrix();
+  protected __worldTransform: Matrix2D = new Matrix2D();
   protected __worldTransformID: number = 0;
   protected __visible: boolean = true;
   protected __x: number = 0;
@@ -75,11 +75,11 @@ export default class DisplayObject implements BitmapDrawable {
     if (targetCoordinateSpace !== null && targetCoordinateSpace !== source) {
       this.__updateWorldTransform(targetCoordinateSpace);
       this.__updateLocalBounds(source);
-      const transform = MatrixPool.get();
-      Matrix.inverse(transform, targetCoordinateSpace.__worldTransform);
-      Matrix.multiply(transform, transform, source.__worldTransform);
-      Matrix.transformRectTo(out, transform, source.__localBounds);
-      MatrixPool.release(transform);
+      const transform = Matrix2DPool.get();
+      Matrix2D.inverse(transform, targetCoordinateSpace.__worldTransform);
+      Matrix2D.multiply(transform, transform, source.__worldTransform);
+      Matrix2D.transformRectTo(out, transform, source.__localBounds);
+      Matrix2DPool.release(transform);
     } else {
       Rectangle.copyFrom(out, source.__localBounds);
     }
@@ -132,7 +132,7 @@ export default class DisplayObject implements BitmapDrawable {
    **/
   static globalToLocalTo(out: Point, source: DisplayObject, pos: Point): void {
     this.__updateWorldTransform(source);
-    Matrix.inverseTransformXY(out, source.__worldTransform, pos.x, pos.y);
+    Matrix2D.inverseTransformXY(out, source.__worldTransform, pos.x, pos.y);
   }
 
   /**
@@ -164,7 +164,7 @@ export default class DisplayObject implements BitmapDrawable {
   static hitTestPoint(source: DisplayObject, x: number, y: number, _shapeFlag: boolean = false): boolean {
     if (!source.__visible || source.__opaqueBackground === null) return false;
     this.__updateWorldTransform(source);
-    Matrix.inverseTransformXY(this.__tempPoint, source.__worldTransform, x, y);
+    Matrix2D.inverseTransformXY(this.__tempPoint, source.__worldTransform, x, y);
     this.__updateLocalBounds(source);
     return Rectangle.contains(source.__localBounds, this.__tempPoint.x, this.__tempPoint.y);
   }
@@ -210,7 +210,7 @@ export default class DisplayObject implements BitmapDrawable {
    **/
   static localToGlobalTo(out: Point, source: DisplayObject, point: Point): void {
     this.__updateWorldTransform(source);
-    Matrix.transformXY(out, source.__worldTransform, point.x, point.y);
+    Matrix2D.transformXY(out, source.__worldTransform, point.x, point.y);
   }
 
   private static __updateLocalBounds(target: DisplayObject): void {
@@ -241,7 +241,7 @@ export default class DisplayObject implements BitmapDrawable {
     this.__updateLocalBounds(target);
     this.__updateLocalTransform(target);
 
-    Matrix.transformRectTo(target.__transformedBounds, target.__localTransform, target.__localBounds);
+    Matrix2D.transformRectTo(target.__transformedBounds, target.__localTransform, target.__localBounds);
 
     target.__dirtyFlags &= ~DirtyFlags.TransformedBounds;
   }
@@ -257,9 +257,9 @@ export default class DisplayObject implements BitmapDrawable {
       // Ensure local transform is accurate
       this.__updateLocalTransform(target);
       if (target.__parent !== null) {
-        Matrix.multiply(target.__worldTransform, target.__parent.__worldTransform, target.__localTransform);
+        Matrix2D.multiply(target.__worldTransform, target.__parent.__worldTransform, target.__localTransform);
       } else {
-        Matrix.copyFrom(target.__worldTransform, target.__localTransform);
+        Matrix2D.copyFrom(target.__worldTransform, target.__localTransform);
       }
       target.__parentTransformID = parentTransformID;
       target.__worldTransformID = target.__localTransformID;
@@ -300,18 +300,18 @@ export default class DisplayObject implements BitmapDrawable {
     DisplayObject.invalidate(this, DirtyFlags.CacheAsBitmap);
   }
 
-  get cacheAsBitmapMatrix(): Matrix | null {
+  get cacheAsBitmapMatrix(): Matrix2D | null {
     return this.__cacheAsBitmapMatrix;
   }
 
-  set cacheAsBitmapMatrix(value: Matrix | null) {
-    if (Matrix.equals(this.__cacheAsBitmapMatrix, value)) return;
+  set cacheAsBitmapMatrix(value: Matrix2D | null) {
+    if (Matrix2D.equals(this.__cacheAsBitmapMatrix, value)) return;
 
     if (value !== null) {
       if (this.__cacheAsBitmapMatrix === null) {
-        this.__cacheAsBitmapMatrix = Matrix.clone(value);
+        this.__cacheAsBitmapMatrix = Matrix2D.clone(value);
       } else {
-        Matrix.copyFrom(this.__cacheAsBitmapMatrix, value);
+        Matrix2D.copyFrom(this.__cacheAsBitmapMatrix, value);
       }
     } else {
       this.__cacheAsBitmapMatrix = null;
@@ -542,14 +542,14 @@ export default class DisplayObject implements BitmapDrawable {
       this.__transform = new Transform(this);
     }
 
-    // if (value.__hasMatrix)
+    // if (value.__hasMatrix2D)
     // {
     //     var other = value.__displayObject.__transform;
     //     __objectTransform.__setTransform(other.a, other.b, other.c, other.d, other.tx, other.ty);
     // }
     // else
     // {
-    //     __objectTransform.__hasMatrix = false;
+    //     __objectTransform.__hasMatrix2D = false;
     // }
 
     // if (!__objectTransform.__colorTransform.__equals(value.__colorTransform, true)
