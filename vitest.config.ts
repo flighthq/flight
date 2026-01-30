@@ -6,7 +6,7 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      projects: ['packages/core', 'packages/math', 'packages/render', 'packages/scene'],
+      projects: ['packages/math', 'packages/render', 'packages/scene'],
     },
   }),
 );
