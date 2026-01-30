@@ -20,6 +20,10 @@
     "./Sprite": {
       "types": "./dist/Sprite.d.ts",
       "default": "./dist/Sprite.js"
+    },
+    "./internal/*": {
+      "types": "./dist/internal/*.d.ts",
+      "default": "./dist/internal/*.js"
     }
   },
   "files": [
