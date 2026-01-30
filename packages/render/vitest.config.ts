@@ -1,12 +1,12 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 
-import baseConfig from './vitest.config.base.js';
+import baseConfig from '../../vitest.config.base.js';
 
 export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      projects: ['packages/core', 'packages/math', 'packages/render', 'packages/scene'],
+      include: ['src/**/*.test.ts'],
     },
   }),
 );
