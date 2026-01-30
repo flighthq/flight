@@ -1,0 +1,14 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "references": [
+    { "path": "../../packages/math" },
+    { "path": "../../packages/render" },
+    { "path": "../../packages/scene" }
+  ],
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

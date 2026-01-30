@@ -3,11 +3,14 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "examples/**"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
-    "clean": "npm run clean --workspaces",
+    "build": "npm run build --workspace=packages",
+    "build:examples": "npm run build --workspace=examples/**",
+    "clean": "npm run clean --workspace=packages",
+    "clean:examples": "npm run clean --workspace=examples/**",
     "lint": "eslint -c eslint.config.js",
     "lint:fix": "eslint -c eslint.config.js --fix",
     "format": "prettier . --write",
@@ -33,9 +36,14 @@
     "eslint-plugin-unicorn": "^62.0.0",
     "jsdom": "^27.4.0",
     "prettier": "3.8.1",
-    "typescript": "^5.3.0",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.53.0",
     "vite-tsconfig-paths": "^6.0.4",
     "vitest": "^4.0.17"
+  },
+  "dependencies": {
+    "@vitejs/plugin-vue": "^6.0.3",
+    "ts-node": "^10.9.2",
+    "vite": "^7.3.1"
   }
 }
