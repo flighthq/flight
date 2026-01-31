@@ -1,17 +1,17 @@
 import { Matrix2D, Matrix2DPool, Point, Rectangle, RectanglePool } from '@flighthq/math';
 
-import type { BitmapDrawable } from './BitmapDrawable.js';
 import { BlendMode } from './BlendMode.js';
 import { DirtyFlags } from './DirtyFlags.js';
 import type DisplayObjectContainer from './DisplayObjectContainer.js';
 import BitmapFilter from './filters/BitmapFilter.js';
 import { internal as $ } from './internal/DisplayObject.js';
 import type LoaderInfo from './LoaderInfo.js';
+import type { Renderable } from './Renderable.js';
 import type Shader from './Shader.js';
 import type Stage from './Stage.js';
 import Transform from './Transform.js';
 
-export default class DisplayObject implements BitmapDrawable {
+export default class DisplayObject implements Renderable {
   private static __tempPoint: Point = new Point();
 
   [$._alpha]: number = 1;
