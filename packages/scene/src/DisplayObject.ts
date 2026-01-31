@@ -18,6 +18,7 @@ export default class DisplayObject implements BitmapDrawable {
   [$._blendMode]: BlendMode = BlendMode.Normal;
   [$._cacheAsBitmap]: boolean = false;
   [$._cacheAsBitmapMatrix]: Matrix2D | null = null;
+  [$._children]: DisplayObject[] | null = null;
   [$._dirtyFlags]: DirtyFlags = DirtyFlags.None;
   [$._filters]: BitmapFilter[] | null = null;
   [$._height]: number = 0;
