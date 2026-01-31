@@ -15,7 +15,7 @@
     "lint:fix": "eslint -c eslint.config.ts --fix",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "test": "npm run test:run --workspaces",
+    "test": "npm run test:run --workspaces --if-present",
     "test:math": "npm run test -w packages/math",
     "test:render": "npm run test -w packages/render",
     "test:scene": "npm run test -w packages/scene"
