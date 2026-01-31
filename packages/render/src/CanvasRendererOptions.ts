@@ -6,6 +6,6 @@ export type CanvasRendererOptions = {
   imageSmoothingEnabled?: boolean;
   imageSmoothingQuality?: ImageSmoothingQuality;
   pixelRatio?: number;
+  renderTransform?: Matrix2D;
   roundPixels?: boolean;
-  worldTransform?: Matrix2D;
 };
