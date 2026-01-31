@@ -1,15 +1,15 @@
 import type { Rectangle } from '@flighthq/math';
 import { Matrix2D } from '@flighthq/math';
-import type { BitmapDrawable, DisplayObject } from '@flighthq/scene';
+import type { DisplayObject, Renderable } from '@flighthq/scene';
 import { BlendMode } from '@flighthq/scene/BlendMode';
-import { internal as $ } from '@flighthq/scene/internal/BitmapDrawable';
+import { internal as $ } from '@flighthq/scene/internal/Renderable';
 
 import CanvasRenderData from './CanvasRenderData';
 import type { CanvasRendererOptions } from './CanvasRendererOptions';
 
 export default class CanvasRenderer {
   protected static __currentBlendMode: BlendMode | null = null;
-  protected static __drawableStack: BitmapDrawable[] = [];
+  protected static __renderableStack: Renderable[] = [];
   protected static __overrideBlendMode: BlendMode | null = null;
 
   readonly canvas: HTMLCanvasElement;
@@ -23,7 +23,7 @@ export default class CanvasRenderer {
   protected __backgroundColor: number = 0x00000000;
   protected __backgroundColorSplit: number[] = [0, 0, 0, 0];
   protected __backgroundColorString: string = '#00000000';
-  protected __renderData: WeakMap<BitmapDrawable, CanvasRenderData> = new WeakMap();
+  protected __renderData: WeakMap<Renderable, CanvasRenderData> = new WeakMap();
   protected __renderQueue: CanvasRenderData[] = [];
   protected __renderQueueLength: number = 0;
 
@@ -44,7 +44,7 @@ export default class CanvasRenderer {
     this.roundPixels = options?.roundPixels ?? false;
   }
 
-  static render(target: CanvasRenderer, source: BitmapDrawable): void {
+  static render(target: CanvasRenderer, source: Renderable): void {
     const dirty = this.__updateRenderQueue(target, source);
     if (dirty) {
       this.__clear(target);
@@ -232,8 +232,8 @@ export default class CanvasRenderer {
     }
   }
 
-  protected static __updateRenderQueue(target: CanvasRenderer, source: BitmapDrawable): boolean {
-    const drawableStack = this.__drawableStack;
+  protected static __updateRenderQueue(target: CanvasRenderer, source: Renderable): boolean {
+    const renderableStack = this.__renderableStack;
     const renderDataMap = target.__renderData;
     const renderQueue = target.__renderQueue;
 
@@ -241,11 +241,11 @@ export default class CanvasRenderer {
     let parentAlpha = 1;
     let renderQueueIndex = 0;
 
-    let drawableStackLength = 1;
-    drawableStack[0] = source;
+    let renderableStackLength = 1;
+    renderableStack[0] = source;
 
-    while (drawableStackLength > 0) {
-      const current = drawableStack[--drawableStackLength];
+    while (renderableStackLength > 0) {
+      const current = renderableStack[--renderableStackLength];
       const renderData =
         renderDataMap.get(current) ?? renderDataMap.set(current, new CanvasRenderData(current)).get(current)!;
 
@@ -271,7 +271,7 @@ export default class CanvasRenderer {
       if (children !== null) {
         for (let i = children.length - 1; i >= 0; i--) {
           // Add child to stack for further traversal
-          drawableStack[drawableStackLength++] = children[i];
+          renderableStack[renderableStackLength++] = children[i];
         }
       }
 

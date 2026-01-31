@@ -1,6 +1,6 @@
 import type { Matrix2D } from '@flighthq/math';
 import type BitmapDrawable from '@flighthq/scene/BitmapDrawable';
-import { internal as $ } from '@flighthq/scene/internal/BitmapDrawable';
+import { internal as $ } from '@flighthq/scene/internal/Renderable';
 
 export default class CanvasRenderData {
   readonly source: BitmapDrawable;
