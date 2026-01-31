@@ -2,8 +2,9 @@ export const _alpha: unique symbol = Symbol('alpha');
 export const _blendMode: unique symbol = Symbol('blendMode');
 export const _cacheAsBitmap: unique symbol = Symbol('cacheAsBitmap');
 export const _cacheAsBitmapMatrix: unique symbol = Symbol('cacheAsBitmapMatrix');
-export const _filters: unique symbol = Symbol('filters');
+export const _children: unique symbol = Symbol('children');
 export const _dirtyFlags: unique symbol = Symbol('dirtyFlags');
+export const _filters: unique symbol = Symbol('filters');
 export const _height: unique symbol = Symbol('height');
 export const _loaderInfo: unique symbol = Symbol('loaderInfo');
 export const _localBounds: unique symbol = Symbol('localBounds');
@@ -40,8 +41,9 @@ export const internal = {
   _blendMode,
   _cacheAsBitmap,
   _cacheAsBitmapMatrix,
-  _filters,
+  _children,
   _dirtyFlags,
+  _filters,
   _height,
   _loaderInfo,
   _localBounds,

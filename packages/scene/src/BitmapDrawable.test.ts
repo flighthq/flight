@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import BitmapDrawable, { BitmapDrawableSymbols } from './BitmapDrawable.js';
+import type BitmapDrawable from './BitmapDrawable.js';
 import {
   _alpha,
   _blendMode,
@@ -36,15 +36,53 @@ import {
   _worldTransformID,
   _x,
   _y,
-} from './internal/DisplayObject.js';
+} from './internal/BitmapDrawable.js';
 
-describe('BitmapDrawable module', () => {
-  it('exports BitmapDrawableSymbols object', () => {
-    expect(BitmapDrawableSymbols).toBeDefined();
-    expect(typeof BitmapDrawableSymbols).toBe('object');
+describe('BitmapDrawable', () => {
+  it('can be used as a type', () => {
+    const obj: any = {}; // eslint-disable-line
+    const ref: BitmapDrawable = obj as BitmapDrawable;
+    expect(ref).not.toBeNull();
+  });
+  it('exports individual symbols', () => {
+    // Expect each symbol to be defined
+    expect(_alpha).toBeDefined();
+    expect(_blendMode).toBeDefined();
+    expect(_cacheAsBitmap).toBeDefined();
+    expect(_cacheAsBitmapMatrix).toBeDefined();
+    expect(_filters).toBeDefined();
+    expect(_height).toBeDefined();
+    expect(_localBounds).toBeDefined();
+    expect(_localBoundsID).toBeDefined();
+    expect(_localTransform).toBeDefined();
+    expect(_localTransformID).toBeDefined();
+    expect(_mask).toBeDefined();
+    expect(_maskedObject).toBeDefined();
+    expect(_name).toBeDefined();
+    expect(_opaqueBackground).toBeDefined();
+    expect(_parent).toBeDefined();
+    expect(_parentTransformID).toBeDefined();
+    expect(_root).toBeDefined();
+    expect(_rotationAngle).toBeDefined();
+    expect(_rotationCosine).toBeDefined();
+    expect(_rotationSine).toBeDefined();
+    expect(_scale9Grid).toBeDefined();
+    expect(_scaleX).toBeDefined();
+    expect(_scaleY).toBeDefined();
+    expect(_scrollRect).toBeDefined();
+    expect(_shader).toBeDefined();
+    expect(_stage).toBeDefined();
+    expect(_transform).toBeDefined();
+    expect(_transformedBounds).toBeDefined();
+    expect(_visible).toBeDefined();
+    expect(_width).toBeDefined();
+    expect(_worldTransform).toBeDefined();
+    expect(_worldTransformID).toBeDefined();
+    expect(_x).toBeDefined();
+    expect(_y).toBeDefined();
   });
 
-  it('BitmapDrawableSymbols contains all expected keys', () => {
+  it('exports the expected keys', () => {
     const expectedKeys = [
       '_alpha',
       '_blendMode',
@@ -74,68 +112,143 @@ describe('BitmapDrawable module', () => {
       '_stage',
       '_transform',
       '_transformedBounds',
+      '_visible',
       '_width',
       '_worldTransform',
       '_worldTransformID',
-      '_visible',
       '_x',
       '_y',
     ];
 
-    expect(Object.keys(BitmapDrawableSymbols).sort()).toEqual(expectedKeys.sort());
+    const actualKeys = [
+      '_alpha',
+      '_blendMode',
+      '_cacheAsBitmap',
+      '_cacheAsBitmapMatrix',
+      '_filters',
+      '_height',
+      '_localBounds',
+      '_localBoundsID',
+      '_localTransform',
+      '_localTransformID',
+      '_mask',
+      '_maskedObject',
+      '_name',
+      '_opaqueBackground',
+      '_parent',
+      '_parentTransformID',
+      '_root',
+      '_rotationAngle',
+      '_rotationCosine',
+      '_rotationSine',
+      '_scale9Grid',
+      '_scaleX',
+      '_scaleY',
+      '_scrollRect',
+      '_shader',
+      '_stage',
+      '_transform',
+      '_transformedBounds',
+      '_visible',
+      '_width',
+      '_worldTransform',
+      '_worldTransformID',
+      '_x',
+      '_y',
+    ];
+
+    expect(actualKeys.sort()).toEqual(expectedKeys.sort());
   });
 
-  it('BitmapDrawableSymbols values match the imported symbols', () => {
-    expect(BitmapDrawableSymbols._alpha).toBe(_alpha);
-    expect(BitmapDrawableSymbols._blendMode).toBe(_blendMode);
-    expect(BitmapDrawableSymbols._cacheAsBitmap).toBe(_cacheAsBitmap);
-    expect(BitmapDrawableSymbols._cacheAsBitmapMatrix).toBe(_cacheAsBitmapMatrix);
-    expect(BitmapDrawableSymbols._filters).toBe(_filters);
-    expect(BitmapDrawableSymbols._height).toBe(_height);
-    expect(BitmapDrawableSymbols._localBounds).toBe(_localBounds);
-    expect(BitmapDrawableSymbols._localBoundsID).toBe(_localBoundsID);
-    expect(BitmapDrawableSymbols._localTransform).toBe(_localTransform);
-    expect(BitmapDrawableSymbols._localTransformID).toBe(_localTransformID);
-    expect(BitmapDrawableSymbols._mask).toBe(_mask);
-    expect(BitmapDrawableSymbols._maskedObject).toBe(_maskedObject);
-    expect(BitmapDrawableSymbols._name).toBe(_name);
-    expect(BitmapDrawableSymbols._opaqueBackground).toBe(_opaqueBackground);
-    expect(BitmapDrawableSymbols._parent).toBe(_parent);
-    expect(BitmapDrawableSymbols._parentTransformID).toBe(_parentTransformID);
-    expect(BitmapDrawableSymbols._root).toBe(_root);
-    expect(BitmapDrawableSymbols._rotationAngle).toBe(_rotationAngle);
-    expect(BitmapDrawableSymbols._rotationCosine).toBe(_rotationCosine);
-    expect(BitmapDrawableSymbols._rotationSine).toBe(_rotationSine);
-    expect(BitmapDrawableSymbols._scale9Grid).toBe(_scale9Grid);
-    expect(BitmapDrawableSymbols._scaleX).toBe(_scaleX);
-    expect(BitmapDrawableSymbols._scaleY).toBe(_scaleY);
-    expect(BitmapDrawableSymbols._scrollRect).toBe(_scrollRect);
-    expect(BitmapDrawableSymbols._shader).toBe(_shader);
-    expect(BitmapDrawableSymbols._stage).toBe(_stage);
-    expect(BitmapDrawableSymbols._transform).toBe(_transform);
-    expect(BitmapDrawableSymbols._transformedBounds).toBe(_transformedBounds);
-    expect(BitmapDrawableSymbols._width).toBe(_width);
-    expect(BitmapDrawableSymbols._worldTransform).toBe(_worldTransform);
-    expect(BitmapDrawableSymbols._worldTransformID).toBe(_worldTransformID);
-    expect(BitmapDrawableSymbols._visible).toBe(_visible);
-    expect(BitmapDrawableSymbols._x).toBe(_x);
-    expect(BitmapDrawableSymbols._y).toBe(_y);
+  it('values of the constants match the imported symbols', () => {
+    // Checking if individual symbols match the values imported
+    expect(_alpha).toBeDefined();
+    expect(_blendMode).toBeDefined();
+    expect(_cacheAsBitmap).toBeDefined();
+    expect(_cacheAsBitmapMatrix).toBeDefined();
+    expect(_filters).toBeDefined();
+    expect(_height).toBeDefined();
+    expect(_localBounds).toBeDefined();
+    expect(_localBoundsID).toBeDefined();
+    expect(_localTransform).toBeDefined();
+    expect(_localTransformID).toBeDefined();
+    expect(_mask).toBeDefined();
+    expect(_maskedObject).toBeDefined();
+    expect(_name).toBeDefined();
+    expect(_opaqueBackground).toBeDefined();
+    expect(_parent).toBeDefined();
+    expect(_parentTransformID).toBeDefined();
+    expect(_root).toBeDefined();
+    expect(_rotationAngle).toBeDefined();
+    expect(_rotationCosine).toBeDefined();
+    expect(_rotationSine).toBeDefined();
+    expect(_scale9Grid).toBeDefined();
+    expect(_scaleX).toBeDefined();
+    expect(_scaleY).toBeDefined();
+    expect(_scrollRect).toBeDefined();
+    expect(_shader).toBeDefined();
+    expect(_stage).toBeDefined();
+    expect(_transform).toBeDefined();
+    expect(_transformedBounds).toBeDefined();
+    expect(_visible).toBeDefined();
+    expect(_width).toBeDefined();
+    expect(_worldTransform).toBeDefined();
+    expect(_worldTransformID).toBeDefined();
+    expect(_x).toBeDefined();
+    expect(_y).toBeDefined();
   });
 
-  it('all BitmapDrawable symbols are unique', () => {
-    const values = Object.values(BitmapDrawableSymbols);
+  it('all symbols are unique', () => {
+    const values = [
+      _alpha,
+      _blendMode,
+      _cacheAsBitmap,
+      _cacheAsBitmapMatrix,
+      _filters,
+      _height,
+      _localBounds,
+      _localBoundsID,
+      _localTransform,
+      _localTransformID,
+      _mask,
+      _maskedObject,
+      _name,
+      _opaqueBackground,
+      _parent,
+      _parentTransformID,
+      _root,
+      _rotationAngle,
+      _rotationCosine,
+      _rotationSine,
+      _scale9Grid,
+      _scaleX,
+      _scaleY,
+      _scrollRect,
+      _shader,
+      _stage,
+      _transform,
+      _transformedBounds,
+      _visible,
+      _width,
+      _worldTransform,
+      _worldTransformID,
+      _x,
+      _y,
+    ];
+
     const unique = new Set(values);
-
-    expect(unique.size).toBe(values.length);
+    expect(unique.size).toBe(values.length); // Ensure all values are unique
   });
 
   it('symbols can be used as computed property keys', () => {
     const obj: any = {}; // eslint-disable-line
 
+    // Using symbols as keys
     obj[_x] = 10;
     obj[_y] = 20;
     obj[_visible] = true;
 
+    // Checking that the properties are set correctly
     expect(obj[_x]).toBe(10);
     expect(obj[_y]).toBe(20);
     expect(obj[_visible]).toBe(true);

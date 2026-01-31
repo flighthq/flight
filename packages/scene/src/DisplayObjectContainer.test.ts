@@ -1,5 +1,6 @@
 import DisplayObject from './DisplayObject.js';
 import DisplayObjectContainer from './DisplayObjectContainer.js';
+import { _children } from './internal/DisplayObject.js';
 
 describe('DisplayObjectContainer', () => {
   let container: DisplayObjectContainer;
@@ -85,8 +86,8 @@ describe('DisplayObjectContainer', () => {
       DisplayObjectContainer.addChildAt(container, childB, 0);
 
       expect(container.numChildren).toBe(2);
-      expect(container['__children'][0]).toBe(childB);
-      expect(container['__children'][1]).toBe(childA);
+      expect(container[_children][0]).toBe(childB);
+      expect(container[_children][1]).toBe(childA);
     });
 
     it('addChildAt allows inserting at the end (index === length)', () => {
@@ -94,7 +95,7 @@ describe('DisplayObjectContainer', () => {
       DisplayObjectContainer.addChildAt(container, childB, 1);
 
       expect(container.numChildren).toBe(2);
-      expect(container['__children'][1]).toBe(childB);
+      expect(container[_children][1]).toBe(childB);
     });
 
     it('addChildAt throws if index is negative', () => {
@@ -112,8 +113,8 @@ describe('DisplayObjectContainer', () => {
       // move childA to the front
       DisplayObjectContainer.addChildAt(container, childA, 1);
 
-      expect(container['__children'][0]).toBe(childB);
-      expect(container['__children'][1]).toBe(childA);
+      expect(container[_children][0]).toBe(childB);
+      expect(container[_children][1]).toBe(childA);
     });
   });
 
@@ -160,7 +161,7 @@ describe('DisplayObjectContainer', () => {
       expect(removed).toBe(childA);
       expect(container.numChildren).toBe(1);
       expect(childA.parent).toBeNull();
-      expect(container['__children'][0]).toBe(childB);
+      expect(container[_children][0]).toBe(childB);
     });
 
     it('removeChildAt returns null for out-of-range index', () => {
@@ -190,7 +191,7 @@ describe('DisplayObjectContainer', () => {
       DisplayObjectContainer.removeChildren(container, 1, 2);
 
       expect(container.numChildren).toBe(1);
-      expect(container['__children'][0]).toBe(childA);
+      expect(container[_children][0]).toBe(childA);
       expect(childB.parent).toBeNull();
       expect(childC.parent).toBeNull();
     });
@@ -218,8 +219,8 @@ describe('DisplayObjectContainer', () => {
 
       DisplayObjectContainer.setChildIndex(container, childA, 1);
 
-      expect(container['__children'][0]).toBe(childB);
-      expect(container['__children'][1]).toBe(childA);
+      expect(container[_children][0]).toBe(childB);
+      expect(container[_children][1]).toBe(childA);
     });
 
     it('setChildIndex does nothing if child is not in container', () => {
@@ -230,7 +231,7 @@ describe('DisplayObjectContainer', () => {
 
       DisplayObjectContainer.setChildIndex(container, childA, 0);
 
-      expect(container['__children'][0]).toBe(childB);
+      expect(container[_children][0]).toBe(childB);
       expect(childA.parent).toBe(other);
     });
 
@@ -239,7 +240,7 @@ describe('DisplayObjectContainer', () => {
 
       DisplayObjectContainer.setChildIndex(container, childA, 5);
 
-      expect(container['__children'][0]).toBe(childA);
+      expect(container[_children][0]).toBe(childA);
     });
   });
 
@@ -250,8 +251,8 @@ describe('DisplayObjectContainer', () => {
 
       DisplayObjectContainer.swapChildren(container, childA, childB);
 
-      expect(container['__children'][0]).toBe(childB);
-      expect(container['__children'][1]).toBe(childA);
+      expect(container[_children][0]).toBe(childB);
+      expect(container[_children][1]).toBe(childA);
     });
 
     it('swapChildren does nothing if either child is not in container', () => {
@@ -262,7 +263,7 @@ describe('DisplayObjectContainer', () => {
 
       DisplayObjectContainer.swapChildren(container, childA, childB);
 
-      expect(container['__children'][0]).toBe(childA);
+      expect(container[_children][0]).toBe(childA);
     });
   });
 
@@ -273,8 +274,8 @@ describe('DisplayObjectContainer', () => {
 
       DisplayObjectContainer.swapChildrenAt(container, 0, 1);
 
-      expect(container['__children'][0]).toBe(childB);
-      expect(container['__children'][1]).toBe(childA);
+      expect(container[_children][0]).toBe(childB);
+      expect(container[_children][1]).toBe(childA);
     });
 
     it('swapChildrenAt assumes valid indices (throws if invalid)', () => {

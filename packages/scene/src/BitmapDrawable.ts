@@ -4,11 +4,12 @@ import type { BlendMode } from './BlendMode';
 import type DisplayObject from './DisplayObject';
 import type DisplayObjectContainer from './DisplayObjectContainer';
 import type BitmapFilter from './filters/BitmapFilter';
-import {
+import type {
   _alpha,
   _blendMode,
   _cacheAsBitmap,
   _cacheAsBitmapMatrix,
+  _children,
   _filters,
   _height,
   _localBounds,
@@ -39,7 +40,7 @@ import {
   _worldTransformID,
   _x,
   _y,
-} from './internal/DisplayObject.js';
+} from './internal/BitmapDrawable.js';
 import type Shader from './Shader';
 import type Stage from './Stage';
 import type Transform from './Transform';
@@ -49,6 +50,7 @@ export interface BitmapDrawable {
   readonly [_blendMode]: BlendMode;
   readonly [_cacheAsBitmap]: boolean;
   readonly [_cacheAsBitmapMatrix]: Matrix2D | null;
+  readonly [_children]: DisplayObject[] | null;
   readonly [_filters]: BitmapFilter[] | null;
   readonly [_height]: number;
   readonly [_localBounds]: Rectangle;
@@ -80,42 +82,5 @@ export interface BitmapDrawable {
   readonly [_x]: number;
   readonly [_y]: number;
 }
-
-export const BitmapDrawableSymbols = {
-  _alpha,
-  _blendMode,
-  _cacheAsBitmap,
-  _cacheAsBitmapMatrix,
-  _filters,
-  _height,
-  _localBounds,
-  _localBoundsID,
-  _localTransform,
-  _localTransformID,
-  _mask,
-  _maskedObject,
-  _name,
-  _opaqueBackground,
-  _parent,
-  _parentTransformID,
-  _root,
-  _rotationAngle,
-  _rotationCosine,
-  _rotationSine,
-  _scale9Grid,
-  _scaleX,
-  _scaleY,
-  _scrollRect,
-  _shader,
-  _stage,
-  _transform,
-  _transformedBounds,
-  _width,
-  _worldTransform,
-  _worldTransformID,
-  _visible,
-  _x,
-  _y,
-};
 
 export default BitmapDrawable;
