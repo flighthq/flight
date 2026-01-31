@@ -1,16 +1,31 @@
+import type { Rectangle } from '@flighthq/math';
 import { Matrix2D } from '@flighthq/math';
+import type { BitmapDrawable, DisplayObject } from '@flighthq/scene';
+import { BlendMode } from '@flighthq/scene/BlendMode';
+import { internal as $ } from '@flighthq/scene/internal/BitmapDrawable';
 
+import CanvasRenderData from './CanvasRenderData';
 import type { CanvasRendererOptions } from './CanvasRendererOptions';
 
 export default class CanvasRenderer {
+  protected static __currentBlendMode: BlendMode | null = null;
+  protected static __drawableStack: BitmapDrawable[] = [];
+  protected static __overrideBlendMode: BlendMode | null = null;
+
   readonly canvas: HTMLCanvasElement;
   readonly context: CanvasRenderingContext2D;
   readonly contextAttributes: CanvasRenderingContext2DSettings;
 
-  backgroundColor: number | null;
   pixelRatio: number;
+  renderTransform: Matrix2D;
   roundPixels: boolean;
-  worldTransform: Matrix2D;
+
+  protected __backgroundColor: number = 0x00000000;
+  protected __backgroundColorSplit: number[] = [0, 0, 0, 0];
+  protected __backgroundColorString: string = '#00000000';
+  protected __renderData: WeakMap<BitmapDrawable, CanvasRenderData> = new WeakMap();
+  protected __renderQueue: CanvasRenderData[] = [];
+  protected __renderQueueLength: number = 0;
 
   constructor(canvas: HTMLCanvasElement, options?: CanvasRendererOptions) {
     this.canvas = canvas;
@@ -23,13 +38,269 @@ export default class CanvasRenderer {
 
     this.contextAttributes = this.context.getContextAttributes();
 
-    this.backgroundColor = options?.backgroundColor ?? null;
+    this.backgroundColor = options?.backgroundColor ?? 0x00000000;
     this.pixelRatio = options?.pixelRatio ?? window.devicePixelRatio | 1;
+    this.renderTransform = options?.renderTransform ?? new Matrix2D();
     this.roundPixels = options?.roundPixels ?? false;
-    this.worldTransform = options?.worldTransform ?? new Matrix2D();
+  }
+
+  static render(target: CanvasRenderer, source: BitmapDrawable): void {
+    const dirty = this.__updateRenderQueue(target, source);
+    if (dirty) {
+      this.__clear(target);
+      this.__flushRenderQueue(target);
+    }
+  }
+
+  protected static __clear(target: CanvasRenderer): void {
+    // const cacheBlendMode = source[$._blendMode];
+    this.__currentBlendMode = null;
+    this.__setBlendMode(target, BlendMode.Normal);
+
+    target.context.setTransform(1, 0, 0, 1, 0, 0);
+    target.context.globalAlpha = 1;
+
+    if ((target.__backgroundColor & 0xff) !== 0) {
+      target.context.fillStyle = target.__backgroundColorString;
+      target.context.fillRect(0, 0, target.canvas.width, target.canvas.height);
+    } else {
+      target.context.clearRect(0, 0, target.canvas.width, target.canvas.height);
+    }
+
+    // this.__setBlendMode(target, cacheBlendMode);
+  }
+
+  protected static __flushRenderQueue(target: CanvasRenderer): void {
+    const renderQueue = target.__renderQueue;
+    const renderQueueLength = target.__renderQueueLength;
+
+    for (let i = 0; i < renderQueueLength; i++) {
+      const renderData = renderQueue[i];
+      // switch (renderData.type) {
+      //   case BITMAP_DATA:
+      //     CanvasBitmapData.renderDrawable(cast object, this);
+      //     break;
+      //   case STAGE, SPRITE:
+      //     CanvasDisplayObjectContainer.renderDrawable(cast object, this);
+      //     break;
+      //   case BITMAP:
+      //     CanvasBitmap.renderDrawable(cast object, this);
+      //     break;
+      //   case SHAPE:
+      //     CanvasDisplayObject.renderDrawable(cast object, this);
+      //     break;
+      //   case SIMPLE_BUTTON:
+      //     CanvasSimpleButton.renderDrawable(cast object, this);
+      //     break;
+      //   case TEXT_FIELD:
+      //     CanvasTextField.renderDrawable(cast object, this);
+      //     break;
+      //   case VIDEO:
+      //     CanvasVideo.renderDrawable(cast object, this);
+      //     break;
+      //   case TILEMAP:
+      //     CanvasTilemap.renderDrawable(cast object, this);
+      //     break;
+      //   default:
+      // }
+    }
+  }
+
+  protected static __popMask(target: CanvasRenderer): void {
+    target.context.restore();
+  }
+
+  protected static __popClipRect(target: CanvasRenderer): void {
+    target.context.restore();
+  }
+
+  protected static __popMaskObject(
+    target: CanvasRenderer,
+    object: CanvasRenderData,
+    handleScrollRect: boolean = true,
+  ): void {
+    if (/*!object.__isCacheBitmapRender && */ object.source[$._mask] !== null) {
+      this.__popMask(target);
+    }
+
+    if (handleScrollRect && object.source[$._scrollRect] != null) {
+      this.__popClipRect(target);
+    }
+  }
+
+  protected static __pushClipRect(target: CanvasRenderer, rect: Rectangle, transform: Matrix2D): void {
+    target.context.save();
+
+    this.__setTransform(target, target.context, transform);
+
+    target.context.beginPath();
+    target.context.rect(rect.x, rect.y, rect.width, rect.height);
+    target.context.clip();
+  }
+
+  protected static __pushMask(target: CanvasRenderer, mask: CanvasRenderData): void {
+    target.context.save();
+
+    this.__setTransform(target, target.context, mask.renderTransform);
+
+    target.context.beginPath();
+    // this.__renderDrawableMask(target, mask);
+    target.context.closePath();
+
+    target.context.clip();
+  }
+
+  protected static __pushMaskObject(
+    target: CanvasRenderer,
+    object: CanvasRenderData,
+    handleScrollRect: boolean = true,
+  ): void {
+    if (handleScrollRect && object.source[$._scrollRect] !== null) {
+      this.__pushClipRect(target, object.source[$._scrollRect]!, object.renderTransform);
+    }
+    if (/*!object.__isCacheBitmapRender &&*/ object.mask !== null) {
+      this.__pushMask(target, object.mask);
+    }
+  }
+
+  protected static __setBlendMode(target: CanvasRenderer, value: BlendMode): void {
+    if (this.__overrideBlendMode !== null) value = this.__overrideBlendMode;
+    if (value === this.__currentBlendMode) return;
+
+    this.__currentBlendMode = value;
+    const context = target.context;
+
+    switch (value) {
+      case BlendMode.Add:
+        context.globalCompositeOperation = 'lighter';
+        break;
+      // case BlendMode.Alpha:
+      // 	context.globalCompositeOperation = "";
+      case BlendMode.Darken:
+        context.globalCompositeOperation = 'darken';
+        break;
+      case BlendMode.Difference:
+        context.globalCompositeOperation = 'difference';
+        break;
+      // case ERASE:
+      //   context.globalCompositeOperation = "";
+      case BlendMode.Hardlight:
+        context.globalCompositeOperation = 'hard-light';
+        break;
+      // case INVERT:
+      //   context.globalCompositeOperation = "";
+      // case LAYER:
+      // 	context.globalCompositeOperation = "source-over";
+      case BlendMode.Lighten:
+        context.globalCompositeOperation = 'lighten';
+        break;
+      case BlendMode.Multiply:
+        context.globalCompositeOperation = 'multiply';
+        break;
+      case BlendMode.Overlay:
+        context.globalCompositeOperation = 'overlay';
+        break;
+      case BlendMode.Screen:
+        context.globalCompositeOperation = 'screen';
+        break;
+      // case SHADER:
+      //   context.globalCompositeOperation = "";
+      // case SUBTRACT:
+      //   context.globalCompositeOperation = "";
+      default:
+        context.globalCompositeOperation = 'source-over';
+        break;
+    }
+  }
+
+  protected static __setTransform(
+    target: CanvasRenderer,
+    context: CanvasRenderingContext2D,
+    transform: Matrix2D,
+  ): void {
+    if (target.roundPixels) {
+      context.setTransform(
+        transform.a,
+        transform.b,
+        transform.c,
+        transform.d,
+        Math.fround(transform.tx),
+        Math.fround(transform.ty),
+      );
+    } else {
+      context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
+    }
+  }
+
+  protected static __updateRenderQueue(target: CanvasRenderer, source: BitmapDrawable): boolean {
+    const drawableStack = this.__drawableStack;
+    const renderDataMap = target.__renderData;
+    const renderQueue = target.__renderQueue;
+
+    let dirty = false;
+    let parentAlpha = 1;
+    let renderQueueIndex = 0;
+
+    let drawableStackLength = 1;
+    drawableStack[0] = source;
+
+    while (drawableStackLength > 0) {
+      const current = drawableStack[--drawableStackLength];
+      const renderData =
+        renderDataMap.get(current) ?? renderDataMap.set(current, new CanvasRenderData(current)).get(current)!;
+
+      if (!dirty) dirty = renderData.isDirty();
+      if (!current[$._visible]) continue;
+
+      const mask = current[$._mask];
+      if (mask !== null) {
+        const maskRenderData =
+          renderDataMap.get(mask) ?? renderDataMap.set(mask, new CanvasRenderData(mask)).get(mask)!;
+        if (!dirty) dirty = maskRenderData.isDirty();
+        renderData.mask = maskRenderData;
+      }
+
+      const renderAlpha = current[$._alpha] * parentAlpha;
+      renderData.renderAlpha = renderAlpha;
+      renderData.renderTransform = source[$._worldTransform];
+
+      renderQueue[renderQueueIndex++] = renderData;
+
+      const children = current[$._children];
+
+      if (children !== null) {
+        for (let i = children.length - 1; i >= 0; i--) {
+          // Add child to stack for further traversal
+          drawableStack[drawableStackLength++] = children[i];
+        }
+      }
+
+      parentAlpha = renderAlpha;
+    }
+
+    target.__renderQueueLength = renderQueueIndex;
+    return dirty;
   }
 
   // Get & Set Methods
+
+  get backgroundColor(): number {
+    return this.__backgroundColor;
+  }
+
+  set backgroundColor(value: number) {
+    if (value === this.__backgroundColor) return;
+    this.__backgroundColor = value & 0xffffffff;
+    const r = (value & 0xff000000) >>> 24;
+    const g = (value & 0x00ff0000) >>> 16;
+    const b = (value & 0x0000ff00) >>> 8;
+    const a = value & 0xff;
+    this.__backgroundColorSplit[0] = r / 0xff;
+    this.__backgroundColorSplit[1] = g / 0xff;
+    this.__backgroundColorSplit[2] = b / 0xff;
+    this.__backgroundColorSplit[3] = a / 0xff;
+    this.__backgroundColorString = '#' + (value & 0xffffffff).toString(16).padStart(8, '0').toUpperCase();
+  }
 
   get imageSmoothingEnabled(): boolean {
     return this.context?.imageSmoothingEnabled ?? false;

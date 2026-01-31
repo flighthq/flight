@@ -31,10 +31,10 @@ describe('CanvasRenderer', () => {
       alpha: true,
       desynchronized: false,
     });
-    expect(renderer.backgroundColor).toBeNull();
+    expect(renderer.backgroundColor).toBe(0);
     expect(renderer.pixelRatio).toBe(window.devicePixelRatio);
     expect(renderer.roundPixels).toBe(false);
-    expect(renderer.worldTransform).toBeInstanceOf(Matrix2D);
+    expect(renderer.renderTransform).toBeInstanceOf(Matrix2D);
   });
 
   it('should use provided options', () => {
@@ -42,7 +42,7 @@ describe('CanvasRenderer', () => {
       backgroundColor: 0xffffff,
       pixelRatio: 2,
       roundPixels: true,
-      worldTransform: new Matrix2D(),
+      renderTransform: new Matrix2D(),
       imageSmoothingEnabled: false,
       imageSmoothingQuality: 'low',
     };
@@ -52,7 +52,7 @@ describe('CanvasRenderer', () => {
     expect(renderer.backgroundColor).toBe(0xffffff);
     expect(renderer.pixelRatio).toBe(2);
     expect(renderer.roundPixels).toBe(true);
-    expect(renderer.worldTransform).toBeInstanceOf(Matrix2D);
+    expect(renderer.renderTransform).toBeInstanceOf(Matrix2D);
     expect(renderer.imageSmoothingEnabled).toBe(false);
     expect(renderer.imageSmoothingQuality).toBe('low');
   });
@@ -131,16 +131,16 @@ describe('CanvasRenderer', () => {
   it('should handle worldTransform option correctly', () => {
     const customTransform = new Matrix2D();
     const options: CanvasRendererOptions = {
-      worldTransform: customTransform,
+      renderTransform: customTransform,
     };
 
     const renderer = new CanvasRenderer(canvas, options);
-    expect(renderer.worldTransform).toBe(customTransform);
+    expect(renderer.renderTransform).toBe(customTransform);
   });
 
   it('should fall back to default Matrix2D if worldTransform is not provided', () => {
     const renderer = new CanvasRenderer(canvas);
-    expect(renderer.worldTransform).toBeInstanceOf(Matrix2D);
+    expect(renderer.renderTransform).toBeInstanceOf(Matrix2D);
   });
 
   // Check if contextAttributes are passed and correctly retrieved
