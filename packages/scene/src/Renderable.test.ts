@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import type BitmapDrawable from './BitmapDrawable.js';
 import {
   _alpha,
   _blendMode,
@@ -36,12 +35,13 @@ import {
   _worldTransformID,
   _x,
   _y,
-} from './internal/BitmapDrawable.js';
+} from './internal/Renderable.js';
+import type Renderable from './Renderable.js';
 
-describe('BitmapDrawable', () => {
+describe('Renderable', () => {
   it('can be used as a type', () => {
     const obj: any = {}; // eslint-disable-line
-    const ref: BitmapDrawable = obj as BitmapDrawable;
+    const ref: Renderable = obj as Renderable;
     expect(ref).not.toBeNull();
   });
   it('exports individual symbols', () => {
