@@ -1,7 +1,8 @@
+import type BitmapDrawable from './BitmapDrawable.js';
 import DisplayObject from './DisplayObject.js';
 import DisplayObjectContainer from './DisplayObjectContainer.js';
 
-export default class Sprite extends DisplayObjectContainer {
+export default class Sprite extends DisplayObjectContainer implements BitmapDrawable {
   constructor() {
     super();
   }

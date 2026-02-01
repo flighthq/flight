@@ -1,6 +1,6 @@
 import type { Rectangle } from '@flighthq/math';
 import { Matrix2D } from '@flighthq/math';
-import type { DisplayObject, Renderable } from '@flighthq/scene';
+import type { Renderable } from '@flighthq/scene';
 import { BlendMode } from '@flighthq/scene/BlendMode';
 import { internal as $ } from '@flighthq/scene/internal/Renderable';
 
@@ -71,11 +71,11 @@ export default class CanvasRenderer {
   }
 
   protected static __flushRenderQueue(target: CanvasRenderer): void {
-    const renderQueue = target.__renderQueue;
+    // const renderQueue = target.__renderQueue;
     const renderQueueLength = target.__renderQueueLength;
 
     for (let i = 0; i < renderQueueLength; i++) {
-      const renderData = renderQueue[i];
+      // const renderData = renderQueue[i];
       // switch (renderData.type) {
       //   case BITMAP_DATA:
       //     CanvasBitmapData.renderDrawable(cast object, this);

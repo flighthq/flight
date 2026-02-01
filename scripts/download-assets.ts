@@ -1,10 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-async function download(url, outPath) {
+async function download(url: string, outPath: string) {
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`Failed to download ${url}: ${res.statusText}`);
@@ -22,14 +19,14 @@ async function run() {
 
   for (const asset of manifest.assets) {
     const outPath = path.join(exampleDir, 'assets', asset.path);
-    console.log(`↓ ${asset.url}`);
+    console.log(`↓ ${asset.url}`); // eslint-disable-line
     await download(asset.url, outPath);
   }
 
-  console.log('Assets ready ✔');
+  console.log('Assets ready ✔'); // eslint-disable-line
 }
 
 run().catch((err) => {
-  console.error(err);
+  console.error(err); // eslint-disable-line
   process.exit(1);
 });
