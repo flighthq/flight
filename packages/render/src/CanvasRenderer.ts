@@ -2,7 +2,7 @@ import type { Rectangle } from '@flighthq/math';
 import { Matrix2D } from '@flighthq/math';
 import type { Renderable } from '@flighthq/scene';
 import { BlendMode } from '@flighthq/scene/BlendMode';
-import { internal as $ } from '@flighthq/scene/internal/Renderable';
+import { Renderable as R } from '@flighthq/scene/Renderable';
 
 import CanvasRenderData from './CanvasRenderData';
 import type { CanvasRendererOptions } from './CanvasRendererOptions';
@@ -53,7 +53,7 @@ export default class CanvasRenderer {
   }
 
   protected static __clear(target: CanvasRenderer): void {
-    // const cacheBlendMode = source[$._blendMode];
+    // const cacheBlendMode = source[R.blendMode];
     this.__currentBlendMode = null;
     this.__setBlendMode(target, BlendMode.Normal);
 
@@ -119,11 +119,11 @@ export default class CanvasRenderer {
     object: CanvasRenderData,
     handleScrollRect: boolean = true,
   ): void {
-    if (/*!object.__isCacheBitmapRender && */ object.source[$._mask] !== null) {
+    if (/*!object.__isCacheBitmapRender && */ object.source[R.mask] !== null) {
       this.__popMask(target);
     }
 
-    if (handleScrollRect && object.source[$._scrollRect] != null) {
+    if (handleScrollRect && object.source[R.scrollRect] != null) {
       this.__popClipRect(target);
     }
   }
@@ -155,8 +155,8 @@ export default class CanvasRenderer {
     object: CanvasRenderData,
     handleScrollRect: boolean = true,
   ): void {
-    if (handleScrollRect && object.source[$._scrollRect] !== null) {
-      this.__pushClipRect(target, object.source[$._scrollRect]!, object.renderTransform);
+    if (handleScrollRect && object.source[R.scrollRect] !== null) {
+      this.__pushClipRect(target, object.source[R.scrollRect]!, object.renderTransform);
     }
     if (/*!object.__isCacheBitmapRender &&*/ object.mask !== null) {
       this.__pushMask(target, object.mask);
@@ -250,9 +250,9 @@ export default class CanvasRenderer {
         renderDataMap.get(current) ?? renderDataMap.set(current, new CanvasRenderData(current)).get(current)!;
 
       if (!dirty) dirty = renderData.isDirty();
-      if (!current[$._visible]) continue;
+      if (!current[R.visible]) continue;
 
-      const mask = current[$._mask];
+      const mask = current[R.mask];
       if (mask !== null) {
         const maskRenderData =
           renderDataMap.get(mask) ?? renderDataMap.set(mask, new CanvasRenderData(mask)).get(mask)!;
@@ -260,13 +260,13 @@ export default class CanvasRenderer {
         renderData.mask = maskRenderData;
       }
 
-      const renderAlpha = current[$._alpha] * parentAlpha;
+      const renderAlpha = current[R.alpha] * parentAlpha;
       renderData.renderAlpha = renderAlpha;
-      renderData.renderTransform = source[$._worldTransform];
+      renderData.renderTransform = source[R.worldTransform];
 
       renderQueue[renderQueueIndex++] = renderData;
 
-      const children = current[$._children];
+      const children = current[R.children];
 
       if (children !== null) {
         for (let i = children.length - 1; i >= 0; i--) {

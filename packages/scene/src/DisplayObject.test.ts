@@ -4,6 +4,7 @@ import { Rectangle } from '@flighthq/math';
 import { DirtyFlags } from './DirtyFlags.js';
 import DisplayObject from './DisplayObject.js';
 import { internal as $ } from './internal/DisplayObject.js';
+import { Renderable as R } from './Renderable.js';
 
 describe('DisplayObject', () => {
   let displayObject: DisplayObject;
@@ -14,15 +15,13 @@ describe('DisplayObject', () => {
   });
 
   function getLocalBounds(displayObject: DisplayObject): Rectangle {
-    // @ts-expect-error: protected
-    DisplayObject.__updateLocalBounds(displayObject);
-    return displayObject[$._localBounds];
+    displayObject[R.updateLocalBounds]();
+    return displayObject[R.localBounds];
   }
 
   function getLocalTransform(displayObject: DisplayObject): Matrix2D {
-    // @ts-expect-error: protected
-    DisplayObject.__updateLocalTransform(displayObject);
-    return displayObject[$._localTransform];
+    displayObject[R.updateLocalTransform]();
+    return displayObject[R.localTransform];
   }
 
   // Constructor
@@ -108,10 +107,10 @@ describe('DisplayObject', () => {
       const mask = new DisplayObject();
 
       displayObject.mask = mask;
-      expect(mask[$._maskedObject]).toBe(displayObject);
+      expect(mask[R.maskedObject]).toBe(displayObject);
 
       displayObject.mask = null;
-      expect(mask[$._maskedObject]).toBeNull();
+      expect(mask[R.maskedObject]).toBeNull();
     });
 
     it('marks clip dirty when changed', () => {
@@ -131,8 +130,8 @@ describe('DisplayObject', () => {
 
     it('uses fast cardinal sin/cos paths', () => {
       displayObject.rotation = 90;
-      expect(displayObject[$._rotationSine]).toBe(1);
-      expect(displayObject[$._rotationCosine]).toBe(0);
+      expect(displayObject[R.rotationSine]).toBe(1);
+      expect(displayObject[R.rotationCosine]).toBe(0);
     });
 
     it('marks transform dirty when changed', () => {
@@ -260,8 +259,8 @@ describe('DisplayObject', () => {
       grandChild = new DisplayObject();
 
       // fake hierarchy
-      child[$._parent] = root as any; // eslint-disable-line
-      grandChild[$._parent] = child as any; // eslint-disable-line
+      child[R.parent] = root as any; // eslint-disable-line
+      grandChild[R.parent] = child as any; // eslint-disable-line
 
       // fake local bounds
       Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
@@ -331,8 +330,8 @@ describe('DisplayObject', () => {
       grandChild = new DisplayObject();
 
       // fake hierarchy
-      child[$._parent] = root as any; // eslint-disable-line
-      grandChild[$._parent] = child as any; // eslint-disable-line
+      child[R.parent] = root as any; // eslint-disable-line
+      grandChild[R.parent] = child as any; // eslint-disable-line
 
       // fake local bounds
       Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
@@ -408,8 +407,8 @@ describe('DisplayObject', () => {
       grandChild = new DisplayObject();
 
       // fake hierarchy
-      child[$._parent] = root as any; // eslint-disable-line
-      grandChild[$._parent] = child as any; // eslint-disable-line
+      child[R.parent] = root as any; // eslint-disable-line
+      grandChild[R.parent] = child as any; // eslint-disable-line
 
       // fake local bounds
       Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
@@ -479,8 +478,8 @@ describe('DisplayObject', () => {
       grandChild = new DisplayObject();
 
       // fake hierarchy
-      child[$._parent] = root as any; // eslint-disable-line
-      grandChild[$._parent] = child as any; // eslint-disable-line
+      child[R.parent] = root as any; // eslint-disable-line
+      grandChild[R.parent] = child as any; // eslint-disable-line
 
       // fake local bounds
       Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
@@ -551,7 +550,7 @@ describe('DisplayObject', () => {
     beforeEach(() => {
       obj = new DisplayObject();
       // fake parent
-      obj[$._parent] = new DisplayObject() as any; // eslint-disable-line
+      obj[R.parent] = new DisplayObject() as any; // eslint-disable-line
       obj.x = 10;
       obj.y = 20;
       obj.scaleX = 2;
@@ -587,7 +586,7 @@ describe('DisplayObject', () => {
       beforeEach(() => {
         obj = new DisplayObject();
         // fake parent
-        obj[$._parent] = new DisplayObject() as any; // eslint-disable-line
+        obj[R.parent] = new DisplayObject() as any; // eslint-disable-line
         obj.x = 10;
         obj.y = 20;
         obj.scaleX = 2;
@@ -613,12 +612,11 @@ describe('DisplayObject', () => {
       });
 
       it('updates the world transform before conversion', () => {
-        // eslint-disable-next-line
-        const spy = vi.spyOn(DisplayObject as any, '__updateWorldTransform');
+        const spy = vi.spyOn(obj, R.updateWorldTransform);
 
         DisplayObject.globalToLocalTo(new Point(), obj, new Point());
 
-        expect(spy).toHaveBeenCalledWith(obj);
+        expect(spy).toHaveBeenCalled();
         spy.mockRestore();
       });
     });
@@ -633,8 +631,8 @@ describe('DisplayObject', () => {
       b = new DisplayObject();
 
       // fake parent
-      a[$._parent] = new DisplayObject() as any; // eslint-disable-line
-      b[$._parent] = new DisplayObject() as any; // eslint-disable-line
+      a[R.parent] = new DisplayObject() as any; // eslint-disable-line
+      b[R.parent] = new DisplayObject() as any; // eslint-disable-line
 
       // Simple local bounds
       Rectangle.setTo(getLocalBounds(a), 0, 0, 10, 10);
@@ -664,7 +662,7 @@ describe('DisplayObject', () => {
     });
 
     it('returns false if either object has no parent', () => {
-      b[$._parent] = null;
+      b[R.parent] = null;
 
       const result = DisplayObject.hitTestObject(a, b);
       expect(result).toBe(false);

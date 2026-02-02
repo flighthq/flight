@@ -1,6 +1,6 @@
 import type { Matrix2D } from '@flighthq/math';
 import type BitmapDrawable from '@flighthq/scene/BitmapDrawable';
-import { internal as $ } from '@flighthq/scene/internal/Renderable';
+import { Renderable as R } from '@flighthq/scene/Renderable';
 
 export default class CanvasRenderData {
   readonly source: BitmapDrawable;
@@ -15,18 +15,18 @@ export default class CanvasRenderData {
 
   constructor(source: BitmapDrawable) {
     this.source = source;
-    this.renderTransform = source[$._worldTransform];
+    this.renderTransform = source[R.worldTransform];
   }
 
   isDirty() {
     if (
       this.worldTransformID !==
-        this.source[$._worldTransformID] /*|| this.appearanceID !== this.source[$._appearanceID]*/ ||
-      this.localBoundsID !== this.source[$._localBoundsID]
+        this.source[R.worldTransformID] /*|| this.appearanceID !== this.source[R.appearanceID]*/ ||
+      this.localBoundsID !== this.source[R.localBoundsID]
     ) {
-      this.worldTransformID = this.source[$._worldTransformID];
+      this.worldTransformID = this.source[R.worldTransformID];
       // this.appearanceID = this.source.appearanceID;
-      this.localBoundsID = this.source[$._localBoundsID];
+      this.localBoundsID = this.source[R.localBoundsID];
       return true;
     }
     return false;
