@@ -1,9 +1,10 @@
 import { DirtyFlags } from './DirtyFlags.js';
 import DisplayObject from './DisplayObject.js';
-import { _children, _parent, _stage } from './internal/DisplayObject.js';
+import { _stage } from './internal/DisplayObject.js';
+import { children, parent } from './Renderable.js';
 
 export default class DisplayObjectContainer extends DisplayObject {
-  override [_children]: DisplayObject[] = [];
+  override [children]: DisplayObject[] = [];
 
   constructor() {
     super();
@@ -31,23 +32,23 @@ export default class DisplayObjectContainer extends DisplayObject {
       throw new TypeError('Error #2024: An object cannot be added as a child of itself.');
     } else if (child[_stage] == child) {
       throw new TypeError('Error #3783: A Stage object cannot be added as the child of another object.');
-    } else if (index < 0 || index > target[_children]!.length) {
+    } else if (index < 0 || index > target[children]!.length) {
       throw 'Invalid index position ' + index;
     }
 
-    if (child[_parent] === target) {
-      const i = target[_children].indexOf(child);
+    if (child[parent] === target) {
+      const i = target[children].indexOf(child);
       if (i !== -1) {
-        target[_children].splice(i, 1);
+        target[children].splice(i, 1);
       }
     } else {
-      if (child[_parent] !== null) {
-        this.removeChild(child[_parent], child);
+      if (child[parent] !== null) {
+        this.removeChild(child[parent], child);
       }
     }
 
-    target[_children].splice(index, 0, child);
-    child[_parent] = target;
+    target[children].splice(index, 0, child);
+    child[parent] = target;
     this.invalidate(target, DirtyFlags.Children);
     return child;
   }
@@ -61,18 +62,18 @@ export default class DisplayObjectContainer extends DisplayObject {
    * DisplayObjectContainer are decreased by 1.
    **/
   static removeChild(target: DisplayObjectContainer, child: DisplayObject): DisplayObject {
-    if (child !== null && child[_parent] === target) {
+    if (child !== null && child[parent] === target) {
       if (target[_stage] !== null) {
-        // if (child.__stage !== null && target.__stage.focus == child)
+        // if (child._stage !== null && target._stage.focus == child)
         // {
         // 	stage.focus = null;
         // }
       }
 
-      child[_parent] = null;
-      const i = target[_children].indexOf(child);
+      child[parent] = null;
+      const i = target[children].indexOf(child);
       if (i !== -1) {
-        target[_children].splice(i, 1);
+        target[children].splice(i, 1);
       }
       this.invalidate(child, DirtyFlags.Transform | DirtyFlags.Render);
       this.invalidate(target, DirtyFlags.Children);
@@ -89,8 +90,8 @@ export default class DisplayObjectContainer extends DisplayObject {
    * above the child in the DisplayObjectContainer are decreased by 1.
    **/
   static removeChildAt(target: DisplayObjectContainer, index: number): DisplayObject | null {
-    if (index >= 0 && index < target[_children].length) {
-      return this.removeChild(target, target[_children][index]);
+    if (index >= 0 && index < target[children].length) {
+      return this.removeChild(target, target[children][index]);
     }
     return null;
   }
@@ -101,13 +102,13 @@ export default class DisplayObjectContainer extends DisplayObject {
    * garbage collected if no other references to the children exist.
    **/
   static removeChildren(target: DisplayObjectContainer, beginIndex: number = 0, endIndex?: number): void {
-    if (beginIndex > target[_children].length - 1) return;
+    if (beginIndex > target[children].length - 1) return;
 
     if (endIndex === undefined) {
-      endIndex = target[_children].length - 1;
+      endIndex = target[children].length - 1;
     }
 
-    if (endIndex < beginIndex || beginIndex < 0 || endIndex > target[_children].length) {
+    if (endIndex < beginIndex || beginIndex < 0 || endIndex > target[children].length) {
       throw new RangeError('The supplied index is out of bounds.');
     }
 
@@ -123,11 +124,11 @@ export default class DisplayObjectContainer extends DisplayObject {
    * This affects the layering of child objects.
    **/
   static setChildIndex(target: DisplayObjectContainer, child: DisplayObject, index: number): void {
-    if (index >= 0 && index <= target[_children].length && child[_parent] === target) {
-      const i = target[_children].indexOf(child);
+    if (index >= 0 && index <= target[children].length && child[parent] === target) {
+      const i = target[children].indexOf(child);
       if (i !== -1) {
-        target[_children].splice(i, 1);
-        target[_children].splice(index, 0, child);
+        target[children].splice(i, 1);
+        target[children].splice(index, 0, child);
       }
     }
   }
@@ -143,12 +144,12 @@ export default class DisplayObjectContainer extends DisplayObject {
    * the same index positions.
    **/
   static swapChildren(target: DisplayObjectContainer, child1: DisplayObject, child2: DisplayObject): void {
-    if (child1[_parent] == target && child2[_parent] == target) {
-      const index1 = target[_children].indexOf(child1);
-      const index2 = target[_children].indexOf(child2);
+    if (child1[parent] == target && child2[parent] == target) {
+      const index1 = target[children].indexOf(child1);
+      const index2 = target[children].indexOf(child2);
 
-      target[_children][index1] = child2;
-      target[_children][index2] = child1;
+      target[children][index1] = child2;
+      target[children][index2] = child1;
 
       this.invalidate(target, DirtyFlags.Children);
     }
@@ -160,23 +161,23 @@ export default class DisplayObjectContainer extends DisplayObject {
    * the display object container remain in the same index positions.
    **/
   static swapChildrenAt(target: DisplayObjectContainer, index1: number, index2: number): void {
-    const len = target[_children].length;
+    const len = target[children].length;
     if (index1 < 0 || index2 < 0 || index1 >= len || index2 >= len) {
       throw new RangeError('The supplied index is out of bounds.');
     }
 
     if (index1 === index2) return;
 
-    const swap: DisplayObject = target[_children][index1];
-    target[_children][index1] = target[_children][index2];
-    target[_children][index2] = swap;
+    const swap: DisplayObject = target[children][index1];
+    target[children][index1] = target[children][index2];
+    target[children][index2] = swap;
     this.invalidate(target, DirtyFlags.Children);
   }
 
   // Get & Set Methods
 
   get numChildren() {
-    return this[_children] ? this[_children].length : 0;
+    return this[children] ? this[children].length : 0;
   }
 
   // Inherited Aliases
