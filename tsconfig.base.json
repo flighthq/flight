@@ -14,12 +14,16 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
+      "@flighthq/contracts": ["packages/contracts/src/index.ts"],
+      "@flighthq/contracts/*": ["packages/contracts/src/*"],
       "@flighthq/math": ["packages/math/src/index.ts"],
       "@flighthq/math/*": ["packages/math/src/*"],
       "@flighthq/render": ["packages/render/src/index.ts"],
       "@flighthq/render/*": ["packages/render/src/*"],
       "@flighthq/scene": ["packages/scene/src/index.ts"],
-      "@flighthq/scene/*": ["packages/scene/src/*"]
+      "@flighthq/scene/*": ["packages/scene/src/*"],
+      "@flighthq/types": ["packages/types/src/index.ts"],
+      "@flighthq/types/*": ["packages/types/src/*"]
     },
     "types": ["vitest/globals"] // Include Vitest globals for type-checking
   },
