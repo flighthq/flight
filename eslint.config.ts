@@ -35,7 +35,7 @@ export default [
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/consistent-type-imports': 'error',
-      '@typescript-eslint/no-empty-object-type': ['error', { allowInterfaces: 'always' }],
+      '@typescript-eslint/no-empty-object-type': ['error', { allowInterfaces: 'with-single-extends' }],
       '@typescript-eslint/no-namespace': 'off',
 
       // General
@@ -45,6 +45,19 @@ export default [
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
       'import/no-unresolved': 'error',
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              // Disallow relative imports from other packages
+              group: ['packages/*', '../../*', '../../../*', '../../../../*', '!../../vitest.config.base.js'],
+              message:
+                'Do not import from packages via relative paths. Use scoped package imports instead (e.g. @scope/pkg).',
+            },
+          ],
+        },
+      ],
 
       // Unicorn
       'unicorn/prefer-module': 'error',
