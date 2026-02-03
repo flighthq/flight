@@ -1,3 +1,5 @@
+import type { Vector3D as Vector3DLike } from '@flighthq/types';
+
 /**
  * The Vector3D class represents a point or a location in the three-dimensional space using
  * the Cartesian coordinates x, y, and z. As in a two-dimensional space, the `x` property
@@ -19,7 +21,7 @@
  * - `length = Math.sqrt(x ** 2 + y ** 2 + z ** 2);`
  * - `lengthSquared = x ** 2 + y ** 2 + z ** 2;`
  */
-export default class Vector3D {
+export default class Vector3D implements Vector3DLike {
   x: number = 0;
   y: number = 0;
   z: number = 0;
@@ -40,7 +42,7 @@ export default class Vector3D {
    * A new Vector3D is returned.
    * @see addTo
    */
-  static add(a: Vector3D, b: Vector3D): Vector3D {
+  static add(a: Vector3DLike, b: Vector3DLike): Vector3D {
     const out = new Vector3D();
     out.x = a.x + b.x;
     out.y = a.y + b.y;
@@ -54,7 +56,7 @@ export default class Vector3D {
    *
    * The w component is ignored.
    */
-  static addTo(out: Vector3D, a: Vector3D, b: Vector3D): void {
+  static addTo(out: Vector3DLike, a: Vector3DLike, b: Vector3DLike): void {
     out.x = a.x + b.x;
     out.y = a.y + b.y;
     out.z = a.z + b.z;
@@ -65,9 +67,9 @@ export default class Vector3D {
    * smallest radian the first Vector3D object rotates until it aligns with the
    * second Vector3D object.
    **/
-  static angleBetween(a: Vector3D, b: Vector3D): number {
-    const la = a.length;
-    const lb = b.length;
+  static angleBetween(a: Vector3DLike, b: Vector3DLike): number {
+    const la = this.length(a);
+    const lb = this.length(b);
     let dot = this.dotProduct(a, b);
 
     if (la !== 0) {
@@ -81,7 +83,7 @@ export default class Vector3D {
     return Math.acos(dot);
   }
 
-  static clone(source: Vector3D): Vector3D {
+  static clone(source: Vector3DLike): Vector3D {
     return new Vector3D(source.x, source.y, source.z, source.w);
   }
 
@@ -90,7 +92,7 @@ export default class Vector3D {
    *
    * The w component is ignored.
    */
-  static copyFrom(source: Vector3D, out: Vector3D): void {
+  static copyFrom(source: Vector3DLike, out: Vector3DLike): void {
     out.x = source.x;
     out.y = source.y;
     out.z = source.z;
@@ -101,7 +103,7 @@ export default class Vector3D {
    *
    * The w component is ignored.
    */
-  static copyTo(out: Vector3D, source: Vector3D): void {
+  static copyTo(out: Vector3DLike, source: Vector3DLike): void {
     out.x = source.x;
     out.y = source.y;
     out.z = source.z;
@@ -117,7 +119,7 @@ export default class Vector3D {
    * A new Vector3D is returned.
    * @see crossProductTo
    **/
-  static crossProduct(source: Vector3D, other: Vector3D): Vector3D {
+  static crossProduct(source: Vector3DLike, other: Vector3DLike): Vector3D {
     const out = new Vector3D();
     this.crossProductTo(out, source, other);
     return out;
@@ -130,7 +132,7 @@ export default class Vector3D {
    *
    * The w component is written to 1.
    **/
-  static crossProductTo(out: Vector3D, source: Vector3D, other: Vector3D): void {
+  static crossProductTo(out: Vector3DLike, source: Vector3DLike, other: Vector3DLike): void {
     const x = source.y * other.z - source.z * other.y;
     const y = source.z * other.x - source.x * other.z;
     const z = source.x * other.y - source.y * other.x;
@@ -146,13 +148,13 @@ export default class Vector3D {
    *
    * The w component is ignored.
    **/
-  static decrementBy(target: Vector3D, source: Vector3D): void {
+  static decrementBy(target: Vector3DLike, source: Vector3DLike): void {
     target.x -= source.x;
     target.y -= source.y;
     target.z -= source.z;
   }
 
-  static decrementTo(out: Vector3D, a: Vector3D, b: Vector3D): void {
+  static decrementTo(out: Vector3DLike, a: Vector3DLike, b: Vector3DLike): void {
     out.x = a.x - b.x;
     out.y = a.y - b.y;
     out.z = a.z - b.z;
@@ -161,7 +163,7 @@ export default class Vector3D {
   /**
    * Returns the distance between two Vector3D objects.
    **/
-  static distance(a: Vector3D, b: Vector3D): number {
+  static distance(a: Vector3DLike, b: Vector3DLike): number {
     const x: number = b.x - a.x;
     const y: number = b.y - a.y;
     const z: number = b.z - a.z;
@@ -174,7 +176,7 @@ export default class Vector3D {
    *
    * This avoids Math.sqrt for better performance.
    **/
-  static distanceSquared(a: Vector3D, b: Vector3D): number {
+  static distanceSquared(a: Vector3DLike, b: Vector3DLike): number {
     const x: number = b.x - a.x;
     const y: number = b.y - a.y;
     const z: number = b.z - a.z;
@@ -191,11 +193,11 @@ export default class Vector3D {
    *
    * The w component is ignored.
    **/
-  static dotProduct(a: Vector3D, b: Vector3D): number {
+  static dotProduct(a: Vector3DLike, b: Vector3DLike): number {
     return a.x * b.x + a.y * b.y + a.z * b.z;
   }
 
-  static equals(a: Vector3D, b: Vector3D, compareW: boolean = false): boolean {
+  static equals(a: Vector3DLike, b: Vector3DLike, compareW: boolean = false): boolean {
     return a.x === b.x && a.y === b.y && a.z === b.z && (!compareW || a.w === b.w);
   }
 
@@ -205,16 +207,35 @@ export default class Vector3D {
    *
    * The w component is ignored.
    **/
-  static incrementBy(target: Vector3D, source: Vector3D): void {
+  static incrementBy(target: Vector3DLike, source: Vector3DLike): void {
     target.x += source.x;
     target.y += source.y;
     target.z += source.z;
   }
 
-  static incrementTo(out: Vector3D, a: Vector3D, b: Vector3D): void {
+  static incrementTo(out: Vector3DLike, a: Vector3DLike, b: Vector3DLike): void {
     out.x = a.x + b.x;
     out.y = a.y + b.y;
     out.z = a.z + b.z;
+  }
+
+  /**
+   * The length, magnitude, of the current Vector3D object from the origin (0,0,0) to
+   * the object's x, y, and z coordinates. The `w` property is ignored. A unit vector has
+   * a length or magnitude of one.
+   **/
+  static length(source: Vector3DLike): number {
+    return Math.sqrt(source.x ** 2 + source.y ** 2 + source.z ** 2);
+  }
+
+  /**
+   * The square of the length of the current Vector3D object, calculated using the `x`,
+   * `y`, and `z` properties. The `w` property is ignored. Use the `lengthSquared()`
+   * method whenever possible instead of the slower `Math.sqrt()` method call of the
+   * `Vector3D.length()` method.
+   **/
+  static lengthSquared(source: Vector3DLike): number {
+    return source.x ** 2 + source.y ** 2 + source.z ** 2;
   }
 
   /**
@@ -224,7 +245,7 @@ export default class Vector3D {
    * The two Vector3D objects are nearly equal if the value of all the elements of the two
    * vertices are equal, or the result of the comparison is within the tolerance range.
    **/
-  static nearEquals(a: Vector3D, b: Vector3D, tolerance: number, compareW: boolean = false): boolean {
+  static nearEquals(a: Vector3DLike, b: Vector3DLike, tolerance: number, compareW: boolean = false): boolean {
     return (
       Math.abs(a.x - b.x) < tolerance &&
       Math.abs(a.y - b.y) < tolerance &&
@@ -238,13 +259,13 @@ export default class Vector3D {
    * considered the opposite of the original object. The value of the `x`, `y`, and `z`
    * properties of the current Vector3D object is changed to -x, -y, and -z.
    **/
-  static negate(target: Vector3D): void {
+  static negate(target: Vector3DLike): void {
     target.x *= -1;
     target.y *= -1;
     target.z *= -1;
   }
 
-  static negateTo(out: Vector3D, source: Vector3D): void {
+  static negateTo(out: Vector3DLike, source: Vector3DLike): void {
     out.x = source.x * -1;
     out.y = source.y * -1;
     out.z = source.z * -1;
@@ -256,8 +277,8 @@ export default class Vector3D {
    *
    * Returns the original length.
    **/
-  static normalize(target: Vector3D): number {
-    const l = target.length;
+  static normalize(target: Vector3DLike): number {
+    const l = this.length(target);
 
     if (l !== 0) {
       target.x /= l;
@@ -268,8 +289,8 @@ export default class Vector3D {
     return l;
   }
 
-  static normalizeTo(out: Vector3D, source: Vector3D): number {
-    const l = source.length;
+  static normalizeTo(out: Vector3DLike, source: Vector3DLike): number {
+    const l = this.length(source);
 
     if (l !== 0) {
       out.x = source.x / l;
@@ -284,13 +305,13 @@ export default class Vector3D {
    * Divides the value of the `x`, `y`, and `z` properties of the current Vector3D
    * object by the value of its `w` property.
    **/
-  static project(target: Vector3D): void {
+  static project(target: Vector3DLike): void {
     target.x /= target.w;
     target.y /= target.w;
     target.z /= target.w;
   }
 
-  static projectTo(out: Vector3D, source: Vector3D): void {
+  static projectTo(out: Vector3DLike, source: Vector3DLike): void {
     out.x = source.x / source.w;
     out.y = source.y / source.w;
     out.z = source.z / source.w;
@@ -302,13 +323,13 @@ export default class Vector3D {
    *
    * The w component is ignored.
    **/
-  static scaleBy(target: Vector3D, scalar: number): void {
+  static scaleBy(target: Vector3DLike, scalar: number): void {
     target.x *= scalar;
     target.y *= scalar;
     target.z *= scalar;
   }
 
-  static scaleTo(out: Vector3D, source: Vector3D, scalar: number): void {
+  static scaleTo(out: Vector3DLike, source: Vector3DLike, scalar: number): void {
     out.x = source.x * scalar;
     out.y = source.y * scalar;
     out.z = source.z * scalar;
@@ -319,7 +340,7 @@ export default class Vector3D {
    *
    * If you do not pass a w value, the w component will be ignored.
    **/
-  static setTo(out: Vector3D, x: number, y: number, z: number, w?: number): void {
+  static setTo(out: Vector3DLike, x: number, y: number, z: number, w?: number): void {
     out.x = x;
     out.y = y;
     out.z = z;
@@ -332,7 +353,7 @@ export default class Vector3D {
    *
    * The w component is ignored.
    **/
-  static subtract(source: Vector3D, other: Vector3D): Vector3D {
+  static subtract(source: Vector3DLike, other: Vector3DLike): Vector3D {
     const out = new Vector3D();
     out.x = source.x - other.x;
     out.y = source.y - other.y;
@@ -340,7 +361,7 @@ export default class Vector3D {
     return out;
   }
 
-  static subtractTo(out: Vector3D, source: Vector3D, other: Vector3D): void {
+  static subtractTo(out: Vector3DLike, source: Vector3DLike, other: Vector3DLike): void {
     out.x = source.x - other.x;
     out.y = source.y - other.y;
     out.z = source.z - other.z;
@@ -364,22 +385,11 @@ export default class Vector3D {
     return new Vector3D(0, 0, 1);
   }
 
-  /**
-        The length, magnitude, of the current Vector3D object from the origin (0,0,0) to
-        the object's x, y, and z coordinates. The `w` property is ignored. A unit vector has
-        a length or magnitude of one.
-    **/
   get length(): number {
-    return Math.sqrt(this.x ** 2 + this.y ** 2 + this.z ** 2);
+    return Vector3D.length(this);
   }
 
-  /**
-        The square of the length of the current Vector3D object, calculated using the `x`,
-        `y`, and `z` properties. The `w` property is ignored. Use the `lengthSquared()`
-        method whenever possible instead of the slower `Math.sqrt()` method call of the
-        `Vector3D.length()` method.
-    **/
   get lengthSquared(): number {
-    return this.x ** 2 + this.y ** 2 + this.z ** 2;
+    return Vector3D.lengthSquared(this);
   }
 }
