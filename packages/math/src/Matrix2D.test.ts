@@ -92,6 +92,23 @@ describe('Matrix2D', () => {
       expect(m2.tx).toBe(6);
       expect(m2.ty).toBe(7);
     });
+
+    it('should also clone matrix-like objects', () => {
+      const obj = { a: 2, b: 3, c: 4, d: 5, tx: 6, ty: 7 };
+      const m2 = Matrix2D.clone(obj);
+      expect(m2.a).toBe(2);
+      expect(m2.b).toBe(3);
+      expect(m2.c).toBe(4);
+      expect(m2.d).toBe(5);
+      expect(m2.tx).toBe(6);
+      expect(m2.ty).toBe(7);
+    });
+
+    it('should return a matrix instance', () => {
+      const obj = { a: 2, b: 3, c: 4, d: 5, tx: 6, ty: 7 };
+      const m2 = Matrix2D.clone(obj);
+      expect(m2).toBeInstanceOf(Matrix2D);
+    });
   });
 
   describe('concat', () => {
@@ -213,6 +230,18 @@ describe('Matrix2D', () => {
       expect(m1.tx).toBe(-2);
       expect(m1.ty).toBe(-3);
     });
+
+    it('should allow matrix-like objects', () => {
+      const m1 = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+      const m2 = { a: 1, b: 2, c: 3, d: 4, tx: 5, ty: 6 };
+      Matrix2D.concat(m1, m2);
+      expect(m1.a).toBe(1);
+      expect(m1.b).toBe(2);
+      expect(m1.c).toBe(3);
+      expect(m1.d).toBe(4);
+      expect(m1.tx).toBe(5);
+      expect(m1.ty).toBe(6);
+    });
   });
 
   describe('copyFrom', () => {
@@ -294,6 +323,15 @@ describe('Matrix2D', () => {
       const v = new Vector3D();
       expect(() => Matrix2D.copyColumnTo(v, 3, m)).toThrow();
     });
+
+    it('should allow matrix-like and vector-like objects', () => {
+      const m = { a: 1, b: 2, c: 3, d: 4, tx: 5, ty: 6 };
+      const v = { x: 0, y: 0, z: 0, w: 0 };
+      Matrix2D.copyColumnTo(v, 0, m); // column 0
+      expect(v.x).toBe(1);
+      expect(v.y).toBe(2);
+      expect(v.z).toBe(0);
+    });
   });
 
   describe('copyRowFrom', () => {
@@ -319,6 +357,15 @@ describe('Matrix2D', () => {
       const m = new Matrix2D();
       const v = new Vector3D();
       expect(() => Matrix2D.copyRowFrom(m, 3, v)).toThrow();
+    });
+
+    it('should allow matrix-like and vector-like objects', () => {
+      const m = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+      const v = { x: 1, y: 2, z: 3, w: 0 };
+      Matrix2D.copyRowFrom(m, 0, v); // row 0
+      expect(m.a).toBe(1);
+      expect(m.c).toBe(2);
+      expect(m.tx).toBe(3);
     });
   });
 
@@ -349,6 +396,15 @@ describe('Matrix2D', () => {
       expect(v.y).toBe(0);
       expect(v.z).toBe(1);
     });
+
+    it('should allow matrix-like and vector-like objects', () => {
+      const m = { a: 1, b: 2, c: 3, d: 4, tx: 5, ty: 6 };
+      const v = { x: 0, y: 0, z: 0, w: 0 };
+      Matrix2D.copyRowTo(v, 0, m); // row 0
+      expect(v.x).toBe(1); // m.a
+      expect(v.y).toBe(3); // m.c
+      expect(v.z).toBe(5); // m.tx
+    });
   });
 
   describe('deltaTransformPoint', () => {
@@ -374,12 +430,35 @@ describe('Matrix2D', () => {
       expect(p.x).toBe(1);
       expect(p.y).toBe(1);
     });
+
+    it('should allow matrix-like and point-like objects', () => {
+      const m = { a: 2, b: 0, c: 0, d: 2, tx: 0, ty: 0 };
+      const p = { x: 1, y: 1 };
+      const transformedPoint = Matrix2D.deltaTransformPoint(m, p);
+      expect(transformedPoint.x).toBe(2);
+      expect(transformedPoint.y).toBe(2);
+    });
+
+    it('should return a Point instance', () => {
+      const m = { a: 2, b: 0, c: 0, d: 2, tx: 0, ty: 0 };
+      const p = { x: 1, y: 1 };
+      const transformedPoint = Matrix2D.deltaTransformPoint(m, p);
+      expect(transformedPoint).toBeInstanceOf(Point);
+    });
   });
 
   describe('deltaTransformXY', () => {
     it('should apply delta transformation to a point', () => {
       const m = new Matrix2D(2, 0, 0, 2, 0, 0);
       const transformedPoint = new Point();
+      Matrix2D.deltaTransformXY(transformedPoint, m, 1, 1);
+      expect(transformedPoint.x).toBe(2);
+      expect(transformedPoint.y).toBe(2);
+    });
+
+    it('should allow matrix-like and point-like objects', () => {
+      const m = { a: 2, b: 0, c: 0, d: 2, tx: 0, ty: 0 };
+      const transformedPoint = { x: 0, y: 0 };
       Matrix2D.deltaTransformXY(transformedPoint, m, 1, 1);
       expect(transformedPoint.x).toBe(2);
       expect(transformedPoint.y).toBe(2);
@@ -429,6 +508,18 @@ describe('Matrix2D', () => {
       mat2.tx = 100;
       expect(Matrix2D.equals(mat1, mat2, true)).toBe(false);
     });
+
+    it('should return true if one object is matrix-like and one is not', () => {
+      const mat1 = new Matrix2D(1, 2, 3, 4, 5, 6);
+      const mat2 = { a: 1, b: 2, c: 3, d: 4, tx: 5, ty: 6 };
+      expect(Matrix2D.equals(mat1, mat2)).toBe(true);
+    });
+
+    it('should return true if both object are matrix-like', () => {
+      const mat1 = { a: 1, b: 2, c: 3, d: 4, tx: 5, ty: 6 };
+      const mat2 = { a: 1, b: 2, c: 3, d: 4, tx: 5, ty: 6 };
+      expect(Matrix2D.equals(mat1, mat2)).toBe(true);
+    });
   });
 
   describe('inverseTransformPoint', () => {
@@ -454,6 +545,21 @@ describe('Matrix2D', () => {
       expect(p.x).toBe(2);
       expect(p.y).toBe(2);
     });
+
+    it('should allow matrix-like and point-like objects', () => {
+      const m = { a: 2, b: 0, c: 0, d: 2, tx: 0, ty: 0 };
+      const p = { x: 2, y: 2 };
+      const transformedPoint = Matrix2D.inverseTransformPoint(m, p);
+      expect(transformedPoint.x).toBe(1);
+      expect(transformedPoint.y).toBe(1);
+    });
+
+    it('should return a Point instance', () => {
+      const m = { a: 2, b: 0, c: 0, d: 2, tx: 0, ty: 0 };
+      const p = { x: 2, y: 2 };
+      const transformedPoint = Matrix2D.inverseTransformPoint(m, p);
+      expect(transformedPoint).toBeInstanceOf(Point);
+    });
   });
 
   describe('inverseTransformXY', () => {
@@ -473,6 +579,14 @@ describe('Matrix2D', () => {
 
       expect(out.x).toBe(-10);
       expect(out.y).toBe(-20);
+    });
+
+    it('should allow matrix-like and point-like objects', () => {
+      const m = { a: 2, b: 0, c: 0, d: 2, tx: 0, ty: 0 };
+      let transformedPoint = { x: 0, y: 0 };
+      Matrix2D.inverseTransformXY(transformedPoint, m, 2, 2);
+      expect(transformedPoint.x).toBe(1);
+      expect(transformedPoint.y).toBe(1);
     });
   });
 
@@ -512,6 +626,18 @@ describe('Matrix2D', () => {
       expect(result.c).toBeCloseTo(0);
       expect(result.d).toBeCloseTo(1);
     });
+
+    it('should should allow matrix-like objects', () => {
+      const m = { a: 2, b: 0, c: 0, d: 2, tx: 5, ty: 3 };
+      let out = { a: 0, b: 0, c: 0, d: 0, tx: 0, ty: 0 };
+      Matrix2D.inverse(out, m);
+      expect(out.a).toBeCloseTo(0.5); // Inverse scaling on x
+      expect(out.b).toBeCloseTo(0); // No shear on x
+      expect(out.c).toBeCloseTo(0); // No shear on y
+      expect(out.d).toBeCloseTo(0.5); // Inverse scaling on y
+      expect(out.tx).toBeCloseTo(-2.5); // Inverse translation on x
+      expect(out.ty).toBeCloseTo(-1.5); // Inverse translation on y
+    });
   });
 
   describe('invert', () => {
@@ -527,6 +653,17 @@ describe('Matrix2D', () => {
       // Translation should be -2.5 (inverse of 5 scaled by 0.5) and -1.5 (inverse of 3 scaled by 0.5)
 
       // Assert the inverse matrix values
+      expect(m.a).toBeCloseTo(0.5); // Inverse scaling on x
+      expect(m.b).toBeCloseTo(0); // No shear on x
+      expect(m.c).toBeCloseTo(0); // No shear on y
+      expect(m.d).toBeCloseTo(0.5); // Inverse scaling on y
+      expect(m.tx).toBeCloseTo(-2.5); // Inverse translation on x
+      expect(m.ty).toBeCloseTo(-1.5); // Inverse translation on y
+    });
+
+    it('should allow a matrix-like object', () => {
+      const m = { a: 2, b: 0, c: 0, d: 2, tx: 5, ty: 3 };
+      Matrix2D.invert(m);
       expect(m.a).toBeCloseTo(0.5); // Inverse scaling on x
       expect(m.b).toBeCloseTo(0); // No shear on x
       expect(m.c).toBeCloseTo(0); // No shear on y
@@ -562,11 +699,28 @@ describe('Matrix2D', () => {
       Matrix2D.multiply(out, a, b);
       expect(Matrix2D.equals(out, b)).toBe(true);
     });
+
+    it('should allow matrix-like objects', () => {
+      const a = { a: 2, b: 0, c: 0, d: 2, tx: 0, ty: 0 };
+      const b = { a: 1, b: 0, c: 0, d: 1, tx: 5, ty: 5 };
+      Matrix2D.multiply(a, a, b);
+      expect(a.tx).toBe(5);
+      expect(a.ty).toBe(5);
+    });
   });
 
   describe('rotate', () => {
     it('should rotate the matrix correctly', () => {
       const m = new Matrix2D(1, 0, 0, 1, 0, 0);
+      Matrix2D.rotate(m, Math.PI / 2); // 90 degrees
+      expect(m.a).toBeCloseTo(0);
+      expect(m.b).toBeCloseTo(1);
+      expect(m.c).toBeCloseTo(-1);
+      expect(m.d).toBeCloseTo(0);
+    });
+
+    it('should allow a matrix-like object', () => {
+      const m = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
       Matrix2D.rotate(m, Math.PI / 2); // 90 degrees
       expect(m.a).toBeCloseTo(0);
       expect(m.b).toBeCloseTo(1);
@@ -590,11 +744,26 @@ describe('Matrix2D', () => {
       expect(m.a).toBeCloseTo(-1);
       expect(m.d).toBeCloseTo(-1);
     });
+
+    it('should allow matrix-like objects', () => {
+      const src = { a: 1, b: 0, c: 0, d: 1, tx: 10, ty: 0 };
+      const out = { a: 0, b: 0, c: 0, d: 0, tx: 0, ty: 0 };
+      Matrix2D.rotateTo(out, src, Math.PI / 2);
+      expect(src.tx).toBe(10);
+      expect(out.tx).toBeCloseTo(0);
+    });
   });
 
   describe('scale', () => {
     it('should scale the matrix correctly', () => {
       const m = new Matrix2D();
+      Matrix2D.scale(m, 2, 3);
+      expect(m.a).toBe(2);
+      expect(m.d).toBe(3);
+    });
+
+    it('should allow a matrix-like object', () => {
+      const m = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
       Matrix2D.scale(m, 2, 3);
       expect(m.a).toBe(2);
       expect(m.d).toBe(3);
@@ -619,6 +788,15 @@ describe('Matrix2D', () => {
       expect(m.tx).toBe(2);
       expect(m.ty).toBe(3);
     });
+
+    it('should allow matrix-like objects', () => {
+      const src = { a: 2, b: 0, c: 0, d: 2, tx: 5, ty: 6 };
+      const out = { a: 0, b: 0, c: 0, d: 0, tx: 0, ty: 0 };
+      Matrix2D.scaleXY(out, src, 2, 3);
+      expect(src.a).toBe(2);
+      expect(out.a).toBe(4);
+      expect(out.d).toBe(6);
+    });
   });
 
   describe('setTo', () => {
@@ -626,6 +804,17 @@ describe('Matrix2D', () => {
       const m = new Matrix2D();
       Matrix2D.setTo(m, 1, 2, 3, 4, 5, 6);
       expect(m.toString()).toBe('matrix(1, 2, 3, 4, 5, 6)');
+    });
+
+    it('should allow a matrix-like object', () => {
+      const m = { a: 0, b: 0, c: 0, d: 0, tx: 0, ty: 0 };
+      Matrix2D.setTo(m, 1, 2, 3, 4, 5, 6);
+      expect(m.a).toBe(1);
+      expect(m.b).toBe(2);
+      expect(m.c).toBe(3);
+      expect(m.d).toBe(4);
+      expect(m.tx).toBe(5);
+      expect(m.ty).toBe(6);
     });
   });
 
@@ -680,6 +869,16 @@ describe('Matrix2D', () => {
       expect(out.width).toBeCloseTo(10);
       expect(out.height).toBeCloseTo(20);
     });
+
+    it('should allow matrix-like and rectangle-like objects', () => {
+      const m = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+      const out = { x: 0, y: 0, width: 0, height: 0 };
+      Matrix2D.transformAABB(out, m, 10, 10, 0, 0);
+      expect(out.x).toBe(0);
+      expect(out.y).toBe(0);
+      expect(out.width).toBe(10);
+      expect(out.height).toBe(10);
+    });
   });
 
   describe('transformPoint', () => {
@@ -704,6 +903,21 @@ describe('Matrix2D', () => {
       Matrix2D.transformPoint(m, p);
       expect(p.x).toBe(1);
       expect(p.y).toBe(1);
+    });
+
+    it('should allow matrix- and point-like objects', () => {
+      const m = { a: 1, b: 0, c: 0, d: 1, tx: 10, ty: 20 };
+      const p = { x: 1, y: 1 };
+      const transformedPoint = Matrix2D.transformPoint(m, p);
+      expect(transformedPoint.x).toBe(11);
+      expect(transformedPoint.y).toBe(21);
+    });
+
+    it('should return a Point instance', () => {
+      const m = { a: 1, b: 0, c: 0, d: 1, tx: 10, ty: 20 };
+      const p = { x: 1, y: 1 };
+      const transformedPoint = Matrix2D.transformPoint(m, p);
+      expect(transformedPoint).toBeInstanceOf(Point);
     });
   });
 
@@ -790,6 +1004,23 @@ describe('Matrix2D', () => {
       expect(rect.y).toBeCloseTo(0);
       expect(rect.width).toBeCloseTo(10);
       expect(rect.height).toBeCloseTo(10);
+    });
+
+    it('should allow rectangle- and matrix-like objects', () => {
+      const rect = { x: 0, y: 0, width: 10, height: 20 };
+      const matrix = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+      const transformed = Matrix2D.transformRect(matrix, rect);
+      expect(transformed.x).toBeCloseTo(0);
+      expect(transformed.y).toBeCloseTo(0);
+      expect(transformed.width).toBeCloseTo(10);
+      expect(transformed.height).toBeCloseTo(20);
+    });
+
+    it('should return Rectangle objeect', () => {
+      const rect = { x: 0, y: 0, width: 10, height: 20 };
+      const matrix = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+      const transformed = Matrix2D.transformRect(matrix, rect);
+      expect(transformed).toBeInstanceOf(Rectangle);
     });
   });
 
@@ -884,6 +1115,17 @@ describe('Matrix2D', () => {
       expect(rect.width).toBeCloseTo(10);
       expect(rect.height).toBeCloseTo(10);
     });
+
+    it('should allow matrix- and rectangle-like objects', () => {
+      const rect = { x: 0, y: 0, width: 10, height: 20 };
+      const matrix = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+      const out = { x: 0, y: 0, width: 0, height: 0 };
+      Matrix2D.transformRectTo(out, matrix, rect);
+      expect(out.x).toBeCloseTo(0);
+      expect(out.y).toBeCloseTo(0);
+      expect(out.width).toBeCloseTo(10);
+      expect(out.height).toBeCloseTo(20);
+    });
   });
 
   describe('transformXY', () => {
@@ -903,11 +1145,27 @@ describe('Matrix2D', () => {
       expect(p.x).toBeCloseTo(0);
       expect(p.y).toBeCloseTo(1);
     });
+
+    it('should allow matrix- and point-like objects', () => {
+      const m = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+      Matrix2D.rotate(m, Math.PI / 2);
+      const p = { x: -1, y: -1 };
+      Matrix2D.transformXY(p, m, 1, 0);
+      expect(p.x).toBeCloseTo(0);
+      expect(p.y).toBeCloseTo(1);
+    });
   });
 
   describe('translate', () => {
     it('should translate the matrix correctly', () => {
       const m = new Matrix2D();
+      Matrix2D.translate(m, 10, 20);
+      expect(m.tx).toBe(10);
+      expect(m.ty).toBe(20);
+    });
+
+    it('should allow a matrix-like object', () => {
+      const m = { a: 0, b: 0, c: 0, d: 0, tx: 0, ty: 0 };
       Matrix2D.translate(m, 10, 20);
       expect(m.tx).toBe(10);
       expect(m.ty).toBe(20);
