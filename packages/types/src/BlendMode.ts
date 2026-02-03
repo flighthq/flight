@@ -1,0 +1,19 @@
+export enum BlendMode {
+  Add,
+  Alpha,
+  Darken,
+  Difference,
+  Erase,
+  Hardlight,
+  Invert,
+  Layer,
+  Lighten,
+  Multiply,
+  Normal,
+  Overlay,
+  Screen,
+  Shader,
+  Subtract,
+}
+
+export default BlendMode;
