@@ -27,6 +27,11 @@
     "test:watch": "vitest --watch",
     "test:run": "vitest run"
   },
+  "dependencies": {
+    "@flighthq/contracts": "^1.0.0",
+    "@flighthq/math": "^1.0.0",
+    "@flighthq/types": "^1.0.0"
+  },
   "devDependencies": {
     "typescript": "^5.3.0"
   }

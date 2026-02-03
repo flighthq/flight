@@ -1,8 +1,8 @@
-import type { Rectangle } from '@flighthq/math';
-import { Matrix2D } from '@flighthq/math';
-import type { Renderable } from '@flighthq/scene';
-import { BlendMode } from '@flighthq/scene/BlendMode';
-import { Renderable as R } from '@flighthq/scene/Renderable';
+import type { Renderable } from '@flighthq/contracts';
+import { RenderableSymbols as R } from '@flighthq/contracts';
+import { Matrix2D as Matrix2DImpl } from '@flighthq/math';
+import type { Matrix2D, Rectangle } from '@flighthq/types';
+import { BlendMode } from '@flighthq/types';
 
 import CanvasRenderData from './CanvasRenderData';
 import type { CanvasRendererOptions } from './CanvasRendererOptions';
@@ -40,7 +40,7 @@ export default class CanvasRenderer {
 
     this.backgroundColor = options?.backgroundColor ?? 0x00000000;
     this.pixelRatio = options?.pixelRatio ?? window.devicePixelRatio | 1;
-    this.renderTransform = options?.renderTransform ?? new Matrix2D();
+    this.renderTransform = options?.renderTransform ?? new Matrix2DImpl();
     this.roundPixels = options?.roundPixels ?? false;
   }
 

@@ -1,9 +1,9 @@
-import type { Matrix2D } from '@flighthq/math';
-import type BitmapDrawable from '@flighthq/scene/BitmapDrawable';
-import { Renderable as R } from '@flighthq/scene/Renderable';
+import type { Renderable } from '@flighthq/contracts';
+import { RenderableSymbols as R } from '@flighthq/contracts';
+import type { Matrix2D } from '@flighthq/types';
 
 export default class CanvasRenderData {
-  readonly source: BitmapDrawable;
+  readonly source: Renderable;
 
   cacheAsBitmap: boolean = false;
   localAppearanceID: number = 0;
@@ -13,7 +13,7 @@ export default class CanvasRenderData {
   renderTransform: Matrix2D;
   worldTransformID: number = 0;
 
-  constructor(source: BitmapDrawable) {
+  constructor(source: Renderable) {
     this.source = source;
     this.renderTransform = source[R.worldTransform];
   }
