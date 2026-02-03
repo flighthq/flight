@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../math" }],
+  "references": [{ "path": "../contracts" }, { "path": "../math" }, { "path": "../types" }],
   "include": ["src"]
 }

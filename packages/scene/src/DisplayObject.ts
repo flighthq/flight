@@ -1,17 +1,18 @@
+import type { Renderable } from '@flighthq/contracts';
+import { RenderableSymbols as R } from '@flighthq/contracts';
 import { Matrix2D, Matrix2DPool, Point, Rectangle, RectanglePool } from '@flighthq/math';
+import type { Shader } from '@flighthq/types';
+import { BlendMode } from '@flighthq/types';
 
-import { BlendMode } from './BlendMode.js';
 import { DirtyFlags } from './DirtyFlags.js';
 import type DisplayObjectContainer from './DisplayObjectContainer.js';
 import BitmapFilter from './filters/BitmapFilter.js';
 import { internal as $ } from './internal/DisplayObject.js';
 import type LoaderInfo from './LoaderInfo.js';
-import { Renderable as R } from './Renderable.js';
-import type Shader from './Shader.js';
 import type Stage from './Stage.js';
 import Transform from './Transform.js';
 
-export default class DisplayObject implements R {
+export default class DisplayObject implements Renderable {
   private static __tempPoint: Point = new Point();
 
   // Renderable contract
@@ -41,7 +42,6 @@ export default class DisplayObject implements R {
   [R.scaleY]: number = 1;
   [R.scrollRect]: Rectangle | null = null;
   [R.shader]: Shader | null = null;
-  [R.transform]: Transform | null = null;
   [R.width]: number = 0;
   [R.worldBounds]: Rectangle = new Rectangle();
   [R.worldTransform]: Matrix2D = new Matrix2D();
@@ -55,6 +55,7 @@ export default class DisplayObject implements R {
   [$._loaderInfo]: LoaderInfo | null = null;
   [$._root]: DisplayObjectContainer | null = null;
   [$._stage]: Stage | null = null;
+  [$._transform]: Transform | null = null;
 
   constructor() {}
 
@@ -548,10 +549,10 @@ export default class DisplayObject implements R {
   }
 
   get transform(): Transform {
-    if (this[R.transform] === null) {
-      this[R.transform] = new Transform(this);
+    if (this[$._transform] === null) {
+      this[$._transform] = new Transform(this);
     }
-    return this[R.transform] as Transform;
+    return this[$._transform] as Transform;
   }
 
   set transform(value: Transform) {
@@ -559,8 +560,8 @@ export default class DisplayObject implements R {
       throw new TypeError('Parameter transform must be non-null.');
     }
 
-    if (this[R.transform] === null) {
-      this[R.transform] = new Transform(this);
+    if (this[$._transform] === null) {
+      this[$._transform] = new Transform(this);
     }
 
     // if (value.__hasMatrix2D)

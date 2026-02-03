@@ -1,4 +1,4 @@
-import type Renderable from './Renderable';
+import type { Renderable } from '@flighthq/contracts';
 
 export interface BitmapDrawable extends Renderable {}
 

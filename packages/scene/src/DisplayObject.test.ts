@@ -1,10 +1,10 @@
+import { RenderableSymbols as R } from '@flighthq/contracts';
 import { Matrix2D, Point } from '@flighthq/math';
 import { Rectangle } from '@flighthq/math';
 
 import { DirtyFlags } from './DirtyFlags.js';
 import DisplayObject from './DisplayObject.js';
 import { internal as $ } from './internal/DisplayObject.js';
-import { Renderable as R } from './Renderable.js';
 
 describe('DisplayObject', () => {
   let displayObject: DisplayObject;
