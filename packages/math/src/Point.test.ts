@@ -24,6 +24,12 @@ describe('Point', () => {
       expect(p.x).toBe(2);
       expect(p.y).toBe(4);
     });
+
+    it('allows a point-like object', () => {
+      const p = { x: 2, y: 4 };
+      expect(p.x).toBe(2);
+      expect(p.y).toBe(4);
+    });
   });
 
   // Properties
@@ -42,6 +48,21 @@ describe('Point', () => {
         pt.x = x;
         pt.y = y;
         expect(pt.length).toBe(expected);
+      }
+    });
+
+    it('works as a static method', () => {
+      for (const { x, y, expected } of testCases) {
+        pt.x = x;
+        pt.y = y;
+        expect(Point.length(pt)).toBe(expected);
+      }
+    });
+
+    it('allows a point-like object', () => {
+      for (const { x, y, expected } of testCases) {
+        const pt = { x: x, y: y };
+        expect(Point.length(pt)).toBe(expected);
       }
     });
   });
@@ -68,6 +89,17 @@ describe('Point', () => {
       pt.y = 4.5;
       expect(pt.lengthSquared).toBe(2.5 * 2.5 + 4.5 * 4.5); // 6.25 + 20.25 = 26.5
     });
+
+    it('is also a static method', () => {
+      pt.x = 3;
+      pt.y = 4;
+      expect(Point.lengthSquared(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
+    });
+
+    it('allows a point-like object', () => {
+      const pt = { x: 3, y: 4 };
+      expect(Point.lengthSquared(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
+    });
   });
 
   // Methods
@@ -78,6 +110,17 @@ describe('Point', () => {
       pt.y = 10;
       pt2.x = 4;
       pt2.y = 20;
+
+      const result = Point.add(pt, pt2);
+      expect(result.x).toBe(6);
+      expect(result.y).toBe(30);
+      expect(result).not.toBe(pt);
+      expect(result).not.toBe(pt2);
+    });
+
+    it('allows a point-like object', () => {
+      const pt = { x: 2, y: 10 };
+      const pt2 = { x: 4, y: 20 };
 
       const result = Point.add(pt, pt2);
       expect(result.x).toBe(6);
@@ -127,6 +170,18 @@ describe('Point', () => {
       expect(pt2.x).toBe(6);
       expect(pt2.y).toBe(30);
     });
+
+    it('allows a point-like object', () => {
+      const pt = { x: 2, y: 10 };
+      const pt2 = { x: 4, y: 20 };
+
+      const result = { x: 0, y: 0 };
+      Point.addTo(result, pt, pt2);
+      expect(result.x).toBe(6);
+      expect(result.y).toBe(30);
+      expect(result).not.toBe(pt);
+      expect(result).not.toBe(pt2);
+    });
   });
 
   describe('clone', () => {
@@ -136,6 +191,12 @@ describe('Point', () => {
       const result = Point.clone(pt);
       expect(result.x).toBe(pt.x);
       expect(result.y).toBe(pt.y);
+    });
+
+    it('returns a Point instance', () => {
+      const pt = { x: 1, y: 2 };
+      const result = Point.clone(pt);
+      expect(result).toBeInstanceOf(Point);
     });
   });
 
@@ -147,12 +208,27 @@ describe('Point', () => {
       expect(pt.x).toBe(1);
       expect(pt.y).toBe(2);
     });
+
+    it('allows a point-like object', () => {
+      const pt = { x: 0, y: 0 };
+      const pt2 = { x: 1, y: 2 };
+      Point.copyFrom(pt2, pt);
+      expect(pt.x).toBe(1);
+      expect(pt.y).toBe(2);
+    });
   });
 
   describe('copyTo', () => {
     it('copies coordinates from one point to another', () => {
       pt2.x = 1;
       pt2.y = 2;
+      Point.copyTo(pt, pt2);
+      expect(pt.x).toBe(1);
+      expect(pt.y).toBe(2);
+    });
+
+    it('allows a point-like object', () => {
+      const pt2 = { x: 1, y: 2 };
       Point.copyTo(pt, pt2);
       expect(pt.x).toBe(1);
       expect(pt.y).toBe(2);
@@ -177,10 +253,27 @@ describe('Point', () => {
         expect(Point.distance(pt, pt2)).toBe(expected);
       }
     });
+
+    it('allows a point-like object', () => {
+      for (const { a, b, expected } of testCases) {
+        const pt = { x: a[0], y: a[1] };
+        const pt2 = { x: b[0], y: b[1] };
+        expect(Point.distance(pt, pt2)).toBe(expected);
+      }
+    });
   });
 
   describe('equals', () => {
     it('returns true if points are identical, false otherwise', () => {
+      expect(Point.equals(pt, pt2)).toBe(true);
+      pt.x = 1;
+      expect(Point.equals(pt, pt2)).toBe(false);
+      pt2.x = 1;
+      expect(Point.equals(pt, pt2)).toBe(true);
+    });
+
+    it('allows a point-like object', () => {
+      const pt2 = { x: 0, y: 0 };
       expect(Point.equals(pt, pt2)).toBe(true);
       pt.x = 1;
       expect(Point.equals(pt, pt2)).toBe(false);
@@ -203,6 +296,18 @@ describe('Point', () => {
       expect(result.x).toBe(expected.x);
       expect(result.y).toBe(expected.y);
     });
+
+    it('allows point-like objects', () => {
+      const pt = { x: 0, y: 0 };
+      const pt2 = { x: 100, y: 100 };
+
+      const result = Point.interpolate(pt2, pt, 1);
+      const expected = new Point();
+      Point.lerp(expected, pt, pt2, 1);
+
+      expect(result.x).toBe(expected.x);
+      expect(result.y).toBe(expected.y);
+    });
   });
 
   describe('interpolateTo', () => {
@@ -215,6 +320,19 @@ describe('Point', () => {
       const result = new Point();
       Point.interpolateTo(result, pt2, pt, 1);
       const expected = new Point();
+      Point.lerp(expected, pt, pt2, 1);
+
+      expect(result.x).toBe(expected.x);
+      expect(result.y).toBe(expected.y);
+    });
+
+    it('allows point-like objects', () => {
+      const pt = { x: 0, y: 0 };
+      const pt2 = { x: 100, y: 100 };
+
+      const result = { x: 0, y: 0 };
+      Point.interpolateTo(result, pt2, pt, 1);
+      const expected = { x: 0, y: 0 };
       Point.lerp(expected, pt, pt2, 1);
 
       expect(result.x).toBe(expected.x);
@@ -282,6 +400,18 @@ describe('Point', () => {
       expect(result.x).toBe(100000);
       expect(result.y).toBe(100000);
     });
+
+    it('allows point-like objects', () => {
+      const pt = { x: 0, y: 0 };
+      const pt2 = { x: 100, y: 100 };
+
+      for (const { t, expected } of cases) {
+        const result = { x: 0, y: 0 };
+        Point.lerp(result, pt, pt2, t);
+        expect(result.x).toBe(expected(pt.x, pt2.x));
+        expect(result.y).toBe(expected(pt.y, pt2.y));
+      }
+    });
   });
 
   describe('normalize', () => {
@@ -330,6 +460,13 @@ describe('Point', () => {
       Point.normalize(pt, 1);
       expect(pt.x).toBeCloseTo(0.7071, 4);
       expect(pt.y).toBeCloseTo(0.7071, 4);
+    });
+
+    it('allows a point-like object', () => {
+      const pt = { x: 3, y: 4 };
+      Point.normalize(pt, 10);
+      expect(pt.x).toBeCloseTo(6);
+      expect(pt.y).toBeCloseTo(8);
     });
   });
 
@@ -388,6 +525,16 @@ describe('Point', () => {
       expect(result.x).toBeCloseTo(0.7071, 4);
       expect(result.y).toBeCloseTo(0.7071, 4);
     });
+
+    it('allows a point-like object', () => {
+      const pt = { x: 3, y: 4 };
+      const result = { x: 0, y: 0 };
+      Point.normalizeTo(result, pt, 10);
+      expect(pt).not.toBe(result);
+      expect(result.x).toBeCloseTo(6);
+      expect(result.y).toBeCloseTo(8);
+      expect(Point.length(result)).toBeCloseTo(10);
+    });
   });
 
   describe('offset', () => {
@@ -401,6 +548,13 @@ describe('Point', () => {
       Point.offset(pt, -5, -10);
       expect(pt.x).toBe(-5);
       expect(pt.y).toBe(-10);
+    });
+
+    it('allows a point-like object', () => {
+      const pt = { x: 0, y: 0 };
+      Point.offset(pt, 10, 100);
+      expect(pt.x).toBe(10);
+      expect(pt.y).toBe(100);
     });
   });
 
@@ -417,6 +571,13 @@ describe('Point', () => {
       Point.offsetTo(result, pt, -5, -10);
       expect(result.x).toBe(-5);
       expect(result.y).toBe(-10);
+    });
+
+    it('allows a point-like object', () => {
+      const result = { x: 0, y: 0 };
+      Point.offsetTo(result, pt, 10, 100);
+      expect(result.x).toBe(10);
+      expect(result.y).toBe(100);
     });
   });
 
@@ -470,6 +631,11 @@ describe('Point', () => {
       expect(p.x).toBeCloseTo(1);
       expect(p.y).toBeCloseTo(1);
       expect(p.length).toBeCloseTo(len);
+    });
+
+    it('returns a Point instance', () => {
+      const p = Point.polar(5, 0);
+      expect(p).toBeInstanceOf(Point);
     });
   });
 
@@ -531,6 +697,13 @@ describe('Point', () => {
       expect(p.y).toBeCloseTo(1);
       expect(p.length).toBeCloseTo(len);
     });
+
+    it('allows point-like objeects', () => {
+      const p = { x: 0, y: 0 };
+      Point.polarTo(p, 5, 0);
+      expect(p.x).toBeCloseTo(5);
+      expect(p.y).toBeCloseTo(0);
+    });
   });
 
   describe('setTo', () => {
@@ -546,6 +719,13 @@ describe('Point', () => {
       Point.setTo(pt, 0, 0);
       expect(pt.x).toBe(0);
       expect(pt.y).toBe(0);
+    });
+
+    it('allows a point-like object', () => {
+      const pt = { x: 0, y: 0 };
+      Point.setTo(pt, 2, 10);
+      expect(pt.x).toBe(2);
+      expect(pt.y).toBe(10);
     });
   });
 
@@ -612,6 +792,30 @@ describe('Point', () => {
       const result = Point.subtract(pt, pt2);
       expect(result.x).toBeCloseTo(0);
       expect(result.y).toBeCloseTo(0);
+    });
+
+    it('allows a point-like objects', () => {
+      pt.x = 5;
+      pt.y = 10;
+      const pt2 = { x: 2, y: 4 };
+
+      const result = Point.subtract(pt, pt2);
+
+      expect(result.x).toBe(3);
+      expect(result.y).toBe(6);
+
+      // Ensure new object is returned
+      expect(result).not.toBe(pt);
+      expect(result).not.toBe(pt2);
+    });
+
+    it('returns a Point instance', () => {
+      pt.x = 5;
+      pt.y = 10;
+      const pt2 = { x: 2, y: 4 };
+
+      const result = Point.subtract(pt, pt2);
+      expect(result).toBeInstanceOf(Point);
     });
   });
 
@@ -684,6 +888,21 @@ describe('Point', () => {
       Point.subtractTo(result, pt, pt2);
       expect(result.x).toBeCloseTo(0);
       expect(result.y).toBeCloseTo(0);
+    });
+
+    it('allows point-like objects', () => {
+      const pt = { x: 5, y: 10 };
+      const pt2 = { x: 2, y: 4 };
+
+      const result = { x: 0, y: 0 };
+      Point.subtractTo(result, pt, pt2);
+
+      expect(result.x).toBe(3);
+      expect(result.y).toBe(6);
+
+      // Ensure new object is returned
+      expect(result).not.toBe(pt);
+      expect(result).not.toBe(pt2);
     });
   });
 
