@@ -34,6 +34,15 @@ describe('Rectangle', () => {
     it('returns y + height', () => {
       expect(r.bottom).toBe(20);
     });
+
+    it('is a static method as well', () => {
+      expect(Rectangle.bottom(r)).toBe(20);
+    });
+
+    it('allows a rectangle-like object', () => {
+      const r = { x: 0, y: 0, width: 10, height: 20 };
+      expect(Rectangle.bottom(r)).toBe(20);
+    });
   });
 
   describe('bottomRight', () => {
@@ -71,6 +80,15 @@ describe('Rectangle', () => {
       r.width = -5;
       expect(r.maxX).toBe(0);
     });
+
+    it('is also a static method', () => {
+      expect(Rectangle.maxX(r)).toBe(10);
+    });
+
+    it('allows a rectangle-like object', () => {
+      const r = { x: 0, y: 0, width: 10, height: 10 };
+      expect(Rectangle.maxX(r)).toBe(10);
+    });
   });
 
   describe('maxY', () => {
@@ -81,6 +99,15 @@ describe('Rectangle', () => {
     it('returns correct maximum Y for flipped rectangle', () => {
       r.height = -10;
       expect(r.maxY).toBe(0);
+    });
+
+    it('is also a static method', () => {
+      expect(Rectangle.maxY(r)).toBe(20);
+    });
+
+    it('allows a rectangle-like object', () => {
+      const r = { x: 0, y: 0, width: 10, height: 10 };
+      expect(Rectangle.maxY(r)).toBe(10);
     });
   });
 
@@ -93,6 +120,15 @@ describe('Rectangle', () => {
       r.width = -5;
       expect(r.minX).toBe(-5);
     });
+
+    it('is also a static method', () => {
+      expect(Rectangle.minX(r)).toBe(0);
+    });
+
+    it('allows a rectangle-like object', () => {
+      const r = { x: 0, y: 0, width: 10, height: 10 };
+      expect(Rectangle.minX(r)).toBe(0);
+    });
   });
 
   describe('minY', () => {
@@ -103,6 +139,15 @@ describe('Rectangle', () => {
     it('returns correct minimum Y for flipped rectangle', () => {
       r.height = -10;
       expect(r.minY).toBe(-10);
+    });
+
+    it('is also a static method', () => {
+      expect(Rectangle.minY(r)).toBe(0);
+    });
+
+    it('allows a rectangle-like object', () => {
+      const r = { x: 0, y: 0, width: 10, height: 10 };
+      expect(Rectangle.minY(r)).toBe(0);
     });
   });
 
@@ -117,6 +162,15 @@ describe('Rectangle', () => {
       expect(ntl.y).toBe(5);
     });
 
+    it('returns a Point instance', () => {
+      r.x = 10;
+      r.y = 20;
+      r.width = -5;
+      r.height = -15;
+      const ntl = r.normalizedTopLeft;
+      expect(ntl).toBeInstanceOf(Point);
+    });
+
     it('match min/max for positive rectangles', () => {
       r.x = 2;
       r.y = 3;
@@ -125,6 +179,25 @@ describe('Rectangle', () => {
       const ntl = r.normalizedTopLeft;
       expect(ntl.x).toBe(r.minX);
       expect(ntl.y).toBe(r.minY);
+    });
+
+    it('is also a static method', () => {
+      r.x = 10;
+      r.y = 20;
+      r.width = -5;
+      r.height = -15;
+      let ntl = new Point();
+      Rectangle.normalizedTopLeft(ntl, r);
+      expect(ntl.x).toBe(5);
+      expect(ntl.y).toBe(5);
+    });
+
+    it('allows rectangle-like objects', () => {
+      const r = { x: 10, y: 20, width: -5, height: -15 };
+      let ntl = { x: 0, y: 0 };
+      Rectangle.normalizedTopLeft(ntl, r);
+      expect(ntl.x).toBe(5);
+      expect(ntl.y).toBe(5);
     });
   });
 
@@ -139,6 +212,15 @@ describe('Rectangle', () => {
       expect(nbr.y).toBe(20);
     });
 
+    it('return a Point instance', () => {
+      r.x = 10;
+      r.y = 20;
+      r.width = -5;
+      r.height = -15;
+      const nbr = r.normalizedBottomRight;
+      expect(nbr).toBeInstanceOf(Point);
+    });
+
     it('match min/max for positive rectangles', () => {
       r.x = 2;
       r.y = 3;
@@ -147,6 +229,25 @@ describe('Rectangle', () => {
       const nbr = r.normalizedBottomRight;
       expect(nbr.x).toBe(r.maxX);
       expect(nbr.y).toBe(r.maxY);
+    });
+
+    it('is also a static method', () => {
+      r.x = 10;
+      r.y = 20;
+      r.width = -5;
+      r.height = -15;
+      const nbr = new Point();
+      Rectangle.normalizedBottomRight(nbr, r);
+      expect(nbr.x).toBe(10);
+      expect(nbr.y).toBe(20);
+    });
+
+    it('allows Rectangle-like objects', () => {
+      const r = { x: 10, y: 20, width: -5, height: -15 };
+      const nbr = { x: 0, y: 0 };
+      Rectangle.normalizedBottomRight(nbr, r);
+      expect(nbr.x).toBe(10);
+      expect(nbr.y).toBe(20);
     });
   });
 
@@ -163,6 +264,15 @@ describe('Rectangle', () => {
     it('setter can create negative width (flipped rectangle)', () => {
       r.right = -5;
       expect(r.width).toBe(-5);
+    });
+
+    it('is also a static method', () => {
+      expect(Rectangle.right(r)).toBe(10);
+    });
+
+    it('allows a rectangle-like object', () => {
+      const r = { x: 5, y: 0, width: 5, height: 0 };
+      expect(Rectangle.right(r)).toBe(10);
     });
   });
 
@@ -208,6 +318,21 @@ describe('Rectangle', () => {
       r.topLeft = new Point(3, 4);
       expect(r.x).toBe(3);
       expect(r.y).toBe(4);
+    });
+
+    it('is also a static method', () => {
+      let tl = new Point();
+      Rectangle.topLeft(tl, r);
+      expect(tl.x).toBe(0);
+      expect(tl.y).toBe(0);
+    });
+
+    it('allows point-like objects', () => {
+      const r = { x: 0, y: 0, height: 0, width: 0 };
+      let tl = { x: 0, y: 0 };
+      Rectangle.topLeft(tl, r);
+      expect(tl.x).toBe(0);
+      expect(tl.y).toBe(0);
     });
   });
 
