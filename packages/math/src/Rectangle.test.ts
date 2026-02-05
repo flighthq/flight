@@ -59,6 +59,46 @@ describe('Rectangle', () => {
     });
   });
 
+  describe('isFlippedX', () => {
+    it('returns false if width is positive', () => {
+      expect(r.isFlippedX).toBe(false);
+    });
+
+    it('returns false if width is negative', () => {
+      r.width = -10;
+      expect(r.isFlippedX).toBe(true);
+    });
+
+    it('is also a static method', () => {
+      expect(Rectangle.isFlippedX(r)).toBe(false);
+    });
+
+    it('allows a rectangle-like object', () => {
+      const r = { x: 0, y: 0, width: 100, height: 100 };
+      expect(Rectangle.isFlippedX(r)).toBe(false);
+    });
+  });
+
+  describe('isFlippedY', () => {
+    it('returns false if height is positive', () => {
+      expect(r.isFlippedY).toBe(false);
+    });
+
+    it('returns false if height is negative', () => {
+      r.height = -20;
+      expect(r.isFlippedY).toBe(true);
+    });
+
+    it('is also a static method', () => {
+      expect(Rectangle.isFlippedY(r)).toBe(false);
+    });
+
+    it('allows a rectangle-like object', () => {
+      const r = { x: 0, y: 0, width: 100, height: 100 };
+      expect(Rectangle.isFlippedY(r)).toBe(false);
+    });
+  });
+
   describe('left', () => {
     it('getter returns x', () => {
       expect(r.left).toBe(0);
@@ -349,6 +389,19 @@ describe('Rectangle', () => {
       c.x = 100;
       expect(r.x).not.toBe(c.x); // Original should remain unchanged
     });
+
+    it('allows a rectangle-like object', () => {
+      const r = { x: 1, y: 1, width: 100, height: 100 };
+      const c = Rectangle.clone(r);
+      c.x = 100;
+      expect(r.x).not.toBe(c.x);
+    });
+
+    it('returns a Rectangle instance', () => {
+      const r = { x: 1, y: 1, width: 100, height: 100 };
+      const c = Rectangle.clone(r);
+      expect(c).toBeInstanceOf(Rectangle);
+    });
   });
 
   describe('contains', () => {
@@ -365,11 +418,22 @@ describe('Rectangle', () => {
       r.height = -20;
       expect(Rectangle.contains(r, -5, -10)).toBe(true);
     });
+
+    it('allows a rectangle-like object', () => {
+      const r = { x: 0, y: 0, width: -10, height: -20 };
+      expect(Rectangle.contains(r, -5, -10)).toBe(true);
+    });
   });
 
   describe('containsPoint', () => {
     it('delegates to contains', () => {
       expect(Rectangle.containsPoint(r, new Point(5, 10))).toBe(true);
+    });
+
+    it('allows point-like and rectangle-like objects', () => {
+      const r = { x: 0, y: 0, width: 100, height: 100 };
+      const p = { x: 5, y: 10 };
+      expect(Rectangle.containsPoint(r, p)).toBe(true);
     });
   });
 
@@ -434,6 +498,13 @@ describe('Rectangle', () => {
       r2.height = 0;
       expect(Rectangle.containsRect(r, r2)).toBe(true);
     });
+
+    it('allows a rectangle-like object', () => {
+      // r: 0,0,10,10
+      // r2: 2,2,5,5 fully inside r
+      const r2 = { x: 2, y: 2, width: 5, height: 5 };
+      expect(Rectangle.containsRect(r, r2)).toBe(true);
+    });
   });
 
   describe('copyFrom', () => {
@@ -451,6 +522,13 @@ describe('Rectangle', () => {
       expect(r1.y).toBe(0);
       expect(r1.width).toBe(10);
       expect(r1.height).toBe(10);
+    });
+
+    it('allows rectangle-like objects', () => {
+      const r = { x: 0, y: 0, width: 100, height: 100 };
+      const r2 = { x: 2, y: 2, width: 2, height: 2 };
+      Rectangle.copyFrom(r2, r);
+      expect(Rectangle.equals(r, r2)).toBe(true);
     });
   });
 
@@ -470,6 +548,13 @@ describe('Rectangle', () => {
       expect(r1.width).toBe(10);
       expect(r1.height).toBe(10);
     });
+
+    it('allows rectangle-like objects', () => {
+      const r = { x: 0, y: 0, width: 100, height: 100 };
+      const r2 = { x: 2, y: 2, width: 2, height: 2 };
+      Rectangle.copyTo(r2, r);
+      expect(Rectangle.equals(r, r2)).toBe(true);
+    });
   });
 
   describe('equals', () => {
@@ -481,6 +566,13 @@ describe('Rectangle', () => {
     it('returns false for different rectangles', () => {
       r2.x = 1;
       expect(Rectangle.equals(r, r2)).toBe(false);
+    });
+
+    it('allows rectangle like objects', () => {
+      const r = { x: 1, y: 1, width: 1, height: 1 };
+      const r2 = { x: 1, y: 1, width: 1, height: 1 };
+      expect(Rectangle.equals(r, r)).toBe(true);
+      expect(Rectangle.equals(r, r2)).toBe(true);
     });
   });
 
@@ -498,6 +590,15 @@ describe('Rectangle', () => {
       const r3 = new Rectangle(20, 20, 5, 5);
       const result = Rectangle.intersection(r, r3);
       expect(Rectangle.isEmpty(result)).toBe(true);
+    });
+
+    it('allows rectangle-like objects', () => {
+      const r3 = { x: 5, y: 10, width: 10, height: 10 };
+      const result = Rectangle.intersection(r, r3);
+      expect(result.x).toBe(5);
+      expect(result.y).toBe(10);
+      expect(result.width).toBe(5);
+      expect(result.height).toBe(10);
     });
   });
 
@@ -546,6 +647,16 @@ describe('Rectangle', () => {
       expect(r1.width).toBe(5); // Ensure r1 got updated
       expect(r1.height).toBe(5); // Ensure r1 got updated
     });
+
+    it('allows rectangle-like objects', () => {
+      const r3 = { x: 5, y: 10, width: 10, height: 10 };
+      const result = { x: 0, y: 0, width: 0, height: 0 };
+      Rectangle.intersectionTo(result, r, r3);
+      expect(result.x).toBe(5);
+      expect(result.y).toBe(10);
+      expect(result.width).toBe(5);
+      expect(result.height).toBe(10);
+    });
   });
 
   describe('intersects', () => {
@@ -557,6 +668,11 @@ describe('Rectangle', () => {
     it('returns false if rectangles do not overlap', () => {
       const r3 = new Rectangle(20, 20, 5, 5);
       expect(Rectangle.intersects(r, r3)).toBe(false);
+    });
+
+    it('allows rectangle-like objects', () => {
+      const r3 = { x: 5, y: 10, width: 10, height: 10 };
+      expect(Rectangle.intersects(r, r3)).toBe(true);
     });
   });
 
@@ -572,10 +688,24 @@ describe('Rectangle', () => {
       r.height = -5;
       expect(Rectangle.isEmpty(r)).toBe(false); // flipped rectangles are valid
     });
+
+    it('allows rectangle-like objects', () => {
+      const r = { x: 0, y: 0, width: 10, height: 10 };
+      expect(Rectangle.isEmpty(r)).toBe(false);
+      r.width = 0;
+      expect(Rectangle.isEmpty(r)).toBe(true);
+    });
   });
 
   describe('offset', () => {
     it('offset moves rectangle', () => {
+      Rectangle.offset(r, 5, 10);
+      expect(r.x).toBe(5);
+      expect(r.y).toBe(10);
+    });
+
+    it('allows rectangle-like objects', () => {
+      const r = { x: 0, y: 0, width: 100, height: 100 };
       Rectangle.offset(r, 5, 10);
       expect(r.x).toBe(5);
       expect(r.y).toBe(10);
@@ -598,11 +728,27 @@ describe('Rectangle', () => {
       expect(r1.x).toBe(5);
       expect(r1.y).toBe(10);
     });
+
+    it('allows rectangle-like objects', () => {
+      const r = { x: 0, y: 0, width: 100, height: 100 };
+      const result = { x: 0, y: 0, width: 0, height: 0 };
+      Rectangle.offsetTo(result, r, 5, 10);
+      expect(result.x).toBe(5);
+      expect(result.y).toBe(10);
+    });
   });
 
   describe('offsetPoint', () => {
     it('moves rectangle by Point', () => {
       Rectangle.offsetPoint(r, new Point(3, 4));
+      expect(r.x).toBe(3);
+      expect(r.y).toBe(4);
+    });
+
+    it('allows rectangle- and point-like objects', () => {
+      const r = { x: 0, y: 0, width: 100, height: 100 };
+      const p = { x: 3, y: 4 };
+      Rectangle.offsetPoint(r, p);
       expect(r.x).toBe(3);
       expect(r.y).toBe(4);
     });
@@ -615,10 +761,28 @@ describe('Rectangle', () => {
       expect(result.x).toBe(3);
       expect(result.y).toBe(4);
     });
+
+    it('allows rectangle- and point-like objects', () => {
+      const r = { x: 0, y: 0, width: 100, height: 100 };
+      const p = { x: 3, y: 4 };
+      const result = { x: 0, y: 0, width: 0, height: 0 };
+      Rectangle.offsetPointTo(result, r, p);
+      expect(result.x).toBe(3);
+      expect(result.y).toBe(4);
+    });
   });
 
   describe('inflate', () => {
     it('inflates rectangle by dx/dy', () => {
+      Rectangle.inflate(r, 2, 3);
+      expect(r.x).toBe(-2);
+      expect(r.y).toBe(-3);
+      expect(r.width).toBe(14);
+      expect(r.height).toBe(26);
+    });
+
+    it('allows rectangle-like objects', () => {
+      const r = { x: 0, y: 0, width: 10, height: 20 };
       Rectangle.inflate(r, 2, 3);
       expect(r.x).toBe(-2);
       expect(r.y).toBe(-3);
@@ -648,11 +812,32 @@ describe('Rectangle', () => {
       expect(r1.width).toBe(14);
       expect(r1.height).toBe(16);
     });
+
+    it('allows rectangle-like objects', () => {
+      const r = { x: 0, y: 0, width: 10, height: 20 };
+      const result = { x: 0, y: 0, width: 0, height: 0 };
+      Rectangle.inflateTo(result, r, 2, 3);
+      expect(result).not.toBe(r);
+      expect(result.x).toBe(-2);
+      expect(result.y).toBe(-3);
+      expect(result.width).toBe(14);
+      expect(result.height).toBe(26);
+    });
   });
 
   describe('inflatePoint', () => {
     it('inflates rectangle by Point', () => {
       Rectangle.inflatePoint(r, new Point(1, 2));
+      expect(r.x).toBe(-1);
+      expect(r.y).toBe(-2);
+      expect(r.width).toBe(12);
+      expect(r.height).toBe(24);
+    });
+
+    it('allows rectangle- and point-like objects', () => {
+      const r = { x: 0, y: 0, width: 10, height: 20 };
+      const p = { x: 1, y: 2 };
+      Rectangle.inflatePoint(r, p);
       expect(r.x).toBe(-1);
       expect(r.y).toBe(-2);
       expect(r.width).toBe(12);
@@ -665,6 +850,17 @@ describe('Rectangle', () => {
       const result = new Rectangle();
       Rectangle.inflatePointTo(result, r, new Point(1, 2));
       expect(result).not.toBe(r);
+      expect(result.x).toBe(-1);
+      expect(result.y).toBe(-2);
+      expect(result.width).toBe(12);
+      expect(result.height).toBe(24);
+    });
+
+    it('allows rectangle- and point-like objects', () => {
+      const r = { x: 0, y: 0, width: 10, height: 20 };
+      const p = { x: 1, y: 2 };
+      const result = { x: 0, y: 0, width: 0, height: 0 };
+      Rectangle.inflatePointTo(result, r, p);
       expect(result.x).toBe(-1);
       expect(result.y).toBe(-2);
       expect(result.width).toBe(12);
@@ -692,6 +888,15 @@ describe('Rectangle', () => {
       expect(n.width).toBe(r.width);
       expect(n.height).toBe(r.height);
     });
+
+    it('allows rectangle-like objects', () => {
+      const r = { x: 10, y: 20, width: -5, height: -15 };
+      const n = Rectangle.normalized(r);
+      expect(n.x).toBe(5);
+      expect(n.y).toBe(5);
+      expect(n.width).toBe(5);
+      expect(n.height).toBe(15);
+    });
   });
 
   describe('normalizedTo', () => {
@@ -716,6 +921,16 @@ describe('Rectangle', () => {
       expect(n.width).toBe(r.width);
       expect(n.height).toBe(r.height);
     });
+
+    it('allows rectangle-like objects', () => {
+      const r = { x: 10, y: 20, width: -5, height: -15 };
+      const n = { x: 0, y: 0, width: 0, height: 0 };
+      Rectangle.normalizedTo(n, r);
+      expect(n.x).toBe(5);
+      expect(n.y).toBe(5);
+      expect(n.width).toBe(5);
+      expect(n.height).toBe(15);
+    });
   });
 
   describe('setEmpty', () => {
@@ -726,10 +941,28 @@ describe('Rectangle', () => {
       expect(r.width).toBe(0);
       expect(r.height).toBe(0);
     });
+
+    it('allows rectangle-like objects', () => {
+      const r = { x: 10, y: 20, width: -5, height: -15 };
+      Rectangle.setEmpty(r);
+      expect(r.x).toBe(0);
+      expect(r.y).toBe(0);
+      expect(r.width).toBe(0);
+      expect(r.height).toBe(0);
+    });
   });
 
   describe('setTo', () => {
     it('sets rectangle to specified values', () => {
+      Rectangle.setTo(r, 1, 2, 3, 4);
+      expect(r.x).toBe(1);
+      expect(r.y).toBe(2);
+      expect(r.width).toBe(3);
+      expect(r.height).toBe(4);
+    });
+
+    it('allows rectangle-like objects', () => {
+      const r = { x: 10, y: 20, width: -5, height: -15 };
       Rectangle.setTo(r, 1, 2, 3, 4);
       expect(r.x).toBe(1);
       expect(r.y).toBe(2);
@@ -768,6 +1001,23 @@ describe('Rectangle', () => {
       expect(u.y).toBe(0);
       expect(u.width).toBe(15);
       expect(u.height).toBe(20);
+    });
+
+    it('allows rectangle-like objects', () => {
+      const r = { x: 0, y: 0, width: 10, height: 20 };
+      const r3 = { x: 5, y: 15, width: 10, height: 10 };
+      const u = Rectangle.union(r, r3);
+      expect(u.x).toBe(0);
+      expect(u.y).toBe(0);
+      expect(u.width).toBe(15);
+      expect(u.height).toBe(25);
+    });
+
+    it('returns a Rectangle instance', () => {
+      const r = { x: 0, y: 0, width: 10, height: 20 };
+      const r3 = { x: 5, y: 15, width: 10, height: 10 };
+      const u = Rectangle.union(r, r3);
+      expect(u).toBeInstanceOf(Rectangle);
     });
   });
 
@@ -823,6 +1073,17 @@ describe('Rectangle', () => {
       expect(result.height).toBe(25); // Correct union height
       expect(r1.width).toBe(25); // r1 should be updated
       expect(r1.height).toBe(25); // r1 should be updated
+    });
+
+    it('allows rectangle-like objects', () => {
+      const r = { x: 0, y: 0, width: 10, height: 20 };
+      const r3 = { x: 5, y: 15, width: 10, height: 10 };
+      const u = { x: 0, y: 0, width: 0, height: 0 };
+      Rectangle.unionTo(u, r, r3);
+      expect(u.x).toBe(0);
+      expect(u.y).toBe(0);
+      expect(u.width).toBe(15);
+      expect(u.height).toBe(25);
     });
   });
 });

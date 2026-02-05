@@ -123,8 +123,8 @@ export default class Rectangle implements RectangleLike {
     this.inflate(target, point.x, point.y);
   }
 
-  static inflatePointTo(out: RectangleLike, target: RectangleLike, point: PointLike): void {
-    this.inflateTo(out, target, point.x, point.y);
+  static inflatePointTo(out: RectangleLike, sourceRectangle: RectangleLike, sourcePoint: PointLike): void {
+    this.inflateTo(out, sourceRectangle, sourcePoint.x, sourcePoint.y);
   }
 
   static inflateTo(out: RectangleLike, source: RectangleLike, dx: number, dy: number): void {
@@ -229,7 +229,7 @@ export default class Rectangle implements RectangleLike {
     target.y += dy;
   }
 
-  static offsetPoint(target: RectangleLike, point: Point): void {
+  static offsetPoint(target: RectangleLike, point: PointLike): void {
     target.x += point.x;
     target.y += point.y;
   }
