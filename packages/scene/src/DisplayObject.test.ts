@@ -263,9 +263,9 @@ describe('DisplayObject', () => {
       grandChild[R.parent] = child as any; // eslint-disable-line
 
       // fake local bounds
-      Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
-      Rectangle.setTo(getLocalBounds(child), 10, 20, 50, 50);
-      Rectangle.setTo(getLocalBounds(grandChild), 5, 5, 10, 10);
+      Rectangle.set(getLocalBounds(root), 0, 0, 100, 100);
+      Rectangle.set(getLocalBounds(child), 10, 20, 50, 50);
+      Rectangle.set(getLocalBounds(grandChild), 5, 5, 10, 10);
     });
 
     it('should return local bounds when targetCoordinateSpace is self', () => {
@@ -334,9 +334,9 @@ describe('DisplayObject', () => {
       grandChild[R.parent] = child as any; // eslint-disable-line
 
       // fake local bounds
-      Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
-      Rectangle.setTo(getLocalBounds(child), 10, 20, 50, 50);
-      Rectangle.setTo(getLocalBounds(grandChild), 5, 5, 10, 10);
+      Rectangle.set(getLocalBounds(root), 0, 0, 100, 100);
+      Rectangle.set(getLocalBounds(child), 10, 20, 50, 50);
+      Rectangle.set(getLocalBounds(grandChild), 5, 5, 10, 10);
     });
 
     it('should return local bounds when targetCoordinateSpace is self', () => {
@@ -411,9 +411,9 @@ describe('DisplayObject', () => {
       grandChild[R.parent] = child as any; // eslint-disable-line
 
       // fake local bounds
-      Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
-      Rectangle.setTo(getLocalBounds(child), 10, 20, 50, 50);
-      Rectangle.setTo(getLocalBounds(grandChild), 5, 5, 10, 10);
+      Rectangle.set(getLocalBounds(root), 0, 0, 100, 100);
+      Rectangle.set(getLocalBounds(child), 10, 20, 50, 50);
+      Rectangle.set(getLocalBounds(grandChild), 5, 5, 10, 10);
     });
 
     it('should return local bounds when targetCoordinateSpace is self', () => {
@@ -482,9 +482,9 @@ describe('DisplayObject', () => {
       grandChild[R.parent] = child as any; // eslint-disable-line
 
       // fake local bounds
-      Rectangle.setTo(getLocalBounds(root), 0, 0, 100, 100);
-      Rectangle.setTo(getLocalBounds(child), 10, 20, 50, 50);
-      Rectangle.setTo(getLocalBounds(grandChild), 5, 5, 10, 10);
+      Rectangle.set(getLocalBounds(root), 0, 0, 100, 100);
+      Rectangle.set(getLocalBounds(child), 10, 20, 50, 50);
+      Rectangle.set(getLocalBounds(grandChild), 5, 5, 10, 10);
     });
 
     it('should return local bounds when targetCoordinateSpace is self', () => {
@@ -635,8 +635,8 @@ describe('DisplayObject', () => {
       b[R.parent] = new DisplayObject() as any; // eslint-disable-line
 
       // Simple local bounds
-      Rectangle.setTo(getLocalBounds(a), 0, 0, 10, 10);
-      Rectangle.setTo(getLocalBounds(b), 0, 0, 10, 10);
+      Rectangle.set(getLocalBounds(a), 0, 0, 10, 10);
+      Rectangle.set(getLocalBounds(b), 0, 0, 10, 10);
 
       // Position b to overlap a
       a.x = 0;
@@ -688,7 +688,7 @@ describe('DisplayObject', () => {
       obj.visible = true;
       obj.opaqueBackground = 0xff0000;
       // set a simple local bounds rectangle
-      Rectangle.setTo(getLocalBounds(obj), 0, 0, 100, 100);
+      Rectangle.set(getLocalBounds(obj), 0, 0, 100, 100);
     });
 
     it('returns true for point inside bounds', () => {
