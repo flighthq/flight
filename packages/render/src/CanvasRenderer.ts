@@ -293,7 +293,7 @@ export default class CanvasRenderer {
 
   set backgroundColor(value: number) {
     if (value === this.__backgroundColor) return;
-    this.__backgroundColor = value & 0xffffffff;
+    this.__backgroundColor = value;
     const r = (value & 0xff000000) >>> 24;
     const g = (value & 0x00ff0000) >>> 16;
     const b = (value & 0x0000ff00) >>> 8;
@@ -302,7 +302,7 @@ export default class CanvasRenderer {
     this.__backgroundColorSplit[1] = g / 0xff;
     this.__backgroundColorSplit[2] = b / 0xff;
     this.__backgroundColorSplit[3] = a / 0xff;
-    this.__backgroundColorString = '#' + (value & 0xffffffff).toString(16).padStart(8, '0').toUpperCase();
+    this.__backgroundColorString = '#' + value.toString(16).padStart(8, '0').toUpperCase();
   }
 
   get imageSmoothingEnabled(): boolean {
