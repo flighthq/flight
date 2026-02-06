@@ -8,7 +8,7 @@ canvas.height = 400;
 document.body.appendChild(canvas);
 
 const options = {
-  backgroundColor: 0xffffff,
+  backgroundColor: 0xffffffff,
   contextAttributes: {
     alpha: false,
   },
@@ -17,4 +17,4 @@ const options = {
 const renderer = new CanvasRenderer(canvas, options);
 
 const main = new Main();
-renderer.render(main);
+CanvasRenderer.render(renderer, main);

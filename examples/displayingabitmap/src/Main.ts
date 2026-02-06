@@ -1,6 +1,6 @@
+import { RenderableSymbols as R } from '@flighthq/contracts';
 import type { Rectangle } from '@flighthq/math';
 import { Sprite } from '@flighthq/scene';
-import { internal } from '@flighthq/scene/internal/DisplayObject';
 
 export default class Main extends Sprite {
   sprite = new Sprite();
@@ -8,7 +8,7 @@ export default class Main extends Sprite {
     super();
 
     // hack
-    const localBounds: Rectangle = this.sprite[internal._localBounds];
+    const localBounds: Rectangle = this.sprite[R.localBounds];
     localBounds.width = 100;
     localBounds.height = 100;
 
