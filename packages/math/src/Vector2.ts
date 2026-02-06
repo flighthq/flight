@@ -22,13 +22,15 @@ export default class Vector2 implements Vector2Like {
     if (y !== undefined) this.y = y;
   }
 
-  static add(a: Vector2Like, b: Vector2Like): Vector2 {
-    return new Vector2(a.x + b.x, a.y + b.y);
-  }
-
-  static addTo(out: Vector2Like, a: Vector2Like, b: Vector2Like): void {
+  static add(out: Vector2Like, a: Vector2Like, b: Vector2Like): void {
     out.x = a.x + b.x;
     out.y = a.y + b.y;
+  }
+
+  add(source: Vector2Like): Vector2 {
+    this.x += source.x;
+    this.y += source.y;
+    return this;
   }
 
   static clone(source: Vector2Like): Vector2 {
@@ -40,9 +42,21 @@ export default class Vector2 implements Vector2Like {
     out.y = source.y;
   }
 
+  copyFrom(source: Vector2Like): Vector2 {
+    this.x = source.x;
+    this.y = source.y;
+    return this;
+  }
+
   static copyTo(out: Vector2Like, source: Vector2Like): void {
     out.x = source.x;
     out.y = source.y;
+  }
+
+  static createPolar(len: number, angle: number): Vector2 {
+    const out = new Vector2();
+    this.setPolar(out, len, angle);
+    return out;
   }
 
   static distance(a: Vector2Like, b: Vector2Like): number {
@@ -53,23 +67,6 @@ export default class Vector2 implements Vector2Like {
 
   static equals(a: Vector2Like, b: Vector2Like): boolean {
     return a === b || (a.x === b.x && a.y === b.y);
-  }
-
-  /**
-   * @legacy Like lerp, except argument order is reversed
-   * @see lerp
-   */
-  static interpolate(end: Vector2Like, start: Vector2Like, t: number): Vector2 {
-    const out = new Vector2();
-    this.lerp(out, start, end, t);
-    return out;
-  }
-
-  /**
-   * @legacy Like lerp, except argument order is reversed
-   */
-  static interpolateTo(out: Vector2Like, end: Vector2Like, start: Vector2Like, t: number): void {
-    this.lerp(out, start, end, t);
   }
 
   static length(source: Vector2Like): number {
@@ -88,26 +85,9 @@ export default class Vector2 implements Vector2Like {
     out.y = a.y + t * (b.y - a.y);
   }
 
-  /**
-   * Modifies a point representing this vector scaled to a given length.
-   *
-   * The direction of the vector is preserved. If the original vector has zero length,
-   * the returned point will also be (0, 0).
-   *
-   * @param length - The desired length of the vector. For example,
-   *                 if the current point is (0, 5) and `length` is 1,
-   *                 the returned point will be (0, 1).
-   */
-  static normalize(target: Vector2Like, length: number): void {
-    const currentLength = this.length(target);
-    if (currentLength === 0) {
-      target.x = 0;
-      target.y = 0;
-    } else {
-      const scale = length / currentLength;
-      target.x *= scale;
-      target.y *= scale;
-    }
+  lerp(b: Vector2Like, t: number): Vector2 {
+    Vector2.lerp(this, this, b, t);
+    return this;
   }
 
   /**
@@ -116,7 +96,7 @@ export default class Vector2 implements Vector2Like {
    * The direction of the vector is preserved. If the original vector has zero length,
    * the returned point will also be (0, 0).
    */
-  static normalizeTo(out: Vector2Like, source: Vector2Like, length: number): void {
+  static normalize(out: Vector2Like, source: Vector2Like, length: number): void {
     const currentLength = this.length(source);
     if (currentLength === 0) {
       out.x = 0;
@@ -128,43 +108,47 @@ export default class Vector2 implements Vector2Like {
     }
   }
 
-  static offset(target: Vector2Like, dx: number, dy: number): void {
-    target.x += dx;
-    target.y += dy;
+  normalize(length: number): Vector2 {
+    Vector2.normalize(this, this, length);
+    return this;
   }
 
-  static offsetTo(out: Vector2Like, source: Vector2Like, dx: number, dy: number): void {
+  static offset(out: Vector2Like, source: Vector2Like, dx: number, dy: number): void {
     out.x = source.x + dx;
     out.y = source.y + dy;
   }
 
-  static polar(len: number, angle: number): Vector2 {
-    const out = new Vector2();
-    out.x = len * Math.cos(angle);
-    out.y = len * Math.sin(angle);
-    return out;
+  offset(dx: number, dy: number): Vector2 {
+    this.x += dx;
+    this.y += dy;
+    return this;
   }
 
-  static polarTo(out: Vector2Like, len: number, angle: number): void {
-    out.x = len * Math.cos(angle);
-    out.y = len * Math.sin(angle);
-  }
-
-  static setTo(out: Vector2Like, x: number, y: number): void {
+  static set(out: Vector2Like, x: number, y: number): void {
     out.x = x;
     out.y = y;
   }
 
-  static subtract(source: Vector2Like, toSubtract: Vector2Like): Vector2 {
-    const out = new Vector2();
-    out.x = source.x - toSubtract.x;
-    out.y = source.y - toSubtract.y;
-    return out;
+  set(x: number, y: number): Vector2 {
+    this.x = x;
+    this.y = y;
+    return this;
   }
 
-  static subtractTo(out: Vector2Like, source: Vector2Like, toSubtract: Vector2Like): void {
+  static setPolar(out: Vector2Like, len: number, angle: number): void {
+    out.x = len * Math.cos(angle);
+    out.y = len * Math.sin(angle);
+  }
+
+  static subtract(out: Vector2Like, source: Vector2Like, toSubtract: Vector2Like): void {
     out.x = source.x - toSubtract.x;
     out.y = source.y - toSubtract.y;
+  }
+
+  subtract(source: Vector2Like): Vector2 {
+    this.x -= source.x;
+    this.y -= source.y;
+    return this;
   }
 
   // Get & Set Methods
