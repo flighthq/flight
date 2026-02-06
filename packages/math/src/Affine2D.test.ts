@@ -1,7 +1,7 @@
 import Affine2D from './Affine2D.js';
 import Rectangle from './Rectangle.js';
 import Vector2 from './Vector2.js';
-import Vector3D from './Vector4.js';
+import Vector3 from './Vector3.js';
 
 describe('Affine2D', () => {
   // Constructor
@@ -88,123 +88,14 @@ describe('Affine2D', () => {
   });
 
   describe('concat', () => {
-    it('should concatenate two matrices', () => {
-      const m1 = new Affine2D(1, 0, 0, 1, 0, 0);
-      const m2 = new Affine2D(1, 2, 3, 4, 5, 6);
-      Affine2D.concat(m1, m2);
-      expect(m1.a).toBe(1);
-      expect(m1.b).toBe(2);
-      expect(m1.c).toBe(3);
-      expect(m1.d).toBe(4);
-      expect(m1.tx).toBe(5);
-      expect(m1.ty).toBe(6);
-    });
-
-    it('should handle concatenation of identity matrices', () => {
-      const m1 = new Affine2D(1, 0, 0, 1, 0, 0);
-      const m2 = new Affine2D(1, 0, 0, 1, 0, 0);
-      Affine2D.concat(m1, m2);
-      expect(m1.a).toBe(1);
-      expect(m1.b).toBe(0);
-      expect(m1.c).toBe(0);
-      expect(m1.d).toBe(1);
-      expect(m1.tx).toBe(0);
-      expect(m1.ty).toBe(0);
-    });
-
-    it('should handle negative scale factors', () => {
-      const m1 = new Affine2D(2, 0, 0, 2, 0, 0);
-      const m2 = new Affine2D(-1, 0, 0, -1, 0, 0);
-      Affine2D.concat(m1, m2);
-      expect(m1.a).toBe(-2);
-      expect(m1.b).toBe(0);
-      expect(m1.c).toBe(0);
-      expect(m1.d).toBe(-2);
-      expect(m1.tx).toBe(0);
-      expect(m1.ty).toBe(0);
-    });
-
-    it('should handle translation after scaling', () => {
-      const m1 = new Affine2D(2, 0, 0, 2, 0, 0); // Scale
-      const m2 = new Affine2D(1, 0, 0, 1, 3, 4); // Translate
-      Affine2D.concat(m1, m2);
-      expect(m1.a).toBe(2);
-      expect(m1.b).toBe(0);
-      expect(m1.c).toBe(0);
-      expect(m1.d).toBe(2);
-      expect(m1.tx).toBe(3);
-      expect(m1.ty).toBe(4);
-    });
-
-    it('should handle rotation transformation', () => {
-      const m1 = new Affine2D(1, 0, 0, 1, 0, 0); // Identity matrix
-      const angle = Math.PI / 4; // 45 degrees rotation
-      const m2 = new Affine2D(Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0); // Rotation matrix
-      Affine2D.concat(m1, m2);
-      expect(m1.a).toBeCloseTo(Math.cos(angle), 5);
-      expect(m1.b).toBeCloseTo(Math.sin(angle), 5);
-      expect(m1.c).toBeCloseTo(-Math.sin(angle), 5);
-      expect(m1.d).toBeCloseTo(Math.cos(angle), 5);
-      expect(m1.tx).toBe(0);
-      expect(m1.ty).toBe(0);
-    });
-
-    it('should handle concatenation with non-zero translations', () => {
-      const m1 = new Affine2D(1, 0, 0, 1, 0, 0);
-      const m2 = new Affine2D(1, 0, 0, 1, 5, 5);
-      Affine2D.concat(m1, m2);
-      expect(m1.a).toBe(1);
-      expect(m1.b).toBe(0);
-      expect(m1.c).toBe(0);
-      expect(m1.d).toBe(1);
-      expect(m1.tx).toBe(5);
-      expect(m1.ty).toBe(5);
-    });
-
-    it('should handle non-uniform scaling', () => {
-      const m1 = new Affine2D(1, 0, 0, 2, 0, 0); // Scaling by 2 along Y-axis
-      const m2 = new Affine2D(2, 0, 0, 1, 0, 0); // Scaling by 2 along X-axis
-      Affine2D.concat(m1, m2);
-      expect(m1.a).toBe(2);
-      expect(m1.b).toBe(0);
-      expect(m1.c).toBe(0);
-      expect(m1.d).toBe(2);
-      expect(m1.tx).toBe(0);
-      expect(m1.ty).toBe(0);
-    });
-
-    it('should handle non-zero initial tx and ty values', () => {
-      const m1 = new Affine2D(1, 0, 0, 1, 1, 1); // Translation by (1, 1)
-      const m2 = new Affine2D(1, 0, 0, 1, 2, 3); // Translation by (2, 3)
-      Affine2D.concat(m1, m2);
-      expect(m1.tx).toBe(3); // 1 + 2
-      expect(m1.ty).toBe(4); // 1 + 3
-    });
-
-    it('should handle inverse matrix multiplication', () => {
-      const m1 = new Affine2D(2, 0, 0, 2, 3, 4); // Scale by 2 and translate by (3, 4)
-      const m2 = new Affine2D(0.5, 0, 0, 0.5, -3, -4); // Inverse of m1
-      Affine2D.concat(m1, m2); // Concatenate m1 with its inverse
-
-      // The result should be the identity matrix with translation adjustments
-      expect(m1.a).toBe(1); // The scaling should be undone, so a = 1
-      expect(m1.b).toBe(0); // No shear, so b = 0
-      expect(m1.c).toBe(0); // No shear, so c = 0
-      expect(m1.d).toBe(1); // The scaling should be undone, so d = 1
-      expect(m1.tx).toBe(-1.5); // The translation is undone, resulting in tx = -1.5
-      expect(m1.ty).toBe(-2); // The translation is undone, resulting in ty = -2
-    });
-
-    it('should handle concatenation with a matrix that has negative values', () => {
-      const m1 = new Affine2D(1, 0, 0, 1, 0, 0);
-      const m2 = new Affine2D(-1, 0, 0, -1, -2, -3); // Negative scale and translation
-      Affine2D.concat(m1, m2);
-      expect(m1.a).toBe(-1);
-      expect(m1.b).toBe(0);
-      expect(m1.c).toBe(0);
-      expect(m1.d).toBe(-1);
-      expect(m1.tx).toBe(-2);
-      expect(m1.ty).toBe(-3);
+    it('is an alias for multiply', () => {
+      const a = new Affine2D(2, 0, 0, 2, 0, 0);
+      const b = new Affine2D(1, 0, 0, 1, 5, 5);
+      const out1 = new Affine2D();
+      const out2 = new Affine2D();
+      Affine2D.concat(out1, a, b);
+      Affine2D.multiply(out2, a, b);
+      expect(Affine2D.equals(out1, out2)).toBe(true);
     });
   });
 
@@ -223,9 +114,9 @@ describe('Affine2D', () => {
   });
 
   describe('copyColumnFrom', () => {
-    it('should copy column from a Vector3D to a Affine2D', () => {
+    it('should copy column from a Vector3 to a Affine2D', () => {
       const m = new Affine2D();
-      const v = new Vector3D(1, 2, 0);
+      const v = new Vector3(1, 2, 0);
       Affine2D.copyColumnFrom(m, 0, v); // column 0
       expect(m.a).toBe(1);
       expect(m.b).toBe(2);
@@ -233,7 +124,7 @@ describe('Affine2D', () => {
 
     it('should copy column 1 (c, d)', () => {
       const m = new Affine2D();
-      const v = new Vector3D(3, 4, 0);
+      const v = new Vector3(3, 4, 0);
       Affine2D.copyColumnFrom(m, 1, v);
       expect(m.c).toBe(3);
       expect(m.d).toBe(4);
@@ -241,7 +132,7 @@ describe('Affine2D', () => {
 
     it('should copy column 2 (tx, ty)', () => {
       const m = new Affine2D();
-      const v = new Vector3D(5, 6, 0);
+      const v = new Vector3(5, 6, 0);
       Affine2D.copyColumnFrom(m, 2, v);
       expect(m.tx).toBe(5);
       expect(m.ty).toBe(6);
@@ -249,33 +140,33 @@ describe('Affine2D', () => {
 
     it('should throw when column is greater than 2', () => {
       const m = new Affine2D();
-      const v = new Vector3D();
+      const v = new Vector3();
       expect(() => Affine2D.copyColumnFrom(m, 3, v)).toThrow();
     });
   });
 
   describe('copyColumnTo', () => {
-    it('should copy column to a Vector3D from a Affine2D', () => {
+    it('should copy column to a Vector3 from a Affine2D', () => {
       const m = new Affine2D(1, 2, 3, 4, 5, 6);
-      const v = new Vector3D();
+      const v = new Vector3();
       Affine2D.copyColumnTo(v, 0, m); // column 0
       expect(v.x).toBe(1);
       expect(v.y).toBe(2);
       expect(v.z).toBe(0);
     });
 
-    it('should copy column 1 into Vector3D', () => {
+    it('should copy column 1 into Vector3', () => {
       const m = new Affine2D(0, 0, 3, 4, 0, 0);
-      const v = new Vector3D();
+      const v = new Vector3();
       Affine2D.copyColumnTo(v, 1, m);
       expect(v.x).toBe(3);
       expect(v.y).toBe(4);
       expect(v.z).toBe(0);
     });
 
-    it('should copy column 2 into Vector3D and set z to 1', () => {
+    it('should copy column 2 into Vector3 and set z to 1', () => {
       const m = new Affine2D(0, 0, 0, 0, 7, 8);
-      const v = new Vector3D();
+      const v = new Vector3();
       Affine2D.copyColumnTo(v, 2, m);
       expect(v.x).toBe(7);
       expect(v.y).toBe(8);
@@ -284,15 +175,15 @@ describe('Affine2D', () => {
 
     it('should throw when column is greater than 2', () => {
       const m = new Affine2D();
-      const v = new Vector3D();
+      const v = new Vector3();
       expect(() => Affine2D.copyColumnTo(v, 3, m)).toThrow();
     });
   });
 
   describe('copyRowFrom', () => {
-    it('should copy row from a Vector3D to a Affine2D', () => {
+    it('should copy row from a Vector3 to a Affine2D', () => {
       const m = new Affine2D();
-      const v = new Vector3D(1, 2, 3);
+      const v = new Vector3(1, 2, 3);
       Affine2D.copyRowFrom(m, 0, v); // row 0
       expect(m.a).toBe(1);
       expect(m.c).toBe(2);
@@ -301,7 +192,7 @@ describe('Affine2D', () => {
 
     it('should copy row 1 (b, d, ty)', () => {
       const m = new Affine2D();
-      const v = new Vector3D(2, 4, 6);
+      const v = new Vector3(2, 4, 6);
       Affine2D.copyRowFrom(m, 1, v);
       expect(m.b).toBe(2);
       expect(m.d).toBe(4);
@@ -310,15 +201,15 @@ describe('Affine2D', () => {
 
     it('should throw when row is greater than 2', () => {
       const m = new Affine2D();
-      const v = new Vector3D();
+      const v = new Vector3();
       expect(() => Affine2D.copyRowFrom(m, 3, v)).toThrow();
     });
   });
 
   describe('copyRowTo', () => {
-    it('should copy row to a Vector3D from a Affine2D', () => {
+    it('should copy row to a Vector3 from a Affine2D', () => {
       const m = new Affine2D(1, 2, 3, 4, 5, 6);
-      const v = new Vector3D();
+      const v = new Vector3();
       Affine2D.copyRowTo(v, 0, m); // row 0
       expect(v.x).toBe(1); // m.a
       expect(v.y).toBe(3); // m.c
@@ -327,7 +218,7 @@ describe('Affine2D', () => {
 
     it('should copy row 1 (b, d, ty)', () => {
       const m = new Affine2D(1, 2, 3, 4, 5, 6);
-      const v = new Vector3D();
+      const v = new Vector3();
       Affine2D.copyRowTo(v, 1, m);
       expect(v.x).toBe(2);
       expect(v.y).toBe(4);
@@ -336,11 +227,20 @@ describe('Affine2D', () => {
 
     it('should return (0, 0, 1) for row 2', () => {
       const m = new Affine2D();
-      const v = new Vector3D();
+      const v = new Vector3();
       Affine2D.copyRowTo(v, 2, m);
       expect(v.x).toBe(0);
       expect(v.y).toBe(0);
       expect(v.z).toBe(1);
+    });
+  });
+
+  describe('createTransform', () => {
+    it('should create a new Affine2D and call setTransform', () => {
+      const m1 = Affine2D.createTransform(2, 4, 45, 10, 100);
+      const m2 = new Affine2D();
+      Affine2D.setTransform(m2, 2, 4, 45, 10, 100);
+      expect(Affine2D.equals(m1, m2)).toBe(true);
     });
   });
 
@@ -431,7 +331,8 @@ describe('Affine2D', () => {
     it('should apply inverse transformation to a point', () => {
       const m = new Affine2D(2, 0, 0, 2, 0, 0);
       const p = new Vector2(2, 2);
-      const transformedVector2 = Affine2D.inverseTransformPoint(m, p);
+      const transformedVector2 = new Vector2();
+      Affine2D.inverseTransformPoint(transformedVector2, m, p);
       expect(transformedVector2.x).toBe(1);
       expect(transformedVector2.y).toBe(1);
     });
@@ -439,14 +340,16 @@ describe('Affine2D', () => {
     it('should return a new point', () => {
       const m = new Affine2D(2, 0, 0, 2, 0, 0);
       const p = new Vector2(2, 2);
-      const transformedVector2 = Affine2D.inverseTransformPoint(m, p);
+      const transformedVector2 = new Vector2();
+      Affine2D.inverseTransformPoint(transformedVector2, m, p);
       expect(p).not.toBe(transformedVector2);
     });
 
     it('should not modify original point', () => {
       const m = new Affine2D(2, 0, 0, 2, 0, 0);
       const p = new Vector2(2, 2);
-      Affine2D.inverseTransformPoint(m, p);
+      const out = new Vector2();
+      Affine2D.inverseTransformPoint(out, m, p);
       expect(p.x).toBe(2);
       expect(p.y).toBe(2);
     });
@@ -476,7 +379,8 @@ describe('Affine2D', () => {
     it('should apply inverse transformation to a point', () => {
       const m = new Affine2D(2, 0, 0, 2, 0, 0);
       const p = new Vector2(2, 2);
-      const transformedVector2 = Affine2D.inverseTransformVector(m, p);
+      const transformedVector2 = new Vector2();
+      Affine2D.inverseTransformVector(transformedVector2, m, p);
       expect(transformedVector2.x).toBe(1);
       expect(transformedVector2.y).toBe(1);
     });
@@ -484,14 +388,16 @@ describe('Affine2D', () => {
     it('should return a new point', () => {
       const m = new Affine2D(2, 0, 0, 2, 0, 0);
       const p = new Vector2(2, 2);
-      const transformedVector2 = Affine2D.inverseTransformVector(m, p);
+      const transformedVector2 = new Vector2();
+      Affine2D.inverseTransformVector(transformedVector2, m, p);
       expect(p).not.toBe(transformedVector2);
     });
 
     it('should not modify original point', () => {
       const m = new Affine2D(2, 0, 0, 2, 0, 0);
       const p = new Vector2(2, 2);
-      Affine2D.inverseTransformVector(m, p);
+      const out = new Vector2();
+      Affine2D.inverseTransformVector(out, m, p);
       expect(p.x).toBe(2);
       expect(p.y).toBe(2);
     });
@@ -514,28 +420,6 @@ describe('Affine2D', () => {
 
       expect(out.x).toBe(0);
       expect(out.y).toBe(0);
-    });
-  });
-
-  describe('invert', () => {
-    it('should invert the matrix correctly', () => {
-      // Create a matrix with scaling of 2 and translation of (5, 3)
-      const m = new Affine2D(2, 0, 0, 2, 5, 3);
-
-      // Apply inversion
-      Affine2D.invert(m);
-
-      // Expected inverse matrix:
-      // Scaling should be 0.5 (inverse of 2)
-      // Translation should be -2.5 (inverse of 5 scaled by 0.5) and -1.5 (inverse of 3 scaled by 0.5)
-
-      // Assert the inverse matrix values
-      expect(m.a).toBeCloseTo(0.5); // Inverse scaling on x
-      expect(m.b).toBeCloseTo(0); // No shear on x
-      expect(m.c).toBeCloseTo(0); // No shear on y
-      expect(m.d).toBeCloseTo(0.5); // Inverse scaling on y
-      expect(m.tx).toBeCloseTo(-2.5); // Inverse translation on x
-      expect(m.ty).toBeCloseTo(-1.5); // Inverse translation on y
     });
   });
 
@@ -565,12 +449,123 @@ describe('Affine2D', () => {
       Affine2D.multiply(out, a, b);
       expect(Affine2D.equals(out, b)).toBe(true);
     });
+
+    it('should handle negative scale factors', () => {
+      const m1 = new Affine2D(2, 0, 0, 2, 0, 0);
+      const m2 = new Affine2D(-1, 0, 0, -1, 0, 0);
+      Affine2D.multiply(m1, m1, m2);
+      expect(m1.a).toBe(-2);
+      expect(m1.b).toBe(0);
+      expect(m1.c).toBe(0);
+      expect(m1.d).toBe(-2);
+      expect(m1.tx).toBe(0);
+      expect(m1.ty).toBe(0);
+    });
+
+    it('should handle translation after scaling', () => {
+      const m1 = new Affine2D(2, 0, 0, 2, 0, 0); // Scale
+      const m2 = new Affine2D(1, 0, 0, 1, 3, 4); // Translate
+      Affine2D.multiply(m1, m1, m2);
+      expect(m1.a).toBe(2);
+      expect(m1.b).toBe(0);
+      expect(m1.c).toBe(0);
+      expect(m1.d).toBe(2);
+      expect(m1.tx).toBe(3);
+      expect(m1.ty).toBe(4);
+    });
+
+    it('should handle rotation transformation', () => {
+      const m1 = new Affine2D(1, 0, 0, 1, 0, 0); // Identity matrix
+      const angle = Math.PI / 4; // 45 degrees rotation
+      const m2 = new Affine2D(Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0); // Rotation matrix
+      Affine2D.multiply(m1, m1, m2);
+      expect(m1.a).toBeCloseTo(Math.cos(angle), 5);
+      expect(m1.b).toBeCloseTo(Math.sin(angle), 5);
+      expect(m1.c).toBeCloseTo(-Math.sin(angle), 5);
+      expect(m1.d).toBeCloseTo(Math.cos(angle), 5);
+      expect(m1.tx).toBe(0);
+      expect(m1.ty).toBe(0);
+    });
+
+    it('should handle concatenation with non-zero translations', () => {
+      const m1 = new Affine2D(1, 0, 0, 1, 0, 0);
+      const m2 = new Affine2D(1, 0, 0, 1, 5, 5);
+      Affine2D.multiply(m1, m1, m2);
+      expect(m1.a).toBe(1);
+      expect(m1.b).toBe(0);
+      expect(m1.c).toBe(0);
+      expect(m1.d).toBe(1);
+      expect(m1.tx).toBe(5);
+      expect(m1.ty).toBe(5);
+    });
+
+    it('should handle non-uniform scaling', () => {
+      const m1 = new Affine2D(1, 0, 0, 2, 0, 0); // Scaling by 2 along Y-axis
+      const m2 = new Affine2D(2, 0, 0, 1, 0, 0); // Scaling by 2 along X-axis
+      Affine2D.multiply(m1, m1, m2);
+      expect(m1.a).toBe(2);
+      expect(m1.b).toBe(0);
+      expect(m1.c).toBe(0);
+      expect(m1.d).toBe(2);
+      expect(m1.tx).toBe(0);
+      expect(m1.ty).toBe(0);
+    });
+
+    it('should handle non-zero initial tx and ty values', () => {
+      const m1 = new Affine2D(1, 0, 0, 1, 1, 1); // Translation by (1, 1)
+      const m2 = new Affine2D(1, 0, 0, 1, 2, 3); // Translation by (2, 3)
+      Affine2D.multiply(m1, m1, m2);
+      expect(m1.tx).toBe(3); // 1 + 2
+      expect(m1.ty).toBe(4); // 1 + 3
+    });
+
+    it('should handle inverse matrix multiplication', () => {
+      const m1 = new Affine2D(2, 0, 0, 2, 3, 4); // Scale by 2 and translate by (3, 4)
+      const m2 = new Affine2D(0.5, 0, 0, 0.5, -3, -4); // Inverse of m1
+      Affine2D.multiply(m1, m1, m2); // Concatenate m1 with its inverse
+
+      // The result should be the identity matrix with translation adjustments
+      expect(m1.a).toBe(1); // The scaling should be undone, so a = 1
+      expect(m1.b).toBe(0); // No shear, so b = 0
+      expect(m1.c).toBe(0); // No shear, so c = 0
+      expect(m1.d).toBe(1); // The scaling should be undone, so d = 1
+      expect(m1.tx).toBe(-1.5); // The translation is undone, resulting in tx = -1.5
+      expect(m1.ty).toBe(-2); // The translation is undone, resulting in ty = -2
+    });
+
+    it('should handle concatenation with a matrix that has negative values', () => {
+      const m1 = new Affine2D(1, 0, 0, 1, 0, 0);
+      const m2 = new Affine2D(-1, 0, 0, -1, -2, -3); // Negative scale and translation
+      Affine2D.multiply(m1, m1, m2);
+      expect(m1.a).toBe(-1);
+      expect(m1.b).toBe(0);
+      expect(m1.c).toBe(0);
+      expect(m1.d).toBe(-1);
+      expect(m1.tx).toBe(-2);
+      expect(m1.ty).toBe(-3);
+    });
   });
 
   describe('rotate', () => {
-    it('should rotate the matrix correctly', () => {
+    it('should write rotated result to out without modifying source', () => {
+      const src = new Affine2D(1, 0, 0, 1, 10, 0);
+      const out = new Affine2D();
+      Affine2D.rotate(out, src, Math.PI / 2);
+      expect(src.tx).toBe(10);
+      expect(out.tx).toBeCloseTo(0);
+    });
+
+    it('should support out === source', () => {
       const m = new Affine2D(1, 0, 0, 1, 0, 0);
-      Affine2D.rotate(m, Math.PI / 2); // 90 degrees
+      Affine2D.rotate(m, m, Math.PI);
+      expect(m.a).toBeCloseTo(-1);
+      expect(m.d).toBeCloseTo(-1);
+    });
+
+    it('should be an instance method too', () => {
+      const m = new Affine2D(1, 0, 0, 1, 0, 0);
+      const ret = m.rotate(Math.PI / 2); // 90 degrees
+      expect(ret).toStrictEqual(m);
       expect(m.a).toBeCloseTo(0);
       expect(m.b).toBeCloseTo(1);
       expect(m.c).toBeCloseTo(-1);
@@ -578,37 +573,11 @@ describe('Affine2D', () => {
     });
   });
 
-  describe('rotateTo', () => {
-    it('should write rotated result to out without modifying source', () => {
-      const src = new Affine2D(1, 0, 0, 1, 10, 0);
-      const out = new Affine2D();
-      Affine2D.rotateTo(out, src, Math.PI / 2);
-      expect(src.tx).toBe(10);
-      expect(out.tx).toBeCloseTo(0);
-    });
-
-    it('should support out === source', () => {
-      const m = new Affine2D(1, 0, 0, 1, 0, 0);
-      Affine2D.rotateTo(m, m, Math.PI);
-      expect(m.a).toBeCloseTo(-1);
-      expect(m.d).toBeCloseTo(-1);
-    });
-  });
-
   describe('scale', () => {
-    it('should scale the matrix correctly', () => {
-      const m = new Affine2D();
-      Affine2D.scale(m, 2, 3);
-      expect(m.a).toBe(2);
-      expect(m.d).toBe(3);
-    });
-  });
-
-  describe('scaleXY', () => {
     it('should write scaled result to out without modifying source', () => {
       const src = new Affine2D(2, 0, 0, 2, 5, 6);
       const out = new Affine2D();
-      Affine2D.scaleXY(out, src, 2, 3);
+      Affine2D.scale(out, src, 2, 3);
       expect(src.a).toBe(2);
       expect(out.a).toBe(4);
       expect(out.d).toBe(6);
@@ -616,18 +585,26 @@ describe('Affine2D', () => {
 
     it('should support out === source', () => {
       const m = new Affine2D(1, 0, 0, 1, 1, 1);
-      Affine2D.scaleXY(m, m, 2, 3);
+      Affine2D.scale(m, m, 2, 3);
       expect(m.a).toBe(2);
       expect(m.d).toBe(3);
       expect(m.tx).toBe(2);
       expect(m.ty).toBe(3);
     });
+
+    it('should be an instance method too', () => {
+      const m = new Affine2D();
+      const ret = m.scale(2, 3);
+      expect(ret).toStrictEqual(m);
+      expect(m.a).toBe(2);
+      expect(m.d).toBe(3);
+    });
   });
 
-  describe('setTo', () => {
+  describe('set', () => {
     it('should assign all matrix fields', () => {
       const m = new Affine2D();
-      Affine2D.setTo(m, 1, 2, 3, 4, 5, 6);
+      Affine2D.set(m, 1, 2, 3, 4, 5, 6);
       expect(m.a).toBe(1);
       expect(m.b).toBe(2);
       expect(m.c).toBe(3);
@@ -637,56 +614,12 @@ describe('Affine2D', () => {
     });
   });
 
-  describe('transformAABB', () => {
-    it('should work when ax > bx or ay > by (flipped input)', () => {
-      const m = new Affine2D();
-      const out = new Rectangle();
-      Affine2D.transformAABB(out, m, 10, 10, 0, 0);
-      expect(out.x).toBe(0);
-      expect(out.y).toBe(0);
-      expect(out.width).toBe(10);
-      expect(out.height).toBe(10);
-    });
-
-    it('should handle negative scaling', () => {
-      const m = new Affine2D(-1, 0, 0, -1, 0, 0);
-      const out = new Rectangle();
-      Affine2D.transformAABB(out, m, 0, 0, 10, 10);
-      expect(out.width).toBe(10);
-      expect(out.height).toBe(10);
-    });
-
-    it('should handle rotation', () => {
-      const m = new Affine2D();
-      Affine2D.rotate(m, Math.PI / 2);
-      const out = new Rectangle();
-      Affine2D.transformAABB(out, m, 0, 0, 10, 20);
-      expect(out.width).toBeCloseTo(20);
-      expect(out.height).toBeCloseTo(10);
-    });
-
-    it('should handle flipped input coordinates', () => {
-      const rect = new Rectangle(10, 20, -10, -20);
-      const matrix = new Affine2D();
-
-      const out = new Rectangle();
-      Affine2D.transformAABB(out, matrix, rect.x, rect.y, rect.right, rect.bottom);
-
-      expect(out.x).toBeCloseTo(0);
-      expect(out.y).toBeCloseTo(0);
-      expect(out.width).toBeCloseTo(10);
-      expect(out.height).toBeCloseTo(20);
-    });
-
-    it('should handle negative scaling (mirroring)', () => {
-      const rect = new Rectangle(0, 0, 10, 20);
-      const matrix = new Affine2D(-1, 0, 0, -1, 0, 0);
-
-      const out = new Rectangle();
-      Affine2D.transformAABB(out, matrix, rect.x, rect.y, rect.right, rect.bottom);
-
-      expect(out.width).toBeCloseTo(10);
-      expect(out.height).toBeCloseTo(20);
+  describe('setTransform', () => {
+    it('should apply rotate, scale and translation', () => {
+      const m1 = new Affine2D().rotate(45).scale(2, 4).translate(10, 100);
+      const m2 = new Affine2D();
+      Affine2D.setTransform(m2, 2, 4, 45, 10, 100);
+      expect(Affine2D.equals(m1, m2)).toBe(true);
     });
   });
 
@@ -694,7 +627,8 @@ describe('Affine2D', () => {
     it('should transform a point using the matrix', () => {
       const m = new Affine2D(1, 0, 0, 1, 10, 20);
       const p = new Vector2(1, 1);
-      const transformedVector2 = Affine2D.transformPoint(m, p);
+      const transformedVector2 = new Vector2();
+      Affine2D.transformPoint(transformedVector2, m, p);
       expect(transformedVector2.x).toBe(11);
       expect(transformedVector2.y).toBe(21);
     });
@@ -702,14 +636,16 @@ describe('Affine2D', () => {
     it('should not return same point', () => {
       const m = new Affine2D(1, 0, 0, 1, 10, 20);
       const p = new Vector2(1, 1);
-      const transformedVector2 = Affine2D.transformPoint(m, p);
+      const transformedVector2 = new Vector2();
+      Affine2D.transformPoint(transformedVector2, m, p);
       expect(p).not.toBe(transformedVector2);
     });
 
     it('should not modify input point', () => {
       const m = new Affine2D(1, 0, 0, 1, 10, 20);
       const p = new Vector2(1, 1);
-      Affine2D.transformPoint(m, p);
+      const out = new Vector2();
+      Affine2D.transformPoint(out, m, p);
       expect(p.x).toBe(1);
       expect(p.y).toBe(1);
     });
@@ -726,7 +662,7 @@ describe('Affine2D', () => {
 
     it('should handle rotation correctly', () => {
       const m = new Affine2D();
-      Affine2D.rotate(m, Math.PI / 2);
+      m.rotate(Math.PI / 2);
       const p = new Vector2();
       Affine2D.transformPointXY(p, m, 1, 0);
       expect(p.x).toBeCloseTo(0);
@@ -738,94 +674,8 @@ describe('Affine2D', () => {
     it('should return the same rectangle for identity matrix', () => {
       const rect = new Rectangle(0, 0, 10, 20);
       const matrix = new Affine2D(); // identity by default
-      const transformed = Affine2D.transformRect(matrix, rect);
-      expect(transformed.x).toBeCloseTo(0);
-      expect(transformed.y).toBeCloseTo(0);
-      expect(transformed.width).toBeCloseTo(10);
-      expect(transformed.height).toBeCloseTo(20);
-    });
-
-    it('should apply translation correctly', () => {
-      const rect = new Rectangle(0, 0, 10, 20);
-      const matrix = new Affine2D();
-      matrix.tx = 5;
-      matrix.ty = 7;
-      const transformed = Affine2D.transformRect(matrix, rect);
-      expect(transformed.x).toBeCloseTo(5);
-      expect(transformed.y).toBeCloseTo(7);
-      expect(transformed.width).toBeCloseTo(10);
-      expect(transformed.height).toBeCloseTo(20);
-    });
-
-    it('should apply uniform scaling correctly', () => {
-      const rect = new Rectangle(0, 0, 10, 20);
-      const matrix = new Affine2D();
-      matrix.a = 2; // scaleX
-      matrix.d = 3; // scaleY
-      const transformed = Affine2D.transformRect(matrix, rect);
-      expect(transformed.x).toBeCloseTo(0);
-      expect(transformed.y).toBeCloseTo(0);
-      expect(transformed.width).toBeCloseTo(20);
-      expect(transformed.height).toBeCloseTo(60);
-    });
-
-    it('should handle rotation correctly', () => {
-      const rect = new Rectangle(0, 0, 10, 20);
-      const matrix = new Affine2D();
-      const angle = Math.PI / 2; // 90 degrees
-      matrix.a = Math.cos(angle);
-      matrix.b = Math.sin(angle);
-      matrix.c = -Math.sin(angle);
-      matrix.d = Math.cos(angle);
-
-      const transformed = Affine2D.transformRect(matrix, rect);
-      // After 90° rotation, width and height swap in axis-aligned bounding box
-      expect(transformed.width).toBeCloseTo(20);
-      expect(transformed.height).toBeCloseTo(10);
-    });
-
-    it('should handle skew correctly', () => {
-      const rect = new Rectangle(0, 0, 10, 10);
-      const matrix = new Affine2D();
-      matrix.c = 1; // skew X
-      matrix.b = 0.5; // skew Y
-
-      const transformed = Affine2D.transformRect(matrix, rect);
-      // For 10x10, transformed width and height increase due to skew
-      expect(transformed.width).toBeCloseTo(10 + 10 * 1); // 20
-      expect(transformed.height).toBeCloseTo(10 + 10 * 0.5); // 15
-    });
-
-    it('should not return same object', () => {
-      const rect = new Rectangle(0, 0, 10, 10);
-      const matrix = new Affine2D();
-      matrix.tx = 5;
-      matrix.ty = 7;
-
-      const result = Affine2D.transformRect(matrix, rect);
-      expect(rect).not.toBe(result);
-    });
-
-    it('should not modify input object', () => {
-      const rect = new Rectangle(0, 0, 10, 10);
-      const matrix = new Affine2D();
-      matrix.tx = 5;
-      matrix.ty = 7;
-
-      Affine2D.transformRect(matrix, rect);
-      expect(rect.x).toBeCloseTo(0);
-      expect(rect.y).toBeCloseTo(0);
-      expect(rect.width).toBeCloseTo(10);
-      expect(rect.height).toBeCloseTo(10);
-    });
-  });
-
-  describe('transformRectTo', () => {
-    it('should return the same rectangle for identity matrix', () => {
-      const rect = new Rectangle(0, 0, 10, 20);
-      const matrix = new Affine2D(); // identity by default
       const out = new Rectangle();
-      Affine2D.transformRectTo(out, matrix, rect);
+      Affine2D.transformRect(out, matrix, rect);
       expect(out.x).toBeCloseTo(0);
       expect(out.y).toBeCloseTo(0);
       expect(out.width).toBeCloseTo(10);
@@ -838,7 +688,7 @@ describe('Affine2D', () => {
       matrix.tx = 5;
       matrix.ty = 7;
       const out = new Rectangle();
-      Affine2D.transformRectTo(out, matrix, rect);
+      Affine2D.transformRect(out, matrix, rect);
       expect(out.x).toBeCloseTo(5);
       expect(out.y).toBeCloseTo(7);
       expect(out.width).toBeCloseTo(10);
@@ -851,7 +701,7 @@ describe('Affine2D', () => {
       matrix.a = 2; // scaleX
       matrix.d = 3; // scaleY
       const out = new Rectangle();
-      Affine2D.transformRectTo(out, matrix, rect);
+      Affine2D.transformRect(out, matrix, rect);
       expect(out.x).toBeCloseTo(0);
       expect(out.y).toBeCloseTo(0);
       expect(out.width).toBeCloseTo(20);
@@ -868,7 +718,7 @@ describe('Affine2D', () => {
       matrix.d = Math.cos(angle);
 
       const out = new Rectangle();
-      Affine2D.transformRectTo(out, matrix, rect);
+      Affine2D.transformRect(out, matrix, rect);
       // After 90° rotation, width and height swap in axis-aligned bounding box
       expect(out.width).toBeCloseTo(20);
       expect(out.height).toBeCloseTo(10);
@@ -881,7 +731,7 @@ describe('Affine2D', () => {
       matrix.b = 0.5; // skew Y
 
       const out = new Rectangle();
-      Affine2D.transformRectTo(out, matrix, rect);
+      Affine2D.transformRect(out, matrix, rect);
       // For 10x10, transformed width and height increase due to skew
       expect(out.width).toBeCloseTo(10 + 10 * 1); // 20
       expect(out.height).toBeCloseTo(10 + 10 * 0.5); // 15
@@ -894,7 +744,7 @@ describe('Affine2D', () => {
       matrix.ty = 7;
 
       const out = new Rectangle();
-      Affine2D.transformRectTo(out, matrix, rect);
+      Affine2D.transformRect(out, matrix, rect);
       expect(rect).not.toBe(out);
     });
 
@@ -905,7 +755,7 @@ describe('Affine2D', () => {
       matrix.ty = 7;
 
       const out = new Rectangle();
-      Affine2D.transformRectTo(out, matrix, rect);
+      Affine2D.transformRect(out, matrix, rect);
       expect(rect.x).toBeCloseTo(0);
       expect(rect.y).toBeCloseTo(0);
       expect(rect.width).toBeCloseTo(10);
@@ -913,26 +763,88 @@ describe('Affine2D', () => {
     });
   });
 
+  describe('transformRectVec2', () => {
+    it('should alias transformRectXY', () => {
+      const m = new Affine2D();
+      const out = new Rectangle();
+      const a = new Vector2(10, 10);
+      const b = new Vector2();
+      Affine2D.transformRectVec2(out, m, a, b);
+      expect(out.x).toBe(0);
+      expect(out.y).toBe(0);
+      expect(out.width).toBe(10);
+      expect(out.height).toBe(10);
+    });
+  });
+
+  describe('transformRectXY', () => {
+    it('should work when ax > bx or ay > by (flipped input)', () => {
+      const m = new Affine2D();
+      const out = new Rectangle();
+      Affine2D.transformRectXY(out, m, 10, 10, 0, 0);
+      expect(out.x).toBe(0);
+      expect(out.y).toBe(0);
+      expect(out.width).toBe(10);
+      expect(out.height).toBe(10);
+    });
+
+    it('should handle negative scaling', () => {
+      const m = new Affine2D(-1, 0, 0, -1, 0, 0);
+      const out = new Rectangle();
+      Affine2D.transformRectXY(out, m, 0, 0, 10, 10);
+      expect(out.width).toBe(10);
+      expect(out.height).toBe(10);
+    });
+
+    it('should handle rotation', () => {
+      const m = new Affine2D();
+      m.rotate(Math.PI / 2);
+      const out = new Rectangle();
+      Affine2D.transformRectXY(out, m, 0, 0, 10, 20);
+      expect(out.width).toBeCloseTo(20);
+      expect(out.height).toBeCloseTo(10);
+    });
+
+    it('should handle flipped input coordinates', () => {
+      const rect = new Rectangle(10, 20, -10, -20);
+      const matrix = new Affine2D();
+
+      const out = new Rectangle();
+      Affine2D.transformRectXY(out, matrix, rect.x, rect.y, rect.right, rect.bottom);
+
+      expect(out.x).toBeCloseTo(0);
+      expect(out.y).toBeCloseTo(0);
+      expect(out.width).toBeCloseTo(10);
+      expect(out.height).toBeCloseTo(20);
+    });
+
+    it('should handle negative scaling (mirroring)', () => {
+      const rect = new Rectangle(0, 0, 10, 20);
+      const matrix = new Affine2D(-1, 0, 0, -1, 0, 0);
+
+      const out = new Rectangle();
+      Affine2D.transformRectXY(out, matrix, rect.x, rect.y, rect.right, rect.bottom);
+
+      expect(out.width).toBeCloseTo(10);
+      expect(out.height).toBeCloseTo(20);
+    });
+  });
+
   describe('transformVector', () => {
     it('should apply delta transformation to a point', () => {
       const m = new Affine2D(2, 0, 0, 2, 0, 0);
       const p = new Vector2(1, 1);
-      const transformedVector2 = Affine2D.transformVector(m, p);
+      const transformedVector2 = new Vector2();
+      Affine2D.transformVector(transformedVector2, m, p);
       expect(transformedVector2.x).toBe(2);
       expect(transformedVector2.y).toBe(2);
-    });
-
-    it('should not return same point', () => {
-      const m = new Affine2D(2, 0, 0, 2, 0, 0);
-      const p = new Vector2(1, 1);
-      const transformedVector2 = Affine2D.transformVector(m, p);
-      expect(p).not.toBe(transformedVector2);
     });
 
     it('should not modify input point', () => {
       const m = new Affine2D(2, 0, 0, 2, 0, 0);
       const p = new Vector2(1, 1);
-      Affine2D.transformVector(m, p);
+      const out = new Vector2();
+      Affine2D.transformVector(out, m, p);
       expect(p.x).toBe(1);
       expect(p.y).toBe(1);
     });
@@ -951,7 +863,15 @@ describe('Affine2D', () => {
   describe('translate', () => {
     it('should translate the matrix correctly', () => {
       const m = new Affine2D();
-      Affine2D.translate(m, 10, 20);
+      Affine2D.translate(m, m, 10, 20);
+      expect(m.tx).toBe(10);
+      expect(m.ty).toBe(20);
+    });
+
+    it('should also be an instance method', () => {
+      const m = new Affine2D();
+      const ret = m.translate(10, 20);
+      expect(ret).toStrictEqual(m);
       expect(m.tx).toBe(10);
       expect(m.ty).toBe(20);
     });
