@@ -1,7 +1,5 @@
 import type { Rectangle as RectangleLike, Vector2 as Vector2Like } from '@flighthq/types';
 
-import Vector2 from './Vector2.js';
-
 /**
  * A Rectangle object is an area defined by its position, as indicated by its
  * top-left corner point(`x`, `y`) and by its `width` and its `height`.
@@ -65,8 +63,8 @@ export default class Rectangle implements RectangleLike {
     return x >= x0 && x < x1 && y >= y0 && y < y1;
   }
 
-  static containsVector2(source: RectangleLike, point: Vector2Like): boolean {
-    return this.contains(source, point.x, point.y);
+  static containsPoint(source: RectangleLike, vector: Vector2Like): boolean {
+    return this.contains(source, vector.x, vector.y);
   }
 
   static containsRect(source: RectangleLike, other: RectangleLike): boolean {
@@ -84,7 +82,7 @@ export default class Rectangle implements RectangleLike {
     return ox0 >= sx0 && oy0 >= sy0 && ox1 <= sx1 && oy1 <= sy1;
   }
 
-  static copyFrom(source: RectangleLike, out: RectangleLike): void {
+  static copy(out: RectangleLike, source: RectangleLike): void {
     if (out !== source) {
       out.x = source.x;
       out.y = source.y;
@@ -93,13 +91,12 @@ export default class Rectangle implements RectangleLike {
     }
   }
 
-  static copyTo(out: RectangleLike, source: RectangleLike): void {
-    if (out !== source) {
-      out.x = source.x;
-      out.y = source.y;
-      out.width = source.width;
-      out.height = source.height;
-    }
+  copyFrom(source: RectangleLike): Rectangle {
+    this.x = source.x;
+    this.y = source.y;
+    this.width = source.width;
+    this.height = source.height;
+    return this;
   }
 
   static equals(source: RectangleLike, other: RectangleLike): boolean {
@@ -112,35 +109,18 @@ export default class Rectangle implements RectangleLike {
     }
   }
 
-  static inflate(target: RectangleLike, dx: number, dy: number): void {
-    target.x -= dx;
-    target.width += dx * 2;
-    target.y -= dy;
-    target.height += dy * 2;
-  }
-
-  static inflateVector2(target: RectangleLike, point: Vector2Like): void {
-    this.inflate(target, point.x, point.y);
-  }
-
-  static inflateVector2To(out: RectangleLike, sourceRectangle: RectangleLike, sourceVector2: Vector2Like): void {
-    this.inflateTo(out, sourceRectangle, sourceVector2.x, sourceVector2.y);
-  }
-
-  static inflateTo(out: RectangleLike, source: RectangleLike, dx: number, dy: number): void {
+  static inflate(out: RectangleLike, source: RectangleLike, dx: number, dy: number): void {
     out.x = source.x - dx;
     out.width = source.width + dx * 2;
     out.y = source.y - dy;
     out.height = source.height + dy * 2;
   }
 
-  static intersection(a: RectangleLike, b: RectangleLike): Rectangle {
-    const out = new Rectangle();
-    this.intersectionTo(out, a, b);
-    return out;
+  static inflatePoint(out: RectangleLike, sourceRect: RectangleLike, sourceVec2: Vector2Like): void {
+    this.inflate(out, sourceRect, sourceVec2.x, sourceVec2.y);
   }
 
-  static intersectionTo(out: RectangleLike, a: RectangleLike, b: RectangleLike): void {
+  static intersection(out: RectangleLike, a: RectangleLike, b: RectangleLike): void {
     const x0 = Math.max(this.minX(a), this.minX(b));
     const x1 = Math.min(this.maxX(a), this.maxX(b));
     const y0 = Math.max(this.minY(a), this.minY(b));
@@ -199,13 +179,7 @@ export default class Rectangle implements RectangleLike {
     return Math.max(source.y, source.y + source.height);
   }
 
-  static normalized(source: RectangleLike): Rectangle {
-    const out = new Rectangle();
-    this.normalizedTo(out, source);
-    return out;
-  }
-
-  static normalizedTo(out: RectangleLike, source: RectangleLike): void {
+  static normalized(out: RectangleLike, source: RectangleLike): void {
     const _minX = this.minX(source);
     const _minY = this.minY(source);
     out.x = _minX;
@@ -224,39 +198,44 @@ export default class Rectangle implements RectangleLike {
     out.y = this.minY(source);
   }
 
-  static offset(target: RectangleLike, dx: number, dy: number): void {
-    target.x += dx;
-    target.y += dy;
-  }
-
-  static offsetVec2(target: RectangleLike, point: Vector2Like): void {
-    target.x += point.x;
-    target.y += point.y;
-  }
-
-  static offsetVec2To(out: Vector2Like, target: RectangleLike, point: Vector2Like): void {
-    out.x = target.x + point.x;
-    out.y = target.y + point.y;
-  }
-
-  static offsetTo(out: RectangleLike, target: RectangleLike, dx: number, dy: number): void {
+  static offset(out: RectangleLike, target: RectangleLike, dx: number, dy: number): void {
     out.x = target.x + dx;
     out.y = target.y + dy;
+  }
+
+  static offsetPoint(out: Vector2Like, target: RectangleLike, point: Vector2Like): void {
+    out.x = target.x + point.x;
+    out.y = target.y + point.y;
   }
 
   static right(source: RectangleLike): number {
     return source.x + source.width;
   }
 
-  static setEmpty(out: RectangleLike): void {
-    out.x = out.y = out.width = out.height = 0;
-  }
-
-  static setTo(out: RectangleLike, x: number, y: number, width: number, height: number): void {
+  static set(out: RectangleLike, x: number, y: number, width: number, height: number): void {
     out.x = x;
     out.y = y;
     out.width = width;
     out.height = height;
+  }
+
+  static setBottomRight(out: RectangleLike, source: RectangleLike, point: Vector2Like): void {
+    out.width = point.x - source.x;
+    out.height = point.y - source.y;
+  }
+
+  static setEmpty(out: RectangleLike): void {
+    out.x = out.y = out.width = out.height = 0;
+  }
+
+  static setSize(out: RectangleLike, size: Vector2Like): void {
+    out.width = size.x;
+    out.height = size.y;
+  }
+
+  static setTopLeft(out: RectangleLike, point: Vector2Like): void {
+    out.x = point.x;
+    out.y = point.y;
   }
 
   /**
@@ -275,13 +254,7 @@ export default class Rectangle implements RectangleLike {
     out.y = source.y;
   }
 
-  static union(source: RectangleLike, other: RectangleLike): Rectangle {
-    const out = new Rectangle();
-    this.unionTo(out, source, other);
-    return out;
-  }
-
-  static unionTo(out: RectangleLike, source: RectangleLike, other: RectangleLike): void {
+  static union(out: RectangleLike, source: RectangleLike, other: RectangleLike): void {
     const sourceLeft = Math.min(source.x, source.x + source.width);
     const sourceRight = Math.max(source.x, source.x + source.width);
     const sourceTop = Math.min(source.y, source.y + source.height);
@@ -307,18 +280,6 @@ export default class Rectangle implements RectangleLike {
 
   get bottom(): number {
     return this.y + this.height;
-  }
-
-  /**
-   * Returns new Vector2 object with bottom-right coordinates
-   */
-  get bottomRight(): Vector2 {
-    return new Vector2(this.x + this.width, this.y + this.height);
-  }
-
-  set bottomRight(value: Vector2Like) {
-    this.width = value.x - this.x;
-    this.height = value.y - this.y;
   }
 
   get isFlippedX(): boolean {
@@ -353,32 +314,12 @@ export default class Rectangle implements RectangleLike {
     return Math.max(this.y, this.bottom);
   }
 
-  get normalizedBottomRight(): Vector2 {
-    return new Vector2(this.maxX, this.maxY);
-  }
-
-  get normalizedTopLeft(): Vector2 {
-    return new Vector2(this.minX, this.minY);
-  }
-
   get right(): number {
     return this.x + this.width;
   }
 
   set right(value: number) {
     this.width = value - this.x;
-  }
-
-  /**
-   * Returns new Vector2 object set to width and height
-   */
-  get size(): Vector2 {
-    return new Vector2(this.width, this.height);
-  }
-
-  set size(value: Vector2Like) {
-    this.width = value.x;
-    this.height = value.y;
   }
 
   get top(): number {
@@ -388,17 +329,5 @@ export default class Rectangle implements RectangleLike {
   set top(value: number) {
     this.height -= value - this.y;
     this.y = value;
-  }
-
-  /**
-   * Returns new Vector2 object with top-left coordinates
-   */
-  get topLeft(): Vector2 {
-    return new Vector2(this.x, this.y);
-  }
-
-  set topLeft(value: Vector2Like) {
-    this.x = value.x;
-    this.y = value.y;
   }
 }
