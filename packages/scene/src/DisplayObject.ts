@@ -84,10 +84,10 @@ export default class DisplayObject implements Renderable {
       const transform = Matrix3Pool.get();
       Matrix3.inverse(transform, targetCoordinateSpace[R.worldTransform]);
       Matrix3.multiply(transform, transform, source[R.worldTransform]);
-      Affine2D.transformRectTo(out, transform, source[R.localBounds]);
+      Affine2D.transformRect(out, transform, source[R.localBounds]);
       Matrix3Pool.release(transform);
     } else {
-      Rectangle.copyFrom(out, source[R.localBounds]);
+      Rectangle.copy(out, source[R.localBounds]);
     }
   }
 
@@ -252,7 +252,7 @@ export default class DisplayObject implements Renderable {
     this[R.updateLocalBounds]();
     this[R.updateLocalTransform]();
 
-    Affine2D.transformRectTo(this[R.bounds], this[R.localTransform], this[R.localBounds]);
+    Affine2D.transformRect(this[R.bounds], this[R.localTransform], this[R.localBounds]);
 
     this[$._dirtyFlags] &= ~DirtyFlags.TransformedBounds;
   }
@@ -261,7 +261,7 @@ export default class DisplayObject implements Renderable {
     this[R.updateWorldTransform]();
 
     // TODO: Cache
-    Affine2D.transformRectTo(this[R.worldBounds], this[R.worldTransform], this[R.bounds]);
+    Affine2D.transformRect(this[R.worldBounds], this[R.worldTransform], this[R.bounds]);
   }
 
   [R.updateWorldTransform](): void {
@@ -278,7 +278,7 @@ export default class DisplayObject implements Renderable {
       if (parent !== null) {
         Matrix3.multiply(this[R.worldTransform], parent[R.worldTransform], this[R.localTransform]);
       } else {
-        Matrix3.copyFrom(this[R.worldTransform], this[R.localTransform]);
+        Matrix3.copy(this[R.worldTransform], this[R.localTransform]);
       }
       this[R.parentTransformID] = parentTransformID;
       this[R.worldTransformID] = this[R.localTransformID];
@@ -330,7 +330,7 @@ export default class DisplayObject implements Renderable {
       if (this[R.cacheAsBitmapMatrix] === null) {
         this[R.cacheAsBitmapMatrix] = Matrix3.clone(value);
       } else {
-        Matrix3.copyFrom(this[R.cacheAsBitmapMatrix] as Matrix3, value);
+        Matrix3.copy(this[R.cacheAsBitmapMatrix] as Matrix3, value);
       }
     } else {
       this[R.cacheAsBitmapMatrix] = null;
@@ -483,7 +483,7 @@ export default class DisplayObject implements Renderable {
 
     if (value != null) {
       if (this[R.scale9Grid] === null) this[R.scale9Grid] = new Rectangle();
-      Rectangle.copyFrom(this[R.scale9Grid] as Rectangle, value);
+      Rectangle.copy(this[R.scale9Grid] as Rectangle, value);
     } else {
       this[R.scale9Grid] = null;
     }
@@ -525,7 +525,7 @@ export default class DisplayObject implements Renderable {
 
     if (value !== null) {
       if (this[R.scrollRect] === null) this[R.scrollRect] = new Rectangle();
-      Rectangle.copyFrom(this[R.scrollRect] as Rectangle, value);
+      Rectangle.copy(this[R.scrollRect] as Rectangle, value);
     } else {
       this[R.scrollRect] = null;
     }
