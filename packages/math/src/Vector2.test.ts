@@ -1,26 +1,26 @@
-import Point from './Point.js';
+import Vector2 from './Vector2.js';
 
-describe('Point', () => {
-  let pt: Point;
-  let pt2: Point;
+describe('Vector2', () => {
+  let pt: Vector2;
+  let pt2: Vector2;
 
   beforeEach(() => {
-    pt = new Point();
-    pt2 = new Point();
+    pt = new Vector2();
+    pt2 = new Vector2();
   });
 
   // Constructor
 
   describe('constructor', () => {
-    it('returns a Point with default coordinates', () => {
-      const p = new Point();
-      expect(p).toBeInstanceOf(Point);
+    it('returns a Vector2 with default coordinates', () => {
+      const p = new Vector2();
+      expect(p).toBeInstanceOf(Vector2);
       expect(p.x).toBe(0);
       expect(p.y).toBe(0);
     });
 
     it('sets the specified x and y coordinates', () => {
-      const p = new Point(2, 4);
+      const p = new Vector2(2, 4);
       expect(p.x).toBe(2);
       expect(p.y).toBe(4);
     });
@@ -55,14 +55,14 @@ describe('Point', () => {
       for (const { x, y, expected } of testCases) {
         pt.x = x;
         pt.y = y;
-        expect(Point.length(pt)).toBe(expected);
+        expect(Vector2.length(pt)).toBe(expected);
       }
     });
 
     it('allows a point-like object', () => {
       for (const { x, y, expected } of testCases) {
         const pt = { x: x, y: y };
-        expect(Point.length(pt)).toBe(expected);
+        expect(Vector2.length(pt)).toBe(expected);
       }
     });
   });
@@ -93,12 +93,12 @@ describe('Point', () => {
     it('is also a static method', () => {
       pt.x = 3;
       pt.y = 4;
-      expect(Point.lengthSquared(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
+      expect(Vector2.lengthSquared(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
     });
 
     it('allows a point-like object', () => {
       const pt = { x: 3, y: 4 };
-      expect(Point.lengthSquared(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
+      expect(Vector2.lengthSquared(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
     });
   });
 
@@ -111,7 +111,7 @@ describe('Point', () => {
       pt2.x = 4;
       pt2.y = 20;
 
-      const result = Point.add(pt, pt2);
+      const result = Vector2.add(pt, pt2);
       expect(result.x).toBe(6);
       expect(result.y).toBe(30);
       expect(result).not.toBe(pt);
@@ -122,7 +122,7 @@ describe('Point', () => {
       const pt = { x: 2, y: 10 };
       const pt2 = { x: 4, y: 20 };
 
-      const result = Point.add(pt, pt2);
+      const result = Vector2.add(pt, pt2);
       expect(result.x).toBe(6);
       expect(result.y).toBe(30);
       expect(result).not.toBe(pt);
@@ -137,8 +137,8 @@ describe('Point', () => {
       pt2.x = 4;
       pt2.y = 20;
 
-      const result = new Point();
-      Point.addTo(result, pt, pt2);
+      const result = new Vector2();
+      Vector2.addTo(result, pt, pt2);
       expect(result.x).toBe(6);
       expect(result.y).toBe(30);
       expect(result).not.toBe(pt);
@@ -151,7 +151,7 @@ describe('Point', () => {
       pt2.x = 5;
       pt2.y = 10;
 
-      Point.addTo(pt, pt, pt2);
+      Vector2.addTo(pt, pt, pt2);
       expect(pt.x).toBe(8);
       expect(pt.y).toBe(17);
       expect(pt2.x).toBe(5);
@@ -164,7 +164,7 @@ describe('Point', () => {
       pt2.x = 4;
       pt2.y = 20;
 
-      Point.addTo(pt2, pt, pt2);
+      Vector2.addTo(pt2, pt, pt2);
       expect(pt.x).toBe(2);
       expect(pt.y).toBe(10);
       expect(pt2.x).toBe(6);
@@ -176,7 +176,7 @@ describe('Point', () => {
       const pt2 = { x: 4, y: 20 };
 
       const result = { x: 0, y: 0 };
-      Point.addTo(result, pt, pt2);
+      Vector2.addTo(result, pt, pt2);
       expect(result.x).toBe(6);
       expect(result.y).toBe(30);
       expect(result).not.toBe(pt);
@@ -188,15 +188,15 @@ describe('Point', () => {
     it('creates a copy of a point', () => {
       pt.x = 1;
       pt.y = 2;
-      const result = Point.clone(pt);
+      const result = Vector2.clone(pt);
       expect(result.x).toBe(pt.x);
       expect(result.y).toBe(pt.y);
     });
 
-    it('returns a Point instance', () => {
+    it('returns a Vector2 instance', () => {
       const pt = { x: 1, y: 2 };
-      const result = Point.clone(pt);
-      expect(result).toBeInstanceOf(Point);
+      const result = Vector2.clone(pt);
+      expect(result).toBeInstanceOf(Vector2);
     });
   });
 
@@ -204,7 +204,7 @@ describe('Point', () => {
     it('copies coordinates from one point to another', () => {
       pt2.x = 1;
       pt2.y = 2;
-      Point.copyFrom(pt2, pt);
+      Vector2.copyFrom(pt2, pt);
       expect(pt.x).toBe(1);
       expect(pt.y).toBe(2);
     });
@@ -212,7 +212,7 @@ describe('Point', () => {
     it('allows a point-like object', () => {
       const pt = { x: 0, y: 0 };
       const pt2 = { x: 1, y: 2 };
-      Point.copyFrom(pt2, pt);
+      Vector2.copyFrom(pt2, pt);
       expect(pt.x).toBe(1);
       expect(pt.y).toBe(2);
     });
@@ -222,14 +222,14 @@ describe('Point', () => {
     it('copies coordinates from one point to another', () => {
       pt2.x = 1;
       pt2.y = 2;
-      Point.copyTo(pt, pt2);
+      Vector2.copyTo(pt, pt2);
       expect(pt.x).toBe(1);
       expect(pt.y).toBe(2);
     });
 
     it('allows a point-like object', () => {
       const pt2 = { x: 1, y: 2 };
-      Point.copyTo(pt, pt2);
+      Vector2.copyTo(pt, pt2);
       expect(pt.x).toBe(1);
       expect(pt.y).toBe(2);
     });
@@ -250,7 +250,7 @@ describe('Point', () => {
         pt.y = a[1];
         pt2.x = b[0];
         pt2.y = b[1];
-        expect(Point.distance(pt, pt2)).toBe(expected);
+        expect(Vector2.distance(pt, pt2)).toBe(expected);
       }
     });
 
@@ -258,27 +258,27 @@ describe('Point', () => {
       for (const { a, b, expected } of testCases) {
         const pt = { x: a[0], y: a[1] };
         const pt2 = { x: b[0], y: b[1] };
-        expect(Point.distance(pt, pt2)).toBe(expected);
+        expect(Vector2.distance(pt, pt2)).toBe(expected);
       }
     });
   });
 
   describe('equals', () => {
     it('returns true if points are identical, false otherwise', () => {
-      expect(Point.equals(pt, pt2)).toBe(true);
+      expect(Vector2.equals(pt, pt2)).toBe(true);
       pt.x = 1;
-      expect(Point.equals(pt, pt2)).toBe(false);
+      expect(Vector2.equals(pt, pt2)).toBe(false);
       pt2.x = 1;
-      expect(Point.equals(pt, pt2)).toBe(true);
+      expect(Vector2.equals(pt, pt2)).toBe(true);
     });
 
     it('allows a point-like object', () => {
       const pt2 = { x: 0, y: 0 };
-      expect(Point.equals(pt, pt2)).toBe(true);
+      expect(Vector2.equals(pt, pt2)).toBe(true);
       pt.x = 1;
-      expect(Point.equals(pt, pt2)).toBe(false);
+      expect(Vector2.equals(pt, pt2)).toBe(false);
       pt2.x = 1;
-      expect(Point.equals(pt, pt2)).toBe(true);
+      expect(Vector2.equals(pt, pt2)).toBe(true);
     });
   });
 
@@ -289,9 +289,9 @@ describe('Point', () => {
       pt2.x = 100;
       pt2.y = 100;
 
-      const result = Point.interpolate(pt2, pt, 1);
-      const expected = new Point();
-      Point.lerp(expected, pt, pt2, 1);
+      const result = Vector2.interpolate(pt2, pt, 1);
+      const expected = new Vector2();
+      Vector2.lerp(expected, pt, pt2, 1);
 
       expect(result.x).toBe(expected.x);
       expect(result.y).toBe(expected.y);
@@ -301,9 +301,9 @@ describe('Point', () => {
       const pt = { x: 0, y: 0 };
       const pt2 = { x: 100, y: 100 };
 
-      const result = Point.interpolate(pt2, pt, 1);
-      const expected = new Point();
-      Point.lerp(expected, pt, pt2, 1);
+      const result = Vector2.interpolate(pt2, pt, 1);
+      const expected = new Vector2();
+      Vector2.lerp(expected, pt, pt2, 1);
 
       expect(result.x).toBe(expected.x);
       expect(result.y).toBe(expected.y);
@@ -317,10 +317,10 @@ describe('Point', () => {
       pt2.x = 100;
       pt2.y = 100;
 
-      const result = new Point();
-      Point.interpolateTo(result, pt2, pt, 1);
-      const expected = new Point();
-      Point.lerp(expected, pt, pt2, 1);
+      const result = new Vector2();
+      Vector2.interpolateTo(result, pt2, pt, 1);
+      const expected = new Vector2();
+      Vector2.lerp(expected, pt, pt2, 1);
 
       expect(result.x).toBe(expected.x);
       expect(result.y).toBe(expected.y);
@@ -331,9 +331,9 @@ describe('Point', () => {
       const pt2 = { x: 100, y: 100 };
 
       const result = { x: 0, y: 0 };
-      Point.interpolateTo(result, pt2, pt, 1);
+      Vector2.interpolateTo(result, pt2, pt, 1);
       const expected = { x: 0, y: 0 };
-      Point.lerp(expected, pt, pt2, 1);
+      Vector2.lerp(expected, pt, pt2, 1);
 
       expect(result.x).toBe(expected.x);
       expect(result.y).toBe(expected.y);
@@ -356,8 +356,8 @@ describe('Point', () => {
       pt2.y = 100;
 
       for (const { t, expected } of cases) {
-        const result = new Point();
-        Point.lerp(result, pt, pt2, t);
+        const result = new Vector2();
+        Vector2.lerp(result, pt, pt2, t);
         expect(result.x).toBe(expected(pt.x, pt2.x));
         expect(result.y).toBe(expected(pt.y, pt2.y));
       }
@@ -369,7 +369,7 @@ describe('Point', () => {
       pt2.x = 30;
       pt2.y = 40;
 
-      Point.lerp(pt, pt, pt2, 0.5);
+      Vector2.lerp(pt, pt, pt2, 0.5);
       expect(pt.x).toBe(20);
       expect(pt.y).toBe(30);
       expect(pt2.x).toBe(30);
@@ -382,7 +382,7 @@ describe('Point', () => {
       pt2.x = 30;
       pt2.y = 40;
 
-      Point.lerp(pt2, pt, pt2, 0.5);
+      Vector2.lerp(pt2, pt, pt2, 0.5);
       expect(pt.x).toBe(10);
       expect(pt.y).toBe(20);
       expect(pt2.x).toBe(20);
@@ -395,8 +395,8 @@ describe('Point', () => {
       pt2.x = 100;
       pt2.y = 100;
 
-      const result = new Point();
-      Point.lerp(result, pt, pt2, 1000);
+      const result = new Vector2();
+      Vector2.lerp(result, pt, pt2, 1000);
       expect(result.x).toBe(100000);
       expect(result.y).toBe(100000);
     });
@@ -407,7 +407,7 @@ describe('Point', () => {
 
       for (const { t, expected } of cases) {
         const result = { x: 0, y: 0 };
-        Point.lerp(result, pt, pt2, t);
+        Vector2.lerp(result, pt, pt2, t);
         expect(result.x).toBe(expected(pt.x, pt2.x));
         expect(result.y).toBe(expected(pt.y, pt2.y));
       }
@@ -416,55 +416,55 @@ describe('Point', () => {
 
   describe('normalize', () => {
     it('scales a vector to the specified length', () => {
-      const pt = new Point(3, 4);
-      Point.normalize(pt, 10);
+      const pt = new Vector2(3, 4);
+      Vector2.normalize(pt, 10);
       expect(pt.x).toBeCloseTo(6);
       expect(pt.y).toBeCloseTo(8);
       expect(pt.length).toBeCloseTo(10);
     });
 
     it('returns zero for a zero-length vector', () => {
-      const pt = new Point(0, 0);
-      Point.normalize(pt, 5);
+      const pt = new Vector2(0, 0);
+      Vector2.normalize(pt, 5);
       expect(pt.x).toBe(0);
       expect(pt.y).toBe(0);
       expect(pt.length).toBe(0);
     });
 
     it('scales vector to zero length', () => {
-      const pt = new Point(3, 4);
-      Point.normalize(pt, 0);
+      const pt = new Vector2(3, 4);
+      Vector2.normalize(pt, 0);
       expect(pt.x).toBe(0);
       expect(pt.y).toBe(0);
       expect(pt.length).toBe(0);
     });
 
     it('scales vector to length 1 (unit vector)', () => {
-      const pt = new Point(0, 5);
-      Point.normalize(pt, 1);
+      const pt = new Vector2(0, 5);
+      Vector2.normalize(pt, 1);
       expect(pt.x).toBeCloseTo(0);
       expect(pt.y).toBeCloseTo(1);
       expect(pt.length).toBeCloseTo(1);
     });
 
     it('scales vector to negative length', () => {
-      const pt = new Point(3, 4);
-      Point.normalize(pt, -10);
+      const pt = new Vector2(3, 4);
+      Vector2.normalize(pt, -10);
       expect(pt.x).toBeCloseTo(-6);
       expect(pt.y).toBeCloseTo(-8);
       expect(pt.length).toBeCloseTo(10); // length is magnitude
     });
 
     it('handles very small vectors correctly', () => {
-      const pt = new Point(0.0001, 0.0001);
-      Point.normalize(pt, 1);
+      const pt = new Vector2(0.0001, 0.0001);
+      Vector2.normalize(pt, 1);
       expect(pt.x).toBeCloseTo(0.7071, 4);
       expect(pt.y).toBeCloseTo(0.7071, 4);
     });
 
     it('allows a point-like object', () => {
       const pt = { x: 3, y: 4 };
-      Point.normalize(pt, 10);
+      Vector2.normalize(pt, 10);
       expect(pt.x).toBeCloseTo(6);
       expect(pt.y).toBeCloseTo(8);
     });
@@ -472,9 +472,9 @@ describe('Point', () => {
 
   describe('normalizeTo', () => {
     it('scales a vector to the specified length', () => {
-      const pt = new Point(3, 4);
-      const result = new Point();
-      Point.normalizeTo(result, pt, 10);
+      const pt = new Vector2(3, 4);
+      const result = new Vector2();
+      Vector2.normalizeTo(result, pt, 10);
       expect(pt).not.toBe(result);
       expect(result.x).toBeCloseTo(6);
       expect(result.y).toBeCloseTo(8);
@@ -482,9 +482,9 @@ describe('Point', () => {
     });
 
     it('returns zero for a zero-length vector', () => {
-      const pt = new Point(0, 0);
-      const result = new Point();
-      Point.normalizeTo(result, pt, 5);
+      const pt = new Vector2(0, 0);
+      const result = new Vector2();
+      Vector2.normalizeTo(result, pt, 5);
       expect(result).not.toBe(pt);
       expect(result.x).toBe(0);
       expect(result.y).toBe(0);
@@ -492,36 +492,36 @@ describe('Point', () => {
     });
 
     it('scales vector to zero length', () => {
-      const pt = new Point(3, 4);
-      const result = new Point();
-      Point.normalizeTo(result, pt, 0);
+      const pt = new Vector2(3, 4);
+      const result = new Vector2();
+      Vector2.normalizeTo(result, pt, 0);
       expect(result.x).toBe(0);
       expect(result.y).toBe(0);
       expect(result.length).toBe(0);
     });
 
     it('scales vector to length 1 (unit vector)', () => {
-      const pt = new Point(0, 5);
-      const result = new Point();
-      Point.normalizeTo(result, pt, 1);
+      const pt = new Vector2(0, 5);
+      const result = new Vector2();
+      Vector2.normalizeTo(result, pt, 1);
       expect(result.x).toBeCloseTo(0);
       expect(result.y).toBeCloseTo(1);
       expect(result.length).toBeCloseTo(1);
     });
 
     it('scales vector to negative length', () => {
-      const pt = new Point(3, 4);
-      const result = new Point();
-      Point.normalizeTo(result, pt, -10);
+      const pt = new Vector2(3, 4);
+      const result = new Vector2();
+      Vector2.normalizeTo(result, pt, -10);
       expect(result.x).toBeCloseTo(-6);
       expect(result.y).toBeCloseTo(-8);
       expect(result.length).toBeCloseTo(10); // length is magnitude
     });
 
     it('handles very small vectors correctly', () => {
-      const pt = new Point(0.0001, 0.0001);
-      const result = new Point();
-      Point.normalizeTo(result, pt, 1);
+      const pt = new Vector2(0.0001, 0.0001);
+      const result = new Vector2();
+      Vector2.normalizeTo(result, pt, 1);
       expect(result.x).toBeCloseTo(0.7071, 4);
       expect(result.y).toBeCloseTo(0.7071, 4);
     });
@@ -529,30 +529,30 @@ describe('Point', () => {
     it('allows a point-like object', () => {
       const pt = { x: 3, y: 4 };
       const result = { x: 0, y: 0 };
-      Point.normalizeTo(result, pt, 10);
+      Vector2.normalizeTo(result, pt, 10);
       expect(pt).not.toBe(result);
       expect(result.x).toBeCloseTo(6);
       expect(result.y).toBeCloseTo(8);
-      expect(Point.length(result)).toBeCloseTo(10);
+      expect(Vector2.length(result)).toBeCloseTo(10);
     });
   });
 
   describe('offset', () => {
     it('adjusts the value of a point', () => {
-      Point.offset(pt, 10, 100);
+      Vector2.offset(pt, 10, 100);
       expect(pt.x).toBe(10);
       expect(pt.y).toBe(100);
     });
 
     it('works with negative deltas', () => {
-      Point.offset(pt, -5, -10);
+      Vector2.offset(pt, -5, -10);
       expect(pt.x).toBe(-5);
       expect(pt.y).toBe(-10);
     });
 
     it('allows a point-like object', () => {
       const pt = { x: 0, y: 0 };
-      Point.offset(pt, 10, 100);
+      Vector2.offset(pt, 10, 100);
       expect(pt.x).toBe(10);
       expect(pt.y).toBe(100);
     });
@@ -560,22 +560,22 @@ describe('Point', () => {
 
   describe('offsetTo', () => {
     it('adjusts the value of a point', () => {
-      const result = new Point();
-      Point.offsetTo(result, pt, 10, 100);
+      const result = new Vector2();
+      Vector2.offsetTo(result, pt, 10, 100);
       expect(result.x).toBe(10);
       expect(result.y).toBe(100);
     });
 
     it('works with negative deltas', () => {
-      const result = new Point();
-      Point.offsetTo(result, pt, -5, -10);
+      const result = new Vector2();
+      Vector2.offsetTo(result, pt, -5, -10);
       expect(result.x).toBe(-5);
       expect(result.y).toBe(-10);
     });
 
     it('allows a point-like object', () => {
       const result = { x: 0, y: 0 };
-      Point.offsetTo(result, pt, 10, 100);
+      Vector2.offsetTo(result, pt, 10, 100);
       expect(result.x).toBe(10);
       expect(result.y).toBe(100);
     });
@@ -583,42 +583,42 @@ describe('Point', () => {
 
   describe('polar', () => {
     it('returns a point at the given length along the x-axis when angle is 0', () => {
-      const p = Point.polar(5, 0);
+      const p = Vector2.polar(5, 0);
       expect(p.x).toBeCloseTo(5);
       expect(p.y).toBeCloseTo(0);
       expect(p.length).toBeCloseTo(5);
     });
 
     it('returns a point at the given length along the y-axis when angle is π/2', () => {
-      const p = Point.polar(3, Math.PI / 2);
+      const p = Vector2.polar(3, Math.PI / 2);
       expect(p.x).toBeCloseTo(0);
       expect(p.y).toBeCloseTo(3);
       expect(p.length).toBeCloseTo(3);
     });
 
     it('returns a point in the correct quadrant for angle π', () => {
-      const p = Point.polar(4, Math.PI);
+      const p = Vector2.polar(4, Math.PI);
       expect(p.x).toBeCloseTo(-4);
       expect(p.y).toBeCloseTo(0);
       expect(p.length).toBeCloseTo(4);
     });
 
     it('returns a point in the correct quadrant for angle 3π/2', () => {
-      const p = Point.polar(2, (3 * Math.PI) / 2);
+      const p = Vector2.polar(2, (3 * Math.PI) / 2);
       expect(p.x).toBeCloseTo(0);
       expect(p.y).toBeCloseTo(-2);
       expect(p.length).toBeCloseTo(2);
     });
 
     it('handles zero length', () => {
-      const p = Point.polar(0, Math.PI / 4);
+      const p = Vector2.polar(0, Math.PI / 4);
       expect(p.x).toBeCloseTo(0);
       expect(p.y).toBeCloseTo(0);
       expect(p.length).toBeCloseTo(0);
     });
 
     it('handles negative length', () => {
-      const p = Point.polar(-5, 0);
+      const p = Vector2.polar(-5, 0);
       expect(p.x).toBeCloseTo(-5);
       expect(p.y).toBeCloseTo(0);
       expect(p.length).toBeCloseTo(5); // length property is always positive
@@ -627,62 +627,62 @@ describe('Point', () => {
     it('handles arbitrary angles', () => {
       const angle = Math.PI / 4; // 45 degrees
       const len = Math.sqrt(2);
-      const p = Point.polar(len, angle);
+      const p = Vector2.polar(len, angle);
       expect(p.x).toBeCloseTo(1);
       expect(p.y).toBeCloseTo(1);
       expect(p.length).toBeCloseTo(len);
     });
 
-    it('returns a Point instance', () => {
-      const p = Point.polar(5, 0);
-      expect(p).toBeInstanceOf(Point);
+    it('returns a Vector2 instance', () => {
+      const p = Vector2.polar(5, 0);
+      expect(p).toBeInstanceOf(Vector2);
     });
   });
 
   describe('polarTo', () => {
     it('returns a point at the given length along the x-axis when angle is 0', () => {
-      const p = new Point();
-      Point.polarTo(p, 5, 0);
+      const p = new Vector2();
+      Vector2.polarTo(p, 5, 0);
       expect(p.x).toBeCloseTo(5);
       expect(p.y).toBeCloseTo(0);
       expect(p.length).toBeCloseTo(5);
     });
 
     it('returns a point at the given length along the y-axis when angle is π/2', () => {
-      const p = new Point();
-      Point.polarTo(p, 3, Math.PI / 2);
+      const p = new Vector2();
+      Vector2.polarTo(p, 3, Math.PI / 2);
       expect(p.x).toBeCloseTo(0);
       expect(p.y).toBeCloseTo(3);
       expect(p.length).toBeCloseTo(3);
     });
 
     it('returns a point in the correct quadrant for angle π', () => {
-      const p = new Point();
-      Point.polarTo(p, 4, Math.PI);
+      const p = new Vector2();
+      Vector2.polarTo(p, 4, Math.PI);
       expect(p.x).toBeCloseTo(-4);
       expect(p.y).toBeCloseTo(0);
       expect(p.length).toBeCloseTo(4);
     });
 
     it('returns a point in the correct quadrant for angle 3π/2', () => {
-      const p = new Point();
-      Point.polarTo(p, 2, (3 * Math.PI) / 2);
+      const p = new Vector2();
+      Vector2.polarTo(p, 2, (3 * Math.PI) / 2);
       expect(p.x).toBeCloseTo(0);
       expect(p.y).toBeCloseTo(-2);
       expect(p.length).toBeCloseTo(2);
     });
 
     it('handles zero length', () => {
-      const p = new Point();
-      Point.polarTo(p, 0, Math.PI / 4);
+      const p = new Vector2();
+      Vector2.polarTo(p, 0, Math.PI / 4);
       expect(p.x).toBeCloseTo(0);
       expect(p.y).toBeCloseTo(0);
       expect(p.length).toBeCloseTo(0);
     });
 
     it('handles negative length', () => {
-      const p = new Point();
-      Point.polarTo(p, -5, 0);
+      const p = new Vector2();
+      Vector2.polarTo(p, -5, 0);
       expect(p.x).toBeCloseTo(-5);
       expect(p.y).toBeCloseTo(0);
       expect(p.length).toBeCloseTo(5); // length property is always positive
@@ -691,8 +691,8 @@ describe('Point', () => {
     it('handles arbitrary angles', () => {
       const angle = Math.PI / 4; // 45 degrees
       const len = Math.sqrt(2);
-      const p = new Point();
-      Point.polarTo(p, len, angle);
+      const p = new Vector2();
+      Vector2.polarTo(p, len, angle);
       expect(p.x).toBeCloseTo(1);
       expect(p.y).toBeCloseTo(1);
       expect(p.length).toBeCloseTo(len);
@@ -700,7 +700,7 @@ describe('Point', () => {
 
     it('allows point-like objeects', () => {
       const p = { x: 0, y: 0 };
-      Point.polarTo(p, 5, 0);
+      Vector2.polarTo(p, 5, 0);
       expect(p.x).toBeCloseTo(5);
       expect(p.y).toBeCloseTo(0);
     });
@@ -708,7 +708,7 @@ describe('Point', () => {
 
   describe('setTo', () => {
     it('updates coordinates of a point', () => {
-      Point.setTo(pt, 2, 10);
+      Vector2.setTo(pt, 2, 10);
       expect(pt.x).toBe(2);
       expect(pt.y).toBe(10);
     });
@@ -716,14 +716,14 @@ describe('Point', () => {
     it('sets both coordinates to zero correctly', () => {
       pt.x = 1;
       pt.y = 2;
-      Point.setTo(pt, 0, 0);
+      Vector2.setTo(pt, 0, 0);
       expect(pt.x).toBe(0);
       expect(pt.y).toBe(0);
     });
 
     it('allows a point-like object', () => {
       const pt = { x: 0, y: 0 };
-      Point.setTo(pt, 2, 10);
+      Vector2.setTo(pt, 2, 10);
       expect(pt.x).toBe(2);
       expect(pt.y).toBe(10);
     });
@@ -736,7 +736,7 @@ describe('Point', () => {
       pt2.x = 2;
       pt2.y = 4;
 
-      const result = Point.subtract(pt, pt2);
+      const result = Vector2.subtract(pt, pt2);
 
       expect(result.x).toBe(3);
       expect(result.y).toBe(6);
@@ -752,7 +752,7 @@ describe('Point', () => {
       pt2.x = 5;
       pt2.y = 10;
 
-      const result = Point.subtract(pt, pt2);
+      const result = Vector2.subtract(pt, pt2);
 
       expect(result.x).toBe(-3);
       expect(result.y).toBe(-7);
@@ -762,7 +762,7 @@ describe('Point', () => {
       pt.x = 7;
       pt.y = -3;
 
-      const result = Point.subtract(pt, pt);
+      const result = Vector2.subtract(pt, pt);
 
       expect(result.x).toBe(0);
       expect(result.y).toBe(0);
@@ -774,11 +774,11 @@ describe('Point', () => {
       pt2.x = 5;
       pt2.y = 10;
 
-      let result = Point.subtract(pt, pt2);
+      let result = Vector2.subtract(pt, pt2);
       expect(result.x).toBe(-5);
       expect(result.y).toBe(-10);
 
-      result = Point.subtract(pt2, pt);
+      result = Vector2.subtract(pt2, pt);
       expect(result.x).toBe(5);
       expect(result.y).toBe(10);
     });
@@ -789,7 +789,7 @@ describe('Point', () => {
       pt2.x = 0.0001;
       pt2.y = 0.0001;
 
-      const result = Point.subtract(pt, pt2);
+      const result = Vector2.subtract(pt, pt2);
       expect(result.x).toBeCloseTo(0);
       expect(result.y).toBeCloseTo(0);
     });
@@ -799,7 +799,7 @@ describe('Point', () => {
       pt.y = 10;
       const pt2 = { x: 2, y: 4 };
 
-      const result = Point.subtract(pt, pt2);
+      const result = Vector2.subtract(pt, pt2);
 
       expect(result.x).toBe(3);
       expect(result.y).toBe(6);
@@ -809,13 +809,13 @@ describe('Point', () => {
       expect(result).not.toBe(pt2);
     });
 
-    it('returns a Point instance', () => {
+    it('returns a Vector2 instance', () => {
       pt.x = 5;
       pt.y = 10;
       const pt2 = { x: 2, y: 4 };
 
-      const result = Point.subtract(pt, pt2);
-      expect(result).toBeInstanceOf(Point);
+      const result = Vector2.subtract(pt, pt2);
+      expect(result).toBeInstanceOf(Vector2);
     });
   });
 
@@ -826,8 +826,8 @@ describe('Point', () => {
       pt2.x = 2;
       pt2.y = 4;
 
-      const result = new Point();
-      Point.subtractTo(result, pt, pt2);
+      const result = new Vector2();
+      Vector2.subtractTo(result, pt, pt2);
 
       expect(result.x).toBe(3);
       expect(result.y).toBe(6);
@@ -843,8 +843,8 @@ describe('Point', () => {
       pt2.x = 5;
       pt2.y = 10;
 
-      const result = new Point();
-      Point.subtractTo(result, pt, pt2);
+      const result = new Vector2();
+      Vector2.subtractTo(result, pt, pt2);
 
       expect(result.x).toBe(-3);
       expect(result.y).toBe(-7);
@@ -854,8 +854,8 @@ describe('Point', () => {
       pt.x = 7;
       pt.y = -3;
 
-      const result = new Point();
-      Point.subtractTo(result, pt, pt);
+      const result = new Vector2();
+      Vector2.subtractTo(result, pt, pt);
 
       expect(result.x).toBe(0);
       expect(result.y).toBe(0);
@@ -867,13 +867,13 @@ describe('Point', () => {
       pt2.x = 5;
       pt2.y = 10;
 
-      const result = new Point();
-      Point.subtractTo(result, pt, pt2);
+      const result = new Vector2();
+      Vector2.subtractTo(result, pt, pt2);
       expect(result.x).toBe(-5);
       expect(result.y).toBe(-10);
 
-      const result2 = new Point();
-      Point.subtractTo(result2, pt2, pt);
+      const result2 = new Vector2();
+      Vector2.subtractTo(result2, pt2, pt);
       expect(result2.x).toBe(5);
       expect(result2.y).toBe(10);
     });
@@ -884,8 +884,8 @@ describe('Point', () => {
       pt2.x = 0.0001;
       pt2.y = 0.0001;
 
-      const result = new Point();
-      Point.subtractTo(result, pt, pt2);
+      const result = new Vector2();
+      Vector2.subtractTo(result, pt, pt2);
       expect(result.x).toBeCloseTo(0);
       expect(result.y).toBeCloseTo(0);
     });
@@ -895,7 +895,7 @@ describe('Point', () => {
       const pt2 = { x: 2, y: 4 };
 
       const result = { x: 0, y: 0 };
-      Point.subtractTo(result, pt, pt2);
+      Vector2.subtractTo(result, pt, pt2);
 
       expect(result.x).toBe(3);
       expect(result.y).toBe(6);
@@ -903,20 +903,6 @@ describe('Point', () => {
       // Ensure new object is returned
       expect(result).not.toBe(pt);
       expect(result).not.toBe(pt2);
-    });
-  });
-
-  describe('toString', () => {
-    it('returns a string in the format "(x=..., y=...)"', () => {
-      pt.x = 3;
-      pt.y = 4;
-      expect(pt.toString()).toBe('(x=3, y=4)');
-    });
-
-    it('handles negative and zero values', () => {
-      pt.x = 0;
-      pt.y = -5;
-      expect(pt.toString()).toBe('(x=0, y=-5)');
     });
   });
 });

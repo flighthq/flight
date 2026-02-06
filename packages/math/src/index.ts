@@ -1,6 +1,7 @@
-export { default as Matrix2D } from './Matrix2D.js';
-export { default as Matrix2DPool } from './Matrix2DPool.js';
-export { default as Point } from './Point.js';
+export { default as Affine2D } from './Affine2D.js';
+export { default as Matrix3 } from './Matrix3.js';
+export { default as Matrix3Pool } from './Matrix3Pool.js';
 export { default as Rectangle } from './Rectangle.js';
 export { default as RectanglePool } from './RectanglePool.js';
-export { default as Vector3D } from './Vector3D.js';
+export { default as Vector2 } from './Vector2.js';
+export { default as Vector4 } from './Vector4.js';

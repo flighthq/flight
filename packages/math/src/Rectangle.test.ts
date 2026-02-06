@@ -1,5 +1,5 @@
-import Point from './Point.js';
 import Rectangle from './Rectangle.js';
+import Vector2 from './Vector2.js';
 
 describe('Rectangle', () => {
   let r: Rectangle;
@@ -46,14 +46,14 @@ describe('Rectangle', () => {
   });
 
   describe('bottomRight', () => {
-    it('returns correct Point', () => {
+    it('returns correct Vector2', () => {
       const br = r.bottomRight;
       expect(br.x).toBe(10);
       expect(br.y).toBe(20);
     });
 
     it('setter adjusts width and height', () => {
-      r.bottomRight = new Point(15, 25);
+      r.bottomRight = new Vector2(15, 25);
       expect(r.width).toBe(15);
       expect(r.height).toBe(25);
     });
@@ -192,7 +192,7 @@ describe('Rectangle', () => {
   });
 
   describe('normalizedTopLeft', () => {
-    it('return proper Points', () => {
+    it('return proper Vector2s', () => {
       r.x = 10;
       r.y = 20;
       r.width = -5;
@@ -202,13 +202,13 @@ describe('Rectangle', () => {
       expect(ntl.y).toBe(5);
     });
 
-    it('returns a Point instance', () => {
+    it('returns a Vector2 instance', () => {
       r.x = 10;
       r.y = 20;
       r.width = -5;
       r.height = -15;
       const ntl = r.normalizedTopLeft;
-      expect(ntl).toBeInstanceOf(Point);
+      expect(ntl).toBeInstanceOf(Vector2);
     });
 
     it('match min/max for positive rectangles', () => {
@@ -226,7 +226,7 @@ describe('Rectangle', () => {
       r.y = 20;
       r.width = -5;
       r.height = -15;
-      let ntl = new Point();
+      let ntl = new Vector2();
       Rectangle.normalizedTopLeft(ntl, r);
       expect(ntl.x).toBe(5);
       expect(ntl.y).toBe(5);
@@ -242,7 +242,7 @@ describe('Rectangle', () => {
   });
 
   describe('normalizedBottomRight', () => {
-    it('return proper Points', () => {
+    it('return proper Vector2s', () => {
       r.x = 10;
       r.y = 20;
       r.width = -5;
@@ -252,13 +252,13 @@ describe('Rectangle', () => {
       expect(nbr.y).toBe(20);
     });
 
-    it('return a Point instance', () => {
+    it('return a Vector2 instance', () => {
       r.x = 10;
       r.y = 20;
       r.width = -5;
       r.height = -15;
       const nbr = r.normalizedBottomRight;
-      expect(nbr).toBeInstanceOf(Point);
+      expect(nbr).toBeInstanceOf(Vector2);
     });
 
     it('match min/max for positive rectangles', () => {
@@ -276,7 +276,7 @@ describe('Rectangle', () => {
       r.y = 20;
       r.width = -5;
       r.height = -15;
-      const nbr = new Point();
+      const nbr = new Vector2();
       Rectangle.normalizedBottomRight(nbr, r);
       expect(nbr.x).toBe(10);
       expect(nbr.y).toBe(20);
@@ -317,14 +317,14 @@ describe('Rectangle', () => {
   });
 
   describe('size', () => {
-    it('getter returns width and height as Point', () => {
+    it('getter returns width and height as Vector2', () => {
       const s = r.size;
       expect(s.x).toBe(10);
       expect(s.y).toBe(20);
     });
 
     it('setter adjusts width and height', () => {
-      r.size = new Point(5, 6);
+      r.size = new Vector2(5, 6);
       expect(r.width).toBe(5);
       expect(r.height).toBe(6);
     });
@@ -348,20 +348,20 @@ describe('Rectangle', () => {
   });
 
   describe('topLeft', () => {
-    it('getter returns top-left Point', () => {
+    it('getter returns top-left Vector2', () => {
       const tl = r.topLeft;
       expect(tl.x).toBe(0);
       expect(tl.y).toBe(0);
     });
 
     it('setter updates x and y', () => {
-      r.topLeft = new Point(3, 4);
+      r.topLeft = new Vector2(3, 4);
       expect(r.x).toBe(3);
       expect(r.y).toBe(4);
     });
 
     it('is also a static method', () => {
-      let tl = new Point();
+      let tl = new Vector2();
       Rectangle.topLeft(tl, r);
       expect(tl.x).toBe(0);
       expect(tl.y).toBe(0);
@@ -425,15 +425,15 @@ describe('Rectangle', () => {
     });
   });
 
-  describe('containsPoint', () => {
+  describe('containsVector2', () => {
     it('delegates to contains', () => {
-      expect(Rectangle.containsPoint(r, new Point(5, 10))).toBe(true);
+      expect(Rectangle.containsVector2(r, new Vector2(5, 10))).toBe(true);
     });
 
     it('allows point-like and rectangle-like objects', () => {
       const r = { x: 0, y: 0, width: 100, height: 100 };
       const p = { x: 5, y: 10 };
-      expect(Rectangle.containsPoint(r, p)).toBe(true);
+      expect(Rectangle.containsVector2(r, p)).toBe(true);
     });
   });
 
@@ -738,9 +738,9 @@ describe('Rectangle', () => {
     });
   });
 
-  describe('offsetPoint', () => {
-    it('moves rectangle by Point', () => {
-      Rectangle.offsetPoint(r, new Point(3, 4));
+  describe('offsetVector2', () => {
+    it('moves rectangle by Vector2', () => {
+      Rectangle.offsetVec2(r, new Vector2(3, 4));
       expect(r.x).toBe(3);
       expect(r.y).toBe(4);
     });
@@ -748,16 +748,16 @@ describe('Rectangle', () => {
     it('allows rectangle- and point-like objects', () => {
       const r = { x: 0, y: 0, width: 100, height: 100 };
       const p = { x: 3, y: 4 };
-      Rectangle.offsetPoint(r, p);
+      Rectangle.offsetVec2(r, p);
       expect(r.x).toBe(3);
       expect(r.y).toBe(4);
     });
   });
 
-  describe('offsetPointTo', () => {
-    it('moves rectangle by Point', () => {
-      const result = new Point();
-      Rectangle.offsetPointTo(result, r, new Point(3, 4));
+  describe('offsetVector2To', () => {
+    it('moves rectangle by Vector2', () => {
+      const result = new Vector2();
+      Rectangle.offsetVec2To(result, r, new Vector2(3, 4));
       expect(result.x).toBe(3);
       expect(result.y).toBe(4);
     });
@@ -766,7 +766,7 @@ describe('Rectangle', () => {
       const r = { x: 0, y: 0, width: 100, height: 100 };
       const p = { x: 3, y: 4 };
       const result = { x: 0, y: 0, width: 0, height: 0 };
-      Rectangle.offsetPointTo(result, r, p);
+      Rectangle.offsetVec2To(result, r, p);
       expect(result.x).toBe(3);
       expect(result.y).toBe(4);
     });
@@ -825,9 +825,9 @@ describe('Rectangle', () => {
     });
   });
 
-  describe('inflatePoint', () => {
-    it('inflates rectangle by Point', () => {
-      Rectangle.inflatePoint(r, new Point(1, 2));
+  describe('inflateVector2', () => {
+    it('inflates rectangle by Vector2', () => {
+      Rectangle.inflateVector2(r, new Vector2(1, 2));
       expect(r.x).toBe(-1);
       expect(r.y).toBe(-2);
       expect(r.width).toBe(12);
@@ -837,7 +837,7 @@ describe('Rectangle', () => {
     it('allows rectangle- and point-like objects', () => {
       const r = { x: 0, y: 0, width: 10, height: 20 };
       const p = { x: 1, y: 2 };
-      Rectangle.inflatePoint(r, p);
+      Rectangle.inflateVector2(r, p);
       expect(r.x).toBe(-1);
       expect(r.y).toBe(-2);
       expect(r.width).toBe(12);
@@ -845,10 +845,10 @@ describe('Rectangle', () => {
     });
   });
 
-  describe('inflatePointTo', () => {
-    it('inflates rectangle by Point', () => {
+  describe('inflateVector2To', () => {
+    it('inflates rectangle by Vector2', () => {
       const result = new Rectangle();
-      Rectangle.inflatePointTo(result, r, new Point(1, 2));
+      Rectangle.inflateVector2To(result, r, new Vector2(1, 2));
       expect(result).not.toBe(r);
       expect(result.x).toBe(-1);
       expect(result.y).toBe(-2);
@@ -860,7 +860,7 @@ describe('Rectangle', () => {
       const r = { x: 0, y: 0, width: 10, height: 20 };
       const p = { x: 1, y: 2 };
       const result = { x: 0, y: 0, width: 0, height: 0 };
-      Rectangle.inflatePointTo(result, r, p);
+      Rectangle.inflateVector2To(result, r, p);
       expect(result.x).toBe(-1);
       expect(result.y).toBe(-2);
       expect(result.width).toBe(12);
@@ -968,13 +968,6 @@ describe('Rectangle', () => {
       expect(r.y).toBe(2);
       expect(r.width).toBe(3);
       expect(r.height).toBe(4);
-    });
-  });
-
-  describe('toString', () => {
-    it('returns the correct string representation', () => {
-      const rect = new Rectangle(1, 2, 3, 4);
-      expect(rect.toString()).toBe('(x=1, y=2, width=3, height=4)');
     });
   });
 

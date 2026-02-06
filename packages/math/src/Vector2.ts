@@ -1,19 +1,19 @@
-import type { Point as PointLike } from '@flighthq/types';
+import type { Vector2 as Vector2Like } from '@flighthq/types';
 
 /**
- * The Point object represents a location in a two-dimensional coordinate
+ * The Vector2 object represents a location in a two-dimensional coordinate
  * system, where _x_ represents the horizontal axis and _y_
  * represents the vertical axis.
  *
  * Invariants:
  *
  * - `length = Math.sqrt(x ** 2 + y ** 2)`
- * - `length = x ** 2 + y ** 2`
+ * - `lengthSquared = x ** 2 + y ** 2`
  *
  * @see Rectangle
- * @see Matrix
+ * @see Affine2D
  */
-export default class Point implements PointLike {
+export default class Vector2 implements Vector2Like {
   x: number = 0;
   y: number = 0;
 
@@ -22,36 +22,36 @@ export default class Point implements PointLike {
     if (y !== undefined) this.y = y;
   }
 
-  static add(a: PointLike, b: PointLike): Point {
-    return new Point(a.x + b.x, a.y + b.y);
+  static add(a: Vector2Like, b: Vector2Like): Vector2 {
+    return new Vector2(a.x + b.x, a.y + b.y);
   }
 
-  static addTo(out: PointLike, a: PointLike, b: PointLike): void {
+  static addTo(out: Vector2Like, a: Vector2Like, b: Vector2Like): void {
     out.x = a.x + b.x;
     out.y = a.y + b.y;
   }
 
-  static clone(source: PointLike): Point {
-    return new Point(source.x, source.y);
+  static clone(source: Vector2Like): Vector2 {
+    return new Vector2(source.x, source.y);
   }
 
-  static copyFrom(source: PointLike, out: PointLike): void {
+  static copyFrom(source: Vector2Like, out: Vector2Like): void {
     out.x = source.x;
     out.y = source.y;
   }
 
-  static copyTo(out: PointLike, source: PointLike): void {
+  static copyTo(out: Vector2Like, source: Vector2Like): void {
     out.x = source.x;
     out.y = source.y;
   }
 
-  static distance(a: PointLike, b: PointLike): number {
+  static distance(a: Vector2Like, b: Vector2Like): number {
     const dx = a.x - b.x;
     const dy = a.y - b.y;
     return Math.sqrt(dx * dx + dy * dy);
   }
 
-  static equals(a: PointLike, b: PointLike): boolean {
+  static equals(a: Vector2Like, b: Vector2Like): boolean {
     return a === b || (a.x === b.x && a.y === b.y);
   }
 
@@ -59,8 +59,8 @@ export default class Point implements PointLike {
    * @legacy Like lerp, except argument order is reversed
    * @see lerp
    */
-  static interpolate(end: PointLike, start: PointLike, t: number): Point {
-    const out = new Point();
+  static interpolate(end: Vector2Like, start: Vector2Like, t: number): Vector2 {
+    const out = new Vector2();
     this.lerp(out, start, end, t);
     return out;
   }
@@ -68,22 +68,22 @@ export default class Point implements PointLike {
   /**
    * @legacy Like lerp, except argument order is reversed
    */
-  static interpolateTo(out: PointLike, end: PointLike, start: PointLike, t: number): void {
+  static interpolateTo(out: Vector2Like, end: Vector2Like, start: Vector2Like, t: number): void {
     this.lerp(out, start, end, t);
   }
 
-  static length(source: PointLike): number {
+  static length(source: Vector2Like): number {
     return Math.sqrt(source.x ** 2 + source.y ** 2);
   }
 
-  static lengthSquared(source: PointLike): number {
+  static lengthSquared(source: Vector2Like): number {
     return source.x ** 2 + source.y ** 2;
   }
 
   /**
    * Linear interpolation between points a and b
    */
-  static lerp(out: PointLike, a: PointLike, b: PointLike, t: number): void {
+  static lerp(out: Vector2Like, a: Vector2Like, b: Vector2Like, t: number): void {
     out.x = a.x + t * (b.x - a.x);
     out.y = a.y + t * (b.y - a.y);
   }
@@ -98,7 +98,7 @@ export default class Point implements PointLike {
    *                 if the current point is (0, 5) and `length` is 1,
    *                 the returned point will be (0, 1).
    */
-  static normalize(target: PointLike, length: number): void {
+  static normalize(target: Vector2Like, length: number): void {
     const currentLength = this.length(target);
     if (currentLength === 0) {
       target.x = 0;
@@ -116,7 +116,7 @@ export default class Point implements PointLike {
    * The direction of the vector is preserved. If the original vector has zero length,
    * the returned point will also be (0, 0).
    */
-  static normalizeTo(out: PointLike, source: PointLike, length: number): void {
+  static normalizeTo(out: Vector2Like, source: Vector2Like, length: number): void {
     const currentLength = this.length(source);
     if (currentLength === 0) {
       out.x = 0;
@@ -128,56 +128,52 @@ export default class Point implements PointLike {
     }
   }
 
-  static offset(target: PointLike, dx: number, dy: number): void {
+  static offset(target: Vector2Like, dx: number, dy: number): void {
     target.x += dx;
     target.y += dy;
   }
 
-  static offsetTo(out: PointLike, source: PointLike, dx: number, dy: number): void {
+  static offsetTo(out: Vector2Like, source: Vector2Like, dx: number, dy: number): void {
     out.x = source.x + dx;
-    out.y += source.y + dy;
+    out.y = source.y + dy;
   }
 
-  static polar(len: number, angle: number): Point {
-    const out = new Point();
+  static polar(len: number, angle: number): Vector2 {
+    const out = new Vector2();
     out.x = len * Math.cos(angle);
     out.y = len * Math.sin(angle);
     return out;
   }
 
-  static polarTo(out: PointLike, len: number, angle: number): void {
+  static polarTo(out: Vector2Like, len: number, angle: number): void {
     out.x = len * Math.cos(angle);
     out.y = len * Math.sin(angle);
   }
 
-  static setTo(out: PointLike, x: number, y: number): void {
+  static setTo(out: Vector2Like, x: number, y: number): void {
     out.x = x;
     out.y = y;
   }
 
-  static subtract(source: PointLike, toSubtract: PointLike): Point {
-    const out = new Point();
+  static subtract(source: Vector2Like, toSubtract: Vector2Like): Vector2 {
+    const out = new Vector2();
     out.x = source.x - toSubtract.x;
     out.y = source.y - toSubtract.y;
     return out;
   }
 
-  static subtractTo(out: PointLike, source: PointLike, toSubtract: PointLike): void {
+  static subtractTo(out: Vector2Like, source: Vector2Like, toSubtract: Vector2Like): void {
     out.x = source.x - toSubtract.x;
     out.y = source.y - toSubtract.y;
-  }
-
-  toString(): string {
-    return `(x=${this.x}, y=${this.y})`;
   }
 
   // Get & Set Methods
 
   get length(): number {
-    return Point.length(this);
+    return Vector2.length(this);
   }
 
   get lengthSquared(): number {
-    return Point.lengthSquared(this);
+    return Vector2.lengthSquared(this);
   }
 }
