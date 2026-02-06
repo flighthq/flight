@@ -37,7 +37,7 @@ export default class Vector2 implements Vector2Like {
     return new Vector2(source.x, source.y);
   }
 
-  static copyFrom(source: Vector2Like, out: Vector2Like): void {
+  static copy(out: Vector2Like, source: Vector2Like): void {
     out.x = source.x;
     out.y = source.y;
   }
@@ -46,11 +46,6 @@ export default class Vector2 implements Vector2Like {
     this.x = source.x;
     this.y = source.y;
     return this;
-  }
-
-  static copyTo(out: Vector2Like, source: Vector2Like): void {
-    out.x = source.x;
-    out.y = source.y;
   }
 
   static createPolar(len: number, angle: number): Vector2 {

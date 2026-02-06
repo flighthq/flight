@@ -185,24 +185,25 @@ describe('Vector2', () => {
     });
   });
 
-  describe('copyFrom', () => {
+  describe('copy', () => {
     it('copies coordinates from one vector to another', () => {
       pt2.x = 1;
       pt2.y = 2;
-      Vector2.copyFrom(pt2, pt);
+      Vector2.copy(pt, pt2);
       expect(pt.x).toBe(1);
       expect(pt.y).toBe(2);
     });
 
     it('allows a vector-like object', () => {
-      const pt = { x: 0, y: 0 };
       const pt2 = { x: 1, y: 2 };
-      Vector2.copyFrom(pt2, pt);
+      Vector2.copy(pt, pt2);
       expect(pt.x).toBe(1);
       expect(pt.y).toBe(2);
     });
+  });
 
-    it('is also an instance method', () => {
+  describe('copyFrom', () => {
+    it('copies coordinates from one vector to another', () => {
       pt2.x = 1;
       pt2.y = 2;
       const ret = pt.copyFrom(pt2);
@@ -210,20 +211,11 @@ describe('Vector2', () => {
       expect(pt.x).toBe(1);
       expect(pt.y).toBe(2);
     });
-  });
-
-  describe('copyTo', () => {
-    it('copies coordinates from one vector to another', () => {
-      pt2.x = 1;
-      pt2.y = 2;
-      Vector2.copyTo(pt, pt2);
-      expect(pt.x).toBe(1);
-      expect(pt.y).toBe(2);
-    });
 
     it('allows a vector-like object', () => {
+      const pt = new Vector2();
       const pt2 = { x: 1, y: 2 };
-      Vector2.copyTo(pt, pt2);
+      pt.copyFrom(pt2);
       expect(pt.x).toBe(1);
       expect(pt.y).toBe(2);
     });

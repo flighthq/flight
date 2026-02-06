@@ -33,27 +33,20 @@ export default class Vector3 implements Vector3Like {
   }
 
   /**
-   * Adds the x, y and z components of two vector objects.
-   *
-   * A new Vector3 is returned.
-   * @see addTo
-   */
-  static add(a: Vector3Like, b: Vector3Like): Vector3 {
-    const out = new Vector3();
-    out.x = a.x + b.x;
-    out.y = a.y + b.y;
-    out.z = a.z + b.z;
-    return out;
-  }
-
-  /**
    * Adds the x, y and z components of two vector objects
    * and writes to out.
    */
-  static addTo(out: Vector3Like, a: Vector3Like, b: Vector3Like): void {
+  static add(out: Vector3Like, a: Vector3Like, b: Vector3Like): void {
     out.x = a.x + b.x;
     out.y = a.y + b.y;
     out.z = a.z + b.z;
+  }
+
+  add(source: Vector3Like): Vector3 {
+    this.x += source.x;
+    this.y += source.y;
+    this.z += source.z;
+    return this;
   }
 
   /**
@@ -64,17 +57,12 @@ export default class Vector3 implements Vector3Like {
   static angleBetween(a: Vector3Like, b: Vector3Like): number {
     const la = this.length(a);
     const lb = this.length(b);
-    let dot = this.dotProduct(a, b);
 
-    if (la !== 0) {
-      dot /= la;
-    }
+    if (la === 0 || lb === 0) return NaN; // undefined angle
 
-    if (lb !== 0) {
-      dot /= lb;
-    }
-
-    return Math.acos(dot);
+    const dot = this.dot(a, b) / (la * lb);
+    // clamp dot to [-1, 1] to avoid floating point errors
+    return Math.acos(Math.min(1, Math.max(-1, dot)));
   }
 
   static clone(source: Vector3Like): Vector3 {
@@ -82,9 +70,9 @@ export default class Vector3 implements Vector3Like {
   }
 
   /**
-   * Copies the x, y and z components of another vector.
+   * Copies the x, y and z components of a vector.
    */
-  static copyFrom(source: Vector3Like, out: Vector3Like): void {
+  static copy(out: Vector3Like, source: Vector3Like): void {
     out.x = source.x;
     out.y = source.y;
     out.z = source.z;
@@ -93,24 +81,11 @@ export default class Vector3 implements Vector3Like {
   /**
    * Copies the x, y and z components of another vector.
    */
-  static copyTo(out: Vector3Like, source: Vector3Like): void {
-    out.x = source.x;
-    out.y = source.y;
-    out.z = source.z;
-  }
-
-  /**
-   * Returns a new Vector3 object that is perpendicular (at a right angle) to the
-   * current Vector3 and another Vector3 object. If the returned Vector3 object's
-   * coordinates are (0,0,0), then the two Vector3 objects are parallel to each other.
-   *
-   * A new Vector3 is returned.
-   * @see crossProductTo
-   **/
-  static crossProduct(source: Vector3Like, other: Vector3Like): Vector3 {
-    const out = new Vector3();
-    this.crossProductTo(out, source, other);
-    return out;
+  copyFrom(source: Vector3Like): Vector3 {
+    this.x = source.x;
+    this.y = source.y;
+    this.z = source.z;
+    return this;
   }
 
   /**
@@ -118,7 +93,7 @@ export default class Vector3 implements Vector3Like {
    * current Vector3 and another Vector3 object. If the returned Vector3 object's
    * coordinates are (0,0,0), then the two Vector3 objects are parallel to each other.
    **/
-  static crossProductTo(out: Vector3Like, source: Vector3Like, other: Vector3Like): void {
+  static cross(out: Vector3Like, source: Vector3Like, other: Vector3Like): void {
     const x = source.y * other.z - source.z * other.y;
     const y = source.z * other.x - source.x * other.z;
     const z = source.x * other.y - source.y * other.x;
@@ -127,20 +102,9 @@ export default class Vector3 implements Vector3Like {
     out.z = z;
   }
 
-  /**
-   * Decrements the value of the x, y, and z elements of the current Vector3 object by
-   * the values of the x, y, and z elements of specified Vector3 object.
-   **/
-  static decrementBy(target: Vector3Like, source: Vector3Like): void {
-    target.x -= source.x;
-    target.y -= source.y;
-    target.z -= source.z;
-  }
-
-  static decrementTo(out: Vector3Like, a: Vector3Like, b: Vector3Like): void {
-    out.x = a.x - b.x;
-    out.y = a.y - b.y;
-    out.z = a.z - b.z;
+  cross(source: Vector3Like): Vector3 {
+    Vector3.cross(this, this, source);
+    return this;
   }
 
   /**
@@ -174,34 +138,12 @@ export default class Vector3 implements Vector3Like {
    * one. They remove the length of the vector as a factor in the result. You can use
    * the `normalize()` method to convert a vector to a unit vector.
    **/
-  static dotProduct(a: Vector3Like, b: Vector3Like): number {
+  static dot(a: Vector3Like, b: Vector3Like): number {
     return a.x * b.x + a.y * b.y + a.z * b.z;
   }
 
   static equals(a: Vector3Like, b: Vector3Like): boolean {
     return a.x === b.x && a.y === b.y && a.z === b.z;
-  }
-
-  static fromVec2(source: Vector2Like): Vector3 {
-    return new Vector3(source.x, source.y);
-  }
-
-  /**
-   * Increments the value of the x, y, and z elements of the current Vector3 object by
-   * the values of the x, y, and z elements of a specified Vector3 object.
-   *
-   * The w component is ignored.
-   **/
-  static incrementBy(target: Vector3Like, source: Vector3Like): void {
-    target.x += source.x;
-    target.y += source.y;
-    target.z += source.z;
-  }
-
-  static incrementTo(out: Vector3Like, a: Vector3Like, b: Vector3Like): void {
-    out.x = a.x + b.x;
-    out.y = a.y + b.y;
-    out.z = a.z + b.z;
   }
 
   /**
@@ -230,7 +172,7 @@ export default class Vector3 implements Vector3Like {
    * The two Vector3 objects are nearly equal if the value of all the elements of the two
    * vertices are equal, or the result of the comparison is within the tolerance range.
    **/
-  static nearEquals(a: Vector3Like, b: Vector3Like, tolerance: number): boolean {
+  static nearEquals(a: Vector3Like, b: Vector3Like, tolerance: number = 1e-6): boolean {
     return Math.abs(a.x - b.x) < tolerance && Math.abs(a.y - b.y) < tolerance && Math.abs(a.z - b.z) < tolerance;
   }
 
@@ -239,16 +181,17 @@ export default class Vector3 implements Vector3Like {
    * considered the opposite of the original object. The value of the `x`, `y`, and `z`
    * properties of the current Vector3 object is changed to -x, -y, and -z.
    **/
-  static negate(target: Vector3Like): void {
-    target.x *= -1;
-    target.y *= -1;
-    target.z *= -1;
-  }
-
-  static negateTo(out: Vector3Like, source: Vector3Like): void {
+  static negate(out: Vector3Like, source: Vector3Like): void {
     out.x = source.x * -1;
     out.y = source.y * -1;
     out.z = source.z * -1;
+  }
+
+  negate(): Vector3 {
+    this.x *= -1;
+    this.y *= -1;
+    this.z *= -1;
+    return this;
   }
 
   /**
@@ -257,19 +200,7 @@ export default class Vector3 implements Vector3Like {
    *
    * Returns the original length.
    **/
-  static normalize(target: Vector3Like): number {
-    const l = this.length(target);
-
-    if (l !== 0) {
-      target.x /= l;
-      target.y /= l;
-      target.z /= l;
-    }
-
-    return l;
-  }
-
-  static normalizeTo(out: Vector3Like, source: Vector3Like): number {
+  static normalize(out: Vector3Like, source: Vector3Like): number {
     const l = this.length(source);
 
     if (l !== 0) {
@@ -281,11 +212,16 @@ export default class Vector3 implements Vector3Like {
     return l;
   }
 
+  normalize(): Vector3 {
+    Vector3.normalize(this, this);
+    return this;
+  }
+
   /**
-   * Divides the value of the `x`, `y`, and `z` properties of the current Vector4
-   * object by the value of its `w` property.
+   * Divides the value of the `x` and `y` properties of the current Vector3
+   * object by the value of its `z` property.
    **/
-  static projectToVec2(out: Vector2Like, source: Vector3Like): void {
+  static project(out: Vector2Like, source: Vector3Like): void {
     out.x = source.x / source.z;
     out.y = source.y / source.z;
   }
@@ -294,43 +230,50 @@ export default class Vector3 implements Vector3Like {
    * Scales the current Vector3 object by a scalar, a magnitude. The Vector3 object's
    * x, y, and z elements are multiplied by the provided scalar number.
    **/
-  static scaleBy(target: Vector3Like, scalar: number): void {
-    target.x *= scalar;
-    target.y *= scalar;
-    target.z *= scalar;
-  }
-
-  static scaleTo(out: Vector3Like, source: Vector3Like, scalar: number): void {
+  static scale(out: Vector3Like, source: Vector3Like, scalar: number): void {
     out.x = source.x * scalar;
     out.y = source.y * scalar;
     out.z = source.z * scalar;
   }
 
+  scale(scalar: number): Vector3 {
+    this.x *= scalar;
+    this.y *= scalar;
+    this.z *= scalar;
+    return this;
+  }
+
   /**
    * Sets the members of Vector3 to the specified values
    **/
-  static setTo(out: Vector3Like, x: number, y: number, z: number): void {
+  static set(out: Vector3Like, x: number, y: number, z: number): void {
     out.x = x;
     out.y = y;
     out.z = z;
+  }
+
+  set(x: number, y: number, z: number): Vector3 {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    return this;
   }
 
   /**
    * Subtracts the value of the x, y, and z elements of the current Vector3 object
    * from the values of the x, y, and z elements of another Vector3 object.
    **/
-  static subtract(source: Vector3Like, other: Vector3Like): Vector3 {
-    const out = new Vector3();
+  static subtract(out: Vector3Like, source: Vector3Like, other: Vector3Like): void {
     out.x = source.x - other.x;
     out.y = source.y - other.y;
     out.z = source.z - other.z;
-    return out;
   }
 
-  static subtractTo(out: Vector3Like, source: Vector3Like, other: Vector3Like): void {
-    out.x = source.x - other.x;
-    out.y = source.y - other.y;
-    out.z = source.z - other.z;
+  subtract(source: Vector3Like): Vector3 {
+    this.x -= source.x;
+    this.y -= source.y;
+    this.z -= source.z;
+    return this;
   }
 
   // Get & Set Methods
