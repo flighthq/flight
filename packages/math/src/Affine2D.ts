@@ -33,7 +33,7 @@ export default class Affine2D {
 
   static clone(source: Matrix3Like): Affine2D {
     const m = new Affine2D();
-    this.copyFrom(m, source);
+    this.copy(m, source);
     return m;
   }
 
@@ -56,6 +56,10 @@ export default class Affine2D {
     const tx1 = a.m[2] * b.m[0] + a.m[5] * b.m[3] + b.m[2];
     out.m[5] = a.m[2] * b.m[1] + a.m[5] * b.m[4] + b.m[5];
     out.m[2] = tx1;
+  }
+
+  static copy(out: Matrix3Like, source: Matrix3Like): void {
+    out.m.set(source.m);
   }
 
   /**
@@ -97,13 +101,9 @@ export default class Affine2D {
     }
   }
 
-  static copyFrom(out: Matrix3Like, source: Matrix3Like): void {
-    out.m[0] = source.m[0];
-    out.m[1] = source.m[1];
-    out.m[3] = source.m[3];
-    out.m[4] = source.m[4];
-    out.m[2] = source.m[2];
-    out.m[5] = source.m[5];
+  copyFrom(source: Matrix3Like): Affine2D {
+    this.m.set(source.m);
+    return this;
   }
 
   /**
