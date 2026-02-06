@@ -1,7 +1,7 @@
 import type { Renderable } from '@flighthq/contracts';
 import { RenderableSymbols as R } from '@flighthq/contracts';
-import { Matrix2D as Matrix2DImpl } from '@flighthq/math';
-import type { Matrix2D, Rectangle } from '@flighthq/types';
+import { Matrix3 as Matrix3Impl } from '@flighthq/math';
+import type { Matrix3, Rectangle } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import CanvasRenderData from './CanvasRenderData';
@@ -17,7 +17,7 @@ export default class CanvasRenderer {
   readonly contextAttributes: CanvasRenderingContext2DSettings;
 
   pixelRatio: number;
-  renderTransform: Matrix2D;
+  renderTransform: Matrix3;
   roundPixels: boolean;
 
   protected __backgroundColor: number = 0x00000000;
@@ -40,7 +40,7 @@ export default class CanvasRenderer {
 
     this.backgroundColor = options?.backgroundColor ?? 0x00000000;
     this.pixelRatio = options?.pixelRatio ?? window.devicePixelRatio | 1;
-    this.renderTransform = options?.renderTransform ?? new Matrix2DImpl();
+    this.renderTransform = options?.renderTransform ?? new Matrix3Impl();
     this.roundPixels = options?.roundPixels ?? false;
   }
 
@@ -128,7 +128,7 @@ export default class CanvasRenderer {
     }
   }
 
-  protected static __pushClipRect(target: CanvasRenderer, rect: Rectangle, transform: Matrix2D): void {
+  protected static __pushClipRect(target: CanvasRenderer, rect: Rectangle, transform: Matrix3): void {
     target.context.save();
 
     this.__setTransform(target, target.context, transform);
@@ -213,22 +213,25 @@ export default class CanvasRenderer {
     }
   }
 
-  protected static __setTransform(
-    target: CanvasRenderer,
-    context: CanvasRenderingContext2D,
-    transform: Matrix2D,
-  ): void {
+  protected static __setTransform(target: CanvasRenderer, context: CanvasRenderingContext2D, transform: Matrix3): void {
     if (target.roundPixels) {
       context.setTransform(
-        transform.a,
-        transform.b,
-        transform.c,
-        transform.d,
-        Math.fround(transform.tx),
-        Math.fround(transform.ty),
+        transform.m[0], // a
+        transform.m[1], // b
+        transform.m[3], // c
+        transform.m[4], // d
+        Math.fround(transform.m[2]), // tx
+        Math.fround(transform.m[5]), // ty
       );
     } else {
-      context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
+      context.setTransform(
+        transform.m[0], // a
+        transform.m[1], // b
+        transform.m[3], // c
+        transform.m[4], // d
+        transform.m[2], // tx
+        transform.m[5], // ty
+      );
     }
   }
 

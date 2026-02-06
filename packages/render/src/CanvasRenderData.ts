@@ -1,6 +1,6 @@
 import type { Renderable } from '@flighthq/contracts';
 import { RenderableSymbols as R } from '@flighthq/contracts';
-import type { Matrix2D } from '@flighthq/types';
+import type { Matrix3 } from '@flighthq/types';
 
 export default class CanvasRenderData {
   readonly source: Renderable;
@@ -10,7 +10,7 @@ export default class CanvasRenderData {
   localBoundsID: number = 0;
   mask: CanvasRenderData | null = null;
   renderAlpha: number = 0;
-  renderTransform: Matrix2D;
+  renderTransform: Matrix3;
   worldTransformID: number = 0;
 
   constructor(source: Renderable) {
