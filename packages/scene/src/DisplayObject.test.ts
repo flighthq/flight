@@ -1,5 +1,5 @@
 import { RenderableSymbols as R } from '@flighthq/contracts';
-import { Matrix2D, Point } from '@flighthq/math';
+import { Matrix3, Vector2 } from '@flighthq/math';
 import { Rectangle } from '@flighthq/math';
 
 import { DirtyFlags } from './DirtyFlags.js';
@@ -19,7 +19,7 @@ describe('DisplayObject', () => {
     return displayObject[R.localBounds];
   }
 
-  function getLocalTransform(displayObject: DisplayObject): Matrix2D {
+  function getLocalTransform(displayObject: DisplayObject): Matrix3 {
     displayObject[R.updateLocalTransform]();
     return displayObject[R.localTransform];
   }
@@ -80,19 +80,19 @@ describe('DisplayObject', () => {
 
   describe('cacheAsBitmapMatrix', () => {
     it('does not dirty transform if cacheAsBitmap is false', () => {
-      displayObject.cacheAsBitmapMatrix = new Matrix2D();
+      displayObject.cacheAsBitmapMatrix = new Matrix3();
       expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.None);
     });
 
     it('marks transform dirty when cacheAsBitmap is true and matrix changes', () => {
       displayObject.cacheAsBitmap = true;
-      displayObject.cacheAsBitmapMatrix = new Matrix2D(2, 0, 0, 2);
+      displayObject.cacheAsBitmapMatrix = new Matrix3(2, 0, 0, 2);
 
       expect(DirtyFlags.has(displayObject[$._dirtyFlags], DirtyFlags.Transform)).toBe(true);
     });
 
     it('does not dirty transform if matrix values are equal', () => {
-      const m = new Matrix2D();
+      const m = new Matrix3();
 
       displayObject.cacheAsBitmapMatrix = m;
       displayObject.cacheAsBitmap = true;
@@ -558,13 +558,13 @@ describe('DisplayObject', () => {
       obj.rotation = 0;
     });
 
-    it('returns a new Point instance', () => {
-      const p = DisplayObject.globalToLocal(obj, new Point(10, 20));
-      expect(p).toBeInstanceOf(Point);
+    it('returns a new Vector2 instance', () => {
+      const p = DisplayObject.globalToLocal(obj, new Vector2(10, 20));
+      expect(p).toBeInstanceOf(Vector2);
     });
 
     it('does not mutate the input point', () => {
-      const input = new Point(30, 40);
+      const input = new Vector2(30, 40);
       DisplayObject.globalToLocal(obj, input);
       expect(input.x).toBe(30);
       expect(input.y).toBe(40);
@@ -573,8 +573,8 @@ describe('DisplayObject', () => {
     it('correctly converts world to local coordinates', () => {
       // world point at (14, 24)
       // object at (10, 20), scale 2 → local should be (2, 2)
-      const worldPoint = new Point(14, 24);
-      const local = DisplayObject.globalToLocal(obj, worldPoint);
+      const worldVector2 = new Vector2(14, 24);
+      const local = DisplayObject.globalToLocal(obj, worldVector2);
 
       expect(local.x).toBeCloseTo(2);
       expect(local.y).toBeCloseTo(2);
@@ -594,9 +594,9 @@ describe('DisplayObject', () => {
         obj.rotation = 0;
       });
 
-      it('writes into the provided output Point', () => {
-        const out = new Point();
-        const world = new Point(14, 24);
+      it('writes into the provided output Vector2', () => {
+        const out = new Vector2();
+        const world = new Vector2(14, 24);
 
         DisplayObject.globalToLocalTo(out, obj, world);
 
@@ -605,8 +605,8 @@ describe('DisplayObject', () => {
       });
 
       it('reuses the output object', () => {
-        const out = new Point(999, 999);
-        DisplayObject.globalToLocalTo(out, obj, new Point(10, 20));
+        const out = new Vector2(999, 999);
+        DisplayObject.globalToLocalTo(out, obj, new Vector2(10, 20));
 
         expect(out).toEqual(expect.objectContaining({ x: 0, y: 0 }));
       });
@@ -614,7 +614,7 @@ describe('DisplayObject', () => {
       it('updates the world transform before conversion', () => {
         const spy = vi.spyOn(obj, R.updateWorldTransform);
 
-        DisplayObject.globalToLocalTo(new Point(), obj, new Point());
+        DisplayObject.globalToLocalTo(new Vector2(), obj, new Vector2());
 
         expect(spy).toHaveBeenCalled();
         spy.mockRestore();
@@ -757,15 +757,15 @@ describe('DisplayObject', () => {
     });
 
     it('returns a new point', () => {
-      const local = new Point(10, 20);
+      const local = new Vector2(10, 20);
       const global = DisplayObject.localToGlobal(obj, local);
 
-      expect(global).toBeInstanceOf(Point);
+      expect(global).toBeInstanceOf(Vector2);
       expect(global).not.toBe(local); // new instance
     });
 
     it('converts identity correctly', () => {
-      const local = new Point(10, 20);
+      const local = new Vector2(10, 20);
       const global = DisplayObject.localToGlobal(obj, local);
 
       expect(global.x).toBe(10);
@@ -777,7 +777,7 @@ describe('DisplayObject', () => {
       obj.x = 100;
       obj.y = 50;
 
-      const local = new Point(10, 20);
+      const local = new Vector2(10, 20);
       const global = DisplayObject.localToGlobal(obj, local);
 
       expect(global.x).toBe(110); // 100 + 10
@@ -793,8 +793,8 @@ describe('DisplayObject', () => {
     });
 
     it('localToGlobalTo writes to out parameter', () => {
-      const local = new Point(5, 5);
-      const out = new Point();
+      const local = new Vector2(5, 5);
+      const out = new Vector2();
 
       DisplayObject.localToGlobalTo(out, obj, local);
 
@@ -807,8 +807,8 @@ describe('DisplayObject', () => {
       obj.x = 50;
       obj.y = 30;
 
-      const local = new Point(10, 20);
-      const out = new Point();
+      const local = new Vector2(10, 20);
+      const out = new Vector2();
 
       DisplayObject.localToGlobalTo(out, obj, local);
 
@@ -820,8 +820,8 @@ describe('DisplayObject', () => {
       obj.x = 1;
       obj.y = 2;
 
-      const p1 = new Point(1, 1);
-      const p2 = new Point(2, 2);
+      const p1 = new Vector2(1, 1);
+      const p2 = new Vector2(2, 2);
 
       const g1 = DisplayObject.localToGlobal(obj, p1);
       const g2 = DisplayObject.localToGlobal(obj, p2);

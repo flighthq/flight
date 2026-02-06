@@ -1,6 +1,6 @@
 import type { Renderable } from '@flighthq/contracts';
 import { RenderableSymbols as R } from '@flighthq/contracts';
-import { Matrix2D, Matrix2DPool, Point, Rectangle, RectanglePool } from '@flighthq/math';
+import { Affine2D, Matrix3, Matrix3Pool, Rectangle, RectanglePool, Vector2 } from '@flighthq/math';
 import type { Shader } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
@@ -13,20 +13,20 @@ import type Stage from './Stage.js';
 import Transform from './Transform.js';
 
 export default class DisplayObject implements Renderable {
-  private static __tempPoint: Point = new Point();
+  private static __tempVector2: Vector2 = new Vector2();
 
   // Renderable contract
   [R.alpha]: number = 1;
   [R.blendMode]: BlendMode = BlendMode.Normal;
   [R.bounds]: Rectangle = new Rectangle();
   [R.cacheAsBitmap]: boolean = false;
-  [R.cacheAsBitmapMatrix]: Matrix2D | null = null;
+  [R.cacheAsBitmapMatrix]: Matrix3 | null = null;
   [R.children]: DisplayObject[] | null = null;
   [R.filters]: BitmapFilter[] | null = null;
   [R.height]: number = 0;
   [R.localBounds]: Rectangle = new Rectangle();
   [R.localBoundsID]: number = 0;
-  [R.localTransform]: Matrix2D = new Matrix2D();
+  [R.localTransform]: Matrix3 = new Matrix3();
   [R.localTransformID]: number = 0;
   [R.mask]: DisplayObject | null = null;
   [R.maskedObject]: DisplayObject | null = null;
@@ -44,7 +44,7 @@ export default class DisplayObject implements Renderable {
   [R.shader]: Shader | null = null;
   [R.width]: number = 0;
   [R.worldBounds]: Rectangle = new Rectangle();
-  [R.worldTransform]: Matrix2D = new Matrix2D();
+  [R.worldTransform]: Matrix3 = new Matrix3();
   [R.worldTransformID]: number = 0;
   [R.visible]: boolean = true;
   [R.x]: number = 0;
@@ -81,11 +81,11 @@ export default class DisplayObject implements Renderable {
     if (targetCoordinateSpace !== null && targetCoordinateSpace !== source) {
       targetCoordinateSpace[R.updateWorldTransform]();
       source[R.updateLocalBounds]();
-      const transform = Matrix2DPool.get();
-      Matrix2D.inverse(transform, targetCoordinateSpace[R.worldTransform]);
-      Matrix2D.multiply(transform, transform, source[R.worldTransform]);
-      Matrix2D.transformRectTo(out, transform, source[R.localBounds]);
-      Matrix2DPool.release(transform);
+      const transform = Matrix3Pool.get();
+      Matrix3.inverse(transform, targetCoordinateSpace[R.worldTransform]);
+      Matrix3.multiply(transform, transform, source[R.worldTransform]);
+      Affine2D.transformRectTo(out, transform, source[R.localBounds]);
+      Matrix3Pool.release(transform);
     } else {
       Rectangle.copyFrom(out, source[R.localBounds]);
     }
@@ -123,11 +123,11 @@ export default class DisplayObject implements Renderable {
    * Converts the `point` object from the Stage (global) coordinates
    * to the display object's (local) coordinates.
    *
-   * Returns a new Point()
+   * Returns a new Vector2()
    * @see globalToLocalTo
    **/
-  static globalToLocal(source: DisplayObject, pos: Point): Point {
-    const out = new Point();
+  static globalToLocal(source: DisplayObject, pos: Vector2): Vector2 {
+    const out = new Vector2();
     this.globalToLocalTo(out, source, pos);
     return out;
   }
@@ -136,9 +136,9 @@ export default class DisplayObject implements Renderable {
    * Converts the `point` object from the Stage (global) coordinates
    * to the display object's (local) coordinates.
    **/
-  static globalToLocalTo(out: Point, source: DisplayObject, pos: Point): void {
+  static globalToLocalTo(out: Vector2, source: DisplayObject, pos: Vector2): void {
     source[R.updateWorldTransform]();
-    Matrix2D.inverseTransformXY(out, source[R.worldTransform], pos.x, pos.y);
+    Affine2D.inverseTransformPointXY(out, source[R.worldTransform], pos.x, pos.y);
   }
 
   /**
@@ -170,9 +170,9 @@ export default class DisplayObject implements Renderable {
   static hitTestPoint(source: DisplayObject, x: number, y: number, _shapeFlag: boolean = false): boolean {
     if (!source[R.visible] || source[R.opaqueBackground] === null) return false;
     source[R.updateWorldTransform]();
-    Matrix2D.inverseTransformXY(this.__tempPoint, source[R.worldTransform], x, y);
+    Affine2D.inverseTransformPointXY(this.__tempVector2, source[R.worldTransform], x, y);
     source[R.updateLocalBounds]();
-    return Rectangle.contains(source[R.localBounds], this.__tempPoint.x, this.__tempPoint.y);
+    return Rectangle.contains(source[R.localBounds], this.__tempVector2.x, this.__tempVector2.y);
   }
 
   /**
@@ -201,11 +201,11 @@ export default class DisplayObject implements Renderable {
    * Converts the `point` object from the display object's (local)
    * coordinates to world coordinates.
    *
-   * Returns a new Point()
+   * Returns a new Vector2()
    * @see localToGlobalTo
    **/
-  static localToGlobal(source: DisplayObject, point: Point): Point {
-    const out = new Point();
+  static localToGlobal(source: DisplayObject, point: Vector2): Vector2 {
+    const out = new Vector2();
     this.localToGlobalTo(out, source, point);
     return out;
   }
@@ -214,9 +214,9 @@ export default class DisplayObject implements Renderable {
    * Converts the `point` object from the display object's (local)
    * coordinates to world coordinates.
    **/
-  static localToGlobalTo(out: Point, source: DisplayObject, point: Point): void {
+  static localToGlobalTo(out: Vector2, source: DisplayObject, point: Vector2): void {
     source[R.updateWorldTransform]();
-    Matrix2D.transformXY(out, source[R.worldTransform], point.x, point.y);
+    Affine2D.transformPointXY(out, source[R.worldTransform], point.x, point.y);
   }
 
   [R.update](): void {
@@ -252,7 +252,7 @@ export default class DisplayObject implements Renderable {
     this[R.updateLocalBounds]();
     this[R.updateLocalTransform]();
 
-    Matrix2D.transformRectTo(this[R.bounds], this[R.localTransform], this[R.localBounds]);
+    Affine2D.transformRectTo(this[R.bounds], this[R.localTransform], this[R.localBounds]);
 
     this[$._dirtyFlags] &= ~DirtyFlags.TransformedBounds;
   }
@@ -261,7 +261,7 @@ export default class DisplayObject implements Renderable {
     this[R.updateWorldTransform]();
 
     // TODO: Cache
-    Matrix2D.transformRectTo(this[R.worldBounds], this[R.worldTransform], this[R.bounds]);
+    Affine2D.transformRectTo(this[R.worldBounds], this[R.worldTransform], this[R.bounds]);
   }
 
   [R.updateWorldTransform](): void {
@@ -276,9 +276,9 @@ export default class DisplayObject implements Renderable {
       // Ensure local transform is accurate
       this[R.updateLocalTransform]();
       if (parent !== null) {
-        Matrix2D.multiply(this[R.worldTransform], parent[R.worldTransform], this[R.localTransform]);
+        Matrix3.multiply(this[R.worldTransform], parent[R.worldTransform], this[R.localTransform]);
       } else {
-        Matrix2D.copyFrom(this[R.worldTransform], this[R.localTransform]);
+        Matrix3.copyFrom(this[R.worldTransform], this[R.localTransform]);
       }
       this[R.parentTransformID] = parentTransformID;
       this[R.worldTransformID] = this[R.localTransformID];
@@ -319,18 +319,18 @@ export default class DisplayObject implements Renderable {
     DisplayObject.invalidate(this, DirtyFlags.CacheAsBitmap);
   }
 
-  get cacheAsBitmapMatrix(): Matrix2D | null {
+  get cacheAsBitmapMatrix(): Matrix3 | null {
     return this[R.cacheAsBitmapMatrix];
   }
 
-  set cacheAsBitmapMatrix(value: Matrix2D | null) {
-    if (Matrix2D.equals(this[R.cacheAsBitmapMatrix], value)) return;
+  set cacheAsBitmapMatrix(value: Matrix3 | null) {
+    if (Matrix3.equals(this[R.cacheAsBitmapMatrix], value)) return;
 
     if (value !== null) {
       if (this[R.cacheAsBitmapMatrix] === null) {
-        this[R.cacheAsBitmapMatrix] = Matrix2D.clone(value);
+        this[R.cacheAsBitmapMatrix] = Matrix3.clone(value);
       } else {
-        Matrix2D.copyFrom(this[R.cacheAsBitmapMatrix] as Matrix2D, value);
+        Matrix3.copyFrom(this[R.cacheAsBitmapMatrix] as Matrix3, value);
       }
     } else {
       this[R.cacheAsBitmapMatrix] = null;
@@ -564,14 +564,14 @@ export default class DisplayObject implements Renderable {
       this[$._transform] = new Transform(this);
     }
 
-    // if (value.__hasMatrix2D)
+    // if (value.__hasMatrix3)
     // {
     //     var other = value.__displayObject.__transform;
     //     __objectTransform.__setTransform(other.a, other.b, other.c, other.d, other.tx, other.ty);
     // }
     // else
     // {
-    //     __objectTransform.__hasMatrix2D = false;
+    //     __objectTransform.__hasMatrix3 = false;
     // }
 
     // if (!__objectTransform.__colorTransform.__equals(value.__colorTransform, true)
