@@ -5,6 +5,8 @@ import type {
   Vector3 as Vector3Like,
 } from '@flighthq/types';
 
+import Matrix3 from './Matrix3.js';
+
 /**
  * An Affine2D object represents two-dimensional coordinate space.
  * It is a 2x3 matrix, with a, b, c, d for a two-dimensional transform,
@@ -15,7 +17,7 @@ import type {
  * @see Transform
  * @see Rectangle
  */
-export default class Affine2D implements Matrix3Like {
+export default class Affine2D {
   private static __identity: Float32Array = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
 
   readonly m: Float32Array = new Float32Array(Affine2D.__identity);
@@ -36,11 +38,24 @@ export default class Affine2D implements Matrix3Like {
   }
 
   /**
-   * Alias for multiply
-   * @see multiply
+   * Concatenates two affine 2D transforms:
+   *
+   *   out = a ∘ b
+   *
+   * Applies the transforms of matrix b onto (and after) matrix a.
    */
-  static concat(out: Matrix3Like, target: Matrix3Like, source: Matrix3Like): void {
-    return this.multiply(out, target, source);
+  static concat(out: Matrix3Like, a: Matrix3Like, b: Matrix3Like): void {
+    const a1 = a.m[0] * b.m[0] + a.m[1] * b.m[3];
+    out.m[1] = a.m[0] * b.m[1] + a.m[1] * b.m[4];
+    out.m[0] = a1;
+
+    const c1 = a.m[3] * b.m[0] + a.m[4] * b.m[3];
+    out.m[4] = a.m[3] * b.m[1] + a.m[4] * b.m[4];
+    out.m[3] = c1;
+
+    const tx1 = a.m[2] * b.m[0] + a.m[5] * b.m[3] + b.m[2];
+    out.m[5] = a.m[2] * b.m[1] + a.m[5] * b.m[4] + b.m[5];
+    out.m[2] = tx1;
   }
 
   /**
@@ -154,18 +169,18 @@ export default class Affine2D implements Matrix3Like {
   }
 
   static equals(
-    source: Matrix3Like | null | undefined,
-    other: Matrix3Like | null | undefined,
-    includeTranslation: boolean = true,
+    a: Matrix3Like | null | undefined,
+    b: Matrix3Like | null | undefined,
+    compareTranslation: boolean = true,
   ): boolean {
-    if (source === other) return true;
-    if (!source || !other) return false;
+    if (a === b) return true;
+    if (!a || !b) return false;
     return (
-      (!includeTranslation || (source.m[2] === other.m[2] && source.m[5] === other.m[5])) &&
-      source.m[0] === other.m[0] &&
-      source.m[1] === other.m[1] &&
-      source.m[3] === other.m[3] &&
-      source.m[4] === other.m[4]
+      (!compareTranslation || (a.m[2] === b.m[2] && a.m[5] === b.m[5])) &&
+      a.m[0] === b.m[0] &&
+      a.m[1] === b.m[1] &&
+      a.m[3] === b.m[3] &&
+      a.m[4] === b.m[4]
     );
   }
 
@@ -177,16 +192,11 @@ export default class Affine2D implements Matrix3Like {
    * following properties: `a`=1, `b`=0, `c`=0, `d`=1, `tx`=0, `ty`=0.
    **/
   static identity(out: Matrix3Like): void {
-    out.m[0] = 1;
-    out.m[1] = 0;
-    out.m[3] = 0;
-    out.m[4] = 1;
-    out.m[2] = 0;
-    out.m[5] = 0;
+    out.m.set(this.__identity);
   }
 
   identity(): Affine2D {
-    Affine2D.identity(this);
+    this.m.set(Affine2D.__identity);
     return this;
   }
 
@@ -195,24 +205,8 @@ export default class Affine2D implements Matrix3Like {
    *
    * Translation (tx, ty) is applied after the linear transformation (scale/rotation/shear) is inverted.
    */
-  static inverse(out: Matrix3Like, source: Matrix3Like): void {
-    const det = source.m[0] * source.m[4] - source.m[1] * source.m[3];
-    if (det === 0) {
-      out.m[0] = out.m[1] = out.m[3] = out.m[4] = 0;
-      out.m[2] = -source.m[2];
-      out.m[5] = -source.m[5];
-    } else {
-      const invDet = 1.0 / det;
-      const a1 = source.m[4] * invDet;
-      out.m[4] = source.m[0] * invDet;
-      out.m[0] = a1;
-      out.m[1] = -source.m[1] * invDet;
-      out.m[3] = -source.m[3] * invDet;
-
-      const tx1 = -out.m[0] * source.m[2] - out.m[3] * source.m[5];
-      out.m[5] = -out.m[1] * source.m[2] - out.m[4] * source.m[5];
-      out.m[2] = tx1;
-    }
+  static inverse(out: Affine2D, source: Matrix3Like): void {
+    Matrix3.inverse(out, source);
   }
 
   /**
@@ -258,35 +252,27 @@ export default class Affine2D implements Matrix3Like {
   }
 
   /**
-   * Multiplies a by b and writes the result to out
+   * Multiplies a by b and writes the result to out.
    *
    * out = a * b
    */
   static multiply(out: Matrix3Like, a: Matrix3Like, b: Matrix3Like): void {
-    const a1 = a.m[0] * b.m[0] + a.m[1] * b.m[3];
-    out.m[1] = a.m[0] * b.m[1] + a.m[1] * b.m[4];
-    out.m[0] = a1;
-
-    const c1 = a.m[3] * b.m[0] + a.m[4] * b.m[3];
-    out.m[4] = a.m[3] * b.m[1] + a.m[4] * b.m[4];
-    out.m[3] = c1;
-
-    const tx1 = a.m[2] * b.m[0] + a.m[5] * b.m[3] + b.m[2];
-    out.m[5] = a.m[2] * b.m[1] + a.m[5] * b.m[4] + b.m[5];
-    out.m[2] = tx1;
+    Matrix3.multiply(out, a, b);
   }
 
   /**
    * Applies a rotation transformation to the given Affine2D object
    * and writes the result to out.
+   *
+   * This is a 2x2 rotation, it will not rotate
    **/
   static rotate(out: Matrix3Like, source: Matrix3Like, theta: number): void {
     /**
       Rotate object "after" other transforms
 
-      [  a  b   0 ][  ma mb  0 ]
-      [  c  d   0 ][  mc md  0 ]
-      [  tx ty  1 ][  mtx mty 1 ]
+      [  a  b  tx ][  ma mb mtx ]
+      [  c  d  ty ][  mc md mty ]
+      [  0  0  1  ][  0  0  1   ]
 
       ma = md = cos
       mb = sin

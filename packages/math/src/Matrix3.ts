@@ -3,14 +3,9 @@ import type { Matrix3 as Matrix3Like, Vector3 as Vector3Like } from '@flighthq/t
 /**
  * A 3×3 homogeneous matrix.
  *
- * Stored in column-vector form:
- *
  * [ m00 m01 m02 ]
  * [ m10 m11 m12 ]
  * [ m20 m21 m22 ]
- *
- * For 2D affine transforms:
- * m20 = 0, m21 = 0, m22 = 1
  */
 export default class Matrix3 implements Matrix3Like {
   private static __identity: Float32Array = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
@@ -39,21 +34,10 @@ export default class Matrix3 implements Matrix3Like {
     if (m22 !== undefined) this.m[8] = m22;
   }
 
-  static clone(src: Matrix3Like): Matrix3 {
+  static clone(source: Matrix3Like): Matrix3 {
     const m = new Matrix3();
-    this.copyFrom(m, src);
+    this.copy(m, source);
     return m;
-  }
-
-  /**
-   * Multiplies target by source, applying the result to target
-   *
-   * target *= source
-   *
-   * @see multiply
-   */
-  static concat(target: Matrix3Like, source: Matrix3Like): void {
-    this.multiply(target, target, source);
   }
 
   static copyColumnFrom(out: Matrix3Like, column: number, source: Vector3Like): void {
@@ -92,8 +76,13 @@ export default class Matrix3 implements Matrix3Like {
     }
   }
 
-  static copyFrom(out: Matrix3Like, src: Matrix3Like): void {
-    out.m.set(src.m);
+  static copy(out: Matrix3Like, source: Matrix3Like): void {
+    out.m.set(source.m);
+  }
+
+  copyFrom(source: Matrix3Like): Matrix3 {
+    this.m.set(source.m);
+    return this;
   }
 
   static copyRowFrom(out: Matrix3Like, row: number, source: Vector3Like): void {
@@ -132,7 +121,7 @@ export default class Matrix3 implements Matrix3Like {
     }
   }
 
-  static equals(a?: Matrix3Like | null, b?: Matrix3Like | null): boolean {
+  static equals(a: Matrix3Like | null | undefined, b: Matrix3Like | null | undefined): boolean {
     if (a === b) return true;
     if (!a || !b) return false;
     for (let i = 0; i < 9; i++) {
@@ -142,99 +131,229 @@ export default class Matrix3 implements Matrix3Like {
   }
 
   static identity(out: Matrix3Like): void {
-    out.m.set(Matrix3.__identity);
+    out.m.set(this.__identity);
   }
 
-  static inverse(out: Matrix3Like, m: Matrix3Like): void {
+  identity(): Matrix3 {
+    this.m.set(Matrix3.__identity);
+    return this;
+  }
+
+  static inverse(out: Matrix3Like, source: Matrix3Like): void {
+    const _in = source.m;
+    const _out = out.m;
+
+    if (this.isAffine(source)) {
+      // Affine fast path
+      const det = _in[0] * _in[4] - _in[1] * _in[3];
+
+      if (det === 0) {
+        _out[0] = _out[1] = _out[3] = _out[4] = 0;
+        _out[2] = -_in[2];
+        _out[5] = -_in[5];
+        _out[6] = _out[7] = 0;
+        _out[8] = 1;
+        return;
+      }
+
+      const invDet = 1 / det;
+
+      _out[0] = _in[4] * invDet;
+      _out[1] = -_in[1] * invDet;
+      _out[3] = -_in[3] * invDet;
+      _out[4] = _in[0] * invDet;
+
+      _out[2] = -(_out[0] * _in[2] + _out[3] * _in[5]);
+      _out[5] = -(_out[1] * _in[2] + _out[4] * _in[5]);
+
+      _out[6] = 0;
+      _out[7] = 0;
+      _out[8] = 1;
+      return;
+    }
+
     const det =
-      m.m[0] * m.m[4] * m.m[8] +
-      m.m[1] * m.m[5] * m.m[6] +
-      m.m[2] * m.m[3] * m.m[7] -
-      m.m[2] * m.m[4] * m.m[6] -
-      m.m[1] * m.m[3] * m.m[8] -
-      m.m[0] * m.m[5] * m.m[7];
+      _in[0] * _in[4] * _in[8] +
+      _in[1] * _in[5] * _in[6] +
+      _in[2] * _in[3] * _in[7] -
+      _in[2] * _in[4] * _in[6] -
+      _in[1] * _in[3] * _in[8] -
+      _in[0] * _in[5] * _in[7];
 
     if (det === 0) {
-      this.identity(out);
-      return;
+      throw new Error('Matrix is not invertable');
     }
 
     const inv = 1 / det;
 
-    out.m[0] = (m.m[4] * m.m[8] - m.m[5] * m.m[7]) * inv;
-    out.m[1] = (m.m[2] * m.m[7] - m.m[1] * m.m[8]) * inv;
-    out.m[2] = (m.m[1] * m.m[5] - m.m[2] * m.m[4]) * inv;
+    _out[0] = (_in[4] * _in[8] - _in[5] * _in[7]) * inv;
+    _out[1] = (_in[2] * _in[7] - _in[1] * _in[8]) * inv;
+    _out[2] = (_in[1] * _in[5] - _in[2] * _in[4]) * inv;
 
-    out.m[3] = (m.m[5] * m.m[6] - m.m[3] * m.m[8]) * inv;
-    out.m[4] = (m.m[0] * m.m[8] - m.m[2] * m.m[6]) * inv;
-    out.m[5] = (m.m[2] * m.m[3] - m.m[0] * m.m[5]) * inv;
+    _out[3] = (_in[5] * _in[6] - _in[3] * _in[8]) * inv;
+    _out[4] = (_in[0] * _in[8] - _in[2] * _in[6]) * inv;
+    _out[5] = (_in[2] * _in[3] - _in[0] * _in[5]) * inv;
 
-    out.m[6] = (m.m[3] * m.m[7] - m.m[4] * m.m[6]) * inv;
-    out.m[7] = (m.m[1] * m.m[6] - m.m[0] * m.m[7]) * inv;
-    out.m[8] = (m.m[0] * m.m[4] - m.m[1] * m.m[3]) * inv;
+    _out[6] = (_in[3] * _in[7] - _in[4] * _in[6]) * inv;
+    _out[7] = (_in[1] * _in[6] - _in[0] * _in[7]) * inv;
+    _out[8] = (_in[0] * _in[4] - _in[1] * _in[3]) * inv;
+  }
+
+  inverse(): Matrix3 {
+    Matrix3.inverse(this, this);
+    return this;
+  }
+
+  static isAffine(source: Matrix3Like): boolean {
+    return source.m[6] === 0 && source.m[7] === 0 && source.m[8] === 1;
   }
 
   /**
    * out = a * b
    */
   static multiply(out: Matrix3Like, a: Matrix3Like, b: Matrix3Like): void {
+    const _a = a.m;
+    const _b = b.m;
+    const _out = out.m;
+
+    if (this.isAffine(a) && this.isAffine(b)) {
+      _out[0] = _a[0] * _b[0] + _a[1] * _b[3];
+      _out[1] = _a[0] * _b[1] + _a[1] * _b[4];
+      _out[2] = _a[0] * _b[2] + _a[1] * _b[5] + _a[2];
+
+      _out[3] = _a[3] * _b[0] + _a[4] * _b[3];
+      _out[4] = _a[3] * _b[1] + _a[4] * _b[4];
+      _out[5] = _a[3] * _b[2] + _a[4] * _b[5] + _a[5];
+
+      _out[6] = 0;
+      _out[7] = 0;
+      _out[8] = 1;
+      return;
+    }
+
     // First row of a * columns of b
-    const m00 = a.m[0] * b.m[0] + a.m[1] * b.m[3] + a.m[2] * b.m[6];
-    const m01 = a.m[0] * b.m[1] + a.m[1] * b.m[4] + a.m[2] * b.m[7];
-    const m02 = a.m[0] * b.m[2] + a.m[1] * b.m[5] + a.m[2] * b.m[8];
+    const m00 = _a[0] * _b[0] + _a[1] * _b[3] + _a[2] * _b[6];
+    const m01 = _a[0] * _b[1] + _a[1] * _b[4] + _a[2] * _b[7];
+    const m02 = _a[0] * _b[2] + _a[1] * _b[5] + _a[2] * _b[8];
 
     // Second row of a * columns of b
-    const m10 = a.m[3] * b.m[0] + a.m[4] * b.m[3] + a.m[5] * b.m[6];
-    const m11 = a.m[3] * b.m[1] + a.m[4] * b.m[4] + a.m[5] * b.m[7];
-    const m12 = a.m[3] * b.m[2] + a.m[4] * b.m[5] + a.m[5] * b.m[8];
+    const m10 = _a[3] * _b[0] + _a[4] * _b[3] + _a[5] * _b[6];
+    const m11 = _a[3] * _b[1] + _a[4] * _b[4] + _a[5] * _b[7];
+    const m12 = _a[3] * _b[2] + _a[4] * _b[5] + _a[5] * _b[8];
 
     // Third row of a * columns of b
-    const m20 = a.m[6] * b.m[0] + a.m[7] * b.m[3] + a.m[8] * b.m[6];
-    const m21 = a.m[6] * b.m[1] + a.m[7] * b.m[4] + a.m[8] * b.m[7];
-    const m22 = a.m[6] * b.m[2] + a.m[7] * b.m[5] + a.m[8] * b.m[8];
+    const m20 = _a[6] * _b[0] + _a[7] * _b[3] + _a[8] * _b[6];
+    const m21 = _a[6] * _b[1] + _a[7] * _b[4] + _a[8] * _b[7];
+    const m22 = _a[6] * _b[2] + _a[7] * _b[5] + _a[8] * _b[8];
 
     // Assign the result to the output matrix
-    out.m[0] = m00;
-    out.m[1] = m01;
-    out.m[2] = m02;
-    out.m[3] = m10;
-    out.m[4] = m11;
-    out.m[5] = m12;
-    out.m[6] = m20;
-    out.m[7] = m21;
-    out.m[8] = m22;
+    _out[0] = m00;
+    _out[1] = m01;
+    _out[2] = m02;
+    _out[3] = m10;
+    _out[4] = m11;
+    _out[5] = m12;
+    _out[6] = m20;
+    _out[7] = m21;
+    _out[8] = m22;
   }
 
-  static rotate(out: Matrix3Like, theta: number): void {
+  multiply(source: Matrix3Like): Matrix3 {
+    Matrix3.multiply(this, this, source);
+    return this;
+  }
+
+  static rotate(out: Matrix3Like, source: Matrix3Like, theta: number): void {
     const c = Math.cos(theta);
     const s = Math.sin(theta);
 
-    // Apply the rotation matrix to the current matrix values
-    const m = out.m;
+    const a = source.m;
+    const o = out.m;
 
-    // Save the current values of the matrix
-    const a = m[0],
-      b = m[1],
-      c0 = m[3],
-      d = m[4];
+    o[0] = a[0] * c + a[1] * s;
+    o[1] = a[0] * -s + a[1] * c;
+    o[2] = a[2];
 
-    // Perform the rotation: Apply the 90-degree rotation to the current matrix values
-    m[0] = c * a - s * c0; // a'
-    m[1] = c * b - s * d; // b'
-    m[3] = s * a + c * c0; // c'
-    m[4] = s * b + c * d; // d'
+    o[3] = a[3] * c + a[4] * s;
+    o[4] = a[3] * -s + a[4] * c;
+    o[5] = a[5];
+
+    o[6] = a[6] * c + a[7] * s;
+    o[7] = a[6] * -s + a[7] * c;
+    o[8] = a[8];
   }
 
-  static scale(out: Matrix3Like, sx: number, sy: number): void {
-    this.identity(out);
-    out.m[0] = sx;
-    out.m[4] = sy;
+  rotate(theta: number): Matrix3 {
+    Matrix3.rotate(this, this, theta);
+    return this;
   }
 
-  static translation(out: Matrix3Like, tx: number, ty: number): void {
-    this.identity(out);
-    out.m[2] = tx;
-    out.m[5] = ty;
+  static scale(out: Matrix3Like, source: Matrix3Like, sx: number, sy: number): void {
+    const a = source.m;
+    const o = out.m;
+
+    o[0] = a[0] * sx;
+    o[1] = a[1] * sy;
+    o[2] = a[2];
+
+    o[3] = a[3] * sx;
+    o[4] = a[4] * sy;
+    o[5] = a[5];
+
+    o[6] = a[6] * sx;
+    o[7] = a[7] * sy;
+    o[8] = a[8];
+  }
+
+  scale(sx: number, sy: number): Matrix3 {
+    Matrix3.scale(this, this, sx, sy);
+    return this;
+  }
+
+  static set(
+    out: Matrix3Like,
+    m00: number,
+    m01: number,
+    m02: number,
+    m10: number,
+    m11: number,
+    m12: number,
+    m20: number,
+    m21: number,
+    m22: number,
+  ): void {
+    const _out = out.m;
+    _out[0] = m00;
+    _out[1] = m01;
+    _out[2] = m02;
+    _out[3] = m10;
+    _out[4] = m11;
+    _out[5] = m12;
+    _out[6] = m20;
+    _out[7] = m21;
+    _out[8] = m22;
+  }
+
+  static translate(out: Matrix3Like, source: Matrix3Like, tx: number, ty: number): void {
+    const a = source.m;
+    const o = out.m;
+
+    o[0] = a[0];
+    o[1] = a[1];
+    o[2] = a[0] * tx + a[1] * ty + a[2];
+
+    o[3] = a[3];
+    o[4] = a[4];
+    o[5] = a[3] * tx + a[4] * ty + a[5];
+
+    o[6] = a[6];
+    o[7] = a[7];
+    o[8] = a[6] * tx + a[7] * ty + a[8];
+  }
+
+  translate(tx: number, ty: number): Matrix3 {
+    Matrix3.translate(this, this, tx, ty);
+    return this;
   }
 
   // Get & Set Methods

@@ -128,7 +128,8 @@ export default class Vector4 implements Vector4Like {
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
   }
 
-  static equals(a: Vector4Like, b: Vector4Like): boolean {
+  static equals(a: Vector4Like | null | undefined, b: Vector4Like | null | undefined): boolean {
+    if (!a || !b) return false;
     return a.x === b.x && a.y === b.y && a.z === b.z && a.w === b.w;
   }
 

@@ -142,7 +142,8 @@ export default class Vector3 implements Vector3Like {
     return a.x * b.x + a.y * b.y + a.z * b.z;
   }
 
-  static equals(a: Vector3Like, b: Vector3Like): boolean {
+  static equals(a: Vector3Like | null | undefined, b: Vector3Like | null | undefined): boolean {
+    if (!a || !b) return false;
     return a.x === b.x && a.y === b.y && a.z === b.z;
   }
 

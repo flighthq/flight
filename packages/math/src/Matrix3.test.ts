@@ -150,11 +150,11 @@ describe('Matrix3', () => {
     });
   });
 
-  describe('concat', () => {
-    it('should concatenate two matrices', () => {
-      const m1 = new Matrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
-      const m2 = new Matrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
-      Matrix3.concat(m1, m2);
+  describe('copy', () => {
+    it('should copy matrix values from another matrix', () => {
+      const m1 = new Matrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
+      const m2 = new Matrix3();
+      Matrix3.copy(m2, m1);
       expect(m2.m00).toBe(2);
       expect(m2.m01).toBe(3);
       expect(m2.m02).toBe(4);
@@ -165,140 +165,14 @@ describe('Matrix3', () => {
       expect(m2.m21).toBe(9);
       expect(m2.m22).toBe(10);
     });
-
-    it('should handle concatenation of identity matrices', () => {
-      const m1 = new Matrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
-      const m2 = new Matrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
-      Matrix3.concat(m1, m2);
-
-      // Using the m[] array access or the m00, m01, etc. properties
-      expect(m1.m00).toBe(1);
-      expect(m1.m01).toBe(0);
-      expect(m1.m02).toBe(0);
-      expect(m1.m10).toBe(0);
-      expect(m1.m11).toBe(1);
-      expect(m1.m12).toBe(0);
-      expect(m1.m20).toBe(0);
-      expect(m1.m21).toBe(0);
-      expect(m1.m22).toBe(1);
-    });
-
-    it('should handle negative scale factors', () => {
-      const m1 = new Matrix3(2, 0, 0, 0, 2, 0, 0, 0, 1);
-      const m2 = new Matrix3(-1, 0, 0, 0, -1, 0, 0, 0, 1);
-      Matrix3.concat(m1, m2);
-      expect(m1.a).toBe(-2);
-      expect(m1.b).toBe(0);
-      expect(m1.c).toBe(0);
-      expect(m1.d).toBe(-2);
-      expect(m1.tx).toBe(0);
-      expect(m1.ty).toBe(0);
-    });
-
-    it('should handle translation after scaling', () => {
-      const m1 = new Matrix3(1, 0, 3, 0, 1, 4, 0, 0, 1); // Translate
-      const m2 = new Matrix3(2, 0, 0, 0, 2, 0, 0, 0, 1); // Scale
-      Matrix3.concat(m1, m2);
-      expect(m1.a).toBe(2);
-      expect(m1.b).toBe(0);
-      expect(m1.c).toBe(0);
-      expect(m1.d).toBe(2);
-      expect(m1.tx).toBe(3);
-      expect(m1.ty).toBe(4);
-    });
-
-    it('should handle rotation transformation', () => {
-      const m1 = new Matrix3(1, 0, 0, 0, 1, 0, 0, 0, 1); // Identity matrix
-      const angle = Math.PI / 4; // 45 degrees rotation
-      const m2 = new Matrix3(Math.cos(angle), Math.sin(angle), 0, -Math.sin(angle), Math.cos(angle), 0, 0, 0, 1); // Rotation matrix
-
-      Matrix3.concat(m1, m2);
-
-      // Check if the rotation matrix was applied correctly
-      expect(m1.a).toBeCloseTo(Math.cos(angle), 5); // cos(45°)
-      expect(m1.b).toBeCloseTo(Math.sin(angle), 5); // sin(45°)
-      expect(m1.c).toBeCloseTo(-Math.sin(angle), 5); // -sin(45°)
-      expect(m1.d).toBeCloseTo(Math.cos(angle), 5); // cos(45°)
-      expect(m1.tx).toBe(0); // No translation
-      expect(m1.ty).toBe(0); // No translation
-    });
-
-    it('should handle concatenation with non-zero translations', () => {
-      const m1 = new Matrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
-      const m2 = new Matrix3(1, 0, 5, 0, 1, 5, 0, 0, 1);
-      Matrix3.concat(m1, m2);
-      expect(m1.a).toBe(1);
-      expect(m1.b).toBe(0);
-      expect(m1.c).toBe(0);
-      expect(m1.d).toBe(1);
-      expect(m1.tx).toBe(5);
-      expect(m1.ty).toBe(5);
-    });
-
-    it('should handle non-uniform scaling', () => {
-      const m1 = new Matrix3(1, 0, 0, 0, 2, 0, 0, 0, 1); // Scaling by 2 along Y-axis
-      const m2 = new Matrix3(2, 0, 0, 0, 1, 0, 0, 0, 1); // Scaling by 2 along X-axis
-      Matrix3.concat(m1, m2);
-      expect(m1.a).toBe(2);
-      expect(m1.b).toBe(0);
-      expect(m1.c).toBe(0);
-      expect(m1.d).toBe(2);
-      expect(m1.tx).toBe(0);
-      expect(m1.ty).toBe(0);
-    });
-
-    it('should handle non-zero initial tx and ty values', () => {
-      const m1 = new Matrix3(1, 0, 1, 0, 1, 1, 0, 0, 1); // Translation by (1, 1)
-      const m2 = new Matrix3(1, 0, 2, 0, 1, 3, 0, 0, 1); // Translation by (2, 3)
-      Matrix3.concat(m1, m2);
-      expect(m1.tx).toBe(3); // 1 + 2
-      expect(m1.ty).toBe(4); // 1 + 3
-    });
-
-    it('should handle inverse matrix multiplication', () => {
-      const m1 = new Matrix3(2, 0, 3, 0, 2, 4, 0, 0, 1); // Scale by 2 and translate by (3, 4)
-      const m2 = new Matrix3(0.5, 0, -3, 0, 0.5, -4, 0, 0, 1); // Inverse of m1
-      Matrix3.concat(m1, m2); // Concatenate m1 with its inverse
-
-      // The result should be the identity matrix with translation adjustments
-      expect(m1.a).toBe(1); // The scaling should be undone, so a = 1
-      expect(m1.b).toBe(0); // No shear, so b = 0
-      expect(m1.c).toBe(0); // No shear, so c = 0
-      expect(m1.d).toBe(1); // The scaling should be undone, so d = 1
-      expect(m1.tx).toBeCloseTo(-3, 5); // The translation is undone, resulting in tx = -3
-      expect(m1.ty).toBeCloseTo(-4, 5); // The translation is undone, resulting in ty = -2
-    });
-
-    it('should handle concatenation with a matrix that has negative values', () => {
-      const m1 = new Matrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
-      const m2 = new Matrix3(-1, 0, -2, 0, -1, -3, 0, 0, 1); // Negative scale and translation
-      Matrix3.concat(m1, m2);
-      expect(m1.a).toBe(-1);
-      expect(m1.b).toBe(0);
-      expect(m1.c).toBe(0);
-      expect(m1.d).toBe(-1);
-      expect(m1.tx).toBe(-2);
-      expect(m1.ty).toBe(-3);
-    });
-
-    it('should allow matrix-like objects', () => {
-      const m1 = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
-      const m2 = { m: new Float32Array([-1, 0, -2, 0, -1, -3, 0, 0, 1]) };
-      Matrix3.concat(m1, m2);
-      expect(m1.m[0]).toBe(-1);
-      expect(m1.m[1]).toBe(0);
-      expect(m1.m[3]).toBe(0);
-      expect(m1.m[4]).toBe(-1);
-      expect(m1.m[2]).toBe(-2);
-      expect(m1.m[5]).toBe(-3);
-    });
   });
 
   describe('copyFrom', () => {
     it('should copy matrix values from another matrix', () => {
       const m1 = new Matrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
       const m2 = new Matrix3();
-      Matrix3.copyFrom(m2, m1);
+      const ret = m2.copyFrom(m1);
+      expect(ret).toStrictEqual(m2);
       expect(m2.m00).toBe(2);
       expect(m2.m01).toBe(3);
       expect(m2.m02).toBe(4);
@@ -595,40 +469,87 @@ describe('Matrix3', () => {
   describe('rotate', () => {
     it('should rotate the matrix correctly', () => {
       const m = new Matrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
-      Matrix3.rotate(m, Math.PI / 2); // 90 degrees
-      expect(m.a).toBeCloseTo(0);
-      expect(m.b).toBeCloseTo(-1);
-      expect(m.c).toBeCloseTo(1);
-      expect(m.d).toBeCloseTo(0);
+      const out = new Matrix3();
+      Matrix3.rotate(out, m, Math.PI / 2); // 90 degrees
+      expect(out.a).toBeCloseTo(0);
+      expect(out.b).toBeCloseTo(-1);
+      expect(out.c).toBeCloseTo(1);
+      expect(out.d).toBeCloseTo(0);
     });
 
     it('should allow a matrix-like object', () => {
       const m = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
+      const out = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
 
       // Apply 90 degrees rotation (π/2 radians)
-      Matrix3.rotate(m, Math.PI / 2);
+      Matrix3.rotate(out, m, Math.PI / 2);
 
       // Check that the resulting matrix corresponds to a 90-degree rotation matrix
-      expect(m.m[0]).toBeCloseTo(0); // a = cos(π/2) = 0
-      expect(m.m[1]).toBeCloseTo(-1); // b = -sin(π/2) = -1
-      expect(m.m[3]).toBeCloseTo(1); // c = sin(π/2) = 1
-      expect(m.m[4]).toBeCloseTo(0); // d = cos(π/2) = 0
+      expect(out.m[0]).toBeCloseTo(0); // a = cos(π/2) = 0
+      expect(out.m[1]).toBeCloseTo(-1); // b = -sin(π/2) = -1
+      expect(out.m[3]).toBeCloseTo(1); // c = sin(π/2) = 1
+      expect(out.m[4]).toBeCloseTo(0); // d = cos(π/2) = 0
+    });
+
+    it('is also an instance method', () => {
+      const a = new Matrix3(2, 0, 0, 0, 2, 0, 0, 0, 1);
+      const b = new Matrix3(1, 0, 5, 0, 1, 5, 0, 0, 1);
+      const ret = a.multiply(b);
+      expect(ret).toStrictEqual(a);
+      expect(a.tx).toBe(10);
+      expect(a.ty).toBe(10);
     });
   });
 
   describe('scale', () => {
     it('should scale the matrix correctly', () => {
       const m = new Matrix3();
-      Matrix3.scale(m, 2, 3);
+      const out = new Matrix3();
+      Matrix3.scale(out, m, 2, 3);
+      expect(out.a).toBe(2);
+      expect(out.d).toBe(3);
+    });
+
+    it('is also an instance method', () => {
+      const m = new Matrix3();
+      const ret = m.scale(2, 3);
+      expect(ret).toStrictEqual(m);
       expect(m.a).toBe(2);
       expect(m.d).toBe(3);
     });
 
     it('should allow a matrix-like object', () => {
-      const m = { m: new Float32Array([2, 3, 4, 5, 6, 7, 8, 9, 10]) };
-      Matrix3.scale(m, 2, 3);
-      expect(m.m[0]).toBe(2); // a
-      expect(m.m[4]).toBe(3); // d
+      const m = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
+      const out = new Matrix3();
+      Matrix3.scale(out, m, 2, 3);
+      expect(out.m[0]).toBe(2); // a
+      expect(out.m[4]).toBe(3); // d
+    });
+  });
+
+  describe('translate', () => {
+    it('should translate the matrix correctly', () => {
+      const m = new Matrix3();
+      const out = new Matrix3();
+      Matrix3.translate(out, m, 2, 3);
+      expect(out.tx).toBe(2);
+      expect(out.ty).toBe(3);
+    });
+
+    it('is also an instance method', () => {
+      const m = new Matrix3();
+      const ret = m.translate(2, 3);
+      expect(ret).toStrictEqual(m);
+      expect(m.tx).toBe(2);
+      expect(m.ty).toBe(3);
+    });
+
+    it('should allow a matrix-like object', () => {
+      const m = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
+      const out = new Matrix3();
+      Matrix3.translate(out, m, 2, 3);
+      expect(out.m[2]).toBe(2); // tx
+      expect(out.m[5]).toBe(3); // ty
     });
   });
 });

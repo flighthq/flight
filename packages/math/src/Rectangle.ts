@@ -99,14 +99,10 @@ export default class Rectangle implements RectangleLike {
     return this;
   }
 
-  static equals(source: RectangleLike, other: RectangleLike): boolean {
-    if (other === source) {
-      return true;
-    } else {
-      return (
-        source.x === other.x && source.y === other.y && source.width === other.width && source.height === other.height
-      );
-    }
+  static equals(a: RectangleLike | null | undefined, b: RectangleLike | null | undefined): boolean {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
   }
 
   static inflate(out: RectangleLike, source: RectangleLike, dx: number, dy: number): void {

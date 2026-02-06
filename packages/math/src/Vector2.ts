@@ -60,7 +60,8 @@ export default class Vector2 implements Vector2Like {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
-  static equals(a: Vector2Like, b: Vector2Like): boolean {
+  static equals(a: Vector2Like | null | undefined, b: Vector2Like | null | undefined): boolean {
+    if (!a || !b) return false;
     return a === b || (a.x === b.x && a.y === b.y);
   }
 
