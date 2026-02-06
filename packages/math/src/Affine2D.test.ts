@@ -210,11 +210,11 @@ describe('Affine2D', () => {
     });
   });
 
-  describe('copyFrom', () => {
+  describe('copy', () => {
     it('should copy matrix values from another matrix', () => {
       const m1 = new Affine2D(2, 3, 4, 5, 6, 7);
       const m2 = new Affine2D();
-      Affine2D.copyFrom(m2, m1);
+      Affine2D.copy(m2, m1);
       expect(m2.a).toBe(2);
       expect(m2.b).toBe(3);
       expect(m2.c).toBe(4);
@@ -288,6 +288,21 @@ describe('Affine2D', () => {
       const m = new Affine2D();
       const v = new Vector3();
       expect(() => Affine2D.copyColumnTo(v, 3, m)).toThrow();
+    });
+  });
+
+  describe('copyFrom', () => {
+    it('should copy matrix values from another matrix', () => {
+      const m1 = new Affine2D(2, 3, 4, 5, 6, 7);
+      const m2 = new Affine2D();
+      const ret = m2.copyFrom(m1);
+      expect(ret).toStrictEqual(m2);
+      expect(m2.a).toBe(2);
+      expect(m2.b).toBe(3);
+      expect(m2.c).toBe(4);
+      expect(m2.d).toBe(5);
+      expect(m2.tx).toBe(6);
+      expect(m2.ty).toBe(7);
     });
   });
 
