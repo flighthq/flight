@@ -1,4 +1,4 @@
-import type { Vector2 as Vector2Like, Vector3 as Vector3Like, Vector4 as Vector4Like } from '@flighthq/types';
+import type { Vector3 as Vector3Like, Vector4 as Vector4Like } from '@flighthq/types';
 
 /**
  * The Vector4 class represents a vector or point in four-dimensional space using the
