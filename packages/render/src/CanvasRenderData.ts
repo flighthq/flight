@@ -6,12 +6,12 @@ export default class CanvasRenderData {
   readonly source: Renderable;
 
   cacheAsBitmap: boolean = false;
-  localAppearanceID: number = 0;
-  localBoundsID: number = 0;
+  localAppearanceID: number = -1;
+  localBoundsID: number = -1;
   mask: CanvasRenderData | null = null;
-  renderAlpha: number = 0;
+  renderAlpha: number = -1;
   renderTransform: Matrix3;
-  worldTransformID: number = 0;
+  worldTransformID: number = -1;
 
   constructor(source: Renderable) {
     this.source = source;
