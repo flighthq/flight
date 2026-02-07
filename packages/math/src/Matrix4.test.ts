@@ -5,7 +5,7 @@ describe('Matrix4', () => {
   const Y_AXIS = { x: 0, y: 1, z: 0, w: 0 };
   const Z_AXIS = { x: 0, y: 0, z: 1, w: 0 };
 
-  const ORIGIN = { x: 0, y: 0, z: 0 };
+  // const ORIGIN = { x: 0, y: 0, z: 0 };
 
   // Constructor
 
