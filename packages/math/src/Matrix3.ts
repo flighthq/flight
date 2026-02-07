@@ -6,6 +6,8 @@ import type { Matrix3 as Matrix3Like, Vector3 as Vector3Like } from '@flighthq/t
  * [ m00 m01 m02 ]
  * [ m10 m11 m12 ]
  * [ m20 m21 m22 ]
+ *
+ * Storage is row-major.
  */
 export default class Matrix3 implements Matrix3Like {
   private static __identity: Float32Array = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
@@ -38,6 +40,10 @@ export default class Matrix3 implements Matrix3Like {
     const m = new Matrix3();
     this.copy(m, source);
     return m;
+  }
+
+  static copy(out: Matrix3Like, source: Matrix3Like): void {
+    out.m.set(source.m);
   }
 
   static copyColumnFrom(out: Matrix3Like, column: number, source: Vector3Like): void {
@@ -74,10 +80,6 @@ export default class Matrix3 implements Matrix3Like {
       out.y = source.m[5];
       out.z = source.m[8];
     }
-  }
-
-  static copy(out: Matrix3Like, source: Matrix3Like): void {
-    out.m.set(source.m);
   }
 
   copyFrom(source: Matrix3Like): Matrix3 {
@@ -139,6 +141,9 @@ export default class Matrix3 implements Matrix3Like {
     return this;
   }
 
+  /**
+   * Attempts to invert a matrix, so long as it is invertable
+   */
   static inverse(out: Matrix3Like, source: Matrix3Like): void {
     const _in = source.m;
     const _out = out.m;
