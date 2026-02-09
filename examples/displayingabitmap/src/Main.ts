@@ -1,6 +1,6 @@
 import { RenderableSymbols as R } from '@flighthq/contracts';
 import type { Rectangle } from '@flighthq/math';
-import { Sprite } from '@flighthq/scene';
+import { Sprite } from '@flighthq/stage';
 
 export default class Main extends Sprite {
   sprite = new Sprite();

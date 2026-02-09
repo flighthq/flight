@@ -1,12 +1,11 @@
 import type { Renderable } from '@flighthq/contracts';
 import { RenderableSymbols as R } from '@flighthq/contracts';
 import { Affine2D, Matrix3, Matrix3Pool, Rectangle, RectanglePool, Vector2 } from '@flighthq/math';
-import type { Shader } from '@flighthq/types';
+import type { BitmapFilter, Shader } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { DirtyFlags } from './DirtyFlags.js';
 import type DisplayObjectContainer from './DisplayObjectContainer.js';
-import BitmapFilter from './filters/BitmapFilter.js';
 import { internal as $ } from './internal/DisplayObject.js';
 import type LoaderInfo from './LoaderInfo.js';
 import type Stage from './Stage.js';
@@ -355,7 +354,7 @@ export default class DisplayObject implements Renderable {
 
     if (value !== null) {
       this[R.filters] = value.map((filter) => {
-        return BitmapFilter.clone(filter);
+        return filter.clone();
       });
     } else {
       this[R.filters] = null;
