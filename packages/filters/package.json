@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/scene",
+  "name": "@flighthq/filters",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -21,8 +21,6 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@flighthq/contracts": "^1.0.0",
-    "@flighthq/math": "^1.0.0",
     "@flighthq/types": "^1.0.0"
   },
   "devDependencies": {

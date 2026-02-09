@@ -6,7 +6,15 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      projects: ['packages/contracts', 'packages/math', 'packages/render', 'packages/scene', 'packages/types'],
+      projects: [
+        'packages/contracts',
+        'packages/filters',
+        'packages/math',
+        'packages/render',
+        'packages/scene',
+        'packages/stage',
+        'packages/types',
+      ],
     },
   }),
 );
