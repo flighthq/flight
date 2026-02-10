@@ -7,7 +7,7 @@
   "references": [
     { "path": "../../packages/math" },
     { "path": "../../packages/render" },
-    { "path": "../../packages/scene" }
+    { "path": "../../packages/stage" }
   ],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
