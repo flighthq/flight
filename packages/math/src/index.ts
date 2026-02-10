@@ -1,4 +1,5 @@
 export { default as Affine2D } from './Affine2D.js';
+export { default as Affine2DPool } from './Affine2DPool.js';
 export { default as Matrix3 } from './Matrix3.js';
 export { default as Matrix3Pool } from './Matrix3Pool.js';
 export { default as Matrix4 } from './Matrix4.js';

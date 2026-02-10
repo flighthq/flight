@@ -418,125 +418,121 @@ describe('Affine2D', () => {
   });
 
   describe('fromMatrix3', () => {
-    describe('Affine2D', () => {
-      let matrix3: Matrix3Like;
-      let affine2D: Affine2D;
+    let matrix3: Matrix3Like;
+    let affine2D: Affine2D;
 
-      beforeEach(() => {
-        // Setup a basic Matrix3 instance for testing
-        matrix3 = {
-          m: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]), // 3x3 matrix (row-major)
-        };
-        affine2D = new Affine2D(); // Create a new Affine2D instance
-      });
+    beforeEach(() => {
+      // Setup a basic Matrix3 instance for testing
+      matrix3 = {
+        m: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]), // 3x3 matrix (row-major)
+      };
+      affine2D = new Affine2D(); // Create a new Affine2D instance
+    });
 
-      it('should correctly copy the first 6 values of Matrix3 into Affine2D', () => {
-        Affine2D.fromMatrix3(affine2D, matrix3);
+    it('should correctly copy the first 6 values of Matrix3 into Affine2D', () => {
+      Affine2D.fromMatrix3(affine2D, matrix3);
 
-        expect(affine2D.m).toEqual(new Float32Array([1, 2, 3, 4, 5, 6]));
-      });
+      expect(affine2D.m).toEqual(new Float32Array([1, 2, 3, 4, 5, 6]));
+    });
 
-      it('should not affect the original Matrix3 after calling fromMatrix3', () => {
-        const originalMatrix3 = new Float32Array(matrix3.m); // Clone the original Matrix3
+    it('should not affect the original Matrix3 after calling fromMatrix3', () => {
+      const originalMatrix3 = new Float32Array(matrix3.m); // Clone the original Matrix3
 
-        Affine2D.fromMatrix3(affine2D, matrix3);
+      Affine2D.fromMatrix3(affine2D, matrix3);
 
-        // Assert that the original Matrix3 is untouched
-        expect(matrix3.m).toEqual(originalMatrix3);
-      });
+      // Assert that the original Matrix3 is untouched
+      expect(matrix3.m).toEqual(originalMatrix3);
+    });
 
-      it('should handle matrices with more than 6 values (extra values should be ignored)', () => {
-        const extendedMatrix3: Matrix3Like = {
-          m: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]), // Extra values beyond 9
-        };
+    it('should handle matrices with more than 6 values (extra values should be ignored)', () => {
+      const extendedMatrix3: Matrix3Like = {
+        m: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]), // Extra values beyond 9
+      };
 
-        Affine2D.fromMatrix3(affine2D, extendedMatrix3);
+      Affine2D.fromMatrix3(affine2D, extendedMatrix3);
 
-        // Only the first 6 values should be copied
-        expect(affine2D.m).toEqual(new Float32Array([1, 2, 3, 4, 5, 6]));
-      });
+      // Only the first 6 values should be copied
+      expect(affine2D.m).toEqual(new Float32Array([1, 2, 3, 4, 5, 6]));
+    });
 
-      it('should work with matrices where all values are zeros', () => {
-        const zeroMatrix3: Matrix3Like = {
-          m: new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0]), // A matrix full of zeros
-        };
+    it('should work with matrices where all values are zeros', () => {
+      const zeroMatrix3: Matrix3Like = {
+        m: new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0]), // A matrix full of zeros
+      };
 
-        Affine2D.fromMatrix3(affine2D, zeroMatrix3);
+      Affine2D.fromMatrix3(affine2D, zeroMatrix3);
 
-        expect(affine2D.m).toEqual(new Float32Array([0, 0, 0, 0, 0, 0]));
-      });
+      expect(affine2D.m).toEqual(new Float32Array([0, 0, 0, 0, 0, 0]));
+    });
 
-      it('should handle matrices where the translation is zero', () => {
-        const translationZeroMatrix: Matrix3Like = {
-          m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]), // Identity matrix (no translation)
-        };
+    it('should handle matrices where the translation is zero', () => {
+      const translationZeroMatrix: Matrix3Like = {
+        m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]), // Identity matrix (no translation)
+      };
 
-        Affine2D.fromMatrix3(affine2D, translationZeroMatrix);
+      Affine2D.fromMatrix3(affine2D, translationZeroMatrix);
 
-        expect(affine2D.m).toEqual(new Float32Array([1, 0, 0, 0, 1, 0]));
-      });
+      expect(affine2D.m).toEqual(new Float32Array([1, 0, 0, 0, 1, 0]));
     });
   });
 
   describe('fromMatrix4', () => {
-    describe('Affine2D fromMatrix4', () => {
-      let matrix4: Matrix4Like;
-      let affine2D: Affine2D;
+    let matrix4: Matrix4Like;
+    let affine2D: Affine2D;
 
-      beforeEach(() => {
-        // Setup a basic Matrix4 instance for testing (column-major)
-        matrix4 = {
-          m: new Float32Array([1, 4, 0, 0, 2, 5, 0, 0, 0, 0, 1, 0, 3, 6, 0, 1]), // 4x4 column-major matrix
-        };
-        affine2D = new Affine2D(); // Create a new Affine2D instance
-      });
+    beforeEach(() => {
+      // Setup a basic Matrix4 instance for testing (column-major)
+      matrix4 = {
+        m: new Float32Array([1, 4, 0, 0, 2, 5, 0, 0, 0, 0, 1, 0, 3, 6, 0, 1]), // 4x4 column-major matrix
+      };
+      affine2D = new Affine2D(); // Create a new Affine2D instance
+    });
 
-      it('should correctly copy the 2D affine part from a column-major Matrix4', () => {
-        Affine2D.fromMatrix4(affine2D, matrix4);
+    it('should correctly copy the 2D affine part from a column-major Matrix4', () => {
+      Affine2D.fromMatrix4(affine2D, matrix4);
 
-        // Expected 2D affine matrix values from Matrix4 (ignoring 3rd row/column)
-        expect(affine2D.m).toEqual(new Float32Array([1, 2, 3, 4, 5, 6]));
-      });
+      // Expected 2D affine matrix values from Matrix4 (ignoring 3rd row/column)
+      expect(affine2D.m).toEqual(new Float32Array([1, 2, 3, 4, 5, 6]));
+    });
 
-      it('should not affect the original Matrix4 after calling fromMatrix4', () => {
-        const originalMatrix4 = new Float32Array(matrix4.m); // Clone the original Matrix4
+    it('should not affect the original Matrix4 after calling fromMatrix4', () => {
+      const originalMatrix4 = new Float32Array(matrix4.m); // Clone the original Matrix4
 
-        Affine2D.fromMatrix4(affine2D, matrix4);
+      Affine2D.fromMatrix4(affine2D, matrix4);
 
-        // Assert that the original Matrix4 is untouched
-        expect(matrix4.m).toEqual(originalMatrix4);
-      });
+      // Assert that the original Matrix4 is untouched
+      expect(matrix4.m).toEqual(originalMatrix4);
+    });
 
-      it('should handle matrices with more than 6 values (extra values should be ignored)', () => {
-        const extendedMatrix4: Matrix4Like = {
-          m: new Float32Array([1, 4, 0, 0, 2, 5, 0, 0, 0, 0, 1, 0, 3, 6, 0, 1, 7, 8, 9, 10]), // Extra values beyond 16
-        };
+    it('should handle matrices with more than 6 values (extra values should be ignored)', () => {
+      const extendedMatrix4: Matrix4Like = {
+        m: new Float32Array([1, 4, 0, 0, 2, 5, 0, 0, 0, 0, 1, 0, 3, 6, 0, 1, 7, 8, 9, 10]), // Extra values beyond 16
+      };
 
-        Affine2D.fromMatrix4(affine2D, extendedMatrix4);
+      Affine2D.fromMatrix4(affine2D, extendedMatrix4);
 
-        // Only the first 6 values should be copied, which represent the affine transformation
-        expect(affine2D.m).toEqual(new Float32Array([1, 2, 3, 4, 5, 6]));
-      });
+      // Only the first 6 values should be copied, which represent the affine transformation
+      expect(affine2D.m).toEqual(new Float32Array([1, 2, 3, 4, 5, 6]));
+    });
 
-      it('should handle matrices with zero values correctly', () => {
-        const zeroMatrix4: Matrix4Like = {
-          m: new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), // Identity matrix with no scaling or translation
-        };
+    it('should handle matrices with zero values correctly', () => {
+      const zeroMatrix4: Matrix4Like = {
+        m: new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), // Identity matrix with no scaling or translation
+      };
 
-        Affine2D.fromMatrix4(affine2D, zeroMatrix4);
+      Affine2D.fromMatrix4(affine2D, zeroMatrix4);
 
-        expect(affine2D.m).toEqual(new Float32Array([0, 0, 0, 0, 0, 0]));
-      });
+      expect(affine2D.m).toEqual(new Float32Array([0, 0, 0, 0, 0, 0]));
+    });
 
-      it('should correctly handle a 2D identity matrix in Matrix4 format', () => {
-        const identityMatrix4: Matrix4Like = {
-          m: new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), // 4x4 identity matrix (no scaling, no translation)
-        };
+    it('should correctly handle a 2D identity matrix in Matrix4 format', () => {
+      const identityMatrix4: Matrix4Like = {
+        m: new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), // 4x4 identity matrix (no scaling, no translation)
+      };
 
-        Affine2D.fromMatrix4(affine2D, identityMatrix4);
+      Affine2D.fromMatrix4(affine2D, identityMatrix4);
 
-        expect(affine2D.m).toEqual(new Float32Array([1, 0, 0, 0, 1, 0])); // Identity 2D affine transform
-      });
+      expect(affine2D.m).toEqual(new Float32Array([1, 0, 0, 0, 1, 0])); // Identity 2D affine transform
     });
   });
 
