@@ -1,5 +1,5 @@
 import { RenderableSymbols as R } from '@flighthq/contracts';
-import { Matrix3, Vector2 } from '@flighthq/math';
+import { Affine2D, Vector2 } from '@flighthq/math';
 import { Rectangle } from '@flighthq/math';
 
 import { DirtyFlags } from './DirtyFlags.js';
@@ -19,7 +19,7 @@ describe('DisplayObject', () => {
     return displayObject[R.localBounds];
   }
 
-  function getLocalTransform(displayObject: DisplayObject): Matrix3 {
+  function getLocalTransform(displayObject: DisplayObject): Affine2D {
     displayObject[R.updateLocalTransform]();
     return displayObject[R.localTransform];
   }
@@ -80,19 +80,19 @@ describe('DisplayObject', () => {
 
   describe('cacheAsBitmapMatrix', () => {
     it('does not dirty transform if cacheAsBitmap is false', () => {
-      displayObject.cacheAsBitmapMatrix = new Matrix3();
+      displayObject.cacheAsBitmapMatrix = new Affine2D();
       expect(displayObject[$._dirtyFlags]).toBe(DirtyFlags.None);
     });
 
     it('marks transform dirty when cacheAsBitmap is true and matrix changes', () => {
       displayObject.cacheAsBitmap = true;
-      displayObject.cacheAsBitmapMatrix = new Matrix3(2, 0, 0, 2);
+      displayObject.cacheAsBitmapMatrix = new Affine2D(2, 0, 0, 2);
 
       expect(DirtyFlags.has(displayObject[$._dirtyFlags], DirtyFlags.Transform)).toBe(true);
     });
 
     it('does not dirty transform if matrix values are equal', () => {
-      const m = new Matrix3();
+      const m = new Affine2D();
 
       displayObject.cacheAsBitmapMatrix = m;
       displayObject.cacheAsBitmap = true;
