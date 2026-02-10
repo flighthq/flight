@@ -380,6 +380,110 @@ describe('Matrix3', () => {
     });
   });
 
+  describe('fromAffine2D', () => {
+    it('should convert an Affine2D matrix to a Matrix3', () => {
+      // Define an Affine2D matrix (6 values, row-major)
+      const affine2D = {
+        m: new Float32Array([1, 0, 0, 0, 1, 0]), // Identity matrix, no transformation
+      };
+
+      // Define an empty Matrix3 to store the result
+      const matrix3 = new Matrix3();
+
+      // Call the fromAffine2D function
+      Matrix3.fromAffine2D(matrix3, affine2D);
+
+      // Expected result: Identity matrix for Matrix3
+      const expectedMatrix3 = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+
+      // Assert that the result matches the expected outcome
+      expect(matrix3.m).toEqual(expectedMatrix3);
+    });
+
+    it('should handle scaling and translation', () => {
+      // Define an Affine2D matrix with scaling and translation
+      const affine2D = {
+        m: new Float32Array([2, 0, 5, 0, 3, 10]), // Scaling by 2,3 and translation by (5,10)
+      };
+
+      // Define an empty Matrix3 to store the result
+      const matrix3 = new Matrix3();
+
+      // Call the fromAffine2D function
+      Matrix3.fromAffine2D(matrix3, affine2D);
+
+      // Expected result: Scaling and translation in Matrix3
+      const expectedMatrix3 = new Float32Array([2, 0, 5, 0, 3, 10, 0, 0, 1]);
+
+      // Assert that the result matches the expected outcome
+      expect(matrix3.m).toEqual(expectedMatrix3);
+    });
+  });
+
+  describe('fromMatrix4', () => {
+    it('should convert an identity Matrix4 to a Matrix3', () => {
+      const matrix4 = {
+        m: new Float32Array([
+          1,
+          0,
+          0,
+          0, // First column
+          0,
+          1,
+          0,
+          0, // Second column
+          0,
+          0,
+          1,
+          0, // Third column
+          3,
+          4,
+          5,
+          1, // Translation (m[12], m[13], m[14])
+        ]),
+      };
+
+      const matrix3 = new Matrix3();
+      Matrix3.fromMatrix4(matrix3, matrix4);
+
+      // Expected result: Identity matrix for Matrix3
+      const expectedMatrix3 = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+
+      expect(matrix3.m).toEqual(expectedMatrix3);
+    });
+
+    it('should handle non-identity Matrix4 correctly', () => {
+      const matrix4 = {
+        m: new Float32Array([
+          2,
+          0,
+          0,
+          0, // First column (scaling by 2)
+          0,
+          3,
+          0,
+          0, // Second column (scaling by 3)
+          0,
+          0,
+          4,
+          0, // Third column (scaling by 4)
+          5,
+          6,
+          7,
+          1, // Translation (m[12], m[13], m[14])
+        ]),
+      };
+
+      const matrix3 = new Matrix3();
+      Matrix3.fromMatrix4(matrix3, matrix4);
+
+      // Expected result: Upper-left 3x3 part of Matrix4
+      const expectedMatrix3 = new Float32Array([2, 0, 0, 0, 3, 0, 0, 0, 4]);
+
+      expect(matrix3.m).toEqual(expectedMatrix3);
+    });
+  });
+
   describe('inverse', () => {
     it('should invert the matrix correctly', () => {
       // Create a matrix with scaling of 2 and translation of (5, 3)

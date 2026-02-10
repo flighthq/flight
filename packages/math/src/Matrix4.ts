@@ -1,4 +1,5 @@
 import type {
+  Affine2D as Affine2DLike,
   Matrix3 as Matrix3Like,
   Matrix4 as Matrix4Like,
   Vector3 as Vector3Like,
@@ -370,16 +371,23 @@ export default class Matrix4 {
     return true;
   }
 
+  static fromAffine2D(out: Matrix4Like, source: Affine2DLike): void {
+    const _source = source.m;
+    this.set2D(out, _source[0], _source[1], _source[3], _source[4], _source[2], _source[5]);
+  }
+
+  static fromMatrix3(out: Matrix4Like, source: Matrix3Like): void {
+    const _out = out.m;
+    const _source = source.m;
+    this.fromAffine2D(out, source);
+    _out[2] = _source[6];
+    _out[6] = _source[7];
+    _out[10] = _source[8];
+  }
+
   static isAffine(source: Matrix4Like): boolean {
     const _source = source.m;
     return _source[3] === 0 && _source[7] === 0 && _source[11] === 0 && _source[15] === 1;
-  }
-
-  static fromMatrix3(source: Matrix3Like): Matrix4 {
-    const _source = source.m;
-    const mat = new Matrix4();
-    this.set2D(mat, _source[0], _source[1], _source[3], _source[4], _source[2], _source[5]);
-    return mat;
   }
 
   /**
@@ -1026,63 +1034,127 @@ export default class Matrix4 {
     return this.m[0];
   }
 
+  set m00(value: number) {
+    this.m[0] = value;
+  }
+
   get m01(): number {
     return this.m[4];
+  }
+
+  set m01(value: number) {
+    this.m[4] = value;
   }
 
   get m02(): number {
     return this.m[8];
   }
 
+  set m02(value: number) {
+    this.m[8] = value;
+  }
+
   get m03(): number {
     return this.m[12];
+  }
+
+  set m03(value: number) {
+    this.m[12] = value;
   }
 
   get m10(): number {
     return this.m[1];
   }
 
+  set m10(value: number) {
+    this.m[1] = value;
+  }
+
   get m11(): number {
     return this.m[5];
+  }
+
+  set m11(value: number) {
+    this.m[5] = value;
   }
 
   get m12(): number {
     return this.m[9];
   }
 
+  set m12(value: number) {
+    this.m[9] = value;
+  }
+
   get m13(): number {
     return this.m[13];
+  }
+
+  set m13(value: number) {
+    this.m[13] = value;
   }
 
   get m20(): number {
     return this.m[2];
   }
 
+  set m20(value: number) {
+    this.m[2] = value;
+  }
+
   get m21(): number {
     return this.m[6];
+  }
+
+  set m21(value: number) {
+    this.m[6] = value;
   }
 
   get m22(): number {
     return this.m[10];
   }
 
+  set m22(value: number) {
+    this.m[10] = value;
+  }
+
   get m23(): number {
     return this.m[14];
+  }
+
+  set m23(value: number) {
+    this.m[14] = value;
   }
 
   get m30(): number {
     return this.m[3];
   }
 
+  set m30(value: number) {
+    this.m[3] = value;
+  }
+
   get m31(): number {
     return this.m[7];
+  }
+
+  set m31(value: number) {
+    this.m[7] = value;
   }
 
   get m32(): number {
     return this.m[11];
   }
 
+  set m32(value: number) {
+    this.m[11] = value;
+  }
+
   get m33(): number {
     return this.m[15];
+  }
+
+  set m33(value: number) {
+    this.m[15] = value;
   }
 }
