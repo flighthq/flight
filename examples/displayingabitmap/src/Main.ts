@@ -13,6 +13,7 @@ export default class Main extends Sprite {
     localBounds.height = 100;
 
     this.sprite.opaqueBackground = 0xff0000;
+    Sprite.addChild(this, this.sprite);
 
     // var loader = new Loader();
     // loader.contentLoaderInfo.addEventListener(Event.COMPLETE, this.loader_onComplete);
