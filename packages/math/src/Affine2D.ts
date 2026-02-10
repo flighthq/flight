@@ -1,5 +1,7 @@
 import type {
   Affine2D as Affine2DLike,
+  Matrix3 as Matrix3Like,
+  Matrix4 as Matrix4Like,
   Rectangle as RectangleLike,
   Vector2 as Vector2Like,
   Vector3 as Vector3Like,
@@ -185,6 +187,20 @@ export default class Affine2D {
       a.m[3] === b.m[3] &&
       a.m[4] === b.m[4]
     );
+  }
+
+  static fromMatrix3(out: Affine2DLike, source: Matrix3Like): void {
+    out.m.set(source.m.slice(0, 6));
+  }
+
+  static fromMatrix4(out: Affine2DLike, source: Matrix4Like): void {
+    const s = source.m;
+    out.m[0] = s[0];
+    out.m[1] = s[4];
+    out.m[2] = s[12];
+    out.m[3] = s[1];
+    out.m[4] = s[5];
+    out.m[5] = s[13];
   }
 
   /**

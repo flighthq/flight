@@ -1,4 +1,9 @@
-import type { Matrix3 as Matrix3Like, Vector3 as Vector3Like } from '@flighthq/types';
+import type {
+  Affine2D as Affine2DLike,
+  Matrix3 as Matrix3Like,
+  Matrix4 as Matrix4Like,
+  Vector3 as Vector3Like,
+} from '@flighthq/types';
 
 /**
  * A 3×3 homogeneous matrix.
@@ -130,6 +135,30 @@ export default class Matrix3 implements Matrix3Like {
       if (a.m[i] !== b.m[i]) return false;
     }
     return true;
+  }
+
+  static fromAffine2D(out: Matrix3Like, source: Affine2DLike): void {
+    const _out = out.m;
+    _out.set(source.m.slice(0, 6));
+    _out[6] = 0;
+    _out[7] = 0;
+    _out[8] = 1;
+  }
+
+  static fromMatrix4(out: Matrix3Like, source: Matrix4Like): void {
+    const _out = out.m;
+    const _source = source.m;
+    _out[0] = _source[0];
+    _out[1] = _source[4];
+    _out[2] = _source[8];
+
+    _out[3] = _source[1];
+    _out[4] = _source[5];
+    _out[5] = _source[9];
+
+    _out[6] = _source[2];
+    _out[7] = _source[6];
+    _out[8] = _source[10];
   }
 
   static identity(out: Matrix3Like): void {
@@ -399,36 +428,72 @@ export default class Matrix3 implements Matrix3Like {
     return this.m[0];
   }
 
+  set m00(value: number) {
+    this.m[0] = value;
+  }
+
   get m01(): number {
     return this.m[1];
+  }
+
+  set m01(value: number) {
+    this.m[1] = value;
   }
 
   get m02(): number {
     return this.m[2];
   }
 
+  set m02(value: number) {
+    this.m[2] = value;
+  }
+
   get m10(): number {
     return this.m[3];
+  }
+
+  set m10(value: number) {
+    this.m[3] = value;
   }
 
   get m11(): number {
     return this.m[4];
   }
 
+  set m11(value: number) {
+    this.m[4] = value;
+  }
+
   get m12(): number {
     return this.m[5];
+  }
+
+  set m12(value: number) {
+    this.m[5] = value;
   }
 
   get m20(): number {
     return this.m[6];
   }
 
+  set m20(value: number) {
+    this.m[6] = value;
+  }
+
   get m21(): number {
     return this.m[7];
   }
 
+  set m21(value: number) {
+    this.m[7] = value;
+  }
+
   get m22(): number {
     return this.m[8];
+  }
+
+  set m22(value: number) {
+    this.m[8] = value;
   }
 
   get tx(): number {

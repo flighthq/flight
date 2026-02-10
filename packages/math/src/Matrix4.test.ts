@@ -202,45 +202,6 @@ describe('Matrix4', () => {
     });
   });
 
-  describe('determinant', () => {
-    it('returns 1 for the identity matrix', () => {
-      const m = new Matrix4();
-      expect(m.determinant).toBe(1);
-    });
-  });
-
-  describe('equals', () => {
-    it('returns true when comparing the same reference', () => {
-      const m = new Matrix4();
-      expect(Matrix4.equals(m, m)).toBe(true);
-    });
-
-    it('returns false if either argument is null or undefined', () => {
-      const m = new Matrix4();
-
-      expect(Matrix4.equals(m, null)).toBe(false);
-      expect(Matrix4.equals(undefined, m)).toBe(false);
-      expect(Matrix4.equals(null, null)).toBe(true); // same reference shortcut
-    });
-
-    it('returns true for two matrices with identical values', () => {
-      const a = new Matrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
-
-      const b = new Matrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
-
-      expect(Matrix4.equals(a, b)).toBe(true);
-    });
-
-    it('returns false if any value differs', () => {
-      const a = new Matrix4();
-      const b = new Matrix4();
-
-      b.m[10] = 2;
-
-      expect(Matrix4.equals(a, b)).toBe(false);
-    });
-  });
-
   describe('copyFrom', () => {
     it('copies all values from the source matrix', () => {
       const source = new Matrix4(1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 3, 0, 4, 5, 6, 1);
@@ -448,6 +409,135 @@ describe('Matrix4', () => {
 
       expect(a.m[0]).toBe(1);
       expect(b.m[0]).toBe(42);
+    });
+  });
+
+  describe('determinant', () => {
+    it('returns 1 for the identity matrix', () => {
+      const m = new Matrix4();
+      expect(m.determinant).toBe(1);
+    });
+  });
+
+  describe('equals', () => {
+    it('returns true when comparing the same reference', () => {
+      const m = new Matrix4();
+      expect(Matrix4.equals(m, m)).toBe(true);
+    });
+
+    it('returns false if either argument is null or undefined', () => {
+      const m = new Matrix4();
+
+      expect(Matrix4.equals(m, null)).toBe(false);
+      expect(Matrix4.equals(undefined, m)).toBe(false);
+      expect(Matrix4.equals(null, null)).toBe(true); // same reference shortcut
+    });
+
+    it('returns true for two matrices with identical values', () => {
+      const a = new Matrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+
+      const b = new Matrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+
+      expect(Matrix4.equals(a, b)).toBe(true);
+    });
+
+    it('returns false if any value differs', () => {
+      const a = new Matrix4();
+      const b = new Matrix4();
+
+      b.m[10] = 2;
+
+      expect(Matrix4.equals(a, b)).toBe(false);
+    });
+  });
+
+  describe('fromAffine2D', () => {
+    it('should convert an Affine2D matrix to a Matrix4', () => {
+      const affine2D = {
+        m: new Float32Array([1, 0, 0, 0, 1, 0]), // Identity matrix (no transformation)
+      };
+
+      const matrix4 = new Matrix4();
+      Matrix4.fromAffine2D(matrix4, affine2D);
+
+      const expectedMatrix4 = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+
+      expect(matrix4.m).toEqual(expectedMatrix4);
+    });
+
+    it('should handle scaling and translation', () => {
+      // scale(2,3), translate(5,10)
+      const affine2D = {
+        m: new Float32Array([2, 0, 5, 0, 3, 10]),
+      };
+
+      const matrix4 = new Matrix4();
+      Matrix4.fromAffine2D(matrix4, affine2D);
+
+      expect(matrix4.m00).toEqual(2); // a
+      expect(matrix4.m01).toEqual(0); // b
+      expect(matrix4.m02).toEqual(0);
+      expect(matrix4.m03).toEqual(5); // tx
+
+      expect(matrix4.m10).toEqual(0); // c
+      expect(matrix4.m11).toEqual(3); // d
+      expect(matrix4.m12).toEqual(0);
+      expect(matrix4.m13).toEqual(10); // ty
+
+      expect(matrix4.m20).toEqual(0);
+      expect(matrix4.m21).toEqual(0);
+      expect(matrix4.m22).toEqual(1);
+      expect(matrix4.m23).toEqual(0);
+
+      expect(matrix4.m30).toEqual(0);
+      expect(matrix4.m31).toEqual(0);
+      expect(matrix4.m32).toEqual(0);
+      expect(matrix4.m33).toEqual(1);
+    });
+  });
+
+  describe('fromMatrix3', () => {
+    it('should convert a Matrix3 to a Matrix4', () => {
+      const matrix3 = {
+        m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]),
+      };
+
+      const matrix4 = new Matrix4();
+      Matrix4.fromMatrix3(matrix4, matrix3);
+
+      const expectedMatrix4 = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+
+      expect(matrix4.m).toEqual(expectedMatrix4);
+    });
+
+    it('should handle scaling and translation', () => {
+      // scale(2,3), translate(5,10)
+      const matrix3 = {
+        m: new Float32Array([2, 0, 5, 0, 3, 10, 0, 0, 1]),
+      };
+
+      const matrix4 = new Matrix4();
+      Matrix4.fromMatrix3(matrix4, matrix3);
+
+      expect(matrix4.m00).toEqual(2); // a
+      expect(matrix4.m01).toEqual(0); // b
+      expect(matrix4.m02).toEqual(0);
+      expect(matrix4.m03).toEqual(5); // tx
+
+      expect(matrix4.m10).toEqual(0); // c
+      expect(matrix4.m11).toEqual(3); // d
+      expect(matrix4.m12).toEqual(0);
+      expect(matrix4.m13).toEqual(10); // ty
+
+      expect(matrix4.m20).toEqual(0);
+      expect(matrix4.m21).toEqual(0);
+      expect(matrix4.m22).toEqual(1);
+      expect(matrix4.m23).toEqual(0);
+
+      expect(matrix4.m30).toEqual(0);
+      expect(matrix4.m31).toEqual(0);
+      expect(matrix4.m32).toEqual(0);
+      expect(matrix4.m33).toEqual(1);
     });
   });
 
