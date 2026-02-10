@@ -1,16 +1,19 @@
 import type {
-  Matrix3 as Matrix3Like,
+  Affine2D as Affine2DLike,
   Rectangle as RectangleLike,
   Vector2 as Vector2Like,
   Vector3 as Vector3Like,
 } from '@flighthq/types';
 
-import Matrix3 from './Matrix3.js';
-
 /**
  * An Affine2D object represents two-dimensional coordinate space.
  * It is a 2x3 matrix, with a, b, c, d for a two-dimensional transform,
  * and tx, ty for translation.
+ *
+ * [ a b tx ]
+ * [ c d ty ]
+ *
+ * Storage is row-major.
  *
  * @see Vector2
  * @see Vector3
@@ -18,7 +21,7 @@ import Matrix3 from './Matrix3.js';
  * @see Rectangle
  */
 export default class Affine2D {
-  private static __identity: Float32Array = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+  private static __identity: Float32Array = new Float32Array([1, 0, 0, 0, 1, 0]);
 
   readonly m: Float32Array = new Float32Array(Affine2D.__identity);
 
@@ -31,7 +34,7 @@ export default class Affine2D {
     if (ty !== undefined) this.m[5] = ty;
   }
 
-  static clone(source: Matrix3Like): Affine2D {
+  static clone(source: Affine2DLike): Affine2D {
     const m = new Affine2D();
     this.copy(m, source);
     return m;
@@ -44,7 +47,7 @@ export default class Affine2D {
    *
    * Applies the transforms of matrix b onto (and after) matrix a.
    */
-  static concat(out: Matrix3Like, a: Matrix3Like, b: Matrix3Like): void {
+  static concat(out: Affine2DLike, a: Affine2DLike, b: Affine2DLike): void {
     const a1 = a.m[0] * b.m[0] + a.m[1] * b.m[3];
     out.m[1] = a.m[0] * b.m[1] + a.m[1] * b.m[4];
     out.m[0] = a1;
@@ -58,14 +61,14 @@ export default class Affine2D {
     out.m[2] = tx1;
   }
 
-  static copy(out: Matrix3Like, source: Matrix3Like): void {
+  static copy(out: Affine2DLike, source: Affine2DLike): void {
     out.m.set(source.m);
   }
 
   /**
    * Copies a column from a vector. The z component will be ignored (3x2 matrix).
    */
-  static copyColumnFrom(out: Matrix3Like, column: number, source: Vector3Like): void {
+  static copyColumnFrom(out: Affine2DLike, column: number, source: Vector3Like): void {
     if (column > 2) {
       throw new RangeError('Column ' + column + ' out of bounds (2)');
     } else if (column === 0) {
@@ -83,7 +86,7 @@ export default class Affine2D {
   /**
    * Copies a column to a vector. The z component will use identity values.
    */
-  static copyColumnTo(out: Vector3Like, column: number, source: Matrix3Like): void {
+  static copyColumnTo(out: Vector3Like, column: number, source: Affine2DLike): void {
     if (column > 2) {
       throw new RangeError('Column ' + column + ' out of bounds (2)');
     } else if (column === 0) {
@@ -101,7 +104,7 @@ export default class Affine2D {
     }
   }
 
-  copyFrom(source: Matrix3Like): Affine2D {
+  copyFrom(source: Affine2DLike): Affine2D {
     this.m.set(source.m);
     return this;
   }
@@ -109,7 +112,7 @@ export default class Affine2D {
   /**
    * Copies a row from a vector. The third row (row 2) will be ignored (3x2 matrix).
    */
-  static copyRowFrom(out: Matrix3Like, row: number, source: Vector3Like): void {
+  static copyRowFrom(out: Affine2DLike, row: number, source: Vector3Like): void {
     if (row > 2) {
       throw new RangeError('Row ' + row + ' out of bounds (2)');
     } else if (row === 0) {
@@ -126,7 +129,7 @@ export default class Affine2D {
   /**
    * Copies a row to a vector. The third row will use identity values (3x2 matrix).
    */
-  static copyRowTo(out: Vector3Like, row: number, source: Matrix3Like): void {
+  static copyRowTo(out: Vector3Like, row: number, source: Affine2DLike): void {
     if (row > 2) {
       throw new RangeError('Row ' + row + ' out of bounds (2)');
     } else if (row === 0) {
@@ -169,8 +172,8 @@ export default class Affine2D {
   }
 
   static equals(
-    a: Matrix3Like | null | undefined,
-    b: Matrix3Like | null | undefined,
+    a: Affine2DLike | null | undefined,
+    b: Affine2DLike | null | undefined,
     compareTranslation: boolean = true,
   ): boolean {
     if (a === b) return true;
@@ -191,7 +194,7 @@ export default class Affine2D {
    * After calling the `identity()` method, the resulting matrix has the
    * following properties: `a`=1, `b`=0, `c`=0, `d`=1, `tx`=0, `ty`=0.
    **/
-  static identity(out: Matrix3Like): void {
+  static identity(out: Affine2DLike): void {
     out.m.set(this.__identity);
   }
 
@@ -205,8 +208,23 @@ export default class Affine2D {
    *
    * Translation (tx, ty) is applied after the linear transformation (scale/rotation/shear) is inverted.
    */
-  static inverse(out: Affine2D, source: Matrix3Like): void {
-    Matrix3.inverse(out, source);
+  static inverse(out: Affine2D, source: Affine2DLike): void {
+    const _out = out.m;
+    const _s = source.m;
+    const det = _s[0] * _s[4] - _s[3] * _s[1];
+    if (det === 0) {
+      _out[0] = _out[1] = _out[3] = _out[4] = 0;
+      _out[2] = -_s[2];
+      _out[5] = -_s[5];
+    } else {
+      const invDet = 1 / det;
+      _out[0] = _s[4] * invDet;
+      _out[1] = -_s[1] * invDet;
+      _out[3] = -_s[3] * invDet;
+      _out[4] = _s[0] * invDet;
+      _out[2] = -(_out[0] * _s[2] + _out[1] * _s[5]);
+      _out[5] = -(_out[3] * _s[2] + _out[4] * _s[5]);
+    }
   }
 
   /**
@@ -214,11 +232,11 @@ export default class Affine2D {
    * a given point, including translation.
    * @see inverseTransformPointXY
    */
-  static inverseTransformPoint(out: Vector2Like, matrix: Matrix3Like, point: Vector2Like): void {
+  static inverseTransformPoint(out: Vector2Like, matrix: Affine2DLike, point: Vector2Like): void {
     this.inverseTransformPointXY(out, matrix, point.x, point.y);
   }
 
-  static inverseTransformPointXY(out: Vector2Like, source: Matrix3Like, x: number, y: number): void {
+  static inverseTransformPointXY(out: Vector2Like, source: Affine2DLike, x: number, y: number): void {
     const norm = source.m[0] * source.m[4] - source.m[1] * source.m[3];
     if (norm === 0) {
       out.x = -source.m[2];
@@ -235,11 +253,11 @@ export default class Affine2D {
    * a given point, excluding translation.
    * @see inverseTransformPointXY
    */
-  static inverseTransformVector(out: Vector2Like, matrix: Matrix3Like, vector: Vector2Like): void {
+  static inverseTransformVector(out: Vector2Like, matrix: Affine2DLike, vector: Vector2Like): void {
     this.inverseTransformVectorXY(out, matrix, vector.x, vector.y);
   }
 
-  static inverseTransformVectorXY(out: Vector2Like, source: Matrix3Like, x: number, y: number): void {
+  static inverseTransformVectorXY(out: Vector2Like, source: Affine2DLike, x: number, y: number): void {
     const norm = source.m[0] * source.m[4] - source.m[1] * source.m[3];
     if (norm === 0) {
       out.x = 0;
@@ -256,8 +274,33 @@ export default class Affine2D {
    *
    * out = a * b
    */
-  static multiply(out: Matrix3Like, a: Matrix3Like, b: Matrix3Like): void {
-    Matrix3.multiply(out, a, b);
+  static multiply(out: Affine2DLike, a: Affine2DLike, b: Affine2DLike): void {
+    const _out = out.m;
+    const _a = a.m;
+    const _b = b.m;
+
+    const a1 = _a[0],
+      c1 = _a[1],
+      tx1 = _a[2];
+    const b1 = _a[3],
+      d1 = _a[4],
+      ty1 = _a[5];
+
+    const a2 = _b[0],
+      c2 = _b[1],
+      tx2 = _b[2];
+    const b2 = _b[3],
+      d2 = _b[4],
+      ty2 = _b[5];
+
+    // Row-major multiplication
+    _out[0] = a1 * a2 + c1 * b2;
+    _out[1] = a1 * c2 + c1 * d2;
+    _out[2] = a1 * tx2 + c1 * ty2 + tx1;
+
+    _out[3] = b1 * a2 + d1 * b2;
+    _out[4] = b1 * c2 + d1 * d2;
+    _out[5] = b1 * tx2 + d1 * ty2 + ty1;
   }
 
   /**
@@ -266,7 +309,7 @@ export default class Affine2D {
    *
    * This is a 2x2 rotation, it will not rotate
    **/
-  static rotate(out: Matrix3Like, source: Matrix3Like, theta: number): void {
+  static rotate(out: Affine2DLike, source: Affine2DLike, theta: number): void {
     /**
       Rotate object "after" other transforms
 
@@ -304,7 +347,7 @@ export default class Affine2D {
    * Applies a scaling transformation to the matrix. The _x_ axis is
    * multiplied by `sx`, and the _y_ axis it is multiplied by `sy`.
    **/
-  static scale(out: Matrix3Like, source: Matrix3Like, sx: number, sy: number): void {
+  static scale(out: Affine2DLike, source: Affine2DLike, sx: number, sy: number): void {
     /*
       Scale object "after" other transforms
 
@@ -332,7 +375,7 @@ export default class Affine2D {
    * pair and the `tx`/`ty` values are offset by half the width and height.
    **/
   static setGradientTransform(
-    out: Matrix3Like,
+    out: Affine2DLike,
     width: number,
     height: number,
     rotation: number = 0,
@@ -360,7 +403,7 @@ export default class Affine2D {
     out.m[5] = ty + height / 2;
   }
 
-  static set(out: Matrix3Like, a: number, b: number, c: number, d: number, tx: number, ty: number): void {
+  static set(out: Affine2DLike, a: number, b: number, c: number, d: number, tx: number, ty: number): void {
     out.m[0] = a;
     out.m[1] = b;
     out.m[3] = c;
@@ -375,7 +418,7 @@ export default class Affine2D {
    * `translate()` in succession.
    **/
   static setTransform(
-    out: Matrix3Like,
+    out: Affine2DLike,
     scaleX: number,
     scaleY: number,
     rotation: number = 0,
@@ -410,14 +453,14 @@ export default class Affine2D {
    * Transforms a point using the given matrix.
    * @see transformPointXY
    */
-  static transformPoint(out: Vector2Like, matrix: Matrix3Like, point: Vector2Like): void {
+  static transformPoint(out: Vector2Like, matrix: Affine2DLike, point: Vector2Like): void {
     this.transformPointXY(out, matrix, point.x, point.y);
   }
 
   /**
    * Transforms an (x, y) point using the given matrix.
    */
-  static transformPointXY(out: Vector2Like, source: Matrix3Like, x: number, y: number): void {
+  static transformPointXY(out: Vector2Like, source: Affine2DLike, x: number, y: number): void {
     out.x = x * source.m[0] + y * source.m[3] + source.m[2];
     out.y = x * source.m[1] + y * source.m[4] + source.m[5];
   }
@@ -432,11 +475,11 @@ export default class Affine2D {
    * @see transformRectTo
    * @see transformAABB
    **/
-  static transformRect(out: RectangleLike, matrix: Matrix3Like, source: RectangleLike): void {
+  static transformRect(out: RectangleLike, matrix: Affine2DLike, source: RectangleLike): void {
     this.transformRectXY(out, matrix, source.x, source.y, source.x + source.width, source.y + source.height);
   }
 
-  static transformRectVec2(out: RectangleLike, matrix: Matrix3Like, a: Vector2Like, b: Vector2Like): void {
+  static transformRectVec2(out: RectangleLike, matrix: Affine2DLike, a: Vector2Like, b: Vector2Like): void {
     this.transformRectXY(out, matrix, a.x, a.y, b.x, b.y);
   }
 
@@ -451,7 +494,7 @@ export default class Affine2D {
    **/
   static transformRectXY(
     out: RectangleLike,
-    source: Matrix3Like,
+    source: Affine2DLike,
     ax: number,
     ay: number,
     bx: number,
@@ -506,11 +549,11 @@ export default class Affine2D {
    * `ty`.
    * @see transformVectorXY
    **/
-  static transformVector(out: Vector2Like, matrix: Matrix3Like, vector: Vector2Like): void {
+  static transformVector(out: Vector2Like, matrix: Affine2DLike, vector: Vector2Like): void {
     this.transformVectorXY(out, matrix, vector.x, vector.y);
   }
 
-  static transformVectorXY(out: Vector2Like, source: Matrix3Like, x: number, y: number): void {
+  static transformVectorXY(out: Vector2Like, source: Affine2DLike, x: number, y: number): void {
     out.x = x * source.m[0] + y * source.m[3];
     out.y = x * source.m[1] + y * source.m[4];
   }
@@ -519,7 +562,7 @@ export default class Affine2D {
    * Translates the matrix along the _x_ and _y_ axes, as specified
    * by the `dx` and `dy` parameters.
    **/
-  static translate(out: Matrix3Like, source: Matrix3Like, dx: number, dy: number): void {
+  static translate(out: Affine2DLike, source: Affine2DLike, dx: number, dy: number): void {
     out.m[2] = source.m[2] + dx;
     out.m[5] = source.m[5] + dy;
   }
