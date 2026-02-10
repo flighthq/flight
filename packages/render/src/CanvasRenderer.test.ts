@@ -1,4 +1,4 @@
-import { Matrix3 } from '@flighthq/math';
+import { Affine2D } from '@flighthq/math';
 
 import CanvasRenderer from './CanvasRenderer';
 import type { CanvasRendererOptions } from './CanvasRendererOptions';
@@ -34,7 +34,7 @@ describe('CanvasRenderer', () => {
     expect(renderer.backgroundColor).toBe(0);
     expect(renderer.pixelRatio).toBe(window.devicePixelRatio);
     expect(renderer.roundPixels).toBe(false);
-    expect(renderer.renderTransform).toBeInstanceOf(Matrix3);
+    expect(renderer.renderTransform).toBeInstanceOf(Affine2D);
   });
 
   it('should use provided options', () => {
@@ -42,7 +42,7 @@ describe('CanvasRenderer', () => {
       backgroundColor: 0xffffff,
       pixelRatio: 2,
       roundPixels: true,
-      renderTransform: new Matrix3(),
+      renderTransform: new Affine2D(),
       imageSmoothingEnabled: false,
       imageSmoothingQuality: 'low',
     };
@@ -52,7 +52,7 @@ describe('CanvasRenderer', () => {
     expect(renderer.backgroundColor).toBe(0xffffff);
     expect(renderer.pixelRatio).toBe(2);
     expect(renderer.roundPixels).toBe(true);
-    expect(renderer.renderTransform).toBeInstanceOf(Matrix3);
+    expect(renderer.renderTransform).toBeInstanceOf(Affine2D);
     expect(renderer.imageSmoothingEnabled).toBe(false);
     expect(renderer.imageSmoothingQuality).toBe('low');
   });
@@ -129,7 +129,7 @@ describe('CanvasRenderer', () => {
   });
 
   it('should handle worldTransform option correctly', () => {
-    const customTransform = new Matrix3();
+    const customTransform = new Affine2D();
     const options: CanvasRendererOptions = {
       renderTransform: customTransform,
     };
@@ -138,9 +138,9 @@ describe('CanvasRenderer', () => {
     expect(renderer.renderTransform).toBe(customTransform);
   });
 
-  it('should fall back to default Matrix3 if worldTransform is not provided', () => {
+  it('should fall back to default Affine2D if worldTransform is not provided', () => {
     const renderer = new CanvasRenderer(canvas);
-    expect(renderer.renderTransform).toBeInstanceOf(Matrix3);
+    expect(renderer.renderTransform).toBeInstanceOf(Affine2D);
   });
 
   // Check if contextAttributes are passed and correctly retrieved

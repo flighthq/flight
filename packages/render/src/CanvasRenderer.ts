@@ -1,7 +1,7 @@
 import type { Renderable } from '@flighthq/contracts';
 import { RenderableSymbols as R } from '@flighthq/contracts';
-import { Matrix3 as Matrix3Impl } from '@flighthq/math';
-import type { Matrix3, Rectangle } from '@flighthq/types';
+import { Affine2D as Affine2DImpl } from '@flighthq/math';
+import type { Affine2D, Rectangle } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import CanvasRenderData from './CanvasRenderData';
@@ -17,7 +17,7 @@ export default class CanvasRenderer {
   readonly contextAttributes: CanvasRenderingContext2DSettings;
 
   pixelRatio: number;
-  renderTransform: Matrix3;
+  renderTransform: Affine2D;
   roundPixels: boolean;
 
   protected __backgroundColor: number = 0x00000000;
@@ -40,7 +40,7 @@ export default class CanvasRenderer {
 
     this.backgroundColor = options?.backgroundColor ?? 0x00000000;
     this.pixelRatio = options?.pixelRatio ?? window.devicePixelRatio | 1;
-    this.renderTransform = options?.renderTransform ?? new Matrix3Impl();
+    this.renderTransform = options?.renderTransform ?? new Affine2DImpl();
     this.roundPixels = options?.roundPixels ?? false;
   }
 
@@ -128,7 +128,7 @@ export default class CanvasRenderer {
     }
   }
 
-  protected static __pushClipRect(target: CanvasRenderer, rect: Rectangle, transform: Matrix3): void {
+  protected static __pushClipRect(target: CanvasRenderer, rect: Rectangle, transform: Affine2D): void {
     target.context.save();
 
     this.__setTransform(target, target.context, transform);
@@ -213,7 +213,11 @@ export default class CanvasRenderer {
     }
   }
 
-  protected static __setTransform(target: CanvasRenderer, context: CanvasRenderingContext2D, transform: Matrix3): void {
+  protected static __setTransform(
+    target: CanvasRenderer,
+    context: CanvasRenderingContext2D,
+    transform: Affine2D,
+  ): void {
     if (target.roundPixels) {
       context.setTransform(
         transform.m[0], // a

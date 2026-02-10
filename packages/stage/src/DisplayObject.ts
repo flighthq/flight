@@ -1,6 +1,6 @@
 import type { Renderable } from '@flighthq/contracts';
 import { RenderableSymbols as R } from '@flighthq/contracts';
-import { Affine2D, Matrix3, Matrix3Pool, Rectangle, RectanglePool, Vector2 } from '@flighthq/math';
+import { Affine2D, Affine2DPool, Rectangle, RectanglePool, Vector2 } from '@flighthq/math';
 import type { BitmapFilter, Shader } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
@@ -19,13 +19,13 @@ export default class DisplayObject implements Renderable {
   [R.blendMode]: BlendMode = BlendMode.Normal;
   [R.bounds]: Rectangle = new Rectangle();
   [R.cacheAsBitmap]: boolean = false;
-  [R.cacheAsBitmapMatrix]: Matrix3 | null = null;
+  [R.cacheAsBitmapMatrix]: Affine2D | null = null;
   [R.children]: DisplayObject[] | null = null;
   [R.filters]: BitmapFilter[] | null = null;
   [R.height]: number = 0;
   [R.localBounds]: Rectangle = new Rectangle();
   [R.localBoundsID]: number = 0;
-  [R.localTransform]: Matrix3 = new Matrix3();
+  [R.localTransform]: Affine2D = new Affine2D();
   [R.localTransformID]: number = 0;
   [R.mask]: DisplayObject | null = null;
   [R.maskedObject]: DisplayObject | null = null;
@@ -43,7 +43,7 @@ export default class DisplayObject implements Renderable {
   [R.shader]: Shader | null = null;
   [R.width]: number = 0;
   [R.worldBounds]: Rectangle = new Rectangle();
-  [R.worldTransform]: Matrix3 = new Matrix3();
+  [R.worldTransform]: Affine2D = new Affine2D();
   [R.worldTransformID]: number = 0;
   [R.visible]: boolean = true;
   [R.x]: number = 0;
@@ -80,11 +80,11 @@ export default class DisplayObject implements Renderable {
     if (targetCoordinateSpace !== null && targetCoordinateSpace !== source) {
       targetCoordinateSpace[R.updateWorldTransform]();
       source[R.updateLocalBounds]();
-      const transform = Matrix3Pool.get();
-      Matrix3.inverse(transform, targetCoordinateSpace[R.worldTransform]);
-      Matrix3.multiply(transform, transform, source[R.worldTransform]);
+      const transform = Affine2DPool.get();
+      Affine2D.inverse(transform, targetCoordinateSpace[R.worldTransform]);
+      Affine2D.multiply(transform, transform, source[R.worldTransform]);
       Affine2D.transformRect(out, transform, source[R.localBounds]);
-      Matrix3Pool.release(transform);
+      Affine2DPool.release(transform);
     } else {
       Rectangle.copy(out, source[R.localBounds]);
     }
@@ -275,9 +275,9 @@ export default class DisplayObject implements Renderable {
       // Ensure local transform is accurate
       this[R.updateLocalTransform]();
       if (parent !== null) {
-        Matrix3.multiply(this[R.worldTransform], parent[R.worldTransform], this[R.localTransform]);
+        Affine2D.multiply(this[R.worldTransform], parent[R.worldTransform], this[R.localTransform]);
       } else {
-        Matrix3.copy(this[R.worldTransform], this[R.localTransform]);
+        Affine2D.copy(this[R.worldTransform], this[R.localTransform]);
       }
       this[R.parentTransformID] = parentTransformID;
       this[R.worldTransformID] = this[R.localTransformID];
@@ -318,18 +318,18 @@ export default class DisplayObject implements Renderable {
     DisplayObject.invalidate(this, DirtyFlags.CacheAsBitmap);
   }
 
-  get cacheAsBitmapMatrix(): Matrix3 | null {
+  get cacheAsBitmapMatrix(): Affine2D | null {
     return this[R.cacheAsBitmapMatrix];
   }
 
-  set cacheAsBitmapMatrix(value: Matrix3 | null) {
-    if (Matrix3.equals(this[R.cacheAsBitmapMatrix], value)) return;
+  set cacheAsBitmapMatrix(value: Affine2D | null) {
+    if (Affine2D.equals(this[R.cacheAsBitmapMatrix], value)) return;
 
     if (value !== null) {
       if (this[R.cacheAsBitmapMatrix] === null) {
-        this[R.cacheAsBitmapMatrix] = Matrix3.clone(value);
+        this[R.cacheAsBitmapMatrix] = Affine2D.clone(value);
       } else {
-        Matrix3.copy(this[R.cacheAsBitmapMatrix] as Matrix3, value);
+        Affine2D.copy(this[R.cacheAsBitmapMatrix] as Affine2D, value);
       }
     } else {
       this[R.cacheAsBitmapMatrix] = null;
@@ -563,14 +563,14 @@ export default class DisplayObject implements Renderable {
       this[$._transform] = new Transform(this);
     }
 
-    // if (value.__hasMatrix3)
+    // if (value.__hasAffine2D)
     // {
     //     var other = value.__displayObject.__transform;
     //     __objectTransform.__setTransform(other.a, other.b, other.c, other.d, other.tx, other.ty);
     // }
     // else
     // {
-    //     __objectTransform.__hasMatrix3 = false;
+    //     __objectTransform.__hasAffine2D = false;
     // }
 
     // if (!__objectTransform.__colorTransform.__equals(value.__colorTransform, true)
