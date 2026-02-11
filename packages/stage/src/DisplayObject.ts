@@ -93,7 +93,7 @@ export default class DisplayObject implements Renderable {
    * Converts the `point` object from the Stage (global) coordinates
    * to the display object's (local) coordinates.
    **/
-  static globalToLocal(out: Vector2Like, source: DisplayObject, pos: Vector2Like): void {
+  static globalToLocal(out: Vector2Like, source: DisplayObject, pos: Readonly<Vector2Like>): void {
     source[R.updateWorldTransform]();
     Affine2D.inverseTransformPointXY(out, source[R.worldTransform], pos.x, pos.y);
   }
@@ -158,7 +158,7 @@ export default class DisplayObject implements Renderable {
    * Converts the `point` object from the display object's (local)
    * coordinates to world coordinates.
    **/
-  static localToGlobal(out: Vector2Like, source: DisplayObject, point: Vector2Like): void {
+  static localToGlobal(out: Vector2Like, source: DisplayObject, point: Readonly<Vector2Like>): void {
     source[R.updateWorldTransform]();
     Affine2D.transformPointXY(out, source[R.worldTransform], point.x, point.y);
   }
