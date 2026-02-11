@@ -1,4 +1,4 @@
-import type { BitmapDrawable } from './BitmapDrawable.js';
+import type { BitmapDrawable } from '../BitmapDrawable.js';
 
 export default class UpdateQueue {
   private static items = new Set<BitmapDrawable>();

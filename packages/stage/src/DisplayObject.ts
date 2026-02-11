@@ -1,7 +1,7 @@
 import type { Renderable } from '@flighthq/contracts';
 import { RenderableSymbols as R } from '@flighthq/contracts';
 import { Affine2D, Affine2DPool, Rectangle, RectanglePool, Vector2 } from '@flighthq/math';
-import type { BitmapFilter, Shader } from '@flighthq/types';
+import type { BitmapFilter, Rectangle as RectangleLike, Shader, Vector2 as Vector2Like } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import type DisplayObjectContainer from './DisplayObjectContainer.js';
@@ -61,21 +61,8 @@ export default class DisplayObject implements Renderable {
   /**
    * Returns a rectangle that defines the area of the display object relative
    * to the coordinate system of the `targetCoordinateSpace` object.
-   *
-   * Returns a new Rectangle().
-   * @see getBoundsTo
    **/
-  static getBounds(source: DisplayObject, targetCoordinateSpace: DisplayObject | null): Rectangle {
-    const out = new Rectangle();
-    this.getBoundsTo(out, source, targetCoordinateSpace);
-    return out;
-  }
-
-  /**
-   * Writes the rectangle that defines the area of the display object relative
-   * to the coordinate system of the `targetCoordinateSpace` object to out.
-   **/
-  static getBoundsTo(out: Rectangle, source: DisplayObject, targetCoordinateSpace: DisplayObject | null): void {
+  static getBounds(out: RectangleLike, source: DisplayObject, targetCoordinateSpace: DisplayObject | null): void {
     if (source !== targetCoordinateSpace) source[R.updateWorldTransform]();
     if (targetCoordinateSpace !== null && targetCoordinateSpace !== source) {
       targetCoordinateSpace[R.updateWorldTransform]();
@@ -96,46 +83,17 @@ export default class DisplayObject implements Renderable {
    * parameter, excluding any strokes on shapes. The values that the
    * `getRect()` method returns are the same or smaller than those
    * returned by the `getBounds()` method.
-   *
-   * Returns a new Rectangle().
-   * @see getRectTo
    **/
-  static getRect(source: DisplayObject, targetCoordinateSpace: DisplayObject | null): Rectangle {
-    const out = new Rectangle();
-    this.getRectTo(out, source, targetCoordinateSpace);
-    return out;
-  }
-
-  /**
-   * Returns a rectangle that defines the boundary of the display object, based
-   * on the coordinate system defined by the `targetCoordinateSpace`
-   * parameter, excluding any strokes on shapes. The values that the
-   * `getRect()` method returns are the same or smaller than those
-   * returned by the `getBounds()` method.
-   **/
-  static getRectTo(out: Rectangle, source: DisplayObject, targetCoordinateSpace: DisplayObject | null): void {
+  static getRect(out: RectangleLike, source: DisplayObject, targetCoordinateSpace: DisplayObject | null): void {
     // TODO: Fill bounds only
-    this.getBoundsTo(out, source, targetCoordinateSpace);
-  }
-
-  /**
-   * Converts the `point` object from the Stage (global) coordinates
-   * to the display object's (local) coordinates.
-   *
-   * Returns a new Vector2()
-   * @see globalToLocalTo
-   **/
-  static globalToLocal(source: DisplayObject, pos: Vector2): Vector2 {
-    const out = new Vector2();
-    this.globalToLocalTo(out, source, pos);
-    return out;
+    this.getBounds(out, source, targetCoordinateSpace);
   }
 
   /**
    * Converts the `point` object from the Stage (global) coordinates
    * to the display object's (local) coordinates.
    **/
-  static globalToLocalTo(out: Vector2, source: DisplayObject, pos: Vector2): void {
+  static globalToLocal(out: Vector2Like, source: DisplayObject, pos: Vector2Like): void {
     source[R.updateWorldTransform]();
     Affine2D.inverseTransformPointXY(out, source[R.worldTransform], pos.x, pos.y);
   }
@@ -150,7 +108,7 @@ export default class DisplayObject implements Renderable {
       const sourceBounds = source[R.localBounds];
       const otherBounds = RectanglePool.get();
       // compare other in source's coordinate space
-      this.getBoundsTo(otherBounds, other, source);
+      this.getBounds(otherBounds, other, source);
       const result = Rectangle.intersects(sourceBounds, otherBounds);
       RectanglePool.release(otherBounds);
       return result;
@@ -199,21 +157,8 @@ export default class DisplayObject implements Renderable {
   /**
    * Converts the `point` object from the display object's (local)
    * coordinates to world coordinates.
-   *
-   * Returns a new Vector2()
-   * @see localToGlobalTo
    **/
-  static localToGlobal(source: DisplayObject, point: Vector2): Vector2 {
-    const out = new Vector2();
-    this.localToGlobalTo(out, source, point);
-    return out;
-  }
-
-  /**
-   * Converts the `point` object from the display object's (local)
-   * coordinates to world coordinates.
-   **/
-  static localToGlobalTo(out: Vector2, source: DisplayObject, point: Vector2): void {
+  static localToGlobal(out: Vector2Like, source: DisplayObject, point: Vector2Like): void {
     source[R.updateWorldTransform]();
     Affine2D.transformPointXY(out, source[R.worldTransform], point.x, point.y);
   }
