@@ -1,8 +1,8 @@
 import { RenderableSymbols as R } from '@flighthq/contracts';
 
-import { DirtyFlags } from './DirtyFlags.js';
+import { DirtyFlags } from './internal/DirtyFlags.js';
 import DisplayObject from './DisplayObject.js';
-import { _stage } from './internal/DisplayObject.js';
+import { _stage } from './internal/DisplayObjectSymbols.js';
 
 export default class DisplayObjectContainer extends DisplayObject {
   override [R.children]: DisplayObject[] = [];

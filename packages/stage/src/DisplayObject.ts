@@ -4,9 +4,9 @@ import { Affine2D, Affine2DPool, Rectangle, RectanglePool, Vector2 } from '@flig
 import type { BitmapFilter, Shader } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import { DirtyFlags } from './DirtyFlags.js';
 import type DisplayObjectContainer from './DisplayObjectContainer.js';
-import { internal as $ } from './internal/DisplayObject.js';
+import { DirtyFlags } from './internal/DirtyFlags.js';
+import { DisplayObjectSymbols as $ } from './internal/DisplayObjectSymbols.js';
 import type LoaderInfo from './LoaderInfo.js';
 import type Stage from './Stage.js';
 import Transform from './Transform.js';
