@@ -19,25 +19,13 @@ export default class Sprite extends DisplayObjectContainer implements BitmapDraw
   static override getBounds = DisplayObject.getBounds;
 
   /** @inheritdoc */
-  static override getBoundsTo = DisplayObject.getBoundsTo;
-
-  /** @inheritdoc */
   static override getRect = DisplayObject.getRect;
-
-  /** @inheritdoc */
-  static override getRectTo = DisplayObject.getRectTo;
 
   /** @inheritdoc */
   static override globalToLocal = DisplayObject.globalToLocal;
 
   /** @inheritdoc */
-  static override globalToLocalTo = DisplayObject.globalToLocalTo;
-
-  /** @inheritdoc */
   static override localToGlobal = DisplayObject.localToGlobal;
-
-  /** @inheritdoc */
-  static override localToGlobalTo = DisplayObject.localToGlobalTo;
 
   /** @inheritdoc */
   static override hitTestObject = DisplayObject.hitTestObject;

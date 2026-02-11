@@ -290,15 +290,11 @@ describe('DisplayObjectContainer', () => {
 
   it('forwards static methods', () => {
     expect(DisplayObjectContainer.getBounds).toBe(DisplayObject.getBounds);
-    expect(DisplayObjectContainer.getBoundsTo).toBe(DisplayObject.getBoundsTo);
     expect(DisplayObjectContainer.getRect).toBe(DisplayObject.getRect);
-    expect(DisplayObjectContainer.getRectTo).toBe(DisplayObject.getRectTo);
     expect(DisplayObjectContainer.globalToLocal).toBe(DisplayObject.globalToLocal);
-    expect(DisplayObjectContainer.globalToLocalTo).toBe(DisplayObject.globalToLocalTo);
     expect(DisplayObjectContainer.hitTestObject).toBe(DisplayObject.hitTestObject);
     expect(DisplayObjectContainer.hitTestPoint).toBe(DisplayObject.hitTestPoint);
     expect(DisplayObjectContainer.localToGlobal).toBe(DisplayObject.localToGlobal);
-    expect(DisplayObjectContainer.localToGlobalTo).toBe(DisplayObject.localToGlobalTo);
     expect(DisplayObjectContainer.invalidate).toBe(DisplayObject.invalidate);
   });
 });
