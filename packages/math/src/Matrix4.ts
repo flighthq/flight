@@ -69,7 +69,7 @@ export default class Matrix4 {
    *
    * out = source · other
    */
-  static append(out: Matrix4Like, source: Matrix4Like, other: Matrix4Like): void {
+  static append(out: Matrix4Like, source: Readonly<Matrix4Like>, other: Readonly<Matrix4Like>): void {
     // world-space append
     this.multiply(out, source, other);
   }
@@ -79,7 +79,7 @@ export default class Matrix4 {
    *
    * out = source · other
    */
-  append(other: Matrix4Like): Matrix4 {
+  append(other: Readonly<Matrix4Like>): Matrix4 {
     Matrix4.append(this, this, other);
     return this;
   }
@@ -91,10 +91,10 @@ export default class Matrix4 {
    **/
   static appendRotation(
     out: Matrix4Like,
-    source: Matrix4Like,
+    source: Readonly<Matrix4Like>,
     degrees: number,
-    axis: Vector4Like,
-    pivotPoint?: Vector4Like,
+    axis: Readonly<Vector4Like>,
+    pivotPoint?: Readonly<Vector4Like>,
   ): void {
     const m = Matrix4Pool.getIdentity();
     this.__getAxisRotation(m, axis.x, axis.y, axis.z, degrees);
@@ -124,7 +124,13 @@ export default class Matrix4 {
    *
    * Scale is applied after all transformations of source are completed.
    **/
-  static appendScale(out: Matrix4Like, source: Matrix4Like, xScale: number, yScale: number, zScale: number): void {
+  static appendScale(
+    out: Matrix4Like,
+    source: Readonly<Matrix4Like>,
+    xScale: number,
+    yScale: number,
+    zScale: number,
+  ): void {
     const m = Matrix4Pool.get();
     this.set(m, xScale, 0.0, 0.0, 0.0, 0.0, yScale, 0.0, 0.0, 0.0, 0.0, zScale, 0.0, 0.0, 0.0, 0.0, 1.0);
     this.append(out, source, m);
@@ -142,7 +148,7 @@ export default class Matrix4 {
    *
    * Translation is applied after all transformations of source are completed.
    */
-  static appendTranslation(out: Matrix4Like, source: Matrix4Like, x: number, y: number, z: number): void {
+  static appendTranslation(out: Matrix4Like, source: Readonly<Matrix4Like>, x: number, y: number, z: number): void {
     const _out = out.m;
     const _source = source.m;
     if (out !== source) out.m.set(source.m);
@@ -151,20 +157,20 @@ export default class Matrix4 {
     _out[14] = _source[14] + z;
   }
 
-  static clone(source: Matrix4Like): Matrix4 {
+  static clone(source: Readonly<Matrix4Like>): Matrix4 {
     const m = new Matrix4();
     this.copy(m, source);
     return m;
   }
 
-  static copy(out: Matrix4Like, source: Matrix4Like): void {
+  static copy(out: Matrix4Like, source: Readonly<Matrix4Like>): void {
     out.m.set(source.m);
   }
 
   /**
 		Copies a column of data from a `Vector4` instance into the values of the target matrix
 	**/
-  static copyColumnFrom(out: Matrix4Like, column: number, source: Vector4Like): void {
+  static copyColumnFrom(out: Matrix4Like, column: number, source: Readonly<Vector4Like>): void {
     const _out = out.m;
     switch (column) {
       case 0:
@@ -203,7 +209,7 @@ export default class Matrix4 {
   /**
    * Copies a column of data from the source matrix into a `Vector4` instance
    **/
-  static copyColumnTo(out: Vector4Like, column: number, source: Matrix4Like): void {
+  static copyColumnTo(out: Vector4Like, column: number, source: Readonly<Matrix4Like>): void {
     const _source = source.m;
     switch (column) {
       case 0:
@@ -239,7 +245,7 @@ export default class Matrix4 {
     }
   }
 
-  copyFrom(source: Matrix4Like): Matrix4 {
+  copyFrom(source: Readonly<Matrix4Like>): Matrix4 {
     this.m.set(source.m);
     return this;
   }
@@ -247,7 +253,7 @@ export default class Matrix4 {
   /**
    * Copies a row of data from a `Vector4` instance into the values of the out matrix
    **/
-  static copyRowFrom(out: Matrix4Like, row: number, source: Vector4Like): void {
+  static copyRowFrom(out: Matrix4Like, row: number, source: Readonly<Vector4Like>): void {
     const _out = out.m;
     switch (row) {
       case 0:
@@ -286,7 +292,7 @@ export default class Matrix4 {
   /**
    * Copies a row of data from the source matrix into a `Vector4` instance
    **/
-  static copyRowTo(out: Vector4Like, row: number, source: Matrix4Like): void {
+  static copyRowTo(out: Vector4Like, row: number, source: Readonly<Matrix4Like>): void {
     const _source = source.m;
     switch (row) {
       case 0:
@@ -349,7 +355,7 @@ export default class Matrix4 {
     return out;
   }
 
-  static determinant(source: Matrix4Like): number {
+  static determinant(source: Readonly<Matrix4Like>): number {
     const _source = source.m;
     return (
       1 *
@@ -362,7 +368,7 @@ export default class Matrix4 {
     );
   }
 
-  static equals(a: Matrix4Like | null | undefined, b: Matrix4Like | null | undefined): boolean {
+  static equals(a: Readonly<Matrix4Like> | null | undefined, b: Readonly<Matrix4Like> | null | undefined): boolean {
     if (a === b) return true;
     if (!a || !b) return false;
     for (let i = 0; i < 16; i++) {
@@ -371,12 +377,12 @@ export default class Matrix4 {
     return true;
   }
 
-  static fromAffine2D(out: Matrix4Like, source: Affine2DLike): void {
+  static fromAffine2D(out: Matrix4Like, source: Readonly<Affine2DLike>): void {
     const _source = source.m;
     this.set2D(out, _source[0], _source[1], _source[3], _source[4], _source[2], _source[5]);
   }
 
-  static fromMatrix3(out: Matrix4Like, source: Matrix3Like): void {
+  static fromMatrix3(out: Matrix4Like, source: Readonly<Matrix3Like>): void {
     const _out = out.m;
     const _source = source.m;
     this.fromAffine2D(out, source);
@@ -385,7 +391,7 @@ export default class Matrix4 {
     _out[10] = _source[8];
   }
 
-  static isAffine(source: Matrix4Like): boolean {
+  static isAffine(source: Readonly<Matrix4Like>): boolean {
     const _source = source.m;
     return _source[3] === 0 && _source[7] === 0 && _source[11] === 0 && _source[15] === 1;
   }
@@ -405,7 +411,7 @@ export default class Matrix4 {
   /**
    * Interpolates from one `Matrix4` instance to another, given a percentage between the two
    **/
-  static interpolate(out: Matrix4Like, a: Matrix4, b: Matrix4, t: number): void {
+  static interpolate(out: Matrix4Like, a: Readonly<Matrix4Like>, b: Readonly<Matrix4Like>, t: number): void {
     const _out = out.m;
     const _a = a.m;
     const _b = b.m;
@@ -417,7 +423,7 @@ export default class Matrix4 {
   /**
    * Attempts to invert the current matrix, so long as the determinant is greater than zero
    **/
-  static inverse(out: Matrix4Like, source: Matrix4Like): boolean {
+  static inverse(out: Matrix4Like, source: Readonly<Matrix4Like>): boolean {
     const _out = out.m;
     const _source = source.m;
 
@@ -489,7 +495,7 @@ export default class Matrix4 {
    *
    * out = a * b
    **/
-  static multiply(out: Matrix4Like, a: Matrix4Like, b: Matrix4Like): void {
+  static multiply(out: Matrix4Like, a: Readonly<Matrix4Like>, b: Readonly<Matrix4Like>): void {
     const _a = a.m;
     const _b = b.m;
     const _out = out.m;
@@ -549,7 +555,7 @@ export default class Matrix4 {
     _out[15] = m241 * m114 + m242 * m124 + m243 * m134 + m244 * m144;
   }
 
-  multiply(other: Matrix4Like): Matrix4 {
+  multiply(other: Readonly<Matrix4Like>): Matrix4 {
     Matrix4.multiply(this, this, other);
     return this;
   }
@@ -612,7 +618,7 @@ export default class Matrix4 {
   //   _out[15] = 1.0;
   // }
 
-  static position(out: Vector3Like, source: Matrix4Like): void {
+  static position(out: Vector3Like, source: Readonly<Matrix4Like>): void {
     const _source = source.m;
     out.x = _source[12];
     out.y = _source[13];
@@ -624,7 +630,7 @@ export default class Matrix4 {
    *
    * out = other · source
    */
-  static prepend(out: Matrix4Like, source: Matrix4Like, other: Matrix4Like): void {
+  static prepend(out: Matrix4Like, source: Readonly<Matrix4Like>, other: Readonly<Matrix4Like>): void {
     this.multiply(out, other, source);
   }
 
@@ -633,7 +639,7 @@ export default class Matrix4 {
    *
    * out = other · source
    */
-  prepend(other: Matrix4Like): Matrix4 {
+  prepend(other: Readonly<Matrix4Like>): Matrix4 {
     Matrix4.prepend(this, this, other);
     return this;
   }
@@ -646,10 +652,10 @@ export default class Matrix4 {
    **/
   static prependRotation(
     out: Matrix4Like,
-    source: Matrix4Like,
+    source: Readonly<Matrix4Like>,
     degrees: number,
-    axis: Vector4Like,
-    pivotPoint?: Vector4Like,
+    axis: Readonly<Vector4Like>,
+    pivotPoint?: Readonly<Vector4Like>,
   ): void {
     const m = Matrix4Pool.getIdentity();
     this.__getAxisRotation(m, axis.x, axis.y, axis.z, degrees);
@@ -680,7 +686,13 @@ export default class Matrix4 {
    * This method first applies the translation (tx, ty, tz) and then applies all the transformations
    * (e.g., rotation, scaling, etc.) from the source matrix.
    **/
-  static prependScale(out: Matrix4Like, source: Matrix4Like, xScale: number, yScale: number, zScale: number): void {
+  static prependScale(
+    out: Matrix4Like,
+    source: Readonly<Matrix4Like>,
+    xScale: number,
+    yScale: number,
+    zScale: number,
+  ): void {
     const m = Matrix4Pool.get();
     this.set(m, xScale, 0.0, 0.0, 0.0, 0.0, yScale, 0.0, 0.0, 0.0, 0.0, zScale, 0.0, 0.0, 0.0, 0.0, 1.0);
     this.prepend(out, source, m);
@@ -693,7 +705,7 @@ export default class Matrix4 {
    * This method first applies the translation (tx, ty, tz) and then applies all the transformations
    * (e.g., rotation, scaling, etc.) from the source matrix.
    */
-  static prependTranslation(out: Matrix4Like, source: Matrix4Like, x: number, y: number, z: number): void {
+  static prependTranslation(out: Matrix4Like, source: Readonly<Matrix4Like>, x: number, y: number, z: number): void {
     const m = Matrix4Pool.getIdentity();
     m.translate(x, y, z); // LOCAL translation matrix
     this.multiply(out, m, source);
@@ -705,14 +717,14 @@ export default class Matrix4 {
    *
    * Translation is preserved.
    */
-  static rotate(out: Matrix4Like, source: Matrix4Like, axis: Vector3Like, degrees: number): void {
+  static rotate(out: Matrix4Like, source: Readonly<Matrix4Like>, axis: Readonly<Vector3Like>, degrees: number): void {
     const m = Matrix4Pool.getIdentity();
     this.__getAxisRotation(m, axis.x, axis.y, axis.z, degrees);
     this.multiply(out, source, m);
     Matrix4Pool.release(m);
   }
 
-  rotate(axis: Vector3Like, theta: number): Matrix4 {
+  rotate(axis: Readonly<Vector3Like>, theta: number): Matrix4 {
     Matrix4.rotate(this, this, axis, theta);
     return this;
   }
@@ -722,7 +734,7 @@ export default class Matrix4 {
    *
    * Translation is preserved.
    */
-  static scale(out: Matrix4Like, source: Matrix4Like, sx: number, sy: number, sz: number): void {
+  static scale(out: Matrix4Like, source: Readonly<Matrix4Like>, sx: number, sy: number, sz: number): void {
     const a = source.m;
     const o = out.m;
 
@@ -892,7 +904,7 @@ export default class Matrix4 {
     _out[15] = 1;
   }
 
-  static setPosition(out: Matrix4Like, source: Vector3Like): void {
+  static setPosition(out: Matrix4Like, source: Readonly<Vector3Like>): void {
     const _out = out.m;
     _out[12] = source.x;
     _out[13] = source.y;
@@ -902,7 +914,7 @@ export default class Matrix4 {
   /**
    * Transforms a point using this matrix, ignoring the translation of the matrix
    **/
-  static transformPoint(out: Vector3Like, source: Matrix4Like, point: Vector3Like): void {
+  static transformPoint(out: Vector3Like, source: Readonly<Matrix4Like>, point: Readonly<Vector3Like>): void {
     const _source = source.m;
     const x = point.x,
       y = point.y,
@@ -917,7 +929,7 @@ export default class Matrix4 {
 		@param	result	(Optional) An existing `Vector2` instance to fill with the result
 		@return	The resulting `Vector4` instance
 	**/
-  static transformVector(out: Vector4Like, source: Matrix4Like, vector: Vector4Like): void {
+  static transformVector(out: Vector4Like, source: Readonly<Matrix4Like>, vector: Readonly<Vector4Like>): void {
     const _source = source.m;
     const x = vector.x,
       y = vector.y,
@@ -931,7 +943,7 @@ export default class Matrix4 {
   /**
    * Transforms a series of [x, y, z] value pairs at once
    **/
-  static transformVectors(out: Float32Array, source: Matrix4Like, vectors: Float32Array): void {
+  static transformVectors(out: Float32Array, source: Readonly<Matrix4Like>, vectors: Readonly<Float32Array>): void {
     const _source = source.m;
     let i = 0;
     let x: number, y: number, z: number;
@@ -941,9 +953,9 @@ export default class Matrix4 {
       y = vectors[i + 1];
       z = vectors[i + 2];
 
-      vectors[i] = x * _source[0] + y * _source[4] + z * _source[8] + _source[12];
-      vectors[i + 1] = x * _source[1] + y * _source[5] + z * _source[9] + _source[13];
-      vectors[i + 2] = x * _source[2] + y * _source[6] + z * _source[10] + _source[14];
+      out[i] = x * _source[0] + y * _source[4] + z * _source[8] + _source[12];
+      out[i + 1] = x * _source[1] + y * _source[5] + z * _source[9] + _source[13];
+      out[i + 2] = x * _source[2] + y * _source[6] + z * _source[10] + _source[14];
 
       i += 3;
     }
@@ -954,7 +966,7 @@ export default class Matrix4 {
    *
    * Translation is applied respecting using all other transformations of source.
    */
-  static translate(out: Matrix4Like, source: Matrix4Like, tx: number, ty: number, tz: number): void {
+  static translate(out: Matrix4Like, source: Readonly<Matrix4Like>, tx: number, ty: number, tz: number): void {
     const a = source.m;
     const o = out.m;
     if (out !== source) out.m.set(source.m);
@@ -979,7 +991,7 @@ export default class Matrix4 {
    * - Computing inverse-transpose for normals
    * - Switching between row- and column-vector math conventions
    */
-  static transpose(out: Matrix4Like, source: Matrix4Like): void {
+  static transpose(out: Matrix4Like, source: Readonly<Matrix4Like>): void {
     if (out !== source) out.m.set(source.m);
     this.__swap(out, source, 1, 4);
     this.__swap(out, source, 2, 8);
@@ -1019,7 +1031,7 @@ export default class Matrix4 {
     _out[6] = tmp1 - tmp2;
   }
 
-  private static __swap(out: Matrix4Like, source: Matrix4Like, a: number, b: number): void {
+  private static __swap(out: Matrix4Like, source: Readonly<Matrix4Like>, a: number, b: number): void {
     const temp = source.m[a];
     out.m[a] = source.m[b];
     out.m[b] = temp;

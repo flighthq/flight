@@ -22,27 +22,27 @@ export default class Vector2 implements Vector2Like {
     if (y !== undefined) this.y = y;
   }
 
-  static add(out: Vector2Like, a: Vector2Like, b: Vector2Like): void {
+  static add(out: Vector2Like, a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): void {
     out.x = a.x + b.x;
     out.y = a.y + b.y;
   }
 
-  add(source: Vector2Like): Vector2 {
+  add(source: Readonly<Vector2Like>): Vector2 {
     this.x += source.x;
     this.y += source.y;
     return this;
   }
 
-  static clone(source: Vector2Like): Vector2 {
+  static clone(source: Readonly<Vector2Like>): Vector2 {
     return new Vector2(source.x, source.y);
   }
 
-  static copy(out: Vector2Like, source: Vector2Like): void {
+  static copy(out: Vector2Like, source: Readonly<Vector2Like>): void {
     out.x = source.x;
     out.y = source.y;
   }
 
-  copyFrom(source: Vector2Like): Vector2 {
+  copyFrom(source: Readonly<Vector2Like>): Vector2 {
     this.x = source.x;
     this.y = source.y;
     return this;
@@ -54,34 +54,34 @@ export default class Vector2 implements Vector2Like {
     return out;
   }
 
-  static distance(a: Vector2Like, b: Vector2Like): number {
+  static distance(a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): number {
     const dx = a.x - b.x;
     const dy = a.y - b.y;
     return Math.sqrt(dx * dx + dy * dy);
   }
 
-  static equals(a: Vector2Like | null | undefined, b: Vector2Like | null | undefined): boolean {
+  static equals(a: Readonly<Vector2Like> | null | undefined, b: Readonly<Vector2Like> | null | undefined): boolean {
     if (!a || !b) return false;
     return a === b || (a.x === b.x && a.y === b.y);
   }
 
-  static length(source: Vector2Like): number {
+  static length(source: Readonly<Vector2Like>): number {
     return Math.sqrt(source.x ** 2 + source.y ** 2);
   }
 
-  static lengthSquared(source: Vector2Like): number {
+  static lengthSquared(source: Readonly<Vector2Like>): number {
     return source.x ** 2 + source.y ** 2;
   }
 
   /**
    * Linear interpolation between points a and b
    */
-  static lerp(out: Vector2Like, a: Vector2Like, b: Vector2Like, t: number): void {
+  static lerp(out: Vector2Like, a: Readonly<Vector2Like>, b: Readonly<Vector2Like>, t: number): void {
     out.x = a.x + t * (b.x - a.x);
     out.y = a.y + t * (b.y - a.y);
   }
 
-  lerp(b: Vector2Like, t: number): Vector2 {
+  lerp(b: Readonly<Vector2Like>, t: number): Vector2 {
     Vector2.lerp(this, this, b, t);
     return this;
   }
@@ -92,7 +92,7 @@ export default class Vector2 implements Vector2Like {
    * The direction of the vector is preserved. If the original vector has zero length,
    * the returned point will also be (0, 0).
    */
-  static normalize(out: Vector2Like, source: Vector2Like, length: number): void {
+  static normalize(out: Vector2Like, source: Readonly<Vector2Like>, length: number): void {
     const currentLength = this.length(source);
     if (currentLength === 0) {
       out.x = 0;
@@ -109,7 +109,7 @@ export default class Vector2 implements Vector2Like {
     return this;
   }
 
-  static offset(out: Vector2Like, source: Vector2Like, dx: number, dy: number): void {
+  static offset(out: Vector2Like, source: Readonly<Vector2Like>, dx: number, dy: number): void {
     out.x = source.x + dx;
     out.y = source.y + dy;
   }
@@ -136,12 +136,12 @@ export default class Vector2 implements Vector2Like {
     out.y = len * Math.sin(angle);
   }
 
-  static subtract(out: Vector2Like, source: Vector2Like, toSubtract: Vector2Like): void {
+  static subtract(out: Vector2Like, source: Readonly<Vector2Like>, toSubtract: Readonly<Vector2Like>): void {
     out.x = source.x - toSubtract.x;
     out.y = source.y - toSubtract.y;
   }
 
-  subtract(source: Vector2Like): Vector2 {
+  subtract(source: Readonly<Vector2Like>): Vector2 {
     this.x -= source.x;
     this.y -= source.y;
     return this;

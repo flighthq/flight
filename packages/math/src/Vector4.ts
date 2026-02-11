@@ -35,14 +35,14 @@ export default class Vector4 implements Vector4Like {
    * Adds the x, y, z and w components of two vector objects
    * and writes to out.
    */
-  static add(out: Vector4Like, a: Vector4Like, b: Vector4Like): void {
+  static add(out: Vector4Like, a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): void {
     out.x = a.x + b.x;
     out.y = a.y + b.y;
     out.z = a.z + b.z;
     out.w = a.w + b.w;
   }
 
-  add(source: Vector4Like): Vector4 {
+  add(source: Readonly<Vector4Like>): Vector4 {
     this.x += source.x;
     this.y += source.y;
     this.z += source.z;
@@ -55,7 +55,7 @@ export default class Vector4 implements Vector4Like {
    * smallest radian the first Vector4 object rotates until it aligns with the
    * second Vector4 object.
    **/
-  static angleBetween(a: Vector4Like, b: Vector4Like): number {
+  static angleBetween(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
     const la = this.length(a);
     const lb = this.length(b);
 
@@ -66,14 +66,14 @@ export default class Vector4 implements Vector4Like {
     return Math.acos(Math.min(1, Math.max(-1, dot)));
   }
 
-  static clone(source: Vector4Like): Vector4 {
+  static clone(source: Readonly<Vector4Like>): Vector4 {
     return new Vector4(source.x, source.y, source.z, source.w);
   }
 
   /**
    * Copies the x, y, z and w components of another vector.
    */
-  static copy(out: Vector4Like, source: Vector4Like): void {
+  static copy(out: Vector4Like, source: Readonly<Vector4Like>): void {
     out.x = source.x;
     out.y = source.y;
     out.z = source.z;
@@ -83,7 +83,7 @@ export default class Vector4 implements Vector4Like {
   /**
    * Copies the x, y, z and w components of another vector.
    */
-  copyFrom(source: Vector4Like): Vector4 {
+  copyFrom(source: Readonly<Vector4Like>): Vector4 {
     this.x = source.x;
     this.y = source.y;
     this.z = source.z;
@@ -94,7 +94,7 @@ export default class Vector4 implements Vector4Like {
   /**
    * Returns the distance between two Vector4 objects.
    **/
-  static distance(a: Vector4Like, b: Vector4Like): number {
+  static distance(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
     const x: number = b.x - a.x;
     const y: number = b.y - a.y;
     const z: number = b.z - a.z;
@@ -108,7 +108,7 @@ export default class Vector4 implements Vector4Like {
    *
    * This avoids Math.sqrt for better performance.
    **/
-  static distanceSquared(a: Vector4Like, b: Vector4Like): number {
+  static distanceSquared(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
     const x: number = b.x - a.x;
     const y: number = b.y - a.y;
     const z: number = b.z - a.z;
@@ -124,11 +124,11 @@ export default class Vector4 implements Vector4Like {
    * one. They remove the length of the vector as a factor in the result. You can use
    * the `normalize()` method to convert a vector to a unit vector.
    **/
-  static dot(a: Vector4Like, b: Vector4Like): number {
+  static dot(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
   }
 
-  static equals(a: Vector4Like | null | undefined, b: Vector4Like | null | undefined): boolean {
+  static equals(a: Readonly<Vector4Like> | null | undefined, b: Readonly<Vector4Like> | null | undefined): boolean {
     if (!a || !b) return false;
     return a.x === b.x && a.y === b.y && a.z === b.z && a.w === b.w;
   }
@@ -138,7 +138,7 @@ export default class Vector4 implements Vector4Like {
    * the object's x, y, z and w coordinates. A unit vector has
    * a length or magnitude of one.
    **/
-  static length(source: Vector4Like): number {
+  static length(source: Readonly<Vector4Like>): number {
     return Math.sqrt(source.x ** 2 + source.y ** 2 + source.z ** 2 + source.w ** 2);
   }
 
@@ -148,7 +148,7 @@ export default class Vector4 implements Vector4Like {
    * method whenever possible instead of the slower `Math.sqrt()` method call of the
    * `Vector4.length()` method.
    **/
-  static lengthSquared(source: Vector4Like): number {
+  static lengthSquared(source: Readonly<Vector4Like>): number {
     return source.x ** 2 + source.y ** 2 + source.z ** 2 + source.w ** 2;
   }
 
@@ -159,7 +159,7 @@ export default class Vector4 implements Vector4Like {
    * The two Vector4 objects are nearly equal if the value of all the elements of the two
    * vertices are equal, or the result of the comparison is within the tolerance range.
    **/
-  static nearEquals(a: Vector4Like, b: Vector4Like, tolerance: number = 1e-6): boolean {
+  static nearEquals(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>, tolerance: number = 1e-6): boolean {
     return (
       Math.abs(a.x - b.x) < tolerance &&
       Math.abs(a.y - b.y) < tolerance &&
@@ -173,7 +173,7 @@ export default class Vector4 implements Vector4Like {
    * considered the opposite of the original object. The value of the `x`, `y`, and `z`
    * properties of the current Vector4 object is changed to -x, -y, and -z.
    **/
-  static negate(out: Vector4Like, source: Vector4Like): void {
+  static negate(out: Vector4Like, source: Readonly<Vector4Like>): void {
     out.x = source.x * -1;
     out.y = source.y * -1;
     out.z = source.z * -1;
@@ -194,7 +194,7 @@ export default class Vector4 implements Vector4Like {
    *
    * Returns the original length.
    **/
-  static normalize(out: Vector4Like, source: Vector4Like): number {
+  static normalize(out: Vector4Like, source: Readonly<Vector4Like>): number {
     const l = this.length(source);
 
     if (l !== 0) {
@@ -216,7 +216,7 @@ export default class Vector4 implements Vector4Like {
    * Divides the value of the `x`, `y`, and `z` properties of the current Vector4
    * object by the value of its `w` property.
    **/
-  static project(out: Vector3Like, source: Vector4Like): void {
+  static project(out: Vector3Like, source: Readonly<Vector4Like>): void {
     out.x = source.x / source.w;
     out.y = source.y / source.w;
     out.z = source.z / source.w;
@@ -226,7 +226,7 @@ export default class Vector4 implements Vector4Like {
    * Scales the current Vector4 object by a scalar, a magnitude. The Vector4 object's
    * x, y, z and w elements are multiplied by the provided scalar number.
    **/
-  static scale(out: Vector4Like, source: Vector4Like, scalar: number): void {
+  static scale(out: Vector4Like, source: Readonly<Vector4Like>, scalar: number): void {
     out.x = source.x * scalar;
     out.y = source.y * scalar;
     out.z = source.z * scalar;
@@ -255,14 +255,14 @@ export default class Vector4 implements Vector4Like {
    * Subtracts the value of the x, y, z and w elements of the current Vector4 object
    * from the values of the x, y, z and w elements of another Vector4 object.
    **/
-  static subtract(out: Vector4Like, source: Vector4Like, other: Vector4Like): void {
+  static subtract(out: Vector4Like, source: Readonly<Vector4Like>, other: Readonly<Vector4Like>): void {
     out.x = source.x - other.x;
     out.y = source.y - other.y;
     out.z = source.z - other.z;
     out.w = source.w - other.w;
   }
 
-  subtract(source: Vector4Like): Vector4 {
+  subtract(source: Readonly<Vector4Like>): Vector4 {
     this.x -= source.x;
     this.y -= source.y;
     this.z -= source.z;

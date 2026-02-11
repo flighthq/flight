@@ -39,23 +39,23 @@ export default class Rectangle implements RectangleLike {
     if (height !== undefined) this.height = height;
   }
 
-  static bottom(source: RectangleLike): number {
+  static bottom(source: Readonly<RectangleLike>): number {
     return source.y + source.height;
   }
 
   /**
    * Returns new Vector2 object with bottom-right coordinates
    */
-  static bottomRight(out: Vector2Like, source: RectangleLike): void {
+  static bottomRight(out: Vector2Like, source: Readonly<RectangleLike>): void {
     out.x = source.x + source.width;
     out.y = source.y + source.height;
   }
 
-  static clone(source: RectangleLike): Rectangle {
+  static clone(source: Readonly<RectangleLike>): Rectangle {
     return new Rectangle(source.x, source.y, source.width, source.height);
   }
 
-  static contains(source: RectangleLike, x: number, y: number): boolean {
+  static contains(source: Readonly<RectangleLike>, x: number, y: number): boolean {
     const x0 = Math.min(source.x, source.x + source.width);
     const x1 = Math.max(source.x, source.x + source.width);
     const y0 = Math.min(source.y, source.y + source.height);
@@ -63,11 +63,11 @@ export default class Rectangle implements RectangleLike {
     return x >= x0 && x < x1 && y >= y0 && y < y1;
   }
 
-  static containsPoint(source: RectangleLike, vector: Vector2Like): boolean {
+  static containsPoint(source: Readonly<RectangleLike>, vector: Readonly<Vector2Like>): boolean {
     return this.contains(source, vector.x, vector.y);
   }
 
-  static containsRect(source: RectangleLike, other: RectangleLike): boolean {
+  static containsRect(source: Readonly<RectangleLike>, other: Readonly<RectangleLike>): boolean {
     const sx0 = Math.min(source.x, source.x + source.width);
     const sx1 = Math.max(source.x, source.x + source.width);
     const sy0 = Math.min(source.y, source.y + source.height);
@@ -82,7 +82,7 @@ export default class Rectangle implements RectangleLike {
     return ox0 >= sx0 && oy0 >= sy0 && ox1 <= sx1 && oy1 <= sy1;
   }
 
-  static copy(out: RectangleLike, source: RectangleLike): void {
+  static copy(out: RectangleLike, source: Readonly<RectangleLike>): void {
     if (out !== source) {
       out.x = source.x;
       out.y = source.y;
@@ -91,7 +91,7 @@ export default class Rectangle implements RectangleLike {
     }
   }
 
-  copyFrom(source: RectangleLike): Rectangle {
+  copyFrom(source: Readonly<RectangleLike>): Rectangle {
     this.x = source.x;
     this.y = source.y;
     this.width = source.width;
@@ -99,24 +99,28 @@ export default class Rectangle implements RectangleLike {
     return this;
   }
 
-  static equals(a: RectangleLike | null | undefined, b: RectangleLike | null | undefined): boolean {
+  static equals(a: Readonly<RectangleLike> | null | undefined, b: Readonly<RectangleLike> | null | undefined): boolean {
     if (a === b) return true;
     if (!a || !b) return false;
     return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
   }
 
-  static inflate(out: RectangleLike, source: RectangleLike, dx: number, dy: number): void {
+  static inflate(out: RectangleLike, source: Readonly<RectangleLike>, dx: number, dy: number): void {
     out.x = source.x - dx;
     out.width = source.width + dx * 2;
     out.y = source.y - dy;
     out.height = source.height + dy * 2;
   }
 
-  static inflatePoint(out: RectangleLike, sourceRect: RectangleLike, sourceVec2: Vector2Like): void {
+  static inflatePoint(
+    out: RectangleLike,
+    sourceRect: Readonly<RectangleLike>,
+    sourceVec2: Readonly<Vector2Like>,
+  ): void {
     this.inflate(out, sourceRect, sourceVec2.x, sourceVec2.y);
   }
 
-  static intersection(out: RectangleLike, a: RectangleLike, b: RectangleLike): void {
+  static intersection(out: RectangleLike, a: Readonly<RectangleLike>, b: Readonly<RectangleLike>): void {
     const x0 = Math.max(this.minX(a), this.minX(b));
     const x1 = Math.min(this.maxX(a), this.maxX(b));
     const y0 = Math.max(this.minY(a), this.minY(b));
@@ -133,7 +137,7 @@ export default class Rectangle implements RectangleLike {
     out.height = y1 - y0;
   }
 
-  static intersects(a: RectangleLike, b: RectangleLike): boolean {
+  static intersects(a: Readonly<RectangleLike>, b: Readonly<RectangleLike>): boolean {
     return !(
       this.maxX(a) <= this.minX(b) ||
       this.minX(a) >= this.maxX(b) ||
@@ -147,35 +151,35 @@ export default class Rectangle implements RectangleLike {
    *
    * Note: Negative width or height is considered valid
    */
-  static isEmpty(source: RectangleLike): boolean {
+  static isEmpty(source: Readonly<RectangleLike>): boolean {
     return source.width === 0 || source.height === 0;
   }
 
-  static isFlippedX(source: RectangleLike): boolean {
+  static isFlippedX(source: Readonly<RectangleLike>): boolean {
     return source.width < 0;
   }
 
-  static isFlippedY(source: RectangleLike): boolean {
+  static isFlippedY(source: Readonly<RectangleLike>): boolean {
     return source.height < 0;
   }
 
-  static minX(source: RectangleLike): number {
+  static minX(source: Readonly<RectangleLike>): number {
     return Math.min(source.x, source.x + source.width);
   }
 
-  static minY(source: RectangleLike): number {
+  static minY(source: Readonly<RectangleLike>): number {
     return Math.min(source.y, source.y + source.height);
   }
 
-  static maxX(source: RectangleLike): number {
+  static maxX(source: Readonly<RectangleLike>): number {
     return Math.max(source.x, source.x + source.width);
   }
 
-  static maxY(source: RectangleLike): number {
+  static maxY(source: Readonly<RectangleLike>): number {
     return Math.max(source.y, source.y + source.height);
   }
 
-  static normalized(out: RectangleLike, source: RectangleLike): void {
+  static normalized(out: RectangleLike, source: Readonly<RectangleLike>): void {
     const _minX = this.minX(source);
     const _minY = this.minY(source);
     out.x = _minX;
@@ -184,27 +188,27 @@ export default class Rectangle implements RectangleLike {
     out.height = this.maxY(source) - _minY;
   }
 
-  static normalizedBottomRight(out: Vector2Like, source: RectangleLike): void {
+  static normalizedBottomRight(out: Vector2Like, source: Readonly<RectangleLike>): void {
     out.x = this.maxX(source);
     out.y = this.maxY(source);
   }
 
-  static normalizedTopLeft(out: Vector2Like, source: RectangleLike): void {
+  static normalizedTopLeft(out: Vector2Like, source: Readonly<RectangleLike>): void {
     out.x = this.minX(source);
     out.y = this.minY(source);
   }
 
-  static offset(out: RectangleLike, target: RectangleLike, dx: number, dy: number): void {
-    out.x = target.x + dx;
-    out.y = target.y + dy;
+  static offset(out: RectangleLike, source: Readonly<RectangleLike>, dx: number, dy: number): void {
+    out.x = source.x + dx;
+    out.y = source.y + dy;
   }
 
-  static offsetPoint(out: Vector2Like, target: RectangleLike, point: Vector2Like): void {
-    out.x = target.x + point.x;
-    out.y = target.y + point.y;
+  static offsetPoint(out: Vector2Like, source: Readonly<RectangleLike>, point: Readonly<Vector2Like>): void {
+    out.x = source.x + point.x;
+    out.y = source.y + point.y;
   }
 
-  static right(source: RectangleLike): number {
+  static right(source: Readonly<RectangleLike>): number {
     return source.x + source.width;
   }
 
@@ -215,7 +219,7 @@ export default class Rectangle implements RectangleLike {
     out.height = height;
   }
 
-  static setBottomRight(out: RectangleLike, source: RectangleLike, point: Vector2Like): void {
+  static setBottomRight(out: RectangleLike, source: Readonly<RectangleLike>, point: Readonly<Vector2Like>): void {
     out.width = point.x - source.x;
     out.height = point.y - source.y;
   }
@@ -224,12 +228,12 @@ export default class Rectangle implements RectangleLike {
     out.x = out.y = out.width = out.height = 0;
   }
 
-  static setSize(out: RectangleLike, size: Vector2Like): void {
+  static setSize(out: RectangleLike, size: Readonly<Vector2Like>): void {
     out.width = size.x;
     out.height = size.y;
   }
 
-  static setTopLeft(out: RectangleLike, point: Vector2Like): void {
+  static setTopLeft(out: RectangleLike, point: Readonly<Vector2Like>): void {
     out.x = point.x;
     out.y = point.y;
   }
@@ -237,7 +241,7 @@ export default class Rectangle implements RectangleLike {
   /**
    * Sets a Vector2 object to width and height
    */
-  static size(out: Vector2Like, source: Rectangle): void {
+  static size(out: Vector2Like, source: Readonly<RectangleLike>): void {
     out.x = source.width;
     out.y = source.height;
   }
@@ -245,12 +249,12 @@ export default class Rectangle implements RectangleLike {
   /**
    * Sets a Vector2 object with top-left coordinates
    */
-  static topLeft(out: Vector2Like, source: RectangleLike): void {
+  static topLeft(out: Vector2Like, source: Readonly<RectangleLike>): void {
     out.x = source.x;
     out.y = source.y;
   }
 
-  static union(out: RectangleLike, source: RectangleLike, other: RectangleLike): void {
+  static union(out: RectangleLike, source: Readonly<RectangleLike>, other: Readonly<RectangleLike>): void {
     const sourceLeft = Math.min(source.x, source.x + source.width);
     const sourceRight = Math.max(source.x, source.x + source.width);
     const sourceTop = Math.min(source.y, source.y + source.height);

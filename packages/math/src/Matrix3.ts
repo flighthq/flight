@@ -41,17 +41,17 @@ export default class Matrix3 implements Matrix3Like {
     if (m22 !== undefined) this.m[8] = m22;
   }
 
-  static clone(source: Matrix3Like): Matrix3 {
+  static clone(source: Readonly<Matrix3Like>): Matrix3 {
     const m = new Matrix3();
     this.copy(m, source);
     return m;
   }
 
-  static copy(out: Matrix3Like, source: Matrix3Like): void {
+  static copy(out: Matrix3Like, source: Readonly<Matrix3Like>): void {
     out.m.set(source.m);
   }
 
-  static copyColumnFrom(out: Matrix3Like, column: number, source: Vector3Like): void {
+  static copyColumnFrom(out: Matrix3Like, column: number, source: Readonly<Vector3Like>): void {
     if (column > 2) {
       throw new RangeError('Column ' + column + ' out of bounds (2)');
     } else if (column === 0) {
@@ -69,7 +69,7 @@ export default class Matrix3 implements Matrix3Like {
     }
   }
 
-  static copyColumnTo(out: Vector3Like, column: number, source: Matrix3Like): void {
+  static copyColumnTo(out: Vector3Like, column: number, source: Readonly<Matrix3Like>): void {
     if (column > 2) {
       throw new RangeError('Column ' + column + ' out of bounds (2)');
     } else if (column === 0) {
@@ -87,12 +87,12 @@ export default class Matrix3 implements Matrix3Like {
     }
   }
 
-  copyFrom(source: Matrix3Like): Matrix3 {
+  copyFrom(source: Readonly<Matrix3Like>): Matrix3 {
     this.m.set(source.m);
     return this;
   }
 
-  static copyRowFrom(out: Matrix3Like, row: number, source: Vector3Like): void {
+  static copyRowFrom(out: Matrix3Like, row: number, source: Readonly<Vector3Like>): void {
     if (row > 2) {
       throw new RangeError('Row ' + row + ' out of bounds (2)');
     } else if (row === 0) {
@@ -110,7 +110,7 @@ export default class Matrix3 implements Matrix3Like {
     }
   }
 
-  static copyRowTo(out: Vector3Like, row: number, source: Matrix3Like): void {
+  static copyRowTo(out: Vector3Like, row: number, source: Readonly<Matrix3Like>): void {
     if (row > 2) {
       throw new RangeError('Row ' + row + ' out of bounds (2)');
     } else if (row === 0) {
@@ -128,7 +128,7 @@ export default class Matrix3 implements Matrix3Like {
     }
   }
 
-  static equals(a: Matrix3Like | null | undefined, b: Matrix3Like | null | undefined): boolean {
+  static equals(a: Readonly<Matrix3Like> | null | undefined, b: Readonly<Matrix3Like> | null | undefined): boolean {
     if (a === b) return true;
     if (!a || !b) return false;
     for (let i = 0; i < 9; i++) {
@@ -137,7 +137,7 @@ export default class Matrix3 implements Matrix3Like {
     return true;
   }
 
-  static fromAffine2D(out: Matrix3Like, source: Affine2DLike): void {
+  static fromAffine2D(out: Matrix3Like, source: Readonly<Affine2DLike>): void {
     const _out = out.m;
     _out.set(source.m.slice(0, 6));
     _out[6] = 0;
@@ -145,7 +145,7 @@ export default class Matrix3 implements Matrix3Like {
     _out[8] = 1;
   }
 
-  static fromMatrix4(out: Matrix3Like, source: Matrix4Like): void {
+  static fromMatrix4(out: Matrix3Like, source: Readonly<Matrix4Like>): void {
     const _out = out.m;
     const _source = source.m;
     _out[0] = _source[0];
@@ -173,7 +173,7 @@ export default class Matrix3 implements Matrix3Like {
   /**
    * Attempts to invert a matrix, so long as it is invertable
    */
-  static inverse(out: Matrix3Like, source: Matrix3Like): void {
+  static inverse(out: Matrix3Like, source: Readonly<Matrix3Like>): void {
     const _in = source.m;
     const _out = out.m;
 
@@ -238,14 +238,14 @@ export default class Matrix3 implements Matrix3Like {
     return this;
   }
 
-  static isAffine(source: Matrix3Like): boolean {
+  static isAffine(source: Readonly<Matrix3Like>): boolean {
     return source.m[6] === 0 && source.m[7] === 0 && source.m[8] === 1;
   }
 
   /**
    * out = a * b
    */
-  static multiply(out: Matrix3Like, a: Matrix3Like, b: Matrix3Like): void {
+  static multiply(out: Matrix3Like, a: Readonly<Matrix3Like>, b: Readonly<Matrix3Like>): void {
     const _a = a.m;
     const _b = b.m;
     const _out = out.m;
@@ -292,12 +292,12 @@ export default class Matrix3 implements Matrix3Like {
     _out[8] = m22;
   }
 
-  multiply(source: Matrix3Like): Matrix3 {
+  multiply(source: Readonly<Matrix3Like>): Matrix3 {
     Matrix3.multiply(this, this, source);
     return this;
   }
 
-  static rotate(out: Matrix3Like, source: Matrix3Like, theta: number): void {
+  static rotate(out: Matrix3Like, source: Readonly<Matrix3Like>, theta: number): void {
     const c = Math.cos(theta);
     const s = Math.sin(theta);
 
@@ -322,7 +322,7 @@ export default class Matrix3 implements Matrix3Like {
     return this;
   }
 
-  static scale(out: Matrix3Like, source: Matrix3Like, sx: number, sy: number): void {
+  static scale(out: Matrix3Like, source: Readonly<Matrix3Like>, sx: number, sy: number): void {
     const a = source.m;
     const o = out.m;
 
@@ -368,7 +368,7 @@ export default class Matrix3 implements Matrix3Like {
     _out[8] = m22;
   }
 
-  static translate(out: Matrix3Like, source: Matrix3Like, tx: number, ty: number): void {
+  static translate(out: Matrix3Like, source: Readonly<Matrix3Like>, tx: number, ty: number): void {
     const a = source.m;
     const o = out.m;
 
