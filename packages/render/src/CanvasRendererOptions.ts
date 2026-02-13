@@ -1,4 +1,4 @@
-import type { Affine2D } from '@flighthq/math';
+import type { Matrix2D } from '@flighthq/types';
 
 export type CanvasRendererOptions = {
   backgroundColor?: number | null;
@@ -6,6 +6,6 @@ export type CanvasRendererOptions = {
   imageSmoothingEnabled?: boolean;
   imageSmoothingQuality?: ImageSmoothingQuality;
   pixelRatio?: number;
-  renderTransform?: Affine2D;
+  renderTransform?: Matrix2D;
   roundPixels?: boolean;
 };

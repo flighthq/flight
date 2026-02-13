@@ -1,32 +1,31 @@
-import type { Renderable } from '@flighthq/contracts';
-import { RenderableSymbols as R } from '@flighthq/contracts';
-import type { Affine2D } from '@flighthq/types';
+import { getCurrentWorldTransform, getDerivedState } from '@flighthq/stage/derived';
+import type { DisplayObject, Matrix2D } from '@flighthq/types';
 
 export default class CanvasRenderData {
-  readonly source: Renderable;
+  readonly source: DisplayObject;
 
   cacheAsBitmap: boolean = false;
   localAppearanceID: number = -1;
   localBoundsID: number = -1;
   mask: CanvasRenderData | null = null;
   renderAlpha: number = -1;
-  renderTransform: Affine2D;
+  renderTransform: Matrix2D;
   worldTransformID: number = -1;
 
-  constructor(source: Renderable) {
+  constructor(source: DisplayObject) {
     this.source = source;
-    this.renderTransform = source[R.worldTransform];
+    this.renderTransform = getCurrentWorldTransform(source);
   }
 
   isDirty() {
+    const state = getDerivedState(this.source);
     if (
-      this.worldTransformID !==
-        this.source[R.worldTransformID] /*|| this.appearanceID !== this.source[R.appearanceID]*/ ||
-      this.localBoundsID !== this.source[R.localBoundsID]
+      this.worldTransformID !== state.worldTransformID /*|| this.appearanceID !== this.source[R.appearanceID]*/ ||
+      this.localBoundsID !== state.localBoundsID
     ) {
-      this.worldTransformID = this.source[R.worldTransformID];
+      this.worldTransformID = state.worldTransformID;
       // this.appearanceID = this.source.appearanceID;
-      this.localBoundsID = this.source[R.localBoundsID];
+      this.localBoundsID = state.localBoundsID;
       return true;
     }
     return false;
