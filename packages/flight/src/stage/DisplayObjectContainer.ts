@@ -1,8 +1,8 @@
+import { children as functions } from '@flighthq/stage';
+import { createDisplayObjectContainer } from '@flighthq/stage';
 import type { DisplayObject as DisplayObjectLike } from '@flighthq/types';
 import { DisplayObjectDerivedState } from '@flighthq/types';
 
-import * as functions from '../functions/children.js';
-import { createDisplayObjectContainer } from '../functions/createDisplayObjectContainer.js';
 import DisplayObject from './DisplayObject.js';
 
 export default class DisplayObjectContainer extends DisplayObject {

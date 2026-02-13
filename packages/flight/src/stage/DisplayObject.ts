@@ -1,4 +1,16 @@
 import { Affine2D, Rectangle, Vector2 } from '@flighthq/math';
+import {
+  createDisplayObject,
+  getBounds as _getBounds,
+  getCurrentBounds,
+  getCurrentLocalBounds,
+  getRect as _getRect,
+  globalToLocal as _globalToLocal,
+  hitTestObject as _hitTestObject,
+  hitTestPoint as _hitTestPoint,
+  invalidate as _invalidate,
+  localToGlobal as _localToGlobal,
+} from '@flighthq/stage';
 import type {
   Affine2D as Affine2DLike,
   BitmapFilter as BitmapFilterLike,
@@ -13,12 +25,6 @@ import type {
 import { BlendMode } from '@flighthq/types';
 import { DirtyFlags, DisplayObjectDerivedState } from '@flighthq/types';
 
-import { getBounds as _getBounds, getRect as _getRect } from '../functions/bounds.js';
-import { createDisplayObject } from '../functions/createDisplayObject.js';
-import { getCurrentBounds, getCurrentLocalBounds } from '../functions/derived.js';
-import { invalidate as _invalidate } from '../functions/dirty.js';
-import { hitTestObject as _hitTestObject, hitTestPoint as _hitTestPoint } from '../functions/hitTest.js';
-import { globalToLocal as _globalToLocal, localToGlobal as _localToGlobal } from '../functions/transform.js';
 import Transform from './Transform.js';
 
 export default class DisplayObject implements DisplayObjectLike {
