@@ -8,7 +8,7 @@ export default class Main extends Sprite {
 
     // hack
     const localBounds = { x: 0, y: 0, width: 0, height: 0 };
-    this.sprite[DisplayObjectDerivedState.Key].localBounds = localBounds;
+    (this.sprite as any).__data[DisplayObjectDerivedState.Key].localBounds = localBounds; // eslint-disable-line
 
     this.sprite.opaqueBackground = 0xff0000;
     this.addChild(this.sprite);
