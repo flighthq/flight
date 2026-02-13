@@ -203,7 +203,7 @@ export function scale(out: Vector3, source: Readonly<Vector3>, scalar: number): 
 /**
  * Sets the members of Vector3 to the specified values
  **/
-export function set(out: Vector3, x: number, y: number, z: number): void {
+export function setTo(out: Vector3, x: number, y: number, z: number): void {
   out.x = x;
   out.y = y;
   out.z = z;

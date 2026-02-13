@@ -169,13 +169,6 @@ export function right(source: Readonly<Rectangle>): number {
   return source.x + source.width;
 }
 
-export function set(out: Rectangle, x: number, y: number, width: number, height: number): void {
-  out.x = x;
-  out.y = y;
-  out.width = width;
-  out.height = height;
-}
-
 export function setBottom(target: Rectangle, value: number): void {
   target.height = value - target.y;
 }
@@ -201,6 +194,13 @@ export function setRight(target: Rectangle, value: number): void {
 export function setSize(out: Rectangle, size: Readonly<Vector2>): void {
   out.width = size.x;
   out.height = size.y;
+}
+
+export function setTo(out: Rectangle, x: number, y: number, width: number, height: number): void {
+  out.x = x;
+  out.y = y;
+  out.width = width;
+  out.height = height;
 }
 
 export function setTop(target: Rectangle, value: number): void {

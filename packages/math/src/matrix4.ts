@@ -718,44 +718,6 @@ export function set(out: Matrix4, row: number, column: number, value: number): v
   out.m[column * 4 + row] = value;
 }
 
-export function setTo(
-  out: Matrix4,
-  m00: number,
-  m01: number,
-  m02: number,
-  m03: number,
-  m10: number,
-  m11: number,
-  m12: number,
-  m13: number,
-  m20: number,
-  m21: number,
-  m22: number,
-  m23: number,
-  m30: number,
-  m31: number,
-  m32: number,
-  m33: number,
-): void {
-  const _out = out.m;
-  _out[0] = m00;
-  _out[1] = m01;
-  _out[2] = m02;
-  _out[3] = m03;
-  _out[4] = m10;
-  _out[5] = m11;
-  _out[6] = m12;
-  _out[7] = m13;
-  _out[8] = m20;
-  _out[9] = m21;
-  _out[10] = m22;
-  _out[11] = m23;
-  _out[12] = m30;
-  _out[13] = m31;
-  _out[14] = m32;
-  _out[15] = m33;
-}
-
 /**
  * Resets the current matrix using two-dimensional transform values
  **/
@@ -863,6 +825,44 @@ export function setPosition(out: Matrix4, source: Readonly<Vector3>): void {
   _out[12] = source.x;
   _out[13] = source.y;
   _out[14] = source.z;
+}
+
+export function setTo(
+  out: Matrix4,
+  m00: number,
+  m01: number,
+  m02: number,
+  m03: number,
+  m10: number,
+  m11: number,
+  m12: number,
+  m13: number,
+  m20: number,
+  m21: number,
+  m22: number,
+  m23: number,
+  m30: number,
+  m31: number,
+  m32: number,
+  m33: number,
+): void {
+  const _out = out.m;
+  _out[0] = m00;
+  _out[1] = m01;
+  _out[2] = m02;
+  _out[3] = m03;
+  _out[4] = m10;
+  _out[5] = m11;
+  _out[6] = m12;
+  _out[7] = m13;
+  _out[8] = m20;
+  _out[9] = m21;
+  _out[10] = m22;
+  _out[11] = m23;
+  _out[12] = m30;
+  _out[13] = m31;
+  _out[14] = m32;
+  _out[15] = m33;
 }
 
 /**

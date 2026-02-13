@@ -87,14 +87,14 @@ export function offset(out: Vector2, source: Readonly<Vector2>, dx: number, dy: 
   out.y = source.y + dy;
 }
 
-export function set(out: Vector2, x: number, y: number): void {
-  out.x = x;
-  out.y = y;
-}
-
 export function setPolar(out: Vector2, len: number, angle: number): void {
   out.x = len * Math.cos(angle);
   out.y = len * Math.sin(angle);
+}
+
+export function setTo(out: Vector2, x: number, y: number): void {
+  out.x = x;
+  out.y = y;
 }
 
 export function subtract(out: Vector2, source: Readonly<Vector2>, toSubtract: Readonly<Vector2>): void {
