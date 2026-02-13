@@ -1,6 +1,8 @@
+import type { Sprite as SpriteLike } from '@flighthq/types';
+
 import DisplayObjectContainer from './DisplayObjectContainer.js';
 
-export default class Sprite extends DisplayObjectContainer {
+export default class Sprite extends DisplayObjectContainer implements SpriteLike {
   constructor() {
     super();
   }
