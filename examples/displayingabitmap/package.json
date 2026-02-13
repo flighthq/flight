@@ -2,9 +2,9 @@
   "name": "displayingabitmap",
   "private": true,
   "dependencies": {
-    "@flighthq/math": "^1.0.0",
+    "@flighthq/flight": "^1.0.0",
     "@flighthq/render": "^1.0.0",
-    "@flighthq/scene": "^1.0.0",
+    "@flighthq/types": "^1.0.0",
     "typescript": "^5.0.0",
     "vite": "^4.0.0"
   },
