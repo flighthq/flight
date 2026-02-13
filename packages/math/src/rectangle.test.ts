@@ -638,7 +638,7 @@ describe('normalizedBottomRight', () => {
 
 describe('set', () => {
   it('sets rectangle to specified values', () => {
-    rectangle.set(r, 1, 2, 3, 4);
+    rectangle.setTo(r, 1, 2, 3, 4);
     expect(r.x).toBe(1);
     expect(r.y).toBe(2);
     expect(r.width).toBe(3);
@@ -647,7 +647,7 @@ describe('set', () => {
 
   it('allows rectangle-like objects', () => {
     const r = { x: 10, y: 20, width: -5, height: -15 };
-    rectangle.set(r, 1, 2, 3, 4);
+    rectangle.setTo(r, 1, 2, 3, 4);
     expect(r.x).toBe(1);
     expect(r.y).toBe(2);
     expect(r.width).toBe(3);

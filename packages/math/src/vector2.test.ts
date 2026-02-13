@@ -395,7 +395,7 @@ describe('offset', () => {
 
 describe('set', () => {
   it('updates coordinates of a vector', () => {
-    vector2.set(pt, 2, 10);
+    vector2.setTo(pt, 2, 10);
     expect(pt.x).toBe(2);
     expect(pt.y).toBe(10);
   });
@@ -403,14 +403,14 @@ describe('set', () => {
   it('sets both coordinates to zero correctly', () => {
     pt.x = 1;
     pt.y = 2;
-    vector2.set(pt, 0, 0);
+    vector2.setTo(pt, 0, 0);
     expect(pt.x).toBe(0);
     expect(pt.y).toBe(0);
   });
 
   it('allows a vector-like object', () => {
     const pt = { x: 0, y: 0 };
-    vector2.set(pt, 2, 10);
+    vector2.setTo(pt, 2, 10);
     expect(pt.x).toBe(2);
     expect(pt.y).toBe(10);
   });

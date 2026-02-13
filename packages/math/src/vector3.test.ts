@@ -269,7 +269,7 @@ describe('scale', () => {
 describe('set', () => {
   it('sets the values of the vector', () => {
     const v = vector3.create();
-    vector3.set(v, 5, 10, 15);
+    vector3.setTo(v, 5, 10, 15);
     expect(v.x).toBe(5);
     expect(v.y).toBe(10);
     expect(v.z).toBe(15);
@@ -277,7 +277,7 @@ describe('set', () => {
 
   it('modifies target when same object is passed as target', () => {
     const v = vector3.create(1, 2, 3);
-    vector3.set(v, 5, 10, 15);
+    vector3.setTo(v, 5, 10, 15);
     expect(v.x).toBe(5);
     expect(v.y).toBe(10);
     expect(v.z).toBe(15);
