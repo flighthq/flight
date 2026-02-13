@@ -44,7 +44,7 @@ export function addChildAt(target: DisplayObjectContainer, child: DisplayObject,
   }
 
   targetState.children!.splice(index, 0, child);
-  (child as any).parent = target; // eslint-disable-line
+  (child as ParentAccess).parent = target;
   invalidate(target, DirtyFlags.Children);
   return child;
 }
@@ -67,7 +67,7 @@ export function removeChild(target: DisplayObjectContainer, child: DisplayObject
     }
 
     const targetState = getDerivedState(target);
-    (child as any).parent = null; // eslint-disable-line
+    (child as ParentAccess).parent = null;
     const i = targetState.children!.indexOf(child);
     if (i !== -1) {
       targetState.children!.splice(i, 1);
@@ -182,3 +182,7 @@ export function getNumChildren(source: Readonly<DisplayObjectContainer>): number
   const sourceState = getDerivedState(source);
   return sourceState.children ? sourceState.children.length : 0;
 }
+
+type ParentAccess = Omit<DisplayObject, 'parent'> & {
+  parent: DisplayObjectContainer | null;
+};
