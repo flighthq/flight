@@ -1,5 +1,4 @@
-import type { DisplayObject, DisplayObjectContainer } from '@flighthq/types';
-import { DisplayObjectSymbols as $ } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectContainer, DisplayObjectDerivedState } from '@flighthq/types';
 
 import * as displayObjectFunctions from './displayObject.js';
 import {
@@ -23,11 +22,13 @@ import {
 
 describe('displayObjectContainer', () => {
   let container: DisplayObjectContainer;
+  let containerState: DisplayObjectDerivedState;
   let childA: DisplayObject;
   let childB: DisplayObject;
 
   beforeEach(() => {
     container = create();
+    containerState = displayObjectFunctions.getDerivedState(container);
     childA = displayObjectFunctions.create();
     childB = displayObjectFunctions.create();
   });
@@ -40,7 +41,7 @@ describe('displayObjectContainer', () => {
 
   it('starts with zero children', () => {
     const container = create();
-    expect(container[$.children].length).toBe(0);
+    expect(containerState.children!.length).toBe(0);
   });
 
   // Methods
@@ -49,8 +50,8 @@ describe('displayObjectContainer', () => {
     it('addChild adds a child to the end of the list', () => {
       addChild(container, childA);
 
-      expect(container[$.children].length).toBe(1);
-      expect(childA[$.parent]).toBe(container);
+      expect(containerState.children!.length).toBe(1);
+      expect(childA.parent).toBe(container);
     });
 
     it('throws if child is null', () => {
@@ -63,26 +64,28 @@ describe('displayObjectContainer', () => {
 
     it('removes child from previous parent before adding', () => {
       const other = create();
+      const otherState = displayObjectFunctions.getDerivedState(other);
 
       addChild(other, childA);
-      expect(childA[$.parent]).toBe(other);
+      expect(childA.parent).toBe(other);
 
       addChild(container, childA);
 
-      expect(childA[$.parent]).toBe(container);
-      expect(other[$.children].length).toBe(0);
-      expect(container[$.children].length).toBe(1);
+      expect(childA.parent).toBe(container);
+      expect(otherState.children!.length).toBe(0);
+      expect(containerState.children!.length).toBe(1);
     });
 
     it('a child never has more than one parent', () => {
       const other = create();
+      const otherState = displayObjectFunctions.getDerivedState(other);
 
       addChild(container, childA);
       addChild(other, childA);
 
-      expect(childA[$.parent]).toBe(other);
-      expect(container[$.children].length).toBe(0);
-      expect(other[$.children].length).toBe(1);
+      expect(childA.parent).toBe(other);
+      expect(containerState.children!.length).toBe(0);
+      expect(otherState.children!.length).toBe(1);
     });
   });
 
@@ -91,17 +94,17 @@ describe('displayObjectContainer', () => {
       addChild(container, childA);
       addChildAt(container, childB, 0);
 
-      expect(container[$.children].length).toBe(2);
-      expect(container[$.children][0]).toBe(childB);
-      expect(container[$.children][1]).toBe(childA);
+      expect(containerState.children!.length).toBe(2);
+      expect(containerState.children![0]).toBe(childB);
+      expect(containerState.children![1]).toBe(childA);
     });
 
     it('addChildAt allows inserting at the end (index === length)', () => {
       addChild(container, childA);
       addChildAt(container, childB, 1);
 
-      expect(container[$.children].length).toBe(2);
-      expect(container[$.children][1]).toBe(childB);
+      expect(containerState.children!.length).toBe(2);
+      expect(containerState.children![1]).toBe(childB);
     });
 
     it('addChildAt throws if index is negative', () => {
@@ -119,20 +122,20 @@ describe('displayObjectContainer', () => {
       // move childA to the front
       addChildAt(container, childA, 1);
 
-      expect(container[$.children][0]).toBe(childB);
-      expect(container[$.children][1]).toBe(childA);
+      expect(containerState.children![0]).toBe(childB);
+      expect(containerState.children![1]).toBe(childA);
     });
   });
 
   describe('removeChild', () => {
     it('removes the child and clears its parent', () => {
       addChild(container, childA);
-      expect(container[$.children].length).toBe(1);
+      expect(containerState.children!.length).toBe(1);
 
       removeChild(container, childA);
 
-      expect(container[$.children].length).toBe(0);
-      expect(childA[$.parent]).toBeNull();
+      expect(containerState.children!.length).toBe(0);
+      expect(childA.parent).toBeNull();
     });
 
     it('does nothing if child is not a child of target', () => {
@@ -141,8 +144,8 @@ describe('displayObjectContainer', () => {
       const other = create();
       removeChild(other, childA);
 
-      expect(container[$.children].length).toBe(1);
-      expect(childA[$.parent]).toBe(container);
+      expect(containerState.children!.length).toBe(1);
+      expect(childA.parent).toBe(container);
     });
 
     it('is safe when child is null', () => {
@@ -153,7 +156,7 @@ describe('displayObjectContainer', () => {
       addChild(container, childA);
       removeChild(container, childA);
 
-      expect(childA[$.parent]).toBeNull();
+      expect(childA.parent).toBeNull();
     });
   });
 
@@ -165,9 +168,9 @@ describe('displayObjectContainer', () => {
       const removed = removeChildAt(container, 0);
 
       expect(removed).toBe(childA);
-      expect(container[$.children].length).toBe(1);
-      expect(childA[$.parent]).toBeNull();
-      expect(container[$.children][0]).toBe(childB);
+      expect(containerState.children!.length).toBe(1);
+      expect(childA.parent).toBeNull();
+      expect(containerState.children![0]).toBe(childB);
     });
 
     it('removeChildAt returns null for out-of-range index', () => {
@@ -182,9 +185,9 @@ describe('displayObjectContainer', () => {
 
       removeChildren(container);
 
-      expect(container[$.children].length).toBe(0);
-      expect(childA[$.parent]).toBeNull();
-      expect(childB[$.parent]).toBeNull();
+      expect(containerState.children!.length).toBe(0);
+      expect(childA.parent).toBeNull();
+      expect(childB.parent).toBeNull();
     });
 
     it('removeChildren removes a range of children', () => {
@@ -196,10 +199,10 @@ describe('displayObjectContainer', () => {
 
       removeChildren(container, 1, 2);
 
-      expect(container[$.children].length).toBe(1);
-      expect(container[$.children][0]).toBe(childA);
-      expect(childB[$.parent]).toBeNull();
-      expect(childC[$.parent]).toBeNull();
+      expect(containerState.children!.length).toBe(1);
+      expect(containerState.children![0]).toBe(childA);
+      expect(childB.parent).toBeNull();
+      expect(childC.parent).toBeNull();
     });
 
     it('removeChildren does nothing if beginIndex is out of range', () => {
@@ -207,7 +210,7 @@ describe('displayObjectContainer', () => {
 
       removeChildren(container, 5);
 
-      expect(container[$.children].length).toBe(1);
+      expect(containerState.children!.length).toBe(1);
     });
 
     it('removeChildren throws if indices are invalid', () => {
@@ -225,8 +228,8 @@ describe('displayObjectContainer', () => {
 
       setChildIndex(container, childA, 1);
 
-      expect(container[$.children][0]).toBe(childB);
-      expect(container[$.children][1]).toBe(childA);
+      expect(containerState.children![0]).toBe(childB);
+      expect(containerState.children![1]).toBe(childA);
     });
 
     it('setChildIndex does nothing if child is not in container', () => {
@@ -237,8 +240,8 @@ describe('displayObjectContainer', () => {
 
       setChildIndex(container, childA, 0);
 
-      expect(container[$.children][0]).toBe(childB);
-      expect(childA[$.parent]).toBe(other);
+      expect(containerState.children![0]).toBe(childB);
+      expect(childA.parent).toBe(other);
     });
 
     it('setChildIndex ignores out-of-range indices', () => {
@@ -246,7 +249,7 @@ describe('displayObjectContainer', () => {
 
       setChildIndex(container, childA, 5);
 
-      expect(container[$.children][0]).toBe(childA);
+      expect(containerState.children![0]).toBe(childA);
     });
   });
 
@@ -257,8 +260,8 @@ describe('displayObjectContainer', () => {
 
       swapChildren(container, childA, childB);
 
-      expect(container[$.children][0]).toBe(childB);
-      expect(container[$.children][1]).toBe(childA);
+      expect(containerState.children![0]).toBe(childB);
+      expect(containerState.children![1]).toBe(childA);
     });
 
     it('swapChildren does nothing if either child is not in container', () => {
@@ -269,7 +272,7 @@ describe('displayObjectContainer', () => {
 
       swapChildren(container, childA, childB);
 
-      expect(container[$.children][0]).toBe(childA);
+      expect(containerState.children![0]).toBe(childA);
     });
   });
 
@@ -280,8 +283,8 @@ describe('displayObjectContainer', () => {
 
       swapChildrenAt(container, 0, 1);
 
-      expect(container[$.children][0]).toBe(childB);
-      expect(container[$.children][1]).toBe(childA);
+      expect(containerState.children![0]).toBe(childB);
+      expect(containerState.children![1]).toBe(childA);
     });
 
     it('swapChildrenAt assumes valid indices (throws if invalid)', () => {

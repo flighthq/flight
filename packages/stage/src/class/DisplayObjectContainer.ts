@@ -1,10 +1,14 @@
-import { DisplayObject as DisplayObjectLike, DisplayObjectSymbols as $ } from '@flighthq/types';
+import type { DisplayObject as DisplayObjectLike} from '@flighthq/types';
+import { DisplayObjectDerivedState } from '@flighthq/types';
 
+import { getDerivedState } from '../functions/displayObject.js';
 import * as functions from '../functions/displayObjectContainer.js';
 import DisplayObject from './DisplayObject.js';
 
 export default class DisplayObjectContainer extends DisplayObject {
-  override [$.children]!: DisplayObjectLike[];
+  override [DisplayObjectDerivedState.Key]!: DisplayObjectDerivedState & {
+    children: DisplayObjectLike[];
+  };
 
   constructor() {
     super();
@@ -46,6 +50,7 @@ export default class DisplayObjectContainer extends DisplayObject {
   // Get & Set Methods
 
   get numChildren() {
-    return this[$.children] ? this[$.children].length : 0;
+    const state = getDerivedState(this);
+    return state.children ? state.children.length : 0;
   }
 }

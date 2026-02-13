@@ -1,8 +1,5 @@
-import { DisplayObject as DisplayObjectLike } from '@flighthq/types';
-import * as functions from '../functions/transform.js';
+import type DisplayObject from './DisplayObject.js';
 
 export default class Transform {
-  constructor(displayObject: DisplayObjectLike) {
-    functions.create(this, displayObject);
-  }
+  constructor(_: DisplayObject) {}
 }
