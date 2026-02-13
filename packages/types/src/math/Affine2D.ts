@@ -1,3 +1,3 @@
-export default interface Matrix3 {
+export default interface Affine2D {
   readonly m: Float32Array;
 }
