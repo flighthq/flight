@@ -103,6 +103,10 @@ export default class DisplayObject implements DisplayObjectLike {
     return out;
   }
 
+  toFunctionalObject(): DisplayObjectLike {
+    return this.__data;
+  }
+
   // Get & Set Methods
 
   get alpha(): number {

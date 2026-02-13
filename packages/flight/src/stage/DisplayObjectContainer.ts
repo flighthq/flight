@@ -9,7 +9,7 @@ import { DisplayObjectDerivedState } from '@flighthq/types';
 import DisplayObject from './DisplayObject.js';
 
 export default class DisplayObjectContainer extends DisplayObject implements DisplayObjectContainerLike {
-  protected override __data: DisplayObjectContainerLike;
+  declare protected __data: DisplayObjectContainerLike;
 
   override [DisplayObjectDerivedState.Key]!: DisplayObjectDerivedState & {
     children: DisplayObjectLike[];
@@ -17,7 +17,7 @@ export default class DisplayObjectContainer extends DisplayObject implements Dis
 
   constructor() {
     super();
-    this.__data = createDisplayObjectContainer(this);
+    createDisplayObjectContainer(this.__data);
   }
 
   addChild(child: DisplayObjectLike): DisplayObjectLike {
