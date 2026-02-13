@@ -13,12 +13,12 @@ import type {
 import { BlendMode } from '@flighthq/types';
 import { DirtyFlags, DisplayObjectDerivedState } from '@flighthq/types';
 
-import * as boundsFunctions from '../functions/bounds.js';
+import { getBounds as _getBounds, getRect as _getRect } from '../functions/bounds.js';
 import { createDisplayObject } from '../functions/createDisplayObject.js';
-import * as derivedFunctions from '../functions/derived.js';
-import * as dirtyFunctions from '../functions/dirty.js';
-import * as hitTestFunctions from '../functions/hitTest.js';
-import * as transformFunctions from '../functions/transform.js';
+import { getCurrentBounds, getCurrentLocalBounds } from '../functions/derived.js';
+import { invalidate as _invalidate } from '../functions/dirty.js';
+import { hitTestObject as _hitTestObject, hitTestPoint as _hitTestPoint } from '../functions/hitTest.js';
+import { globalToLocal as _globalToLocal, localToGlobal as _localToGlobal } from '../functions/transform.js';
 import Transform from './Transform.js';
 
 export default class DisplayObject implements DisplayObjectLike {
@@ -59,7 +59,7 @@ export default class DisplayObject implements DisplayObjectLike {
    **/
   getBounds(targetCoordinateSpace: DisplayObject | null): Rectangle {
     const out = new Rectangle();
-    boundsFunctions.getBounds(out, this, targetCoordinateSpace);
+    _getBounds(out, this, targetCoordinateSpace);
     return out;
   }
 
@@ -74,7 +74,7 @@ export default class DisplayObject implements DisplayObjectLike {
    **/
   getRect(targetCoordinateSpace: DisplayObject | null | undefined): Rectangle {
     const out = new Rectangle();
-    boundsFunctions.getRect(out, this, targetCoordinateSpace);
+    _getRect(out, this, targetCoordinateSpace);
     return out;
   }
 
@@ -84,7 +84,7 @@ export default class DisplayObject implements DisplayObjectLike {
    **/
   globalToLocal(pos: Readonly<Vector2Like>): Vector2 {
     const out = new Vector2();
-    transformFunctions.globalToLocal(out, this, pos);
+    _globalToLocal(out, this, pos);
     return out;
   }
 
@@ -93,7 +93,7 @@ export default class DisplayObject implements DisplayObjectLike {
    * intersects with the bounding box of the `obj` display object.
    **/
   hitTestObject(other: DisplayObject): boolean {
-    return hitTestFunctions.hitTestObject(this, other);
+    return _hitTestObject(this, other);
   }
 
   /**
@@ -105,7 +105,7 @@ export default class DisplayObject implements DisplayObjectLike {
 						(`false`).
 	**/
   hitTestPoint(x: number, y: number, _shapeFlag: boolean = false): boolean {
-    return hitTestFunctions.hitTestPoint(this, x, y, _shapeFlag);
+    return _hitTestPoint(this, x, y, _shapeFlag);
   }
 
   /**
@@ -113,7 +113,7 @@ export default class DisplayObject implements DisplayObjectLike {
    * should be redrawn the next time it is eligible to be rendered.
    */
   invalidate(flags: DirtyFlags = DirtyFlags.Render): void {
-    dirtyFunctions.invalidate(this, flags);
+    _invalidate(this, flags);
   }
 
   /**
@@ -122,7 +122,7 @@ export default class DisplayObject implements DisplayObjectLike {
    **/
   localToGlobal(point: Readonly<Vector2Like>): Vector2 {
     const out = new Vector2();
-    transformFunctions.localToGlobal(out, this, point);
+    _localToGlobal(out, this, point);
     return out;
   }
 
@@ -206,11 +206,11 @@ export default class DisplayObject implements DisplayObjectLike {
   }
 
   get height(): number {
-    return derivedFunctions.getCurrentBounds(this).height;
+    return getCurrentBounds(this).height;
   }
 
   set height(value: number) {
-    const localBounds = derivedFunctions.getCurrentLocalBounds(this);
+    const localBounds = getCurrentLocalBounds(this);
     if (localBounds.height === 0) return;
     // Invalidation (if necessary) occurs in scaleY setter
     this.scaleY = value / localBounds.height;
@@ -405,11 +405,11 @@ export default class DisplayObject implements DisplayObjectLike {
   }
 
   get width(): number {
-    return derivedFunctions.getCurrentBounds(this).width;
+    return getCurrentBounds(this).width;
   }
 
   set width(value: number) {
-    const localBounds = derivedFunctions.getCurrentLocalBounds(this);
+    const localBounds = getCurrentLocalBounds(this);
     if (localBounds.width === 0) return;
     // Invalidation (if necessary) occurs in scaleX setter
     this.scaleX = value / localBounds.width;
