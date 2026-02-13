@@ -1,6 +1,5 @@
-import { RenderableSymbols as R } from '@flighthq/contracts';
-import type { Rectangle } from '@flighthq/math';
-import { Sprite } from '@flighthq/stage';
+import { Sprite } from '@flighthq/flight';
+import { DisplayObjectDerivedState } from '@flighthq/types';
 
 export default class Main extends Sprite {
   sprite = new Sprite();
@@ -8,12 +7,11 @@ export default class Main extends Sprite {
     super();
 
     // hack
-    const localBounds: Rectangle = this.sprite[R.localBounds];
-    localBounds.width = 100;
-    localBounds.height = 100;
+    const localBounds = { x: 0, y: 0, width: 0, height: 0 };
+    this.sprite[DisplayObjectDerivedState.Key].localBounds = localBounds;
 
     this.sprite.opaqueBackground = 0xff0000;
-    Sprite.addChild(this, this.sprite);
+    this.addChild(this.sprite);
 
     // var loader = new Loader();
     // loader.contentLoaderInfo.addEventListener(Event.COMPLETE, this.loader_onComplete);
