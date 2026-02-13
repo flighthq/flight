@@ -1,6 +1,9 @@
 import type DisplayObject from './DisplayObject.js';
-import type { DisplayObjectSymbols as $ } from './DisplayObjectSymbols.js';
+import type { DisplayObjectDerivedState } from './DisplayObjectDerivedState.js';
 
 export default interface DisplayObjectContainer extends DisplayObject {
-  [$.children]: DisplayObject[];
+  // Override derived state to ensure children[] is always defined and not null
+  [DisplayObjectDerivedState.Key]: DisplayObjectDerivedState & {
+    children: DisplayObject[];
+  };
 }
