@@ -1,6 +1,6 @@
 import { Affine2D, Affine2DPool, Rectangle, RectanglePool } from '@flighthq/math';
 import type { DisplayObject, Rectangle as RectangleLike, Vector2 as Vector2Like } from '@flighthq/types';
-import { BlendMode, DirtyFlags, DisplayObjectDerivedState } from '@flighthq/types';
+import { Affine2D as Affine2DLike, BlendMode, DirtyFlags, DisplayObjectDerivedState } from '@flighthq/types';
 
 // temp
 function createRectangle() {
@@ -46,20 +46,41 @@ export function getBounds(
   source: DisplayObject,
   targetCoordinateSpace: DisplayObject | null | undefined,
 ): void {
-  const sourceState = getDerivedState(source);
-  updateLocalBounds(source);
+  const localBounds = getCurrentLocalBounds(source);
   if (targetCoordinateSpace && targetCoordinateSpace !== source) {
-    updateWorldTransform(source);
-    updateWorldTransform(targetCoordinateSpace);
-    const targetState = getDerivedState(targetCoordinateSpace);
     const transform = Affine2DPool.get();
-    Affine2D.inverse(transform, targetState.worldTransform!);
-    Affine2D.multiply(transform, transform, sourceState.worldTransform!);
-    Affine2D.transformRect(out, transform, sourceState.localBounds!);
+    Affine2D.inverse(transform, getCurrentWorldTransform(targetCoordinateSpace));
+    Affine2D.multiply(transform, transform, getCurrentWorldTransform(source));
+    Affine2D.transformRect(out, transform, localBounds);
     Affine2DPool.release(transform);
   } else {
-    Rectangle.copy(out, sourceState.localBounds!);
+    Rectangle.copy(out, localBounds);
   }
+}
+
+export function getCurrentBounds(target: DisplayObject): Readonly<RectangleLike> {
+  updateBounds(target);
+  return target[DisplayObjectDerivedState.Key]!.bounds!;
+}
+
+export function getCurrentLocalBounds(target: DisplayObject): Readonly<RectangleLike> {
+  updateLocalBounds(target);
+  return target[DisplayObjectDerivedState.Key]!.localBounds!;
+}
+
+export function getCurrentLocalTransform(target: DisplayObject): Readonly<Affine2DLike> {
+  updateLocalTransform(target);
+  return target[DisplayObjectDerivedState.Key]!.localTransform!;
+}
+
+export function getCurrentWorldBounds(target: DisplayObject): Readonly<RectangleLike> {
+  updateWorldBounds(target);
+  return target[DisplayObjectDerivedState.Key]!.worldBounds!;
+}
+
+export function getCurrentWorldTransform(target: DisplayObject): Readonly<Affine2DLike> {
+  updateWorldTransform(target);
+  return target[DisplayObjectDerivedState.Key]!.worldTransform!;
 }
 
 export function getDerivedState(source: DisplayObject): DisplayObjectDerivedState {
@@ -105,8 +126,7 @@ export function getRect(
  * to the display object's (local) coordinates.
  **/
 export function globalToLocal(out: Vector2Like, source: DisplayObject, pos: Readonly<Vector2Like>): void {
-  updateWorldTransform(source);
-  Affine2D.inverseTransformPointXY(out, getDerivedState(source).worldTransform!, pos.x, pos.y);
+  Affine2D.inverseTransformPointXY(out, getCurrentWorldTransform(source), pos.x, pos.y);
 }
 
 /**
@@ -115,9 +135,7 @@ export function globalToLocal(out: Vector2Like, source: DisplayObject, pos: Read
  **/
 export function hitTestObject(source: DisplayObject, other: DisplayObject): boolean {
   if (other.parent !== null && source.parent !== null) {
-    updateLocalBounds(source);
-    const sourceState = getDerivedState(source);
-    const sourceBounds = sourceState.localBounds!;
+    const sourceBounds = getCurrentLocalBounds(source);
     const otherBounds = RectanglePool.get();
     // compare other in source's coordinate space
     getBounds(otherBounds, other, source);
@@ -140,11 +158,8 @@ const _tempPoint = { x: 0, y: 0 };
 **/
 export function hitTestPoint(source: DisplayObject, x: number, y: number, _shapeFlag: boolean = false): boolean {
   if (!source.visible || source.opaqueBackground === null) return false;
-  updateWorldTransform(source);
-  const sourceState = getDerivedState(source);
-  Affine2D.inverseTransformPointXY(_tempPoint, sourceState.worldTransform!, x, y);
-  updateLocalBounds(source);
-  return Rectangle.contains(sourceState.localBounds!, _tempPoint.x, _tempPoint.y);
+  Affine2D.inverseTransformPointXY(_tempPoint, getCurrentWorldTransform(source), x, y);
+  return Rectangle.contains(getCurrentLocalBounds(source), _tempPoint.x, _tempPoint.y);
 }
 
 /**
@@ -175,9 +190,7 @@ export function invalidate(target: DisplayObject, flags: DirtyFlags = DirtyFlags
  * coordinates to world coordinates.
  **/
 export function localToGlobal(out: Vector2Like, source: DisplayObject, point: Readonly<Vector2Like>): void {
-  updateWorldTransform(source);
-  const sourceState = getDerivedState(source);
-  Affine2D.transformPointXY(out, sourceState.worldTransform!, point.x, point.y);
+  Affine2D.transformPointXY(out, getCurrentWorldTransform(source), point.x, point.y);
 }
 
 export function update(target: DisplayObject): void {
