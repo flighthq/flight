@@ -1,4 +1,4 @@
-import type Affine2D from '../math/Affine2D.js';
+import type Affine2D from '../math/Matrix2D.js';
 import type Rectangle from '../math/Rectangle.js';
 import type DirtyFlags from './DirtyFlags.js';
 import type DisplayObject from './DisplayObject.js';

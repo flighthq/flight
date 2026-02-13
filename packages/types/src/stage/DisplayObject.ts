@@ -1,5 +1,5 @@
 import type BitmapFilter from '../filters/BitmapFilter.js';
-import type Affine2D from '../math/Affine2D.js';
+import type Affine2D from '../math/Matrix2D.js';
 import type Rectangle from '../math/Rectangle.js';
 import type BlendMode from './BlendMode.js';
 import type DisplayObjectContainer from './DisplayObjectContainer.js';
