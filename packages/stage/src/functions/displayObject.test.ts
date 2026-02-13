@@ -1,16 +1,12 @@
-import { Affine2D, Vector2 } from '@flighthq/math';
+import { Vector2 } from '@flighthq/math';
 import { Rectangle } from '@flighthq/math';
-import type {
-  Affine2D as Affine2DLike,
-  DisplayObject,
-  DisplayObjectContainer,
-  Rectangle as RectangleLike,
-} from '@flighthq/types';
-import { BlendMode, DirtyFlags, DisplayObjectDerivedState } from '@flighthq/types';
+import type { DisplayObject } from '@flighthq/types';
+import { BlendMode, DirtyFlags } from '@flighthq/types';
 
 import {
   create,
   getBounds,
+  getCurrentLocalBounds,
   getDerivedState,
   getRect,
   globalToLocal,
@@ -18,8 +14,6 @@ import {
   hitTestPoint,
   invalidate,
   localToGlobal,
-  updateLocalBounds,
-  updateLocalTransform,
 } from './displayObject.js';
 
 describe('displayObject', () => {
@@ -28,16 +22,6 @@ describe('displayObject', () => {
   beforeEach(() => {
     displayObject = create();
   });
-
-  function getLocalBounds(displayObject: DisplayObject): RectangleLike {
-    updateLocalBounds(displayObject);
-    return getDerivedState(displayObject).localBounds!;
-  }
-
-  function getLocalTransform(displayObject: DisplayObject): Affine2DLike {
-    updateLocalTransform(displayObject);
-    return getDerivedState(displayObject).localTransform!;
-  }
 
   // Constructor
 
@@ -81,15 +65,15 @@ describe('displayObject', () => {
       (grandChild as any).parent = child as any; // eslint-disable-line
 
       // fake local bounds
-      Rectangle.set(getLocalBounds(root), 0, 0, 100, 100);
-      Rectangle.set(getLocalBounds(child), 10, 20, 50, 50);
-      Rectangle.set(getLocalBounds(grandChild), 5, 5, 10, 10);
+      Rectangle.set(getCurrentLocalBounds(root), 0, 0, 100, 100);
+      Rectangle.set(getCurrentLocalBounds(child), 10, 20, 50, 50);
+      Rectangle.set(getCurrentLocalBounds(grandChild), 5, 5, 10, 10);
     });
 
     it('should return local bounds when targetCoordinateSpace is self', () => {
       const out = new Rectangle();
       getBounds(out, child, child);
-      expect(out).toEqual(getLocalBounds(child));
+      expect(out).toEqual(getCurrentLocalBounds(child));
     });
 
     it('should compute bounds relative to parent', () => {
@@ -147,7 +131,7 @@ describe('displayObject', () => {
     it('should allow a rectangle-like object', () => {
       const out = { x: 0, y: 0, width: 0, height: 0 };
       getBounds(out, child, child);
-      expect(out).toEqual(getLocalBounds(child));
+      expect(out).toEqual(getCurrentLocalBounds(child));
     });
   });
 
@@ -166,15 +150,15 @@ describe('displayObject', () => {
       (grandChild as any).parent = child as any; // eslint-disable-line
 
       // fake local bounds
-      Rectangle.set(getLocalBounds(root), 0, 0, 100, 100);
-      Rectangle.set(getLocalBounds(child), 10, 20, 50, 50);
-      Rectangle.set(getLocalBounds(grandChild), 5, 5, 10, 10);
+      Rectangle.set(getCurrentLocalBounds(root), 0, 0, 100, 100);
+      Rectangle.set(getCurrentLocalBounds(child), 10, 20, 50, 50);
+      Rectangle.set(getCurrentLocalBounds(grandChild), 5, 5, 10, 10);
     });
 
     it('should return local bounds when targetCoordinateSpace is self', () => {
       const out = new Rectangle();
       getRect(out, child, child);
-      expect(out).toEqual(getLocalBounds(child));
+      expect(out).toEqual(getCurrentLocalBounds(child));
     });
 
     it('should compute bounds relative to parent', () => {
@@ -232,7 +216,7 @@ describe('displayObject', () => {
     it('should allow a rectangle-like object', () => {
       const out = { x: 0, y: 0, width: 0, height: 0 };
       getRect(out, child, child);
-      expect(out).toEqual(getLocalBounds(child));
+      expect(out).toEqual(getCurrentLocalBounds(child));
     });
   });
 
@@ -299,8 +283,8 @@ describe('displayObject', () => {
       (b as any).parent = create() as any; // eslint-disable-line
 
       // Simple local bounds
-      Rectangle.set(getLocalBounds(a), 0, 0, 10, 10);
-      Rectangle.set(getLocalBounds(b), 0, 0, 10, 10);
+      Rectangle.set(getCurrentLocalBounds(a), 0, 0, 10, 10);
+      Rectangle.set(getCurrentLocalBounds(b), 0, 0, 10, 10);
 
       // Position b to overlap a
       a.x = 0;
@@ -353,7 +337,7 @@ describe('displayObject', () => {
       obj.visible = true;
       obj.opaqueBackground = 0xff0000;
       // set a simple local bounds rectangle
-      Rectangle.set(getLocalBounds(obj), 0, 0, 100, 100);
+      Rectangle.set(getCurrentLocalBounds(obj), 0, 0, 100, 100);
     });
 
     it('returns true for point inside bounds', () => {

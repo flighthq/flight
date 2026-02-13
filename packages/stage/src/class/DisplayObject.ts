@@ -8,10 +8,9 @@ import type {
   Rectangle as RectangleLike,
   Shader,
   Stage as StageLike,
-  Vector2 as Vector2Like} from '@flighthq/types';
-import {
-  BlendMode
+  Vector2 as Vector2Like,
 } from '@flighthq/types';
+import { BlendMode } from '@flighthq/types';
 import { DirtyFlags, DisplayObjectDerivedState } from '@flighthq/types';
 
 import * as functions from '../functions/displayObject.js';
@@ -203,16 +202,14 @@ export default class DisplayObject implements DisplayObjectLike {
   }
 
   get height(): number {
-    functions.updateBounds(this);
-    return functions.getDerivedState(this).bounds!.height;
+    return functions.getCurrentBounds(this).height;
   }
 
   set height(value: number) {
-    functions.updateLocalBounds(this);
-    const state = functions.getDerivedState(this);
-    if (state.localBounds!.height === 0) return;
+    const localBounds = functions.getCurrentLocalBounds(this);
+    if (localBounds.height === 0) return;
     // Invalidation (if necessary) occurs in scaleY setter
-    this.scaleY = value / state.localBounds!.height;
+    this.scaleY = value / localBounds.height;
   }
 
   get loaderInfo(): LoaderInfo | null {
@@ -404,17 +401,14 @@ export default class DisplayObject implements DisplayObjectLike {
   }
 
   get width(): number {
-    functions.updateBounds(this);
-    const state = functions.getDerivedState(this);
-    return state.bounds!.width;
+    return functions.getCurrentBounds(this).width;
   }
 
   set width(value: number) {
-    functions.updateLocalBounds(this);
-    const state = functions.getDerivedState(this);
-    if (state.localBounds!.width === 0) return;
+    const localBounds = functions.getCurrentLocalBounds(this);
+    if (localBounds.width === 0) return;
     // Invalidation (if necessary) occurs in scaleX setter
-    this.scaleX = value / state.localBounds!.width;
+    this.scaleX = value / localBounds.width;
   }
 
   get x(): number {
