@@ -258,8 +258,16 @@ export default class DisplayObject implements DisplayObjectLike {
     return this.__parent;
   }
 
+  private set parent(value: DisplayObjectContainerLike | null) {
+    this.__parent = value;
+  }
+
   get root(): DisplayObjectContainerLike | null {
     return this.__root;
+  }
+
+  private set root(value: DisplayObjectContainerLike | null) {
+    this.__root = value;
   }
 
   get rotation(): number {
@@ -353,6 +361,10 @@ export default class DisplayObject implements DisplayObjectLike {
 
   get stage(): StageLike | null {
     return this.__stage;
+  }
+
+  private set stage(value: StageLike | null) {
+    this.__stage = value;
   }
 
   get transform(): Transform {
