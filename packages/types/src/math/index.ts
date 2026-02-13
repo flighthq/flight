@@ -1,4 +1,4 @@
-export { default as Affine2D } from './Affine2D.js';
+export { default as Matrix2D } from './Matrix2D.js';
 export { default as Matrix3 } from './Matrix3.js';
 export { default as Matrix4 } from './Matrix4.js';
 export { default as Rectangle } from './Rectangle.js';
