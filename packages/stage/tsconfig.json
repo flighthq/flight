@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../contracts" }, { "path": "../math" }, { "path": "../types" }],
+  "references": [{ "path": "../math" }, { "path": "../types" }],
   "include": ["src", "../types/src/stage/DirtyFlags.test.ts", "../types/src/stage/DirtyFlags.ts"]
 }

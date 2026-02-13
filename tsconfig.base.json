@@ -14,10 +14,10 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
-      "@flighthq/contracts": ["packages/contracts/src/index.ts"],
-      "@flighthq/contracts/*": ["packages/contracts/src/*"],
       "@flighthq/filters": ["packages/math/src/index.ts"],
       "@flighthq/filters/*": ["packages/math/src/*"],
+      "@flighthq/flight": ["packages/flight/src/index.ts"],
+      "@flighthq/flight/*": ["packages/flight/src/*"],
       "@flighthq/math": ["packages/math/src/index.ts"],
       "@flighthq/math/*": ["packages/math/src/*"],
       "@flighthq/render": ["packages/render/src/index.ts"],
