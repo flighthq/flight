@@ -11,39 +11,21 @@ import type {
   Stage as StageLike,
   Vector2 as Vector2Like,
 } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+import type { BlendMode } from '@flighthq/types';
 import { DirtyFlags, DisplayObjectDerivedState } from '@flighthq/types';
 
 import Transform from './Transform.js';
 
 export default class DisplayObject implements DisplayObjectLike {
-  protected __alpha: number = 1;
-  protected __blendMode: BlendMode = BlendMode.Normal;
-  protected __cacheAsBitmap: boolean = false;
-  protected __cacheAsBitmapMatrix: Matrix2DLike | null = null;
-  protected __filters: BitmapFilterLike[] | null = null;
+  protected __data: DisplayObjectLike;
   protected __loaderInfo: LoaderInfo | null = null;
-  protected __mask: DisplayObjectLike | null = null;
-  protected __name: string | null = null;
-  protected __opaqueBackground: number | null = null;
-  protected __parent: DisplayObjectContainerLike | null = null;
   protected __root: DisplayObjectContainerLike | null = null;
-  protected __rotation: number = 0;
-  protected __scaleX: number = 1;
-  protected __scaleY: number = 1;
-  protected __scale9Grid: RectangleLike | null = null;
-  protected __scrollRect: RectangleLike | null = null;
-  protected __shader: Shader | null = null;
-  protected __stage: StageLike | null = null;
   protected __transform: Transform | null = null;
-  protected __visible: boolean = true;
-  protected __x: number = 0;
-  protected __y: number = 0;
 
   [DisplayObjectDerivedState.Key]?: DisplayObjectDerivedState;
 
   constructor() {
-    createDisplayObject(this);
+    this.__data = createDisplayObject();
   }
 
   /**
@@ -52,9 +34,9 @@ export default class DisplayObject implements DisplayObjectLike {
    *
    * Returns a rectangle.create()
    **/
-  getBounds(targetCoordinateSpace: DisplayObject | null): RectangleLike {
+  getBounds(targetCoordinateSpace: DisplayObjectLike | null): RectangleLike {
     const out = rectangle.create();
-    bounds.getBounds(out, this, targetCoordinateSpace);
+    bounds.getBounds(out, this.__data, targetCoordinateSpace);
     return out;
   }
 
@@ -67,9 +49,9 @@ export default class DisplayObject implements DisplayObjectLike {
    *
    * Returns a rectangle.create()
    **/
-  getRect(targetCoordinateSpace: DisplayObject | null | undefined): RectangleLike {
+  getRect(targetCoordinateSpace: DisplayObjectLike | null | undefined): RectangleLike {
     const out = rectangle.create();
-    bounds.getRect(out, this, targetCoordinateSpace);
+    bounds.getRect(out, this.__data, targetCoordinateSpace);
     return out;
   }
 
@@ -79,7 +61,7 @@ export default class DisplayObject implements DisplayObjectLike {
    **/
   globalToLocal(pos: Readonly<Vector2Like>): Vector2Like {
     const out = vector2.create();
-    transform.globalToLocal(out, this, pos);
+    transform.globalToLocal(out, this.__data, pos);
     return out;
   }
 
@@ -87,8 +69,8 @@ export default class DisplayObject implements DisplayObjectLike {
    * Evaluates the bounding box of the display object to see if it overlaps or
    * intersects with the bounding box of the `obj` display object.
    **/
-  hitTestObject(other: DisplayObject): boolean {
-    return hitTest.hitTestObject(this, other);
+  hitTestObject(other: DisplayObjectLike): boolean {
+    return hitTest.hitTestObject(this.__data, other);
   }
 
   /**
@@ -100,7 +82,7 @@ export default class DisplayObject implements DisplayObjectLike {
 						(`false`).
 	**/
   hitTestPoint(x: number, y: number, _shapeFlag: boolean = false): boolean {
-    return hitTest.hitTestPoint(this, x, y, _shapeFlag);
+    return hitTest.hitTestPoint(this.__data, x, y, _shapeFlag);
   }
 
   /**
@@ -108,7 +90,7 @@ export default class DisplayObject implements DisplayObjectLike {
    * should be redrawn the next time it is eligible to be rendered.
    */
   invalidate(flags: DirtyFlags = DirtyFlags.Render): void {
-    dirty.invalidate(this, flags);
+    dirty.invalidate(this.__data, flags);
   }
 
   /**
@@ -117,68 +99,69 @@ export default class DisplayObject implements DisplayObjectLike {
    **/
   localToGlobal(point: Readonly<Vector2Like>): Vector2Like {
     const out = vector2.create();
-    transform.localToGlobal(out, this, point);
+    transform.localToGlobal(out, this.__data, point);
     return out;
   }
 
   // Get & Set Methods
 
   get alpha(): number {
-    return this.__alpha;
+    return this.__data.alpha;
   }
 
   set alpha(value: number) {
     if (value > 1.0) value = 1.0;
     if (value < 0.0) value = 0.0;
-    if (value === this.__alpha) return;
-    this.__alpha = value;
-    dirty.invalidate(this, DirtyFlags.Appearance);
+    if (value === this.__data.alpha) return;
+    this.__data.alpha = value;
+    dirty.invalidate(this.__data, DirtyFlags.Appearance);
   }
 
   get blendMode(): BlendMode {
-    return this.__blendMode;
+    return this.__data.blendMode;
   }
 
   set blendMode(value: BlendMode) {
-    if (value === this.__blendMode) return;
-    this.__blendMode = value;
-    dirty.invalidate(this, DirtyFlags.Appearance);
+    if (value === this.__data.blendMode) return;
+    this.__data.blendMode = value;
+    dirty.invalidate(this.__data, DirtyFlags.Appearance);
   }
 
   get cacheAsBitmap(): boolean {
-    return this.__filters === null ? this.__cacheAsBitmap : true;
+    return this.__data.filters === null ? this.__data.cacheAsBitmap : true;
   }
 
   set cacheAsBitmap(value: boolean) {
-    if (value === this.__cacheAsBitmap) return;
-    this.__cacheAsBitmap = value;
-    dirty.invalidate(this, DirtyFlags.CacheAsBitmap);
+    if (value === this.__data.cacheAsBitmap) return;
+    this.__data.cacheAsBitmap = value;
+    dirty.invalidate(this.__data, DirtyFlags.CacheAsBitmap);
   }
 
   get cacheAsBitmapMatrix(): Matrix2DLike | null {
-    return this.__cacheAsBitmapMatrix;
+    return this.__data.cacheAsBitmapMatrix;
   }
 
   set cacheAsBitmapMatrix(value: Matrix2DLike | null) {
-    if (matrix2D.equals(this.__cacheAsBitmapMatrix, value)) return;
+    const data = this.__data;
+    if (matrix2D.equals(data.cacheAsBitmapMatrix, value)) return;
 
     if (value !== null) {
-      if (this.__cacheAsBitmapMatrix === null) {
-        this.__cacheAsBitmapMatrix = matrix2D.clone(value);
+      if (data.cacheAsBitmapMatrix === null) {
+        data.cacheAsBitmapMatrix = matrix2D.clone(value);
       } else {
-        matrix2D.copy(this.__cacheAsBitmapMatrix, value);
+        matrix2D.copy(data.cacheAsBitmapMatrix, value);
       }
     } else {
-      this.__cacheAsBitmapMatrix = null;
+      data.cacheAsBitmapMatrix = null;
     }
 
-    if (this.__cacheAsBitmap) {
-      dirty.invalidate(this, DirtyFlags.Transform);
+    if (data.cacheAsBitmap) {
+      dirty.invalidate(data, DirtyFlags.Transform);
     }
   }
 
   get filters(): BitmapFilterLike[] {
-    const filters = this.__filters;
+    const filters = this.__data.filters;
     if (filters === null) {
       return [];
     } else {
@@ -187,25 +170,25 @@ export default class DisplayObject implements DisplayObjectLike {
   }
 
   set filters(value: BitmapFilterLike[] | null) {
-    if ((value === null || value.length == 0) && this.__filters === null) return;
+    if ((value === null || value.length == 0) && this.__data.filters === null) return;
 
     // if (value !== null) {
     //   target[$.filters] = value.map((filter) => {
     //     return filter.clone();
     //   });
     // } else {
-    this.__filters = null;
+    this.__data.filters = null;
     // }
 
-    dirty.invalidate(this, DirtyFlags.CacheAsBitmap);
+    dirty.invalidate(this.__data, DirtyFlags.CacheAsBitmap);
   }
 
   get height(): number {
-    return derived.getCurrentBounds(this).height;
+    return derived.getCurrentBounds(this.__data).height;
   }
 
   set height(value: number) {
-    const localBounds = derived.getCurrentLocalBounds(this);
+    const localBounds = derived.getCurrentLocalBounds(this.__data);
     if (localBounds.height === 0) return;
     // Invalidation (if necessary) occurs in scaleY setter
     this.scaleY = value / localBounds.height;
@@ -219,47 +202,50 @@ export default class DisplayObject implements DisplayObjectLike {
   }
 
   get mask(): DisplayObjectLike | null {
-    return this.__mask;
+    return this.__data.mask;
   }
 
   set mask(value: DisplayObjectLike | null) {
-    if (value === this.__mask) return;
+    if (value === this.__data.mask) return;
 
-    // if (this.__mask !== null) {
-    //   (this.__mask as DisplayObject)[$.maskedObject] = null;
+    // if (this.__data.mask !== null) {
+    //   (this.__data.mask as DisplayObject)[$.maskedObject] = null;
     // }
     // if (value !== null) {
     //   value.__maskedObject = target;
     // }
 
-    this.__mask = value;
-    dirty.invalidate(this, DirtyFlags.Clip);
+    this.__data.mask = value;
+    dirty.invalidate(this.__data, DirtyFlags.Clip);
   }
 
   get name(): string | null {
-    return this.__name;
+    return this.__data.name;
   }
 
   set name(value: string | null) {
-    this.__name = value;
+    this.__data.name = value;
   }
 
   get opaqueBackground(): number | null {
-    return this.__opaqueBackground;
+    return this.__data.opaqueBackground;
   }
 
   set opaqueBackground(value: number | null) {
-    if (value === this.__opaqueBackground) return;
-    this.__opaqueBackground = value;
-    dirty.invalidate(this, DirtyFlags.Appearance);
+    if (value === this.__data.opaqueBackground) return;
+    this.__data.opaqueBackground = value;
+    dirty.invalidate(this.__data, DirtyFlags.Appearance);
   }
 
   get parent(): DisplayObjectContainerLike | null {
-    return this.__parent;
+    return this.__data.parent;
   }
 
   private set parent(value: DisplayObjectContainerLike | null) {
-    this.__parent = value;
+    type ParentAccess = Omit<DisplayObject, 'parent'> & {
+      parent: DisplayObjectContainerLike | null;
+    };
+    (this.__data as ParentAccess).parent = value;
   }
 
   get root(): DisplayObjectContainerLike | null {
@@ -271,11 +257,11 @@ export default class DisplayObject implements DisplayObjectLike {
   }
 
   get rotation(): number {
-    return this.__rotation;
+    return this.__data.rotation;
   }
 
   set rotation(value: number) {
-    if (value === this.__rotation) return;
+    if (value === this.__data.rotation) return;
     // Normalize from -180 to 180
     value = value % 360.0;
     if (value > 180.0) {
@@ -283,88 +269,93 @@ export default class DisplayObject implements DisplayObjectLike {
     } else if (value < -180.0) {
       value += 360.0;
     }
-    this.__rotation = value;
-    dirty.invalidate(this, DirtyFlags.Transform);
+    this.__data.rotation = value;
+    dirty.invalidate(this.__data, DirtyFlags.Transform);
   }
 
   get scale9Grid(): RectangleLike | null {
-    if (this.__scale9Grid === null) {
+    if (this.__data.scale9Grid === null) {
       return null;
     }
-    return rectangle.clone(this.__scale9Grid);
+    return rectangle.clone(this.__data.scale9Grid);
   }
 
   set scale9Grid(value: RectangleLike | null) {
-    if (value === null && this.__scale9Grid === null) return;
-    if (value !== null && this.__scale9Grid !== null && rectangle.equals(this.__scale9Grid, value)) return;
+    const data = this.__data;
+    if (value === null && data.scale9Grid === null) return;
+    if (value !== null && data.scale9Grid !== null && rectangle.equals(data.scale9Grid, value)) return;
 
     if (value != null) {
-      if (this.__scale9Grid === null) this.__scale9Grid = rectangle.create();
-      rectangle.copy(this.__scale9Grid, value);
+      if (data.scale9Grid === null) data.scale9Grid = rectangle.create();
+      rectangle.copy(data.scale9Grid, value);
     } else {
-      this.__scale9Grid = null;
+      data.scale9Grid = null;
     }
 
-    dirty.invalidate(this, DirtyFlags.Appearance | DirtyFlags.Bounds | DirtyFlags.Clip | DirtyFlags.Transform);
+    dirty.invalidate(data, DirtyFlags.Appearance | DirtyFlags.Bounds | DirtyFlags.Clip | DirtyFlags.Transform);
   }
 
   get scaleX(): number {
-    return this.__scaleX;
+    return this.__data.scaleX;
   }
 
   set scaleX(value: number) {
-    if (value === this.__scaleX) return;
-    this.__scaleX = value;
-    dirty.invalidate(this, DirtyFlags.Transform);
+    if (value === this.__data.scaleX) return;
+    this.__data.scaleX = value;
+    dirty.invalidate(this.__data, DirtyFlags.Transform);
   }
 
   get scaleY(): number {
-    return this.__scaleY;
+    return this.__data.scaleY;
   }
 
   set scaleY(value: number) {
-    if (value === this.__scaleY) return;
-    this.__scaleY = value;
-    dirty.invalidate(this, DirtyFlags.Transform);
+    if (value === this.__data.scaleY) return;
+    this.__data.scaleY = value;
+    dirty.invalidate(this.__data, DirtyFlags.Transform);
   }
 
   get scrollRect(): RectangleLike | null {
-    if (this.__scrollRect === null) {
+    if (this.__data.scrollRect === null) {
       return null;
     }
-    return rectangle.clone(this.__scrollRect);
+    return rectangle.clone(this.__data.scrollRect);
   }
 
   set scrollRect(value: RectangleLike | null) {
-    if (value === null && this.__scrollRect === null) return;
-    if (value !== null && this.__scrollRect !== null && rectangle.equals(this.__scrollRect, value)) return;
+    const data = this.__data;
+    if (value === null && data.scrollRect === null) return;
+    if (value !== null && data.scrollRect !== null && rectangle.equals(data.scrollRect, value)) return;
 
     if (value !== null) {
-      if (this.__scrollRect === null) this.__scrollRect = rectangle.create();
-      rectangle.copy(this.__scrollRect, value);
+      if (data.scrollRect === null) data.scrollRect = rectangle.create();
+      rectangle.copy(data.scrollRect, value);
     } else {
-      this.__scrollRect = null;
+      data.scrollRect = null;
     }
 
-    dirty.invalidate(this, DirtyFlags.Clip);
+    dirty.invalidate(data, DirtyFlags.Clip);
   }
 
   get shader(): Shader | null {
-    return this.__shader;
+    return this.__data.shader;
   }
 
   set shader(value: Shader | null) {
-    if (value === this.__shader) return;
-    this.__shader = value;
-    dirty.invalidate(this, DirtyFlags.Appearance);
+    if (value === this.__data.shader) return;
+    this.__data.shader = value;
+    dirty.invalidate(this.__data, DirtyFlags.Appearance);
   }
 
   get stage(): StageLike | null {
-    return this.__stage;
+    return this.__data.stage;
   }
 
   private set stage(value: StageLike | null) {
-    this.__stage = value;
+    type StageAccess = Omit<DisplayObject, 'stage'> & {
+      stage: StageLike | null;
+    };
+    (this.__data as StageAccess).stage = value;
   }
 
   get transform(): Transform {
@@ -402,45 +393,45 @@ export default class DisplayObject implements DisplayObjectLike {
   }
 
   get visible(): boolean {
-    return this.__visible;
+    return this.__data.visible;
   }
 
   set visible(value: boolean) {
-    if (value === this.__visible) return;
-    this.__visible = value;
-    dirty.invalidate(this, DirtyFlags.Appearance);
+    if (value === this.__data.visible) return;
+    this.__data.visible = value;
+    dirty.invalidate(this.__data, DirtyFlags.Appearance);
   }
 
   get width(): number {
-    return derived.getCurrentBounds(this).width;
+    return derived.getCurrentBounds(this.__data).width;
   }
 
   set width(value: number) {
-    const localBounds = derived.getCurrentLocalBounds(this);
+    const localBounds = derived.getCurrentLocalBounds(this.__data);
     if (localBounds.width === 0) return;
     // Invalidation (if necessary) occurs in scaleX setter
     this.scaleX = value / localBounds.width;
   }
 
   get x(): number {
-    return this.__x;
+    return this.__data.x;
   }
 
   set x(value: number) {
     if (value !== value) value = 0; // convert NaN to 0
-    if (value === this.__x) return;
-    this.__x = value;
-    dirty.invalidate(this, DirtyFlags.Transform);
+    if (value === this.__data.x) return;
+    this.__data.x = value;
+    dirty.invalidate(this.__data, DirtyFlags.Transform);
   }
 
   get y(): number {
-    return this.__y;
+    return this.__data.y;
   }
 
   set y(value: number) {
     if (value !== value) value = 0; // convert NaN to 0
-    if (value === this.__y) return;
-    this.__y = value;
-    dirty.invalidate(this, DirtyFlags.Transform);
+    if (value === this.__data.y) return;
+    this.__data.y = value;
+    dirty.invalidate(this.__data, DirtyFlags.Transform);
   }
 }
