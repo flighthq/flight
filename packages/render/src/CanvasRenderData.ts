@@ -1,4 +1,4 @@
-import { getCurrentWorldTransform, getDerivedState } from '@flighthq/stage/derived';
+import { derived } from '@flighthq/stage';
 import type { DisplayObject, Matrix2D } from '@flighthq/types';
 
 export default class CanvasRenderData {
@@ -14,11 +14,11 @@ export default class CanvasRenderData {
 
   constructor(source: DisplayObject) {
     this.source = source;
-    this.renderTransform = getCurrentWorldTransform(source);
+    this.renderTransform = derived.getCurrentWorldTransform(source);
   }
 
   isDirty() {
-    const state = getDerivedState(this.source);
+    const state = derived.getDerivedState(this.source);
     if (
       this.worldTransformID !== state.worldTransformID /*|| this.appearanceID !== this.source[R.appearanceID]*/ ||
       this.localBoundsID !== state.localBoundsID

@@ -1,5 +1,5 @@
 import { matrix2D } from '@flighthq/math';
-import { getCurrentWorldTransform, getDerivedState } from '@flighthq/stage/derived';
+import { derived } from '@flighthq/stage';
 import type { DisplayObject, Matrix2D, Rectangle } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
@@ -261,11 +261,11 @@ export default class CanvasRenderer {
 
       const renderAlpha = current.alpha * parentAlpha;
       renderData.renderAlpha = renderAlpha;
-      renderData.renderTransform = getCurrentWorldTransform(source);
+      renderData.renderTransform = derived.getCurrentWorldTransform(source);
 
       renderQueue[renderQueueIndex++] = renderData;
 
-      const children = getDerivedState(current).children;
+      const children = derived.getDerivedState(current).children;
 
       if (children !== null) {
         for (let i = children.length - 1; i >= 0; i--) {
