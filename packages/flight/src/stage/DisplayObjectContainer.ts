@@ -1,4 +1,4 @@
-import { children as functions } from '@flighthq/stage';
+import { children } from '@flighthq/stage';
 import { createDisplayObjectContainer } from '@flighthq/stage';
 import type { DisplayObject as DisplayObjectLike } from '@flighthq/types';
 import { DisplayObjectDerivedState } from '@flighthq/types';
@@ -16,40 +16,40 @@ export default class DisplayObjectContainer extends DisplayObject {
   }
 
   addChild(child: DisplayObjectLike): DisplayObjectLike {
-    return functions.addChild(this, child);
+    return children.addChild(this, child);
   }
 
   addChildAt(child: DisplayObjectLike, index: number): DisplayObjectLike {
-    return functions.addChildAt(this, child, index);
+    return children.addChildAt(this, child, index);
   }
 
   removeChild(child: DisplayObjectLike): DisplayObjectLike {
-    return functions.removeChild(this, child);
+    return children.removeChild(this, child);
   }
 
   removeChildAt(index: number): DisplayObjectLike | null {
-    return functions.removeChildAt(this, index);
+    return children.removeChildAt(this, index);
   }
 
   removeChildren(beginIndex: number = 0, endIndex?: number): void {
-    functions.removeChildren(this, beginIndex, endIndex);
+    children.removeChildren(this, beginIndex, endIndex);
   }
 
   setChildIndex(child: DisplayObjectLike, index: number): void {
-    functions.setChildIndex(this, child, index);
+    children.setChildIndex(this, child, index);
   }
 
   swapChildren(child1: DisplayObjectLike, child2: DisplayObjectLike): void {
-    functions.swapChildren(this, child1, child2);
+    children.swapChildren(this, child1, child2);
   }
 
   swapChildrenAt(index1: number, index2: number): void {
-    functions.swapChildrenAt(this, index1, index2);
+    children.swapChildrenAt(this, index1, index2);
   }
 
   // Get & Set Methods
 
   get numChildren() {
-    return functions.getNumChildren(this);
+    return children.getNumChildren(this);
   }
 }
