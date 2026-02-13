@@ -1,4 +1,4 @@
-import { Vector2 } from '@flighthq/math';
+import { vector2 } from '@flighthq/math';
 import type { DisplayObject } from '@flighthq/types';
 import { DirtyFlags } from '@flighthq/types';
 
@@ -22,8 +22,8 @@ describe('globalToLocal', () => {
   });
 
   it('writes into the provided output Vector2', () => {
-    const out = new Vector2();
-    const world = new Vector2(14, 24);
+    const out = vector2.create();
+    const world = vector2.create(14, 24);
 
     globalToLocal(out, obj, world);
 
@@ -32,15 +32,15 @@ describe('globalToLocal', () => {
   });
 
   it('reuses the output object', () => {
-    const out = new Vector2(999, 999);
-    globalToLocal(out, obj, new Vector2(10, 20));
+    const out = vector2.create(999, 999);
+    globalToLocal(out, obj, vector2.create(10, 20));
 
     expect(out).toEqual(expect.objectContaining({ x: 0, y: 0 }));
   });
 
   it('updates the world transform before conversion', () => {
     // const spy = vi.spyOn(obj, updateWorldTransform);
-    // globalToLocal(new Vector2(), obj, new Vector2());
+    // globalToLocal(vector2.create(), obj, vector2.create());
     // expect(spy).toHaveBeenCalled();
     // spy.mockRestore();
   });
@@ -64,8 +64,8 @@ describe('localToGlobal', () => {
   });
 
   it('writes to out parameter', () => {
-    const local = new Vector2(5, 5);
-    const out = new Vector2();
+    const local = vector2.create(5, 5);
+    const out = vector2.create();
 
     localToGlobal(out, obj, local);
 
@@ -79,8 +79,8 @@ describe('localToGlobal', () => {
     obj.y = 30;
     invalidate(obj, DirtyFlags.Transform);
 
-    const local = new Vector2(10, 20);
-    const out = new Vector2();
+    const local = vector2.create(10, 20);
+    const out = vector2.create();
 
     localToGlobal(out, obj, local);
 
@@ -93,12 +93,12 @@ describe('localToGlobal', () => {
     obj.y = 2;
     invalidate(obj, DirtyFlags.Transform);
 
-    const p1 = new Vector2(1, 1);
-    const p2 = new Vector2(2, 2);
+    const p1 = vector2.create(1, 1);
+    const p2 = vector2.create(2, 2);
 
-    const g1 = new Vector2();
+    const g1 = vector2.create();
     localToGlobal(g1, obj, p1);
-    const g2 = new Vector2();
+    const g2 = vector2.create();
     localToGlobal(g2, obj, p2);
 
     expect(g1.x).toBe(2);
