@@ -1,7 +1,6 @@
-import type { Renderable } from '@flighthq/contracts';
-import { RenderableSymbols as R } from '@flighthq/contracts';
-import { Affine2D as Affine2DImpl } from '@flighthq/math';
-import type { Affine2D, Rectangle } from '@flighthq/types';
+import { matrix2D } from '@flighthq/math';
+import { getCurrentWorldTransform, getDerivedState } from '@flighthq/stage/derived';
+import type { DisplayObject, Matrix2D, Rectangle } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import CanvasRenderData from './CanvasRenderData';
@@ -9,7 +8,7 @@ import type { CanvasRendererOptions } from './CanvasRendererOptions';
 
 export default class CanvasRenderer {
   protected static __currentBlendMode: BlendMode | null = null;
-  protected static __renderableStack: Renderable[] = [];
+  protected static __renderableStack: DisplayObject[] = [];
   protected static __overrideBlendMode: BlendMode | null = null;
 
   readonly canvas: HTMLCanvasElement;
@@ -17,13 +16,13 @@ export default class CanvasRenderer {
   readonly contextAttributes: CanvasRenderingContext2DSettings;
 
   pixelRatio: number;
-  renderTransform: Affine2D;
+  renderTransform: Matrix2D;
   roundPixels: boolean;
 
   protected __backgroundColor: number = 0x00000000;
   protected __backgroundColorSplit: number[] = [0, 0, 0, 0];
   protected __backgroundColorString: string = '#00000000';
-  protected __renderData: WeakMap<Renderable, CanvasRenderData> = new WeakMap();
+  protected __renderData: WeakMap<DisplayObject, CanvasRenderData> = new WeakMap();
   protected __renderQueue: CanvasRenderData[] = [];
   protected __renderQueueLength: number = 0;
 
@@ -40,11 +39,11 @@ export default class CanvasRenderer {
 
     this.backgroundColor = options?.backgroundColor ?? 0x00000000;
     this.pixelRatio = options?.pixelRatio ?? window.devicePixelRatio | 1;
-    this.renderTransform = options?.renderTransform ?? new Affine2DImpl();
+    this.renderTransform = options?.renderTransform ?? matrix2D.create();
     this.roundPixels = options?.roundPixels ?? false;
   }
 
-  static render(target: CanvasRenderer, source: Renderable): void {
+  static render(target: CanvasRenderer, source: DisplayObject): void {
     const dirty = this.__updateRenderQueue(target, source);
     if (dirty) {
       this.__clear(target);
@@ -119,16 +118,16 @@ export default class CanvasRenderer {
     object: CanvasRenderData,
     handleScrollRect: boolean = true,
   ): void {
-    if (/*!object.__isCacheBitmapRender && */ object.source[R.mask] !== null) {
+    if (/*!object.__isCacheBitmapRender && */ object.source.mask !== null) {
       this.__popMask(target);
     }
 
-    if (handleScrollRect && object.source[R.scrollRect] != null) {
+    if (handleScrollRect && object.source.scrollRect != null) {
       this.__popClipRect(target);
     }
   }
 
-  protected static __pushClipRect(target: CanvasRenderer, rect: Rectangle, transform: Affine2D): void {
+  protected static __pushClipRect(target: CanvasRenderer, rect: Rectangle, transform: Matrix2D): void {
     target.context.save();
 
     this.__setTransform(target, target.context, transform);
@@ -155,8 +154,8 @@ export default class CanvasRenderer {
     object: CanvasRenderData,
     handleScrollRect: boolean = true,
   ): void {
-    if (handleScrollRect && object.source[R.scrollRect] !== null) {
-      this.__pushClipRect(target, object.source[R.scrollRect]!, object.renderTransform);
+    if (handleScrollRect && object.source.scrollRect !== null) {
+      this.__pushClipRect(target, object.source.scrollRect, object.renderTransform);
     }
     if (/*!object.__isCacheBitmapRender &&*/ object.mask !== null) {
       this.__pushMask(target, object.mask);
@@ -216,30 +215,23 @@ export default class CanvasRenderer {
   protected static __setTransform(
     target: CanvasRenderer,
     context: CanvasRenderingContext2D,
-    transform: Affine2D,
+    transform: Matrix2D,
   ): void {
     if (target.roundPixels) {
       context.setTransform(
-        transform.m[0], // a
-        transform.m[1], // b
-        transform.m[3], // c
-        transform.m[4], // d
-        Math.fround(transform.m[2]), // tx
-        Math.fround(transform.m[5]), // ty
+        transform.a,
+        transform.b,
+        transform.c,
+        transform.d,
+        Math.fround(transform.tx),
+        Math.fround(transform.ty),
       );
     } else {
-      context.setTransform(
-        transform.m[0], // a
-        transform.m[1], // b
-        transform.m[3], // c
-        transform.m[4], // d
-        transform.m[2], // tx
-        transform.m[5], // ty
-      );
+      context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
     }
   }
 
-  protected static __updateRenderQueue(target: CanvasRenderer, source: Renderable): boolean {
+  protected static __updateRenderQueue(target: CanvasRenderer, source: DisplayObject): boolean {
     const renderableStack = this.__renderableStack;
     const renderDataMap = target.__renderData;
     const renderQueue = target.__renderQueue;
@@ -257,9 +249,9 @@ export default class CanvasRenderer {
         renderDataMap.get(current) ?? renderDataMap.set(current, new CanvasRenderData(current)).get(current)!;
 
       if (!dirty) dirty = renderData.isDirty();
-      if (!current[R.visible]) continue;
+      if (!current.visible) continue;
 
-      const mask = current[R.mask];
+      const mask = current.mask;
       if (mask !== null) {
         const maskRenderData =
           renderDataMap.get(mask) ?? renderDataMap.set(mask, new CanvasRenderData(mask)).get(mask)!;
@@ -267,13 +259,13 @@ export default class CanvasRenderer {
         renderData.mask = maskRenderData;
       }
 
-      const renderAlpha = current[R.alpha] * parentAlpha;
+      const renderAlpha = current.alpha * parentAlpha;
       renderData.renderAlpha = renderAlpha;
-      renderData.renderTransform = source[R.worldTransform];
+      renderData.renderTransform = getCurrentWorldTransform(source);
 
       renderQueue[renderQueueIndex++] = renderData;
 
-      const children = current[R.children];
+      const children = getDerivedState(current).children;
 
       if (children !== null) {
         for (let i = children.length - 1; i >= 0; i--) {

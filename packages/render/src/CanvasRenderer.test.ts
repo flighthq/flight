@@ -1,4 +1,4 @@
-import { Affine2D } from '@flighthq/math';
+import { matrix2D } from '@flighthq/math';
 
 import CanvasRenderer from './CanvasRenderer';
 import type { CanvasRendererOptions } from './CanvasRendererOptions';
@@ -34,7 +34,7 @@ describe('CanvasRenderer', () => {
     expect(renderer.backgroundColor).toBe(0);
     expect(renderer.pixelRatio).toBe(window.devicePixelRatio);
     expect(renderer.roundPixels).toBe(false);
-    expect(renderer.renderTransform).toBeInstanceOf(Affine2D);
+    expect(renderer.renderTransform).not.toBeNull();
   });
 
   it('should use provided options', () => {
@@ -42,7 +42,7 @@ describe('CanvasRenderer', () => {
       backgroundColor: 0xffffff,
       pixelRatio: 2,
       roundPixels: true,
-      renderTransform: new Affine2D(),
+      renderTransform: matrix2D.create(),
       imageSmoothingEnabled: false,
       imageSmoothingQuality: 'low',
     };
@@ -52,7 +52,7 @@ describe('CanvasRenderer', () => {
     expect(renderer.backgroundColor).toBe(0xffffff);
     expect(renderer.pixelRatio).toBe(2);
     expect(renderer.roundPixels).toBe(true);
-    expect(renderer.renderTransform).toBeInstanceOf(Affine2D);
+    expect(renderer.renderTransform).not.toBeNull();
     expect(renderer.imageSmoothingEnabled).toBe(false);
     expect(renderer.imageSmoothingQuality).toBe('low');
   });
@@ -129,7 +129,7 @@ describe('CanvasRenderer', () => {
   });
 
   it('should handle worldTransform option correctly', () => {
-    const customTransform = new Affine2D();
+    const customTransform = matrix2D.create();
     const options: CanvasRendererOptions = {
       renderTransform: customTransform,
     };
@@ -140,7 +140,7 @@ describe('CanvasRenderer', () => {
 
   it('should fall back to default Affine2D if worldTransform is not provided', () => {
     const renderer = new CanvasRenderer(canvas);
-    expect(renderer.renderTransform).toBeInstanceOf(Affine2D);
+    expect(renderer.renderTransform).not.toBeNull();
   });
 
   // Check if contextAttributes are passed and correctly retrieved
