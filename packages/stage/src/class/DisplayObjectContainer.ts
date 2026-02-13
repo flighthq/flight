@@ -1,8 +1,8 @@
-import type { DisplayObject as DisplayObjectLike} from '@flighthq/types';
+import type { DisplayObject as DisplayObjectLike } from '@flighthq/types';
 import { DisplayObjectDerivedState } from '@flighthq/types';
 
-import { getDerivedState } from '../functions/displayObject.js';
-import * as functions from '../functions/displayObjectContainer.js';
+import * as childrenFunctions from '../functions/children.js';
+import { createDisplayObjectContainer } from '../functions/createDisplayObjectContainer.js';
 import DisplayObject from './DisplayObject.js';
 
 export default class DisplayObjectContainer extends DisplayObject {
@@ -12,45 +12,44 @@ export default class DisplayObjectContainer extends DisplayObject {
 
   constructor() {
     super();
-    functions.create(this);
+    createDisplayObjectContainer(this);
   }
 
   addChild(child: DisplayObjectLike): DisplayObjectLike {
-    return functions.addChild(this, child);
+    return childrenFunctions.addChild(this, child);
   }
 
   addChildAt(child: DisplayObjectLike, index: number): DisplayObjectLike {
-    return functions.addChildAt(this, child, index);
+    return childrenFunctions.addChildAt(this, child, index);
   }
 
   removeChild(child: DisplayObjectLike): DisplayObjectLike {
-    return functions.removeChild(this, child);
+    return childrenFunctions.removeChild(this, child);
   }
 
   removeChildAt(index: number): DisplayObjectLike | null {
-    return functions.removeChildAt(this, index);
+    return childrenFunctions.removeChildAt(this, index);
   }
 
   removeChildren(beginIndex: number = 0, endIndex?: number): void {
-    functions.removeChildren(this, beginIndex, endIndex);
+    childrenFunctions.removeChildren(this, beginIndex, endIndex);
   }
 
   setChildIndex(child: DisplayObjectLike, index: number): void {
-    functions.setChildIndex(this, child, index);
+    childrenFunctions.setChildIndex(this, child, index);
   }
 
   swapChildren(child1: DisplayObjectLike, child2: DisplayObjectLike): void {
-    functions.swapChildren(this, child1, child2);
+    childrenFunctions.swapChildren(this, child1, child2);
   }
 
   swapChildrenAt(index1: number, index2: number): void {
-    functions.swapChildrenAt(this, index1, index2);
+    childrenFunctions.swapChildrenAt(this, index1, index2);
   }
 
   // Get & Set Methods
 
   get numChildren() {
-    const state = getDerivedState(this);
-    return state.children ? state.children.length : 0;
+    return childrenFunctions.getNumChildren(this);
   }
 }

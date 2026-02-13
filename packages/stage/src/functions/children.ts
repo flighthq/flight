@@ -1,17 +1,8 @@
 import type { DisplayObject, DisplayObjectContainer } from '@flighthq/types';
-import { DirtyFlags, DisplayObjectDerivedState } from '@flighthq/types';
+import { DirtyFlags } from '@flighthq/types';
 
-import * as displayObjectFunctions from './displayObject.js';
-
-// Constructor
-
-export function create(obj: Partial<DisplayObjectContainer> = {}): DisplayObjectContainer {
-  displayObjectFunctions.create(obj);
-  // TODO: Construct later?
-  const state = displayObjectFunctions.getDerivedState(obj as DisplayObject);
-  if (state.children === null) state.children = [];
-  return obj as DisplayObjectContainer;
-}
+import { getDerivedState } from './derived';
+import { invalidate } from './dirty';
 
 /**
  * Adds a child DisplayObject instance to this DisplayObjectContainer
@@ -19,7 +10,7 @@ export function create(obj: Partial<DisplayObjectContainer> = {}): DisplayObject
  * this DisplayObjectContainer instance.
  **/
 export function addChild(target: DisplayObjectContainer, child: DisplayObject): DisplayObject {
-  const targetState = displayObjectFunctions.getDerivedState(target);
+  const targetState = getDerivedState(target);
   return addChildAt(target, child, targetState.children!.length);
 }
 
@@ -30,7 +21,7 @@ export function addChild(target: DisplayObjectContainer, child: DisplayObject): 
  * DisplayObjectContainer object.
  **/
 export function addChildAt(target: DisplayObjectContainer, child: DisplayObject, index: number): DisplayObject {
-  const targetState = displayObjectFunctions.getDerivedState(target);
+  const targetState = getDerivedState(target);
   if (child === null) {
     throw new TypeError('Error #2007: Parameter child must be non-null.');
   } else if (child === target) {
@@ -53,8 +44,8 @@ export function addChildAt(target: DisplayObjectContainer, child: DisplayObject,
   }
 
   targetState.children!.splice(index, 0, child);
-  (child as any).parent = target;
-  displayObjectFunctions.invalidate(target, DirtyFlags.Children);
+  (child as any).parent = target; // eslint-disable-line
+  invalidate(target, DirtyFlags.Children);
   return child;
 }
 
@@ -75,14 +66,14 @@ export function removeChild(target: DisplayObjectContainer, child: DisplayObject
       // }
     }
 
-    const targetState = displayObjectFunctions.getDerivedState(target);
-    (child as any).parent = null;
+    const targetState = getDerivedState(target);
+    (child as any).parent = null; // eslint-disable-line
     const i = targetState.children!.indexOf(child);
     if (i !== -1) {
       targetState.children!.splice(i, 1);
     }
-    displayObjectFunctions.invalidate(child, DirtyFlags.Transform | DirtyFlags.Render);
-    displayObjectFunctions.invalidate(target, DirtyFlags.Children);
+    invalidate(child, DirtyFlags.Transform | DirtyFlags.Render);
+    invalidate(target, DirtyFlags.Children);
   }
   return child;
 }
@@ -96,7 +87,7 @@ export function removeChild(target: DisplayObjectContainer, child: DisplayObject
  * above the child in the DisplayObjectContainer are decreased by 1.
  **/
 export function removeChildAt(target: DisplayObjectContainer, index: number): DisplayObject | null {
-  const targetState = displayObjectFunctions.getDerivedState(target);
+  const targetState = getDerivedState(target);
   if (index >= 0 && index < targetState.children!.length) {
     return removeChild(target, targetState.children![index]);
   }
@@ -109,7 +100,7 @@ export function removeChildAt(target: DisplayObjectContainer, index: number): Di
  * garbage collected if no other references to the children exist.
  **/
 export function removeChildren(target: DisplayObjectContainer, beginIndex: number = 0, endIndex?: number): void {
-  const targetState = displayObjectFunctions.getDerivedState(target);
+  const targetState = getDerivedState(target);
   if (beginIndex > targetState.children!.length - 1) return;
 
   if (endIndex === undefined) {
@@ -132,7 +123,7 @@ export function removeChildren(target: DisplayObjectContainer, beginIndex: numbe
  * This affects the layering of child objects.
  **/
 export function setChildIndex(target: DisplayObjectContainer, child: DisplayObject, index: number): void {
-  const targetState = displayObjectFunctions.getDerivedState(target);
+  const targetState = getDerivedState(target);
   if (index >= 0 && index <= targetState.children!.length && child.parent === target) {
     const i = targetState.children!.indexOf(child);
     if (i !== -1) {
@@ -153,7 +144,7 @@ export function setChildIndex(target: DisplayObjectContainer, child: DisplayObje
  * the same index positions.
  **/
 export function swapChildren(target: DisplayObjectContainer, child1: DisplayObject, child2: DisplayObject): void {
-  const targetState = displayObjectFunctions.getDerivedState(target);
+  const targetState = getDerivedState(target);
   if (child1.parent == target && child2.parent == target) {
     const index1 = targetState.children!.indexOf(child1);
     const index2 = targetState.children!.indexOf(child2);
@@ -161,7 +152,7 @@ export function swapChildren(target: DisplayObjectContainer, child1: DisplayObje
     targetState.children![index1] = child2;
     targetState.children![index2] = child1;
 
-    displayObjectFunctions.invalidate(target, DirtyFlags.Children);
+    invalidate(target, DirtyFlags.Children);
   }
 }
 
@@ -171,7 +162,7 @@ export function swapChildren(target: DisplayObjectContainer, child1: DisplayObje
  * the display object container remain in the same index positions.
  **/
 export function swapChildrenAt(target: DisplayObjectContainer, index1: number, index2: number): void {
-  const targetState = displayObjectFunctions.getDerivedState(target);
+  const targetState = getDerivedState(target);
   const len = targetState.children!.length;
   if (index1 < 0 || index2 < 0 || index1 >= len || index2 >= len) {
     throw new RangeError('The supplied index is out of bounds.');
@@ -182,19 +173,12 @@ export function swapChildrenAt(target: DisplayObjectContainer, index1: number, i
   const swap: DisplayObject = targetState.children![index1];
   targetState.children![index1] = targetState.children![index2];
   targetState.children![index2] = swap;
-  displayObjectFunctions.invalidate(target, DirtyFlags.Children);
+  invalidate(target, DirtyFlags.Children);
 }
 
 // Get & Set Methods
 
 export function getNumChildren(source: Readonly<DisplayObjectContainer>): number {
-  const sourceState = displayObjectFunctions.getDerivedState(source);
+  const sourceState = getDerivedState(source);
   return sourceState.children ? sourceState.children.length : 0;
 }
-
-// Inherited Aliases
-
-const { getBounds, getRect, globalToLocal, localToGlobal, hitTestObject, hitTestPoint, invalidate } =
-  displayObjectFunctions;
-
-export { getBounds, getRect, globalToLocal, hitTestObject, hitTestPoint, invalidate, localToGlobal };
