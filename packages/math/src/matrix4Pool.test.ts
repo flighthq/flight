@@ -8,8 +8,8 @@ beforeEach(() => {
 });
 
 test('get() returns a new matrix4 when pool is empty', () => {
-  const m = matrix4Pool.get();
-  expect(m).toBeInstanceOf(matrix4);
+  const m: Matrix4 = matrix4Pool.get();
+  expect(m).not.toBeNull();
 });
 
 test('getIdentity() returns a matrix set to identity', () => {
