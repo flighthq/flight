@@ -7,8 +7,8 @@ export default mergeConfig(
   defineConfig({
     test: {
       projects: [
-        'packages/contracts',
         'packages/filters',
+        'packages/flight',
         'packages/math',
         'packages/render',
         'packages/scene',

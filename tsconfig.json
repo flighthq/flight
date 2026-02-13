@@ -12,8 +12,7 @@
     "packages/*/src/**/*.ts",
     "packages/*/src/**/*.test.ts", // Include test files here
     "packages/*/src/**/*.spec.ts",
-    "packages/*/__tests__/**/*.ts",
-    "packages/contracts/vitest.config.ts"
+    "packages/*/__tests__/**/*.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }
