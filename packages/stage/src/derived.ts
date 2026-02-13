@@ -1,42 +1,28 @@
-import { Affine2D, Rectangle } from '@flighthq/math';
-import type {
-  Affine2D as Affine2DLike,
-  DisplayObject,
-  Rectangle as RectangleLike} from '@flighthq/types';
-import {
-  DirtyFlags,
-  DisplayObjectDerivedState
-} from '@flighthq/types';
+import { matrix2D, rectangle } from '@flighthq/math';
+import type { DisplayObject, Matrix2D, Rectangle } from '@flighthq/types';
+import { DirtyFlags, DisplayObjectDerivedState } from '@flighthq/types';
 
-function createAffine2D() {
-  return new Affine2D();
-}
-
-function createRectangle() {
-  return new Rectangle();
-}
-
-export function getCurrentBounds(target: DisplayObject): Readonly<RectangleLike> {
+export function getCurrentBounds(target: DisplayObject): Readonly<Rectangle> {
   updateBounds(target);
   return target[DisplayObjectDerivedState.Key]!.bounds!;
 }
 
-export function getCurrentLocalBounds(target: DisplayObject): Readonly<RectangleLike> {
+export function getCurrentLocalBounds(target: DisplayObject): Readonly<Rectangle> {
   updateLocalBounds(target);
   return target[DisplayObjectDerivedState.Key]!.localBounds!;
 }
 
-export function getCurrentLocalTransform(target: DisplayObject): Readonly<Affine2DLike> {
+export function getCurrentLocalTransform(target: DisplayObject): Readonly<Matrix2D> {
   updateLocalTransform(target);
   return target[DisplayObjectDerivedState.Key]!.localTransform!;
 }
 
-export function getCurrentWorldBounds(target: DisplayObject): Readonly<RectangleLike> {
+export function getCurrentWorldBounds(target: DisplayObject): Readonly<Rectangle> {
   updateWorldBounds(target);
   return target[DisplayObjectDerivedState.Key]!.worldBounds!;
 }
 
-export function getCurrentWorldTransform(target: DisplayObject): Readonly<Affine2DLike> {
+export function getCurrentWorldTransform(target: DisplayObject): Readonly<Matrix2D> {
   updateWorldTransform(target);
   return target[DisplayObjectDerivedState.Key]!.worldTransform!;
 }
@@ -75,15 +61,15 @@ export function updateBounds(target: DisplayObject): void {
   updateLocalBounds(target);
   updateLocalTransform(target);
 
-  if (targetState.bounds === null) targetState.bounds = createRectangle();
-  Affine2D.transformRect(targetState.bounds, targetState.localTransform!, targetState.localBounds!);
+  if (targetState.bounds === null) targetState.bounds = rectangle.create();
+  matrix2D.transformRect(targetState.bounds, targetState.localTransform!, targetState.localBounds!);
 
   targetState.dirtyFlags &= ~DirtyFlags.TransformedBounds;
 }
 
 export function updateLocalBounds(target: DisplayObject): void {
   const targetState = getDerivedState(target);
-  if (targetState.localBounds === null) targetState.localBounds = createRectangle();
+  if (targetState.localBounds === null) targetState.localBounds = rectangle.create();
 }
 
 export function updateLocalTransform(target: DisplayObject): void {
@@ -125,20 +111,14 @@ export function updateLocalTransform(target: DisplayObject): void {
     targetState.rotationCosine = cos;
   }
 
-  if (targetState.localTransform === null) targetState.localTransform = createAffine2D();
+  if (targetState.localTransform === null) targetState.localTransform = matrix2D.create();
   const matrix = targetState.localTransform;
-  const a = targetState.rotationCosine * target.scaleX;
-  const b = targetState.rotationSine * target.scaleX;
-  const c = -targetState.rotationSine * target.scaleY;
-  const d = targetState.rotationCosine * target.scaleY;
-  const tx = target.x;
-  const ty = target.y;
-  matrix.m[0] = a;
-  matrix.m[1] = b;
-  matrix.m[2] = tx;
-  matrix.m[3] = c;
-  matrix.m[4] = d;
-  matrix.m[5] = ty;
+  matrix.a = targetState.rotationCosine * target.scaleX;
+  matrix.b = targetState.rotationSine * target.scaleX;
+  matrix.c = -targetState.rotationSine * target.scaleY;
+  matrix.d = targetState.rotationCosine * target.scaleY;
+  matrix.tx = target.x;
+  matrix.ty = target.y;
 
   targetState.dirtyFlags &= ~DirtyFlags.Transform;
 }
@@ -148,10 +128,10 @@ export function updateWorldBounds(target: DisplayObject): void {
   updateLocalBounds(target);
 
   const targetState = getDerivedState(target);
-  if (targetState.worldBounds === null) targetState.worldBounds = createRectangle();
+  if (targetState.worldBounds === null) targetState.worldBounds = rectangle.create();
 
   // TODO: Cache
-  Affine2D.transformRect(targetState.worldBounds, targetState.worldTransform!, targetState.bounds!);
+  matrix2D.transformRect(targetState.worldBounds, targetState.worldTransform!, targetState.bounds!);
 }
 
 export function updateWorldTransform(target: DisplayObject): void {
@@ -164,7 +144,7 @@ export function updateWorldTransform(target: DisplayObject): void {
   const parentTransformID = parentState !== null ? parentState.worldTransformID : 0;
   // Update if local transform ID or parent world transform ID changed
   const targetState = getDerivedState(target);
-  if (targetState.worldTransform === null) targetState.worldTransform = createAffine2D();
+  if (targetState.worldTransform === null) targetState.worldTransform = matrix2D.create();
 
   if (
     targetState.worldTransformID !== targetState.localTransformID ||
@@ -173,9 +153,9 @@ export function updateWorldTransform(target: DisplayObject): void {
     // Ensure local transform is accurate
     updateLocalTransform(target);
     if (parentState !== null) {
-      Affine2D.multiply(targetState.worldTransform, parentState.worldTransform!, targetState.localTransform!);
+      matrix2D.multiply(targetState.worldTransform, parentState.worldTransform!, targetState.localTransform!);
     } else {
-      Affine2D.copy(targetState.worldTransform, targetState.localTransform!);
+      matrix2D.copy(targetState.worldTransform, targetState.localTransform!);
     }
     targetState.parentTransformID = parentTransformID;
     targetState.worldTransformID = targetState.localTransformID;

@@ -1,4 +1,4 @@
-import { Rectangle } from '@flighthq/math';
+import { rectangle } from '@flighthq/math';
 import type { DisplayObject } from '@flighthq/types';
 import { DirtyFlags } from '@flighthq/types';
 
@@ -20,8 +20,8 @@ describe('hitTestObject', () => {
     (b as any).parent = createDisplayObject() as any; // eslint-disable-line
 
     // Simple local bounds
-    Rectangle.set(getCurrentLocalBounds(a), 0, 0, 10, 10);
-    Rectangle.set(getCurrentLocalBounds(b), 0, 0, 10, 10);
+    rectangle.setTo(getCurrentLocalBounds(a), 0, 0, 10, 10);
+    rectangle.setTo(getCurrentLocalBounds(b), 0, 0, 10, 10);
 
     // Position b to overlap a
     a.x = 0;
@@ -74,7 +74,7 @@ describe('hitTestPoint', () => {
     obj.visible = true;
     obj.opaqueBackground = 0xff0000;
     // set a simple local bounds rectangle
-    Rectangle.set(getCurrentLocalBounds(obj), 0, 0, 100, 100);
+    rectangle.setTo(getCurrentLocalBounds(obj), 0, 0, 100, 100);
   });
 
   it('returns true for point inside bounds', () => {

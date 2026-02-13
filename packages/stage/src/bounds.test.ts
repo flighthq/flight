@@ -1,4 +1,4 @@
-import { Rectangle } from '@flighthq/math';
+import { rectangle } from '@flighthq/math';
 import type { DisplayObject } from '@flighthq/types';
 import { DirtyFlags } from '@flighthq/types';
 
@@ -22,19 +22,19 @@ describe('getBounds', () => {
     (grandChild as any).parent = child as any; // eslint-disable-line
 
     // fake local bounds
-    Rectangle.set(getCurrentLocalBounds(root), 0, 0, 100, 100);
-    Rectangle.set(getCurrentLocalBounds(child), 10, 20, 50, 50);
-    Rectangle.set(getCurrentLocalBounds(grandChild), 5, 5, 10, 10);
+    rectangle.setTo(getCurrentLocalBounds(root), 0, 0, 100, 100);
+    rectangle.setTo(getCurrentLocalBounds(child), 10, 20, 50, 50);
+    rectangle.setTo(getCurrentLocalBounds(grandChild), 5, 5, 10, 10);
   });
 
   it('should return local bounds when targetCoordinateSpace is self', () => {
-    const out = new Rectangle();
+    const out = rectangle.create();
     getBounds(out, child, child);
     expect(out).toEqual(getCurrentLocalBounds(child));
   });
 
   it('should compute bounds relative to parent', () => {
-    const out = new Rectangle();
+    const out = rectangle.create();
     getBounds(out, child, root);
     expect(out.x).toBeCloseTo(10);
     expect(out.y).toBeCloseTo(20);
@@ -43,7 +43,7 @@ describe('getBounds', () => {
   });
 
   it('should compute bounds relative to nested child', () => {
-    const out = new Rectangle();
+    const out = rectangle.create();
     getBounds(out, root, grandChild);
     expect(out.width).toBeGreaterThan(0);
     expect(out.height).toBeGreaterThan(0);
@@ -56,7 +56,7 @@ describe('getBounds', () => {
     child.scaleY = 3;
     invalidate(child, DirtyFlags.Transform);
 
-    const out = new Rectangle();
+    const out = rectangle.create();
     getBounds(out, child, root);
 
     expect(out.width).toBeCloseTo(50 * 2);
@@ -68,7 +68,7 @@ describe('getBounds', () => {
     child.y = 7;
     invalidate(child, DirtyFlags.Transform);
 
-    const out = new Rectangle();
+    const out = rectangle.create();
     getBounds(out, grandChild, root);
 
     // grandChild localBounds at (5,5) with no scaling
@@ -79,7 +79,7 @@ describe('getBounds', () => {
   it('should handle rotation', () => {
     child.rotation = 90;
 
-    const out = new Rectangle();
+    const out = rectangle.create();
     getBounds(out, child, root);
     expect(out.width).toBeCloseTo(50); // roughly unchanged
     expect(out.height).toBeCloseTo(50);
@@ -107,19 +107,19 @@ describe('getRect', () => {
     (grandChild as any).parent = child as any; // eslint-disable-line
 
     // fake local bounds
-    Rectangle.set(getCurrentLocalBounds(root), 0, 0, 100, 100);
-    Rectangle.set(getCurrentLocalBounds(child), 10, 20, 50, 50);
-    Rectangle.set(getCurrentLocalBounds(grandChild), 5, 5, 10, 10);
+    rectangle.setTo(getCurrentLocalBounds(root), 0, 0, 100, 100);
+    rectangle.setTo(getCurrentLocalBounds(child), 10, 20, 50, 50);
+    rectangle.setTo(getCurrentLocalBounds(grandChild), 5, 5, 10, 10);
   });
 
   it('should return local bounds when targetCoordinateSpace is self', () => {
-    const out = new Rectangle();
+    const out = rectangle.create();
     getRect(out, child, child);
     expect(out).toEqual(getCurrentLocalBounds(child));
   });
 
   it('should compute bounds relative to parent', () => {
-    const out = new Rectangle();
+    const out = rectangle.create();
     getRect(out, child, root);
     expect(out.x).toBeCloseTo(10);
     expect(out.y).toBeCloseTo(20);
@@ -128,7 +128,7 @@ describe('getRect', () => {
   });
 
   it('should compute bounds relative to nested child', () => {
-    const out = new Rectangle();
+    const out = rectangle.create();
     getRect(out, root, grandChild);
     expect(out.width).toBeGreaterThan(0);
     expect(out.height).toBeGreaterThan(0);
@@ -141,7 +141,7 @@ describe('getRect', () => {
     child.scaleY = 3;
     invalidate(child, DirtyFlags.Transform);
 
-    const out = new Rectangle();
+    const out = rectangle.create();
     getRect(out, child, root);
 
     expect(out.width).toBeCloseTo(50 * 2);
@@ -153,7 +153,7 @@ describe('getRect', () => {
     child.y = 7;
     invalidate(child, DirtyFlags.Transform);
 
-    const out = new Rectangle();
+    const out = rectangle.create();
     getRect(out, grandChild, root);
 
     // grandChild localBounds at (5,5) with no scaling
@@ -164,7 +164,7 @@ describe('getRect', () => {
   it('should handle rotation', () => {
     child.rotation = 90;
 
-    const out = new Rectangle();
+    const out = rectangle.create();
     getRect(out, child, root);
     expect(out.width).toBeCloseTo(50); // roughly unchanged
     expect(out.height).toBeCloseTo(50);

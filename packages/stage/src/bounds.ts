@@ -1,5 +1,5 @@
-import { Affine2D, Affine2DPool, Rectangle } from '@flighthq/math';
-import type { DisplayObject, Rectangle as RectangleLike } from '@flighthq/types';
+import { matrix2D, matrix2DPool, rectangle } from '@flighthq/math';
+import type { DisplayObject, Rectangle } from '@flighthq/types';
 
 import { getCurrentLocalBounds, getCurrentWorldTransform } from './derived';
 
@@ -8,19 +8,19 @@ import { getCurrentLocalBounds, getCurrentWorldTransform } from './derived';
  * to the coordinate system of the `targetCoordinateSpace` object.
  **/
 export function getBounds(
-  out: RectangleLike,
+  out: Rectangle,
   source: DisplayObject,
   targetCoordinateSpace: DisplayObject | null | undefined,
 ): void {
   const localBounds = getCurrentLocalBounds(source);
   if (targetCoordinateSpace && targetCoordinateSpace !== source) {
-    const transform = Affine2DPool.get();
-    Affine2D.inverse(transform, getCurrentWorldTransform(targetCoordinateSpace));
-    Affine2D.multiply(transform, transform, getCurrentWorldTransform(source));
-    Affine2D.transformRect(out, transform, localBounds);
-    Affine2DPool.release(transform);
+    const transform = matrix2DPool.get();
+    matrix2D.inverse(transform, getCurrentWorldTransform(targetCoordinateSpace));
+    matrix2D.multiply(transform, transform, getCurrentWorldTransform(source));
+    matrix2D.transformRect(out, transform, localBounds);
+    matrix2DPool.release(transform);
   } else {
-    Rectangle.copy(out, localBounds);
+    rectangle.copy(out, localBounds);
   }
 }
 
@@ -32,7 +32,7 @@ export function getBounds(
  * returned by the `getBounds()` method.
  **/
 export function getRect(
-  out: RectangleLike,
+  out: Rectangle,
   source: DisplayObject,
   targetCoordinateSpace: DisplayObject | null | undefined,
 ): void {
