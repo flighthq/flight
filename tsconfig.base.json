@@ -18,6 +18,8 @@
       "@flighthq/filters/*": ["packages/math/src/*"],
       "@flighthq/flight": ["packages/flight/src/index.ts"],
       "@flighthq/flight/*": ["packages/flight/src/*"],
+      "@flighthq/interaction": ["packages/interaction/src/index.ts"],
+      "@flighthq/interaction/*": ["packages/interaction/src/*"],
       "@flighthq/math": ["packages/math/src/index.ts"],
       "@flighthq/math/*": ["packages/math/src/*"],
       "@flighthq/render": ["packages/render/src/index.ts"],
