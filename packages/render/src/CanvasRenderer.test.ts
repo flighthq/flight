@@ -1,4 +1,4 @@
-import { matrix2D } from '@flighthq/math';
+import { matrix3x2 } from '@flighthq/math';
 
 import CanvasRenderer from './CanvasRenderer';
 import type { CanvasRendererOptions } from './CanvasRendererOptions';
@@ -42,7 +42,7 @@ describe('CanvasRenderer', () => {
       backgroundColor: 0xffffff,
       pixelRatio: 2,
       roundPixels: true,
-      renderTransform: matrix2D.create(),
+      renderTransform: matrix3x2.create(),
       imageSmoothingEnabled: false,
       imageSmoothingQuality: 'low',
     };
@@ -129,7 +129,7 @@ describe('CanvasRenderer', () => {
   });
 
   it('should handle worldTransform option correctly', () => {
-    const customTransform = matrix2D.create();
+    const customTransform = matrix3x2.create();
     const options: CanvasRendererOptions = {
       renderTransform: customTransform,
     };
@@ -138,7 +138,7 @@ describe('CanvasRenderer', () => {
     expect(renderer.renderTransform).toBe(customTransform);
   });
 
-  it('should fall back to default Affine2D if worldTransform is not provided', () => {
+  it('should fall back to default Matrix3x2 if worldTransform is not provided', () => {
     const renderer = new CanvasRenderer(canvas);
     expect(renderer.renderTransform).not.toBeNull();
   });

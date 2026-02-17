@@ -1,6 +1,6 @@
-import { matrix2D } from '@flighthq/math';
-import { derived } from '@flighthq/stage';
-import type { DisplayObject, Matrix2D, Rectangle } from '@flighthq/types';
+import { matrix3x2 } from '@flighthq/math';
+import { transform } from '@flighthq/stage';
+import type { DisplayObject, Matrix3x2, Rectangle } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import CanvasRenderData from './CanvasRenderData';
@@ -16,7 +16,7 @@ export default class CanvasRenderer {
   readonly contextAttributes: CanvasRenderingContext2DSettings;
 
   pixelRatio: number;
-  renderTransform: Matrix2D;
+  renderTransform: Matrix3x2;
   roundPixels: boolean;
 
   protected __backgroundColor: number = 0x00000000;
@@ -39,7 +39,7 @@ export default class CanvasRenderer {
 
     this.backgroundColor = options?.backgroundColor ?? 0x00000000;
     this.pixelRatio = options?.pixelRatio ?? window.devicePixelRatio | 1;
-    this.renderTransform = options?.renderTransform ?? matrix2D.create();
+    this.renderTransform = options?.renderTransform ?? matrix3x2.create();
     this.roundPixels = options?.roundPixels ?? false;
   }
 
@@ -80,7 +80,7 @@ export default class CanvasRenderer {
       //     CanvasBitmapData.renderDrawable(cast object, this);
       //     break;
       //   case STAGE, SPRITE:
-      //     CanvasDisplayObjectContainer.renderDrawable(cast object, this);
+      //     CanvasDisplayObject.renderDrawable(cast object, this);
       //     break;
       //   case BITMAP:
       //     CanvasBitmap.renderDrawable(cast object, this);
@@ -127,7 +127,7 @@ export default class CanvasRenderer {
     }
   }
 
-  protected static __pushClipRect(target: CanvasRenderer, rect: Rectangle, transform: Matrix2D): void {
+  protected static __pushClipRect(target: CanvasRenderer, rect: Rectangle, transform: Matrix3x2): void {
     target.context.save();
 
     this.__setTransform(target, target.context, transform);
@@ -215,7 +215,7 @@ export default class CanvasRenderer {
   protected static __setTransform(
     target: CanvasRenderer,
     context: CanvasRenderingContext2D,
-    transform: Matrix2D,
+    transform: Matrix3x2,
   ): void {
     if (target.roundPixels) {
       context.setTransform(
@@ -261,16 +261,14 @@ export default class CanvasRenderer {
 
       const renderAlpha = current.alpha * parentAlpha;
       renderData.renderAlpha = renderAlpha;
-      renderData.renderTransform = derived.getCurrentWorldTransform(source);
+      renderData.renderTransform = transform.getWorldTransform(source);
 
       renderQueue[renderQueueIndex++] = renderData;
 
-      const children = derived.getDerivedState(current).children;
-
-      if (children !== null) {
-        for (let i = children.length - 1; i >= 0; i--) {
+      if (current.children !== null) {
+        for (let i = current.children.length - 1; i >= 0; i--) {
           // Add child to stack for further traversal
-          renderableStack[renderableStackLength++] = children[i];
+          renderableStack[renderableStackLength++] = current.children[i];
         }
       }
 
