@@ -103,7 +103,7 @@ describe('DisplayObject', () => {
 
   describe('mask', () => {
     // it('sets and clears bidirectional mask relationship', () => {
-    //   const mask = new DisplayObject();
+    //   const mask = new TestDisplayObject();
 
     //   displayObject.mask = mask;
     //   expect(mask[R.maskedObject]).toBe(displayObject);
@@ -113,7 +113,7 @@ describe('DisplayObject', () => {
     // });
 
     it('invalidates appearance when changed', () => {
-      displayObject.mask = new DisplayObject();
+      displayObject.mask = new TestDisplayObject();
       expect(version.getAppearanceID(displayObject)).toBe(1);
     });
   });
@@ -252,9 +252,9 @@ describe('DisplayObject', () => {
     let grandChild: DisplayObject;
 
     beforeEach(() => {
-      root = new DisplayObject();
-      child = new DisplayObject();
-      grandChild = new DisplayObject();
+      root = new TestDisplayObject();
+      child = new TestDisplayObject();
+      grandChild = new TestDisplayObject();
 
       // fake hierarchy
       (child as any).parent = root as any; // eslint-disable-line
@@ -329,9 +329,9 @@ describe('DisplayObject', () => {
     let grandChild: DisplayObject;
 
     beforeEach(() => {
-      root = new DisplayObject();
-      child = new DisplayObject();
-      grandChild = new DisplayObject();
+      root = new TestDisplayObject();
+      child = new TestDisplayObject();
+      grandChild = new TestDisplayObject();
 
       // fake hierarchy
       (child as any).parent = root as any; // eslint-disable-line
@@ -398,9 +398,9 @@ describe('DisplayObject', () => {
     let obj: DisplayObject;
 
     beforeEach(() => {
-      obj = new DisplayObject();
+      obj = new TestDisplayObject();
       // fake parent
-      (obj as any).parent = new DisplayObject() as any; // eslint-disable-line
+      (obj as any).parent = new TestDisplayObject() as any; // eslint-disable-line
       obj.x = 10;
       obj.y = 20;
       obj.scaleX = 2;
@@ -432,12 +432,12 @@ describe('DisplayObject', () => {
     let b: DisplayObject;
 
     beforeEach(() => {
-      a = new DisplayObject();
-      b = new DisplayObject();
+      a = new TestDisplayObject();
+      b = new TestDisplayObject();
 
       // fake parent
-      (a as any).parent = new DisplayObject() as any; // eslint-disable-line
-      (b as any).parent = new DisplayObject() as any; // eslint-disable-line
+      (a as any).parent = new TestDisplayObject() as any; // eslint-disable-line
+      (b as any).parent = new TestDisplayObject() as any; // eslint-disable-line
 
       // Simple local bounds
       rectangle.setTo(getLocalBoundsRect(a), 0, 0, 10, 10);
@@ -489,7 +489,7 @@ describe('DisplayObject', () => {
     let obj: DisplayObject;
 
     beforeEach(() => {
-      obj = new DisplayObject();
+      obj = new TestDisplayObject();
       obj.visible = true;
       obj.opaqueBackground = 0xff0000;
       // set a simple local bounds rectangle
@@ -552,7 +552,7 @@ describe('DisplayObject', () => {
     let obj: DisplayObject;
 
     beforeEach(() => {
-      obj = new DisplayObject();
+      obj = new TestDisplayObject();
     });
 
     it('writes to out parameter', () => {
@@ -592,3 +592,9 @@ describe('DisplayObject', () => {
     });
   });
 });
+
+class TestDisplayObject extends DisplayObject {
+  constructor() {
+    super();
+  }
+}
