@@ -1,9 +1,8 @@
-import { matrix3x2, rectangle, vector2 } from '@flighthq/math';
+import { matrix3x2, rectangle } from '@flighthq/math';
 import { bounds, createDisplayObject, hitTest, invalidate, transform } from '@flighthq/stage';
 import type {
   BitmapFilter as BitmapFilterLike,
   DisplayObject as DisplayObjectLike,
-  DisplayObjectContainer as DisplayObjectContainerLike,
   LoaderInfo,
   Matrix3x2 as Matrix3x2Like,
   Rectangle as RectangleLike,
@@ -21,10 +20,10 @@ import Transform from './Transform.js';
 export default class DisplayObject implements DisplayObjectLike {
   protected __data: DisplayObjectLike;
   protected __loaderInfo: LoaderInfo | null = null;
-  protected __root: DisplayObjectContainerLike | null = null;
+  protected __root: DisplayObjectLike | null = null;
   protected __transform: Transform | null = null;
 
-  constructor() {
+  protected constructor() {
     this.__data = createDisplayObject();
   }
 
@@ -164,6 +163,17 @@ export default class DisplayObject implements DisplayObjectLike {
     }
   }
 
+  get children(): DisplayObjectLike[] | null {
+    return this.__data.children;
+  }
+
+  protected set children(value: DisplayObjectLike[] | null) {
+    type ChildrenAccess = Omit<DisplayObjectLike, 'children'> & {
+      children: DisplayObjectLike[] | null;
+    };
+    (this.__data as ChildrenAccess).children = value;
+  }
+
   get filters(): BitmapFilterLike[] {
     const filters = this.__data.filters;
     if (filters === null) {
@@ -241,22 +251,22 @@ export default class DisplayObject implements DisplayObjectLike {
     invalidate.invalidateAppearance(this.__data);
   }
 
-  get parent(): DisplayObjectContainerLike | null {
+  get parent(): DisplayObjectLike | null {
     return this.__data.parent;
   }
 
-  private set parent(value: DisplayObjectContainerLike | null) {
-    type ParentAccess = Omit<DisplayObject, 'parent'> & {
-      parent: DisplayObjectContainerLike | null;
+  private set parent(value: DisplayObjectLike | null) {
+    type ParentAccess = Omit<DisplayObjectLike, 'parent'> & {
+      parent: DisplayObjectLike | null;
     };
     (this.__data as ParentAccess).parent = value;
   }
 
-  get root(): DisplayObjectContainerLike | null {
+  get root(): DisplayObjectLike | null {
     return this.__root;
   }
 
-  private set root(value: DisplayObjectContainerLike | null) {
+  private set root(value: DisplayObjectLike | null) {
     this.__root = value;
   }
 
@@ -358,7 +368,7 @@ export default class DisplayObject implements DisplayObjectLike {
   }
 
   private set stage(value: StageLike | null) {
-    type StageAccess = Omit<DisplayObject, 'stage'> & {
+    type StageAccess = Omit<DisplayObjectLike, 'stage'> & {
       stage: StageLike | null;
     };
     (this.__data as StageAccess).stage = value;

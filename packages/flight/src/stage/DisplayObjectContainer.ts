@@ -1,19 +1,15 @@
 import { children } from '@flighthq/stage';
-import { createDisplayObjectContainer } from '@flighthq/stage';
-import type {
-  DisplayObject as DisplayObjectLike,
-  DisplayObjectContainer as DisplayObjectContainerLike,
-} from '@flighthq/types';
-import { DisplayObjectDerivedState } from '@flighthq/types';
+import { createDisplayObject } from '@flighthq/stage';
+import type { DisplayObject as DisplayObjectLike } from '@flighthq/types';
 
 import DisplayObject from './DisplayObject.js';
 
-export default class DisplayObjectContainer extends DisplayObject implements DisplayObjectContainerLike {
-  declare protected __data: DisplayObjectContainerLike;
+export default class DisplayObjectContainer extends DisplayObject implements DisplayObjectLike {
+  declare protected __data: DisplayObjectLike;
 
-  constructor() {
+  protected constructor() {
     super();
-    createDisplayObjectContainer(this.__data);
+    createDisplayObject(this.__data);
   }
 
   addChild(child: DisplayObjectLike): DisplayObjectLike {
@@ -51,18 +47,6 @@ export default class DisplayObjectContainer extends DisplayObject implements Dis
   // Get & Set Methods
 
   get numChildren() {
-    return children.getNumChildren(this.__data);
-  }
-
-  override get [DisplayObjectDerivedState.Key](): DisplayObjectContainerDerivedState {
-    return this.__data[DisplayObjectDerivedState.Key] as DisplayObjectContainerDerivedState;
-  }
-
-  override set [DisplayObjectDerivedState.Key](value: DisplayObjectContainerDerivedState) {
-    this.__data[DisplayObjectDerivedState.Key] = value;
+    return this.__data.children ? this.__data.children.length : 0;
   }
 }
-
-type DisplayObjectContainerDerivedState = DisplayObjectDerivedState & {
-  children: DisplayObjectLike[];
-};
