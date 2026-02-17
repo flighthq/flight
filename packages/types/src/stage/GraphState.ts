@@ -1,7 +1,7 @@
 import type Matrix3x2 from '../math/Matrix3x2.js';
 import type Rectangle from '../math/Rectangle.js';
 
-export interface DisplayObjectState {
+export interface GraphState {
   appearanceID: number;
   boundsRect: Rectangle | null;
   boundsRectUsingLocalBoundsID: number;
@@ -23,6 +23,6 @@ export interface DisplayObjectState {
   worldTransformUsingParentID: number;
 }
 
-export namespace DisplayObjectState {
-  export const SymbolKey: unique symbol = Symbol('DisplayObjectState');
+export namespace GraphState {
+  export const SymbolKey: unique symbol = Symbol('GraphState');
 }
