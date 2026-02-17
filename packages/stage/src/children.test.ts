@@ -12,7 +12,7 @@ import {
 } from './children';
 import { createDisplayObject } from './createDisplayObject';
 import { createDisplayObjectContainer } from './createDisplayObjectContainer';
-import { getDerivedState } from './derived';
+import { getDerivedState } from './internal/derivedState';
 
 let container: DisplayObjectContainer;
 let containerState: DisplayObjectDerivedState;

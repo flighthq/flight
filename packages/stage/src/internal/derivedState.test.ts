@@ -1,7 +1,7 @@
 import { DisplayObjectDerivedState } from '@flighthq/types';
 
-import { createDisplayObject } from './createDisplayObject';
-import { getDerivedState } from './derived';
+import { createDisplayObject } from '../createDisplayObject';
+import { getDerivedState } from './derivedState';
 
 describe('getDerivedState', () => {
   it('instantiates derived if not present', () => {
