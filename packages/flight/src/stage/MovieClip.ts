@@ -1,9 +1,9 @@
 import { createMovieClip } from '@flighthq/stage';
 import type { MovieClip as MovieClipLike } from '@flighthq/types';
 
-import Sprite from './Sprite.js';
+import DisplayObjectContainer from './DisplayObjectContainer.js';
 
-export default class MovieClip extends Sprite implements MovieClipLike {
+export default class MovieClip extends DisplayObjectContainer implements MovieClipLike {
   declare protected __data: MovieClipLike;
 
   constructor() {
