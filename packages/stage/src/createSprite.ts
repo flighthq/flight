@@ -1,7 +1,7 @@
-import type { DisplayObjectContainer } from '@flighthq/types';
+import type { Sprite } from '@flighthq/types';
 
-import { createDisplayObjectContainer } from './createDisplayObjectContainer';
+import { createDisplayObject } from './createDisplayObject';
 
-export function createSprite(obj: Partial<DisplayObjectContainer> = {}): DisplayObjectContainer {
-  return createDisplayObjectContainer(obj);
+export function createSprite(obj: Partial<Sprite> = {}): Sprite {
+  return createDisplayObject(obj);
 }

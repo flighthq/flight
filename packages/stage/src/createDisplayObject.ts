@@ -1,4 +1,4 @@
-import type { DisplayObject, DisplayObjectContainer } from '@flighthq/types';
+import type { DisplayObject } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 export function createDisplayObject(obj: Partial<DisplayObject> = {}): DisplayObject {
@@ -6,6 +6,7 @@ export function createDisplayObject(obj: Partial<DisplayObject> = {}): DisplayOb
   if (obj.blendMode === undefined) obj.blendMode = BlendMode.Normal;
   if (obj.cacheAsBitmap === undefined) obj.cacheAsBitmap = false;
   if (obj.cacheAsBitmapMatrix === undefined) obj.cacheAsBitmapMatrix = null;
+  if (obj.children === undefined) (obj as DisplayObjectInternal).children = null;
   if (obj.filters === undefined) obj.filters = null;
   if (obj.mask === undefined) obj.mask = null;
   if (obj.name === undefined) obj.name = null;
@@ -24,7 +25,8 @@ export function createDisplayObject(obj: Partial<DisplayObject> = {}): DisplayOb
   return obj as DisplayObject;
 }
 
-type DisplayObjectInternal = Omit<DisplayObject, 'parent' | 'stage'> & {
-  parent: DisplayObjectContainer | null;
-  stage: DisplayObjectContainer | null;
+type DisplayObjectInternal = Omit<DisplayObject, 'children' | 'parent' | 'stage'> & {
+  children: DisplayObject[] | null;
+  parent: DisplayObject | null;
+  stage: DisplayObject | null;
 };

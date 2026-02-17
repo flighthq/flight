@@ -1,7 +1,7 @@
-import type { DisplayObjectContainer } from '@flighthq/types';
+import type { Stage } from '@flighthq/types';
 
-import { createDisplayObjectContainer } from './createDisplayObjectContainer';
+import { createDisplayObject } from './createDisplayObject';
 
-export function createStage(obj: Partial<DisplayObjectContainer> = {}): DisplayObjectContainer {
-  return createDisplayObjectContainer(obj);
+export function createStage(obj: Partial<Stage> = {}): Stage {
+  return createDisplayObject(obj);
 }

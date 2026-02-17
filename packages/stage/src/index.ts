@@ -3,7 +3,6 @@ export * from './bounds.js';
 export * as children from './children.js';
 export * from './children.js';
 export * from './createDisplayObject.js';
-export * from './createDisplayObjectContainer.js';
 export * from './createMovieClip.js';
 export * from './createSprite.js';
 export * from './createStage.js';

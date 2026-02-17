@@ -93,8 +93,8 @@ function recomputeLocalBoundsRect(target: DisplayObject, state: DisplayObjectDer
 function recomputeWorldBoundsRect(target: DisplayObject, state: DisplayObjectDerivedState) {
   if (state.worldBoundsRect === null) state.worldBoundsRect = rectangle.create();
   matrix3x2.transformRect(state.worldBoundsRect, getWorldTransform(target), getLocalBoundsRect(target));
-  if (state.children !== null) {
-    for (const child of state.children) {
+  if (target.children !== null) {
+    for (const child of target.children) {
       const childWorldBounds = getWorldBoundsRect(child);
       rectangle.union(state.worldBoundsRect, state.worldBoundsRect, childWorldBounds);
     }
