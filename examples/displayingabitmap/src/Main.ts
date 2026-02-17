@@ -8,8 +8,8 @@ export default class Main extends Sprite {
 
     // hack
     const localBounds = bounds.getLocalBoundsRect(this.sprite);
-    (localBounds as any).width = 100;
-    (localBounds as any).height = 100;
+    (localBounds as any).width = 100; // eslint-disable-line
+    (localBounds as any).height = 100; // eslint-disable-line
 
     this.sprite.opaqueBackground = 0xff0000;
     this.addChild(this.sprite);
