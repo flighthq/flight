@@ -1,25 +1,25 @@
 import { matrix3x2 } from '@flighthq/math';
-import type { DisplayObject, DisplayObjectState, Matrix3x2, Vector2 } from '@flighthq/types';
+import type { DisplayObject, GraphState, Matrix3x2, Vector2 } from '@flighthq/types';
 
-import { getDisplayObjectState } from './internal/displayObjectState';
+import { getGraphState } from './internal/graphState';
 
 export function ensureLocalTransform(target: DisplayObject): void {
-  const state = getDisplayObjectState(target);
+  const state = getGraphState(target);
   if (state.localTransformUsingLocalTransformID !== state.localTransformID) {
     recomputeLocalTransform(target, state);
   }
 }
 
 export function ensureWorldTransform(target: DisplayObject): void {
-  const state = getDisplayObjectState(target);
+  const state = getGraphState(target);
   const parent = target.parent;
 
-  let parentState: DisplayObjectState | undefined;
+  let parentState: GraphState | undefined;
   let parentWorldTransformID = 0;
 
   if (parent !== null) {
     ensureWorldTransform(parent);
-    parentState = getDisplayObjectState(parent);
+    parentState = getGraphState(parent);
     parentWorldTransformID = parentState.worldTransformID;
   }
 
@@ -33,12 +33,12 @@ export function ensureWorldTransform(target: DisplayObject): void {
 
 export function getLocalTransform(target: DisplayObject): Readonly<Matrix3x2> {
   ensureLocalTransform(target);
-  return getDisplayObjectState(target).localTransform!;
+  return getGraphState(target).localTransform!;
 }
 
 export function getWorldTransform(target: DisplayObject): Readonly<Matrix3x2> {
   ensureWorldTransform(target);
-  return getDisplayObjectState(target).worldTransform!;
+  return getGraphState(target).worldTransform!;
 }
 
 /**
@@ -57,7 +57,7 @@ export function localToGlobal(out: Vector2, source: DisplayObject, point: Readon
   matrix3x2.transformPointXY(out, getWorldTransform(source), point.x, point.y);
 }
 
-function recomputeLocalTransform(target: DisplayObject, state: DisplayObjectState): void {
+function recomputeLocalTransform(target: DisplayObject, state: GraphState): void {
   if (target.rotation !== state.rotationAngle) {
     // Normalize from -180 to 180
     let angle = target.rotation % 360.0;
@@ -105,11 +105,7 @@ function recomputeLocalTransform(target: DisplayObject, state: DisplayObjectStat
   state.localTransformUsingLocalTransformID = state.localTransformID;
 }
 
-function recomputeWorldTransform(
-  target: DisplayObject,
-  state: DisplayObjectState,
-  parentState?: DisplayObjectState,
-): void {
+function recomputeWorldTransform(target: DisplayObject, state: GraphState, parentState?: GraphState): void {
   if (state.worldTransform === null) state.worldTransform = matrix3x2.create();
   ensureLocalTransform(target);
   if (parentState !== undefined) {

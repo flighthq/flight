@@ -1,7 +1,8 @@
-import type { MovieClip } from '@flighthq/types';
+import type { DisplayObject } from '@flighthq/types';
 
-import { createSprite } from './createSprite';
+import { createDisplayObject } from './createDisplayObject';
 
-export function createMovieClip(obj: Partial<MovieClip> = {}): MovieClip {
-  return createSprite(obj);
+export function createMovieClip(obj: Partial<DisplayObject> = {}): DisplayObject {
+  obj.type = 'movieclip';
+  return createDisplayObject(obj);
 }

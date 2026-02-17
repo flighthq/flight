@@ -4,7 +4,6 @@ export * as container from './container.js';
 export * from './container.js';
 export * from './createDisplayObject.js';
 export * from './createMovieClip.js';
-export * from './createSprite.js';
 export * from './createStage.js';
 export * as hitTest from './hitTest.js';
 export * from './hitTest.js';
