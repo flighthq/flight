@@ -4,7 +4,7 @@ import type { DisplayObject } from '@flighthq/types';
 import { getLocalBoundsRect } from './bounds';
 import { createDisplayObject } from './createDisplayObject';
 import { hitTestObject, hitTestPoint } from './hitTest';
-import { invalidateLocalTransform } from './invalidate';
+import { invalidateLocalTransform } from './revision';
 
 describe('hitTestObject', () => {
   let a: DisplayObject;

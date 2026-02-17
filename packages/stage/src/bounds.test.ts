@@ -3,7 +3,7 @@ import type { DisplayObject } from '@flighthq/types';
 
 import { calculateBoundsRect, getLocalBoundsRect } from './bounds.js';
 import { createDisplayObject } from './createDisplayObject.js';
-import { invalidateLocalTransform } from './invalidate.js';
+import { invalidateLocalTransform } from './revision.js';
 
 describe('calculateBoundsRect', () => {
   let root: DisplayObject;

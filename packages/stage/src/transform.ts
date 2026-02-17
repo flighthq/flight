@@ -1,25 +1,25 @@
 import { matrix3x2 } from '@flighthq/math';
-import type { DisplayObject, DisplayObjectDerivedState, Matrix3x2, Vector2 } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectState, Matrix3x2, Vector2 } from '@flighthq/types';
 
-import { getDerivedState } from './internal/derivedState';
+import { getDisplayObjectState } from './internal/displayObjectState';
 
 export function ensureLocalTransform(target: DisplayObject): void {
-  const state = getDerivedState(target);
+  const state = getDisplayObjectState(target);
   if (state.localTransformUsingLocalTransformID !== state.localTransformID) {
     recomputeLocalTransform(target, state);
   }
 }
 
 export function ensureWorldTransform(target: DisplayObject): void {
-  const state = getDerivedState(target);
+  const state = getDisplayObjectState(target);
   const parent = target.parent;
 
-  let parentState: DisplayObjectDerivedState | undefined;
+  let parentState: DisplayObjectState | undefined;
   let parentWorldTransformID = 0;
 
   if (parent !== null) {
     ensureWorldTransform(parent);
-    parentState = getDerivedState(parent);
+    parentState = getDisplayObjectState(parent);
     parentWorldTransformID = parentState.worldTransformID;
   }
 
@@ -33,12 +33,12 @@ export function ensureWorldTransform(target: DisplayObject): void {
 
 export function getLocalTransform(target: DisplayObject): Readonly<Matrix3x2> {
   ensureLocalTransform(target);
-  return getDerivedState(target).localTransform!;
+  return getDisplayObjectState(target).localTransform!;
 }
 
 export function getWorldTransform(target: DisplayObject): Readonly<Matrix3x2> {
   ensureWorldTransform(target);
-  return getDerivedState(target).worldTransform!;
+  return getDisplayObjectState(target).worldTransform!;
 }
 
 /**
@@ -57,7 +57,7 @@ export function localToGlobal(out: Vector2, source: DisplayObject, point: Readon
   matrix3x2.transformPointXY(out, getWorldTransform(source), point.x, point.y);
 }
 
-function recomputeLocalTransform(target: DisplayObject, state: DisplayObjectDerivedState): void {
+function recomputeLocalTransform(target: DisplayObject, state: DisplayObjectState): void {
   if (target.rotation !== state.rotationAngle) {
     // Normalize from -180 to 180
     let angle = target.rotation % 360.0;
@@ -107,8 +107,8 @@ function recomputeLocalTransform(target: DisplayObject, state: DisplayObjectDeri
 
 function recomputeWorldTransform(
   target: DisplayObject,
-  state: DisplayObjectDerivedState,
-  parentState?: DisplayObjectDerivedState,
+  state: DisplayObjectState,
+  parentState?: DisplayObjectState,
 ): void {
   if (state.worldTransform === null) state.worldTransform = matrix3x2.create();
   ensureLocalTransform(target);

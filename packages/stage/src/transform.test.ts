@@ -2,7 +2,7 @@ import { vector2 } from '@flighthq/math';
 import type { DisplayObject } from '@flighthq/types';
 
 import { createDisplayObject } from './createDisplayObject';
-import { invalidateLocalTransform } from './invalidate';
+import { invalidateLocalTransform } from './revision';
 import { globalToLocal, localToGlobal } from './transform';
 
 describe('globalToLocal', () => {

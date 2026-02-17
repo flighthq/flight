@@ -1,6 +1,5 @@
 import type { DisplayObject } from '@flighthq/types';
 
-import { version } from '.';
 import {
   addChild,
   addChildAt,
@@ -10,8 +9,9 @@ import {
   setChildIndex,
   swapChildren,
   swapChildrenAt,
-} from './children';
+} from './container';
 import { createDisplayObject } from './createDisplayObject';
+import { getAppearanceID, getWorldBoundsID } from './revision';
 
 let container: DisplayObject;
 let childA: DisplayObject;
@@ -66,8 +66,8 @@ describe('addChild', () => {
   it('invalidates appearance and world bounds', () => {
     addChild(container, childA);
 
-    expect(version.getAppearanceID(container)).toBe(1);
-    expect(version.getWorldBoundsID(container)).toBe(-1);
+    expect(getAppearanceID(container)).toBe(1);
+    expect(getWorldBoundsID(container)).toBe(-1);
   });
 });
 
@@ -111,8 +111,8 @@ describe('addChildAt', () => {
   it('invalidates appearance and world bounds', () => {
     addChildAt(container, childA, 0);
 
-    expect(version.getAppearanceID(container)).toBe(1);
-    expect(version.getWorldBoundsID(container)).toBe(-1);
+    expect(getAppearanceID(container)).toBe(1);
+    expect(getWorldBoundsID(container)).toBe(-1);
   });
 });
 
@@ -150,12 +150,12 @@ describe('removeChild', () => {
 
   it('invalidates appearance and world bounds', () => {
     addChild(container, childA);
-    expect(version.getAppearanceID(container)).toBe(1);
-    expect(version.getWorldBoundsID(container)).toBe(-1);
+    expect(getAppearanceID(container)).toBe(1);
+    expect(getWorldBoundsID(container)).toBe(-1);
     removeChild(container, childA);
 
-    expect(version.getAppearanceID(container)).toBe(2);
-    expect(version.getWorldBoundsID(container)).toBe(-1);
+    expect(getAppearanceID(container)).toBe(2);
+    expect(getWorldBoundsID(container)).toBe(-1);
   });
 });
 
@@ -178,16 +178,16 @@ describe('removeChildAt', () => {
 
   it('invalidates appearance and world bounds', () => {
     addChild(container, childA);
-    expect(version.getAppearanceID(container)).toBe(1);
-    expect(version.getWorldBoundsID(container)).toBe(-1);
+    expect(getAppearanceID(container)).toBe(1);
+    expect(getWorldBoundsID(container)).toBe(-1);
     addChild(container, childB);
-    expect(version.getAppearanceID(container)).toBe(2);
-    expect(version.getWorldBoundsID(container)).toBe(-1);
+    expect(getAppearanceID(container)).toBe(2);
+    expect(getWorldBoundsID(container)).toBe(-1);
 
     removeChildAt(container, 0);
 
-    expect(version.getAppearanceID(container)).toBe(3);
-    expect(version.getWorldBoundsID(container)).toBe(-1);
+    expect(getAppearanceID(container)).toBe(3);
+    expect(getWorldBoundsID(container)).toBe(-1);
   });
 });
 
