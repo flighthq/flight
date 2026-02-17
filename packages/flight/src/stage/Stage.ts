@@ -1,9 +1,9 @@
 import { createStage } from '@flighthq/stage';
 import type { Stage as StageLike } from '@flighthq/types';
 
-import DisplayObject from './DisplayObject.js';
+import DisplayObjectContainer from './DisplayObjectContainer.js';
 
-export default class Stage extends DisplayObject implements StageLike {
+export default class Stage extends DisplayObjectContainer implements StageLike {
   declare protected __data: StageLike;
 
   constructor() {
