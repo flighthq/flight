@@ -1,4 +1,4 @@
-import type { Matrix2D } from '@flighthq/types';
+import type { Matrix3x2 } from '@flighthq/types';
 
 export type CanvasRendererOptions = {
   backgroundColor?: number | null;
@@ -6,6 +6,6 @@ export type CanvasRendererOptions = {
   imageSmoothingEnabled?: boolean;
   imageSmoothingQuality?: ImageSmoothingQuality;
   pixelRatio?: number;
-  renderTransform?: Matrix2D;
+  renderTransform?: Matrix3x2;
   roundPixels?: boolean;
 };
