@@ -136,7 +136,7 @@ export function maxY(source: Readonly<Rectangle>): number {
   return Math.max(source.y, source.y + source.height);
 }
 
-export function normalized(out: Rectangle, source: Readonly<Rectangle>): void {
+export function normalize(out: Rectangle, source: Readonly<Rectangle>): void {
   const _minX = minX(source);
   const _minY = minY(source);
   out.x = _minX;
@@ -158,11 +158,15 @@ export function normalizedTopLeft(out: Vector2, source: Readonly<Rectangle>): vo
 export function offset(out: Rectangle, source: Readonly<Rectangle>, dx: number, dy: number): void {
   out.x = source.x + dx;
   out.y = source.y + dy;
+  out.width = source.width;
+  out.height = source.height;
 }
 
-export function offsetPoint(out: Vector2, source: Readonly<Rectangle>, point: Readonly<Vector2>): void {
+export function offsetPoint(out: Rectangle, source: Readonly<Rectangle>, point: Readonly<Vector2>): void {
   out.x = source.x + point.x;
   out.y = source.y + point.y;
+  out.width = source.width;
+  out.height = source.height;
 }
 
 export function right(source: Readonly<Rectangle>): number {

@@ -1,9 +1,9 @@
-export * as matrix2D from './matrix2D.js';
-export * as matrix2DPool from './matrix2DPool.js';
-export * as matrix3 from './matrix3.js';
-export * as matrix3Pool from './matrix3Pool.js';
-export * as matrix4 from './matrix4.js';
-export * as matrix4Pool from './matrix4Pool.js';
+export * as matrix3x2 from './matrix3x2.js';
+export * as matrix3x3 from './matrix3x3.js';
+export * as matrix3x3Pool from './matrix3x3Pool.js';
+export * as matrix4x4 from './matrix4x4.js';
+export * as matrix4x4Pool from './matrix4x4Pool.js';
+export * as matrix3x2Pool from './matrixPool.js';
 export * as rectangle from './rectangle.js';
 export * as rectanglePool from './rectanglePool.js';
 export * as vector2 from './vector2.js';

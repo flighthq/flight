@@ -1,4 +1,4 @@
-import type { Matrix2D, Matrix3, Matrix4, Vector3 } from '@flighthq/types';
+import type { Matrix3x2, Matrix3x3, Matrix4x4, Vector3 } from '@flighthq/types';
 
 /**
  * A 3×3 homogeneous matrix.
@@ -19,9 +19,9 @@ export function create(
   m20?: number,
   m21?: number,
   m22?: number,
-): Matrix3 {
+): Matrix3x3 {
   const m = new Float32Array(__identity);
-  const out: Matrix3 = { m: m };
+  const out: Matrix3x3 = { m: m };
   if (m00 !== undefined) m[0] = m00;
   if (m01 !== undefined) m[1] = m01;
   if (m02 !== undefined) m[2] = m02;
@@ -34,17 +34,17 @@ export function create(
   return out;
 }
 
-export function clone(source: Readonly<Matrix3>): Matrix3 {
+export function clone(source: Readonly<Matrix3x3>): Matrix3x3 {
   const m = create();
   copy(m, source);
   return m;
 }
 
-export function copy(out: Matrix3, source: Readonly<Matrix3>): void {
+export function copy(out: Matrix3x3, source: Readonly<Matrix3x3>): void {
   out.m.set(source.m);
 }
 
-export function copyColumnFrom(out: Matrix3, column: number, source: Readonly<Vector3>): void {
+export function copyColumnFrom(out: Matrix3x3, column: number, source: Readonly<Vector3>): void {
   if (column > 2) {
     throw new RangeError('Column ' + column + ' out of bounds (2)');
   } else if (column === 0) {
@@ -62,7 +62,7 @@ export function copyColumnFrom(out: Matrix3, column: number, source: Readonly<Ve
   }
 }
 
-export function copyColumnTo(out: Vector3, column: number, source: Readonly<Matrix3>): void {
+export function copyColumnTo(out: Vector3, column: number, source: Readonly<Matrix3x3>): void {
   if (column > 2) {
     throw new RangeError('Column ' + column + ' out of bounds (2)');
   } else if (column === 0) {
@@ -80,7 +80,7 @@ export function copyColumnTo(out: Vector3, column: number, source: Readonly<Matr
   }
 }
 
-export function copyRowFrom(out: Matrix3, row: number, source: Readonly<Vector3>): void {
+export function copyRowFrom(out: Matrix3x3, row: number, source: Readonly<Vector3>): void {
   if (row > 2) {
     throw new RangeError('Row ' + row + ' out of bounds (2)');
   } else if (row === 0) {
@@ -98,7 +98,7 @@ export function copyRowFrom(out: Matrix3, row: number, source: Readonly<Vector3>
   }
 }
 
-export function copyRowTo(out: Vector3, row: number, source: Readonly<Matrix3>): void {
+export function copyRowTo(out: Vector3, row: number, source: Readonly<Matrix3x3>): void {
   if (row > 2) {
     throw new RangeError('Row ' + row + ' out of bounds (2)');
   } else if (row === 0) {
@@ -116,7 +116,7 @@ export function copyRowTo(out: Vector3, row: number, source: Readonly<Matrix3>):
   }
 }
 
-export function equals(a: Readonly<Matrix3> | null | undefined, b: Readonly<Matrix3> | null | undefined): boolean {
+export function equals(a: Readonly<Matrix3x3> | null | undefined, b: Readonly<Matrix3x3> | null | undefined): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
   for (let i = 0; i < 9; i++) {
@@ -125,7 +125,7 @@ export function equals(a: Readonly<Matrix3> | null | undefined, b: Readonly<Matr
   return true;
 }
 
-export function fromMatrix2D(out: Matrix3, source: Readonly<Matrix2D>): void {
+export function fromMatrix3x2(out: Matrix3x3, source: Readonly<Matrix3x2>): void {
   const _out = out.m;
   _out[0] = source.a;
   _out[1] = source.b;
@@ -138,7 +138,7 @@ export function fromMatrix2D(out: Matrix3, source: Readonly<Matrix2D>): void {
   _out[8] = 1;
 }
 
-export function fromMatrix4(out: Matrix3, source: Readonly<Matrix4>): void {
+export function fromMatrix4x4(out: Matrix3x3, source: Readonly<Matrix4x4>): void {
   const _out = out.m;
   const _source = source.m;
   _out[0] = _source[0];
@@ -154,18 +154,18 @@ export function fromMatrix4(out: Matrix3, source: Readonly<Matrix4>): void {
   _out[8] = _source[10];
 }
 
-export function get(source: Readonly<Matrix3>, row: number, column: number): number {
+export function get(source: Readonly<Matrix3x3>, row: number, column: number): number {
   return source.m[row * 3 + column];
 }
 
-export function identity(out: Matrix3): void {
+export function identity(out: Matrix3x3): void {
   out.m.set(__identity);
 }
 
 /**
  * Attempts to invert a matrix, so long as it is invertable
  */
-export function inverse(out: Matrix3, source: Readonly<Matrix3>): void {
+export function inverse(out: Matrix3x3, source: Readonly<Matrix3x3>): void {
   const _in = source.m;
   const _out = out.m;
 
@@ -225,14 +225,14 @@ export function inverse(out: Matrix3, source: Readonly<Matrix3>): void {
   _out[8] = (_in[0] * _in[4] - _in[1] * _in[3]) * inv;
 }
 
-export function isAffine(source: Readonly<Matrix3>): boolean {
+export function isAffine(source: Readonly<Matrix3x3>): boolean {
   return source.m[6] === 0 && source.m[7] === 0 && source.m[8] === 1;
 }
 
 /**
  * out = a * b
  */
-export function multiply(out: Matrix3, a: Readonly<Matrix3>, b: Readonly<Matrix3>): void {
+export function multiply(out: Matrix3x3, a: Readonly<Matrix3x3>, b: Readonly<Matrix3x3>): void {
   const _a = a.m;
   const _b = b.m;
   const _out = out.m;
@@ -279,7 +279,7 @@ export function multiply(out: Matrix3, a: Readonly<Matrix3>, b: Readonly<Matrix3
   _out[8] = m22;
 }
 
-export function rotate(out: Matrix3, source: Readonly<Matrix3>, theta: number): void {
+export function rotate(out: Matrix3x3, source: Readonly<Matrix3x3>, theta: number): void {
   const c = Math.cos(theta);
   const s = Math.sin(theta);
 
@@ -299,7 +299,7 @@ export function rotate(out: Matrix3, source: Readonly<Matrix3>, theta: number): 
   o[8] = a[8];
 }
 
-export function scale(out: Matrix3, source: Readonly<Matrix3>, sx: number, sy: number): void {
+export function scale(out: Matrix3x3, source: Readonly<Matrix3x3>, sx: number, sy: number): void {
   const a = source.m;
   const o = out.m;
 
@@ -316,12 +316,12 @@ export function scale(out: Matrix3, source: Readonly<Matrix3>, sx: number, sy: n
   o[8] = a[8];
 }
 
-export function set(out: Matrix3, row: number, column: number, value: number): void {
+export function set(out: Matrix3x3, row: number, column: number, value: number): void {
   out.m[row * 3 + column] = value;
 }
 
 export function setTo(
-  out: Matrix3,
+  out: Matrix3x3,
   m00: number,
   m01: number,
   m02: number,
@@ -344,7 +344,7 @@ export function setTo(
   _out[8] = m22;
 }
 
-export function translate(out: Matrix3, source: Readonly<Matrix3>, tx: number, ty: number): void {
+export function translate(out: Matrix3x3, source: Readonly<Matrix3x3>, tx: number, ty: number): void {
   const a = source.m;
   const o = out.m;
 

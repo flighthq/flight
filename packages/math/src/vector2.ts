@@ -11,7 +11,7 @@ import type { Vector2 } from '@flighthq/types';
  * - `lengthSquared = x ** 2 + y ** 2`
  *
  * @see Rectangle
- * @see Affine2D
+ * @see Matrix3x2
  */
 export function create(x?: number, y?: number): Vector2 {
   return { x: x ?? 0, y: y ?? 0 };

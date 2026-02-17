@@ -538,14 +538,14 @@ describe('inflatePoint', () => {
   });
 });
 
-describe('normalized', () => {
+describe('normalize', () => {
   it('returns rectangle with positive width and height', () => {
     r.x = 10;
     r.y = 20;
     r.width = -5;
     r.height = -15;
     const n = rectangle.create();
-    rectangle.normalized(n, r);
+    rectangle.normalize(n, r);
     expect(n.x).toBe(5);
     expect(n.y).toBe(5);
     expect(n.width).toBe(5);
@@ -554,7 +554,7 @@ describe('normalized', () => {
 
   it('normalized of positive rectangle equals original', () => {
     const n = rectangle.create();
-    rectangle.normalized(n, r);
+    rectangle.normalize(n, r);
     expect(n.x).toBe(r.x);
     expect(n.y).toBe(r.y);
     expect(n.width).toBe(r.width);
@@ -564,7 +564,7 @@ describe('normalized', () => {
   it('allows rectangle-like objects', () => {
     const r = { x: 10, y: 20, width: -5, height: -15 };
     const n = { x: 0, y: 0, width: 0, height: 0 };
-    rectangle.normalized(n, r);
+    rectangle.normalize(n, r);
     expect(n.x).toBe(5);
     expect(n.y).toBe(5);
     expect(n.width).toBe(5);
