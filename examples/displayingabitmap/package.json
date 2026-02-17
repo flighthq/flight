@@ -1,6 +1,7 @@
 {
   "name": "displayingabitmap",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@flighthq/flight": "^1.0.0",
     "@flighthq/render": "^1.0.0",
