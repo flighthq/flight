@@ -8,7 +8,6 @@ export function getDerivedState(source: DisplayObject): DisplayObjectDerivedStat
       boundsRectUsingLocalBoundsID: -1,
       boundsRectUsingLocalTransformID: -1,
       boundsRect: null,
-      children: null,
       localBoundsRect: null,
       localBoundsRectUsingLocalBoundsID: -1,
       localBoundsID: 0,

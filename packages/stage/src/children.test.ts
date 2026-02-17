@@ -1,5 +1,6 @@
-import type { DisplayObject, DisplayObjectContainer, DisplayObjectDerivedState } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectDerivedState } from '@flighthq/types';
 
+import { version } from '.';
 import {
   addChild,
   addChildAt,
@@ -11,17 +12,13 @@ import {
   swapChildrenAt,
 } from './children';
 import { createDisplayObject } from './createDisplayObject';
-import { createDisplayObjectContainer } from './createDisplayObjectContainer';
-import { getDerivedState } from './internal/derivedState';
 
-let container: DisplayObjectContainer;
-let containerState: DisplayObjectDerivedState;
+let container: DisplayObject;
 let childA: DisplayObject;
 let childB: DisplayObject;
 
 beforeEach(() => {
-  container = createDisplayObjectContainer();
-  containerState = getDerivedState(container);
+  container = createDisplayObject();
   childA = createDisplayObject();
   childB = createDisplayObject();
 });
@@ -30,7 +27,7 @@ describe('addChild', () => {
   it('addChild adds a child to the end of the list', () => {
     addChild(container, childA);
 
-    expect(containerState.children!.length).toBe(1);
+    expect(container.children!.length).toBe(1);
     expect(childA.parent).toBe(container);
   });
 
@@ -43,8 +40,7 @@ describe('addChild', () => {
   });
 
   it('removes child from previous parent before adding', () => {
-    const other = createDisplayObjectContainer();
-    const otherState = getDerivedState(other);
+    const other = createDisplayObject();
 
     addChild(other, childA);
     expect(childA.parent).toBe(other);
@@ -52,20 +48,26 @@ describe('addChild', () => {
     addChild(container, childA);
 
     expect(childA.parent).toBe(container);
-    expect(otherState.children!.length).toBe(0);
-    expect(containerState.children!.length).toBe(1);
+    expect(other.children!.length).toBe(0);
+    expect(container.children!.length).toBe(1);
   });
 
   it('a child never has more than one parent', () => {
-    const other = createDisplayObjectContainer();
-    const otherState = getDerivedState(other);
+    const other = createDisplayObject();
 
     addChild(container, childA);
     addChild(other, childA);
 
     expect(childA.parent).toBe(other);
-    expect(containerState.children!.length).toBe(0);
-    expect(otherState.children!.length).toBe(1);
+    expect(container.children!.length).toBe(0);
+    expect(other.children!.length).toBe(1);
+  });
+
+  it('invalidates appearance and world bounds', () => {
+    addChild(container, childA);
+
+    expect(version.getAppearanceID(container)).toBe(1);
+    expect(version.getWorldBoundsID(container)).toBe(-1);
   });
 });
 
@@ -74,17 +76,17 @@ describe('addChildAt', () => {
     addChild(container, childA);
     addChildAt(container, childB, 0);
 
-    expect(containerState.children!.length).toBe(2);
-    expect(containerState.children![0]).toBe(childB);
-    expect(containerState.children![1]).toBe(childA);
+    expect(container.children!.length).toBe(2);
+    expect(container.children![0]).toBe(childB);
+    expect(container.children![1]).toBe(childA);
   });
 
   it('addChildAt allows inserting at the end (index === length)', () => {
     addChild(container, childA);
     addChildAt(container, childB, 1);
 
-    expect(containerState.children!.length).toBe(2);
-    expect(containerState.children![1]).toBe(childB);
+    expect(container.children!.length).toBe(2);
+    expect(container.children![1]).toBe(childB);
   });
 
   it('addChildAt throws if index is negative', () => {
@@ -102,29 +104,36 @@ describe('addChildAt', () => {
     // move childA to the front
     addChildAt(container, childA, 1);
 
-    expect(containerState.children![0]).toBe(childB);
-    expect(containerState.children![1]).toBe(childA);
+    expect(container.children![0]).toBe(childB);
+    expect(container.children![1]).toBe(childA);
+  });
+
+  it('invalidates appearance and world bounds', () => {
+    addChildAt(container, childA, 0);
+
+    expect(version.getAppearanceID(container)).toBe(1);
+    expect(version.getWorldBoundsID(container)).toBe(-1);
   });
 });
 
 describe('removeChild', () => {
   it('removes the child and clears its parent', () => {
     addChild(container, childA);
-    expect(containerState.children!.length).toBe(1);
+    expect(container.children!.length).toBe(1);
 
     removeChild(container, childA);
 
-    expect(containerState.children!.length).toBe(0);
+    expect(container.children!.length).toBe(0);
     expect(childA.parent).toBeNull();
   });
 
   it('does nothing if child is not a child of target', () => {
     addChild(container, childA);
 
-    const other = createDisplayObjectContainer();
+    const other = createDisplayObject();
     removeChild(other, childA);
 
-    expect(containerState.children!.length).toBe(1);
+    expect(container.children!.length).toBe(1);
     expect(childA.parent).toBe(container);
   });
 
@@ -138,6 +147,16 @@ describe('removeChild', () => {
 
     expect(childA.parent).toBeNull();
   });
+
+  it('invalidates appearance and world bounds', () => {
+    addChild(container, childA);
+    expect(version.getAppearanceID(container)).toBe(1);
+    expect(version.getWorldBoundsID(container)).toBe(-1);
+    removeChild(container, childA);
+
+    expect(version.getAppearanceID(container)).toBe(2);
+    expect(version.getWorldBoundsID(container)).toBe(-1);
+  });
 });
 
 describe('removeChildAt', () => {
@@ -148,13 +167,27 @@ describe('removeChildAt', () => {
     const removed = removeChildAt(container, 0);
 
     expect(removed).toBe(childA);
-    expect(containerState.children!.length).toBe(1);
+    expect(container.children!.length).toBe(1);
     expect(childA.parent).toBeNull();
-    expect(containerState.children![0]).toBe(childB);
+    expect(container.children![0]).toBe(childB);
   });
 
   it('removeChildAt returns null for out-of-range index', () => {
     expect(removeChildAt(container, 0)).toBeNull();
+  });
+
+  it('invalidates appearance and world bounds', () => {
+    addChild(container, childA);
+    expect(version.getAppearanceID(container)).toBe(1);
+    expect(version.getWorldBoundsID(container)).toBe(-1);
+    addChild(container, childB);
+    expect(version.getAppearanceID(container)).toBe(2);
+    expect(version.getWorldBoundsID(container)).toBe(-1);
+
+    removeChildAt(container, 0);
+
+    expect(version.getAppearanceID(container)).toBe(3);
+    expect(version.getWorldBoundsID(container)).toBe(-1);
   });
 });
 
@@ -165,7 +198,7 @@ describe('removeChildren', () => {
 
     removeChildren(container);
 
-    expect(containerState.children!.length).toBe(0);
+    expect(container.children!.length).toBe(0);
     expect(childA.parent).toBeNull();
     expect(childB.parent).toBeNull();
   });
@@ -179,8 +212,8 @@ describe('removeChildren', () => {
 
     removeChildren(container, 1, 2);
 
-    expect(containerState.children!.length).toBe(1);
-    expect(containerState.children![0]).toBe(childA);
+    expect(container.children!.length).toBe(1);
+    expect(container.children![0]).toBe(childA);
     expect(childB.parent).toBeNull();
     expect(childC.parent).toBeNull();
   });
@@ -190,7 +223,7 @@ describe('removeChildren', () => {
 
     removeChildren(container, 5);
 
-    expect(containerState.children!.length).toBe(1);
+    expect(container.children!.length).toBe(1);
   });
 
   it('removeChildren throws if indices are invalid', () => {
@@ -208,19 +241,19 @@ describe('setChildIndex', () => {
 
     setChildIndex(container, childA, 1);
 
-    expect(containerState.children![0]).toBe(childB);
-    expect(containerState.children![1]).toBe(childA);
+    expect(container.children![0]).toBe(childB);
+    expect(container.children![1]).toBe(childA);
   });
 
   it('setChildIndex does nothing if child is not in container', () => {
-    const other = createDisplayObjectContainer();
+    const other = createDisplayObject();
 
     addChild(other, childA);
     addChild(container, childB);
 
     setChildIndex(container, childA, 0);
 
-    expect(containerState.children![0]).toBe(childB);
+    expect(container.children![0]).toBe(childB);
     expect(childA.parent).toBe(other);
   });
 
@@ -229,7 +262,7 @@ describe('setChildIndex', () => {
 
     setChildIndex(container, childA, 5);
 
-    expect(containerState.children![0]).toBe(childA);
+    expect(container.children![0]).toBe(childA);
   });
 });
 
@@ -240,19 +273,19 @@ describe('swapChildren', () => {
 
     swapChildren(container, childA, childB);
 
-    expect(containerState.children![0]).toBe(childB);
-    expect(containerState.children![1]).toBe(childA);
+    expect(container.children![0]).toBe(childB);
+    expect(container.children![1]).toBe(childA);
   });
 
   it('swapChildren does nothing if either child is not in container', () => {
-    const other = createDisplayObjectContainer();
+    const other = createDisplayObject();
 
     addChild(container, childA);
     addChild(other, childB);
 
     swapChildren(container, childA, childB);
 
-    expect(containerState.children![0]).toBe(childA);
+    expect(container.children![0]).toBe(childA);
   });
 });
 
@@ -263,8 +296,8 @@ describe('swapChildrenAt', () => {
 
     swapChildrenAt(container, 0, 1);
 
-    expect(containerState.children![0]).toBe(childB);
-    expect(containerState.children![1]).toBe(childA);
+    expect(container.children![0]).toBe(childB);
+    expect(container.children![1]).toBe(childA);
   });
 
   it('swapChildrenAt assumes valid indices (throws if invalid)', () => {
