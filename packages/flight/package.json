@@ -24,9 +24,9 @@
     "@flighthq/filters": "^1.0.0",
     "@flighthq/math": "^1.0.0",
     "@flighthq/render": "^1.0.0",
-    "@flighthq/scene": "^1.0.0",
     "@flighthq/stage": "^1.0.0",
-    "@flighthq/types": "^1.0.0"
+    "@flighthq/types": "^1.0.0",
+    "@flighthq/world": "^1.0.0"
   },
   "devDependencies": {
     "typescript": "^5.3.0"

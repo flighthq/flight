@@ -11,9 +11,10 @@
   "references": [
     { "path": "../filters" },
     { "path": "../math" },
-    { "path": "../scene" },
+    { "path": "../render" },
     { "path": "../stage" },
-    { "path": "../types" }
+    { "path": "../types" },
+    { "path": "../world" }
   ],
   "include": ["src"]
 }
