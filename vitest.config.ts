@@ -9,6 +9,7 @@ export default mergeConfig(
       projects: [
         'packages/filters',
         'packages/flight',
+        'packages/interaction',
         'packages/math',
         'packages/render',
         'packages/stage',

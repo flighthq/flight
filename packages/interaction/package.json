@@ -1,0 +1,36 @@
+{
+  "name": "@flighthq/interactive",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./hitTest": {
+      "types": "./dist/hitTest.d.ts",
+      "default": "./dist/hitTest.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "@flighthq/math": "^1.0.0",
+    "@flighthq/stage": "^1.0.0",
+    "@flighthq/types": "^1.0.0",
+    "@flighthq/world": "^1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
