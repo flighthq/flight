@@ -1,4 +1,4 @@
-import type { DisplayObject, DisplayObjectDerivedState } from '@flighthq/types';
+import type { DisplayObject } from '@flighthq/types';
 
 import { version } from '.';
 import {
