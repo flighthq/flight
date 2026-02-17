@@ -1,13 +1,11 @@
 import type Matrix3x2 from '../math/Matrix3x2.js';
 import type Rectangle from '../math/Rectangle.js';
-import type DisplayObject from './DisplayObject.js';
 
 export interface DisplayObjectDerivedState {
   appearanceID: number;
   boundsRect: Rectangle | null;
   boundsRectUsingLocalBoundsID: number;
   boundsRectUsingLocalTransformID: number;
-  children: DisplayObject[] | null;
   localBoundsRect: Rectangle | null;
   localBoundsRectUsingLocalBoundsID: number;
   localBoundsID: number;

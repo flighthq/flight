@@ -1,3 +1,3 @@
-import type DisplayObjectContainer from './DisplayObjectContainer.js';
+import type DisplayObject from './DisplayObject.js';
 
-export default interface Stage extends DisplayObjectContainer {}
+export default interface Stage extends DisplayObject {}
