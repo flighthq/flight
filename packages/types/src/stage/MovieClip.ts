@@ -1,3 +1,3 @@
-import type Sprite from './Sprite.js';
+import type DisplayObject from './DisplayObject';
 
-export default interface MovieClip extends Sprite {}
+export default interface MovieClip extends DisplayObject {}

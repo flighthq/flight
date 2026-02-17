@@ -1,8 +1,10 @@
+export { default as Bitmap } from './Bitmap.js';
+export { default as BitmapData } from './BitmapData.js';
 export { default as BlendMode } from './BlendMode.js';
 export { default as DisplayObject } from './DisplayObject.js';
-export { DisplayObjectState } from './DisplayObjectState.js';
-export { default as LoaderInfo } from './LoaderInfo.js';
+export { default as DisplayObjectType } from './DisplayObjectType.js';
+export { GraphState } from './GraphState.js';
 export { default as MovieClip } from './MovieClip.js';
+export { default as PrimitiveData } from './PrimitiveData.js';
 export { default as Shader } from './Shader.js';
-export { default as Sprite } from './Sprite.js';
 export { default as Stage } from './Stage.js';
