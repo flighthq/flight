@@ -1,7 +1,7 @@
 import type { DisplayObject } from '@flighthq/types';
 
 import type { DisplayObjectInternal } from './internal/write';
-import { invalidateAppearance, invalidateWorldBounds } from './invalidate';
+import { invalidateAppearance, invalidateWorldBounds } from './revision';
 
 /**
  * Adds a child DisplayObject instance to this DisplayObject

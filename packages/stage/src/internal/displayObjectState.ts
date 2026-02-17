@@ -1,9 +1,9 @@
 import type { DisplayObject } from '@flighthq/types';
-import { DisplayObjectDerivedState } from '@flighthq/types';
+import { DisplayObjectState } from '@flighthq/types';
 
-export function getDerivedState(source: DisplayObject): DisplayObjectDerivedState {
-  if (source[DisplayObjectDerivedState.Key] === undefined) {
-    source[DisplayObjectDerivedState.Key] = {
+export function getDisplayObjectState(source: DisplayObject): DisplayObjectState {
+  if (source[DisplayObjectState.SymbolKey] === undefined) {
+    source[DisplayObjectState.SymbolKey] = {
       appearanceID: 0,
       boundsRectUsingLocalBoundsID: -1,
       boundsRectUsingLocalTransformID: -1,
@@ -25,5 +25,5 @@ export function getDerivedState(source: DisplayObject): DisplayObjectDerivedStat
       worldTransformUsingParentID: -1,
     };
   }
-  return source[DisplayObjectDerivedState.Key];
+  return source[DisplayObjectState.SymbolKey];
 }

@@ -1,8 +1,8 @@
 import { matrix3x2, matrix3x2Pool, rectangle } from '@flighthq/math';
 import type { DisplayObject, Rectangle } from '@flighthq/types';
-import type { DisplayObjectDerivedState } from '@flighthq/types';
+import type { DisplayObjectState } from '@flighthq/types';
 
-import { getDerivedState } from './internal/derivedState';
+import { getDisplayObjectState } from './internal/displayObjectState';
 import { ensureWorldTransform, getLocalTransform, getWorldTransform } from './transform';
 
 /**
@@ -33,7 +33,7 @@ export function calculateBoundsRect(
 }
 
 export function ensureBoundsRect(target: DisplayObject): void {
-  const state = getDerivedState(target);
+  const state = getDisplayObjectState(target);
   if (
     state.boundsRectUsingLocalBoundsID !== state.localBoundsID ||
     state.boundsRectUsingLocalTransformID !== state.localTransformID
@@ -43,7 +43,7 @@ export function ensureBoundsRect(target: DisplayObject): void {
 }
 
 export function ensureLocalBoundsRect(target: DisplayObject): void {
-  const state = getDerivedState(target);
+  const state = getDisplayObjectState(target);
   if (state.localBoundsRectUsingLocalBoundsID !== state.localBoundsID) {
     recomputeLocalBoundsRect(target, state);
   }
@@ -53,7 +53,7 @@ export function ensureWorldBoundsRect(target: DisplayObject): void {
   ensureWorldTransform(target);
   ensureLocalBoundsRect(target);
 
-  const state = getDerivedState(target);
+  const state = getDisplayObjectState(target);
   if (
     state.worldBoundsRectUsingWorldTransformID !== state.worldTransformID ||
     state.worldBoundsRectUsingLocalBoundsID !== state.localBoundsID
@@ -64,33 +64,33 @@ export function ensureWorldBoundsRect(target: DisplayObject): void {
 
 export function getBoundsRect(target: DisplayObject): Readonly<Rectangle> {
   ensureBoundsRect(target);
-  return getDerivedState(target).boundsRect!;
+  return getDisplayObjectState(target).boundsRect!;
 }
 
 export function getLocalBoundsRect(target: DisplayObject): Readonly<Rectangle> {
   ensureLocalBoundsRect(target);
-  return getDerivedState(target).localBoundsRect!;
+  return getDisplayObjectState(target).localBoundsRect!;
 }
 
 export function getWorldBoundsRect(target: DisplayObject): Readonly<Rectangle> {
   ensureWorldBoundsRect(target);
-  return getDerivedState(target).worldBoundsRect!;
+  return getDisplayObjectState(target).worldBoundsRect!;
 }
 
-function recomputeBoundsRect(target: DisplayObject, state: DisplayObjectDerivedState): void {
+function recomputeBoundsRect(target: DisplayObject, state: DisplayObjectState): void {
   if (state.boundsRect === null) state.boundsRect = rectangle.create();
   matrix3x2.transformRect(state.boundsRect, getLocalTransform(target), getLocalBoundsRect(target));
   state.boundsRectUsingLocalBoundsID = state.localBoundsID;
   state.boundsRectUsingLocalTransformID = state.localTransformID;
 }
 
-function recomputeLocalBoundsRect(target: DisplayObject, state: DisplayObjectDerivedState): void {
+function recomputeLocalBoundsRect(target: DisplayObject, state: DisplayObjectState): void {
   if (state.localBoundsRect === null) state.localBoundsRect = rectangle.create();
   // TODO: Calculate local bounds
   state.localBoundsRectUsingLocalBoundsID = state.localBoundsID;
 }
 
-function recomputeWorldBoundsRect(target: DisplayObject, state: DisplayObjectDerivedState) {
+function recomputeWorldBoundsRect(target: DisplayObject, state: DisplayObjectState) {
   if (state.worldBoundsRect === null) state.worldBoundsRect = rectangle.create();
   matrix3x2.transformRect(state.worldBoundsRect, getWorldTransform(target), getLocalBoundsRect(target));
   if (target.children !== null) {
