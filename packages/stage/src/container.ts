@@ -56,6 +56,57 @@ export function addChildAt(target: DisplayObject, child: DisplayObject, index: n
 }
 
 /**
+ * Determines whether the specified display object is a child of the
+ * DisplayObjectContainer instance or the instance itself.
+ **/
+export function contains(source: Readonly<DisplayObject>, child: Readonly<DisplayObject>): boolean {
+  let current: DisplayObject | null = child;
+  while (current !== source && current !== null) {
+    current = current.parent;
+  }
+  return current === source;
+}
+
+/**
+ * Returns the child display object instance that exists at the specified
+ * index.
+ **/
+export function getChildAt(source: Readonly<DisplayObject>, index: number): DisplayObject | null {
+  if (source.children !== null && index >= 0 && index < source.children.length) {
+    return source.children[index];
+  }
+  return null;
+}
+
+/**
+ * Returns the child display object that exists with the specified name. If
+ * more that one child display object has the specified name, the method
+ * returns the first object found.
+ **/
+export function getChildByName(source: Readonly<DisplayObject>, name: string): DisplayObject | null {
+  if (source.children !== null) {
+    const children = source.children;
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].name === name) return children[i];
+    }
+  }
+  return null;
+}
+
+/**
+ * Returns the index position of a `child` DisplayObject instance.
+ **/
+export function getChildIndex(source: Readonly<DisplayObject>, child: Readonly<DisplayObject>): number {
+  if (source.children !== null) {
+    const children = source.children;
+    for (let i = 0; i < children.length; i++) {
+      if (children[i] == child) return i;
+    }
+  }
+  return -1;
+}
+
+/**
  * Removes the specified `child` DisplayObject instance from the
  * child list of the DisplayObject instance. The `parent`
  * property of the removed child is set to `null` , and the object
