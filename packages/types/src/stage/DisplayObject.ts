@@ -2,7 +2,7 @@ import type BitmapFilter from '../filters/BitmapFilter.js';
 import type Matrix3x2 from '../math/Matrix3x2.js';
 import type Rectangle from '../math/Rectangle.js';
 import type BlendMode from './BlendMode.js';
-import type { DisplayObjectDerivedState } from './DisplayObjectDerivedState.js';
+import type { DisplayObjectState } from './DisplayObjectState.js';
 import type Shader from './Shader.js';
 import type Stage from './Stage.js';
 
@@ -28,5 +28,5 @@ export default interface DisplayObject {
   x: number;
   y: number;
 
-  [DisplayObjectDerivedState.Key]?: DisplayObjectDerivedState;
+  [DisplayObjectState.SymbolKey]?: DisplayObjectState;
 }
