@@ -1,9 +1,8 @@
 import { vector2 } from '@flighthq/math';
 import type { DisplayObject } from '@flighthq/types';
-import { DirtyFlags } from '@flighthq/types';
 
 import { createDisplayObject } from './createDisplayObject';
-import { invalidate } from './dirty';
+import { invalidateLocalTransform } from './invalidate';
 import { globalToLocal, localToGlobal } from './transform';
 
 describe('globalToLocal', () => {
@@ -18,7 +17,7 @@ describe('globalToLocal', () => {
     obj.scaleX = 2;
     obj.scaleY = 2;
     obj.rotation = 0;
-    invalidate(obj, DirtyFlags.Transform);
+    invalidateLocalTransform(obj);
   });
 
   it('writes into the provided output Vector2', () => {
@@ -77,7 +76,7 @@ describe('localToGlobal', () => {
   it('respects world transform', () => {
     obj.x = 50;
     obj.y = 30;
-    invalidate(obj, DirtyFlags.Transform);
+    invalidateLocalTransform(obj);
 
     const local = vector2.create(10, 20);
     const out = vector2.create();
@@ -91,7 +90,7 @@ describe('localToGlobal', () => {
   it('produces independent results from multiple points', () => {
     obj.x = 1;
     obj.y = 2;
-    invalidate(obj, DirtyFlags.Transform);
+    invalidateLocalTransform(obj);
 
     const p1 = vector2.create(1, 1);
     const p2 = vector2.create(2, 2);

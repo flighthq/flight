@@ -1,5 +1,5 @@
 import { createDisplayObjectContainer } from './createDisplayObjectContainer';
-import { getDerivedState } from './derived';
+import { getDerivedState } from './internal/derivedState';
 
 describe('createDisplayObjectContainer', () => {
   it('can be instantiated', () => {

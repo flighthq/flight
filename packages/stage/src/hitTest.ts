@@ -1,8 +1,8 @@
-import { matrix2D, rectangle, rectanglePool } from '@flighthq/math';
+import { matrix3x2, rectangle, rectanglePool } from '@flighthq/math';
 import type { DisplayObject } from '@flighthq/types';
 
-import { getBounds } from './bounds';
-import { getCurrentLocalBounds, getCurrentWorldTransform } from './derived';
+import { calculateBoundsRect, getLocalBoundsRect } from './bounds';
+import { getWorldTransform } from './transform';
 
 /**
  * Evaluates the bounding box of the display object to see if it overlaps or
@@ -10,10 +10,10 @@ import { getCurrentLocalBounds, getCurrentWorldTransform } from './derived';
  **/
 export function hitTestObject(source: DisplayObject, other: DisplayObject): boolean {
   if (other.parent !== null && source.parent !== null) {
-    const sourceBounds = getCurrentLocalBounds(source);
+    const sourceBounds = getLocalBoundsRect(source);
     const otherBounds = rectanglePool.get();
     // compare other in source's coordinate space
-    getBounds(otherBounds, other, source);
+    calculateBoundsRect(otherBounds, other, source);
     const result = rectangle.intersects(sourceBounds, otherBounds);
     rectanglePool.release(otherBounds);
     return result;
@@ -33,6 +33,6 @@ let _tempPoint = { x: 0, y: 0 };
 **/
 export function hitTestPoint(source: DisplayObject, x: number, y: number, _shapeFlag: boolean = false): boolean {
   if (!source.visible || source.opaqueBackground === null) return false;
-  matrix2D.inverseTransformPointXY(_tempPoint, getCurrentWorldTransform(source), x, y);
-  return rectangle.contains(getCurrentLocalBounds(source), _tempPoint.x, _tempPoint.y);
+  matrix3x2.inverseTransformPointXY(_tempPoint, getWorldTransform(source), x, y);
+  return rectangle.contains(getLocalBoundsRect(source), _tempPoint.x, _tempPoint.y);
 }

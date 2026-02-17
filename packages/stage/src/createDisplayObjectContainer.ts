@@ -1,7 +1,7 @@
 import type { DisplayObject, DisplayObjectContainer } from '@flighthq/types';
 
 import { createDisplayObject } from './createDisplayObject';
-import { getDerivedState } from './derived';
+import { getDerivedState } from './internal/derivedState';
 
 export function createDisplayObjectContainer(obj: Partial<DisplayObjectContainer> = {}): DisplayObjectContainer {
   createDisplayObject(obj);

@@ -1,11 +1,10 @@
 import { rectangle } from '@flighthq/math';
 import type { DisplayObject } from '@flighthq/types';
-import { DirtyFlags } from '@flighthq/types';
 
+import { getLocalBoundsRect } from './bounds';
 import { createDisplayObject } from './createDisplayObject';
-import { getCurrentLocalBounds } from './derived';
-import { invalidate } from './dirty';
 import { hitTestObject, hitTestPoint } from './hitTest';
+import { invalidateLocalTransform } from './invalidate';
 
 describe('hitTestObject', () => {
   let a: DisplayObject;
@@ -20,8 +19,8 @@ describe('hitTestObject', () => {
     (b as any).parent = createDisplayObject() as any; // eslint-disable-line
 
     // Simple local bounds
-    rectangle.setTo(getCurrentLocalBounds(a), 0, 0, 10, 10);
-    rectangle.setTo(getCurrentLocalBounds(b), 0, 0, 10, 10);
+    rectangle.setTo(getLocalBoundsRect(a), 0, 0, 10, 10);
+    rectangle.setTo(getLocalBoundsRect(b), 0, 0, 10, 10);
 
     // Position b to overlap a
     a.x = 0;
@@ -41,7 +40,7 @@ describe('hitTestObject', () => {
   it('returns false when bounds do not intersect', () => {
     b.x = 20;
     b.y = 20;
-    invalidate(b, DirtyFlags.Transform);
+    invalidateLocalTransform(b);
 
     const result = hitTestObject(a, b);
     expect(result).toBe(false);
@@ -74,7 +73,7 @@ describe('hitTestPoint', () => {
     obj.visible = true;
     obj.opaqueBackground = 0xff0000;
     // set a simple local bounds rectangle
-    rectangle.setTo(getCurrentLocalBounds(obj), 0, 0, 100, 100);
+    rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 100, 100);
   });
 
   it('returns true for point inside bounds', () => {
@@ -102,7 +101,7 @@ describe('hitTestPoint', () => {
   it('respects world transform', () => {
     obj.x = 100;
     obj.y = 100;
-    invalidate(obj, DirtyFlags.Transform);
+    invalidateLocalTransform(obj);
     const inside = hitTestPoint(obj, 150, 150);
     const outside = hitTestPoint(obj, 50, 50);
 
