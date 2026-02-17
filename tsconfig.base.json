@@ -22,12 +22,12 @@
       "@flighthq/math/*": ["packages/math/src/*"],
       "@flighthq/render": ["packages/render/src/index.ts"],
       "@flighthq/render/*": ["packages/render/src/*"],
-      "@flighthq/scene": ["packages/scene/src/index.ts"],
-      "@flighthq/scene/*": ["packages/scene/src/*"],
       "@flighthq/stage": ["packages/stage/src/index.ts"],
       "@flighthq/stage/*": ["packages/stage/src/*"],
       "@flighthq/types": ["packages/types/src/index.ts"],
-      "@flighthq/types/*": ["packages/types/src/*"]
+      "@flighthq/types/*": ["packages/types/src/*"],
+      "@flighthq/world": ["packages/world/src/index.ts"],
+      "@flighthq/world/*": ["packages/world/src/*"]
     },
     "types": ["vitest/globals"] // Include Vitest globals for type-checking
   },
