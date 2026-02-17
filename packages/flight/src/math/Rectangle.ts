@@ -1,6 +1,8 @@
 import { rectangle } from '@flighthq/math';
 import type { Rectangle as RectangleLike, Vector2 as Vector2Like } from '@flighthq/types';
 
+import Vector2 from './Vector2.js';
+
 export default class Rectangle implements RectangleLike {
   x: number = 0;
   y: number = 0;
@@ -46,7 +48,7 @@ export default class Rectangle implements RectangleLike {
     rectangle.inflatePoint(this, this, sourceVec2);
   }
 
-  static intersection(b: Readonly<RectangleLike>): Rectangle {
+  intersection(b: Readonly<RectangleLike>): Rectangle {
     const out = new Rectangle();
     rectangle.intersection(out, this, b);
     return out;
@@ -84,7 +86,7 @@ export default class Rectangle implements RectangleLike {
    * Sets a Vector2 object to width and height
    */
 
-  static union(other: Readonly<RectangleLike>): Rectangle {
+  union(other: Readonly<RectangleLike>): Rectangle {
     const out = new Rectangle();
     rectangle.union(out, this, other);
     return out;

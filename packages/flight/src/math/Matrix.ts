@@ -61,7 +61,7 @@ export default class Matrix {
     return out;
   }
 
-  static createTransform(scaleX: number, scaleY: number, rotation: number = 0, tx: number = 0, ty: number = 0): void {
+  static createTransform(scaleX: number, scaleY: number, rotation: number = 0, tx: number = 0, ty: number = 0): Matrix {
     const out = new Matrix();
     out.setTransform(scaleX, scaleY, rotation, tx, ty);
     return out;
