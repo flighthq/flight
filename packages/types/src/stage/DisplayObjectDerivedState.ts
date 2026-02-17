@@ -1,23 +1,28 @@
-import type Affine2D from '../math/Matrix2D.js';
+import type Matrix3x2 from '../math/Matrix3x2.js';
 import type Rectangle from '../math/Rectangle.js';
-import type DirtyFlags from './DirtyFlags.js';
 import type DisplayObject from './DisplayObject.js';
 
 export interface DisplayObjectDerivedState {
-  bounds: Rectangle | null;
+  appearanceID: number;
+  boundsRect: Rectangle | null;
+  boundsRectUsingLocalBoundsID: number;
+  boundsRectUsingLocalTransformID: number;
   children: DisplayObject[] | null;
-  dirtyFlags: DirtyFlags;
-  localBounds: Rectangle | null;
+  localBoundsRect: Rectangle | null;
+  localBoundsRectUsingLocalBoundsID: number;
   localBoundsID: number;
-  localTransform: Affine2D | null;
+  localTransform: Matrix3x2 | null;
+  localTransformUsingLocalTransformID: number;
   localTransformID: number;
-  parentTransformID: number;
   rotationAngle: number;
   rotationCosine: number;
   rotationSine: number;
-  worldBounds: Rectangle | null;
-  worldTransform: Affine2D | null;
+  worldBoundsRect: Rectangle | null;
+  worldBoundsRectUsingLocalBoundsID: number;
+  worldBoundsRectUsingWorldTransformID: number;
+  worldTransform: Matrix3x2 | null;
   worldTransformID: number;
+  worldTransformUsingParentID: number;
 }
 
 export namespace DisplayObjectDerivedState {
