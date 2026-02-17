@@ -1,5 +1,5 @@
 import { matrix3x2, rectangle } from '@flighthq/math';
-import { bounds, createDisplayObject, hitTest, invalidate, transform } from '@flighthq/stage';
+import { bounds, createDisplayObject, hitTest, revision, transform } from '@flighthq/stage';
 import type {
   BitmapFilter as BitmapFilterLike,
   DisplayObject as DisplayObjectLike,
@@ -11,7 +11,7 @@ import type {
   Vector2 as Vector2Like,
 } from '@flighthq/types';
 import type { BlendMode } from '@flighthq/types';
-import { DisplayObjectDerivedState } from '@flighthq/types';
+import { DisplayObjectState } from '@flighthq/types';
 
 import Rectangle from '../math/Rectangle.js';
 import Vector2 from '../math/Vector2.js';
@@ -89,7 +89,7 @@ export default class DisplayObject implements DisplayObjectLike {
    * should be redrawn the next time it is eligible to be rendered.
    */
   invalidate(): void {
-    invalidate.invalidate(this.__data);
+    revision.invalidate(this.__data);
   }
 
   /**
@@ -100,10 +100,6 @@ export default class DisplayObject implements DisplayObjectLike {
     const out = new Vector2();
     transform.localToGlobal(out, this.__data, point);
     return out;
-  }
-
-  toFunctionalObject(): DisplayObjectLike {
-    return this.__data;
   }
 
   // Get & Set Methods
@@ -117,7 +113,7 @@ export default class DisplayObject implements DisplayObjectLike {
     if (value < 0.0) value = 0.0;
     if (value === this.__data.alpha) return;
     this.__data.alpha = value;
-    invalidate.invalidateAppearance(this.__data);
+    revision.invalidateAppearance(this.__data);
   }
 
   get blendMode(): BlendMode {
@@ -127,7 +123,7 @@ export default class DisplayObject implements DisplayObjectLike {
   set blendMode(value: BlendMode) {
     if (value === this.__data.blendMode) return;
     this.__data.blendMode = value;
-    invalidate.invalidateAppearance(this.__data);
+    revision.invalidateAppearance(this.__data);
   }
 
   get cacheAsBitmap(): boolean {
@@ -137,7 +133,7 @@ export default class DisplayObject implements DisplayObjectLike {
   set cacheAsBitmap(value: boolean) {
     if (value === this.__data.cacheAsBitmap) return;
     this.__data.cacheAsBitmap = value;
-    invalidate.invalidateAppearance(this.__data);
+    revision.invalidateAppearance(this.__data);
   }
 
   get cacheAsBitmapMatrix(): Matrix3x2Like | null {
@@ -159,7 +155,7 @@ export default class DisplayObject implements DisplayObjectLike {
     }
 
     if (data.cacheAsBitmap) {
-      invalidate.invalidateAppearance(this.__data);
+      revision.invalidateAppearance(this.__data);
     }
   }
 
@@ -194,7 +190,7 @@ export default class DisplayObject implements DisplayObjectLike {
     this.__data.filters = null;
     // }
 
-    invalidate.invalidateAppearance(this.__data);
+    revision.invalidateAppearance(this.__data);
   }
 
   get height(): number {
@@ -230,7 +226,7 @@ export default class DisplayObject implements DisplayObjectLike {
     // }
 
     this.__data.mask = value;
-    invalidate.invalidateAppearance(this.__data);
+    revision.invalidateAppearance(this.__data);
   }
 
   get name(): string | null {
@@ -248,7 +244,7 @@ export default class DisplayObject implements DisplayObjectLike {
   set opaqueBackground(value: number | null) {
     if (value === this.__data.opaqueBackground) return;
     this.__data.opaqueBackground = value;
-    invalidate.invalidateAppearance(this.__data);
+    revision.invalidateAppearance(this.__data);
   }
 
   get parent(): DisplayObjectLike | null {
@@ -284,7 +280,7 @@ export default class DisplayObject implements DisplayObjectLike {
       value += 360.0;
     }
     this.__data.rotation = value;
-    invalidate.invalidateLocalTransform(this.__data);
+    revision.invalidateLocalTransform(this.__data);
   }
 
   get scale9Grid(): RectangleLike | null {
@@ -306,7 +302,7 @@ export default class DisplayObject implements DisplayObjectLike {
       data.scale9Grid = null;
     }
 
-    invalidate.invalidateAppearance(this.__data);
+    revision.invalidateAppearance(this.__data);
   }
 
   get scaleX(): number {
@@ -316,7 +312,7 @@ export default class DisplayObject implements DisplayObjectLike {
   set scaleX(value: number) {
     if (value === this.__data.scaleX) return;
     this.__data.scaleX = value;
-    invalidate.invalidateLocalTransform(this.__data);
+    revision.invalidateLocalTransform(this.__data);
   }
 
   get scaleY(): number {
@@ -326,7 +322,7 @@ export default class DisplayObject implements DisplayObjectLike {
   set scaleY(value: number) {
     if (value === this.__data.scaleY) return;
     this.__data.scaleY = value;
-    invalidate.invalidateLocalTransform(this.__data);
+    revision.invalidateLocalTransform(this.__data);
   }
 
   get scrollRect(): Rectangle | null {
@@ -350,7 +346,7 @@ export default class DisplayObject implements DisplayObjectLike {
       data.scrollRect = null;
     }
 
-    invalidate.invalidateAppearance(this.__data);
+    revision.invalidateAppearance(this.__data);
   }
 
   get shader(): Shader | null {
@@ -360,7 +356,7 @@ export default class DisplayObject implements DisplayObjectLike {
   set shader(value: Shader | null) {
     if (value === this.__data.shader) return;
     this.__data.shader = value;
-    invalidate.invalidateAppearance(this.__data);
+    revision.invalidateAppearance(this.__data);
   }
 
   get stage(): StageLike | null {
@@ -415,7 +411,7 @@ export default class DisplayObject implements DisplayObjectLike {
   set visible(value: boolean) {
     if (value === this.__data.visible) return;
     this.__data.visible = value;
-    invalidate.invalidateAppearance(this.__data);
+    revision.invalidateAppearance(this.__data);
   }
 
   get width(): number {
@@ -437,7 +433,7 @@ export default class DisplayObject implements DisplayObjectLike {
     if (value !== value) value = 0; // convert NaN to 0
     if (value === this.__data.x) return;
     this.__data.x = value;
-    invalidate.invalidateLocalTransform(this.__data);
+    revision.invalidateLocalTransform(this.__data);
   }
 
   get y(): number {
@@ -448,14 +444,14 @@ export default class DisplayObject implements DisplayObjectLike {
     if (value !== value) value = 0; // convert NaN to 0
     if (value === this.__data.y) return;
     this.__data.y = value;
-    invalidate.invalidateLocalTransform(this.__data);
+    revision.invalidateLocalTransform(this.__data);
   }
 
-  get [DisplayObjectDerivedState.Key](): DisplayObjectDerivedState | undefined {
-    return this.__data[DisplayObjectDerivedState.Key];
+  get [DisplayObjectState.SymbolKey](): DisplayObjectState | undefined {
+    return this.__data[DisplayObjectState.SymbolKey];
   }
 
-  set [DisplayObjectDerivedState.Key](value: DisplayObjectDerivedState) {
-    this.__data[DisplayObjectDerivedState.Key] = value;
+  set [DisplayObjectState.SymbolKey](value: DisplayObjectState) {
+    this.__data[DisplayObjectState.SymbolKey] = value;
   }
 }
