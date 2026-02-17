@@ -1,6 +1,6 @@
 import type { Matrix3x2 } from '@flighthq/types';
 
-import * as matrix3x2Pool from './matrixPool.js';
+import * as matrix3x2Pool from './matrix3x2Pool.js';
 
 beforeEach(() => {
   matrix3x2Pool.clear();
