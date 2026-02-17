@@ -1,4 +1,4 @@
-import { transform, version } from '@flighthq/stage';
+import { revision, transform } from '@flighthq/stage';
 import type { DisplayObject, Matrix3x2 } from '@flighthq/types';
 
 export default class CanvasRenderData {
@@ -18,9 +18,9 @@ export default class CanvasRenderData {
   }
 
   isDirty() {
-    const appearanceID = version.getAppearanceID(this.source);
-    const worldTransformID = version.getWorldTransformID(this.source);
-    const localBoundsID = version.getLocalBoundsID(this.source);
+    const appearanceID = revision.getAppearanceID(this.source);
+    const worldTransformID = revision.getWorldTransformID(this.source);
+    const localBoundsID = revision.getLocalBoundsID(this.source);
     if (
       this.appearanceID !== appearanceID ||
       this.worldTransformID !== worldTransformID ||
