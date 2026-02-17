@@ -26,7 +26,7 @@ export default class Vector2 implements Vector2Like {
 
   static createPolar(len: number, angle: number): Vector2 {
     const out = new Vector2();
-    this.setPolar(out, len, angle);
+    vector2.setPolar(out, len, angle);
     return out;
   }
 
