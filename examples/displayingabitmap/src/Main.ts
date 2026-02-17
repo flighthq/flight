@@ -1,5 +1,5 @@
 import { Sprite } from '@flighthq/flight';
-import { DisplayObjectDerivedState } from '@flighthq/types';
+import { bounds } from '@flighthq/stage';
 
 export default class Main extends Sprite {
   sprite = new Sprite();
@@ -7,8 +7,9 @@ export default class Main extends Sprite {
     super();
 
     // hack
-    const localBounds = { x: 0, y: 0, width: 0, height: 0 };
-    (this.sprite as any).__data[DisplayObjectDerivedState.Key].localBounds = localBounds; // eslint-disable-line
+    const localBounds = bounds.getLocalBoundsRect(this.sprite);
+    (localBounds as any).width = 100;
+    (localBounds as any).height = 100;
 
     this.sprite.opaqueBackground = 0xff0000;
     this.addChild(this.sprite);
