@@ -1,5 +1,5 @@
 import type BitmapFilter from '../filters/BitmapFilter.js';
-import type Affine2D from '../math/Matrix2D.js';
+import type Matrix3x2 from '../math/Matrix3x2.js';
 import type Rectangle from '../math/Rectangle.js';
 import type BlendMode from './BlendMode.js';
 import type DisplayObjectContainer from './DisplayObjectContainer.js';
@@ -11,7 +11,7 @@ export default interface DisplayObject {
   alpha: number;
   blendMode: BlendMode;
   cacheAsBitmap: boolean;
-  cacheAsBitmapMatrix: Affine2D | null;
+  cacheAsBitmapMatrix: Matrix3x2 | null;
   filters: BitmapFilter[] | null;
   mask: DisplayObject | null;
   name: string | null;

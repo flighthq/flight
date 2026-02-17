@@ -1,4 +1,4 @@
-export default interface Matrix2D {
+export default interface Matrix3x2 {
   a: number;
   b: number;
   c: number;
