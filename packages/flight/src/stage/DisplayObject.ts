@@ -1,5 +1,6 @@
+import { hitTest } from '@flighthq/interaction';
 import { matrix3x2, rectangle } from '@flighthq/math';
-import { bounds, createDisplayObject, hitTest, revision, transform } from '@flighthq/stage';
+import { bounds, createDisplayObject, revision, transform } from '@flighthq/stage';
 import type {
   BitmapFilter as BitmapFilterLike,
   DisplayObject as DisplayObjectLike,
