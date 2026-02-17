@@ -1,18 +1,18 @@
-import type { Matrix2D } from '@flighthq/types';
+import type { Matrix3x2 } from '@flighthq/types';
 
-import * as matrix2DPool from './matrix2DPool.js';
+import * as matrix3x2Pool from './matrixPool.js';
 
 beforeEach(() => {
-  matrix2DPool.clear();
+  matrix3x2Pool.clear();
 });
 
-test('get() returns a new Matrix2D when pool is empty', () => {
-  const m: Matrix2D = matrix2DPool.get();
+test('get() returns a new Matrix3x2 when pool is empty', () => {
+  const m: Matrix3x2 = matrix3x2Pool.get();
   expect(m).not.toBeNull();
 });
 
 test('getIdentity() returns a matrix set to identity', () => {
-  const m = matrix2DPool.getIdentity();
+  const m = matrix3x2Pool.getIdentity();
   expect(m.a).toBe(1);
   expect(m.b).toBe(0);
   expect(m.c).toBe(0);
@@ -22,20 +22,20 @@ test('getIdentity() returns a matrix set to identity', () => {
 });
 
 test('released matrices are reused by get()', () => {
-  const m1 = matrix2DPool.get();
-  matrix2DPool.release(m1);
+  const m1 = matrix3x2Pool.get();
+  matrix3x2Pool.release(m1);
 
-  const m2 = matrix2DPool.get();
+  const m2 = matrix3x2Pool.get();
   expect(m2).toBe(m1); // same reference
 });
 
 test('getIdentity() resets released matrix to identity', () => {
-  const m1 = matrix2DPool.get();
+  const m1 = matrix3x2Pool.get();
   m1.a = 5;
   m1.tx = 10;
 
-  matrix2DPool.release(m1);
-  const m2 = matrix2DPool.getIdentity();
+  matrix3x2Pool.release(m1);
+  const m2 = matrix3x2Pool.getIdentity();
 
   expect(m2).toBe(m1);
   expect(m2.a).toBe(1);
@@ -47,14 +47,14 @@ test('getIdentity() resets released matrix to identity', () => {
 });
 
 test('clear() empties the pool', () => {
-  const m = matrix2DPool.get();
-  matrix2DPool.release(m);
-  matrix2DPool.clear();
+  const m = matrix3x2Pool.get();
+  matrix3x2Pool.release(m);
+  matrix3x2Pool.clear();
 
-  const m2 = matrix2DPool.get();
+  const m2 = matrix3x2Pool.get();
   expect(m2).not.toBe(m); // pool was cleared, new instance
 });
 
 test('release() handles null safely', () => {
-  expect(() => matrix2DPool.release(null as unknown as Matrix2D)).not.toThrow();
+  expect(() => matrix3x2Pool.release(null as unknown as Matrix3x2)).not.toThrow();
 });
