@@ -9,21 +9,21 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./DisplayObject": {
-      "types": "./dist/DisplayObject.d.ts",
-      "default": "./dist/DisplayObject.js"
+    "./bounds": {
+      "types": "./dist/bounds.d.ts",
+      "default": "./dist/bounds.js"
     },
-    "./DisplayObjectContainer": {
-      "types": "./dist/DisplayObjectContainer.d.ts",
-      "default": "./dist/DisplayObjectContainer.js"
+    "./container": {
+      "types": "./dist/container.d.ts",
+      "default": "./dist/container.js"
     },
-    "./Sprite": {
-      "types": "./dist/Sprite.d.ts",
-      "default": "./dist/Sprite.js"
+    "./revision": {
+      "types": "./dist/revision.d.ts",
+      "default": "./dist/revision.js"
     },
-    "./internal/*": {
-      "types": "./dist/internal/*.d.ts",
-      "default": "./dist/internal/*.js"
+    "./transform": {
+      "types": "./dist/transform.d.ts",
+      "default": "./dist/transform.js"
     }
   },
   "files": [

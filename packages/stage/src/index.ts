@@ -1,13 +1,7 @@
 export * as bounds from './bounds.js';
-export * from './bounds.js';
 export * as container from './container.js';
-export * from './container.js';
 export * from './createDisplayObject.js';
 export * from './createMovieClip.js';
 export * from './createStage.js';
-export * as hitTest from './hitTest.js';
-export * from './hitTest.js';
 export * as revision from './revision.js';
-export * from './revision.js';
 export * as transform from './transform.js';
-export * from './transform.js';
