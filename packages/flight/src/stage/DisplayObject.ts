@@ -1,19 +1,21 @@
-import { matrix2D, rectangle, vector2 } from '@flighthq/math';
-import { bounds, createDisplayObject, derived, dirty, hitTest, transform } from '@flighthq/stage';
+import { matrix3x2, rectangle, vector2 } from '@flighthq/math';
+import { bounds, createDisplayObject, hitTest, invalidate, transform } from '@flighthq/stage';
 import type {
   BitmapFilter as BitmapFilterLike,
   DisplayObject as DisplayObjectLike,
   DisplayObjectContainer as DisplayObjectContainerLike,
   LoaderInfo,
-  Matrix2D as Matrix2DLike,
+  Matrix3x2 as Matrix3x2Like,
   Rectangle as RectangleLike,
   Shader,
   Stage as StageLike,
   Vector2 as Vector2Like,
 } from '@flighthq/types';
 import type { BlendMode } from '@flighthq/types';
-import { DirtyFlags, DisplayObjectDerivedState } from '@flighthq/types';
+import { DisplayObjectDerivedState } from '@flighthq/types';
 
+import Rectangle from '../math/Rectangle.js';
+import Vector2 from '../math/Vector2.js';
 import Transform from './Transform.js';
 
 export default class DisplayObject implements DisplayObjectLike {
@@ -21,8 +23,6 @@ export default class DisplayObject implements DisplayObjectLike {
   protected __loaderInfo: LoaderInfo | null = null;
   protected __root: DisplayObjectContainerLike | null = null;
   protected __transform: Transform | null = null;
-
-  [DisplayObjectDerivedState.Key]?: DisplayObjectDerivedState;
 
   constructor() {
     this.__data = createDisplayObject();
@@ -32,11 +32,11 @@ export default class DisplayObject implements DisplayObjectLike {
    * Returns a rectangle that defines the area of the display object relative
    * to the coordinate system of the `targetCoordinateSpace` object.
    *
-   * Returns a rectangle.create()
+   * Returns a new Rectangle()
    **/
-  getBounds(targetCoordinateSpace: DisplayObjectLike | null): RectangleLike {
-    const out = rectangle.create();
-    bounds.getBounds(out, this.__data, targetCoordinateSpace);
+  getBounds(targetCoordinateSpace: DisplayObjectLike | null): Rectangle {
+    const out = new Rectangle();
+    bounds.calculateBoundsRect(out, this.__data, targetCoordinateSpace);
     return out;
   }
 
@@ -47,11 +47,11 @@ export default class DisplayObject implements DisplayObjectLike {
    * `getRect()` method returns are the same or smaller than those
    * returned by the `getBounds()` method.
    *
-   * Returns a rectangle.create()
+   * Returns a new Rectangle()
    **/
-  getRect(targetCoordinateSpace: DisplayObjectLike | null | undefined): RectangleLike {
-    const out = rectangle.create();
-    bounds.getRect(out, this.__data, targetCoordinateSpace);
+  getRect(targetCoordinateSpace: DisplayObjectLike | null | undefined): Rectangle {
+    const out = new Rectangle();
+    bounds.calculateBoundsRect(out, this.__data, targetCoordinateSpace);
     return out;
   }
 
@@ -59,8 +59,8 @@ export default class DisplayObject implements DisplayObjectLike {
    * Converts the `point` object from the Stage (global) coordinates
    * to the display object's (local) coordinates.
    **/
-  globalToLocal(pos: Readonly<Vector2Like>): Vector2Like {
-    const out = vector2.create();
+  globalToLocal(pos: Readonly<Vector2Like>): Vector2 {
+    const out = new Vector2();
     transform.globalToLocal(out, this.__data, pos);
     return out;
   }
@@ -89,16 +89,16 @@ export default class DisplayObject implements DisplayObjectLike {
    * Calling `invalidate()` signals that the current object has changed and
    * should be redrawn the next time it is eligible to be rendered.
    */
-  invalidate(flags: DirtyFlags = DirtyFlags.Render): void {
-    dirty.invalidate(this.__data, flags);
+  invalidate(): void {
+    invalidate.invalidate(this.__data);
   }
 
   /**
    * Converts the `point` object from the display object's (local)
    * coordinates to world coordinates.
    **/
-  localToGlobal(point: Readonly<Vector2Like>): Vector2Like {
-    const out = vector2.create();
+  localToGlobal(point: Readonly<Vector2Like>): Vector2 {
+    const out = new Vector2();
     transform.localToGlobal(out, this.__data, point);
     return out;
   }
@@ -118,7 +118,7 @@ export default class DisplayObject implements DisplayObjectLike {
     if (value < 0.0) value = 0.0;
     if (value === this.__data.alpha) return;
     this.__data.alpha = value;
-    dirty.invalidate(this.__data, DirtyFlags.Appearance);
+    invalidate.invalidateAppearance(this.__data);
   }
 
   get blendMode(): BlendMode {
@@ -128,7 +128,7 @@ export default class DisplayObject implements DisplayObjectLike {
   set blendMode(value: BlendMode) {
     if (value === this.__data.blendMode) return;
     this.__data.blendMode = value;
-    dirty.invalidate(this.__data, DirtyFlags.Appearance);
+    invalidate.invalidateAppearance(this.__data);
   }
 
   get cacheAsBitmap(): boolean {
@@ -138,29 +138,29 @@ export default class DisplayObject implements DisplayObjectLike {
   set cacheAsBitmap(value: boolean) {
     if (value === this.__data.cacheAsBitmap) return;
     this.__data.cacheAsBitmap = value;
-    dirty.invalidate(this.__data, DirtyFlags.CacheAsBitmap);
+    invalidate.invalidateAppearance(this.__data);
   }
 
-  get cacheAsBitmapMatrix(): Matrix2DLike | null {
+  get cacheAsBitmapMatrix(): Matrix3x2Like | null {
     return this.__data.cacheAsBitmapMatrix;
   }
 
-  set cacheAsBitmapMatrix(value: Matrix2DLike | null) {
+  set cacheAsBitmapMatrix(value: Matrix3x2Like | null) {
     const data = this.__data;
-    if (matrix2D.equals(data.cacheAsBitmapMatrix, value)) return;
+    if (matrix3x2.equals(data.cacheAsBitmapMatrix, value)) return;
 
     if (value !== null) {
       if (data.cacheAsBitmapMatrix === null) {
-        data.cacheAsBitmapMatrix = matrix2D.clone(value);
+        data.cacheAsBitmapMatrix = matrix3x2.clone(value);
       } else {
-        matrix2D.copy(data.cacheAsBitmapMatrix, value);
+        matrix3x2.copy(data.cacheAsBitmapMatrix, value);
       }
     } else {
       data.cacheAsBitmapMatrix = null;
     }
 
     if (data.cacheAsBitmap) {
-      dirty.invalidate(data, DirtyFlags.Transform);
+      invalidate.invalidateAppearance(this.__data);
     }
   }
 
@@ -184,15 +184,15 @@ export default class DisplayObject implements DisplayObjectLike {
     this.__data.filters = null;
     // }
 
-    dirty.invalidate(this.__data, DirtyFlags.CacheAsBitmap);
+    invalidate.invalidateAppearance(this.__data);
   }
 
   get height(): number {
-    return derived.getCurrentBounds(this.__data).height;
+    return bounds.getBoundsRect(this.__data).height;
   }
 
   set height(value: number) {
-    const localBounds = derived.getCurrentLocalBounds(this.__data);
+    const localBounds = bounds.getBoundsRect(this.__data);
     if (localBounds.height === 0) return;
     // Invalidation (if necessary) occurs in scaleY setter
     this.scaleY = value / localBounds.height;
@@ -220,7 +220,7 @@ export default class DisplayObject implements DisplayObjectLike {
     // }
 
     this.__data.mask = value;
-    dirty.invalidate(this.__data, DirtyFlags.Clip);
+    invalidate.invalidateAppearance(this.__data);
   }
 
   get name(): string | null {
@@ -238,7 +238,7 @@ export default class DisplayObject implements DisplayObjectLike {
   set opaqueBackground(value: number | null) {
     if (value === this.__data.opaqueBackground) return;
     this.__data.opaqueBackground = value;
-    dirty.invalidate(this.__data, DirtyFlags.Appearance);
+    invalidate.invalidateAppearance(this.__data);
   }
 
   get parent(): DisplayObjectContainerLike | null {
@@ -274,7 +274,7 @@ export default class DisplayObject implements DisplayObjectLike {
       value += 360.0;
     }
     this.__data.rotation = value;
-    dirty.invalidate(this.__data, DirtyFlags.Transform);
+    invalidate.invalidateLocalTransform(this.__data);
   }
 
   get scale9Grid(): RectangleLike | null {
@@ -296,7 +296,7 @@ export default class DisplayObject implements DisplayObjectLike {
       data.scale9Grid = null;
     }
 
-    dirty.invalidate(data, DirtyFlags.Appearance | DirtyFlags.Bounds | DirtyFlags.Clip | DirtyFlags.Transform);
+    invalidate.invalidateAppearance(this.__data);
   }
 
   get scaleX(): number {
@@ -306,7 +306,7 @@ export default class DisplayObject implements DisplayObjectLike {
   set scaleX(value: number) {
     if (value === this.__data.scaleX) return;
     this.__data.scaleX = value;
-    dirty.invalidate(this.__data, DirtyFlags.Transform);
+    invalidate.invalidateLocalTransform(this.__data);
   }
 
   get scaleY(): number {
@@ -316,14 +316,16 @@ export default class DisplayObject implements DisplayObjectLike {
   set scaleY(value: number) {
     if (value === this.__data.scaleY) return;
     this.__data.scaleY = value;
-    dirty.invalidate(this.__data, DirtyFlags.Transform);
+    invalidate.invalidateLocalTransform(this.__data);
   }
 
-  get scrollRect(): RectangleLike | null {
+  get scrollRect(): Rectangle | null {
     if (this.__data.scrollRect === null) {
       return null;
     }
-    return rectangle.clone(this.__data.scrollRect);
+    const out = new Rectangle();
+    out.copyFrom(this.__data.scrollRect);
+    return out;
   }
 
   set scrollRect(value: RectangleLike | null) {
@@ -338,7 +340,7 @@ export default class DisplayObject implements DisplayObjectLike {
       data.scrollRect = null;
     }
 
-    dirty.invalidate(data, DirtyFlags.Clip);
+    invalidate.invalidateAppearance(this.__data);
   }
 
   get shader(): Shader | null {
@@ -348,7 +350,7 @@ export default class DisplayObject implements DisplayObjectLike {
   set shader(value: Shader | null) {
     if (value === this.__data.shader) return;
     this.__data.shader = value;
-    dirty.invalidate(this.__data, DirtyFlags.Appearance);
+    invalidate.invalidateAppearance(this.__data);
   }
 
   get stage(): StageLike | null {
@@ -378,14 +380,14 @@ export default class DisplayObject implements DisplayObjectLike {
       this.__transform = new Transform(this);
     }
 
-    // if (value.__hasMatrix2D)
+    // if (value.__hasMatrix3x2)
     // {
     //     var other = value.__displayObject.__transform;
     //     __objectTransform.__setTransform(other.a, other.b, other.c, other.d, other.tx, other.ty);
     // }
     // else
     // {
-    //     __objectTransform.__hasMatrix2D = false;
+    //     __objectTransform.__hasMatrix3x2 = false;
     // }
 
     // if (!__objectTransform.__colorTransform.__equals(value.__colorTransform, true)
@@ -403,15 +405,15 @@ export default class DisplayObject implements DisplayObjectLike {
   set visible(value: boolean) {
     if (value === this.__data.visible) return;
     this.__data.visible = value;
-    dirty.invalidate(this.__data, DirtyFlags.Appearance);
+    invalidate.invalidateAppearance(this.__data);
   }
 
   get width(): number {
-    return derived.getCurrentBounds(this.__data).width;
+    return bounds.getBoundsRect(this.__data).width;
   }
 
   set width(value: number) {
-    const localBounds = derived.getCurrentLocalBounds(this.__data);
+    const localBounds = bounds.getBoundsRect(this.__data);
     if (localBounds.width === 0) return;
     // Invalidation (if necessary) occurs in scaleX setter
     this.scaleX = value / localBounds.width;
@@ -425,7 +427,7 @@ export default class DisplayObject implements DisplayObjectLike {
     if (value !== value) value = 0; // convert NaN to 0
     if (value === this.__data.x) return;
     this.__data.x = value;
-    dirty.invalidate(this.__data, DirtyFlags.Transform);
+    invalidate.invalidateLocalTransform(this.__data);
   }
 
   get y(): number {
@@ -436,6 +438,14 @@ export default class DisplayObject implements DisplayObjectLike {
     if (value !== value) value = 0; // convert NaN to 0
     if (value === this.__data.y) return;
     this.__data.y = value;
-    dirty.invalidate(this.__data, DirtyFlags.Transform);
+    invalidate.invalidateLocalTransform(this.__data);
+  }
+
+  get [DisplayObjectDerivedState.Key](): DisplayObjectDerivedState | undefined {
+    return this.__data[DisplayObjectDerivedState.Key];
+  }
+
+  set [DisplayObjectDerivedState.Key](value: DisplayObjectDerivedState) {
+    this.__data[DisplayObjectDerivedState.Key] = value;
   }
 }
