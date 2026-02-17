@@ -9,29 +9,57 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./Matrix2D": {
-      "types": "./dist/Matrix2D.d.ts",
-      "default": "./dist/Matrix2D.js"
+    "./matrix3x2": {
+      "types": "./dist/matrix3x2.d.ts",
+      "default": "./dist/matrix3x2.js"
     },
-    "./Matrix2DPool": {
-      "types": "./dist/Matrix2DPool.d.ts",
-      "default": "./dist/Matrix2DPool.js"
+    "./matrix3x2Pool": {
+      "types": "./dist/matrix3x2Pool.d.ts",
+      "default": "./dist/matrix3x2Pool.js"
     },
-    "./Point": {
-      "types": "./dist/Point.d.ts",
-      "default": "./dist/Point.js"
+    "./matrix3x3": {
+      "types": "./dist/matrix3x3.d.ts",
+      "default": "./dist/matrix3x3.js"
     },
-    "./Rectangle": {
-      "types": "./dist/Rectangle.d.ts",
-      "default": "./dist/Rectangle.js"
+    "./matrix3x3Pool": {
+      "types": "./dist/matrix3x3Pool.d.ts",
+      "default": "./dist/matrix3x3Pool.js"
     },
-    "./RectanglePool": {
-      "types": "./dist/RectanglePool.d.ts",
-      "default": "./dist/RectanglePool.js"
+    "./matrix4x4": {
+      "types": "./dist/matrix4x4.d.ts",
+      "default": "./dist/matrix4x4.js"
     },
-    "./Vector3D": {
-      "types": "./dist/Vector3D.d.ts",
-      "default": "./dist/Vector3D.js"
+    "./matrix4x4Pool": {
+      "types": "./dist/matrix4x4Pool.d.ts",
+      "default": "./dist/matrix4x4Pool.js"
+    },
+    "./rectangle": {
+      "types": "./dist/rectangle.d.ts",
+      "default": "./dist/rectangle.js"
+    },
+    "./rectanglePool": {
+      "types": "./dist/rectanglePool.d.ts",
+      "default": "./dist/rectanglePool.js"
+    },
+    "./vector2": {
+      "types": "./dist/vector2.d.ts",
+      "default": "./dist/vector2.js"
+    },
+    "./vector3": {
+      "types": "./dist/vector3.d.ts",
+      "default": "./dist/vector3.js"
+    },
+    "./vector3Pool": {
+      "types": "./dist/vector3Pool.d.ts",
+      "default": "./dist/vector3Pool.js"
+    },
+    "./vector4": {
+      "types": "./dist/vector4.d.ts",
+      "default": "./dist/vector4.js"
+    },
+    "./vector4Pool": {
+      "types": "./dist/vector4Pool.d.ts",
+      "default": "./dist/vector4Pool.js"
     }
   },
   "files": [
