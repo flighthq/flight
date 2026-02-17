@@ -1,25 +1,25 @@
 import type { DisplayObject } from '@flighthq/types';
 
-import { getDisplayObjectState } from './internal/displayObjectState';
+import { getGraphState } from './internal/graphState';
 
 export function getAppearanceID(target: DisplayObject): number {
-  return getDisplayObjectState(target).appearanceID;
+  return getGraphState(target).appearanceID;
 }
 
 export function getLocalBoundsID(target: DisplayObject): number {
-  return getDisplayObjectState(target).localBoundsID;
+  return getGraphState(target).localBoundsID;
 }
 
 export function getLocalTransformID(target: DisplayObject): number {
-  return getDisplayObjectState(target).localTransformID;
+  return getGraphState(target).localTransformID;
 }
 
 export function getWorldBoundsID(target: DisplayObject): number {
-  return getDisplayObjectState(target).worldBoundsRectUsingWorldTransformID;
+  return getGraphState(target).worldBoundsRectUsingWorldTransformID;
 }
 
 export function getWorldTransformID(target: DisplayObject): number {
-  return getDisplayObjectState(target).worldTransformID;
+  return getGraphState(target).worldTransformID;
 }
 
 export function invalidate(target: DisplayObject): void {
@@ -29,19 +29,19 @@ export function invalidate(target: DisplayObject): void {
 }
 
 export function invalidateAppearance(target: DisplayObject): void {
-  getDisplayObjectState(target).appearanceID++;
+  getGraphState(target).appearanceID++;
 }
 
 export function invalidateLocalBounds(target: DisplayObject): void {
-  getDisplayObjectState(target).localBoundsID++;
+  getGraphState(target).localBoundsID++;
 }
 
 export function invalidateLocalTransform(target: DisplayObject): void {
-  getDisplayObjectState(target).localTransformID++;
+  getGraphState(target).localTransformID++;
 }
 
 export function invalidateWorldBounds(target: DisplayObject): void {
-  const state = getDisplayObjectState(target);
+  const state = getGraphState(target);
   state.worldBoundsRectUsingWorldTransformID = -1;
   state.worldBoundsRectUsingLocalBoundsID = -1;
 }
