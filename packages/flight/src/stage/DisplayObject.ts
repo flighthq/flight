@@ -3,18 +3,20 @@ import { bounds, createDisplayObject, hitTest, revision, transform } from '@flig
 import type {
   BitmapFilter as BitmapFilterLike,
   DisplayObject as DisplayObjectLike,
-  LoaderInfo,
+  DisplayObjectType,
   Matrix3x2 as Matrix3x2Like,
+  PrimitiveData,
   Rectangle as RectangleLike,
   Shader,
   Stage as StageLike,
   Vector2 as Vector2Like,
 } from '@flighthq/types';
 import type { BlendMode } from '@flighthq/types';
-import { DisplayObjectState } from '@flighthq/types';
+import { GraphState } from '@flighthq/types';
 
 import Rectangle from '../math/Rectangle.js';
 import Vector2 from '../math/Vector2.js';
+import type LoaderInfo from './LoaderInfo.js';
 import Transform from './Transform.js';
 
 export default class DisplayObject implements DisplayObjectLike {
@@ -168,6 +170,14 @@ export default class DisplayObject implements DisplayObjectLike {
       children: DisplayObjectLike[] | null;
     };
     (this.__data as ChildrenAccess).children = value;
+  }
+
+  get data(): PrimitiveData | null {
+    return this.__data.data;
+  }
+
+  set data(value: PrimitiveData | null) {
+    this.__data.data = value;
   }
 
   get filters(): BitmapFilterLike[] {
@@ -404,6 +414,14 @@ export default class DisplayObject implements DisplayObjectLike {
     // }
   }
 
+  get type(): DisplayObjectType {
+    return this.__data.type;
+  }
+
+  set type(value: DisplayObjectType) {
+    this.__data.type = value;
+  }
+
   get visible(): boolean {
     return this.__data.visible;
   }
@@ -447,11 +465,11 @@ export default class DisplayObject implements DisplayObjectLike {
     revision.invalidateLocalTransform(this.__data);
   }
 
-  get [DisplayObjectState.SymbolKey](): DisplayObjectState | undefined {
-    return this.__data[DisplayObjectState.SymbolKey];
+  get [GraphState.SymbolKey](): GraphState | undefined {
+    return this.__data[GraphState.SymbolKey];
   }
 
-  set [DisplayObjectState.SymbolKey](value: DisplayObjectState) {
-    this.__data[DisplayObjectState.SymbolKey] = value;
+  set [GraphState.SymbolKey](value: GraphState) {
+    this.__data[GraphState.SymbolKey] = value;
   }
 }
