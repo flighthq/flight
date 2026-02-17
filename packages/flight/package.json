@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@flighthq/filters": "^1.0.0",
+    "@flighthq/interaction": "^1.0.0",
     "@flighthq/math": "^1.0.0",
     "@flighthq/render": "^1.0.0",
     "@flighthq/stage": "^1.0.0",

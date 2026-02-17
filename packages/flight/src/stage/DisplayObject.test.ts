@@ -1,6 +1,7 @@
 import { rectangle } from '@flighthq/math';
-import { getBoundsRect, getLocalBoundsRect, getLocalTransform } from '@flighthq/stage';
 import { revision } from '@flighthq/stage';
+import { getBoundsRect, getLocalBoundsRect } from '@flighthq/stage/bounds';
+import { getLocalTransform } from '@flighthq/stage/transform';
 
 import Matrix from '../math/Matrix.js';
 import Rectangle from '../math/Rectangle.js';
