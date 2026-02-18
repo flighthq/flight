@@ -9,5 +9,10 @@
     "sourceMap": true
   },
   "references": [{ "path": "../math" }, { "path": "../stage" }, { "path": "../types" }],
-  "include": ["src"]
+  "include": [
+    "src",
+    "../types/src/render/RenderableData.ts",
+    "../types/src/render/CanvasRendererState.ts",
+    "../types/src/render/CanvasRendererOptions.ts"
+  ]
 }
