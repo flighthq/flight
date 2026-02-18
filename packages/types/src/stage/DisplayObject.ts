@@ -32,5 +32,5 @@ export default interface DisplayObject {
   x: number;
   y: number;
 
-  [GraphState.SymbolKey]?: GraphState;
+  [GraphState.SymbolKey]: GraphState | undefined;
 }

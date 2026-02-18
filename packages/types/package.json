@@ -17,6 +17,10 @@
       "types": "./dist/math.d.ts",
       "default": "./dist/math.js"
     },
+    "./render": {
+      "types": "./dist/render.d.ts",
+      "default": "./dist/render.js"
+    },
     "./stage": {
       "types": "./dist/stage.d.ts",
       "default": "./dist/stage.js"
