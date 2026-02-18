@@ -9,7 +9,7 @@ import {
   setChildIndex,
   swapChildren,
   swapChildrenAt,
-} from './container';
+} from './children';
 import { createDisplayObject } from './createDisplayObject';
 import { getAppearanceID, getWorldBoundsID } from './revision';
 
