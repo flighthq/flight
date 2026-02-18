@@ -6,6 +6,8 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
+      name: 'unit:interaction',
+      environment: 'jsdom',
       include: ['src/**/*.test.ts'],
     },
   }),
