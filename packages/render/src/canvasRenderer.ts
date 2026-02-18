@@ -82,15 +82,15 @@ function popClipRect(state: CanvasRendererState): void {
   state.context.restore();
 }
 
-function popMaskObject(state: CanvasRendererState, object: RenderableData, handleScrollRect: boolean = true): void {
-  if (/*!object.__isCacheBitmapRender && */ object.source.mask !== null) {
-    popMask(state);
-  }
+// function popMaskObject(state: CanvasRendererState, object: RenderableData, handleScrollRect: boolean = true): void {
+//   if (/*!object.__isCacheBitmapRender && */ object.source.mask !== null) {
+//     popMask(state);
+//   }
 
-  if (handleScrollRect && object.source.scrollRect != null) {
-    popClipRect(state);
-  }
-}
+//   if (handleScrollRect && object.source.scrollRect != null) {
+//     popClipRect(state);
+//   }
+// }
 
 function pushClipRect(state: CanvasRendererState, rect: Rectangle, transform: Matrix3x2): void {
   state.context.save();
@@ -114,14 +114,14 @@ function pushMask(state: CanvasRendererState, mask: RenderableData): void {
   state.context.clip();
 }
 
-function pushMaskObject(state: CanvasRendererState, object: RenderableData, handleScrollRect: boolean = true): void {
-  if (handleScrollRect && object.source.scrollRect !== null) {
-    pushClipRect(state, object.source.scrollRect, object.renderTransform);
-  }
-  if (/*!object.__isCacheBitmapRender &&*/ object.mask !== null) {
-    pushMask(state, object.mask);
-  }
-}
+// function pushMaskObject(state: CanvasRendererState, object: RenderableData, handleScrollRect: boolean = true): void {
+//   if (handleScrollRect && object.source.scrollRect !== null) {
+//     pushClipRect(state, object.source.scrollRect, object.renderTransform);
+//   }
+//   if (/*!object.__isCacheBitmapRender &&*/ object.mask !== null) {
+//     pushMask(state, object.mask);
+//   }
+// }
 
 function setBlendMode(state: CanvasRendererState, value: BlendMode | null): void {
   // if (overrideBlendMode !== null) value = overrideBlendMode;

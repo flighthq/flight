@@ -1,4 +1,4 @@
-import type { Renderable, RenderableData, RendererState } from '@flighthq/types';
+import type { RendererState } from '@flighthq/types';
 
 export type RendererStateInternal = Omit<
   RendererState,
