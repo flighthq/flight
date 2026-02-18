@@ -8,6 +8,9 @@ export default class MovieClip extends DisplayObjectContainer implements MovieCl
 
   constructor() {
     super();
-    createMovieClip(this.__data);
+  }
+
+  protected override __create(): void {
+    this.__data = createMovieClip(this.__data);
   }
 }

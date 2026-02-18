@@ -1,15 +1,11 @@
 import { container } from '@flighthq/stage';
-import { createDisplayObject } from '@flighthq/stage';
 import type { DisplayObject as DisplayObjectLike } from '@flighthq/types';
 
 import DisplayObject from './DisplayObject.js';
 
 export default class DisplayObjectContainer extends DisplayObject implements DisplayObjectLike {
-  declare protected __data: DisplayObjectLike;
-
   protected constructor() {
     super();
-    createDisplayObject(this.__data);
   }
 
   addChild(child: DisplayObjectLike): DisplayObjectLike {
