@@ -21,12 +21,16 @@ import type LoaderInfo from './LoaderInfo.js';
 import Transform from './Transform.js';
 
 export default class DisplayObject implements DisplayObjectLike {
-  protected __data: DisplayObjectLike;
+  declare protected __data: DisplayObjectLike;
   protected __loaderInfo: LoaderInfo | null = null;
   protected __root: DisplayObjectLike | null = null;
   protected __transform: Transform | null = null;
 
   protected constructor() {
+    this.__create();
+  }
+
+  protected __create(): void {
     this.__data = createDisplayObject();
   }
 
