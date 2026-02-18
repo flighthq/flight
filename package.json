@@ -16,10 +16,12 @@
     "lint:fix": "eslint -c eslint.config.ts --fix",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "test": "npm run test:run --workspaces --if-present",
-    "test:math": "npm run test -w packages/math",
-    "test:render": "npm run test -w packages/render",
-    "test:scene": "npm run test -w packages/scene"
+    "test": "npm run test:unit && npm run test:api && npm run test:integration",
+    "test:unit": "npm run test:run --workspaces --if-present",
+    "test:integration": "vitest run tests/integration",
+    "test:api": "npm run test:api:node && npm run test:api:browser",
+    "test:api:node": "vitest run tests/api",
+    "test:api:browser": "vitest run tests/api/browser"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
