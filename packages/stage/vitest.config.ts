@@ -8,7 +8,6 @@ export default mergeConfig(
     test: {
       name: 'unit:stage',
       environment: 'node',
-      setupFiles: [],
       include: ['src/**/*.test.ts'],
     },
   }),

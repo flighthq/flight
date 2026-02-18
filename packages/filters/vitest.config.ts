@@ -8,7 +8,6 @@ export default mergeConfig(
     test: {
       name: 'unit:filters',
       environment: 'node',
-      setupFiles: [],
       include: ['src/**/*.test.ts'],
     },
   }),
