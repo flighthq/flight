@@ -6,6 +6,9 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
+      name: 'unit:math',
+      environment: 'node',
+      setupFiles: [],
       include: ['src/**/*.test.ts'],
     },
   }),

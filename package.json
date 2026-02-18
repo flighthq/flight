@@ -4,7 +4,8 @@
   "type": "module",
   "workspaces": [
     "packages/*",
-    "examples/**"
+    "examples/**",
+    "tests/*"
   ],
   "scripts": {
     "build": "npm run build --workspace=packages",
@@ -42,7 +43,8 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.53.0",
     "vite-tsconfig-paths": "^6.0.4",
-    "vitest": "^4.0.17"
+    "vitest": "^4.0.17",
+    "vitest-webgl-canvas-mock": "^1.1.0"
   },
   "dependencies": {
     "@vitejs/plugin-vue": "^6.0.3",

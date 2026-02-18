@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/interactive",
+  "name": "@flighthq/interaction",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
