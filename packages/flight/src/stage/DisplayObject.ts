@@ -7,9 +7,7 @@ import {
   globalToLocal as __globalToLocal,
   invalidate as __invalidate,
   invalidateAppearance,
-  invalidateLocalBounds,
   invalidateLocalTransform,
-  invalidateWorldBounds,
   localToGlobal as __localToGlobal,
 } from '@flighthq/stage';
 import type {
