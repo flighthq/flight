@@ -1,5 +1,5 @@
 import { rectangle } from '@flighthq/math';
-import { revision } from '@flighthq/stage';
+import { getAppearanceID, getLocalBoundsID, getLocalTransformID } from '@flighthq/stage';
 import { getBoundsRect, getLocalBoundsRect } from '@flighthq/stage/bounds';
 import { getLocalTransform } from '@flighthq/stage/transform';
 
@@ -51,47 +51,47 @@ describe('DisplayObject', () => {
 
     it('invalidates appearance dirty when changed', () => {
       displayObject.alpha = 0.5;
-      expect(revision.getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject)).toBe(1);
     });
 
     it('does not invalidate when unchanged', () => {
       displayObject.alpha = 1;
-      expect(revision.getAppearanceID(displayObject)).toBe(0);
+      expect(getAppearanceID(displayObject)).toBe(0);
     });
   });
 
   describe('cacheAsBitmap', () => {
     it('invalidates appearance when toggled', () => {
       displayObject.cacheAsBitmap = true;
-      expect(revision.getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject)).toBe(1);
 
       displayObject.cacheAsBitmap = false;
-      expect(revision.getAppearanceID(displayObject)).toBe(2);
+      expect(getAppearanceID(displayObject)).toBe(2);
     });
   });
 
   describe('cacheAsBitmapMatrix', () => {
     it('does not invalidate if cacheAsBitmap is false', () => {
       displayObject.cacheAsBitmapMatrix = new Matrix();
-      expect(revision.getAppearanceID(displayObject)).toBe(0);
+      expect(getAppearanceID(displayObject)).toBe(0);
     });
 
     it('marks transform dirty when cacheAsBitmap is true and matrix changes', () => {
       displayObject.cacheAsBitmap = true;
       displayObject.cacheAsBitmapMatrix = new Matrix(2, 0, 0, 2);
 
-      expect(revision.getAppearanceID(displayObject)).toBe(2);
+      expect(getAppearanceID(displayObject)).toBe(2);
     });
 
     it('does not invalidate transform if matrix values are equal', () => {
       const m = new Matrix();
-      expect(revision.getAppearanceID(displayObject)).toBe(0);
+      expect(getAppearanceID(displayObject)).toBe(0);
       displayObject.cacheAsBitmapMatrix = m;
-      expect(revision.getAppearanceID(displayObject)).toBe(0);
+      expect(getAppearanceID(displayObject)).toBe(0);
       displayObject.cacheAsBitmap = true;
-      expect(revision.getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject)).toBe(1);
       displayObject.cacheAsBitmapMatrix = m;
-      expect(revision.getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject)).toBe(1);
     });
   });
 
@@ -115,7 +115,7 @@ describe('DisplayObject', () => {
 
     it('invalidates appearance when changed', () => {
       displayObject.mask = new TestDisplayObject();
-      expect(revision.getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject)).toBe(1);
     });
   });
 
@@ -136,7 +136,7 @@ describe('DisplayObject', () => {
 
     it('marks transform dirty when changed', () => {
       displayObject.rotation = 45;
-      expect(revision.getLocalTransformID(displayObject)).toBe(1);
+      expect(getLocalTransformID(displayObject)).toBe(1);
     });
   });
 
@@ -144,7 +144,7 @@ describe('DisplayObject', () => {
     it('marks transform dirty when changed', () => {
       displayObject.scaleX = 2;
 
-      expect(revision.getLocalTransformID(displayObject)).toBe(1);
+      expect(getLocalTransformID(displayObject)).toBe(1);
     });
 
     it('correctly affects local transform with rotation', () => {
@@ -163,7 +163,7 @@ describe('DisplayObject', () => {
     it('marks transform dirty when changed', () => {
       displayObject.scaleY = 3;
 
-      expect(revision.getLocalTransformID(displayObject)).toBe(1);
+      expect(getLocalTransformID(displayObject)).toBe(1);
     });
 
     it('correctly affects local transform with rotation', () => {
@@ -181,24 +181,24 @@ describe('DisplayObject', () => {
   describe('scrollRect', () => {
     it('marks clip dirty when changed', () => {
       displayObject.scrollRect = new Rectangle();
-      expect(revision.getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject)).toBe(1);
     });
   });
 
   describe('visible', () => {
     it('marks appearance dirty when changed', () => {
       displayObject.visible = false;
-      expect(revision.getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject)).toBe(1);
     });
 
     it('marks appearance dirty only once if changed', () => {
-      expect(revision.getAppearanceID(displayObject)).toBe(0);
+      expect(getAppearanceID(displayObject)).toBe(0);
       displayObject.visible = true;
-      expect(revision.getAppearanceID(displayObject)).toBe(0);
+      expect(getAppearanceID(displayObject)).toBe(0);
       displayObject.visible = false;
-      expect(revision.getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject)).toBe(1);
       displayObject.visible = false;
-      expect(revision.getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject)).toBe(1);
     });
   });
 
@@ -217,7 +217,7 @@ describe('DisplayObject', () => {
 
     it('marks transform dirty when changed', () => {
       displayObject.x = 10;
-      expect(revision.getLocalTransformID(displayObject)).toBe(1);
+      expect(getLocalTransformID(displayObject)).toBe(1);
     });
 
     it('updates translation in local transform', () => {
@@ -235,7 +235,7 @@ describe('DisplayObject', () => {
 
     it('marks transform dirty when changed', () => {
       displayObject.y = 20;
-      expect(revision.getLocalTransformID(displayObject)).toBe(1);
+      expect(getLocalTransformID(displayObject)).toBe(1);
     });
 
     it('updates translation in local transform', () => {
@@ -543,9 +543,9 @@ describe('DisplayObject', () => {
     it('invalidates local bounds, transform and appearance', () => {
       displayObject.invalidate();
 
-      expect(revision.getAppearanceID(displayObject)).toBe(1);
-      expect(revision.getLocalBoundsID(displayObject)).toBe(1);
-      expect(revision.getLocalTransformID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject)).toBe(1);
+      expect(getLocalBoundsID(displayObject)).toBe(1);
+      expect(getLocalTransformID(displayObject)).toBe(1);
     });
   });
 
