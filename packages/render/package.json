@@ -9,9 +9,9 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./canvas": {
-      "types": "./dist/canvas.d.ts",
-      "default": "./dist/canvas.js"
+    "./canvasRenderer": {
+      "types": "./dist/canvasRenderer.d.ts",
+      "default": "./dist/canvasRenderer.js"
     },
     "./color": {
       "types": "./dist/color.d.ts",
