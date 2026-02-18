@@ -4,10 +4,13 @@ import type { Stage as StageLike } from '@flighthq/types';
 import DisplayObjectContainer from './DisplayObjectContainer.js';
 
 export default class Stage extends DisplayObjectContainer implements StageLike {
-  declare protected __data: StageLike;
+  declare protected __model: StageLike;
 
   constructor() {
     super();
-    createStage(this.__data);
+  }
+
+  protected override __create(): void {
+    this.__model = createStage();
   }
 }
