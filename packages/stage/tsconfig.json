@@ -9,5 +9,5 @@
     "sourceMap": true
   },
   "references": [{ "path": "../math" }, { "path": "../types" }],
-  "include": ["src", "../types/src/stage/DirtyFlags.test.ts", "../types/src/stage/DirtyFlags.ts"]
+  "include": ["src"]
 }
