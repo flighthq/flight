@@ -10,7 +10,6 @@ export default mergeConfig(
       name: 'api:node',
       environment: 'node',
       include: ['**/*.test.ts', '!browser/**/*.test.ts'],
-      setupFiles: [], // avoid global test setup
     },
     resolve: {
       alias: {

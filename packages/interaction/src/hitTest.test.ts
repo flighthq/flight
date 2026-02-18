@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { rectangle } from '@flighthq/math';
 import { getLocalBoundsRect } from '@flighthq/stage/bounds';
 import { createDisplayObject } from '@flighthq/stage/createDisplayObject';

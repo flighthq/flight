@@ -10,7 +10,6 @@ export default mergeConfig(
       name: 'api:browser',
       environment: 'jsdom',
       include: ['**/*.test.ts'],
-      setupFiles: [],
     },
     resolve: {
       alias: {
