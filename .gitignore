@@ -140,3 +140,4 @@ vite.config.ts.timestamp-*
 
 # Downloaded asset files
 assets
+.test-assets
