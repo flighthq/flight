@@ -24,7 +24,7 @@ export function ensureWorldTransform(target: DisplayObject): void {
   }
 
   if (
-    state.worldTransformID !== state.localTransformID ||
+    state.worldTransformUsingLocalTransformID !== state.localTransformID ||
     state.worldTransformUsingParentID !== parentWorldTransformID
   ) {
     recomputeWorldTransform(target, state, parentState);
@@ -110,9 +110,16 @@ function recomputeWorldTransform(target: DisplayObject, state: GraphState, paren
   ensureLocalTransform(target);
   if (parentState !== undefined) {
     matrix3x2.multiply(state.worldTransform, parentState.worldTransform!, state.localTransform!);
-    state.worldTransformUsingParentID = parentState.worldTransformID;
   } else {
     matrix3x2.copy(state.worldTransform, state.localTransform!);
   }
-  state.worldTransformID = state.localTransformID;
+  recomputeWorldTransformID(state, parentState);
+}
+
+function recomputeWorldTransformID(state: GraphState, parentState?: GraphState): void {
+  const localTransformID = state.localTransformID;
+  const parentWorldTransformID = parentState ? parentState.worldTransformID : 0;
+  state.worldTransformUsingLocalTransformID = localTransformID;
+  state.worldTransformUsingParentID = parentWorldTransformID;
+  state.worldTransformID = (localTransformID << 16) | (parentWorldTransformID & 0xffff);
 }
