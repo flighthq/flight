@@ -13,9 +13,9 @@
       "types": "./dist/bounds.d.ts",
       "default": "./dist/bounds.js"
     },
-    "./container": {
-      "types": "./dist/container.d.ts",
-      "default": "./dist/container.js"
+    "./children": {
+      "types": "./dist/children.d.ts",
+      "default": "./dist/children.js"
     },
     "./revision": {
       "types": "./dist/revision.d.ts",

@@ -1,5 +1,5 @@
 import { matrix3x2, matrix3x2Pool, rectangle } from '@flighthq/math';
-import type { DisplayObject, Rectangle } from '@flighthq/types';
+import type { BitmapData, DisplayObject, Rectangle } from '@flighthq/types';
 import type { GraphState } from '@flighthq/types';
 
 import { getGraphState } from './internal/graphState';
@@ -86,7 +86,15 @@ function recomputeBoundsRect(target: DisplayObject, state: GraphState): void {
 
 function recomputeLocalBoundsRect(target: DisplayObject, state: GraphState): void {
   if (state.localBoundsRect === null) state.localBoundsRect = rectangle.create();
-  // TODO: Calculate local bounds
+  switch (target.type) {
+    case 'bitmap':
+      const bitmapData: BitmapData = target.data as BitmapData;
+      if (bitmapData.image) {
+        state.localBoundsRect.width = bitmapData.image.width;
+        state.localBoundsRect.height = bitmapData.image.height;
+      }
+      break;
+  }
   state.localBoundsRectUsingLocalBoundsID = state.localBoundsID;
 }
 
