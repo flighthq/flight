@@ -1,30 +1,30 @@
-import { Sprite } from '@flighthq/flight';
-import { bounds } from '@flighthq/stage';
+import { Bitmap, MovieClip } from '@flighthq/flight';
 
-export default class Main extends Sprite {
-  sprite = new Sprite();
+export default class Main extends MovieClip {
+  bitmap: Bitmap = new Bitmap();
+
   constructor() {
     super();
-
-    // hack
-    const localBounds = bounds.getLocalBoundsRect(this.sprite);
-    (localBounds as any).width = 100; // eslint-disable-line
-    (localBounds as any).height = 100; // eslint-disable-line
-
-    this.sprite.opaqueBackground = 0xff0000;
-    this.addChild(this.sprite);
-
-    // var loader = new Loader();
-    // loader.contentLoaderInfo.addEventListener(Event.COMPLETE, this.loader_onComplete);
-    // loader.load(new URLRequest('openfl.png'));
+    this.initialize();
   }
 
-  // // Event Handlers
+  private async initialize() {
+    try {
+      this.bitmap.image = await loadImageAndDecode('assets/wabbit_alpha.png');
+      this.bitmap.x = (this.bitmap.width + 550) / 2;
+      this.bitmap.y = (this.bitmap.height + 400) / 2;
+      this.addChild(this.bitmap);
+    } catch (error) {
+      console.error('Error loading image:', error); // eslint-disable-line
+    }
+  }
+}
 
-  // private loader_onComplete = (event: Event) => {
-  //   var bitmap = event.target.loader.content;
-  //   bitmap.x = (this.stage.stageWidth - bitmap.width) / 2;
-  //   bitmap.y = (this.stage.stageHeight - bitmap.height) / 2;
-  //   this.addChild(bitmap);
-  // };
+function loadImageAndDecode(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = src;
+  });
 }
