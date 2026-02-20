@@ -1,3 +1,4 @@
+export { default as Bitmap } from './Bitmap.js';
 export { default as DisplayObject } from './DisplayObject.js';
 export { default as DisplayObjectContainer } from './DisplayObjectContainer.js';
 export { default as LoaderInfo } from './LoaderInfo.js';
