@@ -1,4 +1,4 @@
-import { CanvasRenderer } from '@flighthq/render';
+import { createCanvasRendererState, renderCanvas } from '@flighthq/render';
 
 import Main from './Main.js';
 
@@ -14,7 +14,6 @@ const options = {
   },
 };
 
-const renderer = new CanvasRenderer(canvas, options);
-
+const state = createCanvasRendererState(canvas, options);
 const main = new Main();
-CanvasRenderer.render(renderer, main);
+renderCanvas(state, main);
