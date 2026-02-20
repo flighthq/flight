@@ -1,5 +1,6 @@
 import type { DisplayObject } from '@flighthq/types';
 
+import { getGraphState } from './internal/graphState';
 import type { DisplayObjectInternal } from './internal/write';
 import { invalidateAppearance, invalidateWorldBounds } from './revision';
 
@@ -48,6 +49,7 @@ export function addChildAt(target: DisplayObject, child: DisplayObject, index: n
     }
   }
 
+  getGraphState(child); // force graph state to exist before adding to array for consistent object shape
   target.children!.splice(index, 0, child);
   (child as DisplayObjectInternal).parent = target;
   invalidateAppearance(target);
