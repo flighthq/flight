@@ -20,6 +20,7 @@ export interface GraphState {
   worldBoundsRectUsingWorldTransformID: number;
   worldTransform: Matrix3x2 | null;
   worldTransformID: number;
+  worldTransformUsingLocalTransformID: number;
   worldTransformUsingParentID: number;
 }
 
