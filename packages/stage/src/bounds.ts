@@ -52,7 +52,6 @@ export function ensureLocalBoundsRect(target: DisplayObject): void {
 export function ensureWorldBoundsRect(target: DisplayObject): void {
   ensureWorldTransform(target);
   ensureLocalBoundsRect(target);
-
   const state = getGraphState(target);
   if (
     state.worldBoundsRectUsingWorldTransformID !== state.worldTransformID ||
@@ -93,6 +92,9 @@ function recomputeLocalBoundsRect(target: DisplayObject, state: GraphState): voi
         state.localBoundsRect.width = bitmapData.image.width;
         state.localBoundsRect.height = bitmapData.image.height;
       }
+      break;
+    default:
+      rectangle.setEmpty(state.localBoundsRect);
       break;
   }
   state.localBoundsRectUsingLocalBoundsID = state.localBoundsID;

@@ -22,6 +22,7 @@ export function getGraphState(source: DisplayObject): GraphState {
       worldBoundsRectUsingWorldTransformID: -1,
       worldTransform: null,
       worldTransformID: 0,
+      worldTransformUsingLocalTransformID: -1,
       worldTransformUsingParentID: -1,
     };
   }

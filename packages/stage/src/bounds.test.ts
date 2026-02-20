@@ -1,8 +1,18 @@
 import { rectangle } from '@flighthq/math';
-import type { DisplayObject } from '@flighthq/types';
+import type { Rectangle } from '@flighthq/types';
+import { type DisplayObject, GraphState } from '@flighthq/types';
 
-import { calculateBoundsRect, getLocalBoundsRect } from './bounds.js';
+import {
+  calculateBoundsRect,
+  ensureBoundsRect,
+  ensureLocalBoundsRect,
+  ensureWorldBoundsRect,
+  getBoundsRect,
+  getLocalBoundsRect,
+  getWorldBoundsRect,
+} from './bounds.js';
 import { createDisplayObject } from './createDisplayObject.js';
+import { getGraphState } from './internal/graphState.js';
 import { invalidateLocalTransform } from './revision.js';
 
 describe('calculateBoundsRect', () => {
@@ -89,3 +99,163 @@ describe('calculateBoundsRect', () => {
     expect(out).toEqual(getLocalBoundsRect(child));
   });
 });
+
+describe('ensureBoundsRect', () => {
+  it('should ensure boundsRect is defined', () => {
+    const object = createDisplayObject();
+    const state = getGraphState(object);
+    expect(state.boundsRect).toBeNull();
+    ensureBoundsRect(object);
+    expect(state.boundsRect).not.toBeNull();
+  });
+
+  it('should not recalculate if localBoundsID and localTransformID are unchanged', () => {
+    const object = createDisplayObject();
+    const state = getGraphState(object);
+    ensureBoundsRect(object);
+    const cache = cloneAndInvalidateRect(state.boundsRect!);
+    ensureBoundsRect(object);
+    expect(state.boundsRect).not.toEqual(cache);
+  });
+
+  it('should recalculate if localBoundsID is changed', () => {
+    const object = createDisplayObject();
+    const state = getGraphState(object);
+    ensureBoundsRect(object);
+    const cache = cloneAndInvalidateRect(state.boundsRect!);
+    state.localBoundsID++;
+    ensureBoundsRect(object);
+    expect(state.boundsRect).toEqual(cache);
+  });
+
+  it('should recalculate if localTransformID is changed', () => {
+    const object = createDisplayObject();
+    const state = getGraphState(object);
+    ensureBoundsRect(object);
+    const cache = cloneAndInvalidateRect(state.boundsRect!);
+    state.localTransformID++;
+    ensureBoundsRect(object);
+    expect(state.boundsRect).toEqual(cache);
+  });
+});
+
+describe('ensureLocalBoundsRect', () => {
+  it('should ensure localBoundsRect is defined', () => {
+    const object = createDisplayObject();
+    const state = getGraphState(object);
+    expect(state.localBoundsRect).toBeNull();
+    ensureLocalBoundsRect(object);
+    expect(state.localBoundsRect).not.toBeNull();
+  });
+
+  it('should not recalculate if localBoundsID is unchanged', () => {
+    const object = createDisplayObject();
+    const state = getGraphState(object);
+    ensureLocalBoundsRect(object);
+    const cache = cloneAndInvalidateRect(state.localBoundsRect!);
+    ensureLocalBoundsRect(object);
+    expect(state.localBoundsRect).not.toEqual(cache);
+  });
+
+  it('should recalculate if localBoundsID is changed', () => {
+    const object = createDisplayObject();
+    const state = getGraphState(object);
+    ensureLocalBoundsRect(object);
+    const cache = cloneAndInvalidateRect(state.localBoundsRect!);
+    state.localBoundsID++;
+    ensureLocalBoundsRect(object);
+    expect(state.localBoundsRect).toEqual(cache);
+  });
+
+  it('should not recalculate if localTransformID is unchanged', () => {
+    const object = createDisplayObject();
+    const state = getGraphState(object);
+    ensureLocalBoundsRect(object);
+    const cache = cloneAndInvalidateRect(state.localBoundsRect!);
+    state.localTransformID++;
+    ensureLocalBoundsRect(object);
+    expect(state.localBoundsRect).not.toEqual(cache);
+  });
+});
+
+describe('ensureWorldBoundsRect', () => {
+  it('should ensure worldBoundsRect is defined', () => {
+    const object = createDisplayObject();
+    const state = getGraphState(object);
+    expect(state.worldBoundsRect).toBeNull();
+    ensureWorldBoundsRect(object);
+    expect(state.worldBoundsRect).not.toBeNull();
+  });
+
+  it('should not recalculate if localBoundsID and worldTransformID are unchanged', () => {
+    const object = createDisplayObject();
+    const state = getGraphState(object);
+    ensureWorldBoundsRect(object);
+    const cache = cloneAndInvalidateRect(state.worldBoundsRect!);
+    ensureWorldBoundsRect(object);
+    expect(state.worldBoundsRect).not.toEqual(cache);
+  });
+
+  it('should recalculate if localBoundsID is changed', () => {
+    const object = createDisplayObject();
+    const state = getGraphState(object);
+    ensureWorldBoundsRect(object);
+    const cache = cloneAndInvalidateRect(state.worldBoundsRect!);
+    state.localBoundsID++;
+    ensureWorldBoundsRect(object);
+    expect(state.worldBoundsRect).toEqual(cache);
+  });
+
+  it('should recalculate if worldTransformID is changed', () => {
+    const object = createDisplayObject();
+    const state = getGraphState(object);
+    ensureWorldBoundsRect(object);
+    const cache = cloneAndInvalidateRect(state.worldBoundsRect!);
+    state.worldTransformID++;
+    ensureWorldBoundsRect(object);
+    expect(state.worldBoundsRect).toEqual(cache);
+  });
+});
+
+describe('getBoundsRect', () => {
+  it('should call ensure and return boundsRect', () => {
+    const object = createDisplayObject();
+    const state = getGraphState(object);
+    expect(state.boundsRect).toBeNull();
+    const rect = getBoundsRect(object);
+    expect(rect).not.toBeNull();
+    expect(rect).toStrictEqual(state.boundsRect);
+  });
+});
+
+describe('getLocalBoundsRect', () => {
+  it('should call ensure and return localBoundsRect', () => {
+    const object = createDisplayObject();
+    const state = getGraphState(object);
+    expect(state.localBoundsRect).toBeNull();
+    const rect = getLocalBoundsRect(object);
+    expect(rect).not.toBeNull();
+    expect(rect).toStrictEqual(state.localBoundsRect);
+  });
+});
+
+describe('getWorldBoundsRect', () => {
+  it('should call ensure and return worldBoundsRect', () => {
+    const object = createDisplayObject();
+    const state = getGraphState(object);
+    expect(state.worldBoundsRect).toBeNull();
+    const rect = getWorldBoundsRect(object);
+    expect(rect).not.toBeNull();
+    expect(rect).toStrictEqual(state.worldBoundsRect);
+  });
+});
+
+function cloneAndInvalidateRect(rect: Rectangle): Rectangle {
+  const clone = rectangle.clone(rect);
+  invalidateRect(rect);
+  return clone;
+}
+
+function invalidateRect(rect: Rectangle | null): void {
+  if (rect !== null) rectangle.setTo(rect, NaN, NaN, NaN, NaN);
+}
