@@ -21,7 +21,7 @@ export interface GraphState {
   worldTransform: Matrix3x2 | null;
   worldTransformID: number;
   worldTransformUsingLocalTransformID: number;
-  worldTransformUsingParentID: number;
+  worldTransformUsingParentTransformID: number;
 }
 
 export namespace GraphState {
