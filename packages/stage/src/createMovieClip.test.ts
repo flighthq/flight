@@ -1,8 +1,15 @@
+import type { MovieClip } from '@flighthq/types';
+
 import { createMovieClip } from './createMovieClip';
 
 describe('createMovieClip', () => {
-  it('can be instantiated', () => {
-    const movieClip = createMovieClip();
-    expect(movieClip).not.toBeNull();
+  let movieClip: MovieClip;
+
+  beforeEach(() => {
+    movieClip = createMovieClip();
+  });
+
+  it('initializes default values', () => {
+    expect(movieClip.data).toBeNull();
   });
 });
