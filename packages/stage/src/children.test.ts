@@ -3,6 +3,10 @@ import type { DisplayObject } from '@flighthq/types';
 import {
   addChild,
   addChildAt,
+  contains,
+  getChildAt,
+  getChildByName,
+  getChildIndex,
   removeChild,
   removeChildAt,
   removeChildren,
@@ -11,7 +15,8 @@ import {
   swapChildrenAt,
 } from './children';
 import { createDisplayObject } from './createDisplayObject';
-import { getAppearanceID, getWorldBoundsID } from './revision';
+import { getGraphState } from './internal/graphState';
+import { getAppearanceID } from './revision';
 
 let container: DisplayObject;
 let childA: DisplayObject;
@@ -67,7 +72,14 @@ describe('addChild', () => {
     addChild(container, childA);
 
     expect(getAppearanceID(container)).toBe(1);
-    expect(getWorldBoundsID(container)).toBe(-1);
+    expect(getGraphState(container).worldBoundsRectUsingLocalBoundsID).toBe(-1);
+  });
+
+  it('invalidates parent cache of child', () => {
+    const state = getGraphState(childA);
+    state.worldTransformUsingParentTransformID = 100;
+    addChild(container, childA);
+    expect(state.worldTransformUsingParentTransformID).toBe(-1);
   });
 });
 
@@ -112,7 +124,94 @@ describe('addChildAt', () => {
     addChildAt(container, childA, 0);
 
     expect(getAppearanceID(container)).toBe(1);
-    expect(getWorldBoundsID(container)).toBe(-1);
+    expect(getGraphState(container).worldBoundsRectUsingLocalBoundsID).toBe(-1);
+  });
+
+  it('invalidates parent cache of child', () => {
+    const state = getGraphState(childA);
+    state.worldTransformUsingParentTransformID = 100;
+    addChild(container, childA);
+    expect(state.worldTransformUsingParentTransformID).toBe(-1);
+  });
+});
+
+describe('contains', () => {
+  it('returns false if parent does not contain child', () => {
+    expect(contains(container, childA)).toBe(false);
+  });
+
+  it('returns true if parent does not contain child', () => {
+    addChild(container, childA);
+    expect(contains(container, childA)).toBe(true);
+  });
+
+  it('returns true if the child is located deeper in the heirarchy', () => {
+    addChild(container, childA);
+    addChild(childA, childB);
+    expect(contains(container, childB)).toBe(true);
+  });
+});
+
+describe('getChildAt', () => {
+  it('returns null if there are no children', () => {
+    expect(getChildAt(container, 0)).toBeNull();
+  });
+
+  it('returns null if there are no children at the given index', () => {
+    addChild(container, childA);
+    expect(getChildAt(container, 1)).toBeNull();
+    expect(getChildAt(container, -1)).toBeNull();
+  });
+
+  it('returns a matching child at the given index', () => {
+    addChild(container, childA);
+    expect(getChildAt(container, 0)).toStrictEqual(childA);
+  });
+});
+
+describe('getChildByName', () => {
+  it('returns null if there are no children', () => {
+    expect(getChildByName(container, 'hello')).toBeNull();
+  });
+
+  it('returns null if there are no children with the given name', () => {
+    addChild(container, childA);
+    childA.name = 'childA';
+    expect(getChildByName(container, 'hello')).toBeNull();
+  });
+
+  it('returns the first child with the given name', () => {
+    addChild(container, childA);
+    addChild(container, childB);
+    childA.name = 'hello';
+    childB.name = 'hello';
+    expect(getChildByName(container, 'hello')).toStrictEqual(childA);
+  });
+
+  it('does not iterate through descendents', () => {
+    addChild(container, childA);
+    addChild(childA, childB);
+    childB.name = 'hello';
+    expect(getChildByName(container, 'hello')).toBeNull();
+  });
+});
+
+describe('getChildIndex', () => {
+  it('returns -1 if object is not a child', () => {
+    expect(getChildIndex(container, childA)).toBe(-1);
+  });
+
+  it('returns the index if object is a child', () => {
+    addChild(container, childA);
+    addChild(container, childB);
+    expect(getChildIndex(container, childA)).toBe(0);
+    expect(getChildIndex(container, childB)).toBe(1);
+  });
+
+  it('does not iterate through descendents', () => {
+    addChild(container, childA);
+    addChild(childA, childB);
+    expect(getChildIndex(container, childB)).toBe(-1);
   });
 });
 
@@ -151,11 +250,19 @@ describe('removeChild', () => {
   it('invalidates appearance and world bounds', () => {
     addChild(container, childA);
     expect(getAppearanceID(container)).toBe(1);
-    expect(getWorldBoundsID(container)).toBe(-1);
+    expect(getGraphState(container).worldBoundsRectUsingLocalBoundsID).toBe(-1);
     removeChild(container, childA);
 
     expect(getAppearanceID(container)).toBe(2);
-    expect(getWorldBoundsID(container)).toBe(-1);
+    expect(getGraphState(container).worldBoundsRectUsingLocalBoundsID).toBe(-1);
+  });
+
+  it('invalidates parent cache of child', () => {
+    addChild(container, childA);
+    const state = getGraphState(childA);
+    state.worldTransformUsingParentTransformID = 100;
+    removeChild(container, childA);
+    expect(state.worldTransformUsingParentTransformID).toBe(-1);
   });
 });
 
@@ -179,15 +286,23 @@ describe('removeChildAt', () => {
   it('invalidates appearance and world bounds', () => {
     addChild(container, childA);
     expect(getAppearanceID(container)).toBe(1);
-    expect(getWorldBoundsID(container)).toBe(-1);
+    expect(getGraphState(container).worldBoundsRectUsingLocalBoundsID).toBe(-1);
     addChild(container, childB);
     expect(getAppearanceID(container)).toBe(2);
-    expect(getWorldBoundsID(container)).toBe(-1);
+    expect(getGraphState(container).worldBoundsRectUsingLocalBoundsID).toBe(-1);
 
     removeChildAt(container, 0);
 
     expect(getAppearanceID(container)).toBe(3);
-    expect(getWorldBoundsID(container)).toBe(-1);
+    expect(getGraphState(container).worldBoundsRectUsingLocalBoundsID).toBe(-1);
+  });
+
+  it('invalidates parent cache of child', () => {
+    addChild(container, childA);
+    const state = getGraphState(childA);
+    state.worldTransformUsingParentTransformID = 100;
+    removeChild(container, childA);
+    expect(state.worldTransformUsingParentTransformID).toBe(-1);
   });
 });
 
