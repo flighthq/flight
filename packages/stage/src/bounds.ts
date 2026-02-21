@@ -1,5 +1,5 @@
 import { matrix3x2, matrix3x2Pool, rectangle } from '@flighthq/math';
-import type { BitmapData, DisplayObject, Rectangle } from '@flighthq/types';
+import type { BitmapData, DisplayObject, Matrix3x2, Rectangle } from '@flighthq/types';
 import type { GraphState } from '@flighthq/types';
 
 import { getGraphState } from './internal/graphState';
@@ -50,27 +50,39 @@ export function ensureLocalBoundsRect(target: DisplayObject): void {
 }
 
 export function ensureWorldBoundsRect(target: DisplayObject): void {
-  ensureWorldTransform(target);
-  ensureLocalBoundsRect(target);
   const state = getGraphState(target);
-  if (
-    state.worldBoundsRectUsingWorldTransformID !== state.worldTransformID ||
-    state.worldBoundsRectUsingLocalBoundsID !== state.localBoundsID
-  ) {
+  const localBoundsInvalid = state.worldBoundsRectUsingLocalBoundsID !== state.localBoundsID;
+  const hasChildren = target.children !== null;
+  let forceRecompute = false;
+  if (!hasChildren && !localBoundsInvalid) {
+    if (tryFastRecomputeWorldBoundsRect(target, state)) return;
+    forceRecompute = true;
+  }
+  ensureWorldTransform(target);
+  if (forceRecompute || localBoundsInvalid || state.worldBoundsRectUsingWorldTransformID !== state.worldTransformID) {
     recomputeWorldBoundsRect(target, state);
   }
 }
 
+/**
+ * localBoundsRect * localTransform
+ */
 export function getBoundsRect(target: DisplayObject): Readonly<Rectangle> {
   ensureBoundsRect(target);
   return getGraphState(target).boundsRect!;
 }
 
+/**
+ * Object's own bounds (not including children)
+ */
 export function getLocalBoundsRect(target: DisplayObject): Readonly<Rectangle> {
   ensureLocalBoundsRect(target);
   return getGraphState(target).localBoundsRect!;
 }
 
+/**
+ * Object's bounds in world space (including children)
+ */
 export function getWorldBoundsRect(target: DisplayObject): Readonly<Rectangle> {
   ensureWorldBoundsRect(target);
   return getGraphState(target).worldBoundsRect!;
@@ -93,6 +105,7 @@ function recomputeLocalBoundsRect(target: DisplayObject, state: GraphState): voi
         state.localBoundsRect.height = bitmapData.image.height;
       }
       break;
+    case 'container': // local bounds are empty, child bounds are in worldBoundsRect
     default:
       rectangle.setEmpty(state.localBoundsRect);
       break;
@@ -111,4 +124,22 @@ function recomputeWorldBoundsRect(target: DisplayObject, state: GraphState) {
   }
   state.worldBoundsRectUsingWorldTransformID = state.worldTransformID;
   state.worldBoundsRectUsingLocalBoundsID = state.localBoundsID;
+}
+
+function tryFastRecomputeWorldBoundsRect(target: DisplayObject, state: GraphState): boolean {
+  if (state.worldBoundsRect !== null && state.worldTransform !== null) {
+    const { a: _a, b: _b, c: _c, d: _d, tx: _tx, ty: _ty } = state.worldTransform;
+    ensureWorldTransform(target);
+    const { a, b, c, d, tx, ty } = state.worldTransform;
+    // check for unchanged rotation and scale
+    if (a === _a && b === _b && c === _c && d === _d) {
+      // offset only
+      if (tx !== _tx || ty !== _ty) {
+        state.worldBoundsRect.x += tx - _tx;
+        state.worldBoundsRect.y += ty - _ty;
+      }
+      return true;
+    }
+  }
+  return false;
 }
