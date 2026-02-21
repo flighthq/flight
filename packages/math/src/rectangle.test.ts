@@ -790,6 +790,38 @@ describe('union', () => {
     expect(rectangle.equals(u, r)).toBe(true);
   });
 
+  it('has the values of the right-hand rectangle if the left-hand is degenerate', () => {
+    const lh = rectangle.create();
+    const rh = rectangle.create(5, 15, 100, 100);
+    const out = rectangle.create();
+    rectangle.union(out, lh, rh);
+    expect(rectangle.equals(out, rh)).toBe(true);
+  });
+
+  it('has the values of the left-hand rectangle if the right-hand is degenerate', () => {
+    const lh = rectangle.create(5, 15, 100, 100);
+    const rh = rectangle.create();
+    const out = rectangle.create();
+    rectangle.union(out, lh, rh);
+    expect(rectangle.equals(out, lh)).toBe(true);
+  });
+
+  it('returns an empty rectangle if both are degenerate', () => {
+    const lh = rectangle.create(-50, -150, 0, 0);
+    const rh = rectangle.create(-5, -15, 0, 0);
+    const out = rectangle.create();
+    rectangle.union(out, lh, rh);
+    expect(rectangle.isEmpty(out)).toBe(true);
+  });
+
+  it('returns the x/y of the left-hand rectangle if both are degenerate', () => {
+    const lh = rectangle.create(-50, -150, 0, 0);
+    const rh = rectangle.create(-5, -15, 0, 0);
+    const out = rectangle.create();
+    rectangle.union(out, lh, rh);
+    expect(rectangle.equals(out, lh)).toBe(true);
+  });
+
   it('union works with flipped rectangles', () => {
     const r3 = rectangle.create(15, 20, -10, -10);
     const u = rectangle.create();

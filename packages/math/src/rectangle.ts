@@ -238,23 +238,34 @@ export function topLeft(out: Vector2, source: Readonly<Rectangle>): void {
 }
 
 export function union(out: Rectangle, source: Readonly<Rectangle>, other: Readonly<Rectangle>): void {
-  const sourceLeft = Math.min(source.x, source.x + source.width);
-  const sourceRight = Math.max(source.x, source.x + source.width);
-  const sourceTop = Math.min(source.y, source.y + source.height);
-  const sourceBottom = Math.max(source.y, source.y + source.height);
+  const { x: sx, y: sy, width: sw, height: sh } = source;
+  const { x: ox, y: oy, width: ow, height: oh } = other;
+  const sEmpty = sw === 0 || sh === 0;
+  const oEmpty = ow === 0 || oh === 0;
+  if (sEmpty || oEmpty) {
+    out.x = oEmpty ? sx : ox;
+    out.y = oEmpty ? sy : oy;
+    out.width = oEmpty ? sw : ow;
+    out.height = oEmpty ? sh : oh;
+  } else {
+    const sourceLeft = Math.min(sx, sx + sw);
+    const sourceRight = Math.max(sx, sx + sw);
+    const sourceTop = Math.min(sy, sy + sh);
+    const sourceBottom = Math.max(sy, sy + sh);
 
-  const otherLeft = Math.min(other.x, other.x + other.width);
-  const otherRight = Math.max(other.x, other.x + other.width);
-  const otherTop = Math.min(other.y, other.y + other.height);
-  const otherBottom = Math.max(other.y, other.y + other.height);
+    const otherLeft = Math.min(ox, ox + ow);
+    const otherRight = Math.max(ox, ox + ow);
+    const otherTop = Math.min(oy, oy + oh);
+    const otherBottom = Math.max(oy, oy + oh);
 
-  const x0 = Math.min(sourceLeft, otherLeft);
-  const x1 = Math.max(sourceRight, otherRight);
-  const y0 = Math.min(sourceTop, otherTop);
-  const y1 = Math.max(sourceBottom, otherBottom);
+    let x0 = Math.min(sourceLeft, otherLeft);
+    const x1 = Math.max(sourceRight, otherRight);
+    const y0 = Math.min(sourceTop, otherTop);
+    const y1 = Math.max(sourceBottom, otherBottom);
 
-  out.x = x0;
-  out.y = y0;
-  out.width = x1 - x0;
-  out.height = y1 - y0;
+    out.x = x0;
+    out.y = y0;
+    out.width = x1 - x0;
+    out.height = y1 - y0;
+  }
 }
