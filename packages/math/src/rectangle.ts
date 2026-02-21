@@ -243,6 +243,7 @@ export function union(out: Rectangle, source: Readonly<Rectangle>, other: Readon
   const sEmpty = sw === 0 || sh === 0;
   const oEmpty = ow === 0 || oh === 0;
   if (sEmpty || oEmpty) {
+    if (oEmpty && source === out) return;
     out.x = oEmpty ? sx : ox;
     out.y = oEmpty ? sy : oy;
     out.width = oEmpty ? sw : ow;
