@@ -119,7 +119,9 @@ function recomputeWorldBoundsRect(target: DisplayObject, state: GraphState) {
   if (target.children !== null) {
     for (const child of target.children) {
       const childWorldBounds = getWorldBoundsRect(child);
-      rectangle.union(state.worldBoundsRect, state.worldBoundsRect, childWorldBounds);
+      if (childWorldBounds.width !== 0 && childWorldBounds.height !== 0) {
+        rectangle.union(state.worldBoundsRect, state.worldBoundsRect, childWorldBounds);
+      }
     }
   }
   state.worldBoundsRectUsingWorldTransformID = state.worldTransformID;
