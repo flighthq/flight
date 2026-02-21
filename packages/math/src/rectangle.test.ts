@@ -822,6 +822,15 @@ describe('union', () => {
     expect(rectangle.equals(out, lh)).toBe(true);
   });
 
+  it('does nothing if right-hand is empty and source===out', () => {
+    const lh = rectangle.create(-50, -150, 0, 0);
+    const rh = rectangle.create(-5, -15, 0, 0);
+    const cache = rectangle.create();
+    rectangle.copy(cache, lh);
+    rectangle.union(lh, lh, rh);
+    expect(rectangle.equals(cache, lh)).toBe(true);
+  });
+
   it('union works with flipped rectangles', () => {
     const r3 = rectangle.create(15, 20, -10, -10);
     const u = rectangle.create();
