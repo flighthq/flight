@@ -2,7 +2,7 @@ import type { DisplayObject } from '@flighthq/types';
 
 import { getGraphState } from './internal/graphState';
 import type { DisplayObjectInternal } from './internal/write';
-import { invalidateAppearance, invalidateWorldBounds } from './revision';
+import { invalidateAppearance, invalidateParentCache, invalidateWorldBounds } from './revision';
 
 /**
  * Adds a child DisplayObject instance to this DisplayObject
@@ -54,6 +54,7 @@ export function addChildAt(target: DisplayObject, child: DisplayObject, index: n
   (child as DisplayObjectInternal).parent = target;
   invalidateAppearance(target);
   invalidateWorldBounds(target);
+  invalidateParentCache(child);
   return child;
 }
 
@@ -131,6 +132,7 @@ export function removeChild(target: DisplayObject, child: DisplayObject): Displa
     }
     invalidateAppearance(target);
     invalidateWorldBounds(target);
+    invalidateParentCache(child);
   }
   return child;
 }
