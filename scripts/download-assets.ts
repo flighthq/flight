@@ -43,10 +43,6 @@ export async function downloadAssets(assets: Asset[], targetDir: string) {
   console.log('Assets ready ✔'); // eslint-disable-line
 }
 
-// CLI behavior for ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   (async () => {
     const exampleDir = process.cwd();

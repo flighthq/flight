@@ -1,6 +1,5 @@
 import { rectangle } from '@flighthq/math';
-import type { Rectangle } from '@flighthq/types';
-import { type DisplayObject, GraphState } from '@flighthq/types';
+import type { DisplayObject, Rectangle } from '@flighthq/types';
 
 import {
   calculateBoundsRect,
@@ -15,7 +14,7 @@ import { addChild } from './children.js';
 import { createDisplayObject } from './createDisplayObject.js';
 import { getGraphState } from './internal/graphState.js';
 import { invalidateLocalTransform } from './revision.js';
-import { ensureLocalTransform, ensureWorldTransform } from './transform.js';
+import { ensureLocalTransform } from './transform.js';
 
 describe('calculateBoundsRect', () => {
   let root: DisplayObject;
