@@ -475,10 +475,16 @@ export function transformRectXY(
   bx: number,
   by: number,
 ): void {
-  const a = source.a;
-  const b = source.b;
-  const c = source.c;
-  const d = source.d;
+  const { a, b, c, d } = source;
+
+  // Fast path for empty rectangles (0x0 size)
+  if (ax === bx && ay === by) {
+    out.x = source.tx;
+    out.y = source.ty;
+    out.width = 0;
+    out.height = 0;
+    return;
+  }
 
   let tx0 = a * ax + c * ay;
   let tx1 = tx0;
