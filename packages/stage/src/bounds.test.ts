@@ -11,9 +11,11 @@ import {
   getLocalBoundsRect,
   getWorldBoundsRect,
 } from './bounds.js';
+import { addChild } from './children.js';
 import { createDisplayObject } from './createDisplayObject.js';
 import { getGraphState } from './internal/graphState.js';
 import { invalidateLocalTransform } from './revision.js';
+import { ensureLocalTransform, ensureWorldTransform } from './transform.js';
 
 describe('calculateBoundsRect', () => {
   let root: DisplayObject;
@@ -206,14 +208,63 @@ describe('ensureWorldBoundsRect', () => {
     expect(state.worldBoundsRect).toEqual(cache);
   });
 
-  it('should recalculate if worldTransformID is changed', () => {
+  it('should recalculate if local transform is changed (translate)', () => {
     const object = createDisplayObject();
     const state = getGraphState(object);
     ensureWorldBoundsRect(object);
-    const cache = cloneAndInvalidateRect(state.worldBoundsRect!);
-    state.worldTransformID++;
+    const cache = rectangle.clone(state.worldBoundsRect!);
+    object.x = 100;
+    invalidateLocalTransform(object);
     ensureWorldBoundsRect(object);
-    expect(state.worldBoundsRect).toEqual(cache);
+    expect(state.worldBoundsRect).not.toEqual(cache);
+    expect(state.worldBoundsRect).toEqual({ x: 100, y: 0, width: 0, height: 0 });
+  });
+
+  it('should recalculate if local transform is changed (scale)', () => {
+    const object = createDisplayObject();
+    const state = getGraphState(object);
+    ensureWorldBoundsRect(object);
+    const cache = rectangle.clone(state.worldBoundsRect!);
+    const localBounds = getLocalBoundsRect(object) as Rectangle;
+    localBounds.width = 10; // hack;
+    object.scaleX = 2;
+    invalidateLocalTransform(object);
+    ensureWorldBoundsRect(object);
+    expect(state.worldBoundsRect).not.toEqual(cache);
+    expect(state.worldBoundsRect).toEqual({ x: 0, y: 0, width: 20, height: 0 });
+  });
+
+  it('should recalculate if parent transform is changed (translate)', () => {
+    const parent = createDisplayObject();
+    const child = createDisplayObject();
+    addChild(parent, child);
+    const state = getGraphState(child);
+    ensureWorldBoundsRect(child);
+    const cache = rectangle.clone(state.worldBoundsRect!);
+    parent.x = 100;
+    invalidateLocalTransform(parent);
+    ensureWorldBoundsRect(child);
+    expect(state.worldBoundsRect).not.toEqual(cache);
+    expect(state.worldBoundsRect).toEqual({ x: 100, y: 0, width: 0, height: 0 });
+  });
+
+  it('should recalculate if parent transform is changed (scale)', () => {
+    const parent = createDisplayObject();
+    const child = createDisplayObject();
+    addChild(parent, child);
+    const state = getGraphState(child);
+    ensureWorldBoundsRect(child);
+    const localBounds = getLocalBoundsRect(child) as Rectangle;
+    localBounds.width = 10; // hack;
+    const worldBounds = getWorldBoundsRect(child) as Rectangle;
+    worldBounds.width = 10; // hack
+    const cache = rectangle.clone(state.worldBoundsRect!);
+    parent.scaleX = 2;
+    invalidateLocalTransform(parent);
+    ensureLocalTransform(parent);
+    ensureWorldBoundsRect(child);
+    expect(state.worldBoundsRect).not.toEqual(cache);
+    expect(state.worldBoundsRect).toEqual({ x: 0, y: 0, width: 20, height: 0 });
   });
 });
 
