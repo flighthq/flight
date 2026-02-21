@@ -25,7 +25,7 @@ export function ensureWorldTransform(target: DisplayObject): void {
 
   if (
     state.worldTransformUsingLocalTransformID !== state.localTransformID ||
-    state.worldTransformUsingParentID !== parentWorldTransformID
+    state.worldTransformUsingParentTransformID !== parentWorldTransformID
   ) {
     recomputeWorldTransform(target, state, parentState);
   }
@@ -120,6 +120,6 @@ function recomputeWorldTransformID(state: GraphState, parentState?: GraphState):
   const localTransformID = state.localTransformID;
   const parentWorldTransformID = parentState ? parentState.worldTransformID : 0;
   state.worldTransformUsingLocalTransformID = localTransformID;
-  state.worldTransformUsingParentID = parentWorldTransformID;
+  state.worldTransformUsingParentTransformID = parentWorldTransformID;
   state.worldTransformID = (localTransformID << 16) | (parentWorldTransformID & 0xffff);
 }
