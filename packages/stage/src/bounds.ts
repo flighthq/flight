@@ -1,5 +1,5 @@
 import { matrix3x2, matrix3x2Pool, rectangle } from '@flighthq/math';
-import type { BitmapData, DisplayObject, Matrix3x2, Rectangle } from '@flighthq/types';
+import type { BitmapData, DisplayObject, Rectangle } from '@flighthq/types';
 import type { GraphState } from '@flighthq/types';
 
 import { getGraphState } from './internal/graphState';
