@@ -23,7 +23,7 @@ export function getGraphState(source: DisplayObject): GraphState {
       worldTransform: null,
       worldTransformID: 0,
       worldTransformUsingLocalTransformID: -1,
-      worldTransformUsingParentID: -1,
+      worldTransformUsingParentTransformID: -1,
     };
   }
   return source[GraphState.SymbolKey];
