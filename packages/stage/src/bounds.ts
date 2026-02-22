@@ -14,21 +14,30 @@ export function calculateBoundsRect(
   source: DisplayObject,
   targetCoordinateSpace: DisplayObject | null | undefined,
 ): void {
-  const localBounds = getLocalBoundsRect(source);
-  // Fast paths
-  if (!targetCoordinateSpace || targetCoordinateSpace === source) {
-    // localBounds
-    rectangle.copy(out, localBounds);
-  } else if (targetCoordinateSpace === source.parent) {
-    // bounds (parent coordinate space)
-    rectangle.copy(out, getBoundsRect(source));
-  } else {
-    // TODO: fast path for root/stage coordinate space?
+  if (!targetCoordinateSpace) targetCoordinateSpace = source;
+  let bounds;
+  if (targetCoordinateSpace.parent === null) {
+    // if target has no parent, use world bounds
+    bounds = getWorldBoundsRect(source);
+  } else if (source.children === null || source.children.length === 0) {
+    // only world bounds considers children
+    if (targetCoordinateSpace === source) {
+      // fast path, return local bounds for self
+      bounds = getLocalBoundsRect(source);
+    } else if (targetCoordinateSpace === source.parent) {
+      // fast path, return bounds for parent
+      bounds = getBoundsRect(source);
+    }
+  }
+  if (!bounds) {
+    // translate world bounds into target coordinate space
+    const worldBounds = getWorldBoundsRect(source);
     const transform = matrix3x2Pool.get();
     matrix3x2.inverse(transform, getWorldTransform(targetCoordinateSpace));
-    matrix3x2.multiply(transform, transform, getWorldTransform(source));
-    matrix3x2.transformRect(out, transform, localBounds);
+    matrix3x2.transformRect(out, transform, worldBounds);
     matrix3x2Pool.release(transform);
+  } else {
+    rectangle.copy(out, bounds);
   }
 }
 

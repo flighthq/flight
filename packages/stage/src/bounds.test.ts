@@ -13,7 +13,7 @@ import {
 import { addChild } from './children.js';
 import { createDisplayObject } from './createDisplayObject.js';
 import { getGraphState } from './internal/graphState.js';
-import { invalidateLocalTransform } from './revision.js';
+import { invalidateLocalTransform, invalidateWorldBounds } from './revision.js';
 import { ensureLocalTransform } from './transform.js';
 
 describe('calculateBoundsRect', () => {
@@ -26,29 +26,37 @@ describe('calculateBoundsRect', () => {
     child = createDisplayObject();
     grandChild = createDisplayObject();
 
-    // fake hierarchy
-    (child as any).parent = root as any; // eslint-disable-line
-    (grandChild as any).parent = child as any; // eslint-disable-line
+    child.x = 100;
+    child.y = 100;
+
+    addChild(root, child);
+    addChild(child, grandChild);
 
     // fake local bounds
     rectangle.setTo(getLocalBoundsRect(root), 0, 0, 100, 100);
     rectangle.setTo(getLocalBoundsRect(child), 10, 20, 50, 50);
-    rectangle.setTo(getLocalBoundsRect(grandChild), 5, 5, 10, 10);
+    rectangle.setTo(getLocalBoundsRect(grandChild), 5, 5, 100, 100);
   });
 
-  it('should return local bounds when targetCoordinateSpace is self', () => {
+  it('should equal local bounds when targetCoordinateSpace is self and there are no children', () => {
+    const out = rectangle.create();
+    calculateBoundsRect(out, grandChild, grandChild);
+    expect(out).toEqual(getLocalBoundsRect(grandChild));
+  });
+
+  it('should include children bounds when targetCoordinateSpace is self', () => {
     const out = rectangle.create();
     calculateBoundsRect(out, child, child);
-    expect(out).toEqual(getLocalBoundsRect(child));
+    expect(out).toEqual({ x: 5, y: 5, width: 100, height: 100 });
   });
 
   it('should compute bounds relative to parent', () => {
     const out = rectangle.create();
     calculateBoundsRect(out, child, root);
-    expect(out.x).toBeCloseTo(10);
-    expect(out.y).toBeCloseTo(20);
-    expect(out.width).toBeCloseTo(50);
-    expect(out.height).toBeCloseTo(50);
+    expect(out.x).toBeCloseTo(105);
+    expect(out.y).toBeCloseTo(105);
+    expect(out.width).toBeCloseTo(100);
+    expect(out.height).toBeCloseTo(100);
   });
 
   it('should compute bounds relative to nested child', () => {
@@ -63,19 +71,17 @@ describe('calculateBoundsRect', () => {
     // child is 50x50, should be 100x150 now in parent coordinate space
     child.scaleX = 2;
     child.scaleY = 3;
-    invalidateLocalTransform(child);
 
     const out = rectangle.create();
     calculateBoundsRect(out, child, root);
 
-    expect(out.width).toBeCloseTo(50 * 2);
-    expect(out.height).toBeCloseTo(50 * 3);
+    expect(out.width).toBeCloseTo(100 * 2);
+    expect(out.height).toBeCloseTo(100 * 3);
   });
 
   it('should account for translation in parent transforms', () => {
     child.x = 5;
     child.y = 7;
-    invalidateLocalTransform(child);
 
     const out = rectangle.create();
     calculateBoundsRect(out, grandChild, root);
@@ -90,14 +96,27 @@ describe('calculateBoundsRect', () => {
 
     const out = rectangle.create();
     calculateBoundsRect(out, child, root);
-    expect(out.width).toBeCloseTo(50); // roughly unchanged
-    expect(out.height).toBeCloseTo(50);
+    expect(out.width).toBeCloseTo(100); // roughly unchanged
+    expect(out.height).toBeCloseTo(100);
   });
 
   it('should allow a rectangle-like object', () => {
     const out = { x: 0, y: 0, width: 0, height: 0 };
-    calculateBoundsRect(out, child, child);
-    expect(out).toEqual(getLocalBoundsRect(child));
+    calculateBoundsRect(out, grandChild, grandChild);
+    expect(out).toEqual(getLocalBoundsRect(grandChild));
+  });
+
+  it('should compute bounds relative to an unrelated target', () => {
+    const out = rectangle.create();
+    const unrelatedTarget = createDisplayObject(); // another object in a separate scene graph
+    calculateBoundsRect(out, child, unrelatedTarget);
+    expect(out).toEqual(getWorldBoundsRect(child));
+  });
+
+  it('should return world bounds if the target coordinate space is root', () => {
+    const out = rectangle.create();
+    calculateBoundsRect(out, child, root);
+    expect(out).toEqual(getWorldBoundsRect(child));
   });
 });
 
