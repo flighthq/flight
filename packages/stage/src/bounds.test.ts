@@ -13,7 +13,7 @@ import {
 import { addChild } from './children.js';
 import { createDisplayObject } from './createDisplayObject.js';
 import { getGraphState } from './internal/graphState.js';
-import { invalidateLocalTransform, invalidateWorldBounds } from './revision.js';
+import { invalidateLocalTransform } from './revision.js';
 import { ensureLocalTransform } from './transform.js';
 
 describe('calculateBoundsRect', () => {
