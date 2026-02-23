@@ -1,9 +1,108 @@
-import { vector2 } from '@flighthq/math';
-import type { DisplayObject } from '@flighthq/types';
+import { matrix3x2, vector2 } from '@flighthq/math';
+import type { DisplayObject, Matrix3x2 } from '@flighthq/types';
 
+import { addChild } from './children';
 import { createDisplayObject } from './createDisplayObject';
+import { getGraphState } from './internal/graphState';
 import { invalidateLocalTransform } from './revision';
-import { globalToLocal, localToGlobal } from './transform';
+import {
+  ensureLocalTransform,
+  ensureWorldTransform,
+  getLocalTransform,
+  getWorldTransform,
+  globalToLocal,
+  localToGlobal,
+} from './transform';
+
+let displayObject: DisplayObject;
+beforeEach(() => {
+  displayObject = createDisplayObject();
+});
+
+describe('ensureLocalTransform', () => {
+  it('computes local transform the first time', () => {
+    const state = getGraphState(displayObject);
+    expect(state.localTransform).toBeNull();
+    ensureLocalTransform(displayObject);
+    expect(state.localTransform).not.toBeNull();
+  });
+
+  it('recomputes if the local transform ID has changed', () => {
+    const state = getGraphState(displayObject);
+    ensureLocalTransform(displayObject);
+    const cache = cloneAndInvalidateMatrix(state.localTransform);
+    state.localTransformID++;
+    ensureLocalTransform(displayObject);
+    expect(state.localTransform).toEqual(cache);
+  });
+});
+
+describe('ensureWorldTransform', () => {
+  it('computes world transform the first time', () => {
+    const state = getGraphState(displayObject);
+    expect(state.worldTransform).toBeNull();
+    ensureWorldTransform(displayObject);
+    expect(state.worldTransform).not.toBeNull();
+  });
+
+  it('computes world transform for a parent for the first time', () => {
+    const parent = createDisplayObject();
+    addChild(parent, displayObject);
+    const parentState = getGraphState(parent);
+    expect(parentState.worldTransform).toBeNull();
+    ensureWorldTransform(displayObject);
+    expect(parentState.worldTransform).not.toBeNull();
+  });
+
+  it('recomputes if the local transform ID has changed', () => {
+    const state = getGraphState(displayObject);
+    ensureWorldTransform(displayObject);
+    const cache = cloneAndInvalidateMatrix(state.worldTransform);
+    state.localTransformID++;
+    ensureWorldTransform(displayObject);
+    expect(state.worldTransform).toEqual(cache);
+  });
+
+  it('recomputes if the parent transform ID has changed', () => {
+    const parent = createDisplayObject();
+    addChild(parent, displayObject);
+    const state = getGraphState(displayObject);
+    const parentState = getGraphState(parent);
+    ensureWorldTransform(displayObject);
+    const cache = cloneAndInvalidateMatrix(state.worldTransform);
+    parentState.worldTransformID++;
+    ensureWorldTransform(displayObject);
+    expect(state.worldTransform).toEqual(cache);
+  });
+});
+
+describe('getLocalTransform', () => {
+  it('ensures local transform', () => {
+    const state = getGraphState(displayObject);
+    expect(state.localTransform).toBeNull();
+    getLocalTransform(displayObject);
+    expect(state.localTransform).not.toBeNull();
+  });
+
+  it('returns local transform', () => {
+    const transform = getLocalTransform(displayObject);
+    expect(transform).equals(getGraphState(displayObject).localTransform);
+  });
+});
+
+describe('getWorldTransform', () => {
+  it('ensures world transform', () => {
+    const state = getGraphState(displayObject);
+    expect(state.worldTransform).toBeNull();
+    getWorldTransform(displayObject);
+    expect(state.worldTransform).not.toBeNull();
+  });
+
+  it('returns local transform', () => {
+    const transform = getWorldTransform(displayObject);
+    expect(transform).equals(getGraphState(displayObject).worldTransform);
+  });
+});
 
 describe('globalToLocal', () => {
   let obj: DisplayObject;
@@ -117,3 +216,10 @@ describe('localToGlobal', () => {
     expect(out).not.toBe(local); // out is a separate object
   });
 });
+
+function cloneAndInvalidateMatrix(matrix: Matrix3x2 | null): Matrix3x2 | null {
+  if (matrix === null) return null;
+  const clone = matrix3x2.clone(matrix);
+  matrix3x2.setTo(matrix, -1, -1, -1, -1, -1, -1);
+  return clone;
+}
