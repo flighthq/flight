@@ -11,6 +11,8 @@ import {
   invalidateAppearance,
   invalidateLocalBounds,
   invalidateLocalTransform,
+  invalidateParentCache,
+  invalidateWorldBounds,
 } from './revision';
 
 let displayObject: DisplayObject;
@@ -83,5 +85,25 @@ describe('invalidateLocalTransform', () => {
     const localTransformID = getGraphState(displayObject).localTransformID;
     invalidateLocalTransform(displayObject);
     expect(getGraphState(displayObject).localTransformID).toBe(localTransformID + 1);
+  });
+});
+
+describe('invalidateParentCache', () => {
+  it('invalidates the world transform parent transform cached ID', () => {
+    const state = getGraphState(displayObject);
+    state.worldTransformUsingParentTransformID = 1;
+    invalidateParentCache(displayObject);
+    expect(state.worldTransformUsingParentTransformID).toBe(-1);
+  });
+});
+
+describe('invalidateWorldBounds', () => {
+  it('invalidates supporting values for world bounds calculations', () => {
+    const state = getGraphState(displayObject);
+    state.worldBoundsRectUsingWorldTransformID = 1;
+    state.worldBoundsRectUsingLocalBoundsID = 1;
+    invalidateWorldBounds(displayObject);
+    expect(state.worldBoundsRectUsingWorldTransformID).toBe(-1);
+    expect(state.worldBoundsRectUsingLocalBoundsID).toBe(-1);
   });
 });
