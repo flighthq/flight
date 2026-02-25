@@ -2,6 +2,7 @@ import type { PartialWithData, RichText, RichTextData } from '@flighthq/types';
 
 import { createTextData } from './createText';
 import { createPrimitive } from './internal/createPrimitive';
+import type { RichTextDataInternal } from './internal/writeInternal';
 
 export function createRichText(obj?: PartialWithData<RichText>): RichText {
   return createPrimitive<RichText, RichTextData>('richtext', obj, createRichTextData);
@@ -27,8 +28,3 @@ export function createRichTextData(data?: Partial<RichTextData>): RichTextData {
   _data.wordWrap = data?.wordWrap ?? false;
   return _data;
 }
-
-type RichTextDataInternal = Omit<RichTextData, 'scrollH' | 'scrollV'> & {
-  scrollH: number;
-  scrollV: number;
-};

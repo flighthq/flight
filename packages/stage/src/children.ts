@@ -1,7 +1,7 @@
 import type { DisplayObject } from '@flighthq/types';
 
 import { getGraphState } from './internal/graphState';
-import type { DisplayObjectInternal } from './internal/write';
+import type { DisplayObjectInternal } from './internal/writeInternal';
 import { invalidateAppearance, invalidateParentCache, invalidateWorldBounds } from './revision';
 
 /**
