@@ -1,4 +1,4 @@
-import type { MovieClip } from '@flighthq/types';
+import type { MovieClip, Timeline } from '@flighthq/types';
 
 import { createMovieClip } from './createMovieClip';
 
@@ -17,7 +17,7 @@ describe('createMovieClip', () => {
   it('allows pre-defined values', () => {
     const base = {
       data: {
-        timeline: {},
+        timeline: {} as Timeline,
       },
     };
     const obj = createMovieClip(base);

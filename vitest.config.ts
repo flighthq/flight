@@ -13,6 +13,7 @@ export default mergeConfig(
         'packages/math',
         'packages/render',
         'packages/stage',
+        'packages/timeline',
         'packages/types',
         'packages/world',
         'tests/integration',
