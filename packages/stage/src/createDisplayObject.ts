@@ -1,7 +1,7 @@
-import type { DisplayObject } from '@flighthq/types';
+import type { DisplayObject, PartialWithData } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-export function createDisplayObject(obj: Partial<DisplayObject> = {}): DisplayObject {
+export function createDisplayObject(obj: PartialWithData<DisplayObject> = {}): DisplayObject {
   if (obj.alpha === undefined) obj.alpha = 1;
   if (obj.blendMode === undefined) obj.blendMode = BlendMode.Normal;
   if (obj.cacheAsBitmap === undefined) obj.cacheAsBitmap = false;
