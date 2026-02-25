@@ -23,4 +23,10 @@ describe('createVideo', () => {
     const obj = createVideo(base);
     expect(obj.data.smoothing).toStrictEqual(base.data.smoothing);
   });
+
+  it('returns a new object for better hidden-class performance', () => {
+    const base = {};
+    const obj = createVideo(base);
+    expect(obj).not.toStrictEqual(base);
+  });
 });

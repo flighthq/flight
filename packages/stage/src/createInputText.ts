@@ -1,11 +1,15 @@
 import type { InputText, InputTextData, PartialWithData } from '@flighthq/types';
 
-import { createRichText } from './createRichText';
+import { createRichTextData } from './createRichText';
+import { createPrimitive } from './internal/createPrimitive';
 
-export function createInputText(obj: PartialWithData<InputText> = {}): InputText {
-  if (obj.data === undefined) obj.data = {} as InputTextData;
-  if (obj.data.displayAsPassword === undefined) obj.data.displayAsPassword = false;
-  if (obj.data.restrict === undefined) obj.data.restrict = '';
-  if (obj.type === undefined) obj.type = 'inputtext';
-  return createRichText(obj) as InputText;
+export function createInputText(obj?: PartialWithData<InputText>): InputText {
+  return createPrimitive<InputText, InputTextData>('inputtext', obj, createInputTextData);
+}
+
+export function createInputTextData(data?: Partial<InputTextData>): InputTextData {
+  const _data = createRichTextData(data) as InputTextData;
+  _data.displayAsPassword = data?.displayAsPassword ?? false;
+  _data.restrict = data?.restrict ?? '';
+  return _data;
 }

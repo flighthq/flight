@@ -23,4 +23,10 @@ describe('createShape', () => {
     const obj = createShape(base);
     expect(obj.data.graphics).toStrictEqual(base.data.graphics);
   });
+
+  it('returns a new object for better hidden-class performance', () => {
+    const base = {};
+    const obj = createShape(base);
+    expect(obj).not.toStrictEqual(base);
+  });
 });

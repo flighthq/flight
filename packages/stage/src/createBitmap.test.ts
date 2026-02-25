@@ -26,4 +26,10 @@ describe('createBitmap', () => {
     expect(obj.data.image).toBe(image);
     expect(obj.data.smoothing).toBe(false);
   });
+
+  it('returns a new object for better hidden-class performance', () => {
+    const base = {};
+    const obj = createBitmap(base);
+    expect(obj).not.toStrictEqual(base);
+  });
 });

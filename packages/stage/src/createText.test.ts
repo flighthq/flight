@@ -27,4 +27,10 @@ describe('createText', () => {
     expect(obj.data.autoSize).toStrictEqual(base.data!.autoSize);
     expect(obj.data.text).toStrictEqual(base.data!.text);
   });
+
+  it('returns a new object for better hidden-class performance', () => {
+    const base = {};
+    const obj = createText(base);
+    expect(obj).not.toStrictEqual(base);
+  });
 });

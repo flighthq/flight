@@ -23,4 +23,10 @@ describe('createMovieClip', () => {
     const obj = createMovieClip(base);
     expect(obj.data.timeline).toStrictEqual(base.data.timeline);
   });
+
+  it('returns a new object for better hidden-class performance', () => {
+    const base = {};
+    const obj = createMovieClip(base);
+    expect(obj).not.toStrictEqual(base);
+  });
 });

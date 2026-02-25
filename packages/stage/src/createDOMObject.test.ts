@@ -24,4 +24,10 @@ describe('createDOMObject', () => {
     const obj = createDOMObject(base);
     expect(obj.data.element).toStrictEqual(element);
   });
+
+  it('returns a new object for better hidden-class performance', () => {
+    const base = {};
+    const obj = createDOMObject(base);
+    expect(obj).not.toStrictEqual(base);
+  });
 });

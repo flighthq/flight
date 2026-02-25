@@ -1,12 +1,15 @@
 import type { PartialWithData, Text, TextData } from '@flighthq/types';
 
-import { createDisplayObject } from './createDisplayObject';
+import { createPrimitive } from './internal/createPrimitive';
 
-export function createText(obj: PartialWithData<Text> = {}): Text {
-  if (obj.data === undefined) obj.data = {} as TextData;
-  if (obj.data.autoSize === undefined) obj.data.autoSize = 'none';
-  if (obj.data.text === undefined) obj.data.text = '';
-  if (obj.data.textFormat === undefined) obj.data.textFormat = {};
-  if (obj.type === undefined) obj.type = 'text';
-  return createDisplayObject(obj) as Text;
+export function createText(obj?: PartialWithData<Text>): Text {
+  return createPrimitive<Text, TextData>('text', obj, createTextData);
+}
+
+export function createTextData(data?: Partial<TextData>): TextData {
+  return {
+    autoSize: data?.autoSize ?? 'none',
+    text: data?.text ?? '',
+    textFormat: data?.textFormat ?? {},
+  };
 }

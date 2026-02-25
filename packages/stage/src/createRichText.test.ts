@@ -64,4 +64,10 @@ describe('createRichText', () => {
     expect(obj.data.textColor).toStrictEqual(base.data.textColor);
     expect(obj.data.wordWrap).toStrictEqual(base.data.wordWrap);
   });
+
+  it('returns a new object for better hidden-class performance', () => {
+    const base = {};
+    const obj = createRichText(base);
+    expect(obj).not.toStrictEqual(base);
+  });
 });

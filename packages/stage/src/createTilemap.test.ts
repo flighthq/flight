@@ -35,4 +35,10 @@ describe('createTilemap', () => {
     expect(obj.data.tileColorTransformEnabled).toStrictEqual(base.data.tileColorTransformEnabled);
     expect(obj.data.tileset).toStrictEqual(base.data.tileset);
   });
+
+  it('returns a new object for better hidden-class performance', () => {
+    const base = {};
+    const obj = createTilemap(base);
+    expect(obj).not.toStrictEqual(base);
+  });
 });
