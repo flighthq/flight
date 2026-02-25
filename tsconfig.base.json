@@ -26,6 +26,8 @@
       "@flighthq/render/*": ["packages/render/src/*"],
       "@flighthq/stage": ["packages/stage/src/index.ts"],
       "@flighthq/stage/*": ["packages/stage/src/*"],
+      "@flighthq/timeline": ["packages/timeline/src/index.ts"],
+      "@flighthq/timeline/*": ["packages/timeline/src/*"],
       "@flighthq/types": ["packages/types/src/index.ts"],
       "@flighthq/types/*": ["packages/types/src/*"],
       "@flighthq/world": ["packages/world/src/index.ts"],
