@@ -13,4 +13,17 @@ describe('createBitmap', () => {
     expect(bitmap.data.image).toBeNull();
     expect(bitmap.data.smoothing).toBe(true);
   });
+
+  it('allows pre-defined values', () => {
+    const image = {} as HTMLImageElement;
+    const base = {
+      data: {
+        image: image,
+        smoothing: false,
+      },
+    };
+    const obj = createBitmap(base);
+    expect(obj.data.image).toBe(image);
+    expect(obj.data.smoothing).toBe(false);
+  });
 });

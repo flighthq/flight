@@ -2,6 +2,7 @@ export * from './bounds.js';
 export * from './children.js';
 export * from './createBitmap.js';
 export * from './createDisplayObject.js';
+export * from './createDOMObject.js';
 export * from './createMovieClip.js';
 export * from './createStage.js';
 export * from './revision.js';

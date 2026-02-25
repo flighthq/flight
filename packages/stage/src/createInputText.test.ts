@@ -1,0 +1,29 @@
+import type { InputText, PartialWithData } from '@flighthq/types';
+
+import { createInputText } from './createInputText';
+
+describe('createInputText', () => {
+  let text: InputText;
+
+  beforeEach(() => {
+    text = createInputText();
+  });
+
+  it('initializes default values', () => {
+    expect(text.data.text).toBe('');
+    expect(text.data.autoSize).toBe('none');
+    expect(text.type).toBe('inputtext');
+  });
+
+  it('allows pre-defined values', () => {
+    const base: PartialWithData<InputText> = {
+      data: {
+        text: 'foofoo',
+        autoSize: 'center',
+      },
+    };
+    const obj = createInputText(base);
+    expect(obj.data.text).toStrictEqual(base.data!.text);
+    expect(obj.data.autoSize).toStrictEqual(base.data!.autoSize);
+  });
+});
