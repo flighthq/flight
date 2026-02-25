@@ -1,6 +1,6 @@
-import type DisplayObject from './DisplayObject';
 import type RichTextData from './RichTextData';
+import type Text from './Text';
 
-export default interface RichText extends DisplayObject {
+export default interface RichText extends Text {
   data: RichTextData;
 }

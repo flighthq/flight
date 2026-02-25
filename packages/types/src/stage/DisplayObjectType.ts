@@ -1,10 +1,14 @@
 export type DisplayObjectType =
   | 'container'
   | 'bitmap'
+  | 'dom'
+  | 'inputtext'
+  | 'richtext'
   | 'shape'
-  | 'statictext'
-  | 'dynamictext'
+  | 'text'
   | 'movieclip'
-  | 'tilemap';
+  | 'stage'
+  | 'tilemap'
+  | 'video';
 
 export default DisplayObjectType;
