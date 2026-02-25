@@ -1,5 +1,7 @@
-import type { DisplayObject, PartialWithData, Stage } from '@flighthq/types';
+import type { DisplayObject, PartialWithData } from '@flighthq/types';
 import { BlendMode, GraphState } from '@flighthq/types';
+
+import type { DisplayObjectInternal } from './internal/writeInternal';
 
 export function createDisplayObject(obj?: PartialWithData<DisplayObject>): DisplayObject {
   return {
@@ -29,9 +31,3 @@ export function createDisplayObject(obj?: PartialWithData<DisplayObject>): Displ
     [GraphState.SymbolKey]: undefined,
   };
 }
-
-type DisplayObjectInternal = Omit<DisplayObject, 'children' | 'parent' | 'stage'> & {
-  children: DisplayObject[] | null;
-  parent: DisplayObject | null;
-  stage: Stage | null;
-};
