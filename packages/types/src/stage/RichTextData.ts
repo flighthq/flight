@@ -1,8 +1,8 @@
-import type { PrimitiveData } from './PrimitiveData';
 import type TextAutoSize from './TextAutoSize';
+import type TextData from './TextData';
 import type TextFormat from './TextFormat';
 
-export default interface RichTextData extends PrimitiveData {
+export default interface RichTextData extends TextData {
   autoSize: TextAutoSize;
   background: boolean;
   backgroundColor: number;
@@ -14,8 +14,8 @@ export default interface RichTextData extends PrimitiveData {
   maxChars: number;
   mouseWheelEnabled: boolean;
   multiline: boolean;
-  scrollH: number;
-  scrollV: number;
+  readonly scrollH: number;
+  readonly scrollV: number;
   selectable: boolean;
   styleSheet: StyleSheet;
   text: string;

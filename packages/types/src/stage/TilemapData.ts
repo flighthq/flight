@@ -6,5 +6,5 @@ export default interface TilemapData extends PrimitiveData {
   tileAlphaEnabled: boolean;
   tileBlendModeEnabled: boolean;
   tileColorTransformEnabled: boolean;
-  tileset: Tileset;
+  tileset: Tileset | null;
 }
