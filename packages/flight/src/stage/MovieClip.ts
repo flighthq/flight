@@ -1,5 +1,5 @@
 import { createMovieClip } from '@flighthq/stage';
-import type { MovieClip as MovieClipLike } from '@flighthq/types';
+import type { MovieClip as MovieClipLike, MovieClipData } from '@flighthq/types';
 
 import DisplayObjectContainer from './DisplayObjectContainer.js';
 
@@ -12,5 +12,15 @@ export default class MovieClip extends DisplayObjectContainer implements MovieCl
 
   protected override __create(): void {
     this.__model = createMovieClip();
+  }
+
+  // Get & Set Methods
+
+  override get data(): MovieClipData {
+    return this.__model.data;
+  }
+
+  override set data(value: MovieClipData) {
+    this.__model.data = value;
   }
 }
