@@ -1,11 +1,14 @@
 import type { Bitmap, BitmapData } from '@flighthq/types';
 
-import { createDisplayObject } from './createDisplayObject';
+import { createPrimitive } from './internal/createPrimitive';
 
-export function createBitmap(obj: Partial<Bitmap> = {}): Bitmap {
-  if (obj.data === undefined) obj.data = {} as BitmapData;
-  if (obj.data.image === undefined) obj.data.image = null;
-  if (obj.data.smoothing === undefined) obj.data.smoothing = true;
-  if (obj.type === undefined) obj.type = 'bitmap';
-  return createDisplayObject(obj) as Bitmap;
+export function createBitmap(obj?: Partial<Bitmap>): Bitmap {
+  return createPrimitive<Bitmap, BitmapData>('bitmap', obj, createBitmapData);
+}
+
+export function createBitmapData(data?: Partial<BitmapData>): BitmapData {
+  return {
+    image: data?.image ?? null,
+    smoothing: data?.smoothing ?? true,
+  };
 }

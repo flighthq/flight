@@ -1,27 +1,31 @@
 import type { PartialWithData, RichText, RichTextData } from '@flighthq/types';
 
-import { createText } from './createText';
+import { createTextData } from './createText';
+import { createPrimitive } from './internal/createPrimitive';
 
-export function createRichText(obj: PartialWithData<RichText> = {}): RichText {
-  if (obj.data === undefined) obj.data = {} as RichTextData;
-  if (obj.data.background === undefined) obj.data.background = false;
-  if (obj.data.backgroundColor === undefined) obj.data.backgroundColor = 0xffffff;
-  if (obj.data.border === undefined) obj.data.border = false;
-  if (obj.data.borderColor === undefined) obj.data.borderColor = 0;
-  if (obj.data.condenseWhite === undefined) obj.data.condenseWhite = false;
-  if (obj.data.defaultTextFormat === undefined) obj.data.defaultTextFormat = {};
-  if (obj.data.htmlText === undefined) obj.data.htmlText = '';
-  if (obj.data.maxChars === undefined) obj.data.maxChars = -1;
-  if (obj.data.mouseWheelEnabled === undefined) obj.data.mouseWheelEnabled = true;
-  if (obj.data.multiline === undefined) obj.data.multiline = true;
-  if (obj.data.scrollH === undefined) (obj.data as RichTextDataInternal).scrollH = 0;
-  if (obj.data.scrollV === undefined) (obj.data as RichTextDataInternal).scrollV = 1;
-  if (obj.data.selectable === undefined) obj.data.selectable = true;
-  // if (obj.data.styleSheet === undefined) obj.data.styleSheet = undefined;
-  if (obj.data.textColor === undefined) obj.data.textColor = 0;
-  if (obj.data.wordWrap === undefined) obj.data.wordWrap = false;
-  if (obj.type === undefined) obj.type = 'richtext';
-  return createText(obj) as RichText;
+export function createRichText(obj?: PartialWithData<RichText>): RichText {
+  return createPrimitive<RichText, RichTextData>('richtext', obj, createRichTextData);
+}
+
+export function createRichTextData(data?: Partial<RichTextData>): RichTextData {
+  const _data = createTextData(data) as RichTextData;
+  _data.background = data?.background ?? false;
+  _data.backgroundColor = data?.backgroundColor ?? 0xffffff;
+  _data.border = data?.border ?? false;
+  _data.borderColor = data?.borderColor ?? 0;
+  _data.condenseWhite = data?.condenseWhite ?? false;
+  _data.defaultTextFormat = data?.defaultTextFormat ?? {};
+  _data.htmlText = data?.htmlText ?? '';
+  _data.maxChars = data?.maxChars ?? -1;
+  _data.mouseWheelEnabled = data?.mouseWheelEnabled ?? true;
+  _data.multiline = data?.multiline ?? true;
+  (_data as RichTextDataInternal).scrollH = data?.scrollH ?? 0;
+  (_data as RichTextDataInternal).scrollV = data?.scrollV ?? 1;
+  _data.selectable = data?.selectable ?? true;
+  // _data.styleSheet = data?.styleSheet = undefined;
+  _data.textColor = data?.textColor ?? 0;
+  _data.wordWrap = data?.wordWrap ?? false;
+  return _data;
 }
 
 type RichTextDataInternal = Omit<RichTextData, 'scrollH' | 'scrollV'> & {

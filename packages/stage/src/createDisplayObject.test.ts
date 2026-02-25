@@ -68,4 +68,10 @@ describe('createDisplayObject', () => {
     expect(obj.y).toStrictEqual(base.y);
     expect(obj.type).toStrictEqual('container');
   });
+
+  it('returns a new object for better hidden-class performance', () => {
+    const base = {};
+    const obj = createDisplayObject(base);
+    expect(obj).not.toStrictEqual(base);
+  });
 });

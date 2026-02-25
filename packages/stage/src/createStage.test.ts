@@ -51,4 +51,10 @@ describe('createStage', () => {
     expect(obj.data.stageHeight).toStrictEqual(base.data.stageHeight);
     expect(obj.data.stageWidth).toStrictEqual(base.data.stageWidth);
   });
+
+  it('returns a new object for better hidden-class performance', () => {
+    const base = {};
+    const obj = createStage(base);
+    expect(obj).not.toStrictEqual(base);
+  });
 });

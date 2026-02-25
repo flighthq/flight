@@ -1,10 +1,13 @@
 import type { DOMObject, DOMObjectData, PartialWithData } from '@flighthq/types';
 
-import { createDisplayObject } from './createDisplayObject';
+import { createPrimitive } from './internal/createPrimitive';
 
-export function createDOMObject(obj: PartialWithData<DOMObject> = {}): DOMObject {
-  if (obj.data === undefined) obj.data = {} as DOMObjectData;
-  if (obj.data.element === undefined) obj.data.element = null;
-  if (obj.type === undefined) obj.type = 'dom';
-  return createDisplayObject(obj) as DOMObject;
+export function createDOMObject(obj?: PartialWithData<DOMObject>): DOMObject {
+  return createPrimitive<DOMObject, DOMObjectData>('dom', obj, createDOMObjectData);
+}
+
+export function createDOMObjectData(data?: Partial<DOMObjectData>): DOMObjectData {
+  return {
+    element: data?.element ?? null,
+  };
 }

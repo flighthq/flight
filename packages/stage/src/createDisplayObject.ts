@@ -1,34 +1,37 @@
-import type { DisplayObject, PartialWithData } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+import type { DisplayObject, PartialWithData, Stage } from '@flighthq/types';
+import { BlendMode, GraphState } from '@flighthq/types';
 
-export function createDisplayObject(obj: PartialWithData<DisplayObject> = {}): DisplayObject {
-  if (obj.alpha === undefined) obj.alpha = 1;
-  if (obj.blendMode === undefined) obj.blendMode = BlendMode.Normal;
-  if (obj.cacheAsBitmap === undefined) obj.cacheAsBitmap = false;
-  if (obj.cacheAsBitmapMatrix === undefined) obj.cacheAsBitmapMatrix = null;
-  if (obj.children === undefined) (obj as DisplayObjectInternal).children = null;
-  if (obj.data === undefined) obj.data = null;
-  if (obj.filters === undefined) obj.filters = null;
-  if (obj.mask === undefined) obj.mask = null;
-  if (obj.name === undefined) obj.name = null;
-  if (obj.opaqueBackground === undefined) obj.opaqueBackground = null;
-  if (obj.parent === undefined) (obj as DisplayObjectInternal).parent = null;
-  if (obj.rotation === undefined) obj.rotation = 0;
-  if (obj.scale9Grid === undefined) obj.scale9Grid = null;
-  if (obj.scaleX === undefined) obj.scaleX = 1;
-  if (obj.scaleY === undefined) obj.scaleY = 1;
-  if (obj.scrollRect === undefined) obj.scrollRect = null;
-  if (obj.shader === undefined) obj.shader = null;
-  if (obj.stage === undefined) (obj as DisplayObjectInternal).stage = null;
-  if (obj.type === undefined) obj.type = 'container';
-  if (obj.visible === undefined) obj.visible = true;
-  if (obj.x === undefined) obj.x = 0;
-  if (obj.y === undefined) obj.y = 0;
-  return obj as DisplayObject;
+export function createDisplayObject(obj?: PartialWithData<DisplayObject>): DisplayObject {
+  return {
+    alpha: obj?.alpha ?? 1,
+    blendMode: obj?.blendMode ?? BlendMode.Normal,
+    cacheAsBitmap: obj?.cacheAsBitmap ?? false,
+    cacheAsBitmapMatrix: obj?.cacheAsBitmapMatrix ?? null,
+    children: (obj as DisplayObjectInternal)?.children ?? null,
+    data: obj?.data ?? null,
+    filters: obj?.filters ?? null,
+    mask: obj?.mask ?? null,
+    name: obj?.name ?? null,
+    opaqueBackground: obj?.opaqueBackground ?? null,
+    parent: (obj as DisplayObjectInternal)?.parent ?? null,
+    rotation: obj?.rotation ?? 0,
+    scale9Grid: obj?.scale9Grid ?? null,
+    scaleX: obj?.scaleX ?? 1,
+    scaleY: obj?.scaleY ?? 1,
+    scrollRect: obj?.scrollRect ?? null,
+    shader: obj?.shader ?? null,
+    stage: (obj as DisplayObjectInternal)?.stage ?? null,
+    type: obj?.type ?? 'container',
+    visible: obj?.visible ?? true,
+    x: obj?.x ?? 0,
+    y: obj?.y ?? 0,
+
+    [GraphState.SymbolKey]: undefined,
+  };
 }
 
 type DisplayObjectInternal = Omit<DisplayObject, 'children' | 'parent' | 'stage'> & {
   children: DisplayObject[] | null;
   parent: DisplayObject | null;
-  stage: DisplayObject | null;
+  stage: Stage | null;
 };
