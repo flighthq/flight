@@ -21,9 +21,9 @@
       "types": "./dist/createRendererState.d.ts",
       "default": "./dist/createRendererState.js"
     },
-    "./dirty": {
-      "types": "./dist/dirty.d.ts",
-      "default": "./dist/dirty.js"
+    "./renderableData": {
+      "types": "./dist/renderableData.d.ts",
+      "default": "./dist/renderableData.js"
     },
     "./renderQueue": {
       "types": "./dist/renderQueue.d.ts",

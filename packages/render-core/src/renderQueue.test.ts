@@ -1,9 +1,7 @@
-import { addChild, createDisplayObject, getWorldTransform, removeChild } from '@flighthq/stage';
-import type { DisplayObject, Renderable, RenderableData, RendererState } from '@flighthq/types';
+import { addChild, createDisplayObject, removeChild } from '@flighthq/stage';
+import type { DisplayObject, Renderable, RendererState } from '@flighthq/types';
 
-import { createRenderableData } from './createRenderableData';
 import { createRendererState } from './createRendererState';
-import { isRenderableDirty } from './dirty';
 import { updateRenderQueue } from './renderQueue';
 
 describe('updateRenderQueue', () => {
@@ -33,7 +31,10 @@ describe('updateRenderQueue', () => {
   });
 
   it('returns false if renderable was not dirty', () => {
-    updateRenderQueue(state, source); // clear state, should not be dirty any more
+    updateRenderQueue(state, source);
+    for (let i = 0; i < state.renderQueueLength; i++) {
+      state.renderQueue[i].dirty = false;
+    }
     const dirty = updateRenderQueue(state, source);
     expect(dirty).toBe(false);
   });

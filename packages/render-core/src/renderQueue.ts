@@ -2,7 +2,7 @@ import { getWorldTransform } from '@flighthq/stage';
 import type { Renderable, RendererState } from '@flighthq/types';
 
 import { createRenderableData } from './createRenderableData';
-import { isRenderableDirty } from './dirty';
+import { updateRenderableData } from './renderableData';
 
 export function updateRenderQueue(state: RendererState, source: Renderable): boolean {
   const renderableStack = state.renderableStack;
@@ -21,13 +21,16 @@ export function updateRenderQueue(state: RendererState, source: Renderable): boo
     const renderData =
       renderDataMap.get(current) ?? renderDataMap.set(current, createRenderableData(current)).get(current)!;
 
-    if (isRenderableDirty(renderData) && !dirty) dirty = true;
+    updateRenderableData(renderData);
+
+    if (!dirty && renderData.dirty) dirty = true;
     if (!current.visible) continue;
 
     const mask = current.mask;
     if (mask !== null) {
       const maskRenderData = renderDataMap.get(mask) ?? renderDataMap.set(mask, createRenderableData(mask)).get(mask)!;
-      if (isRenderableDirty(maskRenderData) && !dirty) dirty = true;
+      updateRenderableData(maskRenderData);
+      if (!dirty && maskRenderData.dirty) dirty = true;
       renderData.mask = maskRenderData;
     }
 

@@ -15,6 +15,7 @@ describe('createRenderableData', () => {
     expect(data.source).toStrictEqual(source);
     expect(data.appearanceID).toStrictEqual(-1);
     expect(data.cacheAsBitmap).toStrictEqual(false);
+    expect(data.dirty).toStrictEqual(false);
     expect(data.localBoundsID).toStrictEqual(-1);
     expect(data.mask).toStrictEqual(null);
     expect(data.renderAlpha).toStrictEqual(-1);

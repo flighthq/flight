@@ -5,6 +5,7 @@ import type Renderable from './Renderable';
 export default interface RenderableData {
   appearanceID: number;
   cacheAsBitmap: boolean;
+  dirty: boolean;
   localBoundsID: number;
   mask: RenderableData | null;
   renderAlpha: number;
