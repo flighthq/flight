@@ -9,7 +9,7 @@ export function createRendererState(obj?: Partial<RendererState>): RendererState
     currentBlendMode: obj?.currentBlendMode ?? null,
     pixelRatio: obj?.pixelRatio ?? 1,
     renderableStack: obj?.renderableStack ?? [],
-    renderData: obj?.renderData ?? new WeakMap(),
+    renderableDataMap: obj?.renderableDataMap ?? new WeakMap(),
     renderTransform: obj?.renderTransform ?? matrix3x2.create(),
     renderQueue: obj?.renderQueue ?? [],
     renderQueueLength: obj?.renderQueueLength ?? 0,

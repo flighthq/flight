@@ -2,7 +2,7 @@ import { addChild, createDisplayObject, removeChild } from '@flighthq/stage';
 import type { DisplayObject, Renderable, RendererState } from '@flighthq/types';
 
 import { createRendererState } from './createRendererState';
-import { updateRenderQueue } from './renderQueue';
+import { updateRenderQueue } from './queue';
 
 describe('updateRenderQueue', () => {
   let state: RendererState;

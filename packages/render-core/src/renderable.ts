@@ -1,5 +1,13 @@
 import { getAppearanceID, getLocalBoundsID, getWorldTransformID } from '@flighthq/stage';
-import type { RenderableData } from '@flighthq/types';
+import type { Renderable, RenderableData, RendererState } from '@flighthq/types';
+
+import { createRenderableData } from './createRenderableData';
+
+export function getRenderableData(state: RendererState, source: Renderable): RenderableData {
+  const renderableDataMap = state.renderableDataMap;
+  if (!renderableDataMap.has(source)) renderableDataMap.set(source, createRenderableData(source));
+  return renderableDataMap.get(source)!;
+}
 
 export function updateRenderableData(data: RenderableData): void {
   const source = data.source;
