@@ -16,6 +16,10 @@
     "./dirty": {
       "types": "./dist/dirty.d.ts",
       "default": "./dist/dirty.js"
+    },
+    "./renderQueue": {
+      "types": "./dist/renderQueue.d.ts",
+      "default": "./dist/renderQueue.js"
     }
   },
   "files": [

@@ -1,13 +1,5 @@
-import { createRenderableData, isRenderableDirty } from '@flighthq/render-core';
-import { getWorldTransform } from '@flighthq/stage';
-import type {
-  CanvasRendererState,
-  DisplayObject,
-  Matrix3x2,
-  Rectangle,
-  Renderable,
-  RenderableData,
-} from '@flighthq/types';
+import { updateRenderQueue } from '@flighthq/render-core';
+import type { CanvasRendererState, Matrix3x2, Rectangle, Renderable, RenderableData } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 export function renderCanvas(state: CanvasRendererState, source: Renderable): void {
@@ -18,7 +10,7 @@ export function renderCanvas(state: CanvasRendererState, source: Renderable): vo
   }
 }
 
-function clear(state: CanvasRendererState): void {
+export function clear(state: CanvasRendererState): void {
   const cacheBlendMode = state.currentBlendMode;
   state.currentBlendMode = null;
   setBlendMode(state, BlendMode.Normal);
@@ -36,7 +28,7 @@ function clear(state: CanvasRendererState): void {
   setBlendMode(state, cacheBlendMode);
 }
 
-function flushRenderQueue(state: CanvasRendererState): void {
+export function flushRenderQueue(state: CanvasRendererState): void {
   // const renderQueue = state.renderQueue;
   const renderQueueLength = state.renderQueueLength;
 
@@ -72,25 +64,29 @@ function flushRenderQueue(state: CanvasRendererState): void {
   }
 }
 
-function popMask(state: CanvasRendererState): void {
+export function popMask(state: CanvasRendererState): void {
   state.context.restore();
 }
 
-function popClipRect(state: CanvasRendererState): void {
+export function popClipRect(state: CanvasRendererState): void {
   state.context.restore();
 }
 
-// function popMaskObject(state: CanvasRendererState, object: RenderableData, handleScrollRect: boolean = true): void {
-//   if (/*!object.__isCacheBitmapRender && */ object.source.mask !== null) {
-//     popMask(state);
-//   }
+export function popMaskObject(
+  state: CanvasRendererState,
+  object: RenderableData,
+  handleScrollRect: boolean = true,
+): void {
+  if (/*!object.__isCacheBitmapRender && */ object.source.mask !== null) {
+    popMask(state);
+  }
 
-//   if (handleScrollRect && object.source.scrollRect != null) {
-//     popClipRect(state);
-//   }
-// }
+  if (handleScrollRect && object.source.scrollRect != null) {
+    popClipRect(state);
+  }
+}
 
-function pushClipRect(state: CanvasRendererState, rect: Rectangle, transform: Matrix3x2): void {
+export function pushClipRect(state: CanvasRendererState, rect: Rectangle, transform: Matrix3x2): void {
   state.context.save();
 
   setTransform(state, state.context, transform);
@@ -100,7 +96,7 @@ function pushClipRect(state: CanvasRendererState, rect: Rectangle, transform: Ma
   state.context.clip();
 }
 
-function pushMask(state: CanvasRendererState, mask: RenderableData): void {
+export function pushMask(state: CanvasRendererState, mask: RenderableData): void {
   state.context.save();
 
   setTransform(state, state.context, mask.renderTransform);
@@ -112,16 +108,20 @@ function pushMask(state: CanvasRendererState, mask: RenderableData): void {
   state.context.clip();
 }
 
-// function pushMaskObject(state: CanvasRendererState, object: RenderableData, handleScrollRect: boolean = true): void {
-//   if (handleScrollRect && object.source.scrollRect !== null) {
-//     pushClipRect(state, object.source.scrollRect, object.renderTransform);
-//   }
-//   if (/*!object.__isCacheBitmapRender &&*/ object.mask !== null) {
-//     pushMask(state, object.mask);
-//   }
-// }
+export function pushMaskObject(
+  state: CanvasRendererState,
+  object: RenderableData,
+  handleScrollRect: boolean = true,
+): void {
+  if (handleScrollRect && object.source.scrollRect !== null) {
+    pushClipRect(state, object.source.scrollRect, object.renderTransform);
+  }
+  if (/*!object.__isCacheBitmapRender &&*/ object.mask !== null) {
+    pushMask(state, object.mask);
+  }
+}
 
-function setBlendMode(state: CanvasRendererState, value: BlendMode | null): void {
+export function setBlendMode(state: CanvasRendererState, value: BlendMode | null): void {
   // if (overrideBlendMode !== null) value = overrideBlendMode;
   if (value === state.currentBlendMode) return;
 
@@ -171,7 +171,11 @@ function setBlendMode(state: CanvasRendererState, value: BlendMode | null): void
   }
 }
 
-function setTransform(state: CanvasRendererState, context: CanvasRenderingContext2D, transform: Matrix3x2): void {
+export function setTransform(
+  state: CanvasRendererState,
+  context: CanvasRenderingContext2D,
+  transform: Matrix3x2,
+): void {
   if (state.roundPixels) {
     context.setTransform(
       transform.a,
@@ -184,51 +188,4 @@ function setTransform(state: CanvasRendererState, context: CanvasRenderingContex
   } else {
     context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
   }
-}
-
-function updateRenderQueue(state: CanvasRendererState, source: DisplayObject): boolean {
-  const renderableStack = state.renderableStack;
-  const renderDataMap = state.renderData;
-  const renderQueue = state.renderQueue;
-
-  let dirty = false;
-  let parentAlpha = 1;
-  let renderQueueIndex = 0;
-
-  let renderableStackLength = 1;
-  renderableStack[0] = source;
-
-  while (renderableStackLength > 0) {
-    const current = renderableStack[--renderableStackLength];
-    const renderData =
-      renderDataMap.get(current) ?? renderDataMap.set(current, createRenderableData(current)).get(current)!;
-
-    if (!dirty) dirty = isRenderableDirty(renderData);
-    if (!current.visible) continue;
-
-    const mask = current.mask;
-    if (mask !== null) {
-      const maskRenderData = renderDataMap.get(mask) ?? renderDataMap.set(mask, createRenderableData(mask)).get(mask)!;
-      if (!dirty) dirty = isRenderableDirty(maskRenderData);
-      renderData.mask = maskRenderData;
-    }
-
-    const renderAlpha = current.alpha * parentAlpha;
-    renderData.renderAlpha = renderAlpha;
-    renderData.renderTransform = getWorldTransform(source);
-
-    renderQueue[renderQueueIndex++] = renderData;
-
-    if (current.children !== null) {
-      for (let i = current.children.length - 1; i >= 0; i--) {
-        // Add child to stack for further traversal
-        renderableStack[renderableStackLength++] = current.children[i];
-      }
-    }
-
-    parentAlpha = renderAlpha;
-  }
-
-  state.renderQueueLength = renderQueueIndex;
-  return dirty;
 }
