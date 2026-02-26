@@ -9,6 +9,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./createCanvasRendererState": {
+      "types": "./dist/createCanvasRendererState.d.ts",
+      "default": "./dist/createCanvasRendererState.js"
+    },
     "./renderer": {
       "types": "./dist/renderer.d.ts",
       "default": "./dist/renderer.js"

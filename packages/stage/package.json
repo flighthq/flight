@@ -17,6 +17,50 @@
       "types": "./dist/children.d.ts",
       "default": "./dist/children.js"
     },
+    "./createBitmap": {
+      "types": "./dist/createBitmap.d.ts",
+      "default": "./dist/createBitmap.js"
+    },
+    "./createDisplayObject": {
+      "types": "./dist/createDisplayObject.d.ts",
+      "default": "./dist/createDisplayObject.js"
+    },
+    "./createDOMObject": {
+      "types": "./dist/createDOMObject.d.ts",
+      "default": "./dist/createDOMObject.js"
+    },
+    "./createInputText": {
+      "types": "./dist/createInputText.d.ts",
+      "default": "./dist/createInputText.js"
+    },
+    "./createMovieClip": {
+      "types": "./dist/createMovieClip.d.ts",
+      "default": "./dist/createMovieClip.js"
+    },
+    "./createRichText": {
+      "types": "./dist/createRichText.d.ts",
+      "default": "./dist/createRichText.js"
+    },
+    "./createShape": {
+      "types": "./dist/createShape.d.ts",
+      "default": "./dist/createShape.js"
+    },
+    "./createStage": {
+      "types": "./dist/createStage.d.ts",
+      "default": "./dist/createStage.js"
+    },
+    "./createText": {
+      "types": "./dist/createText.d.ts",
+      "default": "./dist/createText.js"
+    },
+    "./createTilemap": {
+      "types": "./dist/createTilemap.d.ts",
+      "default": "./dist/createTilemap.js"
+    },
+    "./createVideo": {
+      "types": "./dist/createVideo.d.ts",
+      "default": "./dist/createVideo.js"
+    },
     "./revision": {
       "types": "./dist/revision.d.ts",
       "default": "./dist/revision.js"
