@@ -3,7 +3,7 @@ import type { RendererState } from '@flighthq/types';
 
 import { createRendererState } from './createRendererState';
 
-describe('createBitmap', () => {
+describe('createRendererState', () => {
   let state: RendererState;
 
   beforeEach(() => {
@@ -25,7 +25,6 @@ describe('createBitmap', () => {
   });
 
   it('allows pre-defined values', () => {
-    const image = {} as HTMLImageElement;
     const base = {
       backgroundColor: 0xff,
       backgroundColorRGBA: [1, 0, 0, 0],
