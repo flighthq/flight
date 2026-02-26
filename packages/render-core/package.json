@@ -21,13 +21,13 @@
       "types": "./dist/createRendererState.d.ts",
       "default": "./dist/createRendererState.js"
     },
-    "./renderableData": {
-      "types": "./dist/renderableData.d.ts",
-      "default": "./dist/renderableData.js"
+    "./queue": {
+      "types": "./dist/queue.d.ts",
+      "default": "./dist/queue.js"
     },
-    "./renderQueue": {
-      "types": "./dist/renderQueue.d.ts",
-      "default": "./dist/renderQueue.js"
+    "./renderable": {
+      "types": "./dist/renderable.d.ts",
+      "default": "./dist/renderable.js"
     }
   },
   "files": [

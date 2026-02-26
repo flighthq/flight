@@ -33,8 +33,8 @@ export function flushRenderQueue(state: CanvasRendererState): void {
   const renderQueueLength = state.renderQueueLength;
 
   for (let i = 0; i < renderQueueLength; i++) {
-    // const renderData = renderQueue[i];
-    // switch (renderData.type) {
+    // const data = renderQueue[i];
+    // switch (data.type) {
     //   case BITMAP_DATA:
     //     CanvasBitmapData.renderDrawable(cast object, this);
     //     break;

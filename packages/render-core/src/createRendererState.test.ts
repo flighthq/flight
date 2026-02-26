@@ -17,7 +17,7 @@ describe('createRendererState', () => {
     expect(state.currentBlendMode).toStrictEqual(null);
     expect(state.pixelRatio).toStrictEqual(1);
     expect(state.renderableStack).toStrictEqual([]);
-    expect(state.renderData).toStrictEqual(new WeakMap());
+    expect(state.renderableDataMap).toStrictEqual(new WeakMap());
     expect(state.renderTransform).toStrictEqual(matrix3x2.create());
     expect(state.renderQueue).toStrictEqual([]);
     expect(state.renderQueueLength).toStrictEqual(0);
@@ -32,7 +32,7 @@ describe('createRendererState', () => {
       currentBlendMode: null,
       pixelRatio: 5,
       renderableStack: [],
-      renderData: new WeakMap(),
+      renderableDataMap: new WeakMap(),
       renderTransform: matrix3x2.create(),
       renderQueue: [],
       renderQueueLength: 100,
@@ -45,7 +45,7 @@ describe('createRendererState', () => {
     expect(obj.currentBlendMode).toStrictEqual(base.currentBlendMode);
     expect(obj.pixelRatio).toStrictEqual(base.pixelRatio);
     expect(obj.renderableStack).toStrictEqual(base.renderableStack);
-    expect(obj.renderData).toStrictEqual(base.renderData);
+    expect(obj.renderableDataMap).toStrictEqual(base.renderableDataMap);
     expect(obj.renderTransform).toStrictEqual(base.renderTransform);
     expect(obj.renderQueue).toStrictEqual(base.renderQueue);
     expect(obj.renderQueueLength).toStrictEqual(base.renderQueueLength);

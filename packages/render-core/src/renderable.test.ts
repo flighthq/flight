@@ -10,7 +10,18 @@ import {
 import type { DisplayObject, RenderableData } from '@flighthq/types';
 
 import { createRenderableData } from './createRenderableData';
-import { updateRenderableData } from './renderableData';
+import { createRendererState } from './createRendererState';
+import { getRenderableData, updateRenderableData } from './renderable';
+
+describe('getRenderableData', () => {
+  it('creates renderable data if not present already', () => {
+    const state = createRendererState();
+    const source = createDisplayObject();
+    expect(state.renderableDataMap.has(source)).toBe(false);
+    getRenderableData(state, source);
+    expect(state.renderableDataMap.has(source)).toBe(true);
+  });
+});
 
 describe('updateRenderableData', () => {
   let source: DisplayObject;

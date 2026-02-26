@@ -1,12 +1,10 @@
 import { getWorldTransform } from '@flighthq/stage';
 import type { Renderable, RendererState } from '@flighthq/types';
 
-import { createRenderableData } from './createRenderableData';
-import { updateRenderableData } from './renderableData';
+import { getRenderableData, updateRenderableData } from './renderable';
 
 export function updateRenderQueue(state: RendererState, source: Renderable): boolean {
   const renderableStack = state.renderableStack;
-  const renderDataMap = state.renderData;
   const renderQueue = state.renderQueue;
 
   let dirty = false;
@@ -18,27 +16,26 @@ export function updateRenderQueue(state: RendererState, source: Renderable): boo
 
   while (renderableStackLength > 0) {
     const current = renderableStack[--renderableStackLength];
-    const renderData =
-      renderDataMap.get(current) ?? renderDataMap.set(current, createRenderableData(current)).get(current)!;
+    const data = getRenderableData(state, current);
 
-    updateRenderableData(renderData);
+    updateRenderableData(data);
 
-    if (!dirty && renderData.dirty) dirty = true;
+    if (!dirty && data.dirty) dirty = true;
     if (!current.visible) continue;
 
     const mask = current.mask;
     if (mask !== null) {
-      const maskRenderData = renderDataMap.get(mask) ?? renderDataMap.set(mask, createRenderableData(mask)).get(mask)!;
-      updateRenderableData(maskRenderData);
-      if (!dirty && maskRenderData.dirty) dirty = true;
-      renderData.mask = maskRenderData;
+      const maskData = getRenderableData(state, mask);
+      updateRenderableData(maskData);
+      if (!dirty && maskData.dirty) dirty = true;
+      data.mask = maskData;
     }
 
     const renderAlpha = current.alpha * parentAlpha;
-    renderData.renderAlpha = renderAlpha;
-    renderData.renderTransform = getWorldTransform(source);
+    data.renderAlpha = renderAlpha;
+    data.renderTransform = getWorldTransform(source);
 
-    renderQueue[renderQueueIndex++] = renderData;
+    renderQueue[renderQueueIndex++] = data;
 
     if (current.children !== null) {
       for (let i = current.children.length - 1; i >= 0; i--) {

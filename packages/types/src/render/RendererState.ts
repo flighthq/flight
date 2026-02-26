@@ -9,10 +9,10 @@ export default interface RendererState {
   readonly backgroundColorString: string;
   currentBlendMode: BlendMode | null;
   pixelRatio: number;
-  renderTransform: Matrix3x2;
-  roundPixels: boolean;
+  renderableDataMap: WeakMap<Renderable, RenderableData>;
   renderableStack: Renderable[];
-  renderData: WeakMap<Renderable, RenderableData>;
   renderQueue: RenderableData[];
   renderQueueLength: number;
+  renderTransform: Matrix3x2;
+  roundPixels: boolean;
 }
