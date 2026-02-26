@@ -13,7 +13,7 @@
     { "path": "../interaction" },
     { "path": "../math" },
     { "path": "../render-core" },
-    { "path": "../render-output-canvas" },
+    { "path": "../render-canvas" },
     { "path": "../stage" },
     { "path": "../types" },
     { "path": "../world" }

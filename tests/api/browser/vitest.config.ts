@@ -18,7 +18,7 @@ export default mergeConfig(
         '@flight/interaction': path.resolve(__dirname, '../../../packages/interaction/dist/index.js'),
         '@flight/math': path.resolve(__dirname, '../../../packages/math/dist/index.js'),
         '@flight/render-core': path.resolve(__dirname, '../../packages/render-core/dist/index.js'),
-        '@flight/render-output-canvas': path.resolve(__dirname, '../../packages/render-output-canvas/dist/index.js'),
+        '@flight/render-canvas': path.resolve(__dirname, '../../packages/render-canvas/dist/index.js'),
         '@flight/stage': path.resolve(__dirname, '../../../packages/stage/dist/index.js'),
         '@flight/types': path.resolve(__dirname, '../../../packages/types/dist/index.js'),
       },

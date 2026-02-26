@@ -6,7 +6,7 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      name: 'unit:render-output-canvas',
+      name: 'unit:render-canvas',
       environment: 'jsdom',
       include: ['src/**/*.test.ts'],
     },

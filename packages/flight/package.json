@@ -24,7 +24,7 @@
     "@flighthq/filters": "^1.0.0",
     "@flighthq/interaction": "^1.0.0",
     "@flighthq/math": "^1.0.0",
-    "@flighthq/render-output-canvas": "^1.0.0",
+    "@flighthq/render-canvas": "^1.0.0",
     "@flighthq/stage": "^1.0.0",
     "@flighthq/types": "^1.0.0",
     "@flighthq/world": "^1.0.0"

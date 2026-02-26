@@ -6,7 +6,7 @@
   },
   "references": [
     { "path": "../../packages/flight" },
-    { "path": "../../packages/render-output-canvas" },
+    { "path": "../../packages/render-canvas" },
     { "path": "../../packages/types" }
   ],
   "include": ["src/**/*"],

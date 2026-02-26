@@ -4,7 +4,7 @@
   "type": "module",
   "dependencies": {
     "@flighthq/flight": "^1.0.0",
-    "@flighthq/render-output-canvas": "^1.0.0",
+    "@flighthq/render-canvas": "^1.0.0",
     "@flighthq/types": "^1.0.0",
     "typescript": "^5.0.0",
     "vite": "^4.0.0"
