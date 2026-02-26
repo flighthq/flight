@@ -6,6 +6,7 @@ export function createRenderableData(source: Renderable): RenderableData {
     source: source,
     appearanceID: -1,
     cacheAsBitmap: false,
+    dirty: false,
     localBoundsID: -1,
     mask: null,
     renderAlpha: -1,
