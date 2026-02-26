@@ -1,6 +1,6 @@
 import type { RendererState } from '@flighthq/types/render';
 
-import type { RendererStateInternal } from './internal/write';
+import type { RendererStateInternal } from './internal/writeInternal';
 
 export function setBackgroundColor(state: RendererState, color: number): void {
   const _state = state as RendererStateInternal;

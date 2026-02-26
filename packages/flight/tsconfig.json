@@ -12,7 +12,8 @@
     { "path": "../filters" },
     { "path": "../interaction" },
     { "path": "../math" },
-    { "path": "../render" },
+    { "path": "../render-core" },
+    { "path": "../render-output-canvas" },
     { "path": "../stage" },
     { "path": "../types" },
     { "path": "../world" }

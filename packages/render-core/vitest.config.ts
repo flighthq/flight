@@ -6,8 +6,8 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      name: 'unit:render',
-      environment: 'jsdom',
+      name: 'unit:render-core',
+      environment: 'node',
       include: ['src/**/*.test.ts'],
     },
   }),

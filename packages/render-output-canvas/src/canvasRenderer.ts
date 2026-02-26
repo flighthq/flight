@@ -1,3 +1,4 @@
+import { createRenderableData, isRenderableDirty } from '@flighthq/render-core';
 import { getWorldTransform } from '@flighthq/stage';
 import type {
   CanvasRendererState,
@@ -8,9 +9,6 @@ import type {
   RenderableData,
 } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
-
-import { createRenderableData } from './createRenderableData';
-import { isRenderableDirty } from './dirty';
 
 export function renderCanvas(state: CanvasRendererState, source: Renderable): void {
   const dirty = updateRenderQueue(state, source);
