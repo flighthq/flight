@@ -1,4 +1,4 @@
-import { createCanvasRendererState, renderCanvas } from '@flighthq/render';
+import { createCanvasRendererState, renderCanvas } from '@flighthq/render-output-canvas';
 
 import Main from './Main.js';
 
