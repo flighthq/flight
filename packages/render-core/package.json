@@ -13,6 +13,14 @@
       "types": "./dist/color.d.ts",
       "default": "./dist/color.js"
     },
+    "./createRenderableData": {
+      "types": "./dist/createRenderableData.d.ts",
+      "default": "./dist/createRenderableData.js"
+    },
+    "./createRendererState": {
+      "types": "./dist/createRendererState.d.ts",
+      "default": "./dist/createRendererState.js"
+    },
     "./dirty": {
       "types": "./dist/dirty.d.ts",
       "default": "./dist/dirty.js"

@@ -9,9 +9,9 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./hitTest": {
-      "types": "./dist/hitTest.d.ts",
-      "default": "./dist/hitTest.js"
+    "./createTimeline": {
+      "types": "./dist/createTimeline.d.ts",
+      "default": "./dist/createTimeline.js"
     }
   },
   "files": [
