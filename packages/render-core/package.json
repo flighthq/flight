@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/render",
+  "name": "@flighthq/render-core",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -8,10 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./canvasRenderer": {
-      "types": "./dist/canvasRenderer.d.ts",
-      "default": "./dist/canvasRenderer.js"
     },
     "./color": {
       "types": "./dist/color.d.ts",

@@ -8,12 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [
-    { "path": "../filters" },
-    { "path": "../math" },
-    { "path": "../stage" },
-    { "path": "../types" },
-    { "path": "../world" }
-  ],
+  "references": [{ "path": "../math" }, { "path": "../render-core" }, { "path": "../stage" }, { "path": "../types" }],
   "include": ["src"]
 }

@@ -1,7 +1,6 @@
 import { matrix3x2 } from '@flighthq/math';
+import { setBackgroundColor } from '@flighthq/render-core';
 import type { CanvasRendererOptions, CanvasRendererState } from '@flighthq/types';
-
-import { setBackgroundColor } from './color';
 
 export function createCanvasRendererState(
   canvas: HTMLCanvasElement,
