@@ -1,34 +1,41 @@
 import { createImageSource } from '@flighthq/assets';
-import type { ImageSource as ImageSourceLike } from '@flighthq/types';
+import type { ImageSource as ImageSourceModel } from '@flighthq/types';
 
-export default class ImageSource implements ImageSourceLike {
-  private __model: ImageSourceLike;
+export default class ImageSource {
+  public readonly model: ImageSourceModel;
 
   constructor(source: HTMLImageElement) {
-    this.__model = createImageSource(source);
+    this.model = createImageSource(source);
+  }
+
+  static fromModel(model: Readonly<ImageSourceModel>): ImageSource {
+    const out = new ImageSource(model.source);
+    out.model.height = model.height;
+    out.model.width = model.width;
+    return out;
   }
 
   get height(): number {
-    return this.__model.width;
+    return this.model.width;
   }
 
   set height(value: number) {
-    this.__model.height = value;
+    this.model.height = value;
   }
 
   get source(): HTMLImageElement {
-    return this.__model.source;
+    return this.model.source;
   }
 
   set source(value: HTMLImageElement) {
-    this.__model.source = value;
+    this.model.source = value;
   }
 
   get width(): number {
-    return this.__model.width;
+    return this.model.width;
   }
 
   set width(value: number) {
-    this.__model.width = value;
+    this.model.width = value;
   }
 }

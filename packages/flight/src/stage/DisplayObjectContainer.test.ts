@@ -1,5 +1,6 @@
 import DisplayObject from './DisplayObject.js';
 import DisplayObjectContainer from './DisplayObjectContainer.js';
+import { getDisplayObjectFromModel } from './internal/displayObjectMap.js';
 
 describe('DisplayObjectContainer', () => {
   let container: DisplayObjectContainer;
@@ -13,7 +14,9 @@ describe('DisplayObjectContainer', () => {
   });
 
   function getChildren(object: DisplayObject) {
-    return object.children!;
+    return object.model.children!.map((model) => {
+      return getDisplayObjectFromModel(model);
+    });
   }
 
   // Constructor
@@ -143,8 +146,8 @@ describe('DisplayObjectContainer', () => {
       expect(childA.parent).toBe(container);
     });
 
-    it('is safe when child is null', () => {
-      expect(() => container.removeChild(null as any)).not.toThrow(); // eslint-disable-line
+    it('is not safe when child is null', () => {
+      expect(() => container.removeChild(null as any)).toThrow(); // eslint-disable-line
     });
 
     it('always clears the parent reference', () => {

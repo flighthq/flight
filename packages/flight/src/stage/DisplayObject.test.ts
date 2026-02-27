@@ -51,54 +51,54 @@ describe('DisplayObject', () => {
 
     it('invalidates appearance dirty when changed', () => {
       displayObject.alpha = 0.5;
-      expect(getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject.model)).toBe(1);
     });
 
     it('does not invalidate when unchanged', () => {
       displayObject.alpha = 1;
-      expect(getAppearanceID(displayObject)).toBe(0);
+      expect(getAppearanceID(displayObject.model)).toBe(0);
     });
   });
 
   describe('cacheAsBitmap', () => {
     it('invalidates appearance when toggled', () => {
       displayObject.cacheAsBitmap = true;
-      expect(getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject.model)).toBe(1);
 
       displayObject.cacheAsBitmap = false;
-      expect(getAppearanceID(displayObject)).toBe(2);
+      expect(getAppearanceID(displayObject.model)).toBe(2);
     });
   });
 
   describe('cacheAsBitmapMatrix', () => {
     it('does not invalidate if cacheAsBitmap is false', () => {
       displayObject.cacheAsBitmapMatrix = new Matrix();
-      expect(getAppearanceID(displayObject)).toBe(0);
+      expect(getAppearanceID(displayObject.model)).toBe(0);
     });
 
     it('marks transform dirty when cacheAsBitmap is true and matrix changes', () => {
       displayObject.cacheAsBitmap = true;
       displayObject.cacheAsBitmapMatrix = new Matrix(2, 0, 0, 2);
 
-      expect(getAppearanceID(displayObject)).toBe(2);
+      expect(getAppearanceID(displayObject.model)).toBe(2);
     });
 
     it('does not invalidate transform if matrix values are equal', () => {
       const m = new Matrix();
-      expect(getAppearanceID(displayObject)).toBe(0);
+      expect(getAppearanceID(displayObject.model)).toBe(0);
       displayObject.cacheAsBitmapMatrix = m;
-      expect(getAppearanceID(displayObject)).toBe(0);
+      expect(getAppearanceID(displayObject.model)).toBe(0);
       displayObject.cacheAsBitmap = true;
-      expect(getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject.model)).toBe(1);
       displayObject.cacheAsBitmapMatrix = m;
-      expect(getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject.model)).toBe(1);
     });
   });
 
   describe('height', () => {
     it('returns bounds height', () => {
       displayObject.scaleY = 2;
-      expect(displayObject.height).toBe(getBoundsRect(displayObject).height);
+      expect(displayObject.height).toBe(getBoundsRect(displayObject.model).height);
     });
   });
 
@@ -107,7 +107,7 @@ describe('DisplayObject', () => {
     //   const mask = new TestDisplayObject();
 
     //   displayObject.mask = mask;
-    //   expect(mask[R.maskedObject]).toBe(displayObject);
+    //   expect(mask[R.maskedObject]).toBe(displayObject.model);
 
     //   displayObject.mask = null;
     //   expect(mask[R.maskedObject]).toBeNull();
@@ -115,7 +115,7 @@ describe('DisplayObject', () => {
 
     it('invalidates appearance when changed', () => {
       displayObject.mask = new TestDisplayObject();
-      expect(getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject.model)).toBe(1);
     });
   });
 
@@ -136,7 +136,7 @@ describe('DisplayObject', () => {
 
     it('marks transform dirty when changed', () => {
       displayObject.rotation = 45;
-      expect(getLocalTransformID(displayObject)).toBe(1);
+      expect(getLocalTransformID(displayObject.model)).toBe(1);
     });
   });
 
@@ -144,14 +144,14 @@ describe('DisplayObject', () => {
     it('marks transform dirty when changed', () => {
       displayObject.scaleX = 2;
 
-      expect(getLocalTransformID(displayObject)).toBe(1);
+      expect(getLocalTransformID(displayObject.model)).toBe(1);
     });
 
     it('correctly affects local transform with rotation', () => {
       displayObject.rotation = 90;
       displayObject.scaleX = 2;
 
-      const m = getLocalTransform(displayObject);
+      const m = getLocalTransform(displayObject.model);
       expect(m.a).toBe(0);
       expect(m.b).toBe(2);
       expect(m.c).toBe(-1);
@@ -163,14 +163,14 @@ describe('DisplayObject', () => {
     it('marks transform dirty when changed', () => {
       displayObject.scaleY = 3;
 
-      expect(getLocalTransformID(displayObject)).toBe(1);
+      expect(getLocalTransformID(displayObject.model)).toBe(1);
     });
 
     it('correctly affects local transform with rotation', () => {
       displayObject.rotation = 90;
       displayObject.scaleY = 3;
 
-      const m = getLocalTransform(displayObject);
+      const m = getLocalTransform(displayObject.model);
       expect(m.a).toBe(0);
       expect(m.b).toBe(1);
       expect(m.c).toBe(-3);
@@ -181,31 +181,31 @@ describe('DisplayObject', () => {
   describe('scrollRect', () => {
     it('marks clip dirty when changed', () => {
       displayObject.scrollRect = new Rectangle();
-      expect(getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject.model)).toBe(1);
     });
   });
 
   describe('visible', () => {
     it('marks appearance dirty when changed', () => {
       displayObject.visible = false;
-      expect(getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject.model)).toBe(1);
     });
 
     it('marks appearance dirty only once if changed', () => {
-      expect(getAppearanceID(displayObject)).toBe(0);
+      expect(getAppearanceID(displayObject.model)).toBe(0);
       displayObject.visible = true;
-      expect(getAppearanceID(displayObject)).toBe(0);
+      expect(getAppearanceID(displayObject.model)).toBe(0);
       displayObject.visible = false;
-      expect(getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject.model)).toBe(1);
       displayObject.visible = false;
-      expect(getAppearanceID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject.model)).toBe(1);
     });
   });
 
   describe('width', () => {
     it('returns bounds width', () => {
       displayObject.scaleX = 2;
-      expect(displayObject.width).toBe(getBoundsRect(displayObject).width);
+      expect(displayObject.width).toBe(getBoundsRect(displayObject.model).width);
     });
   });
 
@@ -217,12 +217,12 @@ describe('DisplayObject', () => {
 
     it('marks transform dirty when changed', () => {
       displayObject.x = 10;
-      expect(getLocalTransformID(displayObject)).toBe(1);
+      expect(getLocalTransformID(displayObject.model)).toBe(1);
     });
 
     it('updates translation in local transform', () => {
       displayObject.x = 5;
-      const m = getLocalTransform(displayObject);
+      const m = getLocalTransform(displayObject.model);
       expect(m.tx).toBe(5);
     });
   });
@@ -235,12 +235,12 @@ describe('DisplayObject', () => {
 
     it('marks transform dirty when changed', () => {
       displayObject.y = 20;
-      expect(getLocalTransformID(displayObject)).toBe(1);
+      expect(getLocalTransformID(displayObject.model)).toBe(1);
     });
 
     it('updates translation in local transform', () => {
       displayObject.y = 7;
-      const m = getLocalTransform(displayObject);
+      const m = getLocalTransform(displayObject.model);
       expect(m.ty).toBe(7);
     });
   });
@@ -258,18 +258,18 @@ describe('DisplayObject', () => {
       grandChild = new TestDisplayObject();
 
       // fake hierarchy
-      (child as any).parent = root as any; // eslint-disable-line
-      (grandChild as any).parent = child as any; // eslint-disable-line
+      (child.model as any).parent = root.model as any; // eslint-disable-line
+      (grandChild.model as any).parent = child.model as any; // eslint-disable-line
 
       // fake local bounds
-      rectangle.setTo(getLocalBoundsRect(root), 0, 0, 100, 100);
-      rectangle.setTo(getLocalBoundsRect(child), 10, 20, 50, 50);
-      rectangle.setTo(getLocalBoundsRect(grandChild), 5, 5, 10, 10);
+      rectangle.setTo(getLocalBoundsRect(root.model), 0, 0, 100, 100);
+      rectangle.setTo(getLocalBoundsRect(child.model), 10, 20, 50, 50);
+      rectangle.setTo(getLocalBoundsRect(grandChild.model), 5, 5, 10, 10);
     });
 
     it('should return local bounds when targetCoordinateSpace is self', () => {
       const out = child.getBounds(child);
-      expect(out).toEqual(getLocalBoundsRect(child));
+      expect(out.model).toEqual(getLocalBoundsRect(child.model));
     });
 
     it('should compute bounds relative to parent', () => {
@@ -335,18 +335,18 @@ describe('DisplayObject', () => {
       grandChild = new TestDisplayObject();
 
       // fake hierarchy
-      (child as any).parent = root as any; // eslint-disable-line
-      (grandChild as any).parent = child as any; // eslint-disable-line
+      (child.model as any).parent = root.model as any; // eslint-disable-line
+      (grandChild.model as any).parent = child.model as any; // eslint-disable-line
 
       // fake local bounds
-      rectangle.setTo(getLocalBoundsRect(root), 0, 0, 100, 100);
-      rectangle.setTo(getLocalBoundsRect(child), 10, 20, 50, 50);
-      rectangle.setTo(getLocalBoundsRect(grandChild), 5, 5, 10, 10);
+      rectangle.setTo(getLocalBoundsRect(root.model), 0, 0, 100, 100);
+      rectangle.setTo(getLocalBoundsRect(child.model), 10, 20, 50, 50);
+      rectangle.setTo(getLocalBoundsRect(grandChild.model), 5, 5, 10, 10);
     });
 
     it('should return local bounds when targetCoordinateSpace is self', () => {
       const out = child.getRect(child);
-      expect(out).toEqual(getLocalBoundsRect(child));
+      expect(out.model).toEqual(getLocalBoundsRect(child.model));
     });
 
     it('should compute bounds relative to parent', () => {
@@ -401,7 +401,7 @@ describe('DisplayObject', () => {
     beforeEach(() => {
       obj = new TestDisplayObject();
       // fake parent
-      (obj as any).parent = new TestDisplayObject() as any; // eslint-disable-line
+      (obj.model as any).parent = new TestDisplayObject().model as any; // eslint-disable-line
       obj.x = 10;
       obj.y = 20;
       obj.scaleX = 2;
@@ -437,12 +437,12 @@ describe('DisplayObject', () => {
       b = new TestDisplayObject();
 
       // fake parent
-      (a as any).parent = new TestDisplayObject() as any; // eslint-disable-line
-      (b as any).parent = new TestDisplayObject() as any; // eslint-disable-line
+      (a.model as any).parent = new TestDisplayObject().model as any; // eslint-disable-line
+      (b.model as any).parent = new TestDisplayObject().model as any; // eslint-disable-line
 
       // Simple local bounds
-      rectangle.setTo(getLocalBoundsRect(a), 0, 0, 10, 10);
-      rectangle.setTo(getLocalBoundsRect(b), 0, 0, 10, 10);
+      rectangle.setTo(getLocalBoundsRect(a.model), 0, 0, 10, 10);
+      rectangle.setTo(getLocalBoundsRect(b.model), 0, 0, 10, 10);
 
       // Position b to overlap a
       a.x = 0;
@@ -468,7 +468,7 @@ describe('DisplayObject', () => {
     });
 
     it('returns false if either object has no parent', () => {
-      (b as any).parent = null; // eslint-disable-line
+      (b.model as any).parent = null; // eslint-disable-line
 
       const result = a.hitTestObject(b);
       expect(result).toBe(false);
@@ -494,7 +494,7 @@ describe('DisplayObject', () => {
       obj.visible = true;
       obj.opaqueBackground = 0xff0000;
       // set a simple local bounds rectangle
-      rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 100, 100);
+      rectangle.setTo(getLocalBoundsRect(obj.model), 0, 0, 100, 100);
     });
 
     it('returns true for point inside bounds', () => {
@@ -543,9 +543,9 @@ describe('DisplayObject', () => {
     it('invalidates local bounds, transform and appearance', () => {
       displayObject.invalidate();
 
-      expect(getAppearanceID(displayObject)).toBe(1);
-      expect(getLocalBoundsID(displayObject)).toBe(1);
-      expect(getLocalTransformID(displayObject)).toBe(1);
+      expect(getAppearanceID(displayObject.model)).toBe(1);
+      expect(getLocalBoundsID(displayObject.model)).toBe(1);
+      expect(getLocalTransformID(displayObject.model)).toBe(1);
     });
   });
 
