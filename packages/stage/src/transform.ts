@@ -1,4 +1,4 @@
-import { matrix3x2 } from '@flighthq/math';
+import { matrix3x2 } from '@flighthq/geom';
 import type { DisplayObject, GraphState, Matrix3x2, Vector2 } from '@flighthq/types';
 
 import { getGraphState } from './internal/graphState';

@@ -1,4 +1,4 @@
-import { rectangle } from '@flighthq/math';
+import { rectangle } from '@flighthq/geom';
 import type { DisplayObject, Rectangle } from '@flighthq/types';
 
 import {

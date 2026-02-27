@@ -1,4 +1,4 @@
-import { matrix3x2, matrix3x2Pool, rectangle } from '@flighthq/math';
+import { matrix3x2, matrix3x2Pool, rectangle } from '@flighthq/geom';
 import type { BitmapData, DisplayObject, Rectangle } from '@flighthq/types';
 import type { GraphState } from '@flighthq/types';
 
