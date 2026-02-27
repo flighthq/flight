@@ -1,5 +1,5 @@
+import type Tileset from '../assets/Tileset';
 import type { PrimitiveData } from './PrimitiveData';
-import type Tileset from './Tileset';
 
 export default interface TilemapData extends PrimitiveData {
   smoothing: boolean;
