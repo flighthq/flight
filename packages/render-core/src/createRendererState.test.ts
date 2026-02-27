@@ -1,5 +1,6 @@
-import { matrix3x2 } from '@flighthq/math';
-import type { RendererState } from '@flighthq/types';
+import { matrix3x2 } from '@flighthq/geom';
+import { colorTransform } from '@flighthq/materials';
+import { BlendMode, type RendererState } from '@flighthq/types';
 
 import { createRendererState } from './createRendererState';
 
@@ -14,14 +15,18 @@ describe('createRendererState', () => {
     expect(state.backgroundColor).toStrictEqual(0);
     expect(state.backgroundColorRGBA).toStrictEqual([]);
     expect(state.backgroundColorString).toStrictEqual('');
-    expect(state.currentBlendMode).toStrictEqual(null);
+    expect(state.currentFrameID).toStrictEqual(0);
+    expect(state.currentQueue).toStrictEqual([]);
+    expect(state.currentQueueLength).toStrictEqual(0);
     expect(state.pixelRatio).toStrictEqual(1);
-    expect(state.renderableStack).toStrictEqual([]);
     expect(state.renderableDataMap).toStrictEqual(new WeakMap());
-    expect(state.renderTransform).toStrictEqual(matrix3x2.create());
-    expect(state.renderQueue).toStrictEqual([]);
-    expect(state.renderQueueLength).toStrictEqual(0);
+    expect(state.renderAlpha).toStrictEqual(1);
+    expect(state.renderBlendMode).toStrictEqual(BlendMode.Normal);
+    expect(state.renderColorTransform).toStrictEqual(null);
+    expect(state.renderShader).toStrictEqual(null);
+    expect(state.renderTransform).toStrictEqual(null);
     expect(state.roundPixels).toStrictEqual(false);
+    expect(state.tempStack).toStrictEqual([]);
   });
 
   it('allows pre-defined values', () => {
@@ -29,27 +34,35 @@ describe('createRendererState', () => {
       backgroundColor: 0xff,
       backgroundColorRGBA: [1, 0, 0, 0],
       backgroundColorString: '#FF000000',
-      currentBlendMode: null,
+      currentFrameID: 10,
+      currentQueue: [],
+      currentQueueLength: 100,
       pixelRatio: 5,
-      renderableStack: [],
       renderableDataMap: new WeakMap(),
+      renderAlpha: 0.5,
+      renderBlendMode: BlendMode.Multiply,
+      renderColorTransform: colorTransform.create(),
+      renderShader: null,
       renderTransform: matrix3x2.create(),
-      renderQueue: [],
-      renderQueueLength: 100,
       roundPixels: true,
+      tempStack: [],
     };
     const obj = createRendererState(base);
     expect(obj.backgroundColor).toStrictEqual(base.backgroundColor);
     expect(obj.backgroundColorRGBA).toStrictEqual(base.backgroundColorRGBA);
     expect(obj.backgroundColorString).toStrictEqual(base.backgroundColorString);
-    expect(obj.currentBlendMode).toStrictEqual(base.currentBlendMode);
+    expect(obj.currentFrameID).toStrictEqual(base.currentFrameID);
+    expect(obj.currentQueue).toStrictEqual(base.currentQueue);
+    expect(obj.currentQueueLength).toStrictEqual(base.currentQueueLength);
     expect(obj.pixelRatio).toStrictEqual(base.pixelRatio);
-    expect(obj.renderableStack).toStrictEqual(base.renderableStack);
     expect(obj.renderableDataMap).toStrictEqual(base.renderableDataMap);
+    expect(obj.renderAlpha).toStrictEqual(base.renderAlpha);
+    expect(obj.renderBlendMode).toStrictEqual(base.renderBlendMode);
+    expect(obj.renderColorTransform).toStrictEqual(base.renderColorTransform);
+    expect(obj.renderShader).toStrictEqual(base.renderShader);
     expect(obj.renderTransform).toStrictEqual(base.renderTransform);
-    expect(obj.renderQueue).toStrictEqual(base.renderQueue);
-    expect(obj.renderQueueLength).toStrictEqual(base.renderQueueLength);
     expect(obj.roundPixels).toStrictEqual(base.roundPixels);
+    expect(obj.tempStack).toStrictEqual(base.tempStack);
   });
 
   it('returns a new object for better hidden-class performance', () => {

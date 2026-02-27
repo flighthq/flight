@@ -1,7 +1,10 @@
-import type { RendererState } from '@flighthq/types';
+import { colorTransform } from '@flighthq/materials';
+import { addChild, createDisplayObject } from '@flighthq/stage';
+import type { DisplayObject, RenderableData, RendererState } from '@flighthq/types';
 
-import { setBackgroundColor } from './color';
+import { setBackgroundColor, updateColorTransform } from './color';
 import { createRendererState } from './createRendererState';
+import { getRenderableData } from './renderable';
 
 describe('setBackgroundColor', () => {
   let state: RendererState;
@@ -43,5 +46,58 @@ describe('setBackgroundColor', () => {
     expect(state.backgroundColor).toBe(0x12345678);
     expect(state.backgroundColorRGBA).toStrictEqual([0x12 / 255, 0x34 / 255, 0x56 / 255, 0x78 / 255]);
     expect(state.backgroundColorString).toBe('#12345678');
+  });
+});
+
+describe('updateColorTransform', () => {
+  let parent: DisplayObject;
+  let parentData: RenderableData;
+  let child: DisplayObject;
+  let childData: RenderableData;
+  let state: RendererState;
+
+  beforeEach(() => {
+    parent = createDisplayObject();
+    child = createDisplayObject();
+    addChild(parent, child);
+    state = createRendererState();
+    parentData = getRenderableData(state, parent);
+    childData = getRenderableData(state, child);
+  });
+
+  it('sets useColorTransform to false if source does not use color transform', () => {
+    updateColorTransform(state, parentData);
+    expect(parentData.useColorTransform).toBe(false);
+    updateColorTransform(state, childData, parentData);
+    expect(childData.useColorTransform).toBe(false);
+  });
+
+  it('sets useColorTransform to false if source has identity color transform', () => {
+    parent.colorTransform = colorTransform.create();
+    updateColorTransform(state, parentData);
+    expect(parentData.useColorTransform).toBe(false);
+  });
+
+  it('sets useColorTransform to true if source has non-identity color transform', () => {
+    parent.colorTransform = colorTransform.create();
+    parent.colorTransform.redMultiplier = 0.5;
+    updateColorTransform(state, parentData);
+    expect(parentData.useColorTransform).toBe(true);
+  });
+
+  it('propagates to children', () => {
+    parent.colorTransform = colorTransform.create();
+    parent.colorTransform.redMultiplier = 0.5;
+    updateColorTransform(state, parentData);
+    updateColorTransform(state, childData, parentData);
+    expect(childData.useColorTransform).toBe(true);
+  });
+
+  it('does not propagate to parents', () => {
+    child.colorTransform = colorTransform.create();
+    child.colorTransform.redMultiplier = 0.5;
+    updateColorTransform(state, childData, parentData);
+    updateColorTransform(state, parentData);
+    expect(parentData.useColorTransform).toBe(false);
   });
 });

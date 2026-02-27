@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../math" }, { "path": "../stage" }, { "path": "../types" }],
+  "references": [{ "path": "../geom" }, { "path": "../materials" }, { "path": "../stage" }, { "path": "../types" }],
   "include": ["src"]
 }
