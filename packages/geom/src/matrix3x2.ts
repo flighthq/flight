@@ -547,3 +547,15 @@ export function translate(out: Matrix3x2, source: Readonly<Matrix3x2>, dx: numbe
   out.tx = source.tx + dx;
   out.ty = source.ty + dy;
 }
+
+/**
+ * Transforms a vector, then translates by the result.
+ */
+export function translateUsingVector(out: Matrix3x2, matrix: Readonly<Matrix3x2>, vector: Readonly<Vector2>) {
+  translateUsingVectorXY(out, matrix, vector.x, vector.y);
+}
+
+export function translateUsingVectorXY(out: Matrix3x2, source: Readonly<Matrix3x2>, x: number, y: number) {
+  out.tx = source.tx + source.a * x + source.c * y;
+  out.ty = source.ty + source.b * x + source.d * y;
+}
