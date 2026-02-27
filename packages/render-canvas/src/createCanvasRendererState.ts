@@ -1,4 +1,4 @@
-import { matrix3x2 } from '@flighthq/math';
+import { matrix3x2 } from '@flighthq/geom';
 import { createRendererState, setBackgroundColor } from '@flighthq/render-core';
 import type { CanvasRendererOptions, CanvasRendererState } from '@flighthq/types';
 

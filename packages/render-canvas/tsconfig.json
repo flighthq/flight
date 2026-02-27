@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../math" }, { "path": "../render-core" }, { "path": "../stage" }, { "path": "../types" }],
+  "references": [{ "path": "../geom" }, { "path": "../render-core" }, { "path": "../stage" }, { "path": "../types" }],
   "include": ["src"]
 }
