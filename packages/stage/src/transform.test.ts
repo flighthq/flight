@@ -1,4 +1,4 @@
-import { matrix3x2, vector2 } from '@flighthq/math';
+import { matrix3x2, vector2 } from '@flighthq/geom';
 import type { DisplayObject, Matrix3x2 } from '@flighthq/types';
 
 import { addChild } from './children';

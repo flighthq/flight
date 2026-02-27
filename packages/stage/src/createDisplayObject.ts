@@ -10,6 +10,7 @@ export function createDisplayObject(obj?: PartialWithData<DisplayObject>): Displ
     cacheAsBitmap: obj?.cacheAsBitmap ?? false,
     cacheAsBitmapMatrix: obj?.cacheAsBitmapMatrix ?? null,
     children: (obj as DisplayObjectInternal)?.children ?? null,
+    colorTransform: obj?.colorTransform ?? null,
     data: obj?.data ?? null,
     filters: obj?.filters ?? null,
     mask: obj?.mask ?? null,

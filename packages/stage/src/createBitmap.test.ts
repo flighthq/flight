@@ -1,4 +1,4 @@
-import type { Bitmap } from '@flighthq/types';
+import type { Bitmap, ImageSource } from '@flighthq/types';
 
 import { createBitmap } from './createBitmap';
 
@@ -15,7 +15,7 @@ describe('createBitmap', () => {
   });
 
   it('allows pre-defined values', () => {
-    const image = {} as HTMLImageElement;
+    const image = {} as ImageSource;
     const base = {
       data: {
         image: image,
