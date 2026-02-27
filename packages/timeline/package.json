@@ -25,7 +25,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@flighthq/math": "^1.0.0",
+    "@flighthq/geom": "^1.0.0",
     "@flighthq/stage": "^1.0.0",
     "@flighthq/types": "^1.0.0"
   },

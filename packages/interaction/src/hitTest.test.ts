@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { rectangle } from '@flighthq/math';
+import { rectangle } from '@flighthq/geom';
 import { getLocalBoundsRect } from '@flighthq/stage/bounds';
 import { createDisplayObject } from '@flighthq/stage/createDisplayObject';
 import { invalidateLocalTransform } from '@flighthq/stage/revision';

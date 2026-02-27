@@ -7,10 +7,11 @@ export default mergeConfig(
   defineConfig({
     test: {
       projects: [
-        'packages/filters',
+        'packages/assets',
         'packages/flight',
+        'packages/geom',
         'packages/interaction',
-        'packages/math',
+        'packages/materials',
         'packages/render-canvas',
         'packages/render-core',
         'packages/stage',
