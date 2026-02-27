@@ -9,6 +9,7 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../assets" },
     { "path": "../geom" },
     { "path": "../interaction" },
     { "path": "../materials" },
