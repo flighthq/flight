@@ -1,15 +1,13 @@
 import { addChild, createDisplayObject } from '@flighthq/stage';
-import type { DisplayObject, RenderableData, RendererState } from '@flighthq/types';
+import type { DisplayObject, RendererState } from '@flighthq/types';
 
 import { createRendererState } from './createRendererState';
 import { prepareRenderQueue } from './queue';
-import { getRenderableData, updateRenderableDataTree } from './renderable';
+import { updateRenderableDataTree } from './renderable';
 
 describe('prepareRenderQueue', () => {
   let parent: DisplayObject;
-  let parentData: RenderableData;
   let child: DisplayObject;
-  let childData: RenderableData;
   let state: RendererState;
 
   beforeEach(() => {
@@ -17,8 +15,6 @@ describe('prepareRenderQueue', () => {
     child = createDisplayObject();
     addChild(parent, child);
     state = createRendererState();
-    parentData = getRenderableData(state, parent);
-    childData = getRenderableData(state, child);
   });
 
   it('keeps objects which are renderable', () => {
