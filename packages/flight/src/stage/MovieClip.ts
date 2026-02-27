@@ -1,26 +1,16 @@
 import { createMovieClip } from '@flighthq/stage';
-import type { MovieClip as MovieClipLike, MovieClipData } from '@flighthq/types';
+import type { MovieClip as MovieClipModel } from '@flighthq/types';
 
 import DisplayObjectContainer from './DisplayObjectContainer.js';
 
-export default class MovieClip extends DisplayObjectContainer implements MovieClipLike {
-  declare protected __model: MovieClipLike;
+export default class MovieClip extends DisplayObjectContainer {
+  declare public model: MovieClipModel;
 
   constructor() {
     super();
   }
 
   protected override __create(): void {
-    this.__model = createMovieClip();
-  }
-
-  // Get & Set Methods
-
-  override get data(): MovieClipData {
-    return this.__model.data;
-  }
-
-  override set data(value: MovieClipData) {
-    this.__model.data = value;
+    this.model = createMovieClip();
   }
 }
