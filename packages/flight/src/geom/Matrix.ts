@@ -1,4 +1,4 @@
-import { matrix3x2 } from '@flighthq/math';
+import { matrix3x2 } from '@flighthq/geom';
 import type {
   Matrix3x2 as MatrixLike,
   Matrix3x3 as Matrix3Like,

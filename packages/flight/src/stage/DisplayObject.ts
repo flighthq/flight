@@ -1,5 +1,5 @@
+import { matrix3x2, rectangle } from '@flighthq/geom';
 import { hitTestObject as __hitTestObject, hitTestPoint as __hitTestPoint } from '@flighthq/interaction';
-import { matrix3x2, rectangle } from '@flighthq/math';
 import {
   calculateBoundsRect,
   createDisplayObject,
@@ -11,9 +11,10 @@ import {
   localToGlobal as __localToGlobal,
 } from '@flighthq/stage';
 import type {
-  BitmapFilter as BitmapFilterLike,
+  ColorTransform as ColorTransformLike,
   DisplayObject as DisplayObjectLike,
   DisplayObjectType,
+  Filter as FilterLike,
   Matrix3x2 as Matrix3x2Like,
   PrimitiveData,
   Rectangle as RectangleLike,
@@ -24,8 +25,8 @@ import type {
 import type { BlendMode } from '@flighthq/types';
 import { GraphState } from '@flighthq/types';
 
-import Rectangle from '../math/Rectangle.js';
-import Vector2 from '../math/Vector2.js';
+import Rectangle from '../geom/Rectangle.js';
+import Vector2 from '../geom/Vector2.js';
 import type LoaderInfo from './LoaderInfo.js';
 import Transform from './Transform.js';
 
@@ -186,6 +187,16 @@ export default class DisplayObject implements DisplayObjectLike {
     (this.__model as ChildrenAccess).children = value;
   }
 
+  get colorTransform(): ColorTransformLike | null {
+    return this.__model.colorTransform;
+  }
+
+  set colorTransform(value: ColorTransformLike | null) {
+    if (value === this.__model.colorTransform) return;
+    this.__model.colorTransform = value;
+    invalidateAppearance(this.__model);
+  }
+
   get data(): PrimitiveData | null {
     return this.__model.data;
   }
@@ -194,7 +205,7 @@ export default class DisplayObject implements DisplayObjectLike {
     this.__model.data = value;
   }
 
-  get filters(): BitmapFilterLike[] {
+  get filters(): FilterLike[] {
     const filters = this.__model.filters;
     if (filters === null) {
       return [];
@@ -203,7 +214,7 @@ export default class DisplayObject implements DisplayObjectLike {
     }
   }
 
-  set filters(value: BitmapFilterLike[] | null) {
+  set filters(value: FilterLike[] | null) {
     if ((value === null || value.length == 0) && this.__model.filters === null) return;
 
     // if (value !== null) {

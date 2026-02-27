@@ -1,4 +1,4 @@
-import { vector2 } from '@flighthq/math';
+import { vector2 } from '@flighthq/geom';
 import type { Vector2 as Vector2Like } from '@flighthq/types';
 
 export default class Vector2 implements Vector2Like {

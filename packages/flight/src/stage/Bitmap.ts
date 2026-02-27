@@ -1,5 +1,5 @@
 import { createBitmap, invalidateAppearance, invalidateLocalBounds } from '@flighthq/stage';
-import type { Bitmap as BitmapLike, BitmapData } from '@flighthq/types';
+import type { Bitmap as BitmapLike, BitmapData, ImageSource } from '@flighthq/types';
 
 import DisplayObject from './DisplayObject';
 
@@ -24,11 +24,11 @@ export default class Bitmap extends DisplayObject implements BitmapLike {
     this.__model.data = value;
   }
 
-  get image(): HTMLImageElement | null {
+  get image(): ImageSource | null {
     return this.__model.data.image;
   }
 
-  set image(value: HTMLImageElement | null) {
+  set image(value: ImageSource | null) {
     this.__model.data.image = value;
     invalidateLocalBounds(this.__model);
     invalidateAppearance(this.__model);

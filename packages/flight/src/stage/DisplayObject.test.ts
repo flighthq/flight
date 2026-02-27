@@ -1,11 +1,11 @@
-import { rectangle } from '@flighthq/math';
+import { rectangle } from '@flighthq/geom';
 import { getAppearanceID, getLocalBoundsID, getLocalTransformID } from '@flighthq/stage';
 import { getBoundsRect, getLocalBoundsRect } from '@flighthq/stage/bounds';
 import { getLocalTransform } from '@flighthq/stage/transform';
 
-import Matrix from '../math/Matrix.js';
-import Rectangle from '../math/Rectangle.js';
-import Vector2 from '../math/Vector2.js';
+import Matrix from '../geom/Matrix.js';
+import Rectangle from '../geom/Rectangle.js';
+import Vector2 from '../geom/Vector2.js';
 import DisplayObject from './DisplayObject.js';
 
 describe('DisplayObject', () => {

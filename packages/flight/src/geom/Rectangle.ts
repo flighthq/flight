@@ -1,4 +1,4 @@
-import { rectangle } from '@flighthq/math';
+import { rectangle } from '@flighthq/geom';
 import type { Rectangle as RectangleLike, Vector2 as Vector2Like } from '@flighthq/types';
 
 import Vector2 from './Vector2.js';
