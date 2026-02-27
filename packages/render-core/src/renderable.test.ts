@@ -1,17 +1,9 @@
-import {
-  createDisplayObject,
-  ensureWorldTransform,
-  getAppearanceID,
-  getLocalBoundsID,
-  getWorldTransformID,
-  invalidateAppearance,
-  invalidateLocalBounds,
-} from '@flighthq/stage';
-import type { DisplayObject, RenderableData } from '@flighthq/types';
+import { addChild, createDisplayObject } from '@flighthq/stage';
+import type { DisplayObject, RenderableData, RendererState } from '@flighthq/types';
 
-import { createRenderableData } from './createRenderableData';
 import { createRendererState } from './createRendererState';
-import { getRenderableData, updateRenderableData } from './renderable';
+import type { RendererStateInternal } from './internal/writeInternal';
+import { getRenderableData, updateRenderableDataTree } from './renderable';
 
 describe('getRenderableData', () => {
   it('creates renderable data if not present already', () => {
@@ -23,67 +15,52 @@ describe('getRenderableData', () => {
   });
 });
 
-describe('updateRenderableData', () => {
-  let source: DisplayObject;
-  let data: RenderableData;
+describe('updateRenderableDataTree', () => {
+  let parent: DisplayObject;
+  let parentData: RenderableData;
+  let child: DisplayObject;
+  let childData: RenderableData;
+  let state: RendererState;
 
   beforeEach(() => {
-    source = createDisplayObject();
-    data = createRenderableData(source);
+    parent = createDisplayObject();
+    child = createDisplayObject();
+    addChild(parent, child);
+    state = createRendererState();
+    parentData = getRenderableData(state, parent);
+    childData = getRenderableData(state, child);
   });
 
-  it('does nothing if data is already dirty', () => {
-    const { appearanceID, worldTransformID, localBoundsID } = data;
-    data.dirty = true;
-    invalidateAppearance(source);
-    invalidateLocalBounds(source);
-    ensureWorldTransform(source);
-    updateRenderableData(data);
-    expect(data.appearanceID).toStrictEqual(appearanceID);
-    expect(data.worldTransformID).toStrictEqual(worldTransformID);
-    expect(data.localBoundsID).toStrictEqual(localBoundsID);
-    expect(data.dirty).toBe(true);
+  it('updates appearance for all children', () => {
+    updateRenderableDataTree(state, parent);
+    expect(parentData.appearanceFrameID).toStrictEqual(state.currentFrameID);
+    expect(childData.appearanceFrameID).toStrictEqual(state.currentFrameID);
   });
 
-  it('syncs IDs if data is not dirty and appearanceID changed', () => {
-    data.dirty = false;
-    invalidateAppearance(source);
-    updateRenderableData(data);
-    expect(data.appearanceID).toStrictEqual(getAppearanceID(source));
+  it('updates transform for all children', () => {
+    updateRenderableDataTree(state, parent);
+    expect(parentData.transformFrameID).toStrictEqual(state.currentFrameID);
+    expect(childData.transformFrameID).toStrictEqual(state.currentFrameID);
   });
 
-  it('sets dirty true if data is not dirty and appearanceID changed', () => {
-    data.dirty = false;
-    invalidateAppearance(source);
-    updateRenderableData(data);
-    expect(data.dirty).toBe(true);
+  it('returns true if an update was performed', () => {
+    const dirty = updateRenderableDataTree(state, parent);
+    expect(dirty).toBe(true);
   });
 
-  it('syncs IDs if data is not dirty and worldTransformID changed', () => {
-    data.dirty = false;
-    ensureWorldTransform(source);
-    updateRenderableData(data);
-    expect(data.worldTransformID).toStrictEqual(getWorldTransformID(source));
+  it('does not make a change if not dirty', () => {
+    updateRenderableDataTree(state, parent);
+    (state as RendererStateInternal).currentFrameID++;
+    updateRenderableDataTree(state, parent);
+    expect(parentData.appearanceFrameID).not.toStrictEqual(state.currentFrameID);
+    expect(childData.appearanceFrameID).not.toStrictEqual(state.currentFrameID);
+    expect(parentData.transformFrameID).not.toStrictEqual(state.currentFrameID);
+    expect(childData.transformFrameID).not.toStrictEqual(state.currentFrameID);
   });
 
-  it('sets dirty true if data is not dirty and appearanceID changed', () => {
-    data.dirty = false;
-    ensureWorldTransform(source);
-    updateRenderableData(data);
-    expect(data.dirty).toBe(true);
-  });
-
-  it('syncs IDs if data is not dirty and localBoundsID changed', () => {
-    data.dirty = false;
-    invalidateLocalBounds(source);
-    updateRenderableData(data);
-    expect(data.localBoundsID).toStrictEqual(getLocalBoundsID(source));
-  });
-
-  it('sets dirty true if data is not dirty and appearanceID changed', () => {
-    data.dirty = false;
-    invalidateLocalBounds(source);
-    updateRenderableData(data);
-    expect(data.dirty).toBe(true);
+  it('returns false if a change is not made', () => {
+    updateRenderableDataTree(state, parent);
+    const dirty = updateRenderableDataTree(state, parent);
+    expect(dirty).toBe(false);
   });
 });
