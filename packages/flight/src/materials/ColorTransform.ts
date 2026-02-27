@@ -100,6 +100,70 @@ export default class ColorTransform {
 
   // Get & Set Methods
 
+  get redMultiplier(): number {
+    return this.model.redMultiplier;
+  }
+
+  set redMultiplier(value: number) {
+    this.model.redMultiplier = value;
+  }
+
+  get greenMultiplier(): number {
+    return this.model.greenMultiplier;
+  }
+
+  set greenMultiplier(value: number) {
+    this.model.greenMultiplier = value;
+  }
+
+  get blueMultiplier(): number {
+    return this.model.blueMultiplier;
+  }
+
+  set blueMultiplier(value: number) {
+    this.model.blueMultiplier = value;
+  }
+
+  get alphaMultiplier(): number {
+    return this.model.alphaMultiplier;
+  }
+
+  set alphaMultiplier(value: number) {
+    this.model.alphaMultiplier = value;
+  }
+
+  get redOffset(): number {
+    return this.model.redOffset;
+  }
+
+  set redOffset(value: number) {
+    this.model.redOffset = value;
+  }
+
+  get greenOffset(): number {
+    return this.model.greenOffset;
+  }
+
+  set greenOffset(value: number) {
+    this.model.greenOffset = value;
+  }
+
+  get blueOffset(): number {
+    return this.model.blueOffset;
+  }
+
+  set blueOffset(value: number) {
+    this.model.blueOffset = value;
+  }
+
+  get alphaOffset(): number {
+    return this.model.alphaOffset;
+  }
+
+  set alphaOffset(value: number) {
+    this.model.alphaOffset = value;
+  }
+
   get offsetRGB(): number {
     return colorTransform.getOffsetRGB(this.model);
   }

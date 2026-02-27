@@ -2,6 +2,7 @@ import { matrix3x2 } from '@flighthq/geom';
 import type { Matrix3x2 as MatrixModel } from '@flighthq/types';
 
 import type Matrix3 from './Matrix3';
+import type Matrix4 from './Matrix4';
 import Rectangle from './Rectangle';
 import Vector2 from './Vector2';
 import type Vector3 from './Vector3';
