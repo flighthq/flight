@@ -9,13 +9,13 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./filters": {
-      "types": "./dist/filters.d.ts",
-      "default": "./dist/filters.js"
+    "./materials": {
+      "types": "./dist/materials.d.ts",
+      "default": "./dist/materials.js"
     },
-    "./math": {
-      "types": "./dist/math.d.ts",
-      "default": "./dist/math.js"
+    "./geom": {
+      "types": "./dist/geom.d.ts",
+      "default": "./dist/geom.js"
     },
     "./render": {
       "types": "./dist/render.d.ts",
