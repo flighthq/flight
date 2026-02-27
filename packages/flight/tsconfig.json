@@ -9,9 +9,9 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../filters" },
+    { "path": "../geom" },
     { "path": "../interaction" },
-    { "path": "../math" },
+    { "path": "../materials" },
     { "path": "../render-core" },
     { "path": "../render-canvas" },
     { "path": "../stage" },
