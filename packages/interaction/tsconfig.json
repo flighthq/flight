@@ -9,8 +9,8 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../filters" },
-    { "path": "../math" },
+    { "path": "../materials" },
+    { "path": "../geom" },
     { "path": "../stage" },
     { "path": "../types" },
     { "path": "../world" }
