@@ -1,10 +1,11 @@
-import { updateRenderQueue } from '@flighthq/render-core';
+import { prepareRenderQueue, updateRenderableDataTree } from '@flighthq/render-core';
 import type { CanvasRendererState, Matrix3x2, Rectangle, Renderable, RenderableData } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 export function renderCanvas(state: CanvasRendererState, source: Renderable): void {
-  const dirty = updateRenderQueue(state, source);
+  const dirty = updateRenderableDataTree(state, source);
   if (dirty) {
+    prepareRenderQueue(state, source);
     clear(state);
     flushRenderQueue(state);
   }
@@ -30,7 +31,7 @@ export function clear(state: CanvasRendererState): void {
 
 export function flushRenderQueue(state: CanvasRendererState): void {
   // const renderQueue = state.renderQueue;
-  const renderQueueLength = state.renderQueueLength;
+  const renderQueueLength = state.currentQueueLength;
 
   for (let i = 0; i < renderQueueLength; i++) {
     // const data = renderQueue[i];
@@ -99,7 +100,7 @@ export function pushClipRect(state: CanvasRendererState, rect: Rectangle, transf
 export function pushMask(state: CanvasRendererState, mask: RenderableData): void {
   state.context.save();
 
-  setTransform(state, state.context, mask.renderTransform);
+  setTransform(state, state.context, mask.transform);
 
   state.context.beginPath();
   // renderDrawableMask(state, mask);
@@ -114,7 +115,7 @@ export function pushMaskObject(
   handleScrollRect: boolean = true,
 ): void {
   if (handleScrollRect && object.source.scrollRect !== null) {
-    pushClipRect(state, object.source.scrollRect, object.renderTransform);
+    pushClipRect(state, object.source.scrollRect, object.transform);
   }
   if (/*!object.__isCacheBitmapRender &&*/ object.mask !== null) {
     pushMask(state, object.mask);
