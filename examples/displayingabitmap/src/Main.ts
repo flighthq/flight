@@ -1,4 +1,4 @@
-import { Bitmap, MovieClip } from '@flighthq/flight';
+import { Bitmap, ImageSource, MovieClip } from '@flighthq/flight';
 
 export default class Main extends MovieClip {
   bitmap: Bitmap = new Bitmap();
@@ -10,7 +10,7 @@ export default class Main extends MovieClip {
 
   private async initialize() {
     try {
-      this.bitmap.image = await loadImageAndDecode('assets/wabbit_alpha.png');
+      this.bitmap.image = new ImageSource(await loadImageAndDecode('assets/wabbit_alpha.png'));
       this.bitmap.x = (this.bitmap.width + 550) / 2;
       this.bitmap.y = (this.bitmap.height + 400) / 2;
       this.addChild(this.bitmap);
