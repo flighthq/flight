@@ -1,5 +1,5 @@
 export default interface ImageSource {
   height: number;
-  source: HTMLImageElement;
+  src: HTMLImageElement;
   width: number;
 }
