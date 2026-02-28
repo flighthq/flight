@@ -1,4 +1,4 @@
-import type { BlendMode, ColorTransform, Matrix3x2, Rectangle, Shader } from '@flighthq/types';
+import type { BlendMode, ColorTransform, Matrix3x2, Shader } from '@flighthq/types';
 
 import type Renderable from './Renderable';
 

@@ -1,3 +1,3 @@
-import type { DisplayObject } from '../stage';
+import type { DisplayObject } from '@flighthq/types';
 
 export default interface Renderable extends DisplayObject {}

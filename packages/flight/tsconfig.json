@@ -13,8 +13,8 @@
     { "path": "../geom" },
     { "path": "../interaction" },
     { "path": "../materials" },
-    { "path": "../render-core" },
-    { "path": "../render-canvas" },
+    { "path": "../render/core" },
+    { "path": "../render/canvas" },
     { "path": "../stage" },
     { "path": "../types" },
     { "path": "../world" }

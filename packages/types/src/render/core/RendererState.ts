@@ -1,7 +1,5 @@
-import type { Matrix3x2 } from '../geom';
-import type { BlendMode } from '../materials/BlendMode';
-import type ColorTransform from '../materials/ColorTransform';
-import type Shader from '../materials/ColorTransform';
+import type { BlendMode, ColorTransform, Matrix3x2, Shader } from '@flighthq/types';
+
 import type Renderable from './Renderable';
 import type RenderableData from './RenderableData';
 
