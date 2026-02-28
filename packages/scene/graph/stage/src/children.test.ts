@@ -15,7 +15,7 @@ import {
   swapChildrenAt,
 } from './children';
 import { createDisplayObject } from './createDisplayObject';
-import { getGraphState } from './internal/graphState';
+import { getGraphState } from './graphState';
 import { getAppearanceID } from './revision';
 
 let container: DisplayObject;

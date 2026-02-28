@@ -1,6 +1,6 @@
 import type { DisplayObject, DisplayObjectType, PartialWithData } from '@flighthq/types';
 
-import { createDisplayObject } from '../createDisplayObject';
+import { createDisplayObject } from './createDisplayObject';
 
 export type PrimitiveDataFactory<D extends object> = (obj?: Partial<D>, defaults?: D) => D;
 

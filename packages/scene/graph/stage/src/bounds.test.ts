@@ -12,7 +12,7 @@ import {
 } from './bounds.js';
 import { addChild } from './children.js';
 import { createDisplayObject } from './createDisplayObject.js';
-import { getGraphState } from './internal/graphState.js';
+import { getGraphState } from './graphState.js';
 import { invalidateLocalTransform } from './revision.js';
 import { ensureLocalTransform } from './transform.js';
 

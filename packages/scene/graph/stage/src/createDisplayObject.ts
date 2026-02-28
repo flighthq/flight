@@ -1,7 +1,7 @@
 import type { DisplayObject, PartialWithData } from '@flighthq/types';
 import { BlendMode, GraphState } from '@flighthq/types';
 
-import type { DisplayObjectInternal } from './internal/writeInternal';
+import type { DisplayObjectInternal } from './internal';
 
 export function createDisplayObject(obj?: PartialWithData<DisplayObject>): DisplayObject {
   return {

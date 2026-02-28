@@ -1,6 +1,6 @@
 import type { DisplayObject } from '@flighthq/types';
 
-import { getGraphState } from './internal/graphState';
+import { getGraphState } from './graphState';
 
 export function getAppearanceID(target: DisplayObject): number {
   return getGraphState(target).appearanceID;

@@ -1,7 +1,7 @@
 import { matrix3x2 } from '@flighthq/geometry';
 import type { DisplayObject, GraphState, Matrix3x2, Vector2 } from '@flighthq/types';
 
-import { getGraphState } from './internal/graphState';
+import { getGraphState } from './graphState';
 
 export function ensureLocalTransform(target: DisplayObject): void {
   const state = getGraphState(target);
