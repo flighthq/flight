@@ -11,9 +11,9 @@
       "types": "./dist/materials.d.ts",
       "default": "./dist/materials.js"
     },
-    "./geom": {
-      "types": "./dist/geom.d.ts",
-      "default": "./dist/geom.js"
+    "./geometry": {
+      "types": "./dist/geometry.d.ts",
+      "default": "./dist/geometry.js"
     },
     "./render": {
       "types": "./dist/render.d.ts",

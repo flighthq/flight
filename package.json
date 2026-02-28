@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspace=packages",
+    "build:clean": "npm run clean --workspace=packages && npm run build --workspace=packages",
     "build:examples": "npm run build --workspace=examples/**",
     "clean": "npm run clean --workspace=packages",
     "clean:examples": "npm run clean --workspace=examples/**",

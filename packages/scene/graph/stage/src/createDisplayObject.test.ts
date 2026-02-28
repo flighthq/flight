@@ -1,4 +1,4 @@
-import { matrix3x2 } from '@flighthq/geom';
+import { matrix3x2 } from '@flighthq/geometry';
 import type { DisplayObject } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 

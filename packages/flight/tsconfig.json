@@ -10,7 +10,7 @@
   },
   "references": [
     { "path": "../assets" },
-    { "path": "../geom" },
+    { "path": "../geometry" },
     { "path": "../events/input" },
     { "path": "../materials" },
     { "path": "../render/core" },

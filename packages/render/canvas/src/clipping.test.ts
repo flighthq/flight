@@ -1,4 +1,4 @@
-import { matrix3x2, rectangle } from '@flighthq/geom';
+import { matrix3x2, rectangle } from '@flighthq/geometry';
 import { getRenderableData } from '@flighthq/render-core';
 import { createDisplayObject } from '@flighthq/scene-graph-stage';
 import type { CanvasRendererState, DisplayObject, Matrix3x2, Rectangle, RenderableData } from '@flighthq/types';

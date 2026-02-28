@@ -1,4 +1,4 @@
-import { vector2, vector3, vector4 } from '@flighthq/geom';
+import { vector2, vector3, vector4 } from '@flighthq/geometry';
 import type { Vector4 as Vector4Model } from '@flighthq/types';
 
 import type Vector2 from './Vector2';

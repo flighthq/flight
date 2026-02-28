@@ -1,4 +1,4 @@
-import { matrix3x3 } from '@flighthq/geom';
+import { matrix3x3 } from '@flighthq/geometry';
 import type { Matrix3x3 as Matrix3Model } from '@flighthq/types';
 
 import type Matrix from './Matrix';

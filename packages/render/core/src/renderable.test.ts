@@ -1,4 +1,4 @@
-import { rectangle } from '@flighthq/geom';
+import { rectangle } from '@flighthq/geometry';
 import { addChild, createDisplayObject } from '@flighthq/scene-graph-stage';
 import type { DisplayObject, RenderableData, RendererState } from '@flighthq/types';
 

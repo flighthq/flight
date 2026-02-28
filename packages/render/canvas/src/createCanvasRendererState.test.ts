@@ -1,4 +1,4 @@
-import { matrix3x2 } from '@flighthq/geom';
+import { matrix3x2 } from '@flighthq/geometry';
 import type { CanvasRendererOptions } from '@flighthq/types';
 
 import { createCanvasRendererState } from './createCanvasRendererState';

@@ -1,4 +1,4 @@
-import { matrix3x2 } from '@flighthq/geom';
+import { matrix3x2 } from '@flighthq/geometry';
 import { colorTransform } from '@flighthq/materials';
 import { BlendMode, type RendererState } from '@flighthq/types';
 

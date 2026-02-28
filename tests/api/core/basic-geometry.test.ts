@@ -1,4 +1,4 @@
-import { rectangle, vector2 } from '@flighthq/geom';
+import { rectangle, vector2 } from '@flighthq/geometry';
 
 test('create rectangle and point', () => {
   const rect = rectangle.create();

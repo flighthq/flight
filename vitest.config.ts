@@ -9,7 +9,7 @@ export default mergeConfig(
       projects: [
         'packages/assets',
         'packages/flight',
-        'packages/geom',
+        'packages/geometry',
         'packages/events/input',
         'packages/materials',
         'packages/render/canvas',

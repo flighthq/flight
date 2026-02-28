@@ -1,3 +1,3 @@
 export * from './assets';
-export * from './geom';
+export * from './geometry';
 export * from './stage';

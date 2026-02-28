@@ -1,5 +1,5 @@
 import { hitTestObject as __hitTestObject, hitTestPoint as __hitTestPoint } from '@flighthq/events-input';
-import { matrix3x2, rectangle } from '@flighthq/geom';
+import { matrix3x2, rectangle } from '@flighthq/geometry';
 import {
   calculateBoundsRect,
   createDisplayObject,
@@ -13,9 +13,9 @@ import {
 import type { DisplayObject as DisplayObjectModel, Filter, Shader } from '@flighthq/types';
 import type { BlendMode } from '@flighthq/types';
 
-import Matrix from '../geom/Matrix.js';
-import Rectangle from '../geom/Rectangle.js';
-import Vector2 from '../geom/Vector2.js';
+import Matrix from '../geometry/Matrix.js';
+import Rectangle from '../geometry/Rectangle.js';
+import Vector2 from '../geometry/Vector2.js';
 import { getDisplayObjectFromModel, registerDisplayObject } from './internal/displayObjectMap.js';
 import type { DisplayObjectInternal } from './internal/writeInternal.js';
 import type LoaderInfo from './LoaderInfo.js';
