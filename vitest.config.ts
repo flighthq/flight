@@ -15,7 +15,7 @@ export default mergeConfig(
         'packages/render/canvas',
         'packages/render/core',
         'packages/scene/graph/stage',
-        'packages/timeline',
+        'packages/animation/timeline',
         'packages/types',
         'packages/scene/graph/world',
         'tests/integration',
