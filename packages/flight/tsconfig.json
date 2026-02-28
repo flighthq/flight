@@ -11,7 +11,7 @@
   "references": [
     { "path": "../assets" },
     { "path": "../geom" },
-    { "path": "../interaction" },
+    { "path": "../events/input" },
     { "path": "../materials" },
     { "path": "../render/core" },
     { "path": "../render/canvas" },

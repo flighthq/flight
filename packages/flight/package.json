@@ -23,7 +23,7 @@
   "dependencies": {
     "@flighthq/assets": "^1.0.0",
     "@flighthq/materials": "^1.0.0",
-    "@flighthq/interaction": "^1.0.0",
+    "@flighthq/events-input": "^1.0.0",
     "@flighthq/geom": "^1.0.0",
     "@flighthq/render-canvas": "^1.0.0",
     "@flighthq/scene-graph-stage": "^1.0.0",
