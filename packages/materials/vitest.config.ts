@@ -6,7 +6,6 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      name: 'unit:materials',
       environment: 'node',
       include: ['src/**/*.test.ts'],
     },

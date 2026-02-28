@@ -6,7 +6,6 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      name: 'unit:assets',
       environment: 'jsdom',
       include: ['src/**/*.test.ts'],
     },

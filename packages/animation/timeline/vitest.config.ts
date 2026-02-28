@@ -6,7 +6,6 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      name: 'unit:animation-timeline',
       environment: 'jsdom',
       include: ['src/**/*.test.ts'],
     },

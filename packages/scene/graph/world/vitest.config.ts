@@ -6,7 +6,6 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      name: 'unit:scene-graph-world',
       environment: 'node',
       include: ['src/**/*.test.ts'],
     },

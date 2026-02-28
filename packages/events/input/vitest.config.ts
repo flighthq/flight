@@ -6,7 +6,6 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      name: 'unit:events-input',
       environment: 'jsdom',
       include: ['src/**/*.test.ts'],
     },
