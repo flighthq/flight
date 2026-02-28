@@ -31,17 +31,19 @@ export function updateRenderableTree(state: RendererState, source: Renderable): 
     const current = tempStack[--stackLength];
     const data = getRenderableData(state, current);
 
-    const parent = current.parent;
-    if (current === source || parent === null) {
-      parentData = undefined;
-      lastParent = null;
-      scrollRectDepth = 0;
-      maskDepth = 0;
-    } else if (parent !== lastParent) {
-      parentData = getRenderableData(state, parent);
-      lastParent = parent;
-      scrollRectDepth = parentData.scrollRectDepth;
-      maskDepth = parentData.maskDepth;
+    if (current !== source) {
+      const parent = current.parent;
+      if (parent === null) {
+        parentData = undefined;
+        lastParent = null;
+        scrollRectDepth = 0;
+        maskDepth = 0;
+      } else if (parent !== lastParent) {
+        parentData = getRenderableData(state, parent);
+        lastParent = parent;
+        scrollRectDepth = parentData.scrollRectDepth;
+        maskDepth = parentData.maskDepth;
+      }
     }
 
     const appearanceDirty = updateAppearance(state, data, parentData);
@@ -51,7 +53,7 @@ export function updateRenderableTree(state: RendererState, source: Renderable): 
       treeDirty = appearanceDirty || transformDirty;
     }
 
-    if (source.scrollRect !== null) {
+    if (current.scrollRect !== null) {
       data.scrollRectDepth = ++scrollRectDepth;
     } else {
       data.scrollRectDepth = scrollRectDepth;
