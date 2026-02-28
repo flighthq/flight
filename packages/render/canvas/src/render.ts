@@ -2,12 +2,12 @@ import { prepareRenderQueue, updateRenderableTree } from '@flighthq/render-core'
 import type { CanvasRendererState, Renderable, RenderableData } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
+import { renderBitmap } from './bitmap';
 import { updateCacheBitmap } from './cacheBitmap';
 import { popScrollRect, pushScrollRect } from './clipping';
+import { renderOpaqueBackground } from './displayObject';
 import { popMask, pushMask } from './masks';
 import { setBlendMode } from './materials';
-import { renderBitmap } from './type/bitmap';
-import { renderOpaqueBackground } from './type/displayObject';
 
 export function clear(state: CanvasRendererState): void {
   const cacheBlendMode = state.currentBlendMode;

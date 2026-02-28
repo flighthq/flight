@@ -1,7 +1,7 @@
 import type { Bitmap, CanvasRendererState, RenderableData } from '@flighthq/types';
 
-import { setBlendMode } from '../materials';
-import { setTransform } from '../transform';
+import { setBlendMode } from './materials';
+import { setTransform } from './transform';
 
 export function renderBitmap(state: CanvasRendererState, bitmap: RenderableData): void {
   const source = bitmap.source as Bitmap;

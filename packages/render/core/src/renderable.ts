@@ -2,7 +2,7 @@ import type { Renderable, RenderableData, RendererState } from '@flighthq/types'
 
 import { updateAppearance } from './appearance';
 import { createRenderableData } from './createRenderableData';
-import type { RendererStateInternal } from './internal/writeInternal';
+import type { RendererStateInternal } from './internal';
 import { updateRenderTransform } from './transform';
 
 export function getRenderableData(state: RendererState, source: Renderable): RenderableData {
