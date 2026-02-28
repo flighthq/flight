@@ -51,7 +51,17 @@ export default [
           patterns: [
             {
               // Disallow relative imports from other packages
-              group: ['packages/*', '../../*', '../../../*', '../../../../*', '!../../vitest.config.base.js'],
+              group: [
+                'packages/*',
+                // '../../*',
+                // '../../../*',
+                '../../../../*',
+                '../../../../../*',
+                '!../../vitest.config.base.js',
+                '!../../../vitest.config.base.js',
+                '!../../../../vitest.config.base.js',
+                '!../../../../../vitest.config.base.js',
+              ],
               message:
                 'Do not import from packages via relative paths. Use scoped package imports instead (e.g. @scope/pkg).',
             },
