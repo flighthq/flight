@@ -52,4 +52,24 @@ describe('prepareRenderQueue', () => {
     prepareRenderQueue(state, parent);
     expect(state.currentQueueLength).toBe(0);
   });
+
+  it('discards objects which are a mask', () => {
+    const child2 = createDisplayObject();
+    addChild(parent, child2);
+    child.mask = child2;
+    updateRenderableTree(state, parent);
+    prepareRenderQueue(state, parent);
+    expect(state.currentQueueLength).toBe(2);
+  });
+
+  it('discards objects which are children of a mask', () => {
+    const child2 = createDisplayObject();
+    const maskChild = createDisplayObject();
+    addChild(child2, maskChild);
+    addChild(parent, child2);
+    child.mask = child2;
+    updateRenderableTree(state, parent);
+    prepareRenderQueue(state, parent);
+    expect(state.currentQueueLength).toBe(2);
+  });
 });
