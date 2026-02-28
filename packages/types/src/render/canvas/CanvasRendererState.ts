@@ -1,4 +1,5 @@
-import type { BlendMode, RendererState } from '@flighthq/types';
+import type { BlendMode } from '../../materials';
+import type { RendererState } from '../core';
 
 export default interface CanvasRendererState extends RendererState {
   readonly canvas: HTMLCanvasElement;
