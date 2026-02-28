@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/flight",
+  "name": "@flighthq/events-input",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -8,6 +8,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./hitTest": {
+      "types": "./dist/hitTest.d.ts",
+      "default": "./dist/hitTest.js"
     }
   },
   "files": [
@@ -21,11 +25,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@flighthq/assets": "^1.0.0",
-    "@flighthq/materials": "^1.0.0",
-    "@flighthq/events-input": "^1.0.0",
     "@flighthq/geometry": "^1.0.0",
-    "@flighthq/render-canvas": "^1.0.0",
     "@flighthq/scene-graph-stage": "^1.0.0",
     "@flighthq/types": "^1.0.0",
     "@flighthq/scene-graph-world": "^1.0.0"

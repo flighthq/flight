@@ -9,10 +9,11 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../../materials" },
     { "path": "../../geometry" },
-    { "path": "../core" },
     { "path": "../../scene/graph/stage" },
-    { "path": "../../types" }
+    { "path": "../../types" },
+    { "path": "../../scene/graph/world" }
   ],
   "include": ["src"]
 }

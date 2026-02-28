@@ -1,4 +1,4 @@
-import { matrix3x2 } from '@flighthq/geom';
+import { matrix3x2 } from '@flighthq/geometry';
 import { getLocalTransform, getLocalTransformID } from '@flighthq/scene-graph-stage';
 import type { RenderableData, RendererState } from '@flighthq/types';
 

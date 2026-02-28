@@ -1,4 +1,4 @@
-import { matrix4x4 } from '@flighthq/geom';
+import { matrix4x4 } from '@flighthq/geometry';
 import type { Matrix4x4 as Matrix4Model } from '@flighthq/types';
 
 import type Matrix from './Matrix';

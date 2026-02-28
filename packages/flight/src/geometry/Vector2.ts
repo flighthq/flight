@@ -1,4 +1,4 @@
-import { vector2 } from '@flighthq/geom';
+import { vector2 } from '@flighthq/geometry';
 import type { Vector2 as Vector2Model } from '@flighthq/types';
 
 export default class Vector2 {

@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/geom",
+  "name": "@flighthq/geometry",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",

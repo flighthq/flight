@@ -1,4 +1,4 @@
-import { rectangle } from '@flighthq/geom';
+import { rectangle } from '@flighthq/geometry';
 import type { Rectangle as RectangleModel } from '@flighthq/types';
 
 import Vector2 from './Vector2.js';

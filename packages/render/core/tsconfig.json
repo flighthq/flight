@@ -9,7 +9,7 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../../geom" },
+    { "path": "../../geometry" },
     { "path": "../../materials" },
     { "path": "../../scene/graph/stage" },
     { "path": "../../types" }

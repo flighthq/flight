@@ -21,7 +21,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@flighthq/geom": "^1.0.0",
+    "@flighthq/geometry": "^1.0.0",
     "@flighthq/types": "^1.0.0"
   },
   "devDependencies": {

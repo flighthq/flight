@@ -1,4 +1,4 @@
-import { rectangle } from '@flighthq/geom';
+import { rectangle } from '@flighthq/geometry';
 import { calculateBoundsRect } from '@flighthq/scene-graph-stage';
 import type { CanvasRendererState, RenderableData } from '@flighthq/types';
 
