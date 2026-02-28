@@ -16,13 +16,14 @@ describe('createRenderableData', () => {
     expect(data.alpha).toStrictEqual(1);
     expect(data.appearanceFrameID).toStrictEqual(-1);
     expect(data.blendMode).toStrictEqual(BlendMode.Normal);
+    expect(data.cacheBitmap).toBeNull();
     expect(data.cacheAsBitmap).toStrictEqual(false);
-    expect(data.clipRect).toStrictEqual(null);
     expect(data.colorTransform).toStrictEqual(colorTransform.create());
+    expect(data.isMaskFrameID).toStrictEqual(-1);
     expect(data.lastAppearanceID).toStrictEqual(-1);
     expect(data.lastLocalTransformID).toStrictEqual(-1);
-    expect(data.mask).toStrictEqual(null);
-    expect(data.maskFrameID).toStrictEqual(-1);
+    expect(data.maskDepth).toStrictEqual(0);
+    expect(data.scrollRectDepth).toStrictEqual(0);
     expect(data.shader).toStrictEqual(null);
     expect(data.source).toStrictEqual(source);
     expect(data.transform).toStrictEqual(matrix3x2.create());

@@ -14,33 +14,34 @@ export function getRenderableData(state: RendererState, source: Renderable): Ren
 /**
  * First pass, update appearance, transforms, identify masks
  */
-export function updateRenderableDataTree(state: RendererState, source: Renderable): boolean {
-  const tempStack = (state as RendererStateInternal).tempStack;
+export function updateRenderableTree(state: RendererState, source: Renderable): boolean {
+  const tempStack = state.tempStack;
   const currentFrameID = ++(state as RendererStateInternal).currentFrameID;
 
   let stackLength = 1;
   tempStack[0] = source;
 
+  let parentData: RenderableData | undefined = undefined;
   let lastParent: Renderable | null = null;
-  let lastParentData: RenderableData | undefined = undefined;
+  let scrollRectDepth: number = 0;
+  let maskDepth: number = 0;
   let treeDirty = false;
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength];
     const data = getRenderableData(state, current);
 
-    let parentData;
-    if (current === source) {
+    const parent = current.parent;
+    if (current === source || parent === null) {
       parentData = undefined;
-    } else {
-      const parent = current.parent;
-      if (parent === lastParent) {
-        parentData = lastParentData;
-      } else {
-        parentData = parent ? getRenderableData(state, parent) : undefined;
-        lastParent = parent;
-        lastParentData = parentData;
-      }
+      lastParent = null;
+      scrollRectDepth = 0;
+      maskDepth = 0;
+    } else if (parent !== lastParent) {
+      parentData = getRenderableData(state, parent);
+      lastParent = parent;
+      scrollRectDepth = parentData.scrollRectDepth;
+      maskDepth = parentData.maskDepth;
     }
 
     const appearanceDirty = updateAppearance(state, data, parentData);
@@ -50,12 +51,22 @@ export function updateRenderableDataTree(state: RendererState, source: Renderabl
       treeDirty = appearanceDirty || transformDirty;
     }
 
-    if (current.mask !== null) {
-      const maskData = getRenderableData(state, current.mask);
-      maskData.maskFrameID = currentFrameID;
-      data.mask = maskData;
+    if (source.scrollRect !== null) {
+      data.scrollRectDepth = ++scrollRectDepth;
     } else {
-      data.mask = null;
+      data.scrollRectDepth = scrollRectDepth;
+    }
+
+    const mask = current.mask;
+    if (mask !== null) {
+      const maskData = getRenderableData(state, mask);
+      maskData.isMaskFrameID = currentFrameID;
+      maskData.scrollRectDepth = 0;
+      maskData.maskDepth = 0;
+      tempStack[stackLength++] = mask;
+      data.maskDepth = ++maskDepth;
+    } else {
+      data.maskDepth = maskDepth;
     }
 
     if (current.children !== null) {

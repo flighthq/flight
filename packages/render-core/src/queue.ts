@@ -4,12 +4,12 @@ import type { RendererStateInternal } from './internal/writeInternal';
 import { getRenderableData } from './renderable';
 
 /**
- * Second pass, propagate masks, exclude non-renderable objects from queue
+ * Second pass, exclude non-renderable objects from queue
  */
 export function prepareRenderQueue(state: RendererState, source: Renderable): void {
-  const tempStack = (state as RendererStateInternal).tempStack;
-  const currentQueue = (state as RendererStateInternal).currentQueue;
-  const currentFrameID = (state as RendererStateInternal).currentFrameID;
+  const tempStack = state.tempStack;
+  const currentQueue = state.currentQueue;
+  const currentFrameID = state.currentFrameID;
 
   let stackLength = 1;
   tempStack[0] = source;
@@ -18,7 +18,7 @@ export function prepareRenderQueue(state: RendererState, source: Renderable): vo
   while (stackLength > 0) {
     const current = tempStack[--stackLength];
     const data = getRenderableData(state, current);
-    const isMask = data.maskFrameID === currentFrameID;
+    const isMask = data.isMaskFrameID === currentFrameID;
     if (!isMask) {
       const shouldRender = data.visible && data.alpha > 0 && !(data.transform.a === 0 && data.transform.d === 0);
       if (shouldRender) {
