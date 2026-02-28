@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/timeline",
+  "name": "@flighthq/animation-timeline",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
