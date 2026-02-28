@@ -7,12 +7,13 @@ export default interface RenderableData {
   appearanceFrameID: number;
   blendMode: BlendMode;
   cacheAsBitmap: boolean;
-  clipRect: Rectangle | null;
+  cacheBitmap: RenderableData | null;
   colorTransform: ColorTransform;
+  isMaskFrameID: number;
   lastAppearanceID: number;
   lastLocalTransformID: number;
-  mask: RenderableData | null;
-  maskFrameID: number;
+  maskDepth: number;
+  scrollRectDepth: number;
   shader: Shader | null;
   readonly source: Renderable;
   transform: Matrix3x2;
