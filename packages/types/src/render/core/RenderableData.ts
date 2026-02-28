@@ -1,5 +1,5 @@
-import type { BlendMode, ColorTransform, Matrix3x2, Shader } from '@flighthq/types';
-
+import type { Matrix3x2 } from '../../geometry';
+import type { BlendMode, ColorTransform, Shader } from '../../materials';
 import type Renderable from './Renderable';
 
 export default interface RenderableData {

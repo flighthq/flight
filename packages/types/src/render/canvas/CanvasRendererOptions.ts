@@ -1,4 +1,4 @@
-import type { Matrix3x2 } from '@flighthq/types';
+import type { Matrix3x2 } from '../../geometry';
 
 export default interface CanvasRendererOptions {
   backgroundColor?: number | null;

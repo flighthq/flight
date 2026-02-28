@@ -1,5 +1,5 @@
-import type { BlendMode, ColorTransform, Filter, Matrix3x2, Rectangle, Shader } from '@flighthq/types';
-
+import type { Matrix3x2, Rectangle } from '../../../geometry';
+import type { BlendMode, ColorTransform, Filter, Shader } from '../../../materials';
 import type { DisplayObjectType } from './DisplayObjectType.js';
 import type { GraphState } from './GraphState.js';
 import type { PrimitiveData } from './PrimitiveData.js';

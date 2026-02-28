@@ -1,4 +1,4 @@
-import type { Matrix3x2, Rectangle } from '@flighthq/types';
+import type { Matrix3x2, Rectangle } from '../../../geometry';
 
 export interface GraphState {
   appearanceID: number;

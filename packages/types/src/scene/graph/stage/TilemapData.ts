@@ -1,5 +1,4 @@
-import type { Tileset } from '@flighthq/types';
-
+import type { Tileset } from '../../../assets';
 import type { PrimitiveData } from './PrimitiveData';
 
 export default interface TilemapData extends PrimitiveData {
