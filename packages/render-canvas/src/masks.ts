@@ -1,0 +1,52 @@
+import { rectangle } from '@flighthq/geom';
+import { getRenderableData } from '@flighthq/render-core';
+import { calculateBoundsRect } from '@flighthq/stage';
+import type { CanvasRendererState, RenderableData } from '@flighthq/types';
+
+import { setTransform } from './transform';
+// import * as shape from './type/shape';
+
+export function applyMask(state: CanvasRendererState, data: RenderableData): void {
+  const source = data.source;
+  const type = source.type;
+  if (source.opaqueBackground !== null || type === 'bitmap' || type === 'video') {
+    calculateBoundsRect(tempBounds, source, source);
+    state.context.rect(0, 0, tempBounds.width, tempBounds.width);
+  } else {
+    switch (type) {
+      // case 'shape':
+      //   shape.applyMask(state, data);
+      //   break;
+      case 'container':
+      case 'stage':
+        const children = source.children;
+        if (children !== null) {
+          for (let i = 0; i < children.length; i++) {
+            const data = getRenderableData(state, children[i]);
+            applyMask(state, data);
+          }
+        }
+        break;
+      default:
+    }
+  }
+}
+
+export function popMask(state: CanvasRendererState): void {
+  state.context.restore();
+  state.currentMaskDepth--;
+}
+
+export function pushMask(state: CanvasRendererState, data: RenderableData): void {
+  state.context.save();
+
+  setTransform(state, state.context, data.transform);
+
+  state.context.beginPath();
+  applyMask(state, data);
+  state.context.closePath();
+
+  state.context.clip();
+}
+
+const tempBounds = rectangle.create();
