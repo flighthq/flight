@@ -2,7 +2,7 @@ import { colorTransform } from '@flighthq/materials';
 import type { ColorTransform } from '@flighthq/types';
 import type { RenderableData, RendererState } from '@flighthq/types/render/core';
 
-import type { RendererStateInternal } from './internal/writeInternal';
+import type { RendererStateInternal } from './internal';
 
 export function setBackgroundColor(state: RendererState, color: number): void {
   const _state = state as RendererStateInternal;

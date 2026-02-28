@@ -1,6 +1,6 @@
 import type { Renderable, RendererState } from '@flighthq/types';
 
-import type { RendererStateInternal } from './internal/writeInternal';
+import type { RendererStateInternal } from './internal';
 import { getRenderableData } from './renderable';
 
 /**

@@ -2,8 +2,8 @@ import { rectangle } from '@flighthq/geometry';
 import { calculateBoundsRect } from '@flighthq/scene-graph-stage';
 import type { CanvasRendererState, RenderableData } from '@flighthq/types';
 
-import { setBlendMode } from '../materials';
-import { setTransform } from '../transform';
+import { setBlendMode } from './materials';
+import { setTransform } from './transform';
 
 export function renderOpaqueBackground(state: CanvasRendererState, displayObject: RenderableData): void {
   const opaqueBackground = displayObject.source.opaqueBackground;

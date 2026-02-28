@@ -3,7 +3,7 @@ import { addChild, createDisplayObject } from '@flighthq/scene-graph-stage';
 import type { DisplayObject, RenderableData, RendererState } from '@flighthq/types';
 
 import { createRendererState } from './createRendererState';
-import type { RendererStateInternal } from './internal/writeInternal';
+import type { RendererStateInternal } from './internal';
 import { getRenderableData, updateRenderableTree } from './renderable';
 
 describe('getRenderableData', () => {

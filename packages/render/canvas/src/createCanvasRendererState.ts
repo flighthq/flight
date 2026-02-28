@@ -2,7 +2,7 @@ import { matrix3x2 } from '@flighthq/geometry';
 import { createRendererState, setBackgroundColor } from '@flighthq/render-core';
 import type { CanvasRendererOptions, CanvasRendererState } from '@flighthq/types';
 
-import type { CanvasRendererStateInternal } from './internal/writeInternal';
+import type { CanvasRendererStateInternal } from './internal';
 
 export function createCanvasRendererState(
   canvas: HTMLCanvasElement,
