@@ -3,9 +3,9 @@ import { getAppearanceID, getLocalBoundsID, getLocalTransformID } from '@flighth
 import { getBoundsRect, getLocalBoundsRect } from '@flighthq/scene-graph-stage/bounds';
 import { getLocalTransform } from '@flighthq/scene-graph-stage/transform';
 
-import Matrix from '../geometry/Matrix.js';
-import Rectangle from '../geometry/Rectangle.js';
-import Vector2 from '../geometry/Vector2.js';
+import Matrix from '../../../geometry/Matrix.js';
+import Rectangle from '../../../geometry/Rectangle.js';
+import Vector2 from '../../../geometry/Vector2.js';
 import DisplayObject from './DisplayObject.js';
 
 describe('DisplayObject', () => {

@@ -1,8 +1,8 @@
 import { createBitmap, invalidateAppearance, invalidateLocalBounds } from '@flighthq/scene-graph-stage';
 import type { Bitmap as BitmapModel } from '@flighthq/types';
 
-import type { ImageSource } from '../assets';
-import { getImageSourceFromModel } from '../assets/internal/imageSourceMap';
+import type { ImageSource } from '../../../assets';
+import { getImageSourceFromModel } from '../../../assets/internal/imageSourceMap';
 import DisplayObject from './DisplayObject';
 import type { DisplayObjectInternal } from './internal/writeInternal';
 
