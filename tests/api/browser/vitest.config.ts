@@ -6,7 +6,7 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      name: 'api:browser',
+      name: 'api/browser',
       environment: 'jsdom',
       include: ['**/*.test.ts'],
     },

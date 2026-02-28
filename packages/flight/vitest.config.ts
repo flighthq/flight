@@ -6,7 +6,6 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      name: 'unit:flight',
       environment: 'jsdom',
       include: ['src/**/*.test.ts'],
     },
