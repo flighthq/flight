@@ -65,8 +65,27 @@ export default [
   },
 
   {
-    // Allow deep relative paths in flight, types and vite/vitest config
-    files: ['packages/flight/**/*.{ts,tsx}', 'packages/types/**/*.{ts,tsx}', 'tests/**', '**/vite*.config*.ts'],
+    // Types should not include scoped imports, only relative
+    files: ['packages/types/**/*.{ts,tsx}'],
+    rules: {
+      'import/no-relative-parent-imports': 'off',
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@*/*'],
+              message: 'Scoped imports are not allowed. Please avoid using @scope/pkg.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  {
+    // Allow deep relative paths in flight package, tests and vite/vitest config
+    files: ['packages/flight/**/*.{ts,tsx}', 'tests/**', '**/vite*.config*.ts'],
     rules: {
       'import/no-relative-parent-imports': 'off',
     },
