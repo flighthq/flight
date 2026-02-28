@@ -45,29 +45,7 @@ export default [
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
       'import/no-unresolved': 'error',
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              // Disallow relative imports from other packages
-              group: [
-                'packages/*',
-                // '../../*',
-                // '../../../*',
-                '../../../../*',
-                '../../../../../*',
-                '!../../vitest.config.base.js',
-                '!../../../vitest.config.base.js',
-                '!../../../../vitest.config.base.js',
-                '!../../../../../vitest.config.base.js',
-              ],
-              message:
-                'Do not import from packages via relative paths. Use scoped package imports instead (e.g. @scope/pkg).',
-            },
-          ],
-        },
-      ],
+      'import/no-relative-parent-imports': 'error',
 
       // Unicorn
       'unicorn/prefer-module': 'error',
@@ -83,7 +61,15 @@ export default [
       },
     },
 
-    ignores: ['vitest.config.base.ts', 'dist', 'node_modules'],
+    ignores: ['dist', 'node_modules'],
+  },
+
+  {
+    // Allow deep relative paths in flight, types and vite/vitest config
+    files: ['packages/flight/**/*.{ts,tsx}', 'packages/types/**/*.{ts,tsx}', 'tests/**', '**/vite*.config*.ts'],
+    rules: {
+      'import/no-relative-parent-imports': 'off',
+    },
   },
 
   prettierConfig,
