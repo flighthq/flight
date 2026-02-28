@@ -9,7 +9,7 @@ export default class ImageSource {
   }
 
   static fromModel(model: Readonly<ImageSourceModel>): ImageSource {
-    const out = new ImageSource(model.source);
+    const out = new ImageSource(model.src);
     out.model.height = model.height;
     out.model.width = model.width;
     return out;
@@ -23,12 +23,12 @@ export default class ImageSource {
     this.model.height = value;
   }
 
-  get source(): HTMLImageElement {
-    return this.model.source;
+  get src(): HTMLImageElement {
+    return this.model.src;
   }
 
-  set source(value: HTMLImageElement) {
-    this.model.source = value;
+  set src(value: HTMLImageElement) {
+    this.model.src = value;
   }
 
   get width(): number {
