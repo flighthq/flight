@@ -1,4 +1,4 @@
-import { createCanvasRendererState, renderCanvas } from '@flighthq/render-canvas';
+import { createCanvasRendererState, render } from '@flighthq/render-canvas';
 import { createDisplayObject } from '@flighthq/stage';
 
 test('attach renderer to new canvas', () => {
@@ -10,5 +10,5 @@ test('attach renderer to new canvas', () => {
   const obj = createDisplayObject();
   obj.opaqueBackground = 0xff0000;
 
-  renderCanvas(renderState, obj);
+  render(renderState, obj);
 });
