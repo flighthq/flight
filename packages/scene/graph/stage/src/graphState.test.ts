@@ -1,6 +1,6 @@
 import { GraphState } from '@flighthq/types';
 
-import { createDisplayObject } from '../createDisplayObject';
+import { createDisplayObject } from './createDisplayObject';
 import { getGraphState } from './graphState';
 
 describe('getGraphState', () => {

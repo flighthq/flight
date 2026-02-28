@@ -1,7 +1,7 @@
 import type { DisplayObject } from '@flighthq/types';
 
 import { createDisplayObject } from './createDisplayObject';
-import { getGraphState } from './internal/graphState';
+import { getGraphState } from './graphState';
 import {
   getAppearanceID,
   getLocalBoundsID,

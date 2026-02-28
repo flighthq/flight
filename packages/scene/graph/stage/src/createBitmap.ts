@@ -1,6 +1,6 @@
 import type { Bitmap, BitmapData } from '@flighthq/types';
 
-import { createPrimitive } from './internal/createPrimitive';
+import { createPrimitive } from './createPrimitive';
 
 export function createBitmap(obj?: Partial<Bitmap>): Bitmap {
   return createPrimitive<Bitmap, BitmapData>('bitmap', obj, createBitmapData);

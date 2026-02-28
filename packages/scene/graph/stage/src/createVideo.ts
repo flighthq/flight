@@ -1,6 +1,6 @@
 import type { PartialWithData, Video, VideoData } from '@flighthq/types';
 
-import { createPrimitive } from './internal/createPrimitive';
+import { createPrimitive } from './createPrimitive';
 
 export function createVideo(obj: PartialWithData<Video> = {}): Video {
   return createPrimitive<Video, VideoData>('video', obj, createVideoData);

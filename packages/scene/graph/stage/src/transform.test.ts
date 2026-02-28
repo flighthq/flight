@@ -3,7 +3,7 @@ import type { DisplayObject, Matrix3x2 } from '@flighthq/types';
 
 import { addChild } from './children';
 import { createDisplayObject } from './createDisplayObject';
-import { getGraphState } from './internal/graphState';
+import { getGraphState } from './graphState';
 import { invalidateLocalTransform } from './revision';
 import {
   ensureLocalTransform,
