@@ -12,6 +12,9 @@ describe('createRendererState', () => {
   });
 
   it('initializes default values', () => {
+    expect(state.allowCacheAsBitmap).toStrictEqual(true);
+    expect(state.allowFilters).toStrictEqual(true);
+    expect(state.allowSmoothing).toStrictEqual(true);
     expect(state.backgroundColor).toStrictEqual(0);
     expect(state.backgroundColorRGBA).toStrictEqual([]);
     expect(state.backgroundColorString).toStrictEqual('');
@@ -31,6 +34,9 @@ describe('createRendererState', () => {
 
   it('allows pre-defined values', () => {
     const base = {
+      allowCacheAsBitmap: false,
+      allowFilters: false,
+      allowSmoothing: false,
       backgroundColor: 0xff,
       backgroundColorRGBA: [1, 0, 0, 0],
       backgroundColorString: '#FF000000',
@@ -48,6 +54,9 @@ describe('createRendererState', () => {
       tempStack: [],
     };
     const obj = createRendererState(base);
+    expect(obj.allowCacheAsBitmap).toStrictEqual(base.allowCacheAsBitmap);
+    expect(obj.allowFilters).toStrictEqual(base.allowFilters);
+    expect(obj.allowSmoothing).toStrictEqual(base.allowSmoothing);
     expect(obj.backgroundColor).toStrictEqual(base.backgroundColor);
     expect(obj.backgroundColorRGBA).toStrictEqual(base.backgroundColorRGBA);
     expect(obj.backgroundColorString).toStrictEqual(base.backgroundColorString);

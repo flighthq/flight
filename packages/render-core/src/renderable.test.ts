@@ -3,7 +3,7 @@ import type { DisplayObject, RenderableData, RendererState } from '@flighthq/typ
 
 import { createRendererState } from './createRendererState';
 import type { RendererStateInternal } from './internal/writeInternal';
-import { getRenderableData, updateRenderableDataTree } from './renderable';
+import { getRenderableData, updateRenderableTree } from './renderable';
 
 describe('getRenderableData', () => {
   it('creates renderable data if not present already', () => {
@@ -15,7 +15,7 @@ describe('getRenderableData', () => {
   });
 });
 
-describe('updateRenderableDataTree', () => {
+describe('updateRenderableTree', () => {
   let parent: DisplayObject;
   let parentData: RenderableData;
   let child: DisplayObject;
@@ -32,26 +32,26 @@ describe('updateRenderableDataTree', () => {
   });
 
   it('updates appearance for all children', () => {
-    updateRenderableDataTree(state, parent);
+    updateRenderableTree(state, parent);
     expect(parentData.appearanceFrameID).toStrictEqual(state.currentFrameID);
     expect(childData.appearanceFrameID).toStrictEqual(state.currentFrameID);
   });
 
   it('updates transform for all children', () => {
-    updateRenderableDataTree(state, parent);
+    updateRenderableTree(state, parent);
     expect(parentData.transformFrameID).toStrictEqual(state.currentFrameID);
     expect(childData.transformFrameID).toStrictEqual(state.currentFrameID);
   });
 
   it('returns true if an update was performed', () => {
-    const dirty = updateRenderableDataTree(state, parent);
+    const dirty = updateRenderableTree(state, parent);
     expect(dirty).toBe(true);
   });
 
   it('does not make a change if not dirty', () => {
-    updateRenderableDataTree(state, parent);
+    updateRenderableTree(state, parent);
     (state as RendererStateInternal).currentFrameID++;
-    updateRenderableDataTree(state, parent);
+    updateRenderableTree(state, parent);
     expect(parentData.appearanceFrameID).not.toStrictEqual(state.currentFrameID);
     expect(childData.appearanceFrameID).not.toStrictEqual(state.currentFrameID);
     expect(parentData.transformFrameID).not.toStrictEqual(state.currentFrameID);
@@ -59,8 +59,8 @@ describe('updateRenderableDataTree', () => {
   });
 
   it('returns false if a change is not made', () => {
-    updateRenderableDataTree(state, parent);
-    const dirty = updateRenderableDataTree(state, parent);
+    updateRenderableTree(state, parent);
+    const dirty = updateRenderableTree(state, parent);
     expect(dirty).toBe(false);
   });
 });
