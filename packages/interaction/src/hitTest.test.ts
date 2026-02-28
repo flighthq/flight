@@ -1,9 +1,9 @@
 // @vitest-environment node
 
 import { rectangle } from '@flighthq/geom';
-import { getLocalBoundsRect } from '@flighthq/stage/bounds';
-import { createDisplayObject } from '@flighthq/stage/createDisplayObject';
-import { invalidateLocalTransform } from '@flighthq/stage/revision';
+import { getLocalBoundsRect } from '@flighthq/scene-graph-stage/bounds';
+import { createDisplayObject } from '@flighthq/scene-graph-stage/createDisplayObject';
+import { invalidateLocalTransform } from '@flighthq/scene-graph-stage/revision';
 import type { DisplayObject } from '@flighthq/types';
 
 import { hitTestObject, hitTestPoint } from './hitTest';

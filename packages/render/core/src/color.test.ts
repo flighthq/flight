@@ -1,5 +1,5 @@
 import { colorTransform } from '@flighthq/materials';
-import { addChild, createDisplayObject } from '@flighthq/stage';
+import { addChild, createDisplayObject } from '@flighthq/scene-graph-stage';
 import type { DisplayObject, RenderableData, RendererState } from '@flighthq/types';
 
 import { setBackgroundColor, updateColorTransform } from './color';

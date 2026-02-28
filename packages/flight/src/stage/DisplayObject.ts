@@ -9,7 +9,7 @@ import {
   invalidateAppearance,
   invalidateLocalTransform,
   localToGlobal as __localToGlobal,
-} from '@flighthq/stage';
+} from '@flighthq/scene-graph-stage';
 import type { DisplayObject as DisplayObjectModel, Filter, Shader } from '@flighthq/types';
 import type { BlendMode } from '@flighthq/types';
 

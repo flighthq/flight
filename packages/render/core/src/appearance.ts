@@ -1,4 +1,4 @@
-import { getAppearanceID } from '@flighthq/stage';
+import { getAppearanceID } from '@flighthq/scene-graph-stage';
 import type { RenderableData, RendererState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 

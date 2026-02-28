@@ -1,4 +1,4 @@
-import { createMovieClip } from '@flighthq/stage';
+import { createMovieClip } from '@flighthq/scene-graph-stage';
 import type { MovieClip as MovieClipModel } from '@flighthq/types';
 
 import DisplayObjectContainer from './DisplayObjectContainer.js';

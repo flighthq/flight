@@ -9,10 +9,10 @@
     "sourceMap": true // Generate source maps for JS files
   },
   "include": [
-    "packages/*/src/**/*.ts",
-    "packages/*/src/**/*.test.ts", // Include test files here
-    "packages/*/src/**/*.spec.ts",
-    "packages/*/__tests__/**/*.ts",
+    "packages/**/src/**/*.ts",
+    "packages/**/src/**/*.test.ts", // Include test files here
+    "packages/**/src/**/*.spec.ts",
+    "packages/**/__tests__/**/*.ts",
     "tests/**/*.test.ts"
   ],
   "exclude": ["node_modules", "dist"]

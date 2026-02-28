@@ -1,4 +1,10 @@
-import { addChild, createDisplayObject, getLocalBoundsRect, getLocalTransform, removeChild } from '@flighthq/stage';
+import {
+  addChild,
+  createDisplayObject,
+  getLocalBoundsRect,
+  getLocalTransform,
+  removeChild,
+} from '@flighthq/scene-graph-stage';
 import { GraphState } from '@flighthq/types';
 
 it('should allow undefined when first created', () => {
