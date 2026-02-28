@@ -1,4 +1,5 @@
-import type { ImageSource } from '../assets';
+import type { ImageSource } from '@flighthq/types';
+
 import type { PrimitiveData } from './PrimitiveData';
 
 export default interface BitmapData extends PrimitiveData {

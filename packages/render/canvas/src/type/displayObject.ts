@@ -1,5 +1,5 @@
 import { rectangle } from '@flighthq/geom';
-import { calculateBoundsRect } from '@flighthq/stage';
+import { calculateBoundsRect } from '@flighthq/scene-graph-stage';
 import type { CanvasRendererState, RenderableData } from '@flighthq/types';
 
 import { setBlendMode } from '../materials';

@@ -31,7 +31,7 @@
   "dependencies": {
     "@flighthq/geom": "^1.0.0",
     "@flighthq/render-core": "^1.0.0",
-    "@flighthq/stage": "^1.0.0",
+    "@flighthq/scene-graph-stage": "^1.0.0",
     "@flighthq/types": "^1.0.0"
   },
   "devDependencies": {

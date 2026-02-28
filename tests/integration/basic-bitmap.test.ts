@@ -1,5 +1,5 @@
-// tests/integration/setup-assets.ts
-import { addChild, createBitmap, createDisplayObject } from '@flighthq/stage';
+import { createImageSource } from '@flighthq/assets';
+import { addChild, createBitmap, createDisplayObject } from '@flighthq/scene-graph-stage';
 
 export function loadImageAndDecode(): Promise<HTMLImageElement> {
   return new Promise((resolve) => {
@@ -22,7 +22,7 @@ export function loadImageAndDecode(): Promise<HTMLImageElement> {
 test('create basic bitmap and add to scene', async () => {
   const container = createDisplayObject();
   const bitmap = createBitmap();
-  bitmap.data.image = await loadImageAndDecode(); // <-- stub image
+  bitmap.data.image = createImageSource(await loadImageAndDecode()); // <-- stub image
   addChild(container, bitmap);
   expect(bitmap.parent).toBe(container);
 });

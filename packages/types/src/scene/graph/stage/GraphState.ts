@@ -1,5 +1,4 @@
-import type Matrix3x2 from '../geom/Matrix3x2.js';
-import type Rectangle from '../geom/Rectangle.js';
+import type { Matrix3x2, Rectangle } from '@flighthq/types';
 
 export interface GraphState {
   appearanceID: number;

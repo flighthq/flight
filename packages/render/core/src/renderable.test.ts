@@ -1,5 +1,5 @@
 import { rectangle } from '@flighthq/geom';
-import { addChild, createDisplayObject } from '@flighthq/stage';
+import { addChild, createDisplayObject } from '@flighthq/scene-graph-stage';
 import type { DisplayObject, RenderableData, RendererState } from '@flighthq/types';
 
 import { createRendererState } from './createRendererState';

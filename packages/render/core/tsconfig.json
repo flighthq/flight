@@ -11,7 +11,7 @@
   "references": [
     { "path": "../../geom" },
     { "path": "../../materials" },
-    { "path": "../../stage" },
+    { "path": "../../scene/graph/stage" },
     { "path": "../../types" }
   ],
   "include": ["src"]

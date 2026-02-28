@@ -1,4 +1,4 @@
-import { createStage } from '@flighthq/stage';
+import { createStage } from '@flighthq/scene-graph-stage';
 import type { Stage as StageModel } from '@flighthq/types';
 
 import DisplayObjectContainer from './DisplayObjectContainer.js';

@@ -1,7 +1,7 @@
 import { rectangle } from '@flighthq/geom';
-import { getAppearanceID, getLocalBoundsID, getLocalTransformID } from '@flighthq/stage';
-import { getBoundsRect, getLocalBoundsRect } from '@flighthq/stage/bounds';
-import { getLocalTransform } from '@flighthq/stage/transform';
+import { getAppearanceID, getLocalBoundsID, getLocalTransformID } from '@flighthq/scene-graph-stage';
+import { getBoundsRect, getLocalBoundsRect } from '@flighthq/scene-graph-stage/bounds';
+import { getLocalTransform } from '@flighthq/scene-graph-stage/transform';
 
 import Matrix from '../geom/Matrix.js';
 import Rectangle from '../geom/Rectangle.js';

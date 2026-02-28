@@ -1,5 +1,5 @@
 import { matrix3x2 } from '@flighthq/geom';
-import { getLocalTransform, getLocalTransformID } from '@flighthq/stage';
+import { getLocalTransform, getLocalTransformID } from '@flighthq/scene-graph-stage';
 import type { RenderableData, RendererState } from '@flighthq/types';
 
 export function updateRenderTransform(

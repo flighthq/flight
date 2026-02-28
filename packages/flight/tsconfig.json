@@ -15,9 +15,9 @@
     { "path": "../materials" },
     { "path": "../render/core" },
     { "path": "../render/canvas" },
-    { "path": "../stage" },
+    { "path": "../scene/graph/stage" },
     { "path": "../types" },
-    { "path": "../world" }
+    { "path": "../scene/graph/world" }
   ],
   "include": ["src"]
 }

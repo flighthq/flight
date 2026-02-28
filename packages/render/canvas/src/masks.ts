@@ -1,6 +1,6 @@
 import { rectangle } from '@flighthq/geom';
 import { getRenderableData } from '@flighthq/render-core';
-import { calculateBoundsRect } from '@flighthq/stage';
+import { calculateBoundsRect } from '@flighthq/scene-graph-stage';
 import type { CanvasRendererState, RenderableData } from '@flighthq/types';
 
 import { setTransform } from './transform';

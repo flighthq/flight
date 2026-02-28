@@ -8,6 +8,11 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../../geom" }, { "path": "../core" }, { "path": "../../stage" }, { "path": "../../types" }],
+  "references": [
+    { "path": "../../geom" },
+    { "path": "../core" },
+    { "path": "../../scene/graph/stage" },
+    { "path": "../../types" }
+  ],
   "include": ["src"]
 }

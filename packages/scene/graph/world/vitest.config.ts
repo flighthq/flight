@@ -1,12 +1,12 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 
-import baseConfig from '../../vitest.config.base.js';
+import baseConfig from '../../../../vitest.config.base.js'; // eslint-disable-line
 
 export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      name: 'unit:stage',
+      name: 'unit:scene-graph-world',
       environment: 'node',
       include: ['src/**/*.test.ts'],
     },

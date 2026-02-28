@@ -2,8 +2,6 @@
   "name": "@flighthq/types",
   "version": "1.0.0",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -21,9 +19,25 @@
       "types": "./dist/render.d.ts",
       "default": "./dist/render.js"
     },
-    "./stage": {
-      "types": "./dist/stage.d.ts",
-      "default": "./dist/stage.js"
+    "./render/canvas": {
+      "types": "./dist/render-canvas.d.ts",
+      "default": "./dist/render-canvas.js"
+    },
+    "./render/core": {
+      "types": "./dist/render-core.d.ts",
+      "default": "./dist/render-core.js"
+    },
+    "./scene": {
+      "types": "./dist/scene.d.ts",
+      "default": "./dist/scene.js"
+    },
+    "./scene/graph": {
+      "types": "./dist/scene-graph.d.ts",
+      "default": "./dist/scene-graph.js"
+    },
+    "./scene/graph/stage": {
+      "types": "./dist/scene-graph-stage.d.ts",
+      "default": "./dist/scene-graph-stage.js"
     }
   },
   "files": [

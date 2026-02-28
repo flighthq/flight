@@ -1,4 +1,4 @@
-import * as children from '@flighthq/stage/children';
+import * as children from '@flighthq/scene-graph-stage/children';
 
 import DisplayObject from './DisplayObject.js';
 import { getDisplayObjectFromModel } from './internal/displayObjectMap.js';

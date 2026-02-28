@@ -1,5 +1,5 @@
 import { createCanvasRendererState, render } from '@flighthq/render-canvas';
-import { createDisplayObject } from '@flighthq/stage';
+import { createDisplayObject } from '@flighthq/scene-graph-stage';
 
 test('attach renderer to new canvas', () => {
   const canvas = document.createElement('canvas');

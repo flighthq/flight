@@ -138,6 +138,8 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
+*.hx
+
 # Downloaded asset files
 examples/**/assets
 .test-assets

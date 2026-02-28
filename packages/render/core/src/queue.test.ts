@@ -1,4 +1,4 @@
-import { addChild, createDisplayObject } from '@flighthq/stage';
+import { addChild, createDisplayObject } from '@flighthq/scene-graph-stage';
 import type { DisplayObject, RendererState } from '@flighthq/types';
 
 import { createRendererState } from './createRendererState';
