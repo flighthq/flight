@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
     "rootDir": "src",
@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../geom" }, { "path": "../materials" }, { "path": "../stage" }, { "path": "../types" }],
+  "references": [{ "path": "../../geom" }, { "path": "../core" }, { "path": "../../stage" }, { "path": "../../types" }],
   "include": ["src"]
 }
