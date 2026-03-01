@@ -1,5 +1,5 @@
-import { hitTestObject as __hitTestObject, hitTestPoint as __hitTestPoint } from '@flighthq/events-input';
 import { matrix3x2, rectangle } from '@flighthq/geometry';
+import { hitTestObject as __hitTestObject, hitTestPoint as __hitTestPoint } from '@flighthq/interaction';
 import {
   calculateBoundsRect,
   createDisplayObject,
