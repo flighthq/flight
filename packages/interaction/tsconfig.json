@@ -9,12 +9,8 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../assets" },
-    { "path": "../geometry" },
-    { "path": "../interaction" },
     { "path": "../materials" },
-    { "path": "../render/core" },
-    { "path": "../render/canvas" },
+    { "path": "../geometry" },
     { "path": "../scene/graph/stage" },
     { "path": "../types" },
     { "path": "../scene/graph/world" }

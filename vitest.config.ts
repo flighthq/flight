@@ -10,7 +10,7 @@ export default mergeConfig(
         'packages/assets',
         'packages/flight',
         'packages/geometry',
-        'packages/events/input',
+        'packages/interaction',
         'packages/materials',
         'packages/render/canvas',
         'packages/render/core',

@@ -1,5 +1,3 @@
-// @vitest-environment node
-
 import { rectangle } from '@flighthq/geometry';
 import { getLocalBoundsRect } from '@flighthq/scene-graph-stage/bounds';
 import { createDisplayObject } from '@flighthq/scene-graph-stage/createDisplayObject';
