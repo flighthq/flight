@@ -7,6 +7,7 @@ export default mergeConfig(
   defineConfig({
     test: {
       projects: [
+        'packages/animation/timeline',
         'packages/assets',
         'packages/flight',
         'packages/geometry',
@@ -15,12 +16,11 @@ export default mergeConfig(
         'packages/render/canvas',
         'packages/render/core',
         'packages/scene/graph/stage',
-        'packages/animation/timeline',
-        'packages/types',
         'packages/scene/graph/world',
-        'tests/integration',
+        'packages/types',
         'tests/api',
         'tests/api/browser',
+        'tests/integration',
       ],
     },
   }),
