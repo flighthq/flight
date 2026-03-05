@@ -1,6 +1,6 @@
 import type DisplayObject from './DisplayObject';
-import type DOMElementData from './DOMObjectData';
+import type DOMObjectData from './DOMObjectData';
 
-export default interface DOMElement extends DisplayObject {
-  data: DOMElementData;
+export default interface DOMObject extends DisplayObject {
+  data: DOMObjectData;
 }
