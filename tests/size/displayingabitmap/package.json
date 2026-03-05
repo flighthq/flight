@@ -1,0 +1,20 @@
+{
+  "name": "displayingabitmap",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/flight": "*",
+    "@flighthq/render-canvas": "*",
+    "@flighthq/types": "*",
+    "typescript": "^5.0.0",
+    "vite": "^4.0.0"
+  },
+  "devDependencies": {
+    "vite-plugin-svgr": "^2.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "assets": "tsx ../../scripts/download-assets.ts"
+  }
+}

@@ -22,7 +22,8 @@
     "test:integration": "vitest run tests/integration",
     "test:api": "npm run test:api:node && npm run test:api:browser",
     "test:api:node": "vitest run tests/api",
-    "test:api:browser": "vitest run tests/api/browser"
+    "test:api:browser": "vitest run tests/api/browser",
+    "test:size": "vitest run tests/size"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
@@ -41,6 +42,7 @@
     "jiti": "^2.6.1",
     "jsdom": "^27.4.0",
     "prettier": "3.8.1",
+    "terser": "^5.46.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",

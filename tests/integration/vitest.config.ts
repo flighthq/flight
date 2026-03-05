@@ -9,6 +9,7 @@ export default mergeConfig(
       name: 'integration',
       environment: 'jsdom',
       include: ['**/*.test.ts'],
+      sequence: { groupOrder: 2 },
     },
   }),
 );

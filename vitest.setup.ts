@@ -1,4 +1,4 @@
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && 'document' in window) {
   // jsdom / browser environment
   // @ts-expect-error: quiet warning about types
   import('@testing-library/jest-dom');
