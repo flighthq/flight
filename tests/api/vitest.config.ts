@@ -8,7 +8,8 @@ export default mergeConfig(
     test: {
       name: 'api',
       environment: 'node',
-      include: ['**/*.test.ts', '!browser/**/*.test.ts'],
+      // include: ['**/*.test.ts', '!'],
+      exclude: ['browser/**/*.test.ts'],
     },
   }),
 );
