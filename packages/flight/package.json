@@ -21,14 +21,14 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@flighthq/assets": "^1.0.0",
-    "@flighthq/materials": "^1.0.0",
-    "@flighthq/interaction": "^1.0.0",
-    "@flighthq/geometry": "^1.0.0",
-    "@flighthq/render-canvas": "^1.0.0",
-    "@flighthq/scene-graph-stage": "^1.0.0",
-    "@flighthq/types": "^1.0.0",
-    "@flighthq/scene-graph-world": "^1.0.0"
+    "@flighthq/assets": "*",
+    "@flighthq/materials": "*",
+    "@flighthq/interaction": "*",
+    "@flighthq/geometry": "*",
+    "@flighthq/render-canvas": "*",
+    "@flighthq/scene-graph-stage": "*",
+    "@flighthq/types": "*",
+    "@flighthq/scene-graph-world": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
