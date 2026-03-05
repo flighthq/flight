@@ -8,6 +8,7 @@ export default mergeConfig(
     test: {
       environment: 'jsdom',
       include: ['src/**/*.test.ts'],
+      sequence: { groupOrder: 2 },
     },
   }),
 );
