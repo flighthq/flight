@@ -9,7 +9,7 @@ export default mergeConfig(
       name: 'size',
       environment: 'node',
       include: ['**/*.test.ts'],
-      sequence: { groupOrder: -1 },
+      sequence: { groupOrder: 3 },
     },
   }),
 );
