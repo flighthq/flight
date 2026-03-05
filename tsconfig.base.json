@@ -14,6 +14,8 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
+      "@flighthq/animation-timeline": ["packages/animation/timeline/src/index.ts"],
+      "@flighthq/animation-timeline/*": ["packages/animation/timeline/src/*"],
       "@flighthq/assets": ["packages/assets/src/index.ts"],
       "@flighthq/assets/*": ["packages/assets/src/*"],
       "@flighthq/flight": ["packages/flight/src/index.ts"],
@@ -30,12 +32,10 @@
       "@flighthq/render-core/*": ["packages/render/core/src/*"],
       "@flighthq/scene-graph-stage": ["packages/scene/graph/stage/src/index.ts"],
       "@flighthq/scene-graph-stage/*": ["packages/scene/graph/stage/src/*"],
-      "@flighthq/animation-timeline": ["packages/animation/timeline/src/index.ts"],
-      "@flighthq/animation-timeline/*": ["packages/animation/timeline/src/*"],
-      "@flighthq/types": ["packages/types/src/index.ts"],
-      "@flighthq/types/*": ["packages/types/src/*"],
       "@flighthq/scene-graph-world": ["packages/scene-graph-world/src/index.ts"],
-      "@flighthq/scene-graph-world/*": ["packages/scene-graph-world/src/*"]
+      "@flighthq/scene-graph-world/*": ["packages/scene-graph-world/src/*"],
+      "@flighthq/types": ["packages/types/src/index.ts"],
+      "@flighthq/types/*": ["packages/types/src/*"]
     },
     "types": ["@testing-library/jest-dom", "vitest/globals"] // Include Vitest globals for type-checking
   },
