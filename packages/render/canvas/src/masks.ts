@@ -34,7 +34,7 @@ export function applyMask(state: CanvasRendererState, data: RenderableData): voi
 
 export function popMask(state: CanvasRendererState): void {
   state.context.restore();
-  state.currentMaskDepth--;
+  // state.currentMaskDepth--;
 }
 
 export function pushMask(state: CanvasRendererState, data: RenderableData): void {

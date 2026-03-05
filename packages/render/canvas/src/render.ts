@@ -1,10 +1,10 @@
-import { prepareRenderQueue, updateRenderableTree } from '@flighthq/render-core';
+import { getRenderableData, updateRenderableTree } from '@flighthq/render-core';
 import type { CanvasRendererState, Renderable, RenderableData } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { renderBitmap } from './bitmap';
 import { updateCacheBitmap } from './cacheBitmap';
-import { popScrollRect, pushScrollRect } from './clipping';
+import { popClipRect, pushClipRect } from './clipping';
 import { renderOpaqueBackground } from './displayObject';
 import { popMask, pushMask } from './masks';
 import { setBlendMode } from './materials';
@@ -27,38 +27,90 @@ export function clear(state: CanvasRendererState): void {
   setBlendMode(state, cacheBlendMode);
 }
 
-export function finishClipAfterRender(state: CanvasRendererState) {
-  while (state.currentMaskDepth > 0) {
+// export function finishClipAfterRender(state: CanvasRendererState) {
+//   while (state.currentMaskDepth > 0) {
+//     popMask(state);
+//   }
+//   while (state.currentScrollRectDepth > 0) {
+//     popScrollRect(state);
+//   }
+// }
+
+// export function flushRenderQueue(state: CanvasRendererState): void {
+//   const currentQueue = state.currentQueue;
+//   const currentQueueLength = state.currentQueueLength;
+//   state.currentScrollRectDepth = 0;
+//   state.currentMaskDepth = 0;
+//   for (let i = 0; i < currentQueueLength; i++) {
+//     const data = currentQueue[i];
+//     renderObject(state, data);
+//   }
+//   finishClipAfterRender(state);
+// }
+
+function popMaskObject(state: CanvasRendererState, data: RenderableData, handleScrollRect: boolean = true): void {
+  const source = data.source;
+
+  if (source.mask !== null) {
     popMask(state);
   }
-  while (state.currentScrollRectDepth > 0) {
-    popScrollRect(state);
+
+  if (handleScrollRect && source.scrollRect !== null) {
+    popClipRect(state);
   }
 }
 
-export function flushRenderQueue(state: CanvasRendererState): void {
-  const currentQueue = state.currentQueue;
-  const currentQueueLength = state.currentQueueLength;
-  state.currentScrollRectDepth = 0;
-  state.currentMaskDepth = 0;
-  for (let i = 0; i < currentQueueLength; i++) {
-    const data = currentQueue[i];
-    renderObject(state, data);
+function pushMaskObject(state: CanvasRendererState, data: RenderableData, handleScrollRect: boolean = true): void {
+  const source = data.source;
+
+  if (handleScrollRect && source.scrollRect != null) {
+    pushClipRect(state, source.scrollRect, data.transform);
   }
-  finishClipAfterRender(state);
+
+  if (source.mask !== null) {
+    pushMask(state, getRenderableData(state, source.mask));
+  }
 }
 
 export function render(state: CanvasRendererState, source: Renderable): void {
   const dirty = updateRenderableTree(state, source);
-  if (dirty) {
-    prepareRenderQueue(state, source);
-    clear(state);
-    flushRenderQueue(state);
+  if (!dirty) return;
+
+  clear(state);
+
+  const currentFrameID = state.currentFrameID;
+  const tempStack = state.tempStack;
+  let stackLength = 0;
+
+  // Start with root
+  tempStack[stackLength++] = source;
+
+  while (stackLength > 0) {
+    const current = tempStack[--stackLength];
+    const data = getRenderableData(state, current);
+
+    const isMask = data.isMaskFrameID === currentFrameID;
+    if (isMask) continue; // skip drawing masks (they're used for clipping elsewhere)
+
+    const shouldRender = data.visible && data.alpha > 0 && !(data.transform.a === 0 && data.transform.d === 0);
+    if (!shouldRender) continue;
+
+    // ── Draw current object first (pre-order) ──
+    renderObject(state, data);
+
+    // Then push children in forward order (so we pop & draw index 0 first)
+    if (current.children !== null) {
+      // Push from last to first → pop gives index 0 first
+      for (let i = current.children.length - 1; i >= 0; i--) {
+        tempStack[stackLength++] = current.children[i];
+      }
+    }
   }
 }
 
 export function renderObject(state: CanvasRendererState, data: RenderableData): void {
-  updateClipBeforeRender(state, data);
+  pushMaskObject(state, data);
+  // updateClipBeforeRender(state, data);
   if (state.allowCacheAsBitmap) {
     updateCacheBitmap(state, data);
     if (data.cacheBitmap !== null) {
@@ -86,29 +138,30 @@ export function renderObject(state: CanvasRendererState, data: RenderableData): 
     //   break;
     default:
   }
+  popMaskObject(state, data);
 }
 
-export function updateClipBeforeRender(state: CanvasRendererState, data: RenderableData): void {
-  const { currentScrollRectDepth, currentMaskDepth } = state;
-  const { scrollRectDepth, source, maskDepth } = data;
-  const scrollRect = source.scrollRect;
-  const mask = source.mask;
-  const hasScrollRect = scrollRect != null;
-  const hasMask = mask != null;
+// export function updateClipBeforeRender(state: CanvasRendererState, data: RenderableData): void {
+//   const { currentScrollRectDepth, currentMaskDepth } = state;
+//   const { scrollRectDepth, source, maskDepth } = data;
+//   const scrollRect = source.scrollRect;
+//   const mask = source.mask;
+//   const hasScrollRect = scrollRect != null;
+//   const hasMask = mask != null;
 
-  if (scrollRectDepth > 0 && (scrollRectDepth < currentScrollRectDepth || hasScrollRect)) {
-    popScrollRect(state);
-  }
+//   if (scrollRectDepth > 0 && (scrollRectDepth < currentScrollRectDepth || hasScrollRect)) {
+//     popScrollRect(state);
+//   }
 
-  if (maskDepth > 0 && (maskDepth < currentMaskDepth || hasMask)) {
-    popMask(state);
-  }
+//   if (maskDepth > 0 && (maskDepth < currentMaskDepth || hasMask)) {
+//     popMask(state);
+//   }
 
-  if (hasMask) {
-    pushMask(state, data);
-  }
+//   if (hasMask) {
+//     pushMask(state, data);
+//   }
 
-  if (hasScrollRect) {
-    pushScrollRect(state, data);
-  }
-}
+//   if (hasScrollRect) {
+//     pushScrollRect(state, data);
+//   }
+// }
