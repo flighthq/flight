@@ -8,7 +8,7 @@ canvas.height = 400;
 document.body.appendChild(canvas);
 
 const options = {
-  backgroundColor: 0xffffffff,
+  backgroundColor: 0xeeddccff,
   contextAttributes: {
     alpha: false,
   },
@@ -16,4 +16,10 @@ const options = {
 
 const state = createCanvasRendererState(canvas, options);
 const main = new Main();
-render(state, main.model);
+
+function enterFrame() {
+  render(state, main.model);
+  requestAnimationFrame(enterFrame);
+}
+
+requestAnimationFrame(enterFrame);

@@ -11,8 +11,8 @@ export default class Main extends MovieClip {
   private async initialize() {
     try {
       this.bitmap.image = new ImageSource(await loadImageAndDecode('assets/wabbit_alpha.png'));
-      this.bitmap.x = (this.bitmap.width + 550) / 2;
-      this.bitmap.y = (this.bitmap.height + 400) / 2;
+      this.bitmap.x = (550 - this.bitmap.width) / 2;
+      this.bitmap.y = (400 - this.bitmap.height) / 2;
       this.addChild(this.bitmap);
     } catch (error) {
       console.error('Error loading image:', error); // eslint-disable-line
