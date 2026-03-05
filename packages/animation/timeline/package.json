@@ -25,9 +25,9 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@flighthq/geometry": "^1.0.0",
-    "@flighthq/scene-graph-stage": "^1.0.0",
-    "@flighthq/types": "^1.0.0"
+    "@flighthq/geometry": "*",
+    "@flighthq/scene-graph-stage": "*",
+    "@flighthq/types": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
