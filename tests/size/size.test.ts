@@ -31,10 +31,10 @@ async function buildSample(root: string): Promise<string> {
     logLevel: 'silent',
   });
 
-  const jsFiles = result.output.filter((f) => f.fileName.endsWith('.js'));
+  const jsFiles = (result as any).output.filter((f: any) => f.fileName.endsWith('.js')); // eslint-disable-line
   expect(jsFiles.length).toBeGreaterThan(0);
 
-  const mainChunk = jsFiles.find((f) => f.fileName.includes('main')) || jsFiles[0];
+  const mainChunk = jsFiles.find((f: any) => f.fileName.includes('main')) || jsFiles[0]; // eslint-disable-line
   const code = mainChunk.code;
   return code;
 }
