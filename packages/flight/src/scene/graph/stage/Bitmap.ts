@@ -2,7 +2,7 @@ import { createBitmap, invalidateAppearance, invalidateLocalBounds } from '@flig
 import type { Bitmap as BitmapModel } from '@flighthq/types';
 
 import type { ImageSource } from '../../../assets';
-import { getImageSourceFromModel } from '../../../assets/internal/imageSourceMap';
+import { getImageSourceFromModel, registerImageSource } from '../../../assets/internal/imageSourceMap';
 import DisplayObject from './DisplayObject';
 import type { DisplayObjectInternal } from './internal/writeInternal';
 
@@ -27,6 +27,7 @@ export default class Bitmap extends DisplayObject {
     if (value !== null) {
       if (this.model.data.image === value.model) return;
       this.model.data.image = value.model;
+      registerImageSource(value);
     } else {
       if (this.model.data.image === null) return;
       this.model.data.image = null;
