@@ -1,6 +1,6 @@
-import { type DOMObject,DOMObjectKind } from '@flighthq/types';
+import { type DOMObject, DOMObjectKind } from '@flighthq/types';
 
-import { createDOMObject } from './createDOMObject';
+import { createDOMObject } from './domObject';
 
 describe('createDOMObject', () => {
   let domObject: DOMObject;

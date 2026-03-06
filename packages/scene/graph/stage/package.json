@@ -9,6 +9,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./bitmap": {
+      "types": "./dist/bitmap.d.ts",
+      "default": "./dist/bitmap.js"
+    },
     "./bounds": {
       "types": "./dist/bounds.d.ts",
       "default": "./dist/bounds.js"
@@ -17,57 +21,53 @@
       "types": "./dist/children.d.ts",
       "default": "./dist/children.js"
     },
-    "./createBitmap": {
-      "types": "./dist/createBitmap.d.ts",
-      "default": "./dist/createBitmap.js"
+    "./displayObject": {
+      "types": "./dist/displayObject.d.ts",
+      "default": "./dist/displayObject.js"
     },
-    "./createDisplayObject": {
-      "types": "./dist/createDisplayObject.d.ts",
-      "default": "./dist/createDisplayObject.js"
+    "./domObject": {
+      "types": "./dist/domObject.d.ts",
+      "default": "./dist/domObject.js"
     },
-    "./createDOMObject": {
-      "types": "./dist/createDOMObject.d.ts",
-      "default": "./dist/createDOMObject.js"
+    "./inputText": {
+      "types": "./dist/inputText.d.ts",
+      "default": "./dist/inputText.js"
     },
-    "./createInputText": {
-      "types": "./dist/createInputText.d.ts",
-      "default": "./dist/createInputText.js"
-    },
-    "./createMovieClip": {
-      "types": "./dist/createMovieClip.d.ts",
-      "default": "./dist/createMovieClip.js"
-    },
-    "./createRichText": {
-      "types": "./dist/createRichText.d.ts",
-      "default": "./dist/createRichText.js"
-    },
-    "./createShape": {
-      "types": "./dist/createShape.d.ts",
-      "default": "./dist/createShape.js"
-    },
-    "./createStage": {
-      "types": "./dist/createStage.d.ts",
-      "default": "./dist/createStage.js"
-    },
-    "./createText": {
-      "types": "./dist/createText.d.ts",
-      "default": "./dist/createText.js"
-    },
-    "./createTilemap": {
-      "types": "./dist/createTilemap.d.ts",
-      "default": "./dist/createTilemap.js"
-    },
-    "./createVideo": {
-      "types": "./dist/createVideo.d.ts",
-      "default": "./dist/createVideo.js"
+    "./movieClip": {
+      "types": "./dist/movieClip.d.ts",
+      "default": "./dist/movieClip.js"
     },
     "./revision": {
       "types": "./dist/revision.d.ts",
       "default": "./dist/revision.js"
     },
+    "./richText": {
+      "types": "./dist/richText.d.ts",
+      "default": "./dist/richText.js"
+    },
+    "./shape": {
+      "types": "./dist/shape.d.ts",
+      "default": "./dist/shape.js"
+    },
+    "./stage": {
+      "types": "./dist/stage.d.ts",
+      "default": "./dist/stage.js"
+    },
+    "./text": {
+      "types": "./dist/text.d.ts",
+      "default": "./dist/text.js"
+    },
+    "./tilemap": {
+      "types": "./dist/tilemap.d.ts",
+      "default": "./dist/tilemap.js"
+    },
     "./transform": {
       "types": "./dist/transform.d.ts",
       "default": "./dist/transform.js"
+    },
+    "./video": {
+      "types": "./dist/video.d.ts",
+      "default": "./dist/video.js"
     }
   },
   "files": [

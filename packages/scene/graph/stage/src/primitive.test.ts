@@ -1,6 +1,6 @@
 import { type DisplayObject, type DisplayObjectData, DisplayObjectKind, type PartialWithData } from '@flighthq/types';
 
-import { createPrimitive } from './createPrimitive';
+import { createPrimitive } from './primitive';
 
 describe('createPrimitive', () => {
   it('allows creation of a type without a data field', () => {

@@ -1,8 +1,8 @@
-import { type PartialWithData, type RichText, type RichTextData,RichTextKind } from '@flighthq/types';
+import { type PartialWithData, type RichText, type RichTextData, RichTextKind } from '@flighthq/types';
 
-import { createPrimitive } from './createPrimitive';
-import { createTextData } from './createText';
 import type { RichTextDataInternal } from './internal';
+import { createPrimitive } from './primitive';
+import { createTextData } from './text';
 
 export function createRichText(obj?: PartialWithData<RichText>): RichText {
   return createPrimitive<RichText, RichTextData>(RichTextKind, obj, createRichTextData);

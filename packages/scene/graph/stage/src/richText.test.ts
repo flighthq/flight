@@ -1,6 +1,6 @@
-import { type RichText,RichTextKind } from '@flighthq/types';
+import { type RichText, RichTextKind } from '@flighthq/types';
 
-import { createRichText } from './createRichText';
+import { createRichText } from './richText';
 
 describe('createRichText', () => {
   let richText: RichText;

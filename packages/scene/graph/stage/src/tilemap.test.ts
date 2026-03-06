@@ -1,6 +1,6 @@
-import { type Tilemap,TilemapKind } from '@flighthq/types';
+import { type Tilemap, TilemapKind } from '@flighthq/types';
 
-import { createTilemap } from './createTilemap';
+import { createTilemap } from './tilemap';
 
 describe('createTilemap', () => {
   let tilemap: Tilemap;

@@ -14,7 +14,7 @@ import {
   swapChildren,
   swapChildrenAt,
 } from './children';
-import { createDisplayObject } from './createDisplayObject';
+import { createDisplayObject } from './displayObject';
 import { getGraphState } from './graphState';
 import { getAppearanceID } from './revision';
 

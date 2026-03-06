@@ -2,7 +2,7 @@ import { matrix3x2 } from '@flighthq/geometry';
 import type { DisplayObject } from '@flighthq/types';
 import { BlendMode, DisplayObjectKind } from '@flighthq/types';
 
-import { createDisplayObject } from './createDisplayObject';
+import { createDisplayObject } from './displayObject';
 
 describe('createDisplayObject', () => {
   let displayObject: DisplayObject;

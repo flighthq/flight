@@ -1,6 +1,6 @@
 import { type DOMObject, type DOMObjectData, DOMObjectKind, type PartialWithData } from '@flighthq/types';
 
-import { createPrimitive } from './createPrimitive';
+import { createPrimitive } from './primitive';
 
 export function createDOMObject(obj?: PartialWithData<DOMObject>): DOMObject {
   return createPrimitive<DOMObject, DOMObjectData>(DOMObjectKind, obj, createDOMObjectData);
