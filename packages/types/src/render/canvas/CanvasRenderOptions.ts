@@ -1,6 +1,6 @@
 import type { Matrix3x2 } from '../../geometry';
 
-export interface CanvasRendererOptions {
+export interface CanvasRenderOptions {
   backgroundColor?: number | null;
   contextAttributes?: CanvasRenderingContext2DSettings;
   imageSmoothingEnabled?: boolean;

@@ -1,15 +1,14 @@
 import { getRenderNode, updateRenderableTree } from '@flighthq/render-core';
-import type { CanvasRendererState, Renderable, RenderNode } from '@flighthq/types';
+import type { CanvasRenderState, Renderable, RenderNode } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { renderBitmap } from './bitmap';
 import { updateCacheBitmap } from './cacheBitmap';
 import { popClipRect, pushClipRect } from './clipping';
-import { renderOpaqueBackground } from './displayObject';
 import { popMask, pushMask } from './masks';
 import { setBlendMode } from './materials';
 
-export function clear(state: CanvasRendererState): void {
+export function clear(state: CanvasRenderState): void {
   const cacheBlendMode = state.currentBlendMode;
   state.currentBlendMode = null;
   setBlendMode(state, BlendMode.Normal);
@@ -27,7 +26,7 @@ export function clear(state: CanvasRendererState): void {
   setBlendMode(state, cacheBlendMode);
 }
 
-export function render(state: CanvasRendererState, source: Renderable): void {
+export function render(state: CanvasRenderState, source: Renderable): void {
   const dirty = updateRenderableTree(state, source);
   if (!dirty) return;
 
@@ -63,7 +62,7 @@ export function render(state: CanvasRendererState, source: Renderable): void {
   }
 }
 
-function renderObject(state: CanvasRendererState, data: RenderNode): void {
+function renderObject(state: CanvasRenderState, data: RenderNode): void {
   if (data.renderer === null) return;
   pushMaskObject(state, data);
   if (state.allowCacheAsBitmap) {
@@ -73,12 +72,11 @@ function renderObject(state: CanvasRendererState, data: RenderNode): void {
       return;
     }
   }
-  renderOpaqueBackground(state, data);
   data.renderer.render(state, data);
   popMaskObject(state, data);
 }
 
-function popMaskObject(state: CanvasRendererState, data: RenderNode, handleScrollRect: boolean = true): void {
+function popMaskObject(state: CanvasRenderState, data: RenderNode, handleScrollRect: boolean = true): void {
   const source = data.source;
 
   if (source.mask !== null) {
@@ -90,7 +88,7 @@ function popMaskObject(state: CanvasRendererState, data: RenderNode, handleScrol
   }
 }
 
-function pushMaskObject(state: CanvasRendererState, data: RenderNode, handleScrollRect: boolean = true): void {
+function pushMaskObject(state: CanvasRenderState, data: RenderNode, handleScrollRect: boolean = true): void {
   const source = data.source;
 
   if (handleScrollRect && source.scrollRect != null) {

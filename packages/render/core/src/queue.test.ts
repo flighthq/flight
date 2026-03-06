@@ -1,20 +1,20 @@
 import { addChild, createDisplayObject } from '@flighthq/scene-graph-stage';
-import type { DisplayObject, RendererState } from '@flighthq/types';
+import type { DisplayObject, RenderState } from '@flighthq/types';
 
-import { createRendererState } from './createRendererState';
 import { prepareRenderQueue } from './queue';
-import { updateRenderableTree } from './renderNode';
+import { createRenderState } from './renderState';
+import { updateRenderableTree } from './update';
 
 describe('prepareRenderQueue', () => {
   let parent: DisplayObject;
   let child: DisplayObject;
-  let state: RendererState;
+  let state: RenderState;
 
   beforeEach(() => {
     parent = createDisplayObject();
     child = createDisplayObject();
     addChild(parent, child);
-    state = createRendererState();
+    state = createRenderState();
   });
 
   it('keeps objects which are renderable', () => {

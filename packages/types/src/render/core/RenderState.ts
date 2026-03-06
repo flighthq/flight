@@ -4,7 +4,7 @@ import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
 import type { RenderNode } from './RenderNode';
 
-export interface RendererState {
+export interface RenderState {
   allowCacheAsBitmap: boolean;
   allowFilters: boolean;
   allowSmoothing: boolean;

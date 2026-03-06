@@ -1,50 +1,17 @@
-import { rectangle } from '@flighthq/geometry';
-import { getRenderNode } from '@flighthq/render-core';
-import { calculateBoundsRect } from '@flighthq/scene-graph-stage';
-import {
-  BitmapKind,
-  type CanvasRendererState,
-  DisplayObjectKind,
-  type RenderNode,
-  StageKind,
-  VideoKind,
-} from '@flighthq/types';
+import type { CanvasRenderState, RenderNode } from '@flighthq/types';
 
 import { setTransform } from './transform';
-// import * as shape from './type/shape';
 
-export function applyMask(state: CanvasRendererState, data: RenderNode): void {
-  const source = data.source;
-  const kind = source.kind;
-  if (source.opaqueBackground !== null || kind === BitmapKind || kind === VideoKind) {
-    calculateBoundsRect(tempBounds, source, source);
-    state.context.rect(0, 0, tempBounds.width, tempBounds.width);
-  } else {
-    switch (kind) {
-      // case 'shape':
-      //   shape.applyMask(state, data);
-      //   break;
-      case DisplayObjectKind:
-      case StageKind:
-        const children = source.children;
-        if (children !== null) {
-          for (let i = 0; i < children.length; i++) {
-            const data = getRenderNode(state, children[i]);
-            applyMask(state, data);
-          }
-        }
-        break;
-      default:
-    }
-  }
+export function applyMask(state: CanvasRenderState, data: RenderNode): void {
+  if (data.renderer !== null) data.renderer.applyMask(state, data);
 }
 
-export function popMask(state: CanvasRendererState): void {
+export function popMask(state: CanvasRenderState): void {
   state.context.restore();
   // state.currentMaskDepth--;
 }
 
-export function pushMask(state: CanvasRendererState, data: RenderNode): void {
+export function pushMask(state: CanvasRenderState, data: RenderNode): void {
   state.context.save();
 
   setTransform(state, state.context, data.transform);
@@ -55,5 +22,3 @@ export function pushMask(state: CanvasRendererState, data: RenderNode): void {
 
   state.context.clip();
 }
-
-const tempBounds = rectangle.create();

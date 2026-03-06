@@ -1,12 +1,12 @@
-import type { Renderable, RendererState } from '@flighthq/types';
+import type { Renderable, RenderState } from '@flighthq/types';
 
-import type { RendererStateInternal } from './internal';
+import type { RenderStateInternal } from './internal';
 import { getRenderNode } from './renderNode';
 
 /**
  * Second pass, exclude non-renderable objects from queue
  */
-export function prepareRenderQueue(state: RendererState, source: Renderable): void {
+export function prepareRenderQueue(state: RenderState, source: Renderable): void {
   const tempStack = state.tempStack;
   const currentQueue = state.currentQueue;
   const currentFrameID = state.currentFrameID;
@@ -32,5 +32,5 @@ export function prepareRenderQueue(state: RendererState, source: Renderable): vo
     }
   }
 
-  (state as RendererStateInternal).currentQueueLength = currentQueueIndex;
+  (state as RenderStateInternal).currentQueueLength = currentQueueIndex;
 }

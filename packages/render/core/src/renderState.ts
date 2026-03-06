@@ -1,6 +1,6 @@
-import { BlendMode, type RendererState } from '@flighthq/types';
+import { BlendMode, type RenderState } from '@flighthq/types';
 
-export function createRendererState(obj?: Partial<RendererState>): RendererState {
+export function createRenderState(obj?: Partial<RenderState>): RenderState {
   return {
     allowCacheAsBitmap: obj?.allowCacheAsBitmap ?? true,
     allowFilters: obj?.allowFilters ?? true,

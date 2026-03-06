@@ -1,16 +1,16 @@
-import type { CanvasRendererState } from '@flighthq/types';
+import type { CanvasRenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import { createCanvasRendererState } from './createCanvasRendererState';
 import { setBlendMode } from './materials';
+import { createRenderState } from './renderState';
 
 describe('setBlendMode', () => {
   let canvas: HTMLCanvasElement;
-  let state: CanvasRendererState;
+  let state: CanvasRenderState;
 
   beforeEach(() => {
     canvas = document.createElement('canvas');
-    state = createCanvasRendererState(canvas);
+    state = createRenderState(canvas);
   });
 
   it('should not change globalCompositeOperation if blend mode is the same', () => {

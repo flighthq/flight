@@ -1,14 +1,14 @@
 import { matrix3x2, rectangle } from '@flighthq/geometry';
 import { getRenderNode } from '@flighthq/render-core';
 import { createDisplayObject } from '@flighthq/scene-graph-stage';
-import type { CanvasRendererState, DisplayObject, Matrix3x2, Rectangle, RenderNode } from '@flighthq/types';
+import type { CanvasRenderState, DisplayObject, Matrix3x2, Rectangle, RenderNode } from '@flighthq/types';
 
 import { popClipRect, popScrollRect, pushClipRect } from './clipping';
-import { createCanvasRendererState } from './createCanvasRendererState';
+import { createRenderState } from './renderState';
 
 describe('Clip and Scroll Rect Functions', () => {
   let canvas: HTMLCanvasElement;
-  let state: CanvasRendererState;
+  let state: CanvasRenderState;
   let rect: Rectangle;
   let transform: Matrix3x2;
   let source: DisplayObject;
@@ -16,7 +16,7 @@ describe('Clip and Scroll Rect Functions', () => {
 
   beforeEach(() => {
     canvas = document.createElement('canvas');
-    state = createCanvasRendererState(canvas);
+    state = createRenderState(canvas);
     rect = rectangle.create(10, 10, 100, 100);
     transform = matrix3x2.create();
     source = createDisplayObject();

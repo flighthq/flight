@@ -1,10 +1,10 @@
-import type { Renderer, RendererState } from '@flighthq/types';
+import type { Renderer, RenderState } from '@flighthq/types';
 
-import { createRendererState } from './createRendererState';
 import { registerRenderer } from './renderer';
+import { createRenderState } from './renderState';
 
 describe('registerRenderer', () => {
-  let state: RendererState & { rendererMapID: number };
+  let state: RenderState & { rendererMapID: number };
   let kindA: symbol;
   let kindB: symbol;
   let renderer1: Renderer;
@@ -17,7 +17,7 @@ describe('registerRenderer', () => {
     renderer1 = { render: vi.fn() } as unknown as Renderer;
     renderer2 = { render: vi.fn() } as unknown as Renderer;
 
-    state = createRendererState();
+    state = createRenderState();
   });
 
   it('should register a new renderer', () => {

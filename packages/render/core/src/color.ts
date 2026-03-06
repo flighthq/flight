@@ -1,11 +1,11 @@
 import { colorTransform } from '@flighthq/materials';
 import type { ColorTransform } from '@flighthq/types';
-import type { RendererState, RenderNode } from '@flighthq/types/render/core';
+import type { RenderNode, RenderState } from '@flighthq/types';
 
-import type { RendererStateInternal } from './internal';
+import type { RenderStateInternal } from './internal';
 
-export function setBackgroundColor(state: RendererState, color: number): void {
-  const _state = state as RendererStateInternal;
+export function setBackgroundColor(state: RenderState, color: number): void {
+  const _state = state as RenderStateInternal;
   _state.backgroundColor = color;
   const r = (color & 0xff000000) >>> 24;
   const g = (color & 0x00ff0000) >>> 16;
@@ -18,7 +18,7 @@ export function setBackgroundColor(state: RendererState, color: number): void {
   _state.backgroundColorString = '#' + color.toString(16).padStart(8, '0').toUpperCase();
 }
 
-export function updateColorTransform(state: RendererState, data: RenderNode, parentData?: RenderNode): void {
+export function updateColorTransform(state: RenderState, data: RenderNode, parentData?: RenderNode): void {
   const source = data.source;
   const transform = source.colorTransform ?? null;
   let parentTransform = null;

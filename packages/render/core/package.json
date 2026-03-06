@@ -17,10 +17,6 @@
       "types": "./dist/color.d.ts",
       "default": "./dist/color.js"
     },
-    "./createRendererState": {
-      "types": "./dist/createRendererState.d.ts",
-      "default": "./dist/createRendererState.js"
-    },
     "./queue": {
       "types": "./dist/queue.d.ts",
       "default": "./dist/queue.js"
@@ -33,9 +29,17 @@
       "types": "./dist/renderNode.d.ts",
       "default": "./dist/renderNode.js"
     },
+    "./renderState": {
+      "types": "./dist/renderState.d.ts",
+      "default": "./dist/renderState.js"
+    },
     "./transform": {
       "types": "./dist/transform.d.ts",
       "default": "./dist/transform.js"
+    },
+    "./update": {
+      "types": "./dist/update.d.ts",
+      "default": "./dist/update.js"
     }
   },
   "files": [

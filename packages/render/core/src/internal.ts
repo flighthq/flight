@@ -1,7 +1,7 @@
-import type { Renderable, RendererState, RenderNode } from '@flighthq/types';
+import type { Renderable, RenderState, RenderNode } from '@flighthq/types';
 
-export type RendererStateInternal = Omit<
-  RendererState,
+export type RenderStateInternal = Omit<
+  RenderState,
   | 'backgroundColor'
   | 'backgroundColorRGBA'
   | 'backgroundColorString'
