@@ -1,6 +1,6 @@
-import { type Video,VideoKind } from '@flighthq/types';
+import { type Video, VideoKind } from '@flighthq/types';
 
-import { createVideo } from './createVideo';
+import { createVideo } from './video';
 
 describe('createVideo', () => {
   let video: Video;

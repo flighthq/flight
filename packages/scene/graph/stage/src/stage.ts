@@ -1,7 +1,7 @@
 import type { PartialWithData, Stage, StageData } from '@flighthq/types';
 import { StageKind } from '@flighthq/types';
 
-import { createPrimitive } from './createPrimitive';
+import { createPrimitive } from './primitive';
 
 export function createStage(obj?: PartialWithData<Stage>): Stage {
   return createPrimitive<Stage, StageData>(StageKind, obj, createStageData);

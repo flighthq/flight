@@ -1,4 +1,5 @@
 import { rectangle } from '@flighthq/geometry';
+import { setEmpty } from '@flighthq/geometry/rectangle';
 import type { DisplayObject, Rectangle } from '@flighthq/types';
 
 import {
@@ -11,7 +12,7 @@ import {
   getWorldBoundsRect,
 } from './bounds.js';
 import { addChild } from './children.js';
-import { createDisplayObject } from './createDisplayObject.js';
+import { createDisplayObject } from './displayObject.js';
 import { getGraphState } from './graphState.js';
 import { invalidateLocalTransform } from './revision.js';
 import { ensureLocalTransform } from './transform.js';
@@ -141,6 +142,9 @@ describe('ensureBoundsRect', () => {
   it('should recalculate if localBoundsID is changed', () => {
     const object = createDisplayObject();
     const state = getGraphState(object);
+    state.computeLocalBounds = (out, _source) => {
+      setEmpty(out);
+    };
     ensureBoundsRect(object);
     const cache = cloneAndInvalidateRect(state.boundsRect!);
     state.localBoundsID++;
@@ -171,6 +175,9 @@ describe('ensureLocalBoundsRect', () => {
   it('should not recalculate if localBoundsID is unchanged', () => {
     const object = createDisplayObject();
     const state = getGraphState(object);
+    state.computeLocalBounds = (out, _source) => {
+      setEmpty(out);
+    };
     ensureLocalBoundsRect(object);
     const cache = cloneAndInvalidateRect(state.localBoundsRect!);
     ensureLocalBoundsRect(object);
@@ -180,6 +187,9 @@ describe('ensureLocalBoundsRect', () => {
   it('should recalculate if localBoundsID is changed', () => {
     const object = createDisplayObject();
     const state = getGraphState(object);
+    state.computeLocalBounds = (out, _source) => {
+      setEmpty(out);
+    };
     ensureLocalBoundsRect(object);
     const cache = cloneAndInvalidateRect(state.localBoundsRect!);
     state.localBoundsID++;
@@ -190,6 +200,9 @@ describe('ensureLocalBoundsRect', () => {
   it('should not recalculate if localTransformID is unchanged', () => {
     const object = createDisplayObject();
     const state = getGraphState(object);
+    state.computeLocalBounds = (out, _source) => {
+      setEmpty(out);
+    };
     ensureLocalBoundsRect(object);
     const cache = cloneAndInvalidateRect(state.localBoundsRect!);
     state.localTransformID++;

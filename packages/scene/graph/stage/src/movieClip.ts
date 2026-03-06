@@ -1,6 +1,6 @@
 import { type MovieClip, type MovieClipData, MovieClipKind, type PartialWithData } from '@flighthq/types';
 
-import { createPrimitive } from './createPrimitive';
+import { createPrimitive } from './primitive';
 
 export function createMovieClip(obj?: PartialWithData<MovieClip>): MovieClip {
   return createPrimitive<MovieClip, MovieClipData>(MovieClipKind, obj, createMovieClipData);

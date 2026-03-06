@@ -5,10 +5,11 @@ import {
   getLocalTransform,
   removeChild,
 } from '@flighthq/scene-graph-stage';
+import type { DisplayObject } from '@flighthq/types';
 import { GraphStateKey } from '@flighthq/types';
 
 it('should allow undefined when first created', () => {
-  const object = createDisplayObject();
+  const object: Partial<DisplayObject> = { x: 100, y: 100 };
   expect(object[GraphStateKey]).toBeUndefined();
 });
 

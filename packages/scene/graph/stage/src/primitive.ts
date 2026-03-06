@@ -1,9 +1,17 @@
-import type { DisplayObject, PartialWithData } from '@flighthq/types';
-import { BlendMode, DisplayObjectKind, GraphStateKey } from '@flighthq/types';
+import type { DisplayObject, PartialWithData, Rectangle } from '@flighthq/types';
+import { BlendMode, GraphStateKey } from '@flighthq/types';
 
+import { createGraphState } from './graphState';
 import type { DisplayObjectInternal } from './internal';
 
-export function createDisplayObject(obj?: PartialWithData<DisplayObject>): DisplayObject {
+export type DisplayObjectDataFactory<D extends object> = (obj?: Partial<D>, defaults?: D) => D;
+
+export function createPrimitive<T extends DisplayObject, D extends object>(
+  kind: symbol,
+  obj?: PartialWithData<T>,
+  createDisplayObjectData?: DisplayObjectDataFactory<D>,
+  computeLocalBounds?: (out: Rectangle, source: DisplayObject) => void,
+): T {
   return {
     alpha: obj?.alpha ?? 1,
     blendMode: obj?.blendMode ?? BlendMode.Normal,
@@ -11,7 +19,7 @@ export function createDisplayObject(obj?: PartialWithData<DisplayObject>): Displ
     cacheAsBitmapMatrix: obj?.cacheAsBitmapMatrix ?? null,
     children: (obj as DisplayObjectInternal)?.children ?? null,
     colorTransform: obj?.colorTransform ?? null,
-    data: obj?.data ?? null,
+    data: createDisplayObjectData !== undefined ? createDisplayObjectData(obj?.data as Partial<D>) : null,
     filters: obj?.filters ?? null,
     mask: obj?.mask ?? null,
     name: obj?.name ?? null,
@@ -24,11 +32,10 @@ export function createDisplayObject(obj?: PartialWithData<DisplayObject>): Displ
     scrollRect: obj?.scrollRect ?? null,
     shader: obj?.shader ?? null,
     stage: (obj as DisplayObjectInternal)?.stage ?? null,
-    kind: obj?.kind ?? DisplayObjectKind,
+    kind: obj?.kind ?? kind,
     visible: obj?.visible ?? true,
     x: obj?.x ?? 0,
     y: obj?.y ?? 0,
-
-    [GraphStateKey]: undefined,
-  };
+    [GraphStateKey]: createGraphState(computeLocalBounds),
+  } as T;
 }

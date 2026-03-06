@@ -1,6 +1,6 @@
-import { type PartialWithData, type Text,TextKind } from '@flighthq/types';
+import { type PartialWithData, type Text, TextKind } from '@flighthq/types';
 
-import { createText } from './createText';
+import { createText } from './text';
 
 describe('createText', () => {
   let text: Text;

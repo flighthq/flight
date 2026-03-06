@@ -1,6 +1,6 @@
 import type { Bitmap, ImageSource } from '@flighthq/types';
 
-import { createBitmap } from './createBitmap';
+import { createBitmap } from './bitmap';
 
 describe('createBitmap', () => {
   let bitmap: Bitmap;

@@ -1,6 +1,6 @@
-import { type Shape,ShapeKind } from '@flighthq/types';
+import { type Shape, ShapeKind } from '@flighthq/types';
 
-import { createShape } from './createShape';
+import { createShape } from './shape';
 
 describe('createShape', () => {
   let shape: Shape;

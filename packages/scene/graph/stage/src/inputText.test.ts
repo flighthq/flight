@@ -1,6 +1,6 @@
 import { type InputText, InputTextKind, type PartialWithData } from '@flighthq/types';
 
-import { createInputText } from './createInputText';
+import { createInputText } from './inputText';
 
 describe('createInputText', () => {
   let text: InputText;

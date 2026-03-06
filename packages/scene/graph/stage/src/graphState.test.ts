@@ -1,13 +1,31 @@
-import { GraphStateKey } from '@flighthq/types';
+import type { DisplayObject, Rectangle } from '@flighthq/types';
 
-import { createDisplayObject } from './createDisplayObject';
-import { getGraphState } from './graphState';
+import { createDisplayObject } from './displayObject';
+import { createGraphState, getGraphState } from './graphState';
+
+describe('createGraphState', () => {
+  it('returns a graph state object', () => {
+    const state = createGraphState();
+    expect(state).not.toBeNull();
+  });
+
+  it('allows a custom bounds calculation', () => {
+    const func = (_out: Rectangle, _source: DisplayObject) => {};
+    const state = createGraphState(func);
+    expect(state.computeLocalBounds).toStrictEqual(func);
+  });
+});
 
 describe('getGraphState', () => {
-  it('instantiates derived if not present', () => {
-    const obj = createDisplayObject();
-    expect(obj[GraphStateKey]).toBeUndefined();
-    const state = getGraphState(obj);
-    expect(obj[GraphStateKey]).toStrictEqual(state);
+  it('assumes state is defined', () => {
+    const source: DisplayObject = { x: 100, y: 100 } as DisplayObject;
+    const state = getGraphState(source);
+    expect(state).toBeUndefined();
+  });
+
+  it('returns state when defined', () => {
+    const source = createDisplayObject();
+    const state = getGraphState(source);
+    expect(state).not.toBeUndefined();
   });
 });

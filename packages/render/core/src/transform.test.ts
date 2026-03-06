@@ -1,5 +1,5 @@
 import { addChild, createDisplayObject, invalidateLocalTransform } from '@flighthq/scene-graph-stage';
-import type { DisplayObject, RenderNode, RendererState } from '@flighthq/types';
+import type { DisplayObject, RendererState,RenderNode } from '@flighthq/types';
 
 import { createRendererState } from './createRendererState';
 import { getRenderNode } from './renderable';

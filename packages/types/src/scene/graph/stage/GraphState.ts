@@ -1,10 +1,12 @@
 import type { Matrix3x2, Rectangle } from '../../../geometry';
+import type { DisplayObject } from './DisplayObject';
 
 export interface GraphState {
   appearanceID: number;
   boundsRect: Rectangle | null;
   boundsRectUsingLocalBoundsID: number;
   boundsRectUsingLocalTransformID: number;
+  computeLocalBounds: (out: Rectangle, source: DisplayObject) => void;
   localBoundsRect: Rectangle | null;
   localBoundsRectUsingLocalBoundsID: number;
   localBoundsID: number;

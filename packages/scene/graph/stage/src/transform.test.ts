@@ -2,7 +2,7 @@ import { matrix3x2, vector2 } from '@flighthq/geometry';
 import type { DisplayObject, Matrix3x2 } from '@flighthq/types';
 
 import { addChild } from './children';
-import { createDisplayObject } from './createDisplayObject';
+import { createDisplayObject } from './displayObject';
 import { getGraphState } from './graphState';
 import { invalidateLocalTransform } from './revision';
 import {

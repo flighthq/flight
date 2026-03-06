@@ -106,19 +106,7 @@ function recomputeBoundsRect(target: DisplayObject, state: GraphState): void {
 
 function recomputeLocalBoundsRect(target: DisplayObject, state: GraphState): void {
   if (state.localBoundsRect === null) state.localBoundsRect = rectangle.create();
-  switch (target.kind) {
-    case BitmapKind:
-      const bitmapData: BitmapData = target.data as BitmapData;
-      if (bitmapData.image) {
-        state.localBoundsRect.width = bitmapData.image.width;
-        state.localBoundsRect.height = bitmapData.image.height;
-      }
-      break;
-    case DisplayObjectKind: // local bounds are empty, child bounds are in worldBoundsRect
-    default:
-      rectangle.setEmpty(state.localBoundsRect);
-      break;
-  }
+  state.computeLocalBounds(state.localBoundsRect, target);
   state.localBoundsRectUsingLocalBoundsID = state.localBoundsID;
 }
 

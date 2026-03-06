@@ -1,6 +1,6 @@
-import { type PartialWithData, type Stage,StageKind } from '@flighthq/types';
+import { type PartialWithData, type Stage, StageKind } from '@flighthq/types';
 
-import { createStage } from './createStage';
+import { createStage } from './stage';
 
 describe('createStage', () => {
   let stage: Stage;

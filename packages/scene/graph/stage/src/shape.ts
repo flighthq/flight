@@ -1,6 +1,6 @@
-import { type PartialWithData, type Shape, type ShapeData,ShapeKind } from '@flighthq/types';
+import { type PartialWithData, type Shape, type ShapeData, ShapeKind } from '@flighthq/types';
 
-import { createPrimitive } from './createPrimitive';
+import { createPrimitive } from './primitive';
 
 export function createShape(obj?: PartialWithData<Shape>): Shape {
   return createPrimitive<Shape, ShapeData>(ShapeKind, obj, createShapeData);
