@@ -70,6 +70,13 @@ describe('invalidateAppearance', () => {
     invalidateAppearance(displayObject);
     expect(getGraphState(displayObject).appearanceID).toBe(appearanceID + 1);
   });
+
+  it('should wrap around appearanceID correctly using >>> 0', () => {
+    const state = getGraphState(displayObject);
+    state.appearanceID = 0xffffffff; // max 32-bit uint
+    invalidateAppearance(displayObject);
+    expect(getGraphState(displayObject).appearanceID).toBe(0);
+  });
 });
 
 describe('invalidateLocalBounds', () => {
@@ -78,6 +85,13 @@ describe('invalidateLocalBounds', () => {
     invalidateLocalBounds(displayObject);
     expect(getGraphState(displayObject).localBoundsID).toBe(localBoundsID + 1);
   });
+
+  it('should wrap around localBoundsID correctly using >>> 0', () => {
+    const state = getGraphState(displayObject);
+    state.localBoundsID = 0xffffffff; // max 32-bit uint
+    invalidateLocalBounds(displayObject);
+    expect(getGraphState(displayObject).localBoundsID).toBe(0);
+  });
 });
 
 describe('invalidateLocalTransform', () => {
@@ -85,6 +99,13 @@ describe('invalidateLocalTransform', () => {
     const localTransformID = getGraphState(displayObject).localTransformID;
     invalidateLocalTransform(displayObject);
     expect(getGraphState(displayObject).localTransformID).toBe(localTransformID + 1);
+  });
+
+  it('should wrap around localTransformID correctly using >>> 0', () => {
+    const state = getGraphState(displayObject);
+    state.localTransformID = 0xffffffff; // max 32-bit uint
+    invalidateLocalTransform(displayObject);
+    expect(getGraphState(displayObject).localTransformID).toBe(0);
   });
 });
 

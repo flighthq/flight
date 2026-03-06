@@ -28,21 +28,24 @@ export function invalidate(target: DisplayObject): void {
  * Target object's appearance changed (excluding transforms).
  */
 export function invalidateAppearance(target: DisplayObject): void {
-  getGraphState(target).appearanceID++;
+  const state = getGraphState(target);
+  state.appearanceID = (state.appearanceID + 1) >>> 0;
 }
 
 /**
  * Target object's own dimensions (not including children) changed.
  */
 export function invalidateLocalBounds(target: DisplayObject): void {
-  getGraphState(target).localBoundsID++;
+  const state = getGraphState(target);
+  state.localBoundsID = (state.localBoundsID + 1) >>> 0;
 }
 
 /**
  * Target object's own transform (x, y, rotation, scaleX, scaleY) changed.
  */
 export function invalidateLocalTransform(target: DisplayObject): void {
-  getGraphState(target).localTransformID++;
+  const state = getGraphState(target);
+  state.localTransformID = (state.localTransformID + 1) >>> 0;
 }
 
 /**
