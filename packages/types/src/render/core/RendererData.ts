@@ -1,0 +1,1 @@
+export type RendererData = object;

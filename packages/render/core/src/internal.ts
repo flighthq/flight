@@ -9,6 +9,7 @@ export type RendererStateInternal = Omit<
   | 'currentQueue'
   | 'currentQueueLength'
   | 'renderNodeMap'
+  | 'rendererMapID'
   | 'tempStack'
 > & {
   backgroundColor: number;
@@ -18,5 +19,6 @@ export type RendererStateInternal = Omit<
   currentQueue: RenderNode[];
   currentQueueLength: number;
   renderNodeMap: WeakMap<Renderable, RenderNode>;
+  rendererMapID: number;
   tempStack: Renderable[];
 };

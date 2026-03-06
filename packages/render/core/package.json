@@ -9,13 +9,13 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./appearance": {
+      "types": "./dist/appearance.d.ts",
+      "default": "./dist/appearance.js"
+    },
     "./color": {
       "types": "./dist/color.d.ts",
       "default": "./dist/color.js"
-    },
-    "./createRenderableData": {
-      "types": "./dist/createRenderableData.d.ts",
-      "default": "./dist/createRenderableData.js"
     },
     "./createRendererState": {
       "types": "./dist/createRendererState.d.ts",
@@ -25,9 +25,17 @@
       "types": "./dist/queue.d.ts",
       "default": "./dist/queue.js"
     },
-    "./renderable": {
-      "types": "./dist/renderable.d.ts",
-      "default": "./dist/renderable.js"
+    "./renderer": {
+      "types": "./dist/renderer.d.ts",
+      "default": "./dist/renderer.js"
+    },
+    "./renderNode": {
+      "types": "./dist/renderNode.d.ts",
+      "default": "./dist/renderNode.js"
+    },
+    "./transform": {
+      "types": "./dist/transform.d.ts",
+      "default": "./dist/transform.js"
     }
   },
   "files": [

@@ -1,7 +1,7 @@
 import type { Renderable, RendererState } from '@flighthq/types';
 
 import type { RendererStateInternal } from './internal';
-import { getRenderNode } from './renderable';
+import { getRenderNode } from './renderNode';
 
 /**
  * Second pass, exclude non-renderable objects from queue

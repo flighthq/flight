@@ -20,6 +20,8 @@ export function createRendererState(obj?: Partial<RendererState>): RendererState
     renderColorTransform: obj?.renderColorTransform ?? null,
     renderShader: obj?.renderShader ?? null,
     renderTransform: obj?.renderTransform ?? null,
+    rendererMap: obj?.rendererMap ?? new Map(),
+    rendererMapID: obj?.rendererMapID ?? 0,
     roundPixels: obj?.roundPixels ?? false,
     tempStack: obj?.tempStack ?? [],
   };

@@ -3,7 +3,7 @@ import type { DisplayObject, RendererState, RenderNode } from '@flighthq/types';
 
 import { updateAppearance } from './appearance';
 import { createRendererState } from './createRendererState';
-import { getRenderNode } from './renderable';
+import { getRenderNode } from './renderNode';
 
 describe('updateAppearance', () => {
   let parent: DisplayObject;

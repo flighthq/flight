@@ -1,6 +1,7 @@
 import type { Matrix3x2 } from '../../geometry';
 import type { BlendMode, ColorTransform, Shader } from '../../materials';
 import type { Renderable } from './Renderable';
+import type { Renderer } from './Renderer';
 import type { RenderNode } from './RenderNode';
 
 export interface RendererState {
@@ -22,6 +23,8 @@ export interface RendererState {
   renderColorTransform: ColorTransform | null;
   renderShader: Shader | null;
   renderTransform: Matrix3x2 | null;
+  readonly rendererMap: Map<symbol, Renderer>;
+  readonly rendererMapID: number;
   roundPixels: boolean;
   readonly tempStack: Renderable[];
 }

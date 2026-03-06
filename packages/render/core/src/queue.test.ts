@@ -3,7 +3,7 @@ import type { DisplayObject, RendererState } from '@flighthq/types';
 
 import { createRendererState } from './createRendererState';
 import { prepareRenderQueue } from './queue';
-import { updateRenderableTree } from './renderable';
+import { updateRenderableTree } from './renderNode';
 
 describe('prepareRenderQueue', () => {
   let parent: DisplayObject;
