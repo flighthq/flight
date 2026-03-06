@@ -5,30 +5,30 @@ import {
   getLocalTransform,
   removeChild,
 } from '@flighthq/scene-graph-stage';
-import { GraphState } from '@flighthq/types';
+import { GraphStateKey } from '@flighthq/types';
 
 it('should allow undefined when first created', () => {
   const object = createDisplayObject();
-  expect(object[GraphState.SymbolKey]).toBeUndefined();
+  expect(object[GraphStateKey]).toBeUndefined();
 });
 
 it('should become defined when fetching bounds', () => {
   const object = createDisplayObject();
   getLocalBoundsRect(object);
-  expect(object[GraphState.SymbolKey]).not.toBeUndefined();
+  expect(object[GraphStateKey]).not.toBeUndefined();
 });
 
 it('should become defined when fetching transform', () => {
   const object = createDisplayObject();
   getLocalTransform(object);
-  expect(object[GraphState.SymbolKey]).not.toBeUndefined();
+  expect(object[GraphStateKey]).not.toBeUndefined();
 });
 
 it('should become defined when adding as a child', () => {
   const parent = createDisplayObject();
   const child = createDisplayObject();
   addChild(parent, child);
-  expect(child[GraphState.SymbolKey]).not.toBeUndefined();
+  expect(child[GraphStateKey]).not.toBeUndefined();
 });
 
 it('should remain defined, even when removed', () => {
@@ -36,5 +36,5 @@ it('should remain defined, even when removed', () => {
   const child = createDisplayObject();
   addChild(parent, child);
   removeChild(parent, child);
-  expect(child[GraphState.SymbolKey]).not.toBeUndefined();
+  expect(child[GraphStateKey]).not.toBeUndefined();
 });

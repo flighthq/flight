@@ -1,9 +1,9 @@
-import type { DisplayObject } from '@flighthq/types';
-import { GraphState } from '@flighthq/types';
+import type { DisplayObject, GraphState } from '@flighthq/types';
+import { GraphStateKey } from '@flighthq/types';
 
 export function getGraphState(source: DisplayObject): GraphState {
-  if (source[GraphState.SymbolKey] === undefined) {
-    source[GraphState.SymbolKey] = {
+  if (source[GraphStateKey] === undefined) {
+    source[GraphStateKey] = {
       appearanceID: 0,
       boundsRectUsingLocalBoundsID: -1,
       boundsRectUsingLocalTransformID: -1,
@@ -26,5 +26,5 @@ export function getGraphState(source: DisplayObject): GraphState {
       worldTransformUsingParentTransformID: -1,
     };
   }
-  return source[GraphState.SymbolKey];
+  return source[GraphStateKey];
 }

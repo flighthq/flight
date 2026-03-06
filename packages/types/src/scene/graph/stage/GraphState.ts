@@ -23,6 +23,4 @@ export interface GraphState {
   worldTransformUsingParentTransformID: number;
 }
 
-export namespace GraphState {
-  export const SymbolKey: unique symbol = Symbol('GraphState');
-}
+export const GraphStateKey: unique symbol = Symbol('GraphState');
