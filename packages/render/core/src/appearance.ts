@@ -1,5 +1,5 @@
 import { getAppearanceID } from '@flighthq/scene-graph-stage';
-import type { RenderNode, RendererState } from '@flighthq/types';
+import type { RendererState, RenderNode } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { updateColorTransform } from './color';

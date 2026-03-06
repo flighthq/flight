@@ -1,6 +1,6 @@
 import { colorTransform } from '@flighthq/materials';
 import type { ColorTransform } from '@flighthq/types';
-import type { RenderNode, RendererState } from '@flighthq/types/render/core';
+import type { RendererState, RenderNode } from '@flighthq/types/render/core';
 
 import type { RendererStateInternal } from './internal';
 
