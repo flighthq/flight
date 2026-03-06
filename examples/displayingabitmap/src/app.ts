@@ -1,4 +1,4 @@
-import { createCanvasRenderState, registerBitmapRenderer, render } from '@flighthq/render-canvas';
+import { createRenderState, registerBitmapRenderer, render } from '@flighthq/render-canvas';
 
 import Main from './Main.js';
 
@@ -14,7 +14,7 @@ const options = {
   },
 };
 
-const state = createCanvasRenderState(canvas, options);
+const state = createRenderState(canvas, options);
 registerBitmapRenderer(state);
 const main = new Main();
 
