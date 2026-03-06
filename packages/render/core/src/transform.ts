@@ -1,6 +1,6 @@
 import { matrix3x2 } from '@flighthq/geometry';
 import { getLocalTransform, getLocalTransformID } from '@flighthq/scene-graph-stage';
-import type { RenderNode, RendererState } from '@flighthq/types';
+import type { RendererState, RenderNode } from '@flighthq/types';
 
 export function updateRenderTransform(state: RendererState, data: RenderNode, parentData?: RenderNode): boolean {
   const localTransformID = getLocalTransformID(data.source);

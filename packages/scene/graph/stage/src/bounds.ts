@@ -1,6 +1,6 @@
 import { matrix3x2, matrix3x2Pool, rectangle } from '@flighthq/geometry';
 import type { GraphState } from '@flighthq/types';
-import { type BitmapData, BitmapKind, type DisplayObject, DisplayObjectKind, type Rectangle } from '@flighthq/types';
+import type { DisplayObject, Rectangle } from '@flighthq/types';
 
 import { getGraphState } from './graphState';
 import { ensureWorldTransform, getLocalTransform, getWorldTransform } from './transform';

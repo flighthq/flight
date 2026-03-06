@@ -1,4 +1,4 @@
-import type { Renderable, RenderNode, RendererState } from '@flighthq/types';
+import type { Renderable, RendererState, RenderNode } from '@flighthq/types';
 
 import { updateAppearance } from './appearance';
 import { createRenderNode } from './createRenderNode';
