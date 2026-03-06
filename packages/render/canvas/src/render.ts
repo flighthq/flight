@@ -1,6 +1,6 @@
 import { getRenderNode, updateRenderableTree } from '@flighthq/render-core';
 import type { CanvasRendererState, Renderable, RenderNode } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+import { BitmapKind, BlendMode } from '@flighthq/types';
 
 import { renderBitmap } from './bitmap';
 import { updateCacheBitmap } from './cacheBitmap';
@@ -120,8 +120,8 @@ export function renderObject(state: CanvasRendererState, data: RenderNode): void
   }
   const source = data.source;
   renderOpaqueBackground(state, data);
-  switch (source.type) {
-    case 'bitmap':
+  switch (source.kind) {
+    case BitmapKind:
       renderBitmap(state, data);
       break;
     // case 'richtext':

@@ -1,4 +1,4 @@
-import type { DOMObject } from '@flighthq/types';
+import { type DOMObject,DOMObjectKind } from '@flighthq/types';
 
 import { createDOMObject } from './createDOMObject';
 
@@ -11,7 +11,7 @@ describe('createDOMObject', () => {
 
   it('initializes default values', () => {
     expect(domObject.data.element).toBeNull();
-    expect(domObject.type).toBe('dom');
+    expect(domObject.kind).toBe(DOMObjectKind);
   });
 
   it('allows pre-defined values', () => {

@@ -1,9 +1,9 @@
-import type { PartialWithData, Tilemap, TilemapData } from '@flighthq/types';
+import { type PartialWithData, type Tilemap, type TilemapData,TilemapKind } from '@flighthq/types';
 
 import { createPrimitive } from './createPrimitive';
 
 export function createTilemap(obj: PartialWithData<Tilemap> = {}): Tilemap {
-  return createPrimitive<Tilemap, TilemapData>('tilemap', obj, createTilemapData);
+  return createPrimitive<Tilemap, TilemapData>(TilemapKind, obj, createTilemapData);
 }
 
 export function createTilemapData(data?: Partial<TilemapData>): TilemapData {
