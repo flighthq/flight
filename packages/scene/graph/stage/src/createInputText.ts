@@ -1,10 +1,10 @@
-import type { InputText, InputTextData, PartialWithData } from '@flighthq/types';
+import { type InputText, type InputTextData, InputTextKind, type PartialWithData } from '@flighthq/types';
 
 import { createPrimitive } from './createPrimitive';
 import { createRichTextData } from './createRichText';
 
 export function createInputText(obj?: PartialWithData<InputText>): InputText {
-  return createPrimitive<InputText, InputTextData>('inputtext', obj, createInputTextData);
+  return createPrimitive<InputText, InputTextData>(InputTextKind, obj, createInputTextData);
 }
 
 export function createInputTextData(data?: Partial<InputTextData>): InputTextData {

@@ -1,4 +1,4 @@
-import type { Shape } from '@flighthq/types';
+import { type Shape,ShapeKind } from '@flighthq/types';
 
 import { createShape } from './createShape';
 
@@ -11,7 +11,7 @@ describe('createShape', () => {
 
   it('initializes default values', () => {
     expect(shape.data.graphics).not.toBeNull();
-    expect(shape.type).toBe('shape');
+    expect(shape.kind).toBe(ShapeKind);
   });
 
   it('allows pre-defined values', () => {

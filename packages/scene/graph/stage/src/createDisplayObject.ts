@@ -1,5 +1,5 @@
 import type { DisplayObject, PartialWithData } from '@flighthq/types';
-import { BlendMode, GraphStateKey } from '@flighthq/types';
+import { BlendMode, DisplayObjectKind, GraphStateKey } from '@flighthq/types';
 
 import type { DisplayObjectInternal } from './internal';
 
@@ -24,7 +24,7 @@ export function createDisplayObject(obj?: PartialWithData<DisplayObject>): Displ
     scrollRect: obj?.scrollRect ?? null,
     shader: obj?.shader ?? null,
     stage: (obj as DisplayObjectInternal)?.stage ?? null,
-    type: obj?.type ?? 'container',
+    kind: obj?.kind ?? DisplayObjectKind,
     visible: obj?.visible ?? true,
     x: obj?.x ?? 0,
     y: obj?.y ?? 0,

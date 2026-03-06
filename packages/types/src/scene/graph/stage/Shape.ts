@@ -8,3 +8,5 @@ export interface ShapeData extends DisplayObjectData {
 export interface Shape extends DisplayObject {
   data: ShapeData;
 }
+
+export const ShapeKind: unique symbol = Symbol('Shape');

@@ -1,6 +1,6 @@
 import { matrix3x2, matrix3x2Pool, rectangle } from '@flighthq/geometry';
-import type { BitmapData, DisplayObject, Rectangle } from '@flighthq/types';
 import type { GraphState } from '@flighthq/types';
+import { type BitmapData, BitmapKind, type DisplayObject, DisplayObjectKind, type Rectangle } from '@flighthq/types';
 
 import { getGraphState } from './graphState';
 import { ensureWorldTransform, getLocalTransform, getWorldTransform } from './transform';
@@ -106,15 +106,15 @@ function recomputeBoundsRect(target: DisplayObject, state: GraphState): void {
 
 function recomputeLocalBoundsRect(target: DisplayObject, state: GraphState): void {
   if (state.localBoundsRect === null) state.localBoundsRect = rectangle.create();
-  switch (target.type) {
-    case 'bitmap':
+  switch (target.kind) {
+    case BitmapKind:
       const bitmapData: BitmapData = target.data as BitmapData;
       if (bitmapData.image) {
         state.localBoundsRect.width = bitmapData.image.width;
         state.localBoundsRect.height = bitmapData.image.height;
       }
       break;
-    case 'container': // local bounds are empty, child bounds are in worldBoundsRect
+    case DisplayObjectKind: // local bounds are empty, child bounds are in worldBoundsRect
     default:
       rectangle.setEmpty(state.localBoundsRect);
       break;

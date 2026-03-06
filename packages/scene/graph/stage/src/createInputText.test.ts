@@ -1,4 +1,4 @@
-import type { InputText, PartialWithData } from '@flighthq/types';
+import { type InputText, InputTextKind, type PartialWithData } from '@flighthq/types';
 
 import { createInputText } from './createInputText';
 
@@ -12,7 +12,7 @@ describe('createInputText', () => {
   it('initializes default values', () => {
     expect(text.data.text).toBe('');
     expect(text.data.autoSize).toBe('none');
-    expect(text.type).toBe('inputtext');
+    expect(text.kind).toBe(InputTextKind);
   });
 
   it('allows pre-defined values', () => {

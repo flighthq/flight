@@ -1,6 +1,6 @@
 import { matrix3x2 } from '@flighthq/geometry';
 import type { DisplayObject } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+import { BlendMode, DisplayObjectKind } from '@flighthq/types';
 
 import { createDisplayObject } from './createDisplayObject';
 
@@ -30,6 +30,7 @@ describe('createDisplayObject', () => {
     expect(displayObject.visible).toBe(true);
     expect(displayObject.x).toBe(0);
     expect(displayObject.y).toBe(0);
+    expect(displayObject.kind).toBe(DisplayObjectKind);
   });
 
   it('allows pre-defined values', () => {
@@ -66,7 +67,7 @@ describe('createDisplayObject', () => {
     expect(obj.visible).toStrictEqual(base.visible);
     expect(obj.x).toStrictEqual(base.x);
     expect(obj.y).toStrictEqual(base.y);
-    expect(obj.type).toStrictEqual('container');
+    expect(obj.kind).toStrictEqual(DisplayObjectKind);
   });
 
   it('returns a new object for better hidden-class performance', () => {

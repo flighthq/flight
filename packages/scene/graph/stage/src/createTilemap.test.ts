@@ -1,4 +1,4 @@
-import type { Tilemap } from '@flighthq/types';
+import { type Tilemap,TilemapKind } from '@flighthq/types';
 
 import { createTilemap } from './createTilemap';
 
@@ -15,7 +15,7 @@ describe('createTilemap', () => {
     expect(tilemap.data.tileBlendModeEnabled).toBe(true);
     expect(tilemap.data.tileColorTransformEnabled).toBe(true);
     expect(tilemap.data.tileset).toBeNull();
-    expect(tilemap.type).toBe('tilemap');
+    expect(tilemap.kind).toBe(TilemapKind);
   });
 
   it('allows pre-defined values', () => {

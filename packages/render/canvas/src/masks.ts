@@ -1,24 +1,31 @@
 import { rectangle } from '@flighthq/geometry';
 import { getRenderNode } from '@flighthq/render-core';
 import { calculateBoundsRect } from '@flighthq/scene-graph-stage';
-import type { CanvasRendererState, RenderNode } from '@flighthq/types';
+import {
+  BitmapKind,
+  type CanvasRendererState,
+  DisplayObjectKind,
+  type RenderNode,
+  StageKind,
+  VideoKind,
+} from '@flighthq/types';
 
 import { setTransform } from './transform';
 // import * as shape from './type/shape';
 
 export function applyMask(state: CanvasRendererState, data: RenderNode): void {
   const source = data.source;
-  const type = source.type;
-  if (source.opaqueBackground !== null || type === 'bitmap' || type === 'video') {
+  const kind = source.kind;
+  if (source.opaqueBackground !== null || kind === BitmapKind || kind === VideoKind) {
     calculateBoundsRect(tempBounds, source, source);
     state.context.rect(0, 0, tempBounds.width, tempBounds.width);
   } else {
-    switch (type) {
+    switch (kind) {
       // case 'shape':
       //   shape.applyMask(state, data);
       //   break;
-      case 'container':
-      case 'stage':
+      case DisplayObjectKind:
+      case StageKind:
         const children = source.children;
         if (children !== null) {
           for (let i = 0; i < children.length; i++) {

@@ -11,3 +11,5 @@ export interface TextData extends DisplayObjectData {
 export interface Text extends DisplayObject {
   data: TextData;
 }
+
+export const TextKind: unique symbol = Symbol('Text');

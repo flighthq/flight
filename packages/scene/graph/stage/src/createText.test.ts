@@ -1,4 +1,4 @@
-import type { PartialWithData, Text } from '@flighthq/types';
+import { type PartialWithData, type Text,TextKind } from '@flighthq/types';
 
 import { createText } from './createText';
 
@@ -13,7 +13,7 @@ describe('createText', () => {
     expect(text.data.text).toBe('');
     expect(text.data.autoSize).toBe('none');
     expect(text.data.textFormat).not.toBeNull();
-    expect(text.type).toBe('text');
+    expect(text.kind).toBe(TextKind);
   });
 
   it('allows pre-defined values', () => {

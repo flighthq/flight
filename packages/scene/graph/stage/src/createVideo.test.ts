@@ -1,4 +1,4 @@
-import type { Video } from '@flighthq/types';
+import { type Video,VideoKind } from '@flighthq/types';
 
 import { createVideo } from './createVideo';
 
@@ -11,7 +11,7 @@ describe('createVideo', () => {
 
   it('initializes default values', () => {
     expect(video.data.smoothing).toBe(true);
-    expect(video.type).toBe('video');
+    expect(video.kind).toBe(VideoKind);
   });
 
   it('allows pre-defined values', () => {
