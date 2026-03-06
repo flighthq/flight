@@ -1,25 +1,31 @@
 import { registerRenderer } from '@flighthq/render-core';
-import type { Renderable, RendererData } from '@flighthq/types';
-import { type Bitmap, BitmapKind, type CanvasRendererState, type RenderNode } from '@flighthq/types';
+import type { Bitmap, CanvasRenderState, Renderable, Renderer, RendererData, RenderNode } from '@flighthq/types';
+import { BitmapKind } from '@flighthq/types';
 
-import { applyMask } from './masks';
+import { applyDisplayObjectMask, renderDisplayObject } from './displayObject';
 import { setBlendMode } from './materials';
 import { setTransform } from './transform';
 
-export function createRendererData(_state: CanvasRendererState, _source: Renderable): RendererData | null {
+export const BitmapRenderer: Renderer = {
+  applyMask: applyBitmapMask,
+  createData: createBitmapRendererData,
+  render: renderBitmap,
+};
+
+export function applyBitmapMask(state: CanvasRenderState, data: RenderNode): void {
+  applyDisplayObjectMask(state, data);
+}
+
+export function createBitmapRendererData(_state: CanvasRenderState, _source: Renderable): RendererData | null {
   return null;
 }
 
-export function registerBitmapRenderer(state: CanvasRendererState): void {
-  const renderer = {
-    applyMask: applyMask,
-    createData: createRendererData,
-    render: renderBitmap,
-  };
+export function registerBitmapRenderer(state: CanvasRenderState, renderer: Renderer = BitmapRenderer): void {
   registerRenderer(state, BitmapKind, renderer);
 }
 
-export function renderBitmap(state: CanvasRendererState, bitmap: RenderNode): void {
+export function renderBitmap(state: CanvasRenderState, bitmap: RenderNode): void {
+  renderDisplayObject(state, bitmap);
   const source = bitmap.source as Bitmap;
   if (source.data.image !== null) {
     const context = state.context;

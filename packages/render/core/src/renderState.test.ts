@@ -1,14 +1,14 @@
 import { matrix3x2 } from '@flighthq/geometry';
 import { colorTransform } from '@flighthq/materials';
-import { BlendMode, type RendererState } from '@flighthq/types';
+import { BlendMode, type RenderState } from '@flighthq/types';
 
-import { createRendererState } from './createRendererState';
+import { createRenderState } from './renderState';
 
-describe('createRendererState', () => {
-  let state: RendererState;
+describe('createRenderState', () => {
+  let state: RenderState;
 
   beforeEach(() => {
-    state = createRendererState();
+    state = createRenderState();
   });
 
   it('initializes default values', () => {
@@ -53,7 +53,7 @@ describe('createRendererState', () => {
       roundPixels: true,
       tempStack: [],
     };
-    const obj = createRendererState(base);
+    const obj = createRenderState(base);
     expect(obj.allowCacheAsBitmap).toStrictEqual(base.allowCacheAsBitmap);
     expect(obj.allowFilters).toStrictEqual(base.allowFilters);
     expect(obj.allowSmoothing).toStrictEqual(base.allowSmoothing);
@@ -76,7 +76,7 @@ describe('createRendererState', () => {
 
   it('returns a new object for better hidden-class performance', () => {
     const base = {};
-    const obj = createRendererState(base);
+    const obj = createRenderState(base);
     expect(obj).not.toStrictEqual(base);
   });
 });

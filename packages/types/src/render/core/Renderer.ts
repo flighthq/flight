@@ -1,10 +1,10 @@
 import type { Renderable } from './Renderable';
 import type { RendererData } from './RendererData';
-import type { RendererState } from './RendererState';
+import type { RenderState } from './RenderState';
 import type { RenderNode } from './RenderNode';
 
 export interface Renderer {
-  applyMask(state: RendererState, node: RenderNode): void;
-  createData(state: RendererState, source: Renderable): RendererData | null;
-  render(state: RendererState, node: RenderNode): void;
+  applyMask(state: RenderState, node: RenderNode): void;
+  createData(state: RenderState, source: Renderable): RendererData | null;
+  render(state: RenderState, node: RenderNode): void;
 }

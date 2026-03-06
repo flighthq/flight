@@ -1,22 +1,22 @@
 import { addChild, createDisplayObject, invalidateAppearance } from '@flighthq/scene-graph-stage';
-import type { DisplayObject, RendererState, RenderNode } from '@flighthq/types';
+import type { DisplayObject, RenderNode, RenderState } from '@flighthq/types';
 
 import { updateAppearance } from './appearance';
-import { createRendererState } from './createRendererState';
 import { getRenderNode } from './renderNode';
+import { createRenderState } from './renderState';
 
 describe('updateAppearance', () => {
   let parent: DisplayObject;
   let parentData: RenderNode;
   let child: DisplayObject;
   let childData: RenderNode;
-  let state: RendererState;
+  let state: RenderState;
 
   beforeEach(() => {
     parent = createDisplayObject();
     child = createDisplayObject();
     addChild(parent, child);
-    state = createRendererState();
+    state = createRenderState();
     parentData = getRenderNode(state, parent);
     childData = getRenderNode(state, child);
   });

@@ -1,7 +1,7 @@
-import type { CanvasRendererState } from '@flighthq/types';
+import type { CanvasRenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-export function setBlendMode(state: CanvasRendererState, value: BlendMode | null): void {
+export function setBlendMode(state: CanvasRenderState, value: BlendMode | null): void {
   // if (overrideBlendMode !== null) value = overrideBlendMode;
   if (value === state.currentBlendMode) return;
 

@@ -1,16 +1,16 @@
 import { colorTransform } from '@flighthq/materials';
 import { addChild, createDisplayObject } from '@flighthq/scene-graph-stage';
-import type { DisplayObject, RendererState, RenderNode } from '@flighthq/types';
+import type { DisplayObject, RenderNode, RenderState } from '@flighthq/types';
 
 import { setBackgroundColor, updateColorTransform } from './color';
-import { createRendererState } from './createRendererState';
 import { getRenderNode } from './renderNode';
+import { createRenderState } from './renderState';
 
 describe('setBackgroundColor', () => {
-  let state: RendererState;
+  let state: RenderState;
 
   beforeEach(() => {
-    state = createRendererState();
+    state = createRenderState();
   });
 
   it('sets 0 (transparent) properly', () => {
@@ -54,13 +54,13 @@ describe('updateColorTransform', () => {
   let parentData: RenderNode;
   let child: DisplayObject;
   let childData: RenderNode;
-  let state: RendererState;
+  let state: RenderState;
 
   beforeEach(() => {
     parent = createDisplayObject();
     child = createDisplayObject();
     addChild(parent, child);
-    state = createRendererState();
+    state = createRenderState();
     parentData = getRenderNode(state, parent);
     childData = getRenderNode(state, child);
   });
