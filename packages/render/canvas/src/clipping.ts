@@ -1,4 +1,4 @@
-import type { CanvasRendererState, Matrix3x2, Rectangle, RenderableData } from '@flighthq/types';
+import type { CanvasRendererState, Matrix3x2, Rectangle, RenderNode } from '@flighthq/types';
 
 import { setTransform } from './transform';
 
@@ -21,7 +21,7 @@ export function pushClipRect(state: CanvasRendererState, rect: Rectangle, transf
   state.context.clip();
 }
 
-export function pushScrollRect(state: CanvasRendererState, data: RenderableData): void {
+export function pushScrollRect(state: CanvasRendererState, data: RenderNode): void {
   pushClipRect(state, data.source.scrollRect!, data.transform);
   state.currentScrollRectDepth++;
 }

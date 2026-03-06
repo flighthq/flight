@@ -1,12 +1,12 @@
 import { rectangle } from '@flighthq/geometry';
-import { getRenderableData } from '@flighthq/render-core';
+import { getRenderNode } from '@flighthq/render-core';
 import { calculateBoundsRect } from '@flighthq/scene-graph-stage';
-import type { CanvasRendererState, RenderableData } from '@flighthq/types';
+import type { CanvasRendererState, RenderNode } from '@flighthq/types';
 
 import { setTransform } from './transform';
 // import * as shape from './type/shape';
 
-export function applyMask(state: CanvasRendererState, data: RenderableData): void {
+export function applyMask(state: CanvasRendererState, data: RenderNode): void {
   const source = data.source;
   const type = source.type;
   if (source.opaqueBackground !== null || type === 'bitmap' || type === 'video') {
@@ -22,7 +22,7 @@ export function applyMask(state: CanvasRendererState, data: RenderableData): voi
         const children = source.children;
         if (children !== null) {
           for (let i = 0; i < children.length; i++) {
-            const data = getRenderableData(state, children[i]);
+            const data = getRenderNode(state, children[i]);
             applyMask(state, data);
           }
         }
@@ -37,7 +37,7 @@ export function popMask(state: CanvasRendererState): void {
   // state.currentMaskDepth--;
 }
 
-export function pushMask(state: CanvasRendererState, data: RenderableData): void {
+export function pushMask(state: CanvasRendererState, data: RenderNode): void {
   state.context.save();
 
   setTransform(state, state.context, data.transform);

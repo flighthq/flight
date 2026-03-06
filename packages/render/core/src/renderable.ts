@@ -1,14 +1,14 @@
-import type { Renderable, RenderableData, RendererState } from '@flighthq/types';
+import type { Renderable, RenderNode, RendererState } from '@flighthq/types';
 
 import { updateAppearance } from './appearance';
-import { createRenderableData } from './createRenderableData';
+import { createRenderNode } from './createRenderNode';
 import type { RendererStateInternal } from './internal';
 import { updateRenderTransform } from './transform';
 
-export function getRenderableData(state: RendererState, source: Renderable): RenderableData {
-  const renderableDataMap = state.renderableDataMap;
-  if (!renderableDataMap.has(source)) renderableDataMap.set(source, createRenderableData(source));
-  return renderableDataMap.get(source)!;
+export function getRenderNode(state: RendererState, source: Renderable): RenderNode {
+  const renderNodeMap = state.renderNodeMap;
+  if (!renderNodeMap.has(source)) renderNodeMap.set(source, createRenderNode(source));
+  return renderNodeMap.get(source)!;
 }
 
 /**
@@ -21,7 +21,7 @@ export function updateRenderableTree(state: RendererState, source: Renderable): 
   let stackLength = 1;
   tempStack[0] = source;
 
-  let parentData: RenderableData | undefined = undefined;
+  let parentData: RenderNode | undefined = undefined;
   let lastParent: Renderable | null = null;
   let scrollRectDepth: number = 0;
   let maskDepth: number = 0;
@@ -29,7 +29,7 @@ export function updateRenderableTree(state: RendererState, source: Renderable): 
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength];
-    const data = getRenderableData(state, current);
+    const data = getRenderNode(state, current);
 
     if (current !== source) {
       const parent = current.parent;
@@ -39,7 +39,7 @@ export function updateRenderableTree(state: RendererState, source: Renderable): 
         scrollRectDepth = 0;
         maskDepth = 0;
       } else if (parent !== lastParent) {
-        parentData = getRenderableData(state, parent);
+        parentData = getRenderNode(state, parent);
         lastParent = parent;
         scrollRectDepth = parentData.scrollRectDepth;
         maskDepth = parentData.maskDepth;
@@ -61,7 +61,7 @@ export function updateRenderableTree(state: RendererState, source: Renderable): 
 
     const mask = current.mask;
     if (mask !== null) {
-      const maskData = getRenderableData(state, mask);
+      const maskData = getRenderNode(state, mask);
       maskData.isMaskFrameID = currentFrameID;
       maskData.scrollRectDepth = 0;
       maskData.maskDepth = 0;

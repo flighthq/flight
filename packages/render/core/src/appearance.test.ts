@@ -1,15 +1,15 @@
 import { addChild, createDisplayObject, invalidateAppearance } from '@flighthq/scene-graph-stage';
-import type { DisplayObject, RenderableData, RendererState } from '@flighthq/types';
+import type { DisplayObject, RenderNode, RendererState } from '@flighthq/types';
 
 import { updateAppearance } from './appearance';
 import { createRendererState } from './createRendererState';
-import { getRenderableData } from './renderable';
+import { getRenderNode } from './renderable';
 
 describe('updateAppearance', () => {
   let parent: DisplayObject;
-  let parentData: RenderableData;
+  let parentData: RenderNode;
   let child: DisplayObject;
-  let childData: RenderableData;
+  let childData: RenderNode;
   let state: RendererState;
 
   beforeEach(() => {
@@ -17,8 +17,8 @@ describe('updateAppearance', () => {
     child = createDisplayObject();
     addChild(parent, child);
     state = createRendererState();
-    parentData = getRenderableData(state, parent);
-    childData = getRenderableData(state, child);
+    parentData = getRenderNode(state, parent);
+    childData = getRenderNode(state, child);
   });
 
   it('recalculates the first time', () => {

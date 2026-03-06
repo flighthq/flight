@@ -1,7 +1,7 @@
 import type { Renderable, RendererState } from '@flighthq/types';
 
 import type { RendererStateInternal } from './internal';
-import { getRenderableData } from './renderable';
+import { getRenderNode } from './renderable';
 
 /**
  * Second pass, exclude non-renderable objects from queue
@@ -17,7 +17,7 @@ export function prepareRenderQueue(state: RendererState, source: Renderable): vo
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength];
-    const data = getRenderableData(state, current);
+    const data = getRenderNode(state, current);
     const isMask = data.isMaskFrameID === currentFrameID;
     if (!isMask) {
       const shouldRender = data.visible && data.alpha > 0 && !(data.transform.a === 0 && data.transform.d === 0);

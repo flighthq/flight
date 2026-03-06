@@ -1,7 +1,7 @@
 import type { Matrix3x2 } from '../../geometry';
 import type { BlendMode, ColorTransform, Shader } from '../../materials';
 import type { Renderable } from './Renderable';
-import type { RenderableData } from './RenderableData';
+import type { RenderNode } from './RenderNode';
 
 export interface RendererState {
   allowCacheAsBitmap: boolean;
@@ -12,11 +12,11 @@ export interface RendererState {
   readonly backgroundColorString: string;
   readonly currentFrameID: number;
   currentMaskDepth: number;
-  readonly currentQueue: RenderableData[];
+  readonly currentQueue: RenderNode[];
   readonly currentQueueLength: number;
   currentScrollRectDepth: number;
   pixelRatio: number;
-  readonly renderableDataMap: WeakMap<Renderable, RenderableData>;
+  readonly renderNodeMap: WeakMap<Renderable, RenderNode>;
   renderAlpha: number;
   renderBlendMode: BlendMode | null;
   renderColorTransform: ColorTransform | null;

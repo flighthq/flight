@@ -1,26 +1,26 @@
 import { rectangle } from '@flighthq/geometry';
 import { addChild, createDisplayObject } from '@flighthq/scene-graph-stage';
-import type { DisplayObject, RenderableData, RendererState } from '@flighthq/types';
+import type { DisplayObject, RenderNode, RendererState } from '@flighthq/types';
 
 import { createRendererState } from './createRendererState';
 import type { RendererStateInternal } from './internal';
-import { getRenderableData, updateRenderableTree } from './renderable';
+import { getRenderNode, updateRenderableTree } from './renderable';
 
-describe('getRenderableData', () => {
+describe('getRenderNode', () => {
   it('creates renderable data if not present already', () => {
     const state = createRendererState();
     const source = createDisplayObject();
-    expect(state.renderableDataMap.has(source)).toBe(false);
-    getRenderableData(state, source);
-    expect(state.renderableDataMap.has(source)).toBe(true);
+    expect(state.renderNodeMap.has(source)).toBe(false);
+    getRenderNode(state, source);
+    expect(state.renderNodeMap.has(source)).toBe(true);
   });
 });
 
 describe('updateRenderableTree', () => {
   let parent: DisplayObject;
-  let parentData: RenderableData;
+  let parentData: RenderNode;
   let child: DisplayObject;
-  let childData: RenderableData;
+  let childData: RenderNode;
   let state: RendererState;
 
   beforeEach(() => {
@@ -28,8 +28,8 @@ describe('updateRenderableTree', () => {
     child = createDisplayObject();
     addChild(parent, child);
     state = createRendererState();
-    parentData = getRenderableData(state, parent);
-    childData = getRenderableData(state, child);
+    parentData = getRenderNode(state, parent);
+    childData = getRenderNode(state, child);
   });
 
   it('updates appearance for all children', () => {
@@ -86,11 +86,11 @@ describe('updateRenderableTree', () => {
   let childA_child: DisplayObject;
   let childB: DisplayObject;
   let childB_child: DisplayObject;
-  let parent2Data: RenderableData;
-  let childAData: RenderableData;
-  let childA_childData: RenderableData;
-  let childBData: RenderableData;
-  let childB_childData: RenderableData;
+  let parent2Data: RenderNode;
+  let childAData: RenderNode;
+  let childA_childData: RenderNode;
+  let childBData: RenderNode;
+  let childB_childData: RenderNode;
 
   beforeEach(() => {
     parent2 = createDisplayObject();
@@ -102,11 +102,11 @@ describe('updateRenderableTree', () => {
     addChild(parent2, childB);
     addChild(childA, childA_child);
     addChild(childB, childB_child);
-    parent2Data = getRenderableData(state, parent2);
-    childAData = getRenderableData(state, childA);
-    childBData = getRenderableData(state, childB);
-    childA_childData = getRenderableData(state, childA_child);
-    childB_childData = getRenderableData(state, childB_child);
+    parent2Data = getRenderNode(state, parent2);
+    childAData = getRenderNode(state, childA);
+    childBData = getRenderNode(state, childB);
+    childA_childData = getRenderNode(state, childA_child);
+    childB_childData = getRenderNode(state, childB_child);
   });
 
   it('resets up the tree properly when siblings are not in a scroll rect', () => {
@@ -133,7 +133,7 @@ describe('updateRenderableTree', () => {
     const mask = createDisplayObject();
     childA.mask = mask;
     updateRenderableTree(state, parent2);
-    expect(getRenderableData(state, mask).isMaskFrameID).toStrictEqual(state.currentFrameID);
+    expect(getRenderNode(state, mask).isMaskFrameID).toStrictEqual(state.currentFrameID);
   });
 
   it('updates appearance and transform for all objects, including mask children', () => {
@@ -143,7 +143,7 @@ describe('updateRenderableTree', () => {
     updateRenderableTree(state, parent2);
     const currentFrameID = state.currentFrameID;
     [parent2, childA, childB, childA_child, childB_child, mask, maskChild].every((obj) => {
-      const data = getRenderableData(state, obj);
+      const data = getRenderNode(state, obj);
       expect(data.appearanceFrameID).toStrictEqual(currentFrameID);
       expect(data.transformFrameID).toStrictEqual(currentFrameID);
     });

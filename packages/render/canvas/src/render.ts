@@ -1,5 +1,5 @@
-import { getRenderableData, updateRenderableTree } from '@flighthq/render-core';
-import type { CanvasRendererState, Renderable, RenderableData } from '@flighthq/types';
+import { getRenderNode, updateRenderableTree } from '@flighthq/render-core';
+import type { CanvasRendererState, Renderable, RenderNode } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { renderBitmap } from './bitmap';
@@ -48,7 +48,7 @@ export function clear(state: CanvasRendererState): void {
 //   finishClipAfterRender(state);
 // }
 
-function popMaskObject(state: CanvasRendererState, data: RenderableData, handleScrollRect: boolean = true): void {
+function popMaskObject(state: CanvasRendererState, data: RenderNode, handleScrollRect: boolean = true): void {
   const source = data.source;
 
   if (source.mask !== null) {
@@ -60,7 +60,7 @@ function popMaskObject(state: CanvasRendererState, data: RenderableData, handleS
   }
 }
 
-function pushMaskObject(state: CanvasRendererState, data: RenderableData, handleScrollRect: boolean = true): void {
+function pushMaskObject(state: CanvasRendererState, data: RenderNode, handleScrollRect: boolean = true): void {
   const source = data.source;
 
   if (handleScrollRect && source.scrollRect != null) {
@@ -68,7 +68,7 @@ function pushMaskObject(state: CanvasRendererState, data: RenderableData, handle
   }
 
   if (source.mask !== null) {
-    pushMask(state, getRenderableData(state, source.mask));
+    pushMask(state, getRenderNode(state, source.mask));
   }
 }
 
@@ -87,7 +87,7 @@ export function render(state: CanvasRendererState, source: Renderable): void {
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength];
-    const data = getRenderableData(state, current);
+    const data = getRenderNode(state, current);
 
     const isMask = data.isMaskFrameID === currentFrameID;
     if (isMask) continue; // skip drawing masks (they're used for clipping elsewhere)
@@ -108,7 +108,7 @@ export function render(state: CanvasRendererState, source: Renderable): void {
   }
 }
 
-export function renderObject(state: CanvasRendererState, data: RenderableData): void {
+export function renderObject(state: CanvasRendererState, data: RenderNode): void {
   pushMaskObject(state, data);
   // updateClipBeforeRender(state, data);
   if (state.allowCacheAsBitmap) {
@@ -141,7 +141,7 @@ export function renderObject(state: CanvasRendererState, data: RenderableData): 
   popMaskObject(state, data);
 }
 
-// export function updateClipBeforeRender(state: CanvasRendererState, data: RenderableData): void {
+// export function updateClipBeforeRender(state: CanvasRendererState, data: RenderNode): void {
 //   const { currentScrollRectDepth, currentMaskDepth } = state;
 //   const { scrollRectDepth, source, maskDepth } = data;
 //   const scrollRect = source.scrollRect;
