@@ -1,1 +1,1 @@
-export { Timeline } from './Timeline.js';
+export * from './Timeline.js';

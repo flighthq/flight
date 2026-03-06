@@ -1,2 +1,2 @@
-export { ImageSource } from './ImageSource.js';
-export { Tileset } from './Tileset.js';
+export * from './ImageSource.js';
+export * from './Tileset.js';

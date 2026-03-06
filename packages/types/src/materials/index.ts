@@ -1,4 +1,4 @@
-export { BlendMode } from './BlendMode.js';
-export { ColorTransform } from './ColorTransform.js';
-export { Filter } from './Filter.js';
-export { Shader } from './Shader.js';
+export * from './BlendMode.js';
+export * from './ColorTransform.js';
+export * from './Filter.js';
+export * from './Shader.js';
