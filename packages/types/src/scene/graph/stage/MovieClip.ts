@@ -1,7 +1,7 @@
 import type { Timeline } from '../../../animation/timeline';
-import type { DisplayObject, PrimitiveData } from './DisplayObject';
+import type { DisplayObject, DisplayObjectData } from './DisplayObject';
 
-export interface MovieClipData extends PrimitiveData {
+export interface MovieClipData extends DisplayObjectData {
   timeline: Timeline | null;
 }
 

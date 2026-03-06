@@ -1,8 +1,8 @@
-import type { DisplayObject, PrimitiveData } from './DisplayObject';
+import type { DisplayObject, DisplayObjectData } from './DisplayObject';
 import type { TextAutoSize } from './TextAutoSize';
 import type { TextFormat } from './TextFormat';
 
-export interface TextData extends PrimitiveData {
+export interface TextData extends DisplayObjectData {
   autoSize: TextAutoSize;
   text: string;
   textFormat: TextFormat;

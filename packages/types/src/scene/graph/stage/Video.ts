@@ -1,6 +1,6 @@
-import type { DisplayObject, PrimitiveData } from './DisplayObject';
+import type { DisplayObject, DisplayObjectData } from './DisplayObject';
 
-export interface VideoData extends PrimitiveData {
+export interface VideoData extends DisplayObjectData {
   smoothing: boolean;
 }
 

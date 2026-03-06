@@ -1,7 +1,7 @@
-import type { DisplayObject, PrimitiveData } from './DisplayObject';
+import type { DisplayObject, DisplayObjectData } from './DisplayObject';
 import type { Graphics } from './Graphics';
 
-export interface ShapeData extends PrimitiveData {
+export interface ShapeData extends DisplayObjectData {
   graphics: Graphics;
 }
 

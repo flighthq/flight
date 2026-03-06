@@ -11,7 +11,7 @@ export interface DisplayObject {
   cacheAsBitmapMatrix: Matrix3x2 | null;
   readonly children: DisplayObject[] | null;
   colorTransform: ColorTransform | null;
-  data: PrimitiveData | null;
+  data: DisplayObjectData | null;
   filters: Filter[] | null;
   mask: DisplayObject | null;
   name: string | null;
@@ -32,4 +32,4 @@ export interface DisplayObject {
   [GraphStateKey]: GraphState | undefined;
 }
 
-export type PrimitiveData = object;
+export type DisplayObjectData = object;

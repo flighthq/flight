@@ -2,16 +2,16 @@ import type { DisplayObject, DisplayObjectType, PartialWithData } from '@flighth
 
 import { createDisplayObject } from './createDisplayObject';
 
-export type PrimitiveDataFactory<D extends object> = (obj?: Partial<D>, defaults?: D) => D;
+export type DisplayObjectDataFactory<D extends object> = (obj?: Partial<D>, defaults?: D) => D;
 
 export function createPrimitive<T extends DisplayObject, D extends object>(
   type: DisplayObjectType,
   obj?: PartialWithData<T>,
-  createPrimitiveData?: PrimitiveDataFactory<D>,
+  createDisplayObjectData?: DisplayObjectDataFactory<D>,
 ): T {
   const base = createDisplayObject(obj) as T;
-  if (createPrimitiveData !== undefined) {
-    base.data = createPrimitiveData(obj?.data as Partial<D>);
+  if (createDisplayObjectData !== undefined) {
+    base.data = createDisplayObjectData(obj?.data as Partial<D>);
   }
   base.type = type;
   return base;

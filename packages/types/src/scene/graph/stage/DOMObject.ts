@@ -1,6 +1,6 @@
-import type { DisplayObject, PrimitiveData } from './DisplayObject';
+import type { DisplayObject, DisplayObjectData } from './DisplayObject';
 
-export interface DOMObjectData extends PrimitiveData {
+export interface DOMObjectData extends DisplayObjectData {
   element: HTMLElement | null;
 }
 
