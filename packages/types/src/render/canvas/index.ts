@@ -1,2 +1,2 @@
-export { CanvasRendererOptions } from './CanvasRendererOptions.js';
-export { CanvasRendererState } from './CanvasRendererState.js';
+export * from './CanvasRendererOptions.js';
+export * from './CanvasRendererState.js';
