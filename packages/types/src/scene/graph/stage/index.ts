@@ -5,7 +5,7 @@ export { DisplayObjectType } from './DisplayObjectType.js';
 export { DOMObject } from './DOMObject.js';
 export { DOMObjectData } from './DOMObjectData.js';
 export { Graphics } from './Graphics.js';
-export { GraphState } from './GraphState.js';
+export { GraphState, GraphStateKey } from './GraphState.js';
 export { InputText } from './InputText.js';
 export { InputTextData } from './InputTextData.js';
 export { MovieClip } from './MovieClip.js';

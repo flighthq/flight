@@ -1,7 +1,7 @@
 import type { Matrix3x2, Rectangle } from '../../../geometry';
 import type { BlendMode, ColorTransform, Filter, Shader } from '../../../materials';
 import type { DisplayObjectType } from './DisplayObjectType.js';
-import type { GraphState } from './GraphState.js';
+import type { GraphState, GraphStateKey } from './GraphState.js';
 import type { PrimitiveData } from './PrimitiveData.js';
 import type { Stage } from './Stage.js';
 
@@ -30,5 +30,5 @@ export interface DisplayObject {
   x: number;
   y: number;
 
-  [GraphState.SymbolKey]: GraphState | undefined;
+  [GraphStateKey]: GraphState | undefined;
 }

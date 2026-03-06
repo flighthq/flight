@@ -1,5 +1,5 @@
 import type { DisplayObject, PartialWithData } from '@flighthq/types';
-import { BlendMode, GraphState } from '@flighthq/types';
+import { BlendMode, GraphStateKey } from '@flighthq/types';
 
 import type { DisplayObjectInternal } from './internal';
 
@@ -29,6 +29,6 @@ export function createDisplayObject(obj?: PartialWithData<DisplayObject>): Displ
     x: obj?.x ?? 0,
     y: obj?.y ?? 0,
 
-    [GraphState.SymbolKey]: undefined,
+    [GraphStateKey]: undefined,
   };
 }
