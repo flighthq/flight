@@ -1,4 +1,4 @@
-import type { Renderable, RenderableData, RendererState } from '@flighthq/types';
+import type { Renderable, RenderNode, RendererState } from '@flighthq/types';
 
 export type RendererStateInternal = Omit<
   RendererState,
@@ -8,15 +8,15 @@ export type RendererStateInternal = Omit<
   | 'currentFrameID'
   | 'currentQueue'
   | 'currentQueueLength'
-  | 'renderableDataMap'
+  | 'renderNodeMap'
   | 'tempStack'
 > & {
   backgroundColor: number;
   backgroundColorRGBA: number[];
   backgroundColorString: string;
   currentFrameID: number;
-  currentQueue: RenderableData[];
+  currentQueue: RenderNode[];
   currentQueueLength: number;
-  renderableDataMap: WeakMap<Renderable, RenderableData>;
+  renderNodeMap: WeakMap<Renderable, RenderNode>;
   tempStack: Renderable[];
 };

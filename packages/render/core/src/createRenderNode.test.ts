@@ -1,15 +1,15 @@
 import { matrix3x2 } from '@flighthq/geometry';
 import { colorTransform } from '@flighthq/materials';
-import { BlendMode, type Renderable, type RenderableData } from '@flighthq/types';
+import { BlendMode, type Renderable, type RenderNode } from '@flighthq/types';
 
-import { createRenderableData } from './createRenderableData';
+import { createRenderNode } from './createRenderNode';
 
-describe('createRenderableData', () => {
-  let data: RenderableData;
+describe('createRenderNode', () => {
+  let data: RenderNode;
   let source: Renderable = {} as Renderable;
 
   beforeEach(() => {
-    data = createRenderableData(source);
+    data = createRenderNode(source);
   });
 
   it('initializes default values', () => {

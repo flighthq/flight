@@ -2,12 +2,12 @@ import type { Matrix3x2 } from '../../geometry';
 import type { BlendMode, ColorTransform, Shader } from '../../materials';
 import type { Renderable } from './Renderable';
 
-export interface RenderableData {
+export interface RenderNode {
   alpha: number;
   appearanceFrameID: number;
   blendMode: BlendMode;
   cacheAsBitmap: boolean;
-  cacheBitmap: RenderableData | null;
+  cacheBitmap: RenderNode | null;
   colorTransform: ColorTransform;
   isMaskFrameID: number;
   lastAppearanceID: number;

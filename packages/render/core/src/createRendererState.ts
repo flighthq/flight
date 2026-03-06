@@ -14,7 +14,7 @@ export function createRendererState(obj?: Partial<RendererState>): RendererState
     currentQueueLength: obj?.currentQueueLength ?? 0,
     currentScrollRectDepth: obj?.currentScrollRectDepth ?? 0,
     pixelRatio: obj?.pixelRatio ?? 1,
-    renderableDataMap: obj?.renderableDataMap ?? new WeakMap(),
+    renderNodeMap: obj?.renderNodeMap ?? new WeakMap(),
     renderAlpha: obj?.renderAlpha ?? 1,
     renderBlendMode: obj?.renderBlendMode ?? BlendMode.Normal,
     renderColorTransform: obj?.renderColorTransform ?? null,

@@ -1,9 +1,9 @@
 import { matrix3x2 } from '@flighthq/geometry';
 import { colorTransform } from '@flighthq/materials';
-import type { Renderable, RenderableData } from '@flighthq/types';
+import type { Renderable, RenderNode } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-export function createRenderableData(source: Renderable): RenderableData {
+export function createRenderNode(source: Renderable): RenderNode {
   return {
     alpha: 1,
     appearanceFrameID: -1,

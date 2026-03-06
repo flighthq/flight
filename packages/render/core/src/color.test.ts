@@ -1,10 +1,10 @@
 import { colorTransform } from '@flighthq/materials';
 import { addChild, createDisplayObject } from '@flighthq/scene-graph-stage';
-import type { DisplayObject, RenderableData, RendererState } from '@flighthq/types';
+import type { DisplayObject, RenderNode, RendererState } from '@flighthq/types';
 
 import { setBackgroundColor, updateColorTransform } from './color';
 import { createRendererState } from './createRendererState';
-import { getRenderableData } from './renderable';
+import { getRenderNode } from './renderable';
 
 describe('setBackgroundColor', () => {
   let state: RendererState;
@@ -51,9 +51,9 @@ describe('setBackgroundColor', () => {
 
 describe('updateColorTransform', () => {
   let parent: DisplayObject;
-  let parentData: RenderableData;
+  let parentData: RenderNode;
   let child: DisplayObject;
-  let childData: RenderableData;
+  let childData: RenderNode;
   let state: RendererState;
 
   beforeEach(() => {
@@ -61,8 +61,8 @@ describe('updateColorTransform', () => {
     child = createDisplayObject();
     addChild(parent, child);
     state = createRendererState();
-    parentData = getRenderableData(state, parent);
-    childData = getRenderableData(state, child);
+    parentData = getRenderNode(state, parent);
+    childData = getRenderNode(state, child);
   });
 
   it('sets useColorTransform to false if source does not use color transform', () => {

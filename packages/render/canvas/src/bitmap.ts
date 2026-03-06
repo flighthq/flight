@@ -1,9 +1,9 @@
-import type { Bitmap, CanvasRendererState, RenderableData } from '@flighthq/types';
+import type { Bitmap, CanvasRendererState, RenderNode } from '@flighthq/types';
 
 import { setBlendMode } from './materials';
 import { setTransform } from './transform';
 
-export function renderBitmap(state: CanvasRendererState, bitmap: RenderableData): void {
+export function renderBitmap(state: CanvasRendererState, bitmap: RenderNode): void {
   const source = bitmap.source as Bitmap;
   if (source.data.image !== null) {
     const context = state.context;
