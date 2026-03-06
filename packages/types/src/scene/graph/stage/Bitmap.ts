@@ -1,7 +1,7 @@
 import type { ImageSource } from '../../../assets';
-import type { DisplayObject, PrimitiveData } from './DisplayObject';
+import type { DisplayObject, DisplayObjectData } from './DisplayObject';
 
-export interface BitmapData extends PrimitiveData {
+export interface BitmapData extends DisplayObjectData {
   image: ImageSource | null;
   smoothing: boolean;
 }

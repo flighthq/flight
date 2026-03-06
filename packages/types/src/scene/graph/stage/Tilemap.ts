@@ -1,7 +1,7 @@
 import type { Tileset } from '../../../assets';
-import type { DisplayObject, PrimitiveData } from './DisplayObject';
+import type { DisplayObject, DisplayObjectData } from './DisplayObject';
 
-export interface TilemapData extends PrimitiveData {
+export interface TilemapData extends DisplayObjectData {
   smoothing: boolean;
   tileAlphaEnabled: boolean;
   tileBlendModeEnabled: boolean;

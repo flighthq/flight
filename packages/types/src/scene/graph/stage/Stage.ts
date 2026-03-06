@@ -1,10 +1,10 @@
-import type { DisplayObject, PrimitiveData } from './DisplayObject.js';
+import type { DisplayObject, DisplayObjectData } from './DisplayObject.js';
 import type { StageAlign } from './StageAlign';
 import type { StageDisplayState } from './StageDisplayState';
 import type { StageQuality } from './StageQuality';
 import type { StageScaleMode } from './StageScaleMode';
 
-export interface StageData extends PrimitiveData {
+export interface StageData extends DisplayObjectData {
   autoOrients: boolean;
   align: StageAlign;
   color: number | null;

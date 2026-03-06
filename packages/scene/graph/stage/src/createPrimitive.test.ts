@@ -1,4 +1,4 @@
-import type { DisplayObject, PartialWithData, PrimitiveData } from '@flighthq/types';
+import type { DisplayObject, PartialWithData, DisplayObjectData } from '@flighthq/types';
 
 import { createPrimitive } from './createPrimitive';
 
@@ -35,7 +35,7 @@ describe('createPrimitive', () => {
 
 interface DisplayObjectTest extends DisplayObject {}
 
-interface DisplayObjectTestData extends PrimitiveData {
+interface DisplayObjectTestData extends DisplayObjectData {
   foo: string;
 }
 
