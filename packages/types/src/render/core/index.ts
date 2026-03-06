@@ -1,4 +1,4 @@
 export { AppearanceFlags } from './AppearanceFlags.js';
-export { default as Renderable } from './Renderable.js';
-export { default as RenderableData } from './RenderableData.js';
-export { default as RendererState } from './RendererState.js';
+export { Renderable } from './Renderable.js';
+export { RenderableData } from './RenderableData.js';
+export { RendererState } from './RendererState.js';

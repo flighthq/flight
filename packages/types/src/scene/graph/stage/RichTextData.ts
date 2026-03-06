@@ -1,8 +1,8 @@
-import type TextAutoSize from './TextAutoSize';
-import type TextData from './TextData';
-import type TextFormat from './TextFormat';
+import type { TextAutoSize } from './TextAutoSize';
+import type { TextData } from './TextData';
+import type { TextFormat } from './TextFormat';
 
-export default interface RichTextData extends TextData {
+export interface RichTextData extends TextData {
   autoSize: TextAutoSize;
   background: boolean;
   backgroundColor: number;

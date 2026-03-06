@@ -1,9 +1,9 @@
 import type { Matrix3x2 } from '../../geometry';
 import type { BlendMode, ColorTransform, Shader } from '../../materials';
-import type Renderable from './Renderable';
-import type RenderableData from './RenderableData';
+import type { Renderable } from './Renderable';
+import type { RenderableData } from './RenderableData';
 
-export default interface RendererState {
+export interface RendererState {
   allowCacheAsBitmap: boolean;
   allowFilters: boolean;
   allowSmoothing: boolean;

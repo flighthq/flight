@@ -1,2 +1,2 @@
-export { default as ImageSource } from './ImageSource.js';
-export { default as Tileset } from './Tileset.js';
+export { ImageSource } from './ImageSource.js';
+export { Tileset } from './Tileset.js';

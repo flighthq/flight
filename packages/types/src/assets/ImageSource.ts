@@ -1,4 +1,4 @@
-export default interface ImageSource {
+export interface ImageSource {
   height: number;
   src: HTMLImageElement;
   width: number;

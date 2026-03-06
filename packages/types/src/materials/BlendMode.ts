@@ -15,5 +15,3 @@ export enum BlendMode {
   Shader,
   Subtract,
 }
-
-export default BlendMode;
