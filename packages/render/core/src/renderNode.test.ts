@@ -1,10 +1,43 @@
 import { rectangle } from '@flighthq/geometry';
+import { matrix3x2 } from '@flighthq/geometry';
+import { colorTransform } from '@flighthq/materials';
 import { addChild, createDisplayObject } from '@flighthq/scene-graph-stage';
-import type { DisplayObject, RendererState, RenderNode } from '@flighthq/types';
+import { BlendMode, type DisplayObject, type Renderable, type RendererState, type RenderNode } from '@flighthq/types';
 
 import { createRendererState } from './createRendererState';
 import type { RendererStateInternal } from './internal';
-import { getRenderNode, updateRenderableTree } from './renderable';
+import { createRenderNode, getRenderNode, updateRenderableTree } from './renderNode';
+
+describe('createRenderNode', () => {
+  let data: RenderNode;
+  let state: RendererState;
+  let source: Renderable = {} as Renderable;
+
+  beforeEach(() => {
+    state = createRendererState();
+    data = createRenderNode(state, source);
+  });
+
+  it('initializes default values', () => {
+    expect(data.alpha).toStrictEqual(1);
+    expect(data.appearanceFrameID).toStrictEqual(-1);
+    expect(data.blendMode).toStrictEqual(BlendMode.Normal);
+    expect(data.cacheBitmap).toBeNull();
+    expect(data.cacheAsBitmap).toStrictEqual(false);
+    expect(data.colorTransform).toStrictEqual(colorTransform.create());
+    expect(data.isMaskFrameID).toStrictEqual(-1);
+    expect(data.lastAppearanceID).toStrictEqual(-1);
+    expect(data.lastLocalTransformID).toStrictEqual(-1);
+    expect(data.maskDepth).toStrictEqual(0);
+    expect(data.scrollRectDepth).toStrictEqual(0);
+    expect(data.shader).toStrictEqual(null);
+    expect(data.source).toStrictEqual(source);
+    expect(data.transform).toStrictEqual(matrix3x2.create());
+    expect(data.transformFrameID).toStrictEqual(-1);
+    expect(data.useColorTransform).toStrictEqual(false);
+    expect(data.visible).toStrictEqual(true);
+  });
+});
 
 describe('getRenderNode', () => {
   it('creates renderable data if not present already', () => {

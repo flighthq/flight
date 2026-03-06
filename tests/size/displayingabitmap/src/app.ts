@@ -1,5 +1,6 @@
 import { createImageSource } from '@flighthq/assets';
 import { createCanvasRendererState, render } from '@flighthq/render-canvas';
+import { registerBitmapRenderer } from '@flighthq/render-canvas/bitmap';
 import { addChild, createBitmap, createDisplayObject } from '@flighthq/scene-graph-stage';
 
 const main = createDisplayObject();
@@ -37,6 +38,7 @@ const options = {
 };
 
 const state = createCanvasRendererState(canvas, options);
+registerBitmapRenderer(state);
 
 function enterFrame() {
   render(state, main);

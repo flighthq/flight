@@ -4,7 +4,7 @@ import type { DisplayObject, RendererState, RenderNode } from '@flighthq/types';
 
 import { setBackgroundColor, updateColorTransform } from './color';
 import { createRendererState } from './createRendererState';
-import { getRenderNode } from './renderable';
+import { getRenderNode } from './renderNode';
 
 describe('setBackgroundColor', () => {
   let state: RendererState;
