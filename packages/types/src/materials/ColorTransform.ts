@@ -1,4 +1,4 @@
-export default interface ColorTransform {
+export interface ColorTransform {
   alphaMultiplier: number;
   alphaOffset: number;
   blueMultiplier: number;

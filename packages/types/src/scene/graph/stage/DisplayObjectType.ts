@@ -10,5 +10,3 @@ export type DisplayObjectType =
   | 'stage'
   | 'tilemap'
   | 'video';
-
-export default DisplayObjectType;

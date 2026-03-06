@@ -1,7 +1,7 @@
 import type { BlendMode } from '../../materials';
 import type { RendererState } from '../core';
 
-export default interface CanvasRendererState extends RendererState {
+export interface CanvasRendererState extends RendererState {
   readonly canvas: HTMLCanvasElement;
   readonly context: CanvasRenderingContext2D;
   readonly contextAttributes: CanvasRenderingContext2DSettings;

@@ -1,8 +1,8 @@
 import type { Matrix3x2 } from '../../geometry';
 import type { BlendMode, ColorTransform, Shader } from '../../materials';
-import type Renderable from './Renderable';
+import type { Renderable } from './Renderable';
 
-export default interface RenderableData {
+export interface RenderableData {
   alpha: number;
   appearanceFrameID: number;
   blendMode: BlendMode;

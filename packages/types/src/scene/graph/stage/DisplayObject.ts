@@ -3,9 +3,9 @@ import type { BlendMode, ColorTransform, Filter, Shader } from '../../../materia
 import type { DisplayObjectType } from './DisplayObjectType.js';
 import type { GraphState } from './GraphState.js';
 import type { PrimitiveData } from './PrimitiveData.js';
-import type Stage from './Stage.js';
+import type { Stage } from './Stage.js';
 
-export default interface DisplayObject {
+export interface DisplayObject {
   alpha: number;
   blendMode: BlendMode;
   cacheAsBitmap: boolean;

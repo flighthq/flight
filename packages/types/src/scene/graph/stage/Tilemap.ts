@@ -1,6 +1,6 @@
-import type DisplayObject from './DisplayObject';
-import type TilemapData from './TilemapData';
+import type { DisplayObject } from './DisplayObject';
+import type { TilemapData } from './TilemapData';
 
-export default interface Tilemap extends DisplayObject {
+export interface Tilemap extends DisplayObject {
   data: TilemapData;
 }
