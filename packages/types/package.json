@@ -36,8 +36,8 @@
       "default": "./dist/scene-graph.js"
     },
     "./scene/graph/stage": {
-      "types": "./dist/scene-graph-stage.d.ts",
-      "default": "./dist/scene-graph-stage.js"
+      "types": "./dist/scene-graph-display.d.ts",
+      "default": "./dist/scene-graph-display.js"
     }
   },
   "files": [
