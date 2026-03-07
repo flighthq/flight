@@ -11,7 +11,7 @@
   "references": [
     { "path": "../materials" },
     { "path": "../geometry" },
-    { "path": "../scene/graph/stage" },
+    { "path": "../scene/graph/display" },
     { "path": "../types" },
     { "path": "../scene/graph/world" }
   ],

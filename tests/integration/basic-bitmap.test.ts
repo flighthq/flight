@@ -1,5 +1,6 @@
 import { createImageSource } from '@flighthq/assets';
-import { addChild, createBitmap, createDisplayObject } from '@flighthq/scene-graph-stage';
+import { addChild } from '@flighthq/scene-graph-core';
+import { createBitmap, createDisplayObject } from '@flighthq/scene-graph-display';
 
 export function loadImageAndDecode(): Promise<HTMLImageElement> {
   return new Promise((resolve) => {
@@ -13,7 +14,6 @@ export function loadImageAndDecode(): Promise<HTMLImageElement> {
     if (typeof window === 'undefined' || !('decode' in img)) {
       // In Node/jsdom, onload may never fire if URL is not real
       // You can optionally resolve immediately for testing
-      // @ts-expect-error: setImmediate is a Node global
       setImmediate(() => resolve(img));
     }
   });

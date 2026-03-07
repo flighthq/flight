@@ -26,7 +26,8 @@
     "@flighthq/interaction": "*",
     "@flighthq/geometry": "*",
     "@flighthq/render-canvas": "*",
-    "@flighthq/scene-graph-stage": "*",
+    "@flighthq/scene-graph-core": "*",
+    "@flighthq/scene-graph-display": "*",
     "@flighthq/types": "*",
     "@flighthq/scene-graph-world": "*"
   },

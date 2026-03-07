@@ -1,1 +1,2 @@
-export * from './createImageSource.js';
+export * from './image.js';
+export * from './tileset.js';

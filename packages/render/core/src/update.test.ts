@@ -1,5 +1,6 @@
 import { rectangle } from '@flighthq/geometry';
-import { addChild, createDisplayObject } from '@flighthq/scene-graph-stage';
+import { addChild } from '@flighthq/scene-graph-core';
+import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { DisplayObject, RenderNode, RenderState } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';
