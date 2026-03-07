@@ -20,5 +20,3 @@ export interface StageData extends DisplayObjectData {
 export interface Stage extends DisplayObject {
   data: StageData;
 }
-
-export const StageKind: unique symbol = Symbol('Stage');

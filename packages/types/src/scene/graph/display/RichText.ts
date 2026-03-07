@@ -37,5 +37,3 @@ export interface RichTextData extends TextData {
 export interface RichText extends Text {
   data: RichTextData;
 }
-
-export const RichTextKind: unique symbol = Symbol('RichText');
