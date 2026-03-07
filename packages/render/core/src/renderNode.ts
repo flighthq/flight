@@ -4,7 +4,7 @@ import type { Renderable, RenderNode, RenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 export function createRenderNode(state: RenderState, source: Renderable): RenderNode {
-  const renderer = state.rendererMap.get(source.kind);
+  const renderer = state.rendererMap.get(source.type);
   return {
     alpha: 1,
     appearanceFrameID: -1,
@@ -37,7 +37,7 @@ export function getRenderNode(state: RenderState, source: Renderable): RenderNod
     renderNodeMap.set(source, node);
   }
   if (node.rendererMapID !== state.rendererMapID) {
-    node.renderer = state.rendererMap.get(node.source.kind) ?? null;
+    node.renderer = state.rendererMap.get(node.source.type) ?? null;
     node.rendererMapID = state.rendererMapID;
   }
   return node;

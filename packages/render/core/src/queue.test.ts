@@ -1,4 +1,5 @@
-import { addChild, createDisplayObject } from '@flighthq/scene-graph-stage';
+import { addChild } from '@flighthq/scene-graph-core';
+import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { DisplayObject, RenderState } from '@flighthq/types';
 
 import { prepareRenderQueue } from './queue';

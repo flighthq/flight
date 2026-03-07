@@ -1,35 +1,30 @@
-import {
-  addChild,
-  createDisplayObject,
-  getLocalBoundsRect,
-  getLocalTransform,
-  removeChild,
-} from '@flighthq/scene-graph-stage';
+import { addChild, removeChild } from '@flighthq/scene-graph-core';
+import { createDisplayObject, getLocalBoundsRect, getLocalTransform } from '@flighthq/scene-graph-display';
 import type { DisplayObject } from '@flighthq/types';
-import { GraphStateKey } from '@flighthq/types';
+import { SceneNodeRuntimeKey } from '@flighthq/types';
 
 it('should allow undefined when first created', () => {
   const object: Partial<DisplayObject> = { x: 100, y: 100 };
-  expect(object[GraphStateKey]).toBeUndefined();
+  expect(object[SceneNodeRuntimeKey]).toBeUndefined();
 });
 
 it('should become defined when fetching bounds', () => {
   const object = createDisplayObject();
   getLocalBoundsRect(object);
-  expect(object[GraphStateKey]).not.toBeUndefined();
+  expect(object[SceneNodeRuntimeKey]).not.toBeUndefined();
 });
 
 it('should become defined when fetching transform', () => {
   const object = createDisplayObject();
   getLocalTransform(object);
-  expect(object[GraphStateKey]).not.toBeUndefined();
+  expect(object[SceneNodeRuntimeKey]).not.toBeUndefined();
 });
 
 it('should become defined when adding as a child', () => {
   const parent = createDisplayObject();
   const child = createDisplayObject();
   addChild(parent, child);
-  expect(child[GraphStateKey]).not.toBeUndefined();
+  expect(child[SceneNodeRuntimeKey]).not.toBeUndefined();
 });
 
 it('should remain defined, even when removed', () => {
@@ -37,5 +32,5 @@ it('should remain defined, even when removed', () => {
   const child = createDisplayObject();
   addChild(parent, child);
   removeChild(parent, child);
-  expect(child[GraphStateKey]).not.toBeUndefined();
+  expect(child[SceneNodeRuntimeKey]).not.toBeUndefined();
 });

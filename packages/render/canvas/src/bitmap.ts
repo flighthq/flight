@@ -1,6 +1,13 @@
-import { registerRenderer } from '@flighthq/render-core';
-import type { Bitmap, CanvasRenderState, Renderable, Renderer, RendererData, RenderNode } from '@flighthq/types';
-import { BitmapKind } from '@flighthq/types';
+import { setDefaultRenderer } from '@flighthq/render-core';
+import {
+  type Bitmap,
+  type CanvasRenderState,
+  DisplayObjectType,
+  type Renderable,
+  type Renderer,
+  type RendererData,
+  type RenderNode,
+} from '@flighthq/types';
 
 import { applyDisplayObjectMask, renderDisplayObject } from './displayObject';
 import { setBlendMode } from './materials';
@@ -18,10 +25,6 @@ export function applyBitmapMask(state: CanvasRenderState, data: RenderNode): voi
 
 export function createBitmapRendererData(_state: CanvasRenderState, _source: Renderable): RendererData | null {
   return null;
-}
-
-export function registerBitmapRenderer(state: CanvasRenderState, renderer: Renderer = BitmapRenderer): void {
-  registerRenderer(state, BitmapKind, renderer);
 }
 
 export function renderBitmap(state: CanvasRenderState, bitmap: RenderNode): void {
@@ -63,4 +66,8 @@ export function renderBitmap(state: CanvasRenderState, bitmap: RenderNode): void
       context.imageSmoothingEnabled = true;
     }
   }
+}
+
+export function setDefaultBitmapRenderer(state: CanvasRenderState, renderer: Renderer = BitmapRenderer): void {
+  setDefaultRenderer(state, DisplayObjectType.Bitmap, renderer);
 }

@@ -1,6 +1,6 @@
 import { matrix3x2, rectangle } from '@flighthq/geometry';
 import { getRenderNode } from '@flighthq/render-core';
-import { createDisplayObject } from '@flighthq/scene-graph-stage';
+import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { CanvasRenderState, DisplayObject, Matrix3x2, Rectangle, RenderNode } from '@flighthq/types';
 
 import { popClipRect, popScrollRect, pushClipRect } from './clipping';

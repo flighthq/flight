@@ -11,7 +11,7 @@
   "references": [
     { "path": "../../geometry" },
     { "path": "../core" },
-    { "path": "../../scene/graph/stage" },
+    { "path": "../../scene/graph/display" },
     { "path": "../../types" }
   ],
   "include": ["src"]

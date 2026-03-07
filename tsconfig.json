@@ -2,7 +2,7 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
-    "noEmit": false, // Allow emitting files during build
+    "noEmit": true, // Allow emitting files during build
     "outDir": "dist", // Output directory for build
     "declaration": true, // Generate .d.ts files for distribution
     "declarationMap": true, // Generate declaration maps for debugging

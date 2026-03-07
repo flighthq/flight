@@ -1,6 +1,6 @@
 import { rectangle } from '@flighthq/geometry';
-import { getRenderNode, registerRenderer } from '@flighthq/render-core';
-import { calculateBoundsRect } from '@flighthq/scene-graph-stage';
+import { getRenderNode, setDefaultRenderer } from '@flighthq/render-core';
+import { calculateBoundsRect } from '@flighthq/scene-graph-display';
 import {
   type CanvasRenderState,
   DisplayObjectKind,
@@ -40,13 +40,6 @@ export function createDisplayObjectRendererData(_state: CanvasRenderState, _sour
   return null;
 }
 
-export function registerDisplayObjectRenderer(
-  state: CanvasRenderState,
-  renderer: Renderer = DisplayObjectRenderer,
-): void {
-  registerRenderer(state, DisplayObjectKind, renderer);
-}
-
 export function renderDisplayObject(state: CanvasRenderState, displayObject: RenderNode): void {
   const opaqueBackground = displayObject.source.opaqueBackground;
   if (opaqueBackground === null) return;
@@ -65,6 +58,13 @@ export function renderDisplayObject(state: CanvasRenderState, displayObject: Ren
   // getLocalBoundsRect does not include children
   calculateBoundsRect(tempBounds, displayObject.source, displayObject.source);
   context.fillRect(0, 0, tempBounds.width, tempBounds.height);
+}
+
+export function setDefaultDisplayObjectRenderer(
+  state: CanvasRenderState,
+  renderer: Renderer = DisplayObjectRenderer,
+): void {
+  setDefaultRenderer(state, DisplayObjectKind, renderer);
 }
 
 const tempBounds = rectangle.create();

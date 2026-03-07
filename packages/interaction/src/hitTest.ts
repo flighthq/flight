@@ -1,6 +1,6 @@
 import { matrix3x2, rectangle, rectanglePool } from '@flighthq/geometry';
-import { calculateBoundsRect, getLocalBoundsRect } from '@flighthq/scene-graph-stage/bounds';
-import { getWorldTransform } from '@flighthq/scene-graph-stage/transform';
+import { calculateBoundsRect, getLocalBoundsRect } from '@flighthq/scene-graph-display/bounds';
+import { getWorldTransform } from '@flighthq/scene-graph-display/transform';
 import type { DisplayObject } from '@flighthq/types';
 
 /**
