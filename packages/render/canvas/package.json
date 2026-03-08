@@ -17,6 +17,10 @@
       "types": "./dist/cacheBitmap.d.ts",
       "default": "./dist/cacheBitmap.js"
     },
+    "./clear": {
+      "types": "./dist/clear.d.ts",
+      "default": "./dist/clear.js"
+    },
     "./clipping": {
       "types": "./dist/clipping.d.ts",
       "default": "./dist/clipping.js"
