@@ -40,36 +40,40 @@ export function calculateBoundsRect<K extends symbol>(
 }
 
 export function ensureBoundsRect<K extends symbol>(target: SceneNode<K> & HasBoundsRect<K> & HasTransform2D<K>): void {
-  const state = getRuntime(target) as BoundsRectRuntime<K>;
+  const runtime = getRuntime(target) as BoundsRectRuntime<K>;
   if (
-    state.boundsRectUsingLocalBoundsID !== state.localBoundsID ||
-    state.boundsRectUsingLocalTransformID !== state.localTransformID
+    runtime.boundsRectUsingLocalBoundsID !== runtime.localBoundsID ||
+    runtime.boundsRectUsingLocalTransformID !== runtime.localTransformID
   ) {
-    recomputeBoundsRect(target, state);
+    recomputeBoundsRect(target, runtime);
   }
 }
 
 export function ensureLocalBoundsRect<K extends symbol>(target: SceneNode<K> & HasBoundsRect<K>): void {
-  const state = getRuntime(target) as BoundsRectRuntime<K>;
-  if (state.localBoundsRectUsingLocalBoundsID !== state.localBoundsID) {
-    recomputeLocalBoundsRect(target, state);
+  const runtime = getRuntime(target) as BoundsRectRuntime<K>;
+  if (runtime.localBoundsRectUsingLocalBoundsID !== runtime.localBoundsID) {
+    recomputeLocalBoundsRect(target, runtime);
   }
 }
 
 export function ensureWorldBoundsRect<K extends symbol>(
   target: SceneNode<K> & HasBoundsRect<K> & HasTransform2D<K>,
 ): void {
-  const state = getRuntime(target) as BoundsRectRuntime<K> & Transform2DRuntime<K>;
-  const localBoundsInvalid = state.worldBoundsRectUsingLocalBoundsID !== state.localBoundsID;
+  const runtime = getRuntime(target) as BoundsRectRuntime<K> & Transform2DRuntime<K>;
+  const localBoundsInvalid = runtime.worldBoundsRectUsingLocalBoundsID !== runtime.localBoundsID;
   const hasChildren = target.children !== null;
   let forceRecompute = false;
   if (!hasChildren && !localBoundsInvalid) {
-    if (tryFastRecomputeWorldBoundsRect(target, state)) return;
+    if (tryFastRecomputeWorldBoundsRect(target, runtime)) return;
     forceRecompute = true;
   }
   ensureWorldTransform(target);
-  if (forceRecompute || localBoundsInvalid || state.worldBoundsRectUsingWorldTransformID !== state.worldTransformID) {
-    recomputeWorldBoundsRect(target, state);
+  if (
+    forceRecompute ||
+    localBoundsInvalid ||
+    runtime.worldBoundsRectUsingWorldTransformID !== runtime.worldTransformID
+  ) {
+    recomputeWorldBoundsRect(target, runtime);
   }
 }
 
@@ -103,55 +107,55 @@ export function getWorldBoundsRect<K extends symbol>(
 
 function recomputeBoundsRect<K extends symbol>(
   target: SceneNode<K> & HasBoundsRect<K> & HasTransform2D<K>,
-  state: BoundsRectRuntime<K>,
+  runtime: BoundsRectRuntime<K>,
 ): void {
-  if (state.boundsRect === null) state.boundsRect = rectangle.create();
-  matrix3x2.transformRect(state.boundsRect, getLocalTransform(target), getLocalBoundsRect(target));
-  state.boundsRectUsingLocalBoundsID = state.localBoundsID;
-  state.boundsRectUsingLocalTransformID = state.localTransformID;
+  if (runtime.boundsRect === null) runtime.boundsRect = rectangle.create();
+  matrix3x2.transformRect(runtime.boundsRect, getLocalTransform(target), getLocalBoundsRect(target));
+  runtime.boundsRectUsingLocalBoundsID = runtime.localBoundsID;
+  runtime.boundsRectUsingLocalTransformID = runtime.localTransformID;
 }
 
 function recomputeLocalBoundsRect<K extends symbol>(
   target: SceneNode<K> & HasBoundsRect<K>,
-  state: BoundsRectRuntime<K>,
+  runtime: BoundsRectRuntime<K>,
 ): void {
-  if (state.localBoundsRect === null) state.localBoundsRect = rectangle.create();
-  state.computeLocalBounds(state.localBoundsRect, target);
-  state.localBoundsRectUsingLocalBoundsID = state.localBoundsID;
+  if (runtime.localBoundsRect === null) runtime.localBoundsRect = rectangle.create();
+  runtime.computeLocalBounds(runtime.localBoundsRect, target);
+  runtime.localBoundsRectUsingLocalBoundsID = runtime.localBoundsID;
 }
 
 function recomputeWorldBoundsRect<K extends symbol>(
   target: SceneNode<K> & HasBoundsRect<K> & HasTransform2D<K>,
-  state: BoundsRectRuntime<K> & Transform2DRuntime<K>,
+  runtime: BoundsRectRuntime<K> & Transform2DRuntime<K>,
 ) {
-  if (state.worldBoundsRect === null) state.worldBoundsRect = rectangle.create();
-  matrix3x2.transformRect(state.worldBoundsRect, getWorldTransform(target), getLocalBoundsRect(target));
+  if (runtime.worldBoundsRect === null) runtime.worldBoundsRect = rectangle.create();
+  matrix3x2.transformRect(runtime.worldBoundsRect, getWorldTransform(target), getLocalBoundsRect(target));
   if (target.children !== null) {
     for (const child of target.children) {
       const childWorldBounds = getWorldBoundsRect(child as SceneNode<K> & HasBoundsRect<K> & HasTransform2D<K>);
       if (childWorldBounds.width !== 0 && childWorldBounds.height !== 0) {
-        rectangle.union(state.worldBoundsRect, state.worldBoundsRect, childWorldBounds);
+        rectangle.union(runtime.worldBoundsRect, runtime.worldBoundsRect, childWorldBounds);
       }
     }
   }
-  state.worldBoundsRectUsingWorldTransformID = state.worldTransformID;
-  state.worldBoundsRectUsingLocalBoundsID = state.localBoundsID;
+  runtime.worldBoundsRectUsingWorldTransformID = runtime.worldTransformID;
+  runtime.worldBoundsRectUsingLocalBoundsID = runtime.localBoundsID;
 }
 
 function tryFastRecomputeWorldBoundsRect<K extends symbol>(
   target: SceneNode<K> & HasBoundsRect<K> & HasTransform2D<K>,
-  state: BoundsRectRuntime<K> & Transform2DRuntime<K>,
+  runtime: BoundsRectRuntime<K> & Transform2DRuntime<K>,
 ): boolean {
-  if (state.worldBoundsRect !== null && state.worldTransform !== null) {
-    const { a: _a, b: _b, c: _c, d: _d, tx: _tx, ty: _ty } = state.worldTransform;
+  if (runtime.worldBoundsRect !== null && runtime.worldTransform !== null) {
+    const { a: _a, b: _b, c: _c, d: _d, tx: _tx, ty: _ty } = runtime.worldTransform;
     ensureWorldTransform(target);
-    const { a, b, c, d, tx, ty } = state.worldTransform;
+    const { a, b, c, d, tx, ty } = runtime.worldTransform;
     // check for unchanged rotation and scale
     if (a === _a && b === _b && c === _c && d === _d) {
       // offset only
       if (tx !== _tx || ty !== _ty) {
-        state.worldBoundsRect.x += tx - _tx;
-        state.worldBoundsRect.y += ty - _ty;
+        runtime.worldBoundsRect.x += tx - _tx;
+        runtime.worldBoundsRect.y += ty - _ty;
       }
       return true;
     }

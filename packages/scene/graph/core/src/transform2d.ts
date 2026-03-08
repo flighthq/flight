@@ -3,30 +3,30 @@ import { getRuntime } from '@flighthq/scene-graph-core';
 import type { HasTransform2D, Matrix3x2, SceneNode, Transform2DRuntime, Vector2 } from '@flighthq/types';
 
 export function ensureLocalTransform<K extends symbol>(target: SceneNode<K> & HasTransform2D<K>): void {
-  const state = getRuntime(target) as Transform2DRuntime<K>;
-  if (state.localTransformUsingLocalTransformID !== state.localTransformID) {
-    recomputeLocalTransform(target, state);
+  const runtime = getRuntime(target) as Transform2DRuntime<K>;
+  if (runtime.localTransformUsingLocalTransformID !== runtime.localTransformID) {
+    recomputeLocalTransform(target, runtime);
   }
 }
 
 export function ensureWorldTransform<K extends symbol>(target: SceneNode<K> & HasTransform2D<K>): void {
-  const state = getRuntime(target) as Transform2DRuntime<K>;
+  const runtime = getRuntime(target) as Transform2DRuntime<K>;
   const parent = target.parent;
 
-  let parentState: Transform2DRuntime<K> | undefined;
+  let parentRuntime: Transform2DRuntime<K> | undefined;
   let parentWorldTransformID = 0;
 
   if (parent !== null) {
     ensureWorldTransform(parent as SceneNode<K> & HasTransform2D<K>);
-    parentState = getRuntime(parent) as Transform2DRuntime<K>;
-    parentWorldTransformID = parentState.worldTransformID;
+    parentRuntime = getRuntime(parent) as Transform2DRuntime<K>;
+    parentWorldTransformID = parentRuntime.worldTransformID;
   }
 
   if (
-    state.worldTransformUsingLocalTransformID !== state.localTransformID ||
-    state.worldTransformUsingParentTransformID !== parentWorldTransformID
+    runtime.worldTransformUsingLocalTransformID !== runtime.localTransformID ||
+    runtime.worldTransformUsingParentTransformID !== parentWorldTransformID
   ) {
-    recomputeWorldTransform(target, state, parentState);
+    recomputeWorldTransform(target, runtime, parentRuntime);
   }
 }
 
@@ -66,9 +66,9 @@ export function localToGlobal<K extends symbol>(
 
 function recomputeLocalTransform<K extends symbol>(
   target: SceneNode<K> & HasTransform2D<K>,
-  state: Transform2DRuntime<K>,
+  runtime: Transform2DRuntime<K>,
 ): void {
-  if (target.rotation !== state.rotationAngle) {
+  if (target.rotation !== runtime.rotationAngle) {
     // Normalize from -180 to 180
     let angle = target.rotation % 360.0;
     if (angle > 180.0) {
@@ -98,45 +98,45 @@ function recomputeLocalTransform<K extends symbol>(
       cos = Math.cos(rad);
     }
 
-    state.rotationAngle = angle;
-    state.rotationSine = sin;
-    state.rotationCosine = cos;
+    runtime.rotationAngle = angle;
+    runtime.rotationSine = sin;
+    runtime.rotationCosine = cos;
   }
 
-  if (state.localTransform === null) state.localTransform = matrix3x2.create();
-  const matrix = state.localTransform;
-  matrix.a = state.rotationCosine * target.scaleX;
-  matrix.b = state.rotationSine * target.scaleX;
-  matrix.c = -state.rotationSine * target.scaleY;
-  matrix.d = state.rotationCosine * target.scaleY;
+  if (runtime.localTransform === null) runtime.localTransform = matrix3x2.create();
+  const matrix = runtime.localTransform;
+  matrix.a = runtime.rotationCosine * target.scaleX;
+  matrix.b = runtime.rotationSine * target.scaleX;
+  matrix.c = -runtime.rotationSine * target.scaleY;
+  matrix.d = runtime.rotationCosine * target.scaleY;
   matrix.tx = target.x;
   matrix.ty = target.y;
 
-  state.localTransformUsingLocalTransformID = state.localTransformID;
+  runtime.localTransformUsingLocalTransformID = runtime.localTransformID;
 }
 
 function recomputeWorldTransform<K extends symbol>(
   target: SceneNode<K> & HasTransform2D<K>,
-  state: Transform2DRuntime<K>,
-  parentState?: Transform2DRuntime<K>,
+  runtime: Transform2DRuntime<K>,
+  parentRuntime?: Transform2DRuntime<K>,
 ): void {
-  if (state.worldTransform === null) state.worldTransform = matrix3x2.create();
+  if (runtime.worldTransform === null) runtime.worldTransform = matrix3x2.create();
   ensureLocalTransform(target);
-  if (parentState !== undefined) {
-    matrix3x2.multiply(state.worldTransform, parentState.worldTransform!, state.localTransform!);
+  if (parentRuntime !== undefined) {
+    matrix3x2.multiply(runtime.worldTransform, parentRuntime.worldTransform!, runtime.localTransform!);
   } else {
-    matrix3x2.copy(state.worldTransform, state.localTransform!);
+    matrix3x2.copy(runtime.worldTransform, runtime.localTransform!);
   }
-  recomputeWorldTransformID(state, parentState);
+  recomputeWorldTransformID(runtime, parentRuntime);
 }
 
 function recomputeWorldTransformID<K extends symbol>(
-  state: Transform2DRuntime<K>,
-  parentState?: Transform2DRuntime<K>,
+  runtime: Transform2DRuntime<K>,
+  parentRuntime?: Transform2DRuntime<K>,
 ): void {
-  const localTransformID = state.localTransformID;
-  const parentWorldTransformID = parentState ? parentState.worldTransformID : 0;
-  state.worldTransformUsingLocalTransformID = localTransformID;
-  state.worldTransformUsingParentTransformID = parentWorldTransformID;
-  state.worldTransformID = (localTransformID << 16) | (parentWorldTransformID & 0xffff);
+  const localTransformID = runtime.localTransformID;
+  const parentWorldTransformID = parentRuntime ? parentRuntime.worldTransformID : 0;
+  runtime.worldTransformUsingLocalTransformID = localTransformID;
+  runtime.worldTransformUsingParentTransformID = parentWorldTransformID;
+  runtime.worldTransformID = (localTransformID << 16) | (parentWorldTransformID & 0xffff);
 }
