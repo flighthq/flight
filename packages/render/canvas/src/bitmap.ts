@@ -1,16 +1,10 @@
 import { createNullRendererData, setRenderer } from '@flighthq/render-core';
-import type { Bitmap, CanvasRenderState, DisplayObjectRenderNode, Renderer } from '@flighthq/types';
+import type { Bitmap, CanvasRenderState, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
 import { DisplayObjectType } from '@flighthq/types';
 
 import { drawDisplayObject, drawDisplayObjectMask } from './displayObject';
 import { setBlendMode } from './materials';
 import { setTransform } from './transform';
-
-export const BitmapRenderer: Renderer = {
-  createData: createNullRendererData,
-  draw: drawBitmap,
-  drawMask: drawBitmapMask,
-};
 
 export function drawBitmap(state: CanvasRenderState, bitmap: DisplayObjectRenderNode): void {
   drawDisplayObject(state, bitmap);
@@ -57,6 +51,15 @@ export function drawBitmapMask(state: CanvasRenderState, data: DisplayObjectRend
   drawDisplayObjectMask(state, data);
 }
 
-export function setBitmapRenderer(state: CanvasRenderState, renderer: Renderer = BitmapRenderer): void {
+export function setBitmapRenderer(
+  state: CanvasRenderState,
+  renderer: DisplayObjectRenderer = defaultBitmapRenderer,
+): void {
   setRenderer(state, DisplayObjectType.Bitmap, renderer);
 }
+
+export const defaultBitmapRenderer: DisplayObjectRenderer = {
+  createData: createNullRendererData,
+  draw: drawBitmap,
+  drawMask: drawBitmapMask,
+};
