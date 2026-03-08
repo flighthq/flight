@@ -1,8 +1,8 @@
-import type { CanvasRenderState, RenderNode } from '@flighthq/types';
+import type { CanvasRenderState, DisplayObjectRenderNode } from '@flighthq/types';
 
 import { setTransform } from './transform';
 
-export function applyMask(state: CanvasRenderState, data: RenderNode): void {
+export function applyMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
   if (data.renderer !== null) data.renderer.drawMask(state, data);
 }
 
@@ -11,7 +11,7 @@ export function popMask(state: CanvasRenderState): void {
   // state.currentMaskDepth--;
 }
 
-export function pushMask(state: CanvasRenderState, data: RenderNode): void {
+export function pushMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
   state.context.save();
 
   setTransform(state, state.context, data.transform);

@@ -1,7 +1,7 @@
-import type { Renderable, RenderState } from '@flighthq/types';
+import type { DisplayObject, Renderable, RenderState } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';
-import { getRenderNode } from './renderNode';
+import { getDisplayObjectRenderNode } from './renderNode';
 
 /**
  * Second pass, exclude non-renderable objects from queue
@@ -16,8 +16,8 @@ export function prepareRenderQueue(state: RenderState, source: Renderable): void
   let currentQueueIndex = 0;
 
   while (stackLength > 0) {
-    const current = tempStack[--stackLength];
-    const data = getRenderNode(state, current);
+    const current = tempStack[--stackLength] as DisplayObject;
+    const data = getDisplayObjectRenderNode(state, current);
     const isMask = data.isMaskFrameID === currentFrameID;
     if (!isMask) {
       const shouldRender = data.visible && data.alpha > 0 && !(data.transform.a === 0 && data.transform.d === 0);

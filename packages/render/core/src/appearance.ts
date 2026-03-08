@@ -1,10 +1,14 @@
 import { getAppearanceID } from '@flighthq/scene-graph-display';
-import type { RenderNode, RenderState } from '@flighthq/types';
+import type { DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { updateColorTransform } from './color';
 
-export function updateAppearance(state: RenderState, data: RenderNode, parentData?: RenderNode): boolean {
+export function updateAppearance(
+  state: RenderState,
+  data: DisplayObjectRenderNode,
+  parentData?: DisplayObjectRenderNode,
+): boolean {
   const appearanceID = getAppearanceID(data.source);
   if (
     (parentData !== undefined && parentData.appearanceFrameID === state.currentFrameID) ||
@@ -17,7 +21,11 @@ export function updateAppearance(state: RenderState, data: RenderNode, parentDat
   return false;
 }
 
-function recalculateAppearance(state: RenderState, data: RenderNode, parentData?: RenderNode) {
+function recalculateAppearance(
+  state: RenderState,
+  data: DisplayObjectRenderNode,
+  parentData?: DisplayObjectRenderNode,
+) {
   const source = data.source;
   if (parentData !== undefined) {
     data.visible = source.visible && parentData.visible;

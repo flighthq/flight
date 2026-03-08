@@ -1,16 +1,16 @@
 import { addChild } from '@flighthq/scene-graph-core';
 import { createDisplayObject, invalidateLocalTransform } from '@flighthq/scene-graph-display';
-import type { DisplayObject, RenderNode, RenderState } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
-import { getRenderNode } from './renderNode';
+import { getDisplayObjectRenderNode } from './renderNode';
 import { createRenderState } from './renderState';
 import { updateRenderTransform } from './transform';
 
 describe('updateRenderTransform', () => {
   let parent: DisplayObject;
-  let parentData: RenderNode;
+  let parentData: DisplayObjectRenderNode;
   let child: DisplayObject;
-  let childData: RenderNode;
+  let childData: DisplayObjectRenderNode;
   let state: RenderState;
 
   beforeEach(() => {
@@ -18,8 +18,8 @@ describe('updateRenderTransform', () => {
     child = createDisplayObject();
     addChild(parent, child);
     state = createRenderState();
-    parentData = getRenderNode(state, parent);
-    childData = getRenderNode(state, child);
+    parentData = getDisplayObjectRenderNode(state, parent);
+    childData = getDisplayObjectRenderNode(state, child);
   });
 
   it('recalculates the first time', () => {

@@ -1,20 +1,20 @@
 import { matrix3x2 } from '@flighthq/geometry';
 import { colorTransform } from '@flighthq/materials';
 import { createDisplayObject } from '@flighthq/scene-graph-display';
-import type { Renderable, RenderNode, RenderState } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import { createRenderNode, getRenderNode } from './renderNode';
+import { createDisplayObjectRenderNode, getDisplayObjectRenderNode } from './renderNode';
 import { createRenderState } from './renderState';
 
-describe('createRenderNode', () => {
-  let data: RenderNode;
+describe('createDisplayObjectRenderNode', () => {
+  let data: DisplayObjectRenderNode;
   let state: RenderState;
-  let source: Renderable = {} as Renderable;
+  let source: DisplayObject = {} as DisplayObject;
 
   beforeEach(() => {
     state = createRenderState();
-    data = createRenderNode(state, source);
+    data = createDisplayObjectRenderNode(state, source);
   });
 
   it('initializes default values', () => {
@@ -38,12 +38,12 @@ describe('createRenderNode', () => {
   });
 });
 
-describe('getRenderNode', () => {
+describe('getDisplayObjectRenderNode', () => {
   it('creates renderable data if not present already', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     expect(state.renderNodeMap.has(source)).toBe(false);
-    getRenderNode(state, source);
+    getDisplayObjectRenderNode(state, source);
     expect(state.renderNodeMap.has(source)).toBe(true);
   });
 });

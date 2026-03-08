@@ -1,8 +1,12 @@
 import { matrix3x2 } from '@flighthq/geometry';
 import { getLocalTransform, getLocalTransformID } from '@flighthq/scene-graph-display';
-import type { RenderNode, RenderState } from '@flighthq/types';
+import type { DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
-export function updateRenderTransform(state: RenderState, data: RenderNode, parentData?: RenderNode): boolean {
+export function updateRenderTransform(
+  state: RenderState,
+  data: DisplayObjectRenderNode,
+  parentData?: DisplayObjectRenderNode,
+): boolean {
   const localTransformID = getLocalTransformID(data.source);
   if (
     (parentData !== undefined && parentData.transformFrameID === state.currentFrameID) ||
@@ -15,7 +19,11 @@ export function updateRenderTransform(state: RenderState, data: RenderNode, pare
   return false;
 }
 
-function recalculateRenderTransform(state: RenderState, data: RenderNode, parentData?: RenderNode): void {
+function recalculateRenderTransform(
+  state: RenderState,
+  data: DisplayObjectRenderNode,
+  parentData?: DisplayObjectRenderNode,
+): void {
   const source = data.source;
   const transform = getLocalTransform(source);
   const parentTransform = parentData !== undefined ? parentData.transform : state.renderTransform;
