@@ -1,6 +1,11 @@
 import { rectangle } from '@flighthq/geometry';
 import { setEmpty } from '@flighthq/geometry/rectangle';
-import { addChild, getRuntime as _getRuntime } from '@flighthq/scene-graph-core';
+import {
+  addChild,
+  ensureLocalTransform,
+  getRuntime as _getRuntime,
+  invalidateLocalTransform,
+} from '@flighthq/scene-graph-core';
 import type { DisplayObject, DisplayObjectRuntime, Rectangle } from '@flighthq/types';
 
 import {
@@ -13,8 +18,6 @@ import {
   getWorldBoundsRect,
 } from './bounds';
 import { createDisplayObject } from './displayObject';
-import { invalidateLocalTransform } from './revision';
-import { ensureLocalTransform } from './transform';
 
 function getRuntime(source: DisplayObject) {
   return _getRuntime(source) as DisplayObjectRuntime;

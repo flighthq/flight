@@ -1,6 +1,6 @@
 import type { Matrix3x2, Rectangle } from '../../../geometry';
 import type { BlendMode, ColorTransform, Filter, Shader } from '../../../materials';
-import type { SceneNode, SceneNodeData, SceneNodeRuntime, Transform2D } from '../core';
+import type { SceneNode, SceneNodeData, SceneNodeRuntime, Transform2D, Transform2DRuntime } from '../core';
 import type { SceneNodeRuntimeKey } from '../core';
 import type { Stage } from './Stage';
 
@@ -31,7 +31,8 @@ export interface DisplayObjectData extends SceneNodeData {}
 
 export const DisplayObjectKind: unique symbol = Symbol('DisplayObject');
 
-export interface DisplayObjectRuntime extends SceneNodeRuntime<typeof DisplayObjectKind> {
+export interface DisplayObjectRuntime
+  extends SceneNodeRuntime<typeof DisplayObjectKind>, Transform2DRuntime<typeof DisplayObjectKind> {
   boundsRect: Rectangle | null;
   boundsRectUsingLocalBoundsID: number;
   boundsRectUsingLocalTransformID: number;
@@ -39,17 +40,8 @@ export interface DisplayObjectRuntime extends SceneNodeRuntime<typeof DisplayObj
   localBoundsRect: Rectangle | null;
   localBoundsRectUsingLocalBoundsID: number;
   localBoundsID: number;
-  localTransform: Matrix3x2 | null;
-  localTransformUsingLocalTransformID: number;
   objectType: string;
-  rotationAngle: number;
-  rotationCosine: number;
-  rotationSine: number;
   worldBoundsRect: Rectangle | null;
   worldBoundsRectUsingLocalBoundsID: number;
   worldBoundsRectUsingWorldTransformID: number;
-  worldTransform: Matrix3x2 | null;
-  worldTransformID: number;
-  worldTransformUsingLocalTransformID: number;
-  worldTransformUsingParentTransformID: number;
 }

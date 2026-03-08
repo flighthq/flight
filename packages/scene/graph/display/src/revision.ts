@@ -1,4 +1,4 @@
-import { getRuntime } from '@flighthq/scene-graph-core';
+import { getRuntime, invalidateLocalTransform } from '@flighthq/scene-graph-core';
 import type { DisplayObject, DisplayObjectRuntime } from '@flighthq/types';
 
 export function getAppearanceID(target: DisplayObject): number {
@@ -7,10 +7,6 @@ export function getAppearanceID(target: DisplayObject): number {
 
 export function getLocalBoundsID(target: DisplayObject): number {
   return (getRuntime(target) as DisplayObjectRuntime).localBoundsID;
-}
-
-export function getLocalTransformID(target: DisplayObject): number {
-  return getRuntime(target).localTransformID;
 }
 
 export function getWorldTransformID(target: DisplayObject): number {
@@ -37,14 +33,6 @@ export function invalidateAppearance(target: DisplayObject): void {
 export function invalidateLocalBounds(target: DisplayObject): void {
   const state = getRuntime(target) as DisplayObjectRuntime;
   state.localBoundsID = (state.localBoundsID + 1) >>> 0;
-}
-
-/**
- * Target object's own transform (x, y, rotation, scaleX, scaleY) changed.
- */
-export function invalidateLocalTransform(target: DisplayObject): void {
-  const state = getRuntime(target);
-  state.localTransformID = (state.localTransformID + 1) >>> 0;
 }
 
 /**

@@ -1,5 +1,5 @@
-import { addChild, removeChild } from '@flighthq/scene-graph-core';
-import { createDisplayObject, getLocalBoundsRect, getLocalTransform } from '@flighthq/scene-graph-display';
+import { addChild, getLocalTransform, removeChild } from '@flighthq/scene-graph-core';
+import { createDisplayObject, getLocalBoundsRect } from '@flighthq/scene-graph-display';
 import type { DisplayObject } from '@flighthq/types';
 import { SceneNodeRuntimeKey } from '@flighthq/types';
 

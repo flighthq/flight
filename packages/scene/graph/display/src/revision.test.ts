@@ -5,12 +5,10 @@ import { createDisplayObject } from './displayObject';
 import {
   getAppearanceID,
   getLocalBoundsID,
-  getLocalTransformID,
   getWorldTransformID,
   invalidate,
   invalidateAppearance,
   invalidateLocalBounds,
-  invalidateLocalTransform,
   invalidateParentCache,
   invalidateWorldBounds,
 } from './revision';
@@ -37,14 +35,6 @@ describe('getLocalBoundsID', () => {
     const state = getRuntime(displayObject);
     state.localBoundsID = 100;
     expect(getLocalBoundsID(displayObject)).toStrictEqual(state.localBoundsID);
-  });
-});
-
-describe('getLocalTransformID', () => {
-  it('returns localTransformID', () => {
-    const state = getRuntime(displayObject);
-    state.localTransformID = 100;
-    expect(getLocalTransformID(displayObject)).toStrictEqual(state.localTransformID);
   });
 });
 
@@ -95,21 +85,6 @@ describe('invalidateLocalBounds', () => {
     state.localBoundsID = 0xffffffff; // max 32-bit uint
     invalidateLocalBounds(displayObject);
     expect(getRuntime(displayObject).localBoundsID).toBe(0);
-  });
-});
-
-describe('invalidateLocalTransform', () => {
-  it('increments localTransformID', () => {
-    const localTransformID = getRuntime(displayObject).localTransformID;
-    invalidateLocalTransform(displayObject);
-    expect(getRuntime(displayObject).localTransformID).toBe(localTransformID + 1);
-  });
-
-  it('should wrap around localTransformID correctly using >>> 0', () => {
-    const state = getRuntime(displayObject);
-    state.localTransformID = 0xffffffff; // max 32-bit uint
-    invalidateLocalTransform(displayObject);
-    expect(getRuntime(displayObject).localTransformID).toBe(0);
   });
 });
 
