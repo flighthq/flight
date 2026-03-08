@@ -1,3 +1,4 @@
+export * from './QuadBatch';
 export * from './Sprite';
-export * from './SpriteArray';
+export * from './SpriteBase';
 export * from './Tilemap';

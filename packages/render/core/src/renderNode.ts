@@ -6,7 +6,7 @@ import type {
   Renderable,
   RenderNode,
   RenderState,
-  Sprite,
+  SpriteBase,
   SpriteRenderNode,
 } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
@@ -37,7 +37,7 @@ export function createDisplayObjectRenderNode(state: RenderState, source: Displa
   };
 }
 
-export function createSpriteRenderNode(state: RenderState, source: Sprite): SpriteRenderNode {
+export function createSpriteRenderNode(state: RenderState, source: SpriteBase): SpriteRenderNode {
   const renderer = state.rendererMap.get(source.type);
   return {
     alpha: 1,
@@ -89,7 +89,7 @@ export function getDisplayObjectRenderNode(state: RenderState, source: DisplayOb
   return getRenderNode(state, source, createDisplayObjectRenderNode);
 }
 
-export function getSpriteRenderNode(state: RenderState, source: Sprite): SpriteRenderNode {
+export function getSpriteRenderNode(state: RenderState, source: SpriteBase): SpriteRenderNode {
   return getRenderNode(state, source, createSpriteRenderNode);
 }
 

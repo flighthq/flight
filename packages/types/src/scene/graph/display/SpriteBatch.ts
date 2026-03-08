@@ -1,8 +1,8 @@
-import type { Sprite } from '../sprite';
+import type { SpriteBase } from '../sprite/SpriteBase';
 import type { DisplayObject, DisplayObjectData } from './DisplayObject';
 
 export interface SpriteBatchData extends DisplayObjectData {
-  batch: Sprite | null;
+  batch: SpriteBase | null;
   smoothing: boolean;
 }
 
