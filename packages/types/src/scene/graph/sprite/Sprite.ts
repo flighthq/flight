@@ -6,6 +6,7 @@ import type {
   HasBoundsRect,
   HasTransform2D,
   SceneNode,
+  SceneNodeData,
   SceneNodeRuntime,
   SceneNodeRuntimeKey,
   Transform2DRuntime,
@@ -29,6 +30,8 @@ export interface Sprite
 
   [SceneNodeRuntimeKey]: SpriteRuntime | undefined;
 }
+
+export interface SpriteData extends SceneNodeData {}
 
 export const SpriteKind: unique symbol = Symbol('Sprite');
 
