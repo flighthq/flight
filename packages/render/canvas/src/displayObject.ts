@@ -1,7 +1,7 @@
 import { rectangle } from '@flighthq/geometry';
 import { createNullRendererData, getDisplayObjectRenderNode, setRenderer } from '@flighthq/render-core';
 import { calculateBoundsRect } from '@flighthq/scene-graph-display';
-import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, Renderer } from '@flighthq/types';
+import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { drawBitmap } from './bitmap';
@@ -10,12 +10,6 @@ import { popClipRect, pushClipRect } from './clipping';
 import { applyMask, popMask, pushMask } from './masks';
 import { setBlendMode } from './materials';
 import { setTransform } from './transform';
-
-export const DisplayObjectRenderer: Renderer = {
-  createData: createNullRendererData,
-  draw: drawDisplayObject,
-  drawMask: drawDisplayObjectMask,
-};
 
 export function drawDisplayObject(state: CanvasRenderState, displayObject: DisplayObjectRenderNode): void {
   const opaqueBackground = displayObject.source.opaqueBackground;
@@ -84,7 +78,10 @@ export function renderDisplayObject(state: CanvasRenderState, source: DisplayObj
   }
 }
 
-export function setDisplayObjectRenderer(state: CanvasRenderState, renderer: Renderer = DisplayObjectRenderer): void {
+export function setDisplayObjectRenderer(
+  state: CanvasRenderState,
+  renderer: DisplayObjectRenderer = defaultDisplayObjectRenderer,
+): void {
   setRenderer(state, DisplayObjectKind, renderer);
 }
 
@@ -133,5 +130,11 @@ function pushMaskObject(
     pushMask(state, getDisplayObjectRenderNode(state, source.mask));
   }
 }
+
+export const defaultDisplayObjectRenderer: DisplayObjectRenderer = {
+  createData: createNullRendererData,
+  draw: drawDisplayObject,
+  drawMask: drawDisplayObjectMask,
+};
 
 const tempBounds = rectangle.create();
