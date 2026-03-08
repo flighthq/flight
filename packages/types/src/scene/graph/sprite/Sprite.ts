@@ -1,9 +1,18 @@
 import type { Spritesheet } from '../../../assets';
 import type { Rectangle } from '../../../geometry';
 import type { BlendMode, ColorTransform, Shader } from '../../../materials';
-import type { SceneNode, SceneNodeRuntime, Transform2D, Transform2DRuntime } from '../core';
+import type {
+  BoundsRectRuntime,
+  HasBoundsRect,
+  HasTransform2D,
+  SceneNode,
+  SceneNodeRuntime,
+  SceneNodeRuntimeKey,
+  Transform2DRuntime,
+} from '../core';
 
-export interface Sprite extends SceneNode<typeof SpriteKind>, Transform2D {
+export interface Sprite
+  extends SceneNode<typeof SpriteKind>, HasTransform2D<typeof SpriteKind>, HasBoundsRect<typeof SpriteKind> {
   alpha: number;
   alphaEnabled: boolean;
   blendMode: BlendMode | null;
@@ -17,8 +26,12 @@ export interface Sprite extends SceneNode<typeof SpriteKind>, Transform2D {
   shader: Shader | null;
   spritesheet: Spritesheet | null;
   type: symbol;
+
+  [SceneNodeRuntimeKey]: SpriteRuntime | undefined;
 }
 
 export const SpriteKind: unique symbol = Symbol('Sprite');
 
-export interface SpriteRuntime extends SceneNodeRuntime<typeof SpriteKind>, Transform2DRuntime<typeof SpriteKind> {}
+export type SpriteRuntime = SceneNodeRuntime<typeof SpriteKind> &
+  Transform2DRuntime<typeof SpriteKind> &
+  BoundsRectRuntime<typeof SpriteKind>;

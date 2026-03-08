@@ -1,6 +1,6 @@
 import { matrix3x2, vector2 } from '@flighthq/geometry';
 import { addChild, createSceneNode, createTransform2DRuntime, getRuntime } from '@flighthq/scene-graph-core';
-import type { Matrix3x2, SceneNode, Transform2D, Transform2DRuntime } from '@flighthq/types';
+import type { HasTransform2D, Matrix3x2, SceneNode, Transform2DRuntime } from '@flighthq/types';
 
 import { invalidateLocalTransform } from './revision';
 import {
@@ -232,6 +232,6 @@ function cloneAndInvalidateMatrix(matrix: Matrix3x2 | null): Matrix3x2 | null {
   return clone;
 }
 
-interface TestNode extends SceneNode<typeof TestKind>, Transform2D {}
+type TestNode = SceneNode<typeof TestKind> & HasTransform2D<typeof TestKind>;
 
 const TestKind: unique symbol = Symbol('Test');

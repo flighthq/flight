@@ -9,9 +9,17 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./boundsRect": {
+      "types": "./dist/boundsRect.d.ts",
+      "default": "./dist/boundsRect.js"
+    },
     "./hierarchy": {
       "types": "./dist/hierarchy.d.ts",
       "default": "./dist/hierarchy.js"
+    },
+    "./revision": {
+      "types": "./dist/revision.d.ts",
+      "default": "./dist/revision.js"
     },
     "./runtime": {
       "types": "./dist/runtime.d.ts",
@@ -20,6 +28,10 @@
     "./sceneNode": {
       "types": "./dist/sceneNode.d.ts",
       "default": "./dist/sceneNode.js"
+    },
+    "./transform2d": {
+      "types": "./dist/transform2d.d.ts",
+      "default": "./dist/transform2d.js"
     }
   },
   "files": [

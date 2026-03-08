@@ -2,11 +2,13 @@ import { rectangle } from '@flighthq/geometry';
 import { setEmpty } from '@flighthq/geometry/rectangle';
 import {
   addChild,
+  createBoundsAndTransform2DRuntime,
+  createSceneNode,
   ensureLocalTransform,
   getRuntime as _getRuntime,
   invalidateLocalTransform,
 } from '@flighthq/scene-graph-core';
-import type { DisplayObject, DisplayObjectRuntime, Rectangle } from '@flighthq/types';
+import type { BoundsRectRuntime, HasBoundsRect, HasTransform2D, Rectangle, SceneNode } from '@flighthq/types';
 
 import {
   calculateBoundsRect,
@@ -16,22 +18,31 @@ import {
   getBoundsRect,
   getLocalBoundsRect,
   getWorldBoundsRect,
-} from './bounds';
-import { createDisplayObject } from './displayObject';
+} from './boundsRect';
 
-function getRuntime(source: DisplayObject) {
-  return _getRuntime(source) as DisplayObjectRuntime;
+function createTestNode(): TestNode {
+  const node: TestNode = createSceneNode(TestKind, undefined, undefined, createBoundsAndTransform2DRuntime) as TestNode;
+  node.rotation = 0;
+  node.scaleX = 1;
+  node.scaleY = 1;
+  node.x = 0;
+  node.y = 0;
+  return node;
+}
+
+function getRuntime(source: TestNode) {
+  return _getRuntime(source) as BoundsRectRuntime<typeof TestKind>;
 }
 
 describe('calculateBoundsRect', () => {
-  let root: DisplayObject;
-  let child: DisplayObject;
-  let grandChild: DisplayObject;
+  let root: TestNode;
+  let child: TestNode;
+  let grandChild: TestNode;
 
   beforeEach(() => {
-    root = createDisplayObject();
-    child = createDisplayObject();
-    grandChild = createDisplayObject();
+    root = createTestNode();
+    child = createTestNode();
+    grandChild = createTestNode();
 
     child.x = 100;
     child.y = 100;
@@ -115,7 +126,7 @@ describe('calculateBoundsRect', () => {
 
   it('should compute bounds relative to an unrelated target', () => {
     const out = rectangle.create();
-    const unrelatedTarget = createDisplayObject(); // another object in a separate scene graph
+    const unrelatedTarget = createTestNode(); // another object in a separate scene graph
     calculateBoundsRect(out, child, unrelatedTarget);
     expect(out).toEqual(getWorldBoundsRect(child));
   });
@@ -129,7 +140,7 @@ describe('calculateBoundsRect', () => {
 
 describe('ensureBoundsRect', () => {
   it('should ensure boundsRect is defined', () => {
-    const object = createDisplayObject();
+    const object = createTestNode();
     const state = getRuntime(object);
     expect(state.boundsRect).toBeNull();
     ensureBoundsRect(object);
@@ -137,7 +148,7 @@ describe('ensureBoundsRect', () => {
   });
 
   it('should not recalculate if localBoundsID and localTransformID are unchanged', () => {
-    const object = createDisplayObject();
+    const object = createTestNode();
     const state = getRuntime(object);
     ensureBoundsRect(object);
     const cache = cloneAndInvalidateRect(state.boundsRect!);
@@ -146,7 +157,7 @@ describe('ensureBoundsRect', () => {
   });
 
   it('should recalculate if localBoundsID is changed', () => {
-    const object = createDisplayObject();
+    const object = createTestNode();
     const state = getRuntime(object);
     state.computeLocalBounds = (out, _source) => {
       setEmpty(out);
@@ -159,7 +170,7 @@ describe('ensureBoundsRect', () => {
   });
 
   it('should recalculate if localTransformID is changed', () => {
-    const object = createDisplayObject();
+    const object = createTestNode();
     const state = getRuntime(object);
     ensureBoundsRect(object);
     const cache = cloneAndInvalidateRect(state.boundsRect!);
@@ -171,7 +182,7 @@ describe('ensureBoundsRect', () => {
 
 describe('ensureLocalBoundsRect', () => {
   it('should ensure localBoundsRect is defined', () => {
-    const object = createDisplayObject();
+    const object = createTestNode();
     const state = getRuntime(object);
     expect(state.localBoundsRect).toBeNull();
     ensureLocalBoundsRect(object);
@@ -179,7 +190,7 @@ describe('ensureLocalBoundsRect', () => {
   });
 
   it('should not recalculate if localBoundsID is unchanged', () => {
-    const object = createDisplayObject();
+    const object = createTestNode();
     const state = getRuntime(object);
     state.computeLocalBounds = (out, _source) => {
       setEmpty(out);
@@ -191,7 +202,7 @@ describe('ensureLocalBoundsRect', () => {
   });
 
   it('should recalculate if localBoundsID is changed', () => {
-    const object = createDisplayObject();
+    const object = createTestNode();
     const state = getRuntime(object);
     state.computeLocalBounds = (out, _source) => {
       setEmpty(out);
@@ -204,7 +215,7 @@ describe('ensureLocalBoundsRect', () => {
   });
 
   it('should not recalculate if localTransformID is unchanged', () => {
-    const object = createDisplayObject();
+    const object = createTestNode();
     const state = getRuntime(object);
     state.computeLocalBounds = (out, _source) => {
       setEmpty(out);
@@ -219,7 +230,7 @@ describe('ensureLocalBoundsRect', () => {
 
 describe('ensureWorldBoundsRect', () => {
   it('should ensure worldBoundsRect is defined', () => {
-    const object = createDisplayObject();
+    const object = createTestNode();
     const state = getRuntime(object);
     expect(state.worldBoundsRect).toBeNull();
     ensureWorldBoundsRect(object);
@@ -227,7 +238,7 @@ describe('ensureWorldBoundsRect', () => {
   });
 
   it('should not recalculate if localBoundsID and worldTransformID are unchanged', () => {
-    const object = createDisplayObject();
+    const object = createTestNode();
     const state = getRuntime(object);
     ensureWorldBoundsRect(object);
     const cache = cloneAndInvalidateRect(state.worldBoundsRect!);
@@ -236,7 +247,7 @@ describe('ensureWorldBoundsRect', () => {
   });
 
   it('should recalculate if localBoundsID is changed', () => {
-    const object = createDisplayObject();
+    const object = createTestNode();
     const state = getRuntime(object);
     ensureWorldBoundsRect(object);
     const cache = cloneAndInvalidateRect(state.worldBoundsRect!);
@@ -246,7 +257,7 @@ describe('ensureWorldBoundsRect', () => {
   });
 
   it('should recalculate if local transform is changed (translate)', () => {
-    const object = createDisplayObject();
+    const object = createTestNode();
     const state = getRuntime(object);
     ensureWorldBoundsRect(object);
     const cache = rectangle.clone(state.worldBoundsRect!);
@@ -258,7 +269,7 @@ describe('ensureWorldBoundsRect', () => {
   });
 
   it('should recalculate if local transform is changed (scale)', () => {
-    const object = createDisplayObject();
+    const object = createTestNode();
     const state = getRuntime(object);
     ensureWorldBoundsRect(object);
     const cache = rectangle.clone(state.worldBoundsRect!);
@@ -272,8 +283,8 @@ describe('ensureWorldBoundsRect', () => {
   });
 
   it('should recalculate if parent transform is changed (translate)', () => {
-    const parent = createDisplayObject();
-    const child = createDisplayObject();
+    const parent = createTestNode();
+    const child = createTestNode();
     addChild(parent, child);
     const state = getRuntime(child);
     ensureWorldBoundsRect(child);
@@ -286,8 +297,8 @@ describe('ensureWorldBoundsRect', () => {
   });
 
   it('should recalculate if parent transform is changed (scale)', () => {
-    const parent = createDisplayObject();
-    const child = createDisplayObject();
+    const parent = createTestNode();
+    const child = createTestNode();
     addChild(parent, child);
     const state = getRuntime(child);
     ensureWorldBoundsRect(child);
@@ -307,7 +318,7 @@ describe('ensureWorldBoundsRect', () => {
 
 describe('getBoundsRect', () => {
   it('should call ensure and return boundsRect', () => {
-    const object = createDisplayObject();
+    const object = createTestNode();
     const state = getRuntime(object);
     expect(state.boundsRect).toBeNull();
     const rect = getBoundsRect(object);
@@ -318,7 +329,7 @@ describe('getBoundsRect', () => {
 
 describe('getLocalBoundsRect', () => {
   it('should call ensure and return localBoundsRect', () => {
-    const object = createDisplayObject();
+    const object = createTestNode();
     const state = getRuntime(object);
     expect(state.localBoundsRect).toBeNull();
     const rect = getLocalBoundsRect(object);
@@ -329,7 +340,7 @@ describe('getLocalBoundsRect', () => {
 
 describe('getWorldBoundsRect', () => {
   it('should call ensure and return worldBoundsRect', () => {
-    const object = createDisplayObject();
+    const object = createTestNode();
     const state = getRuntime(object);
     expect(state.worldBoundsRect).toBeNull();
     const rect = getWorldBoundsRect(object);
@@ -347,3 +358,7 @@ function cloneAndInvalidateRect(rect: Rectangle): Rectangle {
 function invalidateRect(rect: Rectangle | null): void {
   if (rect !== null) rectangle.setTo(rect, NaN, NaN, NaN, NaN);
 }
+
+type TestNode = SceneNode<typeof TestKind> & HasTransform2D<typeof TestKind> & HasBoundsRect<typeof TestKind>;
+
+const TestKind: unique symbol = Symbol('Test');

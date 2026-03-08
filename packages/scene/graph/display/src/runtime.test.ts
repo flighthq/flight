@@ -1,5 +1,5 @@
 import { getRuntime } from '@flighthq/scene-graph-core';
-import type { DisplayObject, Rectangle } from '@flighthq/types';
+import type { DisplayObject, Rectangle, SceneNode } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { createDisplayObject } from './displayObject';
@@ -12,7 +12,7 @@ describe('createDisplayObjectRuntime', () => {
   });
 
   it('allows a custom bounds calculation', () => {
-    const func = (_out: Rectangle, _source: DisplayObject) => {};
+    const func = (_out: Rectangle, _source: SceneNode<typeof DisplayObjectKind>) => {};
     const state = createDisplayObjectRuntime(DisplayObjectKind, { computeLocalBounds: func });
     expect(state.computeLocalBounds).toStrictEqual(func);
   });

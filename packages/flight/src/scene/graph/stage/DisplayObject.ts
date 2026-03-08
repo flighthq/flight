@@ -1,17 +1,13 @@
 import { matrix3x2, rectangle } from '@flighthq/geometry';
 import { hitTestObject as __hitTestObject, hitTestPoint as __hitTestPoint } from '@flighthq/interaction';
 import {
+  calculateBoundsRect,
+  getBoundsRect,
   globalToLocal as __globalToLocal,
   invalidateLocalTransform,
   localToGlobal as __localToGlobal,
 } from '@flighthq/scene-graph-core';
-import {
-  calculateBoundsRect,
-  createDisplayObject,
-  getBoundsRect,
-  invalidate as __invalidate,
-  invalidateAppearance,
-} from '@flighthq/scene-graph-display';
+import { createDisplayObject, invalidate as __invalidate, invalidateAppearance } from '@flighthq/scene-graph-display';
 import type { DisplayObject as DisplayObjectModel, Filter, Shader } from '@flighthq/types';
 import type { BlendMode } from '@flighthq/types';
 

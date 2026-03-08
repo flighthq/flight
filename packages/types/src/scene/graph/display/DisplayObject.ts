@@ -1,10 +1,15 @@
 import type { Matrix3x2, Rectangle } from '../../../geometry';
 import type { BlendMode, ColorTransform, Filter, Shader } from '../../../materials';
-import type { SceneNode, SceneNodeData, SceneNodeRuntime, Transform2D, Transform2DRuntime } from '../core';
+import type { HasTransform2D, SceneNode, SceneNodeData, SceneNodeRuntime, Transform2DRuntime } from '../core';
 import type { SceneNodeRuntimeKey } from '../core';
+import type { BoundsRectRuntime, HasBoundsRect } from '../core/HasBoundsRect';
 import type { Stage } from './Stage';
 
-export interface DisplayObject extends SceneNode<typeof DisplayObjectKind>, Transform2D {
+export interface DisplayObject
+  extends
+    SceneNode<typeof DisplayObjectKind>,
+    HasTransform2D<typeof DisplayObjectKind>,
+    HasBoundsRect<typeof DisplayObjectKind> {
   alpha: number;
   blendMode: BlendMode;
   cacheAsBitmap: boolean;
@@ -31,17 +36,6 @@ export interface DisplayObjectData extends SceneNodeData {}
 
 export const DisplayObjectKind: unique symbol = Symbol('DisplayObject');
 
-export interface DisplayObjectRuntime
-  extends SceneNodeRuntime<typeof DisplayObjectKind>, Transform2DRuntime<typeof DisplayObjectKind> {
-  boundsRect: Rectangle | null;
-  boundsRectUsingLocalBoundsID: number;
-  boundsRectUsingLocalTransformID: number;
-  computeLocalBounds: (out: Rectangle, source: DisplayObject) => void;
-  localBoundsRect: Rectangle | null;
-  localBoundsRectUsingLocalBoundsID: number;
-  localBoundsID: number;
-  objectType: string;
-  worldBoundsRect: Rectangle | null;
-  worldBoundsRectUsingLocalBoundsID: number;
-  worldBoundsRectUsingWorldTransformID: number;
-}
+export type DisplayObjectRuntime = SceneNodeRuntime<typeof DisplayObjectKind> &
+  Transform2DRuntime<typeof DisplayObjectKind> &
+  BoundsRectRuntime<typeof DisplayObjectKind>;

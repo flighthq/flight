@@ -13,14 +13,6 @@
       "types": "./dist/bitmap.d.ts",
       "default": "./dist/bitmap.js"
     },
-    "./bounds": {
-      "types": "./dist/bounds.d.ts",
-      "default": "./dist/bounds.js"
-    },
-    "./children": {
-      "types": "./dist/children.d.ts",
-      "default": "./dist/children.js"
-    },
     "./displayObject": {
       "types": "./dist/displayObject.d.ts",
       "default": "./dist/displayObject.js"

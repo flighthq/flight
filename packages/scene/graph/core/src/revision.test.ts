@@ -1,5 +1,5 @@
 import { createSceneNode, createTransform2DRuntime, getRuntime as _getRuntime } from '@flighthq/scene-graph-core';
-import type { SceneNode, Transform2D, Transform2DRuntime } from '@flighthq/types';
+import type { HasTransform2D, SceneNode, Transform2DRuntime } from '@flighthq/types';
 
 import {
   getLocalTransformID,
@@ -67,6 +67,6 @@ describe('invalidateWorldTransformParent', () => {
   });
 });
 
-interface TestNode extends SceneNode<typeof TestKind>, Transform2D {}
+type TestNode = SceneNode<typeof TestKind> & HasTransform2D<typeof TestKind>;
 
 const TestKind: unique symbol = Symbol('Test');

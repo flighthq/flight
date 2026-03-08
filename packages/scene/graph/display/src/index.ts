@@ -1,5 +1,4 @@
 export * from './bitmap.js';
-export * from './bounds.js';
 export * from './displayObject.js';
 export * from './domObject.js';
 export * from './inputText.js';
