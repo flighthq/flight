@@ -1,12 +1,4 @@
-import type {
-  Bitmap,
-  BitmapData,
-  DisplayObject,
-  DisplayObjectRuntime,
-  PartialWithData,
-  Rectangle,
-  SceneNode,
-} from '@flighthq/types';
+import type { Bitmap, BitmapData, DisplayObjectRuntime, PartialWithData, Rectangle, SceneNode } from '@flighthq/types';
 import { DisplayObjectKind, DisplayObjectType } from '@flighthq/types';
 
 import { createPrimitive } from './primitive';
