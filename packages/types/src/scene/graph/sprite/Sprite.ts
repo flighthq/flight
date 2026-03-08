@@ -16,6 +16,7 @@ export interface Sprite extends SceneNode<typeof SpriteKind>, Transform2D {
   rect: Rectangle | null;
   shader: Shader | null;
   spritesheet: Spritesheet | null;
+  type: symbol;
 }
 
 export const SpriteKind: unique symbol = Symbol('Sprite');

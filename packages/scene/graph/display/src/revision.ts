@@ -1,5 +1,5 @@
 import { getRuntime } from '@flighthq/scene-graph-core';
-import type { DisplayObject, DisplayObjectRuntime } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectRuntime, SceneNode } from '@flighthq/types';
 
 export function getAppearanceID(target: DisplayObject): number {
   return getRuntime(target).appearanceID;
@@ -9,7 +9,7 @@ export function getLocalBoundsID(target: DisplayObject): number {
   return (getRuntime(target) as DisplayObjectRuntime).localBoundsID;
 }
 
-export function getLocalTransformID(target: DisplayObject): number {
+export function getLocalTransformID<K extends symbol>(target: SceneNode<K>): number {
   return getRuntime(target).localTransformID;
 }
 

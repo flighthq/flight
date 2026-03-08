@@ -1,7 +1,7 @@
 import { rectangle } from '@flighthq/geometry';
-import { createNullRendererData, getRenderNode, setRenderer } from '@flighthq/render-core';
+import { createNullRendererData, getDisplayObjectRenderNode, setRenderer } from '@flighthq/render-core';
 import { calculateBoundsRect } from '@flighthq/scene-graph-display';
-import type { CanvasRenderState, DisplayObject, Renderer, RenderNode } from '@flighthq/types';
+import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, Renderer } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { drawBitmap } from './bitmap';
@@ -17,7 +17,7 @@ export const DisplayObjectRenderer: Renderer = {
   drawMask: drawDisplayObjectMask,
 };
 
-export function drawDisplayObject(state: CanvasRenderState, displayObject: RenderNode): void {
+export function drawDisplayObject(state: CanvasRenderState, displayObject: DisplayObjectRenderNode): void {
   const opaqueBackground = displayObject.source.opaqueBackground;
   if (opaqueBackground === null) return;
 
@@ -37,7 +37,7 @@ export function drawDisplayObject(state: CanvasRenderState, displayObject: Rende
   context.fillRect(0, 0, tempBounds.width, tempBounds.height);
 }
 
-export function drawDisplayObjectMask(state: CanvasRenderState, data: RenderNode): void {
+export function drawDisplayObjectMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
   const source = data.source;
   if (source.opaqueBackground !== null) {
     calculateBoundsRect(tempBounds, source, source);
@@ -46,7 +46,7 @@ export function drawDisplayObjectMask(state: CanvasRenderState, data: RenderNode
     const children = source.children;
     if (children !== null) {
       for (let i = 0; i < children.length; i++) {
-        const data = getRenderNode(state, children[i]);
+        const data = getDisplayObjectRenderNode(state, children[i]);
         applyMask(state, data);
       }
     }
@@ -62,8 +62,8 @@ export function renderDisplayObject(state: CanvasRenderState, source: DisplayObj
   tempStack[stackLength++] = source;
 
   while (stackLength > 0) {
-    const current = tempStack[--stackLength];
-    const data = getRenderNode(state, current);
+    const current = tempStack[--stackLength] as DisplayObject;
+    const data = getDisplayObjectRenderNode(state, current);
 
     const isMask = data.isMaskFrameID === currentFrameID;
     if (isMask) continue; // skip drawing masks (they're used for clipping elsewhere)
@@ -88,7 +88,7 @@ export function setDisplayObjectRenderer(state: CanvasRenderState, renderer: Ren
   setRenderer(state, DisplayObjectKind, renderer);
 }
 
-function drawObject(state: CanvasRenderState, data: RenderNode): void {
+function drawObject(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
   if (data.renderer === null) return;
   pushMaskObject(state, data);
   if (state.allowCacheAsBitmap) {
@@ -102,7 +102,11 @@ function drawObject(state: CanvasRenderState, data: RenderNode): void {
   popMaskObject(state, data);
 }
 
-function popMaskObject(state: CanvasRenderState, data: RenderNode, handleScrollRect: boolean = true): void {
+function popMaskObject(
+  state: CanvasRenderState,
+  data: DisplayObjectRenderNode,
+  handleScrollRect: boolean = true,
+): void {
   const source = data.source;
 
   if (source.mask !== null) {
@@ -114,7 +118,11 @@ function popMaskObject(state: CanvasRenderState, data: RenderNode, handleScrollR
   }
 }
 
-function pushMaskObject(state: CanvasRenderState, data: RenderNode, handleScrollRect: boolean = true): void {
+function pushMaskObject(
+  state: CanvasRenderState,
+  data: DisplayObjectRenderNode,
+  handleScrollRect: boolean = true,
+): void {
   const source = data.source;
 
   if (handleScrollRect && source.scrollRect != null) {
@@ -122,7 +130,7 @@ function pushMaskObject(state: CanvasRenderState, data: RenderNode, handleScroll
   }
 
   if (source.mask !== null) {
-    pushMask(state, getRenderNode(state, source.mask));
+    pushMask(state, getDisplayObjectRenderNode(state, source.mask));
   }
 }
 

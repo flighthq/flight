@@ -1,8 +1,8 @@
-import type { DisplayObject, RenderNode, RenderState } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
 import { updateAppearance } from './appearance';
 import type { RenderStateInternal } from './internal';
-import { getRenderNode } from './renderNode';
+import { getDisplayObjectRenderNode } from './renderNode';
 import { updateRenderTransform } from './transform';
 
 /**
@@ -15,25 +15,25 @@ export function updateDisplayObjectTree(state: RenderState, source: DisplayObjec
   let stackLength = 1;
   tempStack[0] = source;
 
-  let parentData: RenderNode | undefined = undefined;
+  let parentData: DisplayObjectRenderNode | undefined = undefined;
   let lastParent: DisplayObject | null = null;
   let scrollRectDepth: number = 0;
   let maskDepth: number = 0;
   let treeDirty = false;
 
   while (stackLength > 0) {
-    const current = tempStack[--stackLength];
-    const data = getRenderNode(state, current);
+    const current = tempStack[--stackLength] as DisplayObject;
+    const data = getDisplayObjectRenderNode(state, current);
 
     if (current !== source) {
-      const parent = current.parent;
+      const parent = current.parent as DisplayObject;
       if (parent === null) {
         parentData = undefined;
         lastParent = null;
         scrollRectDepth = 0;
         maskDepth = 0;
       } else if (parent !== lastParent) {
-        parentData = getRenderNode(state, parent);
+        parentData = getDisplayObjectRenderNode(state, parent);
         lastParent = parent;
         scrollRectDepth = parentData.scrollRectDepth;
         maskDepth = parentData.maskDepth;
@@ -55,7 +55,7 @@ export function updateDisplayObjectTree(state: RenderState, source: DisplayObjec
 
     const mask = current.mask;
     if (mask !== null) {
-      const maskData = getRenderNode(state, mask);
+      const maskData = getDisplayObjectRenderNode(state, mask);
       maskData.isMaskFrameID = currentFrameID;
       maskData.scrollRectDepth = 0;
       maskData.maskDepth = 0;

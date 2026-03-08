@@ -1,18 +1,18 @@
 import { rectangle } from '@flighthq/geometry';
 import { addChild } from '@flighthq/scene-graph-core';
 import { createDisplayObject } from '@flighthq/scene-graph-display';
-import type { DisplayObject, RenderNode, RenderState } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';
-import { getRenderNode } from './renderNode';
+import { getDisplayObjectRenderNode } from './renderNode';
 import { createRenderState } from './renderState';
 import { updateDisplayObjectTree } from './update';
 
 describe('updateDisplayObjectTree', () => {
   let parent: DisplayObject;
-  let parentData: RenderNode;
+  let parentData: DisplayObjectRenderNode;
   let child: DisplayObject;
-  let childData: RenderNode;
+  let childData: DisplayObjectRenderNode;
   let state: RenderState;
 
   beforeEach(() => {
@@ -20,8 +20,8 @@ describe('updateDisplayObjectTree', () => {
     child = createDisplayObject();
     addChild(parent, child);
     state = createRenderState();
-    parentData = getRenderNode(state, parent);
-    childData = getRenderNode(state, child);
+    parentData = getDisplayObjectRenderNode(state, parent);
+    childData = getDisplayObjectRenderNode(state, child);
   });
 
   it('updates appearance for all children', () => {
@@ -78,11 +78,11 @@ describe('updateDisplayObjectTree', () => {
   let childA_child: DisplayObject;
   let childB: DisplayObject;
   let childB_child: DisplayObject;
-  let parent2Data: RenderNode;
-  let childAData: RenderNode;
-  let childA_childData: RenderNode;
-  let childBData: RenderNode;
-  let childB_childData: RenderNode;
+  let parent2Data: DisplayObjectRenderNode;
+  let childAData: DisplayObjectRenderNode;
+  let childA_childData: DisplayObjectRenderNode;
+  let childBData: DisplayObjectRenderNode;
+  let childB_childData: DisplayObjectRenderNode;
 
   beforeEach(() => {
     parent2 = createDisplayObject();
@@ -94,11 +94,11 @@ describe('updateDisplayObjectTree', () => {
     addChild(parent2, childB);
     addChild(childA, childA_child);
     addChild(childB, childB_child);
-    parent2Data = getRenderNode(state, parent2);
-    childAData = getRenderNode(state, childA);
-    childBData = getRenderNode(state, childB);
-    childA_childData = getRenderNode(state, childA_child);
-    childB_childData = getRenderNode(state, childB_child);
+    parent2Data = getDisplayObjectRenderNode(state, parent2);
+    childAData = getDisplayObjectRenderNode(state, childA);
+    childBData = getDisplayObjectRenderNode(state, childB);
+    childA_childData = getDisplayObjectRenderNode(state, childA_child);
+    childB_childData = getDisplayObjectRenderNode(state, childB_child);
   });
 
   it('resets up the tree properly when siblings are not in a scroll rect', () => {
@@ -125,7 +125,7 @@ describe('updateDisplayObjectTree', () => {
     const mask = createDisplayObject();
     childA.mask = mask;
     updateDisplayObjectTree(state, parent2);
-    expect(getRenderNode(state, mask).isMaskFrameID).toStrictEqual(state.currentFrameID);
+    expect(getDisplayObjectRenderNode(state, mask).isMaskFrameID).toStrictEqual(state.currentFrameID);
   });
 
   it('updates appearance and transform for all objects, including mask children', () => {
@@ -135,7 +135,7 @@ describe('updateDisplayObjectTree', () => {
     updateDisplayObjectTree(state, parent2);
     const currentFrameID = state.currentFrameID;
     [parent2, childA, childB, childA_child, childB_child, mask, maskChild].every((obj) => {
-      const data = getRenderNode(state, obj);
+      const data = getDisplayObjectRenderNode(state, obj);
       expect(data.appearanceFrameID).toStrictEqual(currentFrameID);
       expect(data.transformFrameID).toStrictEqual(currentFrameID);
     });

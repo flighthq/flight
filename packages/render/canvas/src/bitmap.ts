@@ -1,5 +1,5 @@
 import { createNullRendererData, setRenderer } from '@flighthq/render-core';
-import type { Bitmap, CanvasRenderState, Renderer, RenderNode } from '@flighthq/types';
+import type { Bitmap, CanvasRenderState, DisplayObjectRenderNode, Renderer } from '@flighthq/types';
 import { DisplayObjectType } from '@flighthq/types';
 
 import { drawDisplayObject, drawDisplayObjectMask } from './displayObject';
@@ -12,7 +12,7 @@ export const BitmapRenderer: Renderer = {
   drawMask: drawBitmapMask,
 };
 
-export function drawBitmap(state: CanvasRenderState, bitmap: RenderNode): void {
+export function drawBitmap(state: CanvasRenderState, bitmap: DisplayObjectRenderNode): void {
   drawDisplayObject(state, bitmap);
   const source = bitmap.source as Bitmap;
   if (source.data.image !== null) {
@@ -53,7 +53,7 @@ export function drawBitmap(state: CanvasRenderState, bitmap: RenderNode): void {
   }
 }
 
-export function drawBitmapMask(state: CanvasRenderState, data: RenderNode): void {
+export function drawBitmapMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
   drawDisplayObjectMask(state, data);
 }
 
