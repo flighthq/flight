@@ -1,12 +1,13 @@
 import type { Matrix3x2 } from '../../../geometry';
-import type { SceneNodeRuntime } from './SceneNodeRuntime';
+import type { SceneNodeRuntime, SceneNodeRuntimeKey } from './SceneNodeRuntime';
 
-export interface Transform2D {
+export interface HasTransform2D<K extends symbol> {
   rotation: number;
   scaleX: number;
   scaleY: number;
   x: number;
   y: number;
+  [SceneNodeRuntimeKey]: Transform2DRuntime<K> | undefined;
 }
 
 export interface Transform2DRuntime<K extends symbol> extends SceneNodeRuntime<K> {

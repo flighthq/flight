@@ -1,6 +1,6 @@
 import { rectangle } from '@flighthq/geometry';
-import { invalidateLocalTransform } from '@flighthq/scene-graph-core';
-import { createDisplayObject, getLocalBoundsRect } from '@flighthq/scene-graph-display';
+import { getLocalBoundsRect, invalidateLocalTransform } from '@flighthq/scene-graph-core';
+import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { DisplayObject } from '@flighthq/types';
 
 import { hitTestObject, hitTestPoint } from './hitTest';

@@ -1,6 +1,6 @@
 import { rectangle } from '@flighthq/geometry';
-import { getLocalTransform, getLocalTransformID } from '@flighthq/scene-graph-core';
-import { getAppearanceID, getBoundsRect, getLocalBoundsID, getLocalBoundsRect } from '@flighthq/scene-graph-display';
+import { getBoundsRect, getLocalBoundsRect, getLocalTransform, getLocalTransformID } from '@flighthq/scene-graph-core';
+import { getAppearanceID, getLocalBoundsID } from '@flighthq/scene-graph-display';
 
 import Matrix from '../../../geometry/Matrix.js';
 import Rectangle from '../../../geometry/Rectangle.js';

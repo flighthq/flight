@@ -1,16 +1,16 @@
 import { matrix3x2, matrix3x2Pool, rectangle } from '@flighthq/geometry';
 import { ensureWorldTransform, getLocalTransform, getRuntime, getWorldTransform } from '@flighthq/scene-graph-core';
-import type { DisplayObjectRuntime } from '@flighthq/types';
-import type { DisplayObject, Rectangle } from '@flighthq/types';
+import type { BoundsRectRuntime, HasBoundsRect, HasTransform2D, SceneNode, Transform2DRuntime } from '@flighthq/types';
+import type { Rectangle } from '@flighthq/types';
 
 /**
- * Writes a rectangle which defines the area of the display object
+ * Writes a rectangle which defines the area of the scene node
  * relative to the coordinate system of the `targetCoordinateSpace` object.
  **/
-export function calculateBoundsRect(
+export function calculateBoundsRect<K extends symbol>(
   out: Rectangle,
-  source: DisplayObject,
-  targetCoordinateSpace: DisplayObject | null | undefined,
+  source: SceneNode<K> & HasBoundsRect<K> & HasTransform2D<K>,
+  targetCoordinateSpace: (SceneNode<K> & HasBoundsRect<K> & HasTransform2D<K>) | null | undefined,
 ): void {
   if (!targetCoordinateSpace) targetCoordinateSpace = source;
   let bounds;
@@ -39,8 +39,8 @@ export function calculateBoundsRect(
   }
 }
 
-export function ensureBoundsRect(target: DisplayObject): void {
-  const state = getRuntime(target) as DisplayObjectRuntime;
+export function ensureBoundsRect<K extends symbol>(target: SceneNode<K> & HasBoundsRect<K> & HasTransform2D<K>): void {
+  const state = getRuntime(target) as BoundsRectRuntime<K>;
   if (
     state.boundsRectUsingLocalBoundsID !== state.localBoundsID ||
     state.boundsRectUsingLocalTransformID !== state.localTransformID
@@ -49,15 +49,17 @@ export function ensureBoundsRect(target: DisplayObject): void {
   }
 }
 
-export function ensureLocalBoundsRect(target: DisplayObject): void {
-  const state = getRuntime(target) as DisplayObjectRuntime;
+export function ensureLocalBoundsRect<K extends symbol>(target: SceneNode<K> & HasBoundsRect<K>): void {
+  const state = getRuntime(target) as BoundsRectRuntime<K>;
   if (state.localBoundsRectUsingLocalBoundsID !== state.localBoundsID) {
     recomputeLocalBoundsRect(target, state);
   }
 }
 
-export function ensureWorldBoundsRect(target: DisplayObject): void {
-  const state = getRuntime(target) as DisplayObjectRuntime;
+export function ensureWorldBoundsRect<K extends symbol>(
+  target: SceneNode<K> & HasBoundsRect<K> & HasTransform2D<K>,
+): void {
+  const state = getRuntime(target) as BoundsRectRuntime<K> & Transform2DRuntime<K>;
   const localBoundsInvalid = state.worldBoundsRectUsingLocalBoundsID !== state.localBoundsID;
   const hasChildren = target.children !== null;
   let forceRecompute = false;
@@ -74,46 +76,59 @@ export function ensureWorldBoundsRect(target: DisplayObject): void {
 /**
  * localBoundsRect * localTransform
  */
-export function getBoundsRect(target: DisplayObject): Readonly<Rectangle> {
+export function getBoundsRect<K extends symbol>(
+  target: SceneNode<K> & HasBoundsRect<K> & HasTransform2D<K>,
+): Readonly<Rectangle> {
   ensureBoundsRect(target);
-  return (getRuntime(target) as DisplayObjectRuntime).boundsRect!;
+  return (getRuntime(target) as BoundsRectRuntime<K>).boundsRect!;
 }
 
 /**
  * Object's own bounds (not including children)
  */
-export function getLocalBoundsRect(target: DisplayObject): Readonly<Rectangle> {
+export function getLocalBoundsRect<K extends symbol>(target: SceneNode<K> & HasBoundsRect<K>): Readonly<Rectangle> {
   ensureLocalBoundsRect(target);
-  return (getRuntime(target) as DisplayObjectRuntime).localBoundsRect!;
+  return (getRuntime(target) as BoundsRectRuntime<K>).localBoundsRect!;
 }
 
 /**
  * Object's bounds in world space (including children)
  */
-export function getWorldBoundsRect(target: DisplayObject): Readonly<Rectangle> {
+export function getWorldBoundsRect<K extends symbol>(
+  target: SceneNode<K> & HasBoundsRect<K> & HasTransform2D<K>,
+): Readonly<Rectangle> {
   ensureWorldBoundsRect(target);
-  return (getRuntime(target) as DisplayObjectRuntime).worldBoundsRect!;
+  return (getRuntime(target) as BoundsRectRuntime<K>).worldBoundsRect!;
 }
 
-function recomputeBoundsRect(target: DisplayObject, state: DisplayObjectRuntime): void {
+function recomputeBoundsRect<K extends symbol>(
+  target: SceneNode<K> & HasBoundsRect<K> & HasTransform2D<K>,
+  state: BoundsRectRuntime<K>,
+): void {
   if (state.boundsRect === null) state.boundsRect = rectangle.create();
   matrix3x2.transformRect(state.boundsRect, getLocalTransform(target), getLocalBoundsRect(target));
   state.boundsRectUsingLocalBoundsID = state.localBoundsID;
   state.boundsRectUsingLocalTransformID = state.localTransformID;
 }
 
-function recomputeLocalBoundsRect(target: DisplayObject, state: DisplayObjectRuntime): void {
+function recomputeLocalBoundsRect<K extends symbol>(
+  target: SceneNode<K> & HasBoundsRect<K>,
+  state: BoundsRectRuntime<K>,
+): void {
   if (state.localBoundsRect === null) state.localBoundsRect = rectangle.create();
   state.computeLocalBounds(state.localBoundsRect, target);
   state.localBoundsRectUsingLocalBoundsID = state.localBoundsID;
 }
 
-function recomputeWorldBoundsRect(target: DisplayObject, state: DisplayObjectRuntime) {
+function recomputeWorldBoundsRect<K extends symbol>(
+  target: SceneNode<K> & HasBoundsRect<K> & HasTransform2D<K>,
+  state: BoundsRectRuntime<K> & Transform2DRuntime<K>,
+) {
   if (state.worldBoundsRect === null) state.worldBoundsRect = rectangle.create();
   matrix3x2.transformRect(state.worldBoundsRect, getWorldTransform(target), getLocalBoundsRect(target));
   if (target.children !== null) {
     for (const child of target.children) {
-      const childWorldBounds = getWorldBoundsRect(child);
+      const childWorldBounds = getWorldBoundsRect(child as SceneNode<K> & HasBoundsRect<K> & HasTransform2D<K>);
       if (childWorldBounds.width !== 0 && childWorldBounds.height !== 0) {
         rectangle.union(state.worldBoundsRect, state.worldBoundsRect, childWorldBounds);
       }
@@ -123,7 +138,10 @@ function recomputeWorldBoundsRect(target: DisplayObject, state: DisplayObjectRun
   state.worldBoundsRectUsingLocalBoundsID = state.localBoundsID;
 }
 
-function tryFastRecomputeWorldBoundsRect(target: DisplayObject, state: DisplayObjectRuntime): boolean {
+function tryFastRecomputeWorldBoundsRect<K extends symbol>(
+  target: SceneNode<K> & HasBoundsRect<K> & HasTransform2D<K>,
+  state: BoundsRectRuntime<K> & Transform2DRuntime<K>,
+): boolean {
   if (state.worldBoundsRect !== null && state.worldTransform !== null) {
     const { a: _a, b: _b, c: _c, d: _d, tx: _tx, ty: _ty } = state.worldTransform;
     ensureWorldTransform(target);

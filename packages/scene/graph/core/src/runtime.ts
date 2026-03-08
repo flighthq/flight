@@ -1,4 +1,4 @@
-import type { SceneNode, SceneNodeRuntime, Transform2DRuntime } from '@flighthq/types';
+import type { BoundsRectRuntime, Rectangle, SceneNode, SceneNodeRuntime, Transform2DRuntime } from '@flighthq/types';
 import { SceneNodeRuntimeKey } from '@flighthq/types';
 
 export function createSceneNodeRuntime<K extends symbol>(
@@ -34,8 +34,22 @@ export function createTransform2DRuntime<K extends symbol>(
   return out;
 }
 
-export function getRuntime<K extends symbol>(source: SceneNode<K>): SceneNodeRuntime<K> {
-  return source[SceneNodeRuntimeKey]!;
+export function createBoundsAndTransform2DRuntime<K extends symbol>(
+  nodeKind: K,
+  methods?: Partial<BoundsRectRuntime<K> & Transform2DRuntime<K>>,
+): BoundsRectRuntime<K> & Transform2DRuntime<K> {
+  const out = createTransform2DRuntime(nodeKind, methods) as BoundsRectRuntime<K> & Transform2DRuntime<K>;
+  out.boundsRectUsingLocalBoundsID = -1;
+  out.boundsRectUsingLocalTransformID = -1;
+  out.boundsRect = null;
+  out.computeLocalBounds = methods?.computeLocalBounds ?? defaultComputeLocalBounds;
+  out.localBoundsRect = null;
+  out.localBoundsRectUsingLocalBoundsID = -1;
+  out.localBoundsID = 0;
+  out.worldBoundsRect = null;
+  out.worldBoundsRectUsingLocalBoundsID = -1;
+  out.worldBoundsRectUsingWorldTransformID = -1;
+  return out;
 }
 
 export function defaultSceneNodeRuntimeCallback<K extends symbol>(_target: SceneNode<K>): void {}
@@ -45,3 +59,9 @@ export function defaultSceneNodeRuntimeCanAddChild<K extends symbol>(
 ): boolean {
   return true;
 }
+
+export function getRuntime<K extends symbol>(source: SceneNode<K>): SceneNodeRuntime<K> {
+  return source[SceneNodeRuntimeKey]!;
+}
+
+function defaultComputeLocalBounds<K extends symbol>(_out: Rectangle, _source: SceneNode<K>): void {}

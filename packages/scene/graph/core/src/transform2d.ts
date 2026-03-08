@@ -1,15 +1,15 @@
 import { matrix3x2 } from '@flighthq/geometry';
 import { getRuntime } from '@flighthq/scene-graph-core';
-import type { Matrix3x2, SceneNode, Transform2D, Transform2DRuntime, Vector2 } from '@flighthq/types';
+import type { HasTransform2D, Matrix3x2, SceneNode, Transform2DRuntime, Vector2 } from '@flighthq/types';
 
-export function ensureLocalTransform<K extends symbol>(target: SceneNode<K> & Transform2D): void {
+export function ensureLocalTransform<K extends symbol>(target: SceneNode<K> & HasTransform2D<K>): void {
   const state = getRuntime(target) as Transform2DRuntime<K>;
   if (state.localTransformUsingLocalTransformID !== state.localTransformID) {
     recomputeLocalTransform(target, state);
   }
 }
 
-export function ensureWorldTransform<K extends symbol>(target: SceneNode<K> & Transform2D): void {
+export function ensureWorldTransform<K extends symbol>(target: SceneNode<K> & HasTransform2D<K>): void {
   const state = getRuntime(target) as Transform2DRuntime<K>;
   const parent = target.parent;
 
@@ -17,7 +17,7 @@ export function ensureWorldTransform<K extends symbol>(target: SceneNode<K> & Tr
   let parentWorldTransformID = 0;
 
   if (parent !== null) {
-    ensureWorldTransform(parent as SceneNode<K> & Transform2D);
+    ensureWorldTransform(parent as SceneNode<K> & HasTransform2D<K>);
     parentState = getRuntime(parent) as Transform2DRuntime<K>;
     parentWorldTransformID = parentState.worldTransformID;
   }
@@ -30,12 +30,12 @@ export function ensureWorldTransform<K extends symbol>(target: SceneNode<K> & Tr
   }
 }
 
-export function getLocalTransform<K extends symbol>(target: SceneNode<K> & Transform2D): Readonly<Matrix3x2> {
+export function getLocalTransform<K extends symbol>(target: SceneNode<K> & HasTransform2D<K>): Readonly<Matrix3x2> {
   ensureLocalTransform(target);
   return (getRuntime(target) as Transform2DRuntime<K>).localTransform!;
 }
 
-export function getWorldTransform<K extends symbol>(target: SceneNode<K> & Transform2D): Readonly<Matrix3x2> {
+export function getWorldTransform<K extends symbol>(target: SceneNode<K> & HasTransform2D<K>): Readonly<Matrix3x2> {
   ensureWorldTransform(target);
   return (getRuntime(target) as Transform2DRuntime<K>).worldTransform!;
 }
@@ -46,7 +46,7 @@ export function getWorldTransform<K extends symbol>(target: SceneNode<K> & Trans
  **/
 export function globalToLocal<K extends symbol>(
   out: Vector2,
-  source: SceneNode<K> & Transform2D,
+  source: SceneNode<K> & HasTransform2D<K>,
   pos: Readonly<Vector2>,
 ): void {
   matrix3x2.inverseTransformPointXY(out, getWorldTransform(source), pos.x, pos.y);
@@ -58,14 +58,14 @@ export function globalToLocal<K extends symbol>(
  **/
 export function localToGlobal<K extends symbol>(
   out: Vector2,
-  source: SceneNode<K> & Transform2D,
+  source: SceneNode<K> & HasTransform2D<K>,
   point: Readonly<Vector2>,
 ): void {
   matrix3x2.transformPointXY(out, getWorldTransform(source), point.x, point.y);
 }
 
 function recomputeLocalTransform<K extends symbol>(
-  target: SceneNode<K> & Transform2D,
+  target: SceneNode<K> & HasTransform2D<K>,
   state: Transform2DRuntime<K>,
 ): void {
   if (target.rotation !== state.rotationAngle) {
@@ -116,7 +116,7 @@ function recomputeLocalTransform<K extends symbol>(
 }
 
 function recomputeWorldTransform<K extends symbol>(
-  target: SceneNode<K> & Transform2D,
+  target: SceneNode<K> & HasTransform2D<K>,
   state: Transform2DRuntime<K>,
   parentState?: Transform2DRuntime<K>,
 ): void {
