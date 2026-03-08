@@ -1,5 +1,5 @@
-import { addChild } from '@flighthq/scene-graph-core';
-import { createDisplayObject, invalidateLocalTransform } from '@flighthq/scene-graph-display';
+import { addChild, invalidateLocalTransform } from '@flighthq/scene-graph-core';
+import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
 import { getDisplayObjectRenderNode } from './renderNode';

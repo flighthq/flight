@@ -30,13 +30,7 @@ export function createBaseConfig(mode: string) {
         '@flighthq/materials': path.resolve(__dirname, 'packages/materials/src/index.ts'),
         '@flighthq/render-canvas': path.resolve(__dirname, 'packages/render/canvas/src/index.ts'),
         '@flighthq/render-core': path.resolve(__dirname, 'packages/render/core/src/index.ts'),
-        '@flighthq/scene-graph-core/hierarchy': path.resolve(__dirname, 'packages/scene/graph/core/src/hierarchy.ts'),
         '@flighthq/scene-graph-core': path.resolve(__dirname, 'packages/scene/graph/core/src/index.ts'),
-        '@flighthq/scene-graph-display/bounds': path.resolve(__dirname, 'packages/scene/graph/display/src/bounds.ts'),
-        '@flighthq/scene-graph-display/transform': path.resolve(
-          __dirname,
-          'packages/scene/graph/display/src/transform.ts',
-        ),
         '@flighthq/scene-graph-display': path.resolve(__dirname, 'packages/scene/graph/display/src/index.ts'),
         '@flighthq/scene-graph-world': path.resolve(__dirname, 'packages/scene/graph/world/src/index.ts'),
         // '@flighthq/types': path.resolve(__dirname, 'packages/types/src/index.ts'),

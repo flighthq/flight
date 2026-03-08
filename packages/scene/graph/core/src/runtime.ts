@@ -1,4 +1,4 @@
-import type { SceneNode, SceneNodeRuntime } from '@flighthq/types';
+import type { SceneNode, SceneNodeRuntime, Transform2DRuntime } from '@flighthq/types';
 import { SceneNodeRuntimeKey } from '@flighthq/types';
 
 export function createSceneNodeRuntime<K extends symbol>(
@@ -15,6 +15,23 @@ export function createSceneNodeRuntime<K extends symbol>(
     onChildrenOrderChanged: methods?.onChildrenOrderChanged ?? defaultSceneNodeRuntimeCallback,
     onParentChanged: methods?.onParentChanged ?? defaultSceneNodeRuntimeCallback,
   };
+}
+
+export function createTransform2DRuntime<K extends symbol>(
+  nodeKind: K,
+  methods?: Partial<Transform2DRuntime<K>>,
+): Transform2DRuntime<K> {
+  const out = createSceneNodeRuntime(nodeKind, methods) as Transform2DRuntime<K>;
+  out.localTransform = null;
+  out.localTransformUsingLocalTransformID = -1;
+  out.rotationAngle = 0;
+  out.rotationCosine = 1;
+  out.rotationSine = 0;
+  out.worldTransform = null;
+  out.worldTransformID = 0;
+  out.worldTransformUsingLocalTransformID = -1;
+  out.worldTransformUsingParentTransformID = -1;
+  return out;
 }
 
 export function getRuntime<K extends symbol>(source: SceneNode<K>): SceneNodeRuntime<K> {

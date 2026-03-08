@@ -1,24 +1,24 @@
 import { matrix3x2 } from '@flighthq/geometry';
 import { getRuntime } from '@flighthq/scene-graph-core';
-import type { DisplayObject, DisplayObjectRuntime, Matrix3x2, Vector2 } from '@flighthq/types';
+import type { Matrix3x2, SceneNode, Transform2D, Transform2DRuntime, Vector2 } from '@flighthq/types';
 
-export function ensureLocalTransform(target: DisplayObject): void {
-  const state = getRuntime(target) as DisplayObjectRuntime;
+export function ensureLocalTransform<K extends symbol>(target: SceneNode<K> & Transform2D): void {
+  const state = getRuntime(target) as Transform2DRuntime<K>;
   if (state.localTransformUsingLocalTransformID !== state.localTransformID) {
     recomputeLocalTransform(target, state);
   }
 }
 
-export function ensureWorldTransform(target: DisplayObject): void {
-  const state = getRuntime(target) as DisplayObjectRuntime;
+export function ensureWorldTransform<K extends symbol>(target: SceneNode<K> & Transform2D): void {
+  const state = getRuntime(target) as Transform2DRuntime<K>;
   const parent = target.parent;
 
-  let parentState: DisplayObjectRuntime | undefined;
+  let parentState: Transform2DRuntime<K> | undefined;
   let parentWorldTransformID = 0;
 
   if (parent !== null) {
-    ensureWorldTransform(parent);
-    parentState = getRuntime(parent) as DisplayObjectRuntime;
+    ensureWorldTransform(parent as SceneNode<K> & Transform2D);
+    parentState = getRuntime(parent) as Transform2DRuntime<K>;
     parentWorldTransformID = parentState.worldTransformID;
   }
 
@@ -30,21 +30,25 @@ export function ensureWorldTransform(target: DisplayObject): void {
   }
 }
 
-export function getLocalTransform(target: DisplayObject): Readonly<Matrix3x2> {
+export function getLocalTransform<K extends symbol>(target: SceneNode<K> & Transform2D): Readonly<Matrix3x2> {
   ensureLocalTransform(target);
-  return (getRuntime(target) as DisplayObjectRuntime).localTransform!;
+  return (getRuntime(target) as Transform2DRuntime<K>).localTransform!;
 }
 
-export function getWorldTransform(target: DisplayObject): Readonly<Matrix3x2> {
+export function getWorldTransform<K extends symbol>(target: SceneNode<K> & Transform2D): Readonly<Matrix3x2> {
   ensureWorldTransform(target);
-  return (getRuntime(target) as DisplayObjectRuntime).worldTransform!;
+  return (getRuntime(target) as Transform2DRuntime<K>).worldTransform!;
 }
 
 /**
  * Converts the `point` object from the Stage (global) coordinates
  * to the display object's (local) coordinates.
  **/
-export function globalToLocal(out: Vector2, source: DisplayObject, pos: Readonly<Vector2>): void {
+export function globalToLocal<K extends symbol>(
+  out: Vector2,
+  source: SceneNode<K> & Transform2D,
+  pos: Readonly<Vector2>,
+): void {
   matrix3x2.inverseTransformPointXY(out, getWorldTransform(source), pos.x, pos.y);
 }
 
@@ -52,11 +56,18 @@ export function globalToLocal(out: Vector2, source: DisplayObject, pos: Readonly
  * Converts the `point` object from the display object's (local)
  * coordinates to world coordinates.
  **/
-export function localToGlobal(out: Vector2, source: DisplayObject, point: Readonly<Vector2>): void {
+export function localToGlobal<K extends symbol>(
+  out: Vector2,
+  source: SceneNode<K> & Transform2D,
+  point: Readonly<Vector2>,
+): void {
   matrix3x2.transformPointXY(out, getWorldTransform(source), point.x, point.y);
 }
 
-function recomputeLocalTransform(target: DisplayObject, state: DisplayObjectRuntime): void {
+function recomputeLocalTransform<K extends symbol>(
+  target: SceneNode<K> & Transform2D,
+  state: Transform2DRuntime<K>,
+): void {
   if (target.rotation !== state.rotationAngle) {
     // Normalize from -180 to 180
     let angle = target.rotation % 360.0;
@@ -104,10 +115,10 @@ function recomputeLocalTransform(target: DisplayObject, state: DisplayObjectRunt
   state.localTransformUsingLocalTransformID = state.localTransformID;
 }
 
-function recomputeWorldTransform(
-  target: DisplayObject,
-  state: DisplayObjectRuntime,
-  parentState?: DisplayObjectRuntime,
+function recomputeWorldTransform<K extends symbol>(
+  target: SceneNode<K> & Transform2D,
+  state: Transform2DRuntime<K>,
+  parentState?: Transform2DRuntime<K>,
 ): void {
   if (state.worldTransform === null) state.worldTransform = matrix3x2.create();
   ensureLocalTransform(target);
@@ -119,7 +130,10 @@ function recomputeWorldTransform(
   recomputeWorldTransformID(state, parentState);
 }
 
-function recomputeWorldTransformID(state: DisplayObjectRuntime, parentState?: DisplayObjectRuntime): void {
+function recomputeWorldTransformID<K extends symbol>(
+  state: Transform2DRuntime<K>,
+  parentState?: Transform2DRuntime<K>,
+): void {
   const localTransformID = state.localTransformID;
   const parentWorldTransformID = parentState ? parentState.worldTransformID : 0;
   state.worldTransformUsingLocalTransformID = localTransformID;

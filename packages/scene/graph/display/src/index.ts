@@ -10,5 +10,4 @@ export * from './richText.js';
 export * from './spriteBatch.js';
 export * from './stage.js';
 export * from './text.js';
-export * from './transform.js';
 export * from './video.js';

@@ -1,8 +1,7 @@
 import { matrix3x2, vector2 } from '@flighthq/geometry';
-import { addChild, getRuntime } from '@flighthq/scene-graph-core';
-import type { DisplayObject, DisplayObjectRuntime, Matrix3x2 } from '@flighthq/types';
+import { addChild, createSceneNode, createTransform2DRuntime, getRuntime } from '@flighthq/scene-graph-core';
+import type { Matrix3x2, SceneNode, Transform2D, Transform2DRuntime } from '@flighthq/types';
 
-import { createDisplayObject } from './displayObject';
 import { invalidateLocalTransform } from './revision';
 import {
   ensureLocalTransform,
@@ -11,105 +10,115 @@ import {
   getWorldTransform,
   globalToLocal,
   localToGlobal,
-} from './transform';
+} from './transform2d';
 
-let displayObject: DisplayObject;
+function createTestNode(): TestNode {
+  const node: TestNode = createSceneNode(TestKind, undefined, undefined, createTransform2DRuntime) as TestNode;
+  node.rotation = 0;
+  node.scaleX = 1;
+  node.scaleY = 1;
+  node.x = 0;
+  node.y = 0;
+  return node;
+}
+
+let node: TestNode;
 beforeEach(() => {
-  displayObject = createDisplayObject();
+  node = createTestNode();
 });
 
 describe('ensureLocalTransform', () => {
   it('computes local transform the first time', () => {
-    const state = getRuntime(displayObject) as DisplayObjectRuntime;
+    const state = getRuntime(node) as Transform2DRuntime<typeof TestKind>;
     expect(state.localTransform).toBeNull();
-    ensureLocalTransform(displayObject);
+    ensureLocalTransform(node);
     expect(state.localTransform).not.toBeNull();
   });
 
   it('recomputes if the local transform ID has changed', () => {
-    const state = getRuntime(displayObject) as DisplayObjectRuntime;
-    ensureLocalTransform(displayObject);
+    const state = getRuntime(node) as Transform2DRuntime<typeof TestKind>;
+    ensureLocalTransform(node);
     const cache = cloneAndInvalidateMatrix(state.localTransform);
     state.localTransformID++;
-    ensureLocalTransform(displayObject);
+    ensureLocalTransform(node);
     expect(state.localTransform).toEqual(cache);
   });
 });
 
 describe('ensureWorldTransform', () => {
   it('computes world transform the first time', () => {
-    const state = getRuntime(displayObject) as DisplayObjectRuntime;
+    const state = getRuntime(node) as Transform2DRuntime<typeof TestKind>;
     expect(state.worldTransform).toBeNull();
-    ensureWorldTransform(displayObject);
+    ensureWorldTransform(node);
     expect(state.worldTransform).not.toBeNull();
   });
 
   it('computes world transform for a parent for the first time', () => {
-    const parent = createDisplayObject();
-    addChild(parent, displayObject);
-    const parentState = getRuntime(parent) as DisplayObjectRuntime;
+    const parent = createTestNode();
+    addChild(parent, node);
+    const parentState = getRuntime(parent) as Transform2DRuntime<typeof TestKind>;
     expect(parentState.worldTransform).toBeNull();
-    ensureWorldTransform(displayObject);
+    ensureWorldTransform(node);
     expect(parentState.worldTransform).not.toBeNull();
   });
 
   it('recomputes if the local transform ID has changed', () => {
-    const state = getRuntime(displayObject) as DisplayObjectRuntime;
-    ensureWorldTransform(displayObject);
+    const state = getRuntime(node) as Transform2DRuntime<typeof TestKind>;
+    ensureWorldTransform(node);
     const cache = cloneAndInvalidateMatrix(state.worldTransform);
     state.localTransformID++;
-    ensureWorldTransform(displayObject);
+    ensureWorldTransform(node);
     expect(state.worldTransform).toEqual(cache);
   });
 
   it('recomputes if the parent transform ID has changed', () => {
-    const parent = createDisplayObject();
-    addChild(parent, displayObject);
-    const state = getRuntime(displayObject) as DisplayObjectRuntime;
-    const parentState = getRuntime(parent) as DisplayObjectRuntime;
-    ensureWorldTransform(displayObject);
+    const parent = createTestNode();
+    addChild(parent, node);
+    const state = getRuntime(node) as Transform2DRuntime<typeof TestKind>;
+    const parentState = getRuntime(parent) as Transform2DRuntime<typeof TestKind>;
+    ensureWorldTransform(node);
     const cache = cloneAndInvalidateMatrix(state.worldTransform);
     parentState.worldTransformID++;
-    ensureWorldTransform(displayObject);
+    ensureWorldTransform(node);
     expect(state.worldTransform).toEqual(cache);
   });
 });
 
 describe('getLocalTransform', () => {
   it('ensures local transform', () => {
-    const state = getRuntime(displayObject) as DisplayObjectRuntime;
+    const state = getRuntime(node) as Transform2DRuntime<typeof TestKind>;
     expect(state.localTransform).toBeNull();
-    getLocalTransform(displayObject);
+    getLocalTransform(node);
     expect(state.localTransform).not.toBeNull();
   });
 
   it('returns local transform', () => {
-    const transform = getLocalTransform(displayObject);
-    expect(transform).equals((getRuntime(displayObject) as DisplayObjectRuntime).localTransform);
+    const transform = getLocalTransform(node);
+    expect(transform).equals((getRuntime(node) as Transform2DRuntime<typeof TestKind>).localTransform);
   });
 });
 
 describe('getWorldTransform', () => {
   it('ensures world transform', () => {
-    const state = getRuntime(displayObject) as DisplayObjectRuntime;
+    const state = getRuntime(node) as Transform2DRuntime<typeof TestKind>;
     expect(state.worldTransform).toBeNull();
-    getWorldTransform(displayObject);
+    getWorldTransform(node);
     expect(state.worldTransform).not.toBeNull();
   });
 
   it('returns local transform', () => {
-    const transform = getWorldTransform(displayObject);
-    expect(transform).equals((getRuntime(displayObject) as DisplayObjectRuntime).worldTransform);
+    const transform = getWorldTransform(node);
+    expect(transform).equals((getRuntime(node) as Transform2DRuntime<typeof TestKind>).worldTransform);
   });
 });
 
 describe('globalToLocal', () => {
-  let obj: DisplayObject;
+  let obj: TestNode;
 
   beforeEach(() => {
-    obj = createDisplayObject();
+    obj = createTestNode();
     // fake parent
-    (obj as any).parent = createDisplayObject() as any; // eslint-disable-line
+    (obj as any).parent = createTestNode() as any; // eslint-disable-line
     obj.x = 10;
     obj.y = 20;
     obj.scaleX = 2;
@@ -154,10 +163,10 @@ describe('globalToLocal', () => {
 });
 
 describe('localToGlobal', () => {
-  let obj: DisplayObject;
+  let obj: TestNode;
 
   beforeEach(() => {
-    obj = createDisplayObject();
+    obj = createTestNode();
   });
 
   it('writes to out parameter', () => {
@@ -222,3 +231,7 @@ function cloneAndInvalidateMatrix(matrix: Matrix3x2 | null): Matrix3x2 | null {
   matrix3x2.setTo(matrix, -1, -1, -1, -1, -1, -1);
   return clone;
 }
+
+interface TestNode extends SceneNode<typeof TestKind>, Transform2D {}
+
+const TestKind: unique symbol = Symbol('Test');

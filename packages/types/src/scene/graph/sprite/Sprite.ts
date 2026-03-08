@@ -1,7 +1,7 @@
 import type { Spritesheet } from '../../../assets';
 import type { Rectangle } from '../../../geometry';
 import type { BlendMode, ColorTransform, Shader } from '../../../materials';
-import type { SceneNode, Transform2D } from '../core';
+import type { SceneNode, SceneNodeRuntime, Transform2D, Transform2DRuntime } from '../core';
 
 export interface Sprite extends SceneNode<typeof SpriteKind>, Transform2D {
   alpha: number;
@@ -20,3 +20,5 @@ export interface Sprite extends SceneNode<typeof SpriteKind>, Transform2D {
 }
 
 export const SpriteKind: unique symbol = Symbol('Sprite');
+
+export interface SpriteRuntime extends SceneNodeRuntime<typeof SpriteKind>, Transform2DRuntime<typeof SpriteKind> {}

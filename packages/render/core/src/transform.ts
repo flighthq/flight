@@ -1,5 +1,5 @@
 import { matrix3x2 } from '@flighthq/geometry';
-import { getLocalTransform, getLocalTransformID } from '@flighthq/scene-graph-display';
+import { getLocalTransform, getLocalTransformID } from '@flighthq/scene-graph-core';
 import type { DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
 export function updateRenderTransform(

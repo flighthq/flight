@@ -1,9 +1,7 @@
 import { matrix3x2, matrix3x2Pool, rectangle } from '@flighthq/geometry';
-import { getRuntime } from '@flighthq/scene-graph-core';
+import { ensureWorldTransform, getLocalTransform, getRuntime, getWorldTransform } from '@flighthq/scene-graph-core';
 import type { DisplayObjectRuntime } from '@flighthq/types';
 import type { DisplayObject, Rectangle } from '@flighthq/types';
-
-import { ensureWorldTransform, getLocalTransform, getWorldTransform } from './transform';
 
 /**
  * Writes a rectangle which defines the area of the display object
