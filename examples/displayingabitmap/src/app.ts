@@ -1,6 +1,6 @@
 import { createRenderState, renderDisplayObject, setBitmapRenderer } from '@flighthq/render-canvas';
 import { clearFrame } from '@flighthq/render-canvas';
-import { updateForRender } from '@flighthq/render-core';
+import { updateDisplayObjectTree } from '@flighthq/render-core';
 
 import Main from './Main.js';
 
@@ -21,7 +21,7 @@ setBitmapRenderer(state);
 const main = new Main();
 
 function enterFrame() {
-  if (updateForRender(state, main.model)) {
+  if (updateDisplayObjectTree(state, main.model)) {
     clearFrame(state);
     renderDisplayObject(state, main.model);
   }

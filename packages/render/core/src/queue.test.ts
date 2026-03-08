@@ -4,7 +4,7 @@ import type { DisplayObject, RenderState } from '@flighthq/types';
 
 import { prepareRenderQueue } from './queue';
 import { createRenderState } from './renderState';
-import { updateForRender } from './update';
+import { updateDisplayObjectTree } from './update';
 
 describe('prepareRenderQueue', () => {
   let parent: DisplayObject;
@@ -19,21 +19,21 @@ describe('prepareRenderQueue', () => {
   });
 
   it('keeps objects which are renderable', () => {
-    updateForRender(state, parent);
+    updateDisplayObjectTree(state, parent);
     prepareRenderQueue(state, parent);
     expect(state.currentQueueLength).toBe(2);
   });
 
   it('discards objects which are visible=false', () => {
     child.visible = false;
-    updateForRender(state, parent);
+    updateDisplayObjectTree(state, parent);
     prepareRenderQueue(state, parent);
     expect(state.currentQueueLength).toBe(1);
   });
 
   it('discards objects which are alpha <= 0', () => {
     child.alpha = 0;
-    updateForRender(state, parent);
+    updateDisplayObjectTree(state, parent);
     prepareRenderQueue(state, parent);
     expect(state.currentQueueLength).toBe(1);
   });
@@ -41,7 +41,7 @@ describe('prepareRenderQueue', () => {
   it('discards objects which are scale of 0', () => {
     child.scaleX = 0;
     child.scaleY = 0;
-    updateForRender(state, parent);
+    updateDisplayObjectTree(state, parent);
     prepareRenderQueue(state, parent);
     expect(state.currentQueueLength).toBe(1);
   });
@@ -49,7 +49,7 @@ describe('prepareRenderQueue', () => {
   it('propagates to children', () => {
     parent.scaleX = 0;
     parent.scaleY = 0;
-    updateForRender(state, parent);
+    updateDisplayObjectTree(state, parent);
     prepareRenderQueue(state, parent);
     expect(state.currentQueueLength).toBe(0);
   });
@@ -58,7 +58,7 @@ describe('prepareRenderQueue', () => {
     const child2 = createDisplayObject();
     addChild(parent, child2);
     child.mask = child2;
-    updateForRender(state, parent);
+    updateDisplayObjectTree(state, parent);
     prepareRenderQueue(state, parent);
     expect(state.currentQueueLength).toBe(2);
   });
@@ -69,7 +69,7 @@ describe('prepareRenderQueue', () => {
     addChild(child2, maskChild);
     addChild(parent, child2);
     child.mask = child2;
-    updateForRender(state, parent);
+    updateDisplayObjectTree(state, parent);
     prepareRenderQueue(state, parent);
     expect(state.currentQueueLength).toBe(2);
   });
