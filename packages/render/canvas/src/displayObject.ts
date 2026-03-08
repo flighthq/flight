@@ -1,46 +1,23 @@
 import { rectangle } from '@flighthq/geometry';
-import { getRenderNode, setDefaultRenderer } from '@flighthq/render-core';
+import { createNullRendererData, getRenderNode, setRenderer } from '@flighthq/render-core';
 import { calculateBoundsRect } from '@flighthq/scene-graph-display';
-import {
-  type CanvasRenderState,
-  DisplayObjectKind,
-  type Renderable,
-  type Renderer,
-  type RendererData,
-  type RenderNode,
-} from '@flighthq/types';
+import type { CanvasRenderState, Renderable, Renderer, RenderNode } from '@flighthq/types';
+import { DisplayObjectKind } from '@flighthq/types';
 
-import { applyMask } from './masks';
+import { drawBitmap } from './bitmap';
+import { updateCacheBitmap } from './cacheBitmap';
+import { popClipRect, pushClipRect } from './clipping';
+import { applyMask, popMask, pushMask } from './masks';
 import { setBlendMode } from './materials';
 import { setTransform } from './transform';
 
 export const DisplayObjectRenderer: Renderer = {
-  applyMask: applyDisplayObjectMask,
-  createData: createDisplayObjectRendererData,
-  render: renderDisplayObject,
+  createData: createNullRendererData,
+  draw: drawDisplayObject,
+  drawMask: drawDisplayObjectMask,
 };
 
-export function applyDisplayObjectMask(state: CanvasRenderState, data: RenderNode): void {
-  const source = data.source;
-  if (source.opaqueBackground !== null) {
-    calculateBoundsRect(tempBounds, source, source);
-    state.context.rect(0, 0, tempBounds.width, tempBounds.width);
-  } else {
-    const children = source.children;
-    if (children !== null) {
-      for (let i = 0; i < children.length; i++) {
-        const data = getRenderNode(state, children[i]);
-        applyMask(state, data);
-      }
-    }
-  }
-}
-
-export function createDisplayObjectRendererData(_state: CanvasRenderState, _source: Renderable): RendererData | null {
-  return null;
-}
-
-export function renderDisplayObject(state: CanvasRenderState, displayObject: RenderNode): void {
+export function drawDisplayObject(state: CanvasRenderState, displayObject: RenderNode): void {
   const opaqueBackground = displayObject.source.opaqueBackground;
   if (opaqueBackground === null) return;
 
@@ -60,11 +37,93 @@ export function renderDisplayObject(state: CanvasRenderState, displayObject: Ren
   context.fillRect(0, 0, tempBounds.width, tempBounds.height);
 }
 
-export function setDefaultDisplayObjectRenderer(
-  state: CanvasRenderState,
-  renderer: Renderer = DisplayObjectRenderer,
-): void {
-  setDefaultRenderer(state, DisplayObjectKind, renderer);
+export function drawDisplayObjectMask(state: CanvasRenderState, data: RenderNode): void {
+  const source = data.source;
+  if (source.opaqueBackground !== null) {
+    calculateBoundsRect(tempBounds, source, source);
+    state.context.rect(0, 0, tempBounds.width, tempBounds.width);
+  } else {
+    const children = source.children;
+    if (children !== null) {
+      for (let i = 0; i < children.length; i++) {
+        const data = getRenderNode(state, children[i]);
+        applyMask(state, data);
+      }
+    }
+  }
+}
+
+export function renderDisplayObject(state: CanvasRenderState, source: Renderable): void {
+  const currentFrameID = state.currentFrameID;
+  const tempStack = state.tempStack;
+  let stackLength = 0;
+
+  // Start with root
+  tempStack[stackLength++] = source;
+
+  while (stackLength > 0) {
+    const current = tempStack[--stackLength];
+    const data = getRenderNode(state, current);
+
+    const isMask = data.isMaskFrameID === currentFrameID;
+    if (isMask) continue; // skip drawing masks (they're used for clipping elsewhere)
+
+    const shouldRender = data.visible && data.alpha > 0 && (data.transform.a !== 0 || data.transform.d !== 0);
+    if (!shouldRender) continue;
+
+    // ── Draw current object first (pre-order) ──
+    drawObject(state, data);
+
+    // Then push children in forward order (so we pop & draw index 0 first)
+    if (current.children !== null) {
+      // Push from last to first → pop gives index 0 first
+      for (let i = current.children.length - 1; i >= 0; i--) {
+        tempStack[stackLength++] = current.children[i];
+      }
+    }
+  }
+}
+
+export function setDisplayObjectRenderer(state: CanvasRenderState, renderer: Renderer = DisplayObjectRenderer): void {
+  setRenderer(state, DisplayObjectKind, renderer);
+}
+
+function drawObject(state: CanvasRenderState, data: RenderNode): void {
+  if (data.renderer === null) return;
+  pushMaskObject(state, data);
+  if (state.allowCacheAsBitmap) {
+    updateCacheBitmap(state, data);
+    if (data.cacheBitmap !== null) {
+      drawBitmap(state, data.cacheBitmap);
+      return;
+    }
+  }
+  data.renderer.draw(state, data);
+  popMaskObject(state, data);
+}
+
+function popMaskObject(state: CanvasRenderState, data: RenderNode, handleScrollRect: boolean = true): void {
+  const source = data.source;
+
+  if (source.mask !== null) {
+    popMask(state);
+  }
+
+  if (handleScrollRect && source.scrollRect !== null) {
+    popClipRect(state);
+  }
+}
+
+function pushMaskObject(state: CanvasRenderState, data: RenderNode, handleScrollRect: boolean = true): void {
+  const source = data.source;
+
+  if (handleScrollRect && source.scrollRect != null) {
+    pushClipRect(state, source.scrollRect, data.transform);
+  }
+
+  if (source.mask !== null) {
+    pushMask(state, getRenderNode(state, source.mask));
+  }
 }
 
 const tempBounds = rectangle.create();

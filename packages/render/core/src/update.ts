@@ -8,7 +8,7 @@ import { updateRenderTransform } from './transform';
 /**
  * First pass, update appearance, transforms, identify masks
  */
-export function updateRenderableTree(state: RenderState, source: Renderable): boolean {
+export function updateForRender(state: RenderState, source: Renderable): boolean {
   const tempStack = state.tempStack;
   const currentFrameID = ++(state as RenderStateInternal).currentFrameID;
 

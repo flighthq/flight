@@ -1,34 +1,19 @@
-import { setDefaultRenderer } from '@flighthq/render-core';
-import {
-  type Bitmap,
-  type CanvasRenderState,
-  DisplayObjectType,
-  type Renderable,
-  type Renderer,
-  type RendererData,
-  type RenderNode,
-} from '@flighthq/types';
+import { createNullRendererData, setRenderer } from '@flighthq/render-core';
+import type { Bitmap, CanvasRenderState, Renderer, RenderNode } from '@flighthq/types';
+import { DisplayObjectType } from '@flighthq/types';
 
-import { applyDisplayObjectMask, renderDisplayObject } from './displayObject';
+import { drawDisplayObject, drawDisplayObjectMask } from './displayObject';
 import { setBlendMode } from './materials';
 import { setTransform } from './transform';
 
 export const BitmapRenderer: Renderer = {
-  applyMask: applyBitmapMask,
-  createData: createBitmapRendererData,
-  render: renderBitmap,
+  createData: createNullRendererData,
+  draw: drawBitmap,
+  drawMask: drawBitmapMask,
 };
 
-export function applyBitmapMask(state: CanvasRenderState, data: RenderNode): void {
-  applyDisplayObjectMask(state, data);
-}
-
-export function createBitmapRendererData(_state: CanvasRenderState, _source: Renderable): RendererData | null {
-  return null;
-}
-
-export function renderBitmap(state: CanvasRenderState, bitmap: RenderNode): void {
-  renderDisplayObject(state, bitmap);
+export function drawBitmap(state: CanvasRenderState, bitmap: RenderNode): void {
+  drawDisplayObject(state, bitmap);
   const source = bitmap.source as Bitmap;
   if (source.data.image !== null) {
     const context = state.context;
@@ -68,6 +53,10 @@ export function renderBitmap(state: CanvasRenderState, bitmap: RenderNode): void
   }
 }
 
-export function setDefaultBitmapRenderer(state: CanvasRenderState, renderer: Renderer = BitmapRenderer): void {
-  setDefaultRenderer(state, DisplayObjectType.Bitmap, renderer);
+export function drawBitmapMask(state: CanvasRenderState, data: RenderNode): void {
+  drawDisplayObjectMask(state, data);
+}
+
+export function setBitmapRenderer(state: CanvasRenderState, renderer: Renderer = BitmapRenderer): void {
+  setRenderer(state, DisplayObjectType.Bitmap, renderer);
 }
