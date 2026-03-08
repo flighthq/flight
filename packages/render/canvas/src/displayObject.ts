@@ -1,7 +1,7 @@
 import { rectangle } from '@flighthq/geometry';
 import { createNullRendererData, getRenderNode, setRenderer } from '@flighthq/render-core';
 import { calculateBoundsRect } from '@flighthq/scene-graph-display';
-import type { CanvasRenderState, Renderable, Renderer, RenderNode } from '@flighthq/types';
+import type { CanvasRenderState, DisplayObject, Renderer, RenderNode } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { drawBitmap } from './bitmap';
@@ -53,7 +53,7 @@ export function drawDisplayObjectMask(state: CanvasRenderState, data: RenderNode
   }
 }
 
-export function renderDisplayObject(state: CanvasRenderState, source: Renderable): void {
+export function renderDisplayObject(state: CanvasRenderState, source: DisplayObject): void {
   const currentFrameID = state.currentFrameID;
   const tempStack = state.tempStack;
   let stackLength = 0;

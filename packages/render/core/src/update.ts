@@ -1,4 +1,4 @@
-import type { Renderable, RenderNode, RenderState } from '@flighthq/types';
+import type { DisplayObject, RenderNode, RenderState } from '@flighthq/types';
 
 import { updateAppearance } from './appearance';
 import type { RenderStateInternal } from './internal';
@@ -8,7 +8,7 @@ import { updateRenderTransform } from './transform';
 /**
  * First pass, update appearance, transforms, identify masks
  */
-export function updateForRender(state: RenderState, source: Renderable): boolean {
+export function updateDisplayObjectTree(state: RenderState, source: DisplayObject): boolean {
   const tempStack = state.tempStack;
   const currentFrameID = ++(state as RenderStateInternal).currentFrameID;
 
@@ -16,7 +16,7 @@ export function updateForRender(state: RenderState, source: Renderable): boolean
   tempStack[0] = source;
 
   let parentData: RenderNode | undefined = undefined;
-  let lastParent: Renderable | null = null;
+  let lastParent: DisplayObject | null = null;
   let scrollRectDepth: number = 0;
   let maskDepth: number = 0;
   let treeDirty = false;
