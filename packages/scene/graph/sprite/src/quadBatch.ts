@@ -25,6 +25,7 @@ export function createQuadBatch(obj?: Readonly<PartialWithData<QuadBatch>>): Qua
 
 export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): QuadBatchData {
   return {
+    image: data?.image ?? null,
     indices: data?.indices ?? null,
     rects: data?.rects ?? null,
     transforms: data?.transforms ?? null,
