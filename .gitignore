@@ -144,6 +144,7 @@ vite.config.ts.timestamp-*
 examples/**/assets
 tests/size/**/assets
 .test-assets
+public
 
 # Guard against rogue compilation files
 *.map
