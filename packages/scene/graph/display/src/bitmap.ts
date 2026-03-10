@@ -1,10 +1,21 @@
-import type { Bitmap, BitmapData, DisplayObjectRuntime, PartialWithData, Rectangle, SceneNode } from '@flighthq/types';
-import { DisplayObjectKind, DisplayObjectType } from '@flighthq/types';
+import type {
+  Bitmap,
+  BitmapData,
+  DisplayGraph,
+  DisplayObjectRuntime,
+  GraphNode,
+  HasBoundsRect,
+  PartialWithData,
+  Rectangle,
+} from '@flighthq/types';
+import { BitmapKind } from '@flighthq/types';
 
-import { createPrimitive } from './primitive';
-import { createDisplayObjectRuntime } from './runtime';
+import { createDisplayObjectGeneric, createDisplayObjectRuntime } from './displayObject';
 
-export function computeBitmapLocalBounds(out: Rectangle, source: SceneNode<typeof DisplayObjectKind>): void {
+export function computeBitmapLocalBoundsRect(
+  out: Rectangle,
+  source: Readonly<GraphNode<typeof DisplayGraph> & HasBoundsRect<typeof DisplayGraph>>,
+): void {
   const bitmapData: BitmapData = source.data as BitmapData;
   if (bitmapData.image) {
     out.width = bitmapData.image.width;
@@ -12,11 +23,11 @@ export function computeBitmapLocalBounds(out: Rectangle, source: SceneNode<typeo
   }
 }
 
-export function createBitmap(obj?: PartialWithData<Bitmap>): Bitmap {
-  return createPrimitive(DisplayObjectType.Bitmap, obj, createBitmapData, createBitmapRuntime) as Bitmap;
+export function createBitmap(obj?: Readonly<PartialWithData<Bitmap>>): Bitmap {
+  return createDisplayObjectGeneric(BitmapKind, obj, createBitmapData, createBitmapRuntime) as Bitmap;
 }
 
-export function createBitmapData(data?: Partial<BitmapData>): BitmapData {
+export function createBitmapData(data?: Readonly<Partial<BitmapData>>): BitmapData {
   return {
     image: data?.image ?? null,
     smoothing: data?.smoothing ?? true,
@@ -24,9 +35,9 @@ export function createBitmapData(data?: Partial<BitmapData>): BitmapData {
 }
 
 export function createBitmapRuntime(): DisplayObjectRuntime {
-  return createDisplayObjectRuntime(DisplayObjectKind, defaultMethods);
+  return createDisplayObjectRuntime(defaultMethods);
 }
 
 const defaultMethods: Partial<DisplayObjectRuntime> = {
-  computeLocalBounds: computeBitmapLocalBounds,
+  computeLocalBoundsRect: computeBitmapLocalBoundsRect,
 };

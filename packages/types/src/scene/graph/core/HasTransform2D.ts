@@ -1,23 +1,20 @@
 import type { Matrix3x2 } from '../../../geometry';
-import type { SceneNodeRuntime, SceneNodeRuntimeKey } from './SceneNodeRuntime';
+import type { GraphNodeRuntime } from './GraphNodeRuntime';
+import type { NodeRuntimeKey } from './NodeRuntime';
 
-export interface HasTransform2D<K extends symbol> {
+export interface HasTransform2D<G extends symbol> {
   rotation: number;
   scaleX: number;
   scaleY: number;
   x: number;
   y: number;
-  [SceneNodeRuntimeKey]: Transform2DRuntime<K> | undefined;
+  [NodeRuntimeKey]: HasTransform2DRuntime<G> | undefined;
 }
 
-export interface Transform2DRuntime<K extends symbol> extends SceneNodeRuntime<K> {
-  localTransform: Matrix3x2 | null;
-  localTransformUsingLocalTransformID: number;
+export interface HasTransform2DRuntime<G extends symbol> extends GraphNodeRuntime<G> {
+  localTransform2D: Matrix3x2 | null;
   rotationAngle: number;
   rotationCosine: number;
   rotationSine: number;
-  worldTransform: Matrix3x2 | null;
-  worldTransformID: number;
-  worldTransformUsingLocalTransformID: number;
-  worldTransformUsingParentTransformID: number;
+  worldTransform2D: Matrix3x2 | null;
 }

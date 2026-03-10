@@ -1,7 +1,6 @@
-import type { SceneNode } from '@flighthq/types';
+import type { GraphNode } from '@flighthq/types';
 
-export type SceneNodeInternal<K extends symbol> = Omit<SceneNode<K>, 'children' | 'parent' | 'root'> & {
-  children: SceneNode<K>[] | null;
-  parent: SceneNode<K> | null;
-  root: SceneNode<K> | null;
+export type GraphNodeInternal<K extends symbol> = Omit<GraphNode<K>, 'children' | 'parent'> & {
+  children: GraphNode<K>[] | null;
+  parent: GraphNode<K> | null;
 };

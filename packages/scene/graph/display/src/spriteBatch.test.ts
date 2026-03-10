@@ -1,4 +1,5 @@
-import { DisplayObjectType, type Sprite, type SpriteBatch } from '@flighthq/types';
+import type { Sprite, SpriteBatch } from '@flighthq/types';
+import { SpriteBatchKind } from '@flighthq/types';
 
 import { createSpriteBatch } from './spriteBatch';
 
@@ -12,7 +13,7 @@ describe('createTilemap', () => {
   it('initializes default values', () => {
     expect(spriteBatch.data.batch).toBeNull();
     expect(spriteBatch.data.smoothing).toBe(true);
-    expect(spriteBatch.type).toStrictEqual(DisplayObjectType.SpriteBatch);
+    expect(spriteBatch.kind).toStrictEqual(SpriteBatchKind);
   });
 
   it('allows pre-defined values', () => {

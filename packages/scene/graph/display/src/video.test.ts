@@ -1,4 +1,5 @@
-import { DisplayObjectType, type Video } from '@flighthq/types';
+import type { Video } from '@flighthq/types';
+import { VideoKind } from '@flighthq/types';
 
 import { createVideo } from './video';
 
@@ -11,7 +12,7 @@ describe('createVideo', () => {
 
   it('initializes default values', () => {
     expect(video.data.smoothing).toBe(true);
-    expect(video.type).toStrictEqual(DisplayObjectType.Video);
+    expect(video.kind).toStrictEqual(VideoKind);
   });
 
   it('allows pre-defined values', () => {

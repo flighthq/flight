@@ -1,15 +1,17 @@
 import type { Matrix3x2, Rectangle } from '../../../geometry';
 import type { BlendMode, ColorTransform, Filter, Shader } from '../../../materials';
-import type { HasTransform2D, SceneNode, SceneNodeData, SceneNodeRuntime, Transform2DRuntime } from '../core';
-import type { SceneNodeRuntimeKey } from '../core';
-import type { BoundsRectRuntime, HasBoundsRect } from '../core/HasBoundsRect';
-import type { Stage } from './Stage';
+import type {
+  GraphNode,
+  GraphNodeData,
+  GraphNodeRuntime,
+  HasTransform2D,
+  HasTransform2DRuntime,
+  NodeRuntimeKey,
+} from '../core';
+import type { HasBoundsRect, HasBoundsRectRuntime } from '../core/HasBoundsRect';
 
 export interface DisplayObject
-  extends
-    SceneNode<typeof DisplayObjectKind>,
-    HasTransform2D<typeof DisplayObjectKind>,
-    HasBoundsRect<typeof DisplayObjectKind> {
+  extends GraphNode<typeof DisplayGraph>, HasTransform2D<typeof DisplayGraph>, HasBoundsRect<typeof DisplayGraph> {
   alpha: number;
   blendMode: BlendMode;
   cacheAsBitmap: boolean;
@@ -21,21 +23,20 @@ export interface DisplayObject
   mask: DisplayObject | null;
   opaqueBackground: number | null;
   readonly parent: DisplayObject | null;
-  readonly root: DisplayObject | null;
   scale9Grid: Rectangle | null;
   scrollRect: Rectangle | null;
   shader: Shader | null;
-  readonly stage: Stage | null;
-  type: symbol;
   visible: boolean;
 
-  [SceneNodeRuntimeKey]: DisplayObjectRuntime | undefined;
+  [NodeRuntimeKey]: DisplayObjectRuntime | undefined;
 }
 
-export interface DisplayObjectData extends SceneNodeData {}
+export interface DisplayObjectData extends GraphNodeData {}
+
+export const DisplayGraph: unique symbol = Symbol('DisplayGraph');
 
 export const DisplayObjectKind: unique symbol = Symbol('DisplayObject');
 
-export type DisplayObjectRuntime = SceneNodeRuntime<typeof DisplayObjectKind> &
-  Transform2DRuntime<typeof DisplayObjectKind> &
-  BoundsRectRuntime<typeof DisplayObjectKind>;
+export type DisplayObjectRuntime = GraphNodeRuntime<typeof DisplayGraph> &
+  HasTransform2DRuntime<typeof DisplayGraph> &
+  HasBoundsRectRuntime<typeof DisplayGraph>;

@@ -2,13 +2,21 @@ import { rectangle } from '@flighthq/geometry';
 import { setEmpty } from '@flighthq/geometry/rectangle';
 import {
   addChild,
-  createBoundsAndTransform2DRuntime,
-  createSceneNode,
-  ensureLocalTransform,
-  getRuntime as _getRuntime,
+  createGraphNode,
+  ensureLocalTransform2D,
+  getRuntime,
+  initHasTransform2D,
+  initHasTransform2DRuntime,
   invalidateLocalTransform,
 } from '@flighthq/scene-graph-core';
-import type { BoundsRectRuntime, HasBoundsRect, HasTransform2D, Rectangle, SceneNode } from '@flighthq/types';
+import type {
+  GraphNode,
+  HasBoundsRect,
+  HasBoundsRectRuntime,
+  HasTransform2D,
+  HasTransform2DRuntime,
+  Rectangle,
+} from '@flighthq/types';
 
 import {
   calculateBoundsRect,
@@ -19,19 +27,16 @@ import {
   getLocalBoundsRect,
   getWorldBoundsRect,
 } from './boundsRect';
+import { getHasBoundsRectRuntime, initHasBoundsRect, initHasBoundsRectRuntime } from './hasBoundsRect';
 
 function createTestNode(): TestNode {
-  const node: TestNode = createSceneNode(TestKind, undefined, undefined, createBoundsAndTransform2DRuntime) as TestNode;
-  node.rotation = 0;
-  node.scaleX = 1;
-  node.scaleY = 1;
-  node.x = 0;
-  node.y = 0;
+  const node = createGraphNode(TestGraph, TestKind) as TestNode;
+  const runtime = getRuntime(node);
+  initHasBoundsRect(node);
+  initHasBoundsRectRuntime(runtime as HasBoundsRectRuntime<typeof TestGraph>);
+  initHasTransform2D(node);
+  initHasTransform2DRuntime(runtime as HasTransform2DRuntime<typeof TestGraph>);
   return node;
-}
-
-function getRuntime(source: TestNode) {
-  return _getRuntime(source) as BoundsRectRuntime<typeof TestKind>;
 }
 
 describe('calculateBoundsRect', () => {
@@ -141,211 +146,211 @@ describe('calculateBoundsRect', () => {
 describe('ensureBoundsRect', () => {
   it('should ensure boundsRect is defined', () => {
     const object = createTestNode();
-    const state = getRuntime(object);
-    expect(state.boundsRect).toBeNull();
+    const runtime = getHasBoundsRectRuntime(object);
+    expect(runtime.boundsRect).toBeNull();
     ensureBoundsRect(object);
-    expect(state.boundsRect).not.toBeNull();
+    expect(runtime.boundsRect).not.toBeNull();
   });
 
   it('should not recalculate if localBoundsID and localTransformID are unchanged', () => {
     const object = createTestNode();
-    const state = getRuntime(object);
+    const runtime = getHasBoundsRectRuntime(object);
     ensureBoundsRect(object);
-    const cache = cloneAndInvalidateRect(state.boundsRect!);
+    const cache = cloneAndInvalidateRect(runtime.boundsRect!);
     ensureBoundsRect(object);
-    expect(state.boundsRect).not.toEqual(cache);
+    expect(runtime.boundsRect).not.toEqual(cache);
   });
 
   it('should recalculate if localBoundsID is changed', () => {
     const object = createTestNode();
-    const state = getRuntime(object);
-    state.computeLocalBounds = (out, _source) => {
+    const runtime = getHasBoundsRectRuntime(object);
+    runtime.computeLocalBoundsRect = (out, _source) => {
       setEmpty(out);
     };
     ensureBoundsRect(object);
-    const cache = cloneAndInvalidateRect(state.boundsRect!);
-    state.localBoundsID++;
+    const cache = cloneAndInvalidateRect(runtime.boundsRect!);
+    runtime.localBoundsID++;
     ensureBoundsRect(object);
-    expect(state.boundsRect).toEqual(cache);
+    expect(runtime.boundsRect).toEqual(cache);
   });
 
   it('should recalculate if localTransformID is changed', () => {
     const object = createTestNode();
-    const state = getRuntime(object);
+    const runtime = getHasBoundsRectRuntime(object);
     ensureBoundsRect(object);
-    const cache = cloneAndInvalidateRect(state.boundsRect!);
-    state.localTransformID++;
+    const cache = cloneAndInvalidateRect(runtime.boundsRect!);
+    runtime.localTransformID++;
     ensureBoundsRect(object);
-    expect(state.boundsRect).toEqual(cache);
+    expect(runtime.boundsRect).toEqual(cache);
   });
 });
 
 describe('ensureLocalBoundsRect', () => {
   it('should ensure localBoundsRect is defined', () => {
     const object = createTestNode();
-    const state = getRuntime(object);
-    expect(state.localBoundsRect).toBeNull();
+    const runtime = getHasBoundsRectRuntime(object);
+    expect(runtime.localBoundsRect).toBeNull();
     ensureLocalBoundsRect(object);
-    expect(state.localBoundsRect).not.toBeNull();
+    expect(runtime.localBoundsRect).not.toBeNull();
   });
 
   it('should not recalculate if localBoundsID is unchanged', () => {
     const object = createTestNode();
-    const state = getRuntime(object);
-    state.computeLocalBounds = (out, _source) => {
+    const runtime = getHasBoundsRectRuntime(object);
+    runtime.computeLocalBoundsRect = (out, _source) => {
       setEmpty(out);
     };
     ensureLocalBoundsRect(object);
-    const cache = cloneAndInvalidateRect(state.localBoundsRect!);
+    const cache = cloneAndInvalidateRect(runtime.localBoundsRect!);
     ensureLocalBoundsRect(object);
-    expect(state.localBoundsRect).not.toEqual(cache);
+    expect(runtime.localBoundsRect).not.toEqual(cache);
   });
 
   it('should recalculate if localBoundsID is changed', () => {
     const object = createTestNode();
-    const state = getRuntime(object);
-    state.computeLocalBounds = (out, _source) => {
+    const runtime = getHasBoundsRectRuntime(object);
+    runtime.computeLocalBoundsRect = (out, _source) => {
       setEmpty(out);
     };
     ensureLocalBoundsRect(object);
-    const cache = cloneAndInvalidateRect(state.localBoundsRect!);
-    state.localBoundsID++;
+    const cache = cloneAndInvalidateRect(runtime.localBoundsRect!);
+    runtime.localBoundsID++;
     ensureLocalBoundsRect(object);
-    expect(state.localBoundsRect).toEqual(cache);
+    expect(runtime.localBoundsRect).toEqual(cache);
   });
 
   it('should not recalculate if localTransformID is unchanged', () => {
     const object = createTestNode();
-    const state = getRuntime(object);
-    state.computeLocalBounds = (out, _source) => {
+    const runtime = getHasBoundsRectRuntime(object);
+    runtime.computeLocalBoundsRect = (out, _source) => {
       setEmpty(out);
     };
     ensureLocalBoundsRect(object);
-    const cache = cloneAndInvalidateRect(state.localBoundsRect!);
-    state.localTransformID++;
+    const cache = cloneAndInvalidateRect(runtime.localBoundsRect!);
+    runtime.localTransformID++;
     ensureLocalBoundsRect(object);
-    expect(state.localBoundsRect).not.toEqual(cache);
+    expect(runtime.localBoundsRect).not.toEqual(cache);
   });
 });
 
 describe('ensureWorldBoundsRect', () => {
   it('should ensure worldBoundsRect is defined', () => {
     const object = createTestNode();
-    const state = getRuntime(object);
-    expect(state.worldBoundsRect).toBeNull();
+    const runtime = getHasBoundsRectRuntime(object);
+    expect(runtime.worldBoundsRect).toBeNull();
     ensureWorldBoundsRect(object);
-    expect(state.worldBoundsRect).not.toBeNull();
+    expect(runtime.worldBoundsRect).not.toBeNull();
   });
 
   it('should not recalculate if localBoundsID and worldTransformID are unchanged', () => {
     const object = createTestNode();
-    const state = getRuntime(object);
+    const runtime = getHasBoundsRectRuntime(object);
     ensureWorldBoundsRect(object);
-    const cache = cloneAndInvalidateRect(state.worldBoundsRect!);
+    const cache = cloneAndInvalidateRect(runtime.worldBoundsRect!);
     ensureWorldBoundsRect(object);
-    expect(state.worldBoundsRect).not.toEqual(cache);
+    expect(runtime.worldBoundsRect).not.toEqual(cache);
   });
 
   it('should recalculate if localBoundsID is changed', () => {
     const object = createTestNode();
-    const state = getRuntime(object);
+    const runtime = getHasBoundsRectRuntime(object);
     ensureWorldBoundsRect(object);
-    const cache = cloneAndInvalidateRect(state.worldBoundsRect!);
-    state.localBoundsID++;
+    const cache = cloneAndInvalidateRect(runtime.worldBoundsRect!);
+    runtime.localBoundsID++;
     ensureWorldBoundsRect(object);
-    expect(state.worldBoundsRect).toEqual(cache);
+    expect(runtime.worldBoundsRect).toEqual(cache);
   });
 
   it('should recalculate if local transform is changed (translate)', () => {
     const object = createTestNode();
-    const state = getRuntime(object);
+    const runtime = getHasBoundsRectRuntime(object);
     ensureWorldBoundsRect(object);
-    const cache = rectangle.clone(state.worldBoundsRect!);
+    const cache = rectangle.clone(runtime.worldBoundsRect!);
     object.x = 100;
     invalidateLocalTransform(object);
     ensureWorldBoundsRect(object);
-    expect(state.worldBoundsRect).not.toEqual(cache);
-    expect(state.worldBoundsRect).toEqual({ x: 100, y: 0, width: 0, height: 0 });
+    expect(runtime.worldBoundsRect).not.toEqual(cache);
+    expect(runtime.worldBoundsRect).toEqual({ x: 100, y: 0, width: 0, height: 0 });
   });
 
   it('should recalculate if local transform is changed (scale)', () => {
     const object = createTestNode();
-    const state = getRuntime(object);
+    const runtime = getHasBoundsRectRuntime(object);
     ensureWorldBoundsRect(object);
-    const cache = rectangle.clone(state.worldBoundsRect!);
+    const cache = rectangle.clone(runtime.worldBoundsRect!);
     const localBounds = getLocalBoundsRect(object) as Rectangle;
     localBounds.width = 10; // hack;
     object.scaleX = 2;
     invalidateLocalTransform(object);
     ensureWorldBoundsRect(object);
-    expect(state.worldBoundsRect).not.toEqual(cache);
-    expect(state.worldBoundsRect).toEqual({ x: 0, y: 0, width: 20, height: 0 });
+    expect(runtime.worldBoundsRect).not.toEqual(cache);
+    expect(runtime.worldBoundsRect).toEqual({ x: 0, y: 0, width: 20, height: 0 });
   });
 
   it('should recalculate if parent transform is changed (translate)', () => {
     const parent = createTestNode();
     const child = createTestNode();
     addChild(parent, child);
-    const state = getRuntime(child);
+    const runtime = getHasBoundsRectRuntime(child);
     ensureWorldBoundsRect(child);
-    const cache = rectangle.clone(state.worldBoundsRect!);
+    const cache = rectangle.clone(runtime.worldBoundsRect!);
     parent.x = 100;
     invalidateLocalTransform(parent);
     ensureWorldBoundsRect(child);
-    expect(state.worldBoundsRect).not.toEqual(cache);
-    expect(state.worldBoundsRect).toEqual({ x: 100, y: 0, width: 0, height: 0 });
+    expect(runtime.worldBoundsRect).not.toEqual(cache);
+    expect(runtime.worldBoundsRect).toEqual({ x: 100, y: 0, width: 0, height: 0 });
   });
 
   it('should recalculate if parent transform is changed (scale)', () => {
     const parent = createTestNode();
     const child = createTestNode();
     addChild(parent, child);
-    const state = getRuntime(child);
+    const runtime = getHasBoundsRectRuntime(child);
     ensureWorldBoundsRect(child);
     const localBounds = getLocalBoundsRect(child) as Rectangle;
     localBounds.width = 10; // hack;
     const worldBounds = getWorldBoundsRect(child) as Rectangle;
     worldBounds.width = 10; // hack
-    const cache = rectangle.clone(state.worldBoundsRect!);
+    const cache = rectangle.clone(runtime.worldBoundsRect!);
     parent.scaleX = 2;
     invalidateLocalTransform(parent);
-    ensureLocalTransform(parent);
+    ensureLocalTransform2D(parent);
     ensureWorldBoundsRect(child);
-    expect(state.worldBoundsRect).not.toEqual(cache);
-    expect(state.worldBoundsRect).toEqual({ x: 0, y: 0, width: 20, height: 0 });
+    expect(runtime.worldBoundsRect).not.toEqual(cache);
+    expect(runtime.worldBoundsRect).toEqual({ x: 0, y: 0, width: 20, height: 0 });
   });
 });
 
 describe('getBoundsRect', () => {
   it('should call ensure and return boundsRect', () => {
     const object = createTestNode();
-    const state = getRuntime(object);
-    expect(state.boundsRect).toBeNull();
+    const runtime = getHasBoundsRectRuntime(object);
+    expect(runtime.boundsRect).toBeNull();
     const rect = getBoundsRect(object);
     expect(rect).not.toBeNull();
-    expect(rect).toStrictEqual(state.boundsRect);
+    expect(rect).toStrictEqual(runtime.boundsRect);
   });
 });
 
 describe('getLocalBoundsRect', () => {
   it('should call ensure and return localBoundsRect', () => {
     const object = createTestNode();
-    const state = getRuntime(object);
-    expect(state.localBoundsRect).toBeNull();
+    const runtime = getHasBoundsRectRuntime(object);
+    expect(runtime.localBoundsRect).toBeNull();
     const rect = getLocalBoundsRect(object);
     expect(rect).not.toBeNull();
-    expect(rect).toStrictEqual(state.localBoundsRect);
+    expect(rect).toStrictEqual(runtime.localBoundsRect);
   });
 });
 
 describe('getWorldBoundsRect', () => {
   it('should call ensure and return worldBoundsRect', () => {
     const object = createTestNode();
-    const state = getRuntime(object);
-    expect(state.worldBoundsRect).toBeNull();
+    const runtime = getHasBoundsRectRuntime(object);
+    expect(runtime.worldBoundsRect).toBeNull();
     const rect = getWorldBoundsRect(object);
     expect(rect).not.toBeNull();
-    expect(rect).toStrictEqual(state.worldBoundsRect);
+    expect(rect).toStrictEqual(runtime.worldBoundsRect);
   });
 });
 
@@ -359,6 +364,8 @@ function invalidateRect(rect: Rectangle | null): void {
   if (rect !== null) rectangle.setTo(rect, NaN, NaN, NaN, NaN);
 }
 
-type TestNode = SceneNode<typeof TestKind> & HasTransform2D<typeof TestKind> & HasBoundsRect<typeof TestKind>;
+type TestNode = GraphNode<typeof TestKind> & HasTransform2D<typeof TestKind> & HasBoundsRect<typeof TestKind>;
+
+const TestGraph: unique symbol = Symbol('TestGraph');
 
 const TestKind: unique symbol = Symbol('Test');

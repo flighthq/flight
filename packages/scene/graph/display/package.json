@@ -29,10 +29,6 @@
       "types": "./dist/movieClip.d.ts",
       "default": "./dist/movieClip.js"
     },
-    "./revision": {
-      "types": "./dist/revision.d.ts",
-      "default": "./dist/revision.js"
-    },
     "./richText": {
       "types": "./dist/richText.d.ts",
       "default": "./dist/richText.js"

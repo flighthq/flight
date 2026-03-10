@@ -1,4 +1,5 @@
-import { DisplayObjectType, type InputText, type PartialWithData } from '@flighthq/types';
+import type { InputText, PartialWithData } from '@flighthq/types';
+import { InputTextKind } from '@flighthq/types';
 
 import { createInputText } from './inputText';
 
@@ -12,7 +13,7 @@ describe('createInputText', () => {
   it('initializes default values', () => {
     expect(text.data.text).toBe('');
     expect(text.data.autoSize).toBe('none');
-    expect(text.type).toStrictEqual(DisplayObjectType.InputText);
+    expect(text.kind).toStrictEqual(InputTextKind);
   });
 
   it('allows pre-defined values', () => {

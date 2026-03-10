@@ -1,5 +1,5 @@
 import { matrix3x2, rectangle, rectanglePool } from '@flighthq/geometry';
-import { calculateBoundsRect, getLocalBoundsRect, getWorldTransform } from '@flighthq/scene-graph-core';
+import { calculateBoundsRect, getLocalBoundsRect, getWorldTransform2D } from '@flighthq/scene-graph-core';
 import type { DisplayObject } from '@flighthq/types';
 
 /**
@@ -208,6 +208,6 @@ let _tempPoint = { x: 0, y: 0 };
 **/
 export function hitTestPoint(source: DisplayObject, x: number, y: number, _shapeFlag: boolean = false): boolean {
   if (!source.visible || source.opaqueBackground === null) return false;
-  matrix3x2.inverseTransformPointXY(_tempPoint, getWorldTransform(source), x, y);
+  matrix3x2.inverseTransformPointXY(_tempPoint, getWorldTransform2D(source), x, y);
   return rectangle.contains(getLocalBoundsRect(source), _tempPoint.x, _tempPoint.y);
 }

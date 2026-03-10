@@ -1,24 +1,25 @@
-import type { SceneNode } from '@flighthq/types';
+import type { GraphNode, GraphNodeRuntime } from '@flighthq/types';
 
-import type { SceneNodeInternal } from './internal';
-import { getRuntime } from './runtime';
+import { getGraphNodeRuntime } from './graphNode';
+import type { GraphNodeInternal } from './internal';
+import { getRuntime } from './node';
 
 /**
- * Adds a child SceneNode instance to this SceneNode
+ * Adds a child Node instance to this Node
  * instance. The child is added to the front (top) of all other children in
- * this SceneNode instance.
+ * this Node instance.
  **/
-export function addChild<K extends symbol>(target: SceneNode<K>, child: SceneNode<K>): SceneNode<K> {
+export function addChild<G extends symbol>(target: GraphNode<G>, child: GraphNode<G>): GraphNode<G> {
   return addChildAt(target, child, target.children ? target.children.length : 0);
 }
 
 /**
- * Adds a child SceneNode instance to this SceneNode
+ * Adds a child Node instance to this Node
  * instance. The child is added at the index position specified. An index of
  * 0 represents the back (bottom) of the display list for this
- * SceneNode object.
+ * Node object.
  **/
-export function addChildAt<K extends symbol>(target: SceneNode<K>, child: SceneNode<K>, index: number): SceneNode<K> {
+export function addChildAt<G extends symbol>(target: GraphNode<G>, child: GraphNode<G>, index: number): GraphNode<G> {
   if (!child) {
     throw new TypeError('Parameter child must be non-null');
   } else if (child === target) {
@@ -31,12 +32,12 @@ export function addChildAt<K extends symbol>(target: SceneNode<K>, child: SceneN
     throwOutOfBoundsError();
   }
 
-  const targetRuntime = getRuntime(target);
+  const targetRuntime = getRuntime(target) as GraphNodeRuntime<G>;
   if (!targetRuntime.canAddChild(target, child)) {
     throw new TypeError('The specified parent object cannot add this child');
   }
 
-  if (target.children === null) (target as SceneNodeInternal<K>).children = [];
+  if (target.children === null) (target as GraphNodeInternal<G>).children = [];
 
   if (child.parent === target) {
     const i = target.children!.indexOf(child);
@@ -54,8 +55,8 @@ export function addChildAt<K extends symbol>(target: SceneNode<K>, child: SceneN
   targetRuntime.onChildrenChanged(target);
 
   if (child.parent !== target) {
-    (child as SceneNodeInternal<K>).parent = target;
-    const childRuntime = getRuntime(child);
+    (child as GraphNodeInternal<G>).parent = target;
+    const childRuntime = getRuntime(child) as GraphNodeRuntime<G>;
     childRuntime.onParentChanged(child);
   }
 
@@ -64,10 +65,10 @@ export function addChildAt<K extends symbol>(target: SceneNode<K>, child: SceneN
 
 /**
  * Determines whether the specified scene node is a child of the
- * SceneNodeContainer instance or the instance itself.
+ * NodeContainer instance or the instance itself.
  **/
-export function contains<K extends symbol>(source: Readonly<SceneNode<K>>, child: Readonly<SceneNode<K>>): boolean {
-  let current: SceneNode<K> | null = child;
+export function contains<G extends symbol>(source: Readonly<GraphNode<G>>, child: Readonly<GraphNode<G>>): boolean {
+  let current: GraphNode<G> | null = child;
   while (current !== source && current !== null) {
     current = current.parent;
   }
@@ -78,7 +79,7 @@ export function contains<K extends symbol>(source: Readonly<SceneNode<K>>, child
  * Returns the child scene node instance that exists at the specified
  * index.
  **/
-export function getChildAt<K extends symbol>(source: Readonly<SceneNode<K>>, index: number): SceneNode<K> | null {
+export function getChildAt<G extends symbol>(source: Readonly<GraphNode<G>>, index: number): GraphNode<G> | null {
   if (source.children !== null && index >= 0 && index < source.children.length) {
     return source.children[index];
   }
@@ -90,7 +91,7 @@ export function getChildAt<K extends symbol>(source: Readonly<SceneNode<K>>, ind
  * more that one child scene node has the specified name, the method
  * returns the first object found.
  **/
-export function getChildByName<K extends symbol>(source: Readonly<SceneNode<K>>, name: string): SceneNode<K> | null {
+export function getChildByName<G extends symbol>(source: Readonly<GraphNode<G>>, name: string): GraphNode<G> | null {
   if (source.children !== null) {
     const children = source.children;
     for (let i = 0; i < children.length; i++) {
@@ -101,9 +102,9 @@ export function getChildByName<K extends symbol>(source: Readonly<SceneNode<K>>,
 }
 
 /**
- * Returns the index position of a `child` SceneNode instance.
+ * Returns the index position of a `child` Node instance.
  **/
-export function getChildIndex<K extends symbol>(source: Readonly<SceneNode<K>>, child: Readonly<SceneNode<K>>): number {
+export function getChildIndex<G extends symbol>(source: Readonly<GraphNode<G>>, child: Readonly<GraphNode<G>>): number {
   if (source.children !== null) {
     const children = source.children;
     for (let i = 0; i < children.length; i++) {
@@ -114,37 +115,37 @@ export function getChildIndex<K extends symbol>(source: Readonly<SceneNode<K>>, 
 }
 
 /**
- * Removes the specified `child` SceneNode instance from the
- * child list of the SceneNode instance. The `parent`
+ * Removes the specified `child` Node instance from the
+ * child list of the Node instance. The `parent`
  * property of the removed child is set to `null` , and the object
  * is garbage collected if no other references to the child exist. The index
  * positions of any scene nodes above the child in the
- * SceneNode are decreased by 1.
+ * Node are decreased by 1.
  **/
-export function removeChild<K extends symbol>(target: SceneNode<K>, child: SceneNode<K>): SceneNode<K> {
+export function removeChild<G extends symbol>(target: GraphNode<G>, child: GraphNode<G>): GraphNode<G> {
   if (target.children !== null && child && child.parent === target) {
-    (child as SceneNodeInternal<K>).parent = null;
-    const childRuntime = getRuntime(child);
+    (child as GraphNodeInternal<G>).parent = null;
+    const childRuntime = getGraphNodeRuntime(child);
     childRuntime.onParentChanged(child);
     const i = target.children.indexOf(child);
     if (i !== -1) {
       target.children.splice(i, 1);
     }
-    const targetRuntime = getRuntime(target);
+    const targetRuntime = getGraphNodeRuntime(target);
     targetRuntime.onChildrenChanged(target);
   }
   return child;
 }
 
 /**
- * Removes a child SceneNode from the specified `index`
- * position in the child list of the SceneNode. The
+ * Removes a child Node from the specified `index`
+ * position in the child list of the Node. The
  * `parent` property of the removed child is set to
  * `null`, and the object is garbage collected if no other
  * references to the child exist. The index positions of any scene nodes
- * above the child in the SceneNode are decreased by 1.
+ * above the child in the Node are decreased by 1.
  **/
-export function removeChildAt<K extends symbol>(target: SceneNode<K>, index: number): SceneNode<K> | null {
+export function removeChildAt<G extends symbol>(target: GraphNode<G>, index: number): GraphNode<G> | null {
   if (target.children !== null && index >= 0 && index < target.children.length) {
     return removeChild(target, target.children[index]);
   }
@@ -152,12 +153,12 @@ export function removeChildAt<K extends symbol>(target: SceneNode<K>, index: num
 }
 
 /**
- * Removes all `child` SceneNode instances from the child list of the SceneNode
+ * Removes all `child` Node instances from the child list of the Node
  * instance. The `parent` property of the removed children is set to `null`, and the objects are
  * garbage collected if no other references to the children exist.
  **/
-export function removeChildren<K extends symbol>(
-  target: SceneNode<K>,
+export function removeChildren<G extends symbol>(
+  target: GraphNode<G>,
   beginIndex: number = 0,
   endIndex?: number,
 ): void {
@@ -183,14 +184,14 @@ export function removeChildren<K extends symbol>(
  * Changes the position of an existing child in the scene node container.
  * This affects the layering of child objects.
  **/
-export function setChildIndex<K extends symbol>(target: SceneNode<K>, child: SceneNode<K>, index: number): void {
+export function setChildIndex<G extends symbol>(target: GraphNode<G>, child: GraphNode<G>, index: number): void {
   if (target.children === null) return;
   if (index >= 0 && index <= target.children.length && child.parent === target) {
     const i = target.children.indexOf(child);
     if (i !== -1 && i !== index) {
       target.children.splice(i, 1);
       target.children.splice(index, 0, child);
-      const targetRuntime = getRuntime(target);
+      const targetRuntime = getGraphNodeRuntime(target);
       targetRuntime.onChildrenOrderChanged(target);
     }
   }
@@ -206,13 +207,13 @@ export function setChildIndex<K extends symbol>(target: SceneNode<K>, child: Sce
  * objects. All other child objects in the scene node container remain in
  * the same index positions.
  **/
-export function swapChildren<K extends symbol>(target: SceneNode<K>, child1: SceneNode<K>, child2: SceneNode<K>): void {
+export function swapChildren<G extends symbol>(target: GraphNode<G>, child1: GraphNode<G>, child2: GraphNode<G>): void {
   if (target.children !== null && child1.parent == target && child2.parent == target) {
     const index1 = target.children.indexOf(child1);
     const index2 = target.children.indexOf(child2);
     target.children[index1] = child2;
     target.children[index2] = child1;
-    const targetRuntime = getRuntime(target);
+    const targetRuntime = getGraphNodeRuntime(target);
     targetRuntime.onChildrenOrderChanged(target);
   }
 }
@@ -222,7 +223,7 @@ export function swapChildren<K extends symbol>(target: SceneNode<K>, child1: Sce
  * specified index positions in the child list. All other child objects in
  * the scene node container remain in the same index positions.
  **/
-export function swapChildrenAt<K extends symbol>(target: SceneNode<K>, index1: number, index2: number): void {
+export function swapChildrenAt<G extends symbol>(target: GraphNode<G>, index1: number, index2: number): void {
   if (target.children === null) return;
   const len = target.children.length;
   if (index1 < 0 || index2 < 0 || index1 >= len || index2 >= len) {
@@ -231,11 +232,11 @@ export function swapChildrenAt<K extends symbol>(target: SceneNode<K>, index1: n
 
   if (index1 === index2) return;
 
-  const swap: SceneNode<K> = target.children[index1];
+  const swap: GraphNode<G> = target.children[index1];
   target.children[index1] = target.children[index2];
   target.children[index2] = swap;
 
-  const targetRuntime = getRuntime(target);
+  const targetRuntime = getGraphNodeRuntime(target);
   targetRuntime.onChildrenOrderChanged(target);
 }
 

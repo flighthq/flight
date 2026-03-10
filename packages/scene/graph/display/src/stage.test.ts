@@ -1,4 +1,5 @@
-import { DisplayObjectType, type PartialWithData, type Stage } from '@flighthq/types';
+import type { PartialWithData, Stage } from '@flighthq/types';
+import { StageKind } from '@flighthq/types';
 
 import { createStage } from './stage';
 
@@ -20,7 +21,7 @@ describe('createStage', () => {
     expect(stage.data.stageFocusRect).toBe(false);
     expect(stage.data.stageHeight).toBe(550);
     expect(stage.data.stageWidth).toBe(400);
-    expect(stage.type).toStrictEqual(DisplayObjectType.Stage);
+    expect(stage.kind).toStrictEqual(StageKind);
   });
 
   it('allows pre-defined values', () => {

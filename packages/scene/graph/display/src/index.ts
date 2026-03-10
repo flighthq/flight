@@ -3,8 +3,6 @@ export * from './displayObject.js';
 export * from './domObject.js';
 export * from './inputText.js';
 export * from './movieClip.js';
-export * from './primitive.js';
-export * from './revision.js';
 export * from './richText.js';
 export * from './spriteBatch.js';
 export * from './stage.js';

@@ -1,4 +1,5 @@
-import { createBitmap, invalidateAppearance, invalidateLocalBounds } from '@flighthq/scene-graph-display';
+import { invalidateAppearance, invalidateLocalBounds } from '@flighthq/scene-graph-core';
+import { createBitmap } from '@flighthq/scene-graph-display';
 import type { Bitmap as BitmapModel } from '@flighthq/types';
 
 import type { ImageSource } from '../../../assets';

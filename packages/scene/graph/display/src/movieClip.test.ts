@@ -1,4 +1,5 @@
-import { DisplayObjectType, type MovieClip, type Timeline } from '@flighthq/types';
+import type { MovieClip, Timeline } from '@flighthq/types';
+import { MovieClipKind } from '@flighthq/types';
 
 import { createMovieClip } from './movieClip';
 
@@ -11,7 +12,7 @@ describe('createMovieClip', () => {
 
   it('initializes default values', () => {
     expect(movieClip.data.timeline).toBeNull();
-    expect(movieClip.type).toStrictEqual(DisplayObjectType.MovieClip);
+    expect(movieClip.kind).toStrictEqual(MovieClipKind);
   });
 
   it('allows pre-defined values', () => {

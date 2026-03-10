@@ -1,6 +1,6 @@
 import { rectangle } from '@flighthq/geometry';
-import { getBoundsRect, getLocalBoundsRect, getLocalTransform, getLocalTransformID } from '@flighthq/scene-graph-core';
-import { getAppearanceID, getLocalBoundsID } from '@flighthq/scene-graph-display';
+import { getBoundsRect, getLocalBoundsRect, getLocalTransformID } from '@flighthq/scene-graph-core';
+import { getAppearanceID, getLocalBoundsID, getLocalTransform2D } from '@flighthq/scene-graph-core';
 
 import Matrix from '../../../geometry/Matrix.js';
 import Rectangle from '../../../geometry/Rectangle.js';
@@ -150,7 +150,7 @@ describe('DisplayObject', () => {
       displayObject.rotation = 90;
       displayObject.scaleX = 2;
 
-      const m = getLocalTransform(displayObject.model);
+      const m = getLocalTransform2D(displayObject.model);
       expect(m.a).toBe(0);
       expect(m.b).toBe(2);
       expect(m.c).toBe(-1);
@@ -169,7 +169,7 @@ describe('DisplayObject', () => {
       displayObject.rotation = 90;
       displayObject.scaleY = 3;
 
-      const m = getLocalTransform(displayObject.model);
+      const m = getLocalTransform2D(displayObject.model);
       expect(m.a).toBe(0);
       expect(m.b).toBe(1);
       expect(m.c).toBe(-3);
@@ -221,7 +221,7 @@ describe('DisplayObject', () => {
 
     it('updates translation in local transform', () => {
       displayObject.x = 5;
-      const m = getLocalTransform(displayObject.model);
+      const m = getLocalTransform2D(displayObject.model);
       expect(m.tx).toBe(5);
     });
   });
@@ -239,7 +239,7 @@ describe('DisplayObject', () => {
 
     it('updates translation in local transform', () => {
       displayObject.y = 7;
-      const m = getLocalTransform(displayObject.model);
+      const m = getLocalTransform2D(displayObject.model);
       expect(m.ty).toBe(7);
     });
   });

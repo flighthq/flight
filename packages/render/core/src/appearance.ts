@@ -1,4 +1,4 @@
-import { getAppearanceID } from '@flighthq/scene-graph-display';
+import { getAppearanceID } from '@flighthq/scene-graph-core';
 import type { DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 

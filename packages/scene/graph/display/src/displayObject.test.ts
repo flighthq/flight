@@ -1,9 +1,20 @@
 import { matrix3x2 } from '@flighthq/geometry';
-import { getRuntime } from '@flighthq/scene-graph-core';
-import type { DisplayObject } from '@flighthq/types';
-import { BlendMode, DisplayObjectKind, DisplayObjectType } from '@flighthq/types';
+import type {
+  DisplayObject,
+  DisplayObjectData,
+  GraphNode,
+  HasBoundsRect,
+  PartialWithData,
+  Rectangle,
+} from '@flighthq/types';
+import { BlendMode, DisplayGraph, DisplayObjectKind } from '@flighthq/types';
 
-import { createDisplayObject } from './displayObject';
+import {
+  createDisplayObject,
+  createDisplayObjectGeneric,
+  createDisplayObjectRuntime,
+  getDisplayObjectRuntime,
+} from './displayObject';
 
 describe('createDisplayObject', () => {
   let displayObject: DisplayObject;
@@ -27,11 +38,10 @@ describe('createDisplayObject', () => {
     expect(displayObject.scaleY).toBe(1);
     expect(displayObject.scale9Grid).toBeNull();
     expect(displayObject.shader).toBeNull();
-    expect(displayObject.stage).toBeNull();
     expect(displayObject.visible).toBe(true);
     expect(displayObject.x).toBe(0);
     expect(displayObject.y).toBe(0);
-    expect(displayObject.type).toBe(DisplayObjectType.DisplayObject);
+    expect(displayObject.kind).toBe(DisplayObjectKind);
   });
 
   it('allows pre-defined values', () => {
@@ -70,9 +80,9 @@ describe('createDisplayObject', () => {
     expect(obj.y).toStrictEqual(base.y);
   });
 
-  it('uses the DisplayObjectKind for nodeKind', () => {
-    const runtime = getRuntime(displayObject);
-    expect(runtime.nodeKind).toStrictEqual(DisplayObjectKind);
+  it('uses the DisplayGraphKind for graphKind', () => {
+    const runtime = getDisplayObjectRuntime(displayObject);
+    expect(runtime.graph).toStrictEqual(DisplayGraph);
   });
 
   it('returns a new object for better hidden-class performance', () => {
@@ -81,3 +91,58 @@ describe('createDisplayObject', () => {
     expect(obj).not.toStrictEqual(base);
   });
 });
+
+describe('createDisplayObjectGeneric', () => {
+  it('allows creation of a type without a data field', () => {
+    const displayObject = createDisplayObjectGeneric(DisplayObjectKind);
+    expect(displayObject).not.toBeNull();
+  });
+
+  it('allows a custom type', () => {
+    const data: PartialWithData<DisplayObjectTest> = {
+      x: 100,
+    };
+    const displayObject = createDisplayObjectGeneric(DisplayObjectKind, data);
+    expect(displayObject.x).toBe(data.x);
+  });
+
+  it('returns a new object', () => {
+    const data: PartialWithData<DisplayObjectTest> = {};
+    const displayObject = createDisplayObjectGeneric(DisplayObjectKind, data);
+    expect(displayObject).not.toStrictEqual(data);
+  });
+
+  it('allows use of a data initializer', () => {
+    const data: PartialWithData<DisplayObjectTest> = {};
+    const displayObject = createDisplayObjectGeneric(DisplayObjectKind, data, createDisplayObjectTestData);
+    expect((displayObject.data as DisplayObjectTestData).foo).toBe('bar');
+  });
+});
+
+describe('createDisplayObjectRuntime', () => {
+  it('returns a graph runtime object', () => {
+    const runtime = createDisplayObjectRuntime();
+    expect(runtime).not.toBeNull();
+  });
+
+  it('allows a custom bounds calculation', () => {
+    const func = (
+      _out: Rectangle,
+      _source: Readonly<GraphNode<typeof DisplayGraph> & HasBoundsRect<typeof DisplayGraph>>,
+    ) => {};
+    const runtime = createDisplayObjectRuntime({ computeLocalBoundsRect: func });
+    expect(runtime.computeLocalBoundsRect).toStrictEqual(func);
+  });
+});
+
+interface DisplayObjectTest extends DisplayObject {}
+
+interface DisplayObjectTestData extends DisplayObjectData {
+  foo: string;
+}
+
+function createDisplayObjectTestData(data?: Partial<DisplayObjectTestData>): DisplayObjectTestData {
+  return {
+    foo: data?.foo ?? 'bar',
+  };
+}
