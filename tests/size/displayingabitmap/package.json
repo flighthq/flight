@@ -15,6 +15,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "assets": "tsx ../../scripts/download-assets.ts"
+    "preview": "vite preview",
+    "assets": "tsx ../../../scripts/download-assets.ts"
   }
 }

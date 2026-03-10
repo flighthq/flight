@@ -48,7 +48,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const exampleDir = process.cwd();
     const manifestPath = path.join(exampleDir, 'assets.manifest.json');
     const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8'));
-    await downloadAssets(manifest.assets, path.join(exampleDir, 'assets'));
+    await downloadAssets(manifest.assets, path.join(exampleDir, 'public/assets'));
   })().catch((err) => {
     console.error(err); // eslint-disable-line
     process.exit(1);
