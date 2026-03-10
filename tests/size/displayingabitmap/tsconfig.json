@@ -5,7 +5,7 @@
     "rootDir": "./src"
   },
   "references": [
-    { "path": "../../../packages/flight" },
+    { "path": "../../../packages/assets" },
     { "path": "../../../packages/render/canvas" },
     { "path": "../../../packages/types" }
   ],

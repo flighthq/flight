@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@flighthq/flight": "*",
+    "@flighthq/assets": "*",
     "@flighthq/render-canvas": "*",
     "@flighthq/types": "*",
     "typescript": "^5.0.0",
