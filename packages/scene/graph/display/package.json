@@ -37,6 +37,10 @@
       "types": "./dist/shape.d.ts",
       "default": "./dist/shape.js"
     },
+    "./spriteBatchContainer": {
+      "types": "./dist/spriteBatchContainer.d.ts",
+      "default": "./dist/spriteBatchContainer.js"
+    },
     "./stage": {
       "types": "./dist/stage.d.ts",
       "default": "./dist/stage.js"
