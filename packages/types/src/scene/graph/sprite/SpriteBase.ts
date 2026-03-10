@@ -11,10 +11,7 @@ import type {
 } from '../core';
 
 export interface SpriteBase
-  extends
-    GraphNode<typeof SpriteGraphKind>,
-    HasTransform2D<typeof SpriteGraphKind>,
-    HasBoundsRect<typeof SpriteGraphKind> {
+  extends GraphNode<typeof SpriteGraph>, HasTransform2D<typeof SpriteGraph>, HasBoundsRect<typeof SpriteGraph> {
   alpha: number;
   alphaEnabled: boolean;
   blendMode: BlendMode | null;
@@ -26,15 +23,14 @@ export interface SpriteBase
   originY: number;
   readonly parent: SpriteBase | null;
   shader: Shader | null;
-  type: symbol;
 
   [NodeRuntimeKey]: SpriteGraphRuntime | undefined;
 }
 
 export interface SpriteBaseData extends NodeData {}
 
-export const SpriteGraphKind: unique symbol = Symbol('SpriteGraph');
+export const SpriteGraph: unique symbol = Symbol('SpriteGraph');
 
-export type SpriteGraphRuntime = GraphNodeRuntime<typeof SpriteGraphKind> &
-  HasTransform2DRuntime<typeof SpriteGraphKind> &
-  HasBoundsRectRuntime<typeof SpriteGraphKind>;
+export type SpriteGraphRuntime = GraphNodeRuntime<typeof SpriteGraph> &
+  HasTransform2DRuntime<typeof SpriteGraph> &
+  HasBoundsRectRuntime<typeof SpriteGraph>;
