@@ -1,18 +1,18 @@
-import type { DOMObject } from '@flighthq/types';
-import { DOMObjectKind } from '@flighthq/types';
+import type { DOMElement } from '@flighthq/types';
+import { DOMElementKind } from '@flighthq/types';
 
-import { createDOMObject } from './domObject';
+import { createDOMElement } from './domElement';
 
-describe('createDOMObject', () => {
-  let domObject: DOMObject;
+describe('createDOMElement', () => {
+  let domElement: DOMElement;
 
   beforeEach(() => {
-    domObject = createDOMObject();
+    domElement = createDOMElement();
   });
 
   it('initializes default values', () => {
-    expect(domObject.data.element).toBeNull();
-    expect(domObject.kind).toStrictEqual(DOMObjectKind);
+    expect(domElement.data.element).toBeNull();
+    expect(domElement.kind).toStrictEqual(DOMElementKind);
   });
 
   it('allows pre-defined values', () => {
@@ -22,13 +22,13 @@ describe('createDOMObject', () => {
         element: element,
       },
     };
-    const obj = createDOMObject(base);
+    const obj = createDOMElement(base);
     expect(obj.data.element).toStrictEqual(element);
   });
 
   it('returns a new object for better hidden-class performance', () => {
     const base = {};
-    const obj = createDOMObject(base);
+    const obj = createDOMElement(base);
     expect(obj).not.toStrictEqual(base);
   });
 });
