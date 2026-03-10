@@ -33,6 +33,7 @@ export function createBaseConfig(mode: string) {
         '@flighthq/scene-graph-core/hierarchy': path.resolve(__dirname, 'packages/scene/graph/core/src/hierarchy.ts'),
         '@flighthq/scene-graph-core': path.resolve(__dirname, 'packages/scene/graph/core/src/index.ts'),
         '@flighthq/scene-graph-display': path.resolve(__dirname, 'packages/scene/graph/display/src/index.ts'),
+        '@flighthq/scene-graph-sprite': path.resolve(__dirname, 'packages/scene/graph/sprite/src/index.ts'),
         '@flighthq/scene-graph-world': path.resolve(__dirname, 'packages/scene/graph/world/src/index.ts'),
         // '@flighthq/types': path.resolve(__dirname, 'packages/types/src/index.ts'),
       },
@@ -49,6 +50,7 @@ export function createBaseConfig(mode: string) {
         '@flighthq/render-canvas',
         '@flighthq/render-core',
         '@flighthq/scene-graph-display',
+        '@flighthq/scene-graph-sprite',
         '@flighthq/scene-graph-world',
         // '@flighthq/types',
         // ... list all workspace packages you want live-reloading on

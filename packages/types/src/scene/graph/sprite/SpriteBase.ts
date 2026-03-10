@@ -24,13 +24,13 @@ export interface SpriteBase
   readonly parent: SpriteBase | null;
   shader: Shader | null;
 
-  [NodeRuntimeKey]: SpriteGraphRuntime | undefined;
+  [NodeRuntimeKey]: SpriteBaseRuntime | undefined;
 }
 
 export interface SpriteBaseData extends NodeData {}
 
 export const SpriteGraph: unique symbol = Symbol('SpriteGraph');
 
-export type SpriteGraphRuntime = GraphNodeRuntime<typeof SpriteGraph> &
+export type SpriteBaseRuntime = GraphNodeRuntime<typeof SpriteGraph> &
   HasTransform2DRuntime<typeof SpriteGraph> &
   HasBoundsRectRuntime<typeof SpriteGraph>;
