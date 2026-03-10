@@ -1,0 +1,18 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "references": [
+    { "path": "../../geometry" },
+    { "path": "../core" },
+    { "path": "../../scene/graph/display" },
+    { "path": "../../types" }
+  ],
+  "include": ["src"]
+}

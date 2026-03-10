@@ -1,0 +1,64 @@
+{
+  "name": "@flighthq/render-core",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./appearance": {
+      "types": "./dist/appearance.d.ts",
+      "default": "./dist/appearance.js"
+    },
+    "./color": {
+      "types": "./dist/color.d.ts",
+      "default": "./dist/color.js"
+    },
+    "./queue": {
+      "types": "./dist/queue.d.ts",
+      "default": "./dist/queue.js"
+    },
+    "./renderer": {
+      "types": "./dist/renderer.d.ts",
+      "default": "./dist/renderer.js"
+    },
+    "./renderNode": {
+      "types": "./dist/renderNode.d.ts",
+      "default": "./dist/renderNode.js"
+    },
+    "./renderState": {
+      "types": "./dist/renderState.d.ts",
+      "default": "./dist/renderState.js"
+    },
+    "./transform": {
+      "types": "./dist/transform.d.ts",
+      "default": "./dist/transform.js"
+    },
+    "./update": {
+      "types": "./dist/update.d.ts",
+      "default": "./dist/update.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "@flighthq/geometry": "*",
+    "@flighthq/materials": "*",
+    "@flighthq/scene-graph-display": "*",
+    "@flighthq/types": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
