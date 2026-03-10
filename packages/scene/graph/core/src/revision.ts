@@ -1,7 +1,6 @@
 import type { GraphNode, GraphNodeRuntime } from '@flighthq/types';
 
 import { getGraphNodeRuntime } from './graphNode';
-import { getRuntime } from './node';
 
 export function getAppearanceID<G extends symbol>(source: Readonly<GraphNode<G>>): number {
   return getGraphNodeRuntime(source).appearanceID;

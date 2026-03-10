@@ -1,4 +1,4 @@
-import type { GraphNode, GraphNodeData, GraphNodeRuntime, NodeData, PartialWithData } from '@flighthq/types';
+import type { GraphNode, GraphNodeData, GraphNodeRuntime, PartialWithData } from '@flighthq/types';
 import { NodeRuntimeKey } from '@flighthq/types';
 
 import type { GraphNodeInternal } from './internal';
