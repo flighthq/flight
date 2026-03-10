@@ -8,6 +8,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./imageSource": {
+      "types": "./dist/imageSource.d.ts",
+      "default": "./dist/imageSource.js"
+    },
+    "./tileset": {
+      "types": "./dist/tileset.d.ts",
+      "default": "./dist/tileset.js"
     }
   },
   "files": [

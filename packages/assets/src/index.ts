@@ -1,2 +1,2 @@
-export * from './image.js';
+export * from './imageSource.js';
 export * from './tileset.js';
