@@ -20,6 +20,7 @@ export default mergeConfig(
         path.join(rootDir, 'packages/render/core'),
         path.join(rootDir, 'packages/scene/graph/core'),
         path.join(rootDir, 'packages/scene/graph/display'),
+        path.join(rootDir, 'packages/scene/graph/sprite'),
         path.join(rootDir, 'packages/scene/graph/world'),
         path.join(rootDir, 'packages/types'),
         path.join(rootDir, 'tests/api'),

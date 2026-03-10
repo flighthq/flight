@@ -1,0 +1,47 @@
+{
+  "name": "@flighthq/scene-graph-sprite",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./quadBatch": {
+      "types": "./dist/quadBatch.d.ts",
+      "default": "./dist/quadBatch.js"
+    },
+    "./sprite": {
+      "types": "./dist/sprite.d.ts",
+      "default": "./dist/sprite.js"
+    },
+    "./spriteBase": {
+      "types": "./dist/spriteBase.d.ts",
+      "default": "./dist/spriteBase.js"
+    },
+    "./tilemap": {
+      "types": "./dist/tilemap.d.ts",
+      "default": "./dist/tilemap.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "@flighthq/geometry": "*",
+    "@flighthq/types": "*",
+    "@flighthq/scene-graph-core": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

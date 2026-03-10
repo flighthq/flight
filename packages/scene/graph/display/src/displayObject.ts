@@ -44,14 +44,9 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   out.filters = obj?.filters ?? null;
   out.mask = obj?.mask ?? null;
   out.opaqueBackground = obj?.opaqueBackground ?? null;
-  out.rotation = obj?.rotation ?? 0;
   out.scale9Grid = obj?.scale9Grid ?? null;
-  out.scaleX = obj?.scaleX ?? 1;
-  out.scaleY = obj?.scaleY ?? 1;
   out.scrollRect = obj?.scrollRect ?? null;
   out.shader = obj?.shader ?? null;
-  out.x = obj?.x ?? 0;
-  out.y = obj?.y ?? 0;
   return out;
 }
 

@@ -32,15 +32,9 @@ describe('createDisplayObject', () => {
     expect(displayObject.mask).toBeNull();
     expect(displayObject.name).toBeNull();
     expect(displayObject.opaqueBackground).toBeNull();
-    expect(displayObject.parent).toBeNull();
-    expect(displayObject.rotation).toBe(0);
-    expect(displayObject.scaleX).toBe(1);
-    expect(displayObject.scaleY).toBe(1);
     expect(displayObject.scale9Grid).toBeNull();
     expect(displayObject.shader).toBeNull();
     expect(displayObject.visible).toBe(true);
-    expect(displayObject.x).toBe(0);
-    expect(displayObject.y).toBe(0);
     expect(displayObject.kind).toBe(DisplayObjectKind);
   });
 
@@ -80,7 +74,7 @@ describe('createDisplayObject', () => {
     expect(obj.y).toStrictEqual(base.y);
   });
 
-  it('uses the DisplayGraphKind for graphKind', () => {
+  it('uses DisplayGraph for runtime.graph', () => {
     const runtime = getDisplayObjectRuntime(displayObject);
     expect(runtime.graph).toStrictEqual(DisplayGraph);
   });
