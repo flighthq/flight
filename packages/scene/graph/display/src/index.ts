@@ -1,6 +1,6 @@
 export * from './bitmap.js';
 export * from './displayObject.js';
-export * from './domObject.js';
+export * from './domElement.js';
 export * from './inputText.js';
 export * from './movieClip.js';
 export * from './richText.js';
