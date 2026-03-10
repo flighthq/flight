@@ -1,4 +1,5 @@
-import { DisplayObjectType, type Shape } from '@flighthq/types';
+import type { Shape } from '@flighthq/types';
+import { ShapeKind } from '@flighthq/types';
 
 import { createShape } from './shape';
 
@@ -11,7 +12,7 @@ describe('createShape', () => {
 
   it('initializes default values', () => {
     expect(shape.data.graphics).not.toBeNull();
-    expect(shape.type).toStrictEqual(DisplayObjectType.Shape);
+    expect(shape.kind).toStrictEqual(ShapeKind);
   });
 
   it('allows pre-defined values', () => {

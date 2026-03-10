@@ -1,12 +1,13 @@
-import { DisplayObjectType, type PartialWithData, type Video, type VideoData } from '@flighthq/types';
+import type { PartialWithData, Video, VideoData } from '@flighthq/types';
+import { VideoKind } from '@flighthq/types';
 
-import { createPrimitive } from './primitive';
+import { createDisplayObjectGeneric } from './displayObject';
 
-export function createVideo(obj: PartialWithData<Video> = {}): Video {
-  return createPrimitive(DisplayObjectType.Video, obj, createVideoData) as Video;
+export function createVideo(obj?: Readonly<PartialWithData<Video>>): Video {
+  return createDisplayObjectGeneric(VideoKind, obj, createVideoData) as Video;
 }
 
-export function createVideoData(data?: Partial<VideoData>): VideoData {
+export function createVideoData(data?: Readonly<Partial<VideoData>>): VideoData {
   return {
     smoothing: data?.smoothing ?? true,
   };

@@ -13,6 +13,22 @@
       "types": "./dist/boundsRect.d.ts",
       "default": "./dist/boundsRect.js"
     },
+    "./graphNode": {
+      "types": "./dist/graphNode.d.ts",
+      "default": "./dist/graphNode.js"
+    },
+    "./hasBoundsRect": {
+      "types": "./dist/hasBoundsRect.d.ts",
+      "default": "./dist/hasBoundsRect.js"
+    },
+    "./hasBoundsRectAndTransform2d": {
+      "types": "./dist/hasBoundsRectAndTransform2d.d.ts",
+      "default": "./dist/hasBoundsRectAndTransform2d.js"
+    },
+    "./hasTransform2d": {
+      "types": "./dist/hasTransform2d.d.ts",
+      "default": "./dist/hasTransform2d.js"
+    },
     "./hierarchy": {
       "types": "./dist/hierarchy.d.ts",
       "default": "./dist/hierarchy.js"
@@ -25,9 +41,9 @@
       "types": "./dist/runtime.d.ts",
       "default": "./dist/runtime.js"
     },
-    "./sceneNode": {
-      "types": "./dist/sceneNode.d.ts",
-      "default": "./dist/sceneNode.js"
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "default": "./dist/node.js"
     },
     "./transform2d": {
       "types": "./dist/transform2d.d.ts",

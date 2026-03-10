@@ -7,3 +7,5 @@ export interface DOMObjectData extends DisplayObjectData {
 export interface DOMObject extends DisplayObject {
   data: DOMObjectData;
 }
+
+export const DOMObjectKind: unique symbol = Symbol('DOMObject');

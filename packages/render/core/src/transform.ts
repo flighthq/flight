@@ -1,5 +1,5 @@
 import { matrix3x2 } from '@flighthq/geometry';
-import { getLocalTransform, getLocalTransformID } from '@flighthq/scene-graph-core';
+import { getLocalTransform2D, getLocalTransformID } from '@flighthq/scene-graph-core';
 import type { DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
 export function updateRenderTransform(
@@ -25,7 +25,7 @@ function recalculateRenderTransform(
   parentData?: DisplayObjectRenderNode,
 ): void {
   const source = data.source;
-  const transform = getLocalTransform(source);
+  const transform = getLocalTransform2D(source);
   const parentTransform = parentData !== undefined ? parentData.transform : state.renderTransform;
 
   if (parentTransform !== null) {

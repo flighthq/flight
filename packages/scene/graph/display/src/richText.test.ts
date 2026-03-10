@@ -1,4 +1,5 @@
-import { DisplayObjectType, type RichText } from '@flighthq/types';
+import type { RichText } from '@flighthq/types';
+import { RichTextKind } from '@flighthq/types';
 
 import { createRichText } from './richText';
 
@@ -26,7 +27,7 @@ describe('createRichText', () => {
     expect(richText.data.styleSheet).toBe(undefined);
     expect(richText.data.textColor).toBe(0);
     expect(richText.data.wordWrap).toBe(false);
-    expect(richText.type).toStrictEqual(DisplayObjectType.RichText);
+    expect(richText.kind).toStrictEqual(RichTextKind);
   });
 
   it('allows pre-defined values', () => {

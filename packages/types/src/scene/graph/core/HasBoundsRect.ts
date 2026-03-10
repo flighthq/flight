@@ -1,20 +1,15 @@
 import type { Rectangle } from '../../../geometry/Rectangle';
-import type { SceneNode } from './SceneNode';
-import type { SceneNodeRuntime, SceneNodeRuntimeKey } from './SceneNodeRuntime';
+import type { GraphNode } from './GraphNode';
+import type { GraphNodeRuntime } from './GraphNodeRuntime';
+import type { NodeRuntimeKey } from './NodeRuntime';
 
-export interface HasBoundsRect<K extends symbol> extends SceneNode<K> {
-  [SceneNodeRuntimeKey]: BoundsRectRuntime<K> | undefined;
+export interface HasBoundsRect<G extends symbol> extends GraphNode<G> {
+  [NodeRuntimeKey]: HasBoundsRectRuntime<G> | undefined;
 }
 
-export interface BoundsRectRuntime<K extends symbol> extends SceneNodeRuntime<K> {
+export interface HasBoundsRectRuntime<G extends symbol> extends GraphNodeRuntime<G> {
   boundsRect: Rectangle | null;
-  boundsRectUsingLocalBoundsID: number;
-  boundsRectUsingLocalTransformID: number;
-  computeLocalBounds: (out: Rectangle, source: SceneNode<K>) => void;
+  computeLocalBoundsRect: (out: Rectangle, source: Readonly<GraphNode<G> & HasBoundsRect<G>>) => void;
   localBoundsRect: Rectangle | null;
-  localBoundsRectUsingLocalBoundsID: number;
-  localBoundsID: number;
   worldBoundsRect: Rectangle | null;
-  worldBoundsRectUsingLocalBoundsID: number;
-  worldBoundsRectUsingWorldTransformID: number;
 }

@@ -1,12 +1,13 @@
-import { DisplayObjectType, type PartialWithData, type Stage, type StageData } from '@flighthq/types';
+import type { PartialWithData, Stage, StageData } from '@flighthq/types';
+import { StageKind } from '@flighthq/types';
 
-import { createPrimitive } from './primitive';
+import { createDisplayObjectGeneric } from './displayObject';
 
-export function createStage(obj?: PartialWithData<Stage>): Stage {
-  return createPrimitive(DisplayObjectType.Stage, obj, createStageData) as Stage;
+export function createStage(obj?: Readonly<PartialWithData<Stage>>): Stage {
+  return createDisplayObjectGeneric(StageKind, obj, createStageData) as Stage;
 }
 
-export function createStageData(data?: Partial<StageData>): StageData {
+export function createStageData(data?: Readonly<Partial<StageData>>): StageData {
   return {
     autoOrients: data?.autoOrients ?? true,
     align: data?.align ?? 'topleft',

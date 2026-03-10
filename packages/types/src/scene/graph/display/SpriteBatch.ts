@@ -9,3 +9,5 @@ export interface SpriteBatchData extends DisplayObjectData {
 export interface SpriteBatch extends DisplayObject {
   data: SpriteBatchData;
 }
+
+export const SpriteBatchKind: unique symbol = Symbol('SpriteBatch');

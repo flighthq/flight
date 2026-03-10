@@ -1,6 +1,5 @@
 export * from './Bitmap.js';
 export * from './DisplayObject.js';
-export * from './DisplayObjectType.js';
 export * from './DOMObject.js';
 export * from './Graphics.js';
 export * from './InputText.js';

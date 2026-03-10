@@ -1,12 +1,13 @@
-import { DisplayObjectType, type PartialWithData, type SpriteBatch, type SpriteBatchData } from '@flighthq/types';
+import type { PartialWithData, SpriteBatch, SpriteBatchData } from '@flighthq/types';
+import { SpriteBatchKind } from '@flighthq/types';
 
-import { createPrimitive } from './primitive';
+import { createDisplayObjectGeneric } from './displayObject';
 
-export function createSpriteBatch(obj: PartialWithData<SpriteBatch> = {}): SpriteBatch {
-  return createPrimitive(DisplayObjectType.SpriteBatch, obj, createSpriteBatchData) as SpriteBatch;
+export function createSpriteBatch(obj?: Readonly<PartialWithData<SpriteBatch>>): SpriteBatch {
+  return createDisplayObjectGeneric(SpriteBatchKind, obj, createSpriteBatchData) as SpriteBatch;
 }
 
-export function createSpriteBatchData(data?: Partial<SpriteBatchData>): SpriteBatchData {
+export function createSpriteBatchData(data?: Readonly<Partial<SpriteBatchData>>): SpriteBatchData {
   return {
     batch: data?.batch ?? null,
     smoothing: data?.smoothing ?? true,

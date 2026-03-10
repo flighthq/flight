@@ -1,14 +1,15 @@
-import { DisplayObjectType, type PartialWithData, type RichText, type RichTextData } from '@flighthq/types';
+import type { PartialWithData, RichText, RichTextData } from '@flighthq/types';
+import { RichTextKind } from '@flighthq/types';
 
+import { createDisplayObjectGeneric } from './displayObject';
 import type { RichTextDataInternal } from './internal';
-import { createPrimitive } from './primitive';
 import { createTextData } from './text';
 
-export function createRichText(obj?: PartialWithData<RichText>): RichText {
-  return createPrimitive(DisplayObjectType.RichText, obj, createRichTextData) as RichText;
+export function createRichText(obj?: Readonly<PartialWithData<RichText>>): RichText {
+  return createDisplayObjectGeneric(RichTextKind, obj, createRichTextData) as RichText;
 }
 
-export function createRichTextData(data?: Partial<RichTextData>): RichTextData {
+export function createRichTextData(data?: Readonly<Partial<RichTextData>>): RichTextData {
   const _data = createTextData(data) as RichTextData;
   _data.background = data?.background ?? false;
   _data.backgroundColor = data?.backgroundColor ?? 0xffffff;

@@ -1,6 +1,7 @@
-import type { SceneNode } from '@flighthq/types';
-import { SceneNodeKind } from '@flighthq/types';
+import type { GraphNode } from '@flighthq/types';
+import { GraphNodeKind, NodeKind } from '@flighthq/types';
 
+import { createGraphNode, getGraphNodeRuntime } from './graphNode';
 import {
   addChild,
   addChildAt,
@@ -15,17 +16,15 @@ import {
   swapChildren,
   swapChildrenAt,
 } from './hierarchy';
-import { getRuntime } from './runtime';
-import { createSceneNode } from './sceneNode';
 
-let container: SceneNode<typeof SceneNodeKind>;
-let childA: SceneNode<typeof SceneNodeKind>;
-let childB: SceneNode<typeof SceneNodeKind>;
+let container: GraphNode<typeof GraphNodeKind>;
+let childA: GraphNode<typeof GraphNodeKind>;
+let childB: GraphNode<typeof GraphNodeKind>;
 
 beforeEach(() => {
-  container = createSceneNode(SceneNodeKind);
-  childA = createSceneNode(SceneNodeKind);
-  childB = createSceneNode(SceneNodeKind);
+  container = createGraphNode(GraphNodeKind, NodeKind);
+  childA = createGraphNode(GraphNodeKind, NodeKind);
+  childB = createGraphNode(GraphNodeKind, NodeKind);
 });
 
 describe('addChild', () => {
@@ -45,7 +44,7 @@ describe('addChild', () => {
   });
 
   it('removes child from previous parent before adding', () => {
-    const other = createSceneNode(SceneNodeKind);
+    const other = createGraphNode(GraphNodeKind, NodeKind);
 
     addChild(other, childA);
     expect(childA.parent).toBe(other);
@@ -58,7 +57,7 @@ describe('addChild', () => {
   });
 
   it('a child never has more than one parent', () => {
-    const other = createSceneNode(SceneNodeKind);
+    const other = createGraphNode(GraphNodeKind, NodeKind);
 
     addChild(container, childA);
     addChild(other, childA);
@@ -70,8 +69,8 @@ describe('addChild', () => {
 
   it('calls onParentChanged on the child', () => {
     let called = false;
-    const runtime = getRuntime(childA);
-    runtime.onParentChanged = (_target: SceneNode<typeof SceneNodeKind>) => {
+    const runtime = getGraphNodeRuntime(childA);
+    runtime.onParentChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
       called = true;
     };
     addChild(container, childA);
@@ -80,8 +79,8 @@ describe('addChild', () => {
 
   it('calls onChildrenChanged on the parent', () => {
     let called = false;
-    const runtime = getRuntime(container);
-    runtime.onChildrenChanged = (_target: SceneNode<typeof SceneNodeKind>) => {
+    const runtime = getGraphNodeRuntime(container);
+    runtime.onChildrenChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
       called = true;
     };
     addChild(container, childA);
@@ -128,8 +127,8 @@ describe('addChildAt', () => {
 
   it('calls onParentChanged on the child', () => {
     let called = false;
-    const runtime = getRuntime(childA);
-    runtime.onParentChanged = (_target: SceneNode<typeof SceneNodeKind>) => {
+    const runtime = getGraphNodeRuntime(childA);
+    runtime.onParentChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
       called = true;
     };
     addChildAt(container, childA, 0);
@@ -138,8 +137,8 @@ describe('addChildAt', () => {
 
   it('calls onChildrenChanged on the parent', () => {
     let called = false;
-    const runtime = getRuntime(container);
-    runtime.onChildrenChanged = (_target: SceneNode<typeof SceneNodeKind>) => {
+    const runtime = getGraphNodeRuntime(container);
+    runtime.onChildrenChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
       called = true;
     };
     addChildAt(container, childA, 0);
@@ -241,7 +240,7 @@ describe('removeChild', () => {
   it('does nothing if child is not a child of target', () => {
     addChild(container, childA);
 
-    const other = createSceneNode(SceneNodeKind);
+    const other = createGraphNode(GraphNodeKind, NodeKind);
     removeChild(other, childA);
 
     expect(container.children!.length).toBe(1);
@@ -262,8 +261,8 @@ describe('removeChild', () => {
   it('calls onParentChanged on the child', () => {
     addChild(container, childA);
     let called = false;
-    const runtime = getRuntime(childA);
-    runtime.onParentChanged = (_target: SceneNode<typeof SceneNodeKind>) => {
+    const runtime = getGraphNodeRuntime(childA);
+    runtime.onParentChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
       called = true;
     };
     removeChild(container, childA);
@@ -273,8 +272,8 @@ describe('removeChild', () => {
   it('calls onChildrenChanged on the parent', () => {
     addChild(container, childA);
     let called = false;
-    const runtime = getRuntime(container);
-    runtime.onChildrenChanged = (_target: SceneNode<typeof SceneNodeKind>) => {
+    const runtime = getGraphNodeRuntime(container);
+    runtime.onChildrenChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
       called = true;
     };
     removeChild(container, childA);
@@ -304,8 +303,8 @@ describe('removeChildAt', () => {
     addChild(container, childB);
 
     let called = false;
-    const runtime = getRuntime(childA);
-    runtime.onParentChanged = (_target: SceneNode<typeof SceneNodeKind>) => {
+    const runtime = getGraphNodeRuntime(childA);
+    runtime.onParentChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
       called = true;
     };
     removeChildAt(container, 0);
@@ -317,8 +316,8 @@ describe('removeChildAt', () => {
     addChild(container, childB);
 
     let called = false;
-    const runtime = getRuntime(container);
-    runtime.onChildrenChanged = (_target: SceneNode<typeof SceneNodeKind>) => {
+    const runtime = getGraphNodeRuntime(container);
+    runtime.onChildrenChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
       called = true;
     };
     removeChildAt(container, 0);
@@ -339,7 +338,7 @@ describe('removeChildren', () => {
   });
 
   it('removeChildren removes a range of children', () => {
-    const childC = createSceneNode(SceneNodeKind);
+    const childC = createGraphNode(GraphNodeKind, NodeKind);
 
     addChild(container, childA);
     addChild(container, childB);
@@ -372,8 +371,8 @@ describe('removeChildren', () => {
     addChild(container, childA);
 
     let called = false;
-    const runtime = getRuntime(childA);
-    runtime.onParentChanged = (_target: SceneNode<typeof SceneNodeKind>) => {
+    const runtime = getGraphNodeRuntime(childA);
+    runtime.onParentChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
       called = true;
     };
     removeChildren(container);
@@ -384,8 +383,8 @@ describe('removeChildren', () => {
     addChild(container, childA);
 
     let called = false;
-    const runtime = getRuntime(container);
-    runtime.onChildrenChanged = (_target: SceneNode<typeof SceneNodeKind>) => {
+    const runtime = getGraphNodeRuntime(container);
+    runtime.onChildrenChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
       called = true;
     };
     removeChildren(container);
@@ -405,7 +404,7 @@ describe('setChildIndex', () => {
   });
 
   it('setChildIndex does nothing if child is not in container', () => {
-    const other = createSceneNode(SceneNodeKind);
+    const other = createGraphNode(GraphNodeKind, NodeKind);
 
     addChild(other, childA);
     addChild(container, childB);
@@ -429,8 +428,8 @@ describe('setChildIndex', () => {
     addChild(container, childB);
 
     let called = false;
-    const runtime = getRuntime(container);
-    runtime.onChildrenOrderChanged = (_target: SceneNode<typeof SceneNodeKind>) => {
+    const runtime = getGraphNodeRuntime(container);
+    runtime.onChildrenOrderChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
       called = true;
     };
     setChildIndex(container, childA, 1);
@@ -450,7 +449,7 @@ describe('swapChildren', () => {
   });
 
   it('swapChildren does nothing if either child is not in container', () => {
-    const other = createSceneNode(SceneNodeKind);
+    const other = createGraphNode(GraphNodeKind, NodeKind);
 
     addChild(container, childA);
     addChild(other, childB);
@@ -465,8 +464,8 @@ describe('swapChildren', () => {
     addChild(container, childB);
 
     let called = false;
-    const runtime = getRuntime(container);
-    runtime.onChildrenOrderChanged = (_target: SceneNode<typeof SceneNodeKind>) => {
+    const runtime = getGraphNodeRuntime(container);
+    runtime.onChildrenOrderChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
       called = true;
     };
     swapChildren(container, childA, childB);
@@ -496,8 +495,8 @@ describe('swapChildrenAt', () => {
     addChild(container, childB);
 
     let called = false;
-    const runtime = getRuntime(container);
-    runtime.onChildrenOrderChanged = (_target: SceneNode<typeof SceneNodeKind>) => {
+    const runtime = getGraphNodeRuntime(container);
+    runtime.onChildrenOrderChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
       called = true;
     };
     swapChildrenAt(container, 0, 1);

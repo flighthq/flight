@@ -1,12 +1,13 @@
-import { DisplayObjectType, type MovieClip, type MovieClipData, type PartialWithData } from '@flighthq/types';
+import type { MovieClip, MovieClipData, PartialWithData } from '@flighthq/types';
+import { MovieClipKind } from '@flighthq/types';
 
-import { createPrimitive } from './primitive';
+import { createDisplayObjectGeneric } from './displayObject';
 
-export function createMovieClip(obj?: PartialWithData<MovieClip>): MovieClip {
-  return createPrimitive(DisplayObjectType.MovieClip, obj, createMovieClipData) as MovieClip;
+export function createMovieClip(obj?: Readonly<PartialWithData<MovieClip>>): MovieClip {
+  return createDisplayObjectGeneric(MovieClipKind, obj, createMovieClipData) as MovieClip;
 }
 
-export function createMovieClipData(data?: Partial<MovieClipData>): MovieClipData {
+export function createMovieClipData(data?: Readonly<Partial<MovieClipData>>): MovieClipData {
   return {
     timeline: data?.timeline ?? null,
   };

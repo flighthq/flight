@@ -3,13 +3,15 @@ import { hitTestObject as __hitTestObject, hitTestPoint as __hitTestPoint } from
 import {
   calculateBoundsRect,
   getBoundsRect,
-  globalToLocal as __globalToLocal,
+  globalToLocal2D,
+  invalidate as __invalidate,
+  invalidateAppearance,
   invalidateLocalTransform,
-  localToGlobal as __localToGlobal,
+  localToGlobal2D,
 } from '@flighthq/scene-graph-core';
-import { createDisplayObject, invalidate as __invalidate, invalidateAppearance } from '@flighthq/scene-graph-display';
-import type { DisplayObject as DisplayObjectModel, Filter, Shader } from '@flighthq/types';
+import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { BlendMode } from '@flighthq/types';
+import { type DisplayObject as DisplayObjectModel, type Filter, type Shader, StageKind } from '@flighthq/types';
 
 import Matrix from '../../../geometry/Matrix.js';
 import Rectangle from '../../../geometry/Rectangle.js';
@@ -50,7 +52,7 @@ export default class DisplayObject {
 
   globalToLocal(pos: Readonly<Vector2>): Vector2 {
     const out = new Vector2();
-    __globalToLocal(out.model, this.model, pos.model);
+    globalToLocal2D(out.model, this.model, pos.model);
     return out;
   }
 
@@ -68,7 +70,7 @@ export default class DisplayObject {
 
   localToGlobal(point: Readonly<Vector2>): Vector2 {
     const out = new Vector2();
-    __localToGlobal(out.model, this.model, point.model);
+    localToGlobal2D(out.model, this.model, point.model);
     return out;
   }
 
@@ -309,7 +311,12 @@ export default class DisplayObject {
   }
 
   get stage(): Stage | null {
-    return getDisplayObjectFromModel(this.model.stage) as Stage;
+    let current = this.model.parent;
+    while (current !== null) {
+      if (current.kind === StageKind) return getDisplayObjectFromModel(current) as Stage;
+      current = current.parent;
+    }
+    return null;
   }
 
   get transform(): Transform {

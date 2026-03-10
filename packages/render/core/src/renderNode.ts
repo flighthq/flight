@@ -12,7 +12,7 @@ import type {
 import { BlendMode } from '@flighthq/types';
 
 export function createDisplayObjectRenderNode(state: RenderState, source: DisplayObject): DisplayObjectRenderNode {
-  const renderer = state.rendererMap.get(source.type);
+  const renderer = state.rendererMap.get(source.kind);
   return {
     alpha: 1,
     appearanceFrameID: -1,
@@ -38,7 +38,7 @@ export function createDisplayObjectRenderNode(state: RenderState, source: Displa
 }
 
 export function createSpriteRenderNode(state: RenderState, source: SpriteBase): SpriteRenderNode {
-  const renderer = state.rendererMap.get(source.type);
+  const renderer = state.rendererMap.get(source.kind);
   return {
     alpha: 1,
     appearanceFrameID: -1,
@@ -105,7 +105,7 @@ function getRenderNode<T extends Renderable, N extends RenderNode>(
     renderNodeMap.set(source, node);
   }
   if (node.rendererMapID !== state.rendererMapID) {
-    node.renderer = state.rendererMap.get(node.source.type) ?? null;
+    node.renderer = state.rendererMap.get(node.source.kind) ?? null;
     node.rendererMapID = state.rendererMapID;
   }
   return node;

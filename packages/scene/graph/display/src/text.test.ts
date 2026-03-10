@@ -1,4 +1,5 @@
-import { DisplayObjectType, type PartialWithData, type Text } from '@flighthq/types';
+import type { PartialWithData, Text } from '@flighthq/types';
+import { TextKind } from '@flighthq/types';
 
 import { createText } from './text';
 
@@ -13,7 +14,7 @@ describe('createText', () => {
     expect(text.data.text).toBe('');
     expect(text.data.autoSize).toBe('none');
     expect(text.data.textFormat).not.toBeNull();
-    expect(text.type).toStrictEqual(DisplayObjectType.Text);
+    expect(text.kind).toStrictEqual(TextKind);
   });
 
   it('allows pre-defined values', () => {

@@ -1,4 +1,5 @@
-import { type Bitmap, DisplayObjectType, type ImageSource } from '@flighthq/types';
+import type { Bitmap, ImageSource } from '@flighthq/types';
+import { BitmapKind } from '@flighthq/types';
 
 import { createBitmap } from './bitmap';
 
@@ -12,7 +13,7 @@ describe('createBitmap', () => {
   it('initializes default values', () => {
     expect(bitmap.data.image).toBeNull();
     expect(bitmap.data.smoothing).toBe(true);
-    expect(bitmap.type).toBe(DisplayObjectType.Bitmap);
+    expect(bitmap.kind).toBe(BitmapKind);
   });
 
   it('allows pre-defined values', () => {

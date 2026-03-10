@@ -8,3 +8,5 @@ export interface InputTextData extends RichTextData {
 export interface InputText extends RichText {
   data: InputTextData;
 }
+
+export const InputTextKind: unique symbol = Symbol('InputText');
