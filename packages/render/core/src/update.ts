@@ -10,7 +10,7 @@ import { updateRenderTransform } from './transform';
 /**
  * First pass, update appearance, transforms, identify masks
  */
-export function prepareDisplayObjectForRender(state: RenderState, source: DisplayObject): boolean {
+export function updateDisplayObjectBeforeRender(state: RenderState, source: DisplayObject): boolean {
   const tempStack = state.tempStack;
   const currentFrameID = ++(state as RenderStateInternal).currentFrameID;
 
