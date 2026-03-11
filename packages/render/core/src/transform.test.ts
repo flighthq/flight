@@ -1,9 +1,4 @@
-import {
-  addChild,
-  getLocalTransform2D,
-  getWorldTransform2D,
-  invalidateLocalTransform,
-} from '@flighthq/scene-graph-core';
+import { addChild, getWorldTransform2D, invalidateLocalTransform } from '@flighthq/scene-graph-core';
 import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
@@ -128,7 +123,7 @@ describe('updateRenderTransform', () => {
     updateRenderTransform(state, parentData);
 
     const tRender = parentData.transform;
-    const tWorld = getWorldTransform2D(parent); // or world transform if needed
+    const tWorld = getWorldTransform2D(parent);
 
     // Render transform is offset by scrollRect
     expect(tRender.tx).toBeCloseTo(40); // 50 - 10
