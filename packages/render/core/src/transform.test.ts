@@ -1,4 +1,9 @@
-import { addChild, invalidateLocalTransform } from '@flighthq/scene-graph-core';
+import {
+  addChild,
+  getLocalTransform2D,
+  getWorldTransform2D,
+  invalidateLocalTransform,
+} from '@flighthq/scene-graph-core';
 import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
@@ -113,5 +118,24 @@ describe('updateRenderTransform', () => {
     expect(t.b).toBeCloseTo(-1);
     expect(t.c).toBeCloseTo(1);
     expect(t.d).toBeCloseTo(0);
+  });
+
+  it('applies scrollRect offset in render transform but not world transform', () => {
+    parent.x = 50;
+    parent.y = 50;
+    parent.scrollRect = { x: 10, y: 5, width: 100, height: 100 };
+
+    updateRenderTransform(state, parentData);
+
+    const tRender = parentData.transform;
+    const tWorld = getWorldTransform2D(parent); // or world transform if needed
+
+    // Render transform is offset by scrollRect
+    expect(tRender.tx).toBeCloseTo(40); // 50 - 10
+    expect(tRender.ty).toBeCloseTo(45); // 50 - 5
+
+    // World transform is unaffected
+    expect(tWorld.tx).toBeCloseTo(50);
+    expect(tWorld.ty).toBeCloseTo(50);
   });
 });
