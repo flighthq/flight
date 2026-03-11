@@ -12,6 +12,7 @@ export default mergeConfig(
       projects: [
         path.join(rootDir, 'packages/animation/timeline'),
         path.join(rootDir, 'packages/assets'),
+        path.join(rootDir, 'packages/core'),
         path.join(rootDir, 'packages/flight'),
         path.join(rootDir, 'packages/geometry'),
         path.join(rootDir, 'packages/interaction'),

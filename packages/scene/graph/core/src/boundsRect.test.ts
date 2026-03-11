@@ -1,10 +1,10 @@
+import { getNodeRuntime } from '@flighthq/core';
 import { rectangle } from '@flighthq/geometry';
 import { setEmpty } from '@flighthq/geometry/rectangle';
 import {
   addChild,
   createGraphNode,
   ensureLocalTransform2D,
-  getRuntime,
   initHasTransform2D,
   initHasTransform2DRuntime,
   invalidateLocalTransform,
@@ -27,11 +27,15 @@ import {
   getLocalBoundsRect,
   getWorldBoundsRect,
 } from './boundsRect';
-import { getHasBoundsRectRuntime, initHasBoundsRect, initHasBoundsRectRuntime } from './hasBoundsRect';
+import { initHasBoundsRect, initHasBoundsRectRuntime } from './hasBoundsRect';
+
+function getRuntime<G extends symbol>(source: TestNode) {
+  return getNodeRuntime(source) as HasBoundsRectRuntime<G>;
+}
 
 function createTestNode(): TestNode {
   const node = createGraphNode(TestGraph, TestKind) as TestNode;
-  const runtime = getRuntime(node);
+  const runtime = getNodeRuntime(node);
   initHasBoundsRect(node);
   initHasBoundsRectRuntime(runtime as HasBoundsRectRuntime<typeof TestGraph>);
   initHasTransform2D(node);
@@ -146,7 +150,7 @@ describe('calculateBoundsRect', () => {
 describe('ensureBoundsRect', () => {
   it('should ensure boundsRect is defined', () => {
     const object = createTestNode();
-    const runtime = getHasBoundsRectRuntime(object);
+    const runtime = getRuntime(object);
     expect(runtime.boundsRect).toBeNull();
     ensureBoundsRect(object);
     expect(runtime.boundsRect).not.toBeNull();
@@ -154,7 +158,7 @@ describe('ensureBoundsRect', () => {
 
   it('should not recalculate if localBoundsID and localTransformID are unchanged', () => {
     const object = createTestNode();
-    const runtime = getHasBoundsRectRuntime(object);
+    const runtime = getRuntime(object);
     ensureBoundsRect(object);
     const cache = cloneAndInvalidateRect(runtime.boundsRect!);
     ensureBoundsRect(object);
@@ -163,8 +167,8 @@ describe('ensureBoundsRect', () => {
 
   it('should recalculate if localBoundsID is changed', () => {
     const object = createTestNode();
-    const runtime = getHasBoundsRectRuntime(object);
-    runtime.computeLocalBoundsRect = (out, _source) => {
+    const runtime = getRuntime(object);
+    runtime.computeLocalBoundsRect = (out: Rectangle, _source: GraphNode<symbol>) => {
       setEmpty(out);
     };
     ensureBoundsRect(object);
@@ -176,7 +180,7 @@ describe('ensureBoundsRect', () => {
 
   it('should recalculate if localTransformID is changed', () => {
     const object = createTestNode();
-    const runtime = getHasBoundsRectRuntime(object);
+    const runtime = getRuntime(object);
     ensureBoundsRect(object);
     const cache = cloneAndInvalidateRect(runtime.boundsRect!);
     runtime.localTransformID++;
@@ -188,7 +192,7 @@ describe('ensureBoundsRect', () => {
 describe('ensureLocalBoundsRect', () => {
   it('should ensure localBoundsRect is defined', () => {
     const object = createTestNode();
-    const runtime = getHasBoundsRectRuntime(object);
+    const runtime = getRuntime(object);
     expect(runtime.localBoundsRect).toBeNull();
     ensureLocalBoundsRect(object);
     expect(runtime.localBoundsRect).not.toBeNull();
@@ -196,8 +200,8 @@ describe('ensureLocalBoundsRect', () => {
 
   it('should not recalculate if localBoundsID is unchanged', () => {
     const object = createTestNode();
-    const runtime = getHasBoundsRectRuntime(object);
-    runtime.computeLocalBoundsRect = (out, _source) => {
+    const runtime = getRuntime(object);
+    runtime.computeLocalBoundsRect = (out: Rectangle, _source: GraphNode<symbol>) => {
       setEmpty(out);
     };
     ensureLocalBoundsRect(object);
@@ -208,8 +212,8 @@ describe('ensureLocalBoundsRect', () => {
 
   it('should recalculate if localBoundsID is changed', () => {
     const object = createTestNode();
-    const runtime = getHasBoundsRectRuntime(object);
-    runtime.computeLocalBoundsRect = (out, _source) => {
+    const runtime = getRuntime(object);
+    runtime.computeLocalBoundsRect = (out: Rectangle, _source: GraphNode<symbol>) => {
       setEmpty(out);
     };
     ensureLocalBoundsRect(object);
@@ -221,8 +225,8 @@ describe('ensureLocalBoundsRect', () => {
 
   it('should not recalculate if localTransformID is unchanged', () => {
     const object = createTestNode();
-    const runtime = getHasBoundsRectRuntime(object);
-    runtime.computeLocalBoundsRect = (out, _source) => {
+    const runtime = getRuntime(object);
+    runtime.computeLocalBoundsRect = (out: Rectangle, _source: GraphNode<symbol>) => {
       setEmpty(out);
     };
     ensureLocalBoundsRect(object);
@@ -236,7 +240,7 @@ describe('ensureLocalBoundsRect', () => {
 describe('ensureWorldBoundsRect', () => {
   it('should ensure worldBoundsRect is defined', () => {
     const object = createTestNode();
-    const runtime = getHasBoundsRectRuntime(object);
+    const runtime = getRuntime(object);
     expect(runtime.worldBoundsRect).toBeNull();
     ensureWorldBoundsRect(object);
     expect(runtime.worldBoundsRect).not.toBeNull();
@@ -244,7 +248,7 @@ describe('ensureWorldBoundsRect', () => {
 
   it('should not recalculate if localBoundsID and worldTransformID are unchanged', () => {
     const object = createTestNode();
-    const runtime = getHasBoundsRectRuntime(object);
+    const runtime = getRuntime(object);
     ensureWorldBoundsRect(object);
     const cache = cloneAndInvalidateRect(runtime.worldBoundsRect!);
     ensureWorldBoundsRect(object);
@@ -253,7 +257,7 @@ describe('ensureWorldBoundsRect', () => {
 
   it('should recalculate if localBoundsID is changed', () => {
     const object = createTestNode();
-    const runtime = getHasBoundsRectRuntime(object);
+    const runtime = getRuntime(object);
     ensureWorldBoundsRect(object);
     const cache = cloneAndInvalidateRect(runtime.worldBoundsRect!);
     runtime.localBoundsID++;
@@ -263,7 +267,7 @@ describe('ensureWorldBoundsRect', () => {
 
   it('should recalculate if local transform is changed (translate)', () => {
     const object = createTestNode();
-    const runtime = getHasBoundsRectRuntime(object);
+    const runtime = getRuntime(object);
     ensureWorldBoundsRect(object);
     const cache = rectangle.clone(runtime.worldBoundsRect!);
     object.x = 100;
@@ -275,7 +279,7 @@ describe('ensureWorldBoundsRect', () => {
 
   it('should recalculate if local transform is changed (scale)', () => {
     const object = createTestNode();
-    const runtime = getHasBoundsRectRuntime(object);
+    const runtime = getRuntime(object);
     ensureWorldBoundsRect(object);
     const cache = rectangle.clone(runtime.worldBoundsRect!);
     const localBounds = getLocalBoundsRect(object) as Rectangle;
@@ -291,7 +295,7 @@ describe('ensureWorldBoundsRect', () => {
     const parent = createTestNode();
     const child = createTestNode();
     addChild(parent, child);
-    const runtime = getHasBoundsRectRuntime(child);
+    const runtime = getRuntime(child);
     ensureWorldBoundsRect(child);
     const cache = rectangle.clone(runtime.worldBoundsRect!);
     parent.x = 100;
@@ -305,7 +309,7 @@ describe('ensureWorldBoundsRect', () => {
     const parent = createTestNode();
     const child = createTestNode();
     addChild(parent, child);
-    const runtime = getHasBoundsRectRuntime(child);
+    const runtime = getRuntime(child);
     ensureWorldBoundsRect(child);
     const localBounds = getLocalBoundsRect(child) as Rectangle;
     localBounds.width = 10; // hack;
@@ -324,7 +328,7 @@ describe('ensureWorldBoundsRect', () => {
 describe('getBoundsRect', () => {
   it('should call ensure and return boundsRect', () => {
     const object = createTestNode();
-    const runtime = getHasBoundsRectRuntime(object);
+    const runtime = getRuntime(object);
     expect(runtime.boundsRect).toBeNull();
     const rect = getBoundsRect(object);
     expect(rect).not.toBeNull();
@@ -335,7 +339,7 @@ describe('getBoundsRect', () => {
 describe('getLocalBoundsRect', () => {
   it('should call ensure and return localBoundsRect', () => {
     const object = createTestNode();
-    const runtime = getHasBoundsRectRuntime(object);
+    const runtime = getRuntime(object);
     expect(runtime.localBoundsRect).toBeNull();
     const rect = getLocalBoundsRect(object);
     expect(rect).not.toBeNull();
@@ -346,7 +350,7 @@ describe('getLocalBoundsRect', () => {
 describe('getWorldBoundsRect', () => {
   it('should call ensure and return worldBoundsRect', () => {
     const object = createTestNode();
-    const runtime = getHasBoundsRectRuntime(object);
+    const runtime = getRuntime(object);
     expect(runtime.worldBoundsRect).toBeNull();
     const rect = getWorldBoundsRect(object);
     expect(rect).not.toBeNull();

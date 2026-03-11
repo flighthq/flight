@@ -1,5 +1,5 @@
 import { createImageSource } from '@flighthq/assets';
-import { addChild } from '@flighthq/scene-graph-core';
+import { addChild, getParent } from '@flighthq/scene-graph-core';
 import { createBitmap, createDisplayObject } from '@flighthq/scene-graph-display';
 
 export function loadImageAndDecode(): Promise<HTMLImageElement> {
@@ -24,5 +24,5 @@ test('create basic bitmap and add to scene', async () => {
   const bitmap = createBitmap();
   bitmap.data.image = createImageSource(await loadImageAndDecode()); // <-- stub image
   addChild(container, bitmap);
-  expect(bitmap.parent).toBe(container);
+  expect(getParent(bitmap)).toBe(container);
 });

@@ -1,4 +1,4 @@
-import type { Node, NodeData, NodeRuntime, PartialWithData } from '@flighthq/types';
+import type { MethodsOf, Node, NodeData, NodeRuntime, PartialNode } from '@flighthq/types';
 import { NodeRuntimeKey } from '@flighthq/types';
 
 export type NodeDataFactory<D extends NodeData> = (obj?: Readonly<Partial<D>>) => D;
@@ -6,7 +6,7 @@ export type NodeRuntimeFactory<R extends NodeRuntime> = (obj?: Readonly<Partial<
 
 export function createNode<D extends NodeData, R extends NodeRuntime>(
   kind: symbol,
-  obj?: Readonly<PartialWithData<Node>>,
+  obj?: Readonly<PartialNode<Node>>,
   createData?: NodeDataFactory<D>,
   createRuntime?: NodeRuntimeFactory<R>,
 ): Node {
@@ -18,10 +18,10 @@ export function createNode<D extends NodeData, R extends NodeRuntime>(
   } as Node;
 }
 
-export function createNodeRuntime(_methods?: Readonly<Partial<NodeRuntime>>): NodeRuntime {
+export function createNodeRuntime(_methods?: Readonly<Partial<MethodsOf<NodeRuntime>>>): NodeRuntime {
   return {};
 }
 
-export function getRuntime(source: Readonly<Node>): NodeRuntime {
+export function getNodeRuntime(source: Readonly<Node>): Readonly<NodeRuntime> {
   return source[NodeRuntimeKey]!;
 }

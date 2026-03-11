@@ -1,4 +1,4 @@
-import type { PartialWithData, Text } from '@flighthq/types';
+import type { PartialNode, Text } from '@flighthq/types';
 import { TextKind } from '@flighthq/types';
 
 import { createText } from './text';
@@ -18,7 +18,7 @@ describe('createText', () => {
   });
 
   it('allows pre-defined values', () => {
-    const base: PartialWithData<Text> = {
+    const base: PartialNode<Text> = {
       data: {
         autoSize: 'left',
         text: 'foo',

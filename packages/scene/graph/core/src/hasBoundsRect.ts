@@ -1,17 +1,9 @@
-import type { GraphNode, HasBoundsRect, HasBoundsRectRuntime, Rectangle } from '@flighthq/types';
-
-import { getRuntime } from './node';
+import type { GraphNode, HasBoundsRect, HasBoundsRectRuntime, MethodsOf, Rectangle } from '@flighthq/types';
 
 export function defaultComputeLocalBoundsRect<G extends symbol>(
   _out: Rectangle,
   _source: Readonly<GraphNode<G> & HasBoundsRect<G>>,
 ) {}
-
-export function getHasBoundsRectRuntime<G extends symbol>(
-  source: GraphNode<G> & HasBoundsRect<G>,
-): HasBoundsRectRuntime<G> {
-  return getRuntime(source) as HasBoundsRectRuntime<G>;
-}
 
 export function initHasBoundsRect<G extends symbol>(
   _target: HasBoundsRect<G>,
@@ -20,7 +12,7 @@ export function initHasBoundsRect<G extends symbol>(
 
 export function initHasBoundsRectRuntime<G extends symbol>(
   target: HasBoundsRectRuntime<G>,
-  methods?: Readonly<Partial<HasBoundsRectRuntime<G>>>,
+  methods?: Readonly<Partial<MethodsOf<HasBoundsRectRuntime<G>>>>,
 ): void {
   target.boundsRect = null;
   target.localBoundsRect = null;

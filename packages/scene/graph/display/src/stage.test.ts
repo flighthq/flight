@@ -1,4 +1,4 @@
-import type { PartialWithData, Stage } from '@flighthq/types';
+import type { PartialNode, Stage } from '@flighthq/types';
 import { StageKind } from '@flighthq/types';
 
 import { createStage } from './stage';
@@ -25,7 +25,7 @@ describe('createStage', () => {
   });
 
   it('allows pre-defined values', () => {
-    const base: PartialWithData<Stage> = {
+    const base: PartialNode<Stage> = {
       data: {
         autoOrients: false,
         align: 'right',

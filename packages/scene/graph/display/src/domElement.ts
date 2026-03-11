@@ -1,9 +1,9 @@
-import type { DOMElement, DOMElementData, PartialWithData } from '@flighthq/types';
+import type { DOMElement, DOMElementData, PartialNode } from '@flighthq/types';
 import { DOMElementKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric } from './displayObject';
 
-export function createDOMElement(obj?: Readonly<PartialWithData<DOMElement>>): DOMElement {
+export function createDOMElement(obj?: Readonly<PartialNode<DOMElement>>): DOMElement {
   return createDisplayObjectGeneric(DOMElementKind, obj, createDOMElementData) as DOMElement;
 }
 

@@ -1,13 +1,13 @@
+import type { NodeRuntimeKey } from '../../../index';
 import type { BlendMode, ColorTransform, Shader } from '../../../materials';
 import type {
   GraphNode,
+  GraphNodeData,
   GraphNodeRuntime,
   HasBoundsRect,
   HasBoundsRectRuntime,
   HasTransform2D,
   HasTransform2DRuntime,
-  NodeData,
-  NodeRuntimeKey,
 } from '../core';
 
 export interface SpriteBase
@@ -16,21 +16,24 @@ export interface SpriteBase
   alphaEnabled: boolean;
   blendMode: BlendMode | null;
   blendModeEnabled: boolean;
-  readonly children: SpriteBase[] | null;
   colorTransform: ColorTransform | null;
   colorTransformEnabled: boolean;
   originX: number;
   originY: number;
-  readonly parent: SpriteBase | null;
   shader: Shader | null;
 
   [NodeRuntimeKey]: SpriteBaseRuntime | undefined;
 }
 
-export interface SpriteBaseData extends NodeData {}
+export interface SpriteBaseData extends GraphNodeData {}
 
 export const SpriteGraph: unique symbol = Symbol('SpriteGraph');
 
-export type SpriteBaseRuntime = GraphNodeRuntime<typeof SpriteGraph> &
-  HasTransform2DRuntime<typeof SpriteGraph> &
-  HasBoundsRectRuntime<typeof SpriteGraph>;
+export interface SpriteBaseRuntime
+  extends
+    GraphNodeRuntime<typeof SpriteGraph>,
+    HasTransform2DRuntime<typeof SpriteGraph>,
+    HasBoundsRectRuntime<typeof SpriteGraph> {
+  children: SpriteBase[] | null;
+  parent: SpriteBase | null;
+}

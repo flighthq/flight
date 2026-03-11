@@ -1,10 +1,10 @@
-import type { InputText, InputTextData, PartialWithData } from '@flighthq/types';
+import type { InputText, InputTextData, PartialNode } from '@flighthq/types';
 import { InputTextKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric } from './displayObject';
 import { createRichTextData } from './richText';
 
-export function createInputText(obj?: Readonly<PartialWithData<InputText>>): InputText {
+export function createInputText(obj?: Readonly<PartialNode<InputText>>): InputText {
   return createDisplayObjectGeneric(InputTextKind, obj, createInputTextData) as InputText;
 }
 

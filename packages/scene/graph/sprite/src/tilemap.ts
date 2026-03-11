@@ -1,7 +1,7 @@
 import type {
   GraphNode,
   HasBoundsRect,
-  PartialWithData,
+  PartialNode,
   Rectangle,
   SpriteBaseRuntime,
   SpriteGraph,
@@ -19,7 +19,7 @@ export function computeTilemapLocalBoundsRect(
   // TODO: Get width/height from tileset reference
 }
 
-export function createTilemap(obj?: Readonly<PartialWithData<Tilemap>>): Tilemap {
+export function createTilemap(obj?: Readonly<PartialNode<Tilemap>>): Tilemap {
   return createSpriteBase(TilemapKind, obj, createTilemapData, createTilemapRuntime) as Tilemap;
 }
 

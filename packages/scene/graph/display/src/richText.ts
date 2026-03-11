@@ -1,11 +1,11 @@
-import type { PartialWithData, RichText, RichTextData } from '@flighthq/types';
+import type { PartialNode, RichText, RichTextData } from '@flighthq/types';
 import { RichTextKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric } from './displayObject';
 import type { RichTextDataInternal } from './internal';
 import { createTextData } from './text';
 
-export function createRichText(obj?: Readonly<PartialWithData<RichText>>): RichText {
+export function createRichText(obj?: Readonly<PartialNode<RichText>>): RichText {
   return createDisplayObjectGeneric(RichTextKind, obj, createRichTextData) as RichText;
 }
 

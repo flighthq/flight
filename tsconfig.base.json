@@ -18,6 +18,8 @@
       "@flighthq/animation-timeline/*": ["packages/animation/timeline/src/*"],
       "@flighthq/assets": ["packages/assets/src/index.ts"],
       "@flighthq/assets/*": ["packages/assets/src/*"],
+      "@flighthq/core": ["packages/core/src/index.ts"],
+      "@flighthq/core/*": ["packages/core/src/*"],
       "@flighthq/flight": ["packages/flight/src/index.ts"],
       "@flighthq/flight/*": ["packages/flight/src/*"],
       "@flighthq/geometry": ["packages/geometry/src/index.ts"],

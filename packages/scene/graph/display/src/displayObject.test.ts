@@ -4,7 +4,7 @@ import type {
   DisplayObjectData,
   GraphNode,
   HasBoundsRect,
-  PartialWithData,
+  PartialNode,
   Rectangle,
 } from '@flighthq/types';
 import { BlendMode, DisplayGraph, DisplayObjectKind } from '@flighthq/types';
@@ -93,7 +93,7 @@ describe('createDisplayObjectGeneric', () => {
   });
 
   it('allows a custom type', () => {
-    const data: PartialWithData<DisplayObjectTest> = {
+    const data: PartialNode<DisplayObjectTest> = {
       x: 100,
     };
     const displayObject = createDisplayObjectGeneric(DisplayObjectKind, data);
@@ -101,13 +101,13 @@ describe('createDisplayObjectGeneric', () => {
   });
 
   it('returns a new object', () => {
-    const data: PartialWithData<DisplayObjectTest> = {};
+    const data: PartialNode<DisplayObjectTest> = {};
     const displayObject = createDisplayObjectGeneric(DisplayObjectKind, data);
     expect(displayObject).not.toStrictEqual(data);
   });
 
   it('allows use of a data initializer', () => {
-    const data: PartialWithData<DisplayObjectTest> = {};
+    const data: PartialNode<DisplayObjectTest> = {};
     const displayObject = createDisplayObjectGeneric(DisplayObjectKind, data, createDisplayObjectTestData);
     expect((displayObject.data as DisplayObjectTestData).foo).toBe('bar');
   });

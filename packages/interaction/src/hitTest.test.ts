@@ -1,7 +1,7 @@
 import { rectangle } from '@flighthq/geometry';
-import { getLocalBoundsRect, invalidateLocalTransform } from '@flighthq/scene-graph-core';
-import { createDisplayObject } from '@flighthq/scene-graph-display';
-import type { DisplayObject } from '@flighthq/types';
+import { addChild, getLocalBoundsRect, invalidateLocalTransform } from '@flighthq/scene-graph-core';
+import { createDisplayObject, getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
+import type { DisplayObject, DisplayObjectRuntime } from '@flighthq/types';
 
 import { hitTestObject, hitTestPoint } from './hitTest';
 
@@ -13,9 +13,8 @@ describe('hitTestObject', () => {
     a = createDisplayObject();
     b = createDisplayObject();
 
-    // fake parent
-    (a as any).parent = createDisplayObject() as any; // eslint-disable-line
-    (b as any).parent = createDisplayObject() as any; // eslint-disable-line
+    addChild(createDisplayObject(), a);
+    addChild(createDisplayObject(), b);
 
     // Simple local bounds
     rectangle.setTo(getLocalBoundsRect(a), 0, 0, 10, 10);
@@ -46,7 +45,7 @@ describe('hitTestObject', () => {
   });
 
   it('returns false if either object has no parent', () => {
-    (b as any).parent = null; // eslint-disable-line
+    (getDisplayObjectRuntime(b) as DisplayObjectRuntime).parent = null;
 
     const result = hitTestObject(a, b);
     expect(result).toBe(false);

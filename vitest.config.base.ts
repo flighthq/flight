@@ -12,4 +12,7 @@ export default defineConfig({
       reporter: ['text', 'html'],
     },
   },
+  resolve: {
+    dedupe: ['@flighthq/types'],
+  },
 });

@@ -1,3 +1,5 @@
+import { getParent } from '@flighthq/scene-graph-core';
+import { getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
 import { updateAppearance } from './appearance';
@@ -8,7 +10,7 @@ import { updateRenderTransform } from './transform';
 /**
  * First pass, update appearance, transforms, identify masks
  */
-export function updateDisplayObjectTree(state: RenderState, source: DisplayObject): boolean {
+export function updateDisplayGraph(state: RenderState, source: DisplayObject): boolean {
   const tempStack = state.tempStack;
   const currentFrameID = ++(state as RenderStateInternal).currentFrameID;
 
@@ -26,7 +28,7 @@ export function updateDisplayObjectTree(state: RenderState, source: DisplayObjec
     const data = getDisplayObjectRenderNode(state, current);
 
     if (current !== source) {
-      const parent = current.parent as DisplayObject;
+      const parent = getParent(current) as DisplayObject;
       if (parent === null) {
         parentData = undefined;
         lastParent = null;
@@ -65,9 +67,10 @@ export function updateDisplayObjectTree(state: RenderState, source: DisplayObjec
       data.maskDepth = maskDepth;
     }
 
-    if (current.children !== null) {
-      for (let i = current.children.length - 1; i >= 0; i--) {
-        tempStack[stackLength++] = current.children[i];
+    const children = getDisplayObjectRuntime(current).children;
+    if (children !== null) {
+      for (let i = children.length - 1; i >= 0; i--) {
+        tempStack[stackLength++] = children[i] as DisplayObject;
       }
     }
   }

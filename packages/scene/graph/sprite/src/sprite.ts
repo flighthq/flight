@@ -1,7 +1,7 @@
 import type {
   GraphNode,
   HasBoundsRect,
-  PartialWithData,
+  PartialNode,
   Rectangle,
   Sprite,
   SpriteBaseRuntime,
@@ -19,7 +19,7 @@ export function computeSpriteLocalBoundsRect(
   // TODO: Get width/height from spritesheet reference
 }
 
-export function createSprite(obj?: Readonly<PartialWithData<Sprite>>): Sprite {
+export function createSprite(obj?: Readonly<PartialNode<Sprite>>): Sprite {
   return createSpriteBase(SpriteKind, obj, createSpriteData, createSpriteRuntime) as Sprite;
 }
 

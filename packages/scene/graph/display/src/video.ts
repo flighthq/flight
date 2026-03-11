@@ -1,9 +1,9 @@
-import type { PartialWithData, Video, VideoData } from '@flighthq/types';
+import type { PartialNode, Video, VideoData } from '@flighthq/types';
 import { VideoKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric } from './displayObject';
 
-export function createVideo(obj?: Readonly<PartialWithData<Video>>): Video {
+export function createVideo(obj?: Readonly<PartialNode<Video>>): Video {
   return createDisplayObjectGeneric(VideoKind, obj, createVideoData) as Video;
 }
 
