@@ -4,11 +4,11 @@ import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';
-import { prepareDisplayObjectForRender } from './prepare';
 import { getDisplayObjectRenderNode } from './renderNode';
 import { createRenderState } from './renderState';
+import { updateDisplayObjectBeforeRender } from './update';
 
-describe('prepareDisplayObjectForRender', () => {
+describe('updateDisplayObjectBeforeRender', () => {
   let parent: DisplayObject;
   let parentData: DisplayObjectRenderNode;
   let child: DisplayObject;
@@ -25,26 +25,26 @@ describe('prepareDisplayObjectForRender', () => {
   });
 
   it('updates appearance for all children', () => {
-    prepareDisplayObjectForRender(state, parent);
+    updateDisplayObjectBeforeRender(state, parent);
     expect(parentData.appearanceFrameID).toStrictEqual(state.currentFrameID);
     expect(childData.appearanceFrameID).toStrictEqual(state.currentFrameID);
   });
 
   it('updates transform for all children', () => {
-    prepareDisplayObjectForRender(state, parent);
+    updateDisplayObjectBeforeRender(state, parent);
     expect(parentData.transformFrameID).toStrictEqual(state.currentFrameID);
     expect(childData.transformFrameID).toStrictEqual(state.currentFrameID);
   });
 
   it('returns true if an update was performed', () => {
-    const dirty = prepareDisplayObjectForRender(state, parent);
+    const dirty = updateDisplayObjectBeforeRender(state, parent);
     expect(dirty).toBe(true);
   });
 
   it('does not make a change if not dirty', () => {
-    prepareDisplayObjectForRender(state, parent);
+    updateDisplayObjectBeforeRender(state, parent);
     (state as RenderStateInternal).currentFrameID++;
-    prepareDisplayObjectForRender(state, parent);
+    updateDisplayObjectBeforeRender(state, parent);
     expect(parentData.appearanceFrameID).not.toStrictEqual(state.currentFrameID);
     expect(childData.appearanceFrameID).not.toStrictEqual(state.currentFrameID);
     expect(parentData.transformFrameID).not.toStrictEqual(state.currentFrameID);
@@ -52,15 +52,15 @@ describe('prepareDisplayObjectForRender', () => {
   });
 
   it('returns false if a change is not made', () => {
-    prepareDisplayObjectForRender(state, parent);
-    const dirty = prepareDisplayObjectForRender(state, parent);
+    updateDisplayObjectBeforeRender(state, parent);
+    const dirty = updateDisplayObjectBeforeRender(state, parent);
     expect(dirty).toBe(false);
   });
 
   it('marks how many scroll rects apply to the current object', () => {
     parent.scrollRect = rectangle.create();
     child.scrollRect = rectangle.create();
-    prepareDisplayObjectForRender(state, parent);
+    updateDisplayObjectBeforeRender(state, parent);
     expect(parentData.scrollRectDepth).toBe(1);
     expect(childData.scrollRectDepth).toBe(2);
   });
@@ -68,7 +68,7 @@ describe('prepareDisplayObjectForRender', () => {
   it('marks how many masks apply to the current object', () => {
     parent.mask = createDisplayObject();
     child.mask = createDisplayObject();
-    prepareDisplayObjectForRender(state, parent);
+    updateDisplayObjectBeforeRender(state, parent);
     expect(parentData.maskDepth).toBe(1);
     expect(childData.maskDepth).toBe(2);
   });
@@ -103,7 +103,7 @@ describe('prepareDisplayObjectForRender', () => {
 
   it('resets up the tree properly when siblings are not in a scroll rect', () => {
     childA.scrollRect = rectangle.create();
-    prepareDisplayObjectForRender(state, parent2);
+    updateDisplayObjectBeforeRender(state, parent2);
     expect(parent2Data.scrollRectDepth).toBe(0);
     expect(childAData.scrollRectDepth).toBe(1);
     expect(childA_childData.scrollRectDepth).toBe(1);
@@ -113,7 +113,7 @@ describe('prepareDisplayObjectForRender', () => {
 
   it('resets up the tree properly when siblings are not in a mask', () => {
     childA.mask = createDisplayObject();
-    prepareDisplayObjectForRender(state, parent2);
+    updateDisplayObjectBeforeRender(state, parent2);
     expect(parent2Data.maskDepth).toBe(0);
     expect(childAData.maskDepth).toBe(1);
     expect(childA_childData.maskDepth).toBe(1);
@@ -124,7 +124,7 @@ describe('prepareDisplayObjectForRender', () => {
   it('marks a mask with the current frame ID', () => {
     const mask = createDisplayObject();
     childA.mask = mask;
-    prepareDisplayObjectForRender(state, parent2);
+    updateDisplayObjectBeforeRender(state, parent2);
     expect(getDisplayObjectRenderNode(state, mask).isMaskFrameID).toStrictEqual(state.currentFrameID);
   });
 
@@ -132,7 +132,7 @@ describe('prepareDisplayObjectForRender', () => {
     const mask = createDisplayObject();
     const maskChild = createDisplayObject();
     childA.mask = mask;
-    prepareDisplayObjectForRender(state, parent2);
+    updateDisplayObjectBeforeRender(state, parent2);
     const currentFrameID = state.currentFrameID;
     [parent2, childA, childB, childA_child, childB_child, mask, maskChild].every((obj) => {
       const data = getDisplayObjectRenderNode(state, obj);
