@@ -29,7 +29,7 @@ function recalculateRenderTransform(
   const parentTransform = parentData !== undefined ? parentData.transform : state.renderTransform;
 
   if (parentTransform !== null) {
-    matrix3x2.concat(data.transform, transform, parentTransform);
+    matrix3x2.concat(data.transform, parentTransform, transform);
   } else {
     matrix3x2.copy(data.transform, transform);
   }
