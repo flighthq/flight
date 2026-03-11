@@ -1,5 +1,5 @@
 import { createImageSource } from '@flighthq/assets';
-import { renderBackground, createRenderState, renderDisplayObject, setBitmapRenderer } from '@flighthq/render-canvas';
+import { createRenderState, renderBackground, renderDisplayObject, setBitmapRenderer } from '@flighthq/render-canvas';
 import { updateDisplayObjectBeforeRender } from '@flighthq/render-core';
 import { addChild } from '@flighthq/scene-graph-core';
 import { createBitmap, createDisplayObject } from '@flighthq/scene-graph-display';
@@ -46,7 +46,6 @@ function enterFrame() {
     renderBackground(state);
     renderDisplayObject(state, main);
   }
-
   requestAnimationFrame(enterFrame);
 }
 
