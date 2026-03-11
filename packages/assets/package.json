@@ -13,6 +13,14 @@
       "types": "./dist/imageSource.d.ts",
       "default": "./dist/imageSource.js"
     },
+    "./spritesheet": {
+      "types": "./dist/spritesheet.d.ts",
+      "default": "./dist/spritesheet.js"
+    },
+    "./textureAtlas": {
+      "types": "./dist/textureAtlas.d.ts",
+      "default": "./dist/textureAtlas.js"
+    },
     "./tileset": {
       "types": "./dist/tileset.d.ts",
       "default": "./dist/tileset.js"
