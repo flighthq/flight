@@ -1,9 +1,9 @@
-import type { Node, PartialNode, QuadBatch, QuadBatchData, Rectangle, SpriteBaseRuntime } from '@flighthq/types';
+import type { GraphNode, PartialNode, QuadBatch, QuadBatchData, Rectangle, SpriteBaseRuntime } from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
 
 import { createSpriteBase, createSpriteBaseRuntime } from './spriteBase';
 
-export function computeQuadBatchLocalBoundsRect(_out: Rectangle, _source: Readonly<Node>): void {
+export function computeQuadBatchLocalBoundsRect(_out: Rectangle, _source: Readonly<GraphNode>): void {
   // TODO
 }
 

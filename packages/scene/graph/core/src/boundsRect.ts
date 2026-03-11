@@ -135,7 +135,7 @@ function recomputeLocalBoundsRect<GraphKind extends symbol, Traits extends objec
   runtime: GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime,
 ): void {
   if (runtime.localBoundsRect === null) runtime.localBoundsRect = rectangle.create();
-  runtime.computeLocalBoundsRect(runtime.localBoundsRect, target);
+  runtime.computeLocalBoundsRect(runtime.localBoundsRect, target as GraphNode);
   runtime.localBoundsUsingLocalBoundsID = runtime.localBoundsID;
 }
 

@@ -20,24 +20,25 @@ import { SpriteGraph } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 export type SpriteGraphNodeDataFactory = GraphNodeDataFactory<SpriteBaseData>;
-export type SpriteGraphNodeRuntimeFactory<R extends SpriteBaseRuntime> = GraphNodeRuntimeFactory<
+export type SpriteGraphNodeRuntimeFactory<Runtime extends SpriteBaseRuntime> = GraphNodeRuntimeFactory<
   typeof SpriteGraph,
   SpriteBaseTraits,
-  R
+  Runtime
 >;
 
-export function createSpriteBase<R extends SpriteBaseRuntime>(
+export function createSpriteBase<Runtime extends SpriteBaseRuntime>(
   kind: symbol,
   obj?: Readonly<PartialNode<SpriteBase>>,
   createData?: SpriteGraphNodeDataFactory,
-  createRuntime?: SpriteGraphNodeRuntimeFactory<R>,
+  createRuntime?: SpriteGraphNodeRuntimeFactory<Runtime>,
 ): SpriteBase {
   const out = createGraphNode(
     SpriteGraph,
     kind,
     obj,
     createData,
-    createRuntime ?? (createSpriteBaseRuntime as GraphNodeRuntimeFactory<typeof SpriteGraph, SpriteBaseTraits, R>),
+    createRuntime ??
+      (createSpriteBaseRuntime as GraphNodeRuntimeFactory<typeof SpriteGraph, SpriteBaseTraits, Runtime>),
   ) as SpriteBase;
   initHasTransform2D(out, obj);
   initHasBoundsRect(out, obj);
