@@ -23,7 +23,7 @@ beforeEach(() => {
   node = createTestNode();
 });
 
-function getRuntime<G extends symbol>(source: TestNode) {
+function getRuntime(source: TestNode) {
   return getGraphNodeRuntime(source) as GraphNodeRuntime<typeof TestGraph>;
 }
 
