@@ -17,10 +17,6 @@
       "types": "./dist/color.d.ts",
       "default": "./dist/color.js"
     },
-    "./prepare": {
-      "types": "./dist/prepare.d.ts",
-      "default": "./dist/prepare.js"
-    },
     "./queue": {
       "types": "./dist/queue.d.ts",
       "default": "./dist/queue.js"
@@ -40,6 +36,10 @@
     "./transform": {
       "types": "./dist/transform.d.ts",
       "default": "./dist/transform.js"
+    },
+    "./update": {
+      "types": "./dist/update.d.ts",
+      "default": "./dist/update.js"
     }
   },
   "files": [
