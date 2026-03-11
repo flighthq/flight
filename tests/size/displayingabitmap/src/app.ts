@@ -1,5 +1,5 @@
 import { createImageSource } from '@flighthq/assets';
-import { clearFrame, createRenderState, renderDisplayObject, setBitmapRenderer } from '@flighthq/render-canvas';
+import { clearBackground, createRenderState, renderDisplayObject, setBitmapRenderer } from '@flighthq/render-canvas';
 import { updateDisplayObjectBeforeRender } from '@flighthq/render-core';
 import { addChild } from '@flighthq/scene-graph-core';
 import { createBitmap, createDisplayObject } from '@flighthq/scene-graph-display';
@@ -43,7 +43,7 @@ setBitmapRenderer(state);
 
 function enterFrame() {
   if (updateDisplayObjectBeforeRender(state, main)) {
-    clearFrame(state);
+    clearBackground(state);
     renderDisplayObject(state, main);
   }
 

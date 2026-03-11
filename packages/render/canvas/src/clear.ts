@@ -3,7 +3,7 @@ import { BlendMode } from '@flighthq/types';
 
 import { setBlendMode } from './materials';
 
-export function clearFrame(state: CanvasRenderState): void {
+export function clearBackground(state: CanvasRenderState): void {
   const cacheBlendMode = state.currentBlendMode;
   state.currentBlendMode = null;
   setBlendMode(state, BlendMode.Normal);
