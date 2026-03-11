@@ -1,6 +1,6 @@
-import type { HasBoundsRect, HasBoundsRectRuntime, MethodsOf, Node, Rectangle } from '@flighthq/types';
+import type { GraphNode, HasBoundsRect, HasBoundsRectRuntime, MethodsOf, Rectangle } from '@flighthq/types';
 
-export function defaultComputeLocalBoundsRect(_out: Rectangle, _source: Readonly<Node>) {}
+export function defaultComputeLocalBoundsRect(_out: Rectangle, _source: Readonly<GraphNode>) {}
 
 export function initHasBoundsRect(_target: HasBoundsRect, _obj?: Readonly<Partial<HasBoundsRect>>): void {}
 

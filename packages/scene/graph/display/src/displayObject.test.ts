@@ -1,5 +1,5 @@
 import { matrix3x2 } from '@flighthq/geometry';
-import type { DisplayObject, DisplayObjectData, Node, PartialNode, Rectangle } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectData, GraphNode, PartialNode, Rectangle } from '@flighthq/types';
 import { BlendMode, DisplayGraph, DisplayObjectKind } from '@flighthq/types';
 
 import {
@@ -113,7 +113,7 @@ describe('createDisplayObjectRuntime', () => {
   });
 
   it('allows a custom bounds calculation', () => {
-    const func = (_out: Rectangle, _source: Readonly<Node>) => {};
+    const func = (_out: Rectangle, _source: Readonly<GraphNode>) => {};
     const runtime = createDisplayObjectRuntime({ computeLocalBoundsRect: func });
     expect(runtime.computeLocalBoundsRect).toStrictEqual(func);
   });
