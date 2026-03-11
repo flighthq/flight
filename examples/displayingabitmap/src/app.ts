@@ -1,5 +1,5 @@
 import { createRenderState, renderDisplayObject, setBitmapRenderer } from '@flighthq/render-canvas';
-import { clearFrame } from '@flighthq/render-canvas';
+import { clearBackground } from '@flighthq/render-canvas';
 import { updateDisplayObjectBeforeRender } from '@flighthq/render-core';
 
 import Main from './Main.js';
@@ -22,7 +22,7 @@ const main = new Main();
 
 function enterFrame() {
   if (updateDisplayObjectBeforeRender(state, main.model)) {
-    clearFrame(state);
+    clearBackground(state);
     renderDisplayObject(state, main.model);
   }
   requestAnimationFrame(enterFrame);
