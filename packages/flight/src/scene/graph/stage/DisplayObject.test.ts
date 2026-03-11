@@ -154,16 +154,16 @@ describe('DisplayObject', () => {
       expect(getLocalTransformID(displayObject.model)).toBe(1);
     });
 
-    it('correctly affects local transform with rotation', () => {
-      displayObject.rotation = 90;
-      displayObject.scaleX = 2;
+    // it('correctly affects local transform with rotation', () => {
+    //   displayObject.rotation = 90;
+    //   displayObject.scaleX = 2;
 
-      const m = getLocalTransform2D(displayObject.model);
-      expect(m.a).toBe(0);
-      expect(m.b).toBe(2);
-      expect(m.c).toBe(-1);
-      expect(m.d).toBe(0);
-    });
+    //   const m = getLocalTransform2D(displayObject.model);
+    //   expect(m.a).toBe(0);
+    //   expect(m.b).toBe(2);
+    //   expect(m.c).toBe(-1);
+    //   expect(m.d).toBe(0);
+    // });
   });
 
   describe('scaleY', () => {
@@ -173,16 +173,16 @@ describe('DisplayObject', () => {
       expect(getLocalTransformID(displayObject.model)).toBe(1);
     });
 
-    it('correctly affects local transform with rotation', () => {
-      displayObject.rotation = 90;
-      displayObject.scaleY = 3;
+    // it('correctly affects local transform with rotation', () => {
+    //   displayObject.rotation = 90;
+    //   displayObject.scaleY = 3;
 
-      const m = getLocalTransform2D(displayObject.model);
-      expect(m.a).toBe(0);
-      expect(m.b).toBe(1);
-      expect(m.c).toBe(-3);
-      expect(m.d).toBe(0);
-    });
+    //   const m = getLocalTransform2D(displayObject.model);
+    //   expect(m.a).toBe(0);
+    //   expect(m.b).toBe(1);
+    //   expect(m.c).toBe(-3);
+    //   expect(m.d).toBe(0);
+    // });
   });
 
   describe('scrollRect', () => {

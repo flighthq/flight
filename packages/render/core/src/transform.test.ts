@@ -55,4 +55,63 @@ describe('updateRenderTransform', () => {
     const calc = updateRenderTransform(state, childData, parentData);
     expect(calc).toBe(true);
   });
+
+  it('rotates around its local position correctly', () => {
+    parent.x = 100;
+    parent.y = 50;
+    parent.rotation = 90; // rotate 90 degrees
+
+    updateRenderTransform(state, parentData);
+
+    const t = parentData.transform;
+    // The tx/ty should remain at parent position
+    expect(t.tx).toBeCloseTo(100);
+    expect(t.ty).toBeCloseTo(50);
+
+    // The rotation part: a/b/c/d matrix should match a 90 deg rotation
+    expect(t.a).toBeCloseTo(0);
+    expect(t.b).toBeCloseTo(1);
+    expect(t.c).toBeCloseTo(-1);
+    expect(t.d).toBeCloseTo(0);
+  });
+
+  it('child inherits parent transform correctly', () => {
+    parent.x = 100;
+    parent.y = 50;
+    parent.rotation = 90;
+
+    child.x = 10;
+    child.y = 0;
+    child.rotation = 0;
+
+    updateRenderTransform(state, parentData);
+    updateRenderTransform(state, childData, parentData);
+
+    const t = childData.transform;
+    // child tx/ty should be parent-transformed position
+    expect(t.tx).toBe(110);
+    expect(t.ty).toBe(50);
+
+    // child rotation inherits correctly: should be 90 degrees total
+    expect(t.a).toBeCloseTo(0);
+    expect(t.b).toBeCloseTo(1);
+    expect(t.c).toBeCloseTo(-1);
+    expect(t.d).toBeCloseTo(0);
+  });
+
+  it('works for negative rotation angles', () => {
+    parent.x = 200;
+    parent.y = 100;
+    parent.rotation = -90;
+
+    updateRenderTransform(state, parentData);
+
+    const t = parentData.transform;
+    expect(t.tx).toBeCloseTo(200);
+    expect(t.ty).toBeCloseTo(100);
+    expect(t.a).toBeCloseTo(0);
+    expect(t.b).toBeCloseTo(-1);
+    expect(t.c).toBeCloseTo(1);
+    expect(t.d).toBeCloseTo(0);
+  });
 });

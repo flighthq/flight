@@ -77,33 +77,13 @@ function recomputeLocalTransform2D<G extends symbol>(
     } else if (angle < -180.0) {
       angle += 360.0;
     }
-
-    // Use fast cardinal values, or lookup
-    const DEG_TO_RAD = Math.PI / 180;
-    let sin, cos;
-    if (angle === 0) {
-      sin = 0;
-      cos = 1;
-    } else if (angle === 90) {
-      sin = 1;
-      cos = 0;
-    } else if (angle === -90) {
-      sin = -1;
-      cos = 0;
-    } else if (angle === 180 || angle === -180) {
-      sin = 0;
-      cos = -1;
-    } else {
-      const rad = angle * DEG_TO_RAD;
-      sin = Math.sin(rad);
-      cos = Math.cos(rad);
-    }
-
+    const rad = angle * DEG_TO_RAD;
+    const sin = Math.sin(rad);
+    const cos = Math.cos(rad);
     runtime.rotationAngle = angle;
     runtime.rotationSine = sin;
     runtime.rotationCosine = cos;
   }
-
   if (runtime.localTransform2D === null) runtime.localTransform2D = matrix3x2.create();
   const matrix = runtime.localTransform2D;
   matrix.a = runtime.rotationCosine * target.scaleX;
@@ -112,7 +92,6 @@ function recomputeLocalTransform2D<G extends symbol>(
   matrix.d = runtime.rotationCosine * target.scaleY;
   matrix.tx = target.x;
   matrix.ty = target.y;
-
   runtime.localTransformUsingLocalTransformID = runtime.localTransformID;
 }
 
@@ -130,3 +109,5 @@ function recomputeWorldTransform2D<G extends symbol>(
   }
   recomputeWorldTransformID(runtime, parentRuntime);
 }
+
+const DEG_TO_RAD = Math.PI / 180;
