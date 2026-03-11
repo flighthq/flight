@@ -1,9 +1,9 @@
-import type { PartialWithData, Text, TextData } from '@flighthq/types';
+import type { PartialNode, Text, TextData } from '@flighthq/types';
 import { TextKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric } from './displayObject';
 
-export function createText(obj?: Readonly<PartialWithData<Text>>): Text {
+export function createText(obj?: Readonly<PartialNode<Text>>): Text {
   return createDisplayObjectGeneric(TextKind, obj, createTextData) as Text;
 }
 

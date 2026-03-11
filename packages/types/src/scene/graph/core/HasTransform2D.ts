@@ -1,6 +1,6 @@
 import type { Matrix3x2 } from '../../../geometry';
+import type { NodeRuntimeKey } from '../../../index';
 import type { GraphNodeRuntime } from './GraphNodeRuntime';
-import type { NodeRuntimeKey } from './NodeRuntime';
 
 export interface HasTransform2D<G extends symbol> {
   rotation: number;

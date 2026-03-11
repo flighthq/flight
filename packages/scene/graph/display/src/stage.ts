@@ -1,9 +1,9 @@
-import type { PartialWithData, Stage, StageData } from '@flighthq/types';
+import type { PartialNode, Stage, StageData } from '@flighthq/types';
 import { StageKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric } from './displayObject';
 
-export function createStage(obj?: Readonly<PartialWithData<Stage>>): Stage {
+export function createStage(obj?: Readonly<PartialNode<Stage>>): Stage {
   return createDisplayObjectGeneric(StageKind, obj, createStageData) as Stage;
 }
 

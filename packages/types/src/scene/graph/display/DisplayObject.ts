@@ -1,13 +1,7 @@
 import type { Matrix3x2, Rectangle } from '../../../geometry';
+import type { NodeRuntimeKey } from '../../../index';
 import type { BlendMode, ColorTransform, Filter, Shader } from '../../../materials';
-import type {
-  GraphNode,
-  GraphNodeData,
-  GraphNodeRuntime,
-  HasTransform2D,
-  HasTransform2DRuntime,
-  NodeRuntimeKey,
-} from '../core';
+import type { GraphNode, GraphNodeData, GraphNodeRuntime, HasTransform2D, HasTransform2DRuntime } from '../core';
 import type { HasBoundsRect, HasBoundsRectRuntime } from '../core/HasBoundsRect';
 
 export interface DisplayObject
@@ -16,13 +10,11 @@ export interface DisplayObject
   blendMode: BlendMode;
   cacheAsBitmap: boolean;
   cacheAsBitmapMatrix: Matrix3x2 | null;
-  readonly children: DisplayObject[] | null;
   colorTransform: ColorTransform | null;
   data: DisplayObjectData | null;
   filters: Filter[] | null;
   mask: DisplayObject | null;
   opaqueBackground: number | null;
-  readonly parent: DisplayObject | null;
   scale9Grid: Rectangle | null;
   scrollRect: Rectangle | null;
   shader: Shader | null;
@@ -37,6 +29,11 @@ export const DisplayGraph: unique symbol = Symbol('DisplayGraph');
 
 export const DisplayObjectKind: unique symbol = Symbol('DisplayObject');
 
-export type DisplayObjectRuntime = GraphNodeRuntime<typeof DisplayGraph> &
-  HasTransform2DRuntime<typeof DisplayGraph> &
-  HasBoundsRectRuntime<typeof DisplayGraph>;
+export interface DisplayObjectRuntime
+  extends
+    GraphNodeRuntime<typeof DisplayGraph>,
+    HasTransform2DRuntime<typeof DisplayGraph>,
+    HasBoundsRectRuntime<typeof DisplayGraph> {
+  children: DisplayObject[] | null;
+  parent: DisplayObject | null;
+}

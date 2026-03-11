@@ -1,4 +1,4 @@
-import type { GraphNode, GraphNodeData, GraphNodeRuntime, PartialWithData } from '@flighthq/types';
+import type { GraphNode, GraphNodeData, GraphNodeRuntime, PartialNode } from '@flighthq/types';
 import { GraphNodeKind, NodeKind } from '@flighthq/types';
 
 import {
@@ -17,8 +17,6 @@ describe('createGraphNode', () => {
   });
 
   it('initializes default values', () => {
-    expect(node.children).toBeNull();
-    expect(node.parent).toBeNull();
     expect(node.visible).toBe(true);
     expect(getGraphNodeRuntime(node).graph).toStrictEqual(TestGraph);
   });
@@ -30,8 +28,6 @@ describe('createGraphNode', () => {
       visible: false,
     };
     node = createGraphNode(TestGraph, NodeTestKind, base);
-    expect(node.parent).toStrictEqual(base.parent);
-    expect(node.children).toStrictEqual(base.children);
     expect(node.visible).toStrictEqual(base.visible);
   });
 
@@ -58,7 +54,7 @@ describe('createGraphNode', () => {
   });
 
   it('returns a new object', () => {
-    const obj: PartialWithData<NodeTest<typeof TestGraph>> = {};
+    const obj: PartialNode<NodeTest<typeof TestGraph>> = {};
     const node: NodeTest<typeof TestGraph> = createGraphNode(TestGraph, NodeTestKind, obj) as NodeTest<
       typeof TestGraph
     >;
@@ -66,7 +62,7 @@ describe('createGraphNode', () => {
   });
 
   it('allows use of a data initializer', () => {
-    const obj: PartialWithData<NodeTest<typeof TestGraph>> = {};
+    const obj: PartialNode<NodeTest<typeof TestGraph>> = {};
     const node: NodeTest<typeof TestGraph> = createGraphNode(
       TestGraph,
       NodeTestKind,
@@ -77,7 +73,7 @@ describe('createGraphNode', () => {
   });
 
   it('allows use of a runtime initializer', () => {
-    const obj: PartialWithData<NodeTest<typeof TestGraph>> = {};
+    const obj: PartialNode<NodeTest<typeof TestGraph>> = {};
     const node = createGraphNode(TestGraph, NodeTestKind, obj, undefined, createGraphNodeTestRuntime);
     const runtime = getGraphNodeRuntime(node);
     expect((runtime as NodeTestRuntime<typeof TestGraph>).testRuntimeField).toBe('testRuntimeField');
@@ -95,10 +91,12 @@ describe('createGraphNodeRuntime', () => {
     expect(runtime.appearanceID).toStrictEqual(0);
     expect(runtime.boundsUsingLocalBoundsID).toStrictEqual(-1);
     expect(runtime.boundsUsingLocalTransformID).toStrictEqual(-1);
+    expect(runtime.children).toBeNull();
     expect(runtime.localBoundsID).toStrictEqual(0);
     expect(runtime.localBoundsUsingLocalBoundsID).toStrictEqual(-1);
     expect(runtime.localTransformID).toStrictEqual(0);
     expect(runtime.localTransformUsingLocalTransformID).toStrictEqual(-1);
+    expect(runtime.parent).toBeNull();
     expect(runtime.worldBoundsUsingLocalBoundsID).toStrictEqual(-1);
     expect(runtime.worldBoundsUsingWorldTransformID).toStrictEqual(-1);
     expect(runtime.worldTransformID).toStrictEqual(0);

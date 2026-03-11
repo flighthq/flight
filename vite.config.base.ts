@@ -24,6 +24,7 @@ export function createBaseConfig(mode: string) {
         // Alias directly to source for instant hot-module-reload (HMR)
         '@flighthq/animation-timeline': path.resolve(__dirname, 'packages/animation/timeline/src/index.ts'),
         '@flighthq/assets': path.resolve(__dirname, 'packages/assets/src/index.ts'),
+        '@flighthq/core': path.resolve(__dirname, 'packages/core/src/index.ts'),
         '@flighthq/flight': path.resolve(__dirname, 'packages/flight/src/index.ts'),
         '@flighthq/geometry': path.resolve(__dirname, 'packages/geometry/src/index.ts'),
         '@flighthq/interaction': path.resolve(__dirname, 'packages/interaction/src/index.ts'),
@@ -43,6 +44,7 @@ export function createBaseConfig(mode: string) {
       exclude: [
         '@flighthq/animation-timeline',
         '@flighthq/assets',
+        '@flighthq/core',
         '@flighthq/flight',
         '@flighthq/geometry',
         '@flighthq/interaction',

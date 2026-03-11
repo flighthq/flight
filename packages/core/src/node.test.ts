@@ -1,7 +1,7 @@
-import type { PartialWithData } from '@flighthq/types';
+import type { PartialNode } from '@flighthq/types';
 import { type Node, type NodeData, NodeKind, type NodeRuntime } from '@flighthq/types';
 
-import { createNode, createNodeRuntime, getRuntime } from './node';
+import { createNode, createNodeRuntime, getNodeRuntime } from './node';
 
 describe('createNode', () => {
   let node: Node;
@@ -37,7 +37,7 @@ describe('createNode', () => {
 
   it('makes a default runtime object if none passed in', () => {
     const node = createNode(NodeKind);
-    const runtime = getRuntime(node);
+    const runtime = getNodeRuntime(node);
     expect(runtime).not.toBeNull();
   });
 
@@ -47,21 +47,21 @@ describe('createNode', () => {
   });
 
   it('returns a new object', () => {
-    const obj: PartialWithData<NodeTest> = {};
+    const obj: PartialNode<NodeTest> = {};
     const node: NodeTest = createNode(NodeTestKind, obj) as NodeTest;
     expect(node).not.toStrictEqual(obj);
   });
 
   it('allows use of a data initializer', () => {
-    const obj: PartialWithData<NodeTest> = {};
+    const obj: PartialNode<NodeTest> = {};
     const node: NodeTest = createNode(NodeTestKind, obj, createNodeTestData) as NodeTest;
     expect((node.data as NodeTestData).testDataField).toBe('testDataField');
   });
 
   it('allows use of a runtime initializer', () => {
-    const obj: PartialWithData<NodeTest> = {};
+    const obj: PartialNode<NodeTest> = {};
     const node = createNode(NodeTestKind, obj, undefined, createNodeTestRuntime);
-    const runtime = getRuntime(node);
+    const runtime = getNodeRuntime(node);
     expect((runtime as NodeTestRuntime).testRuntimeField).toBe('testRuntimeField');
   });
 });
@@ -78,16 +78,16 @@ describe('createNodeRuntime', () => {
   });
 });
 
-describe('getRuntime', () => {
+describe('getNodeRuntime', () => {
   it('assumes runtime is defined', () => {
     const node = { kind: NodeTestKind };
-    const runtime = getRuntime(node as Node);
+    const runtime = getNodeRuntime(node as Node);
     expect(runtime).toBeUndefined();
   });
 
   it('returns runtime when defined', () => {
     const node = createNode(NodeTestKind);
-    const runtime = getRuntime(node);
+    const runtime = getNodeRuntime(node);
     expect(runtime).not.toBeUndefined();
   });
 });

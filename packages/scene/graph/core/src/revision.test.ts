@@ -1,5 +1,5 @@
 import { createGraphNode, getGraphNodeRuntime } from '@flighthq/scene-graph-core';
-import type { GraphNode } from '@flighthq/types';
+import type { GraphNode, GraphNodeRuntime } from '@flighthq/types';
 
 import {
   getAppearanceID,
@@ -23,9 +23,13 @@ beforeEach(() => {
   node = createTestNode();
 });
 
+function getRuntime<G extends symbol>(source: TestNode) {
+  return getGraphNodeRuntime(source) as GraphNodeRuntime<typeof TestGraph>;
+}
+
 describe('getAppearanceID', () => {
   it('returns appearanceID', () => {
-    const runtime = getGraphNodeRuntime(node);
+    const runtime = getRuntime(node);
     runtime.appearanceID = 100;
     expect(getAppearanceID(node)).toStrictEqual(runtime.appearanceID);
   });
@@ -33,7 +37,7 @@ describe('getAppearanceID', () => {
 
 describe('getLocalBoundsID', () => {
   it('returns localBoundsID', () => {
-    const runtime = getGraphNodeRuntime(node);
+    const runtime = getRuntime(node);
     runtime.localBoundsID = 100;
     expect(getLocalBoundsID(node)).toStrictEqual(runtime.localBoundsID);
   });
@@ -41,7 +45,7 @@ describe('getLocalBoundsID', () => {
 
 describe('getLocalTransformID', () => {
   it('returns localTransformID', () => {
-    const runtime = getGraphNodeRuntime(node);
+    const runtime = getRuntime(node);
     runtime.localTransformID = 100;
     expect(getLocalTransformID(node)).toStrictEqual(runtime.localTransformID);
   });
@@ -49,7 +53,7 @@ describe('getLocalTransformID', () => {
 
 describe('getWorldTransformID', () => {
   it('returns worldTransformID', () => {
-    const runtime = getGraphNodeRuntime(node);
+    const runtime = getRuntime(node);
     runtime.worldTransformID = 100;
     expect(getWorldTransformID(node)).toStrictEqual(runtime.worldTransformID);
   });
@@ -57,75 +61,75 @@ describe('getWorldTransformID', () => {
 
 describe('invalidate', () => {
   it('increments appearanceID, localBoundsID, localTransformID', () => {
-    const appearanceID = getGraphNodeRuntime(node).appearanceID;
-    const localBoundsID = getGraphNodeRuntime(node).localBoundsID;
-    const localTransformID = getGraphNodeRuntime(node).localTransformID;
+    const appearanceID = getRuntime(node).appearanceID;
+    const localBoundsID = getRuntime(node).localBoundsID;
+    const localTransformID = getRuntime(node).localTransformID;
     invalidate(node);
-    expect(getGraphNodeRuntime(node).appearanceID).toBe(appearanceID + 1);
-    expect(getGraphNodeRuntime(node).localBoundsID).toBe(localBoundsID + 1);
-    expect(getGraphNodeRuntime(node).localTransformID).toBe(localTransformID + 1);
+    expect(getRuntime(node).appearanceID).toBe(appearanceID + 1);
+    expect(getRuntime(node).localBoundsID).toBe(localBoundsID + 1);
+    expect(getRuntime(node).localTransformID).toBe(localTransformID + 1);
   });
 
   it('invalidates parent reference', () => {
     invalidate(node);
-    expect(getGraphNodeRuntime(node).worldTransformUsingParentTransformID).toBe(-1);
+    expect(getRuntime(node).worldTransformUsingParentTransformID).toBe(-1);
   });
 
   it('invalidates world bounds', () => {
     invalidate(node);
-    expect(getGraphNodeRuntime(node).worldBoundsUsingWorldTransformID).toBe(-1);
-    expect(getGraphNodeRuntime(node).worldBoundsUsingLocalBoundsID).toBe(-1);
+    expect(getRuntime(node).worldBoundsUsingWorldTransformID).toBe(-1);
+    expect(getRuntime(node).worldBoundsUsingLocalBoundsID).toBe(-1);
   });
 });
 
 describe('invalidateAppearance', () => {
   it('increments appearanceID', () => {
-    const appearanceID = getGraphNodeRuntime(node).appearanceID;
+    const appearanceID = getRuntime(node).appearanceID;
     invalidateAppearance(node);
-    expect(getGraphNodeRuntime(node).appearanceID).toBe(appearanceID + 1);
+    expect(getRuntime(node).appearanceID).toBe(appearanceID + 1);
   });
 
   it('should wrap around appearanceID correctly using >>> 0', () => {
-    const runtime = getGraphNodeRuntime(node);
+    const runtime = getRuntime(node);
     runtime.appearanceID = 0xffffffff; // max 32-bit uint
     invalidateAppearance(node);
-    expect(getGraphNodeRuntime(node).appearanceID).toBe(0);
+    expect(getRuntime(node).appearanceID).toBe(0);
   });
 });
 
 describe('invalidateLocalBounds', () => {
   it('increments localBoundsID', () => {
-    const localBoundsID = getGraphNodeRuntime(node).localBoundsID;
+    const localBoundsID = getRuntime(node).localBoundsID;
     invalidateLocalBounds(node);
-    expect(getGraphNodeRuntime(node).localBoundsID).toBe(localBoundsID + 1);
+    expect(getRuntime(node).localBoundsID).toBe(localBoundsID + 1);
   });
 
   it('should wrap around localBoundsID correctly using >>> 0', () => {
-    const runtime = getGraphNodeRuntime(node);
+    const runtime = getRuntime(node);
     runtime.localBoundsID = 0xffffffff; // max 32-bit uint
     invalidateLocalBounds(node);
-    expect(getGraphNodeRuntime(node).localBoundsID).toBe(0);
+    expect(getRuntime(node).localBoundsID).toBe(0);
   });
 });
 
 describe('invalidateLocalTransform', () => {
   it('increments localTransformID', () => {
-    const localTransformID = getGraphNodeRuntime(node).localTransformID;
+    const localTransformID = getRuntime(node).localTransformID;
     invalidateLocalTransform(node);
-    expect(getGraphNodeRuntime(node).localTransformID).toBe(localTransformID + 1);
+    expect(getRuntime(node).localTransformID).toBe(localTransformID + 1);
   });
 
   it('should wrap around localTransformID correctly using >>> 0', () => {
-    const runtime = getGraphNodeRuntime(node);
+    const runtime = getRuntime(node);
     runtime.localTransformID = 0xffffffff; // max 32-bit uint
     invalidateLocalTransform(node);
-    expect(getGraphNodeRuntime(node).localTransformID).toBe(0);
+    expect(getRuntime(node).localTransformID).toBe(0);
   });
 });
 
 describe('invalidateParentReference', () => {
   it('invalidates the world transform parent transform cached ID', () => {
-    const runtime = getGraphNodeRuntime(node);
+    const runtime = getRuntime(node);
     runtime.worldTransformUsingParentTransformID = 1;
     invalidateParentReference(node);
     expect(runtime.worldTransformUsingParentTransformID).toBe(-1);
@@ -134,7 +138,7 @@ describe('invalidateParentReference', () => {
 
 describe('invalidateWorldBounds', () => {
   it('invalidates supporting values for world bounds calculations', () => {
-    const runtime = getGraphNodeRuntime(node);
+    const runtime = getRuntime(node);
     runtime.worldBoundsUsingWorldTransformID = 1;
     runtime.worldBoundsUsingLocalBoundsID = 1;
     invalidateWorldBounds(node);

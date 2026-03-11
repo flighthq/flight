@@ -1,24 +1,25 @@
+import { getNodeRuntime } from '@flighthq/core';
 import { matrix3x2 } from '@flighthq/geometry';
-import { getHasTransform2DRuntime, recomputeWorldTransformID } from '@flighthq/scene-graph-core';
+import { recomputeWorldTransformID } from '@flighthq/scene-graph-core';
 import type { GraphNode, HasTransform2D, HasTransform2DRuntime, Matrix3x2, Vector2 } from '@flighthq/types';
 
 export function ensureLocalTransform2D<G extends symbol>(target: GraphNode<G> & HasTransform2D<G>): void {
-  const runtime = getHasTransform2DRuntime(target);
+  const runtime = getNodeRuntime(target) as HasTransform2DRuntime<G>;
   if (runtime.localTransformUsingLocalTransformID !== runtime.localTransformID) {
     recomputeLocalTransform2D(target, runtime);
   }
 }
 
 export function ensureWorldTransform2D<G extends symbol>(target: GraphNode<G> & HasTransform2D<G>): void {
-  const runtime = getHasTransform2DRuntime(target);
-  const parent = target.parent;
+  const runtime = getNodeRuntime(target) as HasTransform2DRuntime<G>;
+  const parent = runtime.parent;
 
   let parentRuntime: HasTransform2DRuntime<G> | undefined;
   let parentWorldTransformID = 0;
 
   if (parent !== null) {
     ensureWorldTransform2D(parent as GraphNode<G> & HasTransform2D<G>);
-    parentRuntime = getHasTransform2DRuntime(parent as GraphNode<G> & HasTransform2D<G>);
+    parentRuntime = getNodeRuntime(parent) as HasTransform2DRuntime<G>;
     parentWorldTransformID = parentRuntime.worldTransformID;
   }
 
@@ -32,12 +33,12 @@ export function ensureWorldTransform2D<G extends symbol>(target: GraphNode<G> & 
 
 export function getLocalTransform2D<G extends symbol>(target: GraphNode<G> & HasTransform2D<G>): Readonly<Matrix3x2> {
   ensureLocalTransform2D(target);
-  return getHasTransform2DRuntime(target).localTransform2D!;
+  return (getNodeRuntime(target) as HasTransform2DRuntime<G>).localTransform2D!;
 }
 
 export function getWorldTransform2D<G extends symbol>(target: GraphNode<G> & HasTransform2D<G>): Readonly<Matrix3x2> {
   ensureWorldTransform2D(target);
-  return getHasTransform2DRuntime(target).worldTransform2D!;
+  return (getNodeRuntime(target) as HasTransform2DRuntime<G>).worldTransform2D!;
 }
 
 /**

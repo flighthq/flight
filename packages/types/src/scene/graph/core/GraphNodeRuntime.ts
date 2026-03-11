@@ -1,15 +1,17 @@
+import type { NodeRuntime } from '../../../core/NodeRuntime';
 import type { GraphNode } from './GraphNode';
-import type { NodeRuntime } from './NodeRuntime';
 
 export interface GraphNodeRuntime<G extends symbol> extends NodeRuntime {
   appearanceID: number;
   boundsUsingLocalBoundsID: number;
   boundsUsingLocalTransformID: number;
+  children: GraphNode<G>[] | null;
   graph: G;
   localBoundsID: number;
   localBoundsUsingLocalBoundsID: number;
   localTransformID: number;
   localTransformUsingLocalTransformID: number;
+  parent: GraphNode<G> | null;
   worldBoundsUsingLocalBoundsID: number;
   worldBoundsUsingWorldTransformID: number;
   worldTransformID: number;

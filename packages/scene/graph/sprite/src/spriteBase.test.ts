@@ -1,4 +1,4 @@
-import type { GraphNode, HasBoundsRect, PartialWithData, Rectangle, SpriteBase, SpriteBaseData } from '@flighthq/types';
+import type { GraphNode, HasBoundsRect, PartialNode, Rectangle, SpriteBase, SpriteBaseData } from '@flighthq/types';
 import { BlendMode, DisplayObjectKind, SpriteGraph } from '@flighthq/types';
 
 import { createSpriteBase, createSpriteBaseRuntime, getSpriteBaseRuntime } from './spriteBase';
@@ -55,7 +55,7 @@ describe('createSpriteBase', () => {
   });
 
   it('allows a custom type', () => {
-    const data: PartialWithData<SpriteBaseTest> = {
+    const data: PartialNode<SpriteBaseTest> = {
       x: 100,
     };
     const spriteBase = createSpriteBase(SpriteBaseTestKind, data);
@@ -63,13 +63,13 @@ describe('createSpriteBase', () => {
   });
 
   it('returns a new object', () => {
-    const data: PartialWithData<SpriteBaseTest> = {};
+    const data: PartialNode<SpriteBaseTest> = {};
     const spriteBase = createSpriteBase(SpriteBaseTestKind, data);
     expect(spriteBase).not.toStrictEqual(data);
   });
 
   it('allows use of a data initializer', () => {
-    const data: PartialWithData<SpriteBaseTest> = {};
+    const data: PartialNode<SpriteBaseTest> = {};
     const spriteBase = createSpriteBase(DisplayObjectKind, data, createSpriteBaseTestData);
     expect((spriteBase.data as SpriteBaseTestData).foo).toBe('bar');
   });

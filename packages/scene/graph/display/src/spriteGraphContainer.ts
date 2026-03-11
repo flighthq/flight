@@ -1,11 +1,9 @@
-import type { PartialWithData, SpriteGraphContainer, SpriteGraphContainerData } from '@flighthq/types';
+import type { PartialNode, SpriteGraphContainer, SpriteGraphContainerData } from '@flighthq/types';
 import { SpriteGraphContainerKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric } from './displayObject';
 
-export function createSpriteGraphContainer(
-  obj?: Readonly<PartialWithData<SpriteGraphContainer>>,
-): SpriteGraphContainer {
+export function createSpriteGraphContainer(obj?: Readonly<PartialNode<SpriteGraphContainer>>): SpriteGraphContainer {
   return createDisplayObjectGeneric(
     SpriteGraphContainerKind,
     obj,

@@ -3,13 +3,14 @@ import { hitTestObject as __hitTestObject, hitTestPoint as __hitTestPoint } from
 import {
   calculateBoundsRect,
   getBoundsRect,
+  getParent,
   globalToLocal2D,
   invalidate as __invalidate,
   invalidateAppearance,
   invalidateLocalTransform,
   localToGlobal2D,
 } from '@flighthq/scene-graph-core';
-import { createDisplayObject } from '@flighthq/scene-graph-display';
+import { createDisplayObject, getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
 import type { BlendMode } from '@flighthq/types';
 import { type DisplayObject as DisplayObjectModel, type Filter, type Shader, StageKind } from '@flighthq/types';
 
@@ -208,7 +209,7 @@ export default class DisplayObject {
   }
 
   get parent(): DisplayObject | null {
-    return getDisplayObjectFromModel(this.model.parent);
+    return getDisplayObjectFromModel(getParent(this.model) as DisplayObjectModel);
   }
 
   get root(): DisplayObject | null {
@@ -311,10 +312,10 @@ export default class DisplayObject {
   }
 
   get stage(): Stage | null {
-    let current = this.model.parent;
+    let current = getDisplayObjectRuntime(this.model).parent;
     while (current !== null) {
       if (current.kind === StageKind) return getDisplayObjectFromModel(current) as Stage;
-      current = current.parent;
+      current = getDisplayObjectRuntime(current).parent;
     }
     return null;
   }

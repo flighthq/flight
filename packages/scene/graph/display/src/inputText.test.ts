@@ -1,4 +1,4 @@
-import type { InputText, PartialWithData } from '@flighthq/types';
+import type { InputText, PartialNode } from '@flighthq/types';
 import { InputTextKind } from '@flighthq/types';
 
 import { createInputText } from './inputText';
@@ -17,7 +17,7 @@ describe('createInputText', () => {
   });
 
   it('allows pre-defined values', () => {
-    const base: PartialWithData<InputText> = {
+    const base: PartialNode<InputText> = {
       data: {
         text: 'foofoo',
         autoSize: 'center',

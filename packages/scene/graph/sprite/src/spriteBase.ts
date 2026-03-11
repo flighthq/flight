@@ -1,22 +1,22 @@
-import type { GraphNodeRuntimeFactory, NodeDataFactory } from '@flighthq/scene-graph-core';
+import type { GraphNodeDataFactory, GraphNodeRuntimeFactory } from '@flighthq/scene-graph-core';
 import {
   createGraphNode,
   createGraphNodeRuntime,
-  getRuntime,
+  getGraphNodeRuntime,
   initHasBoundsRect,
   initHasBoundsRectRuntime,
   initHasTransform2D,
   initHasTransform2DRuntime,
 } from '@flighthq/scene-graph-core';
-import type { PartialWithData, SpriteBase, SpriteBaseData, SpriteBaseRuntime } from '@flighthq/types';
+import type { MethodsOf, PartialNode, SpriteBase, SpriteBaseData, SpriteBaseRuntime } from '@flighthq/types';
 import { BlendMode, SpriteGraph } from '@flighthq/types';
 
-export type SpriteGraphNodeDataFactory = NodeDataFactory<SpriteBaseData>;
+export type SpriteGraphNodeDataFactory = GraphNodeDataFactory<SpriteBaseData>;
 export type SpriteGraphNodeRuntimeFactory<R extends SpriteBaseRuntime> = GraphNodeRuntimeFactory<typeof SpriteGraph, R>;
 
 export function createSpriteBase<R extends SpriteBaseRuntime>(
   kind: symbol,
-  obj?: Readonly<PartialWithData<SpriteBase>>,
+  obj?: Readonly<PartialNode<SpriteBase>>,
   createData?: SpriteGraphNodeDataFactory,
   createRuntime?: SpriteGraphNodeRuntimeFactory<R>,
 ): SpriteBase {
@@ -41,13 +41,13 @@ export function createSpriteBase<R extends SpriteBaseRuntime>(
   return out;
 }
 
-export function createSpriteBaseRuntime(methods?: Readonly<Partial<SpriteBaseRuntime>>): SpriteBaseRuntime {
+export function createSpriteBaseRuntime(methods?: Readonly<Partial<MethodsOf<SpriteBaseRuntime>>>): SpriteBaseRuntime {
   const out = createGraphNodeRuntime(methods) as SpriteBaseRuntime;
   initHasTransform2DRuntime(out, methods);
   initHasBoundsRectRuntime(out, methods);
   return out;
 }
 
-export function getSpriteBaseRuntime(source: Readonly<SpriteBase>): SpriteBaseRuntime {
-  return getRuntime(source) as SpriteBaseRuntime;
+export function getSpriteBaseRuntime(source: Readonly<SpriteBase>): Readonly<SpriteBaseRuntime> {
+  return getGraphNodeRuntime(source) as SpriteBaseRuntime;
 }

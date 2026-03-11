@@ -5,7 +5,8 @@ import type {
   DisplayObjectRuntime,
   GraphNode,
   HasBoundsRect,
-  PartialWithData,
+  MethodsOf,
+  PartialNode,
   Rectangle,
 } from '@flighthq/types';
 import { BitmapKind } from '@flighthq/types';
@@ -23,7 +24,7 @@ export function computeBitmapLocalBoundsRect(
   }
 }
 
-export function createBitmap(obj?: Readonly<PartialWithData<Bitmap>>): Bitmap {
+export function createBitmap(obj?: Readonly<PartialNode<Bitmap>>): Bitmap {
   return createDisplayObjectGeneric(BitmapKind, obj, createBitmapData, createBitmapRuntime) as Bitmap;
 }
 
@@ -38,6 +39,6 @@ export function createBitmapRuntime(): DisplayObjectRuntime {
   return createDisplayObjectRuntime(defaultMethods);
 }
 
-const defaultMethods: Partial<DisplayObjectRuntime> = {
+const defaultMethods: Partial<MethodsOf<DisplayObjectRuntime>> = {
   computeLocalBoundsRect: computeBitmapLocalBoundsRect,
 };

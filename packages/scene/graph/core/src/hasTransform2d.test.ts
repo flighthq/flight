@@ -1,7 +1,7 @@
 import type { GraphNode, HasTransform2D, HasTransform2DRuntime } from '@flighthq/types';
 
 import { createGraphNode, createGraphNodeRuntime } from './graphNode';
-import { getHasTransform2DRuntime, initHasTransform2D, initHasTransform2DRuntime } from './hasTransform2d';
+import { initHasTransform2D, initHasTransform2DRuntime } from './hasTransform2d';
 
 describe('initHasTransform2D', () => {
   let node: HasTransform2D<typeof TestGraph>;
@@ -55,21 +55,6 @@ describe('initHasTransform2DRuntime', () => {
 
     // inherited graph runtime fields
     expect(runtime.appearanceID).toStrictEqual(0);
-  });
-});
-
-describe('getHasTransform2DRuntime', () => {
-  it('assumes runtime is defined', () => {
-    const node = { kind: NodeTestKind } as GraphNode<typeof TestGraph> & HasTransform2D<typeof TestGraph>;
-    const runtime = getHasTransform2DRuntime(node);
-    expect(runtime).toBeUndefined();
-  });
-
-  it('returns runtime when defined', () => {
-    const node = createGraphNode(TestGraph, NodeTestKind) as GraphNode<typeof TestGraph> &
-      HasTransform2D<typeof TestGraph>;
-    const runtime = getHasTransform2DRuntime(node);
-    expect(runtime).not.toBeUndefined();
   });
 });
 

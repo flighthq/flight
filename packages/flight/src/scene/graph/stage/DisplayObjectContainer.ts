@@ -48,6 +48,6 @@ export default class DisplayObjectContainer extends DisplayObject {
   // Get & Set Methods
 
   get numChildren() {
-    return this.model.children ? this.model.children.length : 0;
+    return hierarchy.getNumChildren(this.model);
   }
 }

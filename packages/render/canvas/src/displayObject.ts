@@ -1,6 +1,7 @@
 import { rectangle } from '@flighthq/geometry';
 import { createNullRendererData, getDisplayObjectRenderNode, setRenderer } from '@flighthq/render-core';
 import { calculateBoundsRect } from '@flighthq/scene-graph-core';
+import { getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
@@ -37,10 +38,10 @@ export function drawDisplayObjectMask(state: CanvasRenderState, data: DisplayObj
     calculateBoundsRect(tempBounds, source, source);
     state.context.rect(0, 0, tempBounds.width, tempBounds.width);
   } else {
-    const children = source.children;
+    const children = getDisplayObjectRuntime(source).children;
     if (children !== null) {
       for (let i = 0; i < children.length; i++) {
-        const data = getDisplayObjectRenderNode(state, children[i]);
+        const data = getDisplayObjectRenderNode(state, children[i] as DisplayObject);
         applyMask(state, data);
       }
     }
@@ -69,10 +70,11 @@ export function renderDisplayObject(state: CanvasRenderState, source: DisplayObj
     drawObject(state, data);
 
     // Then push children in forward order (so we pop & draw index 0 first)
-    if (current.children !== null) {
+    const children = getDisplayObjectRuntime(current).children;
+    if (children !== null) {
       // Push from last to first → pop gives index 0 first
-      for (let i = current.children.length - 1; i >= 0; i--) {
-        tempStack[stackLength++] = current.children[i];
+      for (let i = children.length - 1; i >= 0; i--) {
+        tempStack[stackLength++] = children[i];
       }
     }
   }

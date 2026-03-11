@@ -1,21 +1,21 @@
-import type { GraphNodeRuntimeFactory, NodeDataFactory } from '@flighthq/scene-graph-core';
+import type { GraphNodeDataFactory, GraphNodeRuntimeFactory } from '@flighthq/scene-graph-core';
 import {
   createGraphNode,
   createGraphNodeRuntime,
-  getRuntime,
+  getGraphNodeRuntime,
   initHasBoundsRect,
   initHasBoundsRectRuntime,
   initHasTransform2D,
   initHasTransform2DRuntime,
 } from '@flighthq/scene-graph-core';
-import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime, PartialWithData } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime, MethodsOf, PartialNode } from '@flighthq/types';
 import { BlendMode, DisplayGraph, DisplayObjectKind } from '@flighthq/types';
 
-export function createDisplayObject(obj?: Readonly<PartialWithData<DisplayObject>>): DisplayObject {
+export function createDisplayObject(obj?: Readonly<PartialNode<DisplayObject>>): DisplayObject {
   return createDisplayObjectGeneric(DisplayObjectKind, obj);
 }
 
-export type DisplayGraphNodeDataFactory = NodeDataFactory<DisplayObjectData>;
+export type DisplayGraphNodeDataFactory = GraphNodeDataFactory<DisplayObjectData>;
 export type DisplayGraphNodeRuntimeFactory<R extends DisplayObjectRuntime> = GraphNodeRuntimeFactory<
   typeof DisplayGraph,
   R
@@ -23,7 +23,7 @@ export type DisplayGraphNodeRuntimeFactory<R extends DisplayObjectRuntime> = Gra
 
 export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   kind: symbol,
-  obj?: Readonly<PartialWithData<DisplayObject>>,
+  obj?: Readonly<PartialNode<DisplayObject>>,
   createData?: DisplayGraphNodeDataFactory,
   createRuntime?: DisplayGraphNodeRuntimeFactory<R>,
 ): DisplayObject {
@@ -50,13 +50,15 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   return out;
 }
 
-export function createDisplayObjectRuntime(methods?: Readonly<Partial<DisplayObjectRuntime>>): DisplayObjectRuntime {
+export function createDisplayObjectRuntime(
+  methods?: Readonly<Partial<MethodsOf<DisplayObjectRuntime>>>,
+): DisplayObjectRuntime {
   const out = createGraphNodeRuntime(methods) as DisplayObjectRuntime;
   initHasTransform2DRuntime(out, methods);
   initHasBoundsRectRuntime(out, methods);
   return out;
 }
 
-export function getDisplayObjectRuntime(source: Readonly<DisplayObject>): DisplayObjectRuntime {
-  return getRuntime(source) as DisplayObjectRuntime;
+export function getDisplayObjectRuntime(source: Readonly<DisplayObject>): Readonly<DisplayObjectRuntime> {
+  return getGraphNodeRuntime(source) as DisplayObjectRuntime;
 }

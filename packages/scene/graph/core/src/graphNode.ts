@@ -1,10 +1,7 @@
-import type { GraphNode, GraphNodeData, GraphNodeRuntime, PartialWithData } from '@flighthq/types';
+import type { NodeDataFactory, NodeRuntimeFactory } from '@flighthq/core';
+import { createNode, createNodeRuntime, getNodeRuntime } from '@flighthq/core';
+import type { GraphNode, GraphNodeData, GraphNodeRuntime, MethodsOf, PartialNode } from '@flighthq/types';
 import { NodeRuntimeKey } from '@flighthq/types';
-
-import type { GraphNodeInternal } from './internal';
-import type { NodeDataFactory, NodeRuntimeFactory } from './node';
-import { getRuntime } from './node';
-import { createNode, createNodeRuntime } from './node';
 
 export type GraphNodeDataFactory<D extends GraphNodeData> = NodeDataFactory<D>;
 export type GraphNodeRuntimeFactory<G extends symbol, R extends GraphNodeRuntime<G>> = NodeRuntimeFactory<R>;
@@ -12,7 +9,7 @@ export type GraphNodeRuntimeFactory<G extends symbol, R extends GraphNodeRuntime
 export function createGraphNode<G extends symbol, D extends GraphNodeData, R extends GraphNodeRuntime<G>>(
   graph: G,
   nodeKind: symbol,
-  obj?: Readonly<PartialWithData<GraphNode<G>>>,
+  obj?: Readonly<PartialNode<GraphNode<G>>>,
   createData?: GraphNodeDataFactory<D>,
   createRuntime?: GraphNodeRuntimeFactory<G, R>,
 ): GraphNode<G> {
@@ -23,23 +20,23 @@ export function createGraphNode<G extends symbol, D extends GraphNodeData, R ext
     createRuntime ?? (createGraphNodeRuntime as NodeRuntimeFactory<R>),
   ) as GraphNode<G>;
   out[NodeRuntimeKey]!.graph = graph;
-  (out as GraphNodeInternal<G>).children = obj?.children ?? null;
-  (out as GraphNodeInternal<G>).parent = obj?.parent ?? null;
   out.visible = obj?.visible ?? true;
   return out;
 }
 
 export function createGraphNodeRuntime<G extends symbol>(
-  methods?: Readonly<Partial<GraphNodeRuntime<G>>>,
+  methods?: Readonly<Partial<MethodsOf<GraphNodeRuntime<G>>>>,
 ): GraphNodeRuntime<G> {
   const out = createNodeRuntime(methods) as GraphNodeRuntime<G>;
   out.appearanceID = 0;
   out.boundsUsingLocalBoundsID = -1;
   out.boundsUsingLocalTransformID = -1;
+  out.children = null;
   out.localBoundsID = 0;
   out.localBoundsUsingLocalBoundsID = -1;
   out.localTransformID = 0;
   out.localTransformUsingLocalTransformID = -1;
+  out.parent = null;
   out.worldBoundsUsingLocalBoundsID = -1;
   out.worldBoundsUsingWorldTransformID = -1;
   out.worldTransformID = 0;
@@ -60,6 +57,6 @@ export function defaultGraphNodeRuntimeCanAddChild<G extends symbol>(
   return true;
 }
 
-export function getGraphNodeRuntime<G extends symbol>(source: Readonly<GraphNode<G>>): GraphNodeRuntime<G> {
-  return getRuntime(source) as GraphNodeRuntime<G>;
+export function getGraphNodeRuntime<G extends symbol>(source: Readonly<GraphNode<G>>): Readonly<GraphNodeRuntime<G>> {
+  return getNodeRuntime(source) as GraphNodeRuntime<G>;
 }

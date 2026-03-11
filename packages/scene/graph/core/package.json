@@ -37,14 +37,6 @@
       "types": "./dist/revision.d.ts",
       "default": "./dist/revision.js"
     },
-    "./runtime": {
-      "types": "./dist/runtime.d.ts",
-      "default": "./dist/runtime.js"
-    },
-    "./node": {
-      "types": "./dist/node.d.ts",
-      "default": "./dist/node.js"
-    },
     "./transform2d": {
       "types": "./dist/transform2d.d.ts",
       "default": "./dist/transform2d.js"
@@ -61,6 +53,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@flighthq/core": "*",
     "@flighthq/geometry": "*",
     "@flighthq/types": "*"
   },

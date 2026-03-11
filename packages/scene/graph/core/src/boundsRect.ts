@@ -9,8 +9,8 @@ import type {
   Rectangle,
 } from '@flighthq/types';
 
-import { getHasBoundsRectRuntime } from './hasBoundsRect';
-import { getRuntime } from './node';
+import { getGraphNodeRuntime } from './graphNode';
+import { getNumChildren, getParent } from './hierarchy';
 import { ensureWorldTransform2D, getLocalTransform2D, getWorldTransform2D } from './transform2d';
 
 /**
@@ -24,15 +24,15 @@ export function calculateBoundsRect<G extends symbol>(
 ): void {
   if (!targetCoordinateSpace) targetCoordinateSpace = source;
   let bounds;
-  if (targetCoordinateSpace.parent === null) {
+  if (getParent(targetCoordinateSpace) === null) {
     // if target has no parent, use world bounds
     bounds = getWorldBoundsRect(source);
-  } else if (source.children === null || source.children.length === 0) {
+  } else if (getNumChildren(source) === 0) {
     // only world bounds considers children
     if (targetCoordinateSpace === source) {
       // fast path, return local bounds for self
       bounds = getLocalBoundsRect(source);
-    } else if (targetCoordinateSpace === source.parent) {
+    } else if (targetCoordinateSpace === getParent(source)) {
       // fast path, return bounds for parent
       bounds = getBoundsRect(source);
     }
@@ -50,7 +50,7 @@ export function calculateBoundsRect<G extends symbol>(
 }
 
 export function ensureBoundsRect<G extends symbol>(target: GraphNode<G> & HasBoundsRect<G> & HasTransform2D<G>): void {
-  const runtime = getHasBoundsRectRuntime(target);
+  const runtime = getGraphNodeRuntime(target) as HasBoundsRectRuntime<G>;
   if (
     runtime.boundsUsingLocalBoundsID !== runtime.localBoundsID ||
     runtime.boundsUsingLocalTransformID !== runtime.localTransformID
@@ -60,7 +60,7 @@ export function ensureBoundsRect<G extends symbol>(target: GraphNode<G> & HasBou
 }
 
 export function ensureLocalBoundsRect<G extends symbol>(target: GraphNode<G> & HasBoundsRect<G>): void {
-  const runtime = getHasBoundsRectRuntime(target);
+  const runtime = getGraphNodeRuntime(target) as HasBoundsRectRuntime<G>;
   if (runtime.localBoundsUsingLocalBoundsID !== runtime.localBoundsID) {
     recomputeLocalBoundsRect(target, runtime);
   }
@@ -69,9 +69,11 @@ export function ensureLocalBoundsRect<G extends symbol>(target: GraphNode<G> & H
 export function ensureWorldBoundsRect<G extends symbol>(
   target: GraphNode<G> & HasBoundsRect<G> & HasTransform2D<G>,
 ): void {
-  const runtime = getRuntime(target) as GraphNodeRuntime<G> & HasBoundsRectRuntime<G> & HasTransform2DRuntime<G>;
+  const runtime = getGraphNodeRuntime(target) as GraphNodeRuntime<G> &
+    HasBoundsRectRuntime<G> &
+    HasTransform2DRuntime<G>;
   const localBoundsInvalid = runtime.worldBoundsUsingLocalBoundsID !== runtime.localBoundsID;
-  const hasChildren = target.children !== null;
+  const hasChildren = getNumChildren(target) !== 0;
   let forceRecompute = false;
   if (!hasChildren && !localBoundsInvalid) {
     if (tryFastRecomputeWorldBoundsRect(target, runtime)) return;
@@ -90,7 +92,7 @@ export function getBoundsRect<G extends symbol>(
   target: GraphNode<G> & HasBoundsRect<G> & HasTransform2D<G>,
 ): Readonly<Rectangle> {
   ensureBoundsRect(target);
-  return getHasBoundsRectRuntime(target).boundsRect!;
+  return (getGraphNodeRuntime(target) as HasBoundsRectRuntime<G>).boundsRect!;
 }
 
 /**
@@ -98,7 +100,7 @@ export function getBoundsRect<G extends symbol>(
  */
 export function getLocalBoundsRect<G extends symbol>(target: GraphNode<G> & HasBoundsRect<G>): Readonly<Rectangle> {
   ensureLocalBoundsRect(target);
-  return getHasBoundsRectRuntime(target).localBoundsRect!;
+  return (getGraphNodeRuntime(target) as HasBoundsRectRuntime<G>).localBoundsRect!;
 }
 
 /**
@@ -108,7 +110,7 @@ export function getWorldBoundsRect<G extends symbol>(
   target: GraphNode<G> & HasBoundsRect<G> & HasTransform2D<G>,
 ): Readonly<Rectangle> {
   ensureWorldBoundsRect(target);
-  return getHasBoundsRectRuntime(target).worldBoundsRect!;
+  return (getGraphNodeRuntime(target) as HasBoundsRectRuntime<G>).worldBoundsRect!;
 }
 
 function recomputeBoundsRect<G extends symbol>(
@@ -136,8 +138,9 @@ function recomputeWorldBoundsRect<G extends symbol>(
 ) {
   if (runtime.worldBoundsRect === null) runtime.worldBoundsRect = rectangle.create();
   matrix3x2.transformRect(runtime.worldBoundsRect, getWorldTransform2D(target), getLocalBoundsRect(target));
-  if (target.children !== null) {
-    for (const child of target.children) {
+  const children = getGraphNodeRuntime(target).children;
+  if (children !== null) {
+    for (const child of children) {
       const childWorldBounds = getWorldBoundsRect(child as GraphNode<G> & HasBoundsRect<G> & HasTransform2D<G>);
       if (childWorldBounds.width !== 0 && childWorldBounds.height !== 0) {
         rectangle.union(runtime.worldBoundsRect, runtime.worldBoundsRect, childWorldBounds);

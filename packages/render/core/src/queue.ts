@@ -1,3 +1,4 @@
+import { getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
 import type { DisplayObject, Renderable, RenderState } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';
@@ -23,9 +24,10 @@ export function prepareRenderQueue(state: RenderState, source: Renderable): void
       const shouldRender = data.visible && data.alpha > 0 && !(data.transform.a === 0 && data.transform.d === 0);
       if (shouldRender) {
         currentQueue[currentQueueIndex++] = data;
-        if (current.children !== null) {
-          for (let i = current.children.length - 1; i >= 0; i--) {
-            tempStack[stackLength++] = current.children[i];
+        const children = getDisplayObjectRuntime(current).children;
+        if (children !== null) {
+          for (let i = children.length - 1; i >= 0; i--) {
+            tempStack[stackLength++] = children[i] as DisplayObject;
           }
         }
       }

@@ -1,4 +1,4 @@
-import type { GraphNode } from '@flighthq/types';
+import type { GraphNode, GraphNodeRuntime } from '@flighthq/types';
 import { GraphNodeKind, NodeKind } from '@flighthq/types';
 
 import { createGraphNode, getGraphNodeRuntime } from './graphNode';
@@ -9,6 +9,8 @@ import {
   getChildAt,
   getChildByName,
   getChildIndex,
+  getNumChildren,
+  getParent,
   removeChild,
   removeChildAt,
   removeChildren,
@@ -17,22 +19,30 @@ import {
   swapChildrenAt,
 } from './hierarchy';
 
-let container: GraphNode<typeof GraphNodeKind>;
-let childA: GraphNode<typeof GraphNodeKind>;
-let childB: GraphNode<typeof GraphNodeKind>;
+let container: GraphNode<typeof TestGraph>;
+let childA: GraphNode<typeof TestGraph>;
+let childB: GraphNode<typeof TestGraph>;
 
 beforeEach(() => {
-  container = createGraphNode(GraphNodeKind, NodeKind);
-  childA = createGraphNode(GraphNodeKind, NodeKind);
-  childB = createGraphNode(GraphNodeKind, NodeKind);
+  container = createGraphNode(TestGraph, GraphNodeKind);
+  childA = createGraphNode(TestGraph, GraphNodeKind);
+  childB = createGraphNode(TestGraph, GraphNodeKind);
 });
+
+function getChildren(source: GraphNode<typeof TestGraph>) {
+  return getGraphNodeRuntime(source).children as GraphNode<typeof TestGraph>[];
+}
+
+function getRuntime(source: GraphNode<typeof TestGraph>) {
+  return getGraphNodeRuntime(source) as GraphNodeRuntime<typeof TestGraph>;
+}
 
 describe('addChild', () => {
   it('addChild adds a child to the end of the list', () => {
     addChild(container, childA);
 
-    expect(container.children!.length).toBe(1);
-    expect(childA.parent).toBe(container);
+    expect(getNumChildren(container)).toBe(1);
+    expect(getParent(childA)).toBe(container);
   });
 
   it('throws if child is null', () => {
@@ -40,37 +50,37 @@ describe('addChild', () => {
   });
 
   it('throws if child is the same as target', () => {
-    expect(() => addChild(container, container as any)).toThrow(TypeError); // eslint-disable-line
+    expect(() => addChild(container, container)).toThrow(TypeError);  
   });
 
   it('removes child from previous parent before adding', () => {
-    const other = createGraphNode(GraphNodeKind, NodeKind);
+    const other = createGraphNode(TestGraph, NodeKind);
 
     addChild(other, childA);
-    expect(childA.parent).toBe(other);
+    expect(getParent(childA)).toBe(other);
 
     addChild(container, childA);
 
-    expect(childA.parent).toBe(container);
-    expect(other.children!.length).toBe(0);
-    expect(container.children!.length).toBe(1);
+    expect(getParent(childA)).toBe(container);
+    expect(getNumChildren(other)).toBe(0);
+    expect(getNumChildren(container)).toBe(1);
   });
 
   it('a child never has more than one parent', () => {
-    const other = createGraphNode(GraphNodeKind, NodeKind);
+    const other = createGraphNode(TestGraph, NodeKind);
 
     addChild(container, childA);
     addChild(other, childA);
 
-    expect(childA.parent).toBe(other);
-    expect(container.children!.length).toBe(0);
-    expect(other.children!.length).toBe(1);
+    expect(getParent(childA)).toBe(other);
+    expect(getNumChildren(container)).toBe(0);
+    expect(getNumChildren(other)).toBe(1);
   });
 
   it('calls onParentChanged on the child', () => {
     let called = false;
-    const runtime = getGraphNodeRuntime(childA);
-    runtime.onParentChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
+    const runtime = getRuntime(childA);
+    runtime.onParentChanged = (_target: GraphNode<typeof TestGraph>) => {
       called = true;
     };
     addChild(container, childA);
@@ -79,8 +89,8 @@ describe('addChild', () => {
 
   it('calls onChildrenChanged on the parent', () => {
     let called = false;
-    const runtime = getGraphNodeRuntime(container);
-    runtime.onChildrenChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
+    const runtime = getRuntime(container);
+    runtime.onChildrenChanged = (_target: GraphNode<typeof TestGraph>) => {
       called = true;
     };
     addChild(container, childA);
@@ -93,17 +103,17 @@ describe('addChildAt', () => {
     addChild(container, childA);
     addChildAt(container, childB, 0);
 
-    expect(container.children!.length).toBe(2);
-    expect(container.children![0]).toBe(childB);
-    expect(container.children![1]).toBe(childA);
+    expect(getNumChildren(container)).toBe(2);
+    expect(getChildren(container)[0]).toBe(childB);
+    expect(getChildren(container)[1]).toBe(childA);
   });
 
   it('addChildAt allows inserting at the end (index === length)', () => {
     addChild(container, childA);
     addChildAt(container, childB, 1);
 
-    expect(container.children!.length).toBe(2);
-    expect(container.children![1]).toBe(childB);
+    expect(getNumChildren(container)).toBe(2);
+    expect(getChildren(container)[1]).toBe(childB);
   });
 
   it('addChildAt throws if index is negative', () => {
@@ -121,14 +131,14 @@ describe('addChildAt', () => {
     // move childA to the front
     addChildAt(container, childA, 1);
 
-    expect(container.children![0]).toBe(childB);
-    expect(container.children![1]).toBe(childA);
+    expect(getChildren(container)[0]).toBe(childB);
+    expect(getChildren(container)[1]).toBe(childA);
   });
 
   it('calls onParentChanged on the child', () => {
     let called = false;
-    const runtime = getGraphNodeRuntime(childA);
-    runtime.onParentChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
+    const runtime = getRuntime(childA);
+    runtime.onParentChanged = (_target: GraphNode<typeof TestGraph>) => {
       called = true;
     };
     addChildAt(container, childA, 0);
@@ -137,8 +147,8 @@ describe('addChildAt', () => {
 
   it('calls onChildrenChanged on the parent', () => {
     let called = false;
-    const runtime = getGraphNodeRuntime(container);
-    runtime.onChildrenChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
+    const runtime = getRuntime(container);
+    runtime.onChildrenChanged = (_target: GraphNode<typeof TestGraph>) => {
       called = true;
     };
     addChildAt(container, childA, 0);
@@ -226,25 +236,48 @@ describe('getChildIndex', () => {
   });
 });
 
+describe('getNumChildren', () => {
+  it('returns 0 if children is null', () => {
+    const children = getRuntime(container).children;
+    expect(children).toBeNull();
+    expect(getNumChildren(container)).toBe(0);
+  });
+
+  it('returns length of runtime children array', () => {
+    addChild(container, childA);
+    addChild(container, childB);
+    const children = getRuntime(container).children;
+    expect(getNumChildren(container)).toStrictEqual(children!.length);
+  });
+});
+
+describe('getParent', () => {
+  it('returns runtime parent reference', () => {
+    addChild(container, childA);
+    const parent = getRuntime(childA).parent;
+    expect(getParent(childA)).toStrictEqual(parent);
+  });
+});
+
 describe('removeChild', () => {
   it('removes the child and clears its parent', () => {
     addChild(container, childA);
-    expect(container.children!.length).toBe(1);
+    expect(getNumChildren(container)).toBe(1);
 
     removeChild(container, childA);
 
-    expect(container.children!.length).toBe(0);
-    expect(childA.parent).toBeNull();
+    expect(getNumChildren(container)).toBe(0);
+    expect(getParent(childA)).toBeNull();
   });
 
   it('does nothing if child is not a child of target', () => {
     addChild(container, childA);
 
-    const other = createGraphNode(GraphNodeKind, NodeKind);
+    const other = createGraphNode(TestGraph, NodeKind);
     removeChild(other, childA);
 
-    expect(container.children!.length).toBe(1);
-    expect(childA.parent).toBe(container);
+    expect(getNumChildren(container)).toBe(1);
+    expect(getParent(childA)).toBe(container);
   });
 
   it('is safe when child is null', () => {
@@ -255,14 +288,14 @@ describe('removeChild', () => {
     addChild(container, childA);
     removeChild(container, childA);
 
-    expect(childA.parent).toBeNull();
+    expect(getParent(childA)).toBeNull();
   });
 
   it('calls onParentChanged on the child', () => {
     addChild(container, childA);
     let called = false;
-    const runtime = getGraphNodeRuntime(childA);
-    runtime.onParentChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
+    const runtime = getRuntime(childA);
+    runtime.onParentChanged = (_target: GraphNode<typeof TestGraph>) => {
       called = true;
     };
     removeChild(container, childA);
@@ -272,8 +305,8 @@ describe('removeChild', () => {
   it('calls onChildrenChanged on the parent', () => {
     addChild(container, childA);
     let called = false;
-    const runtime = getGraphNodeRuntime(container);
-    runtime.onChildrenChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
+    const runtime = getRuntime(container);
+    runtime.onChildrenChanged = (_target: GraphNode<typeof TestGraph>) => {
       called = true;
     };
     removeChild(container, childA);
@@ -289,9 +322,9 @@ describe('removeChildAt', () => {
     const removed = removeChildAt(container, 0);
 
     expect(removed).toBe(childA);
-    expect(container.children!.length).toBe(1);
-    expect(childA.parent).toBeNull();
-    expect(container.children![0]).toBe(childB);
+    expect(getNumChildren(container)).toBe(1);
+    expect(getParent(childA)).toBeNull();
+    expect(getChildren(container)[0]).toBe(childB);
   });
 
   it('removeChildAt returns null for out-of-range index', () => {
@@ -303,8 +336,8 @@ describe('removeChildAt', () => {
     addChild(container, childB);
 
     let called = false;
-    const runtime = getGraphNodeRuntime(childA);
-    runtime.onParentChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
+    const runtime = getRuntime(childA);
+    runtime.onParentChanged = (_target: GraphNode<typeof TestGraph>) => {
       called = true;
     };
     removeChildAt(container, 0);
@@ -316,8 +349,8 @@ describe('removeChildAt', () => {
     addChild(container, childB);
 
     let called = false;
-    const runtime = getGraphNodeRuntime(container);
-    runtime.onChildrenChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
+    const runtime = getRuntime(container);
+    runtime.onChildrenChanged = (_target: GraphNode<typeof TestGraph>) => {
       called = true;
     };
     removeChildAt(container, 0);
@@ -332,13 +365,13 @@ describe('removeChildren', () => {
 
     removeChildren(container);
 
-    expect(container.children!.length).toBe(0);
-    expect(childA.parent).toBeNull();
-    expect(childB.parent).toBeNull();
+    expect(getNumChildren(container)).toBe(0);
+    expect(getParent(childA)).toBeNull();
+    expect(getParent(childB)).toBeNull();
   });
 
   it('removeChildren removes a range of children', () => {
-    const childC = createGraphNode(GraphNodeKind, NodeKind);
+    const childC = createGraphNode(TestGraph, NodeKind);
 
     addChild(container, childA);
     addChild(container, childB);
@@ -346,10 +379,10 @@ describe('removeChildren', () => {
 
     removeChildren(container, 1, 2);
 
-    expect(container.children!.length).toBe(1);
-    expect(container.children![0]).toBe(childA);
-    expect(childB.parent).toBeNull();
-    expect(childC.parent).toBeNull();
+    expect(getNumChildren(container)).toBe(1);
+    expect(getChildren(container)[0]).toBe(childA);
+    expect(getParent(childB)).toBeNull();
+    expect(getParent(childC)).toBeNull();
   });
 
   it('removeChildren does nothing if beginIndex is out of range', () => {
@@ -357,7 +390,7 @@ describe('removeChildren', () => {
 
     removeChildren(container, 5);
 
-    expect(container.children!.length).toBe(1);
+    expect(getNumChildren(container)).toBe(1);
   });
 
   it('removeChildren throws if indices are invalid', () => {
@@ -371,8 +404,8 @@ describe('removeChildren', () => {
     addChild(container, childA);
 
     let called = false;
-    const runtime = getGraphNodeRuntime(childA);
-    runtime.onParentChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
+    const runtime = getRuntime(childA);
+    runtime.onParentChanged = (_target: GraphNode<typeof TestGraph>) => {
       called = true;
     };
     removeChildren(container);
@@ -383,8 +416,8 @@ describe('removeChildren', () => {
     addChild(container, childA);
 
     let called = false;
-    const runtime = getGraphNodeRuntime(container);
-    runtime.onChildrenChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
+    const runtime = getRuntime(container);
+    runtime.onChildrenChanged = (_target: GraphNode<typeof TestGraph>) => {
       called = true;
     };
     removeChildren(container);
@@ -399,20 +432,20 @@ describe('setChildIndex', () => {
 
     setChildIndex(container, childA, 1);
 
-    expect(container.children![0]).toBe(childB);
-    expect(container.children![1]).toBe(childA);
+    expect(getChildren(container)[0]).toBe(childB);
+    expect(getChildren(container)[1]).toBe(childA);
   });
 
   it('setChildIndex does nothing if child is not in container', () => {
-    const other = createGraphNode(GraphNodeKind, NodeKind);
+    const other = createGraphNode(TestGraph, NodeKind);
 
     addChild(other, childA);
     addChild(container, childB);
 
     setChildIndex(container, childA, 0);
 
-    expect(container.children![0]).toBe(childB);
-    expect(childA.parent).toBe(other);
+    expect(getChildren(container)[0]).toBe(childB);
+    expect(getParent(childA)).toBe(other);
   });
 
   it('setChildIndex ignores out-of-range indices', () => {
@@ -420,7 +453,7 @@ describe('setChildIndex', () => {
 
     setChildIndex(container, childA, 5);
 
-    expect(container.children![0]).toBe(childA);
+    expect(getChildren(container)[0]).toBe(childA);
   });
 
   it('calls onChildrenOrderChanged on the parent', () => {
@@ -428,8 +461,8 @@ describe('setChildIndex', () => {
     addChild(container, childB);
 
     let called = false;
-    const runtime = getGraphNodeRuntime(container);
-    runtime.onChildrenOrderChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
+    const runtime = getRuntime(container);
+    runtime.onChildrenOrderChanged = (_target: GraphNode<typeof TestGraph>) => {
       called = true;
     };
     setChildIndex(container, childA, 1);
@@ -444,19 +477,19 @@ describe('swapChildren', () => {
 
     swapChildren(container, childA, childB);
 
-    expect(container.children![0]).toBe(childB);
-    expect(container.children![1]).toBe(childA);
+    expect(getChildren(container)[0]).toBe(childB);
+    expect(getChildren(container)[1]).toBe(childA);
   });
 
   it('swapChildren does nothing if either child is not in container', () => {
-    const other = createGraphNode(GraphNodeKind, NodeKind);
+    const other = createGraphNode(TestGraph, NodeKind);
 
     addChild(container, childA);
     addChild(other, childB);
 
     swapChildren(container, childA, childB);
 
-    expect(container.children![0]).toBe(childA);
+    expect(getChildren(container)[0]).toBe(childA);
   });
 
   it('calls onChildrenOrderChanged on the parent', () => {
@@ -464,8 +497,8 @@ describe('swapChildren', () => {
     addChild(container, childB);
 
     let called = false;
-    const runtime = getGraphNodeRuntime(container);
-    runtime.onChildrenOrderChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
+    const runtime = getRuntime(container);
+    runtime.onChildrenOrderChanged = (_target: GraphNode<typeof TestGraph>) => {
       called = true;
     };
     swapChildren(container, childA, childB);
@@ -480,8 +513,8 @@ describe('swapChildrenAt', () => {
 
     swapChildrenAt(container, 0, 1);
 
-    expect(container.children![0]).toBe(childB);
-    expect(container.children![1]).toBe(childA);
+    expect(getChildren(container)[0]).toBe(childB);
+    expect(getChildren(container)[1]).toBe(childA);
   });
 
   it('swapChildrenAt assumes valid indices (throws if invalid)', () => {
@@ -495,11 +528,13 @@ describe('swapChildrenAt', () => {
     addChild(container, childB);
 
     let called = false;
-    const runtime = getGraphNodeRuntime(container);
-    runtime.onChildrenOrderChanged = (_target: GraphNode<typeof GraphNodeKind>) => {
+    const runtime = getRuntime(container);
+    runtime.onChildrenOrderChanged = (_target: GraphNode<typeof TestGraph>) => {
       called = true;
     };
     swapChildrenAt(container, 0, 1);
     expect(called).toBe(true);
   });
 });
+
+const TestGraph: unique symbol = Symbol('TestGraph');

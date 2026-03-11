@@ -30,7 +30,7 @@ export function invalidate<G extends symbol>(target: GraphNode<G>): void {
  * Target object's appearance changed (excluding transforms).
  */
 export function invalidateAppearance<G extends symbol>(target: GraphNode<G>): void {
-  const runtime = getGraphNodeRuntime(target);
+  const runtime = getGraphNodeRuntime(target) as GraphNodeRuntime<G>;
   runtime.appearanceID = (runtime.appearanceID + 1) >>> 0;
 }
 
@@ -38,7 +38,7 @@ export function invalidateAppearance<G extends symbol>(target: GraphNode<G>): vo
  * Target object's own dimensions (not including children) changed.
  */
 export function invalidateLocalBounds<G extends symbol>(target: GraphNode<G>): void {
-  const runtime = getGraphNodeRuntime(target);
+  const runtime = getGraphNodeRuntime(target) as GraphNodeRuntime<G>;
   runtime.localBoundsID = (runtime.localBoundsID + 1) >>> 0;
 }
 
@@ -46,7 +46,7 @@ export function invalidateLocalBounds<G extends symbol>(target: GraphNode<G>): v
  * Target object's own transform (x, y, rotation, scaleX, scaleY) changed.
  */
 export function invalidateLocalTransform<G extends symbol>(target: GraphNode<G>): void {
-  const runtime = getGraphNodeRuntime(target);
+  const runtime = getGraphNodeRuntime(target) as GraphNodeRuntime<G>;
   runtime.localTransformID = (runtime.localTransformID + 1) >>> 0;
 }
 
@@ -54,7 +54,7 @@ export function invalidateLocalTransform<G extends symbol>(target: GraphNode<G>)
  * Target object's parent changed.
  */
 export function invalidateParentReference<G extends symbol>(target: GraphNode<G>): void {
-  const runtime = getGraphNodeRuntime(target);
+  const runtime = getGraphNodeRuntime(target) as GraphNodeRuntime<G>;
   runtime.worldTransformUsingParentTransformID = -1;
 }
 
@@ -62,7 +62,7 @@ export function invalidateParentReference<G extends symbol>(target: GraphNode<G>
  * Target object's child bounds have changed.
  */
 export function invalidateWorldBounds<G extends symbol>(target: GraphNode<G>): void {
-  const runtime = getGraphNodeRuntime(target);
+  const runtime = getGraphNodeRuntime(target) as GraphNodeRuntime<G>;
   runtime.worldBoundsUsingWorldTransformID = -1;
   runtime.worldBoundsUsingLocalBoundsID = -1;
 }

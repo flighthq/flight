@@ -1,7 +1,7 @@
 import type { Rectangle } from '../../../geometry/Rectangle';
+import type { NodeRuntimeKey } from '../../../index';
 import type { GraphNode } from './GraphNode';
 import type { GraphNodeRuntime } from './GraphNodeRuntime';
-import type { NodeRuntimeKey } from './NodeRuntime';
 
 export interface HasBoundsRect<G extends symbol> extends GraphNode<G> {
   [NodeRuntimeKey]: HasBoundsRectRuntime<G> | undefined;

@@ -1,7 +1,7 @@
 import type {
   GraphNode,
   HasBoundsRect,
-  PartialWithData,
+  PartialNode,
   QuadBatch,
   QuadBatchData,
   Rectangle,
@@ -19,7 +19,7 @@ export function computeQuadBatchLocalBoundsRect(
   // TODO
 }
 
-export function createQuadBatch(obj?: Readonly<PartialWithData<QuadBatch>>): QuadBatch {
+export function createQuadBatch(obj?: Readonly<PartialNode<QuadBatch>>): QuadBatch {
   return createSpriteBase(QuadBatchKind, obj, createQuadBatchData, createQuadBatchRuntime) as QuadBatch;
 }
 

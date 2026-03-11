@@ -1,19 +1,39 @@
-import type { GraphNode, HasBoundsRect } from '@flighthq/types';
+import type { GraphNode, HasBoundsRect, HasBoundsRectRuntime } from '@flighthq/types';
 
-import { createGraphNode } from './graphNode';
-import { getHasBoundsRectRuntime } from './hasBoundsRect';
+import { createGraphNode, createGraphNodeRuntime } from './graphNode';
+import { defaultComputeLocalBoundsRect, initHasBoundsRect, initHasBoundsRectRuntime } from './hasBoundsRect';
 
-describe('getHasBoundsRectRuntime', () => {
-  it('assumes runtime is defined', () => {
-    const node = { kind: NodeTestKind };
-    const runtime = getHasBoundsRectRuntime(node as GraphNode<typeof TestGraph> & HasBoundsRect<typeof TestGraph>);
-    expect(runtime).toBeUndefined();
+describe('initHasBoundsRect', () => {
+  let node: HasBoundsRect<typeof TestGraph>;
+
+  beforeEach(() => {
+    node = createGraphNode(TestGraph, NodeTestKind) as GraphNode<typeof TestGraph> & HasBoundsRect<typeof TestGraph>;
   });
 
-  it('returns runtime when defined', () => {
-    const node = createGraphNode(TestGraph, NodeTestKind);
-    const runtime = getHasBoundsRectRuntime(node as GraphNode<typeof TestGraph> & HasBoundsRect<typeof TestGraph>);
-    expect(runtime).not.toBeUndefined();
+  it('does nothing', () => {
+    initHasBoundsRect(node);
+  });
+
+  it('allows pre-defined values', () => {
+    const base = {};
+    initHasBoundsRect(node, base);
+  });
+});
+
+describe('initHasBoundsRectRuntime', () => {
+  let runtime: HasBoundsRectRuntime<typeof TestGraph>;
+
+  beforeEach(() => {
+    runtime = createGraphNodeRuntime() as HasBoundsRectRuntime<typeof TestGraph>;
+  });
+
+  it('initializes default values', () => {
+    initHasBoundsRectRuntime(runtime);
+
+    expect(runtime.boundsRect).toBeNull();
+    expect(runtime.localBoundsRect).toBeNull();
+    expect(runtime.worldBoundsRect).toBeNull();
+    expect(runtime.computeLocalBoundsRect).toStrictEqual(defaultComputeLocalBoundsRect);
   });
 });
 
