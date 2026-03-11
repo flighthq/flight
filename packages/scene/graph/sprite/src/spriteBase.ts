@@ -8,11 +8,23 @@ import {
   initHasTransform2D,
   initHasTransform2DRuntime,
 } from '@flighthq/scene-graph-core';
-import type { MethodsOf, PartialNode, SpriteBase, SpriteBaseData, SpriteBaseRuntime } from '@flighthq/types';
-import { BlendMode, SpriteGraph } from '@flighthq/types';
+import type {
+  MethodsOf,
+  PartialNode,
+  SpriteBase,
+  SpriteBaseData,
+  SpriteBaseRuntime,
+  SpriteBaseTraits,
+} from '@flighthq/types';
+import { SpriteGraph } from '@flighthq/types';
+import { BlendMode } from '@flighthq/types';
 
 export type SpriteGraphNodeDataFactory = GraphNodeDataFactory<SpriteBaseData>;
-export type SpriteGraphNodeRuntimeFactory<R extends SpriteBaseRuntime> = GraphNodeRuntimeFactory<typeof SpriteGraph, R>;
+export type SpriteGraphNodeRuntimeFactory<R extends SpriteBaseRuntime> = GraphNodeRuntimeFactory<
+  typeof SpriteGraph,
+  SpriteBaseTraits,
+  R
+>;
 
 export function createSpriteBase<R extends SpriteBaseRuntime>(
   kind: symbol,
@@ -25,7 +37,7 @@ export function createSpriteBase<R extends SpriteBaseRuntime>(
     kind,
     obj,
     createData,
-    createRuntime ?? (createSpriteBaseRuntime as GraphNodeRuntimeFactory<typeof SpriteGraph, R>),
+    createRuntime ?? (createSpriteBaseRuntime as GraphNodeRuntimeFactory<typeof SpriteGraph, SpriteBaseTraits, R>),
   ) as SpriteBase;
   initHasTransform2D(out, obj);
   initHasBoundsRect(out, obj);

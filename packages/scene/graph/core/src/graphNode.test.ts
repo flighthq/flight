@@ -1,5 +1,4 @@
 import type { GraphNode, GraphNodeData, GraphNodeRuntime, PartialNode } from '@flighthq/types';
-import { GraphNodeKind, NodeKind } from '@flighthq/types';
 
 import {
   createGraphNode,
@@ -38,7 +37,7 @@ describe('createGraphNode', () => {
   });
 
   it('allows creation of a type without a data field', () => {
-    const node = createGraphNode(GraphNodeKind, NodeKind);
+    const node = createGraphNode(TestGraph, NodeTestKind);
     expect(node.data).toBeNull();
   });
 
@@ -148,7 +147,7 @@ const TestGraph: unique symbol = Symbol('TestGraph');
 
 const NodeTestKind: unique symbol = Symbol('NodeTest');
 
-interface NodeTest<G extends symbol> extends GraphNode<G> {
+interface NodeTest<GraphKind extends symbol> extends GraphNode<GraphKind> {
   data: NodeTestData;
 }
 
@@ -156,7 +155,7 @@ interface NodeTestData extends GraphNodeData {
   testDataField: string;
 }
 
-interface NodeTestRuntime<G extends symbol> extends GraphNodeRuntime<G> {
+interface NodeTestRuntime<GraphKind extends symbol> extends GraphNodeRuntime<GraphKind> {
   testRuntimeField: string;
 }
 
@@ -166,8 +165,8 @@ function createGraphNodeTestData(data?: Partial<NodeTestData>): NodeTestData {
   };
 }
 
-function createGraphNodeTestRuntime<G extends symbol>(): NodeTestRuntime<G> {
-  const obj = createGraphNodeRuntime() as NodeTestRuntime<G>;
+function createGraphNodeTestRuntime<GraphKind extends symbol>(): NodeTestRuntime<GraphKind> {
+  const obj = createGraphNodeRuntime() as NodeTestRuntime<GraphKind>;
   obj.testRuntimeField = 'testRuntimeField';
   return obj;
 }

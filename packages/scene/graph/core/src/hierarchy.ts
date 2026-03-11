@@ -1,4 +1,4 @@
-import type { GraphNode, GraphNodeRuntime } from '@flighthq/types';
+import type { GraphNode, GraphNodeRuntime, Node } from '@flighthq/types';
 
 import { getGraphNodeRuntime } from './graphNode';
 
@@ -7,7 +7,10 @@ import { getGraphNodeRuntime } from './graphNode';
  * instance. The child is added to the front (top) of all other children in
  * this Node instance.
  **/
-export function addChild<G extends symbol>(target: GraphNode<G>, child: GraphNode<G>): GraphNode<G> {
+export function addChild<GraphKind extends symbol, Traits extends object>(
+  target: GraphNode<GraphKind, Traits> & Traits,
+  child: GraphNode<GraphKind, Traits> & Traits,
+): GraphNode<GraphKind, Traits> & Traits {
   return addChildAt(target, child, getNumChildren(target));
 }
 
@@ -17,8 +20,12 @@ export function addChild<G extends symbol>(target: GraphNode<G>, child: GraphNod
  * 0 represents the back (bottom) of the display list for this
  * Node object.
  **/
-export function addChildAt<G extends symbol>(target: GraphNode<G>, child: GraphNode<G>, index: number): GraphNode<G> {
-  const targetRuntime = getGraphNodeRuntime(target) as GraphNodeRuntime<G>;
+export function addChildAt<GraphKind extends symbol, Traits extends object>(
+  target: GraphNode<GraphKind, Traits> & Traits,
+  child: GraphNode<GraphKind, Traits> & Traits,
+  index: number,
+): GraphNode<GraphKind, Traits> & Traits {
+  const targetRuntime = getGraphNodeRuntime(target) as GraphNodeRuntime<GraphKind, Traits>;
   let children = targetRuntime.children;
 
   if (!child) {
@@ -34,17 +41,17 @@ export function addChildAt<G extends symbol>(target: GraphNode<G>, child: GraphN
   }
 
   if (children === null) {
-    children = targetRuntime.children = [];
+    children = targetRuntime.children = [] as any; // eslint-disable-line
   }
 
-  const childRuntime = getGraphNodeRuntime(child) as GraphNodeRuntime<G>;
-  const parent = childRuntime.parent;
+  const childRuntime = getGraphNodeRuntime(child) as GraphNodeRuntime<GraphKind, Traits>;
+  const parent = childRuntime.parent as GraphNode<GraphKind, Traits> & Traits;
 
   if (parent === target) {
-    const i = children.indexOf(child);
+    const i = children!.indexOf(child);
     if (i !== -1) {
-      if (i === index) return child;
-      children.splice(i, 1);
+      if (i === index) return child as GraphNode<GraphKind, Traits> & Traits;
+      children!.splice(i, 1);
     }
   } else {
     if (parent !== null) {
@@ -52,7 +59,7 @@ export function addChildAt<G extends symbol>(target: GraphNode<G>, child: GraphN
     }
   }
 
-  children.splice(index, 0, child);
+  children!.splice(index, 0, child);
   targetRuntime.onChildrenChanged(target);
 
   if (parent !== target) {
@@ -60,15 +67,18 @@ export function addChildAt<G extends symbol>(target: GraphNode<G>, child: GraphN
     childRuntime.onParentChanged(child);
   }
 
-  return child;
+  return child as GraphNode<GraphKind, Traits> & Traits;
 }
 
 /**
  * Determines whether the specified scene node is a child of the
  * NodeContainer instance or the instance itself.
  **/
-export function contains<G extends symbol>(source: Readonly<GraphNode<G>>, child: Readonly<GraphNode<G>>): boolean {
-  let current: GraphNode<G> | null = child;
+export function contains<GraphKind extends symbol, Traits extends object>(
+  source: Readonly<GraphNode<GraphKind, Traits>>,
+  child: Readonly<GraphNode<GraphKind, Traits>>,
+): boolean {
+  let current: GraphNode<GraphKind, Traits> | null = child;
   while (current !== source && current !== null) {
     current = getParent(current);
   }
@@ -79,10 +89,13 @@ export function contains<G extends symbol>(source: Readonly<GraphNode<G>>, child
  * Returns the child scene node instance that exists at the specified
  * index.
  **/
-export function getChildAt<G extends symbol>(source: Readonly<GraphNode<G>>, index: number): GraphNode<G> | null {
+export function getChildAt<GraphKind extends symbol, Traits extends object>(
+  source: Readonly<GraphNode<GraphKind, Traits>>,
+  index: number,
+): GraphNode<GraphKind, Traits> | null {
   const children = getGraphNodeRuntime(source).children;
   if (children !== null && index >= 0 && index < children.length) {
-    return children[index];
+    return children[index] as GraphNode<GraphKind, Traits>;
   }
   return null;
 }
@@ -92,11 +105,14 @@ export function getChildAt<G extends symbol>(source: Readonly<GraphNode<G>>, ind
  * more that one child scene node has the specified name, the method
  * returns the first object found.
  **/
-export function getChildByName<G extends symbol>(source: Readonly<GraphNode<G>>, name: string): GraphNode<G> | null {
+export function getChildByName<GraphKind extends symbol, Traits extends object>(
+  source: Readonly<GraphNode<GraphKind, Traits>>,
+  name: string,
+): GraphNode<GraphKind, Traits> | null {
   const children = getGraphNodeRuntime(source).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
-      if (children[i].name === name) return children[i];
+      if ((children[i] as Node).name === name) return children[i] as GraphNode<GraphKind, Traits>;
     }
   }
   return null;
@@ -105,7 +121,10 @@ export function getChildByName<G extends symbol>(source: Readonly<GraphNode<G>>,
 /**
  * Returns the index position of a `child` Node instance.
  **/
-export function getChildIndex<G extends symbol>(source: Readonly<GraphNode<G>>, child: Readonly<GraphNode<G>>): number {
+export function getChildIndex<GraphKind extends symbol, Traits extends object>(
+  source: Readonly<GraphNode<GraphKind, Traits>>,
+  child: Readonly<GraphNode<GraphKind, Traits>>,
+): number {
   const children = getGraphNodeRuntime(source).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
@@ -115,13 +134,17 @@ export function getChildIndex<G extends symbol>(source: Readonly<GraphNode<G>>, 
   return -1;
 }
 
-export function getNumChildren<G extends symbol>(source: Readonly<GraphNode<G>>): number {
+export function getNumChildren<GraphKind extends symbol, Traits extends object>(
+  source: Readonly<GraphNode<GraphKind, Traits>>,
+): number {
   const children = getGraphNodeRuntime(source).children;
   return children !== null ? children.length : 0;
 }
 
-export function getParent<G extends symbol>(source: Readonly<GraphNode<G>>): GraphNode<G> | null {
-  return getGraphNodeRuntime(source).parent;
+export function getParent<GraphKind extends symbol, Traits extends object>(
+  source: Readonly<GraphNode<GraphKind, Traits>>,
+): GraphNode<GraphKind, Traits> | null {
+  return getGraphNodeRuntime(source).parent as GraphNode<GraphKind, Traits>;
 }
 
 /**
@@ -132,10 +155,13 @@ export function getParent<G extends symbol>(source: Readonly<GraphNode<G>>): Gra
  * positions of any scene nodes above the child in the
  * Node are decreased by 1.
  **/
-export function removeChild<G extends symbol>(target: GraphNode<G>, child: GraphNode<G>): GraphNode<G> {
+export function removeChild<GraphKind extends symbol, Traits extends object>(
+  target: GraphNode<GraphKind, Traits> & Traits,
+  child: GraphNode<GraphKind, Traits> & Traits,
+): GraphNode<GraphKind, Traits> & Traits {
   if (!child) return child;
   const targetRuntime = getGraphNodeRuntime(target);
-  const childRuntime = getGraphNodeRuntime(child) as GraphNodeRuntime<G>;
+  const childRuntime = getGraphNodeRuntime(child) as GraphNodeRuntime<GraphKind, Traits>;
   const children = targetRuntime.children;
   if (children !== null && childRuntime.parent === target) {
     childRuntime.parent = null;
@@ -146,7 +172,7 @@ export function removeChild<G extends symbol>(target: GraphNode<G>, child: Graph
     }
     targetRuntime.onChildrenChanged(target);
   }
-  return child;
+  return child as GraphNode<GraphKind, Traits> & Traits;
 }
 
 /**
@@ -157,10 +183,13 @@ export function removeChild<G extends symbol>(target: GraphNode<G>, child: Graph
  * references to the child exist. The index positions of any scene nodes
  * above the child in the Node are decreased by 1.
  **/
-export function removeChildAt<G extends symbol>(target: GraphNode<G>, index: number): GraphNode<G> | null {
+export function removeChildAt<GraphKind extends symbol, Traits extends object>(
+  target: GraphNode<GraphKind, Traits> & Traits,
+  index: number,
+): GraphNode<GraphKind, Traits> | null {
   const children = getGraphNodeRuntime(target).children;
   if (children !== null && index >= 0 && index < children.length) {
-    return removeChild(target, children[index]);
+    return removeChild(target, children[index] as GraphNode<GraphKind, Traits> & Traits);
   }
   return null;
 }
@@ -170,8 +199,8 @@ export function removeChildAt<G extends symbol>(target: GraphNode<G>, index: num
  * instance. The `parent` property of the removed children is set to `null`, and the objects are
  * garbage collected if no other references to the children exist.
  **/
-export function removeChildren<G extends symbol>(
-  target: GraphNode<G>,
+export function removeChildren<GraphKind extends symbol, Traits extends object>(
+  target: GraphNode<GraphKind, Traits> & Traits,
   beginIndex: number = 0,
   endIndex?: number,
 ): void {
@@ -198,7 +227,11 @@ export function removeChildren<G extends symbol>(
  * Changes the position of an existing child in the scene node container.
  * This affects the layering of child objects.
  **/
-export function setChildIndex<G extends symbol>(target: GraphNode<G>, child: GraphNode<G>, index: number): void {
+export function setChildIndex<GraphKind extends symbol, Traits extends object>(
+  target: GraphNode<GraphKind, Traits> & Traits,
+  child: GraphNode<GraphKind, Traits> & Traits,
+  index: number,
+): void {
   const targetRuntime = getGraphNodeRuntime(target);
   const children = targetRuntime.children;
   if (children === null) return;
@@ -222,7 +255,11 @@ export function setChildIndex<G extends symbol>(target: GraphNode<G>, child: Gra
  * objects. All other child objects in the scene node container remain in
  * the same index positions.
  **/
-export function swapChildren<G extends symbol>(target: GraphNode<G>, child1: GraphNode<G>, child2: GraphNode<G>): void {
+export function swapChildren<GraphKind extends symbol, Traits extends object>(
+  target: GraphNode<GraphKind, Traits> & Traits,
+  child1: GraphNode<GraphKind, Traits> & Traits,
+  child2: GraphNode<GraphKind, Traits> & Traits,
+): void {
   const targetRuntime = getGraphNodeRuntime(target);
   const children = targetRuntime.children;
   if (children !== null && getParent(child1) == target && getParent(child2) == target) {
@@ -239,7 +276,11 @@ export function swapChildren<G extends symbol>(target: GraphNode<G>, child1: Gra
  * specified index positions in the child list. All other child objects in
  * the scene node container remain in the same index positions.
  **/
-export function swapChildrenAt<G extends symbol>(target: GraphNode<G>, index1: number, index2: number): void {
+export function swapChildrenAt<GraphKind extends symbol, Traits extends object>(
+  target: GraphNode<GraphKind, Traits>,
+  index1: number,
+  index2: number,
+): void {
   const targetRuntime = getGraphNodeRuntime(target);
   const children = targetRuntime.children;
   if (children === null || index1 === index2) return;
@@ -247,7 +288,7 @@ export function swapChildrenAt<G extends symbol>(target: GraphNode<G>, index1: n
   if (index1 < 0 || index2 < 0 || index1 >= len || index2 >= len) {
     throwOutOfBoundsError();
   }
-  const swap: GraphNode<G> = children[index1];
+  const swap = children[index1] as GraphNode<GraphKind, Traits>;
   children[index1] = children[index2];
   children[index2] = swap;
   targetRuntime.onChildrenOrderChanged(target);

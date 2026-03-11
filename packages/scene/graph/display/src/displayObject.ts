@@ -8,8 +8,16 @@ import {
   initHasTransform2D,
   initHasTransform2DRuntime,
 } from '@flighthq/scene-graph-core';
-import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime, MethodsOf, PartialNode } from '@flighthq/types';
-import { BlendMode, DisplayGraph, DisplayObjectKind } from '@flighthq/types';
+import type {
+  DisplayObject,
+  DisplayObjectData,
+  DisplayObjectRuntime,
+  DisplayObjectTraits,
+  MethodsOf,
+  PartialNode,
+} from '@flighthq/types';
+import { DisplayGraph } from '@flighthq/types';
+import { BlendMode, DisplayObjectKind } from '@flighthq/types';
 
 export function createDisplayObject(obj?: Readonly<PartialNode<DisplayObject>>): DisplayObject {
   return createDisplayObjectGeneric(DisplayObjectKind, obj);
@@ -18,6 +26,7 @@ export function createDisplayObject(obj?: Readonly<PartialNode<DisplayObject>>):
 export type DisplayGraphNodeDataFactory = GraphNodeDataFactory<DisplayObjectData>;
 export type DisplayGraphNodeRuntimeFactory<R extends DisplayObjectRuntime> = GraphNodeRuntimeFactory<
   typeof DisplayGraph,
+  DisplayObjectTraits,
   R
 >;
 
@@ -32,7 +41,8 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
     kind,
     obj,
     createData,
-    createRuntime ?? (createDisplayObjectRuntime as GraphNodeRuntimeFactory<typeof DisplayGraph, R>),
+    createRuntime ??
+      (createDisplayObjectRuntime as GraphNodeRuntimeFactory<typeof DisplayGraph, DisplayObjectTraits, R>),
   ) as DisplayObject;
   initHasTransform2D(out, obj);
   initHasBoundsRect(out, obj);

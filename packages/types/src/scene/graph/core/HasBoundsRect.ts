@@ -1,15 +1,11 @@
+import type { Node } from '../../../core';
 import type { Rectangle } from '../../../geometry/Rectangle';
-import type { NodeRuntimeKey } from '../../../index';
-import type { GraphNode } from './GraphNode';
-import type { GraphNodeRuntime } from './GraphNodeRuntime';
 
-export interface HasBoundsRect<G extends symbol> extends GraphNode<G> {
-  [NodeRuntimeKey]: HasBoundsRectRuntime<G> | undefined;
-}
+export type HasBoundsRect = object;
 
-export interface HasBoundsRectRuntime<G extends symbol> extends GraphNodeRuntime<G> {
+export interface HasBoundsRectRuntime {
   boundsRect: Rectangle | null;
-  computeLocalBoundsRect: (out: Rectangle, source: Readonly<GraphNode<G> & HasBoundsRect<G>>) => void;
+  computeLocalBoundsRect: (out: Rectangle, source: Readonly<Node>) => void;
   localBoundsRect: Rectangle | null;
   worldBoundsRect: Rectangle | null;
 }

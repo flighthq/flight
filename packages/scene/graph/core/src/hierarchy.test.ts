@@ -1,4 +1,4 @@
-import type { GraphNode, GraphNodeRuntime } from '@flighthq/types';
+import type { GraphNode, GraphNodeRuntime, GraphNodeTraits } from '@flighthq/types';
 import { GraphNodeKind, NodeKind } from '@flighthq/types';
 
 import { createGraphNode, getGraphNodeRuntime } from './graphNode';
@@ -19,9 +19,9 @@ import {
   swapChildrenAt,
 } from './hierarchy';
 
-let container: GraphNode<typeof TestGraph>;
-let childA: GraphNode<typeof TestGraph>;
-let childB: GraphNode<typeof TestGraph>;
+let container: GraphNode<typeof TestGraph, GraphNodeTraits>;
+let childA: GraphNode<typeof TestGraph, GraphNodeTraits>;
+let childB: GraphNode<typeof TestGraph, GraphNodeTraits>;
 
 beforeEach(() => {
   container = createGraphNode(TestGraph, GraphNodeKind);
@@ -50,7 +50,7 @@ describe('addChild', () => {
   });
 
   it('throws if child is the same as target', () => {
-    expect(() => addChild(container, container)).toThrow(TypeError);  
+    expect(() => addChild(container, container)).toThrow(TypeError);
   });
 
   it('removes child from previous parent before adding', () => {

@@ -11,10 +11,12 @@ import {
 } from '@flighthq/scene-graph-core';
 import type {
   GraphNode,
+  GraphNodeRuntime,
   HasBoundsRect,
   HasBoundsRectRuntime,
   HasTransform2D,
   HasTransform2DRuntime,
+  Node,
   Rectangle,
 } from '@flighthq/types';
 
@@ -29,17 +31,17 @@ import {
 } from './boundsRect';
 import { initHasBoundsRect, initHasBoundsRectRuntime } from './hasBoundsRect';
 
-function getRuntime<G extends symbol>(source: TestNode) {
-  return getNodeRuntime(source) as HasBoundsRectRuntime<G>;
+function getRuntime<GraphKind extends symbol>(source: TestNode) {
+  return getNodeRuntime(source) as GraphNodeRuntime<GraphKind, HasBoundsRect & HasTransform2D> & HasBoundsRectRuntime;
 }
 
 function createTestNode(): TestNode {
-  const node = createGraphNode(TestGraph, TestKind) as TestNode;
+  const node = createGraphNode(TestKind, TestKind) as TestNode;
   const runtime = getNodeRuntime(node);
   initHasBoundsRect(node);
-  initHasBoundsRectRuntime(runtime as HasBoundsRectRuntime<typeof TestGraph>);
+  initHasBoundsRectRuntime(runtime as HasBoundsRectRuntime);
   initHasTransform2D(node);
-  initHasTransform2DRuntime(runtime as HasTransform2DRuntime<typeof TestGraph>);
+  initHasTransform2DRuntime(runtime as HasTransform2DRuntime);
   return node;
 }
 
@@ -168,7 +170,7 @@ describe('ensureBoundsRect', () => {
   it('should recalculate if localBoundsID is changed', () => {
     const object = createTestNode();
     const runtime = getRuntime(object);
-    runtime.computeLocalBoundsRect = (out: Rectangle, _source: GraphNode<symbol>) => {
+    runtime.computeLocalBoundsRect = (out: Rectangle, _source: Node) => {
       setEmpty(out);
     };
     ensureBoundsRect(object);
@@ -201,7 +203,7 @@ describe('ensureLocalBoundsRect', () => {
   it('should not recalculate if localBoundsID is unchanged', () => {
     const object = createTestNode();
     const runtime = getRuntime(object);
-    runtime.computeLocalBoundsRect = (out: Rectangle, _source: GraphNode<symbol>) => {
+    runtime.computeLocalBoundsRect = (out: Rectangle, _source: Node) => {
       setEmpty(out);
     };
     ensureLocalBoundsRect(object);
@@ -213,7 +215,7 @@ describe('ensureLocalBoundsRect', () => {
   it('should recalculate if localBoundsID is changed', () => {
     const object = createTestNode();
     const runtime = getRuntime(object);
-    runtime.computeLocalBoundsRect = (out: Rectangle, _source: GraphNode<symbol>) => {
+    runtime.computeLocalBoundsRect = (out: Rectangle, _source: Node) => {
       setEmpty(out);
     };
     ensureLocalBoundsRect(object);
@@ -226,7 +228,7 @@ describe('ensureLocalBoundsRect', () => {
   it('should not recalculate if localTransformID is unchanged', () => {
     const object = createTestNode();
     const runtime = getRuntime(object);
-    runtime.computeLocalBoundsRect = (out: Rectangle, _source: GraphNode<symbol>) => {
+    runtime.computeLocalBoundsRect = (out: Rectangle, _source: Node) => {
       setEmpty(out);
     };
     ensureLocalBoundsRect(object);
@@ -368,8 +370,6 @@ function invalidateRect(rect: Rectangle | null): void {
   if (rect !== null) rectangle.setTo(rect, NaN, NaN, NaN, NaN);
 }
 
-type TestNode = GraphNode<typeof TestKind> & HasTransform2D<typeof TestKind> & HasBoundsRect<typeof TestKind>;
-
-const TestGraph: unique symbol = Symbol('TestGraph');
+type TestNode = GraphNode<typeof TestKind, HasTransform2D & HasBoundsRect> & HasTransform2D & HasBoundsRect;
 
 const TestKind: unique symbol = Symbol('Test');
