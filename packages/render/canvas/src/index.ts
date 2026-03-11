@@ -1,6 +1,6 @@
+export * from './background.js';
 export * from './bitmap.js';
 export * from './cacheBitmap.js';
-export * from './clear.js';
 export * from './clipping.js';
 export * from './displayObject.js';
 export * from './masks.js';

@@ -9,6 +9,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./background": {
+      "types": "./dist/background.d.ts",
+      "default": "./dist/background.js"
+    },
     "./bitmap": {
       "types": "./dist/bitmap.d.ts",
       "default": "./dist/bitmap.js"
@@ -16,10 +20,6 @@
     "./cacheBitmap": {
       "types": "./dist/cacheBitmap.d.ts",
       "default": "./dist/cacheBitmap.js"
-    },
-    "./clear": {
-      "types": "./dist/clear.d.ts",
-      "default": "./dist/clear.js"
     },
     "./clipping": {
       "types": "./dist/clipping.d.ts",
