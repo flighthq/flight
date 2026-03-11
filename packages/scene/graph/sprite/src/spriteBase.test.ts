@@ -1,4 +1,4 @@
-import type { GraphNode, HasBoundsRect, PartialNode, Rectangle, SpriteBase, SpriteBaseData } from '@flighthq/types';
+import type { Node, PartialNode, Rectangle, SpriteBase, SpriteBaseData } from '@flighthq/types';
 import { BlendMode, DisplayObjectKind, SpriteGraph } from '@flighthq/types';
 
 import { createSpriteBase, createSpriteBaseRuntime, getSpriteBaseRuntime } from './spriteBase';
@@ -82,10 +82,7 @@ describe('createSpriteBaseRuntime', () => {
   });
 
   it('allows a custom bounds calculation', () => {
-    const func = (
-      _out: Rectangle,
-      _source: Readonly<GraphNode<typeof SpriteGraph> & HasBoundsRect<typeof SpriteGraph>>,
-    ) => {};
+    const func = (_out: Rectangle, _source: Readonly<Node>) => {};
     const runtime = createSpriteBaseRuntime({ computeLocalBoundsRect: func });
     expect(runtime.computeLocalBoundsRect).toStrictEqual(func);
   });

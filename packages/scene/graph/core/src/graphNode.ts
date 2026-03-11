@@ -1,33 +1,49 @@
 import type { NodeDataFactory, NodeRuntimeFactory } from '@flighthq/core';
 import { createNode, createNodeRuntime, getNodeRuntime } from '@flighthq/core';
-import type { GraphNode, GraphNodeData, GraphNodeRuntime, MethodsOf, PartialNode } from '@flighthq/types';
+import type {
+  GraphNode,
+  GraphNodeData,
+  GraphNodeRuntime,
+  GraphNodeTraits,
+  MethodsOf,
+  PartialNode,
+} from '@flighthq/types';
 import { NodeRuntimeKey } from '@flighthq/types';
 
-export type GraphNodeDataFactory<D extends GraphNodeData> = NodeDataFactory<D>;
-export type GraphNodeRuntimeFactory<G extends symbol, R extends GraphNodeRuntime<G>> = NodeRuntimeFactory<R>;
+export type GraphNodeDataFactory<Data extends GraphNodeData> = NodeDataFactory<Data>;
+export type GraphNodeRuntimeFactory<
+  GraphKind extends symbol,
+  Traits extends object,
+  Runtime extends GraphNodeRuntime<GraphKind, Traits>,
+> = NodeRuntimeFactory<Runtime>;
 
-export function createGraphNode<G extends symbol, D extends GraphNodeData, R extends GraphNodeRuntime<G>>(
-  graph: G,
+export function createGraphNode<
+  GraphKind extends symbol,
+  Traits extends object = GraphNodeTraits,
+  Data extends GraphNodeData = GraphNodeData,
+  Runtime extends GraphNodeRuntime<GraphKind, Traits> = GraphNodeRuntime<GraphKind, Traits>,
+>(
+  graph: GraphKind,
   nodeKind: symbol,
-  obj?: Readonly<PartialNode<GraphNode<G>>>,
-  createData?: GraphNodeDataFactory<D>,
-  createRuntime?: GraphNodeRuntimeFactory<G, R>,
-): GraphNode<G> {
+  obj?: Readonly<PartialNode<GraphNode<GraphKind, Traits>>>,
+  createData?: GraphNodeDataFactory<Data>,
+  createRuntime?: GraphNodeRuntimeFactory<GraphKind, Traits, Runtime>,
+): GraphNode<GraphKind, Traits> & Traits {
   const out = createNode(
     nodeKind,
     obj,
     createData,
-    createRuntime ?? (createGraphNodeRuntime as NodeRuntimeFactory<R>),
-  ) as GraphNode<G>;
+    createRuntime ?? (createGraphNodeRuntime as NodeRuntimeFactory<Runtime>),
+  ) as GraphNode<GraphKind, Traits> & Traits;
   out[NodeRuntimeKey]!.graph = graph;
   out.visible = obj?.visible ?? true;
   return out;
 }
 
-export function createGraphNodeRuntime<G extends symbol>(
-  methods?: Readonly<Partial<MethodsOf<GraphNodeRuntime<G>>>>,
-): GraphNodeRuntime<G> {
-  const out = createNodeRuntime(methods) as GraphNodeRuntime<G>;
+export function createGraphNodeRuntime<GraphKind extends symbol, Traits extends object>(
+  methods?: Readonly<Partial<MethodsOf<GraphNodeRuntime<GraphKind, Traits>>>>,
+): GraphNodeRuntime<GraphKind, Traits> {
+  const out = createNodeRuntime(methods) as GraphNodeRuntime<GraphKind, Traits>;
   out.appearanceID = 0;
   out.boundsUsingLocalBoundsID = -1;
   out.boundsUsingLocalTransformID = -1;
@@ -49,14 +65,18 @@ export function createGraphNodeRuntime<G extends symbol>(
   return out;
 }
 
-export function defaultGraphNodeRuntimeCallback<G extends symbol>(_target: GraphNode<G>): void {}
-export function defaultGraphNodeRuntimeCanAddChild<G extends symbol>(
-  _target: GraphNode<G>,
-  _child: GraphNode<G>,
+export function defaultGraphNodeRuntimeCallback<GraphKind extends symbol, Traits extends object>(
+  _target: GraphNode<GraphKind, Traits>,
+): void {}
+export function defaultGraphNodeRuntimeCanAddChild<GraphKind extends symbol, Traits extends object>(
+  _target: GraphNode<GraphKind, Traits>,
+  _child: GraphNode<GraphKind, Traits>,
 ): boolean {
   return true;
 }
 
-export function getGraphNodeRuntime<G extends symbol>(source: Readonly<GraphNode<G>>): Readonly<GraphNodeRuntime<G>> {
-  return getNodeRuntime(source) as GraphNodeRuntime<G>;
+export function getGraphNodeRuntime<GraphKind extends symbol, Traits extends object>(
+  source: Readonly<GraphNode<GraphKind, Traits>>,
+): Readonly<GraphNodeRuntime<GraphKind, Traits>> {
+  return getNodeRuntime(source) as GraphNodeRuntime<GraphKind, Traits>;
 }

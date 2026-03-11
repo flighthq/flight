@@ -1,26 +1,14 @@
-import type {
-  GraphNode,
-  HasBoundsRect,
-  PartialNode,
-  QuadBatch,
-  QuadBatchData,
-  Rectangle,
-  SpriteBaseRuntime,
-  SpriteGraph,
-} from '@flighthq/types';
+import type { Node, PartialNode, QuadBatch, QuadBatchData, Rectangle, SpriteBaseRuntime } from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
 
 import { createSpriteBase, createSpriteBaseRuntime } from './spriteBase';
 
-export function computeQuadBatchLocalBoundsRect(
-  _out: Rectangle,
-  _source: Readonly<GraphNode<typeof SpriteGraph> & HasBoundsRect<typeof SpriteGraph>>,
-): void {
+export function computeQuadBatchLocalBoundsRect(_out: Rectangle, _source: Readonly<Node>): void {
   // TODO
 }
 
 export function createQuadBatch(obj?: Readonly<PartialNode<QuadBatch>>): QuadBatch {
-  return createSpriteBase(QuadBatchKind, obj, createQuadBatchData, createQuadBatchRuntime) as QuadBatch;
+  return createSpriteBase(QuadBatchKind, obj, createQuadBatchData, createQuadBatchRuntime as any) as QuadBatch; // eslint-disable-line
 }
 
 export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): QuadBatchData {

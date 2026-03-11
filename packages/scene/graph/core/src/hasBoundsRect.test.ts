@@ -1,13 +1,13 @@
-import type { GraphNode, HasBoundsRect, HasBoundsRectRuntime } from '@flighthq/types';
+import type { GraphNode, GraphNodeRuntime, HasBoundsRect, HasBoundsRectRuntime } from '@flighthq/types';
 
 import { createGraphNode, createGraphNodeRuntime } from './graphNode';
 import { defaultComputeLocalBoundsRect, initHasBoundsRect, initHasBoundsRectRuntime } from './hasBoundsRect';
 
 describe('initHasBoundsRect', () => {
-  let node: HasBoundsRect<typeof TestGraph>;
+  let node: HasBoundsRect;
 
   beforeEach(() => {
-    node = createGraphNode(TestGraph, NodeTestKind) as GraphNode<typeof TestGraph> & HasBoundsRect<typeof TestGraph>;
+    node = createGraphNode(NodeTestKind, NodeTestKind) as GraphNode<typeof NodeTestKind, HasBoundsRect> & HasBoundsRect;
   });
 
   it('does nothing', () => {
@@ -21,10 +21,10 @@ describe('initHasBoundsRect', () => {
 });
 
 describe('initHasBoundsRectRuntime', () => {
-  let runtime: HasBoundsRectRuntime<typeof TestGraph>;
+  let runtime: HasBoundsRectRuntime;
 
   beforeEach(() => {
-    runtime = createGraphNodeRuntime() as HasBoundsRectRuntime<typeof TestGraph>;
+    runtime = createGraphNodeRuntime() as GraphNodeRuntime<typeof NodeTestKind, HasBoundsRect> & HasBoundsRectRuntime;
   });
 
   it('initializes default values', () => {
@@ -36,7 +36,5 @@ describe('initHasBoundsRectRuntime', () => {
     expect(runtime.computeLocalBoundsRect).toStrictEqual(defaultComputeLocalBoundsRect);
   });
 });
-
-const TestGraph: unique symbol = Symbol('TestGraph');
 
 const NodeTestKind: unique symbol = Symbol('NodeTest');

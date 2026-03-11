@@ -74,7 +74,7 @@ export function renderDisplayObject(state: CanvasRenderState, source: DisplayObj
     if (children !== null) {
       // Push from last to first → pop gives index 0 first
       for (let i = children.length - 1; i >= 0; i--) {
-        tempStack[stackLength++] = children[i];
+        tempStack[stackLength++] = children[i] as DisplayObject;
       }
     }
   }

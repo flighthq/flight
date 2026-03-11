@@ -314,8 +314,8 @@ export default class DisplayObject {
   get stage(): Stage | null {
     let current = getDisplayObjectRuntime(this.model).parent;
     while (current !== null) {
-      if (current.kind === StageKind) return getDisplayObjectFromModel(current) as Stage;
-      current = getDisplayObjectRuntime(current).parent;
+      if (current.kind === StageKind) return getDisplayObjectFromModel(current as DisplayObjectModel) as Stage;
+      current = getDisplayObjectRuntime(current as DisplayObjectModel).parent;
     }
     return null;
   }

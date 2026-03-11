@@ -1,13 +1,14 @@
-import type { GraphNode, HasTransform2D, HasTransform2DRuntime } from '@flighthq/types';
+import type { GraphNode, GraphNodeRuntime, HasTransform2D, HasTransform2DRuntime } from '@flighthq/types';
 
 import { createGraphNode, createGraphNodeRuntime } from './graphNode';
 import { initHasTransform2D, initHasTransform2DRuntime } from './hasTransform2d';
 
 describe('initHasTransform2D', () => {
-  let node: HasTransform2D<typeof TestGraph>;
+  let node: HasTransform2D;
 
   beforeEach(() => {
-    node = createGraphNode(TestGraph, NodeTestKind) as GraphNode<typeof TestGraph> & HasTransform2D<typeof TestGraph>;
+    node = createGraphNode(NodeTestKind, NodeTestKind) as GraphNode<typeof NodeTestKind, HasTransform2D> &
+      HasTransform2D;
   });
 
   it('initializes default values', () => {
@@ -38,10 +39,10 @@ describe('initHasTransform2D', () => {
 });
 
 describe('initHasTransform2DRuntime', () => {
-  let runtime: HasTransform2DRuntime<typeof TestGraph>;
+  let runtime: GraphNodeRuntime<typeof NodeTestKind, HasTransform2D> & HasTransform2DRuntime;
 
   beforeEach(() => {
-    runtime = createGraphNodeRuntime() as HasTransform2DRuntime<typeof TestGraph>;
+    runtime = createGraphNodeRuntime() as GraphNodeRuntime<typeof NodeTestKind, HasTransform2D> & HasTransform2DRuntime;
   });
 
   it('initializes default values', () => {
@@ -57,7 +58,5 @@ describe('initHasTransform2DRuntime', () => {
     expect(runtime.appearanceID).toStrictEqual(0);
   });
 });
-
-const TestGraph: unique symbol = Symbol('TestGraph');
 
 const NodeTestKind: unique symbol = Symbol('NodeTest');

@@ -1,11 +1,9 @@
 import type {
   Bitmap,
   BitmapData,
-  DisplayGraph,
   DisplayObjectRuntime,
-  GraphNode,
-  HasBoundsRect,
   MethodsOf,
+  Node,
   PartialNode,
   Rectangle,
 } from '@flighthq/types';
@@ -13,10 +11,7 @@ import { BitmapKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric, createDisplayObjectRuntime } from './displayObject';
 
-export function computeBitmapLocalBoundsRect(
-  out: Rectangle,
-  source: Readonly<GraphNode<typeof DisplayGraph> & HasBoundsRect<typeof DisplayGraph>>,
-): void {
+export function computeBitmapLocalBoundsRect(out: Rectangle, source: Readonly<Node>): void {
   const bitmapData: BitmapData = source.data as BitmapData;
   if (bitmapData.image) {
     out.width = bitmapData.image.width;
@@ -25,7 +20,7 @@ export function computeBitmapLocalBoundsRect(
 }
 
 export function createBitmap(obj?: Readonly<PartialNode<Bitmap>>): Bitmap {
-  return createDisplayObjectGeneric(BitmapKind, obj, createBitmapData, createBitmapRuntime) as Bitmap;
+  return createDisplayObjectGeneric(BitmapKind, obj, createBitmapData, createBitmapRuntime as any) as Bitmap; // eslint-disable-line
 }
 
 export function createBitmapData(data?: Readonly<Partial<BitmapData>>): BitmapData {

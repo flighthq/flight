@@ -1,26 +1,14 @@
-import type {
-  GraphNode,
-  HasBoundsRect,
-  PartialNode,
-  Rectangle,
-  SpriteBaseRuntime,
-  SpriteGraph,
-  Tilemap,
-  TilemapData,
-} from '@flighthq/types';
+import type { Node, PartialNode, Rectangle, SpriteBaseRuntime, Tilemap, TilemapData } from '@flighthq/types';
 import { TilemapKind } from '@flighthq/types';
 
 import { createSpriteBase, createSpriteBaseRuntime } from './spriteBase';
 
-export function computeTilemapLocalBoundsRect(
-  _out: Rectangle,
-  _source: Readonly<GraphNode<typeof SpriteGraph> & HasBoundsRect<typeof SpriteGraph>>,
-): void {
+export function computeTilemapLocalBoundsRect(_out: Rectangle, _source: Readonly<Node>): void {
   // TODO: Get width/height from tileset reference
 }
 
 export function createTilemap(obj?: Readonly<PartialNode<Tilemap>>): Tilemap {
-  return createSpriteBase(TilemapKind, obj, createTilemapData, createTilemapRuntime) as Tilemap;
+  return createSpriteBase(TilemapKind, obj, createTilemapData, createTilemapRuntime as any) as Tilemap; // eslint-disable-line
 }
 
 export function createTilemapData(data?: Readonly<Partial<TilemapData>>): TilemapData {
