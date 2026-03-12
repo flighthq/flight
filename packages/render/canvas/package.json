@@ -10,44 +10,40 @@
       "default": "./dist/index.js"
     },
     "./background": {
-      "types": "./dist/background.d.ts",
-      "default": "./dist/background.js"
+      "types": "./dist/canvasBackground.d.ts",
+      "default": "./dist/canvasBackground.js"
     },
     "./bitmap": {
-      "types": "./dist/bitmap.d.ts",
-      "default": "./dist/bitmap.js"
+      "types": "./dist/canvasBitmap.d.ts",
+      "default": "./dist/canvasBitmap.js"
     },
-    "./cacheBitmap": {
-      "types": "./dist/cacheBitmap.d.ts",
-      "default": "./dist/cacheBitmap.js"
+    "./cacheAsBitmap": {
+      "types": "./dist/canvasCacheAsBitmap.d.ts",
+      "default": "./dist/canvasCacheAsBitmap.js"
     },
-    "./clipping": {
-      "types": "./dist/clipping.d.ts",
-      "default": "./dist/clipping.js"
-    },
-    "./createCanvasRendererState": {
-      "types": "./dist/createCanvasRendererState.d.ts",
-      "default": "./dist/createCanvasRendererState.js"
+    "./clipRect": {
+      "types": "./dist/canvasClipRect.d.ts",
+      "default": "./dist/canvasClipRect.js"
     },
     "./displayObject": {
-      "types": "./dist/displayObject.d.ts",
-      "default": "./dist/displayObject.js"
+      "types": "./dist/canvasDisplayObject.d.ts",
+      "default": "./dist/canvasDisplayObject.js"
     },
-    "./masks": {
-      "types": "./dist/masks.d.ts",
-      "default": "./dist/masks.js"
+    "./mask": {
+      "types": "./dist/canvasMask.d.ts",
+      "default": "./dist/canvasMask.js"
     },
     "./materials": {
-      "types": "./dist/materials.d.ts",
-      "default": "./dist/materials.js"
+      "types": "./dist/canvasMaterials.d.ts",
+      "default": "./dist/canvasMaterials.js"
     },
-    "./render": {
-      "types": "./dist/render.d.ts",
-      "default": "./dist/render.js"
+    "./renderState": {
+      "types": "./dist/canvasRendererState.d.ts",
+      "default": "./dist/canvasRendererState.js"
     },
     "./transform": {
-      "types": "./dist/transform.d.ts",
-      "default": "./dist/transform.js"
+      "types": "./dist/canvasTransform.d.ts",
+      "default": "./dist/canvasTransform.js"
     }
   },
   "files": [

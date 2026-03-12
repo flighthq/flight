@@ -5,12 +5,12 @@ import { getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { drawBitmap } from './bitmap';
-import { updateCacheBitmap } from './cacheBitmap';
-import { popClipRect, pushClipRect } from './clipping';
-import { applyMask, popMask, pushMask } from './masks';
-import { setBlendMode } from './materials';
-import { setTransform } from './transform';
+import { drawBitmap } from './canvasBitmap';
+import { updateCacheBitmap } from './canvasCacheAsBitmap';
+import { popClipRect, pushClipRect } from './canvasClipRect';
+import { applyMask, popMask, pushMask } from './canvasMask';
+import { setBlendMode } from './canvasMaterials';
+import { setTransform } from './canvasTransform';
 
 export function drawDisplayObject(state: CanvasRenderState, displayObject: DisplayObjectRenderNode): void {
   const opaqueBackground = displayObject.source.opaqueBackground;

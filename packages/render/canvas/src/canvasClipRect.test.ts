@@ -3,8 +3,8 @@ import { getDisplayObjectRenderNode } from '@flighthq/render-core';
 import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, Matrix3x2, Rectangle } from '@flighthq/types';
 
-import { popClipRect, popScrollRect, pushClipRect } from './clipping';
-import { createRenderState } from './renderState';
+import { popClipRect, popScrollRect, pushClipRect } from './canvasClipRect';
+import { createRenderState } from './canvasRenderState';
 
 describe('Clip and Scroll Rect Functions', () => {
   let canvas: HTMLCanvasElement;

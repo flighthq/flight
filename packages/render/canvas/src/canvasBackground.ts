@@ -1,7 +1,7 @@
 import type { CanvasRenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import { setBlendMode } from './materials';
+import { setBlendMode } from './canvasMaterials';
 
 export function renderBackground(state: CanvasRenderState): void {
   const cacheBlendMode = state.currentBlendMode;

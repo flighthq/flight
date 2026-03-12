@@ -1,6 +1,6 @@
 import type { CanvasRenderState, DisplayObjectRenderNode } from '@flighthq/types';
 
-import { setTransform } from './transform';
+import { setTransform } from './canvasTransform';
 
 export function applyMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
   if (data.renderer !== null) data.renderer.drawMask(state, data);
