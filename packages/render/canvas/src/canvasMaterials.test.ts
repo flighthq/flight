@@ -1,8 +1,8 @@
 import type { CanvasRenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import { setBlendMode } from './materials';
-import { createRenderState } from './renderState';
+import { setBlendMode } from './canvasMaterials';
+import { createRenderState } from './canvasRenderState';
 
 describe('setBlendMode', () => {
   let canvas: HTMLCanvasElement;

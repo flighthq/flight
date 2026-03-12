@@ -1,6 +1,6 @@
 import type { CanvasRenderState, DisplayObjectRenderNode, Matrix3x2, Rectangle } from '@flighthq/types';
 
-import { setTransform } from './transform';
+import { setTransform } from './canvasTransform';
 
 export function popClipRect(state: CanvasRenderState): void {
   state.context.restore();

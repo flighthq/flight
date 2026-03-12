@@ -1,7 +1,7 @@
 import { matrix3x2 } from '@flighthq/geometry';
 import type { CanvasRenderOptions } from '@flighthq/types';
 
-import { createRenderState } from './renderState';
+import { createRenderState } from './canvasRenderState';
 
 let canvas: HTMLCanvasElement;
 

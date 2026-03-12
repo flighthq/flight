@@ -2,9 +2,9 @@ import { createNullRendererData, setRenderer } from '@flighthq/render-core';
 import type { Bitmap, CanvasRenderState, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
 import { BitmapKind } from '@flighthq/types';
 
-import { drawDisplayObject, drawDisplayObjectMask } from './displayObject';
-import { setBlendMode } from './materials';
-import { setTransform } from './transform';
+import { drawDisplayObject, drawDisplayObjectMask } from './canvasDisplayObject';
+import { setBlendMode } from './canvasMaterials';
+import { setTransform } from './canvasTransform';
 
 export function drawBitmap(state: CanvasRenderState, bitmap: DisplayObjectRenderNode): void {
   drawDisplayObject(state, bitmap);
