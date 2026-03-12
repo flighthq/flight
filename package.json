@@ -8,11 +8,11 @@
     "tests/*"
   ],
   "scripts": {
-    "build": "npm run build --workspace=packages/types --workspace packages/scene/graph --workspace=packages --workspace=packages/render",
-    "build:clean": "npm run clean  --workspace=packages/types --workspace packages/scene/graph --workspace=packages --workspace=packages/render && npm run build --workspace=packages/types --workspace packages/scene/graph --workspace=packages --workspace=packages/render",
+    "build": "tsc -b tsconfig.build.json",
+    "build:clean": "npm run clean && npm run build",
     "build:examples": "npm run build --workspace=examples/**",
-    "clean": "npm run clean --workspace=packages/types --workspace packages/scene/graph --workspace=packages --workspace=packages/render",
-    "clean:examples": "npm run clean --workspace=examples/**",
+    "clean": "tsc -b tsconfig.build.json --clean",
+    "clean:examples": "npm run clean --workspace=examples/** --if-present",
     "lint": "eslint -c eslint.config.ts",
     "lint:fix": "eslint -c eslint.config.ts --fix",
     "format": "prettier . --write",
