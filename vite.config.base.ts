@@ -1,71 +1,39 @@
-import path from 'path';
 import { defineConfig } from 'vite';
+
+import { workspacePackages } from './scripts/workspaces';
 
 export function createBaseConfig(mode: string) {
   const isProduction = mode === 'production';
 
+  const runtimePackages = workspacePackages.filter((pkg) => pkg.name !== '@flighthq/types');
+  const alias = Object.fromEntries(runtimePackages.map((pkg) => [pkg.name, pkg.dir + '/src']));
+  const exclude = workspacePackages.map((p) => p.name);
+
   return defineConfig({
     build: {
       target: 'esnext',
-      sourcemap: isProduction ? false : true,
+      sourcemap: !isProduction,
       minify: isProduction ? 'esbuild' : false,
       outDir: isProduction ? 'dist' : 'dev-dist',
     },
+
     esbuild: {
       drop: isProduction ? ['console', 'debugger'] : [],
       target: 'esnext',
     },
-    plugins: [
-      // Add other plugins as needed, like for Vue or React
-      // Example: vue() for Vue.js
-    ],
+
     resolve: {
-      alias: {
-        // Alias directly to source for instant hot-module-reload (HMR)
-        '@flighthq/animation-timeline': path.resolve(__dirname, 'packages/animation/timeline/src/index.ts'),
-        '@flighthq/assets': path.resolve(__dirname, 'packages/assets/src/index.ts'),
-        '@flighthq/core': path.resolve(__dirname, 'packages/core/src/index.ts'),
-        '@flighthq/flight': path.resolve(__dirname, 'packages/flight/src/index.ts'),
-        '@flighthq/geometry': path.resolve(__dirname, 'packages/geometry/src/index.ts'),
-        '@flighthq/interaction': path.resolve(__dirname, 'packages/interaction/src/index.ts'),
-        '@flighthq/materials': path.resolve(__dirname, 'packages/materials/src/index.ts'),
-        '@flighthq/render-canvas': path.resolve(__dirname, 'packages/render/canvas/src/index.ts'),
-        '@flighthq/render-core': path.resolve(__dirname, 'packages/render/core/src/index.ts'),
-        '@flighthq/scene-graph-core/hierarchy': path.resolve(__dirname, 'packages/scene/graph/core/src/hierarchy.ts'),
-        '@flighthq/scene-graph-core': path.resolve(__dirname, 'packages/scene/graph/core/src/index.ts'),
-        '@flighthq/scene-graph-display': path.resolve(__dirname, 'packages/scene/graph/display/src/index.ts'),
-        '@flighthq/scene-graph-sprite': path.resolve(__dirname, 'packages/scene/graph/sprite/src/index.ts'),
-        '@flighthq/scene-graph-world': path.resolve(__dirname, 'packages/scene/graph/world/src/index.ts'),
-        // '@flighthq/types': path.resolve(__dirname, 'packages/types/src/index.ts'),
-      },
+      alias,
+      preserveSymlinks: false,
     },
+
     optimizeDeps: {
-      // Prevent Vite from pre-bundling your workspace packages → treat as live source
-      exclude: [
-        '@flighthq/animation-timeline',
-        '@flighthq/assets',
-        '@flighthq/core',
-        '@flighthq/flight',
-        '@flighthq/geometry',
-        '@flighthq/interaction',
-        '@flighthq/materials',
-        '@flighthq/render-canvas',
-        '@flighthq/render-core',
-        '@flighthq/scene-graph-display',
-        '@flighthq/scene-graph-sprite',
-        '@flighthq/scene-graph-world',
-        // '@flighthq/types',
-        // ... list all workspace packages you want live-reloading on
-      ],
+      exclude,
     },
+
     server: {
       watch: {
-        // Ensure Vite watches symlinked files properly
         followSymlinks: true,
-
-        // If changes still miss (e.g. WSL, Docker, network FS), enable polling
-        // usePolling: true,
-        // interval: 300,
       },
     },
   });
