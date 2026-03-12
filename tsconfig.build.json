@@ -1,0 +1,19 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/animation/spritesheet" },
+    { "path": "./packages/animation/timeline" },
+    { "path": "./packages/assets" },
+    { "path": "./packages/core" },
+    { "path": "./packages/flight" },
+    { "path": "./packages/geometry" },
+    { "path": "./packages/interaction" },
+    { "path": "./packages/materials" },
+    { "path": "./packages/render/core" },
+    { "path": "./packages/render/canvas" },
+    { "path": "./packages/scene/graph/core" },
+    { "path": "./packages/scene/graph/display" },
+    { "path": "./packages/scene/graph/sprite" },
+    { "path": "./packages/types" }
+  ]
+}

@@ -1,4 +1,4 @@
-import type { Spritesheet } from '../../../assets';
+import type { Spritesheet } from '../../../animation/spritesheet';
 import type { Rectangle } from '../../../geometry';
 import type { SpriteBase, SpriteBaseData } from './SpriteBase';
 

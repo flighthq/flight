@@ -14,6 +14,8 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
+      "@flighthq/animation-spritesheet": ["packages/animation/spritesheet/src/index.ts"],
+      "@flighthq/animation-spritesheet/*": ["packages/animation/spritesheet/src/*"],
       "@flighthq/animation-timeline": ["packages/animation/timeline/src/index.ts"],
       "@flighthq/animation-timeline/*": ["packages/animation/timeline/src/*"],
       "@flighthq/assets": ["packages/assets/src/index.ts"],

@@ -1,6 +1,6 @@
 import type { Tileset } from '@flighthq/types';
 
-import { createTextureAtlasRegion, initTextureAtlasRegion } from './textureAtlas';
+import { createTextureAtlasRegion, initTextureAtlasRegion } from './textureAtlasRegion';
 
 export function createTileset(obj?: Partial<Tileset>): Tileset {
   return {

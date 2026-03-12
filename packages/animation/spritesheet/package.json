@@ -1,0 +1,39 @@
+{
+  "name": "@flighthq/animation-spritesheet",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./spritesheet": {
+      "types": "./dist/spritesheet.d.ts",
+      "default": "./dist/spritesheet.js"
+    },
+    "./spritesheetAnimation": {
+      "types": "./dist/spritesheetAnimation.d.ts",
+      "default": "./dist/spritesheetAnimation.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "@flighthq/assets": "*",
+    "@flighthq/geometry": "*",
+    "@flighthq/types": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
