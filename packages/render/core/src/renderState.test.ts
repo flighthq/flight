@@ -27,7 +27,7 @@ describe('createRenderState', () => {
     expect(state.renderBlendMode).toStrictEqual(BlendMode.Normal);
     expect(state.renderColorTransform).toStrictEqual(null);
     expect(state.renderShader).toStrictEqual(null);
-    expect(state.renderTransform).toStrictEqual(null);
+    expect(state.renderTransform2D).toStrictEqual(null);
     expect(state.roundPixels).toStrictEqual(false);
     expect(state.tempStack).toStrictEqual([]);
   });
@@ -49,7 +49,7 @@ describe('createRenderState', () => {
       renderBlendMode: BlendMode.Multiply,
       renderColorTransform: colorTransform.create(),
       renderShader: null,
-      renderTransform: matrix3x2.create(),
+      renderTransform2D: matrix3x2.create(),
       roundPixels: true,
       tempStack: [],
     };
@@ -69,7 +69,7 @@ describe('createRenderState', () => {
     expect(obj.renderBlendMode).toStrictEqual(base.renderBlendMode);
     expect(obj.renderColorTransform).toStrictEqual(base.renderColorTransform);
     expect(obj.renderShader).toStrictEqual(base.renderShader);
-    expect(obj.renderTransform).toStrictEqual(base.renderTransform);
+    expect(obj.renderTransform2D).toStrictEqual(base.renderTransform2D);
     expect(obj.roundPixels).toStrictEqual(base.roundPixels);
     expect(obj.tempStack).toStrictEqual(base.tempStack);
   });

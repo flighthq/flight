@@ -4,7 +4,7 @@ import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
 import { setBackgroundColor, updateColorTransform } from './color';
-import { getDisplayObjectRenderNode } from './renderNode';
+import { getDisplayObjectRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
 
 describe('setBackgroundColor', () => {

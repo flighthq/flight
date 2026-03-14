@@ -4,7 +4,7 @@ import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import { createDisplayObjectRenderNode, getDisplayObjectRenderNode } from './renderNode';
+import { createDisplayObjectRenderNode, getDisplayObjectRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
 
 describe('createDisplayObjectRenderNode', () => {
@@ -31,7 +31,7 @@ describe('createDisplayObjectRenderNode', () => {
     expect(data.scrollRectDepth).toStrictEqual(0);
     expect(data.shader).toStrictEqual(null);
     expect(data.source).toStrictEqual(source);
-    expect(data.transform).toStrictEqual(matrix3x2.create());
+    expect(data.transform2D).toStrictEqual(matrix3x2.create());
     expect(data.transformFrameID).toStrictEqual(-1);
     expect(data.useColorTransform).toStrictEqual(false);
     expect(data.visible).toStrictEqual(true);

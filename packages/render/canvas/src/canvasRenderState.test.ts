@@ -33,7 +33,7 @@ it('should be instantiated with default options', () => {
   expect(renderer.backgroundColor).toBe(0);
   expect(renderer.pixelRatio).toBe(window.devicePixelRatio);
   expect(renderer.roundPixels).toBe(false);
-  expect(renderer.renderTransform).not.toBeNull();
+  expect(renderer.renderTransform2D).not.toBeNull();
 });
 
 it('should use provided options', () => {
@@ -51,7 +51,7 @@ it('should use provided options', () => {
   expect(renderer.backgroundColor).toBe(0xffffff);
   expect(renderer.pixelRatio).toBe(2);
   expect(renderer.roundPixels).toBe(true);
-  expect(renderer.renderTransform).not.toBeNull();
+  expect(renderer.renderTransform2D).not.toBeNull();
   expect(renderer.context.imageSmoothingEnabled).toBe(false);
   expect(renderer.context.imageSmoothingQuality).toBe('low');
 });
@@ -118,12 +118,12 @@ it('should handle worldTransform option correctly', () => {
   };
 
   const renderer = createRenderState(canvas, options);
-  expect(renderer.renderTransform).toBe(customTransform);
+  expect(renderer.renderTransform2D).toBe(customTransform);
 });
 
 it('should fall back to default Matrix3x2 if worldTransform is not provided', () => {
   const renderer = createRenderState(canvas);
-  expect(renderer.renderTransform).not.toBeNull();
+  expect(renderer.renderTransform2D).not.toBeNull();
 });
 
 // Check if contextAttributes are passed and correctly retrieved

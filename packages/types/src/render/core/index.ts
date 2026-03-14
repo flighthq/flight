@@ -5,6 +5,7 @@ export * from './Renderable.js';
 export * from './Renderer.js';
 export * from './RendererData.js';
 export * from './RenderNode.js';
+export * from './RenderNode2D.js';
 export * from './RenderState.js';
 export * from './SpriteRenderer.js';
 export * from './SpriteRenderNode.js';

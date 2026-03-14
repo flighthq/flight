@@ -3,6 +3,7 @@ export * from './color';
 export * from './queue';
 export * from './renderer';
 export * from './renderNode';
+export * from './renderNode2d';
 export * from './renderState';
-export * from './transform';
+export * from './transform2d';
 export * from './update';

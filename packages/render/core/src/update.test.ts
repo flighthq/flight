@@ -4,7 +4,7 @@ import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';
-import { getDisplayObjectRenderNode } from './renderNode';
+import { getDisplayObjectRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
 import { updateDisplayObjectBeforeRender } from './update';
 

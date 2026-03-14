@@ -20,7 +20,7 @@ export function drawDisplayObject(state: CanvasRenderState, displayObject: Displ
 
   const context = state.context;
 
-  setTransform(state, context, displayObject.transform);
+  setTransform(state, context, displayObject.transform2D);
 
   const r = (opaqueBackground >> 16) & 0xff;
   const g = (opaqueBackground >> 8) & 0xff;
@@ -63,7 +63,7 @@ export function renderDisplayObject(state: CanvasRenderState, source: DisplayObj
     const isMask = data.isMaskFrameID === currentFrameID;
     if (isMask) continue; // skip drawing masks (they're used for clipping elsewhere)
 
-    const shouldRender = data.visible && data.alpha > 0 && (data.transform.a !== 0 || data.transform.d !== 0);
+    const shouldRender = data.visible && data.alpha > 0 && (data.transform2D.a !== 0 || data.transform2D.d !== 0);
     if (!shouldRender) continue;
 
     // ── Draw current object first (pre-order) ──
@@ -125,7 +125,7 @@ function pushMaskObject(
   const source = data.source;
 
   if (handleScrollRect && source.scrollRect != null) {
-    pushClipRect(state, source.scrollRect, data.transform);
+    pushClipRect(state, source.scrollRect, data.transform2D);
   }
 
   if (source.mask !== null) {

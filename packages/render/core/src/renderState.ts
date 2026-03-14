@@ -19,7 +19,7 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
     renderBlendMode: obj?.renderBlendMode ?? BlendMode.Normal,
     renderColorTransform: obj?.renderColorTransform ?? null,
     renderShader: obj?.renderShader ?? null,
-    renderTransform: obj?.renderTransform ?? null,
+    renderTransform2D: obj?.renderTransform2D ?? null,
     rendererMap: obj?.rendererMap ?? new Map(),
     rendererMapID: obj?.rendererMapID ?? 0,
     roundPixels: obj?.roundPixels ?? false,

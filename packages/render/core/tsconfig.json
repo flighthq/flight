@@ -12,6 +12,7 @@
     { "path": "../../geometry" },
     { "path": "../../materials" },
     { "path": "../../scene/graph/display" },
+    { "path": "../../scene/graph/sprite" },
     { "path": "../../types" }
   ],
   "include": ["src"]
