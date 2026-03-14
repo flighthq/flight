@@ -1,6 +1,5 @@
 import { colorTransform } from '@flighthq/materials';
-import type { ColorTransform } from '@flighthq/types';
-import type { DisplayObjectRenderNode, RenderState } from '@flighthq/types';
+import type { ColorTransform, RenderNode, RenderState } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';
 
@@ -18,11 +17,7 @@ export function setBackgroundColor(state: RenderState, color: number): void {
   _state.backgroundColorString = '#' + color.toString(16).padStart(8, '0').toUpperCase();
 }
 
-export function updateColorTransform(
-  state: RenderState,
-  data: DisplayObjectRenderNode,
-  parentData?: DisplayObjectRenderNode,
-): void {
+export function updateColorTransform(state: RenderState, data: RenderNode, parentData?: RenderNode): void {
   const source = data.source;
   const transform = source.colorTransform ?? null;
   let parentTransform = null;

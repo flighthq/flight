@@ -2,7 +2,7 @@ import { getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
 import type { DisplayObject, Renderable, RenderState } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';
-import { getDisplayObjectRenderNode } from './renderNode';
+import { getDisplayObjectRenderNode } from './renderNode2d';
 
 /**
  * Second pass, exclude non-renderable objects from queue
@@ -21,7 +21,7 @@ export function prepareRenderQueue(state: RenderState, source: Renderable): void
     const data = getDisplayObjectRenderNode(state, current);
     const isMask = data.isMaskFrameID === currentFrameID;
     if (!isMask) {
-      const shouldRender = data.visible && data.alpha > 0 && !(data.transform.a === 0 && data.transform.d === 0);
+      const shouldRender = data.visible && data.alpha > 0 && !(data.transform2D.a === 0 && data.transform2D.d === 0);
       if (shouldRender) {
         currentQueue[currentQueueIndex++] = data;
         const children = getDisplayObjectRuntime(current).children;

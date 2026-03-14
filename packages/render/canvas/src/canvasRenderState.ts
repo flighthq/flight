@@ -13,7 +13,7 @@ export function createRenderState(
 
   const state = _createRenderState({
     pixelRatio: options.pixelRatio ?? window.devicePixelRatio | 1,
-    renderTransform: options.renderTransform ?? matrix3x2.create(),
+    renderTransform2D: options.renderTransform ?? matrix3x2.create(),
     roundPixels: options.roundPixels ?? false,
   }) as CanvasRenderStateInternal;
 

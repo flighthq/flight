@@ -1,16 +1,6 @@
-import type { Matrix3x2 } from '../../geometry';
-import type { BlendMode, ColorTransform, Shader } from '../../materials';
-import type { SpriteBase } from '../../scene/graph/sprite/SpriteBase';
-import type { RenderNode } from './RenderNode';
+import type { SpriteBase } from '../../scene';
+import type { RenderNode2D } from './RenderNode2D';
 
-export interface SpriteRenderNode extends RenderNode {
-  alpha: number;
-  blendMode: BlendMode;
-  colorTransform: ColorTransform;
-  isMaskFrameID: number;
-  shader: Shader | null;
+export interface SpriteRenderNode extends RenderNode2D {
   readonly source: SpriteBase;
-  transform: Matrix3x2;
-  transformFrameID: number;
-  useColorTransform: boolean;
 }

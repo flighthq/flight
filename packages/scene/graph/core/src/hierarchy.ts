@@ -92,10 +92,10 @@ export function contains<GraphKind extends symbol, Traits extends object>(
 export function getChildAt<GraphKind extends symbol, Traits extends object>(
   source: Readonly<GraphNode<GraphKind, Traits>>,
   index: number,
-): GraphNode<GraphKind, Traits> | null {
+): (GraphNode<GraphKind, Traits> & Traits) | null {
   const children = getGraphNodeRuntime(source).children;
   if (children !== null && index >= 0 && index < children.length) {
-    return children[index] as GraphNode<GraphKind, Traits>;
+    return children[index] as GraphNode<GraphKind, Traits> & Traits;
   }
   return null;
 }
@@ -108,11 +108,11 @@ export function getChildAt<GraphKind extends symbol, Traits extends object>(
 export function getChildByName<GraphKind extends symbol, Traits extends object>(
   source: Readonly<GraphNode<GraphKind, Traits>>,
   name: string,
-): GraphNode<GraphKind, Traits> | null {
+): (GraphNode<GraphKind, Traits> & Traits) | null {
   const children = getGraphNodeRuntime(source).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
-      if ((children[i] as Node).name === name) return children[i] as GraphNode<GraphKind, Traits>;
+      if ((children[i] as Node).name === name) return children[i] as GraphNode<GraphKind, Traits> & Traits;
     }
   }
   return null;
@@ -143,8 +143,8 @@ export function getNumChildren<GraphKind extends symbol, Traits extends object>(
 
 export function getParent<GraphKind extends symbol, Traits extends object>(
   source: Readonly<GraphNode<GraphKind, Traits>>,
-): GraphNode<GraphKind, Traits> | null {
-  return getGraphNodeRuntime(source).parent as GraphNode<GraphKind, Traits>;
+): (GraphNode<GraphKind, Traits> & Traits) | null {
+  return getGraphNodeRuntime(source).parent as GraphNode<GraphKind, Traits> & Traits;
 }
 
 /**

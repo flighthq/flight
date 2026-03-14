@@ -1,20 +1,11 @@
-import type { Matrix3x2 } from '../../geometry';
-import type { BlendMode, ColorTransform, Shader } from '../../materials';
-import type { DisplayObject } from '../../scene/graph/display/DisplayObject';
-import type { RenderNode } from './RenderNode';
+import type { DisplayObject } from '../../scene';
+import type { RenderNode2D } from './RenderNode2D';
 
-export interface DisplayObjectRenderNode extends RenderNode {
-  alpha: number;
-  blendMode: BlendMode;
+export interface DisplayObjectRenderNode extends RenderNode2D {
   cacheAsBitmap: boolean;
   cacheBitmap: DisplayObjectRenderNode | null;
-  colorTransform: ColorTransform;
   isMaskFrameID: number;
   maskDepth: number;
   scrollRectDepth: number;
-  shader: Shader | null;
   readonly source: DisplayObject;
-  transform: Matrix3x2;
-  transformFrameID: number;
-  useColorTransform: boolean;
 }

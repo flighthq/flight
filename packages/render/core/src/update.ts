@@ -1,11 +1,18 @@
 import { getParent } from '@flighthq/scene-graph-core';
 import { getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
-import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
+import { getSpriteBaseRuntime } from '@flighthq/scene-graph-sprite';
+import type {
+  DisplayObject,
+  DisplayObjectRenderNode,
+  RenderState,
+  SpriteBase,
+  SpriteRenderNode,
+} from '@flighthq/types';
 
 import { updateAppearance } from './appearance';
 import type { RenderStateInternal } from './internal';
-import { getDisplayObjectRenderNode } from './renderNode';
-import { updateRenderTransform } from './transform';
+import { getDisplayObjectRenderNode, getSpriteRenderNode } from './renderNode2d';
+import { updateDisplayObjectRenderTransform2D, updateRenderTransform2D } from './transform2d';
 
 /**
  * First pass, update appearance, transforms, identify masks
@@ -28,7 +35,7 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
     const data = getDisplayObjectRenderNode(state, current);
 
     if (current !== source) {
-      const parent = getParent(current) as DisplayObject;
+      const parent = getParent(current);
       if (parent === null) {
         parentData = undefined;
         lastParent = null;
@@ -43,7 +50,7 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
     }
 
     const appearanceDirty = updateAppearance(state, data, parentData);
-    const transformDirty = updateRenderTransform(state, data, parentData);
+    const transformDirty = updateDisplayObjectRenderTransform2D(state, data, parentData);
 
     if (!treeDirty) {
       treeDirty = appearanceDirty || transformDirty;
@@ -71,6 +78,50 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
     if (children !== null) {
       for (let i = children.length - 1; i >= 0; i--) {
         tempStack[stackLength++] = children[i] as DisplayObject;
+      }
+    }
+  }
+
+  return treeDirty;
+}
+
+export function updateSpriteBeforeRender(state: RenderState, source: SpriteBase): boolean {
+  const tempStack = state.tempStack;
+  ++(state as RenderStateInternal).currentFrameID;
+
+  let stackLength = 1;
+  tempStack[0] = source;
+
+  let parentData: SpriteRenderNode | undefined = undefined;
+  let lastParent: SpriteBase | null = null;
+  let treeDirty = false;
+
+  while (stackLength > 0) {
+    const current = tempStack[--stackLength] as SpriteBase;
+    const data = getSpriteRenderNode(state, current);
+
+    if (current !== source) {
+      const parent = getParent(current);
+      if (parent === null) {
+        parentData = undefined;
+        lastParent = null;
+      } else if (parent !== lastParent) {
+        parentData = getSpriteRenderNode(state, parent);
+        lastParent = parent;
+      }
+    }
+
+    const appearanceDirty = updateAppearance(state, data, parentData);
+    const transformDirty = updateRenderTransform2D(state, data, parentData);
+
+    if (!treeDirty) {
+      treeDirty = appearanceDirty || transformDirty;
+    }
+
+    const children = getSpriteBaseRuntime(current).children;
+    if (children !== null) {
+      for (let i = children.length - 1; i >= 0; i--) {
+        tempStack[stackLength++] = children[i] as SpriteBase;
       }
     }
   }

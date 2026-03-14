@@ -14,7 +14,7 @@ export function popMask(state: CanvasRenderState): void {
 export function pushMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
   state.context.save();
 
-  setTransform(state, state.context, data.transform);
+  setTransform(state, state.context, data.transform2D);
 
   state.context.beginPath();
   applyMask(state, data);

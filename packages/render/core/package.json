@@ -29,13 +29,17 @@
       "types": "./dist/renderNode.d.ts",
       "default": "./dist/renderNode.js"
     },
+    "./renderNode2d": {
+      "types": "./dist/renderNode2d.d.ts",
+      "default": "./dist/renderNode2d.js"
+    },
     "./renderState": {
       "types": "./dist/renderState.d.ts",
       "default": "./dist/renderState.js"
     },
-    "./transform": {
-      "types": "./dist/transform.d.ts",
-      "default": "./dist/transform.js"
+    "./transform2d": {
+      "types": "./dist/transform2d.d.ts",
+      "default": "./dist/transform2d.js"
     },
     "./update": {
       "types": "./dist/update.d.ts",
@@ -56,6 +60,7 @@
     "@flighthq/geometry": "*",
     "@flighthq/materials": "*",
     "@flighthq/scene-graph-display": "*",
+    "@flighthq/scene-graph-sprite": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

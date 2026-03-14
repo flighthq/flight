@@ -3,7 +3,7 @@ import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
 import { updateAppearance } from './appearance';
-import { getDisplayObjectRenderNode } from './renderNode';
+import { getDisplayObjectRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
 
 describe('updateAppearance', () => {

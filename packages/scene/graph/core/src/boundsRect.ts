@@ -33,7 +33,7 @@ export function calculateBoundsRect<GraphKind extends symbol, Traits extends obj
     if (targetCoordinateSpace === source) {
       // fast path, return local bounds for self
       bounds = getLocalBoundsRect(source);
-    } else if (targetCoordinateSpace === getParent(source)) {
+    } else if (targetCoordinateSpace === getParent<GraphKind, Traits & HasBoundsRect & HasTransform2D>(source)) {
       // fast path, return bounds for parent
       bounds = getBoundsRect(source);
     }

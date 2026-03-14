@@ -10,7 +10,7 @@ describe('Clip and Scroll Rect Functions', () => {
   let canvas: HTMLCanvasElement;
   let state: CanvasRenderState;
   let rect: Rectangle;
-  let transform: Matrix3x2;
+  let transform2D: Matrix3x2;
   let source: DisplayObject;
   let data: DisplayObjectRenderNode;
 
@@ -18,11 +18,11 @@ describe('Clip and Scroll Rect Functions', () => {
     canvas = document.createElement('canvas');
     state = createRenderState(canvas);
     rect = rectangle.create(10, 10, 100, 100);
-    transform = matrix3x2.create();
+    transform2D = matrix3x2.create();
     source = createDisplayObject();
     source.scrollRect = rect;
     data = getDisplayObjectRenderNode(state, source);
-    data.transform = transform;
+    data.transform2D = transform2D;
   });
 
   it('should call context.restore() when popClipRect is called', () => {
@@ -46,7 +46,7 @@ describe('Clip and Scroll Rect Functions', () => {
     const clipSpy = vi.spyOn(state.context, 'clip');
     // const setTransformSpy = vi.spyOn(setTransform, 'bind');
 
-    pushClipRect(state, rect, transform);
+    pushClipRect(state, rect, transform2D);
 
     expect(saveSpy).toHaveBeenCalled();
     // expect(setTransformSpy).toHaveBeenCalledWith(state, state.context, transform);

@@ -17,7 +17,7 @@ export function drawBitmap(state: CanvasRenderState, bitmap: DisplayObjectRender
     context.globalAlpha = bitmap.alpha;
     const scrollRect = source.scrollRect;
 
-    setTransform(state, context, bitmap.transform);
+    setTransform(state, context, bitmap.transform2D);
 
     if (!state.allowSmoothing || !source.data.smoothing) {
       context.imageSmoothingEnabled = false;

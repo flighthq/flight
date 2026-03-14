@@ -22,6 +22,6 @@ export function pushClipRect(state: CanvasRenderState, rect: Rectangle, transfor
 }
 
 export function pushScrollRect(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
-  pushClipRect(state, data.source.scrollRect!, data.transform);
+  pushClipRect(state, data.source.scrollRect!, data.transform2D);
   state.currentScrollRectDepth++;
 }

@@ -22,7 +22,7 @@ export interface RenderState {
   renderBlendMode: BlendMode | null;
   renderColorTransform: ColorTransform | null;
   renderShader: Shader | null;
-  renderTransform: Matrix3x2 | null;
+  renderTransform2D: Matrix3x2 | null;
   readonly rendererMap: Map<symbol, Renderer>;
   readonly rendererMapID: number;
   roundPixels: boolean;
