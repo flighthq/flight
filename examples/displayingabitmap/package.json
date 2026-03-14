@@ -1,5 +1,5 @@
 {
-  "name": "displayingabitmap",
+  "name": "@flighthq/examples-displayingabitmap",
   "private": true,
   "type": "module",
   "dependencies": {
