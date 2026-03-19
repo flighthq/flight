@@ -5,15 +5,15 @@ import type Vector2 from './Vector2';
 import type Vector3 from './Vector3';
 
 export default class Vector4 {
-  public readonly model: Vector4Model;
+  protected _model: Vector4Model;
 
   constructor(x?: number, y?: number, z?: number, w?: number) {
-    this.model = vector4.create(x, y, z, w);
+    this._model = vector4.create(x, y, z, w);
   }
 
   add(b: Readonly<Vector4>): Vector4 {
     const out = new Vector4();
-    vector4.add(out.model, this.model, b.model);
+    vector4.add(out.model, this._model, b.model);
     return out;
   }
 
@@ -22,16 +22,16 @@ export default class Vector4 {
   }
 
   clone(): Vector4 {
-    return Vector4.fromModel(this.model);
+    return Vector4.fromModel(this._model);
   }
 
   copyFrom(source: Readonly<Vector4>): void {
-    vector4.copy(this.model, source.model);
+    vector4.copy(this._model, source.model);
   }
 
   cross(other: Readonly<Vector4>): Vector4 {
     const out = new Vector4();
-    vector3.cross(out.model, this.model, other.model);
+    vector3.cross(out.model, this._model, other.model);
     out.w = 1;
     return out;
   }
@@ -45,12 +45,12 @@ export default class Vector4 {
   }
 
   dot(b: Readonly<Vector4>): number {
-    return vector4.dot(this.model, b.model);
+    return vector4.dot(this._model, b.model);
   }
 
   equals(b: Readonly<Vector4> | null | undefined): boolean {
     if (!b) return false;
-    return vector4.equals(this.model, b.model);
+    return vector4.equals(this._model, b.model);
   }
 
   static fromModel(model: Readonly<Vector4Model>): Vector4 {
@@ -74,32 +74,32 @@ export default class Vector4 {
   }
 
   nearEquals(b: Readonly<Vector4>, tolerance: number = 1e-6): boolean {
-    return vector4.nearEquals(this.model, b.model, tolerance);
+    return vector4.nearEquals(this._model, b.model, tolerance);
   }
 
   negate(): void {
-    vector4.negate(this.model, this.model);
+    vector4.negate(this._model, this._model);
   }
 
   normalize(): number {
-    return vector4.normalize(this.model, this.model);
+    return vector4.normalize(this._model, this._model);
   }
 
   project(): void {
-    vector4.project(this.model, this.model);
+    vector4.project(this._model, this._model);
   }
 
   scale(scalar: number): void {
-    vector4.scale(this.model, this.model, scalar);
+    vector4.scale(this._model, this._model, scalar);
   }
 
   setTo(x: number, y: number, z: number, w: number): void {
-    vector4.setTo(this.model, x, y, z, w);
+    vector4.setTo(this._model, x, y, z, w);
   }
 
   subtract(other: Readonly<Vector4>): Vector4 {
     const out = new Vector4();
-    vector4.subtract(out.model, this.model, other.model);
+    vector4.subtract(out.model, this._model, other.model);
     return out;
   }
 
@@ -124,42 +124,46 @@ export default class Vector4 {
   }
 
   get length(): number {
-    return vector4.length(this.model);
+    return vector4.length(this._model);
   }
 
   get lengthSquared(): number {
-    return vector4.lengthSquared(this.model);
+    return vector4.lengthSquared(this._model);
+  }
+
+  get model(): Vector4Model {
+    return this._model;
   }
 
   get w(): number {
-    return this.model.w;
+    return this._model.w;
   }
 
   set w(value: number) {
-    this.model.w = value;
+    this._model.w = value;
   }
 
   get x(): number {
-    return this.model.x;
+    return this._model.x;
   }
 
   set x(value: number) {
-    this.model.x = value;
+    this._model.x = value;
   }
 
   get y(): number {
-    return this.model.y;
+    return this._model.y;
   }
 
   set y(value: number) {
-    this.model.y = value;
+    this._model.y = value;
   }
 
   get z(): number {
-    return this.model.z;
+    return this._model.z;
   }
 
   set z(value: number) {
-    this.model.z = value;
+    this._model.z = value;
   }
 }

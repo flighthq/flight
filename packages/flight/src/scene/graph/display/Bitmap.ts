@@ -5,45 +5,48 @@ import type { Bitmap as BitmapModel } from '@flighthq/types';
 import type { ImageSource } from '../../../assets';
 import { getImageSourceFromModel, registerImageSource } from '../../../assets/internal/imageSourceMap';
 import DisplayObject from './DisplayObject';
-import type { DisplayObjectInternal } from './internal/writeInternal';
 
 export default class Bitmap extends DisplayObject {
-  declare public readonly model: BitmapModel;
+  declare protected _model: BitmapModel;
 
   constructor() {
     super();
   }
 
   protected override __create(): void {
-    (this as DisplayObjectInternal).model = createBitmap();
+    this._model = createBitmap();
   }
 
   // Get & Set Methods
 
   get image(): ImageSource | null {
-    return getImageSourceFromModel(this.model.data.image);
+    return getImageSourceFromModel(this._model.data.image);
   }
 
   set image(value: ImageSource | null) {
     if (value !== null) {
-      if (this.model.data.image === value.model) return;
-      this.model.data.image = value.model;
+      if (this._model.data.image === value.model) return;
+      this._model.data.image = value.model;
       registerImageSource(value);
     } else {
-      if (this.model.data.image === null) return;
-      this.model.data.image = null;
+      if (this._model.data.image === null) return;
+      this._model.data.image = null;
     }
-    invalidateLocalBounds(this.model);
-    invalidateAppearance(this.model);
+    invalidateLocalBounds(this._model);
+    invalidateAppearance(this._model);
+  }
+
+  override get model(): BitmapModel {
+    return this._model;
   }
 
   get smoothing(): boolean {
-    return this.model.data.smoothing;
+    return this._model.data.smoothing;
   }
 
   set smoothing(value: boolean) {
-    if (this.model.data.smoothing === value) return;
-    this.model.data.smoothing = value;
-    invalidateAppearance(this.model);
+    if (this._model.data.smoothing === value) return;
+    this._model.data.smoothing = value;
+    invalidateAppearance(this._model);
   }
 }

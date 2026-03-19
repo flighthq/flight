@@ -2,15 +2,15 @@ import { vector3 } from '@flighthq/geometry';
 import type { Vector3 as Vector3Model } from '@flighthq/types';
 
 export default class Vector3 {
-  public readonly model: Vector3Model;
+  protected _model: Vector3Model;
 
   constructor(x?: number, y?: number, z?: number) {
-    this.model = vector3.create(x, y, z);
+    this._model = vector3.create(x, y, z);
   }
 
   add(b: Readonly<Vector3>): Vector3 {
     const out = new Vector3();
-    vector3.add(out, this.model, b.model);
+    vector3.add(out, this._model, b.model);
     return out;
   }
 
@@ -20,17 +20,17 @@ export default class Vector3 {
 
   clone(): Vector3 {
     const out = new Vector3();
-    vector3.copy(out.model, this.model);
+    vector3.copy(out.model, this._model);
     return out;
   }
 
   copyFrom(source: Readonly<Vector3>): void {
-    vector3.copy(this.model, source.model);
+    vector3.copy(this._model, source.model);
   }
 
   cross(other: Readonly<Vector3>): Vector3 {
     const out = new Vector3();
-    vector3.cross(out.model, this.model, other.model);
+    vector3.cross(out.model, this._model, other.model);
     return out;
   }
 
@@ -43,41 +43,41 @@ export default class Vector3 {
   }
 
   dot(b: Readonly<Vector3>): number {
-    return vector3.dot(this.model, b.model);
+    return vector3.dot(this._model, b.model);
   }
 
   equals(b: Readonly<Vector3> | null | undefined): boolean {
     if (!b) return false;
-    return vector3.equals(this.model, b.model);
+    return vector3.equals(this._model, b.model);
   }
 
   nearEquals(b: Readonly<Vector3>, tolerance: number = 1e-6): boolean {
-    return vector3.nearEquals(this.model, b.model, tolerance);
+    return vector3.nearEquals(this._model, b.model, tolerance);
   }
 
   negate(): void {
-    vector3.negate(this.model, this.model);
+    vector3.negate(this._model, this._model);
   }
 
   normalize(): number {
-    return vector3.normalize(this.model, this.model);
+    return vector3.normalize(this._model, this._model);
   }
 
   project(): void {
-    vector3.project(this.model, this.model);
+    vector3.project(this._model, this._model);
   }
 
   scale(scalar: number): void {
-    vector3.scale(this.model, this.model, scalar);
+    vector3.scale(this._model, this._model, scalar);
   }
 
   setTo(x: number, y: number, z: number): void {
-    vector3.setTo(this.model, x, y, z);
+    vector3.setTo(this._model, x, y, z);
   }
 
   subtract(other: Readonly<Vector3>): Vector3 {
     const out = new Vector3();
-    vector3.subtract(out.model, this.model, other.model);
+    vector3.subtract(out.model, this._model, other.model);
     return out;
   }
 
@@ -101,27 +101,31 @@ export default class Vector3 {
     return out;
   }
 
+  get model(): Vector3Model {
+    return this._model;
+  }
+
   get x(): number {
-    return this.model.x;
+    return this._model.x;
   }
 
   set x(value: number) {
-    this.model.x = value;
+    this._model.x = value;
   }
 
   get y(): number {
-    return this.model.y;
+    return this._model.y;
   }
 
   set y(value: number) {
-    this.model.y = value;
+    this._model.y = value;
   }
 
   get z(): number {
-    return this.model.z;
+    return this._model.z;
   }
 
   set z(value: number) {
-    this.model.z = value;
+    this._model.z = value;
   }
 }

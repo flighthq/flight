@@ -10,44 +10,44 @@ export default class DisplayObjectContainer extends DisplayObject {
   }
 
   addChild(child: DisplayObject): DisplayObject {
-    hierarchy.addChild(this.model, child.model);
+    hierarchy.addChild(this._model, child.model);
     return child;
   }
 
   addChildAt(child: DisplayObject, index: number): DisplayObject {
-    hierarchy.addChildAt(this.model, child.model, index);
+    hierarchy.addChildAt(this._model, child.model, index);
     return child;
   }
 
   removeChild(child: DisplayObject): DisplayObject {
-    hierarchy.removeChild(this.model, child.model);
+    hierarchy.removeChild(this._model, child.model);
     return child;
   }
 
   removeChildAt(index: number): DisplayObject | null {
-    const model = hierarchy.removeChildAt(this.model, index);
+    const model = hierarchy.removeChildAt(this._model, index);
     return getDisplayObjectFromModel(model as DisplayObjectModel);
   }
 
   removeChildren(beginIndex: number = 0, endIndex?: number): void {
-    hierarchy.removeChildren(this.model, beginIndex, endIndex);
+    hierarchy.removeChildren(this._model, beginIndex, endIndex);
   }
 
   setChildIndex(child: DisplayObject, index: number): void {
-    hierarchy.setChildIndex(this.model, child.model, index);
+    hierarchy.setChildIndex(this._model, child.model, index);
   }
 
   swapChildren(child1: DisplayObject, child2: DisplayObject): void {
-    hierarchy.swapChildren(this.model, child1.model, child2.model);
+    hierarchy.swapChildren(this._model, child1.model, child2.model);
   }
 
   swapChildrenAt(index1: number, index2: number): void {
-    hierarchy.swapChildrenAt(this.model, index1, index2);
+    hierarchy.swapChildrenAt(this._model, index1, index2);
   }
 
   // Get & Set Methods
 
   get numChildren() {
-    return hierarchy.getNumChildren(this.model);
+    return hierarchy.getNumChildren(this._model);
   }
 }

@@ -6,7 +6,7 @@ import type Matrix4 from './Matrix4';
 import type Vector3 from './Vector3';
 
 export default class Matrix3 {
-  public readonly model: Matrix3Model;
+  protected _model: Matrix3Model;
 
   constructor(
     m00?: number,
@@ -19,36 +19,36 @@ export default class Matrix3 {
     m21?: number,
     m22?: number,
   ) {
-    this.model = matrix3x3.create(m00, m01, m02, m10, m11, m12, m20, m21, m22);
+    this._model = matrix3x3.create(m00, m01, m02, m10, m11, m12, m20, m21, m22);
   }
 
   clone(): Matrix3 {
-    return Matrix3.fromModel(this.model);
+    return Matrix3.fromModel(this._model);
   }
 
   copyColumnFrom(column: number, source: Readonly<Vector3>): void {
-    matrix3x3.copyColumnFrom(this.model, column, source.model);
+    matrix3x3.copyColumnFrom(this._model, column, source.model);
   }
 
   copyColumnTo(column: number, target: Vector3): void {
-    matrix3x3.copyColumnTo(target.model, column, this.model);
+    matrix3x3.copyColumnTo(target.model, column, this._model);
   }
 
   copyFrom(source: Readonly<Matrix3>): void {
-    matrix3x3.copy(this.model, source.model);
+    matrix3x3.copy(this._model, source.model);
   }
 
   copyRowFrom(row: number, source: Readonly<Vector3>): void {
-    matrix3x3.copyRowFrom(this.model, row, source.model);
+    matrix3x3.copyRowFrom(this._model, row, source.model);
   }
 
   copyRowTo(row: number, target: Vector3): void {
-    matrix3x3.copyRowTo(target.model, row, this.model);
+    matrix3x3.copyRowTo(target.model, row, this._model);
   }
 
   equals(b: Readonly<Matrix3> | null | undefined): boolean {
     if (!b) return false;
-    return matrix3x3.equals(this.model, b.model);
+    return matrix3x3.equals(this._model, b.model);
   }
 
   static fromMatrix(source: Readonly<Matrix>): Matrix3 {
@@ -70,31 +70,31 @@ export default class Matrix3 {
   }
 
   get(row: number, column: number): number {
-    return matrix3x3.get(this.model, row, column);
+    return matrix3x3.get(this._model, row, column);
   }
 
   identity(): void {
-    matrix3x3.identity(this.model);
+    matrix3x3.identity(this._model);
   }
 
   inverse(): void {
-    matrix3x3.inverse(this.model, this.model);
+    matrix3x3.inverse(this._model, this._model);
   }
 
   multiply(b: Readonly<Matrix3>): void {
-    matrix3x3.multiply(this.model, this.model, b.model);
+    matrix3x3.multiply(this._model, this._model, b.model);
   }
 
   rotate(theta: number): void {
-    matrix3x3.rotate(this.model, this.model, theta);
+    matrix3x3.rotate(this._model, this._model, theta);
   }
 
   scale(sx: number, sy: number): void {
-    matrix3x3.scale(this.model, this.model, sx, sy);
+    matrix3x3.scale(this._model, this._model, sx, sy);
   }
 
   set(row: number, column: number, value: number): void {
-    matrix3x3.set(this.model, row, column, value);
+    matrix3x3.set(this._model, row, column, value);
   }
 
   setTo(
@@ -108,16 +108,20 @@ export default class Matrix3 {
     m21: number,
     m22: number,
   ): void {
-    matrix3x3.setTo(this.model, m00, m01, m02, m10, m11, m12, m20, m21, m22);
+    matrix3x3.setTo(this._model, m00, m01, m02, m10, m11, m12, m20, m21, m22);
   }
 
   translate(tx: number, ty: number): void {
-    matrix3x3.translate(this.model, this.model, tx, ty);
+    matrix3x3.translate(this._model, this._model, tx, ty);
   }
 
   // Get & Set Methods
 
   get isAffine(): boolean {
-    return matrix3x3.isAffine(this.model);
+    return matrix3x3.isAffine(this._model);
+  }
+
+  get model(): Matrix3Model {
+    return this._model;
   }
 }
