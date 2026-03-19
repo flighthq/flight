@@ -1,6 +1,4 @@
-import { createRenderState, renderDisplayObject, setBitmapRenderer } from '@flighthq/render-canvas';
-import { renderBackground } from '@flighthq/render-canvas';
-import { updateDisplayObjectBeforeRender } from '@flighthq/render-core';
+import { CanvasRenderer } from '@flighthq/flight';
 
 import Main from './Main.js';
 
@@ -16,15 +14,11 @@ const options = {
   },
 };
 
-const state = createRenderState(canvas, options);
-setBitmapRenderer(state);
+const renderer = new CanvasRenderer(canvas, options);
 const main = new Main();
 
 function enterFrame() {
-  if (updateDisplayObjectBeforeRender(state, main.model)) {
-    renderBackground(state);
-    renderDisplayObject(state, main.model);
-  }
+  renderer.render(main);
   requestAnimationFrame(enterFrame);
 }
 
