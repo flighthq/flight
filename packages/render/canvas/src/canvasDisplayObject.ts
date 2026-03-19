@@ -1,9 +1,8 @@
 import { rectangle } from '@flighthq/geometry';
-import { createNullRendererData, getDisplayObjectRenderNode, setRenderer } from '@flighthq/render-core';
+import { createNullRendererData, getDisplayObjectRenderNode } from '@flighthq/render-core';
 import { calculateBoundsRect } from '@flighthq/scene-graph-core';
 import { getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
-import { DisplayObjectKind } from '@flighthq/types';
 
 import { drawBitmap } from './canvasBitmap';
 import { updateCacheBitmap } from './canvasCacheAsBitmap';
@@ -80,13 +79,6 @@ export function renderDisplayObject(state: CanvasRenderState, source: DisplayObj
   }
 }
 
-export function setDisplayObjectRenderer(
-  state: CanvasRenderState,
-  renderer: DisplayObjectRenderer = defaultDisplayObjectRenderer,
-): void {
-  setRenderer(state, DisplayObjectKind, renderer);
-}
-
 function drawObject(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
   if (data.renderer === null) return;
   pushMaskObject(state, data);
@@ -133,7 +125,7 @@ function pushMaskObject(
   }
 }
 
-export const defaultDisplayObjectRenderer: DisplayObjectRenderer = {
+export const defaultCanvasDisplayObjectRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
   draw: drawDisplayObject,
   drawMask: drawDisplayObjectMask,

@@ -1,11 +1,17 @@
 import {
   createCanvasRenderState,
+  defaultCanvasBitmapRenderer,
+  defaultCanvasDisplayObjectRenderer,
   renderBackground,
   renderDisplayObject,
-  setBitmapRenderer,
 } from '@flighthq/render-canvas';
-import { updateDisplayObjectBeforeRender } from '@flighthq/render-core';
-import type { CanvasRenderOptions as CanvasRenderOptionsModel, CanvasRenderState } from '@flighthq/types';
+import { registerRenderer, updateDisplayObjectBeforeRender } from '@flighthq/render-core';
+import {
+  BitmapKind,
+  type CanvasRenderOptions as CanvasRenderOptionsModel,
+  type CanvasRenderState,
+  DisplayObjectKind,
+} from '@flighthq/types';
 
 import type { DisplayObject } from '../scene/graph/display';
 import type CanvasRenderOptions from './CanvasRenderOptions';
@@ -27,7 +33,8 @@ export default class CanvasRenderer {
       };
     }
     this.state = createCanvasRenderState(canvas, _options);
-    setBitmapRenderer(this.state);
+    registerRenderer(this.state, DisplayObjectKind, defaultCanvasDisplayObjectRenderer);
+    registerRenderer(this.state, BitmapKind, defaultCanvasBitmapRenderer);
   }
 
   render(object: DisplayObject): void {
