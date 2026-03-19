@@ -2,7 +2,7 @@ import type { CanvasRenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { setBlendMode } from './canvasMaterials';
-import { createRenderState } from './canvasRenderState';
+import { createCanvasRenderState } from './canvasRenderState';
 
 describe('setBlendMode', () => {
   let canvas: HTMLCanvasElement;
@@ -10,7 +10,7 @@ describe('setBlendMode', () => {
 
   beforeEach(() => {
     canvas = document.createElement('canvas');
-    state = createRenderState(canvas);
+    state = createCanvasRenderState(canvas);
   });
 
   it('should not change globalCompositeOperation if blend mode is the same', () => {

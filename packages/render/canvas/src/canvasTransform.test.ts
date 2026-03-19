@@ -1,7 +1,7 @@
 import { matrix3x2 } from '@flighthq/geometry';
 import type { CanvasRenderState, Matrix3x2 } from '@flighthq/types';
 
-import { createRenderState } from './canvasRenderState';
+import { createCanvasRenderState } from './canvasRenderState';
 import { setTransform } from './canvasTransform';
 
 describe('setTransform', () => {
@@ -11,7 +11,7 @@ describe('setTransform', () => {
 
   beforeEach(() => {
     canvas = document.createElement('canvas');
-    state = createRenderState(canvas);
+    state = createCanvasRenderState(canvas);
     transform = matrix3x2.create(1, 2, 3, 4, 5.6789, 9.1011);
   });
 
