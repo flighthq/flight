@@ -4,7 +4,7 @@ import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, Matrix3x2, Rectangle } from '@flighthq/types';
 
 import { popClipRect, popScrollRect, pushClipRect } from './canvasClipRect';
-import { createRenderState } from './canvasRenderState';
+import { createCanvasRenderState } from './canvasRenderState';
 
 describe('Clip and Scroll Rect Functions', () => {
   let canvas: HTMLCanvasElement;
@@ -16,7 +16,7 @@ describe('Clip and Scroll Rect Functions', () => {
 
   beforeEach(() => {
     canvas = document.createElement('canvas');
-    state = createRenderState(canvas);
+    state = createCanvasRenderState(canvas);
     rect = rectangle.create(10, 10, 100, 100);
     transform2D = matrix3x2.create();
     source = createDisplayObject();

@@ -1,7 +1,7 @@
 import { matrix3x2 } from '@flighthq/geometry';
 import type { CanvasRenderOptions } from '@flighthq/types';
 
-import { createRenderState } from './canvasRenderState';
+import { createCanvasRenderState } from './canvasRenderState';
 
 let canvas: HTMLCanvasElement;
 
@@ -20,7 +20,7 @@ beforeEach(() => {
 });
 
 it('should be instantiated with default options', () => {
-  const renderer = createRenderState(canvas);
+  const renderer = createCanvasRenderState(canvas);
 
   expect(renderer).not.toBeNull();
   expect(renderer.canvas).toBe(canvas);
@@ -46,7 +46,7 @@ it('should use provided options', () => {
     imageSmoothingQuality: 'low',
   };
 
-  const renderer = createRenderState(canvas, options);
+  const renderer = createCanvasRenderState(canvas, options);
 
   expect(renderer.backgroundColor).toBe(0xffffff);
   expect(renderer.pixelRatio).toBe(2);
@@ -59,17 +59,17 @@ it('should use provided options', () => {
 it('should throw an error if context is not available', () => {
   canvas.getContext = vi.fn().mockReturnValue(null); // Simulate failure to get context
 
-  expect(() => createRenderState(canvas)).toThrowError('Failed to get context for canvas.');
+  expect(() => createCanvasRenderState(canvas)).toThrowError('Failed to get context for canvas.');
 });
 
 it('should default imageSmoothingEnabled to true', () => {
-  const renderer = createRenderState(canvas);
+  const renderer = createCanvasRenderState(canvas);
 
   expect(renderer.context.imageSmoothingEnabled).toBe(true);
 });
 
 it('should default imageSmoothingQuality to "high"', () => {
-  const renderer = createRenderState(canvas);
+  const renderer = createCanvasRenderState(canvas);
 
   expect(renderer.context.imageSmoothingQuality).toBe('high');
 });
@@ -79,12 +79,12 @@ it('should correctly handle backgroundColor option', () => {
     backgroundColor: 0xff0000, // Red
   };
 
-  const renderer = createRenderState(canvas, options);
+  const renderer = createCanvasRenderState(canvas, options);
   expect(renderer.backgroundColor).toBe(0xff0000);
 });
 
 it('should use default pixelRatio if not provided', () => {
-  const renderer = createRenderState(canvas);
+  const renderer = createCanvasRenderState(canvas);
   expect(renderer.pixelRatio).toBe(window.devicePixelRatio);
 });
 
@@ -93,12 +93,12 @@ it('should handle custom pixelRatio correctly', () => {
     pixelRatio: 2,
   };
 
-  const renderer = createRenderState(canvas, options);
+  const renderer = createCanvasRenderState(canvas, options);
   expect(renderer.pixelRatio).toBe(2);
 });
 
 it('should default roundPixels to false', () => {
-  const renderer = createRenderState(canvas);
+  const renderer = createCanvasRenderState(canvas);
   expect(renderer.roundPixels).toBe(false);
 });
 
@@ -107,7 +107,7 @@ it('should correctly handle roundPixels option', () => {
     roundPixels: true,
   };
 
-  const renderer = createRenderState(canvas, options);
+  const renderer = createCanvasRenderState(canvas, options);
   expect(renderer.roundPixels).toBe(true);
 });
 
@@ -117,18 +117,18 @@ it('should handle worldTransform option correctly', () => {
     renderTransform: customTransform,
   };
 
-  const renderer = createRenderState(canvas, options);
+  const renderer = createCanvasRenderState(canvas, options);
   expect(renderer.renderTransform2D).toBe(customTransform);
 });
 
 it('should fall back to default Matrix3x2 if worldTransform is not provided', () => {
-  const renderer = createRenderState(canvas);
+  const renderer = createCanvasRenderState(canvas);
   expect(renderer.renderTransform2D).not.toBeNull();
 });
 
 // Check if contextAttributes are passed and correctly retrieved
 it('should retrieve contextAttributes from the context', () => {
-  const renderer = createRenderState(canvas);
+  const renderer = createCanvasRenderState(canvas);
 
   expect(renderer.contextAttributes).toEqual({
     alpha: true,
@@ -143,7 +143,7 @@ it('should handle missing imageSmoothingQuality and imageSmoothingEnabled in opt
     imageSmoothingQuality: undefined,
   };
 
-  const renderer = createRenderState(canvas, options);
+  const renderer = createCanvasRenderState(canvas, options);
   expect(renderer.context.imageSmoothingEnabled).toBe(true);
   expect(renderer.context.imageSmoothingQuality).toBe('high');
 });

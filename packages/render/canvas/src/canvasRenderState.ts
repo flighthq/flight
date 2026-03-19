@@ -4,7 +4,7 @@ import type { CanvasRenderOptions, CanvasRenderState } from '@flighthq/types';
 
 import type { CanvasRenderStateInternal } from './internal';
 
-export function createRenderState(
+export function createCanvasRenderState(
   canvas: HTMLCanvasElement,
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
