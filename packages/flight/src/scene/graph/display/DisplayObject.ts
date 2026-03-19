@@ -12,19 +12,19 @@ import {
 } from '@flighthq/scene-graph-core';
 import { createDisplayObject, getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
 import type { BlendMode } from '@flighthq/types';
-import { type DisplayObject as DisplayObjectModel, type Filter, type Shader, StageKind } from '@flighthq/types';
+import { type DisplayObject as DisplayObjectType, type Filter, type Shader, StageKind } from '@flighthq/types';
 
 import Matrix from '../../../geometry/Matrix.js';
 import Rectangle from '../../../geometry/Rectangle.js';
 import Vector2 from '../../../geometry/Vector2.js';
-import { getDisplayObjectFromModel, registerDisplayObject } from './internal/displayObjectMap.js';
+import { getDisplayObjectFromType, registerDisplayObject } from './internal/displayObjectMap.js';
 import type { DisplayObjectInternal } from './internal/writeInternal.js';
 import type LoaderInfo from './LoaderInfo.js';
 import type Stage from './Stage.js';
 import Transform from './Transform.js';
 
 export default class DisplayObject {
-  declare public readonly model: DisplayObjectModel;
+  declare public readonly value: DisplayObjectType;
 
   protected __loaderInfo: LoaderInfo | null = null;
   protected __root: DisplayObject | null = null;
@@ -36,103 +36,103 @@ export default class DisplayObject {
   }
 
   protected __create(): void {
-    (this as DisplayObjectInternal).model = createDisplayObject();
+    (this as DisplayObjectInternal).value = createDisplayObject();
   }
 
   getBounds(targetCoordinateSpace: DisplayObject | null): Rectangle {
     const out = new Rectangle();
-    calculateBoundsRect(out.model, this.model, targetCoordinateSpace?.model);
+    calculateBoundsRect(out.value, this.value, targetCoordinateSpace?.value);
     return out;
   }
 
   getRect(targetCoordinateSpace: DisplayObject | null | undefined): Rectangle {
     const out = new Rectangle();
-    calculateBoundsRect(out.model, this.model, targetCoordinateSpace?.model);
+    calculateBoundsRect(out.value, this.value, targetCoordinateSpace?.value);
     return out;
   }
 
   globalToLocal(pos: Readonly<Vector2>): Vector2 {
     const out = new Vector2();
-    globalToLocal2D(out.model, this.model, pos.model);
+    globalToLocal2D(out.value, this.value, pos.value);
     return out;
   }
 
   hitTestObject(other: DisplayObject): boolean {
-    return __hitTestObject(this.model, other.model);
+    return __hitTestObject(this.value, other.value);
   }
 
   hitTestPoint(x: number, y: number, _shapeFlag: boolean = false): boolean {
-    return __hitTestPoint(this.model, x, y, _shapeFlag);
+    return __hitTestPoint(this.value, x, y, _shapeFlag);
   }
 
   invalidate(): void {
-    __invalidate(this.model);
+    __invalidate(this.value);
   }
 
   localToGlobal(point: Readonly<Vector2>): Vector2 {
     const out = new Vector2();
-    localToGlobal2D(out.model, this.model, point.model);
+    localToGlobal2D(out.value, this.value, point.value);
     return out;
   }
 
   // Get & Set Methods
 
   get alpha(): number {
-    return this.model.alpha;
+    return this.value.alpha;
   }
 
   set alpha(value: number) {
     if (value > 1.0) value = 1.0;
     if (value < 0.0) value = 0.0;
-    if (value === this.model.alpha) return;
-    this.model.alpha = value;
-    invalidateAppearance(this.model);
+    if (value === this.value.alpha) return;
+    this.value.alpha = value;
+    invalidateAppearance(this.value);
   }
 
   get blendMode(): BlendMode {
-    return this.model.blendMode;
+    return this.value.blendMode;
   }
 
   set blendMode(value: BlendMode) {
-    if (value === this.model.blendMode) return;
-    this.model.blendMode = value;
-    invalidateAppearance(this.model);
+    if (value === this.value.blendMode) return;
+    this.value.blendMode = value;
+    invalidateAppearance(this.value);
   }
 
   get cacheAsBitmap(): boolean {
-    return this.model.filters === null ? this.model.cacheAsBitmap : true;
+    return this.value.filters === null ? this.value.cacheAsBitmap : true;
   }
 
   set cacheAsBitmap(value: boolean) {
-    if (value === this.model.cacheAsBitmap) return;
-    this.model.cacheAsBitmap = value;
-    invalidateAppearance(this.model);
+    if (value === this.value.cacheAsBitmap) return;
+    this.value.cacheAsBitmap = value;
+    invalidateAppearance(this.value);
   }
 
   get cacheAsBitmapMatrix(): Matrix | null {
-    if (this.model.cacheAsBitmapMatrix === null) return null;
-    return Matrix.fromModel(this.model.cacheAsBitmapMatrix);
+    if (this.value.cacheAsBitmapMatrix === null) return null;
+    return Matrix.fromType(this.value.cacheAsBitmapMatrix);
   }
 
   set cacheAsBitmapMatrix(value: Matrix | null) {
     if (value !== null) {
-      if (this.model.cacheAsBitmapMatrix !== null) {
-        if (matrix3x2.equals(this.model.cacheAsBitmapMatrix, value.model)) return;
-        matrix3x2.copy(this.model.cacheAsBitmapMatrix, value.model);
+      if (this.value.cacheAsBitmapMatrix !== null) {
+        if (matrix3x2.equals(this.value.cacheAsBitmapMatrix, value.value)) return;
+        matrix3x2.copy(this.value.cacheAsBitmapMatrix, value.value);
       } else {
-        this.model.cacheAsBitmapMatrix = matrix3x2.clone(value.model);
+        this.value.cacheAsBitmapMatrix = matrix3x2.clone(value.value);
       }
     } else {
-      if (this.model.cacheAsBitmapMatrix === null) return;
-      this.model.cacheAsBitmapMatrix = null;
+      if (this.value.cacheAsBitmapMatrix === null) return;
+      this.value.cacheAsBitmapMatrix = null;
     }
-    if (this.model.cacheAsBitmap) {
-      invalidateAppearance(this.model);
+    if (this.value.cacheAsBitmap) {
+      invalidateAppearance(this.value);
     }
   }
 
   get filters(): Filter[] {
-    const filters = this.model.filters;
+    const filters = this.value.filters;
     if (filters === null) {
       return [];
     } else {
@@ -141,25 +141,25 @@ export default class DisplayObject {
   }
 
   set filters(value: Filter[] | null) {
-    if ((value === null || value.length == 0) && this.model.filters === null) return;
+    if ((value === null || value.length == 0) && this.value.filters === null) return;
 
     // if (value !== null) {
     //   target[$.filters] = value.map((filter) => {
     //     return filter.clone();
     //   });
     // } else {
-    this.model.filters = null;
+    this.value.filters = null;
     // }
 
-    invalidateAppearance(this.model);
+    invalidateAppearance(this.value);
   }
 
   get height(): number {
-    return getBoundsRect(this.model).height;
+    return getBoundsRect(this.value).height;
   }
 
   set height(value: number) {
-    const localBounds = getBoundsRect(this.model);
+    const localBounds = getBoundsRect(this.value);
     if (localBounds.height === 0) return;
     // Invalidation (if necessary) occurs in scaleY setter
     this.scaleY = value / localBounds.height;
@@ -173,43 +173,43 @@ export default class DisplayObject {
   }
 
   get mask(): DisplayObject | null {
-    if (this.model.mask !== null) {
-      return getDisplayObjectFromModel(this.model.mask);
+    if (this.value.mask !== null) {
+      return getDisplayObjectFromType(this.value.mask);
     }
     return null;
   }
 
   set mask(value: DisplayObject | null) {
     if (value !== null) {
-      if (this.model.mask === value.model) return;
-      this.model.mask = value.model;
+      if (this.value.mask === value.value) return;
+      this.value.mask = value.value;
     } else {
-      if (this.model.mask === null) return;
-      this.model.mask = null;
+      if (this.value.mask === null) return;
+      this.value.mask = null;
     }
-    invalidateAppearance(this.model);
+    invalidateAppearance(this.value);
   }
 
   get name(): string | null {
-    return this.model.name;
+    return this.value.name;
   }
 
   set name(value: string | null) {
-    this.model.name = value;
+    this.value.name = value;
   }
 
   get opaqueBackground(): number | null {
-    return this.model.opaqueBackground;
+    return this.value.opaqueBackground;
   }
 
   set opaqueBackground(value: number | null) {
-    if (value === this.model.opaqueBackground) return;
-    this.model.opaqueBackground = value;
-    invalidateAppearance(this.model);
+    if (value === this.value.opaqueBackground) return;
+    this.value.opaqueBackground = value;
+    invalidateAppearance(this.value);
   }
 
   get parent(): DisplayObject | null {
-    return getDisplayObjectFromModel(getParent(this.model) as DisplayObjectModel);
+    return getDisplayObjectFromType(getParent(this.value) as DisplayObjectType);
   }
 
   get root(): DisplayObject | null {
@@ -221,11 +221,11 @@ export default class DisplayObject {
   }
 
   get rotation(): number {
-    return this.model.rotation;
+    return this.value.rotation;
   }
 
   set rotation(value: number) {
-    if (value === this.model.rotation) return;
+    if (value === this.value.rotation) return;
     // Normalize from -180 to 180
     value = value % 360.0;
     if (value > 180.0) {
@@ -233,19 +233,19 @@ export default class DisplayObject {
     } else if (value < -180.0) {
       value += 360.0;
     }
-    this.model.rotation = value;
-    invalidateLocalTransform(this.model);
+    this.value.rotation = value;
+    invalidateLocalTransform(this.value);
   }
 
   get scale9Grid(): Rectangle | null {
-    if (this.model.scale9Grid === null) {
+    if (this.value.scale9Grid === null) {
       return null;
     }
-    return Rectangle.fromModel(this.model.scale9Grid);
+    return Rectangle.fromType(this.value.scale9Grid);
   }
 
   set scale9Grid(value: Rectangle | null) {
-    const data = this.model;
+    const data = this.value;
     if (value === null && data.scale9Grid === null) return;
     if (value !== null && data.scale9Grid !== null && rectangle.equals(data.scale9Grid, value)) return;
 
@@ -256,38 +256,38 @@ export default class DisplayObject {
       data.scale9Grid = null;
     }
 
-    invalidateAppearance(this.model);
+    invalidateAppearance(this.value);
   }
 
   get scaleX(): number {
-    return this.model.scaleX;
+    return this.value.scaleX;
   }
 
   set scaleX(value: number) {
-    if (value === this.model.scaleX) return;
-    this.model.scaleX = value;
-    invalidateLocalTransform(this.model);
+    if (value === this.value.scaleX) return;
+    this.value.scaleX = value;
+    invalidateLocalTransform(this.value);
   }
 
   get scaleY(): number {
-    return this.model.scaleY;
+    return this.value.scaleY;
   }
 
   set scaleY(value: number) {
-    if (value === this.model.scaleY) return;
-    this.model.scaleY = value;
-    invalidateLocalTransform(this.model);
+    if (value === this.value.scaleY) return;
+    this.value.scaleY = value;
+    invalidateLocalTransform(this.value);
   }
 
   get scrollRect(): Rectangle | null {
-    if (this.model.scrollRect === null) {
+    if (this.value.scrollRect === null) {
       return null;
     }
-    return Rectangle.fromModel(this.model.scrollRect);
+    return Rectangle.fromType(this.value.scrollRect);
   }
 
   set scrollRect(value: Rectangle | null) {
-    const data = this.model;
+    const data = this.value;
     if (value === null && data.scrollRect === null) return;
     if (value !== null && data.scrollRect !== null && rectangle.equals(data.scrollRect, value)) return;
 
@@ -298,24 +298,24 @@ export default class DisplayObject {
       data.scrollRect = null;
     }
 
-    invalidateAppearance(this.model);
+    invalidateAppearance(this.value);
   }
 
   get shader(): Shader | null {
-    return this.model.shader;
+    return this.value.shader;
   }
 
   set shader(value: Shader | null) {
-    if (value === this.model.shader) return;
-    this.model.shader = value;
-    invalidateAppearance(this.model);
+    if (value === this.value.shader) return;
+    this.value.shader = value;
+    invalidateAppearance(this.value);
   }
 
   get stage(): Stage | null {
-    let current = getDisplayObjectRuntime(this.model).parent;
+    let current = getDisplayObjectRuntime(this.value).parent;
     while (current !== null) {
-      if (current.kind === StageKind) return getDisplayObjectFromModel(current as DisplayObjectModel) as Stage;
-      current = getDisplayObjectRuntime(current as DisplayObjectModel).parent;
+      if (current.kind === StageKind) return getDisplayObjectFromType(current as DisplayObjectType) as Stage;
+      current = getDisplayObjectRuntime(current as DisplayObjectType).parent;
     }
     return null;
   }
@@ -355,45 +355,45 @@ export default class DisplayObject {
   }
 
   get visible(): boolean {
-    return this.model.visible;
+    return this.value.visible;
   }
 
   set visible(value: boolean) {
-    if (value === this.model.visible) return;
-    this.model.visible = value;
-    invalidateAppearance(this.model);
+    if (value === this.value.visible) return;
+    this.value.visible = value;
+    invalidateAppearance(this.value);
   }
 
   get width(): number {
-    return getBoundsRect(this.model).width;
+    return getBoundsRect(this.value).width;
   }
 
   set width(value: number) {
-    const localBounds = getBoundsRect(this.model);
+    const localBounds = getBoundsRect(this.value);
     if (localBounds.width === 0) return;
     // Invalidation (if necessary) occurs in scaleX setter
     this.scaleX = value / localBounds.width;
   }
 
   get x(): number {
-    return this.model.x;
+    return this.value.x;
   }
 
   set x(value: number) {
     if (value !== value) value = 0; // convert NaN to 0
-    if (value === this.model.x) return;
-    this.model.x = value;
-    invalidateLocalTransform(this.model);
+    if (value === this.value.x) return;
+    this.value.x = value;
+    invalidateLocalTransform(this.value);
   }
 
   get y(): number {
-    return this.model.y;
+    return this.value.y;
   }
 
   set y(value: number) {
     if (value !== value) value = 0; // convert NaN to 0
-    if (value === this.model.y) return;
-    this.model.y = value;
-    invalidateLocalTransform(this.model);
+    if (value === this.value.y) return;
+    this.value.y = value;
+    invalidateLocalTransform(this.value);
   }
 }
