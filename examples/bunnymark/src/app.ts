@@ -1,5 +1,5 @@
 import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
-import { createRenderState, renderSprite, setSpriteRenderer } from '@flighthq/render-canvas';
+import { createCanvasRenderState, renderSprite, setSpriteRenderer } from '@flighthq/render-canvas';
 import { renderBackground } from '@flighthq/render-canvas';
 import { updateSpriteBeforeRender } from '@flighthq/render-core';
 import { addChild } from '@flighthq/scene-graph-core';
@@ -55,7 +55,7 @@ const options = {
   },
 };
 
-const state = createRenderState(canvas, options);
+const state = createCanvasRenderState(canvas, options);
 setSpriteRenderer(state);
 requestAnimationFrame(enterFrame);
 
