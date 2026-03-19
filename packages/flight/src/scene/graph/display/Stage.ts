@@ -2,16 +2,21 @@ import { createStage } from '@flighthq/scene-graph-display';
 import type { Stage as StageModel } from '@flighthq/types';
 
 import DisplayObjectContainer from './DisplayObjectContainer.js';
-import type { DisplayObjectInternal } from './internal/writeInternal.js';
 
 export default class Stage extends DisplayObjectContainer {
-  declare public readonly model: StageModel;
+  declare protected _model: StageModel;
 
   constructor() {
     super();
   }
 
   protected override __create(): void {
-    (this as DisplayObjectInternal).model = createStage();
+    this._model = createStage();
+  }
+
+  // Get & Set Methods
+
+  override get model(): StageModel {
+    return this._model;
   }
 }

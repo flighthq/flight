@@ -2,15 +2,15 @@ import { vector2 } from '@flighthq/geometry';
 import type { Vector2 as Vector2Model } from '@flighthq/types';
 
 export default class Vector2 {
-  public readonly model: Vector2Model;
+  protected _model: Vector2Model;
 
   constructor(x?: number, y?: number) {
-    this.model = vector2.create(x, y);
+    this._model = vector2.create(x, y);
   }
 
   add(source: Readonly<Vector2>): Vector2 {
     const out = new Vector2();
-    vector2.add(out.model, this.model, source.model);
+    vector2.add(out.model, this._model, source.model);
     return out;
   }
 
@@ -19,7 +19,7 @@ export default class Vector2 {
   }
 
   copyFrom(source: Readonly<Vector2>): void {
-    vector2.copy(this.model, source.model);
+    vector2.copy(this._model, source.model);
   }
 
   static createPolar(len: number, angle: number): Vector2 {
@@ -34,7 +34,7 @@ export default class Vector2 {
 
   equals(b: Readonly<Vector2> | null | undefined): boolean {
     if (!b) return false;
-    return vector2.equals(this.model, b.model);
+    return vector2.equals(this._model, b.model);
   }
 
   static fromModel(model: Readonly<Vector2Model>): Vector2 {
@@ -50,46 +50,50 @@ export default class Vector2 {
   }
 
   normalize(length: number): void {
-    vector2.normalize(this.model, this.model, length);
+    vector2.normalize(this._model, this._model, length);
   }
 
   offset(dx: number, dy: number): void {
-    vector2.offset(this.model, this.model, dx, dy);
+    vector2.offset(this._model, this._model, dx, dy);
   }
 
   setTo(x: number, y: number): void {
-    vector2.setTo(this.model, x, y);
+    vector2.setTo(this._model, x, y);
   }
 
   subtract(source: Readonly<Vector2>): Vector2 {
     const out = new Vector2();
-    vector2.subtract(out.model, this.model, source.model);
+    vector2.subtract(out.model, this._model, source.model);
     return out;
   }
 
   // Get & Set Methods
 
   get length(): number {
-    return vector2.length(this.model);
+    return vector2.length(this._model);
   }
 
   get lengthSquared(): number {
-    return vector2.lengthSquared(this.model);
+    return vector2.lengthSquared(this._model);
+  }
+
+  get model(): Vector2Model {
+    return this._model;
   }
 
   get x(): number {
-    return this.model.x;
+    return this._model.x;
   }
 
   set x(value: number) {
-    this.model.x = value;
+    this._model.x = value;
   }
 
   get y(): number {
-    return this.model.y;
+    return this._model.y;
   }
 
   set y(value: number) {
-    this.model.y = value;
+    this._model.y = value;
   }
 }
