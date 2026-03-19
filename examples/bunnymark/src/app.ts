@@ -1,9 +1,9 @@
+import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
 import { createRenderState, renderSprite, setSpriteRenderer } from '@flighthq/render-canvas';
 import { renderBackground } from '@flighthq/render-canvas';
 import { updateSpriteBeforeRender } from '@flighthq/render-core';
 import { addChild } from '@flighthq/scene-graph-core';
 import { createSprite } from '@flighthq/scene-graph-sprite';
-import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from 'packages/assets/dist';
 import Stats from 'stats.js';
 
 import type { Bunny } from './bunny';
