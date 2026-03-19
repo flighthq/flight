@@ -1,16 +1,16 @@
 import { vector2 } from '@flighthq/geometry';
-import type { Vector2 as Vector2Type } from '@flighthq/types';
+import type { Vector2 as Vector2Model } from '@flighthq/types';
 
 export default class Vector2 {
-  public readonly value: Vector2Type;
+  public readonly model: Vector2Model;
 
   constructor(x?: number, y?: number) {
-    this.value = vector2.create(x, y);
+    this.model = vector2.create(x, y);
   }
 
   add(source: Readonly<Vector2>): Vector2 {
     const out = new Vector2();
-    vector2.add(out.value, this.value, source.value);
+    vector2.add(out.model, this.model, source.model);
     return out;
   }
 
@@ -19,77 +19,77 @@ export default class Vector2 {
   }
 
   copyFrom(source: Readonly<Vector2>): void {
-    vector2.copy(this.value, source.value);
+    vector2.copy(this.model, source.model);
   }
 
   static createPolar(len: number, angle: number): Vector2 {
     const out = new Vector2();
-    vector2.setPolar(out.value, len, angle);
+    vector2.setPolar(out.model, len, angle);
     return out;
   }
 
   static distance(a: Readonly<Vector2>, b: Readonly<Vector2>): number {
-    return vector2.distance(a.value, b.value);
+    return vector2.distance(a.model, b.model);
   }
 
   equals(b: Readonly<Vector2> | null | undefined): boolean {
     if (!b) return false;
-    return vector2.equals(this.value, b.value);
+    return vector2.equals(this.model, b.model);
   }
 
-  static fromType(value: Readonly<Vector2Type>): Vector2 {
+  static fromModel(model: Readonly<Vector2Model>): Vector2 {
     const out = new Vector2();
-    vector2.copy(out.value, value);
+    vector2.copy(out.model, model);
     return out;
   }
 
   static lerp(a: Readonly<Vector2>, b: Readonly<Vector2>, t: number): Vector2 {
     const out = new Vector2();
-    vector2.lerp(out.value, a.value, b.value, t);
+    vector2.lerp(out.model, a.model, b.model, t);
     return out;
   }
 
   normalize(length: number): void {
-    vector2.normalize(this.value, this.value, length);
+    vector2.normalize(this.model, this.model, length);
   }
 
   offset(dx: number, dy: number): void {
-    vector2.offset(this.value, this.value, dx, dy);
+    vector2.offset(this.model, this.model, dx, dy);
   }
 
   setTo(x: number, y: number): void {
-    vector2.setTo(this.value, x, y);
+    vector2.setTo(this.model, x, y);
   }
 
   subtract(source: Readonly<Vector2>): Vector2 {
     const out = new Vector2();
-    vector2.subtract(out.value, this.value, source.value);
+    vector2.subtract(out.model, this.model, source.model);
     return out;
   }
 
   // Get & Set Methods
 
   get length(): number {
-    return vector2.length(this.value);
+    return vector2.length(this.model);
   }
 
   get lengthSquared(): number {
-    return vector2.lengthSquared(this.value);
+    return vector2.lengthSquared(this.model);
   }
 
   get x(): number {
-    return this.value.x;
+    return this.model.x;
   }
 
   set x(value: number) {
-    this.value.x = value;
+    this.model.x = value;
   }
 
   get y(): number {
-    return this.value.y;
+    return this.model.y;
   }
 
   set y(value: number) {
-    this.value.y = value;
+    this.model.y = value;
   }
 }

@@ -8,7 +8,7 @@ import {
 import { registerRenderer, updateDisplayObjectBeforeRender } from '@flighthq/render-core';
 import {
   BitmapKind,
-  type CanvasRenderOptions as CanvasRenderOptionsType,
+  type CanvasRenderOptions as CanvasRenderOptionsModel,
   type CanvasRenderState,
   DisplayObjectKind,
 } from '@flighthq/types';
@@ -25,18 +25,18 @@ export default class CanvasRenderer {
     registerRenderer(this.state, BitmapKind, defaultCanvasBitmapRenderer);
   }
 
-  private mapCanvasOptions(options?: Partial<CanvasRenderOptions>): CanvasRenderOptionsType | undefined {
+  private mapCanvasOptions(options?: Partial<CanvasRenderOptions>): CanvasRenderOptionsModel | undefined {
     if (!options) return undefined;
     return {
       ...options,
-      renderTransform: options.renderTransform?.value,
+      renderTransform: options.renderTransform?.model,
     };
   }
 
   render(object: DisplayObject): void {
-    if (updateDisplayObjectBeforeRender(this.state, object.value)) {
+    if (updateDisplayObjectBeforeRender(this.state, object.model)) {
       renderBackground(this.state);
-      renderDisplayObject(this.state, object.value);
+      renderDisplayObject(this.state, object.model);
     }
   }
 }

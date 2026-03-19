@@ -1,8 +1,8 @@
 import * as hierarchy from '@flighthq/scene-graph-core/hierarchy';
-import type { DisplayObject as DisplayObjectType } from '@flighthq/types';
+import type { DisplayObject as DisplayObjectModel } from '@flighthq/types';
 
 import DisplayObject from './DisplayObject.js';
-import { getDisplayObjectFromType } from './internal/displayObjectMap.js';
+import { getDisplayObjectFromModel } from './internal/displayObjectMap.js';
 
 export default class DisplayObjectContainer extends DisplayObject {
   protected constructor() {
@@ -10,44 +10,44 @@ export default class DisplayObjectContainer extends DisplayObject {
   }
 
   addChild(child: DisplayObject): DisplayObject {
-    hierarchy.addChild(this.value, child.value);
+    hierarchy.addChild(this.model, child.model);
     return child;
   }
 
   addChildAt(child: DisplayObject, index: number): DisplayObject {
-    hierarchy.addChildAt(this.value, child.value, index);
+    hierarchy.addChildAt(this.model, child.model, index);
     return child;
   }
 
   removeChild(child: DisplayObject): DisplayObject {
-    hierarchy.removeChild(this.value, child.value);
+    hierarchy.removeChild(this.model, child.model);
     return child;
   }
 
   removeChildAt(index: number): DisplayObject | null {
-    const value = hierarchy.removeChildAt(this.value, index);
-    return getDisplayObjectFromType(value as DisplayObjectType);
+    const model = hierarchy.removeChildAt(this.model, index);
+    return getDisplayObjectFromModel(model as DisplayObjectModel);
   }
 
   removeChildren(beginIndex: number = 0, endIndex?: number): void {
-    hierarchy.removeChildren(this.value, beginIndex, endIndex);
+    hierarchy.removeChildren(this.model, beginIndex, endIndex);
   }
 
   setChildIndex(child: DisplayObject, index: number): void {
-    hierarchy.setChildIndex(this.value, child.value, index);
+    hierarchy.setChildIndex(this.model, child.model, index);
   }
 
   swapChildren(child1: DisplayObject, child2: DisplayObject): void {
-    hierarchy.swapChildren(this.value, child1.value, child2.value);
+    hierarchy.swapChildren(this.model, child1.model, child2.model);
   }
 
   swapChildrenAt(index1: number, index2: number): void {
-    hierarchy.swapChildrenAt(this.value, index1, index2);
+    hierarchy.swapChildrenAt(this.model, index1, index2);
   }
 
   // Get & Set Methods
 
   get numChildren() {
-    return hierarchy.getNumChildren(this.value);
+    return hierarchy.getNumChildren(this.model);
   }
 }

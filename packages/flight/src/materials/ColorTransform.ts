@@ -1,8 +1,8 @@
 import { colorTransform } from '@flighthq/materials';
-import type { ColorTransform as ColorTransformType } from '@flighthq/types';
+import type { ColorTransform as ColorTransformModel } from '@flighthq/types';
 
 export default class ColorTransform {
-  public readonly value: ColorTransformType;
+  public readonly model: ColorTransformModel;
 
   constructor(
     redMultiplier = 1,
@@ -14,9 +14,9 @@ export default class ColorTransform {
     blueOffset = 0,
     alphaOffset = 0,
   ) {
-    this.value = colorTransform.create();
+    this.model = colorTransform.create();
     colorTransform.setTo(
-      this.value,
+      this.model,
       redMultiplier,
       greenMultiplier,
       blueMultiplier,
@@ -29,46 +29,46 @@ export default class ColorTransform {
   }
 
   clone(): ColorTransform {
-    return ColorTransform.fromType(this.value);
+    return ColorTransform.fromModel(this.model);
   }
 
   concat(other: Readonly<ColorTransform>): void {
-    colorTransform.concat(this.value, this.value, other.value);
+    colorTransform.concat(this.model, this.model, other.model);
   }
 
   copyFrom(source: Readonly<ColorTransform>): void {
-    colorTransform.copy(this.value, source.value);
+    colorTransform.copy(this.model, source.model);
   }
 
   equals(b: Readonly<ColorTransform>): boolean {
     if (!b) return false;
-    return colorTransform.equals(this.value, b.value);
+    return colorTransform.equals(this.model, b.model);
   }
 
-  static fromType(value: Readonly<ColorTransformType>): ColorTransform {
+  static fromModel(model: Readonly<ColorTransformModel>): ColorTransform {
     const out = new ColorTransform();
-    colorTransform.copy(out.value, value);
+    colorTransform.copy(out.model, model);
     return out;
   }
 
   identity(): void {
-    colorTransform.identity(this.value);
+    colorTransform.identity(this.model);
   }
 
   invert(): void {
-    colorTransform.invert(this.value, this.value);
+    colorTransform.invert(this.model, this.model);
   }
 
   isIdentity(compareAlphaMultiplier: boolean = true): boolean {
-    return colorTransform.isIdentity(this.value, compareAlphaMultiplier);
+    return colorTransform.isIdentity(this.model, compareAlphaMultiplier);
   }
 
   multiplierEquals(a: Readonly<ColorTransform>, b: Readonly<ColorTransform>, compareAlpha: boolean = true): boolean {
-    return colorTransform.multiplierEquals(this.value, b.value, compareAlpha);
+    return colorTransform.multiplierEquals(this.model, b.model, compareAlpha);
   }
 
   offsetEquals(b: Readonly<ColorTransform>, compareAlpha: boolean = true): boolean {
-    return colorTransform.offsetEquals(this.value, b.value, compareAlpha);
+    return colorTransform.offsetEquals(this.model, b.model, compareAlpha);
   }
 
   setTo(
@@ -82,7 +82,7 @@ export default class ColorTransform {
     alphaOffset: number,
   ): void {
     colorTransform.setTo(
-      this.value,
+      this.model,
       redMultiplier,
       greenMultiplier,
       blueMultiplier,
@@ -95,88 +95,88 @@ export default class ColorTransform {
   }
 
   toArrays(outColorMultipliers: number[], outColorOffsets: number[]): void {
-    colorTransform.toArrays(outColorMultipliers, outColorOffsets, this.value);
+    colorTransform.toArrays(outColorMultipliers, outColorOffsets, this.model);
   }
 
   // Get & Set Methods
 
   get redMultiplier(): number {
-    return this.value.redMultiplier;
+    return this.model.redMultiplier;
   }
 
   set redMultiplier(value: number) {
-    this.value.redMultiplier = value;
+    this.model.redMultiplier = value;
   }
 
   get greenMultiplier(): number {
-    return this.value.greenMultiplier;
+    return this.model.greenMultiplier;
   }
 
   set greenMultiplier(value: number) {
-    this.value.greenMultiplier = value;
+    this.model.greenMultiplier = value;
   }
 
   get blueMultiplier(): number {
-    return this.value.blueMultiplier;
+    return this.model.blueMultiplier;
   }
 
   set blueMultiplier(value: number) {
-    this.value.blueMultiplier = value;
+    this.model.blueMultiplier = value;
   }
 
   get alphaMultiplier(): number {
-    return this.value.alphaMultiplier;
+    return this.model.alphaMultiplier;
   }
 
   set alphaMultiplier(value: number) {
-    this.value.alphaMultiplier = value;
+    this.model.alphaMultiplier = value;
   }
 
   get redOffset(): number {
-    return this.value.redOffset;
+    return this.model.redOffset;
   }
 
   set redOffset(value: number) {
-    this.value.redOffset = value;
+    this.model.redOffset = value;
   }
 
   get greenOffset(): number {
-    return this.value.greenOffset;
+    return this.model.greenOffset;
   }
 
   set greenOffset(value: number) {
-    this.value.greenOffset = value;
+    this.model.greenOffset = value;
   }
 
   get blueOffset(): number {
-    return this.value.blueOffset;
+    return this.model.blueOffset;
   }
 
   set blueOffset(value: number) {
-    this.value.blueOffset = value;
+    this.model.blueOffset = value;
   }
 
   get alphaOffset(): number {
-    return this.value.alphaOffset;
+    return this.model.alphaOffset;
   }
 
   set alphaOffset(value: number) {
-    this.value.alphaOffset = value;
+    this.model.alphaOffset = value;
   }
 
   get offsetRGB(): number {
-    return colorTransform.getOffsetRGB(this.value);
+    return colorTransform.getOffsetRGB(this.model);
   }
 
   set offsetRGB(value: number) {
-    colorTransform.setOffsetRGB(this.value, value);
+    colorTransform.setOffsetRGB(this.model, value);
   }
 
   get offsetRGBA(): number {
-    return colorTransform.getOffsetRGBA(this.value);
+    return colorTransform.getOffsetRGBA(this.model);
   }
 
   set offsetRGBA(value: number) {
-    colorTransform.setOffsetRGBA(this.value, value);
+    colorTransform.setOffsetRGBA(this.model, value);
   }
 }
