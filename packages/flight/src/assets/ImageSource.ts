@@ -1,41 +1,41 @@
 import { createImageSource } from '@flighthq/assets';
-import type { ImageSource as ImageSourceModel } from '@flighthq/types';
+import type { ImageSource as ImageSourceType } from '@flighthq/types';
 
 export default class ImageSource {
-  public readonly model: ImageSourceModel;
+  public readonly value: ImageSourceType;
 
   constructor(source: HTMLImageElement) {
-    this.model = createImageSource(source);
+    this.value = createImageSource(source);
   }
 
-  static fromModel(model: Readonly<ImageSourceModel>): ImageSource {
-    const out = new ImageSource(model.src);
-    out.model.height = model.height;
-    out.model.width = model.width;
+  static fromType(value: Readonly<ImageSourceType>): ImageSource {
+    const out = new ImageSource(value.src);
+    out.value.height = value.height;
+    out.value.width = value.width;
     return out;
   }
 
   get height(): number {
-    return this.model.width;
+    return this.value.width;
   }
 
   set height(value: number) {
-    this.model.height = value;
+    this.value.height = value;
   }
 
   get src(): HTMLImageElement {
-    return this.model.src;
+    return this.value.src;
   }
 
   set src(value: HTMLImageElement) {
-    this.model.src = value;
+    this.value.src = value;
   }
 
   get width(): number {
-    return this.model.width;
+    return this.value.width;
   }
 
   set width(value: number) {
-    this.model.width = value;
+    this.value.width = value;
   }
 }

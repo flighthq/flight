@@ -1,15 +1,15 @@
-import type { ImageSource as ImageSourceModel } from '@flighthq/types';
+import type { ImageSource as ImageSourceType } from '@flighthq/types';
 
 import type ImageSource from '../ImageSource';
 
-export function getImageSourceFromModel(model: Readonly<ImageSourceModel> | null | undefined): ImageSource | null {
-  if (!model) return null;
-  const object = objectsByModel.get(model);
+export function getImageSourceFromType(value: Readonly<ImageSourceType> | null | undefined): ImageSource | null {
+  if (!value) return null;
+  const object = objectsByType.get(value);
   return object ?? null;
 }
 
 export function registerImageSource(object: ImageSource): void {
-  objectsByModel.set(object.model, object);
+  objectsByType.set(object.value, object);
 }
 
-const objectsByModel: WeakMap<ImageSourceModel, ImageSource> = new WeakMap();
+const objectsByType: WeakMap<ImageSourceType, ImageSource> = new WeakMap();

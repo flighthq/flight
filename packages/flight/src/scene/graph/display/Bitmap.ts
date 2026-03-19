@@ -1,49 +1,49 @@
 import { invalidateAppearance, invalidateLocalBounds } from '@flighthq/scene-graph-core';
 import { createBitmap } from '@flighthq/scene-graph-display';
-import type { Bitmap as BitmapModel } from '@flighthq/types';
+import type { Bitmap as BitmapType } from '@flighthq/types';
 
 import type { ImageSource } from '../../../assets';
-import { getImageSourceFromModel, registerImageSource } from '../../../assets/internal/imageSourceMap';
+import { getImageSourceFromType, registerImageSource } from '../../../assets/internal/imageSourceMap';
 import DisplayObject from './DisplayObject';
 import type { DisplayObjectInternal } from './internal/writeInternal';
 
 export default class Bitmap extends DisplayObject {
-  declare public readonly model: BitmapModel;
+  declare public readonly value: BitmapType;
 
   constructor() {
     super();
   }
 
   protected override __create(): void {
-    (this as DisplayObjectInternal).model = createBitmap();
+    (this as DisplayObjectInternal).value = createBitmap();
   }
 
   // Get & Set Methods
 
   get image(): ImageSource | null {
-    return getImageSourceFromModel(this.model.data.image);
+    return getImageSourceFromType(this.value.data.image);
   }
 
   set image(value: ImageSource | null) {
     if (value !== null) {
-      if (this.model.data.image === value.model) return;
-      this.model.data.image = value.model;
+      if (this.value.data.image === value.value) return;
+      this.value.data.image = value.value;
       registerImageSource(value);
     } else {
-      if (this.model.data.image === null) return;
-      this.model.data.image = null;
+      if (this.value.data.image === null) return;
+      this.value.data.image = null;
     }
-    invalidateLocalBounds(this.model);
-    invalidateAppearance(this.model);
+    invalidateLocalBounds(this.value);
+    invalidateAppearance(this.value);
   }
 
   get smoothing(): boolean {
-    return this.model.data.smoothing;
+    return this.value.data.smoothing;
   }
 
   set smoothing(value: boolean) {
-    if (this.model.data.smoothing === value) return;
-    this.model.data.smoothing = value;
-    invalidateAppearance(this.model);
+    if (this.value.data.smoothing === value) return;
+    this.value.data.smoothing = value;
+    invalidateAppearance(this.value);
   }
 }

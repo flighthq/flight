@@ -1,9 +1,9 @@
 import { getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
-import type { DisplayObject as DisplayObjectModel } from '@flighthq/types';
+import type { DisplayObject as DisplayObjectType } from '@flighthq/types';
 
 import DisplayObject from './DisplayObject.js';
 import DisplayObjectContainer from './DisplayObjectContainer.js';
-import { getDisplayObjectFromModel } from './internal/displayObjectMap.js';
+import { getDisplayObjectFromType } from './internal/displayObjectMap.js';
 
 describe('DisplayObjectContainer', () => {
   let container: DisplayObjectContainer;
@@ -17,9 +17,9 @@ describe('DisplayObjectContainer', () => {
   });
 
   function getChildren(object: DisplayObject) {
-    const children = getDisplayObjectRuntime(object.model).children;
-    return children!.map((model) => {
-      return getDisplayObjectFromModel(model as DisplayObjectModel);
+    const children = getDisplayObjectRuntime(object.value).children;
+    return children!.map((value) => {
+      return getDisplayObjectFromType(value as DisplayObjectType);
     });
   }
 
