@@ -1,7 +1,7 @@
-import type { DisplayObject as DisplayObjectType } from '@flighthq/types';
+import type { DisplayObject as DisplayObjectModel } from '@flighthq/types';
 
 import type DisplayObject from '../DisplayObject';
 
-export type DisplayObjectInternal = Omit<DisplayObject, 'value'> & {
-  value: DisplayObjectType;
+export type DisplayObjectInternal = Omit<DisplayObject, 'model'> & {
+  model: DisplayObjectModel;
 };

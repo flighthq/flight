@@ -1,15 +1,17 @@
-import type { DisplayObject as DisplayObjectType } from '@flighthq/types';
+import type { DisplayObject as DisplayObjectModel } from '@flighthq/types';
 
 import type DisplayObject from '../DisplayObject';
 
-export function getDisplayObjectFromType(value: Readonly<DisplayObjectType> | null | undefined): DisplayObject | null {
-  if (!value) return null;
-  const object = objectsByType.get(value);
+export function getDisplayObjectFromModel(
+  model: Readonly<DisplayObjectModel> | null | undefined,
+): DisplayObject | null {
+  if (!model) return null;
+  const object = objectsByModel.get(model);
   return object ?? null;
 }
 
 export function registerDisplayObject(object: DisplayObject): void {
-  objectsByType.set(object.value, object);
+  objectsByModel.set(object.model, object);
 }
 
-const objectsByType: WeakMap<DisplayObjectType, DisplayObject> = new WeakMap();
+const objectsByModel: WeakMap<DisplayObjectModel, DisplayObject> = new WeakMap();
