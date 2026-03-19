@@ -19,22 +19,18 @@ import type CanvasRenderOptions from './CanvasRenderOptions';
 export default class CanvasRenderer {
   private state: CanvasRenderState;
 
-  constructor(canvas: HTMLCanvasElement, options: CanvasRenderOptions) {
-    let _options: CanvasRenderOptionsModel | undefined = undefined;
-    if (options) {
-      _options = {
-        backgroundColor: options.backgroundColor,
-        contextAttributes: options.contextAttributes,
-        imageSmoothingEnabled: options.imageSmoothingEnabled,
-        imageSmoothingQuality: options.imageSmoothingQuality,
-        pixelRatio: options.pixelRatio,
-        renderTransform: options.renderTransform ? options.renderTransform.model : undefined,
-        roundPixels: options.roundPixels,
-      };
-    }
-    this.state = createCanvasRenderState(canvas, _options);
+  constructor(canvas: HTMLCanvasElement, options?: Partial<CanvasRenderOptions>) {
+    this.state = createCanvasRenderState(canvas, this.mapCanvasOptions(options));
     registerRenderer(this.state, DisplayObjectKind, defaultCanvasDisplayObjectRenderer);
     registerRenderer(this.state, BitmapKind, defaultCanvasBitmapRenderer);
+  }
+
+  private mapCanvasOptions(options?: Partial<CanvasRenderOptions>): CanvasRenderOptionsModel | undefined {
+    if (!options) return undefined;
+    return {
+      ...options,
+      renderTransform: options.renderTransform?.model,
+    };
   }
 
   render(object: DisplayObject): void {
