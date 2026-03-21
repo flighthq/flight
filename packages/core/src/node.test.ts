@@ -1,7 +1,8 @@
-import type { PartialNode } from '@flighthq/types';
-import { type Node, type NodeData, NodeKind, type NodeRuntime } from '@flighthq/types';
+import type { Node, NodeData, PartialNode, Runtime } from '@flighthq/types';
+import { NodeKind } from '@flighthq/types';
 
-import { createNode, createNodeRuntime, getNodeRuntime } from './node';
+import { createNode } from './node';
+import { createRuntime, getRuntime } from './runtime';
 
 describe('createNode', () => {
   let node: Node;
@@ -37,7 +38,7 @@ describe('createNode', () => {
 
   it('makes a default runtime object if none passed in', () => {
     const node = createNode(NodeKind);
-    const runtime = getNodeRuntime(node);
+    const runtime = getRuntime(node);
     expect(runtime).not.toBeNull();
   });
 
@@ -61,34 +62,8 @@ describe('createNode', () => {
   it('allows use of a runtime initializer', () => {
     const obj: PartialNode<NodeTest> = {};
     const node = createNode(NodeTestKind, obj, undefined, createNodeTestRuntime);
-    const runtime = getNodeRuntime(node);
+    const runtime = getRuntime(node);
     expect((runtime as NodeTestRuntime).testRuntimeField).toBe('testRuntimeField');
-  });
-});
-
-describe('createNodeRuntime', () => {
-  let runtime: NodeRuntime;
-
-  beforeEach(() => {
-    runtime = createNodeRuntime();
-  });
-
-  it('initializes default values', () => {
-    expect(runtime).not.toBeNull();
-  });
-});
-
-describe('getNodeRuntime', () => {
-  it('assumes runtime is defined', () => {
-    const node = { kind: NodeTestKind };
-    const runtime = getNodeRuntime(node as Node);
-    expect(runtime).toBeUndefined();
-  });
-
-  it('returns runtime when defined', () => {
-    const node = createNode(NodeTestKind);
-    const runtime = getNodeRuntime(node);
-    expect(runtime).not.toBeUndefined();
   });
 });
 
@@ -102,7 +77,7 @@ interface NodeTestData extends NodeData {
   testDataField: string;
 }
 
-interface NodeTestRuntime extends NodeRuntime {
+interface NodeTestRuntime extends Runtime {
   testRuntimeField: string;
 }
 
@@ -113,7 +88,7 @@ function createNodeTestData(data?: Partial<NodeTestData>): NodeTestData {
 }
 
 function createNodeTestRuntime(): NodeTestRuntime {
-  const obj = createNodeRuntime() as NodeTestRuntime;
+  const obj = createRuntime() as NodeTestRuntime;
   obj.testRuntimeField = 'testRuntimeField';
   return obj;
 }
