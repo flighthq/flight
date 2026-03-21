@@ -1,4 +1,4 @@
-import type { Matrix3x2, Matrix3x3, Matrix4x4 } from '@flighthq/types';
+import type { Matrix3x2, Matrix3x3, Matrix3x3Like, Matrix4x4, Matrix4x4Like } from '@flighthq/types';
 
 import * as matrix3x2 from './matrix3x2.js';
 import * as rectangle from './rectangle.js';
@@ -398,7 +398,7 @@ describe('equals', () => {
 });
 
 describe('fromMatrix3x3', () => {
-  let mat3: Matrix3x3;
+  let mat3: Matrix3x3Like;
   let mat2D: Matrix3x2;
 
   beforeEach(() => {
@@ -430,7 +430,7 @@ describe('fromMatrix3x3', () => {
   });
 
   it('should work with matrices where all values are zeros', () => {
-    const zeroMatrix3x3: Matrix3x3 = {
+    const zeroMatrix3x3: Matrix3x3Like = {
       m: new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0]), // A matrix3x2 full of zeros
     };
 
@@ -445,7 +445,7 @@ describe('fromMatrix3x3', () => {
   });
 
   it('should handle matrices where the translation is zero', () => {
-    const translationZeromatrix3x2: Matrix3x3 = {
+    const translationZeromatrix3x2: Matrix3x3Like = {
       m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]), // Identity matrix3x2 (no translation)
     };
 
@@ -461,7 +461,7 @@ describe('fromMatrix3x3', () => {
 });
 
 describe('fromMatrix4x4', () => {
-  let mat4: Matrix4x4;
+  let mat4: Matrix4x4Like;
   let mat2D: Matrix3x2;
 
   beforeEach(() => {
@@ -494,7 +494,7 @@ describe('fromMatrix4x4', () => {
   });
 
   it('should handle matrices with zero values correctly', () => {
-    const zeroMatrix4x4: Matrix4x4 = {
+    const zeroMatrix4x4: Matrix4x4Like = {
       m: new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), // Identity matrix3x2 with no scaling or translation
     };
 
@@ -509,7 +509,7 @@ describe('fromMatrix4x4', () => {
   });
 
   it('should correctly handle a 2D identity matrix3x2 in Matrix4x4 format', () => {
-    const identityMatrix4x4: Matrix4x4 = {
+    const identityMatrix4x4: Matrix4x4Like = {
       m: new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), // 4x4 identity matrix3x2 (no scaling, no translation)
     };
 

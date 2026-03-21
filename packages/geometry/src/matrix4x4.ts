@@ -1,4 +1,5 @@
-import type { Matrix3x2, Matrix3x3, Matrix4x4, Vector3, Vector4 } from '@flighthq/types';
+import { createEntity } from '@flighthq/core';
+import type { Matrix3x2Like, Matrix3x3Like, Matrix4x4, Matrix4x4Like, Vector3Like, Vector4Like } from '@flighthq/types';
 
 import * as matrix4x4Pool from './matrix4x4Pool.js';
 
@@ -34,7 +35,7 @@ export function create(
   m33?: number,
 ): Matrix4x4 {
   const m = new Float32Array(__identity);
-  const out: Matrix4x4 = { m: m };
+  const out: Matrix4x4 = createEntity({ m: m });
   if (m00 !== undefined) m[0] = m00;
   if (m01 !== undefined) m[1] = m01;
   if (m02 !== undefined) m[2] = m02;
@@ -59,7 +60,7 @@ export function create(
  *
  * out = source · other
  */
-export function append(out: Matrix4x4, source: Readonly<Matrix4x4>, other: Readonly<Matrix4x4>): void {
+export function append(out: Matrix4x4Like, source: Readonly<Matrix4x4Like>, other: Readonly<Matrix4x4Like>): void {
   // world-space append
   multiply(out, source, other);
 }
@@ -70,11 +71,11 @@ export function append(out: Matrix4x4, source: Readonly<Matrix4x4>, other: Reado
  * Rotation is applied after all transformations of source are completed.
  **/
 export function appendRotation(
-  out: Matrix4x4,
-  source: Readonly<Matrix4x4>,
+  out: Matrix4x4Like,
+  source: Readonly<Matrix4x4Like>,
   degrees: number,
-  axis: Readonly<Vector4>,
-  pivotPoint?: Readonly<Vector4>,
+  axis: Readonly<Vector4Like>,
+  pivotPoint?: Readonly<Vector4Like>,
 ): void {
   const m = matrix4x4Pool.getIdentity();
   __getAxisRotation(m, axis.x, axis.y, axis.z, degrees);
@@ -105,8 +106,8 @@ export function appendRotation(
  * Scale is applied after all transformations of source are completed.
  **/
 export function appendScale(
-  out: Matrix4x4,
-  source: Readonly<Matrix4x4>,
+  out: Matrix4x4Like,
+  source: Readonly<Matrix4x4Like>,
   xScale: number,
   yScale: number,
   zScale: number,
@@ -128,7 +129,13 @@ export function appendScale(
  *
  * Translation is applied after all transformations of source are completed.
  */
-export function appendTranslation(out: Matrix4x4, source: Readonly<Matrix4x4>, x: number, y: number, z: number): void {
+export function appendTranslation(
+  out: Matrix4x4Like,
+  source: Readonly<Matrix4x4Like>,
+  x: number,
+  y: number,
+  z: number,
+): void {
   const _out = out.m;
   const _source = source.m;
   if (out !== source) out.m.set(source.m);
@@ -137,20 +144,20 @@ export function appendTranslation(out: Matrix4x4, source: Readonly<Matrix4x4>, x
   _out[14] = _source[14] + z;
 }
 
-export function clone(source: Readonly<Matrix4x4>): Matrix4x4 {
+export function clone(source: Readonly<Matrix4x4Like>): Matrix4x4 {
   const m = create();
   copy(m, source);
   return m;
 }
 
-export function copy(out: Matrix4x4, source: Readonly<Matrix4x4>): void {
+export function copy(out: Matrix4x4Like, source: Readonly<Matrix4x4Like>): void {
   out.m.set(source.m);
 }
 
 /**
-  Copies a column of data from a `Vector4` instance into the values of the target matrix
+  Copies a column of data from a `Vector4Like` instance into the values of the target matrix
 **/
-export function copyColumnFrom(out: Matrix4x4, column: number, source: Readonly<Vector4>): void {
+export function copyColumnFrom(out: Matrix4x4Like, column: number, source: Readonly<Vector4Like>): void {
   const _out = out.m;
   switch (column) {
     case 0:
@@ -187,9 +194,9 @@ export function copyColumnFrom(out: Matrix4x4, column: number, source: Readonly<
 }
 
 /**
- * Copies a column of data from the source matrix into a `Vector4` instance
+ * Copies a column of data from the source matrix into a `Vector4Like` instance
  **/
-export function copyColumnTo(out: Vector4, column: number, source: Readonly<Matrix4x4>): void {
+export function copyColumnTo(out: Vector4Like, column: number, source: Readonly<Matrix4x4Like>): void {
   const _source = source.m;
   switch (column) {
     case 0:
@@ -226,9 +233,9 @@ export function copyColumnTo(out: Vector4, column: number, source: Readonly<Matr
 }
 
 /**
- * Copies a row of data from a `Vector4` instance into the values of the out matrix
+ * Copies a row of data from a `Vector4Like` instance into the values of the out matrix
  **/
-export function copyRowFrom(out: Matrix4x4, row: number, source: Readonly<Vector4>): void {
+export function copyRowFrom(out: Matrix4x4Like, row: number, source: Readonly<Vector4Like>): void {
   const _out = out.m;
   switch (row) {
     case 0:
@@ -265,9 +272,9 @@ export function copyRowFrom(out: Matrix4x4, row: number, source: Readonly<Vector
 }
 
 /**
- * Copies a row of data from the source matrix into a `Vector4` instance
+ * Copies a row of data from the source matrix into a `Vector4Like` instance
  **/
-export function copyRowTo(out: Vector4, row: number, source: Readonly<Matrix4x4>): void {
+export function copyRowTo(out: Vector4Like, row: number, source: Readonly<Matrix4x4Like>): void {
   const _source = source.m;
   switch (row) {
     case 0:
@@ -337,7 +344,7 @@ export function createPerspective(fov: number, aspect: number, zNear: number, zF
   return out;
 }
 
-export function determinant(source: Readonly<Matrix4x4>): number {
+export function determinant(source: Readonly<Matrix4x4Like>): number {
   const _source = source.m;
   return (
     1 *
@@ -350,7 +357,10 @@ export function determinant(source: Readonly<Matrix4x4>): number {
   );
 }
 
-export function equals(a: Readonly<Matrix4x4> | null | undefined, b: Readonly<Matrix4x4> | null | undefined): boolean {
+export function equals(
+  a: Readonly<Matrix4x4Like> | null | undefined,
+  b: Readonly<Matrix4x4Like> | null | undefined,
+): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
   for (let i = 0; i < 16; i++) {
@@ -359,11 +369,11 @@ export function equals(a: Readonly<Matrix4x4> | null | undefined, b: Readonly<Ma
   return true;
 }
 
-export function fromMatrix3x2(out: Matrix4x4, source: Readonly<Matrix3x2>): void {
+export function fromMatrix3x2(out: Matrix4x4Like, source: Readonly<Matrix3x2Like>): void {
   set2D(out, source.a, source.b, source.c, source.d, source.tx, source.ty);
 }
 
-export function fromMatrix3x3(out: Matrix4x4, source: Readonly<Matrix3x3>): void {
+export function fromMatrix3x3(out: Matrix4x4Like, source: Readonly<Matrix3x3Like>): void {
   const _out = out.m;
   const _source = source.m;
   set2D(out, _source[0], _source[1], _source[3], _source[4], _source[2], _source[5]);
@@ -372,11 +382,11 @@ export function fromMatrix3x3(out: Matrix4x4, source: Readonly<Matrix3x3>): void
   _out[10] = _source[8];
 }
 
-export function get(source: Readonly<Matrix4x4>, row: number, column: number): number {
+export function get(source: Readonly<Matrix4x4Like>, row: number, column: number): number {
   return source.m[column * 4 + row];
 }
 
-export function isAffine(source: Readonly<Matrix4x4>): boolean {
+export function isAffine(source: Readonly<Matrix4x4Like>): boolean {
   const _source = source.m;
   return _source[3] === 0 && _source[7] === 0 && _source[11] === 0 && _source[15] === 1;
 }
@@ -384,14 +394,19 @@ export function isAffine(source: Readonly<Matrix4x4>): boolean {
 /**
  * Resets the current matrix using default identity values
  **/
-export function identity(out: Matrix4x4): void {
+export function identity(out: Matrix4x4Like): void {
   setTo(out, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 }
 
 /**
- * Interpolates from one `Matrix4x4` instance to another, given a percentage between the two
+ * Interpolates from one `Matrix4x4Like` instance to another, given a percentage between the two
  **/
-export function interpolate(out: Matrix4x4, a: Readonly<Matrix4x4>, b: Readonly<Matrix4x4>, t: number): void {
+export function interpolate(
+  out: Matrix4x4Like,
+  a: Readonly<Matrix4x4Like>,
+  b: Readonly<Matrix4x4Like>,
+  t: number,
+): void {
   const _out = out.m;
   const _a = a.m;
   const _b = b.m;
@@ -403,7 +418,7 @@ export function interpolate(out: Matrix4x4, a: Readonly<Matrix4x4>, b: Readonly<
 /**
  * Attempts to invert the current matrix, so long as the determinant is greater than zero
  **/
-export function inverse(out: Matrix4x4, source: Readonly<Matrix4x4>): boolean {
+export function inverse(out: Matrix4x4Like, source: Readonly<Matrix4x4Like>): boolean {
   const _out = out.m;
   const _source = source.m;
 
@@ -470,7 +485,7 @@ export function inverse(out: Matrix4x4, source: Readonly<Matrix4x4>): boolean {
  *
  * out = a * b
  **/
-export function multiply(out: Matrix4x4, a: Readonly<Matrix4x4>, b: Readonly<Matrix4x4>): void {
+export function multiply(out: Matrix4x4Like, a: Readonly<Matrix4x4Like>, b: Readonly<Matrix4x4Like>): void {
   const _a = a.m;
   const _b = b.m;
   const _out = out.m;
@@ -533,21 +548,21 @@ export function multiply(out: Matrix4x4, a: Readonly<Matrix4x4>, b: Readonly<Mat
 /**
   Sets the matrix values as a transformation orientated toward a certain vector position
 **/
-// export function pointAt(out: Matrix4x4, pos: Vector4, at?: Vector4, up?: Vector4): void {
+// export function pointAt(out: Matrix4x4Like, pos: Vector4Like, at?: Vector4Like, up?: Vector4Like): void {
 //   const _out = out.m;
 //   // TODO: This implementation is broken
 
 //   if (at === undefined) {
-//     at = new Vector4(0, 0, 1);
+//     at = new Vector4Like(0, 0, 1);
 //   }
 
 //   if (up === undefined) {
-//     up = new Vector4(0, 1, 0);
+//     up = new Vector4Like(0, 1, 0);
 //   }
 
 //   const dir = pos.subtract(at);
 //   const vup = up.clone();
-//   const right: Vector4;
+//   const right: Vector4Like;
 
 //   dir.normalize();
 //   vup.normalize();
@@ -561,9 +576,9 @@ export function multiply(out: Matrix4x4, a: Readonly<Matrix4x4>, b: Readonly<Mat
 //     vup.normalize();
 //   } else {
 //     if (dir.x != 0) {
-//       vup = new Vector4(-dir.y, dir.x, 0);
+//       vup = new Vector4Like(-dir.y, dir.x, 0);
 //     } else {
-//       vup = new Vector4(1, 0, 0);
+//       vup = new Vector4Like(1, 0, 0);
 //     }
 //   }
 
@@ -588,7 +603,7 @@ export function multiply(out: Matrix4x4, a: Readonly<Matrix4x4>, b: Readonly<Mat
 //   _out[15] = 1.0;
 // }
 
-export function position(out: Vector3, source: Readonly<Matrix4x4>): void {
+export function position(out: Vector3Like, source: Readonly<Matrix4x4Like>): void {
   const _source = source.m;
   out.x = _source[12];
   out.y = _source[13];
@@ -600,7 +615,7 @@ export function position(out: Vector3, source: Readonly<Matrix4x4>): void {
  *
  * out = other · source
  */
-export function prepend(out: Matrix4x4, source: Readonly<Matrix4x4>, other: Readonly<Matrix4x4>): void {
+export function prepend(out: Matrix4x4Like, source: Readonly<Matrix4x4Like>, other: Readonly<Matrix4x4Like>): void {
   multiply(out, other, source);
 }
 
@@ -611,11 +626,11 @@ export function prepend(out: Matrix4x4, source: Readonly<Matrix4x4>, other: Read
  * (e.g., rotation, scaling, etc.) from the source matrix.
  **/
 export function prependRotation(
-  out: Matrix4x4,
-  source: Readonly<Matrix4x4>,
+  out: Matrix4x4Like,
+  source: Readonly<Matrix4x4Like>,
   degrees: number,
-  axis: Readonly<Vector4>,
-  pivotPoint?: Readonly<Vector4>,
+  axis: Readonly<Vector4Like>,
+  pivotPoint?: Readonly<Vector4Like>,
 ): void {
   const m = matrix4x4Pool.getIdentity();
   __getAxisRotation(m, axis.x, axis.y, axis.z, degrees);
@@ -647,8 +662,8 @@ export function prependRotation(
  * (e.g., rotation, scaling, etc.) from the source matrix.
  **/
 export function prependScale(
-  out: Matrix4x4,
-  source: Readonly<Matrix4x4>,
+  out: Matrix4x4Like,
+  source: Readonly<Matrix4x4Like>,
   xScale: number,
   yScale: number,
   zScale: number,
@@ -665,7 +680,13 @@ export function prependScale(
  * This method first applies the translation (tx, ty, tz) and then applies all the transformations
  * (e.g., rotation, scaling, etc.) from the source matrix.
  */
-export function prependTranslation(out: Matrix4x4, source: Readonly<Matrix4x4>, x: number, y: number, z: number): void {
+export function prependTranslation(
+  out: Matrix4x4Like,
+  source: Readonly<Matrix4x4Like>,
+  x: number,
+  y: number,
+  z: number,
+): void {
   const m = matrix4x4Pool.getIdentity();
   translate(m, m, x, y, z); // LOCAL translation matrix
   multiply(out, m, source);
@@ -677,7 +698,12 @@ export function prependTranslation(out: Matrix4x4, source: Readonly<Matrix4x4>, 
  *
  * Translation is preserved.
  */
-export function rotate(out: Matrix4x4, source: Readonly<Matrix4x4>, axis: Readonly<Vector3>, degrees: number): void {
+export function rotate(
+  out: Matrix4x4Like,
+  source: Readonly<Matrix4x4Like>,
+  axis: Readonly<Vector3Like>,
+  degrees: number,
+): void {
   const m = matrix4x4Pool.getIdentity();
   __getAxisRotation(m, axis.x, axis.y, axis.z, degrees);
   multiply(out, source, m);
@@ -689,7 +715,7 @@ export function rotate(out: Matrix4x4, source: Readonly<Matrix4x4>, axis: Readon
  *
  * Translation is preserved.
  */
-export function scale(out: Matrix4x4, source: Readonly<Matrix4x4>, sx: number, sy: number, sz: number): void {
+export function scale(out: Matrix4x4Like, source: Readonly<Matrix4x4Like>, sx: number, sy: number, sz: number): void {
   const a = source.m;
   const o = out.m;
 
@@ -714,14 +740,14 @@ export function scale(out: Matrix4x4, source: Readonly<Matrix4x4>, sx: number, s
   }
 }
 
-export function set(out: Matrix4x4, row: number, column: number, value: number): void {
+export function set(out: Matrix4x4Like, row: number, column: number, value: number): void {
   out.m[column * 4 + row] = value;
 }
 
 /**
  * Resets the current matrix using two-dimensional transform values
  **/
-export function set2D(out: Matrix4x4, a: number, b: number, c: number, d: number, tx?: number, ty?: number): void {
+export function set2D(out: Matrix4x4Like, a: number, b: number, c: number, d: number, tx?: number, ty?: number): void {
   const _out = out.m;
   tx = tx ?? 0;
   ty = ty ?? 0;
@@ -751,7 +777,7 @@ export function set2D(out: Matrix4x4, a: number, b: number, c: number, d: number
  * Initializes a matrix with values for an orthographic projection, useful in rendering
  **/
 export function setOrtho(
-  out: Matrix4x4,
+  out: Matrix4x4Like,
   left: number,
   right: number,
   bottom: number,
@@ -788,7 +814,7 @@ export function setOrtho(
 /**
  * Initializes a matrix with values for a perspective projection
  **/
-export function setPerspective(out: Matrix4x4, fov: number, aspect: number, zNear: number, zFar: number): void {
+export function setPerspective(out: Matrix4x4Like, fov: number, aspect: number, zNear: number, zFar: number): void {
   if (aspect > -0.0000001 && aspect < 0.0000001) {
     throw new Error('Aspect ratio may not be 0');
   }
@@ -820,7 +846,7 @@ export function setPerspective(out: Matrix4x4, fov: number, aspect: number, zNea
   _out[15] = 1;
 }
 
-export function setPosition(out: Matrix4x4, source: Readonly<Vector3>): void {
+export function setPosition(out: Matrix4x4Like, source: Readonly<Vector3Like>): void {
   const _out = out.m;
   _out[12] = source.x;
   _out[13] = source.y;
@@ -828,7 +854,7 @@ export function setPosition(out: Matrix4x4, source: Readonly<Vector3>): void {
 }
 
 export function setTo(
-  out: Matrix4x4,
+  out: Matrix4x4Like,
   m00: number,
   m01: number,
   m02: number,
@@ -868,7 +894,7 @@ export function setTo(
 /**
  * Transforms a point using this matrix, ignoring the translation of the matrix
  **/
-export function transformPoint(out: Vector3, source: Readonly<Matrix4x4>, point: Readonly<Vector3>): void {
+export function transformPoint(out: Vector3Like, source: Readonly<Matrix4x4Like>, point: Readonly<Vector3Like>): void {
   const _source = source.m;
   const x = point.x,
     y = point.y,
@@ -879,11 +905,15 @@ export function transformPoint(out: Vector3, source: Readonly<Matrix4x4>, point:
 }
 
 /**
-  Transforms a `Vector4` instance using the current matrix
+  Transforms a `Vector4Like` instance using the current matrix
   @param	result	(Optional) An existing `Vector2` instance to fill with the result
-  @return	The resulting `Vector4` instance
+  @return	The resulting `Vector4Like` instance
 **/
-export function transformVector(out: Vector4, source: Readonly<Matrix4x4>, vector: Readonly<Vector4>): void {
+export function transformVector(
+  out: Vector4Like,
+  source: Readonly<Matrix4x4Like>,
+  vector: Readonly<Vector4Like>,
+): void {
   const _source = source.m;
   const x = vector.x,
     y = vector.y,
@@ -899,7 +929,7 @@ export function transformVector(out: Vector4, source: Readonly<Matrix4x4>, vecto
  **/
 export function transformVectors(
   out: Float32Array,
-  source: Readonly<Matrix4x4>,
+  source: Readonly<Matrix4x4Like>,
   vectors: Readonly<Float32Array>,
 ): void {
   const _source = source.m;
@@ -924,7 +954,13 @@ export function transformVectors(
  *
  * Translation is applied respecting using all other transformations of source.
  */
-export function translate(out: Matrix4x4, source: Readonly<Matrix4x4>, tx: number, ty: number, tz: number): void {
+export function translate(
+  out: Matrix4x4Like,
+  source: Readonly<Matrix4x4Like>,
+  tx: number,
+  ty: number,
+  tz: number,
+): void {
   const a = source.m;
   const o = out.m;
   if (out !== source) out.m.set(source.m);
@@ -944,7 +980,7 @@ export function translate(out: Matrix4x4, source: Readonly<Matrix4x4>, tx: numbe
  * - Computing inverse-transpose for normals
  * - Switching between row- and column-vector math conventions
  */
-export function transpose(out: Matrix4x4, source: Readonly<Matrix4x4>): void {
+export function transpose(out: Matrix4x4Like, source: Readonly<Matrix4x4Like>): void {
   if (out !== source) out.m.set(source.m);
   __swap(out, source, 1, 4);
   __swap(out, source, 2, 8);
@@ -954,7 +990,7 @@ export function transpose(out: Matrix4x4, source: Readonly<Matrix4x4>): void {
   __swap(out, source, 11, 14);
 }
 
-function __getAxisRotation(out: Matrix4x4, x: number, y: number, z: number, degrees: number): void {
+function __getAxisRotation(out: Matrix4x4Like, x: number, y: number, z: number, degrees: number): void {
   const _out = out.m;
   let ax = x,
     ay = y,
@@ -984,7 +1020,7 @@ function __getAxisRotation(out: Matrix4x4, x: number, y: number, z: number, degr
   _out[6] = tmp1 - tmp2;
 }
 
-function __swap(out: Matrix4x4, source: Readonly<Matrix4x4>, a: number, b: number): void {
+function __swap(out: Matrix4x4Like, source: Readonly<Matrix4x4Like>, a: number, b: number): void {
   const temp = source.m[a];
   out.m[a] = source.m[b];
   out.m[b] = temp;
