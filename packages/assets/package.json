@@ -37,6 +37,8 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@flighthq/core": "*",
+    "@flighthq/geometry": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
