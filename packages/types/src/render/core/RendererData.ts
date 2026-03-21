@@ -1,1 +1,3 @@
-export type RendererData = object;
+import type { Entity } from '../../core';
+
+export interface RendererData extends Entity {}

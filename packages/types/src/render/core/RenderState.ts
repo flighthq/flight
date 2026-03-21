@@ -1,10 +1,11 @@
+import type { Entity } from '../../core';
 import type { Matrix3x2 } from '../../geometry';
 import type { BlendMode, ColorTransform, Shader } from '../../materials';
 import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
 import type { RenderNode } from './RenderNode';
 
-export interface RenderState {
+export interface RenderState extends Entity {
   allowCacheAsBitmap: boolean;
   allowFilters: boolean;
   allowSmoothing: boolean;

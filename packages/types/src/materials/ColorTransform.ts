@@ -1,4 +1,6 @@
-export interface ColorTransform {
+import type { Entity } from '../core';
+
+export interface ColorTransform extends Entity {
   alphaMultiplier: number;
   alphaOffset: number;
   blueMultiplier: number;

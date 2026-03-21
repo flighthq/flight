@@ -1,9 +1,10 @@
+import type { Entity } from '../../core';
 import type { BlendMode, ColorTransform, Shader } from '../../materials';
 import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
 import type { RendererData } from './RendererData';
 
-export interface RenderNode {
+export interface RenderNode extends Entity {
   alpha: number;
   blendMode: BlendMode | null;
   appearanceFrameID: number;

@@ -1,1 +1,3 @@
-export type Filter = object;
+import type { Entity } from '../core';
+
+export interface Filter extends Entity {}

@@ -1,6 +1,7 @@
+import type { Entity, Runtime } from '../../../core';
 import type { Matrix3x2 } from '../../../geometry';
 
-export interface HasTransform2D {
+export interface HasTransform2D extends Entity {
   rotation: number;
   scaleX: number;
   scaleY: number;
@@ -8,7 +9,7 @@ export interface HasTransform2D {
   y: number;
 }
 
-export interface HasTransform2DRuntime {
+export interface HasTransform2DRuntime extends Runtime {
   localTransform2D: Matrix3x2 | null;
   rotationAngle: number;
   rotationCosine: number;

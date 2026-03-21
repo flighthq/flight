@@ -1,11 +1,9 @@
-import type { NodeRuntime, NodeRuntimeKey } from './NodeRuntime';
+import type { Entity } from './Entity';
 
-export interface Node {
+export interface Node extends Entity {
   data: NodeData | null;
   kind: symbol;
   name: string | null;
-
-  [NodeRuntimeKey]: NodeRuntime | undefined;
 }
 
 export type NodeData = object;

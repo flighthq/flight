@@ -1,5 +1,7 @@
-export interface ImageSource {
+import type { Entity } from '../core';
+
+export interface ImageSource extends Entity {
   height: number;
-  src: HTMLImageElement;
+  src: HTMLImageElement | null;
   width: number;
 }
