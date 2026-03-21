@@ -1,9 +1,10 @@
+import { createEntity } from '@flighthq/core';
 import { colorTransform } from '@flighthq/materials';
 import { BlendMode, type Renderable, type RenderNode, type RenderState } from '@flighthq/types';
 
 export function createRenderNode(state: RenderState, source: Renderable): RenderNode {
   const renderer = state.rendererMap.get(source.kind);
-  return {
+  return createEntity({
     alpha: 1,
     appearanceFrameID: -1,
     blendMode: BlendMode.Normal,
@@ -18,7 +19,7 @@ export function createRenderNode(state: RenderState, source: Renderable): Render
     transformFrameID: -1,
     useColorTransform: false,
     visible: true,
-  };
+  });
 }
 
 export function getRenderNode<Source extends Renderable, NodeType extends RenderNode>(

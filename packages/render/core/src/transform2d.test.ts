@@ -1,3 +1,4 @@
+import { createRectangle } from '@flighthq/geometry';
 import { addChild, getWorldTransform2D, invalidateLocalTransform } from '@flighthq/scene-graph-core';
 import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
@@ -135,7 +136,7 @@ describe('updateDisplayObjectRenderTransform2D', () => {
   it('applies scrollRect offset in render transform but not world transform', () => {
     parent.x = 50;
     parent.y = 50;
-    parent.scrollRect = { x: 10, y: 5, width: 100, height: 100 };
+    parent.scrollRect = createRectangle(10, 5, 100, 100);
 
     updateDisplayObjectRenderTransform2D(state, parentData);
 

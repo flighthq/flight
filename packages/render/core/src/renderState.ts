@@ -1,7 +1,8 @@
+import { createEntity } from '@flighthq/core';
 import { BlendMode, type RenderState } from '@flighthq/types';
 
 export function createRenderState(obj?: Partial<RenderState>): RenderState {
-  return {
+  return createEntity({
     allowCacheAsBitmap: obj?.allowCacheAsBitmap ?? true,
     allowFilters: obj?.allowFilters ?? true,
     allowSmoothing: obj?.allowSmoothing ?? true,
@@ -24,5 +25,5 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
     rendererMapID: obj?.rendererMapID ?? 0,
     roundPixels: obj?.roundPixels ?? false,
     tempStack: obj?.tempStack ?? [],
-  };
+  });
 }
