@@ -4,12 +4,15 @@ import type { Vector2 as RawVector2 } from '@flighthq/types';
 import FlightObject from '../FlightObject';
 
 export default class Vector2 extends FlightObject<RawVector2> {
-  protected override __create = vector2.create;
   constructor(x?: number, y?: number) {
     super();
     const raw = this.__raw;
     if (x !== undefined) raw.x = x;
     if (y !== undefined) raw.y = y;
+  }
+
+  protected override __create() {
+    return vector2.create();
   }
 
   add(source: Readonly<Vector2>): Vector2 {
