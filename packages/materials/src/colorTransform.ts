@@ -1,7 +1,8 @@
+import { createEntity } from '@flighthq/core';
 import type { ColorTransform } from '@flighthq/types';
 
 export function create(obj?: Partial<ColorTransform>): ColorTransform {
-  return {
+  return createEntity({
     redMultiplier: obj?.redMultiplier ?? 1,
     greenMultiplier: obj?.greenMultiplier ?? 1,
     blueMultiplier: obj?.blueMultiplier ?? 1,
@@ -10,7 +11,7 @@ export function create(obj?: Partial<ColorTransform>): ColorTransform {
     greenOffset: obj?.greenOffset ?? 0,
     blueOffset: obj?.blueOffset ?? 0,
     alphaOffset: obj?.alphaOffset ?? 0,
-  };
+  });
 }
 
 export function clone(source: Readonly<ColorTransform>): ColorTransform {
