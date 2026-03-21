@@ -8,7 +8,8 @@ import { setTransform } from './canvasTransform';
 export function drawBitmap(state: CanvasRenderState, bitmap: DisplayObjectRenderNode): void {
   drawDisplayObject(state, bitmap);
   const source = bitmap.source as Bitmap;
-  if (source.data.image !== null) {
+  const imageSource = source.data.image;
+  if (imageSource !== null && imageSource.src !== null) {
     const context = state.context;
 
     setBlendMode(state, bitmap.blendMode);
@@ -21,8 +22,6 @@ export function drawBitmap(state: CanvasRenderState, bitmap: DisplayObjectRender
     if (!state.allowSmoothing || !source.data.smoothing) {
       context.imageSmoothingEnabled = false;
     }
-
-    const imageSource = source.data.image;
 
     if (scrollRect === null) {
       context.drawImage(imageSource.src, 0, 0, imageSource.width, imageSource.height);
