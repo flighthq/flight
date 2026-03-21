@@ -1,4 +1,4 @@
-import { getNodeRuntime } from '@flighthq/core';
+import { getRuntime } from '@flighthq/core';
 import { matrix3x2 } from '@flighthq/geometry';
 import { recomputeWorldTransformID } from '@flighthq/scene-graph-core';
 import type {
@@ -7,13 +7,13 @@ import type {
   HasTransform2D,
   HasTransform2DRuntime,
   Matrix3x2,
-  Vector2,
+  Vector2Like,
 } from '@flighthq/types';
 
 export function ensureLocalTransform2D<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasTransform2D,
 ): void {
-  const runtime = getNodeRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime;
+  const runtime = getRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime;
   if (runtime.localTransformUsingLocalTransformID !== runtime.localTransformID) {
     recomputeLocalTransform2D(target, runtime);
   }
@@ -22,7 +22,7 @@ export function ensureLocalTransform2D<GraphKind extends symbol, Traits extends 
 export function ensureWorldTransform2D<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasTransform2D,
 ): void {
-  const runtime = getNodeRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime;
+  const runtime = getRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime;
   const parent = runtime.parent as GraphNode<GraphKind, Traits> & HasTransform2D;
 
   let parentRuntime: (GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime) | undefined;
@@ -30,7 +30,7 @@ export function ensureWorldTransform2D<GraphKind extends symbol, Traits extends 
 
   if (parent !== null) {
     ensureWorldTransform2D(parent);
-    parentRuntime = getNodeRuntime(parent) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime;
+    parentRuntime = getRuntime(parent) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime;
     parentWorldTransformID = parentRuntime.worldTransformID;
   }
 
@@ -46,14 +46,14 @@ export function getLocalTransform2D<GraphKind extends symbol, Traits extends obj
   target: GraphNode<GraphKind, Traits> & HasTransform2D,
 ): Readonly<Matrix3x2> {
   ensureLocalTransform2D(target);
-  return (getNodeRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime).localTransform2D!;
+  return (getRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime).localTransform2D!;
 }
 
 export function getWorldTransform2D<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasTransform2D,
 ): Readonly<Matrix3x2> {
   ensureWorldTransform2D(target);
-  return (getNodeRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime).worldTransform2D!;
+  return (getRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime).worldTransform2D!;
 }
 
 /**
@@ -61,9 +61,9 @@ export function getWorldTransform2D<GraphKind extends symbol, Traits extends obj
  * to the display object's (local) coordinates.
  **/
 export function globalToLocal2D<GraphKind extends symbol, Traits extends object>(
-  out: Vector2,
+  out: Vector2Like,
   source: GraphNode<GraphKind, Traits> & HasTransform2D,
-  pos: Readonly<Vector2>,
+  pos: Readonly<Vector2Like>,
 ): void {
   matrix3x2.inverseTransformPointXY(out, getWorldTransform2D(source), pos.x, pos.y);
 }
@@ -73,9 +73,9 @@ export function globalToLocal2D<GraphKind extends symbol, Traits extends object>
  * coordinates to world coordinates.
  **/
 export function localToGlobal2D<GraphKind extends symbol, Traits extends object>(
-  out: Vector2,
+  out: Vector2Like,
   source: GraphNode<GraphKind, Traits> & HasTransform2D,
-  point: Readonly<Vector2>,
+  point: Readonly<Vector2Like>,
 ): void {
   matrix3x2.transformPointXY(out, getWorldTransform2D(source), point.x, point.y);
 }

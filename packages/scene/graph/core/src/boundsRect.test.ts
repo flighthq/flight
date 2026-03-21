@@ -1,4 +1,4 @@
-import { getNodeRuntime } from '@flighthq/core';
+import { createEntity, getRuntime as _getRuntime } from '@flighthq/core';
 import { rectangle } from '@flighthq/geometry';
 import { setEmpty } from '@flighthq/geometry/rectangle';
 import {
@@ -30,13 +30,15 @@ import {
 } from './boundsRect';
 import { initHasBoundsRect, initHasBoundsRectRuntime } from './hasBoundsRect';
 
-function getRuntime<GraphKind extends symbol>(source: TestNode) {
-  return getNodeRuntime(source) as GraphNodeRuntime<GraphKind, HasBoundsRect & HasTransform2D> & HasBoundsRectRuntime;
+function getRuntime<GraphKind extends symbol>(
+  source: TestNode,
+): GraphNodeRuntime<GraphKind, HasBoundsRect & HasTransform2D> & HasBoundsRectRuntime {
+  return _getRuntime(source) as GraphNodeRuntime<GraphKind, HasBoundsRect & HasTransform2D> & HasBoundsRectRuntime;
 }
 
 function createTestNode(): TestNode {
   const node = createGraphNode(TestKind, TestKind) as TestNode;
-  const runtime = getNodeRuntime(node);
+  const runtime = _getRuntime(node);
   initHasBoundsRect(node);
   initHasBoundsRectRuntime(runtime as HasBoundsRectRuntime);
   initHasTransform2D(node);
@@ -69,13 +71,13 @@ describe('calculateBoundsRect', () => {
   it('should equal local bounds when targetCoordinateSpace is self and there are no children', () => {
     const out = rectangle.create();
     calculateBoundsRect(out, grandChild, grandChild);
-    expect(out).toEqual(getLocalBoundsRect(grandChild));
+    expect(rectangle.equals(out, getLocalBoundsRect(grandChild))).toBe(true);
   });
 
   it('should include children bounds when targetCoordinateSpace is self', () => {
     const out = rectangle.create();
     calculateBoundsRect(out, child, child);
-    expect(out).toEqual({ x: 5, y: 5, width: 100, height: 100 });
+    expect(rectangle.equals(out, { x: 5, y: 5, width: 100, height: 100 })).toBe(true);
   });
 
   it('should compute bounds relative to parent', () => {
@@ -131,20 +133,20 @@ describe('calculateBoundsRect', () => {
   it('should allow a rectangle-like object', () => {
     const out = { x: 0, y: 0, width: 0, height: 0 };
     calculateBoundsRect(out, grandChild, grandChild);
-    expect(out).toEqual(getLocalBoundsRect(grandChild));
+    expect(rectangle.equals(out, getLocalBoundsRect(grandChild))).toBe(true);
   });
 
   it('should compute bounds relative to an unrelated target', () => {
     const out = rectangle.create();
     const unrelatedTarget = createTestNode(); // another object in a separate scene graph
     calculateBoundsRect(out, child, unrelatedTarget);
-    expect(out).toEqual(getWorldBoundsRect(child));
+    expect(rectangle.equals(out, getWorldBoundsRect(child))).toBe(true);
   });
 
   it('should return world bounds if the target coordinate space is root', () => {
     const out = rectangle.create();
     calculateBoundsRect(out, child, root);
-    expect(out).toEqual(getWorldBoundsRect(child));
+    expect(rectangle.equals(out, getWorldBoundsRect(child))).toBe(true);
   });
 });
 
@@ -176,7 +178,7 @@ describe('ensureBoundsRect', () => {
     const cache = cloneAndInvalidateRect(runtime.boundsRect!);
     runtime.localBoundsID++;
     ensureBoundsRect(object);
-    expect(runtime.boundsRect).toEqual(cache);
+    expect(rectangle.equals(runtime.boundsRect, cache)).toBe(true);
   });
 
   it('should recalculate if localTransformID is changed', () => {
@@ -186,7 +188,7 @@ describe('ensureBoundsRect', () => {
     const cache = cloneAndInvalidateRect(runtime.boundsRect!);
     runtime.localTransformID++;
     ensureBoundsRect(object);
-    expect(runtime.boundsRect).toEqual(cache);
+    expect(rectangle.equals(runtime.boundsRect, cache)).toBe(true);
   });
 });
 
@@ -221,7 +223,7 @@ describe('ensureLocalBoundsRect', () => {
     const cache = cloneAndInvalidateRect(runtime.localBoundsRect!);
     runtime.localBoundsID++;
     ensureLocalBoundsRect(object);
-    expect(runtime.localBoundsRect).toEqual(cache);
+    expect(rectangle.equals(runtime.localBoundsRect, cache)).toBe(true);
   });
 
   it('should not recalculate if localTransformID is unchanged', () => {
@@ -263,7 +265,7 @@ describe('ensureWorldBoundsRect', () => {
     const cache = cloneAndInvalidateRect(runtime.worldBoundsRect!);
     runtime.localBoundsID++;
     ensureWorldBoundsRect(object);
-    expect(runtime.worldBoundsRect).toEqual(cache);
+    expect(rectangle.equals(runtime.worldBoundsRect, cache)).toBe(true);
   });
 
   it('should recalculate if local transform is changed (translate)', () => {
@@ -275,7 +277,7 @@ describe('ensureWorldBoundsRect', () => {
     invalidateLocalTransform(object);
     ensureWorldBoundsRect(object);
     expect(runtime.worldBoundsRect).not.toEqual(cache);
-    expect(runtime.worldBoundsRect).toEqual({ x: 100, y: 0, width: 0, height: 0 });
+    expect(rectangle.equals(runtime.worldBoundsRect, { x: 100, y: 0, width: 0, height: 0 })).toBe(true);
   });
 
   it('should recalculate if local transform is changed (scale)', () => {
@@ -289,7 +291,7 @@ describe('ensureWorldBoundsRect', () => {
     invalidateLocalTransform(object);
     ensureWorldBoundsRect(object);
     expect(runtime.worldBoundsRect).not.toEqual(cache);
-    expect(runtime.worldBoundsRect).toEqual({ x: 0, y: 0, width: 20, height: 0 });
+    expect(rectangle.equals(runtime.worldBoundsRect, { x: 0, y: 0, width: 20, height: 0 })).toBe(true);
   });
 
   it('should recalculate if parent transform is changed (translate)', () => {
@@ -303,7 +305,7 @@ describe('ensureWorldBoundsRect', () => {
     invalidateLocalTransform(parent);
     ensureWorldBoundsRect(child);
     expect(runtime.worldBoundsRect).not.toEqual(cache);
-    expect(runtime.worldBoundsRect).toEqual({ x: 100, y: 0, width: 0, height: 0 });
+    expect(rectangle.equals(runtime.worldBoundsRect, { x: 100, y: 0, width: 0, height: 0 })).toBe(true);
   });
 
   it('should recalculate if parent transform is changed (scale)', () => {
@@ -322,7 +324,7 @@ describe('ensureWorldBoundsRect', () => {
     ensureLocalTransform2D(parent);
     ensureWorldBoundsRect(child);
     expect(runtime.worldBoundsRect).not.toEqual(cache);
-    expect(runtime.worldBoundsRect).toEqual({ x: 0, y: 0, width: 20, height: 0 });
+    expect(rectangle.equals(runtime.worldBoundsRect, { x: 0, y: 0, width: 20, height: 0 })).toBe(true);
   });
 });
 

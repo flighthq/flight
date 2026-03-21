@@ -1,4 +1,4 @@
-import { getNodeRuntime } from '@flighthq/core';
+import { getRuntime } from '@flighthq/core';
 import { matrix3x2, matrix3x2Pool, rectangle } from '@flighthq/geometry';
 import type {
   GraphNode,
@@ -8,6 +8,7 @@ import type {
   HasTransform2D,
   HasTransform2DRuntime,
   Rectangle,
+  RectangleLike,
 } from '@flighthq/types';
 
 import { getGraphNodeRuntime } from './graphNode';
@@ -19,7 +20,7 @@ import { ensureWorldTransform2D, getLocalTransform2D, getWorldTransform2D } from
  * relative to the coordinate system of the `targetCoordinateSpace` object.
  **/
 export function calculateBoundsRect<GraphKind extends symbol, Traits extends object>(
-  out: Rectangle,
+  out: RectangleLike,
   source: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
   targetCoordinateSpace: (GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D) | null | undefined,
 ): void {
@@ -53,7 +54,7 @@ export function calculateBoundsRect<GraphKind extends symbol, Traits extends obj
 export function ensureBoundsRect<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
 ): void {
-  const runtime = getNodeRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime;
+  const runtime = getRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime;
   if (
     runtime.boundsUsingLocalBoundsID !== runtime.localBoundsID ||
     runtime.boundsUsingLocalTransformID !== runtime.localTransformID
@@ -65,7 +66,7 @@ export function ensureBoundsRect<GraphKind extends symbol, Traits extends object
 export function ensureLocalBoundsRect<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasBoundsRect,
 ): void {
-  const runtime = getNodeRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime;
+  const runtime = getRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime;
   if (runtime.localBoundsUsingLocalBoundsID !== runtime.localBoundsID) {
     recomputeLocalBoundsRect(target, runtime);
   }
@@ -74,7 +75,7 @@ export function ensureLocalBoundsRect<GraphKind extends symbol, Traits extends o
 export function ensureWorldBoundsRect<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
 ): void {
-  const runtime = getNodeRuntime(target) as GraphNodeRuntime<GraphKind, Traits> &
+  const runtime = getRuntime(target) as GraphNodeRuntime<GraphKind, Traits> &
     HasBoundsRectRuntime &
     HasTransform2DRuntime;
   const localBoundsInvalid = runtime.worldBoundsUsingLocalBoundsID !== runtime.localBoundsID;
@@ -97,7 +98,7 @@ export function getBoundsRect<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
 ): Readonly<Rectangle> {
   ensureBoundsRect(target);
-  return (getNodeRuntime(target) as HasBoundsRectRuntime).boundsRect!;
+  return (getRuntime(target) as HasBoundsRectRuntime).boundsRect!;
 }
 
 /**
@@ -107,7 +108,7 @@ export function getLocalBoundsRect<GraphKind extends symbol, Traits extends obje
   target: GraphNode<GraphKind, Traits> & HasBoundsRect,
 ): Readonly<Rectangle> {
   ensureLocalBoundsRect(target);
-  return (getNodeRuntime(target) as HasBoundsRectRuntime).localBoundsRect!;
+  return (getRuntime(target) as HasBoundsRectRuntime).localBoundsRect!;
 }
 
 /**
@@ -117,7 +118,7 @@ export function getWorldBoundsRect<GraphKind extends symbol, Traits extends obje
   target: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
 ): Readonly<Rectangle> {
   ensureWorldBoundsRect(target);
-  return (getNodeRuntime(target) as HasBoundsRectRuntime).worldBoundsRect!;
+  return (getRuntime(target) as HasBoundsRectRuntime).worldBoundsRect!;
 }
 
 function recomputeBoundsRect<GraphKind extends symbol, Traits extends object>(

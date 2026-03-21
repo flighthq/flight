@@ -1,4 +1,4 @@
-import type { GraphNode, PartialNode, Rectangle, SpriteBase, SpriteBaseData } from '@flighthq/types';
+import type { GraphNode, PartialNode, Rectangle, Shader, SpriteBase, SpriteBaseData } from '@flighthq/types';
 import { BlendMode, DisplayObjectKind, SpriteGraph } from '@flighthq/types';
 
 import { createSpriteBase, createSpriteBaseRuntime, getSpriteBaseRuntime } from './spriteBase';
@@ -26,7 +26,7 @@ describe('createSpriteBase', () => {
       rotation: 45,
       scaleX: 2,
       scaleY: 3,
-      shader: {},
+      shader: {} as Shader,
       visible: false,
       x: 100,
       y: 200,

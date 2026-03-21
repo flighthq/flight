@@ -1,5 +1,5 @@
 import { matrix3x2 } from '@flighthq/geometry';
-import type { DisplayObject, DisplayObjectData, GraphNode, PartialNode, Rectangle } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectData, GraphNode, PartialNode, Rectangle, Shader } from '@flighthq/types';
 import { BlendMode, DisplayGraph, DisplayObjectKind } from '@flighthq/types';
 
 import {
@@ -44,7 +44,7 @@ describe('createDisplayObject', () => {
       rotation: 45,
       scaleX: 2,
       scaleY: 3,
-      shader: {},
+      shader: {} as Shader,
       visible: false,
       x: 100,
       y: 200,

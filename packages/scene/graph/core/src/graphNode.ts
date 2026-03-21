@@ -1,5 +1,5 @@
 import type { NodeDataFactory, NodeRuntimeFactory } from '@flighthq/core';
-import { createNode, createNodeRuntime, getNodeRuntime } from '@flighthq/core';
+import { createNode, createRuntime, getRuntime } from '@flighthq/core';
 import type {
   GraphNode,
   GraphNodeData,
@@ -8,7 +8,7 @@ import type {
   MethodsOf,
   PartialNode,
 } from '@flighthq/types';
-import { NodeRuntimeKey } from '@flighthq/types';
+import { RuntimeKey } from '@flighthq/types';
 
 export type GraphNodeDataFactory<Data extends GraphNodeData> = NodeDataFactory<Data>;
 export type GraphNodeRuntimeFactory<
@@ -35,7 +35,7 @@ export function createGraphNode<
     createData,
     createRuntime ?? (createGraphNodeRuntime as NodeRuntimeFactory<Runtime>),
   ) as GraphNode<GraphKind, Traits> & Traits;
-  out[NodeRuntimeKey]!.graph = graph;
+  out[RuntimeKey]!.graph = graph;
   out.visible = obj?.visible ?? true;
   return out;
 }
@@ -43,7 +43,7 @@ export function createGraphNode<
 export function createGraphNodeRuntime<GraphKind extends symbol, Traits extends object>(
   methods?: Readonly<Partial<MethodsOf<GraphNodeRuntime<GraphKind, Traits>>>>,
 ): GraphNodeRuntime<GraphKind, Traits> {
-  const out = createNodeRuntime(methods) as GraphNodeRuntime<GraphKind, Traits>;
+  const out = createRuntime() as GraphNodeRuntime<GraphKind, Traits>;
   out.appearanceID = 0;
   out.boundsUsingLocalBoundsID = -1;
   out.boundsUsingLocalTransformID = -1;
@@ -78,5 +78,5 @@ export function defaultGraphNodeRuntimeCanAddChild<GraphKind extends symbol, Tra
 export function getGraphNodeRuntime<GraphKind extends symbol, Traits extends object>(
   source: Readonly<GraphNode<GraphKind, Traits>>,
 ): Readonly<GraphNodeRuntime<GraphKind, Traits>> {
-  return getNodeRuntime(source) as GraphNodeRuntime<GraphKind, Traits>;
+  return getRuntime(source) as GraphNodeRuntime<GraphKind, Traits>;
 }
