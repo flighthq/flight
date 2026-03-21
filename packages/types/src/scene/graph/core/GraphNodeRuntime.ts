@@ -1,11 +1,11 @@
-import type { NodeRuntime } from '../../../core/NodeRuntime';
+import type { Runtime } from '../../../core/Runtime';
 import type { GraphNodeTraits, NullGraph } from './GraphNode';
 import type { GraphNode } from './GraphNode';
 
 export interface GraphNodeRuntime<
   GraphKind extends symbol = typeof NullGraph,
   Traits extends object = GraphNodeTraits,
-> extends NodeRuntime {
+> extends Runtime {
   appearanceID: number;
   boundsUsingLocalBoundsID: number;
   boundsUsingLocalTransformID: number;

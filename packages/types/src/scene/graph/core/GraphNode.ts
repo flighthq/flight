@@ -1,5 +1,5 @@
-import type { NodeRuntime } from '../../../core/NodeRuntime';
-import type { Node, NodeData, NodeRuntimeKey } from '../../../index';
+import type { Runtime } from '../../../core/Runtime';
+import type { Node, NodeData, RuntimeKey } from '../../../index';
 
 export interface GraphNodeTraits {
   data: GraphNodeData | null;
@@ -10,13 +10,13 @@ export interface GraphNodeTraits {
 
 export interface GraphNode<GraphKind extends symbol = typeof NullGraph, Traits extends object = GraphNodeTraits>
   extends Node, GraphNodeTraits {
-  [NodeRuntimeKey]: GraphNodeRuntime<GraphKind, Traits> | undefined;
+  [RuntimeKey]: GraphNodeRuntime<GraphKind, Traits> | undefined;
 }
 
 export interface GraphNodeRuntime<
   GraphKind extends symbol = typeof NullGraph,
   Traits extends object = GraphNodeTraits,
-> extends NodeRuntime {
+> extends Runtime {
   appearanceID: number;
   boundsUsingLocalBoundsID: number;
   boundsUsingLocalTransformID: number;

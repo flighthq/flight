@@ -1,4 +1,6 @@
-export interface TextureAtlasRegion {
+import type { Entity } from '../core';
+
+export interface TextureAtlasRegion extends Entity {
   height: number;
   id: number;
   pivotX: number | null;
