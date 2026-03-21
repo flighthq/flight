@@ -1,0 +1,39 @@
+{
+  "name": "@flighthq/flight",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "@flighthq/animation-spritesheet": "*",
+    "@flighthq/assets": "*",
+    "@flighthq/core": "*",
+    "@flighthq/materials": "*",
+    "@flighthq/interaction": "*",
+    "@flighthq/geometry": "*",
+    "@flighthq/render-canvas": "*",
+    "@flighthq/scene-graph-core": "*",
+    "@flighthq/scene-graph-display": "*",
+    "@flighthq/types": "*",
+    "@flighthq/scene-graph-world": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
