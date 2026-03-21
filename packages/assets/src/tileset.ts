@@ -1,15 +1,16 @@
+import { createEntity } from '@flighthq/core';
 import type { Tileset } from '@flighthq/types';
 
 import { createTextureAtlasRegion, initTextureAtlasRegion } from './textureAtlasRegion';
 
 export function createTileset(obj?: Partial<Tileset>): Tileset {
-  return {
+  return createEntity({
     atlas: obj?.atlas ?? null,
     tileWidth: obj?.tileWidth ?? 0,
     tileHeight: obj?.tileHeight ?? 0,
     rows: obj?.rows ?? 0,
     columns: obj?.columns ?? 0,
-  };
+  });
 }
 
 export function initTilesetRegions(target: Tileset): void {

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/core';
 import type { Rectangle, TextureAtlas, TextureAtlasRegion, Vector2 } from '@flighthq/types';
 
 export function addTextureAtlasRegion(
@@ -59,7 +60,7 @@ export function addTextureAtlasRegionVec2(target: TextureAtlas, a: Vector2, b: V
 }
 
 export function createTextureAtlasRegion(obj?: Partial<TextureAtlasRegion>): TextureAtlasRegion {
-  return {
+  return createEntity({
     x: obj?.x ?? 0,
     y: obj?.y ?? 0,
     width: obj?.width ?? 0,
@@ -67,7 +68,7 @@ export function createTextureAtlasRegion(obj?: Partial<TextureAtlasRegion>): Tex
     id: obj?.id ?? -1,
     pivotX: obj?.pivotX ?? 0,
     pivotY: obj?.pivotY ?? 0,
-  };
+  });
 }
 
 export function initTextureAtlasRegion(
