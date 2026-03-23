@@ -1,4 +1,4 @@
-import { type Runtime, RuntimeKey } from '@flighthq/types';
+import { RuntimeKey } from '@flighthq/types';
 
 import { attachAPI, getAPI } from './api';
 import { createEntity } from './entity';

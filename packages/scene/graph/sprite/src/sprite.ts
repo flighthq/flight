@@ -1,4 +1,4 @@
-import type { GraphNode, PartialNode, Rectangle, Sprite, SpriteNodeRuntime, SpriteData } from '@flighthq/types';
+import type { GraphNode, PartialNode, Rectangle, Sprite, SpriteData, SpriteNodeRuntime } from '@flighthq/types';
 import { SpriteKind } from '@flighthq/types';
 
 import { createSpriteNode, createSpriteNodeRuntime } from './spriteBase';
