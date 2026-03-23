@@ -3,9 +3,9 @@ import type { Tilemap as RawTilemap, TilemapData } from '@flighthq/types';
 
 import { Tileset } from '../../../assets';
 import FlightObject from '../../../FlightObject';
-import SpriteBase from './SpriteBase';
+import SpriteNode from './SpriteNode';
 
-export default class Tilemap extends SpriteBase {
+export default class Tilemap extends SpriteNode {
   protected __data: TilemapData;
 
   constructor() {

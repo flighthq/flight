@@ -2,9 +2,9 @@ import { createStage } from '@flighthq/scene-graph-display';
 import type { Stage as RawStage, StageData } from '@flighthq/types';
 
 import FlightObject from '../../../FlightObject.js';
-import DisplayObjectContainer from './DisplayObjectContainer.js';
+import DisplayContainer from './DisplayContainer.js';
 
-export default class Stage extends DisplayObjectContainer {
+export default class Stage extends DisplayContainer {
   protected __data: StageData;
   constructor() {
     super();

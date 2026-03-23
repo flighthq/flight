@@ -2,9 +2,9 @@ import { createMovieClip } from '@flighthq/scene-graph-display';
 import type { MovieClip as RawMovieClip, MovieClipData } from '@flighthq/types';
 
 import FlightObject from '../../../FlightObject.js';
-import DisplayObjectContainer from './DisplayObjectContainer.js';
+import DisplayContainer from './DisplayContainer.js';
 
-export default class MovieClip extends DisplayObjectContainer {
+export default class MovieClip extends DisplayContainer {
   protected __data: MovieClipData;
   constructor() {
     super();

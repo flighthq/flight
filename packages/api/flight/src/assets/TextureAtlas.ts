@@ -1,4 +1,4 @@
-import { createTextureAtlas } from '@flighthq/assets';
+import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/assets';
 import type { TextureAtlas as RawTextureAtlas } from '@flighthq/types';
 
 import FlightObject from '../FlightObject';
@@ -14,8 +14,27 @@ export default class TextureAtlas extends FlightObject<RawTextureAtlas> {
     return createTextureAtlas();
   }
 
+  addRegion(region: Readonly<TextureAtlasRegion>): void {
+    addTextureAtlasRegion(
+      this.__raw,
+      region.x,
+      region.y,
+      region.width,
+      region.height,
+      region.pivotX ?? undefined,
+      region.pivotY ?? undefined,
+    );
+  }
+
   static fromRaw(raw: RawTextureAtlas): TextureAtlas {
     return FlightObject.getOrCreate(raw, TextureAtlas)!;
+  }
+
+  getRegion(index: number): Readonly<TextureAtlasRegion> | null {
+    if (index >= 0 && index < this.__raw.regions.length) {
+      return FlightObject.getOrCreate(this.__raw.regions[index], TextureAtlasRegion);
+    }
+    return null;
   }
 
   // Get & Set Methods
@@ -28,11 +47,7 @@ export default class TextureAtlas extends FlightObject<RawTextureAtlas> {
     this.__raw.image = value ? value.raw : null;
   }
 
-  get regions(): TextureAtlasRegion[] {
-    return this.__raw.regions.map((raw) => FlightObject.getOrCreate(raw, TextureAtlasRegion)!);
-  }
-
-  set regions(value: TextureAtlasRegion[]) {
-    this.__raw.regions = value.map((region: TextureAtlasRegion) => region.raw);
+  get numRegions(): number {
+    return this.__raw.regions.length;
   }
 }
