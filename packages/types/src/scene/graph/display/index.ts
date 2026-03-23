@@ -1,4 +1,5 @@
 export * from './Bitmap.js';
+export * from './DisplayContainer.js';
 export * from './DisplayObject.js';
 export * from './DOMElement.js';
 export * from './Graphics.js';
@@ -6,7 +7,7 @@ export * from './InputText.js';
 export * from './MovieClip.js';
 export * from './RichText.js';
 export * from './Shape.js';
-export * from './SpriteGraphContainer.js';
+export * from './SpriteContainer.js';
 export * from './Stage.js';
 export * from './StageAlign.js';
 export * from './StageDisplayState.js';

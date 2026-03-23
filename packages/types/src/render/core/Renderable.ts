@@ -1,4 +1,4 @@
 import type { DisplayObject } from '../../scene/graph/display/DisplayObject';
-import type { SpriteBase } from '../../scene/graph/sprite/SpriteBase';
+import type { SpriteNode } from '../../scene/graph/sprite/SpriteNode';
 
-export type Renderable = DisplayObject | SpriteBase;
+export type Renderable = DisplayObject | SpriteNode;

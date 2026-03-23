@@ -1,14 +1,14 @@
 import type { ImageSource } from '../../../assets';
-import type { SpriteBase, SpriteBaseData } from './SpriteBase';
+import type { SpriteNode, SpriteNodeData } from './SpriteNode';
 
-export interface QuadBatchData extends SpriteBaseData {
+export interface QuadBatchData extends SpriteNodeData {
   image: ImageSource | null;
   indices: Int16Array | null;
   rects: Float32Array | null;
   transforms: Float32Array | null;
 }
 
-export interface QuadBatch extends SpriteBase {
+export interface QuadBatch extends SpriteNode {
   data: QuadBatchData;
 }
 

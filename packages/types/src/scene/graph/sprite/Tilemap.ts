@@ -1,13 +1,13 @@
 import type { Tileset } from '../../../assets';
-import type { SpriteBase, SpriteBaseData } from './SpriteBase';
+import type { SpriteNode, SpriteNodeData } from './SpriteNode';
 
-export interface TilemapData extends SpriteBaseData {
+export interface TilemapData extends SpriteNodeData {
   tileset: Tileset | null;
   width: number;
   height: number;
 }
 
-export interface Tilemap extends SpriteBase {
+export interface Tilemap extends SpriteNode {
   data: TilemapData;
 }
 
