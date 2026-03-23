@@ -1,14 +1,14 @@
-import type { GraphNode, PartialNode, Rectangle, Sprite, SpriteBaseRuntime, SpriteData } from '@flighthq/types';
+import type { GraphNode, PartialNode, Rectangle, Sprite, SpriteNodeRuntime, SpriteData } from '@flighthq/types';
 import { SpriteKind } from '@flighthq/types';
 
-import { createSpriteBase, createSpriteBaseRuntime } from './spriteBase';
+import { createSpriteNode, createSpriteNodeRuntime } from './spriteBase';
 
 export function computeSpriteLocalBoundsRect(_out: Rectangle, _source: Readonly<GraphNode>): void {
   // TODO: Get width/height from spritesheet reference
 }
 
 export function createSprite(obj?: Readonly<PartialNode<Sprite>>): Sprite {
-  return createSpriteBase(SpriteKind, obj, createSpriteData, createSpriteRuntime as any) as Sprite; // eslint-disable-line
+  return createSpriteNode(SpriteKind, obj, createSpriteData, createSpriteRuntime as any) as Sprite; // eslint-disable-line
 }
 
 export function createSpriteData(data?: Readonly<Partial<SpriteData>>): SpriteData {
@@ -19,10 +19,10 @@ export function createSpriteData(data?: Readonly<Partial<SpriteData>>): SpriteDa
   };
 }
 
-export function createSpriteRuntime(): SpriteBaseRuntime {
-  return createSpriteBaseRuntime(defaultMethods);
+export function createSpriteRuntime(): SpriteNodeRuntime {
+  return createSpriteNodeRuntime(defaultMethods);
 }
 
-const defaultMethods: Partial<SpriteBaseRuntime> = {
+const defaultMethods: Partial<SpriteNodeRuntime> = {
   computeLocalBoundsRect: computeSpriteLocalBoundsRect,
 };

@@ -13,6 +13,10 @@
       "types": "./dist/bitmap.d.ts",
       "default": "./dist/bitmap.js"
     },
+    "./displayContainer": {
+      "types": "./dist/displayContainer.d.ts",
+      "default": "./dist/displayContainer.js"
+    },
     "./displayObject": {
       "types": "./dist/displayObject.d.ts",
       "default": "./dist/displayObject.js"
@@ -37,9 +41,9 @@
       "types": "./dist/shape.d.ts",
       "default": "./dist/shape.js"
     },
-    "./spriteBatchContainer": {
-      "types": "./dist/spriteBatchContainer.d.ts",
-      "default": "./dist/spriteBatchContainer.js"
+    "./spriteContainer": {
+      "types": "./dist/spriteContainer.d.ts",
+      "default": "./dist/spriteContainer.js"
     },
     "./stage": {
       "types": "./dist/stage.d.ts",

@@ -11,35 +11,35 @@ import {
 import type {
   MethodsOf,
   PartialNode,
-  SpriteBase,
-  SpriteBaseData,
-  SpriteBaseRuntime,
-  SpriteBaseTraits,
+  SpriteNode,
+  SpriteNodeData,
+  SpriteNodeRuntime,
+  SpriteNodeTraits,
 } from '@flighthq/types';
 import { SpriteGraph } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-export type SpriteGraphNodeDataFactory = GraphNodeDataFactory<SpriteBaseData>;
-export type SpriteGraphNodeRuntimeFactory<Runtime extends SpriteBaseRuntime> = GraphNodeRuntimeFactory<
+export type SpriteGraphNodeDataFactory = GraphNodeDataFactory<SpriteNodeData>;
+export type SpriteGraphNodeRuntimeFactory<Runtime extends SpriteNodeRuntime> = GraphNodeRuntimeFactory<
   typeof SpriteGraph,
-  SpriteBaseTraits,
+  SpriteNodeTraits,
   Runtime
 >;
 
-export function createSpriteBase<Runtime extends SpriteBaseRuntime>(
+export function createSpriteNode<Runtime extends SpriteNodeRuntime>(
   kind: symbol,
-  obj?: Readonly<PartialNode<SpriteBase>>,
+  obj?: Readonly<PartialNode<SpriteNode>>,
   createData?: SpriteGraphNodeDataFactory,
   createRuntime?: SpriteGraphNodeRuntimeFactory<Runtime>,
-): SpriteBase {
+): SpriteNode {
   const out = createGraphNode(
     SpriteGraph,
     kind,
     obj,
     createData,
     createRuntime ??
-      (createSpriteBaseRuntime as GraphNodeRuntimeFactory<typeof SpriteGraph, SpriteBaseTraits, Runtime>),
-  ) as SpriteBase;
+      (createSpriteNodeRuntime as GraphNodeRuntimeFactory<typeof SpriteGraph, SpriteNodeTraits, Runtime>),
+  ) as SpriteNode;
   initHasTransform2D(out, obj);
   initHasBoundsRect(out, obj);
   out.alpha = obj?.alpha ?? 1;
@@ -54,13 +54,13 @@ export function createSpriteBase<Runtime extends SpriteBaseRuntime>(
   return out;
 }
 
-export function createSpriteBaseRuntime(methods?: Readonly<Partial<MethodsOf<SpriteBaseRuntime>>>): SpriteBaseRuntime {
-  const out = createGraphNodeRuntime(methods) as SpriteBaseRuntime;
+export function createSpriteNodeRuntime(methods?: Readonly<Partial<MethodsOf<SpriteNodeRuntime>>>): SpriteNodeRuntime {
+  const out = createGraphNodeRuntime(methods) as SpriteNodeRuntime;
   initHasTransform2DRuntime(out, methods);
   initHasBoundsRectRuntime(out, methods);
   return out;
 }
 
-export function getSpriteBaseRuntime(source: Readonly<SpriteBase>): Readonly<SpriteBaseRuntime> {
-  return getGraphNodeRuntime(source) as SpriteBaseRuntime;
+export function getSpriteNodeRuntime(source: Readonly<SpriteNode>): Readonly<SpriteNodeRuntime> {
+  return getGraphNodeRuntime(source) as SpriteNodeRuntime;
 }
