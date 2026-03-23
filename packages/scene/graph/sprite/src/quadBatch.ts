@@ -1,14 +1,14 @@
-import type { GraphNode, PartialNode, QuadBatch, QuadBatchData, Rectangle, SpriteBaseRuntime } from '@flighthq/types';
+import type { GraphNode, PartialNode, QuadBatch, QuadBatchData, Rectangle, SpriteNodeRuntime } from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
 
-import { createSpriteBase, createSpriteBaseRuntime } from './spriteBase';
+import { createSpriteNode, createSpriteNodeRuntime } from './spriteBase';
 
 export function computeQuadBatchLocalBoundsRect(_out: Rectangle, _source: Readonly<GraphNode>): void {
   // TODO
 }
 
 export function createQuadBatch(obj?: Readonly<PartialNode<QuadBatch>>): QuadBatch {
-  return createSpriteBase(QuadBatchKind, obj, createQuadBatchData, createQuadBatchRuntime as any) as QuadBatch; // eslint-disable-line
+  return createSpriteNode(QuadBatchKind, obj, createQuadBatchData, createQuadBatchRuntime as any) as QuadBatch; // eslint-disable-line
 }
 
 export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): QuadBatchData {
@@ -20,10 +20,10 @@ export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): Qu
   };
 }
 
-export function createQuadBatchRuntime(): SpriteBaseRuntime {
-  return createSpriteBaseRuntime(defaultMethods);
+export function createQuadBatchRuntime(): SpriteNodeRuntime {
+  return createSpriteNodeRuntime(defaultMethods);
 }
 
-const defaultMethods: Partial<SpriteBaseRuntime> = {
+const defaultMethods: Partial<SpriteNodeRuntime> = {
   computeLocalBoundsRect: computeQuadBatchLocalBoundsRect,
 };

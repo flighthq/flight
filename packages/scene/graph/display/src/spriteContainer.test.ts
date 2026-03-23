@@ -1,19 +1,19 @@
-import type { Sprite, SpriteGraphContainer } from '@flighthq/types';
-import { SpriteGraphContainerKind } from '@flighthq/types';
+import type { Sprite, SpriteContainer } from '@flighthq/types';
+import { SpriteContainerKind } from '@flighthq/types';
 
-import { createSpriteGraphContainer } from './spriteGraphContainer';
+import { createSpriteContainer } from './spriteContainer';
 
-describe('createSpriteGraphContainer', () => {
-  let spriteGraphContainer: SpriteGraphContainer;
+describe('createSpriteContainer', () => {
+  let spriteGraphContainer: SpriteContainer;
 
   beforeEach(() => {
-    spriteGraphContainer = createSpriteGraphContainer();
+    spriteGraphContainer = createSpriteContainer();
   });
 
   it('initializes default values', () => {
     expect(spriteGraphContainer.data.graph).toBeNull();
     expect(spriteGraphContainer.data.smoothing).toBe(true);
-    expect(spriteGraphContainer.kind).toStrictEqual(SpriteGraphContainerKind);
+    expect(spriteGraphContainer.kind).toStrictEqual(SpriteContainerKind);
   });
 
   it('allows pre-defined values', () => {
@@ -23,14 +23,14 @@ describe('createSpriteGraphContainer', () => {
         smoothing: false,
       },
     };
-    const obj = createSpriteGraphContainer(base);
+    const obj = createSpriteContainer(base);
     expect(obj.data.graph).toStrictEqual(base.data.graph);
     expect(obj.data.smoothing).toStrictEqual(base.data.smoothing);
   });
 
   it('returns a new object for better hidden-class performance', () => {
     const base = {};
-    const obj = createSpriteGraphContainer(base);
+    const obj = createSpriteContainer(base);
     expect(obj).not.toStrictEqual(base);
   });
 });

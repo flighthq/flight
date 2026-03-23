@@ -1,13 +1,13 @@
-import type { GraphNode, PartialNode, Rectangle, Shader, SpriteBase, SpriteBaseData } from '@flighthq/types';
+import type { GraphNode, PartialNode, Rectangle, Shader, SpriteNode, SpriteNodeData } from '@flighthq/types';
 import { BlendMode, DisplayObjectKind, SpriteGraph } from '@flighthq/types';
 
-import { createSpriteBase, createSpriteBaseRuntime, getSpriteBaseRuntime } from './spriteBase';
+import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteBase';
 
-describe('createSpriteBase', () => {
-  let spriteBase: SpriteBase;
+describe('createSpriteNode', () => {
+  let spriteBase: SpriteNode;
 
   beforeEach(() => {
-    spriteBase = createSpriteBase(SpriteBaseTestKind);
+    spriteBase = createSpriteNode(SpriteNodeTestKind);
   });
 
   it('initializes default values', () => {
@@ -15,7 +15,7 @@ describe('createSpriteBase', () => {
     expect(spriteBase.blendMode).toBe(BlendMode.Normal);
     expect(spriteBase.shader).toBeNull();
     expect(spriteBase.visible).toBe(true);
-    expect(spriteBase.kind).toBe(SpriteBaseTestKind);
+    expect(spriteBase.kind).toBe(SpriteNodeTestKind);
   });
 
   it('allows pre-defined values', () => {
@@ -31,7 +31,7 @@ describe('createSpriteBase', () => {
       x: 100,
       y: 200,
     };
-    const obj = createSpriteBase(SpriteBaseTestKind, base);
+    const obj = createSpriteNode(SpriteNodeTestKind, base);
     expect(obj.alpha).toStrictEqual(base.alpha);
     expect(obj.blendMode).toStrictEqual(base.blendMode);
     expect(obj.name).toStrictEqual(base.name);
@@ -45,58 +45,58 @@ describe('createSpriteBase', () => {
   });
 
   it('uses SpriteGraph for runtime.graph', () => {
-    const runtime = getSpriteBaseRuntime(spriteBase);
+    const runtime = getSpriteNodeRuntime(spriteBase);
     expect(runtime.graph).toStrictEqual(SpriteGraph);
   });
 
   it('allows creation of a type without a data field', () => {
-    const spriteBase = createSpriteBase(SpriteBaseTestKind);
+    const spriteBase = createSpriteNode(SpriteNodeTestKind);
     expect(spriteBase).not.toBeNull();
   });
 
   it('allows a custom type', () => {
-    const data: PartialNode<SpriteBaseTest> = {
+    const data: PartialNode<SpriteNodeTest> = {
       x: 100,
     };
-    const spriteBase = createSpriteBase(SpriteBaseTestKind, data);
+    const spriteBase = createSpriteNode(SpriteNodeTestKind, data);
     expect(spriteBase.x).toBe(data.x);
   });
 
   it('returns a new object', () => {
-    const data: PartialNode<SpriteBaseTest> = {};
-    const spriteBase = createSpriteBase(SpriteBaseTestKind, data);
+    const data: PartialNode<SpriteNodeTest> = {};
+    const spriteBase = createSpriteNode(SpriteNodeTestKind, data);
     expect(spriteBase).not.toStrictEqual(data);
   });
 
   it('allows use of a data initializer', () => {
-    const data: PartialNode<SpriteBaseTest> = {};
-    const spriteBase = createSpriteBase(DisplayObjectKind, data, createSpriteBaseTestData);
-    expect((spriteBase.data as SpriteBaseTestData).foo).toBe('bar');
+    const data: PartialNode<SpriteNodeTest> = {};
+    const spriteBase = createSpriteNode(DisplayObjectKind, data, createSpriteNodeTestData);
+    expect((spriteBase.data as SpriteNodeTestData).foo).toBe('bar');
   });
 });
 
-describe('createSpriteBaseRuntime', () => {
+describe('createSpriteNodeRuntime', () => {
   it('returns a graph runtime object', () => {
-    const runtime = createSpriteBaseRuntime();
+    const runtime = createSpriteNodeRuntime();
     expect(runtime).not.toBeNull();
   });
 
   it('allows a custom bounds calculation', () => {
     const func = (_out: Rectangle, _source: Readonly<GraphNode>) => {};
-    const runtime = createSpriteBaseRuntime({ computeLocalBoundsRect: func });
+    const runtime = createSpriteNodeRuntime({ computeLocalBoundsRect: func });
     expect(runtime.computeLocalBoundsRect).toStrictEqual(func);
   });
 });
 
-interface SpriteBaseTest extends SpriteBase {}
+interface SpriteNodeTest extends SpriteNode {}
 
-const SpriteBaseTestKind: unique symbol = Symbol('SpriteBaseTest');
+const SpriteNodeTestKind: unique symbol = Symbol('SpriteNodeTest');
 
-interface SpriteBaseTestData extends SpriteBaseData {
+interface SpriteNodeTestData extends SpriteNodeData {
   foo: string;
 }
 
-function createSpriteBaseTestData(data?: Partial<SpriteBaseTestData>): SpriteBaseTestData {
+function createSpriteNodeTestData(data?: Partial<SpriteNodeTestData>): SpriteNodeTestData {
   return {
     foo: data?.foo ?? 'bar',
   };
