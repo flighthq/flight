@@ -245,7 +245,7 @@ export default class DisplayObject extends FlightObject<RawDisplayObject> {
     if (value === null && data.scale9Grid === null) return;
     if (value !== null && data.scale9Grid !== null && rectangle.equals(data.scale9Grid, value)) return;
 
-    if (value != null) {
+    if (value !== null) {
       if (data.scale9Grid === null) data.scale9Grid = rectangle.create();
       rectangle.copy(data.scale9Grid, value);
     } else {

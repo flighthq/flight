@@ -4,15 +4,13 @@ import type { SpritesheetAnimation as RawSpritesheetAnimation } from '@flighthq/
 import { FlightObject } from '../..';
 
 export default class SpritesheetAnimation extends FlightObject<RawSpritesheetAnimation> {
-  constructor(obj?: Partial<SpritesheetAnimation>) {
+  constructor(label?: string, frames?: number[], frameDuration?: number, loop?: boolean) {
     super();
-    if (obj) {
-      const raw = this.__raw;
-      if (obj.frameDuration) raw.frameDuration = obj.frameDuration;
-      if (obj.frames) raw.frames = obj.frames;
-      if (obj.label) raw.label = obj.label;
-      if (obj.loop) raw.loop = obj.loop;
-    }
+    const raw = this.__raw;
+    if (label !== undefined) raw.label = label;
+    if (frames !== undefined) raw.frames = frames;
+    if (frameDuration !== undefined) raw.frameDuration = frameDuration;
+    if (loop !== undefined) raw.loop = loop;
   }
 
   protected override __create() {

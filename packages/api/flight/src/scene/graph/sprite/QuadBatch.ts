@@ -2,9 +2,9 @@ import { createQuadBatch } from '@flighthq/scene-graph-sprite';
 import type { QuadBatch as RawQuadBatch, QuadBatchData } from '@flighthq/types';
 
 import FlightObject from '../../../FlightObject';
-import SpriteBase from './SpriteBase';
+import SpriteNode from './SpriteNode';
 
-export default class QuadBatch extends SpriteBase {
+export default class QuadBatch extends SpriteNode {
   protected __data: QuadBatchData;
 
   constructor() {

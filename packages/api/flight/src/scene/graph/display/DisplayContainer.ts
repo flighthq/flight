@@ -3,7 +3,7 @@ import * as hierarchy from '@flighthq/scene-graph-core/hierarchy';
 import FlightObject from '../../../FlightObject.js';
 import DisplayObject from './DisplayObject.js';
 
-export default class DisplayObjectContainer extends DisplayObject {
+export default class DisplayContainer extends DisplayObject {
   protected constructor() {
     super();
   }

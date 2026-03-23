@@ -1,11 +1,11 @@
 import { ColorTransform } from '@flighthq/flight/materials';
 import { getBoundsRect, getParent, invalidateAppearance, invalidateLocalTransform } from '@flighthq/scene-graph-core';
-import type { BlendMode, Shader, SpriteBase as RawSpriteBase } from '@flighthq/types';
+import type { BlendMode, Shader, SpriteNode as RawSpriteNode } from '@flighthq/types';
 
 import FlightObject from '../../../FlightObject';
 import type Sprite from './Sprite';
 
-export default class SpriteBase extends FlightObject<RawSpriteBase> {
+export default class SpriteNode extends FlightObject<RawSpriteNode> {
   protected constructor() {
     super();
   }
@@ -86,7 +86,7 @@ export default class SpriteBase extends FlightObject<RawSpriteBase> {
   }
 
   get parent(): Sprite | null {
-    return FlightObject.get(getParent(this.__raw));
+    return FlightObject.get(getParent(this.__raw)) as unknown as Sprite;
   }
 
   get rotation(): number {

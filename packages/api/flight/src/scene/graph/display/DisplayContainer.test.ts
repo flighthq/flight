@@ -2,16 +2,16 @@ import FlightObject from '@flighthq/flight/FlightObject.js';
 import { getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
 import type { DisplayObject as RawDisplayObject } from '@flighthq/types';
 
+import DisplayContainer from './DisplayContainer.js';
 import DisplayObject from './DisplayObject.js';
-import DisplayObjectContainer from './DisplayObjectContainer.js';
 
-describe('DisplayObjectContainer', () => {
-  let container: DisplayObjectContainer;
+describe('DisplayContainer', () => {
+  let container: DisplayContainer;
   let childA: DisplayObject;
   let childB: DisplayObject;
 
   beforeEach(() => {
-    container = new TestDisplayObjectContainer();
+    container = new TestDisplayContainer();
     childA = new TestDisplayObject();
     childB = new TestDisplayObject();
   });
@@ -26,17 +26,17 @@ describe('DisplayObjectContainer', () => {
   // Constructor
 
   it('can be instantiated', () => {
-    const container = new TestDisplayObjectContainer();
+    const container = new TestDisplayContainer();
     expect(container).toBeInstanceOf(DisplayObject);
   });
 
   it('starts with zero children', () => {
-    const container = new TestDisplayObjectContainer();
+    const container = new TestDisplayContainer();
     expect(container.numChildren).toBe(0);
   });
 
   it('numChildren is read-only', () => {
-    const container = new TestDisplayObjectContainer();
+    const container = new TestDisplayContainer();
 
     expect(() => {
       // @ts-expect-error numChildren should not be writable
@@ -67,7 +67,7 @@ describe('DisplayObjectContainer', () => {
     });
 
     it('removes child from previous parent before adding', () => {
-      const other = new TestDisplayObjectContainer();
+      const other = new TestDisplayContainer();
 
       other.addChild(childA);
       expect(childA.parent).toBe(other);
@@ -80,7 +80,7 @@ describe('DisplayObjectContainer', () => {
     });
 
     it('a child never has more than one parent', () => {
-      const other = new TestDisplayObjectContainer();
+      const other = new TestDisplayContainer();
 
       container.addChild(childA);
       other.addChild(childA);
@@ -143,7 +143,7 @@ describe('DisplayObjectContainer', () => {
     it('does nothing if child is not a child of target', () => {
       container.addChild(childA);
 
-      const other = new TestDisplayObjectContainer();
+      const other = new TestDisplayContainer();
       other.removeChild(childA);
 
       expect(container.numChildren).toBe(1);
@@ -235,7 +235,7 @@ describe('DisplayObjectContainer', () => {
     });
 
     it('setChildIndex does nothing if child is not in container', () => {
-      const other = new TestDisplayObjectContainer();
+      const other = new TestDisplayContainer();
 
       other.addChild(childA);
       container.addChild(childB);
@@ -267,7 +267,7 @@ describe('DisplayObjectContainer', () => {
     });
 
     it('swapChildren does nothing if either child is not in container', () => {
-      const other = new TestDisplayObjectContainer();
+      const other = new TestDisplayContainer();
 
       container.addChild(childA);
       other.addChild(childB);
@@ -303,7 +303,7 @@ class TestDisplayObject extends DisplayObject {
   }
 }
 
-class TestDisplayObjectContainer extends DisplayObjectContainer {
+class TestDisplayContainer extends DisplayContainer {
   constructor() {
     super();
   }
