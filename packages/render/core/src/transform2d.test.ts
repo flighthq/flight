@@ -121,7 +121,7 @@ describe('updateDisplayObjectRenderTransform2D', () => {
   let parent: DisplayObject;
   let parentData: DisplayObjectRenderNode;
   let child: DisplayObject;
-  let childData: DisplayObjectRenderNode;
+  // let childData: DisplayObjectRenderNode;
   let state: RenderState;
 
   beforeEach(() => {
@@ -130,7 +130,7 @@ describe('updateDisplayObjectRenderTransform2D', () => {
     addChild(parent, child);
     state = createRenderState();
     parentData = getDisplayObjectRenderNode(state, parent);
-    childData = getDisplayObjectRenderNode(state, child);
+    // childData = getDisplayObjectRenderNode(state, child);
   });
 
   it('applies scrollRect offset in render transform but not world transform', () => {

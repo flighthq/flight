@@ -1,4 +1,4 @@
-import { createEntity, getRuntime as _getRuntime } from '@flighthq/core';
+import { getRuntime as _getRuntime } from '@flighthq/core';
 import { rectangle } from '@flighthq/geometry';
 import { setEmpty } from '@flighthq/geometry/rectangle';
 import {

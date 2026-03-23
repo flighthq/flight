@@ -1,4 +1,4 @@
-import type { Matrix3x2, Matrix3x3, Matrix3x3Like, Matrix4x4, Matrix4x4Like } from '@flighthq/types';
+import type { Matrix3x2, Matrix3x3Like, Matrix4x4Like } from '@flighthq/types';
 
 import * as matrix3x2 from './matrix3x2.js';
 import * as rectangle from './rectangle.js';
