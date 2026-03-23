@@ -1,14 +1,14 @@
 import type { Spritesheet } from '../../../animation/spritesheet';
 import type { Rectangle } from '../../../geometry';
-import type { SpriteBase, SpriteBaseData } from './SpriteBase';
+import type { SpriteNode, SpriteNodeData } from './SpriteNode';
 
-export interface SpriteData extends SpriteBaseData {
+export interface SpriteData extends SpriteNodeData {
   id: number;
   rect: Rectangle | null;
   spritesheet: Spritesheet | null;
 }
 
-export interface Sprite extends SpriteBase {
+export interface Sprite extends SpriteNode {
   data: SpriteData;
 }
 

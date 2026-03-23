@@ -9,9 +9,11 @@ import type {
   HasTransform2DRuntime,
 } from '../core';
 
-export type SpriteBase = GraphNode<typeof SpriteGraph, SpriteBaseTraits> & SpriteBaseTraits;
+export const SpriteGraph = Symbol('SpriteGraph');
 
-export interface SpriteBaseTraits extends HasBoundsRect, HasTransform2D {
+export type SpriteNode = GraphNode<typeof SpriteGraph, SpriteNodeTraits> & SpriteNodeTraits;
+
+export interface SpriteNodeTraits extends HasBoundsRect, HasTransform2D {
   alpha: number;
   alphaEnabled: boolean;
   blendMode: BlendMode | null;
@@ -23,10 +25,8 @@ export interface SpriteBaseTraits extends HasBoundsRect, HasTransform2D {
   shader: Shader | null;
 }
 
-export interface SpriteBaseData extends GraphNodeData {}
+export interface SpriteNodeData extends GraphNodeData {}
 
-export const SpriteGraph = Symbol('SpriteGraph');
-
-export type SpriteBaseRuntime = GraphNodeRuntime<typeof SpriteGraph, SpriteBaseTraits> &
+export type SpriteNodeRuntime = GraphNodeRuntime<typeof SpriteGraph, SpriteNodeTraits> &
   HasTransform2DRuntime &
   HasBoundsRectRuntime;
