@@ -1,11 +1,11 @@
 import { getParent } from '@flighthq/scene-graph-core';
 import { getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
-import { getSpriteBaseRuntime } from '@flighthq/scene-graph-sprite';
+import { getSpriteNodeRuntime } from '@flighthq/scene-graph-sprite';
 import type {
   DisplayObject,
   DisplayObjectRenderNode,
   RenderState,
-  SpriteBase,
+  SpriteNode,
   SpriteRenderNode,
 } from '@flighthq/types';
 
@@ -85,7 +85,7 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
   return treeDirty;
 }
 
-export function updateSpriteBeforeRender(state: RenderState, source: SpriteBase): boolean {
+export function updateSpriteBeforeRender(state: RenderState, source: SpriteNode): boolean {
   const tempStack = state.tempStack;
   ++(state as RenderStateInternal).currentFrameID;
 
@@ -93,11 +93,11 @@ export function updateSpriteBeforeRender(state: RenderState, source: SpriteBase)
   tempStack[0] = source;
 
   let parentData: SpriteRenderNode | undefined = undefined;
-  let lastParent: SpriteBase | null = null;
+  let lastParent: SpriteNode | null = null;
   let treeDirty = false;
 
   while (stackLength > 0) {
-    const current = tempStack[--stackLength] as SpriteBase;
+    const current = tempStack[--stackLength] as SpriteNode;
     const data = getSpriteRenderNode(state, current);
 
     if (current !== source) {
@@ -118,10 +118,10 @@ export function updateSpriteBeforeRender(state: RenderState, source: SpriteBase)
       treeDirty = appearanceDirty || transformDirty;
     }
 
-    const children = getSpriteBaseRuntime(current).children;
+    const children = getSpriteNodeRuntime(current).children;
     if (children !== null) {
       for (let i = children.length - 1; i >= 0; i--) {
-        tempStack[stackLength++] = children[i] as SpriteBase;
+        tempStack[stackLength++] = children[i] as SpriteNode;
       }
     }
   }

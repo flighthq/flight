@@ -7,7 +7,7 @@ import type {
   Renderable,
   RenderNode2D,
   RenderState,
-  SpriteBase,
+  SpriteNode,
   SpriteRenderNode,
 } from '@flighthq/types';
 
@@ -32,7 +32,7 @@ export function createRenderNode2D(
   return out;
 }
 
-export function createSpriteRenderNode(state: RenderState, source: SpriteBase): SpriteRenderNode {
+export function createSpriteRenderNode(state: RenderState, source: SpriteNode): SpriteRenderNode {
   return createRenderNode2D(state, source) as SpriteRenderNode;
 }
 
@@ -40,6 +40,6 @@ export function getDisplayObjectRenderNode(state: RenderState, source: DisplayOb
   return getRenderNode(state, source, createDisplayObjectRenderNode);
 }
 
-export function getSpriteRenderNode(state: RenderState, source: SpriteBase): SpriteRenderNode {
+export function getSpriteRenderNode(state: RenderState, source: SpriteNode): SpriteRenderNode {
   return getRenderNode(state, source, createSpriteRenderNode);
 }
