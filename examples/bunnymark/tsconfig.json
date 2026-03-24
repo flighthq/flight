@@ -4,12 +4,7 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "references": [
-    { "path": "../../packages/assets" },
-    { "path": "../../packages/scene/graph/sprite" },
-    { "path": "../../packages/render/canvas" },
-    { "path": "../../packages/types" }
-  ],
+  "references": [{ "path": "../../packages/api/flight" }],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

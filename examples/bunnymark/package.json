@@ -3,10 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@flighthq/assets": "*",
-    "@flighthq/scene-graph-sprite": "*",
-    "@flighthq/render-canvas": "*",
-    "@flighthq/types": "*",
+    "@flighthq/flight": "*",
     "@types/stats.js": "^0.17.4",
     "stats.js": "^0.17.0",
     "typescript": "^5.0.0",
