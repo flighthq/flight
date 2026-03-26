@@ -1,7 +1,7 @@
 import { createSpritesheet } from '@flighthq/animation-spritesheet';
 import type { Spritesheet as RawSpritesheet } from '@flighthq/types';
 
-import { TextureAtlas } from '../../assets';
+import TextureAtlas from '../../assets/TextureAtlas';
 import FlightObject from '../../FlightObject';
 import SpritesheetAnimation from './SpritesheetAnimation';
 

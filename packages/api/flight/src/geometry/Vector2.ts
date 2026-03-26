@@ -44,6 +44,12 @@ export default class Vector2 extends FlightObject<RawVector2> {
     return vector2.equals(this.__raw, b.raw);
   }
 
+  static fromFloat32Array(source: Readonly<Float32Array>, offset: number): Vector2 {
+    const out = new Vector2();
+    vector2.fromFloat32Array(out.raw, offset, source);
+    return out;
+  }
+
   static fromRaw(raw: Readonly<RawVector2>): Vector2 {
     return FlightObject.getOrCreate(raw, Vector2)!;
   }
@@ -70,6 +76,10 @@ export default class Vector2 extends FlightObject<RawVector2> {
     const out = new Vector2();
     vector2.subtract(out.raw, this.__raw, source.raw);
     return out;
+  }
+
+  writeToFloat32Array(out: Float32Array, offset: number): void {
+    vector2.writeToFloat32Array(out, offset, this.__raw);
   }
 
   // Get & Set Methods

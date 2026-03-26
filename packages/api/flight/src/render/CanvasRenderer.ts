@@ -13,7 +13,7 @@ import {
   DisplayObjectKind,
 } from '@flighthq/types';
 
-import type { DisplayObject } from '../scene/graph/display';
+import type DisplayObject from '../scene/graph/display/DisplayObject';
 import type CanvasRenderOptions from './CanvasRenderOptions';
 
 export default class CanvasRenderer {

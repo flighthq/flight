@@ -2,7 +2,7 @@ import { invalidateAppearance, invalidateLocalBounds } from '@flighthq/scene-gra
 import { createBitmap } from '@flighthq/scene-graph-display';
 import type { Bitmap as RawBitmap, BitmapData } from '@flighthq/types';
 
-import { ImageSource } from '../../../assets';
+import ImageSource from '../../../assets/ImageSource';
 import FlightObject from '../../../FlightObject';
 import DisplayObject from './DisplayObject';
 

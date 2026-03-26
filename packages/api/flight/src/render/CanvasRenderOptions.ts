@@ -1,4 +1,4 @@
-import type { Matrix } from '../geometry';
+import type Matrix from '../geometry/Matrix';
 
 export default interface CanvasRenderOptions {
   backgroundColor?: number | null;
