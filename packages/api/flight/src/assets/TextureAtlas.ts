@@ -6,8 +6,9 @@ import ImageSource from './ImageSource';
 import TextureAtlasRegion from './TextureAtlasRegion';
 
 export default class TextureAtlas extends FlightObject<RawTextureAtlas> {
-  constructor() {
+  constructor(image?: ImageSource) {
     super();
+    if (image) this.__raw.image = image.raw;
   }
 
   protected override __create() {
