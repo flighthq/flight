@@ -397,6 +397,23 @@ describe('equals', () => {
   });
 });
 
+describe('fromFloat32Array', () => {
+  it('writes the matrix from 6 values at the offset', () => {
+    const array = new Float32Array(6);
+    for (let i = 0; i < 6; i++) {
+      array[i] = i;
+    }
+    const matrix = matrix3x2.create();
+    matrix3x2.fromFloat32Array(matrix, 0, array);
+    expect(matrix.a).toBe(0);
+    expect(matrix.b).toBe(1);
+    expect(matrix.c).toBe(2);
+    expect(matrix.d).toBe(3);
+    expect(matrix.tx).toBe(4);
+    expect(matrix.ty).toBe(5);
+  });
+});
+
 describe('fromMatrix3x3', () => {
   let mat3: Matrix3x3Like;
   let mat2D: Matrix3x2;
@@ -1065,5 +1082,16 @@ describe('translate', () => {
     matrix3x2.translate(m, m, 10, 20);
     expect(m.tx).toBe(10);
     expect(m.ty).toBe(20);
+  });
+});
+
+describe('writeToFloat32Array', () => {
+  it('writes 6 values at the offset', () => {
+    const array = new Float32Array(6);
+    const matrix = { a: 1, b: 2, c: 3, d: 4, tx: 5, ty: 6 };
+    matrix3x2.writeToFloat32Array(array, 0, matrix);
+    for (let i = 0; i < 6; i++) {
+      expect(array[i]).toBe(i + 1);
+    }
   });
 });

@@ -52,6 +52,11 @@ export function equals(
   return a === b || (a.x === b.x && a.y === b.y);
 }
 
+export function fromFloat32Array(out: Vector2Like, offset: number, source: Readonly<Float32Array>): void {
+  out.x = source[offset];
+  out.y = source[offset + 1];
+}
+
 export function length(source: Readonly<Vector2Like>): number {
   return Math.sqrt(source.x ** 2 + source.y ** 2);
 }
@@ -104,4 +109,9 @@ export function setTo(out: Vector2Like, x: number, y: number): void {
 export function subtract(out: Vector2Like, source: Readonly<Vector2Like>, toSubtract: Readonly<Vector2Like>): void {
   out.x = source.x - toSubtract.x;
   out.y = source.y - toSubtract.y;
+}
+
+export function writeToFloat32Array(out: Float32Array, offset: number, source: Readonly<Vector2Like>): void {
+  out[offset] = source.x;
+  out[offset + 1] = source.y;
 }

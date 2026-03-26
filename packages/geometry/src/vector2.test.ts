@@ -229,6 +229,18 @@ describe('equals', () => {
   });
 });
 
+describe('fromFloat32Array', () => {
+  it('writes the vector from 2 values at the offset', () => {
+    const array = new Float32Array(2);
+    array[0] = 1;
+    array[1] = 2;
+    const vector = { x: 100, y: 100 };
+    vector2.fromFloat32Array(vector, 0, array);
+    expect(vector.x).toBe(1);
+    expect(vector.y).toBe(2);
+  });
+});
+
 describe('lerp', () => {
   const cases = [
     { t: 0, expected: (a: number, _: number) => a },
@@ -563,5 +575,16 @@ describe('subtract', () => {
     // Ensure new object is returned
     expect(result).not.toBe(pt);
     expect(result).not.toBe(pt2);
+  });
+});
+
+describe('writeToFloat32Array', () => {
+  it('writes 2 values at the offset', () => {
+    const array = new Float32Array(6);
+    const vector = { x: 1, y: 2 };
+    vector2.writeToFloat32Array(array, 0, vector);
+    for (let i = 0; i < 2; i++) {
+      expect(array[i]).toBe(i + 1);
+    }
   });
 });

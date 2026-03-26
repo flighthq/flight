@@ -173,6 +173,15 @@ export function equals(
   );
 }
 
+export function fromFloat32Array(out: Matrix3x2Like, offset: number, source: Readonly<Float32Array>): void {
+  out.a = source[offset];
+  out.b = source[offset + 1];
+  out.c = source[offset + 2];
+  out.d = source[offset + 3];
+  out.tx = source[offset + 4];
+  out.ty = source[offset + 5];
+}
+
 export function fromMatrix3x3(out: Matrix3x2Like, source: Readonly<Matrix3x3Like>): void {
   const m = source.m;
   setTo(out, m[0], m[1], m[3], m[4], m[2], m[5]);
@@ -591,4 +600,13 @@ export function translateUsingVector(
 export function translateUsingVectorXY(out: Matrix3x2Like, source: Readonly<Matrix3x2Like>, x: number, y: number) {
   out.tx = source.tx + source.a * x + source.c * y;
   out.ty = source.ty + source.b * x + source.d * y;
+}
+
+export function writeToFloat32Array(out: Float32Array, offset: number, source: Readonly<Matrix3x2Like>): void {
+  out[offset] = source.a;
+  out[offset + 1] = source.b;
+  out[offset + 2] = source.c;
+  out[offset + 3] = source.d;
+  out[offset + 4] = source.tx;
+  out[offset + 5] = source.ty;
 }
