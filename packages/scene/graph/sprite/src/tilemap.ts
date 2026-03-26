@@ -1,7 +1,7 @@
 import type { GraphNode, PartialNode, Rectangle, SpriteNodeRuntime, Tilemap, TilemapData } from '@flighthq/types';
 import { TilemapKind } from '@flighthq/types';
 
-import { createSpriteNode, createSpriteNodeRuntime } from './spriteBase';
+import { createSpriteNode, createSpriteNodeRuntime } from './spriteNode';
 
 export function computeTilemapLocalBoundsRect(_out: Rectangle, _source: Readonly<GraphNode>): void {
   // TODO: Get width/height from tileset reference

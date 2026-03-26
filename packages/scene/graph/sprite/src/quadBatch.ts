@@ -10,7 +10,7 @@ import type {
 } from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
 
-import { createSpriteNode, createSpriteNodeRuntime } from './spriteBase';
+import { createSpriteNode, createSpriteNodeRuntime } from './spriteNode';
 
 export function computeQuadBatchLocalBoundsRect(_out: Rectangle, _source: Readonly<GraphNode>): void {
   // TODO

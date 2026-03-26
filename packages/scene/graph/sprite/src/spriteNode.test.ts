@@ -1,21 +1,23 @@
+import { createGraphNode } from '@flighthq/scene-graph-core';
 import type { GraphNode, PartialNode, Rectangle, Shader, SpriteNode, SpriteNodeData } from '@flighthq/types';
 import { BlendMode, DisplayObjectKind, SpriteGraph } from '@flighthq/types';
 
-import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteBase';
+import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
+import { isSpriteNode } from './spriteNode';
 
 describe('createSpriteNode', () => {
-  let spriteBase: SpriteNode;
+  let spriteNode: SpriteNode;
 
   beforeEach(() => {
-    spriteBase = createSpriteNode(SpriteNodeTestKind);
+    spriteNode = createSpriteNode(SpriteNodeTestKind);
   });
 
   it('initializes default values', () => {
-    expect(spriteBase.alpha).toBe(1);
-    expect(spriteBase.blendMode).toBe(BlendMode.Normal);
-    expect(spriteBase.shader).toBeNull();
-    expect(spriteBase.visible).toBe(true);
-    expect(spriteBase.kind).toBe(SpriteNodeTestKind);
+    expect(spriteNode.alpha).toBe(1);
+    expect(spriteNode.blendMode).toBe(BlendMode.Normal);
+    expect(spriteNode.shader).toBeNull();
+    expect(spriteNode.visible).toBe(true);
+    expect(spriteNode.kind).toBe(SpriteNodeTestKind);
   });
 
   it('allows pre-defined values', () => {
@@ -45,33 +47,33 @@ describe('createSpriteNode', () => {
   });
 
   it('uses SpriteGraph for runtime.graph', () => {
-    const runtime = getSpriteNodeRuntime(spriteBase);
+    const runtime = getSpriteNodeRuntime(spriteNode);
     expect(runtime.graph).toStrictEqual(SpriteGraph);
   });
 
   it('allows creation of a type without a data field', () => {
-    const spriteBase = createSpriteNode(SpriteNodeTestKind);
-    expect(spriteBase).not.toBeNull();
+    const spriteNode = createSpriteNode(SpriteNodeTestKind);
+    expect(spriteNode).not.toBeNull();
   });
 
   it('allows a custom type', () => {
     const data: PartialNode<SpriteNodeTest> = {
       x: 100,
     };
-    const spriteBase = createSpriteNode(SpriteNodeTestKind, data);
-    expect(spriteBase.x).toBe(data.x);
+    const spriteNode = createSpriteNode(SpriteNodeTestKind, data);
+    expect(spriteNode.x).toBe(data.x);
   });
 
   it('returns a new object', () => {
     const data: PartialNode<SpriteNodeTest> = {};
-    const spriteBase = createSpriteNode(SpriteNodeTestKind, data);
-    expect(spriteBase).not.toStrictEqual(data);
+    const spriteNode = createSpriteNode(SpriteNodeTestKind, data);
+    expect(spriteNode).not.toStrictEqual(data);
   });
 
   it('allows use of a data initializer', () => {
     const data: PartialNode<SpriteNodeTest> = {};
-    const spriteBase = createSpriteNode(DisplayObjectKind, data, createSpriteNodeTestData);
-    expect((spriteBase.data as SpriteNodeTestData).foo).toBe('bar');
+    const spriteNode = createSpriteNode(DisplayObjectKind, data, createSpriteNodeTestData);
+    expect((spriteNode.data as SpriteNodeTestData).foo).toBe('bar');
   });
 });
 
@@ -85,6 +87,19 @@ describe('createSpriteNodeRuntime', () => {
     const func = (_out: Rectangle, _source: Readonly<GraphNode>) => {};
     const runtime = createSpriteNodeRuntime({ computeLocalBoundsRect: func });
     expect(runtime.computeLocalBoundsRect).toStrictEqual(func);
+  });
+});
+
+describe('isSpriteNode', () => {
+  it('returns true for a sprite node', () => {
+    const node = createSpriteNode(SpriteNodeTestKind);
+    expect(isSpriteNode(node)).toBe(true);
+  });
+
+  it('returns false for a different graph type', () => {
+    const TestGraph: unique symbol = Symbol('TestGraph');
+    const node = createGraphNode(TestGraph, SpriteNodeTestKind);
+    expect(isSpriteNode(node)).toBe(false);
   });
 });
 

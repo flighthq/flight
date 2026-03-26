@@ -1,7 +1,7 @@
 import type { GraphNode, PartialNode, Rectangle, Sprite, SpriteData, SpriteNodeRuntime } from '@flighthq/types';
 import { SpriteKind } from '@flighthq/types';
 
-import { createSpriteNode, createSpriteNodeRuntime } from './spriteBase';
+import { createSpriteNode, createSpriteNodeRuntime } from './spriteNode';
 
 export function computeSpriteLocalBoundsRect(_out: Rectangle, _source: Readonly<GraphNode>): void {
   // TODO: Get width/height from spritesheet reference
