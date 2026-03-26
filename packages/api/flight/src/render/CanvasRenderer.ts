@@ -3,9 +3,11 @@ import {
   defaultCanvasBitmapRenderer,
   defaultCanvasDisplayObjectRenderer,
   renderBackground,
-  renderDisplayObject,
+  renderDisplayObject as __renderDisplayObject,
+  renderSprite as __renderSprite,
 } from '@flighthq/render-canvas';
-import { registerRenderer, updateDisplayObjectBeforeRender } from '@flighthq/render-core';
+import { registerRenderer, updateDisplayObjectBeforeRender, updateSpriteBeforeRender } from '@flighthq/render-core';
+import { isSpriteNode } from '@flighthq/scene-graph-sprite';
 import {
   BitmapKind,
   type CanvasRenderOptions as CanvasRenderOptionsModel,
@@ -14,6 +16,7 @@ import {
 } from '@flighthq/types';
 
 import type DisplayObject from '../scene/graph/display/DisplayObject';
+import type SpriteNode from '../scene/graph/sprite/SpriteNode';
 import type CanvasRenderOptions from './CanvasRenderOptions';
 
 export default class CanvasRenderer {
@@ -33,10 +36,25 @@ export default class CanvasRenderer {
     };
   }
 
-  render(object: DisplayObject): void {
-    if (updateDisplayObjectBeforeRender(this.state, object.raw)) {
+  render(renderable: DisplayObject | SpriteNode): void {
+    if (isSpriteNode(renderable.raw)) {
+      this.renderSprite(renderable as SpriteNode);
+    } else {
+      this.renderDisplayObject(renderable as DisplayObject);
+    }
+  }
+
+  renderDisplayObject(displayObject: DisplayObject): void {
+    if (updateDisplayObjectBeforeRender(this.state, displayObject.raw)) {
       renderBackground(this.state);
-      renderDisplayObject(this.state, object.raw);
+      __renderDisplayObject(this.state, displayObject.raw);
+    }
+  }
+
+  renderSprite(sprite: SpriteNode): void {
+    if (updateSpriteBeforeRender(this.state, sprite.raw)) {
+      renderBackground(this.state);
+      __renderSprite(this.state, sprite.raw);
     }
   }
 }

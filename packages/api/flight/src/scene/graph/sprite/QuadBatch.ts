@@ -1,3 +1,4 @@
+import { invalidateAppearance } from '@flighthq/scene-graph-core';
 import { createQuadBatch, reserveQuadBatch, resizeQuadBatch } from '@flighthq/scene-graph-sprite';
 import type { QuadBatch as RawQuadBatch, QuadBatchData, QuadTransformType } from '@flighthq/types';
 
@@ -46,26 +47,32 @@ export default class QuadBatch extends SpriteNode {
 
   writeID(index: number, id: number): void {
     this.__data.ids[index] = id;
+    invalidateAppearance(this.__raw);
   }
 
   writeIDs(startIndex: number, values: Uint16Array): void {
     this.__data.ids.set(values, startIndex);
+    invalidateAppearance(this.__raw);
   }
 
   writeMatrices(startIndex: number, values: Float32Array): void {
     this.__data.transforms.set(values, startIndex * 6);
+    invalidateAppearance(this.__raw);
   }
 
   writeMatrix(index: number, matrix: Readonly<Matrix>): void {
     matrix.writeToFloat32Array(this.__data.transforms, index * 6);
+    invalidateAppearance(this.__raw);
   }
 
-  writeVector2(index: number, vector: Readonly<Vector2>): void {
+  writeVector(index: number, vector: Readonly<Vector2>): void {
     vector.writeToFloat32Array(this.__data.transforms, index * 2);
+    invalidateAppearance(this.__raw);
   }
 
   writeVectors(startIndex: number, values: Float32Array): void {
     this.__data.transforms.set(values, startIndex * 2);
+    invalidateAppearance(this.__raw);
   }
 
   // Get & Set Methods
