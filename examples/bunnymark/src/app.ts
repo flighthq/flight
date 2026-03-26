@@ -1,4 +1,4 @@
-import type { CanvasRenderer } from '@flighthq/flight';
+import { CanvasRenderer, Vector2 } from '@flighthq/flight';
 import { ImageSource, QuadBatch, TextureAtlas, TextureAtlasRegion } from '@flighthq/flight';
 import Stats from 'stats.js';
 
@@ -10,18 +10,18 @@ class App {
   declare stats: Stats;
 
   addingBunnies: boolean = false;
+  bunnyPosition: Vector2[] = [];
+  bunnySpeed: Vector2[] = [];
   gravity: number = 0.5;
   minX: number;
   minY: number;
   maxX: number;
   maxY: number;
-  speed: number[] = [];
-  texturePath = 'assets/wabbit_alpha.png';
 
-  constructor() {
+  constructor(bunny: ImageSource) {
     this.initElements();
     this.initStats();
-    this.initQuadBatch();
+    this.initQuadBatch(bunny);
     this.initRenderer();
 
     this.minX = 0;
@@ -31,60 +31,57 @@ class App {
   }
 
   addBunny(): void {
-    this.quadBatch.resize(this.quadBatch.numQuads + 1);
-    this.speed.push(Math.random() * 5);
-    this.speed.push(Math.random() * 5 - 2.5);
+    this.quadBatch.resize(this.quadBatch.instanceCount + 1);
+    this.bunnyPosition.push(new Vector2());
+    this.bunnySpeed.push(new Vector2(Math.random() * 5, Math.random() * 5 - 2.5));
   }
 
-  enterFrame(): void {
+  enterFrame = (): void => {
     this.stats.begin();
-    const transforms = this.quadBatch.transforms!;
-    const numQuads = this.quadBatch.numQuads;
-    const gravity = this.gravity;
-    const speed = this.speed;
-    for (let i = 0; i < numQuads; i++) {
-      const 
-      transforms[i] += speed[i]; // x
-      transforms[i + 1] += speed[i + 1]; // y
-      speed[i + 1] += this.gravity;
 
-      const bunny = bunnies[i];
-      bunny.x += bunny.speedX;
-      bunny.y += bunny.speedY;
-      bunny.speedY += gravity;
+    const { addingBunnies, quadBatch, gravity, minX, minY, maxX, maxY, renderer } = this;
+    const instanceCount = quadBatch.instanceCount;
 
-      if (bunny.x > maxX) {
-        bunny.speedX *= -1;
-        bunny.x = maxX;
-      } else if (bunny.x < minX) {
-        bunny.speedX *= -1;
-        bunny.x = minX;
+    for (let i = 0; i < instanceCount; i++) {
+      const position = this.bunnyPosition[i];
+      const speed = this.bunnySpeed[i];
+      position.add(speed);
+      position.x += speed.x;
+      position.y += speed.y;
+      speed.y += gravity;
+
+      if (position.x > maxX) {
+        speed.x *= -1;
+        position.x = maxX;
+      } else if (position.x < minX) {
+        speed.x *= -1;
+        position.x = minX;
       }
 
-      if (bunny.y > maxY) {
-        bunny.speedY *= -0.8;
-        bunny.y = maxY;
+      if (position.y > maxY) {
+        speed.y *= -0.8;
+        position.y = maxY;
         if (Math.random() > 0.5) {
-          bunny.speedY -= 3 + Math.random() * 4;
+          speed.y -= 3 + Math.random() * 4;
         }
-      } else if (bunny.y < minY) {
-        bunny.speedY = 0;
-        bunny.y = minY;
+      } else if (position.y < minY) {
+        speed.y = 0;
+        position.y = minY;
       }
+
+      quadBatch.writeVector(i, position);
     }
 
     if (addingBunnies) {
       for (let i = 0; i < 100; i++) {
-        addBunny();
+        this.addBunny();
       }
     }
-    if (updateSpriteBeforeRender(state, container)) {
-      renderBackground(state);
-      renderSprite(state, container);
-    }
-    stats.end();
-    requestAnimationFrame(enterFrame);
-  }
+
+    renderer.render(quadBatch);
+    this.stats.end();
+    requestAnimationFrame(this.enterFrame);
+  };
 
   initElements(): void {
     this.element = document.createElement('div');
@@ -96,14 +93,14 @@ class App {
     canvas.width = 550;
     canvas.height = 400;
     element.appendChild(canvas);
-    element.addEventListener('mousedown', this.onMouseDown);
-    element.addEventListener('mouseup', this.onMouseUp);
+    element.addEventListener('mousedown', this.onMouseDown.bind(this));
+    element.addEventListener('mouseup', this.onMouseUp.bind(this));
+    document.body.appendChild(element);
   }
 
-  async initQuadBatch() {
-    const image = new ImageSource(await this.loadImageAndDecode(this.texturePath));
-    const atlas = new TextureAtlas(image);
-    atlas.addRegion(new TextureAtlasRegion(0, 0, image.width, image.height));
+  initQuadBatch(bunny: ImageSource) {
+    const atlas = new TextureAtlas(bunny);
+    atlas.addRegion(new TextureAtlasRegion(0, 0, bunny.width, bunny.height));
     this.quadBatch = new QuadBatch();
     this.quadBatch.atlas = atlas;
     this.quadBatch.transformType = 'vector2';
@@ -117,28 +114,16 @@ class App {
       },
     };
 
-    const state = createCanvasRenderState(canvas, options);
-    setSpriteRenderer(state);
-    requestAnimationFrame(enterFrame);
+    this.renderer = new CanvasRenderer(this.canvas, options);
   }
 
   initStats(): void {
-    const stats = new Stats();
-    stats.dom.style.position = 'absolute';
-    stats.dom.style.left = '0px';
-    stats.dom.style.top = '0px';
-    document.body.appendChild(stats.dom);
-  }
-
-  initTextureAtlas(): void {}
-
-  async loadImageAndDecode(src: string): Promise<HTMLImageElement> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = src;
-    });
+    this.stats = new Stats();
+    const dom = this.stats.dom;
+    dom.style.position = 'absolute';
+    dom.style.left = '0px';
+    dom.style.top = '0px';
+    document.body.appendChild(dom);
   }
 
   onMouseDown(): void {
@@ -147,7 +132,7 @@ class App {
 
   onMouseUp(): void {
     this.addingBunnies = false;
-    console.log(bunnies.length + ' bunnies'); // eslint-disable-line
+    console.log(this.bunnyPosition.length + ' bunnies'); // eslint-disable-line
   }
 
   start(): void {
@@ -159,5 +144,15 @@ class App {
   }
 }
 
-const app = new App();
+async function loadImageAndDecode(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = src;
+  });
+}
+
+const bunny = new ImageSource(await loadImageAndDecode('assets/wabbit_alpha.png'));
+const app = new App(bunny);
 app.start();
