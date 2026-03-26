@@ -1,4 +1,13 @@
-import type { GraphNode, PartialNode, QuadBatch, QuadBatchData, Rectangle, SpriteNodeRuntime } from '@flighthq/types';
+import { reserveFloat32Array, reserveUint16Array } from '@flighthq/core';
+import type {
+  GraphNode,
+  PartialNode,
+  QuadBatch,
+  QuadBatchData,
+  QuadTransformType,
+  Rectangle,
+  SpriteNodeRuntime,
+} from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
 
 import { createSpriteNode, createSpriteNodeRuntime } from './spriteBase';
@@ -14,10 +23,9 @@ export function createQuadBatch(obj?: Readonly<PartialNode<QuadBatch>>): QuadBat
 export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): QuadBatchData {
   return {
     atlas: data?.atlas ?? null,
-    indices: data?.indices ?? null,
-    numQuads: data?.numQuads ?? 0,
-    overrideRects: data?.overrideRects ?? null,
-    transforms: data?.transforms ?? null,
+    ids: data?.ids ?? new Uint16Array(),
+    instanceCount: data?.instanceCount ?? 0,
+    transforms: data?.transforms ?? new Float32Array(),
     transformType: data?.transformType ?? 'vector2',
   };
 }
@@ -26,54 +34,42 @@ export function createQuadBatchRuntime(): SpriteNodeRuntime {
   return createSpriteNodeRuntime(defaultMethods);
 }
 
-export function resizeQuadBatch(target: QuadBatch, numQuads: number): boolean {
+export function getQuadBatchCapacity(source: Readonly<QuadBatch>): number {
+  const data = source.data;
+  const stride = getQuadTransformStride(data.transformType);
+  const transformCapacity = (data.transforms.length / stride) | 0;
+  return Math.min(data.ids.length, transformCapacity);
+}
+
+export function getQuadTransformStride(transformType: QuadTransformType): number {
+  return quadTransformStride[transformType];
+}
+
+export function reserveQuadBatch(target: QuadBatch, capacity: number): void {
+  const currentCapacity = getQuadBatchCapacity(target);
+  if (currentCapacity >= capacity) return;
   const data = target.data;
-  if (numQuads <= data.numQuads) return false;
-  const capacity = getQuadCapacity(data);
-  if (capacity >= numQuads) {
-    data.numQuads = numQuads;
-    return false;
+  data.ids = reserveUint16Array(data.ids, capacity);
+  data.transforms = reserveFloat32Array(data.transforms, capacity * getQuadTransformStride(data.transformType));
+}
+
+export function resizeQuadBatch(target: QuadBatch, instanceCount: number): void {
+  const data = target.data;
+  const oldInstanceCount = data.instanceCount;
+  data.instanceCount = instanceCount;
+  if (oldInstanceCount >= instanceCount) return;
+  const capacity = getQuadBatchCapacity(target);
+  if (capacity < instanceCount) {
+    const newCapacity = Math.max(instanceCount, capacity * 2);
+    reserveQuadBatch(target, newCapacity);
   }
-
-  const newCapacity = growCapacity(capacity);
-  if (data.overrideRects !== null) {
-    data.overrideRects = resizeFloat32Array(data.overrideRects, newCapacity * 4);
-  } else {
-    data.indices = resizeInt16Array(data.indices, newCapacity);
-  }
-  data.transforms = resizeFloat32Array(data.transforms, newCapacity * quadTransformLength[data.transformType]);
-  data.numQuads = numQuads;
-  return true;
-}
-
-function getQuadCapacity(data: QuadBatchData): number {
-  if (data.overrideRects !== null) return data.overrideRects.length >> 2;
-  if (data.indices !== null) return data.indices.length;
-  return 0;
-}
-
-function growCapacity(current: number): number {
-  return ((current + 1) * 3) >> 1;
-}
-
-function resizeInt16Array(array: Int16Array | null, length: number): Int16Array {
-  const out = new Int16Array(length);
-  if (array) out.set(array);
-  return out;
-}
-
-function resizeFloat32Array(array: Float32Array | null, length: number): Float32Array {
-  const out = new Float32Array(length);
-  if (array) out.set(array);
-  return out;
 }
 
 const defaultMethods: Partial<SpriteNodeRuntime> = {
   computeLocalBoundsRect: computeQuadBatchLocalBoundsRect,
 };
 
-const quadTransformLength = {
+const quadTransformStride = {
   vector2: 2,
-  matrix2x2: 4,
   matrix3x2: 6,
 } as const;
