@@ -13,6 +13,7 @@ import type {
   DisplayObjectData,
   DisplayObjectRuntime,
   DisplayObjectTraits,
+  GraphNode,
   MethodsOf,
   PartialNode,
 } from '@flighthq/types';
@@ -71,4 +72,9 @@ export function createDisplayObjectRuntime(
 
 export function getDisplayObjectRuntime(source: Readonly<DisplayObject>): Readonly<DisplayObjectRuntime> {
   return getGraphNodeRuntime(source) as DisplayObjectRuntime;
+}
+
+// eslint-disable-next-line
+export function isDisplayObject(source: Readonly<GraphNode<any, any>>): boolean {
+  return getGraphNodeRuntime(source).graph === DisplayGraph;
 }

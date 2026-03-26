@@ -9,6 +9,7 @@ import {
   initHasTransform2DRuntime,
 } from '@flighthq/scene-graph-core';
 import type {
+  GraphNode,
   MethodsOf,
   PartialNode,
   SpriteNode,
@@ -63,4 +64,9 @@ export function createSpriteNodeRuntime(methods?: Readonly<Partial<MethodsOf<Spr
 
 export function getSpriteNodeRuntime(source: Readonly<SpriteNode>): Readonly<SpriteNodeRuntime> {
   return getGraphNodeRuntime(source) as SpriteNodeRuntime;
+}
+
+// eslint-disable-next-line
+export function isSpriteNode(source: Readonly<GraphNode<any, any>>): boolean {
+  return getGraphNodeRuntime(source).graph === SpriteGraph;
 }

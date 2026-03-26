@@ -17,9 +17,9 @@
       "types": "./dist/sprite.d.ts",
       "default": "./dist/sprite.js"
     },
-    "./spriteBase": {
-      "types": "./dist/spriteBase.d.ts",
-      "default": "./dist/spriteBase.js"
+    "./spriteNode": {
+      "types": "./dist/spriteNode.d.ts",
+      "default": "./dist/spriteNode.js"
     },
     "./tilemap": {
       "types": "./dist/tilemap.d.ts",

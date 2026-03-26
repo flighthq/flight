@@ -1,4 +1,5 @@
 import { matrix3x2 } from '@flighthq/geometry';
+import { createGraphNode } from '@flighthq/scene-graph-core';
 import type { DisplayObject, DisplayObjectData, GraphNode, PartialNode, Rectangle, Shader } from '@flighthq/types';
 import { BlendMode, DisplayGraph, DisplayObjectKind } from '@flighthq/types';
 
@@ -7,6 +8,7 @@ import {
   createDisplayObjectGeneric,
   createDisplayObjectRuntime,
   getDisplayObjectRuntime,
+  isDisplayObject,
 } from './displayObject';
 
 describe('createDisplayObject', () => {
@@ -116,6 +118,19 @@ describe('createDisplayObjectRuntime', () => {
     const func = (_out: Rectangle, _source: Readonly<GraphNode>) => {};
     const runtime = createDisplayObjectRuntime({ computeLocalBoundsRect: func });
     expect(runtime.computeLocalBoundsRect).toStrictEqual(func);
+  });
+});
+
+describe('isDisplayObject', () => {
+  it('returns true for a sprite node', () => {
+    const node = createDisplayObject();
+    expect(isDisplayObject(node)).toBe(true);
+  });
+
+  it('returns false for a different graph type', () => {
+    const TestGraph: unique symbol = Symbol('TestGraph');
+    const node = createGraphNode(TestGraph, DisplayObjectKind);
+    expect(isDisplayObject(node)).toBe(false);
   });
 });
 
