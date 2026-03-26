@@ -1,7 +1,7 @@
 import { createSpritesheetAnimation } from '@flighthq/animation-spritesheet';
 import type { SpritesheetAnimation as RawSpritesheetAnimation } from '@flighthq/types';
 
-import { FlightObject } from '../..';
+import FlightObject from '../../FlightObject';
 
 export default class SpritesheetAnimation extends FlightObject<RawSpritesheetAnimation> {
   constructor(label?: string, frames?: number[], frameDuration?: number, loop?: boolean) {

@@ -73,6 +73,12 @@ export default class Matrix extends FlightObject<RawMatrix> {
     return matrix3x2.equals(this.__raw, b, compareTranslation);
   }
 
+  static fromFloat32Array(source: Readonly<Float32Array>, offset: number): Matrix {
+    const out = new Matrix();
+    matrix3x2.fromFloat32Array(out.raw, offset, source);
+    return out;
+  }
+
   static fromMatrix3(source: Readonly<Matrix3>): Matrix {
     const out = new Matrix();
     matrix3x2.fromMatrix3x3(out.raw, source.raw);
@@ -195,6 +201,10 @@ export default class Matrix extends FlightObject<RawMatrix> {
   translate(dx: number, dy: number): Matrix {
     matrix3x2.translate(this.__raw, this.__raw, dx, dy);
     return this;
+  }
+
+  writeToFloat32Array(out: Float32Array, offset: number): void {
+    matrix3x2.writeToFloat32Array(out, offset, this.__raw);
   }
 
   // Get & Set Methods

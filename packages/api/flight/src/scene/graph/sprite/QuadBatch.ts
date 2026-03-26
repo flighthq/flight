@@ -1,8 +1,10 @@
-import { createQuadBatch, resizeQuadBatch } from '@flighthq/scene-graph-sprite';
+import { createQuadBatch, reserveQuadBatch, resizeQuadBatch } from '@flighthq/scene-graph-sprite';
 import type { QuadBatch as RawQuadBatch, QuadBatchData, QuadTransformType } from '@flighthq/types';
 
-import { TextureAtlas } from '../../../assets';
+import TextureAtlas from '../../../assets/TextureAtlas';
 import FlightObject from '../../../FlightObject';
+import Matrix from '../../../geometry/Matrix';
+import Vector2 from '../../../geometry/Vector2';
 import SpriteNode from './SpriteNode';
 
 export default class QuadBatch extends SpriteNode {
@@ -22,8 +24,48 @@ export default class QuadBatch extends SpriteNode {
     return FlightObject.getOrCreate(raw, QuadBatch)!;
   }
 
-  resize(numQuads: number): void {
-    resizeQuadBatch(this.__raw, numQuads);
+  readID(index: number): number {
+    return this.__data.ids[index];
+  }
+
+  readMatrix(index: number): Matrix {
+    return Matrix.fromFloat32Array(this.__data.transforms, index * 6);
+  }
+
+  readVector2(index: number): Vector2 {
+    return Vector2.fromFloat32Array(this.__data.transforms, index * 2);
+  }
+
+  reserve(capacity: number): void {
+    reserveQuadBatch(this.__raw, capacity);
+  }
+
+  resize(instanceCount: number): void {
+    resizeQuadBatch(this.__raw, instanceCount);
+  }
+
+  writeID(index: number, id: number): void {
+    this.__data.ids[index] = id;
+  }
+
+  writeIDs(startIndex: number, values: Uint16Array): void {
+    this.__data.ids.set(values, startIndex);
+  }
+
+  writeMatrices(startIndex: number, values: Float32Array): void {
+    this.__data.transforms.set(values, startIndex * 6);
+  }
+
+  writeMatrix(index: number, matrix: Readonly<Matrix>): void {
+    matrix.writeToFloat32Array(this.__data.transforms, index * 6);
+  }
+
+  writeVector2(index: number, vector: Readonly<Vector2>): void {
+    vector.writeToFloat32Array(this.__data.transforms, index * 2);
+  }
+
+  writeVectors(startIndex: number, values: Float32Array): void {
+    this.__data.transforms.set(values, startIndex * 2);
   }
 
   // Get & Set Methods
@@ -37,39 +79,31 @@ export default class QuadBatch extends SpriteNode {
     this.__data.atlas = value !== null ? value.raw : null;
   }
 
-  get indices(): Int16Array | null {
-    return this.__data.indices;
+  get ids(): Uint16Array {
+    return this.__data.ids;
   }
 
-  set indices(value: Int16Array | null) {
-    this.__data.indices = value;
+  set indices(value: Uint16Array) {
+    this.__data.ids = value;
   }
 
-  get numQuads(): number {
-    return this.__data.numQuads;
+  get instanceCount(): number {
+    return this.__data.instanceCount;
   }
 
-  set numQuads(value: number) {
-    this.__data.numQuads = value;
-  }
-
-  get overrideRects(): Float32Array | null {
-    return this.__data.overrideRects;
-  }
-
-  set overrideRects(value: Float32Array | null) {
-    this.__data.overrideRects = value;
+  set instanceCount(value: number) {
+    this.__data.instanceCount = value;
   }
 
   override get raw(): RawQuadBatch {
     return this.__raw;
   }
 
-  get transforms(): Float32Array | null {
+  get transforms(): Float32Array {
     return this.__data.transforms;
   }
 
-  set transforms(value: Float32Array | null) {
+  set transforms(value: Float32Array) {
     this.__data.transforms = value;
   }
 
