@@ -1,5 +1,3 @@
-import type { Matrix3x2Like, Vector2Like } from '@flighthq/types';
-
 export function reserveFloat32Array(array: Float32Array, capacity: number): Float32Array {
   if (array.length >= capacity) return array;
   const out = new Float32Array(capacity);
