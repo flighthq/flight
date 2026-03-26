@@ -73,7 +73,13 @@ export default class QuadBatch extends SpriteNode {
     this.__data.transforms = value;
   }
 
-  get transformType(): 
+  get transformType(): QuadTransformType {
+    return this.__data.transformType;
+  }
+
+  set transformType(value: QuadTransformType) {
+    this.__data.transformType = value;
+  }
 }
 
 export { QuadTransformType };
