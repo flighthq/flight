@@ -4,10 +4,9 @@ import type { SpriteNode, SpriteNodeData } from './SpriteNode';
 
 export interface QuadBatchData extends SpriteNodeData {
   atlas: TextureAtlas | null;
-  indices: Int16Array | null;
-  numQuads: number;
-  overrideRects: Float32Array | null;
-  transforms: Float32Array | null;
+  ids: Uint16Array;
+  instanceCount: number;
+  transforms: Float32Array;
   transformType: QuadTransformType;
 }
 
