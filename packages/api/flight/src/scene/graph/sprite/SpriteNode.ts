@@ -1,7 +1,7 @@
-import { ColorTransform } from '@flighthq/flight/materials';
 import { getBoundsRect, getParent, invalidateAppearance, invalidateLocalTransform } from '@flighthq/scene-graph-core';
 import type { BlendMode, Shader, SpriteNode as RawSpriteNode } from '@flighthq/types';
 
+import ColorTransform from '../../../materials/ColorTransform';
 import FlightObject from '../../../FlightObject';
 import type Sprite from './Sprite';
 
