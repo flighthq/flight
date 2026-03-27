@@ -37,6 +37,10 @@
       "types": "./dist/canvasMaterials.d.ts",
       "default": "./dist/canvasMaterials.js"
     },
+    "./quadBatch": {
+      "types": "./dist/canvasQuadBatch.d.ts",
+      "default": "./dist/canvasQuadBatch.js"
+    },
     "./renderState": {
       "types": "./dist/canvasRendererState.d.ts",
       "default": "./dist/canvasRendererState.js"
