@@ -5,6 +5,7 @@ export * from './canvasClipRect.js';
 export * from './canvasDisplayObject.js';
 export * from './canvasMask.js';
 export * from './canvasMaterials.js';
+export * from './canvasQuadBatch.js';
 export * from './canvasRenderState.js';
 export * from './canvasSprite.js';
 export * from './canvasTransform.js';
