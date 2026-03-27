@@ -23,7 +23,7 @@ export default class ImageSource extends FlightObject<RawImageSource> {
   }
 
   get height(): number {
-    return this.__raw.width;
+    return this.__raw.height;
   }
 
   set height(value: number) {
