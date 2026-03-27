@@ -2,6 +2,7 @@ import {
   createCanvasRenderState,
   defaultCanvasBitmapRenderer,
   defaultCanvasDisplayObjectRenderer,
+  defaultCanvasQuadBatchRenderer,
   renderBackground,
   renderDisplayObject as __renderDisplayObject,
   renderSprite as __renderSprite,
@@ -13,6 +14,7 @@ import {
   type CanvasRenderOptions as CanvasRenderOptionsModel,
   type CanvasRenderState,
   DisplayObjectKind,
+  QuadBatchKind,
 } from '@flighthq/types';
 
 import type DisplayObject from '../scene/graph/display/DisplayObject';
@@ -26,6 +28,7 @@ export default class CanvasRenderer {
     this.state = createCanvasRenderState(canvas, this.mapCanvasOptions(options));
     registerRenderer(this.state, DisplayObjectKind, defaultCanvasDisplayObjectRenderer);
     registerRenderer(this.state, BitmapKind, defaultCanvasBitmapRenderer);
+    registerRenderer(this.state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
   }
 
   private mapCanvasOptions(options?: Partial<CanvasRenderOptions>): CanvasRenderOptionsModel | undefined {
