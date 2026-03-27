@@ -63,7 +63,7 @@ export default class ColorTransform extends FlightObject<RawColorTransform> {
     return colorTransform.isIdentity(this.__raw, compareAlphaMultiplier);
   }
 
-  multiplierEquals(a: Readonly<ColorTransform>, b: Readonly<ColorTransform>, compareAlpha: boolean = true): boolean {
+  multiplierEquals(b: Readonly<ColorTransform>, compareAlpha: boolean = true): boolean {
     return colorTransform.multiplierEquals(this.__raw, b.raw, compareAlpha);
   }
 

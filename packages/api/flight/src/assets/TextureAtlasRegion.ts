@@ -23,6 +23,8 @@ export default class TextureAtlasRegion extends FlightObject<RawTextureAtlasRegi
     return FlightObject.getOrCreate(raw, TextureAtlasRegion)!;
   }
 
+  // Get & Set Methods
+
   get height(): number {
     return this.__raw.height;
   }

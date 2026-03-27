@@ -111,6 +111,12 @@ export default class Vector4 extends FlightObject<RawVector4> {
 
   // Get & Set Methods
 
+  static get W_UNIT(): Vector4 {
+    const out = new Vector4();
+    vector4.copy(out.raw, vector4.W_UNIT);
+    return out;
+  }
+
   static get X_AXIS(): Vector4 {
     const out = new Vector4();
     vector4.copy(out.raw, vector4.X_AXIS);

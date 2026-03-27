@@ -23,6 +23,8 @@ export default class Tileset extends FlightObject<RawTileset> {
     return FlightObject.getOrCreate(raw, Tileset)!;
   }
 
+  // Get & Set Methods
+
   get atlas(): TextureAtlas | null {
     if (this.__raw.atlas === null) return null;
     return FlightObject.getOrCreate(this.__raw.atlas, TextureAtlas);
