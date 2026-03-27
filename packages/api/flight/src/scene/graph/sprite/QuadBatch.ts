@@ -90,7 +90,7 @@ export default class QuadBatch extends SpriteNode {
     return this.__data.ids;
   }
 
-  set indices(value: Uint16Array) {
+  set ids(value: Uint16Array) {
     this.__data.ids = value;
   }
 

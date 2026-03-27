@@ -128,6 +128,10 @@ export default class Matrix3 extends FlightObject<RawMatrix3> {
 
   // Get & Set Methods
 
+  get m(): Float32Array {
+    return this.__raw.m;
+  }
+
   get isAffine(): boolean {
     return matrix3x3.isAffine(this.__raw);
   }
