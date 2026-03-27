@@ -80,14 +80,14 @@ describe('Z_AXIS', () => {
   });
 });
 
-describe('W_AXIS', () => {
-  it('returns the unit vector along the W-axis', () => {
-    const wAxis = vector4.W_AXIS;
-    expect(wAxis).not.toBeNull();
-    expect(wAxis.x).toBe(0);
-    expect(wAxis.y).toBe(0);
-    expect(wAxis.z).toBe(0);
-    expect(wAxis.w).toBe(1);
+describe('W_UNIT', () => {
+  it('returns the unit vector along the W-dimension', () => {
+    const wUnit = vector4.W_UNIT;
+    expect(wUnit).not.toBeNull();
+    expect(wUnit.x).toBe(0);
+    expect(wUnit.y).toBe(0);
+    expect(wUnit.z).toBe(0);
+    expect(wUnit.w).toBe(1);
   });
 });
 

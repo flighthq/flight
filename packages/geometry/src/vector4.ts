@@ -4,7 +4,7 @@ import type { Vector3Like, Vector4, Vector4Like } from '@flighthq/types';
 export const X_AXIS: Readonly<Vector4> = create(1, 0, 0, 0);
 export const Y_AXIS: Readonly<Vector4> = create(0, 1, 0, 0);
 export const Z_AXIS: Readonly<Vector4> = create(0, 0, 1, 0);
-export const W_AXIS: Readonly<Vector4> = create(0, 0, 0, 1);
+export const W_UNIT: Readonly<Vector4> = create(0, 0, 0, 1);
 
 /**
  * The Vector4Like class represents a vector or point in four-dimensional space using the
@@ -20,7 +20,7 @@ export const W_AXIS: Readonly<Vector4> = create(0, 0, 0, 1);
  * - `X_AXIS = new Vector4Like(1, 0, 0, 0);`
  * - `Y_AXIS = new Vector4Like(0, 1, 0, 0);`
  * - `Z_AXIS = new Vector4Like(0, 0, 1, 0);`
- * - `W_AXIS = new Vector4Like(0, 0, 0, 1);`
+ * - `W_UNIT = new Vector4Like(0, 0, 0, 1);`
  * - `length = Math.sqrt(x ** 2 + y ** 2 + z ** 2 + w ** 2);`
  * - `lengthSquared = x ** 2 + y ** 2 + z ** 2 + w ** 2;`
  */
