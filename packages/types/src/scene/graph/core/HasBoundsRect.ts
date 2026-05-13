@@ -1,4 +1,4 @@
-import type { Entity, Runtime } from '../../../core';
+import type { Entity, Runtime } from '../../../foundation';
 import type { Rectangle } from '../../../geometry/Rectangle';
 import type { GraphNode } from './GraphNode';
 

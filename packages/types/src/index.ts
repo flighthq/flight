@@ -1,6 +1,6 @@
 export * from './animation';
 export * from './assets';
-export * from './core';
+export * from './foundation';
 export * from './geometry';
 export * from './materials';
 export * from './render';

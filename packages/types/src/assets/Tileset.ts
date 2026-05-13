@@ -1,4 +1,4 @@
-import type { Entity } from '../core';
+import type { Entity } from '../foundation';
 import type { TextureAtlas } from './TextureAtlas';
 
 export interface Tileset extends Entity {

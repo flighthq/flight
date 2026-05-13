@@ -1,5 +1,5 @@
-import type { NodeDataFactory, NodeRuntimeFactory } from '@flighthq/core';
-import { createNode, createRuntime, getRuntime } from '@flighthq/core';
+import type { NodeDataFactory, NodeRuntimeFactory } from '@flighthq/foundation';
+import { createNode, createRuntime, getRuntime } from '@flighthq/foundation';
 import type {
   GraphNode,
   GraphNodeData,

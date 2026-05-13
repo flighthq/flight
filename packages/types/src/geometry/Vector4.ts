@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutRuntime } from '../core';
+import type { Entity, EntityWithoutRuntime } from '../foundation';
 
 export interface Vector4 extends Entity {
   x: number;

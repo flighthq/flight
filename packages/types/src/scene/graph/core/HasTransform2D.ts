@@ -1,4 +1,4 @@
-import type { Entity, Runtime } from '../../../core';
+import type { Entity, Runtime } from '../../../foundation';
 import type { Matrix3x2 } from '../../../geometry';
 
 export interface HasTransform2D extends Entity {

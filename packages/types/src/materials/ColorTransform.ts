@@ -1,4 +1,4 @@
-import type { Entity } from '../core';
+import type { Entity } from '../foundation';
 
 export interface ColorTransform extends Entity {
   alphaMultiplier: number;

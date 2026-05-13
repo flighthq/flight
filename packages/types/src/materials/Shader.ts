@@ -1,3 +1,3 @@
-import type { Entity } from '../core';
+import type { Entity } from '../foundation';
 
 export interface Shader extends Entity {}
