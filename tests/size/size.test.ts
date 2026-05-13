@@ -4,19 +4,19 @@ import { expect, test } from 'vitest';
 import { gzipSync } from 'zlib';
 
 describe('bundle size checks', () => {
-  test.each([
-    { name: 'displayingabitmap - functional', path: 'displayingabitmap', threshold: 7000 },
-    { name: 'displayingabitmap - wrapper', path: '../../examples/displayingabitmap', threshold: 15000 },
-  ])('$name', async ({ name, path, threshold }) => {
-    const code = await buildSample(resolve(__dirname, path));
-    const rawSize = getRawSize(code);
-    const gzipSize = getGzipSize(code);
-    const gzipSizeKB = (gzipSize / 1024).toFixed(2);
+  test.each([{ name: 'displayingabitmap', path: '../../examples/displayingabitmap', threshold: 7000 }])(
+    '$name',
+    async ({ name, path, threshold }) => {
+      const code = await buildSample(resolve(__dirname, path));
+      const rawSize = getRawSize(code);
+      const gzipSize = getGzipSize(code);
+      const gzipSizeKB = (gzipSize / 1024).toFixed(2);
 
-    console.log(`${name}: ${gzipSizeKB} KB gzipped (raw ${rawSize} bytes)`); // eslint-disable-line
+      console.log(`${name}: ${gzipSizeKB} KB gzipped (raw ${rawSize} bytes)`); // eslint-disable-line
 
-    expect(gzipSize, `${name} exceeded limit (${gzipSizeKB} KB > ${threshold / 1000} KB)`).toBeLessThan(threshold);
-  });
+      expect(gzipSize, `${name} exceeded limit (${gzipSizeKB} KB > ${threshold / 1000} KB)`).toBeLessThan(threshold);
+    },
+  );
 });
 
 async function buildSample(root: string): Promise<string> {

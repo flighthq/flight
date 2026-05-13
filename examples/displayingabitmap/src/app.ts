@@ -1,6 +1,38 @@
-import { CanvasRenderer } from '@flighthq/flight';
+import {
+  addChild,
+  BitmapKind,
+  createBitmap,
+  createCanvasRenderState,
+  createDisplayObject,
+  createImageSource,
+  defaultCanvasBitmapRenderer,
+  registerRenderer,
+  renderBackground,
+  renderDisplayObject,
+  updateDisplayObjectBeforeRender,
+} from '@flighthq/engine';
 
-import Main from './Main.js';
+const main = createDisplayObject();
+const bitmap = createBitmap();
+
+try {
+  const image = createImageSource(await loadImageAndDecode('assets/wabbit_alpha.png'));
+  bitmap.data.image = image;
+  bitmap.x = (550 - image.width) / 2;
+  bitmap.y = (400 - image.height) / 2;
+  addChild(main, bitmap);
+} catch (error) {
+  console.error('Error loading image:', error); // eslint-disable-line
+}
+
+function loadImageAndDecode(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = src;
+  });
+}
 
 const canvas = document.createElement('canvas');
 canvas.width = 550;
@@ -14,12 +46,15 @@ const options = {
   },
 };
 
-const renderer = new CanvasRenderer(canvas, options);
-const main = new Main();
+const state = createCanvasRenderState(canvas, options);
+registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
 
 function enterFrame() {
-  renderer.render(main);
+  if (updateDisplayObjectBeforeRender(state, main)) {
+    renderBackground(state);
+    renderDisplayObject(state, main);
+  }
   requestAnimationFrame(enterFrame);
 }
 
-requestAnimationFrame(enterFrame);
+enterFrame();
