@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/core';
+import { createEntity } from '@flighthq/foundation';
 import { colorTransform } from '@flighthq/materials';
 import { BlendMode, type Renderable, type RenderNode, type RenderState } from '@flighthq/types';
 

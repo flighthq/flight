@@ -1,4 +1,4 @@
-import { getRuntime } from '@flighthq/core';
+import { getRuntime } from '@flighthq/foundation';
 import { matrix3x2, vector2 } from '@flighthq/geometry';
 import { addChild, createGraphNode } from '@flighthq/scene-graph-core';
 import type { GraphNode, GraphNodeRuntime, HasTransform2D, HasTransform2DRuntime, Matrix3x2 } from '@flighthq/types';

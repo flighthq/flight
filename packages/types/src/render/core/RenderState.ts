@@ -1,4 +1,4 @@
-import type { Entity } from '../../core';
+import type { Entity } from '../../foundation';
 import type { Matrix3x2 } from '../../geometry';
 import type { BlendMode, ColorTransform, Shader } from '../../materials';
 import type { Renderable } from './Renderable';

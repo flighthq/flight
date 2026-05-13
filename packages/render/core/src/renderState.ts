@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/core';
+import { createEntity } from '@flighthq/foundation';
 import { BlendMode, type RenderState } from '@flighthq/types';
 
 export function createRenderState(obj?: Partial<RenderState>): RenderState {

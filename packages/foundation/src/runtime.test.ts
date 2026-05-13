@@ -12,7 +12,7 @@ describe('createRuntime', () => {
 
   it('has a null api slot', () => {
     const runtime = createRuntime();
-    expect(runtime.api).toBeNull();
+    expect(runtime.binding).toBeNull();
   });
 });
 

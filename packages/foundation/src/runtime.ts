@@ -3,7 +3,7 @@ import { RuntimeKey } from '@flighthq/types';
 
 export function createRuntime(): Runtime {
   return {
-    api: null,
+    binding: null,
   };
 }
 

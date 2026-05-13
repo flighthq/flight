@@ -1,4 +1,4 @@
-import { getRuntime } from '@flighthq/core';
+import { getRuntime } from '@flighthq/foundation';
 import { matrix3x2, matrix3x2Pool, rectangle } from '@flighthq/geometry';
 import type {
   GraphNode,

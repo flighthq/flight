@@ -1,4 +1,4 @@
-import type { Runtime } from '../../../core/Runtime';
+import type { Runtime } from '../../../foundation';
 import type { Node, NodeData, RuntimeKey } from '../../../index';
 
 export interface GraphNodeTraits {

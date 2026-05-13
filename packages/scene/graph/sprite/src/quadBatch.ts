@@ -1,4 +1,4 @@
-import { reserveFloat32Array, reserveUint16Array } from '@flighthq/core';
+import { reserveFloat32Array, reserveUint16Array } from '@flighthq/foundation';
 import type {
   GraphNode,
   PartialNode,

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/core';
+import { createEntity } from '@flighthq/foundation';
 import type { Spritesheet } from '@flighthq/types';
 
 export function createSpritesheet(obj?: Partial<Spritesheet>): Spritesheet {

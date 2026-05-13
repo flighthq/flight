@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/core';
+import { createEntity } from '@flighthq/foundation';
 import type { Timeline } from '@flighthq/types';
 
 export function createTimeline(obj: Partial<Timeline> = {}): Timeline {

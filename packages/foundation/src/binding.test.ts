@@ -1,42 +1,42 @@
 import { RuntimeKey } from '@flighthq/types';
 
-import { attachAPI, getAPI } from './api';
+import { attachBinding, getBinding } from './binding';
 import { createEntity } from './entity';
 import { createRuntime, getRuntime } from './runtime';
 
-describe('attachAPI', () => {
+describe('attachBinding', () => {
   it('creates a runtime object if none is present', () => {
     const entity = createEntity();
     expect(getRuntime(entity)).toBeUndefined();
-    attachAPI(entity, {});
+    attachBinding(entity, {});
     expect(getRuntime(entity)).not.toBeUndefined();
   });
 
-  it('assigns to the api slot', () => {
+  it('assigns to the binding slot', () => {
     const entity = createEntity();
-    const api = {};
-    attachAPI(entity, api);
-    expect(getRuntime(entity).api).toStrictEqual(api);
+    const binding = {};
+    attachBinding(entity, binding);
+    expect(getRuntime(entity).binding).toStrictEqual(binding);
   });
 });
 
-describe('getAPI', () => {
+describe('getBinding', () => {
   it('returns null if the entity has no runtime', () => {
     const entity = createEntity();
-    expect(getAPI(entity)).toBeNull();
+    expect(getBinding(entity)).toBeNull();
   });
 
-  it('returns null if the api slot is empty', () => {
+  it('returns null if the binding slot is empty', () => {
     const entity = createEntity();
     entity[RuntimeKey] = createRuntime();
-    expect(getAPI(entity)).toBeNull();
+    expect(getBinding(entity)).toBeNull();
   });
 
-  it('returns the api slot if set', () => {
+  it('returns the binding slot if set', () => {
     const entity = createEntity();
     const runtime = createRuntime();
-    runtime.api = {};
+    runtime.binding = {};
     entity[RuntimeKey] = runtime;
-    expect(getAPI(entity)).toStrictEqual(runtime.api);
+    expect(getBinding(entity)).toStrictEqual(runtime.binding);
   });
 });

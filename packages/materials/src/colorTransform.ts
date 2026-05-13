@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/core';
+import { createEntity } from '@flighthq/foundation';
 import type { ColorTransform } from '@flighthq/types';
 
 export function create(obj?: Partial<ColorTransform>): ColorTransform {

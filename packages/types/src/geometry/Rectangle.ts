@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutRuntime } from '../core';
+import type { Entity, EntityWithoutRuntime } from '../foundation';
 
 export interface Rectangle extends Entity {
   height: number;

@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutRuntime } from '../core';
+import type { Entity, EntityWithoutRuntime } from '../foundation';
 
 export interface Matrix3x3 extends Entity {
   readonly m: Float32Array;

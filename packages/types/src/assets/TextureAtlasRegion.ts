@@ -1,4 +1,4 @@
-import type { Entity } from '../core';
+import type { Entity } from '../foundation';
 
 export interface TextureAtlasRegion extends Entity {
   height: number;

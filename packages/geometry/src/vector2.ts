@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/core';
+import { createEntity } from '@flighthq/foundation';
 import type { Vector2, Vector2Like } from '@flighthq/types';
 
 /**

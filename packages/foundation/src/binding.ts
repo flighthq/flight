@@ -3,14 +3,14 @@ import { RuntimeKey } from '@flighthq/types';
 
 import { createRuntime, getRuntime } from './runtime';
 
-export function attachAPI(entity: Entity, api: object): void {
+export function attachBinding(entity: Entity, binding: object): void {
   if (entity[RuntimeKey] === undefined) {
     entity[RuntimeKey] = createRuntime();
   }
-  entity[RuntimeKey].api = api;
+  entity[RuntimeKey].binding = binding;
 }
 
-export function getAPI(source: Entity): object | null {
+export function getBinding(source: Entity): object | null {
   const runtime = getRuntime(source);
-  return runtime?.api ?? null;
+  return runtime?.binding ?? null;
 }
