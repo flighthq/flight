@@ -1,7 +1,9 @@
+import { addChild } from '@flighthq/scene-graph-core';
 import type { PartialNode, Stage } from '@flighthq/types';
 import { StageKind } from '@flighthq/types';
 
-import { createStage } from './stage';
+import { createDisplayObject } from './displayObject';
+import { createStage, getStage } from './stage';
 
 describe('createStage', () => {
   let stage: Stage;
@@ -57,5 +59,35 @@ describe('createStage', () => {
     const base = {};
     const obj = createStage(base);
     expect(obj).not.toStrictEqual(base);
+  });
+});
+
+describe('getStage', () => {
+  it('returns null when the node has no parent', () => {
+    const obj = createDisplayObject();
+    expect(getStage(obj)).toBeNull();
+  });
+
+  it('returns null when the root is not a Stage', () => {
+    const root = createDisplayObject();
+    const child = createDisplayObject();
+    addChild(root, child);
+    expect(getStage(child)).toBeNull();
+  });
+
+  it('returns the Stage when it is the root', () => {
+    const stage = createStage();
+    const child = createDisplayObject();
+    addChild(stage, child);
+    expect(getStage(child)).toBe(stage);
+  });
+
+  it('returns the Stage from a deeply nested node', () => {
+    const stage = createStage();
+    const mid = createDisplayObject();
+    const leaf = createDisplayObject();
+    addChild(stage, mid);
+    addChild(mid, leaf);
+    expect(getStage(leaf)).toBe(stage);
   });
 });

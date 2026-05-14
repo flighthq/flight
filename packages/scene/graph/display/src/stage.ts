@@ -1,4 +1,5 @@
-import type { PartialNode, Stage, StageData } from '@flighthq/types';
+import { getRoot } from '@flighthq/scene-graph-core';
+import type { DisplayObject, PartialNode, Stage, StageData } from '@flighthq/types';
 import { StageKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric } from './displayObject';
@@ -20,4 +21,9 @@ export function createStageData(data?: Readonly<Partial<StageData>>): StageData 
     stageHeight: data?.stageHeight ?? 550,
     stageWidth: data?.stageWidth ?? 400,
   };
+}
+
+export function getStage(source: Readonly<DisplayObject>): Stage | null {
+  const root = getRoot(source);
+  return root.kind === StageKind ? (root as Stage) : null;
 }

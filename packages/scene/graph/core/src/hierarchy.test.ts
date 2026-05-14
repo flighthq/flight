@@ -11,6 +11,7 @@ import {
   getChildIndex,
   getNumChildren,
   getParent,
+  getRoot,
   removeChild,
   removeChildAt,
   removeChildren,
@@ -256,6 +257,23 @@ describe('getParent', () => {
     addChild(container, childA);
     const parent = getRuntime(childA).parent;
     expect(getParent(childA)).toStrictEqual(parent);
+  });
+});
+
+describe('getRoot', () => {
+  it('returns the node itself when it has no parent', () => {
+    expect(getRoot(childA)).toBe(childA);
+  });
+
+  it('returns the topmost ancestor', () => {
+    addChild(container, childA);
+    addChild(childA, childB);
+    expect(getRoot(childB)).toBe(container);
+  });
+
+  it('returns the direct parent when depth is one', () => {
+    addChild(container, childA);
+    expect(getRoot(childA)).toBe(container);
   });
 });
 

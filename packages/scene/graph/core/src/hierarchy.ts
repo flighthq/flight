@@ -148,6 +148,22 @@ export function getParent<GraphKind extends symbol, Traits extends object>(
 }
 
 /**
+ * Returns the topmost ancestor of the node, or the node itself if it has no
+ * parent.
+ **/
+export function getRoot<GraphKind extends symbol, Traits extends object>(
+  source: Readonly<GraphNode<GraphKind, Traits>>,
+): GraphNode<GraphKind, Traits> & Traits {
+  let current: GraphNode<GraphKind, Traits> = source as GraphNode<GraphKind, Traits>;
+  let parent = getParent(current);
+  while (parent !== null) {
+    current = parent;
+    parent = getParent(current);
+  }
+  return current as GraphNode<GraphKind, Traits> & Traits;
+}
+
+/**
  * Removes the specified `child` Node instance from the
  * child list of the Node instance. The `parent`
  * property of the removed child is set to `null` , and the object
