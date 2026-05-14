@@ -363,6 +363,38 @@ describe('getWorldBoundsRect', () => {
     expect(rect).not.toBeNull();
     expect(rect).toStrictEqual(runtime.worldBoundsRect);
   });
+
+  it('excludes a disabled child from world bounds', () => {
+    const parent = createTestNode();
+    const child = createTestNode();
+    addChild(parent, child);
+
+    rectangle.setTo(getLocalBoundsRect(parent) as Rectangle, 0, 0, 10, 10);
+    rectangle.setTo(getLocalBoundsRect(child) as Rectangle, 0, 0, 200, 200);
+    child.x = 100;
+    invalidateLocalTransform(child);
+
+    child.enabled = false;
+
+    const bounds = getWorldBoundsRect(parent);
+    expect(bounds.width).toBeCloseTo(10);
+    expect(bounds.height).toBeCloseTo(10);
+  });
+
+  it('includes an enabled child in world bounds', () => {
+    const parent = createTestNode();
+    const child = createTestNode();
+    addChild(parent, child);
+
+    rectangle.setTo(getLocalBoundsRect(parent) as Rectangle, 0, 0, 10, 10);
+    rectangle.setTo(getLocalBoundsRect(child) as Rectangle, 0, 0, 200, 200);
+    child.x = 100;
+    invalidateLocalTransform(child);
+
+    const bounds = getWorldBoundsRect(parent);
+    expect(bounds.width).toBeGreaterThan(10);
+    expect(bounds.height).toBeGreaterThan(10);
+  });
 });
 
 describe('getHeight', () => {
