@@ -1,9 +1,15 @@
 import { rectangle } from '@flighthq/geometry';
 import { addChild, getLocalBoundsRect, invalidateLocalTransform } from '@flighthq/scene-graph-core';
-import { createDisplayObject, getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
+import {
+  createDisplayObject,
+  createDisplayObjectGeneric,
+  getDisplayObjectRuntime,
+} from '@flighthq/scene-graph-display';
 import type { DisplayObject, DisplayObjectRuntime } from '@flighthq/types';
+import { DisplayObjectKind } from '@flighthq/types';
 
-import { hitTestObject, hitTestPoint } from './hitTest';
+import { hitTestObject, hitTestPoint, registerHitTestPoint } from './hitTests';
+import { defaultDisplayObjectHitTestPoint } from './displayHitTests';
 
 describe('hitTestObject', () => {
   let a: DisplayObject;
@@ -66,6 +72,10 @@ describe('hitTestObject', () => {
 describe('hitTestPoint', () => {
   let obj: DisplayObject;
 
+  beforeAll(() => {
+    registerHitTestPoint(DisplayObjectKind, defaultDisplayObjectHitTestPoint);
+  });
+
   beforeEach(() => {
     obj = createDisplayObject();
     obj.visible = true;
@@ -108,11 +118,40 @@ describe('hitTestPoint', () => {
   });
 
   it('works with the default shapeFlag param', () => {
-    // should ignore _shapeFlag in base DisplayObject
     const result = hitTestPoint(obj, 50, 50);
     expect(result).toBe(true);
 
     const resultExplicit = hitTestPoint(obj, 50, 50, true);
     expect(resultExplicit).toBe(true);
+  });
+
+  it('returns true when a child is hit even if the parent has no opaqueBackground', () => {
+    obj.opaqueBackground = null;
+
+    const child = createDisplayObject();
+    child.opaqueBackground = 0xff0000;
+    rectangle.setTo(getLocalBoundsRect(child), 0, 0, 100, 100);
+    addChild(obj, child);
+
+    expect(hitTestPoint(obj, 50, 50)).toBe(true);
+  });
+
+  it('does not test children of an invisible parent', () => {
+    obj.visible = false;
+
+    const child = createDisplayObject();
+    child.opaqueBackground = 0xff0000;
+    rectangle.setTo(getLocalBoundsRect(child), 0, 0, 100, 100);
+    addChild(obj, child);
+
+    expect(hitTestPoint(obj, 50, 50)).toBe(false);
+  });
+
+  it('uses a registered handler for a custom kind', () => {
+    const CustomKind = Symbol('CustomKind');
+    registerHitTestPoint(CustomKind, () => true);
+    const custom = createDisplayObjectGeneric(CustomKind);
+
+    expect(hitTestPoint(custom, 50, 50)).toBe(true);
   });
 });

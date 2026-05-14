@@ -68,6 +68,7 @@ export function createGraphNodeRuntime<GraphKind extends symbol, Traits extends 
 export function defaultGraphNodeRuntimeCallback<GraphKind extends symbol, Traits extends object>(
   _target: GraphNode<GraphKind, Traits>,
 ): void {}
+
 export function defaultGraphNodeRuntimeCanAddChild<GraphKind extends symbol, Traits extends object>(
   _target: GraphNode<GraphKind, Traits>,
   _child: GraphNode<GraphKind, Traits>,

@@ -1,1 +1,3 @@
-export * from './hitTest.js';
+export * from './displayHitTests';
+export * from './hitTests';
+export * from './spriteHitTests';

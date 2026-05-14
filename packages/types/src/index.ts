@@ -2,6 +2,7 @@ export * from './animation';
 export * from './assets';
 export * from './foundation';
 export * from './geometry';
+export * from './interaction';
 export * from './materials';
 export * from './render';
 export * from './scene';
