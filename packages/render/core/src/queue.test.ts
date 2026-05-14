@@ -73,4 +73,20 @@ describe('prepareRenderQueue', () => {
     prepareRenderQueue(state, parent);
     expect(state.currentQueueLength).toBe(2);
   });
+
+  it('discards objects which are enabled=false', () => {
+    child.enabled = false;
+    updateDisplayObjectBeforeRender(state, parent);
+    prepareRenderQueue(state, parent);
+    expect(state.currentQueueLength).toBe(1);
+  });
+
+  it('discards subtree of a disabled object', () => {
+    const grandChild = createDisplayObject();
+    addChild(child, grandChild);
+    child.enabled = false;
+    updateDisplayObjectBeforeRender(state, parent);
+    prepareRenderQueue(state, parent);
+    expect(state.currentQueueLength).toBe(1);
+  });
 });
