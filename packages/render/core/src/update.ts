@@ -32,6 +32,7 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as DisplayObject;
+    if (!current.enabled) continue;
     const data = getDisplayObjectRenderNode(state, current);
 
     if (current !== source) {
@@ -98,6 +99,7 @@ export function updateSpriteBeforeRender(state: RenderState, source: SpriteNode)
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as SpriteNode;
+    if (!current.enabled) continue;
     const data = getSpriteRenderNode(state, current);
 
     if (current !== source) {

@@ -18,6 +18,7 @@ export function prepareRenderQueue(state: RenderState, source: Renderable): void
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as DisplayObject;
+    if (!current.enabled) continue;
     const data = getDisplayObjectRenderNode(state, current);
     const isMask = data.isMaskFrameID === currentFrameID;
     if (!isMask) {
