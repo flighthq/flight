@@ -8,15 +8,19 @@ import {
   initHasBoundsRectRuntime,
   initHasTransform2D,
   initHasTransform2DRuntime,
+  invalidateAppearance,
 } from '@flighthq/scene-graph-core';
 import type {
   DisplayObject,
   DisplayObjectData,
   DisplayObjectRuntime,
   DisplayObjectTraits,
+  Filter,
   GraphNode,
+  Matrix3x2,
   MethodsOf,
   PartialNode,
+  Rectangle,
 } from '@flighthq/types';
 import { DisplayGraph } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
@@ -75,4 +79,39 @@ export function getDisplayObjectRuntime(source: Readonly<DisplayObject>): Readon
 // eslint-disable-next-line
 export function isDisplayObject(source: Readonly<GraphNode<any, any>>): boolean {
   return getGraphNodeRuntime(source).graph === DisplayGraph;
+}
+
+export function setCacheAsBitmap(source: DisplayObject, value: boolean): void {
+  source.cacheAsBitmap = value;
+  invalidateAppearance(source);
+}
+
+export function setCacheAsBitmapMatrix(source: DisplayObject, value: Matrix3x2 | null): void {
+  source.cacheAsBitmapMatrix = value;
+  invalidateAppearance(source);
+}
+
+export function setFilters(source: DisplayObject, value: Filter[] | null): void {
+  source.filters = value;
+  invalidateAppearance(source);
+}
+
+export function setMask(source: DisplayObject, value: DisplayObject | null): void {
+  source.mask = value;
+  invalidateAppearance(source);
+}
+
+export function setOpaqueBackground(source: DisplayObject, value: number | null): void {
+  source.opaqueBackground = value;
+  invalidateAppearance(source);
+}
+
+export function setScale9Grid(source: DisplayObject, value: Rectangle | null): void {
+  source.scale9Grid = value;
+  invalidateAppearance(source);
+}
+
+export function setScrollRect(source: DisplayObject, value: Rectangle | null): void {
+  source.scrollRect = value;
+  invalidateAppearance(source);
 }
