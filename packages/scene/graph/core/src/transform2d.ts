@@ -1,6 +1,6 @@
 import { getRuntime } from '@flighthq/foundation';
 import { matrix3x2 } from '@flighthq/geometry';
-import { recomputeWorldTransformID } from '@flighthq/scene-graph-core';
+import { invalidateLocalTransform, recomputeWorldTransformID } from '@flighthq/scene-graph-core';
 import type {
   GraphNode,
   GraphNodeRuntime,
@@ -123,6 +123,46 @@ function recomputeWorldTransform2D<GraphKind extends symbol, Traits extends obje
     matrix3x2.copy(runtime.worldTransform2D, runtime.localTransform2D!);
   }
   recomputeWorldTransformID(runtime, parentRuntime);
+}
+
+export function setRotation<GraphKind extends symbol, Traits extends object>(
+  source: GraphNode<GraphKind, Traits> & HasTransform2D,
+  value: number,
+): void {
+  source.rotation = value;
+  invalidateLocalTransform(source);
+}
+
+export function setScaleX<GraphKind extends symbol, Traits extends object>(
+  source: GraphNode<GraphKind, Traits> & HasTransform2D,
+  value: number,
+): void {
+  source.scaleX = value;
+  invalidateLocalTransform(source);
+}
+
+export function setScaleY<GraphKind extends symbol, Traits extends object>(
+  source: GraphNode<GraphKind, Traits> & HasTransform2D,
+  value: number,
+): void {
+  source.scaleY = value;
+  invalidateLocalTransform(source);
+}
+
+export function setX<GraphKind extends symbol, Traits extends object>(
+  source: GraphNode<GraphKind, Traits> & HasTransform2D,
+  value: number,
+): void {
+  source.x = value;
+  invalidateLocalTransform(source);
+}
+
+export function setY<GraphKind extends symbol, Traits extends object>(
+  source: GraphNode<GraphKind, Traits> & HasTransform2D,
+  value: number,
+): void {
+  source.y = value;
+  invalidateLocalTransform(source);
 }
 
 const DEG_TO_RAD = Math.PI / 180;

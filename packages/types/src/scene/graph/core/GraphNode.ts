@@ -1,11 +1,10 @@
-import type { Runtime } from '../../../foundation';
-import type { Node, NodeData, RuntimeKey } from '../../../index';
+import type { Node, NodeData, Runtime, RuntimeKey } from '../../../foundation';
 
 export interface GraphNodeTraits {
   data: GraphNodeData | null;
+  enabled: boolean;
   kind: symbol;
   name: string | null;
-  visible: boolean;
 }
 
 export interface GraphNode<GraphKind extends symbol = typeof NullGraph, Traits extends object = GraphNodeTraits>

@@ -1,8 +1,8 @@
-import type { BlendMode, ColorTransform, Shader } from '../../../materials';
 import type {
   GraphNode,
   GraphNodeData,
   GraphNodeRuntime,
+  HasAppearance,
   HasBoundsRect,
   HasBoundsRectRuntime,
   HasTransform2D,
@@ -13,16 +13,12 @@ export const SpriteGraph = Symbol('SpriteGraph');
 
 export type SpriteNode = GraphNode<typeof SpriteGraph, SpriteNodeTraits> & SpriteNodeTraits;
 
-export interface SpriteNodeTraits extends HasBoundsRect, HasTransform2D {
-  alpha: number;
+export interface SpriteNodeTraits extends HasAppearance, HasBoundsRect, HasTransform2D {
   alphaEnabled: boolean;
-  blendMode: BlendMode | null;
   blendModeEnabled: boolean;
-  colorTransform: ColorTransform | null;
   colorTransformEnabled: boolean;
   originX: number;
   originY: number;
-  shader: Shader | null;
 }
 
 export interface SpriteNodeData extends GraphNodeData {}

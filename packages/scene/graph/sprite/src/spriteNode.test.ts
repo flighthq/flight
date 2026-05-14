@@ -14,7 +14,7 @@ describe('createSpriteNode', () => {
 
   it('initializes default values', () => {
     expect(spriteNode.alpha).toBe(1);
-    expect(spriteNode.blendMode).toBe(BlendMode.Normal);
+    expect(spriteNode.blendMode).toBeNull();
     expect(spriteNode.shader).toBeNull();
     expect(spriteNode.visible).toBe(true);
     expect(spriteNode.kind).toBe(SpriteNodeTestKind);

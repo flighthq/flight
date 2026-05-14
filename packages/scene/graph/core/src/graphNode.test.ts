@@ -16,7 +16,7 @@ describe('createGraphNode', () => {
   });
 
   it('initializes default values', () => {
-    expect(node.visible).toBe(true);
+    expect(node.enabled).toBe(true);
     expect(getGraphNodeRuntime(node).graph).toStrictEqual(TestGraph);
   });
 
@@ -24,10 +24,10 @@ describe('createGraphNode', () => {
     const base = {
       parent: createGraphNode(TestGraph, NodeTestKind),
       children: [],
-      visible: false,
+      enabled: false,
     };
     node = createGraphNode(TestGraph, NodeTestKind, base);
-    expect(node.visible).toStrictEqual(base.visible);
+    expect(node.enabled).toStrictEqual(base.enabled);
   });
 
   it('returns a new object for better hidden-class performance', () => {

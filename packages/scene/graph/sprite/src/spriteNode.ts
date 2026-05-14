@@ -3,6 +3,7 @@ import {
   createGraphNode,
   createGraphNodeRuntime,
   getGraphNodeRuntime,
+  initHasAppearance,
   initHasBoundsRect,
   initHasBoundsRectRuntime,
   initHasTransform2D,
@@ -18,7 +19,6 @@ import type {
   SpriteNodeTraits,
 } from '@flighthq/types';
 import { SpriteGraph } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
 
 export type SpriteGraphNodeDataFactory = GraphNodeDataFactory<SpriteNodeData>;
 export type SpriteGraphNodeRuntimeFactory<Runtime extends SpriteNodeRuntime> = GraphNodeRuntimeFactory<
@@ -43,15 +43,12 @@ export function createSpriteNode<Runtime extends SpriteNodeRuntime>(
   ) as SpriteNode;
   initHasTransform2D(out, obj);
   initHasBoundsRect(out, obj);
-  out.alpha = obj?.alpha ?? 1;
+  initHasAppearance(out, obj);
   out.alphaEnabled = obj?.alphaEnabled ?? true;
-  out.blendMode = obj?.blendMode ?? BlendMode.Normal;
   out.blendModeEnabled = obj?.blendModeEnabled ?? true;
-  out.colorTransform = obj?.colorTransform ?? null;
   out.colorTransformEnabled = obj?.colorTransformEnabled ?? true;
   out.originX = obj?.originX ?? 1;
   out.originY = obj?.originY ?? 1;
-  out.shader = obj?.shader ?? null;
   return out;
 }
 

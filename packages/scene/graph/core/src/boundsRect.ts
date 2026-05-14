@@ -13,6 +13,7 @@ import type {
 
 import { getGraphNodeRuntime } from './graphNode';
 import { getNumChildren, getParent } from './hierarchy';
+import { invalidateLocalTransform } from './revision';
 import { ensureWorldTransform2D, getLocalTransform2D, getWorldTransform2D } from './transform2d';
 
 /**
@@ -101,6 +102,17 @@ export function getBoundsRect<GraphKind extends symbol, Traits extends object>(
   return (getRuntime(target) as HasBoundsRectRuntime).boundsRect!;
 }
 
+export function getHeight<GraphKind extends symbol, Traits extends object>(
+  source: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
+): number {
+  calculateBoundsRect(
+    _tempBoundsRect,
+    source,
+    getParent(source) as (GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D) | null,
+  );
+  return _tempBoundsRect.height;
+}
+
 /**
  * Object's own bounds (not including children)
  */
@@ -111,6 +123,17 @@ export function getLocalBoundsRect<GraphKind extends symbol, Traits extends obje
   return (getRuntime(target) as HasBoundsRectRuntime).localBoundsRect!;
 }
 
+export function getWidth<GraphKind extends symbol, Traits extends object>(
+  source: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
+): number {
+  calculateBoundsRect(
+    _tempBoundsRect,
+    source,
+    getParent(source) as (GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D) | null,
+  );
+  return _tempBoundsRect.width;
+}
+
 /**
  * Object's bounds in world space (including children)
  */
@@ -119,6 +142,24 @@ export function getWorldBoundsRect<GraphKind extends symbol, Traits extends obje
 ): Readonly<Rectangle> {
   ensureWorldBoundsRect(target);
   return (getRuntime(target) as HasBoundsRectRuntime).worldBoundsRect!;
+}
+
+export function setHeight<GraphKind extends symbol, Traits extends object>(
+  source: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
+  value: number,
+): void {
+  if (source.scaleY === 0) return;
+  source.scaleY = (value * source.scaleY) / getHeight(source);
+  invalidateLocalTransform(source);
+}
+
+export function setWidth<GraphKind extends symbol, Traits extends object>(
+  source: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
+  value: number,
+): void {
+  if (source.scaleX === 0) return;
+  source.scaleX = (value * source.scaleX) / getWidth(source);
+  invalidateLocalTransform(source);
 }
 
 function recomputeBoundsRect<GraphKind extends symbol, Traits extends object>(
@@ -181,3 +222,5 @@ function tryFastRecomputeWorldBoundsRect<GraphKind extends symbol, Traits extend
   }
   return false;
 }
+
+const _tempBoundsRect = rectangle.create();

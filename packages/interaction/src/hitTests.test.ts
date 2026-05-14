@@ -78,7 +78,6 @@ describe('hitTestPoint', () => {
 
   beforeEach(() => {
     obj = createDisplayObject();
-    obj.visible = true;
     obj.opaqueBackground = 0xff0000;
     // set a simple local bounds rectangle
     rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 100, 100);
@@ -94,8 +93,8 @@ describe('hitTestPoint', () => {
     expect(result).toBe(false);
   });
 
-  it('returns false if object is not visible', () => {
-    obj.visible = false;
+  it('returns false if object is not enabled', () => {
+    obj.enabled = false;
     const result = hitTestPoint(obj, 50, 50);
     expect(result).toBe(false);
   });
@@ -136,8 +135,8 @@ describe('hitTestPoint', () => {
     expect(hitTestPoint(obj, 50, 50)).toBe(true);
   });
 
-  it('does not test children of an invisible parent', () => {
-    obj.visible = false;
+  it('does not test children of a disabled parent', () => {
+    obj.enabled = false;
 
     const child = createDisplayObject();
     child.opaqueBackground = 0xff0000;
