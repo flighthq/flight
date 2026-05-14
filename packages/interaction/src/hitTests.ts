@@ -1,9 +1,9 @@
-import { matrix3x2, rectangle, rectanglePool } from '@flighthq/geometry';
+import { matrix3x2, rectangle } from '@flighthq/geometry';
 import {
-  calculateBoundsRect,
   getGraphNodeRuntime,
   getLocalBoundsRect,
   getParent,
+  getWorldBoundsRect,
   getWorldTransform2D,
 } from '@flighthq/scene-graph-core';
 import type { DisplayObject, GraphNode, HitTestPoint } from '@flighthq/types';
@@ -13,14 +13,8 @@ import type { DisplayObject, GraphNode, HitTestPoint } from '@flighthq/types';
  * intersects with the bounding box of the `obj` display object.
  **/
 export function hitTestObject(source: DisplayObject, other: DisplayObject): boolean {
-  if (getParent(other) !== null && getParent(source) !== null) {
-    const sourceBounds = getLocalBoundsRect(source);
-    const otherBounds = rectanglePool.get();
-    // compare other in source's coordinate space
-    calculateBoundsRect(otherBounds, other, source);
-    const result = rectangle.intersects(sourceBounds, otherBounds);
-    rectanglePool.release(otherBounds);
-    return result;
+  if (getParent(source) !== null && getParent(other) !== null) {
+    return rectangle.intersects(getWorldBoundsRect(source), getWorldBoundsRect(other));
   }
   return false;
 }

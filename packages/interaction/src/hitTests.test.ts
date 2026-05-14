@@ -57,15 +57,33 @@ describe('hitTestObject', () => {
     expect(result).toBe(false);
   });
 
-  it('compares bounds in source local space', () => {
+  it('compares bounds in world space', () => {
     a.scaleX = 1;
     a.scaleY = 1;
 
     b.x = 5;
     b.y = 5;
+    invalidateLocalTransform(b);
 
     const result = hitTestObject(a, b);
     expect(result).toBe(true);
+  });
+
+  it('includes child bounds when a child extends beyond the object local bounds', () => {
+    // a at (0,0) local bounds [0,0,10,10]; child at (90,90) size 20x20
+    // a's world bounds unions to [0,0,110,110], which reaches b at (100,100)
+    const child = createDisplayObject();
+    child.x = 90;
+    child.y = 90;
+    invalidateLocalTransform(child);
+    rectangle.setTo(getLocalBoundsRect(child), 0, 0, 20, 20);
+    addChild(a, child);
+
+    b.x = 100;
+    b.y = 100;
+    invalidateLocalTransform(b);
+
+    expect(hitTestObject(a, b)).toBe(true);
   });
 });
 
