@@ -3,6 +3,7 @@ import {
   createGraphNode,
   createGraphNodeRuntime,
   getGraphNodeRuntime,
+  initHasAppearance,
   initHasBoundsRect,
   initHasBoundsRectRuntime,
   initHasTransform2D,
@@ -18,7 +19,7 @@ import type {
   PartialNode,
 } from '@flighthq/types';
 import { DisplayGraph } from '@flighthq/types';
-import { BlendMode, DisplayObjectKind } from '@flighthq/types';
+import { DisplayObjectKind } from '@flighthq/types';
 
 export function createDisplayObject(obj?: Readonly<PartialNode<DisplayObject>>): DisplayObject {
   return createDisplayObjectGeneric(DisplayObjectKind, obj);
@@ -47,17 +48,14 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   ) as DisplayObject;
   initHasTransform2D(out, obj);
   initHasBoundsRect(out, obj);
-  out.alpha = obj?.alpha ?? 1;
-  out.blendMode = obj?.blendMode ?? BlendMode.Normal;
+  initHasAppearance(out, obj);
   out.cacheAsBitmap = obj?.cacheAsBitmap ?? false;
   out.cacheAsBitmapMatrix = obj?.cacheAsBitmapMatrix ?? null;
-  out.colorTransform = obj?.colorTransform ?? null;
   out.filters = obj?.filters ?? null;
   out.mask = obj?.mask ?? null;
   out.opaqueBackground = obj?.opaqueBackground ?? null;
   out.scale9Grid = obj?.scale9Grid ?? null;
   out.scrollRect = obj?.scrollRect ?? null;
-  out.shader = obj?.shader ?? null;
   return out;
 }
 

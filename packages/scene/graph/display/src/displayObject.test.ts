@@ -20,7 +20,7 @@ describe('createDisplayObject', () => {
 
   it('initializes default values', () => {
     expect(displayObject.alpha).toBe(1);
-    expect(displayObject.blendMode).toBe(BlendMode.Normal);
+    expect(displayObject.blendMode).toBeNull();
     expect(displayObject.cacheAsBitmap).toBe(false);
     expect(displayObject.cacheAsBitmapMatrix).toBeNull();
     expect(displayObject.filters).toBeNull();

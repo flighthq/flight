@@ -25,8 +25,12 @@ import {
   ensureLocalBoundsRect,
   ensureWorldBoundsRect,
   getBoundsRect,
+  getHeight,
   getLocalBoundsRect,
+  getWidth,
   getWorldBoundsRect,
+  setHeight,
+  setWidth,
 } from './boundsRect';
 import { initHasBoundsRect, initHasBoundsRectRuntime } from './hasBoundsRect';
 
@@ -358,6 +362,84 @@ describe('getWorldBoundsRect', () => {
     const rect = getWorldBoundsRect(object);
     expect(rect).not.toBeNull();
     expect(rect).toStrictEqual(runtime.worldBoundsRect);
+  });
+});
+
+describe('getHeight', () => {
+  it('returns height in parent space with default scale', () => {
+    const parent = createTestNode();
+    const node = createTestNode();
+    addChild(parent, node);
+    rectangle.setTo(getLocalBoundsRect(node) as Rectangle, 0, 0, 100, 50);
+    expect(getHeight(node)).toBeCloseTo(50);
+  });
+
+  it('accounts for scaleY', () => {
+    const parent = createTestNode();
+    const node = createTestNode();
+    addChild(parent, node);
+    rectangle.setTo(getLocalBoundsRect(node) as Rectangle, 0, 0, 100, 50);
+    node.scaleY = 2;
+    invalidateLocalTransform(node);
+    expect(getHeight(node)).toBeCloseTo(100);
+  });
+});
+
+describe('getWidth', () => {
+  it('returns width in parent space with default scale', () => {
+    const parent = createTestNode();
+    const node = createTestNode();
+    addChild(parent, node);
+    rectangle.setTo(getLocalBoundsRect(node) as Rectangle, 0, 0, 80, 40);
+    expect(getWidth(node)).toBeCloseTo(80);
+  });
+
+  it('accounts for scaleX', () => {
+    const parent = createTestNode();
+    const node = createTestNode();
+    addChild(parent, node);
+    rectangle.setTo(getLocalBoundsRect(node) as Rectangle, 0, 0, 80, 40);
+    node.scaleX = 3;
+    invalidateLocalTransform(node);
+    expect(getWidth(node)).toBeCloseTo(240);
+  });
+});
+
+describe('setHeight', () => {
+  it('adjusts scaleY to achieve the desired height', () => {
+    const parent = createTestNode();
+    const node = createTestNode();
+    addChild(parent, node);
+    rectangle.setTo(getLocalBoundsRect(node) as Rectangle, 0, 0, 100, 50);
+    setHeight(node, 100);
+    expect(getHeight(node)).toBeCloseTo(100);
+  });
+
+  it('does nothing when scaleY is zero', () => {
+    const node = createTestNode();
+    node.scaleY = 0;
+    invalidateLocalTransform(node);
+    setHeight(node, 100);
+    expect(node.scaleY).toBe(0);
+  });
+});
+
+describe('setWidth', () => {
+  it('adjusts scaleX to achieve the desired width', () => {
+    const parent = createTestNode();
+    const node = createTestNode();
+    addChild(parent, node);
+    rectangle.setTo(getLocalBoundsRect(node) as Rectangle, 0, 0, 80, 40);
+    setWidth(node, 160);
+    expect(getWidth(node)).toBeCloseTo(160);
+  });
+
+  it('does nothing when scaleX is zero', () => {
+    const node = createTestNode();
+    node.scaleX = 0;
+    invalidateLocalTransform(node);
+    setWidth(node, 100);
+    expect(node.scaleX).toBe(0);
   });
 });
 

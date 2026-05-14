@@ -10,6 +10,8 @@ import type {
 } from '@flighthq/types';
 import { RuntimeKey } from '@flighthq/types';
 
+import { invalidate } from './revision';
+
 export type GraphNodeDataFactory<Data extends GraphNodeData> = NodeDataFactory<Data>;
 export type GraphNodeRuntimeFactory<
   GraphKind extends symbol,
@@ -36,8 +38,16 @@ export function createGraphNode<
     createRuntime ?? (createGraphNodeRuntime as NodeRuntimeFactory<Runtime>),
   ) as GraphNode<GraphKind, Traits> & Traits;
   out[RuntimeKey]!.graph = graph;
-  out.visible = obj?.visible ?? true;
+  out.enabled = obj?.enabled ?? true;
   return out;
+}
+
+export function setEnabled<GraphKind extends symbol, Traits extends object>(
+  source: GraphNode<GraphKind, Traits>,
+  value: boolean,
+): void {
+  source.enabled = value;
+  invalidate(source);
 }
 
 export function createGraphNodeRuntime<GraphKind extends symbol, Traits extends object>(

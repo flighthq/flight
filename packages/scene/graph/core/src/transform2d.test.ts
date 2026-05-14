@@ -12,6 +12,11 @@ import {
   getWorldTransform2D,
   globalToLocal2D,
   localToGlobal2D,
+  setRotation,
+  setScaleX,
+  setScaleY,
+  setX,
+  setY,
 } from './transform2d';
 
 function createTestNode(): TestNode {
@@ -221,6 +226,107 @@ describe('localToGlobal2D', () => {
     expect(out.x).toBe(5);
     expect(out.y).toBe(5);
     expect(out).not.toBe(local); // out is a separate object
+  });
+});
+
+describe('setRotation', () => {
+  it('updates rotation on the node', () => {
+    setRotation(node, 45);
+    expect(node.rotation).toBe(45);
+  });
+
+  it('invalidates the local transform', () => {
+    const before = matrix3x2.clone(getLocalTransform2D(node));
+    setRotation(node, 90);
+    const after = getLocalTransform2D(node);
+    expect(matrix3x2.equals(before, after)).toBe(false);
+  });
+
+  it('affects the resulting matrix', () => {
+    setRotation(node, 90);
+    const m = getLocalTransform2D(node);
+    expect(m.a).toBeCloseTo(0);
+    expect(m.b).toBeCloseTo(1);
+  });
+});
+
+describe('setScaleX', () => {
+  it('updates scaleX on the node', () => {
+    setScaleX(node, 3);
+    expect(node.scaleX).toBe(3);
+  });
+
+  it('invalidates the local transform', () => {
+    const before = matrix3x2.clone(getLocalTransform2D(node));
+    setScaleX(node, 2);
+    const after = getLocalTransform2D(node);
+    expect(matrix3x2.equals(before, after)).toBe(false);
+  });
+
+  it('affects the resulting matrix', () => {
+    setScaleX(node, 4);
+    const m = getLocalTransform2D(node);
+    expect(m.a).toBeCloseTo(4);
+  });
+});
+
+describe('setScaleY', () => {
+  it('updates scaleY on the node', () => {
+    setScaleY(node, 3);
+    expect(node.scaleY).toBe(3);
+  });
+
+  it('invalidates the local transform', () => {
+    const before = matrix3x2.clone(getLocalTransform2D(node));
+    setScaleY(node, 2);
+    const after = getLocalTransform2D(node);
+    expect(matrix3x2.equals(before, after)).toBe(false);
+  });
+
+  it('affects the resulting matrix', () => {
+    setScaleY(node, 5);
+    const m = getLocalTransform2D(node);
+    expect(m.d).toBeCloseTo(5);
+  });
+});
+
+describe('setX', () => {
+  it('updates x on the node', () => {
+    setX(node, 50);
+    expect(node.x).toBe(50);
+  });
+
+  it('invalidates the local transform', () => {
+    const before = matrix3x2.clone(getLocalTransform2D(node));
+    setX(node, 100);
+    const after = getLocalTransform2D(node);
+    expect(matrix3x2.equals(before, after)).toBe(false);
+  });
+
+  it('affects the resulting matrix', () => {
+    setX(node, 42);
+    const m = getLocalTransform2D(node);
+    expect(m.tx).toBe(42);
+  });
+});
+
+describe('setY', () => {
+  it('updates y on the node', () => {
+    setY(node, 75);
+    expect(node.y).toBe(75);
+  });
+
+  it('invalidates the local transform', () => {
+    const before = matrix3x2.clone(getLocalTransform2D(node));
+    setY(node, 100);
+    const after = getLocalTransform2D(node);
+    expect(matrix3x2.equals(before, after)).toBe(false);
+  });
+
+  it('affects the resulting matrix', () => {
+    setY(node, 99);
+    const m = getLocalTransform2D(node);
+    expect(m.ty).toBe(99);
   });
 });
 

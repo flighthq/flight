@@ -1,5 +1,7 @@
+export * from './appearance';
 export * from './boundsRect';
 export * from './graphNode';
+export * from './hasAppearance';
 export * from './hasBoundsRect';
 export * from './hasTransform2d';
 export * from './hierarchy';

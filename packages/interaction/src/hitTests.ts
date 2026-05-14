@@ -40,7 +40,7 @@ export function hitTestPoint<GraphKind extends symbol, Traits extends object>(
   y: number,
   shapeFlag: boolean = false,
 ): boolean {
-  if (!source.visible) return false;
+  if (!source.enabled) return false;
 
   const hitTestSelf = hitTestPointRegistry.get(source.kind);
   if (hitTestSelf?.(source as GraphNode<symbol, object>, x, y, shapeFlag)) return true;
