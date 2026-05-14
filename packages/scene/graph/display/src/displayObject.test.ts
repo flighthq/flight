@@ -1,6 +1,7 @@
-import { matrix3x2 } from '@flighthq/geometry';
+import { getRuntime } from '@flighthq/foundation';
+import { matrix3x2, rectangle } from '@flighthq/geometry';
 import { createGraphNode } from '@flighthq/scene-graph-core';
-import type { DisplayObject, DisplayObjectData, GraphNode, PartialNode, Rectangle, Shader } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime, Filter, GraphNode, PartialNode, Rectangle, Shader } from '@flighthq/types';
 import { BlendMode, DisplayGraph, DisplayObjectKind } from '@flighthq/types';
 
 import {
@@ -9,7 +10,18 @@ import {
   createDisplayObjectRuntime,
   getDisplayObjectRuntime,
   isDisplayObject,
+  setCacheAsBitmap,
+  setCacheAsBitmapMatrix,
+  setFilters,
+  setMask,
+  setOpaqueBackground,
+  setScale9Grid,
+  setScrollRect,
 } from './displayObject';
+
+function getRuntime_(obj: DisplayObject): DisplayObjectRuntime {
+  return getRuntime(obj) as DisplayObjectRuntime;
+}
 
 describe('createDisplayObject', () => {
   let displayObject: DisplayObject;
@@ -131,6 +143,153 @@ describe('isDisplayObject', () => {
     const TestGraph: unique symbol = Symbol('TestGraph');
     const node = createGraphNode(TestGraph, DisplayObjectKind);
     expect(isDisplayObject(node)).toBe(false);
+  });
+});
+
+describe('setCacheAsBitmap', () => {
+  let obj: DisplayObject;
+  beforeEach(() => { obj = createDisplayObject(); });
+
+  it('sets cacheAsBitmap', () => {
+    setCacheAsBitmap(obj, true);
+    expect(obj.cacheAsBitmap).toBe(true);
+  });
+
+  it('invalidates appearance', () => {
+    const idBefore = getRuntime_(obj).appearanceID;
+    setCacheAsBitmap(obj, true);
+    expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
+  });
+});
+
+describe('setCacheAsBitmapMatrix', () => {
+  let obj: DisplayObject;
+  beforeEach(() => { obj = createDisplayObject(); });
+
+  it('sets cacheAsBitmapMatrix', () => {
+    const m = matrix3x2.create();
+    setCacheAsBitmapMatrix(obj, m);
+    expect(obj.cacheAsBitmapMatrix).toBe(m);
+  });
+
+  it('accepts null', () => {
+    setCacheAsBitmapMatrix(obj, null);
+    expect(obj.cacheAsBitmapMatrix).toBeNull();
+  });
+
+  it('invalidates appearance', () => {
+    const idBefore = getRuntime_(obj).appearanceID;
+    setCacheAsBitmapMatrix(obj, matrix3x2.create());
+    expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
+  });
+});
+
+describe('setFilters', () => {
+  let obj: DisplayObject;
+  beforeEach(() => { obj = createDisplayObject(); });
+
+  it('sets filters', () => {
+    const filters = [{} as unknown as Filter];
+    setFilters(obj, filters);
+    expect(obj.filters).toBe(filters);
+  });
+
+  it('accepts null', () => {
+    setFilters(obj, null);
+    expect(obj.filters).toBeNull();
+  });
+
+  it('invalidates appearance', () => {
+    const idBefore = getRuntime_(obj).appearanceID;
+    setFilters(obj, []);
+    expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
+  });
+});
+
+describe('setMask', () => {
+  let obj: DisplayObject;
+  beforeEach(() => { obj = createDisplayObject(); });
+
+  it('sets mask', () => {
+    const mask = createDisplayObject();
+    setMask(obj, mask);
+    expect(obj.mask).toBe(mask);
+  });
+
+  it('accepts null', () => {
+    setMask(obj, null);
+    expect(obj.mask).toBeNull();
+  });
+
+  it('invalidates appearance', () => {
+    const idBefore = getRuntime_(obj).appearanceID;
+    setMask(obj, createDisplayObject());
+    expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
+  });
+});
+
+describe('setOpaqueBackground', () => {
+  let obj: DisplayObject;
+  beforeEach(() => { obj = createDisplayObject(); });
+
+  it('sets opaqueBackground', () => {
+    setOpaqueBackground(obj, 0xff0000);
+    expect(obj.opaqueBackground).toBe(0xff0000);
+  });
+
+  it('accepts null', () => {
+    setOpaqueBackground(obj, null);
+    expect(obj.opaqueBackground).toBeNull();
+  });
+
+  it('invalidates appearance', () => {
+    const idBefore = getRuntime_(obj).appearanceID;
+    setOpaqueBackground(obj, 0xff0000);
+    expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
+  });
+});
+
+describe('setScale9Grid', () => {
+  let obj: DisplayObject;
+  beforeEach(() => { obj = createDisplayObject(); });
+
+  it('sets scale9Grid', () => {
+    const rect = rectangle.create();
+    setScale9Grid(obj, rect);
+    expect(obj.scale9Grid).toBe(rect);
+  });
+
+  it('accepts null', () => {
+    setScale9Grid(obj, null);
+    expect(obj.scale9Grid).toBeNull();
+  });
+
+  it('invalidates appearance', () => {
+    const idBefore = getRuntime_(obj).appearanceID;
+    setScale9Grid(obj, rectangle.create());
+    expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
+  });
+});
+
+describe('setScrollRect', () => {
+  let obj: DisplayObject;
+  beforeEach(() => { obj = createDisplayObject(); });
+
+  it('sets scrollRect', () => {
+    const rect = rectangle.create();
+    setScrollRect(obj, rect);
+    expect(obj.scrollRect).toBe(rect);
+  });
+
+  it('accepts null', () => {
+    setScrollRect(obj, null);
+    expect(obj.scrollRect).toBeNull();
+  });
+
+  it('invalidates appearance', () => {
+    const idBefore = getRuntime_(obj).appearanceID;
+    setScrollRect(obj, rectangle.create());
+    expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
   });
 });
 
