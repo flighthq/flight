@@ -190,6 +190,7 @@ function recomputeWorldBoundsRect<GraphKind extends symbol, Traits extends objec
   const children = getGraphNodeRuntime(target).children;
   if (children !== null) {
     for (const child of children) {
+      if (!child.enabled) continue;
       const childWorldBounds = getWorldBoundsRect(
         child as GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
       );
