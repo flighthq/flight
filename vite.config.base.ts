@@ -5,8 +5,7 @@ import { workspacePackages } from './scripts/workspaces';
 export function createBaseConfig(mode: string) {
   const isProduction = mode === 'production';
 
-  const runtimePackages = workspacePackages.filter((pkg) => pkg.name !== '@flighthq/types');
-  const alias = Object.fromEntries(runtimePackages.map((pkg) => [pkg.name, pkg.dir + '/src']));
+  const alias = Object.fromEntries(workspacePackages.map((pkg) => [pkg.name, pkg.dir + '/src']));
   const exclude = workspacePackages.map((p) => p.name);
 
   return defineConfig({
