@@ -13,9 +13,9 @@ export function createSprite(obj?: Readonly<PartialNode<Sprite>>): Sprite {
 
 export function createSpriteData(data?: Readonly<Partial<SpriteData>>): SpriteData {
   return {
+    atlas: data?.atlas ?? null,
     id: data?.id ?? 0,
     rect: data?.rect ?? null,
-    spritesheet: data?.spritesheet ?? null,
   };
 }
 
