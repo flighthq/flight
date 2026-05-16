@@ -7,8 +7,8 @@ import {
   createImageSource,
   defaultCanvasBitmapRenderer,
   registerRenderer,
-  renderBackground,
-  renderDisplayObject,
+  renderCanvasBackground,
+  renderCanvasDisplayObject,
   updateDisplayObjectBeforeRender,
 } from '@flighthq/engine';
 
@@ -51,8 +51,8 @@ registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
 
 function enterFrame() {
   if (updateDisplayObjectBeforeRender(state, main)) {
-    renderBackground(state);
-    renderDisplayObject(state, main);
+    renderCanvasBackground(state);
+    renderCanvasDisplayObject(state, main);
   }
   requestAnimationFrame(enterFrame);
 }
