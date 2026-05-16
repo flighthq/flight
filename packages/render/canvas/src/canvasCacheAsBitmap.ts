@@ -1,6 +1,6 @@
 import type { CanvasRenderState, DisplayObjectRenderNode } from '@flighthq/types';
 
-export function updateCacheBitmap(
+export function updateCanvasCacheBitmap(
   _state: CanvasRenderState,
   _object: DisplayObjectRenderNode,
   _force: boolean = false,

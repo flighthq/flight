@@ -3,7 +3,7 @@ import { getDisplayObjectRenderNode } from '@flighthq/render-core';
 import { createDisplayObject } from '@flighthq/scene-graph-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, Matrix3x2, Rectangle } from '@flighthq/types';
 
-import { popClipRect, popScrollRect, pushClipRect } from './canvasClipRect';
+import { popCanvasClipRect, popCanvasScrollRect, pushCanvasClipRect } from './canvasClipRect';
 import { createCanvasRenderState } from './canvasRenderState';
 
 describe('Clip and Scroll Rect Functions', () => {
@@ -27,14 +27,14 @@ describe('Clip and Scroll Rect Functions', () => {
 
   it('should call context.restore() when popClipRect is called', () => {
     const restoreSpy = vi.spyOn(state.context, 'restore');
-    popClipRect(state);
+    popCanvasClipRect(state);
     expect(restoreSpy).toHaveBeenCalled();
   });
 
   it('should call context.restore() and decrement currentScrollRectDepth when popScrollRect is called', () => {
     state.currentScrollRectDepth = 1;
     const restoreSpy = vi.spyOn(state.context, 'restore');
-    popScrollRect(state);
+    popCanvasScrollRect(state);
     expect(restoreSpy).toHaveBeenCalled();
     expect(state.currentScrollRectDepth).toBe(0);
   });
@@ -46,7 +46,7 @@ describe('Clip and Scroll Rect Functions', () => {
     const clipSpy = vi.spyOn(state.context, 'clip');
     // const setTransformSpy = vi.spyOn(setTransform, 'bind');
 
-    pushClipRect(state, rect, transform2D);
+    pushCanvasClipRect(state, rect, transform2D);
 
     expect(saveSpy).toHaveBeenCalled();
     // expect(setTransformSpy).toHaveBeenCalledWith(state, state.context, transform);

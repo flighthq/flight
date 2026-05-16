@@ -1,23 +1,23 @@
 import { createNullRendererData } from '@flighthq/render-core';
 import type { Bitmap, CanvasRenderState, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
 
-import { drawDisplayObject, drawDisplayObjectMask } from './canvasDisplayObject';
-import { setBlendMode } from './canvasMaterials';
-import { setTransform } from './canvasTransform';
+import { drawCanvasDisplayObject, drawCanvasDisplayObjectMask } from './canvasDisplayObject';
+import { setCanvasBlendMode } from './canvasMaterials';
+import { setCanvasTransform } from './canvasTransform';
 
-export function drawBitmap(state: CanvasRenderState, bitmap: DisplayObjectRenderNode): void {
-  drawDisplayObject(state, bitmap);
+export function drawCanvasBitmap(state: CanvasRenderState, bitmap: DisplayObjectRenderNode): void {
+  drawCanvasDisplayObject(state, bitmap);
   const source = bitmap.source as Bitmap;
   const imageSource = source.data.image;
   if (imageSource !== null && imageSource.src !== null) {
     const context = state.context;
 
-    setBlendMode(state, bitmap.blendMode);
+    setCanvasBlendMode(state, bitmap.blendMode);
 
     context.globalAlpha = bitmap.alpha;
     const scrollRect = source.scrollRect;
 
-    setTransform(state, context, bitmap.transform2D);
+    setCanvasTransform(state, context, bitmap.transform2D);
 
     if (!state.allowSmoothing || !source.data.smoothing) {
       context.imageSmoothingEnabled = false;
@@ -45,12 +45,12 @@ export function drawBitmap(state: CanvasRenderState, bitmap: DisplayObjectRender
   }
 }
 
-export function drawBitmapMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
-  drawDisplayObjectMask(state, data);
+export function drawCanvasBitmapMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
+  drawCanvasDisplayObjectMask(state, data);
 }
 
 export const defaultCanvasBitmapRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
-  draw: drawBitmap,
-  drawMask: drawBitmapMask,
+  draw: drawCanvasBitmap,
+  drawMask: drawCanvasBitmapMask,
 };

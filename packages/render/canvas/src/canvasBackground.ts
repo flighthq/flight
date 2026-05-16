@@ -1,12 +1,12 @@
 import type { CanvasRenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import { setBlendMode } from './canvasMaterials';
+import { setCanvasBlendMode } from './canvasMaterials';
 
-export function renderBackground(state: CanvasRenderState): void {
+export function renderCanvasBackground(state: CanvasRenderState): void {
   const cacheBlendMode = state.currentBlendMode;
   state.currentBlendMode = null;
-  setBlendMode(state, BlendMode.Normal);
+  setCanvasBlendMode(state, BlendMode.Normal);
 
   state.context.setTransform(1, 0, 0, 1, 0, 0);
   state.context.globalAlpha = 1;
@@ -18,5 +18,5 @@ export function renderBackground(state: CanvasRenderState): void {
     state.context.clearRect(0, 0, state.canvas.width, state.canvas.height);
   }
 
-  setBlendMode(state, cacheBlendMode);
+  setCanvasBlendMode(state, cacheBlendMode);
 }

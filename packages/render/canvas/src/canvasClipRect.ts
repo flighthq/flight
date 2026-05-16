@@ -1,27 +1,27 @@
 import type { CanvasRenderState, DisplayObjectRenderNode, Matrix3x2, Rectangle } from '@flighthq/types';
 
-import { setTransform } from './canvasTransform';
+import { setCanvasTransform } from './canvasTransform';
 
-export function popClipRect(state: CanvasRenderState): void {
+export function popCanvasClipRect(state: CanvasRenderState): void {
   state.context.restore();
 }
 
-export function popScrollRect(state: CanvasRenderState): void {
+export function popCanvasScrollRect(state: CanvasRenderState): void {
   state.context.restore();
   state.currentScrollRectDepth--;
 }
 
-export function pushClipRect(state: CanvasRenderState, rect: Rectangle, transform: Matrix3x2): void {
+export function pushCanvasClipRect(state: CanvasRenderState, rect: Rectangle, transform: Matrix3x2): void {
   state.context.save();
 
-  setTransform(state, state.context, transform);
+  setCanvasTransform(state, state.context, transform);
 
   state.context.beginPath();
   state.context.rect(rect.x, rect.y, rect.width, rect.height);
   state.context.clip();
 }
 
-export function pushScrollRect(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
-  pushClipRect(state, data.source.scrollRect!, data.transform2D);
+export function pushCanvasScrollRect(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
+  pushCanvasClipRect(state, data.source.scrollRect!, data.transform2D);
   state.currentScrollRectDepth++;
 }

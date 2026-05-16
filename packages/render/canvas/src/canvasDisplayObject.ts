@@ -4,22 +4,22 @@ import { calculateBoundsRect } from '@flighthq/scene-graph-core';
 import { getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
 
-import { drawBitmap } from './canvasBitmap';
-import { updateCacheBitmap } from './canvasCacheAsBitmap';
-import { popClipRect, pushClipRect } from './canvasClipRect';
-import { applyMask, popMask, pushMask } from './canvasMask';
-import { setBlendMode } from './canvasMaterials';
-import { setTransform } from './canvasTransform';
+import { drawCanvasBitmap } from './canvasBitmap';
+import { updateCanvasCacheBitmap } from './canvasCacheAsBitmap';
+import { popCanvasClipRect, pushCanvasClipRect } from './canvasClipRect';
+import { applyCanvasMask, popCanvasMask, pushCanvasMask } from './canvasMask';
+import { setCanvasBlendMode } from './canvasMaterials';
+import { setCanvasTransform } from './canvasTransform';
 
-export function drawDisplayObject(state: CanvasRenderState, displayObject: DisplayObjectRenderNode): void {
+export function drawCanvasDisplayObject(state: CanvasRenderState, displayObject: DisplayObjectRenderNode): void {
   const opaqueBackground = displayObject.source.opaqueBackground;
   if (opaqueBackground === null) return;
 
-  setBlendMode(state, displayObject.blendMode);
+  setCanvasBlendMode(state, displayObject.blendMode);
 
   const context = state.context;
 
-  setTransform(state, context, displayObject.transform2D);
+  setCanvasTransform(state, context, displayObject.transform2D);
 
   const r = (opaqueBackground >> 16) & 0xff;
   const g = (opaqueBackground >> 8) & 0xff;
@@ -31,7 +31,7 @@ export function drawDisplayObject(state: CanvasRenderState, displayObject: Displ
   context.fillRect(0, 0, tempBounds.width, tempBounds.height);
 }
 
-export function drawDisplayObjectMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
+export function drawCanvasDisplayObjectMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
   const source = data.source;
   if (source.opaqueBackground !== null) {
     calculateBoundsRect(tempBounds, source, source);
@@ -41,13 +41,13 @@ export function drawDisplayObjectMask(state: CanvasRenderState, data: DisplayObj
     if (children !== null) {
       for (let i = 0; i < children.length; i++) {
         const data = getDisplayObjectRenderNode(state, children[i] as DisplayObject);
-        applyMask(state, data);
+        applyCanvasMask(state, data);
       }
     }
   }
 }
 
-export function renderDisplayObject(state: CanvasRenderState, source: DisplayObject): void {
+export function renderCanvasDisplayObject(state: CanvasRenderState, source: DisplayObject): void {
   const currentFrameID = state.currentFrameID;
   const tempStack = state.tempStack;
   let stackLength = 0;
@@ -83,9 +83,9 @@ function drawObject(state: CanvasRenderState, data: DisplayObjectRenderNode): vo
   if (data.renderer === null) return;
   pushMaskObject(state, data);
   if (state.allowCacheAsBitmap) {
-    updateCacheBitmap(state, data);
+    updateCanvasCacheBitmap(state, data);
     if (data.cacheBitmap !== null) {
-      drawBitmap(state, data.cacheBitmap);
+      drawCanvasBitmap(state, data.cacheBitmap);
       return;
     }
   }
@@ -101,11 +101,11 @@ function popMaskObject(
   const source = data.source;
 
   if (source.mask !== null) {
-    popMask(state);
+    popCanvasMask(state);
   }
 
   if (handleScrollRect && source.scrollRect !== null) {
-    popClipRect(state);
+    popCanvasClipRect(state);
   }
 }
 
@@ -117,18 +117,18 @@ function pushMaskObject(
   const source = data.source;
 
   if (handleScrollRect && source.scrollRect != null) {
-    pushClipRect(state, source.scrollRect, data.transform2D);
+    pushCanvasClipRect(state, source.scrollRect, data.transform2D);
   }
 
   if (source.mask !== null) {
-    pushMask(state, getDisplayObjectRenderNode(state, source.mask));
+    pushCanvasMask(state, getDisplayObjectRenderNode(state, source.mask));
   }
 }
 
 export const defaultCanvasDisplayObjectRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
-  draw: drawDisplayObject,
-  drawMask: drawDisplayObjectMask,
+  draw: drawCanvasDisplayObject,
+  drawMask: drawCanvasDisplayObjectMask,
 };
 
 const tempBounds = rectangle.create();

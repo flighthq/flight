@@ -2,7 +2,7 @@ import { getSpriteRenderNode } from '@flighthq/render-core';
 import { getSpriteNodeRuntime } from '@flighthq/scene-graph-sprite';
 import type { CanvasRenderState, SpriteNode, SpriteRenderNode } from '@flighthq/types';
 
-export function renderSprite(state: CanvasRenderState, source: SpriteNode): void {
+export function renderCanvasSprite(state: CanvasRenderState, source: SpriteNode): void {
   // const currentFrameID = state.currentFrameID;
   const tempStack = state.tempStack;
   let stackLength = 0;

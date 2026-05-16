@@ -2,15 +2,15 @@ import { matrix3x2, matrix3x2Pool } from '@flighthq/geometry';
 import { createNullRendererData } from '@flighthq/render-core';
 import type { CanvasRenderState, QuadBatch, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
-import { setBlendMode } from './canvasMaterials';
+import { setCanvasBlendMode } from './canvasMaterials';
 
-export function drawQuadBatch(state: CanvasRenderState, quadBatch: SpriteRenderNode): void {
+export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: SpriteRenderNode): void {
   const source = quadBatch.source as QuadBatch;
   const data = source.data;
   const { atlas, instanceCount, ids, transforms } = data;
   if (atlas === null || atlas.image === null || atlas.image.src === null || instanceCount === 0) return;
 
-  setBlendMode(state, quadBatch.blendMode);
+  setCanvasBlendMode(state, quadBatch.blendMode);
 
   const context = state.context;
   const image = atlas.image.src;
@@ -89,5 +89,5 @@ export function drawQuadBatch(state: CanvasRenderState, quadBatch: SpriteRenderN
 
 export const defaultCanvasQuadBatchRenderer: SpriteRenderer = {
   createData: createNullRendererData,
-  draw: drawQuadBatch,
+  draw: drawCanvasQuadBatch,
 };

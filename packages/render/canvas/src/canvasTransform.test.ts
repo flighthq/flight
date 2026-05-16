@@ -2,9 +2,9 @@ import { matrix3x2 } from '@flighthq/geometry';
 import type { CanvasRenderState, Matrix3x2 } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';
-import { setTransform } from './canvasTransform';
+import { setCanvasTransform } from './canvasTransform';
 
-describe('setTransform', () => {
+describe('setCanvasTransform', () => {
   let canvas: HTMLCanvasElement;
   let state: CanvasRenderState;
   let transform: Matrix3x2;
@@ -16,7 +16,7 @@ describe('setTransform', () => {
   });
 
   it('should call setTransform with correct values when roundPixels is false', () => {
-    setTransform(state, state.context, transform);
+    setCanvasTransform(state, state.context, transform);
     expect(state.context.setTransform).toHaveBeenCalledWith(
       transform.a,
       transform.b,
@@ -29,7 +29,7 @@ describe('setTransform', () => {
 
   it('should call setTransform with frounded tx and ty when roundPixels is true', () => {
     state.roundPixels = true;
-    setTransform(state, state.context, transform);
+    setCanvasTransform(state, state.context, transform);
     expect(state.context.setTransform).toHaveBeenCalledWith(
       transform.a,
       transform.b,
