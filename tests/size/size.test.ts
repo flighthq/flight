@@ -4,7 +4,10 @@ import { expect, test } from 'vitest';
 import { gzipSync } from 'zlib';
 
 describe('bundle size checks', () => {
-  test.each([{ name: 'displayingabitmap', path: '../../examples/displayingabitmap', threshold: 7000 }])(
+  test.each([
+    { name: 'displayingabitmap', path: '../../examples/displayingabitmap', threshold: 7000 },
+    { name: 'bunnymark', path: '../../examples/bunnymark', threshold: 6000 },
+  ])(
     '$name',
     async ({ name, path, threshold }) => {
       const code = await buildSample(resolve(__dirname, path));
