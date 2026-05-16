@@ -89,15 +89,47 @@ describe('updateRenderTransform2D', () => {
     updateRenderTransform2D(state, childData, parentData);
 
     const t = childData.transform2D;
-    // child tx/ty should be parent-transformed position
-    expect(t.tx).toBe(110);
-    expect(t.ty).toBe(50);
+    // child world position: (10, 0) in parent space, rotated 90° → (100, 60) in world
+    expect(t.tx).toBeCloseTo(100);
+    expect(t.ty).toBeCloseTo(60);
 
     // child rotation inherits correctly: should be 90 degrees total
     expect(t.a).toBeCloseTo(0);
     expect(t.b).toBeCloseTo(1);
     expect(t.c).toBeCloseTo(-1);
     expect(t.d).toBeCloseTo(0);
+  });
+
+  it('child position is scaled by parent scale', () => {
+    parent.scaleX = 4;
+    parent.scaleY = 4;
+
+    child.x = 10;
+    child.y = 5;
+
+    updateRenderTransform2D(state, parentData);
+    updateRenderTransform2D(state, childData, parentData);
+
+    const t = childData.transform2D;
+    expect(t.tx).toBe(40);
+    expect(t.ty).toBe(20);
+    expect(t.a).toBe(4);
+    expect(t.d).toBe(4);
+  });
+
+  it('child position is offset by parent translation', () => {
+    parent.x = 50;
+    parent.y = 30;
+
+    child.x = 10;
+    child.y = 5;
+
+    updateRenderTransform2D(state, parentData);
+    updateRenderTransform2D(state, childData, parentData);
+
+    const t = childData.transform2D;
+    expect(t.tx).toBe(60);
+    expect(t.ty).toBe(35);
   });
 
   it('works for negative rotation angles', () => {

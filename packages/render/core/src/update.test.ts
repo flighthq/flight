@@ -1,12 +1,14 @@
 import { rectangle } from '@flighthq/geometry';
 import { addChild } from '@flighthq/scene-graph-core';
 import { createDisplayObject } from '@flighthq/scene-graph-display';
-import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
+import { setScaleX, setScaleY, setX, setY } from '@flighthq/scene-graph-core';
+import { createSprite } from '@flighthq/scene-graph-sprite';
+import type { DisplayObject, DisplayObjectRenderNode, RenderState, SpriteNode } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';
-import { getDisplayObjectRenderNode } from './renderNode2d';
+import { getDisplayObjectRenderNode, getSpriteRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
-import { updateDisplayObjectBeforeRender } from './update';
+import { updateDisplayObjectBeforeRender, updateSpriteBeforeRender } from './update';
 
 describe('updateDisplayObjectBeforeRender', () => {
   let parent: DisplayObject;
@@ -139,5 +141,61 @@ describe('updateDisplayObjectBeforeRender', () => {
       expect(data.appearanceFrameID).toStrictEqual(currentFrameID);
       expect(data.transformFrameID).toStrictEqual(currentFrameID);
     });
+  });
+});
+
+describe('updateSpriteBeforeRender', () => {
+  let root: SpriteNode;
+  let child: SpriteNode;
+  let state: RenderState;
+
+  beforeEach(() => {
+    root = createSprite();
+    child = createSprite();
+    addChild(root, child);
+    state = createRenderState();
+  });
+
+  it('applies parent scale to child world position', () => {
+    setScaleX(root, 4);
+    setScaleY(root, 4);
+    setX(child, 10);
+    setY(child, 5);
+
+    updateSpriteBeforeRender(state, root);
+
+    const t = getSpriteRenderNode(state, child).transform2D;
+    expect(t.tx).toBe(40);
+    expect(t.ty).toBe(20);
+    expect(t.a).toBe(4);
+    expect(t.d).toBe(4);
+  });
+
+  it('applies parent translation to child world position', () => {
+    setX(root, 50);
+    setY(root, 30);
+    setX(child, 10);
+    setY(child, 5);
+
+    updateSpriteBeforeRender(state, root);
+
+    const t = getSpriteRenderNode(state, child).transform2D;
+    expect(t.tx).toBe(60);
+    expect(t.ty).toBe(35);
+  });
+
+  it('applies combined parent scale and translation to child world position', () => {
+    setScaleX(root, 2);
+    setScaleY(root, 2);
+    setX(root, 100);
+    setY(root, 80);
+    setX(child, 15);
+    setY(child, 10);
+
+    updateSpriteBeforeRender(state, root);
+
+    const t = getSpriteRenderNode(state, child).transform2D;
+    expect(t.tx).toBe(130); // 100 + 2*15
+    expect(t.ty).toBe(100); // 80 + 2*10
   });
 });
