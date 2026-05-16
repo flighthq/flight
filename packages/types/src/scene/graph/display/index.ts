@@ -7,7 +7,7 @@ export * from './InputText.js';
 export * from './MovieClip.js';
 export * from './RichText.js';
 export * from './Shape.js';
-export * from './SpriteContainer.js';
+export * from './SpriteBatch.js';
 export * from './Stage.js';
 export * from './StageAlign.js';
 export * from './StageDisplayState.js';

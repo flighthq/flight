@@ -1,4 +1,4 @@
-import type { DisplayObject, GraphNode, SpriteContainer } from '@flighthq/types';
+import type { DisplayObject, GraphNode, SpriteBatch } from '@flighthq/types';
 
 import { hitTestLocalBoundsRect } from './hitTests';
 import { defaultSpriteHitTestPoint } from './spriteHitTests';
@@ -72,15 +72,15 @@ export function defaultShapeHitTestPoint(
   return defaultDisplayObjectHitTestPoint(source, x, y, shapeFlag);
 }
 
-export function defaultSpriteContainerHitTestPoint(
+export function defaultSpriteBatchHitTestPoint(
   source: GraphNode<symbol, object>,
   x: number,
   y: number,
   shapeFlag: boolean,
 ): boolean {
-  const spriteContainer = source as SpriteContainer;
-  if (spriteContainer.data.graph !== null) {
-    return defaultSpriteHitTestPoint(spriteContainer.data.graph, x, y, shapeFlag);
+  const spriteBatch = source as SpriteBatch;
+  if (spriteBatch.data.graph !== null) {
+    return defaultSpriteHitTestPoint(spriteBatch.data.graph, x, y, shapeFlag);
   }
   return defaultDisplayObjectHitTestPoint(source, x, y, shapeFlag);
 }

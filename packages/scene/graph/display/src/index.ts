@@ -5,7 +5,7 @@ export * from './domElement.js';
 export * from './inputText.js';
 export * from './movieClip.js';
 export * from './richText.js';
-export * from './spriteContainer.js';
+export * from './spriteBatch.js';
 export * from './stage.js';
 export * from './text.js';
 export * from './video.js';
