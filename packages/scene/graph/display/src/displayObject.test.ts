@@ -1,7 +1,16 @@
 import { getRuntime } from '@flighthq/foundation';
 import { matrix3x2, rectangle } from '@flighthq/geometry';
 import { createGraphNode } from '@flighthq/scene-graph-core';
-import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime, Filter, GraphNode, PartialNode, Rectangle, Shader } from '@flighthq/types';
+import type {
+  DisplayObject,
+  DisplayObjectData,
+  DisplayObjectRuntime,
+  Filter,
+  GraphNode,
+  PartialNode,
+  Rectangle,
+  Shader,
+} from '@flighthq/types';
 import { BlendMode, DisplayGraph, DisplayObjectKind } from '@flighthq/types';
 
 import {
@@ -148,7 +157,9 @@ describe('isDisplayObject', () => {
 
 describe('setCacheAsBitmap', () => {
   let obj: DisplayObject;
-  beforeEach(() => { obj = createDisplayObject(); });
+  beforeEach(() => {
+    obj = createDisplayObject();
+  });
 
   it('sets cacheAsBitmap', () => {
     setCacheAsBitmap(obj, true);
@@ -164,7 +175,9 @@ describe('setCacheAsBitmap', () => {
 
 describe('setCacheAsBitmapMatrix', () => {
   let obj: DisplayObject;
-  beforeEach(() => { obj = createDisplayObject(); });
+  beforeEach(() => {
+    obj = createDisplayObject();
+  });
 
   it('sets cacheAsBitmapMatrix', () => {
     const m = matrix3x2.create();
@@ -186,7 +199,9 @@ describe('setCacheAsBitmapMatrix', () => {
 
 describe('setFilters', () => {
   let obj: DisplayObject;
-  beforeEach(() => { obj = createDisplayObject(); });
+  beforeEach(() => {
+    obj = createDisplayObject();
+  });
 
   it('sets filters', () => {
     const filters = [{} as unknown as Filter];
@@ -208,7 +223,9 @@ describe('setFilters', () => {
 
 describe('setMask', () => {
   let obj: DisplayObject;
-  beforeEach(() => { obj = createDisplayObject(); });
+  beforeEach(() => {
+    obj = createDisplayObject();
+  });
 
   it('sets mask', () => {
     const mask = createDisplayObject();
@@ -230,7 +247,9 @@ describe('setMask', () => {
 
 describe('setOpaqueBackground', () => {
   let obj: DisplayObject;
-  beforeEach(() => { obj = createDisplayObject(); });
+  beforeEach(() => {
+    obj = createDisplayObject();
+  });
 
   it('sets opaqueBackground', () => {
     setOpaqueBackground(obj, 0xff0000);
@@ -251,7 +270,9 @@ describe('setOpaqueBackground', () => {
 
 describe('setScale9Grid', () => {
   let obj: DisplayObject;
-  beforeEach(() => { obj = createDisplayObject(); });
+  beforeEach(() => {
+    obj = createDisplayObject();
+  });
 
   it('sets scale9Grid', () => {
     const rect = rectangle.create();
@@ -273,7 +294,9 @@ describe('setScale9Grid', () => {
 
 describe('setScrollRect', () => {
   let obj: DisplayObject;
-  beforeEach(() => { obj = createDisplayObject(); });
+  beforeEach(() => {
+    obj = createDisplayObject();
+  });
 
   it('sets scrollRect', () => {
     const rect = rectangle.create();

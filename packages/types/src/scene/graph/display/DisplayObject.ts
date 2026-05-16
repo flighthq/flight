@@ -1,6 +1,15 @@
 import type { Matrix3x2, Rectangle } from '../../../geometry';
 import type { Filter } from '../../../materials';
-import type { GraphNode, GraphNodeData, GraphNodeRuntime, HasAppearance, HasBoundsRect, HasBoundsRectRuntime, HasTransform2D, HasTransform2DRuntime } from '../core';
+import type {
+  GraphNode,
+  GraphNodeData,
+  GraphNodeRuntime,
+  HasAppearance,
+  HasBoundsRect,
+  HasBoundsRectRuntime,
+  HasTransform2D,
+  HasTransform2DRuntime,
+} from '../core';
 
 export type DisplayObject = GraphNode<typeof DisplayGraph, DisplayObjectTraits> & DisplayObjectTraits;
 

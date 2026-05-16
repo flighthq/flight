@@ -8,8 +8,8 @@ import {
 import type { DisplayObject, DisplayObjectRuntime } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { hitTestObject, hitTestPoint, registerHitTestPoint } from './hitTests';
 import { defaultDisplayObjectHitTestPoint } from './displayHitTests';
+import { hitTestObject, hitTestPoint, registerHitTestPoint } from './hitTests';
 
 describe('hitTestObject', () => {
   let a: DisplayObject;
