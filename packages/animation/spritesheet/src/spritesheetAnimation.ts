@@ -5,7 +5,8 @@ export function createSpritesheetAnimation(obj?: Partial<SpritesheetAnimation>):
   return createEntity({
     frameDuration: obj?.frameDuration ?? 0,
     frames: obj?.frames ?? [],
-    label: obj?.label ?? null,
     loop: obj?.loop ?? false,
+    originX: obj?.originX ?? 0,
+    originY: obj?.originY ?? 0,
   });
 }
