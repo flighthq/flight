@@ -41,6 +41,8 @@
       "@flighthq/scene-graph-sprite/*": ["./packages/scene/graph/sprite/src/*"],
       "@flighthq/scene-graph-world": ["./packages/scene-graph-world/src/index.ts"],
       "@flighthq/scene-graph-world/*": ["./packages/scene-graph-world/src/*"],
+      "@flighthq/signals": ["./packages/signals/src/index.ts"],
+      "@flighthq/signals/*": ["./packages/signals/src/*"],
       "@flighthq/types": ["./packages/types/src/index.ts"],
       "@flighthq/types/*": ["./packages/types/src/*"]
     },

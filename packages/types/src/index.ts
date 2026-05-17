@@ -6,3 +6,4 @@ export * from './interaction';
 export * from './materials';
 export * from './render';
 export * from './scene';
+export * from './signals';
