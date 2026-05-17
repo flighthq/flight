@@ -50,9 +50,9 @@ const sheet = createSpritesheet({ atlas });
 
 const animationDefs = [
   { name: 'snail', row: 1 },
-  { name: 'blob',  row: 4 },
-  { name: 'owl',   row: 5 },
-  { name: 'bug',   row: 6 },
+  { name: 'blob', row: 4 },
+  { name: 'owl', row: 5 },
+  { name: 'bug', row: 6 },
 ];
 
 for (const { name, row } of animationDefs) {
@@ -64,7 +64,11 @@ for (const { name, row } of animationDefs) {
     sheet.frames.push(createSpritesheetFrame({ id: atlasId }));
     frameIndices.push(frameIndex);
   }
-  sheet.animations[name] = createSpritesheetAnimation({ frames: frameIndices, frameDuration: FRAME_DURATION, loop: true });
+  sheet.animations[name] = createSpritesheetAnimation({
+    frames: frameIndices,
+    frameDuration: FRAME_DURATION,
+    loop: true,
+  });
 }
 
 const root = createSprite();

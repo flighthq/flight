@@ -26,16 +26,11 @@ export function connectSignal<T extends (...args: any[]) => void>(
   current.next = node;
 }
 
-export function disconnectAllSignals<T extends (...args: any[]) => void>(
-  signal: Signal<T>,
-): void {
+export function disconnectAllSignals<T extends (...args: any[]) => void>(signal: Signal<T>): void {
   signal.head = null;
 }
 
-export function disconnectSignal<T extends (...args: any[]) => void>(
-  signal: Signal<T>,
-  slot: T,
-): void {
+export function disconnectSignal<T extends (...args: any[]) => void>(signal: Signal<T>, slot: T): void {
   while (signal.head !== null && signal.head.callback === slot) {
     signal.head = signal.head.next;
   }
@@ -49,10 +44,7 @@ export function disconnectSignal<T extends (...args: any[]) => void>(
   }
 }
 
-export function isSlotConnected<T extends (...args: any[]) => void>(
-  signal: Signal<T>,
-  slot: T,
-): boolean {
+export function isSlotConnected<T extends (...args: any[]) => void>(signal: Signal<T>, slot: T): boolean {
   let node = signal.head;
   while (node !== null) {
     if (node.callback === slot) return true;

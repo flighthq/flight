@@ -39,9 +39,7 @@ function findPackages(): Map<string, PackageInfo> {
           const indexPath = join(pkgDir, 'src', 'index.ts');
           if (existsSync(indexPath)) {
             const allDeps = { ...pkg.dependencies, ...pkg.peerDependencies };
-            const deps = Object.keys(allDeps).filter(
-              (d) => d.startsWith('@flighthq/') && d !== '@flighthq/engine',
-            );
+            const deps = Object.keys(allDeps).filter((d) => d.startsWith('@flighthq/') && d !== '@flighthq/engine');
             found.set(pkg.name, { name: pkg.name, description: pkg.description ?? '', dir: pkgDir, indexPath, deps });
           }
         } catch {

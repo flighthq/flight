@@ -6,7 +6,9 @@ describe('connectSignal', () => {
   it('connects a slot that receives emits', () => {
     const signal = createSignal<() => void>();
     let called = false;
-    connectSignal(signal, () => { called = true; });
+    connectSignal(signal, () => {
+      called = true;
+    });
     emitSignal(signal);
     expect(called).toBe(true);
   });
@@ -24,7 +26,9 @@ describe('connectSignal', () => {
   it('passes typed arguments to slot', () => {
     const signal = createSignal<(x: number, y: number) => void>();
     let received: [number, number] | null = null;
-    connectSignal(signal, (x, y) => { received = [x, y]; });
+    connectSignal(signal, (x, y) => {
+      received = [x, y];
+    });
     emitSignal(signal, 3, 7);
     expect(received).toEqual([3, 7]);
   });
@@ -71,7 +75,8 @@ describe('disconnectSignal', () => {
 
   it('does not remove other slots', () => {
     const signal = createSignal<() => void>();
-    let a = 0, b = 0;
+    let a = 0,
+      b = 0;
     const slotA = () => a++;
     connectSignal(signal, slotA);
     connectSignal(signal, () => b++);

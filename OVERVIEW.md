@@ -1,12 +1,11 @@
 # @flighthq Engine — Package Overview
 
-_Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a single entry point._
-_Types from `@flighthq/types` are shown with their logical package rather than as a separate section._
+_Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a single entry point._ _Types from `@flighthq/types` are shown with their logical package rather than as a separate section._
 
 ## Packages
 
 | Package | Description |
-|---------|-------------|
+| --- | --- |
 | `@flighthq/types` | Shared TypeScript interfaces, enums, and symbol constants used across all packages |
 | `@flighthq/foundation` | Core entity/node/runtime data model and binding system |
 | `@flighthq/geometry` | 2D/3D math primitives: vectors, matrices, rectangles, and object pools |

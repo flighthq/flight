@@ -8,10 +8,7 @@ export function cancelSignal<T extends (...args: any[]) => void>(signal: Signal<
   signal.canceled = true;
 }
 
-export function emitSignal<T extends (...args: any[]) => void>(
-  signal: Signal<T>,
-  ...args: Parameters<T>
-): void {
+export function emitSignal<T extends (...args: any[]) => void>(signal: Signal<T>, ...args: Parameters<T>): void {
   signal.canceled = false;
   let node = signal.head;
   while (node !== null) {

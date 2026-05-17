@@ -1,5 +1,5 @@
-import type { Spritesheet, SpritesheetAnimation } from '@flighthq/types';
 import { connectSignal } from '@flighthq/signals';
+import type { Spritesheet, SpritesheetAnimation } from '@flighthq/types';
 
 import { createSpritesheet } from './spritesheet';
 import { createSpritesheetAnimation } from './spritesheetAnimation';

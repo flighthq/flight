@@ -61,7 +61,17 @@ export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRen
   }
 
   context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
-  context.drawImage(atlas.image.src, region.x, region.y, region.width, region.height, 0, 0, region.width, region.height);
+  context.drawImage(
+    atlas.image.src,
+    region.x,
+    region.y,
+    region.width,
+    region.height,
+    0,
+    0,
+    region.width,
+    region.height,
+  );
 
   if (!state.allowSmoothing) {
     context.imageSmoothingEnabled = true;

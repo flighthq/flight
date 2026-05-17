@@ -1,7 +1,7 @@
 import { rectangle } from '@flighthq/geometry';
 import { addChild } from '@flighthq/scene-graph-core';
-import { createDisplayObject } from '@flighthq/scene-graph-display';
 import { setScaleX, setScaleY, setX, setY } from '@flighthq/scene-graph-core';
+import { createDisplayObject } from '@flighthq/scene-graph-display';
 import { createSprite } from '@flighthq/scene-graph-sprite';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState, SpriteNode } from '@flighthq/types';
 

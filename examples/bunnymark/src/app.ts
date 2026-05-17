@@ -32,7 +32,8 @@ stats.dom.style.top = '0px';
 document.body.appendChild(stats.dom);
 
 const counter = document.createElement('div');
-counter.style.cssText = 'position:fixed;bottom:0;right:0;width:80px;padding:3px 0;background:#fff;color:#333;font:bold 9px monospace;text-align:center;opacity:0.9;z-index:10000';
+counter.style.cssText =
+  'position:fixed;bottom:0;right:0;width:80px;padding:3px 0;background:#fff;color:#333;font:bold 9px monospace;text-align:center;opacity:0.9;z-index:10000';
 document.body.appendChild(counter);
 
 function loadImage(src: string): Promise<HTMLImageElement> {

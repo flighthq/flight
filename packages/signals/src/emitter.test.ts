@@ -23,8 +23,13 @@ describe('emitSignal', () => {
   it('resets canceled=false before each emit', () => {
     const signal = createSignal<() => void>();
     let count = 0;
-    connectSignal(signal, () => { count++; cancelSignal(signal); });
-    connectSignal(signal, () => { count++; });
+    connectSignal(signal, () => {
+      count++;
+      cancelSignal(signal);
+    });
+    connectSignal(signal, () => {
+      count++;
+    });
     emitSignal(signal);
     expect(count).toBe(1);
     emitSignal(signal);
@@ -50,7 +55,10 @@ describe('cancelSignal', () => {
   it('stops emit after the canceling slot', () => {
     const signal = createSignal<() => void>();
     const order: number[] = [];
-    connectSignal(signal, () => { order.push(1); cancelSignal(signal); });
+    connectSignal(signal, () => {
+      order.push(1);
+      cancelSignal(signal);
+    });
     connectSignal(signal, () => order.push(2));
     emitSignal(signal);
     expect(order).toEqual([1]);
@@ -59,8 +67,13 @@ describe('cancelSignal', () => {
   it('does not prevent subsequent emits', () => {
     const signal = createSignal<() => void>();
     let count = 0;
-    connectSignal(signal, () => { count++; cancelSignal(signal); });
-    connectSignal(signal, () => { count++; });
+    connectSignal(signal, () => {
+      count++;
+      cancelSignal(signal);
+    });
+    connectSignal(signal, () => {
+      count++;
+    });
     emitSignal(signal);
     emitSignal(signal);
     expect(count).toBe(2);

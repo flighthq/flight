@@ -1,5 +1,5 @@
-import type { Spritesheet, SpritesheetAnimation, SpritesheetFrame, SpritesheetPlayer } from '@flighthq/types';
 import { createSignal, emitSignal } from '@flighthq/signals';
+import type { Spritesheet, SpritesheetAnimation, SpritesheetFrame, SpritesheetPlayer } from '@flighthq/types';
 
 export function createSpritesheetPlayer(obj?: Partial<SpritesheetPlayer>): SpritesheetPlayer {
   return {
@@ -13,7 +13,10 @@ export function createSpritesheetPlayer(obj?: Partial<SpritesheetPlayer>): Sprit
   };
 }
 
-export function getSpritesheetPlayerFrame(player: SpritesheetPlayer, spritesheet: Spritesheet): SpritesheetFrame | null {
+export function getSpritesheetPlayerFrame(
+  player: SpritesheetPlayer,
+  spritesheet: Spritesheet,
+): SpritesheetFrame | null {
   const { animation, frameIndex } = player;
   if (animation === null || animation.frames.length === 0) return null;
   const spriteFrameIndex = animation.frames[frameIndex];

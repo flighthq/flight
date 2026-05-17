@@ -47,8 +47,8 @@ function addRegion(y: number): number {
 
 const gumdropID = addRegion(0);
 const balloonID = addRegion(64);
-const robotID   = addRegion(96);
-const compyID   = addRegion(224);
+const robotID = addRegion(96);
+const compyID = addRegion(224);
 
 const root = createSprite();
 setScaleX(root, SCALE);
