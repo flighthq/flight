@@ -5,6 +5,7 @@ import { gzipSync } from 'zlib';
 
 describe('bundle size checks', () => {
   test.each([
+    { name: 'animatedsprite', path: '../../examples/animatedsprite', threshold: 6000 },
     { name: 'displayingabitmap', path: '../../examples/displayingabitmap', threshold: 7000 },
     { name: 'bunnymark', path: '../../examples/bunnymark', threshold: 6000 },
   ])(
