@@ -20,6 +20,7 @@
     { "path": "../scene/graph/core" },
     { "path": "../scene/graph/display" },
     { "path": "../scene/graph/world" },
+    { "path": "../signals" },
     { "path": "../types" }
   ],
   "include": ["src"]

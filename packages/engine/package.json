@@ -31,6 +31,7 @@
     "@flighthq/scene-graph-display": "*",
     "@flighthq/scene-graph-sprite": "*",
     "@flighthq/scene-graph-world": "*",
+    "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

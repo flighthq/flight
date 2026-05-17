@@ -10,6 +10,7 @@ export * from '@flighthq/interaction';
 export * from '@flighthq/materials';
 export * from '@flighthq/render-canvas';
 export * from '@flighthq/render-core';
+export * from '@flighthq/signals';
 export * from '@flighthq/scene-graph-core';
 export * from '@flighthq/scene-graph-display';
 export * from '@flighthq/scene-graph-sprite';
