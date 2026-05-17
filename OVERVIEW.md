@@ -1,24 +1,26 @@
 # @flighthq Engine — Package Overview
 
-_Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a single entry point._ _Types from `@flighthq/types` are shown with their logical package rather than as a separate section._
+_Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a single entry point._
+_Types from `@flighthq/types` are shown with their logical package rather than as a separate section._
 
 ## Packages
 
 | Package | Description |
-| --- | --- |
+|---------|-------------|
 | `@flighthq/types` | Shared TypeScript interfaces, enums, and symbol constants used across all packages |
 | `@flighthq/foundation` | Core entity/node/runtime data model and binding system |
 | `@flighthq/geometry` | 2D/3D math primitives: vectors, matrices, rectangles, and object pools |
 | `@flighthq/assets` | Asset types and utilities: image sources, texture atlases, tilesets |
-| `@flighthq/materials` | Color transforms, filters, and material utilities |
+| `@flighthq/animation-spritesheet` | Spritesheet frame animation playback |
 | `@flighthq/scene-graph-core` | Base scene graph: transform hierarchy, bounds, appearance traits, child management |
 | `@flighthq/scene-graph-display` | Display object tree for composited 2D rendering: bitmaps, shapes, text, masks, blend modes |
-| `@flighthq/scene-graph-sprite` | Sprite graph for atlas-based batch rendering: sprites, quad batches, tilemaps |
 | `@flighthq/scene-graph-world` | 3D world graph for spatial scene management |
 | `@flighthq/interaction` | Hit testing: point-in-node tests and object overlap detection |
+| `@flighthq/materials` | Color transforms, filters, and material utilities |
+| `@flighthq/scene-graph-sprite` | Sprite graph for atlas-based batch rendering: sprites, quad batches, tilemaps |
 | `@flighthq/render-core` | Renderer abstraction: render state, node tracking, transform and color update pipeline |
 | `@flighthq/render-canvas` | Canvas 2D renderer implementation |
-| `@flighthq/animation-spritesheet` | Spritesheet frame animation playback |
+| `@flighthq/signals` | Strictly-typed signals and slots for event dispatching |
 
 ---
 
@@ -56,13 +58,13 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 ---
 
-## @flighthq/materials
+## @flighthq/animation-spritesheet
 
-> Color transforms, filters, and material utilities
+> Spritesheet frame animation playback
 
-**Types:** `ColorTransform`, `Filter`, `Shader`
+**Types:** `Spritesheet`, `SpritesheetAnimation`, `SpritesheetFrame`, `SpritesheetPlayer`
 
-**Values/Enums:** `BlendMode`, `colorTransform`
+**Functions:** `createSpritesheet`, `createSpritesheetAnimation`, `createSpritesheetFrame`, `createSpritesheetPlayer`, `getSpritesheetAnimation`, `getSpritesheetPlayerFrame`, `queueSpritesheetAnimation`, `showSpritesheetAnimation`, `updateSpritesheetPlayer`
 
 ---
 
@@ -82,23 +84,11 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > Display object tree for composited 2D rendering: bitmaps, shapes, text, masks, blend modes
 
-**Types:** `Bitmap`, `BitmapData`, `DOMElement`, `DOMElementData`, `DisplayContainer`, `DisplayGraphNodeDataFactory`, `DisplayGraphNodeRuntimeFactory`, `DisplayObject`, `DisplayObjectData`, `DisplayObjectRuntime`, `DisplayObjectTraits`, `Graphics`, `InputText`, `InputTextData`, `MovieClip`, `MovieClipData`, `RichText`, `RichTextData`, `Shape`, `ShapeData`, `SpriteContainer`, `SpriteContainerData`, `Stage`, `StageAlign`, `StageData`, `StageDisplayState`, `StageQuality`, `StageScaleMode`, `Text`, `TextAutoSize`, `TextData`, `TextFormat`, `Video`, `VideoData`
+**Types:** `Bitmap`, `BitmapData`, `DOMElement`, `DOMElementData`, `DisplayContainer`, `DisplayGraphNodeDataFactory`, `DisplayGraphNodeRuntimeFactory`, `DisplayObject`, `DisplayObjectData`, `DisplayObjectRuntime`, `DisplayObjectTraits`, `Graphics`, `InputText`, `InputTextData`, `MovieClip`, `MovieClipData`, `RichText`, `RichTextData`, `Shape`, `ShapeData`, `SpriteBatch`, `SpriteBatchData`, `Stage`, `StageAlign`, `StageData`, `StageDisplayState`, `StageQuality`, `StageScaleMode`, `Text`, `TextAutoSize`, `TextData`, `TextFormat`, `Video`, `VideoData`
 
-**Functions:** `computeBitmapLocalBoundsRect`, `createBitmap`, `createBitmapData`, `createBitmapRuntime`, `createDOMElement`, `createDOMElementData`, `createDisplayContainer`, `createDisplayObject`, `createDisplayObjectGeneric`, `createDisplayObjectRuntime`, `createInputText`, `createInputTextData`, `createMovieClip`, `createMovieClipData`, `createRichText`, `createRichTextData`, `createSpriteContainer`, `createSpriteContainerData`, `createStage`, `createStageData`, `createText`, `createTextData`, `createVideo`, `createVideoData`, `getDisplayObjectRuntime`, `getStage`, `isDisplayObject`, `setCacheAsBitmap`, `setCacheAsBitmapMatrix`, `setFilters`, `setMask`, `setOpaqueBackground`, `setScale9Grid`, `setScrollRect`
+**Functions:** `computeBitmapLocalBoundsRect`, `createBitmap`, `createBitmapData`, `createBitmapRuntime`, `createDOMElement`, `createDOMElementData`, `createDisplayContainer`, `createDisplayObject`, `createDisplayObjectGeneric`, `createDisplayObjectRuntime`, `createInputText`, `createInputTextData`, `createMovieClip`, `createMovieClipData`, `createRichText`, `createRichTextData`, `createSpriteBatch`, `createSpriteBatchData`, `createStage`, `createStageData`, `createText`, `createTextData`, `createVideo`, `createVideoData`, `getDisplayObjectRuntime`, `getStage`, `isDisplayObject`, `setCacheAsBitmap`, `setCacheAsBitmapMatrix`, `setFilters`, `setMask`, `setOpaqueBackground`, `setScale9Grid`, `setScrollRect`
 
-**Values/Enums:** `BitmapKind`, `DOMElementKind`, `DisplayGraph`, `DisplayObjectKind`, `InputTextKind`, `MovieClipKind`, `RichTextKind`, `ShapeKind`, `SpriteContainerKind`, `StageKind`, `TextKind`, `VideoKind`
-
----
-
-## @flighthq/scene-graph-sprite
-
-> Sprite graph for atlas-based batch rendering: sprites, quad batches, tilemaps
-
-**Types:** `QuadBatch`, `QuadBatchData`, `QuadTransformType`, `Sprite`, `SpriteData`, `SpriteGraphNodeDataFactory`, `SpriteGraphNodeRuntimeFactory`, `SpriteNode`, `SpriteNodeData`, `SpriteNodeRuntime`, `SpriteNodeTraits`, `Tilemap`, `TilemapData`
-
-**Functions:** `computeQuadBatchLocalBoundsRect`, `computeSpriteLocalBoundsRect`, `computeTilemapLocalBoundsRect`, `createQuadBatch`, `createQuadBatchData`, `createQuadBatchRuntime`, `createSprite`, `createSpriteData`, `createSpriteNode`, `createSpriteNodeRuntime`, `createSpriteRuntime`, `createTilemap`, `createTilemapData`, `createTilemapRuntime`, `getQuadBatchCapacity`, `getQuadTransformStride`, `getSpriteNodeRuntime`, `isSpriteNode`, `reserveQuadBatch`, `resizeQuadBatch`
-
-**Values/Enums:** `QuadBatchKind`, `SpriteGraph`, `SpriteKind`, `TilemapKind`
+**Values/Enums:** `BitmapKind`, `DOMElementKind`, `DisplayGraph`, `DisplayObjectKind`, `InputTextKind`, `MovieClipKind`, `RichTextKind`, `ShapeKind`, `SpriteBatchKind`, `StageKind`, `TextKind`, `VideoKind`
 
 ---
 
@@ -114,7 +104,29 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 **Types:** `HitTestPoint`
 
-**Functions:** `defaultBitmapHitTestPoint`, `defaultDOMElementHitTestPoint`, `defaultDisplayObjectHitTestPoint`, `defaultInputTextHitTestPoint`, `defaultMovieClipHitTestPoint`, `defaultQuadBatchHitTestPoint`, `defaultRichTextHitTestPoint`, `defaultShapeHitTestPoint`, `defaultSpriteContainerHitTestPoint`, `defaultSpriteHitTestPoint`, `defaultStageHitTestPoint`, `defaultTextHitTestPoint`, `defaultTilemapHitTestPoint`, `defaultVideoHitTestPoint`, `hitTestLocalBoundsRect`, `hitTestObject`, `hitTestPoint`, `registerHitTestPoint`
+**Functions:** `defaultBitmapHitTestPoint`, `defaultDOMElementHitTestPoint`, `defaultDisplayObjectHitTestPoint`, `defaultInputTextHitTestPoint`, `defaultMovieClipHitTestPoint`, `defaultQuadBatchHitTestPoint`, `defaultRichTextHitTestPoint`, `defaultShapeHitTestPoint`, `defaultSpriteBatchHitTestPoint`, `defaultSpriteHitTestPoint`, `defaultStageHitTestPoint`, `defaultTextHitTestPoint`, `defaultTilemapHitTestPoint`, `defaultVideoHitTestPoint`, `hitTestLocalBoundsRect`, `hitTestObject`, `hitTestPoint`, `registerHitTestPoint`
+
+---
+
+## @flighthq/materials
+
+> Color transforms, filters, and material utilities
+
+**Types:** `ColorTransform`, `Filter`, `Shader`
+
+**Values/Enums:** `BlendMode`, `colorTransform`
+
+---
+
+## @flighthq/scene-graph-sprite
+
+> Sprite graph for atlas-based batch rendering: sprites, quad batches, tilemaps
+
+**Types:** `QuadBatch`, `QuadBatchData`, `QuadTransformType`, `Sprite`, `SpriteData`, `SpriteGraphNodeDataFactory`, `SpriteGraphNodeRuntimeFactory`, `SpriteNode`, `SpriteNodeData`, `SpriteNodeRuntime`, `SpriteNodeTraits`, `Tilemap`, `TilemapData`
+
+**Functions:** `computeQuadBatchLocalBoundsRect`, `computeSpriteLocalBoundsRect`, `computeTilemapLocalBoundsRect`, `createQuadBatch`, `createQuadBatchData`, `createQuadBatchRuntime`, `createSprite`, `createSpriteData`, `createSpriteNode`, `createSpriteNodeRuntime`, `createSpriteRuntime`, `createTilemap`, `createTilemapData`, `createTilemapRuntime`, `getQuadBatchCapacity`, `getQuadTransformStride`, `getSpriteNodeRuntime`, `isSpriteNode`, `reserveQuadBatch`, `resizeQuadBatch`
+
+**Values/Enums:** `QuadBatchKind`, `SpriteGraph`, `SpriteKind`, `TilemapKind`
 
 ---
 
@@ -136,18 +148,18 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 **Types:** `CanvasRenderOptions`, `CanvasRenderState`
 
-**Functions:** `applyCanvasMask`, `createCanvasRenderState`, `drawCanvasBitmap`, `drawCanvasBitmapMask`, `drawCanvasDisplayObject`, `drawCanvasDisplayObjectMask`, `drawCanvasQuadBatch`, `popCanvasClipRect`, `popCanvasMask`, `popCanvasScrollRect`, `pushCanvasClipRect`, `pushCanvasMask`, `pushCanvasScrollRect`, `renderCanvasBackground`, `renderCanvasDisplayObject`, `renderCanvasSprite`, `setCanvasBlendMode`, `setCanvasTransform`, `updateCanvasCacheBitmap`
+**Functions:** `applyCanvasMask`, `createCanvasRenderState`, `drawCanvasBitmap`, `drawCanvasBitmapMask`, `drawCanvasDisplayObject`, `drawCanvasDisplayObjectMask`, `drawCanvasQuadBatch`, `drawCanvasSprite`, `popCanvasClipRect`, `popCanvasMask`, `popCanvasScrollRect`, `pushCanvasClipRect`, `pushCanvasMask`, `pushCanvasScrollRect`, `renderCanvasBackground`, `renderCanvasDisplayObject`, `renderCanvasSprite`, `setCanvasBlendMode`, `setCanvasTransform`, `updateCanvasCacheBitmap`
 
-**Values/Enums:** `defaultCanvasBitmapRenderer`, `defaultCanvasDisplayObjectRenderer`, `defaultCanvasQuadBatchRenderer`
+**Values/Enums:** `defaultCanvasBitmapRenderer`, `defaultCanvasDisplayObjectRenderer`, `defaultCanvasQuadBatchRenderer`, `defaultCanvasSpriteRenderer`
 
 ---
 
-## @flighthq/animation-spritesheet
+## @flighthq/signals
 
-> Spritesheet frame animation playback
+> Strictly-typed signals and slots for event dispatching
 
-**Types:** `Spritesheet`, `SpritesheetAnimation`
+**Types:** `Signal`, `SignalConnectOptions`, `SignalNode`
 
-**Functions:** `createSpritesheet`, `createSpritesheetAnimation`
+**Functions:** `cancelSignal`, `connectSignal`, `createSignal`, `disconnectAllSignals`, `disconnectSignal`, `emitSignal`, `hasSignalListener`
 
 ---

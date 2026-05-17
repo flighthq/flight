@@ -1,53 +1,23 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { Node, Project } from 'ts-morph';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
-
-const PACKAGE_ORDER = [
-  '@flighthq/types',
-  '@flighthq/foundation',
-  '@flighthq/geometry',
-  '@flighthq/assets',
-  '@flighthq/materials',
-  '@flighthq/scene-graph-core',
-  '@flighthq/scene-graph-display',
-  '@flighthq/scene-graph-sprite',
-  '@flighthq/scene-graph-world',
-  '@flighthq/interaction',
-  '@flighthq/render-core',
-  '@flighthq/render-canvas',
-  '@flighthq/animation-spritesheet',
-  '@flighthq/animation-timeline',
-];
-
-// Maps each package to the corresponding subdirectory in @flighthq/types.
-// Types are dissolved into their logical package sections rather than listed as a monolith.
-const TYPES_SUBDIR: Record<string, string> = {
-  '@flighthq/foundation': 'packages/types/src/foundation/index.ts',
-  '@flighthq/geometry': 'packages/types/src/geometry/index.ts',
-  '@flighthq/assets': 'packages/types/src/assets/index.ts',
-  '@flighthq/materials': 'packages/types/src/materials/index.ts',
-  '@flighthq/scene-graph-core': 'packages/types/src/scene/graph/core/index.ts',
-  '@flighthq/scene-graph-display': 'packages/types/src/scene/graph/display/index.ts',
-  '@flighthq/scene-graph-sprite': 'packages/types/src/scene/graph/sprite/index.ts',
-  '@flighthq/interaction': 'packages/types/src/interaction/index.ts',
-  '@flighthq/render-core': 'packages/types/src/render/core/index.ts',
-  '@flighthq/render-canvas': 'packages/types/src/render/canvas/index.ts',
-  '@flighthq/animation-spritesheet': 'packages/types/src/animation/spritesheet/index.ts',
-  '@flighthq/animation-timeline': 'packages/types/src/animation/timeline/index.ts',
-};
+const packagesDir = join(root, 'packages');
+const typesDir = join(packagesDir, 'types', 'src');
 
 interface PackageInfo {
   name: string;
   description: string;
+  dir: string;
   indexPath: string;
+  deps: string[];
 }
 
-function findPackages(): PackageInfo[] {
+function findPackages(): Map<string, PackageInfo> {
   const found = new Map<string, PackageInfo>();
 
   function walk(dir: string): void {
@@ -58,12 +28,21 @@ function findPackages(): PackageInfo[] {
         walk(full);
       } else if (entry.name === 'package.json') {
         try {
-          const pkg = JSON.parse(readFileSync(full, 'utf-8')) as { name?: string; description?: string };
+          const pkg = JSON.parse(readFileSync(full, 'utf-8')) as {
+            name?: string;
+            description?: string;
+            dependencies?: Record<string, string>;
+            peerDependencies?: Record<string, string>;
+          };
           if (!pkg.name?.startsWith('@flighthq/') || pkg.name === '@flighthq/engine') continue;
           const pkgDir = dirname(full);
           const indexPath = join(pkgDir, 'src', 'index.ts');
           if (existsSync(indexPath)) {
-            found.set(pkg.name, { name: pkg.name, description: pkg.description ?? '', indexPath });
+            const allDeps = { ...pkg.dependencies, ...pkg.peerDependencies };
+            const deps = Object.keys(allDeps).filter(
+              (d) => d.startsWith('@flighthq/') && d !== '@flighthq/engine',
+            );
+            found.set(pkg.name, { name: pkg.name, description: pkg.description ?? '', dir: pkgDir, indexPath, deps });
           }
         } catch {
           // skip malformed package.json
@@ -72,16 +51,31 @@ function findPackages(): PackageInfo[] {
     }
   }
 
-  walk(join(root, 'packages'));
+  walk(packagesDir);
+  return found;
+}
 
-  return [...found.values()].sort((a, b) => {
-    const ai = PACKAGE_ORDER.indexOf(a.name);
-    const bi = PACKAGE_ORDER.indexOf(b.name);
-    if (ai !== -1 && bi !== -1) return ai - bi;
-    if (ai !== -1) return -1;
-    if (bi !== -1) return 1;
-    return a.name.localeCompare(b.name);
-  });
+function topoSort(pkgMap: Map<string, PackageInfo>): PackageInfo[] {
+  const sorted: PackageInfo[] = [];
+  const visited = new Set<string>();
+
+  function visit(name: string): void {
+    if (visited.has(name)) return;
+    visited.add(name);
+    const pkg = pkgMap.get(name);
+    if (!pkg) return;
+    for (const dep of [...pkg.deps].sort()) visit(dep);
+    sorted.push(pkg);
+  }
+
+  for (const name of [...pkgMap.keys()].sort()) visit(name);
+  return sorted;
+}
+
+function resolveTypesPath(pkg: PackageInfo): string | null {
+  const rel = relative(packagesDir, pkg.dir);
+  const candidate = join(typesDir, rel, 'index.ts');
+  return existsSync(candidate) ? candidate : null;
 }
 
 interface ExportGroup {
@@ -131,7 +125,8 @@ function list(items: string[]): string {
 
 // --- main ---
 
-const packages = findPackages();
+const pkgMap = findPackages();
+const packages = topoSort(pkgMap);
 const detailPackages = packages.filter((p) => p.name !== '@flighthq/types');
 
 const project = new Project({
@@ -162,12 +157,8 @@ for (const pkg of detailPackages) {
   if (pkg.description) lines.push(`> ${pkg.description}`, '');
 
   const impl = collectExports(project, pkg.indexPath);
-  const typesRelPath = TYPES_SUBDIR[pkg.name];
-  const typesAbsPath = typesRelPath ? join(root, typesRelPath) : null;
-  const typesGroup =
-    typesAbsPath && existsSync(typesAbsPath)
-      ? collectExports(project, typesAbsPath)
-      : { functions: [], types: [], values: [] };
+  const typesPath = resolveTypesPath(pkg);
+  const typesGroup = typesPath ? collectExports(project, typesPath) : { functions: [], types: [], values: [] };
 
   const { functions, types, values } = mergeGroups(impl, typesGroup);
 
