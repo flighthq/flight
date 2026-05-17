@@ -1,4 +1,5 @@
 import type { Spritesheet, SpritesheetAnimation, SpritesheetFrame, SpritesheetPlayer } from '@flighthq/types';
+import { createSignal, emitSignal } from '@flighthq/signals';
 
 export function createSpritesheetPlayer(obj?: Partial<SpritesheetPlayer>): SpritesheetPlayer {
   return {
@@ -6,6 +7,8 @@ export function createSpritesheetPlayer(obj?: Partial<SpritesheetPlayer>): Sprit
     complete: obj?.complete ?? true,
     elapsed: obj?.elapsed ?? 0,
     frameIndex: obj?.frameIndex ?? 0,
+    onComplete: obj?.onComplete ?? createSignal(),
+    onLoop: obj?.onLoop ?? createSignal(),
     queue: obj?.queue ?? [],
   };
 }
@@ -38,10 +41,11 @@ export function updateSpritesheetPlayer(player: SpritesheetPlayer, deltaTime: nu
   const { animation } = player;
   if (animation === null || player.complete || animation.frames.length === 0) return false;
 
-  player.elapsed += deltaTime;
-
   const { frames, frameDuration, loop } = animation;
   const loopTime = frames.length * frameDuration;
+  const prevLoopCount = Math.floor(player.elapsed / loopTime);
+
+  player.elapsed += deltaTime;
 
   if (!loop && player.elapsed >= loopTime) {
     if (player.queue.length > 0) {
@@ -54,8 +58,11 @@ export function updateSpritesheetPlayer(player: SpritesheetPlayer, deltaTime: nu
     player.elapsed = loopTime;
     player.frameIndex = frames.length - 1;
     player.complete = true;
+    emitSignal(player.onComplete);
     return true;
   }
+
+  if (Math.floor(player.elapsed / loopTime) > prevLoopCount) emitSignal(player.onLoop);
 
   const timeInLoop = player.elapsed % loopTime;
   player.frameIndex = Math.min(Math.floor(timeInLoop / frameDuration), frames.length - 1);

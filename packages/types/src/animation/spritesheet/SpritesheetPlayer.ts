@@ -1,3 +1,4 @@
+import type { Signal } from '../../signals/Signal';
 import type { SpritesheetAnimation } from './SpritesheetAnimation';
 
 export interface SpritesheetPlayer {
@@ -5,5 +6,7 @@ export interface SpritesheetPlayer {
   complete: boolean;
   elapsed: number;
   frameIndex: number;
+  onComplete: Signal<() => void>;
+  onLoop: Signal<() => void>;
   queue: SpritesheetAnimation[];
 }

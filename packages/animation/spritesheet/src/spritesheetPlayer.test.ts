@@ -1,4 +1,5 @@
 import type { Spritesheet, SpritesheetAnimation } from '@flighthq/types';
+import { connectSignal } from '@flighthq/signals';
 
 import { createSpritesheet } from './spritesheet';
 import { createSpritesheetAnimation } from './spritesheetAnimation';
@@ -159,6 +160,50 @@ describe('updateSpritesheetPlayer', () => {
 
     updateSpritesheetPlayer(player, 200);
     expect(player.complete).toBe(true);
+  });
+
+  it('emits onComplete when non-looping animation finishes', () => {
+    const player = createSpritesheetPlayer();
+    const anim = makeAnimation([0, 1, 2], 100, false);
+    showSpritesheetAnimation(player, anim);
+    let fired = 0;
+    connectSignal(player.onComplete, () => fired++);
+    updateSpritesheetPlayer(player, 400);
+    expect(fired).toBe(1);
+    updateSpritesheetPlayer(player, 100);
+    expect(fired).toBe(1);
+  });
+
+  it('does not emit onComplete for looping animation', () => {
+    const player = createSpritesheetPlayer();
+    const anim = makeAnimation([0, 1, 2], 100, true);
+    showSpritesheetAnimation(player, anim);
+    let fired = 0;
+    connectSignal(player.onComplete, () => fired++);
+    updateSpritesheetPlayer(player, 400);
+    expect(fired).toBe(0);
+  });
+
+  it('emits onLoop each time a looping animation cycles', () => {
+    const player = createSpritesheetPlayer();
+    const anim = makeAnimation([0, 1, 2, 3], 100, true);
+    showSpritesheetAnimation(player, anim);
+    let loops = 0;
+    connectSignal(player.onLoop, () => loops++);
+    updateSpritesheetPlayer(player, 400);
+    expect(loops).toBe(1);
+    updateSpritesheetPlayer(player, 400);
+    expect(loops).toBe(2);
+  });
+
+  it('does not emit onLoop for non-looping animation', () => {
+    const player = createSpritesheetPlayer();
+    const anim = makeAnimation([0, 1, 2, 3], 100, false);
+    showSpritesheetAnimation(player, anim);
+    let loops = 0;
+    connectSignal(player.onLoop, () => loops++);
+    updateSpritesheetPlayer(player, 500);
+    expect(loops).toBe(0);
   });
 
   it('does not advance queue for looping animation', () => {
