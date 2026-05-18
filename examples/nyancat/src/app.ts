@@ -10,7 +10,6 @@ import {
   createSpritesheetFrame,
   createTextureAtlas,
   defaultCanvasBitmapRenderer,
-  playTimeline,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
@@ -61,7 +60,6 @@ const spritesheet = createSpritesheet({
 
 const clip = createMovieClip();
 attachSpritesheetTimeline(clip, spritesheet, animation);
-playTimeline(clip.data.timeline!);
 
 const canvas = document.createElement('canvas');
 canvas.width = FRAME_W;
