@@ -7,7 +7,7 @@ export type { SignalConnectOptions, Slot } from '@flighthq/types';
 export function connectSignal<T extends (...args: any[]) => void>(
   signal: Signal<T>,
   slot: T,
-  options?: SignalConnectOptions,
+  options?: Readonly<SignalConnectOptions>,
 ): void {
   const priority = options?.priority ?? 0;
   const node: Slot<T> = { callback: slot, next: null, once: options?.once ?? false, priority };
@@ -44,7 +44,7 @@ export function disconnectSignal<T extends (...args: any[]) => void>(signal: Sig
   }
 }
 
-export function isSlotConnected<T extends (...args: any[]) => void>(signal: Signal<T>, slot: T): boolean {
+export function isSlotConnected<T extends (...args: any[]) => void>(signal: Readonly<Signal<T>>, slot: T): boolean {
   let node = signal.head;
   while (node !== null) {
     if (node.callback === slot) return true;
