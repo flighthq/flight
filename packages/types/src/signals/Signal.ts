@@ -1,8 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { Slot } from './Slot';
-
 export interface Signal<T extends (...args: any[]) => void> {
-  canceled: boolean;
-  head: Slot<T> | null;
+  data: SignalData<T> | null;
+  emit: T;
+}
+
+export interface SignalData<T extends (...args: any[]) => void> {
+  slots: T[];
+  priorities: number[];
+  repeat: boolean[];
+  cancelled: boolean;
 }

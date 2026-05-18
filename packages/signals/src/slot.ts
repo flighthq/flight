@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { Signal, SignalConnectOptions, Slot } from '@flighthq/types';
+import type { Signal, SignalConnectOptions, SignalData } from '@flighthq/types';
 
-export type { SignalConnectOptions, Slot } from '@flighthq/types';
+import { noop } from './signal.js';
+
+export type { SignalConnectOptions } from '@flighthq/types';
 
 export function connectSignal<T extends (...args: any[]) => void>(
   signal: Signal<T>,
@@ -10,45 +12,74 @@ export function connectSignal<T extends (...args: any[]) => void>(
   options?: Readonly<SignalConnectOptions>,
 ): void {
   const priority = options?.priority ?? 0;
-  const node: Slot<T> = { callback: slot, next: null, once: options?.once ?? false, priority };
+  const repeat = !(options?.once ?? false);
 
-  if (signal.head === null || priority > signal.head.priority) {
-    node.next = signal.head;
-    signal.head = node;
-    return;
+  initSignal(signal);
+  const data = signal.data!;
+
+  for (let i = 0; i < data.priorities.length; i++) {
+    if (priority > data.priorities[i]) {
+      data.slots.splice(i, 0, slot);
+      data.priorities.splice(i, 0, priority);
+      data.repeat.splice(i, 0, repeat);
+      return;
+    }
   }
 
-  let current = signal.head;
-  while (current.next !== null && priority <= current.next.priority) {
-    current = current.next;
-  }
-  node.next = current.next;
-  current.next = node;
-}
-
-export function disconnectAllSignals<T extends (...args: any[]) => void>(signal: Signal<T>): void {
-  signal.head = null;
+  data.slots.push(slot);
+  data.priorities.push(priority);
+  data.repeat.push(repeat);
 }
 
 export function disconnectSignal<T extends (...args: any[]) => void>(signal: Signal<T>, slot: T): void {
-  while (signal.head !== null && signal.head.callback === slot) {
-    signal.head = signal.head.next;
-  }
-  let current = signal.head;
-  while (current !== null && current.next !== null) {
-    if (current.next.callback === slot) {
-      current.next = current.next.next;
-    } else {
-      current = current.next;
+  const data = signal.data;
+  if (data === null) return;
+
+  let i = data.slots.length;
+  while (--i >= 0) {
+    if (data.slots[i] === slot) {
+      data.slots.splice(i, 1);
+      data.priorities.splice(i, 1);
+      data.repeat.splice(i, 1);
     }
+  }
+
+  if (data.slots.length === 0) {
+    signal.emit = noop as unknown as T;
+    signal.data = null;
   }
 }
 
+export function disconnectAllSignals<T extends (...args: any[]) => void>(signal: Signal<T>): void {
+  signal.emit = noop as unknown as T;
+  signal.data = null;
+}
+
 export function isSlotConnected<T extends (...args: any[]) => void>(signal: Readonly<Signal<T>>, slot: T): boolean {
-  let node = signal.head;
-  while (node !== null) {
-    if (node.callback === slot) return true;
-    node = node.next;
-  }
-  return false;
+  return signal.data !== null && signal.data.slots.indexOf(slot) !== -1;
+}
+
+function initSignal<T extends (...args: any[]) => void>(signal: Signal<T>): void {
+  if (signal.data !== null) return;
+  const data: SignalData<T> = { slots: [], priorities: [], repeat: [], cancelled: false };
+  signal.data = data;
+  signal.emit = makeDispatch(data);
+}
+
+function makeDispatch<T extends (...args: any[]) => void>(data: SignalData<T>): T {
+  return ((...args: any[]) => {
+    data.cancelled = false;
+    let i = 0;
+    while (i < data.slots.length) {
+      data.slots[i](...args);
+      if (data.cancelled) break;
+      if (!data.repeat[i]) {
+        data.slots.splice(i, 1);
+        data.priorities.splice(i, 1);
+        data.repeat.splice(i, 1);
+      } else {
+        i++;
+      }
+    }
+  }) as unknown as T;
 }

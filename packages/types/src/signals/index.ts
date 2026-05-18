@@ -1,3 +1,2 @@
-export * from './Signal.js';
-export * from './SignalConnectOptions.js';
-export * from './Slot.js';
+export * from './Signal';
+export * from './SignalConnectOptions';

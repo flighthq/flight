@@ -1,9 +1,8 @@
 import { createSignal } from './signal';
 
 describe('createSignal', () => {
-  it('initializes with head=null and canceled=false', () => {
+  it('initializes with data=null', () => {
     const signal = createSignal<() => void>();
-    expect(signal.head).toBeNull();
-    expect(signal.canceled).toBe(false);
+    expect(signal.data).toBeNull();
   });
 });
