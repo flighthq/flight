@@ -1,11 +1,6 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/spritesheet" },
-    { "path": "./packages/timeline" },
-    { "path": "./packages/timeline-spritesheet" },
-    { "path": "./packages/tween-easing" },
-    { "path": "./packages/tween" },
     { "path": "./packages/assets" },
     { "path": "./packages/engine" },
     { "path": "./packages/foundation" },
@@ -14,10 +9,15 @@
     { "path": "./packages/materials" },
     { "path": "./packages/render-core" },
     { "path": "./packages/render-canvas" },
-    { "path": "./packages/signals" },
     { "path": "./packages/scene-graph-core" },
     { "path": "./packages/scene-graph-display" },
     { "path": "./packages/scene-graph-sprite" },
+    { "path": "./packages/signals" },
+    { "path": "./packages/spritesheet" },
+    { "path": "./packages/timeline" },
+    { "path": "./packages/timeline-spritesheet" },
+    { "path": "./packages/tween-easing" },
+    { "path": "./packages/tween" },
     { "path": "./packages/types" }
   ]
 }
