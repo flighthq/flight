@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../geometry" }, { "path": "../scene-graph-display" }, { "path": "../types" }],
+  "references": [{ "path": "../scene-graph-display" }, { "path": "../types" }],
   "include": ["src"]
 }
