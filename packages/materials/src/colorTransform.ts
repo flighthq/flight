@@ -84,11 +84,10 @@ export function multiplierEquals(
   compareAlpha: boolean = true,
 ): boolean {
   return (
-    compareAlpha &&
-    a.alphaMultiplier === b.alphaMultiplier &&
     a.redMultiplier === b.redMultiplier &&
     a.greenMultiplier === b.greenMultiplier &&
-    a.blueMultiplier == b.blueMultiplier
+    a.blueMultiplier === b.blueMultiplier &&
+    (!compareAlpha || a.alphaMultiplier === b.alphaMultiplier)
   );
 }
 
@@ -98,11 +97,10 @@ export function offsetEquals(
   compareAlpha: boolean = true,
 ): boolean {
   return (
-    compareAlpha &&
-    a.alphaOffset === b.alphaOffset &&
     a.redOffset === b.redOffset &&
     a.greenOffset === b.greenOffset &&
-    a.blueOffset == b.blueOffset
+    a.blueOffset === b.blueOffset &&
+    (!compareAlpha || a.alphaOffset === b.alphaOffset)
   );
 }
 
