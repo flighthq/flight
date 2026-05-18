@@ -43,6 +43,8 @@
       "@flighthq/spritesheet/*": ["./packages/spritesheet/src/*"],
       "@flighthq/timeline": ["./packages/timeline/src/index.ts"],
       "@flighthq/timeline/*": ["./packages/timeline/src/*"],
+      "@flighthq/timeline-spritesheet": ["./packages/timeline-spritesheet/src/index.ts"],
+      "@flighthq/timeline-spritesheet/*": ["./packages/timeline-spritesheet/src/*"],
       "@flighthq/tween": ["./packages/tween/src/index.ts"],
       "@flighthq/tween/*": ["./packages/tween/src/*"],
       "@flighthq/tween-easing": ["./packages/tween-easing/src/index.ts"],
