@@ -1,7 +1,7 @@
 import type { Matrix4x4 } from '@flighthq/types';
 
-import * as matrix4x4 from './matrix4x4.js';
-import * as matrix4x4Pool from './matrix4x4Pool.js';
+import * as matrix4x4 from './matrix4x4';
+import * as matrix4x4Pool from './matrix4x4Pool';
 
 beforeEach(() => {
   matrix4x4Pool.clear();

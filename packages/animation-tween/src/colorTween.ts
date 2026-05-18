@@ -1,7 +1,7 @@
 import { connectSignal } from '@flighthq/signals';
 import type { Tween, TweenManager, TweenOptions } from '@flighthq/types';
 
-import { createTween } from './tween.js';
+import { createTween } from './tween';
 
 type ColorComponents = { b: number; g: number; r: number };
 

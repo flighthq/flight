@@ -1,8 +1,8 @@
 import type { Matrix3x3 } from '@flighthq/types';
 
-import * as matrix3x2 from './matrix3x2.js';
-import * as matrix3x3 from './matrix3x3.js';
-import * as vector3 from './vector3.js';
+import * as matrix3x2 from './matrix3x2';
+import * as matrix3x3 from './matrix3x3';
+import * as vector3 from './vector3';
 
 describe('create', () => {
   it('should initialize matrix with provided values', () => {

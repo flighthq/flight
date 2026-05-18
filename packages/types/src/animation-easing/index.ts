@@ -1,1 +1,1 @@
-export * from './EasingFunction.js';
+export * from './EasingFunction';

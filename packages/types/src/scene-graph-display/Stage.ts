@@ -1,4 +1,4 @@
-import type { DisplayObject, DisplayObjectData } from './DisplayObject.js';
+import type { DisplayObject, DisplayObjectData } from './DisplayObject';
 import type { StageAlign } from './StageAlign';
 import type { StageDisplayState } from './StageDisplayState';
 import type { StageQuality } from './StageQuality';

@@ -11,8 +11,8 @@ import type {
   TweenPropertyDetail,
 } from '@flighthq/types';
 
-import { initializeTween } from './internal.js';
-import { defaultManager } from './tweenManager.js';
+import { initializeTween } from './internal';
+import { defaultManager } from './tweenManager';
 
 export type { NumericProps, StopTweenOptions, Tween, TweenManager, TweenOptions } from '@flighthq/types';
 

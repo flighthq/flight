@@ -1,6 +1,6 @@
 import type { Vector3 } from '@flighthq/types';
 
-import * as vector3Pool from './vector3Pool.js';
+import * as vector3Pool from './vector3Pool';
 
 beforeEach(() => {
   vector3Pool.clear();

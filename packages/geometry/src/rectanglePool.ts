@@ -1,6 +1,6 @@
 import type { Rectangle } from '@flighthq/types';
 
-import { create } from './rectangle.js';
+import { create } from './rectangle';
 
 export function clear(): void {
   pool.length = 0;

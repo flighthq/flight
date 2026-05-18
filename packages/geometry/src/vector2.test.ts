@@ -1,6 +1,6 @@
 import type { Vector2 } from '@flighthq/types';
 
-import * as vector2 from './vector2.js';
+import * as vector2 from './vector2';
 
 let pt: Vector2;
 let pt2: Vector2;

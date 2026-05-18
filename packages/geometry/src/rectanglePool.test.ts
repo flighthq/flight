@@ -1,6 +1,6 @@
 import type { Rectangle } from '@flighthq/types';
 
-import * as rectanglePool from './rectanglePool.js';
+import * as rectanglePool from './rectanglePool';
 
 beforeEach(() => {
   rectanglePool.clear();

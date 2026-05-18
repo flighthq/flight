@@ -1,7 +1,7 @@
 import { emitSignal } from '@flighthq/signals';
 import type { Tween, TweenManager } from '@flighthq/types';
 
-import { initializeTween } from './internal.js';
+import { initializeTween } from './internal';
 
 function updateTween<T extends object>(tween: Tween<T>, deltaTime: number): void {
   if (tween.paused || tween.complete) return;

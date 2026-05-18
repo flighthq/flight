@@ -2,7 +2,7 @@
 
 import type { Signal, SignalConnectOptions, SignalData } from '@flighthq/types';
 
-import { noop } from './signal.js';
+import { noop } from './signal';
 
 export type { SignalConnectOptions } from '@flighthq/types';
 
