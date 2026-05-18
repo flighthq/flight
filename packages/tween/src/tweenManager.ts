@@ -1,4 +1,4 @@
-import { Expo } from '@flighthq/animation-easing';
+import { Expo } from '@flighthq/tween-easing';
 import type { TweenManager, TweenManagerOptions } from '@flighthq/types';
 
 export type { TweenManagerOptions } from '@flighthq/types';
