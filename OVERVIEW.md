@@ -1,16 +1,17 @@
 # @flighthq Engine — Package Overview
 
-_Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a single entry point._ _Types from `@flighthq/types` are shown with their logical package rather than as a separate section._
+_Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a single entry point._
+_Types from `@flighthq/types` are shown with their logical package rather than as a separate section._
 
 ## Packages
 
 | Package | Description |
-| --- | --- |
+|---------|-------------|
 | `@flighthq/types` | Shared TypeScript interfaces, enums, and symbol constants used across all packages |
 | `@flighthq/foundation` | Core entity/node/runtime data model and binding system |
 | `@flighthq/geometry` | 2D/3D math primitives: vectors, matrices, rectangles, and object pools |
 | `@flighthq/assets` | Asset types and utilities: image sources, texture atlases, tilesets |
-| `@flighthq/animation-spritesheet` | Spritesheet frame animation playback |
+| `@flighthq/signals` | Strictly-typed signals and slots for event dispatching |
 | `@flighthq/scene-graph-core` | Base scene graph: transform hierarchy, bounds, appearance traits, child management |
 | `@flighthq/scene-graph-display` | Display object tree for composited 2D rendering: bitmaps, shapes, text, masks, blend modes |
 | `@flighthq/scene-graph-world` | 3D world graph for spatial scene management |
@@ -19,7 +20,11 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 | `@flighthq/scene-graph-sprite` | Sprite graph for atlas-based batch rendering: sprites, quad batches, tilemaps |
 | `@flighthq/render-core` | Renderer abstraction: render state, node tracking, transform and color update pipeline |
 | `@flighthq/render-canvas` | Canvas 2D renderer implementation |
-| `@flighthq/signals` | Strictly-typed signals and slots for event dispatching |
+| `@flighthq/spritesheet` | Spritesheet frame animation playback |
+| `@flighthq/timeline` | Timeline-based animation sequencing |
+| `@flighthq/timeline-spritesheet` | Spritesheet animation driven by the Timeline system |
+| `@flighthq/tween-easing` | Easing functions for animation |
+| `@flighthq/tween` | Tween animation system with easing functions |
 
 ---
 
@@ -57,13 +62,13 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 ---
 
-## @flighthq/animation-spritesheet
+## @flighthq/signals
 
-> Spritesheet frame animation playback
+> Strictly-typed signals and slots for event dispatching
 
-**Types:** `Spritesheet`, `SpritesheetAnimation`, `SpritesheetFrame`, `SpritesheetPlayer`
+**Types:** `Signal`, `SignalConnectOptions`, `SignalData`
 
-**Functions:** `createSpritesheet`, `createSpritesheetAnimation`, `createSpritesheetFrame`, `createSpritesheetPlayer`, `getSpritesheetAnimation`, `getSpritesheetPlayerFrame`, `queueSpritesheetAnimation`, `showSpritesheetAnimation`, `updateSpritesheetPlayer`
+**Functions:** `cancelSignal`, `connectSignal`, `createSignal`, `disconnectAllSignals`, `disconnectSignal`, `emitSignal`, `isSlotConnected`, `noop`
 
 ---
 
@@ -73,7 +78,7 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 **Types:** `GraphNode`, `GraphNodeData`, `GraphNodeDataFactory`, `GraphNodeOf`, `GraphNodeRuntime`, `GraphNodeRuntimeFactory`, `GraphNodeTraits`, `HasAppearance`, `HasBoundsRect`, `HasBoundsRectRuntime`, `HasTransform2D`, `HasTransform2DRuntime`
 
-**Functions:** `addChild`, `addChildAt`, `calculateBoundsRect`, `contains`, `createGraphNode`, `createGraphNodeRuntime`, `defaultComputeLocalBoundsRect`, `defaultGraphNodeRuntimeCallback`, `defaultGraphNodeRuntimeCanAddChild`, `ensureBoundsRect`, `ensureLocalBoundsRect`, `ensureLocalTransform2D`, `ensureWorldBoundsRect`, `ensureWorldTransform2D`, `getAppearanceID`, `getBoundsRect`, `getChildAt`, `getChildByName`, `getChildIndex`, `getGraphNodeRuntime`, `getHeight`, `getLocalBoundsID`, `getLocalBoundsRect`, `getLocalTransform2D`, `getLocalTransformID`, `getNumChildren`, `getParent`, `getRoot`, `getWidth`, `getWorldBoundsRect`, `getWorldTransform2D`, `getWorldTransformID`, `globalToLocal2D`, `initHasAppearance`, `initHasBoundsRect`, `initHasBoundsRectRuntime`, `initHasTransform2D`, `initHasTransform2DRuntime`, `invalidate`, `invalidateAppearance`, `invalidateLocalBounds`, `invalidateLocalTransform`, `invalidateParentReference`, `invalidateWorldBounds`, `localToGlobal2D`, `recomputeWorldTransformID`, `removeChild`, `removeChildAt`, `removeChildren`, `setAlpha`, `setBlendMode`, `setChildIndex`, `setColorTransform`, `setEnabled`, `setHeight`, `setRotation`, `setScaleX`, `setScaleY`, `setShader`, `setVisible`, `setWidth`, `setX`, `setY`, `swapChildren`, `swapChildrenAt`
+**Functions:** `addChild`, `addChildAt`, `calculateBoundsRect`, `contains`, `createGraphNode`, `createGraphNodeRuntime`, `defaultComputeLocalBoundsRect`, `defaultGraphNodeRuntimeCanAddChild`, `ensureBoundsRect`, `ensureLocalBoundsRect`, `ensureLocalTransform2D`, `ensureWorldBoundsRect`, `ensureWorldTransform2D`, `getAppearanceID`, `getBoundsRect`, `getChildAt`, `getChildByName`, `getChildIndex`, `getGraphNodeRuntime`, `getHeight`, `getLocalBoundsID`, `getLocalBoundsRect`, `getLocalTransform2D`, `getLocalTransformID`, `getNumChildren`, `getParent`, `getRoot`, `getWidth`, `getWorldBoundsRect`, `getWorldTransform2D`, `getWorldTransformID`, `globalToLocal2D`, `initHasAppearance`, `initHasBoundsRect`, `initHasBoundsRectRuntime`, `initHasTransform2D`, `initHasTransform2DRuntime`, `invalidate`, `invalidateAppearance`, `invalidateLocalBounds`, `invalidateLocalTransform`, `invalidateParentReference`, `invalidateRender`, `invalidateWorldBounds`, `localToGlobal2D`, `recomputeWorldTransformID`, `removeChild`, `removeChildAt`, `removeChildren`, `setAlpha`, `setBlendMode`, `setChildIndex`, `setColorTransform`, `setEnabled`, `setHeight`, `setRotation`, `setScaleX`, `setScaleY`, `setShader`, `setVisible`, `setWidth`, `setX`, `setY`, `swapChildren`, `swapChildrenAt`
 
 **Values/Enums:** `GraphNodeKind`, `NullGraph`
 
@@ -153,12 +158,52 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 ---
 
-## @flighthq/signals
+## @flighthq/spritesheet
 
-> Strictly-typed signals and slots for event dispatching
+> Spritesheet frame animation playback
 
-**Types:** `Signal`, `SignalConnectOptions`, `SignalNode`
+**Types:** `Spritesheet`, `SpritesheetAnimation`, `SpritesheetFrame`, `SpritesheetPlayer`
 
-**Functions:** `cancelSignal`, `connectSignal`, `createSignal`, `disconnectAllSignals`, `disconnectSignal`, `emitSignal`, `hasSignalListener`
+**Functions:** `createSpritesheet`, `createSpritesheetAnimation`, `createSpritesheetFrame`, `createSpritesheetPlayer`, `getSpritesheetAnimation`, `getSpritesheetPlayerFrame`, `queueSpritesheetAnimation`, `showSpritesheetAnimation`, `updateSpritesheetPlayer`
+
+---
+
+## @flighthq/timeline
+
+> Timeline-based animation sequencing
+
+**Types:** `Timeline`, `TimelineLabel`
+
+**Functions:** `createTimeline`, `gotoAndPlayTimeline`, `gotoAndStopTimeline`, `nextFrameTimeline`, `playTimeline`, `prevFrameTimeline`, `resolveTimelineLabel`, `stopTimeline`, `updateMovieClip`, `updateTimeline`
+
+---
+
+## @flighthq/timeline-spritesheet
+
+> Spritesheet animation driven by the Timeline system
+
+**Functions:** `attachSpritesheetTimeline`
+
+---
+
+## @flighthq/tween-easing
+
+> Easing functions for animation
+
+**Types:** `EasingFunction`
+
+**Values/Enums:** `Back`, `Bounce`, `Cubic`, `Elastic`, `Expo`, `Linear`, `Quad`, `Quart`, `Quint`, `Sine`
+
+---
+
+## @flighthq/tween
+
+> Tween animation system with easing functions
+
+**Types:** `NumericProps`, `StopTweenOptions`, `Tween`, `TweenManager`, `TweenManagerOptions`, `TweenOptions`, `TweenPropertyDetail`
+
+**Functions:** `applyTween`, `completeTween`, `createColorTween`, `createTimer`, `createTween`, `createTweenManager`, `pauseAllTweens`, `pauseTween`, `pauseTweens`, `resetTweens`, `resumeAllTweens`, `resumeTween`, `resumeTweens`, `stopAllTweens`, `stopTween`, `updateTweens`
+
+**Values/Enums:** `defaultManager`
 
 ---

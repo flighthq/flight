@@ -1,10 +1,11 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/animation-spritesheet" },
-    { "path": "./packages/animation-timeline" },
-    { "path": "./packages/animation-easing" },
-    { "path": "./packages/animation-tween" },
+    { "path": "./packages/spritesheet" },
+    { "path": "./packages/timeline" },
+    { "path": "./packages/timeline-spritesheet" },
+    { "path": "./packages/tween-easing" },
+    { "path": "./packages/tween" },
     { "path": "./packages/assets" },
     { "path": "./packages/engine" },
     { "path": "./packages/foundation" },
