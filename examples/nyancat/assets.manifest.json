@@ -1,0 +1,12 @@
+{
+  "assets": [
+    {
+      "path": "nyancat.png",
+      "url": "https://github.com/flighthq/example-assets/releases/download/v3/nyancat.png"
+    },
+    {
+      "path": "nyancat.gif",
+      "url": "https://github.com/flighthq/example-assets/releases/download/v3/nyancat.gif"
+    }
+  ]
+}

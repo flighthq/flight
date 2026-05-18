@@ -1,0 +1,16 @@
+{
+  "name": "nyancat",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/engine": "*"
+  },
+  "scripts": {
+    "predev": "tsx ../../scripts/download-assets.ts",
+    "dev": "vite",
+    "prebuild": "tsx ../../scripts/download-assets.ts",
+    "build": "vite build",
+    "preview": "vite preview",
+    "assets": "tsx ../../scripts/download-assets.ts"
+  }
+}

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nyan Cat</title>
+    <style>
+      body {
+        margin: 0;
+        background: #111;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        font-family: sans-serif;
+      }
+      .comparison {
+        display: flex;
+        gap: 40px;
+        align-items: flex-start;
+      }
+      .panel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+      .panel label {
+        color: #aaa;
+        font-size: 12px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+      canvas,
+      .gif {
+        display: block;
+        image-rendering: pixelated;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="comparison">
+      <div class="panel">
+        <label>MovieClip + Timeline</label>
+        <div id="app"></div>
+      </div>
+      <div class="panel">
+        <label>Animated GIF</label>
+        <img class="gif" src="assets/nyancat.gif" width="220" height="220" />
+      </div>
+    </div>
+    <script type="module" src="/src/app.ts"></script>
+  </body>
+</html>
