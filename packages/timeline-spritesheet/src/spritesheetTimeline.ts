@@ -1,0 +1,25 @@
+import { addChild, setX, setY } from '@flighthq/scene-graph-core';
+import { createBitmap } from '@flighthq/scene-graph-display';
+import { createTimeline } from '@flighthq/timeline';
+import type { MovieClip, Spritesheet, SpritesheetAnimation } from '@flighthq/types';
+
+export function attachSpritesheetTimeline(
+  clip: MovieClip,
+  spritesheet: Readonly<Spritesheet>,
+  animation: Readonly<SpritesheetAnimation>,
+): void {
+  const bitmap = createBitmap();
+  bitmap.data.image = spritesheet.atlas?.image ?? null;
+  addChild(clip, bitmap);
+
+  clip.data.timeline = createTimeline({
+    frameRate: 1000 / animation.frameDuration,
+    onEnterFrame: (frame) => {
+      const spritesheetFrame = spritesheet.frames[animation.frames[frame - 1]];
+      bitmap.scrollRect = spritesheet.atlas!.regions[spritesheetFrame.id];
+      setX(bitmap, spritesheetFrame.offsetX - animation.originX);
+      setY(bitmap, spritesheetFrame.offsetY - animation.originY);
+    },
+    totalFrames: animation.frames.length,
+  });
+}
