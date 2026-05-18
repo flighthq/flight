@@ -21,11 +21,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@flighthq/spritesheet": "*",
-    "@flighthq/timeline": "*",
-    "@flighthq/timeline-spritesheet": "*",
-    "@flighthq/tween-easing": "*",
-    "@flighthq/tween": "*",
+    "@flighthq/assets": "*",
     "@flighthq/foundation": "*",
     "@flighthq/geometry": "*",
     "@flighthq/materials": "*",
@@ -36,6 +32,11 @@
     "@flighthq/scene-graph-sprite": "*",
     "@flighthq/scene-graph-world": "*",
     "@flighthq/signals": "*",
+    "@flighthq/spritesheet": "*",
+    "@flighthq/timeline": "*",
+    "@flighthq/timeline-spritesheet": "*",
+    "@flighthq/tween": "*",
+    "@flighthq/tween-easing": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
