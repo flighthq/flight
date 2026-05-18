@@ -45,7 +45,7 @@ describe('renderCanvasSprite', () => {
     updateSpriteBeforeRender(state, root);
     renderCanvasSprite(state, root);
 
-    const calls = spy.mock.calls;
+    const calls = spy.mock.calls as unknown as [number, number, number, number, number, number][];
     expect(calls.some(([a, , , d, tx, ty]) => a === 4 && d === 4 && tx === 40 && ty === 20)).toBe(true);
   });
 
