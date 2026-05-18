@@ -22,6 +22,8 @@
   },
   "dependencies": {
     "@flighthq/animation-spritesheet": "*",
+    "@flighthq/animation-easing": "*",
+    "@flighthq/animation-tween": "*",
     "@flighthq/foundation": "*",
     "@flighthq/geometry": "*",
     "@flighthq/materials": "*",

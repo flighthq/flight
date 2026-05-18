@@ -1,6 +1,7 @@
+export * from '@flighthq/animation-easing';
 export * from '@flighthq/animation-spritesheet';
 // export * from '@flighthq/animation-timeline';
-// export * from '@flighthq/animation-tween';
+export * from '@flighthq/animation-tween';
 export * from '@flighthq/assets';
 // export * from '@flighthq/events-core';
 // export * from '@flighthq/events-input';

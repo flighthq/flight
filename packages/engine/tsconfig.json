@@ -10,6 +10,8 @@
   },
   "references": [
     { "path": "../animation/spritesheet" },
+    { "path": "../animation/easing" },
+    { "path": "../animation/tween" },
     { "path": "../assets" },
     { "path": "../foundation" },
     { "path": "../geometry" },

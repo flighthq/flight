@@ -14,8 +14,8 @@ export function createSpritesheetPlayer(obj?: Partial<SpritesheetPlayer>): Sprit
 }
 
 export function getSpritesheetPlayerFrame(
-  player: SpritesheetPlayer,
-  spritesheet: Spritesheet,
+  player: Readonly<SpritesheetPlayer>,
+  spritesheet: Readonly<Spritesheet>,
 ): SpritesheetFrame | null {
   const { animation, frameIndex } = player;
   if (animation === null || animation.frames.length === 0) return null;
@@ -23,13 +23,13 @@ export function getSpritesheetPlayerFrame(
   return spritesheet.frames[spriteFrameIndex] ?? null;
 }
 
-export function queueSpritesheetAnimation(player: SpritesheetPlayer, animation: SpritesheetAnimation): void {
+export function queueSpritesheetAnimation(player: SpritesheetPlayer, animation: Readonly<SpritesheetAnimation>): void {
   player.queue.push(animation);
 }
 
 export function showSpritesheetAnimation(
   player: SpritesheetPlayer,
-  animation: SpritesheetAnimation | null,
+  animation: Readonly<SpritesheetAnimation> | null,
   restart = true,
 ): void {
   if (!restart && animation === player.animation) return;

@@ -13,9 +13,13 @@
     "sourceMap": true,
     "composite": true,
     "paths": {
+      "@flighthq/animation-easing": ["./packages/animation/easing/src/index.ts"],
+      "@flighthq/animation-easing/*": ["./packages/animation/easing/src/*"],
       "@flighthq/animation-spritesheet": ["./packages/animation/spritesheet/src/index.ts"],
       "@flighthq/animation-spritesheet/*": ["./packages/animation/spritesheet/src/*"],
       "@flighthq/animation-timeline": ["./packages/animation/timeline/src/index.ts"],
+      "@flighthq/animation-tween": ["./packages/animation/tween/src/index.ts"],
+      "@flighthq/animation-tween/*": ["./packages/animation/tween/src/*"],
       "@flighthq/animation-timeline/*": ["./packages/animation/timeline/src/*"],
       "@flighthq/assets": ["./packages/assets/src/index.ts"],
       "@flighthq/assets/*": ["./packages/assets/src/*"],

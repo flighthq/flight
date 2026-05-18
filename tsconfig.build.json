@@ -3,6 +3,8 @@
   "references": [
     { "path": "./packages/animation/spritesheet" },
     { "path": "./packages/animation/timeline" },
+    { "path": "./packages/animation/easing" },
+    { "path": "./packages/animation/tween" },
     { "path": "./packages/assets" },
     { "path": "./packages/engine" },
     { "path": "./packages/foundation" },
