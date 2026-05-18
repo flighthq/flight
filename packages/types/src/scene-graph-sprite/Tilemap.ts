@@ -1,4 +1,4 @@
-import type { Tileset } from '../../../assets';
+import type { Tileset } from '../assets';
 import type { SpriteNode, SpriteNodeData } from './SpriteNode';
 
 export interface TilemapData extends SpriteNodeData {

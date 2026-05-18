@@ -1,4 +1,4 @@
-import type { Sprite } from '../../scene-graph-sprite/Sprite';
+import type { Sprite } from '../scene-graph-sprite/Sprite';
 import type { Renderer } from './Renderer';
 import type { RendererData } from './RendererData';
 import type { RenderState } from './RenderState';

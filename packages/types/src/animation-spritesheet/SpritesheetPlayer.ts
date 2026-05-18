@@ -1,4 +1,4 @@
-import type { Signal } from '../../signals/Signal';
+import type { Signal } from '../signals/Signal';
 import type { SpritesheetAnimation } from './SpritesheetAnimation';
 
 export interface SpritesheetPlayer {

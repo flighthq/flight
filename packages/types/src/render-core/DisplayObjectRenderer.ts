@@ -1,4 +1,4 @@
-import type { DisplayObject } from '../../scene-graph-display/DisplayObject';
+import type { DisplayObject } from '../scene-graph-display/DisplayObject';
 import type { DisplayObjectRenderNode } from './DisplayObjectRenderNode';
 import type { Renderer } from './Renderer';
 import type { RendererData } from './RendererData';

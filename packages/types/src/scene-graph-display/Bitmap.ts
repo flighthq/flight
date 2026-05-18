@@ -1,4 +1,4 @@
-import type { ImageSource } from '../../../assets';
+import type { ImageSource } from '../assets';
 import type { DisplayObject, DisplayObjectData } from './DisplayObject';
 
 export interface BitmapData extends DisplayObjectData {

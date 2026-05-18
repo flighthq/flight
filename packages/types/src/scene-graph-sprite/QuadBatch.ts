@@ -1,4 +1,4 @@
-import type { TextureAtlas } from '../../../assets';
+import type { TextureAtlas } from '../assets';
 import type { QuadTransformType } from './QuadTransformType';
 import type { SpriteNode, SpriteNodeData } from './SpriteNode';
 
