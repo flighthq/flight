@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { EasingFunction } from '../animation-easing/EasingFunction';
+import type { EasingFunction } from '../tween-easing/EasingFunction';
 import type { Tween } from './Tween';
 
 export interface TweenManager {

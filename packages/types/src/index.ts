@@ -1,7 +1,3 @@
-export * from './animation-easing';
-export * from './animation-spritesheet';
-export * from './animation-timeline';
-export * from './animation-tween';
 export * from './assets';
 export * from './foundation';
 export * from './geometry';
@@ -13,3 +9,7 @@ export * from './scene-graph-core';
 export * from './scene-graph-display';
 export * from './scene-graph-sprite';
 export * from './signals';
+export * from './spritesheet';
+export * from './timeline';
+export * from './tween';
+export * from './tween-easing';
