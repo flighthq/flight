@@ -1,5 +1,5 @@
-import type { EasingFunction } from '../../easing/EasingFunction';
-import type { Signal } from '../../signals/Signal';
+import type { EasingFunction } from '../animation-easing/EasingFunction';
+import type { Signal } from '../signals/Signal';
 import type { TweenPropertyDetail } from './TweenPropertyDetail';
 
 export type NumericProps<T> = { [K in keyof T as T[K] extends number ? K : never]?: number };

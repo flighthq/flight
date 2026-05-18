@@ -1,4 +1,4 @@
-import type { BlendMode, ColorTransform, Shader } from '../../../materials';
+import type { BlendMode, ColorTransform, Shader } from '../materials';
 
 export interface HasAppearance {
   alpha: number;

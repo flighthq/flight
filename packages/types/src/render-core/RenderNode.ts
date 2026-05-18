@@ -1,5 +1,5 @@
-import type { Entity } from '../../foundation';
-import type { BlendMode, ColorTransform, Shader } from '../../materials';
+import type { Entity } from '../foundation';
+import type { BlendMode, ColorTransform, Shader } from '../materials';
 import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
 import type { RendererData } from './RendererData';

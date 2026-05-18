@@ -1,5 +1,5 @@
-import type { BlendMode } from '../../materials';
-import type { RenderState } from '../core';
+import type { BlendMode } from '../materials';
+import type { RenderState } from '../render-core';
 
 export interface CanvasRenderState extends RenderState {
   readonly canvas: HTMLCanvasElement;

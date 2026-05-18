@@ -1,4 +1,4 @@
-import type { EasingFunction } from '../../easing/EasingFunction';
+import type { EasingFunction } from '../animation-easing/EasingFunction';
 
 export interface TweenOptions {
   delay?: number;

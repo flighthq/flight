@@ -1,5 +1,5 @@
-import type { TextureAtlas } from '../../../assets';
-import type { Rectangle } from '../../../geometry';
+import type { TextureAtlas } from '../assets';
+import type { Rectangle } from '../geometry';
 import type { SpriteNode, SpriteNodeData } from './SpriteNode';
 
 export interface SpriteData extends SpriteNodeData {

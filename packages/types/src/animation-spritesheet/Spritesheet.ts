@@ -1,5 +1,5 @@
-import type { TextureAtlas } from '../../assets/TextureAtlas';
-import type { Entity } from '../../foundation';
+import type { TextureAtlas } from '../assets/TextureAtlas';
+import type { Entity } from '../foundation';
 import type { SpritesheetAnimation } from './SpritesheetAnimation';
 import type { SpritesheetFrame } from './SpritesheetFrame';
 

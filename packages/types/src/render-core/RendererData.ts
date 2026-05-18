@@ -1,3 +1,3 @@
-import type { Entity } from '../../foundation';
+import type { Entity } from '../foundation';
 
 export interface RendererData extends Entity {}

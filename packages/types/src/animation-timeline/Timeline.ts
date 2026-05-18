@@ -1,4 +1,4 @@
-import type { Entity } from '../../foundation';
+import type { Entity } from '../foundation';
 
 export interface Timeline extends Entity {
   frameRate: number | null;

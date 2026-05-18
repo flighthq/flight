@@ -1,5 +1,5 @@
-import type { Entity, Runtime } from '../../../foundation';
-import type { Matrix3x2 } from '../../../geometry';
+import type { Entity, Runtime } from '../foundation';
+import type { Matrix3x2 } from '../geometry';
 
 export interface HasTransform2D extends Entity {
   rotation: number;

@@ -1,5 +1,5 @@
-import type { Matrix3x2, Rectangle } from '../../../geometry';
-import type { Filter } from '../../../materials';
+import type { Matrix3x2, Rectangle } from '../geometry';
+import type { Filter } from '../materials';
 import type {
   GraphNode,
   GraphNodeData,
@@ -9,7 +9,7 @@ import type {
   HasBoundsRectRuntime,
   HasTransform2D,
   HasTransform2DRuntime,
-} from '../core';
+} from '../scene-graph-core';
 
 export type DisplayObject = GraphNode<typeof DisplayGraph, DisplayObjectTraits> & DisplayObjectTraits;
 

@@ -1,4 +1,4 @@
-import type { Matrix3x2 } from '../../geometry';
+import type { Matrix3x2 } from '../geometry';
 
 export interface CanvasRenderOptions {
   backgroundColor?: number | null;

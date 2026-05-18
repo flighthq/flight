@@ -1,5 +1,5 @@
-import type { Node, NodeData, Runtime, RuntimeKey } from '../../../foundation';
-import type { Signal } from '../../../signals';
+import type { Node, NodeData, Runtime, RuntimeKey } from '../foundation';
+import type { Signal } from '../signals';
 
 export interface GraphNodeTraits {
   data: GraphNodeData | null;

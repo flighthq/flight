@@ -1,5 +1,5 @@
-import type { Matrix3x2 } from '../../geometry';
-import type { HasBoundsRect, HasTransform2D } from '../../scene-graph-core';
+import type { Matrix3x2 } from '../geometry';
+import type { HasBoundsRect, HasTransform2D } from '../scene-graph-core';
 import type { Renderable } from './Renderable';
 import type { RenderNode } from './RenderNode';
 

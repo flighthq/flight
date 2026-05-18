@@ -1,5 +1,5 @@
-import type { Entity, Runtime } from '../../../foundation';
-import type { Rectangle } from '../../../geometry/Rectangle';
+import type { Entity, Runtime } from '../foundation';
+import type { Rectangle } from '../geometry/Rectangle';
 import type { GraphNode } from './GraphNode';
 
 export interface HasBoundsRect extends Entity {}
