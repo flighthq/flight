@@ -19,11 +19,11 @@
       "types": "./dist/render.d.ts",
       "default": "./dist/render.js"
     },
-    "./render/canvas": {
+    "./render-canvas": {
       "types": "./dist/render-canvas.d.ts",
       "default": "./dist/render-canvas.js"
     },
-    "./render/core": {
+    "./render-core": {
       "types": "./dist/render-core.d.ts",
       "default": "./dist/render-core.js"
     },
@@ -35,7 +35,7 @@
       "types": "./dist/scene-graph.d.ts",
       "default": "./dist/scene-graph.js"
     },
-    "./scene/graph/display": {
+    "./scene-graph-display": {
       "types": "./dist/scene-graph-display.d.ts",
       "default": "./dist/scene-graph-display.js"
     }
