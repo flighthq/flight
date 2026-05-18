@@ -1,3 +1,4 @@
+import { emitSignal } from '@flighthq/signals';
 import type { GraphNode, GraphNodeRuntime, Node } from '@flighthq/types';
 
 import { getGraphNodeRuntime } from './graphNode';
@@ -61,11 +62,11 @@ export function addChildAt<GraphKind extends symbol, Traits extends object>(
   }
 
   children!.splice(index, 0, child);
-  targetRuntime.onChildrenChanged(target);
+  emitSignal(target.onChildrenChanged);
 
   if (parent !== target) {
     childRuntime.parent = target;
-    childRuntime.onParentChanged(child);
+    emitSignal(child.onParentChanged);
     invalidateParentReference(child);
   }
 
@@ -183,13 +184,13 @@ export function removeChild<GraphKind extends symbol, Traits extends object>(
   const children = targetRuntime.children;
   if (children !== null && childRuntime.parent === target) {
     childRuntime.parent = null;
-    childRuntime.onParentChanged(child);
+    emitSignal(child.onParentChanged);
     invalidateParentReference(child);
     const i = children.indexOf(child);
     if (i !== -1) {
       children.splice(i, 1);
     }
-    targetRuntime.onChildrenChanged(target);
+    emitSignal(target.onChildrenChanged);
   }
   return child as GraphNode<GraphKind, Traits> & Traits;
 }
@@ -259,7 +260,7 @@ export function setChildIndex<GraphKind extends symbol, Traits extends object>(
     if (i !== -1 && i !== index) {
       children.splice(i, 1);
       children.splice(index, 0, child);
-      targetRuntime.onChildrenOrderChanged(target);
+      emitSignal(target.onChildrenOrderChanged);
     }
   }
 }
@@ -286,7 +287,7 @@ export function swapChildren<GraphKind extends symbol, Traits extends object>(
     const index2 = children.indexOf(child2);
     children[index1] = child2;
     children[index2] = child1;
-    targetRuntime.onChildrenOrderChanged(target);
+    emitSignal(target.onChildrenOrderChanged);
   }
 }
 
@@ -310,7 +311,7 @@ export function swapChildrenAt<GraphKind extends symbol, Traits extends object>(
   const swap = children[index1] as GraphNode<GraphKind, Traits>;
   children[index1] = children[index2];
   children[index2] = swap;
-  targetRuntime.onChildrenOrderChanged(target);
+  emitSignal(target.onChildrenOrderChanged);
 }
 
 function throwOutOfBoundsError(): void {

@@ -1,4 +1,5 @@
 import type { Node, NodeData, Runtime, RuntimeKey } from '../../../foundation';
+import type { Signal } from '../../../signals';
 
 export interface GraphNodeTraits {
   data: GraphNodeData | null;
@@ -10,6 +11,9 @@ export interface GraphNodeTraits {
 export interface GraphNode<GraphKind extends symbol = typeof NullGraph, Traits extends object = GraphNodeTraits>
   extends Node, GraphNodeTraits {
   [RuntimeKey]: GraphNodeRuntime<GraphKind, Traits> | undefined;
+  onChildrenChanged: Signal<() => void>;
+  onChildrenOrderChanged: Signal<() => void>;
+  onParentChanged: Signal<() => void>;
 }
 
 export interface GraphNodeRuntime<
@@ -33,9 +37,6 @@ export interface GraphNodeRuntime<
   worldTransformUsingParentTransformID: number;
 
   canAddChild: (target: GraphNode<GraphKind, Traits>, child: GraphNode<GraphKind, Traits>) => boolean;
-  onChildrenChanged: (target: GraphNode<GraphKind, Traits>) => void;
-  onChildrenOrderChanged: (target: GraphNode<GraphKind, Traits>) => void;
-  onParentChanged: (target: GraphNode<GraphKind, Traits>) => void;
 }
 
 export interface GraphNodeData extends NodeData {}

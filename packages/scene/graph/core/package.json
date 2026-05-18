@@ -55,6 +55,7 @@
   "dependencies": {
     "@flighthq/foundation": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

@@ -1,3 +1,4 @@
+import { connectSignal } from '@flighthq/signals';
 import type { GraphNode, GraphNodeRuntime, GraphNodeTraits } from '@flighthq/types';
 import { GraphNodeKind, NodeKind } from '@flighthq/types';
 
@@ -80,20 +81,18 @@ describe('addChild', () => {
 
   it('calls onParentChanged on the child', () => {
     let called = false;
-    const runtime = getRuntime(childA);
-    runtime.onParentChanged = (_target: GraphNode<typeof TestGraph>) => {
+    connectSignal(childA.onParentChanged, () => {
       called = true;
-    };
+    });
     addChild(container, childA);
     expect(called).toBe(true);
   });
 
   it('calls onChildrenChanged on the parent', () => {
     let called = false;
-    const runtime = getRuntime(container);
-    runtime.onChildrenChanged = (_target: GraphNode<typeof TestGraph>) => {
+    connectSignal(container.onChildrenChanged, () => {
       called = true;
-    };
+    });
     addChild(container, childA);
     expect(called).toBe(true);
   });
@@ -138,20 +137,18 @@ describe('addChildAt', () => {
 
   it('calls onParentChanged on the child', () => {
     let called = false;
-    const runtime = getRuntime(childA);
-    runtime.onParentChanged = (_target: GraphNode<typeof TestGraph>) => {
+    connectSignal(childA.onParentChanged, () => {
       called = true;
-    };
+    });
     addChildAt(container, childA, 0);
     expect(called).toBe(true);
   });
 
   it('calls onChildrenChanged on the parent', () => {
     let called = false;
-    const runtime = getRuntime(container);
-    runtime.onChildrenChanged = (_target: GraphNode<typeof TestGraph>) => {
+    connectSignal(container.onChildrenChanged, () => {
       called = true;
-    };
+    });
     addChildAt(container, childA, 0);
     expect(called).toBe(true);
   });
@@ -312,10 +309,9 @@ describe('removeChild', () => {
   it('calls onParentChanged on the child', () => {
     addChild(container, childA);
     let called = false;
-    const runtime = getRuntime(childA);
-    runtime.onParentChanged = (_target: GraphNode<typeof TestGraph>) => {
+    connectSignal(childA.onParentChanged, () => {
       called = true;
-    };
+    });
     removeChild(container, childA);
     expect(called).toBe(true);
   });
@@ -323,10 +319,9 @@ describe('removeChild', () => {
   it('calls onChildrenChanged on the parent', () => {
     addChild(container, childA);
     let called = false;
-    const runtime = getRuntime(container);
-    runtime.onChildrenChanged = (_target: GraphNode<typeof TestGraph>) => {
+    connectSignal(container.onChildrenChanged, () => {
       called = true;
-    };
+    });
     removeChild(container, childA);
     expect(called).toBe(true);
   });
@@ -354,10 +349,9 @@ describe('removeChildAt', () => {
     addChild(container, childB);
 
     let called = false;
-    const runtime = getRuntime(childA);
-    runtime.onParentChanged = (_target: GraphNode<typeof TestGraph>) => {
+    connectSignal(childA.onParentChanged, () => {
       called = true;
-    };
+    });
     removeChildAt(container, 0);
     expect(called).toBe(true);
   });
@@ -367,10 +361,9 @@ describe('removeChildAt', () => {
     addChild(container, childB);
 
     let called = false;
-    const runtime = getRuntime(container);
-    runtime.onChildrenChanged = (_target: GraphNode<typeof TestGraph>) => {
+    connectSignal(container.onChildrenChanged, () => {
       called = true;
-    };
+    });
     removeChildAt(container, 0);
     expect(called).toBe(true);
   });
@@ -422,10 +415,9 @@ describe('removeChildren', () => {
     addChild(container, childA);
 
     let called = false;
-    const runtime = getRuntime(childA);
-    runtime.onParentChanged = (_target: GraphNode<typeof TestGraph>) => {
+    connectSignal(childA.onParentChanged, () => {
       called = true;
-    };
+    });
     removeChildren(container);
     expect(called).toBe(true);
   });
@@ -434,10 +426,9 @@ describe('removeChildren', () => {
     addChild(container, childA);
 
     let called = false;
-    const runtime = getRuntime(container);
-    runtime.onChildrenChanged = (_target: GraphNode<typeof TestGraph>) => {
+    connectSignal(container.onChildrenChanged, () => {
       called = true;
-    };
+    });
     removeChildren(container);
     expect(called).toBe(true);
   });
@@ -479,10 +470,9 @@ describe('setChildIndex', () => {
     addChild(container, childB);
 
     let called = false;
-    const runtime = getRuntime(container);
-    runtime.onChildrenOrderChanged = (_target: GraphNode<typeof TestGraph>) => {
+    connectSignal(container.onChildrenOrderChanged, () => {
       called = true;
-    };
+    });
     setChildIndex(container, childA, 1);
     expect(called).toBe(true);
   });
@@ -515,10 +505,9 @@ describe('swapChildren', () => {
     addChild(container, childB);
 
     let called = false;
-    const runtime = getRuntime(container);
-    runtime.onChildrenOrderChanged = (_target: GraphNode<typeof TestGraph>) => {
+    connectSignal(container.onChildrenOrderChanged, () => {
       called = true;
-    };
+    });
     swapChildren(container, childA, childB);
     expect(called).toBe(true);
   });
@@ -546,10 +535,9 @@ describe('swapChildrenAt', () => {
     addChild(container, childB);
 
     let called = false;
-    const runtime = getRuntime(container);
-    runtime.onChildrenOrderChanged = (_target: GraphNode<typeof TestGraph>) => {
+    connectSignal(container.onChildrenOrderChanged, () => {
       called = true;
-    };
+    });
     swapChildrenAt(container, 0, 1);
     expect(called).toBe(true);
   });

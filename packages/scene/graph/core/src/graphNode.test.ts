@@ -3,7 +3,6 @@ import type { GraphNode, GraphNodeData, GraphNodeRuntime, PartialNode } from '@f
 import {
   createGraphNode,
   createGraphNodeRuntime,
-  defaultGraphNodeRuntimeCallback,
   defaultGraphNodeRuntimeCanAddChild,
   getGraphNodeRuntime,
 } from './graphNode';
@@ -102,9 +101,6 @@ describe('createGraphNodeRuntime', () => {
     expect(runtime.worldTransformUsingLocalTransformID).toStrictEqual(-1);
     expect(runtime.worldTransformUsingParentTransformID).toStrictEqual(-1);
     expect(runtime.canAddChild).toStrictEqual(defaultGraphNodeRuntimeCanAddChild);
-    expect(runtime.onChildrenChanged).toStrictEqual(defaultGraphNodeRuntimeCallback);
-    expect(runtime.onChildrenOrderChanged).toStrictEqual(defaultGraphNodeRuntimeCallback);
-    expect(runtime.onParentChanged).toStrictEqual(defaultGraphNodeRuntimeCallback);
   });
 
   it('does not initialize graph', () => {
@@ -112,20 +108,12 @@ describe('createGraphNodeRuntime', () => {
     expect(runtime.graph).toBeUndefined();
   });
 
-  it('allows custom methods', () => {
+  it('allows custom canAddChild', () => {
     const methods = {
-      canAddChild: (_parent: GraphNode<typeof TestGraph>, _child: GraphNode<typeof TestGraph>) => {
-        return true;
-      },
-      onChildrenChanged: (_target: GraphNode<typeof TestGraph>) => {},
-      onChildrenOrderChanged: (_target: GraphNode<typeof TestGraph>) => {},
-      onParentChanged: (_target: GraphNode<typeof TestGraph>) => {},
+      canAddChild: (_parent: GraphNode<typeof TestGraph>, _child: GraphNode<typeof TestGraph>) => true,
     };
     runtime = createGraphNodeRuntime(methods);
     expect(runtime.canAddChild).toStrictEqual(methods.canAddChild);
-    expect(runtime.onChildrenChanged).toStrictEqual(methods.onChildrenChanged);
-    expect(runtime.onChildrenOrderChanged).toStrictEqual(methods.onChildrenOrderChanged);
-    expect(runtime.onParentChanged).toStrictEqual(methods.onParentChanged);
   });
 });
 

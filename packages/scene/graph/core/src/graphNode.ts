@@ -1,5 +1,6 @@
 import type { NodeDataFactory, NodeRuntimeFactory } from '@flighthq/foundation';
 import { createNode, createRuntime, getRuntime } from '@flighthq/foundation';
+import { createSignal } from '@flighthq/signals';
 import type {
   GraphNode,
   GraphNodeData,
@@ -39,6 +40,9 @@ export function createGraphNode<
   ) as GraphNode<GraphKind, Traits> & Traits;
   out[RuntimeKey]!.graph = graph;
   out.enabled = obj?.enabled ?? true;
+  out.onChildrenChanged = createSignal();
+  out.onChildrenOrderChanged = createSignal();
+  out.onParentChanged = createSignal();
   return out;
 }
 
@@ -69,15 +73,8 @@ export function createGraphNodeRuntime<GraphKind extends symbol, Traits extends 
   out.worldTransformUsingLocalTransformID = -1;
   out.worldTransformUsingParentTransformID = -1;
   out.canAddChild = methods?.canAddChild ?? defaultGraphNodeRuntimeCanAddChild;
-  out.onChildrenChanged = methods?.onChildrenChanged ?? defaultGraphNodeRuntimeCallback;
-  out.onChildrenOrderChanged = methods?.onChildrenOrderChanged ?? defaultGraphNodeRuntimeCallback;
-  out.onParentChanged = methods?.onParentChanged ?? defaultGraphNodeRuntimeCallback;
   return out;
 }
-
-export function defaultGraphNodeRuntimeCallback<GraphKind extends symbol, Traits extends object>(
-  _target: GraphNode<GraphKind, Traits>,
-): void {}
 
 export function defaultGraphNodeRuntimeCanAddChild<GraphKind extends symbol, Traits extends object>(
   _target: GraphNode<GraphKind, Traits>,
