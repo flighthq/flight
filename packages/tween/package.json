@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/animation-tween",
+  "name": "@flighthq/tween",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -21,7 +21,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@flighthq/animation-easing": "*",
+    "@flighthq/tween-easing": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
