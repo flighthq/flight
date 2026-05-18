@@ -9,9 +9,11 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../animation-spritesheet" },
-    { "path": "../animation-easing" },
-    { "path": "../animation-tween" },
+    { "path": "../spritesheet" },
+    { "path": "../timeline" },
+    { "path": "../timeline-spritesheet" },
+    { "path": "../tween-easing" },
+    { "path": "../tween" },
     { "path": "../assets" },
     { "path": "../foundation" },
     { "path": "../geometry" },

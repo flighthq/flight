@@ -21,9 +21,11 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@flighthq/animation-spritesheet": "*",
-    "@flighthq/animation-easing": "*",
-    "@flighthq/animation-tween": "*",
+    "@flighthq/spritesheet": "*",
+    "@flighthq/timeline": "*",
+    "@flighthq/timeline-spritesheet": "*",
+    "@flighthq/tween-easing": "*",
+    "@flighthq/tween": "*",
     "@flighthq/foundation": "*",
     "@flighthq/geometry": "*",
     "@flighthq/materials": "*",

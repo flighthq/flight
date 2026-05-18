@@ -1,8 +1,9 @@
-export * from '@flighthq/animation-easing';
-export * from '@flighthq/animation-spritesheet';
-// export * from '@flighthq/animation-timeline';
-export * from '@flighthq/animation-tween';
 export * from '@flighthq/assets';
+export * from '@flighthq/spritesheet';
+export * from '@flighthq/timeline';
+export * from '@flighthq/timeline-spritesheet';
+export * from '@flighthq/tween';
+export * from '@flighthq/tween-easing';
 // export * from '@flighthq/events-core';
 // export * from '@flighthq/events-input';
 export * from '@flighthq/foundation';
