@@ -1,6 +1,7 @@
 import type { GraphNode, GraphNodeRuntime, Node } from '@flighthq/types';
 
 import { getGraphNodeRuntime } from './graphNode';
+import { invalidateParentReference } from './revision';
 
 /**
  * Adds a child Node instance to this Node
@@ -65,6 +66,7 @@ export function addChildAt<GraphKind extends symbol, Traits extends object>(
   if (parent !== target) {
     childRuntime.parent = target;
     childRuntime.onParentChanged(child);
+    invalidateParentReference(child);
   }
 
   return child as GraphNode<GraphKind, Traits> & Traits;
@@ -182,6 +184,7 @@ export function removeChild<GraphKind extends symbol, Traits extends object>(
   if (children !== null && childRuntime.parent === target) {
     childRuntime.parent = null;
     childRuntime.onParentChanged(child);
+    invalidateParentReference(child);
     const i = children.indexOf(child);
     if (i !== -1) {
       children.splice(i, 1);
