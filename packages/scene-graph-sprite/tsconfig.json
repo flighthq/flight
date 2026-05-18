@@ -8,12 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [
-    { "path": "../materials" },
-    { "path": "../geometry" },
-    { "path": "../scene-graph-display" },
-    { "path": "../types" },
-    { "path": "../scene-graph-world" }
-  ],
+  "references": [{ "path": "../geometry" }, { "path": "../types" }, { "path": "../scene-graph-core" }],
   "include": ["src"]
 }

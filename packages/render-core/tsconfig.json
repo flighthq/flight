@@ -9,11 +9,11 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../materials" },
     { "path": "../geometry" },
+    { "path": "../materials" },
     { "path": "../scene-graph-display" },
-    { "path": "../types" },
-    { "path": "../scene-graph-world" }
+    { "path": "../scene-graph-sprite" },
+    { "path": "../types" }
   ],
   "include": ["src"]
 }

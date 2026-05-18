@@ -9,11 +9,10 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../materials" },
+    { "path": "../foundation" },
     { "path": "../geometry" },
-    { "path": "../scene-graph-display" },
-    { "path": "../types" },
-    { "path": "../scene-graph-world" }
+    { "path": "../signals" },
+    { "path": "../types" }
   ],
   "include": ["src"]
 }

@@ -1,22 +1,22 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/animation/spritesheet" },
-    { "path": "./packages/animation/timeline" },
-    { "path": "./packages/animation/easing" },
-    { "path": "./packages/animation/tween" },
+    { "path": "./packages/animation-spritesheet" },
+    { "path": "./packages/animation-timeline" },
+    { "path": "./packages/animation-easing" },
+    { "path": "./packages/animation-tween" },
     { "path": "./packages/assets" },
     { "path": "./packages/engine" },
     { "path": "./packages/foundation" },
     { "path": "./packages/geometry" },
     { "path": "./packages/interaction" },
     { "path": "./packages/materials" },
-    { "path": "./packages/render/core" },
-    { "path": "./packages/render/canvas" },
+    { "path": "./packages/render-core" },
+    { "path": "./packages/render-canvas" },
     { "path": "./packages/signals" },
-    { "path": "./packages/scene/graph/core" },
-    { "path": "./packages/scene/graph/display" },
-    { "path": "./packages/scene/graph/sprite" },
+    { "path": "./packages/scene-graph-core" },
+    { "path": "./packages/scene-graph-display" },
+    { "path": "./packages/scene-graph-sprite" },
     { "path": "./packages/types" }
   ]
 }
