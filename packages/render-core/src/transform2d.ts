@@ -7,13 +7,17 @@ export function updateDisplayObjectRenderTransform2D(
   data: DisplayObjectRenderNode,
   parentData?: DisplayObjectRenderNode,
 ): boolean {
-  const updated = updateRenderTransform2D(state, data, parentData);
   const source = data.source;
-  if (updated && source.scrollRect !== null) {
-    const scrollRect = source.scrollRect;
+  const scrollRect = source.scrollRect;
+  if (scrollRect !== null) {
+    // scrollRect contributes to the render transform but isn't tracked by localTransformID,
+    // so always recalculate when it is set.
+    recalculateRenderTransform2D(state, data, parentData);
+    data.lastLocalTransformID = getLocalTransformID(data.source as GraphNode);
     matrix3x2.translateUsingVectorXY(data.transform2D, data.transform2D, -scrollRect.x, -scrollRect.y);
+    return true;
   }
-  return updated;
+  return updateRenderTransform2D(state, data, parentData);
 }
 
 export function updateRenderTransform2D(state: RenderState, data: RenderNode2D, parentData?: RenderNode2D): boolean {
