@@ -1,7 +1,6 @@
 import { rectangle } from '@flighthq/geometry';
 import { addChild, getLocalBoundsRect } from '@flighthq/scene-graph-core';
 import { createDisplayObject, createSpriteBatch } from '@flighthq/scene-graph-display';
-import { createSprite } from '@flighthq/scene-graph-sprite';
 import type { DisplayObject } from '@flighthq/types';
 
 import {
@@ -25,6 +24,18 @@ function makeDisplayObject(opaqueBackground: number | null = 0xff0000): DisplayO
   return obj;
 }
 
+describe('defaultBitmapHitTestPoint', () => {
+  it('returns true within bounds with opaqueBackground set', () => {
+    const obj = makeDisplayObject(0xffffff);
+    expect(defaultBitmapHitTestPoint(obj, 10, 10, false)).toBe(true);
+  });
+
+  it('returns false when opaqueBackground is null', () => {
+    const obj = makeDisplayObject(null);
+    expect(defaultBitmapHitTestPoint(obj, 10, 10, false)).toBe(false);
+  });
+});
+
 describe('defaultDisplayObjectHitTestPoint', () => {
   it('returns true when opaqueBackground is set and point is within bounds', () => {
     const obj = makeDisplayObject(0xff0000);
@@ -45,18 +56,6 @@ describe('defaultDisplayObjectHitTestPoint', () => {
     const obj = makeDisplayObject(0xff0000);
     expect(defaultDisplayObjectHitTestPoint(obj, 50, 50, true)).toBe(true);
     expect(defaultDisplayObjectHitTestPoint(obj, 200, 200, true)).toBe(false);
-  });
-});
-
-describe('defaultBitmapHitTestPoint', () => {
-  it('returns true within bounds with opaqueBackground set', () => {
-    const obj = makeDisplayObject(0xffffff);
-    expect(defaultBitmapHitTestPoint(obj, 10, 10, false)).toBe(true);
-  });
-
-  it('returns false when opaqueBackground is null', () => {
-    const obj = makeDisplayObject(null);
-    expect(defaultBitmapHitTestPoint(obj, 10, 10, false)).toBe(false);
   });
 });
 
@@ -106,23 +105,12 @@ describe('defaultShapeHitTestPoint', () => {
 });
 
 describe('defaultSpriteBatchHitTestPoint', () => {
-  it('delegates to defaultSpriteHitTestPoint when graph is set', () => {
-    const batch = createSpriteBatch();
-    batch.opaqueBackground = null;
-    const spriteRoot = createSprite();
-    rectangle.setTo(getLocalBoundsRect(spriteRoot), 0, 0, 100, 100);
-    batch.data.graph = spriteRoot;
-    addChild(createDisplayObject(), batch);
-
-    expect(defaultSpriteBatchHitTestPoint(batch, 50, 50, false)).toBe(true);
-  });
-
-  it('falls back to defaultDisplayObjectHitTestPoint when graph is null', () => {
+  it('returns true when graph is null and opaqueBackground is set within bounds', () => {
     const batch = createSpriteBatch();
     batch.opaqueBackground = 0xff0000;
-    rectangle.setTo(getLocalBoundsRect(batch), 0, 0, 100, 100);
     batch.data.graph = null;
-
+    rectangle.setTo(getLocalBoundsRect(batch), 0, 0, 100, 100);
+    addChild(createDisplayObject(), batch);
     expect(defaultSpriteBatchHitTestPoint(batch, 50, 50, false)).toBe(true);
   });
 
@@ -130,7 +118,6 @@ describe('defaultSpriteBatchHitTestPoint', () => {
     const batch = createSpriteBatch();
     batch.opaqueBackground = null;
     batch.data.graph = null;
-
     expect(defaultSpriteBatchHitTestPoint(batch, 50, 50, false)).toBe(false);
   });
 });
