@@ -1,4 +1,5 @@
 import { createImageSource } from '@flighthq/assets';
+import { rectangle } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { createBitmap } from '@flighthq/scene-graph-display';
 import { BitmapKind } from '@flighthq/types';
@@ -55,7 +56,7 @@ describe('drawCanvasBitmap', () => {
     const bitmap = createBitmap();
     bitmap.opaqueBackground = 0;
     bitmap.data.image = makeImageSource();
-    bitmap.scrollRect = { x: 10, y: 20, width: 32, height: 32 };
+    bitmap.scrollRect = rectangle.create(10, 20, 32, 32);
     const data = getDisplayObjectRenderNode(state, bitmap);
     const spy = vi.spyOn(state.context, 'drawImage');
 
