@@ -9,8 +9,10 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../assets" },
     { "path": "../scene-graph-core" },
     { "path": "../scene-graph-display" },
+    { "path": "../spritesheet" },
     { "path": "../timeline" },
     { "path": "../types" }
   ],

@@ -27,6 +27,8 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/assets": "*",
+    "@flighthq/spritesheet": "*",
     "typescript": "^5.3.0"
   },
   "description": "Spritesheet animation driven by the Timeline system"
