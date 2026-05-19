@@ -1,0 +1,13 @@
+{
+  "name": "drawingshapes",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/engine": "*"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  }
+}

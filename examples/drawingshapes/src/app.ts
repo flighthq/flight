@@ -1,0 +1,165 @@
+import {
+  addChild,
+  beginFill,
+  createCanvasRenderState,
+  createDisplayObject,
+  createShape,
+  curveTo,
+  defaultCanvasShapeRenderer,
+  drawCircle,
+  drawEllipse,
+  drawRect,
+  drawRoundRect,
+  type Graphics,
+  lineStyle,
+  lineTo,
+  moveTo,
+  registerRenderer,
+  renderCanvasBackground,
+  renderCanvasDisplayObject,
+  setX,
+  setY,
+  ShapeKind,
+  updateDisplayObjectBeforeRender,
+} from '@flighthq/engine';
+
+const canvas = document.createElement('canvas');
+canvas.width = 800;
+canvas.height = 400;
+document.body.appendChild(canvas);
+
+const state = createCanvasRenderState(canvas, {
+  backgroundColor: 0xffffffff,
+  contextAttributes: { alpha: false },
+});
+registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
+
+const main = createDisplayObject();
+
+function drawPolygon(g: Graphics, x: number, y: number, radius: number, sides: number): void {
+  const step = (Math.PI * 2) / sides;
+  const start = 0.5 * Math.PI;
+  moveTo(g, Math.cos(start) * radius + x, -Math.sin(start) * radius + y);
+  for (let i = 0; i < sides; i++) {
+    lineTo(g, Math.cos(start + step * i) * radius + x, -Math.sin(start + step * i) * radius + y);
+  }
+}
+
+// ── Row 1: primitives ──────────────────────────────────────────────────────
+
+const square = createShape();
+beginFill(square.data.graphics, 0x24afc4);
+drawRect(square.data.graphics, 0, 0, 100, 100);
+setX(square, 20);
+setY(square, 20);
+addChild(main, square);
+
+const rectangle = createShape();
+beginFill(rectangle.data.graphics, 0x24afc4);
+drawRect(rectangle.data.graphics, 0, 0, 120, 100);
+setX(rectangle, 140);
+setY(rectangle, 20);
+addChild(main, rectangle);
+
+const circle = createShape();
+beginFill(circle.data.graphics, 0x24afc4);
+drawCircle(circle.data.graphics, 50, 50, 50);
+setX(circle, 280);
+setY(circle, 20);
+addChild(main, circle);
+
+const ellipse = createShape();
+beginFill(ellipse.data.graphics, 0x24afc4);
+drawEllipse(ellipse.data.graphics, 0, 0, 120, 100);
+setX(ellipse, 400);
+setY(ellipse, 20);
+addChild(main, ellipse);
+
+const roundSquare = createShape();
+beginFill(roundSquare.data.graphics, 0x24afc4);
+drawRoundRect(roundSquare.data.graphics, 0, 0, 100, 100, 40, 40);
+setX(roundSquare, 540);
+setY(roundSquare, 20);
+addChild(main, roundSquare);
+
+const roundRectangle = createShape();
+beginFill(roundRectangle.data.graphics, 0x24afc4);
+drawRoundRect(roundRectangle.data.graphics, 0, 0, 120, 100, 40, 40);
+setX(roundRectangle, 660);
+setY(roundRectangle, 20);
+addChild(main, roundRectangle);
+
+// ── Row 2: polygons ────────────────────────────────────────────────────────
+
+const triangle = createShape();
+beginFill(triangle.data.graphics, 0x24afc4);
+moveTo(triangle.data.graphics, 0, 100);
+lineTo(triangle.data.graphics, 50, 0);
+lineTo(triangle.data.graphics, 100, 100);
+lineTo(triangle.data.graphics, 0, 100);
+setX(triangle, 20);
+setY(triangle, 150);
+addChild(main, triangle);
+
+const pentagon = createShape();
+beginFill(pentagon.data.graphics, 0x24afc4);
+drawPolygon(pentagon.data.graphics, 50, 50, 50, 5);
+setX(pentagon, 145);
+setY(pentagon, 150);
+addChild(main, pentagon);
+
+const hexagon = createShape();
+beginFill(hexagon.data.graphics, 0x24afc4);
+drawPolygon(hexagon.data.graphics, 50, 50, 50, 6);
+setX(hexagon, 270);
+setY(hexagon, 150);
+addChild(main, hexagon);
+
+const heptagon = createShape();
+beginFill(heptagon.data.graphics, 0x24afc4);
+drawPolygon(heptagon.data.graphics, 50, 50, 50, 7);
+setX(heptagon, 395);
+setY(heptagon, 150);
+addChild(main, heptagon);
+
+const octagon = createShape();
+beginFill(octagon.data.graphics, 0x24afc4);
+drawPolygon(octagon.data.graphics, 50, 50, 50, 8);
+setX(octagon, 520);
+setY(octagon, 150);
+addChild(main, octagon);
+
+const decagon = createShape();
+beginFill(decagon.data.graphics, 0x24afc4);
+drawPolygon(decagon.data.graphics, 50, 50, 50, 10);
+setX(decagon, 650);
+setY(decagon, 150);
+addChild(main, decagon);
+
+// ── Row 3: lines and curves ───────────────────────────────────────────────
+
+const line = createShape();
+lineStyle(line.data.graphics, 10, 0x24afc4);
+lineTo(line.data.graphics, 755, 0);
+setX(line, 20);
+setY(line, 280);
+addChild(main, line);
+
+const curve = createShape();
+lineStyle(curve.data.graphics, 10, 0x24afc4);
+curveTo(curve.data.graphics, 327.5, -50, 755, 0);
+setX(curve, 20);
+setY(curve, 340);
+addChild(main, curve);
+
+// ── Render loop ───────────────────────────────────────────────────────────
+
+function enterFrame(): void {
+  if (updateDisplayObjectBeforeRender(state, main)) {
+    renderCanvasBackground(state);
+    renderCanvasDisplayObject(state, main);
+  }
+  requestAnimationFrame(enterFrame);
+}
+
+enterFrame();

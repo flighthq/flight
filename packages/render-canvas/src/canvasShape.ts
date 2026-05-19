@@ -75,6 +75,9 @@ function playCommands(
   let hasFill = false;
   let hasStroke = false;
   let hasPendingPath = false;
+  // Flash pen starts at (0,0); Canvas lineTo/curveTo with no current point acts as
+  // moveTo instead of drawing from origin. Track and insert the implicit moveTo.
+  let hasCurrentPoint = false;
   let fillStyle: string | CanvasPattern | CanvasGradient = '';
   let strokeStyle: string | CanvasPattern | CanvasGradient = '';
   let strokeWidth = 1;
@@ -105,6 +108,7 @@ function playCommands(
             strokePass,
           );
           hasPendingPath = false;
+          hasCurrentPoint = false;
         }
         hasFill = cmd.alpha >= 0.005;
         fillStyle = !strokePass && hasFill ? rgbaString(cmd.color, cmd.alpha) : '';
@@ -128,6 +132,7 @@ function playCommands(
             strokePass,
           );
           hasPendingPath = false;
+          hasCurrentPoint = false;
         }
         if (!strokePass) {
           const pattern = createBitmapPattern(ctx, cmd.bitmap, cmd.repeat, cmd.smooth);
@@ -163,6 +168,7 @@ function playCommands(
             strokePass,
           );
           hasPendingPath = false;
+          hasCurrentPoint = false;
         }
         if (!strokePass) {
           const pattern = createGradientPattern(
@@ -203,6 +209,7 @@ function playCommands(
             strokePass,
           );
           hasPendingPath = false;
+          hasCurrentPoint = false;
         }
         hasFill = false;
         pendingFillMatrix = null;
@@ -262,19 +269,32 @@ function playCommands(
       case 'moveTo':
         ctx.moveTo(mapX(cmd.x), mapY(cmd.y));
         hasPendingPath = true;
+        hasCurrentPoint = true;
         break;
 
       case 'lineTo':
+        if (!hasCurrentPoint) {
+          ctx.moveTo(0, 0);
+          hasCurrentPoint = true;
+        }
         ctx.lineTo(mapX(cmd.x), mapY(cmd.y));
         hasPendingPath = true;
         break;
 
       case 'curveTo':
+        if (!hasCurrentPoint) {
+          ctx.moveTo(0, 0);
+          hasCurrentPoint = true;
+        }
         ctx.quadraticCurveTo(mapX(cmd.controlX), mapY(cmd.controlY), mapX(cmd.anchorX), mapY(cmd.anchorY));
         hasPendingPath = true;
         break;
 
       case 'cubicCurveTo':
+        if (!hasCurrentPoint) {
+          ctx.moveTo(0, 0);
+          hasCurrentPoint = true;
+        }
         ctx.bezierCurveTo(
           mapX(cmd.controlX1),
           mapY(cmd.controlY1),
@@ -293,6 +313,7 @@ function playCommands(
         ctx.moveTo(cx + cmd.radius, cy);
         ctx.arc(cx, cy, cmd.radius, 0, Math.PI * 2, true);
         hasPendingPath = true;
+        hasCurrentPoint = true;
         break;
       }
 
@@ -304,6 +325,7 @@ function playCommands(
         ctx.moveTo(ex + ew / 2, ey);
         ctx.ellipse(ex, ey, ew / 2, eh / 2, 0, 0, Math.PI * 2);
         hasPendingPath = true;
+        hasCurrentPoint = true;
         break;
       }
 
@@ -344,6 +366,7 @@ function playCommands(
                 strokePass,
               );
               hasPendingPath = false;
+              hasCurrentPoint = false;
             }
             ctx.drawImage(bitmapSrc, sl, st, sr - sl, sb - st, cmd.x, cmd.y, cmd.width, cmd.height);
             break;
@@ -353,6 +376,7 @@ function playCommands(
         const ry0 = mapY(cmd.y);
         ctx.rect(rx0, ry0, mapX(cmd.x + cmd.width) - rx0, mapY(cmd.y + cmd.height) - ry0);
         hasPendingPath = true;
+        hasCurrentPoint = true;
         break;
       }
 
@@ -370,6 +394,7 @@ function playCommands(
           ctx.rect(rrx0, rry0, rrw, rrh);
         }
         hasPendingPath = true;
+        hasCurrentPoint = true;
         break;
       }
 
@@ -384,13 +409,22 @@ function playCommands(
               ctx.moveTo(mapX(cmd.data[di]), mapY(cmd.data[di + 1]));
               di += 2;
               hasPendingPath = true;
+              hasCurrentPoint = true;
               break;
             case 2: // LINE_TO
+              if (!hasCurrentPoint) {
+                ctx.moveTo(0, 0);
+                hasCurrentPoint = true;
+              }
               ctx.lineTo(mapX(cmd.data[di]), mapY(cmd.data[di + 1]));
               di += 2;
               hasPendingPath = true;
               break;
             case 3: // CURVE_TO
+              if (!hasCurrentPoint) {
+                ctx.moveTo(0, 0);
+                hasCurrentPoint = true;
+              }
               ctx.quadraticCurveTo(
                 mapX(cmd.data[di]),
                 mapY(cmd.data[di + 1]),
@@ -404,13 +438,22 @@ function playCommands(
               ctx.moveTo(mapX(cmd.data[di + 2]), mapY(cmd.data[di + 3]));
               di += 4;
               hasPendingPath = true;
+              hasCurrentPoint = true;
               break;
             case 5: // WIDE_LINE_TO
+              if (!hasCurrentPoint) {
+                ctx.moveTo(0, 0);
+                hasCurrentPoint = true;
+              }
               ctx.lineTo(mapX(cmd.data[di + 2]), mapY(cmd.data[di + 3]));
               di += 4;
               hasPendingPath = true;
               break;
             case 6: // CUBIC_CURVE_TO
+              if (!hasCurrentPoint) {
+                ctx.moveTo(0, 0);
+                hasCurrentPoint = true;
+              }
               ctx.bezierCurveTo(
                 mapX(cmd.data[di]),
                 mapY(cmd.data[di + 1]),
