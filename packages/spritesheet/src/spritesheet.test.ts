@@ -1,6 +1,15 @@
 import { createSpritesheet, getSpritesheetAnimation } from './spritesheet';
 import { createSpritesheetAnimation } from './spritesheetAnimation';
 
+describe('createSpritesheet', () => {
+  it('initializes with null atlas, empty animations and frames', () => {
+    const sheet = createSpritesheet();
+    expect(sheet.atlas).toBeNull();
+    expect(sheet.frames).toHaveLength(0);
+    expect(Object.keys(sheet.animations)).toHaveLength(0);
+  });
+});
+
 describe('getSpritesheetAnimation', () => {
   it('returns null when no animations exist', () => {
     const sheet = createSpritesheet();
