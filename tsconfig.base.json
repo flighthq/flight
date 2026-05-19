@@ -12,6 +12,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "composite": true,
+    "noEmitOnError": true,
     "paths": {
       "@flighthq/assets": ["./packages/assets/src/index.ts"],
       "@flighthq/assets/*": ["./packages/assets/src/*"],
