@@ -1,6 +1,6 @@
 import type { TextureAtlas, Tileset } from '@flighthq/types';
 
-import { createTileset, initTilesetRegions } from './tileset';
+import { createTileset } from './tileset';
 
 describe('createTileset', () => {
   let tileset: Tileset;

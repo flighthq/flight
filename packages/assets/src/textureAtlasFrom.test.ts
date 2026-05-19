@@ -1,3 +1,4 @@
+import { createImageSourceFromImageElement } from './imageSourceFrom';
 import {
   createTextureAtlasFromCanvas,
   createTextureAtlasFromImageBitmap,
@@ -8,7 +9,6 @@ import {
   loadTextureAtlasFromBlob,
   loadTextureAtlasFromURL,
 } from './textureAtlasFrom';
-import { createImageSourceFromImageElement } from './imageSourceFrom';
 
 // Stub img.decode() so async load functions resolve immediately in jsdom.
 beforeEach(() => {
