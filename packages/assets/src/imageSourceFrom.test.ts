@@ -120,9 +120,18 @@ describe('detectImageMimeType', () => {
   it('detects WebP', () => {
     const buf = new ArrayBuffer(16);
     new Uint8Array(buf).set([
-      0x52, 0x49, 0x46, 0x46, // RIFF
-      0x00, 0x00, 0x00, 0x00, // size (ignored)
-      0x57, 0x45, 0x42, 0x50, // WEBP
+      0x52,
+      0x49,
+      0x46,
+      0x46, // RIFF
+      0x00,
+      0x00,
+      0x00,
+      0x00, // size (ignored)
+      0x57,
+      0x45,
+      0x42,
+      0x50, // WEBP
     ]);
     expect(detectImageMimeType(buf)).toBe('image/webp');
   });
