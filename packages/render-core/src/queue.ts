@@ -1,4 +1,4 @@
-import { getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
+import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type { DisplayObject, Renderable, RenderState } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';

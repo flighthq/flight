@@ -12,7 +12,7 @@
     { "path": "../assets" },
     { "path": "../geometry" },
     { "path": "../render-core" },
-    { "path": "../scene-graph-display" },
+    { "path": "../scenegraph-display" },
     { "path": "../types" }
   ],
   "include": ["src"]

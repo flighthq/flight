@@ -1,4 +1,4 @@
-import { getRoot } from '@flighthq/scene-graph-core';
+import { getRoot } from '@flighthq/scenegraph-core';
 import type { DisplayObject, PartialNode, Stage, StageData } from '@flighthq/types';
 import { StageKind } from '@flighthq/types';
 

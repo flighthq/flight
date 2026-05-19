@@ -7,7 +7,7 @@ import type {
   HasBoundsRectRuntime,
   HasTransform2D,
   HasTransform2DRuntime,
-} from '../scene-graph-core';
+} from '../scenegraph-core';
 
 export const SpriteGraph = Symbol('SpriteGraph');
 

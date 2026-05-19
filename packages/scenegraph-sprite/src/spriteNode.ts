@@ -1,4 +1,4 @@
-import type { GraphNodeDataFactory, GraphNodeRuntimeFactory } from '@flighthq/scene-graph-core';
+import type { GraphNodeDataFactory, GraphNodeRuntimeFactory } from '@flighthq/scenegraph-core';
 import {
   createGraphNode,
   createGraphNodeRuntime,
@@ -8,7 +8,7 @@ import {
   initHasBoundsRectRuntime,
   initHasTransform2D,
   initHasTransform2DRuntime,
-} from '@flighthq/scene-graph-core';
+} from '@flighthq/scenegraph-core';
 import type {
   GraphNode,
   MethodsOf,

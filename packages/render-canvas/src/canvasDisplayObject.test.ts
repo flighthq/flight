@@ -1,7 +1,7 @@
 import { rectangle } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { addChild, getLocalBoundsRect } from '@flighthq/scene-graph-core';
-import { createDisplayObject } from '@flighthq/scene-graph-display';
+import { addChild, getLocalBoundsRect } from '@flighthq/scenegraph-core';
+import { createDisplayObject } from '@flighthq/scenegraph-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import {

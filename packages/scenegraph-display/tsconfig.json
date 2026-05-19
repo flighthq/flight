@@ -10,7 +10,7 @@
   },
   "references": [
     { "path": "../geometry" },
-    { "path": "../scene-graph-core" },
+    { "path": "../scenegraph-core" },
     { "path": "../shape" },
     { "path": "../types" }
   ],

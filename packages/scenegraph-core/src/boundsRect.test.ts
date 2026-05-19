@@ -8,7 +8,7 @@ import {
   initHasTransform2D,
   initHasTransform2DRuntime,
   invalidateLocalTransform,
-} from '@flighthq/scene-graph-core';
+} from '@flighthq/scenegraph-core';
 import type {
   GraphNode,
   GraphNodeRuntime,

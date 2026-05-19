@@ -1,6 +1,6 @@
-import { addChild, getNumChildren } from '@flighthq/scene-graph-core';
-import { createDisplayObject } from '@flighthq/scene-graph-display';
-import { createSprite } from '@flighthq/scene-graph-sprite';
+import { addChild, getNumChildren } from '@flighthq/scenegraph-core';
+import { createDisplayObject } from '@flighthq/scenegraph-display';
+import { createSprite } from '@flighthq/scenegraph-sprite';
 import type { DisplayObject, SpriteBase } from '@flighthq/types';
 
 test('can add display objects to display graph', () => {

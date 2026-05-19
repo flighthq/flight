@@ -1,10 +1,6 @@
 import { rectangle } from '@flighthq/geometry';
-import { addChild, getLocalBoundsRect, invalidateLocalTransform } from '@flighthq/scene-graph-core';
-import {
-  createDisplayObject,
-  createDisplayObjectGeneric,
-  getDisplayObjectRuntime,
-} from '@flighthq/scene-graph-display';
+import { addChild, getLocalBoundsRect, invalidateLocalTransform } from '@flighthq/scenegraph-core';
+import { createDisplayObject, createDisplayObjectGeneric, getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type { DisplayObject, DisplayObjectRuntime } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 

@@ -1,6 +1,6 @@
 import { createImageSource } from '@flighthq/assets';
-import { addChild, getParent } from '@flighthq/scene-graph-core';
-import { createBitmap, createDisplayObject } from '@flighthq/scene-graph-display';
+import { addChild, getParent } from '@flighthq/scenegraph-core';
+import { createBitmap, createDisplayObject } from '@flighthq/scenegraph-display';
 
 export function loadImageAndDecode(): Promise<HTMLImageElement> {
   return new Promise((resolve) => {

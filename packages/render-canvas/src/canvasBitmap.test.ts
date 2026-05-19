@@ -1,7 +1,7 @@
 import { createImageSource } from '@flighthq/assets';
 import { rectangle } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { createBitmap } from '@flighthq/scene-graph-display';
+import { createBitmap } from '@flighthq/scenegraph-display';
 import { BitmapKind } from '@flighthq/types';
 
 import { defaultCanvasBitmapRenderer, drawCanvasBitmap, drawCanvasBitmapMask } from './canvasBitmap';

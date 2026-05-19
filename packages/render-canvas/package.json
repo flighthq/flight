@@ -63,7 +63,7 @@
   "dependencies": {
     "@flighthq/geometry": "*",
     "@flighthq/render-core": "*",
-    "@flighthq/scene-graph-display": "*",
+    "@flighthq/scenegraph-display": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

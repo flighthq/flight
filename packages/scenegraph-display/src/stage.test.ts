@@ -1,4 +1,4 @@
-import { addChild } from '@flighthq/scene-graph-core';
+import { addChild } from '@flighthq/scenegraph-core';
 import type { PartialNode, Stage } from '@flighthq/types';
 import { StageKind } from '@flighthq/types';
 

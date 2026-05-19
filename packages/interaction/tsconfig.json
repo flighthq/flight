@@ -11,10 +11,10 @@
   "references": [
     { "path": "../geometry" },
     { "path": "../materials" },
-    { "path": "../scene-graph-core" },
-    { "path": "../scene-graph-display" },
-    { "path": "../scene-graph-sprite" },
-    { "path": "../scene-graph-world" },
+    { "path": "../scenegraph-core" },
+    { "path": "../scenegraph-display" },
+    { "path": "../scenegraph-sprite" },
+    { "path": "../scenegraph-world" },
     { "path": "../types" }
   ],
   "include": ["src"]

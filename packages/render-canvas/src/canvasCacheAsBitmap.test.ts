@@ -1,5 +1,5 @@
 import { getDisplayObjectRenderNode } from '@flighthq/render-core';
-import { createDisplayObject } from '@flighthq/scene-graph-display';
+import { createDisplayObject } from '@flighthq/scenegraph-display';
 
 import { updateCanvasCacheBitmap } from './canvasCacheAsBitmap';
 import { createCanvasRenderState } from './canvasRenderState';

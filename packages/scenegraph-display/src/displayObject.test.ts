@@ -1,6 +1,6 @@
 import { getRuntime } from '@flighthq/foundation';
 import { matrix3x2, rectangle } from '@flighthq/geometry';
-import { createGraphNode } from '@flighthq/scene-graph-core';
+import { createGraphNode } from '@flighthq/scenegraph-core';
 import type {
   DisplayObject,
   DisplayObjectData,

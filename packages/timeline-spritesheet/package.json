@@ -21,8 +21,8 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@flighthq/scene-graph-core": "*",
-    "@flighthq/scene-graph-display": "*",
+    "@flighthq/scenegraph-core": "*",
+    "@flighthq/scenegraph-display": "*",
     "@flighthq/timeline": "*",
     "@flighthq/types": "*"
   },

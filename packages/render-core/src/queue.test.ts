@@ -1,5 +1,5 @@
-import { addChild } from '@flighthq/scene-graph-core';
-import { createDisplayObject } from '@flighthq/scene-graph-display';
+import { addChild } from '@flighthq/scenegraph-core';
+import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { DisplayObject, RenderState } from '@flighthq/types';
 
 import { prepareRenderQueue } from './queue';

@@ -1,5 +1,5 @@
-import { addChild, invalidateAppearance } from '@flighthq/scene-graph-core';
-import { createDisplayObject } from '@flighthq/scene-graph-display';
+import { addChild, invalidateAppearance } from '@flighthq/scenegraph-core';
+import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
 import { updateAppearance } from './appearance';

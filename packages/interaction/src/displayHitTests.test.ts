@@ -1,6 +1,6 @@
 import { rectangle } from '@flighthq/geometry';
-import { addChild, getLocalBoundsRect } from '@flighthq/scene-graph-core';
-import { createDisplayObject, createSpriteBatch } from '@flighthq/scene-graph-display';
+import { addChild, getLocalBoundsRect } from '@flighthq/scenegraph-core';
+import { createDisplayObject, createSpriteBatch } from '@flighthq/scenegraph-display';
 import type { DisplayObject } from '@flighthq/types';
 
 import {

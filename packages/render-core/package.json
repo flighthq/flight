@@ -59,8 +59,8 @@
   "dependencies": {
     "@flighthq/geometry": "*",
     "@flighthq/materials": "*",
-    "@flighthq/scene-graph-display": "*",
-    "@flighthq/scene-graph-sprite": "*",
+    "@flighthq/scenegraph-display": "*",
+    "@flighthq/scenegraph-sprite": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

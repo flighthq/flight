@@ -1,4 +1,4 @@
-import { createGraphNode } from '@flighthq/scene-graph-core';
+import { createGraphNode } from '@flighthq/scenegraph-core';
 import type { GraphNode, PartialNode, Rectangle, Shader, SpriteNode, SpriteNodeData } from '@flighthq/types';
 import { BlendMode, DisplayObjectKind, SpriteGraph } from '@flighthq/types';
 

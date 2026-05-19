@@ -1,4 +1,4 @@
-import type { SpriteNode } from '../scene-graph-sprite/SpriteNode';
+import type { SpriteNode } from '../scenegraph-sprite/SpriteNode';
 import type { DisplayObject, DisplayObjectData } from './DisplayObject';
 
 export interface SpriteBatchData extends DisplayObjectData {

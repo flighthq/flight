@@ -1,5 +1,5 @@
-import { addChild, setX, setY } from '@flighthq/scene-graph-core';
-import { createBitmap } from '@flighthq/scene-graph-display';
+import { addChild, setX, setY } from '@flighthq/scenegraph-core';
+import { createBitmap } from '@flighthq/scenegraph-display';
 import { createTimeline, playMovieClip } from '@flighthq/timeline';
 import type { MovieClip, Spritesheet, SpritesheetAnimation } from '@flighthq/types';
 

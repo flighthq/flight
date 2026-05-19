@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/scene-graph-display",
+  "name": "@flighthq/scenegraph-display",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -78,7 +78,7 @@
   },
   "dependencies": {
     "@flighthq/geometry": "*",
-    "@flighthq/scene-graph-core": "*",
+    "@flighthq/scenegraph-core": "*",
     "@flighthq/shape": "*",
     "@flighthq/types": "*"
   },

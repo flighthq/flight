@@ -1,6 +1,6 @@
-import { getParent } from '@flighthq/scene-graph-core';
-import { getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
-import { getSpriteNodeRuntime } from '@flighthq/scene-graph-sprite';
+import { getParent } from '@flighthq/scenegraph-core';
+import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
+import { getSpriteNodeRuntime } from '@flighthq/scenegraph-sprite';
 import type {
   DisplayObject,
   DisplayObjectRenderNode,

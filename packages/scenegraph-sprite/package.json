@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/scene-graph-sprite",
+  "name": "@flighthq/scenegraph-sprite",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -39,7 +39,7 @@
   "dependencies": {
     "@flighthq/geometry": "*",
     "@flighthq/types": "*",
-    "@flighthq/scene-graph-core": "*"
+    "@flighthq/scenegraph-core": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"

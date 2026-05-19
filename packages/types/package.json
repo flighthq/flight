@@ -35,9 +35,9 @@
       "types": "./dist/scene-graph.d.ts",
       "default": "./dist/scene-graph.js"
     },
-    "./scene-graph-display": {
-      "types": "./dist/scene-graph-display.d.ts",
-      "default": "./dist/scene-graph-display.js"
+    "./scenegraph-display": {
+      "types": "./dist/scenegraph-display.d.ts",
+      "default": "./dist/scenegraph-display.js"
     }
   },
   "files": [

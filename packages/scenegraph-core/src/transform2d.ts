@@ -1,6 +1,6 @@
 import { getRuntime } from '@flighthq/foundation';
 import { matrix3x2 } from '@flighthq/geometry';
-import { invalidateLocalTransform, recomputeWorldTransformID } from '@flighthq/scene-graph-core';
+import { invalidateLocalTransform, recomputeWorldTransformID } from '@flighthq/scenegraph-core';
 import type {
   GraphNode,
   GraphNodeRuntime,

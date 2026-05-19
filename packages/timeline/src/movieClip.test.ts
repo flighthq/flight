@@ -1,4 +1,4 @@
-import { createMovieClip } from '@flighthq/scene-graph-display';
+import { createMovieClip } from '@flighthq/scenegraph-display';
 
 import { updateMovieClip } from './movieClip';
 import { createTimeline, playTimeline } from './timeline';

@@ -1,4 +1,4 @@
-import { createGraphNode, getGraphNodeRuntime } from '@flighthq/scene-graph-core';
+import { createGraphNode, getGraphNodeRuntime } from '@flighthq/scenegraph-core';
 import type { GraphNode, GraphNodeRuntime } from '@flighthq/types';
 
 import {

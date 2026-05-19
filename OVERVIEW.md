@@ -11,12 +11,12 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 | `@flighthq/geometry` | 2D/3D math primitives: vectors, matrices, rectangles, and object pools |
 | `@flighthq/assets` | Asset types and utilities: image sources, texture atlases, tilesets |
 | `@flighthq/signals` | Strictly-typed signals and slots for event dispatching |
-| `@flighthq/scene-graph-core` | Base scene graph: transform hierarchy, bounds, appearance traits, child management |
-| `@flighthq/scene-graph-display` | Display object tree for composited 2D rendering: bitmaps, shapes, text, masks, blend modes |
-| `@flighthq/scene-graph-world` | 3D world graph for spatial scene management |
+| `@flighthq/scenegraph-core` | Base scene graph: transform hierarchy, bounds, appearance traits, child management |
+| `@flighthq/scenegraph-display` | Display object tree for composited 2D rendering: bitmaps, shapes, text, masks, blend modes |
+| `@flighthq/scenegraph-world` | 3D world graph for spatial scene management |
 | `@flighthq/interaction` | Hit testing: point-in-node tests and object overlap detection |
 | `@flighthq/materials` | Color transforms, filters, and material utilities |
-| `@flighthq/scene-graph-sprite` | Sprite graph for atlas-based batch rendering: sprites, quad batches, tilemaps |
+| `@flighthq/scenegraph-sprite` | Sprite graph for atlas-based batch rendering: sprites, quad batches, tilemaps |
 | `@flighthq/render-core` | Renderer abstraction: render state, node tracking, transform and color update pipeline |
 | `@flighthq/render-canvas` | Canvas 2D renderer implementation |
 | `@flighthq/spritesheet` | Spritesheet frame animation playback |
@@ -71,7 +71,7 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 ---
 
-## @flighthq/scene-graph-core
+## @flighthq/scenegraph-core
 
 > Base scene graph: transform hierarchy, bounds, appearance traits, child management
 
@@ -83,7 +83,7 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 ---
 
-## @flighthq/scene-graph-display
+## @flighthq/scenegraph-display
 
 > Display object tree for composited 2D rendering: bitmaps, shapes, text, masks, blend modes
 
@@ -95,7 +95,7 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 ---
 
-## @flighthq/scene-graph-world
+## @flighthq/scenegraph-world
 
 > 3D world graph for spatial scene management
 
@@ -121,7 +121,7 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 ---
 
-## @flighthq/scene-graph-sprite
+## @flighthq/scenegraph-sprite
 
 > Sprite graph for atlas-based batch rendering: sprites, quad batches, tilemaps
 

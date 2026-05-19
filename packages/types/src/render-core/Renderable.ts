@@ -1,4 +1,4 @@
-import type { DisplayObject } from '../scene-graph-display/DisplayObject';
-import type { SpriteNode } from '../scene-graph-sprite/SpriteNode';
+import type { DisplayObject } from '../scenegraph-display/DisplayObject';
+import type { SpriteNode } from '../scenegraph-sprite/SpriteNode';
 
 export type Renderable = DisplayObject | SpriteNode;

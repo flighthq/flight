@@ -9,7 +9,7 @@ import type {
   HasBoundsRectRuntime,
   HasTransform2D,
   HasTransform2DRuntime,
-} from '../scene-graph-core';
+} from '../scenegraph-core';
 
 export type DisplayObject = GraphNode<typeof DisplayGraph, DisplayObjectTraits> & DisplayObjectTraits;
 

@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/scene-graph-world",
+  "name": "@flighthq/scenegraph-world",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",

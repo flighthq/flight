@@ -1,7 +1,7 @@
 import { rectangle } from '@flighthq/geometry';
 import { createNullRendererData, getDisplayObjectRenderNode } from '@flighthq/render-core';
-import { calculateBoundsRect } from '@flighthq/scene-graph-core';
-import { getDisplayObjectRuntime } from '@flighthq/scene-graph-display';
+import { calculateBoundsRect } from '@flighthq/scenegraph-core';
+import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
 
 import { drawCanvasBitmap } from './canvasBitmap';

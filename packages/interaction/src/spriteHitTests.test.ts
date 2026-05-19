@@ -1,6 +1,6 @@
 import { rectangle } from '@flighthq/geometry';
-import { addChild, getLocalBoundsRect } from '@flighthq/scene-graph-core';
-import { createQuadBatch, createSprite, createTilemap } from '@flighthq/scene-graph-sprite';
+import { addChild, getLocalBoundsRect } from '@flighthq/scenegraph-core';
+import { createQuadBatch, createSprite, createTilemap } from '@flighthq/scenegraph-sprite';
 
 import { defaultQuadBatchHitTestPoint, defaultSpriteHitTestPoint, defaultTilemapHitTestPoint } from './spriteHitTests';
 

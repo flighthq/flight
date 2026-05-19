@@ -1,6 +1,6 @@
 import { matrix3x2 } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { createDisplayObject } from '@flighthq/scene-graph-display';
+import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { DisplayObjectRenderer } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 

@@ -1,4 +1,4 @@
-import type { DisplayObject } from '../scene-graph-display';
+import type { DisplayObject } from '../scenegraph-display';
 import type { RenderNode2D } from './RenderNode2D';
 
 export interface DisplayObjectRenderNode extends RenderNode2D {

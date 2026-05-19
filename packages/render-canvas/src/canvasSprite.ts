@@ -1,5 +1,5 @@
 import { createNullRendererData, getSpriteRenderNode } from '@flighthq/render-core';
-import { getSpriteNodeRuntime } from '@flighthq/scene-graph-sprite';
+import { getSpriteNodeRuntime } from '@flighthq/scenegraph-sprite';
 import type { CanvasRenderState, Sprite, SpriteNode, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 import { setCanvasBlendMode } from './canvasMaterials';

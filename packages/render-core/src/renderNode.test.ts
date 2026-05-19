@@ -1,6 +1,6 @@
 import { matrix3x2 } from '@flighthq/geometry';
 import { colorTransform } from '@flighthq/materials';
-import { createDisplayObject } from '@flighthq/scene-graph-display';
+import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
