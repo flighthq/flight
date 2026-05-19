@@ -173,7 +173,8 @@ describe('drawRoundRectComplex', () => {
     drawRoundRectComplex(g, 0, 0, 100, 50, 5, 5, 5, 5);
     expect(g.commands.length).toBeGreaterThan(1);
     expect(g.commands[0]).toMatchObject({ type: 'moveTo' });
-    expect(g.commands.every((c) => c.type !== 'drawRoundRectComplex')).toBe(true);
+    const knownPrimitives = ['moveTo', 'lineTo', 'curveTo'];
+    expect(g.commands.every((c) => knownPrimitives.includes(c.type))).toBe(true);
   });
 });
 
