@@ -1,10 +1,10 @@
 import {
   addTextureAtlasRegion,
   createCanvasRenderState,
-  createImageSource,
   createQuadBatch,
   createTextureAtlas,
   defaultCanvasQuadBatchRenderer,
+  loadImageSourceFromURL,
   QuadBatchKind,
   registerRenderer,
   renderCanvasBackground,
@@ -36,17 +36,7 @@ counter.style.cssText =
   'position:fixed;bottom:0;right:0;width:80px;padding:3px 0;background:#fff;color:#333;font:bold 9px monospace;text-align:center;opacity:0.9;z-index:10000';
 document.body.appendChild(counter);
 
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('Failed to load image'));
-    img.src = src;
-  });
-}
-
-const image = await loadImage('assets/wabbit_alpha.png');
-const bunny = createImageSource(image);
+const bunny = await loadImageSourceFromURL('assets/wabbit_alpha.png');
 
 const atlas = createTextureAtlas({ image: bunny });
 addTextureAtlasRegion(atlas, 0, 0, bunny.width, bunny.height);

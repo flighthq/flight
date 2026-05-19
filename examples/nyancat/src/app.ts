@@ -3,13 +3,13 @@ import {
   attachSpritesheetTimeline,
   BitmapKind,
   createCanvasRenderState,
-  createImageSource,
   createMovieClip,
   createSpritesheet,
   createSpritesheetAnimation,
   createSpritesheetFrame,
   createTextureAtlas,
   defaultCanvasBitmapRenderer,
+  loadImageSourceFromURL,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
@@ -24,17 +24,7 @@ const GAP = 4;
 const COLS_PER_ROW = [5, 4];
 const FPS = 10;
 
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Failed to load: ${src}`));
-    img.src = src;
-  });
-}
-
-const image = await loadImage('assets/nyancat.png');
-const source = createImageSource(image);
+const source = await loadImageSourceFromURL('assets/nyancat.png');
 const atlas = createTextureAtlas({ image: source });
 
 const frames = [];
