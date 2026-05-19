@@ -5,6 +5,7 @@ export * from './domElement';
 export * from './inputText';
 export * from './movieClip';
 export * from './richText';
+export * from './shape';
 export * from './spriteBatch';
 export * from './stage';
 export * from './text';
