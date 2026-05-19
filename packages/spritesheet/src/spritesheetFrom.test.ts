@@ -1,7 +1,6 @@
-import { createTextureAtlas } from '@flighthq/assets';
-import { createTileset, initTilesetRegions } from '@flighthq/assets';
+import { createTextureAtlas, createTileset, initTilesetRegions } from '@flighthq/assets';
 
-import { spritesheetFromTileset } from './spritesheetFromTileset';
+import { createSpritesheetFromTileset } from './spritesheetFrom';
 
 function makeTileset(columns: number, rows: number) {
   const atlas = createTextureAtlas();
@@ -10,17 +9,17 @@ function makeTileset(columns: number, rows: number) {
   return tileset;
 }
 
-describe('spritesheetFromTileset', () => {
+describe('createSpritesheetFromTileset', () => {
   it('creates one frame per tile region', () => {
     const tileset = makeTileset(3, 2);
-    const sheet = spritesheetFromTileset(tileset);
+    const sheet = createSpritesheetFromTileset(tileset);
 
     expect(sheet.frames).toHaveLength(6);
   });
 
   it('assigns region ids to frames in order', () => {
     const tileset = makeTileset(2, 1);
-    const sheet = spritesheetFromTileset(tileset);
+    const sheet = createSpritesheetFromTileset(tileset);
     const regions = tileset.atlas?.regions ?? [];
 
     expect(sheet.frames[0].id).toBe(regions[0].id);
@@ -29,14 +28,14 @@ describe('spritesheetFromTileset', () => {
 
   it('passes the atlas through to the spritesheet', () => {
     const tileset = makeTileset(1, 1);
-    const sheet = spritesheetFromTileset(tileset);
+    const sheet = createSpritesheetFromTileset(tileset);
 
     expect(sheet.atlas).toBe(tileset.atlas);
   });
 
   it('produces no frames when atlas is null', () => {
     const tileset = createTileset();
-    const sheet = spritesheetFromTileset(tileset);
+    const sheet = createSpritesheetFromTileset(tileset);
 
     expect(sheet.frames).toHaveLength(0);
     expect(sheet.atlas).toBeNull();
@@ -44,7 +43,7 @@ describe('spritesheetFromTileset', () => {
 
   it('starts with no animations', () => {
     const tileset = makeTileset(2, 2);
-    const sheet = spritesheetFromTileset(tileset);
+    const sheet = createSpritesheetFromTileset(tileset);
 
     expect(Object.keys(sheet.animations)).toHaveLength(0);
   });
