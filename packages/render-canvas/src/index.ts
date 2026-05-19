@@ -7,5 +7,6 @@ export * from './canvasMask';
 export * from './canvasMaterials';
 export * from './canvasQuadBatch';
 export * from './canvasRenderState';
+export * from './canvasShape';
 export * from './canvasSprite';
 export * from './canvasTransform';

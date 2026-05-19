@@ -6,7 +6,6 @@ export * from '@flighthq/geometry';
 export * from '@flighthq/interaction';
 export * from '@flighthq/materials';
 export * from '@flighthq/render-canvas';
-export * from '@flighthq/render-canvas-shape';
 export * from '@flighthq/render-core';
 export * from '@flighthq/scenegraph-core';
 export * from '@flighthq/scenegraph-display';

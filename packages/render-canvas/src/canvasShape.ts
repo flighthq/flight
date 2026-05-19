@@ -1,4 +1,3 @@
-import { drawCanvasDisplayObject, setCanvasBlendMode, setCanvasTransform } from '@flighthq/render-canvas';
 import { createNullRendererData } from '@flighthq/render-core';
 import type {
   CanvasRenderState,
@@ -8,6 +7,10 @@ import type {
   Shape,
   ShapeCommand,
 } from '@flighthq/types';
+
+import { drawCanvasDisplayObject } from './canvasDisplayObject';
+import { setCanvasBlendMode } from './canvasMaterials';
+import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasShape(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
   drawCanvasDisplayObject(state, renderNode);

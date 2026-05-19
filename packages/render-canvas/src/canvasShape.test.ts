@@ -1,5 +1,13 @@
-import { createGraphics } from '@flighthq/shape';
-import { beginFill, drawCircle, drawEllipse, drawRect, drawRoundRect, endFill, lineStyle } from '@flighthq/shape';
+import {
+  beginFill,
+  createGraphics,
+  drawCircle,
+  drawEllipse,
+  drawRect,
+  drawRoundRect,
+  endFill,
+  lineStyle,
+} from '@flighthq/shape';
 
 import { renderGraphicsToCanvas } from './canvasShape';
 
