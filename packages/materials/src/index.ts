@@ -1,2 +1,2 @@
-export * as colorTransform from './colorTransform';
 export * from './bitmapFilter';
+export * as colorTransform from './colorTransform';
