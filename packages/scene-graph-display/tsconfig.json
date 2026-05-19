@@ -8,6 +8,11 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../scene-graph-core" }, { "path": "../geometry" }, { "path": "../types" }],
+  "references": [
+    { "path": "../geometry" },
+    { "path": "../scene-graph-core" },
+    { "path": "../shape" },
+    { "path": "../types" }
+  ],
   "include": ["src"]
 }
