@@ -5,12 +5,12 @@ import {
   createBitmap,
   createCanvasRenderState,
   createDisplayObject,
-  createImageSource,
   createTween,
   createTweenManager,
   defaultCanvasBitmapRenderer,
   Elastic,
   invalidateRender,
+  loadImageSourceFromURL,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
@@ -46,14 +46,10 @@ container.y = STAGE_HEIGHT / 2;
 addChild(container, bitmap);
 addChild(main, container);
 
-try {
-  const image = createImageSource(await loadImageAndDecode('assets/wabbit_alpha.png'));
-  bitmap.data.image = image;
-  bitmap.x = -image.width / 2;
-  bitmap.y = -image.height / 2;
-} catch (error) {
-  console.error('Error loading image:', error); // eslint-disable-line
-}
+const image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
+bitmap.data.image = image;
+bitmap.x = -image.width / 2;
+bitmap.y = -image.height / 2;
 
 const tween = createTween(
   manager,
@@ -63,15 +59,6 @@ const tween = createTween(
   { ease: Elastic.easeOut, repeat: -1, reflect: true },
 );
 connectSignal(tween.onUpdate, () => invalidateRender(container));
-
-function loadImageAndDecode(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('Failed to load image'));
-    img.src = src;
-  });
-}
 
 let lastTime = 0;
 

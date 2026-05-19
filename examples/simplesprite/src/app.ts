@@ -2,10 +2,10 @@ import {
   addChild,
   addTextureAtlasRegion,
   createCanvasRenderState,
-  createImageSource,
   createSprite,
   createTextureAtlas,
   defaultCanvasSpriteRenderer,
+  loadImageSourceFromURL,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasSprite,
@@ -25,17 +25,7 @@ canvas.width = 800;
 canvas.height = 400;
 document.body.appendChild(canvas);
 
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('Failed to load image'));
-    img.src = src;
-  });
-}
-
-const image = await loadImage('assets/tileset.png');
-const source = createImageSource(image);
+const source = await loadImageSourceFromURL('assets/tileset.png');
 
 const atlas = createTextureAtlas({ image: source });
 
