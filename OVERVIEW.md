@@ -1,12 +1,11 @@
 # @flighthq Engine — Package Overview
 
-_Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a single entry point._
-_Types from `@flighthq/types` are shown with their logical package rather than as a separate section._
+_Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a single entry point._ _Types from `@flighthq/types` are shown with their logical package rather than as a separate section._
 
 ## Packages
 
 | Package | Description |
-|---------|-------------|
+| --- | --- |
 | `@flighthq/types` | Shared TypeScript interfaces, enums, and symbol constants used across all packages |
 | `@flighthq/foundation` | Core entity/node/runtime data model and binding system |
 | `@flighthq/geometry` | 2D/3D math primitives: vectors, matrices, rectangles, and object pools |
@@ -58,7 +57,7 @@ _Types from `@flighthq/types` are shown with their logical package rather than a
 
 **Types:** `ImageSource`, `TextureAtlas`, `TextureAtlasRegion`, `Tileset`
 
-**Functions:** `addTextureAtlasRegion`, `addTextureAtlasRegionRect`, `addTextureAtlasRegionRectXY`, `addTextureAtlasRegionVec2`, `createImageSource`, `createTextureAtlas`, `createTextureAtlasRegion`, `createTileset`, `initTextureAtlasRegion`, `initTilesetRegions`
+**Functions:** `addTextureAtlasRegion`, `addTextureAtlasRegionRect`, `addTextureAtlasRegionRectXY`, `addTextureAtlasRegionVec2`, `createImageSource`, `createTextureAtlas`, `createTextureAtlasRegion`, `createTileset`, `detectImageMimeType`, `imageSourceFromCanvas`, `imageSourceFromImageBitmap`, `imageSourceFromImageElement`, `initTextureAtlasRegion`, `initTilesetRegions`, `isImageSourceSameOrigin`, `loadImageSourceFromArrayBuffer`, `loadImageSourceFromBase64`, `loadImageSourceFromBlob`, `loadImageSourceFromURL`
 
 ---
 
@@ -174,7 +173,7 @@ _Types from `@flighthq/types` are shown with their logical package rather than a
 
 **Types:** `Timeline`, `TimelineLabel`
 
-**Functions:** `createTimeline`, `gotoAndPlayTimeline`, `gotoAndStopTimeline`, `nextFrameTimeline`, `playTimeline`, `prevFrameTimeline`, `resolveTimelineLabel`, `stopTimeline`, `updateMovieClip`, `updateTimeline`
+**Functions:** `createTimeline`, `getMovieClipCurrentFrame`, `getMovieClipTotalFrames`, `gotoAndPlayMovieClip`, `gotoAndPlayTimeline`, `gotoAndStopMovieClip`, `gotoAndStopTimeline`, `isMovieClipPlaying`, `nextFrameMovieClip`, `nextFrameTimeline`, `playMovieClip`, `playTimeline`, `prevFrameMovieClip`, `prevFrameTimeline`, `resolveTimelineLabel`, `stopMovieClip`, `stopTimeline`, `updateMovieClip`, `updateTimeline`
 
 ---
 

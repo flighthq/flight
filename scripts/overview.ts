@@ -135,13 +135,12 @@ const project = new Project({
 const lines: string[] = [
   '# @flighthq Engine — Package Overview',
   '',
-  '_Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a single entry point._',
-  '_Types from `@flighthq/types` are shown with their logical package rather than as a separate section._',
+  '_Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a single entry point._ _Types from `@flighthq/types` are shown with their logical package rather than as a separate section._',
   '',
   '## Packages',
   '',
   '| Package | Description |',
-  '|---------|-------------|',
+  '| --- | --- |',
 ];
 
 for (const pkg of packages) {
