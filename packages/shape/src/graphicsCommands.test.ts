@@ -1,17 +1,48 @@
 import { createGraphics } from './graphics';
 import {
+  beginBitmapFill,
   beginFill,
+  beginGradientFill,
   cubicCurveTo,
   curveTo,
   drawCircle,
   drawEllipse,
+  drawPath,
   drawRect,
   drawRoundRect,
+  drawRoundRectComplex,
+  // drawTriangles,
   endFill,
+  GraphicsPathCommand,
+  lineBitmapStyle,
+  lineGradientStyle,
   lineStyle,
   lineTo,
   moveTo,
 } from './graphicsCommands';
+
+const fakeImageSource = { id: 1, height: 10, src: null, width: 10 } as never;
+const fakeMatrix = { id: 2, a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 } as never;
+
+describe('beginBitmapFill', () => {
+  it('pushes a beginBitmapFill command with bitmap, matrix, repeat, smooth', () => {
+    const g = createGraphics();
+    beginBitmapFill(g, fakeImageSource, fakeMatrix, false, true);
+    expect(g.commands[0]).toEqual({
+      type: 'beginBitmapFill',
+      bitmap: fakeImageSource,
+      matrix: fakeMatrix,
+      repeat: false,
+      smooth: true,
+    });
+  });
+
+  it('defaults matrix to null, repeat to true, smooth to false', () => {
+    const g = createGraphics();
+    beginBitmapFill(g, fakeImageSource);
+    expect(g.commands[0]).toMatchObject({ type: 'beginBitmapFill', matrix: null, repeat: true, smooth: false });
+  });
+});
 
 describe('beginFill', () => {
   it('pushes a beginFill command with color and alpha', () => {
@@ -24,6 +55,36 @@ describe('beginFill', () => {
     const g = createGraphics();
     beginFill(g);
     expect(g.commands[0]).toEqual({ type: 'beginFill', color: 0, alpha: 1 });
+  });
+});
+
+describe('beginGradientFill', () => {
+  it('pushes a beginGradientFill command with all fields', () => {
+    const g = createGraphics();
+    beginGradientFill(g, 'linear', [0xff0000, 0x0000ff], [1, 1], [0, 255], fakeMatrix, 'reflect', 'linearRGB', 0.5);
+    expect(g.commands[0]).toEqual({
+      type: 'beginGradientFill',
+      gradientType: 'linear',
+      colors: [0xff0000, 0x0000ff],
+      alphas: [1, 1],
+      ratios: [0, 255],
+      matrix: fakeMatrix,
+      spreadMethod: 'reflect',
+      interpolationMethod: 'linearRGB',
+      focalPointRatio: 0.5,
+    });
+  });
+
+  it('defaults matrix null, spreadMethod pad, interpolationMethod rgb, focalPointRatio 0', () => {
+    const g = createGraphics();
+    beginGradientFill(g, 'radial', [0xffffff], [1], [0]);
+    expect(g.commands[0]).toMatchObject({
+      type: 'beginGradientFill',
+      matrix: null,
+      spreadMethod: 'pad',
+      interpolationMethod: 'rgb',
+      focalPointRatio: 0,
+    });
   });
 });
 
@@ -67,6 +128,21 @@ describe('drawEllipse', () => {
   });
 });
 
+describe('drawPath', () => {
+  it('pushes a drawPath command with commands, data, and winding', () => {
+    const g = createGraphics();
+    const cmds = [GraphicsPathCommand.MOVE_TO, GraphicsPathCommand.LINE_TO];
+    drawPath(g, cmds, [0, 0, 100, 100], 'nonZero');
+    expect(g.commands[0]).toEqual({ type: 'drawPath', commands: cmds, data: [0, 0, 100, 100], winding: 'nonZero' });
+  });
+
+  it('defaults winding to evenOdd', () => {
+    const g = createGraphics();
+    drawPath(g, [], []);
+    expect(g.commands[0]).toMatchObject({ type: 'drawPath', winding: 'evenOdd' });
+  });
+});
+
 describe('drawRect', () => {
   it('pushes a drawRect command with position and dimensions', () => {
     const g = createGraphics();
@@ -91,6 +167,36 @@ describe('drawRoundRect', () => {
   });
 });
 
+describe('drawRoundRectComplex', () => {
+  it('expands to moveTo/lineTo/curveTo commands (no new command type)', () => {
+    const g = createGraphics();
+    drawRoundRectComplex(g, 0, 0, 100, 50, 5, 5, 5, 5);
+    expect(g.commands.length).toBeGreaterThan(1);
+    expect(g.commands[0]).toMatchObject({ type: 'moveTo' });
+    expect(g.commands.every((c) => c.type !== 'drawRoundRectComplex')).toBe(true);
+  });
+});
+
+// describe('drawTriangles', () => {
+//   it('pushes a drawTriangles command with vertices, indices, uvtData, and culling', () => {
+//     const g = createGraphics();
+//     drawTriangles(g, [0, 0, 100, 0, 50, 100], [0, 1, 2], [0, 0, 1, 0, 0.5, 1], 'positive');
+//     expect(g.commands[0]).toEqual({
+//       type: 'drawTriangles',
+//       vertices: [0, 0, 100, 0, 50, 100],
+//       indices: [0, 1, 2],
+//       uvtData: [0, 0, 1, 0, 0.5, 1],
+//       culling: 'positive',
+//     });
+//   });
+//
+//   it('defaults indices to null, uvtData to null, culling to none', () => {
+//     const g = createGraphics();
+//     drawTriangles(g, [0, 0, 100, 0, 50, 100]);
+//     expect(g.commands[0]).toMatchObject({ type: 'drawTriangles', indices: null, uvtData: null, culling: 'none' });
+//   });
+// });
+
 describe('endFill', () => {
   it('pushes an endFill command', () => {
     const g = createGraphics();
@@ -99,17 +205,87 @@ describe('endFill', () => {
   });
 });
 
-describe('lineStyle', () => {
-  it('pushes a lineStyle command with thickness, color, and alpha', () => {
+describe('GraphicsPathCommand', () => {
+  it('has expected numeric values', () => {
+    expect(GraphicsPathCommand.NO_OP).toBe(0);
+    expect(GraphicsPathCommand.MOVE_TO).toBe(1);
+    expect(GraphicsPathCommand.LINE_TO).toBe(2);
+    expect(GraphicsPathCommand.CURVE_TO).toBe(3);
+    expect(GraphicsPathCommand.WIDE_MOVE_TO).toBe(4);
+    expect(GraphicsPathCommand.WIDE_LINE_TO).toBe(5);
+    expect(GraphicsPathCommand.CUBIC_CURVE_TO).toBe(6);
+  });
+});
+
+describe('lineBitmapStyle', () => {
+  it('pushes a lineBitmapStyle command with bitmap, matrix, repeat, smooth', () => {
     const g = createGraphics();
-    lineStyle(g, 2, 0x0000ff, 0.8);
-    expect(g.commands[0]).toEqual({ type: 'lineStyle', thickness: 2, color: 0x0000ff, alpha: 0.8 });
+    lineBitmapStyle(g, fakeImageSource, fakeMatrix, false, true);
+    expect(g.commands[0]).toEqual({
+      type: 'lineBitmapStyle',
+      bitmap: fakeImageSource,
+      matrix: fakeMatrix,
+      repeat: false,
+      smooth: true,
+    });
   });
 
-  it('defaults to thickness 1, color 0, alpha 1', () => {
+  it('defaults matrix to null, repeat to true, smooth to false', () => {
+    const g = createGraphics();
+    lineBitmapStyle(g, fakeImageSource);
+    expect(g.commands[0]).toMatchObject({ type: 'lineBitmapStyle', matrix: null, repeat: true, smooth: false });
+  });
+});
+
+describe('lineGradientStyle', () => {
+  it('pushes a lineGradientStyle command with all fields', () => {
+    const g = createGraphics();
+    lineGradientStyle(g, 'linear', [0xff0000], [1], [0]);
+    expect(g.commands[0]).toMatchObject({
+      type: 'lineGradientStyle',
+      gradientType: 'linear',
+      colors: [0xff0000],
+      alphas: [1],
+      ratios: [0],
+      matrix: null,
+      spreadMethod: 'pad',
+      interpolationMethod: 'rgb',
+      focalPointRatio: 0,
+    });
+  });
+});
+
+describe('lineStyle', () => {
+  it('pushes a lineStyle command with all parameters', () => {
+    const g = createGraphics();
+    lineStyle(g, 2, 0x0000ff, 0.8, true, 'horizontal', 'round', 'bevel', 5);
+    expect(g.commands[0]).toEqual({
+      type: 'lineStyle',
+      thickness: 2,
+      color: 0x0000ff,
+      alpha: 0.8,
+      pixelHinting: true,
+      scaleMode: 'horizontal',
+      caps: 'round',
+      joints: 'bevel',
+      miterLimit: 5,
+    });
+  });
+
+  it('defaults thickness 1, color 0, alpha 1, pixelHinting false, scaleMode normal, caps none, joints round, miterLimit 3', () => {
     const g = createGraphics();
     lineStyle(g);
-    expect(g.commands[0]).toEqual({ type: 'lineStyle', thickness: 1, color: 0, alpha: 1 });
+    expect(g.commands[0]).toEqual({
+      type: 'lineStyle',
+      thickness: 1,
+      color: 0,
+      alpha: 1,
+      pixelHinting: false,
+      scaleMode: 'normal',
+      caps: 'none',
+      joints: 'round',
+      miterLimit: 3,
+    });
   });
 });
 
