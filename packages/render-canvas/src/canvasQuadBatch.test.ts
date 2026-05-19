@@ -3,8 +3,8 @@ import { getSpriteRenderNode, registerRenderer, updateSpriteBeforeRender } from 
 import { createQuadBatch, reserveQuadBatch } from '@flighthq/scene-graph-sprite';
 import { QuadBatchKind } from '@flighthq/types';
 
-import { createCanvasRenderState } from './canvasRenderState';
 import { defaultCanvasQuadBatchRenderer, drawCanvasQuadBatch } from './canvasQuadBatch';
+import { createCanvasRenderState } from './canvasRenderState';
 
 function makeAtlas(regionCount = 1) {
   const img = document.createElement('img') as HTMLImageElement;

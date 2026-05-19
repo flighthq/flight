@@ -1,8 +1,8 @@
 import { getDisplayObjectRenderNode } from '@flighthq/render-core';
 import { createDisplayObject } from '@flighthq/scene-graph-display';
 
-import { createCanvasRenderState } from './canvasRenderState';
 import { updateCanvasCacheBitmap } from './canvasCacheAsBitmap';
+import { createCanvasRenderState } from './canvasRenderState';
 
 describe('updateCanvasCacheBitmap', () => {
   it('does not throw (placeholder implementation)', () => {

@@ -4,12 +4,12 @@ import { addChild, getLocalBoundsRect } from '@flighthq/scene-graph-core';
 import { createDisplayObject } from '@flighthq/scene-graph-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { createCanvasRenderState } from './canvasRenderState';
 import {
   defaultCanvasDisplayObjectRenderer,
   drawCanvasDisplayObject,
   renderCanvasDisplayObject,
 } from './canvasDisplayObject';
+import { createCanvasRenderState } from './canvasRenderState';
 
 function makeState() {
   const canvas = document.createElement('canvas');

@@ -1,10 +1,10 @@
-import { createImageSource, createTextureAtlas } from '@flighthq/assets';
+import { createImageSource } from '@flighthq/assets';
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { createBitmap } from '@flighthq/scene-graph-display';
 import { BitmapKind } from '@flighthq/types';
 
-import { createCanvasRenderState } from './canvasRenderState';
 import { defaultCanvasBitmapRenderer, drawCanvasBitmap, drawCanvasBitmapMask } from './canvasBitmap';
+import { createCanvasRenderState } from './canvasRenderState';
 
 function makeState() {
   const canvas = document.createElement('canvas');
