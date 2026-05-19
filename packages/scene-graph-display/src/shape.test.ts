@@ -1,33 +1,21 @@
-import type { Shape } from '@flighthq/types';
 import { ShapeKind } from '@flighthq/types';
 
 import { createShape } from './shape';
 
 describe('createShape', () => {
-  let shape: Shape;
-
-  beforeEach(() => {
-    shape = createShape();
-  });
-
-  it('initializes default values', () => {
-    expect(shape.data.graphics).not.toBeNull();
+  it('initializes with an empty graphics command buffer', () => {
+    const shape = createShape();
+    expect(shape.data.graphics.commands).toHaveLength(0);
     expect(shape.kind).toStrictEqual(ShapeKind);
   });
 
-  it('allows pre-defined values', () => {
-    const base = {
-      data: {
-        graphics: {},
-      },
-    };
-    const obj = createShape(base);
-    expect(obj.data.graphics).toStrictEqual(base.data.graphics);
+  it('allows a pre-defined graphics object', () => {
+    const graphics = { commands: [] };
+    const shape = createShape({ data: { graphics } });
+    expect(shape.data.graphics).toBe(graphics);
   });
 
   it('returns a new object for better hidden-class performance', () => {
-    const base = {};
-    const obj = createShape(base);
-    expect(obj).not.toStrictEqual(base);
+    expect(createShape()).not.toBe(createShape());
   });
 });

@@ -1,5 +1,5 @@
-import { createTextureAtlas } from './textureAtlas';
 import { imageSourceFromImageElement } from './imageSourceFrom';
+import { createTextureAtlas } from './textureAtlas';
 import { tilesetFromAtlas, tilesetFromImageSource } from './tilesetFrom';
 
 function makeAtlas(width: number, height: number) {

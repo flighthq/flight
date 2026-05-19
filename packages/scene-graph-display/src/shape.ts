@@ -1,3 +1,4 @@
+import { createGraphics } from '@flighthq/shape';
 import type { PartialNode, Shape, ShapeData } from '@flighthq/types';
 import { ShapeKind } from '@flighthq/types';
 
@@ -9,6 +10,6 @@ export function createShape(obj?: Readonly<PartialNode<Shape>>): Shape {
 
 export function createShapeData(data?: Readonly<Partial<ShapeData>>): ShapeData {
   return {
-    graphics: data?.graphics ?? {},
+    graphics: data?.graphics ?? createGraphics(),
   };
 }
