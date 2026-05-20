@@ -8,13 +8,15 @@ import {
   createTimer,
   createTween,
   createTweenManager,
-  defaultCanvasShapeCommands,
+  defaultCanvasBeginFill,
+  defaultCanvasDrawCircle,
+  defaultCanvasEndFill,
   defaultCanvasShapeRenderer,
   drawCircle,
   endFill,
   invalidateRender,
   Quad,
-  registerCanvasShapeCommands,
+  registerCanvasShapeCommand,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
@@ -42,7 +44,9 @@ const state = createCanvasRenderState(canvas, {
   contextAttributes: { alpha: false },
 });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommand('beginFill', defaultCanvasBeginFill);
+registerCanvasShapeCommand('endFill', defaultCanvasEndFill);
+registerCanvasShapeCommand('drawCircle', defaultCanvasDrawCircle);
 
 const manager = createTweenManager();
 const root = createDisplayObject();
