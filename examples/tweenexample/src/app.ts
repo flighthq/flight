@@ -8,11 +8,13 @@ import {
   createTimer,
   createTween,
   createTweenManager,
+  defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   drawCircle,
   endFill,
   invalidateRender,
   Quad,
+  registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
@@ -40,6 +42,7 @@ const state = createCanvasRenderState(canvas, {
   contextAttributes: { alpha: false },
 });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
+registerCanvasShapeCommands(defaultCanvasShapeCommands);
 
 const manager = createTweenManager();
 const root = createDisplayObject();
@@ -57,9 +60,9 @@ function createCircle(): void {
   const radius = MIN_RADIUS + Math.random() * (MAX_RADIUS - MIN_RADIUS);
   const circle = createShape();
 
-  beginFill(circle.data.graphics, Math.floor(Math.random() * 0xffffff));
-  drawCircle(circle.data.graphics, 0, 0, radius);
-  endFill(circle.data.graphics);
+  beginFill(circle, Math.floor(Math.random() * 0xffffff));
+  drawCircle(circle, 0, 0, radius);
+  endFill(circle);
 
   circle.alpha = 0.2 + Math.random() * 0.6;
   circle.x = Math.random() * STAGE_WIDTH;
