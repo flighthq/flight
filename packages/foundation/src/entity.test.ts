@@ -1,4 +1,4 @@
-import { RuntimeKey } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
 import { createEntity } from './entity';
 
@@ -10,6 +10,6 @@ describe('createEntity', () => {
 
   it('has an undefined runtime', () => {
     const entity = createEntity();
-    expect(entity[RuntimeKey]).toBeUndefined();
+    expect(entity[EntityRuntimeKey]).toBeUndefined();
   });
 });

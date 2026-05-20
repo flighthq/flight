@@ -1,4 +1,3 @@
-import type { GraphNodeDataFactory, GraphNodeRuntimeFactory } from '@flighthq/scenegraph-core';
 import {
   createGraphNode,
   createGraphNodeRuntime,
@@ -11,12 +10,14 @@ import {
   invalidateAppearance,
 } from '@flighthq/scenegraph-core';
 import type {
+  DisplayGraphNodeDataFactory,
+  DisplayGraphNodeRuntimeFactory,
   DisplayObject,
-  DisplayObjectData,
   DisplayObjectRuntime,
   DisplayObjectTraits,
   Filter,
   GraphNode,
+  GraphNodeRuntimeFactory,
   Matrix3x2,
   MethodsOf,
   PartialNode,
@@ -28,13 +29,6 @@ import { DisplayObjectKind } from '@flighthq/types';
 export function createDisplayObject(obj?: Readonly<PartialNode<DisplayObject>>): DisplayObject {
   return createDisplayObjectGeneric(DisplayObjectKind, obj);
 }
-
-export type DisplayGraphNodeDataFactory = GraphNodeDataFactory<DisplayObjectData>;
-export type DisplayGraphNodeRuntimeFactory<R extends DisplayObjectRuntime> = GraphNodeRuntimeFactory<
-  typeof DisplayGraph,
-  DisplayObjectTraits,
-  R
->;
 
 export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   kind: symbol,

@@ -33,7 +33,7 @@ export function renderCanvasShapeCommands(ctx: CanvasRenderingContext2D, command
   ctx.beginPath();
   for (const cmd of commands) {
     const handler = getCanvasShapeRenderer(cmd.key);
-    if (handler !== undefined) handler(ctx, drawState, ...(cmd.args as unknown[]));
+    if (handler !== undefined) handler(ctx, drawState, ...(cmd.args as readonly unknown[]));
   }
   if (drawState.hasPendingPath && (drawState.hasFill || drawState.hasStroke)) {
     flushCanvasShapePath(ctx, drawState);

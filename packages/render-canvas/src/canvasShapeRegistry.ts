@@ -1,24 +1,11 @@
-import type { CanvasShapeDrawState, ShapeCommandKey, ShapeCommandRegistry } from '@flighthq/types';
+import type { CanvasShapeCommandMap, CanvasShapeDrawState, CanvasShapeHandler, ShapeCommandKey } from '@flighthq/types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCanvasShapeHandler = (ctx: CanvasRenderingContext2D, state: CanvasShapeDrawState, ...args: any[]) => void;
 
 const registry = new Map<string, AnyCanvasShapeHandler>();
 
-export type CanvasShapeHandler<K extends ShapeCommandKey> = (
-  ctx: CanvasRenderingContext2D,
-  state: CanvasShapeDrawState,
-  ...args: ShapeCommandRegistry[K]
-) => void;
-
-export type CanvasShapeCommandMap = {
-  [K in ShapeCommandKey]?: CanvasShapeHandler<K>;
-};
-
-export function registerCanvasShapeCommand<K extends ShapeCommandKey>(
-  key: K,
-  handler: (ctx: CanvasRenderingContext2D, state: CanvasShapeDrawState, ...args: ShapeCommandRegistry[K]) => void,
-): void {
+export function registerCanvasShapeCommand<K extends ShapeCommandKey>(key: K, handler: CanvasShapeHandler<K>): void {
   registry.set(key, handler as AnyCanvasShapeHandler);
 }
 

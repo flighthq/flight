@@ -1,5 +1,5 @@
-import type { Runtime } from '@flighthq/types';
-import { RuntimeKey } from '@flighthq/types';
+import type { EntityRuntime } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
 import { createEntity } from './entity';
 import { createRuntime, getRuntime } from './runtime';
@@ -20,8 +20,8 @@ describe('getRuntime', () => {
   it('returns the runtime object', () => {
     const entity = createEntity();
     expect(getRuntime(entity)).toBeUndefined();
-    const runtime = {} as Runtime;
-    entity[RuntimeKey] = runtime;
+    const runtime = {} as EntityRuntime;
+    entity[EntityRuntimeKey] = runtime;
     expect(getRuntime(entity)).toStrictEqual(runtime);
   });
 });

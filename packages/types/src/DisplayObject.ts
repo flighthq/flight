@@ -1,5 +1,11 @@
 import type { Filter } from './Filter';
-import type { GraphNode, GraphNodeData, GraphNodeRuntime } from './GraphNode';
+import type {
+  GraphNode,
+  GraphNodeData,
+  GraphNodeDataFactory,
+  GraphNodeRuntime,
+  GraphNodeRuntimeFactory,
+} from './GraphNode';
 import type { HasAppearance } from './HasAppearance';
 import type { HasBoundsRect, HasBoundsRectRuntime } from './HasBoundsRect';
 import type { HasTransform2D, HasTransform2DRuntime } from './HasTransform2D';
@@ -27,3 +33,10 @@ export const DisplayGraph = Symbol('DisplayGraph');
 export type DisplayObjectRuntime = GraphNodeRuntime<typeof DisplayGraph, DisplayObjectTraits> &
   HasTransform2DRuntime &
   HasBoundsRectRuntime;
+
+export type DisplayGraphNodeDataFactory = GraphNodeDataFactory<DisplayObjectData>;
+export type DisplayGraphNodeRuntimeFactory<R extends DisplayObjectRuntime> = GraphNodeRuntimeFactory<
+  typeof DisplayGraph,
+  DisplayObjectTraits,
+  R
+>;

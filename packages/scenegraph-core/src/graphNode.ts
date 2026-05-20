@@ -1,24 +1,19 @@
-import type { NodeDataFactory, NodeRuntimeFactory } from '@flighthq/foundation';
 import { createNode, createRuntime, getRuntime } from '@flighthq/foundation';
 import { createSignal } from '@flighthq/signals';
 import type {
   GraphNode,
   GraphNodeData,
+  GraphNodeDataFactory,
   GraphNodeRuntime,
+  GraphNodeRuntimeFactory,
   GraphNodeTraits,
   MethodsOf,
+  NodeRuntimeFactory,
   PartialNode,
 } from '@flighthq/types';
-import { RuntimeKey } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
 import { invalidate } from './revision';
-
-export type GraphNodeDataFactory<Data extends GraphNodeData> = NodeDataFactory<Data>;
-export type GraphNodeRuntimeFactory<
-  GraphKind extends symbol,
-  Traits extends object,
-  Runtime extends GraphNodeRuntime<GraphKind, Traits>,
-> = NodeRuntimeFactory<Runtime>;
 
 export function createGraphNode<
   GraphKind extends symbol,
@@ -38,7 +33,7 @@ export function createGraphNode<
     createData,
     createRuntime ?? (createGraphNodeRuntime as NodeRuntimeFactory<Runtime>),
   ) as GraphNode<GraphKind, Traits> & Traits;
-  out[RuntimeKey]!.graph = graph;
+  out[EntityRuntimeKey]!.graph = graph;
   out.enabled = obj?.enabled ?? true;
   out.onChildrenChanged = createSignal();
   out.onChildrenOrderChanged = createSignal();

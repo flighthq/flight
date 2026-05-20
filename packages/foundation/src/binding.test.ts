@@ -1,4 +1,4 @@
-import { RuntimeKey } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
 import { attachBinding, getBinding } from './binding';
 import { createEntity } from './entity';
@@ -28,7 +28,7 @@ describe('getBinding', () => {
 
   it('returns null if the binding slot is empty', () => {
     const entity = createEntity();
-    entity[RuntimeKey] = createRuntime();
+    entity[EntityRuntimeKey] = createRuntime();
     expect(getBinding(entity)).toBeNull();
   });
 
@@ -36,7 +36,7 @@ describe('getBinding', () => {
     const entity = createEntity();
     const runtime = createRuntime();
     runtime.binding = {};
-    entity[RuntimeKey] = runtime;
+    entity[EntityRuntimeKey] = runtime;
     expect(getBinding(entity)).toStrictEqual(runtime.binding);
   });
 });

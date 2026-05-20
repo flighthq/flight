@@ -11,9 +11,9 @@ import type {
   Matrix3x2,
   SpreadMethod,
 } from '@flighthq/types';
+import type { CanvasShapeCommandMap, CanvasShapeHandler } from '@flighthq/types';
 
 import { createBitmapPattern, createGradientPattern } from './canvasFillPattern';
-import type { CanvasShapeCommandMap, CanvasShapeHandler } from './canvasShapeRegistry';
 
 export const defaultCanvasBeginBitmapFill: CanvasShapeHandler<'beginBitmapFill'> = (
   ctx: CanvasRenderingContext2D,

@@ -17,9 +17,9 @@ export type SpreadMethod = 'pad' | 'reflect' | 'repeat';
 
 // Maps command key strings to their argument tuples. May be extended via declaration merging.
 export interface ShapeCommandRegistry {
-  beginBitmapFill: [bitmap: ImageSource, matrix: Matrix3x2 | null, repeat: boolean, smooth: boolean];
-  beginFill: [color: number, alpha: number];
-  beginGradientFill: [
+  beginBitmapFill: readonly [bitmap: ImageSource, matrix: Matrix3x2 | null, repeat: boolean, smooth: boolean];
+  beginFill: readonly [color: number, alpha: number];
+  beginGradientFill: readonly [
     gradientType: GradientType,
     colors: number[],
     alphas: number[],
@@ -29,7 +29,7 @@ export interface ShapeCommandRegistry {
     interpolationMethod: InterpolationMethod,
     focalPointRatio: number,
   ];
-  cubicCurveTo: [
+  cubicCurveTo: readonly [
     controlX1: number,
     controlY1: number,
     controlX2: number,
@@ -37,15 +37,22 @@ export interface ShapeCommandRegistry {
     anchorX: number,
     anchorY: number,
   ];
-  curveTo: [controlX: number, controlY: number, anchorX: number, anchorY: number];
-  drawCircle: [x: number, y: number, radius: number];
-  drawEllipse: [x: number, y: number, width: number, height: number];
-  drawPath: [commands: number[], data: number[], winding: GraphicsPathWinding];
-  drawRect: [x: number, y: number, width: number, height: number];
-  drawRoundRect: [x: number, y: number, width: number, height: number, ellipseWidth: number, ellipseHeight: number];
-  endFill: [];
-  lineBitmapStyle: [bitmap: ImageSource, matrix: Matrix3x2 | null, repeat: boolean, smooth: boolean];
-  lineGradientStyle: [
+  curveTo: readonly [controlX: number, controlY: number, anchorX: number, anchorY: number];
+  drawCircle: readonly [x: number, y: number, radius: number];
+  drawEllipse: readonly [x: number, y: number, width: number, height: number];
+  drawPath: readonly [commands: number[], data: number[], winding: GraphicsPathWinding];
+  drawRect: readonly [x: number, y: number, width: number, height: number];
+  drawRoundRect: readonly [
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    ellipseWidth: number,
+    ellipseHeight: number,
+  ];
+  endFill: readonly [];
+  lineBitmapStyle: readonly [bitmap: ImageSource, matrix: Matrix3x2 | null, repeat: boolean, smooth: boolean];
+  lineGradientStyle: readonly [
     gradientType: GradientType,
     colors: number[],
     alphas: number[],
@@ -55,7 +62,7 @@ export interface ShapeCommandRegistry {
     interpolationMethod: InterpolationMethod,
     focalPointRatio: number,
   ];
-  lineStyle: [
+  lineStyle: readonly [
     thickness: number,
     color: number,
     alpha: number,
@@ -65,8 +72,8 @@ export interface ShapeCommandRegistry {
     joints: JointStyle,
     miterLimit: number,
   ];
-  lineTo: [x: number, y: number];
-  moveTo: [x: number, y: number];
+  lineTo: readonly [x: number, y: number];
+  moveTo: readonly [x: number, y: number];
 }
 
 export type ShapeCommandKey = keyof ShapeCommandRegistry;

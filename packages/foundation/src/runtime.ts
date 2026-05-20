@@ -1,12 +1,12 @@
-import type { Entity, Runtime } from '@flighthq/types';
-import { RuntimeKey } from '@flighthq/types';
+import type { Entity, EntityRuntime } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
-export function createRuntime(): Runtime {
+export function createRuntime(): EntityRuntime {
   return {
     binding: null,
   };
 }
 
-export function getRuntime(source: Readonly<Entity>): Readonly<Runtime> {
-  return source[RuntimeKey]!;
+export function getRuntime(source: Readonly<Entity>): Readonly<EntityRuntime> {
+  return source[EntityRuntimeKey]!;
 }

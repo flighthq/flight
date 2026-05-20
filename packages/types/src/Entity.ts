@@ -1,7 +1,11 @@
-import type { Runtime, RuntimeKey } from './Runtime';
-
 export interface Entity {
-  [RuntimeKey]: Runtime | undefined;
+  [EntityRuntimeKey]: EntityRuntime | undefined;
 }
 
-export type EntityWithoutRuntime<Type extends Entity> = Omit<Type, typeof RuntimeKey>;
+export type EntityWithoutRuntime<Type extends Entity> = Omit<Type, typeof EntityRuntimeKey>;
+
+export interface EntityRuntime {
+  binding: object | null;
+}
+
+export const EntityRuntimeKey: unique symbol = Symbol.for('EntityRuntime');

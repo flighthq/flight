@@ -1,4 +1,10 @@
-import type { GraphNode, GraphNodeData, GraphNodeRuntime } from './GraphNode';
+import type {
+  GraphNode,
+  GraphNodeData,
+  GraphNodeDataFactory,
+  GraphNodeRuntime,
+  GraphNodeRuntimeFactory,
+} from './GraphNode';
 import type { HasAppearance } from './HasAppearance';
 import type { HasBoundsRect, HasBoundsRectRuntime } from './HasBoundsRect';
 import type { HasTransform2D, HasTransform2DRuntime } from './HasTransform2D';
@@ -20,3 +26,10 @@ export interface SpriteNodeData extends GraphNodeData {}
 export type SpriteNodeRuntime = GraphNodeRuntime<typeof SpriteGraph, SpriteNodeTraits> &
   HasTransform2DRuntime &
   HasBoundsRectRuntime;
+
+export type SpriteGraphNodeDataFactory = GraphNodeDataFactory<SpriteNodeData>;
+export type SpriteGraphNodeRuntimeFactory<Runtime extends SpriteNodeRuntime> = GraphNodeRuntimeFactory<
+  typeof SpriteGraph,
+  SpriteNodeTraits,
+  Runtime
+>;

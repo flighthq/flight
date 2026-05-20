@@ -1,4 +1,4 @@
-import type { Node, NodeData, PartialNode, Runtime } from '@flighthq/types';
+import type { EntityRuntime, Node, NodeData, PartialNode } from '@flighthq/types';
 import { NodeKind } from '@flighthq/types';
 
 import { createNode } from './node';
@@ -77,7 +77,7 @@ interface NodeTestData extends NodeData {
   testDataField: string;
 }
 
-interface NodeTestRuntime extends Runtime {
+interface NodeTestRuntime extends EntityRuntime {
   testRuntimeField: string;
 }
 

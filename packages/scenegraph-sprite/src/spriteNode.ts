@@ -1,4 +1,3 @@
-import type { GraphNodeDataFactory, GraphNodeRuntimeFactory } from '@flighthq/scenegraph-core';
 import {
   createGraphNode,
   createGraphNodeRuntime,
@@ -9,23 +8,18 @@ import {
   initHasTransform2D,
   initHasTransform2DRuntime,
 } from '@flighthq/scenegraph-core';
+import type { GraphNodeRuntimeFactory } from '@flighthq/types';
 import type {
   GraphNode,
   MethodsOf,
   PartialNode,
+  SpriteGraphNodeDataFactory,
+  SpriteGraphNodeRuntimeFactory,
   SpriteNode,
-  SpriteNodeData,
   SpriteNodeRuntime,
   SpriteNodeTraits,
 } from '@flighthq/types';
 import { SpriteGraph } from '@flighthq/types';
-
-export type SpriteGraphNodeDataFactory = GraphNodeDataFactory<SpriteNodeData>;
-export type SpriteGraphNodeRuntimeFactory<Runtime extends SpriteNodeRuntime> = GraphNodeRuntimeFactory<
-  typeof SpriteGraph,
-  SpriteNodeTraits,
-  Runtime
->;
 
 export function createSpriteNode<Runtime extends SpriteNodeRuntime>(
   kind: symbol,

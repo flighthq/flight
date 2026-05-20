@@ -1,13 +1,13 @@
 import type { Entity } from '@flighthq/types';
-import { RuntimeKey } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
 import { createRuntime, getRuntime } from './runtime';
 
 export function attachBinding(entity: Entity, binding: object): void {
-  if (entity[RuntimeKey] === undefined) {
-    entity[RuntimeKey] = createRuntime();
+  if (entity[EntityRuntimeKey] === undefined) {
+    entity[EntityRuntimeKey] = createRuntime();
   }
-  entity[RuntimeKey].binding = binding;
+  entity[EntityRuntimeKey].binding = binding;
 }
 
 export function getBinding(source: Entity): object | null {

@@ -1,5 +1,5 @@
-import type { Node, NodeData } from './Node';
-import type { Runtime, RuntimeKey } from './Runtime';
+import type { EntityRuntime, EntityRuntimeKey } from './Entity';
+import type { Node, NodeData, NodeDataFactory, NodeRuntimeFactory } from './Node';
 import type { Signal } from './Signal';
 
 export interface GraphNodeTraits {
@@ -11,7 +11,7 @@ export interface GraphNodeTraits {
 
 export interface GraphNode<GraphKind extends symbol = typeof NullGraph, Traits extends object = GraphNodeTraits>
   extends Node, GraphNodeTraits {
-  [RuntimeKey]: GraphNodeRuntime<GraphKind, Traits> | undefined;
+  [EntityRuntimeKey]: GraphNodeRuntime<GraphKind, Traits> | undefined;
   onChildrenChanged: Signal<() => void>;
   onChildrenOrderChanged: Signal<() => void>;
   onParentChanged: Signal<() => void>;
@@ -20,7 +20,7 @@ export interface GraphNode<GraphKind extends symbol = typeof NullGraph, Traits e
 export interface GraphNodeRuntime<
   GraphKind extends symbol = typeof NullGraph,
   Traits extends object = GraphNodeTraits,
-> extends Runtime {
+> extends EntityRuntime {
   appearanceID: number;
   boundsUsingLocalBoundsID: number;
   boundsUsingLocalTransformID: number;
@@ -47,3 +47,10 @@ export const GraphNodeKind: unique symbol = Symbol('GraphNode');
 export type GraphNodeOf<GraphKind extends symbol, Traits extends object> = GraphNode<GraphKind, Traits> & Traits;
 
 export const NullGraph: unique symbol = Symbol('NullGraph');
+
+export type GraphNodeDataFactory<Data extends GraphNodeData> = NodeDataFactory<Data>;
+export type GraphNodeRuntimeFactory<
+  GraphKind extends symbol,
+  Traits extends object,
+  Runtime extends GraphNodeRuntime<GraphKind, Traits> = GraphNodeRuntime<GraphKind, Traits>,
+> = NodeRuntimeFactory<Runtime>;

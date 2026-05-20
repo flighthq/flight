@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity, EntityRuntime } from './Entity';
 
 export interface Node extends Entity {
   data: NodeData | null;
@@ -7,5 +7,9 @@ export interface Node extends Entity {
 }
 
 export type NodeData = object;
+
+export type NodeDataFactory<D extends NodeData> = (obj?: Readonly<Partial<D>>) => D;
+
+export type NodeRuntimeFactory<R extends EntityRuntime> = (obj?: Readonly<Partial<R>>) => R;
 
 export const NodeKind: unique symbol = Symbol('Node');

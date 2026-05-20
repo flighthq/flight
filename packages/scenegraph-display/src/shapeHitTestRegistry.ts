@@ -11,5 +11,5 @@ export function registerShapeCommandHitTest<K extends ShapeCommandKey>(key: K, f
 export function hitTestCommand(cmd: ShapeCommand, x: number, y: number): boolean | null {
   const handler = hitTests.get(cmd.key);
   if (handler === undefined) return null;
-  return handler(x, y, ...(cmd.args as unknown[]));
+  return handler(x, y, ...(cmd.args as readonly unknown[]));
 }
