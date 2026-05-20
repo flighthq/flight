@@ -11,7 +11,6 @@ export * from '@flighthq/scenegraph-core';
 export * from '@flighthq/scenegraph-display';
 export * from '@flighthq/scenegraph-sprite';
 // export * from '@flighthq/scenegraph-world';
-export * from '@flighthq/shape';
 export * from '@flighthq/signals';
 export * from '@flighthq/spritesheet';
 export * from '@flighthq/timeline';

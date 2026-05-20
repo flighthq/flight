@@ -19,7 +19,6 @@
     { "path": "../scenegraph-core" },
     { "path": "../scenegraph-display" },
     { "path": "../scenegraph-world" },
-    { "path": "../shape" },
     { "path": "../signals" },
     { "path": "../spritesheet" },
     { "path": "../timeline" },
