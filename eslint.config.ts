@@ -68,7 +68,6 @@ export default [
     // Types should not include scoped imports, only relative
     files: ['packages/types/**/*.{ts,tsx}'],
     rules: {
-      'import/no-relative-parent-imports': 'off',
       'no-restricted-imports': [
         'error',
         {
