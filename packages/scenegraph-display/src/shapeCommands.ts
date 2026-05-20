@@ -7,7 +7,7 @@ import type {
   JointStyle,
   LineScaleMode,
   Matrix3x2,
-  ShapeData,
+  Shape,
   SpreadMethod,
 } from '@flighthq/types';
 
@@ -22,21 +22,21 @@ export const GraphicsPathCommand = {
 } as const;
 
 export function beginBitmapFill(
-  data: ShapeData,
+  shape: Shape,
   bitmap: ImageSource,
   matrix: Matrix3x2 | null = null,
   repeat = true,
   smooth = false,
 ): void {
-  data.commands.push({ key: 'beginBitmapFill', args: [bitmap, matrix, repeat, smooth] });
+  shape.data.commands.push({ key: 'beginBitmapFill', args: [bitmap, matrix, repeat, smooth] });
 }
 
-export function beginFill(data: ShapeData, color = 0, alpha = 1): void {
-  data.commands.push({ key: 'beginFill', args: [color, alpha] });
+export function beginFill(shape: Shape, color = 0, alpha = 1): void {
+  shape.data.commands.push({ key: 'beginFill', args: [color, alpha] });
 }
 
 export function beginGradientFill(
-  data: ShapeData,
+  shape: Shape,
   gradientType: GradientType,
   colors: number[],
   alphas: number[],
@@ -46,14 +46,14 @@ export function beginGradientFill(
   interpolationMethod: InterpolationMethod = 'rgb',
   focalPointRatio = 0,
 ): void {
-  data.commands.push({
+  shape.data.commands.push({
     key: 'beginGradientFill',
     args: [gradientType, colors, alphas, ratios, matrix, spreadMethod, interpolationMethod, focalPointRatio],
   });
 }
 
 export function cubicCurveTo(
-  data: ShapeData,
+  shape: Shape,
   controlX1: number,
   controlY1: number,
   controlX2: number,
@@ -61,36 +61,39 @@ export function cubicCurveTo(
   anchorX: number,
   anchorY: number,
 ): void {
-  data.commands.push({ key: 'cubicCurveTo', args: [controlX1, controlY1, controlX2, controlY2, anchorX, anchorY] });
+  shape.data.commands.push({
+    key: 'cubicCurveTo',
+    args: [controlX1, controlY1, controlX2, controlY2, anchorX, anchorY],
+  });
 }
 
-export function curveTo(data: ShapeData, controlX: number, controlY: number, anchorX: number, anchorY: number): void {
-  data.commands.push({ key: 'curveTo', args: [controlX, controlY, anchorX, anchorY] });
+export function curveTo(shape: Shape, controlX: number, controlY: number, anchorX: number, anchorY: number): void {
+  shape.data.commands.push({ key: 'curveTo', args: [controlX, controlY, anchorX, anchorY] });
 }
 
-export function drawCircle(data: ShapeData, x: number, y: number, radius: number): void {
-  data.commands.push({ key: 'drawCircle', args: [x, y, radius] });
+export function drawCircle(shape: Shape, x: number, y: number, radius: number): void {
+  shape.data.commands.push({ key: 'drawCircle', args: [x, y, radius] });
 }
 
-export function drawEllipse(data: ShapeData, x: number, y: number, width: number, height: number): void {
-  data.commands.push({ key: 'drawEllipse', args: [x, y, width, height] });
+export function drawEllipse(shape: Shape, x: number, y: number, width: number, height: number): void {
+  shape.data.commands.push({ key: 'drawEllipse', args: [x, y, width, height] });
 }
 
 export function drawPath(
-  data: ShapeData,
+  shape: Shape,
   commands: number[],
   pathData: number[],
   winding: GraphicsPathWinding = 'evenOdd',
 ): void {
-  data.commands.push({ key: 'drawPath', args: [commands, pathData, winding] });
+  shape.data.commands.push({ key: 'drawPath', args: [commands, pathData, winding] });
 }
 
-export function drawRect(data: ShapeData, x: number, y: number, width: number, height: number): void {
-  data.commands.push({ key: 'drawRect', args: [x, y, width, height] });
+export function drawRect(shape: Shape, x: number, y: number, width: number, height: number): void {
+  shape.data.commands.push({ key: 'drawRect', args: [x, y, width, height] });
 }
 
 export function drawRoundRect(
-  data: ShapeData,
+  shape: Shape,
   x: number,
   y: number,
   width: number,
@@ -98,11 +101,11 @@ export function drawRoundRect(
   ellipseWidth: number,
   ellipseHeight: number,
 ): void {
-  data.commands.push({ key: 'drawRoundRect', args: [x, y, width, height, ellipseWidth, ellipseHeight] });
+  shape.data.commands.push({ key: 'drawRoundRect', args: [x, y, width, height, ellipseWidth, ellipseHeight] });
 }
 
 export function drawRoundRectComplex(
-  data: ShapeData,
+  shape: Shape,
   x: number,
   y: number,
   width: number,
@@ -114,33 +117,34 @@ export function drawRoundRectComplex(
 ): void {
   const r = x + width;
   const b = y + height;
-  data.commands.push({ key: 'moveTo', args: [x + topLeftRadius, y] });
-  data.commands.push({ key: 'lineTo', args: [r - topRightRadius, y] });
-  data.commands.push({ key: 'curveTo', args: [r, y, r, y + topRightRadius] });
-  data.commands.push({ key: 'lineTo', args: [r, b - bottomRightRadius] });
-  data.commands.push({ key: 'curveTo', args: [r, b, r - bottomRightRadius, b] });
-  data.commands.push({ key: 'lineTo', args: [x + bottomLeftRadius, b] });
-  data.commands.push({ key: 'curveTo', args: [x, b, x, b - bottomLeftRadius] });
-  data.commands.push({ key: 'lineTo', args: [x, y + topLeftRadius] });
-  data.commands.push({ key: 'curveTo', args: [x, y, x + topLeftRadius, y] });
+  const cmds = shape.data.commands;
+  cmds.push({ key: 'moveTo', args: [x + topLeftRadius, y] });
+  cmds.push({ key: 'lineTo', args: [r - topRightRadius, y] });
+  cmds.push({ key: 'curveTo', args: [r, y, r, y + topRightRadius] });
+  cmds.push({ key: 'lineTo', args: [r, b - bottomRightRadius] });
+  cmds.push({ key: 'curveTo', args: [r, b, r - bottomRightRadius, b] });
+  cmds.push({ key: 'lineTo', args: [x + bottomLeftRadius, b] });
+  cmds.push({ key: 'curveTo', args: [x, b, x, b - bottomLeftRadius] });
+  cmds.push({ key: 'lineTo', args: [x, y + topLeftRadius] });
+  cmds.push({ key: 'curveTo', args: [x, y, x + topLeftRadius, y] });
 }
 
-export function endFill(data: ShapeData): void {
-  data.commands.push({ key: 'endFill', args: [] });
+export function endFill(shape: Shape): void {
+  shape.data.commands.push({ key: 'endFill', args: [] });
 }
 
 export function lineBitmapStyle(
-  data: ShapeData,
+  shape: Shape,
   bitmap: ImageSource,
   matrix: Matrix3x2 | null = null,
   repeat = true,
   smooth = false,
 ): void {
-  data.commands.push({ key: 'lineBitmapStyle', args: [bitmap, matrix, repeat, smooth] });
+  shape.data.commands.push({ key: 'lineBitmapStyle', args: [bitmap, matrix, repeat, smooth] });
 }
 
 export function lineGradientStyle(
-  data: ShapeData,
+  shape: Shape,
   gradientType: GradientType,
   colors: number[],
   alphas: number[],
@@ -150,14 +154,14 @@ export function lineGradientStyle(
   interpolationMethod: InterpolationMethod = 'rgb',
   focalPointRatio = 0,
 ): void {
-  data.commands.push({
+  shape.data.commands.push({
     key: 'lineGradientStyle',
     args: [gradientType, colors, alphas, ratios, matrix, spreadMethod, interpolationMethod, focalPointRatio],
   });
 }
 
 export function lineStyle(
-  data: ShapeData,
+  shape: Shape,
   thickness = 1,
   color = 0,
   alpha = 1,
@@ -167,16 +171,16 @@ export function lineStyle(
   joints: JointStyle = 'round',
   miterLimit = 3,
 ): void {
-  data.commands.push({
+  shape.data.commands.push({
     key: 'lineStyle',
     args: [thickness, color, alpha, pixelHinting, scaleMode, caps, joints, miterLimit],
   });
 }
 
-export function lineTo(data: ShapeData, x: number, y: number): void {
-  data.commands.push({ key: 'lineTo', args: [x, y] });
+export function lineTo(shape: Shape, x: number, y: number): void {
+  shape.data.commands.push({ key: 'lineTo', args: [x, y] });
 }
 
-export function moveTo(data: ShapeData, x: number, y: number): void {
-  data.commands.push({ key: 'moveTo', args: [x, y] });
+export function moveTo(shape: Shape, x: number, y: number): void {
+  shape.data.commands.push({ key: 'moveTo', args: [x, y] });
 }
