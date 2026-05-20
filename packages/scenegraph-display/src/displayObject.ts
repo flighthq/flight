@@ -58,7 +58,6 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   out.filters = obj?.filters ?? null;
   out.mask = obj?.mask ?? null;
   out.opaqueBackground = obj?.opaqueBackground ?? null;
-  out.scale9Grid = obj?.scale9Grid ?? null;
   out.scrollRect = obj?.scrollRect ?? null;
   return out;
 }
@@ -103,11 +102,6 @@ export function setMask(source: DisplayObject, value: DisplayObject | null): voi
 
 export function setOpaqueBackground(source: DisplayObject, value: number | null): void {
   source.opaqueBackground = value;
-  invalidateAppearance(source);
-}
-
-export function setScale9Grid(source: DisplayObject, value: Rectangle | null): void {
-  source.scale9Grid = value;
   invalidateAppearance(source);
 }
 

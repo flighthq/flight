@@ -24,7 +24,6 @@ import {
   setFilters,
   setMask,
   setOpaqueBackground,
-  setScale9Grid,
   setScrollRect,
 } from './displayObject';
 
@@ -48,7 +47,6 @@ describe('createDisplayObject', () => {
     expect(displayObject.mask).toBeNull();
     expect(displayObject.name).toBeNull();
     expect(displayObject.opaqueBackground).toBeNull();
-    expect(displayObject.scale9Grid).toBeNull();
     expect(displayObject.shader).toBeNull();
     expect(displayObject.visible).toBe(true);
     expect(displayObject.kind).toBe(DisplayObjectKind);
@@ -264,30 +262,6 @@ describe('setOpaqueBackground', () => {
   it('invalidates appearance', () => {
     const idBefore = getRuntime_(obj).appearanceID;
     setOpaqueBackground(obj, 0xff0000);
-    expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
-  });
-});
-
-describe('setScale9Grid', () => {
-  let obj: DisplayObject;
-  beforeEach(() => {
-    obj = createDisplayObject();
-  });
-
-  it('sets scale9Grid', () => {
-    const rect = rectangle.create();
-    setScale9Grid(obj, rect);
-    expect(obj.scale9Grid).toBe(rect);
-  });
-
-  it('accepts null', () => {
-    setScale9Grid(obj, null);
-    expect(obj.scale9Grid).toBeNull();
-  });
-
-  it('invalidates appearance', () => {
-    const idBefore = getRuntime_(obj).appearanceID;
-    setScale9Grid(obj, rectangle.create());
     expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
   });
 });
