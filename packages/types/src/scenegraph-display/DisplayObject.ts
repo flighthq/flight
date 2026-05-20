@@ -20,7 +20,6 @@ export interface DisplayObjectTraits extends HasAppearance, HasBoundsRect, HasTr
   filters: Filter[] | null;
   mask: DisplayObject | null;
   opaqueBackground: number | null;
-  scale9Grid: Rectangle | null;
   scrollRect: Rectangle | null;
 }
 

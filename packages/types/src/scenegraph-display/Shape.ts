@@ -1,8 +1,8 @@
 import type { DisplayObject, DisplayObjectData } from './DisplayObject';
-import type { Graphics } from './Graphics';
+import type { ShapeCommand } from './ShapeCommand';
 
 export interface ShapeData extends DisplayObjectData {
-  graphics: Graphics;
+  commands: ShapeCommand[];
 }
 
 export interface Shape extends DisplayObject {
