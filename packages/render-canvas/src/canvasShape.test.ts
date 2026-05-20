@@ -1,4 +1,4 @@
-import { beginFill, createShapeData, drawRect, endFill, lineStyle } from '@flighthq/scenegraph-display';
+import { beginFill, createShape, drawRect, endFill, lineStyle } from '@flighthq/scenegraph-display';
 
 import { renderCanvasShapeCommands } from './canvasShape';
 import { defaultCanvasShapeCommands } from './canvasShapeCommands';
@@ -19,29 +19,29 @@ describe('renderCanvasShapeCommands', () => {
   it('does nothing when the command list is empty', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'fill');
-    renderCanvasShapeCommands(ctx, createShapeData().commands);
+    renderCanvasShapeCommands(ctx, createShape().data.commands);
     expect(spy).not.toHaveBeenCalled();
   });
 
   it('calls fill after beginFill + drawRect + endFill', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'fill');
-    const data = createShapeData();
-    beginFill(data, 0xff0000);
-    drawRect(data, 0, 0, 100, 50);
-    endFill(data);
-    renderCanvasShapeCommands(ctx, data.commands);
+    const shape = createShape();
+    beginFill(shape, 0xff0000);
+    drawRect(shape, 0, 0, 100, 50);
+    endFill(shape);
+    renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledOnce();
   });
 
   it('calls stroke once when lineStyle is set', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'stroke');
-    const data = createShapeData();
-    lineStyle(data, 2, 0x000000);
-    drawRect(data, 0, 0, 100, 50);
-    endFill(data);
-    renderCanvasShapeCommands(ctx, data.commands);
+    const shape = createShape();
+    lineStyle(shape, 2, 0x000000);
+    drawRect(shape, 0, 0, 100, 50);
+    endFill(shape);
+    renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledOnce();
   });
 
@@ -54,23 +54,23 @@ describe('renderCanvasShapeCommands', () => {
     vi.spyOn(ctx, 'stroke').mockImplementation(() => {
       order.push('stroke');
     });
-    const data = createShapeData();
-    lineStyle(data, 2, 0x000000);
-    beginFill(data, 0xff0000);
-    drawRect(data, 0, 0, 100, 50);
-    endFill(data);
-    renderCanvasShapeCommands(ctx, data.commands);
+    const shape = createShape();
+    lineStyle(shape, 2, 0x000000);
+    beginFill(shape, 0xff0000);
+    drawRect(shape, 0, 0, 100, 50);
+    endFill(shape);
+    renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(order).toEqual(['fill', 'stroke']);
   });
 
   it('calls fill with evenodd winding rule by default', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'fill');
-    const data = createShapeData();
-    beginFill(data, 0xff0000, 1);
-    drawRect(data, 0, 0, 10, 10);
-    endFill(data);
-    renderCanvasShapeCommands(ctx, data.commands);
+    const shape = createShape();
+    beginFill(shape, 0xff0000, 1);
+    drawRect(shape, 0, 0, 10, 10);
+    endFill(shape);
+    renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledWith('evenodd');
   });
 });

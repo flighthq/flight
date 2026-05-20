@@ -64,8 +64,8 @@ describe('remapScale9Commands', () => {
 
   it('returns an array of the same length as the input', () => {
     const shape = createScale9Shape(grid);
-    beginFill(shape.data, 0xff0000);
-    drawRect(shape.data, 0, 0, 100, 100);
+    beginFill(shape, 0xff0000);
+    drawRect(shape, 0, 0, 100, 100);
     const mapper = buildScale9Mapper(shape.data.commands, grid, 2, 2)!;
     const result = remapScale9Commands(shape.data.commands, mapper);
     expect(result).toHaveLength(shape.data.commands.length);
