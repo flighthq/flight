@@ -1,60 +1,43 @@
-import { matrix3x2 } from '@flighthq/geometry';
 import { createNullRendererData } from '@flighthq/render-core';
 import type {
   CanvasRenderState,
+  CanvasShapeDrawState,
   DisplayObjectRenderer,
   DisplayObjectRenderNode,
-  Graphics,
-  Matrix3x2,
   Shape,
   ShapeCommand,
 } from '@flighthq/types';
 
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
-import { createBitmapPattern, createGradientPattern } from './canvasGraphicsPattern';
-import { buildScale9Mapper, type Scale9Mapper } from './canvasGraphicsScale9';
 import { setCanvasBlendMode } from './canvasMaterials';
+import { getCanvasShapeRenderer } from './canvasShapeRegistry';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasShape(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
   drawCanvasDisplayObject(state, renderNode);
 
   const source = renderNode.source as Shape;
-  const { commands } = source.data.graphics;
+  const { commands } = source.data;
   if (commands.length === 0) return;
 
   const context = state.context;
   setCanvasBlendMode(state, renderNode.blendMode);
   context.globalAlpha = renderNode.alpha;
+  setCanvasTransform(state, context, renderNode.transform2D);
 
-  const scale9Grid = source.scale9Grid;
-  const t = renderNode.transform2D;
-  const scale9Mapper =
-    scale9Grid !== null && t.b === 0 && t.c === 0
-      ? buildScale9Mapper(commands, scale9Grid, source.scaleX, source.scaleY)
-      : null;
-
-  if (scale9Mapper !== null) {
-    // Remove the object's own scaleX/scaleY from the canvas transform — the 9-slice
-    // mapper handles scaling in coordinate space, keeping corners pixel-accurate.
-    const parentScaleX = source.scaleX !== 0 ? t.a / source.scaleX : 1;
-    const parentScaleY = source.scaleY !== 0 ? t.d / source.scaleY : 1;
-    context.setTransform(parentScaleX, 0, 0, parentScaleY, t.tx, t.ty);
-  } else {
-    setCanvasTransform(state, context, t);
-  }
-
-  renderGraphicsToCanvas(context, source.data.graphics, scale9Mapper);
+  renderCanvasShapeCommands(context, commands);
 }
 
-export function renderGraphicsToCanvas(
-  ctx: CanvasRenderingContext2D,
-  graphics: Graphics,
-  scale9?: Scale9Mapper | null,
-): void {
-  // Two-pass: all fills first, then all strokes on top — matches Flash rendering order.
-  playCommands(ctx, graphics.commands, false, scale9 ?? null);
-  playCommands(ctx, graphics.commands, true, scale9 ?? null);
+export function renderCanvasShapeCommands(ctx: CanvasRenderingContext2D, commands: ShapeCommand[]): void {
+  const drawState = createCanvasShapeDrawState(ctx);
+  ctx.beginPath();
+  for (const cmd of commands) {
+    const handler = getCanvasShapeRenderer(cmd.key);
+    if (handler !== undefined) handler(ctx, drawState, ...(cmd.args as unknown[]));
+  }
+  if (drawState.hasPendingPath && (drawState.hasFill || drawState.hasStroke)) {
+    flushCanvasShapePath(ctx, drawState);
+  }
 }
 
 export const defaultCanvasShapeRenderer: DisplayObjectRenderer = {
@@ -63,477 +46,45 @@ export const defaultCanvasShapeRenderer: DisplayObjectRenderer = {
   drawMask: drawCanvasShape,
 };
 
-function playCommands(
-  ctx: CanvasRenderingContext2D,
-  commands: readonly ShapeCommand[],
-  strokePass: boolean,
-  scale9: Scale9Mapper | null,
-): void {
-  const mapX = scale9 ? (x: number) => scale9.mapX(x) : (x: number) => x;
-  const mapY = scale9 ? (y: number) => scale9.mapY(y) : (y: number) => y;
-
-  let hasFill = false;
-  let hasStroke = false;
-  let hasPendingPath = false;
-  // Flash pen starts at (0,0); Canvas lineTo/curveTo with no current point acts as
-  // moveTo instead of drawing from origin. Track and insert the implicit moveTo.
-  let hasCurrentPoint = false;
-  let fillStyle: string | CanvasPattern | CanvasGradient = '';
-  let strokeStyle: string | CanvasPattern | CanvasGradient = '';
-  let strokeWidth = 1;
-  let windingRule: CanvasFillRule = 'evenodd';
-  let pendingFillMatrix: Matrix3x2 | null = null;
-  let pendingFillMatrixInverse: Matrix3x2 | null = null;
-  // Bitmap fill state — used for the drawRect drawImage optimization.
-  let bitmapSrc: CanvasImageSource | null = null;
-  let bitmapW = 0;
-  let bitmapH = 0;
-
-  ctx.beginPath();
-
-  for (const cmd of commands) {
-    switch (cmd.type) {
-      case 'beginFill':
-        if (hasPendingPath && (hasFill || hasStroke)) {
-          flushPath(
-            ctx,
-            hasFill,
-            fillStyle,
-            pendingFillMatrix,
-            pendingFillMatrixInverse,
-            hasStroke,
-            strokeStyle,
-            strokeWidth,
-            windingRule,
-            strokePass,
-          );
-          hasPendingPath = false;
-          hasCurrentPoint = false;
-        }
-        hasFill = cmd.alpha >= 0.005;
-        fillStyle = !strokePass && hasFill ? rgbaString(cmd.color, cmd.alpha) : '';
-        pendingFillMatrix = null;
-        pendingFillMatrixInverse = null;
-        bitmapSrc = null;
-        break;
-
-      case 'beginBitmapFill': {
-        if (hasPendingPath && (hasFill || hasStroke)) {
-          flushPath(
-            ctx,
-            hasFill,
-            fillStyle,
-            pendingFillMatrix,
-            pendingFillMatrixInverse,
-            hasStroke,
-            strokeStyle,
-            strokeWidth,
-            windingRule,
-            strokePass,
-          );
-          hasPendingPath = false;
-          hasCurrentPoint = false;
-        }
-        if (!strokePass) {
-          const pattern = createBitmapPattern(ctx, cmd.bitmap, cmd.repeat, cmd.smooth);
-          hasFill = pattern !== null;
-          fillStyle = pattern ?? '';
-          pendingFillMatrix = cmd.matrix;
-          pendingFillMatrixInverse = cmd.matrix !== null ? invertMatrix(cmd.matrix) : null;
-          bitmapSrc = cmd.bitmap.src;
-          bitmapW = cmd.bitmap.width;
-          bitmapH = cmd.bitmap.height;
-        } else {
-          hasFill = true; // still track for flush boundaries
-          fillStyle = '';
-          pendingFillMatrix = null;
-          pendingFillMatrixInverse = null;
-          bitmapSrc = null;
-        }
-        break;
-      }
-
-      case 'beginGradientFill': {
-        if (hasPendingPath && (hasFill || hasStroke)) {
-          flushPath(
-            ctx,
-            hasFill,
-            fillStyle,
-            pendingFillMatrix,
-            pendingFillMatrixInverse,
-            hasStroke,
-            strokeStyle,
-            strokeWidth,
-            windingRule,
-            strokePass,
-          );
-          hasPendingPath = false;
-          hasCurrentPoint = false;
-        }
-        if (!strokePass) {
-          const pattern = createGradientPattern(
-            ctx,
-            cmd.gradientType,
-            cmd.colors,
-            cmd.alphas,
-            cmd.ratios,
-            cmd.matrix,
-            cmd.spreadMethod,
-            cmd.interpolationMethod,
-            cmd.focalPointRatio,
-          );
-          hasFill = pattern !== null;
-          fillStyle = pattern ?? '';
-        } else {
-          hasFill = true; // still track for flush boundaries
-          fillStyle = '';
-        }
-        pendingFillMatrix = null;
-        pendingFillMatrixInverse = null;
-        bitmapSrc = null;
-        break;
-      }
-
-      case 'endFill':
-        if (hasPendingPath) {
-          flushPath(
-            ctx,
-            hasFill,
-            fillStyle,
-            pendingFillMatrix,
-            pendingFillMatrixInverse,
-            hasStroke,
-            strokeStyle,
-            strokeWidth,
-            windingRule,
-            strokePass,
-          );
-          hasPendingPath = false;
-          hasCurrentPoint = false;
-        }
-        hasFill = false;
-        pendingFillMatrix = null;
-        pendingFillMatrixInverse = null;
-        bitmapSrc = null;
-        break;
-
-      case 'lineStyle':
-        hasStroke = cmd.thickness > 0;
-        if (hasStroke) {
-          strokeWidth = cmd.thickness;
-          if (strokePass) {
-            strokeStyle = rgbaString(cmd.color, cmd.alpha);
-            ctx.lineCap = cmd.caps === 'none' ? 'butt' : cmd.caps;
-            ctx.lineJoin = cmd.joints;
-            ctx.miterLimit = cmd.miterLimit;
-          }
-        }
-        break;
-
-      case 'lineBitmapStyle': {
-        if (strokePass) {
-          const pattern = createBitmapPattern(ctx, cmd.bitmap, cmd.repeat, cmd.smooth);
-          if (pattern !== null) {
-            strokeStyle = pattern;
-            hasStroke = true;
-          }
-        } else {
-          hasStroke = true; // track for flush boundaries
-        }
-        break;
-      }
-
-      case 'lineGradientStyle': {
-        if (strokePass) {
-          const pattern = createGradientPattern(
-            ctx,
-            cmd.gradientType,
-            cmd.colors,
-            cmd.alphas,
-            cmd.ratios,
-            cmd.matrix,
-            cmd.spreadMethod,
-            cmd.interpolationMethod,
-            cmd.focalPointRatio,
-          );
-          if (pattern !== null) {
-            strokeStyle = pattern;
-            hasStroke = true;
-          }
-        } else {
-          hasStroke = true; // track for flush boundaries
-        }
-        break;
-      }
-
-      case 'moveTo':
-        ctx.moveTo(mapX(cmd.x), mapY(cmd.y));
-        hasPendingPath = true;
-        hasCurrentPoint = true;
-        break;
-
-      case 'lineTo':
-        if (!hasCurrentPoint) {
-          ctx.moveTo(0, 0);
-          hasCurrentPoint = true;
-        }
-        ctx.lineTo(mapX(cmd.x), mapY(cmd.y));
-        hasPendingPath = true;
-        break;
-
-      case 'curveTo':
-        if (!hasCurrentPoint) {
-          ctx.moveTo(0, 0);
-          hasCurrentPoint = true;
-        }
-        ctx.quadraticCurveTo(mapX(cmd.controlX), mapY(cmd.controlY), mapX(cmd.anchorX), mapY(cmd.anchorY));
-        hasPendingPath = true;
-        break;
-
-      case 'cubicCurveTo':
-        if (!hasCurrentPoint) {
-          ctx.moveTo(0, 0);
-          hasCurrentPoint = true;
-        }
-        ctx.bezierCurveTo(
-          mapX(cmd.controlX1),
-          mapY(cmd.controlY1),
-          mapX(cmd.controlX2),
-          mapY(cmd.controlY2),
-          mapX(cmd.anchorX),
-          mapY(cmd.anchorY),
-        );
-        hasPendingPath = true;
-        break;
-
-      case 'drawCircle': {
-        // Scale9Grid remaps center; radius stays unscaled (corners don't scale).
-        const cx = mapX(cmd.x);
-        const cy = mapY(cmd.y);
-        ctx.moveTo(cx + cmd.radius, cy);
-        ctx.arc(cx, cy, cmd.radius, 0, Math.PI * 2, true);
-        hasPendingPath = true;
-        hasCurrentPoint = true;
-        break;
-      }
-
-      case 'drawEllipse': {
-        const ex = mapX(cmd.x + cmd.width / 2);
-        const ey = mapY(cmd.y + cmd.height / 2);
-        const ew = mapX(cmd.x + cmd.width) - mapX(cmd.x);
-        const eh = mapY(cmd.y + cmd.height) - mapY(cmd.y);
-        ctx.moveTo(ex + ew / 2, ey);
-        ctx.ellipse(ex, ey, ew / 2, eh / 2, 0, 0, Math.PI * 2);
-        hasPendingPath = true;
-        hasCurrentPoint = true;
-        break;
-      }
-
-      case 'drawRect': {
-        // Bitmap fill optimization: use drawImage directly when the rect lies within
-        // the bitmap bounds and no scale9 remapping is active.
-        if (!strokePass && !scale9 && bitmapSrc !== null) {
-          let sl = cmd.x,
-            st = cmd.y,
-            sr = cmd.x + cmd.width,
-            sb = cmd.y + cmd.height;
-          let canOptimize = true;
-
-          if (pendingFillMatrix !== null && pendingFillMatrixInverse !== null) {
-            if (pendingFillMatrix.b !== 0 || pendingFillMatrix.c !== 0) {
-              canOptimize = false;
-            } else {
-              const inv = pendingFillMatrixInverse;
-              sl = inv.a * cmd.x + inv.c * cmd.y + inv.tx;
-              st = inv.b * cmd.x + inv.d * cmd.y + inv.ty;
-              sr = inv.a * (cmd.x + cmd.width) + inv.c * (cmd.y + cmd.height) + inv.tx;
-              sb = inv.b * (cmd.x + cmd.width) + inv.d * (cmd.y + cmd.height) + inv.ty;
-            }
-          }
-
-          if (canOptimize && sl >= 0 && st >= 0 && sr <= bitmapW && sb <= bitmapH) {
-            if (hasPendingPath && (hasFill || hasStroke)) {
-              flushPath(
-                ctx,
-                hasFill,
-                fillStyle,
-                pendingFillMatrix,
-                pendingFillMatrixInverse,
-                hasStroke,
-                strokeStyle,
-                strokeWidth,
-                windingRule,
-                strokePass,
-              );
-              hasPendingPath = false;
-              hasCurrentPoint = false;
-            }
-            ctx.drawImage(bitmapSrc, sl, st, sr - sl, sb - st, cmd.x, cmd.y, cmd.width, cmd.height);
-            break;
-          }
-        }
-        const rx0 = mapX(cmd.x);
-        const ry0 = mapY(cmd.y);
-        ctx.rect(rx0, ry0, mapX(cmd.x + cmd.width) - rx0, mapY(cmd.y + cmd.height) - ry0);
-        hasPendingPath = true;
-        hasCurrentPoint = true;
-        break;
-      }
-
-      case 'drawRoundRect': {
-        const rrx0 = mapX(cmd.x);
-        const rry0 = mapY(cmd.y);
-        const rrw = mapX(cmd.x + cmd.width) - rrx0;
-        const rrh = mapY(cmd.y + cmd.height) - rry0;
-        const rx = Math.min(cmd.ellipseWidth / 2, cmd.width / 2);
-        const ry = Math.min(cmd.ellipseHeight / 2, cmd.height / 2);
-        const radius = Math.min(rx, ry);
-        if (typeof ctx.roundRect === 'function') {
-          ctx.roundRect(rrx0, rry0, rrw, rrh, radius);
-        } else {
-          ctx.rect(rrx0, rry0, rrw, rrh);
-        }
-        hasPendingPath = true;
-        hasCurrentPoint = true;
-        break;
-      }
-
-      case 'drawPath': {
-        windingRule = cmd.winding === 'nonZero' ? 'nonzero' : 'evenodd';
-        let di = 0;
-        for (const pc of cmd.commands) {
-          switch (pc) {
-            case 0: // NO_OP
-              break;
-            case 1: // MOVE_TO
-              ctx.moveTo(mapX(cmd.data[di]), mapY(cmd.data[di + 1]));
-              di += 2;
-              hasPendingPath = true;
-              hasCurrentPoint = true;
-              break;
-            case 2: // LINE_TO
-              if (!hasCurrentPoint) {
-                ctx.moveTo(0, 0);
-                hasCurrentPoint = true;
-              }
-              ctx.lineTo(mapX(cmd.data[di]), mapY(cmd.data[di + 1]));
-              di += 2;
-              hasPendingPath = true;
-              break;
-            case 3: // CURVE_TO
-              if (!hasCurrentPoint) {
-                ctx.moveTo(0, 0);
-                hasCurrentPoint = true;
-              }
-              ctx.quadraticCurveTo(
-                mapX(cmd.data[di]),
-                mapY(cmd.data[di + 1]),
-                mapX(cmd.data[di + 2]),
-                mapY(cmd.data[di + 3]),
-              );
-              di += 4;
-              hasPendingPath = true;
-              break;
-            case 4: // WIDE_MOVE_TO
-              ctx.moveTo(mapX(cmd.data[di + 2]), mapY(cmd.data[di + 3]));
-              di += 4;
-              hasPendingPath = true;
-              hasCurrentPoint = true;
-              break;
-            case 5: // WIDE_LINE_TO
-              if (!hasCurrentPoint) {
-                ctx.moveTo(0, 0);
-                hasCurrentPoint = true;
-              }
-              ctx.lineTo(mapX(cmd.data[di + 2]), mapY(cmd.data[di + 3]));
-              di += 4;
-              hasPendingPath = true;
-              break;
-            case 6: // CUBIC_CURVE_TO
-              if (!hasCurrentPoint) {
-                ctx.moveTo(0, 0);
-                hasCurrentPoint = true;
-              }
-              ctx.bezierCurveTo(
-                mapX(cmd.data[di]),
-                mapY(cmd.data[di + 1]),
-                mapX(cmd.data[di + 2]),
-                mapY(cmd.data[di + 3]),
-                mapX(cmd.data[di + 4]),
-                mapY(cmd.data[di + 5]),
-              );
-              di += 6;
-              hasPendingPath = true;
-              break;
-          }
-        }
-        break;
-      }
-    }
-  }
-
-  if (hasPendingPath && (hasFill || hasStroke)) {
-    flushPath(
-      ctx,
-      hasFill,
-      fillStyle,
-      pendingFillMatrix,
-      pendingFillMatrixInverse,
-      hasStroke,
-      strokeStyle,
-      strokeWidth,
-      windingRule,
-      strokePass,
-    );
-  }
+function createCanvasShapeDrawState(ctx: CanvasRenderingContext2D): CanvasShapeDrawState {
+  const state: CanvasShapeDrawState = {
+    bitmapH: 0,
+    bitmapSrc: null,
+    bitmapW: 0,
+    fillMatrix: null,
+    fillMatrixInverse: null,
+    fillStyle: '',
+    hasFill: false,
+    hasPendingPath: false,
+    hasCurrentPoint: false,
+    hasStroke: false,
+    strokeStyle: '',
+    strokeWidth: 1,
+    windingRule: 'evenodd',
+    flush: () => flushCanvasShapePath(ctx, state),
+  };
+  return state;
 }
 
-function flushPath(
-  ctx: CanvasRenderingContext2D,
-  hasFill: boolean,
-  fillStyle: string | CanvasPattern | CanvasGradient,
-  fillMatrix: Matrix3x2 | null,
-  fillMatrixInverse: Matrix3x2 | null,
-  hasStroke: boolean,
-  strokeStyle: string | CanvasPattern | CanvasGradient,
-  strokeWidth: number,
-  windingRule: CanvasFillRule,
-  strokePass: boolean,
-): void {
-  if (!strokePass && hasFill) {
-    ctx.fillStyle = fillStyle;
-    if (fillMatrix !== null && fillMatrixInverse !== null) {
-      ctx.transform(fillMatrix.a, fillMatrix.b, fillMatrix.c, fillMatrix.d, fillMatrix.tx, fillMatrix.ty);
-      ctx.fill(windingRule);
-      ctx.transform(
-        fillMatrixInverse.a,
-        fillMatrixInverse.b,
-        fillMatrixInverse.c,
-        fillMatrixInverse.d,
-        fillMatrixInverse.tx,
-        fillMatrixInverse.ty,
-      );
+function flushCanvasShapePath(ctx: CanvasRenderingContext2D, state: CanvasShapeDrawState): void {
+  if (state.hasFill) {
+    ctx.fillStyle = state.fillStyle;
+    if (state.fillMatrix !== null && state.fillMatrixInverse !== null) {
+      const m = state.fillMatrix;
+      const inv = state.fillMatrixInverse;
+      ctx.transform(m.a, m.b, m.c, m.d, m.tx, m.ty);
+      ctx.fill(state.windingRule);
+      ctx.transform(inv.a, inv.b, inv.c, inv.d, inv.tx, inv.ty);
     } else {
-      ctx.fill(windingRule);
+      ctx.fill(state.windingRule);
     }
   }
-  if (strokePass && hasStroke) {
-    ctx.strokeStyle = strokeStyle;
-    ctx.lineWidth = strokeWidth;
+  if (state.hasStroke) {
+    ctx.strokeStyle = state.strokeStyle;
+    ctx.lineWidth = state.strokeWidth;
     ctx.stroke();
   }
+  state.hasPendingPath = false;
+  state.hasCurrentPoint = false;
   ctx.beginPath();
-}
-
-function invertMatrix(m: Matrix3x2): Matrix3x2 {
-  const out = matrix3x2.clone(m);
-  matrix3x2.inverse(out, m);
-  return out;
-}
-
-function rgbaString(color: number, alpha: number): string {
-  const r = (color >> 16) & 0xff;
-  const g = (color >> 8) & 0xff;
-  const b = color & 0xff;
-  return `rgba(${r},${g},${b},${alpha})`;
 }
