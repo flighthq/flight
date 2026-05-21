@@ -9,7 +9,10 @@ describe('bundle size checks', () => {
     { name: 'animatedsprite', path: '../../examples/animatedsprite', threshold: 6000 },
     { name: 'bunnymark', path: '../../examples/bunnymark', threshold: 6000 },
     { name: 'displayingabitmap', path: '../../examples/displayingabitmap', threshold: 7000 },
+    { name: 'drawingshapes', path: '../../examples/drawingshapes', threshold: 9000 },
+    { name: 'nyancat', path: '../../examples/nyancat', threshold: 7000 },
     { name: 'simplesprite', path: '../../examples/simplesprite', threshold: 5000 },
+    { name: 'tweenexample', path: '../../examples/tweenexample', threshold: 8000 },
   ])('$name', async ({ name, path, threshold }) => {
     const code = await buildSample(resolve(__dirname, path));
     const rawSize = getRawSize(code);
