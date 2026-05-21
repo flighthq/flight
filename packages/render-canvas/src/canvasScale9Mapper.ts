@@ -1,4 +1,4 @@
-import type { RectangleLike, ShapeCommand } from '@flighthq/types';
+import type { RectangleLike } from '@flighthq/types';
 
 export interface Scale9Mapper {
   mapX(x: number): number;
@@ -13,7 +13,7 @@ export interface Scale9Mapper {
  * scaleX/scaleY removed (leaving only parent scale + translation) before drawing.
  */
 export function buildScale9Mapper(
-  commands: readonly ShapeCommand[],
+  commands: readonly unknown[],
   scale9Grid: Readonly<RectangleLike>,
   scaleX: number,
   scaleY: number,
@@ -80,9 +80,8 @@ function toScale9Position(
 /**
  * Computes an axis-aligned bounding box from shape commands.
  * Uses endpoints and control points as a conservative over-estimate of bezier extents.
- * Reads args positionally: each command's args array matches the ShapeCommandRegistry order.
  */
-function computeCommandsBounds(commands: readonly ShapeCommand[]): { width: number; height: number } | null {
+function computeCommandsBounds(commands: readonly unknown[]): { width: number; height: number } | null {
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -95,45 +94,52 @@ function computeCommandsBounds(commands: readonly ShapeCommand[]): { width: numb
     if (y > maxY) maxY = y;
   }
 
-  for (const cmd of commands) {
-    const a = cmd.args as readonly number[];
-    switch (cmd.key) {
+  let i = 0;
+  while (i < commands.length) {
+    const key = commands[i] as string;
+    const argCount = commands[i + 1] as number;
+
+    // args begin at i+2 (after key and argCount)
+    switch (key) {
       case 'moveTo':
       case 'lineTo':
-        // [x, y]
-        expand(a[0], a[1]);
+        expand(commands[i + 2] as number, commands[i + 3] as number);
         break;
       case 'curveTo':
-        // [controlX, controlY, anchorX, anchorY]
-        expand(a[0], a[1]);
-        expand(a[2], a[3]);
+        expand(commands[i + 2] as number, commands[i + 3] as number);
+        expand(commands[i + 4] as number, commands[i + 5] as number);
         break;
       case 'cubicCurveTo':
-        // [controlX1, controlY1, controlX2, controlY2, anchorX, anchorY]
-        expand(a[0], a[1]);
-        expand(a[2], a[3]);
-        expand(a[4], a[5]);
+        expand(commands[i + 2] as number, commands[i + 3] as number);
+        expand(commands[i + 4] as number, commands[i + 5] as number);
+        expand(commands[i + 6] as number, commands[i + 7] as number);
         break;
-      case 'drawCircle':
-        // [x, y, radius]
-        expand(a[0] - a[2], a[1] - a[2]);
-        expand(a[0] + a[2], a[1] + a[2]);
+      case 'drawCircle': {
+        const cx = commands[i + 2] as number;
+        const cy = commands[i + 3] as number;
+        const r = commands[i + 4] as number;
+        expand(cx - r, cy - r);
+        expand(cx + r, cy + r);
         break;
+      }
       case 'drawEllipse':
       case 'drawRect':
-        // [x, y, width, height]
-        expand(a[0], a[1]);
-        expand(a[0] + a[2], a[1] + a[3]);
+        expand(commands[i + 2] as number, commands[i + 3] as number);
+        expand(
+          (commands[i + 2] as number) + (commands[i + 4] as number),
+          (commands[i + 3] as number) + (commands[i + 5] as number),
+        );
         break;
       case 'drawRoundRect':
-        // [x, y, width, height, ellipseWidth, ellipseHeight]
-        expand(a[0], a[1]);
-        expand(a[0] + a[2], a[1] + a[3]);
+        expand(commands[i + 2] as number, commands[i + 3] as number);
+        expand(
+          (commands[i + 2] as number) + (commands[i + 4] as number),
+          (commands[i + 3] as number) + (commands[i + 5] as number),
+        );
         break;
       case 'drawPath': {
-        // [commands: number[], data: number[], winding]
-        const pathCmds = cmd.args[0] as number[];
-        const data = cmd.args[1] as number[];
+        const pathCmds = commands[i + 2] as number[];
+        const data = commands[i + 3] as number[];
         let di = 0;
         for (const pc of pathCmds) {
           switch (pc) {
@@ -165,6 +171,8 @@ function computeCommandsBounds(commands: readonly ShapeCommand[]): { width: numb
         break;
       }
     }
+
+    i += argCount + 2;
   }
 
   if (!isFinite(minX)) return null;

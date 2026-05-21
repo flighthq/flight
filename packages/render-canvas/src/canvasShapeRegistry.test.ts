@@ -1,44 +1,42 @@
-import { getCanvasShapeRenderer, registerCanvasShapeCommand, registerCanvasShapeCommands } from './canvasShapeRegistry';
+import { getCanvasShapeCommand, registerCanvasShapeCommand, registerCanvasShapeCommands } from './canvasShapeRegistry';
 
-describe('getCanvasShapeRenderer', () => {
+describe('getCanvasShapeCommand', () => {
   it('returns undefined for an unregistered key', () => {
-    expect(getCanvasShapeRenderer('__unregistered__')).toBeUndefined();
+    expect(getCanvasShapeCommand('__unregistered__')).toBeUndefined();
   });
 
-  it('returns the handler after registration', () => {
+  it('returns the command after registration', () => {
     const fn = vi.fn();
-    registerCanvasShapeCommand('__test_get__' as never, fn);
-    expect(getCanvasShapeRenderer('__test_get__')).toBe(fn);
+    registerCanvasShapeCommand({ key: '__test_get__' as never, draw: fn });
+    expect(getCanvasShapeCommand('__test_get__')?.draw).toBe(fn);
   });
 });
 
 describe('registerCanvasShapeCommand', () => {
-  it('stores and retrieves a handler by key', () => {
+  it('stores and retrieves a command by key', () => {
     const fn = vi.fn();
-    registerCanvasShapeCommand('__test_register__' as never, fn);
-    expect(getCanvasShapeRenderer('__test_register__')).toBe(fn);
+    registerCanvasShapeCommand({ key: '__test_register__' as never, draw: fn });
+    expect(getCanvasShapeCommand('__test_register__')?.draw).toBe(fn);
   });
 
-  it('replaces an existing handler when called again with the same key', () => {
+  it('replaces an existing command when called again with the same key', () => {
     const first = vi.fn();
     const second = vi.fn();
-    registerCanvasShapeCommand('__test_replace__' as never, first);
-    registerCanvasShapeCommand('__test_replace__' as never, second);
-    expect(getCanvasShapeRenderer('__test_replace__')).toBe(second);
+    registerCanvasShapeCommand({ key: '__test_replace__' as never, draw: first });
+    registerCanvasShapeCommand({ key: '__test_replace__' as never, draw: second });
+    expect(getCanvasShapeCommand('__test_replace__')?.draw).toBe(second);
   });
 });
 
 describe('registerCanvasShapeCommands', () => {
-  it('registers all handlers in the map', () => {
+  it('registers all commands in the array', () => {
     const a = vi.fn();
     const b = vi.fn();
-    registerCanvasShapeCommands({ __test_map_a__: a, __test_map_b__: b } as never);
-    expect(getCanvasShapeRenderer('__test_map_a__')).toBe(a);
-    expect(getCanvasShapeRenderer('__test_map_b__')).toBe(b);
-  });
-
-  it('skips undefined entries', () => {
-    registerCanvasShapeCommands({ __test_undef__: undefined } as never);
-    expect(getCanvasShapeRenderer('__test_undef__')).toBeUndefined();
+    registerCanvasShapeCommands([
+      { key: '__test_arr_a__' as never, draw: a },
+      { key: '__test_arr_b__' as never, draw: b },
+    ]);
+    expect(getCanvasShapeCommand('__test_arr_a__')?.draw).toBe(a);
+    expect(getCanvasShapeCommand('__test_arr_b__')?.draw).toBe(b);
   });
 });

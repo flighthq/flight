@@ -1,15 +1,17 @@
-import type { ShapeCommand, ShapeCommandHitTest, ShapeCommandKey } from '@flighthq/types';
+import type { ShapeCommandKey, ShapeHitTestCommand } from '@flighthq/types';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const hitTests = new Map<string, (x: number, y: number, ...args: any[]) => boolean>();
+type AnyHitTestFn = (x: number, y: number, buf: unknown[], i: number) => boolean;
 
-export function registerShapeCommandHitTest<K extends ShapeCommandKey>(key: K, fn: ShapeCommandHitTest<K>): void {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  hitTests.set(key, fn as (x: number, y: number, ...args: any[]) => boolean);
+const hitTests = new Map<string, AnyHitTestFn>();
+
+export function registerShapeHitTestCommand<K extends ShapeCommandKey>(command: ShapeHitTestCommand<K>): void {
+  hitTests.set(command.key, command.hitTest as AnyHitTestFn);
 }
 
-export function hitTestCommand(cmd: ShapeCommand, x: number, y: number): boolean | null {
-  const handler = hitTests.get(cmd.key);
-  if (handler === undefined) return null;
-  return handler(x, y, ...(cmd.args as readonly unknown[]));
+// Tests the command at position i in buf. Args begin at i+2 (after key and argCount).
+export function hitTestCommand(buf: unknown[], i: number, x: number, y: number): boolean | null {
+  const key = buf[i] as string;
+  const fn = hitTests.get(key);
+  if (fn === undefined) return null;
+  return fn(x, y, buf, i + 2);
 }

@@ -448,8 +448,9 @@ describe('defaultCanvasShapeCommands', () => {
       'lineStyle',
       'moveTo',
     ];
+    const registeredKeys = defaultCanvasShapeCommands.map((c) => c.key);
     for (const key of keys) {
-      expect(defaultCanvasShapeCommands).toHaveProperty(key);
+      expect(registeredKeys).toContain(key);
     }
   });
 });

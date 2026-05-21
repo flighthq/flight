@@ -1,12 +1,15 @@
 import type { CanvasShapeDrawState } from './CanvasShapeDrawState';
-import type { ShapeCommandKey, ShapeCommandRegistry } from './ShapeCommand';
+import type { ShapeCommandKey } from './ShapeCommand';
 
-export type CanvasShapeHandler<K extends ShapeCommandKey> = (
+// Handler for drawing a command. Reads args from the flat command buffer at position i.
+export type CanvasShapeHandler = (
   ctx: CanvasRenderingContext2D,
   state: CanvasShapeDrawState,
-  ...args: ShapeCommandRegistry[K]
+  buf: unknown[],
+  i: number,
 ) => void;
 
-export type CanvasShapeCommandMap = {
-  [K in ShapeCommandKey]?: CanvasShapeHandler<K>;
-};
+export interface CanvasShapeCommand<K extends ShapeCommandKey = ShapeCommandKey> {
+  readonly key: K;
+  readonly draw: CanvasShapeHandler;
+}

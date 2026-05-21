@@ -78,12 +78,10 @@ export interface ShapeCommandRegistry {
 
 export type ShapeCommandKey = keyof ShapeCommandRegistry;
 
-export type ShapeCommand<K extends ShapeCommandKey = ShapeCommandKey> = K extends ShapeCommandKey
-  ? { readonly key: K; readonly args: ShapeCommandRegistry[K] }
-  : never;
+// Handler for hit-testing a command. Reads args from the flat command buffer at position i.
+export type ShapeCommandHitTest = (x: number, y: number, buf: unknown[], i: number) => boolean;
 
-export type ShapeCommandHitTest<K extends ShapeCommandKey = ShapeCommandKey> = (
-  x: number,
-  y: number,
-  ...args: ShapeCommandRegistry[K]
-) => boolean;
+// Command definition registered in the hit-test registry.
+export type ShapeHitTestCommand<K extends ShapeCommandKey = ShapeCommandKey> = K extends ShapeCommandKey
+  ? { readonly key: K; readonly hitTest: ShapeCommandHitTest }
+  : never;

@@ -5,7 +5,6 @@ import type {
   DisplayObjectRenderNode,
   Matrix3x2Like,
   Scale9Shape,
-  ShapeCommand,
 } from '@flighthq/types';
 
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
@@ -37,71 +36,96 @@ export function drawCanvasScale9Shape(state: CanvasRenderState, renderNode: Disp
   }
 }
 
-export function remapScale9Commands(commands: ShapeCommand[], mapper: Scale9Mapper): ShapeCommand[] {
-  const result: ShapeCommand[] = new Array(commands.length);
-  for (let i = 0; i < commands.length; i++) {
-    const cmd = commands[i];
-    switch (cmd.key) {
+export function remapScale9Commands(commands: unknown[], mapper: Scale9Mapper): unknown[] {
+  const result: unknown[] = [];
+  let i = 0;
+  while (i < commands.length) {
+    const key = commands[i] as string;
+    const argCount = commands[i + 1] as number;
+
+    switch (key) {
       case 'moveTo':
-        result[i] = { key: 'moveTo', args: [mapper.mapX(cmd.args[0]), mapper.mapY(cmd.args[1])] };
+        result.push('moveTo', 2, mapper.mapX(commands[i + 2] as number), mapper.mapY(commands[i + 3] as number));
         break;
       case 'lineTo':
-        result[i] = { key: 'lineTo', args: [mapper.mapX(cmd.args[0]), mapper.mapY(cmd.args[1])] };
+        result.push('lineTo', 2, mapper.mapX(commands[i + 2] as number), mapper.mapY(commands[i + 3] as number));
         break;
-      case 'curveTo': {
-        const [cx, cy, ax, ay] = cmd.args;
-        result[i] = { key: 'curveTo', args: [mapper.mapX(cx), mapper.mapY(cy), mapper.mapX(ax), mapper.mapY(ay)] };
+      case 'curveTo':
+        result.push(
+          'curveTo',
+          4,
+          mapper.mapX(commands[i + 2] as number),
+          mapper.mapY(commands[i + 3] as number),
+          mapper.mapX(commands[i + 4] as number),
+          mapper.mapY(commands[i + 5] as number),
+        );
         break;
-      }
-      case 'cubicCurveTo': {
-        const [cx1, cy1, cx2, cy2, ax, ay] = cmd.args;
-        result[i] = {
-          key: 'cubicCurveTo',
-          args: [
-            mapper.mapX(cx1),
-            mapper.mapY(cy1),
-            mapper.mapX(cx2),
-            mapper.mapY(cy2),
-            mapper.mapX(ax),
-            mapper.mapY(ay),
-          ],
-        };
+      case 'cubicCurveTo':
+        result.push(
+          'cubicCurveTo',
+          6,
+          mapper.mapX(commands[i + 2] as number),
+          mapper.mapY(commands[i + 3] as number),
+          mapper.mapX(commands[i + 4] as number),
+          mapper.mapY(commands[i + 5] as number),
+          mapper.mapX(commands[i + 6] as number),
+          mapper.mapY(commands[i + 7] as number),
+        );
         break;
-      }
       case 'drawRect': {
-        const [x, y, w, h] = cmd.args;
+        const x = commands[i + 2] as number;
+        const y = commands[i + 3] as number;
+        const w = commands[i + 4] as number;
+        const h = commands[i + 5] as number;
         const mx = mapper.mapX(x);
         const my = mapper.mapY(y);
-        result[i] = { key: 'drawRect', args: [mx, my, mapper.mapX(x + w) - mx, mapper.mapY(y + h) - my] };
+        result.push('drawRect', 4, mx, my, mapper.mapX(x + w) - mx, mapper.mapY(y + h) - my);
         break;
       }
       case 'drawRoundRect': {
-        const [x, y, w, h, eW, eH] = cmd.args;
+        const x = commands[i + 2] as number;
+        const y = commands[i + 3] as number;
+        const w = commands[i + 4] as number;
+        const h = commands[i + 5] as number;
+        const eW = commands[i + 6] as number;
+        const eH = commands[i + 7] as number;
         const mx = mapper.mapX(x);
         const my = mapper.mapY(y);
-        result[i] = { key: 'drawRoundRect', args: [mx, my, mapper.mapX(x + w) - mx, mapper.mapY(y + h) - my, eW, eH] };
+        result.push('drawRoundRect', 6, mx, my, mapper.mapX(x + w) - mx, mapper.mapY(y + h) - my, eW, eH);
         break;
       }
       case 'drawEllipse': {
-        const [x, y, w, h] = cmd.args;
+        const x = commands[i + 2] as number;
+        const y = commands[i + 3] as number;
+        const w = commands[i + 4] as number;
+        const h = commands[i + 5] as number;
         const mx = mapper.mapX(x);
         const my = mapper.mapY(y);
-        result[i] = { key: 'drawEllipse', args: [mx, my, mapper.mapX(x + w) - mx, mapper.mapY(y + h) - my] };
+        result.push('drawEllipse', 4, mx, my, mapper.mapX(x + w) - mx, mapper.mapY(y + h) - my);
         break;
       }
-      case 'drawCircle': {
-        const [x, y, r] = cmd.args;
-        result[i] = { key: 'drawCircle', args: [mapper.mapX(x), mapper.mapY(y), r] };
+      case 'drawCircle':
+        result.push(
+          'drawCircle',
+          3,
+          mapper.mapX(commands[i + 2] as number),
+          mapper.mapY(commands[i + 3] as number),
+          commands[i + 4],
+        );
         break;
-      }
       case 'drawPath': {
-        const [pathCmds, pathData, winding] = cmd.args;
-        result[i] = { key: 'drawPath', args: [pathCmds, remapPathData(pathCmds, pathData, mapper), winding] };
+        const pathCmds = commands[i + 2] as number[];
+        const pathData = commands[i + 3] as number[];
+        const winding = commands[i + 4];
+        result.push('drawPath', 3, pathCmds, remapPathData(pathCmds, pathData, mapper), winding);
         break;
       }
       default:
-        result[i] = cmd;
+        for (let j = 0; j < argCount + 2; j++) result.push(commands[i + j]);
+        break;
     }
+
+    i += argCount + 2;
   }
   return result;
 }

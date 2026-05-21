@@ -5,12 +5,11 @@ import type {
   DisplayObjectRenderer,
   DisplayObjectRenderNode,
   Shape,
-  ShapeCommand,
 } from '@flighthq/types';
 
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { setCanvasBlendMode } from './canvasMaterials';
-import { getCanvasShapeRenderer } from './canvasShapeRegistry';
+import { getCanvasShapeCommand } from './canvasShapeRegistry';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasShape(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
@@ -28,12 +27,16 @@ export function drawCanvasShape(state: CanvasRenderState, renderNode: DisplayObj
   renderCanvasShapeCommands(context, commands);
 }
 
-export function renderCanvasShapeCommands(ctx: CanvasRenderingContext2D, commands: ShapeCommand[]): void {
+export function renderCanvasShapeCommands(ctx: CanvasRenderingContext2D, commands: unknown[]): void {
   const drawState = createCanvasShapeDrawState(ctx);
   ctx.beginPath();
-  for (const cmd of commands) {
-    const handler = getCanvasShapeRenderer(cmd.key);
-    if (handler !== undefined) handler(ctx, drawState, ...(cmd.args as readonly unknown[]));
+  let i = 0;
+  while (i < commands.length) {
+    const key = commands[i] as string;
+    const argCount = commands[i + 1] as number;
+    const def = getCanvasShapeCommand(key);
+    if (def !== undefined) def.draw(ctx, drawState, commands, i + 2);
+    i += argCount + 2;
   }
   if (drawState.hasPendingPath && (drawState.hasFill || drawState.hasStroke)) {
     flushCanvasShapePath(ctx, drawState);
