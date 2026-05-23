@@ -1,5 +1,5 @@
-export * from './fontSource';
-export * from './fontSourceFrom';
+export * from './font';
+export * from './fontFrom';
 export * from './imageSource';
 export * from './imageSourceFrom';
 export * from './textureAtlas';

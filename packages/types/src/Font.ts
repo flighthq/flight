@@ -1,5 +1,5 @@
 import type { Entity } from './Entity';
 
-export interface FontSource extends Entity {
+export interface Font extends Entity {
   name: string;
 }
