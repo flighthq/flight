@@ -4,7 +4,7 @@ import {
   createDisplayObject,
   createText,
   defaultCanvasTextRenderer,
-  loadFontSourceFromURL,
+  loadFontFromURL,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
@@ -23,7 +23,7 @@ const state = createCanvasRenderState(canvas, {
 });
 registerRenderer(state, TextKind, defaultCanvasTextRenderer);
 
-const font = await loadFontSourceFromURL('assets/KatamotzIkasi.woff', 'Katamotz Ikasi');
+const font = await loadFontFromURL('assets/KatamotzIkasi.woff', 'Katamotz Ikasi');
 
 const root = createDisplayObject();
 
