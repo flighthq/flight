@@ -14,6 +14,7 @@ export * from './DOMElement';
 export * from './EasingFunction';
 export * from './Entity';
 export * from './Filter';
+export * from './FontSource';
 export * from './GraphNode';
 export * from './HasAppearance';
 export * from './HasBoundsRect';

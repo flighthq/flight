@@ -10,6 +10,7 @@ export interface RichTextData extends TextData {
   borderColor: number;
   condenseWhite: boolean;
   defaultTextFormat: TextFormat;
+  height: number;
   htmlText: string;
   maxChars: number;
   mouseWheelEnabled: boolean;
@@ -20,6 +21,7 @@ export interface RichTextData extends TextData {
   styleSheet: StyleSheet;
   text: string;
   textColor: number;
+  width: number;
   wordWrap: boolean;
 
   // getBottomScrollV(source: Readonly<DynamicText>): number;
