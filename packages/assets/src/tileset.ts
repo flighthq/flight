@@ -20,7 +20,7 @@ export function initTilesetRegions(target: Tileset): void {
   for (let row = 0; row < rows; row++) {
     for (let column = 0; column < columns; column++) {
       if (i >= atlas.regions.length) atlas.regions.push(createTextureAtlasRegion());
-      initTextureAtlasRegion(atlas.regions[i], row * tileWidth, column * tileHeight, tileWidth, tileHeight);
+      initTextureAtlasRegion(atlas.regions[i], column * tileWidth, row * tileHeight, tileWidth, tileHeight);
       i++;
     }
   }
