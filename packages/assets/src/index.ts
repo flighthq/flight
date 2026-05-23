@@ -1,3 +1,5 @@
+export * from './fontSource';
+export * from './fontSourceFrom';
 export * from './imageSource';
 export * from './imageSourceFrom';
 export * from './textureAtlas';
