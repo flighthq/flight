@@ -10,21 +10,10 @@ import type {
 
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { setCanvasBlendMode } from './canvasMaterials';
+import { colorToHex, formatToCanvasFont } from './canvasTextHelpers';
 import { setCanvasTransform } from './canvasTransform';
 
 const LAYOUT_WIDTH = 10000;
-
-function formatToCanvasFont(format: TextFormat): string {
-  const style = format.italic ? 'italic' : 'normal';
-  const weight = format.bold ? 'bold' : 'normal';
-  const size = format.size ?? 12;
-  const family = format.font ?? 'serif';
-  return `${style} ${weight} ${size}px ${family}`;
-}
-
-function colorToHex(color: number): string {
-  return `#${(color & 0xffffff).toString(16).padStart(6, '0')}`;
-}
 
 export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
   drawCanvasDisplayObject(state, renderNode);

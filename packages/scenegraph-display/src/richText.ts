@@ -15,6 +15,8 @@ export function createRichTextData(data?: Readonly<Partial<RichTextData>>): Rich
   _data.backgroundColor = data?.backgroundColor ?? 0xffffff;
   _data.border = data?.border ?? false;
   _data.borderColor = data?.borderColor ?? 0;
+  _data.height = data?.height ?? 100;
+  _data.width = data?.width ?? 100;
   _data.condenseWhite = data?.condenseWhite ?? false;
   _data.defaultTextFormat = data?.defaultTextFormat ?? {};
   _data.htmlText = data?.htmlText ?? '';
