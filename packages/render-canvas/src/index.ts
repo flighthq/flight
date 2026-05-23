@@ -12,5 +12,6 @@ export * from './canvasShape';
 export * from './canvasShapeCommands';
 export * from './canvasShapeRegistry';
 export * from './canvasSprite';
+export * from './canvasText';
 export * from './canvasTilemap';
 export * from './canvasTransform';

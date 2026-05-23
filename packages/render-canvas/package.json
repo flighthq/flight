@@ -64,6 +64,7 @@
     "@flighthq/geometry": "*",
     "@flighthq/render-core": "*",
     "@flighthq/scenegraph-display": "*",
+    "@flighthq/text-layout": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

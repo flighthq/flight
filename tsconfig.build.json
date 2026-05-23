@@ -14,6 +14,7 @@
     { "path": "./packages/scenegraph-sprite" },
     { "path": "./packages/signals" },
     { "path": "./packages/spritesheet" },
+    { "path": "./packages/text-layout" },
     { "path": "./packages/timeline" },
     { "path": "./packages/timeline-spritesheet" },
     { "path": "./packages/tween-easing" },

@@ -50,6 +50,8 @@
       "@flighthq/tween/*": ["./packages/tween/src/*"],
       "@flighthq/tween-easing": ["./packages/tween-easing/src/index.ts"],
       "@flighthq/tween-easing/*": ["./packages/tween-easing/src/*"],
+      "@flighthq/text-layout": ["./packages/text-layout/src/index.ts"],
+      "@flighthq/text-layout/*": ["./packages/text-layout/src/*"],
       "@flighthq/types": ["./packages/types/src/index.ts"],
       "@flighthq/types/*": ["./packages/types/src/*"]
     },
