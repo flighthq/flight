@@ -3,8 +3,9 @@ import type { Tileset } from './Tileset';
 
 export interface TilemapData extends SpriteNodeData {
   tileset: Tileset | null;
-  width: number;
-  height: number;
+  columns: number;
+  rows: number;
+  tiles: Int16Array;
 }
 
 export interface Tilemap extends SpriteNode {
