@@ -1,8 +1,10 @@
-import type { DisplayObject, DisplayObjectData } from './DisplayObject';
+import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime } from './DisplayObject';
 
 export interface VideoData extends DisplayObjectData {
   smoothing: boolean;
 }
+
+export interface VideoRuntime extends DisplayObjectRuntime {}
 
 export interface Video extends DisplayObject {
   data: VideoData;

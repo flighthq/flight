@@ -2,7 +2,7 @@ import { connectSignal } from '@flighthq/signals';
 import type { GraphNode, GraphNodeRuntime, GraphNodeTraits } from '@flighthq/types';
 import { GraphNodeKind, NodeKind } from '@flighthq/types';
 
-import { createGraphNode, getGraphNodeRuntime } from './graphNode';
+import { createGraphNode, getGraphNodeRuntime, getGraphNodeSignals } from './graphNode';
 import {
   addChild,
   addChildAt,
@@ -81,7 +81,7 @@ describe('addChild', () => {
 
   it('calls onParentChanged on the child', () => {
     let called = false;
-    connectSignal(childA.onParentChanged, () => {
+    connectSignal(getGraphNodeSignals(childA).onParentChanged, () => {
       called = true;
     });
     addChild(container, childA);
@@ -90,7 +90,7 @@ describe('addChild', () => {
 
   it('calls onChildrenChanged on the parent', () => {
     let called = false;
-    connectSignal(container.onChildrenChanged, () => {
+    connectSignal(getGraphNodeSignals(container).onChildrenChanged, () => {
       called = true;
     });
     addChild(container, childA);
@@ -137,7 +137,7 @@ describe('addChildAt', () => {
 
   it('calls onParentChanged on the child', () => {
     let called = false;
-    connectSignal(childA.onParentChanged, () => {
+    connectSignal(getGraphNodeSignals(childA).onParentChanged, () => {
       called = true;
     });
     addChildAt(container, childA, 0);
@@ -146,7 +146,7 @@ describe('addChildAt', () => {
 
   it('calls onChildrenChanged on the parent', () => {
     let called = false;
-    connectSignal(container.onChildrenChanged, () => {
+    connectSignal(getGraphNodeSignals(container).onChildrenChanged, () => {
       called = true;
     });
     addChildAt(container, childA, 0);
@@ -309,7 +309,7 @@ describe('removeChild', () => {
   it('calls onParentChanged on the child', () => {
     addChild(container, childA);
     let called = false;
-    connectSignal(childA.onParentChanged, () => {
+    connectSignal(getGraphNodeSignals(childA).onParentChanged, () => {
       called = true;
     });
     removeChild(container, childA);
@@ -319,7 +319,7 @@ describe('removeChild', () => {
   it('calls onChildrenChanged on the parent', () => {
     addChild(container, childA);
     let called = false;
-    connectSignal(container.onChildrenChanged, () => {
+    connectSignal(getGraphNodeSignals(container).onChildrenChanged, () => {
       called = true;
     });
     removeChild(container, childA);
@@ -349,7 +349,7 @@ describe('removeChildAt', () => {
     addChild(container, childB);
 
     let called = false;
-    connectSignal(childA.onParentChanged, () => {
+    connectSignal(getGraphNodeSignals(childA).onParentChanged, () => {
       called = true;
     });
     removeChildAt(container, 0);
@@ -361,7 +361,7 @@ describe('removeChildAt', () => {
     addChild(container, childB);
 
     let called = false;
-    connectSignal(container.onChildrenChanged, () => {
+    connectSignal(getGraphNodeSignals(container).onChildrenChanged, () => {
       called = true;
     });
     removeChildAt(container, 0);
@@ -415,7 +415,7 @@ describe('removeChildren', () => {
     addChild(container, childA);
 
     let called = false;
-    connectSignal(childA.onParentChanged, () => {
+    connectSignal(getGraphNodeSignals(childA).onParentChanged, () => {
       called = true;
     });
     removeChildren(container);
@@ -426,7 +426,7 @@ describe('removeChildren', () => {
     addChild(container, childA);
 
     let called = false;
-    connectSignal(container.onChildrenChanged, () => {
+    connectSignal(getGraphNodeSignals(container).onChildrenChanged, () => {
       called = true;
     });
     removeChildren(container);
@@ -470,7 +470,7 @@ describe('setChildIndex', () => {
     addChild(container, childB);
 
     let called = false;
-    connectSignal(container.onChildrenOrderChanged, () => {
+    connectSignal(getGraphNodeSignals(container).onChildrenOrderChanged, () => {
       called = true;
     });
     setChildIndex(container, childA, 1);
@@ -505,7 +505,7 @@ describe('swapChildren', () => {
     addChild(container, childB);
 
     let called = false;
-    connectSignal(container.onChildrenOrderChanged, () => {
+    connectSignal(getGraphNodeSignals(container).onChildrenOrderChanged, () => {
       called = true;
     });
     swapChildren(container, childA, childB);
@@ -535,7 +535,7 @@ describe('swapChildrenAt', () => {
     addChild(container, childB);
 
     let called = false;
-    connectSignal(container.onChildrenOrderChanged, () => {
+    connectSignal(getGraphNodeSignals(container).onChildrenOrderChanged, () => {
       called = true;
     });
     swapChildrenAt(container, 0, 1);

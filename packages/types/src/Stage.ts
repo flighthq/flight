@@ -1,4 +1,4 @@
-import type { DisplayObject, DisplayObjectData } from './DisplayObject';
+import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime } from './DisplayObject';
 import type { StageAlign } from './StageAlign';
 import type { StageDisplayState } from './StageDisplayState';
 import type { StageQuality } from './StageQuality';
@@ -16,6 +16,8 @@ export interface StageData extends DisplayObjectData {
   stageHeight: number;
   stageWidth: number;
 }
+
+export interface StageRuntime extends DisplayObjectRuntime {}
 
 export interface Stage extends DisplayObject {
   data: StageData;

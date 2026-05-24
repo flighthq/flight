@@ -1,7 +1,15 @@
-import type { GraphNode, PartialNode, Rectangle, SpriteNodeRuntime, Tilemap, TilemapData } from '@flighthq/types';
+import type {
+  GraphNode,
+  MethodsOf,
+  PartialNode,
+  Rectangle,
+  Tilemap,
+  TilemapData,
+  TilemapRuntime,
+} from '@flighthq/types';
 import { TilemapKind } from '@flighthq/types';
 
-import { createSpriteNode, createSpriteNodeRuntime } from './spriteNode';
+import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
 
 export function computeTilemapLocalBoundsRect(out: Rectangle, source: Readonly<GraphNode>): void {
   const tilemap = source as Tilemap;
@@ -13,7 +21,7 @@ export function computeTilemapLocalBoundsRect(out: Rectangle, source: Readonly<G
 }
 
 export function createTilemap(obj?: Readonly<PartialNode<Tilemap>>): Tilemap {
-  return createSpriteNode(TilemapKind, obj, createTilemapData, createTilemapRuntime as any) as Tilemap; // eslint-disable-line
+  return createSpriteNode(TilemapKind, obj, createTilemapData, createTilemapRuntime) as Tilemap;
 }
 
 export function createTilemapData(data?: Readonly<Partial<TilemapData>>): TilemapData {
@@ -27,11 +35,15 @@ export function createTilemapData(data?: Readonly<Partial<TilemapData>>): Tilema
   };
 }
 
-export function createTilemapRuntime(): SpriteNodeRuntime {
-  return createSpriteNodeRuntime(defaultMethods);
+export function createTilemapRuntime(): TilemapRuntime {
+  return createSpriteNodeRuntime(defaultMethods) as TilemapRuntime;
 }
 
-const defaultMethods: Partial<SpriteNodeRuntime> = {
+export function getTilemapRuntime(source: Readonly<Tilemap>): Readonly<TilemapRuntime> {
+  return getSpriteNodeRuntime(source) as TilemapRuntime;
+}
+
+const defaultMethods: Partial<MethodsOf<TilemapRuntime>> = {
   computeLocalBoundsRect: computeTilemapLocalBoundsRect,
 };
 

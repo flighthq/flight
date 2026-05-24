@@ -1,4 +1,4 @@
-import type { SpriteNode, SpriteNodeData } from './SpriteNode';
+import type { SpriteNode, SpriteNodeData, SpriteNodeRuntime } from './SpriteNode';
 import type { Tileset } from './Tileset';
 
 export interface TilemapData extends SpriteNodeData {
@@ -7,6 +7,8 @@ export interface TilemapData extends SpriteNodeData {
   rows: number;
   tiles: Int16Array;
 }
+
+export interface TilemapRuntime extends SpriteNodeRuntime {}
 
 export interface Tilemap extends SpriteNode {
   data: TilemapData;

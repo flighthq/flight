@@ -1,4 +1,4 @@
-import type { Text, TextData } from './Text';
+import type { Text, TextData, TextRuntime } from './Text';
 import type { TextAutoSize } from './TextAutoSize';
 import type { TextFormat } from './TextFormat';
 
@@ -35,6 +35,8 @@ export interface RichTextData extends TextData {
   // getTextHeight(source: Readonly<DynamicText>): number;
   // getTextWidth(source: Readonly<DynamicText>): number;
 }
+
+export interface RichTextRuntime extends TextRuntime {}
 
 export interface RichText extends Text {
   data: RichTextData;

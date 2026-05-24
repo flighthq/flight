@@ -1,11 +1,26 @@
 import { getRoot } from '@flighthq/scenegraph-core';
-import type { DisplayObject, PartialNode, Stage, StageData } from '@flighthq/types';
+import type {
+  DisplayObject,
+  GraphNode,
+  MethodsOf,
+  PartialNode,
+  Rectangle,
+  Stage,
+  StageData,
+  StageRuntime,
+} from '@flighthq/types';
 import { StageKind } from '@flighthq/types';
 
-import { createDisplayObjectGeneric } from './displayObject';
+import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
+
+export function computeStageLocalBoundsRect(out: Rectangle, source: Readonly<GraphNode>): void {
+  const data = (source as Stage).data;
+  out.width = data.stageWidth;
+  out.height = data.stageHeight;
+}
 
 export function createStage(obj?: Readonly<PartialNode<Stage>>): Stage {
-  return createDisplayObjectGeneric(StageKind, obj, createStageData) as Stage;
+  return createDisplayObjectGeneric(StageKind, obj, createStageData, createStageRuntime) as Stage;
 }
 
 export function createStageData(data?: Readonly<Partial<StageData>>): StageData {
@@ -23,7 +38,19 @@ export function createStageData(data?: Readonly<Partial<StageData>>): StageData 
   };
 }
 
+export function createStageRuntime(): StageRuntime {
+  return createDisplayObjectRuntime(defaultMethods) as StageRuntime;
+}
+
 export function getStage(source: Readonly<DisplayObject>): Stage | null {
   const root = getRoot(source);
   return root.kind === StageKind ? (root as Stage) : null;
 }
+
+export function getStageRuntime(source: Readonly<Stage>): Readonly<StageRuntime> {
+  return getDisplayObjectRuntime(source) as StageRuntime;
+}
+
+const defaultMethods: Partial<MethodsOf<StageRuntime>> = {
+  computeLocalBoundsRect: computeStageLocalBoundsRect,
+};

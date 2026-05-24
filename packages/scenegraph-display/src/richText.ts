@@ -1,12 +1,26 @@
-import type { PartialNode, RichText, RichTextData } from '@flighthq/types';
+import type {
+  GraphNode,
+  MethodsOf,
+  PartialNode,
+  Rectangle,
+  RichText,
+  RichTextData,
+  RichTextRuntime,
+} from '@flighthq/types';
 import { RichTextKind } from '@flighthq/types';
 
-import { createDisplayObjectGeneric } from './displayObject';
+import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
 import type { RichTextDataInternal } from './internal';
 import { createTextData } from './text';
 
+export function computeRichTextLocalBoundsRect(out: Rectangle, source: Readonly<GraphNode>): void {
+  const data = (source as RichText).data;
+  out.width = data.width;
+  out.height = data.height;
+}
+
 export function createRichText(obj?: Readonly<PartialNode<RichText>>): RichText {
-  return createDisplayObjectGeneric(RichTextKind, obj, createRichTextData) as RichText;
+  return createDisplayObjectGeneric(RichTextKind, obj, createRichTextData, createRichTextRuntime) as RichText;
 }
 
 export function createRichTextData(data?: Readonly<Partial<RichTextData>>): RichTextData {
@@ -31,3 +45,15 @@ export function createRichTextData(data?: Readonly<Partial<RichTextData>>): Rich
   _data.wordWrap = data?.wordWrap ?? false;
   return _data;
 }
+
+export function createRichTextRuntime(): RichTextRuntime {
+  return createDisplayObjectRuntime(defaultMethods) as RichTextRuntime;
+}
+
+export function getRichTextRuntime(source: Readonly<RichText>): Readonly<RichTextRuntime> {
+  return getDisplayObjectRuntime(source) as RichTextRuntime;
+}
+
+const defaultMethods: Partial<MethodsOf<RichTextRuntime>> = {
+  computeLocalBoundsRect: computeRichTextLocalBoundsRect,
+};

@@ -9,12 +9,15 @@ export interface GraphNodeTraits {
   name: string | null;
 }
 
-export interface GraphNode<GraphKind extends symbol = typeof NullGraph, Traits extends object = GraphNodeTraits>
-  extends Node, GraphNodeTraits {
-  [EntityRuntimeKey]: GraphNodeRuntime<GraphKind, Traits> | undefined;
+export interface GraphNodeSignals {
   onChildrenChanged: Signal<() => void>;
   onChildrenOrderChanged: Signal<() => void>;
   onParentChanged: Signal<() => void>;
+}
+
+export interface GraphNode<GraphKind extends symbol = typeof NullGraph, Traits extends object = GraphNodeTraits>
+  extends Node, GraphNodeTraits {
+  [EntityRuntimeKey]: GraphNodeRuntime<GraphKind, Traits> | undefined;
 }
 
 export interface GraphNodeRuntime<
@@ -31,6 +34,7 @@ export interface GraphNodeRuntime<
   localTransformID: number;
   localTransformUsingLocalTransformID: number;
   parent: GraphNode<GraphKind, Traits> | null;
+  signals: GraphNodeSignals | null;
   worldBoundsUsingLocalBoundsID: number;
   worldBoundsUsingWorldTransformID: number;
   worldTransformID: number;
