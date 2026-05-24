@@ -43,7 +43,7 @@ export function addChildAt<GraphKind extends symbol, Traits extends object>(
   }
 
   if (children === null) {
-    children = targetRuntime.children = [] as any; // eslint-disable-line
+    children = targetRuntime.children = [] as GraphNode<GraphKind, Traits>[];
   }
 
   const childRuntime = getGraphNodeRuntime(child) as GraphNodeRuntime<GraphKind, Traits>;
@@ -62,11 +62,13 @@ export function addChildAt<GraphKind extends symbol, Traits extends object>(
   }
 
   children!.splice(index, 0, child);
-  emitSignal(target.onChildrenChanged);
+  const targetSignals = targetRuntime.signals;
+  if (targetSignals) emitSignal(targetSignals.onChildrenChanged);
 
   if (parent !== target) {
     childRuntime.parent = target;
-    emitSignal(child.onParentChanged);
+    const childSignals = childRuntime.signals;
+    if (childSignals) emitSignal(childSignals.onParentChanged);
     invalidateParentReference(child);
   }
 
@@ -184,13 +186,15 @@ export function removeChild<GraphKind extends symbol, Traits extends object>(
   const children = targetRuntime.children;
   if (children !== null && childRuntime.parent === target) {
     childRuntime.parent = null;
-    emitSignal(child.onParentChanged);
+    const childSignals = childRuntime.signals;
+    if (childSignals) emitSignal(childSignals.onParentChanged);
     invalidateParentReference(child);
     const i = children.indexOf(child);
     if (i !== -1) {
       children.splice(i, 1);
     }
-    emitSignal(target.onChildrenChanged);
+    const targetSignals = targetRuntime.signals;
+    if (targetSignals) emitSignal(targetSignals.onChildrenChanged);
   }
   return child as GraphNode<GraphKind, Traits> & Traits;
 }
@@ -260,7 +264,8 @@ export function setChildIndex<GraphKind extends symbol, Traits extends object>(
     if (i !== -1 && i !== index) {
       children.splice(i, 1);
       children.splice(index, 0, child);
-      emitSignal(target.onChildrenOrderChanged);
+      const signals = targetRuntime.signals;
+      if (signals) emitSignal(signals.onChildrenOrderChanged);
     }
   }
 }
@@ -287,7 +292,8 @@ export function swapChildren<GraphKind extends symbol, Traits extends object>(
     const index2 = children.indexOf(child2);
     children[index1] = child2;
     children[index2] = child1;
-    emitSignal(target.onChildrenOrderChanged);
+    const signals = getGraphNodeRuntime(target).signals;
+    if (signals) emitSignal(signals.onChildrenOrderChanged);
   }
 }
 
@@ -311,7 +317,8 @@ export function swapChildrenAt<GraphKind extends symbol, Traits extends object>(
   const swap = children[index1] as GraphNode<GraphKind, Traits>;
   children[index1] = children[index2];
   children[index2] = swap;
-  emitSignal(target.onChildrenOrderChanged);
+  const signals = targetRuntime.signals;
+  if (signals) emitSignal(signals.onChildrenOrderChanged);
 }
 
 function throwOutOfBoundsError(): void {

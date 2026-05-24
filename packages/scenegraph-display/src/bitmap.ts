@@ -1,15 +1,7 @@
-import type {
-  Bitmap,
-  BitmapData,
-  DisplayObjectRuntime,
-  GraphNode,
-  MethodsOf,
-  PartialNode,
-  Rectangle,
-} from '@flighthq/types';
+import type { Bitmap, BitmapData, BitmapRuntime, GraphNode, MethodsOf, PartialNode, Rectangle } from '@flighthq/types';
 import { BitmapKind } from '@flighthq/types';
 
-import { createDisplayObjectGeneric, createDisplayObjectRuntime } from './displayObject';
+import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
 
 export function computeBitmapLocalBoundsRect(out: Rectangle, source: Readonly<GraphNode>): void {
   const bitmapData: BitmapData = source.data as BitmapData;
@@ -20,7 +12,7 @@ export function computeBitmapLocalBoundsRect(out: Rectangle, source: Readonly<Gr
 }
 
 export function createBitmap(obj?: Readonly<PartialNode<Bitmap>>): Bitmap {
-  return createDisplayObjectGeneric(BitmapKind, obj, createBitmapData, createBitmapRuntime as any) as Bitmap; // eslint-disable-line
+  return createDisplayObjectGeneric(BitmapKind, obj, createBitmapData, createBitmapRuntime) as Bitmap;  
 }
 
 export function createBitmapData(data?: Readonly<Partial<BitmapData>>): BitmapData {
@@ -30,10 +22,14 @@ export function createBitmapData(data?: Readonly<Partial<BitmapData>>): BitmapDa
   };
 }
 
-export function createBitmapRuntime(): DisplayObjectRuntime {
-  return createDisplayObjectRuntime(defaultMethods);
+export function createBitmapRuntime(): BitmapRuntime {
+  return createDisplayObjectRuntime(defaultMethods) as BitmapRuntime;
 }
 
-const defaultMethods: Partial<MethodsOf<DisplayObjectRuntime>> = {
+export function getBitmapRuntime(source: Readonly<Bitmap>): Readonly<BitmapRuntime> {
+  return getDisplayObjectRuntime(source) as BitmapRuntime;
+}
+
+const defaultMethods: Partial<MethodsOf<BitmapRuntime>> = {
   computeLocalBoundsRect: computeBitmapLocalBoundsRect,
 };

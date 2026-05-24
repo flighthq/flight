@@ -1,5 +1,5 @@
 import type { QuadTransformType } from './QuadTransformType';
-import type { SpriteNode, SpriteNodeData } from './SpriteNode';
+import type { SpriteNode, SpriteNodeData, SpriteNodeRuntime } from './SpriteNode';
 import type { TextureAtlas } from './TextureAtlas';
 
 export interface QuadBatchData extends SpriteNodeData {
@@ -9,6 +9,8 @@ export interface QuadBatchData extends SpriteNodeData {
   transforms: Float32Array;
   transformType: QuadTransformType;
 }
+
+export interface QuadBatchRuntime extends SpriteNodeRuntime {}
 
 export interface QuadBatch extends SpriteNode {
   data: QuadBatchData;
