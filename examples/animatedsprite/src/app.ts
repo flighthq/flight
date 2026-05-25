@@ -28,10 +28,16 @@ import {
 const SCALE = 4;
 const TILE_SIZE = 32;
 const FRAME_DURATION = 150;
+const STAGE_WIDTH = 800;
+const STAGE_HEIGHT = 400;
+
+const dpr = window.devicePixelRatio || 1;
 
 const canvas = document.createElement('canvas');
-canvas.width = 800;
-canvas.height = 400;
+canvas.style.width = `${STAGE_WIDTH}px`;
+canvas.style.height = `${STAGE_HEIGHT}px`;
+canvas.width = STAGE_WIDTH * dpr;
+canvas.height = STAGE_HEIGHT * dpr;
 document.body.appendChild(canvas);
 
 const source = await loadImageSourceFromURL('assets/tileset.png');
@@ -62,13 +68,13 @@ for (const { name, row } of animationDefs) {
 }
 
 const root = createSprite();
-setScaleX(root, SCALE);
-setScaleY(root, SCALE);
+setScaleX(root, SCALE * dpr);
+setScaleY(root, SCALE * dpr);
 
 const spriteScreenSize = TILE_SIZE * SCALE;
 const totalWidth = animationDefs.length * spriteScreenSize;
-const gap = (canvas.width - totalWidth) / (animationDefs.length + 1);
-const yLocal = (canvas.height - spriteScreenSize) / 2 / SCALE;
+const gap = (STAGE_WIDTH - totalWidth) / (animationDefs.length + 1);
+const yLocal = (STAGE_HEIGHT - spriteScreenSize) / 2 / SCALE;
 
 const sprites = animationDefs.map((def, i) => {
   const sprite = createSprite();

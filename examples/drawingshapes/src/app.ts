@@ -25,9 +25,13 @@ import {
   updateDisplayObjectBeforeRender,
 } from '@flighthq/engine';
 
+const dpr = window.devicePixelRatio || 1;
+
 const canvas = document.createElement('canvas');
-canvas.width = 800;
-canvas.height = 400;
+canvas.style.width = '800px';
+canvas.style.height = '400px';
+canvas.width = 800 * dpr;
+canvas.height = 400 * dpr;
 document.body.appendChild(canvas);
 
 const state = createCanvasRenderState(canvas, {
@@ -38,6 +42,8 @@ registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
 
 const main = createDisplayObject();
+main.scaleX = dpr;
+main.scaleY = dpr;
 
 function drawPolygon(g: Shape, x: number, y: number, radius: number, sides: number): void {
   const step = (Math.PI * 2) / sides;

@@ -23,18 +23,22 @@ const PAD = 40;
 const mapW = COLS * TILE_W * SCALE;
 const mapH = ROWS * TILE_H * SCALE;
 
+const dpr = window.devicePixelRatio || 1;
+
 const canvas = document.createElement('canvas');
-canvas.width = mapW + PAD * 2;
-canvas.height = mapH + PAD * 2;
+canvas.style.width = `${mapW + PAD * 2}px`;
+canvas.style.height = `${mapH + PAD * 2}px`;
+canvas.width = (mapW + PAD * 2) * dpr;
+canvas.height = (mapH + PAD * 2) * dpr;
 document.getElementById('app')!.appendChild(canvas);
 
 const tileset = await loadTilesetFromURL('assets/tileset.png', TILE_W, TILE_H);
 
 const tilemap = createTilemap({ data: { columns: COLS, rows: ROWS, tileset } });
-tilemap.scaleX = SCALE;
-tilemap.scaleY = SCALE;
-setX(tilemap, PAD);
-setY(tilemap, PAD);
+tilemap.scaleX = SCALE * dpr;
+tilemap.scaleY = SCALE * dpr;
+setX(tilemap, PAD * dpr);
+setY(tilemap, PAD * dpr);
 
 // Each row shows the idle frame of one character.
 // Character n's first frame = n * tileset.columns (row-major stride).

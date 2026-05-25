@@ -21,9 +21,13 @@ import {
 const STAGE_WIDTH = 550;
 const STAGE_HEIGHT = 400;
 
+const dpr = window.devicePixelRatio || 1;
+
 const canvas = document.createElement('canvas');
-canvas.width = STAGE_WIDTH;
-canvas.height = STAGE_HEIGHT;
+canvas.style.width = `${STAGE_WIDTH}px`;
+canvas.style.height = `${STAGE_HEIGHT}px`;
+canvas.width = STAGE_WIDTH * dpr;
+canvas.height = STAGE_HEIGHT * dpr;
 document.body.appendChild(canvas);
 
 const state = createCanvasRenderState(canvas, {
@@ -34,6 +38,8 @@ registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
 
 const manager = createTweenManager();
 const main = createDisplayObject();
+main.scaleX = dpr;
+main.scaleY = dpr;
 const container = createDisplayObject();
 const bitmap = createBitmap();
 

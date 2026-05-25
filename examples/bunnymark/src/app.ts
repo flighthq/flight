@@ -20,9 +20,13 @@ const HEIGHT = 400;
 const INITIAL_COUNT = 10;
 const BATCH_SIZE = 100;
 
+const dpr = window.devicePixelRatio || 1;
+
 const canvas = document.createElement('canvas');
-canvas.width = WIDTH;
-canvas.height = HEIGHT;
+canvas.style.width = `${WIDTH}px`;
+canvas.style.height = `${HEIGHT}px`;
+canvas.width = WIDTH * dpr;
+canvas.height = HEIGHT * dpr;
 document.body.appendChild(canvas);
 
 const stats = new Stats();
@@ -46,6 +50,8 @@ const bunnyHeight = bunny.height;
 
 const quadBatch = createQuadBatch();
 quadBatch.data.atlas = atlas;
+quadBatch.scaleX = dpr;
+quadBatch.scaleY = dpr;
 
 const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xeeddccff,

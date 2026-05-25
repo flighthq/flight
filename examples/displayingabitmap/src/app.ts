@@ -12,7 +12,11 @@ import {
   updateDisplayObjectBeforeRender,
 } from '@flighthq/engine';
 
+const dpr = window.devicePixelRatio || 1;
+
 const main = createDisplayObject();
+main.scaleX = dpr;
+main.scaleY = dpr;
 const bitmap = createBitmap();
 
 const image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
@@ -22,8 +26,10 @@ bitmap.y = (400 - image.height) / 2;
 addChild(main, bitmap);
 
 const canvas = document.createElement('canvas');
-canvas.width = 550;
-canvas.height = 400;
+canvas.style.width = '550px';
+canvas.style.height = '400px';
+canvas.width = 550 * dpr;
+canvas.height = 400 * dpr;
 document.body.appendChild(canvas);
 
 const state = createCanvasRenderState(canvas, {

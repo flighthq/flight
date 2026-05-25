@@ -12,9 +12,13 @@ import {
   updateDisplayObjectBeforeRender,
 } from '@flighthq/engine';
 
+const dpr = window.devicePixelRatio || 1;
+
 const canvas = document.createElement('canvas');
-canvas.width = 400;
-canvas.height = 200;
+canvas.style.width = '400px';
+canvas.style.height = '200px';
+canvas.width = 400 * dpr;
+canvas.height = 200 * dpr;
 document.body.appendChild(canvas);
 
 const state = createCanvasRenderState(canvas, {
@@ -26,6 +30,8 @@ registerRenderer(state, TextKind, defaultCanvasTextRenderer);
 const font = await loadFontFromURL('assets/KatamotzIkasi.woff', 'Katamotz Ikasi');
 
 const root = createDisplayObject();
+root.scaleX = dpr;
+root.scaleY = dpr;
 
 const textField = createText();
 textField.data.text = 'Hello World';

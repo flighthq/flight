@@ -34,9 +34,13 @@ const MIN_DURATION = 1500;
 const MAX_DURATION = 6000;
 const MAX_CREATION_DELAY = 10000;
 
+const dpr = window.devicePixelRatio || 1;
+
 const canvas = document.createElement('canvas');
-canvas.width = STAGE_WIDTH;
-canvas.height = STAGE_HEIGHT;
+canvas.style.width = `${STAGE_WIDTH}px`;
+canvas.style.height = `${STAGE_HEIGHT}px`;
+canvas.width = STAGE_WIDTH * dpr;
+canvas.height = STAGE_HEIGHT * dpr;
 document.body.appendChild(canvas);
 
 const state = createCanvasRenderState(canvas, {
@@ -48,6 +52,8 @@ registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasEndFill, defau
 
 const manager = createTweenManager();
 const root = createDisplayObject();
+root.scaleX = dpr;
+root.scaleY = dpr;
 
 function animateCircle(circle: ReturnType<typeof createShape>): void {
   const duration = MIN_DURATION + Math.random() * (MAX_DURATION - MIN_DURATION);
