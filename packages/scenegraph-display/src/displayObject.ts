@@ -62,6 +62,7 @@ export function createDisplayObjectRuntime(
   const out = createGraphNodeRuntime(methods) as DisplayObjectRuntime;
   initHasTransform2DRuntime(out, methods);
   initHasBoundsRectRuntime(out, methods);
+  out.interactionSignals = null;
   return out;
 }
 
