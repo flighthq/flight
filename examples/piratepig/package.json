@@ -1,0 +1,16 @@
+{
+  "name": "piratepig",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/engine": "*"
+  },
+  "scripts": {
+    "predev": "npm run assets",
+    "dev": "vite",
+    "prebuild": "npm run assets",
+    "build": "vite build",
+    "preview": "vite preview",
+    "assets": "tsx ../../scripts/download-assets.ts"
+  }
+}
