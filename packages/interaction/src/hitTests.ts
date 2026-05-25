@@ -20,6 +20,33 @@ export function hitTestObject(source: DisplayObject, other: DisplayObject): bool
 }
 
 /**
+ * Walks the scene graph depth-first in reverse child order (front-to-back) and
+ * returns the first node that registers a hit at the given world-space
+ * coordinates, or null if nothing was hit.
+ **/
+export function findHitTarget(
+  source: GraphNode<symbol, object>,
+  x: number,
+  y: number,
+  shapeFlag: boolean = false,
+): GraphNode<symbol, object> | null {
+  if (!source.enabled) return null;
+
+  const children = getGraphNodeRuntime(source).children;
+  if (children !== null) {
+    for (let i = children.length - 1; i >= 0; i--) {
+      const hit = findHitTarget(children[i] as GraphNode<symbol, object>, x, y, shapeFlag);
+      if (hit !== null) return hit;
+    }
+  }
+
+  const hitTestSelf = hitTestPointRegistry.get(source.kind);
+  if (hitTestSelf?.(source, x, y, shapeFlag)) return source;
+
+  return null;
+}
+
+/**
  * Evaluates the node to see if it or any of its descendants register a hit at
  * the given world-space coordinates.
  *

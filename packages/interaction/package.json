@@ -26,12 +26,13 @@
   },
   "dependencies": {
     "@flighthq/geometry": "*",
+    "@flighthq/scenegraph-core": "*",
     "@flighthq/scenegraph-display": "*",
+    "@flighthq/signals": "*",
     "@flighthq/types": "*",
     "@flighthq/scenegraph-world": "*"
   },
   "devDependencies": {
-    "@flighthq/scenegraph-core": "*",
     "@flighthq/scenegraph-sprite": "*",
     "typescript": "^5.3.0"
   },
