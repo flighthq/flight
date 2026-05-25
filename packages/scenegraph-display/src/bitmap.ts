@@ -12,7 +12,7 @@ export function computeBitmapLocalBoundsRect(out: Rectangle, source: Readonly<Gr
 }
 
 export function createBitmap(obj?: Readonly<PartialNode<Bitmap>>): Bitmap {
-  return createDisplayObjectGeneric(BitmapKind, obj, createBitmapData, createBitmapRuntime) as Bitmap;  
+  return createDisplayObjectGeneric(BitmapKind, obj, createBitmapData, createBitmapRuntime) as Bitmap;
 }
 
 export function createBitmapData(data?: Readonly<Partial<BitmapData>>): BitmapData {
