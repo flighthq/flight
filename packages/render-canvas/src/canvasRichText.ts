@@ -1,5 +1,5 @@
 import { createNullRendererData } from '@flighthq/render-core';
-import { createTextFormatRange, layoutText, mergeTextFormat } from '@flighthq/text-layout';
+import { createTextFormatRange, createTextLayoutResult, layoutText, mergeTextFormat } from '@flighthq/text-layout';
 import type {
   CanvasRenderState,
   DisplayObjectRenderer,
@@ -12,6 +12,8 @@ import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { setCanvasBlendMode } from './canvasMaterials';
 import { colorToHex, formatToCanvasFont } from './canvasTextHelpers';
 import { setCanvasTransform } from './canvasTransform';
+
+const _richTextLayout = createTextLayoutResult();
 
 export function drawCanvasRichText(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
   drawCanvasDisplayObject(state, renderNode);
@@ -49,7 +51,7 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
     return context.measureText(t).width;
   };
 
-  const result = layoutText({
+  layoutText(_richTextLayout, {
     text,
     formatRanges: [createTextFormatRange(format, 0, text.length)],
     width: data.wordWrap ? fieldW : 10000,
@@ -58,6 +60,7 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
     multiline: data.multiline,
     wordWrap: data.wordWrap,
   });
+  const result = _richTextLayout;
 
   // scrollV is 1-based: first visible line index = scrollV - 1
   const firstVisibleLine = data.scrollV - 1;

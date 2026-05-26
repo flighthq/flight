@@ -1,6 +1,8 @@
 import { matrix3x2 } from '@flighthq/geometry';
 import type { CanvasShapeCommand, ImageSource, Matrix3x2 } from '@flighthq/types';
 
+const _fillMatrixInverse: Matrix3x2 = matrix3x2.create();
+
 import { createBitmapPattern, createGradientPattern } from './canvasFillPattern';
 
 export const defaultCanvasBeginBitmapFill: CanvasShapeCommand<'beginBitmapFill'> = {
@@ -15,7 +17,12 @@ export const defaultCanvasBeginBitmapFill: CanvasShapeCommand<'beginBitmapFill'>
     state.hasFill = pattern !== null;
     state.fillStyle = pattern ?? '';
     state.fillMatrix = matrix;
-    state.fillMatrixInverse = matrix !== null ? invertMatrix(matrix) : null;
+    if (matrix !== null) {
+      matrix3x2.inverse(_fillMatrixInverse, matrix);
+      state.fillMatrixInverse = _fillMatrixInverse;
+    } else {
+      state.fillMatrixInverse = null;
+    }
     state.bitmapSrc = bitmap.src;
     state.bitmapW = bitmap.width;
     state.bitmapH = bitmap.height;
@@ -372,11 +379,6 @@ export const defaultCanvasShapeCommands: CanvasShapeCommand<any>[] = [
   defaultCanvasMoveTo,
 ];
 
-function invertMatrix(m: Matrix3x2): Matrix3x2 {
-  const out = matrix3x2.clone(m);
-  matrix3x2.inverse(out, m);
-  return out;
-}
 
 function rgbaString(color: number, alpha: number): string {
   const r = (color >> 16) & 0xff;
