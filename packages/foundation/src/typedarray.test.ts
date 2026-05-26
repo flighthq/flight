@@ -66,7 +66,7 @@ describe('reserveInt16Array', () => {
   });
 });
 
-describe('reserveInt16Array', () => {
+describe('reserveUint16Array', () => {
   it('returns the same array if the capacity is equal', () => {
     const array = new Uint16Array(100);
     const out = reserveUint16Array(array, 100);
