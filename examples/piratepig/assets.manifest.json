@@ -45,16 +45,32 @@
       "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_theme.ogg"
     },
     {
+      "path": "sounds/theme.mp3",
+      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_theme.mp3"
+    },
+    {
       "path": "sounds/sound3.ogg",
       "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_3.ogg"
+    },
+    {
+      "path": "sounds/sound3.mp3",
+      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_3.mp3"
     },
     {
       "path": "sounds/sound4.ogg",
       "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_4.ogg"
     },
     {
+      "path": "sounds/sound4.mp3",
+      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_4.mp3"
+    },
+    {
       "path": "sounds/sound5.ogg",
       "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_5.ogg"
+    },
+    {
+      "path": "sounds/sound5.mp3",
+      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_5.mp3"
     }
   ]
 }

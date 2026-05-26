@@ -1,6 +1,7 @@
 import {
   addChild,
   BitmapKind,
+  createAudioSourceFromURLs,
   createBitmap,
   createCanvasElement,
   createCanvasRenderState,
@@ -11,6 +12,7 @@ import {
   defaultCanvasShapeRenderer,
   defaultCanvasTextRenderer,
   invalidateRender,
+  loadAudioSourceFromURLs,
   loadFontFromURL,
   loadImageSourceFromURL,
   registerCanvasShapeCommands,
@@ -23,38 +25,29 @@ import {
   updateTweens,
 } from '@flighthq/engine';
 
-import { createPiratePigGame, hitTileAtStageXY, newGame, onEnterFrame, resizeGame, swapTile } from './game';
+import { PiratePigGame } from './game';
 
 // ── Assets ─────────────────────────────────────────────────────────────────
 
-const TILE_PATHS = [
-  'assets/images/game_bear.png',
-  'assets/images/game_bunny_02.png',
-  'assets/images/game_carrot.png',
-  'assets/images/game_lemon.png',
-  'assets/images/game_panda.png',
-  'assets/images/game_piratePig.png',
-];
-
-const [bgImage, footerImage, logoImage, font, ...tileImages] = await Promise.all([
+const [bgImage, footerImage, logoImage, font, theme, ...tileImages] = await Promise.all([
   loadImageSourceFromURL('assets/images/background_tile.png'),
   loadImageSourceFromURL('assets/images/center_bottom.png'),
   loadImageSourceFromURL('assets/images/logo.png'),
   loadFontFromURL('assets/fonts/FreebooterUpdated.ttf', 'FreebooterUpdated'),
-  ...TILE_PATHS.map((p) => loadImageSourceFromURL(p)),
+  loadAudioSourceFromURLs([{ url: 'assets/sounds/theme.ogg' }, { url: 'assets/sounds/theme.mp3' }]),
+  loadImageSourceFromURL('assets/images/game_bear.png'),
+  loadImageSourceFromURL('assets/images/game_bunny_02.png'),
+  loadImageSourceFromURL('assets/images/game_carrot.png'),
+  loadImageSourceFromURL('assets/images/game_lemon.png'),
+  loadImageSourceFromURL('assets/images/game_panda.png'),
+  loadImageSourceFromURL('assets/images/game_piratePig.png'),
 ]);
 
-function loadAudio(path: string): HTMLAudioElement {
-  const el = new Audio(path);
-  el.preload = 'auto';
-  return el;
-}
-
 const sounds = [
-  loadAudio('assets/sounds/theme.ogg'),
-  loadAudio('assets/sounds/sound3.ogg'),
-  loadAudio('assets/sounds/sound4.ogg'),
-  loadAudio('assets/sounds/sound5.ogg'),
+  theme,
+  createAudioSourceFromURLs([{ url: 'assets/sounds/sound3.ogg' }, { url: 'assets/sounds/sound3.mp3' }]),
+  createAudioSourceFromURLs([{ url: 'assets/sounds/sound4.ogg' }, { url: 'assets/sounds/sound4.mp3' }]),
+  createAudioSourceFromURLs([{ url: 'assets/sounds/sound5.ogg' }, { url: 'assets/sounds/sound5.mp3' }]),
 ];
 
 // ── Canvas + renderer ──────────────────────────────────────────────────────
@@ -90,7 +83,7 @@ footer.data.smoothing = true;
 addChild(root, footer);
 
 // Game
-const game = createPiratePigGame(manager, tileImages, logoImage, font.name, sounds);
+const game = new PiratePigGame(manager, tileImages, logoImage, font.name, sounds);
 
 // Logo (first child of game container, behind score and tiles)
 const logo = createBitmap();
@@ -115,7 +108,7 @@ function resize(w: number, h: number): void {
   background.scaleY = h / bgImage.height;
   invalidateRender(background);
 
-  resizeGame(game, w, h);
+  game.resize(w, h);
 
   footer.scaleX = game.currentScale;
   footer.scaleY = game.currentScale;
@@ -129,18 +122,18 @@ window.addEventListener('resize', () => resize(window.innerWidth, window.innerHe
 
 // ── Game start ─────────────────────────────────────────────────────────────
 
-newGame();
+game.newGame();
 
 // ── Pointer input ──────────────────────────────────────────────────────────
 
 let dragStartX = 0;
 let dragStartY = 0;
-let selectedTile = hitTileAtStageXY(-1, -1);
+let selectedTile = game.hitTileAtStageXY(-1, -1);
 
 canvas.addEventListener('pointerdown', (e: PointerEvent) => {
   dragStartX = e.clientX;
   dragStartY = e.clientY;
-  selectedTile = hitTileAtStageXY(e.clientX, e.clientY);
+  selectedTile = game.hitTileAtStageXY(e.clientX, e.clientY);
 });
 
 canvas.addEventListener('pointerup', (e: PointerEvent) => {
@@ -157,7 +150,7 @@ canvas.addEventListener('pointerup', (e: PointerEvent) => {
     } else {
       targetRow += dy < 0 ? -1 : 1;
     }
-    swapTile(selectedTile, targetRow, targetCol);
+    game.swapTile(selectedTile, targetRow, targetCol);
   }
 
   selectedTile = null;
@@ -172,7 +165,7 @@ function enterFrame(time: number): void {
   lastTime = time;
 
   updateTweens(manager, delta);
-  onEnterFrame();
+  game.onEnterFrame();
 
   if (updateDisplayObjectBeforeRender(renderState, root)) {
     renderCanvasBackground(renderState);
