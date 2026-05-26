@@ -1,6 +1,7 @@
 import {
   addChild,
   addTextureAtlasRegion,
+  createCanvasElement,
   createCanvasRenderState,
   createSprite,
   createSpritesheet,
@@ -32,12 +33,7 @@ const STAGE_WIDTH = 800;
 const STAGE_HEIGHT = 400;
 
 const dpr = window.devicePixelRatio || 1;
-
-const canvas = document.createElement('canvas');
-canvas.style.width = `${STAGE_WIDTH}px`;
-canvas.style.height = `${STAGE_HEIGHT}px`;
-canvas.width = STAGE_WIDTH * dpr;
-canvas.height = STAGE_HEIGHT * dpr;
+const canvas = createCanvasElement(STAGE_WIDTH, STAGE_HEIGHT, dpr);
 document.body.appendChild(canvas);
 
 const source = await loadImageSourceFromURL('assets/tileset.png');

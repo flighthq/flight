@@ -2,6 +2,7 @@ import {
   addChild,
   BitmapKind,
   createBitmap,
+  createCanvasElement,
   createCanvasRenderState,
   createDisplayObject,
   defaultCanvasBitmapRenderer,
@@ -13,6 +14,8 @@ import {
 } from '@flighthq/engine';
 
 const dpr = window.devicePixelRatio || 1;
+const canvas = createCanvasElement(550, 400, dpr);
+document.body.appendChild(canvas);
 
 const main = createDisplayObject();
 main.scaleX = dpr;
@@ -24,13 +27,6 @@ bitmap.data.image = image;
 bitmap.x = (550 - image.width) / 2;
 bitmap.y = (400 - image.height) / 2;
 addChild(main, bitmap);
-
-const canvas = document.createElement('canvas');
-canvas.style.width = '550px';
-canvas.style.height = '400px';
-canvas.width = 550 * dpr;
-canvas.height = 400 * dpr;
-document.body.appendChild(canvas);
 
 const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xeeddccff,

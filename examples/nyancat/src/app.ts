@@ -2,6 +2,7 @@ import {
   addTextureAtlasRegion,
   attachSpritesheetTimeline,
   BitmapKind,
+  createCanvasElement,
   createCanvasRenderState,
   createMovieClip,
   createSpritesheet,
@@ -49,18 +50,13 @@ const spritesheet = createSpritesheet({
 });
 
 const dpr = window.devicePixelRatio || 1;
+const canvas = createCanvasElement(FRAME_W, FRAME_H, dpr);
+document.getElementById('app')!.appendChild(canvas);
 
 const clip = createMovieClip();
 attachSpritesheetTimeline(clip, spritesheet, animation);
 clip.scaleX = dpr;
 clip.scaleY = dpr;
-
-const canvas = document.createElement('canvas');
-canvas.style.width = `${FRAME_W}px`;
-canvas.style.height = `${FRAME_H}px`;
-canvas.width = FRAME_W * dpr;
-canvas.height = FRAME_H * dpr;
-document.getElementById('app')!.appendChild(canvas);
 
 const state = createCanvasRenderState(canvas, {
   backgroundColor: 0x000000ff,

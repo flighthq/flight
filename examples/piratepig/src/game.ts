@@ -1,3 +1,4 @@
+import type { DisplayObject, ImageSource, Text, TweenManager } from '@flighthq/engine';
 import {
   addChild,
   beginFill,
@@ -6,15 +7,11 @@ import {
   createShape,
   createText,
   createTween,
-  type DisplayObject,
   drawRect,
   endFill,
-  type ImageSource,
   invalidateRender,
   Quad,
   ShapeKind,
-  type Text,
-  type TweenManager,
 } from '@flighthq/engine';
 
 import { createTile, initTile, moveTile, removeTileAnimated, removeTileImmediate, type Tile, TILE_STEP } from './tile';
