@@ -1,5 +1,6 @@
-import type { Rectangle, Sprite, TextureAtlas } from '@flighthq/types';
+import type { GraphNode, Rectangle, Sprite, TextureAtlas } from '@flighthq/types';
 import { SpriteKind } from '@flighthq/types';
+import { createRectangle } from '@flighthq/geometry';
 
 import {
   computeSpriteLocalBoundsRect,
@@ -47,8 +48,8 @@ describe('createSprite', () => {
 describe('computeSpriteLocalBoundsRect', () => {
   it('is a no-op that does not modify out', () => {
     const sprite = createSprite();
-    const out: Rectangle = { x: 1, y: 2, width: 3, height: 4 };
-    computeSpriteLocalBoundsRect(out, sprite);
+    const out = createRectangle(1, 2, 3, 4);
+    computeSpriteLocalBoundsRect(out, sprite as unknown as GraphNode);
     expect(out.x).toBe(1);
     expect(out.y).toBe(2);
     expect(out.width).toBe(3);

@@ -1,4 +1,5 @@
 import type { TextureAtlasRegion } from '@flighthq/types';
+import { createRectangle, createVector2 } from '@flighthq/geometry';
 
 import { createTextureAtlas } from './textureAtlas';
 import {
@@ -84,7 +85,7 @@ describe('addTextureAtlasRegion', () => {
 describe('addTextureAtlasRegionRect', () => {
   it('adds a region from a Rectangle', () => {
     const atlas = createTextureAtlas();
-    const rect = { x: 10, y: 20, width: 30, height: 40 };
+    const rect = createRectangle(10, 20, 30, 40);
     addTextureAtlasRegionRect(atlas, rect);
     expect(atlas.regions[0].x).toBe(10);
     expect(atlas.regions[0].width).toBe(30);
@@ -92,7 +93,7 @@ describe('addTextureAtlasRegionRect', () => {
 
   it('sets pivot from optional Vector2', () => {
     const atlas = createTextureAtlas();
-    addTextureAtlasRegionRect(atlas, { x: 0, y: 0, width: 10, height: 10 }, { x: 3, y: 4 });
+    addTextureAtlasRegionRect(atlas, createRectangle(0, 0, 10, 10), createVector2(3, 4));
     expect(atlas.regions[0].pivotX).toBe(3);
     expect(atlas.regions[0].pivotY).toBe(4);
   });
@@ -112,7 +113,7 @@ describe('addTextureAtlasRegionRectXY', () => {
 describe('addTextureAtlasRegionVec2', () => {
   it('computes region from two Vector2 corner points', () => {
     const atlas = createTextureAtlas();
-    addTextureAtlasRegionVec2(atlas, { x: 5, y: 10 }, { x: 25, y: 30 });
+    addTextureAtlasRegionVec2(atlas, createVector2(5, 10), createVector2(25, 30));
     expect(atlas.regions[0].x).toBe(5);
     expect(atlas.regions[0].y).toBe(10);
     expect(atlas.regions[0].width).toBe(20);

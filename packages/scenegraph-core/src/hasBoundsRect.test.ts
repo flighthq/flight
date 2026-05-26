@@ -1,6 +1,6 @@
 import type { GraphNode, GraphNodeRuntime, HasBoundsRect, HasBoundsRectRuntime } from '@flighthq/types';
-
 import type { Rectangle } from '@flighthq/types';
+import { createRectangle } from '@flighthq/geometry';
 
 import { createGraphNode, createGraphNodeRuntime } from './graphNode';
 import { defaultComputeLocalBoundsRect, initHasBoundsRect, initHasBoundsRectRuntime } from './hasBoundsRect';
@@ -41,9 +41,9 @@ describe('initHasBoundsRectRuntime', () => {
 
 describe('defaultComputeLocalBoundsRect', () => {
   it('is a no-op that does not modify out', () => {
-    const out: Rectangle = { x: 1, y: 2, width: 3, height: 4 };
+    const out = createRectangle(1, 2, 3, 4);
     const node = createGraphNode(NodeTestKind, NodeTestKind);
-    defaultComputeLocalBoundsRect(out, node);
+    defaultComputeLocalBoundsRect(out, node as unknown as GraphNode);
     expect(out.x).toBe(1);
     expect(out.y).toBe(2);
     expect(out.width).toBe(3);

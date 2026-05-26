@@ -1,5 +1,6 @@
-import type { Rectangle, RichText } from '@flighthq/types';
+import type { GraphNode, RichText } from '@flighthq/types';
 import { RichTextKind } from '@flighthq/types';
+import { createRectangle } from '@flighthq/geometry';
 
 import {
   computeRichTextLocalBoundsRect,
@@ -82,8 +83,8 @@ describe('createRichText', () => {
 describe('computeRichTextLocalBoundsRect', () => {
   it('sets out.width and out.height from data dimensions', () => {
     const richText = createRichText({ data: { width: 200, height: 150 } });
-    const out: Rectangle = { x: 0, y: 0, width: 0, height: 0 };
-    computeRichTextLocalBoundsRect(out, richText);
+    const out = createRectangle();
+    computeRichTextLocalBoundsRect(out, richText as unknown as GraphNode);
     expect(out.width).toBe(200);
     expect(out.height).toBe(150);
   });

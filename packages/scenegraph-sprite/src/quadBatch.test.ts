@@ -1,5 +1,6 @@
-import type { QuadBatch, QuadTransformType, TextureAtlas } from '@flighthq/types';
+import type { GraphNode, QuadBatch, QuadTransformType, TextureAtlas } from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
+import { createRectangle } from '@flighthq/geometry';
 
 import {
   computeQuadBatchLocalBoundsRect,
@@ -145,8 +146,8 @@ describe('resizeQuadBatch', () => {
 describe('computeQuadBatchLocalBoundsRect', () => {
   it('is a no-op that does not modify out', () => {
     const quadBatch = createQuadBatch();
-    const out = { x: 1, y: 2, width: 3, height: 4 };
-    computeQuadBatchLocalBoundsRect(out, quadBatch);
+    const out = createRectangle(1, 2, 3, 4);
+    computeQuadBatchLocalBoundsRect(out, quadBatch as unknown as GraphNode);
     expect(out.x).toBe(1);
     expect(out.y).toBe(2);
     expect(out.width).toBe(3);

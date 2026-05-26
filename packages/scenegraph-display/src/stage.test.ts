@@ -1,6 +1,7 @@
 import { addChild } from '@flighthq/scenegraph-core';
-import type { PartialNode, Rectangle, Stage } from '@flighthq/types';
+import type { GraphNode, PartialNode, Stage } from '@flighthq/types';
 import { StageKind } from '@flighthq/types';
+import { createRectangle } from '@flighthq/geometry';
 
 import { createDisplayObject } from './displayObject';
 import {
@@ -102,8 +103,8 @@ describe('getStage', () => {
 describe('computeStageLocalBoundsRect', () => {
   it('sets out dimensions from stageWidth and stageHeight', () => {
     const stage = createStage({ data: { stageWidth: 800, stageHeight: 600 } });
-    const out: Rectangle = { x: 0, y: 0, width: 0, height: 0 };
-    computeStageLocalBoundsRect(out, stage);
+    const out = createRectangle();
+    computeStageLocalBoundsRect(out, stage as unknown as GraphNode);
     expect(out.width).toBe(800);
     expect(out.height).toBe(600);
   });
