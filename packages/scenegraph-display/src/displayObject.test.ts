@@ -290,6 +290,14 @@ describe('setScrollRect', () => {
   });
 });
 
+describe('getDisplayObjectRuntime', () => {
+  it('returns the runtime for a DisplayObject', () => {
+    const obj = createDisplayObject();
+    const runtime = getDisplayObjectRuntime(obj);
+    expect(runtime).not.toBeNull();
+  });
+});
+
 interface DisplayObjectTest extends DisplayObject {}
 
 interface DisplayObjectTestData extends DisplayObjectData {

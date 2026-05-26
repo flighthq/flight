@@ -1,7 +1,12 @@
 import type { MovieClip, Timeline } from '@flighthq/types';
 import { MovieClipKind } from '@flighthq/types';
 
-import { createMovieClip } from './movieClip';
+import {
+  createMovieClip,
+  createMovieClipData,
+  createMovieClipRuntime,
+  getMovieClipRuntime,
+} from './movieClip';
 
 describe('createMovieClip', () => {
   let movieClip: MovieClip;
@@ -29,5 +34,33 @@ describe('createMovieClip', () => {
     const base = {};
     const obj = createMovieClip(base);
     expect(obj).not.toStrictEqual(base);
+  });
+});
+
+describe('createMovieClipData', () => {
+  it('returns default values', () => {
+    const data = createMovieClipData();
+    expect(data.timeline).toBeNull();
+  });
+
+  it('allows pre-defined values', () => {
+    const timeline = {} as Timeline;
+    const data = createMovieClipData({ timeline });
+    expect(data.timeline).toBe(timeline);
+  });
+});
+
+describe('createMovieClipRuntime', () => {
+  it('returns a non-null runtime', () => {
+    const runtime = createMovieClipRuntime();
+    expect(runtime).not.toBeNull();
+  });
+});
+
+describe('getMovieClipRuntime', () => {
+  it('returns the runtime for a MovieClip', () => {
+    const movieClip = createMovieClip();
+    const runtime = getMovieClipRuntime(movieClip);
+    expect(runtime).not.toBeNull();
   });
 });

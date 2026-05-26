@@ -1,6 +1,13 @@
 import { ShapeKind } from '@flighthq/types';
 
-import { clearShapeCommands, copyShapeCommands, createShape, createShapeData } from './shape';
+import {
+  clearShapeCommands,
+  copyShapeCommands,
+  createShape,
+  createShapeData,
+  createShapeRuntime,
+  getShapeRuntime,
+} from './shape';
 
 describe('clearShapeCommands', () => {
   it('empties the commands array', () => {
@@ -65,5 +72,20 @@ describe('createShapeData', () => {
 
   it('returns a new object each call', () => {
     expect(createShapeData()).not.toBe(createShapeData());
+  });
+});
+
+describe('createShapeRuntime', () => {
+  it('returns a non-null runtime', () => {
+    const runtime = createShapeRuntime();
+    expect(runtime).not.toBeNull();
+  });
+});
+
+describe('getShapeRuntime', () => {
+  it('returns the runtime for a Shape', () => {
+    const shape = createShape();
+    const runtime = getShapeRuntime(shape);
+    expect(runtime).not.toBeNull();
   });
 });
