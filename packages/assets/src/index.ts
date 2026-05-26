@@ -1,3 +1,5 @@
+export * from './audioSource';
+export * from './audioSourceFrom';
 export * from './font';
 export * from './fontFrom';
 export * from './imageSource';
