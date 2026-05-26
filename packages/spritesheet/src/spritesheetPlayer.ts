@@ -37,7 +37,7 @@ export function showSpritesheetAnimation(
   player.complete = animation === null;
   player.elapsed = 0;
   player.frameIndex = 0;
-  player.queue = [];
+  player.queue.length = 0;
 }
 
 export function updateSpritesheetPlayer(player: SpritesheetPlayer, deltaTime: number): boolean {
