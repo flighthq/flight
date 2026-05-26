@@ -14,7 +14,8 @@ import {
   Quad,
 } from '@flighthq/engine';
 
-import { createTile, initTile, moveTile, removeTileAnimated, removeTileImmediate, type Tile, TILE_STEP } from './tile';
+import type { Tile } from './tile';
+import { createTile, initTile, moveTile, removeTileAnimated, removeTileImmediate, TILE_STEP } from './tile';
 
 const NUM_COLUMNS = 8;
 const NUM_ROWS = 8;

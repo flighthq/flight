@@ -1,3 +1,4 @@
+import type { DisplayObject, ImageSource, TweenManager } from '@flighthq/engine';
 import {
   addChild,
   addChildAt,
@@ -5,13 +6,10 @@ import {
   createBitmap,
   createDisplayObject,
   createTween,
-  type DisplayObject,
   getParent,
-  type ImageSource,
   invalidateRender,
   Quad,
   removeChild,
-  type TweenManager,
 } from '@flighthq/engine';
 
 export const TILE_SIZE = 57;
