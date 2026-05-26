@@ -237,3 +237,23 @@ describe('getSpritesheetPlayerFrame', () => {
     expect(frame!.id).toBe(2);
   });
 });
+
+describe('queueSpritesheetAnimation', () => {
+  it('appends animation to the queue', () => {
+    const player = createSpritesheetPlayer();
+    const anim = makeAnimation([0, 1], 100);
+    queueSpritesheetAnimation(player, anim);
+    expect(player.queue).toHaveLength(1);
+    expect(player.queue[0]).toBe(anim);
+  });
+
+  it('appends multiple animations in order', () => {
+    const player = createSpritesheetPlayer();
+    const a1 = makeAnimation([0], 100);
+    const a2 = makeAnimation([1], 100);
+    queueSpritesheetAnimation(player, a1);
+    queueSpritesheetAnimation(player, a2);
+    expect(player.queue[0]).toBe(a1);
+    expect(player.queue[1]).toBe(a2);
+  });
+});
