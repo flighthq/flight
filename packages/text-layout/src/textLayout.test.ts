@@ -28,6 +28,29 @@ function doLayout(params: TextLayoutParams): TextLayoutResult {
 }
 
 // ---------------------------------------------------------------------------
+// createTextLayoutResult
+// ---------------------------------------------------------------------------
+
+describe('createTextLayoutResult', () => {
+  it('returns default zero values', () => {
+    const result = createTextLayoutResult();
+    expect(result.groups).toHaveLength(0);
+    expect(result.lineAscents).toHaveLength(0);
+    expect(result.lineDescents).toHaveLength(0);
+    expect(result.lineHeights).toHaveLength(0);
+    expect(result.lineLeadings).toHaveLength(0);
+    expect(result.lineWidths).toHaveLength(0);
+    expect(result.numLines).toBe(0);
+    expect(result.textHeight).toBe(0);
+    expect(result.textWidth).toBe(0);
+  });
+
+  it('returns a new object each call', () => {
+    expect(createTextLayoutResult()).not.toBe(createTextLayoutResult());
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Empty / trivial
 // ---------------------------------------------------------------------------
 
