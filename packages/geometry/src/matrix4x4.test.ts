@@ -1062,3 +1062,187 @@ describe('transpose', () => {
     expect(matrix4x4.equals(t2, m)).toBe(true);
   });
 });
+
+describe('append', () => {
+  it('is equivalent to multiply(out, source, other)', () => {
+    const a = matrix4x4.create();
+    matrix4x4.translate(a, a, 5, 0, 0);
+    const b = matrix4x4.create();
+    matrix4x4.scale(b, b, 2, 2, 2);
+
+    const out1 = matrix4x4.create();
+    matrix4x4.append(out1, a, b);
+
+    const out2 = matrix4x4.create();
+    matrix4x4.multiply(out2, a, b);
+
+    expect(matrix4x4.equals(out1, out2)).toBe(true);
+  });
+});
+
+describe('createOrtho', () => {
+  it('returns a Matrix4x4 equivalent to setOrtho', () => {
+    const m1 = matrix4x4.createOrtho(-1, 1, -1, 1, 0.1, 100);
+    const m2 = matrix4x4.create();
+    matrix4x4.setOrtho(m2, -1, 1, -1, 1, 0.1, 100);
+    expect(matrix4x4.equals(m1, m2)).toBe(true);
+  });
+});
+
+describe('createPerspective', () => {
+  it('returns a Matrix4x4 equivalent to setPerspective', () => {
+    const m1 = matrix4x4.createPerspective(0.5, 1.6, 0.1, 1000);
+    const m2 = matrix4x4.create();
+    matrix4x4.setPerspective(m2, 0.5, 1.6, 0.1, 1000);
+    expect(matrix4x4.equals(m1, m2)).toBe(true);
+  });
+});
+
+describe('get', () => {
+  it('returns the element at the given row and column', () => {
+    const m = matrix4x4.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    expect(matrix4x4.get(m, 0, 0)).toBe(1);
+    expect(matrix4x4.get(m, 1, 0)).toBe(2);
+    expect(matrix4x4.get(m, 0, 1)).toBe(5);
+    expect(matrix4x4.get(m, 3, 3)).toBe(16);
+  });
+});
+
+describe('interpolate', () => {
+  it('returns a at t=0', () => {
+    const a = matrix4x4.create();
+    matrix4x4.translate(a, a, 0, 0, 0);
+    const b = matrix4x4.create();
+    matrix4x4.translate(b, b, 10, 0, 0);
+    const out = matrix4x4.create();
+    matrix4x4.interpolate(out, a, b, 0);
+    expect(matrix4x4.equals(out, a)).toBe(true);
+  });
+
+  it('returns b at t=1', () => {
+    const a = matrix4x4.create();
+    const b = matrix4x4.create();
+    matrix4x4.translate(b, b, 10, 0, 0);
+    const out = matrix4x4.create();
+    matrix4x4.interpolate(out, a, b, 1);
+    expect(matrix4x4.equals(out, b)).toBe(true);
+  });
+
+  it('returns midpoint at t=0.5', () => {
+    const a = matrix4x4.create();
+    const b = matrix4x4.create();
+    matrix4x4.translate(b, b, 10, 0, 0);
+    const out = matrix4x4.create();
+    matrix4x4.interpolate(out, a, b, 0.5);
+    expect(out.m[12]).toBeCloseTo(5);
+  });
+});
+
+describe('prepend', () => {
+  it('is equivalent to multiply(out, other, source)', () => {
+    const a = matrix4x4.create();
+    matrix4x4.translate(a, a, 5, 0, 0);
+    const b = matrix4x4.create();
+    matrix4x4.scale(b, b, 2, 2, 2);
+
+    const out1 = matrix4x4.create();
+    matrix4x4.prepend(out1, a, b);
+
+    const out2 = matrix4x4.create();
+    matrix4x4.multiply(out2, b, a);
+
+    expect(matrix4x4.equals(out1, out2)).toBe(true);
+  });
+});
+
+describe('set', () => {
+  it('writes the value at the given row and column', () => {
+    const m = matrix4x4.create();
+    matrix4x4.set(m, 2, 3, 42);
+    expect(matrix4x4.get(m, 2, 3)).toBe(42);
+  });
+
+  it('does not affect other elements', () => {
+    const m = matrix4x4.create();
+    matrix4x4.set(m, 1, 2, 7);
+    expect(matrix4x4.get(m, 0, 0)).toBe(1);
+    expect(matrix4x4.get(m, 3, 3)).toBe(1);
+  });
+});
+
+describe('setOrtho', () => {
+  it('sets m[0] to 2 / (right - left)', () => {
+    const m = matrix4x4.create();
+    matrix4x4.setOrtho(m, -1, 1, -1, 1, 0.1, 100);
+    expect(m.m[0]).toBeCloseTo(1); // 2 / (1 - (-1)) = 1
+  });
+
+  it('sets m[5] to 2 / (top - bottom)', () => {
+    const m = matrix4x4.create();
+    matrix4x4.setOrtho(m, 0, 2, 0, 4, 0.1, 100);
+    expect(m.m[5]).toBeCloseTo(0.5); // 2 / (4 - 0) = 0.5
+  });
+});
+
+describe('setPerspective', () => {
+  it('throws when aspect is 0', () => {
+    const m = matrix4x4.create();
+    expect(() => matrix4x4.setPerspective(m, 0.5, 0, 0.1, 1000)).toThrow();
+  });
+
+  it('sets m[11] to -1', () => {
+    const m = matrix4x4.create();
+    matrix4x4.setPerspective(m, 0.5, 1.6, 0.1, 1000);
+    expect(m.m[11]).toBe(-1);
+  });
+});
+
+describe('transformPoint', () => {
+  it('translates a point by the matrix translation', () => {
+    const m = matrix4x4.create();
+    matrix4x4.translate(m, m, 5, 10, 15);
+    const out = { x: 0, y: 0, z: 0 };
+    matrix4x4.transformPoint(out, m, { x: 0, y: 0, z: 0 });
+    expect(out.x).toBeCloseTo(5);
+    expect(out.y).toBeCloseTo(10);
+    expect(out.z).toBeCloseTo(15);
+  });
+
+  it('scales a point correctly', () => {
+    const m = matrix4x4.create();
+    matrix4x4.scale(m, m, 2, 3, 4);
+    const out = { x: 0, y: 0, z: 0 };
+    matrix4x4.transformPoint(out, m, { x: 1, y: 2, z: 3 });
+    expect(out.x).toBe(2);
+    expect(out.y).toBe(6);
+    expect(out.z).toBe(12);
+  });
+});
+
+describe('transformVector', () => {
+  it('transforms a Vector4 by the matrix', () => {
+    const m = matrix4x4.create();
+    matrix4x4.translate(m, m, 5, 10, 15);
+    const out = { x: 0, y: 0, z: 0, w: 0 };
+    matrix4x4.transformVector(out, m, { x: 1, y: 2, z: 3, w: 1 });
+    expect(out.x).toBeCloseTo(6);
+    expect(out.y).toBeCloseTo(12);
+    expect(out.z).toBeCloseTo(18);
+  });
+});
+
+describe('transformVectors', () => {
+  it('transforms a flat array of [x, y, z] triples', () => {
+    const m = matrix4x4.create();
+    matrix4x4.translate(m, m, 1, 2, 3);
+    const vectors = new Float32Array([0, 0, 0, 1, 0, 0]);
+    const out = new Float32Array(6);
+    matrix4x4.transformVectors(out, m, vectors);
+    expect(out[0]).toBeCloseTo(1);
+    expect(out[1]).toBeCloseTo(2);
+    expect(out[2]).toBeCloseTo(3);
+    expect(out[3]).toBeCloseTo(2);
+    expect(out[4]).toBeCloseTo(2);
+    expect(out[5]).toBeCloseTo(3);
+  });
+});

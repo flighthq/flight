@@ -405,7 +405,7 @@ describe('offset', () => {
   });
 });
 
-describe('set', () => {
+describe('setTo', () => {
   it('updates coordinates of a vector', () => {
     vector2.setTo(pt, 2, 10);
     expect(pt.x).toBe(2);

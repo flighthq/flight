@@ -266,7 +266,7 @@ describe('scale', () => {
   });
 });
 
-describe('set', () => {
+describe('setTo', () => {
   it('sets the values of the vector', () => {
     const v = vector3.create();
     vector3.setTo(v, 5, 10, 15);
@@ -302,5 +302,74 @@ describe('subtract', () => {
     expect(result.x).toBe(0);
     expect(result.y).toBe(0);
     expect(result.z).toBe(0);
+  });
+});
+
+describe('angleBetween', () => {
+  it('returns 0 for identical vectors', () => {
+    const a = vector3.create(1, 0, 0);
+    expect(vector3.angleBetween(a, a)).toBeCloseTo(0);
+  });
+
+  it('returns PI/2 for perpendicular vectors', () => {
+    const a = vector3.create(1, 0, 0);
+    const b = vector3.create(0, 1, 0);
+    expect(vector3.angleBetween(a, b)).toBeCloseTo(Math.PI / 2);
+  });
+
+  it('returns PI for opposite vectors', () => {
+    const a = vector3.create(1, 0, 0);
+    const b = vector3.create(-1, 0, 0);
+    expect(vector3.angleBetween(a, b)).toBeCloseTo(Math.PI);
+  });
+
+  it('returns NaN for a zero-length vector', () => {
+    const a = vector3.create(0, 0, 0);
+    const b = vector3.create(1, 0, 0);
+    expect(vector3.angleBetween(a, b)).toBeNaN();
+  });
+});
+
+describe('nearEquals', () => {
+  it('returns true for identical vectors', () => {
+    const a = vector3.create(1, 2, 3);
+    expect(vector3.nearEquals(a, a)).toBe(true);
+  });
+
+  it('returns true when difference is within default tolerance', () => {
+    const a = vector3.create(1, 2, 3);
+    const b = vector3.create(1 + 1e-7, 2, 3);
+    expect(vector3.nearEquals(a, b)).toBe(true);
+  });
+
+  it('returns false when difference exceeds default tolerance', () => {
+    const a = vector3.create(1, 2, 3);
+    const b = vector3.create(1 + 1e-5, 2, 3);
+    expect(vector3.nearEquals(a, b)).toBe(false);
+  });
+
+  it('respects a custom tolerance', () => {
+    const a = vector3.create(1, 2, 3);
+    const b = vector3.create(1.05, 2, 3);
+    expect(vector3.nearEquals(a, b, 0.1)).toBe(true);
+    expect(vector3.nearEquals(a, b, 0.01)).toBe(false);
+  });
+});
+
+describe('project', () => {
+  it('divides x and y by z to produce a 2D point', () => {
+    const v = vector3.create(4, 6, 2);
+    const out = { x: 0, y: 0 };
+    vector3.project(out, v);
+    expect(out.x).toBe(2);
+    expect(out.y).toBe(3);
+  });
+
+  it('returns the original xy when z is 1', () => {
+    const v = vector3.create(5, 7, 1);
+    const out = { x: 0, y: 0 };
+    vector3.project(out, v);
+    expect(out.x).toBe(5);
+    expect(out.y).toBe(7);
   });
 });

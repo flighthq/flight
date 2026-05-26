@@ -527,3 +527,70 @@ describe('translate', () => {
     expect(out.m[5]).toBe(3); // ty
   });
 });
+
+describe('get', () => {
+  it('returns the element at the given row and column', () => {
+    const m = matrix3x3.create(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    expect(matrix3x3.get(m, 0, 0)).toBe(1);
+    expect(matrix3x3.get(m, 0, 1)).toBe(2);
+    expect(matrix3x3.get(m, 0, 2)).toBe(3);
+    expect(matrix3x3.get(m, 1, 0)).toBe(4);
+    expect(matrix3x3.get(m, 2, 2)).toBe(9);
+  });
+});
+
+describe('identity', () => {
+  it('resets a matrix to the identity', () => {
+    const m = matrix3x3.create(2, 3, 4, 5, 6, 7, 8, 9, 10);
+    matrix3x3.identity(m);
+    expect(matrix3x3.get(m, 0, 0)).toBe(1);
+    expect(matrix3x3.get(m, 1, 1)).toBe(1);
+    expect(matrix3x3.get(m, 2, 2)).toBe(1);
+    expect(matrix3x3.get(m, 0, 1)).toBe(0);
+    expect(matrix3x3.get(m, 1, 0)).toBe(0);
+  });
+});
+
+describe('isAffine', () => {
+  it('returns true for identity matrix', () => {
+    const m = matrix3x3.create();
+    expect(matrix3x3.isAffine(m)).toBe(true);
+  });
+
+  it('returns false when last row is not (0, 0, 1)', () => {
+    const m = matrix3x3.create(1, 0, 0, 0, 1, 0, 1, 0, 1);
+    expect(matrix3x3.isAffine(m)).toBe(false);
+  });
+
+  it('returns true for a matrix with translation', () => {
+    const m = matrix3x3.create(1, 0, 5, 0, 1, 10, 0, 0, 1);
+    expect(matrix3x3.isAffine(m)).toBe(true);
+  });
+});
+
+describe('set', () => {
+  it('writes the value at the given row and column', () => {
+    const m = matrix3x3.create();
+    matrix3x3.set(m, 1, 2, 42);
+    expect(matrix3x3.get(m, 1, 2)).toBe(42);
+  });
+
+  it('does not affect other elements', () => {
+    const m = matrix3x3.create();
+    matrix3x3.set(m, 0, 1, 7);
+    expect(matrix3x3.get(m, 0, 0)).toBe(1);
+    expect(matrix3x3.get(m, 1, 1)).toBe(1);
+  });
+});
+
+describe('setTo', () => {
+  it('sets all 9 elements in row-major order', () => {
+    const m = matrix3x3.create();
+    matrix3x3.setTo(m, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        expect(matrix3x3.get(m, row, col)).toBe(row * 3 + col + 1);
+      }
+    }
+  });
+});

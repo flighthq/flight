@@ -289,7 +289,7 @@ describe('scale', () => {
   });
 });
 
-describe('set', () => {
+describe('setTo', () => {
   it('sets the values of the vector', () => {
     const v = vector4.create();
     vector4.setTo(v, 5, 10, 15, 5);
@@ -329,5 +329,50 @@ describe('subtract', () => {
     expect(result.y).toBe(0);
     expect(result.z).toBe(0);
     expect(result.w).toBe(0);
+  });
+});
+
+describe('angleBetween', () => {
+  it('returns 0 for identical vectors', () => {
+    const a = vector4.create(1, 0, 0, 0);
+    expect(vector4.angleBetween(a, a)).toBeCloseTo(0);
+  });
+
+  it('returns PI/2 for perpendicular vectors', () => {
+    const a = vector4.create(1, 0, 0, 0);
+    const b = vector4.create(0, 1, 0, 0);
+    expect(vector4.angleBetween(a, b)).toBeCloseTo(Math.PI / 2);
+  });
+
+  it('returns NaN for a zero-length vector', () => {
+    const a = vector4.create(0, 0, 0, 0);
+    const b = vector4.create(1, 0, 0, 0);
+    expect(vector4.angleBetween(a, b)).toBeNaN();
+  });
+});
+
+describe('nearEquals', () => {
+  it('returns true for identical vectors', () => {
+    const a = vector4.create(1, 2, 3, 4);
+    expect(vector4.nearEquals(a, a)).toBe(true);
+  });
+
+  it('returns true when difference is within default tolerance', () => {
+    const a = vector4.create(1, 2, 3, 4);
+    const b = vector4.create(1 + 1e-7, 2, 3, 4);
+    expect(vector4.nearEquals(a, b)).toBe(true);
+  });
+
+  it('returns false when difference exceeds default tolerance', () => {
+    const a = vector4.create(1, 2, 3, 4);
+    const b = vector4.create(1 + 1e-5, 2, 3, 4);
+    expect(vector4.nearEquals(a, b)).toBe(false);
+  });
+
+  it('respects a custom tolerance', () => {
+    const a = vector4.create(1, 2, 3, 4);
+    const b = vector4.create(1.05, 2, 3, 4);
+    expect(vector4.nearEquals(a, b, 0.1)).toBe(true);
+    expect(vector4.nearEquals(a, b, 0.01)).toBe(false);
   });
 });

@@ -1095,3 +1095,81 @@ describe('writeToFloat32Array', () => {
     }
   });
 });
+
+describe('createGradientTransform', () => {
+  it('returns a Matrix3x2 equivalent to calling setGradientTransform', () => {
+    const m1 = matrix3x2.createGradientTransform(100, 200);
+    const m2 = matrix3x2.create();
+    matrix3x2.setGradientTransform(m2, 100, 200);
+    expect(matrix3x2.equals(m1, m2)).toBe(true);
+  });
+
+  it('sets tx to tx + width / 2 and ty to ty + height / 2', () => {
+    const m = matrix3x2.createGradientTransform(100, 200, 0, 10, 20);
+    expect(m.tx).toBeCloseTo(60); // 10 + 100/2
+    expect(m.ty).toBeCloseTo(120); // 20 + 200/2
+  });
+});
+
+describe('identity', () => {
+  it('resets a modified matrix to identity', () => {
+    const m = matrix3x2.create(2, 3, 4, 5, 6, 7);
+    matrix3x2.identity(m);
+    expect(m.a).toBe(1);
+    expect(m.b).toBe(0);
+    expect(m.c).toBe(0);
+    expect(m.d).toBe(1);
+    expect(m.tx).toBe(0);
+    expect(m.ty).toBe(0);
+  });
+});
+
+describe('setGradientTransform', () => {
+  it('sets a and d proportional to width and height', () => {
+    const m = matrix3x2.create();
+    matrix3x2.setGradientTransform(m, 1638.4, 1638.4);
+    expect(m.a).toBeCloseTo(1);
+    expect(m.d).toBeCloseTo(1);
+  });
+
+  it('sets tx to tx + width / 2 and ty to ty + height / 2', () => {
+    const m = matrix3x2.create();
+    matrix3x2.setGradientTransform(m, 200, 400, 0, 0, 0);
+    expect(m.tx).toBeCloseTo(100);
+    expect(m.ty).toBeCloseTo(200);
+  });
+
+  it('applies rotation to the linear part', () => {
+    const m = matrix3x2.create();
+    matrix3x2.setGradientTransform(m, 1638.4, 1638.4, Math.PI / 2);
+    expect(m.b).toBeCloseTo(1);
+    expect(m.c).toBeCloseTo(-1);
+  });
+});
+
+describe('translateUsingVector', () => {
+  it('translates tx/ty by the transformed vector', () => {
+    const m = matrix3x2.create(2, 0, 0, 2, 5, 10);
+    const out = matrix3x2.create();
+    matrix3x2.translateUsingVector(out, m, { x: 3, y: 4 });
+    expect(out.tx).toBeCloseTo(5 + 2 * 3 + 0 * 4); // 11
+    expect(out.ty).toBeCloseTo(10 + 0 * 3 + 2 * 4); // 18
+  });
+});
+
+describe('translateUsingVectorXY', () => {
+  it('translates tx/ty by the transformed x and y components', () => {
+    const m = matrix3x2.create(2, 0, 0, 2, 5, 10);
+    const out = matrix3x2.create();
+    matrix3x2.translateUsingVectorXY(out, m, 3, 4);
+    expect(out.tx).toBeCloseTo(11);
+    expect(out.ty).toBeCloseTo(18);
+  });
+
+  it('supports out === source', () => {
+    const m = matrix3x2.create(1, 0, 0, 1, 5, 10);
+    matrix3x2.translateUsingVectorXY(m, m, 2, 3);
+    expect(m.tx).toBeCloseTo(7);
+    expect(m.ty).toBeCloseTo(13);
+  });
+});

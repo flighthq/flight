@@ -878,3 +878,37 @@ describe('union', () => {
     expect(u.height).toBe(25);
   });
 });
+
+describe('setBottom', () => {
+  it('adjusts height so that y + height equals value', () => {
+    const rect = rectangle.create(0, 10, 5, 5);
+    rectangle.setBottom(rect, 30);
+    expect(rect.height).toBe(20);
+  });
+
+  it('can set bottom to equal y (zero height)', () => {
+    const rect = rectangle.create(0, 5, 10, 10);
+    rectangle.setBottom(rect, 5);
+    expect(rect.height).toBe(0);
+  });
+});
+
+describe('setTo', () => {
+  it('assigns all four properties', () => {
+    const rect = rectangle.create();
+    rectangle.setTo(rect, 1, 2, 3, 4);
+    expect(rect.x).toBe(1);
+    expect(rect.y).toBe(2);
+    expect(rect.width).toBe(3);
+    expect(rect.height).toBe(4);
+  });
+
+  it('overwrites existing values', () => {
+    const rect = rectangle.create(10, 20, 30, 40);
+    rectangle.setTo(rect, 0, 0, 0, 0);
+    expect(rect.x).toBe(0);
+    expect(rect.y).toBe(0);
+    expect(rect.width).toBe(0);
+    expect(rect.height).toBe(0);
+  });
+});
