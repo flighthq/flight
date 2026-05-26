@@ -4,6 +4,7 @@ import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
+import { createRenderNode, getRenderNode } from './renderNode';
 import { createDisplayObjectRenderNode, getDisplayObjectRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
 
@@ -45,5 +46,37 @@ describe('getDisplayObjectRenderNode', () => {
     expect(state.renderNodeMap.has(source)).toBe(false);
     getDisplayObjectRenderNode(state, source);
     expect(state.renderNodeMap.has(source)).toBe(true);
+  });
+});
+
+describe('createRenderNode', () => {
+  it('creates a render node with default values', () => {
+    const state = createRenderState();
+    const source = createDisplayObject();
+    const node = createRenderNode(state, source);
+    expect(node.alpha).toBe(1);
+    expect(node.blendMode).toStrictEqual(BlendMode.Normal);
+    expect(node.visible).toBe(true);
+    expect(node.source).toBe(source);
+    expect(node.renderer).toBeNull();
+    expect(node.rendererData).toBeNull();
+  });
+});
+
+describe('getRenderNode', () => {
+  it('creates and caches a render node on first call', () => {
+    const state = createRenderState();
+    const source = createDisplayObject();
+    const node = getRenderNode(state, source, createDisplayObjectRenderNode);
+    expect(state.renderNodeMap.has(source)).toBe(true);
+    expect(node.source).toBe(source);
+  });
+
+  it('returns the same node on subsequent calls', () => {
+    const state = createRenderState();
+    const source = createDisplayObject();
+    const first = getRenderNode(state, source, createDisplayObjectRenderNode);
+    const second = getRenderNode(state, source, createDisplayObjectRenderNode);
+    expect(first).toBe(second);
   });
 });
