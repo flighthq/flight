@@ -24,6 +24,14 @@ function singleRangeParams(text: string, width = 1000, overrides: object = {}) {
 // Empty / trivial
 // ---------------------------------------------------------------------------
 
+describe('layoutText', () => {
+  it('returns groups and line metrics for simple text', () => {
+    const result = layoutText(singleRangeParams('hi'));
+    expect(result.groups).not.toBeNull();
+    expect(result.numLines).toBeGreaterThan(0);
+  });
+});
+
 describe('layoutText — empty input', () => {
   it('returns an empty result for empty text', () => {
     const result = layoutText(singleRangeParams(''));
