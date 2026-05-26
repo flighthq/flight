@@ -40,7 +40,8 @@ describe('getPixels', () => {
   it('returns a region as a Uint8ClampedArray', () => {
     const img = createImageData(4, 4);
     setPixel32(img, 1, 1, 0xff112233);
-    const region = getPixels(img, 1, 1, 1, 1);
+    const region = new Uint8ClampedArray(1 * 1 * 4);
+    getPixels(region, img, 1, 1, 1, 1);
     expect(region[0]).toBe(0x11);
     expect(region[1]).toBe(0x22);
     expect(region[2]).toBe(0x33);
@@ -51,7 +52,8 @@ describe('setPixels', () => {
   it('writes a region from a Uint8ClampedArray', () => {
     const src = createImageData(2, 2, 0xff112233);
     const dst = createImageData(4, 4);
-    const pixels = getPixels(src, 0, 0, 2, 2);
+    const pixels = new Uint8ClampedArray(2 * 2 * 4);
+    getPixels(pixels, src, 0, 0, 2, 2);
     setPixels(dst, 1, 1, 2, 2, pixels);
     expect(getPixel32(dst, 1, 1)).toBe(0xff112233);
   });
@@ -90,7 +92,8 @@ describe('getPixels / setPixels', () => {
     const img = createImageData(4, 4);
     setPixel32(img, 1, 1, 0xff112233);
     setPixel32(img, 2, 1, 0xff445566);
-    const region = getPixels(img, 1, 1, 2, 1);
+    const region = new Uint8ClampedArray(2 * 1 * 4);
+    getPixels(region, img, 1, 1, 2, 1);
     expect(region[0]).toBe(0x11);
     expect(region[4]).toBe(0x44);
   });
@@ -98,7 +101,8 @@ describe('getPixels / setPixels', () => {
   it('restores a region written with setPixels', () => {
     const src = createImageData(2, 2, 0xffaabbcc);
     const dst = createImageData(4, 4);
-    const pixels = getPixels(src, 0, 0, 2, 2);
+    const pixels = new Uint8ClampedArray(2 * 2 * 4);
+    getPixels(pixels, src, 0, 0, 2, 2);
     setPixels(dst, 1, 1, 2, 2, pixels);
     expect(getPixel32(dst, 1, 1)).toBe(0xffaabbcc);
     expect(getPixel32(dst, 2, 2)).toBe(0xffaabbcc);
