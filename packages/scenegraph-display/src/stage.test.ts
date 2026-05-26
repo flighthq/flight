@@ -1,9 +1,16 @@
 import { addChild } from '@flighthq/scenegraph-core';
-import type { PartialNode, Stage } from '@flighthq/types';
+import type { PartialNode, Rectangle, Stage } from '@flighthq/types';
 import { StageKind } from '@flighthq/types';
 
 import { createDisplayObject } from './displayObject';
-import { createStage, getStage } from './stage';
+import {
+  computeStageLocalBoundsRect,
+  createStage,
+  createStageData,
+  createStageRuntime,
+  getStage,
+  getStageRuntime,
+} from './stage';
 
 describe('createStage', () => {
   let stage: Stage;
@@ -89,5 +96,51 @@ describe('getStage', () => {
     addChild(stage, mid);
     addChild(mid, leaf);
     expect(getStage(leaf)).toBe(stage);
+  });
+});
+
+describe('computeStageLocalBoundsRect', () => {
+  it('sets out dimensions from stageWidth and stageHeight', () => {
+    const stage = createStage({ data: { stageWidth: 800, stageHeight: 600 } });
+    const out: Rectangle = { x: 0, y: 0, width: 0, height: 0 };
+    computeStageLocalBoundsRect(out, stage);
+    expect(out.width).toBe(800);
+    expect(out.height).toBe(600);
+  });
+});
+
+describe('createStageData', () => {
+  it('returns default values', () => {
+    const data = createStageData();
+    expect(data.stageWidth).toBe(400);
+    expect(data.stageHeight).toBe(550);
+    expect(data.frameRate).toBe(0);
+    expect(data.quality).toBe('high');
+  });
+
+  it('allows pre-defined values', () => {
+    const data = createStageData({ stageWidth: 1920, stageHeight: 1080 });
+    expect(data.stageWidth).toBe(1920);
+    expect(data.stageHeight).toBe(1080);
+  });
+});
+
+describe('createStageRuntime', () => {
+  it('returns a non-null runtime', () => {
+    const runtime = createStageRuntime();
+    expect(runtime).not.toBeNull();
+  });
+
+  it('uses computeStageLocalBoundsRect', () => {
+    const runtime = createStageRuntime();
+    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeStageLocalBoundsRect);
+  });
+});
+
+describe('getStageRuntime', () => {
+  it('returns the runtime for a Stage', () => {
+    const stage = createStage();
+    const runtime = getStageRuntime(stage);
+    expect(runtime).not.toBeNull();
   });
 });

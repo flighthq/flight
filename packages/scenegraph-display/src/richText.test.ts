@@ -1,7 +1,13 @@
-import type { RichText } from '@flighthq/types';
+import type { Rectangle, RichText } from '@flighthq/types';
 import { RichTextKind } from '@flighthq/types';
 
-import { createRichText } from './richText';
+import {
+  computeRichTextLocalBoundsRect,
+  createRichText,
+  createRichTextData,
+  createRichTextRuntime,
+  getRichTextRuntime,
+} from './richText';
 
 describe('createRichText', () => {
   let richText: RichText;
@@ -70,5 +76,53 @@ describe('createRichText', () => {
     const base = {};
     const obj = createRichText(base);
     expect(obj).not.toStrictEqual(base);
+  });
+});
+
+describe('computeRichTextLocalBoundsRect', () => {
+  it('sets out.width and out.height from data dimensions', () => {
+    const richText = createRichText({ data: { width: 200, height: 150 } });
+    const out: Rectangle = { x: 0, y: 0, width: 0, height: 0 };
+    computeRichTextLocalBoundsRect(out, richText);
+    expect(out.width).toBe(200);
+    expect(out.height).toBe(150);
+  });
+});
+
+describe('createRichTextData', () => {
+  it('returns default values', () => {
+    const data = createRichTextData();
+    expect(data.width).toBe(100);
+    expect(data.height).toBe(100);
+    expect(data.htmlText).toBe('');
+    expect(data.multiline).toBe(true);
+    expect(data.wordWrap).toBe(false);
+  });
+
+  it('allows pre-defined values', () => {
+    const data = createRichTextData({ width: 300, height: 200, htmlText: '<b>hi</b>' });
+    expect(data.width).toBe(300);
+    expect(data.height).toBe(200);
+    expect(data.htmlText).toBe('<b>hi</b>');
+  });
+});
+
+describe('createRichTextRuntime', () => {
+  it('returns a non-null runtime', () => {
+    const runtime = createRichTextRuntime();
+    expect(runtime).not.toBeNull();
+  });
+
+  it('uses computeRichTextLocalBoundsRect', () => {
+    const runtime = createRichTextRuntime();
+    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeRichTextLocalBoundsRect);
+  });
+});
+
+describe('getRichTextRuntime', () => {
+  it('returns the runtime for a RichText', () => {
+    const richText = createRichText();
+    const runtime = getRichTextRuntime(richText);
+    expect(runtime).not.toBeNull();
   });
 });

@@ -1,7 +1,11 @@
 import type { DisplayContainer } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { createDisplayContainer } from './displayContainer';
+import {
+  createDisplayContainer,
+  createDisplayContainerRuntime,
+  getDisplayContainerRuntime,
+} from './displayContainer';
 
 describe('createDisplayContainer', () => {
   let displayContainer: DisplayContainer;
@@ -18,5 +22,20 @@ describe('createDisplayContainer', () => {
     const base = {};
     const obj = createDisplayContainer(base);
     expect(obj).not.toStrictEqual(base);
+  });
+});
+
+describe('createDisplayContainerRuntime', () => {
+  it('returns a non-null runtime', () => {
+    const runtime = createDisplayContainerRuntime();
+    expect(runtime).not.toBeNull();
+  });
+});
+
+describe('getDisplayContainerRuntime', () => {
+  it('returns the runtime for a DisplayContainer', () => {
+    const container = createDisplayContainer();
+    const runtime = getDisplayContainerRuntime(container);
+    expect(runtime).not.toBeNull();
   });
 });

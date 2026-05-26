@@ -1,7 +1,7 @@
 import type { PartialNode, Text } from '@flighthq/types';
 import { TextKind } from '@flighthq/types';
 
-import { createText } from './text';
+import { createText, createTextData, createTextRuntime, getTextRuntime } from './text';
 
 describe('createText', () => {
   let text: Text;
@@ -33,5 +33,35 @@ describe('createText', () => {
     const base = {};
     const obj = createText(base);
     expect(obj).not.toStrictEqual(base);
+  });
+});
+
+describe('createTextData', () => {
+  it('returns default values', () => {
+    const data = createTextData();
+    expect(data.autoSize).toBe('none');
+    expect(data.text).toBe('');
+    expect(data.textFormat).not.toBeNull();
+  });
+
+  it('allows pre-defined values', () => {
+    const data = createTextData({ autoSize: 'left', text: 'hello' });
+    expect(data.autoSize).toBe('left');
+    expect(data.text).toBe('hello');
+  });
+});
+
+describe('createTextRuntime', () => {
+  it('returns a non-null runtime', () => {
+    const runtime = createTextRuntime();
+    expect(runtime).not.toBeNull();
+  });
+});
+
+describe('getTextRuntime', () => {
+  it('returns the runtime for a Text', () => {
+    const text = createText();
+    const runtime = getTextRuntime(text);
+    expect(runtime).not.toBeNull();
   });
 });

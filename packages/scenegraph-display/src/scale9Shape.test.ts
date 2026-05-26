@@ -1,6 +1,11 @@
 import { Scale9ShapeKind } from '@flighthq/types';
 
-import { createScale9Shape, createScale9ShapeData } from './scale9Shape';
+import {
+  createScale9Shape,
+  createScale9ShapeData,
+  createScale9ShapeRuntime,
+  getScale9ShapeRuntime,
+} from './scale9Shape';
 
 const grid = { x: 10, y: 10, width: 80, height: 80 };
 
@@ -40,5 +45,20 @@ describe('createScale9ShapeData', () => {
     const commands = [{ key: 'endFill' as const, args: [] as const }];
     const data = createScale9ShapeData(grid, { commands });
     expect(data.commands).toBe(commands);
+  });
+});
+
+describe('createScale9ShapeRuntime', () => {
+  it('returns a non-null runtime', () => {
+    const runtime = createScale9ShapeRuntime();
+    expect(runtime).not.toBeNull();
+  });
+});
+
+describe('getScale9ShapeRuntime', () => {
+  it('returns the runtime for a Scale9Shape', () => {
+    const shape = createScale9Shape(grid);
+    const runtime = getScale9ShapeRuntime(shape);
+    expect(runtime).not.toBeNull();
   });
 });
