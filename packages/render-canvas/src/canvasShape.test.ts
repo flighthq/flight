@@ -1,6 +1,9 @@
+import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { beginFill, createShape, drawRect, endFill, lineStyle } from '@flighthq/scenegraph-display';
+import { ShapeKind } from '@flighthq/types';
 
-import { renderCanvasShapeCommands } from './canvasShape';
+import { createCanvasRenderState } from './canvasRenderState';
+import { defaultCanvasShapeRenderer, drawCanvasShape, renderCanvasShapeCommands } from './canvasShape';
 import { defaultCanvasShapeCommands } from './canvasShapeCommands';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
 
@@ -72,5 +75,34 @@ describe('renderCanvasShapeCommands', () => {
     endFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledWith('evenodd');
+  });
+});
+
+describe('drawCanvasShape', () => {
+  it('does not throw for a shape with no commands', () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 200;
+    const state = createCanvasRenderState(canvas);
+    registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
+    const shape = createShape();
+    const data = getDisplayObjectRenderNode(state, shape);
+    expect(() => drawCanvasShape(state, data)).not.toThrow();
+  });
+
+  it('calls fill when shape has beginFill and drawRect commands', () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 200;
+    const state = createCanvasRenderState(canvas);
+    registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
+    const shape = createShape();
+    beginFill(shape, 0xff0000);
+    drawRect(shape, 0, 0, 50, 50);
+    endFill(shape);
+    const data = getDisplayObjectRenderNode(state, shape);
+    const spy = vi.spyOn(state.context, 'fill');
+    drawCanvasShape(state, data);
+    expect(spy).toHaveBeenCalled();
   });
 });

@@ -7,6 +7,7 @@ import { DisplayObjectKind } from '@flighthq/types';
 import {
   defaultCanvasDisplayObjectRenderer,
   drawCanvasDisplayObject,
+  drawCanvasDisplayObjectMask,
   renderCanvasDisplayObject,
 } from './canvasDisplayObject';
 import { createCanvasRenderState } from './canvasRenderState';
@@ -108,5 +109,26 @@ describe('defaultCanvasDisplayObjectRenderer', () => {
     expect(typeof defaultCanvasDisplayObjectRenderer.draw).toBe('function');
     expect(typeof defaultCanvasDisplayObjectRenderer.drawMask).toBe('function');
     expect(typeof defaultCanvasDisplayObjectRenderer.createData).toBe('function');
+  });
+});
+
+describe('drawCanvasDisplayObjectMask', () => {
+  it('does not throw when opaqueBackground is null and no children', () => {
+    const state = makeState();
+    const obj = createDisplayObject();
+    obj.opaqueBackground = null;
+    const data = getDisplayObjectRenderNode(state, obj);
+    expect(() => drawCanvasDisplayObjectMask(state, data)).not.toThrow();
+  });
+
+  it('calls context.rect when opaqueBackground is set', () => {
+    const state = makeState();
+    const obj = createDisplayObject();
+    obj.opaqueBackground = 0xff0000;
+    rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 50, 50);
+    const data = getDisplayObjectRenderNode(state, obj);
+    const rectSpy = vi.spyOn(state.context, 'rect');
+    drawCanvasDisplayObjectMask(state, data);
+    expect(rectSpy).toHaveBeenCalled();
   });
 });

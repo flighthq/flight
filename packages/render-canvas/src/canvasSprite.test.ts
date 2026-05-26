@@ -4,8 +4,10 @@ import { addChild, setScaleX, setScaleY, setX, setY } from '@flighthq/scenegraph
 import { createSprite } from '@flighthq/scenegraph-sprite';
 import { SpriteKind } from '@flighthq/types';
 
+import { getSpriteRenderNode } from '@flighthq/render-core';
+
 import { createCanvasRenderState } from './canvasRenderState';
-import { defaultCanvasSpriteRenderer, renderCanvasSprite } from './canvasSprite';
+import { defaultCanvasSpriteRenderer, drawCanvasSprite, renderCanvasSprite } from './canvasSprite';
 
 function makeAtlas() {
   const img = document.createElement('img') as HTMLImageElement;
@@ -81,6 +83,31 @@ describe('renderCanvasSprite', () => {
     updateSpriteBeforeRender(state, sprite);
     renderCanvasSprite(state, sprite);
 
+    expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe('drawCanvasSprite', () => {
+  it('calls drawImage when sprite has a valid atlas region', () => {
+    const atlas = makeAtlas();
+    const state = makeState();
+    const sprite = createSprite();
+    sprite.data.atlas = atlas;
+    sprite.data.id = 0;
+    updateSpriteBeforeRender(state, sprite);
+    const renderNode = getSpriteRenderNode(state, sprite);
+    const spy = vi.spyOn(state.context, 'drawImage');
+    drawCanvasSprite(state, renderNode);
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('skips draw when atlas is null', () => {
+    const state = makeState();
+    const sprite = createSprite();
+    updateSpriteBeforeRender(state, sprite);
+    const renderNode = getSpriteRenderNode(state, sprite);
+    const spy = vi.spyOn(state.context, 'drawImage');
+    drawCanvasSprite(state, renderNode);
     expect(spy).not.toHaveBeenCalled();
   });
 });
