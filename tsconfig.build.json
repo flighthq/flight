@@ -10,6 +10,7 @@
     { "path": "./packages/materials" },
     { "path": "./packages/render-core" },
     { "path": "./packages/render-canvas" },
+    { "path": "./packages/render-dom" },
     { "path": "./packages/scenegraph-core" },
     { "path": "./packages/scenegraph-display" },
     { "path": "./packages/scenegraph-sprite" },

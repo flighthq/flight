@@ -1,0 +1,77 @@
+{
+  "name": "@flighthq/render-dom",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./background": {
+      "types": "./dist/domBackground.d.ts",
+      "default": "./dist/domBackground.js"
+    },
+    "./bitmap": {
+      "types": "./dist/domBitmap.d.ts",
+      "default": "./dist/domBitmap.js"
+    },
+    "./displayObject": {
+      "types": "./dist/domDisplayObject.d.ts",
+      "default": "./dist/domDisplayObject.js"
+    },
+    "./element": {
+      "types": "./dist/domElement.d.ts",
+      "default": "./dist/domElement.js"
+    },
+    "./materials": {
+      "types": "./dist/domMaterials.d.ts",
+      "default": "./dist/domMaterials.js"
+    },
+    "./renderState": {
+      "types": "./dist/domRenderState.d.ts",
+      "default": "./dist/domRenderState.js"
+    },
+    "./richText": {
+      "types": "./dist/domRichText.d.ts",
+      "default": "./dist/domRichText.js"
+    },
+    "./shape": {
+      "types": "./dist/domShape.d.ts",
+      "default": "./dist/domShape.js"
+    },
+    "./text": {
+      "types": "./dist/domText.d.ts",
+      "default": "./dist/domText.js"
+    },
+    "./transform": {
+      "types": "./dist/domTransform.d.ts",
+      "default": "./dist/domTransform.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "@flighthq/foundation": "*",
+    "@flighthq/geometry": "*",
+    "@flighthq/render-canvas": "*",
+    "@flighthq/render-core": "*",
+    "@flighthq/scenegraph-core": "*",
+    "@flighthq/scenegraph-display": "*",
+    "@flighthq/text-layout": "*",
+    "@flighthq/types": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  },
+  "description": "DOM renderer implementation"
+}
