@@ -7,6 +7,8 @@ import { createTextLayoutGroup } from './textLayoutGroup';
 import { getLineBreaks } from './textLineBreaks';
 
 const GUTTER = 2;
+const _lineBreaks: number[] = [];
+const _charAdvances: number[] = [];
 
 export type TextMeasureFn = (text: string, format: TextFormat) => number;
 
@@ -23,24 +25,38 @@ export interface TextLayoutParams {
 }
 
 export interface TextLayoutResult {
-  groups: readonly TextLayoutGroup[];
-  lineAscents: readonly number[];
-  lineDescents: readonly number[];
-  lineHeights: readonly number[];
-  lineLeadings: readonly number[];
-  lineWidths: readonly number[];
+  groups: TextLayoutGroup[];
+  lineAscents: number[];
+  lineDescents: number[];
+  lineHeights: number[];
+  lineLeadings: number[];
+  lineWidths: number[];
   numLines: number;
   textHeight: number;
   textWidth: number;
+}
+
+export function createTextLayoutResult(): TextLayoutResult {
+  return {
+    groups: [],
+    lineAscents: [],
+    lineDescents: [],
+    lineHeights: [],
+    lineLeadings: [],
+    lineWidths: [],
+    numLines: 0,
+    textHeight: 0,
+    textWidth: 0,
+  };
 }
 
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-function charAdvances(text: string, format: TextFormat, start: number, end: number, measure: TextMeasureFn): number[] {
+function charAdvances(out: number[], text: string, format: TextFormat, start: number, end: number, measure: TextMeasureFn): void {
+  out.length = 0;
   const letterSpacing = format.letterSpacing ?? 0;
-  const positions: number[] = [];
 
   for (let i = start; i < end; i++) {
     let advance: number;
@@ -52,10 +68,8 @@ function charAdvances(text: string, format: TextFormat, start: number, end: numb
     } else {
       advance = measure(text.charAt(i), format);
     }
-    positions.push(advance + letterSpacing);
+    out.push(advance + letterSpacing);
   }
-
-  return positions;
 }
 
 function sumAdvances(positions: number[]): number {
@@ -69,6 +83,7 @@ function sumAdvances(positions: number[]): number {
 // ---------------------------------------------------------------------------
 
 function buildGroups(
+  out: TextLayoutGroup[],
   text: string,
   formatRanges: readonly TextFormatRange[],
   lineBreaks: number[],
@@ -76,8 +91,9 @@ function buildGroups(
   measure: TextMeasureFn,
   wordWrap: boolean,
   multiline: boolean,
-): TextLayoutGroup[] {
-  const groups: TextLayoutGroup[] = [];
+): void {
+  out.length = 0;
+  const groups = out;
 
   let rangeIndex = 0;
   let formatRange = formatRanges[0];
@@ -174,9 +190,6 @@ function buildGroups(
       const rangeEnd = Math.min(end, formatRange.end);
 
       if (idx < rangeEnd) {
-        const pos = charAdvances(text, currentFormat, idx, rangeEnd, measure);
-        const spanWidth = sumAdvances(pos);
-
         if (activeGroup === null || activeGroup.startIndex !== activeGroup.endIndex) {
           activeGroup = createTextLayoutGroup(formatRange.format, idx, rangeEnd);
           groups.push(activeGroup);
@@ -186,7 +199,8 @@ function buildGroups(
           activeGroup.endIndex = rangeEnd;
         }
 
-        activeGroup.positions = pos;
+        charAdvances(activeGroup.positions, text, currentFormat, idx, rangeEnd, measure);
+        const spanWidth = sumAdvances(activeGroup.positions);
         activeGroup.offsetX = offsetX + baseX();
         activeGroup.ascent = ascent;
         activeGroup.descent = descent;
@@ -230,8 +244,8 @@ function buildGroups(
     while (idx < end) {
       const rangeEnd = Math.min(end, formatRange.end);
       if (idx < rangeEnd) {
-        const pos = charAdvances(text, currentFormat, idx, rangeEnd, measure);
-        for (const p of pos) allPositions.push(p);
+        charAdvances(_charAdvances, text, currentFormat, idx, rangeEnd, measure);
+        for (const p of _charAdvances) allPositions.push(p);
         idx = rangeEnd;
       }
       if (idx >= end) break;
@@ -252,8 +266,8 @@ function buildGroups(
     let remaining = textIndex;
 
     while (remaining < end) {
-      const pos = charAdvances(text, currentFormat, remaining, end, measure);
-      const totalW = sumAdvances(pos);
+      charAdvances(_charAdvances, text, currentFormat, remaining, end, measure);
+      const totalW = sumAdvances(_charAdvances);
 
       if (offsetX + totalW <= wrapWidth()) {
         placeSpan(remaining, end);
@@ -263,8 +277,8 @@ function buildGroups(
       // Find the largest prefix that fits.
       let count = 0;
       let w = 0;
-      while (count < pos.length && offsetX + w + pos[count] <= wrapWidth()) {
-        w += pos[count++];
+      while (count < _charAdvances.length && offsetX + w + _charAdvances[count] <= wrapWidth()) {
+        w += _charAdvances[count++];
       }
       if (count === 0) count = 1; // always place at least one character
 
@@ -359,7 +373,6 @@ function buildGroups(
     g.height = maxLineHeight || g.height;
   }
 
-  return groups;
 }
 
 // ---------------------------------------------------------------------------
@@ -386,62 +399,48 @@ function applyAlignment(groups: TextLayoutGroup[], containerWidth: number, lineW
 // Line metrics pass
 // ---------------------------------------------------------------------------
 
-interface LineMetrics {
-  lineAscents: number[];
-  lineDescents: number[];
-  lineHeights: number[];
-  lineLeadings: number[];
-  lineWidths: number[];
-  numLines: number;
-  textHeight: number;
-  textWidth: number;
-}
-
-function buildLineMetrics(groups: readonly TextLayoutGroup[]): LineMetrics {
-  const lineAscents: number[] = [];
-  const lineDescents: number[] = [];
-  const lineHeights: number[] = [];
-  const lineLeadings: number[] = [];
-  const lineWidths: number[] = [];
-
-  let textWidth = 0;
-  let textHeight = 0;
-  let numLines = 0;
+function writeLineMetrics(out: TextLayoutResult, groups: readonly TextLayoutGroup[]): void {
+  out.lineAscents.length = 0;
+  out.lineDescents.length = 0;
+  out.lineHeights.length = 0;
+  out.lineLeadings.length = 0;
+  out.lineWidths.length = 0;
+  out.textWidth = 0;
+  out.textHeight = 0;
+  out.numLines = 0;
 
   for (const g of groups) {
-    while (g.lineIndex >= numLines) {
-      lineAscents.push(0);
-      lineDescents.push(0);
-      lineHeights.push(0);
-      lineLeadings.push(0);
-      lineWidths.push(0);
-      numLines++;
+    while (g.lineIndex >= out.numLines) {
+      out.lineAscents.push(0);
+      out.lineDescents.push(0);
+      out.lineHeights.push(0);
+      out.lineLeadings.push(0);
+      out.lineWidths.push(0);
+      out.numLines++;
     }
 
     const li = g.lineIndex;
-    lineAscents[li] = Math.max(lineAscents[li], g.ascent);
-    lineDescents[li] = Math.max(lineDescents[li], g.descent);
-    lineHeights[li] = Math.max(lineHeights[li], g.height);
-    if (g.leading > lineLeadings[li]) lineLeadings[li] = g.leading;
+    out.lineAscents[li] = Math.max(out.lineAscents[li], g.ascent);
+    out.lineDescents[li] = Math.max(out.lineDescents[li], g.descent);
+    out.lineHeights[li] = Math.max(out.lineHeights[li], g.height);
+    if (g.leading > out.lineLeadings[li]) out.lineLeadings[li] = g.leading;
 
     const rightEdge = g.offsetX - GUTTER + g.width;
-    if (rightEdge > lineWidths[li]) lineWidths[li] = rightEdge;
-    if (rightEdge > textWidth) textWidth = rightEdge;
+    if (rightEdge > out.lineWidths[li]) out.lineWidths[li] = rightEdge;
+    if (rightEdge > out.textWidth) out.textWidth = rightEdge;
 
     const bottom = Math.ceil(g.offsetY - GUTTER + g.ascent + g.descent);
-    if (bottom > textHeight) textHeight = bottom;
+    if (bottom > out.textHeight) out.textHeight = bottom;
   }
 
-  if (numLines === 0) numLines = 1;
-
-  return { lineAscents, lineDescents, lineHeights, lineLeadings, lineWidths, numLines, textHeight, textWidth };
+  if (out.numLines === 0) out.numLines = 1;
 }
 
 // ---------------------------------------------------------------------------
 // Public entry point
 // ---------------------------------------------------------------------------
 
-export function layoutText(params: TextLayoutParams): TextLayoutResult {
+export function layoutText(out: TextLayoutResult, params: TextLayoutParams): void {
   const {
     text,
     formatRanges,
@@ -454,30 +453,27 @@ export function layoutText(params: TextLayoutParams): TextLayoutResult {
   } = params;
 
   if (!text || formatRanges.length === 0) {
-    return {
-      groups: [],
-      lineAscents: [],
-      lineDescents: [],
-      lineHeights: [],
-      lineLeadings: [],
-      lineWidths: [],
-      numLines: 1,
-      textHeight: 0,
-      textWidth: 0,
-    };
+    out.groups.length = 0;
+    out.lineAscents.length = 0;
+    out.lineDescents.length = 0;
+    out.lineHeights.length = 0;
+    out.lineLeadings.length = 0;
+    out.lineWidths.length = 0;
+    out.numLines = 1;
+    out.textHeight = 0;
+    out.textWidth = 0;
+    return;
   }
 
-  const lineBreaks = getLineBreaks(text);
-  const groups = buildGroups(text, formatRanges, lineBreaks, width, measure, wordWrap, multiline);
-  const metrics = buildLineMetrics(groups);
+  getLineBreaks(_lineBreaks, text);
+  buildGroups(out.groups, text, formatRanges, _lineBreaks, width, measure, wordWrap, multiline);
+  writeLineMetrics(out, out.groups);
 
   // Alignment shifts require knowing per-line widths first.
-  applyAlignment(groups, width, metrics.lineWidths);
+  applyAlignment(out.groups, width, out.lineWidths);
 
   // autoSize is intentionally not applied here — callers (scene graph /
   // renderer) own the node's width/height and apply the result themselves.
   void autoSize;
   void border;
-
-  return { groups, ...metrics };
 }

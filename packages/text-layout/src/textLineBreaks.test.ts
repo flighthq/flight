@@ -3,29 +3,38 @@ import { describe, expect, it } from 'vitest';
 import { getLineBreakIndex, getLineBreaks } from './textLineBreaks';
 
 describe('getLineBreaks', () => {
+  const out: number[] = [];
+
   it('returns empty array for text with no line breaks', () => {
-    expect(getLineBreaks('hello world')).toEqual([]);
+    getLineBreaks(out, 'hello world');
+    expect(out).toEqual([]);
   });
 
   it('finds LF positions', () => {
-    expect(getLineBreaks('a\nb\nc')).toEqual([1, 3]);
+    getLineBreaks(out, 'a\nb\nc');
+    expect(out).toEqual([1, 3]);
   });
 
   it('finds CR positions', () => {
-    expect(getLineBreaks('a\rb\rc')).toEqual([1, 3]);
+    getLineBreaks(out, 'a\rb\rc');
+    expect(out).toEqual([1, 3]);
   });
 
   it('prefers the earlier of CR and LF when both are present', () => {
-    expect(getLineBreaks('a\nb\rc')).toEqual([1, 3]);
-    expect(getLineBreaks('a\rb\nc')).toEqual([1, 3]);
+    getLineBreaks(out, 'a\nb\rc');
+    expect(out).toEqual([1, 3]);
+    getLineBreaks(out, 'a\rb\nc');
+    expect(out).toEqual([1, 3]);
   });
 
   it('handles trailing newline', () => {
-    expect(getLineBreaks('ab\n')).toEqual([2]);
+    getLineBreaks(out, 'ab\n');
+    expect(out).toEqual([2]);
   });
 
   it('returns empty array for empty text', () => {
-    expect(getLineBreaks('')).toEqual([]);
+    getLineBreaks(out, '');
+    expect(out).toEqual([]);
   });
 });
 

@@ -5,8 +5,8 @@ export function getLineBreakIndex(lineBreaks: readonly number[], startIndex = 0)
   return -1;
 }
 
-export function getLineBreaks(text: string): number[] {
-  const breaks: number[] = [];
+export function getLineBreaks(out: number[], text: string): void {
+  out.length = 0;
   let index = -1;
 
   while (index < text.length) {
@@ -16,8 +16,6 @@ export function getLineBreaks(text: string): number[] {
     if (lf === -1 && cr === -1) break;
 
     index = cr === -1 ? lf : lf === -1 ? cr : Math.min(cr, lf);
-    breaks.push(index);
+    out.push(index);
   }
-
-  return breaks;
 }
