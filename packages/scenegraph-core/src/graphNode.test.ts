@@ -3,8 +3,11 @@ import type { GraphNode, GraphNodeData, GraphNodeRuntime, PartialNode } from '@f
 import {
   createGraphNode,
   createGraphNodeRuntime,
+  createGraphNodeSignals,
   defaultGraphNodeRuntimeCanAddChild,
   getGraphNodeRuntime,
+  getGraphNodeSignals,
+  setEnabled,
 } from './graphNode';
 
 describe('createGraphNode', () => {
@@ -158,3 +161,49 @@ function createGraphNodeTestRuntime<GraphKind extends symbol>(): NodeTestRuntime
   obj.testRuntimeField = 'testRuntimeField';
   return obj;
 }
+
+describe('createGraphNodeSignals', () => {
+  it('returns an object with three signal properties', () => {
+    const signals = createGraphNodeSignals();
+    expect(signals.onChildrenChanged).toBeDefined();
+    expect(signals.onChildrenOrderChanged).toBeDefined();
+    expect(signals.onParentChanged).toBeDefined();
+  });
+});
+
+describe('defaultGraphNodeRuntimeCanAddChild', () => {
+  it('always returns true', () => {
+    const parent = createGraphNode(TestGraph, NodeTestKind);
+    const child = createGraphNode(TestGraph, NodeTestKind);
+    expect(defaultGraphNodeRuntimeCanAddChild(parent, child)).toBe(true);
+  });
+});
+
+describe('getGraphNodeSignals', () => {
+  it('returns signals object (lazily created)', () => {
+    const node = createGraphNode(TestGraph, NodeTestKind);
+    const signals = getGraphNodeSignals(node);
+    expect(signals).toBeDefined();
+    expect(signals.onChildrenChanged).toBeDefined();
+  });
+
+  it('returns the same object on subsequent calls', () => {
+    const node = createGraphNode(TestGraph, NodeTestKind);
+    expect(getGraphNodeSignals(node)).toBe(getGraphNodeSignals(node));
+  });
+});
+
+describe('setEnabled', () => {
+  it('sets enabled to false', () => {
+    const node = createGraphNode(TestGraph, NodeTestKind);
+    setEnabled(node, false);
+    expect(node.enabled).toBe(false);
+  });
+
+  it('sets enabled back to true', () => {
+    const node = createGraphNode(TestGraph, NodeTestKind);
+    setEnabled(node, false);
+    setEnabled(node, true);
+    expect(node.enabled).toBe(true);
+  });
+});

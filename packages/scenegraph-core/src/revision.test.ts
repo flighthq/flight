@@ -11,7 +11,9 @@ import {
   invalidateLocalBounds,
   invalidateLocalTransform,
   invalidateParentReference,
+  invalidateRender,
   invalidateWorldBounds,
+  recomputeWorldTransformID,
 } from './revision';
 
 function createTestNode(): TestNode {
@@ -144,6 +146,36 @@ describe('invalidateWorldBounds', () => {
     invalidateWorldBounds(node);
     expect(runtime.worldBoundsUsingWorldTransformID).toBe(-1);
     expect(runtime.worldBoundsUsingLocalBoundsID).toBe(-1);
+  });
+});
+
+describe('invalidateRender', () => {
+  it('increments both appearanceID and localTransformID', () => {
+    const runtime = getRuntime(node);
+    const prevAppearance = runtime.appearanceID;
+    const prevLocalTransform = runtime.localTransformID;
+    invalidateRender(node);
+    expect(runtime.appearanceID).toBe(prevAppearance + 1);
+    expect(runtime.localTransformID).toBe(prevLocalTransform + 1);
+  });
+});
+
+describe('recomputeWorldTransformID', () => {
+  it('updates worldTransformID based on local and parent transform IDs', () => {
+    const runtime = getRuntime(node);
+    runtime.localTransformID = 3;
+    recomputeWorldTransformID(runtime);
+    expect(runtime.worldTransformUsingLocalTransformID).toBe(3);
+    expect(runtime.worldTransformUsingParentTransformID).toBe(0);
+  });
+
+  it('incorporates parent worldTransformID when provided', () => {
+    const parentNode = createTestNode();
+    const parentRuntime = getRuntime(parentNode);
+    parentRuntime.worldTransformID = 7;
+    const runtime = getRuntime(node);
+    recomputeWorldTransformID(runtime, parentRuntime);
+    expect(runtime.worldTransformUsingParentTransformID).toBe(7);
   });
 });
 
