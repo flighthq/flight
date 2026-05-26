@@ -1,3 +1,4 @@
+import type { Shape } from '@flighthq/engine';
 import {
   addChild,
   beginFill,
@@ -21,7 +22,6 @@ import {
   renderCanvasDisplayObject,
   setX,
   setY,
-  type Shape,
   ShapeKind,
   updateDisplayObjectBeforeRender,
 } from '@flighthq/engine';
