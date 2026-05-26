@@ -103,6 +103,19 @@ describe('isSpriteNode', () => {
   });
 });
 
+describe('getSpriteNodeRuntime', () => {
+  it('returns the runtime for a SpriteNode', () => {
+    const node = createSpriteNode(SpriteNodeTestKind);
+    const runtime = getSpriteNodeRuntime(node);
+    expect(runtime).not.toBeNull();
+  });
+
+  it('returns the same object as the internal runtime', () => {
+    const node = createSpriteNode(SpriteNodeTestKind);
+    expect(getSpriteNodeRuntime(node)).toBe(getSpriteNodeRuntime(node));
+  });
+});
+
 interface SpriteNodeTest extends SpriteNode {}
 
 const SpriteNodeTestKind: unique symbol = Symbol('SpriteNodeTest');

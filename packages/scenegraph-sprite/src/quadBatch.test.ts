@@ -2,8 +2,12 @@ import type { QuadBatch, QuadTransformType, TextureAtlas } from '@flighthq/types
 import { QuadBatchKind } from '@flighthq/types';
 
 import {
+  computeQuadBatchLocalBoundsRect,
   createQuadBatch,
+  createQuadBatchData,
+  createQuadBatchRuntime,
   getQuadBatchCapacity,
+  getQuadBatchRuntime,
   getQuadTransformStride,
   reserveQuadBatch,
   resizeQuadBatch,
@@ -135,5 +139,53 @@ describe('resizeQuadBatch', () => {
     expect(quadBatch.data.ids.length).toBe(0);
     expect(quadBatch.data.transforms.length).toBe(0);
     expect(quadBatch.data.instanceCount).toBe(100);
+  });
+});
+
+describe('computeQuadBatchLocalBoundsRect', () => {
+  it('is a no-op that does not modify out', () => {
+    const quadBatch = createQuadBatch();
+    const out = { x: 1, y: 2, width: 3, height: 4 };
+    computeQuadBatchLocalBoundsRect(out, quadBatch);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.width).toBe(3);
+    expect(out.height).toBe(4);
+  });
+});
+
+describe('createQuadBatchData', () => {
+  it('returns default values', () => {
+    const data = createQuadBatchData();
+    expect(data.atlas).toBeNull();
+    expect(data.instanceCount).toBe(0);
+    expect(data.ids).toBeInstanceOf(Uint16Array);
+    expect(data.transforms).toBeInstanceOf(Float32Array);
+    expect(data.transformType).toBe('vector2');
+  });
+
+  it('allows pre-defined values', () => {
+    const data = createQuadBatchData({ instanceCount: 10 });
+    expect(data.instanceCount).toBe(10);
+  });
+});
+
+describe('createQuadBatchRuntime', () => {
+  it('returns a non-null runtime', () => {
+    const runtime = createQuadBatchRuntime();
+    expect(runtime).not.toBeNull();
+  });
+
+  it('uses computeQuadBatchLocalBoundsRect', () => {
+    const runtime = createQuadBatchRuntime();
+    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeQuadBatchLocalBoundsRect);
+  });
+});
+
+describe('getQuadBatchRuntime', () => {
+  it('returns the runtime for a QuadBatch', () => {
+    const quadBatch = createQuadBatch();
+    const runtime = getQuadBatchRuntime(quadBatch);
+    expect(runtime).not.toBeNull();
   });
 });
