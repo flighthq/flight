@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "./packages/assets" },
+    { "path": "./packages/imagedata" },
     { "path": "./packages/engine" },
     { "path": "./packages/foundation" },
     { "path": "./packages/geometry" },

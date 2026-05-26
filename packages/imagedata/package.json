@@ -1,0 +1,75 @@
+{
+  "name": "@flighthq/imagedata",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./compare": {
+      "types": "./dist/compare.d.ts",
+      "default": "./dist/compare.js"
+    },
+    "./copy": {
+      "types": "./dist/copy.d.ts",
+      "default": "./dist/copy.js"
+    },
+    "./draw": {
+      "types": "./dist/draw.d.ts",
+      "default": "./dist/draw.js"
+    },
+    "./encode": {
+      "types": "./dist/encode.d.ts",
+      "default": "./dist/encode.js"
+    },
+    "./fill": {
+      "types": "./dist/fill.d.ts",
+      "default": "./dist/fill.js"
+    },
+    "./imageChannel": {
+      "types": "./dist/imageChannel.d.ts",
+      "default": "./dist/imageChannel.js"
+    },
+    "./imageData": {
+      "types": "./dist/imageData.d.ts",
+      "default": "./dist/imageData.js"
+    },
+    "./imageDataFrom": {
+      "types": "./dist/imageDataFrom.d.ts",
+      "default": "./dist/imageDataFrom.js"
+    },
+    "./pixel": {
+      "types": "./dist/pixel.d.ts",
+      "default": "./dist/pixel.js"
+    },
+    "./query": {
+      "types": "./dist/query.d.ts",
+      "default": "./dist/query.js"
+    },
+    "./transform": {
+      "types": "./dist/transform.d.ts",
+      "default": "./dist/transform.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "@flighthq/assets": "*",
+    "@flighthq/types": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  },
+  "description": "Pixel-level image manipulation using browser ImageData"
+}
