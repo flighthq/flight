@@ -1,7 +1,11 @@
 import { beginFill, createScale9Shape, drawRect } from '@flighthq/scenegraph-display';
 
+import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { Scale9ShapeKind } from '@flighthq/types';
+
 import { buildScale9Mapper } from './canvasScale9Mapper';
-import { remapScale9Commands } from './canvasScale9Shape';
+import { createCanvasRenderState } from './canvasRenderState';
+import { defaultCanvasScale9ShapeRenderer, drawCanvasScale9Shape, remapScale9Commands } from './canvasScale9Shape';
 import { defaultCanvasShapeCommands } from './canvasShapeCommands';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
 
@@ -69,5 +73,18 @@ describe('remapScale9Commands', () => {
     const mapper = buildScale9Mapper(shape.data.commands, grid, 2, 2)!;
     const result = remapScale9Commands(shape.data.commands, mapper);
     expect(result).toHaveLength(shape.data.commands.length);
+  });
+});
+
+describe('drawCanvasScale9Shape', () => {
+  it('does not throw when commands list is empty', () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 200;
+    const state = createCanvasRenderState(canvas);
+    registerRenderer(state, Scale9ShapeKind, defaultCanvasScale9ShapeRenderer);
+    const shape = createScale9Shape(grid);
+    const data = getDisplayObjectRenderNode(state, shape);
+    expect(() => drawCanvasScale9Shape(state, data)).not.toThrow();
   });
 });

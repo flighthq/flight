@@ -3,8 +3,58 @@ import { getDisplayObjectRenderNode } from '@flighthq/render-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, Matrix3x2, Rectangle } from '@flighthq/types';
 
-import { popCanvasClipRect, popCanvasScrollRect, pushCanvasClipRect } from './canvasClipRect';
+import { popCanvasClipRect, popCanvasScrollRect, pushCanvasClipRect, pushCanvasScrollRect } from './canvasClipRect';
 import { createCanvasRenderState } from './canvasRenderState';
+
+describe('popCanvasClipRect', () => {
+  it('calls context.restore()', () => {
+    const c = document.createElement('canvas');
+    const state = createCanvasRenderState(c);
+    const spy = vi.spyOn(state.context, 'restore');
+    popCanvasClipRect(state);
+    expect(spy).toHaveBeenCalled();
+  });
+});
+
+describe('popCanvasScrollRect', () => {
+  it('calls context.restore() and decrements currentScrollRectDepth', () => {
+    const c = document.createElement('canvas');
+    const state = createCanvasRenderState(c);
+    state.currentScrollRectDepth = 1;
+    const spy = vi.spyOn(state.context, 'restore');
+    popCanvasScrollRect(state);
+    expect(spy).toHaveBeenCalled();
+    expect(state.currentScrollRectDepth).toBe(0);
+  });
+});
+
+describe('pushCanvasClipRect', () => {
+  it('saves context, clips to rect, and restores', () => {
+    const c = document.createElement('canvas');
+    const state = createCanvasRenderState(c);
+    const r = rectangle.create(0, 0, 50, 50);
+    const t = matrix3x2.create();
+    const saveSpy = vi.spyOn(state.context, 'save');
+    const clipSpy = vi.spyOn(state.context, 'clip');
+    pushCanvasClipRect(state, r, t);
+    expect(saveSpy).toHaveBeenCalled();
+    expect(clipSpy).toHaveBeenCalled();
+  });
+});
+
+describe('pushCanvasScrollRect', () => {
+  it('increments currentScrollRectDepth', () => {
+    const c = document.createElement('canvas');
+    const state = createCanvasRenderState(c);
+    const source = createDisplayObject();
+    source.scrollRect = rectangle.create(0, 0, 50, 50);
+    const data = getDisplayObjectRenderNode(state, source);
+    data.transform2D = matrix3x2.create();
+    const before = state.currentScrollRectDepth;
+    pushCanvasScrollRect(state, data);
+    expect(state.currentScrollRectDepth).toBe(before + 1);
+  });
+});
 
 describe('Clip and Scroll Rect Functions', () => {
   let canvas: HTMLCanvasElement;

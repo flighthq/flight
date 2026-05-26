@@ -3,6 +3,15 @@ import type { CanvasRenderOptions } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';
 
+describe('createCanvasRenderState', () => {
+  it('creates state with a valid context and canvas', () => {
+    const c = document.createElement('canvas');
+    const state = createCanvasRenderState(c);
+    expect(state).not.toBeNull();
+    expect(state.canvas).toBe(c);
+  });
+});
+
 let canvas: HTMLCanvasElement;
 
 beforeEach(() => {
