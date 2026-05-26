@@ -2,6 +2,7 @@ import {
   addChild,
   BitmapKind,
   createBitmap,
+  createCanvasElement,
   createCanvasRenderState,
   createDisplayObject,
   createTweenManager,
@@ -59,12 +60,7 @@ const sounds = [
 // ── Canvas + renderer ──────────────────────────────────────────────────────
 
 const dpr = window.devicePixelRatio || 1;
-
-const canvas = document.createElement('canvas');
-canvas.style.width = `${window.innerWidth}px`;
-canvas.style.height = `${window.innerHeight}px`;
-canvas.width = window.innerWidth * dpr;
-canvas.height = window.innerHeight * dpr;
+const canvas = createCanvasElement(window.innerWidth, window.innerHeight, dpr);
 document.body.appendChild(canvas);
 
 const renderState = createCanvasRenderState(canvas, {
@@ -141,13 +137,13 @@ let dragStartX = 0;
 let dragStartY = 0;
 let selectedTile = hitTileAtStageXY(-1, -1);
 
-canvas.addEventListener('pointerdown', (e) => {
+canvas.addEventListener('pointerdown', (e: PointerEvent) => {
   dragStartX = e.clientX;
   dragStartY = e.clientY;
   selectedTile = hitTileAtStageXY(e.clientX, e.clientY);
 });
 
-canvas.addEventListener('pointerup', (e) => {
+canvas.addEventListener('pointerup', (e: PointerEvent) => {
   if (selectedTile === null || selectedTile.moving) return;
 
   const dx = e.clientX - dragStartX;

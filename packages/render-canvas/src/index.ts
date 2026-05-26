@@ -3,6 +3,7 @@ export * from './canvasBitmap';
 export * from './canvasCacheAsBitmap';
 export * from './canvasClipRect';
 export * from './canvasDisplayObject';
+export * from './canvasElement';
 export * from './canvasMask';
 export * from './canvasMaterials';
 export * from './canvasQuadBatch';

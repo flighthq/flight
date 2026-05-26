@@ -1,4 +1,5 @@
 import {
+  createCanvasElement,
   createCanvasRenderState,
   createTilemap,
   defaultCanvasTilemapRenderer,
@@ -24,12 +25,7 @@ const mapW = COLS * TILE_W * SCALE;
 const mapH = ROWS * TILE_H * SCALE;
 
 const dpr = window.devicePixelRatio || 1;
-
-const canvas = document.createElement('canvas');
-canvas.style.width = `${mapW + PAD * 2}px`;
-canvas.style.height = `${mapH + PAD * 2}px`;
-canvas.width = (mapW + PAD * 2) * dpr;
-canvas.height = (mapH + PAD * 2) * dpr;
+const canvas = createCanvasElement(mapW + PAD * 2, mapH + PAD * 2, dpr);
 document.getElementById('app')!.appendChild(canvas);
 
 const tileset = await loadTilesetFromURL('assets/tileset.png', TILE_W, TILE_H);

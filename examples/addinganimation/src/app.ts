@@ -3,6 +3,7 @@ import {
   BitmapKind,
   connectSignal,
   createBitmap,
+  createCanvasElement,
   createCanvasRenderState,
   createDisplayObject,
   createTween,
@@ -22,12 +23,7 @@ const STAGE_WIDTH = 550;
 const STAGE_HEIGHT = 400;
 
 const dpr = window.devicePixelRatio || 1;
-
-const canvas = document.createElement('canvas');
-canvas.style.width = `${STAGE_WIDTH}px`;
-canvas.style.height = `${STAGE_HEIGHT}px`;
-canvas.width = STAGE_WIDTH * dpr;
-canvas.height = STAGE_HEIGHT * dpr;
+const canvas = createCanvasElement(STAGE_WIDTH, STAGE_HEIGHT, dpr);
 document.body.appendChild(canvas);
 
 const state = createCanvasRenderState(canvas, {

@@ -1,6 +1,7 @@
 import {
   addChild,
   beginFill,
+  createCanvasElement,
   createCanvasRenderState,
   createDisplayObject,
   createShape,
@@ -26,12 +27,7 @@ import {
 } from '@flighthq/engine';
 
 const dpr = window.devicePixelRatio || 1;
-
-const canvas = document.createElement('canvas');
-canvas.style.width = '800px';
-canvas.style.height = '400px';
-canvas.width = 800 * dpr;
-canvas.height = 400 * dpr;
+const canvas = createCanvasElement(800, 400, dpr);
 document.body.appendChild(canvas);
 
 const state = createCanvasRenderState(canvas, {

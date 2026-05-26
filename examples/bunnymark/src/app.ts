@@ -1,5 +1,6 @@
 import {
   addTextureAtlasRegion,
+  createCanvasElement,
   createCanvasRenderState,
   createQuadBatch,
   createTextureAtlas,
@@ -21,12 +22,7 @@ const INITIAL_COUNT = 10;
 const BATCH_SIZE = 100;
 
 const dpr = window.devicePixelRatio || 1;
-
-const canvas = document.createElement('canvas');
-canvas.style.width = `${WIDTH}px`;
-canvas.style.height = `${HEIGHT}px`;
-canvas.width = WIDTH * dpr;
-canvas.height = HEIGHT * dpr;
+const canvas = createCanvasElement(WIDTH, HEIGHT, dpr);
 document.body.appendChild(canvas);
 
 const stats = new Stats();
