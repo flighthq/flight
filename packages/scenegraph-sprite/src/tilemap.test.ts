@@ -1,7 +1,17 @@
-import type { Tileset } from '@flighthq/types';
+import type { Rectangle, Tileset } from '@flighthq/types';
 import { TilemapKind } from '@flighthq/types';
 
-import { createTilemap, fillTiles, getTile, resizeTilemap, setTile } from './tilemap';
+import {
+  computeTilemapLocalBoundsRect,
+  createTilemap,
+  createTilemapData,
+  createTilemapRuntime,
+  fillTiles,
+  getTile,
+  getTilemapRuntime,
+  resizeTilemap,
+  setTile,
+} from './tilemap';
 
 describe('createTilemap', () => {
   it('initializes default values', () => {
@@ -126,5 +136,59 @@ describe('resizeTilemap', () => {
     resizeTilemap(tilemap, 4, 3);
     // after resize, row 1, col 2 → raw index = 1*4 + 2 = 6
     expect(getTile(tilemap, 2, 1)).toBe(9);
+  });
+});
+
+describe('computeTilemapLocalBoundsRect', () => {
+  it('sets out dimensions from tileset and grid size', () => {
+    const tileset = { tileWidth: 32, tileHeight: 16 } as Tileset;
+    const tilemap = createTilemap({ data: { columns: 5, rows: 4, tileset } });
+    const out: Rectangle = { x: 0, y: 0, width: 0, height: 0 };
+    computeTilemapLocalBoundsRect(out, tilemap);
+    expect(out.width).toBe(160);
+    expect(out.height).toBe(64);
+  });
+
+  it('sets zero dimensions when tileset is null', () => {
+    const tilemap = createTilemap({ data: { columns: 5, rows: 4 } });
+    const out: Rectangle = { x: 0, y: 0, width: 99, height: 99 };
+    computeTilemapLocalBoundsRect(out, tilemap);
+    expect(out.width).toBe(0);
+    expect(out.height).toBe(0);
+  });
+});
+
+describe('createTilemapData', () => {
+  it('returns default values', () => {
+    const data = createTilemapData();
+    expect(data.columns).toBe(0);
+    expect(data.rows).toBe(0);
+    expect(data.tileset).toBeNull();
+    expect(data.tiles).toBeInstanceOf(Int16Array);
+  });
+
+  it('fills tiles with -1', () => {
+    const data = createTilemapData({ columns: 2, rows: 3 });
+    expect(Array.from(data.tiles)).toEqual([-1, -1, -1, -1, -1, -1]);
+  });
+});
+
+describe('createTilemapRuntime', () => {
+  it('returns a non-null runtime', () => {
+    const runtime = createTilemapRuntime();
+    expect(runtime).not.toBeNull();
+  });
+
+  it('uses computeTilemapLocalBoundsRect', () => {
+    const runtime = createTilemapRuntime();
+    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeTilemapLocalBoundsRect);
+  });
+});
+
+describe('getTilemapRuntime', () => {
+  it('returns the runtime for a Tilemap', () => {
+    const tilemap = createTilemap();
+    const runtime = getTilemapRuntime(tilemap);
+    expect(runtime).not.toBeNull();
   });
 });
