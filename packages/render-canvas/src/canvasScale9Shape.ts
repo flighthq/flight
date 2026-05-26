@@ -13,6 +13,9 @@ import { buildScale9Mapper, type Scale9Mapper } from './canvasScale9Mapper';
 import { renderCanvasShapeCommands } from './canvasShape';
 import { setCanvasTransform } from './canvasTransform';
 
+const _remappedCommands: unknown[] = [];
+const _remappedPathData: number[] = [];
+
 export function drawCanvasScale9Shape(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
   drawCanvasDisplayObject(state, renderNode);
 
@@ -32,102 +35,81 @@ export function drawCanvasScale9Shape(state: CanvasRenderState, renderNode: Disp
     renderCanvasShapeCommands(ctx, commands);
   } else {
     applyStrippedTransform(state, ctx, renderNode.transform2D, scaleX, scaleY);
-    renderCanvasShapeCommands(ctx, remapScale9Commands(commands, mapper));
+    remapScale9Commands(_remappedCommands, commands, mapper);
+    renderCanvasShapeCommands(ctx, _remappedCommands);
   }
 }
 
-export function remapScale9Commands(commands: unknown[], mapper: Scale9Mapper): unknown[] {
-  const result: unknown[] = [];
+export function remapScale9Commands(out: unknown[], source: readonly unknown[], mapper: Scale9Mapper): void {
+  if (out !== (source as unknown[])) {
+    out.length = source.length;
+    for (let k = 0; k < source.length; k++) out[k] = source[k];
+  }
+
   let i = 0;
-  while (i < commands.length) {
-    const key = commands[i] as string;
-    const argCount = commands[i + 1] as number;
+  while (i < out.length) {
+    const key = out[i] as string;
+    const argCount = out[i + 1] as number;
 
     switch (key) {
       case 'moveTo':
-        result.push('moveTo', 2, mapper.mapX(commands[i + 2] as number), mapper.mapY(commands[i + 3] as number));
-        break;
       case 'lineTo':
-        result.push('lineTo', 2, mapper.mapX(commands[i + 2] as number), mapper.mapY(commands[i + 3] as number));
+        out[i + 2] = mapper.mapX(out[i + 2] as number);
+        out[i + 3] = mapper.mapY(out[i + 3] as number);
         break;
       case 'curveTo':
-        result.push(
-          'curveTo',
-          4,
-          mapper.mapX(commands[i + 2] as number),
-          mapper.mapY(commands[i + 3] as number),
-          mapper.mapX(commands[i + 4] as number),
-          mapper.mapY(commands[i + 5] as number),
-        );
+        out[i + 2] = mapper.mapX(out[i + 2] as number);
+        out[i + 3] = mapper.mapY(out[i + 3] as number);
+        out[i + 4] = mapper.mapX(out[i + 4] as number);
+        out[i + 5] = mapper.mapY(out[i + 5] as number);
         break;
       case 'cubicCurveTo':
-        result.push(
-          'cubicCurveTo',
-          6,
-          mapper.mapX(commands[i + 2] as number),
-          mapper.mapY(commands[i + 3] as number),
-          mapper.mapX(commands[i + 4] as number),
-          mapper.mapY(commands[i + 5] as number),
-          mapper.mapX(commands[i + 6] as number),
-          mapper.mapY(commands[i + 7] as number),
-        );
+        out[i + 2] = mapper.mapX(out[i + 2] as number);
+        out[i + 3] = mapper.mapY(out[i + 3] as number);
+        out[i + 4] = mapper.mapX(out[i + 4] as number);
+        out[i + 5] = mapper.mapY(out[i + 5] as number);
+        out[i + 6] = mapper.mapX(out[i + 6] as number);
+        out[i + 7] = mapper.mapY(out[i + 7] as number);
         break;
-      case 'drawRect': {
-        const x = commands[i + 2] as number;
-        const y = commands[i + 3] as number;
-        const w = commands[i + 4] as number;
-        const h = commands[i + 5] as number;
+      case 'drawRect':
+      case 'drawEllipse': {
+        const x = out[i + 2] as number;
+        const y = out[i + 3] as number;
+        const w = out[i + 4] as number;
+        const h = out[i + 5] as number;
         const mx = mapper.mapX(x);
         const my = mapper.mapY(y);
-        result.push('drawRect', 4, mx, my, mapper.mapX(x + w) - mx, mapper.mapY(y + h) - my);
+        out[i + 2] = mx;
+        out[i + 3] = my;
+        out[i + 4] = mapper.mapX(x + w) - mx;
+        out[i + 5] = mapper.mapY(y + h) - my;
         break;
       }
       case 'drawRoundRect': {
-        const x = commands[i + 2] as number;
-        const y = commands[i + 3] as number;
-        const w = commands[i + 4] as number;
-        const h = commands[i + 5] as number;
-        const eW = commands[i + 6] as number;
-        const eH = commands[i + 7] as number;
+        const x = out[i + 2] as number;
+        const y = out[i + 3] as number;
+        const w = out[i + 4] as number;
+        const h = out[i + 5] as number;
         const mx = mapper.mapX(x);
         const my = mapper.mapY(y);
-        result.push('drawRoundRect', 6, mx, my, mapper.mapX(x + w) - mx, mapper.mapY(y + h) - my, eW, eH);
-        break;
-      }
-      case 'drawEllipse': {
-        const x = commands[i + 2] as number;
-        const y = commands[i + 3] as number;
-        const w = commands[i + 4] as number;
-        const h = commands[i + 5] as number;
-        const mx = mapper.mapX(x);
-        const my = mapper.mapY(y);
-        result.push('drawEllipse', 4, mx, my, mapper.mapX(x + w) - mx, mapper.mapY(y + h) - my);
+        out[i + 2] = mx;
+        out[i + 3] = my;
+        out[i + 4] = mapper.mapX(x + w) - mx;
+        out[i + 5] = mapper.mapY(y + h) - my;
         break;
       }
       case 'drawCircle':
-        result.push(
-          'drawCircle',
-          3,
-          mapper.mapX(commands[i + 2] as number),
-          mapper.mapY(commands[i + 3] as number),
-          commands[i + 4],
-        );
+        out[i + 2] = mapper.mapX(out[i + 2] as number);
+        out[i + 3] = mapper.mapY(out[i + 3] as number);
         break;
-      case 'drawPath': {
-        const pathCmds = commands[i + 2] as number[];
-        const pathData = commands[i + 3] as number[];
-        const winding = commands[i + 4];
-        result.push('drawPath', 3, pathCmds, remapPathData(pathCmds, pathData, mapper), winding);
-        break;
-      }
-      default:
-        for (let j = 0; j < argCount + 2; j++) result.push(commands[i + j]);
+      case 'drawPath':
+        remapPathData(_remappedPathData, out[i + 3] as readonly number[], out[i + 2] as readonly number[], mapper);
+        out[i + 3] = _remappedPathData;
         break;
     }
 
     i += argCount + 2;
   }
-  return result;
 }
 
 export const defaultCanvasScale9ShapeRenderer: DisplayObjectRenderer = {
@@ -154,44 +136,44 @@ function applyStrippedTransform(
   }
 }
 
-function remapPathData(cmds: number[], data: number[], mapper: Scale9Mapper): number[] {
-  const result: number[] = [];
+function remapPathData(out: number[], source: readonly number[], cmds: readonly number[], mapper: Scale9Mapper): void {
+  if (out !== (source as number[])) {
+    out.length = source.length;
+    for (let k = 0; k < source.length; k++) out[k] = source[k];
+  }
   let di = 0;
   for (const pc of cmds) {
     switch (pc) {
       case 1: // MOVE_TO [x, y]
       case 2: // LINE_TO [x, y]
-        result.push(mapper.mapX(data[di]), mapper.mapY(data[di + 1]));
+        out[di] = mapper.mapX(out[di]);
+        out[di + 1] = mapper.mapY(out[di + 1]);
         di += 2;
         break;
       case 3: // CURVE_TO [cx, cy, ax, ay]
-        result.push(
-          mapper.mapX(data[di]),
-          mapper.mapY(data[di + 1]),
-          mapper.mapX(data[di + 2]),
-          mapper.mapY(data[di + 3]),
-        );
+        out[di] = mapper.mapX(out[di]);
+        out[di + 1] = mapper.mapY(out[di + 1]);
+        out[di + 2] = mapper.mapX(out[di + 2]);
+        out[di + 3] = mapper.mapY(out[di + 3]);
         di += 4;
         break;
       case 4: // WIDE_MOVE_TO [?, ?, x, y]
       case 5: // WIDE_LINE_TO [?, ?, x, y]
-        result.push(data[di], data[di + 1], mapper.mapX(data[di + 2]), mapper.mapY(data[di + 3]));
+        out[di + 2] = mapper.mapX(out[di + 2]);
+        out[di + 3] = mapper.mapY(out[di + 3]);
         di += 4;
         break;
       case 6: // CUBIC_CURVE_TO [cx1, cy1, cx2, cy2, ax, ay]
-        result.push(
-          mapper.mapX(data[di]),
-          mapper.mapY(data[di + 1]),
-          mapper.mapX(data[di + 2]),
-          mapper.mapY(data[di + 3]),
-          mapper.mapX(data[di + 4]),
-          mapper.mapY(data[di + 5]),
-        );
+        out[di] = mapper.mapX(out[di]);
+        out[di + 1] = mapper.mapY(out[di + 1]);
+        out[di + 2] = mapper.mapX(out[di + 2]);
+        out[di + 3] = mapper.mapY(out[di + 3]);
+        out[di + 4] = mapper.mapX(out[di + 4]);
+        out[di + 5] = mapper.mapY(out[di + 5]);
         di += 6;
         break;
       default:
         break;
     }
   }
-  return result;
 }

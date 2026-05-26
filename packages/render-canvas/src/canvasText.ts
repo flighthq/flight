@@ -1,5 +1,5 @@
 import { createNullRendererData } from '@flighthq/render-core';
-import { createTextFormatRange, layoutText } from '@flighthq/text-layout';
+import { createTextFormatRange, createTextLayoutResult, layoutText } from '@flighthq/text-layout';
 import type {
   CanvasRenderState,
   DisplayObjectRenderer,
@@ -14,6 +14,7 @@ import { colorToHex, formatToCanvasFont } from './canvasTextHelpers';
 import { setCanvasTransform } from './canvasTransform';
 
 const LAYOUT_WIDTH = 10000;
+const _textLayout = createTextLayoutResult();
 
 export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
   drawCanvasDisplayObject(state, renderNode);
@@ -32,13 +33,14 @@ export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObje
     return context.measureText(t).width;
   };
 
-  const result = layoutText({
+  layoutText(_textLayout, {
     text,
     formatRanges: [createTextFormatRange(textFormat, 0, text.length)],
     width: LAYOUT_WIDTH,
     height: LAYOUT_WIDTH,
     measure,
   });
+  const result = _textLayout;
 
   context.textBaseline = 'alphabetic';
   context.textAlign = 'start';
