@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "references": [
+    { "path": "../foundation" },
+    { "path": "../geometry" },
+    { "path": "../render-canvas" },
+    { "path": "../render-core" },
+    { "path": "../scenegraph-core" },
+    { "path": "../scenegraph-display" },
+    { "path": "../text-layout" },
+    { "path": "../types" }
+  ],
+  "include": ["src"]
+}

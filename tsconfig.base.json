@@ -30,6 +30,8 @@
       "@flighthq/render-canvas/*": ["./packages/render-canvas/src/*"],
       "@flighthq/render-core": ["./packages/render-core/src/index.ts"],
       "@flighthq/render-core/*": ["./packages/render-core/src/*"],
+      "@flighthq/render-dom": ["./packages/render-dom/src/index.ts"],
+      "@flighthq/render-dom/*": ["./packages/render-dom/src/*"],
       "@flighthq/scenegraph-core": ["./packages/scenegraph-core/src/index.ts"],
       "@flighthq/scenegraph-core/*": ["./packages/scenegraph-core/src/*"],
       "@flighthq/scenegraph-display": ["./packages/scenegraph-display/src/index.ts"],

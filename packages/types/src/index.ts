@@ -12,6 +12,8 @@ export * from './DisplayObjectInteractionSignals';
 export * from './DisplayObjectRenderer';
 export * from './DisplayObjectRenderNode';
 export * from './DOMElement';
+export * from './DOMRenderOptions';
+export * from './DOMRenderState';
 export * from './EasingFunction';
 export * from './Entity';
 export * from './Filter';
