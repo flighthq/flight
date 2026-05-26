@@ -1,5 +1,6 @@
-import type { Bitmap, ImageSource, Rectangle } from '@flighthq/types';
+import type { Bitmap, GraphNode, ImageSource } from '@flighthq/types';
 import { BitmapKind } from '@flighthq/types';
+import { createRectangle } from '@flighthq/geometry';
 
 import {
   computeBitmapLocalBoundsRect,
@@ -45,16 +46,16 @@ describe('createBitmap', () => {
 describe('computeBitmapLocalBoundsRect', () => {
   it('sets out dimensions from image when image is present', () => {
     const bitmap = createBitmap({ data: { image: { width: 100, height: 200 } as ImageSource } });
-    const out: Rectangle = { x: 0, y: 0, width: 0, height: 0 };
-    computeBitmapLocalBoundsRect(out, bitmap);
+    const out = createRectangle();
+    computeBitmapLocalBoundsRect(out, bitmap as unknown as GraphNode);
     expect(out.width).toBe(100);
     expect(out.height).toBe(200);
   });
 
   it('does not modify out when image is null', () => {
     const bitmap = createBitmap();
-    const out: Rectangle = { x: 0, y: 0, width: 50, height: 60 };
-    computeBitmapLocalBoundsRect(out, bitmap);
+    const out = createRectangle(0, 0, 50, 60);
+    computeBitmapLocalBoundsRect(out, bitmap as unknown as GraphNode);
     expect(out.width).toBe(50);
     expect(out.height).toBe(60);
   });
