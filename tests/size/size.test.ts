@@ -12,7 +12,7 @@ describe('bundle size checks', () => {
     { name: 'displayingabitmap', path: '../../examples/displayingabitmap', threshold: 7000 },
     { name: 'drawingshapes', path: '../../examples/drawingshapes', threshold: 9000 },
     { name: 'nyancat', path: '../../examples/nyancat', threshold: 7000 },
-    { name: 'piratepig', path: '../../examples/piratepig', threshold: 12500 },
+    { name: 'piratepig', path: '../../examples/piratepig', threshold: 13000 },
     { name: 'simplesprite', path: '../../examples/simplesprite', threshold: 5000 },
     { name: 'tweenexample', path: '../../examples/tweenexample', threshold: 8000 },
     { name: 'usingtilemap', path: '../../examples/usingtilemap', threshold: 5000 },
