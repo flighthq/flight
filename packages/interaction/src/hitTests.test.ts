@@ -5,7 +5,7 @@ import type { DisplayObject, DisplayObjectRuntime } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { defaultDisplayObjectHitTestPoint } from './displayHitTests';
-import { hitTestObject, hitTestPoint, registerHitTestPoint } from './hitTests';
+import { findHitTarget, hitTestLocalBoundsRect, hitTestObject, hitTestPoint, registerHitTestPoint } from './hitTests';
 
 describe('hitTestObject', () => {
   let a: DisplayObject;
@@ -166,5 +166,47 @@ describe('hitTestPoint', () => {
     const custom = createDisplayObjectGeneric(CustomKind);
 
     expect(hitTestPoint(custom, 50, 50)).toBe(true);
+  });
+});
+
+describe('registerHitTestPoint', () => {
+  it('registers a handler that hitTestPoint will use', () => {
+    const kind = Symbol('RegisterTest');
+    registerHitTestPoint(kind, () => true);
+    const node = createDisplayObjectGeneric(kind);
+    expect(hitTestPoint(node, 0, 0)).toBe(true);
+  });
+});
+
+describe('hitTestLocalBoundsRect', () => {
+  it('returns true when world-space point is inside local bounds', () => {
+    const obj = createDisplayObject();
+    rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 100, 100);
+    expect(hitTestLocalBoundsRect(obj, 50, 50)).toBe(true);
+  });
+
+  it('returns false when world-space point is outside local bounds', () => {
+    const obj = createDisplayObject();
+    rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 100, 100);
+    expect(hitTestLocalBoundsRect(obj, 200, 200)).toBe(false);
+  });
+});
+
+describe('findHitTarget', () => {
+  it('returns null when node is disabled', () => {
+    const obj = createDisplayObject();
+    obj.enabled = false;
+    expect(findHitTarget(obj, 50, 50)).toBeNull();
+  });
+
+  it('returns a child node registered with a hit handler', () => {
+    const parent = createDisplayObject();
+    const child = createDisplayObjectGeneric(DisplayObjectKind);
+    child.opaqueBackground = 0xff0000;
+    rectangle.setTo(getLocalBoundsRect(child), 0, 0, 100, 100);
+    addChild(parent, child);
+    registerHitTestPoint(DisplayObjectKind, defaultDisplayObjectHitTestPoint);
+    const hit = findHitTarget(parent, 50, 50);
+    expect(hit).toBe(child);
   });
 });
