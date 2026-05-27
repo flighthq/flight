@@ -11,5 +11,5 @@ export function createImageSource(image?: CanvasImageSource): ImageSource {
     src instanceof HTMLVideoElement
       ? src.videoHeight
       : ((src as HTMLImageElement | HTMLCanvasElement | null)?.height ?? 0);
-  return createEntity({ height, src, width });
+  return createEntity({ height, src, version: 0, width });
 }
