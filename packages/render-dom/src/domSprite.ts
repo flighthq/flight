@@ -44,7 +44,6 @@ export function drawDOMSprite(state: DOMRenderState, spriteNode: SpriteRenderNod
   }
 
   const pr = state.pixelRatio;
-  console.log(pr);
   data.canvas.width = region.width * pr;
   data.canvas.height = region.height * pr;
   data.canvas.style.width = region.width + 'px';

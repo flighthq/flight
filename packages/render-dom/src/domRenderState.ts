@@ -15,6 +15,7 @@ export function createDOMRenderState(element: HTMLElement, options: Partial<DOMR
 
   state.element = element;
   state.currentBlendMode = null;
+  state.allowSmoothing = options.imageSmoothingEnabled ?? true;
 
   element.style.position = 'relative';
   element.style.overflow = 'hidden';
