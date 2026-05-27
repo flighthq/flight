@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@flighthq/imagedata": "*"
+    "@flighthq/surface": "*"
   },
   "scripts": {
     "dev": "npm run dev:canvas",

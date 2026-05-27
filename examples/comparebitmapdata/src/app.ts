@@ -1,19 +1,20 @@
+import type { Surface } from '@flighthq/surface';
 import {
-  cloneImageData,
-  compareImageData,
-  createImageData,
-  drawImageData,
+  cloneSurface,
+  compareSurface,
+  createSurface,
+  drawSurface,
   fillRect,
   setPixel32,
-} from '@flighthq/imagedata';
+} from '@flighthq/surface';
 
 const IMG_SIZE = 40;
 const CELL_SIZE = IMG_SIZE + 4;
 const LABEL_SIZE = 56;
 const PAD = 8;
 
-function createCheckers(color1: number, color2: number, tileSize = 8): ImageData {
-  const img = createImageData(IMG_SIZE, IMG_SIZE, color1);
+function createCheckers(color1: number, color2: number, tileSize = 8): Surface {
+  const img = createSurface(IMG_SIZE, IMG_SIZE, color1);
   for (let y = 0; y < IMG_SIZE; y++) {
     for (let x = 0; x < IMG_SIZE; x++) {
       if (((Math.floor(x / tileSize) + Math.floor(y / tileSize)) & 1) === 1) {
@@ -24,8 +25,8 @@ function createCheckers(color1: number, color2: number, tileSize = 8): ImageData
   return img;
 }
 
-function createNoise(seed: number): ImageData {
-  const img = createImageData(IMG_SIZE, IMG_SIZE);
+function createNoise(seed: number): Surface {
+  const img = createSurface(IMG_SIZE, IMG_SIZE);
   let s = seed >>> 0;
   for (let i = 0; i < img.data.length; i++) {
     s = Math.imul(s, 1664525) + 1013904223;
@@ -34,8 +35,8 @@ function createNoise(seed: number): ImageData {
   return img;
 }
 
-function createBall(color: number, alpha = 255): ImageData {
-  const img = createImageData(IMG_SIZE, IMG_SIZE);
+function createBall(color: number, alpha = 255): Surface {
+  const img = createSurface(IMG_SIZE, IMG_SIZE);
   const cx = IMG_SIZE / 2;
   const cy = IMG_SIZE / 2;
   const r = IMG_SIZE / 2 - 2;
@@ -51,13 +52,13 @@ function createBall(color: number, alpha = 255): ImageData {
   return img;
 }
 
-function createRect(color: number, inset = 4): ImageData {
-  const img = createImageData(IMG_SIZE, IMG_SIZE);
+function createRect(color: number, inset = 4): Surface {
+  const img = createSurface(IMG_SIZE, IMG_SIZE);
   fillRect(img, inset, inset, IMG_SIZE - inset * 2, IMG_SIZE - inset * 2, color);
   return img;
 }
 
-const sources: Array<{ label: string; img: ImageData | null }> = [
+const sources: Array<{ label: string; img: Surface | null }> = [
   { label: 'Checkers', img: createCheckers(0xffffffff, 0xff000000) },
   { label: 'Checkers2', img: createCheckers(0xffffffff, 0xff808080) },
   { label: 'Noise 1', img: createNoise(0xdeadbeef) },
@@ -71,7 +72,7 @@ const sources: Array<{ label: string; img: ImageData | null }> = [
   { label: 'Null', img: null },
 ];
 
-sources[9].img = cloneImageData(sources[4].img!);
+sources[9].img = cloneSurface(sources[4].img!);
 
 const n = sources.length;
 const gridW = LABEL_SIZE + n * CELL_SIZE + PAD;
@@ -90,7 +91,7 @@ for (let col = 0; col < n; col++) {
   const { label, img } = sources[col];
 
   if (img) {
-    drawImageData(canvas, img, x + 2, 2);
+    drawSurface(canvas, img, x + 2, 2);
   } else {
     ctx.fillStyle = '#333';
     ctx.fillRect(x + 2, 2, IMG_SIZE, IMG_SIZE);
@@ -115,7 +116,7 @@ for (let row = 0; row < n; row++) {
   const { label: rowLabel, img: rowImg } = sources[row];
 
   if (rowImg) {
-    drawImageData(canvas, rowImg, 2, y + 2);
+    drawSurface(canvas, rowImg, 2, y + 2);
   } else {
     ctx.fillStyle = '#333';
     ctx.fillRect(2, y + 2, IMG_SIZE, IMG_SIZE);
@@ -136,7 +137,7 @@ for (let row = 0; row < n; row++) {
     if (rowImg === null) {
       drawCell(ctx, canvas, x + 2, y + 2, -1, true);
     } else {
-      drawCell(ctx, canvas, x + 2, y + 2, compareImageData(rowImg, colImg), false);
+      drawCell(ctx, canvas, x + 2, y + 2, compareSurface(rowImg, colImg), false);
     }
   }
 }
@@ -146,7 +147,7 @@ function drawCell(
   canvas: HTMLCanvasElement,
   x: number,
   y: number,
-  result: ImageData | 0 | -1 | -2 | -3,
+  result: Surface | 0 | -1 | -2 | -3,
   sourceIsNull: boolean,
 ): void {
   if (sourceIsNull) {
@@ -176,5 +177,5 @@ function drawCell(
     return;
   }
 
-  drawImageData(canvas, result, x, y);
+  drawSurface(canvas, result, x, y);
 }

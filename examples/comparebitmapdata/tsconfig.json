@@ -4,7 +4,7 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "references": [{ "path": "../../packages/imagedata" }],
+  "references": [{ "path": "../../packages/surface" }],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
