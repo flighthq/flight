@@ -1,2 +1,27 @@
-// WebGL renderer entry — re-exports canvas as fallback until @flighthq/render-webgl is available
-export * from './render.canvas';
+import type { Tilemap } from '@flighthq/engine';
+import {
+  createWebGLElement,
+  createWebGLRenderState,
+  defaultWebGLTilemapRenderer,
+  registerRenderer,
+  renderWebGLBackground,
+  renderWebGLSprite,
+  TilemapKind,
+} from '@flighthq/engine';
+
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createWebGLElement(592, 592, pixelRatio);
+document.getElementById('app')!.appendChild(canvas);
+
+export const state = createWebGLRenderState(canvas, {
+  backgroundColor: 0xeeddccff,
+  contextAttributes: { alpha: false },
+  imageSmoothingEnabled: false,
+});
+registerRenderer(state, TilemapKind, defaultWebGLTilemapRenderer);
+export const scale = pixelRatio;
+
+export function render(root: Tilemap): void {
+  renderWebGLBackground(state);
+  renderWebGLSprite(state, root);
+}
