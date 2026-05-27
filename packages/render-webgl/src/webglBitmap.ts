@@ -16,11 +16,7 @@ export function drawWebGLBitmap(state: RenderState, renderNode: DisplayObjectRen
 
   internal.defaultBitmapShader.bind(internal.gl, internal, renderNode);
 
-  drawWebGLQuad(
-    internal,
-    0, 0, imageSource.width, imageSource.height,
-    0, 0, 1, 1,
-  );
+  drawWebGLQuad(internal, 0, 0, imageSource.width, imageSource.height, 0, 0, 1, 1);
 }
 
 export function drawWebGLBitmapMask(_state: RenderState, _data: DisplayObjectRenderNode): void {

@@ -1,4 +1,5 @@
 ﻿import type { Surface } from '@flighthq/types';
+
 import type { ImageChannel } from './imageChannel';
 
 export function copyChannel(

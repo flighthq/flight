@@ -1,12 +1,6 @@
 import { createNullRendererData } from '@flighthq/render-core';
 import { createTextFormatRange, createTextLayoutResult, layoutText } from '@flighthq/text-layout';
-import type {
-  DisplayObjectRenderer,
-  DisplayObjectRenderNode,
-  RenderState,
-  Text,
-  TextFormat,
-} from '@flighthq/types';
+import type { DisplayObjectRenderer, DisplayObjectRenderNode, RenderState, Text, TextFormat } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';

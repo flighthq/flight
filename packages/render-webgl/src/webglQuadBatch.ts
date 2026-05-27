@@ -3,7 +3,13 @@ import { createNullRendererData } from '@flighthq/render-core';
 import type { QuadBatch, RenderState, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { bindWebGLTexture, drawWebGLQuad, setQuadMatrixFromOffset, setWebGLBlendMode, useWebGLProgram } from './webglDraw';
+import {
+  bindWebGLTexture,
+  drawWebGLQuad,
+  setQuadMatrixFromOffset,
+  setWebGLBlendMode,
+  useWebGLProgram,
+} from './webglDraw';
 import { setWebGLMatrixFromTransform } from './webglShader';
 
 export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNode): void {
@@ -67,9 +73,14 @@ export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNo
 
       setQuadMatrixFromOffset(
         internal,
-        transform.a, transform.b, transform.c, transform.d,
-        transform.tx, transform.ty,
-        dx, dy,
+        transform.a,
+        transform.b,
+        transform.c,
+        transform.d,
+        transform.tx,
+        transform.ty,
+        dx,
+        dy,
       );
 
       const u0 = region.x * iw;

@@ -1,8 +1,8 @@
 ﻿import { describe, expect, it } from 'vitest';
 
 import { fillRect } from './fill';
-import { createSurface } from './surface';
 import { getColorBoundsRect } from './query';
+import { createSurface } from './surface';
 
 describe('getColorBoundsRect', () => {
   it('returns null when no pixels match', () => {

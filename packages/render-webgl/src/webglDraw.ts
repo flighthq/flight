@@ -1,6 +1,6 @@
 import type { WebGLRenderState } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal, WebGLShaderLocations } from './internal';
+import type { WebGLRenderStateInternal } from './internal';
 import { setWebGLAttribs, setWebGLMatrixFromValues } from './webglShader';
 
 export function useWebGLProgram(state: WebGLRenderStateInternal): void {
@@ -11,10 +11,7 @@ export function useWebGLProgram(state: WebGLRenderStateInternal): void {
   }
 }
 
-export function bindWebGLTexture(
-  state: WebGLRenderStateInternal,
-  imageSource: CanvasImageSource,
-): WebGLTexture {
+export function bindWebGLTexture(state: WebGLRenderStateInternal, imageSource: CanvasImageSource): WebGLTexture {
   const { gl, textureCache } = state;
   let texture = textureCache.get(imageSource);
   if (!texture) {
@@ -68,15 +65,33 @@ export function createWebGLTexture(state: WebGLRenderStateInternal): WebGLTextur
 
 export function drawWebGLQuad(
   state: WebGLRenderStateInternal,
-  x0: number, y0: number, x1: number, y1: number,
-  u0: number, v0: number, u1: number, v1: number,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  u0: number,
+  v0: number,
+  u1: number,
+  v1: number,
 ): void {
   const { gl, quadVertexData, quadVertexBuffer, quadIndexBuffer, shaderLoc } = state;
   const v = quadVertexData;
-  v[0]  = x0; v[1]  = y0; v[2]  = u0; v[3]  = v0;
-  v[4]  = x1; v[5]  = y0; v[6]  = u1; v[7]  = v0;
-  v[8]  = x1; v[9]  = y1; v[10] = u1; v[11] = v1;
-  v[12] = x0; v[13] = y1; v[14] = u0; v[15] = v1;
+  v[0] = x0;
+  v[1] = y0;
+  v[2] = u0;
+  v[3] = v0;
+  v[4] = x1;
+  v[5] = y0;
+  v[6] = u1;
+  v[7] = v0;
+  v[8] = x1;
+  v[9] = y1;
+  v[10] = u1;
+  v[11] = v1;
+  v[12] = x0;
+  v[13] = y1;
+  v[14] = u0;
+  v[15] = v1;
   gl.bindBuffer(gl.ARRAY_BUFFER, quadVertexBuffer);
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, v);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadIndexBuffer);
@@ -98,12 +113,23 @@ export function setWebGLBlendMode(state: WebGLRenderState, blendMode: number | n
 
 export function setQuadMatrixFromOffset(
   state: WebGLRenderStateInternal,
-  a: number, b: number, c: number, d: number, tx: number, ty: number,
-  dx: number, dy: number,
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  tx: number,
+  ty: number,
+  dx: number,
+  dy: number,
 ): void {
   setWebGLMatrixFromValues(
-    state.gl, state.shaderLoc, state.matrixArray,
-    a, b, c, d,
+    state.gl,
+    state.shaderLoc,
+    state.matrixArray,
+    a,
+    b,
+    c,
+    d,
     tx + a * dx + c * dy,
     ty + b * dx + d * dy,
     state.canvas,

@@ -1,12 +1,5 @@
 import type { Surface } from '@flighthq/surface';
-import {
-  cloneSurface,
-  compareSurface,
-  createSurface,
-  drawSurface,
-  fillRect,
-  setPixel32,
-} from '@flighthq/surface';
+import { cloneSurface, compareSurface, createSurface, drawSurface, fillRect, setPixel32 } from '@flighthq/surface';
 
 const IMG_SIZE = 40;
 const CELL_SIZE = IMG_SIZE + 4;

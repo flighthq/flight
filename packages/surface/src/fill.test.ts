@@ -1,8 +1,8 @@
 ﻿import { describe, expect, it } from 'vitest';
 
 import { fillRect, floodFill } from './fill';
-import { createSurface } from './surface';
 import { getPixel32 } from './pixel';
+import { createSurface } from './surface';
 
 describe('fillRect', () => {
   it('fills the specified region', () => {
