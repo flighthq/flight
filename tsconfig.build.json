@@ -2,14 +2,14 @@
   "files": [],
   "references": [
     { "path": "./packages/assets" },
-    { "path": "./packages/imagedata" },
     { "path": "./packages/engine" },
     { "path": "./packages/foundation" },
     { "path": "./packages/geometry" },
+    { "path": "./packages/imagedata" },
     { "path": "./packages/interaction" },
     { "path": "./packages/materials" },
-    { "path": "./packages/render-core" },
     { "path": "./packages/render-canvas" },
+    { "path": "./packages/render-core" },
     { "path": "./packages/render-dom" },
     { "path": "./packages/scenegraph-core" },
     { "path": "./packages/scenegraph-display" },
@@ -19,8 +19,8 @@
     { "path": "./packages/text-layout" },
     { "path": "./packages/timeline" },
     { "path": "./packages/timeline-spritesheet" },
-    { "path": "./packages/tween-easing" },
     { "path": "./packages/tween" },
+    { "path": "./packages/tween-easing" },
     { "path": "./packages/types" }
   ]
 }
