@@ -17,6 +17,7 @@
     { "path": "../materials" },
     { "path": "../render-core" },
     { "path": "../render-canvas" },
+    { "path": "../render-dom" },
     { "path": "../scenegraph-core" },
     { "path": "../scenegraph-display" },
     { "path": "../scenegraph-world" },
