@@ -29,10 +29,12 @@ export function beginBitmapFill(
   smooth = false,
 ): void {
   shape.data.commands.push('beginBitmapFill', 4, bitmap, matrix, repeat, smooth);
+  shape.data.version++;
 }
 
 export function beginFill(shape: Shape, color = 0, alpha = 1): void {
   shape.data.commands.push('beginFill', 2, color, alpha);
+  shape.data.version++;
 }
 
 export function beginGradientFill(
@@ -58,6 +60,7 @@ export function beginGradientFill(
     interpolationMethod,
     focalPointRatio,
   );
+  shape.data.version++;
 }
 
 export function cubicCurveTo(
@@ -70,18 +73,22 @@ export function cubicCurveTo(
   anchorY: number,
 ): void {
   shape.data.commands.push('cubicCurveTo', 6, controlX1, controlY1, controlX2, controlY2, anchorX, anchorY);
+  shape.data.version++;
 }
 
 export function curveTo(shape: Shape, controlX: number, controlY: number, anchorX: number, anchorY: number): void {
   shape.data.commands.push('curveTo', 4, controlX, controlY, anchorX, anchorY);
+  shape.data.version++;
 }
 
 export function drawCircle(shape: Shape, x: number, y: number, radius: number): void {
   shape.data.commands.push('drawCircle', 3, x, y, radius);
+  shape.data.version++;
 }
 
 export function drawEllipse(shape: Shape, x: number, y: number, width: number, height: number): void {
   shape.data.commands.push('drawEllipse', 4, x, y, width, height);
+  shape.data.version++;
 }
 
 export function drawPath(
@@ -91,10 +98,12 @@ export function drawPath(
   winding: GraphicsPathWinding = 'evenOdd',
 ): void {
   shape.data.commands.push('drawPath', 3, commands, pathData, winding);
+  shape.data.version++;
 }
 
 export function drawRect(shape: Shape, x: number, y: number, width: number, height: number): void {
   shape.data.commands.push('drawRect', 4, x, y, width, height);
+  shape.data.version++;
 }
 
 export function drawRoundRect(
@@ -107,6 +116,7 @@ export function drawRoundRect(
   ellipseHeight: number,
 ): void {
   shape.data.commands.push('drawRoundRect', 6, x, y, width, height, ellipseWidth, ellipseHeight);
+  shape.data.version++;
 }
 
 export function drawRoundRectComplex(
@@ -132,10 +142,12 @@ export function drawRoundRectComplex(
   cmds.push('curveTo', 4, x, b, x, b - bottomLeftRadius);
   cmds.push('lineTo', 2, x, y + topLeftRadius);
   cmds.push('curveTo', 4, x, y, x + topLeftRadius, y);
+  shape.data.version++;
 }
 
 export function endFill(shape: Shape): void {
   shape.data.commands.push('endFill', 0);
+  shape.data.version++;
 }
 
 export function lineBitmapStyle(
@@ -146,6 +158,7 @@ export function lineBitmapStyle(
   smooth = false,
 ): void {
   shape.data.commands.push('lineBitmapStyle', 4, bitmap, matrix, repeat, smooth);
+  shape.data.version++;
 }
 
 export function lineGradientStyle(
@@ -171,6 +184,7 @@ export function lineGradientStyle(
     interpolationMethod,
     focalPointRatio,
   );
+  shape.data.version++;
 }
 
 export function lineStyle(
@@ -185,12 +199,15 @@ export function lineStyle(
   miterLimit = 3,
 ): void {
   shape.data.commands.push('lineStyle', 8, thickness, color, alpha, pixelHinting, scaleMode, caps, joints, miterLimit);
+  shape.data.version++;
 }
 
 export function lineTo(shape: Shape, x: number, y: number): void {
   shape.data.commands.push('lineTo', 2, x, y);
+  shape.data.version++;
 }
 
 export function moveTo(shape: Shape, x: number, y: number): void {
   shape.data.commands.push('moveTo', 2, x, y);
+  shape.data.version++;
 }

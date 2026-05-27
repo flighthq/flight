@@ -5,6 +5,7 @@ import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjec
 
 export function clearShapeCommands(data: ShapeData): void {
   data.commands.length = 0;
+  data.version++;
 }
 
 export function computeShapeLocalBoundsRect(out: Rectangle, source: Readonly<GraphNode>): void {
@@ -137,6 +138,7 @@ export function computeShapeLocalBoundsRect(out: Rectangle, source: Readonly<Gra
 export function copyShapeCommands(source: ShapeData, target: ShapeData): void {
   target.commands.length = 0;
   target.commands.push(...source.commands);
+  target.version++;
 }
 
 export function createShape(obj?: Readonly<PartialNode<Shape>>): Shape {
@@ -146,6 +148,7 @@ export function createShape(obj?: Readonly<PartialNode<Shape>>): Shape {
 export function createShapeData(data?: Readonly<Partial<ShapeData>>): ShapeData {
   return {
     commands: data?.commands ?? [],
+    version: data?.version ?? 0,
   };
 }
 
