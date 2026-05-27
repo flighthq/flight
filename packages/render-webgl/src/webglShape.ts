@@ -1,6 +1,5 @@
-import { rectangle } from '@flighthq/geometry';
 import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
-import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
+import { getLocalBoundsRect } from '@flighthq/scenegraph-core';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderNode,
@@ -33,8 +32,6 @@ function createWebGLShapeData(state: RenderState, _source: Renderable): Renderer
   return { canvas, ctx, texture, lastVersion: -1, lastW: 0, lastH: 0 } as unknown as RendererData;
 }
 
-const _tempBounds = rectangle.create();
-
 export function drawWebGLShape(state: RenderState, renderNode: DisplayObjectRenderNode): void {
   const internal = state as WebGLRenderStateInternal;
   const source = renderNode.source as Shape;
@@ -44,9 +41,7 @@ export function drawWebGLShape(state: RenderState, renderNode: DisplayObjectRend
 
   const shapeData = renderNode.rendererData as unknown as WebGLShapeData;
 
-  // Use cached local bounds from the scene graph update; fall back to temp rect
-  const runtime = getDisplayObjectRuntime(source);
-  const bounds = runtime.localBoundsRect ?? _tempBounds;
+  const bounds = getLocalBoundsRect(source);
   const w = Math.ceil(bounds.width);
   const h = Math.ceil(bounds.height);
   if (w <= 0 || h <= 0) return;
