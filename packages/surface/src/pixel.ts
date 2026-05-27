@@ -1,18 +1,18 @@
-import type { ImageData } from '@flighthq/types';
+﻿import type { Surface } from '@flighthq/types';
 
-export function getPixel(source: ImageData, x: number, y: number): number {
+export function getPixel(source: Surface, x: number, y: number): number {
   const i = (y * source.width + x) * 4;
   return ((source.data[i] << 16) | (source.data[i + 1] << 8) | source.data[i + 2]) >>> 0;
 }
 
-export function getPixel32(source: ImageData, x: number, y: number): number {
+export function getPixel32(source: Surface, x: number, y: number): number {
   const i = (y * source.width + x) * 4;
   return ((source.data[i + 3] << 24) | (source.data[i] << 16) | (source.data[i + 1] << 8) | source.data[i + 2]) >>> 0;
 }
 
 export function getPixels(
   out: Uint8ClampedArray,
-  source: ImageData,
+  source: Surface,
   x: number,
   y: number,
   width: number,
@@ -30,14 +30,14 @@ export function getPixels(
   }
 }
 
-export function setPixel(dest: ImageData, x: number, y: number, color: number): void {
+export function setPixel(dest: Surface, x: number, y: number, color: number): void {
   const i = (y * dest.width + x) * 4;
   dest.data[i] = (color >> 16) & 0xff;
   dest.data[i + 1] = (color >> 8) & 0xff;
   dest.data[i + 2] = color & 0xff;
 }
 
-export function setPixel32(dest: ImageData, x: number, y: number, color: number): void {
+export function setPixel32(dest: Surface, x: number, y: number, color: number): void {
   const i = (y * dest.width + x) * 4;
   dest.data[i] = (color >> 16) & 0xff;
   dest.data[i + 1] = (color >> 8) & 0xff;
@@ -46,7 +46,7 @@ export function setPixel32(dest: ImageData, x: number, y: number, color: number)
 }
 
 export function setPixels(
-  dest: ImageData,
+  dest: Surface,
   x: number,
   y: number,
   width: number,

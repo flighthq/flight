@@ -1,4 +1,4 @@
-import type { ImageData } from '@flighthq/types';
+﻿import type { Surface } from '@flighthq/types';
 
 export interface ColorTransformData {
   alphaMultiplier: number;
@@ -14,7 +14,7 @@ export interface ColorTransformData {
 export type ThresholdOperation = '!=' | '<' | '<=' | '==' | '>' | '>=';
 
 export function colorTransform(
-  dest: ImageData,
+  dest: Surface,
   x: number,
   y: number,
   width: number,
@@ -37,12 +37,12 @@ export function colorTransform(
 }
 
 export function merge(
-  source: ImageData,
+  source: Surface,
   sx: number,
   sy: number,
   sw: number,
   sh: number,
-  dest: ImageData,
+  dest: Surface,
   dx: number,
   dy: number,
   redMultiplier: number,
@@ -70,7 +70,7 @@ export function merge(
   }
 }
 
-export function scroll(dest: ImageData, dx: number, dy: number): void {
+export function scroll(dest: Surface, dx: number, dy: number): void {
   const copy = new Uint8ClampedArray(dest.data);
   dest.data.fill(0);
   for (let py = 0; py < dest.height; py++) {
@@ -88,12 +88,12 @@ export function scroll(dest: ImageData, dx: number, dy: number): void {
 }
 
 export function threshold(
-  source: ImageData,
+  source: Surface,
   sx: number,
   sy: number,
   sw: number,
   sh: number,
-  dest: ImageData,
+  dest: Surface,
   dx: number,
   dy: number,
   operation: ThresholdOperation,

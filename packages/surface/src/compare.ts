@@ -1,13 +1,13 @@
-import type { ImageData } from '@flighthq/types';
+﻿import type { Surface } from '@flighthq/types';
 
-import { createImageData } from './imageData';
+import { createSurface } from './surface';
 
-export function compareImageData(source: ImageData, other: ImageData | null): ImageData | 0 | -1 | -2 | -3 {
+export function compareSurface(source: Surface, other: Surface | null): Surface | 0 | -1 | -2 | -3 {
   if (other === null) return -1;
   if (source.width !== other.width) return -2;
   if (source.height !== other.height) return -3;
 
-  const result = createImageData(source.width, source.height);
+  const result = createSurface(source.width, source.height);
   let hasDiff = false;
 
   for (let i = 0; i < source.data.length; i += 4) {

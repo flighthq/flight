@@ -23,7 +23,7 @@ export * from './HasAppearance';
 export * from './HasBoundsRect';
 export * from './HasTransform2D';
 export * from './HitTestPoint';
-export * from './ImageData';
+export * from './Surface';
 export * from './ImageSource';
 export * from './InputText';
 export * from './Matrix3x2';

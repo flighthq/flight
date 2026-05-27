@@ -5,7 +5,7 @@
     { "path": "./packages/engine" },
     { "path": "./packages/foundation" },
     { "path": "./packages/geometry" },
-    { "path": "./packages/imagedata" },
+    { "path": "./packages/surface" },
     { "path": "./packages/interaction" },
     { "path": "./packages/materials" },
     { "path": "./packages/render-canvas" },

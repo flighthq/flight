@@ -1,5 +1,5 @@
 export * from '@flighthq/assets';
-// export * from '@flighthq/imagedata';
+// export * from '@flighthq/surface';
 // export * from '@flighthq/events-core';
 // export * from '@flighthq/events-input';
 export * from '@flighthq/foundation';

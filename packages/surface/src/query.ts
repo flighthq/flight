@@ -1,4 +1,4 @@
-import type { ImageData } from '@flighthq/types';
+﻿import type { Surface } from '@flighthq/types';
 
 export interface ColorBoundsRect {
   height: number;
@@ -8,7 +8,7 @@ export interface ColorBoundsRect {
 }
 
 export function getColorBoundsRect(
-  source: ImageData,
+  source: Surface,
   mask: number,
   color: number,
   findColor: boolean = true,

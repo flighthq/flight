@@ -10,7 +10,7 @@
   },
   "references": [
     { "path": "../assets" },
-    { "path": "../imagedata" },
+    { "path": "../surface" },
     { "path": "../foundation" },
     { "path": "../geometry" },
     { "path": "../interaction" },

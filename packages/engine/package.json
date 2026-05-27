@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@flighthq/assets": "*",
-    "@flighthq/imagedata": "*",
+    "@flighthq/surface": "*",
     "@flighthq/foundation": "*",
     "@flighthq/geometry": "*",
     "@flighthq/materials": "*",

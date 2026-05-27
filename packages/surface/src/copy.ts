@@ -1,10 +1,10 @@
-import type { ImageData } from '@flighthq/types';
+﻿import type { Surface } from '@flighthq/types';
 import type { ImageChannel } from './imageChannel';
 
 export function copyChannel(
-  source: ImageData,
+  source: Surface,
   sourceChannel: ImageChannel,
-  dest: ImageData,
+  dest: Surface,
   destChannel: ImageChannel,
   sx: number = 0,
   sy: number = 0,
@@ -25,12 +25,12 @@ export function copyChannel(
 }
 
 export function copyPixels(
-  source: ImageData,
+  source: Surface,
   sx: number,
   sy: number,
   sw: number,
   sh: number,
-  dest: ImageData,
+  dest: Surface,
   dx: number,
   dy: number,
   mergeAlpha: boolean = false,

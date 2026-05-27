@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/imagedata",
+  "name": "@flighthq/surface",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -66,6 +66,7 @@
   },
   "dependencies": {
     "@flighthq/assets": "*",
+    "@flighthq/foundation": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

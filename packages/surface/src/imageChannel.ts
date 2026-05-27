@@ -1,4 +1,4 @@
-export const ImageChannel = {
+﻿export const ImageChannel = {
   Red: 0,
   Green: 1,
   Blue: 2,

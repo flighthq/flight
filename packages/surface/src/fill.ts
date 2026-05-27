@@ -1,6 +1,6 @@
-import type { ImageData } from '@flighthq/types';
+﻿import type { Surface } from '@flighthq/types';
 
-export function fillRect(dest: ImageData, x: number, y: number, width: number, height: number, color: number): void {
+export function fillRect(dest: Surface, x: number, y: number, width: number, height: number, color: number): void {
   const r = (color >> 16) & 0xff;
   const g = (color >> 8) & 0xff;
   const b = color & 0xff;
@@ -20,7 +20,7 @@ export function fillRect(dest: ImageData, x: number, y: number, width: number, h
   }
 }
 
-export function floodFill(dest: ImageData, x: number, y: number, color: number): void {
+export function floodFill(dest: Surface, x: number, y: number, color: number): void {
   if (x < 0 || x >= dest.width || y < 0 || y >= dest.height) return;
 
   const fillR = (color >> 16) & 0xff;
