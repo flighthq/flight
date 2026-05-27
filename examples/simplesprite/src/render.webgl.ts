@@ -1,2 +1,27 @@
-// WebGL renderer entry — re-exports canvas as fallback until @flighthq/render-webgl is available
-export * from './render.canvas';
+import type { Sprite } from '@flighthq/engine';
+import {
+  createWebGLElement,
+  createWebGLRenderState,
+  defaultWebGLSpriteRenderer,
+  registerRenderer,
+  renderWebGLBackground,
+  renderWebGLSprite,
+  SpriteKind,
+} from '@flighthq/engine';
+
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createWebGLElement(800, 400, pixelRatio);
+document.body.appendChild(canvas);
+
+export const state = createWebGLRenderState(canvas, {
+  backgroundColor: 0xeeddccff,
+  contextAttributes: { alpha: false },
+  imageSmoothingEnabled: false,
+});
+registerRenderer(state, SpriteKind, defaultWebGLSpriteRenderer);
+export const scale = pixelRatio;
+
+export function render(root: Sprite): void {
+  renderWebGLBackground(state);
+  renderWebGLSprite(state, root);
+}
