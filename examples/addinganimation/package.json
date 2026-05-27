@@ -7,9 +7,13 @@
   },
   "scripts": {
     "predev": "npm run assets",
-    "dev": "vite",
+    "dev": "npm run dev:canvas",
+    "dev:canvas": "cross-env RENDER=canvas vite",
+    "dev:dom": "cross-env RENDER=dom vite",
     "prebuild": "npm run assets",
-    "build": "vite build",
+    "build": "npm run build:canvas",
+    "build:canvas": "cross-env RENDER=canvas vite build",
+    "build:dom": "cross-env RENDER=dom vite build",
     "preview": "vite preview",
     "assets": "tsx ../../scripts/download-assets.ts"
   }

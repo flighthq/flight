@@ -1,31 +1,20 @@
 import {
   addChild,
   addTextureAtlasRegion,
-  createCanvasElement,
-  createCanvasRenderState,
   createSprite,
   createTextureAtlas,
-  defaultCanvasSpriteRenderer,
   loadImageSourceFromURL,
-  registerRenderer,
-  renderCanvasBackground,
-  renderCanvasSprite,
-  setScaleX,
-  setScaleY,
   setX,
   setY,
-  SpriteKind,
   updateSpriteBeforeRender,
 } from '@flighthq/engine';
+
+import { render, scale, state } from './render';
 
 const SCALE = 4;
 const TILE_SIZE = 32;
 const STAGE_WIDTH = 800;
 const STAGE_HEIGHT = 400;
-
-const dpr = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(STAGE_WIDTH, STAGE_HEIGHT, dpr);
-document.body.appendChild(canvas);
 
 const source = await loadImageSourceFromURL('assets/tileset.png');
 
@@ -43,8 +32,8 @@ const robotID = addRegion(96);
 const compyID = addRegion(224);
 
 const root = createSprite();
-setScaleX(root, SCALE * dpr);
-setScaleY(root, SCALE * dpr);
+root.scaleX = SCALE * scale;
+root.scaleY = SCALE * scale;
 
 const creatureIDs = [gumdropID, balloonID, robotID, compyID];
 
@@ -62,17 +51,9 @@ for (let i = 0; i < creatureIDs.length; i++) {
   addChild(root, sprite);
 }
 
-const state = createCanvasRenderState(canvas, {
-  backgroundColor: 0xeeddccff,
-  contextAttributes: { alpha: false },
-  imageSmoothingEnabled: false,
-});
-registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
-
 function enterFrame(): void {
   if (updateSpriteBeforeRender(state, root)) {
-    renderCanvasBackground(state);
-    renderCanvasSprite(state, root);
+    render(root);
   }
   requestAnimationFrame(enterFrame);
 }

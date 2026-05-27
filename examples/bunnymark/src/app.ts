@@ -1,29 +1,20 @@
 import {
   addTextureAtlasRegion,
-  createCanvasElement,
-  createCanvasRenderState,
   createQuadBatch,
   createTextureAtlas,
-  defaultCanvasQuadBatchRenderer,
   loadImageSourceFromURL,
-  QuadBatchKind,
-  registerRenderer,
-  renderCanvasBackground,
-  renderCanvasSprite,
   resizeQuadBatch,
   updateSpriteBeforeRender,
 } from '@flighthq/engine';
 import Stats from 'stats.js';
+
+import { canvas, render, scale, state } from './render';
 
 const GRAVITY = 0.5;
 const WIDTH = 550;
 const HEIGHT = 400;
 const INITIAL_COUNT = 10;
 const BATCH_SIZE = 100;
-
-const dpr = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(WIDTH, HEIGHT, dpr);
-document.body.appendChild(canvas);
 
 const stats = new Stats();
 stats.dom.style.position = 'absolute';
@@ -46,14 +37,8 @@ const bunnyHeight = bunny.height;
 
 const quadBatch = createQuadBatch();
 quadBatch.data.atlas = atlas;
-quadBatch.scaleX = dpr;
-quadBatch.scaleY = dpr;
-
-const state = createCanvasRenderState(canvas, {
-  backgroundColor: 0xeeddccff,
-  contextAttributes: { alpha: false },
-});
-registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
+quadBatch.scaleX = scale;
+quadBatch.scaleY = scale;
 
 const posX: number[] = [];
 const posY: number[] = [];
@@ -120,8 +105,7 @@ function enterFrame(): void {
   counter.textContent = posX.length + ' bunnies';
 
   updateSpriteBeforeRender(state, quadBatch);
-  renderCanvasBackground(state);
-  renderCanvasSprite(state, quadBatch);
+  render(quadBatch);
 
   stats.end();
   requestAnimationFrame(enterFrame);

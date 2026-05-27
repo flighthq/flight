@@ -6,8 +6,10 @@
     "@flighthq/imagedata": "*"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "npm run dev:canvas",
+    "dev:canvas": "cross-env RENDER=canvas vite",
+    "build": "npm run build:canvas",
+    "build:canvas": "cross-env RENDER=canvas vite build",
     "preview": "vite preview"
   }
 }

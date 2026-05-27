@@ -1,40 +1,29 @@
 import {
   addChild,
   addTextureAtlasRegion,
-  createCanvasElement,
-  createCanvasRenderState,
   createSprite,
   createSpritesheet,
   createSpritesheetAnimation,
   createSpritesheetFrame,
   createSpritesheetPlayer,
   createTextureAtlas,
-  defaultCanvasSpriteRenderer,
   getSpritesheetAnimation,
   getSpritesheetPlayerFrame,
   loadImageSourceFromURL,
-  registerRenderer,
-  renderCanvasBackground,
-  renderCanvasSprite,
-  setScaleX,
-  setScaleY,
   setX,
   setY,
   showSpritesheetAnimation,
-  SpriteKind,
   updateSpriteBeforeRender,
   updateSpritesheetPlayer,
 } from '@flighthq/engine';
+
+import { render, scale, state } from './render';
 
 const SCALE = 4;
 const TILE_SIZE = 32;
 const FRAME_DURATION = 150;
 const STAGE_WIDTH = 800;
 const STAGE_HEIGHT = 400;
-
-const dpr = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(STAGE_WIDTH, STAGE_HEIGHT, dpr);
-document.body.appendChild(canvas);
 
 const source = await loadImageSourceFromURL('assets/tileset.png');
 const atlas = createTextureAtlas({ image: source });
@@ -64,8 +53,8 @@ for (const { name, row } of animationDefs) {
 }
 
 const root = createSprite();
-setScaleX(root, SCALE * dpr);
-setScaleY(root, SCALE * dpr);
+root.scaleX = SCALE * scale;
+root.scaleY = SCALE * scale;
 
 const spriteScreenSize = TILE_SIZE * SCALE;
 const totalWidth = animationDefs.length * spriteScreenSize;
@@ -87,13 +76,6 @@ const players = animationDefs.map(({ name }) => {
   return player;
 });
 
-const state = createCanvasRenderState(canvas, {
-  backgroundColor: 0xeeddccff,
-  contextAttributes: { alpha: false },
-  imageSmoothingEnabled: false,
-});
-registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
-
 let lastTime = performance.now();
 
 function enterFrame(time: number): void {
@@ -108,8 +90,7 @@ function enterFrame(time: number): void {
   }
 
   updateSpriteBeforeRender(state, root);
-  renderCanvasBackground(state);
-  renderCanvasSprite(state, root);
+  render(root);
 
   requestAnimationFrame(enterFrame);
 }

@@ -2,29 +2,20 @@ import {
   addChildAt,
   beginFill,
   connectSignal,
-  createCanvasElement,
-  createCanvasRenderState,
   createDisplayObject,
   createShape,
   createTimer,
   createTween,
   createTweenManager,
-  defaultCanvasBeginFill,
-  defaultCanvasDrawCircle,
-  defaultCanvasEndFill,
-  defaultCanvasShapeRenderer,
   drawCircle,
   endFill,
   invalidateRender,
   Quad,
-  registerCanvasShapeCommands,
-  registerRenderer,
-  renderCanvasBackground,
-  renderCanvasDisplayObject,
-  ShapeKind,
   updateDisplayObjectBeforeRender,
   updateTweens,
 } from '@flighthq/engine';
+
+import { render, scale, state } from './render';
 
 const STAGE_WIDTH = 550;
 const STAGE_HEIGHT = 400;
@@ -35,21 +26,10 @@ const MIN_DURATION = 1500;
 const MAX_DURATION = 6000;
 const MAX_CREATION_DELAY = 10000;
 
-const dpr = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(STAGE_WIDTH, STAGE_HEIGHT, dpr);
-document.body.appendChild(canvas);
-
-const state = createCanvasRenderState(canvas, {
-  backgroundColor: 0xeeddccff,
-  contextAttributes: { alpha: false },
-});
-registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasEndFill, defaultCanvasDrawCircle]);
-
 const manager = createTweenManager();
 const root = createDisplayObject();
-root.scaleX = dpr;
-root.scaleY = dpr;
+root.scaleX = scale;
+root.scaleY = scale;
 
 function animateCircle(circle: ReturnType<typeof createShape>): void {
   const duration = MIN_DURATION + Math.random() * (MAX_DURATION - MIN_DURATION);
@@ -89,8 +69,7 @@ function enterFrame(time: number): void {
   lastTime = time;
   updateTweens(manager, delta);
   if (updateDisplayObjectBeforeRender(state, root)) {
-    renderCanvasBackground(state);
-    renderCanvasDisplayObject(state, root);
+    render(root);
   }
   requestAnimationFrame(enterFrame);
 }

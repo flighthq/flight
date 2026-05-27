@@ -1,0 +1,31 @@
+import type { DisplayObject } from '@flighthq/engine';
+import {
+  createCanvasElement,
+  createCanvasRenderState,
+  defaultCanvasBeginFill,
+  defaultCanvasDrawCircle,
+  defaultCanvasEndFill,
+  defaultCanvasShapeRenderer,
+  registerCanvasShapeCommands,
+  registerRenderer,
+  renderCanvasBackground,
+  renderCanvasDisplayObject,
+  ShapeKind,
+} from '@flighthq/engine';
+
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createCanvasElement(550, 400, pixelRatio);
+document.body.appendChild(canvas);
+
+export const state = createCanvasRenderState(canvas, {
+  backgroundColor: 0xeeddccff,
+  contextAttributes: { alpha: false },
+});
+registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
+registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasEndFill, defaultCanvasDrawCircle]);
+export const scale = pixelRatio;
+
+export function render(root: DisplayObject): void {
+  renderCanvasBackground(state);
+  renderCanvasDisplayObject(state, root);
+}

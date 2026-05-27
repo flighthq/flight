@@ -7,9 +7,11 @@
   },
   "scripts": {
     "predev": "tsx ../../scripts/download-assets.ts",
-    "dev": "vite",
+    "dev": "npm run dev:canvas",
+    "dev:canvas": "cross-env RENDER=canvas vite",
     "prebuild": "tsx ../../scripts/download-assets.ts",
-    "build": "vite build",
+    "build": "npm run build:canvas",
+    "build:canvas": "cross-env RENDER=canvas vite build",
     "preview": "vite preview",
     "assets": "tsx ../../scripts/download-assets.ts"
   }

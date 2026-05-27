@@ -1,18 +1,6 @@
-import {
-  createCanvasElement,
-  createCanvasRenderState,
-  createTilemap,
-  defaultCanvasTilemapRenderer,
-  loadTilesetFromURL,
-  registerRenderer,
-  renderCanvasBackground,
-  renderCanvasSprite,
-  setTile,
-  setX,
-  setY,
-  TilemapKind,
-  updateSpriteBeforeRender,
-} from '@flighthq/engine';
+import { createTilemap, loadTilesetFromURL, setTile, setX, setY, updateSpriteBeforeRender } from '@flighthq/engine';
+
+import { render, scale, state } from './render';
 
 const TILE_W = 32;
 const TILE_H = 32;
@@ -21,20 +9,13 @@ const ROWS = 8;
 const SCALE = 2;
 const PAD = 40;
 
-const mapW = COLS * TILE_W * SCALE;
-const mapH = ROWS * TILE_H * SCALE;
-
-const dpr = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(mapW + PAD * 2, mapH + PAD * 2, dpr);
-document.getElementById('app')!.appendChild(canvas);
-
 const tileset = await loadTilesetFromURL('assets/tileset.png', TILE_W, TILE_H);
 
 const tilemap = createTilemap({ data: { columns: COLS, rows: ROWS, tileset } });
-tilemap.scaleX = SCALE * dpr;
-tilemap.scaleY = SCALE * dpr;
-setX(tilemap, PAD * dpr);
-setY(tilemap, PAD * dpr);
+tilemap.scaleX = SCALE * scale;
+tilemap.scaleY = SCALE * scale;
+setX(tilemap, PAD * scale);
+setY(tilemap, PAD * scale);
 
 // Each row shows the idle frame of one character.
 // Character n's first frame = n * tileset.columns (row-major stride).
@@ -45,17 +26,9 @@ for (let r = 0; r < ROWS; r++) {
   }
 }
 
-const state = createCanvasRenderState(canvas, {
-  backgroundColor: 0xeeddccff,
-  contextAttributes: { alpha: false },
-  imageSmoothingEnabled: false,
-});
-registerRenderer(state, TilemapKind, defaultCanvasTilemapRenderer);
-
 function enterFrame(): void {
   if (updateSpriteBeforeRender(state, tilemap)) {
-    renderCanvasBackground(state);
-    renderCanvasSprite(state, tilemap);
+    render(tilemap);
   }
   requestAnimationFrame(enterFrame);
 }

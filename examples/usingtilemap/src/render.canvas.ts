@@ -1,0 +1,27 @@
+import type { Tilemap } from '@flighthq/engine';
+import {
+  createCanvasElement,
+  createCanvasRenderState,
+  defaultCanvasTilemapRenderer,
+  registerRenderer,
+  renderCanvasBackground,
+  renderCanvasSprite,
+  TilemapKind,
+} from '@flighthq/engine';
+
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createCanvasElement(592, 592, pixelRatio);
+document.getElementById('app')!.appendChild(canvas);
+
+export const state = createCanvasRenderState(canvas, {
+  backgroundColor: 0xeeddccff,
+  contextAttributes: { alpha: false },
+  imageSmoothingEnabled: false,
+});
+registerRenderer(state, TilemapKind, defaultCanvasTilemapRenderer);
+export const scale = pixelRatio;
+
+export function render(root: Tilemap): void {
+  renderCanvasBackground(state);
+  renderCanvasSprite(state, root);
+}

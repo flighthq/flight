@@ -6,8 +6,12 @@
     "@flighthq/engine": "*"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "npm run dev:canvas",
+    "dev:canvas": "cross-env RENDER=canvas vite",
+    "dev:dom": "cross-env RENDER=dom vite",
+    "build": "npm run build:canvas",
+    "build:canvas": "cross-env RENDER=canvas vite build",
+    "build:dom": "cross-env RENDER=dom vite build",
     "preview": "vite preview"
   }
 }

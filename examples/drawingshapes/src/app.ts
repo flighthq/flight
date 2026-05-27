@@ -2,13 +2,9 @@ import type { Shape } from '@flighthq/engine';
 import {
   addChild,
   beginFill,
-  createCanvasElement,
-  createCanvasRenderState,
   createDisplayObject,
   createShape,
   curveTo,
-  defaultCanvasShapeCommands,
-  defaultCanvasShapeRenderer,
   drawCircle,
   drawEllipse,
   drawRect,
@@ -16,30 +12,16 @@ import {
   lineStyle,
   lineTo,
   moveTo,
-  registerCanvasShapeCommands,
-  registerRenderer,
-  renderCanvasBackground,
-  renderCanvasDisplayObject,
   setX,
   setY,
-  ShapeKind,
   updateDisplayObjectBeforeRender,
 } from '@flighthq/engine';
 
-const dpr = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(800, 400, dpr);
-document.body.appendChild(canvas);
-
-const state = createCanvasRenderState(canvas, {
-  backgroundColor: 0xffffffff,
-  contextAttributes: { alpha: false },
-});
-registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
+import { render, scale, state } from './render';
 
 const main = createDisplayObject();
-main.scaleX = dpr;
-main.scaleY = dpr;
+main.scaleX = scale;
+main.scaleY = scale;
 
 function drawPolygon(g: Shape, x: number, y: number, radius: number, sides: number): void {
   const step = (Math.PI * 2) / sides;
@@ -161,8 +143,7 @@ addChild(main, curve);
 
 function enterFrame(): void {
   if (updateDisplayObjectBeforeRender(state, main)) {
-    renderCanvasBackground(state);
-    renderCanvasDisplayObject(state, main);
+    render(main);
   }
   requestAnimationFrame(enterFrame);
 }

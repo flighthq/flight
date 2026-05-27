@@ -1,22 +1,17 @@
 import {
   addTextureAtlasRegion,
   attachSpritesheetTimeline,
-  BitmapKind,
-  createCanvasElement,
-  createCanvasRenderState,
   createMovieClip,
   createSpritesheet,
   createSpritesheetAnimation,
   createSpritesheetFrame,
   createTextureAtlas,
-  defaultCanvasBitmapRenderer,
   loadImageSourceFromURL,
-  registerRenderer,
-  renderCanvasBackground,
-  renderCanvasDisplayObject,
   updateDisplayObjectBeforeRender,
   updateMovieClip,
 } from '@flighthq/engine';
+
+import { render, scale, state } from './render';
 
 const FRAME_W = 220;
 const FRAME_H = 220;
@@ -49,21 +44,10 @@ const spritesheet = createSpritesheet({
   animations: { nyancat: animation },
 });
 
-const dpr = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(FRAME_W, FRAME_H, dpr);
-document.getElementById('app')!.appendChild(canvas);
-
 const clip = createMovieClip();
 attachSpritesheetTimeline(clip, spritesheet, animation);
-clip.scaleX = dpr;
-clip.scaleY = dpr;
-
-const state = createCanvasRenderState(canvas, {
-  backgroundColor: 0x000000ff,
-  contextAttributes: { alpha: false },
-  imageSmoothingEnabled: false,
-});
-registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
+clip.scaleX = scale;
+clip.scaleY = scale;
 
 let lastTime = performance.now();
 
@@ -74,8 +58,7 @@ function enterFrame(time: number): void {
   updateMovieClip(clip, deltaTime);
 
   updateDisplayObjectBeforeRender(state, clip);
-  renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, clip);
+  render(clip);
 
   requestAnimationFrame(enterFrame);
 }

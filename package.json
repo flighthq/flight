@@ -25,7 +25,8 @@
     "test:api": "npm run test:api:node && npm run test:api:browser",
     "test:api:node": "vitest run tests/api",
     "test:api:browser": "vitest run tests/api/browser",
-    "test:size": "vitest run tests/size"
+    "test:size": "vitest run tests/size",
+    "test:size:baseline": "cross-env UPDATE_BASELINE=1 vitest run tests/size"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
@@ -34,6 +35,7 @@
     "@typescript-eslint/eslint-plugin": "^8.53.0",
     "@typescript-eslint/parser": "^8.53.0",
     "@vitest/coverage-v8": "^4.0.17",
+    "cross-env": "^10.1.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-define-config": "^2.1.0",

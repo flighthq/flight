@@ -1,33 +1,18 @@
 import {
   addChild,
-  createCanvasElement,
-  createCanvasRenderState,
   createDisplayObject,
   createText,
-  defaultCanvasTextRenderer,
   loadFontFromURL,
-  registerRenderer,
-  renderCanvasBackground,
-  renderCanvasDisplayObject,
-  TextKind,
   updateDisplayObjectBeforeRender,
 } from '@flighthq/engine';
 
-const dpr = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(400, 200, dpr);
-document.body.appendChild(canvas);
-
-const state = createCanvasRenderState(canvas, {
-  backgroundColor: 0xffffffff,
-  contextAttributes: { alpha: false },
-});
-registerRenderer(state, TextKind, defaultCanvasTextRenderer);
+import { render, scale, state } from './render';
 
 const font = await loadFontFromURL('assets/KatamotzIkasi.woff', 'Katamotz Ikasi');
 
 const root = createDisplayObject();
-root.scaleX = dpr;
-root.scaleY = dpr;
+root.scaleX = scale;
+root.scaleY = scale;
 
 const textField = createText();
 textField.data.text = 'Hello World';
@@ -38,8 +23,7 @@ addChild(root, textField);
 
 function enterFrame(): void {
   if (updateDisplayObjectBeforeRender(state, root)) {
-    renderCanvasBackground(state);
-    renderCanvasDisplayObject(state, root);
+    render(root);
   }
   requestAnimationFrame(enterFrame);
 }

@@ -1,41 +1,26 @@
 import {
   addChild,
-  BitmapKind,
   connectSignal,
   createBitmap,
-  createCanvasElement,
-  createCanvasRenderState,
   createDisplayObject,
   createTween,
   createTweenManager,
-  defaultCanvasBitmapRenderer,
   Elastic,
   invalidateRender,
   loadImageSourceFromURL,
-  registerRenderer,
-  renderCanvasBackground,
-  renderCanvasDisplayObject,
   updateDisplayObjectBeforeRender,
   updateTweens,
 } from '@flighthq/engine';
 
+import { render, scale, state } from './render';
+
 const STAGE_WIDTH = 550;
 const STAGE_HEIGHT = 400;
 
-const dpr = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(STAGE_WIDTH, STAGE_HEIGHT, dpr);
-document.body.appendChild(canvas);
-
-const state = createCanvasRenderState(canvas, {
-  backgroundColor: 0xeeddccff,
-  contextAttributes: { alpha: false },
-});
-registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
-
 const manager = createTweenManager();
 const main = createDisplayObject();
-main.scaleX = dpr;
-main.scaleY = dpr;
+main.scaleX = scale;
+main.scaleY = scale;
 const container = createDisplayObject();
 const bitmap = createBitmap();
 
@@ -69,8 +54,7 @@ function enterFrame(time: number) {
   lastTime = time;
   updateTweens(manager, delta);
   if (updateDisplayObjectBeforeRender(state, main)) {
-    renderCanvasBackground(state);
-    renderCanvasDisplayObject(state, main);
+    render(main);
   }
   requestAnimationFrame(enterFrame);
 }

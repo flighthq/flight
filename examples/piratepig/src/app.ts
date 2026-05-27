@@ -1,31 +1,19 @@
 import {
   addChild,
-  BitmapKind,
   createAudioSourceFromURLs,
   createBitmap,
-  createCanvasElement,
-  createCanvasRenderState,
   createDisplayObject,
   createTweenManager,
-  defaultCanvasBitmapRenderer,
-  defaultCanvasShapeCommands,
-  defaultCanvasShapeRenderer,
-  defaultCanvasTextRenderer,
   invalidateRender,
   loadAudioSourceFromURLs,
   loadFontFromURL,
   loadImageSourceFromURL,
-  registerCanvasShapeCommands,
-  registerRenderer,
-  renderCanvasBackground,
-  renderCanvasDisplayObject,
-  ShapeKind,
-  TextKind,
   updateDisplayObjectBeforeRender,
   updateTweens,
 } from '@flighthq/engine';
 
 import { PiratePigGame } from './game';
+import { container, render, setSize, state } from './render';
 
 // ── Assets ─────────────────────────────────────────────────────────────────
 
@@ -50,42 +38,23 @@ const sounds = [
   createAudioSourceFromURLs([{ url: 'assets/sounds/sound5.ogg' }, { url: 'assets/sounds/sound5.mp3' }]),
 ];
 
-// ── Canvas + renderer ──────────────────────────────────────────────────────
-
-const dpr = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(window.innerWidth, window.innerHeight, dpr);
-document.body.appendChild(canvas);
-
-const renderState = createCanvasRenderState(canvas, {
-  backgroundColor: 0x000000ff,
-  contextAttributes: { alpha: false },
-});
-registerRenderer(renderState, BitmapKind, defaultCanvasBitmapRenderer);
-registerRenderer(renderState, ShapeKind, defaultCanvasShapeRenderer);
-registerRenderer(renderState, TextKind, defaultCanvasTextRenderer);
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
-
 // ── Scene ──────────────────────────────────────────────────────────────────
 
 const manager = createTweenManager();
 const root = createDisplayObject();
 
-// Stretched background image
 const background = createBitmap();
 background.data.image = bgImage;
 background.data.smoothing = true;
 addChild(root, background);
 
-// Footer bar sits behind game in z-order
 const footer = createBitmap();
 footer.data.image = footerImage;
 footer.data.smoothing = true;
 addChild(root, footer);
 
-// Game
 const game = new PiratePigGame(manager, tileImages, logoImage, font.name, sounds);
 
-// Logo (first child of game container, behind score and tiles)
 const logo = createBitmap();
 logo.data.image = logoImage;
 logo.data.smoothing = true;
@@ -96,13 +65,7 @@ addChild(root, game.obj);
 // ── Layout ─────────────────────────────────────────────────────────────────
 
 function resize(w: number, h: number): void {
-  canvas.style.width = `${w}px`;
-  canvas.style.height = `${h}px`;
-  canvas.width = w * dpr;
-  canvas.height = h * dpr;
-
-  root.scaleX = dpr;
-  root.scaleY = dpr;
+  setSize(w, h);
 
   background.scaleX = w / bgImage.width;
   background.scaleY = h / bgImage.height;
@@ -130,13 +93,13 @@ let dragStartX = 0;
 let dragStartY = 0;
 let selectedTile = game.hitTileAtStageXY(-1, -1);
 
-canvas.addEventListener('pointerdown', (e: PointerEvent) => {
+container.addEventListener('pointerdown', (e: PointerEvent) => {
   dragStartX = e.clientX;
   dragStartY = e.clientY;
   selectedTile = game.hitTileAtStageXY(e.clientX, e.clientY);
 });
 
-canvas.addEventListener('pointerup', (e: PointerEvent) => {
+container.addEventListener('pointerup', (e: PointerEvent) => {
   if (selectedTile === null || selectedTile.moving) return;
 
   const dx = e.clientX - dragStartX;
@@ -167,9 +130,8 @@ function enterFrame(time: number): void {
   updateTweens(manager, delta);
   game.onEnterFrame();
 
-  if (updateDisplayObjectBeforeRender(renderState, root)) {
-    renderCanvasBackground(renderState);
-    renderCanvasDisplayObject(renderState, root);
+  if (updateDisplayObjectBeforeRender(state, root)) {
+    render(root);
   }
 
   requestAnimationFrame(enterFrame);

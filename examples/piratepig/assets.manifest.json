@@ -2,75 +2,75 @@
   "assets": [
     {
       "path": "images/background_tile.png",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_background_tile.png"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_background_tile.png"
     },
     {
       "path": "images/center_bottom.png",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_center_bottom.png"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_center_bottom.png"
     },
     {
       "path": "images/logo.png",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_logo.png"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_logo.png"
     },
     {
       "path": "images/game_bear.png",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_game_bear.png"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_game_bear.png"
     },
     {
       "path": "images/game_bunny_02.png",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_game_bunny_02.png"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_game_bunny_02.png"
     },
     {
       "path": "images/game_carrot.png",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_game_carrot.png"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_game_carrot.png"
     },
     {
       "path": "images/game_lemon.png",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_game_lemon.png"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_game_lemon.png"
     },
     {
       "path": "images/game_panda.png",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_game_panda.png"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_game_panda.png"
     },
     {
       "path": "images/game_piratePig.png",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_game_piratePig.png"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_game_piratePig.png"
     },
     {
       "path": "fonts/FreebooterUpdated.ttf",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/FreebooterUpdated.ttf"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/FreebooterUpdated.ttf"
     },
     {
       "path": "sounds/theme.ogg",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_theme.ogg"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_theme.ogg"
     },
     {
       "path": "sounds/theme.mp3",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_theme.mp3"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_theme.mp3"
     },
     {
       "path": "sounds/sound3.ogg",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_3.ogg"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_3.ogg"
     },
     {
       "path": "sounds/sound3.mp3",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_3.mp3"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_3.mp3"
     },
     {
       "path": "sounds/sound4.ogg",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_4.ogg"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_4.ogg"
     },
     {
       "path": "sounds/sound4.mp3",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_4.mp3"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_4.mp3"
     },
     {
       "path": "sounds/sound5.ogg",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_5.ogg"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_5.ogg"
     },
     {
       "path": "sounds/sound5.mp3",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/piratepig_5.mp3"
+      "url": "https://github.com/flighthq/example-assets/releases/download/v4/piratepig_5.mp3"
     }
   ]
 }
