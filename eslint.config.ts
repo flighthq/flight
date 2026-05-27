@@ -90,5 +90,13 @@ export default [
     },
   },
 
+  {
+    // Allow console in scripts
+    files: ['scripts/**'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+
   prettierConfig,
 ];

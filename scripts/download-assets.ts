@@ -31,16 +31,16 @@ export async function downloadAssets(assets: Asset[], targetDir: string) {
     // Skip download if file exists
     try {
       await fs.access(outPath);
-      console.log(`✔ Cached: ${asset.path}`); // eslint-disable-line
+      console.log(`✔ Cached: ${asset.path}`);
       continue;
     } catch {
       // File does not exist → download
     }
 
-    console.log(`↓ Downloading: ${asset.url}`); // eslint-disable-line
+    console.log(`↓ Downloading: ${asset.url}`);
     await download(asset.url, outPath);
   }
-  console.log('Assets ready ✔'); // eslint-disable-line
+  console.log('Assets ready ✔');
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -50,7 +50,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8'));
     await downloadAssets(manifest.assets, path.join(exampleDir, 'public/assets'));
   })().catch((err) => {
-    console.error(err); // eslint-disable-line
+    console.error(err);
     process.exit(1);
   });
 }

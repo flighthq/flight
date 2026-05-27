@@ -70,6 +70,6 @@ describe('registerRenderer', () => {
 describe('createNullRendererData', () => {
   it('returns null', () => {
     const state = createRenderState();
-    expect(createNullRendererData(state, {} as any)).toBeNull();
+    expect(createNullRendererData(state, {} as any)).toBeNull(); //eslint-disable-line
   });
 });

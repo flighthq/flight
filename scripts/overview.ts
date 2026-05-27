@@ -168,5 +168,4 @@ for (const pkg of detailPackages) {
 
 const outPath = join(root, 'OVERVIEW.md');
 writeFileSync(outPath, lines.join('\n'), 'utf-8');
-//eslint-disable-next-line
 console.log(`Written ${outPath} (${detailPackages.length} packages with detail)`);
