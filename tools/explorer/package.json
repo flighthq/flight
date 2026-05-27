@@ -1,0 +1,13 @@
+{
+  "name": "@flighthq/explorer",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "tsx ../../scripts/download-all-assets.ts",
+    "dev": "vite --config vite.config.ts"
+  },
+  "devDependencies": {
+    "vite": "*"
+  }
+}

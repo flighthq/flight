@@ -5,7 +5,8 @@
   "workspaces": [
     "packages/**",
     "examples/**",
-    "tests/*"
+    "tests/*",
+    "tools/*"
   ],
   "scripts": {
     "build": "tsc -b tsconfig.build.json",
@@ -26,7 +27,8 @@
     "test:api:node": "vitest run tests/api",
     "test:api:browser": "vitest run tests/api/browser",
     "test:size": "vitest run tests/size",
-    "test:size:baseline": "cross-env UPDATE_BASELINE=1 vitest run tests/size"
+    "test:size:baseline": "cross-env UPDATE_BASELINE=1 vitest run tests/size",
+    "explorer": "npm run dev --workspace=tools/explorer"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
