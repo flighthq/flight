@@ -1,3 +1,5 @@
+import type { ImageData } from '@flighthq/types';
+
 export interface ColorTransformData {
   alphaMultiplier: number;
   alphaOffset: number;

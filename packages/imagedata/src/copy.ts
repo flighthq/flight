@@ -1,3 +1,4 @@
+import type { ImageData } from '@flighthq/types';
 import type { ImageChannel } from './imageChannel';
 
 export function copyChannel(

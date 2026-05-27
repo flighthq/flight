@@ -1,5 +1,5 @@
 import { createImageSourceFromCanvas } from '@flighthq/assets';
-import type { ImageSource } from '@flighthq/types';
+import type { ImageData, ImageSource } from '@flighthq/types';
 
 export function createImageDataFromCanvas(
   canvas: HTMLCanvasElement,
@@ -18,7 +18,7 @@ export function createImageDataFromImageSource(source: ImageSource): ImageData {
   const canvas = document.createElement('canvas');
   canvas.width = source.width;
   canvas.height = source.height;
-  if (source.src === null) return new ImageData(source.width, source.height);
+  if (source.src === null) return { colorSpace: 'srgb', data: new Uint8ClampedArray(source.width * source.height * 4), width: source.width, height: source.height };
   const ctx = canvas.getContext('2d')!;
   ctx.drawImage(source.src, 0, 0);
   return ctx.getImageData(0, 0, source.width, source.height);
@@ -28,6 +28,8 @@ export function createImageSourceFromImageData(source: ImageData): ImageSource {
   const canvas = document.createElement('canvas');
   canvas.width = source.width;
   canvas.height = source.height;
-  canvas.getContext('2d')!.putImageData(source, 0, 0);
+  const domImageData = new globalThis.ImageData(source.width, source.height);
+  domImageData.data.set(source.data);
+  canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
   return createImageSourceFromCanvas(canvas);
 }

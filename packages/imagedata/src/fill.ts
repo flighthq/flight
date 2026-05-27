@@ -1,3 +1,5 @@
+import type { ImageData } from '@flighthq/types';
+
 export function fillRect(dest: ImageData, x: number, y: number, width: number, height: number, color: number): void {
   const r = (color >> 16) & 0xff;
   const g = (color >> 8) & 0xff;

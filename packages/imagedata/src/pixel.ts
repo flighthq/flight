@@ -1,3 +1,5 @@
+import type { ImageData } from '@flighthq/types';
+
 export function getPixel(source: ImageData, x: number, y: number): number {
   const i = (y * source.width + x) * 4;
   return ((source.data[i] << 16) | (source.data[i + 1] << 8) | source.data[i + 2]) >>> 0;

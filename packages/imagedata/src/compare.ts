@@ -1,3 +1,5 @@
+import type { ImageData } from '@flighthq/types';
+
 import { createImageData } from './imageData';
 
 export function compareImageData(source: ImageData, other: ImageData | null): ImageData | 0 | -1 | -2 | -3 {
