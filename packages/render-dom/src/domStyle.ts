@@ -1,4 +1,4 @@
-import type { DisplayObjectRenderNode, DOMRenderState } from '@flighthq/types';
+import type { DOMRenderState, RenderNode2D } from '@flighthq/types';
 
 import { setDOMBlendMode } from './domMaterials';
 import { setDOMTransform } from './domTransform';
@@ -11,8 +11,9 @@ export function initDOMElement(element: HTMLElement): void {
   element.style.pointerEvents = 'none';
 }
 
-export function applyDOMStyle(state: DOMRenderState, element: HTMLElement, node: DisplayObjectRenderNode): void {
+export function applyDOMStyle(state: DOMRenderState, element: HTMLElement, node: RenderNode2D): void {
   setDOMTransform(element, node.transform2D, state.roundPixels);
   element.style.opacity = node.alpha < 1 ? String(node.alpha) : '';
+  element.style.imageRendering = state.allowSmoothing ? '' : 'pixelated';
   setDOMBlendMode(element, node.blendMode);
 }
