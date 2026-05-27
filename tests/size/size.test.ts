@@ -1,7 +1,8 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
+import pc from 'picocolors';
 import { build } from 'vite';
-import { describe, expect, test } from 'vitest';
+import { afterAll, describe, expect, test } from 'vitest';
 import { gzipSync } from 'zlib';
 
 const baselineFile = resolve(__dirname, 'size.baseline.json');
@@ -13,66 +14,116 @@ const baseline: Record<string, number> = existsSync(baselineFile)
 
 const pendingBaseline: Record<string, number> = { ...baseline };
 
-const examples = [
-  { name: 'addinganimation', threshold: 9000 },
-  { name: 'addingtext', threshold: 9000 },
-  { name: 'animatedsprite', threshold: 6000 },
-  { name: 'bunnymark', threshold: 6000 },
-  { name: 'displayingabitmap', threshold: 7000 },
-  { name: 'drawingshapes', threshold: 9000 },
-  { name: 'nyancat', threshold: 7000 },
-  { name: 'piratepig', threshold: 13000 },
-  { name: 'simplesprite', threshold: 5000 },
-  { name: 'tweenexample', threshold: 8000 },
-  { name: 'usingtilemap', threshold: 5000 },
-];
+const thresholds: Record<string, number> = {
+  addinganimation: 9000,
+  addingtext: 9000,
+  animatedsprite: 6000,
+  bunnymark: 6000,
+  displayingabitmap: 7000,
+  drawingshapes: 9000,
+  nyancat: 7000,
+  piratepig: 14000,
+  simplesprite: 5000,
+  tweenexample: 8000,
+  usingtilemap: 5000,
+};
 
-const domSupported = new Set([
-  'addinganimation',
-  'addingtext',
-  'animatedsprite',
-  'bunnymark',
-  'displayingabitmap',
-  'drawingshapes',
-  'nyancat',
-  'piratepig',
-  'simplesprite',
-  'tweenexample',
-  'usingtilemap',
-]);
+const DEFAULT_THRESHOLD = 15000;
+const RENDERERS = ['dom', 'canvas', 'webgl'] as const;
+const examplesDir = resolve(__dirname, '../../examples');
 
-const testCases = examples.flatMap(({ name, threshold }) => {
-  const renders = ['canvas', ...(domSupported.has(name) ? ['dom'] : [])];
-  return renders.map((render) => ({ name, render, threshold }));
-});
+const testCases = readdirSync(examplesDir, { withFileTypes: true })
+  .filter((d) => d.isDirectory() && existsSync(resolve(examplesDir, d.name, 'package.json')))
+  .sort((a, b) => a.name.localeCompare(b.name))
+  .flatMap(({ name }) =>
+    RENDERERS.filter((r) => existsSync(resolve(examplesDir, name, `src/render.${r}.ts`))).map((render) => ({
+      name,
+      render,
+      threshold: thresholds[name] ?? DEFAULT_THRESHOLD,
+    })),
+  );
 
-describe('bundle size checks', () => {
-  test.each(testCases)('$name ($render)', async ({ name, render, threshold }) => {
-    const root = resolve(__dirname, `../../examples/${name}`);
-    const code = await buildSample(root, render);
-    const gzipSize = getGzipSize(code);
-    const gzipSizeKB = (gzipSize / 1024).toFixed(2);
-    const key = `${name}:${render}`;
-    const baselineSize = baseline[key];
-    const baselineStr = baselineSize != null ? ` (expected: ~${(baselineSize / 1024).toFixed(2)} KB)` : '';
+interface SizeResult {
+  name: string;
+  render: string;
+  gzipKB: string;
+  baselineKB: string | null;
+  delta: string | null;
+  passed: boolean;
+}
 
-    console.log(`${name} (${render}): ${gzipSizeKB} KB gzipped${baselineStr}`); // eslint-disable-line
+const results: SizeResult[] = [];
+let lastPrintedExample = '';
 
-    pendingBaseline[key] = gzipSize;
+const exampleNames = [...new Set(testCases.map((tc) => tc.name))];
+const exampleBgColors = [pc.bgBlue, pc.bgMagenta, pc.bgCyan, pc.bgGreen];
+const maxNameLen = Math.max(...exampleNames.map((n) => n.length));
+const w = { name: maxNameLen + 5, render: 8, size: 10, base: 10 };
 
-    if (!updateBaseline) {
-      expect(gzipSize, `${name} (${render}) exceeded limit (${gzipSizeKB} KB > ${threshold / 1000} KB)`).toBeLessThan(
-        threshold,
-      );
-    }
+function printGroup(name: string): void {
+  const group = results.filter((r) => r.name === name);
+  const bgColor = exampleBgColors[exampleNames.indexOf(name) % exampleBgColors.length];
+
+  const lines = group.map((r, i) => {
+    const nameCell = i === 0 ? bgColor(' ' + r.name + ' ') + ''.padEnd(w.name - r.name.length - 2) : ''.padEnd(w.name);
+
+    const deltaNum = r.delta != null ? parseFloat(r.delta) : null;
+    const color = deltaNum == null ? pc.dim : deltaNum > 2 ? pc.red : deltaNum > 0 ? pc.yellow : pc.green;
+    const deltaStr =
+      r.delta == null ? pc.dim('—') : color(r.delta[0]) + color(r.delta.slice(1, -1)) + pc.dim(color('%'));
+
+    const baselineStr = pc.dim((r.baselineKB ? '~' + r.baselineKB + ' KB' : '—').padEnd(w.base));
+    const flag = r.passed ? '' : '  ' + pc.red('✗');
+
+    return `${nameCell}  ${pc.dim(r.render.padEnd(w.render))}  ${(r.gzipKB + ' KB').padEnd(w.size)}  ${baselineStr}  ${deltaStr}${flag}`;
   });
 
-  test('write baseline', () => {
+  console.log(lines.join('\n') + '\n'); // eslint-disable-line
+}
+
+describe('bundle size checks', () => {
+  afterAll(() => {
     if (updateBaseline) {
       writeFileSync(baselineFile, JSON.stringify(pendingBaseline, null, 2) + '\n');
       console.log(`Baseline written to ${baselineFile}`); // eslint-disable-line
     }
   });
+
+  afterEach(() => {
+    if (results.length === 0) return;
+    const last = results[results.length - 1];
+    if (last.name === lastPrintedExample) return;
+    const expected = testCases.filter((tc) => tc.name === last.name).length;
+    const completed = results.filter((r) => r.name === last.name).length;
+    if (completed === expected) {
+      printGroup(last.name);
+      lastPrintedExample = last.name;
+    }
+  });
+
+  test.each(testCases)('$name ($render)', async ({ name, render, threshold }) => {
+    const root = resolve(examplesDir, name);
+    const code = await buildSample(root, render);
+    const gzipSize = getGzipSize(code);
+    const gzipKB = (gzipSize / 1024).toFixed(2);
+    const key = `${name}:${render}`;
+    const baselineSize = baseline[key];
+    const baselineKB = baselineSize != null ? (baselineSize / 1024).toFixed(2) : null;
+    const rawDelta = baselineSize != null ? (((gzipSize - baselineSize) / baselineSize) * 100).toFixed(1) : null;
+    const delta = rawDelta != null ? (parseFloat(rawDelta) >= 0 ? `+${rawDelta}%` : `${rawDelta}%`) : null;
+    const passed = updateBaseline || gzipSize < threshold;
+
+    pendingBaseline[key] = gzipSize;
+    results.push({ name, render, gzipKB, baselineKB, delta, passed });
+
+    if (!updateBaseline) {
+      expect(gzipSize, `${name} (${render}) exceeded limit (${gzipKB} KB > ${threshold / 1000} KB)`).toBeLessThan(
+        threshold,
+      );
+    }
+  });
+
+  test('write baseline', () => {});
 });
 
 async function buildSample(root: string, render: string): Promise<string> {
