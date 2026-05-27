@@ -1,5 +1,5 @@
 import type { DisplayObjectInteractionSignals } from './DisplayObjectInteractionSignals';
-import type { Filter } from './Filter';
+import type { BitmapFilter } from './Filter';
 import type {
   GraphNode,
   GraphNodeData,
@@ -19,7 +19,7 @@ export interface DisplayObjectTraits extends HasAppearance, HasBoundsRect, HasTr
   cacheAsBitmap: boolean;
   cacheAsBitmapMatrix: Matrix3x2 | null;
   data: DisplayObjectData | null;
-  filters: Filter[] | null;
+  filters: BitmapFilter[] | null;
   mask: DisplayObject | null;
   opaqueBackground: number | null;
   scrollRect: Rectangle | null;

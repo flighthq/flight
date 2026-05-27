@@ -1,3 +1,5 @@
-import type { Entity } from './Entity';
+export interface BitmapFilter {
+  readonly passes: number;
+}
 
-export interface Filter extends Entity {}
+export type Filter = BitmapFilter;
