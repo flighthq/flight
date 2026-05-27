@@ -3,6 +3,7 @@ export interface WebGLRenderOptions {
   antialias?: boolean;
   backgroundColor?: number;
   contextAttributes?: WebGLContextAttributes;
+  imageSmoothingEnabled?: boolean;
   pixelRatio?: number;
   powerPreference?: WebGLPowerPreference;
   roundPixels?: boolean;

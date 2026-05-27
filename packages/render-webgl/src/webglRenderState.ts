@@ -34,7 +34,7 @@ export function createWebGLRenderState(
   gl.bufferData(gl.ARRAY_BUFFER, 64, gl.DYNAMIC_DRAW);
 
   const state = _createRenderState({
-    allowSmoothing: options.allowSmoothing ?? true,
+    allowSmoothing: options.imageSmoothingEnabled ?? true,
     pixelRatio: options.pixelRatio ?? window.devicePixelRatio | 1,
     renderTransform2D: matrix3x2.create(),
     roundPixels: options.roundPixels ?? false,
