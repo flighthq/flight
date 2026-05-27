@@ -1,7 +1,5 @@
 export * from '@flighthq/assets';
 // export * from '@flighthq/surface';
-// export * from '@flighthq/events-core';
-// export * from '@flighthq/events-input';
 export * from '@flighthq/foundation';
 export * from '@flighthq/geometry';
 export * from '@flighthq/interaction';
