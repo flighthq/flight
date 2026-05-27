@@ -14,7 +14,7 @@ container.style.width = '592px';
 container.style.height = '592px';
 document.getElementById('app')!.appendChild(container);
 
-export const state = createDOMRenderState(container, { backgroundColor: 0xeeddccff });
+export const state = createDOMRenderState(container, { backgroundColor: 0xeeddccff, imageSmoothingEnabled: false });
 registerRenderer(state, TilemapKind, defaultDOMTilemapRenderer);
 export const scale = 1;
 
