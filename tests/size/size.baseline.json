@@ -1,0 +1,20 @@
+{
+  "addinganimation:canvas": 6577,
+  "addinganimation:dom": 5192,
+  "addingtext:canvas": 7430,
+  "addingtext:dom": 5992,
+  "animatedsprite:canvas": 4603,
+  "bunnymark:canvas": 5163,
+  "displayingabitmap:canvas": 5501,
+  "displayingabitmap:dom": 4123,
+  "drawingshapes:canvas": 8107,
+  "drawingshapes:dom": 6859,
+  "nyancat:canvas": 6188,
+  "nyancat:dom": 4800,
+  "piratepig:canvas": 12997,
+  "piratepig:dom": 12030,
+  "simplesprite:canvas": 4072,
+  "tweenexample:canvas": 7332,
+  "tweenexample:dom": 5956,
+  "usingtilemap:canvas": 4035
+}
