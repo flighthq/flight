@@ -19,3 +19,4 @@ export * as vector3Pool from './vector3Pool';
 export * as vector4 from './vector4';
 export { create as createVector4 } from './vector4';
 export * as vector4Pool from './vector4Pool';
+export * from './typedarray';

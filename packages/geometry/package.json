@@ -60,6 +60,10 @@
     "./vector4Pool": {
       "types": "./dist/vector4Pool.d.ts",
       "default": "./dist/vector4Pool.js"
+    },
+    "./typedarray": {
+      "types": "./dist/typedarray.d.ts",
+      "default": "./dist/typedarray.js"
     }
   },
   "files": [
