@@ -1,4 +1,4 @@
-import { createImageSource } from '@flighthq/assets';
+import { createImageSource, createImageSourceFromCanvas } from '@flighthq/assets';
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { createBitmap } from '@flighthq/scenegraph-display';
 import { BitmapKind } from '@flighthq/types';
@@ -26,10 +26,7 @@ function makeCanvasImageSource() {
   const canvas = document.createElement('canvas');
   canvas.width = 64;
   canvas.height = 64;
-  const source = createImageSource(canvas);
-  source.width = 64;
-  source.height = 64;
-  return source;
+  return createImageSourceFromCanvas(canvas);
 }
 
 describe('drawDOMBitmap', () => {
