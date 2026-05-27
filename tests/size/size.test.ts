@@ -30,11 +30,15 @@ const examples = [
 const domSupported = new Set([
   'addinganimation',
   'addingtext',
+  'animatedsprite',
+  'bunnymark',
   'displayingabitmap',
   'drawingshapes',
   'nyancat',
   'piratepig',
+  'simplesprite',
   'tweenexample',
+  'usingtilemap',
 ]);
 
 const testCases = examples.flatMap(({ name, threshold }) => {
