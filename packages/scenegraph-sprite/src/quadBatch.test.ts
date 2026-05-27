@@ -1,6 +1,6 @@
+import { createRectangle } from '@flighthq/geometry';
 import type { GraphNode, QuadBatch, QuadTransformType, TextureAtlas } from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
-import { createRectangle } from '@flighthq/geometry';
 
 import {
   computeQuadBatchLocalBoundsRect,

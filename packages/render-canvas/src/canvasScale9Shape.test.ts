@@ -1,10 +1,9 @@
-import { beginFill, createScale9Shape, drawRect } from '@flighthq/scenegraph-display';
-
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { beginFill, createScale9Shape, drawRect } from '@flighthq/scenegraph-display';
 import { Scale9ShapeKind } from '@flighthq/types';
 
-import { buildScale9Mapper } from './canvasScale9Mapper';
 import { createCanvasRenderState } from './canvasRenderState';
+import { buildScale9Mapper } from './canvasScale9Mapper';
 import { defaultCanvasScale9ShapeRenderer, drawCanvasScale9Shape, remapScale9Commands } from './canvasScale9Shape';
 import { defaultCanvasShapeCommands } from './canvasShapeCommands';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';

@@ -1,9 +1,12 @@
+import { createImageSource } from '@flighthq/assets';
 import { describe, expect, it } from 'vitest';
 
-import { createImageSource } from '@flighthq/assets';
-
 import { createImageData } from './imageData';
-import { createImageDataFromCanvas, createImageDataFromImageSource, createImageSourceFromImageData } from './imageDataFrom';
+import {
+  createImageDataFromCanvas,
+  createImageDataFromImageSource,
+  createImageSourceFromImageData,
+} from './imageDataFrom';
 
 describe('createImageDataFromCanvas', () => {
   it('returns ImageData matching the canvas size', () => {

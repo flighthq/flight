@@ -1,6 +1,6 @@
+import { createRectangle } from '@flighthq/geometry';
 import type { Bitmap, GraphNode, ImageSource } from '@flighthq/types';
 import { BitmapKind } from '@flighthq/types';
-import { createRectangle } from '@flighthq/geometry';
 
 import {
   computeBitmapLocalBoundsRect,

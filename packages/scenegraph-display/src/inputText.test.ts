@@ -1,12 +1,7 @@
 import type { InputText, PartialNode } from '@flighthq/types';
 import { InputTextKind } from '@flighthq/types';
 
-import {
-  createInputText,
-  createInputTextData,
-  createInputTextRuntime,
-  getInputTextRuntime,
-} from './inputText';
+import { createInputText, createInputTextData, createInputTextRuntime, getInputTextRuntime } from './inputText';
 
 describe('createInputText', () => {
   let text: InputText;

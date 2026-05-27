@@ -1,6 +1,6 @@
+import { createRectangle } from '@flighthq/geometry';
 import type { GraphNode, Rectangle, Sprite, TextureAtlas } from '@flighthq/types';
 import { SpriteKind } from '@flighthq/types';
-import { createRectangle } from '@flighthq/geometry';
 
 import {
   computeSpriteLocalBoundsRect,

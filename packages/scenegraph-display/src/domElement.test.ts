@@ -1,12 +1,7 @@
 import type { DOMElement } from '@flighthq/types';
 import { DOMElementKind } from '@flighthq/types';
 
-import {
-  createDOMElement,
-  createDOMElementData,
-  createDOMElementRuntime,
-  getDOMElementRuntime,
-} from './domElement';
+import { createDOMElement, createDOMElementData, createDOMElementRuntime, getDOMElementRuntime } from './domElement';
 
 describe('createDOMElement', () => {
   let domElement: DOMElement;

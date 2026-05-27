@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { createTextFormatRange } from './textFormatRange';
-import { createTextLayoutResult, layoutText } from './textLayout';
 import type { TextLayoutParams, TextLayoutResult } from './textLayout';
+import { createTextLayoutResult, layoutText } from './textLayout';
 
 // Fixed-width measure: every character is 10px regardless of font settings.
 const fixedMeasure = (text: string) => text.length * 10;
@@ -119,9 +119,7 @@ describe('layoutText — single line', () => {
 describe('layoutText — explicit line breaks (multiline)', () => {
   it('splits on \\n when multiline is true', () => {
     const text = 'ab\ncd';
-    const result = doLayout(
-      singleRangeParams(text, 1000, { multiline: true, formatRanges: [range(0, text.length)] }),
-    );
+    const result = doLayout(singleRangeParams(text, 1000, { multiline: true, formatRanges: [range(0, text.length)] }));
     const lines = result.groups.map((g) => g.lineIndex);
     expect(lines).toContain(0);
     expect(lines).toContain(1);
@@ -130,25 +128,19 @@ describe('layoutText — explicit line breaks (multiline)', () => {
 
   it('does not split on \\n when multiline is false', () => {
     const text = 'ab\ncd';
-    const result = doLayout(
-      singleRangeParams(text, 1000, { multiline: false, formatRanges: [range(0, text.length)] }),
-    );
+    const result = doLayout(singleRangeParams(text, 1000, { multiline: false, formatRanges: [range(0, text.length)] }));
     expect(result.numLines).toBe(1);
   });
 
   it('splits on \\r as well', () => {
     const text = 'ab\rcd';
-    const result = doLayout(
-      singleRangeParams(text, 1000, { multiline: true, formatRanges: [range(0, text.length)] }),
-    );
+    const result = doLayout(singleRangeParams(text, 1000, { multiline: true, formatRanges: [range(0, text.length)] }));
     expect(result.numLines).toBe(2);
   });
 
   it('handles multiple consecutive breaks', () => {
     const text = 'a\n\nb';
-    const result = doLayout(
-      singleRangeParams(text, 1000, { multiline: true, formatRanges: [range(0, text.length)] }),
-    );
+    const result = doLayout(singleRangeParams(text, 1000, { multiline: true, formatRanges: [range(0, text.length)] }));
     expect(result.numLines).toBe(3);
   });
 });
@@ -244,17 +236,13 @@ describe('layoutText — center alignment', () => {
 describe('layoutText — line metrics', () => {
   it('reports lineWidths for each line', () => {
     const text = 'ab\ncd';
-    const result = doLayout(
-      singleRangeParams(text, 1000, { multiline: true, formatRanges: [range(0, text.length)] }),
-    );
+    const result = doLayout(singleRangeParams(text, 1000, { multiline: true, formatRanges: [range(0, text.length)] }));
     expect(result.lineWidths).toHaveLength(2);
   });
 
   it('reports lineHeights for each line', () => {
     const text = 'ab\ncd';
-    const result = doLayout(
-      singleRangeParams(text, 1000, { multiline: true, formatRanges: [range(0, text.length)] }),
-    );
+    const result = doLayout(singleRangeParams(text, 1000, { multiline: true, formatRanges: [range(0, text.length)] }));
     expect(result.lineHeights).toHaveLength(2);
     for (const h of result.lineHeights) expect(h).toBeGreaterThan(0);
   });

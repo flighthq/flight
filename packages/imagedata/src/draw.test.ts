@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { createImageData } from './imageData';
 import { drawImageData } from './draw';
+import { createImageData } from './imageData';
 
 describe('drawImageData', () => {
   it('does not throw when drawing onto a canvas', () => {

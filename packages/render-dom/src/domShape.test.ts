@@ -1,10 +1,10 @@
+import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/render-canvas';
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { beginFill, createShape, drawRect, endFill } from '@flighthq/scenegraph-display';
 import { ShapeKind } from '@flighthq/types';
-import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/render-canvas';
 
-import { defaultDOMShapeRenderer, drawDOMShape, drawDOMShapeMask } from './domShape';
 import { createDOMRenderState } from './domRenderState';
+import { defaultDOMShapeRenderer, drawDOMShape, drawDOMShapeMask } from './domShape';
 
 beforeAll(() => {
   registerCanvasShapeCommands(defaultCanvasShapeCommands);

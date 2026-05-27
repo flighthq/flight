@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { createImageData } from './imageData';
 import { encodeImageData } from './encode';
+import { createImageData } from './imageData';
 
 describe('encodeImageData', () => {
   it('returns a non-empty Uint8Array for a simple image', () => {

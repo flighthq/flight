@@ -1,6 +1,6 @@
+import { createRectangle } from '@flighthq/geometry';
 import type { GraphNode, RichText } from '@flighthq/types';
 import { RichTextKind } from '@flighthq/types';
-import { createRectangle } from '@flighthq/geometry';
 
 import {
   computeRichTextLocalBoundsRect,

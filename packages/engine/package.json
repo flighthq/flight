@@ -28,6 +28,7 @@
     "@flighthq/materials": "*",
     "@flighthq/render-core": "*",
     "@flighthq/render-canvas": "*",
+    "@flighthq/render-dom": "*",
     "@flighthq/scenegraph-core": "*",
     "@flighthq/scenegraph-display": "*",
     "@flighthq/scenegraph-sprite": "*",

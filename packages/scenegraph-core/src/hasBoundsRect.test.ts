@@ -1,6 +1,6 @@
+import { createRectangle } from '@flighthq/geometry';
 import type { GraphNode, GraphNodeRuntime, HasBoundsRect, HasBoundsRectRuntime } from '@flighthq/types';
 import type { Rectangle } from '@flighthq/types';
-import { createRectangle } from '@flighthq/geometry';
 
 import { createGraphNode, createGraphNodeRuntime } from './graphNode';
 import { defaultComputeLocalBoundsRect, initHasBoundsRect, initHasBoundsRectRuntime } from './hasBoundsRect';

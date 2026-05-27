@@ -3,8 +3,8 @@ import { getDisplayObjectRenderNode } from '@flighthq/render-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import { BlendMode } from '@flighthq/types';
 
-import { applyDOMStyle, initDOMElement } from './domStyle';
 import { createDOMRenderState } from './domRenderState';
+import { applyDOMStyle, initDOMElement } from './domStyle';
 
 function makeState() {
   const container = document.createElement('div');

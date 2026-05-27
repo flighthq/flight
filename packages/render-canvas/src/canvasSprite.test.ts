@@ -1,10 +1,9 @@
 import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
 import { registerRenderer, updateSpriteBeforeRender } from '@flighthq/render-core';
+import { getSpriteRenderNode } from '@flighthq/render-core';
 import { addChild, setScaleX, setScaleY, setX, setY } from '@flighthq/scenegraph-core';
 import { createSprite } from '@flighthq/scenegraph-sprite';
 import { SpriteKind } from '@flighthq/types';
-
-import { getSpriteRenderNode } from '@flighthq/render-core';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { defaultCanvasSpriteRenderer, drawCanvasSprite, renderCanvasSprite } from './canvasSprite';

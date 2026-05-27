@@ -54,7 +54,14 @@ export function createTextLayoutResult(): TextLayoutResult {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-function charAdvances(out: number[], text: string, format: TextFormat, start: number, end: number, measure: TextMeasureFn): void {
+function charAdvances(
+  out: number[],
+  text: string,
+  format: TextFormat,
+  start: number,
+  end: number,
+  measure: TextMeasureFn,
+): void {
   out.length = 0;
   const letterSpacing = format.letterSpacing ?? 0;
 
@@ -372,7 +379,6 @@ function buildGroups(
     g.ascent = maxAscent || g.ascent;
     g.height = maxLineHeight || g.height;
   }
-
 }
 
 // ---------------------------------------------------------------------------

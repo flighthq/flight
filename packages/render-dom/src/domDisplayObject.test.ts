@@ -3,8 +3,8 @@ import { addChild } from '@flighthq/scenegraph-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { createDOMRenderState } from './domRenderState';
 import { renderDOMDisplayObject } from './domDisplayObject';
+import { createDOMRenderState } from './domRenderState';
 
 function makeState() {
   const container = document.createElement('div');

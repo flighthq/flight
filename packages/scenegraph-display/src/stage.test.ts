@@ -1,7 +1,7 @@
+import { createRectangle } from '@flighthq/geometry';
 import { addChild } from '@flighthq/scenegraph-core';
 import type { GraphNode, PartialNode, Stage } from '@flighthq/types';
 import { StageKind } from '@flighthq/types';
-import { createRectangle } from '@flighthq/geometry';
 
 import { createDisplayObject } from './displayObject';
 import {

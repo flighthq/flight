@@ -1,12 +1,7 @@
 import type { MovieClip, Timeline } from '@flighthq/types';
 import { MovieClipKind } from '@flighthq/types';
 
-import {
-  createMovieClip,
-  createMovieClipData,
-  createMovieClipRuntime,
-  getMovieClipRuntime,
-} from './movieClip';
+import { createMovieClip, createMovieClipData, createMovieClipRuntime, getMovieClipRuntime } from './movieClip';
 
 describe('createMovieClip', () => {
   let movieClip: MovieClip;

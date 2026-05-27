@@ -379,7 +379,6 @@ export const defaultCanvasShapeCommands: CanvasShapeCommand<any>[] = [
   defaultCanvasMoveTo,
 ];
 
-
 function rgbaString(color: number, alpha: number): string {
   const r = (color >> 16) & 0xff;
   const g = (color >> 8) & 0xff;

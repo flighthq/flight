@@ -8,7 +8,14 @@ export function getPixel32(source: ImageData, x: number, y: number): number {
   return ((source.data[i + 3] << 24) | (source.data[i] << 16) | (source.data[i + 1] << 8) | source.data[i + 2]) >>> 0;
 }
 
-export function getPixels(out: Uint8ClampedArray, source: ImageData, x: number, y: number, width: number, height: number): void {
+export function getPixels(
+  out: Uint8ClampedArray,
+  source: ImageData,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): void {
   for (let py = 0; py < height; py++) {
     for (let px = 0; px < width; px++) {
       const si = ((y + py) * source.width + (x + px)) * 4;

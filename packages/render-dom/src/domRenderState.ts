@@ -4,12 +4,9 @@ import type { DOMRenderOptions, DOMRenderState } from '@flighthq/types';
 
 import type { DOMRenderStateInternal } from './internal';
 
-export function createDOMRenderState(
-  element: HTMLElement,
-  options: Partial<DOMRenderOptions> = {},
-): DOMRenderState {
+export function createDOMRenderState(element: HTMLElement, options: Partial<DOMRenderOptions> = {}): DOMRenderState {
   const state = _createRenderState({
-    pixelRatio: options.pixelRatio ?? (window.devicePixelRatio | 1),
+    pixelRatio: options.pixelRatio ?? window.devicePixelRatio | 1,
     renderTransform2D: matrix3x2.create(),
     roundPixels: options.roundPixels ?? false,
   }) as DOMRenderStateInternal;

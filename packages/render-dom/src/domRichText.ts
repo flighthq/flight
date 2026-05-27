@@ -6,8 +6,8 @@ import type {
   DOMRenderState,
   Renderable,
   RendererData,
-  RichText,
   RenderState,
+  RichText,
   TextFormat,
 } from '@flighthq/types';
 
@@ -38,8 +38,22 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
   if (data === null) return;
 
   const source = renderNode.source as RichText;
-  const { text, defaultTextFormat, textFormat, background, backgroundColor, border, borderColor, width, height,
-    wordWrap, multiline, scrollH, scrollV, textColor } = source.data;
+  const {
+    text,
+    defaultTextFormat,
+    textFormat,
+    background,
+    backgroundColor,
+    border,
+    borderColor,
+    width,
+    height,
+    wordWrap,
+    multiline,
+    scrollH,
+    scrollV,
+    textColor,
+  } = source.data;
 
   if (data.div === null) {
     data.div = document.createElement('div');

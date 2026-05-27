@@ -1,7 +1,6 @@
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import { createSprite } from '@flighthq/scenegraph-sprite';
 
-import { createRenderState } from './renderState';
 import {
   createDisplayObjectRenderNode,
   createRenderNode2D,
@@ -9,6 +8,7 @@ import {
   getDisplayObjectRenderNode,
   getSpriteRenderNode,
 } from './renderNode2d';
+import { createRenderState } from './renderState';
 
 describe('createDisplayObjectRenderNode', () => {
   it('initializes cacheAsBitmap, isMaskFrameID, maskDepth, scrollRectDepth', () => {
