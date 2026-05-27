@@ -14,21 +14,7 @@ const baseline: Record<string, number> = existsSync(baselineFile)
 
 const pendingBaseline: Record<string, number> = { ...baseline };
 
-const thresholds: Record<string, number> = {
-  addinganimation: 9000,
-  addingtext: 9000,
-  animatedsprite: 6000,
-  bunnymark: 6000,
-  displayingabitmap: 7000,
-  drawingshapes: 9000,
-  nyancat: 7000,
-  piratepig: 14000,
-  simplesprite: 5000,
-  tweenexample: 8000,
-  usingtilemap: 5000,
-};
-
-const DEFAULT_THRESHOLD = 15000;
+const BASELINE_ALLOWANCE = 1.05;
 const RENDERERS = ['dom', 'canvas', 'webgl'] as const;
 const examplesDir = resolve(__dirname, '../../examples');
 
@@ -39,7 +25,6 @@ const testCases = readdirSync(examplesDir, { withFileTypes: true })
     RENDERERS.filter((r) => existsSync(resolve(examplesDir, name, `src/render.${r}.ts`))).map((render) => ({
       name,
       render,
-      threshold: thresholds[name] ?? DEFAULT_THRESHOLD,
     })),
   );
 
@@ -78,14 +63,14 @@ function printGroup(name: string): void {
     return `${nameCell}  ${pc.dim(r.render.padEnd(w.render))}  ${(r.gzipKB + ' KB').padEnd(w.size)}  ${baselineStr}  ${deltaStr}${flag}`;
   });
 
-  console.log(lines.join('\n') + '\n');  
+  console.log(lines.join('\n') + '\n');
 }
 
 describe('bundle size checks', () => {
   afterAll(() => {
     if (updateBaseline) {
       writeFileSync(baselineFile, JSON.stringify(pendingBaseline, null, 2) + '\n');
-      console.log(`Baseline written to ${baselineFile}`);  
+      console.log(`Baseline written to ${baselineFile}`);
     }
   });
 
@@ -101,7 +86,7 @@ describe('bundle size checks', () => {
     }
   });
 
-  test.each(testCases)('$name ($render)', async ({ name, render, threshold }) => {
+  test.each(testCases)('$name ($render)', async ({ name, render }) => {
     const root = resolve(examplesDir, name);
     const code = await buildSample(root, render);
     const gzipSize = getGzipSize(code);
@@ -111,13 +96,15 @@ describe('bundle size checks', () => {
     const baselineKB = baselineSize != null ? (baselineSize / 1024).toFixed(2) : null;
     const rawDelta = baselineSize != null ? (((gzipSize - baselineSize) / baselineSize) * 100).toFixed(1) : null;
     const delta = rawDelta != null ? (parseFloat(rawDelta) >= 0 ? `+${rawDelta}%` : `${rawDelta}%`) : null;
-    const passed = updateBaseline || gzipSize < threshold;
+    const threshold = baselineSize != null ? Math.ceil(baselineSize * BASELINE_ALLOWANCE) : null;
+    const passed = updateBaseline || threshold == null || gzipSize < threshold;
 
     pendingBaseline[key] = gzipSize;
     results.push({ name, render, gzipKB, baselineKB, delta, passed });
 
-    if (!updateBaseline) {
-      expect(gzipSize, `${name} (${render}) exceeded limit (${gzipKB} KB > ${threshold / 1000} KB)`).toBeLessThan(
+    if (!updateBaseline && threshold != null) {
+      const thresholdKB = (threshold / 1024).toFixed(2);
+      expect(gzipSize, `${name} (${render}) exceeded limit (${gzipKB} KB > ${thresholdKB} KB)`).toBeLessThan(
         threshold,
       );
     }
@@ -142,10 +129,10 @@ async function buildSample(root: string, render: string): Promise<string> {
       logLevel: 'silent',
     });
 
-    const jsFiles = (result as any).output.filter((f: any) => f.fileName.endsWith('.js'));  
+    const jsFiles = (result as any).output.filter((f: any) => f.fileName.endsWith('.js'));
     expect(jsFiles.length).toBeGreaterThan(0);
 
-    const mainChunk = jsFiles.find((f: any) => f.fileName.includes('main')) || jsFiles[0];  
+    const mainChunk = jsFiles.find((f: any) => f.fileName.includes('main')) || jsFiles[0];
     return mainChunk.code;
   } finally {
     if (prev === undefined) {
