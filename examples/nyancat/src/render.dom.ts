@@ -14,7 +14,7 @@ container.style.width = '220px';
 container.style.height = '220px';
 document.getElementById('app')!.appendChild(container);
 
-export const state = createDOMRenderState(container, { backgroundColor: 0x000000ff });
+export const state = createDOMRenderState(container, { backgroundColor: 0x000000ff, imageSmoothingEnabled: false });
 registerRenderer(state, BitmapKind, defaultDOMBitmapRenderer);
 export const scale = 1;
 
