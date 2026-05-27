@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/foundation';
+﻿import { createEntity } from '@flighthq/entity';
 import type { Vector2Like, Vector3, Vector3Like } from '@flighthq/types';
 
 export const X_AXIS: Readonly<Vector3> = create(1, 0, 0);

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/foundation';
+﻿import { createEntity } from '@flighthq/entity';
 import type { Tileset } from '@flighthq/types';
 
 import { createTextureAtlasRegion, initTextureAtlasRegion } from './textureAtlasRegion';

@@ -1,6 +1,6 @@
-export * from '@flighthq/assets';
+﻿export * from '@flighthq/assets';
 // export * from '@flighthq/surface';
-export * from '@flighthq/foundation';
+export * from '@flighthq/entity';
 export * from '@flighthq/geometry';
 export * from '@flighthq/interaction';
 export * from '@flighthq/materials';

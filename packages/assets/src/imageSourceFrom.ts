@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/foundation';
+﻿import { createEntity } from '@flighthq/entity';
 import type { ImageSource } from '@flighthq/types';
 
 export function createImageSourceFromCanvas(canvas: HTMLCanvasElement): ImageSource {

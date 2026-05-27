@@ -1,4 +1,4 @@
-{
+﻿{
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
@@ -9,7 +9,7 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../foundation" },
+    { "path": "../entity" },
     { "path": "../geometry" },
     { "path": "../render-canvas" },
     { "path": "../render-core" },

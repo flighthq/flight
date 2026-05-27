@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/foundation';
+﻿import { createEntity } from '@flighthq/entity';
 import type { Surface } from '@flighthq/types';
 
 export function cloneSurface(source: Surface): Surface {

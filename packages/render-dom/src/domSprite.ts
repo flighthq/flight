@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/foundation';
+﻿import { createEntity } from '@flighthq/entity';
 import { getSpriteRenderNode } from '@flighthq/render-core';
 import { getSpriteNodeRuntime } from '@flighthq/scenegraph-sprite';
 import type {

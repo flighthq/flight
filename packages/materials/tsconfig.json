@@ -1,4 +1,4 @@
-{
+﻿{
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../foundation" }, { "path": "../types" }],
+  "references": [{ "path": "../entity" }, { "path": "../types" }],
   "include": ["src"]
 }

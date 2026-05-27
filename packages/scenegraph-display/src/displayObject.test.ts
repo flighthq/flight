@@ -1,4 +1,4 @@
-import { getRuntime } from '@flighthq/foundation';
+﻿import { getRuntime } from '@flighthq/entity';
 import { matrix3x2, rectangle } from '@flighthq/geometry';
 import { createGraphNode } from '@flighthq/scenegraph-core';
 import type {

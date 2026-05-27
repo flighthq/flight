@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "@flighthq/engine",
   "version": "1.0.0",
   "type": "module",
@@ -23,7 +23,7 @@
   "dependencies": {
     "@flighthq/assets": "*",
     "@flighthq/surface": "*",
-    "@flighthq/foundation": "*",
+    "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/materials": "*",
     "@flighthq/render-core": "*",

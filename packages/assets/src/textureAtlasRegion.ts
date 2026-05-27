@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/foundation';
+﻿import { createEntity } from '@flighthq/entity';
 import type { Rectangle, TextureAtlas, TextureAtlasRegion, Vector2 } from '@flighthq/types';
 
 export function addTextureAtlasRegion(

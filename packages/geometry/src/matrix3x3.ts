@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/foundation';
+﻿import { createEntity } from '@flighthq/entity';
 import type { Matrix3x2Like, Matrix3x3, Matrix3x3Like, Matrix4x4Like, Vector3Like } from '@flighthq/types';
 
 /**

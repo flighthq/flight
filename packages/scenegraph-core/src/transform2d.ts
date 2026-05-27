@@ -1,4 +1,4 @@
-import { getRuntime } from '@flighthq/foundation';
+﻿import { getRuntime } from '@flighthq/entity';
 import { matrix3x2 } from '@flighthq/geometry';
 import { invalidateLocalTransform, recomputeWorldTransformID } from '@flighthq/scenegraph-core';
 import type {

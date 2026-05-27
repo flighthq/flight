@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "@flighthq/render-dom",
   "version": "1.0.0",
   "type": "module",
@@ -61,7 +61,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@flighthq/foundation": "*",
+    "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/render-canvas": "*",
     "@flighthq/render-core": "*",

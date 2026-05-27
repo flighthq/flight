@@ -1,4 +1,4 @@
-{
+﻿{
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
@@ -18,8 +18,8 @@
       "@flighthq/assets/*": ["./packages/assets/src/*"],
       "@flighthq/engine": ["./packages/engine/src/index.ts"],
       "@flighthq/engine/*": ["./packages/engine/src/*"],
-      "@flighthq/foundation": ["./packages/foundation/src/index.ts"],
-      "@flighthq/foundation/*": ["./packages/foundation/src/*"],
+      "@flighthq/entity": ["./packages/entity/src/index.ts"],
+      "@flighthq/entity/*": ["./packages/entity/src/*"],
       "@flighthq/geometry": ["./packages/geometry/src/index.ts"],
       "@flighthq/geometry/*": ["./packages/geometry/src/*"],
       "@flighthq/interaction": ["./packages/interaction/src/index.ts"],

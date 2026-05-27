@@ -1,9 +1,9 @@
-{
+﻿{
   "files": [],
   "references": [
     { "path": "./packages/assets" },
     { "path": "./packages/engine" },
-    { "path": "./packages/foundation" },
+    { "path": "./packages/entity" },
     { "path": "./packages/geometry" },
     { "path": "./packages/surface" },
     { "path": "./packages/interaction" },

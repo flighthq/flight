@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "@flighthq/materials",
   "version": "1.0.0",
   "type": "module",
@@ -25,7 +25,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@flighthq/foundation": "*",
+    "@flighthq/entity": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

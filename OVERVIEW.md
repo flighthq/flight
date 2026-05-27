@@ -10,6 +10,7 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 | `@flighthq/foundation` | Core entity/node/runtime data model and binding system |
 | `@flighthq/geometry` | 2D/3D math primitives: vectors, matrices, rectangles, and object pools |
 | `@flighthq/assets` | Asset types and utilities: image sources, texture atlases, tilesets |
+| `@flighthq/imagedata` | Pixel-level image manipulation using browser ImageData |
 | `@flighthq/signals` | Strictly-typed signals and slots for event dispatching |
 | `@flighthq/scenegraph-core` | Base scene graph: transform hierarchy, bounds, appearance traits, child management |
 | `@flighthq/scenegraph-display` | Display object tree for composited 2D rendering: bitmaps, shapes, text, masks, blend modes |
@@ -18,7 +19,10 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 | `@flighthq/materials` | Color transforms, filters, and material utilities |
 | `@flighthq/scenegraph-sprite` | Sprite graph for atlas-based batch rendering: sprites, quad batches, tilemaps |
 | `@flighthq/render-core` | Renderer abstraction: render state, node tracking, transform and color update pipeline |
+| `@flighthq/text-layout` | Renderer-agnostic text layout engine: measures and positions glyphs into layout groups |
 | `@flighthq/render-canvas` | Canvas 2D renderer implementation |
+| `@flighthq/render-dom` | DOM renderer implementation |
+| `@flighthq/render-webgl` | WebGL2 renderer implementation |
 | `@flighthq/spritesheet` | Spritesheet frame animation playback |
 | `@flighthq/timeline` | Timeline-based animation sequencing |
 | `@flighthq/timeline-spritesheet` | Spritesheet animation driven by the Timeline system |
@@ -31,11 +35,7 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > Core entity/node/runtime data model and binding system
 
-**Types:** `Entity`, `EntityWithoutRuntime`, `MethodsOf`, `Node`, `NodeData`, `NodeDataFactory`, `NodeRuntimeFactory`, `PartialNode`, `Runtime`
-
 **Functions:** `attachBinding`, `createEntity`, `createNode`, `createRuntime`, `getBinding`, `getRuntime`, `reserveFloat32Array`, `reserveInt16Array`, `reserveUint16Array`
-
-**Values/Enums:** `NodeKind`, `RuntimeKey`
 
 ---
 
@@ -43,11 +43,9 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > 2D/3D math primitives: vectors, matrices, rectangles, and object pools
 
-**Types:** `Matrix3x2`, `Matrix3x2Like`, `Matrix3x3`, `Matrix3x3Like`, `Matrix4x4`, `Matrix4x4Like`, `Rectangle`, `RectangleLike`, `Vector2`, `Vector2Like`, `Vector3`, `Vector3Like`, `Vector4`, `Vector4Like`
-
 **Functions:** `createMatrix3x2`, `createMatrix3x3`, `createMatrix4x4`, `createRectangle`, `createVector2`, `createVector3`, `createVector4`
 
-**Values/Enums:** `matrix3x2`, `matrix3x2Pool`, `matrix3x3`, `matrix3x3Pool`, `matrix4x4`, `matrix4x4Pool`, `rectangle`, `rectanglePool`, `vector2`, `vector3`, `vector3Pool`, `vector4`
+**Values/Enums:** `matrix3x2`, `matrix3x2Pool`, `matrix3x3`, `matrix3x3Pool`, `matrix4x4`, `matrix4x4Pool`, `rectangle`, `rectanglePool`, `vector2`, `vector2Pool`, `vector3`, `vector3Pool`, `vector4`, `vector4Pool`
 
 ---
 
@@ -55,9 +53,21 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > Asset types and utilities: image sources, texture atlases, tilesets
 
-**Types:** `ImageSource`, `TextureAtlas`, `TextureAtlasRegion`, `Tileset`
+**Types:** `AudioSource`, `AudioSourceURL`, `FontURL`
 
-**Functions:** `addTextureAtlasRegion`, `addTextureAtlasRegionRect`, `addTextureAtlasRegionRectXY`, `addTextureAtlasRegionVec2`, `createImageSource`, `createTextureAtlas`, `createTextureAtlasRegion`, `createTileset`, `detectImageMimeType`, `imageSourceFromCanvas`, `imageSourceFromImageBitmap`, `imageSourceFromImageElement`, `initTextureAtlasRegion`, `initTilesetRegions`, `isImageSourceSameOrigin`, `loadImageSourceFromArrayBuffer`, `loadImageSourceFromBase64`, `loadImageSourceFromBlob`, `loadImageSourceFromURL`
+**Functions:** `addTextureAtlasRegion`, `addTextureAtlasRegionRect`, `addTextureAtlasRegionRectXY`, `addTextureAtlasRegionVec2`, `createAudioSource`, `createAudioSourceFromURL`, `createAudioSourceFromURLs`, `createFont`, `createImageSource`, `createImageSourceFromCanvas`, `createImageSourceFromImageBitmap`, `createImageSourceFromImageElement`, `createTextureAtlas`, `createTextureAtlasFromCanvas`, `createTextureAtlasFromImageBitmap`, `createTextureAtlasFromImageElement`, `createTextureAtlasFromImageSource`, `createTextureAtlasRegion`, `createTileset`, `createTilesetFromAtlas`, `createTilesetFromImageSource`, `detectImageMimeType`, `initTextureAtlasRegion`, `initTilesetRegions`, `isImageSourceSameOrigin`, `loadAudioSourceFromURL`, `loadAudioSourceFromURLs`, `loadFontFromArrayBuffer`, `loadFontFromName`, `loadFontFromURL`, `loadFontFromURLs`, `loadImageSourceFromArrayBuffer`, `loadImageSourceFromBase64`, `loadImageSourceFromBlob`, `loadImageSourceFromURL`, `loadTextureAtlasFromArrayBuffer`, `loadTextureAtlasFromBase64`, `loadTextureAtlasFromBlob`, `loadTextureAtlasFromURL`, `loadTilesetFromArrayBuffer`, `loadTilesetFromBase64`, `loadTilesetFromBlob`, `loadTilesetFromURL`, `playAudioSource`
+
+---
+
+## @flighthq/imagedata
+
+> Pixel-level image manipulation using browser ImageData
+
+**Types:** `ColorBoundsRect`, `ColorTransformData`, `ImageFormat`, `ThresholdOperation`
+
+**Functions:** `cloneImageData`, `colorTransform`, `compareImageData`, `copyChannel`, `copyPixels`, `createImageData`, `createImageDataFromCanvas`, `createImageDataFromImageSource`, `createImageSourceFromImageData`, `drawImageData`, `encodeImageData`, `fillRect`, `floodFill`, `getColorBoundsRect`, `getPixel`, `getPixel32`, `getPixels`, `merge`, `scroll`, `setPixel`, `setPixel32`, `setPixels`, `threshold`
+
+**Values/Enums:** `ImageChannel`
 
 ---
 
@@ -65,7 +75,7 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > Strictly-typed signals and slots for event dispatching
 
-**Types:** `Signal`, `SignalConnectOptions`, `SignalData`
+**Types:** `Signal`, `SignalConnectOptions`
 
 **Functions:** `cancelSignal`, `connectSignal`, `createSignal`, `disconnectAllSignals`, `disconnectSignal`, `emitSignal`, `isSlotConnected`, `noop`
 
@@ -75,11 +85,7 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > Base scene graph: transform hierarchy, bounds, appearance traits, child management
 
-**Types:** `GraphNode`, `GraphNodeData`, `GraphNodeDataFactory`, `GraphNodeOf`, `GraphNodeRuntime`, `GraphNodeRuntimeFactory`, `GraphNodeTraits`, `HasAppearance`, `HasBoundsRect`, `HasBoundsRectRuntime`, `HasTransform2D`, `HasTransform2DRuntime`
-
-**Functions:** `addChild`, `addChildAt`, `calculateBoundsRect`, `contains`, `createGraphNode`, `createGraphNodeRuntime`, `defaultComputeLocalBoundsRect`, `defaultGraphNodeRuntimeCanAddChild`, `ensureBoundsRect`, `ensureLocalBoundsRect`, `ensureLocalTransform2D`, `ensureWorldBoundsRect`, `ensureWorldTransform2D`, `getAppearanceID`, `getBoundsRect`, `getChildAt`, `getChildByName`, `getChildIndex`, `getGraphNodeRuntime`, `getHeight`, `getLocalBoundsID`, `getLocalBoundsRect`, `getLocalTransform2D`, `getLocalTransformID`, `getNumChildren`, `getParent`, `getRoot`, `getWidth`, `getWorldBoundsRect`, `getWorldTransform2D`, `getWorldTransformID`, `globalToLocal2D`, `initHasAppearance`, `initHasBoundsRect`, `initHasBoundsRectRuntime`, `initHasTransform2D`, `initHasTransform2DRuntime`, `invalidate`, `invalidateAppearance`, `invalidateLocalBounds`, `invalidateLocalTransform`, `invalidateParentReference`, `invalidateRender`, `invalidateWorldBounds`, `localToGlobal2D`, `recomputeWorldTransformID`, `removeChild`, `removeChildAt`, `removeChildren`, `setAlpha`, `setBlendMode`, `setChildIndex`, `setColorTransform`, `setEnabled`, `setHeight`, `setRotation`, `setScaleX`, `setScaleY`, `setShader`, `setVisible`, `setWidth`, `setX`, `setY`, `swapChildren`, `swapChildrenAt`
-
-**Values/Enums:** `GraphNodeKind`, `NullGraph`
+**Functions:** `addChild`, `addChildAt`, `calculateBoundsRect`, `contains`, `createGraphNode`, `createGraphNodeRuntime`, `createGraphNodeSignals`, `defaultComputeLocalBoundsRect`, `defaultGraphNodeRuntimeCanAddChild`, `ensureBoundsRect`, `ensureLocalBoundsRect`, `ensureLocalTransform2D`, `ensureWorldBoundsRect`, `ensureWorldTransform2D`, `getAppearanceID`, `getBoundsRect`, `getChildAt`, `getChildByName`, `getChildIndex`, `getGraphNodeRuntime`, `getGraphNodeSignals`, `getHeight`, `getLocalBoundsID`, `getLocalBoundsRect`, `getLocalTransform2D`, `getLocalTransformID`, `getNumChildren`, `getParent`, `getRoot`, `getWidth`, `getWorldBoundsRect`, `getWorldTransform2D`, `getWorldTransformID`, `globalToLocal2D`, `initHasAppearance`, `initHasBoundsRect`, `initHasBoundsRectRuntime`, `initHasTransform2D`, `initHasTransform2DRuntime`, `invalidate`, `invalidateAppearance`, `invalidateLocalBounds`, `invalidateLocalTransform`, `invalidateParentReference`, `invalidateRender`, `invalidateWorldBounds`, `localToGlobal2D`, `recomputeWorldTransformID`, `removeChild`, `removeChildAt`, `removeChildren`, `setAlpha`, `setBlendMode`, `setChildIndex`, `setColorTransform`, `setEnabled`, `setHeight`, `setRotation`, `setScaleX`, `setScaleY`, `setShader`, `setVisible`, `setWidth`, `setX`, `setY`, `swapChildren`, `swapChildrenAt`
 
 ---
 
@@ -87,11 +93,9 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > Display object tree for composited 2D rendering: bitmaps, shapes, text, masks, blend modes
 
-**Types:** `Bitmap`, `BitmapData`, `DOMElement`, `DOMElementData`, `DisplayContainer`, `DisplayGraphNodeDataFactory`, `DisplayGraphNodeRuntimeFactory`, `DisplayObject`, `DisplayObjectData`, `DisplayObjectRuntime`, `DisplayObjectTraits`, `Graphics`, `InputText`, `InputTextData`, `MovieClip`, `MovieClipData`, `RichText`, `RichTextData`, `Shape`, `ShapeData`, `SpriteBatch`, `SpriteBatchData`, `Stage`, `StageAlign`, `StageData`, `StageDisplayState`, `StageQuality`, `StageScaleMode`, `Text`, `TextAutoSize`, `TextData`, `TextFormat`, `Video`, `VideoData`
+**Functions:** `beginBitmapFill`, `beginFill`, `beginGradientFill`, `clearShapeCommands`, `computeBitmapLocalBoundsRect`, `computeRichTextLocalBoundsRect`, `computeShapeLocalBoundsRect`, `computeStageLocalBoundsRect`, `copyShapeCommands`, `createBitmap`, `createBitmapData`, `createBitmapRuntime`, `createDOMElement`, `createDOMElementData`, `createDOMElementRuntime`, `createDisplayContainer`, `createDisplayContainerRuntime`, `createDisplayObject`, `createDisplayObjectGeneric`, `createDisplayObjectRuntime`, `createInputText`, `createInputTextData`, `createInputTextRuntime`, `createMovieClip`, `createMovieClipData`, `createMovieClipRuntime`, `createRichText`, `createRichTextData`, `createRichTextRuntime`, `createScale9Shape`, `createScale9ShapeData`, `createScale9ShapeRuntime`, `createShape`, `createShapeData`, `createShapeRuntime`, `createSpriteBatch`, `createSpriteBatchData`, `createSpriteBatchRuntime`, `createStage`, `createStageData`, `createStageRuntime`, `createText`, `createTextData`, `createTextRuntime`, `createVideo`, `createVideoData`, `createVideoRuntime`, `cubicCurveTo`, `curveTo`, `drawCircle`, `drawEllipse`, `drawPath`, `drawRect`, `drawRoundRect`, `drawRoundRectComplex`, `endFill`, `getBitmapRuntime`, `getDOMElementRuntime`, `getDisplayContainerRuntime`, `getDisplayObjectRuntime`, `getInputTextRuntime`, `getMovieClipRuntime`, `getRichTextRuntime`, `getScale9ShapeRuntime`, `getShapeRuntime`, `getSpriteBatchRuntime`, `getStage`, `getStageRuntime`, `getTextRuntime`, `getVideoRuntime`, `hitTestCommand`, `isDisplayObject`, `lineBitmapStyle`, `lineGradientStyle`, `lineStyle`, `lineTo`, `moveTo`, `registerShapeHitTestCommand`, `setCacheAsBitmap`, `setCacheAsBitmapMatrix`, `setFilters`, `setMask`, `setOpaqueBackground`, `setScrollRect`
 
-**Functions:** `computeBitmapLocalBoundsRect`, `createBitmap`, `createBitmapData`, `createBitmapRuntime`, `createDOMElement`, `createDOMElementData`, `createDisplayContainer`, `createDisplayObject`, `createDisplayObjectGeneric`, `createDisplayObjectRuntime`, `createInputText`, `createInputTextData`, `createMovieClip`, `createMovieClipData`, `createRichText`, `createRichTextData`, `createSpriteBatch`, `createSpriteBatchData`, `createStage`, `createStageData`, `createText`, `createTextData`, `createVideo`, `createVideoData`, `getDisplayObjectRuntime`, `getStage`, `isDisplayObject`, `setCacheAsBitmap`, `setCacheAsBitmapMatrix`, `setFilters`, `setMask`, `setOpaqueBackground`, `setScale9Grid`, `setScrollRect`
-
-**Values/Enums:** `BitmapKind`, `DOMElementKind`, `DisplayGraph`, `DisplayObjectKind`, `InputTextKind`, `MovieClipKind`, `RichTextKind`, `ShapeKind`, `SpriteBatchKind`, `StageKind`, `TextKind`, `VideoKind`
+**Values/Enums:** `GraphicsPathCommand`
 
 ---
 
@@ -105,9 +109,7 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > Hit testing: point-in-node tests and object overlap detection
 
-**Types:** `HitTestPoint`
-
-**Functions:** `defaultBitmapHitTestPoint`, `defaultDOMElementHitTestPoint`, `defaultDisplayObjectHitTestPoint`, `defaultInputTextHitTestPoint`, `defaultMovieClipHitTestPoint`, `defaultQuadBatchHitTestPoint`, `defaultRichTextHitTestPoint`, `defaultShapeHitTestPoint`, `defaultSpriteBatchHitTestPoint`, `defaultSpriteHitTestPoint`, `defaultStageHitTestPoint`, `defaultTextHitTestPoint`, `defaultTilemapHitTestPoint`, `defaultVideoHitTestPoint`, `hitTestLocalBoundsRect`, `hitTestObject`, `hitTestPoint`, `registerHitTestPoint`
+**Functions:** `createDisplayObjectInteractionSignals`, `defaultBitmapHitTestPoint`, `defaultDOMElementHitTestPoint`, `defaultDisplayObjectHitTestPoint`, `defaultInputTextHitTestPoint`, `defaultMovieClipHitTestPoint`, `defaultQuadBatchHitTestPoint`, `defaultRichTextHitTestPoint`, `defaultShapeHitTestPoint`, `defaultSpriteBatchHitTestPoint`, `defaultSpriteHitTestPoint`, `defaultStageHitTestPoint`, `defaultTextHitTestPoint`, `defaultTilemapHitTestPoint`, `defaultVideoHitTestPoint`, `dispatchPointerDown`, `findHitTarget`, `getDisplayObjectInteractionSignals`, `hitTestLocalBoundsRect`, `hitTestObject`, `hitTestPoint`, `registerHitTestPoint`
 
 ---
 
@@ -115,9 +117,7 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > Color transforms, filters, and material utilities
 
-**Types:** `ColorTransform`, `Filter`, `Shader`
-
-**Values/Enums:** `BlendMode`, `colorTransform`
+**Values/Enums:** `colorTransform`
 
 ---
 
@@ -125,11 +125,7 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > Sprite graph for atlas-based batch rendering: sprites, quad batches, tilemaps
 
-**Types:** `QuadBatch`, `QuadBatchData`, `QuadTransformType`, `Sprite`, `SpriteData`, `SpriteGraphNodeDataFactory`, `SpriteGraphNodeRuntimeFactory`, `SpriteNode`, `SpriteNodeData`, `SpriteNodeRuntime`, `SpriteNodeTraits`, `Tilemap`, `TilemapData`
-
-**Functions:** `computeQuadBatchLocalBoundsRect`, `computeSpriteLocalBoundsRect`, `computeTilemapLocalBoundsRect`, `createQuadBatch`, `createQuadBatchData`, `createQuadBatchRuntime`, `createSprite`, `createSpriteData`, `createSpriteNode`, `createSpriteNodeRuntime`, `createSpriteRuntime`, `createTilemap`, `createTilemapData`, `createTilemapRuntime`, `getQuadBatchCapacity`, `getQuadTransformStride`, `getSpriteNodeRuntime`, `isSpriteNode`, `reserveQuadBatch`, `resizeQuadBatch`
-
-**Values/Enums:** `QuadBatchKind`, `SpriteGraph`, `SpriteKind`, `TilemapKind`
+**Functions:** `computeQuadBatchLocalBoundsRect`, `computeSpriteLocalBoundsRect`, `computeTilemapLocalBoundsRect`, `createQuadBatch`, `createQuadBatchData`, `createQuadBatchRuntime`, `createSprite`, `createSpriteData`, `createSpriteNode`, `createSpriteNodeRuntime`, `createSpriteRuntime`, `createTilemap`, `createTilemapData`, `createTilemapRuntime`, `fillTiles`, `getQuadBatchCapacity`, `getQuadBatchRuntime`, `getQuadTransformStride`, `getSpriteNodeRuntime`, `getSpriteRuntime`, `getTile`, `getTilemapRuntime`, `isSpriteNode`, `reserveQuadBatch`, `resizeQuadBatch`, `resizeTilemap`, `setTile`
 
 ---
 
@@ -137,11 +133,17 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > Renderer abstraction: render state, node tracking, transform and color update pipeline
 
-**Types:** `DisplayObjectRenderNode`, `DisplayObjectRenderer`, `RenderNode`, `RenderNode2D`, `RenderState`, `Renderable`, `Renderer`, `RendererData`, `SpriteRenderNode`, `SpriteRenderer`
-
 **Functions:** `createDisplayObjectRenderNode`, `createNullRendererData`, `createRenderNode`, `createRenderNode2D`, `createRenderState`, `createSpriteRenderNode`, `getDisplayObjectRenderNode`, `getRenderNode`, `getSpriteRenderNode`, `prepareRenderQueue`, `registerRenderer`, `setBackgroundColor`, `updateAppearance`, `updateColorTransform`, `updateDisplayObjectBeforeRender`, `updateDisplayObjectRenderTransform2D`, `updateRenderTransform2D`, `updateSpriteBeforeRender`
 
-**Values/Enums:** `AppearanceFlags`
+---
+
+## @flighthq/text-layout
+
+> Renderer-agnostic text layout engine: measures and positions glyphs into layout groups
+
+**Types:** `TextFormatRange`, `TextLayoutGroup`, `TextLayoutParams`, `TextLayoutResult`, `TextMeasureFn`
+
+**Functions:** `createTextFormatRange`, `createTextLayoutGroup`, `createTextLayoutResult`, `getFormatAscent`, `getFormatDescent`, `getFormatHeight`, `getFormatLeading`, `getLineBreakIndex`, `getLineBreaks`, `layoutText`, `mergeTextFormat`
 
 ---
 
@@ -149,11 +151,29 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > Canvas 2D renderer implementation
 
-**Types:** `CanvasRenderOptions`, `CanvasRenderState`
+**Functions:** `applyCanvasMask`, `colorToHex`, `createCanvasElement`, `createCanvasRenderState`, `drawCanvasBitmap`, `drawCanvasBitmapMask`, `drawCanvasDisplayObject`, `drawCanvasDisplayObjectMask`, `drawCanvasQuadBatch`, `drawCanvasRichText`, `drawCanvasRichTextMask`, `drawCanvasScale9Shape`, `drawCanvasShape`, `drawCanvasSprite`, `drawCanvasText`, `drawCanvasTextMask`, `drawCanvasTilemap`, `formatToCanvasFont`, `getCanvasShapeCommand`, `popCanvasClipRect`, `popCanvasMask`, `popCanvasScrollRect`, `pushCanvasClipRect`, `pushCanvasMask`, `pushCanvasScrollRect`, `registerCanvasShapeCommand`, `registerCanvasShapeCommands`, `remapScale9Commands`, `renderCanvasBackground`, `renderCanvasDisplayObject`, `renderCanvasShapeCommands`, `renderCanvasSprite`, `setCanvasBlendMode`, `setCanvasTransform`, `updateCanvasCacheBitmap`
 
-**Functions:** `applyCanvasMask`, `createCanvasRenderState`, `drawCanvasBitmap`, `drawCanvasBitmapMask`, `drawCanvasDisplayObject`, `drawCanvasDisplayObjectMask`, `drawCanvasQuadBatch`, `drawCanvasSprite`, `popCanvasClipRect`, `popCanvasMask`, `popCanvasScrollRect`, `pushCanvasClipRect`, `pushCanvasMask`, `pushCanvasScrollRect`, `renderCanvasBackground`, `renderCanvasDisplayObject`, `renderCanvasSprite`, `setCanvasBlendMode`, `setCanvasTransform`, `updateCanvasCacheBitmap`
+**Values/Enums:** `defaultCanvasBeginBitmapFill`, `defaultCanvasBeginFill`, `defaultCanvasBeginGradientFill`, `defaultCanvasBitmapRenderer`, `defaultCanvasCubicCurveTo`, `defaultCanvasCurveTo`, `defaultCanvasDisplayObjectRenderer`, `defaultCanvasDrawCircle`, `defaultCanvasDrawEllipse`, `defaultCanvasDrawPath`, `defaultCanvasDrawRect`, `defaultCanvasDrawRoundRect`, `defaultCanvasEndFill`, `defaultCanvasLineBitmapStyle`, `defaultCanvasLineGradientStyle`, `defaultCanvasLineStyle`, `defaultCanvasLineTo`, `defaultCanvasMoveTo`, `defaultCanvasQuadBatchRenderer`, `defaultCanvasRichTextRenderer`, `defaultCanvasScale9ShapeRenderer`, `defaultCanvasShapeCommands`, `defaultCanvasShapeRenderer`, `defaultCanvasSpriteRenderer`, `defaultCanvasTextRenderer`, `defaultCanvasTilemapRenderer`
 
-**Values/Enums:** `defaultCanvasBitmapRenderer`, `defaultCanvasDisplayObjectRenderer`, `defaultCanvasQuadBatchRenderer`, `defaultCanvasSpriteRenderer`
+---
+
+## @flighthq/render-dom
+
+> DOM renderer implementation
+
+**Functions:** `applyDOMStyle`, `colorToCSS`, `createDOMRenderState`, `drawDOMBitmap`, `drawDOMBitmapMask`, `drawDOMElement`, `drawDOMElementMask`, `drawDOMQuadBatch`, `drawDOMRichText`, `drawDOMRichTextMask`, `drawDOMShape`, `drawDOMShapeMask`, `drawDOMSprite`, `drawDOMText`, `drawDOMTextMask`, `drawDOMTilemap`, `formatToFont`, `htmlEscape`, `initDOMElement`, `renderDOMBackground`, `renderDOMDisplayObject`, `renderDOMSprite`, `setDOMBlendMode`, `setDOMTransform`, `setDOMTransformWithOffset`
+
+**Values/Enums:** `defaultDOMBitmapRenderer`, `defaultDOMElementRenderer`, `defaultDOMQuadBatchRenderer`, `defaultDOMRichTextRenderer`, `defaultDOMShapeRenderer`, `defaultDOMSpriteRenderer`, `defaultDOMTextRenderer`, `defaultDOMTilemapRenderer`
+
+---
+
+## @flighthq/render-webgl
+
+> WebGL2 renderer implementation
+
+**Functions:** `createWebGLElement`, `createWebGLRenderState`, `drawWebGLBitmap`, `drawWebGLBitmapMask`, `drawWebGLQuadBatch`, `drawWebGLSpriteNode`, `drawWebGLText`, `drawWebGLTextMask`, `drawWebGLTilemap`, `registerWebGLShapeCommands`, `renderWebGLBackground`, `renderWebGLDisplayObject`, `renderWebGLSprite`
+
+**Values/Enums:** `defaultWebGLBeginBitmapFill`, `defaultWebGLBeginFill`, `defaultWebGLBeginGradientFill`, `defaultWebGLBitmapRenderer`, `defaultWebGLCubicCurveTo`, `defaultWebGLCurveTo`, `defaultWebGLDrawCircle`, `defaultWebGLDrawEllipse`, `defaultWebGLDrawRect`, `defaultWebGLDrawRoundRect`, `defaultWebGLEndFill`, `defaultWebGLLineStyle`, `defaultWebGLLineTo`, `defaultWebGLMoveTo`, `defaultWebGLQuadBatchRenderer`, `defaultWebGLShapeCommands`, `defaultWebGLShapeRenderer`, `defaultWebGLSpriteRenderer`, `defaultWebGLTextRenderer`, `defaultWebGLTilemapRenderer`
 
 ---
 
@@ -161,17 +181,13 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > Spritesheet frame animation playback
 
-**Types:** `Spritesheet`, `SpritesheetAnimation`, `SpritesheetFrame`, `SpritesheetPlayer`
-
-**Functions:** `createSpritesheet`, `createSpritesheetAnimation`, `createSpritesheetFrame`, `createSpritesheetPlayer`, `getSpritesheetAnimation`, `getSpritesheetPlayerFrame`, `queueSpritesheetAnimation`, `showSpritesheetAnimation`, `updateSpritesheetPlayer`
+**Functions:** `createSpritesheet`, `createSpritesheetAnimation`, `createSpritesheetFrame`, `createSpritesheetFromTileset`, `createSpritesheetPlayer`, `getSpritesheetAnimation`, `getSpritesheetPlayerFrame`, `queueSpritesheetAnimation`, `showSpritesheetAnimation`, `updateSpritesheetPlayer`
 
 ---
 
 ## @flighthq/timeline
 
 > Timeline-based animation sequencing
-
-**Types:** `Timeline`, `TimelineLabel`
 
 **Functions:** `createTimeline`, `getMovieClipCurrentFrame`, `getMovieClipTotalFrames`, `gotoAndPlayMovieClip`, `gotoAndPlayTimeline`, `gotoAndStopMovieClip`, `gotoAndStopTimeline`, `isMovieClipPlaying`, `nextFrameMovieClip`, `nextFrameTimeline`, `playMovieClip`, `playTimeline`, `prevFrameMovieClip`, `prevFrameTimeline`, `resolveTimelineLabel`, `stopMovieClip`, `stopTimeline`, `updateMovieClip`, `updateTimeline`
 
@@ -189,8 +205,6 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > Easing functions for animation
 
-**Types:** `EasingFunction`
-
 **Values/Enums:** `Back`, `Bounce`, `Cubic`, `Elastic`, `Expo`, `Linear`, `Quad`, `Quart`, `Quint`, `Sine`
 
 ---
@@ -199,7 +213,7 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > Tween animation system with easing functions
 
-**Types:** `NumericProps`, `StopTweenOptions`, `Tween`, `TweenManager`, `TweenManagerOptions`, `TweenOptions`, `TweenPropertyDetail`
+**Types:** `NumericProps`, `StopTweenOptions`, `Tween`, `TweenManager`, `TweenManagerOptions`, `TweenOptions`
 
 **Functions:** `applyTween`, `completeTween`, `createColorTween`, `createTimer`, `createTween`, `createTweenManager`, `pauseAllTweens`, `pauseTween`, `pauseTweens`, `resetTweens`, `resumeAllTweens`, `resumeTween`, `resumeTweens`, `stopAllTweens`, `stopTween`, `updateTweens`
 
