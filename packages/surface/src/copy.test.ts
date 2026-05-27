@@ -2,8 +2,8 @@
 
 import { copyChannel, copyPixels } from './copy';
 import { ImageChannel } from './imageChannel';
-import { createSurface } from './surface';
 import { getPixel32, setPixel32 } from './pixel';
+import { createSurface } from './surface';
 
 describe('copyPixels', () => {
   it('copies a region without alpha blend', () => {

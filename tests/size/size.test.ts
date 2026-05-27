@@ -78,14 +78,14 @@ function printGroup(name: string): void {
     return `${nameCell}  ${pc.dim(r.render.padEnd(w.render))}  ${(r.gzipKB + ' KB').padEnd(w.size)}  ${baselineStr}  ${deltaStr}${flag}`;
   });
 
-  console.log(lines.join('\n') + '\n'); // eslint-disable-line
+  console.log(lines.join('\n') + '\n');  
 }
 
 describe('bundle size checks', () => {
   afterAll(() => {
     if (updateBaseline) {
       writeFileSync(baselineFile, JSON.stringify(pendingBaseline, null, 2) + '\n');
-      console.log(`Baseline written to ${baselineFile}`); // eslint-disable-line
+      console.log(`Baseline written to ${baselineFile}`);  
     }
   });
 
@@ -142,10 +142,10 @@ async function buildSample(root: string, render: string): Promise<string> {
       logLevel: 'silent',
     });
 
-    const jsFiles = (result as any).output.filter((f: any) => f.fileName.endsWith('.js')); // eslint-disable-line
+    const jsFiles = (result as any).output.filter((f: any) => f.fileName.endsWith('.js'));  
     expect(jsFiles.length).toBeGreaterThan(0);
 
-    const mainChunk = jsFiles.find((f: any) => f.fileName.includes('main')) || jsFiles[0]; // eslint-disable-line
+    const mainChunk = jsFiles.find((f: any) => f.fileName.includes('main')) || jsFiles[0];  
     return mainChunk.code;
   } finally {
     if (prev === undefined) {

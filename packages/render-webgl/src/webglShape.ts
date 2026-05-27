@@ -1,12 +1,11 @@
 import { rectangle } from '@flighthq/geometry';
-import { createNullRendererData } from '@flighthq/render-core';
 import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderNode,
-  RendererData,
   Renderable,
+  RendererData,
   RenderState,
   Shape,
 } from '@flighthq/types';
@@ -82,8 +81,13 @@ export function drawWebGLShape(state: RenderState, renderNode: DisplayObjectRend
 
   const t = renderNode.transform2D;
   setWebGLMatrixFromValues(
-    gl, shaderLoc, matrixArray,
-    t.a, t.b, t.c, t.d,
+    gl,
+    shaderLoc,
+    matrixArray,
+    t.a,
+    t.b,
+    t.c,
+    t.d,
     t.tx + t.a * bounds.x + t.c * bounds.y,
     t.ty + t.b * bounds.x + t.d * bounds.y,
     internal.canvas,

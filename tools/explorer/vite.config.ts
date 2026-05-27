@@ -95,9 +95,7 @@ function explorerPlugin(examples: Example[]): Plugin[] {
           if (parts[0] !== 'examples' || parts.length < 3) return next();
           const [, name, render, ...assetParts] = parts;
 
-          const example = examples.find(
-            (e) => e.name === name && (e.renderers as readonly string[]).includes(render),
-          );
+          const example = examples.find((e) => e.name === name && (e.renderers as readonly string[]).includes(render));
           if (!example) return next();
 
           // Asset request: /examples/{name}/{render}/{assetPath...}

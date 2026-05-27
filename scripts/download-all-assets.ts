@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { downloadAssets, type Asset } from './download-assets.ts';
+import { type Asset, downloadAssets } from './download-assets.ts';
 
 const projectRoot = resolve(fileURLToPath(import.meta.url), '../..');
 const examplesDir = join(projectRoot, 'examples');

@@ -48,7 +48,7 @@ describe('addChild', () => {
   });
 
   it('throws if child is null', () => {
-    expect(() => addChild(container, null as any)).toThrow(TypeError); // eslint-disable-line
+    expect(() => addChild(container, null as any)).toThrow(TypeError);  
   });
 
   it('throws if child is the same as target', () => {
@@ -296,7 +296,7 @@ describe('removeChild', () => {
   });
 
   it('is safe when child is null', () => {
-    expect(() => removeChild(container, null as any)).not.toThrow(); // eslint-disable-line
+    expect(() => removeChild(container, null as any)).not.toThrow();  
   });
 
   it('always clears the parent reference', () => {

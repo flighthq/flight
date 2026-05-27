@@ -55,10 +55,7 @@ export function compileDefaultProgram(gl: WebGL2RenderingContext): WebGLShaderLo
   };
 }
 
-export function createDefaultBitmapShader(
-  shaderLoc: WebGLShaderLocations,
-  matrixArray: Float32Array,
-): BitmapShader {
+export function createDefaultBitmapShader(shaderLoc: WebGLShaderLocations, matrixArray: Float32Array): BitmapShader {
   return {
     program: shaderLoc.program,
     bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: DisplayObjectRenderNode): void {
@@ -102,7 +99,12 @@ export function setWebGLMatrixFromValues(
   gl: WebGL2RenderingContext,
   loc: WebGLShaderLocations,
   m: Float32Array,
-  a: number, b: number, c: number, d: number, tx: number, ty: number,
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  tx: number,
+  ty: number,
   canvas: HTMLCanvasElement,
 ): void {
   const iw = 2 / canvas.width;

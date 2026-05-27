@@ -3,8 +3,8 @@ import { getSpriteRenderNode, registerRenderer } from '@flighthq/render-core';
 import { createQuadBatch, resizeQuadBatch } from '@flighthq/scenegraph-sprite';
 import { QuadBatchKind } from '@flighthq/types';
 
-import { createDOMRenderState } from './domRenderState';
 import { defaultDOMQuadBatchRenderer, drawDOMQuadBatch } from './domQuadBatch';
+import { createDOMRenderState } from './domRenderState';
 
 function makeState() {
   const container = document.createElement('div');

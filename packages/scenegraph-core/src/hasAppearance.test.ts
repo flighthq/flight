@@ -40,7 +40,7 @@ describe('initHasAppearance', () => {
   });
 
   it('applies colorTransform override', () => {
-    const ct = {} as any; // eslint-disable-line
+    const ct = {} as any;  
     const target = makeTarget();
     initHasAppearance(target, { colorTransform: ct });
 
@@ -48,7 +48,7 @@ describe('initHasAppearance', () => {
   });
 
   it('applies shader override', () => {
-    const shader = {} as any; // eslint-disable-line
+    const shader = {} as any;  
     const target = makeTarget();
     initHasAppearance(target, { shader });
 

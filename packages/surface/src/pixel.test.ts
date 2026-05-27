@@ -1,7 +1,7 @@
 ﻿import { describe, expect, it } from 'vitest';
 
-import { createSurface } from './surface';
 import { getPixel, getPixel32, getPixels, setPixel, setPixel32, setPixels } from './pixel';
+import { createSurface } from './surface';
 
 describe('getPixel', () => {
   it('reads back an RGB value written by setPixel', () => {

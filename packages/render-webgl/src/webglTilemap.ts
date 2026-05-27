@@ -45,8 +45,13 @@ export function drawWebGLTilemap(state: RenderState, tilemapNode: SpriteRenderNo
 
       // Effective transform: tile's offset baked into the translation
       setWebGLMatrixFromValues(
-        gl, shaderLoc, matrixArray,
-        transform.a, transform.b, transform.c, transform.d,
+        gl,
+        shaderLoc,
+        matrixArray,
+        transform.a,
+        transform.b,
+        transform.c,
+        transform.d,
         transform.tx + transform.a * dx + transform.c * dy,
         transform.ty + transform.b * dx + transform.d * dy,
         internal.canvas,

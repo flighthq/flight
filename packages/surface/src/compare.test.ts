@@ -1,9 +1,9 @@
-﻿import { describe, expect, it } from 'vitest';
+﻿import type { Surface } from '@flighthq/types';
+import { describe, expect, it } from 'vitest';
 
-import type { Surface } from '@flighthq/types';
 import { compareSurface } from './compare';
-import { cloneSurface, createSurface } from './surface';
 import { setPixel32 } from './pixel';
+import { cloneSurface, createSurface } from './surface';
 
 describe('compareSurface', () => {
   it('returns -1 when other is null', () => {

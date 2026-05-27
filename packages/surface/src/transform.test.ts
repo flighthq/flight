@@ -1,7 +1,7 @@
 ﻿import { describe, expect, it } from 'vitest';
 
-import { createSurface } from './surface';
 import { getPixel32, setPixel32 } from './pixel';
+import { createSurface } from './surface';
 import { colorTransform, merge, scroll, threshold } from './transform';
 
 const identity = {
