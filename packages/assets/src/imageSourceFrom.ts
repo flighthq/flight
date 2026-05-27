@@ -5,6 +5,7 @@ export function createImageSourceFromCanvas(canvas: HTMLCanvasElement): ImageSou
   return createEntity({
     height: canvas.height,
     src: canvas,
+    version: 0,
     width: canvas.width,
   });
 }
@@ -13,6 +14,7 @@ export function createImageSourceFromImageBitmap(bitmap: ImageBitmap): ImageSour
   return createEntity({
     height: bitmap.height,
     src: bitmap,
+    version: 0,
     width: bitmap.width,
   });
 }
@@ -21,6 +23,7 @@ export function createImageSourceFromImageElement(img: HTMLImageElement): ImageS
   return createEntity({
     height: img.height,
     src: img,
+    version: 0,
     width: img.width,
   });
 }
