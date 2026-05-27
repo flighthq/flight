@@ -1,4 +1,4 @@
-﻿import { createEntity } from '@flighthq/entity';
+import { createEntity } from '@flighthq/entity';
 import { createTextFormatRange, createTextLayoutResult, layoutText } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,

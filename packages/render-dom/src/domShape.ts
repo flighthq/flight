@@ -1,4 +1,4 @@
-﻿import { createEntity } from '@flighthq/entity';
+import { createEntity } from '@flighthq/entity';
 import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import { getLocalBoundsRect } from '@flighthq/scenegraph-core';
 import type {

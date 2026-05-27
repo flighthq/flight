@@ -1,4 +1,4 @@
-﻿import type { Surface } from '@flighthq/types';
+import type { Surface } from '@flighthq/types';
 
 import { createSurface } from './surface';
 

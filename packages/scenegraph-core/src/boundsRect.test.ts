@@ -1,4 +1,4 @@
-﻿import { getRuntime as _getRuntime } from '@flighthq/entity';
+import { getRuntime as _getRuntime } from '@flighthq/entity';
 import { rectangle } from '@flighthq/geometry';
 import { setEmpty } from '@flighthq/geometry/rectangle';
 import {

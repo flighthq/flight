@@ -1,4 +1,4 @@
-﻿import { createEntity } from '@flighthq/entity';
+import { createEntity } from '@flighthq/entity';
 import { matrix3x2, matrix3x2Pool } from '@flighthq/geometry';
 import type {
   DOMRenderState,

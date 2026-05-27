@@ -1,4 +1,4 @@
-﻿import { createNode, createRuntime, getRuntime } from '@flighthq/entity';
+import { createNode, createRuntime, getRuntime } from '@flighthq/entity';
 import { createSignal } from '@flighthq/signals';
 import type {
   GraphNode,

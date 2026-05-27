@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { getPixel32, setPixel32 } from './pixel';
 import { createSurface } from './surface';

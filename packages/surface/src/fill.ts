@@ -1,4 +1,4 @@
-﻿import type { Surface } from '@flighthq/types';
+import type { Surface } from '@flighthq/types';
 
 export function fillRect(dest: Surface, x: number, y: number, width: number, height: number, color: number): void {
   const r = (color >> 16) & 0xff;

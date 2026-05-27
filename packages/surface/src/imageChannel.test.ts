@@ -1,4 +1,4 @@
-﻿import { ImageChannel } from './imageChannel';
+import { ImageChannel } from './imageChannel';
 
 describe('ImageChannel', () => {
   it('has Red = 0', () => {

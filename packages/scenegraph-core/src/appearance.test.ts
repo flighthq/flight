@@ -1,4 +1,4 @@
-﻿import { getRuntime } from '@flighthq/entity';
+import { getRuntime } from '@flighthq/entity';
 import type { GraphNode, GraphNodeRuntime, HasAppearance } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 

@@ -1,4 +1,4 @@
-﻿import { createImageSourceFromCanvas } from '@flighthq/assets';
+import { createImageSourceFromCanvas } from '@flighthq/assets';
 import { createEntity } from '@flighthq/entity';
 import type { ImageSource, Surface } from '@flighthq/types';
 

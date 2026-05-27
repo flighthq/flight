@@ -1,4 +1,4 @@
-﻿import type { Surface } from '@flighthq/types';
+import type { Surface } from '@flighthq/types';
 
 export function getPixel(source: Surface, x: number, y: number): number {
   const i = (y * source.width + x) * 4;

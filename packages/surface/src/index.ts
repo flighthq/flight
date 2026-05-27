@@ -1,4 +1,4 @@
-﻿export * from './compare';
+export * from './compare';
 export * from './copy';
 export * from './draw';
 export * from './encode';

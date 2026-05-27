@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { fillRect, floodFill } from './fill';
 import { getPixel32 } from './pixel';

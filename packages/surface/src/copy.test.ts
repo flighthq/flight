@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { copyChannel, copyPixels } from './copy';
 import { ImageChannel } from './imageChannel';

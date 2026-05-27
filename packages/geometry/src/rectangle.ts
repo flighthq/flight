@@ -1,4 +1,4 @@
-﻿import { createEntity } from '@flighthq/entity';
+import { createEntity } from '@flighthq/entity';
 import type { Rectangle, RectangleLike, Vector2Like } from '@flighthq/types';
 
 export function create(x?: number, y?: number, width?: number, height?: number): Rectangle {
