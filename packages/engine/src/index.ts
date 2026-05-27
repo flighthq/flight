@@ -9,6 +9,7 @@ export * from '@flighthq/materials';
 export * from '@flighthq/render-canvas';
 export * from '@flighthq/render-core';
 export * from '@flighthq/render-dom';
+export * from '@flighthq/render-webgl';
 export * from '@flighthq/scenegraph-core';
 export * from '@flighthq/scenegraph-display';
 export * from '@flighthq/scenegraph-sprite';
