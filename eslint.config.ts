@@ -44,8 +44,19 @@ export default [
       // Imports
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
-      'import/no-unresolved': 'error',
+      'import/no-unresolved': ['error', { ignore: ['virtual:.*'] }],
       'import/no-relative-parent-imports': 'error',
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@flighthq/engine',
+              message: 'Import from specific packages directly. @flighthq/engine is only for use in examples.',
+            },
+          ],
+        },
+      ],
 
       // Unicorn
       'unicorn/prefer-module': 'error',
@@ -95,6 +106,24 @@ export default [
     files: ['scripts/**'],
     rules: {
       'no-console': 'off',
+    },
+  },
+
+  {
+    // test files can have console, and use any, and undeclared variables
+    files: ['**/*.test.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      'no-console': 'off',
+    },
+  },
+
+  {
+    // examples and tools are allowed to import from the engine barrel
+    files: ['examples/**/*.{ts,tsx}', 'tools/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': 'off',
     },
   },
 
