@@ -3,7 +3,6 @@ import { BlendMode, type RenderState } from '@flighthq/types';
 
 export function createRenderState(obj?: Partial<RenderState>): RenderState {
   return createEntity({
-    allowCacheAsBitmap: obj?.allowCacheAsBitmap ?? true,
     allowFilters: obj?.allowFilters ?? true,
     allowSmoothing: obj?.allowSmoothing ?? true,
     backgroundColor: obj?.backgroundColor ?? 0,

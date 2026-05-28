@@ -15,8 +15,6 @@ import { createRenderNode, getRenderNode } from './renderNode';
 
 export function createDisplayObjectRenderNode(state: RenderState, source: DisplayObject): DisplayObjectRenderNode {
   const out = createRenderNode2D(state, source) as DisplayObjectRenderNode;
-  out.cacheAsBitmap = false;
-  out.cacheBitmap = null;
   out.isMaskFrameID = -1;
   out.maskDepth = 0;
   out.scrollRectDepth = 0;

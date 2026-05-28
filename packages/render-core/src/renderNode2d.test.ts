@@ -11,12 +11,10 @@ import {
 import { createRenderState } from './renderState';
 
 describe('createDisplayObjectRenderNode', () => {
-  it('initializes cacheAsBitmap, isMaskFrameID, maskDepth, scrollRectDepth', () => {
+  it('initializes isMaskFrameID, maskDepth, scrollRectDepth', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     const node = createDisplayObjectRenderNode(state, source);
-    expect(node.cacheAsBitmap).toBe(false);
-    expect(node.cacheBitmap).toBeNull();
     expect(node.isMaskFrameID).toBe(-1);
     expect(node.maskDepth).toBe(0);
     expect(node.scrollRectDepth).toBe(0);
