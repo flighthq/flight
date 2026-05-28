@@ -13,7 +13,7 @@ import {
 } from '@flighthq/engine';
 
 import { PiratePigGame } from './game';
-import { container, render, setSize, state } from './render';
+import { container, render, scale, setSize, state } from './render';
 
 // ── Assets ─────────────────────────────────────────────────────────────────
 
@@ -42,6 +42,8 @@ const sounds = [
 
 const manager = createTweenManager();
 const root = createDisplayObject();
+root.scaleX = scale;
+root.scaleY = scale;
 
 const background = createBitmap();
 background.data.image = bgImage;
