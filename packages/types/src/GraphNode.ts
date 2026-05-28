@@ -1,6 +1,12 @@
 import type { EntityRuntime, EntityRuntimeKey } from './Entity';
+import type { Matrix3x2 } from './Matrix3x2';
 import type { Node, NodeData, NodeDataFactory, NodeRuntimeFactory } from './Node';
 import type { Signal } from './Signal';
+
+export interface ImageCacheResult {
+  canvas: HTMLCanvasElement | null;
+  transform: Matrix3x2;
+}
 
 export interface GraphNodeTraits {
   data: GraphNodeData | null;
@@ -29,6 +35,7 @@ export interface GraphNodeRuntime<
   boundsUsingLocalTransformID: number;
   children: GraphNode<GraphKind, Traits>[] | null;
   graph: GraphKind;
+  imageCache: ImageCacheResult | null;
   localBoundsID: number;
   localBoundsUsingLocalBoundsID: number;
   localTransformID: number;
