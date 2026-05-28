@@ -22,6 +22,8 @@
       "@flighthq/entity/*": ["./packages/entity/src/*"],
       "@flighthq/geometry": ["./packages/geometry/src/index.ts"],
       "@flighthq/geometry/*": ["./packages/geometry/src/*"],
+      "@flighthq/image-cache": ["./packages/image-cache/src/index.ts"],
+      "@flighthq/image-cache/*": ["./packages/image-cache/src/*"],
       "@flighthq/interaction": ["./packages/interaction/src/index.ts"],
       "@flighthq/interaction/*": ["./packages/interaction/src/*"],
       "@flighthq/materials": ["./packages/materials/src/index.ts"],

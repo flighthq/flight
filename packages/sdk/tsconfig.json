@@ -13,6 +13,7 @@
     { "path": "../surface" },
     { "path": "../entity" },
     { "path": "../geometry" },
+    { "path": "../image-cache" },
     { "path": "../interaction" },
     { "path": "../materials" },
     { "path": "../render-core" },

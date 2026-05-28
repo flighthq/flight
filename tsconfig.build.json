@@ -5,6 +5,7 @@
     { "path": "./packages/sdk" },
     { "path": "./packages/entity" },
     { "path": "./packages/geometry" },
+    { "path": "./packages/image-cache" },
     { "path": "./packages/surface" },
     { "path": "./packages/interaction" },
     { "path": "./packages/materials" },

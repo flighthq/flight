@@ -14,7 +14,6 @@ test('attach renderer to new canvas', () => {
   const renderState = createCanvasRenderState(canvas);
 
   const obj = createDisplayObject();
-  obj.opaqueBackground = 0xff0000;
 
   registerRenderer(renderState, DisplayObjectKind, defaultCanvasDisplayObjectRenderer);
   updateDisplayObjectBeforeRender(renderState, obj);
