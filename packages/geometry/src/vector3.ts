@@ -1,9 +1,9 @@
 import { createEntity } from '@flighthq/entity';
 import type { Vector2Like, Vector3, Vector3Like } from '@flighthq/types';
 
-export const X_AXIS: Readonly<Vector3> = createVector3(1, 0, 0);
-export const Y_AXIS: Readonly<Vector3> = createVector3(0, 1, 0);
-export const Z_AXIS: Readonly<Vector3> = createVector3(0, 0, 1);
+export const VEC3_X_AXIS: Readonly<Vector3> = createVector3(1, 0, 0);
+export const VEC3_Y_AXIS: Readonly<Vector3> = createVector3(0, 1, 0);
+export const VEC3_Z_AXIS: Readonly<Vector3> = createVector3(0, 0, 1);
 
 /**
  * The Vector3Like class represents a point or a location in the three-dimensional space using
@@ -223,5 +223,27 @@ export function vec3Subtract(out: Vector3Like, source: Readonly<Vector3Like>, ot
   out.z = source.z - other.z;
 }
 
-// Aliases for pool compatibility
-export { createVector3 as create };
+export const vector3 = {
+  create: createVector3,
+  X_AXIS: VEC3_X_AXIS,
+  Y_AXIS: VEC3_Y_AXIS,
+  Z_AXIS: VEC3_Z_AXIS,
+  add: vec3Add,
+  angleBetween: vec3AngleBetween,
+  clone: vec3Clone,
+  copy: vec3Copy,
+  cross: vec3Cross,
+  distance: vec3Distance,
+  distanceSquared: vec3DistanceSquared,
+  dot: vec3Dot,
+  equals: vec3Equals,
+  length: vec3Length,
+  lengthSquared: vec3LengthSquared,
+  nearEquals: vec3NearEquals,
+  negate: vec3Negate,
+  normalize: vec3Normalize,
+  project: vec3Project,
+  scale: vec3Scale,
+  setTo: vec3SetTo,
+  subtract: vec3Subtract,
+};

@@ -254,9 +254,6 @@ export function rectTopLeft(out: Vector2Like, source: Readonly<RectangleLike>): 
   out.y = source.y;
 }
 
-// Aliases for pool compatibility
-export { createRectangle as create };
-
 export function rectUnion(out: RectangleLike, source: Readonly<RectangleLike>, other: Readonly<RectangleLike>): void {
   const { x: sx, y: sy, width: sw, height: sh } = source;
   const { x: ox, y: oy, width: ow, height: oh } = other;
@@ -290,3 +287,46 @@ export function rectUnion(out: RectangleLike, source: Readonly<RectangleLike>, o
     out.height = y1 - y0;
   }
 }
+
+export const rectangle = {
+  create: createRectangle,
+  bottom: rectBottom,
+  bottomRight: rectBottomRight,
+  clone: rectClone,
+  contains: rectContains,
+  containsPoint: rectContainsPoint,
+  containsRect: rectContainsRect,
+  copy: rectCopy,
+  equals: rectEquals,
+  inflate: rectInflate,
+  inflatePoint: rectInflatePoint,
+  intersection: rectIntersection,
+  intersects: rectIntersects,
+  isEmpty: rectIsEmpty,
+  isFlippedX: rectIsFlippedX,
+  isFlippedY: rectIsFlippedY,
+  left: rectLeft,
+  minX: rectMinX,
+  minY: rectMinY,
+  maxX: rectMaxX,
+  maxY: rectMaxY,
+  normalize: rectNormalize,
+  normalizedBottomRight: rectNormalizedBottomRight,
+  normalizedTopLeft: rectNormalizedTopLeft,
+  offset: rectOffset,
+  offsetPoint: rectOffsetPoint,
+  right: rectRight,
+  setBottom: rectSetBottom,
+  setBottomRight: rectSetBottomRight,
+  setEmpty: rectSetEmpty,
+  setLeft: rectSetLeft,
+  setRight: rectSetRight,
+  setSize: rectSetSize,
+  setTo: rectSetTo,
+  setTop: rectSetTop,
+  setTopLeft: rectSetTopLeft,
+  size: rectSize,
+  top: rectTop,
+  topLeft: rectTopLeft,
+  union: rectUnion,
+};

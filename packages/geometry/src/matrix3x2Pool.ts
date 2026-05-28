@@ -1,6 +1,6 @@
 import type { Matrix3x2 } from '@flighthq/types';
 
-import { create, identity } from './matrix3x2';
+import { createMatrix3x2 as create, mat3x2Identity as identity } from './matrix3x2';
 
 export function clear(): void {
   pool.length = 0;

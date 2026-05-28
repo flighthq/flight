@@ -1,6 +1,6 @@
 import type { Vector2 } from '@flighthq/types';
 
-import { create } from './vector2';
+import { createVector2 as create } from './vector2';
 
 export function clear(): void {
   pool.length = 0;

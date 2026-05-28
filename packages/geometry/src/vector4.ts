@@ -1,10 +1,10 @@
 import { createEntity } from '@flighthq/entity';
 import type { Vector3Like, Vector4, Vector4Like } from '@flighthq/types';
 
-export const X_AXIS: Readonly<Vector4> = createVector4(1, 0, 0, 0);
-export const Y_AXIS: Readonly<Vector4> = createVector4(0, 1, 0, 0);
-export const Z_AXIS: Readonly<Vector4> = createVector4(0, 0, 1, 0);
-export const W_UNIT: Readonly<Vector4> = createVector4(0, 0, 0, 1);
+export const VEC4_X_AXIS: Readonly<Vector4> = createVector4(1, 0, 0, 0);
+export const VEC4_Y_AXIS: Readonly<Vector4> = createVector4(0, 1, 0, 0);
+export const VEC4_Z_AXIS: Readonly<Vector4> = createVector4(0, 0, 1, 0);
+export const VEC4_W_UNIT: Readonly<Vector4> = createVector4(0, 0, 0, 1);
 
 /**
  * The Vector4Like class represents a vector or point in four-dimensional space using the
@@ -222,5 +222,27 @@ export function vec4Subtract(out: Vector4Like, source: Readonly<Vector4Like>, ot
   out.w = source.w - other.w;
 }
 
-// Aliases for pool compatibility
-export { createVector4 as create };
+export const vector4 = {
+  create: createVector4,
+  X_AXIS: VEC4_X_AXIS,
+  Y_AXIS: VEC4_Y_AXIS,
+  Z_AXIS: VEC4_Z_AXIS,
+  W_UNIT: VEC4_W_UNIT,
+  add: vec4Add,
+  angleBetween: vec4AngleBetween,
+  clone: vec4Clone,
+  copy: vec4Copy,
+  distance: vec4Distance,
+  distanceSquared: vec4DistanceSquared,
+  dot: vec4Dot,
+  equals: vec4Equals,
+  length: vec4Length,
+  lengthSquared: vec4LengthSquared,
+  nearEquals: vec4NearEquals,
+  negate: vec4Negate,
+  normalize: vec4Normalize,
+  project: vec4Project,
+  scale: vec4Scale,
+  setTo: vec4SetTo,
+  subtract: vec4Subtract,
+};

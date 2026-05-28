@@ -367,5 +367,25 @@ export function mat3x3Translate(out: Matrix3x3Like, source: Readonly<Matrix3x3Li
 
 const __identity: Float32Array = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
 
-// Aliases for pool compatibility
-export { createMatrix3x3 as create, mat3x3Identity as identity };
+export const matrix3x3 = {
+  create: createMatrix3x3,
+  clone: mat3x3Clone,
+  copy: mat3x3Copy,
+  copyColumnFrom: mat3x3CopyColumnFrom,
+  copyColumnTo: mat3x3CopyColumnTo,
+  copyRowFrom: mat3x3CopyRowFrom,
+  copyRowTo: mat3x3CopyRowTo,
+  equals: mat3x3Equals,
+  fromMatrix3x2: mat3x3FromMat3x2,
+  fromMatrix4x4: mat3x3FromMat4x4,
+  get: mat3x3Get,
+  identity: mat3x3Identity,
+  inverse: mat3x3Inverse,
+  isAffine: mat3x3IsAffine,
+  multiply: mat3x3Multiply,
+  rotate: mat3x3Rotate,
+  scale: mat3x3Scale,
+  set: mat3x3Set,
+  setTo: mat3x3SetTo,
+  translate: mat3x3Translate,
+};
