@@ -55,6 +55,7 @@ export function createGraphNodeRuntime<GraphKind extends symbol, Traits extends 
   out.boundsUsingLocalBoundsID = -1;
   out.boundsUsingLocalTransformID = -1;
   out.children = null;
+  out.imageCache = null;
   out.localBoundsID = 0;
   out.localBoundsUsingLocalBoundsID = -1;
   out.localTransformID = 0;
