@@ -51,8 +51,8 @@ export default [
         {
           paths: [
             {
-              name: '@flighthq/engine',
-              message: 'Import from specific packages directly. @flighthq/engine is only for use in examples.',
+              name: '@flighthq/sdk',
+              message: 'Import from specific packages directly. @flighthq/sdk is only for use in examples.',
             },
           ],
         },

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@flighthq/engine": "*"
+    "@flighthq/sdk": "*"
   },
   "scripts": {
     "assets": "tsx ../../scripts/download-assets.ts",

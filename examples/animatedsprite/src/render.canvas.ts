@@ -1,4 +1,4 @@
-import type { Sprite } from '@flighthq/engine';
+import type { Sprite } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
@@ -7,7 +7,7 @@ import {
   renderCanvasBackground,
   renderCanvasSprite,
   SpriteKind,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 400, pixelRatio);

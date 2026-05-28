@@ -1,4 +1,4 @@
-import type { DisplayObject, ImageSource, TweenManager } from '@flighthq/engine';
+import type { DisplayObject, ImageSource, TweenManager } from '@flighthq/sdk';
 import {
   addChild,
   addChildAt,
@@ -10,7 +10,7 @@ import {
   invalidateRender,
   Quad,
   removeChild,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 export const TILE_SIZE = 57;
 export const TILE_STEP = TILE_SIZE + 16;

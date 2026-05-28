@@ -1,4 +1,4 @@
-import { createTilemap, loadTilesetFromURL, setTile, setX, setY, updateSpriteBeforeRender } from '@flighthq/engine';
+import { createTilemap, loadTilesetFromURL, setTile, setX, setY, updateSpriteBeforeRender } from '@flighthq/sdk';
 
 import { render, scale, state } from './render';
 

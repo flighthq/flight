@@ -1,4 +1,4 @@
-import type { Tilemap } from '@flighthq/engine';
+import type { Tilemap } from '@flighthq/sdk';
 import {
   createWebGLElement,
   createWebGLRenderState,
@@ -7,7 +7,7 @@ import {
   renderWebGLBackground,
   renderWebGLSprite,
   TilemapKind,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWebGLElement(592, 592, pixelRatio);

@@ -1,4 +1,4 @@
-import type { Sprite } from '@flighthq/engine';
+import type { Sprite } from '@flighthq/sdk';
 import {
   createWebGLElement,
   createWebGLRenderState,
@@ -7,7 +7,7 @@ import {
   renderWebGLBackground,
   renderWebGLSprite,
   SpriteKind,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWebGLElement(800, 400, pixelRatio);

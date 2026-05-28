@@ -1,4 +1,4 @@
-import type { AudioSource, DisplayObject, ImageSource, Text, TweenManager } from '@flighthq/engine';
+import type { AudioSource, DisplayObject, ImageSource, Text, TweenManager } from '@flighthq/sdk';
 import {
   addChild,
   beginFill,
@@ -12,7 +12,7 @@ import {
   invalidateRender,
   playAudioSource,
   Quad,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 import type { Tile } from './tile';
 import { createTile, initTile, moveTile, removeTileAnimated, removeTileImmediate, TILE_STEP } from './tile';

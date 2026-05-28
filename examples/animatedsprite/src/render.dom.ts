@@ -1,4 +1,4 @@
-import type { Sprite } from '@flighthq/engine';
+import type { Sprite } from '@flighthq/sdk';
 import {
   createDOMRenderState,
   defaultDOMSpriteRenderer,
@@ -6,7 +6,7 @@ import {
   renderDOMBackground,
   renderDOMSprite,
   SpriteKind,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 const container = document.createElement('div');
 container.style.position = 'relative';

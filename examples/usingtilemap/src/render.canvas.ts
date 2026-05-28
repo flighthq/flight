@@ -1,4 +1,4 @@
-import type { Tilemap } from '@flighthq/engine';
+import type { Tilemap } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
@@ -7,7 +7,7 @@ import {
   renderCanvasBackground,
   renderCanvasSprite,
   TilemapKind,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(592, 592, pixelRatio);

@@ -5,7 +5,7 @@ import {
   loadImageSourceFromURL,
   resizeQuadBatch,
   updateSpriteBeforeRender,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 import Stats from 'stats.js';
 
 import { canvas, render, scale, state } from './render';

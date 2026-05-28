@@ -1,4 +1,4 @@
-import type { QuadBatch } from '@flighthq/engine';
+import type { QuadBatch } from '@flighthq/sdk';
 import {
   createDOMRenderState,
   defaultDOMQuadBatchRenderer,
@@ -6,7 +6,7 @@ import {
   registerRenderer,
   renderDOMBackground,
   renderDOMSprite,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 const container = document.createElement('div');
 container.style.position = 'relative';

@@ -13,7 +13,7 @@ import {
   Quad,
   updateDisplayObjectBeforeRender,
   updateTweens,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 import { render, scale, state } from './render';
 

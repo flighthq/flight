@@ -1,4 +1,4 @@
-import type { QuadBatch } from '@flighthq/engine';
+import type { QuadBatch } from '@flighthq/sdk';
 import {
   createWebGLElement,
   createWebGLRenderState,
@@ -7,7 +7,7 @@ import {
   registerRenderer,
   renderWebGLBackground,
   renderWebGLSprite,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWebGLElement(550, 400, pixelRatio);

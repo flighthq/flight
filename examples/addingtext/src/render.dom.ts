@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/engine';
+import type { DisplayObject } from '@flighthq/sdk';
 import {
   createDOMRenderState,
   defaultDOMTextRenderer,
@@ -6,7 +6,7 @@ import {
   renderDOMBackground,
   renderDOMDisplayObject,
   TextKind,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 const container = document.createElement('div');
 container.style.position = 'relative';

@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/engine';
+import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
   createWebGLElement,
@@ -7,7 +7,7 @@ import {
   registerRenderer,
   renderWebGLBackground,
   renderWebGLDisplayObject,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWebGLElement(220, 220, pixelRatio);

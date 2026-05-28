@@ -34,12 +34,12 @@ function findPackages(): Map<string, PackageInfo> {
             dependencies?: Record<string, string>;
             peerDependencies?: Record<string, string>;
           };
-          if (!pkg.name?.startsWith('@flighthq/') || pkg.name === '@flighthq/engine') continue;
+          if (!pkg.name?.startsWith('@flighthq/') || pkg.name === '@flighthq/sdk') continue;
           const pkgDir = dirname(full);
           const indexPath = join(pkgDir, 'src', 'index.ts');
           if (existsSync(indexPath)) {
             const allDeps = { ...pkg.dependencies, ...pkg.peerDependencies };
-            const deps = Object.keys(allDeps).filter((d) => d.startsWith('@flighthq/') && d !== '@flighthq/engine');
+            const deps = Object.keys(allDeps).filter((d) => d.startsWith('@flighthq/') && d !== '@flighthq/sdk');
             found.set(pkg.name, { name: pkg.name, description: pkg.description ?? '', dir: pkgDir, indexPath, deps });
           }
         } catch {
@@ -135,7 +135,7 @@ const project = new Project({
 const lines: string[] = [
   '# @flighthq Engine — Package Overview',
   '',
-  '_Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a single entry point._ _Types from `@flighthq/types` are shown with their logical package rather than as a separate section._',
+  '_Run `npm run overview` to regenerate. Import from `@flighthq/sdk` for a single entry point._ _Types from `@flighthq/types` are shown with their logical package rather than as a separate section._',
   '',
   '## Packages',
   '',

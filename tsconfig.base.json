@@ -16,8 +16,8 @@
     "paths": {
       "@flighthq/assets": ["./packages/assets/src/index.ts"],
       "@flighthq/assets/*": ["./packages/assets/src/*"],
-      "@flighthq/engine": ["./packages/engine/src/index.ts"],
-      "@flighthq/engine/*": ["./packages/engine/src/*"],
+      "@flighthq/sdk": ["./packages/sdk/src/index.ts"],
+      "@flighthq/sdk/*": ["./packages/sdk/src/*"],
       "@flighthq/entity": ["./packages/entity/src/index.ts"],
       "@flighthq/entity/*": ["./packages/entity/src/*"],
       "@flighthq/geometry": ["./packages/geometry/src/index.ts"],

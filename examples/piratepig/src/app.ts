@@ -10,7 +10,7 @@ import {
   loadImageSourceFromURL,
   updateDisplayObjectBeforeRender,
   updateTweens,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 import { PiratePigGame } from './game';
 import { container, render, scale, setSize, state } from './render';

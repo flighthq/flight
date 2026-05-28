@@ -1,4 +1,4 @@
-import type { Shape } from '@flighthq/engine';
+import type { Shape } from '@flighthq/sdk';
 import {
   addChild,
   beginFill,
@@ -15,7 +15,7 @@ import {
   setX,
   setY,
   updateDisplayObjectBeforeRender,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 import { render, scale, state } from './render';
 

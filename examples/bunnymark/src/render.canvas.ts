@@ -1,4 +1,4 @@
-import type { QuadBatch } from '@flighthq/engine';
+import type { QuadBatch } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
@@ -7,7 +7,7 @@ import {
   registerRenderer,
   renderCanvasBackground,
   renderCanvasSprite,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createCanvasElement(550, 400, pixelRatio);

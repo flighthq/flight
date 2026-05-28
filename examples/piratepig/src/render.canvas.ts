@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/engine';
+import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
   createCanvasRenderState,
@@ -12,7 +12,7 @@ import {
   renderCanvasDisplayObject,
   ShapeKind,
   TextKind,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = document.createElement('canvas');

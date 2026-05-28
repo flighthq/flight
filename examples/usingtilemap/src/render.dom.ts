@@ -1,4 +1,4 @@
-import type { Tilemap } from '@flighthq/engine';
+import type { Tilemap } from '@flighthq/sdk';
 import {
   createDOMRenderState,
   defaultDOMTilemapRenderer,
@@ -6,7 +6,7 @@ import {
   renderDOMBackground,
   renderDOMSprite,
   TilemapKind,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 const container = document.createElement('div');
 container.style.position = 'relative';

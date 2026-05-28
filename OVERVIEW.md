@@ -1,16 +1,15 @@
 # @flighthq Engine — Package Overview
 
-_Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a single entry point._ _Types from `@flighthq/types` are shown with their logical package rather than as a separate section._
+_Run `npm run overview` to regenerate. Import from `@flighthq/sdk` for a single entry point._ _Types from `@flighthq/types` are shown with their logical package rather than as a separate section._
 
 ## Packages
 
 | Package | Description |
 | --- | --- |
 | `@flighthq/types` | Shared TypeScript interfaces, enums, and symbol constants used across all packages |
-| `@flighthq/foundation` | Core entity/node/runtime data model and binding system |
+| `@flighthq/entity` | Core entity/node/runtime data model and binding system |
 | `@flighthq/geometry` | 2D/3D math primitives: vectors, matrices, rectangles, and object pools |
 | `@flighthq/assets` | Asset types and utilities: image sources, texture atlases, tilesets |
-| `@flighthq/imagedata` | Pixel-level image manipulation using browser ImageData |
 | `@flighthq/signals` | Strictly-typed signals and slots for event dispatching |
 | `@flighthq/scenegraph-core` | Base scene graph: transform hierarchy, bounds, appearance traits, child management |
 | `@flighthq/scenegraph-display` | Display object tree for composited 2D rendering: bitmaps, shapes, text, masks, blend modes |
@@ -24,6 +23,7 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 | `@flighthq/render-dom` | DOM renderer implementation |
 | `@flighthq/render-webgl` | WebGL2 renderer implementation |
 | `@flighthq/spritesheet` | Spritesheet frame animation playback |
+| `@flighthq/surface` | Pixel-level image manipulation using browser ImageData |
 | `@flighthq/timeline` | Timeline-based animation sequencing |
 | `@flighthq/timeline-spritesheet` | Spritesheet animation driven by the Timeline system |
 | `@flighthq/tween-easing` | Easing functions for animation |
@@ -31,11 +31,11 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 ---
 
-## @flighthq/foundation
+## @flighthq/entity
 
 > Core entity/node/runtime data model and binding system
 
-**Functions:** `attachBinding`, `createEntity`, `createNode`, `createRuntime`, `getBinding`, `getRuntime`, `reserveFloat32Array`, `reserveInt16Array`, `reserveUint16Array`
+**Functions:** `attachBinding`, `createEntity`, `createNode`, `createRuntime`, `getBinding`, `getRuntime`
 
 ---
 
@@ -43,7 +43,7 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > 2D/3D math primitives: vectors, matrices, rectangles, and object pools
 
-**Functions:** `createMatrix3x2`, `createMatrix3x3`, `createMatrix4x4`, `createRectangle`, `createVector2`, `createVector3`, `createVector4`
+**Functions:** `createMatrix3x2`, `createMatrix3x3`, `createMatrix4x4`, `createRectangle`, `createVector2`, `createVector3`, `createVector4`, `reserveFloat32Array`, `reserveInt16Array`, `reserveUint16Array`
 
 **Values/Enums:** `matrix3x2`, `matrix3x2Pool`, `matrix3x3`, `matrix3x3Pool`, `matrix4x4`, `matrix4x4Pool`, `rectangle`, `rectanglePool`, `vector2`, `vector2Pool`, `vector3`, `vector3Pool`, `vector4`, `vector4Pool`
 
@@ -56,18 +56,6 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 **Types:** `AudioSource`, `AudioSourceURL`, `FontURL`
 
 **Functions:** `addTextureAtlasRegion`, `addTextureAtlasRegionRect`, `addTextureAtlasRegionRectXY`, `addTextureAtlasRegionVec2`, `createAudioSource`, `createAudioSourceFromURL`, `createAudioSourceFromURLs`, `createFont`, `createImageSource`, `createImageSourceFromCanvas`, `createImageSourceFromImageBitmap`, `createImageSourceFromImageElement`, `createTextureAtlas`, `createTextureAtlasFromCanvas`, `createTextureAtlasFromImageBitmap`, `createTextureAtlasFromImageElement`, `createTextureAtlasFromImageSource`, `createTextureAtlasRegion`, `createTileset`, `createTilesetFromAtlas`, `createTilesetFromImageSource`, `detectImageMimeType`, `initTextureAtlasRegion`, `initTilesetRegions`, `isImageSourceSameOrigin`, `loadAudioSourceFromURL`, `loadAudioSourceFromURLs`, `loadFontFromArrayBuffer`, `loadFontFromName`, `loadFontFromURL`, `loadFontFromURLs`, `loadImageSourceFromArrayBuffer`, `loadImageSourceFromBase64`, `loadImageSourceFromBlob`, `loadImageSourceFromURL`, `loadTextureAtlasFromArrayBuffer`, `loadTextureAtlasFromBase64`, `loadTextureAtlasFromBlob`, `loadTextureAtlasFromURL`, `loadTilesetFromArrayBuffer`, `loadTilesetFromBase64`, `loadTilesetFromBlob`, `loadTilesetFromURL`, `playAudioSource`
-
----
-
-## @flighthq/imagedata
-
-> Pixel-level image manipulation using browser ImageData
-
-**Types:** `ColorBoundsRect`, `ColorTransformData`, `ImageFormat`, `ThresholdOperation`
-
-**Functions:** `cloneImageData`, `colorTransform`, `compareImageData`, `copyChannel`, `copyPixels`, `createImageData`, `createImageDataFromCanvas`, `createImageDataFromImageSource`, `createImageSourceFromImageData`, `drawImageData`, `encodeImageData`, `fillRect`, `floodFill`, `getColorBoundsRect`, `getPixel`, `getPixel32`, `getPixels`, `merge`, `scroll`, `setPixel`, `setPixel32`, `setPixels`, `threshold`
-
-**Values/Enums:** `ImageChannel`
 
 ---
 
@@ -171,7 +159,7 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 
 > WebGL2 renderer implementation
 
-**Functions:** `createWebGLElement`, `createWebGLRenderState`, `drawWebGLBitmap`, `drawWebGLBitmapMask`, `drawWebGLQuadBatch`, `drawWebGLSpriteNode`, `drawWebGLText`, `drawWebGLTextMask`, `drawWebGLTilemap`, `registerWebGLShapeCommands`, `renderWebGLBackground`, `renderWebGLDisplayObject`, `renderWebGLSprite`
+**Functions:** `createWebGLElement`, `createWebGLRenderState`, `drawWebGLBitmap`, `drawWebGLBitmapMask`, `drawWebGLQuadBatch`, `drawWebGLShape`, `drawWebGLShapeMask`, `drawWebGLSpriteNode`, `drawWebGLText`, `drawWebGLTextMask`, `drawWebGLTilemap`, `registerWebGLShapeCommands`, `renderWebGLBackground`, `renderWebGLDisplayObject`, `renderWebGLSprite`
 
 **Values/Enums:** `defaultWebGLBeginBitmapFill`, `defaultWebGLBeginFill`, `defaultWebGLBeginGradientFill`, `defaultWebGLBitmapRenderer`, `defaultWebGLCubicCurveTo`, `defaultWebGLCurveTo`, `defaultWebGLDrawCircle`, `defaultWebGLDrawEllipse`, `defaultWebGLDrawRect`, `defaultWebGLDrawRoundRect`, `defaultWebGLEndFill`, `defaultWebGLLineStyle`, `defaultWebGLLineTo`, `defaultWebGLMoveTo`, `defaultWebGLQuadBatchRenderer`, `defaultWebGLShapeCommands`, `defaultWebGLShapeRenderer`, `defaultWebGLSpriteRenderer`, `defaultWebGLTextRenderer`, `defaultWebGLTilemapRenderer`
 
@@ -182,6 +170,18 @@ _Run `npm run overview` to regenerate. Import from `@flighthq/engine` for a sing
 > Spritesheet frame animation playback
 
 **Functions:** `createSpritesheet`, `createSpritesheetAnimation`, `createSpritesheetFrame`, `createSpritesheetFromTileset`, `createSpritesheetPlayer`, `getSpritesheetAnimation`, `getSpritesheetPlayerFrame`, `queueSpritesheetAnimation`, `showSpritesheetAnimation`, `updateSpritesheetPlayer`
+
+---
+
+## @flighthq/surface
+
+> Pixel-level image manipulation using browser ImageData
+
+**Types:** `ColorBoundsRect`, `ColorTransformData`, `ImageFormat`, `ThresholdOperation`
+
+**Functions:** `cloneSurface`, `colorTransform`, `compareSurface`, `copyChannel`, `copyPixels`, `createImageSourceFromSurface`, `createSurface`, `createSurfaceFromCanvas`, `createSurfaceFromImageSource`, `drawSurface`, `encodeSurface`, `fillRect`, `floodFill`, `getColorBoundsRect`, `getPixel`, `getPixel32`, `getPixels`, `merge`, `scroll`, `setPixel`, `setPixel32`, `setPixels`, `threshold`
+
+**Values/Enums:** `ImageChannel`
 
 ---
 

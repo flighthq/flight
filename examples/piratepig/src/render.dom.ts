@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/engine';
+import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
   createDOMRenderState,
@@ -12,7 +12,7 @@ import {
   renderDOMDisplayObject,
   ShapeKind,
   TextKind,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 export const container = document.createElement('div');
 document.body.appendChild(container);

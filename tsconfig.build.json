@@ -2,7 +2,7 @@
   "files": [],
   "references": [
     { "path": "./packages/assets" },
-    { "path": "./packages/engine" },
+    { "path": "./packages/sdk" },
     { "path": "./packages/entity" },
     { "path": "./packages/geometry" },
     { "path": "./packages/surface" },

@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/engine';
+import type { DisplayObject } from '@flighthq/sdk';
 import {
   createDOMRenderState,
   defaultCanvasShapeCommands,
@@ -8,7 +8,7 @@ import {
   renderDOMBackground,
   renderDOMDisplayObject,
   ShapeKind,
-} from '@flighthq/engine';
+} from '@flighthq/sdk';
 
 const container = document.createElement('div');
 container.style.position = 'relative';
