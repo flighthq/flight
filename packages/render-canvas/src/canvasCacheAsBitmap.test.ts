@@ -1,36 +1,83 @@
+import { matrix3x2, rectangle } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode } from '@flighthq/render-core';
-import { createDisplayObject } from '@flighthq/scenegraph-display';
+import { getLocalBoundsRect } from '@flighthq/scenegraph-core';
+import { createDisplayObject, getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 
-import { updateCanvasCacheBitmap } from './canvasCacheAsBitmap';
+import { drawImageCacheResult, renderToImageCache } from './canvasCacheAsBitmap';
 import { createCanvasRenderState } from './canvasRenderState';
 
-describe('updateCanvasCacheBitmap', () => {
-  it('does not throw (placeholder implementation)', () => {
+function makeStateAndObj() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 100;
+  canvas.height = 100;
+  const state = createCanvasRenderState(canvas);
+  const obj = createDisplayObject();
+  rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 50, 50);
+  return { state, obj };
+}
+
+describe('renderToImageCache', () => {
+  it('does not throw when bounds are zero', () => {
     const canvas = document.createElement('canvas');
     const state = createCanvasRenderState(canvas);
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
 
-    expect(() => updateCanvasCacheBitmap(state, data)).not.toThrow();
+    expect(() => renderToImageCache(state, obj)).not.toThrow();
   });
 
-  it('does not throw with force = true', () => {
-    const canvas = document.createElement('canvas');
-    const state = createCanvasRenderState(canvas);
-    const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+  it('sets imageCache slot with a canvas when bounds are non-zero', () => {
+    const { state, obj } = makeStateAndObj();
 
-    expect(() => updateCanvasCacheBitmap(state, data, true)).not.toThrow();
+    renderToImageCache(state, obj, null, 0xff0000);
+
+    const cache = getDisplayObjectRuntime(obj).imageCache;
+    expect(cache).not.toBeNull();
+    expect(cache!.canvas).not.toBeNull();
   });
 
-  it('does not modify cacheBitmap (TODO stub)', () => {
+  it('clears the slot when bounds are zero', () => {
+    const canvas = document.createElement('canvas');
+    const state = createCanvasRenderState(canvas);
+    const obj = createDisplayObject();
+
+    renderToImageCache(state, obj);
+
+    expect(getDisplayObjectRuntime(obj).imageCache).toBeNull();
+  });
+
+  it('stores identity-like transform when matrix is null', () => {
+    const { state, obj } = makeStateAndObj();
+
+    renderToImageCache(state, obj);
+
+    const cache = getDisplayObjectRuntime(obj).imageCache;
+    expect(cache!.transform.a).toBeCloseTo(1);
+    expect(cache!.transform.d).toBeCloseTo(1);
+    expect(cache!.transform.b).toBeCloseTo(0);
+    expect(cache!.transform.c).toBeCloseTo(0);
+  });
+});
+
+describe('drawImageCacheResult', () => {
+  it('does not throw when canvas is null', () => {
     const canvas = document.createElement('canvas');
     const state = createCanvasRenderState(canvas);
     const obj = createDisplayObject();
     const data = getDisplayObjectRenderNode(state, obj);
+    const cache = { canvas: null, transform: matrix3x2.create() };
 
-    updateCanvasCacheBitmap(state, data);
+    expect(() => drawImageCacheResult(state, data, cache)).not.toThrow();
+  });
 
-    expect(data.cacheBitmap).toBeNull();
+  it('calls drawImage when canvas is set', () => {
+    const { state, obj } = makeStateAndObj();
+    renderToImageCache(state, obj, null, 0xff0000);
+    const data = getDisplayObjectRenderNode(state, obj);
+    const cache = getDisplayObjectRuntime(obj).imageCache!;
+    const spy = vi.spyOn(state.context, 'drawImage');
+
+    drawImageCacheResult(state, data, cache);
+
+    expect(spy).toHaveBeenCalledOnce();
   });
 });

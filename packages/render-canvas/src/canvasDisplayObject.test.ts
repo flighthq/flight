@@ -1,7 +1,7 @@
-import { rectangle } from '@flighthq/geometry';
+import { matrix3x2 } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { addChild, getLocalBoundsRect } from '@flighthq/scenegraph-core';
-import { createDisplayObject } from '@flighthq/scenegraph-display';
+import { addChild } from '@flighthq/scenegraph-core';
+import { createDisplayObject, getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import {
@@ -22,41 +22,22 @@ function makeState() {
 }
 
 describe('drawCanvasDisplayObject', () => {
-  it('calls fillRect when opaqueBackground is set', () => {
+  it('does not throw', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    obj.opaqueBackground = 0xff0000;
-    rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 50, 50);
     const data = getDisplayObjectRenderNode(state, obj);
-    const fillSpy = vi.spyOn(state.context, 'fillRect');
-
-    drawCanvasDisplayObject(state, data);
-
-    expect(fillSpy).toHaveBeenCalledOnce();
+    expect(() => drawCanvasDisplayObject(state, data)).not.toThrow();
   });
 
-  it('skips fillRect when opaqueBackground is null', () => {
+  it('does not call fillRect (no visual geometry)', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    obj.opaqueBackground = null;
     const data = getDisplayObjectRenderNode(state, obj);
-    const fillSpy = vi.spyOn(state.context, 'fillRect');
+    const spy = vi.spyOn(state.context, 'fillRect');
 
     drawCanvasDisplayObject(state, data);
 
-    expect(fillSpy).not.toHaveBeenCalled();
-  });
-
-  it('sets fillStyle from the packed opaqueBackground color', () => {
-    const state = makeState();
-    const obj = createDisplayObject();
-    obj.opaqueBackground = (0xab << 16) | (0xcd << 8) | 0xef;
-    rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 10, 10);
-    const data = getDisplayObjectRenderNode(state, obj);
-
-    drawCanvasDisplayObject(state, data);
-
-    expect(state.context.fillStyle).toBe('#abcdef');
+    expect(spy).not.toHaveBeenCalled();
   });
 });
 
@@ -64,9 +45,7 @@ describe('renderCanvasDisplayObject', () => {
   it('does not throw for a simple visible object', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    obj.opaqueBackground = 0xff0000;
     obj.visible = true;
-    rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 50, 50);
 
     expect(() => renderCanvasDisplayObject(state, obj)).not.toThrow();
   });
@@ -74,33 +53,46 @@ describe('renderCanvasDisplayObject', () => {
   it('skips invisible objects', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    obj.opaqueBackground = 0xff0000;
     obj.visible = false;
     const data = getDisplayObjectRenderNode(state, obj);
     data.visible = false;
-    rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 50, 50);
-    const fillSpy = vi.spyOn(state.context, 'fillRect');
+    const drawImageSpy = vi.spyOn(state.context, 'drawImage');
 
     renderCanvasDisplayObject(state, obj);
 
-    expect(fillSpy).not.toHaveBeenCalled();
+    expect(drawImageSpy).not.toHaveBeenCalled();
   });
 
-  it('recurses into children', () => {
+  it('draws from imageCache slot when canvas is set', () => {
+    const state = makeState();
+    const obj = createDisplayObject();
+    const runtime = getDisplayObjectRuntime(obj) as ReturnType<typeof getDisplayObjectRuntime>;
+    (runtime as { imageCache: unknown }).imageCache = {
+      canvas: document.createElement('canvas'),
+      transform: matrix3x2.create(),
+    };
+
+    const drawImageSpy = vi.spyOn(state.context, 'drawImage');
+    renderCanvasDisplayObject(state, obj);
+
+    expect(drawImageSpy).toHaveBeenCalledOnce();
+  });
+
+  it('recurses into children with cached results', () => {
     const state = makeState();
     const parent = createDisplayObject();
-    parent.opaqueBackground = null;
-
     const child = createDisplayObject();
-    child.opaqueBackground = 0x00ff00;
-    rectangle.setTo(getLocalBoundsRect(child), 0, 0, 20, 20);
+    const childRuntime = getDisplayObjectRuntime(child);
+    (childRuntime as { imageCache: unknown }).imageCache = {
+      canvas: document.createElement('canvas'),
+      transform: matrix3x2.create(),
+    };
     addChild(parent, child);
 
-    const fillSpy = vi.spyOn(state.context, 'fillRect');
-
+    const drawImageSpy = vi.spyOn(state.context, 'drawImage');
     renderCanvasDisplayObject(state, parent);
 
-    expect(fillSpy).toHaveBeenCalledOnce();
+    expect(drawImageSpy).toHaveBeenCalledOnce();
   });
 });
 
@@ -113,22 +105,21 @@ describe('defaultCanvasDisplayObjectRenderer', () => {
 });
 
 describe('drawCanvasDisplayObjectMask', () => {
-  it('does not throw when opaqueBackground is null and no children', () => {
+  it('does not throw when no children', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    obj.opaqueBackground = null;
     const data = getDisplayObjectRenderNode(state, obj);
     expect(() => drawCanvasDisplayObjectMask(state, data)).not.toThrow();
   });
 
-  it('calls context.rect when opaqueBackground is set', () => {
+  it('does not call context.rect for a childless display object', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    obj.opaqueBackground = 0xff0000;
-    rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 50, 50);
     const data = getDisplayObjectRenderNode(state, obj);
     const rectSpy = vi.spyOn(state.context, 'rect');
+
     drawCanvasDisplayObjectMask(state, data);
-    expect(rectSpy).toHaveBeenCalled();
+
+    expect(rectSpy).not.toHaveBeenCalled();
   });
 });
