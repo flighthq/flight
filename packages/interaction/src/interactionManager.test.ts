@@ -4,7 +4,7 @@ import { createDisplayObject } from '@flighthq/scenegraph-display';
 import { connectSignal } from '@flighthq/signals';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { defaultDisplayObjectHitTestPoint } from './displayHitTests';
+import { hitTestLocalBoundsRect } from './hitTests';
 import { registerHitTestPoint } from './hitTests';
 import {
   createDisplayObjectInteractionSignals,
@@ -13,7 +13,7 @@ import {
 } from './interactionManager';
 
 beforeAll(() => {
-  registerHitTestPoint(DisplayObjectKind, defaultDisplayObjectHitTestPoint);
+  registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRect);
 });
 
 describe('createDisplayObjectInteractionSignals', () => {
@@ -50,7 +50,6 @@ describe('dispatchPointerDown', () => {
   it('fires onPointerDown on a hit target', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
-    child.opaqueBackground = 0xff0000;
     rectangle.setTo(getLocalBoundsRect(child), 0, 0, 100, 100);
     addChild(root, child);
 
@@ -65,7 +64,6 @@ describe('dispatchPointerDown', () => {
   it('passes correct pointer data to the handler', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
-    child.opaqueBackground = 0xff0000;
     rectangle.setTo(getLocalBoundsRect(child), 0, 0, 100, 100);
     addChild(root, child);
 

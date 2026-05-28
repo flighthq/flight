@@ -4,7 +4,6 @@ import { createDisplayObject, createDisplayObjectGeneric, getDisplayObjectRuntim
 import type { DisplayObject, DisplayObjectRuntime } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { defaultDisplayObjectHitTestPoint } from './displayHitTests';
 import { findHitTarget, hitTestLocalBoundsRect, hitTestObject, hitTestPoint, registerHitTestPoint } from './hitTests';
 
 describe('hitTestObject', () => {
@@ -18,11 +17,9 @@ describe('hitTestObject', () => {
     addChild(createDisplayObject(), a);
     addChild(createDisplayObject(), b);
 
-    // Simple local bounds
     rectangle.setTo(getLocalBoundsRect(a), 0, 0, 10, 10);
     rectangle.setTo(getLocalBoundsRect(b), 0, 0, 10, 10);
 
-    // Position b to overlap a
     a.x = 0;
     a.y = 0;
     b.x = 5;
@@ -66,8 +63,6 @@ describe('hitTestObject', () => {
   });
 
   it('includes child bounds when a child extends beyond the object local bounds', () => {
-    // a at (0,0) local bounds [0,0,10,10]; child at (90,90) size 20x20
-    // a's world bounds unions to [0,0,110,110], which reaches b at (100,100)
     const child = createDisplayObject();
     child.x = 90;
     child.y = 90;
@@ -87,13 +82,11 @@ describe('hitTestPoint', () => {
   let obj: DisplayObject;
 
   beforeAll(() => {
-    registerHitTestPoint(DisplayObjectKind, defaultDisplayObjectHitTestPoint);
+    registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRect);
   });
 
   beforeEach(() => {
     obj = createDisplayObject();
-    obj.opaqueBackground = 0xff0000;
-    // set a simple local bounds rectangle
     rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 100, 100);
   });
 
@@ -113,9 +106,8 @@ describe('hitTestPoint', () => {
     expect(result).toBe(false);
   });
 
-  it('returns false if object has no opaqueBackground', () => {
-    obj.opaqueBackground = null;
-    const result = hitTestPoint(obj, 50, 50);
+  it('returns false when point is outside bounds', () => {
+    const result = hitTestPoint(obj, 200, 200);
     expect(result).toBe(false);
   });
 
@@ -138,14 +130,12 @@ describe('hitTestPoint', () => {
     expect(resultExplicit).toBe(true);
   });
 
-  it('returns true when a child is hit even if the parent has no opaqueBackground', () => {
-    obj.opaqueBackground = null;
-
+  it('returns true when a child is hit even if the parent has no local bounds', () => {
     const child = createDisplayObject();
-    child.opaqueBackground = 0xff0000;
     rectangle.setTo(getLocalBoundsRect(child), 0, 0, 100, 100);
     addChild(obj, child);
 
+    rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 0, 0);
     expect(hitTestPoint(obj, 50, 50)).toBe(true);
   });
 
@@ -153,7 +143,6 @@ describe('hitTestPoint', () => {
     obj.enabled = false;
 
     const child = createDisplayObject();
-    child.opaqueBackground = 0xff0000;
     rectangle.setTo(getLocalBoundsRect(child), 0, 0, 100, 100);
     addChild(obj, child);
 
@@ -202,10 +191,9 @@ describe('findHitTarget', () => {
   it('returns a child node registered with a hit handler', () => {
     const parent = createDisplayObject();
     const child = createDisplayObjectGeneric(DisplayObjectKind);
-    child.opaqueBackground = 0xff0000;
     rectangle.setTo(getLocalBoundsRect(child), 0, 0, 100, 100);
     addChild(parent, child);
-    registerHitTestPoint(DisplayObjectKind, defaultDisplayObjectHitTestPoint);
+    registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRect);
     const hit = findHitTarget(parent, 50, 50);
     expect(hit).toBe(child);
   });

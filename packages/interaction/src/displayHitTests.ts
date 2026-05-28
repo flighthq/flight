@@ -1,4 +1,4 @@
-import type { DisplayObject, GraphNode, SpriteBatch } from '@flighthq/types';
+import type { GraphNode, SpriteBatch } from '@flighthq/types';
 
 import { hitTestLocalBoundsRect } from './hitTests';
 import { defaultSpriteHitTestPoint } from './spriteHitTests';
@@ -14,13 +14,12 @@ export function defaultBitmapHitTestPoint(
 }
 
 export function defaultDisplayObjectHitTestPoint(
-  source: GraphNode<symbol, object>,
-  x: number,
-  y: number,
+  _source: GraphNode<symbol, object>,
+  _x: number,
+  _y: number,
   _shapeFlag: boolean,
 ): boolean {
-  const obj = source as DisplayObject;
-  return obj.opaqueBackground !== null && hitTestLocalBoundsRect(source, x, y);
+  return false;
 }
 
 export function defaultDOMElementHitTestPoint(
