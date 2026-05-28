@@ -18,7 +18,6 @@ import type {
   Filter,
   GraphNode,
   GraphNodeRuntimeFactory,
-  Matrix3x2,
   MethodsOf,
   PartialNode,
   Rectangle,
@@ -47,11 +46,8 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   initHasTransform2D(out, obj);
   initHasBoundsRect(out, obj);
   initHasAppearance(out, obj);
-  out.cacheAsBitmap = obj?.cacheAsBitmap ?? false;
-  out.cacheAsBitmapMatrix = obj?.cacheAsBitmapMatrix ?? null;
   out.filters = obj?.filters ?? null;
   out.mask = obj?.mask ?? null;
-  out.opaqueBackground = obj?.opaqueBackground ?? null;
   out.scrollRect = obj?.scrollRect ?? null;
   return out;
 }
@@ -75,16 +71,6 @@ export function isDisplayObject(source: Readonly<GraphNode<any, any>>): boolean 
   return getGraphNodeRuntime(source).graph === DisplayGraph;
 }
 
-export function setCacheAsBitmap(source: DisplayObject, value: boolean): void {
-  source.cacheAsBitmap = value;
-  invalidateAppearance(source);
-}
-
-export function setCacheAsBitmapMatrix(source: DisplayObject, value: Matrix3x2 | null): void {
-  source.cacheAsBitmapMatrix = value;
-  invalidateAppearance(source);
-}
-
 export function setFilters(source: DisplayObject, value: Filter[] | null): void {
   source.filters = value;
   invalidateAppearance(source);
@@ -92,11 +78,6 @@ export function setFilters(source: DisplayObject, value: Filter[] | null): void 
 
 export function setMask(source: DisplayObject, value: DisplayObject | null): void {
   source.mask = value;
-  invalidateAppearance(source);
-}
-
-export function setOpaqueBackground(source: DisplayObject, value: number | null): void {
-  source.opaqueBackground = value;
   invalidateAppearance(source);
 }
 

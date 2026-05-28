@@ -1,5 +1,5 @@
 import { getRuntime } from '@flighthq/entity';
-import { matrix3x2, rectangle } from '@flighthq/geometry';
+import { rectangle } from '@flighthq/geometry';
 import { createGraphNode } from '@flighthq/scenegraph-core';
 import type {
   DisplayObject,
@@ -19,11 +19,8 @@ import {
   createDisplayObjectRuntime,
   getDisplayObjectRuntime,
   isDisplayObject,
-  setCacheAsBitmap,
-  setCacheAsBitmapMatrix,
   setFilters,
   setMask,
-  setOpaqueBackground,
   setScrollRect,
 } from './displayObject';
 
@@ -41,12 +38,9 @@ describe('createDisplayObject', () => {
   it('initializes default values', () => {
     expect(displayObject.alpha).toBe(1);
     expect(displayObject.blendMode).toBeNull();
-    expect(displayObject.cacheAsBitmap).toBe(false);
-    expect(displayObject.cacheAsBitmapMatrix).toBeNull();
     expect(displayObject.filters).toBeNull();
     expect(displayObject.mask).toBeNull();
     expect(displayObject.name).toBeNull();
-    expect(displayObject.opaqueBackground).toBeNull();
     expect(displayObject.shader).toBeNull();
     expect(displayObject.visible).toBe(true);
     expect(displayObject.kind).toBe(DisplayObjectKind);
@@ -56,12 +50,9 @@ describe('createDisplayObject', () => {
     const base = {
       alpha: 2,
       blendMode: BlendMode.Darken,
-      cacheAsBitmap: true,
-      cacheAsBitmapMatrix: matrix3x2.create(),
       filters: [],
       mask: createDisplayObject(),
       name: 'foo',
-      opaqueBackground: 0xff0000,
       rotation: 45,
       scaleX: 2,
       scaleY: 3,
@@ -73,12 +64,9 @@ describe('createDisplayObject', () => {
     const obj = createDisplayObject(base);
     expect(obj.alpha).toStrictEqual(base.alpha);
     expect(obj.blendMode).toStrictEqual(base.blendMode);
-    expect(obj.cacheAsBitmap).toStrictEqual(base.cacheAsBitmap);
-    expect(obj.cacheAsBitmapMatrix).toStrictEqual(base.cacheAsBitmapMatrix);
     expect(obj.filters).toStrictEqual(base.filters);
     expect(obj.mask).toStrictEqual(base.mask);
     expect(obj.name).toStrictEqual(base.name);
-    expect(obj.opaqueBackground).toStrictEqual(base.opaqueBackground);
     expect(obj.rotation).toStrictEqual(base.rotation);
     expect(obj.scaleX).toStrictEqual(base.scaleX);
     expect(obj.scaleY).toStrictEqual(base.scaleY);
@@ -153,48 +141,6 @@ describe('isDisplayObject', () => {
   });
 });
 
-describe('setCacheAsBitmap', () => {
-  let obj: DisplayObject;
-  beforeEach(() => {
-    obj = createDisplayObject();
-  });
-
-  it('sets cacheAsBitmap', () => {
-    setCacheAsBitmap(obj, true);
-    expect(obj.cacheAsBitmap).toBe(true);
-  });
-
-  it('invalidates appearance', () => {
-    const idBefore = getRuntime_(obj).appearanceID;
-    setCacheAsBitmap(obj, true);
-    expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
-  });
-});
-
-describe('setCacheAsBitmapMatrix', () => {
-  let obj: DisplayObject;
-  beforeEach(() => {
-    obj = createDisplayObject();
-  });
-
-  it('sets cacheAsBitmapMatrix', () => {
-    const m = matrix3x2.create();
-    setCacheAsBitmapMatrix(obj, m);
-    expect(obj.cacheAsBitmapMatrix).toBe(m);
-  });
-
-  it('accepts null', () => {
-    setCacheAsBitmapMatrix(obj, null);
-    expect(obj.cacheAsBitmapMatrix).toBeNull();
-  });
-
-  it('invalidates appearance', () => {
-    const idBefore = getRuntime_(obj).appearanceID;
-    setCacheAsBitmapMatrix(obj, matrix3x2.create());
-    expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
-  });
-});
-
 describe('setFilters', () => {
   let obj: DisplayObject;
   beforeEach(() => {
@@ -239,29 +185,6 @@ describe('setMask', () => {
   it('invalidates appearance', () => {
     const idBefore = getRuntime_(obj).appearanceID;
     setMask(obj, createDisplayObject());
-    expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
-  });
-});
-
-describe('setOpaqueBackground', () => {
-  let obj: DisplayObject;
-  beforeEach(() => {
-    obj = createDisplayObject();
-  });
-
-  it('sets opaqueBackground', () => {
-    setOpaqueBackground(obj, 0xff0000);
-    expect(obj.opaqueBackground).toBe(0xff0000);
-  });
-
-  it('accepts null', () => {
-    setOpaqueBackground(obj, null);
-    expect(obj.opaqueBackground).toBeNull();
-  });
-
-  it('invalidates appearance', () => {
-    const idBefore = getRuntime_(obj).appearanceID;
-    setOpaqueBackground(obj, 0xff0000);
     expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
   });
 });
