@@ -49,6 +49,7 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
   if (data.div === null) {
     data.div = document.createElement('div');
     initDOMElement(data.div);
+    data.div.style.overflow = 'hidden';
   }
 
   const measure = (t: string, format: TextFormat): number => {
@@ -63,6 +64,9 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
     height: LAYOUT_WIDTH,
     measure,
   });
+
+  data.div.style.width = `${_textLayout.textWidth}px`;
+  data.div.style.height = `${_textLayout.textHeight}px`;
 
   let html = '';
   for (const group of _textLayout.groups) {
