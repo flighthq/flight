@@ -12,7 +12,6 @@ describe('createRenderState', () => {
   });
 
   it('initializes default values', () => {
-    expect(state.allowCacheAsBitmap).toStrictEqual(true);
     expect(state.allowFilters).toStrictEqual(true);
     expect(state.allowSmoothing).toStrictEqual(true);
     expect(state.backgroundColor).toStrictEqual(0);
@@ -34,7 +33,6 @@ describe('createRenderState', () => {
 
   it('allows pre-defined values', () => {
     const base = {
-      allowCacheAsBitmap: false,
       allowFilters: false,
       allowSmoothing: false,
       backgroundColor: 0xff,
@@ -54,7 +52,6 @@ describe('createRenderState', () => {
       tempStack: [],
     };
     const obj = createRenderState(base);
-    expect(obj.allowCacheAsBitmap).toStrictEqual(base.allowCacheAsBitmap);
     expect(obj.allowFilters).toStrictEqual(base.allowFilters);
     expect(obj.allowSmoothing).toStrictEqual(base.allowSmoothing);
     expect(obj.backgroundColor).toStrictEqual(base.backgroundColor);

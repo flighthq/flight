@@ -22,8 +22,6 @@ describe('createDisplayObjectRenderNode', () => {
     expect(data.alpha).toStrictEqual(1);
     expect(data.appearanceFrameID).toStrictEqual(-1);
     expect(data.blendMode).toStrictEqual(BlendMode.Normal);
-    expect(data.cacheBitmap).toBeNull();
-    expect(data.cacheAsBitmap).toStrictEqual(false);
     expect(data.colorTransform).toStrictEqual(colorTransform.create());
     expect(data.isMaskFrameID).toStrictEqual(-1);
     expect(data.lastAppearanceID).toStrictEqual(-1);
