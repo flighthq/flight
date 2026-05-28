@@ -18,6 +18,7 @@
     "lint:fix": "eslint -c eslint.config.ts --fix",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
+    "validate": "tsx ./scripts/validate.ts",
     "coverage": "tsx ./scripts/coverage.ts",
     "overview": "tsx ./scripts/overview.ts",
     "test": "npm run test:unit && npm run test:api && npm run test:integration",

@@ -16,6 +16,7 @@
     { "path": "./packages/scenegraph-core" },
     { "path": "./packages/scenegraph-display" },
     { "path": "./packages/scenegraph-sprite" },
+    { "path": "./packages/scenegraph-world" },
     { "path": "./packages/signals" },
     { "path": "./packages/spritesheet" },
     { "path": "./packages/text-layout" },
