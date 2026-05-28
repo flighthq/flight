@@ -1,3 +1,4 @@
+import { createMatrix3x2 } from '@flighthq/geometry';
 import { createGraphNode, getGraphNodeRuntime } from '@flighthq/scenegraph-core';
 import type { GraphNode, GraphNodeRuntime, ImageCacheResult } from '@flighthq/types';
 import { NullGraph } from '@flighthq/types';
@@ -9,7 +10,7 @@ function makeObj(): GraphNode<symbol, object> {
 }
 
 function makeResult(): ImageCacheResult {
-  return { canvas: null, transform: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 } };
+  return { canvas: null, transform: createMatrix3x2() };
 }
 
 describe('getImageCache', () => {
