@@ -1,6 +1,5 @@
-import type { Matrix3x3 } from '@flighthq/types';
-
 import { matrix3x2, matrix3x3, vector3 } from '@flighthq/geometry';
+import type { Matrix3x3 } from '@flighthq/types';
 
 describe('create', () => {
   it('should initialize matrix with provided values', () => {

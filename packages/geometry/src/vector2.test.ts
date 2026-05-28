@@ -1,6 +1,5 @@
-import type { Vector2 } from '@flighthq/types';
-
 import { vector2 } from '@flighthq/geometry';
+import type { Vector2 } from '@flighthq/types';
 
 let pt: Vector2;
 let pt2: Vector2;

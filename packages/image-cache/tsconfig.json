@@ -8,9 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [
-    { "path": "../scenegraph-core" },
-    { "path": "../types" }
-  ],
+  "references": [{ "path": "../scenegraph-core" }, { "path": "../types" }],
   "include": ["src"]
 }

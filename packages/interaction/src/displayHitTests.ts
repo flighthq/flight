@@ -1,6 +1,5 @@
 import type { GraphNode, SpriteBatch } from '@flighthq/types';
 
-import { hitTestLocalBoundsRect } from './hitTests';
 import { defaultSpriteHitTestPoint } from './spriteHitTests';
 
 export function defaultBitmapHitTestPoint(

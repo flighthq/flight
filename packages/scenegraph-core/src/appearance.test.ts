@@ -52,7 +52,7 @@ describe('setBlendMode', () => {
 
 describe('setColorTransform', () => {
   it('sets colorTransform on the node', () => {
-    const ct = {} as any;  
+    const ct = {} as any;
     setColorTransform(node, ct);
     expect(node.colorTransform).toBe(ct);
   });
@@ -72,7 +72,7 @@ describe('setColorTransform', () => {
 
 describe('setShader', () => {
   it('sets shader on the node', () => {
-    const shader = {} as any;  
+    const shader = {} as any;
     setShader(node, shader);
     expect(node.shader).toBe(shader);
   });

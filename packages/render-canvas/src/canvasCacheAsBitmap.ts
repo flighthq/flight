@@ -1,7 +1,14 @@
 import { matrix3x2, rectangle } from '@flighthq/geometry';
 import { calculateBoundsRect } from '@flighthq/scenegraph-core';
 import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
-import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, DisplayObjectRuntime, ImageCacheResult, Matrix3x2 } from '@flighthq/types';
+import type {
+  CanvasRenderState,
+  DisplayObject,
+  DisplayObjectRenderNode,
+  DisplayObjectRuntime,
+  ImageCacheResult,
+  Matrix3x2,
+} from '@flighthq/types';
 
 import { setCanvasTransform } from './canvasTransform';
 

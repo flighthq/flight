@@ -1,6 +1,5 @@
-import type { Vector4 } from '@flighthq/types';
-
 import { vector3, vector4 } from '@flighthq/geometry';
+import type { Vector4 } from '@flighthq/types';
 
 describe('create', () => {
   it('creates a vector4.create with default values', () => {

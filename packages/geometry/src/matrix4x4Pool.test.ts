@@ -1,6 +1,6 @@
+import { matrix4x4 } from '@flighthq/geometry';
 import type { Matrix4x4 } from '@flighthq/types';
 
-import { matrix4x4 } from '@flighthq/geometry';
 import * as matrix4x4Pool from './matrix4x4Pool';
 
 beforeEach(() => {

@@ -104,9 +104,7 @@ describe('bundle size checks', () => {
 
     if (!updateBaseline && threshold != null) {
       const thresholdKB = (threshold / 1024).toFixed(2);
-      expect(gzipSize, `${name} (${render}) exceeded limit (${gzipKB} KB > ${thresholdKB} KB)`).toBeLessThan(
-        threshold,
-      );
+      expect(gzipSize, `${name} (${render}) exceeded limit (${gzipKB} KB > ${thresholdKB} KB)`).toBeLessThan(threshold);
     }
   });
 

@@ -36,9 +36,15 @@ function stripJsonComments(text: string): string {
     if (text[i] === '"') {
       result += text[i++];
       while (i < len) {
-        if (text[i] === '\\') { result += text[i] + text[i + 1]; i += 2; }
-        else if (text[i] === '"') { result += text[i++]; break; }
-        else { result += text[i++]; }
+        if (text[i] === '\\') {
+          result += text[i] + text[i + 1];
+          i += 2;
+        } else if (text[i] === '"') {
+          result += text[i++];
+          break;
+        } else {
+          result += text[i++];
+        }
       }
     } else if (text[i] === '/' && text[i + 1] === '/') {
       while (i < len && text[i] !== '\n') i++;
@@ -80,9 +86,7 @@ const tsconfigPaths = tsconfig?.compilerOptions?.paths ?? {};
 
 const tsconfigBuildPath = join(root, 'tsconfig.build.json');
 const tsconfigBuild = readJson<TsConfigBuild>(tsconfigBuildPath);
-const buildRefs = new Set(
-  (tsconfigBuild?.references ?? []).map((r) => r.path.replace(/^\.\/packages\//, '')),
-);
+const buildRefs = new Set((tsconfigBuild?.references ?? []).map((r) => r.path.replace(/^\.\/packages\//, '')));
 
 // --- discover workspace packages ---
 

@@ -65,7 +65,7 @@ export {
   vec4SetTo,
   vec4Subtract,
 } from './vector4';
-export { X_AXIS as VEC4_X_AXIS, Y_AXIS as VEC4_Y_AXIS, Z_AXIS as VEC4_Z_AXIS, W_UNIT as VEC4_W_UNIT } from './vector4';
+export { W_UNIT as VEC4_W_UNIT, X_AXIS as VEC4_X_AXIS, Y_AXIS as VEC4_Y_AXIS, Z_AXIS as VEC4_Z_AXIS } from './vector4';
 
 import * as _rect from './rectangle';
 export {
@@ -86,10 +86,10 @@ export {
   rectIsFlippedX,
   rectIsFlippedY,
   rectLeft,
-  rectMinX,
-  rectMinY,
   rectMaxX,
   rectMaxY,
+  rectMinX,
+  rectMinY,
   rectNormalize,
   rectNormalizedBottomRight,
   rectNormalizedTopLeft,
@@ -177,6 +177,8 @@ export {
 } from './matrix3x3';
 
 import * as _mat4x4 from './matrix4x4';
+export * as matrix3x2Pool from './matrix3x2Pool';
+export * as matrix3x3Pool from './matrix3x3Pool';
 export {
   createMatrix4x4,
   createMatrix4x4From2D,
@@ -221,16 +223,12 @@ export {
   mat4x4Translate,
   mat4x4Transpose,
 } from './matrix4x4';
-
+export * as matrix4x4Pool from './matrix4x4Pool';
+export * as rectanglePool from './rectanglePool';
+export * from './typedarray';
 export * as vector2Pool from './vector2Pool';
 export * as vector3Pool from './vector3Pool';
 export * as vector4Pool from './vector4Pool';
-export * as rectanglePool from './rectanglePool';
-export * as matrix3x2Pool from './matrix3x2Pool';
-export * as matrix3x3Pool from './matrix3x3Pool';
-export * as matrix4x4Pool from './matrix4x4Pool';
-
-export * from './typedarray';
 
 export const vector2 = {
   create: _vec2.createVector2,

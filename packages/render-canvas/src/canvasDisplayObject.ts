@@ -61,13 +61,21 @@ function drawObject(state: CanvasRenderState, data: DisplayObjectRenderNode): vo
   popMaskObject(state, data);
 }
 
-function popMaskObject(state: CanvasRenderState, data: DisplayObjectRenderNode, handleScrollRect: boolean = true): void {
+function popMaskObject(
+  state: CanvasRenderState,
+  data: DisplayObjectRenderNode,
+  handleScrollRect: boolean = true,
+): void {
   const source = data.source;
   if (source.mask !== null) popCanvasMask(state);
   if (handleScrollRect && source.scrollRect !== null) popCanvasClipRect(state);
 }
 
-function pushMaskObject(state: CanvasRenderState, data: DisplayObjectRenderNode, handleScrollRect: boolean = true): void {
+function pushMaskObject(
+  state: CanvasRenderState,
+  data: DisplayObjectRenderNode,
+  handleScrollRect: boolean = true,
+): void {
   const source = data.source;
   if (handleScrollRect && source.scrollRect != null) pushCanvasClipRect(state, source.scrollRect, data.transform2D);
   if (source.mask !== null) pushCanvasMask(state, getDisplayObjectRenderNode(state, source.mask));

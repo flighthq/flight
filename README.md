@@ -12,28 +12,28 @@ import { createBitmap, createShape, addChild } from '@flighthq/sdk';
 
 Individual packages can be imported directly in library code (the barrel is for examples and apps only).
 
-| Package | Purpose |
-|---|---|
-| `@flighthq/sdk` | Single barrel re-exporting all packages |
-| `@flighthq/types` | Shared TypeScript interfaces and types |
-| `@flighthq/scenegraph-display` | Display objects — containers, bitmaps, shapes, text |
-| `@flighthq/scenegraph-core` | Base scene graph (transform, bounds, graph nodes) |
-| `@flighthq/render-canvas` | HTML5 Canvas renderer |
-| `@flighthq/render-dom` | DOM renderer |
-| `@flighthq/render-webgl` | WebGL renderer |
-| `@flighthq/render-core` | Renderer registration and render node management |
-| `@flighthq/tween` | Tween engine and timers |
-| `@flighthq/tween-easing` | Easing functions (Quad, Elastic, …) |
-| `@flighthq/signals` | Typed event signals |
-| `@flighthq/assets` | Asset loading (images, fonts, audio) |
-| `@flighthq/geometry` | Rectangle, matrix, point types |
-| `@flighthq/materials` | Blend modes, color utilities |
-| `@flighthq/spritesheet` | Spritesheet parsing |
-| `@flighthq/timeline` | Frame-based timeline |
-| `@flighthq/timeline-spritesheet` | Spritesheet animation timeline |
-| `@flighthq/interaction` | Input and hit testing |
-| `@flighthq/text-layout` | Text layout engine |
-| `@flighthq/entity` | Entity/component system |
+| Package                          | Purpose                                             |
+| -------------------------------- | --------------------------------------------------- |
+| `@flighthq/sdk`                  | Single barrel re-exporting all packages             |
+| `@flighthq/types`                | Shared TypeScript interfaces and types              |
+| `@flighthq/scenegraph-display`   | Display objects — containers, bitmaps, shapes, text |
+| `@flighthq/scenegraph-core`      | Base scene graph (transform, bounds, graph nodes)   |
+| `@flighthq/render-canvas`        | HTML5 Canvas renderer                               |
+| `@flighthq/render-dom`           | DOM renderer                                        |
+| `@flighthq/render-webgl`         | WebGL renderer                                      |
+| `@flighthq/render-core`          | Renderer registration and render node management    |
+| `@flighthq/tween`                | Tween engine and timers                             |
+| `@flighthq/tween-easing`         | Easing functions (Quad, Elastic, …)                 |
+| `@flighthq/signals`              | Typed event signals                                 |
+| `@flighthq/assets`               | Asset loading (images, fonts, audio)                |
+| `@flighthq/geometry`             | Rectangle, matrix, point types                      |
+| `@flighthq/materials`            | Blend modes, color utilities                        |
+| `@flighthq/spritesheet`          | Spritesheet parsing                                 |
+| `@flighthq/timeline`             | Frame-based timeline                                |
+| `@flighthq/timeline-spritesheet` | Spritesheet animation timeline                      |
+| `@flighthq/interaction`          | Input and hit testing                               |
+| `@flighthq/text-layout`          | Text layout engine                                  |
+| `@flighthq/entity`               | Entity/component system                             |
 
 ## Getting started
 
@@ -121,10 +121,7 @@ label.data.textFormat = { font: font.name, size: 32, color: 0xffffff };
 ### Tweens
 
 ```ts
-import {
-  createTweenManager, createTween, updateTweens,
-  connectSignal, invalidateRender, Quad,
-} from '@flighthq/sdk';
+import { createTweenManager, createTween, updateTweens, connectSignal, invalidateRender, Quad } from '@flighthq/sdk';
 
 const manager = createTweenManager();
 
@@ -152,19 +149,19 @@ setFilters(sprite, [createBlurFilter(8, 8)]);
 
 Examples live in `examples/`. Each is a standalone Vite app that can target canvas, DOM, or WebGL via `RENDER` env var.
 
-| Example | Description |
-|---|---|
-| `displayingabitmap` | Load and display a bitmap |
-| `drawingshapes` | Primitives — rect, circle, ellipse, polygon, lines |
-| `addingtext` | Text with a custom font |
-| `addinganimation` | Tween with easing |
-| `tweenexample` | Animated circles using tweens and timers |
-| `animatedsprite` | Spritesheet animation |
-| `bunnymark` | Performance benchmark (bitmaps) |
-| `nyancat` | GIF-style animation |
-| `piratepig` | Match-3 game with tweens, audio, and filters |
-| `simplesprite` | Minimal sprite example |
-| `usingtilemap` | Tile map rendering |
+| Example             | Description                                        |
+| ------------------- | -------------------------------------------------- |
+| `displayingabitmap` | Load and display a bitmap                          |
+| `drawingshapes`     | Primitives — rect, circle, ellipse, polygon, lines |
+| `addingtext`        | Text with a custom font                            |
+| `addinganimation`   | Tween with easing                                  |
+| `tweenexample`      | Animated circles using tweens and timers           |
+| `animatedsprite`    | Spritesheet animation                              |
+| `bunnymark`         | Performance benchmark (bitmaps)                    |
+| `nyancat`           | GIF-style animation                                |
+| `piratepig`         | Match-3 game with tweens, audio, and filters       |
+| `simplesprite`      | Minimal sprite example                             |
+| `usingtilemap`      | Tile map rendering                                 |
 
 Build a specific example:
 

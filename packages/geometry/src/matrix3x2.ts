@@ -243,7 +243,12 @@ export function mat3x2InverseTransformPoint(
   mat3x2InverseTransformPointXY(out, matrix, point.x, point.y);
 }
 
-export function mat3x2InverseTransformPointXY(out: Vector2Like, source: Readonly<Matrix3x2Like>, x: number, y: number): void {
+export function mat3x2InverseTransformPointXY(
+  out: Vector2Like,
+  source: Readonly<Matrix3x2Like>,
+  x: number,
+  y: number,
+): void {
   const norm = source.a * source.d - source.b * source.c;
   if (norm === 0) {
     out.x = -source.tx;
@@ -403,7 +408,15 @@ export function mat3x2SetGradientTransform(
   out.ty = ty + height / 2;
 }
 
-export function mat3x2SetTo(out: Matrix3x2Like, a: number, b: number, c: number, d: number, tx: number, ty: number): void {
+export function mat3x2SetTo(
+  out: Matrix3x2Like,
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  tx: number,
+  ty: number,
+): void {
   out.a = a;
   out.b = b;
   out.c = c;
@@ -453,7 +466,11 @@ export function mat3x2SetTransform(
  * Transforms a point using the given matrix.
  * @see mat3x2TransformPointXY
  */
-export function mat3x2TransformPoint(out: Vector2Like, matrix: Readonly<Matrix3x2Like>, point: Readonly<Vector2Like>): void {
+export function mat3x2TransformPoint(
+  out: Vector2Like,
+  matrix: Readonly<Matrix3x2Like>,
+  point: Readonly<Vector2Like>,
+): void {
   mat3x2TransformPointXY(out, matrix, point.x, point.y);
 }
 
@@ -597,7 +614,12 @@ export function mat3x2TranslateUsingVector(
   mat3x2TranslateUsingVectorXY(out, matrix, vector.x, vector.y);
 }
 
-export function mat3x2TranslateUsingVectorXY(out: Matrix3x2Like, source: Readonly<Matrix3x2Like>, x: number, y: number) {
+export function mat3x2TranslateUsingVectorXY(
+  out: Matrix3x2Like,
+  source: Readonly<Matrix3x2Like>,
+  x: number,
+  y: number,
+) {
   out.tx = source.tx + source.a * x + source.c * y;
   out.ty = source.ty + source.b * x + source.d * y;
 }

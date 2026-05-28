@@ -104,7 +104,12 @@ export function rectIntersection(out: RectangleLike, a: Readonly<RectangleLike>,
 }
 
 export function rectIntersects(a: Readonly<RectangleLike>, b: Readonly<RectangleLike>): boolean {
-  return !(rectMaxX(a) <= rectMinX(b) || rectMinX(a) >= rectMaxX(b) || rectMaxY(a) <= rectMinY(b) || rectMinY(a) >= rectMaxY(b));
+  return !(
+    rectMaxX(a) <= rectMinX(b) ||
+    rectMinX(a) >= rectMaxX(b) ||
+    rectMaxY(a) <= rectMinY(b) ||
+    rectMinY(a) >= rectMaxY(b)
+  );
 }
 
 /**
@@ -170,7 +175,11 @@ export function rectOffset(out: RectangleLike, source: Readonly<RectangleLike>, 
   out.height = source.height;
 }
 
-export function rectOffsetPoint(out: RectangleLike, source: Readonly<RectangleLike>, point: Readonly<Vector2Like>): void {
+export function rectOffsetPoint(
+  out: RectangleLike,
+  source: Readonly<RectangleLike>,
+  point: Readonly<Vector2Like>,
+): void {
   out.x = source.x + point.x;
   out.y = source.y + point.y;
   out.width = source.width;

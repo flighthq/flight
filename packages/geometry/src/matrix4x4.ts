@@ -60,7 +60,11 @@ export function createMatrix4x4(
  *
  * out = source · other
  */
-export function mat4x4Append(out: Matrix4x4Like, source: Readonly<Matrix4x4Like>, other: Readonly<Matrix4x4Like>): void {
+export function mat4x4Append(
+  out: Matrix4x4Like,
+  source: Readonly<Matrix4x4Like>,
+  other: Readonly<Matrix4x4Like>,
+): void {
   // world-space append
   mat4x4Multiply(out, source, other);
 }
@@ -564,7 +568,11 @@ export function mat4x4Position(out: Vector3Like, source: Readonly<Matrix4x4Like>
  *
  * out = other · source
  */
-export function mat4x4Prepend(out: Matrix4x4Like, source: Readonly<Matrix4x4Like>, other: Readonly<Matrix4x4Like>): void {
+export function mat4x4Prepend(
+  out: Matrix4x4Like,
+  source: Readonly<Matrix4x4Like>,
+  other: Readonly<Matrix4x4Like>,
+): void {
   mat4x4Multiply(out, other, source);
 }
 
@@ -664,7 +672,13 @@ export function mat4x4Rotate(
  *
  * Translation is preserved.
  */
-export function mat4x4Scale(out: Matrix4x4Like, source: Readonly<Matrix4x4Like>, sx: number, sy: number, sz: number): void {
+export function mat4x4Scale(
+  out: Matrix4x4Like,
+  source: Readonly<Matrix4x4Like>,
+  sx: number,
+  sy: number,
+  sz: number,
+): void {
   const a = source.m;
   const o = out.m;
 
@@ -696,7 +710,15 @@ export function mat4x4Set(out: Matrix4x4Like, row: number, column: number, value
 /**
  * Resets the current matrix using two-dimensional transform values
  **/
-export function mat4x4Set2D(out: Matrix4x4Like, a: number, b: number, c: number, d: number, tx?: number, ty?: number): void {
+export function mat4x4Set2D(
+  out: Matrix4x4Like,
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  tx?: number,
+  ty?: number,
+): void {
   const _out = out.m;
   tx = tx ?? 0;
   ty = ty ?? 0;
@@ -763,7 +785,13 @@ export function mat4x4SetOrtho(
 /**
  * Initializes a matrix with values for a perspective projection
  **/
-export function mat4x4SetPerspective(out: Matrix4x4Like, fov: number, aspect: number, zNear: number, zFar: number): void {
+export function mat4x4SetPerspective(
+  out: Matrix4x4Like,
+  fov: number,
+  aspect: number,
+  zNear: number,
+  zFar: number,
+): void {
   if (aspect > -0.0000001 && aspect < 0.0000001) {
     throw new Error('Aspect ratio may not be 0');
   }
@@ -843,7 +871,11 @@ export function mat4x4SetTo(
 /**
  * Transforms a point using this matrix, ignoring the translation of the matrix
  **/
-export function mat4x4TransformPoint(out: Vector3Like, source: Readonly<Matrix4x4Like>, point: Readonly<Vector3Like>): void {
+export function mat4x4TransformPoint(
+  out: Vector3Like,
+  source: Readonly<Matrix4x4Like>,
+  point: Readonly<Vector3Like>,
+): void {
   const _source = source.m;
   const x = point.x,
     y = point.y,
