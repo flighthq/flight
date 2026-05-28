@@ -45,8 +45,9 @@ export function updateWebGLTexture(
     gl.bindTexture(gl.TEXTURE_2D, texture);
     state.currentTexture = texture;
   }
-  // Canvas 2D stores premultiplied pixels — upload without extra premultiplication.
-  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+  // Browsers pass canvas pixel data to WebGL as straight (unmultiplied) alpha.
+  // Premultiply on upload so the texture matches the (ONE, ONE_MINUS_SRC_ALPHA) blend mode.
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
 }
 
