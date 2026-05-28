@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/signals",
+  "name": "@flighthq/image-cache",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -21,10 +21,11 @@
     "test:run": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
+    "@flighthq/scenegraph-core": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Strictly-typed signals and slots for event dispatching"
+  "description": "Image cache subsystem — WeakMap-keyed per-display-object off-screen canvas with opaqueBackground and matrix options"
 }
