@@ -1,7 +1,7 @@
 import { createEntity } from '@flighthq/entity';
 import type { Rectangle, RectangleLike, Vector2Like } from '@flighthq/types';
 
-export function create(x?: number, y?: number, width?: number, height?: number): Rectangle {
+export function createRectangle(x?: number, y?: number, width?: number, height?: number): Rectangle {
   return createEntity({
     x: x ?? 0,
     y: y ?? 0,
@@ -10,23 +10,23 @@ export function create(x?: number, y?: number, width?: number, height?: number):
   });
 }
 
-export function bottom(source: Readonly<RectangleLike>): number {
+export function rectBottom(source: Readonly<RectangleLike>): number {
   return source.y + source.height;
 }
 
 /**
  * Sets a Vector2Like object with bottom-right coordinates
  */
-export function bottomRight(out: Vector2Like, source: Readonly<RectangleLike>): void {
+export function rectBottomRight(out: Vector2Like, source: Readonly<RectangleLike>): void {
   out.x = source.x + source.width;
   out.y = source.y + source.height;
 }
 
-export function clone(source: Readonly<RectangleLike>): Rectangle {
-  return create(source.x, source.y, source.width, source.height);
+export function rectClone(source: Readonly<RectangleLike>): Rectangle {
+  return createRectangle(source.x, source.y, source.width, source.height);
 }
 
-export function contains(source: Readonly<RectangleLike>, x: number, y: number): boolean {
+export function rectContains(source: Readonly<RectangleLike>, x: number, y: number): boolean {
   const x0 = Math.min(source.x, source.x + source.width);
   const x1 = Math.max(source.x, source.x + source.width);
   const y0 = Math.min(source.y, source.y + source.height);
@@ -34,11 +34,11 @@ export function contains(source: Readonly<RectangleLike>, x: number, y: number):
   return x >= x0 && x < x1 && y >= y0 && y < y1;
 }
 
-export function containsPoint(source: Readonly<RectangleLike>, vector: Readonly<Vector2Like>): boolean {
-  return contains(source, vector.x, vector.y);
+export function rectContainsPoint(source: Readonly<RectangleLike>, vector: Readonly<Vector2Like>): boolean {
+  return rectContains(source, vector.x, vector.y);
 }
 
-export function containsRect(source: Readonly<RectangleLike>, other: Readonly<RectangleLike>): boolean {
+export function rectContainsRect(source: Readonly<RectangleLike>, other: Readonly<RectangleLike>): boolean {
   const sx0 = Math.min(source.x, source.x + source.width);
   const sx1 = Math.max(source.x, source.x + source.width);
   const sy0 = Math.min(source.y, source.y + source.height);
@@ -53,7 +53,7 @@ export function containsRect(source: Readonly<RectangleLike>, other: Readonly<Re
   return ox0 >= sx0 && oy0 >= sy0 && ox1 <= sx1 && oy1 <= sy1;
 }
 
-export function copy(out: RectangleLike, source: Readonly<RectangleLike>): void {
+export function rectCopy(out: RectangleLike, source: Readonly<RectangleLike>): void {
   if (out !== source) {
     out.x = source.x;
     out.y = source.y;
@@ -62,7 +62,7 @@ export function copy(out: RectangleLike, source: Readonly<RectangleLike>): void 
   }
 }
 
-export function equals(
+export function rectEquals(
   a: Readonly<RectangleLike> | null | undefined,
   b: Readonly<RectangleLike> | null | undefined,
 ): boolean {
@@ -71,29 +71,29 @@ export function equals(
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
 
-export function inflate(out: RectangleLike, source: Readonly<RectangleLike>, dx: number, dy: number): void {
+export function rectInflate(out: RectangleLike, source: Readonly<RectangleLike>, dx: number, dy: number): void {
   out.x = source.x - dx;
   out.width = source.width + dx * 2;
   out.y = source.y - dy;
   out.height = source.height + dy * 2;
 }
 
-export function inflatePoint(
+export function rectInflatePoint(
   out: RectangleLike,
   sourceRect: Readonly<RectangleLike>,
   sourceVec2: Readonly<Vector2Like>,
 ): void {
-  inflate(out, sourceRect, sourceVec2.x, sourceVec2.y);
+  rectInflate(out, sourceRect, sourceVec2.x, sourceVec2.y);
 }
 
-export function intersection(out: RectangleLike, a: Readonly<RectangleLike>, b: Readonly<RectangleLike>): void {
-  const x0 = Math.max(minX(a), minX(b));
-  const x1 = Math.min(maxX(a), maxX(b));
-  const y0 = Math.max(minY(a), minY(b));
-  const y1 = Math.min(maxY(a), maxY(b));
+export function rectIntersection(out: RectangleLike, a: Readonly<RectangleLike>, b: Readonly<RectangleLike>): void {
+  const x0 = Math.max(rectMinX(a), rectMinX(b));
+  const x1 = Math.min(rectMaxX(a), rectMaxX(b));
+  const y0 = Math.max(rectMinY(a), rectMinY(b));
+  const y1 = Math.min(rectMaxY(a), rectMaxY(b));
 
   if (x1 <= x0 || y1 <= y0) {
-    setEmpty(out);
+    rectSetEmpty(out);
     return;
   }
 
@@ -103,8 +103,8 @@ export function intersection(out: RectangleLike, a: Readonly<RectangleLike>, b: 
   out.height = y1 - y0;
 }
 
-export function intersects(a: Readonly<RectangleLike>, b: Readonly<RectangleLike>): boolean {
-  return !(maxX(a) <= minX(b) || minX(a) >= maxX(b) || maxY(a) <= minY(b) || minY(a) >= maxY(b));
+export function rectIntersects(a: Readonly<RectangleLike>, b: Readonly<RectangleLike>): boolean {
+  return !(rectMaxX(a) <= rectMinX(b) || rectMinX(a) >= rectMaxX(b) || rectMaxY(a) <= rectMinY(b) || rectMinY(a) >= rectMaxY(b));
 }
 
 /**
@@ -112,115 +112,115 @@ export function intersects(a: Readonly<RectangleLike>, b: Readonly<RectangleLike
  *
  * Note: Negative width or height is considered valid
  */
-export function isEmpty(source: Readonly<RectangleLike>): boolean {
+export function rectIsEmpty(source: Readonly<RectangleLike>): boolean {
   return source.width === 0 || source.height === 0;
 }
 
-export function isFlippedX(source: Readonly<RectangleLike>): boolean {
+export function rectIsFlippedX(source: Readonly<RectangleLike>): boolean {
   return source.width < 0;
 }
 
-export function isFlippedY(source: Readonly<RectangleLike>): boolean {
+export function rectIsFlippedY(source: Readonly<RectangleLike>): boolean {
   return source.height < 0;
 }
 
-export function left(source: Readonly<RectangleLike>): number {
+export function rectLeft(source: Readonly<RectangleLike>): number {
   return source.x;
 }
 
-export function minX(source: Readonly<RectangleLike>): number {
+export function rectMinX(source: Readonly<RectangleLike>): number {
   return Math.min(source.x, source.x + source.width);
 }
 
-export function minY(source: Readonly<RectangleLike>): number {
+export function rectMinY(source: Readonly<RectangleLike>): number {
   return Math.min(source.y, source.y + source.height);
 }
 
-export function maxX(source: Readonly<RectangleLike>): number {
+export function rectMaxX(source: Readonly<RectangleLike>): number {
   return Math.max(source.x, source.x + source.width);
 }
 
-export function maxY(source: Readonly<RectangleLike>): number {
+export function rectMaxY(source: Readonly<RectangleLike>): number {
   return Math.max(source.y, source.y + source.height);
 }
 
-export function normalize(out: RectangleLike, source: Readonly<RectangleLike>): void {
-  const _minX = minX(source);
-  const _minY = minY(source);
+export function rectNormalize(out: RectangleLike, source: Readonly<RectangleLike>): void {
+  const _minX = rectMinX(source);
+  const _minY = rectMinY(source);
   out.x = _minX;
   out.y = _minY;
-  out.width = maxX(source) - _minX;
-  out.height = maxY(source) - _minY;
+  out.width = rectMaxX(source) - _minX;
+  out.height = rectMaxY(source) - _minY;
 }
 
-export function normalizedBottomRight(out: Vector2Like, source: Readonly<RectangleLike>): void {
-  out.x = maxX(source);
-  out.y = maxY(source);
+export function rectNormalizedBottomRight(out: Vector2Like, source: Readonly<RectangleLike>): void {
+  out.x = rectMaxX(source);
+  out.y = rectMaxY(source);
 }
 
-export function normalizedTopLeft(out: Vector2Like, source: Readonly<RectangleLike>): void {
-  out.x = minX(source);
-  out.y = minY(source);
+export function rectNormalizedTopLeft(out: Vector2Like, source: Readonly<RectangleLike>): void {
+  out.x = rectMinX(source);
+  out.y = rectMinY(source);
 }
 
-export function offset(out: RectangleLike, source: Readonly<RectangleLike>, dx: number, dy: number): void {
+export function rectOffset(out: RectangleLike, source: Readonly<RectangleLike>, dx: number, dy: number): void {
   out.x = source.x + dx;
   out.y = source.y + dy;
   out.width = source.width;
   out.height = source.height;
 }
 
-export function offsetPoint(out: RectangleLike, source: Readonly<RectangleLike>, point: Readonly<Vector2Like>): void {
+export function rectOffsetPoint(out: RectangleLike, source: Readonly<RectangleLike>, point: Readonly<Vector2Like>): void {
   out.x = source.x + point.x;
   out.y = source.y + point.y;
   out.width = source.width;
   out.height = source.height;
 }
 
-export function right(source: Readonly<RectangleLike>): number {
+export function rectRight(source: Readonly<RectangleLike>): number {
   return source.x + source.width;
 }
 
-export function setBottom(target: RectangleLike, value: number): void {
+export function rectSetBottom(target: RectangleLike, value: number): void {
   target.height = value - target.y;
 }
 
-export function setBottomRight(target: RectangleLike, point: Readonly<Vector2Like>): void {
+export function rectSetBottomRight(target: RectangleLike, point: Readonly<Vector2Like>): void {
   target.width = point.x - target.x;
   target.height = point.y - target.y;
 }
 
-export function setEmpty(out: RectangleLike): void {
+export function rectSetEmpty(out: RectangleLike): void {
   out.x = out.y = out.width = out.height = 0;
 }
 
-export function setLeft(target: RectangleLike, value: number): void {
+export function rectSetLeft(target: RectangleLike, value: number): void {
   target.width -= value - target.x;
   target.x = value;
 }
 
-export function setRight(target: RectangleLike, value: number): void {
+export function rectSetRight(target: RectangleLike, value: number): void {
   target.width = value - target.x;
 }
 
-export function setSize(out: RectangleLike, size: Readonly<Vector2Like>): void {
+export function rectSetSize(out: RectangleLike, size: Readonly<Vector2Like>): void {
   out.width = size.x;
   out.height = size.y;
 }
 
-export function setTo(out: RectangleLike, x: number, y: number, width: number, height: number): void {
+export function rectSetTo(out: RectangleLike, x: number, y: number, width: number, height: number): void {
   out.x = x;
   out.y = y;
   out.width = width;
   out.height = height;
 }
 
-export function setTop(target: RectangleLike, value: number): void {
+export function rectSetTop(target: RectangleLike, value: number): void {
   target.height -= value - target.y;
   target.y = value;
 }
 
-export function setTopLeft(out: RectangleLike, point: Readonly<Vector2Like>): void {
+export function rectSetTopLeft(out: RectangleLike, point: Readonly<Vector2Like>): void {
   out.x = point.x;
   out.y = point.y;
 }
@@ -228,24 +228,27 @@ export function setTopLeft(out: RectangleLike, point: Readonly<Vector2Like>): vo
 /**
  * Sets a Vector2Like object to width and height
  */
-export function size(out: Vector2Like, source: Readonly<RectangleLike>): void {
+export function rectSize(out: Vector2Like, source: Readonly<RectangleLike>): void {
   out.x = source.width;
   out.y = source.height;
 }
 
-export function top(source: Readonly<RectangleLike>): number {
+export function rectTop(source: Readonly<RectangleLike>): number {
   return source.y;
 }
 
 /**
  * Sets a Vector2Like object with top-left coordinates
  */
-export function topLeft(out: Vector2Like, source: Readonly<RectangleLike>): void {
+export function rectTopLeft(out: Vector2Like, source: Readonly<RectangleLike>): void {
   out.x = source.x;
   out.y = source.y;
 }
 
-export function union(out: RectangleLike, source: Readonly<RectangleLike>, other: Readonly<RectangleLike>): void {
+// Aliases for pool compatibility
+export { createRectangle as create };
+
+export function rectUnion(out: RectangleLike, source: Readonly<RectangleLike>, other: Readonly<RectangleLike>): void {
   const { x: sx, y: sy, width: sw, height: sh } = source;
   const { x: ox, y: oy, width: ow, height: oh } = other;
   const sEmpty = sw === 0 || sh === 0;

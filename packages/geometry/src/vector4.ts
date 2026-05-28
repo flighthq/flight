@@ -1,10 +1,10 @@
 import { createEntity } from '@flighthq/entity';
 import type { Vector3Like, Vector4, Vector4Like } from '@flighthq/types';
 
-export const X_AXIS: Readonly<Vector4> = create(1, 0, 0, 0);
-export const Y_AXIS: Readonly<Vector4> = create(0, 1, 0, 0);
-export const Z_AXIS: Readonly<Vector4> = create(0, 0, 1, 0);
-export const W_UNIT: Readonly<Vector4> = create(0, 0, 0, 1);
+export const X_AXIS: Readonly<Vector4> = createVector4(1, 0, 0, 0);
+export const Y_AXIS: Readonly<Vector4> = createVector4(0, 1, 0, 0);
+export const Z_AXIS: Readonly<Vector4> = createVector4(0, 0, 1, 0);
+export const W_UNIT: Readonly<Vector4> = createVector4(0, 0, 0, 1);
 
 /**
  * The Vector4Like class represents a vector or point in four-dimensional space using the
@@ -24,7 +24,7 @@ export const W_UNIT: Readonly<Vector4> = create(0, 0, 0, 1);
  * - `length = Math.sqrt(x ** 2 + y ** 2 + z ** 2 + w ** 2);`
  * - `lengthSquared = x ** 2 + y ** 2 + z ** 2 + w ** 2;`
  */
-export function create(x?: number, y?: number, z?: number, w?: number): Vector4 {
+export function createVector4(x?: number, y?: number, z?: number, w?: number): Vector4 {
   return createEntity({ x: x ?? 0, y: y ?? 0, z: z ?? 0, w: w ?? 0 });
 }
 
@@ -32,7 +32,7 @@ export function create(x?: number, y?: number, z?: number, w?: number): Vector4 
  * Adds the x, y, z and w components of two vector objects
  * and writes to out.
  */
-export function add(out: Vector4Like, a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): void {
+export function vec4Add(out: Vector4Like, a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): void {
   out.x = a.x + b.x;
   out.y = a.y + b.y;
   out.z = a.z + b.z;
@@ -44,25 +44,25 @@ export function add(out: Vector4Like, a: Readonly<Vector4Like>, b: Readonly<Vect
  * smallest radian the first Vector4Like object rotates until it aligns with the
  * second Vector4Like object.
  **/
-export function angleBetween(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
-  const la = length(a);
-  const lb = length(b);
+export function vec4AngleBetween(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
+  const la = vec4Length(a);
+  const lb = vec4Length(b);
 
   if (la === 0 || lb === 0) return NaN; // undefined angle
 
-  const _dot = dot(a, b) / (la * lb);
+  const _dot = vec4Dot(a, b) / (la * lb);
   // clamp dot to [-1, 1] to avoid floating point errors
   return Math.acos(Math.min(1, Math.max(-1, _dot)));
 }
 
-export function clone(source: Readonly<Vector4Like>): Vector4 {
-  return create(source.x, source.y, source.z, source.w);
+export function vec4Clone(source: Readonly<Vector4Like>): Vector4 {
+  return createVector4(source.x, source.y, source.z, source.w);
 }
 
 /**
  * Copies the x, y, z and w components of another vector.
  */
-export function copy(out: Vector4Like, source: Readonly<Vector4Like>): void {
+export function vec4Copy(out: Vector4Like, source: Readonly<Vector4Like>): void {
   out.x = source.x;
   out.y = source.y;
   out.z = source.z;
@@ -72,7 +72,7 @@ export function copy(out: Vector4Like, source: Readonly<Vector4Like>): void {
 /**
  * Returns the distance between two Vector4Like objects.
  **/
-export function distance(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
+export function vec4Distance(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
   const x: number = b.x - a.x;
   const y: number = b.y - a.y;
   const z: number = b.z - a.z;
@@ -86,7 +86,7 @@ export function distance(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): nu
  *
  * This avoids Math.sqrt for better performance.
  **/
-export function distanceSquared(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
+export function vec4DistanceSquared(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
   const x: number = b.x - a.x;
   const y: number = b.y - a.y;
   const z: number = b.z - a.z;
@@ -102,11 +102,11 @@ export function distanceSquared(a: Readonly<Vector4Like>, b: Readonly<Vector4Lik
  * one. They remove the length of the vector as a factor in the result. You can use
  * the `normalize()` method to convert a vector to a unit vector.
  **/
-export function dot(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
+export function vec4Dot(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
   return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 }
 
-export function equals(
+export function vec4Equals(
   a: Readonly<Vector4Like> | null | undefined,
   b: Readonly<Vector4Like> | null | undefined,
 ): boolean {
@@ -119,7 +119,7 @@ export function equals(
  * the object's x, y, z and w coordinates. A unit vector has
  * a length or magnitude of one.
  **/
-export function length(source: Readonly<Vector4Like>): number {
+export function vec4Length(source: Readonly<Vector4Like>): number {
   return Math.sqrt(source.x ** 2 + source.y ** 2 + source.z ** 2 + source.w ** 2);
 }
 
@@ -129,7 +129,7 @@ export function length(source: Readonly<Vector4Like>): number {
  * method whenever possible instead of the slower `Math.sqrt()` method call of the
  * `Vector4Like.length()` method.
  **/
-export function lengthSquared(source: Readonly<Vector4Like>): number {
+export function vec4LengthSquared(source: Readonly<Vector4Like>): number {
   return source.x ** 2 + source.y ** 2 + source.z ** 2 + source.w ** 2;
 }
 
@@ -140,7 +140,7 @@ export function lengthSquared(source: Readonly<Vector4Like>): number {
  * The two Vector4Like objects are nearly equal if the value of all the elements of the two
  * vertices are equal, or the result of the comparison is within the tolerance range.
  **/
-export function nearEquals(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>, tolerance: number = 1e-6): boolean {
+export function vec4NearEquals(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>, tolerance: number = 1e-6): boolean {
   return (
     Math.abs(a.x - b.x) < tolerance &&
     Math.abs(a.y - b.y) < tolerance &&
@@ -154,7 +154,7 @@ export function nearEquals(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>, t
  * considered the opposite of the original object. The value of the `x`, `y`, and `z`
  * properties of the current Vector4Like object is changed to -x, -y, and -z.
  **/
-export function negate(out: Vector4Like, source: Readonly<Vector4Like>): void {
+export function vec4Negate(out: Vector4Like, source: Readonly<Vector4Like>): void {
   out.x = source.x * -1;
   out.y = source.y * -1;
   out.z = source.z * -1;
@@ -167,8 +167,8 @@ export function negate(out: Vector4Like, source: Readonly<Vector4Like>): void {
  *
  * Returns the original length.
  **/
-export function normalize(out: Vector4Like, source: Readonly<Vector4Like>): number {
-  const l = length(source);
+export function vec4Normalize(out: Vector4Like, source: Readonly<Vector4Like>): number {
+  const l = vec4Length(source);
 
   if (l !== 0) {
     out.x = source.x / l;
@@ -184,7 +184,7 @@ export function normalize(out: Vector4Like, source: Readonly<Vector4Like>): numb
  * Divides the value of the `x`, `y`, and `z` properties of the current Vector4Like
  * object by the value of its `w` property.
  **/
-export function project(out: Vector3Like, source: Readonly<Vector4Like>): void {
+export function vec4Project(out: Vector3Like, source: Readonly<Vector4Like>): void {
   out.x = source.x / source.w;
   out.y = source.y / source.w;
   out.z = source.z / source.w;
@@ -194,7 +194,7 @@ export function project(out: Vector3Like, source: Readonly<Vector4Like>): void {
  * Scales the current Vector4Like object by a scalar, a magnitude. The Vector4Like object's
  * x, y, z and w elements are multiplied by the provided scalar number.
  **/
-export function scale(out: Vector4Like, source: Readonly<Vector4Like>, scalar: number): void {
+export function vec4Scale(out: Vector4Like, source: Readonly<Vector4Like>, scalar: number): void {
   out.x = source.x * scalar;
   out.y = source.y * scalar;
   out.z = source.z * scalar;
@@ -204,7 +204,7 @@ export function scale(out: Vector4Like, source: Readonly<Vector4Like>, scalar: n
 /**
  * Sets the members of Vector4Like to the specified values
  **/
-export function setTo(out: Vector4Like, x: number, y: number, z: number, w: number): void {
+export function vec4SetTo(out: Vector4Like, x: number, y: number, z: number, w: number): void {
   out.x = x;
   out.y = y;
   out.z = z;
@@ -215,9 +215,12 @@ export function setTo(out: Vector4Like, x: number, y: number, z: number, w: numb
  * Subtracts the value of the x, y, z and w elements of the current Vector4Like object
  * from the values of the x, y, z and w elements of another Vector4Like object.
  **/
-export function subtract(out: Vector4Like, source: Readonly<Vector4Like>, other: Readonly<Vector4Like>): void {
+export function vec4Subtract(out: Vector4Like, source: Readonly<Vector4Like>, other: Readonly<Vector4Like>): void {
   out.x = source.x - other.x;
   out.y = source.y - other.y;
   out.z = source.z - other.z;
   out.w = source.w - other.w;
 }
+
+// Aliases for pool compatibility
+export { createVector4 as create };
