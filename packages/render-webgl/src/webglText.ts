@@ -74,7 +74,9 @@ export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRende
     offCtx.fillStyle = colorToHex(group.format.color ?? 0);
     const slice = text.substring(group.startIndex, group.endIndex);
     const x = group.offsetX;
-    const y = group.offsetY + group.ascent;
+    // group.ascent = font-size; CSS places the alphabetic baseline at ~80% of the em-size.
+    // Subtract 20% so the rasterised texture aligns with the DOM renderer's natural baseline.
+    const y = group.offsetY + group.ascent * 0.815;
     offCtx.fillText(slice, x, y);
   }
 
