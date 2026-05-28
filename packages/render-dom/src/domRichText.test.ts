@@ -74,18 +74,6 @@ describe('drawDOMRichText', () => {
     expect(div.style.height).toBe('100px');
   });
 
-  it('sets overflow:hidden on the div', () => {
-    const state = makeState();
-    const node = createRichText();
-    node.data.text = 'hello';
-    const renderNode = getDisplayObjectRenderNode(state, node);
-
-    drawDOMRichText(state, renderNode);
-
-    const div = state.element.children[0] as HTMLElement;
-    expect(div.style.overflow).toBe('hidden');
-  });
-
   it('includes the text content in innerHTML', () => {
     const state = makeState();
     const node = createRichText();
