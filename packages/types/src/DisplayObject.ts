@@ -10,18 +10,14 @@ import type {
 import type { HasAppearance } from './HasAppearance';
 import type { HasBoundsRect, HasBoundsRectRuntime } from './HasBoundsRect';
 import type { HasTransform2D, HasTransform2DRuntime } from './HasTransform2D';
-import type { Matrix3x2 } from './Matrix3x2';
 import type { Rectangle } from './Rectangle';
 
 export type DisplayObject = GraphNode<typeof DisplayGraph, DisplayObjectTraits> & DisplayObjectTraits;
 
 export interface DisplayObjectTraits extends HasAppearance, HasBoundsRect, HasTransform2D {
-  cacheAsBitmap: boolean;
-  cacheAsBitmapMatrix: Matrix3x2 | null;
   data: DisplayObjectData | null;
   filters: BitmapFilter[] | null;
   mask: DisplayObject | null;
-  opaqueBackground: number | null;
   scrollRect: Rectangle | null;
 }
 

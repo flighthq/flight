@@ -8,7 +8,6 @@ import type { RenderNode } from './RenderNode';
 import type { BitmapShader } from './Shader';
 
 export interface RenderState extends Entity {
-  allowCacheAsBitmap: boolean;
   allowFilters: boolean;
   allowSmoothing: boolean;
   readonly backgroundColor: number;
