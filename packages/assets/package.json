@@ -32,9 +32,9 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
-    "test": "vitest",
-    "test:watch": "vitest --watch",
-    "test:run": "vitest run"
+    "test": "vitest --config vitest.config.ts",
+    "test:watch": "vitest --watch --config vitest.config.ts",
+    "test:run": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
     "@flighthq/entity": "*",
