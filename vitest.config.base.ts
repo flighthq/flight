@@ -3,7 +3,7 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
+  plugins: [tsconfigPaths({ root: __dirname })],
   test: {
     globals: true,
     setupFiles: [path.resolve(__dirname, 'vitest.setup.ts')],
