@@ -1,4 +1,4 @@
-import { matrix3x2 } from '@flighthq/geometry';
+import { createMatrix3x2 } from '@flighthq/geometry';
 import { colorTransform } from '@flighthq/materials';
 import { BlendMode, type RenderState } from '@flighthq/types';
 
@@ -47,7 +47,7 @@ describe('createRenderState', () => {
       renderBlendMode: BlendMode.Multiply,
       renderColorTransform: colorTransform.create(),
       renderShader: null,
-      renderTransform2D: matrix3x2.create(),
+      renderTransform2D: createMatrix3x2(),
       roundPixels: true,
       tempStack: [],
     };

@@ -1,4 +1,4 @@
-import { rectangle } from '@flighthq/geometry';
+import { rectSetTo } from '@flighthq/geometry';
 import { addChild, getLocalBoundsRect } from '@flighthq/scenegraph-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import { connectSignal } from '@flighthq/signals';
@@ -50,7 +50,7 @@ describe('dispatchPointerDown', () => {
   it('fires onPointerDown on a hit target', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
-    rectangle.setTo(getLocalBoundsRect(child), 0, 0, 100, 100);
+    rectSetTo(getLocalBoundsRect(child), 0, 0, 100, 100);
     addChild(root, child);
 
     const signals = getDisplayObjectInteractionSignals(child);
@@ -64,7 +64,7 @@ describe('dispatchPointerDown', () => {
   it('passes correct pointer data to the handler', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
-    rectangle.setTo(getLocalBoundsRect(child), 0, 0, 100, 100);
+    rectSetTo(getLocalBoundsRect(child), 0, 0, 100, 100);
     addChild(root, child);
 
     const signals = getDisplayObjectInteractionSignals(child);

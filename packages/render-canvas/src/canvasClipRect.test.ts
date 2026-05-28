@@ -1,4 +1,4 @@
-import { matrix3x2, rectangle } from '@flighthq/geometry';
+import { createMatrix3x2, createRectangle } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode } from '@flighthq/render-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, Matrix3x2, Rectangle } from '@flighthq/types';
@@ -32,8 +32,8 @@ describe('pushCanvasClipRect', () => {
   it('saves context, clips to rect, and restores', () => {
     const c = document.createElement('canvas');
     const state = createCanvasRenderState(c);
-    const r = rectangle.create(0, 0, 50, 50);
-    const t = matrix3x2.create();
+    const r = createRectangle(0, 0, 50, 50);
+    const t = createMatrix3x2();
     const saveSpy = vi.spyOn(state.context, 'save');
     const clipSpy = vi.spyOn(state.context, 'clip');
     pushCanvasClipRect(state, r, t);
@@ -47,9 +47,9 @@ describe('pushCanvasScrollRect', () => {
     const c = document.createElement('canvas');
     const state = createCanvasRenderState(c);
     const source = createDisplayObject();
-    source.scrollRect = rectangle.create(0, 0, 50, 50);
+    source.scrollRect = createRectangle(0, 0, 50, 50);
     const data = getDisplayObjectRenderNode(state, source);
-    data.transform2D = matrix3x2.create();
+    data.transform2D = createMatrix3x2();
     const before = state.currentScrollRectDepth;
     pushCanvasScrollRect(state, data);
     expect(state.currentScrollRectDepth).toBe(before + 1);
@@ -67,8 +67,8 @@ describe('Clip and Scroll Rect Functions', () => {
   beforeEach(() => {
     canvas = document.createElement('canvas');
     state = createCanvasRenderState(canvas);
-    rect = rectangle.create(10, 10, 100, 100);
-    transform2D = matrix3x2.create();
+    rect = createRectangle(10, 10, 100, 100);
+    transform2D = createMatrix3x2();
     source = createDisplayObject();
     source.scrollRect = rect;
     data = getDisplayObjectRenderNode(state, source);

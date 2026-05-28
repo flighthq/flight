@@ -1,30 +1,30 @@
 import type { Matrix3x2 } from '@flighthq/types';
 
-import { createMatrix3x2 as create, mat3x2Identity as identity } from './matrix3x2';
+import { createMatrix3x2, mat3x2Identity } from './matrix3x2';
 
-export function clear(): void {
+export function mat3x2PoolClear(): void {
   pool.length = 0;
 }
 
-export function get(): Matrix3x2 {
+export function mat3x2PoolGet(): Matrix3x2 {
   let m: Matrix3x2;
 
   if (pool.length > 0) {
     m = pool.pop() as Matrix3x2;
   } else {
-    m = create();
+    m = createMatrix3x2();
   }
 
   return m;
 }
 
-export function getIdentity(): Matrix3x2 {
-  const m = get();
-  identity(m);
+export function mat3x2PoolGetIdentity(): Matrix3x2 {
+  const m = mat3x2PoolGet();
+  mat3x2Identity(m);
   return m;
 }
 
-export function release(m: Matrix3x2): void {
+export function mat3x2PoolRelease(m: Matrix3x2): void {
   if (!m) return;
   pool.push(m);
 }

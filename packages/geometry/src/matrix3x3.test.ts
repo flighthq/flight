@@ -1,160 +1,183 @@
-import { matrix3x2, matrix3x3, vector3 } from '@flighthq/geometry';
+import {
+  createMatrix3x2,
+  createMatrix3x3,
+  createVector3,
+  mat3x3Clone,
+  mat3x3Copy,
+  mat3x3CopyColumnFrom,
+  mat3x3CopyColumnTo,
+  mat3x3CopyRowFrom,
+  mat3x3CopyRowTo,
+  mat3x3Equals,
+  mat3x3FromMat3x2,
+  mat3x3FromMat4x4,
+  mat3x3Get,
+  mat3x3Identity,
+  mat3x3Inverse,
+  mat3x3IsAffine,
+  mat3x3Multiply,
+  mat3x3Rotate,
+  mat3x3Scale,
+  mat3x3Set,
+  mat3x3SetTo,
+  mat3x3Translate,
+} from '@flighthq/geometry';
 import type { Matrix3x3 } from '@flighthq/types';
 
 describe('create', () => {
   it('should initialize matrix with provided values', () => {
-    const m = matrix3x3.create(2, 3, 4, 5, 6, 7, 8, 9, 10);
-    expect(matrix3x3.get(m, 0, 0)).toBe(2);
-    expect(matrix3x3.get(m, 0, 1)).toBe(3);
-    expect(matrix3x3.get(m, 0, 2)).toBe(4);
-    expect(matrix3x3.get(m, 1, 0)).toBe(5);
-    expect(matrix3x3.get(m, 1, 1)).toBe(6);
-    expect(matrix3x3.get(m, 1, 2)).toBe(7);
-    expect(matrix3x3.get(m, 2, 0)).toBe(8);
-    expect(matrix3x3.get(m, 2, 1)).toBe(9);
-    expect(matrix3x3.get(m, 2, 2)).toBe(10);
+    const m = createMatrix3x3(2, 3, 4, 5, 6, 7, 8, 9, 10);
+    expect(mat3x3Get(m, 0, 0)).toBe(2);
+    expect(mat3x3Get(m, 0, 1)).toBe(3);
+    expect(mat3x3Get(m, 0, 2)).toBe(4);
+    expect(mat3x3Get(m, 1, 0)).toBe(5);
+    expect(mat3x3Get(m, 1, 1)).toBe(6);
+    expect(mat3x3Get(m, 1, 2)).toBe(7);
+    expect(mat3x3Get(m, 2, 0)).toBe(8);
+    expect(mat3x3Get(m, 2, 1)).toBe(9);
+    expect(mat3x3Get(m, 2, 2)).toBe(10);
   });
 
   it('should default to identity matrix when no values are provided', () => {
-    const m = matrix3x3.create();
-    expect(matrix3x3.get(m, 0, 0)).toBe(1);
-    expect(matrix3x3.get(m, 0, 1)).toBe(0);
-    expect(matrix3x3.get(m, 0, 2)).toBe(0);
-    expect(matrix3x3.get(m, 1, 0)).toBe(0);
-    expect(matrix3x3.get(m, 1, 1)).toBe(1);
-    expect(matrix3x3.get(m, 1, 2)).toBe(0);
-    expect(matrix3x3.get(m, 2, 0)).toBe(0);
-    expect(matrix3x3.get(m, 2, 1)).toBe(0);
-    expect(matrix3x3.get(m, 2, 2)).toBe(1);
+    const m = createMatrix3x3();
+    expect(mat3x3Get(m, 0, 0)).toBe(1);
+    expect(mat3x3Get(m, 0, 1)).toBe(0);
+    expect(mat3x3Get(m, 0, 2)).toBe(0);
+    expect(mat3x3Get(m, 1, 0)).toBe(0);
+    expect(mat3x3Get(m, 1, 1)).toBe(1);
+    expect(mat3x3Get(m, 1, 2)).toBe(0);
+    expect(mat3x3Get(m, 2, 0)).toBe(0);
+    expect(mat3x3Get(m, 2, 1)).toBe(0);
+    expect(mat3x3Get(m, 2, 2)).toBe(1);
   });
 });
 
 describe('clone', () => {
   it('should clone the matrix correctly', () => {
-    const m1 = matrix3x3.create(2, 3, 4, 5, 6, 7, 8, 9, 10);
-    const m2 = matrix3x3.clone(m1);
-    expect(matrix3x3.get(m2, 0, 0)).toBe(2);
-    expect(matrix3x3.get(m2, 0, 1)).toBe(3);
-    expect(matrix3x3.get(m2, 0, 2)).toBe(4);
-    expect(matrix3x3.get(m2, 1, 0)).toBe(5);
-    expect(matrix3x3.get(m2, 1, 1)).toBe(6);
-    expect(matrix3x3.get(m2, 1, 2)).toBe(7);
-    expect(matrix3x3.get(m2, 2, 0)).toBe(8);
-    expect(matrix3x3.get(m2, 2, 1)).toBe(9);
-    expect(matrix3x3.get(m2, 2, 2)).toBe(10);
+    const m1 = createMatrix3x3(2, 3, 4, 5, 6, 7, 8, 9, 10);
+    const m2 = mat3x3Clone(m1);
+    expect(mat3x3Get(m2, 0, 0)).toBe(2);
+    expect(mat3x3Get(m2, 0, 1)).toBe(3);
+    expect(mat3x3Get(m2, 0, 2)).toBe(4);
+    expect(mat3x3Get(m2, 1, 0)).toBe(5);
+    expect(mat3x3Get(m2, 1, 1)).toBe(6);
+    expect(mat3x3Get(m2, 1, 2)).toBe(7);
+    expect(mat3x3Get(m2, 2, 0)).toBe(8);
+    expect(mat3x3Get(m2, 2, 1)).toBe(9);
+    expect(mat3x3Get(m2, 2, 2)).toBe(10);
   });
 
   it('should also clone matrix-like objects', () => {
     const obj = { m: new Float32Array([2, 3, 4, 5, 6, 7, 8, 9, 10]) };
-    const m2 = matrix3x3.clone(obj);
-    expect(matrix3x3.get(m2, 0, 0)).toBe(2);
-    expect(matrix3x3.get(m2, 0, 1)).toBe(3);
-    expect(matrix3x3.get(m2, 0, 2)).toBe(4);
-    expect(matrix3x3.get(m2, 1, 0)).toBe(5);
-    expect(matrix3x3.get(m2, 1, 1)).toBe(6);
-    expect(matrix3x3.get(m2, 1, 2)).toBe(7);
-    expect(matrix3x3.get(m2, 2, 0)).toBe(8);
-    expect(matrix3x3.get(m2, 2, 1)).toBe(9);
-    expect(matrix3x3.get(m2, 2, 2)).toBe(10);
+    const m2 = mat3x3Clone(obj);
+    expect(mat3x3Get(m2, 0, 0)).toBe(2);
+    expect(mat3x3Get(m2, 0, 1)).toBe(3);
+    expect(mat3x3Get(m2, 0, 2)).toBe(4);
+    expect(mat3x3Get(m2, 1, 0)).toBe(5);
+    expect(mat3x3Get(m2, 1, 1)).toBe(6);
+    expect(mat3x3Get(m2, 1, 2)).toBe(7);
+    expect(mat3x3Get(m2, 2, 0)).toBe(8);
+    expect(mat3x3Get(m2, 2, 1)).toBe(9);
+    expect(mat3x3Get(m2, 2, 2)).toBe(10);
   });
 
   it('should return a matrix instance', () => {
     const obj = { m: new Float32Array([2, 3, 4, 5, 6, 7, 8, 9, 10]) };
-    const m2: Matrix3x3 = matrix3x3.clone(obj);
+    const m2: Matrix3x3 = mat3x3Clone(obj);
     expect(m2).not.toBeNull();
   });
 });
 
 describe('copy', () => {
   it('should copy matrix values from another matrix', () => {
-    const m1 = matrix3x3.create(2, 3, 4, 5, 6, 7, 8, 9, 10);
-    const m2 = matrix3x3.create();
-    matrix3x3.copy(m2, m1);
-    expect(matrix3x3.get(m2, 0, 0)).toBe(2);
-    expect(matrix3x3.get(m2, 0, 1)).toBe(3);
-    expect(matrix3x3.get(m2, 0, 2)).toBe(4);
-    expect(matrix3x3.get(m2, 1, 0)).toBe(5);
-    expect(matrix3x3.get(m2, 1, 1)).toBe(6);
-    expect(matrix3x3.get(m2, 1, 2)).toBe(7);
-    expect(matrix3x3.get(m2, 2, 0)).toBe(8);
-    expect(matrix3x3.get(m2, 2, 1)).toBe(9);
-    expect(matrix3x3.get(m2, 2, 2)).toBe(10);
+    const m1 = createMatrix3x3(2, 3, 4, 5, 6, 7, 8, 9, 10);
+    const m2 = createMatrix3x3();
+    mat3x3Copy(m2, m1);
+    expect(mat3x3Get(m2, 0, 0)).toBe(2);
+    expect(mat3x3Get(m2, 0, 1)).toBe(3);
+    expect(mat3x3Get(m2, 0, 2)).toBe(4);
+    expect(mat3x3Get(m2, 1, 0)).toBe(5);
+    expect(mat3x3Get(m2, 1, 1)).toBe(6);
+    expect(mat3x3Get(m2, 1, 2)).toBe(7);
+    expect(mat3x3Get(m2, 2, 0)).toBe(8);
+    expect(mat3x3Get(m2, 2, 1)).toBe(9);
+    expect(mat3x3Get(m2, 2, 2)).toBe(10);
   });
 });
 
 describe('copyColumnFrom', () => {
   it('should copy column from a Vector3 to a Matrix3x3', () => {
-    const m = matrix3x3.create();
-    const v = vector3.create(1, 2, 3);
-    matrix3x3.copyColumnFrom(m, 0, v); // column 0
-    expect(matrix3x3.get(m, 0, 0)).toBe(1);
-    expect(matrix3x3.get(m, 1, 0)).toBe(2);
-    expect(matrix3x3.get(m, 2, 0)).toBe(3);
+    const m = createMatrix3x3();
+    const v = createVector3(1, 2, 3);
+    mat3x3CopyColumnFrom(m, 0, v); // column 0
+    expect(mat3x3Get(m, 0, 0)).toBe(1);
+    expect(mat3x3Get(m, 1, 0)).toBe(2);
+    expect(mat3x3Get(m, 2, 0)).toBe(3);
   });
 
   it('should copy column 1 (c, d)', () => {
-    const m = matrix3x3.create();
-    const v = vector3.create(3, 4, 5);
-    matrix3x3.copyColumnFrom(m, 1, v);
-    expect(matrix3x3.get(m, 0, 1)).toBe(3);
-    expect(matrix3x3.get(m, 1, 1)).toBe(4);
-    expect(matrix3x3.get(m, 2, 1)).toBe(5);
+    const m = createMatrix3x3();
+    const v = createVector3(3, 4, 5);
+    mat3x3CopyColumnFrom(m, 1, v);
+    expect(mat3x3Get(m, 0, 1)).toBe(3);
+    expect(mat3x3Get(m, 1, 1)).toBe(4);
+    expect(mat3x3Get(m, 2, 1)).toBe(5);
   });
 
   it('should copy column 2 (tx, ty)', () => {
-    const m = matrix3x3.create();
-    const v = vector3.create(5, 6, 7);
-    matrix3x3.copyColumnFrom(m, 2, v);
-    expect(matrix3x3.get(m, 0, 2)).toBe(5);
-    expect(matrix3x3.get(m, 1, 2)).toBe(6);
-    expect(matrix3x3.get(m, 2, 2)).toBe(7);
+    const m = createMatrix3x3();
+    const v = createVector3(5, 6, 7);
+    mat3x3CopyColumnFrom(m, 2, v);
+    expect(mat3x3Get(m, 0, 2)).toBe(5);
+    expect(mat3x3Get(m, 1, 2)).toBe(6);
+    expect(mat3x3Get(m, 2, 2)).toBe(7);
   });
 
   it('should throw when column is greater than 2', () => {
-    const m = matrix3x3.create();
-    const v = vector3.create();
-    expect(() => matrix3x3.copyColumnFrom(m, 3, v)).toThrow();
+    const m = createMatrix3x3();
+    const v = createVector3();
+    expect(() => mat3x3CopyColumnFrom(m, 3, v)).toThrow();
   });
 });
 
 describe('copyColumnTo', () => {
   it('should copy column to a Vector3 from a Matrix3x3', () => {
-    const m = matrix3x3.create(1, 2, 3, 4, 5, 6, 7, 8, 9);
-    const v = vector3.create();
-    matrix3x3.copyColumnTo(v, 0, m); // column 0
+    const m = createMatrix3x3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const v = createVector3();
+    mat3x3CopyColumnTo(v, 0, m); // column 0
     expect(v.x).toBe(1);
     expect(v.y).toBe(4);
     expect(v.z).toBe(7);
   });
 
   it('should copy column 1 into Vector3', () => {
-    const m = matrix3x3.create(1, 2, 3, 4, 5, 6, 7, 8, 9);
-    const v = vector3.create();
-    matrix3x3.copyColumnTo(v, 1, m);
+    const m = createMatrix3x3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const v = createVector3();
+    mat3x3CopyColumnTo(v, 1, m);
     expect(v.x).toBe(2);
     expect(v.y).toBe(5);
     expect(v.z).toBe(8);
   });
 
   it('should copy column 2 into Vector3', () => {
-    const m = matrix3x3.create(1, 2, 3, 4, 5, 6, 7, 8, 9);
-    const v = vector3.create();
-    matrix3x3.copyColumnTo(v, 2, m);
+    const m = createMatrix3x3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const v = createVector3();
+    mat3x3CopyColumnTo(v, 2, m);
     expect(v.x).toBe(3);
     expect(v.y).toBe(6);
     expect(v.z).toBe(9);
   });
 
   it('should throw when column is greater than 2', () => {
-    const m = matrix3x3.create();
-    const v = vector3.create();
-    expect(() => matrix3x3.copyColumnTo(v, 3, m)).toThrow();
+    const m = createMatrix3x3();
+    const v = createVector3();
+    expect(() => mat3x3CopyColumnTo(v, 3, m)).toThrow();
   });
 
   it('should allow matrix-like and vector-like objects', () => {
     const m = { m: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]) };
     const v = { x: 0, y: 0, z: 0 };
-    matrix3x3.copyColumnTo(v, 0, m); // column 0
+    mat3x3CopyColumnTo(v, 0, m); // column 0
     expect(v.x).toBe(1);
     expect(v.y).toBe(4);
     expect(v.z).toBe(7);
@@ -163,33 +186,33 @@ describe('copyColumnTo', () => {
 
 describe('copyRowFrom', () => {
   it('should copy row from a Vector3 to a Matrix3x3', () => {
-    const m = matrix3x3.create();
-    const v = vector3.create(1, 2, 3);
-    matrix3x3.copyRowFrom(m, 0, v); // row 0
-    expect(matrix3x3.get(m, 0, 0)).toBe(1);
-    expect(matrix3x3.get(m, 0, 1)).toBe(2);
-    expect(matrix3x3.get(m, 0, 2)).toBe(3);
+    const m = createMatrix3x3();
+    const v = createVector3(1, 2, 3);
+    mat3x3CopyRowFrom(m, 0, v); // row 0
+    expect(mat3x3Get(m, 0, 0)).toBe(1);
+    expect(mat3x3Get(m, 0, 1)).toBe(2);
+    expect(mat3x3Get(m, 0, 2)).toBe(3);
   });
 
   it('should copy row 1 (b, d, ty)', () => {
-    const m = matrix3x3.create();
-    const v = vector3.create(2, 4, 6);
-    matrix3x3.copyRowFrom(m, 1, v);
-    expect(matrix3x3.get(m, 1, 0)).toBe(2);
-    expect(matrix3x3.get(m, 1, 1)).toBe(4);
-    expect(matrix3x3.get(m, 1, 2)).toBe(6);
+    const m = createMatrix3x3();
+    const v = createVector3(2, 4, 6);
+    mat3x3CopyRowFrom(m, 1, v);
+    expect(mat3x3Get(m, 1, 0)).toBe(2);
+    expect(mat3x3Get(m, 1, 1)).toBe(4);
+    expect(mat3x3Get(m, 1, 2)).toBe(6);
   });
 
   it('should throw when row is greater than 2', () => {
-    const m = matrix3x3.create();
-    const v = vector3.create();
-    expect(() => matrix3x3.copyRowFrom(m, 3, v)).toThrow();
+    const m = createMatrix3x3();
+    const v = createVector3();
+    expect(() => mat3x3CopyRowFrom(m, 3, v)).toThrow();
   });
 
   it('should allow matrix-like and vector-like objects', () => {
     const m = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
     const v = { x: 1, y: 2, z: 3 };
-    matrix3x3.copyRowFrom(m, 0, v); // row 0
+    mat3x3CopyRowFrom(m, 0, v); // row 0
     expect(m.m[0]).toBe(1);
     expect(m.m[1]).toBe(2);
     expect(m.m[2]).toBe(3);
@@ -198,27 +221,27 @@ describe('copyRowFrom', () => {
 
 describe('copyRowTo', () => {
   it('should copy row to a Vector3 from a Matrix3x3', () => {
-    const m = matrix3x3.create(1, 2, 3, 4, 5, 6, 7, 8, 9);
-    const v = vector3.create();
-    matrix3x3.copyRowTo(v, 0, m); // row 0
+    const m = createMatrix3x3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const v = createVector3();
+    mat3x3CopyRowTo(v, 0, m); // row 0
     expect(v.x).toBe(1); // m.a
     expect(v.y).toBe(2); // m.c
     expect(v.z).toBe(3); // m.tx
   });
 
   it('should copy row 1 (b, d, ty)', () => {
-    const m = matrix3x3.create(1, 2, 3, 4, 5, 6, 7, 8, 9);
-    const v = vector3.create();
-    matrix3x3.copyRowTo(v, 1, m);
+    const m = createMatrix3x3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const v = createVector3();
+    mat3x3CopyRowTo(v, 1, m);
     expect(v.x).toBe(4);
     expect(v.y).toBe(5);
     expect(v.z).toBe(6);
   });
 
   it('should return (0, 0, 1) for row 2', () => {
-    const m = matrix3x3.create();
-    const v = vector3.create();
-    matrix3x3.copyRowTo(v, 2, m);
+    const m = createMatrix3x3();
+    const v = createVector3();
+    mat3x3CopyRowTo(v, 2, m);
     expect(v.x).toBe(0);
     expect(v.y).toBe(0);
     expect(v.z).toBe(1);
@@ -227,7 +250,7 @@ describe('copyRowTo', () => {
   it('should allow matrix-like and vector-like objects', () => {
     const m = { m: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]) };
     const v = { x: 0, y: 0, z: 0 };
-    matrix3x3.copyRowTo(v, 0, m); // row 0
+    mat3x3CopyRowTo(v, 0, m); // row 0
     expect(v.x).toBe(1); // m.a
     expect(v.y).toBe(2); // m.c
     expect(v.z).toBe(3); // m.tx
@@ -236,57 +259,57 @@ describe('copyRowTo', () => {
 
 describe('equals', () => {
   it('should return false if one matrix is null and the other is not', () => {
-    const mat1 = matrix3x3.create();
-    expect(matrix3x3.equals(mat1, null)).toBe(false);
+    const mat1 = createMatrix3x3();
+    expect(mat3x3Equals(mat1, null)).toBe(false);
   });
 
   it('should return false if one matrix is undefined and the other is not', () => {
-    const mat1 = matrix3x3.create();
-    expect(matrix3x3.equals(mat1, undefined)).toBe(false);
+    const mat1 = createMatrix3x3();
+    expect(mat3x3Equals(mat1, undefined)).toBe(false);
   });
 
   it('should return true if both matrix objects are null', () => {
-    expect(matrix3x3.equals(null, null)).toBe(true);
+    expect(mat3x3Equals(null, null)).toBe(true);
   });
 
   it('should return true if both matrix objects are undefined', () => {
-    expect(matrix3x3.equals(undefined, undefined)).toBe(true);
+    expect(mat3x3Equals(undefined, undefined)).toBe(true);
   });
 
   it('should return true if one matrix object is undefined and the other is null', () => {
-    expect(matrix3x3.equals(undefined, undefined)).toBe(true);
+    expect(mat3x3Equals(undefined, undefined)).toBe(true);
   });
 
   it('should return false if both matrix objects are defined and have different values', () => {
-    const mat1 = matrix3x3.create();
-    const mat2 = matrix3x3.create();
+    const mat1 = createMatrix3x3();
+    const mat2 = createMatrix3x3();
     mat2.m[0] = 2;
-    expect(matrix3x3.equals(mat1, mat2)).toBe(false);
+    expect(mat3x3Equals(mat1, mat2)).toBe(false);
   });
 
   it('should return true if one object is matrix-like and one is not', () => {
-    const mat1 = matrix3x3.create(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const mat1 = createMatrix3x3(1, 2, 3, 4, 5, 6, 7, 8, 9);
     const mat2 = { m: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]) };
-    expect(matrix3x3.equals(mat1, mat2)).toBe(true);
+    expect(mat3x3Equals(mat1, mat2)).toBe(true);
   });
 
   it('should return true if both object are matrix-like', () => {
     const mat1 = { m: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]) };
     const mat2 = { m: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]) };
-    expect(matrix3x3.equals(mat1, mat2)).toBe(true);
+    expect(mat3x3Equals(mat1, mat2)).toBe(true);
   });
 });
 
 describe('fromMatrix3x2', () => {
   it('should convert a Matrix3x2 to a Matrix3x3', () => {
     // Define a matrix (6 values, row-major)
-    const mat2D = matrix3x2.create();
+    const mat2D = createMatrix3x2();
 
     // Define an empty Matrix3x3 to store the result
-    const mat = matrix3x3.create();
+    const mat = createMatrix3x3();
 
     // Call the fromMatrix3x2 function
-    matrix3x3.fromMatrix3x2(mat, mat2D);
+    mat3x3FromMat3x2(mat, mat2D);
 
     // Expected result: Identity matrix for Matrix3x3
     const expectedMatrix3x3 = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
@@ -297,13 +320,13 @@ describe('fromMatrix3x2', () => {
 
   it('should handle scaling and translation', () => {
     // Define a matrix with scaling and translation
-    const mat2D = matrix3x2.create(2, 0, 0, 3, 5, 10); // Scaling by 2,3 and translation by (5,10)
+    const mat2D = createMatrix3x2(2, 0, 0, 3, 5, 10); // Scaling by 2,3 and translation by (5,10)
 
     // Define an empty Matrix3x3 to store the result
-    const mat = matrix3x3.create();
+    const mat = createMatrix3x3();
 
     // Call the fromMatrix3x2 function
-    matrix3x3.fromMatrix3x2(mat, mat2D);
+    mat3x3FromMat3x2(mat, mat2D);
 
     // Expected result: Scaling and translation in Matrix3x3
     const expectedMatrix3x3 = new Float32Array([2, 0, 5, 0, 3, 10, 0, 0, 1]);
@@ -336,8 +359,8 @@ describe('fromMatrix4x4', () => {
       ]),
     };
 
-    const mat = matrix3x3.create();
-    matrix3x3.fromMatrix4x4(mat, Matrix4x4);
+    const mat = createMatrix3x3();
+    mat3x3FromMat4x4(mat, Matrix4x4);
 
     // Expected result: Identity matrix for Matrix3x3
     const expectedMatrix3x3 = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
@@ -367,8 +390,8 @@ describe('fromMatrix4x4', () => {
       ]),
     };
 
-    const mat = matrix3x3.create();
-    matrix3x3.fromMatrix4x4(mat, Matrix4x4);
+    const mat = createMatrix3x3();
+    mat3x3FromMat4x4(mat, Matrix4x4);
 
     // Expected result: Upper-left 3x3 part of Matrix4x4
     const expectedMatrix3x3 = new Float32Array([2, 0, 0, 0, 3, 0, 0, 0, 4]);
@@ -380,11 +403,11 @@ describe('fromMatrix4x4', () => {
 describe('inverse', () => {
   it('should invert the matrix correctly', () => {
     // Create a matrix with scaling of 2 and translation of (5, 3)
-    const m = matrix3x3.create(2, 0, 5, 0, 2, 3, 0, 0, 1);
+    const m = createMatrix3x3(2, 0, 5, 0, 2, 3, 0, 0, 1);
 
     // Apply inversion
-    let out = matrix3x3.create();
-    matrix3x3.inverse(out, m);
+    let out = createMatrix3x3();
+    mat3x3Inverse(out, m);
 
     // Expected inverse matrix:
     // Scaling should be 0.5 (inverse of 2)
@@ -400,13 +423,13 @@ describe('inverse', () => {
   });
 
   it('should not depend on initial out matrix values', () => {
-    const source = matrix3x3.create(2, 1, 5, 3, 4, 6, 0, 0, 1);
-    const out = matrix3x3.create(9, 9, 9, 9, 9, 9, 0, 0, 1);
+    const source = createMatrix3x3(2, 1, 5, 3, 4, 6, 0, 0, 1);
+    const out = createMatrix3x3(9, 9, 9, 9, 9, 9, 0, 0, 1);
 
-    matrix3x3.inverse(out, source);
+    mat3x3Inverse(out, source);
 
-    const result = matrix3x3.create();
-    matrix3x3.multiply(result, source, out);
+    const result = createMatrix3x3();
+    mat3x3Multiply(result, source, out);
 
     expect(result.m[0]).toBeCloseTo(1);
     expect(result.m[1]).toBeCloseTo(0);
@@ -417,7 +440,7 @@ describe('inverse', () => {
   it('should should allow matrix-like objects', () => {
     const m = { m: new Float32Array([2, 0, 5, 0, 2, 3, 0, 0, 1]) };
     let out = { m: new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0]) };
-    matrix3x3.inverse(out, m);
+    mat3x3Inverse(out, m);
     expect(out.m[0]).toBeCloseTo(0.5); // Inverse scaling on x
     expect(out.m[1]).toBeCloseTo(0); // No shear on x
     expect(out.m[3]).toBeCloseTo(0); // No shear on y
@@ -429,17 +452,17 @@ describe('inverse', () => {
 
 describe('multiply', () => {
   it('should support out === a', () => {
-    const a = matrix3x3.create(2, 0, 0, 0, 2, 0, 0, 0, 1);
-    const b = matrix3x3.create(1, 0, 5, 0, 1, 5, 0, 0, 1);
-    matrix3x3.multiply(a, a, b);
+    const a = createMatrix3x3(2, 0, 0, 0, 2, 0, 0, 0, 1);
+    const b = createMatrix3x3(1, 0, 5, 0, 1, 5, 0, 0, 1);
+    mat3x3Multiply(a, a, b);
     expect(a.m[2]).toBe(10);
     expect(a.m[5]).toBe(10);
   });
 
   it('should support out === b', () => {
-    const a = matrix3x3.create(2, 0, 0, 0, 2, 0, 0, 0, 1);
-    const b = matrix3x3.create(1, 0, 3, 0, 1, 4, 0, 0, 1);
-    matrix3x3.multiply(b, a, b); // Multiply a by b and store the result in b
+    const a = createMatrix3x3(2, 0, 0, 0, 2, 0, 0, 0, 1);
+    const b = createMatrix3x3(1, 0, 3, 0, 1, 4, 0, 0, 1);
+    mat3x3Multiply(b, a, b); // Multiply a by b and store the result in b
     expect(b.m[0]).toBe(2); // a[0][0] = 2
     expect(b.m[4]).toBe(2); // d[1][1] = 2
     expect(b.m[2]).toBe(6); // tx = b[0][2] = 6
@@ -447,17 +470,17 @@ describe('multiply', () => {
   });
 
   it('should multiply identity correctly', () => {
-    const a = matrix3x3.create();
-    const b = matrix3x3.create(2, 3, 4, 5, 6, 7);
-    const out = matrix3x3.create();
-    matrix3x3.multiply(out, a, b);
-    expect(matrix3x3.equals(out, b)).toBe(true);
+    const a = createMatrix3x3();
+    const b = createMatrix3x3(2, 3, 4, 5, 6, 7);
+    const out = createMatrix3x3();
+    mat3x3Multiply(out, a, b);
+    expect(mat3x3Equals(out, b)).toBe(true);
   });
 
   it('should allow matrix-like objects', () => {
     const a = { m: new Float32Array([2, 0, 0, 0, 2, 0, 0, 0, 1]) };
     const b = { m: new Float32Array([1, 0, 5, 0, 1, 5, 0, 0, 1]) };
-    matrix3x3.multiply(a, a, b);
+    mat3x3Multiply(a, a, b);
     expect(a.m[2]).toBe(10);
     expect(a.m[5]).toBe(10);
   });
@@ -465,9 +488,9 @@ describe('multiply', () => {
 
 describe('rotate', () => {
   it('should rotate the matrix correctly', () => {
-    const m = matrix3x3.create(1, 0, 0, 0, 1, 0, 0, 0, 1);
-    const out = matrix3x3.create();
-    matrix3x3.rotate(out, m, Math.PI / 2); // 90 degrees
+    const m = createMatrix3x3(1, 0, 0, 0, 1, 0, 0, 0, 1);
+    const out = createMatrix3x3();
+    mat3x3Rotate(out, m, Math.PI / 2); // 90 degrees
     expect(out.m[0]).toBeCloseTo(0);
     expect(out.m[1]).toBeCloseTo(-1);
     expect(out.m[3]).toBeCloseTo(1);
@@ -479,7 +502,7 @@ describe('rotate', () => {
     const out = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
 
     // Apply 90 degrees rotation (π/2 radians)
-    matrix3x3.rotate(out, m, Math.PI / 2);
+    mat3x3Rotate(out, m, Math.PI / 2);
 
     // Check that the resulting matrix corresponds to a 90-degree rotation matrix
     expect(out.m[0]).toBeCloseTo(0); // a = cos(π/2) = 0
@@ -491,17 +514,17 @@ describe('rotate', () => {
 
 describe('scale', () => {
   it('should scale the matrix correctly', () => {
-    const m = matrix3x3.create();
-    const out = matrix3x3.create();
-    matrix3x3.scale(out, m, 2, 3);
+    const m = createMatrix3x3();
+    const out = createMatrix3x3();
+    mat3x3Scale(out, m, 2, 3);
     expect(out.m[0]).toBe(2);
     expect(out.m[4]).toBe(3);
   });
 
   it('should allow a matrix-like object', () => {
     const m = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
-    const out = matrix3x3.create();
-    matrix3x3.scale(out, m, 2, 3);
+    const out = createMatrix3x3();
+    mat3x3Scale(out, m, 2, 3);
     expect(out.m[0]).toBe(2); // a
     expect(out.m[4]).toBe(3); // d
   });
@@ -509,17 +532,17 @@ describe('scale', () => {
 
 describe('translate', () => {
   it('should translate the matrix correctly', () => {
-    const m = matrix3x3.create();
-    const out = matrix3x3.create();
-    matrix3x3.translate(out, m, 2, 3);
+    const m = createMatrix3x3();
+    const out = createMatrix3x3();
+    mat3x3Translate(out, m, 2, 3);
     expect(out.m[2]).toBe(2);
     expect(out.m[5]).toBe(3);
   });
 
   it('should allow a matrix-like object', () => {
     const m = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
-    const out = matrix3x3.create();
-    matrix3x3.translate(out, m, 2, 3);
+    const out = createMatrix3x3();
+    mat3x3Translate(out, m, 2, 3);
     expect(out.m[2]).toBe(2); // tx
     expect(out.m[5]).toBe(3); // ty
   });
@@ -527,66 +550,66 @@ describe('translate', () => {
 
 describe('get', () => {
   it('returns the element at the given row and column', () => {
-    const m = matrix3x3.create(1, 2, 3, 4, 5, 6, 7, 8, 9);
-    expect(matrix3x3.get(m, 0, 0)).toBe(1);
-    expect(matrix3x3.get(m, 0, 1)).toBe(2);
-    expect(matrix3x3.get(m, 0, 2)).toBe(3);
-    expect(matrix3x3.get(m, 1, 0)).toBe(4);
-    expect(matrix3x3.get(m, 2, 2)).toBe(9);
+    const m = createMatrix3x3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    expect(mat3x3Get(m, 0, 0)).toBe(1);
+    expect(mat3x3Get(m, 0, 1)).toBe(2);
+    expect(mat3x3Get(m, 0, 2)).toBe(3);
+    expect(mat3x3Get(m, 1, 0)).toBe(4);
+    expect(mat3x3Get(m, 2, 2)).toBe(9);
   });
 });
 
 describe('identity', () => {
   it('resets a matrix to the identity', () => {
-    const m = matrix3x3.create(2, 3, 4, 5, 6, 7, 8, 9, 10);
-    matrix3x3.identity(m);
-    expect(matrix3x3.get(m, 0, 0)).toBe(1);
-    expect(matrix3x3.get(m, 1, 1)).toBe(1);
-    expect(matrix3x3.get(m, 2, 2)).toBe(1);
-    expect(matrix3x3.get(m, 0, 1)).toBe(0);
-    expect(matrix3x3.get(m, 1, 0)).toBe(0);
+    const m = createMatrix3x3(2, 3, 4, 5, 6, 7, 8, 9, 10);
+    mat3x3Identity(m);
+    expect(mat3x3Get(m, 0, 0)).toBe(1);
+    expect(mat3x3Get(m, 1, 1)).toBe(1);
+    expect(mat3x3Get(m, 2, 2)).toBe(1);
+    expect(mat3x3Get(m, 0, 1)).toBe(0);
+    expect(mat3x3Get(m, 1, 0)).toBe(0);
   });
 });
 
 describe('isAffine', () => {
   it('returns true for identity matrix', () => {
-    const m = matrix3x3.create();
-    expect(matrix3x3.isAffine(m)).toBe(true);
+    const m = createMatrix3x3();
+    expect(mat3x3IsAffine(m)).toBe(true);
   });
 
   it('returns false when last row is not (0, 0, 1)', () => {
-    const m = matrix3x3.create(1, 0, 0, 0, 1, 0, 1, 0, 1);
-    expect(matrix3x3.isAffine(m)).toBe(false);
+    const m = createMatrix3x3(1, 0, 0, 0, 1, 0, 1, 0, 1);
+    expect(mat3x3IsAffine(m)).toBe(false);
   });
 
   it('returns true for a matrix with translation', () => {
-    const m = matrix3x3.create(1, 0, 5, 0, 1, 10, 0, 0, 1);
-    expect(matrix3x3.isAffine(m)).toBe(true);
+    const m = createMatrix3x3(1, 0, 5, 0, 1, 10, 0, 0, 1);
+    expect(mat3x3IsAffine(m)).toBe(true);
   });
 });
 
 describe('set', () => {
   it('writes the value at the given row and column', () => {
-    const m = matrix3x3.create();
-    matrix3x3.set(m, 1, 2, 42);
-    expect(matrix3x3.get(m, 1, 2)).toBe(42);
+    const m = createMatrix3x3();
+    mat3x3Set(m, 1, 2, 42);
+    expect(mat3x3Get(m, 1, 2)).toBe(42);
   });
 
   it('does not affect other elements', () => {
-    const m = matrix3x3.create();
-    matrix3x3.set(m, 0, 1, 7);
-    expect(matrix3x3.get(m, 0, 0)).toBe(1);
-    expect(matrix3x3.get(m, 1, 1)).toBe(1);
+    const m = createMatrix3x3();
+    mat3x3Set(m, 0, 1, 7);
+    expect(mat3x3Get(m, 0, 0)).toBe(1);
+    expect(mat3x3Get(m, 1, 1)).toBe(1);
   });
 });
 
 describe('setTo', () => {
   it('sets all 9 elements in row-major order', () => {
-    const m = matrix3x3.create();
-    matrix3x3.setTo(m, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const m = createMatrix3x3();
+    mat3x3SetTo(m, 1, 2, 3, 4, 5, 6, 7, 8, 9);
     for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 3; col++) {
-        expect(matrix3x3.get(m, row, col)).toBe(row * 3 + col + 1);
+        expect(mat3x3Get(m, row, col)).toBe(row * 3 + col + 1);
       }
     }
   });

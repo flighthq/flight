@@ -1,5 +1,6 @@
 import { createEntity } from '@flighthq/entity';
-import { matrix3x2, matrix3x2Pool } from '@flighthq/geometry';
+import { mat3x2FromFloat32Array } from '@flighthq/geometry';
+import { mat3x2PoolGet, mat3x2PoolRelease } from '@flighthq/geometry/matrix3x2Pool';
 import type {
   DOMRenderState,
   QuadBatch,
@@ -109,13 +110,13 @@ export function drawDOMQuadBatch(state: DOMRenderState, quadBatch: SpriteRenderN
       );
     }
   } else {
-    const localMatrix = matrix3x2Pool.get();
+    const localMatrix = mat3x2PoolGet();
     for (let i = 0; i < instanceCount; i++) {
       const id = ids[i];
       if (id < 0 || id >= numRegions) continue;
       const region = regions[id];
       if (region.width <= 0 || region.height <= 0) continue;
-      matrix3x2.fromFloat32Array(localMatrix, i * 6, transforms);
+      mat3x2FromFloat32Array(localMatrix, i * 6, transforms);
       ctx.setTransform(
         localMatrix.a * pr,
         localMatrix.b * pr,
@@ -127,7 +128,7 @@ export function drawDOMQuadBatch(state: DOMRenderState, quadBatch: SpriteRenderN
       ctx.drawImage(image, region.x, region.y, region.width, region.height, 0, 0, region.width, region.height);
     }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    matrix3x2Pool.release(localMatrix);
+    mat3x2PoolRelease(localMatrix);
   }
 
   applyDOMStyle(state, data.canvas, quadBatch);

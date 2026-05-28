@@ -1,28 +1,28 @@
 import type { Rectangle } from '@flighthq/types';
 
-import * as rectanglePool from './rectanglePool';
+import { rectPoolClear, rectPoolGet, rectPoolGetEmpty, rectPoolRelease } from './rectanglePool';
 
 beforeEach(() => {
-  rectanglePool.clear();
+  rectPoolClear();
 });
 
 describe('get', () => {
   it('returns a new Rectangle when pool is empty', () => {
-    const r: Rectangle = rectanglePool.get();
+    const r: Rectangle = rectPoolGet();
     expect(r).not.toBeNull();
   });
 
   it('reuses released rectangles', () => {
-    const r1 = rectanglePool.get();
-    rectanglePool.release(r1);
-    const r2 = rectanglePool.get();
+    const r1 = rectPoolGet();
+    rectPoolRelease(r1);
+    const r2 = rectPoolGet();
     expect(r2).toBe(r1);
   });
 });
 
 describe('getEmpty', () => {
   it('returns a rectangle with all properties set to 0', () => {
-    const r = rectanglePool.getEmpty();
+    const r = rectPoolGetEmpty();
     expect(r.x).toBe(0);
     expect(r.y).toBe(0);
     expect(r.width).toBe(0);
@@ -30,13 +30,13 @@ describe('getEmpty', () => {
   });
 
   it('resets a released rectangle to empty', () => {
-    const r1 = rectanglePool.get();
+    const r1 = rectPoolGet();
     r1.x = 5;
     r1.y = 10;
     r1.width = 50;
     r1.height = 100;
-    rectanglePool.release(r1);
-    const r2 = rectanglePool.getEmpty();
+    rectPoolRelease(r1);
+    const r2 = rectPoolGetEmpty();
     expect(r2).toBe(r1);
     expect(r2.x).toBe(0);
     expect(r2.y).toBe(0);
@@ -47,16 +47,16 @@ describe('getEmpty', () => {
 
 describe('release', () => {
   it('handles null safely', () => {
-    expect(() => rectanglePool.release(null as unknown as Rectangle)).not.toThrow();
+    expect(() => rectPoolRelease(null as unknown as Rectangle)).not.toThrow();
   });
 });
 
 describe('clear', () => {
   it('empties the pool so the next get allocates fresh', () => {
-    const r = rectanglePool.get();
-    rectanglePool.release(r);
-    rectanglePool.clear();
-    const r2 = rectanglePool.get();
+    const r = rectPoolGet();
+    rectPoolRelease(r);
+    rectPoolClear();
+    const r2 = rectPoolGet();
     expect(r2).not.toBe(r);
   });
 });

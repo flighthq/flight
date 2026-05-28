@@ -1,4 +1,49 @@
-import { matrix3x2, matrix3x3, matrix4x4 } from '@flighthq/geometry';
+import {
+  createMatrix3x2,
+  createMatrix3x3,
+  createMatrix4x4,
+  createMatrix4x4From2D,
+  createMatrix4x4Ortho,
+  createMatrix4x4Perspective,
+  mat4x4Append,
+  mat4x4AppendRotation,
+  mat4x4AppendScale,
+  mat4x4AppendTranslation,
+  mat4x4Clone,
+  mat4x4Copy,
+  mat4x4CopyColumnFrom,
+  mat4x4CopyColumnTo,
+  mat4x4CopyRowFrom,
+  mat4x4CopyRowTo,
+  mat4x4Determinant,
+  mat4x4Equals,
+  mat4x4FromMat3x2,
+  mat4x4FromMat3x3,
+  mat4x4Get,
+  mat4x4Identity,
+  mat4x4Interpolate,
+  mat4x4Inverse,
+  mat4x4IsAffine,
+  mat4x4Multiply,
+  mat4x4Position,
+  mat4x4Prepend,
+  mat4x4PrependRotation,
+  mat4x4PrependScale,
+  mat4x4PrependTranslation,
+  mat4x4Rotate,
+  mat4x4Scale,
+  mat4x4Set,
+  mat4x4Set2D,
+  mat4x4SetOrtho,
+  mat4x4SetPerspective,
+  mat4x4SetPosition,
+  mat4x4SetTo,
+  mat4x4TransformPoint,
+  mat4x4TransformVector,
+  mat4x4TransformVectors,
+  mat4x4Translate,
+  mat4x4Transpose,
+} from '@flighthq/geometry';
 import type { Matrix3x2, Matrix4x4 } from '@flighthq/types';
 
 const X_AXIS = { x: 1, y: 0, z: 0, w: 0 };
@@ -7,20 +52,20 @@ const Z_AXIS = { x: 0, y: 0, z: 1, w: 0 };
 
 describe('create', () => {
   it('creates an identity matrix when called with no arguments', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
     expect(Array.from(m.m)).toEqual([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
   });
 
   it('creates a Float32Array of length 16', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
     expect(m.m).toBeInstanceOf(Float32Array);
     expect(m.m.length).toBe(16);
   });
 
   it('overrides only the provided constructor values', () => {
-    const m = matrix4x4.create(
+    const m = createMatrix4x4(
       2, // m00
       undefined,
       undefined,
@@ -33,7 +78,7 @@ describe('create', () => {
   });
 
   it('maps constructor arguments to correct column-major indices', () => {
-    const m = matrix4x4.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const m = createMatrix4x4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
     expect(Array.from(m.m)).toEqual([
       // column 0
@@ -50,9 +95,9 @@ describe('create', () => {
 
 describe('appendRotation', () => {
   it('rotates identity around Z axis by 90 degrees', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.appendRotation(m, m, 90, Z_AXIS);
+    mat4x4AppendRotation(m, m, 90, Z_AXIS);
 
     expect(m.m[0]).toBeCloseTo(0);
     expect(m.m[1]).toBeCloseTo(1);
@@ -61,41 +106,41 @@ describe('appendRotation', () => {
   });
 
   it('does not rotate existing translation when appending rotation', () => {
-    const m = matrix4x4.create();
-    matrix4x4.translate(m, m, 10, 0, 0);
+    const m = createMatrix4x4();
+    mat4x4Translate(m, m, 10, 0, 0);
 
-    matrix4x4.appendRotation(m, m, 90, Z_AXIS);
+    mat4x4AppendRotation(m, m, 90, Z_AXIS);
 
     expect(m.m[12]).toBe(10);
     expect(m.m[13]).toBe(0);
   });
 
   it('rotates around pivot point', () => {
-    const m = matrix4x4.create();
-    matrix4x4.translate(m, m, 10, 0, 0);
+    const m = createMatrix4x4();
+    mat4x4Translate(m, m, 10, 0, 0);
 
-    matrix4x4.appendRotation(m, m, 90, Z_AXIS, { x: 5, y: 0, z: 0, w: 1 });
+    mat4x4AppendRotation(m, m, 90, Z_AXIS, { x: 5, y: 0, z: 0, w: 1 });
 
     expect(m.m[12]).toBeCloseTo(5);
     expect(m.m[13]).toBeCloseTo(5);
   });
 
   it('appendRotation and prependRotation match on identity', () => {
-    const a = matrix4x4.create();
-    const b = matrix4x4.create();
+    const a = createMatrix4x4();
+    const b = createMatrix4x4();
 
-    matrix4x4.appendRotation(a, a, 45, Z_AXIS);
-    matrix4x4.prependRotation(b, b, 45, Z_AXIS);
+    mat4x4AppendRotation(a, a, 45, Z_AXIS);
+    mat4x4PrependRotation(b, b, 45, Z_AXIS);
 
-    expect(matrix4x4.equals(a, b)).toBe(true);
+    expect(mat4x4Equals(a, b)).toBe(true);
   });
 });
 
 describe('appendScale', () => {
   it('scales an identity matrix', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.appendScale(m, m, 2, 3, 4);
+    mat4x4AppendScale(m, m, 2, 3, 4);
 
     expect(m.m[0]).toBe(2);
     expect(m.m[5]).toBe(3);
@@ -103,10 +148,10 @@ describe('appendScale', () => {
   });
 
   it('accumulates scale multiplicatively', () => {
-    const m = matrix4x4.create();
-    matrix4x4.scale(m, m, 2, 2, 2);
+    const m = createMatrix4x4();
+    mat4x4Scale(m, m, 2, 2, 2);
 
-    matrix4x4.appendScale(m, m, 3, 4, 5);
+    mat4x4AppendScale(m, m, 3, 4, 5);
 
     expect(m.m[0]).toBe(6);
     expect(m.m[5]).toBe(8);
@@ -116,9 +161,9 @@ describe('appendScale', () => {
 
 describe('appendTranslation', () => {
   it('adds translation to an identity matrix', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.appendTranslation(m, m, 1, 2, 3);
+    mat4x4AppendTranslation(m, m, 1, 2, 3);
 
     expect(m.m[12]).toBe(1);
     expect(m.m[13]).toBe(2);
@@ -126,12 +171,12 @@ describe('appendTranslation', () => {
   });
 
   it('adds to existing translation values', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     m.m[12] = 10;
     m.m[13] = 20;
     m.m[14] = 30;
 
-    matrix4x4.appendTranslation(m, m, 1, 2, 3);
+    mat4x4AppendTranslation(m, m, 1, 2, 3);
 
     expect(m.m[12]).toBe(11);
     expect(m.m[13]).toBe(22);
@@ -139,12 +184,12 @@ describe('appendTranslation', () => {
   });
 
   it('does not affect rotation or scale components', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     m.m[0] = 2; // scale x
     m.m[5] = 3; // scale y
     m.m[10] = 4; // scale z
 
-    matrix4x4.appendTranslation(m, m, 1, 2, 3);
+    mat4x4AppendTranslation(m, m, 1, 2, 3);
 
     expect(m.m[0]).toBe(2);
     expect(m.m[5]).toBe(3);
@@ -153,25 +198,25 @@ describe('appendTranslation', () => {
 });
 
 describe('clone', () => {
-  it('creates a matrix4x4.create instance', () => {
-    const source = matrix4x4.create();
-    const clone: Matrix4x4 = matrix4x4.clone(source);
+  it('creates a createMatrix4x4 instance', () => {
+    const source = createMatrix4x4();
+    const clone: Matrix4x4 = mat4x4Clone(source);
 
     expect(clone).not.toBeNull();
     expect(clone).not.toBe(source);
   });
 
   it('copies all values from the source matrix', () => {
-    const source = matrix4x4.create(2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53);
+    const source = createMatrix4x4(2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53);
 
-    const clone = matrix4x4.clone(source);
+    const clone = mat4x4Clone(source);
 
     expect(Array.from(clone.m)).toEqual(Array.from(source.m));
   });
 
   it('does not share internal storage', () => {
-    const source = matrix4x4.create();
-    const clone = matrix4x4.clone(source);
+    const source = createMatrix4x4();
+    const clone = mat4x4Clone(source);
 
     clone.m[5] = 42;
 
@@ -182,19 +227,19 @@ describe('clone', () => {
 
 describe('copy', () => {
   it('copies all values from source into out', () => {
-    const source = matrix4x4.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const source = createMatrix4x4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
-    const out = matrix4x4.create();
-    matrix4x4.copy(out, source);
+    const out = createMatrix4x4();
+    mat4x4Copy(out, source);
 
     expect(Array.from(out.m)).toEqual(Array.from(source.m));
   });
 
   it('does not share the underlying Float32Array', () => {
-    const source = matrix4x4.create();
-    const out = matrix4x4.create();
+    const source = createMatrix4x4();
+    const out = createMatrix4x4();
 
-    matrix4x4.copy(out, source);
+    mat4x4Copy(out, source);
 
     out.m[0] = 99;
 
@@ -205,10 +250,10 @@ describe('copy', () => {
 
 describe('copyColumnFrom', () => {
   it('copies values into column 0', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     const v = { x: 1, y: 2, z: 3, w: 4 };
 
-    matrix4x4.copyColumnFrom(m, 0, v);
+    mat4x4CopyColumnFrom(m, 0, v);
 
     expect(m.m[0]).toBe(1);
     expect(m.m[1]).toBe(2);
@@ -217,10 +262,10 @@ describe('copyColumnFrom', () => {
   });
 
   it('copies values into column 2', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     const v = { x: 5, y: 6, z: 7, w: 8 };
 
-    matrix4x4.copyColumnFrom(m, 2, v);
+    mat4x4CopyColumnFrom(m, 2, v);
 
     expect(m.m[8]).toBe(5);
     expect(m.m[9]).toBe(6);
@@ -229,21 +274,21 @@ describe('copyColumnFrom', () => {
   });
 
   it('throws a RangeError for an invalid column index', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     const v = { x: 0, y: 0, z: 0, w: 0 };
 
-    expect(() => matrix4x4.copyColumnFrom(m, -1, v)).toThrow(RangeError);
-    expect(() => matrix4x4.copyColumnFrom(m, 4, v)).toThrow(RangeError);
+    expect(() => mat4x4CopyColumnFrom(m, -1, v)).toThrow(RangeError);
+    expect(() => mat4x4CopyColumnFrom(m, 4, v)).toThrow(RangeError);
   });
 });
 
 describe('copyColumnTo', () => {
   it('copies values from column 1 into a vector', () => {
-    const m = matrix4x4.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const m = createMatrix4x4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
     const out = { x: 0, y: 0, z: 0, w: 0 };
 
-    matrix4x4.copyColumnTo(out, 1, m);
+    mat4x4CopyColumnTo(out, 1, m);
 
     expect(out).toEqual({
       x: 5,
@@ -254,19 +299,19 @@ describe('copyColumnTo', () => {
   });
 
   it('throws a RangeError for an invalid column index', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     const out = { x: 0, y: 0, z: 0, w: 0 };
 
-    expect(() => matrix4x4.copyColumnTo(out, 99, m)).toThrow(RangeError);
+    expect(() => mat4x4CopyColumnTo(out, 99, m)).toThrow(RangeError);
   });
 });
 
 describe('copyRowFrom', () => {
   it('copies values into row 0', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     const v = { x: 1, y: 2, z: 3, w: 4 };
 
-    matrix4x4.copyRowFrom(m, 0, v);
+    mat4x4CopyRowFrom(m, 0, v);
 
     expect(m.m[0]).toBe(1);
     expect(m.m[4]).toBe(2);
@@ -275,10 +320,10 @@ describe('copyRowFrom', () => {
   });
 
   it('copies values into row 3', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     const v = { x: 9, y: 8, z: 7, w: 6 };
 
-    matrix4x4.copyRowFrom(m, 3, v);
+    mat4x4CopyRowFrom(m, 3, v);
 
     expect(m.m[3]).toBe(9);
     expect(m.m[7]).toBe(8);
@@ -287,21 +332,21 @@ describe('copyRowFrom', () => {
   });
 
   it('throws a RangeError for an invalid row index', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     const v = { x: 0, y: 0, z: 0, w: 0 };
 
-    expect(() => matrix4x4.copyRowFrom(m, -1, v)).toThrow(RangeError);
-    expect(() => matrix4x4.copyRowFrom(m, 4, v)).toThrow(RangeError);
+    expect(() => mat4x4CopyRowFrom(m, -1, v)).toThrow(RangeError);
+    expect(() => mat4x4CopyRowFrom(m, 4, v)).toThrow(RangeError);
   });
 });
 
 describe('copyRowTo', () => {
   it('copies values from row 2 into a vector', () => {
-    const m = matrix4x4.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const m = createMatrix4x4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
     const out = { x: 0, y: 0, z: 0, w: 0 };
 
-    matrix4x4.copyRowTo(out, 2, m);
+    mat4x4CopyRowTo(out, 2, m);
 
     expect(out).toEqual({
       x: 3,
@@ -312,28 +357,28 @@ describe('copyRowTo', () => {
   });
 
   it('throws a RangeError for an invalid row index', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     const out = { x: 0, y: 0, z: 0, w: 0 };
 
-    expect(() => matrix4x4.copyRowTo(out, 42, m)).toThrow(RangeError);
+    expect(() => mat4x4CopyRowTo(out, 42, m)).toThrow(RangeError);
   });
 });
 
 describe('create2D', () => {
   it('creates a Matrix4x4 instance', () => {
-    const m: Matrix4x4 = matrix4x4.create2D(1, 0, 0, 1, 10, 20);
+    const m: Matrix4x4 = createMatrix4x4From2D(1, 0, 0, 1, 10, 20);
     expect(m).not.toBeNull();
   });
 
   it('initializes the matrix using set2D semantics', () => {
-    const m = matrix4x4.create2D(1, 2, 3, 4, 5, 6);
+    const m = createMatrix4x4From2D(1, 2, 3, 4, 5, 6);
 
     expect(Array.from(m.m)).toEqual([1, 2, 0, 0, 3, 4, 0, 0, 0, 0, 1, 0, 5, 6, 0, 1]);
   });
 
   it('does not share internal storage with other matrices', () => {
-    const a = matrix4x4.create2D(1, 0, 0, 1, 0, 0);
-    const b = matrix4x4.create2D(1, 0, 0, 1, 0, 0);
+    const a = createMatrix4x4From2D(1, 0, 0, 1, 0, 0);
+    const b = createMatrix4x4From2D(1, 0, 0, 1, 0, 0);
 
     b.m[0] = 42;
 
@@ -344,49 +389,49 @@ describe('create2D', () => {
 
 describe('determinant', () => {
   it('returns 1 for the identity matrix', () => {
-    const m = matrix4x4.create();
-    expect(matrix4x4.determinant(m)).toBe(1);
+    const m = createMatrix4x4();
+    expect(mat4x4Determinant(m)).toBe(1);
   });
 });
 
 describe('equals', () => {
   it('returns true when comparing the same reference', () => {
-    const m = matrix4x4.create();
-    expect(matrix4x4.equals(m, m)).toBe(true);
+    const m = createMatrix4x4();
+    expect(mat4x4Equals(m, m)).toBe(true);
   });
 
   it('returns false if either argument is null or undefined', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    expect(matrix4x4.equals(m, null)).toBe(false);
-    expect(matrix4x4.equals(undefined, m)).toBe(false);
-    expect(matrix4x4.equals(null, null)).toBe(true); // same reference shortcut
+    expect(mat4x4Equals(m, null)).toBe(false);
+    expect(mat4x4Equals(undefined, m)).toBe(false);
+    expect(mat4x4Equals(null, null)).toBe(true); // same reference shortcut
   });
 
   it('returns true for two matrices with identical values', () => {
-    const a = matrix4x4.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const a = createMatrix4x4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
-    const b = matrix4x4.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const b = createMatrix4x4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
-    expect(matrix4x4.equals(a, b)).toBe(true);
+    expect(mat4x4Equals(a, b)).toBe(true);
   });
 
   it('returns false if any value differs', () => {
-    const a = matrix4x4.create();
-    const b = matrix4x4.create();
+    const a = createMatrix4x4();
+    const b = createMatrix4x4();
 
     b.m[10] = 2;
 
-    expect(matrix4x4.equals(a, b)).toBe(false);
+    expect(mat4x4Equals(a, b)).toBe(false);
   });
 });
 
 describe('fromMatrix3x2', () => {
   it('should convert an Matrix3x2 to a Matrix4x4', () => {
-    const mat2D: Matrix3x2 = matrix3x2.create();
+    const mat2D: Matrix3x2 = createMatrix3x2();
 
-    const mat = matrix4x4.create();
-    matrix4x4.fromMatrix3x2(mat, mat2D);
+    const mat = createMatrix4x4();
+    mat4x4FromMat3x2(mat, mat2D);
 
     const expectedMatrix4x4 = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 
@@ -395,39 +440,39 @@ describe('fromMatrix3x2', () => {
 
   it('should handle scaling and translation', () => {
     // scale(2,3), translate(5,10)
-    const mat2D: Matrix3x2 = matrix3x2.create(2, 0, 0, 3, 5, 10);
+    const mat2D: Matrix3x2 = createMatrix3x2(2, 0, 0, 3, 5, 10);
 
-    const mat = matrix4x4.create();
-    matrix4x4.fromMatrix3x2(mat, mat2D);
+    const mat = createMatrix4x4();
+    mat4x4FromMat3x2(mat, mat2D);
 
-    expect(matrix4x4.get(mat, 0, 0)).toEqual(2); // a
-    expect(matrix4x4.get(mat, 0, 1)).toEqual(0); // b
-    expect(matrix4x4.get(mat, 0, 2)).toEqual(0);
-    expect(matrix4x4.get(mat, 0, 3)).toEqual(5); // tx
+    expect(mat4x4Get(mat, 0, 0)).toEqual(2); // a
+    expect(mat4x4Get(mat, 0, 1)).toEqual(0); // b
+    expect(mat4x4Get(mat, 0, 2)).toEqual(0);
+    expect(mat4x4Get(mat, 0, 3)).toEqual(5); // tx
 
-    expect(matrix4x4.get(mat, 1, 0)).toEqual(0); // c
-    expect(matrix4x4.get(mat, 1, 1)).toEqual(3); // d
-    expect(matrix4x4.get(mat, 1, 2)).toEqual(0);
-    expect(matrix4x4.get(mat, 1, 3)).toEqual(10); // ty
+    expect(mat4x4Get(mat, 1, 0)).toEqual(0); // c
+    expect(mat4x4Get(mat, 1, 1)).toEqual(3); // d
+    expect(mat4x4Get(mat, 1, 2)).toEqual(0);
+    expect(mat4x4Get(mat, 1, 3)).toEqual(10); // ty
 
-    expect(matrix4x4.get(mat, 2, 0)).toEqual(0);
-    expect(matrix4x4.get(mat, 2, 1)).toEqual(0);
-    expect(matrix4x4.get(mat, 2, 2)).toEqual(1);
-    expect(matrix4x4.get(mat, 2, 3)).toEqual(0);
+    expect(mat4x4Get(mat, 2, 0)).toEqual(0);
+    expect(mat4x4Get(mat, 2, 1)).toEqual(0);
+    expect(mat4x4Get(mat, 2, 2)).toEqual(1);
+    expect(mat4x4Get(mat, 2, 3)).toEqual(0);
 
-    expect(matrix4x4.get(mat, 3, 0)).toEqual(0);
-    expect(matrix4x4.get(mat, 3, 1)).toEqual(0);
-    expect(matrix4x4.get(mat, 3, 2)).toEqual(0);
-    expect(matrix4x4.get(mat, 3, 3)).toEqual(1);
+    expect(mat4x4Get(mat, 3, 0)).toEqual(0);
+    expect(mat4x4Get(mat, 3, 1)).toEqual(0);
+    expect(mat4x4Get(mat, 3, 2)).toEqual(0);
+    expect(mat4x4Get(mat, 3, 3)).toEqual(1);
   });
 });
 
 describe('fromMatrix3x3', () => {
   it('should convert a Matrix3x3 to a Matrix4x4', () => {
-    const mat3 = matrix3x3.create();
+    const mat3 = createMatrix3x3();
 
-    const mat = matrix4x4.create();
-    matrix4x4.fromMatrix3x3(mat, mat3);
+    const mat = createMatrix4x4();
+    mat4x4FromMat3x3(mat, mat3);
 
     const expectedMatrix4x4 = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 
@@ -436,38 +481,38 @@ describe('fromMatrix3x3', () => {
 
   it('should handle scaling and translation', () => {
     // scale(2,3), translate(5,10)
-    const mat3 = matrix3x3.create(2, 0, 5, 0, 3, 10, 0, 0, 1);
+    const mat3 = createMatrix3x3(2, 0, 5, 0, 3, 10, 0, 0, 1);
 
-    const mat = matrix4x4.create();
-    matrix4x4.fromMatrix3x3(mat, mat3);
+    const mat = createMatrix4x4();
+    mat4x4FromMat3x3(mat, mat3);
 
-    expect(matrix4x4.get(mat, 0, 0)).toEqual(2); // a
-    expect(matrix4x4.get(mat, 0, 1)).toEqual(0); // b
-    expect(matrix4x4.get(mat, 0, 2)).toEqual(0);
-    expect(matrix4x4.get(mat, 0, 3)).toEqual(5); // tx
+    expect(mat4x4Get(mat, 0, 0)).toEqual(2); // a
+    expect(mat4x4Get(mat, 0, 1)).toEqual(0); // b
+    expect(mat4x4Get(mat, 0, 2)).toEqual(0);
+    expect(mat4x4Get(mat, 0, 3)).toEqual(5); // tx
 
-    expect(matrix4x4.get(mat, 1, 0)).toEqual(0); // c
-    expect(matrix4x4.get(mat, 1, 1)).toEqual(3); // d
-    expect(matrix4x4.get(mat, 1, 2)).toEqual(0);
-    expect(matrix4x4.get(mat, 1, 3)).toEqual(10); // ty
+    expect(mat4x4Get(mat, 1, 0)).toEqual(0); // c
+    expect(mat4x4Get(mat, 1, 1)).toEqual(3); // d
+    expect(mat4x4Get(mat, 1, 2)).toEqual(0);
+    expect(mat4x4Get(mat, 1, 3)).toEqual(10); // ty
 
-    expect(matrix4x4.get(mat, 2, 0)).toEqual(0);
-    expect(matrix4x4.get(mat, 2, 1)).toEqual(0);
-    expect(matrix4x4.get(mat, 2, 2)).toEqual(1);
-    expect(matrix4x4.get(mat, 2, 3)).toEqual(0);
+    expect(mat4x4Get(mat, 2, 0)).toEqual(0);
+    expect(mat4x4Get(mat, 2, 1)).toEqual(0);
+    expect(mat4x4Get(mat, 2, 2)).toEqual(1);
+    expect(mat4x4Get(mat, 2, 3)).toEqual(0);
 
-    expect(matrix4x4.get(mat, 3, 0)).toEqual(0);
-    expect(matrix4x4.get(mat, 3, 1)).toEqual(0);
-    expect(matrix4x4.get(mat, 3, 2)).toEqual(0);
-    expect(matrix4x4.get(mat, 3, 3)).toEqual(1);
+    expect(mat4x4Get(mat, 3, 0)).toEqual(0);
+    expect(mat4x4Get(mat, 3, 1)).toEqual(0);
+    expect(mat4x4Get(mat, 3, 2)).toEqual(0);
+    expect(mat4x4Get(mat, 3, 3)).toEqual(1);
   });
 });
 
 describe('identity', () => {
   it('resets a matrix to identity', () => {
-    const m = matrix4x4.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const m = createMatrix4x4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
-    matrix4x4.identity(m);
+    mat4x4Identity(m);
 
     expect(Array.from(m.m)).toEqual([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
   });
@@ -475,19 +520,19 @@ describe('identity', () => {
 
 describe('inverse', () => {
   it('inverse of identity is identity', () => {
-    const m = matrix4x4.create();
-    const inv = matrix4x4.create();
-    matrix4x4.inverse(m, inv);
+    const m = createMatrix4x4();
+    const inv = createMatrix4x4();
+    mat4x4Inverse(m, inv);
 
-    expect(matrix4x4.equals(inv, matrix4x4.create())).toBe(true);
+    expect(mat4x4Equals(inv, createMatrix4x4())).toBe(true);
   });
 
   it('inverse of translation only negates translation', () => {
-    const m = matrix4x4.create();
-    matrix4x4.translate(m, m, 5, -3, 2);
+    const m = createMatrix4x4();
+    mat4x4Translate(m, m, 5, -3, 2);
 
-    const inv = matrix4x4.create();
-    matrix4x4.inverse(inv, m);
+    const inv = createMatrix4x4();
+    mat4x4Inverse(inv, m);
 
     expect(inv.m[12]).toBeCloseTo(-5); // Correct negative translation
     expect(inv.m[13]).toBeCloseTo(3); // Correct negative translation
@@ -500,40 +545,40 @@ describe('inverse', () => {
   });
 
   it('inverse of rotation-only matrix is its transpose', () => {
-    const m = matrix4x4.create();
-    matrix4x4.appendRotation(m, m, 90, Z_AXIS);
+    const m = createMatrix4x4();
+    mat4x4AppendRotation(m, m, 90, Z_AXIS);
 
-    const inv = matrix4x4.create();
-    matrix4x4.inverse(m, inv);
+    const inv = createMatrix4x4();
+    mat4x4Inverse(m, inv);
 
     // m * inv = identity
-    const check = matrix4x4.create();
-    matrix4x4.multiply(m, inv, check);
-    expect(matrix4x4.equals(check, matrix4x4.create())).toBe(true);
+    const check = createMatrix4x4();
+    mat4x4Multiply(m, inv, check);
+    expect(mat4x4Equals(check, createMatrix4x4())).toBe(true);
   });
 
   it('inverse of rotation + translation', () => {
-    const m = matrix4x4.create();
-    matrix4x4.translate(m, m, 5, 0, 0);
-    matrix4x4.appendRotation(m, m, 90, Z_AXIS);
+    const m = createMatrix4x4();
+    mat4x4Translate(m, m, 5, 0, 0);
+    mat4x4AppendRotation(m, m, 90, Z_AXIS);
 
-    const inv = matrix4x4.create();
-    matrix4x4.inverse(m, inv);
+    const inv = createMatrix4x4();
+    mat4x4Inverse(m, inv);
 
     // m * inv = identity
-    const check = matrix4x4.create();
-    matrix4x4.multiply(m, inv, check);
-    expect(matrix4x4.equals(check, matrix4x4.create())).toBe(true);
+    const check = createMatrix4x4();
+    mat4x4Multiply(m, inv, check);
+    expect(mat4x4Equals(check, createMatrix4x4())).toBe(true);
   });
 
   it('inverse of singular matrix should fail or produce NaN', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     m.m[0] = 0; // make determinant zero
 
-    const inv = matrix4x4.create();
-    matrix4x4.inverse(inv, m);
+    const inv = createMatrix4x4();
+    mat4x4Inverse(inv, m);
 
-    const det = matrix4x4.determinant(m);
+    const det = mat4x4Determinant(m);
     expect(det).toBeCloseTo(0);
 
     // Inverse should either be NaN or throw an error
@@ -541,79 +586,79 @@ describe('inverse', () => {
     expect(inv.m[1]).toBeNaN();
     expect(inv.m[2]).toBeNaN();
     // or, if you prefer to throw an error:
-    // expect(() => matrix4x4.inverse(m, inv)).toThrowError();
+    // expect(() => mat4x4Inverse(m, inv)).toThrowError();
   });
 });
 
 describe('isAffine', () => {
   it('returns true for the identity matrix', () => {
-    const m = matrix4x4.create();
-    expect(matrix4x4.isAffine(m)).toBe(true);
+    const m = createMatrix4x4();
+    expect(mat4x4IsAffine(m)).toBe(true);
   });
 
   it('returns true for a 2D transform matrix', () => {
-    const m = matrix4x4.create2D(1, 0, 0, 1, 10, 20);
-    expect(matrix4x4.isAffine(m)).toBe(true);
+    const m = createMatrix4x4From2D(1, 0, 0, 1, 10, 20);
+    expect(mat4x4IsAffine(m)).toBe(true);
   });
 
   it('returns false if m[3] is non-zero', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     m.m[3] = 1;
-    expect(matrix4x4.isAffine(m)).toBe(false);
+    expect(mat4x4IsAffine(m)).toBe(false);
   });
 
   it('returns false if m[7] is non-zero', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     m.m[7] = 1;
-    expect(matrix4x4.isAffine(m)).toBe(false);
+    expect(mat4x4IsAffine(m)).toBe(false);
   });
 
   it('returns false if m[11] is non-zero', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     m.m[11] = 1;
-    expect(matrix4x4.isAffine(m)).toBe(false);
+    expect(mat4x4IsAffine(m)).toBe(false);
   });
 
   it('returns false if m[15] is not 1', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     m.m[15] = 0;
-    expect(matrix4x4.isAffine(m)).toBe(false);
+    expect(mat4x4IsAffine(m)).toBe(false);
   });
 });
 
 describe('multiply', () => {
   describe('multiply (identity)', () => {
     it('returns the right-hand operand when left is identity', () => {
-      const I = matrix4x4.create();
-      const T = matrix4x4.create2D(1, 0, 0, 1, 10, 20);
+      const I = createMatrix4x4();
+      const T = createMatrix4x4From2D(1, 0, 0, 1, 10, 20);
 
-      const out = matrix4x4.create();
-      matrix4x4.multiply(out, I, T);
+      const out = createMatrix4x4();
+      mat4x4Multiply(out, I, T);
 
-      expect(matrix4x4.equals(out, T)).toBe(true);
+      expect(mat4x4Equals(out, T)).toBe(true);
     });
 
     it('returns the left-hand operand when right is identity', () => {
-      const I = matrix4x4.create();
-      const S = matrix4x4.create();
-      matrix4x4.scale(S, S, 2, 3, 4);
+      const I = createMatrix4x4();
+      const S = createMatrix4x4();
+      mat4x4Scale(S, S, 2, 3, 4);
 
-      const out = matrix4x4.create();
-      matrix4x4.multiply(out, S, I);
+      const out = createMatrix4x4();
+      mat4x4Multiply(out, S, I);
 
-      expect(matrix4x4.equals(out, S)).toBe(true);
+      expect(mat4x4Equals(out, S)).toBe(true);
     });
 
     it('does not mutate inputs', () => {
-      const a = matrix4x4.create();
-      matrix4x4.translate(a, a, 1, 2, 3);
-      const b = matrix4x4.create();
-      matrix4x4.scale(b, b, 2, 2, 2);
+      const a = createMatrix4x4();
+      mat4x4Translate(a, a, 1, 2, 3);
+      const b = createMatrix4x4();
+      mat4x4Scale(b, b, 2, 2, 2);
 
       const aBefore = Array.from(a.m);
       const bBefore = Array.from(b.m);
 
-      matrix4x4.multiply(matrix4x4.create(), a, b);
+      mat4x4Multiply(createMatrix4x4(), a, b);
 
       expect(Array.from(a.m)).toEqual(aBefore);
       expect(Array.from(b.m)).toEqual(bBefore);
@@ -622,12 +667,12 @@ describe('multiply', () => {
 
   describe('multiply', () => {
     it('post-multiplies by the given matrix', () => {
-      const m = matrix4x4.create();
-      matrix4x4.translate(m, m, 1, 0, 0);
-      const s = matrix4x4.create();
-      matrix4x4.scale(s, s, 2, 2, 2);
+      const m = createMatrix4x4();
+      mat4x4Translate(m, m, 1, 0, 0);
+      const s = createMatrix4x4();
+      mat4x4Scale(s, s, 2, 2, 2);
 
-      matrix4x4.multiply(m, m, s);
+      mat4x4Multiply(m, m, s);
 
       // translation then scale: position unaffected
       expect(m.m[12]).toBe(1);
@@ -637,16 +682,16 @@ describe('multiply', () => {
 
   describe('multiply (ordering)', () => {
     it('translation × scale ≠ scale × translation', () => {
-      const T = matrix4x4.create();
-      matrix4x4.translate(T, T, 10, 0, 0);
-      const S = matrix4x4.create();
-      matrix4x4.scale(S, S, 2, 2, 2);
+      const T = createMatrix4x4();
+      mat4x4Translate(T, T, 10, 0, 0);
+      const S = createMatrix4x4();
+      mat4x4Scale(S, S, 2, 2, 2);
 
-      const TS = matrix4x4.create();
-      matrix4x4.multiply(TS, T, S);
+      const TS = createMatrix4x4();
+      mat4x4Multiply(TS, T, S);
 
-      const ST = matrix4x4.create();
-      matrix4x4.multiply(ST, S, T);
+      const ST = createMatrix4x4();
+      mat4x4Multiply(ST, S, T);
 
       // TS: translate, then scale → translation unaffected
       expect(TS.m[12]).toBe(10);
@@ -654,63 +699,63 @@ describe('multiply', () => {
       // ST: scale, then translate → translation scaled
       expect(ST.m[12]).toBe(20);
 
-      expect(matrix4x4.equals(TS, ST)).toBe(false);
+      expect(mat4x4Equals(TS, ST)).toBe(false);
     });
   });
 
   describe('multiply equivalence', () => {
     it('appendTranslation equals multiply by translation matrix', () => {
-      const m1 = matrix4x4.create();
-      matrix4x4.translate(m1, m1, 1, 2, 3);
-      const m2 = matrix4x4.create();
-      matrix4x4.translate(m2, m2, 1, 2, 3);
+      const m1 = createMatrix4x4();
+      mat4x4Translate(m1, m1, 1, 2, 3);
+      const m2 = createMatrix4x4();
+      mat4x4Translate(m2, m2, 1, 2, 3);
 
-      const t = matrix4x4.create();
-      matrix4x4.translate(t, t, 4, 5, 6);
+      const t = createMatrix4x4();
+      mat4x4Translate(t, t, 4, 5, 6);
 
-      matrix4x4.appendTranslation(m1, m1, 4, 5, 6);
-      matrix4x4.multiply(m2, m2, t);
+      mat4x4AppendTranslation(m1, m1, 4, 5, 6);
+      mat4x4Multiply(m2, m2, t);
 
-      expect(matrix4x4.equals(m1, m2)).toBe(true);
+      expect(mat4x4Equals(m1, m2)).toBe(true);
     });
 
     it('prependScale equals multiply scale × matrix', () => {
-      const m1 = matrix4x4.create();
-      matrix4x4.translate(m1, m1, 10, 0, 0);
-      const m2 = matrix4x4.create();
-      matrix4x4.translate(m2, m2, 10, 0, 0);
+      const m1 = createMatrix4x4();
+      mat4x4Translate(m1, m1, 10, 0, 0);
+      const m2 = createMatrix4x4();
+      mat4x4Translate(m2, m2, 10, 0, 0);
 
-      const s = matrix4x4.create();
-      matrix4x4.scale(s, s, 2, 2, 2);
+      const s = createMatrix4x4();
+      mat4x4Scale(s, s, 2, 2, 2);
 
-      matrix4x4.prependScale(m1, m1, 2, 2, 2);
-      matrix4x4.multiply(m2, s, m2);
+      mat4x4PrependScale(m1, m1, 2, 2, 2);
+      mat4x4Multiply(m2, s, m2);
 
-      expect(matrix4x4.equals(m1, m2)).toBe(true);
+      expect(mat4x4Equals(m1, m2)).toBe(true);
     });
   });
 });
 
 describe('position', () => {
   it('extracts translation components from the matrix', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     m.m[12] = 10;
     m.m[13] = 20;
     m.m[14] = 30;
 
     const out = { x: 0, y: 0, z: 0 };
 
-    matrix4x4.position(out, m);
+    mat4x4Position(out, m);
 
     expect(out).toEqual({ x: 10, y: 20, z: 30 });
   });
 
   it('does not mutate the source matrix', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     const snapshot = Array.from(m.m);
 
     const out = { x: 0, y: 0, z: 0 };
-    matrix4x4.position(out, m);
+    mat4x4Position(out, m);
 
     expect(Array.from(m.m)).toEqual(snapshot);
   });
@@ -718,19 +763,19 @@ describe('position', () => {
 
 describe('prependRotation', () => {
   it('rotates identity around Z axis', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.prependRotation(m, m, 90, Z_AXIS);
+    mat4x4PrependRotation(m, m, 90, Z_AXIS);
 
     expect(m.m[0]).toBeCloseTo(0);
     expect(m.m[1]).toBeCloseTo(1);
   });
 
   it('rotates translation when prepending rotation', () => {
-    const m = matrix4x4.create();
-    matrix4x4.translate(m, m, 10, 0, 0);
+    const m = createMatrix4x4();
+    mat4x4Translate(m, m, 10, 0, 0);
 
-    matrix4x4.prependRotation(m, m, 90, Z_AXIS);
+    mat4x4PrependRotation(m, m, 90, Z_AXIS);
 
     // (10, 0, 0) → (0, 10, 0)
     expect(m.m[12]).toBeCloseTo(0);
@@ -740,9 +785,9 @@ describe('prependRotation', () => {
 
 describe('prependScale', () => {
   it('scales an identity matrix', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.prependScale(m, m, 2, 3, 4);
+    mat4x4PrependScale(m, m, 2, 3, 4);
 
     expect(m.m[0]).toBe(2);
     expect(m.m[5]).toBe(3);
@@ -750,10 +795,10 @@ describe('prependScale', () => {
   });
 
   it('scales translation when prepending scale', () => {
-    const m = matrix4x4.create();
-    matrix4x4.translate(m, m, 10, 20, 30);
+    const m = createMatrix4x4();
+    mat4x4Translate(m, m, 10, 20, 30);
 
-    matrix4x4.prependScale(m, m, 2, 3, 4);
+    mat4x4PrependScale(m, m, 2, 3, 4);
 
     expect(m.m[12]).toBe(20); // 10 * 2
     expect(m.m[13]).toBe(60); // 20 * 3
@@ -761,24 +806,24 @@ describe('prependScale', () => {
   });
 
   it('scale, appendScale, and prependScale behave the same on identity', () => {
-    const a = matrix4x4.create();
-    const b = matrix4x4.create();
-    const c = matrix4x4.create();
+    const a = createMatrix4x4();
+    const b = createMatrix4x4();
+    const c = createMatrix4x4();
 
-    matrix4x4.scale(a, a, 2, 3, 4);
-    matrix4x4.appendScale(b, b, 2, 3, 4);
-    matrix4x4.prependScale(c, c, 2, 3, 4);
+    mat4x4Scale(a, a, 2, 3, 4);
+    mat4x4AppendScale(b, b, 2, 3, 4);
+    mat4x4PrependScale(c, c, 2, 3, 4);
 
-    expect(matrix4x4.equals(a, b)).toBe(true);
-    expect(matrix4x4.equals(b, c)).toBe(true);
+    expect(mat4x4Equals(a, b)).toBe(true);
+    expect(mat4x4Equals(b, c)).toBe(true);
   });
 });
 
 describe('prependTranslation', () => {
   it('translates an identity matrix by (x, y, z)', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.prependTranslation(m, m, 1, 2, 3);
+    mat4x4PrependTranslation(m, m, 1, 2, 3);
 
     expect(m.m[12]).toBe(1);
     expect(m.m[13]).toBe(2);
@@ -786,54 +831,54 @@ describe('prependTranslation', () => {
   });
 
   it('prepends translation before existing transforms', () => {
-    const m = matrix4x4.create();
-    matrix4x4.translate(m, m, 10, 0, 0);
+    const m = createMatrix4x4();
+    mat4x4Translate(m, m, 10, 0, 0);
 
-    matrix4x4.prependTranslation(m, m, 5, 0, 0);
+    mat4x4PrependTranslation(m, m, 5, 0, 0);
 
     // world-space prepend: (5 + 10)
     expect(m.m[12]).toBe(15);
   });
 
   it('translate, appendTranslation, and prependTranslation behave the same on identity', () => {
-    const a = matrix4x4.create();
-    const b = matrix4x4.create();
-    const c = matrix4x4.create();
+    const a = createMatrix4x4();
+    const b = createMatrix4x4();
+    const c = createMatrix4x4();
 
-    matrix4x4.translate(a, a, 1, 2, 3);
-    matrix4x4.appendTranslation(b, b, 1, 2, 3);
-    matrix4x4.prependTranslation(c, c, 1, 2, 3);
+    mat4x4Translate(a, a, 1, 2, 3);
+    mat4x4AppendTranslation(b, b, 1, 2, 3);
+    mat4x4PrependTranslation(c, c, 1, 2, 3);
 
-    expect(matrix4x4.equals(a, b)).toBe(true);
-    expect(matrix4x4.equals(b, c)).toBe(true);
+    expect(mat4x4Equals(a, b)).toBe(true);
+    expect(mat4x4Equals(b, c)).toBe(true);
   });
 });
 
 describe('rotate', () => {
   it('matches appendRotation on identity', () => {
-    const a = matrix4x4.create();
-    const b = matrix4x4.create();
+    const a = createMatrix4x4();
+    const b = createMatrix4x4();
 
-    matrix4x4.rotate(a, a, Z_AXIS, 90);
-    matrix4x4.appendRotation(b, b, 90, Z_AXIS);
+    mat4x4Rotate(a, a, Z_AXIS, 90);
+    mat4x4AppendRotation(b, b, 90, Z_AXIS);
 
-    expect(matrix4x4.equals(a, b)).toBe(true);
+    expect(mat4x4Equals(a, b)).toBe(true);
   });
 
   it('preserves translation when rotating locally', () => {
-    const m = matrix4x4.create();
-    matrix4x4.translate(m, m, 5, 0, 0);
+    const m = createMatrix4x4();
+    mat4x4Translate(m, m, 5, 0, 0);
 
-    matrix4x4.rotate(m, m, Z_AXIS, 90);
+    mat4x4Rotate(m, m, Z_AXIS, 90);
 
     expect(m.m[12]).toBe(5);
     expect(m.m[13]).toBe(0);
   });
 
   it('rotation around X does not affect X axis basis vector', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.appendRotation(m, m, 90, X_AXIS);
+    mat4x4AppendRotation(m, m, 90, X_AXIS);
 
     expect(m.m[0]).toBeCloseTo(1);
     expect(m.m[1]).toBeCloseTo(0);
@@ -841,9 +886,9 @@ describe('rotate', () => {
   });
 
   it('rotation around Y does not affect Y axis basis vector', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.appendRotation(m, m, 90, Y_AXIS);
+    mat4x4AppendRotation(m, m, 90, Y_AXIS);
 
     expect(m.m[4]).toBeCloseTo(0);
     expect(m.m[5]).toBeCloseTo(1);
@@ -853,9 +898,9 @@ describe('rotate', () => {
 
 describe('scale', () => {
   it('scales an identity matrix by (x, y, z)', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.scale(m, m, 2, 3, 4);
+    mat4x4Scale(m, m, 2, 3, 4);
 
     expect(m.m[0]).toBe(2);
     expect(m.m[5]).toBe(3);
@@ -863,10 +908,10 @@ describe('scale', () => {
   });
 
   it('accumulates scale multiplicatively', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.scale(m, m, 2, 3, 4);
-    matrix4x4.scale(m, m, 5, 6, 7);
+    mat4x4Scale(m, m, 2, 3, 4);
+    mat4x4Scale(m, m, 5, 6, 7);
 
     expect(m.m[0]).toBe(10); // 2 * 5
     expect(m.m[5]).toBe(18); // 3 * 6
@@ -874,10 +919,10 @@ describe('scale', () => {
   });
 
   it('does not modify translation when scaling locally', () => {
-    const m = matrix4x4.create();
-    matrix4x4.translate(m, m, 10, 20, 30);
+    const m = createMatrix4x4();
+    mat4x4Translate(m, m, 10, 20, 30);
 
-    matrix4x4.scale(m, m, 2, 3, 4);
+    mat4x4Scale(m, m, 2, 3, 4);
 
     expect(m.m[12]).toBe(10);
     expect(m.m[13]).toBe(20);
@@ -887,17 +932,17 @@ describe('scale', () => {
 
 describe('setTo', () => {
   it('sets all 16 values in column-major order', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.setTo(m, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    mat4x4SetTo(m, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
     expect(Array.from(m.m)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
   });
 
   it('overwrites existing matrix values completely', () => {
-    const m = matrix4x4.create(99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99);
+    const m = createMatrix4x4(99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99);
 
-    matrix4x4.setTo(m, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+    mat4x4SetTo(m, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 
     expect(Array.from(m.m)).toEqual([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
   });
@@ -905,9 +950,9 @@ describe('setTo', () => {
 
 describe('set2D', () => {
   it('sets a 2D transform with translation', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.set2D(m, 1, 2, 3, 4, 5, 6);
+    mat4x4Set2D(m, 1, 2, 3, 4, 5, 6);
 
     expect(Array.from(m.m)).toEqual([
       // column 0
@@ -922,26 +967,26 @@ describe('set2D', () => {
   });
 
   it('defaults tx and ty to 0 when omitted', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.set2D(m, 7, 8, 9, 10);
+    mat4x4Set2D(m, 7, 8, 9, 10);
 
     expect(m.m[12]).toBe(0);
     expect(m.m[13]).toBe(0);
   });
 
   it('produces an affine matrix', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.set2D(m, 1, 0, 0, 1, 0, 0);
+    mat4x4Set2D(m, 1, 0, 0, 1, 0, 0);
 
-    expect(matrix4x4.isAffine(m)).toBe(true);
+    expect(mat4x4IsAffine(m)).toBe(true);
   });
 
   it('sets Z axis to identity', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.set2D(m, 1, 2, 3, 4);
+    mat4x4Set2D(m, 1, 2, 3, 4);
 
     expect(m.m[10]).toBe(1); // z-scale
     expect(m.m[2]).toBe(0);
@@ -952,9 +997,9 @@ describe('set2D', () => {
 
 describe('setPosition', () => {
   it('sets the translation components of the matrix', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.setPosition(m, { x: 5, y: 6, z: 7 });
+    mat4x4SetPosition(m, { x: 5, y: 6, z: 7 });
 
     expect(m.m[12]).toBe(5);
     expect(m.m[13]).toBe(6);
@@ -962,10 +1007,10 @@ describe('setPosition', () => {
   });
 
   it('does not modify other matrix values', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
     const before = Array.from(m.m);
 
-    matrix4x4.setPosition(m, { x: 1, y: 2, z: 3 });
+    mat4x4SetPosition(m, { x: 1, y: 2, z: 3 });
 
     expect(m.m[0]).toBe(before[0]);
     expect(m.m[5]).toBe(before[5]);
@@ -974,9 +1019,9 @@ describe('setPosition', () => {
   });
 
   it('can overwrite an existing translation', () => {
-    const m = matrix4x4.create();
-    matrix4x4.setPosition(m, { x: 1, y: 2, z: 3 });
-    matrix4x4.setPosition(m, { x: -1, y: -2, z: -3 });
+    const m = createMatrix4x4();
+    mat4x4SetPosition(m, { x: 1, y: 2, z: 3 });
+    mat4x4SetPosition(m, { x: -1, y: -2, z: -3 });
 
     expect(m.m[12]).toBe(-1);
     expect(m.m[13]).toBe(-2);
@@ -986,9 +1031,9 @@ describe('setPosition', () => {
 
 describe('translate', () => {
   it('translates an identity matrix by (x, y, z)', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.translate(m, m, 1, 2, 3);
+    mat4x4Translate(m, m, 1, 2, 3);
 
     expect(m.m[12]).toBe(1);
     expect(m.m[13]).toBe(2);
@@ -996,10 +1041,10 @@ describe('translate', () => {
   });
 
   it('accumulates translation when called multiple times', () => {
-    const m = matrix4x4.create();
+    const m = createMatrix4x4();
 
-    matrix4x4.translate(m, m, 1, 2, 3);
-    matrix4x4.translate(m, m, 4, 5, 6);
+    mat4x4Translate(m, m, 1, 2, 3);
+    mat4x4Translate(m, m, 4, 5, 6);
 
     expect(m.m[12]).toBe(5);
     expect(m.m[13]).toBe(7);
@@ -1009,28 +1054,28 @@ describe('translate', () => {
 
 describe('transpose', () => {
   it('transpose of identity is identity', () => {
-    const m = matrix4x4.create();
-    const t = matrix4x4.create();
-    matrix4x4.transpose(t, m);
-    expect(matrix4x4.equals(t, m)).toBe(true);
+    const m = createMatrix4x4();
+    const t = createMatrix4x4();
+    mat4x4Transpose(t, m);
+    expect(mat4x4Equals(t, m)).toBe(true);
   });
 
   it('transpose of diagonal matrix is itself', () => {
-    const m = matrix4x4.create();
-    matrix4x4.scale(m, m, 2, 3, 4); // diagonal elements only
-    const t = matrix4x4.create();
-    matrix4x4.transpose(t, m);
-    expect(matrix4x4.equals(t, m)).toBe(true);
+    const m = createMatrix4x4();
+    mat4x4Scale(m, m, 2, 3, 4); // diagonal elements only
+    const t = createMatrix4x4();
+    mat4x4Transpose(t, m);
+    expect(mat4x4Equals(t, m)).toBe(true);
   });
 
   it('transpose of rotation matrix equals its inverse', () => {
-    const m = matrix4x4.create();
-    matrix4x4.appendRotation(m, m, 90, Z_AXIS);
+    const m = createMatrix4x4();
+    mat4x4AppendRotation(m, m, 90, Z_AXIS);
 
-    const t = matrix4x4.create();
-    matrix4x4.transpose(t, m);
-    const inv = matrix4x4.create();
-    matrix4x4.inverse(inv, m);
+    const t = createMatrix4x4();
+    mat4x4Transpose(t, m);
+    const inv = createMatrix4x4();
+    mat4x4Inverse(inv, m);
 
     // element-wise close comparison
     for (let i = 0; i < 16; i++) {
@@ -1039,10 +1084,10 @@ describe('transpose', () => {
   });
 
   it('transpose of arbitrary matrix swaps rows and columns', () => {
-    const m = matrix4x4.create();
-    matrix4x4.setTo(m, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
-    const t = matrix4x4.create();
-    matrix4x4.transpose(t, m);
+    const m = createMatrix4x4();
+    mat4x4SetTo(m, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const t = createMatrix4x4();
+    mat4x4Transpose(t, m);
     const values = [1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 16];
     for (let i = 0; i < values.length; i++) {
       expect(t.m[i]).toBe(values[i]);
@@ -1050,166 +1095,166 @@ describe('transpose', () => {
   });
 
   it('transpose twice returns original matrix', () => {
-    const m = matrix4x4.create();
-    matrix4x4.setTo(m, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
-    const t = matrix4x4.create();
-    matrix4x4.transpose(t, m);
-    const t2 = matrix4x4.create();
-    matrix4x4.transpose(t2, t);
-    expect(matrix4x4.equals(t2, m)).toBe(true);
+    const m = createMatrix4x4();
+    mat4x4SetTo(m, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const t = createMatrix4x4();
+    mat4x4Transpose(t, m);
+    const t2 = createMatrix4x4();
+    mat4x4Transpose(t2, t);
+    expect(mat4x4Equals(t2, m)).toBe(true);
   });
 });
 
 describe('append', () => {
   it('is equivalent to multiply(out, source, other)', () => {
-    const a = matrix4x4.create();
-    matrix4x4.translate(a, a, 5, 0, 0);
-    const b = matrix4x4.create();
-    matrix4x4.scale(b, b, 2, 2, 2);
+    const a = createMatrix4x4();
+    mat4x4Translate(a, a, 5, 0, 0);
+    const b = createMatrix4x4();
+    mat4x4Scale(b, b, 2, 2, 2);
 
-    const out1 = matrix4x4.create();
-    matrix4x4.append(out1, a, b);
+    const out1 = createMatrix4x4();
+    mat4x4Append(out1, a, b);
 
-    const out2 = matrix4x4.create();
-    matrix4x4.multiply(out2, a, b);
+    const out2 = createMatrix4x4();
+    mat4x4Multiply(out2, a, b);
 
-    expect(matrix4x4.equals(out1, out2)).toBe(true);
+    expect(mat4x4Equals(out1, out2)).toBe(true);
   });
 });
 
 describe('createOrtho', () => {
   it('returns a Matrix4x4 equivalent to setOrtho', () => {
-    const m1 = matrix4x4.createOrtho(-1, 1, -1, 1, 0.1, 100);
-    const m2 = matrix4x4.create();
-    matrix4x4.setOrtho(m2, -1, 1, -1, 1, 0.1, 100);
-    expect(matrix4x4.equals(m1, m2)).toBe(true);
+    const m1 = createMatrix4x4Ortho(-1, 1, -1, 1, 0.1, 100);
+    const m2 = createMatrix4x4();
+    mat4x4SetOrtho(m2, -1, 1, -1, 1, 0.1, 100);
+    expect(mat4x4Equals(m1, m2)).toBe(true);
   });
 });
 
 describe('createPerspective', () => {
   it('returns a Matrix4x4 equivalent to setPerspective', () => {
-    const m1 = matrix4x4.createPerspective(0.5, 1.6, 0.1, 1000);
-    const m2 = matrix4x4.create();
-    matrix4x4.setPerspective(m2, 0.5, 1.6, 0.1, 1000);
-    expect(matrix4x4.equals(m1, m2)).toBe(true);
+    const m1 = createMatrix4x4Perspective(0.5, 1.6, 0.1, 1000);
+    const m2 = createMatrix4x4();
+    mat4x4SetPerspective(m2, 0.5, 1.6, 0.1, 1000);
+    expect(mat4x4Equals(m1, m2)).toBe(true);
   });
 });
 
 describe('get', () => {
   it('returns the element at the given row and column', () => {
-    const m = matrix4x4.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
-    expect(matrix4x4.get(m, 0, 0)).toBe(1);
-    expect(matrix4x4.get(m, 1, 0)).toBe(2);
-    expect(matrix4x4.get(m, 0, 1)).toBe(5);
-    expect(matrix4x4.get(m, 3, 3)).toBe(16);
+    const m = createMatrix4x4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    expect(mat4x4Get(m, 0, 0)).toBe(1);
+    expect(mat4x4Get(m, 1, 0)).toBe(2);
+    expect(mat4x4Get(m, 0, 1)).toBe(5);
+    expect(mat4x4Get(m, 3, 3)).toBe(16);
   });
 });
 
 describe('interpolate', () => {
   it('returns a at t=0', () => {
-    const a = matrix4x4.create();
-    matrix4x4.translate(a, a, 0, 0, 0);
-    const b = matrix4x4.create();
-    matrix4x4.translate(b, b, 10, 0, 0);
-    const out = matrix4x4.create();
-    matrix4x4.interpolate(out, a, b, 0);
-    expect(matrix4x4.equals(out, a)).toBe(true);
+    const a = createMatrix4x4();
+    mat4x4Translate(a, a, 0, 0, 0);
+    const b = createMatrix4x4();
+    mat4x4Translate(b, b, 10, 0, 0);
+    const out = createMatrix4x4();
+    mat4x4Interpolate(out, a, b, 0);
+    expect(mat4x4Equals(out, a)).toBe(true);
   });
 
   it('returns b at t=1', () => {
-    const a = matrix4x4.create();
-    const b = matrix4x4.create();
-    matrix4x4.translate(b, b, 10, 0, 0);
-    const out = matrix4x4.create();
-    matrix4x4.interpolate(out, a, b, 1);
-    expect(matrix4x4.equals(out, b)).toBe(true);
+    const a = createMatrix4x4();
+    const b = createMatrix4x4();
+    mat4x4Translate(b, b, 10, 0, 0);
+    const out = createMatrix4x4();
+    mat4x4Interpolate(out, a, b, 1);
+    expect(mat4x4Equals(out, b)).toBe(true);
   });
 
   it('returns midpoint at t=0.5', () => {
-    const a = matrix4x4.create();
-    const b = matrix4x4.create();
-    matrix4x4.translate(b, b, 10, 0, 0);
-    const out = matrix4x4.create();
-    matrix4x4.interpolate(out, a, b, 0.5);
+    const a = createMatrix4x4();
+    const b = createMatrix4x4();
+    mat4x4Translate(b, b, 10, 0, 0);
+    const out = createMatrix4x4();
+    mat4x4Interpolate(out, a, b, 0.5);
     expect(out.m[12]).toBeCloseTo(5);
   });
 });
 
 describe('prepend', () => {
   it('is equivalent to multiply(out, other, source)', () => {
-    const a = matrix4x4.create();
-    matrix4x4.translate(a, a, 5, 0, 0);
-    const b = matrix4x4.create();
-    matrix4x4.scale(b, b, 2, 2, 2);
+    const a = createMatrix4x4();
+    mat4x4Translate(a, a, 5, 0, 0);
+    const b = createMatrix4x4();
+    mat4x4Scale(b, b, 2, 2, 2);
 
-    const out1 = matrix4x4.create();
-    matrix4x4.prepend(out1, a, b);
+    const out1 = createMatrix4x4();
+    mat4x4Prepend(out1, a, b);
 
-    const out2 = matrix4x4.create();
-    matrix4x4.multiply(out2, b, a);
+    const out2 = createMatrix4x4();
+    mat4x4Multiply(out2, b, a);
 
-    expect(matrix4x4.equals(out1, out2)).toBe(true);
+    expect(mat4x4Equals(out1, out2)).toBe(true);
   });
 });
 
 describe('set', () => {
   it('writes the value at the given row and column', () => {
-    const m = matrix4x4.create();
-    matrix4x4.set(m, 2, 3, 42);
-    expect(matrix4x4.get(m, 2, 3)).toBe(42);
+    const m = createMatrix4x4();
+    mat4x4Set(m, 2, 3, 42);
+    expect(mat4x4Get(m, 2, 3)).toBe(42);
   });
 
   it('does not affect other elements', () => {
-    const m = matrix4x4.create();
-    matrix4x4.set(m, 1, 2, 7);
-    expect(matrix4x4.get(m, 0, 0)).toBe(1);
-    expect(matrix4x4.get(m, 3, 3)).toBe(1);
+    const m = createMatrix4x4();
+    mat4x4Set(m, 1, 2, 7);
+    expect(mat4x4Get(m, 0, 0)).toBe(1);
+    expect(mat4x4Get(m, 3, 3)).toBe(1);
   });
 });
 
 describe('setOrtho', () => {
   it('sets m[0] to 2 / (right - left)', () => {
-    const m = matrix4x4.create();
-    matrix4x4.setOrtho(m, -1, 1, -1, 1, 0.1, 100);
+    const m = createMatrix4x4();
+    mat4x4SetOrtho(m, -1, 1, -1, 1, 0.1, 100);
     expect(m.m[0]).toBeCloseTo(1); // 2 / (1 - (-1)) = 1
   });
 
   it('sets m[5] to 2 / (top - bottom)', () => {
-    const m = matrix4x4.create();
-    matrix4x4.setOrtho(m, 0, 2, 0, 4, 0.1, 100);
+    const m = createMatrix4x4();
+    mat4x4SetOrtho(m, 0, 2, 0, 4, 0.1, 100);
     expect(m.m[5]).toBeCloseTo(0.5); // 2 / (4 - 0) = 0.5
   });
 });
 
 describe('setPerspective', () => {
   it('throws when aspect is 0', () => {
-    const m = matrix4x4.create();
-    expect(() => matrix4x4.setPerspective(m, 0.5, 0, 0.1, 1000)).toThrow();
+    const m = createMatrix4x4();
+    expect(() => mat4x4SetPerspective(m, 0.5, 0, 0.1, 1000)).toThrow();
   });
 
   it('sets m[11] to -1', () => {
-    const m = matrix4x4.create();
-    matrix4x4.setPerspective(m, 0.5, 1.6, 0.1, 1000);
+    const m = createMatrix4x4();
+    mat4x4SetPerspective(m, 0.5, 1.6, 0.1, 1000);
     expect(m.m[11]).toBe(-1);
   });
 });
 
 describe('transformPoint', () => {
   it('translates a point by the matrix translation', () => {
-    const m = matrix4x4.create();
-    matrix4x4.translate(m, m, 5, 10, 15);
+    const m = createMatrix4x4();
+    mat4x4Translate(m, m, 5, 10, 15);
     const out = { x: 0, y: 0, z: 0 };
-    matrix4x4.transformPoint(out, m, { x: 0, y: 0, z: 0 });
+    mat4x4TransformPoint(out, m, { x: 0, y: 0, z: 0 });
     expect(out.x).toBeCloseTo(5);
     expect(out.y).toBeCloseTo(10);
     expect(out.z).toBeCloseTo(15);
   });
 
   it('scales a point correctly', () => {
-    const m = matrix4x4.create();
-    matrix4x4.scale(m, m, 2, 3, 4);
+    const m = createMatrix4x4();
+    mat4x4Scale(m, m, 2, 3, 4);
     const out = { x: 0, y: 0, z: 0 };
-    matrix4x4.transformPoint(out, m, { x: 1, y: 2, z: 3 });
+    mat4x4TransformPoint(out, m, { x: 1, y: 2, z: 3 });
     expect(out.x).toBe(2);
     expect(out.y).toBe(6);
     expect(out.z).toBe(12);
@@ -1218,10 +1263,10 @@ describe('transformPoint', () => {
 
 describe('transformVector', () => {
   it('transforms a Vector4 by the matrix', () => {
-    const m = matrix4x4.create();
-    matrix4x4.translate(m, m, 5, 10, 15);
+    const m = createMatrix4x4();
+    mat4x4Translate(m, m, 5, 10, 15);
     const out = { x: 0, y: 0, z: 0, w: 0 };
-    matrix4x4.transformVector(out, m, { x: 1, y: 2, z: 3, w: 1 });
+    mat4x4TransformVector(out, m, { x: 1, y: 2, z: 3, w: 1 });
     expect(out.x).toBeCloseTo(6);
     expect(out.y).toBeCloseTo(12);
     expect(out.z).toBeCloseTo(18);
@@ -1230,11 +1275,11 @@ describe('transformVector', () => {
 
 describe('transformVectors', () => {
   it('transforms a flat array of [x, y, z] triples', () => {
-    const m = matrix4x4.create();
-    matrix4x4.translate(m, m, 1, 2, 3);
+    const m = createMatrix4x4();
+    mat4x4Translate(m, m, 1, 2, 3);
     const vectors = new Float32Array([0, 0, 0, 1, 0, 0]);
     const out = new Float32Array(6);
-    matrix4x4.transformVectors(out, m, vectors);
+    mat4x4TransformVectors(out, m, vectors);
     expect(out[0]).toBeCloseTo(1);
     expect(out[1]).toBeCloseTo(2);
     expect(out[2]).toBeCloseTo(3);

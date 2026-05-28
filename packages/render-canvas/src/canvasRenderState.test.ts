@@ -1,4 +1,4 @@
-import { matrix3x2 } from '@flighthq/geometry';
+import { createMatrix3x2 } from '@flighthq/geometry';
 import type { CanvasRenderOptions } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';
@@ -50,7 +50,7 @@ it('should use provided options', () => {
     backgroundColor: 0xffffff,
     pixelRatio: 2,
     roundPixels: true,
-    renderTransform: matrix3x2.create(),
+    renderTransform: createMatrix3x2(),
     imageSmoothingEnabled: false,
     imageSmoothingQuality: 'low',
   };
@@ -121,7 +121,7 @@ it('should correctly handle roundPixels option', () => {
 });
 
 it('should handle worldTransform option correctly', () => {
-  const customTransform = matrix3x2.create();
+  const customTransform = createMatrix3x2();
   const options: CanvasRenderOptions = {
     renderTransform: customTransform,
   };

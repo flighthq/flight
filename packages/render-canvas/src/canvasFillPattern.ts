@@ -1,4 +1,4 @@
-import { matrix3x2 } from '@flighthq/geometry';
+import { createMatrix3x2 } from '@flighthq/geometry';
 import type {
   GradientType,
   ImageSource,
@@ -45,7 +45,7 @@ export function createGradientPattern(
 // Private helpers
 // ---------------------------------------------------------------------------
 
-const IDENTITY = matrix3x2.create();
+const IDENTITY = createMatrix3x2();
 
 function tp(m: Matrix3x2Like, x: number, y: number): [number, number] {
   return [m.a * x + m.c * y + m.tx, m.b * x + m.d * y + m.ty];

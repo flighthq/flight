@@ -1,4 +1,4 @@
-import { matrix3x2 } from '@flighthq/geometry';
+import { createMatrix3x2 } from '@flighthq/geometry';
 import type { CanvasRenderState, Matrix3x2 } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';
@@ -12,7 +12,7 @@ describe('setCanvasTransform', () => {
   beforeEach(() => {
     canvas = document.createElement('canvas');
     state = createCanvasRenderState(canvas);
-    transform = matrix3x2.create(1, 2, 3, 4, 5.6789, 9.1011);
+    transform = createMatrix3x2(1, 2, 3, 4, 5.6789, 9.1011);
   });
 
   it('should call setTransform with correct values when roundPixels is false', () => {

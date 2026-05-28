@@ -1,5 +1,11 @@
 import { getRuntime } from '@flighthq/entity';
-import { matrix3x2 } from '@flighthq/geometry';
+import {
+  createMatrix3x2,
+  mat3x2Copy,
+  mat3x2InverseTransformPointXY,
+  mat3x2Multiply,
+  mat3x2TransformPointXY,
+} from '@flighthq/geometry';
 import { invalidateLocalTransform, recomputeWorldTransformID } from '@flighthq/scenegraph-core';
 import type {
   GraphNode,
@@ -65,7 +71,7 @@ export function globalToLocal2D<GraphKind extends symbol, Traits extends object>
   source: GraphNode<GraphKind, Traits> & HasTransform2D,
   pos: Readonly<Vector2Like>,
 ): void {
-  matrix3x2.inverseTransformPointXY(out, getWorldTransform2D(source), pos.x, pos.y);
+  mat3x2InverseTransformPointXY(out, getWorldTransform2D(source), pos.x, pos.y);
 }
 
 /**
@@ -77,7 +83,7 @@ export function localToGlobal2D<GraphKind extends symbol, Traits extends object>
   source: GraphNode<GraphKind, Traits> & HasTransform2D,
   point: Readonly<Vector2Like>,
 ): void {
-  matrix3x2.transformPointXY(out, getWorldTransform2D(source), point.x, point.y);
+  mat3x2TransformPointXY(out, getWorldTransform2D(source), point.x, point.y);
 }
 
 function recomputeLocalTransform2D<GraphKind extends symbol, Traits extends object>(
@@ -99,7 +105,7 @@ function recomputeLocalTransform2D<GraphKind extends symbol, Traits extends obje
     runtime.rotationSine = sin;
     runtime.rotationCosine = cos;
   }
-  if (runtime.localTransform2D === null) runtime.localTransform2D = matrix3x2.create();
+  if (runtime.localTransform2D === null) runtime.localTransform2D = createMatrix3x2();
   const matrix = runtime.localTransform2D;
   matrix.a = runtime.rotationCosine * target.scaleX;
   matrix.b = runtime.rotationSine * target.scaleX;
@@ -115,12 +121,12 @@ function recomputeWorldTransform2D<GraphKind extends symbol, Traits extends obje
   runtime: GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime,
   parentRuntime?: Readonly<GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime>,
 ): void {
-  if (runtime.worldTransform2D === null) runtime.worldTransform2D = matrix3x2.create();
+  if (runtime.worldTransform2D === null) runtime.worldTransform2D = createMatrix3x2();
   ensureLocalTransform2D(target);
   if (parentRuntime !== undefined) {
-    matrix3x2.multiply(runtime.worldTransform2D, parentRuntime.worldTransform2D!, runtime.localTransform2D!);
+    mat3x2Multiply(runtime.worldTransform2D, parentRuntime.worldTransform2D!, runtime.localTransform2D!);
   } else {
-    matrix3x2.copy(runtime.worldTransform2D, runtime.localTransform2D!);
+    mat3x2Copy(runtime.worldTransform2D, runtime.localTransform2D!);
   }
   recomputeWorldTransformID(runtime, parentRuntime);
 }

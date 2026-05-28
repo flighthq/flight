@@ -1,4 +1,4 @@
-import { rectangle } from '@flighthq/geometry';
+import { createRectangle } from '@flighthq/geometry';
 import { addChild } from '@flighthq/scenegraph-core';
 import { setScaleX, setScaleY, setX, setY } from '@flighthq/scenegraph-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
@@ -60,8 +60,8 @@ describe('updateDisplayObjectBeforeRender', () => {
   });
 
   it('marks how many scroll rects apply to the current object', () => {
-    parent.scrollRect = rectangle.create();
-    child.scrollRect = rectangle.create();
+    parent.scrollRect = createRectangle();
+    child.scrollRect = createRectangle();
     updateDisplayObjectBeforeRender(state, parent);
     expect(parentData.scrollRectDepth).toBe(1);
     expect(childData.scrollRectDepth).toBe(2);
@@ -104,7 +104,7 @@ describe('updateDisplayObjectBeforeRender', () => {
   });
 
   it('resets up the tree properly when siblings are not in a scroll rect', () => {
-    childA.scrollRect = rectangle.create();
+    childA.scrollRect = createRectangle();
     updateDisplayObjectBeforeRender(state, parent2);
     expect(parent2Data.scrollRectDepth).toBe(0);
     expect(childAData.scrollRectDepth).toBe(1);

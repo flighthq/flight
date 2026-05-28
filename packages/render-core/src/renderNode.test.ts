@@ -1,4 +1,4 @@
-import { matrix3x2 } from '@flighthq/geometry';
+import { createMatrix3x2 } from '@flighthq/geometry';
 import { colorTransform } from '@flighthq/materials';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
@@ -30,7 +30,7 @@ describe('createDisplayObjectRenderNode', () => {
     expect(data.scrollRectDepth).toStrictEqual(0);
     expect(data.shader).toStrictEqual(null);
     expect(data.source).toStrictEqual(source);
-    expect(data.transform2D).toStrictEqual(matrix3x2.create());
+    expect(data.transform2D).toStrictEqual(createMatrix3x2());
     expect(data.transformFrameID).toStrictEqual(-1);
     expect(data.useColorTransform).toStrictEqual(false);
     expect(data.visible).toStrictEqual(true);

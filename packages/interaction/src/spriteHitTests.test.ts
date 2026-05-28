@@ -1,4 +1,4 @@
-import { rectangle } from '@flighthq/geometry';
+import { rectSetTo } from '@flighthq/geometry';
 import { addChild, getLocalBoundsRect } from '@flighthq/scenegraph-core';
 import { createQuadBatch, createSprite, createTilemap } from '@flighthq/scenegraph-sprite';
 
@@ -8,7 +8,7 @@ function makeSprite(boundsW = 100, boundsH = 100) {
   const parent = createSprite();
   const sprite = createSprite();
   addChild(parent, sprite);
-  rectangle.setTo(getLocalBoundsRect(sprite), 0, 0, boundsW, boundsH);
+  rectSetTo(getLocalBoundsRect(sprite), 0, 0, boundsW, boundsH);
   return sprite;
 }
 
@@ -17,7 +17,7 @@ describe('defaultQuadBatchHitTestPoint', () => {
     const parent = createSprite();
     const qb = createQuadBatch();
     addChild(parent, qb);
-    rectangle.setTo(getLocalBoundsRect(qb), 0, 0, 100, 100);
+    rectSetTo(getLocalBoundsRect(qb), 0, 0, 100, 100);
     expect(defaultQuadBatchHitTestPoint(qb, 50, 50, false)).toBe(true);
   });
 
@@ -25,7 +25,7 @@ describe('defaultQuadBatchHitTestPoint', () => {
     const parent = createSprite();
     const qb = createQuadBatch();
     addChild(parent, qb);
-    rectangle.setTo(getLocalBoundsRect(qb), 0, 0, 100, 100);
+    rectSetTo(getLocalBoundsRect(qb), 0, 0, 100, 100);
     expect(defaultQuadBatchHitTestPoint(qb, 200, 200, false)).toBe(false);
   });
 });
@@ -58,7 +58,7 @@ describe('defaultTilemapHitTestPoint', () => {
     const parent = createSprite();
     const tilemap = createTilemap();
     addChild(parent, tilemap);
-    rectangle.setTo(getLocalBoundsRect(tilemap), 0, 0, 100, 100);
+    rectSetTo(getLocalBoundsRect(tilemap), 0, 0, 100, 100);
     expect(defaultTilemapHitTestPoint(tilemap, 10, 10, false)).toBe(true);
   });
 
@@ -66,7 +66,7 @@ describe('defaultTilemapHitTestPoint', () => {
     const parent = createSprite();
     const tilemap = createTilemap();
     addChild(parent, tilemap);
-    rectangle.setTo(getLocalBoundsRect(tilemap), 0, 0, 100, 100);
+    rectSetTo(getLocalBoundsRect(tilemap), 0, 0, 100, 100);
     expect(defaultTilemapHitTestPoint(tilemap, 999, 999, false)).toBe(false);
   });
 });

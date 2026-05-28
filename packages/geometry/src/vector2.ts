@@ -118,25 +118,3 @@ export function vec2WriteToFloat32Array(out: Float32Array, offset: number, sourc
   out[offset] = source.x;
   out[offset + 1] = source.y;
 }
-
-export const vector2 = {
-  create: createVector2,
-  createPolar: createVector2Polar,
-  X_AXIS: VEC2_X_AXIS,
-  Y_AXIS: VEC2_Y_AXIS,
-  add: vec2Add,
-  clone: vec2Clone,
-  copy: vec2Copy,
-  distance: vec2Distance,
-  equals: vec2Equals,
-  fromFloat32Array: vec2FromFloat32Array,
-  length: vec2Length,
-  lengthSquared: vec2LengthSquared,
-  lerp: vec2Lerp,
-  normalize: vec2Normalize,
-  offset: vec2Offset,
-  setPolar: vec2SetPolar,
-  setTo: vec2SetTo,
-  subtract: vec2Subtract,
-  writeToFloat32Array: vec2WriteToFloat32Array,
-};

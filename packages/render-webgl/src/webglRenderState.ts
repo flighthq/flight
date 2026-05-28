@@ -1,4 +1,4 @@
-import { matrix3x2 } from '@flighthq/geometry';
+import { createMatrix3x2 } from '@flighthq/geometry';
 import { createRenderState as _createRenderState, setBackgroundColor } from '@flighthq/render-core';
 import type { WebGLRenderOptions, WebGLRenderState } from '@flighthq/types';
 
@@ -36,7 +36,7 @@ export function createWebGLRenderState(
   const state = _createRenderState({
     allowSmoothing: options.imageSmoothingEnabled ?? true,
     pixelRatio: options.pixelRatio ?? window.devicePixelRatio | 1,
-    renderTransform2D: matrix3x2.create(),
+    renderTransform2D: createMatrix3x2(),
     roundPixels: options.roundPixels ?? false,
   }) as WebGLRenderStateInternal;
 

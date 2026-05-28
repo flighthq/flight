@@ -1,5 +1,5 @@
 import { getRuntime } from '@flighthq/entity';
-import { rectangle } from '@flighthq/geometry';
+import { createRectangle } from '@flighthq/geometry';
 import { createGraphNode } from '@flighthq/scenegraph-core';
 import type {
   DisplayObject,
@@ -196,7 +196,7 @@ describe('setScrollRect', () => {
   });
 
   it('sets scrollRect', () => {
-    const rect = rectangle.create();
+    const rect = createRectangle();
     setScrollRect(obj, rect);
     expect(obj.scrollRect).toBe(rect);
   });
@@ -208,7 +208,7 @@ describe('setScrollRect', () => {
 
   it('invalidates appearance', () => {
     const idBefore = getRuntime_(obj).appearanceID;
-    setScrollRect(obj, rectangle.create());
+    setScrollRect(obj, createRectangle());
     expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
   });
 });

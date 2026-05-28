@@ -1,23 +1,23 @@
 import type { Vector2 } from '@flighthq/types';
 
-import { createVector2 as create } from './vector2';
+import { createVector2 } from './vector2';
 
-export function clear(): void {
+export function vec2PoolClear(): void {
   pool.length = 0;
 }
 
-export function get(): Vector2 {
-  return pool.length > 0 ? (pool.pop() as Vector2) : create();
+export function vec2PoolGet(): Vector2 {
+  return pool.length > 0 ? (pool.pop() as Vector2) : createVector2();
 }
 
-export function getEmpty(): Vector2 {
-  const v = get();
+export function vec2PoolGetEmpty(): Vector2 {
+  const v = vec2PoolGet();
   v.x = 0;
   v.y = 0;
   return v;
 }
 
-export function release(v: Vector2): void {
+export function vec2PoolRelease(v: Vector2): void {
   if (!v) return;
   pool.push(v);
 }

@@ -1,7 +1,7 @@
 import { createEntity } from '@flighthq/entity';
 import type { Matrix3x2Like, Matrix3x3Like, Matrix4x4, Matrix4x4Like, Vector3Like, Vector4Like } from '@flighthq/types';
 
-import * as matrix4x4Pool from './matrix4x4Pool';
+import { mat4x4PoolGet, mat4x4PoolGetIdentity, mat4x4PoolRelease } from './matrix4x4Pool';
 
 /**
  * A 4×4 homogeneous matrix.
@@ -81,13 +81,13 @@ export function mat4x4AppendRotation(
   axis: Readonly<Vector4Like>,
   pivotPoint?: Readonly<Vector4Like>,
 ): void {
-  const m = matrix4x4Pool.getIdentity();
+  const m = mat4x4PoolGetIdentity();
   __getAxisRotation(m, axis.x, axis.y, axis.z, degrees);
 
   if (pivotPoint !== undefined) {
     const p = pivotPoint;
-    const t1 = matrix4x4Pool.getIdentity();
-    const t2 = matrix4x4Pool.getIdentity();
+    const t1 = mat4x4PoolGetIdentity();
+    const t2 = mat4x4PoolGetIdentity();
 
     mat4x4AppendTranslation(t1, t1, -p.x, -p.y, -p.z);
     mat4x4AppendTranslation(t2, t2, p.x, p.y, p.z);
@@ -95,13 +95,13 @@ export function mat4x4AppendRotation(
     mat4x4Multiply(m, t1, m); // R · T(-p)
     mat4x4Multiply(m, m, t2); // T(p) · (R · T(-p))
 
-    matrix4x4Pool.release(t1);
-    matrix4x4Pool.release(t2);
+    mat4x4PoolRelease(t1);
+    mat4x4PoolRelease(t2);
   }
 
   mat4x4Append(out, source, m);
 
-  matrix4x4Pool.release(m);
+  mat4x4PoolRelease(m);
 }
 
 /**
@@ -116,10 +116,10 @@ export function mat4x4AppendScale(
   yScale: number,
   zScale: number,
 ): void {
-  const m = matrix4x4Pool.get();
+  const m = mat4x4PoolGet();
   mat4x4SetTo(m, xScale, 0.0, 0.0, 0.0, 0.0, yScale, 0.0, 0.0, 0.0, 0.0, zScale, 0.0, 0.0, 0.0, 0.0, 1.0);
   mat4x4Append(out, source, m);
-  matrix4x4Pool.release(m);
+  mat4x4PoolRelease(m);
 }
 
 /**
@@ -589,13 +589,13 @@ export function mat4x4PrependRotation(
   axis: Readonly<Vector4Like>,
   pivotPoint?: Readonly<Vector4Like>,
 ): void {
-  const m = matrix4x4Pool.getIdentity();
+  const m = mat4x4PoolGetIdentity();
   __getAxisRotation(m, axis.x, axis.y, axis.z, degrees);
 
   if (pivotPoint !== undefined) {
     const p = pivotPoint;
-    const t1 = matrix4x4Pool.getIdentity();
-    const t2 = matrix4x4Pool.getIdentity();
+    const t1 = mat4x4PoolGetIdentity();
+    const t2 = mat4x4PoolGetIdentity();
 
     mat4x4AppendTranslation(t1, t1, -p.x, -p.y, -p.z);
     mat4x4AppendTranslation(t2, t2, p.x, p.y, p.z);
@@ -603,13 +603,13 @@ export function mat4x4PrependRotation(
     mat4x4Multiply(m, m, t1); // R · T(-p)
     mat4x4Multiply(m, t2, m); // T(p) · (R · T(-p))
 
-    matrix4x4Pool.release(t1);
-    matrix4x4Pool.release(t2);
+    mat4x4PoolRelease(t1);
+    mat4x4PoolRelease(t2);
   }
 
   mat4x4Prepend(out, source, m);
 
-  matrix4x4Pool.release(m);
+  mat4x4PoolRelease(m);
 }
 
 /**
@@ -625,10 +625,10 @@ export function mat4x4PrependScale(
   yScale: number,
   zScale: number,
 ): void {
-  const m = matrix4x4Pool.get();
+  const m = mat4x4PoolGet();
   mat4x4SetTo(m, xScale, 0.0, 0.0, 0.0, 0.0, yScale, 0.0, 0.0, 0.0, 0.0, zScale, 0.0, 0.0, 0.0, 0.0, 1.0);
   mat4x4Prepend(out, source, m);
-  matrix4x4Pool.release(m);
+  mat4x4PoolRelease(m);
 }
 
 /**
@@ -644,10 +644,10 @@ export function mat4x4PrependTranslation(
   y: number,
   z: number,
 ): void {
-  const m = matrix4x4Pool.getIdentity();
+  const m = mat4x4PoolGetIdentity();
   mat4x4Translate(m, m, x, y, z); // LOCAL translation matrix
   mat4x4Multiply(out, m, source);
-  matrix4x4Pool.release(m);
+  mat4x4PoolRelease(m);
 }
 
 /**
@@ -661,10 +661,10 @@ export function mat4x4Rotate(
   axis: Readonly<Vector3Like>,
   degrees: number,
 ): void {
-  const m = matrix4x4Pool.getIdentity();
+  const m = mat4x4PoolGetIdentity();
   __getAxisRotation(m, axis.x, axis.y, axis.z, degrees);
   mat4x4Multiply(out, source, m);
-  matrix4x4Pool.release(m);
+  mat4x4PoolRelease(m);
 }
 
 /**
@@ -1010,48 +1010,3 @@ function __swap(out: Matrix4x4Like, source: Readonly<Matrix4x4Like>, a: number, 
 const __identity: Float32Array = new Float32Array([
   1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
 ]);
-
-export const matrix4x4 = {
-  create: createMatrix4x4,
-  create2D: createMatrix4x4From2D,
-  createOrtho: createMatrix4x4Ortho,
-  createPerspective: createMatrix4x4Perspective,
-  append: mat4x4Append,
-  appendRotation: mat4x4AppendRotation,
-  appendScale: mat4x4AppendScale,
-  appendTranslation: mat4x4AppendTranslation,
-  clone: mat4x4Clone,
-  copy: mat4x4Copy,
-  copyColumnFrom: mat4x4CopyColumnFrom,
-  copyColumnTo: mat4x4CopyColumnTo,
-  copyRowFrom: mat4x4CopyRowFrom,
-  copyRowTo: mat4x4CopyRowTo,
-  determinant: mat4x4Determinant,
-  equals: mat4x4Equals,
-  fromMatrix3x2: mat4x4FromMat3x2,
-  fromMatrix3x3: mat4x4FromMat3x3,
-  get: mat4x4Get,
-  identity: mat4x4Identity,
-  interpolate: mat4x4Interpolate,
-  inverse: mat4x4Inverse,
-  isAffine: mat4x4IsAffine,
-  multiply: mat4x4Multiply,
-  position: mat4x4Position,
-  prepend: mat4x4Prepend,
-  prependRotation: mat4x4PrependRotation,
-  prependScale: mat4x4PrependScale,
-  prependTranslation: mat4x4PrependTranslation,
-  rotate: mat4x4Rotate,
-  scale: mat4x4Scale,
-  set: mat4x4Set,
-  set2D: mat4x4Set2D,
-  setOrtho: mat4x4SetOrtho,
-  setPerspective: mat4x4SetPerspective,
-  setPosition: mat4x4SetPosition,
-  setTo: mat4x4SetTo,
-  transformPoint: mat4x4TransformPoint,
-  transformVector: mat4x4TransformVector,
-  transformVectors: mat4x4TransformVectors,
-  translate: mat4x4Translate,
-  transpose: mat4x4Transpose,
-};
