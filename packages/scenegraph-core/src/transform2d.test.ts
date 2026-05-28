@@ -1,5 +1,5 @@
 import { getRuntime } from '@flighthq/entity';
-import { matrix3x2, vector2 } from '@flighthq/geometry';
+import { createVector2, mat3x2Clone, mat3x2Equals, mat3x2SetTo } from '@flighthq/geometry';
 import { addChild, createGraphNode } from '@flighthq/scenegraph-core';
 import type { GraphNode, GraphNodeRuntime, HasTransform2D, HasTransform2DRuntime, Matrix3x2 } from '@flighthq/types';
 
@@ -46,7 +46,7 @@ describe('ensureLocalTransform2D', () => {
     const cache = cloneAndInvalidateMatrix(runtime.localTransform2D);
     runtime.localTransformID++;
     ensureLocalTransform2D(node);
-    expect(matrix3x2.equals(runtime.localTransform2D, cache)).toBe(true);
+    expect(mat3x2Equals(runtime.localTransform2D, cache)).toBe(true);
   });
 });
 
@@ -73,7 +73,7 @@ describe('ensureWorldTransform2D', () => {
     const cache = cloneAndInvalidateMatrix(runtime.worldTransform2D);
     runtime.localTransformID++;
     ensureWorldTransform2D(node);
-    expect(matrix3x2.equals(runtime.worldTransform2D, cache)).toBe(true);
+    expect(mat3x2Equals(runtime.worldTransform2D, cache)).toBe(true);
   });
 
   it('recomputes if the parent transform ID has changed', () => {
@@ -85,7 +85,7 @@ describe('ensureWorldTransform2D', () => {
     const cache = cloneAndInvalidateMatrix(runtime.worldTransform2D);
     parentState.worldTransformID++;
     ensureWorldTransform2D(node);
-    expect(matrix3x2.equals(runtime.worldTransform2D, cache)).toBe(true);
+    expect(mat3x2Equals(runtime.worldTransform2D, cache)).toBe(true);
   });
 });
 
@@ -132,8 +132,8 @@ describe('globalToLocal2D', () => {
   });
 
   it('writes into the provided output Vector2', () => {
-    const out = vector2.create();
-    const world = vector2.create(14, 24);
+    const out = createVector2();
+    const world = createVector2(14, 24);
 
     globalToLocal2D(out, obj, world);
 
@@ -142,15 +142,15 @@ describe('globalToLocal2D', () => {
   });
 
   it('reuses the output object', () => {
-    const out = vector2.create(999, 999);
-    globalToLocal2D(out, obj, vector2.create(10, 20));
+    const out = createVector2(999, 999);
+    globalToLocal2D(out, obj, createVector2(10, 20));
 
     expect(out).toEqual(expect.objectContaining({ x: 0, y: 0 }));
   });
 
   it('updates the world transform before conversion', () => {
     // const spy = vi.spyOn(obj, updateWorldTransform);
-    // globalToLocal(vector2.create(), obj, vector2.create());
+    // globalToLocal(createVector2(), obj, createVector2());
     // expect(spy).toHaveBeenCalled();
     // spy.mockRestore();
   });
@@ -174,8 +174,8 @@ describe('localToGlobal2D', () => {
   });
 
   it('writes to out parameter', () => {
-    const local = vector2.create(5, 5);
-    const out = vector2.create();
+    const local = createVector2(5, 5);
+    const out = createVector2();
 
     localToGlobal2D(out, obj, local);
 
@@ -189,8 +189,8 @@ describe('localToGlobal2D', () => {
     obj.y = 30;
     invalidateLocalTransform(obj);
 
-    const local = vector2.create(10, 20);
-    const out = vector2.create();
+    const local = createVector2(10, 20);
+    const out = createVector2();
 
     localToGlobal2D(out, obj, local);
 
@@ -203,12 +203,12 @@ describe('localToGlobal2D', () => {
     obj.y = 2;
     invalidateLocalTransform(obj);
 
-    const p1 = vector2.create(1, 1);
-    const p2 = vector2.create(2, 2);
+    const p1 = createVector2(1, 1);
+    const p2 = createVector2(2, 2);
 
-    const g1 = vector2.create();
+    const g1 = createVector2();
     localToGlobal2D(g1, obj, p1);
-    const g2 = vector2.create();
+    const g2 = createVector2();
     localToGlobal2D(g2, obj, p2);
 
     expect(g1.x).toBe(2);
@@ -236,10 +236,10 @@ describe('setRotation', () => {
   });
 
   it('invalidates the local transform', () => {
-    const before = matrix3x2.clone(getLocalTransform2D(node));
+    const before = mat3x2Clone(getLocalTransform2D(node));
     setRotation(node, 90);
     const after = getLocalTransform2D(node);
-    expect(matrix3x2.equals(before, after)).toBe(false);
+    expect(mat3x2Equals(before, after)).toBe(false);
   });
 
   it('affects the resulting matrix', () => {
@@ -257,10 +257,10 @@ describe('setScaleX', () => {
   });
 
   it('invalidates the local transform', () => {
-    const before = matrix3x2.clone(getLocalTransform2D(node));
+    const before = mat3x2Clone(getLocalTransform2D(node));
     setScaleX(node, 2);
     const after = getLocalTransform2D(node);
-    expect(matrix3x2.equals(before, after)).toBe(false);
+    expect(mat3x2Equals(before, after)).toBe(false);
   });
 
   it('affects the resulting matrix', () => {
@@ -277,10 +277,10 @@ describe('setScaleY', () => {
   });
 
   it('invalidates the local transform', () => {
-    const before = matrix3x2.clone(getLocalTransform2D(node));
+    const before = mat3x2Clone(getLocalTransform2D(node));
     setScaleY(node, 2);
     const after = getLocalTransform2D(node);
-    expect(matrix3x2.equals(before, after)).toBe(false);
+    expect(mat3x2Equals(before, after)).toBe(false);
   });
 
   it('affects the resulting matrix', () => {
@@ -297,10 +297,10 @@ describe('setX', () => {
   });
 
   it('invalidates the local transform', () => {
-    const before = matrix3x2.clone(getLocalTransform2D(node));
+    const before = mat3x2Clone(getLocalTransform2D(node));
     setX(node, 100);
     const after = getLocalTransform2D(node);
-    expect(matrix3x2.equals(before, after)).toBe(false);
+    expect(mat3x2Equals(before, after)).toBe(false);
   });
 
   it('affects the resulting matrix', () => {
@@ -317,10 +317,10 @@ describe('setY', () => {
   });
 
   it('invalidates the local transform', () => {
-    const before = matrix3x2.clone(getLocalTransform2D(node));
+    const before = mat3x2Clone(getLocalTransform2D(node));
     setY(node, 100);
     const after = getLocalTransform2D(node);
-    expect(matrix3x2.equals(before, after)).toBe(false);
+    expect(mat3x2Equals(before, after)).toBe(false);
   });
 
   it('affects the resulting matrix', () => {
@@ -332,8 +332,8 @@ describe('setY', () => {
 
 function cloneAndInvalidateMatrix(matrix: Matrix3x2 | null): Matrix3x2 | null {
   if (matrix === null) return null;
-  const clone = matrix3x2.clone(matrix);
-  matrix3x2.setTo(matrix, -1, -1, -1, -1, -1, -1);
+  const clone = mat3x2Clone(matrix);
+  mat3x2SetTo(matrix, -1, -1, -1, -1, -1, -1);
   return clone;
 }
 

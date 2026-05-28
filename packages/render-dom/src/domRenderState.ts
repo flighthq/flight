@@ -1,4 +1,4 @@
-import { matrix3x2 } from '@flighthq/geometry';
+import { createMatrix3x2 } from '@flighthq/geometry';
 import { createRenderState as _createRenderState, setBackgroundColor } from '@flighthq/render-core';
 import type { DOMRenderOptions, DOMRenderState } from '@flighthq/types';
 
@@ -7,7 +7,7 @@ import type { DOMRenderStateInternal } from './internal';
 export function createDOMRenderState(element: HTMLElement, options: Partial<DOMRenderOptions> = {}): DOMRenderState {
   const state = _createRenderState({
     pixelRatio: options.pixelRatio ?? window.devicePixelRatio | 1,
-    renderTransform2D: matrix3x2.create(),
+    renderTransform2D: createMatrix3x2(),
     roundPixels: options.roundPixels ?? false,
   }) as DOMRenderStateInternal;
 

@@ -1,25 +1,25 @@
 import type { Vector4 } from '@flighthq/types';
 
-import { createVector4 as create } from './vector4';
+import { createVector4 } from './vector4';
 
-export function clear(): void {
+export function vec4PoolClear(): void {
   pool.length = 0;
 }
 
-export function get(): Vector4 {
+export function vec4PoolGet(): Vector4 {
   let v: Vector4;
 
   if (pool.length > 0) {
     v = pool.pop() as Vector4;
   } else {
-    v = create();
+    v = createVector4();
   }
 
   return v;
 }
 
-export function getEmpty(): Vector4 {
-  const v = get();
+export function vec4PoolGetEmpty(): Vector4 {
+  const v = vec4PoolGet();
   v.x = 0;
   v.y = 0;
   v.z = 0;
@@ -27,7 +27,7 @@ export function getEmpty(): Vector4 {
   return v;
 }
 
-export function release(v: Vector4): void {
+export function vec4PoolRelease(v: Vector4): void {
   if (!v) return;
   pool.push(v);
 }

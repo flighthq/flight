@@ -1,4 +1,4 @@
-import { rectangle } from '@flighthq/geometry';
+import { rectSetTo } from '@flighthq/geometry';
 import { addChild, getLocalBoundsRect, invalidateLocalTransform } from '@flighthq/scenegraph-core';
 import { createDisplayObject, createDisplayObjectGeneric, getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type { DisplayObject, DisplayObjectRuntime } from '@flighthq/types';
@@ -17,8 +17,8 @@ describe('hitTestObject', () => {
     addChild(createDisplayObject(), a);
     addChild(createDisplayObject(), b);
 
-    rectangle.setTo(getLocalBoundsRect(a), 0, 0, 10, 10);
-    rectangle.setTo(getLocalBoundsRect(b), 0, 0, 10, 10);
+    rectSetTo(getLocalBoundsRect(a), 0, 0, 10, 10);
+    rectSetTo(getLocalBoundsRect(b), 0, 0, 10, 10);
 
     a.x = 0;
     a.y = 0;
@@ -67,7 +67,7 @@ describe('hitTestObject', () => {
     child.x = 90;
     child.y = 90;
     invalidateLocalTransform(child);
-    rectangle.setTo(getLocalBoundsRect(child), 0, 0, 20, 20);
+    rectSetTo(getLocalBoundsRect(child), 0, 0, 20, 20);
     addChild(a, child);
 
     b.x = 100;
@@ -87,7 +87,7 @@ describe('hitTestPoint', () => {
 
   beforeEach(() => {
     obj = createDisplayObject();
-    rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 100, 100);
+    rectSetTo(getLocalBoundsRect(obj), 0, 0, 100, 100);
   });
 
   it('returns true for point inside bounds', () => {
@@ -132,10 +132,10 @@ describe('hitTestPoint', () => {
 
   it('returns true when a child is hit even if the parent has no local bounds', () => {
     const child = createDisplayObject();
-    rectangle.setTo(getLocalBoundsRect(child), 0, 0, 100, 100);
+    rectSetTo(getLocalBoundsRect(child), 0, 0, 100, 100);
     addChild(obj, child);
 
-    rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 0, 0);
+    rectSetTo(getLocalBoundsRect(obj), 0, 0, 0, 0);
     expect(hitTestPoint(obj, 50, 50)).toBe(true);
   });
 
@@ -143,7 +143,7 @@ describe('hitTestPoint', () => {
     obj.enabled = false;
 
     const child = createDisplayObject();
-    rectangle.setTo(getLocalBoundsRect(child), 0, 0, 100, 100);
+    rectSetTo(getLocalBoundsRect(child), 0, 0, 100, 100);
     addChild(obj, child);
 
     expect(hitTestPoint(obj, 50, 50)).toBe(false);
@@ -170,13 +170,13 @@ describe('registerHitTestPoint', () => {
 describe('hitTestLocalBoundsRect', () => {
   it('returns true when world-space point is inside local bounds', () => {
     const obj = createDisplayObject();
-    rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 100, 100);
+    rectSetTo(getLocalBoundsRect(obj), 0, 0, 100, 100);
     expect(hitTestLocalBoundsRect(obj, 50, 50)).toBe(true);
   });
 
   it('returns false when world-space point is outside local bounds', () => {
     const obj = createDisplayObject();
-    rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 100, 100);
+    rectSetTo(getLocalBoundsRect(obj), 0, 0, 100, 100);
     expect(hitTestLocalBoundsRect(obj, 200, 200)).toBe(false);
   });
 });
@@ -191,7 +191,7 @@ describe('findHitTarget', () => {
   it('returns a child node registered with a hit handler', () => {
     const parent = createDisplayObject();
     const child = createDisplayObjectGeneric(DisplayObjectKind);
-    rectangle.setTo(getLocalBoundsRect(child), 0, 0, 100, 100);
+    rectSetTo(getLocalBoundsRect(child), 0, 0, 100, 100);
     addChild(parent, child);
     registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRect);
     const hit = findHitTarget(parent, 50, 50);

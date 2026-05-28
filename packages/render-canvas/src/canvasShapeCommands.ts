@@ -1,7 +1,7 @@
-import { matrix3x2 } from '@flighthq/geometry';
+import { createMatrix3x2, mat3x2Inverse } from '@flighthq/geometry';
 import type { CanvasShapeCommand, ImageSource, Matrix3x2 } from '@flighthq/types';
 
-const _fillMatrixInverse: Matrix3x2 = matrix3x2.create();
+const _fillMatrixInverse: Matrix3x2 = createMatrix3x2();
 
 import { createBitmapPattern, createGradientPattern } from './canvasFillPattern';
 
@@ -18,7 +18,7 @@ export const defaultCanvasBeginBitmapFill: CanvasShapeCommand<'beginBitmapFill'>
     state.fillStyle = pattern ?? '';
     state.fillMatrix = matrix;
     if (matrix !== null) {
-      matrix3x2.inverse(_fillMatrixInverse, matrix);
+      mat3x2Inverse(_fillMatrixInverse, matrix);
       state.fillMatrixInverse = _fillMatrixInverse;
     } else {
       state.fillMatrixInverse = null;

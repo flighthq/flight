@@ -1,4 +1,4 @@
-import { matrix3x2, rectangle } from '@flighthq/geometry';
+import { createMatrix3x2, rectSetTo } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode } from '@flighthq/render-core';
 import { getLocalBoundsRect } from '@flighthq/scenegraph-core';
 import { createDisplayObject, getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
@@ -12,7 +12,7 @@ function makeStateAndObj() {
   canvas.height = 100;
   const state = createCanvasRenderState(canvas);
   const obj = createDisplayObject();
-  rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 50, 50);
+  rectSetTo(getLocalBoundsRect(obj), 0, 0, 50, 50);
   return { state, obj };
 }
 
@@ -64,7 +64,7 @@ describe('drawImageCacheResult', () => {
     const state = createCanvasRenderState(canvas);
     const obj = createDisplayObject();
     const data = getDisplayObjectRenderNode(state, obj);
-    const cache = { canvas: null, transform: matrix3x2.create() };
+    const cache = { canvas: null, transform: createMatrix3x2() };
 
     expect(() => drawImageCacheResult(state, data, cache)).not.toThrow();
   });

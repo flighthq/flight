@@ -1,4 +1,4 @@
-import { rectangle } from '@flighthq/geometry';
+import { rectSetTo } from '@flighthq/geometry';
 import { getLocalBoundsRect } from '@flighthq/scenegraph-core';
 import { createDisplayObject, createSpriteBatch } from '@flighthq/scenegraph-display';
 
@@ -18,7 +18,7 @@ import {
 
 function makeDisplayObject() {
   const obj = createDisplayObject();
-  rectangle.setTo(getLocalBoundsRect(obj), 0, 0, 100, 100);
+  rectSetTo(getLocalBoundsRect(obj), 0, 0, 100, 100);
   return obj;
 }
 

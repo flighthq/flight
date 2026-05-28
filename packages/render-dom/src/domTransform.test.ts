@@ -1,11 +1,11 @@
-import { matrix3x2 } from '@flighthq/geometry';
+import { createMatrix3x2 } from '@flighthq/geometry';
 
 import { setDOMTransform, setDOMTransformWithOffset } from './domTransform';
 
 describe('setDOMTransform', () => {
   it('sets the CSS transform to the matrix values', () => {
     const el = document.createElement('div');
-    const t = matrix3x2.create(1, 2, 3, 4, 5, 6);
+    const t = createMatrix3x2(1, 2, 3, 4, 5, 6);
 
     setDOMTransform(el, t, false);
 
@@ -14,7 +14,7 @@ describe('setDOMTransform', () => {
 
   it('passes tx and ty through without rounding when roundPixels is false', () => {
     const el = document.createElement('div');
-    const t = matrix3x2.create(1, 0, 0, 1, 1.7, 2.3);
+    const t = createMatrix3x2(1, 0, 0, 1, 1.7, 2.3);
 
     setDOMTransform(el, t, false);
 
@@ -23,7 +23,7 @@ describe('setDOMTransform', () => {
 
   it('frounds tx and ty when roundPixels is true', () => {
     const el = document.createElement('div');
-    const t = matrix3x2.create(1, 0, 0, 1, 5.6789, 9.1011);
+    const t = createMatrix3x2(1, 0, 0, 1, 5.6789, 9.1011);
 
     setDOMTransform(el, t, true);
 
@@ -36,7 +36,7 @@ describe('setDOMTransform', () => {
 describe('setDOMTransformWithOffset', () => {
   it('applies offset through the transform before setting CSS matrix', () => {
     const el = document.createElement('div');
-    const t = matrix3x2.create(1, 0, 0, 1, 10, 20);
+    const t = createMatrix3x2(1, 0, 0, 1, 10, 20);
 
     setDOMTransformWithOffset(el, t, 5, 8, false);
 
@@ -47,7 +47,7 @@ describe('setDOMTransformWithOffset', () => {
   it('applies offset through a rotated transform', () => {
     const el = document.createElement('div');
     // 90-degree rotation: a=0, b=1, c=-1, d=0
-    const t = matrix3x2.create(0, 1, -1, 0, 0, 0);
+    const t = createMatrix3x2(0, 1, -1, 0, 0, 0);
 
     setDOMTransformWithOffset(el, t, 10, 20, false);
 
@@ -57,7 +57,7 @@ describe('setDOMTransformWithOffset', () => {
 
   it('frounds the adjusted tx/ty when roundPixels is true', () => {
     const el = document.createElement('div');
-    const t = matrix3x2.create(1, 0, 0, 1, 0.5, 0.5);
+    const t = createMatrix3x2(1, 0, 0, 1, 0.5, 0.5);
 
     setDOMTransformWithOffset(el, t, 0.1, 0.1, true);
 

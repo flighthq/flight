@@ -1,30 +1,30 @@
 import type { Matrix4x4 } from '@flighthq/types';
 
-import { createMatrix4x4 as create, mat4x4Identity as identity } from './matrix4x4';
+import { createMatrix4x4, mat4x4Identity } from './matrix4x4';
 
-export function clear(): void {
+export function mat4x4PoolClear(): void {
   pool.length = 0;
 }
 
-export function get(): Matrix4x4 {
+export function mat4x4PoolGet(): Matrix4x4 {
   let m: Matrix4x4;
 
   if (pool.length > 0) {
     m = pool.pop() as Matrix4x4;
   } else {
-    m = create();
+    m = createMatrix4x4();
   }
 
   return m;
 }
 
-export function getIdentity(): Matrix4x4 {
-  const m = get();
-  identity(m);
+export function mat4x4PoolGetIdentity(): Matrix4x4 {
+  const m = mat4x4PoolGet();
+  mat4x4Identity(m);
   return m;
 }
 
-export function release(m: Matrix4x4): void {
+export function mat4x4PoolRelease(m: Matrix4x4): void {
   if (!m) return;
   pool.push(m);
 }

@@ -1,4 +1,4 @@
-import { matrix3x2, rectangle } from '@flighthq/geometry';
+import { mat3x2InverseTransformPointXY, rectContains, rectIntersects } from '@flighthq/geometry';
 import {
   getGraphNodeRuntime,
   getLocalBoundsRect,
@@ -14,7 +14,7 @@ import type { DisplayObject, GraphNode, HitTestPoint } from '@flighthq/types';
  **/
 export function hitTestObject(source: DisplayObject, other: DisplayObject): boolean {
   if (getParent(source) !== null && getParent(other) !== null) {
-    return rectangle.intersects(getWorldBoundsRect(source), getWorldBoundsRect(other));
+    return rectIntersects(getWorldBoundsRect(source), getWorldBoundsRect(other));
   }
   return false;
 }
@@ -81,8 +81,8 @@ export function hitTestPoint<GraphKind extends symbol, Traits extends object>(
  * after inverting through the node's world transform.
  **/
 export function hitTestLocalBoundsRect(source: GraphNode<symbol, object>, x: number, y: number): boolean {
-  matrix3x2.inverseTransformPointXY(hitTestLocalBoundsRectPoint, getWorldTransform2D(source as DisplayObject), x, y);
-  return rectangle.contains(
+  mat3x2InverseTransformPointXY(hitTestLocalBoundsRectPoint, getWorldTransform2D(source as DisplayObject), x, y);
+  return rectContains(
     getLocalBoundsRect(source as DisplayObject),
     hitTestLocalBoundsRectPoint.x,
     hitTestLocalBoundsRectPoint.y,

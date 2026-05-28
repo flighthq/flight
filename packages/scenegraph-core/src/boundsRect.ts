@@ -1,5 +1,6 @@
 import { getRuntime } from '@flighthq/entity';
-import { matrix3x2, matrix3x2Pool, rectangle } from '@flighthq/geometry';
+import { createRectangle, mat3x2Inverse, mat3x2TransformRect, rectCopy, rectUnion } from '@flighthq/geometry';
+import { mat3x2PoolGet, mat3x2PoolRelease } from '@flighthq/geometry/matrix3x2Pool';
 import type {
   GraphNode,
   GraphNodeRuntime,
@@ -43,12 +44,12 @@ export function calculateBoundsRect<GraphKind extends symbol, Traits extends obj
   if (!bounds) {
     // translate world bounds into target coordinate space
     const worldBounds = getWorldBoundsRect(source);
-    const transform = matrix3x2Pool.get();
-    matrix3x2.inverse(transform, getWorldTransform2D(targetCoordinateSpace));
-    matrix3x2.transformRect(out, transform, worldBounds);
-    matrix3x2Pool.release(transform);
+    const transform = mat3x2PoolGet();
+    mat3x2Inverse(transform, getWorldTransform2D(targetCoordinateSpace));
+    mat3x2TransformRect(out, transform, worldBounds);
+    mat3x2PoolRelease(transform);
   } else {
-    rectangle.copy(out, bounds);
+    rectCopy(out, bounds);
   }
 }
 
@@ -166,8 +167,8 @@ function recomputeBoundsRect<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
   runtime: GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime,
 ): void {
-  if (runtime.boundsRect === null) runtime.boundsRect = rectangle.create();
-  matrix3x2.transformRect(runtime.boundsRect, getLocalTransform2D(target), getLocalBoundsRect(target));
+  if (runtime.boundsRect === null) runtime.boundsRect = createRectangle();
+  mat3x2TransformRect(runtime.boundsRect, getLocalTransform2D(target), getLocalBoundsRect(target));
   runtime.boundsUsingLocalBoundsID = runtime.localBoundsID;
   runtime.boundsUsingLocalTransformID = runtime.localTransformID;
 }
@@ -176,7 +177,7 @@ function recomputeLocalBoundsRect<GraphKind extends symbol, Traits extends objec
   target: GraphNode<GraphKind, Traits> & HasBoundsRect,
   runtime: GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime,
 ): void {
-  if (runtime.localBoundsRect === null) runtime.localBoundsRect = rectangle.create();
+  if (runtime.localBoundsRect === null) runtime.localBoundsRect = createRectangle();
   runtime.computeLocalBoundsRect(runtime.localBoundsRect, target as GraphNode);
   runtime.localBoundsUsingLocalBoundsID = runtime.localBoundsID;
 }
@@ -185,8 +186,8 @@ function recomputeWorldBoundsRect<GraphKind extends symbol, Traits extends objec
   target: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
   runtime: GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime & HasTransform2DRuntime,
 ) {
-  if (runtime.worldBoundsRect === null) runtime.worldBoundsRect = rectangle.create();
-  matrix3x2.transformRect(runtime.worldBoundsRect, getWorldTransform2D(target), getLocalBoundsRect(target));
+  if (runtime.worldBoundsRect === null) runtime.worldBoundsRect = createRectangle();
+  mat3x2TransformRect(runtime.worldBoundsRect, getWorldTransform2D(target), getLocalBoundsRect(target));
   const children = getGraphNodeRuntime(target).children;
   if (children !== null) {
     for (const child of children) {
@@ -195,7 +196,7 @@ function recomputeWorldBoundsRect<GraphKind extends symbol, Traits extends objec
         child as GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
       );
       if (childWorldBounds.width !== 0 && childWorldBounds.height !== 0) {
-        rectangle.union(runtime.worldBoundsRect, runtime.worldBoundsRect, childWorldBounds);
+        rectUnion(runtime.worldBoundsRect, runtime.worldBoundsRect, childWorldBounds);
       }
     }
   }
@@ -224,4 +225,4 @@ function tryFastRecomputeWorldBoundsRect<GraphKind extends symbol, Traits extend
   return false;
 }
 
-const _tempBoundsRect = rectangle.create();
+const _tempBoundsRect = createRectangle();

@@ -222,28 +222,3 @@ export function vec3Subtract(out: Vector3Like, source: Readonly<Vector3Like>, ot
   out.y = source.y - other.y;
   out.z = source.z - other.z;
 }
-
-export const vector3 = {
-  create: createVector3,
-  X_AXIS: VEC3_X_AXIS,
-  Y_AXIS: VEC3_Y_AXIS,
-  Z_AXIS: VEC3_Z_AXIS,
-  add: vec3Add,
-  angleBetween: vec3AngleBetween,
-  clone: vec3Clone,
-  copy: vec3Copy,
-  cross: vec3Cross,
-  distance: vec3Distance,
-  distanceSquared: vec3DistanceSquared,
-  dot: vec3Dot,
-  equals: vec3Equals,
-  length: vec3Length,
-  lengthSquared: vec3LengthSquared,
-  nearEquals: vec3NearEquals,
-  negate: vec3Negate,
-  normalize: vec3Normalize,
-  project: vec3Project,
-  scale: vec3Scale,
-  setTo: vec3SetTo,
-  subtract: vec3Subtract,
-};

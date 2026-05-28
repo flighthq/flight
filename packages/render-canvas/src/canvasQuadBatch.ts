@@ -1,4 +1,5 @@
-import { matrix3x2, matrix3x2Pool } from '@flighthq/geometry';
+import { mat3x2Concat, mat3x2FromFloat32Array } from '@flighthq/geometry';
+import { mat3x2PoolGet, mat3x2PoolRelease } from '@flighthq/geometry/matrix3x2Pool';
 import { createNullRendererData } from '@flighthq/render-core';
 import type { CanvasRenderState, QuadBatch, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
@@ -19,7 +20,7 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: SpriteR
   const transform = quadBatch.transform2D;
   const roundPixels = state.roundPixels;
 
-  const quadTransform = matrix3x2Pool.get();
+  const quadTransform = mat3x2PoolGet();
   const stride = data.transformType === 'vector2' ? 2 : 6;
 
   context.globalAlpha = quadBatch.alpha;
@@ -55,8 +56,8 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: SpriteR
         region.height,
       );
     } else {
-      matrix3x2.fromFloat32Array(quadTransform, offset, transforms);
-      matrix3x2.concat(quadTransform, quadTransform, transform);
+      mat3x2FromFloat32Array(quadTransform, offset, transforms);
+      mat3x2Concat(quadTransform, quadTransform, transform);
 
       if (roundPixels) {
         quadTransform.tx = Math.round(quadTransform.tx);
@@ -77,7 +78,7 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: SpriteR
   }
 
   context.setTransform(1, 0, 0, 1, 0, 0);
-  matrix3x2Pool.release(quadTransform);
+  mat3x2PoolRelease(quadTransform);
 
   if (!state.allowSmoothing /*|| !quadBatch.smoothing*/) {
     context.imageSmoothingEnabled = true;

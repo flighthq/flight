@@ -221,28 +221,3 @@ export function vec4Subtract(out: Vector4Like, source: Readonly<Vector4Like>, ot
   out.z = source.z - other.z;
   out.w = source.w - other.w;
 }
-
-export const vector4 = {
-  create: createVector4,
-  X_AXIS: VEC4_X_AXIS,
-  Y_AXIS: VEC4_Y_AXIS,
-  Z_AXIS: VEC4_Z_AXIS,
-  W_UNIT: VEC4_W_UNIT,
-  add: vec4Add,
-  angleBetween: vec4AngleBetween,
-  clone: vec4Clone,
-  copy: vec4Copy,
-  distance: vec4Distance,
-  distanceSquared: vec4DistanceSquared,
-  dot: vec4Dot,
-  equals: vec4Equals,
-  length: vec4Length,
-  lengthSquared: vec4LengthSquared,
-  nearEquals: vec4NearEquals,
-  negate: vec4Negate,
-  normalize: vec4Normalize,
-  project: vec4Project,
-  scale: vec4Scale,
-  setTo: vec4SetTo,
-  subtract: vec4Subtract,
-};
