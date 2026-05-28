@@ -1,8 +1,6 @@
 import type { Matrix3x2, Matrix4x4 } from '@flighthq/types';
 
-import * as matrix3x2 from './matrix3x2';
-import * as matrix3x3 from './matrix3x3';
-import * as matrix4x4 from './matrix4x4';
+import { matrix3x2, matrix3x3, matrix4x4 } from '@flighthq/geometry';
 
 const X_AXIS = { x: 1, y: 0, z: 0, w: 0 };
 const Y_AXIS = { x: 0, y: 1, z: 0, w: 0 };

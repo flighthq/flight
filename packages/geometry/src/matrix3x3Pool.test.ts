@@ -1,6 +1,6 @@
 import type { Matrix3x3 } from '@flighthq/types';
 
-import * as matrix3x3 from './matrix3x3';
+import { matrix3x3 } from '@flighthq/geometry';
 import * as matrix3x3Pool from './matrix3x3Pool';
 
 beforeEach(() => {

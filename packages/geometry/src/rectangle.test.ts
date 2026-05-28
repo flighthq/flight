@@ -1,7 +1,6 @@
 import type { Rectangle } from '@flighthq/types';
 
-import * as rectangle from './rectangle';
-import * as vector2 from './vector2';
+import { rectangle, vector2 } from '@flighthq/geometry';
 
 let r: Rectangle;
 let r2: Rectangle;
