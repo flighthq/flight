@@ -1,40 +1,6 @@
 import { createEntity } from '@flighthq/entity';
 import type { Matrix3, Matrix3Like, Matrix4Like, MatrixLike, Vector3Like } from '@flighthq/types';
 
-/**
- * A 3×3 homogeneous matrix.
- *
- * [ m00 m01 m02 ]
- * [ m10 m11 m12 ]
- * [ m20 m21 m22 ]
- *
- * Storage is row-major.
- */
-export function createMatrix3(
-  m00?: number,
-  m01?: number,
-  m02?: number,
-  m10?: number,
-  m11?: number,
-  m12?: number,
-  m20?: number,
-  m21?: number,
-  m22?: number,
-): Matrix3 {
-  const m = new Float32Array(__identity);
-  const out: Matrix3 = createEntity({ m: m });
-  if (m00 !== undefined) m[0] = m00;
-  if (m01 !== undefined) m[1] = m01;
-  if (m02 !== undefined) m[2] = m02;
-  if (m10 !== undefined) m[3] = m10;
-  if (m11 !== undefined) m[4] = m11;
-  if (m12 !== undefined) m[5] = m12;
-  if (m20 !== undefined) m[6] = m20;
-  if (m21 !== undefined) m[7] = m21;
-  if (m22 !== undefined) m[8] = m22;
-  return out;
-}
-
 export function cloneMatrix3(source: Readonly<Matrix3Like>): Matrix3 {
   const m = createMatrix3();
   copyMatrix3(m, source);
@@ -117,6 +83,40 @@ export function copyMatrix3RowToVector3(out: Vector3Like, row: number, source: R
   }
 }
 
+/**
+ * A 3×3 homogeneous matrix.
+ *
+ * [ m00 m01 m02 ]
+ * [ m10 m11 m12 ]
+ * [ m20 m21 m22 ]
+ *
+ * Storage is row-major.
+ */
+export function createMatrix3(
+  m00?: number,
+  m01?: number,
+  m02?: number,
+  m10?: number,
+  m11?: number,
+  m12?: number,
+  m20?: number,
+  m21?: number,
+  m22?: number,
+): Matrix3 {
+  const m = new Float32Array(__identity);
+  const out: Matrix3 = createEntity({ m: m });
+  if (m00 !== undefined) m[0] = m00;
+  if (m01 !== undefined) m[1] = m01;
+  if (m02 !== undefined) m[2] = m02;
+  if (m10 !== undefined) m[3] = m10;
+  if (m11 !== undefined) m[4] = m11;
+  if (m12 !== undefined) m[5] = m12;
+  if (m20 !== undefined) m[6] = m20;
+  if (m21 !== undefined) m[7] = m21;
+  if (m22 !== undefined) m[8] = m22;
+  return out;
+}
+
 export function equalsMatrix3(
   a: Readonly<Matrix3Like> | null | undefined,
   b: Readonly<Matrix3Like> | null | undefined,
@@ -127,35 +127,6 @@ export function equalsMatrix3(
     if (a.m[i] !== b.m[i]) return false;
   }
   return true;
-}
-
-export function setMatrix3FromMatrix(out: Matrix3Like, source: Readonly<MatrixLike>): void {
-  const _out = out.m;
-  _out[0] = source.a;
-  _out[1] = source.b;
-  _out[2] = source.tx;
-  _out[3] = source.c;
-  _out[4] = source.d;
-  _out[5] = source.ty;
-  _out[6] = 0;
-  _out[7] = 0;
-  _out[8] = 1;
-}
-
-export function setMatrix3FromMatrix4(out: Matrix3Like, source: Readonly<Matrix4Like>): void {
-  const _out = out.m;
-  const _source = source.m;
-  _out[0] = _source[0];
-  _out[1] = _source[4];
-  _out[2] = _source[8];
-
-  _out[3] = _source[1];
-  _out[4] = _source[5];
-  _out[5] = _source[9];
-
-  _out[6] = _source[2];
-  _out[7] = _source[6];
-  _out[8] = _source[10];
 }
 
 export function getMatrix3Element(source: Readonly<Matrix3Like>, row: number, column: number): number {
@@ -320,10 +291,6 @@ export function scaleMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>, sx
   o[8] = a[8];
 }
 
-export function setMatrix3Element(out: Matrix3Like, row: number, column: number, value: number): void {
-  out.m[row * 3 + column] = value;
-}
-
 export function setMatrix3(
   out: Matrix3Like,
   m00: number,
@@ -346,6 +313,39 @@ export function setMatrix3(
   _out[6] = m20;
   _out[7] = m21;
   _out[8] = m22;
+}
+
+export function setMatrix3Element(out: Matrix3Like, row: number, column: number, value: number): void {
+  out.m[row * 3 + column] = value;
+}
+
+export function setMatrix3FromMatrix(out: Matrix3Like, source: Readonly<MatrixLike>): void {
+  const _out = out.m;
+  _out[0] = source.a;
+  _out[1] = source.b;
+  _out[2] = source.tx;
+  _out[3] = source.c;
+  _out[4] = source.d;
+  _out[5] = source.ty;
+  _out[6] = 0;
+  _out[7] = 0;
+  _out[8] = 1;
+}
+
+export function setMatrix3FromMatrix4(out: Matrix3Like, source: Readonly<Matrix4Like>): void {
+  const _out = out.m;
+  const _source = source.m;
+  _out[0] = _source[0];
+  _out[1] = _source[4];
+  _out[2] = _source[8];
+
+  _out[3] = _source[1];
+  _out[4] = _source[5];
+  _out[5] = _source[9];
+
+  _out[6] = _source[2];
+  _out[7] = _source[6];
+  _out[8] = _source[10];
 }
 
 export function translateMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>, tx: number, ty: number): void {

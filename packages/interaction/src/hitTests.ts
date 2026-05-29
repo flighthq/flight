@@ -1,4 +1,4 @@
-import { rectangleIntersects, inverseMatrixTransformPointXY, rectangleContains } from '@flighthq/geometry';
+import { intersectsRectangle, inverseMatrixTransformPointXY, rectangleContains } from '@flighthq/geometry';
 import {
   getGraphNodeRuntime,
   getLocalBoundsRect,
@@ -14,7 +14,7 @@ import type { DisplayObject, GraphNode, HitTestPoint } from '@flighthq/types';
  **/
 export function hitTestObject(source: DisplayObject, other: DisplayObject): boolean {
   if (getParent(source) !== null && getParent(other) !== null) {
-    return rectangleIntersects(getWorldBoundsRect(source), getWorldBoundsRect(other));
+    return intersectsRectangle(getWorldBoundsRect(source), getWorldBoundsRect(other));
   }
   return false;
 }

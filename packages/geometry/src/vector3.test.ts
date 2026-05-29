@@ -1,16 +1,16 @@
 import {
   addVector3,
-  angleBetweenVector3,
   cloneVector3,
   copyVector3,
   createVector3,
   crossVector3,
-  distanceSquaredVector3,
-  distanceVector3,
-  dotVector3,
   equalsVector3,
-  lengthSquaredVector3,
-  lengthVector3,
+  getVector3AngleBetween,
+  getVector3Distance,
+  getVector3DistanceSquared,
+  getVector3Dot,
+  getVector3Length,
+  getVector3LengthSquared,
   nearEqualsVector3,
   negateVector3,
   normalizeVector3,
@@ -45,24 +45,24 @@ describe('create', () => {
 describe('length', () => {
   it('returns the length of the vector', () => {
     const v = createVector3(3, 4, 0);
-    expect(lengthVector3(v)).toBe(5);
+    expect(getVector3Length(v)).toBe(5);
   });
 
   it('allows a vector-like object', () => {
     const v = { x: 3, y: 4, z: 0 };
-    expect(lengthVector3(v)).toBe(5);
+    expect(getVector3Length(v)).toBe(5);
   });
 });
 
 describe('lengthSquared', () => {
   it('returns the squared length of the vector', () => {
     const v = createVector3(3, 4, 0);
-    expect(lengthSquaredVector3(v)).toBe(25);
+    expect(getVector3LengthSquared(v)).toBe(25);
   });
 
   it('allows a vector-like object', () => {
     const v = { x: 3, y: 4, z: 0 };
-    expect(lengthSquaredVector3(v)).toBe(25);
+    expect(getVector3LengthSquared(v)).toBe(25);
   });
 });
 
@@ -192,7 +192,7 @@ describe('distance', () => {
   it('returns the distance between two vectors', () => {
     const a = createVector3(1, 1, 1);
     const b = createVector3(4, 5, 6);
-    expect(distanceVector3(a, b)).toBeCloseTo(7.071068, 5);
+    expect(getVector3Distance(a, b)).toBeCloseTo(7.071068, 5);
   });
 });
 
@@ -200,7 +200,7 @@ describe('distanceSquared', () => {
   it('returns the squared distance between two vectors', () => {
     const a = createVector3(1, 1, 1);
     const b = createVector3(4, 5, 6);
-    expect(distanceSquaredVector3(a, b)).toBe(50);
+    expect(getVector3DistanceSquared(a, b)).toBe(50);
   });
 });
 
@@ -208,7 +208,7 @@ describe('dot', () => {
   it('returns the dot product of two vectors', () => {
     const a = createVector3(1, 2, 3);
     const b = createVector3(4, 5, 6);
-    expect(dotVector3(a, b)).toBe(32); // 1*4 + 2*5 + 3*6
+    expect(getVector3Dot(a, b)).toBe(32); // 1*4 + 2*5 + 3*6
   });
 });
 
@@ -330,25 +330,25 @@ describe('subtract', () => {
 describe('angleBetween', () => {
   it('returns 0 for identical vectors', () => {
     const a = createVector3(1, 0, 0);
-    expect(angleBetweenVector3(a, a)).toBeCloseTo(0);
+    expect(getVector3AngleBetween(a, a)).toBeCloseTo(0);
   });
 
   it('returns PI/2 for perpendicular vectors', () => {
     const a = createVector3(1, 0, 0);
     const b = createVector3(0, 1, 0);
-    expect(angleBetweenVector3(a, b)).toBeCloseTo(Math.PI / 2);
+    expect(getVector3AngleBetween(a, b)).toBeCloseTo(Math.PI / 2);
   });
 
   it('returns PI for opposite vectors', () => {
     const a = createVector3(1, 0, 0);
     const b = createVector3(-1, 0, 0);
-    expect(angleBetweenVector3(a, b)).toBeCloseTo(Math.PI);
+    expect(getVector3AngleBetween(a, b)).toBeCloseTo(Math.PI);
   });
 
   it('returns NaN for a zero-length vector', () => {
     const a = createVector3(0, 0, 0);
     const b = createVector3(1, 0, 0);
-    expect(angleBetweenVector3(a, b)).toBeNaN();
+    expect(getVector3AngleBetween(a, b)).toBeNaN();
   });
 });
 

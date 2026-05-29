@@ -1,9 +1,28 @@
 import { createEntity } from '@flighthq/entity';
 import type { Vector2Like, Vector3, Vector3Like } from '@flighthq/types';
 
-export const VECTOR3_X_AXIS: Readonly<Vector3> = createVector3(1, 0, 0);
-export const VECTOR3_Y_AXIS: Readonly<Vector3> = createVector3(0, 1, 0);
-export const VECTOR3_Z_AXIS: Readonly<Vector3> = createVector3(0, 0, 1);
+/**
+ * Adds the x, y and z components of two vector objects
+ * and writes to out.
+ */
+export function addVector3(out: Vector3Like, a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): void {
+  out.x = a.x + b.x;
+  out.y = a.y + b.y;
+  out.z = a.z + b.z;
+}
+
+export function cloneVector3(source: Readonly<Vector3Like>): Vector3 {
+  return createVector3(source.x, source.y, source.z);
+}
+
+/**
+ * Copies the x, y and z components of a vector.
+ */
+export function copyVector3(out: Vector3Like, source: Readonly<Vector3Like>): void {
+  out.x = source.x;
+  out.y = source.y;
+  out.z = source.z;
+}
 
 /**
  * The Vector3Like class represents a point or a location in the three-dimensional space using
@@ -31,45 +50,6 @@ export function createVector3(x?: number, y?: number, z?: number): Vector3 {
 }
 
 /**
- * Adds the x, y and z components of two vector objects
- * and writes to out.
- */
-export function addVector3(out: Vector3Like, a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): void {
-  out.x = a.x + b.x;
-  out.y = a.y + b.y;
-  out.z = a.z + b.z;
-}
-
-/**
- * Returns the angle in radians between two vectors. The returned angle is the
- * smallest radian the first Vector3Like object rotates until it aligns with the
- * second Vector3Like object.
- **/
-export function angleBetweenVector3(a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): number {
-  const la = lengthVector3(a);
-  const lb = lengthVector3(b);
-
-  if (la === 0 || lb === 0) return NaN; // undefined angle
-
-  const _dot = dotVector3(a, b) / (la * lb);
-  // clamp dot to [-1, 1] to avoid floating point errors
-  return Math.acos(Math.min(1, Math.max(-1, _dot)));
-}
-
-export function cloneVector3(source: Readonly<Vector3Like>): Vector3 {
-  return createVector3(source.x, source.y, source.z);
-}
-
-/**
- * Copies the x, y and z components of a vector.
- */
-export function copyVector3(out: Vector3Like, source: Readonly<Vector3Like>): void {
-  out.x = source.x;
-  out.y = source.y;
-  out.z = source.z;
-}
-
-/**
  * Writes a Vector3Like object that is perpendicular (at a right angle) to the
  * current Vector3Like and another Vector3Like object. If the returned Vector3Like object's
  * coordinates are (0,0,0), then the two Vector3Like objects are parallel to each other.
@@ -83,10 +63,34 @@ export function crossVector3(out: Vector3Like, source: Readonly<Vector3Like>, ot
   out.z = z;
 }
 
+export function equalsVector3(
+  a: Readonly<Vector3Like> | null | undefined,
+  b: Readonly<Vector3Like> | null | undefined,
+): boolean {
+  if (!a || !b) return false;
+  return a.x === b.x && a.y === b.y && a.z === b.z;
+}
+
+/**
+ * Returns the angle in radians between two vectors. The returned angle is the
+ * smallest radian the first Vector3Like object rotates until it aligns with the
+ * second Vector3Like object.
+ **/
+export function getVector3AngleBetween(a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): number {
+  const la = getVector3Length(a);
+  const lb = getVector3Length(b);
+
+  if (la === 0 || lb === 0) return NaN; // undefined angle
+
+  const _dot = getVector3Dot(a, b) / (la * lb);
+  // clamp dot to [-1, 1] to avoid floating point errors
+  return Math.acos(Math.min(1, Math.max(-1, _dot)));
+}
+
 /**
  * Returns the distance between two Vector3Like objects.
  **/
-export function distanceVector3(a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): number {
+export function getVector3Distance(a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): number {
   const x: number = b.x - a.x;
   const y: number = b.y - a.y;
   const z: number = b.z - a.z;
@@ -99,7 +103,7 @@ export function distanceVector3(a: Readonly<Vector3Like>, b: Readonly<Vector3Lik
  *
  * This avoids Math.sqrt for better performance.
  **/
-export function distanceSquaredVector3(a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): number {
+export function getVector3DistanceSquared(a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): number {
   const x: number = b.x - a.x;
   const y: number = b.y - a.y;
   const z: number = b.z - a.z;
@@ -114,16 +118,8 @@ export function distanceSquaredVector3(a: Readonly<Vector3Like>, b: Readonly<Vec
  * one. They remove the length of the vector as a factor in the result. You can use
  * the `normalize()` method to convert a vector to a unit vector.
  **/
-export function dotVector3(a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): number {
+export function getVector3Dot(a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): number {
   return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
-export function equalsVector3(
-  a: Readonly<Vector3Like> | null | undefined,
-  b: Readonly<Vector3Like> | null | undefined,
-): boolean {
-  if (!a || !b) return false;
-  return a.x === b.x && a.y === b.y && a.z === b.z;
 }
 
 /**
@@ -131,7 +127,7 @@ export function equalsVector3(
  * the object's x, y, and z coordinates. The `w` property is ignored. A unit vector has
  * a length or magnitude of one.
  **/
-export function lengthVector3(source: Readonly<Vector3Like>): number {
+export function getVector3Length(source: Readonly<Vector3Like>): number {
   return Math.sqrt(source.x ** 2 + source.y ** 2 + source.z ** 2);
 }
 
@@ -141,7 +137,7 @@ export function lengthVector3(source: Readonly<Vector3Like>): number {
  * method whenever possible instead of the slower `Math.sqrt()` method call of the
  * `Vector3Like.length()` method.
  **/
-export function lengthSquaredVector3(source: Readonly<Vector3Like>): number {
+export function getVector3LengthSquared(source: Readonly<Vector3Like>): number {
   return source.x ** 2 + source.y ** 2 + source.z ** 2;
 }
 
@@ -178,7 +174,7 @@ export function negateVector3(out: Vector3Like, source: Readonly<Vector3Like>): 
  * Returns the original length.
  **/
 export function normalizeVector3(out: Vector3Like, source: Readonly<Vector3Like>): number {
-  const l = lengthVector3(source);
+  const l = getVector3Length(source);
 
   if (l !== 0) {
     out.x = source.x / l;
@@ -226,3 +222,7 @@ export function subtractVector3(out: Vector3Like, source: Readonly<Vector3Like>,
   out.y = source.y - other.y;
   out.z = source.z - other.z;
 }
+
+export const VECTOR3_X_AXIS: Readonly<Vector3> = createVector3(1, 0, 0);
+export const VECTOR3_Y_AXIS: Readonly<Vector3> = createVector3(0, 1, 0);
+export const VECTOR3_Z_AXIS: Readonly<Vector3> = createVector3(0, 0, 1);

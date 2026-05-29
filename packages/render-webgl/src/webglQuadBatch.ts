@@ -1,4 +1,4 @@
-import { concatMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry';
+import { multiplyMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry';
 import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
 import { createNullRendererData } from '@flighthq/render-core';
 import type { QuadBatch, RenderState, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
@@ -48,7 +48,7 @@ export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNo
 
       const offset = i * 6;
       setMatrixFromFloat32Array(quadTransform, offset, transforms);
-      concatMatrix(quadTransform, quadTransform, transform);
+      multiplyMatrix(quadTransform, transform, quadTransform);
 
       setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, quadTransform, internal.canvas);
 

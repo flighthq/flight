@@ -1,4 +1,4 @@
-import { concatMatrix, copyMatrix, translateMatrixByVectorXY } from '@flighthq/geometry';
+import { copyMatrix, multiplyMatrix, translateMatrixByVectorXY } from '@flighthq/geometry';
 import { getLocalTransform2D, getLocalTransformID } from '@flighthq/scenegraph-core';
 import type { DisplayObjectRenderNode, GraphNode, HasTransform2D, RenderNode2D, RenderState } from '@flighthq/types';
 
@@ -38,7 +38,7 @@ function recalculateRenderTransform2D(state: RenderState, data: RenderNode2D, pa
   const transform2D = getLocalTransform2D(source as GraphNode & HasTransform2D);
   const parentTransform2D = parentData !== undefined ? parentData.transform2D : state.renderTransform2D;
   if (parentTransform2D !== null) {
-    concatMatrix(data.transform2D, transform2D, parentTransform2D);
+    multiplyMatrix(data.transform2D, parentTransform2D, transform2D);
   } else {
     copyMatrix(data.transform2D, transform2D);
   }

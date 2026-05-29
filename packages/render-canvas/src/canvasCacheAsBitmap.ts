@@ -1,4 +1,4 @@
-import { concatMatrix, createMatrix, createRectangle, identityMatrix, inverseMatrix } from '@flighthq/geometry';
+import { createMatrix, createRectangle, identityMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry';
 import { calculateBoundsRect } from '@flighthq/scenegraph-core';
 import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type {
@@ -73,7 +73,7 @@ export function drawImageCacheResult(
   cache: ImageCacheResult,
 ): void {
   if (cache.canvas === null) return;
-  concatMatrix(_tempDrawTransform, cache.transform, renderNode.transform2D);
+  multiplyMatrix(_tempDrawTransform, renderNode.transform2D, cache.transform);
   setCanvasTransform(state, state.context, _tempDrawTransform);
   state.context.drawImage(cache.canvas, 0, 0);
 }
