@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { getPixel32, setPixel32 } from './pixel';
 import { createSurface } from './surface';
-import { colorTransform, merge, scroll, threshold } from './transform';
+import { colorTransformSurface, merge, scroll, threshold } from './transform';
 
 const identity = {
   redMultiplier: 1,
@@ -15,10 +15,10 @@ const identity = {
   alphaOffset: 0,
 };
 
-describe('colorTransform', () => {
+describe('colorTransformSurface', () => {
   it('applies multiplier', () => {
     const img = createSurface(2, 2, 0xff808080);
-    colorTransform(img, 0, 0, 2, 2, { ...identity, redMultiplier: 0 });
+    colorTransformSurface(img, 0, 0, 2, 2, { ...identity, redMultiplier: 0 });
     expect(img.data[0]).toBe(0);
     expect(img.data[1]).toBe(0x80);
   });
@@ -26,21 +26,21 @@ describe('colorTransform', () => {
   it('applies offset', () => {
     const img = createSurface(1, 1);
     setPixel32(img, 0, 0, 0xff000000);
-    colorTransform(img, 0, 0, 1, 1, { ...identity, redOffset: 100 });
+    colorTransformSurface(img, 0, 0, 1, 1, { ...identity, redOffset: 100 });
     expect(img.data[0]).toBe(100);
   });
 
   it('clamps to 0-255', () => {
     const img = createSurface(1, 1, 0xff808080);
-    colorTransform(img, 0, 0, 1, 1, { ...identity, redMultiplier: 10, redOffset: 100 });
+    colorTransformSurface(img, 0, 0, 1, 1, { ...identity, redMultiplier: 10, redOffset: 100 });
     expect(img.data[0]).toBe(255);
-    colorTransform(img, 0, 0, 1, 1, { ...identity, redMultiplier: 0, redOffset: -100 });
+    colorTransformSurface(img, 0, 0, 1, 1, { ...identity, redMultiplier: 0, redOffset: -100 });
     expect(img.data[0]).toBe(0);
   });
 
   it('only affects the specified rect', () => {
     const img = createSurface(2, 2, 0xff808080);
-    colorTransform(img, 0, 0, 1, 1, { ...identity, redMultiplier: 0 });
+    colorTransformSurface(img, 0, 0, 1, 1, { ...identity, redMultiplier: 0 });
     expect(img.data[0]).toBe(0);
     expect(img.data[4]).toBe(0x80);
   });

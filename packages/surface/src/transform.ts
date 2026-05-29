@@ -13,7 +13,7 @@ export interface ColorTransformData {
 
 export type ThresholdOperation = '!=' | '<' | '<=' | '==' | '>' | '>=';
 
-export function colorTransform(
+export function colorTransformSurface(
   dest: Surface,
   x: number,
   y: number,
@@ -37,7 +37,7 @@ export function colorTransform(
 }
 
 export function merge(
-  source: Surface,
+  source: Readonly<Surface>,
   sx: number,
   sy: number,
   sw: number,
@@ -88,7 +88,7 @@ export function scroll(dest: Surface, dx: number, dy: number): void {
 }
 
 export function threshold(
-  source: Surface,
+  source: Readonly<Surface>,
   sx: number,
   sy: number,
   sw: number,
