@@ -120,7 +120,8 @@ function checkPackageTargetPaths(pkgDir: string, targets: Iterable<string>): num
     checkedSourcePaths.add(sourcePath);
 
     const ok = existsSync(sourcePath);
-    if (!check(`${sourcePath.replace(pkgDir + '\\', '')} exists for package target`, ok, `referenced by ${target}`)) errors++;
+    if (!check(`${sourcePath.replace(pkgDir + '\\', '')} exists for package target`, ok, `referenced by ${target}`))
+      errors++;
   }
 
   return errors;
@@ -134,7 +135,12 @@ function getSourceFiles(dir: string): string[] {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) {
       files.push(...getSourceFiles(path));
-    } else if (entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.test.ts') && !entry.name.endsWith('.spec.ts')) {
+    } else if (
+      entry.isFile() &&
+      entry.name.endsWith('.ts') &&
+      !entry.name.endsWith('.test.ts') &&
+      !entry.name.endsWith('.spec.ts')
+    ) {
       files.push(path);
     }
   }
@@ -201,7 +207,9 @@ const expectedPackageFiles = [
   '!dist/**/*.test.js.map',
   '!dist/**/*.test.d.ts.map',
 ];
-const expectedCleanScript = 'tsc -b --clean && node -e "require(\'node:fs\').rmSync(\'dist\',{recursive:true,force:true})"';
+const expectedCleanScript = 'tsc -b --clean';
+const expectedCleanDistScript = 'tsx ../../scripts/clean-package-dist.ts';
+const expectedPrepackScript = 'npm run clean && npm run clean:dist && npm run build';
 
 let totalErrors = 0;
 
@@ -226,7 +234,11 @@ for (const pkgDir of packageDirs) {
     if (!check(rel, ok, `missing ${join(pkgDir, rel)}`)) errors++;
   }
 
-  const sideEffectsOk = check('sideEffects is false', pkg.sideEffects === false, `got ${JSON.stringify(pkg.sideEffects)}`);
+  const sideEffectsOk = check(
+    'sideEffects is false',
+    pkg.sideEffects === false,
+    `got ${JSON.stringify(pkg.sideEffects)}`,
+  );
   if (!sideEffectsOk) errors++;
   errors += checkNoTopLevelSideEffects(pkgDir);
 
@@ -239,17 +251,24 @@ for (const pkgDir of packageDirs) {
 
   const prepackOk = check(
     'prepack cleans and builds package',
-    pkg.scripts?.prepack === 'npm run clean && npm run build',
+    pkg.scripts?.prepack === expectedPrepackScript,
     `got ${JSON.stringify(pkg.scripts?.prepack)}`,
   );
   if (!prepackOk) errors++;
 
   const cleanOk = check(
-    'clean removes dist output',
+    'clean runs TypeScript project clean',
     pkg.scripts?.clean === expectedCleanScript,
     `got ${JSON.stringify(pkg.scripts?.clean)}`,
   );
   if (!cleanOk) errors++;
+
+  const cleanDistOk = check(
+    'clean:dist removes package dist output',
+    pkg.scripts?.['clean:dist'] === expectedCleanDistScript,
+    `got ${JSON.stringify(pkg.scripts?.['clean:dist'])}`,
+  );
+  if (!cleanDistOk) errors++;
 
   // tsconfig.base.json paths entries
   const pathKey = name;
