@@ -4,58 +4,6 @@ import type { Matrix3Like, Matrix4, Matrix4Like, MatrixLike, Vector3Like, Vector
 import { acquireIdentityMatrix4, acquireMatrix4, releaseMatrix4 } from './matrix4Pool';
 
 /**
- * A 4×4 homogeneous matrix.
- *
- * [ m00 m10 m20 m30 ]
- * [ m01 m11 m21 m31 ]
- * [ m02 m12 m22 m32 ]
- * [ m03 m13 m23 m33 ]
- *
- * Storage is column-major (OpenGL-compatible).
- *
- * This matrix assumes column vectors, multiplied on the right:
- * v' = M · v
- */
-export function createMatrix4(
-  m00?: number,
-  m01?: number,
-  m02?: number,
-  m03?: number,
-  m10?: number,
-  m11?: number,
-  m12?: number,
-  m13?: number,
-  m20?: number,
-  m21?: number,
-  m22?: number,
-  m23?: number,
-  m30?: number,
-  m31?: number,
-  m32?: number,
-  m33?: number,
-): Matrix4 {
-  const m = new Float32Array(__identity);
-  const out: Matrix4 = createEntity({ m: m });
-  if (m00 !== undefined) m[0] = m00;
-  if (m01 !== undefined) m[1] = m01;
-  if (m02 !== undefined) m[2] = m02;
-  if (m03 !== undefined) m[3] = m03;
-  if (m10 !== undefined) m[4] = m10;
-  if (m11 !== undefined) m[5] = m11;
-  if (m12 !== undefined) m[6] = m12;
-  if (m13 !== undefined) m[7] = m13;
-  if (m20 !== undefined) m[8] = m20;
-  if (m21 !== undefined) m[9] = m21;
-  if (m22 !== undefined) m[10] = m22;
-  if (m23 !== undefined) m[11] = m23;
-  if (m30 !== undefined) m[12] = m30;
-  if (m31 !== undefined) m[13] = m31;
-  if (m32 !== undefined) m[14] = m32;
-  if (m33 !== undefined) m[15] = m33;
-  return out;
-}
-
-/**
  * Appends a matrix in world space (post-multiply).
  *
  * out = source · other
@@ -311,6 +259,58 @@ export function copyMatrix4RowToVector4(out: Vector4Like, row: number, source: R
 }
 
 /**
+ * A 4×4 homogeneous matrix.
+ *
+ * [ m00 m10 m20 m30 ]
+ * [ m01 m11 m21 m31 ]
+ * [ m02 m12 m22 m32 ]
+ * [ m03 m13 m23 m33 ]
+ *
+ * Storage is column-major (OpenGL-compatible).
+ *
+ * This matrix assumes column vectors, multiplied on the right:
+ * v' = M · v
+ */
+export function createMatrix4(
+  m00?: number,
+  m01?: number,
+  m02?: number,
+  m03?: number,
+  m10?: number,
+  m11?: number,
+  m12?: number,
+  m13?: number,
+  m20?: number,
+  m21?: number,
+  m22?: number,
+  m23?: number,
+  m30?: number,
+  m31?: number,
+  m32?: number,
+  m33?: number,
+): Matrix4 {
+  const m = new Float32Array(__identity);
+  const out: Matrix4 = createEntity({ m: m });
+  if (m00 !== undefined) m[0] = m00;
+  if (m01 !== undefined) m[1] = m01;
+  if (m02 !== undefined) m[2] = m02;
+  if (m03 !== undefined) m[3] = m03;
+  if (m10 !== undefined) m[4] = m10;
+  if (m11 !== undefined) m[5] = m11;
+  if (m12 !== undefined) m[6] = m12;
+  if (m13 !== undefined) m[7] = m13;
+  if (m20 !== undefined) m[8] = m20;
+  if (m21 !== undefined) m[9] = m21;
+  if (m22 !== undefined) m[10] = m22;
+  if (m23 !== undefined) m[11] = m23;
+  if (m30 !== undefined) m[12] = m30;
+  if (m31 !== undefined) m[13] = m31;
+  if (m32 !== undefined) m[14] = m32;
+  if (m33 !== undefined) m[15] = m33;
+  return out;
+}
+
+/**
  * Creates a matrix using two-dimensional transform values
  **/
 export function createMatrix4From2D(a: number, b: number, c: number, d: number, tx?: number, ty?: number): Matrix4 {
@@ -344,6 +344,18 @@ export function createPerspectiveMatrix4(fov: number, aspect: number, zNear: num
   return out;
 }
 
+export function equalsMatrix4(
+  a: Readonly<Matrix4Like> | null | undefined,
+  b: Readonly<Matrix4Like> | null | undefined,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  for (let i = 0; i < 16; i++) {
+    if (a.m[i] !== b.m[i]) return false;
+  }
+  return true;
+}
+
 export function getMatrix4Determinant(source: Readonly<Matrix4Like>): number {
   const _source = source.m;
   return (
@@ -357,38 +369,15 @@ export function getMatrix4Determinant(source: Readonly<Matrix4Like>): number {
   );
 }
 
-export function equalsMatrix4(
-  a: Readonly<Matrix4Like> | null | undefined,
-  b: Readonly<Matrix4Like> | null | undefined,
-): boolean {
-  if (a === b) return true;
-  if (!a || !b) return false;
-  for (let i = 0; i < 16; i++) {
-    if (a.m[i] !== b.m[i]) return false;
-  }
-  return true;
-}
-
-export function setMatrix4FromMatrix(out: Matrix4Like, source: Readonly<MatrixLike>): void {
-  setMatrix4From2D(out, source.a, source.b, source.c, source.d, source.tx, source.ty);
-}
-
-export function setMatrix4FromMatrix3(out: Matrix4Like, source: Readonly<Matrix3Like>): void {
-  const _out = out.m;
-  const _source = source.m;
-  setMatrix4From2D(out, _source[0], _source[1], _source[3], _source[4], _source[2], _source[5]);
-  _out[2] = _source[6];
-  _out[6] = _source[7];
-  _out[10] = _source[8];
-}
-
 export function getMatrix4Element(source: Readonly<Matrix4Like>, row: number, column: number): number {
   return source.m[column * 4 + row];
 }
 
-export function isAffineMatrix4(source: Readonly<Matrix4Like>): boolean {
+export function getMatrix4Position(out: Vector3Like, source: Readonly<Matrix4Like>): void {
   const _source = source.m;
-  return _source[3] === 0 && _source[7] === 0 && _source[11] === 0 && _source[15] === 1;
+  out.x = _source[12];
+  out.y = _source[13];
+  out.z = _source[14];
 }
 
 /**
@@ -480,6 +469,73 @@ export function inverseMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>):
   return invertable;
 }
 
+export function isAffineMatrix4(source: Readonly<Matrix4Like>): boolean {
+  const _source = source.m;
+  return _source[3] === 0 && _source[7] === 0 && _source[11] === 0 && _source[15] === 1;
+}
+
+/**
+ * Transforms a point using this matrix, ignoring the translation of the matrix
+ **/
+export function matrix4TransformPoint(
+  out: Vector3Like,
+  source: Readonly<Matrix4Like>,
+  point: Readonly<Vector3Like>,
+): void {
+  const _source = source.m;
+  const x = point.x,
+    y = point.y,
+    z = point.z;
+  out.x = x * _source[0] + y * _source[4] + z * _source[8] + _source[12];
+  out.y = x * _source[1] + y * _source[5] + z * _source[9] + _source[13];
+  out.z = x * _source[2] + y * _source[6] + z * _source[10] + _source[14];
+}
+
+/**
+  Transforms a `Vector4Like` instance using the current matrix
+  @param	result	(Optional) An existing `Vector2` instance to fill with the result
+  @return	The resulting `Vector4Like` instance
+**/
+export function matrix4TransformVector(
+  out: Vector4Like,
+  source: Readonly<Matrix4Like>,
+  vector: Readonly<Vector4Like>,
+): void {
+  const _source = source.m;
+  const x = vector.x,
+    y = vector.y,
+    z = vector.z;
+  out.x = x * _source[0] + y * _source[4] + z * _source[8] + _source[12];
+  out.y = x * _source[1] + y * _source[5] + z * _source[9] + _source[13];
+  out.z = x * _source[2] + y * _source[6] + z * _source[10] + _source[14];
+  out.w = x * _source[3] + y * _source[7] + z * _source[11] + _source[15];
+}
+
+/**
+ * Transforms a series of [x, y, z] value pairs at once
+ **/
+export function matrix4TransformVectors(
+  out: Float32Array,
+  source: Readonly<Matrix4Like>,
+  vectors: Readonly<Float32Array>,
+): void {
+  const _source = source.m;
+  let i = 0;
+  let x: number, y: number, z: number;
+
+  while (i + 3 <= vectors.length) {
+    x = vectors[i];
+    y = vectors[i + 1];
+    z = vectors[i + 2];
+
+    out[i] = x * _source[0] + y * _source[4] + z * _source[8] + _source[12];
+    out[i + 1] = x * _source[1] + y * _source[5] + z * _source[9] + _source[13];
+    out[i + 2] = x * _source[2] + y * _source[6] + z * _source[10] + _source[14];
+
+    i += 3;
+  }
+}
+
 /**
  * Matrix multiplication
  *
@@ -543,13 +599,6 @@ export function multiplyMatrix4(out: Matrix4Like, a: Readonly<Matrix4Like>, b: R
   _out[13] = m241 * m112 + m242 * m122 + m243 * m132 + m244 * m142;
   _out[14] = m241 * m113 + m242 * m123 + m243 * m133 + m244 * m143;
   _out[15] = m241 * m114 + m242 * m124 + m243 * m134 + m244 * m144;
-}
-
-export function getMatrix4Position(out: Vector3Like, source: Readonly<Matrix4Like>): void {
-  const _source = source.m;
-  out.x = _source[12];
-  out.y = _source[13];
-  out.z = _source[14];
 }
 
 /**
@@ -688,6 +737,44 @@ export function scaleMatrix4(
   }
 }
 
+export function setMatrix4(
+  out: Matrix4Like,
+  m00: number,
+  m01: number,
+  m02: number,
+  m03: number,
+  m10: number,
+  m11: number,
+  m12: number,
+  m13: number,
+  m20: number,
+  m21: number,
+  m22: number,
+  m23: number,
+  m30: number,
+  m31: number,
+  m32: number,
+  m33: number,
+): void {
+  const _out = out.m;
+  _out[0] = m00;
+  _out[1] = m01;
+  _out[2] = m02;
+  _out[3] = m03;
+  _out[4] = m10;
+  _out[5] = m11;
+  _out[6] = m12;
+  _out[7] = m13;
+  _out[8] = m20;
+  _out[9] = m21;
+  _out[10] = m22;
+  _out[11] = m23;
+  _out[12] = m30;
+  _out[13] = m31;
+  _out[14] = m32;
+  _out[15] = m33;
+}
+
 export function setMatrix4Element(out: Matrix4Like, row: number, column: number, value: number): void {
   out.m[column * 4 + row] = value;
 }
@@ -727,6 +814,26 @@ export function setMatrix4From2D(
   _out[13] = ty;
   _out[14] = 0;
   _out[15] = 1;
+}
+
+export function setMatrix4FromMatrix(out: Matrix4Like, source: Readonly<MatrixLike>): void {
+  setMatrix4From2D(out, source.a, source.b, source.c, source.d, source.tx, source.ty);
+}
+
+export function setMatrix4FromMatrix3(out: Matrix4Like, source: Readonly<Matrix3Like>): void {
+  const _out = out.m;
+  const _source = source.m;
+  setMatrix4From2D(out, _source[0], _source[1], _source[3], _source[4], _source[2], _source[5]);
+  _out[2] = _source[6];
+  _out[6] = _source[7];
+  _out[10] = _source[8];
+}
+
+export function setMatrix4Position(out: Matrix4Like, source: Readonly<Vector3Like>): void {
+  const _out = out.m;
+  _out[12] = source.x;
+  _out[13] = source.y;
+  _out[14] = source.z;
 }
 
 /**
@@ -806,113 +913,6 @@ export function setPerspectiveMatrix4(
   _out[13] = 0;
   _out[14] = (-2 * zFar * zNear) / (zFar - zNear);
   _out[15] = 1;
-}
-
-export function setMatrix4Position(out: Matrix4Like, source: Readonly<Vector3Like>): void {
-  const _out = out.m;
-  _out[12] = source.x;
-  _out[13] = source.y;
-  _out[14] = source.z;
-}
-
-export function setMatrix4(
-  out: Matrix4Like,
-  m00: number,
-  m01: number,
-  m02: number,
-  m03: number,
-  m10: number,
-  m11: number,
-  m12: number,
-  m13: number,
-  m20: number,
-  m21: number,
-  m22: number,
-  m23: number,
-  m30: number,
-  m31: number,
-  m32: number,
-  m33: number,
-): void {
-  const _out = out.m;
-  _out[0] = m00;
-  _out[1] = m01;
-  _out[2] = m02;
-  _out[3] = m03;
-  _out[4] = m10;
-  _out[5] = m11;
-  _out[6] = m12;
-  _out[7] = m13;
-  _out[8] = m20;
-  _out[9] = m21;
-  _out[10] = m22;
-  _out[11] = m23;
-  _out[12] = m30;
-  _out[13] = m31;
-  _out[14] = m32;
-  _out[15] = m33;
-}
-
-/**
- * Transforms a point using this matrix, ignoring the translation of the matrix
- **/
-export function matrix4TransformPoint(
-  out: Vector3Like,
-  source: Readonly<Matrix4Like>,
-  point: Readonly<Vector3Like>,
-): void {
-  const _source = source.m;
-  const x = point.x,
-    y = point.y,
-    z = point.z;
-  out.x = x * _source[0] + y * _source[4] + z * _source[8] + _source[12];
-  out.y = x * _source[1] + y * _source[5] + z * _source[9] + _source[13];
-  out.z = x * _source[2] + y * _source[6] + z * _source[10] + _source[14];
-}
-
-/**
-  Transforms a `Vector4Like` instance using the current matrix
-  @param	result	(Optional) An existing `Vector2` instance to fill with the result
-  @return	The resulting `Vector4Like` instance
-**/
-export function matrix4TransformVector(
-  out: Vector4Like,
-  source: Readonly<Matrix4Like>,
-  vector: Readonly<Vector4Like>,
-): void {
-  const _source = source.m;
-  const x = vector.x,
-    y = vector.y,
-    z = vector.z;
-  out.x = x * _source[0] + y * _source[4] + z * _source[8] + _source[12];
-  out.y = x * _source[1] + y * _source[5] + z * _source[9] + _source[13];
-  out.z = x * _source[2] + y * _source[6] + z * _source[10] + _source[14];
-  out.w = x * _source[3] + y * _source[7] + z * _source[11] + _source[15];
-}
-
-/**
- * Transforms a series of [x, y, z] value pairs at once
- **/
-export function matrix4TransformVectors(
-  out: Float32Array,
-  source: Readonly<Matrix4Like>,
-  vectors: Readonly<Float32Array>,
-): void {
-  const _source = source.m;
-  let i = 0;
-  let x: number, y: number, z: number;
-
-  while (i + 3 <= vectors.length) {
-    x = vectors[i];
-    y = vectors[i + 1];
-    z = vectors[i + 2];
-
-    out[i] = x * _source[0] + y * _source[4] + z * _source[8] + _source[12];
-    out[i + 1] = x * _source[1] + y * _source[5] + z * _source[9] + _source[13];
-    out[i + 2] = x * _source[2] + y * _source[6] + z * _source[10] + _source[14];
-
-    i += 3;
-  }
 }
 
 /**

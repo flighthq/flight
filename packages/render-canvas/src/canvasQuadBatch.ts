@@ -1,4 +1,4 @@
-import { concatMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry';
+import { multiplyMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry';
 import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
 import { createNullRendererData } from '@flighthq/render-core';
 import type { CanvasRenderState, QuadBatch, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
@@ -57,7 +57,7 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: SpriteR
       );
     } else {
       setMatrixFromFloat32Array(quadTransform, offset, transforms);
-      concatMatrix(quadTransform, quadTransform, transform);
+      multiplyMatrix(quadTransform, transform, quadTransform);
 
       if (roundPixels) {
         quadTransform.tx = Math.round(quadTransform.tx);

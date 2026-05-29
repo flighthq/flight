@@ -2,18 +2,18 @@ import {
   addVector2,
   cloneVector2,
   copyVector2,
-  createPolarVector2,
   createVector2,
-  distanceVector2,
+  createVector2FromPolar,
   equalsVector2,
+  getVector2Distance,
   getVector2Length,
   getVector2LengthSquared,
   lerpVector2,
   normalizeVector2,
   offsetVector2,
-  setPolarVector2,
   setVector2,
   setVector2FromFloat32Array,
+  setVector2FromPolar,
   subtractVector2,
   writeVector2ToFloat32Array,
 } from '@flighthq/geometry';
@@ -193,8 +193,8 @@ describe('copy', () => {
 
 describe('createPolar', () => {
   it('makes a createVector2 and calls polar', () => {
-    const pt = createPolarVector2(5, 0);
-    setPolarVector2(pt2, 5, 0);
+    const pt = createVector2FromPolar(5, 0);
+    setVector2FromPolar(pt2, 5, 0);
     expect(equalsVector2(pt, pt2)).toBe(true);
   });
 });
@@ -214,7 +214,7 @@ describe('distance', () => {
       pt.y = a[1];
       pt2.x = b[0];
       pt2.y = b[1];
-      expect(distanceVector2(pt, pt2)).toBe(expected);
+      expect(getVector2Distance(pt, pt2)).toBe(expected);
     }
   });
 
@@ -222,7 +222,7 @@ describe('distance', () => {
     for (const { a, b, expected } of testCases) {
       const pt = { x: a[0], y: a[1] };
       const pt2 = { x: b[0], y: b[1] };
-      expect(distanceVector2(pt, pt2)).toBe(expected);
+      expect(getVector2Distance(pt, pt2)).toBe(expected);
     }
   });
 });
@@ -448,7 +448,7 @@ describe('setTo', () => {
 describe('setPolar', () => {
   it('returns a vector at the given length along the x-axis when angle is 0', () => {
     const p = createVector2();
-    setPolarVector2(p, 5, 0);
+    setVector2FromPolar(p, 5, 0);
     expect(p.x).toBeCloseTo(5);
     expect(p.y).toBeCloseTo(0);
     expect(getVector2Length(p)).toBeCloseTo(5);
@@ -456,7 +456,7 @@ describe('setPolar', () => {
 
   it('returns a vector at the given length along the y-axis when angle is π/2', () => {
     const p = createVector2();
-    setPolarVector2(p, 3, Math.PI / 2);
+    setVector2FromPolar(p, 3, Math.PI / 2);
     expect(p.x).toBeCloseTo(0);
     expect(p.y).toBeCloseTo(3);
     expect(getVector2Length(p)).toBeCloseTo(3);
@@ -464,7 +464,7 @@ describe('setPolar', () => {
 
   it('returns a vector in the correct quadrant for angle π', () => {
     const p = createVector2();
-    setPolarVector2(p, 4, Math.PI);
+    setVector2FromPolar(p, 4, Math.PI);
     expect(p.x).toBeCloseTo(-4);
     expect(p.y).toBeCloseTo(0);
     expect(getVector2Length(p)).toBeCloseTo(4);
@@ -472,7 +472,7 @@ describe('setPolar', () => {
 
   it('returns a vector in the correct quadrant for angle 3π/2', () => {
     const p = createVector2();
-    setPolarVector2(p, 2, (3 * Math.PI) / 2);
+    setVector2FromPolar(p, 2, (3 * Math.PI) / 2);
     expect(p.x).toBeCloseTo(0);
     expect(p.y).toBeCloseTo(-2);
     expect(getVector2Length(p)).toBeCloseTo(2);
@@ -480,7 +480,7 @@ describe('setPolar', () => {
 
   it('handles zero length', () => {
     const p = createVector2();
-    setPolarVector2(p, 0, Math.PI / 4);
+    setVector2FromPolar(p, 0, Math.PI / 4);
     expect(p.x).toBeCloseTo(0);
     expect(p.y).toBeCloseTo(0);
     expect(getVector2Length(p)).toBeCloseTo(0);
@@ -488,7 +488,7 @@ describe('setPolar', () => {
 
   it('handles negative length', () => {
     const p = createVector2();
-    setPolarVector2(p, -5, 0);
+    setVector2FromPolar(p, -5, 0);
     expect(p.x).toBeCloseTo(-5);
     expect(p.y).toBeCloseTo(0);
     expect(getVector2Length(p)).toBeCloseTo(5); // length property is always positive
@@ -498,7 +498,7 @@ describe('setPolar', () => {
     const angle = Math.PI / 4; // 45 degrees
     const len = Math.sqrt(2);
     const p = createVector2();
-    setPolarVector2(p, len, angle);
+    setVector2FromPolar(p, len, angle);
     expect(p.x).toBeCloseTo(1);
     expect(p.y).toBeCloseTo(1);
     expect(getVector2Length(p)).toBeCloseTo(len);
@@ -506,7 +506,7 @@ describe('setPolar', () => {
 
   it('allows vector-like objects', () => {
     const p = { x: 0, y: 0 };
-    setPolarVector2(p, 5, 0);
+    setVector2FromPolar(p, 5, 0);
     expect(p.x).toBeCloseTo(5);
     expect(p.y).toBeCloseTo(0);
   });

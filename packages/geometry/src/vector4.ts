@@ -1,10 +1,30 @@
 import { createEntity } from '@flighthq/entity';
 import type { Vector3Like, Vector4, Vector4Like } from '@flighthq/types';
 
-export const VECTOR4_X_AXIS: Readonly<Vector4> = createVector4(1, 0, 0, 0);
-export const VECTOR4_Y_AXIS: Readonly<Vector4> = createVector4(0, 1, 0, 0);
-export const VECTOR4_Z_AXIS: Readonly<Vector4> = createVector4(0, 0, 1, 0);
-export const VECTOR4_W_UNIT: Readonly<Vector4> = createVector4(0, 0, 0, 1);
+/**
+ * Adds the x, y, z and w components of two vector objects
+ * and writes to out.
+ */
+export function addVector4(out: Vector4Like, a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): void {
+  out.x = a.x + b.x;
+  out.y = a.y + b.y;
+  out.z = a.z + b.z;
+  out.w = a.w + b.w;
+}
+
+export function cloneVector4(source: Readonly<Vector4Like>): Vector4 {
+  return createVector4(source.x, source.y, source.z, source.w);
+}
+
+/**
+ * Copies the x, y, z and w components of another vector.
+ */
+export function copyVector4(out: Vector4Like, source: Readonly<Vector4Like>): void {
+  out.x = source.x;
+  out.y = source.y;
+  out.z = source.z;
+  out.w = source.w;
+}
 
 /**
  * The Vector4Like class represents a vector or point in four-dimensional space using the
@@ -28,15 +48,12 @@ export function createVector4(x?: number, y?: number, z?: number, w?: number): V
   return createEntity({ x: x ?? 0, y: y ?? 0, z: z ?? 0, w: w ?? 0 });
 }
 
-/**
- * Adds the x, y, z and w components of two vector objects
- * and writes to out.
- */
-export function addVector4(out: Vector4Like, a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): void {
-  out.x = a.x + b.x;
-  out.y = a.y + b.y;
-  out.z = a.z + b.z;
-  out.w = a.w + b.w;
+export function equalsVector4(
+  a: Readonly<Vector4Like> | null | undefined,
+  b: Readonly<Vector4Like> | null | undefined,
+): boolean {
+  if (!a || !b) return false;
+  return a.x === b.x && a.y === b.y && a.z === b.z && a.w === b.w;
 }
 
 /**
@@ -44,35 +61,21 @@ export function addVector4(out: Vector4Like, a: Readonly<Vector4Like>, b: Readon
  * smallest radian the first Vector4Like object rotates until it aligns with the
  * second Vector4Like object.
  **/
-export function angleBetweenVector4(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
-  const la = lengthVector4(a);
-  const lb = lengthVector4(b);
+export function getVector4AngleBetween(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
+  const la = getVector4Length(a);
+  const lb = getVector4Length(b);
 
   if (la === 0 || lb === 0) return NaN; // undefined angle
 
-  const _dot = dotVector4(a, b) / (la * lb);
+  const _dot = getVector4Dot(a, b) / (la * lb);
   // clamp dot to [-1, 1] to avoid floating point errors
   return Math.acos(Math.min(1, Math.max(-1, _dot)));
-}
-
-export function cloneVector4(source: Readonly<Vector4Like>): Vector4 {
-  return createVector4(source.x, source.y, source.z, source.w);
-}
-
-/**
- * Copies the x, y, z and w components of another vector.
- */
-export function copyVector4(out: Vector4Like, source: Readonly<Vector4Like>): void {
-  out.x = source.x;
-  out.y = source.y;
-  out.z = source.z;
-  out.w = source.w;
 }
 
 /**
  * Returns the distance between two Vector4Like objects.
  **/
-export function distanceVector4(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
+export function getVector4Distance(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
   const x: number = b.x - a.x;
   const y: number = b.y - a.y;
   const z: number = b.z - a.z;
@@ -86,7 +89,7 @@ export function distanceVector4(a: Readonly<Vector4Like>, b: Readonly<Vector4Lik
  *
  * This avoids Math.sqrt for better performance.
  **/
-export function distanceSquaredVector4(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
+export function getVector4DistanceSquared(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
   const x: number = b.x - a.x;
   const y: number = b.y - a.y;
   const z: number = b.z - a.z;
@@ -102,16 +105,8 @@ export function distanceSquaredVector4(a: Readonly<Vector4Like>, b: Readonly<Vec
  * one. They remove the length of the vector as a factor in the result. You can use
  * the `normalize()` method to convert a vector to a unit vector.
  **/
-export function dotVector4(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
+export function getVector4Dot(a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): number {
   return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
-}
-
-export function equalsVector4(
-  a: Readonly<Vector4Like> | null | undefined,
-  b: Readonly<Vector4Like> | null | undefined,
-): boolean {
-  if (!a || !b) return false;
-  return a.x === b.x && a.y === b.y && a.z === b.z && a.w === b.w;
 }
 
 /**
@@ -119,7 +114,7 @@ export function equalsVector4(
  * the object's x, y, z and w coordinates. A unit vector has
  * a length or magnitude of one.
  **/
-export function lengthVector4(source: Readonly<Vector4Like>): number {
+export function getVector4Length(source: Readonly<Vector4Like>): number {
   return Math.sqrt(source.x ** 2 + source.y ** 2 + source.z ** 2 + source.w ** 2);
 }
 
@@ -129,7 +124,7 @@ export function lengthVector4(source: Readonly<Vector4Like>): number {
  * method whenever possible instead of the slower `Math.sqrt()` method call of the
  * `Vector4Like.length()` method.
  **/
-export function lengthSquaredVector4(source: Readonly<Vector4Like>): number {
+export function getVector4LengthSquared(source: Readonly<Vector4Like>): number {
   return source.x ** 2 + source.y ** 2 + source.z ** 2 + source.w ** 2;
 }
 
@@ -172,7 +167,7 @@ export function negateVector4(out: Vector4Like, source: Readonly<Vector4Like>): 
  * Returns the original length.
  **/
 export function normalizeVector4(out: Vector4Like, source: Readonly<Vector4Like>): number {
-  const l = lengthVector4(source);
+  const l = getVector4Length(source);
 
   if (l !== 0) {
     out.x = source.x / l;
@@ -225,3 +220,8 @@ export function subtractVector4(out: Vector4Like, source: Readonly<Vector4Like>,
   out.z = source.z - other.z;
   out.w = source.w - other.w;
 }
+
+export const VECTOR4_W_UNIT: Readonly<Vector4> = createVector4(0, 0, 0, 1);
+export const VECTOR4_X_AXIS: Readonly<Vector4> = createVector4(1, 0, 0, 0);
+export const VECTOR4_Y_AXIS: Readonly<Vector4> = createVector4(0, 1, 0, 0);
+export const VECTOR4_Z_AXIS: Readonly<Vector4> = createVector4(0, 0, 1, 0);

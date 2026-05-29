@@ -9,47 +9,10 @@ import type {
   Vector3Like,
 } from '@flighthq/types';
 
-/**
- * An Matrix object represents two-dimensional coordinate space.
- * It is a 2x3 matrix, with a, b, c, d for a two-dimensional transform,
- * and tx, ty for translation.
- *
- * [ a b tx ]
- * [ c d ty ]
- *
- * @see Vector2
- * @see Vector3
- * @see Rectangle
- */
-export function createMatrix(a?: number, b?: number, c?: number, d?: number, tx?: number, ty?: number): Matrix {
-  return createEntity({ a: a ?? 1, b: b ?? 0, c: c ?? 0, d: d ?? 1, tx: tx ?? 0, ty: ty ?? 0 });
-}
-
 export function cloneMatrix(source: Readonly<MatrixLike>): Matrix {
   const m = createMatrix();
   copyMatrix(m, source);
   return m;
-}
-
-/**
- * Concatenates two affine 2D transforms:
- *
- *   out = a ∘ b
- *
- * Applies the transforms of matrix b onto (and after) matrix a.
- */
-export function concatMatrix(out: MatrixLike, a: Readonly<MatrixLike>, b: Readonly<MatrixLike>): void {
-  const a1 = a.a * b.a + a.b * b.c;
-  out.b = a.a * b.b + a.b * b.d;
-  out.a = a1;
-
-  const c1 = a.c * b.a + a.d * b.c;
-  out.d = a.c * b.b + a.d * b.d;
-  out.c = c1;
-
-  const tx1 = a.tx * b.a + a.ty * b.c + b.tx;
-  out.ty = a.tx * b.b + a.ty * b.d + b.ty;
-  out.tx = tx1;
 }
 
 export function copyMatrix(out: MatrixLike, source: Readonly<MatrixLike>): void {
@@ -145,6 +108,22 @@ export function createGradientTransformMatrix(
   return out;
 }
 
+/**
+ * An Matrix object represents two-dimensional coordinate space.
+ * It is a 2x3 matrix, with a, b, c, d for a two-dimensional transform,
+ * and tx, ty for translation.
+ *
+ * [ a b tx ]
+ * [ c d ty ]
+ *
+ * @see Vector2
+ * @see Vector3
+ * @see Rectangle
+ */
+export function createMatrix(a?: number, b?: number, c?: number, d?: number, tx?: number, ty?: number): Matrix {
+  return createEntity({ a: a ?? 1, b: b ?? 0, c: c ?? 0, d: d ?? 1, tx: tx ?? 0, ty: ty ?? 0 });
+}
+
 export function createTransformMatrix(
   scaleX: number,
   scaleY: number,
@@ -171,30 +150,6 @@ export function equalsMatrix(
     a.c === b.c &&
     a.d === b.d
   );
-}
-
-export function setMatrixFromFloat32Array(out: MatrixLike, offset: number, source: Readonly<Float32Array>): void {
-  out.a = source[offset];
-  out.b = source[offset + 1];
-  out.c = source[offset + 2];
-  out.d = source[offset + 3];
-  out.tx = source[offset + 4];
-  out.ty = source[offset + 5];
-}
-
-export function setMatrixFromMatrix3(out: MatrixLike, source: Readonly<Matrix3Like>): void {
-  const m = source.m;
-  setMatrix(out, m[0], m[1], m[3], m[4], m[2], m[5]);
-}
-
-export function setMatrixFromMatrix4(out: MatrixLike, source: Readonly<Matrix4Like>): void {
-  const s = source.m;
-  out.a = s[0];
-  out.b = s[4];
-  out.tx = s[12];
-  out.c = s[1];
-  out.d = s[5];
-  out.ty = s[13];
 }
 
 /**
@@ -288,6 +243,138 @@ export function inverseMatrixTransformVectorXY(
     out.y = (1.0 / norm) * (-source.b * x + source.a * y);
     out.x = px;
   }
+}
+
+/**
+ * Transforms an axis-aligned bounding box defined by two opposite corners
+ * (ax, ay) and (bx, by) into a world-space axis-aligned bounding box.
+ *
+ * The input points may be in any order (min/max not required).
+ *
+ * This accounts for translation, rotation, scaling, and skew
+ * from the source matrix.
+ **/
+export function matrixTransformAABB(
+  out: RectangleLike,
+  source: Readonly<MatrixLike>,
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+): void {
+  const { a, b, c, d } = source;
+
+  // Fast path for empty rectangles (0x0 size)
+  if (ax === bx && ay === by) {
+    out.x = source.tx;
+    out.y = source.ty;
+    out.width = 0;
+    out.height = 0;
+    return;
+  }
+
+  let tx0 = a * ax + c * ay;
+  let tx1 = tx0;
+  let ty0 = b * ax + d * ay;
+  let ty1 = ty0;
+
+  let tx = a * bx + c * ay;
+  let ty = b * bx + d * ay;
+
+  if (tx < tx0) tx0 = tx;
+  if (ty < ty0) ty0 = ty;
+  if (tx > tx1) tx1 = tx;
+  if (ty > ty1) ty1 = ty;
+
+  tx = a * bx + c * by;
+  ty = b * bx + d * by;
+
+  if (tx < tx0) tx0 = tx;
+  if (ty < ty0) ty0 = ty;
+  if (tx > tx1) tx1 = tx;
+  if (ty > ty1) ty1 = ty;
+
+  tx = a * ax + c * by;
+  ty = b * ax + d * by;
+
+  if (tx < tx0) tx0 = tx;
+  if (ty < ty0) ty0 = ty;
+  if (tx > tx1) tx1 = tx;
+  if (ty > ty1) ty1 = ty;
+
+  out.x = tx0 + source.tx;
+  out.y = ty0 + source.ty;
+  out.width = tx1 - tx0;
+  out.height = ty1 - ty0;
+}
+
+export function matrixTransformAABBVector2(
+  out: RectangleLike,
+  matrix: Readonly<MatrixLike>,
+  a: Readonly<Vector2Like>,
+  b: Readonly<Vector2Like>,
+): void {
+  matrixTransformAABB(out, matrix, a.x, a.y, b.x, b.y);
+}
+
+/**
+ * Transforms a point using the given matrix.
+ * @see matrixTransformPointXY
+ */
+export function matrixTransformPoint(
+  out: Vector2Like,
+  matrix: Readonly<MatrixLike>,
+  point: Readonly<Vector2Like>,
+): void {
+  matrixTransformPointXY(out, matrix, point.x, point.y);
+}
+
+/**
+ * Transforms an (x, y) point using the given matrix.
+ */
+export function matrixTransformPointXY(out: Vector2Like, source: Readonly<MatrixLike>, x: number, y: number): void {
+  out.x = x * source.a + y * source.c + source.tx;
+  out.y = x * source.b + y * source.d + source.ty;
+}
+
+/**
+ * Applies a point transform to each corner of a rectangle and updates it
+ * to the axis-aligned bounding box of the transformed rectangle.
+ *
+ * This accounts for translation, rotation, scaling, and skew
+ * from the given matrix.
+ *
+ * @see matrixTransformAABB
+ * @see matrixTransformAABB
+ **/
+export function matrixTransformRectangle(
+  out: RectangleLike,
+  matrix: Readonly<MatrixLike>,
+  source: Readonly<RectangleLike>,
+): void {
+  matrixTransformAABB(out, matrix, source.x, source.y, source.x + source.width, source.y + source.height);
+}
+
+/**
+ * Given a point in the pretransform coordinate space, returns the
+ * coordinates of that point after the transformation occurs. Unlike the
+ * standard transformation applied using the `matrixTransformPoint()`
+ * method, the `matrixTransformVector()` method's transformation
+ * does not consider the translation parameters `tx` and
+ * `ty`.
+ * @see matrixTransformVectorXY
+ **/
+export function matrixTransformVector(
+  out: Vector2Like,
+  matrix: Readonly<MatrixLike>,
+  vector: Readonly<Vector2Like>,
+): void {
+  matrixTransformVectorXY(out, matrix, vector.x, vector.y);
+}
+
+export function matrixTransformVectorXY(out: Vector2Like, source: Readonly<MatrixLike>, x: number, y: number): void {
+  out.x = x * source.a + y * source.c;
+  out.y = x * source.b + y * source.d;
 }
 
 /**
@@ -417,6 +504,30 @@ export function setMatrix(out: MatrixLike, a: number, b: number, c: number, d: n
   out.ty = ty;
 }
 
+export function setMatrixFromFloat32Array(out: MatrixLike, offset: number, source: Readonly<Float32Array>): void {
+  out.a = source[offset];
+  out.b = source[offset + 1];
+  out.c = source[offset + 2];
+  out.d = source[offset + 3];
+  out.tx = source[offset + 4];
+  out.ty = source[offset + 5];
+}
+
+export function setMatrixFromMatrix3(out: MatrixLike, source: Readonly<Matrix3Like>): void {
+  const m = source.m;
+  setMatrix(out, m[0], m[1], m[3], m[4], m[2], m[5]);
+}
+
+export function setMatrixFromMatrix4(out: MatrixLike, source: Readonly<Matrix4Like>): void {
+  const s = source.m;
+  out.a = s[0];
+  out.b = s[4];
+  out.tx = s[12];
+  out.c = s[1];
+  out.d = s[5];
+  out.ty = s[13];
+}
+
 /**
  * Using `setTransform()` lets you obtain the same matrix as
  * if you applied `identity()`, `rotate()`, `scale()`, and
@@ -452,138 +563,6 @@ export function setTransformMatrix(
 
   out.tx = tx;
   out.ty = ty;
-}
-
-/**
- * Transforms a point using the given matrix.
- * @see matrixTransformPointXY
- */
-export function matrixTransformPoint(
-  out: Vector2Like,
-  matrix: Readonly<MatrixLike>,
-  point: Readonly<Vector2Like>,
-): void {
-  matrixTransformPointXY(out, matrix, point.x, point.y);
-}
-
-/**
- * Transforms an (x, y) point using the given matrix.
- */
-export function matrixTransformPointXY(out: Vector2Like, source: Readonly<MatrixLike>, x: number, y: number): void {
-  out.x = x * source.a + y * source.c + source.tx;
-  out.y = x * source.b + y * source.d + source.ty;
-}
-
-/**
- * Applies a point transform to each corner of a rectangle and updates it
- * to the axis-aligned bounding box of the transformed rectangle.
- *
- * This accounts for translation, rotation, scaling, and skew
- * from the given matrix.
- *
- * @see matrixTransformAABB
- * @see matrixTransformAABB
- **/
-export function matrixTransformRectangle(
-  out: RectangleLike,
-  matrix: Readonly<MatrixLike>,
-  source: Readonly<RectangleLike>,
-): void {
-  matrixTransformAABB(out, matrix, source.x, source.y, source.x + source.width, source.y + source.height);
-}
-
-export function matrixTransformAABBVector2(
-  out: RectangleLike,
-  matrix: Readonly<MatrixLike>,
-  a: Readonly<Vector2Like>,
-  b: Readonly<Vector2Like>,
-): void {
-  matrixTransformAABB(out, matrix, a.x, a.y, b.x, b.y);
-}
-
-/**
- * Transforms an axis-aligned bounding box defined by two opposite corners
- * (ax, ay) and (bx, by) into a world-space axis-aligned bounding box.
- *
- * The input points may be in any order (min/max not required).
- *
- * This accounts for translation, rotation, scaling, and skew
- * from the source matrix.
- **/
-export function matrixTransformAABB(
-  out: RectangleLike,
-  source: Readonly<MatrixLike>,
-  ax: number,
-  ay: number,
-  bx: number,
-  by: number,
-): void {
-  const { a, b, c, d } = source;
-
-  // Fast path for empty rectangles (0x0 size)
-  if (ax === bx && ay === by) {
-    out.x = source.tx;
-    out.y = source.ty;
-    out.width = 0;
-    out.height = 0;
-    return;
-  }
-
-  let tx0 = a * ax + c * ay;
-  let tx1 = tx0;
-  let ty0 = b * ax + d * ay;
-  let ty1 = ty0;
-
-  let tx = a * bx + c * ay;
-  let ty = b * bx + d * ay;
-
-  if (tx < tx0) tx0 = tx;
-  if (ty < ty0) ty0 = ty;
-  if (tx > tx1) tx1 = tx;
-  if (ty > ty1) ty1 = ty;
-
-  tx = a * bx + c * by;
-  ty = b * bx + d * by;
-
-  if (tx < tx0) tx0 = tx;
-  if (ty < ty0) ty0 = ty;
-  if (tx > tx1) tx1 = tx;
-  if (ty > ty1) ty1 = ty;
-
-  tx = a * ax + c * by;
-  ty = b * ax + d * by;
-
-  if (tx < tx0) tx0 = tx;
-  if (ty < ty0) ty0 = ty;
-  if (tx > tx1) tx1 = tx;
-  if (ty > ty1) ty1 = ty;
-
-  out.x = tx0 + source.tx;
-  out.y = ty0 + source.ty;
-  out.width = tx1 - tx0;
-  out.height = ty1 - ty0;
-}
-
-/**
- * Given a point in the pretransform coordinate space, returns the
- * coordinates of that point after the transformation occurs. Unlike the
- * standard transformation applied using the `matrixTransformPoint()`
- * method, the `matrixTransformVector()` method's transformation
- * does not consider the translation parameters `tx` and
- * `ty`.
- * @see matrixTransformVectorXY
- **/
-export function matrixTransformVector(
-  out: Vector2Like,
-  matrix: Readonly<MatrixLike>,
-  vector: Readonly<Vector2Like>,
-): void {
-  matrixTransformVectorXY(out, matrix, vector.x, vector.y);
-}
-
-export function matrixTransformVectorXY(out: Vector2Like, source: Readonly<MatrixLike>, x: number, y: number): void {
-  out.x = x * source.a + y * source.c;
-  out.y = x * source.b + y * source.d;
 }
 
 /**
