@@ -21,13 +21,14 @@ This document should stay useful, not ornamental. Prefer making architecture and
 - Keep APIs portable to C/C++ style ownership and memory rules.
 - Packages are designed to be import side-effect-free and declare `"sideEffects": false`. Do not register renderers, patch globals, start listeners/timers, or mutate shared state at module top level. Expose explicit `register*`, `init*`, or `create*` functions instead, and let callers opt in.
 - `import type { Foo }` must be on its own `import type { }` line. Never mix type imports inline with value imports as `import { type Foo, bar }`.
-- Examples import from `@flighthq/sdk` (the convenience barrel), not from individual packages. Granular package imports are correct inside packages that depend on each other, not in examples or application code.
+- Packages must not import from `@flighthq/sdk`. Examples usually import from `@flighthq/sdk` when demonstrating application usage, but may import individual packages when intentionally demonstrating lower-level or tree-shaken usage.
 
 ## Source Style
 
 - Keep exported functions alphabetized within a file unless local readability strongly requires a different order.
 - Keep tests aligned with source order. `describe` blocks should be alphabetized and mirror exported function or object names.
-- Prefer constructors and package helpers over object literals for SDK types. For example, use `createMatrix(...)`, `createRectangle(...)`, or `createDisplayObject(...)` instead of plain literals that only happen to match public fields.
+- Prefer constructors and package helpers over object literals for SDK entity types. For example, use `createMatrix(...)`, `createRectangle(...)`, or `createDisplayObject(...)` instead of plain literals that only happen to match public fields.
+- Use structural literals only for `*Like` inputs. Entity-backed types such as `Matrix`, `Rectangle`, and display objects carry runtime/binding identity beyond their public fields. A literal may match the fields but will not participate in runtime attachment or OOP binding behavior.
 - Loose module variables, pools, constants, and scratch objects usually belong at the bottom of the file after exported functions. This keeps the public API surface easy to scan first.
 - Avoid structural divider comments such as `// ---- setup ----`. Use names, file boundaries, and package boundaries instead.
 - Add comments when a name cannot carry the full rule: ownership, aliasing, allocation, coordinate-space semantics, C/C++ portability, or architecture. Do not comment obvious assignments.
@@ -37,8 +38,11 @@ This document should stay useful, not ornamental. Prefer making architecture and
 - `npm run overview` regenerates `OVERVIEW.md`, a package/export bird's-eye view.
 - `npm run api` prints compact exported function signatures for all packages.
 - `npm run api:json` prints the same API data as JSON for tools and agents.
+- `npm run check` is the default non-fixing quality sweep for agents and contributors. It runs `validate`, `coverage`, and the non-failing `order` report.
+- `npm run check:strict` runs the same sweep with `order:check` in failing mode. Use this for cleaned-up areas or future CI ratcheting.
 - `npm run validate` checks monorepo shape, package references, workspace dependency conventions, package export targets, packaging shape, and side-effect-free source invariants. Run this after any package-level change and fix everything it reports before moving on.
 - `npm run coverage` checks for missing test files and missing tests for exported functions.
+- `npm run order` reports exported functions and test `describe` blocks that are not alphabetized. `npm run order:check` runs the same check in failing mode once a package or area has been cleaned up.
 
 ## Core Patterns
 
@@ -81,7 +85,7 @@ Geometry types (rectangles, vectors, matrices) follow explicit allocation and ow
 
 - One test file per source file, colocated in `src/`, named `*.test.ts`.
 - `describe` blocks are alphabetized and mirror each file's exported function or object names.
-- Test fixtures should use constructors and public helpers instead of object literals for SDK objects unless the test is intentionally about structural compatibility.
+- Test fixtures should use constructors and public helpers instead of object literals for SDK entity types unless the test is intentionally about structural compatibility with a `*Like` input.
 - Vitest is configured with `globals: true`. `vi`, `describe`, `it`, and `expect` are available in test files without importing.
 - Browser-facing packages (`render-canvas`, `render-webgl`, `render-dom`, etc.) use the `jsdom` test environment.
 - `vitest-webgl-canvas-mock` mocks `'webgl'` and `'experimental-webgl'` contexts only, not `'webgl2'`. Tests in `render-webgl` that need a WebGL2 render state must mock `canvas.getContext` to return a fake `WebGL2RenderingContext`.
@@ -119,6 +123,7 @@ Packaging policy should be enforced by scripts and `npm run validate` rather tha
 
 - After any package-level change, run `npm run validate` and fix everything it reports. It catches stale subpaths, missing `tsconfig.json` references, workspace dependency mismatches, packaging drift, and top-level side-effect statements.
 - When adding or renaming exported functions, run `npm run coverage` to find missing test files and missing `describe` coverage.
+- When adding or renaming exported functions or `describe` blocks, run `npm run order` to check the scan order. Prefer leaving touched files cleaner than you found them.
 - When changing public APIs, check naming symmetry across packages and run `npm run api` to scan signatures.
 - When changing an `out`-parameter function, test both a distinct output object and aliasing where `out` is also an input.
 - When adding a new package, copy the package shape from a nearby package and then run `npm run validate`.
