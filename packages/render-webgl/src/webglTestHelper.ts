@@ -1,5 +1,7 @@
 import type { WebGLRenderStateInternal, WebGLShaderLocations } from './internal';
 
+// makeGL returns a fresh isolated mock for unit tests that call GL functions
+// directly (e.g. shader math tests) and need a clean call-count slate.
 export function makeGL(): WebGL2RenderingContext {
   return {
     TEXTURE_2D: 3553,

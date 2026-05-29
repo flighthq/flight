@@ -6,13 +6,11 @@ import { SpriteKind } from '@flighthq/types';
 
 import { renderWebGLSprite } from './webglSprite';
 import { createWebGLRenderState } from './webglRenderState';
-import { makeGL } from './webglTestHelper';
 
 function makeState(): WebGLRenderState {
   const canvas = document.createElement('canvas');
   canvas.width = 200;
   canvas.height = 100;
-  canvas.getContext = vi.fn().mockReturnValue(makeGL()) as typeof canvas.getContext;
   return createWebGLRenderState(canvas);
 }
 
