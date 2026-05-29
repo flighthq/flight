@@ -24,6 +24,12 @@ describe('createTextureAtlas', () => {
     expect(obj.regions).toStrictEqual(base.regions);
   });
 
+  it('uses a provided regions array directly', () => {
+    const regions = [{} as TextureAtlasRegion];
+    const atlas = createTextureAtlas({ regions });
+    expect(atlas.regions).toBe(regions);
+  });
+
   it('returns a new object for better hidden-class performance', () => {
     const base = {};
     const obj = createTextureAtlas(base);

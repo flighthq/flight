@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity';
-import type { Rectangle, TextureAtlas, TextureAtlasRegion, Vector2 } from '@flighthq/types';
+import type { RectangleLike, TextureAtlas, TextureAtlasRegion, Vector2Like } from '@flighthq/types';
 
 export function addTextureAtlasRegion(
   target: TextureAtlas,
@@ -23,7 +23,11 @@ export function addTextureAtlasRegion(
   );
 }
 
-export function addTextureAtlasRegionRect(target: TextureAtlas, rect: Rectangle, pivot?: Vector2): void {
+export function addTextureAtlasRegionRect(
+  target: TextureAtlas,
+  rect: Readonly<RectangleLike>,
+  pivot?: Readonly<Vector2Like>,
+): void {
   addTextureAtlasRegion(
     target,
     rect.x,
@@ -47,7 +51,12 @@ export function addTextureAtlasRegionRectXY(
   addTextureAtlasRegion(target, ax, ay, bx - ax, by - ay, pivotX, pivotY);
 }
 
-export function addTextureAtlasRegionVec2(target: TextureAtlas, a: Vector2, b: Vector2, pivot?: Vector2): void {
+export function addTextureAtlasRegionVec2(
+  target: TextureAtlas,
+  a: Readonly<Vector2Like>,
+  b: Readonly<Vector2Like>,
+  pivot?: Readonly<Vector2Like>,
+): void {
   addTextureAtlasRegion(
     target,
     a.x,
@@ -79,7 +88,7 @@ export function initTextureAtlasRegion(
   height: number = 0,
   pivotX: number = 0,
   pivotY: number = 0,
-) {
+): void {
   out.x = x;
   out.y = y;
   out.width = width;

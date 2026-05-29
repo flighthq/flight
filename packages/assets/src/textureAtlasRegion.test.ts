@@ -97,6 +97,17 @@ describe('addTextureAtlasRegionRect', () => {
     expect(atlas.regions[0].pivotX).toBe(3);
     expect(atlas.regions[0].pivotY).toBe(4);
   });
+
+  it('accepts rectangle-like and vector-like objects', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegionRect(atlas, { x: 10, y: 20, width: 30, height: 40 }, { x: 5, y: 6 });
+    expect(atlas.regions[0].x).toBe(10);
+    expect(atlas.regions[0].y).toBe(20);
+    expect(atlas.regions[0].width).toBe(30);
+    expect(atlas.regions[0].height).toBe(40);
+    expect(atlas.regions[0].pivotX).toBe(5);
+    expect(atlas.regions[0].pivotY).toBe(6);
+  });
 });
 
 describe('addTextureAtlasRegionRectXY', () => {
@@ -119,12 +130,37 @@ describe('addTextureAtlasRegionVec2', () => {
     expect(atlas.regions[0].width).toBe(20);
     expect(atlas.regions[0].height).toBe(20);
   });
+
+  it('accepts vector-like corner and pivot objects', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegionVec2(atlas, { x: 5, y: 10 }, { x: 25, y: 30 }, { x: 3, y: 4 });
+    expect(atlas.regions[0].x).toBe(5);
+    expect(atlas.regions[0].y).toBe(10);
+    expect(atlas.regions[0].width).toBe(20);
+    expect(atlas.regions[0].height).toBe(20);
+    expect(atlas.regions[0].pivotX).toBe(3);
+    expect(atlas.regions[0].pivotY).toBe(4);
+  });
 });
 
 describe('initTextureAtlasRegion', () => {
   it('sets all fields on an existing region', () => {
     const region = createTextureAtlasRegion();
+    const result = initTextureAtlasRegion(region, 10, 20, 30, 40, 5, 6);
+    expect(result).toBeUndefined();
+    expect(region.x).toBe(10);
+    expect(region.y).toBe(20);
+    expect(region.width).toBe(30);
+    expect(region.height).toBe(40);
+    expect(region.pivotX).toBe(5);
+    expect(region.pivotY).toBe(6);
+  });
+
+  it('reuses the existing region object', () => {
+    const region = createTextureAtlasRegion();
+    const target = region;
     initTextureAtlasRegion(region, 10, 20, 30, 40, 5, 6);
+    expect(region).toBe(target);
     expect(region.x).toBe(10);
     expect(region.y).toBe(20);
     expect(region.width).toBe(30);
