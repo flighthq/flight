@@ -71,14 +71,21 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "src/**/*.test.ts",
+    "!dist/**/*.test.js",
+    "!dist/**/*.test.d.ts",
+    "!dist/**/*.test.js.map",
+    "!dist/**/*.test.d.ts.map"
   ],
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
     "test": "vitest --config vitest.config.ts",
     "test:watch": "vitest --watch --config vitest.config.ts",
-    "test:run": "vitest run --config vitest.config.ts"
+    "test:run": "vitest run --config vitest.config.ts",
+    "prepack": "npm run clean && npm run clean:dist && npm run build",
+    "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
     "@flighthq/entity": "*",
@@ -87,5 +94,6 @@
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "2D/3D math primitives: vectors, matrices, rectangles, and object pools"
+  "description": "2D/3D math primitives: vectors, matrices, rectangles, and object pools",
+  "sideEffects": false
 }

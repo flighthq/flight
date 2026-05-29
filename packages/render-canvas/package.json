@@ -51,14 +51,21 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "src/**/*.test.ts",
+    "!dist/**/*.test.js",
+    "!dist/**/*.test.d.ts",
+    "!dist/**/*.test.js.map",
+    "!dist/**/*.test.d.ts.map"
   ],
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
     "test": "vitest --config vitest.config.ts",
     "test:watch": "vitest --watch --config vitest.config.ts",
-    "test:run": "vitest run --config vitest.config.ts"
+    "test:run": "vitest run --config vitest.config.ts",
+    "prepack": "npm run clean && npm run clean:dist && npm run build",
+    "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
     "@flighthq/geometry": "*",
@@ -70,5 +77,6 @@
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Canvas 2D renderer implementation"
+  "description": "Canvas 2D renderer implementation",
+  "sideEffects": false
 }
