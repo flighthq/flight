@@ -344,7 +344,7 @@ export function createPerspectiveMatrix4(fov: number, aspect: number, zNear: num
   return out;
 }
 
-export function determinantMatrix4(source: Readonly<Matrix4Like>): number {
+export function getMatrix4Determinant(source: Readonly<Matrix4Like>): number {
   const _source = source.m;
   return (
     1 *
@@ -423,7 +423,7 @@ export function inverseMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>):
   const _source = source.m;
 
   // Calculate determinant
-  let d = determinantMatrix4(source);
+  let d = getMatrix4Determinant(source);
 
   // Threshold for determining if matrix is invertible
   const EPS = 1e-6;

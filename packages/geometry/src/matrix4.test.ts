@@ -15,7 +15,7 @@ import {
   createMatrix4From2D,
   createOrthographicMatrix4,
   createPerspectiveMatrix4,
-  determinantMatrix4,
+  getMatrix4Determinant,
   equalsMatrix4,
   getMatrix4Element,
   getMatrix4Position,
@@ -390,7 +390,7 @@ describe('create2D', () => {
 describe('determinant', () => {
   it('returns 1 for the identity matrix', () => {
     const m = createMatrix4();
-    expect(determinantMatrix4(m)).toBe(1);
+    expect(getMatrix4Determinant(m)).toBe(1);
   });
 });
 
@@ -578,7 +578,7 @@ describe('inverse', () => {
     const inv = createMatrix4();
     inverseMatrix4(inv, m);
 
-    const det = determinantMatrix4(m);
+    const det = getMatrix4Determinant(m);
     expect(det).toBeCloseTo(0);
 
     // Inverse should either be NaN or throw an error

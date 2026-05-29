@@ -598,11 +598,11 @@ export function translateMatrix(out: MatrixLike, source: Readonly<MatrixLike>, d
 /**
  * Transforms a vector, then translates by the result.
  */
-export function translateMatrixVector(out: MatrixLike, matrix: Readonly<MatrixLike>, vector: Readonly<Vector2Like>) {
-  translateMatrixVectorXY(out, matrix, vector.x, vector.y);
+export function translateMatrixByVector(out: MatrixLike, matrix: Readonly<MatrixLike>, vector: Readonly<Vector2Like>) {
+  translateMatrixByVectorXY(out, matrix, vector.x, vector.y);
 }
 
-export function translateMatrixVectorXY(out: MatrixLike, source: Readonly<MatrixLike>, x: number, y: number) {
+export function translateMatrixByVectorXY(out: MatrixLike, source: Readonly<MatrixLike>, x: number, y: number) {
   out.tx = source.tx + source.a * x + source.c * y;
   out.ty = source.ty + source.b * x + source.d * y;
 }

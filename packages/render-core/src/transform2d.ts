@@ -1,4 +1,4 @@
-import { concatMatrix, copyMatrix, translateMatrixVectorXY } from '@flighthq/geometry';
+import { concatMatrix, copyMatrix, translateMatrixByVectorXY } from '@flighthq/geometry';
 import { getLocalTransform2D, getLocalTransformID } from '@flighthq/scenegraph-core';
 import type { DisplayObjectRenderNode, GraphNode, HasTransform2D, RenderNode2D, RenderState } from '@flighthq/types';
 
@@ -14,7 +14,7 @@ export function updateDisplayObjectRenderTransform2D(
     // so always recalculate when it is set.
     recalculateRenderTransform2D(state, data, parentData);
     data.lastLocalTransformID = getLocalTransformID(data.source as GraphNode);
-    translateMatrixVectorXY(data.transform2D, data.transform2D, -scrollRect.x, -scrollRect.y);
+    translateMatrixByVectorXY(data.transform2D, data.transform2D, -scrollRect.x, -scrollRect.y);
     return true;
   }
   return updateRenderTransform2D(state, data, parentData);
