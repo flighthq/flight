@@ -33,6 +33,13 @@ describe('createSpritesheetPlayer', () => {
     expect(player.frameIndex).toBe(0);
     expect(player.queue).toEqual([]);
   });
+
+  it('uses provided queue and signals directly', () => {
+    const animation = makeAnimation([0], 100);
+    const queue = [animation];
+    const player = createSpritesheetPlayer({ queue });
+    expect(player.queue).toBe(queue);
+  });
 });
 
 describe('showSpritesheetAnimation', () => {
@@ -73,11 +80,30 @@ describe('showSpritesheetAnimation', () => {
     showSpritesheetAnimation(player, anim, true);
     expect(player.elapsed).toBe(0);
   });
+
+  it('clears animation and marks complete when animation is null', () => {
+    const player = createSpritesheetPlayer();
+    const anim = makeAnimation([0, 1], 100);
+    showSpritesheetAnimation(player, anim);
+    queueSpritesheetAnimation(player, makeAnimation([2], 100));
+    showSpritesheetAnimation(player, null);
+    expect(player.animation).toBeNull();
+    expect(player.complete).toBe(true);
+    expect(player.elapsed).toBe(0);
+    expect(player.frameIndex).toBe(0);
+    expect(player.queue).toEqual([]);
+  });
 });
 
 describe('updateSpritesheetPlayer', () => {
   it('returns false when no animation', () => {
     const player = createSpritesheetPlayer();
+    expect(updateSpritesheetPlayer(player, 16)).toBe(false);
+  });
+
+  it('returns false for an animation with no frames', () => {
+    const player = createSpritesheetPlayer();
+    showSpritesheetAnimation(player, makeAnimation([], 100));
     expect(updateSpritesheetPlayer(player, 16)).toBe(false);
   });
 
@@ -141,6 +167,19 @@ describe('updateSpritesheetPlayer', () => {
     expect(player.elapsed).toBe(0);
     expect(player.frameIndex).toBe(0);
     expect(player.complete).toBe(false);
+  });
+
+  it('does not emit onComplete when advancing to a queued animation', () => {
+    const player = createSpritesheetPlayer();
+    const first = makeAnimation([0], 100, false);
+    const second = makeAnimation([1], 100, false);
+    let fired = 0;
+    connectSignal(player.onComplete, () => fired++);
+    showSpritesheetAnimation(player, first);
+    queueSpritesheetAnimation(player, second);
+    updateSpritesheetPlayer(player, 200);
+    expect(player.animation).toBe(second);
+    expect(fired).toBe(0);
   });
 
   it('plays through multiple queued animations in order', () => {
@@ -235,6 +274,21 @@ describe('getSpritesheetPlayerFrame', () => {
     const frame = getSpritesheetPlayerFrame(player, sheet);
     expect(frame).not.toBeNull();
     expect(frame!.id).toBe(2);
+  });
+
+  it('returns null when the animation frame points outside the sheet', () => {
+    const sheet = makeSheet(1);
+    const anim = makeAnimation([2], 100);
+    const player = createSpritesheetPlayer();
+    showSpritesheetAnimation(player, anim);
+    expect(getSpritesheetPlayerFrame(player, sheet)).toBeNull();
+  });
+
+  it('returns null when the current animation has no frames', () => {
+    const sheet = makeSheet(1);
+    const player = createSpritesheetPlayer();
+    showSpritesheetAnimation(player, makeAnimation([], 100));
+    expect(getSpritesheetPlayerFrame(player, sheet)).toBeNull();
   });
 });
 

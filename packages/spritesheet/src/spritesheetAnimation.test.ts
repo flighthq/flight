@@ -21,6 +21,12 @@ describe('createSpritesheetAnimation', () => {
     expect(anim.originY).toBe(0);
   });
 
+  it('uses a provided frames array directly', () => {
+    const frames = [0, 1, 2];
+    const anim = createSpritesheetAnimation({ frames });
+    expect(anim.frames).toBe(frames);
+  });
+
   it('applies originX and originY overrides', () => {
     const anim = createSpritesheetAnimation({ originX: 16, originY: 32 });
 
