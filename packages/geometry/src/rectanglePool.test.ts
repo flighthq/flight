@@ -6,7 +6,7 @@ beforeEach(() => {
   clearRectanglePool();
 });
 
-describe('get', () => {
+describe('acquireRectangle', () => {
   it('returns a new Rectangle when pool is empty', () => {
     const r: Rectangle = acquireRectangle();
     expect(r).not.toBeNull();
@@ -20,7 +20,7 @@ describe('get', () => {
   });
 });
 
-describe('getEmpty', () => {
+describe('acquireEmptyRectangle', () => {
   it('returns a rectangle with all properties set to 0', () => {
     const r = acquireEmptyRectangle();
     expect(r.x).toBe(0);
@@ -45,13 +45,13 @@ describe('getEmpty', () => {
   });
 });
 
-describe('release', () => {
+describe('releaseRectangle', () => {
   it('handles null safely', () => {
     expect(() => releaseRectangle(null as unknown as Rectangle)).not.toThrow();
   });
 });
 
-describe('clear', () => {
+describe('clearRectanglePool', () => {
   it('empties the pool so the next get allocates fresh', () => {
     const r = acquireRectangle();
     releaseRectangle(r);

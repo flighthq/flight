@@ -7,7 +7,7 @@ beforeEach(() => {
   clearMatrix3Pool();
 });
 
-describe('get', () => {
+describe('acquireMatrix3', () => {
   it('returns a new Matrix3 when pool is empty', () => {
     const m: Matrix3 = acquireMatrix3();
     expect(m).not.toBeNull();
@@ -21,7 +21,7 @@ describe('get', () => {
   });
 });
 
-describe('getIdentity', () => {
+describe('acquireIdentityMatrix3', () => {
   it('returns a matrix set to identity', () => {
     const m = acquireIdentityMatrix3();
     expect(getMatrix3Element(m, 0, 0)).toBe(1);
@@ -47,13 +47,13 @@ describe('getIdentity', () => {
   });
 });
 
-describe('release', () => {
+describe('releaseMatrix3', () => {
   it('handles null safely', () => {
     expect(() => releaseMatrix3(null as unknown as Matrix3)).not.toThrow();
   });
 });
 
-describe('clear', () => {
+describe('clearMatrix3Pool', () => {
   it('empties the pool so the next get allocates fresh', () => {
     const m = acquireMatrix3();
     releaseMatrix3(m);

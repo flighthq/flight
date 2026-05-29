@@ -51,7 +51,7 @@ beforeEach(() => {
   r2 = createRectangle(2, 5, 3, 4);
 });
 
-describe('create', () => {
+describe('createRectangle', () => {
   it('initializes with default values', () => {
     const rect = createRectangle();
     expect(rect.x).toBe(0);
@@ -70,7 +70,7 @@ describe('create', () => {
 });
 
 // Properties
-describe('bottom', () => {
+describe('getRectangleBottom', () => {
   it('returns y + height', () => {
     expect(getRectangleBottom(r)).toBe(20);
   });
@@ -81,7 +81,7 @@ describe('bottom', () => {
   });
 });
 
-describe('isFlippedX', () => {
+describe('isFlippedXRectangle', () => {
   it('returns false if width is positive', () => {
     expect(isFlippedXRectangle(r)).toBe(false);
   });
@@ -97,7 +97,7 @@ describe('isFlippedX', () => {
   });
 });
 
-describe('isFlippedY', () => {
+describe('isFlippedYRectangle', () => {
   it('returns false if height is positive', () => {
     expect(isFlippedYRectangle(r)).toBe(false);
   });
@@ -113,13 +113,13 @@ describe('isFlippedY', () => {
   });
 });
 
-describe('left', () => {
+describe('getRectangleLeft', () => {
   it('returns x', () => {
     expect(getRectangleLeft(r)).toBe(0);
   });
 });
 
-describe('maxX', () => {
+describe('getRectangleMaxX', () => {
   it('returns correct maximum X for positive rectangle', () => {
     expect(getRectangleMaxX(r)).toBe(10);
   });
@@ -135,7 +135,7 @@ describe('maxX', () => {
   });
 });
 
-describe('maxY', () => {
+describe('getRectangleMaxY', () => {
   it('returns correct maximum Y for positive rectangle', () => {
     expect(getRectangleMaxY(r)).toBe(20);
   });
@@ -151,7 +151,7 @@ describe('maxY', () => {
   });
 });
 
-describe('minX', () => {
+describe('getRectangleMinX', () => {
   it('returns correct minimum X for positive rectangle', () => {
     expect(getRectangleMinX(r)).toBe(0);
   });
@@ -167,7 +167,7 @@ describe('minX', () => {
   });
 });
 
-describe('minY', () => {
+describe('getRectangleMinY', () => {
   it('returns correct minimum Y for positive rectangle', () => {
     expect(getRectangleMinY(r)).toBe(0);
   });
@@ -183,7 +183,7 @@ describe('minY', () => {
   });
 });
 
-describe('right', () => {
+describe('getRectangleRight', () => {
   it('getter returns x + width', () => {
     expect(getRectangleRight(r)).toBe(10);
   });
@@ -194,13 +194,13 @@ describe('right', () => {
   });
 });
 
-describe('top', () => {
+describe('getRectangleTop', () => {
   it('returns y', () => {
     expect(getRectangleTop(r)).toBe(0);
   });
 });
 
-describe('bottomRight', () => {
+describe('getRectangleBottomRight', () => {
   it('returns correct Vector2', () => {
     const br = createVector2();
     getRectangleBottomRight(br, r);
@@ -209,7 +209,7 @@ describe('bottomRight', () => {
   });
 });
 
-describe('clone', () => {
+describe('cloneRectangle', () => {
   it('clone creates a copy', () => {
     const c = cloneRectangle(r);
     expect(equalsRectangle(r, c)).toBe(true);
@@ -235,7 +235,7 @@ describe('clone', () => {
   });
 });
 
-describe('contains', () => {
+describe('rectangleContains', () => {
   it('returns true for a point inside', () => {
     expect(rectangleContains(r, 5, 10)).toBe(true);
   });
@@ -256,7 +256,7 @@ describe('contains', () => {
   });
 });
 
-describe('containsPoint', () => {
+describe('rectangleContainsPoint', () => {
   it('delegates to contains', () => {
     expect(rectangleContainsPoint(r, createVector2(5, 10))).toBe(true);
   });
@@ -268,7 +268,7 @@ describe('containsPoint', () => {
   });
 });
 
-describe('containsRect', () => {
+describe('rectangleEncloses', () => {
   it('returns true if rectangle is fully inside', () => {
     // r: 0,0,10,10
     // r2: 2,2,5,5 fully inside r
@@ -338,7 +338,7 @@ describe('containsRect', () => {
   });
 });
 
-describe('copy', () => {
+describe('copyRectangle', () => {
   it('copies values', () => {
     copyRectangle(r, r2);
     expect(equalsRectangle(r, r2)).toBe(true);
@@ -363,7 +363,7 @@ describe('copy', () => {
   });
 });
 
-describe('equals', () => {
+describe('equalsRectangle', () => {
   it('returns true for identical rectangles', () => {
     expect(equalsRectangle(r, r)).toBe(true);
     expect(equalsRectangle(r, cloneRectangle(r))).toBe(true);
@@ -382,7 +382,7 @@ describe('equals', () => {
   });
 });
 
-describe('intersection', () => {
+describe('intersectionRectangle', () => {
   it('returns intersection rectangle', () => {
     const r3 = createRectangle(5, 10, 10, 10);
     const result = createRectangle();
@@ -439,7 +439,7 @@ describe('intersection', () => {
   });
 });
 
-describe('intersects', () => {
+describe('intersectsRectangle', () => {
   it('returns true if rectangles overlap', () => {
     const r3 = createRectangle(5, 10, 10, 10);
     expect(intersectsRectangle(r, r3)).toBe(true);
@@ -456,7 +456,7 @@ describe('intersects', () => {
   });
 });
 
-describe('isEmpty', () => {
+describe('isEmptyRectangle', () => {
   it('returns true only for zero width or height', () => {
     expect(isEmptyRectangle(r)).toBe(false);
     r.width = 0;
@@ -477,7 +477,7 @@ describe('isEmpty', () => {
   });
 });
 
-describe('offset', () => {
+describe('offsetRectangle', () => {
   it('moves rectangle', () => {
     const result = createRectangle();
     offsetRectangle(result, r, 5, 10);
@@ -503,7 +503,7 @@ describe('offset', () => {
   });
 });
 
-describe('offsetPoint', () => {
+describe('offsetRectangleByPoint', () => {
   it('moves rectangle by Vector2', () => {
     const out = createRectangle();
     offsetRectangleByPoint(out, r, createVector2(3, 4));
@@ -521,7 +521,7 @@ describe('offsetPoint', () => {
   });
 });
 
-describe('inflate', () => {
+describe('inflateRectangle', () => {
   it('inflates rectangle by dx/dy', () => {
     const result = createRectangle();
     inflateRectangle(result, r, 2, 3);
@@ -555,7 +555,7 @@ describe('inflate', () => {
   });
 });
 
-describe('inflatePoint', () => {
+describe('expandRectangleToPoint', () => {
   it('inflates rectangle by Vector2', () => {
     const result = createRectangle();
     expandRectangleToPoint(result, r, createVector2(1, 2));
@@ -578,7 +578,7 @@ describe('inflatePoint', () => {
   });
 });
 
-describe('normalize', () => {
+describe('normalizeRectangle', () => {
   it('returns rectangle with positive width and height', () => {
     r.x = 10;
     r.y = 20;
@@ -590,6 +590,15 @@ describe('normalize', () => {
     expect(n.y).toBe(5);
     expect(n.width).toBe(5);
     expect(n.height).toBe(15);
+  });
+
+  it('supports out === source', () => {
+    const rect = createRectangle(10, 20, -5, -15);
+    normalizeRectangle(rect, rect);
+    expect(rect.x).toBe(5);
+    expect(rect.y).toBe(5);
+    expect(rect.width).toBe(5);
+    expect(rect.height).toBe(15);
   });
 
   it('normalized of positive rectangle equals original', () => {
@@ -612,7 +621,7 @@ describe('normalize', () => {
   });
 });
 
-describe('normalizedTopLeft', () => {
+describe('getRectangleNormalizedTopLeft', () => {
   it('return proper Vector2s', () => {
     r.x = 10;
     r.y = 20;
@@ -644,7 +653,7 @@ describe('normalizedTopLeft', () => {
   });
 });
 
-describe('normalizedBottomRight', () => {
+describe('getRectangleNormalizedBottomRight', () => {
   it('return proper Vector2s', () => {
     r.x = 10;
     r.y = 20;
@@ -676,7 +685,7 @@ describe('normalizedBottomRight', () => {
   });
 });
 
-describe('set', () => {
+describe('setRectangle', () => {
   it('sets rectangle to specified values', () => {
     setRectangle(r, 1, 2, 3, 4);
     expect(r.x).toBe(1);
@@ -695,7 +704,7 @@ describe('set', () => {
   });
 });
 
-describe('setBottomRight', () => {
+describe('setRectangleBottomRight', () => {
   it('adjusts width and height', () => {
     setRectangleBottomRight(r, createVector2(15, 25));
     expect(r.width).toBe(15);
@@ -703,7 +712,7 @@ describe('setBottomRight', () => {
   });
 });
 
-describe('setEmpty', () => {
+describe('setEmptyRectangle', () => {
   it('sets rectangle to zero', () => {
     setEmptyRectangle(r);
     expect(r.x).toBe(0);
@@ -722,7 +731,7 @@ describe('setEmpty', () => {
   });
 });
 
-describe('setLeft', () => {
+describe('setRectangleLeft', () => {
   it('adjusts width correctly', () => {
     setRectangleLeft(r, 5);
     expect(r.x).toBe(5);
@@ -730,7 +739,7 @@ describe('setLeft', () => {
   });
 });
 
-describe('setSize', () => {
+describe('setRectangleSize', () => {
   it('setter adjusts width and height', () => {
     setRectangleSize(r, createVector2(5, 6));
     expect(r.width).toBe(5);
@@ -738,7 +747,7 @@ describe('setSize', () => {
   });
 });
 
-describe('setTop', () => {
+describe('setRectangleTop', () => {
   it('adjusts height correctly', () => {
     setRectangleTop(r, 5);
     expect(r.y).toBe(5);
@@ -751,7 +760,7 @@ describe('setTop', () => {
   });
 });
 
-describe('setTopLeft', () => {
+describe('setRectangleTopLeft', () => {
   it('setter updates x and y', () => {
     const out = createRectangle();
     setRectangleTopLeft(out, createVector2(3, 4));
@@ -768,7 +777,7 @@ describe('setTopLeft', () => {
   });
 });
 
-describe('setRight', () => {
+describe('setRectangleRight', () => {
   it('adjusts width', () => {
     setRectangleRight(r, 15);
     expect(r.width).toBe(15);
@@ -786,7 +795,7 @@ describe('setRight', () => {
   });
 });
 
-describe('size', () => {
+describe('getRectangleSize', () => {
   it('returns width and height as Vector2', () => {
     const s = createVector2();
     getRectangleSize(s, r);
@@ -795,7 +804,7 @@ describe('size', () => {
   });
 });
 
-describe('topLeft', () => {
+describe('getRectangleTopLeft', () => {
   it('getter returns top-left Vector2', () => {
     const tl = createVector2();
     getRectangleTopLeft(tl, r);
@@ -812,7 +821,7 @@ describe('topLeft', () => {
   });
 });
 
-describe('union', () => {
+describe('unionRectangle', () => {
   it('returns union of two rectangles', () => {
     const r3 = createRectangle(5, 15, 10, 10);
     const u = createRectangle();
@@ -919,7 +928,7 @@ describe('union', () => {
   });
 });
 
-describe('setBottom', () => {
+describe('setRectangleBottom', () => {
   it('adjusts height so that y + height equals value', () => {
     const rect = createRectangle(0, 10, 5, 5);
     setRectangleBottom(rect, 30);

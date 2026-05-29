@@ -50,7 +50,7 @@ const X_AXIS = { x: 1, y: 0, z: 0, w: 0 };
 const Y_AXIS = { x: 0, y: 1, z: 0, w: 0 };
 const Z_AXIS = { x: 0, y: 0, z: 1, w: 0 };
 
-describe('create', () => {
+describe('createMatrix4', () => {
   it('creates an identity matrix when called with no arguments', () => {
     const m = createMatrix4();
 
@@ -93,7 +93,7 @@ describe('create', () => {
   });
 });
 
-describe('appendRotation', () => {
+describe('appendRotationMatrix4', () => {
   it('rotates identity around Z axis by 90 degrees', () => {
     const m = createMatrix4();
 
@@ -136,7 +136,7 @@ describe('appendRotation', () => {
   });
 });
 
-describe('appendScale', () => {
+describe('appendScaleMatrix4', () => {
   it('scales an identity matrix', () => {
     const m = createMatrix4();
 
@@ -159,7 +159,7 @@ describe('appendScale', () => {
   });
 });
 
-describe('appendTranslation', () => {
+describe('appendTranslationMatrix4', () => {
   it('adds translation to an identity matrix', () => {
     const m = createMatrix4();
 
@@ -197,7 +197,7 @@ describe('appendTranslation', () => {
   });
 });
 
-describe('clone', () => {
+describe('cloneMatrix4', () => {
   it('creates a createMatrix4 instance', () => {
     const source = createMatrix4();
     const clone: Matrix4 = cloneMatrix4(source);
@@ -225,7 +225,7 @@ describe('clone', () => {
   });
 });
 
-describe('copy', () => {
+describe('copyMatrix4', () => {
   it('copies all values from source into out', () => {
     const source = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
@@ -248,7 +248,7 @@ describe('copy', () => {
   });
 });
 
-describe('copyColumnFrom', () => {
+describe('copyMatrix4ColumnFromVector4', () => {
   it('copies values into column 0', () => {
     const m = createMatrix4();
     const v = { x: 1, y: 2, z: 3, w: 4 };
@@ -282,7 +282,7 @@ describe('copyColumnFrom', () => {
   });
 });
 
-describe('copyColumnTo', () => {
+describe('copyMatrix4ColumnToVector4', () => {
   it('copies values from column 1 into a vector', () => {
     const m = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
@@ -306,7 +306,7 @@ describe('copyColumnTo', () => {
   });
 });
 
-describe('copyRowFrom', () => {
+describe('copyMatrix4RowFromVector4', () => {
   it('copies values into row 0', () => {
     const m = createMatrix4();
     const v = { x: 1, y: 2, z: 3, w: 4 };
@@ -340,7 +340,7 @@ describe('copyRowFrom', () => {
   });
 });
 
-describe('copyRowTo', () => {
+describe('copyMatrix4RowToVector4', () => {
   it('copies values from row 2 into a vector', () => {
     const m = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
@@ -364,7 +364,7 @@ describe('copyRowTo', () => {
   });
 });
 
-describe('create2D', () => {
+describe('createMatrix4From2D', () => {
   it('creates a Matrix4 instance', () => {
     const m: Matrix4 = createMatrix4From2D(1, 0, 0, 1, 10, 20);
     expect(m).not.toBeNull();
@@ -387,14 +387,14 @@ describe('create2D', () => {
   });
 });
 
-describe('determinant', () => {
+describe('getMatrix4Determinant', () => {
   it('returns 1 for the identity matrix', () => {
     const m = createMatrix4();
     expect(getMatrix4Determinant(m)).toBe(1);
   });
 });
 
-describe('equals', () => {
+describe('equalsMatrix4', () => {
   it('returns true when comparing the same reference', () => {
     const m = createMatrix4();
     expect(equalsMatrix4(m, m)).toBe(true);
@@ -426,7 +426,7 @@ describe('equals', () => {
   });
 });
 
-describe('fromMatrix', () => {
+describe('setMatrix4FromMatrix', () => {
   it('should convert an Matrix to a Matrix4', () => {
     const mat2D: Matrix = createMatrix();
 
@@ -467,7 +467,7 @@ describe('fromMatrix', () => {
   });
 });
 
-describe('fromMatrix3x3', () => {
+describe('setMatrix4FromMatrix3', () => {
   it('should convert a Matrix3x3 to a Matrix4', () => {
     const mat3 = createMatrix3();
 
@@ -508,7 +508,7 @@ describe('fromMatrix3x3', () => {
   });
 });
 
-describe('identity', () => {
+describe('identityMatrix4', () => {
   it('resets a matrix to identity', () => {
     const m = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
@@ -518,7 +518,7 @@ describe('identity', () => {
   });
 });
 
-describe('inverse', () => {
+describe('inverseMatrix4', () => {
   it('inverse of identity is identity', () => {
     const m = createMatrix4();
     const inv = createMatrix4();
@@ -590,7 +590,7 @@ describe('inverse', () => {
   });
 });
 
-describe('isAffine', () => {
+describe('isAffineMatrix4', () => {
   it('returns true for the identity matrix', () => {
     const m = createMatrix4();
     expect(isAffineMatrix4(m)).toBe(true);
@@ -626,7 +626,7 @@ describe('isAffine', () => {
   });
 });
 
-describe('multiply', () => {
+describe('multiplyMatrix4', () => {
   describe('multiply (identity)', () => {
     it('returns the right-hand operand when left is identity', () => {
       const I = createMatrix4();
@@ -665,7 +665,7 @@ describe('multiply', () => {
     });
   });
 
-  describe('multiply', () => {
+  describe('multiplyMatrix4', () => {
     it('post-multiplies by the given matrix', () => {
       const m = createMatrix4();
       translateMatrix4(m, m, 1, 0, 0);
@@ -736,7 +736,7 @@ describe('multiply', () => {
   });
 });
 
-describe('position', () => {
+describe('getMatrix4Position', () => {
   it('extracts translation components from the matrix', () => {
     const m = createMatrix4();
     m.m[12] = 10;
@@ -761,7 +761,7 @@ describe('position', () => {
   });
 });
 
-describe('prependRotation', () => {
+describe('prependRotationMatrix4', () => {
   it('rotates identity around Z axis', () => {
     const m = createMatrix4();
 
@@ -783,7 +783,7 @@ describe('prependRotation', () => {
   });
 });
 
-describe('prependScale', () => {
+describe('prependScaleMatrix4', () => {
   it('scales an identity matrix', () => {
     const m = createMatrix4();
 
@@ -819,7 +819,7 @@ describe('prependScale', () => {
   });
 });
 
-describe('prependTranslation', () => {
+describe('prependTranslationMatrix4', () => {
   it('translates an identity matrix by (x, y, z)', () => {
     const m = createMatrix4();
 
@@ -854,7 +854,7 @@ describe('prependTranslation', () => {
   });
 });
 
-describe('rotate', () => {
+describe('rotateMatrix4', () => {
   it('matches appendRotation on identity', () => {
     const a = createMatrix4();
     const b = createMatrix4();
@@ -896,7 +896,7 @@ describe('rotate', () => {
   });
 });
 
-describe('scale', () => {
+describe('scaleMatrix4', () => {
   it('scales an identity matrix by (x, y, z)', () => {
     const m = createMatrix4();
 
@@ -930,7 +930,7 @@ describe('scale', () => {
   });
 });
 
-describe('setTo', () => {
+describe('setMatrix4', () => {
   it('sets all 16 values in column-major order', () => {
     const m = createMatrix4();
 
@@ -948,7 +948,7 @@ describe('setTo', () => {
   });
 });
 
-describe('set2D', () => {
+describe('setMatrix4From2D', () => {
   it('sets a 2D transform with translation', () => {
     const m = createMatrix4();
 
@@ -995,7 +995,7 @@ describe('set2D', () => {
   });
 });
 
-describe('setPosition', () => {
+describe('setMatrix4Position', () => {
   it('sets the translation components of the matrix', () => {
     const m = createMatrix4();
 
@@ -1029,7 +1029,7 @@ describe('setPosition', () => {
   });
 });
 
-describe('translate', () => {
+describe('translateMatrix4', () => {
   it('translates an identity matrix by (x, y, z)', () => {
     const m = createMatrix4();
 
@@ -1052,7 +1052,7 @@ describe('translate', () => {
   });
 });
 
-describe('transpose', () => {
+describe('transposeMatrix4', () => {
   it('transpose of identity is identity', () => {
     const m = createMatrix4();
     const t = createMatrix4();
@@ -1105,7 +1105,7 @@ describe('transpose', () => {
   });
 });
 
-describe('append', () => {
+describe('appendMatrix4', () => {
   it('is equivalent to multiply(out, source, other)', () => {
     const a = createMatrix4();
     translateMatrix4(a, a, 5, 0, 0);
@@ -1122,7 +1122,7 @@ describe('append', () => {
   });
 });
 
-describe('createOrtho', () => {
+describe('createOrthographicMatrix4', () => {
   it('returns a Matrix4 equivalent to setOrtho', () => {
     const m1 = createOrthographicMatrix4(-1, 1, -1, 1, 0.1, 100);
     const m2 = createMatrix4();
@@ -1131,7 +1131,7 @@ describe('createOrtho', () => {
   });
 });
 
-describe('createPerspective', () => {
+describe('createPerspectiveMatrix4', () => {
   it('returns a Matrix4 equivalent to setPerspective', () => {
     const m1 = createPerspectiveMatrix4(0.5, 1.6, 0.1, 1000);
     const m2 = createMatrix4();
@@ -1140,7 +1140,7 @@ describe('createPerspective', () => {
   });
 });
 
-describe('get', () => {
+describe('getMatrix4Element', () => {
   it('returns the element at the given row and column', () => {
     const m = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
     expect(getMatrix4Element(m, 0, 0)).toBe(1);
@@ -1150,7 +1150,7 @@ describe('get', () => {
   });
 });
 
-describe('interpolate', () => {
+describe('interpolateMatrix4', () => {
   it('returns a at t=0', () => {
     const a = createMatrix4();
     translateMatrix4(a, a, 0, 0, 0);
@@ -1180,7 +1180,7 @@ describe('interpolate', () => {
   });
 });
 
-describe('prepend', () => {
+describe('prependMatrix4', () => {
   it('is equivalent to multiply(out, other, source)', () => {
     const a = createMatrix4();
     translateMatrix4(a, a, 5, 0, 0);
@@ -1197,7 +1197,7 @@ describe('prepend', () => {
   });
 });
 
-describe('set', () => {
+describe('setMatrix4Element', () => {
   it('writes the value at the given row and column', () => {
     const m = createMatrix4();
     setMatrix4Element(m, 2, 3, 42);
@@ -1212,7 +1212,7 @@ describe('set', () => {
   });
 });
 
-describe('setOrtho', () => {
+describe('setOrthographicMatrix4', () => {
   it('sets m[0] to 2 / (right - left)', () => {
     const m = createMatrix4();
     setOrthographicMatrix4(m, -1, 1, -1, 1, 0.1, 100);
@@ -1226,7 +1226,7 @@ describe('setOrtho', () => {
   });
 });
 
-describe('setPerspective', () => {
+describe('setPerspectiveMatrix4', () => {
   it('throws when aspect is 0', () => {
     const m = createMatrix4();
     expect(() => setPerspectiveMatrix4(m, 0.5, 0, 0.1, 1000)).toThrow();
@@ -1239,7 +1239,7 @@ describe('setPerspective', () => {
   });
 });
 
-describe('transformPoint', () => {
+describe('matrix4TransformPoint', () => {
   it('translates a point by the matrix translation', () => {
     const m = createMatrix4();
     translateMatrix4(m, m, 5, 10, 15);
@@ -1261,7 +1261,7 @@ describe('transformPoint', () => {
   });
 });
 
-describe('transformVector', () => {
+describe('matrix4TransformVector', () => {
   it('transforms a Vector4 by the matrix', () => {
     const m = createMatrix4();
     translateMatrix4(m, m, 5, 10, 15);
@@ -1273,7 +1273,7 @@ describe('transformVector', () => {
   });
 });
 
-describe('transformVectors', () => {
+describe('matrix4TransformVectors', () => {
   it('transforms a flat array of [x, y, z] triples', () => {
     const m = createMatrix4();
     translateMatrix4(m, m, 1, 2, 3);

@@ -141,17 +141,26 @@ export function identityMatrix3(out: Matrix3Like): void {
  * Attempts to invert a matrix, so long as it is invertable
  */
 export function inverseMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>): void {
-  const _in = source.m;
   const _out = out.m;
+  const _in = source.m;
+  const m0 = _in[0];
+  const m1 = _in[1];
+  const m2 = _in[2];
+  const m3 = _in[3];
+  const m4 = _in[4];
+  const m5 = _in[5];
+  const m6 = _in[6];
+  const m7 = _in[7];
+  const m8 = _in[8];
 
   if (isAffineMatrix3(source)) {
     // Affine fast path
-    const det = _in[0] * _in[4] - _in[1] * _in[3];
+    const det = m0 * m4 - m1 * m3;
 
     if (det === 0) {
       _out[0] = _out[1] = _out[3] = _out[4] = 0;
-      _out[2] = -_in[2];
-      _out[5] = -_in[5];
+      _out[2] = -m2;
+      _out[5] = -m5;
       _out[6] = _out[7] = 0;
       _out[8] = 1;
       return;
@@ -159,13 +168,17 @@ export function inverseMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>):
 
     const invDet = 1 / det;
 
-    _out[0] = _in[4] * invDet;
-    _out[1] = -_in[1] * invDet;
-    _out[3] = -_in[3] * invDet;
-    _out[4] = _in[0] * invDet;
+    const out0 = m4 * invDet;
+    const out1 = -m1 * invDet;
+    const out3 = -m3 * invDet;
+    const out4 = m0 * invDet;
 
-    _out[2] = -(_out[0] * _in[2] + _out[3] * _in[5]);
-    _out[5] = -(_out[1] * _in[2] + _out[4] * _in[5]);
+    _out[0] = out0;
+    _out[1] = out1;
+    _out[2] = -(out0 * m2 + out3 * m5);
+    _out[3] = out3;
+    _out[4] = out4;
+    _out[5] = -(out1 * m2 + out4 * m5);
 
     _out[6] = 0;
     _out[7] = 0;
@@ -173,13 +186,7 @@ export function inverseMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>):
     return;
   }
 
-  const det =
-    _in[0] * _in[4] * _in[8] +
-    _in[1] * _in[5] * _in[6] +
-    _in[2] * _in[3] * _in[7] -
-    _in[2] * _in[4] * _in[6] -
-    _in[1] * _in[3] * _in[8] -
-    _in[0] * _in[5] * _in[7];
+  const det = m0 * m4 * m8 + m1 * m5 * m6 + m2 * m3 * m7 - m2 * m4 * m6 - m1 * m3 * m8 - m0 * m5 * m7;
 
   if (det === 0) {
     throw new Error('Matrix is not invertable');
@@ -187,17 +194,17 @@ export function inverseMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>):
 
   const inv = 1 / det;
 
-  _out[0] = (_in[4] * _in[8] - _in[5] * _in[7]) * inv;
-  _out[1] = (_in[2] * _in[7] - _in[1] * _in[8]) * inv;
-  _out[2] = (_in[1] * _in[5] - _in[2] * _in[4]) * inv;
+  _out[0] = (m4 * m8 - m5 * m7) * inv;
+  _out[1] = (m2 * m7 - m1 * m8) * inv;
+  _out[2] = (m1 * m5 - m2 * m4) * inv;
 
-  _out[3] = (_in[5] * _in[6] - _in[3] * _in[8]) * inv;
-  _out[4] = (_in[0] * _in[8] - _in[2] * _in[6]) * inv;
-  _out[5] = (_in[2] * _in[3] - _in[0] * _in[5]) * inv;
+  _out[3] = (m5 * m6 - m3 * m8) * inv;
+  _out[4] = (m0 * m8 - m2 * m6) * inv;
+  _out[5] = (m2 * m3 - m0 * m5) * inv;
 
-  _out[6] = (_in[3] * _in[7] - _in[4] * _in[6]) * inv;
-  _out[7] = (_in[1] * _in[6] - _in[0] * _in[7]) * inv;
-  _out[8] = (_in[0] * _in[4] - _in[1] * _in[3]) * inv;
+  _out[6] = (m3 * m7 - m4 * m6) * inv;
+  _out[7] = (m1 * m6 - m0 * m7) * inv;
+  _out[8] = (m0 * m4 - m1 * m3) * inv;
 }
 
 export function isAffineMatrix3(source: Readonly<Matrix3Like>): boolean {

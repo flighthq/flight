@@ -174,6 +174,11 @@ export function normalizeVector4(out: Vector4Like, source: Readonly<Vector4Like>
     out.y = source.y / l;
     out.z = source.z / l;
     out.w = source.w / l;
+  } else {
+    out.x = 0;
+    out.y = 0;
+    out.z = 0;
+    out.w = 0;
   }
 
   return l;

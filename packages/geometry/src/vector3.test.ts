@@ -24,7 +24,7 @@ import {
 } from '@flighthq/geometry';
 import type { Vector3 } from '@flighthq/types';
 
-describe('create', () => {
+describe('createVector3', () => {
   it('creates a createVector3 with default values', () => {
     const v = createVector3();
     expect(v.x).toBe(0);
@@ -42,7 +42,7 @@ describe('create', () => {
 
 // Properties
 
-describe('length', () => {
+describe('getVector3Length', () => {
   it('returns the length of the vector', () => {
     const v = createVector3(3, 4, 0);
     expect(getVector3Length(v)).toBe(5);
@@ -54,7 +54,7 @@ describe('length', () => {
   });
 });
 
-describe('lengthSquared', () => {
+describe('getVector3LengthSquared', () => {
   it('returns the squared length of the vector', () => {
     const v = createVector3(3, 4, 0);
     expect(getVector3LengthSquared(v)).toBe(25);
@@ -96,7 +96,7 @@ describe('Z_AXIS', () => {
   });
 });
 
-describe('add', () => {
+describe('addVector3', () => {
   it('returns a new vector when no target is passed', () => {
     const a = createVector3(1, 2, 3);
     const b = createVector3(4, 5, 6);
@@ -126,7 +126,7 @@ describe('add', () => {
   });
 });
 
-describe('clone', () => {
+describe('cloneVector3', () => {
   it('creates a new independent vector', () => {
     const original = createVector3(1, 2, 3);
     const cloned: Vector3 = cloneVector3(original);
@@ -148,7 +148,7 @@ describe('clone', () => {
   });
 });
 
-describe('copy', () => {
+describe('copyVector3', () => {
   it('copies values from source to target', () => {
     const source = createVector3(1, 2, 3);
     const target = createVector3();
@@ -167,7 +167,7 @@ describe('copy', () => {
   });
 });
 
-describe('cross', () => {
+describe('crossVector3', () => {
   it('returns the cross product of two vectors', () => {
     const a = createVector3(1, 0, 0);
     const b = createVector3(0, 1, 0);
@@ -188,7 +188,7 @@ describe('cross', () => {
   });
 });
 
-describe('distance', () => {
+describe('getVector3Distance', () => {
   it('returns the distance between two vectors', () => {
     const a = createVector3(1, 1, 1);
     const b = createVector3(4, 5, 6);
@@ -196,7 +196,7 @@ describe('distance', () => {
   });
 });
 
-describe('distanceSquared', () => {
+describe('getVector3DistanceSquared', () => {
   it('returns the squared distance between two vectors', () => {
     const a = createVector3(1, 1, 1);
     const b = createVector3(4, 5, 6);
@@ -204,7 +204,7 @@ describe('distanceSquared', () => {
   });
 });
 
-describe('dot', () => {
+describe('getVector3Dot', () => {
   it('returns the dot product of two vectors', () => {
     const a = createVector3(1, 2, 3);
     const b = createVector3(4, 5, 6);
@@ -212,7 +212,7 @@ describe('dot', () => {
   });
 });
 
-describe('equals', () => {
+describe('equalsVector3', () => {
   it('returns true if vectors are equal', () => {
     const a = createVector3(1, 2, 3);
     const b = createVector3(1, 2, 3);
@@ -226,7 +226,7 @@ describe('equals', () => {
   });
 });
 
-describe('negate', () => {
+describe('negateVector3', () => {
   it('inverts the values of the vector components', () => {
     const v = createVector3(1, -2, 3);
     const result = createVector3();
@@ -236,17 +236,16 @@ describe('negate', () => {
     expect(result.z).toBe(-3);
   });
 
-  it('modifies target when same object is passed as target', () => {
+  it('supports out === source', () => {
     const v = createVector3(1, -2, 3);
-    const result = createVector3();
-    negateVector3(result, v);
-    expect(result.x).toBe(-1);
-    expect(result.y).toBe(2);
-    expect(result.z).toBe(-3);
+    negateVector3(v, v);
+    expect(v.x).toBe(-1);
+    expect(v.y).toBe(2);
+    expect(v.z).toBe(-3);
   });
 });
 
-describe('normalize', () => {
+describe('normalizeVector3', () => {
   it('normalizes the vector', () => {
     const v = createVector3(3, 4, 0);
     const result = createVector3();
@@ -257,18 +256,27 @@ describe('normalize', () => {
     expect(length).toBe(5);
   });
 
-  it('modifies target when same object is passed as target', () => {
+  it('supports out === source', () => {
     const v = createVector3(3, 4, 0);
-    const result = createVector3();
-    const length = normalizeVector3(result, v);
-    expect(result.x).toBeCloseTo(0.6, 5);
-    expect(result.y).toBeCloseTo(0.8, 5);
-    expect(result.z).toBe(0);
+    const length = normalizeVector3(v, v);
+    expect(v.x).toBeCloseTo(0.6, 5);
+    expect(v.y).toBeCloseTo(0.8, 5);
+    expect(v.z).toBe(0);
     expect(length).toBe(5);
+  });
+
+  it('writes zero to out for a zero-length source', () => {
+    const v = createVector3(0, 0, 0);
+    const result = createVector3(1, 2, 3);
+    const length = normalizeVector3(result, v);
+    expect(result.x).toBe(0);
+    expect(result.y).toBe(0);
+    expect(result.z).toBe(0);
+    expect(length).toBe(0);
   });
 });
 
-describe('scale', () => {
+describe('scaleVector3', () => {
   it('scales the vector by a scalar', () => {
     const v = createVector3(1, 1, 1);
     const result = createVector3();
@@ -278,17 +286,16 @@ describe('scale', () => {
     expect(result.z).toBe(2);
   });
 
-  it('modifies target when same object is passed as target', () => {
+  it('supports out === source', () => {
     const v = createVector3(1, 1, 1);
-    const result = createVector3();
-    scaleVector3(result, v, 2);
-    expect(result.x).toBe(2);
-    expect(result.y).toBe(2);
-    expect(result.z).toBe(2);
+    scaleVector3(v, v, 2);
+    expect(v.x).toBe(2);
+    expect(v.y).toBe(2);
+    expect(v.z).toBe(2);
   });
 });
 
-describe('setTo', () => {
+describe('setVector3', () => {
   it('sets the values of the vector', () => {
     const v = createVector3();
     setVector3(v, 5, 10, 15);
@@ -306,7 +313,7 @@ describe('setTo', () => {
   });
 });
 
-describe('subtract', () => {
+describe('subtractVector3', () => {
   it('returns a new vector when no target is passed', () => {
     const a = createVector3(4, 5, 6);
     const b = createVector3(1, 2, 3);
@@ -317,17 +324,16 @@ describe('subtract', () => {
     expect(result.z).toBe(3);
   });
 
-  it('modifies target when same object is passed as target', () => {
+  it('supports out === source', () => {
     const a = createVector3(4, 5, 6);
-    const result = createVector3();
-    subtractVector3(result, a, a); // passing the same object as both source and target
-    expect(result.x).toBe(0);
-    expect(result.y).toBe(0);
-    expect(result.z).toBe(0);
+    subtractVector3(a, a, a);
+    expect(a.x).toBe(0);
+    expect(a.y).toBe(0);
+    expect(a.z).toBe(0);
   });
 });
 
-describe('angleBetween', () => {
+describe('getVector3AngleBetween', () => {
   it('returns 0 for identical vectors', () => {
     const a = createVector3(1, 0, 0);
     expect(getVector3AngleBetween(a, a)).toBeCloseTo(0);
@@ -352,7 +358,7 @@ describe('angleBetween', () => {
   });
 });
 
-describe('nearEquals', () => {
+describe('nearEqualsVector3', () => {
   it('returns true for identical vectors', () => {
     const a = createVector3(1, 2, 3);
     expect(nearEqualsVector3(a, a)).toBe(true);
@@ -378,7 +384,7 @@ describe('nearEquals', () => {
   });
 });
 
-describe('project', () => {
+describe('projectVector3', () => {
   it('divides x and y by z to produce a 2D point', () => {
     const v = createVector3(4, 6, 2);
     const out = { x: 0, y: 0 };

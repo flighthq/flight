@@ -169,19 +169,29 @@ export function identityMatrix(out: MatrixLike): void {
  * Translation (tx, ty) is applied after the linear transformation (scale/rotation/shear) is inverted.
  */
 export function inverseMatrix(out: MatrixLike, source: Readonly<MatrixLike>): void {
-  const det = source.a * source.d - source.c * source.b;
+  const a = source.a;
+  const b = source.b;
+  const c = source.c;
+  const d = source.d;
+  const tx = source.tx;
+  const ty = source.ty;
+  const det = a * d - c * b;
   if (det === 0) {
     out.a = out.b = out.c = out.d = 0;
-    out.tx = -source.tx;
-    out.ty = -source.ty;
+    out.tx = -tx;
+    out.ty = -ty;
   } else {
     const invDet = 1 / det;
-    out.a = source.d * invDet;
-    out.b = -source.b * invDet;
-    out.c = -source.c * invDet;
-    out.d = source.a * invDet;
-    out.tx = -(out.a * source.tx + out.b * source.ty);
-    out.ty = -(out.c * source.tx + out.d * source.ty);
+    const outA = d * invDet;
+    const outB = -b * invDet;
+    const outC = -c * invDet;
+    const outD = a * invDet;
+    out.a = outA;
+    out.b = outB;
+    out.c = outC;
+    out.d = outD;
+    out.tx = -(outA * tx + outB * ty);
+    out.ty = -(outC * tx + outD * ty);
   }
 }
 

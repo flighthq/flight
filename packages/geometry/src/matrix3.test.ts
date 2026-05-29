@@ -24,7 +24,7 @@ import {
 } from '@flighthq/geometry';
 import type { Matrix3 } from '@flighthq/types';
 
-describe('create', () => {
+describe('createMatrix3', () => {
   it('should initialize matrix with provided values', () => {
     const m = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
     expect(getMatrix3Element(m, 0, 0)).toBe(2);
@@ -52,7 +52,7 @@ describe('create', () => {
   });
 });
 
-describe('clone', () => {
+describe('cloneMatrix3', () => {
   it('should clone the matrix correctly', () => {
     const m1 = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
     const m2 = cloneMatrix3(m1);
@@ -88,7 +88,7 @@ describe('clone', () => {
   });
 });
 
-describe('copy', () => {
+describe('copyMatrix3', () => {
   it('should copy matrix values from another matrix', () => {
     const m1 = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
     const m2 = createMatrix3();
@@ -105,7 +105,7 @@ describe('copy', () => {
   });
 });
 
-describe('copyColumnFrom', () => {
+describe('copyMatrix3ColumnFromVector3', () => {
   it('should copy column from a Vector3 to a Matrix3', () => {
     const m = createMatrix3();
     const v = createVector3(1, 2, 3);
@@ -140,7 +140,7 @@ describe('copyColumnFrom', () => {
   });
 });
 
-describe('copyColumnTo', () => {
+describe('copyMatrix3ColumnToVector3', () => {
   it('should copy column to a Vector3 from a Matrix3', () => {
     const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
     const v = createVector3();
@@ -184,7 +184,7 @@ describe('copyColumnTo', () => {
   });
 });
 
-describe('copyRowFrom', () => {
+describe('copyMatrix3RowFromVector3', () => {
   it('should copy row from a Vector3 to a Matrix3', () => {
     const m = createMatrix3();
     const v = createVector3(1, 2, 3);
@@ -219,7 +219,7 @@ describe('copyRowFrom', () => {
   });
 });
 
-describe('copyRowTo', () => {
+describe('copyMatrix3RowToVector3', () => {
   it('should copy row to a Vector3 from a Matrix3', () => {
     const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
     const v = createVector3();
@@ -257,7 +257,7 @@ describe('copyRowTo', () => {
   });
 });
 
-describe('equals', () => {
+describe('equalsMatrix3', () => {
   it('should return false if one matrix is null and the other is not', () => {
     const mat1 = createMatrix3();
     expect(equalsMatrix3(mat1, null)).toBe(false);
@@ -300,7 +300,7 @@ describe('equals', () => {
   });
 });
 
-describe('fromMatrix3x2', () => {
+describe('setMatrix3FromMatrix', () => {
   it('should convert a Matrix3x2 to a Matrix3', () => {
     // Define a matrix (6 values, row-major)
     const mat2D = createMatrix();
@@ -336,7 +336,7 @@ describe('fromMatrix3x2', () => {
   });
 });
 
-describe('fromMatrix4x4', () => {
+describe('setMatrix3FromMatrix4', () => {
   it('should convert an identity Matrix4x4 to a Matrix3', () => {
     const Matrix4x4 = {
       m: new Float32Array([
@@ -400,7 +400,7 @@ describe('fromMatrix4x4', () => {
   });
 });
 
-describe('inverse', () => {
+describe('inverseMatrix3', () => {
   it('should invert the matrix correctly', () => {
     // Create a matrix with scaling of 2 and translation of (5, 3)
     const m = createMatrix3(2, 0, 5, 0, 2, 3, 0, 0, 1);
@@ -448,9 +448,29 @@ describe('inverse', () => {
     expect(out.m[2]).toBeCloseTo(-2.5); // Inverse translation on x
     expect(out.m[5]).toBeCloseTo(-1.5); // Inverse translation on y
   });
+
+  it('supports out === source for affine matrices', () => {
+    const matrix = createMatrix3(2, 1, 5, 3, 4, 6, 0, 0, 1);
+    const expected = createMatrix3();
+    inverseMatrix3(expected, matrix);
+
+    inverseMatrix3(matrix, matrix);
+
+    expect(equalsMatrix3(matrix, expected)).toBe(true);
+  });
+
+  it('supports out === source for non-affine matrices', () => {
+    const matrix = createMatrix3(1, 2, 3, 0, 1, 4, 5, 6, 0);
+    const expected = createMatrix3();
+    inverseMatrix3(expected, matrix);
+
+    inverseMatrix3(matrix, matrix);
+
+    expect(equalsMatrix3(matrix, expected)).toBe(true);
+  });
 });
 
-describe('multiply', () => {
+describe('multiplyMatrix3', () => {
   it('should support out === a', () => {
     const a = createMatrix3(2, 0, 0, 0, 2, 0, 0, 0, 1);
     const b = createMatrix3(1, 0, 5, 0, 1, 5, 0, 0, 1);
@@ -486,7 +506,7 @@ describe('multiply', () => {
   });
 });
 
-describe('rotate', () => {
+describe('rotateMatrix3', () => {
   it('should rotate the matrix correctly', () => {
     const m = createMatrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
     const out = createMatrix3();
@@ -512,7 +532,7 @@ describe('rotate', () => {
   });
 });
 
-describe('scale', () => {
+describe('scaleMatrix3', () => {
   it('should scale the matrix correctly', () => {
     const m = createMatrix3();
     const out = createMatrix3();
@@ -530,7 +550,7 @@ describe('scale', () => {
   });
 });
 
-describe('translate', () => {
+describe('translateMatrix3', () => {
   it('should translate the matrix correctly', () => {
     const m = createMatrix3();
     const out = createMatrix3();
@@ -548,7 +568,7 @@ describe('translate', () => {
   });
 });
 
-describe('get', () => {
+describe('getMatrix3Element', () => {
   it('returns the element at the given row and column', () => {
     const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
     expect(getMatrix3Element(m, 0, 0)).toBe(1);
@@ -559,7 +579,7 @@ describe('get', () => {
   });
 });
 
-describe('identity', () => {
+describe('identityMatrix3', () => {
   it('resets a matrix to the identity', () => {
     const m = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
     identityMatrix3(m);
@@ -571,7 +591,7 @@ describe('identity', () => {
   });
 });
 
-describe('isAffine', () => {
+describe('isAffineMatrix3', () => {
   it('returns true for identity matrix', () => {
     const m = createMatrix3();
     expect(isAffineMatrix3(m)).toBe(true);
@@ -588,7 +608,7 @@ describe('isAffine', () => {
   });
 });
 
-describe('set', () => {
+describe('setMatrix3Element', () => {
   it('writes the value at the given row and column', () => {
     const m = createMatrix3();
     setMatrix3Element(m, 1, 2, 42);
@@ -603,7 +623,7 @@ describe('set', () => {
   });
 });
 
-describe('setTo', () => {
+describe('setMatrix3', () => {
   it('sets all 9 elements in row-major order', () => {
     const m = createMatrix3();
     setMatrix3(m, 1, 2, 3, 4, 5, 6, 7, 8, 9);

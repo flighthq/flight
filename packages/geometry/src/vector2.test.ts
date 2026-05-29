@@ -27,7 +27,7 @@ beforeEach(() => {
   pt2 = createVector2();
 });
 
-describe('create', () => {
+describe('createVector2', () => {
   it('returns a Vector2 with default coordinates', () => {
     const p: Vector2 = createVector2();
     expect(p).not.toBeNull();
@@ -50,7 +50,7 @@ describe('create', () => {
 
 // Properties
 
-describe('length', () => {
+describe('getVector2Length', () => {
   const testCases = [
     { x: 100, y: 0, expected: 100 },
     { x: 0, y: 100, expected: 100 },
@@ -75,7 +75,7 @@ describe('length', () => {
   });
 });
 
-describe('lengthSquared', () => {
+describe('getVector2LengthSquared', () => {
   it('returns the square of the length', () => {
     pt.x = 3;
     pt.y = 4;
@@ -104,7 +104,7 @@ describe('lengthSquared', () => {
   });
 });
 
-describe('add', () => {
+describe('addVector2', () => {
   it('adds two coordinates', () => {
     pt.x = 2;
     pt.y = 10;
@@ -158,7 +158,7 @@ describe('add', () => {
   });
 });
 
-describe('clone', () => {
+describe('cloneVector2', () => {
   it('creates a copy of a vector', () => {
     pt.x = 1;
     pt.y = 2;
@@ -174,7 +174,7 @@ describe('clone', () => {
   });
 });
 
-describe('copy', () => {
+describe('copyVector2', () => {
   it('copies coordinates from one vector to another', () => {
     pt2.x = 1;
     pt2.y = 2;
@@ -191,7 +191,7 @@ describe('copy', () => {
   });
 });
 
-describe('createPolar', () => {
+describe('createVector2FromPolar', () => {
   it('makes a createVector2 and calls polar', () => {
     const pt = createVector2FromPolar(5, 0);
     setVector2FromPolar(pt2, 5, 0);
@@ -199,7 +199,7 @@ describe('createPolar', () => {
   });
 });
 
-describe('distance', () => {
+describe('getVector2Distance', () => {
   const testCases = [
     { a: [100, 0], b: [0, 0], expected: 100 },
     { a: [0, 100], b: [0, 0], expected: 100 },
@@ -227,7 +227,7 @@ describe('distance', () => {
   });
 });
 
-describe('equals', () => {
+describe('equalsVector2', () => {
   it('returns true if vectors are identical, false otherwise', () => {
     expect(equalsVector2(pt, pt2)).toBe(true);
     pt.x = 1;
@@ -246,7 +246,7 @@ describe('equals', () => {
   });
 });
 
-describe('fromFloat32Array', () => {
+describe('setVector2FromFloat32Array', () => {
   it('writes the vector from 2 values at the offset', () => {
     const array = new Float32Array(2);
     array[0] = 1;
@@ -258,7 +258,7 @@ describe('fromFloat32Array', () => {
   });
 });
 
-describe('lerp', () => {
+describe('lerpVector2', () => {
   const cases = [
     { t: 0, expected: (a: number, _: number) => a },
     { t: 1, expected: (_: number, b: number) => b },
@@ -332,7 +332,7 @@ describe('lerp', () => {
   });
 });
 
-describe('normalize', () => {
+describe('normalizeVector2', () => {
   it('scales a vector to the specified length', () => {
     const pt = createVector2(3, 4);
     const result = createVector2();
@@ -399,7 +399,7 @@ describe('normalize', () => {
   });
 });
 
-describe('offset', () => {
+describe('offsetVector2', () => {
   it('adjusts the value of a vector', () => {
     const result = createVector2();
     offsetVector2(result, pt, 10, 100);
@@ -422,7 +422,7 @@ describe('offset', () => {
   });
 });
 
-describe('setTo', () => {
+describe('setVector2', () => {
   it('updates coordinates of a vector', () => {
     setVector2(pt, 2, 10);
     expect(pt.x).toBe(2);
@@ -445,7 +445,7 @@ describe('setTo', () => {
   });
 });
 
-describe('setPolar', () => {
+describe('setVector2FromPolar', () => {
   it('returns a vector at the given length along the x-axis when angle is 0', () => {
     const p = createVector2();
     setVector2FromPolar(p, 5, 0);
@@ -512,7 +512,7 @@ describe('setPolar', () => {
   });
 });
 
-describe('subtract', () => {
+describe('subtractVector2', () => {
   it('subtracts the coordinates of two vectors into a new vector', () => {
     pt.x = 5;
     pt.y = 10;
@@ -595,7 +595,7 @@ describe('subtract', () => {
   });
 });
 
-describe('writeToFloat32Array', () => {
+describe('writeVector2ToFloat32Array', () => {
   it('writes 2 values at the offset', () => {
     const array = new Float32Array(6);
     const vector = { x: 1, y: 2 };

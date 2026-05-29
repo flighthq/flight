@@ -6,7 +6,7 @@ beforeEach(() => {
   clearVector3Pool();
 });
 
-describe('get', () => {
+describe('acquireVector3', () => {
   it('returns a new Vector3 when pool is empty', () => {
     const v: Vector3 = acquireVector3();
     expect(v).not.toBeNull();
@@ -20,7 +20,7 @@ describe('get', () => {
   });
 });
 
-describe('getEmpty', () => {
+describe('acquireEmptyVector3', () => {
   it('returns a vector with all components set to 0', () => {
     const v = acquireEmptyVector3();
     expect(v.x).toBe(0);
@@ -42,13 +42,13 @@ describe('getEmpty', () => {
   });
 });
 
-describe('release', () => {
+describe('releaseVector3', () => {
   it('handles null safely', () => {
     expect(() => releaseVector3(null as unknown as Vector3)).not.toThrow();
   });
 });
 
-describe('clear', () => {
+describe('clearVector3Pool', () => {
   it('empties the pool so the next get allocates fresh', () => {
     const v = acquireVector3();
     releaseVector3(v);

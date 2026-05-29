@@ -161,12 +161,14 @@ export function isFlippedYRectangle(source: Readonly<RectangleLike>): boolean {
 }
 
 export function normalizeRectangle(out: RectangleLike, source: Readonly<RectangleLike>): void {
-  const _minX = getRectangleMinX(source);
-  const _minY = getRectangleMinY(source);
-  out.x = _minX;
-  out.y = _minY;
-  out.width = getRectangleMaxX(source) - _minX;
-  out.height = getRectangleMaxY(source) - _minY;
+  const maxX = getRectangleMaxX(source);
+  const maxY = getRectangleMaxY(source);
+  const minX = getRectangleMinX(source);
+  const minY = getRectangleMinY(source);
+  out.x = minX;
+  out.y = minY;
+  out.width = maxX - minX;
+  out.height = maxY - minY;
 }
 
 export function offsetRectangle(out: RectangleLike, source: Readonly<RectangleLike>, dx: number, dy: number): void {

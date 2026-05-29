@@ -180,6 +180,10 @@ export function normalizeVector3(out: Vector3Like, source: Readonly<Vector3Like>
     out.x = source.x / l;
     out.y = source.y / l;
     out.z = source.z / l;
+  } else {
+    out.x = 0;
+    out.y = 0;
+    out.z = 0;
   }
 
   return l;

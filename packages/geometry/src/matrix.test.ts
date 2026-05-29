@@ -43,7 +43,7 @@ import {
 } from '@flighthq/geometry';
 import type { Matrix, Matrix3Like, Matrix4Like } from '@flighthq/types';
 
-describe('create', () => {
+describe('createMatrix', () => {
   it('should initialize matrix3x2 with provided values', () => {
     const m = createMatrix(2, 3, 4, 5, 6, 7);
     expect(m.a).toBe(2);
@@ -109,7 +109,7 @@ describe('ty', () => {
   });
 });
 
-describe('clone', () => {
+describe('cloneMatrix', () => {
   it('should clone the matrix3x2 correctly', () => {
     const m1 = createMatrix(2, 3, 4, 5, 6, 7);
     const m2 = cloneMatrix(m1);
@@ -122,7 +122,7 @@ describe('clone', () => {
   });
 });
 
-describe('copy', () => {
+describe('copyMatrix', () => {
   it('should copy matrix3x2 values from another matrix3x2', () => {
     const m1 = createMatrix(2, 3, 4, 5, 6, 7);
     const m2 = createMatrix();
@@ -136,7 +136,7 @@ describe('copy', () => {
   });
 });
 
-describe('copyColumnFrom', () => {
+describe('copyMatrixColumnFromVector3', () => {
   it('should copy column from a vector3 to a matrix3x2', () => {
     const m = createMatrix();
     const v = createVector3(1, 2, 0);
@@ -168,7 +168,7 @@ describe('copyColumnFrom', () => {
   });
 });
 
-describe('copyColumnTo', () => {
+describe('copyMatrixColumnToVector3', () => {
   it('should copy column to a vector3 from a matrix3x2', () => {
     const m = createMatrix(1, 2, 3, 4, 5, 6);
     const v = createVector3();
@@ -203,7 +203,7 @@ describe('copyColumnTo', () => {
   });
 });
 
-describe('copyRowFrom', () => {
+describe('copyMatrixRowFromVector3', () => {
   it('should copy row from a vector3 to a matrix3x2', () => {
     const m = createMatrix();
     const v = createVector3(1, 2, 3);
@@ -229,7 +229,7 @@ describe('copyRowFrom', () => {
   });
 });
 
-describe('copyRowTo', () => {
+describe('copyMatrixRowToVector3', () => {
   it('should copy row to a vector3 from a matrix3x2', () => {
     const m = createMatrix(1, 2, 3, 4, 5, 6);
     const v = createVector3();
@@ -258,7 +258,7 @@ describe('copyRowTo', () => {
   });
 });
 
-describe('createTransform', () => {
+describe('createTransformMatrix', () => {
   it('should create a createMatrix and call setTransform', () => {
     const m1 = createTransformMatrix(2, 4, 45, 10, 100);
     const m2 = createMatrix();
@@ -267,7 +267,7 @@ describe('createTransform', () => {
   });
 });
 
-describe('equals', () => {
+describe('equalsMatrix', () => {
   it('should return false if one matrix3x2 is null and the other is not', () => {
     const mat1 = createMatrix();
     expect(equalsMatrix(mat1, null)).toBe(false);
@@ -312,7 +312,7 @@ describe('equals', () => {
   });
 });
 
-describe('fromFloat32Array', () => {
+describe('setMatrixFromFloat32Array', () => {
   it('writes the matrix from 6 values at the offset', () => {
     const array = new Float32Array(6);
     for (let i = 0; i < 6; i++) {
@@ -329,7 +329,7 @@ describe('fromFloat32Array', () => {
   });
 });
 
-describe('fromMatrix3x3', () => {
+describe('setMatrixFromMatrix3', () => {
   let mat3: Matrix3Like;
   let mat2D: Matrix;
 
@@ -392,7 +392,7 @@ describe('fromMatrix3x3', () => {
   });
 });
 
-describe('fromMatrix4x4', () => {
+describe('setMatrixFromMatrix4', () => {
   let mat4: Matrix4Like;
   let mat2D: Matrix;
 
@@ -456,7 +456,7 @@ describe('fromMatrix4x4', () => {
   });
 });
 
-describe('inverse', () => {
+describe('inverseMatrix', () => {
   it('should invert the matrix3x2 correctly', () => {
     // Create a matrix3x2 with scaling of 2 and translation of (5, 3)
     const m = createMatrix(2, 0, 0, 2, 5, 3);
@@ -492,9 +492,19 @@ describe('inverse', () => {
     expect(result.c).toBeCloseTo(0);
     expect(result.d).toBeCloseTo(1);
   });
+
+  it('supports out === source', () => {
+    const matrix = createMatrix(2, 1, 3, 4, 5, 6);
+    const expected = createMatrix();
+    inverseMatrix(expected, matrix);
+
+    inverseMatrix(matrix, matrix);
+
+    expect(equalsMatrix(matrix, expected)).toBe(true);
+  });
 });
 
-describe('inverseTransformPoint', () => {
+describe('inverseMatrixTransformPoint', () => {
   it('should apply inverse transformation to a point', () => {
     const m = createMatrix(2, 0, 0, 2, 0, 0);
     const p = createVector2(2, 2);
@@ -522,7 +532,7 @@ describe('inverseTransformPoint', () => {
   });
 });
 
-describe('inverseTransformPointXY', () => {
+describe('inverseMatrixTransformPointXY', () => {
   it('should apply inverse transformation to a point', () => {
     const m = createMatrix(2, 0, 0, 2, 0, 0);
     let transformedvector2 = createVector2();
@@ -542,7 +552,7 @@ describe('inverseTransformPointXY', () => {
   });
 });
 
-describe('inverseTransformVector', () => {
+describe('inverseMatrixTransformVector', () => {
   it('should apply inverse transformation to a point', () => {
     const m = createMatrix(2, 0, 0, 2, 0, 0);
     const p = createVector2(2, 2);
@@ -570,7 +580,7 @@ describe('inverseTransformVector', () => {
   });
 });
 
-describe('inverseTransformVectorXY', () => {
+describe('inverseMatrixTransformVectorXY', () => {
   it('should apply inverse transformation to a point', () => {
     const m = createMatrix(2, 0, 0, 2, 0, 0);
     let transformedvector2 = createVector2();
@@ -590,7 +600,7 @@ describe('inverseTransformVectorXY', () => {
   });
 });
 
-describe('multiply', () => {
+describe('multiplyMatrix', () => {
   it('should support out === a', () => {
     const a = createMatrix(2, 0, 0, 2, 1, 1);
     const b = createMatrix(1, 0, 0, 1, 5, 6);
@@ -692,7 +702,7 @@ describe('multiply', () => {
   });
 });
 
-describe('rotate', () => {
+describe('rotateMatrix', () => {
   it('should write rotated result to out without modifying source', () => {
     const src = createMatrix(1, 0, 0, 1, 10, 0);
     const out = createMatrix();
@@ -709,7 +719,7 @@ describe('rotate', () => {
   });
 });
 
-describe('scale', () => {
+describe('scaleMatrix', () => {
   it('should write scaled result to out without modifying source', () => {
     const src = createMatrix(2, 0, 0, 2, 5, 6);
     const out = createMatrix();
@@ -729,7 +739,7 @@ describe('scale', () => {
   });
 });
 
-describe('setTo', () => {
+describe('setMatrix', () => {
   it('should assign all matrix3x2 fields', () => {
     const m = createMatrix();
     setMatrix(m, 1, 2, 3, 4, 5, 6);
@@ -742,7 +752,7 @@ describe('setTo', () => {
   });
 });
 
-describe('setTransform', () => {
+describe('setTransformMatrix', () => {
   it('should apply rotate, scale and translation', () => {
     const m1 = createMatrix();
     rotateMatrix(m1, m1, 45);
@@ -754,7 +764,7 @@ describe('setTransform', () => {
   });
 });
 
-describe('transformPoint', () => {
+describe('matrixTransformPoint', () => {
   it('should transform a point using the matrix3x2', () => {
     const m = createMatrix(1, 0, 0, 1, 10, 20);
     const p = createVector2(1, 1);
@@ -782,7 +792,7 @@ describe('transformPoint', () => {
   });
 });
 
-describe('transformPointXY', () => {
+describe('matrixTransformPointXY', () => {
   it('should correctly transform coordinates with translation', () => {
     const m = createMatrix(1, 0, 0, 1, 5, 6);
     const p = createVector2();
@@ -801,7 +811,7 @@ describe('transformPointXY', () => {
   });
 });
 
-describe('transformRect', () => {
+describe('matrixTransformRectangle', () => {
   it('should return the same rectangle for identity matrix3x2', () => {
     const rect = createRectangle(0, 0, 10, 20);
     const mat = createMatrix(); // identity by default
@@ -894,7 +904,7 @@ describe('transformRect', () => {
   });
 });
 
-describe('transformRectVec2', () => {
+describe('matrixTransformAABBVector2', () => {
   it('should alias transformRectXY', () => {
     const m = createMatrix();
     const out = createRectangle();
@@ -908,7 +918,7 @@ describe('transformRectVec2', () => {
   });
 });
 
-describe('transformRectXY', () => {
+describe('matrixTransformAABB', () => {
   it('should work when ax > bx or ay > by (flipped input)', () => {
     const m = createMatrix();
     const out = createRectangle();
@@ -961,7 +971,7 @@ describe('transformRectXY', () => {
   });
 });
 
-describe('transformVector', () => {
+describe('matrixTransformVector', () => {
   it('should apply delta transformation to a point', () => {
     const m = createMatrix(2, 0, 0, 2, 0, 0);
     const p = createVector2(1, 1);
@@ -981,7 +991,7 @@ describe('transformVector', () => {
   });
 });
 
-describe('transformVectorXY', () => {
+describe('matrixTransformVectorXY', () => {
   it('should apply delta transformation to a point', () => {
     const m = createMatrix(2, 0, 0, 2, 0, 0);
     const transformedvector2 = createVector2();
@@ -991,7 +1001,7 @@ describe('transformVectorXY', () => {
   });
 });
 
-describe('translate', () => {
+describe('translateMatrix', () => {
   it('should translate the matrix3x2 correctly', () => {
     const m = createMatrix();
     translateMatrix(m, m, 10, 20);
@@ -1000,7 +1010,7 @@ describe('translate', () => {
   });
 });
 
-describe('writeToFloat32Array', () => {
+describe('writeMatrixToFloat32Array', () => {
   it('writes 6 values at the offset', () => {
     const array = new Float32Array(6);
     const matrix = { a: 1, b: 2, c: 3, d: 4, tx: 5, ty: 6 };
@@ -1011,7 +1021,7 @@ describe('writeToFloat32Array', () => {
   });
 });
 
-describe('createGradientTransform', () => {
+describe('createGradientTransformMatrix', () => {
   it('returns a Matrix equivalent to calling setGradientTransform', () => {
     const m1 = createGradientTransformMatrix(100, 200);
     const m2 = createMatrix();
@@ -1026,7 +1036,7 @@ describe('createGradientTransform', () => {
   });
 });
 
-describe('identity', () => {
+describe('identityMatrix', () => {
   it('resets a modified matrix to identity', () => {
     const m = createMatrix(2, 3, 4, 5, 6, 7);
     identityMatrix(m);
@@ -1039,7 +1049,7 @@ describe('identity', () => {
   });
 });
 
-describe('setGradientTransform', () => {
+describe('setGradientTransformMatrix', () => {
   it('sets a and d proportional to width and height', () => {
     const m = createMatrix();
     setGradientTransformMatrix(m, 1638.4, 1638.4);
@@ -1062,7 +1072,7 @@ describe('setGradientTransform', () => {
   });
 });
 
-describe('translateUsingVector', () => {
+describe('translateMatrixByVector', () => {
   it('translates tx/ty by the transformed vector', () => {
     const m = createMatrix(2, 0, 0, 2, 5, 10);
     const out = createMatrix();
@@ -1072,7 +1082,7 @@ describe('translateUsingVector', () => {
   });
 });
 
-describe('translateUsingVectorXY', () => {
+describe('translateMatrixByVectorXY', () => {
   it('translates tx/ty by the transformed x and y components', () => {
     const m = createMatrix(2, 0, 0, 2, 5, 10);
     const out = createMatrix();
