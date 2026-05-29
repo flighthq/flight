@@ -1,10 +1,10 @@
 import { getRuntime } from '@flighthq/entity';
 import {
-  createMatrix3x2,
-  mat3x2Copy,
-  mat3x2InverseTransformPointXY,
-  mat3x2Multiply,
-  mat3x2TransformPointXY,
+  copyMatrix,
+  createMatrix,
+  inverseMatrixTransformPointXY,
+  matrixTransformPointXY,
+  multiplyMatrix,
 } from '@flighthq/geometry';
 import { invalidateLocalTransform, recomputeWorldTransformID } from '@flighthq/scenegraph-core';
 import type {
@@ -12,7 +12,7 @@ import type {
   GraphNodeRuntime,
   HasTransform2D,
   HasTransform2DRuntime,
-  Matrix3x2,
+  Matrix,
   Vector2Like,
 } from '@flighthq/types';
 
@@ -50,14 +50,14 @@ export function ensureWorldTransform2D<GraphKind extends symbol, Traits extends 
 
 export function getLocalTransform2D<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasTransform2D,
-): Readonly<Matrix3x2> {
+): Readonly<Matrix> {
   ensureLocalTransform2D(target);
   return (getRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime).localTransform2D!;
 }
 
 export function getWorldTransform2D<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasTransform2D,
-): Readonly<Matrix3x2> {
+): Readonly<Matrix> {
   ensureWorldTransform2D(target);
   return (getRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime).worldTransform2D!;
 }
@@ -71,7 +71,7 @@ export function globalToLocal2D<GraphKind extends symbol, Traits extends object>
   source: GraphNode<GraphKind, Traits> & HasTransform2D,
   pos: Readonly<Vector2Like>,
 ): void {
-  mat3x2InverseTransformPointXY(out, getWorldTransform2D(source), pos.x, pos.y);
+  inverseMatrixTransformPointXY(out, getWorldTransform2D(source), pos.x, pos.y);
 }
 
 /**
@@ -83,7 +83,7 @@ export function localToGlobal2D<GraphKind extends symbol, Traits extends object>
   source: GraphNode<GraphKind, Traits> & HasTransform2D,
   point: Readonly<Vector2Like>,
 ): void {
-  mat3x2TransformPointXY(out, getWorldTransform2D(source), point.x, point.y);
+  matrixTransformPointXY(out, getWorldTransform2D(source), point.x, point.y);
 }
 
 function recomputeLocalTransform2D<GraphKind extends symbol, Traits extends object>(
@@ -105,7 +105,7 @@ function recomputeLocalTransform2D<GraphKind extends symbol, Traits extends obje
     runtime.rotationSine = sin;
     runtime.rotationCosine = cos;
   }
-  if (runtime.localTransform2D === null) runtime.localTransform2D = createMatrix3x2();
+  if (runtime.localTransform2D === null) runtime.localTransform2D = createMatrix();
   const matrix = runtime.localTransform2D;
   matrix.a = runtime.rotationCosine * target.scaleX;
   matrix.b = runtime.rotationSine * target.scaleX;
@@ -121,12 +121,12 @@ function recomputeWorldTransform2D<GraphKind extends symbol, Traits extends obje
   runtime: GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime,
   parentRuntime?: Readonly<GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime>,
 ): void {
-  if (runtime.worldTransform2D === null) runtime.worldTransform2D = createMatrix3x2();
+  if (runtime.worldTransform2D === null) runtime.worldTransform2D = createMatrix();
   ensureLocalTransform2D(target);
   if (parentRuntime !== undefined) {
-    mat3x2Multiply(runtime.worldTransform2D, parentRuntime.worldTransform2D!, runtime.localTransform2D!);
+    multiplyMatrix(runtime.worldTransform2D, parentRuntime.worldTransform2D!, runtime.localTransform2D!);
   } else {
-    mat3x2Copy(runtime.worldTransform2D, runtime.localTransform2D!);
+    copyMatrix(runtime.worldTransform2D, runtime.localTransform2D!);
   }
   recomputeWorldTransformID(runtime, parentRuntime);
 }

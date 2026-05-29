@@ -1,5 +1,5 @@
 import type { ImageSource } from './ImageSource';
-import type { Matrix3x2 } from './Matrix3x2';
+import type { Matrix } from './Matrix';
 
 export type CapsStyle = 'none' | 'round' | 'square';
 
@@ -17,14 +17,14 @@ export type SpreadMethod = 'pad' | 'reflect' | 'repeat';
 
 // Maps command key strings to their argument tuples. May be extended via declaration merging.
 export interface ShapeCommandRegistry {
-  beginBitmapFill: readonly [bitmap: ImageSource, matrix: Matrix3x2 | null, repeat: boolean, smooth: boolean];
+  beginBitmapFill: readonly [bitmap: ImageSource, matrix: Matrix | null, repeat: boolean, smooth: boolean];
   beginFill: readonly [color: number, alpha: number];
   beginGradientFill: readonly [
     gradientType: GradientType,
     colors: number[],
     alphas: number[],
     ratios: number[],
-    matrix: Matrix3x2 | null,
+    matrix: Matrix | null,
     spreadMethod: SpreadMethod,
     interpolationMethod: InterpolationMethod,
     focalPointRatio: number,
@@ -51,13 +51,13 @@ export interface ShapeCommandRegistry {
     ellipseHeight: number,
   ];
   endFill: readonly [];
-  lineBitmapStyle: readonly [bitmap: ImageSource, matrix: Matrix3x2 | null, repeat: boolean, smooth: boolean];
+  lineBitmapStyle: readonly [bitmap: ImageSource, matrix: Matrix | null, repeat: boolean, smooth: boolean];
   lineGradientStyle: readonly [
     gradientType: GradientType,
     colors: number[],
     alphas: number[],
     ratios: number[],
-    matrix: Matrix3x2 | null,
+    matrix: Matrix | null,
     spreadMethod: SpreadMethod,
     interpolationMethod: InterpolationMethod,
     focalPointRatio: number,

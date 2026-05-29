@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity';
-import { mat3x2FromFloat32Array } from '@flighthq/geometry';
-import { mat3x2PoolGet, mat3x2PoolRelease } from '@flighthq/geometry/matrix3x2Pool';
+import { setMatrixFromFloat32Array } from '@flighthq/geometry';
+import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
 import type {
   DOMRenderState,
   QuadBatch,
@@ -110,13 +110,13 @@ export function drawDOMQuadBatch(state: DOMRenderState, quadBatch: SpriteRenderN
       );
     }
   } else {
-    const localMatrix = mat3x2PoolGet();
+    const localMatrix = acquireMatrix();
     for (let i = 0; i < instanceCount; i++) {
       const id = ids[i];
       if (id < 0 || id >= numRegions) continue;
       const region = regions[id];
       if (region.width <= 0 || region.height <= 0) continue;
-      mat3x2FromFloat32Array(localMatrix, i * 6, transforms);
+      setMatrixFromFloat32Array(localMatrix, i * 6, transforms);
       ctx.setTransform(
         localMatrix.a * pr,
         localMatrix.b * pr,
@@ -128,7 +128,7 @@ export function drawDOMQuadBatch(state: DOMRenderState, quadBatch: SpriteRenderN
       ctx.drawImage(image, region.x, region.y, region.width, region.height, 0, 0, region.width, region.height);
     }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    mat3x2PoolRelease(localMatrix);
+    releaseMatrix(localMatrix);
   }
 
   applyDOMStyle(state, data.canvas, quadBatch);

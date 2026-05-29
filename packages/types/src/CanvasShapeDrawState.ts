@@ -1,10 +1,10 @@
-import type { Matrix3x2 } from './Matrix3x2';
+import type { Matrix } from './Matrix';
 
 export interface CanvasShapeDrawState {
   hasFill: boolean;
   fillStyle: string | CanvasPattern | CanvasGradient;
-  fillMatrix: Matrix3x2 | null;
-  fillMatrixInverse: Matrix3x2 | null;
+  fillMatrix: Matrix | null;
+  fillMatrixInverse: Matrix | null;
   hasStroke: boolean;
   strokeStyle: string | CanvasPattern | CanvasGradient;
   strokeWidth: number;

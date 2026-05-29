@@ -1,23 +1,21 @@
 import {
+  addVector2,
+  cloneVector2,
+  copyVector2,
+  createPolarVector2,
   createVector2,
-  createVector2Polar,
-  VEC2_X_AXIS,
-  VEC2_Y_AXIS,
-  vec2Add,
-  vec2Clone,
-  vec2Copy,
-  vec2Distance,
-  vec2Equals,
-  vec2FromFloat32Array,
-  vec2Length,
-  vec2LengthSquared,
-  vec2Lerp,
-  vec2Normalize,
-  vec2Offset,
-  vec2SetPolar,
-  vec2SetTo,
-  vec2Subtract,
-  vec2WriteToFloat32Array,
+  distanceVector2,
+  equalsVector2,
+  lengthSquaredVector2,
+  lengthVector2,
+  lerpVector2,
+  normalizeVector2,
+  offsetVector2,
+  setPolarVector2,
+  setVector2,
+  setVector2FromFloat32Array,
+  subtractVector2,
+  writeVector2ToFloat32Array,
 } from '@flighthq/geometry';
 import type { Vector2 } from '@flighthq/types';
 
@@ -65,14 +63,14 @@ describe('length', () => {
     for (const { x, y, expected } of testCases) {
       pt.x = x;
       pt.y = y;
-      expect(vec2Length(pt)).toBe(expected);
+      expect(lengthVector2(pt)).toBe(expected);
     }
   });
 
   it('allows a vector-like object', () => {
     for (const { x, y, expected } of testCases) {
       const pt = { x: x, y: y };
-      expect(vec2Length(pt)).toBe(expected);
+      expect(lengthVector2(pt)).toBe(expected);
     }
   });
 });
@@ -81,28 +79,28 @@ describe('lengthSquared', () => {
   it('returns the square of the length', () => {
     pt.x = 3;
     pt.y = 4;
-    expect(vec2LengthSquared(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
+    expect(lengthSquaredVector2(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
   });
 
   it('returns 0 for the origin (0, 0)', () => {
-    expect(vec2LengthSquared(pt)).toBe(0);
+    expect(lengthSquaredVector2(pt)).toBe(0);
   });
 
   it('handles negative values correctly', () => {
     pt.x = -3;
     pt.y = -4;
-    expect(vec2LengthSquared(pt)).toBe(9 + 16); // 9 + 16 = 25
+    expect(lengthSquaredVector2(pt)).toBe(9 + 16); // 9 + 16 = 25
   });
 
   it('handles non-integer values', () => {
     pt.x = 2.5;
     pt.y = 4.5;
-    expect(vec2LengthSquared(pt)).toBe(2.5 * 2.5 + 4.5 * 4.5); // 6.25 + 20.25 = 26.5
+    expect(lengthSquaredVector2(pt)).toBe(2.5 * 2.5 + 4.5 * 4.5); // 6.25 + 20.25 = 26.5
   });
 
   it('allows a vector-like object', () => {
     const pt = { x: 3, y: 4 };
-    expect(vec2LengthSquared(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
+    expect(lengthSquaredVector2(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
   });
 });
 
@@ -114,7 +112,7 @@ describe('add', () => {
     pt2.y = 20;
 
     const result = createVector2();
-    vec2Add(result, pt, pt2);
+    addVector2(result, pt, pt2);
     expect(result.x).toBe(6);
     expect(result.y).toBe(30);
     expect(result).not.toBe(pt);
@@ -127,7 +125,7 @@ describe('add', () => {
     pt2.x = 5;
     pt2.y = 10;
 
-    vec2Add(pt, pt, pt2);
+    addVector2(pt, pt, pt2);
     expect(pt.x).toBe(8);
     expect(pt.y).toBe(17);
     expect(pt2.x).toBe(5);
@@ -140,7 +138,7 @@ describe('add', () => {
     pt2.x = 4;
     pt2.y = 20;
 
-    vec2Add(pt2, pt, pt2);
+    addVector2(pt2, pt, pt2);
     expect(pt.x).toBe(2);
     expect(pt.y).toBe(10);
     expect(pt2.x).toBe(6);
@@ -152,7 +150,7 @@ describe('add', () => {
     const pt2 = { x: 4, y: 20 };
 
     const result = { x: 0, y: 0 };
-    vec2Add(result, pt, pt2);
+    addVector2(result, pt, pt2);
     expect(result.x).toBe(6);
     expect(result.y).toBe(30);
     expect(result).not.toBe(pt);
@@ -164,14 +162,14 @@ describe('clone', () => {
   it('creates a copy of a vector', () => {
     pt.x = 1;
     pt.y = 2;
-    const result = vec2Clone(pt);
+    const result = cloneVector2(pt);
     expect(result.x).toBe(pt.x);
     expect(result.y).toBe(pt.y);
   });
 
   it('returns a Vector2 instance', () => {
     const pt = { x: 1, y: 2 };
-    const result: Vector2 = vec2Clone(pt);
+    const result: Vector2 = cloneVector2(pt);
     expect(result).not.toBeNull();
   });
 });
@@ -180,14 +178,14 @@ describe('copy', () => {
   it('copies coordinates from one vector to another', () => {
     pt2.x = 1;
     pt2.y = 2;
-    vec2Copy(pt, pt2);
+    copyVector2(pt, pt2);
     expect(pt.x).toBe(1);
     expect(pt.y).toBe(2);
   });
 
   it('allows a vector-like object', () => {
     const pt2 = { x: 1, y: 2 };
-    vec2Copy(pt, pt2);
+    copyVector2(pt, pt2);
     expect(pt.x).toBe(1);
     expect(pt.y).toBe(2);
   });
@@ -195,9 +193,9 @@ describe('copy', () => {
 
 describe('createPolar', () => {
   it('makes a createVector2 and calls polar', () => {
-    const pt = createVector2Polar(5, 0);
-    vec2SetPolar(pt2, 5, 0);
-    expect(vec2Equals(pt, pt2)).toBe(true);
+    const pt = createPolarVector2(5, 0);
+    setPolarVector2(pt2, 5, 0);
+    expect(equalsVector2(pt, pt2)).toBe(true);
   });
 });
 
@@ -216,7 +214,7 @@ describe('distance', () => {
       pt.y = a[1];
       pt2.x = b[0];
       pt2.y = b[1];
-      expect(vec2Distance(pt, pt2)).toBe(expected);
+      expect(distanceVector2(pt, pt2)).toBe(expected);
     }
   });
 
@@ -224,27 +222,27 @@ describe('distance', () => {
     for (const { a, b, expected } of testCases) {
       const pt = { x: a[0], y: a[1] };
       const pt2 = { x: b[0], y: b[1] };
-      expect(vec2Distance(pt, pt2)).toBe(expected);
+      expect(distanceVector2(pt, pt2)).toBe(expected);
     }
   });
 });
 
 describe('equals', () => {
   it('returns true if vectors are identical, false otherwise', () => {
-    expect(vec2Equals(pt, pt2)).toBe(true);
+    expect(equalsVector2(pt, pt2)).toBe(true);
     pt.x = 1;
-    expect(vec2Equals(pt, pt2)).toBe(false);
+    expect(equalsVector2(pt, pt2)).toBe(false);
     pt2.x = 1;
-    expect(vec2Equals(pt, pt2)).toBe(true);
+    expect(equalsVector2(pt, pt2)).toBe(true);
   });
 
   it('allows a vector-like object', () => {
     const pt2 = { x: 0, y: 0 };
-    expect(vec2Equals(pt, pt2)).toBe(true);
+    expect(equalsVector2(pt, pt2)).toBe(true);
     pt.x = 1;
-    expect(vec2Equals(pt, pt2)).toBe(false);
+    expect(equalsVector2(pt, pt2)).toBe(false);
     pt2.x = 1;
-    expect(vec2Equals(pt, pt2)).toBe(true);
+    expect(equalsVector2(pt, pt2)).toBe(true);
   });
 });
 
@@ -254,7 +252,7 @@ describe('fromFloat32Array', () => {
     array[0] = 1;
     array[1] = 2;
     const vector = { x: 100, y: 100 };
-    vec2FromFloat32Array(vector, 0, array);
+    setVector2FromFloat32Array(vector, 0, array);
     expect(vector.x).toBe(1);
     expect(vector.y).toBe(2);
   });
@@ -277,7 +275,7 @@ describe('lerp', () => {
 
     for (const { t, expected } of cases) {
       const result = createVector2();
-      vec2Lerp(result, pt, pt2, t);
+      lerpVector2(result, pt, pt2, t);
       expect(result.x).toBe(expected(pt.x, pt2.x));
       expect(result.y).toBe(expected(pt.y, pt2.y));
     }
@@ -289,7 +287,7 @@ describe('lerp', () => {
     pt2.x = 30;
     pt2.y = 40;
 
-    vec2Lerp(pt, pt, pt2, 0.5);
+    lerpVector2(pt, pt, pt2, 0.5);
     expect(pt.x).toBe(20);
     expect(pt.y).toBe(30);
     expect(pt2.x).toBe(30);
@@ -302,7 +300,7 @@ describe('lerp', () => {
     pt2.x = 30;
     pt2.y = 40;
 
-    vec2Lerp(pt2, pt, pt2, 0.5);
+    lerpVector2(pt2, pt, pt2, 0.5);
     expect(pt.x).toBe(10);
     expect(pt.y).toBe(20);
     expect(pt2.x).toBe(20);
@@ -316,7 +314,7 @@ describe('lerp', () => {
     pt2.y = 100;
 
     const result = createVector2();
-    vec2Lerp(result, pt, pt2, 1000);
+    lerpVector2(result, pt, pt2, 1000);
     expect(result.x).toBe(100000);
     expect(result.y).toBe(100000);
   });
@@ -327,7 +325,7 @@ describe('lerp', () => {
 
     for (const { t, expected } of cases) {
       const result = { x: 0, y: 0 };
-      vec2Lerp(result, pt, pt2, t);
+      lerpVector2(result, pt, pt2, t);
       expect(result.x).toBe(expected(pt.x, pt2.x));
       expect(result.y).toBe(expected(pt.y, pt2.y));
     }
@@ -338,54 +336,54 @@ describe('normalize', () => {
   it('scales a vector to the specified length', () => {
     const pt = createVector2(3, 4);
     const result = createVector2();
-    vec2Normalize(result, pt, 10);
+    normalizeVector2(result, pt, 10);
     expect(pt).not.toBe(result);
     expect(result.x).toBeCloseTo(6);
     expect(result.y).toBeCloseTo(8);
-    expect(vec2Length(result)).toBeCloseTo(10);
+    expect(lengthVector2(result)).toBeCloseTo(10);
   });
 
   it('returns zero for a zero-length vector', () => {
     const pt = createVector2(0, 0);
     const result = createVector2();
-    vec2Normalize(result, pt, 5);
+    normalizeVector2(result, pt, 5);
     expect(result).not.toBe(pt);
     expect(result.x).toBe(0);
     expect(result.y).toBe(0);
-    expect(vec2Length(result)).toBe(0);
+    expect(lengthVector2(result)).toBe(0);
   });
 
   it('scales vector to zero length', () => {
     const pt = createVector2(3, 4);
     const result = createVector2();
-    vec2Normalize(result, pt, 0);
+    normalizeVector2(result, pt, 0);
     expect(result.x).toBe(0);
     expect(result.y).toBe(0);
-    expect(vec2Length(result)).toBe(0);
+    expect(lengthVector2(result)).toBe(0);
   });
 
   it('scales vector to length 1 (unit vector)', () => {
     const pt = createVector2(0, 5);
     const result = createVector2();
-    vec2Normalize(result, pt, 1);
+    normalizeVector2(result, pt, 1);
     expect(result.x).toBeCloseTo(0);
     expect(result.y).toBeCloseTo(1);
-    expect(vec2Length(result)).toBeCloseTo(1);
+    expect(lengthVector2(result)).toBeCloseTo(1);
   });
 
   it('scales vector to negative length', () => {
     const pt = createVector2(3, 4);
     const result = createVector2();
-    vec2Normalize(result, pt, -10);
+    normalizeVector2(result, pt, -10);
     expect(result.x).toBeCloseTo(-6);
     expect(result.y).toBeCloseTo(-8);
-    expect(vec2Length(result)).toBeCloseTo(10); // length is magnitude
+    expect(lengthVector2(result)).toBeCloseTo(10); // length is magnitude
   });
 
   it('handles very small vectors correctly', () => {
     const pt = createVector2(0.0001, 0.0001);
     const result = createVector2();
-    vec2Normalize(result, pt, 1);
+    normalizeVector2(result, pt, 1);
     expect(result.x).toBeCloseTo(0.7071, 4);
     expect(result.y).toBeCloseTo(0.7071, 4);
   });
@@ -393,32 +391,32 @@ describe('normalize', () => {
   it('allows a vector-like object', () => {
     const pt = { x: 3, y: 4 };
     const result = { x: 0, y: 0 };
-    vec2Normalize(result, pt, 10);
+    normalizeVector2(result, pt, 10);
     expect(pt).not.toBe(result);
     expect(result.x).toBeCloseTo(6);
     expect(result.y).toBeCloseTo(8);
-    expect(vec2Length(result)).toBeCloseTo(10);
+    expect(lengthVector2(result)).toBeCloseTo(10);
   });
 });
 
 describe('offset', () => {
   it('adjusts the value of a vector', () => {
     const result = createVector2();
-    vec2Offset(result, pt, 10, 100);
+    offsetVector2(result, pt, 10, 100);
     expect(result.x).toBe(10);
     expect(result.y).toBe(100);
   });
 
   it('works with negative deltas', () => {
     const result = createVector2();
-    vec2Offset(result, pt, -5, -10);
+    offsetVector2(result, pt, -5, -10);
     expect(result.x).toBe(-5);
     expect(result.y).toBe(-10);
   });
 
   it('allows a vector-like object', () => {
     const result = { x: 0, y: 0 };
-    vec2Offset(result, pt, 10, 100);
+    offsetVector2(result, pt, 10, 100);
     expect(result.x).toBe(10);
     expect(result.y).toBe(100);
   });
@@ -426,7 +424,7 @@ describe('offset', () => {
 
 describe('setTo', () => {
   it('updates coordinates of a vector', () => {
-    vec2SetTo(pt, 2, 10);
+    setVector2(pt, 2, 10);
     expect(pt.x).toBe(2);
     expect(pt.y).toBe(10);
   });
@@ -434,14 +432,14 @@ describe('setTo', () => {
   it('sets both coordinates to zero correctly', () => {
     pt.x = 1;
     pt.y = 2;
-    vec2SetTo(pt, 0, 0);
+    setVector2(pt, 0, 0);
     expect(pt.x).toBe(0);
     expect(pt.y).toBe(0);
   });
 
   it('allows a vector-like object', () => {
     const pt = { x: 0, y: 0 };
-    vec2SetTo(pt, 2, 10);
+    setVector2(pt, 2, 10);
     expect(pt.x).toBe(2);
     expect(pt.y).toBe(10);
   });
@@ -450,65 +448,65 @@ describe('setTo', () => {
 describe('setPolar', () => {
   it('returns a vector at the given length along the x-axis when angle is 0', () => {
     const p = createVector2();
-    vec2SetPolar(p, 5, 0);
+    setPolarVector2(p, 5, 0);
     expect(p.x).toBeCloseTo(5);
     expect(p.y).toBeCloseTo(0);
-    expect(vec2Length(p)).toBeCloseTo(5);
+    expect(lengthVector2(p)).toBeCloseTo(5);
   });
 
   it('returns a vector at the given length along the y-axis when angle is π/2', () => {
     const p = createVector2();
-    vec2SetPolar(p, 3, Math.PI / 2);
+    setPolarVector2(p, 3, Math.PI / 2);
     expect(p.x).toBeCloseTo(0);
     expect(p.y).toBeCloseTo(3);
-    expect(vec2Length(p)).toBeCloseTo(3);
+    expect(lengthVector2(p)).toBeCloseTo(3);
   });
 
   it('returns a vector in the correct quadrant for angle π', () => {
     const p = createVector2();
-    vec2SetPolar(p, 4, Math.PI);
+    setPolarVector2(p, 4, Math.PI);
     expect(p.x).toBeCloseTo(-4);
     expect(p.y).toBeCloseTo(0);
-    expect(vec2Length(p)).toBeCloseTo(4);
+    expect(lengthVector2(p)).toBeCloseTo(4);
   });
 
   it('returns a vector in the correct quadrant for angle 3π/2', () => {
     const p = createVector2();
-    vec2SetPolar(p, 2, (3 * Math.PI) / 2);
+    setPolarVector2(p, 2, (3 * Math.PI) / 2);
     expect(p.x).toBeCloseTo(0);
     expect(p.y).toBeCloseTo(-2);
-    expect(vec2Length(p)).toBeCloseTo(2);
+    expect(lengthVector2(p)).toBeCloseTo(2);
   });
 
   it('handles zero length', () => {
     const p = createVector2();
-    vec2SetPolar(p, 0, Math.PI / 4);
+    setPolarVector2(p, 0, Math.PI / 4);
     expect(p.x).toBeCloseTo(0);
     expect(p.y).toBeCloseTo(0);
-    expect(vec2Length(p)).toBeCloseTo(0);
+    expect(lengthVector2(p)).toBeCloseTo(0);
   });
 
   it('handles negative length', () => {
     const p = createVector2();
-    vec2SetPolar(p, -5, 0);
+    setPolarVector2(p, -5, 0);
     expect(p.x).toBeCloseTo(-5);
     expect(p.y).toBeCloseTo(0);
-    expect(vec2Length(p)).toBeCloseTo(5); // length property is always positive
+    expect(lengthVector2(p)).toBeCloseTo(5); // length property is always positive
   });
 
   it('handles arbitrary angles', () => {
     const angle = Math.PI / 4; // 45 degrees
     const len = Math.sqrt(2);
     const p = createVector2();
-    vec2SetPolar(p, len, angle);
+    setPolarVector2(p, len, angle);
     expect(p.x).toBeCloseTo(1);
     expect(p.y).toBeCloseTo(1);
-    expect(vec2Length(p)).toBeCloseTo(len);
+    expect(lengthVector2(p)).toBeCloseTo(len);
   });
 
   it('allows vector-like objects', () => {
     const p = { x: 0, y: 0 };
-    vec2SetPolar(p, 5, 0);
+    setPolarVector2(p, 5, 0);
     expect(p.x).toBeCloseTo(5);
     expect(p.y).toBeCloseTo(0);
   });
@@ -522,7 +520,7 @@ describe('subtract', () => {
     pt2.y = 4;
 
     const result = createVector2();
-    vec2Subtract(result, pt, pt2);
+    subtractVector2(result, pt, pt2);
 
     expect(result.x).toBe(3);
     expect(result.y).toBe(6);
@@ -535,7 +533,7 @@ describe('subtract', () => {
     pt2.y = 10;
 
     const result = createVector2();
-    vec2Subtract(result, pt, pt2);
+    subtractVector2(result, pt, pt2);
 
     expect(result.x).toBe(-3);
     expect(result.y).toBe(-7);
@@ -546,7 +544,7 @@ describe('subtract', () => {
     pt.y = -3;
 
     const result = createVector2();
-    vec2Subtract(result, pt, pt);
+    subtractVector2(result, pt, pt);
 
     expect(result.x).toBe(0);
     expect(result.y).toBe(0);
@@ -559,12 +557,12 @@ describe('subtract', () => {
     pt2.y = 10;
 
     const result = createVector2();
-    vec2Subtract(result, pt, pt2);
+    subtractVector2(result, pt, pt2);
     expect(result.x).toBe(-5);
     expect(result.y).toBe(-10);
 
     const result2 = createVector2();
-    vec2Subtract(result2, pt2, pt);
+    subtractVector2(result2, pt2, pt);
     expect(result2.x).toBe(5);
     expect(result2.y).toBe(10);
   });
@@ -576,7 +574,7 @@ describe('subtract', () => {
     pt2.y = 0.0001;
 
     const result = createVector2();
-    vec2Subtract(result, pt, pt2);
+    subtractVector2(result, pt, pt2);
     expect(result.x).toBeCloseTo(0);
     expect(result.y).toBeCloseTo(0);
   });
@@ -586,7 +584,7 @@ describe('subtract', () => {
     const pt2 = { x: 2, y: 4 };
 
     const result = { x: 0, y: 0 };
-    vec2Subtract(result, pt, pt2);
+    subtractVector2(result, pt, pt2);
 
     expect(result.x).toBe(3);
     expect(result.y).toBe(6);
@@ -601,7 +599,7 @@ describe('writeToFloat32Array', () => {
   it('writes 2 values at the offset', () => {
     const array = new Float32Array(6);
     const vector = { x: 1, y: 2 };
-    vec2WriteToFloat32Array(array, 0, vector);
+    writeVector2ToFloat32Array(array, 0, vector);
     for (let i = 0; i < 2; i++) {
       expect(array[i]).toBe(i + 1);
     }

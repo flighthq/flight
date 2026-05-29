@@ -1,4 +1,4 @@
-import type { Matrix3x2 } from './Matrix3x2';
+import type { Matrix } from './Matrix';
 
 export interface CanvasRenderOptions {
   backgroundColor?: number | null;
@@ -6,6 +6,6 @@ export interface CanvasRenderOptions {
   imageSmoothingEnabled?: boolean;
   imageSmoothingQuality?: ImageSmoothingQuality;
   pixelRatio?: number;
-  renderTransform?: Matrix3x2;
+  renderTransform?: Matrix;
   roundPixels?: boolean;
 }

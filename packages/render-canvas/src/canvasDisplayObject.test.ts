@@ -1,4 +1,4 @@
-import { createMatrix3x2 } from '@flighthq/geometry';
+import { createMatrix } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { addChild } from '@flighthq/scenegraph-core';
 import { createDisplayObject, getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
@@ -69,7 +69,7 @@ describe('renderCanvasDisplayObject', () => {
     const runtime = getDisplayObjectRuntime(obj) as ReturnType<typeof getDisplayObjectRuntime>;
     (runtime as { imageCache: unknown }).imageCache = {
       canvas: document.createElement('canvas'),
-      transform: createMatrix3x2(),
+      transform: createMatrix(),
     };
 
     const drawImageSpy = vi.spyOn(state.context, 'drawImage');
@@ -85,7 +85,7 @@ describe('renderCanvasDisplayObject', () => {
     const childRuntime = getDisplayObjectRuntime(child);
     (childRuntime as { imageCache: unknown }).imageCache = {
       canvas: document.createElement('canvas'),
-      transform: createMatrix3x2(),
+      transform: createMatrix(),
     };
     addChild(parent, child);
 

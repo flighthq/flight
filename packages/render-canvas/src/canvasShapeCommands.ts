@@ -1,7 +1,7 @@
-import { createMatrix3x2, mat3x2Inverse } from '@flighthq/geometry';
-import type { CanvasShapeCommand, ImageSource, Matrix3x2 } from '@flighthq/types';
+import { createMatrix, inverseMatrix } from '@flighthq/geometry';
+import type { CanvasShapeCommand, ImageSource, Matrix } from '@flighthq/types';
 
-const _fillMatrixInverse: Matrix3x2 = createMatrix3x2();
+const _fillMatrixInverse: Matrix = createMatrix();
 
 import { createBitmapPattern, createGradientPattern } from './canvasFillPattern';
 
@@ -9,7 +9,7 @@ export const defaultCanvasBeginBitmapFill: CanvasShapeCommand<'beginBitmapFill'>
   key: 'beginBitmapFill',
   draw(ctx, state, buf, i) {
     const bitmap = buf[i] as ImageSource;
-    const matrix = buf[i + 1] as Matrix3x2 | null;
+    const matrix = buf[i + 1] as Matrix | null;
     const repeat = buf[i + 2] as boolean;
     const smooth = buf[i + 3] as boolean;
     if (state.hasPendingPath && (state.hasFill || state.hasStroke)) state.flush();
@@ -18,7 +18,7 @@ export const defaultCanvasBeginBitmapFill: CanvasShapeCommand<'beginBitmapFill'>
     state.fillStyle = pattern ?? '';
     state.fillMatrix = matrix;
     if (matrix !== null) {
-      mat3x2Inverse(_fillMatrixInverse, matrix);
+      inverseMatrix(_fillMatrixInverse, matrix);
       state.fillMatrixInverse = _fillMatrixInverse;
     } else {
       state.fillMatrixInverse = null;
@@ -50,7 +50,7 @@ export const defaultCanvasBeginGradientFill: CanvasShapeCommand<'beginGradientFi
     const colors = buf[i + 1] as number[];
     const alphas = buf[i + 2] as number[];
     const ratios = buf[i + 3] as number[];
-    const matrix = buf[i + 4] as Matrix3x2 | null;
+    const matrix = buf[i + 4] as Matrix | null;
     const spreadMethod = buf[i + 5] as never;
     const interpolationMethod = buf[i + 6] as never;
     const focalPointRatio = buf[i + 7] as number;
@@ -292,7 +292,7 @@ export const defaultCanvasLineGradientStyle: CanvasShapeCommand<'lineGradientSty
     const colors = buf[i + 1] as number[];
     const alphas = buf[i + 2] as number[];
     const ratios = buf[i + 3] as number[];
-    const matrix = buf[i + 4] as Matrix3x2 | null;
+    const matrix = buf[i + 4] as Matrix | null;
     const spreadMethod = buf[i + 5] as never;
     const interpolationMethod = buf[i + 6] as never;
     const focalPointRatio = buf[i + 7] as number;

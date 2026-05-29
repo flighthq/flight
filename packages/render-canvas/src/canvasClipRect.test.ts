@@ -1,7 +1,7 @@
-import { createMatrix3x2, createRectangle } from '@flighthq/geometry';
+import { createMatrix, createRectangle } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode } from '@flighthq/render-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
-import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, Matrix3x2, Rectangle } from '@flighthq/types';
+import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, Matrix, Rectangle } from '@flighthq/types';
 
 import { popCanvasClipRect, popCanvasScrollRect, pushCanvasClipRect, pushCanvasScrollRect } from './canvasClipRect';
 import { createCanvasRenderState } from './canvasRenderState';
@@ -33,7 +33,7 @@ describe('pushCanvasClipRect', () => {
     const c = document.createElement('canvas');
     const state = createCanvasRenderState(c);
     const r = createRectangle(0, 0, 50, 50);
-    const t = createMatrix3x2();
+    const t = createMatrix();
     const saveSpy = vi.spyOn(state.context, 'save');
     const clipSpy = vi.spyOn(state.context, 'clip');
     pushCanvasClipRect(state, r, t);
@@ -49,7 +49,7 @@ describe('pushCanvasScrollRect', () => {
     const source = createDisplayObject();
     source.scrollRect = createRectangle(0, 0, 50, 50);
     const data = getDisplayObjectRenderNode(state, source);
-    data.transform2D = createMatrix3x2();
+    data.transform2D = createMatrix();
     const before = state.currentScrollRectDepth;
     pushCanvasScrollRect(state, data);
     expect(state.currentScrollRectDepth).toBe(before + 1);
@@ -60,7 +60,7 @@ describe('Clip and Scroll Rect Functions', () => {
   let canvas: HTMLCanvasElement;
   let state: CanvasRenderState;
   let rect: Rectangle;
-  let transform2D: Matrix3x2;
+  let transform2D: Matrix;
   let source: DisplayObject;
   let data: DisplayObjectRenderNode;
 
@@ -68,7 +68,7 @@ describe('Clip and Scroll Rect Functions', () => {
     canvas = document.createElement('canvas');
     state = createCanvasRenderState(canvas);
     rect = createRectangle(10, 10, 100, 100);
-    transform2D = createMatrix3x2();
+    transform2D = createMatrix();
     source = createDisplayObject();
     source.scrollRect = rect;
     data = getDisplayObjectRenderNode(state, source);

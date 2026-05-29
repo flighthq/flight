@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity';
-import type { Matrix3x2Like, Matrix3x3, Matrix3x3Like, Matrix4x4Like, Vector3Like } from '@flighthq/types';
+import type { Matrix3, Matrix3Like, Matrix4Like, MatrixLike, Vector3Like } from '@flighthq/types';
 
 /**
  * A 3×3 homogeneous matrix.
@@ -10,7 +10,7 @@ import type { Matrix3x2Like, Matrix3x3, Matrix3x3Like, Matrix4x4Like, Vector3Lik
  *
  * Storage is row-major.
  */
-export function createMatrix3x3(
+export function createMatrix3(
   m00?: number,
   m01?: number,
   m02?: number,
@@ -20,9 +20,9 @@ export function createMatrix3x3(
   m20?: number,
   m21?: number,
   m22?: number,
-): Matrix3x3 {
+): Matrix3 {
   const m = new Float32Array(__identity);
-  const out: Matrix3x3 = createEntity({ m: m });
+  const out: Matrix3 = createEntity({ m: m });
   if (m00 !== undefined) m[0] = m00;
   if (m01 !== undefined) m[1] = m01;
   if (m02 !== undefined) m[2] = m02;
@@ -35,17 +35,17 @@ export function createMatrix3x3(
   return out;
 }
 
-export function mat3x3Clone(source: Readonly<Matrix3x3Like>): Matrix3x3 {
-  const m = createMatrix3x3();
-  mat3x3Copy(m, source);
+export function cloneMatrix3(source: Readonly<Matrix3Like>): Matrix3 {
+  const m = createMatrix3();
+  copyMatrix3(m, source);
   return m;
 }
 
-export function mat3x3Copy(out: Matrix3x3Like, source: Readonly<Matrix3x3Like>): void {
+export function copyMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>): void {
   out.m.set(source.m);
 }
 
-export function mat3x3CopyColumnFrom(out: Matrix3x3Like, column: number, source: Readonly<Vector3Like>): void {
+export function copyMatrix3ColumnFromVector3(out: Matrix3Like, column: number, source: Readonly<Vector3Like>): void {
   if (column > 2) {
     throw new RangeError('Column ' + column + ' out of bounds (2)');
   } else if (column === 0) {
@@ -63,7 +63,7 @@ export function mat3x3CopyColumnFrom(out: Matrix3x3Like, column: number, source:
   }
 }
 
-export function mat3x3CopyColumnTo(out: Vector3Like, column: number, source: Readonly<Matrix3x3Like>): void {
+export function copyMatrix3ColumnToVector3(out: Vector3Like, column: number, source: Readonly<Matrix3Like>): void {
   if (column > 2) {
     throw new RangeError('Column ' + column + ' out of bounds (2)');
   } else if (column === 0) {
@@ -81,7 +81,7 @@ export function mat3x3CopyColumnTo(out: Vector3Like, column: number, source: Rea
   }
 }
 
-export function mat3x3CopyRowFrom(out: Matrix3x3Like, row: number, source: Readonly<Vector3Like>): void {
+export function copyMatrix3RowFromVector3(out: Matrix3Like, row: number, source: Readonly<Vector3Like>): void {
   if (row > 2) {
     throw new RangeError('Row ' + row + ' out of bounds (2)');
   } else if (row === 0) {
@@ -99,7 +99,7 @@ export function mat3x3CopyRowFrom(out: Matrix3x3Like, row: number, source: Reado
   }
 }
 
-export function mat3x3CopyRowTo(out: Vector3Like, row: number, source: Readonly<Matrix3x3Like>): void {
+export function copyMatrix3RowToVector3(out: Vector3Like, row: number, source: Readonly<Matrix3Like>): void {
   if (row > 2) {
     throw new RangeError('Row ' + row + ' out of bounds (2)');
   } else if (row === 0) {
@@ -117,9 +117,9 @@ export function mat3x3CopyRowTo(out: Vector3Like, row: number, source: Readonly<
   }
 }
 
-export function mat3x3Equals(
-  a: Readonly<Matrix3x3Like> | null | undefined,
-  b: Readonly<Matrix3x3Like> | null | undefined,
+export function equalsMatrix3(
+  a: Readonly<Matrix3Like> | null | undefined,
+  b: Readonly<Matrix3Like> | null | undefined,
 ): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
@@ -129,7 +129,7 @@ export function mat3x3Equals(
   return true;
 }
 
-export function mat3x3FromMat3x2(out: Matrix3x3Like, source: Readonly<Matrix3x2Like>): void {
+export function setMatrix3FromMatrix(out: Matrix3Like, source: Readonly<MatrixLike>): void {
   const _out = out.m;
   _out[0] = source.a;
   _out[1] = source.b;
@@ -142,7 +142,7 @@ export function mat3x3FromMat3x2(out: Matrix3x3Like, source: Readonly<Matrix3x2L
   _out[8] = 1;
 }
 
-export function mat3x3FromMat4x4(out: Matrix3x3Like, source: Readonly<Matrix4x4Like>): void {
+export function setMatrix3FromMatrix4(out: Matrix3Like, source: Readonly<Matrix4Like>): void {
   const _out = out.m;
   const _source = source.m;
   _out[0] = _source[0];
@@ -158,22 +158,22 @@ export function mat3x3FromMat4x4(out: Matrix3x3Like, source: Readonly<Matrix4x4L
   _out[8] = _source[10];
 }
 
-export function mat3x3Get(source: Readonly<Matrix3x3Like>, row: number, column: number): number {
+export function getMatrix3Element(source: Readonly<Matrix3Like>, row: number, column: number): number {
   return source.m[row * 3 + column];
 }
 
-export function mat3x3Identity(out: Matrix3x3Like): void {
+export function identityMatrix3(out: Matrix3Like): void {
   out.m.set(__identity);
 }
 
 /**
  * Attempts to invert a matrix, so long as it is invertable
  */
-export function mat3x3Inverse(out: Matrix3x3Like, source: Readonly<Matrix3x3Like>): void {
+export function inverseMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>): void {
   const _in = source.m;
   const _out = out.m;
 
-  if (mat3x3IsAffine(source)) {
+  if (isAffineMatrix3(source)) {
     // Affine fast path
     const det = _in[0] * _in[4] - _in[1] * _in[3];
 
@@ -229,19 +229,19 @@ export function mat3x3Inverse(out: Matrix3x3Like, source: Readonly<Matrix3x3Like
   _out[8] = (_in[0] * _in[4] - _in[1] * _in[3]) * inv;
 }
 
-export function mat3x3IsAffine(source: Readonly<Matrix3x3Like>): boolean {
+export function isAffineMatrix3(source: Readonly<Matrix3Like>): boolean {
   return source.m[6] === 0 && source.m[7] === 0 && source.m[8] === 1;
 }
 
 /**
  * out = a * b
  */
-export function mat3x3Multiply(out: Matrix3x3Like, a: Readonly<Matrix3x3Like>, b: Readonly<Matrix3x3Like>): void {
+export function multiplyMatrix3(out: Matrix3Like, a: Readonly<Matrix3Like>, b: Readonly<Matrix3Like>): void {
   const _a = a.m;
   const _b = b.m;
   const _out = out.m;
 
-  if (mat3x3IsAffine(a) && mat3x3IsAffine(b)) {
+  if (isAffineMatrix3(a) && isAffineMatrix3(b)) {
     _out[0] = _a[0] * _b[0] + _a[1] * _b[3];
     _out[1] = _a[0] * _b[1] + _a[1] * _b[4];
     _out[2] = _a[0] * _b[2] + _a[1] * _b[5] + _a[2];
@@ -283,7 +283,7 @@ export function mat3x3Multiply(out: Matrix3x3Like, a: Readonly<Matrix3x3Like>, b
   _out[8] = m22;
 }
 
-export function mat3x3Rotate(out: Matrix3x3Like, source: Readonly<Matrix3x3Like>, theta: number): void {
+export function rotateMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>, theta: number): void {
   const c = Math.cos(theta);
   const s = Math.sin(theta);
 
@@ -303,7 +303,7 @@ export function mat3x3Rotate(out: Matrix3x3Like, source: Readonly<Matrix3x3Like>
   o[8] = a[8];
 }
 
-export function mat3x3Scale(out: Matrix3x3Like, source: Readonly<Matrix3x3Like>, sx: number, sy: number): void {
+export function scaleMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>, sx: number, sy: number): void {
   const a = source.m;
   const o = out.m;
 
@@ -320,12 +320,12 @@ export function mat3x3Scale(out: Matrix3x3Like, source: Readonly<Matrix3x3Like>,
   o[8] = a[8];
 }
 
-export function mat3x3Set(out: Matrix3x3Like, row: number, column: number, value: number): void {
+export function setMatrix3Element(out: Matrix3Like, row: number, column: number, value: number): void {
   out.m[row * 3 + column] = value;
 }
 
-export function mat3x3SetTo(
-  out: Matrix3x3Like,
+export function setMatrix3(
+  out: Matrix3Like,
   m00: number,
   m01: number,
   m02: number,
@@ -348,7 +348,7 @@ export function mat3x3SetTo(
   _out[8] = m22;
 }
 
-export function mat3x3Translate(out: Matrix3x3Like, source: Readonly<Matrix3x3Like>, tx: number, ty: number): void {
+export function translateMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>, tx: number, ty: number): void {
   const a = source.m;
   const o = out.m;
 

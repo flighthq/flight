@@ -1,12 +1,5 @@
-import { createMatrix3x2 } from '@flighthq/geometry';
-import type {
-  GradientType,
-  ImageSource,
-  InterpolationMethod,
-  Matrix3x2,
-  Matrix3x2Like,
-  SpreadMethod,
-} from '@flighthq/types';
+import { createMatrix } from '@flighthq/geometry';
+import type { GradientType, ImageSource, InterpolationMethod, Matrix, MatrixLike, SpreadMethod } from '@flighthq/types';
 
 // Flash's gradient box is normalized to ±819.2 units.
 const GRADIENT_HALF = 819.2;
@@ -28,7 +21,7 @@ export function createGradientPattern(
   colors: number[],
   alphas: number[],
   ratios: number[],
-  m: Matrix3x2 | null,
+  m: Matrix | null,
   spreadMethod: SpreadMethod,
   _interpolationMethod: InterpolationMethod,
   focalPointRatio: number,
@@ -45,9 +38,9 @@ export function createGradientPattern(
 // Private helpers
 // ---------------------------------------------------------------------------
 
-const IDENTITY = createMatrix3x2();
+const IDENTITY = createMatrix();
 
-function tp(m: Matrix3x2Like, x: number, y: number): [number, number] {
+function tp(m: MatrixLike, x: number, y: number): [number, number] {
   return [m.a * x + m.c * y + m.tx, m.b * x + m.d * y + m.ty];
 }
 
@@ -63,7 +56,7 @@ function createRadialGradient(
   colors: number[],
   alphas: number[],
   ratios: number[],
-  m: Matrix3x2Like,
+  m: MatrixLike,
   focalPointRatio: number,
 ): CanvasGradient {
   const clampedFocal = Math.max(-1, Math.min(1, focalPointRatio));
@@ -86,7 +79,7 @@ function createLinearGradient(
   colors: number[],
   alphas: number[],
   ratios: number[],
-  m: Matrix3x2Like,
+  m: MatrixLike,
   spreadMethod: SpreadMethod,
 ): CanvasGradient | CanvasPattern | null {
   if (spreadMethod === 'pad') {

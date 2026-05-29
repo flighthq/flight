@@ -1,16 +1,16 @@
 import { createEntity } from '@flighthq/entity';
 import type {
-  Matrix3x2,
-  Matrix3x2Like,
-  Matrix3x3Like,
-  Matrix4x4Like,
+  Matrix,
+  Matrix3Like,
+  Matrix4Like,
+  MatrixLike,
   RectangleLike,
   Vector2Like,
   Vector3Like,
 } from '@flighthq/types';
 
 /**
- * An Matrix3x2 object represents two-dimensional coordinate space.
+ * An Matrix object represents two-dimensional coordinate space.
  * It is a 2x3 matrix, with a, b, c, d for a two-dimensional transform,
  * and tx, ty for translation.
  *
@@ -21,13 +21,13 @@ import type {
  * @see Vector3
  * @see Rectangle
  */
-export function createMatrix3x2(a?: number, b?: number, c?: number, d?: number, tx?: number, ty?: number): Matrix3x2 {
+export function createMatrix(a?: number, b?: number, c?: number, d?: number, tx?: number, ty?: number): Matrix {
   return createEntity({ a: a ?? 1, b: b ?? 0, c: c ?? 0, d: d ?? 1, tx: tx ?? 0, ty: ty ?? 0 });
 }
 
-export function mat3x2Clone(source: Readonly<Matrix3x2Like>): Matrix3x2 {
-  const m = createMatrix3x2();
-  mat3x2Copy(m, source);
+export function cloneMatrix(source: Readonly<MatrixLike>): Matrix {
+  const m = createMatrix();
+  copyMatrix(m, source);
   return m;
 }
 
@@ -38,7 +38,7 @@ export function mat3x2Clone(source: Readonly<Matrix3x2Like>): Matrix3x2 {
  *
  * Applies the transforms of matrix b onto (and after) matrix a.
  */
-export function mat3x2Concat(out: Matrix3x2Like, a: Readonly<Matrix3x2Like>, b: Readonly<Matrix3x2Like>): void {
+export function concatMatrix(out: MatrixLike, a: Readonly<MatrixLike>, b: Readonly<MatrixLike>): void {
   const a1 = a.a * b.a + a.b * b.c;
   out.b = a.a * b.b + a.b * b.d;
   out.a = a1;
@@ -52,14 +52,14 @@ export function mat3x2Concat(out: Matrix3x2Like, a: Readonly<Matrix3x2Like>, b: 
   out.tx = tx1;
 }
 
-export function mat3x2Copy(out: Matrix3x2Like, source: Readonly<Matrix3x2Like>): void {
-  mat3x2SetTo(out, source.a, source.b, source.c, source.d, source.tx, source.ty);
+export function copyMatrix(out: MatrixLike, source: Readonly<MatrixLike>): void {
+  setMatrix(out, source.a, source.b, source.c, source.d, source.tx, source.ty);
 }
 
 /**
  * Copies a column from a vector. The z component will be ignored (3x2 matrix).
  */
-export function mat3x2CopyColumnFrom(out: Matrix3x2Like, column: number, source: Readonly<Vector3Like>): void {
+export function copyMatrixColumnFromVector3(out: MatrixLike, column: number, source: Readonly<Vector3Like>): void {
   if (column > 2) {
     throw new RangeError('Column ' + column + ' out of bounds (2)');
   } else if (column === 0) {
@@ -77,7 +77,7 @@ export function mat3x2CopyColumnFrom(out: Matrix3x2Like, column: number, source:
 /**
  * Copies a column to a vector. The z component will use identity values.
  */
-export function mat3x2CopyColumnTo(out: Vector3Like, column: number, source: Readonly<Matrix3x2Like>): void {
+export function copyMatrixColumnToVector3(out: Vector3Like, column: number, source: Readonly<MatrixLike>): void {
   if (column > 2) {
     throw new RangeError('Column ' + column + ' out of bounds (2)');
   } else if (column === 0) {
@@ -98,7 +98,7 @@ export function mat3x2CopyColumnTo(out: Vector3Like, column: number, source: Rea
 /**
  * Copies a row from a vector. The third row (row 2) will be ignored (3x2 matrix).
  */
-export function mat3x2CopyRowFrom(out: Matrix3x2Like, row: number, source: Readonly<Vector3Like>): void {
+export function copyMatrixRowFromVector3(out: MatrixLike, row: number, source: Readonly<Vector3Like>): void {
   if (row > 2) {
     throw new RangeError('Row ' + row + ' out of bounds (2)');
   } else if (row === 0) {
@@ -115,7 +115,7 @@ export function mat3x2CopyRowFrom(out: Matrix3x2Like, row: number, source: Reado
 /**
  * Copies a row to a vector. The third row will use identity values (3x2 matrix).
  */
-export function mat3x2CopyRowTo(out: Vector3Like, row: number, source: Readonly<Matrix3x2Like>): void {
+export function copyMatrixRowToVector3(out: Vector3Like, row: number, source: Readonly<MatrixLike>): void {
   if (row > 2) {
     throw new RangeError('Row ' + row + ' out of bounds (2)');
   } else if (row === 0) {
@@ -133,33 +133,33 @@ export function mat3x2CopyRowTo(out: Vector3Like, row: number, source: Readonly<
   }
 }
 
-export function createMatrix3x2GradientTransform(
+export function createGradientTransformMatrix(
   width: number,
   height: number,
   rotation: number = 0,
   tx: number = 0,
   ty: number = 0,
-): Matrix3x2 {
-  const out = createMatrix3x2();
-  mat3x2SetGradientTransform(out, width, height, rotation, tx, ty);
+): Matrix {
+  const out = createMatrix();
+  setGradientTransformMatrix(out, width, height, rotation, tx, ty);
   return out;
 }
 
-export function createMatrix3x2Transform(
+export function createTransformMatrix(
   scaleX: number,
   scaleY: number,
   rotation: number = 0,
   tx: number = 0,
   ty: number = 0,
-): Matrix3x2 {
-  const out = createMatrix3x2();
-  mat3x2SetTransform(out, scaleX, scaleY, rotation, tx, ty);
+): Matrix {
+  const out = createMatrix();
+  setTransformMatrix(out, scaleX, scaleY, rotation, tx, ty);
   return out;
 }
 
-export function mat3x2Equals(
-  a: Readonly<Matrix3x2Like> | null | undefined,
-  b: Readonly<Matrix3x2Like> | null | undefined,
+export function equalsMatrix(
+  a: Readonly<MatrixLike> | null | undefined,
+  b: Readonly<MatrixLike> | null | undefined,
   compareTranslation: boolean = true,
 ): boolean {
   if (a === b) return true;
@@ -173,7 +173,7 @@ export function mat3x2Equals(
   );
 }
 
-export function mat3x2FromFloat32Array(out: Matrix3x2Like, offset: number, source: Readonly<Float32Array>): void {
+export function setMatrixFromFloat32Array(out: MatrixLike, offset: number, source: Readonly<Float32Array>): void {
   out.a = source[offset];
   out.b = source[offset + 1];
   out.c = source[offset + 2];
@@ -182,12 +182,12 @@ export function mat3x2FromFloat32Array(out: Matrix3x2Like, offset: number, sourc
   out.ty = source[offset + 5];
 }
 
-export function mat3x2FromMat3x3(out: Matrix3x2Like, source: Readonly<Matrix3x3Like>): void {
+export function setMatrixFromMatrix3(out: MatrixLike, source: Readonly<Matrix3Like>): void {
   const m = source.m;
-  mat3x2SetTo(out, m[0], m[1], m[3], m[4], m[2], m[5]);
+  setMatrix(out, m[0], m[1], m[3], m[4], m[2], m[5]);
 }
 
-export function mat3x2FromMat4x4(out: Matrix3x2Like, source: Readonly<Matrix4x4Like>): void {
+export function setMatrixFromMatrix4(out: MatrixLike, source: Readonly<Matrix4Like>): void {
   const s = source.m;
   out.a = s[0];
   out.b = s[4];
@@ -204,8 +204,8 @@ export function mat3x2FromMat4x4(out: Matrix3x2Like, source: Readonly<Matrix4x4L
  * After calling the `identity()` method, the resulting matrix has the
  * following properties: `a`=1, `b`=0, `c`=0, `d`=1, `tx`=0, `ty`=0.
  **/
-export function mat3x2Identity(out: Matrix3x2Like): void {
-  mat3x2SetTo(out, 1, 0, 0, 1, 0, 0);
+export function identityMatrix(out: MatrixLike): void {
+  setMatrix(out, 1, 0, 0, 1, 0, 0);
 }
 
 /**
@@ -213,7 +213,7 @@ export function mat3x2Identity(out: Matrix3x2Like): void {
  *
  * Translation (tx, ty) is applied after the linear transformation (scale/rotation/shear) is inverted.
  */
-export function mat3x2Inverse(out: Matrix3x2Like, source: Readonly<Matrix3x2Like>): void {
+export function inverseMatrix(out: MatrixLike, source: Readonly<MatrixLike>): void {
   const det = source.a * source.d - source.c * source.b;
   if (det === 0) {
     out.a = out.b = out.c = out.d = 0;
@@ -233,19 +233,19 @@ export function mat3x2Inverse(out: Matrix3x2Like, source: Readonly<Matrix3x2Like
 /**
  * Use an inverse of the source matrix to transform
  * a given point, including translation.
- * @see mat3x2InverseTransformPointXY
+ * @see inverseMatrixTransformPointXY
  */
-export function mat3x2InverseTransformPoint(
+export function inverseMatrixTransformPoint(
   out: Vector2Like,
-  matrix: Readonly<Matrix3x2Like>,
+  matrix: Readonly<MatrixLike>,
   point: Readonly<Vector2Like>,
 ): void {
-  mat3x2InverseTransformPointXY(out, matrix, point.x, point.y);
+  inverseMatrixTransformPointXY(out, matrix, point.x, point.y);
 }
 
-export function mat3x2InverseTransformPointXY(
+export function inverseMatrixTransformPointXY(
   out: Vector2Like,
-  source: Readonly<Matrix3x2Like>,
+  source: Readonly<MatrixLike>,
   x: number,
   y: number,
 ): void {
@@ -263,19 +263,19 @@ export function mat3x2InverseTransformPointXY(
 /**
  * Use an inverse of the source matrix to transform
  * a given point, excluding translation.
- * @see mat3x2InverseTransformPointXY
+ * @see inverseMatrixTransformPointXY
  */
-export function mat3x2InverseTransformVector(
+export function inverseMatrixTransformVector(
   out: Vector2Like,
-  matrix: Readonly<Matrix3x2Like>,
+  matrix: Readonly<MatrixLike>,
   vector: Readonly<Vector2Like>,
 ): void {
-  mat3x2InverseTransformVectorXY(out, matrix, vector.x, vector.y);
+  inverseMatrixTransformVectorXY(out, matrix, vector.x, vector.y);
 }
 
-export function mat3x2InverseTransformVectorXY(
+export function inverseMatrixTransformVectorXY(
   out: Vector2Like,
-  source: Readonly<Matrix3x2Like>,
+  source: Readonly<MatrixLike>,
   x: number,
   y: number,
 ): void {
@@ -295,7 +295,7 @@ export function mat3x2InverseTransformVectorXY(
  *
  * out = a * b
  */
-export function mat3x2Multiply(out: Matrix3x2Like, a: Readonly<Matrix3x2Like>, b: Readonly<Matrix3x2Like>): void {
+export function multiplyMatrix(out: MatrixLike, a: Readonly<MatrixLike>, b: Readonly<MatrixLike>): void {
   const a1 = a.a,
     b1 = a.b,
     tx1 = a.tx,
@@ -319,12 +319,12 @@ export function mat3x2Multiply(out: Matrix3x2Like, a: Readonly<Matrix3x2Like>, b
 }
 
 /**
- * Applies a rotation transformation to the given Matrix3x2 object
+ * Applies a rotation transformation to the given Matrix object
  * and writes the result to out.
  *
  * This is a 2x2 rotation, it will not rotate
  **/
-export function mat3x2Rotate(out: Matrix3x2Like, source: Readonly<Matrix3x2Like>, theta: number): void {
+export function rotateMatrix(out: MatrixLike, source: Readonly<MatrixLike>, theta: number): void {
   /**
     Rotate object "after" other transforms
 
@@ -357,7 +357,7 @@ export function mat3x2Rotate(out: Matrix3x2Like, source: Readonly<Matrix3x2Like>
  * Applies a scaling transformation to the matrix. The _x_ axis is
  * multiplied by `sx`, and the _y_ axis it is multiplied by `sy`.
  **/
-export function mat3x2Scale(out: Matrix3x2Like, source: Readonly<Matrix3x2Like>, sx: number, sy: number): void {
+export function scaleMatrix(out: MatrixLike, source: Readonly<MatrixLike>, sx: number, sy: number): void {
   /*
     Scale object "after" other transforms
 
@@ -379,8 +379,8 @@ export function mat3x2Scale(out: Matrix3x2Like, source: Readonly<Matrix3x2Like>,
  * Graphics class. Width and height are scaled to a `scaleX`/`scaleY`
  * pair and the `tx`/`ty` values are offset by half the width and height.
  **/
-export function mat3x2SetGradientTransform(
-  out: Matrix3x2Like,
+export function setGradientTransformMatrix(
+  out: MatrixLike,
   width: number,
   height: number,
   rotation: number = 0,
@@ -408,15 +408,7 @@ export function mat3x2SetGradientTransform(
   out.ty = ty + height / 2;
 }
 
-export function mat3x2SetTo(
-  out: Matrix3x2Like,
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  tx: number,
-  ty: number,
-): void {
+export function setMatrix(out: MatrixLike, a: number, b: number, c: number, d: number, tx: number, ty: number): void {
   out.a = a;
   out.b = b;
   out.c = c;
@@ -430,8 +422,8 @@ export function mat3x2SetTo(
  * if you applied `identity()`, `rotate()`, `scale()`, and
  * `translate()` in succession.
  **/
-export function mat3x2SetTransform(
-  out: Matrix3x2Like,
+export function setTransformMatrix(
+  out: MatrixLike,
   scaleX: number,
   scaleY: number,
   rotation: number = 0,
@@ -464,20 +456,20 @@ export function mat3x2SetTransform(
 
 /**
  * Transforms a point using the given matrix.
- * @see mat3x2TransformPointXY
+ * @see matrixTransformPointXY
  */
-export function mat3x2TransformPoint(
+export function matrixTransformPoint(
   out: Vector2Like,
-  matrix: Readonly<Matrix3x2Like>,
+  matrix: Readonly<MatrixLike>,
   point: Readonly<Vector2Like>,
 ): void {
-  mat3x2TransformPointXY(out, matrix, point.x, point.y);
+  matrixTransformPointXY(out, matrix, point.x, point.y);
 }
 
 /**
  * Transforms an (x, y) point using the given matrix.
  */
-export function mat3x2TransformPointXY(out: Vector2Like, source: Readonly<Matrix3x2Like>, x: number, y: number): void {
+export function matrixTransformPointXY(out: Vector2Like, source: Readonly<MatrixLike>, x: number, y: number): void {
   out.x = x * source.a + y * source.c + source.tx;
   out.y = x * source.b + y * source.d + source.ty;
 }
@@ -489,24 +481,24 @@ export function mat3x2TransformPointXY(out: Vector2Like, source: Readonly<Matrix
  * This accounts for translation, rotation, scaling, and skew
  * from the given matrix.
  *
- * @see mat3x2TransformRectXY
- * @see mat3x2TransformAABB
+ * @see matrixTransformAABB
+ * @see matrixTransformAABB
  **/
-export function mat3x2TransformRect(
+export function matrixTransformRectangle(
   out: RectangleLike,
-  matrix: Readonly<Matrix3x2Like>,
+  matrix: Readonly<MatrixLike>,
   source: Readonly<RectangleLike>,
 ): void {
-  mat3x2TransformRectXY(out, matrix, source.x, source.y, source.x + source.width, source.y + source.height);
+  matrixTransformAABB(out, matrix, source.x, source.y, source.x + source.width, source.y + source.height);
 }
 
-export function mat3x2TransformRectVec2(
+export function matrixTransformAABBVector2(
   out: RectangleLike,
-  matrix: Readonly<Matrix3x2Like>,
+  matrix: Readonly<MatrixLike>,
   a: Readonly<Vector2Like>,
   b: Readonly<Vector2Like>,
 ): void {
-  mat3x2TransformRectXY(out, matrix, a.x, a.y, b.x, b.y);
+  matrixTransformAABB(out, matrix, a.x, a.y, b.x, b.y);
 }
 
 /**
@@ -518,9 +510,9 @@ export function mat3x2TransformRectVec2(
  * This accounts for translation, rotation, scaling, and skew
  * from the source matrix.
  **/
-export function mat3x2TransformRectXY(
+export function matrixTransformAABB(
   out: RectangleLike,
-  source: Readonly<Matrix3x2Like>,
+  source: Readonly<MatrixLike>,
   ax: number,
   ay: number,
   bx: number,
@@ -574,22 +566,22 @@ export function mat3x2TransformRectXY(
 
 /**
  * Given a point in the pretransform coordinate space, returns the
- * coordinates of that point after the transformation occurs. Un the
- * standard transformation applied using the `mat3x2TransformPoint()`
- * method, the `mat3x2TransformVector()` method's transformation
+ * coordinates of that point after the transformation occurs. Unlike the
+ * standard transformation applied using the `matrixTransformPoint()`
+ * method, the `matrixTransformVector()` method's transformation
  * does not consider the translation parameters `tx` and
  * `ty`.
- * @see mat3x2TransformVectorXY
+ * @see matrixTransformVectorXY
  **/
-export function mat3x2TransformVector(
+export function matrixTransformVector(
   out: Vector2Like,
-  matrix: Readonly<Matrix3x2Like>,
+  matrix: Readonly<MatrixLike>,
   vector: Readonly<Vector2Like>,
 ): void {
-  mat3x2TransformVectorXY(out, matrix, vector.x, vector.y);
+  matrixTransformVectorXY(out, matrix, vector.x, vector.y);
 }
 
-export function mat3x2TransformVectorXY(out: Vector2Like, source: Readonly<Matrix3x2Like>, x: number, y: number): void {
+export function matrixTransformVectorXY(out: Vector2Like, source: Readonly<MatrixLike>, x: number, y: number): void {
   out.x = x * source.a + y * source.c;
   out.y = x * source.b + y * source.d;
 }
@@ -598,7 +590,7 @@ export function mat3x2TransformVectorXY(out: Vector2Like, source: Readonly<Matri
  * Translates the matrix along the _x_ and _y_ axes, as specified
  * by the `dx` and `dy` parameters.
  **/
-export function mat3x2Translate(out: Matrix3x2Like, source: Readonly<Matrix3x2Like>, dx: number, dy: number): void {
+export function translateMatrix(out: MatrixLike, source: Readonly<MatrixLike>, dx: number, dy: number): void {
   out.tx = source.tx + dx;
   out.ty = source.ty + dy;
 }
@@ -606,25 +598,16 @@ export function mat3x2Translate(out: Matrix3x2Like, source: Readonly<Matrix3x2Li
 /**
  * Transforms a vector, then translates by the result.
  */
-export function mat3x2TranslateUsingVector(
-  out: Matrix3x2Like,
-  matrix: Readonly<Matrix3x2Like>,
-  vector: Readonly<Vector2Like>,
-) {
-  mat3x2TranslateUsingVectorXY(out, matrix, vector.x, vector.y);
+export function translateMatrixVector(out: MatrixLike, matrix: Readonly<MatrixLike>, vector: Readonly<Vector2Like>) {
+  translateMatrixVectorXY(out, matrix, vector.x, vector.y);
 }
 
-export function mat3x2TranslateUsingVectorXY(
-  out: Matrix3x2Like,
-  source: Readonly<Matrix3x2Like>,
-  x: number,
-  y: number,
-) {
+export function translateMatrixVectorXY(out: MatrixLike, source: Readonly<MatrixLike>, x: number, y: number) {
   out.tx = source.tx + source.a * x + source.c * y;
   out.ty = source.ty + source.b * x + source.d * y;
 }
 
-export function mat3x2WriteToFloat32Array(out: Float32Array, offset: number, source: Readonly<Matrix3x2Like>): void {
+export function writeMatrixToFloat32Array(out: Float32Array, offset: number, source: Readonly<MatrixLike>): void {
   out[offset] = source.a;
   out[offset + 1] = source.b;
   out[offset + 2] = source.c;

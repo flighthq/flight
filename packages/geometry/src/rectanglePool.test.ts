@@ -1,28 +1,28 @@
 import type { Rectangle } from '@flighthq/types';
 
-import { rectPoolClear, rectPoolGet, rectPoolGetEmpty, rectPoolRelease } from './rectanglePool';
+import { acquireEmptyRectangle, acquireRectangle, clearRectanglePool, releaseRectangle } from './rectanglePool';
 
 beforeEach(() => {
-  rectPoolClear();
+  clearRectanglePool();
 });
 
 describe('get', () => {
   it('returns a new Rectangle when pool is empty', () => {
-    const r: Rectangle = rectPoolGet();
+    const r: Rectangle = acquireRectangle();
     expect(r).not.toBeNull();
   });
 
   it('reuses released rectangles', () => {
-    const r1 = rectPoolGet();
-    rectPoolRelease(r1);
-    const r2 = rectPoolGet();
+    const r1 = acquireRectangle();
+    releaseRectangle(r1);
+    const r2 = acquireRectangle();
     expect(r2).toBe(r1);
   });
 });
 
 describe('getEmpty', () => {
   it('returns a rectangle with all properties set to 0', () => {
-    const r = rectPoolGetEmpty();
+    const r = acquireEmptyRectangle();
     expect(r.x).toBe(0);
     expect(r.y).toBe(0);
     expect(r.width).toBe(0);
@@ -30,13 +30,13 @@ describe('getEmpty', () => {
   });
 
   it('resets a released rectangle to empty', () => {
-    const r1 = rectPoolGet();
+    const r1 = acquireRectangle();
     r1.x = 5;
     r1.y = 10;
     r1.width = 50;
     r1.height = 100;
-    rectPoolRelease(r1);
-    const r2 = rectPoolGetEmpty();
+    releaseRectangle(r1);
+    const r2 = acquireEmptyRectangle();
     expect(r2).toBe(r1);
     expect(r2.x).toBe(0);
     expect(r2.y).toBe(0);
@@ -47,16 +47,16 @@ describe('getEmpty', () => {
 
 describe('release', () => {
   it('handles null safely', () => {
-    expect(() => rectPoolRelease(null as unknown as Rectangle)).not.toThrow();
+    expect(() => releaseRectangle(null as unknown as Rectangle)).not.toThrow();
   });
 });
 
 describe('clear', () => {
   it('empties the pool so the next get allocates fresh', () => {
-    const r = rectPoolGet();
-    rectPoolRelease(r);
-    rectPoolClear();
-    const r2 = rectPoolGet();
+    const r = acquireRectangle();
+    releaseRectangle(r);
+    clearRectanglePool();
+    const r2 = acquireRectangle();
     expect(r2).not.toBe(r);
   });
 });

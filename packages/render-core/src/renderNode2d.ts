@@ -1,4 +1,4 @@
-import { createMatrix3x2 } from '@flighthq/geometry';
+import { createMatrix } from '@flighthq/geometry';
 import type {
   DisplayObject,
   DisplayObjectRenderNode,
@@ -26,7 +26,7 @@ export function createRenderNode2D(
   source: Renderable & HasTransform2D & HasBoundsRect,
 ): RenderNode2D {
   const out = createRenderNode(state, source) as RenderNode2D;
-  out.transform2D = createMatrix3x2();
+  out.transform2D = createMatrix();
   return out;
 }
 

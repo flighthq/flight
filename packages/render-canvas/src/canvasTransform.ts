@@ -1,9 +1,9 @@
-import type { CanvasRenderState, Matrix3x2 } from '@flighthq/types';
+import type { CanvasRenderState, Matrix } from '@flighthq/types';
 
 export function setCanvasTransform(
   state: CanvasRenderState,
   context: CanvasRenderingContext2D,
-  transform: Readonly<Matrix3x2>,
+  transform: Readonly<Matrix>,
 ): void {
   if (state.roundPixels) {
     context.setTransform(

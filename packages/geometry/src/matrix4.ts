@@ -1,7 +1,7 @@
 import { createEntity } from '@flighthq/entity';
-import type { Matrix3x2Like, Matrix3x3Like, Matrix4x4, Matrix4x4Like, Vector3Like, Vector4Like } from '@flighthq/types';
+import type { Matrix3Like, Matrix4, Matrix4Like, MatrixLike, Vector3Like, Vector4Like } from '@flighthq/types';
 
-import { mat4x4PoolGet, mat4x4PoolGetIdentity, mat4x4PoolRelease } from './matrix4x4Pool';
+import { acquireIdentityMatrix4, acquireMatrix4, releaseMatrix4 } from './matrix4Pool';
 
 /**
  * A 4×4 homogeneous matrix.
@@ -16,7 +16,7 @@ import { mat4x4PoolGet, mat4x4PoolGetIdentity, mat4x4PoolRelease } from './matri
  * This matrix assumes column vectors, multiplied on the right:
  * v' = M · v
  */
-export function createMatrix4x4(
+export function createMatrix4(
   m00?: number,
   m01?: number,
   m02?: number,
@@ -33,9 +33,9 @@ export function createMatrix4x4(
   m31?: number,
   m32?: number,
   m33?: number,
-): Matrix4x4 {
+): Matrix4 {
   const m = new Float32Array(__identity);
-  const out: Matrix4x4 = createEntity({ m: m });
+  const out: Matrix4 = createEntity({ m: m });
   if (m00 !== undefined) m[0] = m00;
   if (m01 !== undefined) m[1] = m01;
   if (m02 !== undefined) m[2] = m02;
@@ -60,13 +60,9 @@ export function createMatrix4x4(
  *
  * out = source · other
  */
-export function mat4x4Append(
-  out: Matrix4x4Like,
-  source: Readonly<Matrix4x4Like>,
-  other: Readonly<Matrix4x4Like>,
-): void {
+export function appendMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>, other: Readonly<Matrix4Like>): void {
   // world-space append
-  mat4x4Multiply(out, source, other);
+  multiplyMatrix4(out, source, other);
 }
 
 /**
@@ -74,34 +70,34 @@ export function mat4x4Append(
  *
  * Rotation is applied after all transformations of source are completed.
  **/
-export function mat4x4AppendRotation(
-  out: Matrix4x4Like,
-  source: Readonly<Matrix4x4Like>,
+export function appendRotationMatrix4(
+  out: Matrix4Like,
+  source: Readonly<Matrix4Like>,
   degrees: number,
   axis: Readonly<Vector4Like>,
   pivotPoint?: Readonly<Vector4Like>,
 ): void {
-  const m = mat4x4PoolGetIdentity();
+  const m = acquireIdentityMatrix4();
   __getAxisRotation(m, axis.x, axis.y, axis.z, degrees);
 
   if (pivotPoint !== undefined) {
     const p = pivotPoint;
-    const t1 = mat4x4PoolGetIdentity();
-    const t2 = mat4x4PoolGetIdentity();
+    const t1 = acquireIdentityMatrix4();
+    const t2 = acquireIdentityMatrix4();
 
-    mat4x4AppendTranslation(t1, t1, -p.x, -p.y, -p.z);
-    mat4x4AppendTranslation(t2, t2, p.x, p.y, p.z);
+    appendTranslationMatrix4(t1, t1, -p.x, -p.y, -p.z);
+    appendTranslationMatrix4(t2, t2, p.x, p.y, p.z);
 
-    mat4x4Multiply(m, t1, m); // R · T(-p)
-    mat4x4Multiply(m, m, t2); // T(p) · (R · T(-p))
+    multiplyMatrix4(m, t1, m); // R · T(-p)
+    multiplyMatrix4(m, m, t2); // T(p) · (R · T(-p))
 
-    mat4x4PoolRelease(t1);
-    mat4x4PoolRelease(t2);
+    releaseMatrix4(t1);
+    releaseMatrix4(t2);
   }
 
-  mat4x4Append(out, source, m);
+  appendMatrix4(out, source, m);
 
-  mat4x4PoolRelease(m);
+  releaseMatrix4(m);
 }
 
 /**
@@ -109,17 +105,17 @@ export function mat4x4AppendRotation(
  *
  * Scale is applied after all transformations of source are completed.
  **/
-export function mat4x4AppendScale(
-  out: Matrix4x4Like,
-  source: Readonly<Matrix4x4Like>,
+export function appendScaleMatrix4(
+  out: Matrix4Like,
+  source: Readonly<Matrix4Like>,
   xScale: number,
   yScale: number,
   zScale: number,
 ): void {
-  const m = mat4x4PoolGet();
-  mat4x4SetTo(m, xScale, 0.0, 0.0, 0.0, 0.0, yScale, 0.0, 0.0, 0.0, 0.0, zScale, 0.0, 0.0, 0.0, 0.0, 1.0);
-  mat4x4Append(out, source, m);
-  mat4x4PoolRelease(m);
+  const m = acquireMatrix4();
+  setMatrix4(m, xScale, 0.0, 0.0, 0.0, 0.0, yScale, 0.0, 0.0, 0.0, 0.0, zScale, 0.0, 0.0, 0.0, 0.0, 1.0);
+  appendMatrix4(out, source, m);
+  releaseMatrix4(m);
 }
 
 /**
@@ -133,9 +129,9 @@ export function mat4x4AppendScale(
  *
  * Translation is applied after all transformations of source are completed.
  */
-export function mat4x4AppendTranslation(
-  out: Matrix4x4Like,
-  source: Readonly<Matrix4x4Like>,
+export function appendTranslationMatrix4(
+  out: Matrix4Like,
+  source: Readonly<Matrix4Like>,
   x: number,
   y: number,
   z: number,
@@ -148,20 +144,20 @@ export function mat4x4AppendTranslation(
   _out[14] = _source[14] + z;
 }
 
-export function mat4x4Clone(source: Readonly<Matrix4x4Like>): Matrix4x4 {
-  const m = createMatrix4x4();
-  mat4x4Copy(m, source);
+export function cloneMatrix4(source: Readonly<Matrix4Like>): Matrix4 {
+  const m = createMatrix4();
+  copyMatrix4(m, source);
   return m;
 }
 
-export function mat4x4Copy(out: Matrix4x4Like, source: Readonly<Matrix4x4Like>): void {
+export function copyMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>): void {
   out.m.set(source.m);
 }
 
 /**
   Copies a column of data from a `Vector4Like` instance into the values of the target matrix
 **/
-export function mat4x4CopyColumnFrom(out: Matrix4x4Like, column: number, source: Readonly<Vector4Like>): void {
+export function copyMatrix4ColumnFromVector4(out: Matrix4Like, column: number, source: Readonly<Vector4Like>): void {
   const _out = out.m;
   switch (column) {
     case 0:
@@ -200,7 +196,7 @@ export function mat4x4CopyColumnFrom(out: Matrix4x4Like, column: number, source:
 /**
  * Copies a column of data from the source matrix into a `Vector4Like` instance
  **/
-export function mat4x4CopyColumnTo(out: Vector4Like, column: number, source: Readonly<Matrix4x4Like>): void {
+export function copyMatrix4ColumnToVector4(out: Vector4Like, column: number, source: Readonly<Matrix4Like>): void {
   const _source = source.m;
   switch (column) {
     case 0:
@@ -239,7 +235,7 @@ export function mat4x4CopyColumnTo(out: Vector4Like, column: number, source: Rea
 /**
  * Copies a row of data from a `Vector4Like` instance into the values of the out matrix
  **/
-export function mat4x4CopyRowFrom(out: Matrix4x4Like, row: number, source: Readonly<Vector4Like>): void {
+export function copyMatrix4RowFromVector4(out: Matrix4Like, row: number, source: Readonly<Vector4Like>): void {
   const _out = out.m;
   switch (row) {
     case 0:
@@ -278,7 +274,7 @@ export function mat4x4CopyRowFrom(out: Matrix4x4Like, row: number, source: Reado
 /**
  * Copies a row of data from the source matrix into a `Vector4Like` instance
  **/
-export function mat4x4CopyRowTo(out: Vector4Like, row: number, source: Readonly<Matrix4x4Like>): void {
+export function copyMatrix4RowToVector4(out: Vector4Like, row: number, source: Readonly<Matrix4Like>): void {
   const _source = source.m;
   switch (row) {
     case 0:
@@ -317,38 +313,38 @@ export function mat4x4CopyRowTo(out: Vector4Like, row: number, source: Readonly<
 /**
  * Creates a matrix using two-dimensional transform values
  **/
-export function createMatrix4x4From2D(a: number, b: number, c: number, d: number, tx?: number, ty?: number): Matrix4x4 {
-  const out = createMatrix4x4();
-  mat4x4Set2D(out, a, b, c, d, tx, ty);
+export function createMatrix4From2D(a: number, b: number, c: number, d: number, tx?: number, ty?: number): Matrix4 {
+  const out = createMatrix4();
+  setMatrix4From2D(out, a, b, c, d, tx, ty);
   return out;
 }
 
 /**
  * Initializes this matrix with values for an orthographic projection, useful in rendering
  **/
-export function createMatrix4x4Ortho(
+export function createOrthographicMatrix4(
   left: number,
   right: number,
   bottom: number,
   top: number,
   zNear: number,
   zFar: number,
-): Matrix4x4 {
-  const out = createMatrix4x4();
-  mat4x4SetOrtho(out, left, right, bottom, top, zNear, zFar);
+): Matrix4 {
+  const out = createMatrix4();
+  setOrthographicMatrix4(out, left, right, bottom, top, zNear, zFar);
   return out;
 }
 
 /**
  * Initializes this matrix with values for a perspective projection
  **/
-export function createMatrix4x4Perspective(fov: number, aspect: number, zNear: number, zFar: number): Matrix4x4 {
-  const out = createMatrix4x4();
-  mat4x4SetPerspective(out, fov, aspect, zNear, zFar);
+export function createPerspectiveMatrix4(fov: number, aspect: number, zNear: number, zFar: number): Matrix4 {
+  const out = createMatrix4();
+  setPerspectiveMatrix4(out, fov, aspect, zNear, zFar);
   return out;
 }
 
-export function mat4x4Determinant(source: Readonly<Matrix4x4Like>): number {
+export function determinantMatrix4(source: Readonly<Matrix4Like>): number {
   const _source = source.m;
   return (
     1 *
@@ -361,9 +357,9 @@ export function mat4x4Determinant(source: Readonly<Matrix4x4Like>): number {
   );
 }
 
-export function mat4x4Equals(
-  a: Readonly<Matrix4x4Like> | null | undefined,
-  b: Readonly<Matrix4x4Like> | null | undefined,
+export function equalsMatrix4(
+  a: Readonly<Matrix4Like> | null | undefined,
+  b: Readonly<Matrix4Like> | null | undefined,
 ): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
@@ -373,24 +369,24 @@ export function mat4x4Equals(
   return true;
 }
 
-export function mat4x4FromMat3x2(out: Matrix4x4Like, source: Readonly<Matrix3x2Like>): void {
-  mat4x4Set2D(out, source.a, source.b, source.c, source.d, source.tx, source.ty);
+export function setMatrix4FromMatrix(out: Matrix4Like, source: Readonly<MatrixLike>): void {
+  setMatrix4From2D(out, source.a, source.b, source.c, source.d, source.tx, source.ty);
 }
 
-export function mat4x4FromMat3x3(out: Matrix4x4Like, source: Readonly<Matrix3x3Like>): void {
+export function setMatrix4FromMatrix3(out: Matrix4Like, source: Readonly<Matrix3Like>): void {
   const _out = out.m;
   const _source = source.m;
-  mat4x4Set2D(out, _source[0], _source[1], _source[3], _source[4], _source[2], _source[5]);
+  setMatrix4From2D(out, _source[0], _source[1], _source[3], _source[4], _source[2], _source[5]);
   _out[2] = _source[6];
   _out[6] = _source[7];
   _out[10] = _source[8];
 }
 
-export function mat4x4Get(source: Readonly<Matrix4x4Like>, row: number, column: number): number {
+export function getMatrix4Element(source: Readonly<Matrix4Like>, row: number, column: number): number {
   return source.m[column * 4 + row];
 }
 
-export function mat4x4IsAffine(source: Readonly<Matrix4x4Like>): boolean {
+export function isAffineMatrix4(source: Readonly<Matrix4Like>): boolean {
   const _source = source.m;
   return _source[3] === 0 && _source[7] === 0 && _source[11] === 0 && _source[15] === 1;
 }
@@ -398,17 +394,17 @@ export function mat4x4IsAffine(source: Readonly<Matrix4x4Like>): boolean {
 /**
  * Resets the current matrix using default identity values
  **/
-export function mat4x4Identity(out: Matrix4x4Like): void {
-  mat4x4SetTo(out, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+export function identityMatrix4(out: Matrix4Like): void {
+  setMatrix4(out, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 }
 
 /**
- * Interpolates from one `Matrix4x4Like` instance to another, given a percentage between the two
+ * Interpolates from one `Matrix4Like` instance to another, given a percentage between the two
  **/
-export function mat4x4Interpolate(
-  out: Matrix4x4Like,
-  a: Readonly<Matrix4x4Like>,
-  b: Readonly<Matrix4x4Like>,
+export function interpolateMatrix4(
+  out: Matrix4Like,
+  a: Readonly<Matrix4Like>,
+  b: Readonly<Matrix4Like>,
   t: number,
 ): void {
   const _out = out.m;
@@ -422,12 +418,12 @@ export function mat4x4Interpolate(
 /**
  * Attempts to invert the current matrix, so long as the determinant is greater than zero
  **/
-export function mat4x4Inverse(out: Matrix4x4Like, source: Readonly<Matrix4x4Like>): boolean {
+export function inverseMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>): boolean {
   const _out = out.m;
   const _source = source.m;
 
   // Calculate determinant
-  let d = mat4x4Determinant(source);
+  let d = determinantMatrix4(source);
 
   // Threshold for determining if matrix is invertible
   const EPS = 1e-6;
@@ -489,7 +485,7 @@ export function mat4x4Inverse(out: Matrix4x4Like, source: Readonly<Matrix4x4Like
  *
  * out = a * b
  **/
-export function mat4x4Multiply(out: Matrix4x4Like, a: Readonly<Matrix4x4Like>, b: Readonly<Matrix4x4Like>): void {
+export function multiplyMatrix4(out: Matrix4Like, a: Readonly<Matrix4Like>, b: Readonly<Matrix4Like>): void {
   const _a = a.m;
   const _b = b.m;
   const _out = out.m;
@@ -549,14 +545,7 @@ export function mat4x4Multiply(out: Matrix4x4Like, a: Readonly<Matrix4x4Like>, b
   _out[15] = m241 * m114 + m242 * m124 + m243 * m134 + m244 * m144;
 }
 
-/**
-  Sets the matrix values as a transformation orientated toward a certain vector position
-**/
-// export function pointAt(out: Matrix4x4Like, pos: Vector4Like, at?: Vector4Like, up?: Vector4Like): void {
-//   ...
-// }
-
-export function mat4x4Position(out: Vector3Like, source: Readonly<Matrix4x4Like>): void {
+export function getMatrix4Position(out: Vector3Like, source: Readonly<Matrix4Like>): void {
   const _source = source.m;
   out.x = _source[12];
   out.y = _source[13];
@@ -568,12 +557,8 @@ export function mat4x4Position(out: Vector3Like, source: Readonly<Matrix4x4Like>
  *
  * out = other · source
  */
-export function mat4x4Prepend(
-  out: Matrix4x4Like,
-  source: Readonly<Matrix4x4Like>,
-  other: Readonly<Matrix4x4Like>,
-): void {
-  mat4x4Multiply(out, other, source);
+export function prependMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>, other: Readonly<Matrix4Like>): void {
+  multiplyMatrix4(out, other, source);
 }
 
 /**
@@ -582,34 +567,34 @@ export function mat4x4Prepend(
  * This method first applies the translation (tx, ty, tz) and then applies all the transformations
  * (e.g., rotation, scaling, etc.) from the source matrix.
  **/
-export function mat4x4PrependRotation(
-  out: Matrix4x4Like,
-  source: Readonly<Matrix4x4Like>,
+export function prependRotationMatrix4(
+  out: Matrix4Like,
+  source: Readonly<Matrix4Like>,
   degrees: number,
   axis: Readonly<Vector4Like>,
   pivotPoint?: Readonly<Vector4Like>,
 ): void {
-  const m = mat4x4PoolGetIdentity();
+  const m = acquireIdentityMatrix4();
   __getAxisRotation(m, axis.x, axis.y, axis.z, degrees);
 
   if (pivotPoint !== undefined) {
     const p = pivotPoint;
-    const t1 = mat4x4PoolGetIdentity();
-    const t2 = mat4x4PoolGetIdentity();
+    const t1 = acquireIdentityMatrix4();
+    const t2 = acquireIdentityMatrix4();
 
-    mat4x4AppendTranslation(t1, t1, -p.x, -p.y, -p.z);
-    mat4x4AppendTranslation(t2, t2, p.x, p.y, p.z);
+    appendTranslationMatrix4(t1, t1, -p.x, -p.y, -p.z);
+    appendTranslationMatrix4(t2, t2, p.x, p.y, p.z);
 
-    mat4x4Multiply(m, m, t1); // R · T(-p)
-    mat4x4Multiply(m, t2, m); // T(p) · (R · T(-p))
+    multiplyMatrix4(m, m, t1); // R · T(-p)
+    multiplyMatrix4(m, t2, m); // T(p) · (R · T(-p))
 
-    mat4x4PoolRelease(t1);
-    mat4x4PoolRelease(t2);
+    releaseMatrix4(t1);
+    releaseMatrix4(t2);
   }
 
-  mat4x4Prepend(out, source, m);
+  prependMatrix4(out, source, m);
 
-  mat4x4PoolRelease(m);
+  releaseMatrix4(m);
 }
 
 /**
@@ -618,17 +603,17 @@ export function mat4x4PrependRotation(
  * This method first applies the translation (tx, ty, tz) and then applies all the transformations
  * (e.g., rotation, scaling, etc.) from the source matrix.
  **/
-export function mat4x4PrependScale(
-  out: Matrix4x4Like,
-  source: Readonly<Matrix4x4Like>,
+export function prependScaleMatrix4(
+  out: Matrix4Like,
+  source: Readonly<Matrix4Like>,
   xScale: number,
   yScale: number,
   zScale: number,
 ): void {
-  const m = mat4x4PoolGet();
-  mat4x4SetTo(m, xScale, 0.0, 0.0, 0.0, 0.0, yScale, 0.0, 0.0, 0.0, 0.0, zScale, 0.0, 0.0, 0.0, 0.0, 1.0);
-  mat4x4Prepend(out, source, m);
-  mat4x4PoolRelease(m);
+  const m = acquireMatrix4();
+  setMatrix4(m, xScale, 0.0, 0.0, 0.0, 0.0, yScale, 0.0, 0.0, 0.0, 0.0, zScale, 0.0, 0.0, 0.0, 0.0, 1.0);
+  prependMatrix4(out, source, m);
+  releaseMatrix4(m);
 }
 
 /**
@@ -637,17 +622,17 @@ export function mat4x4PrependScale(
  * This method first applies the translation (tx, ty, tz) and then applies all the transformations
  * (e.g., rotation, scaling, etc.) from the source matrix.
  */
-export function mat4x4PrependTranslation(
-  out: Matrix4x4Like,
-  source: Readonly<Matrix4x4Like>,
+export function prependTranslationMatrix4(
+  out: Matrix4Like,
+  source: Readonly<Matrix4Like>,
   x: number,
   y: number,
   z: number,
 ): void {
-  const m = mat4x4PoolGetIdentity();
-  mat4x4Translate(m, m, x, y, z); // LOCAL translation matrix
-  mat4x4Multiply(out, m, source);
-  mat4x4PoolRelease(m);
+  const m = acquireIdentityMatrix4();
+  translateMatrix4(m, m, x, y, z); // LOCAL translation matrix
+  multiplyMatrix4(out, m, source);
+  releaseMatrix4(m);
 }
 
 /**
@@ -655,16 +640,16 @@ export function mat4x4PrependTranslation(
  *
  * Translation is preserved.
  */
-export function mat4x4Rotate(
-  out: Matrix4x4Like,
-  source: Readonly<Matrix4x4Like>,
+export function rotateMatrix4(
+  out: Matrix4Like,
+  source: Readonly<Matrix4Like>,
   axis: Readonly<Vector3Like>,
   degrees: number,
 ): void {
-  const m = mat4x4PoolGetIdentity();
+  const m = acquireIdentityMatrix4();
   __getAxisRotation(m, axis.x, axis.y, axis.z, degrees);
-  mat4x4Multiply(out, source, m);
-  mat4x4PoolRelease(m);
+  multiplyMatrix4(out, source, m);
+  releaseMatrix4(m);
 }
 
 /**
@@ -672,9 +657,9 @@ export function mat4x4Rotate(
  *
  * Translation is preserved.
  */
-export function mat4x4Scale(
-  out: Matrix4x4Like,
-  source: Readonly<Matrix4x4Like>,
+export function scaleMatrix4(
+  out: Matrix4Like,
+  source: Readonly<Matrix4Like>,
   sx: number,
   sy: number,
   sz: number,
@@ -703,15 +688,15 @@ export function mat4x4Scale(
   }
 }
 
-export function mat4x4Set(out: Matrix4x4Like, row: number, column: number, value: number): void {
+export function setMatrix4Element(out: Matrix4Like, row: number, column: number, value: number): void {
   out.m[column * 4 + row] = value;
 }
 
 /**
  * Resets the current matrix using two-dimensional transform values
  **/
-export function mat4x4Set2D(
-  out: Matrix4x4Like,
+export function setMatrix4From2D(
+  out: Matrix4Like,
   a: number,
   b: number,
   c: number,
@@ -747,8 +732,8 @@ export function mat4x4Set2D(
 /**
  * Initializes a matrix with values for an orthographic projection, useful in rendering
  **/
-export function mat4x4SetOrtho(
-  out: Matrix4x4Like,
+export function setOrthographicMatrix4(
+  out: Matrix4Like,
   left: number,
   right: number,
   bottom: number,
@@ -785,8 +770,8 @@ export function mat4x4SetOrtho(
 /**
  * Initializes a matrix with values for a perspective projection
  **/
-export function mat4x4SetPerspective(
-  out: Matrix4x4Like,
+export function setPerspectiveMatrix4(
+  out: Matrix4Like,
   fov: number,
   aspect: number,
   zNear: number,
@@ -823,15 +808,15 @@ export function mat4x4SetPerspective(
   _out[15] = 1;
 }
 
-export function mat4x4SetPosition(out: Matrix4x4Like, source: Readonly<Vector3Like>): void {
+export function setMatrix4Position(out: Matrix4Like, source: Readonly<Vector3Like>): void {
   const _out = out.m;
   _out[12] = source.x;
   _out[13] = source.y;
   _out[14] = source.z;
 }
 
-export function mat4x4SetTo(
-  out: Matrix4x4Like,
+export function setMatrix4(
+  out: Matrix4Like,
   m00: number,
   m01: number,
   m02: number,
@@ -871,9 +856,9 @@ export function mat4x4SetTo(
 /**
  * Transforms a point using this matrix, ignoring the translation of the matrix
  **/
-export function mat4x4TransformPoint(
+export function matrix4TransformPoint(
   out: Vector3Like,
-  source: Readonly<Matrix4x4Like>,
+  source: Readonly<Matrix4Like>,
   point: Readonly<Vector3Like>,
 ): void {
   const _source = source.m;
@@ -890,9 +875,9 @@ export function mat4x4TransformPoint(
   @param	result	(Optional) An existing `Vector2` instance to fill with the result
   @return	The resulting `Vector4Like` instance
 **/
-export function mat4x4TransformVector(
+export function matrix4TransformVector(
   out: Vector4Like,
-  source: Readonly<Matrix4x4Like>,
+  source: Readonly<Matrix4Like>,
   vector: Readonly<Vector4Like>,
 ): void {
   const _source = source.m;
@@ -908,9 +893,9 @@ export function mat4x4TransformVector(
 /**
  * Transforms a series of [x, y, z] value pairs at once
  **/
-export function mat4x4TransformVectors(
+export function matrix4TransformVectors(
   out: Float32Array,
-  source: Readonly<Matrix4x4Like>,
+  source: Readonly<Matrix4Like>,
   vectors: Readonly<Float32Array>,
 ): void {
   const _source = source.m;
@@ -935,9 +920,9 @@ export function mat4x4TransformVectors(
  *
  * Translation is applied respecting using all other transformations of source.
  */
-export function mat4x4Translate(
-  out: Matrix4x4Like,
-  source: Readonly<Matrix4x4Like>,
+export function translateMatrix4(
+  out: Matrix4Like,
+  source: Readonly<Matrix4Like>,
   tx: number,
   ty: number,
   tz: number,
@@ -961,7 +946,7 @@ export function mat4x4Translate(
  * - Computing inverse-transpose for normals
  * - Switching between row- and column-vector math conventions
  */
-export function mat4x4Transpose(out: Matrix4x4Like, source: Readonly<Matrix4x4Like>): void {
+export function transposeMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>): void {
   if (out !== source) out.m.set(source.m);
   __swap(out, source, 1, 4);
   __swap(out, source, 2, 8);
@@ -971,7 +956,7 @@ export function mat4x4Transpose(out: Matrix4x4Like, source: Readonly<Matrix4x4Li
   __swap(out, source, 11, 14);
 }
 
-function __getAxisRotation(out: Matrix4x4Like, x: number, y: number, z: number, degrees: number): void {
+function __getAxisRotation(out: Matrix4Like, x: number, y: number, z: number, degrees: number): void {
   const _out = out.m;
   let ax = x,
     ay = y,
@@ -1001,7 +986,7 @@ function __getAxisRotation(out: Matrix4x4Like, x: number, y: number, z: number, 
   _out[6] = tmp1 - tmp2;
 }
 
-function __swap(out: Matrix4x4Like, source: Readonly<Matrix4x4Like>, a: number, b: number): void {
+function __swap(out: Matrix4Like, source: Readonly<Matrix4Like>, a: number, b: number): void {
   const temp = source.m[a];
   out.m[a] = source.m[b];
   out.m[b] = temp;

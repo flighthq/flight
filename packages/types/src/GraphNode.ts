@@ -1,11 +1,11 @@
 import type { EntityRuntime, EntityRuntimeKey } from './Entity';
-import type { Matrix3x2 } from './Matrix3x2';
+import type { Matrix } from './Matrix';
 import type { Node, NodeData, NodeDataFactory, NodeRuntimeFactory } from './Node';
 import type { Signal } from './Signal';
 
 export interface ImageCacheResult {
   canvas: HTMLCanvasElement | null;
-  transform: Matrix3x2;
+  transform: Matrix;
 }
 
 export interface GraphNodeTraits {

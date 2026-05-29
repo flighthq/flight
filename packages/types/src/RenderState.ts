@@ -1,7 +1,7 @@
 import type { BlendMode } from './BlendMode';
 import type { ColorTransform } from './ColorTransform';
 import type { Entity } from './Entity';
-import type { Matrix3x2 } from './Matrix3x2';
+import type { Matrix } from './Matrix';
 import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
 import type { RenderNode } from './RenderNode';
@@ -24,7 +24,7 @@ export interface RenderState extends Entity {
   renderBlendMode: BlendMode | null;
   renderColorTransform: ColorTransform | null;
   renderShader: BitmapShader | null;
-  renderTransform2D: Matrix3x2 | null;
+  renderTransform2D: Matrix | null;
   readonly rendererMap: Map<symbol, Renderer>;
   readonly rendererMapID: number;
   roundPixels: boolean;

@@ -1,4 +1,4 @@
-import { createMatrix3x2, createRectangle, mat3x2Concat, mat3x2Identity, mat3x2Inverse } from '@flighthq/geometry';
+import { concatMatrix, createMatrix, createRectangle, identityMatrix, inverseMatrix } from '@flighthq/geometry';
 import { calculateBoundsRect } from '@flighthq/scenegraph-core';
 import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type {
@@ -7,18 +7,18 @@ import type {
   DisplayObjectRenderNode,
   DisplayObjectRuntime,
   ImageCacheResult,
-  Matrix3x2,
+  Matrix,
 } from '@flighthq/types';
 
 import { setCanvasTransform } from './canvasTransform';
 
 const _tempBounds = createRectangle();
-const _tempDrawTransform = createMatrix3x2();
+const _tempDrawTransform = createMatrix();
 
 export function renderToImageCache(
   _state: CanvasRenderState,
   source: DisplayObject,
-  matrix: Readonly<Matrix3x2> | null = null,
+  matrix: Readonly<Matrix> | null = null,
   opaqueBackground: number | null = null,
 ): void {
   calculateBoundsRect(_tempBounds, source, source);
@@ -53,13 +53,13 @@ export function renderToImageCache(
 
   // TODO: render display object subtree into offscreen canvas
 
-  const transform = existing?.transform ?? createMatrix3x2();
+  const transform = existing?.transform ?? createMatrix();
   if (matrix !== null) {
-    mat3x2Inverse(transform, matrix);
+    inverseMatrix(transform, matrix);
     transform.tx += _tempBounds.x;
     transform.ty += _tempBounds.y;
   } else {
-    mat3x2Identity(transform);
+    identityMatrix(transform);
     transform.tx = _tempBounds.x;
     transform.ty = _tempBounds.y;
   }
@@ -73,7 +73,7 @@ export function drawImageCacheResult(
   cache: ImageCacheResult,
 ): void {
   if (cache.canvas === null) return;
-  mat3x2Concat(_tempDrawTransform, cache.transform, renderNode.transform2D);
+  concatMatrix(_tempDrawTransform, cache.transform, renderNode.transform2D);
   setCanvasTransform(state, state.context, _tempDrawTransform);
   state.context.drawImage(cache.canvas, 0, 0);
 }

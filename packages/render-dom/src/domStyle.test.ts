@@ -1,4 +1,4 @@
-import { mat3x2SetTo } from '@flighthq/geometry';
+import { setMatrix } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode } from '@flighthq/render-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import { BlendMode } from '@flighthq/types';
@@ -44,7 +44,7 @@ describe('applyDOMStyle', () => {
     const el = document.createElement('div');
     const obj = createDisplayObject();
     const node = getDisplayObjectRenderNode(state, obj);
-    mat3x2SetTo(node.transform2D, 1, 0, 0, 1, 10, 20);
+    setMatrix(node.transform2D, 1, 0, 0, 1, 10, 20);
 
     applyDOMStyle(state, el, node);
 

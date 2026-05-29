@@ -6,7 +6,7 @@ import type {
   InterpolationMethod,
   JointStyle,
   LineScaleMode,
-  Matrix3x2,
+  Matrix,
   Shape,
   SpreadMethod,
 } from '@flighthq/types';
@@ -24,7 +24,7 @@ export const GraphicsPathCommand = {
 export function beginBitmapFill(
   shape: Shape,
   bitmap: ImageSource,
-  matrix: Matrix3x2 | null = null,
+  matrix: Matrix | null = null,
   repeat = true,
   smooth = false,
 ): void {
@@ -43,7 +43,7 @@ export function beginGradientFill(
   colors: number[],
   alphas: number[],
   ratios: number[],
-  matrix: Matrix3x2 | null = null,
+  matrix: Matrix | null = null,
   spreadMethod: SpreadMethod = 'pad',
   interpolationMethod: InterpolationMethod = 'rgb',
   focalPointRatio = 0,
@@ -153,7 +153,7 @@ export function endFill(shape: Shape): void {
 export function lineBitmapStyle(
   shape: Shape,
   bitmap: ImageSource,
-  matrix: Matrix3x2 | null = null,
+  matrix: Matrix | null = null,
   repeat = true,
   smooth = false,
 ): void {
@@ -167,7 +167,7 @@ export function lineGradientStyle(
   colors: number[],
   alphas: number[],
   ratios: number[],
-  matrix: Matrix3x2 | null = null,
+  matrix: Matrix | null = null,
   spreadMethod: SpreadMethod = 'pad',
   interpolationMethod: InterpolationMethod = 'rgb',
   focalPointRatio = 0,

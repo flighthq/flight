@@ -1,4 +1,4 @@
-import type { CanvasRenderState, DisplayObjectRenderNode, Matrix3x2, Rectangle } from '@flighthq/types';
+import type { CanvasRenderState, DisplayObjectRenderNode, Matrix, Rectangle } from '@flighthq/types';
 
 import { setCanvasTransform } from './canvasTransform';
 
@@ -11,7 +11,7 @@ export function popCanvasScrollRect(state: CanvasRenderState): void {
   state.currentScrollRectDepth--;
 }
 
-export function pushCanvasClipRect(state: CanvasRenderState, rect: Rectangle, transform: Matrix3x2): void {
+export function pushCanvasClipRect(state: CanvasRenderState, rect: Rectangle, transform: Matrix): void {
   state.context.save();
 
   setCanvasTransform(state, state.context, transform);

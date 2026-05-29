@@ -1,4 +1,4 @@
-import { createMatrix3x2 } from '@flighthq/geometry';
+import { createMatrix } from '@flighthq/geometry';
 import { createRenderState as _createRenderState, setBackgroundColor } from '@flighthq/render-core';
 import type { CanvasRenderOptions, CanvasRenderState } from '@flighthq/types';
 
@@ -13,7 +13,7 @@ export function createCanvasRenderState(
 
   const state = _createRenderState({
     pixelRatio: options.pixelRatio ?? window.devicePixelRatio | 1,
-    renderTransform2D: options.renderTransform ?? createMatrix3x2(),
+    renderTransform2D: options.renderTransform ?? createMatrix(),
     roundPixels: options.roundPixels ?? false,
   }) as CanvasRenderStateInternal;
 

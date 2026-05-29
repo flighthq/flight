@@ -3,7 +3,7 @@ import type {
   CanvasRenderState,
   DisplayObjectRenderer,
   DisplayObjectRenderNode,
-  Matrix3x2Like,
+  MatrixLike,
   Scale9Shape,
 } from '@flighthq/types';
 
@@ -121,7 +121,7 @@ export const defaultCanvasScale9ShapeRenderer: DisplayObjectRenderer = {
 function applyStrippedTransform(
   state: CanvasRenderState,
   ctx: CanvasRenderingContext2D,
-  t: Readonly<Matrix3x2Like>,
+  t: Readonly<MatrixLike>,
   scaleX: number,
   scaleY: number,
 ): void {

@@ -1,5 +1,5 @@
-import { mat3x2Concat, mat3x2FromFloat32Array } from '@flighthq/geometry';
-import { mat3x2PoolGet, mat3x2PoolRelease } from '@flighthq/geometry/matrix3x2Pool';
+import { concatMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry';
+import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
 import { createNullRendererData } from '@flighthq/render-core';
 import type { QuadBatch, RenderState, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
@@ -38,7 +38,7 @@ export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNo
   gl.uniform1i(shaderLoc.locTexture, 0);
 
   if (stride === 6) {
-    const quadTransform = mat3x2PoolGet();
+    const quadTransform = acquireMatrix();
     for (let i = 0; i < instanceCount; i++) {
       const id = ids[i];
       if (id < 0 || id >= numRegions) continue;
@@ -47,8 +47,8 @@ export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNo
       if (region.width <= 0 || region.height <= 0) continue;
 
       const offset = i * 6;
-      mat3x2FromFloat32Array(quadTransform, offset, transforms);
-      mat3x2Concat(quadTransform, quadTransform, transform);
+      setMatrixFromFloat32Array(quadTransform, offset, transforms);
+      concatMatrix(quadTransform, quadTransform, transform);
 
       setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, quadTransform, internal.canvas);
 
@@ -59,7 +59,7 @@ export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNo
 
       drawWebGLQuad(internal, 0, 0, region.width, region.height, u0, v0, u1, v1);
     }
-    mat3x2PoolRelease(quadTransform);
+    releaseMatrix(quadTransform);
   } else {
     for (let i = 0; i < instanceCount; i++) {
       const id = ids[i];

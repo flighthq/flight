@@ -1,6 +1,6 @@
 import type { Entity, EntityWithoutRuntime } from './Entity';
 
-export interface Matrix3x2 extends Entity {
+export interface Matrix extends Entity {
   a: number;
   b: number;
   c: number;
@@ -9,4 +9,4 @@ export interface Matrix3x2 extends Entity {
   ty: number;
 }
 
-export type Matrix3x2Like = EntityWithoutRuntime<Matrix3x2>;
+export type MatrixLike = EntityWithoutRuntime<Matrix>;

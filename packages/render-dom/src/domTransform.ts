@@ -1,6 +1,6 @@
-import type { Matrix3x2 } from '@flighthq/types';
+import type { Matrix } from '@flighthq/types';
 
-export function setDOMTransform(element: HTMLElement, transform: Readonly<Matrix3x2>, roundPixels: boolean): void {
+export function setDOMTransform(element: HTMLElement, transform: Readonly<Matrix>, roundPixels: boolean): void {
   const tx = roundPixels ? Math.fround(transform.tx) : transform.tx;
   const ty = roundPixels ? Math.fround(transform.ty) : transform.ty;
   element.style.transform = `matrix(${transform.a},${transform.b},${transform.c},${transform.d},${tx},${ty})`;
@@ -8,7 +8,7 @@ export function setDOMTransform(element: HTMLElement, transform: Readonly<Matrix
 
 export function setDOMTransformWithOffset(
   element: HTMLElement,
-  transform: Readonly<Matrix3x2>,
+  transform: Readonly<Matrix>,
   offsetX: number,
   offsetY: number,
   roundPixels: boolean,

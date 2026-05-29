@@ -1,4 +1,4 @@
-import { createMatrix3x2 } from '@flighthq/geometry';
+import { createMatrix } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { DisplayObjectRenderer } from '@flighthq/types';
@@ -30,7 +30,7 @@ describe('pushCanvasMask', () => {
     const state = makeState();
     const obj = createDisplayObject();
     const data = getDisplayObjectRenderNode(state, obj);
-    data.transform2D = createMatrix3x2();
+    data.transform2D = createMatrix();
 
     const saveSpy = vi.spyOn(state.context, 'save');
     const beginPathSpy = vi.spyOn(state.context, 'beginPath');
@@ -55,7 +55,7 @@ describe('pushCanvasMask', () => {
 
     const obj = createDisplayObject();
     const data = getDisplayObjectRenderNode(state, obj);
-    data.transform2D = createMatrix3x2();
+    data.transform2D = createMatrix();
 
     pushCanvasMask(state, data);
 
