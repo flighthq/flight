@@ -19,6 +19,8 @@
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "validate": "tsx ./scripts/validate.ts",
+    "api": "tsx ./scripts/api.ts",
+    "api:json": "tsx ./scripts/api.ts --json",
     "coverage": "tsx ./scripts/coverage.ts",
     "overview": "tsx ./scripts/overview.ts",
     "test": "npm run test:unit && npm run test:api && npm run test:integration",
