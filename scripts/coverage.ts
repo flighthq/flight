@@ -2,36 +2,92 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import pc from 'picocolors';
 import { Node, Project } from 'ts-morph';
+
+interface FileCoverage {
+  covered: string[];
+  exports: string[];
+  file: SourceFile;
+  missingTestFile: boolean;
+  uncovered: string[];
+}
+
+interface SourceFile {
+  absPath: string;
+  rel: string;
+  testPath: string;
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const packagesDir = join(root, 'packages');
+const verboseMode = process.argv.includes('--verbose');
+const maxDefaultNames = 8;
 
-// ── Types ────────────────────────────────────────────────────────────────────
+const project = new Project({
+  skipAddingFilesFromTsConfig: true,
+  tsConfigFilePath: join(root, 'tsconfig.base.json'),
+});
 
-interface SourceFile {
-  absPath: string;
-  testPath: string;
-  rel: string; // relative to root, for display
+const sourceFiles = findSourceFiles();
+const results: FileCoverage[] = [];
+
+for (const file of sourceFiles) {
+  const exports = getFunctionExports(project, file.absPath);
+  if (exports.length === 0) continue;
+
+  if (!existsSync(file.testPath)) {
+    results.push({ covered: [], exports, file, missingTestFile: true, uncovered: exports });
+    continue;
+  }
+
+  const coveredSet = getCoveredFunctions(file.testPath, exports);
+  const covered = exports.filter((name) => coveredSet.has(name));
+  const uncovered = exports.filter((name) => !coveredSet.has(name));
+  results.push({ covered, exports, file, missingTestFile: false, uncovered });
 }
 
-interface FileCoverage {
-  file: SourceFile;
-  exports: string[];
-  missingTestFile: boolean;
-  covered: string[];
-  uncovered: string[];
+const missing = results.filter((result) => result.missingTestFile);
+const partial = results.filter((result) => !result.missingTestFile && result.uncovered.length > 0);
+const full = results.filter((result) => !result.missingTestFile && result.uncovered.length === 0);
+const total = results.length;
+
+if (missing.length > 0) {
+  printHeading('Missing test files', missing.length, pc.red);
+  for (const result of missing) {
+    console.log(`  ${pc.red('x')} ${pc.white(result.file.rel)}`);
+    console.log(`    ${pc.dim('exports:')} ${formatNames(result.exports, pc.cyan)}\n`);
+  }
 }
 
-// ── Discovery ────────────────────────────────────────────────────────────────
+if (partial.length > 0) {
+  printHeading('Partial coverage', partial.length, pc.yellow);
+  for (const result of partial) {
+    const count = `${result.covered.length}/${result.exports.length}`;
+    console.log(`  ${pc.yellow('!')} ${pc.white(result.file.rel)} ${pc.dim(`(${count})`)}`);
+    console.log(`    ${pc.dim('uncovered:')} ${formatNames(result.uncovered, pc.yellow)}\n`);
+  }
+}
+
+printHeading('Summary');
+console.log(`  ${pc.dim('Functional files:')} ${pc.bold(total.toString())}`);
+console.log(
+  `  ${pc.dim('Fully covered:   ')} ${pc.green(full.length.toString())} ${pc.dim(`(${pct(full.length, total)}%)`)}`,
+);
+console.log(
+  `  ${pc.dim('Partial:         ')} ${pc.yellow(partial.length.toString())} ${pc.dim(`(${pct(partial.length, total)}%)`)}`,
+);
+console.log(
+  `  ${pc.dim('No tests:        ')} ${pc.red(missing.length.toString())} ${pc.dim(`(${pct(missing.length, total)}%)`)}`,
+);
 
 function findSourceFiles(): SourceFile[] {
   const results: SourceFile[] = [];
 
-  for (const pkgEntry of readdirSync(packagesDir, { withFileTypes: true })) {
-    if (!pkgEntry.isDirectory()) continue;
-    const srcDir = join(packagesDir, pkgEntry.name, 'src');
+  for (const packageEntry of readdirSync(packagesDir, { withFileTypes: true })) {
+    if (!packageEntry.isDirectory()) continue;
+    const srcDir = join(packagesDir, packageEntry.name, 'src');
     if (!existsSync(srcDir)) continue;
 
     for (const entry of readdirSync(srcDir, { withFileTypes: true })) {
@@ -44,8 +100,8 @@ function findSourceFiles(): SourceFile[] {
       const absPath = join(srcDir, name);
       results.push({
         absPath,
-        testPath: absPath.replace(/\.ts$/, '.test.ts'),
         rel: relative(root, absPath).replaceAll('\\', '/'),
+        testPath: absPath.replace(/\.ts$/, '.test.ts'),
       });
     }
   }
@@ -53,30 +109,14 @@ function findSourceFiles(): SourceFile[] {
   return results.sort((a, b) => a.rel.localeCompare(b.rel));
 }
 
-// ── Export analysis ──────────────────────────────────────────────────────────
-
-function getFunctionExports(project: Project, absPath: string): string[] {
-  const sf = project.addSourceFileAtPathIfExists(absPath) ?? project.addSourceFileAtPath(absPath);
-  const names: string[] = [];
-
-  for (const [name, decls] of sf.getExportedDeclarations()) {
-    const decl = decls[0];
-    if (!decl) continue;
-
-    if (Node.isFunctionDeclaration(decl) || Node.isFunctionExpression(decl) || Node.isArrowFunction(decl)) {
-      names.push(name);
-    } else if (Node.isVariableDeclaration(decl)) {
-      const init = decl.getInitializer();
-      if (init && (Node.isArrowFunction(init) || Node.isFunctionExpression(init))) {
-        names.push(name);
-      }
-    }
-  }
-
-  return names.sort();
+function formatNames(names: string[], color: (value: string) => string): string {
+  const shown = verboseMode ? names : names.slice(0, maxDefaultNames);
+  const suffix =
+    shown.length === names.length
+      ? ''
+      : `${pc.dim(', ')}${pc.dim(`+${names.length - shown.length} more`)} ${pc.dim('(run npm run coverage -- --verbose)')}`;
+  return `${shown.map((name) => color(name)).join(pc.dim(', '))}${suffix}`;
 }
-
-// ── Describe coverage ────────────────────────────────────────────────────────
 
 function getCoveredFunctions(testPath: string, fnNames: string[]): Set<string> {
   const content = readFileSync(testPath, 'utf-8');
@@ -89,61 +129,36 @@ function getCoveredFunctions(testPath: string, fnNames: string[]): Set<string> {
   return covered;
 }
 
-// ── Main ─────────────────────────────────────────────────────────────────────
+function getFunctionExports(project: Project, absPath: string): string[] {
+  const sourceFile = project.addSourceFileAtPathIfExists(absPath) ?? project.addSourceFileAtPath(absPath);
+  const names: string[] = [];
 
-const project = new Project({
-  tsConfigFilePath: join(root, 'tsconfig.base.json'),
-  skipAddingFilesFromTsConfig: true,
-});
+  for (const [name, declarations] of sourceFile.getExportedDeclarations()) {
+    const declaration = declarations[0];
+    if (!declaration) continue;
 
-const sourceFiles = findSourceFiles();
-const results: FileCoverage[] = [];
-
-for (const file of sourceFiles) {
-  const exports = getFunctionExports(project, file.absPath);
-  if (exports.length === 0) continue; // types/interfaces/enums only — skip
-
-  if (!existsSync(file.testPath)) {
-    results.push({ file, exports, missingTestFile: true, covered: [], uncovered: exports });
-    continue;
+    if (
+      Node.isFunctionDeclaration(declaration) ||
+      Node.isFunctionExpression(declaration) ||
+      Node.isArrowFunction(declaration)
+    ) {
+      names.push(name);
+    } else if (Node.isVariableDeclaration(declaration)) {
+      const initializer = declaration.getInitializer();
+      if (initializer && (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer))) {
+        names.push(name);
+      }
+    }
   }
 
-  const coveredSet = getCoveredFunctions(file.testPath, exports);
-  const covered = exports.filter((n) => coveredSet.has(n));
-  const uncovered = exports.filter((n) => !coveredSet.has(n));
-  results.push({ file, exports, missingTestFile: false, covered, uncovered });
+  return names.sort();
 }
-
-const missing = results.filter((r) => r.missingTestFile);
-const partial = results.filter((r) => !r.missingTestFile && r.uncovered.length > 0);
-const full = results.filter((r) => !r.missingTestFile && r.uncovered.length === 0);
-const total = results.length;
-
-// ── Output ───────────────────────────────────────────────────────────────────
-
-if (missing.length > 0) {
-  console.log('Missing test files\n');
-  for (const r of missing) {
-    console.log(`  ${r.file.rel}`);
-    console.log(`    ${r.exports.join(', ')}\n`);
-  }
-}
-
-if (partial.length > 0) {
-  console.log('Partial coverage\n');
-  for (const r of partial) {
-    console.log(`  ${r.file.rel}`);
-    if (r.covered.length > 0) console.log(`    covered:   ${r.covered.join(', ')}`);
-    console.log(`    uncovered: ${r.uncovered.join(', ')}\n`);
-  }
-}
-
-console.log('Summary\n');
-console.log(`  Functional files: ${total}`);
-console.log(`  Fully covered:    ${full.length} (${pct(full.length, total)}%)`);
-console.log(`  Partial:          ${partial.length} (${pct(partial.length, total)}%)`);
-console.log(`  No tests:         ${missing.length} (${pct(missing.length, total)}%)`);
 
 function pct(n: number, d: number): string {
   return d === 0 ? '0' : Math.round((n / d) * 100).toString();
+}
+
+function printHeading(label: string, count?: number, color: (value: string) => string = pc.white): void {
+  const suffix = count === undefined ? '' : pc.dim(` (${count})`);
+  console.log(`${pc.bold(color(label))}${suffix}\n`);
 }
