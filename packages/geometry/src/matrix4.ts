@@ -504,11 +504,12 @@ export function matrix4TransformVector(
   const _source = source.m;
   const x = vector.x,
     y = vector.y,
-    z = vector.z;
-  out.x = x * _source[0] + y * _source[4] + z * _source[8] + _source[12];
-  out.y = x * _source[1] + y * _source[5] + z * _source[9] + _source[13];
-  out.z = x * _source[2] + y * _source[6] + z * _source[10] + _source[14];
-  out.w = x * _source[3] + y * _source[7] + z * _source[11] + _source[15];
+    z = vector.z,
+    w = vector.w;
+  out.x = x * _source[0] + y * _source[4] + z * _source[8] + w * _source[12];
+  out.y = x * _source[1] + y * _source[5] + z * _source[9] + w * _source[13];
+  out.z = x * _source[2] + y * _source[6] + z * _source[10] + w * _source[14];
+  out.w = x * _source[3] + y * _source[7] + z * _source[11] + w * _source[15];
 }
 
 /**

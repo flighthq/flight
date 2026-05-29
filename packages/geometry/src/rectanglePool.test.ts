@@ -18,6 +18,15 @@ describe('acquireRectangle', () => {
     const r2 = acquireRectangle();
     expect(r2).toBe(r1);
   });
+
+  it('reuses released rectangles in last-in-first-out order', () => {
+    const r1 = acquireRectangle();
+    const r2 = acquireRectangle();
+    releaseRectangle(r1);
+    releaseRectangle(r2);
+    expect(acquireRectangle()).toBe(r2);
+    expect(acquireRectangle()).toBe(r1);
+  });
 });
 
 describe('acquireEmptyRectangle', () => {

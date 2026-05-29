@@ -522,7 +522,7 @@ describe('inverseMatrix4', () => {
   it('inverse of identity is identity', () => {
     const m = createMatrix4();
     const inv = createMatrix4();
-    inverseMatrix4(m, inv);
+    inverseMatrix4(inv, m);
 
     expect(equalsMatrix4(inv, createMatrix4())).toBe(true);
   });
@@ -549,12 +549,12 @@ describe('inverseMatrix4', () => {
     appendRotationMatrix4(m, m, 90, Z_AXIS);
 
     const inv = createMatrix4();
-    inverseMatrix4(m, inv);
+    inverseMatrix4(inv, m);
 
     // m * inv = identity
     const check = createMatrix4();
-    multiplyMatrix4(m, inv, check);
-    expect(equalsMatrix4(check, createMatrix4())).toBe(true);
+    multiplyMatrix4(check, m, inv);
+    expectMatrix4Close(check, createMatrix4());
   });
 
   it('inverse of rotation + translation', () => {
@@ -563,12 +563,25 @@ describe('inverseMatrix4', () => {
     appendRotationMatrix4(m, m, 90, Z_AXIS);
 
     const inv = createMatrix4();
-    inverseMatrix4(m, inv);
+    inverseMatrix4(inv, m);
 
     // m * inv = identity
     const check = createMatrix4();
-    multiplyMatrix4(m, inv, check);
-    expect(equalsMatrix4(check, createMatrix4())).toBe(true);
+    multiplyMatrix4(check, m, inv);
+    expectMatrix4Close(check, createMatrix4());
+  });
+
+  it('supports out === source', () => {
+    const matrix = createMatrix4();
+    translateMatrix4(matrix, matrix, 5, -3, 2);
+    appendRotationMatrix4(matrix, matrix, 30, Z_AXIS);
+    scaleMatrix4(matrix, matrix, 2, 3, 4);
+    const expected = createMatrix4();
+    inverseMatrix4(expected, matrix);
+
+    inverseMatrix4(matrix, matrix);
+
+    expectMatrix4Close(matrix, expected);
   });
 
   it('inverse of singular matrix should fail or produce NaN', () => {
@@ -1271,6 +1284,28 @@ describe('matrix4TransformVector', () => {
     expect(out.y).toBeCloseTo(12);
     expect(out.z).toBeCloseTo(18);
   });
+
+  it('does not translate a direction vector with w = 0', () => {
+    const m = createMatrix4();
+    translateMatrix4(m, m, 5, 10, 15);
+    const out = { x: 0, y: 0, z: 0, w: 0 };
+    matrix4TransformVector(out, m, { x: 1, y: 2, z: 3, w: 0 });
+    expect(out.x).toBeCloseTo(1);
+    expect(out.y).toBeCloseTo(2);
+    expect(out.z).toBeCloseTo(3);
+    expect(out.w).toBeCloseTo(0);
+  });
+
+  it('supports out === vector', () => {
+    const m = createMatrix4();
+    translateMatrix4(m, m, 5, 10, 15);
+    const vector = { x: 1, y: 2, z: 3, w: 1 };
+    matrix4TransformVector(vector, m, vector);
+    expect(vector.x).toBeCloseTo(6);
+    expect(vector.y).toBeCloseTo(12);
+    expect(vector.z).toBeCloseTo(18);
+    expect(vector.w).toBeCloseTo(1);
+  });
 });
 
 describe('matrix4TransformVectors', () => {
@@ -1288,3 +1323,9 @@ describe('matrix4TransformVectors', () => {
     expect(out[5]).toBeCloseTo(3);
   });
 });
+
+function expectMatrix4Close(actual: Matrix4, expected: Matrix4): void {
+  for (let i = 0; i < 16; i++) {
+    expect(actual.m[i]).toBeCloseTo(expected.m[i]);
+  }
+}

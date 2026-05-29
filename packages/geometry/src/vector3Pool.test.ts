@@ -18,6 +18,15 @@ describe('acquireVector3', () => {
     const v2 = acquireVector3();
     expect(v2).toBe(v1);
   });
+
+  it('reuses released vectors in last-in-first-out order', () => {
+    const v1 = acquireVector3();
+    const v2 = acquireVector3();
+    releaseVector3(v1);
+    releaseVector3(v2);
+    expect(acquireVector3()).toBe(v2);
+    expect(acquireVector3()).toBe(v1);
+  });
 });
 
 describe('acquireEmptyVector3', () => {

@@ -21,6 +21,12 @@ describe('reserveFloat32Array', () => {
     expect(out.length).toBe(1000);
   });
 
+  it('leaves extended capacity zero-filled', () => {
+    const array = new Float32Array([1, 2]);
+    const out = reserveFloat32Array(array, 4);
+    expect(Array.from(out)).toEqual([1, 2, 0, 0]);
+  });
+
   it('copies the existing array values if it allocates', () => {
     const array = new Float32Array(10);
     for (let i = 0; i < 10; i++) {
@@ -54,6 +60,12 @@ describe('reserveInt16Array', () => {
     expect(out.length).toBe(1000);
   });
 
+  it('leaves extended capacity zero-filled', () => {
+    const array = new Int16Array([1, 2]);
+    const out = reserveInt16Array(array, 4);
+    expect(Array.from(out)).toEqual([1, 2, 0, 0]);
+  });
+
   it('copies the existing array values if it allocates', () => {
     const array = new Int16Array(10);
     for (let i = 0; i < 10; i++) {
@@ -85,6 +97,12 @@ describe('reserveUint16Array', () => {
     const out = reserveUint16Array(array, 1000);
     expect(out).not.toStrictEqual(array);
     expect(out.length).toBe(1000);
+  });
+
+  it('leaves extended capacity zero-filled', () => {
+    const array = new Uint16Array([1, 2]);
+    const out = reserveUint16Array(array, 4);
+    expect(Array.from(out)).toEqual([1, 2, 0, 0]);
   });
 
   it('copies the existing array values if it allocates', () => {

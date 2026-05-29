@@ -19,6 +19,15 @@ describe('acquireMatrix3', () => {
     const m2 = acquireMatrix3();
     expect(m2).toBe(m1);
   });
+
+  it('reuses released matrices in last-in-first-out order', () => {
+    const m1 = acquireMatrix3();
+    const m2 = acquireMatrix3();
+    releaseMatrix3(m1);
+    releaseMatrix3(m2);
+    expect(acquireMatrix3()).toBe(m2);
+    expect(acquireMatrix3()).toBe(m1);
+  });
 });
 
 describe('acquireIdentityMatrix3', () => {
