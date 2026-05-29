@@ -676,6 +676,26 @@ describe('multiplyMatrix4', () => {
       expect(Array.from(a.m)).toEqual(aBefore);
       expect(Array.from(b.m)).toEqual(bBefore);
     });
+
+    it('supports out === a', () => {
+      const a = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+      const b = createMatrix4(17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79);
+      const expected = createMatrix4();
+      multiplyMatrix4(expected, a, b);
+
+      multiplyMatrix4(a, a, b);
+      expect(equalsMatrix4(a, expected)).toBe(true);
+    });
+
+    it('supports out === b', () => {
+      const a = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+      const b = createMatrix4(17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79);
+      const expected = createMatrix4();
+      multiplyMatrix4(expected, a, b);
+
+      multiplyMatrix4(b, a, b);
+      expect(equalsMatrix4(b, expected)).toBe(true);
+    });
   });
 
   describe('multiplyMatrix4', () => {
@@ -1116,6 +1136,16 @@ describe('transposeMatrix4', () => {
     transposeMatrix4(t2, t);
     expect(equalsMatrix4(t2, m)).toBe(true);
   });
+
+  it('supports out === source', () => {
+    const matrix = createMatrix4();
+    setMatrix4(matrix, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const expected = createMatrix4();
+    transposeMatrix4(expected, matrix);
+
+    transposeMatrix4(matrix, matrix);
+    expect(equalsMatrix4(matrix, expected)).toBe(true);
+  });
 });
 
 describe('appendMatrix4', () => {
@@ -1132,6 +1162,18 @@ describe('appendMatrix4', () => {
     multiplyMatrix4(out2, a, b);
 
     expect(equalsMatrix4(out1, out2)).toBe(true);
+  });
+
+  it('supports out === source', () => {
+    const a = createMatrix4();
+    translateMatrix4(a, a, 5, 0, 0);
+    const b = createMatrix4();
+    scaleMatrix4(b, b, 2, 3, 4);
+    const expected = createMatrix4();
+    appendMatrix4(expected, a, b);
+
+    appendMatrix4(a, a, b);
+    expect(equalsMatrix4(a, expected)).toBe(true);
   });
 });
 
@@ -1191,6 +1233,26 @@ describe('interpolateMatrix4', () => {
     interpolateMatrix4(out, a, b, 0.5);
     expect(out.m[12]).toBeCloseTo(5);
   });
+
+  it('supports out === a', () => {
+    const a = createMatrix4();
+    const b = createMatrix4();
+    translateMatrix4(b, b, 10, 20, 30);
+    interpolateMatrix4(a, a, b, 0.5);
+    expect(a.m[12]).toBeCloseTo(5);
+    expect(a.m[13]).toBeCloseTo(10);
+    expect(a.m[14]).toBeCloseTo(15);
+  });
+
+  it('supports out === b', () => {
+    const a = createMatrix4();
+    const b = createMatrix4();
+    translateMatrix4(b, b, 10, 20, 30);
+    interpolateMatrix4(b, a, b, 0.5);
+    expect(b.m[12]).toBeCloseTo(5);
+    expect(b.m[13]).toBeCloseTo(10);
+    expect(b.m[14]).toBeCloseTo(15);
+  });
 });
 
 describe('prependMatrix4', () => {
@@ -1207,6 +1269,18 @@ describe('prependMatrix4', () => {
     multiplyMatrix4(out2, b, a);
 
     expect(equalsMatrix4(out1, out2)).toBe(true);
+  });
+
+  it('supports out === source', () => {
+    const a = createMatrix4();
+    translateMatrix4(a, a, 5, 0, 0);
+    const b = createMatrix4();
+    scaleMatrix4(b, b, 2, 3, 4);
+    const expected = createMatrix4();
+    prependMatrix4(expected, a, b);
+
+    prependMatrix4(a, a, b);
+    expect(equalsMatrix4(a, expected)).toBe(true);
   });
 });
 
@@ -1272,6 +1346,16 @@ describe('matrix4TransformPoint', () => {
     expect(out.y).toBe(6);
     expect(out.z).toBe(12);
   });
+
+  it('supports out === point', () => {
+    const m = createMatrix4();
+    translateMatrix4(m, m, 5, 10, 15);
+    const point = { x: 1, y: 2, z: 3 };
+    matrix4TransformPoint(point, m, point);
+    expect(point.x).toBeCloseTo(6);
+    expect(point.y).toBeCloseTo(12);
+    expect(point.z).toBeCloseTo(18);
+  });
 });
 
 describe('matrix4TransformVector', () => {
@@ -1321,6 +1405,14 @@ describe('matrix4TransformVectors', () => {
     expect(out[3]).toBeCloseTo(2);
     expect(out[4]).toBeCloseTo(2);
     expect(out[5]).toBeCloseTo(3);
+  });
+
+  it('supports out === vectors', () => {
+    const m = createMatrix4();
+    translateMatrix4(m, m, 1, 2, 3);
+    const vectors = new Float32Array([0, 0, 0, 1, 0, 0]);
+    matrix4TransformVectors(vectors, m, vectors);
+    expect(Array.from(vectors)).toEqual([1, 2, 3, 2, 2, 3]);
   });
 });
 

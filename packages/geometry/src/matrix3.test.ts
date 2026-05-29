@@ -472,21 +472,23 @@ describe('inverseMatrix3', () => {
 
 describe('multiplyMatrix3', () => {
   it('should support out === a', () => {
-    const a = createMatrix3(2, 0, 0, 0, 2, 0, 0, 0, 1);
-    const b = createMatrix3(1, 0, 5, 0, 1, 5, 0, 0, 1);
+    const a = createMatrix3(2, 3, 4, 5, 7, 8, 0, 0, 1);
+    const b = createMatrix3(11, 13, 17, 19, 23, 29, 0, 0, 1);
+    const expected = createMatrix3();
+    multiplyMatrix3(expected, a, b);
+
     multiplyMatrix3(a, a, b);
-    expect(a.m[2]).toBe(10);
-    expect(a.m[5]).toBe(10);
+    expect(equalsMatrix3(a, expected)).toBe(true);
   });
 
   it('should support out === b', () => {
-    const a = createMatrix3(2, 0, 0, 0, 2, 0, 0, 0, 1);
-    const b = createMatrix3(1, 0, 3, 0, 1, 4, 0, 0, 1);
-    multiplyMatrix3(b, a, b); // Multiply a by b and store the result in b
-    expect(b.m[0]).toBe(2); // a[0][0] = 2
-    expect(b.m[4]).toBe(2); // d[1][1] = 2
-    expect(b.m[2]).toBe(6); // tx = b[0][2] = 6
-    expect(b.m[5]).toBe(8); // ty = b[1][2] = 8
+    const a = createMatrix3(2, 3, 4, 5, 7, 8, 0, 0, 1);
+    const b = createMatrix3(11, 13, 17, 19, 23, 29, 0, 0, 1);
+    const expected = createMatrix3();
+    multiplyMatrix3(expected, a, b);
+
+    multiplyMatrix3(b, a, b);
+    expect(equalsMatrix3(b, expected)).toBe(true);
   });
 
   it('should multiply identity correctly', () => {
@@ -529,6 +531,15 @@ describe('rotateMatrix3', () => {
     expect(out.m[1]).toBeCloseTo(-1); // b = -sin(π/2) = -1
     expect(out.m[3]).toBeCloseTo(1); // c = sin(π/2) = 1
     expect(out.m[4]).toBeCloseTo(0); // d = cos(π/2) = 0
+  });
+
+  it('supports out === source', () => {
+    const matrix = createMatrix3(2, 3, 4, 5, 7, 8, 11, 13, 17);
+    const expected = createMatrix3();
+    rotateMatrix3(expected, matrix, Math.PI / 2);
+
+    rotateMatrix3(matrix, matrix, Math.PI / 2);
+    expect(equalsMatrix3(matrix, expected)).toBe(true);
   });
 });
 

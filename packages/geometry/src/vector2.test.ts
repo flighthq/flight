@@ -183,6 +183,14 @@ describe('copyVector2', () => {
     expect(pt.y).toBe(2);
   });
 
+  it('supports out === source', () => {
+    pt.x = 1;
+    pt.y = 2;
+    copyVector2(pt, pt);
+    expect(pt.x).toBe(1);
+    expect(pt.y).toBe(2);
+  });
+
   it('allows a vector-like object', () => {
     const pt2 = { x: 1, y: 2 };
     copyVector2(pt, pt2);
@@ -388,6 +396,14 @@ describe('normalizeVector2', () => {
     expect(result.y).toBeCloseTo(0.7071, 4);
   });
 
+  it('supports out === source', () => {
+    const pt = createVector2(3, 4);
+    normalizeVector2(pt, pt, 10);
+    expect(pt.x).toBeCloseTo(6);
+    expect(pt.y).toBeCloseTo(8);
+    expect(getVector2Length(pt)).toBeCloseTo(10);
+  });
+
   it('allows a vector-like object', () => {
     const pt = { x: 3, y: 4 };
     const result = { x: 0, y: 0 };
@@ -412,6 +428,13 @@ describe('offsetVector2', () => {
     offsetVector2(result, pt, -5, -10);
     expect(result.x).toBe(-5);
     expect(result.y).toBe(-10);
+  });
+
+  it('supports out === source', () => {
+    const pt = createVector2(1, 2);
+    offsetVector2(pt, pt, 3, 4);
+    expect(pt.x).toBe(4);
+    expect(pt.y).toBe(6);
   });
 
   it('allows a vector-like object', () => {
@@ -548,6 +571,26 @@ describe('subtractVector2', () => {
 
     expect(result.x).toBe(0);
     expect(result.y).toBe(0);
+  });
+
+  it('supports out === source', () => {
+    pt.x = 5;
+    pt.y = 10;
+    pt2.x = 2;
+    pt2.y = 4;
+    subtractVector2(pt, pt, pt2);
+    expect(pt.x).toBe(3);
+    expect(pt.y).toBe(6);
+  });
+
+  it('supports out === toSubtract', () => {
+    pt.x = 5;
+    pt.y = 10;
+    pt2.x = 2;
+    pt2.y = 4;
+    subtractVector2(pt2, pt, pt2);
+    expect(pt2.x).toBe(3);
+    expect(pt2.y).toBe(6);
   });
 
   it('works when source or target vectors are at the origin', () => {

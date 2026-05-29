@@ -115,6 +115,24 @@ describe('addVector3', () => {
     expect(a.z).toBe(6);
   });
 
+  it('supports out === a', () => {
+    const a = createVector3(1, 2, 3);
+    const b = createVector3(4, 5, 6);
+    addVector3(a, a, b);
+    expect(a.x).toBe(5);
+    expect(a.y).toBe(7);
+    expect(a.z).toBe(9);
+  });
+
+  it('supports out === b', () => {
+    const a = createVector3(1, 2, 3);
+    const b = createVector3(4, 5, 6);
+    addVector3(b, a, b);
+    expect(b.x).toBe(5);
+    expect(b.y).toBe(7);
+    expect(b.z).toBe(9);
+  });
+
   it('allows vector-like objects', () => {
     const a = { x: 1, y: 2, z: 3 };
     const b = { x: 4, y: 5, z: 6 };
@@ -185,6 +203,15 @@ describe('crossVector3', () => {
     expect(a.x).toBe(0);
     expect(a.y).toBe(0);
     expect(a.z).toBe(1);
+  });
+
+  it('supports out === other', () => {
+    const a = createVector3(1, 0, 0);
+    const b = createVector3(0, 1, 0);
+    crossVector3(b, a, b);
+    expect(b.x).toBe(0);
+    expect(b.y).toBe(0);
+    expect(b.z).toBe(1);
   });
 });
 
@@ -326,10 +353,20 @@ describe('subtractVector3', () => {
 
   it('supports out === source', () => {
     const a = createVector3(4, 5, 6);
-    subtractVector3(a, a, a);
-    expect(a.x).toBe(0);
-    expect(a.y).toBe(0);
-    expect(a.z).toBe(0);
+    const b = createVector3(1, 2, 3);
+    subtractVector3(a, a, b);
+    expect(a.x).toBe(3);
+    expect(a.y).toBe(3);
+    expect(a.z).toBe(3);
+  });
+
+  it('supports out === other', () => {
+    const a = createVector3(4, 5, 6);
+    const b = createVector3(1, 2, 3);
+    subtractVector3(b, a, b);
+    expect(b.x).toBe(3);
+    expect(b.y).toBe(3);
+    expect(b.z).toBe(3);
   });
 });
 
@@ -399,5 +436,13 @@ describe('projectVector3', () => {
     projectVector3(out, v);
     expect(out.x).toBe(5);
     expect(out.y).toBe(7);
+  });
+
+  it('supports out === source', () => {
+    const v = createVector3(4, 6, 2);
+    projectVector3(v, v);
+    expect(v.x).toBe(2);
+    expect(v.y).toBe(3);
+    expect(v.z).toBe(2);
   });
 });
