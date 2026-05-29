@@ -62,7 +62,7 @@ export function copyRectangle(out: RectangleLike, source: Readonly<RectangleLike
   }
 }
 
-export function equalsRectangle(
+export function rectangleEquals(
   a: Readonly<RectangleLike> | null | undefined,
   b: Readonly<RectangleLike> | null | undefined,
 ): boolean {
@@ -107,7 +107,7 @@ export function intersectionRectangle(
   out.height = y1 - y0;
 }
 
-export function intersectsRectangle(a: Readonly<RectangleLike>, b: Readonly<RectangleLike>): boolean {
+export function rectangleIntersects(a: Readonly<RectangleLike>, b: Readonly<RectangleLike>): boolean {
   return !(
     getRectangleMaxX(a) <= getRectangleMinX(b) ||
     getRectangleMinX(a) >= getRectangleMaxX(b) ||
@@ -179,7 +179,7 @@ export function offsetRectangle(out: RectangleLike, source: Readonly<RectangleLi
   out.height = source.height;
 }
 
-export function offsetPointRectangle(
+export function offsetRectangleByPoint(
   out: RectangleLike,
   source: Readonly<RectangleLike>,
   point: Readonly<Vector2Like>,

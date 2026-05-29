@@ -38,8 +38,8 @@ import {
   setMatrixFromMatrix4,
   setTransformMatrix,
   translateMatrix,
-  translateMatrixVector,
-  translateMatrixVectorXY,
+  translateMatrixByVector,
+  translateMatrixByVectorXY,
   writeMatrixToFloat32Array,
 } from '@flighthq/geometry';
 import type { Matrix, Matrix3Like, Matrix4Like } from '@flighthq/types';
@@ -1190,7 +1190,7 @@ describe('translateUsingVector', () => {
   it('translates tx/ty by the transformed vector', () => {
     const m = createMatrix(2, 0, 0, 2, 5, 10);
     const out = createMatrix();
-    translateMatrixVector(out, m, { x: 3, y: 4 });
+    translateMatrixByVector(out, m, { x: 3, y: 4 });
     expect(out.tx).toBeCloseTo(5 + 2 * 3 + 0 * 4); // 11
     expect(out.ty).toBeCloseTo(10 + 0 * 3 + 2 * 4); // 18
   });
@@ -1200,14 +1200,14 @@ describe('translateUsingVectorXY', () => {
   it('translates tx/ty by the transformed x and y components', () => {
     const m = createMatrix(2, 0, 0, 2, 5, 10);
     const out = createMatrix();
-    translateMatrixVectorXY(out, m, 3, 4);
+    translateMatrixByVectorXY(out, m, 3, 4);
     expect(out.tx).toBeCloseTo(11);
     expect(out.ty).toBeCloseTo(18);
   });
 
   it('supports out === source', () => {
     const m = createMatrix(1, 0, 0, 1, 5, 10);
-    translateMatrixVectorXY(m, m, 2, 3);
+    translateMatrixByVectorXY(m, m, 2, 3);
     expect(m.tx).toBeCloseTo(7);
     expect(m.ty).toBeCloseTo(13);
   });

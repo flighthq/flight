@@ -3,7 +3,6 @@ import {
   copyRectangle,
   createRectangle,
   createVector2,
-  equalsRectangle,
   expandRectangleToPoint,
   getRectangleBottom,
   getRectangleBottomRight,
@@ -20,16 +19,17 @@ import {
   getRectangleTopLeft,
   inflateRectangle,
   intersectionRectangle,
-  intersectsRectangle,
   isEmptyRectangle,
   isFlippedXRectangle,
   isFlippedYRectangle,
   normalizeRectangle,
-  offsetPointRectangle,
   offsetRectangle,
+  offsetRectangleByPoint,
   rectangleContains,
   rectangleContainsPoint,
   rectangleEncloses,
+  rectangleEquals,
+  rectangleIntersects,
   setEmptyRectangle,
   setRectangle,
   setRectangleBottom,
@@ -212,7 +212,7 @@ describe('bottomRight', () => {
 describe('clone', () => {
   it('clone creates a copy', () => {
     const c = cloneRectangle(r);
-    expect(equalsRectangle(r, c)).toBe(true);
+    expect(rectangleEquals(r, c)).toBe(true);
   });
 
   it('clone does not affect original rectangle', () => {
@@ -341,7 +341,7 @@ describe('containsRect', () => {
 describe('copy', () => {
   it('copies values', () => {
     copyRectangle(r, r2);
-    expect(equalsRectangle(r, r2)).toBe(true);
+    expect(rectangleEquals(r, r2)).toBe(true);
   });
 
   it('does not change the original values if source and target are the same', () => {
@@ -359,26 +359,26 @@ describe('copy', () => {
     const r = { x: 0, y: 0, width: 100, height: 100 };
     const r2 = { x: 2, y: 2, width: 2, height: 2 };
     copyRectangle(r2, r);
-    expect(equalsRectangle(r, r2)).toBe(true);
+    expect(rectangleEquals(r, r2)).toBe(true);
   });
 });
 
 describe('equals', () => {
   it('returns true for identical rectangles', () => {
-    expect(equalsRectangle(r, r)).toBe(true);
-    expect(equalsRectangle(r, cloneRectangle(r))).toBe(true);
+    expect(rectangleEquals(r, r)).toBe(true);
+    expect(rectangleEquals(r, cloneRectangle(r))).toBe(true);
   });
 
   it('returns false for different rectangles', () => {
     r2.x = 1;
-    expect(equalsRectangle(r, r2)).toBe(false);
+    expect(rectangleEquals(r, r2)).toBe(false);
   });
 
   it('allows rectangle like objects', () => {
     const r = { x: 1, y: 1, width: 1, height: 1 };
     const r2 = { x: 1, y: 1, width: 1, height: 1 };
-    expect(equalsRectangle(r, r)).toBe(true);
-    expect(equalsRectangle(r, r2)).toBe(true);
+    expect(rectangleEquals(r, r)).toBe(true);
+    expect(rectangleEquals(r, r2)).toBe(true);
   });
 });
 
@@ -442,17 +442,17 @@ describe('intersection', () => {
 describe('intersects', () => {
   it('returns true if rectangles overlap', () => {
     const r3 = createRectangle(5, 10, 10, 10);
-    expect(intersectsRectangle(r, r3)).toBe(true);
+    expect(rectangleIntersects(r, r3)).toBe(true);
   });
 
   it('returns false if rectangles do not overlap', () => {
     const r3 = createRectangle(20, 20, 5, 5);
-    expect(intersectsRectangle(r, r3)).toBe(false);
+    expect(rectangleIntersects(r, r3)).toBe(false);
   });
 
   it('allows rectangle-like objects', () => {
     const r3 = { x: 5, y: 10, width: 10, height: 10 };
-    expect(intersectsRectangle(r, r3)).toBe(true);
+    expect(rectangleIntersects(r, r3)).toBe(true);
   });
 });
 
@@ -506,7 +506,7 @@ describe('offset', () => {
 describe('offsetPoint', () => {
   it('moves rectangle by Vector2', () => {
     const out = createRectangle();
-    offsetPointRectangle(out, r, createVector2(3, 4));
+    offsetRectangleByPoint(out, r, createVector2(3, 4));
     expect(out.x).toBe(3);
     expect(out.y).toBe(4);
   });
@@ -515,7 +515,7 @@ describe('offsetPoint', () => {
     const r = { x: 0, y: 0, width: 100, height: 100 };
     const p = { x: 3, y: 4 };
     const out = { x: 0, y: 0, width: 0, height: 0 };
-    offsetPointRectangle(out, r, p);
+    offsetRectangleByPoint(out, r, p);
     expect(out.x).toBe(3);
     expect(out.y).toBe(4);
   });
@@ -827,7 +827,7 @@ describe('union', () => {
     const r3 = createRectangle(5, 15, 0, 0);
     const u = createRectangle();
     unionRectangle(u, r, r3);
-    expect(equalsRectangle(u, r)).toBe(true);
+    expect(rectangleEquals(u, r)).toBe(true);
   });
 
   it('has the values of the right-hand rectangle if the left-hand is degenerate', () => {
@@ -835,7 +835,7 @@ describe('union', () => {
     const rh = createRectangle(5, 15, 100, 100);
     const out = createRectangle();
     unionRectangle(out, lh, rh);
-    expect(equalsRectangle(out, rh)).toBe(true);
+    expect(rectangleEquals(out, rh)).toBe(true);
   });
 
   it('has the values of the left-hand rectangle if the right-hand is degenerate', () => {
@@ -843,7 +843,7 @@ describe('union', () => {
     const rh = createRectangle();
     const out = createRectangle();
     unionRectangle(out, lh, rh);
-    expect(equalsRectangle(out, lh)).toBe(true);
+    expect(rectangleEquals(out, lh)).toBe(true);
   });
 
   it('returns an empty rectangle if both are degenerate', () => {
@@ -859,7 +859,7 @@ describe('union', () => {
     const rh = createRectangle(-5, -15, 0, 0);
     const out = createRectangle();
     unionRectangle(out, lh, rh);
-    expect(equalsRectangle(out, lh)).toBe(true);
+    expect(rectangleEquals(out, lh)).toBe(true);
   });
 
   it('does nothing if right-hand is empty and source===out', () => {
@@ -868,7 +868,7 @@ describe('union', () => {
     const cache = createRectangle();
     copyRectangle(cache, lh);
     unionRectangle(lh, lh, rh);
-    expect(equalsRectangle(cache, lh)).toBe(true);
+    expect(rectangleEquals(cache, lh)).toBe(true);
   });
 
   it('union works with flipped rectangles', () => {

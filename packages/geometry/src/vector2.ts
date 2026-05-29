@@ -60,11 +60,11 @@ export function setVector2FromFloat32Array(out: Vector2Like, offset: number, sou
   out.y = source[offset + 1];
 }
 
-export function lengthVector2(source: Readonly<Vector2Like>): number {
+export function getVector2Length(source: Readonly<Vector2Like>): number {
   return Math.sqrt(source.x ** 2 + source.y ** 2);
 }
 
-export function lengthSquaredVector2(source: Readonly<Vector2Like>): number {
+export function getVector2LengthSquared(source: Readonly<Vector2Like>): number {
   return source.x ** 2 + source.y ** 2;
 }
 
@@ -83,7 +83,7 @@ export function lerpVector2(out: Vector2Like, a: Readonly<Vector2Like>, b: Reado
  * the returned point will also be (0, 0).
  */
 export function normalizeVector2(out: Vector2Like, source: Readonly<Vector2Like>, newLength: number): void {
-  const currentLength = lengthVector2(source);
+  const currentLength = getVector2Length(source);
   if (currentLength === 0) {
     out.x = 0;
     out.y = 0;

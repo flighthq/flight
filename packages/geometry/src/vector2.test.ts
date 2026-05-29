@@ -6,8 +6,8 @@ import {
   createVector2,
   distanceVector2,
   equalsVector2,
-  lengthSquaredVector2,
-  lengthVector2,
+  getVector2Length,
+  getVector2LengthSquared,
   lerpVector2,
   normalizeVector2,
   offsetVector2,
@@ -63,14 +63,14 @@ describe('length', () => {
     for (const { x, y, expected } of testCases) {
       pt.x = x;
       pt.y = y;
-      expect(lengthVector2(pt)).toBe(expected);
+      expect(getVector2Length(pt)).toBe(expected);
     }
   });
 
   it('allows a vector-like object', () => {
     for (const { x, y, expected } of testCases) {
       const pt = { x: x, y: y };
-      expect(lengthVector2(pt)).toBe(expected);
+      expect(getVector2Length(pt)).toBe(expected);
     }
   });
 });
@@ -79,28 +79,28 @@ describe('lengthSquared', () => {
   it('returns the square of the length', () => {
     pt.x = 3;
     pt.y = 4;
-    expect(lengthSquaredVector2(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
+    expect(getVector2LengthSquared(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
   });
 
   it('returns 0 for the origin (0, 0)', () => {
-    expect(lengthSquaredVector2(pt)).toBe(0);
+    expect(getVector2LengthSquared(pt)).toBe(0);
   });
 
   it('handles negative values correctly', () => {
     pt.x = -3;
     pt.y = -4;
-    expect(lengthSquaredVector2(pt)).toBe(9 + 16); // 9 + 16 = 25
+    expect(getVector2LengthSquared(pt)).toBe(9 + 16); // 9 + 16 = 25
   });
 
   it('handles non-integer values', () => {
     pt.x = 2.5;
     pt.y = 4.5;
-    expect(lengthSquaredVector2(pt)).toBe(2.5 * 2.5 + 4.5 * 4.5); // 6.25 + 20.25 = 26.5
+    expect(getVector2LengthSquared(pt)).toBe(2.5 * 2.5 + 4.5 * 4.5); // 6.25 + 20.25 = 26.5
   });
 
   it('allows a vector-like object', () => {
     const pt = { x: 3, y: 4 };
-    expect(lengthSquaredVector2(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
+    expect(getVector2LengthSquared(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
   });
 });
 
@@ -340,7 +340,7 @@ describe('normalize', () => {
     expect(pt).not.toBe(result);
     expect(result.x).toBeCloseTo(6);
     expect(result.y).toBeCloseTo(8);
-    expect(lengthVector2(result)).toBeCloseTo(10);
+    expect(getVector2Length(result)).toBeCloseTo(10);
   });
 
   it('returns zero for a zero-length vector', () => {
@@ -350,7 +350,7 @@ describe('normalize', () => {
     expect(result).not.toBe(pt);
     expect(result.x).toBe(0);
     expect(result.y).toBe(0);
-    expect(lengthVector2(result)).toBe(0);
+    expect(getVector2Length(result)).toBe(0);
   });
 
   it('scales vector to zero length', () => {
@@ -359,7 +359,7 @@ describe('normalize', () => {
     normalizeVector2(result, pt, 0);
     expect(result.x).toBe(0);
     expect(result.y).toBe(0);
-    expect(lengthVector2(result)).toBe(0);
+    expect(getVector2Length(result)).toBe(0);
   });
 
   it('scales vector to length 1 (unit vector)', () => {
@@ -368,7 +368,7 @@ describe('normalize', () => {
     normalizeVector2(result, pt, 1);
     expect(result.x).toBeCloseTo(0);
     expect(result.y).toBeCloseTo(1);
-    expect(lengthVector2(result)).toBeCloseTo(1);
+    expect(getVector2Length(result)).toBeCloseTo(1);
   });
 
   it('scales vector to negative length', () => {
@@ -377,7 +377,7 @@ describe('normalize', () => {
     normalizeVector2(result, pt, -10);
     expect(result.x).toBeCloseTo(-6);
     expect(result.y).toBeCloseTo(-8);
-    expect(lengthVector2(result)).toBeCloseTo(10); // length is magnitude
+    expect(getVector2Length(result)).toBeCloseTo(10); // length is magnitude
   });
 
   it('handles very small vectors correctly', () => {
@@ -395,7 +395,7 @@ describe('normalize', () => {
     expect(pt).not.toBe(result);
     expect(result.x).toBeCloseTo(6);
     expect(result.y).toBeCloseTo(8);
-    expect(lengthVector2(result)).toBeCloseTo(10);
+    expect(getVector2Length(result)).toBeCloseTo(10);
   });
 });
 
@@ -451,7 +451,7 @@ describe('setPolar', () => {
     setPolarVector2(p, 5, 0);
     expect(p.x).toBeCloseTo(5);
     expect(p.y).toBeCloseTo(0);
-    expect(lengthVector2(p)).toBeCloseTo(5);
+    expect(getVector2Length(p)).toBeCloseTo(5);
   });
 
   it('returns a vector at the given length along the y-axis when angle is π/2', () => {
@@ -459,7 +459,7 @@ describe('setPolar', () => {
     setPolarVector2(p, 3, Math.PI / 2);
     expect(p.x).toBeCloseTo(0);
     expect(p.y).toBeCloseTo(3);
-    expect(lengthVector2(p)).toBeCloseTo(3);
+    expect(getVector2Length(p)).toBeCloseTo(3);
   });
 
   it('returns a vector in the correct quadrant for angle π', () => {
@@ -467,7 +467,7 @@ describe('setPolar', () => {
     setPolarVector2(p, 4, Math.PI);
     expect(p.x).toBeCloseTo(-4);
     expect(p.y).toBeCloseTo(0);
-    expect(lengthVector2(p)).toBeCloseTo(4);
+    expect(getVector2Length(p)).toBeCloseTo(4);
   });
 
   it('returns a vector in the correct quadrant for angle 3π/2', () => {
@@ -475,7 +475,7 @@ describe('setPolar', () => {
     setPolarVector2(p, 2, (3 * Math.PI) / 2);
     expect(p.x).toBeCloseTo(0);
     expect(p.y).toBeCloseTo(-2);
-    expect(lengthVector2(p)).toBeCloseTo(2);
+    expect(getVector2Length(p)).toBeCloseTo(2);
   });
 
   it('handles zero length', () => {
@@ -483,7 +483,7 @@ describe('setPolar', () => {
     setPolarVector2(p, 0, Math.PI / 4);
     expect(p.x).toBeCloseTo(0);
     expect(p.y).toBeCloseTo(0);
-    expect(lengthVector2(p)).toBeCloseTo(0);
+    expect(getVector2Length(p)).toBeCloseTo(0);
   });
 
   it('handles negative length', () => {
@@ -491,7 +491,7 @@ describe('setPolar', () => {
     setPolarVector2(p, -5, 0);
     expect(p.x).toBeCloseTo(-5);
     expect(p.y).toBeCloseTo(0);
-    expect(lengthVector2(p)).toBeCloseTo(5); // length property is always positive
+    expect(getVector2Length(p)).toBeCloseTo(5); // length property is always positive
   });
 
   it('handles arbitrary angles', () => {
@@ -501,7 +501,7 @@ describe('setPolar', () => {
     setPolarVector2(p, len, angle);
     expect(p.x).toBeCloseTo(1);
     expect(p.y).toBeCloseTo(1);
-    expect(lengthVector2(p)).toBeCloseTo(len);
+    expect(getVector2Length(p)).toBeCloseTo(len);
   });
 
   it('allows vector-like objects', () => {
