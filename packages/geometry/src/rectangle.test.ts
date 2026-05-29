@@ -428,6 +428,16 @@ describe('intersectionRectangle', () => {
     expect(r1.height).toBe(5); // Ensure r1 got updated
   });
 
+  it('supports out === b', () => {
+    const r1 = createRectangle(0, 0, 10, 10);
+    const r2 = createRectangle(5, 5, 10, 10);
+    intersectionRectangle(r2, r1, r2);
+    expect(r2.x).toBe(5);
+    expect(r2.y).toBe(5);
+    expect(r2.width).toBe(5);
+    expect(r2.height).toBe(5);
+  });
+
   it('allows rectangle-like objects', () => {
     const r3 = { x: 5, y: 10, width: 10, height: 10 };
     const result = { x: 0, y: 0, width: 0, height: 0 };
@@ -914,6 +924,16 @@ describe('unionRectangle', () => {
     expect(result.height).toBe(25); // Correct union height
     expect(r1.width).toBe(25); // r1 should be updated
     expect(r1.height).toBe(25); // r1 should be updated
+  });
+
+  it('supports out === other', () => {
+    const r1 = createRectangle(0, 0, 10, 10);
+    const r2 = createRectangle(5, 5, 10, 10);
+    unionRectangle(r2, r1, r2);
+    expect(r2.x).toBe(0);
+    expect(r2.y).toBe(0);
+    expect(r2.width).toBe(15);
+    expect(r2.height).toBe(15);
   });
 
   it('allows rectangle-like objects', () => {

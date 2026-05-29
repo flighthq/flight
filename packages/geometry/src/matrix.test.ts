@@ -530,6 +530,14 @@ describe('inverseMatrixTransformPoint', () => {
     expect(p.x).toBe(2);
     expect(p.y).toBe(2);
   });
+
+  it('supports out === point', () => {
+    const m = createMatrix(2, 0, 0, 2, 0, 0);
+    const p = createVector2(2, 4);
+    inverseMatrixTransformPoint(p, m, p);
+    expect(p.x).toBe(1);
+    expect(p.y).toBe(2);
+  });
 });
 
 describe('inverseMatrixTransformPointXY', () => {
@@ -576,6 +584,14 @@ describe('inverseMatrixTransformVector', () => {
     const out = createVector2();
     inverseMatrixTransformVector(out, m, p);
     expect(p.x).toBe(2);
+    expect(p.y).toBe(2);
+  });
+
+  it('supports out === vector', () => {
+    const m = createMatrix(2, 0, 0, 4, 10, 20);
+    const p = createVector2(2, 8);
+    inverseMatrixTransformVector(p, m, p);
+    expect(p.x).toBe(1);
     expect(p.y).toBe(2);
   });
 });
@@ -790,6 +806,14 @@ describe('matrixTransformPoint', () => {
     expect(p.x).toBe(1);
     expect(p.y).toBe(1);
   });
+
+  it('supports out === point', () => {
+    const m = createMatrix(2, 0, 0, 3, 10, 20);
+    const p = createVector2(1, 2);
+    matrixTransformPoint(p, m, p);
+    expect(p.x).toBe(12);
+    expect(p.y).toBe(26);
+  });
 });
 
 describe('matrixTransformPointXY', () => {
@@ -902,6 +926,16 @@ describe('matrixTransformRectangle', () => {
     expect(rect.width).toBeCloseTo(10);
     expect(rect.height).toBeCloseTo(10);
   });
+
+  it('supports out === source', () => {
+    const rect = createRectangle(0, 0, 10, 20);
+    const mat = createMatrix(2, 0, 0, 3, 5, 7);
+    matrixTransformRectangle(rect, mat, rect);
+    expect(rect.x).toBeCloseTo(5);
+    expect(rect.y).toBeCloseTo(7);
+    expect(rect.width).toBeCloseTo(20);
+    expect(rect.height).toBeCloseTo(60);
+  });
 });
 
 describe('matrixTransformAABBVector2', () => {
@@ -915,6 +949,17 @@ describe('matrixTransformAABBVector2', () => {
     expect(out.y).toBe(0);
     expect(out.width).toBe(10);
     expect(out.height).toBe(10);
+  });
+
+  it('supports out === a', () => {
+    const m = createMatrix(2, 0, 0, 3, 5, 7);
+    const out = createRectangle(0, 0, 0, 0);
+    const b = createVector2(10, 20);
+    matrixTransformAABBVector2(out, m, out, b);
+    expect(out.x).toBe(5);
+    expect(out.y).toBe(7);
+    expect(out.width).toBe(20);
+    expect(out.height).toBe(60);
   });
 });
 
@@ -988,6 +1033,14 @@ describe('matrixTransformVector', () => {
     matrixTransformVector(out, m, p);
     expect(p.x).toBe(1);
     expect(p.y).toBe(1);
+  });
+
+  it('supports out === vector', () => {
+    const m = createMatrix(2, 0, 0, 3, 10, 20);
+    const p = createVector2(1, 2);
+    matrixTransformVector(p, m, p);
+    expect(p.x).toBe(2);
+    expect(p.y).toBe(6);
   });
 });
 

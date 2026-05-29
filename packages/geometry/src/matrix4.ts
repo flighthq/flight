@@ -475,7 +475,7 @@ export function isAffineMatrix4(source: Readonly<Matrix4Like>): boolean {
 }
 
 /**
- * Transforms a point using this matrix, ignoring the translation of the matrix
+ * Transforms a point using this matrix, including the translation of the matrix.
  **/
 export function matrix4TransformPoint(
   out: Vector3Like,
@@ -492,10 +492,8 @@ export function matrix4TransformPoint(
 }
 
 /**
-  Transforms a `Vector4Like` instance using the current matrix
-  @param	result	(Optional) An existing `Vector2` instance to fill with the result
-  @return	The resulting `Vector4Like` instance
-**/
+ * Transforms a `Vector4Like` instance using this matrix.
+ **/
 export function matrix4TransformVector(
   out: Vector4Like,
   source: Readonly<Matrix4Like>,
@@ -513,7 +511,7 @@ export function matrix4TransformVector(
 }
 
 /**
- * Transforms a series of [x, y, z] value pairs at once
+ * Transforms a series of [x, y, z] triples at once.
  **/
 export function matrix4TransformVectors(
   out: Float32Array,

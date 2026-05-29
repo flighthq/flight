@@ -220,13 +220,26 @@ export function multiplyMatrix3(out: Matrix3Like, a: Readonly<Matrix3Like>, b: R
   const _out = out.m;
 
   if (isAffineMatrix3(a) && isAffineMatrix3(b)) {
-    _out[0] = _a[0] * _b[0] + _a[1] * _b[3];
-    _out[1] = _a[0] * _b[1] + _a[1] * _b[4];
-    _out[2] = _a[0] * _b[2] + _a[1] * _b[5] + _a[2];
+    const a0 = _a[0];
+    const a1 = _a[1];
+    const a2 = _a[2];
+    const a3 = _a[3];
+    const a4 = _a[4];
+    const a5 = _a[5];
+    const b0 = _b[0];
+    const b1 = _b[1];
+    const b2 = _b[2];
+    const b3 = _b[3];
+    const b4 = _b[4];
+    const b5 = _b[5];
 
-    _out[3] = _a[3] * _b[0] + _a[4] * _b[3];
-    _out[4] = _a[3] * _b[1] + _a[4] * _b[4];
-    _out[5] = _a[3] * _b[2] + _a[4] * _b[5] + _a[5];
+    _out[0] = a0 * b0 + a1 * b3;
+    _out[1] = a0 * b1 + a1 * b4;
+    _out[2] = a0 * b2 + a1 * b5 + a2;
+
+    _out[3] = a3 * b0 + a4 * b3;
+    _out[4] = a3 * b1 + a4 * b4;
+    _out[5] = a3 * b2 + a4 * b5 + a5;
 
     _out[6] = 0;
     _out[7] = 0;
@@ -268,17 +281,27 @@ export function rotateMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>, t
   const a = source.m;
   const o = out.m;
 
-  o[0] = a[0] * c + a[1] * s;
-  o[1] = a[0] * -s + a[1] * c;
-  o[2] = a[2];
+  const a0 = a[0];
+  const a1 = a[1];
+  const a2 = a[2];
+  const a3 = a[3];
+  const a4 = a[4];
+  const a5 = a[5];
+  const a6 = a[6];
+  const a7 = a[7];
+  const a8 = a[8];
 
-  o[3] = a[3] * c + a[4] * s;
-  o[4] = a[3] * -s + a[4] * c;
-  o[5] = a[5];
+  o[0] = a0 * c + a1 * s;
+  o[1] = a0 * -s + a1 * c;
+  o[2] = a2;
 
-  o[6] = a[6] * c + a[7] * s;
-  o[7] = a[6] * -s + a[7] * c;
-  o[8] = a[8];
+  o[3] = a3 * c + a4 * s;
+  o[4] = a3 * -s + a4 * c;
+  o[5] = a5;
+
+  o[6] = a6 * c + a7 * s;
+  o[7] = a6 * -s + a7 * c;
+  o[8] = a8;
 }
 
 export function scaleMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>, sx: number, sy: number): void {

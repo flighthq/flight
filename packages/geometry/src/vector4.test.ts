@@ -134,6 +134,26 @@ describe('addVector4', () => {
     expect(a.w).toBe(8);
   });
 
+  it('supports out === a', () => {
+    const a = createVector4(1, 2, 3, 4);
+    const b = createVector4(4, 5, 6, 7);
+    addVector4(a, a, b);
+    expect(a.x).toBe(5);
+    expect(a.y).toBe(7);
+    expect(a.z).toBe(9);
+    expect(a.w).toBe(11);
+  });
+
+  it('supports out === b', () => {
+    const a = createVector4(1, 2, 3, 4);
+    const b = createVector4(4, 5, 6, 7);
+    addVector4(b, a, b);
+    expect(b.x).toBe(5);
+    expect(b.y).toBe(7);
+    expect(b.z).toBe(9);
+    expect(b.w).toBe(11);
+  });
+
   it('allows vector-like objects', () => {
     const a = { x: 1, y: 2, z: 3, w: 10 };
     const b = { x: 4, y: 5, z: 6, w: 10 };
@@ -296,6 +316,15 @@ describe('projectVector4', () => {
     expect(result.y).toBe(4);
     expect(result.z).toBe(6);
   });
+
+  it('supports out === source', () => {
+    const v = createVector4(10, 20, 30, 5);
+    projectVector4(v, v);
+    expect(v.x).toBe(2);
+    expect(v.y).toBe(4);
+    expect(v.z).toBe(6);
+    expect(v.w).toBe(5);
+  });
 });
 
 describe('scaleVector4', () => {
@@ -353,11 +382,22 @@ describe('subtractVector4', () => {
 
   it('supports out === source', () => {
     const a = createVector4(4, 5, 6, 7);
-    subtractVector4(a, a, a);
-    expect(a.x).toBe(0);
-    expect(a.y).toBe(0);
-    expect(a.z).toBe(0);
-    expect(a.w).toBe(0);
+    const b = createVector4(1, 2, 3, 4);
+    subtractVector4(a, a, b);
+    expect(a.x).toBe(3);
+    expect(a.y).toBe(3);
+    expect(a.z).toBe(3);
+    expect(a.w).toBe(3);
+  });
+
+  it('supports out === other', () => {
+    const a = createVector4(4, 5, 6, 7);
+    const b = createVector4(1, 2, 3, 4);
+    subtractVector4(b, a, b);
+    expect(b.x).toBe(3);
+    expect(b.y).toBe(3);
+    expect(b.z).toBe(3);
+    expect(b.w).toBe(3);
   });
 });
 
