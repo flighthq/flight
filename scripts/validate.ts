@@ -12,11 +12,15 @@ interface PackageJson {
   name?: string;
   main?: string;
   module?: string;
-  exports?: unknown;
+  types?: string;
+  exports?: PackageExports;
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
 }
+
+type PackageExportTarget = string | { [condition: string]: PackageExportTarget } | PackageExportTarget[];
+type PackageExports = PackageExportTarget | Record<string, PackageExportTarget>;
 
 interface TsConfigBase {
   compilerOptions?: {
@@ -74,6 +78,48 @@ function check(label: string, ok: boolean, detail?: string): boolean {
     console.log(`  ${pc.red('✗')} ${label}${detail ? pc.dim(` — ${detail}`) : ''}`);
   }
   return ok;
+}
+
+function collectPackageTargetPaths(target: PackageExportTarget | undefined, out: Set<string>): void {
+  if (target === undefined) return;
+
+  if (typeof target === 'string') {
+    out.add(target);
+    return;
+  }
+
+  if (Array.isArray(target)) {
+    for (const item of target) collectPackageTargetPaths(item, out);
+    return;
+  }
+
+  for (const value of Object.values(target)) collectPackageTargetPaths(value, out);
+}
+
+function getSourcePathForDistTarget(pkgDir: string, target: string): string | null {
+  const normalized = target.replaceAll('\\', '/');
+  if (!normalized.startsWith('./dist/')) return null;
+
+  const withoutDist = normalized.slice('./dist/'.length);
+  const sourceRel = withoutDist.replace(/\.d\.ts$/, '.ts').replace(/\.js$/, '.ts');
+  return join(pkgDir, 'src', sourceRel);
+}
+
+function checkPackageTargetPaths(pkgDir: string, targets: Iterable<string>): number {
+  let errors = 0;
+  const checkedSourcePaths = new Set<string>();
+
+  for (const target of targets) {
+    const sourcePath = getSourcePathForDistTarget(pkgDir, target);
+    if (sourcePath === null) continue;
+    if (checkedSourcePaths.has(sourcePath)) continue;
+    checkedSourcePaths.add(sourcePath);
+
+    const ok = existsSync(sourcePath);
+    if (!check(`${sourcePath.replace(pkgDir + '\\', '')} exists for package target`, ok, `referenced by ${target}`)) errors++;
+  }
+
+  return errors;
 }
 
 // --- load tsconfig.base.json paths ---
@@ -147,6 +193,14 @@ for (const pkgDir of packageDirs) {
   if (!hasExports) {
     console.log(`  ${pc.dim('·')} ${pc.dim('no exports/main/module (optional)')}`);
   }
+
+  // package entry target paths
+  const packageTargets = new Set<string>();
+  if (pkg.main) packageTargets.add(pkg.main);
+  if (pkg.module) packageTargets.add(pkg.module);
+  if (pkg.types) packageTargets.add(pkg.types);
+  collectPackageTargetPaths(pkg.exports, packageTargets);
+  errors += checkPackageTargetPaths(pkgDir, packageTargets);
 
   totalErrors += errors;
 }
