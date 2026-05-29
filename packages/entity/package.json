@@ -9,9 +9,9 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./api": {
-      "types": "./dist/api.d.ts",
-      "default": "./dist/api.js"
+    "./binding": {
+      "types": "./dist/binding.d.ts",
+      "default": "./dist/binding.js"
     },
     "./entity": {
       "types": "./dist/entity.d.ts",

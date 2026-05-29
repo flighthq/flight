@@ -33,14 +33,6 @@
       "types": "./dist/imageChannel.d.ts",
       "default": "./dist/imageChannel.js"
     },
-    "./imageData": {
-      "types": "./dist/imageData.d.ts",
-      "default": "./dist/imageData.js"
-    },
-    "./imageDataFrom": {
-      "types": "./dist/imageDataFrom.d.ts",
-      "default": "./dist/imageDataFrom.js"
-    },
     "./pixel": {
       "types": "./dist/pixel.d.ts",
       "default": "./dist/pixel.js"
@@ -48,6 +40,14 @@
     "./query": {
       "types": "./dist/query.d.ts",
       "default": "./dist/query.js"
+    },
+    "./surface": {
+      "types": "./dist/surface.d.ts",
+      "default": "./dist/surface.js"
+    },
+    "./surfaceFrom": {
+      "types": "./dist/surfaceFrom.d.ts",
+      "default": "./dist/surfaceFrom.js"
     },
     "./transform": {
       "types": "./dist/transform.d.ts",

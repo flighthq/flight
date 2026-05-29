@@ -42,8 +42,8 @@
       "default": "./dist/canvasQuadBatch.js"
     },
     "./renderState": {
-      "types": "./dist/canvasRendererState.d.ts",
-      "default": "./dist/canvasRendererState.js"
+      "types": "./dist/canvasRenderState.d.ts",
+      "default": "./dist/canvasRenderState.js"
     },
     "./transform": {
       "types": "./dist/canvasTransform.d.ts",

@@ -9,9 +9,13 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./createTimeline": {
-      "types": "./dist/createTimeline.d.ts",
-      "default": "./dist/createTimeline.js"
+    "./movieClip": {
+      "types": "./dist/movieClip.d.ts",
+      "default": "./dist/movieClip.js"
+    },
+    "./timeline": {
+      "types": "./dist/timeline.d.ts",
+      "default": "./dist/timeline.js"
     }
   },
   "files": [

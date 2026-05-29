@@ -6,38 +6,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./materials": {
-      "types": "./dist/materials.d.ts",
-      "default": "./dist/materials.js"
-    },
-    "./geometry": {
-      "types": "./dist/geometry.d.ts",
-      "default": "./dist/geometry.js"
-    },
-    "./render": {
-      "types": "./dist/render.d.ts",
-      "default": "./dist/render.js"
-    },
-    "./render-canvas": {
-      "types": "./dist/render-canvas.d.ts",
-      "default": "./dist/render-canvas.js"
-    },
-    "./render-core": {
-      "types": "./dist/render-core.d.ts",
-      "default": "./dist/render-core.js"
-    },
-    "./scene": {
-      "types": "./dist/scene.d.ts",
-      "default": "./dist/scene.js"
-    },
-    "./scene/graph": {
-      "types": "./dist/scene-graph.d.ts",
-      "default": "./dist/scene-graph.js"
-    },
-    "./scenegraph-display": {
-      "types": "./dist/scenegraph-display.d.ts",
-      "default": "./dist/scenegraph-display.js"
     }
   },
   "files": [

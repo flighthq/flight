@@ -21,10 +21,6 @@
       "types": "./dist/hasBoundsRect.d.ts",
       "default": "./dist/hasBoundsRect.js"
     },
-    "./hasBoundsRectAndTransform2d": {
-      "types": "./dist/hasBoundsRectAndTransform2d.d.ts",
-      "default": "./dist/hasBoundsRectAndTransform2d.js"
-    },
     "./hasTransform2d": {
       "types": "./dist/hasTransform2d.d.ts",
       "default": "./dist/hasTransform2d.js"

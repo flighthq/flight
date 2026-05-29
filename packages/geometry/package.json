@@ -9,29 +9,29 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./matrix3x2": {
-      "types": "./dist/matrix3x2.d.ts",
-      "default": "./dist/matrix3x2.js"
+    "./matrix": {
+      "types": "./dist/matrix.d.ts",
+      "default": "./dist/matrix.js"
     },
-    "./matrix3x2Pool": {
-      "types": "./dist/matrix3x2Pool.d.ts",
-      "default": "./dist/matrix3x2Pool.js"
+    "./matrixPool": {
+      "types": "./dist/matrixPool.d.ts",
+      "default": "./dist/matrixPool.js"
     },
-    "./matrix3x3": {
-      "types": "./dist/matrix3x3.d.ts",
-      "default": "./dist/matrix3x3.js"
+    "./matrix3": {
+      "types": "./dist/matrix3.d.ts",
+      "default": "./dist/matrix3.js"
     },
-    "./matrix3x3Pool": {
-      "types": "./dist/matrix3x3Pool.d.ts",
-      "default": "./dist/matrix3x3Pool.js"
+    "./matrix3Pool": {
+      "types": "./dist/matrix3Pool.d.ts",
+      "default": "./dist/matrix3Pool.js"
     },
-    "./matrix4x4": {
-      "types": "./dist/matrix4x4.d.ts",
-      "default": "./dist/matrix4x4.js"
+    "./matrix4": {
+      "types": "./dist/matrix4.d.ts",
+      "default": "./dist/matrix4.js"
     },
-    "./matrix4x4Pool": {
-      "types": "./dist/matrix4x4Pool.d.ts",
-      "default": "./dist/matrix4x4Pool.js"
+    "./matrix4Pool": {
+      "types": "./dist/matrix4Pool.d.ts",
+      "default": "./dist/matrix4Pool.js"
     },
     "./rectangle": {
       "types": "./dist/rectangle.d.ts",
@@ -44,6 +44,10 @@
     "./vector2": {
       "types": "./dist/vector2.d.ts",
       "default": "./dist/vector2.js"
+    },
+    "./vector2Pool": {
+      "types": "./dist/vector2Pool.d.ts",
+      "default": "./dist/vector2Pool.js"
     },
     "./vector3": {
       "types": "./dist/vector3.d.ts",

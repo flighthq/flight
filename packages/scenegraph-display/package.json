@@ -21,9 +21,9 @@
       "types": "./dist/displayObject.d.ts",
       "default": "./dist/displayObject.js"
     },
-    "./domObject": {
-      "types": "./dist/domObject.d.ts",
-      "default": "./dist/domObject.js"
+    "./domElement": {
+      "types": "./dist/domElement.d.ts",
+      "default": "./dist/domElement.js"
     },
     "./inputText": {
       "types": "./dist/inputText.d.ts",
@@ -41,9 +41,21 @@
       "types": "./dist/shape.d.ts",
       "default": "./dist/shape.js"
     },
-    "./spriteContainer": {
-      "types": "./dist/spriteContainer.d.ts",
-      "default": "./dist/spriteContainer.js"
+    "./scale9Shape": {
+      "types": "./dist/scale9Shape.d.ts",
+      "default": "./dist/scale9Shape.js"
+    },
+    "./shapeCommands": {
+      "types": "./dist/shapeCommands.d.ts",
+      "default": "./dist/shapeCommands.js"
+    },
+    "./shapeHitTestRegistry": {
+      "types": "./dist/shapeHitTestRegistry.d.ts",
+      "default": "./dist/shapeHitTestRegistry.js"
+    },
+    "./spriteBatch": {
+      "types": "./dist/spriteBatch.d.ts",
+      "default": "./dist/spriteBatch.js"
     },
     "./stage": {
       "types": "./dist/stage.d.ts",
@@ -52,14 +64,6 @@
     "./text": {
       "types": "./dist/text.d.ts",
       "default": "./dist/text.js"
-    },
-    "./tilemap": {
-      "types": "./dist/tilemap.d.ts",
-      "default": "./dist/tilemap.js"
-    },
-    "./transform": {
-      "types": "./dist/transform.d.ts",
-      "default": "./dist/transform.js"
     },
     "./video": {
       "types": "./dist/video.d.ts",
