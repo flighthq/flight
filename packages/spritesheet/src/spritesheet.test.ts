@@ -8,6 +8,14 @@ describe('createSpritesheet', () => {
     expect(sheet.frames).toHaveLength(0);
     expect(Object.keys(sheet.animations)).toHaveLength(0);
   });
+
+  it('uses provided animations and frames directly', () => {
+    const animations = { idle: createSpritesheetAnimation() };
+    const frames = [{ id: 0, offsetX: 0, offsetY: 0 }];
+    const sheet = createSpritesheet({ animations, frames });
+    expect(sheet.animations).toBe(animations);
+    expect(sheet.frames).toBe(frames);
+  });
 });
 
 describe('getSpritesheetAnimation', () => {
