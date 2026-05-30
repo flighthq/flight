@@ -32,7 +32,6 @@
     "order": "tsx ./scripts/order.ts",
     "order:check": "tsx ./scripts/order.ts --check",
     "order:fix": "tsx ./scripts/order.ts --fix",
-    "overview": "tsx ./scripts/overview.ts",
     "test": "vitest run --project=!size",
     "test:unit": "npm run test:run --workspaces --if-present",
     "test:integration": "vitest run tests/integration",
