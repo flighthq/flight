@@ -7,13 +7,14 @@ import type {
 } from './GraphNode';
 import type { HasAppearance } from './HasAppearance';
 import type { HasBoundsRect, HasBoundsRectRuntime } from './HasBoundsRect';
+import type { HasGraphHierarchy } from './HasGraphHierarchy';
 import type { HasTransform2D, HasTransform2DRuntime } from './HasTransform2D';
 
 export const SpriteGraph = Symbol('SpriteGraph');
 
 export type SpriteNode = GraphNode<typeof SpriteGraph, SpriteNodeTraits> & SpriteNodeTraits;
 
-export interface SpriteNodeTraits extends HasAppearance, HasBoundsRect, HasTransform2D {
+export interface SpriteNodeTraits extends HasAppearance, HasBoundsRect, HasGraphHierarchy, HasTransform2D {
   alphaEnabled: boolean;
   blendModeEnabled: boolean;
   colorTransformEnabled: boolean;

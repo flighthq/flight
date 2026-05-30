@@ -9,12 +9,13 @@ import type {
 } from './GraphNode';
 import type { HasAppearance } from './HasAppearance';
 import type { HasBoundsRect, HasBoundsRectRuntime } from './HasBoundsRect';
+import type { HasGraphHierarchy } from './HasGraphHierarchy';
 import type { HasTransform2D, HasTransform2DRuntime } from './HasTransform2D';
 import type { Rectangle } from './Rectangle';
 
 export type DisplayObject = GraphNode<typeof DisplayGraph, DisplayObjectTraits> & DisplayObjectTraits;
 
-export interface DisplayObjectTraits extends HasAppearance, HasBoundsRect, HasTransform2D {
+export interface DisplayObjectTraits extends HasAppearance, HasBoundsRect, HasGraphHierarchy, HasTransform2D {
   data: DisplayObjectData | null;
   filters: BitmapFilter[] | null;
   mask: DisplayObject | null;

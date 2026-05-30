@@ -1,9 +1,9 @@
-import type { BlendMode, ColorTransform, GraphNode, HasAppearance, Shader } from '@flighthq/types';
+import type { BlendMode, ColorTransform, GraphAppearanceNode, Shader } from '@flighthq/types';
 
 import { invalidateAppearance } from './revision';
 
 export function setAppearanceAlpha<GraphKind extends symbol, Traits extends object>(
-  source: GraphNode<GraphKind, Traits> & HasAppearance,
+  source: GraphAppearanceNode<GraphKind, Traits>,
   value: number,
 ): void {
   source.alpha = value;
@@ -11,7 +11,7 @@ export function setAppearanceAlpha<GraphKind extends symbol, Traits extends obje
 }
 
 export function setAppearanceBlendMode<GraphKind extends symbol, Traits extends object>(
-  source: GraphNode<GraphKind, Traits> & HasAppearance,
+  source: GraphAppearanceNode<GraphKind, Traits>,
   value: BlendMode | null,
 ): void {
   source.blendMode = value;
@@ -19,7 +19,7 @@ export function setAppearanceBlendMode<GraphKind extends symbol, Traits extends 
 }
 
 export function setAppearanceColorTransform<GraphKind extends symbol, Traits extends object>(
-  source: GraphNode<GraphKind, Traits> & HasAppearance,
+  source: GraphAppearanceNode<GraphKind, Traits>,
   value: ColorTransform | null,
 ): void {
   source.colorTransform = value;
@@ -27,7 +27,7 @@ export function setAppearanceColorTransform<GraphKind extends symbol, Traits ext
 }
 
 export function setAppearanceShader<GraphKind extends symbol, Traits extends object>(
-  source: GraphNode<GraphKind, Traits> & HasAppearance,
+  source: GraphAppearanceNode<GraphKind, Traits>,
   value: Shader | null,
 ): void {
   source.shader = value;
@@ -35,7 +35,7 @@ export function setAppearanceShader<GraphKind extends symbol, Traits extends obj
 }
 
 export function setAppearanceVisible<GraphKind extends symbol, Traits extends object>(
-  source: GraphNode<GraphKind, Traits> & HasAppearance,
+  source: GraphAppearanceNode<GraphKind, Traits>,
   value: boolean,
 ): void {
   source.visible = value;
