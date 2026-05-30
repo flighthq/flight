@@ -120,48 +120,6 @@ describe('createGraphNodeRuntime', () => {
   });
 });
 
-describe('getGraphNodeRuntime', () => {
-  it('assumes runtime is defined', () => {
-    const node = { kind: NodeTestKind };
-    const runtime = getGraphNodeRuntime(node as GraphNode<typeof TestGraph>);
-    expect(runtime).toBeUndefined();
-  });
-
-  it('returns runtime when defined', () => {
-    const node = createGraphNode(TestGraph, NodeTestKind);
-    const runtime = getGraphNodeRuntime(node);
-    expect(runtime).not.toBeUndefined();
-  });
-});
-
-const TestGraph: unique symbol = Symbol('TestGraph');
-
-const NodeTestKind: unique symbol = Symbol('NodeTest');
-
-interface NodeTest<GraphKind extends symbol> extends GraphNode<GraphKind> {
-  data: NodeTestData;
-}
-
-interface NodeTestData extends GraphNodeData {
-  testDataField: string;
-}
-
-interface NodeTestRuntime<GraphKind extends symbol> extends GraphNodeRuntime<GraphKind> {
-  testRuntimeField: string;
-}
-
-function createGraphNodeTestData(data?: Partial<NodeTestData>): NodeTestData {
-  return {
-    testDataField: data?.testDataField ?? 'testDataField',
-  };
-}
-
-function createGraphNodeTestRuntime<GraphKind extends symbol>(): NodeTestRuntime<GraphKind> {
-  const obj = createGraphNodeRuntime() as NodeTestRuntime<GraphKind>;
-  obj.testRuntimeField = 'testRuntimeField';
-  return obj;
-}
-
 describe('createGraphNodeSignals', () => {
   it('returns an object with three signal properties', () => {
     const signals = createGraphNodeSignals();
@@ -176,6 +134,20 @@ describe('defaultGraphNodeRuntimeCanAddChild', () => {
     const parent = createGraphNode(TestGraph, NodeTestKind);
     const child = createGraphNode(TestGraph, NodeTestKind);
     expect(defaultGraphNodeRuntimeCanAddChild(parent, child)).toBe(true);
+  });
+});
+
+describe('getGraphNodeRuntime', () => {
+  it('assumes runtime is defined', () => {
+    const node = { kind: NodeTestKind };
+    const runtime = getGraphNodeRuntime(node as GraphNode<typeof TestGraph>);
+    expect(runtime).toBeUndefined();
+  });
+
+  it('returns runtime when defined', () => {
+    const node = createGraphNode(TestGraph, NodeTestKind);
+    const runtime = getGraphNodeRuntime(node);
+    expect(runtime).not.toBeUndefined();
   });
 });
 
@@ -207,3 +179,31 @@ describe('setEnabled', () => {
     expect(node.enabled).toBe(true);
   });
 });
+
+const TestGraph: unique symbol = Symbol('TestGraph');
+
+const NodeTestKind: unique symbol = Symbol('NodeTest');
+
+interface NodeTest<GraphKind extends symbol> extends GraphNode<GraphKind> {
+  data: NodeTestData;
+}
+
+interface NodeTestData extends GraphNodeData {
+  testDataField: string;
+}
+
+interface NodeTestRuntime<GraphKind extends symbol> extends GraphNodeRuntime<GraphKind> {
+  testRuntimeField: string;
+}
+
+function createGraphNodeTestData(data?: Partial<NodeTestData>): NodeTestData {
+  return {
+    testDataField: data?.testDataField ?? 'testDataField',
+  };
+}
+
+function createGraphNodeTestRuntime<GraphKind extends symbol>(): NodeTestRuntime<GraphKind> {
+  const obj = createGraphNodeRuntime() as NodeTestRuntime<GraphKind>;
+  obj.testRuntimeField = 'testRuntimeField';
+  return obj;
+}

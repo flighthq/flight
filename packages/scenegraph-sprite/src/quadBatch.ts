@@ -35,15 +35,15 @@ export function createQuadBatchRuntime(): QuadBatchRuntime {
   return createSpriteNodeRuntime(defaultMethods) as QuadBatchRuntime;
 }
 
-export function getQuadBatchRuntime(source: Readonly<QuadBatch>): Readonly<QuadBatchRuntime> {
-  return getSpriteNodeRuntime(source) as QuadBatchRuntime;
-}
-
 export function getQuadBatchCapacity(source: Readonly<QuadBatch>): number {
   const data = source.data;
   const stride = getQuadTransformStride(data.transformType);
   const transformCapacity = (data.transforms.length / stride) | 0;
   return Math.min(data.ids.length, transformCapacity);
+}
+
+export function getQuadBatchRuntime(source: Readonly<QuadBatch>): Readonly<QuadBatchRuntime> {
+  return getSpriteNodeRuntime(source) as QuadBatchRuntime;
 }
 
 export function getQuadTransformStride(transformType: QuadTransformType): number {

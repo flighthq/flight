@@ -6,56 +6,6 @@ import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, Matrix,
 import { popCanvasClipRect, popCanvasScrollRect, pushCanvasClipRect, pushCanvasScrollRect } from './canvasClipRect';
 import { createCanvasRenderState } from './canvasRenderState';
 
-describe('popCanvasClipRect', () => {
-  it('calls context.restore()', () => {
-    const c = document.createElement('canvas');
-    const state = createCanvasRenderState(c);
-    const spy = vi.spyOn(state.context, 'restore');
-    popCanvasClipRect(state);
-    expect(spy).toHaveBeenCalled();
-  });
-});
-
-describe('popCanvasScrollRect', () => {
-  it('calls context.restore() and decrements currentScrollRectDepth', () => {
-    const c = document.createElement('canvas');
-    const state = createCanvasRenderState(c);
-    state.currentScrollRectDepth = 1;
-    const spy = vi.spyOn(state.context, 'restore');
-    popCanvasScrollRect(state);
-    expect(spy).toHaveBeenCalled();
-    expect(state.currentScrollRectDepth).toBe(0);
-  });
-});
-
-describe('pushCanvasClipRect', () => {
-  it('saves context, clips to rect, and restores', () => {
-    const c = document.createElement('canvas');
-    const state = createCanvasRenderState(c);
-    const r = createRectangle(0, 0, 50, 50);
-    const t = createMatrix();
-    const saveSpy = vi.spyOn(state.context, 'save');
-    const clipSpy = vi.spyOn(state.context, 'clip');
-    pushCanvasClipRect(state, r, t);
-    expect(saveSpy).toHaveBeenCalled();
-    expect(clipSpy).toHaveBeenCalled();
-  });
-});
-
-describe('pushCanvasScrollRect', () => {
-  it('increments currentScrollRectDepth', () => {
-    const c = document.createElement('canvas');
-    const state = createCanvasRenderState(c);
-    const source = createDisplayObject();
-    source.scrollRect = createRectangle(0, 0, 50, 50);
-    const data = getDisplayObjectRenderNode(state, source);
-    data.transform2D = createMatrix();
-    const before = state.currentScrollRectDepth;
-    pushCanvasScrollRect(state, data);
-    expect(state.currentScrollRectDepth).toBe(before + 1);
-  });
-});
-
 describe('Clip and Scroll Rect Functions', () => {
   let canvas: HTMLCanvasElement;
   let state: CanvasRenderState;
@@ -113,4 +63,54 @@ describe('Clip and Scroll Rect Functions', () => {
   //   expect(pushClipRectSpy).toHaveBeenCalledWith(state, rect, transform);
   //   expect(state.currentScrollRectDepth).toBe(1);
   // });
+});
+
+describe('popCanvasClipRect', () => {
+  it('calls context.restore()', () => {
+    const c = document.createElement('canvas');
+    const state = createCanvasRenderState(c);
+    const spy = vi.spyOn(state.context, 'restore');
+    popCanvasClipRect(state);
+    expect(spy).toHaveBeenCalled();
+  });
+});
+
+describe('popCanvasScrollRect', () => {
+  it('calls context.restore() and decrements currentScrollRectDepth', () => {
+    const c = document.createElement('canvas');
+    const state = createCanvasRenderState(c);
+    state.currentScrollRectDepth = 1;
+    const spy = vi.spyOn(state.context, 'restore');
+    popCanvasScrollRect(state);
+    expect(spy).toHaveBeenCalled();
+    expect(state.currentScrollRectDepth).toBe(0);
+  });
+});
+
+describe('pushCanvasClipRect', () => {
+  it('saves context, clips to rect, and restores', () => {
+    const c = document.createElement('canvas');
+    const state = createCanvasRenderState(c);
+    const r = createRectangle(0, 0, 50, 50);
+    const t = createMatrix();
+    const saveSpy = vi.spyOn(state.context, 'save');
+    const clipSpy = vi.spyOn(state.context, 'clip');
+    pushCanvasClipRect(state, r, t);
+    expect(saveSpy).toHaveBeenCalled();
+    expect(clipSpy).toHaveBeenCalled();
+  });
+});
+
+describe('pushCanvasScrollRect', () => {
+  it('increments currentScrollRectDepth', () => {
+    const c = document.createElement('canvas');
+    const state = createCanvasRenderState(c);
+    const source = createDisplayObject();
+    source.scrollRect = createRectangle(0, 0, 50, 50);
+    const data = getDisplayObjectRenderNode(state, source);
+    data.transform2D = createMatrix();
+    const before = state.currentScrollRectDepth;
+    pushCanvasScrollRect(state, data);
+    expect(state.currentScrollRectDepth).toBe(before + 1);
+  });
 });

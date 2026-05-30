@@ -23,6 +23,13 @@ function makeAtlas() {
   return atlas;
 }
 
+describe('defaultDOMQuadBatchRenderer', () => {
+  it('has draw and createData', () => {
+    expect(typeof defaultDOMQuadBatchRenderer.draw).toBe('function');
+    expect(typeof defaultDOMQuadBatchRenderer.createData).toBe('function');
+  });
+});
+
 describe('drawDOMQuadBatch', () => {
   it('does nothing when atlas is null', () => {
     const state = makeState();
@@ -77,12 +84,5 @@ describe('drawDOMQuadBatch', () => {
 
     expect(state.element.children.length).toBe(1);
     expect(state.element.children[0].tagName).toBe('CANVAS');
-  });
-});
-
-describe('defaultDOMQuadBatchRenderer', () => {
-  it('has draw and createData', () => {
-    expect(typeof defaultDOMQuadBatchRenderer.draw).toBe('function');
-    expect(typeof defaultDOMQuadBatchRenderer.createData).toBe('function');
   });
 });

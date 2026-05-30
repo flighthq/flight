@@ -10,6 +10,18 @@ import {
   getSpriteRuntime,
 } from './sprite';
 
+describe('computeSpriteLocalBoundsRect', () => {
+  it('is a no-op that does not modify out', () => {
+    const sprite = createSprite();
+    const out = createRectangle(1, 2, 3, 4);
+    computeSpriteLocalBoundsRect(out, sprite as unknown as GraphNode);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.width).toBe(3);
+    expect(out.height).toBe(4);
+  });
+});
+
 describe('createSprite', () => {
   let sprite: Sprite;
 
@@ -42,18 +54,6 @@ describe('createSprite', () => {
     const base = {};
     const obj = createSprite(base);
     expect(obj).not.toStrictEqual(base);
-  });
-});
-
-describe('computeSpriteLocalBoundsRect', () => {
-  it('is a no-op that does not modify out', () => {
-    const sprite = createSprite();
-    const out = createRectangle(1, 2, 3, 4);
-    computeSpriteLocalBoundsRect(out, sprite as unknown as GraphNode);
-    expect(out.x).toBe(1);
-    expect(out.y).toBe(2);
-    expect(out.width).toBe(3);
-    expect(out.height).toBe(4);
   });
 });
 

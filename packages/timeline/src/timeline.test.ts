@@ -31,6 +31,69 @@ describe('createTimeline', () => {
   });
 });
 
+describe('gotoAndPlayTimeline', () => {
+  it('seeks to frame and starts playing', () => {
+    const t = make();
+    gotoAndPlayTimeline(t, 3);
+    expect(t.currentFrame).toBe(3);
+    expect(t.isPlaying).toBe(true);
+  });
+
+  it('fires onEnterFrame immediately for the target frame', () => {
+    const frames: number[] = [];
+    const t = make({ onEnterFrame: (f) => frames.push(f) });
+    gotoAndPlayTimeline(t, 3);
+    expect(frames).toEqual([3]);
+  });
+
+  it('resolves a label name to a frame number', () => {
+    const t = make({ labels: [{ name: 'run', frame: 2 }] });
+    gotoAndPlayTimeline(t, 'run');
+    expect(t.currentFrame).toBe(2);
+    expect(t.isPlaying).toBe(true);
+  });
+
+  it('throws for an unknown label', () => {
+    const t = make();
+    expect(() => gotoAndPlayTimeline(t, 'missing')).toThrow();
+  });
+});
+
+describe('gotoAndStopTimeline', () => {
+  it('seeks to frame and stops', () => {
+    const t = make();
+    playTimeline(t);
+    gotoAndStopTimeline(t, 2);
+    expect(t.currentFrame).toBe(2);
+    expect(t.isPlaying).toBe(false);
+  });
+
+  it('clamps frame to valid range', () => {
+    const t = make({ totalFrames: 4 });
+    gotoAndStopTimeline(t, 99);
+    expect(t.currentFrame).toBe(4);
+    gotoAndStopTimeline(t, 0);
+    expect(t.currentFrame).toBe(1);
+  });
+});
+
+describe('nextFrameTimeline', () => {
+  it('advances one frame and stops', () => {
+    const t = make();
+    playTimeline(t);
+    nextFrameTimeline(t);
+    expect(t.currentFrame).toBe(2);
+    expect(t.isPlaying).toBe(false);
+  });
+
+  it('clamps at the last frame', () => {
+    const t = make({ totalFrames: 4 });
+    gotoAndStopTimeline(t, 4);
+    nextFrameTimeline(t);
+    expect(t.currentFrame).toBe(4);
+  });
+});
+
 describe('playTimeline', () => {
   it('sets isPlaying to true', () => {
     const t = make();
@@ -49,6 +112,39 @@ describe('playTimeline', () => {
     t.timeElapsed = 999;
     playTimeline(t);
     expect(t.timeElapsed).toBe(0);
+  });
+});
+
+describe('prevFrameTimeline', () => {
+  it('retreats one frame and stops', () => {
+    const t = make();
+    gotoAndStopTimeline(t, 3);
+    prevFrameTimeline(t);
+    expect(t.currentFrame).toBe(2);
+    expect(t.isPlaying).toBe(false);
+  });
+
+  it('clamps at frame 1', () => {
+    const t = make();
+    prevFrameTimeline(t);
+    expect(t.currentFrame).toBe(1);
+  });
+});
+
+describe('resolveTimelineLabel', () => {
+  it('returns the matching label', () => {
+    const t = make({
+      labels: [
+        { name: 'idle', frame: 1 },
+        { name: 'run', frame: 3 },
+      ],
+    });
+    expect(resolveTimelineLabel(t, 'run')?.frame).toBe(3);
+  });
+
+  it('returns null for an unknown name', () => {
+    const t = make();
+    expect(resolveTimelineLabel(t, 'missing')).toBeNull();
   });
 });
 
@@ -114,101 +210,5 @@ describe('updateTimeline', () => {
     playTimeline(t);
     updateTimeline(t, 250); // should advance 2 frames beyond current
     expect(t.currentFrame).toBe(3);
-  });
-});
-
-describe('gotoAndPlayTimeline', () => {
-  it('seeks to frame and starts playing', () => {
-    const t = make();
-    gotoAndPlayTimeline(t, 3);
-    expect(t.currentFrame).toBe(3);
-    expect(t.isPlaying).toBe(true);
-  });
-
-  it('fires onEnterFrame immediately for the target frame', () => {
-    const frames: number[] = [];
-    const t = make({ onEnterFrame: (f) => frames.push(f) });
-    gotoAndPlayTimeline(t, 3);
-    expect(frames).toEqual([3]);
-  });
-
-  it('resolves a label name to a frame number', () => {
-    const t = make({ labels: [{ name: 'run', frame: 2 }] });
-    gotoAndPlayTimeline(t, 'run');
-    expect(t.currentFrame).toBe(2);
-    expect(t.isPlaying).toBe(true);
-  });
-
-  it('throws for an unknown label', () => {
-    const t = make();
-    expect(() => gotoAndPlayTimeline(t, 'missing')).toThrow();
-  });
-});
-
-describe('gotoAndStopTimeline', () => {
-  it('seeks to frame and stops', () => {
-    const t = make();
-    playTimeline(t);
-    gotoAndStopTimeline(t, 2);
-    expect(t.currentFrame).toBe(2);
-    expect(t.isPlaying).toBe(false);
-  });
-
-  it('clamps frame to valid range', () => {
-    const t = make({ totalFrames: 4 });
-    gotoAndStopTimeline(t, 99);
-    expect(t.currentFrame).toBe(4);
-    gotoAndStopTimeline(t, 0);
-    expect(t.currentFrame).toBe(1);
-  });
-});
-
-describe('nextFrameTimeline', () => {
-  it('advances one frame and stops', () => {
-    const t = make();
-    playTimeline(t);
-    nextFrameTimeline(t);
-    expect(t.currentFrame).toBe(2);
-    expect(t.isPlaying).toBe(false);
-  });
-
-  it('clamps at the last frame', () => {
-    const t = make({ totalFrames: 4 });
-    gotoAndStopTimeline(t, 4);
-    nextFrameTimeline(t);
-    expect(t.currentFrame).toBe(4);
-  });
-});
-
-describe('prevFrameTimeline', () => {
-  it('retreats one frame and stops', () => {
-    const t = make();
-    gotoAndStopTimeline(t, 3);
-    prevFrameTimeline(t);
-    expect(t.currentFrame).toBe(2);
-    expect(t.isPlaying).toBe(false);
-  });
-
-  it('clamps at frame 1', () => {
-    const t = make();
-    prevFrameTimeline(t);
-    expect(t.currentFrame).toBe(1);
-  });
-});
-
-describe('resolveTimelineLabel', () => {
-  it('returns the matching label', () => {
-    const t = make({
-      labels: [
-        { name: 'idle', frame: 1 },
-        { name: 'run', frame: 3 },
-      ],
-    });
-    expect(resolveTimelineLabel(t, 'run')?.frame).toBe(3);
-  });
-
-  it('returns null for an unknown name', () => {
-    const t = make();
-    expect(resolveTimelineLabel(t, 'missing')).toBeNull();
   });
 });

@@ -2,8 +2,10 @@ import type { Matrix } from '@flighthq/types';
 
 import { createMatrix, identityMatrix } from './matrix';
 
-export function clearMatrixPool(): void {
-  pool.length = 0;
+export function acquireIdentityMatrix(): Matrix {
+  const m = acquireMatrix();
+  identityMatrix(m);
+  return m;
 }
 
 export function acquireMatrix(): Matrix {
@@ -18,10 +20,8 @@ export function acquireMatrix(): Matrix {
   return m;
 }
 
-export function acquireIdentityMatrix(): Matrix {
-  const m = acquireMatrix();
-  identityMatrix(m);
-  return m;
+export function clearMatrixPool(): void {
+  pool.length = 0;
 }
 
 export function releaseMatrix(m: Matrix): void {

@@ -16,6 +16,30 @@ function makeStateAndObj() {
   return { state, obj };
 }
 
+describe('drawImageCacheResult', () => {
+  it('does not throw when canvas is null', () => {
+    const canvas = document.createElement('canvas');
+    const state = createCanvasRenderState(canvas);
+    const obj = createDisplayObject();
+    const data = getDisplayObjectRenderNode(state, obj);
+    const cache = { canvas: null, transform: createMatrix() };
+
+    expect(() => drawImageCacheResult(state, data, cache)).not.toThrow();
+  });
+
+  it('calls drawImage when canvas is set', () => {
+    const { state, obj } = makeStateAndObj();
+    renderToImageCache(state, obj, null, 0xff0000);
+    const data = getDisplayObjectRenderNode(state, obj);
+    const cache = getDisplayObjectRuntime(obj).imageCache!;
+    const spy = vi.spyOn(state.context, 'drawImage');
+
+    drawImageCacheResult(state, data, cache);
+
+    expect(spy).toHaveBeenCalledOnce();
+  });
+});
+
 describe('renderToImageCache', () => {
   it('does not throw when bounds are zero', () => {
     const canvas = document.createElement('canvas');
@@ -55,29 +79,5 @@ describe('renderToImageCache', () => {
     expect(cache!.transform.d).toBeCloseTo(1);
     expect(cache!.transform.b).toBeCloseTo(0);
     expect(cache!.transform.c).toBeCloseTo(0);
-  });
-});
-
-describe('drawImageCacheResult', () => {
-  it('does not throw when canvas is null', () => {
-    const canvas = document.createElement('canvas');
-    const state = createCanvasRenderState(canvas);
-    const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
-    const cache = { canvas: null, transform: createMatrix() };
-
-    expect(() => drawImageCacheResult(state, data, cache)).not.toThrow();
-  });
-
-  it('calls drawImage when canvas is set', () => {
-    const { state, obj } = makeStateAndObj();
-    renderToImageCache(state, obj, null, 0xff0000);
-    const data = getDisplayObjectRenderNode(state, obj);
-    const cache = getDisplayObjectRuntime(obj).imageCache!;
-    const spy = vi.spyOn(state.context, 'drawImage');
-
-    drawImageCacheResult(state, data, cache);
-
-    expect(spy).toHaveBeenCalledOnce();
   });
 });

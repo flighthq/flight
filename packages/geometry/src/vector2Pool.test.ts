@@ -6,6 +6,25 @@ beforeEach(() => {
   clearVector2Pool();
 });
 
+describe('acquireEmptyVector2', () => {
+  it('returns a vector with all components set to 0', () => {
+    const v = acquireEmptyVector2();
+    expect(v.x).toBe(0);
+    expect(v.y).toBe(0);
+  });
+
+  it('resets a released vector to zero', () => {
+    const v1 = acquireVector2();
+    v1.x = 5;
+    v1.y = 10;
+    releaseVector2(v1);
+    const v2 = acquireEmptyVector2();
+    expect(v2).toBe(v1);
+    expect(v2.x).toBe(0);
+    expect(v2.y).toBe(0);
+  });
+});
+
 describe('acquireVector2', () => {
   it('returns a new Vector2 when pool is empty', () => {
     const v: Vector2 = acquireVector2();
@@ -29,31 +48,6 @@ describe('acquireVector2', () => {
   });
 });
 
-describe('acquireEmptyVector2', () => {
-  it('returns a vector with all components set to 0', () => {
-    const v = acquireEmptyVector2();
-    expect(v.x).toBe(0);
-    expect(v.y).toBe(0);
-  });
-
-  it('resets a released vector to zero', () => {
-    const v1 = acquireVector2();
-    v1.x = 5;
-    v1.y = 10;
-    releaseVector2(v1);
-    const v2 = acquireEmptyVector2();
-    expect(v2).toBe(v1);
-    expect(v2.x).toBe(0);
-    expect(v2.y).toBe(0);
-  });
-});
-
-describe('releaseVector2', () => {
-  it('handles null safely', () => {
-    expect(() => releaseVector2(null as unknown as Vector2)).not.toThrow();
-  });
-});
-
 describe('clearVector2Pool', () => {
   it('empties the pool so the next get allocates fresh', () => {
     const v = acquireVector2();
@@ -61,5 +55,11 @@ describe('clearVector2Pool', () => {
     clearVector2Pool();
     const v2 = acquireVector2();
     expect(v2).not.toBe(v);
+  });
+});
+
+describe('releaseVector2', () => {
+  it('handles null safely', () => {
+    expect(() => releaseVector2(null as unknown as Vector2)).not.toThrow();
   });
 });

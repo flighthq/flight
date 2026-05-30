@@ -343,31 +343,6 @@ describe('defaultCanvasLineGradientStyle', () => {
   });
 });
 
-describe('defaultCanvasLineTo', () => {
-  it('calls ctx.lineTo', () => {
-    const ctx = makeContext();
-    const spy = vi.spyOn(ctx, 'lineTo');
-    const shape = createShape();
-    beginFill(shape, 0xff0000);
-    moveTo(shape, 0, 0);
-    lineTo(shape, 100, 50);
-    endFill(shape);
-    renderCanvasShapeCommands(ctx, shape.data.commands);
-    expect(spy).toHaveBeenCalledWith(100, 50);
-  });
-
-  it('moves to origin when there is no current point', () => {
-    const ctx = makeContext();
-    const moveSpy = vi.spyOn(ctx, 'moveTo');
-    const shape = createShape();
-    beginFill(shape, 0xff0000);
-    lineTo(shape, 100, 50);
-    endFill(shape);
-    renderCanvasShapeCommands(ctx, shape.data.commands);
-    expect(moveSpy).toHaveBeenCalledWith(0, 0);
-  });
-});
-
 describe('defaultCanvasLineStyle', () => {
   it('sets lineCap to butt when caps is none', () => {
     const ctx = makeContext();
@@ -411,6 +386,31 @@ describe('defaultCanvasLineStyle', () => {
     endFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(ctx.miterLimit).toBe(8);
+  });
+});
+
+describe('defaultCanvasLineTo', () => {
+  it('calls ctx.lineTo', () => {
+    const ctx = makeContext();
+    const spy = vi.spyOn(ctx, 'lineTo');
+    const shape = createShape();
+    beginFill(shape, 0xff0000);
+    moveTo(shape, 0, 0);
+    lineTo(shape, 100, 50);
+    endFill(shape);
+    renderCanvasShapeCommands(ctx, shape.data.commands);
+    expect(spy).toHaveBeenCalledWith(100, 50);
+  });
+
+  it('moves to origin when there is no current point', () => {
+    const ctx = makeContext();
+    const moveSpy = vi.spyOn(ctx, 'moveTo');
+    const shape = createShape();
+    beginFill(shape, 0xff0000);
+    lineTo(shape, 100, 50);
+    endFill(shape);
+    renderCanvasShapeCommands(ctx, shape.data.commands);
+    expect(moveSpy).toHaveBeenCalledWith(0, 0);
   });
 });
 

@@ -12,6 +12,14 @@ function makeState() {
   return state;
 }
 
+describe('defaultDOMRichTextRenderer', () => {
+  it('has draw, drawMask, and createData', () => {
+    expect(typeof defaultDOMRichTextRenderer.draw).toBe('function');
+    expect(typeof defaultDOMRichTextRenderer.drawMask).toBe('function');
+    expect(typeof defaultDOMRichTextRenderer.createData).toBe('function');
+  });
+});
+
 describe('drawDOMRichText', () => {
   it('does not throw when text is empty', () => {
     const state = makeState();
@@ -120,13 +128,5 @@ describe('drawDOMRichTextMask', () => {
     const node = createRichText();
     const renderNode = getDisplayObjectRenderNode(state, node);
     expect(() => drawDOMRichTextMask(state, renderNode)).not.toThrow();
-  });
-});
-
-describe('defaultDOMRichTextRenderer', () => {
-  it('has draw, drawMask, and createData', () => {
-    expect(typeof defaultDOMRichTextRenderer.draw).toBe('function');
-    expect(typeof defaultDOMRichTextRenderer.drawMask).toBe('function');
-    expect(typeof defaultDOMRichTextRenderer.createData).toBe('function');
   });
 });

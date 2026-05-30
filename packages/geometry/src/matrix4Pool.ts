@@ -2,8 +2,10 @@ import type { Matrix4 } from '@flighthq/types';
 
 import { createMatrix4, identityMatrix4 } from './matrix4';
 
-export function clearMatrix4Pool(): void {
-  pool.length = 0;
+export function acquireIdentityMatrix4(): Matrix4 {
+  const m = acquireMatrix4();
+  identityMatrix4(m);
+  return m;
 }
 
 export function acquireMatrix4(): Matrix4 {
@@ -18,10 +20,8 @@ export function acquireMatrix4(): Matrix4 {
   return m;
 }
 
-export function acquireIdentityMatrix4(): Matrix4 {
-  const m = acquireMatrix4();
-  identityMatrix4(m);
-  return m;
+export function clearMatrix4Pool(): void {
+  pool.length = 0;
 }
 
 export function releaseMatrix4(m: Matrix4): void {

@@ -51,164 +51,6 @@ beforeEach(() => {
   r2 = createRectangle(2, 5, 3, 4);
 });
 
-describe('createRectangle', () => {
-  it('initializes with default values', () => {
-    const rect = createRectangle();
-    expect(rect.x).toBe(0);
-    expect(rect.y).toBe(0);
-    expect(rect.width).toBe(0);
-    expect(rect.height).toBe(0);
-  });
-
-  it('initializes with specified values', () => {
-    const rect = createRectangle(1, 2, 3, 4);
-    expect(rect.x).toBe(1);
-    expect(rect.y).toBe(2);
-    expect(rect.width).toBe(3);
-    expect(rect.height).toBe(4);
-  });
-});
-
-// Properties
-describe('getRectangleBottom', () => {
-  it('returns y + height', () => {
-    expect(getRectangleBottom(r)).toBe(20);
-  });
-
-  it('allows a rectangle-like object', () => {
-    const r = { x: 0, y: 0, width: 10, height: 20 };
-    expect(getRectangleBottom(r)).toBe(20);
-  });
-});
-
-describe('isFlippedXRectangle', () => {
-  it('returns false if width is positive', () => {
-    expect(isFlippedXRectangle(r)).toBe(false);
-  });
-
-  it('returns false if width is negative', () => {
-    r.width = -10;
-    expect(isFlippedXRectangle(r)).toBe(true);
-  });
-
-  it('allows a rectangle-like object', () => {
-    const r = { x: 0, y: 0, width: 100, height: 100 };
-    expect(isFlippedXRectangle(r)).toBe(false);
-  });
-});
-
-describe('isFlippedYRectangle', () => {
-  it('returns false if height is positive', () => {
-    expect(isFlippedYRectangle(r)).toBe(false);
-  });
-
-  it('returns false if height is negative', () => {
-    r.height = -20;
-    expect(isFlippedYRectangle(r)).toBe(true);
-  });
-
-  it('allows a rectangle-like object', () => {
-    const r = { x: 0, y: 0, width: 100, height: 100 };
-    expect(isFlippedYRectangle(r)).toBe(false);
-  });
-});
-
-describe('getRectangleLeft', () => {
-  it('returns x', () => {
-    expect(getRectangleLeft(r)).toBe(0);
-  });
-});
-
-describe('getRectangleMaxX', () => {
-  it('returns correct maximum X for positive rectangle', () => {
-    expect(getRectangleMaxX(r)).toBe(10);
-  });
-
-  it('returns correct maximum X for flipped rectangle', () => {
-    r.width = -5;
-    expect(getRectangleMaxX(r)).toBe(0);
-  });
-
-  it('allows a rectangle-like object', () => {
-    const r = { x: 0, y: 0, width: 10, height: 10 };
-    expect(getRectangleMaxX(r)).toBe(10);
-  });
-});
-
-describe('getRectangleMaxY', () => {
-  it('returns correct maximum Y for positive rectangle', () => {
-    expect(getRectangleMaxY(r)).toBe(20);
-  });
-
-  it('returns correct maximum Y for flipped rectangle', () => {
-    r.height = -10;
-    expect(getRectangleMaxY(r)).toBe(0);
-  });
-
-  it('allows a rectangle-like object', () => {
-    const r = { x: 0, y: 0, width: 10, height: 10 };
-    expect(getRectangleMaxY(r)).toBe(10);
-  });
-});
-
-describe('getRectangleMinX', () => {
-  it('returns correct minimum X for positive rectangle', () => {
-    expect(getRectangleMinX(r)).toBe(0);
-  });
-
-  it('returns correct minimum X for flipped rectangle', () => {
-    r.width = -5;
-    expect(getRectangleMinX(r)).toBe(-5);
-  });
-
-  it('allows a rectangle-like object', () => {
-    const r = { x: 0, y: 0, width: 10, height: 10 };
-    expect(getRectangleMinX(r)).toBe(0);
-  });
-});
-
-describe('getRectangleMinY', () => {
-  it('returns correct minimum Y for positive rectangle', () => {
-    expect(getRectangleMinY(r)).toBe(0);
-  });
-
-  it('returns correct minimum Y for flipped rectangle', () => {
-    r.height = -10;
-    expect(getRectangleMinY(r)).toBe(-10);
-  });
-
-  it('allows a rectangle-like object', () => {
-    const r = { x: 0, y: 0, width: 10, height: 10 };
-    expect(getRectangleMinY(r)).toBe(0);
-  });
-});
-
-describe('getRectangleRight', () => {
-  it('getter returns x + width', () => {
-    expect(getRectangleRight(r)).toBe(10);
-  });
-
-  it('allows a rectangle-like object', () => {
-    const r = { x: 5, y: 0, width: 5, height: 0 };
-    expect(getRectangleRight(r)).toBe(10);
-  });
-});
-
-describe('getRectangleTop', () => {
-  it('returns y', () => {
-    expect(getRectangleTop(r)).toBe(0);
-  });
-});
-
-describe('getRectangleBottomRight', () => {
-  it('returns correct Vector2', () => {
-    const br = createVector2();
-    getRectangleBottomRight(br, r);
-    expect(br.x).toBe(10);
-    expect(br.y).toBe(20);
-  });
-});
-
 describe('cloneRectangle', () => {
   it('clone creates a copy', () => {
     const c = cloneRectangle(r);
@@ -232,6 +74,24 @@ describe('cloneRectangle', () => {
     const r = { x: 1, y: 1, width: 100, height: 100 };
     const c: Rectangle = cloneRectangle(r);
     expect(c).not.toBeNull();
+  });
+});
+
+describe('createRectangle', () => {
+  it('initializes with default values', () => {
+    const rect = createRectangle();
+    expect(rect.x).toBe(0);
+    expect(rect.y).toBe(0);
+    expect(rect.width).toBe(0);
+    expect(rect.height).toBe(0);
+  });
+
+  it('initializes with specified values', () => {
+    const rect = createRectangle(1, 2, 3, 4);
+    expect(rect.x).toBe(1);
+    expect(rect.y).toBe(2);
+    expect(rect.width).toBe(3);
+    expect(rect.height).toBe(4);
   });
 });
 
@@ -382,6 +242,113 @@ describe('equalsRectangle', () => {
   });
 });
 
+describe('getRectangleBottom', () => {
+  it('returns y + height', () => {
+    expect(getRectangleBottom(r)).toBe(20);
+  });
+
+  it('allows a rectangle-like object', () => {
+    const r = { x: 0, y: 0, width: 10, height: 20 };
+    expect(getRectangleBottom(r)).toBe(20);
+  });
+});
+
+describe('getRectangleLeft', () => {
+  it('returns x', () => {
+    expect(getRectangleLeft(r)).toBe(0);
+  });
+});
+
+describe('getRectangleMaxX', () => {
+  it('returns correct maximum X for positive rectangle', () => {
+    expect(getRectangleMaxX(r)).toBe(10);
+  });
+
+  it('returns correct maximum X for flipped rectangle', () => {
+    r.width = -5;
+    expect(getRectangleMaxX(r)).toBe(0);
+  });
+
+  it('allows a rectangle-like object', () => {
+    const r = { x: 0, y: 0, width: 10, height: 10 };
+    expect(getRectangleMaxX(r)).toBe(10);
+  });
+});
+
+describe('getRectangleMaxY', () => {
+  it('returns correct maximum Y for positive rectangle', () => {
+    expect(getRectangleMaxY(r)).toBe(20);
+  });
+
+  it('returns correct maximum Y for flipped rectangle', () => {
+    r.height = -10;
+    expect(getRectangleMaxY(r)).toBe(0);
+  });
+
+  it('allows a rectangle-like object', () => {
+    const r = { x: 0, y: 0, width: 10, height: 10 };
+    expect(getRectangleMaxY(r)).toBe(10);
+  });
+});
+
+describe('getRectangleMinX', () => {
+  it('returns correct minimum X for positive rectangle', () => {
+    expect(getRectangleMinX(r)).toBe(0);
+  });
+
+  it('returns correct minimum X for flipped rectangle', () => {
+    r.width = -5;
+    expect(getRectangleMinX(r)).toBe(-5);
+  });
+
+  it('allows a rectangle-like object', () => {
+    const r = { x: 0, y: 0, width: 10, height: 10 };
+    expect(getRectangleMinX(r)).toBe(0);
+  });
+});
+
+describe('getRectangleMinY', () => {
+  it('returns correct minimum Y for positive rectangle', () => {
+    expect(getRectangleMinY(r)).toBe(0);
+  });
+
+  it('returns correct minimum Y for flipped rectangle', () => {
+    r.height = -10;
+    expect(getRectangleMinY(r)).toBe(-10);
+  });
+
+  it('allows a rectangle-like object', () => {
+    const r = { x: 0, y: 0, width: 10, height: 10 };
+    expect(getRectangleMinY(r)).toBe(0);
+  });
+});
+
+describe('getRectangleRight', () => {
+  it('getter returns x + width', () => {
+    expect(getRectangleRight(r)).toBe(10);
+  });
+
+  it('allows a rectangle-like object', () => {
+    const r = { x: 5, y: 0, width: 5, height: 0 };
+    expect(getRectangleRight(r)).toBe(10);
+  });
+});
+
+describe('getRectangleTop', () => {
+  it('returns y', () => {
+    expect(getRectangleTop(r)).toBe(0);
+  });
+});
+
+describe('getRectangleBottomRight', () => {
+  it('returns correct Vector2', () => {
+    const br = createVector2();
+    getRectangleBottomRight(br, r);
+    expect(br.x).toBe(10);
+    expect(br.y).toBe(20);
+  });
+});
+
 describe('intersectionRectangle', () => {
   it('returns intersection rectangle', () => {
     const r3 = createRectangle(5, 10, 10, 10);
@@ -484,6 +451,38 @@ describe('isEmptyRectangle', () => {
     expect(isEmptyRectangle(r)).toBe(false);
     r.width = 0;
     expect(isEmptyRectangle(r)).toBe(true);
+  });
+});
+
+describe('isFlippedXRectangle', () => {
+  it('returns false if width is positive', () => {
+    expect(isFlippedXRectangle(r)).toBe(false);
+  });
+
+  it('returns false if width is negative', () => {
+    r.width = -10;
+    expect(isFlippedXRectangle(r)).toBe(true);
+  });
+
+  it('allows a rectangle-like object', () => {
+    const r = { x: 0, y: 0, width: 100, height: 100 };
+    expect(isFlippedXRectangle(r)).toBe(false);
+  });
+});
+
+describe('isFlippedYRectangle', () => {
+  it('returns false if height is positive', () => {
+    expect(isFlippedYRectangle(r)).toBe(false);
+  });
+
+  it('returns false if height is negative', () => {
+    r.height = -20;
+    expect(isFlippedYRectangle(r)).toBe(true);
+  });
+
+  it('allows a rectangle-like object', () => {
+    const r = { x: 0, y: 0, width: 100, height: 100 };
+    expect(isFlippedYRectangle(r)).toBe(false);
   });
 });
 

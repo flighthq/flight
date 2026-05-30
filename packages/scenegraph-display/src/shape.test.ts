@@ -20,6 +20,40 @@ describe('clearShapeCommands', () => {
   });
 });
 
+describe('computeShapeLocalBoundsRect', () => {
+  it('sets out to zero for an empty shape with no commands', () => {
+    const shape = createShape();
+    const out = createRectangle(1, 2, 3, 4);
+    computeShapeLocalBoundsRect(out, shape);
+    expect(out.x).toBe(0);
+    expect(out.y).toBe(0);
+    expect(out.width).toBe(0);
+    expect(out.height).toBe(0);
+  });
+
+  it('computes bounds from drawRect commands', () => {
+    const shape = createShape();
+    shape.data.commands.push('drawRect', 4, 10, 20, 100, 50);
+    const out = createRectangle();
+    computeShapeLocalBoundsRect(out, shape);
+    expect(out.x).toBe(10);
+    expect(out.y).toBe(20);
+    expect(out.width).toBe(100);
+    expect(out.height).toBe(50);
+  });
+
+  it('computes bounds from moveTo and lineTo commands', () => {
+    const shape = createShape();
+    shape.data.commands.push('moveTo', 2, 0, 0, 'lineTo', 2, 80, 60);
+    const out = createRectangle();
+    computeShapeLocalBoundsRect(out, shape);
+    expect(out.x).toBe(0);
+    expect(out.y).toBe(0);
+    expect(out.width).toBe(80);
+    expect(out.height).toBe(60);
+  });
+});
+
 describe('copyShapeCommands', () => {
   it('copies commands from source to target', () => {
     const source = createShapeData();
@@ -81,40 +115,6 @@ describe('createShapeRuntime', () => {
   it('returns a non-null runtime', () => {
     const runtime = createShapeRuntime();
     expect(runtime).not.toBeNull();
-  });
-});
-
-describe('computeShapeLocalBoundsRect', () => {
-  it('sets out to zero for an empty shape with no commands', () => {
-    const shape = createShape();
-    const out = createRectangle(1, 2, 3, 4);
-    computeShapeLocalBoundsRect(out, shape);
-    expect(out.x).toBe(0);
-    expect(out.y).toBe(0);
-    expect(out.width).toBe(0);
-    expect(out.height).toBe(0);
-  });
-
-  it('computes bounds from drawRect commands', () => {
-    const shape = createShape();
-    shape.data.commands.push('drawRect', 4, 10, 20, 100, 50);
-    const out = createRectangle();
-    computeShapeLocalBoundsRect(out, shape);
-    expect(out.x).toBe(10);
-    expect(out.y).toBe(20);
-    expect(out.width).toBe(100);
-    expect(out.height).toBe(50);
-  });
-
-  it('computes bounds from moveTo and lineTo commands', () => {
-    const shape = createShape();
-    shape.data.commands.push('moveTo', 2, 0, 0, 'lineTo', 2, 80, 60);
-    const out = createRectangle();
-    computeShapeLocalBoundsRect(out, shape);
-    expect(out.x).toBe(0);
-    expect(out.y).toBe(0);
-    expect(out.width).toBe(80);
-    expect(out.height).toBe(60);
   });
 });
 

@@ -161,44 +161,31 @@ describe('isImageSourceSameOrigin', () => {
   });
 });
 
-describe('loadImageSourceFromURL', () => {
-  it('resolves to an ImageSource whose src is an HTMLImageElement', async () => {
-    const source = await loadImageSourceFromURL('data:image/png;base64,abc');
+describe('loadImageSourceFromArrayBuffer', () => {
+  it('throws when mime type cannot be detected and none is provided', async () => {
+    const buf = new ArrayBuffer(16);
+    new Uint8Array(buf).set([0x00, 0x01, 0x02, 0x03]);
+    await expect(loadImageSourceFromArrayBuffer(buf)).rejects.toThrow('Unable to determine image type');
+  });
+
+  it('uses the provided mimeType and bypasses detection', async () => {
+    const buf = new ArrayBuffer(16);
+    const source = await loadImageSourceFromArrayBuffer(buf, 'image/png');
     expect(source.src).toBeInstanceOf(HTMLImageElement);
   });
 
-  it('sets crossOrigin when the crossOrigin parameter is provided', async () => {
-    let capturedImg: HTMLImageElement | undefined;
-    const origImage = globalThis.Image;
-    globalThis.Image = new Proxy(origImage, {
-      construct(Target, args) {
-        const img = new Target(...(args as []));
-        capturedImg = img;
-        return img;
-      },
-    }) as typeof Image;
-
-    await loadImageSourceFromURL('https://cdn.other-domain.com/image.png', 'anonymous');
-    expect(capturedImg?.crossOrigin).toBe('anonymous');
-
-    globalThis.Image = origImage;
+  it('detects PNG and resolves', async () => {
+    const buf = new ArrayBuffer(16);
+    new Uint8Array(buf).set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const source = await loadImageSourceFromArrayBuffer(buf);
+    expect(source.src).toBeInstanceOf(HTMLImageElement);
   });
 
-  it('does not set crossOrigin when no crossOrigin parameter is given', async () => {
-    let capturedImg: HTMLImageElement | undefined;
-    const origImage = globalThis.Image;
-    globalThis.Image = new Proxy(origImage, {
-      construct(Target, args) {
-        const img = new Target(...(args as []));
-        capturedImg = img;
-        return img;
-      },
-    }) as typeof Image;
-
-    await loadImageSourceFromURL('/images/logo.png');
-    expect(capturedImg?.crossOrigin).toBeNull();
-
-    globalThis.Image = origImage;
+  it('detects JPEG and resolves', async () => {
+    const buf = new ArrayBuffer(16);
+    new Uint8Array(buf).set([0xff, 0xd8, 0xff, 0xe0]);
+    const source = await loadImageSourceFromArrayBuffer(buf);
+    expect(source.src).toBeInstanceOf(HTMLImageElement);
   });
 });
 
@@ -239,30 +226,43 @@ describe('loadImageSourceFromBlob', () => {
   });
 });
 
-describe('loadImageSourceFromArrayBuffer', () => {
-  it('throws when mime type cannot be detected and none is provided', async () => {
-    const buf = new ArrayBuffer(16);
-    new Uint8Array(buf).set([0x00, 0x01, 0x02, 0x03]);
-    await expect(loadImageSourceFromArrayBuffer(buf)).rejects.toThrow('Unable to determine image type');
-  });
-
-  it('uses the provided mimeType and bypasses detection', async () => {
-    const buf = new ArrayBuffer(16);
-    const source = await loadImageSourceFromArrayBuffer(buf, 'image/png');
+describe('loadImageSourceFromURL', () => {
+  it('resolves to an ImageSource whose src is an HTMLImageElement', async () => {
+    const source = await loadImageSourceFromURL('data:image/png;base64,abc');
     expect(source.src).toBeInstanceOf(HTMLImageElement);
   });
 
-  it('detects PNG and resolves', async () => {
-    const buf = new ArrayBuffer(16);
-    new Uint8Array(buf).set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    const source = await loadImageSourceFromArrayBuffer(buf);
-    expect(source.src).toBeInstanceOf(HTMLImageElement);
+  it('sets crossOrigin when the crossOrigin parameter is provided', async () => {
+    let capturedImg: HTMLImageElement | undefined;
+    const origImage = globalThis.Image;
+    globalThis.Image = new Proxy(origImage, {
+      construct(Target, args) {
+        const img = new Target(...(args as []));
+        capturedImg = img;
+        return img;
+      },
+    }) as typeof Image;
+
+    await loadImageSourceFromURL('https://cdn.other-domain.com/image.png', 'anonymous');
+    expect(capturedImg?.crossOrigin).toBe('anonymous');
+
+    globalThis.Image = origImage;
   });
 
-  it('detects JPEG and resolves', async () => {
-    const buf = new ArrayBuffer(16);
-    new Uint8Array(buf).set([0xff, 0xd8, 0xff, 0xe0]);
-    const source = await loadImageSourceFromArrayBuffer(buf);
-    expect(source.src).toBeInstanceOf(HTMLImageElement);
+  it('does not set crossOrigin when no crossOrigin parameter is given', async () => {
+    let capturedImg: HTMLImageElement | undefined;
+    const origImage = globalThis.Image;
+    globalThis.Image = new Proxy(origImage, {
+      construct(Target, args) {
+        const img = new Target(...(args as []));
+        capturedImg = img;
+        return img;
+      },
+    }) as typeof Image;
+
+    await loadImageSourceFromURL('/images/logo.png');
+    expect(capturedImg?.crossOrigin).toBeNull();
+
+    globalThis.Image = origImage;
   });
 });

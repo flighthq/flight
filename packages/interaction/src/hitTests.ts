@@ -9,17 +9,6 @@ import {
 import type { DisplayObject, GraphNode, HitTestPoint } from '@flighthq/types';
 
 /**
- * Evaluates the bounding box of the display object to see if it overlaps or
- * intersects with the bounding box of the `obj` display object.
- **/
-export function hitTestObject(source: DisplayObject, other: DisplayObject): boolean {
-  if (getParent(source) !== null && getParent(other) !== null) {
-    return intersectsRectangle(getWorldBoundsRect(source), getWorldBoundsRect(other));
-  }
-  return false;
-}
-
-/**
  * Walks the scene graph depth-first in reverse child order (front-to-back) and
  * returns the first node that registers a hit at the given world-space
  * coordinates, or null if nothing was hit.
@@ -44,6 +33,30 @@ export function findHitTarget(
   if (hitTestSelf?.(source, x, y, shapeFlag)) return source;
 
   return null;
+}
+
+/**
+ * Tests whether world-space (x, y) falls within the node's local bounds rect,
+ * after inverting through the node's world transform.
+ **/
+export function hitTestLocalBoundsRect(source: GraphNode<symbol, object>, x: number, y: number): boolean {
+  inverseMatrixTransformPointXY(hitTestLocalBoundsRectPoint, getWorldTransform2D(source as DisplayObject), x, y);
+  return rectangleContains(
+    getLocalBoundsRect(source as DisplayObject),
+    hitTestLocalBoundsRectPoint.x,
+    hitTestLocalBoundsRectPoint.y,
+  );
+}
+
+/**
+ * Evaluates the bounding box of the display object to see if it overlaps or
+ * intersects with the bounding box of the `obj` display object.
+ **/
+export function hitTestObject(source: DisplayObject, other: DisplayObject): boolean {
+  if (getParent(source) !== null && getParent(other) !== null) {
+    return intersectsRectangle(getWorldBoundsRect(source), getWorldBoundsRect(other));
+  }
+  return false;
 }
 
 /**
@@ -74,19 +87,6 @@ export function hitTestPoint<GraphKind extends symbol, Traits extends object>(
   }
 
   return false;
-}
-
-/**
- * Tests whether world-space (x, y) falls within the node's local bounds rect,
- * after inverting through the node's world transform.
- **/
-export function hitTestLocalBoundsRect(source: GraphNode<symbol, object>, x: number, y: number): boolean {
-  inverseMatrixTransformPointXY(hitTestLocalBoundsRectPoint, getWorldTransform2D(source as DisplayObject), x, y);
-  return rectangleContains(
-    getLocalBoundsRect(source as DisplayObject),
-    hitTestLocalBoundsRectPoint.x,
-    hitTestLocalBoundsRectPoint.y,
-  );
 }
 
 /**

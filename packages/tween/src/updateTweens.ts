@@ -3,6 +3,21 @@ import type { Tween, TweenManager } from '@flighthq/types';
 
 import { initializeTween } from './internal';
 
+export function completeTween<T extends object>(tween: Tween<T>): void {
+  if (tween.complete) return;
+  if (!tween.initialized) initializeTween(tween);
+  const effectiveT = tween.reverse ? 0 : 1;
+  const easedT = tween.ease(effectiveT);
+  const target = tween.target as Record<string, number>;
+  for (const detail of tween.properties) {
+    let value = detail.start + detail.change * easedT;
+    if (tween.snapping) value = Math.round(value);
+    target[detail.key] = value;
+  }
+  tween.complete = true;
+  emitSignal(tween.onComplete);
+}
+
 function updateTween<T extends object>(tween: Tween<T>, deltaTime: number): void {
   if (tween.paused || tween.complete) return;
 
@@ -37,21 +52,6 @@ function updateTween<T extends object>(tween: Tween<T>, deltaTime: number): void
       emitSignal(tween.onRepeat);
     }
   }
-}
-
-export function completeTween<T extends object>(tween: Tween<T>): void {
-  if (tween.complete) return;
-  if (!tween.initialized) initializeTween(tween);
-  const effectiveT = tween.reverse ? 0 : 1;
-  const easedT = tween.ease(effectiveT);
-  const target = tween.target as Record<string, number>;
-  for (const detail of tween.properties) {
-    let value = detail.start + detail.change * easedT;
-    if (tween.snapping) value = Math.round(value);
-    target[detail.key] = value;
-  }
-  tween.complete = true;
-  emitSignal(tween.onComplete);
 }
 
 export function updateTweens(manager: TweenManager, deltaTime: number): void {

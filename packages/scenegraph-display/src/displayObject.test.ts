@@ -128,6 +128,14 @@ describe('createDisplayObjectRuntime', () => {
   });
 });
 
+describe('getDisplayObjectRuntime', () => {
+  it('returns the runtime for a DisplayObject', () => {
+    const obj = createDisplayObject();
+    const runtime = getDisplayObjectRuntime(obj);
+    expect(runtime).not.toBeNull();
+  });
+});
+
 describe('isDisplayObject', () => {
   it('returns true for a sprite node', () => {
     const node = createDisplayObject();
@@ -210,14 +218,6 @@ describe('setScrollRect', () => {
     const idBefore = getRuntime_(obj).appearanceID;
     setScrollRect(obj, createRectangle());
     expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
-  });
-});
-
-describe('getDisplayObjectRuntime', () => {
-  it('returns the runtime for a DisplayObject', () => {
-    const obj = createDisplayObject();
-    const runtime = getDisplayObjectRuntime(obj);
-    expect(runtime).not.toBeNull();
   });
 });
 

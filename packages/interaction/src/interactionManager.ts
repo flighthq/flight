@@ -17,11 +17,6 @@ export function createDisplayObjectInteractionSignals(): DisplayObjectInteractio
   };
 }
 
-export function getDisplayObjectInteractionSignals(source: DisplayObject): DisplayObjectInteractionSignals {
-  const runtime = getGraphNodeRuntime(source) as DisplayObjectRuntime;
-  return (runtime.interactionSignals ??= createDisplayObjectInteractionSignals());
-}
-
 export function dispatchPointerDown(root: DisplayObject, x: number, y: number, button: number = 0): void {
   const target = findHitTarget(root, x, y) as DisplayObject | null;
   if (target === null) return;
@@ -41,4 +36,9 @@ export function dispatchPointerDown(root: DisplayObject, x: number, y: number, b
     if (current === root) break;
     current = getParent(current) as DisplayObject | null;
   }
+}
+
+export function getDisplayObjectInteractionSignals(source: DisplayObject): DisplayObjectInteractionSignals {
+  const runtime = getGraphNodeRuntime(source) as DisplayObjectRuntime;
+  return (runtime.interactionSignals ??= createDisplayObjectInteractionSignals());
 }

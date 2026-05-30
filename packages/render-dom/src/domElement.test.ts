@@ -12,6 +12,14 @@ function makeState() {
   return state;
 }
 
+describe('defaultDOMElementRenderer', () => {
+  it('has draw, drawMask, and createData', () => {
+    expect(typeof defaultDOMElementRenderer.draw).toBe('function');
+    expect(typeof defaultDOMElementRenderer.drawMask).toBe('function');
+    expect(typeof defaultDOMElementRenderer.createData).toBe('function');
+  });
+});
+
 describe('drawDOMElement', () => {
   it('does not append anything when source element is null', () => {
     const state = makeState();
@@ -80,13 +88,5 @@ describe('drawDOMElementMask', () => {
     const node = createDOMElement();
     const renderNode = getDisplayObjectRenderNode(state, node);
     expect(() => drawDOMElementMask(state, renderNode)).not.toThrow();
-  });
-});
-
-describe('defaultDOMElementRenderer', () => {
-  it('has draw, drawMask, and createData', () => {
-    expect(typeof defaultDOMElementRenderer.draw).toBe('function');
-    expect(typeof defaultDOMElementRenderer.drawMask).toBe('function');
-    expect(typeof defaultDOMElementRenderer.createData).toBe('function');
   });
 });

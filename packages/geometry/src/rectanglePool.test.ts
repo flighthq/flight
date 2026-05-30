@@ -6,29 +6,6 @@ beforeEach(() => {
   clearRectanglePool();
 });
 
-describe('acquireRectangle', () => {
-  it('returns a new Rectangle when pool is empty', () => {
-    const r: Rectangle = acquireRectangle();
-    expect(r).not.toBeNull();
-  });
-
-  it('reuses released rectangles', () => {
-    const r1 = acquireRectangle();
-    releaseRectangle(r1);
-    const r2 = acquireRectangle();
-    expect(r2).toBe(r1);
-  });
-
-  it('reuses released rectangles in last-in-first-out order', () => {
-    const r1 = acquireRectangle();
-    const r2 = acquireRectangle();
-    releaseRectangle(r1);
-    releaseRectangle(r2);
-    expect(acquireRectangle()).toBe(r2);
-    expect(acquireRectangle()).toBe(r1);
-  });
-});
-
 describe('acquireEmptyRectangle', () => {
   it('returns a rectangle with all properties set to 0', () => {
     const r = acquireEmptyRectangle();
@@ -54,9 +31,26 @@ describe('acquireEmptyRectangle', () => {
   });
 });
 
-describe('releaseRectangle', () => {
-  it('handles null safely', () => {
-    expect(() => releaseRectangle(null as unknown as Rectangle)).not.toThrow();
+describe('acquireRectangle', () => {
+  it('returns a new Rectangle when pool is empty', () => {
+    const r: Rectangle = acquireRectangle();
+    expect(r).not.toBeNull();
+  });
+
+  it('reuses released rectangles', () => {
+    const r1 = acquireRectangle();
+    releaseRectangle(r1);
+    const r2 = acquireRectangle();
+    expect(r2).toBe(r1);
+  });
+
+  it('reuses released rectangles in last-in-first-out order', () => {
+    const r1 = acquireRectangle();
+    const r2 = acquireRectangle();
+    releaseRectangle(r1);
+    releaseRectangle(r2);
+    expect(acquireRectangle()).toBe(r2);
+    expect(acquireRectangle()).toBe(r1);
   });
 });
 
@@ -67,5 +61,11 @@ describe('clearRectanglePool', () => {
     clearRectanglePool();
     const r2 = acquireRectangle();
     expect(r2).not.toBe(r);
+  });
+});
+
+describe('releaseRectangle', () => {
+  it('handles null safely', () => {
+    expect(() => releaseRectangle(null as unknown as Rectangle)).not.toThrow();
   });
 });

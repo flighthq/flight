@@ -138,17 +138,6 @@ describe('invalidateParentReference', () => {
   });
 });
 
-describe('invalidateWorldBounds', () => {
-  it('invalidates supporting values for world bounds calculations', () => {
-    const runtime = getRuntime(node);
-    runtime.worldBoundsUsingWorldTransformID = 1;
-    runtime.worldBoundsUsingLocalBoundsID = 1;
-    invalidateWorldBounds(node);
-    expect(runtime.worldBoundsUsingWorldTransformID).toBe(-1);
-    expect(runtime.worldBoundsUsingLocalBoundsID).toBe(-1);
-  });
-});
-
 describe('invalidateRender', () => {
   it('increments both appearanceID and localTransformID', () => {
     const runtime = getRuntime(node);
@@ -157,6 +146,17 @@ describe('invalidateRender', () => {
     invalidateRender(node);
     expect(runtime.appearanceID).toBe(prevAppearance + 1);
     expect(runtime.localTransformID).toBe(prevLocalTransform + 1);
+  });
+});
+
+describe('invalidateWorldBounds', () => {
+  it('invalidates supporting values for world bounds calculations', () => {
+    const runtime = getRuntime(node);
+    runtime.worldBoundsUsingWorldTransformID = 1;
+    runtime.worldBoundsUsingLocalBoundsID = 1;
+    invalidateWorldBounds(node);
+    expect(runtime.worldBoundsUsingWorldTransformID).toBe(-1);
+    expect(runtime.worldBoundsUsingLocalBoundsID).toBe(-1);
   });
 });
 

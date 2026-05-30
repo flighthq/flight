@@ -10,6 +10,16 @@ import {
   getRichTextRuntime,
 } from './richText';
 
+describe('computeRichTextLocalBoundsRect', () => {
+  it('sets out.width and out.height from data dimensions', () => {
+    const richText = createRichText({ data: { width: 200, height: 150 } });
+    const out = createRectangle();
+    computeRichTextLocalBoundsRect(out, richText as unknown as GraphNode);
+    expect(out.width).toBe(200);
+    expect(out.height).toBe(150);
+  });
+});
+
 describe('createRichText', () => {
   let richText: RichText;
 
@@ -77,16 +87,6 @@ describe('createRichText', () => {
     const base = {};
     const obj = createRichText(base);
     expect(obj).not.toStrictEqual(base);
-  });
-});
-
-describe('computeRichTextLocalBoundsRect', () => {
-  it('sets out.width and out.height from data dimensions', () => {
-    const richText = createRichText({ data: { width: 200, height: 150 } });
-    const out = createRectangle();
-    computeRichTextLocalBoundsRect(out, richText as unknown as GraphNode);
-    expect(out.width).toBe(200);
-    expect(out.height).toBe(150);
   });
 });
 

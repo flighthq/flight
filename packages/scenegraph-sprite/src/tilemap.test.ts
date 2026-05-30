@@ -14,6 +14,25 @@ import {
   setTile,
 } from './tilemap';
 
+describe('computeTilemapLocalBoundsRect', () => {
+  it('sets out dimensions from tileset and grid size', () => {
+    const tileset = { tileWidth: 32, tileHeight: 16 } as Tileset;
+    const tilemap = createTilemap({ data: { columns: 5, rows: 4, tileset } });
+    const out = createRectangle();
+    computeTilemapLocalBoundsRect(out, tilemap as unknown as GraphNode);
+    expect(out.width).toBe(160);
+    expect(out.height).toBe(64);
+  });
+
+  it('sets zero dimensions when tileset is null', () => {
+    const tilemap = createTilemap({ data: { columns: 5, rows: 4 } });
+    const out = createRectangle(0, 0, 99, 99);
+    computeTilemapLocalBoundsRect(out, tilemap as unknown as GraphNode);
+    expect(out.width).toBe(0);
+    expect(out.height).toBe(0);
+  });
+});
+
 describe('createTilemap', () => {
   it('initializes default values', () => {
     const tilemap = createTilemap();
@@ -45,6 +64,48 @@ describe('createTilemap', () => {
   });
 });
 
+describe('createTilemapData', () => {
+  it('returns default values', () => {
+    const data = createTilemapData();
+    expect(data.columns).toBe(0);
+    expect(data.rows).toBe(0);
+    expect(data.tileset).toBeNull();
+    expect(data.tiles).toBeInstanceOf(Int16Array);
+  });
+
+  it('fills tiles with -1', () => {
+    const data = createTilemapData({ columns: 2, rows: 3 });
+    expect(Array.from(data.tiles)).toEqual([-1, -1, -1, -1, -1, -1]);
+  });
+});
+
+describe('createTilemapRuntime', () => {
+  it('returns a non-null runtime', () => {
+    const runtime = createTilemapRuntime();
+    expect(runtime).not.toBeNull();
+  });
+
+  it('uses computeTilemapLocalBoundsRect', () => {
+    const runtime = createTilemapRuntime();
+    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeTilemapLocalBoundsRect);
+  });
+});
+
+describe('fillTiles', () => {
+  it('fills all cells with the given id', () => {
+    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
+    fillTiles(tilemap, 3);
+    expect(Array.from(tilemap.data.tiles)).toEqual([3, 3, 3, 3]);
+  });
+
+  it('clears all tiles with -1', () => {
+    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
+    fillTiles(tilemap, 5);
+    fillTiles(tilemap, -1);
+    expect(Array.from(tilemap.data.tiles)).toEqual([-1, -1, -1, -1]);
+  });
+});
+
 describe('getTile', () => {
   it('returns -1 for out-of-bounds coordinates', () => {
     const tilemap = createTilemap({ data: { columns: 3, rows: 3 } });
@@ -66,42 +127,11 @@ describe('getTile', () => {
   });
 });
 
-describe('setTile', () => {
-  it('stores tiles in row-major order', () => {
-    const tilemap = createTilemap({ data: { columns: 3, rows: 3 } });
-    setTile(tilemap, 1, 0, 42); // index = row(0) * cols(3) + col(1) = 1
-    expect(tilemap.data.tiles[1]).toBe(42);
-  });
-
-  it('silently ignores out-of-bounds writes', () => {
-    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
-    setTile(tilemap, -1, 0, 5);
-    setTile(tilemap, 2, 0, 5);
-    setTile(tilemap, 0, -1, 5);
-    setTile(tilemap, 0, 2, 5);
-    expect(Array.from(tilemap.data.tiles)).toEqual([-1, -1, -1, -1]);
-  });
-
-  it('can set the empty sentinel -1', () => {
-    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
-    setTile(tilemap, 0, 0, 3);
-    setTile(tilemap, 0, 0, -1);
-    expect(getTile(tilemap, 0, 0)).toBe(-1);
-  });
-});
-
-describe('fillTiles', () => {
-  it('fills all cells with the given id', () => {
-    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
-    fillTiles(tilemap, 3);
-    expect(Array.from(tilemap.data.tiles)).toEqual([3, 3, 3, 3]);
-  });
-
-  it('clears all tiles with -1', () => {
-    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
-    fillTiles(tilemap, 5);
-    fillTiles(tilemap, -1);
-    expect(Array.from(tilemap.data.tiles)).toEqual([-1, -1, -1, -1]);
+describe('getTilemapRuntime', () => {
+  it('returns the runtime for a Tilemap', () => {
+    const tilemap = createTilemap();
+    const runtime = getTilemapRuntime(tilemap);
+    expect(runtime).not.toBeNull();
   });
 });
 
@@ -140,56 +170,26 @@ describe('resizeTilemap', () => {
   });
 });
 
-describe('computeTilemapLocalBoundsRect', () => {
-  it('sets out dimensions from tileset and grid size', () => {
-    const tileset = { tileWidth: 32, tileHeight: 16 } as Tileset;
-    const tilemap = createTilemap({ data: { columns: 5, rows: 4, tileset } });
-    const out = createRectangle();
-    computeTilemapLocalBoundsRect(out, tilemap as unknown as GraphNode);
-    expect(out.width).toBe(160);
-    expect(out.height).toBe(64);
+describe('setTile', () => {
+  it('stores tiles in row-major order', () => {
+    const tilemap = createTilemap({ data: { columns: 3, rows: 3 } });
+    setTile(tilemap, 1, 0, 42); // index = row(0) * cols(3) + col(1) = 1
+    expect(tilemap.data.tiles[1]).toBe(42);
   });
 
-  it('sets zero dimensions when tileset is null', () => {
-    const tilemap = createTilemap({ data: { columns: 5, rows: 4 } });
-    const out = createRectangle(0, 0, 99, 99);
-    computeTilemapLocalBoundsRect(out, tilemap as unknown as GraphNode);
-    expect(out.width).toBe(0);
-    expect(out.height).toBe(0);
-  });
-});
-
-describe('createTilemapData', () => {
-  it('returns default values', () => {
-    const data = createTilemapData();
-    expect(data.columns).toBe(0);
-    expect(data.rows).toBe(0);
-    expect(data.tileset).toBeNull();
-    expect(data.tiles).toBeInstanceOf(Int16Array);
+  it('silently ignores out-of-bounds writes', () => {
+    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
+    setTile(tilemap, -1, 0, 5);
+    setTile(tilemap, 2, 0, 5);
+    setTile(tilemap, 0, -1, 5);
+    setTile(tilemap, 0, 2, 5);
+    expect(Array.from(tilemap.data.tiles)).toEqual([-1, -1, -1, -1]);
   });
 
-  it('fills tiles with -1', () => {
-    const data = createTilemapData({ columns: 2, rows: 3 });
-    expect(Array.from(data.tiles)).toEqual([-1, -1, -1, -1, -1, -1]);
-  });
-});
-
-describe('createTilemapRuntime', () => {
-  it('returns a non-null runtime', () => {
-    const runtime = createTilemapRuntime();
-    expect(runtime).not.toBeNull();
-  });
-
-  it('uses computeTilemapLocalBoundsRect', () => {
-    const runtime = createTilemapRuntime();
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeTilemapLocalBoundsRect);
-  });
-});
-
-describe('getTilemapRuntime', () => {
-  it('returns the runtime for a Tilemap', () => {
-    const tilemap = createTilemap();
-    const runtime = getTilemapRuntime(tilemap);
-    expect(runtime).not.toBeNull();
+  it('can set the empty sentinel -1', () => {
+    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
+    setTile(tilemap, 0, 0, 3);
+    setTile(tilemap, 0, 0, -1);
+    expect(getTile(tilemap, 0, 0)).toBe(-1);
   });
 });

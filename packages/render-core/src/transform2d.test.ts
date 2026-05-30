@@ -7,6 +7,42 @@ import { getDisplayObjectRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
 import { updateDisplayObjectRenderTransform2D, updateRenderTransform2D } from './transform2d';
 
+describe('updateDisplayObjectRenderTransform2D', () => {
+  let parent: DisplayObject;
+  let parentData: DisplayObjectRenderNode;
+  let child: DisplayObject;
+  // let childData: DisplayObjectRenderNode;
+  let state: RenderState;
+
+  beforeEach(() => {
+    parent = createDisplayObject();
+    child = createDisplayObject();
+    addChild(parent, child);
+    state = createRenderState();
+    parentData = getDisplayObjectRenderNode(state, parent);
+    // childData = getDisplayObjectRenderNode(state, child);
+  });
+
+  it('applies scrollRect offset in render transform but not world transform', () => {
+    parent.x = 50;
+    parent.y = 50;
+    parent.scrollRect = createRectangle(10, 5, 100, 100);
+
+    updateDisplayObjectRenderTransform2D(state, parentData);
+
+    const tRender = parentData.transform2D;
+    const tWorld = getWorldTransform2D(parent);
+
+    // Render transform is offset by scrollRect
+    expect(tRender.tx).toBeCloseTo(40); // 50 - 10
+    expect(tRender.ty).toBeCloseTo(45); // 50 - 5
+
+    // World transform is unaffected
+    expect(tWorld.tx).toBeCloseTo(50);
+    expect(tWorld.ty).toBeCloseTo(50);
+  });
+});
+
 describe('updateRenderTransform2D', () => {
   let parent: DisplayObject;
   let parentData: DisplayObjectRenderNode;
@@ -146,41 +182,5 @@ describe('updateRenderTransform2D', () => {
     expect(t.b).toBeCloseTo(-1);
     expect(t.c).toBeCloseTo(1);
     expect(t.d).toBeCloseTo(0);
-  });
-});
-
-describe('updateDisplayObjectRenderTransform2D', () => {
-  let parent: DisplayObject;
-  let parentData: DisplayObjectRenderNode;
-  let child: DisplayObject;
-  // let childData: DisplayObjectRenderNode;
-  let state: RenderState;
-
-  beforeEach(() => {
-    parent = createDisplayObject();
-    child = createDisplayObject();
-    addChild(parent, child);
-    state = createRenderState();
-    parentData = getDisplayObjectRenderNode(state, parent);
-    // childData = getDisplayObjectRenderNode(state, child);
-  });
-
-  it('applies scrollRect offset in render transform but not world transform', () => {
-    parent.x = 50;
-    parent.y = 50;
-    parent.scrollRect = createRectangle(10, 5, 100, 100);
-
-    updateDisplayObjectRenderTransform2D(state, parentData);
-
-    const tRender = parentData.transform2D;
-    const tWorld = getWorldTransform2D(parent);
-
-    // Render transform is offset by scrollRect
-    expect(tRender.tx).toBeCloseTo(40); // 50 - 10
-    expect(tRender.ty).toBeCloseTo(45); // 50 - 5
-
-    // World transform is unaffected
-    expect(tWorld.tx).toBeCloseTo(50);
-    expect(tWorld.ty).toBeCloseTo(50);
   });
 });

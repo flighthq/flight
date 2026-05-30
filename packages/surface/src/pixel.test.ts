@@ -11,54 +11,6 @@ describe('getPixel', () => {
   });
 });
 
-describe('setPixel', () => {
-  it('writes RGB channels without touching alpha', () => {
-    const img = createSurface(2, 2, 0xff000000);
-    setPixel(img, 0, 0, 0x112233);
-    expect(img.data[3]).toBe(0xff);
-    expect(getPixel(img, 0, 0)).toBe(0x112233);
-  });
-});
-
-describe('getPixel32', () => {
-  it('reads back an ARGB value including alpha', () => {
-    const img = createSurface(2, 2);
-    setPixel32(img, 0, 0, 0x80aabbcc);
-    expect(getPixel32(img, 0, 0)).toBe(0x80aabbcc);
-  });
-});
-
-describe('setPixel32', () => {
-  it('writes all four ARGB channels', () => {
-    const img = createSurface(2, 2);
-    setPixel32(img, 1, 0, 0xdeadbeef);
-    expect(getPixel32(img, 1, 0)).toBe(0xdeadbeef);
-  });
-});
-
-describe('getPixels', () => {
-  it('returns a region as a Uint8ClampedArray', () => {
-    const img = createSurface(4, 4);
-    setPixel32(img, 1, 1, 0xff112233);
-    const region = new Uint8ClampedArray(1 * 1 * 4);
-    getPixels(region, img, 1, 1, 1, 1);
-    expect(region[0]).toBe(0x11);
-    expect(region[1]).toBe(0x22);
-    expect(region[2]).toBe(0x33);
-  });
-});
-
-describe('setPixels', () => {
-  it('writes a region from a Uint8ClampedArray', () => {
-    const src = createSurface(2, 2, 0xff112233);
-    const dst = createSurface(4, 4);
-    const pixels = new Uint8ClampedArray(2 * 2 * 4);
-    getPixels(pixels, src, 0, 0, 2, 2);
-    setPixels(dst, 1, 1, 2, 2, pixels);
-    expect(getPixel32(dst, 1, 1)).toBe(0xff112233);
-  });
-});
-
 describe('getPixel / setPixel', () => {
   it('round-trips an RGB value', () => {
     const img = createSurface(4, 4);
@@ -73,6 +25,14 @@ describe('getPixel / setPixel', () => {
   });
 });
 
+describe('getPixel32', () => {
+  it('reads back an ARGB value including alpha', () => {
+    const img = createSurface(2, 2);
+    setPixel32(img, 0, 0, 0x80aabbcc);
+    expect(getPixel32(img, 0, 0)).toBe(0x80aabbcc);
+  });
+});
+
 describe('getPixel32 / setPixel32', () => {
   it('round-trips an ARGB value', () => {
     const img = createSurface(4, 4);
@@ -84,6 +44,18 @@ describe('getPixel32 / setPixel32', () => {
     const img = createSurface(2, 2);
     setPixel32(img, 0, 0, 0xde112233);
     expect(img.data[3]).toBe(0xde);
+  });
+});
+
+describe('getPixels', () => {
+  it('returns a region as a Uint8ClampedArray', () => {
+    const img = createSurface(4, 4);
+    setPixel32(img, 1, 1, 0xff112233);
+    const region = new Uint8ClampedArray(1 * 1 * 4);
+    getPixels(region, img, 1, 1, 1, 1);
+    expect(region[0]).toBe(0x11);
+    expect(region[1]).toBe(0x22);
+    expect(region[2]).toBe(0x33);
   });
 });
 
@@ -106,5 +78,33 @@ describe('getPixels / setPixels', () => {
     setPixels(dst, 1, 1, 2, 2, pixels);
     expect(getPixel32(dst, 1, 1)).toBe(0xffaabbcc);
     expect(getPixel32(dst, 2, 2)).toBe(0xffaabbcc);
+  });
+});
+
+describe('setPixel', () => {
+  it('writes RGB channels without touching alpha', () => {
+    const img = createSurface(2, 2, 0xff000000);
+    setPixel(img, 0, 0, 0x112233);
+    expect(img.data[3]).toBe(0xff);
+    expect(getPixel(img, 0, 0)).toBe(0x112233);
+  });
+});
+
+describe('setPixel32', () => {
+  it('writes all four ARGB channels', () => {
+    const img = createSurface(2, 2);
+    setPixel32(img, 1, 0, 0xdeadbeef);
+    expect(getPixel32(img, 1, 0)).toBe(0xdeadbeef);
+  });
+});
+
+describe('setPixels', () => {
+  it('writes a region from a Uint8ClampedArray', () => {
+    const src = createSurface(2, 2, 0xff112233);
+    const dst = createSurface(4, 4);
+    const pixels = new Uint8ClampedArray(2 * 2 * 4);
+    getPixels(pixels, src, 0, 0, 2, 2);
+    setPixels(dst, 1, 1, 2, 2, pixels);
+    expect(getPixel32(dst, 1, 1)).toBe(0xff112233);
   });
 });

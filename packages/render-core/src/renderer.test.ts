@@ -3,6 +3,13 @@ import type { Renderer, RenderState } from '@flighthq/types';
 import { createNullRendererData, registerRenderer } from './renderer';
 import { createRenderState } from './renderState';
 
+describe('createNullRendererData', () => {
+  it('returns null', () => {
+    const state = createRenderState();
+    expect(createNullRendererData(state, {} as any)).toBeNull();
+  });
+});
+
 describe('registerRenderer', () => {
   let state: RenderState & { rendererMapID: number };
   let kindA: symbol;
@@ -64,12 +71,5 @@ describe('registerRenderer', () => {
     state.rendererMapID = 0xffffffff; // max 32-bit uint
     registerRenderer(state, kindA, renderer1);
     expect(state.rendererMapID).toBe(0); // wrapped to 0
-  });
-});
-
-describe('createNullRendererData', () => {
-  it('returns null', () => {
-    const state = createRenderState();
-    expect(createNullRendererData(state, {} as any)).toBeNull();
   });
 });

@@ -39,14 +39,6 @@ export function createGraphNode<
   return out;
 }
 
-export function setEnabled<GraphKind extends symbol, Traits extends object>(
-  source: GraphNode<GraphKind, Traits>,
-  value: boolean,
-): void {
-  source.enabled = value;
-  invalidate(source);
-}
-
 export function createGraphNodeRuntime<GraphKind extends symbol, Traits extends object>(
   methods?: Readonly<Partial<MethodsOf<GraphNodeRuntime<GraphKind, Traits>>>>,
 ): GraphNodeRuntime<GraphKind, Traits> {
@@ -97,4 +89,12 @@ export function getGraphNodeSignals<GraphKind extends symbol, Traits extends obj
 ): GraphNodeSignals {
   const runtime = getRuntime(source) as GraphNodeRuntime<GraphKind, Traits>;
   return (runtime.signals ??= createGraphNodeSignals());
+}
+
+export function setEnabled<GraphKind extends symbol, Traits extends object>(
+  source: GraphNode<GraphKind, Traits>,
+  value: boolean,
+): void {
+  source.enabled = value;
+  invalidate(source);
 }

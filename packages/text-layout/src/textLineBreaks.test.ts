@@ -2,6 +2,24 @@ import { describe, expect, it } from 'vitest';
 
 import { getLineBreakIndex, getLineBreaks } from './textLineBreaks';
 
+describe('getLineBreakIndex', () => {
+  it('returns the first break at or after startIndex', () => {
+    expect(getLineBreakIndex([3, 7, 12], 5)).toBe(7);
+  });
+
+  it('returns the first break when startIndex is 0', () => {
+    expect(getLineBreakIndex([3, 7], 0)).toBe(3);
+  });
+
+  it('returns -1 when no break is at or after startIndex', () => {
+    expect(getLineBreakIndex([3, 7], 10)).toBe(-1);
+  });
+
+  it('returns -1 for empty break list', () => {
+    expect(getLineBreakIndex([], 0)).toBe(-1);
+  });
+});
+
 describe('getLineBreaks', () => {
   const out: number[] = [];
 
@@ -35,23 +53,5 @@ describe('getLineBreaks', () => {
   it('returns empty array for empty text', () => {
     getLineBreaks(out, '');
     expect(out).toEqual([]);
-  });
-});
-
-describe('getLineBreakIndex', () => {
-  it('returns the first break at or after startIndex', () => {
-    expect(getLineBreakIndex([3, 7, 12], 5)).toBe(7);
-  });
-
-  it('returns the first break when startIndex is 0', () => {
-    expect(getLineBreakIndex([3, 7], 0)).toBe(3);
-  });
-
-  it('returns -1 when no break is at or after startIndex', () => {
-    expect(getLineBreakIndex([3, 7], 10)).toBe(-1);
-  });
-
-  it('returns -1 for empty break list', () => {
-    expect(getLineBreakIndex([], 0)).toBe(-1);
   });
 });

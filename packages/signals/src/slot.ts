@@ -31,6 +31,11 @@ export function connectSignal<T extends (...args: any[]) => void>(
   data.repeat.push(repeat);
 }
 
+export function disconnectAllSignals<T extends (...args: any[]) => void>(signal: Signal<T>): void {
+  signal.emit = noop as unknown as T;
+  signal.data = null;
+}
+
 export function disconnectSignal<T extends (...args: any[]) => void>(signal: Signal<T>, slot: T): void {
   const data = signal.data;
   if (data === null) return;
@@ -50,20 +55,15 @@ export function disconnectSignal<T extends (...args: any[]) => void>(signal: Sig
   }
 }
 
-export function disconnectAllSignals<T extends (...args: any[]) => void>(signal: Signal<T>): void {
-  signal.emit = noop as unknown as T;
-  signal.data = null;
-}
-
-export function isSlotConnected<T extends (...args: any[]) => void>(signal: Readonly<Signal<T>>, slot: T): boolean {
-  return signal.data !== null && signal.data.slots.indexOf(slot) !== -1;
-}
-
 function initSignal<T extends (...args: any[]) => void>(signal: Signal<T>): void {
   if (signal.data !== null) return;
   const data: SignalData<T> = { slots: [], priorities: [], repeat: [], cancelled: false };
   signal.data = data;
   signal.emit = makeDispatch(data);
+}
+
+export function isSlotConnected<T extends (...args: any[]) => void>(signal: Readonly<Signal<T>>, slot: T): boolean {
+  return signal.data !== null && signal.data.slots.indexOf(slot) !== -1;
 }
 
 function makeDispatch<T extends (...args: any[]) => void>(data: SignalData<T>): T {

@@ -25,6 +25,31 @@ function makeState() {
   return state;
 }
 
+describe('drawCanvasSprite', () => {
+  it('calls drawImage when sprite has a valid atlas region', () => {
+    const atlas = makeAtlas();
+    const state = makeState();
+    const sprite = createSprite();
+    sprite.data.atlas = atlas;
+    sprite.data.id = 0;
+    updateSpriteBeforeRender(state, sprite);
+    const renderNode = getSpriteRenderNode(state, sprite);
+    const spy = vi.spyOn(state.context, 'drawImage');
+    drawCanvasSprite(state, renderNode);
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('skips draw when atlas is null', () => {
+    const state = makeState();
+    const sprite = createSprite();
+    updateSpriteBeforeRender(state, sprite);
+    const renderNode = getSpriteRenderNode(state, sprite);
+    const spy = vi.spyOn(state.context, 'drawImage');
+    drawCanvasSprite(state, renderNode);
+    expect(spy).not.toHaveBeenCalled();
+  });
+});
+
 describe('renderCanvasSprite', () => {
   it('calls setTransform with child world transform scaled by parent', () => {
     const atlas = makeAtlas();
@@ -82,31 +107,6 @@ describe('renderCanvasSprite', () => {
     updateSpriteBeforeRender(state, sprite);
     renderCanvasSprite(state, sprite);
 
-    expect(spy).not.toHaveBeenCalled();
-  });
-});
-
-describe('drawCanvasSprite', () => {
-  it('calls drawImage when sprite has a valid atlas region', () => {
-    const atlas = makeAtlas();
-    const state = makeState();
-    const sprite = createSprite();
-    sprite.data.atlas = atlas;
-    sprite.data.id = 0;
-    updateSpriteBeforeRender(state, sprite);
-    const renderNode = getSpriteRenderNode(state, sprite);
-    const spy = vi.spyOn(state.context, 'drawImage');
-    drawCanvasSprite(state, renderNode);
-    expect(spy).toHaveBeenCalled();
-  });
-
-  it('skips draw when atlas is null', () => {
-    const state = makeState();
-    const sprite = createSprite();
-    updateSpriteBeforeRender(state, sprite);
-    const renderNode = getSpriteRenderNode(state, sprite);
-    const spy = vi.spyOn(state.context, 'drawImage');
-    drawCanvasSprite(state, renderNode);
     expect(spy).not.toHaveBeenCalled();
   });
 });

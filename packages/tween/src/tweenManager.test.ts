@@ -17,13 +17,7 @@ describe('createTweenManager', () => {
   });
 });
 
-describe('defaultManager', () => {
-  it('is a TweenManager', () => {
-    expect(defaultManager.tweens).toBeInstanceOf(Map);
-  });
-});
-
-describe('createTweenManager defaultEase', () => {
+describe('defaultEase', () => {
   it('defaults to Expo.easeOut when no option provided', () => {
     const manager = createTweenManager();
     expect(typeof manager.defaultEase).toBe('function');
@@ -48,5 +42,11 @@ describe('createTweenManager defaultEase', () => {
     createTween(manager, target, 1000, { x: 100 }, { ease: alwaysOne });
     updateTweens(manager, 1);
     expect(target.x).toBe(100); // alwaysOne ease jumps straight to end
+  });
+});
+
+describe('defaultManager', () => {
+  it('is a TweenManager', () => {
+    expect(defaultManager.tweens).toBeInstanceOf(Map);
   });
 });

@@ -22,19 +22,19 @@ function makeDisplayObject() {
   return obj;
 }
 
+describe('defaultBitmapHitTestPoint', () => {
+  it('delegates to defaultDisplayObjectHitTestPoint (returns false)', () => {
+    const obj = makeDisplayObject();
+    expect(defaultBitmapHitTestPoint(obj, 10, 10, false)).toBe(false);
+  });
+});
+
 describe('defaultDisplayObjectHitTestPoint', () => {
   it('always returns false — plain display objects have no hit geometry', () => {
     const obj = makeDisplayObject();
     expect(defaultDisplayObjectHitTestPoint(obj, 50, 50, false)).toBe(false);
     expect(defaultDisplayObjectHitTestPoint(obj, 0, 0, false)).toBe(false);
     expect(defaultDisplayObjectHitTestPoint(obj, 200, 200, false)).toBe(false);
-  });
-});
-
-describe('defaultBitmapHitTestPoint', () => {
-  it('delegates to defaultDisplayObjectHitTestPoint (returns false)', () => {
-    const obj = makeDisplayObject();
-    expect(defaultBitmapHitTestPoint(obj, 10, 10, false)).toBe(false);
   });
 });
 

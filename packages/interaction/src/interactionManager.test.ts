@@ -27,20 +27,6 @@ describe('createDisplayObjectInteractionSignals', () => {
   });
 });
 
-describe('getDisplayObjectInteractionSignals', () => {
-  it('lazily creates interaction signals on the runtime', () => {
-    const obj = createDisplayObject();
-    const signals = getDisplayObjectInteractionSignals(obj);
-    expect(signals).toBeDefined();
-    expect(signals.onPointerDown).toBeDefined();
-  });
-
-  it('returns the same object on subsequent calls', () => {
-    const obj = createDisplayObject();
-    expect(getDisplayObjectInteractionSignals(obj)).toBe(getDisplayObjectInteractionSignals(obj));
-  });
-});
-
 describe('dispatchPointerDown', () => {
   it('does nothing when no hit target is found', () => {
     const root = createDisplayObject();
@@ -78,5 +64,19 @@ describe('dispatchPointerDown', () => {
     dispatchPointerDown(root, 30, 40);
     expect(receivedX).toBe(30);
     expect(receivedY).toBe(40);
+  });
+});
+
+describe('getDisplayObjectInteractionSignals', () => {
+  it('lazily creates interaction signals on the runtime', () => {
+    const obj = createDisplayObject();
+    const signals = getDisplayObjectInteractionSignals(obj);
+    expect(signals).toBeDefined();
+    expect(signals.onPointerDown).toBeDefined();
+  });
+
+  it('returns the same object on subsequent calls', () => {
+    const obj = createDisplayObject();
+    expect(getDisplayObjectInteractionSignals(obj)).toBe(getDisplayObjectInteractionSignals(obj));
   });
 });

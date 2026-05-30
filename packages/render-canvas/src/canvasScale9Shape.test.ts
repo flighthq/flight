@@ -14,6 +14,19 @@ beforeAll(() => {
 
 const grid = { x: 10, y: 10, width: 80, height: 80 };
 
+describe('drawCanvasScale9Shape', () => {
+  it('does not throw when commands list is empty', () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 200;
+    const state = createCanvasRenderState(canvas);
+    registerRenderer(state, Scale9ShapeKind, defaultCanvasScale9ShapeRenderer);
+    const shape = createScale9Shape(grid);
+    const data = getDisplayObjectRenderNode(state, shape);
+    expect(() => drawCanvasScale9Shape(state, data)).not.toThrow();
+  });
+});
+
 describe('remapScale9Commands', () => {
   const out: unknown[] = [];
 
@@ -67,18 +80,5 @@ describe('remapScale9Commands', () => {
     const mapper = buildScale9Mapper(shape.data.commands, grid, 2, 2)!;
     remapScale9Commands(out, shape.data.commands, mapper);
     expect(out).toHaveLength(shape.data.commands.length);
-  });
-});
-
-describe('drawCanvasScale9Shape', () => {
-  it('does not throw when commands list is empty', () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 200;
-    canvas.height = 200;
-    const state = createCanvasRenderState(canvas);
-    registerRenderer(state, Scale9ShapeKind, defaultCanvasScale9ShapeRenderer);
-    const shape = createScale9Shape(grid);
-    const data = getDisplayObjectRenderNode(state, shape);
-    expect(() => drawCanvasScale9Shape(state, data)).not.toThrow();
   });
 });

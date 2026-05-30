@@ -10,6 +10,24 @@ import {
   getBitmapRuntime,
 } from './bitmap';
 
+describe('computeBitmapLocalBoundsRect', () => {
+  it('sets out dimensions from image when image is present', () => {
+    const bitmap = createBitmap({ data: { image: { width: 100, height: 200 } as ImageSource } });
+    const out = createRectangle();
+    computeBitmapLocalBoundsRect(out, bitmap as unknown as GraphNode);
+    expect(out.width).toBe(100);
+    expect(out.height).toBe(200);
+  });
+
+  it('does not modify out when image is null', () => {
+    const bitmap = createBitmap();
+    const out = createRectangle(0, 0, 50, 60);
+    computeBitmapLocalBoundsRect(out, bitmap as unknown as GraphNode);
+    expect(out.width).toBe(50);
+    expect(out.height).toBe(60);
+  });
+});
+
 describe('createBitmap', () => {
   let bitmap: Bitmap;
 
@@ -40,24 +58,6 @@ describe('createBitmap', () => {
     const base = {};
     const obj = createBitmap(base);
     expect(obj).not.toStrictEqual(base);
-  });
-});
-
-describe('computeBitmapLocalBoundsRect', () => {
-  it('sets out dimensions from image when image is present', () => {
-    const bitmap = createBitmap({ data: { image: { width: 100, height: 200 } as ImageSource } });
-    const out = createRectangle();
-    computeBitmapLocalBoundsRect(out, bitmap as unknown as GraphNode);
-    expect(out.width).toBe(100);
-    expect(out.height).toBe(200);
-  });
-
-  it('does not modify out when image is null', () => {
-    const bitmap = createBitmap();
-    const out = createRectangle(0, 0, 50, 60);
-    computeBitmapLocalBoundsRect(out, bitmap as unknown as GraphNode);
-    expect(out.width).toBe(50);
-    expect(out.height).toBe(60);
   });
 });
 

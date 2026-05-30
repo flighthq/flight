@@ -1,4 +1,5 @@
 export * from './AppearanceFlags';
+export * from './AudioSource';
 export * from './Bitmap';
 export * from './BlendMode';
 export * from './CanvasRenderOptions';

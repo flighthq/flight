@@ -43,72 +43,6 @@ import {
 } from '@flighthq/geometry';
 import type { Matrix, Matrix3Like, Matrix4Like } from '@flighthq/types';
 
-describe('createMatrix', () => {
-  it('should initialize matrix3x2 with provided values', () => {
-    const m = createMatrix(2, 3, 4, 5, 6, 7);
-    expect(m.a).toBe(2);
-    expect(m.b).toBe(3);
-    expect(m.c).toBe(4);
-    expect(m.d).toBe(5);
-    expect(m.tx).toBe(6);
-    expect(m.ty).toBe(7);
-  });
-
-  it('should default to identity matrix3x2 when no values are provided', () => {
-    const m = createMatrix();
-    expect(m.a).toBe(1);
-    expect(m.b).toBe(0);
-    expect(m.c).toBe(0);
-    expect(m.d).toBe(1);
-    expect(m.tx).toBe(0);
-    expect(m.ty).toBe(0);
-  });
-});
-
-// Properties
-
-describe('a', () => {
-  it('should have default value of 1', () => {
-    const m = createMatrix();
-    expect(m.a).toBe(1);
-  });
-});
-
-describe('b', () => {
-  it('should have default value of 0', () => {
-    const m = createMatrix();
-    expect(m.b).toBe(0);
-  });
-});
-
-describe('c', () => {
-  it('should have default value of 0', () => {
-    const m = createMatrix();
-    expect(m.c).toBe(0);
-  });
-});
-
-describe('d', () => {
-  it('should have default value of 1', () => {
-    const m = createMatrix();
-    expect(m.d).toBe(1);
-  });
-});
-
-describe('tx', () => {
-  it('should have default value of 0', () => {
-    const m = createMatrix();
-    expect(m.tx).toBe(0);
-  });
-});
-
-describe('ty', () => {
-  it('should have default value of 0', () => {
-    const m = createMatrix();
-    expect(m.ty).toBe(0);
-  });
-});
-
 describe('cloneMatrix', () => {
   it('should clone the matrix3x2 correctly', () => {
     const m1 = createMatrix(2, 3, 4, 5, 6, 7);
@@ -255,6 +189,28 @@ describe('copyMatrixRowToVector3', () => {
     expect(v.x).toBe(0);
     expect(v.y).toBe(0);
     expect(v.z).toBe(1);
+  });
+});
+
+describe('createMatrix', () => {
+  it('should initialize matrix3x2 with provided values', () => {
+    const m = createMatrix(2, 3, 4, 5, 6, 7);
+    expect(m.a).toBe(2);
+    expect(m.b).toBe(3);
+    expect(m.c).toBe(4);
+    expect(m.d).toBe(5);
+    expect(m.tx).toBe(6);
+    expect(m.ty).toBe(7);
+  });
+
+  it('should default to identity matrix3x2 when no values are provided', () => {
+    const m = createMatrix();
+    expect(m.a).toBe(1);
+    expect(m.b).toBe(0);
+    expect(m.c).toBe(0);
+    expect(m.d).toBe(1);
+    expect(m.tx).toBe(0);
+    expect(m.ty).toBe(0);
   });
 });
 

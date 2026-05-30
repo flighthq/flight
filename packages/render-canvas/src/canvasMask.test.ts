@@ -14,6 +14,35 @@ function makeState() {
   return createCanvasRenderState(canvas);
 }
 
+describe('applyCanvasMask', () => {
+  it('calls renderer.drawMask when renderer is set', () => {
+    const state = makeState();
+    const drawMaskFn = vi.fn();
+    const renderer: DisplayObjectRenderer = {
+      createData: () => null,
+      draw: vi.fn(),
+      drawMask: drawMaskFn,
+    };
+    registerRenderer(state, DisplayObjectKind, renderer);
+
+    const obj = createDisplayObject();
+    const data = getDisplayObjectRenderNode(state, obj);
+
+    applyCanvasMask(state, data);
+
+    expect(drawMaskFn).toHaveBeenCalledOnce();
+  });
+
+  it('does not throw when renderer is null', () => {
+    const state = makeState();
+    const obj = createDisplayObject();
+    const data = getDisplayObjectRenderNode(state, obj);
+    data.renderer = null;
+
+    expect(() => applyCanvasMask(state, data)).not.toThrow();
+  });
+});
+
 describe('popCanvasMask', () => {
   it('calls context.restore()', () => {
     const state = makeState();
@@ -60,34 +89,5 @@ describe('pushCanvasMask', () => {
     pushCanvasMask(state, data);
 
     expect(drawMaskFn).toHaveBeenCalledOnce();
-  });
-});
-
-describe('applyCanvasMask', () => {
-  it('calls renderer.drawMask when renderer is set', () => {
-    const state = makeState();
-    const drawMaskFn = vi.fn();
-    const renderer: DisplayObjectRenderer = {
-      createData: () => null,
-      draw: vi.fn(),
-      drawMask: drawMaskFn,
-    };
-    registerRenderer(state, DisplayObjectKind, renderer);
-
-    const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
-
-    applyCanvasMask(state, data);
-
-    expect(drawMaskFn).toHaveBeenCalledOnce();
-  });
-
-  it('does not throw when renderer is null', () => {
-    const state = makeState();
-    const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
-    data.renderer = null;
-
-    expect(() => applyCanvasMask(state, data)).not.toThrow();
   });
 });

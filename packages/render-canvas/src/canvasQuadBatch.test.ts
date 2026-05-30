@@ -27,6 +27,13 @@ function makeState() {
   return state;
 }
 
+describe('defaultCanvasQuadBatchRenderer', () => {
+  it('has draw and createData', () => {
+    expect(typeof defaultCanvasQuadBatchRenderer.draw).toBe('function');
+    expect(typeof defaultCanvasQuadBatchRenderer.createData).toBe('function');
+  });
+});
+
 describe('drawCanvasQuadBatch', () => {
   it('skips draw when atlas is null', () => {
     const state = makeState();
@@ -107,12 +114,5 @@ describe('drawCanvasQuadBatch', () => {
     drawCanvasQuadBatch(state, renderNode);
 
     expect(spy).not.toHaveBeenCalled();
-  });
-});
-
-describe('defaultCanvasQuadBatchRenderer', () => {
-  it('has draw and createData', () => {
-    expect(typeof defaultCanvasQuadBatchRenderer.draw).toBe('function');
-    expect(typeof defaultCanvasQuadBatchRenderer.createData).toBe('function');
   });
 });

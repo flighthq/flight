@@ -2,27 +2,6 @@ import type { ShapeCommandKey } from '@flighthq/types';
 
 import { hitTestCommand, registerShapeHitTestCommand } from './shapeHitTestRegistry';
 
-describe('registerShapeHitTestCommand', () => {
-  it('registers a handler that hitTestCommand can retrieve', () => {
-    const fn = vi.fn().mockReturnValue(true);
-    registerShapeHitTestCommand({ key: 'drawRect' as ShapeCommandKey, hitTest: fn });
-    const buf: unknown[] = ['drawRect', 4, 0, 0, 100, 100];
-    const result = hitTestCommand(buf, 0, 50, 50);
-    expect(result).toBe(true);
-  });
-
-  it('replaces an existing handler when registered again', () => {
-    const first = vi.fn().mockReturnValue(false);
-    const second = vi.fn().mockReturnValue(true);
-    registerShapeHitTestCommand({ key: 'drawCircle' as ShapeCommandKey, hitTest: first });
-    registerShapeHitTestCommand({ key: 'drawCircle' as ShapeCommandKey, hitTest: second });
-    const buf: unknown[] = ['drawCircle', 3, 50, 50, 25];
-    hitTestCommand(buf, 0, 50, 50);
-    expect(second).toHaveBeenCalled();
-    expect(first).not.toHaveBeenCalled();
-  });
-});
-
 describe('hitTestCommand', () => {
   it('returns null for an unregistered command key', () => {
     const buf: unknown[] = ['__unregistered__', 0];
@@ -41,5 +20,26 @@ describe('hitTestCommand', () => {
     registerShapeHitTestCommand({ key: 'endFill' as ShapeCommandKey, hitTest: () => true });
     const buf: unknown[] = ['endFill', 0];
     expect(hitTestCommand(buf, 0, 0, 0)).toBe(true);
+  });
+});
+
+describe('registerShapeHitTestCommand', () => {
+  it('registers a handler that hitTestCommand can retrieve', () => {
+    const fn = vi.fn().mockReturnValue(true);
+    registerShapeHitTestCommand({ key: 'drawRect' as ShapeCommandKey, hitTest: fn });
+    const buf: unknown[] = ['drawRect', 4, 0, 0, 100, 100];
+    const result = hitTestCommand(buf, 0, 50, 50);
+    expect(result).toBe(true);
+  });
+
+  it('replaces an existing handler when registered again', () => {
+    const first = vi.fn().mockReturnValue(false);
+    const second = vi.fn().mockReturnValue(true);
+    registerShapeHitTestCommand({ key: 'drawCircle' as ShapeCommandKey, hitTest: first });
+    registerShapeHitTestCommand({ key: 'drawCircle' as ShapeCommandKey, hitTest: second });
+    const buf: unknown[] = ['drawCircle', 3, 50, 50, 25];
+    hitTestCommand(buf, 0, 50, 50);
+    expect(second).toHaveBeenCalled();
+    expect(first).not.toHaveBeenCalled();
   });
 });

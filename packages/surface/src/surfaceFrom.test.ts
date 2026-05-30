@@ -4,6 +4,16 @@ import { describe, expect, it } from 'vitest';
 import { createSurface } from './surface';
 import { createImageSourceFromSurface, createSurfaceFromCanvas, createSurfaceFromImageSource } from './surfaceFrom';
 
+describe('createImageSourceFromSurface', () => {
+  it('returns an ImageSource with matching dimensions', () => {
+    const img = createSurface(4, 4, 0xff112233);
+    const source = createImageSourceFromSurface(img);
+    expect(source.width).toBe(4);
+    expect(source.height).toBe(4);
+    expect(source.src).not.toBeNull();
+  });
+});
+
 describe('createSurfaceFromCanvas', () => {
   it('returns Surface matching the canvas size', () => {
     const canvas = document.createElement('canvas');
@@ -32,15 +42,5 @@ describe('createSurfaceFromImageSource', () => {
     const data = createSurfaceFromImageSource(source);
     expect(data.width).toBe(4);
     expect(data.height).toBe(4);
-  });
-});
-
-describe('createImageSourceFromSurface', () => {
-  it('returns an ImageSource with matching dimensions', () => {
-    const img = createSurface(4, 4, 0xff112233);
-    const source = createImageSourceFromSurface(img);
-    expect(source.width).toBe(4);
-    expect(source.height).toBe(4);
-    expect(source.src).not.toBeNull();
   });
 });

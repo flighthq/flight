@@ -37,16 +37,6 @@ describe('createDisplayObjectRenderNode', () => {
   });
 });
 
-describe('getDisplayObjectRenderNode', () => {
-  it('creates renderable data if not present already', () => {
-    const state = createRenderState();
-    const source = createDisplayObject();
-    expect(state.renderNodeMap.has(source)).toBe(false);
-    getDisplayObjectRenderNode(state, source);
-    expect(state.renderNodeMap.has(source)).toBe(true);
-  });
-});
-
 describe('createRenderNode', () => {
   it('creates a render node with default values', () => {
     const state = createRenderState();
@@ -58,6 +48,16 @@ describe('createRenderNode', () => {
     expect(node.source).toBe(source);
     expect(node.renderer).toBeNull();
     expect(node.rendererData).toBeNull();
+  });
+});
+
+describe('getDisplayObjectRenderNode', () => {
+  it('creates renderable data if not present already', () => {
+    const state = createRenderState();
+    const source = createDisplayObject();
+    expect(state.renderNodeMap.has(source)).toBe(false);
+    getDisplayObjectRenderNode(state, source);
+    expect(state.renderNodeMap.has(source)).toBe(true);
   });
 });
 

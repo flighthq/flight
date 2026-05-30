@@ -37,17 +37,6 @@ export function invalidate<GraphKind extends symbol, Traits extends object>(
 }
 
 /**
- * Target object's visual output changed (appearance or local transform).
- * Use this when animating properties like alpha, x, y, scaleX, scaleY, rotation.
- */
-export function invalidateRender<GraphKind extends symbol, Traits extends object>(
-  target: GraphNode<GraphKind, Traits>,
-): void {
-  invalidateAppearance(target);
-  invalidateLocalTransform(target);
-}
-
-/**
  * Target object's appearance changed (excluding transforms).
  */
 export function invalidateAppearance<GraphKind extends symbol, Traits extends object>(
@@ -85,6 +74,17 @@ export function invalidateParentReference<GraphKind extends symbol, Traits exten
 ): void {
   const runtime = getGraphNodeRuntime(target) as GraphNodeRuntime<GraphKind, Traits>;
   runtime.worldTransformUsingParentTransformID = -1;
+}
+
+/**
+ * Target object's visual output changed (appearance or local transform).
+ * Use this when animating properties like alpha, x, y, scaleX, scaleY, rotation.
+ */
+export function invalidateRender<GraphKind extends symbol, Traits extends object>(
+  target: GraphNode<GraphKind, Traits>,
+): void {
+  invalidateAppearance(target);
+  invalidateLocalTransform(target);
 }
 
 /**

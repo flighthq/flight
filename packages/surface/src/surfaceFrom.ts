@@ -2,6 +2,16 @@ import { createImageSourceFromCanvas } from '@flighthq/assets';
 import { createEntity } from '@flighthq/entity';
 import type { ImageSource, Surface } from '@flighthq/types';
 
+export function createImageSourceFromSurface(source: Surface): ImageSource {
+  const canvas = document.createElement('canvas');
+  canvas.width = source.width;
+  canvas.height = source.height;
+  const domImageData = new globalThis.ImageData(source.width, source.height);
+  domImageData.data.set(source.data);
+  canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
+  return createImageSourceFromCanvas(canvas);
+}
+
 export function createSurfaceFromCanvas(
   canvas: HTMLCanvasElement,
   x: number = 0,
@@ -48,14 +58,4 @@ export function createSurfaceFromImageSource(source: ImageSource): Surface {
     version: 0,
     width: source.width,
   });
-}
-
-export function createImageSourceFromSurface(source: Surface): ImageSource {
-  const canvas = document.createElement('canvas');
-  canvas.width = source.width;
-  canvas.height = source.height;
-  const domImageData = new globalThis.ImageData(source.width, source.height);
-  domImageData.data.set(source.data);
-  canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
-  return createImageSourceFromCanvas(canvas);
 }

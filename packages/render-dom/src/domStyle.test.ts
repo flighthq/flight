@@ -11,33 +11,6 @@ function makeState() {
   return createDOMRenderState(container);
 }
 
-describe('initDOMElement', () => {
-  it('sets position to absolute', () => {
-    const el = document.createElement('div');
-    initDOMElement(el);
-    expect(el.style.position).toBe('absolute');
-  });
-
-  it('sets left and top to 0', () => {
-    const el = document.createElement('div');
-    initDOMElement(el);
-    expect(el.style.left).toBe('0px');
-    expect(el.style.top).toBe('0px');
-  });
-
-  it('sets transformOrigin to "0 0"', () => {
-    const el = document.createElement('div');
-    initDOMElement(el);
-    expect(el.style.transformOrigin).toBe('0 0');
-  });
-
-  it('sets pointerEvents to none', () => {
-    const el = document.createElement('div');
-    initDOMElement(el);
-    expect(el.style.pointerEvents).toBe('none');
-  });
-});
-
 describe('applyDOMStyle', () => {
   it('applies the world transform as a CSS matrix', () => {
     const state = makeState();
@@ -86,5 +59,32 @@ describe('applyDOMStyle', () => {
     applyDOMStyle(state, el, node);
 
     expect(el.style.mixBlendMode).toBe('multiply');
+  });
+});
+
+describe('initDOMElement', () => {
+  it('sets position to absolute', () => {
+    const el = document.createElement('div');
+    initDOMElement(el);
+    expect(el.style.position).toBe('absolute');
+  });
+
+  it('sets left and top to 0', () => {
+    const el = document.createElement('div');
+    initDOMElement(el);
+    expect(el.style.left).toBe('0px');
+    expect(el.style.top).toBe('0px');
+  });
+
+  it('sets transformOrigin to "0 0"', () => {
+    const el = document.createElement('div');
+    initDOMElement(el);
+    expect(el.style.transformOrigin).toBe('0 0');
+  });
+
+  it('sets pointerEvents to none', () => {
+    const el = document.createElement('div');
+    initDOMElement(el);
+    expect(el.style.pointerEvents).toBe('none');
   });
 });

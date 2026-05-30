@@ -29,6 +29,14 @@ function makeCanvasImageSource() {
   return createImageSourceFromCanvas(canvas);
 }
 
+describe('defaultDOMBitmapRenderer', () => {
+  it('has draw, drawMask, and createData', () => {
+    expect(typeof defaultDOMBitmapRenderer.draw).toBe('function');
+    expect(typeof defaultDOMBitmapRenderer.drawMask).toBe('function');
+    expect(typeof defaultDOMBitmapRenderer.createData).toBe('function');
+  });
+});
+
 describe('drawDOMBitmap', () => {
   it('does nothing when imageSource is null', () => {
     const state = makeState();
@@ -102,13 +110,5 @@ describe('drawDOMBitmapMask', () => {
     const bitmap = createBitmap();
     const renderNode = getDisplayObjectRenderNode(state, bitmap);
     expect(() => drawDOMBitmapMask(state, renderNode)).not.toThrow();
-  });
-});
-
-describe('defaultDOMBitmapRenderer', () => {
-  it('has draw, drawMask, and createData', () => {
-    expect(typeof defaultDOMBitmapRenderer.draw).toBe('function');
-    expect(typeof defaultDOMBitmapRenderer.drawMask).toBe('function');
-    expect(typeof defaultDOMBitmapRenderer.createData).toBe('function');
   });
 });

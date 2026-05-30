@@ -6,6 +6,38 @@ import { DisplayObjectKind } from '@flighthq/types';
 
 import { findHitTarget, hitTestLocalBoundsRect, hitTestObject, hitTestPoint, registerHitTestPoint } from './hitTests';
 
+describe('findHitTarget', () => {
+  it('returns null when node is disabled', () => {
+    const obj = createDisplayObject();
+    obj.enabled = false;
+    expect(findHitTarget(obj, 50, 50)).toBeNull();
+  });
+
+  it('returns a child node registered with a hit handler', () => {
+    const parent = createDisplayObject();
+    const child = createDisplayObjectGeneric(DisplayObjectKind);
+    setRectangle(getLocalBoundsRect(child), 0, 0, 100, 100);
+    addChild(parent, child);
+    registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRect);
+    const hit = findHitTarget(parent, 50, 50);
+    expect(hit).toBe(child);
+  });
+});
+
+describe('hitTestLocalBoundsRect', () => {
+  it('returns true when world-space point is inside local bounds', () => {
+    const obj = createDisplayObject();
+    setRectangle(getLocalBoundsRect(obj), 0, 0, 100, 100);
+    expect(hitTestLocalBoundsRect(obj, 50, 50)).toBe(true);
+  });
+
+  it('returns false when world-space point is outside local bounds', () => {
+    const obj = createDisplayObject();
+    setRectangle(getLocalBoundsRect(obj), 0, 0, 100, 100);
+    expect(hitTestLocalBoundsRect(obj, 200, 200)).toBe(false);
+  });
+});
+
 describe('hitTestObject', () => {
   let a: DisplayObject;
   let b: DisplayObject;
@@ -164,37 +196,5 @@ describe('registerHitTestPoint', () => {
     registerHitTestPoint(kind, () => true);
     const node = createDisplayObjectGeneric(kind);
     expect(hitTestPoint(node, 0, 0)).toBe(true);
-  });
-});
-
-describe('hitTestLocalBoundsRect', () => {
-  it('returns true when world-space point is inside local bounds', () => {
-    const obj = createDisplayObject();
-    setRectangle(getLocalBoundsRect(obj), 0, 0, 100, 100);
-    expect(hitTestLocalBoundsRect(obj, 50, 50)).toBe(true);
-  });
-
-  it('returns false when world-space point is outside local bounds', () => {
-    const obj = createDisplayObject();
-    setRectangle(getLocalBoundsRect(obj), 0, 0, 100, 100);
-    expect(hitTestLocalBoundsRect(obj, 200, 200)).toBe(false);
-  });
-});
-
-describe('findHitTarget', () => {
-  it('returns null when node is disabled', () => {
-    const obj = createDisplayObject();
-    obj.enabled = false;
-    expect(findHitTarget(obj, 50, 50)).toBeNull();
-  });
-
-  it('returns a child node registered with a hit handler', () => {
-    const parent = createDisplayObject();
-    const child = createDisplayObjectGeneric(DisplayObjectKind);
-    setRectangle(getLocalBoundsRect(child), 0, 0, 100, 100);
-    addChild(parent, child);
-    registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRect);
-    const hit = findHitTarget(parent, 50, 50);
-    expect(hit).toBe(child);
   });
 });

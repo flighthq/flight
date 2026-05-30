@@ -21,6 +21,14 @@ function makeState() {
   return state;
 }
 
+describe('defaultCanvasDisplayObjectRenderer', () => {
+  it('has draw, drawMask, and createData', () => {
+    expect(typeof defaultCanvasDisplayObjectRenderer.draw).toBe('function');
+    expect(typeof defaultCanvasDisplayObjectRenderer.drawMask).toBe('function');
+    expect(typeof defaultCanvasDisplayObjectRenderer.createData).toBe('function');
+  });
+});
+
 describe('drawCanvasDisplayObject', () => {
   it('does not throw', () => {
     const state = makeState();
@@ -93,14 +101,6 @@ describe('renderCanvasDisplayObject', () => {
     renderCanvasDisplayObject(state, parent);
 
     expect(drawImageSpy).toHaveBeenCalledOnce();
-  });
-});
-
-describe('defaultCanvasDisplayObjectRenderer', () => {
-  it('has draw, drawMask, and createData', () => {
-    expect(typeof defaultCanvasDisplayObjectRenderer.draw).toBe('function');
-    expect(typeof defaultCanvasDisplayObjectRenderer.drawMask).toBe('function');
-    expect(typeof defaultCanvasDisplayObjectRenderer.createData).toBe('function');
   });
 });
 

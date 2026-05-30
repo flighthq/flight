@@ -4,6 +4,18 @@ import type { GraphNode, GraphNodeRuntime, HasBoundsRect, HasBoundsRectRuntime }
 import { createGraphNode, createGraphNodeRuntime } from './graphNode';
 import { defaultComputeLocalBoundsRect, initHasBoundsRect, initHasBoundsRectRuntime } from './hasBoundsRect';
 
+describe('defaultComputeLocalBoundsRect', () => {
+  it('is a no-op that does not modify out', () => {
+    const out = createRectangle(1, 2, 3, 4);
+    const node = createGraphNode(NodeTestKind, NodeTestKind);
+    defaultComputeLocalBoundsRect(out, node as unknown as GraphNode);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.width).toBe(3);
+    expect(out.height).toBe(4);
+  });
+});
+
 describe('initHasBoundsRect', () => {
   let node: HasBoundsRect;
 
@@ -35,18 +47,6 @@ describe('initHasBoundsRectRuntime', () => {
     expect(runtime.localBoundsRect).toBeNull();
     expect(runtime.worldBoundsRect).toBeNull();
     expect(runtime.computeLocalBoundsRect).toStrictEqual(defaultComputeLocalBoundsRect);
-  });
-});
-
-describe('defaultComputeLocalBoundsRect', () => {
-  it('is a no-op that does not modify out', () => {
-    const out = createRectangle(1, 2, 3, 4);
-    const node = createGraphNode(NodeTestKind, NodeTestKind);
-    defaultComputeLocalBoundsRect(out, node as unknown as GraphNode);
-    expect(out.x).toBe(1);
-    expect(out.y).toBe(2);
-    expect(out.width).toBe(3);
-    expect(out.height).toBe(4);
   });
 });
 

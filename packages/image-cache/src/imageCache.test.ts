@@ -13,20 +13,6 @@ function makeResult(): ImageCacheResult {
   return { canvas: null, transform: createMatrix() };
 }
 
-describe('getImageCache', () => {
-  it('returns null when slot is empty', () => {
-    const obj = makeObj();
-    expect(getImageCache(obj)).toBeNull();
-  });
-
-  it('returns the result when slot is set', () => {
-    const obj = makeObj();
-    const result = makeResult();
-    (getGraphNodeRuntime(obj) as GraphNodeRuntime<symbol, object>).imageCache = result;
-    expect(getImageCache(obj)).toBe(result);
-  });
-});
-
 describe('clearImageCache', () => {
   it('sets the slot to null', () => {
     const obj = makeObj();
@@ -39,5 +25,19 @@ describe('clearImageCache', () => {
   it('is a no-op when slot is already null', () => {
     const obj = makeObj();
     expect(() => clearImageCache(obj)).not.toThrow();
+  });
+});
+
+describe('getImageCache', () => {
+  it('returns null when slot is empty', () => {
+    const obj = makeObj();
+    expect(getImageCache(obj)).toBeNull();
+  });
+
+  it('returns the result when slot is set', () => {
+    const obj = makeObj();
+    const result = makeResult();
+    (getGraphNodeRuntime(obj) as GraphNodeRuntime<symbol, object>).imageCache = result;
+    expect(getImageCache(obj)).toBe(result);
   });
 });

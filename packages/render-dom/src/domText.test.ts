@@ -12,6 +12,14 @@ function makeState() {
   return state;
 }
 
+describe('defaultDOMTextRenderer', () => {
+  it('has draw, drawMask, and createData', () => {
+    expect(typeof defaultDOMTextRenderer.draw).toBe('function');
+    expect(typeof defaultDOMTextRenderer.drawMask).toBe('function');
+    expect(typeof defaultDOMTextRenderer.createData).toBe('function');
+  });
+});
+
 describe('drawDOMText', () => {
   it('does not throw when text is empty', () => {
     const state = makeState();
@@ -91,13 +99,5 @@ describe('drawDOMTextMask', () => {
     const node = createText();
     const renderNode = getDisplayObjectRenderNode(state, node);
     expect(() => drawDOMTextMask(state, renderNode)).not.toThrow();
-  });
-});
-
-describe('defaultDOMTextRenderer', () => {
-  it('has draw, drawMask, and createData', () => {
-    expect(typeof defaultDOMTextRenderer.draw).toBe('function');
-    expect(typeof defaultDOMTextRenderer.drawMask).toBe('function');
-    expect(typeof defaultDOMTextRenderer.createData).toBe('function');
   });
 });

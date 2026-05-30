@@ -13,6 +13,16 @@ import {
   getStageRuntime,
 } from './stage';
 
+describe('computeStageLocalBoundsRect', () => {
+  it('sets out dimensions from stageWidth and stageHeight', () => {
+    const stage = createStage({ data: { stageWidth: 800, stageHeight: 600 } });
+    const out = createRectangle();
+    computeStageLocalBoundsRect(out, stage as unknown as GraphNode);
+    expect(out.width).toBe(800);
+    expect(out.height).toBe(600);
+  });
+});
+
 describe('createStage', () => {
   let stage: Stage;
 
@@ -70,6 +80,34 @@ describe('createStage', () => {
   });
 });
 
+describe('createStageData', () => {
+  it('returns default values', () => {
+    const data = createStageData();
+    expect(data.stageWidth).toBe(400);
+    expect(data.stageHeight).toBe(550);
+    expect(data.frameRate).toBe(0);
+    expect(data.quality).toBe('high');
+  });
+
+  it('allows pre-defined values', () => {
+    const data = createStageData({ stageWidth: 1920, stageHeight: 1080 });
+    expect(data.stageWidth).toBe(1920);
+    expect(data.stageHeight).toBe(1080);
+  });
+});
+
+describe('createStageRuntime', () => {
+  it('returns a non-null runtime', () => {
+    const runtime = createStageRuntime();
+    expect(runtime).not.toBeNull();
+  });
+
+  it('uses computeStageLocalBoundsRect', () => {
+    const runtime = createStageRuntime();
+    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeStageLocalBoundsRect);
+  });
+});
+
 describe('getStage', () => {
   it('returns null when the node has no parent', () => {
     const obj = createDisplayObject();
@@ -97,44 +135,6 @@ describe('getStage', () => {
     addChild(stage, mid);
     addChild(mid, leaf);
     expect(getStage(leaf)).toBe(stage);
-  });
-});
-
-describe('computeStageLocalBoundsRect', () => {
-  it('sets out dimensions from stageWidth and stageHeight', () => {
-    const stage = createStage({ data: { stageWidth: 800, stageHeight: 600 } });
-    const out = createRectangle();
-    computeStageLocalBoundsRect(out, stage as unknown as GraphNode);
-    expect(out.width).toBe(800);
-    expect(out.height).toBe(600);
-  });
-});
-
-describe('createStageData', () => {
-  it('returns default values', () => {
-    const data = createStageData();
-    expect(data.stageWidth).toBe(400);
-    expect(data.stageHeight).toBe(550);
-    expect(data.frameRate).toBe(0);
-    expect(data.quality).toBe('high');
-  });
-
-  it('allows pre-defined values', () => {
-    const data = createStageData({ stageWidth: 1920, stageHeight: 1080 });
-    expect(data.stageWidth).toBe(1920);
-    expect(data.stageHeight).toBe(1080);
-  });
-});
-
-describe('createStageRuntime', () => {
-  it('returns a non-null runtime', () => {
-    const runtime = createStageRuntime();
-    expect(runtime).not.toBeNull();
-  });
-
-  it('uses computeStageLocalBoundsRect', () => {
-    const runtime = createStageRuntime();
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeStageLocalBoundsRect);
   });
 });
 

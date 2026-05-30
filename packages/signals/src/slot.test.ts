@@ -62,6 +62,18 @@ describe('connectSignal', () => {
   });
 });
 
+describe('disconnectAllSignals', () => {
+  it('removes all slots', () => {
+    const signal = createSignal<() => void>();
+    let count = 0;
+    connectSignal(signal, () => count++);
+    connectSignal(signal, () => count++);
+    disconnectAllSignals(signal);
+    emitSignal(signal);
+    expect(count).toBe(0);
+  });
+});
+
 describe('disconnectSignal', () => {
   it('removes a specific slot', () => {
     const signal = createSignal<() => void>();
@@ -84,18 +96,6 @@ describe('disconnectSignal', () => {
     emitSignal(signal);
     expect(a).toBe(0);
     expect(b).toBe(1);
-  });
-});
-
-describe('disconnectAllSignals', () => {
-  it('removes all slots', () => {
-    const signal = createSignal<() => void>();
-    let count = 0;
-    connectSignal(signal, () => count++);
-    connectSignal(signal, () => count++);
-    disconnectAllSignals(signal);
-    emitSignal(signal);
-    expect(count).toBe(0);
   });
 });
 

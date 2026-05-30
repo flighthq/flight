@@ -23,6 +23,13 @@ function makeAtlas() {
   return atlas;
 }
 
+describe('defaultDOMSpriteRenderer', () => {
+  it('has draw and createData', () => {
+    expect(typeof defaultDOMSpriteRenderer.draw).toBe('function');
+    expect(typeof defaultDOMSpriteRenderer.createData).toBe('function');
+  });
+});
+
 describe('drawDOMSprite', () => {
   it('does nothing when atlas is null', () => {
     const state = makeState();
@@ -106,12 +113,5 @@ describe('renderDOMSprite', () => {
     const state = makeState();
     const sprite = createSprite();
     expect(() => renderDOMSprite(state, sprite)).not.toThrow();
-  });
-});
-
-describe('defaultDOMSpriteRenderer', () => {
-  it('has draw and createData', () => {
-    expect(typeof defaultDOMSpriteRenderer.draw).toBe('function');
-    expect(typeof defaultDOMSpriteRenderer.createData).toBe('function');
   });
 });

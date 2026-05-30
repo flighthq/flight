@@ -17,6 +17,14 @@ function makeState() {
   return state;
 }
 
+describe('defaultDOMShapeRenderer', () => {
+  it('has draw, drawMask, and createData', () => {
+    expect(typeof defaultDOMShapeRenderer.draw).toBe('function');
+    expect(typeof defaultDOMShapeRenderer.drawMask).toBe('function');
+    expect(typeof defaultDOMShapeRenderer.createData).toBe('function');
+  });
+});
+
 describe('drawDOMShape', () => {
   it('does not append anything when commands array is empty', () => {
     const state = makeState();
@@ -82,13 +90,5 @@ describe('drawDOMShapeMask', () => {
     const shape = createShape();
     const renderNode = getDisplayObjectRenderNode(state, shape);
     expect(() => drawDOMShapeMask(state, renderNode)).not.toThrow();
-  });
-});
-
-describe('defaultDOMShapeRenderer', () => {
-  it('has draw, drawMask, and createData', () => {
-    expect(typeof defaultDOMShapeRenderer.draw).toBe('function');
-    expect(typeof defaultDOMShapeRenderer.drawMask).toBe('function');
-    expect(typeof defaultDOMShapeRenderer.createData).toBe('function');
   });
 });

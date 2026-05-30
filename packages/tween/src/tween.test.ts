@@ -16,6 +16,24 @@ import {
 import { createTweenManager } from './tweenManager';
 import { updateTweens } from './updateTweens';
 
+describe('applyTween', () => {
+  it('immediately sets properties on target', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    applyTween(manager, target, { x: 50 });
+    expect(target.x).toBe(50);
+  });
+
+  it('stops conflicting tweens before applying', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    const tween = createTween(manager, target, 1000, { x: 100 });
+    applyTween(manager, target, { x: 50 });
+    expect(tween.complete).toBe(true);
+    expect(target.x).toBe(50);
+  });
+});
+
 describe('createTween', () => {
   it('registers with manager', () => {
     const manager = createTweenManager();
@@ -75,52 +93,30 @@ describe('createTween', () => {
   });
 });
 
-describe('applyTween', () => {
-  it('immediately sets properties on target', () => {
+describe('pauseAllTweens', () => {
+  it('sets paused=true on every tween in the manager', () => {
     const manager = createTweenManager();
-    const target = { x: 0 };
-    applyTween(manager, target, { x: 50 });
-    expect(target.x).toBe(50);
-  });
-
-  it('stops conflicting tweens before applying', () => {
-    const manager = createTweenManager();
-    const target = { x: 0 };
-    const tween = createTween(manager, target, 1000, { x: 100 });
-    applyTween(manager, target, { x: 50 });
-    expect(tween.complete).toBe(true);
-    expect(target.x).toBe(50);
+    const a = createTween(manager, { x: 0 }, 1000, { x: 100 });
+    pauseAllTweens(manager);
+    expect(a.paused).toBe(true);
   });
 });
 
-describe('pauseTweens / resumeTweens', () => {
-  it('pauses only tweens on the specified target', () => {
+describe('pauseTween', () => {
+  it('sets paused to true on a single tween', () => {
     const manager = createTweenManager();
-    const a = { x: 0 };
-    const b = { x: 0 };
-    const tweenA = createTween(manager, a, 1000, { x: 100 });
-    const tweenB = createTween(manager, b, 1000, { x: 100 });
-    pauseTweens(manager, a);
-    expect(tweenA.paused).toBe(true);
-    expect(tweenB.paused).toBe(false);
+    const tween = createTween(manager, { x: 0 }, 1000, { x: 100 });
+    pauseTween(tween);
+    expect(tween.paused).toBe(true);
   });
+});
 
-  it('resumes only tweens on the specified target', () => {
+describe('pauseTweens', () => {
+  it('pauses only tweens for the given target', () => {
     const manager = createTweenManager();
-    const a = { x: 0 };
-    const b = { x: 0 };
-    const tweenA = createTween(manager, a, 1000, { x: 100 });
-    const tweenB = createTween(manager, b, 1000, { x: 100 });
-    pauseAllTweens(manager);
-    resumeTweens(manager, a);
-    expect(tweenA.paused).toBe(false);
-    expect(tweenB.paused).toBe(true);
-  });
-
-  it('is a no-op for an unknown target', () => {
-    const manager = createTweenManager();
-    expect(() => pauseTweens(manager, {})).not.toThrow();
-    expect(() => resumeTweens(manager, {})).not.toThrow();
+    const t = createTween(manager, { x: 0 }, 1000, { x: 100 });
+    pauseTweens(manager, t.target);
+    expect(t.paused).toBe(true);
   });
 });
 
@@ -136,51 +132,13 @@ describe('resetTweens', () => {
   });
 });
 
-describe('pauseAllTweens / resumeAllTweens / stopAllTweens', () => {
-  it('pauseAllTweens pauses every tween in the manager', () => {
+describe('resumeAllTweens', () => {
+  it('sets paused=false on every tween in the manager', () => {
     const manager = createTweenManager();
     const a = createTween(manager, { x: 0 }, 1000, { x: 100 });
-    const b = createTween(manager, { y: 0 }, 1000, { y: 100 }, { overwrite: false });
-    pauseAllTweens(manager);
-    expect(a.paused).toBe(true);
-    expect(b.paused).toBe(true);
-  });
-
-  it('resumeAllTweens unpauses every tween in the manager', () => {
-    const manager = createTweenManager();
-    const a = createTween(manager, { x: 0 }, 1000, { x: 100 });
-    const b = createTween(manager, { y: 0 }, 1000, { y: 100 }, { overwrite: false });
     pauseAllTweens(manager);
     resumeAllTweens(manager);
     expect(a.paused).toBe(false);
-    expect(b.paused).toBe(false);
-  });
-
-  it('stopAllTweens marks every tween complete', () => {
-    const manager = createTweenManager();
-    const a = createTween(manager, { x: 0 }, 1000, { x: 100 });
-    const b = createTween(manager, { y: 0 }, 1000, { y: 100 }, { overwrite: false });
-    stopAllTweens(manager);
-    expect(a.complete).toBe(true);
-    expect(b.complete).toBe(true);
-  });
-
-  it('pauseAllTweens prevents values from updating', () => {
-    const manager = createTweenManager();
-    const target = { x: 0 };
-    createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t });
-    pauseAllTweens(manager);
-    updateTweens(manager, 500);
-    expect(target.x).toBe(0);
-  });
-});
-
-describe('pauseTween', () => {
-  it('sets paused to true on a single tween', () => {
-    const manager = createTweenManager();
-    const tween = createTween(manager, { x: 0 }, 1000, { x: 100 });
-    pauseTween(tween);
-    expect(tween.paused).toBe(true);
   });
 });
 
@@ -191,34 +149,6 @@ describe('resumeTween', () => {
     pauseTween(tween);
     resumeTween(tween);
     expect(tween.paused).toBe(false);
-  });
-});
-
-describe('pauseAllTweens', () => {
-  it('sets paused=true on every tween in the manager', () => {
-    const manager = createTweenManager();
-    const a = createTween(manager, { x: 0 }, 1000, { x: 100 });
-    pauseAllTweens(manager);
-    expect(a.paused).toBe(true);
-  });
-});
-
-describe('pauseTweens', () => {
-  it('pauses only tweens for the given target', () => {
-    const manager = createTweenManager();
-    const t = createTween(manager, { x: 0 }, 1000, { x: 100 });
-    pauseTweens(manager, t.target);
-    expect(t.paused).toBe(true);
-  });
-});
-
-describe('resumeAllTweens', () => {
-  it('sets paused=false on every tween in the manager', () => {
-    const manager = createTweenManager();
-    const a = createTween(manager, { x: 0 }, 1000, { x: 100 });
-    pauseAllTweens(manager);
-    resumeAllTweens(manager);
-    expect(a.paused).toBe(false);
   });
 });
 

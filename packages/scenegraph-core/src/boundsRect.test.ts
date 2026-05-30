@@ -348,6 +348,26 @@ describe('getBoundsRect', () => {
   });
 });
 
+describe('getHeight', () => {
+  it('returns height in parent space with default scale', () => {
+    const parent = createTestNode();
+    const node = createTestNode();
+    addChild(parent, node);
+    setRectangle(getLocalBoundsRect(node) as Rectangle, 0, 0, 100, 50);
+    expect(getHeight(node)).toBeCloseTo(50);
+  });
+
+  it('accounts for scaleY', () => {
+    const parent = createTestNode();
+    const node = createTestNode();
+    addChild(parent, node);
+    setRectangle(getLocalBoundsRect(node) as Rectangle, 0, 0, 100, 50);
+    node.scaleY = 2;
+    invalidateLocalTransform(node);
+    expect(getHeight(node)).toBeCloseTo(100);
+  });
+});
+
 describe('getLocalBoundsRect', () => {
   it('should call ensure and return localBoundsRect', () => {
     const object = createTestNode();
@@ -356,6 +376,26 @@ describe('getLocalBoundsRect', () => {
     const rect = getLocalBoundsRect(object);
     expect(rect).not.toBeNull();
     expect(rect).toStrictEqual(runtime.localBoundsRect);
+  });
+});
+
+describe('getWidth', () => {
+  it('returns width in parent space with default scale', () => {
+    const parent = createTestNode();
+    const node = createTestNode();
+    addChild(parent, node);
+    setRectangle(getLocalBoundsRect(node) as Rectangle, 0, 0, 80, 40);
+    expect(getWidth(node)).toBeCloseTo(80);
+  });
+
+  it('accounts for scaleX', () => {
+    const parent = createTestNode();
+    const node = createTestNode();
+    addChild(parent, node);
+    setRectangle(getLocalBoundsRect(node) as Rectangle, 0, 0, 80, 40);
+    node.scaleX = 3;
+    invalidateLocalTransform(node);
+    expect(getWidth(node)).toBeCloseTo(240);
   });
 });
 
@@ -399,46 +439,6 @@ describe('getWorldBoundsRect', () => {
     const bounds = getWorldBoundsRect(parent);
     expect(bounds.width).toBeGreaterThan(10);
     expect(bounds.height).toBeGreaterThan(10);
-  });
-});
-
-describe('getHeight', () => {
-  it('returns height in parent space with default scale', () => {
-    const parent = createTestNode();
-    const node = createTestNode();
-    addChild(parent, node);
-    setRectangle(getLocalBoundsRect(node) as Rectangle, 0, 0, 100, 50);
-    expect(getHeight(node)).toBeCloseTo(50);
-  });
-
-  it('accounts for scaleY', () => {
-    const parent = createTestNode();
-    const node = createTestNode();
-    addChild(parent, node);
-    setRectangle(getLocalBoundsRect(node) as Rectangle, 0, 0, 100, 50);
-    node.scaleY = 2;
-    invalidateLocalTransform(node);
-    expect(getHeight(node)).toBeCloseTo(100);
-  });
-});
-
-describe('getWidth', () => {
-  it('returns width in parent space with default scale', () => {
-    const parent = createTestNode();
-    const node = createTestNode();
-    addChild(parent, node);
-    setRectangle(getLocalBoundsRect(node) as Rectangle, 0, 0, 80, 40);
-    expect(getWidth(node)).toBeCloseTo(80);
-  });
-
-  it('accounts for scaleX', () => {
-    const parent = createTestNode();
-    const node = createTestNode();
-    addChild(parent, node);
-    setRectangle(getLocalBoundsRect(node) as Rectangle, 0, 0, 80, 40);
-    node.scaleX = 3;
-    invalidateLocalTransform(node);
-    expect(getWidth(node)).toBeCloseTo(240);
   });
 });
 

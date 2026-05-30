@@ -27,83 +27,6 @@ beforeEach(() => {
   pt2 = createVector2();
 });
 
-describe('createVector2', () => {
-  it('returns a Vector2 with default coordinates', () => {
-    const p: Vector2 = createVector2();
-    expect(p).not.toBeNull();
-    expect(p.x).toBe(0);
-    expect(p.y).toBe(0);
-  });
-
-  it('sets the specified x and y coordinates', () => {
-    const p = createVector2(2, 4);
-    expect(p.x).toBe(2);
-    expect(p.y).toBe(4);
-  });
-
-  it('allows a vector-like object', () => {
-    const p = { x: 2, y: 4 };
-    expect(p.x).toBe(2);
-    expect(p.y).toBe(4);
-  });
-});
-
-// Properties
-
-describe('getVector2Length', () => {
-  const testCases = [
-    { x: 100, y: 0, expected: 100 },
-    { x: 0, y: 100, expected: 100 },
-    { x: 3, y: 4, expected: 5 },
-    { x: 5, y: 12, expected: 13 },
-    { x: 8, y: 15, expected: 17 },
-  ];
-
-  it('returns the length of the vector', () => {
-    for (const { x, y, expected } of testCases) {
-      pt.x = x;
-      pt.y = y;
-      expect(getVector2Length(pt)).toBe(expected);
-    }
-  });
-
-  it('allows a vector-like object', () => {
-    for (const { x, y, expected } of testCases) {
-      const pt = { x: x, y: y };
-      expect(getVector2Length(pt)).toBe(expected);
-    }
-  });
-});
-
-describe('getVector2LengthSquared', () => {
-  it('returns the square of the length', () => {
-    pt.x = 3;
-    pt.y = 4;
-    expect(getVector2LengthSquared(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
-  });
-
-  it('returns 0 for the origin (0, 0)', () => {
-    expect(getVector2LengthSquared(pt)).toBe(0);
-  });
-
-  it('handles negative values correctly', () => {
-    pt.x = -3;
-    pt.y = -4;
-    expect(getVector2LengthSquared(pt)).toBe(9 + 16); // 9 + 16 = 25
-  });
-
-  it('handles non-integer values', () => {
-    pt.x = 2.5;
-    pt.y = 4.5;
-    expect(getVector2LengthSquared(pt)).toBe(2.5 * 2.5 + 4.5 * 4.5); // 6.25 + 20.25 = 26.5
-  });
-
-  it('allows a vector-like object', () => {
-    const pt = { x: 3, y: 4 };
-    expect(getVector2LengthSquared(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
-  });
-});
-
 describe('addVector2', () => {
   it('adds two coordinates', () => {
     pt.x = 2;
@@ -199,6 +122,27 @@ describe('copyVector2', () => {
   });
 });
 
+describe('createVector2', () => {
+  it('returns a Vector2 with default coordinates', () => {
+    const p: Vector2 = createVector2();
+    expect(p).not.toBeNull();
+    expect(p.x).toBe(0);
+    expect(p.y).toBe(0);
+  });
+
+  it('sets the specified x and y coordinates', () => {
+    const p = createVector2(2, 4);
+    expect(p.x).toBe(2);
+    expect(p.y).toBe(4);
+  });
+
+  it('allows a vector-like object', () => {
+    const p = { x: 2, y: 4 };
+    expect(p.x).toBe(2);
+    expect(p.y).toBe(4);
+  });
+});
+
 describe('createVector2FromPolar', () => {
   it('makes a createVector2 and calls polar', () => {
     const pt = createVector2FromPolar(5, 0);
@@ -251,6 +195,60 @@ describe('equalsVector2', () => {
     expect(equalsVector2(pt, pt2)).toBe(false);
     pt2.x = 1;
     expect(equalsVector2(pt, pt2)).toBe(true);
+  });
+});
+
+describe('getVector2Length', () => {
+  const testCases = [
+    { x: 100, y: 0, expected: 100 },
+    { x: 0, y: 100, expected: 100 },
+    { x: 3, y: 4, expected: 5 },
+    { x: 5, y: 12, expected: 13 },
+    { x: 8, y: 15, expected: 17 },
+  ];
+
+  it('returns the length of the vector', () => {
+    for (const { x, y, expected } of testCases) {
+      pt.x = x;
+      pt.y = y;
+      expect(getVector2Length(pt)).toBe(expected);
+    }
+  });
+
+  it('allows a vector-like object', () => {
+    for (const { x, y, expected } of testCases) {
+      const pt = { x: x, y: y };
+      expect(getVector2Length(pt)).toBe(expected);
+    }
+  });
+});
+
+describe('getVector2LengthSquared', () => {
+  it('returns the square of the length', () => {
+    pt.x = 3;
+    pt.y = 4;
+    expect(getVector2LengthSquared(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
+  });
+
+  it('returns 0 for the origin (0, 0)', () => {
+    expect(getVector2LengthSquared(pt)).toBe(0);
+  });
+
+  it('handles negative values correctly', () => {
+    pt.x = -3;
+    pt.y = -4;
+    expect(getVector2LengthSquared(pt)).toBe(9 + 16); // 9 + 16 = 25
+  });
+
+  it('handles non-integer values', () => {
+    pt.x = 2.5;
+    pt.y = 4.5;
+    expect(getVector2LengthSquared(pt)).toBe(2.5 * 2.5 + 4.5 * 4.5); // 6.25 + 20.25 = 26.5
+  });
+
+  it('allows a vector-like object', () => {
+    const pt = { x: 3, y: 4 };
+    expect(getVector2LengthSquared(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
   });
 });
 

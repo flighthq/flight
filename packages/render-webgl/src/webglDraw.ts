@@ -3,14 +3,6 @@ import type { WebGLRenderState } from '@flighthq/types';
 import type { WebGLRenderStateInternal } from './internal';
 import { setWebGLAttribs, setWebGLMatrixFromValues } from './webglShader';
 
-export function useWebGLProgram(state: WebGLRenderStateInternal): void {
-  const program = state.shaderLoc.program;
-  if (state.currentProgram !== program) {
-    state.gl.useProgram(program);
-    state.currentProgram = program;
-  }
-}
-
 export function bindWebGLTexture(state: WebGLRenderStateInternal, imageSource: CanvasImageSource): WebGLTexture {
   const { gl, textureCache } = state;
   let texture = textureCache.get(imageSource);
@@ -33,22 +25,6 @@ export function bindWebGLTexture(state: WebGLRenderStateInternal, imageSource: C
     state.currentTexture = texture;
   }
   return texture;
-}
-
-export function updateWebGLTexture(
-  state: WebGLRenderStateInternal,
-  texture: WebGLTexture,
-  canvas: HTMLCanvasElement,
-): void {
-  const { gl } = state;
-  if (state.currentTexture !== texture) {
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    state.currentTexture = texture;
-  }
-  // Browsers pass canvas pixel data to WebGL as straight (unmultiplied) alpha.
-  // Premultiply on upload so the texture matches the (ONE, ONE_MINUS_SRC_ALPHA) blend mode.
-  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
 }
 
 export function createWebGLTexture(state: WebGLRenderStateInternal): WebGLTexture {
@@ -100,18 +76,6 @@ export function drawWebGLQuad(
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 }
 
-export function setWebGLBlendMode(state: WebGLRenderState, blendMode: number | null): void {
-  if (blendMode === state.currentBlendMode) return;
-  state.currentBlendMode = blendMode;
-  const gl = state.gl;
-  // BlendMode.Add = 1, Normal = 0 (matches render-canvas ordering)
-  if (blendMode === 1 /* Add */) {
-    gl.blendFunc(gl.ONE, gl.ONE);
-  } else {
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-  }
-}
-
 export function setQuadMatrixFromOffset(
   state: WebGLRenderStateInternal,
   a: number,
@@ -135,4 +99,40 @@ export function setQuadMatrixFromOffset(
     ty + b * dx + d * dy,
     state.canvas,
   );
+}
+
+export function setWebGLBlendMode(state: WebGLRenderState, blendMode: number | null): void {
+  if (blendMode === state.currentBlendMode) return;
+  state.currentBlendMode = blendMode;
+  const gl = state.gl;
+  // BlendMode.Add = 1, Normal = 0 (matches render-canvas ordering)
+  if (blendMode === 1 /* Add */) {
+    gl.blendFunc(gl.ONE, gl.ONE);
+  } else {
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  }
+}
+
+export function updateWebGLTexture(
+  state: WebGLRenderStateInternal,
+  texture: WebGLTexture,
+  canvas: HTMLCanvasElement,
+): void {
+  const { gl } = state;
+  if (state.currentTexture !== texture) {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    state.currentTexture = texture;
+  }
+  // Browsers pass canvas pixel data to WebGL as straight (unmultiplied) alpha.
+  // Premultiply on upload so the texture matches the (ONE, ONE_MINUS_SRC_ALPHA) blend mode.
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+}
+
+export function useWebGLProgram(state: WebGLRenderStateInternal): void {
+  const program = state.shaderLoc.program;
+  if (state.currentProgram !== program) {
+    state.gl.useProgram(program);
+    state.currentProgram = program;
+  }
 }

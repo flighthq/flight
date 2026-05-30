@@ -12,16 +12,16 @@ import {
   updateSpritesheetPlayer,
 } from './spritesheetPlayer';
 
+function makeAnimation(frameIndices: number[], frameDuration: number, loop = true): SpritesheetAnimation {
+  return createSpritesheetAnimation({ frames: frameIndices, frameDuration, loop });
+}
+
 function makeSheet(frameCount: number, atlas = null): Spritesheet {
   const sheet = createSpritesheet({ atlas });
   for (let i = 0; i < frameCount; i++) {
     sheet.frames.push(createSpritesheetFrame({ id: i }));
   }
   return sheet;
-}
-
-function makeAnimation(frameIndices: number[], frameDuration: number, loop = true): SpritesheetAnimation {
-  return createSpritesheetAnimation({ frames: frameIndices, frameDuration, loop });
 }
 
 describe('createSpritesheetPlayer', () => {
@@ -39,6 +39,61 @@ describe('createSpritesheetPlayer', () => {
     const queue = [animation];
     const player = createSpritesheetPlayer({ queue });
     expect(player.queue).toBe(queue);
+  });
+});
+
+describe('getSpritesheetPlayerFrame', () => {
+  it('returns null when no animation', () => {
+    const player = createSpritesheetPlayer();
+    const sheet = makeSheet(4);
+    expect(getSpritesheetPlayerFrame(player, sheet)).toBeNull();
+  });
+
+  it('returns the correct SpritesheetFrame for current frameIndex', () => {
+    const sheet = makeSheet(4);
+    const anim = makeAnimation([0, 1, 2, 3], 100);
+    const player = createSpritesheetPlayer();
+    showSpritesheetAnimation(player, anim);
+
+    updateSpritesheetPlayer(player, 200);
+    const frame = getSpritesheetPlayerFrame(player, sheet);
+    expect(frame).not.toBeNull();
+    expect(frame!.id).toBe(2);
+  });
+
+  it('returns null when the animation frame points outside the sheet', () => {
+    const sheet = makeSheet(1);
+    const anim = makeAnimation([2], 100);
+    const player = createSpritesheetPlayer();
+    showSpritesheetAnimation(player, anim);
+    expect(getSpritesheetPlayerFrame(player, sheet)).toBeNull();
+  });
+
+  it('returns null when the current animation has no frames', () => {
+    const sheet = makeSheet(1);
+    const player = createSpritesheetPlayer();
+    showSpritesheetAnimation(player, makeAnimation([], 100));
+    expect(getSpritesheetPlayerFrame(player, sheet)).toBeNull();
+  });
+});
+
+describe('queueSpritesheetAnimation', () => {
+  it('appends animation to the queue', () => {
+    const player = createSpritesheetPlayer();
+    const anim = makeAnimation([0, 1], 100);
+    queueSpritesheetAnimation(player, anim);
+    expect(player.queue).toHaveLength(1);
+    expect(player.queue[0]).toBe(anim);
+  });
+
+  it('appends multiple animations in order', () => {
+    const player = createSpritesheetPlayer();
+    const a1 = makeAnimation([0], 100);
+    const a2 = makeAnimation([1], 100);
+    queueSpritesheetAnimation(player, a1);
+    queueSpritesheetAnimation(player, a2);
+    expect(player.queue[0]).toBe(a1);
+    expect(player.queue[1]).toBe(a2);
   });
 });
 
@@ -254,60 +309,5 @@ describe('updateSpritesheetPlayer', () => {
     updateSpritesheetPlayer(player, 500);
     expect(player.animation).toBe(looping);
     expect(player.queue).toHaveLength(1);
-  });
-});
-
-describe('getSpritesheetPlayerFrame', () => {
-  it('returns null when no animation', () => {
-    const player = createSpritesheetPlayer();
-    const sheet = makeSheet(4);
-    expect(getSpritesheetPlayerFrame(player, sheet)).toBeNull();
-  });
-
-  it('returns the correct SpritesheetFrame for current frameIndex', () => {
-    const sheet = makeSheet(4);
-    const anim = makeAnimation([0, 1, 2, 3], 100);
-    const player = createSpritesheetPlayer();
-    showSpritesheetAnimation(player, anim);
-
-    updateSpritesheetPlayer(player, 200);
-    const frame = getSpritesheetPlayerFrame(player, sheet);
-    expect(frame).not.toBeNull();
-    expect(frame!.id).toBe(2);
-  });
-
-  it('returns null when the animation frame points outside the sheet', () => {
-    const sheet = makeSheet(1);
-    const anim = makeAnimation([2], 100);
-    const player = createSpritesheetPlayer();
-    showSpritesheetAnimation(player, anim);
-    expect(getSpritesheetPlayerFrame(player, sheet)).toBeNull();
-  });
-
-  it('returns null when the current animation has no frames', () => {
-    const sheet = makeSheet(1);
-    const player = createSpritesheetPlayer();
-    showSpritesheetAnimation(player, makeAnimation([], 100));
-    expect(getSpritesheetPlayerFrame(player, sheet)).toBeNull();
-  });
-});
-
-describe('queueSpritesheetAnimation', () => {
-  it('appends animation to the queue', () => {
-    const player = createSpritesheetPlayer();
-    const anim = makeAnimation([0, 1], 100);
-    queueSpritesheetAnimation(player, anim);
-    expect(player.queue).toHaveLength(1);
-    expect(player.queue[0]).toBe(anim);
-  });
-
-  it('appends multiple animations in order', () => {
-    const player = createSpritesheetPlayer();
-    const a1 = makeAnimation([0], 100);
-    const a2 = makeAnimation([1], 100);
-    queueSpritesheetAnimation(player, a1);
-    queueSpritesheetAnimation(player, a2);
-    expect(player.queue[0]).toBe(a1);
-    expect(player.queue[1]).toBe(a2);
   });
 });

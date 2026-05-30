@@ -6,29 +6,6 @@ beforeEach(() => {
   clearVector4Pool();
 });
 
-describe('acquireVector4', () => {
-  it('returns a new Vector4 when pool is empty', () => {
-    const v: Vector4 = acquireVector4();
-    expect(v).not.toBeNull();
-  });
-
-  it('reuses released vectors', () => {
-    const v1 = acquireVector4();
-    releaseVector4(v1);
-    const v2 = acquireVector4();
-    expect(v2).toBe(v1);
-  });
-
-  it('reuses released vectors in last-in-first-out order', () => {
-    const v1 = acquireVector4();
-    const v2 = acquireVector4();
-    releaseVector4(v1);
-    releaseVector4(v2);
-    expect(acquireVector4()).toBe(v2);
-    expect(acquireVector4()).toBe(v1);
-  });
-});
-
 describe('acquireEmptyVector4', () => {
   it('returns a vector with all components set to 0', () => {
     const v = acquireEmptyVector4();
@@ -54,9 +31,26 @@ describe('acquireEmptyVector4', () => {
   });
 });
 
-describe('releaseVector4', () => {
-  it('handles null safely', () => {
-    expect(() => releaseVector4(null as unknown as Vector4)).not.toThrow();
+describe('acquireVector4', () => {
+  it('returns a new Vector4 when pool is empty', () => {
+    const v: Vector4 = acquireVector4();
+    expect(v).not.toBeNull();
+  });
+
+  it('reuses released vectors', () => {
+    const v1 = acquireVector4();
+    releaseVector4(v1);
+    const v2 = acquireVector4();
+    expect(v2).toBe(v1);
+  });
+
+  it('reuses released vectors in last-in-first-out order', () => {
+    const v1 = acquireVector4();
+    const v2 = acquireVector4();
+    releaseVector4(v1);
+    releaseVector4(v2);
+    expect(acquireVector4()).toBe(v2);
+    expect(acquireVector4()).toBe(v1);
   });
 });
 
@@ -67,5 +61,11 @@ describe('clearVector4Pool', () => {
     clearVector4Pool();
     const v2 = acquireVector4();
     expect(v2).not.toBe(v);
+  });
+});
+
+describe('releaseVector4', () => {
+  it('handles null safely', () => {
+    expect(() => releaseVector4(null as unknown as Vector4)).not.toThrow();
   });
 });

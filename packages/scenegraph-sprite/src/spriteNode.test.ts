@@ -90,19 +90,6 @@ describe('createSpriteNodeRuntime', () => {
   });
 });
 
-describe('isSpriteNode', () => {
-  it('returns true for a sprite node', () => {
-    const node = createSpriteNode(SpriteNodeTestKind);
-    expect(isSpriteNode(node)).toBe(true);
-  });
-
-  it('returns false for a different graph type', () => {
-    const TestGraph: unique symbol = Symbol('TestGraph');
-    const node = createGraphNode(TestGraph, SpriteNodeTestKind);
-    expect(isSpriteNode(node)).toBe(false);
-  });
-});
-
 describe('getSpriteNodeRuntime', () => {
   it('returns the runtime for a SpriteNode', () => {
     const node = createSpriteNode(SpriteNodeTestKind);
@@ -113,6 +100,19 @@ describe('getSpriteNodeRuntime', () => {
   it('returns the same object as the internal runtime', () => {
     const node = createSpriteNode(SpriteNodeTestKind);
     expect(getSpriteNodeRuntime(node)).toBe(getSpriteNodeRuntime(node));
+  });
+});
+
+describe('isSpriteNode', () => {
+  it('returns true for a sprite node', () => {
+    const node = createSpriteNode(SpriteNodeTestKind);
+    expect(isSpriteNode(node)).toBe(true);
+  });
+
+  it('returns false for a different graph type', () => {
+    const TestGraph: unique symbol = Symbol('TestGraph');
+    const node = createGraphNode(TestGraph, SpriteNodeTestKind);
+    expect(isSpriteNode(node)).toBe(false);
   });
 });
 

@@ -24,34 +24,6 @@ import {
 } from '@flighthq/geometry';
 import type { Matrix3 } from '@flighthq/types';
 
-describe('createMatrix3', () => {
-  it('should initialize matrix with provided values', () => {
-    const m = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
-    expect(getMatrix3Element(m, 0, 0)).toBe(2);
-    expect(getMatrix3Element(m, 0, 1)).toBe(3);
-    expect(getMatrix3Element(m, 0, 2)).toBe(4);
-    expect(getMatrix3Element(m, 1, 0)).toBe(5);
-    expect(getMatrix3Element(m, 1, 1)).toBe(6);
-    expect(getMatrix3Element(m, 1, 2)).toBe(7);
-    expect(getMatrix3Element(m, 2, 0)).toBe(8);
-    expect(getMatrix3Element(m, 2, 1)).toBe(9);
-    expect(getMatrix3Element(m, 2, 2)).toBe(10);
-  });
-
-  it('should default to identity matrix when no values are provided', () => {
-    const m = createMatrix3();
-    expect(getMatrix3Element(m, 0, 0)).toBe(1);
-    expect(getMatrix3Element(m, 0, 1)).toBe(0);
-    expect(getMatrix3Element(m, 0, 2)).toBe(0);
-    expect(getMatrix3Element(m, 1, 0)).toBe(0);
-    expect(getMatrix3Element(m, 1, 1)).toBe(1);
-    expect(getMatrix3Element(m, 1, 2)).toBe(0);
-    expect(getMatrix3Element(m, 2, 0)).toBe(0);
-    expect(getMatrix3Element(m, 2, 1)).toBe(0);
-    expect(getMatrix3Element(m, 2, 2)).toBe(1);
-  });
-});
-
 describe('cloneMatrix3', () => {
   it('should clone the matrix correctly', () => {
     const m1 = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
@@ -254,6 +226,34 @@ describe('copyMatrix3RowToVector3', () => {
     expect(v.x).toBe(1); // m.a
     expect(v.y).toBe(2); // m.c
     expect(v.z).toBe(3); // m.tx
+  });
+});
+
+describe('createMatrix3', () => {
+  it('should initialize matrix with provided values', () => {
+    const m = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
+    expect(getMatrix3Element(m, 0, 0)).toBe(2);
+    expect(getMatrix3Element(m, 0, 1)).toBe(3);
+    expect(getMatrix3Element(m, 0, 2)).toBe(4);
+    expect(getMatrix3Element(m, 1, 0)).toBe(5);
+    expect(getMatrix3Element(m, 1, 1)).toBe(6);
+    expect(getMatrix3Element(m, 1, 2)).toBe(7);
+    expect(getMatrix3Element(m, 2, 0)).toBe(8);
+    expect(getMatrix3Element(m, 2, 1)).toBe(9);
+    expect(getMatrix3Element(m, 2, 2)).toBe(10);
+  });
+
+  it('should default to identity matrix when no values are provided', () => {
+    const m = createMatrix3();
+    expect(getMatrix3Element(m, 0, 0)).toBe(1);
+    expect(getMatrix3Element(m, 0, 1)).toBe(0);
+    expect(getMatrix3Element(m, 0, 2)).toBe(0);
+    expect(getMatrix3Element(m, 1, 0)).toBe(0);
+    expect(getMatrix3Element(m, 1, 1)).toBe(1);
+    expect(getMatrix3Element(m, 1, 2)).toBe(0);
+    expect(getMatrix3Element(m, 2, 0)).toBe(0);
+    expect(getMatrix3Element(m, 2, 1)).toBe(0);
+    expect(getMatrix3Element(m, 2, 2)).toBe(1);
   });
 });
 

@@ -7,29 +7,6 @@ beforeEach(() => {
   clearMatrix4Pool();
 });
 
-describe('acquireMatrix4', () => {
-  it('returns a new Matrix4 when pool is empty', () => {
-    const m: Matrix4 = acquireMatrix4();
-    expect(m).not.toBeNull();
-  });
-
-  it('reuses released matrices', () => {
-    const m1 = acquireMatrix4();
-    releaseMatrix4(m1);
-    const m2 = acquireMatrix4();
-    expect(m2).toBe(m1);
-  });
-
-  it('reuses released matrices in last-in-first-out order', () => {
-    const m1 = acquireMatrix4();
-    const m2 = acquireMatrix4();
-    releaseMatrix4(m1);
-    releaseMatrix4(m2);
-    expect(acquireMatrix4()).toBe(m2);
-    expect(acquireMatrix4()).toBe(m1);
-  });
-});
-
 describe('acquireIdentityMatrix4', () => {
   it('returns a matrix set to identity', () => {
     const m = acquireIdentityMatrix4();
@@ -54,9 +31,26 @@ describe('acquireIdentityMatrix4', () => {
   });
 });
 
-describe('releaseMatrix4', () => {
-  it('handles null safely', () => {
-    expect(() => releaseMatrix4(null as unknown as Matrix4)).not.toThrow();
+describe('acquireMatrix4', () => {
+  it('returns a new Matrix4 when pool is empty', () => {
+    const m: Matrix4 = acquireMatrix4();
+    expect(m).not.toBeNull();
+  });
+
+  it('reuses released matrices', () => {
+    const m1 = acquireMatrix4();
+    releaseMatrix4(m1);
+    const m2 = acquireMatrix4();
+    expect(m2).toBe(m1);
+  });
+
+  it('reuses released matrices in last-in-first-out order', () => {
+    const m1 = acquireMatrix4();
+    const m2 = acquireMatrix4();
+    releaseMatrix4(m1);
+    releaseMatrix4(m2);
+    expect(acquireMatrix4()).toBe(m2);
+    expect(acquireMatrix4()).toBe(m1);
   });
 });
 
@@ -67,5 +61,11 @@ describe('clearMatrix4Pool', () => {
     clearMatrix4Pool();
     const m2 = acquireMatrix4();
     expect(m2).not.toBe(m);
+  });
+});
+
+describe('releaseMatrix4', () => {
+  it('handles null safely', () => {
+    expect(() => releaseMatrix4(null as unknown as Matrix4)).not.toThrow();
   });
 });

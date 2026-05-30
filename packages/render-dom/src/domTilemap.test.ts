@@ -23,6 +23,13 @@ function makeTileset() {
   return { atlas, tileWidth: 16, tileHeight: 16 } as any;
 }
 
+describe('defaultDOMTilemapRenderer', () => {
+  it('has draw and createData', () => {
+    expect(typeof defaultDOMTilemapRenderer.draw).toBe('function');
+    expect(typeof defaultDOMTilemapRenderer.createData).toBe('function');
+  });
+});
+
 describe('drawDOMTilemap', () => {
   it('does nothing when tileset is null', () => {
     const state = makeState();
@@ -76,12 +83,5 @@ describe('drawDOMTilemap', () => {
 
     expect(state.element.children.length).toBe(1);
     expect(state.element.children[0].tagName).toBe('CANVAS');
-  });
-});
-
-describe('defaultDOMTilemapRenderer', () => {
-  it('has draw and createData', () => {
-    expect(typeof defaultDOMTilemapRenderer.draw).toBe('function');
-    expect(typeof defaultDOMTilemapRenderer.createData).toBe('function');
   });
 });

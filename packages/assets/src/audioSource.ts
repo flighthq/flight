@@ -1,6 +1,4 @@
-export interface AudioSource {
-  src: HTMLAudioElement | null;
-}
+import type { AudioSource } from '@flighthq/types';
 
 export function createAudioSource(element?: HTMLAudioElement): AudioSource {
   return { src: element ?? null };

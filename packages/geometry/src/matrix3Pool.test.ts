@@ -7,29 +7,6 @@ beforeEach(() => {
   clearMatrix3Pool();
 });
 
-describe('acquireMatrix3', () => {
-  it('returns a new Matrix3 when pool is empty', () => {
-    const m: Matrix3 = acquireMatrix3();
-    expect(m).not.toBeNull();
-  });
-
-  it('reuses released matrices', () => {
-    const m1 = acquireMatrix3();
-    releaseMatrix3(m1);
-    const m2 = acquireMatrix3();
-    expect(m2).toBe(m1);
-  });
-
-  it('reuses released matrices in last-in-first-out order', () => {
-    const m1 = acquireMatrix3();
-    const m2 = acquireMatrix3();
-    releaseMatrix3(m1);
-    releaseMatrix3(m2);
-    expect(acquireMatrix3()).toBe(m2);
-    expect(acquireMatrix3()).toBe(m1);
-  });
-});
-
 describe('acquireIdentityMatrix3', () => {
   it('returns a matrix set to identity', () => {
     const m = acquireIdentityMatrix3();
@@ -56,9 +33,26 @@ describe('acquireIdentityMatrix3', () => {
   });
 });
 
-describe('releaseMatrix3', () => {
-  it('handles null safely', () => {
-    expect(() => releaseMatrix3(null as unknown as Matrix3)).not.toThrow();
+describe('acquireMatrix3', () => {
+  it('returns a new Matrix3 when pool is empty', () => {
+    const m: Matrix3 = acquireMatrix3();
+    expect(m).not.toBeNull();
+  });
+
+  it('reuses released matrices', () => {
+    const m1 = acquireMatrix3();
+    releaseMatrix3(m1);
+    const m2 = acquireMatrix3();
+    expect(m2).toBe(m1);
+  });
+
+  it('reuses released matrices in last-in-first-out order', () => {
+    const m1 = acquireMatrix3();
+    const m2 = acquireMatrix3();
+    releaseMatrix3(m1);
+    releaseMatrix3(m2);
+    expect(acquireMatrix3()).toBe(m2);
+    expect(acquireMatrix3()).toBe(m1);
   });
 });
 
@@ -69,5 +63,11 @@ describe('clearMatrix3Pool', () => {
     clearMatrix3Pool();
     const m2 = acquireMatrix3();
     expect(m2).not.toBe(m);
+  });
+});
+
+describe('releaseMatrix3', () => {
+  it('handles null safely', () => {
+    expect(() => releaseMatrix3(null as unknown as Matrix3)).not.toThrow();
   });
 });

@@ -4,6 +4,95 @@ import { createTween, pauseTween, resumeTween } from './tween';
 import { createTweenManager } from './tweenManager';
 import { completeTween, updateTweens } from './updateTweens';
 
+describe('completeTween', () => {
+  it('jumps target to end value and marks tween complete', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t });
+    completeTween(tween);
+    expect(target.x).toBe(100);
+    expect(tween.complete).toBe(true);
+  });
+
+  it('emits onComplete', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    const tween = createTween(manager, target, 1000, { x: 100 });
+    let fired = 0;
+    connectSignal(tween.onComplete, () => fired++);
+    completeTween(tween);
+    expect(fired).toBe(1);
+  });
+
+  it('works on an uninitialized tween (before first update)', () => {
+    const manager = createTweenManager();
+    const target = { x: 25 };
+    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t });
+    expect(tween.initialized).toBe(false);
+    completeTween(tween);
+    expect(target.x).toBe(100);
+  });
+
+  it('lands on start value when reverse=true', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t, reverse: true });
+    completeTween(tween);
+    expect(target.x).toBe(0); // reverse completes at start (0), not end (100)
+    expect(tween.complete).toBe(true);
+  });
+
+  it('is a no-op on an already complete tween', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t });
+    completeTween(tween);
+    target.x = 0;
+    completeTween(tween);
+    expect(target.x).toBe(0);
+  });
+});
+
+describe('smartRotation', () => {
+  it('takes the short path for a large positive delta', () => {
+    const manager = createTweenManager();
+    const target = { rotation: 0 };
+    // 350° forward is the same as -10° backward — smart path is -10
+    createTween(manager, target, 1000, { rotation: 350 }, { ease: (t) => t, smartRotation: true });
+    updateTweens(manager, 500);
+    expect(target.rotation).toBeCloseTo(-5);
+  });
+
+  it('takes the short path for a large negative delta', () => {
+    const manager = createTweenManager();
+    const target = { rotation: 0 };
+    // -350° backward is the same as +10° forward — smart path is +10
+    createTween(manager, target, 1000, { rotation: -350 }, { ease: (t) => t, smartRotation: true });
+    updateTweens(manager, 500);
+    expect(target.rotation).toBeCloseTo(5);
+  });
+
+  it('finds the short path when starting from a non-zero angle', () => {
+    const manager = createTweenManager();
+    const target = { rotation: 350 };
+    // Naive delta: 10 - 350 = -340°. Smart path: +20° (go forward, not backward).
+    // start=350, change=+20, midpoint: 360, end: 370
+    createTween(manager, target, 1000, { rotation: 10 }, { ease: (t) => t, smartRotation: true });
+    updateTweens(manager, 500);
+    expect(target.rotation).toBeCloseTo(360);
+    updateTweens(manager, 500);
+    expect(target.rotation).toBeCloseTo(370);
+  });
+
+  it('leaves small deltas unchanged', () => {
+    const manager = createTweenManager();
+    const target = { rotation: 0 };
+    createTween(manager, target, 1000, { rotation: 90 }, { ease: (t) => t, smartRotation: true });
+    updateTweens(manager, 500);
+    expect(target.rotation).toBeCloseTo(45);
+  });
+});
+
 describe('updateTweens', () => {
   it('interpolates property toward target value', () => {
     const manager = createTweenManager();
@@ -166,94 +255,5 @@ describe('updateTweens', () => {
     resumeTween(tween);
     updateTweens(manager, 500);
     expect(target.x).toBeCloseTo(50); // 500ms of actual animation, not 1000ms
-  });
-});
-
-describe('completeTween', () => {
-  it('jumps target to end value and marks tween complete', () => {
-    const manager = createTweenManager();
-    const target = { x: 0 };
-    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t });
-    completeTween(tween);
-    expect(target.x).toBe(100);
-    expect(tween.complete).toBe(true);
-  });
-
-  it('emits onComplete', () => {
-    const manager = createTweenManager();
-    const target = { x: 0 };
-    const tween = createTween(manager, target, 1000, { x: 100 });
-    let fired = 0;
-    connectSignal(tween.onComplete, () => fired++);
-    completeTween(tween);
-    expect(fired).toBe(1);
-  });
-
-  it('works on an uninitialized tween (before first update)', () => {
-    const manager = createTweenManager();
-    const target = { x: 25 };
-    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t });
-    expect(tween.initialized).toBe(false);
-    completeTween(tween);
-    expect(target.x).toBe(100);
-  });
-
-  it('lands on start value when reverse=true', () => {
-    const manager = createTweenManager();
-    const target = { x: 0 };
-    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t, reverse: true });
-    completeTween(tween);
-    expect(target.x).toBe(0); // reverse completes at start (0), not end (100)
-    expect(tween.complete).toBe(true);
-  });
-
-  it('is a no-op on an already complete tween', () => {
-    const manager = createTweenManager();
-    const target = { x: 0 };
-    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t });
-    completeTween(tween);
-    target.x = 0;
-    completeTween(tween);
-    expect(target.x).toBe(0);
-  });
-});
-
-describe('smartRotation', () => {
-  it('takes the short path for a large positive delta', () => {
-    const manager = createTweenManager();
-    const target = { rotation: 0 };
-    // 350° forward is the same as -10° backward — smart path is -10
-    createTween(manager, target, 1000, { rotation: 350 }, { ease: (t) => t, smartRotation: true });
-    updateTweens(manager, 500);
-    expect(target.rotation).toBeCloseTo(-5);
-  });
-
-  it('takes the short path for a large negative delta', () => {
-    const manager = createTweenManager();
-    const target = { rotation: 0 };
-    // -350° backward is the same as +10° forward — smart path is +10
-    createTween(manager, target, 1000, { rotation: -350 }, { ease: (t) => t, smartRotation: true });
-    updateTweens(manager, 500);
-    expect(target.rotation).toBeCloseTo(5);
-  });
-
-  it('finds the short path when starting from a non-zero angle', () => {
-    const manager = createTweenManager();
-    const target = { rotation: 350 };
-    // Naive delta: 10 - 350 = -340°. Smart path: +20° (go forward, not backward).
-    // start=350, change=+20, midpoint: 360, end: 370
-    createTween(manager, target, 1000, { rotation: 10 }, { ease: (t) => t, smartRotation: true });
-    updateTweens(manager, 500);
-    expect(target.rotation).toBeCloseTo(360);
-    updateTweens(manager, 500);
-    expect(target.rotation).toBeCloseTo(370);
-  });
-
-  it('leaves small deltas unchanged', () => {
-    const manager = createTweenManager();
-    const target = { rotation: 0 };
-    createTween(manager, target, 1000, { rotation: 90 }, { ease: (t) => t, smartRotation: true });
-    updateTweens(manager, 500);
-    expect(target.rotation).toBeCloseTo(45);
   });
 });

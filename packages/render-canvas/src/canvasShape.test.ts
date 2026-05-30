@@ -18,6 +18,35 @@ function makeContext(): CanvasRenderingContext2D {
   return canvas.getContext('2d') as CanvasRenderingContext2D;
 }
 
+describe('drawCanvasShape', () => {
+  it('does not throw for a shape with no commands', () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 200;
+    const state = createCanvasRenderState(canvas);
+    registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
+    const shape = createShape();
+    const data = getDisplayObjectRenderNode(state, shape);
+    expect(() => drawCanvasShape(state, data)).not.toThrow();
+  });
+
+  it('calls fill when shape has beginFill and drawRect commands', () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 200;
+    const state = createCanvasRenderState(canvas);
+    registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
+    const shape = createShape();
+    beginFill(shape, 0xff0000);
+    drawRect(shape, 0, 0, 50, 50);
+    endFill(shape);
+    const data = getDisplayObjectRenderNode(state, shape);
+    const spy = vi.spyOn(state.context, 'fill');
+    drawCanvasShape(state, data);
+    expect(spy).toHaveBeenCalled();
+  });
+});
+
 describe('renderCanvasShapeCommands', () => {
   it('does nothing when the command list is empty', () => {
     const ctx = makeContext();
@@ -75,34 +104,5 @@ describe('renderCanvasShapeCommands', () => {
     endFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledWith('evenodd');
-  });
-});
-
-describe('drawCanvasShape', () => {
-  it('does not throw for a shape with no commands', () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 200;
-    canvas.height = 200;
-    const state = createCanvasRenderState(canvas);
-    registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-    const shape = createShape();
-    const data = getDisplayObjectRenderNode(state, shape);
-    expect(() => drawCanvasShape(state, data)).not.toThrow();
-  });
-
-  it('calls fill when shape has beginFill and drawRect commands', () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 200;
-    canvas.height = 200;
-    const state = createCanvasRenderState(canvas);
-    registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-    const shape = createShape();
-    beginFill(shape, 0xff0000);
-    drawRect(shape, 0, 0, 50, 50);
-    endFill(shape);
-    const data = getDisplayObjectRenderNode(state, shape);
-    const spy = vi.spyOn(state.context, 'fill');
-    drawCanvasShape(state, data);
-    expect(spy).toHaveBeenCalled();
   });
 });

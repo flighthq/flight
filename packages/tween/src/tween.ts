@@ -16,64 +16,6 @@ import { defaultManager } from './tweenManager';
 
 export type { NumericProps, StopTweenOptions, Tween, TweenManager, TweenOptions } from '@flighthq/types';
 
-function isTweenManager(value: unknown): value is TweenManager {
-  return typeof value === 'object' && value !== null && (value as any).__brand === 'TweenManager';
-}
-
-function makeTween<T extends object>(
-  target: T,
-  duration: number,
-  propertyMap: Readonly<NumericProps<T>>,
-  options: Readonly<TweenOptions> | undefined,
-  defaultEase: EasingFunction,
-): Tween<T> {
-  const keys = Object.keys(propertyMap);
-  const properties: TweenPropertyDetail[] = keys.map((key) => ({ change: 0, key, start: 0 }));
-  return {
-    complete: false,
-    delay: options?.delay ?? 0,
-    duration,
-    ease: options?.ease ?? defaultEase,
-    elapsed: 0,
-    initialized: false,
-    onComplete: createSignal(),
-    onRepeat: createSignal(),
-    onUpdate: createSignal(),
-    paused: false,
-    properties,
-    propertyMap,
-    reflect: options?.reflect ?? false,
-    repeat: options?.repeat ?? 0,
-    reverse: options?.reverse ?? false,
-    smartRotation: options?.smartRotation ?? false,
-    snapping: options?.snapping ?? false,
-    target,
-  };
-}
-
-function registerTween<T extends object>(manager: TweenManager, tween: Tween<T>, overwrite: boolean): void {
-  let list = manager.tweens.get(tween.target);
-  if (list === undefined) {
-    list = [];
-    manager.tweens.set(tween.target, list);
-  }
-  if (overwrite) {
-    for (let i = list.length - 1; i >= 0; i--) {
-      const existing = list[i];
-      const existingMap = existing.propertyMap as Record<string, unknown>;
-      let overlaps = false;
-      for (const detail of tween.properties) {
-        if (detail.key in existingMap) {
-          overlaps = true;
-          break;
-        }
-      }
-      if (overlaps) existing.complete = true;
-    }
-  }
-  list.push(tween);
-}
-
 export function applyTween<T extends object>(
   manager: TweenManager,
   target: T,
@@ -133,10 +75,49 @@ export function createTween<T extends object>(
   return tween;
 }
 
+function isTweenManager(value: unknown): value is TweenManager {
+  return typeof value === 'object' && value !== null && (value as any).__brand === 'TweenManager';
+}
+
+function makeTween<T extends object>(
+  target: T,
+  duration: number,
+  propertyMap: Readonly<NumericProps<T>>,
+  options: Readonly<TweenOptions> | undefined,
+  defaultEase: EasingFunction,
+): Tween<T> {
+  const keys = Object.keys(propertyMap);
+  const properties: TweenPropertyDetail[] = keys.map((key) => ({ change: 0, key, start: 0 }));
+  return {
+    complete: false,
+    delay: options?.delay ?? 0,
+    duration,
+    ease: options?.ease ?? defaultEase,
+    elapsed: 0,
+    initialized: false,
+    onComplete: createSignal(),
+    onRepeat: createSignal(),
+    onUpdate: createSignal(),
+    paused: false,
+    properties,
+    propertyMap,
+    reflect: options?.reflect ?? false,
+    repeat: options?.repeat ?? 0,
+    reverse: options?.reverse ?? false,
+    smartRotation: options?.smartRotation ?? false,
+    snapping: options?.snapping ?? false,
+    target,
+  };
+}
+
 export function pauseAllTweens(manager: TweenManager): void {
   for (const list of manager.tweens.values()) {
     for (const tween of list) tween.paused = true;
   }
+}
+
+export function pauseTween(tween: Tween<any>): void {
+  tween.paused = true;
 }
 
 export function pauseTweens(manager: TweenManager, target: object): void {
@@ -145,8 +126,27 @@ export function pauseTweens(manager: TweenManager, target: object): void {
   for (const tween of list) tween.paused = true;
 }
 
-export function pauseTween(tween: Tween<any>): void {
-  tween.paused = true;
+function registerTween<T extends object>(manager: TweenManager, tween: Tween<T>, overwrite: boolean): void {
+  let list = manager.tweens.get(tween.target);
+  if (list === undefined) {
+    list = [];
+    manager.tweens.set(tween.target, list);
+  }
+  if (overwrite) {
+    for (let i = list.length - 1; i >= 0; i--) {
+      const existing = list[i];
+      const existingMap = existing.propertyMap as Record<string, unknown>;
+      let overlaps = false;
+      for (const detail of tween.properties) {
+        if (detail.key in existingMap) {
+          overlaps = true;
+          break;
+        }
+      }
+      if (overlaps) existing.complete = true;
+    }
+  }
+  list.push(tween);
 }
 
 export function resetTweens(manager: TweenManager): void {
@@ -159,14 +159,14 @@ export function resumeAllTweens(manager: TweenManager): void {
   }
 }
 
+export function resumeTween(tween: Tween<any>): void {
+  tween.paused = false;
+}
+
 export function resumeTweens(manager: TweenManager, target: object): void {
   const list = manager.tweens.get(target);
   if (list === undefined) return;
   for (const tween of list) tween.paused = false;
-}
-
-export function resumeTween(tween: Tween<any>): void {
-  tween.paused = false;
 }
 
 export function stopAllTweens(manager: TweenManager): void {
