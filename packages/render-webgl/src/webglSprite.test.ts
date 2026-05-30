@@ -1,11 +1,12 @@
+import { createMatrix } from '@flighthq/geometry';
 import { getSpriteRenderNode, registerRenderer } from '@flighthq/render-core';
 import { addChild } from '@flighthq/scenegraph-core';
 import { createSprite } from '@flighthq/scenegraph-sprite';
-import type { SpriteRenderer, WebGLRenderState } from '@flighthq/types';
+import type { WebGLRenderState } from '@flighthq/types';
 import { SpriteKind } from '@flighthq/types';
 
-import { renderWebGLSprite } from './webglSprite';
 import { createWebGLRenderState } from './webglRenderState';
+import { renderWebGLSprite } from './webglSprite';
 
 function makeState(): WebGLRenderState {
   const canvas = document.createElement('canvas');
@@ -14,11 +15,11 @@ function makeState(): WebGLRenderState {
   return createWebGLRenderState(canvas);
 }
 
-function makeRenderer(): SpriteRenderer & { draw: ReturnType<typeof vi.fn> } {
+function makeRenderer() {
   return {
     createData: () => null,
     draw: vi.fn(),
-  };
+  } as any;
 }
 
 describe('renderWebGLSprite', () => {
@@ -37,7 +38,7 @@ describe('renderWebGLSprite', () => {
     const data = getSpriteRenderNode(state, sprite);
     data.visible = true;
     data.alpha = 1;
-    data.transform2D = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+    data.transform2D = createMatrix();
     data.renderer = renderer;
 
     renderWebGLSprite(state, sprite);
@@ -85,13 +86,13 @@ describe('renderWebGLSprite', () => {
     const parentData = getSpriteRenderNode(state, parent);
     parentData.visible = true;
     parentData.alpha = 1;
-    parentData.transform2D = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+    parentData.transform2D = createMatrix();
     parentData.renderer = null;
 
     const childData = getSpriteRenderNode(state, child);
     childData.visible = true;
     childData.alpha = 1;
-    childData.transform2D = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+    childData.transform2D = createMatrix();
     childData.renderer = renderer;
 
     renderWebGLSprite(state, parent);

@@ -1,7 +1,8 @@
+import { createMatrix } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { addChild } from '@flighthq/scenegraph-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
-import type { DisplayObjectRenderer, WebGLRenderState } from '@flighthq/types';
+import type { WebGLRenderState } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { renderWebGLDisplayObject } from './webglDisplayObject';
@@ -14,12 +15,12 @@ function makeState(): WebGLRenderState {
   return createWebGLRenderState(canvas);
 }
 
-function makeRenderer(): DisplayObjectRenderer & { draw: ReturnType<typeof vi.fn> } {
+function makeRenderer() {
   return {
     createData: () => null,
     draw: vi.fn(),
     drawMask: vi.fn(),
-  };
+  } as any;
 }
 
 describe('renderWebGLDisplayObject', () => {
@@ -38,7 +39,7 @@ describe('renderWebGLDisplayObject', () => {
     const data = getDisplayObjectRenderNode(state, obj);
     data.visible = true;
     data.alpha = 1;
-    data.transform2D = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+    data.transform2D = createMatrix();
     data.renderer = renderer;
 
     renderWebGLDisplayObject(state, obj);
@@ -83,7 +84,7 @@ describe('renderWebGLDisplayObject', () => {
     const data = getDisplayObjectRenderNode(state, obj);
     data.visible = true;
     data.alpha = 1;
-    data.transform2D = { a: 0, b: 0, c: 0, d: 0, tx: 0, ty: 0 };
+    data.transform2D = createMatrix(0, 0, 0, 0);
     data.renderer = renderer;
 
     renderWebGLDisplayObject(state, obj);
@@ -102,13 +103,13 @@ describe('renderWebGLDisplayObject', () => {
     const parentData = getDisplayObjectRenderNode(state, parent);
     parentData.visible = true;
     parentData.alpha = 1;
-    parentData.transform2D = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+    parentData.transform2D = createMatrix();
     parentData.renderer = null;
 
     const childData = getDisplayObjectRenderNode(state, child);
     childData.visible = true;
     childData.alpha = 1;
-    childData.transform2D = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+    childData.transform2D = createMatrix();
     childData.renderer = renderer;
 
     renderWebGLDisplayObject(state, parent);
