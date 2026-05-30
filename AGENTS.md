@@ -37,7 +37,6 @@ This document should stay useful, not ornamental. Prefer making architecture and
 ## Orientation Commands
 
 - `npm run fix` runs all auto-fixers in sequence: `lint:fix`, `order:fix`, then `format`. Run this after any edit session before committing.
-- `npm run overview` regenerates `OVERVIEW.md`, a package/export bird's-eye view.
 - `npm run api` prints compact exported function signatures for all packages.
 - `npm run api:json` prints the same API data as JSON for tools and agents.
 - `npm run check` is the default non-fixing quality sweep for agents and contributors. It runs `validate`, `coverage`, and the non-failing `order` report.
@@ -61,7 +60,9 @@ Use runtime slots for any internal mutable state that should not be part of the 
 
 ### Scene Graph
 
-Scene graph hierarchy is shared across graph kinds. Functions such as `addGraphChild`, `removeGraphChild`, `getGraphParent`, `getGraphRoot`, `containsGraphChild`, and `swapGraphChildren` operate on generic graph nodes, which is why the same hierarchy code supports display objects, sprite graphs, and future graph families.
+Scene graph hierarchy is shared across graph kinds. Functions such as `addGraphChild`, `removeGraphChild`, `getGraphParent`, `getGraphRoot`, `containsGraphChild`, and `swapGraphChildren` operate on `HasGraphHierarchy` nodes, which is why the same hierarchy code supports display objects, sprite graphs, and future graph families.
+
+Use graph-feature aliases for reusable graph APIs: `GraphHierarchyNode`, `GraphAppearanceNode`, `GraphTransform2DNode`, `GraphBoundsNode`, and `GraphSpatial2DNode`. These preserve graph-kind compatibility while making APIs depend on features rather than concrete graph families.
 
 ### Renderer Registration
 
