@@ -2,7 +2,7 @@ import type { InputText, InputTextData, InputTextRuntime, MethodsOf, PartialNode
 import { InputTextKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
-import { computeRichTextLocalBoundsRect, createRichTextData } from './richText';
+import { computeRichTextLocalBoundsRectangle, createRichTextData } from './richText';
 
 export function createInputText(obj?: Readonly<PartialNode<InputText>>): InputText {
   return createDisplayObjectGeneric(InputTextKind, obj, createInputTextData, createInputTextRuntime) as InputText;
@@ -24,5 +24,5 @@ export function getInputTextRuntime(source: Readonly<InputText>): Readonly<Input
 }
 
 const defaultMethods: Partial<MethodsOf<InputTextRuntime>> = {
-  computeLocalBoundsRect: computeRichTextLocalBoundsRect,
+  computeLocalBoundsRect: computeRichTextLocalBoundsRectangle,
 };

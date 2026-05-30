@@ -8,7 +8,7 @@ export function clearShapeCommands(data: ShapeData): void {
   data.version++;
 }
 
-export function computeShapeLocalBoundsRect(out: Rectangle, source: Readonly<GraphNode>): void {
+export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonly<GraphNode>): void {
   const shape = source as Shape;
   const commands = shape.data.commands;
 
@@ -39,8 +39,8 @@ export function computeShapeLocalBoundsRect(out: Rectangle, source: Readonly<Gra
     const b = i + 2;
 
     switch (key) {
-      case 'drawRect':
-      case 'drawRoundRect': {
+      case 'drawRectangle':
+      case 'drawRoundRectangle': {
         const x = commands[b] as number;
         const y = commands[b + 1] as number;
         const w = commands[b + 2] as number;
@@ -209,7 +209,7 @@ export function createShapeData(data?: Readonly<Partial<ShapeData>>): ShapeData 
 }
 
 export function createShapeRuntime(): ShapeRuntime {
-  return createDisplayObjectRuntime({ computeLocalBoundsRect: computeShapeLocalBoundsRect }) as ShapeRuntime;
+  return createDisplayObjectRuntime({ computeLocalBoundsRect: computeShapeLocalBoundsRectangle }) as ShapeRuntime;
 }
 
 export function getShapeRuntime(source: Readonly<Shape>): Readonly<ShapeRuntime> {

@@ -4,9 +4,9 @@ import {
   connectSignal,
   createDisplayObject,
   createShape,
-  createTimer,
   createTween,
   createTweenManager,
+  createTweenTimer,
   drawCircle,
   endFill,
   invalidateRender,
@@ -58,7 +58,7 @@ function createCircle(): void {
 
 for (let i = 0; i < CIRCLE_COUNT; i++) {
   const delay = Math.random() * MAX_CREATION_DELAY;
-  const timer = createTimer(manager, delay);
+  const timer = createTweenTimer(manager, delay);
   connectSignal(timer.onComplete, createCircle);
 }
 

@@ -13,7 +13,7 @@ import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjec
 import type { RichTextDataInternal } from './internal';
 import { createTextData } from './text';
 
-export function computeRichTextLocalBoundsRect(out: Rectangle, source: Readonly<GraphNode>): void {
+export function computeRichTextLocalBoundsRectangle(out: Rectangle, source: Readonly<GraphNode>): void {
   const data = (source as RichText).data;
   out.width = data.width;
   out.height = data.height;
@@ -55,5 +55,5 @@ export function getRichTextRuntime(source: Readonly<RichText>): Readonly<RichTex
 }
 
 const defaultMethods: Partial<MethodsOf<RichTextRuntime>> = {
-  computeLocalBoundsRect: computeRichTextLocalBoundsRect,
+  computeLocalBoundsRect: computeRichTextLocalBoundsRectangle,
 };

@@ -1,9 +1,9 @@
-import { colorTransform } from '@flighthq/materials';
+import { concatColorTransform, copyColorTransform, isIdentityColorTransform } from '@flighthq/materials';
 import type { ColorTransform, RenderNode, RenderState } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';
 
-export function setBackgroundColor(state: RenderState, color: number): void {
+export function setRenderStateBackgroundColor(state: RenderState, color: number): void {
   const _state = state as RenderStateInternal;
   const uint = color >>> 0; // ensure 0..0xFFFFFFFF
   _state.backgroundColor = uint;
@@ -39,15 +39,15 @@ function recalculateColorTransform(
   transform: Readonly<ColorTransform> | null,
   parentTransform: Readonly<ColorTransform> | null,
 ): boolean {
-  if (parentTransform !== null && !colorTransform.isIdentity(parentTransform)) {
+  if (parentTransform !== null && !isIdentityColorTransform(parentTransform)) {
     if (transform !== null) {
-      colorTransform.concat(out, transform, parentTransform);
+      concatColorTransform(out, transform, parentTransform);
     } else {
-      colorTransform.copy(out, parentTransform);
+      copyColorTransform(out, parentTransform);
     }
     return true;
-  } else if (transform !== null && !colorTransform.isIdentity(transform)) {
-    colorTransform.copy(out, transform);
+  } else if (transform !== null && !isIdentityColorTransform(transform)) {
+    copyColorTransform(out, transform);
     return true;
   }
   return false;

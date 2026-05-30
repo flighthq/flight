@@ -1,4 +1,4 @@
-import { getGraphNodeRuntime, getParent } from '@flighthq/scenegraph-core';
+import { getGraphNodeRuntime, getGraphParent } from '@flighthq/scenegraph-core';
 import { createSignal, emitSignal } from '@flighthq/signals';
 import type {
   DisplayObject,
@@ -34,7 +34,7 @@ export function dispatchPointerDown(root: DisplayObject, x: number, y: number, b
       if (signals.onPointerDown.data?.cancelled) break;
     }
     if (current === root) break;
-    current = getParent(current) as DisplayObject | null;
+    current = getGraphParent(current) as DisplayObject | null;
   }
 }
 

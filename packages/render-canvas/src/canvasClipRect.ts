@@ -2,16 +2,16 @@ import type { CanvasRenderState, DisplayObjectRenderNode, Matrix, Rectangle } fr
 
 import { setCanvasTransform } from './canvasTransform';
 
-export function popCanvasClipRect(state: CanvasRenderState): void {
+export function popCanvasClipRectangle(state: CanvasRenderState): void {
   state.context.restore();
 }
 
-export function popCanvasScrollRect(state: CanvasRenderState): void {
+export function popCanvasScrollRectangle(state: CanvasRenderState): void {
   state.context.restore();
   state.currentScrollRectDepth--;
 }
 
-export function pushCanvasClipRect(state: CanvasRenderState, rect: Rectangle, transform: Matrix): void {
+export function pushCanvasClipRectangle(state: CanvasRenderState, rect: Rectangle, transform: Matrix): void {
   state.context.save();
 
   setCanvasTransform(state, state.context, transform);
@@ -21,7 +21,7 @@ export function pushCanvasClipRect(state: CanvasRenderState, rect: Rectangle, tr
   state.context.clip();
 }
 
-export function pushCanvasScrollRect(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
-  pushCanvasClipRect(state, data.source.scrollRect!, data.transform2D);
+export function pushCanvasScrollRectangle(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
+  pushCanvasClipRectangle(state, data.source.scrollRect!, data.transform2D);
   state.currentScrollRectDepth++;
 }

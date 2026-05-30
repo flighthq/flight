@@ -3,7 +3,7 @@ import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
 
 import { drawImageCacheResult } from './canvasCacheAsBitmap';
-import { popCanvasClipRect, pushCanvasClipRect } from './canvasClipRect';
+import { popCanvasClipRectangle, pushCanvasClipRectangle } from './canvasClipRect';
 import { applyCanvasMask, popCanvasMask, pushCanvasMask } from './canvasMask';
 
 export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderNode: DisplayObjectRenderNode): void {
@@ -68,7 +68,7 @@ function popMaskObject(
 ): void {
   const source = data.source;
   if (source.mask !== null) popCanvasMask(state);
-  if (handleScrollRect && source.scrollRect !== null) popCanvasClipRect(state);
+  if (handleScrollRect && source.scrollRect !== null) popCanvasClipRectangle(state);
 }
 
 function pushMaskObject(
@@ -77,7 +77,8 @@ function pushMaskObject(
   handleScrollRect: boolean = true,
 ): void {
   const source = data.source;
-  if (handleScrollRect && source.scrollRect != null) pushCanvasClipRect(state, source.scrollRect, data.transform2D);
+  if (handleScrollRect && source.scrollRect != null)
+    pushCanvasClipRectangle(state, source.scrollRect, data.transform2D);
   if (source.mask !== null) pushCanvasMask(state, getDisplayObjectRenderNode(state, source.mask));
 }
 

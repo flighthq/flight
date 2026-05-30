@@ -3,7 +3,7 @@ import { BitmapKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
 
-export function computeBitmapLocalBoundsRect(out: Rectangle, source: Readonly<GraphNode>): void {
+export function computeBitmapLocalBoundsRectangle(out: Rectangle, source: Readonly<GraphNode>): void {
   const bitmapData: BitmapData = source.data as BitmapData;
   if (bitmapData.image) {
     out.width = bitmapData.image.width;
@@ -31,5 +31,5 @@ export function getBitmapRuntime(source: Readonly<Bitmap>): Readonly<BitmapRunti
 }
 
 const defaultMethods: Partial<MethodsOf<BitmapRuntime>> = {
-  computeLocalBoundsRect: computeBitmapLocalBoundsRect,
+  computeLocalBoundsRect: computeBitmapLocalBoundsRectangle,
 };

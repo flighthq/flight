@@ -1,4 +1,4 @@
-import { addChild, invalidateAppearance } from '@flighthq/scenegraph-core';
+import { addGraphChild, invalidateAppearance } from '@flighthq/scenegraph-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
@@ -16,7 +16,7 @@ describe('updateAppearance', () => {
   beforeEach(() => {
     parent = createDisplayObject();
     child = createDisplayObject();
-    addChild(parent, child);
+    addGraphChild(parent, child);
     state = createRenderState();
     parentData = getDisplayObjectRenderNode(state, parent);
     childData = getDisplayObjectRenderNode(state, child);

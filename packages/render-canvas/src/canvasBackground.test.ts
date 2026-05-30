@@ -1,4 +1,4 @@
-import { setBackgroundColor } from '@flighthq/render-core';
+import { setRenderStateBackgroundColor } from '@flighthq/render-core';
 import type { CanvasRenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
@@ -16,7 +16,7 @@ function makeState(): { canvas: HTMLCanvasElement; state: CanvasRenderState } {
 describe('renderCanvasBackground', () => {
   it('calls clearRect when background alpha is 0', () => {
     const { state } = makeState();
-    setBackgroundColor(state, 0x00000000); // alpha = 0
+    setRenderStateBackgroundColor(state, 0x00000000); // alpha = 0
     const clearSpy = vi.spyOn(state.context, 'clearRect');
 
     renderCanvasBackground(state);
@@ -26,7 +26,7 @@ describe('renderCanvasBackground', () => {
 
   it('calls fillRect when background has non-zero alpha', () => {
     const { state } = makeState();
-    setBackgroundColor(state, 0xff0000ff); // alpha = 0xff
+    setRenderStateBackgroundColor(state, 0xff0000ff); // alpha = 0xff
     const fillSpy = vi.spyOn(state.context, 'fillRect');
 
     renderCanvasBackground(state);

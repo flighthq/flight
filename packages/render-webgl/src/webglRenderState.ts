@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import { createRenderState as _createRenderState, setBackgroundColor } from '@flighthq/render-core';
+import { createRenderState as _createRenderState, setRenderStateBackgroundColor } from '@flighthq/render-core';
 import type { WebGLRenderOptions, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
@@ -40,7 +40,7 @@ export function createWebGLRenderState(
     roundPixels: options.roundPixels ?? false,
   }) as WebGLRenderStateInternal;
 
-  if (options.backgroundColor) setBackgroundColor(state, options.backgroundColor);
+  if (options.backgroundColor) setRenderStateBackgroundColor(state, options.backgroundColor);
 
   state.canvas = canvas;
   state.gl = gl;

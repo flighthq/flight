@@ -1,6 +1,6 @@
 import { createRectangle } from '@flighthq/geometry';
-import { addChild } from '@flighthq/scenegraph-core';
-import { setScaleX, setScaleY, setX, setY } from '@flighthq/scenegraph-core';
+import { addGraphChild } from '@flighthq/scenegraph-core';
+import { setTransformScaleX, setTransformScaleY, setTransformX, setTransformY } from '@flighthq/scenegraph-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import { createSprite } from '@flighthq/scenegraph-sprite';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState, SpriteNode } from '@flighthq/types';
@@ -20,7 +20,7 @@ describe('updateDisplayObjectBeforeRender', () => {
   beforeEach(() => {
     parent = createDisplayObject();
     child = createDisplayObject();
-    addChild(parent, child);
+    addGraphChild(parent, child);
     state = createRenderState();
     parentData = getDisplayObjectRenderNode(state, parent);
     childData = getDisplayObjectRenderNode(state, child);
@@ -92,10 +92,10 @@ describe('updateDisplayObjectBeforeRender', () => {
     childA_child = createDisplayObject();
     childB = createDisplayObject();
     childB_child = createDisplayObject();
-    addChild(parent2, childA);
-    addChild(parent2, childB);
-    addChild(childA, childA_child);
-    addChild(childB, childB_child);
+    addGraphChild(parent2, childA);
+    addGraphChild(parent2, childB);
+    addGraphChild(childA, childA_child);
+    addGraphChild(childB, childB_child);
     parent2Data = getDisplayObjectRenderNode(state, parent2);
     childAData = getDisplayObjectRenderNode(state, childA);
     childBData = getDisplayObjectRenderNode(state, childB);
@@ -152,15 +152,15 @@ describe('updateSpriteBeforeRender', () => {
   beforeEach(() => {
     root = createSprite();
     child = createSprite();
-    addChild(root, child);
+    addGraphChild(root, child);
     state = createRenderState();
   });
 
   it('applies parent scale to child world position', () => {
-    setScaleX(root, 4);
-    setScaleY(root, 4);
-    setX(child, 10);
-    setY(child, 5);
+    setTransformScaleX(root, 4);
+    setTransformScaleY(root, 4);
+    setTransformX(child, 10);
+    setTransformY(child, 5);
 
     updateSpriteBeforeRender(state, root);
 
@@ -172,10 +172,10 @@ describe('updateSpriteBeforeRender', () => {
   });
 
   it('applies parent translation to child world position', () => {
-    setX(root, 50);
-    setY(root, 30);
-    setX(child, 10);
-    setY(child, 5);
+    setTransformX(root, 50);
+    setTransformY(root, 30);
+    setTransformX(child, 10);
+    setTransformY(child, 5);
 
     updateSpriteBeforeRender(state, root);
 
@@ -185,12 +185,12 @@ describe('updateSpriteBeforeRender', () => {
   });
 
   it('applies combined parent scale and translation to child world position', () => {
-    setScaleX(root, 2);
-    setScaleY(root, 2);
-    setX(root, 100);
-    setY(root, 80);
-    setX(child, 15);
-    setY(child, 10);
+    setTransformScaleX(root, 2);
+    setTransformScaleY(root, 2);
+    setTransformX(root, 100);
+    setTransformY(root, 80);
+    setTransformX(child, 15);
+    setTransformY(child, 10);
 
     updateSpriteBeforeRender(state, root);
 

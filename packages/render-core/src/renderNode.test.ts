@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import { colorTransform } from '@flighthq/materials';
+import { createColorTransform } from '@flighthq/materials';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
@@ -22,7 +22,7 @@ describe('createDisplayObjectRenderNode', () => {
     expect(data.alpha).toStrictEqual(1);
     expect(data.appearanceFrameID).toStrictEqual(-1);
     expect(data.blendMode).toStrictEqual(BlendMode.Normal);
-    expect(data.colorTransform).toStrictEqual(colorTransform.create());
+    expect(data.colorTransform).toStrictEqual(createColorTransform());
     expect(data.isMaskFrameID).toStrictEqual(-1);
     expect(data.lastAppearanceID).toStrictEqual(-1);
     expect(data.lastLocalTransformID).toStrictEqual(-1);

@@ -1,4 +1,4 @@
-import { setBackgroundColor } from '@flighthq/render-core';
+import { setRenderStateBackgroundColor } from '@flighthq/render-core';
 
 import { renderDOMBackground } from './domBackground';
 import { createDOMRenderState } from './domRenderState';
@@ -11,7 +11,7 @@ function makeState() {
 describe('renderDOMBackground', () => {
   it('sets element backgroundColor when background alpha is non-zero', () => {
     const { div, state } = makeState();
-    setBackgroundColor(state, 0xff0000ff); // opaque red
+    setRenderStateBackgroundColor(state, 0xff0000ff); // opaque red
 
     renderDOMBackground(state);
 
@@ -21,7 +21,7 @@ describe('renderDOMBackground', () => {
   it('clears element backgroundColor when background alpha is 0', () => {
     const { div, state } = makeState();
     div.style.backgroundColor = 'red';
-    setBackgroundColor(state, 0xff000000); // alpha = 0
+    setRenderStateBackgroundColor(state, 0xff000000); // alpha = 0
 
     renderDOMBackground(state);
 

@@ -10,8 +10,8 @@ import {
   getSpritesheetAnimation,
   getSpritesheetPlayerFrame,
   loadImageSourceFromURL,
-  setX,
-  setY,
+  setTransformX,
+  setTransformY,
   showSpritesheetAnimation,
   updateSpriteBeforeRender,
   updateSpritesheetPlayer,
@@ -64,8 +64,8 @@ const yLocal = (STAGE_HEIGHT - spriteScreenSize) / 2 / SCALE;
 const sprites = animationDefs.map((def, i) => {
   const sprite = createSprite();
   sprite.data.atlas = atlas;
-  setX(sprite, (gap + i * (spriteScreenSize + gap)) / SCALE);
-  setY(sprite, yLocal);
+  setTransformX(sprite, (gap + i * (spriteScreenSize + gap)) / SCALE);
+  setTransformY(sprite, yLocal);
   addChild(root, sprite);
   return sprite;
 });

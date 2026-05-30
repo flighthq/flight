@@ -71,7 +71,7 @@ export function remapScale9Commands(out: unknown[], source: readonly unknown[], 
         out[i + 6] = mapper.mapX(out[i + 6] as number);
         out[i + 7] = mapper.mapY(out[i + 7] as number);
         break;
-      case 'drawRect':
+      case 'drawRectangle':
       case 'drawEllipse': {
         const x = out[i + 2] as number;
         const y = out[i + 3] as number;
@@ -85,7 +85,7 @@ export function remapScale9Commands(out: unknown[], source: readonly unknown[], 
         out[i + 5] = mapper.mapY(y + h) - my;
         break;
       }
-      case 'drawRoundRect': {
+      case 'drawRoundRectangle': {
         const x = out[i + 2] as number;
         const y = out[i + 3] as number;
         const w = out[i + 4] as number;

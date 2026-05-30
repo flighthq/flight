@@ -1,6 +1,6 @@
 import type { GraphNode } from '@flighthq/types';
 
-import { hitTestLocalBoundsRect } from './hitTests';
+import { hitTestLocalBoundsRectangle } from './hitTests';
 
 export function defaultQuadBatchHitTestPoint(
   source: GraphNode<symbol, object>,
@@ -18,7 +18,7 @@ export function defaultSpriteHitTestPoint(
   y: number,
   _shapeFlag: boolean,
 ): boolean {
-  return hitTestLocalBoundsRect(source, x, y);
+  return hitTestLocalBoundsRectangle(source, x, y);
 }
 
 export function defaultTilemapHitTestPoint(

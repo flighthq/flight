@@ -1,11 +1,11 @@
 import { createRectangle } from '@flighthq/geometry';
-import { addChild } from '@flighthq/scenegraph-core';
+import { addGraphChild } from '@flighthq/scenegraph-core';
 import type { GraphNode, PartialNode, Stage } from '@flighthq/types';
 import { StageKind } from '@flighthq/types';
 
 import { createDisplayObject } from './displayObject';
 import {
-  computeStageLocalBoundsRect,
+  computeStageLocalBoundsRectangle,
   createStage,
   createStageData,
   createStageRuntime,
@@ -13,11 +13,11 @@ import {
   getStageRuntime,
 } from './stage';
 
-describe('computeStageLocalBoundsRect', () => {
+describe('computeStageLocalBoundsRectangle', () => {
   it('sets out dimensions from stageWidth and stageHeight', () => {
     const stage = createStage({ data: { stageWidth: 800, stageHeight: 600 } });
     const out = createRectangle();
-    computeStageLocalBoundsRect(out, stage as unknown as GraphNode);
+    computeStageLocalBoundsRectangle(out, stage as unknown as GraphNode);
     expect(out.width).toBe(800);
     expect(out.height).toBe(600);
   });
@@ -102,9 +102,9 @@ describe('createStageRuntime', () => {
     expect(runtime).not.toBeNull();
   });
 
-  it('uses computeStageLocalBoundsRect', () => {
+  it('uses computeStageLocalBoundsRectangle', () => {
     const runtime = createStageRuntime();
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeStageLocalBoundsRect);
+    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeStageLocalBoundsRectangle);
   });
 });
 
@@ -117,14 +117,14 @@ describe('getStage', () => {
   it('returns null when the root is not a Stage', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
-    addChild(root, child);
+    addGraphChild(root, child);
     expect(getStage(child)).toBeNull();
   });
 
   it('returns the Stage when it is the root', () => {
     const stage = createStage();
     const child = createDisplayObject();
-    addChild(stage, child);
+    addGraphChild(stage, child);
     expect(getStage(child)).toBe(stage);
   });
 
@@ -132,8 +132,8 @@ describe('getStage', () => {
     const stage = createStage();
     const mid = createDisplayObject();
     const leaf = createDisplayObject();
-    addChild(stage, mid);
-    addChild(mid, leaf);
+    addGraphChild(stage, mid);
+    addGraphChild(mid, leaf);
     expect(getStage(leaf)).toBe(stage);
   });
 });

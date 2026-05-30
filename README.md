@@ -91,11 +91,11 @@ function render(root) {
 ### Shapes
 
 ```ts
-import { createShape, beginFill, drawRect, drawCircle, lineStyle, lineTo } from '@flighthq/sdk';
+import { createShape, beginFill, drawRectangle, drawCircle, lineStyle, lineTo } from '@flighthq/sdk';
 
 const box = createShape();
 beginFill(box, 0x24afc4);
-drawRect(box, 0, 0, 100, 100);
+drawRectangle(box, 0, 0, 100, 100);
 
 const circle = createShape();
 beginFill(circle, 0xff6644);
@@ -138,11 +138,11 @@ updateTweens(manager, deltaMs);
 Filters are applied per display object and rendered via `cacheAsBitmap`:
 
 ```ts
-import { setFilters, createDropShadowFilter, createGlowFilter, createBlurFilter } from '@flighthq/sdk';
+import { setDisplayObjectFilters, createDropShadowFilter, createGlowFilter, createBlurFilter } from '@flighthq/sdk';
 
-setFilters(panel, [createGlowFilter(0xffffff, 0.6, 10, 10)]);
-setFilters(label, [createDropShadowFilter(3, 45, 0x000000, 0.5, 4, 4)]);
-setFilters(sprite, [createBlurFilter(8, 8)]);
+setDisplayObjectFilters(panel, [createGlowFilter(0xffffff, 0.6, 10, 10)]);
+setDisplayObjectFilters(label, [createDropShadowFilter(3, 45, 0x000000, 0.5, 4, 4)]);
+setDisplayObjectFilters(sprite, [createBlurFilter(8, 8)]);
 ```
 
 ## Examples

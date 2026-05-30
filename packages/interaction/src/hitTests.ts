@@ -1,10 +1,10 @@
 import { intersectsRectangle, inverseMatrixTransformPointXY, rectangleContains } from '@flighthq/geometry';
 import {
   getGraphNodeRuntime,
-  getLocalBoundsRect,
-  getParent,
-  getWorldBoundsRect,
-  getWorldTransform2D,
+  getGraphParent,
+  getLocalBoundsRectangle,
+  getWorldBoundsRectangle,
+  getWorldTransformMatrix,
 } from '@flighthq/scenegraph-core';
 import type { DisplayObject, GraphNode, HitTestPoint } from '@flighthq/types';
 
@@ -39,10 +39,10 @@ export function findHitTarget(
  * Tests whether world-space (x, y) falls within the node's local bounds rect,
  * after inverting through the node's world transform.
  **/
-export function hitTestLocalBoundsRect(source: GraphNode<symbol, object>, x: number, y: number): boolean {
-  inverseMatrixTransformPointXY(hitTestLocalBoundsRectPoint, getWorldTransform2D(source as DisplayObject), x, y);
+export function hitTestLocalBoundsRectangle(source: GraphNode<symbol, object>, x: number, y: number): boolean {
+  inverseMatrixTransformPointXY(hitTestLocalBoundsRectPoint, getWorldTransformMatrix(source as DisplayObject), x, y);
   return rectangleContains(
-    getLocalBoundsRect(source as DisplayObject),
+    getLocalBoundsRectangle(source as DisplayObject),
     hitTestLocalBoundsRectPoint.x,
     hitTestLocalBoundsRectPoint.y,
   );
@@ -53,8 +53,8 @@ export function hitTestLocalBoundsRect(source: GraphNode<symbol, object>, x: num
  * intersects with the bounding box of the `obj` display object.
  **/
 export function hitTestObject(source: DisplayObject, other: DisplayObject): boolean {
-  if (getParent(source) !== null && getParent(other) !== null) {
-    return intersectsRectangle(getWorldBoundsRect(source), getWorldBoundsRect(other));
+  if (getGraphParent(source) !== null && getGraphParent(other) !== null) {
+    return intersectsRectangle(getWorldBoundsRectangle(source), getWorldBoundsRectangle(other));
   }
   return false;
 }

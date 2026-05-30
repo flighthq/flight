@@ -1,4 +1,4 @@
-import { addChild } from '@flighthq/scenegraph-core';
+import { addGraphChild } from '@flighthq/scenegraph-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { DisplayObject, RenderState } from '@flighthq/types';
 
@@ -14,7 +14,7 @@ describe('prepareRenderQueue', () => {
   beforeEach(() => {
     parent = createDisplayObject();
     child = createDisplayObject();
-    addChild(parent, child);
+    addGraphChild(parent, child);
     state = createRenderState();
   });
 
@@ -56,7 +56,7 @@ describe('prepareRenderQueue', () => {
 
   it('discards objects which are a mask', () => {
     const child2 = createDisplayObject();
-    addChild(parent, child2);
+    addGraphChild(parent, child2);
     child.mask = child2;
     updateDisplayObjectBeforeRender(state, parent);
     prepareRenderQueue(state, parent);
@@ -66,8 +66,8 @@ describe('prepareRenderQueue', () => {
   it('discards objects which are children of a mask', () => {
     const child2 = createDisplayObject();
     const maskChild = createDisplayObject();
-    addChild(child2, maskChild);
-    addChild(parent, child2);
+    addGraphChild(child2, maskChild);
+    addGraphChild(parent, child2);
     child.mask = child2;
     updateDisplayObjectBeforeRender(state, parent);
     prepareRenderQueue(state, parent);
@@ -83,7 +83,7 @@ describe('prepareRenderQueue', () => {
 
   it('discards subtree of a disabled object', () => {
     const grandChild = createDisplayObject();
-    addChild(child, grandChild);
+    addGraphChild(child, grandChild);
     child.enabled = false;
     updateDisplayObjectBeforeRender(state, parent);
     prepareRenderQueue(state, parent);

@@ -2,13 +2,17 @@ import { createRectangle } from '@flighthq/geometry';
 import type { GraphNode, GraphNodeRuntime, HasBoundsRect, HasBoundsRectRuntime } from '@flighthq/types';
 
 import { createGraphNode, createGraphNodeRuntime } from './graphNode';
-import { defaultComputeLocalBoundsRect, initHasBoundsRect, initHasBoundsRectRuntime } from './hasBoundsRect';
+import {
+  defaultComputeLocalBoundsRectangle,
+  initHasBoundsRectangle,
+  initHasBoundsRectangleRuntime,
+} from './hasBoundsRect';
 
-describe('defaultComputeLocalBoundsRect', () => {
+describe('defaultComputeLocalBoundsRectangle', () => {
   it('is a no-op that does not modify out', () => {
     const out = createRectangle(1, 2, 3, 4);
     const node = createGraphNode(NodeTestKind, NodeTestKind);
-    defaultComputeLocalBoundsRect(out, node as unknown as GraphNode);
+    defaultComputeLocalBoundsRectangle(out, node as unknown as GraphNode);
     expect(out.x).toBe(1);
     expect(out.y).toBe(2);
     expect(out.width).toBe(3);
@@ -16,7 +20,7 @@ describe('defaultComputeLocalBoundsRect', () => {
   });
 });
 
-describe('initHasBoundsRect', () => {
+describe('initHasBoundsRectangle', () => {
   let node: HasBoundsRect;
 
   beforeEach(() => {
@@ -24,16 +28,16 @@ describe('initHasBoundsRect', () => {
   });
 
   it('does nothing', () => {
-    initHasBoundsRect(node);
+    initHasBoundsRectangle(node);
   });
 
   it('allows pre-defined values', () => {
     const base = {};
-    initHasBoundsRect(node, base);
+    initHasBoundsRectangle(node, base);
   });
 });
 
-describe('initHasBoundsRectRuntime', () => {
+describe('initHasBoundsRectangleRuntime', () => {
   let runtime: HasBoundsRectRuntime;
 
   beforeEach(() => {
@@ -41,12 +45,12 @@ describe('initHasBoundsRectRuntime', () => {
   });
 
   it('initializes default values', () => {
-    initHasBoundsRectRuntime(runtime);
+    initHasBoundsRectangleRuntime(runtime);
 
     expect(runtime.boundsRect).toBeNull();
     expect(runtime.localBoundsRect).toBeNull();
     expect(runtime.worldBoundsRect).toBeNull();
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(defaultComputeLocalBoundsRect);
+    expect(runtime.computeLocalBoundsRect).toStrictEqual(defaultComputeLocalBoundsRectangle);
   });
 });
 

@@ -1,10 +1,16 @@
 import { setRectangle } from '@flighthq/geometry';
-import { addChild, getLocalBoundsRect, invalidateLocalTransform } from '@flighthq/scenegraph-core';
+import { addGraphChild, getLocalBoundsRectangle, invalidateLocalTransform } from '@flighthq/scenegraph-core';
 import { createDisplayObject, createDisplayObjectGeneric, getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type { DisplayObject, DisplayObjectRuntime } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { findHitTarget, hitTestLocalBoundsRect, hitTestObject, hitTestPoint, registerHitTestPoint } from './hitTests';
+import {
+  findHitTarget,
+  hitTestLocalBoundsRectangle,
+  hitTestObject,
+  hitTestPoint,
+  registerHitTestPoint,
+} from './hitTests';
 
 describe('findHitTarget', () => {
   it('returns null when node is disabled', () => {
@@ -16,25 +22,25 @@ describe('findHitTarget', () => {
   it('returns a child node registered with a hit handler', () => {
     const parent = createDisplayObject();
     const child = createDisplayObjectGeneric(DisplayObjectKind);
-    setRectangle(getLocalBoundsRect(child), 0, 0, 100, 100);
-    addChild(parent, child);
-    registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRect);
+    setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
+    addGraphChild(parent, child);
+    registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRectangle);
     const hit = findHitTarget(parent, 50, 50);
     expect(hit).toBe(child);
   });
 });
 
-describe('hitTestLocalBoundsRect', () => {
+describe('hitTestLocalBoundsRectangle', () => {
   it('returns true when world-space point is inside local bounds', () => {
     const obj = createDisplayObject();
-    setRectangle(getLocalBoundsRect(obj), 0, 0, 100, 100);
-    expect(hitTestLocalBoundsRect(obj, 50, 50)).toBe(true);
+    setRectangle(getLocalBoundsRectangle(obj), 0, 0, 100, 100);
+    expect(hitTestLocalBoundsRectangle(obj, 50, 50)).toBe(true);
   });
 
   it('returns false when world-space point is outside local bounds', () => {
     const obj = createDisplayObject();
-    setRectangle(getLocalBoundsRect(obj), 0, 0, 100, 100);
-    expect(hitTestLocalBoundsRect(obj, 200, 200)).toBe(false);
+    setRectangle(getLocalBoundsRectangle(obj), 0, 0, 100, 100);
+    expect(hitTestLocalBoundsRectangle(obj, 200, 200)).toBe(false);
   });
 });
 
@@ -46,11 +52,11 @@ describe('hitTestObject', () => {
     a = createDisplayObject();
     b = createDisplayObject();
 
-    addChild(createDisplayObject(), a);
-    addChild(createDisplayObject(), b);
+    addGraphChild(createDisplayObject(), a);
+    addGraphChild(createDisplayObject(), b);
 
-    setRectangle(getLocalBoundsRect(a), 0, 0, 10, 10);
-    setRectangle(getLocalBoundsRect(b), 0, 0, 10, 10);
+    setRectangle(getLocalBoundsRectangle(a), 0, 0, 10, 10);
+    setRectangle(getLocalBoundsRectangle(b), 0, 0, 10, 10);
 
     a.x = 0;
     a.y = 0;
@@ -99,8 +105,8 @@ describe('hitTestObject', () => {
     child.x = 90;
     child.y = 90;
     invalidateLocalTransform(child);
-    setRectangle(getLocalBoundsRect(child), 0, 0, 20, 20);
-    addChild(a, child);
+    setRectangle(getLocalBoundsRectangle(child), 0, 0, 20, 20);
+    addGraphChild(a, child);
 
     b.x = 100;
     b.y = 100;
@@ -114,12 +120,12 @@ describe('hitTestPoint', () => {
   let obj: DisplayObject;
 
   beforeAll(() => {
-    registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRect);
+    registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRectangle);
   });
 
   beforeEach(() => {
     obj = createDisplayObject();
-    setRectangle(getLocalBoundsRect(obj), 0, 0, 100, 100);
+    setRectangle(getLocalBoundsRectangle(obj), 0, 0, 100, 100);
   });
 
   it('returns true for point inside bounds', () => {
@@ -164,10 +170,10 @@ describe('hitTestPoint', () => {
 
   it('returns true when a child is hit even if the parent has no local bounds', () => {
     const child = createDisplayObject();
-    setRectangle(getLocalBoundsRect(child), 0, 0, 100, 100);
-    addChild(obj, child);
+    setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
+    addGraphChild(obj, child);
 
-    setRectangle(getLocalBoundsRect(obj), 0, 0, 0, 0);
+    setRectangle(getLocalBoundsRectangle(obj), 0, 0, 0, 0);
     expect(hitTestPoint(obj, 50, 50)).toBe(true);
   });
 
@@ -175,8 +181,8 @@ describe('hitTestPoint', () => {
     obj.enabled = false;
 
     const child = createDisplayObject();
-    setRectangle(getLocalBoundsRect(child), 0, 0, 100, 100);
-    addChild(obj, child);
+    setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
+    addGraphChild(obj, child);
 
     expect(hitTestPoint(obj, 50, 50)).toBe(false);
   });

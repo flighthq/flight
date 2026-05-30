@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import { createRenderState as _createRenderState, setBackgroundColor } from '@flighthq/render-core';
+import { createRenderState as _createRenderState, setRenderStateBackgroundColor } from '@flighthq/render-core';
 import type { CanvasRenderOptions, CanvasRenderState } from '@flighthq/types';
 
 import type { CanvasRenderStateInternal } from './internal';
@@ -17,7 +17,7 @@ export function createCanvasRenderState(
     roundPixels: options.roundPixels ?? false,
   }) as CanvasRenderStateInternal;
 
-  if (options.backgroundColor) setBackgroundColor(state, options.backgroundColor);
+  if (options.backgroundColor) setRenderStateBackgroundColor(state, options.backgroundColor);
 
   state.canvas = canvas;
   state.context = context;

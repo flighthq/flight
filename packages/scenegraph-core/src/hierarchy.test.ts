@@ -4,21 +4,21 @@ import { GraphNodeKind, NodeKind } from '@flighthq/types';
 
 import { createGraphNode, getGraphNodeRuntime, getGraphNodeSignals } from './graphNode';
 import {
-  addChild,
-  addChildAt,
-  contains,
-  getChildAt,
-  getChildByName,
-  getChildIndex,
-  getNumChildren,
-  getParent,
-  getRoot,
-  removeChild,
-  removeChildAt,
-  removeChildren,
-  setChildIndex,
-  swapChildren,
+  addGraphChild,
+  addGraphChildAt,
+  containsGraphChild,
+  getGraphChildAt,
+  getGraphChildByName,
+  getGraphChildIndex,
+  getGraphNumChildren,
+  getGraphParent,
+  getGraphRoot,
+  removeGraphChild,
+  removeGraphChildAt,
+  removeGraphChildren,
+  setGraphChildIndex,
   swapChildrenAt,
+  swapGraphChildren,
 } from './hierarchy';
 
 let container: GraphNode<typeof TestGraph, GraphNodeTraits>;
@@ -35,48 +35,48 @@ function getChildren(source: GraphNode<typeof TestGraph>) {
   return getGraphNodeRuntime(source).children as GraphNode<typeof TestGraph>[];
 }
 
-function getRuntime(source: GraphNode<typeof TestGraph>) {
+function getEntityRuntime(source: GraphNode<typeof TestGraph>) {
   return getGraphNodeRuntime(source) as GraphNodeRuntime<typeof TestGraph>;
 }
 
-describe('addChild', () => {
+describe('addGraphChild', () => {
   it('addChild adds a child to the end of the list', () => {
-    addChild(container, childA);
+    addGraphChild(container, childA);
 
-    expect(getNumChildren(container)).toBe(1);
-    expect(getParent(childA)).toBe(container);
+    expect(getGraphNumChildren(container)).toBe(1);
+    expect(getGraphParent(childA)).toBe(container);
   });
 
   it('throws if child is null', () => {
-    expect(() => addChild(container, null as any)).toThrow(TypeError);
+    expect(() => addGraphChild(container, null as any)).toThrow(TypeError);
   });
 
   it('throws if child is the same as target', () => {
-    expect(() => addChild(container, container)).toThrow(TypeError);
+    expect(() => addGraphChild(container, container)).toThrow(TypeError);
   });
 
   it('removes child from previous parent before adding', () => {
     const other = createGraphNode(TestGraph, NodeKind);
 
-    addChild(other, childA);
-    expect(getParent(childA)).toBe(other);
+    addGraphChild(other, childA);
+    expect(getGraphParent(childA)).toBe(other);
 
-    addChild(container, childA);
+    addGraphChild(container, childA);
 
-    expect(getParent(childA)).toBe(container);
-    expect(getNumChildren(other)).toBe(0);
-    expect(getNumChildren(container)).toBe(1);
+    expect(getGraphParent(childA)).toBe(container);
+    expect(getGraphNumChildren(other)).toBe(0);
+    expect(getGraphNumChildren(container)).toBe(1);
   });
 
   it('a child never has more than one parent', () => {
     const other = createGraphNode(TestGraph, NodeKind);
 
-    addChild(container, childA);
-    addChild(other, childA);
+    addGraphChild(container, childA);
+    addGraphChild(other, childA);
 
-    expect(getParent(childA)).toBe(other);
-    expect(getNumChildren(container)).toBe(0);
-    expect(getNumChildren(other)).toBe(1);
+    expect(getGraphParent(childA)).toBe(other);
+    expect(getGraphNumChildren(container)).toBe(0);
+    expect(getGraphNumChildren(other)).toBe(1);
   });
 
   it('calls onParentChanged on the child', () => {
@@ -84,7 +84,7 @@ describe('addChild', () => {
     connectSignal(getGraphNodeSignals(childA).onParentChanged, () => {
       called = true;
     });
-    addChild(container, childA);
+    addGraphChild(container, childA);
     expect(called).toBe(true);
   });
 
@@ -93,43 +93,43 @@ describe('addChild', () => {
     connectSignal(getGraphNodeSignals(container).onChildrenChanged, () => {
       called = true;
     });
-    addChild(container, childA);
+    addGraphChild(container, childA);
     expect(called).toBe(true);
   });
 });
 
-describe('addChildAt', () => {
+describe('addGraphChildAt', () => {
   it('addChildAt inserts a child at the given index', () => {
-    addChild(container, childA);
-    addChildAt(container, childB, 0);
+    addGraphChild(container, childA);
+    addGraphChildAt(container, childB, 0);
 
-    expect(getNumChildren(container)).toBe(2);
+    expect(getGraphNumChildren(container)).toBe(2);
     expect(getChildren(container)[0]).toBe(childB);
     expect(getChildren(container)[1]).toBe(childA);
   });
 
   it('addChildAt allows inserting at the end (index === length)', () => {
-    addChild(container, childA);
-    addChildAt(container, childB, 1);
+    addGraphChild(container, childA);
+    addGraphChildAt(container, childB, 1);
 
-    expect(getNumChildren(container)).toBe(2);
+    expect(getGraphNumChildren(container)).toBe(2);
     expect(getChildren(container)[1]).toBe(childB);
   });
 
   it('addChildAt throws if index is negative', () => {
-    expect(() => addChildAt(container, childA, -1)).toThrow();
+    expect(() => addGraphChildAt(container, childA, -1)).toThrow();
   });
 
   it('throws if index is out of bounds', () => {
-    expect(() => addChildAt(container, childA, 1)).toThrow();
+    expect(() => addGraphChildAt(container, childA, 1)).toThrow();
   });
 
   it('reorders child when added again to the same parent', () => {
-    addChild(container, childA);
-    addChild(container, childB);
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
 
     // move childA to the front
-    addChildAt(container, childA, 1);
+    addGraphChildAt(container, childA, 1);
 
     expect(getChildren(container)[0]).toBe(childB);
     expect(getChildren(container)[1]).toBe(childA);
@@ -140,7 +140,7 @@ describe('addChildAt', () => {
     connectSignal(getGraphNodeSignals(childA).onParentChanged, () => {
       called = true;
     });
-    addChildAt(container, childA, 0);
+    addGraphChildAt(container, childA, 0);
     expect(called).toBe(true);
   });
 
@@ -149,297 +149,297 @@ describe('addChildAt', () => {
     connectSignal(getGraphNodeSignals(container).onChildrenChanged, () => {
       called = true;
     });
-    addChildAt(container, childA, 0);
+    addGraphChildAt(container, childA, 0);
     expect(called).toBe(true);
   });
 });
 
-describe('contains', () => {
+describe('containsGraphChild', () => {
   it('returns false if parent does not contain child', () => {
-    expect(contains(container, childA)).toBe(false);
+    expect(containsGraphChild(container, childA)).toBe(false);
   });
 
   it('returns true if parent does not contain child', () => {
-    addChild(container, childA);
-    expect(contains(container, childA)).toBe(true);
+    addGraphChild(container, childA);
+    expect(containsGraphChild(container, childA)).toBe(true);
   });
 
   it('returns true if the child is located deeper in the heirarchy', () => {
-    addChild(container, childA);
-    addChild(childA, childB);
-    expect(contains(container, childB)).toBe(true);
+    addGraphChild(container, childA);
+    addGraphChild(childA, childB);
+    expect(containsGraphChild(container, childB)).toBe(true);
   });
 });
 
-describe('getChildAt', () => {
+describe('getGraphChildAt', () => {
   it('returns null if there are no children', () => {
-    expect(getChildAt(container, 0)).toBeNull();
+    expect(getGraphChildAt(container, 0)).toBeNull();
   });
 
   it('returns null if there are no children at the given index', () => {
-    addChild(container, childA);
-    expect(getChildAt(container, 1)).toBeNull();
-    expect(getChildAt(container, -1)).toBeNull();
+    addGraphChild(container, childA);
+    expect(getGraphChildAt(container, 1)).toBeNull();
+    expect(getGraphChildAt(container, -1)).toBeNull();
   });
 
   it('returns a matching child at the given index', () => {
-    addChild(container, childA);
-    expect(getChildAt(container, 0)).toStrictEqual(childA);
+    addGraphChild(container, childA);
+    expect(getGraphChildAt(container, 0)).toStrictEqual(childA);
   });
 });
 
-describe('getChildByName', () => {
+describe('getGraphChildByName', () => {
   it('returns null if there are no children', () => {
-    expect(getChildByName(container, 'hello')).toBeNull();
+    expect(getGraphChildByName(container, 'hello')).toBeNull();
   });
 
   it('returns null if there are no children with the given name', () => {
-    addChild(container, childA);
+    addGraphChild(container, childA);
     childA.name = 'childA';
-    expect(getChildByName(container, 'hello')).toBeNull();
+    expect(getGraphChildByName(container, 'hello')).toBeNull();
   });
 
   it('returns the first child with the given name', () => {
-    addChild(container, childA);
-    addChild(container, childB);
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
     childA.name = 'hello';
     childB.name = 'hello';
-    expect(getChildByName(container, 'hello')).toStrictEqual(childA);
+    expect(getGraphChildByName(container, 'hello')).toStrictEqual(childA);
   });
 
   it('does not iterate through descendents', () => {
-    addChild(container, childA);
-    addChild(childA, childB);
+    addGraphChild(container, childA);
+    addGraphChild(childA, childB);
     childB.name = 'hello';
-    expect(getChildByName(container, 'hello')).toBeNull();
+    expect(getGraphChildByName(container, 'hello')).toBeNull();
   });
 });
 
-describe('getChildIndex', () => {
+describe('getGraphChildIndex', () => {
   it('returns -1 if object is not a child', () => {
-    expect(getChildIndex(container, childA)).toBe(-1);
+    expect(getGraphChildIndex(container, childA)).toBe(-1);
   });
 
   it('returns the index if object is a child', () => {
-    addChild(container, childA);
-    addChild(container, childB);
-    expect(getChildIndex(container, childA)).toBe(0);
-    expect(getChildIndex(container, childB)).toBe(1);
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
+    expect(getGraphChildIndex(container, childA)).toBe(0);
+    expect(getGraphChildIndex(container, childB)).toBe(1);
   });
 
   it('does not iterate through descendents', () => {
-    addChild(container, childA);
-    addChild(childA, childB);
-    expect(getChildIndex(container, childB)).toBe(-1);
+    addGraphChild(container, childA);
+    addGraphChild(childA, childB);
+    expect(getGraphChildIndex(container, childB)).toBe(-1);
   });
 });
 
-describe('getNumChildren', () => {
+describe('getGraphNumChildren', () => {
   it('returns 0 if children is null', () => {
-    const children = getRuntime(container).children;
+    const children = getEntityRuntime(container).children;
     expect(children).toBeNull();
-    expect(getNumChildren(container)).toBe(0);
+    expect(getGraphNumChildren(container)).toBe(0);
   });
 
   it('returns length of runtime children array', () => {
-    addChild(container, childA);
-    addChild(container, childB);
-    const children = getRuntime(container).children;
-    expect(getNumChildren(container)).toStrictEqual(children!.length);
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
+    const children = getEntityRuntime(container).children;
+    expect(getGraphNumChildren(container)).toStrictEqual(children!.length);
   });
 });
 
-describe('getParent', () => {
+describe('getGraphParent', () => {
   it('returns runtime parent reference', () => {
-    addChild(container, childA);
-    const parent = getRuntime(childA).parent;
-    expect(getParent(childA)).toStrictEqual(parent);
+    addGraphChild(container, childA);
+    const parent = getEntityRuntime(childA).parent;
+    expect(getGraphParent(childA)).toStrictEqual(parent);
   });
 });
 
-describe('getRoot', () => {
+describe('getGraphRoot', () => {
   it('returns the node itself when it has no parent', () => {
-    expect(getRoot(childA)).toBe(childA);
+    expect(getGraphRoot(childA)).toBe(childA);
   });
 
   it('returns the topmost ancestor', () => {
-    addChild(container, childA);
-    addChild(childA, childB);
-    expect(getRoot(childB)).toBe(container);
+    addGraphChild(container, childA);
+    addGraphChild(childA, childB);
+    expect(getGraphRoot(childB)).toBe(container);
   });
 
   it('returns the direct parent when depth is one', () => {
-    addChild(container, childA);
-    expect(getRoot(childA)).toBe(container);
+    addGraphChild(container, childA);
+    expect(getGraphRoot(childA)).toBe(container);
   });
 });
 
-describe('removeChild', () => {
+describe('removeGraphChild', () => {
   it('removes the child and clears its parent', () => {
-    addChild(container, childA);
-    expect(getNumChildren(container)).toBe(1);
+    addGraphChild(container, childA);
+    expect(getGraphNumChildren(container)).toBe(1);
 
-    removeChild(container, childA);
+    removeGraphChild(container, childA);
 
-    expect(getNumChildren(container)).toBe(0);
-    expect(getParent(childA)).toBeNull();
+    expect(getGraphNumChildren(container)).toBe(0);
+    expect(getGraphParent(childA)).toBeNull();
   });
 
   it('does nothing if child is not a child of target', () => {
-    addChild(container, childA);
+    addGraphChild(container, childA);
 
     const other = createGraphNode(TestGraph, NodeKind);
-    removeChild(other, childA);
+    removeGraphChild(other, childA);
 
-    expect(getNumChildren(container)).toBe(1);
-    expect(getParent(childA)).toBe(container);
+    expect(getGraphNumChildren(container)).toBe(1);
+    expect(getGraphParent(childA)).toBe(container);
   });
 
   it('is safe when child is null', () => {
-    expect(() => removeChild(container, null as any)).not.toThrow();
+    expect(() => removeGraphChild(container, null as any)).not.toThrow();
   });
 
   it('always clears the parent reference', () => {
-    addChild(container, childA);
-    removeChild(container, childA);
+    addGraphChild(container, childA);
+    removeGraphChild(container, childA);
 
-    expect(getParent(childA)).toBeNull();
+    expect(getGraphParent(childA)).toBeNull();
   });
 
   it('calls onParentChanged on the child', () => {
-    addChild(container, childA);
+    addGraphChild(container, childA);
     let called = false;
     connectSignal(getGraphNodeSignals(childA).onParentChanged, () => {
       called = true;
     });
-    removeChild(container, childA);
+    removeGraphChild(container, childA);
     expect(called).toBe(true);
   });
 
   it('calls onChildrenChanged on the parent', () => {
-    addChild(container, childA);
+    addGraphChild(container, childA);
     let called = false;
     connectSignal(getGraphNodeSignals(container).onChildrenChanged, () => {
       called = true;
     });
-    removeChild(container, childA);
+    removeGraphChild(container, childA);
     expect(called).toBe(true);
   });
 });
 
-describe('removeChildAt', () => {
+describe('removeGraphChildAt', () => {
   it('removeChildAt removes and returns the child at index', () => {
-    addChild(container, childA);
-    addChild(container, childB);
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
 
-    const removed = removeChildAt(container, 0);
+    const removed = removeGraphChildAt(container, 0);
 
     expect(removed).toBe(childA);
-    expect(getNumChildren(container)).toBe(1);
-    expect(getParent(childA)).toBeNull();
+    expect(getGraphNumChildren(container)).toBe(1);
+    expect(getGraphParent(childA)).toBeNull();
     expect(getChildren(container)[0]).toBe(childB);
   });
 
   it('removeChildAt returns null for out-of-range index', () => {
-    expect(removeChildAt(container, 0)).toBeNull();
+    expect(removeGraphChildAt(container, 0)).toBeNull();
   });
 
   it('calls onParentChanged on the child', () => {
-    addChild(container, childA);
-    addChild(container, childB);
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
 
     let called = false;
     connectSignal(getGraphNodeSignals(childA).onParentChanged, () => {
       called = true;
     });
-    removeChildAt(container, 0);
+    removeGraphChildAt(container, 0);
     expect(called).toBe(true);
   });
 
   it('calls onChildrenChanged on the parent', () => {
-    addChild(container, childA);
-    addChild(container, childB);
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
 
     let called = false;
     connectSignal(getGraphNodeSignals(container).onChildrenChanged, () => {
       called = true;
     });
-    removeChildAt(container, 0);
+    removeGraphChildAt(container, 0);
     expect(called).toBe(true);
   });
 });
 
-describe('removeChildren', () => {
+describe('removeGraphChildren', () => {
   it('removeChildren removes all children by default', () => {
-    addChild(container, childA);
-    addChild(container, childB);
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
 
-    removeChildren(container);
+    removeGraphChildren(container);
 
-    expect(getNumChildren(container)).toBe(0);
-    expect(getParent(childA)).toBeNull();
-    expect(getParent(childB)).toBeNull();
+    expect(getGraphNumChildren(container)).toBe(0);
+    expect(getGraphParent(childA)).toBeNull();
+    expect(getGraphParent(childB)).toBeNull();
   });
 
   it('removeChildren removes a range of children', () => {
     const childC = createGraphNode(TestGraph, NodeKind);
 
-    addChild(container, childA);
-    addChild(container, childB);
-    addChild(container, childC);
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
+    addGraphChild(container, childC);
 
-    removeChildren(container, 1, 2);
+    removeGraphChildren(container, 1, 2);
 
-    expect(getNumChildren(container)).toBe(1);
+    expect(getGraphNumChildren(container)).toBe(1);
     expect(getChildren(container)[0]).toBe(childA);
-    expect(getParent(childB)).toBeNull();
-    expect(getParent(childC)).toBeNull();
+    expect(getGraphParent(childB)).toBeNull();
+    expect(getGraphParent(childC)).toBeNull();
   });
 
   it('removeChildren does nothing if beginIndex is out of range', () => {
-    addChild(container, childA);
+    addGraphChild(container, childA);
 
-    removeChildren(container, 5);
+    removeGraphChildren(container, 5);
 
-    expect(getNumChildren(container)).toBe(1);
+    expect(getGraphNumChildren(container)).toBe(1);
   });
 
   it('removeChildren throws if indices are invalid', () => {
-    addChild(container, childA);
+    addGraphChild(container, childA);
 
-    expect(() => removeChildren(container, 0, 10)).toThrow(RangeError);
-    expect(() => removeChildren(container, -1, 0)).toThrow(RangeError);
+    expect(() => removeGraphChildren(container, 0, 10)).toThrow(RangeError);
+    expect(() => removeGraphChildren(container, -1, 0)).toThrow(RangeError);
   });
 
   it('calls onParentChanged on the child', () => {
-    addChild(container, childA);
+    addGraphChild(container, childA);
 
     let called = false;
     connectSignal(getGraphNodeSignals(childA).onParentChanged, () => {
       called = true;
     });
-    removeChildren(container);
+    removeGraphChildren(container);
     expect(called).toBe(true);
   });
 
   it('calls onChildrenChanged on the parent', () => {
-    addChild(container, childA);
+    addGraphChild(container, childA);
 
     let called = false;
     connectSignal(getGraphNodeSignals(container).onChildrenChanged, () => {
       called = true;
     });
-    removeChildren(container);
+    removeGraphChildren(container);
     expect(called).toBe(true);
   });
 });
 
-describe('setChildIndex', () => {
+describe('setGraphChildIndex', () => {
   it('setChildIndex moves an existing child to a new index', () => {
-    addChild(container, childA);
-    addChild(container, childB);
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
 
-    setChildIndex(container, childA, 1);
+    setGraphChildIndex(container, childA, 1);
 
     expect(getChildren(container)[0]).toBe(childB);
     expect(getChildren(container)[1]).toBe(childA);
@@ -448,75 +448,40 @@ describe('setChildIndex', () => {
   it('setChildIndex does nothing if child is not in container', () => {
     const other = createGraphNode(TestGraph, NodeKind);
 
-    addChild(other, childA);
-    addChild(container, childB);
+    addGraphChild(other, childA);
+    addGraphChild(container, childB);
 
-    setChildIndex(container, childA, 0);
+    setGraphChildIndex(container, childA, 0);
 
     expect(getChildren(container)[0]).toBe(childB);
-    expect(getParent(childA)).toBe(other);
+    expect(getGraphParent(childA)).toBe(other);
   });
 
   it('setChildIndex ignores out-of-range indices', () => {
-    addChild(container, childA);
+    addGraphChild(container, childA);
 
-    setChildIndex(container, childA, 5);
-
-    expect(getChildren(container)[0]).toBe(childA);
-  });
-
-  it('calls onChildrenOrderChanged on the parent', () => {
-    addChild(container, childA);
-    addChild(container, childB);
-
-    let called = false;
-    connectSignal(getGraphNodeSignals(container).onChildrenOrderChanged, () => {
-      called = true;
-    });
-    setChildIndex(container, childA, 1);
-    expect(called).toBe(true);
-  });
-});
-
-describe('swapChildren', () => {
-  it('swapChildren swaps two children', () => {
-    addChild(container, childA);
-    addChild(container, childB);
-
-    swapChildren(container, childA, childB);
-
-    expect(getChildren(container)[0]).toBe(childB);
-    expect(getChildren(container)[1]).toBe(childA);
-  });
-
-  it('swapChildren does nothing if either child is not in container', () => {
-    const other = createGraphNode(TestGraph, NodeKind);
-
-    addChild(container, childA);
-    addChild(other, childB);
-
-    swapChildren(container, childA, childB);
+    setGraphChildIndex(container, childA, 5);
 
     expect(getChildren(container)[0]).toBe(childA);
   });
 
   it('calls onChildrenOrderChanged on the parent', () => {
-    addChild(container, childA);
-    addChild(container, childB);
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
 
     let called = false;
     connectSignal(getGraphNodeSignals(container).onChildrenOrderChanged, () => {
       called = true;
     });
-    swapChildren(container, childA, childB);
+    setGraphChildIndex(container, childA, 1);
     expect(called).toBe(true);
   });
 });
 
 describe('swapChildrenAt', () => {
   it('swapChildrenAt swaps children by index', () => {
-    addChild(container, childA);
-    addChild(container, childB);
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
 
     swapChildrenAt(container, 0, 1);
 
@@ -525,20 +490,55 @@ describe('swapChildrenAt', () => {
   });
 
   it('swapChildrenAt assumes valid indices (throws if invalid)', () => {
-    addChild(container, childA);
+    addGraphChild(container, childA);
 
     expect(() => swapChildrenAt(container, 0, 1)).toThrow();
   });
 
   it('calls onChildrenOrderChanged on the parent', () => {
-    addChild(container, childA);
-    addChild(container, childB);
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
 
     let called = false;
     connectSignal(getGraphNodeSignals(container).onChildrenOrderChanged, () => {
       called = true;
     });
     swapChildrenAt(container, 0, 1);
+    expect(called).toBe(true);
+  });
+});
+
+describe('swapGraphChildren', () => {
+  it('swapChildren swaps two children', () => {
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
+
+    swapGraphChildren(container, childA, childB);
+
+    expect(getChildren(container)[0]).toBe(childB);
+    expect(getChildren(container)[1]).toBe(childA);
+  });
+
+  it('swapChildren does nothing if either child is not in container', () => {
+    const other = createGraphNode(TestGraph, NodeKind);
+
+    addGraphChild(container, childA);
+    addGraphChild(other, childB);
+
+    swapGraphChildren(container, childA, childB);
+
+    expect(getChildren(container)[0]).toBe(childA);
+  });
+
+  it('calls onChildrenOrderChanged on the parent', () => {
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
+
+    let called = false;
+    connectSignal(getGraphNodeSignals(container).onChildrenOrderChanged, () => {
+      called = true;
+    });
+    swapGraphChildren(container, childA, childB);
     expect(called).toBe(true);
   });
 });

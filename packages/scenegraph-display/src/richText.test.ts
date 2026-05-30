@@ -3,18 +3,18 @@ import type { GraphNode, RichText } from '@flighthq/types';
 import { RichTextKind } from '@flighthq/types';
 
 import {
-  computeRichTextLocalBoundsRect,
+  computeRichTextLocalBoundsRectangle,
   createRichText,
   createRichTextData,
   createRichTextRuntime,
   getRichTextRuntime,
 } from './richText';
 
-describe('computeRichTextLocalBoundsRect', () => {
+describe('computeRichTextLocalBoundsRectangle', () => {
   it('sets out.width and out.height from data dimensions', () => {
     const richText = createRichText({ data: { width: 200, height: 150 } });
     const out = createRectangle();
-    computeRichTextLocalBoundsRect(out, richText as unknown as GraphNode);
+    computeRichTextLocalBoundsRectangle(out, richText as unknown as GraphNode);
     expect(out.width).toBe(200);
     expect(out.height).toBe(150);
   });
@@ -114,9 +114,9 @@ describe('createRichTextRuntime', () => {
     expect(runtime).not.toBeNull();
   });
 
-  it('uses computeRichTextLocalBoundsRect', () => {
+  it('uses computeRichTextLocalBoundsRectangle', () => {
     const runtime = createRichTextRuntime();
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeRichTextLocalBoundsRect);
+    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeRichTextLocalBoundsRectangle);
   });
 });
 

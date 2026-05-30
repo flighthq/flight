@@ -7,7 +7,7 @@ import {
   createShape,
   createText,
   createTween,
-  drawRect,
+  drawRectangle,
   endFill,
   invalidateRender,
   playAudioSource,
@@ -62,7 +62,7 @@ export class PiratePigGame {
     const backgroundPanel = createShape();
     backgroundPanel.y = BACKGROUND_Y;
     beginFill(backgroundPanel, 0xffffff, 0.4);
-    drawRect(backgroundPanel, 0, 0, CONTENT_WIDTH, CONTENT_HEIGHT);
+    drawRectangle(backgroundPanel, 0, 0, CONTENT_WIDTH, CONTENT_HEIGHT);
     endFill(backgroundPanel);
     addChild(this.obj, backgroundPanel);
 

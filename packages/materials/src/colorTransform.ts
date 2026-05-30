@@ -1,11 +1,15 @@
 import { createEntity } from '@flighthq/entity';
 import type { ColorTransform } from '@flighthq/types';
 
-export function clone(source: Readonly<ColorTransform>): ColorTransform {
-  return create(source);
+export function cloneColorTransform(source: Readonly<ColorTransform>): ColorTransform {
+  return createColorTransform(source);
 }
 
-export function concat(out: ColorTransform, source: Readonly<ColorTransform>, other: Readonly<ColorTransform>): void {
+export function concatColorTransform(
+  out: ColorTransform,
+  source: Readonly<ColorTransform>,
+  other: Readonly<ColorTransform>,
+): void {
   out.redOffset = source.redMultiplier * other.redOffset + source.redOffset;
   out.greenOffset = source.greenMultiplier * other.greenOffset + source.greenOffset;
   out.blueOffset = source.blueMultiplier * other.blueOffset + source.blueOffset;
@@ -16,7 +20,7 @@ export function concat(out: ColorTransform, source: Readonly<ColorTransform>, ot
   out.alphaMultiplier = source.alphaMultiplier * other.alphaMultiplier;
 }
 
-export function copy(out: ColorTransform, source: Readonly<ColorTransform>): void {
+export function copyColorTransform(out: ColorTransform, source: Readonly<ColorTransform>): void {
   out.redMultiplier = source.redMultiplier;
   out.greenMultiplier = source.greenMultiplier;
   out.blueMultiplier = source.blueMultiplier;
@@ -27,7 +31,22 @@ export function copy(out: ColorTransform, source: Readonly<ColorTransform>): voi
   out.alphaOffset = source.alphaOffset;
 }
 
-export function create(obj?: Partial<ColorTransform>): ColorTransform {
+export function copyColorTransformToArrays(
+  outColorMultipliers: number[],
+  outColorOffsets: number[],
+  source: Readonly<ColorTransform>,
+): void {
+  outColorMultipliers[0] = source.redMultiplier;
+  outColorMultipliers[1] = source.greenMultiplier;
+  outColorMultipliers[2] = source.blueMultiplier;
+  outColorMultipliers[3] = source.alphaMultiplier;
+  outColorOffsets[0] = source.redOffset;
+  outColorOffsets[1] = source.greenOffset;
+  outColorOffsets[2] = source.blueOffset;
+  outColorOffsets[3] = source.alphaOffset;
+}
+
+export function createColorTransform(obj?: Partial<ColorTransform>): ColorTransform {
   return createEntity({
     redMultiplier: obj?.redMultiplier ?? 1,
     greenMultiplier: obj?.greenMultiplier ?? 1,
@@ -40,45 +59,11 @@ export function create(obj?: Partial<ColorTransform>): ColorTransform {
   });
 }
 
-export function equals(a: Readonly<ColorTransform>, b: Readonly<ColorTransform>): boolean {
-  return offsetEquals(a, b) && multiplierEquals(a, b);
+export function equalsColorTransform(a: Readonly<ColorTransform>, b: Readonly<ColorTransform>): boolean {
+  return equalsColorTransformOffsets(a, b) && equalsColorTransformMultipliers(a, b);
 }
 
-export function getOffsetRGB(source: Readonly<ColorTransform>): number {
-  return (
-    (Math.fround(source.redOffset) << 16) | (Math.fround(source.greenOffset) << 8) | Math.fround(source.blueOffset)
-  );
-}
-
-export function getOffsetRGBA(source: Readonly<ColorTransform>): number {
-  return (
-    (Math.fround(source.redOffset) << 24) |
-    (Math.fround(source.greenOffset) << 16) |
-    (Math.fround(source.blueOffset) << 8) |
-    Math.fround(source.alphaOffset)
-  );
-}
-
-export function identity(out: ColorTransform): void {
-  setTo(out, 1, 1, 1, 1, 0, 0, 0, 0);
-}
-
-export function invert(out: ColorTransform, source: Readonly<ColorTransform>): void {
-  out.redMultiplier = source.redMultiplier !== 0 ? 1 / source.redMultiplier : 1;
-  out.greenMultiplier = source.greenMultiplier !== 0 ? 1 / source.greenMultiplier : 1;
-  out.blueMultiplier = source.blueMultiplier !== 0 ? 1 / source.blueMultiplier : 1;
-  out.alphaMultiplier = source.alphaMultiplier !== 0 ? 1 / source.alphaMultiplier : 1;
-  out.redOffset = -source.redOffset;
-  out.greenOffset = -source.greenOffset;
-  out.blueOffset = -source.blueOffset;
-  out.alphaOffset = -source.alphaOffset;
-}
-
-export function isIdentity(source: Readonly<ColorTransform>, compareAlphaMultiplier: boolean = true): boolean {
-  return offsetEquals(source, _identity) && multiplierEquals(source, _identity, compareAlphaMultiplier);
-}
-
-export function multiplierEquals(
+export function equalsColorTransformMultipliers(
   a: Readonly<ColorTransform>,
   b: Readonly<ColorTransform>,
   compareAlpha: boolean = true,
@@ -91,7 +76,7 @@ export function multiplierEquals(
   );
 }
 
-export function offsetEquals(
+export function equalsColorTransformOffsets(
   a: Readonly<ColorTransform>,
   b: Readonly<ColorTransform>,
   compareAlpha: boolean = true,
@@ -104,29 +89,47 @@ export function offsetEquals(
   );
 }
 
-export function setOffsetRGB(out: ColorTransform, value: number): void {
-  out.redOffset = (value >> 16) & 0xff;
-  out.greenOffset = (value >> 8) & 0xff;
-  out.blueOffset = value & 0xff;
-  out.alphaOffset = 0;
-  out.redMultiplier = 0;
-  out.greenMultiplier = 0;
-  out.blueMultiplier = 0;
-  out.alphaMultiplier = 1;
+export function getColorTransformOffsetRGB(source: Readonly<ColorTransform>): number {
+  return (
+    (Math.fround(source.redOffset) << 16) | (Math.fround(source.greenOffset) << 8) | Math.fround(source.blueOffset)
+  );
 }
 
-export function setOffsetRGBA(out: ColorTransform, value: number): void {
-  out.redOffset = (value >> 24) & 0xff;
-  out.greenOffset = (value >> 16) & 0xff;
-  out.blueOffset = (value >> 8) & 0xff;
-  out.alphaOffset = value & 0xff;
-  out.redMultiplier = 0;
-  out.greenMultiplier = 0;
-  out.blueMultiplier = 0;
-  out.alphaMultiplier = 0;
+export function getColorTransformOffsetRGBA(source: Readonly<ColorTransform>): number {
+  return (
+    (Math.fround(source.redOffset) << 24) |
+    (Math.fround(source.greenOffset) << 16) |
+    (Math.fround(source.blueOffset) << 8) |
+    Math.fround(source.alphaOffset)
+  );
 }
 
-export function setTo(
+export function identityColorTransform(out: ColorTransform): void {
+  setColorTransform(out, 1, 1, 1, 1, 0, 0, 0, 0);
+}
+
+export function invertColorTransform(out: ColorTransform, source: Readonly<ColorTransform>): void {
+  out.redMultiplier = source.redMultiplier !== 0 ? 1 / source.redMultiplier : 1;
+  out.greenMultiplier = source.greenMultiplier !== 0 ? 1 / source.greenMultiplier : 1;
+  out.blueMultiplier = source.blueMultiplier !== 0 ? 1 / source.blueMultiplier : 1;
+  out.alphaMultiplier = source.alphaMultiplier !== 0 ? 1 / source.alphaMultiplier : 1;
+  out.redOffset = -source.redOffset;
+  out.greenOffset = -source.greenOffset;
+  out.blueOffset = -source.blueOffset;
+  out.alphaOffset = -source.alphaOffset;
+}
+
+export function isIdentityColorTransform(
+  source: Readonly<ColorTransform>,
+  compareAlphaMultiplier: boolean = true,
+): boolean {
+  return (
+    equalsColorTransformOffsets(source, _identity) &&
+    equalsColorTransformMultipliers(source, _identity, compareAlphaMultiplier)
+  );
+}
+
+export function setColorTransform(
   out: ColorTransform,
   redMultiplier: number,
   greenMultiplier: number,
@@ -147,19 +150,26 @@ export function setTo(
   out.alphaOffset = alphaOffset;
 }
 
-export function toArrays(
-  outColorMultipliers: number[],
-  outColorOffsets: number[],
-  source: Readonly<ColorTransform>,
-): void {
-  outColorMultipliers[0] = source.redMultiplier;
-  outColorMultipliers[1] = source.greenMultiplier;
-  outColorMultipliers[2] = source.blueMultiplier;
-  outColorMultipliers[3] = source.alphaMultiplier;
-  outColorOffsets[0] = source.redOffset;
-  outColorOffsets[1] = source.greenOffset;
-  outColorOffsets[2] = source.blueOffset;
-  outColorOffsets[3] = source.alphaOffset;
+export function setColorTransformOffsetRGB(out: ColorTransform, value: number): void {
+  out.redOffset = (value >> 16) & 0xff;
+  out.greenOffset = (value >> 8) & 0xff;
+  out.blueOffset = value & 0xff;
+  out.alphaOffset = 0;
+  out.redMultiplier = 0;
+  out.greenMultiplier = 0;
+  out.blueMultiplier = 0;
+  out.alphaMultiplier = 1;
 }
 
-const _identity: ColorTransform = create();
+export function setColorTransformOffsetRGBA(out: ColorTransform, value: number): void {
+  out.redOffset = (value >> 24) & 0xff;
+  out.greenOffset = (value >> 16) & 0xff;
+  out.blueOffset = (value >> 8) & 0xff;
+  out.alphaOffset = value & 0xff;
+  out.redMultiplier = 0;
+  out.greenMultiplier = 0;
+  out.blueMultiplier = 0;
+  out.alphaMultiplier = 0;
+}
+
+const _identity: ColorTransform = createColorTransform();

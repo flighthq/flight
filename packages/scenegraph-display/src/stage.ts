@@ -1,4 +1,4 @@
-import { getRoot } from '@flighthq/scenegraph-core';
+import { getGraphRoot } from '@flighthq/scenegraph-core';
 import type {
   DisplayObject,
   GraphNode,
@@ -13,7 +13,7 @@ import { StageKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
 
-export function computeStageLocalBoundsRect(out: Rectangle, source: Readonly<GraphNode>): void {
+export function computeStageLocalBoundsRectangle(out: Rectangle, source: Readonly<GraphNode>): void {
   const data = (source as Stage).data;
   out.width = data.stageWidth;
   out.height = data.stageHeight;
@@ -43,7 +43,7 @@ export function createStageRuntime(): StageRuntime {
 }
 
 export function getStage(source: Readonly<DisplayObject>): Stage | null {
-  const root = getRoot(source);
+  const root = getGraphRoot(source);
   return root.kind === StageKind ? (root as Stage) : null;
 }
 
@@ -52,5 +52,5 @@ export function getStageRuntime(source: Readonly<Stage>): Readonly<StageRuntime>
 }
 
 const defaultMethods: Partial<MethodsOf<StageRuntime>> = {
-  computeLocalBoundsRect: computeStageLocalBoundsRect,
+  computeLocalBoundsRect: computeStageLocalBoundsRectangle,
 };

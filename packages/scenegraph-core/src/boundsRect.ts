@@ -1,4 +1,4 @@
-import { getRuntime } from '@flighthq/entity';
+import { getEntityRuntime } from '@flighthq/entity';
 import {
   copyRectangle,
   createRectangle,
@@ -19,39 +19,39 @@ import type {
 } from '@flighthq/types';
 
 import { getGraphNodeRuntime } from './graphNode';
-import { getNumChildren, getParent } from './hierarchy';
+import { getGraphNumChildren, getGraphParent } from './hierarchy';
 import { invalidateLocalTransform } from './revision';
-import { ensureWorldTransform2D, getLocalTransform2D, getWorldTransform2D } from './transform2d';
+import { ensureWorldTransformMatrix, getLocalTransformMatrix, getWorldTransformMatrix } from './transform2d';
 
 /**
  * Writes a rectangle which defines the area of the scene node
  * relative to the coordinate system of the `targetCoordinateSpace` object.
  **/
-export function calculateBoundsRect<GraphKind extends symbol, Traits extends object>(
+export function calculateBoundsRectangle<GraphKind extends symbol, Traits extends object>(
   out: RectangleLike,
   source: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
   targetCoordinateSpace: (GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D) | null | undefined,
 ): void {
   if (!targetCoordinateSpace) targetCoordinateSpace = source;
   let bounds;
-  if (getParent(targetCoordinateSpace) === null) {
+  if (getGraphParent(targetCoordinateSpace) === null) {
     // if target has no parent, use world bounds
-    bounds = getWorldBoundsRect(source);
-  } else if (getNumChildren(source) === 0) {
+    bounds = getWorldBoundsRectangle(source);
+  } else if (getGraphNumChildren(source) === 0) {
     // only world bounds considers children
     if (targetCoordinateSpace === source) {
       // fast path, return local bounds for self
-      bounds = getLocalBoundsRect(source);
-    } else if (targetCoordinateSpace === getParent<GraphKind, Traits & HasBoundsRect & HasTransform2D>(source)) {
+      bounds = getLocalBoundsRectangle(source);
+    } else if (targetCoordinateSpace === getGraphParent<GraphKind, Traits & HasBoundsRect & HasTransform2D>(source)) {
       // fast path, return bounds for parent
-      bounds = getBoundsRect(source);
+      bounds = getBoundsRectangle(source);
     }
   }
   if (!bounds) {
     // translate world bounds into target coordinate space
-    const worldBounds = getWorldBoundsRect(source);
+    const worldBounds = getWorldBoundsRectangle(source);
     const transform = acquireMatrix();
-    inverseMatrix(transform, getWorldTransform2D(targetCoordinateSpace));
+    inverseMatrix(transform, getWorldTransformMatrix(targetCoordinateSpace));
     matrixTransformRectangle(out, transform, worldBounds);
     releaseMatrix(transform);
   } else {
@@ -59,10 +59,10 @@ export function calculateBoundsRect<GraphKind extends symbol, Traits extends obj
   }
 }
 
-export function ensureBoundsRect<GraphKind extends symbol, Traits extends object>(
+export function ensureBoundsRectangle<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
 ): void {
-  const runtime = getRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime;
+  const runtime = getEntityRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime;
   if (
     runtime.boundsUsingLocalBoundsID !== runtime.localBoundsID ||
     runtime.boundsUsingLocalTransformID !== runtime.localTransformID
@@ -71,29 +71,29 @@ export function ensureBoundsRect<GraphKind extends symbol, Traits extends object
   }
 }
 
-export function ensureLocalBoundsRect<GraphKind extends symbol, Traits extends object>(
+export function ensureLocalBoundsRectangle<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasBoundsRect,
 ): void {
-  const runtime = getRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime;
+  const runtime = getEntityRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime;
   if (runtime.localBoundsUsingLocalBoundsID !== runtime.localBoundsID) {
     recomputeLocalBoundsRect(target, runtime);
   }
 }
 
-export function ensureWorldBoundsRect<GraphKind extends symbol, Traits extends object>(
+export function ensureWorldBoundsRectangle<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
 ): void {
-  const runtime = getRuntime(target) as GraphNodeRuntime<GraphKind, Traits> &
+  const runtime = getEntityRuntime(target) as GraphNodeRuntime<GraphKind, Traits> &
     HasBoundsRectRuntime &
     HasTransform2DRuntime;
   const localBoundsInvalid = runtime.worldBoundsUsingLocalBoundsID !== runtime.localBoundsID;
-  const hasChildren = getNumChildren(target) !== 0;
+  const hasChildren = getGraphNumChildren(target) !== 0;
   let forceRecompute = false;
   if (!hasChildren && !localBoundsInvalid) {
     if (tryFastRecomputeWorldBoundsRect(target, runtime)) return;
     forceRecompute = true;
   }
-  ensureWorldTransform2D(target);
+  ensureWorldTransformMatrix(target);
   if (forceRecompute || localBoundsInvalid || runtime.worldBoundsUsingWorldTransformID !== runtime.worldTransformID) {
     recomputeWorldBoundsRect(target, runtime);
   }
@@ -102,41 +102,41 @@ export function ensureWorldBoundsRect<GraphKind extends symbol, Traits extends o
 /**
  * localBoundsRect * localTransform
  */
-export function getBoundsRect<GraphKind extends symbol, Traits extends object>(
+export function getBoundsRectangle<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
 ): Readonly<Rectangle> {
-  ensureBoundsRect(target);
-  return (getRuntime(target) as HasBoundsRectRuntime).boundsRect!;
-}
-
-export function getHeight<GraphKind extends symbol, Traits extends object>(
-  source: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
-): number {
-  calculateBoundsRect(
-    _tempBoundsRect,
-    source,
-    getParent(source) as (GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D) | null,
-  );
-  return _tempBoundsRect.height;
+  ensureBoundsRectangle(target);
+  return (getEntityRuntime(target) as HasBoundsRectRuntime).boundsRect!;
 }
 
 /**
  * Object's own bounds (not including children)
  */
-export function getLocalBoundsRect<GraphKind extends symbol, Traits extends object>(
+export function getLocalBoundsRectangle<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasBoundsRect,
 ): Readonly<Rectangle> {
-  ensureLocalBoundsRect(target);
-  return (getRuntime(target) as HasBoundsRectRuntime).localBoundsRect!;
+  ensureLocalBoundsRectangle(target);
+  return (getEntityRuntime(target) as HasBoundsRectRuntime).localBoundsRect!;
 }
 
-export function getWidth<GraphKind extends symbol, Traits extends object>(
+export function getScaledBoundsHeight<GraphKind extends symbol, Traits extends object>(
   source: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
 ): number {
-  calculateBoundsRect(
+  calculateBoundsRectangle(
     _tempBoundsRect,
     source,
-    getParent(source) as (GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D) | null,
+    getGraphParent(source) as (GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D) | null,
+  );
+  return _tempBoundsRect.height;
+}
+
+export function getScaledBoundsWidth<GraphKind extends symbol, Traits extends object>(
+  source: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
+): number {
+  calculateBoundsRectangle(
+    _tempBoundsRect,
+    source,
+    getGraphParent(source) as (GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D) | null,
   );
   return _tempBoundsRect.width;
 }
@@ -144,28 +144,28 @@ export function getWidth<GraphKind extends symbol, Traits extends object>(
 /**
  * Object's bounds in world space (including children)
  */
-export function getWorldBoundsRect<GraphKind extends symbol, Traits extends object>(
+export function getWorldBoundsRectangle<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
 ): Readonly<Rectangle> {
-  ensureWorldBoundsRect(target);
-  return (getRuntime(target) as HasBoundsRectRuntime).worldBoundsRect!;
+  ensureWorldBoundsRectangle(target);
+  return (getEntityRuntime(target) as HasBoundsRectRuntime).worldBoundsRect!;
 }
 
-export function setHeight<GraphKind extends symbol, Traits extends object>(
+export function setScaledBoundsHeight<GraphKind extends symbol, Traits extends object>(
   source: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
   value: number,
 ): void {
   if (source.scaleY === 0) return;
-  source.scaleY = (value * source.scaleY) / getHeight(source);
+  source.scaleY = (value * source.scaleY) / getScaledBoundsHeight(source);
   invalidateLocalTransform(source);
 }
 
-export function setWidth<GraphKind extends symbol, Traits extends object>(
+export function setScaledBoundsWidth<GraphKind extends symbol, Traits extends object>(
   source: GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
   value: number,
 ): void {
   if (source.scaleX === 0) return;
-  source.scaleX = (value * source.scaleX) / getWidth(source);
+  source.scaleX = (value * source.scaleX) / getScaledBoundsWidth(source);
   invalidateLocalTransform(source);
 }
 
@@ -174,7 +174,7 @@ function recomputeBoundsRect<GraphKind extends symbol, Traits extends object>(
   runtime: GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime,
 ): void {
   if (runtime.boundsRect === null) runtime.boundsRect = createRectangle();
-  matrixTransformRectangle(runtime.boundsRect, getLocalTransform2D(target), getLocalBoundsRect(target));
+  matrixTransformRectangle(runtime.boundsRect, getLocalTransformMatrix(target), getLocalBoundsRectangle(target));
   runtime.boundsUsingLocalBoundsID = runtime.localBoundsID;
   runtime.boundsUsingLocalTransformID = runtime.localTransformID;
 }
@@ -193,12 +193,12 @@ function recomputeWorldBoundsRect<GraphKind extends symbol, Traits extends objec
   runtime: GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime & HasTransform2DRuntime,
 ) {
   if (runtime.worldBoundsRect === null) runtime.worldBoundsRect = createRectangle();
-  matrixTransformRectangle(runtime.worldBoundsRect, getWorldTransform2D(target), getLocalBoundsRect(target));
+  matrixTransformRectangle(runtime.worldBoundsRect, getWorldTransformMatrix(target), getLocalBoundsRectangle(target));
   const children = getGraphNodeRuntime(target).children;
   if (children !== null) {
     for (const child of children) {
       if (!child.enabled) continue;
-      const childWorldBounds = getWorldBoundsRect(
+      const childWorldBounds = getWorldBoundsRectangle(
         child as GraphNode<GraphKind, Traits> & HasBoundsRect & HasTransform2D,
       );
       if (childWorldBounds.width !== 0 && childWorldBounds.height !== 0) {
@@ -216,7 +216,7 @@ function tryFastRecomputeWorldBoundsRect<GraphKind extends symbol, Traits extend
 ): boolean {
   if (runtime.worldBoundsRect !== null && runtime.worldTransform2D !== null) {
     const { a: _a, b: _b, c: _c, d: _d, tx: _tx, ty: _ty } = runtime.worldTransform2D;
-    ensureWorldTransform2D(target);
+    ensureWorldTransformMatrix(target);
     const { a, b, c, d, tx, ty } = runtime.worldTransform2D;
     // check for unchanged rotation and scale
     if (a === _a && b === _b && c === _c && d === _d) {

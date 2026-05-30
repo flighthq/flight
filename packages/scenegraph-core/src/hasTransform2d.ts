@@ -1,6 +1,6 @@
 import type { HasTransform2D, HasTransform2DRuntime, MethodsOf } from '@flighthq/types';
 
-export function initHasTransform2D(target: HasTransform2D, obj?: Readonly<Partial<HasTransform2D>>): void {
+export function initHasTransform(target: HasTransform2D, obj?: Readonly<Partial<HasTransform2D>>): void {
   target.rotation = obj?.rotation ?? 0;
   target.scaleX = obj?.scaleX ?? 1;
   target.scaleY = obj?.scaleY ?? 1;
@@ -8,7 +8,7 @@ export function initHasTransform2D(target: HasTransform2D, obj?: Readonly<Partia
   target.y = obj?.y ?? 0;
 }
 
-export function initHasTransform2DRuntime(
+export function initHasTransformRuntime(
   target: HasTransform2DRuntime,
   _methods?: Readonly<Partial<MethodsOf<HasTransform2DRuntime>>>,
 ): void {

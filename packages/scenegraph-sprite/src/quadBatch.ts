@@ -13,7 +13,7 @@ import { QuadBatchKind } from '@flighthq/types';
 
 import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
 
-export function computeQuadBatchLocalBoundsRect(_out: Rectangle, _source: Readonly<GraphNode>): void {
+export function computeQuadBatchLocalBoundsRectangle(_out: Rectangle, _source: Readonly<GraphNode>): void {
   // TODO
 }
 
@@ -71,7 +71,7 @@ export function resizeQuadBatch(target: QuadBatch, instanceCount: number): void 
 }
 
 const defaultMethods: Partial<MethodsOf<QuadBatchRuntime>> = {
-  computeLocalBoundsRect: computeQuadBatchLocalBoundsRect,
+  computeLocalBoundsRect: computeQuadBatchLocalBoundsRectangle,
 };
 
 const quadTransformStride = {

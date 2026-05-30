@@ -1,4 +1,4 @@
-import { getParent } from '@flighthq/scenegraph-core';
+import { getGraphParent } from '@flighthq/scenegraph-core';
 import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import { getSpriteNodeRuntime } from '@flighthq/scenegraph-sprite';
 import type {
@@ -12,7 +12,7 @@ import type {
 import { updateAppearance } from './appearance';
 import type { RenderStateInternal } from './internal';
 import { getDisplayObjectRenderNode, getSpriteRenderNode } from './renderNode2d';
-import { updateDisplayObjectRenderTransform2D, updateRenderTransform2D } from './transform2d';
+import { updateDisplayObjectRenderTransform, updateRenderTransform } from './transform2d';
 
 /**
  * First pass, update appearance, transforms, identify masks
@@ -36,7 +36,7 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
     const data = getDisplayObjectRenderNode(state, current);
 
     if (current !== source) {
-      const parent = getParent(current);
+      const parent = getGraphParent(current);
       if (parent === null) {
         parentData = undefined;
         lastParent = null;
@@ -51,7 +51,7 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
     }
 
     const appearanceDirty = updateAppearance(state, data, parentData);
-    const transformDirty = updateDisplayObjectRenderTransform2D(state, data, parentData);
+    const transformDirty = updateDisplayObjectRenderTransform(state, data, parentData);
 
     if (!treeDirty) {
       treeDirty = appearanceDirty || transformDirty;
@@ -103,7 +103,7 @@ export function updateSpriteBeforeRender(state: RenderState, source: SpriteNode)
     const data = getSpriteRenderNode(state, current);
 
     if (current !== source) {
-      const parent = getParent(current);
+      const parent = getGraphParent(current);
       if (parent === null) {
         parentData = undefined;
         lastParent = null;
@@ -114,7 +114,7 @@ export function updateSpriteBeforeRender(state: RenderState, source: SpriteNode)
     }
 
     const appearanceDirty = updateAppearance(state, data, parentData);
-    const transformDirty = updateRenderTransform2D(state, data, parentData);
+    const transformDirty = updateRenderTransform(state, data, parentData);
 
     if (!treeDirty) {
       treeDirty = appearanceDirty || transformDirty;

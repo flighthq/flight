@@ -4,8 +4,8 @@ import {
   createSprite,
   createTextureAtlas,
   loadImageSourceFromURL,
-  setX,
-  setY,
+  setTransformX,
+  setTransformY,
   updateSpriteBeforeRender,
 } from '@flighthq/sdk';
 
@@ -46,8 +46,8 @@ for (let i = 0; i < creatureIDs.length; i++) {
   const sprite = createSprite();
   sprite.data.atlas = atlas;
   sprite.data.id = creatureIDs[i];
-  setX(sprite, (gap + i * (spriteScreenSize + gap)) / SCALE);
-  setY(sprite, yLocal);
+  setTransformX(sprite, (gap + i * (spriteScreenSize + gap)) / SCALE);
+  setTransformY(sprite, yLocal);
   addChild(root, sprite);
 }
 

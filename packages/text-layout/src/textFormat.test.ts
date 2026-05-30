@@ -1,44 +1,50 @@
 import { describe, expect, it } from 'vitest';
 
-import { getFormatAscent, getFormatDescent, getFormatHeight, getFormatLeading, mergeTextFormat } from './textFormat';
+import {
+  getTextFormatAscent,
+  getTextFormatDescent,
+  getTextFormatHeight,
+  getTextFormatLeading,
+  mergeTextFormat,
+} from './textFormat';
 
-describe('getFormatAscent', () => {
+describe('getTextFormatAscent', () => {
   it('returns size when specified', () => {
-    expect(getFormatAscent({ size: 24 })).toBe(24);
+    expect(getTextFormatAscent({ size: 24 })).toBe(24);
   });
 
   it('returns 12 when size is absent', () => {
-    expect(getFormatAscent({})).toBe(12);
+    expect(getTextFormatAscent({})).toBe(12);
   });
 });
 
-describe('getFormatDescent', () => {
+describe('getTextFormatDescent', () => {
   it('returns 18.5% of size', () => {
-    expect(getFormatDescent({ size: 100 })).toBeCloseTo(18.5);
+    expect(getTextFormatDescent({ size: 100 })).toBeCloseTo(18.5);
   });
 
   it('uses default size of 12 when absent', () => {
-    expect(getFormatDescent({})).toBeCloseTo(12 * 0.185);
+    expect(getTextFormatDescent({})).toBeCloseTo(12 * 0.185);
   });
 });
 
-describe('getFormatHeight', () => {
+describe('getTextFormatHeight', () => {
   it('sums ascent, descent and leading', () => {
-    expect(getFormatHeight({ size: 10, leading: 4 })).toBeCloseTo(10 + 10 * 0.185 + 4);
+    expect(getTextFormatHeight({ size: 10, leading: 4 })).toBeCloseTo(10 + 10 * 0.185 + 4);
   });
 
   it('treats absent leading as zero', () => {
-    expect(getFormatHeight({ size: 10 })).toBeCloseTo(10 + 10 * 0.185);
+    expect(getTextFormatHeight({ size: 10 })).toBeCloseTo(10 + 10 * 0.185);
   });
 });
 
-describe('getFormatLeading', () => {
+describe('getTextFormatLeading', () => {
   it('returns leading when specified', () => {
-    expect(getFormatLeading({ leading: 6 })).toBe(6);
+    expect(getTextFormatLeading({ leading: 6 })).toBe(6);
   });
 
   it('returns 0 when absent', () => {
-    expect(getFormatLeading({})).toBe(0);
+    expect(getTextFormatLeading({})).toBe(0);
   });
 });
 

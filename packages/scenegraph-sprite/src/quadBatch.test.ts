@@ -3,7 +3,7 @@ import type { GraphNode, QuadBatch, QuadTransformType, TextureAtlas } from '@fli
 import { QuadBatchKind } from '@flighthq/types';
 
 import {
-  computeQuadBatchLocalBoundsRect,
+  computeQuadBatchLocalBoundsRectangle,
   createQuadBatch,
   createQuadBatchData,
   createQuadBatchRuntime,
@@ -14,11 +14,11 @@ import {
   resizeQuadBatch,
 } from './quadBatch';
 
-describe('computeQuadBatchLocalBoundsRect', () => {
+describe('computeQuadBatchLocalBoundsRectangle', () => {
   it('is a no-op that does not modify out', () => {
     const quadBatch = createQuadBatch();
     const out = createRectangle(1, 2, 3, 4);
-    computeQuadBatchLocalBoundsRect(out, quadBatch as unknown as GraphNode);
+    computeQuadBatchLocalBoundsRectangle(out, quadBatch as unknown as GraphNode);
     expect(out.x).toBe(1);
     expect(out.y).toBe(2);
     expect(out.width).toBe(3);
@@ -89,9 +89,9 @@ describe('createQuadBatchRuntime', () => {
     expect(runtime).not.toBeNull();
   });
 
-  it('uses computeQuadBatchLocalBoundsRect', () => {
+  it('uses computeQuadBatchLocalBoundsRectangle', () => {
     const runtime = createQuadBatchRuntime();
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeQuadBatchLocalBoundsRect);
+    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeQuadBatchLocalBoundsRectangle);
   });
 });
 

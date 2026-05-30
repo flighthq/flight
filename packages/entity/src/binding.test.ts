@@ -1,42 +1,42 @@
 import { EntityRuntimeKey } from '@flighthq/types';
 
-import { attachBinding, getBinding } from './binding';
+import { attachEntityBinding, getEntityBinding } from './binding';
 import { createEntity } from './entity';
-import { createRuntime, getRuntime } from './runtime';
+import { createEntityRuntime, getEntityRuntime } from './runtime';
 
-describe('attachBinding', () => {
+describe('attachEntityBinding', () => {
   it('creates a runtime object if none is present', () => {
     const entity = createEntity();
-    expect(getRuntime(entity)).toBeUndefined();
-    attachBinding(entity, {});
-    expect(getRuntime(entity)).not.toBeUndefined();
+    expect(getEntityRuntime(entity)).toBeUndefined();
+    attachEntityBinding(entity, {});
+    expect(getEntityRuntime(entity)).not.toBeUndefined();
   });
 
   it('assigns to the binding slot', () => {
     const entity = createEntity();
     const binding = {};
-    attachBinding(entity, binding);
-    expect(getRuntime(entity).binding).toStrictEqual(binding);
+    attachEntityBinding(entity, binding);
+    expect(getEntityRuntime(entity).binding).toStrictEqual(binding);
   });
 });
 
-describe('getBinding', () => {
+describe('getEntityBinding', () => {
   it('returns null if the entity has no runtime', () => {
     const entity = createEntity();
-    expect(getBinding(entity)).toBeNull();
+    expect(getEntityBinding(entity)).toBeNull();
   });
 
   it('returns null if the binding slot is empty', () => {
     const entity = createEntity();
-    entity[EntityRuntimeKey] = createRuntime();
-    expect(getBinding(entity)).toBeNull();
+    entity[EntityRuntimeKey] = createEntityRuntime();
+    expect(getEntityBinding(entity)).toBeNull();
   });
 
   it('returns the binding slot if set', () => {
     const entity = createEntity();
-    const runtime = createRuntime();
+    const runtime = createEntityRuntime();
     runtime.binding = {};
     entity[EntityRuntimeKey] = runtime;
-    expect(getBinding(entity)).toStrictEqual(runtime.binding);
+    expect(getEntityBinding(entity)).toStrictEqual(runtime.binding);
   });
 });

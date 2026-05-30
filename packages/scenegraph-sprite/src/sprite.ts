@@ -3,7 +3,7 @@ import { SpriteKind } from '@flighthq/types';
 
 import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
 
-export function computeSpriteLocalBoundsRect(_out: Rectangle, _source: Readonly<GraphNode>): void {
+export function computeSpriteLocalBoundsRectangle(_out: Rectangle, _source: Readonly<GraphNode>): void {
   // TODO: Get width/height from spritesheet reference
 }
 
@@ -28,5 +28,5 @@ export function getSpriteRuntime(source: Readonly<Sprite>): Readonly<SpriteRunti
 }
 
 const defaultMethods: Partial<MethodsOf<SpriteRuntime>> = {
-  computeLocalBoundsRect: computeSpriteLocalBoundsRect,
+  computeLocalBoundsRect: computeSpriteLocalBoundsRectangle,
 };

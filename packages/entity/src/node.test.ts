@@ -2,7 +2,7 @@ import type { EntityRuntime, Node, NodeData, PartialNode } from '@flighthq/types
 import { NodeKind } from '@flighthq/types';
 
 import { createNode } from './node';
-import { createRuntime, getRuntime } from './runtime';
+import { createEntityRuntime, getEntityRuntime } from './runtime';
 
 describe('createNode', () => {
   let node: Node;
@@ -38,7 +38,7 @@ describe('createNode', () => {
 
   it('makes a default runtime object if none passed in', () => {
     const node = createNode(NodeKind);
-    const runtime = getRuntime(node);
+    const runtime = getEntityRuntime(node);
     expect(runtime).not.toBeNull();
   });
 
@@ -62,7 +62,7 @@ describe('createNode', () => {
   it('allows use of a runtime initializer', () => {
     const obj: PartialNode<NodeTest> = {};
     const node = createNode(NodeTestKind, obj, undefined, createNodeTestRuntime);
-    const runtime = getRuntime(node);
+    const runtime = getEntityRuntime(node);
     expect((runtime as NodeTestRuntime).testRuntimeField).toBe('testRuntimeField');
   });
 });
@@ -88,7 +88,7 @@ function createNodeTestData(data?: Partial<NodeTestData>): NodeTestData {
 }
 
 function createNodeTestRuntime(): NodeTestRuntime {
-  const obj = createRuntime() as NodeTestRuntime;
+  const obj = createEntityRuntime() as NodeTestRuntime;
   obj.testRuntimeField = 'testRuntimeField';
   return obj;
 }

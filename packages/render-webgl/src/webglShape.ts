@@ -1,5 +1,5 @@
 import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
-import { getLocalBoundsRect } from '@flighthq/scenegraph-core';
+import { getLocalBoundsRectangle } from '@flighthq/scenegraph-core';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderNode,
@@ -41,7 +41,7 @@ export function drawWebGLShape(state: RenderState, renderNode: DisplayObjectRend
 
   const shapeData = renderNode.rendererData as unknown as WebGLShapeData;
 
-  const bounds = getLocalBoundsRect(source);
+  const bounds = getLocalBoundsRectangle(source);
   const w = Math.ceil(bounds.width);
   const h = Math.ceil(bounds.height);
   if (w <= 0 || h <= 0) return;

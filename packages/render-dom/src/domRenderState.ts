@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import { createRenderState as _createRenderState, setBackgroundColor } from '@flighthq/render-core';
+import { createRenderState as _createRenderState, setRenderStateBackgroundColor } from '@flighthq/render-core';
 import type { DOMRenderOptions, DOMRenderState } from '@flighthq/types';
 
 import type { DOMRenderStateInternal } from './internal';
@@ -11,7 +11,7 @@ export function createDOMRenderState(element: HTMLElement, options: Partial<DOMR
     roundPixels: options.roundPixels ?? false,
   }) as DOMRenderStateInternal;
 
-  if (options.backgroundColor != null) setBackgroundColor(state, options.backgroundColor);
+  if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
 
   state.element = element;
   state.currentBlendMode = null;

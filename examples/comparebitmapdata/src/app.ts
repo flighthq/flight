@@ -1,5 +1,12 @@
 import type { Surface } from '@flighthq/surface';
-import { cloneSurface, compareSurface, createSurface, drawSurface, fillRect, setPixel32 } from '@flighthq/surface';
+import {
+  cloneSurface,
+  compareSurface,
+  createSurface,
+  drawSurface,
+  fillSurfaceRectangle,
+  setSurfacePixel32,
+} from '@flighthq/surface';
 
 const IMG_SIZE = 40;
 const CELL_SIZE = IMG_SIZE + 4;
@@ -11,7 +18,7 @@ function createCheckers(color1: number, color2: number, tileSize = 8): Surface {
   for (let y = 0; y < IMG_SIZE; y++) {
     for (let x = 0; x < IMG_SIZE; x++) {
       if (((Math.floor(x / tileSize) + Math.floor(y / tileSize)) & 1) === 1) {
-        setPixel32(img, x, y, color2);
+        setSurfacePixel32(img, x, y, color2);
       }
     }
   }
@@ -38,7 +45,7 @@ function createBall(color: number, alpha = 255): Surface {
       const dx = x + 0.5 - cx;
       const dy = y + 0.5 - cy;
       if (dx * dx + dy * dy <= r * r) {
-        setPixel32(img, x, y, ((alpha & 0xff) * 0x1000000 + (color & 0xffffff)) >>> 0);
+        setSurfacePixel32(img, x, y, ((alpha & 0xff) * 0x1000000 + (color & 0xffffff)) >>> 0);
       }
     }
   }
@@ -47,7 +54,7 @@ function createBall(color: number, alpha = 255): Surface {
 
 function createRect(color: number, inset = 4): Surface {
   const img = createSurface(IMG_SIZE, IMG_SIZE);
-  fillRect(img, inset, inset, IMG_SIZE - inset * 2, IMG_SIZE - inset * 2, color);
+  fillSurfaceRectangle(img, inset, inset, IMG_SIZE - inset * 2, IMG_SIZE - inset * 2, color);
   return img;
 }
 

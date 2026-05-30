@@ -2,7 +2,7 @@ import type { Surface } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { compareSurface } from './compare';
-import { setPixel32 } from './pixel';
+import { setSurfacePixel32 } from './pixel';
 import { cloneSurface, createSurface } from './surface';
 
 describe('compareSurface', () => {
@@ -32,7 +32,7 @@ describe('compareSurface', () => {
   it('returns diff Surface for different pixels', () => {
     const a = createSurface(2, 1, 0xff000000);
     const b = createSurface(2, 1, 0xff000000);
-    setPixel32(b, 0, 0, 0xff102030);
+    setSurfacePixel32(b, 0, 0, 0xff102030);
     const result = compareSurface(a, b) as Surface;
     expect(result.width).toBe(2);
     expect(result.height).toBe(1);
@@ -56,7 +56,7 @@ describe('compareSurface', () => {
   it('unchanged pixels in diff have zero alpha', () => {
     const a = createSurface(2, 1, 0xff000000);
     const b = cloneSurface(a);
-    setPixel32(b, 1, 0, 0xffff0000);
+    setSurfacePixel32(b, 1, 0, 0xffff0000);
     const result = compareSurface(a, b) as Surface;
     expect(result.data[3]).toBe(0);
     expect(result.data[7]).toBe(255);

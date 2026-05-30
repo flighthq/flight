@@ -1,5 +1,5 @@
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { beginFill, createScale9Shape, drawRect } from '@flighthq/scenegraph-display';
+import { beginShapeFill, createScale9Shape, drawShapeRectangle } from '@flighthq/scenegraph-display';
 import { Scale9ShapeKind } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';
@@ -48,17 +48,17 @@ describe('remapScale9Commands', () => {
     expect(out).toEqual(['lineTo', 2, 105, 60]);
   });
 
-  it('remaps drawRect corners and recomputes size', () => {
+  it('remaps drawRectangle corners and recomputes size', () => {
     const mapper = { mapX: (x: number) => x * 2, mapY: (y: number) => y * 2 };
-    remapScale9Commands(out, ['drawRect', 4, 10, 20, 50, 30], mapper);
+    remapScale9Commands(out, ['drawRectangle', 4, 10, 20, 50, 30], mapper);
     // x=10→20, y=20→40, x+w=60→120 (w=100), y+h=50→100 (h=60)
-    expect(out).toEqual(['drawRect', 4, 20, 40, 100, 60]);
+    expect(out).toEqual(['drawRectangle', 4, 20, 40, 100, 60]);
   });
 
-  it('remaps drawRoundRect corners but leaves ellipse radii unchanged', () => {
+  it('remaps drawRoundRectangle corners but leaves ellipse radii unchanged', () => {
     const mapper = { mapX: (x: number) => x * 2, mapY: (y: number) => y * 2 };
-    remapScale9Commands(out, ['drawRoundRect', 6, 10, 20, 50, 30, 8, 8], mapper);
-    expect(out).toEqual(['drawRoundRect', 6, 20, 40, 100, 60, 8, 8]);
+    remapScale9Commands(out, ['drawRoundRectangle', 6, 10, 20, 50, 30, 8, 8], mapper);
+    expect(out).toEqual(['drawRoundRectangle', 6, 20, 40, 100, 60, 8, 8]);
   });
 
   it('remaps drawCircle center but leaves radius unchanged', () => {
@@ -75,8 +75,8 @@ describe('remapScale9Commands', () => {
 
   it('returns a buffer with the same element count as the input', () => {
     const shape = createScale9Shape(grid);
-    beginFill(shape, 0xff0000);
-    drawRect(shape, 0, 0, 100, 100);
+    beginShapeFill(shape, 0xff0000);
+    drawShapeRectangle(shape, 0, 0, 100, 100);
     const mapper = buildScale9Mapper(shape.data.commands, grid, 2, 2)!;
     remapScale9Commands(out, shape.data.commands, mapper);
     expect(out).toHaveLength(shape.data.commands.length);
