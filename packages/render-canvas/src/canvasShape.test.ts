@@ -1,10 +1,10 @@
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import {
-  beginShapeFill,
+  appendShapeBeginFill,
+  appendShapeEndFill,
+  appendShapeLineStyle,
+  appendShapeRectangle,
   createShape,
-  drawShapeRectangle,
-  endShapeFill,
-  setShapeLineStyle,
 } from '@flighthq/scenegraph-display';
 import { ShapeKind } from '@flighthq/types';
 
@@ -43,9 +43,9 @@ describe('drawCanvasShape', () => {
     const state = createCanvasRenderState(canvas);
     registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    drawShapeRectangle(shape, 0, 0, 50, 50);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeRectangle(shape, 0, 0, 50, 50);
+    appendShapeEndFill(shape);
     const data = getDisplayObjectRenderNode(state, shape);
     const spy = vi.spyOn(state.context, 'fill');
     drawCanvasShape(state, data);
@@ -65,9 +65,9 @@ describe('renderCanvasShapeCommands', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'fill');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    drawShapeRectangle(shape, 0, 0, 100, 50);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeRectangle(shape, 0, 0, 100, 50);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledOnce();
   });
@@ -76,9 +76,9 @@ describe('renderCanvasShapeCommands', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'stroke');
     const shape = createShape();
-    setShapeLineStyle(shape, 2, 0x000000);
-    drawShapeRectangle(shape, 0, 0, 100, 50);
-    endShapeFill(shape);
+    appendShapeLineStyle(shape, 2, 0x000000);
+    appendShapeRectangle(shape, 0, 0, 100, 50);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledOnce();
   });
@@ -93,10 +93,10 @@ describe('renderCanvasShapeCommands', () => {
       order.push('stroke');
     });
     const shape = createShape();
-    setShapeLineStyle(shape, 2, 0x000000);
-    beginShapeFill(shape, 0xff0000);
-    drawShapeRectangle(shape, 0, 0, 100, 50);
-    endShapeFill(shape);
+    appendShapeLineStyle(shape, 2, 0x000000);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeRectangle(shape, 0, 0, 100, 50);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(order).toEqual(['fill', 'stroke']);
   });
@@ -105,9 +105,9 @@ describe('renderCanvasShapeCommands', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'fill');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000, 1);
-    drawShapeRectangle(shape, 0, 0, 10, 10);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000, 1);
+    appendShapeRectangle(shape, 0, 0, 10, 10);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledWith('evenodd');
   });

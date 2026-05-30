@@ -1,5 +1,5 @@
 import {
-  addChild,
+  addGraphChild,
   createDisplayObject,
   createText,
   loadFontFromURL,
@@ -19,7 +19,7 @@ textField.data.text = 'Hello World';
 textField.data.textFormat = { font: font.name, size: 30, color: 0x7a0026 };
 textField.x = 50;
 textField.y = 50;
-addChild(root, textField);
+addGraphChild(root, textField);
 
 function enterFrame(): void {
   if (updateDisplayObjectBeforeRender(state, root)) {

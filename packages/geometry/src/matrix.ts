@@ -472,8 +472,8 @@ export function scaleMatrix(out: MatrixLike, source: Readonly<MatrixLike>, sx: n
 
 /**
  * Creates the specific style of matrix expected by the
- * `beginGradientFill()` and `lineGradientStyle()` methods of the
- * Graphics class. Width and height are scaled to a `scaleX`/`scaleY`
+ * `appendShapeBeginGradientFill()` and `appendShapeLineGradientStyle()`
+ * helpers. Width and height are scaled to a `scaleX`/`scaleY`
  * pair and the `tx`/`ty` values are offset by half the width and height.
  **/
 export function setGradientTransformMatrix(

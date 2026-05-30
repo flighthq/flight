@@ -1,6 +1,11 @@
 import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/render-canvas';
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { beginShapeFill, createShape, drawShapeRectangle, endShapeFill } from '@flighthq/scenegraph-display';
+import {
+  appendShapeBeginFill,
+  appendShapeEndFill,
+  appendShapeRectangle,
+  createShape,
+} from '@flighthq/scenegraph-display';
 import { ShapeKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
@@ -39,9 +44,9 @@ describe('drawDOMShape', () => {
   it('appends a canvas element when the shape has draw commands', () => {
     const state = makeState();
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    drawShapeRectangle(shape, 0, 0, 50, 50);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeRectangle(shape, 0, 0, 50, 50);
+    appendShapeEndFill(shape);
     const renderNode = getDisplayObjectRenderNode(state, shape);
 
     drawDOMShape(state, renderNode);
@@ -53,9 +58,9 @@ describe('drawDOMShape', () => {
   it('sets canvas size to at least 1x1 for zero-size shapes', () => {
     const state = makeState();
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    drawShapeRectangle(shape, 0, 0, 0, 0);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeRectangle(shape, 0, 0, 0, 0);
+    appendShapeEndFill(shape);
     const renderNode = getDisplayObjectRenderNode(state, shape);
 
     drawDOMShape(state, renderNode);
@@ -68,9 +73,9 @@ describe('drawDOMShape', () => {
   it('reuses the same canvas element across multiple draws', () => {
     const state = makeState();
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    drawShapeRectangle(shape, 0, 0, 40, 40);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeRectangle(shape, 0, 0, 40, 40);
+    appendShapeEndFill(shape);
     const renderNode = getDisplayObjectRenderNode(state, shape);
 
     drawDOMShape(state, renderNode);

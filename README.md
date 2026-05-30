@@ -7,7 +7,7 @@ A TypeScript 2D rendering engine with a Flash/OpenFL-style display list API. Tar
 The monorepo is organized under `packages/`. Import everything from the barrel for applications:
 
 ```ts
-import { createBitmap, createShape, addChild } from '@flighthq/sdk';
+import { createBitmap, createShape, addGraphChild } from '@flighthq/sdk';
 ```
 
 Individual packages can be imported directly in library code (the barrel is for examples and apps only).
@@ -39,7 +39,7 @@ Individual packages can be imported directly in library code (the barrel is for 
 
 ```ts
 import {
-  addChild,
+  addGraphChild,
   createBitmap,
   createDisplayObject,
   loadImageSourceFromURL,
@@ -51,7 +51,7 @@ const root = createDisplayObject();
 const bitmap = createBitmap();
 const image = await loadImageSourceFromURL('assets/sprite.png');
 bitmap.data.image = image;
-addChild(root, bitmap);
+addGraphChild(root, bitmap);
 
 // Render loop
 function enterFrame() {
@@ -91,19 +91,26 @@ function render(root) {
 ### Shapes
 
 ```ts
-import { createShape, beginFill, drawRectangle, drawCircle, lineStyle, lineTo } from '@flighthq/sdk';
+import {
+  createShape,
+  appendShapeBeginFill,
+  appendShapeRectangle,
+  appendShapeCircle,
+  appendShapeLineStyle,
+  appendShapeLineTo,
+} from '@flighthq/sdk';
 
 const box = createShape();
-beginFill(box, 0x24afc4);
-drawRectangle(box, 0, 0, 100, 100);
+appendShapeBeginFill(box, 0x24afc4);
+appendShapeRectangle(box, 0, 0, 100, 100);
 
 const circle = createShape();
-beginFill(circle, 0xff6644);
-drawCircle(circle, 0, 0, 50);
+appendShapeBeginFill(circle, 0xff6644);
+appendShapeCircle(circle, 0, 0, 50);
 
 const line = createShape();
-lineStyle(line, 4, 0xffffff);
-lineTo(line, 200, 0);
+appendShapeLineStyle(line, 4, 0xffffff);
+appendShapeLineTo(line, 200, 0);
 ```
 
 ### Text

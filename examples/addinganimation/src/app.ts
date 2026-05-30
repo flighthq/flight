@@ -1,5 +1,5 @@
 import {
-  addChild,
+  addGraphChild,
   connectSignal,
   createBitmap,
   createDisplayObject,
@@ -30,8 +30,8 @@ container.scaleY = 0;
 container.x = STAGE_WIDTH / 2;
 container.y = STAGE_HEIGHT / 2;
 
-addChild(container, bitmap);
-addChild(main, container);
+addGraphChild(container, bitmap);
+addGraphChild(main, container);
 
 const image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
 bitmap.data.image = image;

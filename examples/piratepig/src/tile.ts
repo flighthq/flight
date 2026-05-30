@@ -1,15 +1,15 @@
 import type { DisplayObject, ImageSource, TweenManager } from '@flighthq/sdk';
 import {
-  addChild,
-  addChildAt,
+  addGraphChild,
+  addGraphChildAt,
   connectSignal,
   createBitmap,
   createDisplayObject,
   createTween,
-  getParent,
+  getGraphParent,
   invalidateRender,
   Quad,
-  removeChild,
+  removeGraphChild,
 } from '@flighthq/sdk';
 
 export const TILE_SIZE = 57;
@@ -29,7 +29,7 @@ export function createTile(image: ImageSource, type: number): Tile {
   const bitmap = createBitmap();
   bitmap.data.image = image;
   bitmap.data.smoothing = true;
-  addChild(obj, bitmap);
+  addGraphChild(obj, bitmap);
   return { obj, column: 0, row: 0, type, moving: false, removed: false };
 }
 
@@ -56,7 +56,7 @@ export function removeTileAnimated(manager: TweenManager, tile: Tile, tileContai
   tile.removed = true;
 
   const half = TILE_SIZE / 2;
-  addChildAt(tileContainer, tile.obj, 0);
+  addGraphChildAt(tileContainer, tile.obj, 0);
 
   const tween = createTween(
     manager,
@@ -67,15 +67,15 @@ export function removeTileAnimated(manager: TweenManager, tile: Tile, tileContai
   );
   connectSignal(tween.onUpdate, () => invalidateRender(tile.obj));
   connectSignal(tween.onComplete, () => {
-    const parent = getParent(tile.obj) as DisplayObject | null;
-    if (parent !== null) removeChild(parent, tile.obj);
+    const parent = getGraphParent(tile.obj) as DisplayObject | null;
+    if (parent !== null) removeGraphChild(parent, tile.obj);
     invalidateRender(tileContainer);
   });
 }
 
 export function removeTileImmediate(tile: Tile, tileContainer: DisplayObject): void {
   tile.removed = true;
-  const parent = getParent(tile.obj) as DisplayObject | null;
-  if (parent !== null) removeChild(parent, tile.obj);
+  const parent = getGraphParent(tile.obj) as DisplayObject | null;
+  if (parent !== null) removeGraphChild(parent, tile.obj);
   invalidateRender(tileContainer);
 }

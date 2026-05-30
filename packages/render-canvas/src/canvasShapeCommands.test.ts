@@ -1,22 +1,22 @@
 import {
-  beginShapeBitmapFill,
-  beginShapeFill,
-  beginShapeGradientFill,
+  appendShapeBeginBitmapFill,
+  appendShapeBeginFill,
+  appendShapeBeginGradientFill,
+  appendShapeCircle,
+  appendShapeCubicCurveTo,
+  appendShapeCurveTo,
+  appendShapeEllipse,
+  appendShapeEndFill,
+  appendShapeLineBitmapStyle,
+  appendShapeLineGradientStyle,
+  appendShapeLineStyle,
+  appendShapeLineTo,
+  appendShapeMoveTo,
+  appendShapePath,
+  appendShapeRectangle,
+  appendShapeRoundRectangle,
   createShape,
-  cubicCurveToShape,
-  curveToShape,
-  drawShapeCircle,
-  drawShapeEllipse,
-  drawShapePath,
-  drawShapeRectangle,
-  drawShapeRoundRectangle,
-  endShapeFill,
   GraphicsPathCommand,
-  lineToShape,
-  moveToShape,
-  setShapeLineBitmapStyle,
-  setShapeLineGradientStyle,
-  setShapeLineStyle,
 } from '@flighthq/scenegraph-display';
 
 import { renderCanvasShapeCommands } from './canvasShape';
@@ -51,9 +51,9 @@ describe('defaultCanvasBeginBitmapFill', () => {
     const drawImageSpy = vi.spyOn(ctx, 'drawImage');
     const fillSpy = vi.spyOn(ctx, 'fill');
     const shape = createShape();
-    beginShapeBitmapFill(shape, makeBitmapSource(200, 200));
-    drawShapeRectangle(shape, 0, 0, 100, 100);
-    endShapeFill(shape);
+    appendShapeBeginBitmapFill(shape, makeBitmapSource(200, 200));
+    appendShapeRectangle(shape, 0, 0, 100, 100);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(drawImageSpy).toHaveBeenCalledOnce();
     expect(fillSpy).not.toHaveBeenCalled();
@@ -64,9 +64,9 @@ describe('defaultCanvasBeginBitmapFill', () => {
     const drawImageSpy = vi.spyOn(ctx, 'drawImage');
     const fillSpy = vi.spyOn(ctx, 'fill');
     const shape = createShape();
-    beginShapeBitmapFill(shape, makeBitmapSource(50, 50));
-    drawShapeRectangle(shape, 0, 0, 100, 100);
-    endShapeFill(shape);
+    appendShapeBeginBitmapFill(shape, makeBitmapSource(50, 50));
+    appendShapeRectangle(shape, 0, 0, 100, 100);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(drawImageSpy).not.toHaveBeenCalled();
     expect(fillSpy).toHaveBeenCalled();
@@ -76,9 +76,9 @@ describe('defaultCanvasBeginBitmapFill', () => {
     const ctx = makeContext();
     ctx.imageSmoothingEnabled = false;
     const shape = createShape();
-    beginShapeBitmapFill(shape, makeBitmapSource(200, 200), null, true, true);
-    drawShapeRectangle(shape, 0, 0, 100, 100);
-    endShapeFill(shape);
+    appendShapeBeginBitmapFill(shape, makeBitmapSource(200, 200), null, true, true);
+    appendShapeRectangle(shape, 0, 0, 100, 100);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(ctx.imageSmoothingEnabled).toBe(true);
   });
@@ -89,9 +89,9 @@ describe('defaultCanvasBeginFill', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'fill');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000, 1);
-    drawShapeRectangle(shape, 0, 0, 10, 10);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000, 1);
+    appendShapeRectangle(shape, 0, 0, 10, 10);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledOnce();
   });
@@ -100,9 +100,9 @@ describe('defaultCanvasBeginFill', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'fill');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000, 0);
-    drawShapeRectangle(shape, 0, 0, 10, 10);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000, 0);
+    appendShapeRectangle(shape, 0, 0, 10, 10);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).not.toHaveBeenCalled();
   });
@@ -113,9 +113,9 @@ describe('defaultCanvasBeginGradientFill', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'createLinearGradient');
     const shape = createShape();
-    beginShapeGradientFill(shape, 'linear', [0xff0000, 0x0000ff], [1, 1], [0, 255]);
-    drawShapeRectangle(shape, 0, 0, 100, 100);
-    endShapeFill(shape);
+    appendShapeBeginGradientFill(shape, 'linear', [0xff0000, 0x0000ff], [1, 1], [0, 255]);
+    appendShapeRectangle(shape, 0, 0, 100, 100);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledOnce();
   });
@@ -124,9 +124,9 @@ describe('defaultCanvasBeginGradientFill', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'createRadialGradient');
     const shape = createShape();
-    beginShapeGradientFill(shape, 'radial', [0xff0000, 0x0000ff], [1, 1], [0, 255]);
-    drawShapeRectangle(shape, 0, 0, 100, 100);
-    endShapeFill(shape);
+    appendShapeBeginGradientFill(shape, 'radial', [0xff0000, 0x0000ff], [1, 1], [0, 255]);
+    appendShapeRectangle(shape, 0, 0, 100, 100);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledOnce();
   });
@@ -137,10 +137,10 @@ describe('defaultCanvasCubicCurveTo', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'bezierCurveTo');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    moveToShape(shape, 0, 0);
-    cubicCurveToShape(shape, 25, -50, 75, -50, 100, 0);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeCubicCurveTo(shape, 25, -50, 75, -50, 100, 0);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledWith(25, -50, 75, -50, 100, 0);
   });
@@ -149,9 +149,9 @@ describe('defaultCanvasCubicCurveTo', () => {
     const ctx = makeContext();
     const moveSpy = vi.spyOn(ctx, 'moveTo');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    cubicCurveToShape(shape, 25, -50, 75, -50, 100, 0);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeCubicCurveTo(shape, 25, -50, 75, -50, 100, 0);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(moveSpy).toHaveBeenCalledWith(0, 0);
   });
@@ -162,10 +162,10 @@ describe('defaultCanvasCurveTo', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'quadraticCurveTo');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    moveToShape(shape, 0, 0);
-    curveToShape(shape, 50, -50, 100, 0);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeCurveTo(shape, 50, -50, 100, 0);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledWith(50, -50, 100, 0);
   });
@@ -174,9 +174,9 @@ describe('defaultCanvasCurveTo', () => {
     const ctx = makeContext();
     const moveSpy = vi.spyOn(ctx, 'moveTo');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    curveToShape(shape, 50, -50, 100, 0);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeCurveTo(shape, 50, -50, 100, 0);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(moveSpy).toHaveBeenCalledWith(0, 0);
   });
@@ -187,9 +187,9 @@ describe('defaultCanvasDrawCircle', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'arc');
     const shape = createShape();
-    beginShapeFill(shape, 0xffffff);
-    drawShapeCircle(shape, 50, 50, 25);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xffffff);
+    appendShapeCircle(shape, 50, 50, 25);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledWith(50, 50, 25, 0, Math.PI * 2, true);
   });
@@ -200,9 +200,9 @@ describe('defaultCanvasDrawEllipse', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'ellipse');
     const shape = createShape();
-    beginShapeFill(shape, 0xffffff);
-    drawShapeEllipse(shape, 0, 0, 100, 50);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xffffff);
+    appendShapeEllipse(shape, 0, 0, 100, 50);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledWith(50, 25, 50, 25, 0, 0, Math.PI * 2);
   });
@@ -214,13 +214,13 @@ describe('defaultCanvasDrawPath', () => {
     const moveSpy = vi.spyOn(ctx, 'moveTo');
     const lineSpy = vi.spyOn(ctx, 'lineTo');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    drawShapePath(
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapePath(
       shape,
       [GraphicsPathCommand.MOVE_TO, GraphicsPathCommand.LINE_TO, GraphicsPathCommand.LINE_TO],
       [10, 20, 100, 20, 100, 80],
     );
-    endShapeFill(shape);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(moveSpy).toHaveBeenCalledWith(10, 20);
     expect(lineSpy).toHaveBeenCalledWith(100, 20);
@@ -231,9 +231,9 @@ describe('defaultCanvasDrawPath', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'quadraticCurveTo');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    drawShapePath(shape, [GraphicsPathCommand.MOVE_TO, GraphicsPathCommand.CURVE_TO], [0, 0, 50, 0, 100, 50]);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapePath(shape, [GraphicsPathCommand.MOVE_TO, GraphicsPathCommand.CURVE_TO], [0, 0, 50, 0, 100, 50]);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledWith(50, 0, 100, 50);
   });
@@ -242,13 +242,13 @@ describe('defaultCanvasDrawPath', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'bezierCurveTo');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    drawShapePath(
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapePath(
       shape,
       [GraphicsPathCommand.MOVE_TO, GraphicsPathCommand.CUBIC_CURVE_TO],
       [0, 0, 25, -50, 75, -50, 100, 0],
     );
-    endShapeFill(shape);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledWith(25, -50, 75, -50, 100, 0);
   });
@@ -257,9 +257,9 @@ describe('defaultCanvasDrawPath', () => {
     const ctx = makeContext();
     const fillSpy = vi.spyOn(ctx, 'fill');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    drawShapePath(shape, [GraphicsPathCommand.MOVE_TO, GraphicsPathCommand.LINE_TO], [0, 0, 100, 100], 'nonZero');
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapePath(shape, [GraphicsPathCommand.MOVE_TO, GraphicsPathCommand.LINE_TO], [0, 0, 100, 100], 'nonZero');
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(fillSpy).toHaveBeenCalledWith('nonzero');
   });
@@ -268,9 +268,9 @@ describe('defaultCanvasDrawPath', () => {
     const ctx = makeContext();
     const fillSpy = vi.spyOn(ctx, 'fill');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    drawShapePath(shape, [GraphicsPathCommand.MOVE_TO, GraphicsPathCommand.LINE_TO], [0, 0, 100, 100], 'evenOdd');
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapePath(shape, [GraphicsPathCommand.MOVE_TO, GraphicsPathCommand.LINE_TO], [0, 0, 100, 100], 'evenOdd');
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(fillSpy).toHaveBeenCalledWith('evenodd');
   });
@@ -281,9 +281,9 @@ describe('defaultCanvasDrawRectangle', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'rect');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    drawShapeRectangle(shape, 10, 20, 50, 30);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeRectangle(shape, 10, 20, 50, 30);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledWith(10, 20, 50, 30);
   });
@@ -294,9 +294,9 @@ describe('defaultCanvasDrawRoundRectangle', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'roundRect');
     const shape = createShape();
-    beginShapeFill(shape, 0xffffff);
-    drawShapeRoundRectangle(shape, 0, 0, 100, 50, 10, 10);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xffffff);
+    appendShapeRoundRectangle(shape, 0, 0, 100, 50, 10, 10);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledWith(0, 0, 100, 50, 5);
   });
@@ -307,9 +307,9 @@ describe('defaultCanvasEndFill', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'fill');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    drawShapeRectangle(shape, 0, 0, 10, 10);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeRectangle(shape, 0, 0, 10, 10);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledOnce();
   });
@@ -320,10 +320,10 @@ describe('defaultCanvasLineBitmapStyle', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'stroke');
     const shape = createShape();
-    setShapeLineBitmapStyle(shape, makeBitmapSource(64, 64));
-    moveToShape(shape, 0, 0);
-    lineToShape(shape, 100, 0);
-    endShapeFill(shape);
+    appendShapeLineBitmapStyle(shape, makeBitmapSource(64, 64));
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeLineTo(shape, 100, 0);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledOnce();
   });
@@ -334,10 +334,10 @@ describe('defaultCanvasLineGradientStyle', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'stroke');
     const shape = createShape();
-    setShapeLineGradientStyle(shape, 'linear', [0xff0000, 0x0000ff], [1, 1], [0, 255]);
-    moveToShape(shape, 0, 0);
-    lineToShape(shape, 100, 0);
-    endShapeFill(shape);
+    appendShapeLineGradientStyle(shape, 'linear', [0xff0000, 0x0000ff], [1, 1], [0, 255]);
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeLineTo(shape, 100, 0);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledOnce();
   });
@@ -347,10 +347,10 @@ describe('defaultCanvasLineStyle', () => {
   it('sets lineCap to butt when caps is none', () => {
     const ctx = makeContext();
     const shape = createShape();
-    setShapeLineStyle(shape, 2, 0x000000, 1, false, 'normal', 'none', 'round', 3);
-    moveToShape(shape, 0, 0);
-    lineToShape(shape, 100, 0);
-    endShapeFill(shape);
+    appendShapeLineStyle(shape, 2, 0x000000, 1, false, 'normal', 'none', 'round', 3);
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeLineTo(shape, 100, 0);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(ctx.lineCap).toBe('butt');
   });
@@ -358,10 +358,10 @@ describe('defaultCanvasLineStyle', () => {
   it('sets lineCap to round when caps is round', () => {
     const ctx = makeContext();
     const shape = createShape();
-    setShapeLineStyle(shape, 2, 0x000000, 1, false, 'normal', 'round', 'round', 3);
-    moveToShape(shape, 0, 0);
-    lineToShape(shape, 100, 0);
-    endShapeFill(shape);
+    appendShapeLineStyle(shape, 2, 0x000000, 1, false, 'normal', 'round', 'round', 3);
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeLineTo(shape, 100, 0);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(ctx.lineCap).toBe('round');
   });
@@ -369,10 +369,10 @@ describe('defaultCanvasLineStyle', () => {
   it('sets lineJoin', () => {
     const ctx = makeContext();
     const shape = createShape();
-    setShapeLineStyle(shape, 2, 0x000000, 1, false, 'normal', 'none', 'bevel', 3);
-    moveToShape(shape, 0, 0);
-    lineToShape(shape, 100, 0);
-    endShapeFill(shape);
+    appendShapeLineStyle(shape, 2, 0x000000, 1, false, 'normal', 'none', 'bevel', 3);
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeLineTo(shape, 100, 0);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(ctx.lineJoin).toBe('bevel');
   });
@@ -380,10 +380,10 @@ describe('defaultCanvasLineStyle', () => {
   it('sets miterLimit', () => {
     const ctx = makeContext();
     const shape = createShape();
-    setShapeLineStyle(shape, 2, 0x000000, 1, false, 'normal', 'none', 'miter', 8);
-    moveToShape(shape, 0, 0);
-    lineToShape(shape, 100, 0);
-    endShapeFill(shape);
+    appendShapeLineStyle(shape, 2, 0x000000, 1, false, 'normal', 'none', 'miter', 8);
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeLineTo(shape, 100, 0);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(ctx.miterLimit).toBe(8);
   });
@@ -394,10 +394,10 @@ describe('defaultCanvasLineTo', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'lineTo');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    moveToShape(shape, 0, 0);
-    lineToShape(shape, 100, 50);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeLineTo(shape, 100, 50);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledWith(100, 50);
   });
@@ -406,9 +406,9 @@ describe('defaultCanvasLineTo', () => {
     const ctx = makeContext();
     const moveSpy = vi.spyOn(ctx, 'moveTo');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    lineToShape(shape, 100, 50);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeLineTo(shape, 100, 50);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(moveSpy).toHaveBeenCalledWith(0, 0);
   });
@@ -419,10 +419,10 @@ describe('defaultCanvasMoveTo', () => {
     const ctx = makeContext();
     const spy = vi.spyOn(ctx, 'moveTo');
     const shape = createShape();
-    beginShapeFill(shape, 0xff0000);
-    moveToShape(shape, 30, 40);
-    lineToShape(shape, 100, 40);
-    endShapeFill(shape);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeMoveTo(shape, 30, 40);
+    appendShapeLineTo(shape, 100, 40);
+    appendShapeEndFill(shape);
     renderCanvasShapeCommands(ctx, shape.data.commands);
     expect(spy).toHaveBeenCalledWith(30, 40);
   });

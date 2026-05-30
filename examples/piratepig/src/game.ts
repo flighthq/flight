@@ -1,14 +1,14 @@
 import type { AudioSource, DisplayObject, ImageSource, Text, TweenManager } from '@flighthq/sdk';
 import {
-  addChild,
-  beginFill,
+  addGraphChild,
+  appendShapeBeginFill,
+  appendShapeEndFill,
+  appendShapeRectangle,
   connectSignal,
   createDisplayObject,
   createShape,
   createText,
   createTween,
-  drawRectangle,
-  endFill,
   invalidateRender,
   playAudioSource,
   Quad,
@@ -56,20 +56,20 @@ export class PiratePigGame {
     scoreText.data.textFormat = { font: fontName, size: 60, color: 0x000000, align: 'right' };
     scoreText.x = CONTENT_WIDTH - 200;
     scoreText.y = 12;
-    addChild(this.obj, scoreText);
+    addGraphChild(this.obj, scoreText);
     this.scoreText = scoreText;
 
     const backgroundPanel = createShape();
     backgroundPanel.y = BACKGROUND_Y;
-    beginFill(backgroundPanel, 0xffffff, 0.4);
-    drawRectangle(backgroundPanel, 0, 0, CONTENT_WIDTH, CONTENT_HEIGHT);
-    endFill(backgroundPanel);
-    addChild(this.obj, backgroundPanel);
+    appendShapeBeginFill(backgroundPanel, 0xffffff, 0.4);
+    appendShapeRectangle(backgroundPanel, 0, 0, CONTENT_WIDTH, CONTENT_HEIGHT);
+    appendShapeEndFill(backgroundPanel);
+    addGraphChild(this.obj, backgroundPanel);
 
     const tileContainer = createDisplayObject();
     tileContainer.x = TILE_CONTAINER_X;
     tileContainer.y = TILE_CONTAINER_Y;
-    addChild(this.obj, tileContainer);
+    addGraphChild(this.obj, tileContainer);
     this.tileContainer = tileContainer;
 
     this.tiles = Array.from({ length: NUM_ROWS }, () => new Array(NUM_COLUMNS).fill(null));
@@ -204,7 +204,7 @@ export class PiratePigGame {
       tile.obj.y = tileY(row);
     }
 
-    addChild(this.tileContainer, tile.obj);
+    addGraphChild(this.tileContainer, tile.obj);
     this.needToCheckMatches = true;
   }
 

@@ -1,5 +1,5 @@
 import {
-  addChild,
+  addGraphChild,
   addTextureAtlasRegion,
   createSprite,
   createTextureAtlas,
@@ -48,7 +48,7 @@ for (let i = 0; i < creatureIDs.length; i++) {
   sprite.data.id = creatureIDs[i];
   setTransformX(sprite, (gap + i * (spriteScreenSize + gap)) / SCALE);
   setTransformY(sprite, yLocal);
-  addChild(root, sprite);
+  addGraphChild(root, sprite);
 }
 
 function enterFrame(): void {

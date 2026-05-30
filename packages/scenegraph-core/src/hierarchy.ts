@@ -276,30 +276,6 @@ export function setGraphChildIndex<GraphKind extends symbol, Traits extends obje
 // static stopAllMovieClips(): void {}
 
 /**
- * Swaps the z-order (front-to-back order) of the child objects at the two
- * specified index positions in the child list. All other child objects in
- * the scene node container remain in the same index positions.
- **/
-export function swapChildrenAt<GraphKind extends symbol, Traits extends object>(
-  target: GraphNode<GraphKind, Traits>,
-  index1: number,
-  index2: number,
-): void {
-  const targetRuntime = getGraphNodeRuntime(target);
-  const children = targetRuntime.children;
-  if (children === null || index1 === index2) return;
-  const len = children.length;
-  if (index1 < 0 || index2 < 0 || index1 >= len || index2 >= len) {
-    throwOutOfBoundsError();
-  }
-  const swap = children[index1] as GraphNode<GraphKind, Traits>;
-  children[index1] = children[index2];
-  children[index2] = swap;
-  const signals = targetRuntime.signals;
-  if (signals) emitSignal(signals.onChildrenOrderChanged);
-}
-
-/**
  * Swaps the z-order (front-to-back order) of the two specified child
  * objects. All other child objects in the scene node container remain in
  * the same index positions.
@@ -319,6 +295,30 @@ export function swapGraphChildren<GraphKind extends symbol, Traits extends objec
     const signals = getGraphNodeRuntime(target).signals;
     if (signals) emitSignal(signals.onChildrenOrderChanged);
   }
+}
+
+/**
+ * Swaps the z-order (front-to-back order) of the child objects at the two
+ * specified index positions in the child list. All other child objects in
+ * the scene node container remain in the same index positions.
+ **/
+export function swapGraphChildrenAt<GraphKind extends symbol, Traits extends object>(
+  target: GraphNode<GraphKind, Traits>,
+  index1: number,
+  index2: number,
+): void {
+  const targetRuntime = getGraphNodeRuntime(target);
+  const children = targetRuntime.children;
+  if (children === null || index1 === index2) return;
+  const len = children.length;
+  if (index1 < 0 || index2 < 0 || index1 >= len || index2 >= len) {
+    throwOutOfBoundsError();
+  }
+  const swap = children[index1] as GraphNode<GraphKind, Traits>;
+  children[index1] = children[index2];
+  children[index2] = swap;
+  const signals = targetRuntime.signals;
+  if (signals) emitSignal(signals.onChildrenOrderChanged);
 }
 
 function throwOutOfBoundsError(): void {
