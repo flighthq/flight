@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -16,7 +16,34 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const packagesDir = join(root, 'packages');
 const checkMode = process.argv.includes('--check');
+const fixMode = process.argv.includes('--fix');
 const verboseMode = process.argv.includes('--verbose');
+
+// ---- fix mode ---------------------------------------------------------------
+
+if (fixMode) {
+  let fixedCount = 0;
+
+  for (const path of getPackageSourceFiles()) {
+    const sourceText = readFileSync(path, 'utf-8');
+    const fixed = getFixedText(path, sourceText);
+    if (fixed !== null) {
+      writeFileSync(path, fixed, 'utf-8');
+      fixedCount++;
+      console.log(`${pc.green('✓')} ${pc.white(relative(root, path).replaceAll('\\', '/'))}`);
+    }
+  }
+
+  if (fixedCount === 0) {
+    console.log(`${pc.green('OK')} ${pc.bold('Source and test order valid')}`);
+  } else {
+    console.log(`\n${pc.green('✓')} ${pc.bold(`Fixed ${fixedCount} file${fixedCount === 1 ? '' : 's'}`)}`);
+  }
+
+  process.exit(0);
+}
+
+// ---- check / report mode ----------------------------------------------------
 
 const issues: OrderIssue[] = [];
 
@@ -52,6 +79,153 @@ console.log(
 );
 for (const issue of issues) printIssue(issue);
 process.exit(checkMode ? 1 : 0);
+
+// ---- fix helpers ------------------------------------------------------------
+
+/**
+ * Returns the fixed source text with sortable blocks reordered, or null if
+ * the file is already in order (no write needed).
+ *
+ * Each sortable "block" is the statement itself plus any comment lines that
+ * immediately precede it without a blank line in between. Blank lines between
+ * blocks are treated as separators and stay in their original positions.
+ */
+function getFixedText(filePath: string, sourceText: string): string | null {
+  const isTest = filePath.endsWith('.test.ts');
+  const sourceFile = ts.createSourceFile(filePath, sourceText, ts.ScriptTarget.Latest, true);
+  const nodes = isTest ? getDescribeStatements(sourceFile) : getExportedFunctionStatements(sourceFile);
+
+  if (nodes.length < 2) return null;
+
+  const names = nodes.map((n) => getStatementSortKey(n, isTest));
+  const sortedNames = [...names].sort((a, b) => a.localeCompare(b));
+  if (names.every((n, i) => n === sortedNames[i])) return null;
+
+  // For each sortable statement, compute the start of its "block" — the point
+  // after the last blank line before the statement. Comments between that point
+  // and the statement are "attached" and move with it.
+  const blocks = nodes.map((node) => ({
+    start: getBlockStart(sourceText, node),
+    end: node.getEnd(),
+    name: getStatementSortKey(node, isTest),
+  }));
+
+  const sortedBlocks = [...blocks].sort((a, b) => a.name.localeCompare(b.name));
+
+  // Reassemble: walk through blocks in their original positions, substituting
+  // each slot's content with the corresponding sorted block's text. The text
+  // between consecutive block ends/starts (separators) is preserved unchanged.
+  let result = '';
+  let pos = 0;
+
+  for (let i = 0; i < blocks.length; i++) {
+    result += sourceText.slice(pos, blocks[i].start); // separator / prefix
+    result += sourceText.slice(sortedBlocks[i].start, sortedBlocks[i].end); // sorted content
+    pos = blocks[i].end;
+  }
+
+  result += sourceText.slice(pos); // trailing content after last block
+  return result;
+}
+
+/**
+ * Returns the position in sourceText where the "moveable content" of this
+ * node begins — i.e., the start of attached comment lines, or the node's own
+ * start if no comments are attached.
+ *
+ * A comment is "attached" when there is no blank line (empty or
+ * whitespace-only line) between it and the node. A blank line breaks the
+ * attachment, keeping the comment as part of the preceding separator instead.
+ */
+function getBlockStart(sourceText: string, node: ts.Node): number {
+  const fullStart = node.getFullStart();
+  const nodeStart = node.getStart();
+
+  if (fullStart >= nodeStart) return fullStart;
+
+  const trivia = sourceText.slice(fullStart, nodeStart);
+
+  // Split into lines. Exclude the trailing empty string produced by a
+  // final newline, since that represents the end of the last comment line
+  // rather than a standalone blank line.
+  const lines = trivia.split('\n');
+  const effectiveEnd = trivia.endsWith('\n') ? lines.length - 1 : lines.length;
+
+  // Find the index of the last blank (empty / whitespace-only) line in the
+  // effective range. Everything after it is "attached" to this node.
+  let lastBlankIdx = -1;
+  for (let i = 0; i < effectiveEnd; i++) {
+    if (lines[i].trim() === '') lastBlankIdx = i;
+  }
+
+  if (lastBlankIdx === -1) {
+    // No blank lines — all trivia is attached to this node.
+    return fullStart;
+  }
+
+  // Compute the character offset of the line immediately following the last
+  // blank line. That is where the attached content begins.
+  let offset = 0;
+  for (let i = 0; i <= lastBlankIdx; i++) {
+    offset += lines[i].length + 1; // +1 for the \n that ended this line
+  }
+  return fullStart + offset;
+}
+
+/** Nodes for top-level describe(...) calls. */
+function getDescribeStatements(sourceFile: ts.SourceFile): ts.Statement[] {
+  return sourceFile.statements.filter((s) => {
+    if (!ts.isExpressionStatement(s)) return false;
+    const expr = s.expression;
+    return (
+      ts.isCallExpression(expr) &&
+      ts.isIdentifier(expr.expression) &&
+      expr.expression.text === 'describe' &&
+      expr.arguments.length > 0 &&
+      ts.isStringLiteralLike(expr.arguments[0])
+    );
+  });
+}
+
+/** Nodes for top-level exported function / const-arrow declarations. */
+function getExportedFunctionStatements(sourceFile: ts.SourceFile): ts.Statement[] {
+  return sourceFile.statements.filter((s) => {
+    const modifiers = ts.canHaveModifiers(s) ? ts.getModifiers(s) : undefined;
+    if (!modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) return false;
+
+    if (ts.isFunctionDeclaration(s) && s.name) return true;
+
+    if (ts.isVariableStatement(s)) {
+      return s.declarationList.declarations.some(
+        (d) =>
+          ts.isIdentifier(d.name) &&
+          d.initializer &&
+          (ts.isArrowFunction(d.initializer) || ts.isFunctionExpression(d.initializer)),
+      );
+    }
+
+    return false;
+  });
+}
+
+/** The sort key for a sortable statement. */
+function getStatementSortKey(node: ts.Statement, isTest: boolean): string {
+  if (isTest && ts.isExpressionStatement(node)) {
+    const expr = node.expression as ts.CallExpression;
+    return (expr.arguments[0] as ts.StringLiteralLike).text;
+  }
+
+  if (ts.isFunctionDeclaration(node)) return node.name!.text;
+
+  if (ts.isVariableStatement(node)) {
+    const decl = node.declarationList.declarations[0];
+    return (decl.name as ts.Identifier).text;
+  }
+
+  return '';
+}
+
+// ---- report helpers ---------------------------------------------------------
 
 function formatNames(names: string[], color: (value: string) => string): string {
   return names.map((name) => color(name)).join(pc.dim(', '));
