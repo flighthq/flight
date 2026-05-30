@@ -1,5 +1,5 @@
 import { emitSignal } from '@flighthq/signals';
-import type { GraphNode, GraphNodeRuntime, Node } from '@flighthq/types';
+import type { GraphHierarchyNode, GraphHierarchyNodeOf, GraphNode, GraphNodeRuntime, Node } from '@flighthq/types';
 
 import { getGraphNodeRuntime } from './graphNode';
 import { invalidateParentReference } from './revision';
@@ -10,9 +10,9 @@ import { invalidateParentReference } from './revision';
  * this Node instance.
  **/
 export function addGraphChild<GraphKind extends symbol, Traits extends object>(
-  target: GraphNode<GraphKind, Traits> & Traits,
-  child: GraphNode<GraphKind, Traits> & Traits,
-): GraphNode<GraphKind, Traits> & Traits {
+  target: GraphHierarchyNode<GraphKind, Traits>,
+  child: GraphHierarchyNode<GraphKind, Traits>,
+): GraphHierarchyNodeOf<GraphKind, Traits> {
   return addGraphChildAt(target, child, getGraphNumChildren(target));
 }
 
@@ -23,10 +23,10 @@ export function addGraphChild<GraphKind extends symbol, Traits extends object>(
  * Node object.
  **/
 export function addGraphChildAt<GraphKind extends symbol, Traits extends object>(
-  target: GraphNode<GraphKind, Traits> & Traits,
-  child: GraphNode<GraphKind, Traits> & Traits,
+  target: GraphHierarchyNode<GraphKind, Traits>,
+  child: GraphHierarchyNode<GraphKind, Traits>,
   index: number,
-): GraphNode<GraphKind, Traits> & Traits {
+): GraphHierarchyNodeOf<GraphKind, Traits> {
   const targetRuntime = getGraphNodeRuntime(target) as GraphNodeRuntime<GraphKind, Traits>;
   let children = targetRuntime.children;
 
@@ -47,12 +47,12 @@ export function addGraphChildAt<GraphKind extends symbol, Traits extends object>
   }
 
   const childRuntime = getGraphNodeRuntime(child) as GraphNodeRuntime<GraphKind, Traits>;
-  const parent = childRuntime.parent as GraphNode<GraphKind, Traits> & Traits;
+  const parent = childRuntime.parent as GraphHierarchyNode<GraphKind, Traits>;
 
   if (parent === target) {
     const i = children!.indexOf(child);
     if (i !== -1) {
-      if (i === index) return child as GraphNode<GraphKind, Traits> & Traits;
+      if (i === index) return child as GraphHierarchyNodeOf<GraphKind, Traits>;
       children!.splice(i, 1);
     }
   } else {
@@ -72,7 +72,7 @@ export function addGraphChildAt<GraphKind extends symbol, Traits extends object>
     invalidateParentReference(child);
   }
 
-  return child as GraphNode<GraphKind, Traits> & Traits;
+  return child as GraphHierarchyNodeOf<GraphKind, Traits>;
 }
 
 /**
@@ -80,10 +80,10 @@ export function addGraphChildAt<GraphKind extends symbol, Traits extends object>
  * NodeContainer instance or the instance itself.
  **/
 export function containsGraphChild<GraphKind extends symbol, Traits extends object>(
-  source: Readonly<GraphNode<GraphKind, Traits>>,
-  child: Readonly<GraphNode<GraphKind, Traits>>,
+  source: Readonly<GraphHierarchyNode<GraphKind, Traits>>,
+  child: Readonly<GraphHierarchyNode<GraphKind, Traits>>,
 ): boolean {
-  let current: GraphNode<GraphKind, Traits> | null = child;
+  let current: GraphHierarchyNode<GraphKind, Traits> | null = child;
   while (current !== source && current !== null) {
     current = getGraphParent(current);
   }
@@ -95,12 +95,12 @@ export function containsGraphChild<GraphKind extends symbol, Traits extends obje
  * index.
  **/
 export function getGraphChildAt<GraphKind extends symbol, Traits extends object>(
-  source: Readonly<GraphNode<GraphKind, Traits>>,
+  source: Readonly<GraphHierarchyNode<GraphKind, Traits>>,
   index: number,
-): (GraphNode<GraphKind, Traits> & Traits) | null {
+): GraphHierarchyNodeOf<GraphKind, Traits> | null {
   const children = getGraphNodeRuntime(source).children;
   if (children !== null && index >= 0 && index < children.length) {
-    return children[index] as GraphNode<GraphKind, Traits> & Traits;
+    return children[index] as GraphHierarchyNodeOf<GraphKind, Traits>;
   }
   return null;
 }
@@ -111,13 +111,13 @@ export function getGraphChildAt<GraphKind extends symbol, Traits extends object>
  * returns the first object found.
  **/
 export function getGraphChildByName<GraphKind extends symbol, Traits extends object>(
-  source: Readonly<GraphNode<GraphKind, Traits>>,
+  source: Readonly<GraphHierarchyNode<GraphKind, Traits>>,
   name: string,
-): (GraphNode<GraphKind, Traits> & Traits) | null {
+): GraphHierarchyNodeOf<GraphKind, Traits> | null {
   const children = getGraphNodeRuntime(source).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
-      if ((children[i] as Node).name === name) return children[i] as GraphNode<GraphKind, Traits> & Traits;
+      if ((children[i] as Node).name === name) return children[i] as GraphHierarchyNodeOf<GraphKind, Traits>;
     }
   }
   return null;
@@ -127,8 +127,8 @@ export function getGraphChildByName<GraphKind extends symbol, Traits extends obj
  * Returns the index position of a `child` Node instance.
  **/
 export function getGraphChildIndex<GraphKind extends symbol, Traits extends object>(
-  source: Readonly<GraphNode<GraphKind, Traits>>,
-  child: Readonly<GraphNode<GraphKind, Traits>>,
+  source: Readonly<GraphHierarchyNode<GraphKind, Traits>>,
+  child: Readonly<GraphHierarchyNode<GraphKind, Traits>>,
 ): number {
   const children = getGraphNodeRuntime(source).children;
   if (children !== null) {
@@ -140,16 +140,16 @@ export function getGraphChildIndex<GraphKind extends symbol, Traits extends obje
 }
 
 export function getGraphNumChildren<GraphKind extends symbol, Traits extends object>(
-  source: Readonly<GraphNode<GraphKind, Traits>>,
+  source: Readonly<GraphHierarchyNode<GraphKind, Traits>>,
 ): number {
   const children = getGraphNodeRuntime(source).children;
   return children !== null ? children.length : 0;
 }
 
 export function getGraphParent<GraphKind extends symbol, Traits extends object>(
-  source: Readonly<GraphNode<GraphKind, Traits>>,
-): (GraphNode<GraphKind, Traits> & Traits) | null {
-  return getGraphNodeRuntime(source).parent as GraphNode<GraphKind, Traits> & Traits;
+  source: Readonly<GraphHierarchyNode<GraphKind, Traits>>,
+): GraphHierarchyNodeOf<GraphKind, Traits> | null {
+  return getGraphNodeRuntime(source).parent as GraphHierarchyNodeOf<GraphKind, Traits>;
 }
 
 /**
@@ -157,15 +157,15 @@ export function getGraphParent<GraphKind extends symbol, Traits extends object>(
  * parent.
  **/
 export function getGraphRoot<GraphKind extends symbol, Traits extends object>(
-  source: Readonly<GraphNode<GraphKind, Traits>>,
-): GraphNode<GraphKind, Traits> & Traits {
-  let current: GraphNode<GraphKind, Traits> = source as GraphNode<GraphKind, Traits>;
+  source: Readonly<GraphHierarchyNode<GraphKind, Traits>>,
+): GraphHierarchyNodeOf<GraphKind, Traits> {
+  let current: GraphHierarchyNodeOf<GraphKind, Traits> = source as GraphHierarchyNodeOf<GraphKind, Traits>;
   let parent = getGraphParent(current);
   while (parent !== null) {
     current = parent;
     parent = getGraphParent(current);
   }
-  return current as GraphNode<GraphKind, Traits> & Traits;
+  return current as GraphHierarchyNodeOf<GraphKind, Traits>;
 }
 
 /**
@@ -177,9 +177,9 @@ export function getGraphRoot<GraphKind extends symbol, Traits extends object>(
  * Node are decreased by 1.
  **/
 export function removeGraphChild<GraphKind extends symbol, Traits extends object>(
-  target: GraphNode<GraphKind, Traits> & Traits,
-  child: GraphNode<GraphKind, Traits> & Traits,
-): GraphNode<GraphKind, Traits> & Traits {
+  target: GraphHierarchyNode<GraphKind, Traits>,
+  child: GraphHierarchyNode<GraphKind, Traits>,
+): GraphHierarchyNodeOf<GraphKind, Traits> {
   if (!child) return child;
   const targetRuntime = getGraphNodeRuntime(target);
   const childRuntime = getGraphNodeRuntime(child) as GraphNodeRuntime<GraphKind, Traits>;
@@ -196,7 +196,7 @@ export function removeGraphChild<GraphKind extends symbol, Traits extends object
     const targetSignals = targetRuntime.signals;
     if (targetSignals) emitSignal(targetSignals.onChildrenChanged);
   }
-  return child as GraphNode<GraphKind, Traits> & Traits;
+  return child as GraphHierarchyNodeOf<GraphKind, Traits>;
 }
 
 /**
@@ -208,12 +208,12 @@ export function removeGraphChild<GraphKind extends symbol, Traits extends object
  * above the child in the Node are decreased by 1.
  **/
 export function removeGraphChildAt<GraphKind extends symbol, Traits extends object>(
-  target: GraphNode<GraphKind, Traits> & Traits,
+  target: GraphHierarchyNode<GraphKind, Traits>,
   index: number,
-): GraphNode<GraphKind, Traits> | null {
+): GraphHierarchyNodeOf<GraphKind, Traits> | null {
   const children = getGraphNodeRuntime(target).children;
   if (children !== null && index >= 0 && index < children.length) {
-    return removeGraphChild(target, children[index] as GraphNode<GraphKind, Traits> & Traits);
+    return removeGraphChild(target, children[index] as GraphHierarchyNodeOf<GraphKind, Traits>);
   }
   return null;
 }
@@ -224,7 +224,7 @@ export function removeGraphChildAt<GraphKind extends symbol, Traits extends obje
  * garbage collected if no other references to the children exist.
  **/
 export function removeGraphChildren<GraphKind extends symbol, Traits extends object>(
-  target: GraphNode<GraphKind, Traits> & Traits,
+  target: GraphHierarchyNode<GraphKind, Traits>,
   beginIndex: number = 0,
   endIndex?: number,
 ): void {
@@ -252,8 +252,8 @@ export function removeGraphChildren<GraphKind extends symbol, Traits extends obj
  * This affects the layering of child objects.
  **/
 export function setGraphChildIndex<GraphKind extends symbol, Traits extends object>(
-  target: GraphNode<GraphKind, Traits> & Traits,
-  child: GraphNode<GraphKind, Traits> & Traits,
+  target: GraphHierarchyNode<GraphKind, Traits>,
+  child: GraphHierarchyNode<GraphKind, Traits>,
   index: number,
 ): void {
   const targetRuntime = getGraphNodeRuntime(target);
@@ -281,9 +281,9 @@ export function setGraphChildIndex<GraphKind extends symbol, Traits extends obje
  * the same index positions.
  **/
 export function swapGraphChildren<GraphKind extends symbol, Traits extends object>(
-  target: GraphNode<GraphKind, Traits> & Traits,
-  child1: GraphNode<GraphKind, Traits> & Traits,
-  child2: GraphNode<GraphKind, Traits> & Traits,
+  target: GraphHierarchyNode<GraphKind, Traits>,
+  child1: GraphHierarchyNode<GraphKind, Traits>,
+  child2: GraphHierarchyNode<GraphKind, Traits>,
 ): void {
   const targetRuntime = getGraphNodeRuntime(target);
   const children = targetRuntime.children;
@@ -303,7 +303,7 @@ export function swapGraphChildren<GraphKind extends symbol, Traits extends objec
  * the scene node container remain in the same index positions.
  **/
 export function swapGraphChildrenAt<GraphKind extends symbol, Traits extends object>(
-  target: GraphNode<GraphKind, Traits>,
+  target: GraphHierarchyNode<GraphKind, Traits>,
   index1: number,
   index2: number,
 ): void {

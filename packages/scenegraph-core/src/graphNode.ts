@@ -4,6 +4,7 @@ import type {
   GraphNode,
   GraphNodeData,
   GraphNodeDataFactory,
+  GraphHierarchyNode,
   GraphNodeRuntime,
   GraphNodeRuntimeFactory,
   GraphNodeSignals,
@@ -72,8 +73,8 @@ export function createGraphNodeSignals(): GraphNodeSignals {
 }
 
 export function defaultGraphNodeRuntimeCanAddChild<GraphKind extends symbol, Traits extends object>(
-  _target: GraphNode<GraphKind, Traits>,
-  _child: GraphNode<GraphKind, Traits>,
+  _target: GraphHierarchyNode<GraphKind, Traits>,
+  _child: GraphHierarchyNode<GraphKind, Traits>,
 ): boolean {
   return true;
 }

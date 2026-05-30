@@ -22,6 +22,7 @@ export * from './Font';
 export * from './GraphNode';
 export * from './HasAppearance';
 export * from './HasBoundsRect';
+export * from './HasGraphHierarchy';
 export * from './HasTransform2D';
 export * from './HitTestPoint';
 export * from './ImageSource';

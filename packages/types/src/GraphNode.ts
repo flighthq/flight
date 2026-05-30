@@ -1,4 +1,5 @@
 import type { EntityRuntime, EntityRuntimeKey } from './Entity';
+import type { HasGraphHierarchy, HasGraphHierarchyRuntime } from './HasGraphHierarchy';
 import type { Matrix } from './Matrix';
 import type { Node, NodeData, NodeDataFactory, NodeRuntimeFactory } from './Node';
 import type { Signal } from './Signal';
@@ -22,33 +23,26 @@ export interface GraphNodeSignals {
 }
 
 export interface GraphNode<GraphKind extends symbol = typeof NullGraph, Traits extends object = GraphNodeTraits>
-  extends Node, GraphNodeTraits {
+  extends Node, GraphNodeTraits, HasGraphHierarchy {
   [EntityRuntimeKey]: GraphNodeRuntime<GraphKind, Traits> | undefined;
 }
 
-export interface GraphNodeRuntime<
-  GraphKind extends symbol = typeof NullGraph,
-  Traits extends object = GraphNodeTraits,
-> extends EntityRuntime {
+export interface GraphNodeRuntime<GraphKind extends symbol = typeof NullGraph, Traits extends object = GraphNodeTraits>
+  extends EntityRuntime, HasGraphHierarchyRuntime<GraphKind, Traits> {
   appearanceID: number;
   boundsUsingLocalBoundsID: number;
   boundsUsingLocalTransformID: number;
-  children: GraphNode<GraphKind, Traits>[] | null;
   graph: GraphKind;
   imageCache: ImageCacheResult | null;
   localBoundsID: number;
   localBoundsUsingLocalBoundsID: number;
   localTransformID: number;
   localTransformUsingLocalTransformID: number;
-  parent: GraphNode<GraphKind, Traits> | null;
-  signals: GraphNodeSignals | null;
   worldBoundsUsingLocalBoundsID: number;
   worldBoundsUsingWorldTransformID: number;
   worldTransformID: number;
   worldTransformUsingLocalTransformID: number;
   worldTransformUsingParentTransformID: number;
-
-  canAddChild: (target: GraphNode<GraphKind, Traits>, child: GraphNode<GraphKind, Traits>) => boolean;
 }
 
 export interface GraphNodeData extends NodeData {}
