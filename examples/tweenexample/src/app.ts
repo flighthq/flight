@@ -1,14 +1,14 @@
 import {
-  addChildAt,
-  beginFill,
+  addGraphChildAt,
+  appendShapeBeginFill,
+  appendShapeCircle,
+  appendShapeEndFill,
   connectSignal,
   createDisplayObject,
   createShape,
   createTween,
   createTweenManager,
   createTweenTimer,
-  drawCircle,
-  endFill,
   invalidateRender,
   Quad,
   updateDisplayObjectBeforeRender,
@@ -44,15 +44,15 @@ function createCircle(): void {
   const radius = MIN_RADIUS + Math.random() * (MAX_RADIUS - MIN_RADIUS);
   const circle = createShape();
 
-  beginFill(circle, Math.floor(Math.random() * 0xffffff));
-  drawCircle(circle, 0, 0, radius);
-  endFill(circle);
+  appendShapeBeginFill(circle, Math.floor(Math.random() * 0xffffff));
+  appendShapeCircle(circle, 0, 0, radius);
+  appendShapeEndFill(circle);
 
   circle.alpha = 0.2 + Math.random() * 0.6;
   circle.x = Math.random() * STAGE_WIDTH;
   circle.y = Math.random() * STAGE_HEIGHT;
 
-  addChildAt(root, circle, 0);
+  addGraphChildAt(root, circle, 0);
   animateCircle(circle);
 }
 

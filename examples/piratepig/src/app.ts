@@ -1,5 +1,5 @@
 import {
-  addChild,
+  addGraphChild,
   createAudioSourceFromURLs,
   createBitmap,
   createDisplayObject,
@@ -48,21 +48,21 @@ root.scaleY = scale;
 const background = createBitmap();
 background.data.image = bgImage;
 background.data.smoothing = true;
-addChild(root, background);
+addGraphChild(root, background);
 
 const footer = createBitmap();
 footer.data.image = footerImage;
 footer.data.smoothing = true;
-addChild(root, footer);
+addGraphChild(root, footer);
 
 const game = new PiratePigGame(manager, tileImages, logoImage, font.name, sounds);
 
 const logo = createBitmap();
 logo.data.image = logoImage;
 logo.data.smoothing = true;
-addChild(game.obj, logo);
+addGraphChild(game.obj, logo);
 
-addChild(root, game.obj);
+addGraphChild(root, game.obj);
 
 // ── Layout ─────────────────────────────────────────────────────────────────
 

@@ -1,5 +1,5 @@
 import { copyMatrix, multiplyMatrix, translateMatrixByVectorXY } from '@flighthq/geometry';
-import { getLocalTransformID,getLocalTransformMatrix } from '@flighthq/scenegraph-core';
+import { getLocalTransformID, getLocalTransformMatrix } from '@flighthq/scenegraph-core';
 import type { DisplayObjectRenderNode, GraphNode, HasTransform2D, RenderNode2D, RenderState } from '@flighthq/types';
 
 export function updateDisplayObjectRenderTransform(

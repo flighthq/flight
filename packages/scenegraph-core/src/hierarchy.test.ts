@@ -17,8 +17,8 @@ import {
   removeGraphChildAt,
   removeGraphChildren,
   setGraphChildIndex,
-  swapChildrenAt,
   swapGraphChildren,
+  swapGraphChildrenAt,
 } from './hierarchy';
 
 let container: GraphNode<typeof TestGraph, GraphNodeTraits>;
@@ -40,7 +40,7 @@ function getEntityRuntime(source: GraphNode<typeof TestGraph>) {
 }
 
 describe('addGraphChild', () => {
-  it('addChild adds a child to the end of the list', () => {
+  it('addGraphChild adds a child to the end of the list', () => {
     addGraphChild(container, childA);
 
     expect(getGraphNumChildren(container)).toBe(1);
@@ -99,7 +99,7 @@ describe('addGraphChild', () => {
 });
 
 describe('addGraphChildAt', () => {
-  it('addChildAt inserts a child at the given index', () => {
+  it('addGraphChildAt inserts a child at the given index', () => {
     addGraphChild(container, childA);
     addGraphChildAt(container, childB, 0);
 
@@ -108,7 +108,7 @@ describe('addGraphChildAt', () => {
     expect(getChildren(container)[1]).toBe(childA);
   });
 
-  it('addChildAt allows inserting at the end (index === length)', () => {
+  it('addGraphChildAt allows inserting at the end (index === length)', () => {
     addGraphChild(container, childA);
     addGraphChildAt(container, childB, 1);
 
@@ -116,7 +116,7 @@ describe('addGraphChildAt', () => {
     expect(getChildren(container)[1]).toBe(childB);
   });
 
-  it('addChildAt throws if index is negative', () => {
+  it('addGraphChildAt throws if index is negative', () => {
     expect(() => addGraphChildAt(container, childA, -1)).toThrow();
   });
 
@@ -328,7 +328,7 @@ describe('removeGraphChild', () => {
 });
 
 describe('removeGraphChildAt', () => {
-  it('removeChildAt removes and returns the child at index', () => {
+  it('removeGraphChildAt removes and returns the child at index', () => {
     addGraphChild(container, childA);
     addGraphChild(container, childB);
 
@@ -340,7 +340,7 @@ describe('removeGraphChildAt', () => {
     expect(getChildren(container)[0]).toBe(childB);
   });
 
-  it('removeChildAt returns null for out-of-range index', () => {
+  it('removeGraphChildAt returns null for out-of-range index', () => {
     expect(removeGraphChildAt(container, 0)).toBeNull();
   });
 
@@ -478,38 +478,8 @@ describe('setGraphChildIndex', () => {
   });
 });
 
-describe('swapChildrenAt', () => {
-  it('swapChildrenAt swaps children by index', () => {
-    addGraphChild(container, childA);
-    addGraphChild(container, childB);
-
-    swapChildrenAt(container, 0, 1);
-
-    expect(getChildren(container)[0]).toBe(childB);
-    expect(getChildren(container)[1]).toBe(childA);
-  });
-
-  it('swapChildrenAt assumes valid indices (throws if invalid)', () => {
-    addGraphChild(container, childA);
-
-    expect(() => swapChildrenAt(container, 0, 1)).toThrow();
-  });
-
-  it('calls onChildrenOrderChanged on the parent', () => {
-    addGraphChild(container, childA);
-    addGraphChild(container, childB);
-
-    let called = false;
-    connectSignal(getGraphNodeSignals(container).onChildrenOrderChanged, () => {
-      called = true;
-    });
-    swapChildrenAt(container, 0, 1);
-    expect(called).toBe(true);
-  });
-});
-
 describe('swapGraphChildren', () => {
-  it('swapChildren swaps two children', () => {
+  it('swapGraphChildren swaps two children', () => {
     addGraphChild(container, childA);
     addGraphChild(container, childB);
 
@@ -519,7 +489,7 @@ describe('swapGraphChildren', () => {
     expect(getChildren(container)[1]).toBe(childA);
   });
 
-  it('swapChildren does nothing if either child is not in container', () => {
+  it('swapGraphChildren does nothing if either child is not in container', () => {
     const other = createGraphNode(TestGraph, NodeKind);
 
     addGraphChild(container, childA);
@@ -539,6 +509,36 @@ describe('swapGraphChildren', () => {
       called = true;
     });
     swapGraphChildren(container, childA, childB);
+    expect(called).toBe(true);
+  });
+});
+
+describe('swapGraphChildrenAt', () => {
+  it('swapGraphChildrenAt swaps children by index', () => {
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
+
+    swapGraphChildrenAt(container, 0, 1);
+
+    expect(getChildren(container)[0]).toBe(childB);
+    expect(getChildren(container)[1]).toBe(childA);
+  });
+
+  it('swapGraphChildrenAt assumes valid indices (throws if invalid)', () => {
+    addGraphChild(container, childA);
+
+    expect(() => swapGraphChildrenAt(container, 0, 1)).toThrow();
+  });
+
+  it('calls onChildrenOrderChanged on the parent', () => {
+    addGraphChild(container, childA);
+    addGraphChild(container, childB);
+
+    let called = false;
+    connectSignal(getGraphNodeSignals(container).onChildrenOrderChanged, () => {
+      called = true;
+    });
+    swapGraphChildrenAt(container, 0, 1);
     expect(called).toBe(true);
   });
 });

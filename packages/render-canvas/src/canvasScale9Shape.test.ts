@@ -1,5 +1,5 @@
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { beginShapeFill, createScale9Shape, drawShapeRectangle } from '@flighthq/scenegraph-display';
+import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/scenegraph-display';
 import { Scale9ShapeKind } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';
@@ -75,8 +75,8 @@ describe('remapScale9Commands', () => {
 
   it('returns a buffer with the same element count as the input', () => {
     const shape = createScale9Shape(grid);
-    beginShapeFill(shape, 0xff0000);
-    drawShapeRectangle(shape, 0, 0, 100, 100);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeRectangle(shape, 0, 0, 100, 100);
     const mapper = buildScale9Mapper(shape.data.commands, grid, 2, 2)!;
     remapScale9Commands(out, shape.data.commands, mapper);
     expect(out).toHaveLength(shape.data.commands.length);

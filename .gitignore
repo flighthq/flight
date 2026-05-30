@@ -150,3 +150,5 @@ public
 *.map
 *.d.ts
 *.js
+
+.claude
