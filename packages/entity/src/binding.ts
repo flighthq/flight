@@ -1,16 +1,16 @@
 import type { Entity } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
-import { createRuntime, getRuntime } from './runtime';
+import { createEntityRuntime, getEntityRuntime } from './runtime';
 
-export function attachBinding(entity: Entity, binding: object): void {
+export function attachEntityBinding(entity: Entity, binding: object): void {
   if (entity[EntityRuntimeKey] === undefined) {
-    entity[EntityRuntimeKey] = createRuntime();
+    entity[EntityRuntimeKey] = createEntityRuntime();
   }
   entity[EntityRuntimeKey].binding = binding;
 }
 
-export function getBinding(source: Entity): object | null {
-  const runtime = getRuntime(source);
+export function getEntityBinding(source: Entity): object | null {
+  const runtime = getEntityRuntime(source);
   return runtime?.binding ?? null;
 }

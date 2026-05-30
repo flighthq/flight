@@ -123,14 +123,14 @@ function computeCommandsBounds(commands: readonly unknown[]): { width: number; h
         break;
       }
       case 'drawEllipse':
-      case 'drawRect':
+      case 'drawRectangle':
         expand(commands[i + 2] as number, commands[i + 3] as number);
         expand(
           (commands[i + 2] as number) + (commands[i + 4] as number),
           (commands[i + 3] as number) + (commands[i + 5] as number),
         );
         break;
-      case 'drawRoundRect':
+      case 'drawRoundRectangle':
         expand(commands[i + 2] as number, commands[i + 3] as number);
         expand(
           (commands[i + 2] as number) + (commands[i + 4] as number),

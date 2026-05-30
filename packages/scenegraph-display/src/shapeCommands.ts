@@ -21,7 +21,7 @@ export const GraphicsPathCommand = {
   CUBIC_CURVE_TO: 6,
 } as const;
 
-export function beginBitmapFill(
+export function beginShapeBitmapFill(
   shape: Shape,
   bitmap: ImageSource,
   matrix: Matrix | null = null,
@@ -32,12 +32,12 @@ export function beginBitmapFill(
   shape.data.version++;
 }
 
-export function beginFill(shape: Shape, color = 0, alpha = 1): void {
+export function beginShapeFill(shape: Shape, color = 0, alpha = 1): void {
   shape.data.commands.push('beginFill', 2, color, alpha);
   shape.data.version++;
 }
 
-export function beginGradientFill(
+export function beginShapeGradientFill(
   shape: Shape,
   gradientType: GradientType,
   colors: number[],
@@ -63,7 +63,7 @@ export function beginGradientFill(
   shape.data.version++;
 }
 
-export function cubicCurveTo(
+export function cubicCurveToShape(
   shape: Shape,
   controlX1: number,
   controlY1: number,
@@ -76,22 +76,22 @@ export function cubicCurveTo(
   shape.data.version++;
 }
 
-export function curveTo(shape: Shape, controlX: number, controlY: number, anchorX: number, anchorY: number): void {
+export function curveToShape(shape: Shape, controlX: number, controlY: number, anchorX: number, anchorY: number): void {
   shape.data.commands.push('curveTo', 4, controlX, controlY, anchorX, anchorY);
   shape.data.version++;
 }
 
-export function drawCircle(shape: Shape, x: number, y: number, radius: number): void {
+export function drawShapeCircle(shape: Shape, x: number, y: number, radius: number): void {
   shape.data.commands.push('drawCircle', 3, x, y, radius);
   shape.data.version++;
 }
 
-export function drawEllipse(shape: Shape, x: number, y: number, width: number, height: number): void {
+export function drawShapeEllipse(shape: Shape, x: number, y: number, width: number, height: number): void {
   shape.data.commands.push('drawEllipse', 4, x, y, width, height);
   shape.data.version++;
 }
 
-export function drawPath(
+export function drawShapePath(
   shape: Shape,
   commands: number[],
   pathData: number[],
@@ -101,12 +101,12 @@ export function drawPath(
   shape.data.version++;
 }
 
-export function drawRect(shape: Shape, x: number, y: number, width: number, height: number): void {
-  shape.data.commands.push('drawRect', 4, x, y, width, height);
+export function drawShapeRectangle(shape: Shape, x: number, y: number, width: number, height: number): void {
+  shape.data.commands.push('drawRectangle', 4, x, y, width, height);
   shape.data.version++;
 }
 
-export function drawRoundRect(
+export function drawShapeRoundRectangle(
   shape: Shape,
   x: number,
   y: number,
@@ -115,11 +115,11 @@ export function drawRoundRect(
   ellipseWidth: number,
   ellipseHeight: number,
 ): void {
-  shape.data.commands.push('drawRoundRect', 6, x, y, width, height, ellipseWidth, ellipseHeight);
+  shape.data.commands.push('drawRoundRectangle', 6, x, y, width, height, ellipseWidth, ellipseHeight);
   shape.data.version++;
 }
 
-export function drawRoundRectComplex(
+export function drawShapeRoundRectangleComplex(
   shape: Shape,
   x: number,
   y: number,
@@ -145,12 +145,22 @@ export function drawRoundRectComplex(
   shape.data.version++;
 }
 
-export function endFill(shape: Shape): void {
+export function endShapeFill(shape: Shape): void {
   shape.data.commands.push('endFill', 0);
   shape.data.version++;
 }
 
-export function lineBitmapStyle(
+export function lineToShape(shape: Shape, x: number, y: number): void {
+  shape.data.commands.push('lineTo', 2, x, y);
+  shape.data.version++;
+}
+
+export function moveToShape(shape: Shape, x: number, y: number): void {
+  shape.data.commands.push('moveTo', 2, x, y);
+  shape.data.version++;
+}
+
+export function setShapeLineBitmapStyle(
   shape: Shape,
   bitmap: ImageSource,
   matrix: Matrix | null = null,
@@ -161,7 +171,7 @@ export function lineBitmapStyle(
   shape.data.version++;
 }
 
-export function lineGradientStyle(
+export function setShapeLineGradientStyle(
   shape: Shape,
   gradientType: GradientType,
   colors: number[],
@@ -187,7 +197,7 @@ export function lineGradientStyle(
   shape.data.version++;
 }
 
-export function lineStyle(
+export function setShapeLineStyle(
   shape: Shape,
   thickness = 1,
   color = 0,
@@ -199,15 +209,5 @@ export function lineStyle(
   miterLimit = 3,
 ): void {
   shape.data.commands.push('lineStyle', 8, thickness, color, alpha, pixelHinting, scaleMode, caps, joints, miterLimit);
-  shape.data.version++;
-}
-
-export function lineTo(shape: Shape, x: number, y: number): void {
-  shape.data.commands.push('lineTo', 2, x, y);
-  shape.data.version++;
-}
-
-export function moveTo(shape: Shape, x: number, y: number): void {
-  shape.data.commands.push('moveTo', 2, x, y);
   shape.data.version++;
 }

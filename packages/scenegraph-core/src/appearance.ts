@@ -2,7 +2,7 @@ import type { BlendMode, ColorTransform, GraphNode, HasAppearance, Shader } from
 
 import { invalidateAppearance } from './revision';
 
-export function setAlpha<GraphKind extends symbol, Traits extends object>(
+export function setAppearanceAlpha<GraphKind extends symbol, Traits extends object>(
   source: GraphNode<GraphKind, Traits> & HasAppearance,
   value: number,
 ): void {
@@ -10,7 +10,7 @@ export function setAlpha<GraphKind extends symbol, Traits extends object>(
   invalidateAppearance(source);
 }
 
-export function setBlendMode<GraphKind extends symbol, Traits extends object>(
+export function setAppearanceBlendMode<GraphKind extends symbol, Traits extends object>(
   source: GraphNode<GraphKind, Traits> & HasAppearance,
   value: BlendMode | null,
 ): void {
@@ -18,7 +18,7 @@ export function setBlendMode<GraphKind extends symbol, Traits extends object>(
   invalidateAppearance(source);
 }
 
-export function setColorTransform<GraphKind extends symbol, Traits extends object>(
+export function setAppearanceColorTransform<GraphKind extends symbol, Traits extends object>(
   source: GraphNode<GraphKind, Traits> & HasAppearance,
   value: ColorTransform | null,
 ): void {
@@ -26,7 +26,7 @@ export function setColorTransform<GraphKind extends symbol, Traits extends objec
   invalidateAppearance(source);
 }
 
-export function setShader<GraphKind extends symbol, Traits extends object>(
+export function setAppearanceShader<GraphKind extends symbol, Traits extends object>(
   source: GraphNode<GraphKind, Traits> & HasAppearance,
   value: Shader | null,
 ): void {
@@ -34,7 +34,7 @@ export function setShader<GraphKind extends symbol, Traits extends object>(
   invalidateAppearance(source);
 }
 
-export function setVisible<GraphKind extends symbol, Traits extends object>(
+export function setAppearanceVisible<GraphKind extends symbol, Traits extends object>(
   source: GraphNode<GraphKind, Traits> & HasAppearance,
   value: boolean,
 ): void {

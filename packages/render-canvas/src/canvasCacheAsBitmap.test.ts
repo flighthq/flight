@@ -1,6 +1,6 @@
 import { createMatrix, setRectangle } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode } from '@flighthq/render-core';
-import { getLocalBoundsRect } from '@flighthq/scenegraph-core';
+import { getLocalBoundsRectangle } from '@flighthq/scenegraph-core';
 import { createDisplayObject, getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 
 import { drawImageCacheResult, renderToImageCache } from './canvasCacheAsBitmap';
@@ -12,7 +12,7 @@ function makeStateAndObj() {
   canvas.height = 100;
   const state = createCanvasRenderState(canvas);
   const obj = createDisplayObject();
-  setRectangle(getLocalBoundsRect(obj), 0, 0, 50, 50);
+  setRectangle(getLocalBoundsRectangle(obj), 0, 0, 50, 50);
   return { state, obj };
 }
 

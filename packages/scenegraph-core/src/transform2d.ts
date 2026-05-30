@@ -1,4 +1,4 @@
-import { getRuntime } from '@flighthq/entity';
+import { getEntityRuntime } from '@flighthq/entity';
 import {
   copyMatrix,
   createMatrix,
@@ -16,27 +16,27 @@ import type {
   Vector2Like,
 } from '@flighthq/types';
 
-export function ensureLocalTransform2D<GraphKind extends symbol, Traits extends object>(
+export function ensureLocalTransformMatrix<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasTransform2D,
 ): void {
-  const runtime = getRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime;
+  const runtime = getEntityRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime;
   if (runtime.localTransformUsingLocalTransformID !== runtime.localTransformID) {
     recomputeLocalTransform2D(target, runtime);
   }
 }
 
-export function ensureWorldTransform2D<GraphKind extends symbol, Traits extends object>(
+export function ensureWorldTransformMatrix<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasTransform2D,
 ): void {
-  const runtime = getRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime;
+  const runtime = getEntityRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime;
   const parent = runtime.parent as GraphNode<GraphKind, Traits> & HasTransform2D;
 
   let parentRuntime: (GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime) | undefined;
   let parentWorldTransformID = 0;
 
   if (parent !== null) {
-    ensureWorldTransform2D(parent);
-    parentRuntime = getRuntime(parent) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime;
+    ensureWorldTransformMatrix(parent);
+    parentRuntime = getEntityRuntime(parent) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime;
     parentWorldTransformID = parentRuntime.worldTransformID;
   }
 
@@ -48,42 +48,42 @@ export function ensureWorldTransform2D<GraphKind extends symbol, Traits extends 
   }
 }
 
-export function getLocalTransform2D<GraphKind extends symbol, Traits extends object>(
+export function getLocalTransformMatrix<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasTransform2D,
 ): Readonly<Matrix> {
-  ensureLocalTransform2D(target);
-  return (getRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime).localTransform2D!;
+  ensureLocalTransformMatrix(target);
+  return (getEntityRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime).localTransform2D!;
 }
 
-export function getWorldTransform2D<GraphKind extends symbol, Traits extends object>(
+export function getWorldTransformMatrix<GraphKind extends symbol, Traits extends object>(
   target: GraphNode<GraphKind, Traits> & HasTransform2D,
 ): Readonly<Matrix> {
-  ensureWorldTransform2D(target);
-  return (getRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime).worldTransform2D!;
+  ensureWorldTransformMatrix(target);
+  return (getEntityRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime).worldTransform2D!;
 }
 
 /**
- * Converts the `point` object from the Stage (global) coordinates
+ * Converts the `vector` object from the Stage (global) coordinates
  * to the display object's (local) coordinates.
  **/
-export function globalToLocal2D<GraphKind extends symbol, Traits extends object>(
+export function globalVector2ToLocal<GraphKind extends symbol, Traits extends object>(
   out: Vector2Like,
   source: GraphNode<GraphKind, Traits> & HasTransform2D,
-  pos: Readonly<Vector2Like>,
+  vector: Readonly<Vector2Like>,
 ): void {
-  inverseMatrixTransformPointXY(out, getWorldTransform2D(source), pos.x, pos.y);
+  inverseMatrixTransformPointXY(out, getWorldTransformMatrix(source), vector.x, vector.y);
 }
 
 /**
- * Converts the `point` object from the display object's (local)
+ * Converts the `vector` object from the display object's (local)
  * coordinates to world coordinates.
  **/
-export function localToGlobal2D<GraphKind extends symbol, Traits extends object>(
+export function localVector2ToGlobal<GraphKind extends symbol, Traits extends object>(
   out: Vector2Like,
   source: GraphNode<GraphKind, Traits> & HasTransform2D,
-  point: Readonly<Vector2Like>,
+  vector: Readonly<Vector2Like>,
 ): void {
-  matrixTransformPointXY(out, getWorldTransform2D(source), point.x, point.y);
+  matrixTransformPointXY(out, getWorldTransformMatrix(source), vector.x, vector.y);
 }
 
 function recomputeLocalTransform2D<GraphKind extends symbol, Traits extends object>(
@@ -122,7 +122,7 @@ function recomputeWorldTransform2D<GraphKind extends symbol, Traits extends obje
   parentRuntime?: Readonly<GraphNodeRuntime<GraphKind, Traits> & HasTransform2DRuntime>,
 ): void {
   if (runtime.worldTransform2D === null) runtime.worldTransform2D = createMatrix();
-  ensureLocalTransform2D(target);
+  ensureLocalTransformMatrix(target);
   if (parentRuntime !== undefined) {
     multiplyMatrix(runtime.worldTransform2D, parentRuntime.worldTransform2D!, runtime.localTransform2D!);
   } else {
@@ -131,7 +131,7 @@ function recomputeWorldTransform2D<GraphKind extends symbol, Traits extends obje
   recomputeWorldTransformID(runtime, parentRuntime);
 }
 
-export function setRotation<GraphKind extends symbol, Traits extends object>(
+export function setTransformRotation<GraphKind extends symbol, Traits extends object>(
   source: GraphNode<GraphKind, Traits> & HasTransform2D,
   value: number,
 ): void {
@@ -139,7 +139,7 @@ export function setRotation<GraphKind extends symbol, Traits extends object>(
   invalidateLocalTransform(source);
 }
 
-export function setScaleX<GraphKind extends symbol, Traits extends object>(
+export function setTransformScaleX<GraphKind extends symbol, Traits extends object>(
   source: GraphNode<GraphKind, Traits> & HasTransform2D,
   value: number,
 ): void {
@@ -147,7 +147,7 @@ export function setScaleX<GraphKind extends symbol, Traits extends object>(
   invalidateLocalTransform(source);
 }
 
-export function setScaleY<GraphKind extends symbol, Traits extends object>(
+export function setTransformScaleY<GraphKind extends symbol, Traits extends object>(
   source: GraphNode<GraphKind, Traits> & HasTransform2D,
   value: number,
 ): void {
@@ -155,7 +155,7 @@ export function setScaleY<GraphKind extends symbol, Traits extends object>(
   invalidateLocalTransform(source);
 }
 
-export function setX<GraphKind extends symbol, Traits extends object>(
+export function setTransformX<GraphKind extends symbol, Traits extends object>(
   source: GraphNode<GraphKind, Traits> & HasTransform2D,
   value: number,
 ): void {
@@ -163,7 +163,7 @@ export function setX<GraphKind extends symbol, Traits extends object>(
   invalidateLocalTransform(source);
 }
 
-export function setY<GraphKind extends symbol, Traits extends object>(
+export function setTransformY<GraphKind extends symbol, Traits extends object>(
   source: GraphNode<GraphKind, Traits> & HasTransform2D,
   value: number,
 ): void {

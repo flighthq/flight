@@ -1,18 +1,18 @@
 import type { Surface } from '@flighthq/types';
 
-export interface ColorBoundsRect {
+export interface ColorBoundsRectangle {
   height: number;
   width: number;
   x: number;
   y: number;
 }
 
-export function getColorBoundsRect(
+export function getSurfaceColorBoundsRectangle(
   source: Surface,
   mask: number,
   color: number,
   findColor: boolean = true,
-): ColorBoundsRect | null {
+): ColorBoundsRectangle | null {
   const maskedColor = (color >>> 0) & (mask >>> 0);
   let minX = source.width;
   let minY = source.height;

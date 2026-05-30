@@ -1,5 +1,5 @@
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { addChild } from '@flighthq/scenegraph-core';
+import { addGraphChild } from '@flighthq/scenegraph-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
@@ -98,7 +98,7 @@ describe('renderDOMDisplayObject', () => {
     const state = makeState();
     const parent = createDisplayObject();
     const child = createDisplayObject();
-    addChild(parent, child);
+    addGraphChild(parent, child);
 
     const childData = getDisplayObjectRenderNode(state, child);
     childData.visible = true;

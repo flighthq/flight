@@ -1,4 +1,10 @@
-export { getFormatAscent, getFormatDescent, getFormatHeight, getFormatLeading, mergeTextFormat } from './textFormat';
+export {
+  getTextFormatAscent,
+  getTextFormatDescent,
+  getTextFormatHeight,
+  getTextFormatLeading,
+  mergeTextFormat,
+} from './textFormat';
 export type { TextFormatRange } from './textFormatRange';
 export { createTextFormatRange } from './textFormatRange';
 export type { TextLayoutParams, TextLayoutResult, TextMeasureFn } from './textLayout';

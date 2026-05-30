@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { addChild } from '@flighthq/scenegraph-core';
+import { addGraphChild } from '@flighthq/scenegraph-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { WebGLRenderState } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
@@ -98,7 +98,7 @@ describe('renderWebGLDisplayObject', () => {
 
     const parent = createDisplayObject();
     const child = createDisplayObject();
-    addChild(parent, child);
+    addGraphChild(parent, child);
 
     const parentData = getDisplayObjectRenderNode(state, parent);
     parentData.visible = true;

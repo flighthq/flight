@@ -4,9 +4,9 @@ import type { TextureAtlasRegion } from '@flighthq/types';
 import { createTextureAtlas } from './textureAtlas';
 import {
   addTextureAtlasRegion,
-  addTextureAtlasRegionRect,
-  addTextureAtlasRegionRectXY,
-  addTextureAtlasRegionVec2,
+  addTextureAtlasRegionRectangle,
+  addTextureAtlasRegionRectangleXY,
+  addTextureAtlasRegionVector2,
   createTextureAtlasRegion,
   initTextureAtlasRegion,
 } from './textureAtlasRegion';
@@ -38,25 +38,25 @@ describe('addTextureAtlasRegion', () => {
   });
 });
 
-describe('addTextureAtlasRegionRect', () => {
+describe('addTextureAtlasRegionRectangle', () => {
   it('adds a region from a Rectangle', () => {
     const atlas = createTextureAtlas();
     const rect = createRectangle(10, 20, 30, 40);
-    addTextureAtlasRegionRect(atlas, rect);
+    addTextureAtlasRegionRectangle(atlas, rect);
     expect(atlas.regions[0].x).toBe(10);
     expect(atlas.regions[0].width).toBe(30);
   });
 
   it('sets pivot from optional Vector2', () => {
     const atlas = createTextureAtlas();
-    addTextureAtlasRegionRect(atlas, createRectangle(0, 0, 10, 10), createVector2(3, 4));
+    addTextureAtlasRegionRectangle(atlas, createRectangle(0, 0, 10, 10), createVector2(3, 4));
     expect(atlas.regions[0].pivotX).toBe(3);
     expect(atlas.regions[0].pivotY).toBe(4);
   });
 
   it('accepts rectangle-like and vector-like objects', () => {
     const atlas = createTextureAtlas();
-    addTextureAtlasRegionRect(atlas, { x: 10, y: 20, width: 30, height: 40 }, { x: 5, y: 6 });
+    addTextureAtlasRegionRectangle(atlas, { x: 10, y: 20, width: 30, height: 40 }, { x: 5, y: 6 });
     expect(atlas.regions[0].x).toBe(10);
     expect(atlas.regions[0].y).toBe(20);
     expect(atlas.regions[0].width).toBe(30);
@@ -66,10 +66,10 @@ describe('addTextureAtlasRegionRect', () => {
   });
 });
 
-describe('addTextureAtlasRegionRectXY', () => {
+describe('addTextureAtlasRegionRectangleXY', () => {
   it('computes width and height from corner coordinates', () => {
     const atlas = createTextureAtlas();
-    addTextureAtlasRegionRectXY(atlas, 5, 10, 25, 30);
+    addTextureAtlasRegionRectangleXY(atlas, 5, 10, 25, 30);
     expect(atlas.regions[0].x).toBe(5);
     expect(atlas.regions[0].y).toBe(10);
     expect(atlas.regions[0].width).toBe(20);
@@ -77,10 +77,10 @@ describe('addTextureAtlasRegionRectXY', () => {
   });
 });
 
-describe('addTextureAtlasRegionVec2', () => {
+describe('addTextureAtlasRegionVector2', () => {
   it('computes region from two Vector2 corner points', () => {
     const atlas = createTextureAtlas();
-    addTextureAtlasRegionVec2(atlas, createVector2(5, 10), createVector2(25, 30));
+    addTextureAtlasRegionVector2(atlas, createVector2(5, 10), createVector2(25, 30));
     expect(atlas.regions[0].x).toBe(5);
     expect(atlas.regions[0].y).toBe(10);
     expect(atlas.regions[0].width).toBe(20);
@@ -89,7 +89,7 @@ describe('addTextureAtlasRegionVec2', () => {
 
   it('accepts vector-like corner and pivot objects', () => {
     const atlas = createTextureAtlas();
-    addTextureAtlasRegionVec2(atlas, { x: 5, y: 10 }, { x: 25, y: 30 }, { x: 3, y: 4 });
+    addTextureAtlasRegionVector2(atlas, { x: 5, y: 10 }, { x: 25, y: 30 }, { x: 3, y: 4 });
     expect(atlas.regions[0].x).toBe(5);
     expect(atlas.regions[0].y).toBe(10);
     expect(atlas.regions[0].width).toBe(20);

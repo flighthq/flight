@@ -1,8 +1,8 @@
 import { copyMatrix, multiplyMatrix, translateMatrixByVectorXY } from '@flighthq/geometry';
-import { getLocalTransform2D, getLocalTransformID } from '@flighthq/scenegraph-core';
+import { getLocalTransformID,getLocalTransformMatrix } from '@flighthq/scenegraph-core';
 import type { DisplayObjectRenderNode, GraphNode, HasTransform2D, RenderNode2D, RenderState } from '@flighthq/types';
 
-export function updateDisplayObjectRenderTransform2D(
+export function updateDisplayObjectRenderTransform(
   state: RenderState,
   data: DisplayObjectRenderNode,
   parentData?: DisplayObjectRenderNode,
@@ -17,10 +17,10 @@ export function updateDisplayObjectRenderTransform2D(
     translateMatrixByVectorXY(data.transform2D, data.transform2D, -scrollRect.x, -scrollRect.y);
     return true;
   }
-  return updateRenderTransform2D(state, data, parentData);
+  return updateRenderTransform(state, data, parentData);
 }
 
-export function updateRenderTransform2D(state: RenderState, data: RenderNode2D, parentData?: RenderNode2D): boolean {
+export function updateRenderTransform(state: RenderState, data: RenderNode2D, parentData?: RenderNode2D): boolean {
   const localTransformID = getLocalTransformID(data.source as GraphNode);
   if (
     (parentData !== undefined && parentData.transformFrameID === state.currentFrameID) ||
@@ -35,7 +35,7 @@ export function updateRenderTransform2D(state: RenderState, data: RenderNode2D, 
 
 function recalculateRenderTransform2D(state: RenderState, data: RenderNode2D, parentData?: RenderNode2D): void {
   const source = data.source;
-  const transform2D = getLocalTransform2D(source as GraphNode & HasTransform2D);
+  const transform2D = getLocalTransformMatrix(source as GraphNode & HasTransform2D);
   const parentTransform2D = parentData !== undefined ? parentData.transform2D : state.renderTransform2D;
   if (parentTransform2D !== null) {
     multiplyMatrix(data.transform2D, parentTransform2D, transform2D);

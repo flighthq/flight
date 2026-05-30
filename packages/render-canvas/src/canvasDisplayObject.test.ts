@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { addChild } from '@flighthq/scenegraph-core';
+import { addGraphChild } from '@flighthq/scenegraph-core';
 import { createDisplayObject, getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
@@ -115,7 +115,7 @@ describe('renderCanvasDisplayObject', () => {
       canvas: document.createElement('canvas'),
       transform: createMatrix(),
     };
-    addChild(parent, child);
+    addGraphChild(parent, child);
 
     const drawImageSpy = vi.spyOn(state.context, 'drawImage');
     renderCanvasDisplayObject(state, parent);

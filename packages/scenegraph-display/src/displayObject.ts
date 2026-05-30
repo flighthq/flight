@@ -3,10 +3,10 @@ import {
   createGraphNodeRuntime,
   getGraphNodeRuntime,
   initHasAppearance,
-  initHasBoundsRect,
-  initHasBoundsRectRuntime,
-  initHasTransform2D,
-  initHasTransform2DRuntime,
+  initHasBoundsRectangle,
+  initHasBoundsRectangleRuntime,
+  initHasTransform,
+  initHasTransformRuntime,
   invalidateAppearance,
 } from '@flighthq/scenegraph-core';
 import type {
@@ -33,18 +33,18 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   kind: symbol,
   obj?: Readonly<PartialNode<DisplayObject>>,
   createData?: DisplayGraphNodeDataFactory,
-  createRuntime?: DisplayGraphNodeRuntimeFactory<R>,
+  createDisplayObjectRuntimeFactory?: DisplayGraphNodeRuntimeFactory<R>,
 ): DisplayObject {
   const out = createGraphNode(
     DisplayGraph,
     kind,
     obj,
     createData,
-    createRuntime ??
+    createDisplayObjectRuntimeFactory ??
       (createDisplayObjectRuntime as GraphNodeRuntimeFactory<typeof DisplayGraph, DisplayObjectTraits, R>),
   ) as DisplayObject;
-  initHasTransform2D(out, obj);
-  initHasBoundsRect(out, obj);
+  initHasTransform(out, obj);
+  initHasBoundsRectangle(out, obj);
   initHasAppearance(out, obj);
   out.filters = obj?.filters ?? null;
   out.mask = obj?.mask ?? null;
@@ -56,8 +56,8 @@ export function createDisplayObjectRuntime(
   methods?: Readonly<Partial<MethodsOf<DisplayObjectRuntime>>>,
 ): DisplayObjectRuntime {
   const out = createGraphNodeRuntime(methods) as DisplayObjectRuntime;
-  initHasTransform2DRuntime(out, methods);
-  initHasBoundsRectRuntime(out, methods);
+  initHasTransformRuntime(out, methods);
+  initHasBoundsRectangleRuntime(out, methods);
   out.interactionSignals = null;
   return out;
 }
@@ -71,17 +71,17 @@ export function isDisplayObject(source: Readonly<GraphNode<any, any>>): boolean 
   return getGraphNodeRuntime(source).graph === DisplayGraph;
 }
 
-export function setFilters(source: DisplayObject, value: Filter[] | null): void {
+export function setDisplayObjectFilters(source: DisplayObject, value: Filter[] | null): void {
   source.filters = value;
   invalidateAppearance(source);
 }
 
-export function setMask(source: DisplayObject, value: DisplayObject | null): void {
+export function setDisplayObjectMask(source: DisplayObject, value: DisplayObject | null): void {
   source.mask = value;
   invalidateAppearance(source);
 }
 
-export function setScrollRect(source: DisplayObject, value: Rectangle | null): void {
+export function setDisplayObjectScrollRectangle(source: DisplayObject, value: Rectangle | null): void {
   source.scrollRect = value;
   invalidateAppearance(source);
 }

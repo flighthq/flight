@@ -2,7 +2,7 @@ import type { Surface } from '@flighthq/types';
 
 import type { ImageChannel } from './imageChannel';
 
-export function copyChannel(
+export function copySurfaceChannel(
   source: Surface,
   sourceChannel: ImageChannel,
   dest: Surface,
@@ -25,7 +25,7 @@ export function copyChannel(
   }
 }
 
-export function copyPixels(
+export function copySurfacePixels(
   source: Surface,
   sx: number,
   sy: number,

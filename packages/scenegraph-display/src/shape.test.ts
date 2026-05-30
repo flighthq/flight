@@ -3,7 +3,7 @@ import { ShapeKind } from '@flighthq/types';
 
 import {
   clearShapeCommands,
-  computeShapeLocalBoundsRect,
+  computeShapeLocalBoundsRectangle,
   copyShapeCommands,
   createShape,
   createShapeData,
@@ -20,22 +20,22 @@ describe('clearShapeCommands', () => {
   });
 });
 
-describe('computeShapeLocalBoundsRect', () => {
+describe('computeShapeLocalBoundsRectangle', () => {
   it('sets out to zero for an empty shape with no commands', () => {
     const shape = createShape();
     const out = createRectangle(1, 2, 3, 4);
-    computeShapeLocalBoundsRect(out, shape as any);
+    computeShapeLocalBoundsRectangle(out, shape as any);
     expect(out.x).toBe(0);
     expect(out.y).toBe(0);
     expect(out.width).toBe(0);
     expect(out.height).toBe(0);
   });
 
-  it('computes bounds from drawRect commands', () => {
+  it('computes bounds from drawRectangle commands', () => {
     const shape = createShape();
-    shape.data.commands.push('drawRect', 4, 10, 20, 100, 50);
+    shape.data.commands.push('drawRectangle', 4, 10, 20, 100, 50);
     const out = createRectangle();
-    computeShapeLocalBoundsRect(out, shape as any);
+    computeShapeLocalBoundsRectangle(out, shape as any);
     expect(out.x).toBe(10);
     expect(out.y).toBe(20);
     expect(out.width).toBe(100);
@@ -46,7 +46,7 @@ describe('computeShapeLocalBoundsRect', () => {
     const shape = createShape();
     shape.data.commands.push('moveTo', 2, 0, 0, 'lineTo', 2, 80, 60);
     const out = createRectangle();
-    computeShapeLocalBoundsRect(out, shape as any);
+    computeShapeLocalBoundsRectangle(out, shape as any);
     expect(out.x).toBe(0);
     expect(out.y).toBe(0);
     expect(out.width).toBe(80);

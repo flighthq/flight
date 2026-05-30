@@ -23,7 +23,7 @@ export function addTextureAtlasRegion(
   );
 }
 
-export function addTextureAtlasRegionRect(
+export function addTextureAtlasRegionRectangle(
   target: TextureAtlas,
   rect: Readonly<RectangleLike>,
   pivot?: Readonly<Vector2Like>,
@@ -39,7 +39,7 @@ export function addTextureAtlasRegionRect(
   );
 }
 
-export function addTextureAtlasRegionRectXY(
+export function addTextureAtlasRegionRectangleXY(
   target: TextureAtlas,
   ax: number,
   ay: number,
@@ -51,7 +51,7 @@ export function addTextureAtlasRegionRectXY(
   addTextureAtlasRegion(target, ax, ay, bx - ax, by - ay, pivotX, pivotY);
 }
 
-export function addTextureAtlasRegionVec2(
+export function addTextureAtlasRegionVector2(
   target: TextureAtlas,
   a: Readonly<Vector2Like>,
   b: Readonly<Vector2Like>,

@@ -1,8 +1,14 @@
-import { getRuntime } from '@flighthq/entity';
+import { getEntityRuntime } from '@flighthq/entity';
 import type { GraphNode, GraphNodeRuntime, HasAppearance } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import { setAlpha, setBlendMode, setColorTransform, setShader, setVisible } from './appearance';
+import {
+  setAppearanceAlpha,
+  setAppearanceBlendMode,
+  setAppearanceColorTransform,
+  setAppearanceShader,
+  setAppearanceVisible,
+} from './appearance';
 import { createGraphNode } from './graphNode';
 import { initHasAppearance } from './hasAppearance';
 
@@ -17,89 +23,89 @@ beforeEach(() => {
   node = createTestNode();
 });
 
-describe('setAlpha', () => {
+describe('setAppearanceAlpha', () => {
   it('sets alpha on the node', () => {
-    setAlpha(node, 0.5);
+    setAppearanceAlpha(node, 0.5);
     expect(node.alpha).toBe(0.5);
   });
 
   it('invalidates appearance', () => {
-    const runtime = getRuntime(node) as GraphNodeRuntime<typeof TestKind, HasAppearance>;
+    const runtime = getEntityRuntime(node) as GraphNodeRuntime<typeof TestKind, HasAppearance>;
     const idBefore = runtime.appearanceID;
-    setAlpha(node, 0.5);
+    setAppearanceAlpha(node, 0.5);
     expect(runtime.appearanceID).not.toBe(idBefore);
   });
 });
 
-describe('setBlendMode', () => {
+describe('setAppearanceBlendMode', () => {
   it('sets blendMode on the node', () => {
-    setBlendMode(node, BlendMode.Add);
+    setAppearanceBlendMode(node, BlendMode.Add);
     expect(node.blendMode).toBe(BlendMode.Add);
   });
 
   it('accepts null', () => {
-    setBlendMode(node, null);
+    setAppearanceBlendMode(node, null);
     expect(node.blendMode).toBeNull();
   });
 
   it('invalidates appearance', () => {
-    const runtime = getRuntime(node) as GraphNodeRuntime<typeof TestKind, HasAppearance>;
+    const runtime = getEntityRuntime(node) as GraphNodeRuntime<typeof TestKind, HasAppearance>;
     const idBefore = runtime.appearanceID;
-    setBlendMode(node, BlendMode.Add);
+    setAppearanceBlendMode(node, BlendMode.Add);
     expect(runtime.appearanceID).not.toBe(idBefore);
   });
 });
 
-describe('setColorTransform', () => {
+describe('setAppearanceColorTransform', () => {
   it('sets colorTransform on the node', () => {
     const ct = {} as any;
-    setColorTransform(node, ct);
+    setAppearanceColorTransform(node, ct);
     expect(node.colorTransform).toBe(ct);
   });
 
   it('accepts null', () => {
-    setColorTransform(node, null);
+    setAppearanceColorTransform(node, null);
     expect(node.colorTransform).toBeNull();
   });
 
   it('invalidates appearance', () => {
-    const runtime = getRuntime(node) as GraphNodeRuntime<typeof TestKind, HasAppearance>;
+    const runtime = getEntityRuntime(node) as GraphNodeRuntime<typeof TestKind, HasAppearance>;
     const idBefore = runtime.appearanceID;
-    setColorTransform(node, null);
+    setAppearanceColorTransform(node, null);
     expect(runtime.appearanceID).not.toBe(idBefore);
   });
 });
 
-describe('setShader', () => {
+describe('setAppearanceShader', () => {
   it('sets shader on the node', () => {
     const shader = {} as any;
-    setShader(node, shader);
+    setAppearanceShader(node, shader);
     expect(node.shader).toBe(shader);
   });
 
   it('accepts null', () => {
-    setShader(node, null);
+    setAppearanceShader(node, null);
     expect(node.shader).toBeNull();
   });
 
   it('invalidates appearance', () => {
-    const runtime = getRuntime(node) as GraphNodeRuntime<typeof TestKind, HasAppearance>;
+    const runtime = getEntityRuntime(node) as GraphNodeRuntime<typeof TestKind, HasAppearance>;
     const idBefore = runtime.appearanceID;
-    setShader(node, null);
+    setAppearanceShader(node, null);
     expect(runtime.appearanceID).not.toBe(idBefore);
   });
 });
 
-describe('setVisible', () => {
+describe('setAppearanceVisible', () => {
   it('sets visible on the node', () => {
-    setVisible(node, false);
+    setAppearanceVisible(node, false);
     expect(node.visible).toBe(false);
   });
 
   it('invalidates appearance', () => {
-    const runtime = getRuntime(node) as GraphNodeRuntime<typeof TestKind, HasAppearance>;
+    const runtime = getEntityRuntime(node) as GraphNodeRuntime<typeof TestKind, HasAppearance>;
     const idBefore = runtime.appearanceID;
-    setVisible(node, false);
+    setAppearanceVisible(node, false);
     expect(runtime.appearanceID).not.toBe(idBefore);
   });
 });

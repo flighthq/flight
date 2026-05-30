@@ -202,8 +202,8 @@ export const defaultCanvasDrawPath: CanvasShapeCommand<'drawPath'> = {
   },
 };
 
-export const defaultCanvasDrawRect: CanvasShapeCommand<'drawRect'> = {
-  key: 'drawRect',
+export const defaultCanvasDrawRectangle: CanvasShapeCommand<'drawRectangle'> = {
+  key: 'drawRectangle',
   draw(ctx, state, buf, i) {
     const x = buf[i] as number;
     const y = buf[i + 1] as number;
@@ -238,8 +238,8 @@ export const defaultCanvasDrawRect: CanvasShapeCommand<'drawRect'> = {
   },
 };
 
-export const defaultCanvasDrawRoundRect: CanvasShapeCommand<'drawRoundRect'> = {
-  key: 'drawRoundRect',
+export const defaultCanvasDrawRoundRectangle: CanvasShapeCommand<'drawRoundRectangle'> = {
+  key: 'drawRoundRectangle',
   draw(ctx, state, buf, i) {
     const x = buf[i] as number;
     const y = buf[i + 1] as number;
@@ -369,8 +369,8 @@ export const defaultCanvasShapeCommands: CanvasShapeCommand<any>[] = [
   defaultCanvasDrawCircle,
   defaultCanvasDrawEllipse,
   defaultCanvasDrawPath,
-  defaultCanvasDrawRect,
-  defaultCanvasDrawRoundRect,
+  defaultCanvasDrawRectangle,
+  defaultCanvasDrawRoundRectangle,
   defaultCanvasEndFill,
   defaultCanvasLineBitmapStyle,
   defaultCanvasLineGradientStyle,

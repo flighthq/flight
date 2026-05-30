@@ -36,7 +36,7 @@ export function colorTransformSurface(
   }
 }
 
-export function merge(
+export function mergeSurface(
   source: Readonly<Surface>,
   sx: number,
   sy: number,
@@ -70,7 +70,7 @@ export function merge(
   }
 }
 
-export function scroll(dest: Surface, dx: number, dy: number): void {
+export function scrollSurface(dest: Surface, dx: number, dy: number): void {
   const copy = new Uint8ClampedArray(dest.data);
   dest.data.fill(0);
   for (let py = 0; py < dest.height; py++) {
@@ -87,7 +87,7 @@ export function scroll(dest: Surface, dx: number, dy: number): void {
   }
 }
 
-export function threshold(
+export function thresholdSurface(
   source: Readonly<Surface>,
   sx: number,
   sy: number,
@@ -97,7 +97,7 @@ export function threshold(
   dx: number,
   dy: number,
   operation: ThresholdOperation,
-  threshold: number,
+  thresholdValue: number,
   color: number = 0,
   mask: number = 0xffffffff,
   copySource: boolean = false,
@@ -113,7 +113,7 @@ export function threshold(
         (((source.data[si + 3] << 24) | (source.data[si] << 16) | (source.data[si + 1] << 8) | source.data[si + 2]) &
           mask) >>>
         0;
-      const passes = compare(pixel, operation, threshold >>> 0);
+      const passes = compare(pixel, operation, thresholdValue >>> 0);
       if (passes) {
         const cr = (color >> 16) & 0xff;
         const cg = (color >> 8) & 0xff;

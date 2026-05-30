@@ -3,18 +3,18 @@ import type { GraphNode, Rectangle, Sprite, TextureAtlas } from '@flighthq/types
 import { SpriteKind } from '@flighthq/types';
 
 import {
-  computeSpriteLocalBoundsRect,
+  computeSpriteLocalBoundsRectangle,
   createSprite,
   createSpriteData,
   createSpriteRuntime,
   getSpriteRuntime,
 } from './sprite';
 
-describe('computeSpriteLocalBoundsRect', () => {
+describe('computeSpriteLocalBoundsRectangle', () => {
   it('is a no-op that does not modify out', () => {
     const sprite = createSprite();
     const out = createRectangle(1, 2, 3, 4);
-    computeSpriteLocalBoundsRect(out, sprite as unknown as GraphNode);
+    computeSpriteLocalBoundsRectangle(out, sprite as unknown as GraphNode);
     expect(out.x).toBe(1);
     expect(out.y).toBe(2);
     expect(out.width).toBe(3);
@@ -79,9 +79,9 @@ describe('createSpriteRuntime', () => {
     expect(runtime).not.toBeNull();
   });
 
-  it('uses computeSpriteLocalBoundsRect', () => {
+  it('uses computeSpriteLocalBoundsRectangle', () => {
     const runtime = createSpriteRuntime();
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeSpriteLocalBoundsRect);
+    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeSpriteLocalBoundsRectangle);
   });
 });
 

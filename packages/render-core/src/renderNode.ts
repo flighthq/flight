@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity';
-import { colorTransform } from '@flighthq/materials';
+import { createColorTransform } from '@flighthq/materials';
 import { BlendMode, type Renderable, type RenderNode, type RenderState } from '@flighthq/types';
 
 export function createRenderNode(state: RenderState, source: Renderable): RenderNode {
@@ -8,7 +8,7 @@ export function createRenderNode(state: RenderState, source: Renderable): Render
     alpha: 1,
     appearanceFrameID: -1,
     blendMode: BlendMode.Normal,
-    colorTransform: colorTransform.create(),
+    colorTransform: createColorTransform(),
     lastAppearanceID: -1,
     lastLocalTransformID: -1,
     renderer: renderer ?? null,

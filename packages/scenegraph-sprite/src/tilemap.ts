@@ -11,7 +11,7 @@ import { TilemapKind } from '@flighthq/types';
 
 import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
 
-export function computeTilemapLocalBoundsRect(out: Rectangle, source: Readonly<GraphNode>): void {
+export function computeTilemapLocalBoundsRectangle(out: Rectangle, source: Readonly<GraphNode>): void {
   const tilemap = source as Tilemap;
   const { tileset, columns, rows } = tilemap.data;
   out.x = 0;
@@ -39,18 +39,18 @@ export function createTilemapRuntime(): TilemapRuntime {
   return createSpriteNodeRuntime(defaultMethods) as TilemapRuntime;
 }
 
-export function fillTiles(tilemap: Tilemap, id: number): void {
+export function fillTilemapTiles(tilemap: Tilemap, id: number): void {
   tilemap.data.tiles.fill(id);
-}
-
-export function getTile(tilemap: Readonly<Tilemap>, col: number, row: number): number {
-  const { columns, rows, tiles } = tilemap.data;
-  if (col < 0 || col >= columns || row < 0 || row >= rows) return -1;
-  return tiles[row * columns + col];
 }
 
 export function getTilemapRuntime(source: Readonly<Tilemap>): Readonly<TilemapRuntime> {
   return getSpriteNodeRuntime(source) as TilemapRuntime;
+}
+
+export function getTilemapTile(tilemap: Readonly<Tilemap>, col: number, row: number): number {
+  const { columns, rows, tiles } = tilemap.data;
+  if (col < 0 || col >= columns || row < 0 || row >= rows) return -1;
+  return tiles[row * columns + col];
 }
 
 export function resizeTilemap(tilemap: Tilemap, columns: number, rows: number): void {
@@ -68,12 +68,12 @@ export function resizeTilemap(tilemap: Tilemap, columns: number, rows: number): 
   data.tiles = newTiles;
 }
 
-export function setTile(tilemap: Tilemap, col: number, row: number, id: number): void {
+export function setTilemapTile(tilemap: Tilemap, col: number, row: number, id: number): void {
   const { columns, rows, tiles } = tilemap.data;
   if (col < 0 || col >= columns || row < 0 || row >= rows) return;
   tiles[row * columns + col] = id;
 }
 
 const defaultMethods: Partial<MethodsOf<TilemapRuntime>> = {
-  computeLocalBoundsRect: computeTilemapLocalBoundsRect,
+  computeLocalBoundsRect: computeTilemapLocalBoundsRectangle,
 };

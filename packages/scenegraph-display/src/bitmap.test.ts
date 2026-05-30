@@ -3,18 +3,18 @@ import type { Bitmap, GraphNode, ImageSource } from '@flighthq/types';
 import { BitmapKind } from '@flighthq/types';
 
 import {
-  computeBitmapLocalBoundsRect,
+  computeBitmapLocalBoundsRectangle,
   createBitmap,
   createBitmapData,
   createBitmapRuntime,
   getBitmapRuntime,
 } from './bitmap';
 
-describe('computeBitmapLocalBoundsRect', () => {
+describe('computeBitmapLocalBoundsRectangle', () => {
   it('sets out dimensions from image when image is present', () => {
     const bitmap = createBitmap({ data: { image: { width: 100, height: 200 } as ImageSource } });
     const out = createRectangle();
-    computeBitmapLocalBoundsRect(out, bitmap as unknown as GraphNode);
+    computeBitmapLocalBoundsRectangle(out, bitmap as unknown as GraphNode);
     expect(out.width).toBe(100);
     expect(out.height).toBe(200);
   });
@@ -22,7 +22,7 @@ describe('computeBitmapLocalBoundsRect', () => {
   it('does not modify out when image is null', () => {
     const bitmap = createBitmap();
     const out = createRectangle(0, 0, 50, 60);
-    computeBitmapLocalBoundsRect(out, bitmap as unknown as GraphNode);
+    computeBitmapLocalBoundsRectangle(out, bitmap as unknown as GraphNode);
     expect(out.width).toBe(50);
     expect(out.height).toBe(60);
   });
@@ -82,9 +82,9 @@ describe('createBitmapRuntime', () => {
     expect(runtime).not.toBeNull();
   });
 
-  it('uses computeBitmapLocalBoundsRect', () => {
+  it('uses computeBitmapLocalBoundsRectangle', () => {
     const runtime = createBitmapRuntime();
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeBitmapLocalBoundsRect);
+    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeBitmapLocalBoundsRectangle);
   });
 });
 

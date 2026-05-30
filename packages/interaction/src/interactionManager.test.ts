@@ -1,10 +1,10 @@
 import { setRectangle } from '@flighthq/geometry';
-import { addChild, getLocalBoundsRect } from '@flighthq/scenegraph-core';
+import { addGraphChild, getLocalBoundsRectangle } from '@flighthq/scenegraph-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import { connectSignal } from '@flighthq/signals';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { hitTestLocalBoundsRect } from './hitTests';
+import { hitTestLocalBoundsRectangle } from './hitTests';
 import { registerHitTestPoint } from './hitTests';
 import {
   createDisplayObjectInteractionSignals,
@@ -13,7 +13,7 @@ import {
 } from './interactionManager';
 
 beforeAll(() => {
-  registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRect);
+  registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRectangle);
 });
 
 describe('createDisplayObjectInteractionSignals', () => {
@@ -36,8 +36,8 @@ describe('dispatchPointerDown', () => {
   it('fires onPointerDown on a hit target', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
-    setRectangle(getLocalBoundsRect(child), 0, 0, 100, 100);
-    addChild(root, child);
+    setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
+    addGraphChild(root, child);
 
     const signals = getDisplayObjectInteractionSignals(child);
     let fired = 0;
@@ -50,8 +50,8 @@ describe('dispatchPointerDown', () => {
   it('passes correct pointer data to the handler', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
-    setRectangle(getLocalBoundsRect(child), 0, 0, 100, 100);
-    addChild(root, child);
+    setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
+    addGraphChild(root, child);
 
     const signals = getDisplayObjectInteractionSignals(child);
     let receivedX = 0;

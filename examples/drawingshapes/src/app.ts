@@ -7,13 +7,13 @@ import {
   curveTo,
   drawCircle,
   drawEllipse,
-  drawRect,
-  drawRoundRect,
+  drawRectangle,
+  drawRoundRectangle,
   lineStyle,
   lineTo,
   moveTo,
-  setX,
-  setY,
+  setTransformX,
+  setTransformY,
   updateDisplayObjectBeforeRender,
 } from '@flighthq/sdk';
 
@@ -36,44 +36,44 @@ function drawPolygon(g: Shape, x: number, y: number, radius: number, sides: numb
 
 const square = createShape();
 beginFill(square, 0x24afc4);
-drawRect(square, 0, 0, 100, 100);
-setX(square, 20);
-setY(square, 20);
+drawRectangle(square, 0, 0, 100, 100);
+setTransformX(square, 20);
+setTransformY(square, 20);
 addChild(main, square);
 
 const rectangle = createShape();
 beginFill(rectangle, 0x24afc4);
-drawRect(rectangle, 0, 0, 120, 100);
-setX(rectangle, 140);
-setY(rectangle, 20);
+drawRectangle(rectangle, 0, 0, 120, 100);
+setTransformX(rectangle, 140);
+setTransformY(rectangle, 20);
 addChild(main, rectangle);
 
 const circle = createShape();
 beginFill(circle, 0x24afc4);
 drawCircle(circle, 50, 50, 50);
-setX(circle, 280);
-setY(circle, 20);
+setTransformX(circle, 280);
+setTransformY(circle, 20);
 addChild(main, circle);
 
 const ellipse = createShape();
 beginFill(ellipse, 0x24afc4);
 drawEllipse(ellipse, 0, 0, 120, 100);
-setX(ellipse, 400);
-setY(ellipse, 20);
+setTransformX(ellipse, 400);
+setTransformY(ellipse, 20);
 addChild(main, ellipse);
 
 const roundSquare = createShape();
 beginFill(roundSquare, 0x24afc4);
-drawRoundRect(roundSquare, 0, 0, 100, 100, 40, 40);
-setX(roundSquare, 540);
-setY(roundSquare, 20);
+drawRoundRectangle(roundSquare, 0, 0, 100, 100, 40, 40);
+setTransformX(roundSquare, 540);
+setTransformY(roundSquare, 20);
 addChild(main, roundSquare);
 
 const roundRectangle = createShape();
 beginFill(roundRectangle, 0x24afc4);
-drawRoundRect(roundRectangle, 0, 0, 120, 100, 40, 40);
-setX(roundRectangle, 660);
-setY(roundRectangle, 20);
+drawRoundRectangle(roundRectangle, 0, 0, 120, 100, 40, 40);
+setTransformX(roundRectangle, 660);
+setTransformY(roundRectangle, 20);
 addChild(main, roundRectangle);
 
 // ── Row 2: polygons ────────────────────────────────────────────────────────
@@ -84,43 +84,43 @@ moveTo(triangle, 0, 100);
 lineTo(triangle, 50, 0);
 lineTo(triangle, 100, 100);
 lineTo(triangle, 0, 100);
-setX(triangle, 20);
-setY(triangle, 150);
+setTransformX(triangle, 20);
+setTransformY(triangle, 150);
 addChild(main, triangle);
 
 const pentagon = createShape();
 beginFill(pentagon, 0x24afc4);
 drawPolygon(pentagon, 50, 50, 50, 5);
-setX(pentagon, 145);
-setY(pentagon, 150);
+setTransformX(pentagon, 145);
+setTransformY(pentagon, 150);
 addChild(main, pentagon);
 
 const hexagon = createShape();
 beginFill(hexagon, 0x24afc4);
 drawPolygon(hexagon, 50, 50, 50, 6);
-setX(hexagon, 270);
-setY(hexagon, 150);
+setTransformX(hexagon, 270);
+setTransformY(hexagon, 150);
 addChild(main, hexagon);
 
 const heptagon = createShape();
 beginFill(heptagon, 0x24afc4);
 drawPolygon(heptagon, 50, 50, 50, 7);
-setX(heptagon, 395);
-setY(heptagon, 150);
+setTransformX(heptagon, 395);
+setTransformY(heptagon, 150);
 addChild(main, heptagon);
 
 const octagon = createShape();
 beginFill(octagon, 0x24afc4);
 drawPolygon(octagon, 50, 50, 50, 8);
-setX(octagon, 520);
-setY(octagon, 150);
+setTransformX(octagon, 520);
+setTransformY(octagon, 150);
 addChild(main, octagon);
 
 const decagon = createShape();
 beginFill(decagon, 0x24afc4);
 drawPolygon(decagon, 50, 50, 50, 10);
-setX(decagon, 650);
-setY(decagon, 150);
+setTransformX(decagon, 650);
+setTransformY(decagon, 150);
 addChild(main, decagon);
 
 // ── Row 3: lines and curves ───────────────────────────────────────────────
@@ -128,15 +128,15 @@ addChild(main, decagon);
 const line = createShape();
 lineStyle(line, 10, 0x24afc4);
 lineTo(line, 755, 0);
-setX(line, 20);
-setY(line, 280);
+setTransformX(line, 20);
+setTransformY(line, 280);
 addChild(main, line);
 
 const curve = createShape();
 lineStyle(curve, 10, 0x24afc4);
 curveTo(curve, 327.5, -50, 755, 0);
-setX(curve, 20);
-setY(curve, 340);
+setTransformX(curve, 20);
+setTransformY(curve, 340);
 addChild(main, curve);
 
 // ── Render loop ───────────────────────────────────────────────────────────

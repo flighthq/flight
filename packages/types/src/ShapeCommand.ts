@@ -41,8 +41,8 @@ export interface ShapeCommandRegistry {
   drawCircle: readonly [x: number, y: number, radius: number];
   drawEllipse: readonly [x: number, y: number, width: number, height: number];
   drawPath: readonly [commands: number[], data: number[], winding: GraphicsPathWinding];
-  drawRect: readonly [x: number, y: number, width: number, height: number];
-  drawRoundRect: readonly [
+  drawRectangle: readonly [x: number, y: number, width: number, height: number];
+  drawRoundRectangle: readonly [
     x: number,
     y: number,
     width: number,

@@ -2,19 +2,19 @@ import type { TextFormat } from '@flighthq/types';
 
 const DEFAULT_SIZE = 12;
 
-export function getFormatAscent(format: TextFormat): number {
+export function getTextFormatAscent(format: TextFormat): number {
   return format.size ?? DEFAULT_SIZE;
 }
 
-export function getFormatDescent(format: TextFormat): number {
+export function getTextFormatDescent(format: TextFormat): number {
   return (format.size ?? DEFAULT_SIZE) * 0.185;
 }
 
-export function getFormatHeight(format: TextFormat): number {
-  return getFormatAscent(format) + getFormatDescent(format) + getFormatLeading(format);
+export function getTextFormatHeight(format: TextFormat): number {
+  return getTextFormatAscent(format) + getTextFormatDescent(format) + getTextFormatLeading(format);
 }
 
-export function getFormatLeading(format: TextFormat): number {
+export function getTextFormatLeading(format: TextFormat): number {
   return format.leading ?? 0;
 }
 

@@ -3,10 +3,10 @@ import {
   createGraphNodeRuntime,
   getGraphNodeRuntime,
   initHasAppearance,
-  initHasBoundsRect,
-  initHasBoundsRectRuntime,
-  initHasTransform2D,
-  initHasTransform2DRuntime,
+  initHasBoundsRectangle,
+  initHasBoundsRectangleRuntime,
+  initHasTransform,
+  initHasTransformRuntime,
 } from '@flighthq/scenegraph-core';
 import type { GraphNodeRuntimeFactory } from '@flighthq/types';
 import type {
@@ -25,18 +25,18 @@ export function createSpriteNode<Runtime extends SpriteNodeRuntime>(
   kind: symbol,
   obj?: Readonly<PartialNode<SpriteNode>>,
   createData?: SpriteGraphNodeDataFactory,
-  createRuntime?: SpriteGraphNodeRuntimeFactory<Runtime>,
+  createSpriteNodeRuntimeFactory?: SpriteGraphNodeRuntimeFactory<Runtime>,
 ): SpriteNode {
   const out = createGraphNode(
     SpriteGraph,
     kind,
     obj,
     createData,
-    createRuntime ??
+    createSpriteNodeRuntimeFactory ??
       (createSpriteNodeRuntime as GraphNodeRuntimeFactory<typeof SpriteGraph, SpriteNodeTraits, Runtime>),
   ) as SpriteNode;
-  initHasTransform2D(out, obj);
-  initHasBoundsRect(out, obj);
+  initHasTransform(out, obj);
+  initHasBoundsRectangle(out, obj);
   initHasAppearance(out, obj);
   out.alphaEnabled = obj?.alphaEnabled ?? true;
   out.blendModeEnabled = obj?.blendModeEnabled ?? true;
@@ -48,8 +48,8 @@ export function createSpriteNode<Runtime extends SpriteNodeRuntime>(
 
 export function createSpriteNodeRuntime(methods?: Readonly<Partial<MethodsOf<SpriteNodeRuntime>>>): SpriteNodeRuntime {
   const out = createGraphNodeRuntime(methods) as SpriteNodeRuntime;
-  initHasTransform2DRuntime(out, methods);
-  initHasBoundsRectRuntime(out, methods);
+  initHasTransformRuntime(out, methods);
+  initHasBoundsRectangleRuntime(out, methods);
   return out;
 }
 

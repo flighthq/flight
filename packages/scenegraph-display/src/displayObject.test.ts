@@ -1,4 +1,4 @@
-import { getRuntime } from '@flighthq/entity';
+import { getEntityRuntime } from '@flighthq/entity';
 import { createRectangle } from '@flighthq/geometry';
 import { createGraphNode } from '@flighthq/scenegraph-core';
 import type {
@@ -19,13 +19,13 @@ import {
   createDisplayObjectRuntime,
   getDisplayObjectRuntime,
   isDisplayObject,
-  setFilters,
-  setMask,
-  setScrollRect,
+  setDisplayObjectFilters,
+  setDisplayObjectMask,
+  setDisplayObjectScrollRectangle,
 } from './displayObject';
 
 function getRuntime_(obj: DisplayObject): DisplayObjectRuntime {
-  return getRuntime(obj) as DisplayObjectRuntime;
+  return getEntityRuntime(obj) as DisplayObjectRuntime;
 }
 
 describe('createDisplayObject', () => {
@@ -149,7 +149,7 @@ describe('isDisplayObject', () => {
   });
 });
 
-describe('setFilters', () => {
+describe('setDisplayObjectFilters', () => {
   let obj: DisplayObject;
   beforeEach(() => {
     obj = createDisplayObject();
@@ -157,23 +157,23 @@ describe('setFilters', () => {
 
   it('sets filters', () => {
     const filters = [{} as unknown as Filter];
-    setFilters(obj, filters);
+    setDisplayObjectFilters(obj, filters);
     expect(obj.filters).toBe(filters);
   });
 
   it('accepts null', () => {
-    setFilters(obj, null);
+    setDisplayObjectFilters(obj, null);
     expect(obj.filters).toBeNull();
   });
 
   it('invalidates appearance', () => {
     const idBefore = getRuntime_(obj).appearanceID;
-    setFilters(obj, []);
+    setDisplayObjectFilters(obj, []);
     expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
   });
 });
 
-describe('setMask', () => {
+describe('setDisplayObjectMask', () => {
   let obj: DisplayObject;
   beforeEach(() => {
     obj = createDisplayObject();
@@ -181,23 +181,23 @@ describe('setMask', () => {
 
   it('sets mask', () => {
     const mask = createDisplayObject();
-    setMask(obj, mask);
+    setDisplayObjectMask(obj, mask);
     expect(obj.mask).toBe(mask);
   });
 
   it('accepts null', () => {
-    setMask(obj, null);
+    setDisplayObjectMask(obj, null);
     expect(obj.mask).toBeNull();
   });
 
   it('invalidates appearance', () => {
     const idBefore = getRuntime_(obj).appearanceID;
-    setMask(obj, createDisplayObject());
+    setDisplayObjectMask(obj, createDisplayObject());
     expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
   });
 });
 
-describe('setScrollRect', () => {
+describe('setDisplayObjectScrollRectangle', () => {
   let obj: DisplayObject;
   beforeEach(() => {
     obj = createDisplayObject();
@@ -205,18 +205,18 @@ describe('setScrollRect', () => {
 
   it('sets scrollRect', () => {
     const rect = createRectangle();
-    setScrollRect(obj, rect);
+    setDisplayObjectScrollRectangle(obj, rect);
     expect(obj.scrollRect).toBe(rect);
   });
 
   it('accepts null', () => {
-    setScrollRect(obj, null);
+    setDisplayObjectScrollRectangle(obj, null);
     expect(obj.scrollRect).toBeNull();
   });
 
   it('invalidates appearance', () => {
     const idBefore = getRuntime_(obj).appearanceID;
-    setScrollRect(obj, createRectangle());
+    setDisplayObjectScrollRectangle(obj, createRectangle());
     expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
   });
 });

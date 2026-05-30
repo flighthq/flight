@@ -1,9 +1,9 @@
 import type { GraphNode, GraphNodeRuntime, HasTransform2D, HasTransform2DRuntime } from '@flighthq/types';
 
 import { createGraphNode, createGraphNodeRuntime } from './graphNode';
-import { initHasTransform2D, initHasTransform2DRuntime } from './hasTransform2d';
+import { initHasTransform, initHasTransformRuntime } from './hasTransform2d';
 
-describe('initHasTransform2D', () => {
+describe('initHasTransform', () => {
   let node: HasTransform2D;
 
   beforeEach(() => {
@@ -12,7 +12,7 @@ describe('initHasTransform2D', () => {
   });
 
   it('initializes default values', () => {
-    initHasTransform2D(node);
+    initHasTransform(node);
 
     expect(node.rotation).toStrictEqual(0);
     expect(node.scaleX).toStrictEqual(1);
@@ -29,7 +29,7 @@ describe('initHasTransform2D', () => {
       x: 100,
       y: 200,
     };
-    initHasTransform2D(node, base);
+    initHasTransform(node, base);
     expect(base.scaleX).toStrictEqual(base.scaleX);
     expect(base.scaleY).toStrictEqual(base.scaleY);
     expect(base.rotation).toStrictEqual(base.rotation);
@@ -38,7 +38,7 @@ describe('initHasTransform2D', () => {
   });
 });
 
-describe('initHasTransform2DRuntime', () => {
+describe('initHasTransformRuntime', () => {
   let runtime: GraphNodeRuntime<typeof NodeTestKind, HasTransform2D> & HasTransform2DRuntime;
 
   beforeEach(() => {
@@ -46,7 +46,7 @@ describe('initHasTransform2DRuntime', () => {
   });
 
   it('initializes default values', () => {
-    initHasTransform2DRuntime(runtime);
+    initHasTransformRuntime(runtime);
 
     expect(runtime.localTransform2D).toBeNull();
     expect(runtime.rotationAngle).toStrictEqual(0);

@@ -7,7 +7,7 @@ import {
   defaultGraphNodeRuntimeCanAddChild,
   getGraphNodeRuntime,
   getGraphNodeSignals,
-  setEnabled,
+  setGraphNodeEnabled,
 } from './graphNode';
 
 describe('createGraphNode', () => {
@@ -165,17 +165,17 @@ describe('getGraphNodeSignals', () => {
   });
 });
 
-describe('setEnabled', () => {
+describe('setGraphNodeEnabled', () => {
   it('sets enabled to false', () => {
     const node = createGraphNode(TestGraph, NodeTestKind);
-    setEnabled(node, false);
+    setGraphNodeEnabled(node, false);
     expect(node.enabled).toBe(false);
   });
 
   it('sets enabled back to true', () => {
     const node = createGraphNode(TestGraph, NodeTestKind);
-    setEnabled(node, false);
-    setEnabled(node, true);
+    setGraphNodeEnabled(node, false);
+    setGraphNodeEnabled(node, true);
     expect(node.enabled).toBe(true);
   });
 });

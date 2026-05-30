@@ -1,6 +1,6 @@
 import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/render-canvas';
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { beginFill, createShape, drawRect, endFill } from '@flighthq/scenegraph-display';
+import { beginShapeFill, createShape, drawShapeRectangle, endShapeFill } from '@flighthq/scenegraph-display';
 import { ShapeKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
@@ -39,9 +39,9 @@ describe('drawDOMShape', () => {
   it('appends a canvas element when the shape has draw commands', () => {
     const state = makeState();
     const shape = createShape();
-    beginFill(shape, 0xff0000);
-    drawRect(shape, 0, 0, 50, 50);
-    endFill(shape);
+    beginShapeFill(shape, 0xff0000);
+    drawShapeRectangle(shape, 0, 0, 50, 50);
+    endShapeFill(shape);
     const renderNode = getDisplayObjectRenderNode(state, shape);
 
     drawDOMShape(state, renderNode);
@@ -53,9 +53,9 @@ describe('drawDOMShape', () => {
   it('sets canvas size to at least 1x1 for zero-size shapes', () => {
     const state = makeState();
     const shape = createShape();
-    beginFill(shape, 0xff0000);
-    drawRect(shape, 0, 0, 0, 0);
-    endFill(shape);
+    beginShapeFill(shape, 0xff0000);
+    drawShapeRectangle(shape, 0, 0, 0, 0);
+    endShapeFill(shape);
     const renderNode = getDisplayObjectRenderNode(state, shape);
 
     drawDOMShape(state, renderNode);
@@ -68,9 +68,9 @@ describe('drawDOMShape', () => {
   it('reuses the same canvas element across multiple draws', () => {
     const state = makeState();
     const shape = createShape();
-    beginFill(shape, 0xff0000);
-    drawRect(shape, 0, 0, 40, 40);
-    endFill(shape);
+    beginShapeFill(shape, 0xff0000);
+    drawShapeRectangle(shape, 0, 0, 40, 40);
+    endShapeFill(shape);
     const renderNode = getDisplayObjectRenderNode(state, shape);
 
     drawDOMShape(state, renderNode);

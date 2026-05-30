@@ -1,6 +1,6 @@
 import type { TextAutoSize, TextFormat } from '@flighthq/types';
 
-import { getFormatAscent, getFormatDescent, getFormatLeading, mergeTextFormat } from './textFormat';
+import { getTextFormatAscent, getTextFormatDescent, getTextFormatLeading, mergeTextFormat } from './textFormat';
 import type { TextFormatRange } from './textFormatRange';
 import type { TextLayoutGroup } from './textLayoutGroup';
 import { createTextLayoutGroup } from './textLayoutGroup';
@@ -114,9 +114,9 @@ function buildGroups(
   let firstLineOfParagraph = true;
 
   // Line-level metrics.
-  let ascent = getFormatAscent(currentFormat);
-  let descent = getFormatDescent(currentFormat);
-  let leading = getFormatLeading(currentFormat);
+  let ascent = getTextFormatAscent(currentFormat);
+  let descent = getTextFormatDescent(currentFormat);
+  let leading = getTextFormatLeading(currentFormat);
   let lineHeight = Math.ceil(ascent + descent + leading);
   let maxAscent = ascent;
   let maxLineHeight = lineHeight;
@@ -144,9 +144,9 @@ function buildGroups(
   }
 
   function updateLineMetrics(): void {
-    ascent = getFormatAscent(currentFormat);
-    descent = getFormatDescent(currentFormat);
-    leading = getFormatLeading(currentFormat);
+    ascent = getTextFormatAscent(currentFormat);
+    descent = getTextFormatDescent(currentFormat);
+    leading = getTextFormatLeading(currentFormat);
     lineHeight = Math.ceil(ascent + descent + leading);
     if (lineHeight > maxLineHeight) maxLineHeight = lineHeight;
     if (ascent > maxAscent) maxAscent = ascent;
