@@ -49,6 +49,26 @@ describe('drawCanvasDisplayObject', () => {
   });
 });
 
+describe('drawCanvasDisplayObjectMask', () => {
+  it('does not throw when no children', () => {
+    const state = makeState();
+    const obj = createDisplayObject();
+    const data = getDisplayObjectRenderNode(state, obj);
+    expect(() => drawCanvasDisplayObjectMask(state, data)).not.toThrow();
+  });
+
+  it('does not call context.rect for a childless display object', () => {
+    const state = makeState();
+    const obj = createDisplayObject();
+    const data = getDisplayObjectRenderNode(state, obj);
+    const rectSpy = vi.spyOn(state.context, 'rect');
+
+    drawCanvasDisplayObjectMask(state, data);
+
+    expect(rectSpy).not.toHaveBeenCalled();
+  });
+});
+
 describe('renderCanvasDisplayObject', () => {
   it('does not throw for a simple visible object', () => {
     const state = makeState();
@@ -101,25 +121,5 @@ describe('renderCanvasDisplayObject', () => {
     renderCanvasDisplayObject(state, parent);
 
     expect(drawImageSpy).toHaveBeenCalledOnce();
-  });
-});
-
-describe('drawCanvasDisplayObjectMask', () => {
-  it('does not throw when no children', () => {
-    const state = makeState();
-    const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
-    expect(() => drawCanvasDisplayObjectMask(state, data)).not.toThrow();
-  });
-
-  it('does not call context.rect for a childless display object', () => {
-    const state = makeState();
-    const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
-    const rectSpy = vi.spyOn(state.context, 'rect');
-
-    drawCanvasDisplayObjectMask(state, data);
-
-    expect(rectSpy).not.toHaveBeenCalled();
   });
 });

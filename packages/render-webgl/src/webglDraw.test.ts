@@ -1,4 +1,12 @@
-import { bindWebGLTexture, createWebGLTexture, drawWebGLQuad, setQuadMatrixFromOffset, setWebGLBlendMode, updateWebGLTexture, useWebGLProgram } from './webglDraw';
+import {
+  bindWebGLTexture,
+  createWebGLTexture,
+  drawWebGLQuad,
+  setQuadMatrixFromOffset,
+  setWebGLBlendMode,
+  updateWebGLTexture,
+  useWebGLProgram,
+} from './webglDraw';
 import { makeWebGLState } from './webglTestHelper';
 
 describe('bindWebGLTexture', () => {
@@ -37,14 +45,20 @@ describe('bindWebGLTexture', () => {
     const { state, gl } = makeWebGLState();
     const canvas = document.createElement('canvas');
     bindWebGLTexture(state, canvas);
-    expect(gl.pixelStorei).toHaveBeenCalledWith((gl as unknown as { UNPACK_PREMULTIPLY_ALPHA_WEBGL: number }).UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    expect(gl.pixelStorei).toHaveBeenCalledWith(
+      (gl as unknown as { UNPACK_PREMULTIPLY_ALPHA_WEBGL: number }).UNPACK_PREMULTIPLY_ALPHA_WEBGL,
+      false,
+    );
   });
 
   it('sets premultiply to true for non-canvas image sources', () => {
     const { state, gl } = makeWebGLState();
     const img = document.createElement('img');
     bindWebGLTexture(state, img);
-    expect(gl.pixelStorei).toHaveBeenCalledWith((gl as unknown as { UNPACK_PREMULTIPLY_ALPHA_WEBGL: number }).UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    expect(gl.pixelStorei).toHaveBeenCalledWith(
+      (gl as unknown as { UNPACK_PREMULTIPLY_ALPHA_WEBGL: number }).UNPACK_PREMULTIPLY_ALPHA_WEBGL,
+      true,
+    );
   });
 
   it('rebinds and updates currentTexture when switching to a cached texture', () => {
@@ -74,7 +88,12 @@ describe('createWebGLTexture', () => {
   it('sets CLAMP_TO_EDGE for both wrap modes', () => {
     const { state, gl } = makeWebGLState();
     createWebGLTexture(state);
-    const g = gl as unknown as { TEXTURE_2D: number; TEXTURE_WRAP_S: number; TEXTURE_WRAP_T: number; CLAMP_TO_EDGE: number };
+    const g = gl as unknown as {
+      TEXTURE_2D: number;
+      TEXTURE_WRAP_S: number;
+      TEXTURE_WRAP_T: number;
+      CLAMP_TO_EDGE: number;
+    };
     expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE);
     expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_WRAP_T, g.CLAMP_TO_EDGE);
   });
@@ -82,7 +101,12 @@ describe('createWebGLTexture', () => {
   it('uses LINEAR filter when allowSmoothing is true', () => {
     const { state, gl } = makeWebGLState({ allowSmoothing: true });
     createWebGLTexture(state);
-    const g = gl as unknown as { TEXTURE_2D: number; TEXTURE_MIN_FILTER: number; TEXTURE_MAG_FILTER: number; LINEAR: number };
+    const g = gl as unknown as {
+      TEXTURE_2D: number;
+      TEXTURE_MIN_FILTER: number;
+      TEXTURE_MAG_FILTER: number;
+      LINEAR: number;
+    };
     expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR);
     expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
   });
@@ -90,7 +114,12 @@ describe('createWebGLTexture', () => {
   it('uses NEAREST filter when allowSmoothing is false', () => {
     const { state, gl } = makeWebGLState({ allowSmoothing: false });
     createWebGLTexture(state);
-    const g = gl as unknown as { TEXTURE_2D: number; TEXTURE_MIN_FILTER: number; TEXTURE_MAG_FILTER: number; NEAREST: number };
+    const g = gl as unknown as {
+      TEXTURE_2D: number;
+      TEXTURE_MIN_FILTER: number;
+      TEXTURE_MAG_FILTER: number;
+      NEAREST: number;
+    };
     expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.NEAREST);
     expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.NEAREST);
   });
@@ -132,7 +161,11 @@ describe('drawWebGLQuad', () => {
   it('calls bufferSubData to upload vertex data', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLQuad(state, 10, 20, 110, 70, 0.1, 0.2, 0.9, 0.8);
-    expect(gl.bufferSubData).toHaveBeenCalledWith((gl as unknown as { ARRAY_BUFFER: number }).ARRAY_BUFFER, 0, state.quadVertexData);
+    expect(gl.bufferSubData).toHaveBeenCalledWith(
+      (gl as unknown as { ARRAY_BUFFER: number }).ARRAY_BUFFER,
+      0,
+      state.quadVertexData,
+    );
   });
 
   it('calls drawElements for 6 indices forming 2 triangles', () => {
@@ -241,7 +274,10 @@ describe('updateWebGLTexture', () => {
     const texture = {} as WebGLTexture;
     state.currentTexture = texture;
     updateWebGLTexture(state, texture, document.createElement('canvas'));
-    expect(gl.pixelStorei).toHaveBeenCalledWith((gl as unknown as { UNPACK_PREMULTIPLY_ALPHA_WEBGL: number }).UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    expect(gl.pixelStorei).toHaveBeenCalledWith(
+      (gl as unknown as { UNPACK_PREMULTIPLY_ALPHA_WEBGL: number }).UNPACK_PREMULTIPLY_ALPHA_WEBGL,
+      true,
+    );
   });
 });
 

@@ -1,19 +1,6 @@
 import { createEntity } from '@flighthq/entity';
 import type { ColorTransform } from '@flighthq/types';
 
-export function create(obj?: Partial<ColorTransform>): ColorTransform {
-  return createEntity({
-    redMultiplier: obj?.redMultiplier ?? 1,
-    greenMultiplier: obj?.greenMultiplier ?? 1,
-    blueMultiplier: obj?.blueMultiplier ?? 1,
-    alphaMultiplier: obj?.alphaMultiplier ?? 1,
-    redOffset: obj?.redOffset ?? 0,
-    greenOffset: obj?.greenOffset ?? 0,
-    blueOffset: obj?.blueOffset ?? 0,
-    alphaOffset: obj?.alphaOffset ?? 0,
-  });
-}
-
 export function clone(source: Readonly<ColorTransform>): ColorTransform {
   return create(source);
 }
@@ -38,6 +25,19 @@ export function copy(out: ColorTransform, source: Readonly<ColorTransform>): voi
   out.greenOffset = source.greenOffset;
   out.blueOffset = source.blueOffset;
   out.alphaOffset = source.alphaOffset;
+}
+
+export function create(obj?: Partial<ColorTransform>): ColorTransform {
+  return createEntity({
+    redMultiplier: obj?.redMultiplier ?? 1,
+    greenMultiplier: obj?.greenMultiplier ?? 1,
+    blueMultiplier: obj?.blueMultiplier ?? 1,
+    alphaMultiplier: obj?.alphaMultiplier ?? 1,
+    redOffset: obj?.redOffset ?? 0,
+    greenOffset: obj?.greenOffset ?? 0,
+    blueOffset: obj?.blueOffset ?? 0,
+    alphaOffset: obj?.alphaOffset ?? 0,
+  });
 }
 
 export function equals(a: Readonly<ColorTransform>, b: Readonly<ColorTransform>): boolean {

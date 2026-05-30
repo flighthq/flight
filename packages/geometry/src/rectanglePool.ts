@@ -2,8 +2,13 @@ import type { Rectangle } from '@flighthq/types';
 
 import { createRectangle } from './rectangle';
 
-export function clearRectanglePool(): void {
-  pool.length = 0;
+export function acquireEmptyRectangle(): Rectangle {
+  const r = acquireRectangle();
+  r.x = 0;
+  r.y = 0;
+  r.width = 0;
+  r.height = 0;
+  return r;
 }
 
 export function acquireRectangle(): Rectangle {
@@ -18,13 +23,8 @@ export function acquireRectangle(): Rectangle {
   return r;
 }
 
-export function acquireEmptyRectangle(): Rectangle {
-  const r = acquireRectangle();
-  r.x = 0;
-  r.y = 0;
-  r.width = 0;
-  r.height = 0;
-  return r;
+export function clearRectanglePool(): void {
+  pool.length = 0;
 }
 
 export function releaseRectangle(r: Rectangle): void {

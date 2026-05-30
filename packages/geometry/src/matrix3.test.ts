@@ -300,6 +300,234 @@ describe('equalsMatrix3', () => {
   });
 });
 
+describe('getMatrix3Element', () => {
+  it('returns the element at the given row and column', () => {
+    const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    expect(getMatrix3Element(m, 0, 0)).toBe(1);
+    expect(getMatrix3Element(m, 0, 1)).toBe(2);
+    expect(getMatrix3Element(m, 0, 2)).toBe(3);
+    expect(getMatrix3Element(m, 1, 0)).toBe(4);
+    expect(getMatrix3Element(m, 2, 2)).toBe(9);
+  });
+});
+
+describe('identityMatrix3', () => {
+  it('resets a matrix to the identity', () => {
+    const m = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
+    identityMatrix3(m);
+    expect(getMatrix3Element(m, 0, 0)).toBe(1);
+    expect(getMatrix3Element(m, 1, 1)).toBe(1);
+    expect(getMatrix3Element(m, 2, 2)).toBe(1);
+    expect(getMatrix3Element(m, 0, 1)).toBe(0);
+    expect(getMatrix3Element(m, 1, 0)).toBe(0);
+  });
+});
+
+describe('inverseMatrix3', () => {
+  it('should invert the matrix correctly', () => {
+    // Create a matrix with scaling of 2 and translation of (5, 3)
+    const m = createMatrix3(2, 0, 5, 0, 2, 3, 0, 0, 1);
+
+    // Apply inversion
+    let out = createMatrix3();
+    inverseMatrix3(out, m);
+
+    // Expected inverse matrix:
+    // Scaling should be 0.5 (inverse of 2)
+    // Translation should be -2.5 (inverse of 5 scaled by 0.5) and -1.5 (inverse of 3 scaled by 0.5)
+
+    // Assert the inverse matrix values
+    expect(out.m[0]).toBeCloseTo(0.5); // Inverse scaling on x
+    expect(out.m[1]).toBeCloseTo(0); // No shear on x
+    expect(out.m[3]).toBeCloseTo(0); // No shear on y
+    expect(out.m[4]).toBeCloseTo(0.5); // Inverse scaling on y
+    expect(out.m[2]).toBeCloseTo(-2.5); // Inverse translation on x
+    expect(out.m[5]).toBeCloseTo(-1.5); // Inverse translation on y
+  });
+
+  it('should not depend on initial out matrix values', () => {
+    const source = createMatrix3(2, 1, 5, 3, 4, 6, 0, 0, 1);
+    const out = createMatrix3(9, 9, 9, 9, 9, 9, 0, 0, 1);
+
+    inverseMatrix3(out, source);
+
+    const result = createMatrix3();
+    multiplyMatrix3(result, source, out);
+
+    expect(result.m[0]).toBeCloseTo(1);
+    expect(result.m[1]).toBeCloseTo(0);
+    expect(result.m[3]).toBeCloseTo(0);
+    expect(result.m[4]).toBeCloseTo(1);
+  });
+
+  it('should should allow matrix-like objects', () => {
+    const m = { m: new Float32Array([2, 0, 5, 0, 2, 3, 0, 0, 1]) };
+    let out = { m: new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0]) };
+    inverseMatrix3(out, m);
+    expect(out.m[0]).toBeCloseTo(0.5); // Inverse scaling on x
+    expect(out.m[1]).toBeCloseTo(0); // No shear on x
+    expect(out.m[3]).toBeCloseTo(0); // No shear on y
+    expect(out.m[4]).toBeCloseTo(0.5); // Inverse scaling on y
+    expect(out.m[2]).toBeCloseTo(-2.5); // Inverse translation on x
+    expect(out.m[5]).toBeCloseTo(-1.5); // Inverse translation on y
+  });
+
+  it('supports out === source for affine matrices', () => {
+    const matrix = createMatrix3(2, 1, 5, 3, 4, 6, 0, 0, 1);
+    const expected = createMatrix3();
+    inverseMatrix3(expected, matrix);
+
+    inverseMatrix3(matrix, matrix);
+
+    expect(equalsMatrix3(matrix, expected)).toBe(true);
+  });
+
+  it('supports out === source for non-affine matrices', () => {
+    const matrix = createMatrix3(1, 2, 3, 0, 1, 4, 5, 6, 0);
+    const expected = createMatrix3();
+    inverseMatrix3(expected, matrix);
+
+    inverseMatrix3(matrix, matrix);
+
+    expect(equalsMatrix3(matrix, expected)).toBe(true);
+  });
+});
+
+describe('isAffineMatrix3', () => {
+  it('returns true for identity matrix', () => {
+    const m = createMatrix3();
+    expect(isAffineMatrix3(m)).toBe(true);
+  });
+
+  it('returns false when last row is not (0, 0, 1)', () => {
+    const m = createMatrix3(1, 0, 0, 0, 1, 0, 1, 0, 1);
+    expect(isAffineMatrix3(m)).toBe(false);
+  });
+
+  it('returns true for a matrix with translation', () => {
+    const m = createMatrix3(1, 0, 5, 0, 1, 10, 0, 0, 1);
+    expect(isAffineMatrix3(m)).toBe(true);
+  });
+});
+
+describe('multiplyMatrix3', () => {
+  it('should support out === a', () => {
+    const a = createMatrix3(2, 3, 4, 5, 7, 8, 0, 0, 1);
+    const b = createMatrix3(11, 13, 17, 19, 23, 29, 0, 0, 1);
+    const expected = createMatrix3();
+    multiplyMatrix3(expected, a, b);
+
+    multiplyMatrix3(a, a, b);
+    expect(equalsMatrix3(a, expected)).toBe(true);
+  });
+
+  it('should support out === b', () => {
+    const a = createMatrix3(2, 3, 4, 5, 7, 8, 0, 0, 1);
+    const b = createMatrix3(11, 13, 17, 19, 23, 29, 0, 0, 1);
+    const expected = createMatrix3();
+    multiplyMatrix3(expected, a, b);
+
+    multiplyMatrix3(b, a, b);
+    expect(equalsMatrix3(b, expected)).toBe(true);
+  });
+
+  it('should multiply identity correctly', () => {
+    const a = createMatrix3();
+    const b = createMatrix3(2, 3, 4, 5, 6, 7);
+    const out = createMatrix3();
+    multiplyMatrix3(out, a, b);
+    expect(equalsMatrix3(out, b)).toBe(true);
+  });
+
+  it('should allow matrix-like objects', () => {
+    const a = { m: new Float32Array([2, 0, 0, 0, 2, 0, 0, 0, 1]) };
+    const b = { m: new Float32Array([1, 0, 5, 0, 1, 5, 0, 0, 1]) };
+    multiplyMatrix3(a, a, b);
+    expect(a.m[2]).toBe(10);
+    expect(a.m[5]).toBe(10);
+  });
+});
+
+describe('rotateMatrix3', () => {
+  it('should rotate the matrix correctly', () => {
+    const m = createMatrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
+    const out = createMatrix3();
+    rotateMatrix3(out, m, Math.PI / 2); // 90 degrees
+    expect(out.m[0]).toBeCloseTo(0);
+    expect(out.m[1]).toBeCloseTo(-1);
+    expect(out.m[3]).toBeCloseTo(1);
+    expect(out.m[4]).toBeCloseTo(0);
+  });
+
+  it('should allow a matrix-like object', () => {
+    const m = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
+    const out = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
+
+    // Apply 90 degrees rotation (π/2 radians)
+    rotateMatrix3(out, m, Math.PI / 2);
+
+    // Check that the resulting matrix corresponds to a 90-degree rotation matrix
+    expect(out.m[0]).toBeCloseTo(0); // a = cos(π/2) = 0
+    expect(out.m[1]).toBeCloseTo(-1); // b = -sin(π/2) = -1
+    expect(out.m[3]).toBeCloseTo(1); // c = sin(π/2) = 1
+    expect(out.m[4]).toBeCloseTo(0); // d = cos(π/2) = 0
+  });
+
+  it('supports out === source', () => {
+    const matrix = createMatrix3(2, 3, 4, 5, 7, 8, 11, 13, 17);
+    const expected = createMatrix3();
+    rotateMatrix3(expected, matrix, Math.PI / 2);
+
+    rotateMatrix3(matrix, matrix, Math.PI / 2);
+    expect(equalsMatrix3(matrix, expected)).toBe(true);
+  });
+});
+
+describe('scaleMatrix3', () => {
+  it('should scale the matrix correctly', () => {
+    const m = createMatrix3();
+    const out = createMatrix3();
+    scaleMatrix3(out, m, 2, 3);
+    expect(out.m[0]).toBe(2);
+    expect(out.m[4]).toBe(3);
+  });
+
+  it('should allow a matrix-like object', () => {
+    const m = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
+    const out = createMatrix3();
+    scaleMatrix3(out, m, 2, 3);
+    expect(out.m[0]).toBe(2); // a
+    expect(out.m[4]).toBe(3); // d
+  });
+});
+
+describe('setMatrix3', () => {
+  it('sets all 9 elements in row-major order', () => {
+    const m = createMatrix3();
+    setMatrix3(m, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        expect(getMatrix3Element(m, row, col)).toBe(row * 3 + col + 1);
+      }
+    }
+  });
+});
+
+describe('setMatrix3Element', () => {
+  it('writes the value at the given row and column', () => {
+    const m = createMatrix3();
+    setMatrix3Element(m, 1, 2, 42);
+    expect(getMatrix3Element(m, 1, 2)).toBe(42);
+  });
+
+  it('does not affect other elements', () => {
+    const m = createMatrix3();
+    setMatrix3Element(m, 0, 1, 7);
+    expect(getMatrix3Element(m, 0, 0)).toBe(1);
+    expect(getMatrix3Element(m, 1, 1)).toBe(1);
+  });
+});
+
 describe('setMatrix3FromMatrix', () => {
   it('should convert a Matrix3x2 to a Matrix3', () => {
     // Define a matrix (6 values, row-major)
@@ -400,167 +628,6 @@ describe('setMatrix3FromMatrix4', () => {
   });
 });
 
-describe('inverseMatrix3', () => {
-  it('should invert the matrix correctly', () => {
-    // Create a matrix with scaling of 2 and translation of (5, 3)
-    const m = createMatrix3(2, 0, 5, 0, 2, 3, 0, 0, 1);
-
-    // Apply inversion
-    let out = createMatrix3();
-    inverseMatrix3(out, m);
-
-    // Expected inverse matrix:
-    // Scaling should be 0.5 (inverse of 2)
-    // Translation should be -2.5 (inverse of 5 scaled by 0.5) and -1.5 (inverse of 3 scaled by 0.5)
-
-    // Assert the inverse matrix values
-    expect(out.m[0]).toBeCloseTo(0.5); // Inverse scaling on x
-    expect(out.m[1]).toBeCloseTo(0); // No shear on x
-    expect(out.m[3]).toBeCloseTo(0); // No shear on y
-    expect(out.m[4]).toBeCloseTo(0.5); // Inverse scaling on y
-    expect(out.m[2]).toBeCloseTo(-2.5); // Inverse translation on x
-    expect(out.m[5]).toBeCloseTo(-1.5); // Inverse translation on y
-  });
-
-  it('should not depend on initial out matrix values', () => {
-    const source = createMatrix3(2, 1, 5, 3, 4, 6, 0, 0, 1);
-    const out = createMatrix3(9, 9, 9, 9, 9, 9, 0, 0, 1);
-
-    inverseMatrix3(out, source);
-
-    const result = createMatrix3();
-    multiplyMatrix3(result, source, out);
-
-    expect(result.m[0]).toBeCloseTo(1);
-    expect(result.m[1]).toBeCloseTo(0);
-    expect(result.m[3]).toBeCloseTo(0);
-    expect(result.m[4]).toBeCloseTo(1);
-  });
-
-  it('should should allow matrix-like objects', () => {
-    const m = { m: new Float32Array([2, 0, 5, 0, 2, 3, 0, 0, 1]) };
-    let out = { m: new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0]) };
-    inverseMatrix3(out, m);
-    expect(out.m[0]).toBeCloseTo(0.5); // Inverse scaling on x
-    expect(out.m[1]).toBeCloseTo(0); // No shear on x
-    expect(out.m[3]).toBeCloseTo(0); // No shear on y
-    expect(out.m[4]).toBeCloseTo(0.5); // Inverse scaling on y
-    expect(out.m[2]).toBeCloseTo(-2.5); // Inverse translation on x
-    expect(out.m[5]).toBeCloseTo(-1.5); // Inverse translation on y
-  });
-
-  it('supports out === source for affine matrices', () => {
-    const matrix = createMatrix3(2, 1, 5, 3, 4, 6, 0, 0, 1);
-    const expected = createMatrix3();
-    inverseMatrix3(expected, matrix);
-
-    inverseMatrix3(matrix, matrix);
-
-    expect(equalsMatrix3(matrix, expected)).toBe(true);
-  });
-
-  it('supports out === source for non-affine matrices', () => {
-    const matrix = createMatrix3(1, 2, 3, 0, 1, 4, 5, 6, 0);
-    const expected = createMatrix3();
-    inverseMatrix3(expected, matrix);
-
-    inverseMatrix3(matrix, matrix);
-
-    expect(equalsMatrix3(matrix, expected)).toBe(true);
-  });
-});
-
-describe('multiplyMatrix3', () => {
-  it('should support out === a', () => {
-    const a = createMatrix3(2, 3, 4, 5, 7, 8, 0, 0, 1);
-    const b = createMatrix3(11, 13, 17, 19, 23, 29, 0, 0, 1);
-    const expected = createMatrix3();
-    multiplyMatrix3(expected, a, b);
-
-    multiplyMatrix3(a, a, b);
-    expect(equalsMatrix3(a, expected)).toBe(true);
-  });
-
-  it('should support out === b', () => {
-    const a = createMatrix3(2, 3, 4, 5, 7, 8, 0, 0, 1);
-    const b = createMatrix3(11, 13, 17, 19, 23, 29, 0, 0, 1);
-    const expected = createMatrix3();
-    multiplyMatrix3(expected, a, b);
-
-    multiplyMatrix3(b, a, b);
-    expect(equalsMatrix3(b, expected)).toBe(true);
-  });
-
-  it('should multiply identity correctly', () => {
-    const a = createMatrix3();
-    const b = createMatrix3(2, 3, 4, 5, 6, 7);
-    const out = createMatrix3();
-    multiplyMatrix3(out, a, b);
-    expect(equalsMatrix3(out, b)).toBe(true);
-  });
-
-  it('should allow matrix-like objects', () => {
-    const a = { m: new Float32Array([2, 0, 0, 0, 2, 0, 0, 0, 1]) };
-    const b = { m: new Float32Array([1, 0, 5, 0, 1, 5, 0, 0, 1]) };
-    multiplyMatrix3(a, a, b);
-    expect(a.m[2]).toBe(10);
-    expect(a.m[5]).toBe(10);
-  });
-});
-
-describe('rotateMatrix3', () => {
-  it('should rotate the matrix correctly', () => {
-    const m = createMatrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
-    const out = createMatrix3();
-    rotateMatrix3(out, m, Math.PI / 2); // 90 degrees
-    expect(out.m[0]).toBeCloseTo(0);
-    expect(out.m[1]).toBeCloseTo(-1);
-    expect(out.m[3]).toBeCloseTo(1);
-    expect(out.m[4]).toBeCloseTo(0);
-  });
-
-  it('should allow a matrix-like object', () => {
-    const m = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
-    const out = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
-
-    // Apply 90 degrees rotation (π/2 radians)
-    rotateMatrix3(out, m, Math.PI / 2);
-
-    // Check that the resulting matrix corresponds to a 90-degree rotation matrix
-    expect(out.m[0]).toBeCloseTo(0); // a = cos(π/2) = 0
-    expect(out.m[1]).toBeCloseTo(-1); // b = -sin(π/2) = -1
-    expect(out.m[3]).toBeCloseTo(1); // c = sin(π/2) = 1
-    expect(out.m[4]).toBeCloseTo(0); // d = cos(π/2) = 0
-  });
-
-  it('supports out === source', () => {
-    const matrix = createMatrix3(2, 3, 4, 5, 7, 8, 11, 13, 17);
-    const expected = createMatrix3();
-    rotateMatrix3(expected, matrix, Math.PI / 2);
-
-    rotateMatrix3(matrix, matrix, Math.PI / 2);
-    expect(equalsMatrix3(matrix, expected)).toBe(true);
-  });
-});
-
-describe('scaleMatrix3', () => {
-  it('should scale the matrix correctly', () => {
-    const m = createMatrix3();
-    const out = createMatrix3();
-    scaleMatrix3(out, m, 2, 3);
-    expect(out.m[0]).toBe(2);
-    expect(out.m[4]).toBe(3);
-  });
-
-  it('should allow a matrix-like object', () => {
-    const m = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
-    const out = createMatrix3();
-    scaleMatrix3(out, m, 2, 3);
-    expect(out.m[0]).toBe(2); // a
-    expect(out.m[4]).toBe(3); // d
-  });
-});
-
 describe('translateMatrix3', () => {
   it('should translate the matrix correctly', () => {
     const m = createMatrix3();
@@ -576,72 +643,5 @@ describe('translateMatrix3', () => {
     translateMatrix3(out, m, 2, 3);
     expect(out.m[2]).toBe(2); // tx
     expect(out.m[5]).toBe(3); // ty
-  });
-});
-
-describe('getMatrix3Element', () => {
-  it('returns the element at the given row and column', () => {
-    const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
-    expect(getMatrix3Element(m, 0, 0)).toBe(1);
-    expect(getMatrix3Element(m, 0, 1)).toBe(2);
-    expect(getMatrix3Element(m, 0, 2)).toBe(3);
-    expect(getMatrix3Element(m, 1, 0)).toBe(4);
-    expect(getMatrix3Element(m, 2, 2)).toBe(9);
-  });
-});
-
-describe('identityMatrix3', () => {
-  it('resets a matrix to the identity', () => {
-    const m = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
-    identityMatrix3(m);
-    expect(getMatrix3Element(m, 0, 0)).toBe(1);
-    expect(getMatrix3Element(m, 1, 1)).toBe(1);
-    expect(getMatrix3Element(m, 2, 2)).toBe(1);
-    expect(getMatrix3Element(m, 0, 1)).toBe(0);
-    expect(getMatrix3Element(m, 1, 0)).toBe(0);
-  });
-});
-
-describe('isAffineMatrix3', () => {
-  it('returns true for identity matrix', () => {
-    const m = createMatrix3();
-    expect(isAffineMatrix3(m)).toBe(true);
-  });
-
-  it('returns false when last row is not (0, 0, 1)', () => {
-    const m = createMatrix3(1, 0, 0, 0, 1, 0, 1, 0, 1);
-    expect(isAffineMatrix3(m)).toBe(false);
-  });
-
-  it('returns true for a matrix with translation', () => {
-    const m = createMatrix3(1, 0, 5, 0, 1, 10, 0, 0, 1);
-    expect(isAffineMatrix3(m)).toBe(true);
-  });
-});
-
-describe('setMatrix3Element', () => {
-  it('writes the value at the given row and column', () => {
-    const m = createMatrix3();
-    setMatrix3Element(m, 1, 2, 42);
-    expect(getMatrix3Element(m, 1, 2)).toBe(42);
-  });
-
-  it('does not affect other elements', () => {
-    const m = createMatrix3();
-    setMatrix3Element(m, 0, 1, 7);
-    expect(getMatrix3Element(m, 0, 0)).toBe(1);
-    expect(getMatrix3Element(m, 1, 1)).toBe(1);
-  });
-});
-
-describe('setMatrix3', () => {
-  it('sets all 9 elements in row-major order', () => {
-    const m = createMatrix3();
-    setMatrix3(m, 1, 2, 3, 4, 5, 6, 7, 8, 9);
-    for (let row = 0; row < 3; row++) {
-      for (let col = 0; col < 3; col++) {
-        expect(getMatrix3Element(m, row, col)).toBe(row * 3 + col + 1);
-      }
-    }
   });
 });

@@ -1,4 +1,10 @@
-import { compileDefaultProgram, createDefaultBitmapShader, setWebGLAttribs, setWebGLMatrixFromTransform, setWebGLMatrixFromValues } from './webglShader';
+import {
+  compileDefaultProgram,
+  createDefaultBitmapShader,
+  setWebGLAttribs,
+  setWebGLMatrixFromTransform,
+  setWebGLMatrixFromValues,
+} from './webglShader';
 import { makeGL, makeShaderLoc } from './webglTestHelper';
 
 describe('compileDefaultProgram', () => {
@@ -74,14 +80,28 @@ describe('setWebGLAttribs', () => {
     const gl = makeGL();
     const loc = makeShaderLoc();
     setWebGLAttribs(gl, loc);
-    expect(gl.vertexAttribPointer).toHaveBeenCalledWith(loc.locPosition, 2, (gl as unknown as { FLOAT: number }).FLOAT, false, 16, 0);
+    expect(gl.vertexAttribPointer).toHaveBeenCalledWith(
+      loc.locPosition,
+      2,
+      (gl as unknown as { FLOAT: number }).FLOAT,
+      false,
+      16,
+      0,
+    );
   });
 
   it('configures texCoord attrib with stride 16 and offset 8', () => {
     const gl = makeGL();
     const loc = makeShaderLoc();
     setWebGLAttribs(gl, loc);
-    expect(gl.vertexAttribPointer).toHaveBeenCalledWith(loc.locTexCoord, 2, (gl as unknown as { FLOAT: number }).FLOAT, false, 16, 8);
+    expect(gl.vertexAttribPointer).toHaveBeenCalledWith(
+      loc.locTexCoord,
+      2,
+      (gl as unknown as { FLOAT: number }).FLOAT,
+      false,
+      16,
+      8,
+    );
   });
 });
 
@@ -96,14 +116,14 @@ describe('setWebGLMatrixFromTransform', () => {
 
     setWebGLMatrixFromTransform(gl, loc, m, { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 }, canvas);
 
-    expect(m[0]).toBeCloseTo(0.01);  // a * 2/width
-    expect(m[1]).toBeCloseTo(0);     // -b * 2/height
+    expect(m[0]).toBeCloseTo(0.01); // a * 2/width
+    expect(m[1]).toBeCloseTo(0); // -b * 2/height
     expect(m[2]).toBe(0);
-    expect(m[3]).toBeCloseTo(0);     // c * 2/width
+    expect(m[3]).toBeCloseTo(0); // c * 2/width
     expect(m[4]).toBeCloseTo(-0.02); // -d * 2/height
     expect(m[5]).toBe(0);
-    expect(m[6]).toBeCloseTo(-1);    // tx * 2/width - 1
-    expect(m[7]).toBeCloseTo(1);     // -ty * 2/height + 1
+    expect(m[6]).toBeCloseTo(-1); // tx * 2/width - 1
+    expect(m[7]).toBeCloseTo(1); // -ty * 2/height + 1
     expect(m[8]).toBe(1);
   });
 
@@ -118,7 +138,7 @@ describe('setWebGLMatrixFromTransform', () => {
     setWebGLMatrixFromTransform(gl, loc, m, { a: 1, b: 0, c: 0, d: 1, tx: 10, ty: 20 }, canvas);
 
     expect(m[6]).toBeCloseTo(-0.9); // 10 * 2/200 - 1
-    expect(m[7]).toBeCloseTo(0.6);  // -20 * 2/100 + 1
+    expect(m[7]).toBeCloseTo(0.6); // -20 * 2/100 + 1
   });
 
   it('negates b and d components to flip y-axis for clip space', () => {
@@ -132,8 +152,8 @@ describe('setWebGLMatrixFromTransform', () => {
     setWebGLMatrixFromTransform(gl, loc, m, { a: 0, b: 2, c: 3, d: 0, tx: 0, ty: 0 }, canvas);
 
     expect(m[1]).toBeCloseTo(-0.04); // -b * 2/100
-    expect(m[3]).toBeCloseTo(0.06);  // c * 2/100
-    expect(m[4]).toBeCloseTo(0);     // -d * 2/100
+    expect(m[3]).toBeCloseTo(0.06); // c * 2/100
+    expect(m[4]).toBeCloseTo(0); // -d * 2/100
   });
 
   it('calls uniformMatrix3fv with the filled matrix', () => {

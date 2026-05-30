@@ -19,28 +19,6 @@ const {
   toArrays,
 } = colorTransform;
 
-describe('create', () => {
-  it('initializes multipliers to 1 and offsets to 0 by default', () => {
-    const ct = create();
-    expect(ct.redMultiplier).toBe(1);
-    expect(ct.greenMultiplier).toBe(1);
-    expect(ct.blueMultiplier).toBe(1);
-    expect(ct.alphaMultiplier).toBe(1);
-    expect(ct.redOffset).toBe(0);
-    expect(ct.greenOffset).toBe(0);
-    expect(ct.blueOffset).toBe(0);
-    expect(ct.alphaOffset).toBe(0);
-  });
-
-  it('applies partial overrides', () => {
-    const ct = create({ redMultiplier: 0.5, blueOffset: 128 });
-    expect(ct.redMultiplier).toBe(0.5);
-    expect(ct.greenMultiplier).toBe(1);
-    expect(ct.blueOffset).toBe(128);
-    expect(ct.alphaOffset).toBe(0);
-  });
-});
-
 describe('clone', () => {
   it('returns a new object with identical values', () => {
     const ct = create({ redMultiplier: 0.5, greenOffset: 64 });
@@ -124,6 +102,28 @@ describe('copy', () => {
     copy(out, source);
     out.redOffset = 99;
     expect(source.redOffset).toBe(50);
+  });
+});
+
+describe('create', () => {
+  it('initializes multipliers to 1 and offsets to 0 by default', () => {
+    const ct = create();
+    expect(ct.redMultiplier).toBe(1);
+    expect(ct.greenMultiplier).toBe(1);
+    expect(ct.blueMultiplier).toBe(1);
+    expect(ct.alphaMultiplier).toBe(1);
+    expect(ct.redOffset).toBe(0);
+    expect(ct.greenOffset).toBe(0);
+    expect(ct.blueOffset).toBe(0);
+    expect(ct.alphaOffset).toBe(0);
+  });
+
+  it('applies partial overrides', () => {
+    const ct = create({ redMultiplier: 0.5, blueOffset: 128 });
+    expect(ct.redMultiplier).toBe(0.5);
+    expect(ct.greenMultiplier).toBe(1);
+    expect(ct.blueOffset).toBe(128);
+    expect(ct.alphaOffset).toBe(0);
   });
 });
 

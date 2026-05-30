@@ -1,7 +1,7 @@
 import type { DisplayObjectRenderNode } from '@flighthq/types';
 
-import { defaultWebGLTextRenderer, drawWebGLText, drawWebGLTextMask } from './webglText';
 import { makeWebGLState } from './webglTestHelper';
+import { defaultWebGLTextRenderer, drawWebGLText, drawWebGLTextMask } from './webglText';
 
 function makeTextNode(text = '', textFormat = {}): DisplayObjectRenderNode {
   return {

@@ -151,6 +151,25 @@ describe('createVector2FromPolar', () => {
   });
 });
 
+describe('equalsVector2', () => {
+  it('returns true if vectors are identical, false otherwise', () => {
+    expect(equalsVector2(pt, pt2)).toBe(true);
+    pt.x = 1;
+    expect(equalsVector2(pt, pt2)).toBe(false);
+    pt2.x = 1;
+    expect(equalsVector2(pt, pt2)).toBe(true);
+  });
+
+  it('allows a vector-like object', () => {
+    const pt2 = { x: 0, y: 0 };
+    expect(equalsVector2(pt, pt2)).toBe(true);
+    pt.x = 1;
+    expect(equalsVector2(pt, pt2)).toBe(false);
+    pt2.x = 1;
+    expect(equalsVector2(pt, pt2)).toBe(true);
+  });
+});
+
 describe('getVector2Distance', () => {
   const testCases = [
     { a: [100, 0], b: [0, 0], expected: 100 },
@@ -176,25 +195,6 @@ describe('getVector2Distance', () => {
       const pt2 = { x: b[0], y: b[1] };
       expect(getVector2Distance(pt, pt2)).toBe(expected);
     }
-  });
-});
-
-describe('equalsVector2', () => {
-  it('returns true if vectors are identical, false otherwise', () => {
-    expect(equalsVector2(pt, pt2)).toBe(true);
-    pt.x = 1;
-    expect(equalsVector2(pt, pt2)).toBe(false);
-    pt2.x = 1;
-    expect(equalsVector2(pt, pt2)).toBe(true);
-  });
-
-  it('allows a vector-like object', () => {
-    const pt2 = { x: 0, y: 0 };
-    expect(equalsVector2(pt, pt2)).toBe(true);
-    pt.x = 1;
-    expect(equalsVector2(pt, pt2)).toBe(false);
-    pt2.x = 1;
-    expect(equalsVector2(pt, pt2)).toBe(true);
   });
 });
 
@@ -249,18 +249,6 @@ describe('getVector2LengthSquared', () => {
   it('allows a vector-like object', () => {
     const pt = { x: 3, y: 4 };
     expect(getVector2LengthSquared(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
-  });
-});
-
-describe('setVector2FromFloat32Array', () => {
-  it('writes the vector from 2 values at the offset', () => {
-    const array = new Float32Array(2);
-    array[0] = 1;
-    array[1] = 2;
-    const vector = { x: 100, y: 100 };
-    setVector2FromFloat32Array(vector, 0, array);
-    expect(vector.x).toBe(1);
-    expect(vector.y).toBe(2);
   });
 });
 
@@ -463,6 +451,18 @@ describe('setVector2', () => {
     setVector2(pt, 2, 10);
     expect(pt.x).toBe(2);
     expect(pt.y).toBe(10);
+  });
+});
+
+describe('setVector2FromFloat32Array', () => {
+  it('writes the vector from 2 values at the offset', () => {
+    const array = new Float32Array(2);
+    array[0] = 1;
+    array[1] = 2;
+    const vector = { x: 100, y: 100 };
+    setVector2FromFloat32Array(vector, 0, array);
+    expect(vector.x).toBe(1);
+    expect(vector.y).toBe(2);
   });
 });
 

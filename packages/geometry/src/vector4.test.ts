@@ -25,94 +25,6 @@ import {
 } from '@flighthq/geometry';
 import type { Vector4 } from '@flighthq/types';
 
-describe('createVector4', () => {
-  it('creates a createVector4 with default values', () => {
-    const v = createVector4();
-    expect(v.x).toBe(0);
-    expect(v.y).toBe(0);
-    expect(v.z).toBe(0);
-    expect(v.w).toBe(0);
-  });
-
-  it('creates a createVector4 with specified values', () => {
-    const v = createVector4(1, 2, 3, 4);
-    expect(v.x).toBe(1);
-    expect(v.y).toBe(2);
-    expect(v.z).toBe(3);
-    expect(v.w).toBe(4);
-  });
-});
-
-// Properties
-
-describe('getVector4Length', () => {
-  it('returns the length of the vector', () => {
-    const v = createVector4(3, 4, 0, 12);
-    expect(getVector4Length(v)).toBe(13);
-  });
-
-  it('allows a vector-like object', () => {
-    const v = { x: 3, y: 4, z: 0, w: 12 };
-    expect(getVector4Length(v)).toBe(13);
-  });
-});
-
-describe('getVector4LengthSquared', () => {
-  it('returns the squared length of the vector', () => {
-    const v = createVector4(3, 4, 0, 12);
-    expect(getVector4LengthSquared(v)).toBe(169); // 3^2 + 4^2 + 12^2 = 169
-  });
-
-  it('allows a vector-like object', () => {
-    const v = { x: 3, y: 4, z: 0, w: 12 };
-    expect(getVector4LengthSquared(v)).toBe(169);
-  });
-});
-
-describe('X_AXIS', () => {
-  it('returns the unit vector along the X-axis', () => {
-    const xAxis: Vector4 = VECTOR4_X_AXIS;
-    expect(xAxis).not.toBeNull();
-    expect(xAxis.x).toBe(1);
-    expect(xAxis.y).toBe(0);
-    expect(xAxis.z).toBe(0);
-    expect(xAxis.w).toBe(0);
-  });
-});
-
-describe('Y_AXIS', () => {
-  it('returns the unit vector along the Y-axis', () => {
-    const yAxis = VECTOR4_Y_AXIS;
-    expect(yAxis).not.toBeNull();
-    expect(yAxis.x).toBe(0);
-    expect(yAxis.y).toBe(1);
-    expect(yAxis.z).toBe(0);
-    expect(yAxis.w).toBe(0);
-  });
-});
-
-describe('Z_AXIS', () => {
-  it('returns the unit vector along the Z-axis', () => {
-    const zAxis = VECTOR4_Z_AXIS;
-    expect(zAxis).not.toBeNull();
-    expect(zAxis.x).toBe(0);
-    expect(zAxis.y).toBe(0);
-    expect(zAxis.z).toBe(1);
-    expect(zAxis.w).toBe(0);
-  });
-});
-
-describe('W_UNIT', () => {
-  it('returns the unit vector along the W-dimension', () => {
-    const wUnit = VECTOR4_W_UNIT;
-    expect(wUnit).not.toBeNull();
-    expect(wUnit.x).toBe(0);
-    expect(wUnit.y).toBe(0);
-    expect(wUnit.z).toBe(0);
-    expect(wUnit.w).toBe(1);
-  });
-});
-
 describe('addVector4', () => {
   it('returns a new vector when no target is passed', () => {
     const a = createVector4(1, 2, 3, 10);
@@ -211,6 +123,57 @@ describe('copyVector4', () => {
   });
 });
 
+describe('createVector4', () => {
+  it('creates a createVector4 with default values', () => {
+    const v = createVector4();
+    expect(v.x).toBe(0);
+    expect(v.y).toBe(0);
+    expect(v.z).toBe(0);
+    expect(v.w).toBe(0);
+  });
+
+  it('creates a createVector4 with specified values', () => {
+    const v = createVector4(1, 2, 3, 4);
+    expect(v.x).toBe(1);
+    expect(v.y).toBe(2);
+    expect(v.z).toBe(3);
+    expect(v.w).toBe(4);
+  });
+});
+
+describe('equalsVector4', () => {
+  it('returns true if vectors are equal', () => {
+    const a = createVector4(1, 2, 3, 4);
+    const b = createVector4(1, 2, 3, 4);
+    expect(equalsVector4(a, b)).toBe(true);
+  });
+
+  it('returns false if vectors are not equal', () => {
+    const a = createVector4(1, 2, 3, 4);
+    const b = createVector4(4, 5, 6, 7);
+    expect(equalsVector4(a, b)).toBe(false);
+  });
+});
+
+describe('getVector4AngleBetween', () => {
+  it('returns 0 for identical vectors', () => {
+    const a = createVector4(1, 0, 0, 0);
+    expect(getVector4AngleBetween(a, a)).toBeCloseTo(0);
+  });
+
+  it('returns PI/2 for perpendicular vectors', () => {
+    const a = createVector4(1, 0, 0, 0);
+    const b = createVector4(0, 1, 0, 0);
+    expect(getVector4AngleBetween(a, b)).toBeCloseTo(Math.PI / 2);
+  });
+
+  it('returns NaN for a zero-length vector', () => {
+    const a = createVector4(0, 0, 0, 0);
+    const b = createVector4(1, 0, 0, 0);
+    expect(getVector4AngleBetween(a, b)).toBeNaN();
+  });
+});
+
 describe('getVector4Distance', () => {
   it('returns the distance between two vectors', () => {
     const a = createVector4(1, 1, 1, 1);
@@ -237,17 +200,53 @@ describe('getVector4Dot', () => {
   });
 });
 
-describe('equalsVector4', () => {
-  it('returns true if vectors are equal', () => {
-    const a = createVector4(1, 2, 3, 4);
-    const b = createVector4(1, 2, 3, 4);
-    expect(equalsVector4(a, b)).toBe(true);
+describe('getVector4Length', () => {
+  it('returns the length of the vector', () => {
+    const v = createVector4(3, 4, 0, 12);
+    expect(getVector4Length(v)).toBe(13);
   });
 
-  it('returns false if vectors are not equal', () => {
+  it('allows a vector-like object', () => {
+    const v = { x: 3, y: 4, z: 0, w: 12 };
+    expect(getVector4Length(v)).toBe(13);
+  });
+});
+
+describe('getVector4LengthSquared', () => {
+  it('returns the squared length of the vector', () => {
+    const v = createVector4(3, 4, 0, 12);
+    expect(getVector4LengthSquared(v)).toBe(169); // 3^2 + 4^2 + 12^2 = 169
+  });
+
+  it('allows a vector-like object', () => {
+    const v = { x: 3, y: 4, z: 0, w: 12 };
+    expect(getVector4LengthSquared(v)).toBe(169);
+  });
+});
+
+describe('nearEqualsVector4', () => {
+  it('returns true for identical vectors', () => {
     const a = createVector4(1, 2, 3, 4);
-    const b = createVector4(4, 5, 6, 7);
-    expect(equalsVector4(a, b)).toBe(false);
+    expect(nearEqualsVector4(a, a)).toBe(true);
+  });
+
+  it('returns true when difference is within default tolerance', () => {
+    const a = createVector4(1, 2, 3, 4);
+    const b = createVector4(1 + 1e-7, 2, 3, 4);
+    expect(nearEqualsVector4(a, b)).toBe(true);
+  });
+
+  it('returns false when difference exceeds default tolerance', () => {
+    const a = createVector4(1, 2, 3, 4);
+    const b = createVector4(1 + 1e-5, 2, 3, 4);
+    expect(nearEqualsVector4(a, b)).toBe(false);
+  });
+
+  it('respects a custom tolerance', () => {
+    const a = createVector4(1, 2, 3, 4);
+    const b = createVector4(1.05, 2, 3, 4);
+    expect(nearEqualsVector4(a, b, 0.1)).toBe(true);
+    expect(nearEqualsVector4(a, b, 0.01)).toBe(false);
   });
 });
 
@@ -401,47 +400,48 @@ describe('subtractVector4', () => {
   });
 });
 
-describe('getVector4AngleBetween', () => {
-  it('returns 0 for identical vectors', () => {
-    const a = createVector4(1, 0, 0, 0);
-    expect(getVector4AngleBetween(a, a)).toBeCloseTo(0);
-  });
+// Properties
 
-  it('returns PI/2 for perpendicular vectors', () => {
-    const a = createVector4(1, 0, 0, 0);
-    const b = createVector4(0, 1, 0, 0);
-    expect(getVector4AngleBetween(a, b)).toBeCloseTo(Math.PI / 2);
-  });
-
-  it('returns NaN for a zero-length vector', () => {
-    const a = createVector4(0, 0, 0, 0);
-    const b = createVector4(1, 0, 0, 0);
-    expect(getVector4AngleBetween(a, b)).toBeNaN();
+describe('W_UNIT', () => {
+  it('returns the unit vector along the W-dimension', () => {
+    const wUnit = VECTOR4_W_UNIT;
+    expect(wUnit).not.toBeNull();
+    expect(wUnit.x).toBe(0);
+    expect(wUnit.y).toBe(0);
+    expect(wUnit.z).toBe(0);
+    expect(wUnit.w).toBe(1);
   });
 });
 
-describe('nearEqualsVector4', () => {
-  it('returns true for identical vectors', () => {
-    const a = createVector4(1, 2, 3, 4);
-    expect(nearEqualsVector4(a, a)).toBe(true);
+describe('X_AXIS', () => {
+  it('returns the unit vector along the X-axis', () => {
+    const xAxis: Vector4 = VECTOR4_X_AXIS;
+    expect(xAxis).not.toBeNull();
+    expect(xAxis.x).toBe(1);
+    expect(xAxis.y).toBe(0);
+    expect(xAxis.z).toBe(0);
+    expect(xAxis.w).toBe(0);
   });
+});
 
-  it('returns true when difference is within default tolerance', () => {
-    const a = createVector4(1, 2, 3, 4);
-    const b = createVector4(1 + 1e-7, 2, 3, 4);
-    expect(nearEqualsVector4(a, b)).toBe(true);
+describe('Y_AXIS', () => {
+  it('returns the unit vector along the Y-axis', () => {
+    const yAxis = VECTOR4_Y_AXIS;
+    expect(yAxis).not.toBeNull();
+    expect(yAxis.x).toBe(0);
+    expect(yAxis.y).toBe(1);
+    expect(yAxis.z).toBe(0);
+    expect(yAxis.w).toBe(0);
   });
+});
 
-  it('returns false when difference exceeds default tolerance', () => {
-    const a = createVector4(1, 2, 3, 4);
-    const b = createVector4(1 + 1e-5, 2, 3, 4);
-    expect(nearEqualsVector4(a, b)).toBe(false);
-  });
-
-  it('respects a custom tolerance', () => {
-    const a = createVector4(1, 2, 3, 4);
-    const b = createVector4(1.05, 2, 3, 4);
-    expect(nearEqualsVector4(a, b, 0.1)).toBe(true);
-    expect(nearEqualsVector4(a, b, 0.01)).toBe(false);
+describe('Z_AXIS', () => {
+  it('returns the unit vector along the Z-axis', () => {
+    const zAxis = VECTOR4_Z_AXIS;
+    expect(zAxis).not.toBeNull();
+    expect(zAxis.x).toBe(0);
+    expect(zAxis.y).toBe(0);
+    expect(zAxis.z).toBe(1);
+    expect(zAxis.w).toBe(0);
   });
 });

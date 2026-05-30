@@ -192,6 +192,21 @@ describe('copyMatrixRowToVector3', () => {
   });
 });
 
+describe('createGradientTransformMatrix', () => {
+  it('returns a Matrix equivalent to calling setGradientTransform', () => {
+    const m1 = createGradientTransformMatrix(100, 200);
+    const m2 = createMatrix();
+    setGradientTransformMatrix(m2, 100, 200);
+    expect(equalsMatrix(m1, m2)).toBe(true);
+  });
+
+  it('sets tx to tx + width / 2 and ty to ty + height / 2', () => {
+    const m = createGradientTransformMatrix(100, 200, 0, 10, 20);
+    expect(m.tx).toBeCloseTo(60); // 10 + 100/2
+    expect(m.ty).toBeCloseTo(120); // 20 + 200/2
+  });
+});
+
 describe('createMatrix', () => {
   it('should initialize matrix3x2 with provided values', () => {
     const m = createMatrix(2, 3, 4, 5, 6, 7);
@@ -268,147 +283,16 @@ describe('equalsMatrix', () => {
   });
 });
 
-describe('setMatrixFromFloat32Array', () => {
-  it('writes the matrix from 6 values at the offset', () => {
-    const array = new Float32Array(6);
-    for (let i = 0; i < 6; i++) {
-      array[i] = i;
-    }
-    const matrix = createMatrix();
-    setMatrixFromFloat32Array(matrix, 0, array);
-    expect(matrix.a).toBe(0);
-    expect(matrix.b).toBe(1);
-    expect(matrix.c).toBe(2);
-    expect(matrix.d).toBe(3);
-    expect(matrix.tx).toBe(4);
-    expect(matrix.ty).toBe(5);
-  });
-});
-
-describe('setMatrixFromMatrix3', () => {
-  let mat3: Matrix3Like;
-  let mat2D: Matrix;
-
-  beforeEach(() => {
-    // Setup a basic Matrix3x3 instance for testing
-    mat3 = {
-      m: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]), // 3x3 matrix3x2 (row-major)
-    };
-    mat2D = createMatrix(); // Create a createMatrix instance
-  });
-
-  it('should correctly copy the first 6 values of Matrix3x3 into matrix3x2', () => {
-    setMatrixFromMatrix3(mat2D, mat3);
-
-    expect(mat2D.a).toEqual(1);
-    expect(mat2D.b).toEqual(2);
-    expect(mat2D.tx).toEqual(3);
-    expect(mat2D.c).toEqual(4);
-    expect(mat2D.d).toEqual(5);
-    expect(mat2D.ty).toEqual(6);
-  });
-
-  it('should not affect the original Matrix3x3 after calling fromMatrix3x3', () => {
-    const originalMatrix3x3 = new Float32Array(mat3.m); // Clone the original Matrix3x3
-
-    setMatrixFromMatrix3(mat2D, mat3);
-
-    // Assert that the original Matrix3x3 is untouched
-    expect(mat3.m).toEqual(originalMatrix3x3);
-  });
-
-  it('should work with matrices where all values are zeros', () => {
-    const zeroMatrix3x3: Matrix3Like = {
-      m: new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0]), // A matrix3x2 full of zeros
-    };
-
-    setMatrixFromMatrix3(mat2D, zeroMatrix3x3);
-
-    expect(mat2D.a).toEqual(0);
-    expect(mat2D.b).toEqual(0);
-    expect(mat2D.tx).toEqual(0);
-    expect(mat2D.c).toEqual(0);
-    expect(mat2D.d).toEqual(0);
-    expect(mat2D.ty).toEqual(0);
-  });
-
-  it('should handle matrices where the translation is zero', () => {
-    const translationZeromatrix3x2: Matrix3Like = {
-      m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]), // Identity matrix3x2 (no translation)
-    };
-
-    setMatrixFromMatrix3(mat2D, translationZeromatrix3x2);
-
-    expect(mat2D.a).toEqual(1);
-    expect(mat2D.b).toEqual(0);
-    expect(mat2D.tx).toEqual(0);
-    expect(mat2D.c).toEqual(0);
-    expect(mat2D.d).toEqual(1);
-    expect(mat2D.ty).toEqual(0);
-  });
-});
-
-describe('setMatrixFromMatrix4', () => {
-  let mat4: Matrix4Like;
-  let mat2D: Matrix;
-
-  beforeEach(() => {
-    // Setup a basic Matrix4x4 instance for testing (column-major)
-    mat4 = {
-      m: new Float32Array([1, 4, 0, 0, 2, 5, 0, 0, 0, 0, 1, 0, 3, 6, 0, 1]), // 4x4 column-major matrix3x2
-    };
-    mat2D = createMatrix(); // Create a createMatrix instance
-  });
-
-  it('should correctly copy the 2D affine part from a column-major Matrix4x4', () => {
-    setMatrixFromMatrix4(mat2D, mat4);
-
-    // Expected 2D affine matrix3x2 values from Matrix4x4 (ignoring 3rd row/column)
-    expect(mat2D.a).toEqual(1);
-    expect(mat2D.b).toEqual(2);
-    expect(mat2D.tx).toEqual(3);
-    expect(mat2D.c).toEqual(4);
-    expect(mat2D.d).toEqual(5);
-    expect(mat2D.ty).toEqual(6);
-  });
-
-  it('should not affect the original Matrix4x4 after calling fromMatrix4x4', () => {
-    const originalMatrix4x4 = new Float32Array(mat4.m); // Clone the original Matrix4x4
-
-    setMatrixFromMatrix4(mat2D, mat4);
-
-    // Assert that the original Matrix4x4 is untouched
-    expect(mat4.m).toEqual(originalMatrix4x4);
-  });
-
-  it('should handle matrices with zero values correctly', () => {
-    const zeroMatrix4x4: Matrix4Like = {
-      m: new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), // Identity matrix3x2 with no scaling or translation
-    };
-
-    setMatrixFromMatrix4(mat2D, zeroMatrix4x4);
-
-    expect(mat2D.a).toEqual(0);
-    expect(mat2D.b).toEqual(0);
-    expect(mat2D.tx).toEqual(0);
-    expect(mat2D.c).toEqual(0);
-    expect(mat2D.d).toEqual(0);
-    expect(mat2D.ty).toEqual(0);
-  });
-
-  it('should correctly handle a 2D identity matrix3x2 in Matrix4x4 format', () => {
-    const identityMatrix4x4: Matrix4Like = {
-      m: new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), // 4x4 identity matrix3x2 (no scaling, no translation)
-    };
-
-    setMatrixFromMatrix4(mat2D, identityMatrix4x4);
-
-    expect(mat2D.a).toEqual(1);
-    expect(mat2D.b).toEqual(0);
-    expect(mat2D.tx).toEqual(0);
-    expect(mat2D.c).toEqual(0);
-    expect(mat2D.d).toEqual(1);
-    expect(mat2D.ty).toEqual(0);
+describe('identityMatrix', () => {
+  it('resets a modified matrix to identity', () => {
+    const m = createMatrix(2, 3, 4, 5, 6, 7);
+    identityMatrix(m);
+    expect(m.a).toBe(1);
+    expect(m.b).toBe(0);
+    expect(m.c).toBe(0);
+    expect(m.d).toBe(1);
+    expect(m.tx).toBe(0);
+    expect(m.ty).toBe(0);
   });
 });
 
@@ -572,167 +456,81 @@ describe('inverseMatrixTransformVectorXY', () => {
   });
 });
 
-describe('multiplyMatrix', () => {
-  it('should support out === a', () => {
-    const a = createMatrix(2, 0, 0, 2, 1, 1);
-    const b = createMatrix(1, 0, 0, 1, 5, 6);
-
-    // out = a × b
-    multiplyMatrix(a, a, b);
-
-    // translation = A.linear × B.translation + A.translation
-    expect(a.tx).toBe(2 * 5 + 1); // 11
-    expect(a.ty).toBe(2 * 6 + 1); // 13
-  });
-
-  it('should support out === b', () => {
-    const a = createMatrix(2, 0, 0, 2, 0, 0);
-    const b = createMatrix(1, 0, 0, 1, 3, 4);
-
-    multiplyMatrix(b, a, b);
-
-    expect(b.a).toBe(2);
-    expect(b.d).toBe(2);
-    expect(b.tx).toBe(6); // 2 * 3
-    expect(b.ty).toBe(8); // 2 * 4
-  });
-
-  it('should multiply identity correctly', () => {
-    const identity = createMatrix();
-    const m = createMatrix(2, 3, 4, 5, 6, 7);
-    const out = createMatrix();
-
-    multiplyMatrix(out, identity, m);
-    expect(equalsMatrix(out, m)).toBe(true);
-
-    multiplyMatrix(out, m, identity);
-    expect(equalsMatrix(out, m)).toBe(true);
-  });
-
-  it('should handle negative scale factors', () => {
-    const m1 = createMatrix(2, 0, 0, 2, 0, 0);
-    const m2 = createMatrix(-1, 0, 0, -1, 0, 0);
-
-    const out = createMatrix();
-    multiplyMatrix(out, m1, m2);
-
-    expect(out.a).toBe(-2);
-    expect(out.b).toBe(0);
-    expect(out.c).toBe(0);
-    expect(out.d).toBe(-2);
-    expect(out.tx).toBe(0);
-    expect(out.ty).toBe(0);
-  });
-
-  it('should handle rotation multiplication', () => {
-    const angle = Math.PI / 4;
-    const r = createMatrix(Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0);
-
-    const out = createMatrix();
-    multiplyMatrix(out, r, r); // r² = rotation by 90°
-
-    expect(out.a).toBeCloseTo(0, 5);
-    expect(out.b).toBeCloseTo(1, 5);
-    expect(out.c).toBeCloseTo(-1, 5);
-    expect(out.d).toBeCloseTo(0, 5);
-  });
-
-  it('should handle non-uniform scaling', () => {
-    const scaleY = createMatrix(1, 0, 0, 2, 0, 0);
-    const scaleX = createMatrix(2, 0, 0, 1, 0, 0);
-
-    const out = createMatrix();
-    multiplyMatrix(out, scaleY, scaleX);
-
-    expect(out.a).toBe(2);
-    expect(out.b).toBe(0);
-    expect(out.c).toBe(0);
-    expect(out.d).toBe(2);
-  });
-
-  it('should handle translation correctly', () => {
-    const a = createMatrix(2, 0, 0, 2, 1, 1);
-    const b = createMatrix(1, 0, 0, 1, 3, 4);
-
-    const out = createMatrix();
-    multiplyMatrix(out, a, b);
-
-    // t' = A.linear × B.translation + A.translation
-    expect(out.tx).toBe(2 * 3 + 1); // 7
-    expect(out.ty).toBe(2 * 4 + 1); // 9
-  });
-
-  it('should handle negative values consistently', () => {
-    const a = createMatrix(-1, 0, 0, -1, 0, 0);
-    const b = createMatrix(1, 0, 0, 1, -2, -3);
-
-    const out = createMatrix();
-    multiplyMatrix(out, a, b);
-
-    expect(out.tx).toBe(2);
-    expect(out.ty).toBe(3);
-  });
-});
-
-describe('rotateMatrix', () => {
-  it('should write rotated result to out without modifying source', () => {
-    const src = createMatrix(1, 0, 0, 1, 10, 0);
-    const out = createMatrix();
-    rotateMatrix(out, src, Math.PI / 2);
-    expect(src.tx).toBe(10);
-    expect(out.tx).toBeCloseTo(0);
-  });
-
-  it('should support out === source', () => {
-    const m = createMatrix(1, 0, 0, 1, 0, 0);
-    rotateMatrix(m, m, Math.PI);
-    expect(m.a).toBeCloseTo(-1);
-    expect(m.d).toBeCloseTo(-1);
-  });
-});
-
-describe('scaleMatrix', () => {
-  it('should write scaled result to out without modifying source', () => {
-    const src = createMatrix(2, 0, 0, 2, 5, 6);
-    const out = createMatrix();
-    scaleMatrix(out, src, 2, 3);
-    expect(src.a).toBe(2);
-    expect(out.a).toBe(4);
-    expect(out.d).toBe(6);
-  });
-
-  it('should support out === source', () => {
-    const m = createMatrix(1, 0, 0, 1, 1, 1);
-    scaleMatrix(m, m, 2, 3);
-    expect(m.a).toBe(2);
-    expect(m.d).toBe(3);
-    expect(m.tx).toBe(2);
-    expect(m.ty).toBe(3);
-  });
-});
-
-describe('setMatrix', () => {
-  it('should assign all matrix3x2 fields', () => {
+describe('matrixTransformAABB', () => {
+  it('should work when ax > bx or ay > by (flipped input)', () => {
     const m = createMatrix();
-    setMatrix(m, 1, 2, 3, 4, 5, 6);
-    expect(m.a).toBe(1);
-    expect(m.b).toBe(2);
-    expect(m.c).toBe(3);
-    expect(m.d).toBe(4);
-    expect(m.tx).toBe(5);
-    expect(m.ty).toBe(6);
+    const out = createRectangle();
+    matrixTransformAABB(out, m, 10, 10, 0, 0);
+    expect(out.x).toBe(0);
+    expect(out.y).toBe(0);
+    expect(out.width).toBe(10);
+    expect(out.height).toBe(10);
+  });
+
+  it('should handle negative scaling', () => {
+    const m = createMatrix(-1, 0, 0, -1, 0, 0);
+    const out = createRectangle();
+    matrixTransformAABB(out, m, 0, 0, 10, 10);
+    expect(out.width).toBe(10);
+    expect(out.height).toBe(10);
+  });
+
+  it('should handle rotation', () => {
+    const m = createMatrix();
+    rotateMatrix(m, m, Math.PI / 2);
+    const out = createRectangle();
+    matrixTransformAABB(out, m, 0, 0, 10, 20);
+    expect(out.width).toBeCloseTo(20);
+    expect(out.height).toBeCloseTo(10);
+  });
+
+  it('should handle flipped input coordinates', () => {
+    const rect = createRectangle(10, 20, -10, -20);
+    const mat = createMatrix();
+
+    const out = createRectangle();
+    matrixTransformAABB(out, mat, rect.x, rect.y, getRectangleRight(rect), getRectangleBottom(rect));
+
+    expect(out.x).toBeCloseTo(0);
+    expect(out.y).toBeCloseTo(0);
+    expect(out.width).toBeCloseTo(10);
+    expect(out.height).toBeCloseTo(20);
+  });
+
+  it('should handle negative scaling (mirroring)', () => {
+    const rect = createRectangle(0, 0, 10, 20);
+    const mat = createMatrix(-1, 0, 0, -1, 0, 0);
+
+    const out = createRectangle();
+    matrixTransformAABB(out, mat, rect.x, rect.y, getRectangleRight(rect), getRectangleBottom(rect));
+
+    expect(out.width).toBeCloseTo(10);
+    expect(out.height).toBeCloseTo(20);
   });
 });
 
-describe('setTransformMatrix', () => {
-  it('should apply rotate, scale and translation', () => {
-    const m1 = createMatrix();
-    rotateMatrix(m1, m1, 45);
-    scaleMatrix(m1, m1, 2, 4);
-    translateMatrix(m1, m1, 10, 100);
-    const m2 = createMatrix();
-    setTransformMatrix(m2, 2, 4, 45, 10, 100);
-    expect(equalsMatrix(m1, m2)).toBe(true);
+describe('matrixTransformAABBVector2', () => {
+  it('should alias transformRectXY', () => {
+    const m = createMatrix();
+    const out = createRectangle();
+    const a = createVector2(10, 10);
+    const b = createVector2();
+    matrixTransformAABBVector2(out, m, a, b);
+    expect(out.x).toBe(0);
+    expect(out.y).toBe(0);
+    expect(out.width).toBe(10);
+    expect(out.height).toBe(10);
+  });
+
+  it('supports out === a', () => {
+    const m = createMatrix(2, 0, 0, 3, 5, 7);
+    const out = createRectangle(0, 0, 0, 0);
+    const b = createVector2(10, 20);
+    matrixTransformAABBVector2(out, m, out, b);
+    expect(out.x).toBe(5);
+    expect(out.y).toBe(7);
+    expect(out.width).toBe(20);
+    expect(out.height).toBe(60);
   });
 });
 
@@ -894,84 +692,6 @@ describe('matrixTransformRectangle', () => {
   });
 });
 
-describe('matrixTransformAABBVector2', () => {
-  it('should alias transformRectXY', () => {
-    const m = createMatrix();
-    const out = createRectangle();
-    const a = createVector2(10, 10);
-    const b = createVector2();
-    matrixTransformAABBVector2(out, m, a, b);
-    expect(out.x).toBe(0);
-    expect(out.y).toBe(0);
-    expect(out.width).toBe(10);
-    expect(out.height).toBe(10);
-  });
-
-  it('supports out === a', () => {
-    const m = createMatrix(2, 0, 0, 3, 5, 7);
-    const out = createRectangle(0, 0, 0, 0);
-    const b = createVector2(10, 20);
-    matrixTransformAABBVector2(out, m, out, b);
-    expect(out.x).toBe(5);
-    expect(out.y).toBe(7);
-    expect(out.width).toBe(20);
-    expect(out.height).toBe(60);
-  });
-});
-
-describe('matrixTransformAABB', () => {
-  it('should work when ax > bx or ay > by (flipped input)', () => {
-    const m = createMatrix();
-    const out = createRectangle();
-    matrixTransformAABB(out, m, 10, 10, 0, 0);
-    expect(out.x).toBe(0);
-    expect(out.y).toBe(0);
-    expect(out.width).toBe(10);
-    expect(out.height).toBe(10);
-  });
-
-  it('should handle negative scaling', () => {
-    const m = createMatrix(-1, 0, 0, -1, 0, 0);
-    const out = createRectangle();
-    matrixTransformAABB(out, m, 0, 0, 10, 10);
-    expect(out.width).toBe(10);
-    expect(out.height).toBe(10);
-  });
-
-  it('should handle rotation', () => {
-    const m = createMatrix();
-    rotateMatrix(m, m, Math.PI / 2);
-    const out = createRectangle();
-    matrixTransformAABB(out, m, 0, 0, 10, 20);
-    expect(out.width).toBeCloseTo(20);
-    expect(out.height).toBeCloseTo(10);
-  });
-
-  it('should handle flipped input coordinates', () => {
-    const rect = createRectangle(10, 20, -10, -20);
-    const mat = createMatrix();
-
-    const out = createRectangle();
-    matrixTransformAABB(out, mat, rect.x, rect.y, getRectangleRight(rect), getRectangleBottom(rect));
-
-    expect(out.x).toBeCloseTo(0);
-    expect(out.y).toBeCloseTo(0);
-    expect(out.width).toBeCloseTo(10);
-    expect(out.height).toBeCloseTo(20);
-  });
-
-  it('should handle negative scaling (mirroring)', () => {
-    const rect = createRectangle(0, 0, 10, 20);
-    const mat = createMatrix(-1, 0, 0, -1, 0, 0);
-
-    const out = createRectangle();
-    matrixTransformAABB(out, mat, rect.x, rect.y, getRectangleRight(rect), getRectangleBottom(rect));
-
-    expect(out.width).toBeCloseTo(10);
-    expect(out.height).toBeCloseTo(20);
-  });
-});
-
 describe('matrixTransformVector', () => {
   it('should apply delta transformation to a point', () => {
     const m = createMatrix(2, 0, 0, 2, 0, 0);
@@ -1010,51 +730,142 @@ describe('matrixTransformVectorXY', () => {
   });
 });
 
-describe('translateMatrix', () => {
-  it('should translate the matrix3x2 correctly', () => {
-    const m = createMatrix();
-    translateMatrix(m, m, 10, 20);
-    expect(m.tx).toBe(10);
-    expect(m.ty).toBe(20);
-  });
-});
+describe('multiplyMatrix', () => {
+  it('should support out === a', () => {
+    const a = createMatrix(2, 0, 0, 2, 1, 1);
+    const b = createMatrix(1, 0, 0, 1, 5, 6);
 
-describe('writeMatrixToFloat32Array', () => {
-  it('writes 6 values at the offset', () => {
-    const array = new Float32Array(6);
-    const matrix = { a: 1, b: 2, c: 3, d: 4, tx: 5, ty: 6 };
-    writeMatrixToFloat32Array(array, 0, matrix);
-    for (let i = 0; i < 6; i++) {
-      expect(array[i]).toBe(i + 1);
-    }
-  });
-});
+    // out = a × b
+    multiplyMatrix(a, a, b);
 
-describe('createGradientTransformMatrix', () => {
-  it('returns a Matrix equivalent to calling setGradientTransform', () => {
-    const m1 = createGradientTransformMatrix(100, 200);
-    const m2 = createMatrix();
-    setGradientTransformMatrix(m2, 100, 200);
-    expect(equalsMatrix(m1, m2)).toBe(true);
+    // translation = A.linear × B.translation + A.translation
+    expect(a.tx).toBe(2 * 5 + 1); // 11
+    expect(a.ty).toBe(2 * 6 + 1); // 13
   });
 
-  it('sets tx to tx + width / 2 and ty to ty + height / 2', () => {
-    const m = createGradientTransformMatrix(100, 200, 0, 10, 20);
-    expect(m.tx).toBeCloseTo(60); // 10 + 100/2
-    expect(m.ty).toBeCloseTo(120); // 20 + 200/2
-  });
-});
+  it('should support out === b', () => {
+    const a = createMatrix(2, 0, 0, 2, 0, 0);
+    const b = createMatrix(1, 0, 0, 1, 3, 4);
 
-describe('identityMatrix', () => {
-  it('resets a modified matrix to identity', () => {
+    multiplyMatrix(b, a, b);
+
+    expect(b.a).toBe(2);
+    expect(b.d).toBe(2);
+    expect(b.tx).toBe(6); // 2 * 3
+    expect(b.ty).toBe(8); // 2 * 4
+  });
+
+  it('should multiply identity correctly', () => {
+    const identity = createMatrix();
     const m = createMatrix(2, 3, 4, 5, 6, 7);
-    identityMatrix(m);
-    expect(m.a).toBe(1);
-    expect(m.b).toBe(0);
-    expect(m.c).toBe(0);
-    expect(m.d).toBe(1);
-    expect(m.tx).toBe(0);
-    expect(m.ty).toBe(0);
+    const out = createMatrix();
+
+    multiplyMatrix(out, identity, m);
+    expect(equalsMatrix(out, m)).toBe(true);
+
+    multiplyMatrix(out, m, identity);
+    expect(equalsMatrix(out, m)).toBe(true);
+  });
+
+  it('should handle negative scale factors', () => {
+    const m1 = createMatrix(2, 0, 0, 2, 0, 0);
+    const m2 = createMatrix(-1, 0, 0, -1, 0, 0);
+
+    const out = createMatrix();
+    multiplyMatrix(out, m1, m2);
+
+    expect(out.a).toBe(-2);
+    expect(out.b).toBe(0);
+    expect(out.c).toBe(0);
+    expect(out.d).toBe(-2);
+    expect(out.tx).toBe(0);
+    expect(out.ty).toBe(0);
+  });
+
+  it('should handle rotation multiplication', () => {
+    const angle = Math.PI / 4;
+    const r = createMatrix(Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0);
+
+    const out = createMatrix();
+    multiplyMatrix(out, r, r); // r² = rotation by 90°
+
+    expect(out.a).toBeCloseTo(0, 5);
+    expect(out.b).toBeCloseTo(1, 5);
+    expect(out.c).toBeCloseTo(-1, 5);
+    expect(out.d).toBeCloseTo(0, 5);
+  });
+
+  it('should handle non-uniform scaling', () => {
+    const scaleY = createMatrix(1, 0, 0, 2, 0, 0);
+    const scaleX = createMatrix(2, 0, 0, 1, 0, 0);
+
+    const out = createMatrix();
+    multiplyMatrix(out, scaleY, scaleX);
+
+    expect(out.a).toBe(2);
+    expect(out.b).toBe(0);
+    expect(out.c).toBe(0);
+    expect(out.d).toBe(2);
+  });
+
+  it('should handle translation correctly', () => {
+    const a = createMatrix(2, 0, 0, 2, 1, 1);
+    const b = createMatrix(1, 0, 0, 1, 3, 4);
+
+    const out = createMatrix();
+    multiplyMatrix(out, a, b);
+
+    // t' = A.linear × B.translation + A.translation
+    expect(out.tx).toBe(2 * 3 + 1); // 7
+    expect(out.ty).toBe(2 * 4 + 1); // 9
+  });
+
+  it('should handle negative values consistently', () => {
+    const a = createMatrix(-1, 0, 0, -1, 0, 0);
+    const b = createMatrix(1, 0, 0, 1, -2, -3);
+
+    const out = createMatrix();
+    multiplyMatrix(out, a, b);
+
+    expect(out.tx).toBe(2);
+    expect(out.ty).toBe(3);
+  });
+});
+
+describe('rotateMatrix', () => {
+  it('should write rotated result to out without modifying source', () => {
+    const src = createMatrix(1, 0, 0, 1, 10, 0);
+    const out = createMatrix();
+    rotateMatrix(out, src, Math.PI / 2);
+    expect(src.tx).toBe(10);
+    expect(out.tx).toBeCloseTo(0);
+  });
+
+  it('should support out === source', () => {
+    const m = createMatrix(1, 0, 0, 1, 0, 0);
+    rotateMatrix(m, m, Math.PI);
+    expect(m.a).toBeCloseTo(-1);
+    expect(m.d).toBeCloseTo(-1);
+  });
+});
+
+describe('scaleMatrix', () => {
+  it('should write scaled result to out without modifying source', () => {
+    const src = createMatrix(2, 0, 0, 2, 5, 6);
+    const out = createMatrix();
+    scaleMatrix(out, src, 2, 3);
+    expect(src.a).toBe(2);
+    expect(out.a).toBe(4);
+    expect(out.d).toBe(6);
+  });
+
+  it('should support out === source', () => {
+    const m = createMatrix(1, 0, 0, 1, 1, 1);
+    scaleMatrix(m, m, 2, 3);
+    expect(m.a).toBe(2);
+    expect(m.d).toBe(3);
+    expect(m.tx).toBe(2);
+    expect(m.ty).toBe(3);
   });
 });
 
@@ -1078,6 +889,184 @@ describe('setGradientTransformMatrix', () => {
     setGradientTransformMatrix(m, 1638.4, 1638.4, Math.PI / 2);
     expect(m.b).toBeCloseTo(1);
     expect(m.c).toBeCloseTo(-1);
+  });
+});
+
+describe('setMatrix', () => {
+  it('should assign all matrix3x2 fields', () => {
+    const m = createMatrix();
+    setMatrix(m, 1, 2, 3, 4, 5, 6);
+    expect(m.a).toBe(1);
+    expect(m.b).toBe(2);
+    expect(m.c).toBe(3);
+    expect(m.d).toBe(4);
+    expect(m.tx).toBe(5);
+    expect(m.ty).toBe(6);
+  });
+});
+
+describe('setMatrixFromFloat32Array', () => {
+  it('writes the matrix from 6 values at the offset', () => {
+    const array = new Float32Array(6);
+    for (let i = 0; i < 6; i++) {
+      array[i] = i;
+    }
+    const matrix = createMatrix();
+    setMatrixFromFloat32Array(matrix, 0, array);
+    expect(matrix.a).toBe(0);
+    expect(matrix.b).toBe(1);
+    expect(matrix.c).toBe(2);
+    expect(matrix.d).toBe(3);
+    expect(matrix.tx).toBe(4);
+    expect(matrix.ty).toBe(5);
+  });
+});
+
+describe('setMatrixFromMatrix3', () => {
+  let mat3: Matrix3Like;
+  let mat2D: Matrix;
+
+  beforeEach(() => {
+    // Setup a basic Matrix3x3 instance for testing
+    mat3 = {
+      m: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]), // 3x3 matrix3x2 (row-major)
+    };
+    mat2D = createMatrix(); // Create a createMatrix instance
+  });
+
+  it('should correctly copy the first 6 values of Matrix3x3 into matrix3x2', () => {
+    setMatrixFromMatrix3(mat2D, mat3);
+
+    expect(mat2D.a).toEqual(1);
+    expect(mat2D.b).toEqual(2);
+    expect(mat2D.tx).toEqual(3);
+    expect(mat2D.c).toEqual(4);
+    expect(mat2D.d).toEqual(5);
+    expect(mat2D.ty).toEqual(6);
+  });
+
+  it('should not affect the original Matrix3x3 after calling fromMatrix3x3', () => {
+    const originalMatrix3x3 = new Float32Array(mat3.m); // Clone the original Matrix3x3
+
+    setMatrixFromMatrix3(mat2D, mat3);
+
+    // Assert that the original Matrix3x3 is untouched
+    expect(mat3.m).toEqual(originalMatrix3x3);
+  });
+
+  it('should work with matrices where all values are zeros', () => {
+    const zeroMatrix3x3: Matrix3Like = {
+      m: new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0]), // A matrix3x2 full of zeros
+    };
+
+    setMatrixFromMatrix3(mat2D, zeroMatrix3x3);
+
+    expect(mat2D.a).toEqual(0);
+    expect(mat2D.b).toEqual(0);
+    expect(mat2D.tx).toEqual(0);
+    expect(mat2D.c).toEqual(0);
+    expect(mat2D.d).toEqual(0);
+    expect(mat2D.ty).toEqual(0);
+  });
+
+  it('should handle matrices where the translation is zero', () => {
+    const translationZeromatrix3x2: Matrix3Like = {
+      m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]), // Identity matrix3x2 (no translation)
+    };
+
+    setMatrixFromMatrix3(mat2D, translationZeromatrix3x2);
+
+    expect(mat2D.a).toEqual(1);
+    expect(mat2D.b).toEqual(0);
+    expect(mat2D.tx).toEqual(0);
+    expect(mat2D.c).toEqual(0);
+    expect(mat2D.d).toEqual(1);
+    expect(mat2D.ty).toEqual(0);
+  });
+});
+
+describe('setMatrixFromMatrix4', () => {
+  let mat4: Matrix4Like;
+  let mat2D: Matrix;
+
+  beforeEach(() => {
+    // Setup a basic Matrix4x4 instance for testing (column-major)
+    mat4 = {
+      m: new Float32Array([1, 4, 0, 0, 2, 5, 0, 0, 0, 0, 1, 0, 3, 6, 0, 1]), // 4x4 column-major matrix3x2
+    };
+    mat2D = createMatrix(); // Create a createMatrix instance
+  });
+
+  it('should correctly copy the 2D affine part from a column-major Matrix4x4', () => {
+    setMatrixFromMatrix4(mat2D, mat4);
+
+    // Expected 2D affine matrix3x2 values from Matrix4x4 (ignoring 3rd row/column)
+    expect(mat2D.a).toEqual(1);
+    expect(mat2D.b).toEqual(2);
+    expect(mat2D.tx).toEqual(3);
+    expect(mat2D.c).toEqual(4);
+    expect(mat2D.d).toEqual(5);
+    expect(mat2D.ty).toEqual(6);
+  });
+
+  it('should not affect the original Matrix4x4 after calling fromMatrix4x4', () => {
+    const originalMatrix4x4 = new Float32Array(mat4.m); // Clone the original Matrix4x4
+
+    setMatrixFromMatrix4(mat2D, mat4);
+
+    // Assert that the original Matrix4x4 is untouched
+    expect(mat4.m).toEqual(originalMatrix4x4);
+  });
+
+  it('should handle matrices with zero values correctly', () => {
+    const zeroMatrix4x4: Matrix4Like = {
+      m: new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), // Identity matrix3x2 with no scaling or translation
+    };
+
+    setMatrixFromMatrix4(mat2D, zeroMatrix4x4);
+
+    expect(mat2D.a).toEqual(0);
+    expect(mat2D.b).toEqual(0);
+    expect(mat2D.tx).toEqual(0);
+    expect(mat2D.c).toEqual(0);
+    expect(mat2D.d).toEqual(0);
+    expect(mat2D.ty).toEqual(0);
+  });
+
+  it('should correctly handle a 2D identity matrix3x2 in Matrix4x4 format', () => {
+    const identityMatrix4x4: Matrix4Like = {
+      m: new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), // 4x4 identity matrix3x2 (no scaling, no translation)
+    };
+
+    setMatrixFromMatrix4(mat2D, identityMatrix4x4);
+
+    expect(mat2D.a).toEqual(1);
+    expect(mat2D.b).toEqual(0);
+    expect(mat2D.tx).toEqual(0);
+    expect(mat2D.c).toEqual(0);
+    expect(mat2D.d).toEqual(1);
+    expect(mat2D.ty).toEqual(0);
+  });
+});
+
+describe('setTransformMatrix', () => {
+  it('should apply rotate, scale and translation', () => {
+    const m1 = createMatrix();
+    rotateMatrix(m1, m1, 45);
+    scaleMatrix(m1, m1, 2, 4);
+    translateMatrix(m1, m1, 10, 100);
+    const m2 = createMatrix();
+    setTransformMatrix(m2, 2, 4, 45, 10, 100);
+    expect(equalsMatrix(m1, m2)).toBe(true);
+  });
+});
+
+describe('translateMatrix', () => {
+  it('should translate the matrix3x2 correctly', () => {
+    const m = createMatrix();
+    translateMatrix(m, m, 10, 20);
+    expect(m.tx).toBe(10);
+    expect(m.ty).toBe(20);
   });
 });
 
@@ -1105,5 +1094,16 @@ describe('translateMatrixByVectorXY', () => {
     translateMatrixByVectorXY(m, m, 2, 3);
     expect(m.tx).toBeCloseTo(7);
     expect(m.ty).toBeCloseTo(13);
+  });
+});
+
+describe('writeMatrixToFloat32Array', () => {
+  it('writes 6 values at the offset', () => {
+    const array = new Float32Array(6);
+    const matrix = { a: 1, b: 2, c: 3, d: 4, tx: 5, ty: 6 };
+    writeMatrixToFloat32Array(array, 0, matrix);
+    for (let i = 0; i < 6; i++) {
+      expect(array[i]).toBe(i + 1);
+    }
   });
 });

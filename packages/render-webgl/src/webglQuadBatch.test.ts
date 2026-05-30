@@ -66,35 +66,44 @@ describe('drawWebGLQuadBatch', () => {
 
   it('draws one quad per valid instance with vector2 transform type', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLQuadBatch(state, makeQuadBatchNode({
-      instanceCount: 2,
-      ids: new Int32Array([0, 0]),
-      transforms: new Float32Array([0, 0, 10, 20]),
-      transformType: 'vector2',
-    }));
+    drawWebGLQuadBatch(
+      state,
+      makeQuadBatchNode({
+        instanceCount: 2,
+        ids: new Int32Array([0, 0]),
+        transforms: new Float32Array([0, 0, 10, 20]),
+        transformType: 'vector2',
+      }),
+    );
     expect(gl.drawElements).toHaveBeenCalledTimes(2);
   });
 
   it('skips instances with out-of-range ids', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLQuadBatch(state, makeQuadBatchNode({
-      instanceCount: 3,
-      ids: new Int32Array([0, 99, 0]),
-      transforms: new Float32Array([0, 0, 0, 0, 0, 0]),
-      transformType: 'vector2',
-    }));
+    drawWebGLQuadBatch(
+      state,
+      makeQuadBatchNode({
+        instanceCount: 3,
+        ids: new Int32Array([0, 99, 0]),
+        transforms: new Float32Array([0, 0, 0, 0, 0, 0]),
+        transformType: 'vector2',
+      }),
+    );
     expect(gl.drawElements).toHaveBeenCalledTimes(2);
   });
 
   it('draws one quad per valid instance with full matrix transform type', () => {
     const { state, gl } = makeWebGLState();
     const transforms = new Float32Array([1, 0, 0, 1, 0, 0]);
-    drawWebGLQuadBatch(state, makeQuadBatchNode({
-      instanceCount: 1,
-      ids: new Int32Array([0]),
-      transforms,
-      transformType: 'matrix',
-    }));
+    drawWebGLQuadBatch(
+      state,
+      makeQuadBatchNode({
+        instanceCount: 1,
+        ids: new Int32Array([0]),
+        transforms,
+        transformType: 'matrix',
+      }),
+    );
     expect(gl.drawElements).toHaveBeenCalledTimes(1);
   });
 });

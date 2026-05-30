@@ -1,7 +1,7 @@
 import type { SpriteRenderNode } from '@flighthq/types';
 
-import { defaultWebGLTilemapRenderer, drawWebGLTilemap } from './webglTilemap';
 import { makeWebGLState } from './webglTestHelper';
+import { defaultWebGLTilemapRenderer, drawWebGLTilemap } from './webglTilemap';
 
 function makeAtlas() {
   const img = document.createElement('img');
@@ -61,13 +61,19 @@ describe('drawWebGLTilemap', () => {
 
   it('returns early without drawing when atlas.image is null', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLTilemap(state, makeTilemapNode({ tileset: { atlas: { image: null, regions: [] }, tileWidth: 16, tileHeight: 16 } }));
+    drawWebGLTilemap(
+      state,
+      makeTilemapNode({ tileset: { atlas: { image: null, regions: [] }, tileWidth: 16, tileHeight: 16 } }),
+    );
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when atlas.image.src is null', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLTilemap(state, makeTilemapNode({ tileset: { atlas: { image: { src: null }, regions: [] }, tileWidth: 16, tileHeight: 16 } }));
+    drawWebGLTilemap(
+      state,
+      makeTilemapNode({ tileset: { atlas: { image: { src: null }, regions: [] }, tileWidth: 16, tileHeight: 16 } }),
+    );
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 

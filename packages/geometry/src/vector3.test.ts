@@ -24,78 +24,6 @@ import {
 } from '@flighthq/geometry';
 import type { Vector3 } from '@flighthq/types';
 
-describe('createVector3', () => {
-  it('creates a createVector3 with default values', () => {
-    const v = createVector3();
-    expect(v.x).toBe(0);
-    expect(v.y).toBe(0);
-    expect(v.z).toBe(0);
-  });
-
-  it('creates a createVector3 with specified values', () => {
-    const v = createVector3(1, 2, 3);
-    expect(v.x).toBe(1);
-    expect(v.y).toBe(2);
-    expect(v.z).toBe(3);
-  });
-});
-
-// Properties
-
-describe('getVector3Length', () => {
-  it('returns the length of the vector', () => {
-    const v = createVector3(3, 4, 0);
-    expect(getVector3Length(v)).toBe(5);
-  });
-
-  it('allows a vector-like object', () => {
-    const v = { x: 3, y: 4, z: 0 };
-    expect(getVector3Length(v)).toBe(5);
-  });
-});
-
-describe('getVector3LengthSquared', () => {
-  it('returns the squared length of the vector', () => {
-    const v = createVector3(3, 4, 0);
-    expect(getVector3LengthSquared(v)).toBe(25);
-  });
-
-  it('allows a vector-like object', () => {
-    const v = { x: 3, y: 4, z: 0 };
-    expect(getVector3LengthSquared(v)).toBe(25);
-  });
-});
-
-describe('X_AXIS', () => {
-  it('returns the unit vector along the X-axis', () => {
-    const xAxis: Vector3 = VECTOR3_X_AXIS;
-    expect(xAxis).not.toBeNull();
-    expect(xAxis.x).toBe(1);
-    expect(xAxis.y).toBe(0);
-    expect(xAxis.z).toBe(0);
-  });
-});
-
-describe('Y_AXIS', () => {
-  it('returns the unit vector along the Y-axis', () => {
-    const yAxis: Vector3 = VECTOR3_Y_AXIS;
-    expect(yAxis).not.toBeNull();
-    expect(yAxis.x).toBe(0);
-    expect(yAxis.y).toBe(1);
-    expect(yAxis.z).toBe(0);
-  });
-});
-
-describe('Z_AXIS', () => {
-  it('returns the unit vector along the Z-axis', () => {
-    const zAxis: Vector3 = VECTOR3_Z_AXIS;
-    expect(zAxis).not.toBeNull();
-    expect(zAxis.x).toBe(0);
-    expect(zAxis.y).toBe(0);
-    expect(zAxis.z).toBe(1);
-  });
-});
-
 describe('addVector3', () => {
   it('returns a new vector when no target is passed', () => {
     const a = createVector3(1, 2, 3);
@@ -185,6 +113,22 @@ describe('copyVector3', () => {
   });
 });
 
+describe('createVector3', () => {
+  it('creates a createVector3 with default values', () => {
+    const v = createVector3();
+    expect(v.x).toBe(0);
+    expect(v.y).toBe(0);
+    expect(v.z).toBe(0);
+  });
+
+  it('creates a createVector3 with specified values', () => {
+    const v = createVector3(1, 2, 3);
+    expect(v.x).toBe(1);
+    expect(v.y).toBe(2);
+    expect(v.z).toBe(3);
+  });
+});
+
 describe('crossVector3', () => {
   it('returns the cross product of two vectors', () => {
     const a = createVector3(1, 0, 0);
@@ -215,6 +159,45 @@ describe('crossVector3', () => {
   });
 });
 
+describe('equalsVector3', () => {
+  it('returns true if vectors are equal', () => {
+    const a = createVector3(1, 2, 3);
+    const b = createVector3(1, 2, 3);
+    expect(equalsVector3(a, b)).toBe(true);
+  });
+
+  it('returns false if vectors are not equal', () => {
+    const a = createVector3(1, 2, 3);
+    const b = createVector3(4, 5, 6);
+    expect(equalsVector3(a, b)).toBe(false);
+  });
+});
+
+describe('getVector3AngleBetween', () => {
+  it('returns 0 for identical vectors', () => {
+    const a = createVector3(1, 0, 0);
+    expect(getVector3AngleBetween(a, a)).toBeCloseTo(0);
+  });
+
+  it('returns PI/2 for perpendicular vectors', () => {
+    const a = createVector3(1, 0, 0);
+    const b = createVector3(0, 1, 0);
+    expect(getVector3AngleBetween(a, b)).toBeCloseTo(Math.PI / 2);
+  });
+
+  it('returns PI for opposite vectors', () => {
+    const a = createVector3(1, 0, 0);
+    const b = createVector3(-1, 0, 0);
+    expect(getVector3AngleBetween(a, b)).toBeCloseTo(Math.PI);
+  });
+
+  it('returns NaN for a zero-length vector', () => {
+    const a = createVector3(0, 0, 0);
+    const b = createVector3(1, 0, 0);
+    expect(getVector3AngleBetween(a, b)).toBeNaN();
+  });
+});
+
 describe('getVector3Distance', () => {
   it('returns the distance between two vectors', () => {
     const a = createVector3(1, 1, 1);
@@ -239,17 +222,53 @@ describe('getVector3Dot', () => {
   });
 });
 
-describe('equalsVector3', () => {
-  it('returns true if vectors are equal', () => {
-    const a = createVector3(1, 2, 3);
-    const b = createVector3(1, 2, 3);
-    expect(equalsVector3(a, b)).toBe(true);
+describe('getVector3Length', () => {
+  it('returns the length of the vector', () => {
+    const v = createVector3(3, 4, 0);
+    expect(getVector3Length(v)).toBe(5);
   });
 
-  it('returns false if vectors are not equal', () => {
+  it('allows a vector-like object', () => {
+    const v = { x: 3, y: 4, z: 0 };
+    expect(getVector3Length(v)).toBe(5);
+  });
+});
+
+describe('getVector3LengthSquared', () => {
+  it('returns the squared length of the vector', () => {
+    const v = createVector3(3, 4, 0);
+    expect(getVector3LengthSquared(v)).toBe(25);
+  });
+
+  it('allows a vector-like object', () => {
+    const v = { x: 3, y: 4, z: 0 };
+    expect(getVector3LengthSquared(v)).toBe(25);
+  });
+});
+
+describe('nearEqualsVector3', () => {
+  it('returns true for identical vectors', () => {
     const a = createVector3(1, 2, 3);
-    const b = createVector3(4, 5, 6);
-    expect(equalsVector3(a, b)).toBe(false);
+    expect(nearEqualsVector3(a, a)).toBe(true);
+  });
+
+  it('returns true when difference is within default tolerance', () => {
+    const a = createVector3(1, 2, 3);
+    const b = createVector3(1 + 1e-7, 2, 3);
+    expect(nearEqualsVector3(a, b)).toBe(true);
+  });
+
+  it('returns false when difference exceeds default tolerance', () => {
+    const a = createVector3(1, 2, 3);
+    const b = createVector3(1 + 1e-5, 2, 3);
+    expect(nearEqualsVector3(a, b)).toBe(false);
+  });
+
+  it('respects a custom tolerance', () => {
+    const a = createVector3(1, 2, 3);
+    const b = createVector3(1.05, 2, 3);
+    expect(nearEqualsVector3(a, b, 0.1)).toBe(true);
+    expect(nearEqualsVector3(a, b, 0.01)).toBe(false);
   });
 });
 
@@ -300,6 +319,32 @@ describe('normalizeVector3', () => {
     expect(result.y).toBe(0);
     expect(result.z).toBe(0);
     expect(length).toBe(0);
+  });
+});
+
+describe('projectVector3', () => {
+  it('divides x and y by z to produce a 2D point', () => {
+    const v = createVector3(4, 6, 2);
+    const out = { x: 0, y: 0 };
+    projectVector3(out, v);
+    expect(out.x).toBe(2);
+    expect(out.y).toBe(3);
+  });
+
+  it('returns the original xy when z is 1', () => {
+    const v = createVector3(5, 7, 1);
+    const out = { x: 0, y: 0 };
+    projectVector3(out, v);
+    expect(out.x).toBe(5);
+    expect(out.y).toBe(7);
+  });
+
+  it('supports out === source', () => {
+    const v = createVector3(4, 6, 2);
+    projectVector3(v, v);
+    expect(v.x).toBe(2);
+    expect(v.y).toBe(3);
+    expect(v.z).toBe(2);
   });
 });
 
@@ -370,79 +415,32 @@ describe('subtractVector3', () => {
   });
 });
 
-describe('getVector3AngleBetween', () => {
-  it('returns 0 for identical vectors', () => {
-    const a = createVector3(1, 0, 0);
-    expect(getVector3AngleBetween(a, a)).toBeCloseTo(0);
-  });
-
-  it('returns PI/2 for perpendicular vectors', () => {
-    const a = createVector3(1, 0, 0);
-    const b = createVector3(0, 1, 0);
-    expect(getVector3AngleBetween(a, b)).toBeCloseTo(Math.PI / 2);
-  });
-
-  it('returns PI for opposite vectors', () => {
-    const a = createVector3(1, 0, 0);
-    const b = createVector3(-1, 0, 0);
-    expect(getVector3AngleBetween(a, b)).toBeCloseTo(Math.PI);
-  });
-
-  it('returns NaN for a zero-length vector', () => {
-    const a = createVector3(0, 0, 0);
-    const b = createVector3(1, 0, 0);
-    expect(getVector3AngleBetween(a, b)).toBeNaN();
+describe('X_AXIS', () => {
+  it('returns the unit vector along the X-axis', () => {
+    const xAxis: Vector3 = VECTOR3_X_AXIS;
+    expect(xAxis).not.toBeNull();
+    expect(xAxis.x).toBe(1);
+    expect(xAxis.y).toBe(0);
+    expect(xAxis.z).toBe(0);
   });
 });
 
-describe('nearEqualsVector3', () => {
-  it('returns true for identical vectors', () => {
-    const a = createVector3(1, 2, 3);
-    expect(nearEqualsVector3(a, a)).toBe(true);
-  });
-
-  it('returns true when difference is within default tolerance', () => {
-    const a = createVector3(1, 2, 3);
-    const b = createVector3(1 + 1e-7, 2, 3);
-    expect(nearEqualsVector3(a, b)).toBe(true);
-  });
-
-  it('returns false when difference exceeds default tolerance', () => {
-    const a = createVector3(1, 2, 3);
-    const b = createVector3(1 + 1e-5, 2, 3);
-    expect(nearEqualsVector3(a, b)).toBe(false);
-  });
-
-  it('respects a custom tolerance', () => {
-    const a = createVector3(1, 2, 3);
-    const b = createVector3(1.05, 2, 3);
-    expect(nearEqualsVector3(a, b, 0.1)).toBe(true);
-    expect(nearEqualsVector3(a, b, 0.01)).toBe(false);
+describe('Y_AXIS', () => {
+  it('returns the unit vector along the Y-axis', () => {
+    const yAxis: Vector3 = VECTOR3_Y_AXIS;
+    expect(yAxis).not.toBeNull();
+    expect(yAxis.x).toBe(0);
+    expect(yAxis.y).toBe(1);
+    expect(yAxis.z).toBe(0);
   });
 });
 
-describe('projectVector3', () => {
-  it('divides x and y by z to produce a 2D point', () => {
-    const v = createVector3(4, 6, 2);
-    const out = { x: 0, y: 0 };
-    projectVector3(out, v);
-    expect(out.x).toBe(2);
-    expect(out.y).toBe(3);
-  });
-
-  it('returns the original xy when z is 1', () => {
-    const v = createVector3(5, 7, 1);
-    const out = { x: 0, y: 0 };
-    projectVector3(out, v);
-    expect(out.x).toBe(5);
-    expect(out.y).toBe(7);
-  });
-
-  it('supports out === source', () => {
-    const v = createVector3(4, 6, 2);
-    projectVector3(v, v);
-    expect(v.x).toBe(2);
-    expect(v.y).toBe(3);
-    expect(v.z).toBe(2);
+describe('Z_AXIS', () => {
+  it('returns the unit vector along the Z-axis', () => {
+    const zAxis: Vector3 = VECTOR3_Z_AXIS;
+    expect(zAxis).not.toBeNull();
+    expect(zAxis.x).toBe(0);
+    expect(zAxis.y).toBe(0);
+    expect(zAxis.z).toBe(1);
   });
 });
