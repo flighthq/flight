@@ -8,7 +8,7 @@ This document should stay useful, not ornamental. Prefer making architecture and
 
 - Use `npm`, not `pnpm` or `yarn`.
 - On Windows, prefer Bash (Git Bash or WSL) over PowerShell when running shell commands. If Bash is unavailable, `cmd.exe` is preferred over PowerShell.
-- After editing source files, run `npm run lint:fix` then `npm run format` to apply linting and formatting. These are not optional. Unformatted or unlinted code will fail CI.
+- After editing source files, run `npm run fix` to apply linting, ordering, and formatting in one step. This is not optional. Unformatted or unlinted code will fail CI.
 
 ## Design Constraints
 
@@ -36,14 +36,18 @@ This document should stay useful, not ornamental. Prefer making architecture and
 
 ## Orientation Commands
 
+- `npm run fix` runs all auto-fixers in sequence: `lint:fix`, `order:fix`, then `format`. Run this after any edit session before committing.
 - `npm run overview` regenerates `OVERVIEW.md`, a package/export bird's-eye view.
 - `npm run api` prints compact exported function signatures for all packages.
 - `npm run api:json` prints the same API data as JSON for tools and agents.
 - `npm run check` is the default non-fixing quality sweep for agents and contributors. It runs `validate`, `coverage`, and the non-failing `order` report.
 - `npm run check:strict` runs the same sweep with `order:check` in failing mode. Use this for cleaned-up areas or future CI ratcheting.
+- `npm run verify` is the full confidence pass to run before calling a broad change done. It runs `build`, `check:strict`, unit/API/integration tests, and `test:size`.
 - `npm run validate` checks monorepo shape, package references, workspace dependency conventions, package export targets, packaging shape, and side-effect-free source invariants. Run this after any package-level change and fix everything it reports before moving on.
 - `npm run coverage` checks for missing test files and missing tests for exported functions.
-- `npm run order` reports exported functions and test `describe` blocks that are not alphabetized. `npm run order:check` runs the same check in failing mode once a package or area has been cleaned up.
+- `npm run order` reports exported functions and test `describe` blocks that are not alphabetized. `npm run order:check` runs the same check in failing mode once a package or area has been cleaned up. `npm run order:fix` rewrites files in place to apply the correct order; comments immediately preceding a declaration (with no blank line between them) are treated as attached and move with it.
+- `npm run test` runs the normal root Vitest workspace, excluding the heavier `size` project. This is usually faster than chaining package/API/integration test scripts separately.
+- `npm run test:size` builds every example and compares the gzip output size against the baseline. It is intentionally heavier than ordinary package tests, but it is the main example smoke test and tree-shaking regression check.
 
 ## Core Patterns
 
@@ -57,7 +61,7 @@ Use runtime slots for any internal mutable state that should not be part of the 
 
 ### Scene Graph
 
-Scene graph hierarchy is shared across graph kinds. Functions such as `addChild`, `removeChild`, `getParent`, `getRoot`, `contains`, and `swapChildren` operate on generic graph nodes, which is why the same hierarchy code supports display objects, sprite graphs, and future graph families.
+Scene graph hierarchy is shared across graph kinds. Functions such as `addGraphChild`, `removeGraphChild`, `getGraphParent`, `getGraphRoot`, `containsGraphChild`, and `swapGraphChildren` operate on generic graph nodes, which is why the same hierarchy code supports display objects, sprite graphs, and future graph families.
 
 ### Renderer Registration
 
@@ -90,7 +94,9 @@ Geometry types (rectangles, vectors, matrices) follow explicit allocation and ow
 - Vitest is configured with `globals: true`. `vi`, `describe`, `it`, and `expect` are available in test files without importing.
 - Browser-facing packages (`render-canvas`, `render-webgl`, `render-dom`, etc.) use the `jsdom` test environment.
 - `vitest-webgl-canvas-mock` mocks `'webgl'` and `'experimental-webgl'` contexts only, not `'webgl2'`. Tests in `render-webgl` that need a WebGL2 render state must mock `canvas.getContext` to return a fake `WebGL2RenderingContext`.
+- While iterating, prefer the narrowest meaningful Vitest run: a touched test file, a package workspace, or a Vitest project filter. Broaden only after the local change is understood.
 - Run a package's tests with `npm run test:run --workspace=packages/<name>`.
+- Root API and integration tests are for cross-package behavior that is awkward or less meaningful in one package's colocated unit tests. Prefer adding colocated unit tests first, then add API/integration coverage when the behavior crosses package boundaries, validates public SDK import paths, or demonstrates a complete user-facing flow.
 
 ## Packaging and Publishing
 
@@ -126,6 +132,8 @@ Packaging policy should be enforced by scripts and `npm run validate` rather tha
 - When adding or renaming exported functions, run `npm run coverage` to find missing test files and missing `describe` coverage.
 - When adding or renaming exported functions or `describe` blocks, run `npm run order` to check the scan order. Prefer leaving touched files cleaner than you found them.
 - When changing public APIs, check naming symmetry across packages and run `npm run api` to scan signatures.
+- Before declaring a broad refactor complete, run `npm run verify`. For narrower changes, run the closest package tests plus `check` or `check:strict`; use `verify` when examples, public API names, packaging, or tree-shaking may have been affected.
+- Do not use broad test runs as a substitute for reading the nearby source and tests. Broad runs are confidence gates; focused tests are the normal editing loop.
 - When changing an `out`-parameter function, test both a distinct output object and aliasing where `out` is also an input.
 - When adding a new package, copy the package shape from a nearby package and then run `npm run validate`.
 - Subsystem state belongs on the runtime object, not as new fields on the entity or as new casts in `internal.ts`.
