@@ -1,7 +1,7 @@
-import type { EntityRuntime } from './Entity';
+import type { Entity, EntityRuntime } from './Entity';
 import type { GraphNode, GraphNodeSignals, GraphNodeTraits, NullGraph } from './GraphNode';
 
-export interface HasGraphHierarchy {}
+export interface HasGraphHierarchy extends Entity {}
 
 export interface HasGraphHierarchyRuntime<
   GraphKind extends symbol = typeof NullGraph,

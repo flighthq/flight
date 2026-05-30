@@ -7,7 +7,7 @@ export interface HasBoundsRect extends Entity {}
 
 export interface HasBoundsRectRuntime extends EntityRuntime {
   boundsRect: Rectangle | null;
-  computeLocalBoundsRect: (out: Rectangle, source: Readonly<GraphBoundsNode<any, any>>) => void;
+  computeLocalBoundsRect: (out: Rectangle, source: Readonly<GraphBoundsNode<symbol, object>>) => void;
   localBoundsRect: Rectangle | null;
   worldBoundsRect: Rectangle | null;
 }
