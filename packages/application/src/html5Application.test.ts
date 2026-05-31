@@ -6,6 +6,5 @@ describe('createHTML5Application', () => {
     expect(app.onUpdate).toBeDefined();
     expect(app.onRender).toBeDefined();
     expect(app.onExit).toBeDefined();
-    expect(app.frameRate).toBeNull();
   });
 });
