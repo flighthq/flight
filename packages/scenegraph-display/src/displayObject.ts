@@ -58,7 +58,6 @@ export function createDisplayObjectRuntime(
   const out = createGraphNodeRuntime(methods) as DisplayObjectRuntime;
   initHasTransformRuntime(out, methods);
   initHasBoundsRectangleRuntime(out, methods);
-  out.interactionSignals = null;
   return out;
 }
 
