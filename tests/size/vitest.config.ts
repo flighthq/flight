@@ -10,6 +10,7 @@ export default mergeConfig(
       environment: 'node',
       include: ['**/*.test.ts'],
       sequence: { groupOrder: 3 },
+      testTimeout: 300000, // 5 minutes for full builds + gzip
     },
   }),
 );
