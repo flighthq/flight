@@ -2,6 +2,7 @@ import {
   addGraphChild,
   attachPointerInput,
   attachWindowResize,
+  attachWindowVisibility,
   connectInputToInteraction,
   connectSignal,
   createApplication,
@@ -20,6 +21,7 @@ import {
   loadImageSourceFromURL,
   registerHitTestPoint,
   startApplicationLoop,
+  stopApplicationLoop,
   updateDisplayObjectBeforeRender,
   updateTweens,
 } from '@flighthq/sdk';
@@ -102,7 +104,10 @@ function resize(w: number, h: number): void {
 
 const win = createApplicationWindow();
 connectSignal(win.onResize, () => resize(win.width, win.height));
+connectSignal(win.onDeactivate, () => stopApplicationLoop(app));
+connectSignal(win.onActivate, () => startApplicationLoop(app));
 attachWindowResize(win, container);
+attachWindowVisibility(win);
 resize(window.innerWidth, window.innerHeight);
 
 // ── Game start ─────────────────────────────────────────────────────────────
