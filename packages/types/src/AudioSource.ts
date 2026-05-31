@@ -1,5 +1,5 @@
 export interface AudioSource {
-  src: HTMLAudioElement | null;
+  src: AudioBuffer | null;
 }
 
 export interface AudioSourceURL {

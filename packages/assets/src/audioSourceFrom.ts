@@ -1,11 +1,17 @@
 import type { AudioSource, AudioSourceURL } from '@flighthq/types';
 
-import { createAudioSource } from './audioSource';
+import { createAudioSource, getAudioContext } from './audioSource';
 
 export function createAudioSourceFromURL(url: string): AudioSource {
-  const el = new Audio(url);
-  el.preload = 'auto';
-  return createAudioSource(el);
+  const source = createAudioSource();
+  fetch(url)
+    .then((r) => r.arrayBuffer())
+    .then((buf) => getAudioContext().decodeAudioData(buf))
+    .then((buf) => {
+      source.src = buf;
+    })
+    .catch(() => {});
+  return source;
 }
 
 export function createAudioSourceFromURLs(sources: AudioSourceURL[]): AudioSource {
@@ -13,6 +19,20 @@ export function createAudioSourceFromURLs(sources: AudioSourceURL[]): AudioSourc
   const selected = sources.find(({ url, type }) => probe.canPlayType(type ?? inferAudioType(url) ?? '') !== '');
   if (selected === undefined) return createAudioSource();
   return createAudioSourceFromURL(selected.url);
+}
+
+export async function loadAudioSourceFromURL(url: string): Promise<AudioSource> {
+  const response = await fetch(url);
+  const arrayBuffer = await response.arrayBuffer();
+  const audioBuffer = await getAudioContext().decodeAudioData(arrayBuffer);
+  return createAudioSource(audioBuffer);
+}
+
+export async function loadAudioSourceFromURLs(sources: AudioSourceURL[]): Promise<AudioSource> {
+  const probe = new Audio();
+  const selected = sources.find(({ url, type }) => probe.canPlayType(type ?? inferAudioType(url) ?? '') !== '');
+  if (selected === undefined) return createAudioSource();
+  return loadAudioSourceFromURL(selected.url);
 }
 
 function inferAudioType(url: string): string | null {
@@ -35,21 +55,4 @@ function inferAudioType(url: string): string | null {
     default:
       return null;
   }
-}
-
-export function loadAudioSourceFromURL(url: string): Promise<AudioSource> {
-  return new Promise((resolve, reject) => {
-    const el = new Audio(url);
-    el.preload = 'auto';
-    const source = createAudioSource(el);
-    el.addEventListener('canplay', () => resolve(source), { once: true });
-    el.addEventListener('error', () => reject(new Error(`Failed to load audio: ${url}`)), { once: true });
-  });
-}
-
-export function loadAudioSourceFromURLs(sources: AudioSourceURL[]): Promise<AudioSource> {
-  const probe = new Audio();
-  const selected = sources.find(({ url, type }) => probe.canPlayType(type ?? inferAudioType(url) ?? '') !== '');
-  if (selected === undefined) return Promise.resolve(createAudioSource());
-  return loadAudioSourceFromURL(selected.url);
 }
