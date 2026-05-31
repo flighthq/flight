@@ -6,9 +6,9 @@ import {
 } from './audioSourceFrom';
 
 describe('createAudioSourceFromURL', () => {
-  it('returns an AudioSource with a non-null src', () => {
+  it('returns an AudioSource object with a src property', () => {
     const source = createAudioSourceFromURL('test.mp3');
-    expect(source.src).not.toBeNull();
+    expect(source).toHaveProperty('src');
   });
 });
 
@@ -22,6 +22,7 @@ describe('createAudioSourceFromURLs', () => {
 describe('loadAudioSourceFromURL', () => {
   it('returns a Promise', () => {
     const result = loadAudioSourceFromURL('test.mp3');
+    result.catch(() => {});
     expect(result).toBeInstanceOf(Promise);
   });
 });

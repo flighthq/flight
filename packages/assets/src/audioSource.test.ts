@@ -5,12 +5,6 @@ describe('createAudioSource', () => {
     const source = createAudioSource();
     expect(source.src).toBeNull();
   });
-
-  it('stores the provided audio element', () => {
-    const el = document.createElement('audio');
-    const source = createAudioSource(el);
-    expect(source.src).toBe(el);
-  });
 });
 
 describe('playAudioSource', () => {

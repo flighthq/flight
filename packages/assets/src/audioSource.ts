@@ -1,10 +1,30 @@
 import type { AudioSource } from '@flighthq/types';
 
-export function createAudioSource(element?: HTMLAudioElement): AudioSource {
-  return { src: element ?? null };
+let context: AudioContext | null = null;
+
+export function createAudioSource(buffer?: AudioBuffer): AudioSource {
+  return { src: buffer ?? null };
+}
+
+export function getAudioContext(): AudioContext {
+  if (context === null) {
+    context = new AudioContext();
+  }
+  return context;
 }
 
 export function playAudioSource(source: AudioSource): void {
   if (source.src === null) return;
-  (source.src.cloneNode(true) as HTMLAudioElement).play().catch(() => {});
+  const ctx = getAudioContext();
+  const node = ctx.createBufferSource();
+  node.buffer = source.src;
+  node.connect(ctx.destination);
+  if (ctx.state === 'suspended') {
+    ctx
+      .resume()
+      .then(() => node.start())
+      .catch(() => {});
+  } else {
+    node.start();
+  }
 }
