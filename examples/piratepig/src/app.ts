@@ -1,13 +1,25 @@
 import {
   addGraphChild,
+  attachPointerInput,
+  attachWindowResize,
+  connectInputToInteraction,
+  connectSignal,
+  createApplication,
+  createApplicationWindow,
   createAudioSourceFromURLs,
   createBitmap,
   createDisplayObject,
+  createInputManager,
+  createInteractionManager,
   createTweenManager,
+  DisplayObjectKind,
+  hitTestLocalBoundsRectangle,
   invalidateRender,
   loadAudioSourceFromURLs,
   loadFontFromURL,
   loadImageSourceFromURL,
+  registerHitTestPoint,
+  startApplicationLoop,
   updateDisplayObjectBeforeRender,
   updateTweens,
 } from '@flighthq/sdk';
@@ -40,6 +52,8 @@ const sounds = [
 
 // ── Scene ──────────────────────────────────────────────────────────────────
 
+registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRectangle);
+
 const manager = createTweenManager();
 const root = createDisplayObject();
 root.scaleX = scale;
@@ -55,7 +69,11 @@ footer.data.image = footerImage;
 footer.data.smoothing = true;
 addGraphChild(root, footer);
 
-const game = new PiratePigGame(manager, tileImages, logoImage, font.name, sounds);
+const interactionManager = createInteractionManager(root);
+const game = new PiratePigGame(manager, interactionManager, tileImages, logoImage, font.name, sounds, {
+  coordScale: scale,
+  cursorElement: container,
+});
 
 const logo = createBitmap();
 logo.data.image = logoImage;
@@ -82,61 +100,31 @@ function resize(w: number, h: number): void {
   invalidateRender(footer);
 }
 
+const win = createApplicationWindow();
+connectSignal(win.onResize, () => resize(win.width, win.height));
+attachWindowResize(win, container);
 resize(window.innerWidth, window.innerHeight);
-window.addEventListener('resize', () => resize(window.innerWidth, window.innerHeight));
 
 // ── Game start ─────────────────────────────────────────────────────────────
 
 game.newGame();
 
-// ── Pointer input ──────────────────────────────────────────────────────────
+// ── Input ──────────────────────────────────────────────────────────────────
 
-let dragStartX = 0;
-let dragStartY = 0;
-let selectedTile = game.hitTileAtStageXY(-1, -1);
-
-container.addEventListener('pointerdown', (e: PointerEvent) => {
-  dragStartX = e.clientX;
-  dragStartY = e.clientY;
-  selectedTile = game.hitTileAtStageXY(e.clientX, e.clientY);
-});
-
-container.addEventListener('pointerup', (e: PointerEvent) => {
-  if (selectedTile === null || selectedTile.moving) return;
-
-  const dx = e.clientX - dragStartX;
-  const dy = e.clientY - dragStartY;
-
-  if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
-    let targetRow = selectedTile.row;
-    let targetCol = selectedTile.column;
-    if (Math.abs(dx) > Math.abs(dy)) {
-      targetCol += dx < 0 ? -1 : 1;
-    } else {
-      targetRow += dy < 0 ? -1 : 1;
-    }
-    game.swapTile(selectedTile, targetRow, targetCol);
-  }
-
-  selectedTile = null;
-});
+const inputManager = createInputManager();
+attachPointerInput(inputManager, container);
+connectInputToInteraction(inputManager, interactionManager, scale);
 
 // ── Render loop ────────────────────────────────────────────────────────────
 
-let lastTime = 0;
-
-function enterFrame(time: number): void {
-  const delta = lastTime === 0 ? 0 : time - lastTime;
-  lastTime = time;
-
+const app = createApplication();
+connectSignal(app.onUpdate, (delta) => {
   updateTweens(manager, delta);
   game.onEnterFrame();
-
+});
+connectSignal(app.onRender, () => {
   if (updateDisplayObjectBeforeRender(state, root)) {
     render(root);
   }
-
-  requestAnimationFrame(enterFrame);
-}
-
-requestAnimationFrame(enterFrame);
+});
+startApplicationLoop(app);

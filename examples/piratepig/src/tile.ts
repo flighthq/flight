@@ -1,15 +1,20 @@
-import type { DisplayObject, ImageSource, TweenManager } from '@flighthq/sdk';
+import type { DisplayObject, GraphNode, ImageSource, InteractionManager, TweenManager } from '@flighthq/sdk';
 import {
   addGraphChild,
   addGraphChildAt,
+  capturePointer,
   connectSignal,
   createBitmap,
   createDisplayObject,
   createTween,
   getGraphParent,
+  getInteractionSignals,
+  getLocalBoundsRectangle,
   invalidateRender,
   Quad,
+  releasePointer,
   removeGraphChild,
+  setRectangle,
 } from '@flighthq/sdk';
 
 export const TILE_SIZE = 57;
@@ -24,8 +29,62 @@ export interface Tile {
   removed: boolean;
 }
 
+export interface TileInteractionOptions {
+  coordScale?: number;
+  cursorElement?: HTMLElement;
+}
+
+export function connectTileInteraction(
+  tile: Tile,
+  manager: InteractionManager,
+  onDrag: (tile: Tile, dx: number, dy: number) => void,
+  options?: TileInteractionOptions,
+): void {
+  const coordScale = options?.coordScale ?? 1;
+  const cursorElement = options?.cursorElement ?? null;
+  const dragThreshold = 10 * coordScale;
+  const node = tile.obj as GraphNode<symbol, object>;
+  const signals = getInteractionSignals(node);
+  let startX = 0;
+  let startY = 0;
+  let isDragging = false;
+
+  connectSignal(signals.onPointerDown, (data) => {
+    if (tile.moving) return;
+    capturePointer(manager, data.pointerId, node);
+    startX = data.worldX;
+    startY = data.worldY;
+    isDragging = true;
+  });
+
+  connectSignal(signals.onPointerUp, (data) => {
+    releasePointer(manager, data.pointerId);
+    if (!isDragging) return;
+    isDragging = false;
+    if (tile.moving) return;
+    const dx = data.worldX - startX;
+    const dy = data.worldY - startY;
+    if (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold) {
+      onDrag(tile, dx, dy);
+    }
+  });
+
+  if (cursorElement !== null) {
+    connectSignal(signals.onPointerOver, () => {
+      cursorElement.style.cursor = tile.moving ? '' : 'pointer';
+    });
+    connectSignal(signals.onPointerMove, () => {
+      cursorElement.style.cursor = tile.moving ? '' : 'pointer';
+    });
+    connectSignal(signals.onPointerOut, () => {
+      cursorElement.style.cursor = '';
+    });
+  }
+}
+
 export function createTile(image: ImageSource, type: number): Tile {
   const obj = createDisplayObject();
+  setRectangle(getLocalBoundsRectangle(obj), 0, 0, TILE_SIZE, TILE_SIZE);
   const bitmap = createBitmap();
   bitmap.data.image = image;
   bitmap.data.smoothing = true;
