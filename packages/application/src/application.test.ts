@@ -178,7 +178,7 @@ describe('startApplicationLoop', () => {
     vi.unstubAllGlobals();
   });
 
-  it('clamps delta to MAX_DELTA_TIME on large gaps', () => {
+  it('passes the real elapsed delta on large gaps', () => {
     let tickFn: ((time: number) => void) | null = null;
     vi.stubGlobal('requestAnimationFrame', (fn: (time: number) => void) => {
       tickFn = fn;
@@ -192,9 +192,9 @@ describe('startApplicationLoop', () => {
 
     startApplicationLoop(app);
     tickFn!(0);
-    tickFn!(5000); // simulate tab backgrounded
+    tickFn!(5000);
 
-    expect(updates[1]).toBe(100);
+    expect(updates[1]).toBe(5000);
     vi.unstubAllGlobals();
   });
 });
