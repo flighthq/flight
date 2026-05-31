@@ -31,6 +31,7 @@ export interface RunSizeOptions {
   baselineFile?: string;
   updateBaseline?: boolean;
   exampleFilters?: string[];
+  onResult?: (result: Readonly<SizeResult>) => void;
   renderFilters?: string[];
 }
 
@@ -140,6 +141,7 @@ export async function runSizeChecks({
   baselineFile = resolve(root, 'tests', 'size', 'size.baseline.json'),
   updateBaseline = false,
   exampleFilters = [],
+  onResult,
   renderFilters = [],
 }: RunSizeOptions): Promise<{ results: SizeResult[]; pendingBaseline: Record<string, number>; baselineFile: string }> {
   const cases = collectSizeCases(examplesDir, exampleFilters, renderFilters);
@@ -157,7 +159,7 @@ export async function runSizeChecks({
 
     const adjustedPassed = updateBaseline || passed;
     pendingBaseline[key] = gzipSize;
-    results.push({
+    const result = {
       name,
       render,
       gzipSize,
@@ -168,7 +170,9 @@ export async function runSizeChecks({
       passed: adjustedPassed,
       threshold,
       key,
-    });
+    };
+    results.push(result);
+    onResult?.(result);
   }
 
   return { results, pendingBaseline, baselineFile };

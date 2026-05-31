@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import pc from 'picocolors';
 
 import type { SizeResult } from './size-runner';
-import { runSizeChecks } from './size-runner';
+import { collectSizeCases, runSizeChecks } from './size-runner';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -28,6 +28,15 @@ const root = resolve(__dirname, '..');
 const examplesDir = resolve(root, 'examples');
 const baselineFile = resolve(root, 'tests', 'size', 'size.baseline.json');
 const updateBaseline = process.env.UPDATE_BASELINE === '1';
+const report = options.report ?? (options.outputPath ? 'json' : null);
+const outputPath = options.outputPath;
+const standardOutput = !outputPath && report !== 'json';
+const sizeCases = standardOutput ? collectSizeCases(examplesDir, options.exampleFilters, options.renderFilters) : [];
+const printProgress = standardOutput ? createProgressivePrinter(sizeCases) : null;
+
+if (standardOutput && sizeCases.length === 0) {
+  console.log(pc.yellow('No matching size tests were found.'));
+}
 
 const { results, pendingBaseline } = await runSizeChecks({
   root,
@@ -35,6 +44,7 @@ const { results, pendingBaseline } = await runSizeChecks({
   baselineFile,
   updateBaseline,
   exampleFilters: options.exampleFilters,
+  onResult: (result) => printProgress?.(result),
   renderFilters: options.renderFilters,
 });
 
@@ -42,9 +52,6 @@ if (updateBaseline) {
   const { writeBaseline } = await import('./size-runner');
   writeBaseline(baselineFile, pendingBaseline);
 }
-
-const report = options.report ?? (options.outputPath ? 'json' : null);
-const outputPath = options.outputPath;
 
 if (outputPath) {
   const path = resolve(process.cwd(), outputPath);
@@ -59,7 +66,6 @@ if (report === 'json') {
   process.exit(results.every((r) => r.passed) ? 0 : 1);
 }
 
-printResults(results);
 process.exit(results.every((r) => r.passed) ? 0 : 1);
 
 function parseArgs(args: string[]): ParsedArgs {
@@ -123,20 +129,26 @@ function parseArgs(args: string[]): ParsedArgs {
   return parsed;
 }
 
-function printResults(results: SizeResult[]): void {
-  if (results.length === 0) {
-    console.log(pc.yellow('No matching size tests were found.'));
-    return;
+function createProgressivePrinter(cases: ReturnType<typeof collectSizeCases>): (result: Readonly<SizeResult>) => void {
+  const exampleNames = [...new Set(cases.map((tc) => tc.name))];
+  const exampleBgColors = [pc.bgBlue, pc.bgMagenta, pc.bgCyan, pc.bgGreen];
+  const maxNameLen = Math.max(0, ...exampleNames.map((n) => n.length));
+  const w = { name: maxNameLen + 5, render: 8, size: 10, base: 10 };
+  const expectedByExample = new Map<string, number>();
+  const resultsByExample = new Map<string, Readonly<SizeResult>[]>();
+
+  for (const { name } of cases) {
+    expectedByExample.set(name, (expectedByExample.get(name) ?? 0) + 1);
   }
 
-  const exampleNames = [...new Set(results.map((r) => r.name))];
-  const exampleBgColors = [pc.bgBlue, pc.bgMagenta, pc.bgCyan, pc.bgGreen];
-  const maxNameLen = Math.max(...exampleNames.map((n) => n.length));
-  const w = { name: maxNameLen + 5, render: 8, size: 10, base: 10 };
+  return (result) => {
+    const group = resultsByExample.get(result.name) ?? [];
+    group.push(result);
+    resultsByExample.set(result.name, group);
 
-  for (const example of exampleNames) {
-    const group = results.filter((r) => r.name === example);
-    const bgColor = exampleBgColors[exampleNames.indexOf(example) % exampleBgColors.length];
+    if (group.length !== expectedByExample.get(result.name)) return;
+
+    const bgColor = exampleBgColors[exampleNames.indexOf(result.name) % exampleBgColors.length];
 
     const lines = group.map((r, i) => {
       const nameCell =
@@ -152,7 +164,7 @@ function printResults(results: SizeResult[]): void {
     });
 
     console.log(lines.join('\n') + '\n');
-  }
+  };
 }
 
 function printUsage(): void {
