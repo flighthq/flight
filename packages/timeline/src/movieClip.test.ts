@@ -1,7 +1,9 @@
 import { createMovieClip } from '@flighthq/scenegraph-display';
 
 import {
+  createMovieClipSignals,
   getMovieClipCurrentFrame,
+  getMovieClipSignals,
   getMovieClipTotalFrames,
   gotoAndPlayMovieClip,
   gotoAndStopMovieClip,
@@ -14,6 +16,19 @@ import {
 } from './movieClip';
 import { createTimeline, playTimeline } from './timeline';
 
+describe('createMovieClipSignals', () => {
+  it('returns all movie clip signals', () => {
+    const signals = createMovieClipSignals();
+    expect(signals.onEnterFrame).toBeDefined();
+    expect(signals.onExitFrame).toBeDefined();
+    expect(signals.onFrameConstructed).toBeDefined();
+  });
+
+  it('returns a new object each call', () => {
+    expect(createMovieClipSignals()).not.toBe(createMovieClipSignals());
+  });
+});
+
 describe('getMovieClipCurrentFrame', () => {
   it('returns 1 when timeline is null', () => {
     const clip = createMovieClip();
@@ -24,6 +39,19 @@ describe('getMovieClipCurrentFrame', () => {
     const clip = createMovieClip();
     clip.data.timeline = createTimeline({ totalFrames: 5, currentFrame: 3 });
     expect(getMovieClipCurrentFrame(clip)).toBe(3);
+  });
+});
+
+describe('getMovieClipSignals', () => {
+  it('lazily creates movie clip signals on the clip', () => {
+    const clip = createMovieClip();
+    const signals = getMovieClipSignals(clip);
+    expect(signals.onEnterFrame).toBeDefined();
+  });
+
+  it('returns the same object on subsequent calls', () => {
+    const clip = createMovieClip();
+    expect(getMovieClipSignals(clip)).toBe(getMovieClipSignals(clip));
   });
 });
 
