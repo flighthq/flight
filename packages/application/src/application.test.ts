@@ -1,7 +1,8 @@
-import { connectSignal } from '@flighthq/signals';
+import { connectSignal, createSignal } from '@flighthq/signals';
 
 import {
   attachApplicationExit,
+  connectThrottle,
   createApplication,
   detachApplicationExit,
   disposeApplication,
@@ -34,20 +35,49 @@ describe('attachApplicationExit', () => {
   });
 });
 
+describe('connectThrottle', () => {
+  it('fires the slot only when accumulated delta reaches the period', () => {
+    const source = createSignal<(delta: number) => void>();
+    const fired: number[] = [];
+    connectThrottle(source, 10, (delta) => fired.push(delta)); // 10fps = 100ms period
+
+    source.emit(40);
+    source.emit(40);
+    expect(fired).toHaveLength(0);
+
+    source.emit(40); // total 120ms — crosses 100ms threshold
+    expect(fired).toHaveLength(1);
+    expect(fired[0]).toBeCloseTo(120);
+  });
+
+  it('accumulates remainder across firings', () => {
+    const source = createSignal<(delta: number) => void>();
+    const fired: number[] = [];
+    connectThrottle(source, 10, (delta) => fired.push(delta)); // 100ms period
+
+    source.emit(110); // fires once, 10ms remainder
+    source.emit(110); // 120ms total — fires again
+    expect(fired).toHaveLength(2);
+  });
+
+  it('returns a cleanup that stops the slot', () => {
+    const source = createSignal<(delta: number) => void>();
+    let fired = 0;
+    const detach = connectThrottle(source, 10, () => fired++);
+
+    detach();
+    source.emit(200);
+    expect(fired).toBe(0);
+  });
+});
+
 describe('createApplication', () => {
-  it('returns signals and frameRate with no side effects', () => {
+  it('returns signals with no side effects', () => {
     const app = createApplication();
     expect(app.onUpdate).toBeDefined();
     expect(app.onRender).toBeDefined();
     expect(app.onExit).toBeDefined();
-    expect(app.frameRate).toBeNull();
     expect(app.observers.size).toBe(0);
-  });
-
-  it('frameRate is mutable', () => {
-    const app = createApplication();
-    app.frameRate = 30;
-    expect(app.frameRate).toBe(30);
   });
 });
 
@@ -116,7 +146,7 @@ describe('startApplicationLoop', () => {
     vi.unstubAllGlobals();
   });
 
-  it('emits onUpdate and onRender on each tick', () => {
+  it('emits onUpdate with delta and onRender on each tick', () => {
     let tickFn: ((time: number) => void) | null = null;
     vi.stubGlobal('requestAnimationFrame', (fn: (time: number) => void) => {
       tickFn = fn;
@@ -139,7 +169,7 @@ describe('startApplicationLoop', () => {
     vi.unstubAllGlobals();
   });
 
-  it('skips frames when frameRate is set', () => {
+  it('clamps delta to MAX_DELTA_TIME on large gaps', () => {
     let tickFn: ((time: number) => void) | null = null;
     vi.stubGlobal('requestAnimationFrame', (fn: (time: number) => void) => {
       tickFn = fn;
@@ -148,16 +178,14 @@ describe('startApplicationLoop', () => {
     vi.stubGlobal('cancelAnimationFrame', vi.fn());
 
     const app = createApplication();
-    app.frameRate = 10;
-    let renders = 0;
-    connectSignal(app.onRender, () => renders++);
+    const updates: number[] = [];
+    connectSignal(app.onUpdate, (dt) => updates.push(dt));
 
     startApplicationLoop(app);
     tickFn!(0);
-    tickFn!(50);
-    tickFn!(100);
+    tickFn!(5000); // simulate tab backgrounded
 
-    expect(renders).toBe(2);
+    expect(updates[1]).toBe(100);
     vi.unstubAllGlobals();
   });
 });

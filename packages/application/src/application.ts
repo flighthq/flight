@@ -1,8 +1,7 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
+import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals';
 import type { Signal } from '@flighthq/types';
 
 export interface Application {
-  frameRate: number | null;
   observers: Map<symbol, () => void>;
   onExit: Signal<() => void>;
   onRender: Signal<() => void>;
@@ -20,9 +19,26 @@ export function attachApplicationExit(app: Application): void {
   app.observers.set(kExit, () => window.removeEventListener('beforeunload', handler));
 }
 
+export function connectThrottle(
+  source: Signal<(deltaTime: number) => void>,
+  fps: number,
+  slot: (deltaTime: number) => void,
+): () => void {
+  const period = 1000 / fps;
+  let elapsed = 0;
+  const handler = (delta: number) => {
+    elapsed += delta;
+    if (elapsed >= period) {
+      slot(elapsed);
+      elapsed %= period;
+    }
+  };
+  connectSignal(source, handler);
+  return () => disconnectSignal(source, handler);
+}
+
 export function createApplication(): Application {
   return {
-    frameRate: null,
     observers: new Map(),
     onExit: createSignal(),
     onRender: createSignal(),
@@ -43,29 +59,13 @@ export function disposeApplication(app: Application): void {
 export function startApplicationLoop(app: Application): void {
   app.observers.get(kLoop)?.();
   let lastTime = -1;
-  let timeElapsed = 0;
   let rafId = 0;
 
   function tick(time: number): void {
-    const isFirstFrame = lastTime < 0;
-    const rawDelta = isFirstFrame ? 0 : time - lastTime;
+    const delta = lastTime < 0 ? 0 : Math.min(time - lastTime, MAX_DELTA_TIME);
     lastTime = time;
-
-    const { frameRate } = app;
-    if (frameRate === null || isFirstFrame) {
-      emitSignal(app.onUpdate, Math.min(rawDelta, MAX_DELTA_TIME));
-      emitSignal(app.onRender);
-      timeElapsed = 0;
-    } else {
-      timeElapsed += rawDelta;
-      const framePeriod = 1000 / frameRate;
-      if (timeElapsed >= framePeriod) {
-        emitSignal(app.onUpdate, Math.min(timeElapsed, MAX_DELTA_TIME));
-        emitSignal(app.onRender);
-        timeElapsed %= framePeriod;
-      }
-    }
-
+    emitSignal(app.onUpdate, delta);
+    emitSignal(app.onRender);
     rafId = requestAnimationFrame(tick);
   }
 
