@@ -6,5 +6,5 @@
     "skipLibCheck": true // Skips type checking of declaration files (.d.ts)
   },
   "include": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
-  "exclude": ["node_modules", "dist", "coverage"]
+  "exclude": ["node_modules", "dist", "coverage", ".git", ".idea", ".vscode", ".claude", "worktrees"]
 }
