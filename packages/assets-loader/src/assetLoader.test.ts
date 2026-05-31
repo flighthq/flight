@@ -11,33 +11,6 @@ describe('createAssetLoader', () => {
   });
 });
 
-describe('startAssetLoad', () => {
-  it('fires onComplete immediately when queue is empty', () => {
-    const loader = createAssetLoader();
-    let called = false;
-    connectSignal(loader.onComplete, () => { called = true; });
-    startAssetLoad(loader);
-    expect(called).toBe(true);
-  });
-
-  it('fires onProgress(0, 0) for an empty queue', () => {
-    const loader = createAssetLoader();
-    let args: [number, number] | null = null;
-    connectSignal(loader.onProgress, (loaded, total) => { args = [loaded, total]; });
-    startAssetLoad(loader);
-    expect(args).toEqual([0, 0]);
-  });
-
-  it('is a no-op if called a second time', () => {
-    const loader = createAssetLoader();
-    let count = 0;
-    connectSignal(loader.onComplete, () => { count++; });
-    startAssetLoad(loader);
-    startAssetLoad(loader);
-    expect(count).toBe(1);
-  });
-});
-
 describe('queueAssetLoad', () => {
   it('throws if called after loading has started', () => {
     const loader = createAssetLoader();
@@ -117,5 +90,32 @@ describe('queueAssetLoad', () => {
 
     // Parallel: item 2 (5ms) finishes before item 1 (20ms)
     expect(order).toEqual([2, 1]);
+  });
+});
+
+describe('startAssetLoad', () => {
+  it('fires onComplete immediately when queue is empty', () => {
+    const loader = createAssetLoader();
+    let called = false;
+    connectSignal(loader.onComplete, () => { called = true; });
+    startAssetLoad(loader);
+    expect(called).toBe(true);
+  });
+
+  it('fires onProgress(0, 0) for an empty queue', () => {
+    const loader = createAssetLoader();
+    let args: [number, number] | null = null;
+    connectSignal(loader.onProgress, (loaded, total) => { args = [loaded, total]; });
+    startAssetLoad(loader);
+    expect(args).toEqual([0, 0]);
+  });
+
+  it('is a no-op if called a second time', () => {
+    const loader = createAssetLoader();
+    let count = 0;
+    connectSignal(loader.onComplete, () => { count++; });
+    startAssetLoad(loader);
+    startAssetLoad(loader);
+    expect(count).toBe(1);
   });
 });
