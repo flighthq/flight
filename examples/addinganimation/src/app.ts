@@ -1,6 +1,7 @@
 import {
   addGraphChild,
   connectSignal,
+  createApplication,
   createBitmap,
   createDisplayObject,
   createTween,
@@ -8,6 +9,7 @@ import {
   Elastic,
   invalidateRender,
   loadImageSourceFromURL,
+  startApplicationLoop,
   updateDisplayObjectBeforeRender,
   updateTweens,
 } from '@flighthq/sdk';
@@ -47,16 +49,9 @@ const tween = createTween(
 );
 connectSignal(tween.onUpdate, () => invalidateRender(container));
 
-let lastTime = 0;
-
-function enterFrame(time: number) {
-  const delta = lastTime === 0 ? 0 : time - lastTime;
-  lastTime = time;
-  updateTweens(manager, delta);
-  if (updateDisplayObjectBeforeRender(state, main)) {
-    render(main);
-  }
-  requestAnimationFrame(enterFrame);
-}
-
-requestAnimationFrame(enterFrame);
+const app = createApplication();
+connectSignal(app.onUpdate, (delta) => updateTweens(manager, delta));
+connectSignal(app.onRender, () => {
+  if (updateDisplayObjectBeforeRender(state, main)) render(main);
+});
+startApplicationLoop(app);

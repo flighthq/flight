@@ -1,12 +1,15 @@
 import {
   addTextureAtlasRegion,
   attachSpritesheetTimeline,
+  connectSignal,
+  createApplication,
   createMovieClip,
   createSpritesheet,
   createSpritesheetAnimation,
   createSpritesheetFrame,
   createTextureAtlas,
   loadImageSourceFromURL,
+  startApplicationLoop,
   updateDisplayObjectBeforeRender,
   updateMovieClip,
 } from '@flighthq/sdk';
@@ -49,18 +52,9 @@ attachSpritesheetTimeline(clip, spritesheet, animation);
 clip.scaleX = scale;
 clip.scaleY = scale;
 
-let lastTime = performance.now();
-
-function enterFrame(time: number): void {
-  const deltaTime = time - lastTime;
-  lastTime = time;
-
-  updateMovieClip(clip, deltaTime);
-
-  updateDisplayObjectBeforeRender(state, clip);
-  render(clip);
-
-  requestAnimationFrame(enterFrame);
-}
-
-requestAnimationFrame(enterFrame);
+const app = createApplication();
+connectSignal(app.onUpdate, (delta) => updateMovieClip(clip, delta));
+connectSignal(app.onRender, () => {
+  if (updateDisplayObjectBeforeRender(state, clip)) render(clip);
+});
+startApplicationLoop(app);
