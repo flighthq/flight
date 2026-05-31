@@ -1,4 +1,10 @@
-import { createDisplayObject, createDOMRenderState, registerRenderer, renderDOMDisplayObject, updateDisplayObjectBeforeRender } from '@flighthq/sdk';
+import {
+  createDisplayObject,
+  createDOMRenderState,
+  registerRenderer,
+  renderDOMDisplayObject,
+  updateDisplayObjectBeforeRender,
+} from '@flighthq/sdk';
 import { DisplayObjectKind } from '@flighthq/sdk';
 
 test('sdk browser barrel can render a display object to the DOM', () => {
