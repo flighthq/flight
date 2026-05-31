@@ -2,7 +2,7 @@ import type { EntityRuntime } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import { createEntity } from './entity';
-import { createEntityRuntime, getEntityRuntime } from './runtime';
+import { createEntityRuntime, createNodeRuntime, getEntityRuntime } from './runtime';
 
 describe('createEntityRuntime', () => {
   it('returns an object', () => {
@@ -12,6 +12,18 @@ describe('createEntityRuntime', () => {
 
   it('has a null api slot', () => {
     const runtime = createEntityRuntime();
+    expect(runtime.binding).toBeNull();
+  });
+});
+
+describe('createNodeRuntime', () => {
+  it('returns an object', () => {
+    const runtime = createNodeRuntime();
+    expect(runtime).not.toBeNull();
+  });
+
+  it('has a null binding slot', () => {
+    const runtime = createNodeRuntime();
     expect(runtime.binding).toBeNull();
   });
 });

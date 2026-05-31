@@ -1,8 +1,8 @@
-import type { EntityRuntime, Node, NodeData, PartialNode } from '@flighthq/types';
+import type { Node, NodeData, NodeRuntime, PartialNode } from '@flighthq/types';
 import { NodeKind } from '@flighthq/types';
 
 import { createNode } from './node';
-import { createEntityRuntime, getEntityRuntime } from './runtime';
+import { createNodeRuntime, getEntityRuntime } from './runtime';
 
 describe('createNode', () => {
   let node: Node;
@@ -77,7 +77,7 @@ interface NodeTestData extends NodeData {
   testDataField: string;
 }
 
-interface NodeTestRuntime extends EntityRuntime {
+interface NodeTestRuntime extends NodeRuntime {
   testRuntimeField: string;
 }
 
@@ -88,7 +88,7 @@ function createNodeTestData(data?: Partial<NodeTestData>): NodeTestData {
 }
 
 function createNodeTestRuntime(): NodeTestRuntime {
-  const obj = createEntityRuntime() as NodeTestRuntime;
+  const obj = createNodeRuntime() as NodeTestRuntime;
   obj.testRuntimeField = 'testRuntimeField';
   return obj;
 }
