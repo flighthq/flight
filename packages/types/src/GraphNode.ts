@@ -1,13 +1,8 @@
-import type { EntityRuntime, EntityRuntimeKey } from './Entity';
+import type { EntityRuntimeKey } from './Entity';
+import type { GraphSignals } from './GraphNodeSignals';
 import type { HasGraphHierarchy, HasGraphHierarchyRuntime } from './HasGraphHierarchy';
-import type { Matrix } from './Matrix';
-import type { Node, NodeData, NodeDataFactory, NodeRuntimeFactory } from './Node';
-import type { Signal } from './Signal';
-
-export interface ImageCacheResult {
-  canvas: HTMLCanvasElement | null;
-  transform: Matrix;
-}
+import type { ImageCacheResult } from './ImageCacheResult';
+import type { Node, NodeData, NodeDataFactory, NodeRuntime, NodeRuntimeFactory } from './Node';
 
 export interface GraphNodeTraits {
   data: GraphNodeData | null;
@@ -16,19 +11,13 @@ export interface GraphNodeTraits {
   name: string | null;
 }
 
-export interface GraphNodeSignals {
-  onChildrenChanged: Signal<() => void>;
-  onChildrenOrderChanged: Signal<() => void>;
-  onParentChanged: Signal<() => void>;
-}
-
 export interface GraphNode<GraphKind extends symbol = typeof NullGraph, Traits extends object = GraphNodeTraits>
   extends Node, GraphNodeTraits, HasGraphHierarchy {
   [EntityRuntimeKey]: GraphNodeRuntime<GraphKind, Traits> | undefined;
 }
 
 export interface GraphNodeRuntime<GraphKind extends symbol = typeof NullGraph, Traits extends object = GraphNodeTraits>
-  extends EntityRuntime, HasGraphHierarchyRuntime<GraphKind, Traits> {
+  extends NodeRuntime, HasGraphHierarchyRuntime<GraphKind, Traits> {
   appearanceID: number;
   boundsUsingLocalBoundsID: number;
   boundsUsingLocalTransformID: number;
@@ -59,3 +48,5 @@ export type GraphNodeRuntimeFactory<
   Traits extends object,
   Runtime extends GraphNodeRuntime<GraphKind, Traits> = GraphNodeRuntime<GraphKind, Traits>,
 > = NodeRuntimeFactory<Runtime>;
+
+export type { GraphSignals };

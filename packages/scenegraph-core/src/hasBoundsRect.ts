@@ -1,6 +1,7 @@
 import type { GraphBoundsNode, HasBoundsRect, HasBoundsRectRuntime, MethodsOf, Rectangle } from '@flighthq/types';
 
-export function defaultComputeLocalBoundsRectangle(_out: Rectangle, _source: Readonly<GraphBoundsNode<symbol, object>>) {}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- unique symbol variance prevents a tighter type here
+export function defaultComputeLocalBoundsRectangle(_out: Rectangle, _source: Readonly<GraphBoundsNode<any, any>>) {}
 
 export function initHasBoundsRectangle(_target: HasBoundsRect, _obj?: Readonly<Partial<HasBoundsRect>>): void {}
 

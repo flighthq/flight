@@ -7,7 +7,8 @@ export interface HasBoundsRect extends Entity {}
 
 export interface HasBoundsRectRuntime extends EntityRuntime {
   boundsRect: Rectangle | null;
-  computeLocalBoundsRect: (out: Rectangle, source: Readonly<GraphBoundsNode<symbol, object>>) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- unique symbol variance prevents a tighter type here
+  computeLocalBoundsRect: (out: Rectangle, source: Readonly<GraphBoundsNode<any, any>>) => void;
   localBoundsRect: Rectangle | null;
   worldBoundsRect: Rectangle | null;
 }

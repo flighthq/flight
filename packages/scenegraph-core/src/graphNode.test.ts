@@ -3,10 +3,10 @@ import type { GraphNode, GraphNodeData, GraphNodeRuntime, PartialNode } from '@f
 import {
   createGraphNode,
   createGraphNodeRuntime,
-  createGraphNodeSignals,
+  createGraphSignals,
   defaultGraphNodeRuntimeCanAddChild,
   getGraphNodeRuntime,
-  getGraphNodeSignals,
+  getGraphSignals,
   setGraphNodeEnabled,
 } from './graphNode';
 
@@ -93,6 +93,8 @@ describe('createGraphNodeRuntime', () => {
     expect(runtime.boundsUsingLocalBoundsID).toStrictEqual(-1);
     expect(runtime.boundsUsingLocalTransformID).toStrictEqual(-1);
     expect(runtime.children).toBeNull();
+    expect(runtime.graphSignals).toBeDefined();
+    expect(runtime.imageCache).toBeNull();
     expect(runtime.localBoundsID).toStrictEqual(0);
     expect(runtime.localBoundsUsingLocalBoundsID).toStrictEqual(-1);
     expect(runtime.localTransformID).toStrictEqual(0);
@@ -120,9 +122,11 @@ describe('createGraphNodeRuntime', () => {
   });
 });
 
-describe('createGraphNodeSignals', () => {
-  it('returns an object with three signal properties', () => {
-    const signals = createGraphNodeSignals();
+describe('createGraphSignals', () => {
+  it('returns an object with all signal properties', () => {
+    const signals = createGraphSignals();
+    expect(signals.onChildAdded).toBeDefined();
+    expect(signals.onChildRemoved).toBeDefined();
     expect(signals.onChildrenChanged).toBeDefined();
     expect(signals.onChildrenOrderChanged).toBeDefined();
     expect(signals.onParentChanged).toBeDefined();
@@ -151,17 +155,17 @@ describe('getGraphNodeRuntime', () => {
   });
 });
 
-describe('getGraphNodeSignals', () => {
-  it('returns signals object (lazily created)', () => {
+describe('getGraphSignals', () => {
+  it('returns the signals object', () => {
     const node = createGraphNode(TestGraph, NodeTestKind);
-    const signals = getGraphNodeSignals(node);
+    const signals = getGraphSignals(node);
     expect(signals).toBeDefined();
     expect(signals.onChildrenChanged).toBeDefined();
   });
 
   it('returns the same object on subsequent calls', () => {
     const node = createGraphNode(TestGraph, NodeTestKind);
-    expect(getGraphNodeSignals(node)).toBe(getGraphNodeSignals(node));
+    expect(getGraphSignals(node)).toBe(getGraphSignals(node));
   });
 });
 

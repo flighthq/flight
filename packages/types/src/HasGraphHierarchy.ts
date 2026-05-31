@@ -1,5 +1,6 @@
 import type { Entity, EntityRuntime } from './Entity';
-import type { GraphNode, GraphNodeSignals, GraphNodeTraits, NullGraph } from './GraphNode';
+import type { GraphNode, GraphNodeTraits, NullGraph } from './GraphNode';
+import type { GraphSignals } from './GraphNodeSignals';
 
 export interface HasGraphHierarchy extends Entity {}
 
@@ -7,11 +8,10 @@ export interface HasGraphHierarchyRuntime<
   GraphKind extends symbol = typeof NullGraph,
   Traits extends object = GraphNodeTraits,
 > extends EntityRuntime {
-  children: GraphNode<GraphKind, Traits>[] | null;
-  parent: GraphNode<GraphKind, Traits> | null;
-  signals: GraphNodeSignals | null;
-
   canAddChild: (target: GraphNode<GraphKind, Traits>, child: GraphNode<GraphKind, Traits>) => boolean;
+  children: GraphNode<GraphKind, Traits>[] | null;
+  graphSignals: GraphSignals;
+  parent: GraphNode<GraphKind, Traits> | null;
 }
 
 export type GraphHierarchyNode<

@@ -1,13 +1,13 @@
-import { createEntityRuntime, createNode, getEntityRuntime } from '@flighthq/entity';
+import { createNode, createNodeRuntime, getEntityRuntime } from '@flighthq/entity';
 import { createSignal } from '@flighthq/signals';
 import type {
+  GraphHierarchyNode,
   GraphNode,
   GraphNodeData,
   GraphNodeDataFactory,
-  GraphHierarchyNode,
   GraphNodeRuntime,
   GraphNodeRuntimeFactory,
-  GraphNodeSignals,
+  GraphSignals,
   GraphNodeTraits,
   MethodsOf,
   NodeRuntimeFactory,
@@ -43,29 +43,31 @@ export function createGraphNode<
 export function createGraphNodeRuntime<GraphKind extends symbol, Traits extends object>(
   methods?: Readonly<Partial<MethodsOf<GraphNodeRuntime<GraphKind, Traits>>>>,
 ): GraphNodeRuntime<GraphKind, Traits> {
-  const out = createEntityRuntime() as GraphNodeRuntime<GraphKind, Traits>;
+  const out = createNodeRuntime() as GraphNodeRuntime<GraphKind, Traits>;
   out.appearanceID = 0;
   out.boundsUsingLocalBoundsID = -1;
   out.boundsUsingLocalTransformID = -1;
+  out.canAddChild = methods?.canAddChild ?? defaultGraphNodeRuntimeCanAddChild;
   out.children = null;
+  out.graphSignals = createGraphSignals();
   out.imageCache = null;
   out.localBoundsID = 0;
   out.localBoundsUsingLocalBoundsID = -1;
   out.localTransformID = 0;
   out.localTransformUsingLocalTransformID = -1;
   out.parent = null;
-  out.signals = null;
   out.worldBoundsUsingLocalBoundsID = -1;
   out.worldBoundsUsingWorldTransformID = -1;
   out.worldTransformID = 0;
   out.worldTransformUsingLocalTransformID = -1;
   out.worldTransformUsingParentTransformID = -1;
-  out.canAddChild = methods?.canAddChild ?? defaultGraphNodeRuntimeCanAddChild;
   return out;
 }
 
-export function createGraphNodeSignals(): GraphNodeSignals {
+export function createGraphSignals(): GraphSignals {
   return {
+    onChildAdded: createSignal(),
+    onChildRemoved: createSignal(),
     onChildrenChanged: createSignal(),
     onChildrenOrderChanged: createSignal(),
     onParentChanged: createSignal(),
@@ -85,11 +87,10 @@ export function getGraphNodeRuntime<GraphKind extends symbol, Traits extends obj
   return getEntityRuntime(source) as GraphNodeRuntime<GraphKind, Traits>;
 }
 
-export function getGraphNodeSignals<GraphKind extends symbol, Traits extends object>(
+export function getGraphSignals<GraphKind extends symbol, Traits extends object>(
   source: GraphNode<GraphKind, Traits>,
-): GraphNodeSignals {
-  const runtime = getEntityRuntime(source) as GraphNodeRuntime<GraphKind, Traits>;
-  return (runtime.signals ??= createGraphNodeSignals());
+): GraphSignals {
+  return (getEntityRuntime(source) as GraphNodeRuntime<GraphKind, Traits>).graphSignals;
 }
 
 export function setGraphNodeEnabled<GraphKind extends symbol, Traits extends object>(

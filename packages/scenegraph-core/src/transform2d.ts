@@ -8,8 +8,8 @@ import {
 } from '@flighthq/geometry';
 import { invalidateLocalTransform, recomputeWorldTransformID } from '@flighthq/scenegraph-core';
 import type {
-  GraphTransform2DNode,
   GraphNodeRuntime,
+  GraphTransform2DNode,
   HasTransform2DRuntime,
   Matrix,
   Vector2Like,

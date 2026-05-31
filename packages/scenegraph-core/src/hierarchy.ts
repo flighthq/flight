@@ -62,13 +62,12 @@ export function addGraphChildAt<GraphKind extends symbol, Traits extends object>
   }
 
   children!.splice(index, 0, child);
-  const targetSignals = targetRuntime.signals;
-  if (targetSignals) emitSignal(targetSignals.onChildrenChanged);
+  emitSignal(targetRuntime.graphSignals.onChildrenChanged);
 
   if (parent !== target) {
     childRuntime.parent = target;
-    const childSignals = childRuntime.signals;
-    if (childSignals) emitSignal(childSignals.onParentChanged);
+    emitSignal(targetRuntime.graphSignals.onChildAdded, child as GraphHierarchyNode);
+    emitSignal(childRuntime.graphSignals.onParentChanged);
     invalidateParentReference(child);
   }
 
@@ -186,15 +185,14 @@ export function removeGraphChild<GraphKind extends symbol, Traits extends object
   const children = targetRuntime.children;
   if (children !== null && childRuntime.parent === target) {
     childRuntime.parent = null;
-    const childSignals = childRuntime.signals;
-    if (childSignals) emitSignal(childSignals.onParentChanged);
+    emitSignal(childRuntime.graphSignals.onParentChanged);
     invalidateParentReference(child);
     const i = children.indexOf(child);
     if (i !== -1) {
       children.splice(i, 1);
     }
-    const targetSignals = targetRuntime.signals;
-    if (targetSignals) emitSignal(targetSignals.onChildrenChanged);
+    emitSignal(targetRuntime.graphSignals.onChildRemoved, child as GraphHierarchyNode);
+    emitSignal(targetRuntime.graphSignals.onChildrenChanged);
   }
   return child as GraphHierarchyNodeOf<GraphKind, Traits>;
 }
@@ -264,8 +262,7 @@ export function setGraphChildIndex<GraphKind extends symbol, Traits extends obje
     if (i !== -1 && i !== index) {
       children.splice(i, 1);
       children.splice(index, 0, child);
-      const signals = targetRuntime.signals;
-      if (signals) emitSignal(signals.onChildrenOrderChanged);
+      emitSignal(targetRuntime.graphSignals.onChildrenOrderChanged);
     }
   }
 }
@@ -292,8 +289,7 @@ export function swapGraphChildren<GraphKind extends symbol, Traits extends objec
     const index2 = children.indexOf(child2);
     children[index1] = child2;
     children[index2] = child1;
-    const signals = getGraphNodeRuntime(target).signals;
-    if (signals) emitSignal(signals.onChildrenOrderChanged);
+    emitSignal(getGraphNodeRuntime(target).graphSignals.onChildrenOrderChanged);
   }
 }
 
@@ -317,8 +313,7 @@ export function swapGraphChildrenAt<GraphKind extends symbol, Traits extends obj
   const swap = children[index1] as GraphNode<GraphKind, Traits>;
   children[index1] = children[index2];
   children[index2] = swap;
-  const signals = targetRuntime.signals;
-  if (signals) emitSignal(signals.onChildrenOrderChanged);
+  emitSignal(targetRuntime.graphSignals.onChildrenOrderChanged);
 }
 
 function throwOutOfBoundsError(): void {

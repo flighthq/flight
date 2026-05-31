@@ -10,9 +10,9 @@ import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
 import type {
   GraphBoundsNode,
   GraphNodeRuntime,
+  GraphSpatial2DNode,
   HasBoundsRectRuntime,
   HasTransform2DRuntime,
-  GraphSpatial2DNode,
   Rectangle,
   RectangleLike,
 } from '@flighthq/types';
