@@ -90,6 +90,7 @@
   "dependencies": {
     "@flighthq/geometry": "*",
     "@flighthq/scenegraph-core": "*",
+    "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

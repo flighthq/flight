@@ -1,5 +1,6 @@
 import { createRectangle } from '@flighthq/geometry';
 import { addGraphChild } from '@flighthq/scenegraph-core';
+import { connectSignal } from '@flighthq/signals';
 import type { GraphNode, PartialNode, Stage } from '@flighthq/types';
 import { StageKind } from '@flighthq/types';
 
@@ -9,8 +10,11 @@ import {
   createStage,
   createStageData,
   createStageRuntime,
+  createStageSignals,
   getStage,
   getStageRuntime,
+  getStageSignals,
+  setStageSize,
 } from './stage';
 
 describe('computeStageLocalBoundsRectangle', () => {
@@ -108,6 +112,15 @@ describe('createStageRuntime', () => {
   });
 });
 
+describe('createStageSignals', () => {
+  it('returns an object with all signal properties', () => {
+    const signals = createStageSignals();
+    expect(signals.onResize).toBeDefined();
+    expect(signals.onFullscreenChanged).toBeDefined();
+    expect(signals.onOrientationChanged).toBeDefined();
+  });
+});
+
 describe('getStage', () => {
   it('returns null when the node has no parent', () => {
     const obj = createDisplayObject();
@@ -143,5 +156,58 @@ describe('getStageRuntime', () => {
     const stage = createStage();
     const runtime = getStageRuntime(stage);
     expect(runtime).not.toBeNull();
+  });
+
+  it('initializes stageSignals to null', () => {
+    const runtime = createStageRuntime();
+    expect(runtime.stageSignals).toBeNull();
+  });
+});
+
+describe('getStageSignals', () => {
+  it('lazily creates and returns signals', () => {
+    const stage = createStage();
+    const signals = getStageSignals(stage);
+    expect(signals).toBeDefined();
+    expect(signals.onResize).toBeDefined();
+  });
+
+  it('returns the same object on subsequent calls', () => {
+    const stage = createStage();
+    expect(getStageSignals(stage)).toBe(getStageSignals(stage));
+  });
+});
+
+describe('setStageSize', () => {
+  it('updates stageWidth and stageHeight', () => {
+    const stage = createStage();
+    setStageSize(stage, 1920, 1080);
+    expect(stage.data.stageWidth).toBe(1920);
+    expect(stage.data.stageHeight).toBe(1080);
+  });
+
+  it('emits onResize when dimensions change', () => {
+    const stage = createStage();
+    let called = false;
+    connectSignal(getStageSignals(stage).onResize, () => {
+      called = true;
+    });
+    setStageSize(stage, 1280, 720);
+    expect(called).toBe(true);
+  });
+
+  it('does not emit onResize when dimensions are unchanged', () => {
+    const stage = createStage({ data: { stageWidth: 400, stageHeight: 300 } });
+    let called = false;
+    connectSignal(getStageSignals(stage).onResize, () => {
+      called = true;
+    });
+    setStageSize(stage, 400, 300);
+    expect(called).toBe(false);
+  });
+
+  it('does not emit onResize when no one has subscribed', () => {
+    const stage = createStage();
+    expect(() => setStageSize(stage, 1280, 720)).not.toThrow();
   });
 });
