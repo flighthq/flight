@@ -25,6 +25,7 @@ Library code should prefer the smallest package or subpath that provides the nee
 | `@flighthq/input`                | Keyboard, pointer, wheel, and text input normalization             |
 | `@flighthq/interaction`          | Hit testing and pointer dispatch                                   |
 | `@flighthq/materials`            | Color transforms, filters, blend modes, and material utilities     |
+| `@flighthq/media`                | Audio and video playback channels                                  |
 | `@flighthq/render-canvas`        | Canvas 2D renderer                                                 |
 | `@flighthq/render-core`          | Renderer registration, render nodes, and render update pipeline    |
 | `@flighthq/render-dom`           | DOM renderer                                                       |
@@ -182,6 +183,7 @@ Examples live in `examples/`. Each example is a standalone Vite app and most can
 | `displayingabitmap` | Minimal bitmap display                           |
 | `drawingshapes`     | Shape primitives, lines, curves, and polygons    |
 | `nyancat`           | Frame animation                                  |
+| `playingsound`      | Sound playback with pause, resume, and fades     |
 | `piratepig`         | Match-3 game with tweens, audio, text, and input |
 | `simplesprite`      | Minimal sprite graph example                     |
 | `tweenexample`      | Animated circles using tweens and timers         |
