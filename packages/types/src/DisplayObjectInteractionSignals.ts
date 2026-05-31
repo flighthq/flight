@@ -1,6 +1,3 @@
-import type { PointerData } from './PointerData';
-import type { Signal } from './Signal';
+import type { InteractionSignals } from './InteractionSignals';
 
-export interface DisplayObjectInteractionSignals {
-  onPointerDown: Signal<(data: Readonly<PointerData>) => void>;
-}
+export type DisplayObjectInteractionSignals = InteractionSignals;

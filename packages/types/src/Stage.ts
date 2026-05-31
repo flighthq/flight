@@ -3,6 +3,7 @@ import type { StageAlign } from './StageAlign';
 import type { StageDisplayState } from './StageDisplayState';
 import type { StageQuality } from './StageQuality';
 import type { StageScaleMode } from './StageScaleMode';
+import type { StageSignals } from './StageSignals';
 
 export interface StageData extends DisplayObjectData {
   autoOrients: boolean;
@@ -17,7 +18,9 @@ export interface StageData extends DisplayObjectData {
   stageWidth: number;
 }
 
-export interface StageRuntime extends DisplayObjectRuntime {}
+export interface StageRuntime extends DisplayObjectRuntime {
+  stageSignals: StageSignals | null;
+}
 
 export interface Stage extends DisplayObject {
   data: StageData;

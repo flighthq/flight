@@ -7,8 +7,8 @@ import type {
   GraphNodeDataFactory,
   GraphNodeRuntime,
   GraphNodeRuntimeFactory,
-  GraphSignals,
   GraphNodeTraits,
+  GraphSignals,
   MethodsOf,
   NodeRuntimeFactory,
   PartialNode,
@@ -51,6 +51,7 @@ export function createGraphNodeRuntime<GraphKind extends symbol, Traits extends 
   out.children = null;
   out.graphSignals = createGraphSignals();
   out.imageCache = null;
+  out.interactionSignals = null;
   out.localBoundsID = 0;
   out.localBoundsUsingLocalBoundsID = -1;
   out.localTransformID = 0;
