@@ -6,9 +6,9 @@ import {
 } from './audioSourceFrom';
 
 describe('createAudioSourceFromURL', () => {
-  it('returns an AudioSource object with a src property', () => {
+  it('returns an AudioSource object with a buffer property', () => {
     const source = createAudioSourceFromURL('test.mp3');
-    expect(source).toHaveProperty('src');
+    expect(source).toHaveProperty('buffer');
   });
 });
 
@@ -28,8 +28,8 @@ describe('loadAudioSourceFromURL', () => {
 });
 
 describe('loadAudioSourceFromURLs', () => {
-  it('resolves immediately with a null-src source when sources is empty', async () => {
+  it('resolves immediately with a null-buffer source when sources is empty', async () => {
     const source = await loadAudioSourceFromURLs([]);
-    expect(source.src).toBeNull();
+    expect(source.buffer).toBeNull();
   });
 });

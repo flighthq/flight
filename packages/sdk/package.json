@@ -35,6 +35,7 @@
     "@flighthq/image-cache": "*",
     "@flighthq/input": "*",
     "@flighthq/materials": "*",
+    "@flighthq/media": "*",
     "@flighthq/render-canvas": "*",
     "@flighthq/render-core": "*",
     "@flighthq/render-dom": "*",

@@ -12,6 +12,7 @@
     { "path": "./packages/surface" },
     { "path": "./packages/interaction" },
     { "path": "./packages/materials" },
+    { "path": "./packages/media" },
     { "path": "./packages/render-canvas" },
     { "path": "./packages/render-core" },
     { "path": "./packages/render-dom" },
