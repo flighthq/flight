@@ -18,6 +18,7 @@
     { "path": "../input" },
     { "path": "../interaction" },
     { "path": "../materials" },
+    { "path": "../media" },
     { "path": "../render-core" },
     { "path": "../render-canvas" },
     { "path": "../render-dom" },

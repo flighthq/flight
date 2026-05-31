@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/sdk",
+  "name": "@flighthq/media",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -28,34 +28,13 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/application": "*",
     "@flighthq/assets": "*",
-    "@flighthq/entity": "*",
-    "@flighthq/geometry": "*",
-    "@flighthq/image-cache": "*",
-    "@flighthq/input": "*",
-    "@flighthq/materials": "*",
-    "@flighthq/media": "*",
-    "@flighthq/render-canvas": "*",
-    "@flighthq/render-core": "*",
-    "@flighthq/render-dom": "*",
-    "@flighthq/render-webgl": "*",
-    "@flighthq/scenegraph-core": "*",
-    "@flighthq/scenegraph-display": "*",
-    "@flighthq/scenegraph-sprite": "*",
-    "@flighthq/scenegraph-world": "*",
     "@flighthq/signals": "*",
-    "@flighthq/spritesheet": "*",
-    "@flighthq/surface": "*",
-    "@flighthq/timeline": "*",
-    "@flighthq/timeline-spritesheet": "*",
-    "@flighthq/tween": "*",
-    "@flighthq/tween-easing": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Single entry point re-exporting all packages",
+  "description": "Audio and video playback channels",
   "sideEffects": false
 }

@@ -7,6 +7,7 @@ export * from '@flighthq/image-cache';
 export * from '@flighthq/input';
 export * from '@flighthq/interaction';
 export * from '@flighthq/materials';
+export * from '@flighthq/media';
 export * from '@flighthq/render-canvas';
 export * from '@flighthq/render-core';
 export * from '@flighthq/render-dom';

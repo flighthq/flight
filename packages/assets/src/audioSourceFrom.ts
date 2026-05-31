@@ -8,7 +8,7 @@ export function createAudioSourceFromURL(url: string): AudioSource {
     .then((r) => r.arrayBuffer())
     .then((buf) => getAudioContext().decodeAudioData(buf))
     .then((buf) => {
-      source.src = buf;
+      source.buffer = buf;
     })
     .catch(() => {});
   return source;
