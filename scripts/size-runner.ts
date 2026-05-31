@@ -57,8 +57,10 @@ export function collectSizeCases(
         .filter((tc) => {
           const normalizedName = tc.name.toLowerCase();
           const normalizedRender = tc.render.toLowerCase();
-          const exampleMatches = exampleFilters.length === 0 || exampleFilters.some((query) => normalizedName.includes(query));
-          const renderMatches = renderFilters.length === 0 || renderFilters.some((query) => normalizedRender.includes(query));
+          const exampleMatches =
+            exampleFilters.length === 0 || exampleFilters.some((query) => normalizedName.includes(query));
+          const renderMatches =
+            renderFilters.length === 0 || renderFilters.some((query) => normalizedRender.includes(query));
           return exampleMatches && renderMatches;
         }),
     );
@@ -89,10 +91,13 @@ export async function buildSample(root: string, render: Render): Promise<string>
       logLevel: 'silent',
     });
 
-    const jsFiles = (result as any).output.filter((f: any) => f.fileName.endsWith('.js'));
+    type BuildOutputFile = { fileName: string; code?: string };
+    const output = (result as unknown as { output?: BuildOutputFile[] }).output ?? [];
+    const jsFiles = output.filter((f) => f.fileName.endsWith('.js'));
     if (jsFiles.length === 0) throw new Error(`No JS output found for ${root}`);
 
-    const mainChunk = jsFiles.find((f: any) => f.fileName.includes('main')) || jsFiles[0];
+    const mainChunk = jsFiles.find((f) => f.fileName.includes('main')) || jsFiles[0];
+    if (!mainChunk.code) throw new Error(`No code found in main chunk for ${root}`);
     return mainChunk.code;
   } finally {
     if (prev === undefined) {
@@ -107,7 +112,10 @@ export function getGzipSize(code: string): number {
   return gzipSync(code).length;
 }
 
-export function formatSizeResult(gzipSize: number, baselineSize: number | null): {
+export function formatSizeResult(
+  gzipSize: number,
+  baselineSize: number | null,
+): {
   gzipKB: string;
   baselineKB: number | null;
   baselineKBStr: string | null;
@@ -147,8 +155,20 @@ export async function runSizeChecks({
     const baselineSize = baseline[key] ?? null;
     const { gzipKB, baselineKB, baselineKBStr, delta, passed, threshold } = formatSizeResult(gzipSize, baselineSize);
 
+    const adjustedPassed = updateBaseline || passed;
     pendingBaseline[key] = gzipSize;
-    results.push({ name, render, gzipSize, gzipKB, baselineKB, baselineKBStr, delta, passed, threshold, key });
+    results.push({
+      name,
+      render,
+      gzipSize,
+      gzipKB,
+      baselineKB,
+      baselineKBStr,
+      delta,
+      passed: adjustedPassed,
+      threshold,
+      key,
+    });
   }
 
   return { results, pendingBaseline, baselineFile };

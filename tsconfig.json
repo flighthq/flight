@@ -13,7 +13,8 @@
     "packages/**/src/**/*.test.ts", // Include test files here
     "packages/**/src/**/*.spec.ts",
     "packages/**/__tests__/**/*.ts",
-    "tests/**/*.test.ts"
+    "tests/**/*.test.ts",
+    "scripts/**/*.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

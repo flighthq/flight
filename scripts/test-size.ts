@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { basename, dirname, resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -64,6 +64,7 @@ function parseArgs(args: string[]): ParsedArgs {
     exampleFilters: [],
     renderFilters: [],
     report: null,
+    outputPath: null,
     forwardedArgs: [],
     help: false,
   };
@@ -162,7 +163,6 @@ function parseArgs(args: string[]): ParsedArgs {
 }
 
 function printUsage(): void {
-  const name = basename(process.argv[1]);
   console.log(`Usage: npm run test:size [filters...] [-- vitest-args...]`);
   console.log('');
   console.log('Filter examples:');

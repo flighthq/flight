@@ -25,7 +25,7 @@ Read this file once at the start of a fresh agent session, then revisit the rele
 - Run `npm run api` after public API changes to scan signatures and naming symmetry.
 - Run `npm run size` after changes to examples, package exports, barrel files, renderer registration, dependencies, or anything that may affect tree-shaking.
 - Run the closest meaningful tests while iterating: a touched test file, a package workspace, or a Vitest project filter. Broaden once the local behavior is understood.
-- Run `npm run check` or `npm run check:strict` for narrower completed changes. Run `npm run verify` before calling broad refactors, public API reshapes, example changes, packaging changes, or tree-shaking-sensitive work done.
+- Run `npm run check` for narrower completed changes. Run `npm run verify` before calling broad refactors, public API reshapes, example changes, packaging changes, or tree-shaking-sensitive work done.
 
 ## Bundle Size Discipline
 
@@ -64,9 +64,9 @@ This SDK should behave like a hardware store: users can import one small tool wi
 - `npm run api` prints compact exported function signatures for all packages.
 - `npm run api <query>` filters packages and exported functions by the given query. Example: `npm run api application` or `npm run api --function register`.
 - `npm run api:json` prints the same API data as JSON for tools and agents.
-- `npm run check` is the default non-fixing quality sweep for agents and contributors. It runs `validate`, `coverage`, and the non-failing `order` report.
-- `npm run check:strict` runs the same sweep with `order:check` in failing mode. Use this for cleaned-up areas or future CI ratcheting.
-- `npm run verify` is the full confidence pass to run before calling a broad change done. It runs `build`, `check:strict`, unit/API/integration tests, and the size baseline gate.
+- `npm run check` is the default non-fixing quality sweep for agents and contributors. It runs `validate`, `coverage`, failing `order:check`, `lint:check`, and `typecheck`.
+- `npm run check:strict` is an alias for `npm run check` kept for compatibility.
+- `npm run verify` is an alias for `npm run ci`, kept as the agent-friendly full confidence command before calling broad changes done.
 - `npm run validate` checks monorepo shape, package references, workspace dependency conventions, package export targets, packaging shape, and side-effect-free source invariants. Run this after any package-level change and fix everything it reports before moving on.
 - `npm run coverage` checks for missing test files and missing tests for exported functions.
 - `npm run order` reports exported functions and test `describe` blocks that are not alphabetized. `npm run order:check` runs the same check in failing mode once a package or area has been cleaned up. `npm run order:fix` rewrites files in place to apply the correct order; comments immediately preceding a declaration (with no blank line between them) are treated as attached and move with it.
@@ -158,7 +158,7 @@ Packaging policy should be enforced by scripts and `npm run validate` rather tha
 - When adding or renaming exported functions, run `npm run coverage` to find missing test files and missing `describe` coverage.
 - When adding or renaming exported functions or `describe` blocks, run `npm run order` to check the scan order. Prefer leaving touched files cleaner than you found them.
 - When changing public APIs, check naming symmetry across packages and run `npm run api` to scan signatures.
-- Before declaring a broad refactor complete, run `npm run verify`. For narrower changes, run the closest package tests plus `check` or `check:strict`; use `verify` when examples, public API names, packaging, or tree-shaking may have been affected.
+- Before declaring a broad refactor complete, run `npm run verify`. For narrower changes, run the closest package tests plus `check`; use `verify` when examples, public API names, packaging, or tree-shaking may have been affected.
 - Do not use broad test runs as a substitute for reading the nearby source and tests. Broad runs are confidence gates; focused tests are the normal editing loop.
 - When changing an `out`-parameter function, test both a distinct output object and aliasing where `out` is also an input.
 - When adding a new package, copy the package shape from a nearby package and then run `npm run validate`.

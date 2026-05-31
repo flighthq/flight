@@ -1,10 +1,10 @@
-import { basename, dirname, resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import type { SizeResult } from './size-runner.ts';
-import { runSizeChecks } from './size-runner.ts';
+import type { SizeResult } from './size-runner';
+import { runSizeChecks } from './size-runner';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -39,7 +39,7 @@ const { results, pendingBaseline } = await runSizeChecks({
 });
 
 if (updateBaseline) {
-  const { writeBaseline } = await import('./size-runner.ts');
+  const { writeBaseline } = await import('./size-runner');
   writeBaseline(baselineFile, pendingBaseline);
 }
 
@@ -153,4 +153,12 @@ function printResults(results: SizeResult[]): void {
 
     console.log(lines.join('\n') + '\n');
   }
+}
+
+function printUsage(): void {
+  console.log('Usage: npm run size [filters...] [report=json] [output=path]');
+  console.log('Examples:');
+  console.log('  npm run size piratepig');
+  console.log('  npm run size report=json piratepig');
+  console.log('  npm run size output=size-report.json piratepig');
 }
