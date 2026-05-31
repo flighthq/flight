@@ -1,104 +1,127 @@
 # Flight
 
-A TypeScript 2D rendering engine with a Flash/OpenFL-style display list API. Targets HTML5 Canvas, WebGL, and DOM renderers from a single scene graph.
+Flight is a TypeScript monorepo for a tree-shakable 2D rendering SDK inspired by OpenFL and Lime. It provides scene graph packages, renderer packages, animation and asset helpers, and a convenience `@flighthq/sdk` barrel for applications and examples.
+
+The codebase is organized so low-level users can import small subpaths without pulling in renderer registration, app helpers, or unrelated graph families. Packages are intended to be import side-effect-free; renderers and platform listeners are registered explicitly by the caller.
 
 ## Packages
 
-The monorepo is organized under `packages/`. Import everything from the barrel for applications:
+Applications and examples can import from the SDK barrel:
 
 ```ts
-import { createBitmap, createShape, addGraphChild } from '@flighthq/sdk';
+import { addGraphChild, createBitmap, createShape } from '@flighthq/sdk';
 ```
 
-Individual packages can be imported directly in library code (the barrel is for examples and apps only).
+Library code should prefer the smallest package or subpath that provides the needed API.
 
-| Package                          | Purpose                                             |
-| -------------------------------- | --------------------------------------------------- |
-| `@flighthq/sdk`                  | Single barrel re-exporting all packages             |
-| `@flighthq/types`                | Shared TypeScript interfaces and types              |
-| `@flighthq/scenegraph-display`   | Display objects — containers, bitmaps, shapes, text |
-| `@flighthq/scenegraph-core`      | Base scene graph (transform, bounds, graph nodes)   |
-| `@flighthq/render-canvas`        | HTML5 Canvas renderer                               |
-| `@flighthq/render-dom`           | DOM renderer                                        |
-| `@flighthq/render-webgl`         | WebGL renderer                                      |
-| `@flighthq/render-core`          | Renderer registration and render node management    |
-| `@flighthq/tween`                | Tween engine and timers                             |
-| `@flighthq/tween-easing`         | Easing functions (Quad, Elastic, …)                 |
-| `@flighthq/signals`              | Typed event signals                                 |
-| `@flighthq/assets`               | Asset loading (images, fonts, audio)                |
-| `@flighthq/geometry`             | Rectangle, matrix, point types                      |
-| `@flighthq/materials`            | Blend modes, color utilities                        |
-| `@flighthq/spritesheet`          | Spritesheet parsing                                 |
-| `@flighthq/timeline`             | Frame-based timeline                                |
-| `@flighthq/timeline-spritesheet` | Spritesheet animation timeline                      |
-| `@flighthq/interaction`          | Input and hit testing                               |
-| `@flighthq/text-layout`          | Text layout engine                                  |
-| `@flighthq/entity`               | Entity/component system                             |
+| Package                          | Purpose                                                            |
+| -------------------------------- | ------------------------------------------------------------------ |
+| `@flighthq/application`          | Application loop and browser window lifecycle helpers              |
+| `@flighthq/assets`               | Image source, texture atlas, tileset, font, and audio utilities    |
+| `@flighthq/assets-loader`        | Group asset loading with progress and completion signals           |
+| `@flighthq/entity`               | Entity, node, runtime, and binding primitives                      |
+| `@flighthq/geometry`             | Vectors, matrices, rectangles, typed-array helpers, and pools      |
+| `@flighthq/image-cache`          | Runtime image cache access for display-object bitmap caching       |
+| `@flighthq/input`                | Keyboard, pointer, wheel, and text input normalization             |
+| `@flighthq/interaction`          | Hit testing and pointer dispatch                                   |
+| `@flighthq/materials`            | Color transforms, filters, blend modes, and material utilities     |
+| `@flighthq/render-canvas`        | Canvas 2D renderer                                                 |
+| `@flighthq/render-core`          | Renderer registration, render nodes, and render update pipeline    |
+| `@flighthq/render-dom`           | DOM renderer                                                       |
+| `@flighthq/render-webgl`         | WebGL2 renderer                                                    |
+| `@flighthq/scenegraph-core`      | Shared hierarchy, transforms, bounds, appearance, and invalidation |
+| `@flighthq/scenegraph-display`   | Display-object graph: bitmaps, shapes, text, masks, and video      |
+| `@flighthq/scenegraph-sprite`    | Sprite graph: sprites, quad batches, and tilemaps                  |
+| `@flighthq/scenegraph-world`     | Experimental 3D world graph                                        |
+| `@flighthq/sdk`                  | Application-level convenience barrel                               |
+| `@flighthq/signals`              | Strictly typed signals and slots                                   |
+| `@flighthq/spritesheet`          | Spritesheet frame animation playback                               |
+| `@flighthq/surface`              | Pixel-level image manipulation using browser `ImageData`           |
+| `@flighthq/text-layout`          | Renderer-agnostic glyph measuring and text layout                  |
+| `@flighthq/timeline`             | Timeline-based animation sequencing                                |
+| `@flighthq/timeline-spritesheet` | Spritesheet animation driven by timelines                          |
+| `@flighthq/tween`                | Tween managers, tweens, and timers                                 |
+| `@flighthq/tween-easing`         | Easing functions for animation                                     |
+| `@flighthq/types`                | Shared interfaces, kind symbols, and cross-package contracts       |
 
-## Getting started
+## Getting Started
+
+Install dependencies with npm:
+
+```sh
+npm install
+```
+
+Create a display-object scene, register the renderer kinds you use, update the render graph, then draw:
 
 ```ts
 import {
   addGraphChild,
-  createBitmap,
-  createDisplayObject,
-  loadImageSourceFromURL,
-  updateDisplayObjectBeforeRender,
-} from '@flighthq/sdk';
-
-// Scene graph
-const root = createDisplayObject();
-const bitmap = createBitmap();
-const image = await loadImageSourceFromURL('assets/sprite.png');
-bitmap.data.image = image;
-addGraphChild(root, bitmap);
-
-// Render loop
-function enterFrame() {
-  if (updateDisplayObjectBeforeRender(state, root)) {
-    render(root);
-  }
-  requestAnimationFrame(enterFrame);
-}
-enterFrame();
-```
-
-### Renderer setup
-
-Each renderer is set up independently. Register display object renderers against a render state, then call the appropriate render function:
-
-```ts
-import {
   BitmapKind,
+  createBitmap,
+  createCanvasElement,
   createCanvasRenderState,
+  createDisplayObject,
   defaultCanvasBitmapRenderer,
+  loadImageSourceFromURL,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
+  updateDisplayObjectBeforeRender,
 } from '@flighthq/sdk';
 
-const canvas = document.createElement('canvas');
-const state = createCanvasRenderState(canvas, { backgroundColor: 0x1a1a2eff });
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createCanvasElement(550, 400, pixelRatio);
+document.body.appendChild(canvas);
+
+const state = createCanvasRenderState(canvas, {
+  backgroundColor: 0xeeddccff,
+  contextAttributes: { alpha: false },
+});
 
 registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
 
-function render(root) {
-  renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, root);
+const root = createDisplayObject();
+root.scaleX = pixelRatio;
+root.scaleY = pixelRatio;
+
+const bitmap = createBitmap();
+bitmap.data.image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
+addGraphChild(root, bitmap);
+
+function enterFrame(): void {
+  if (updateDisplayObjectBeforeRender(state, root)) {
+    renderCanvasBackground(state);
+    renderCanvasDisplayObject(state, root);
+  }
+
+  requestAnimationFrame(enterFrame);
 }
+
+enterFrame();
 ```
 
 ### Shapes
 
+Shapes store drawing commands on a `Shape` node. Canvas rendering also needs the shape renderer and shape-command draw handlers registered for the commands you use:
+
 ```ts
 import {
-  createShape,
   appendShapeBeginFill,
-  appendShapeRectangle,
   appendShapeCircle,
   appendShapeLineStyle,
   appendShapeLineTo,
+  appendShapeRectangle,
+  createShape,
+  defaultCanvasShapeCommands,
+  defaultCanvasShapeRenderer,
+  registerCanvasShapeCommands,
+  registerRenderer,
+  ShapeKind,
 } from '@flighthq/sdk';
+
+registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
+registerCanvasShapeCommands(defaultCanvasShapeCommands);
 
 const box = createShape();
 appendShapeBeginFill(box, 0x24afc4);
@@ -106,69 +129,69 @@ appendShapeRectangle(box, 0, 0, 100, 100);
 
 const circle = createShape();
 appendShapeBeginFill(circle, 0xff6644);
-appendShapeCircle(circle, 0, 0, 50);
+appendShapeCircle(circle, 50, 50, 50);
 
 const line = createShape();
 appendShapeLineStyle(line, 4, 0xffffff);
 appendShapeLineTo(line, 200, 0);
 ```
 
-### Text
+### Animation
+
+The application package provides a request-animation-frame loop with typed update and render signals:
 
 ```ts
-import { createText, loadFontFromURL } from '@flighthq/sdk';
+import {
+  connectSignal,
+  createApplication,
+  createTween,
+  createTweenManager,
+  invalidateRender,
+  Quad,
+  startApplicationLoop,
+  updateTweens,
+} from '@flighthq/sdk';
 
-const font = await loadFontFromURL('assets/MyFont.woff', 'MyFont');
+const app = createApplication();
+const tweens = createTweenManager();
 
-const label = createText();
-label.data.text = 'Hello World';
-label.data.textFormat = { font: font.name, size: 32, color: 0xffffff };
-```
-
-### Tweens
-
-```ts
-import { createTweenManager, createTween, updateTweens, connectSignal, invalidateRender, Quad } from '@flighthq/sdk';
-
-const manager = createTweenManager();
-
-const tween = createTween(manager, sprite, 1000, { x: 400, alpha: 0 }, { ease: Quad.easeOut });
-connectSignal(tween.onComplete, () => console.log('done'));
+const tween = createTween(tweens, sprite, 1000, { x: 400, alpha: 0 }, { ease: Quad.easeOut });
 connectSignal(tween.onUpdate, () => invalidateRender(sprite));
 
-// In your frame loop:
-updateTweens(manager, deltaMs);
-```
+connectSignal(app.onUpdate, (deltaMs) => updateTweens(tweens, deltaMs));
+connectSignal(app.onRender, () => {
+  if (updateDisplayObjectBeforeRender(state, root)) {
+    render(root);
+  }
+});
 
-### Filters
-
-Filters are applied per display object and rendered via `cacheAsBitmap`:
-
-```ts
-import { setDisplayObjectFilters, createDropShadowFilter, createGlowFilter, createBlurFilter } from '@flighthq/sdk';
-
-setDisplayObjectFilters(panel, [createGlowFilter(0xffffff, 0.6, 10, 10)]);
-setDisplayObjectFilters(label, [createDropShadowFilter(3, 45, 0x000000, 0.5, 4, 4)]);
-setDisplayObjectFilters(sprite, [createBlurFilter(8, 8)]);
+startApplicationLoop(app);
 ```
 
 ## Examples
 
-Examples live in `examples/`. Each is a standalone Vite app that can target canvas, DOM, or WebGL via `RENDER` env var.
+Examples live in `examples/`. Each example is a standalone Vite app and most can target Canvas, DOM, or WebGL through renderer-specific scripts.
 
-| Example             | Description                                        |
-| ------------------- | -------------------------------------------------- |
-| `displayingabitmap` | Load and display a bitmap                          |
-| `drawingshapes`     | Primitives — rect, circle, ellipse, polygon, lines |
-| `addingtext`        | Text with a custom font                            |
-| `addinganimation`   | Tween with easing                                  |
-| `tweenexample`      | Animated circles using tweens and timers           |
-| `animatedsprite`    | Spritesheet animation                              |
-| `bunnymark`         | Performance benchmark (bitmaps)                    |
-| `nyancat`           | GIF-style animation                                |
-| `piratepig`         | Match-3 game with tweens, audio, and filters       |
-| `simplesprite`      | Minimal sprite example                             |
-| `usingtilemap`      | Tile map rendering                                 |
+| Example             | Description                                      |
+| ------------------- | ------------------------------------------------ |
+| `addinganimation`   | Bitmap animation with tweens                     |
+| `addingtext`        | Text rendering with a custom font                |
+| `animatedsprite`    | Spritesheet animation                            |
+| `bunnymark`         | Bitmap batching benchmark                        |
+| `comparebitmapdata` | Surface and bitmap-data comparison               |
+| `displayingabitmap` | Minimal bitmap display                           |
+| `drawingshapes`     | Shape primitives, lines, curves, and polygons    |
+| `nyancat`           | Frame animation                                  |
+| `piratepig`         | Match-3 game with tweens, audio, text, and input |
+| `simplesprite`      | Minimal sprite graph example                     |
+| `tweenexample`      | Animated circles using tweens and timers         |
+| `usingtilemap`      | Tilemap rendering                                |
+
+Run the example explorer:
+
+```sh
+npm run explorer
+```
 
 Build a specific example:
 
@@ -176,10 +199,11 @@ Build a specific example:
 npm run build --workspace=examples/drawingshapes
 ```
 
-Run the example explorer (dev server with live preview of all examples):
+Run a renderer-specific example dev server:
 
 ```sh
-npm run explorer
+npm run dev:canvas --workspace=examples/drawingshapes
+npm run dev:dom --workspace=examples/drawingshapes
 ```
 
 ## Development
@@ -187,29 +211,41 @@ npm run explorer
 ```sh
 npm install
 
-# Build all packages
+# Build packages
 npm run build
 
-# Run all tests
+# Run the normal Vitest workspace, excluding size tests
 npm run test
 
-# Unit tests only
+# Run package unit tests through workspace scripts
 npm run test:unit
 
-# Lint and format
-npm run lint
-npm run format
+# Lint, order, and format with auto-fixes
+npm run fix
 
-# Regenerate OVERVIEW.md (auto-generated — do not edit manually)
-npm run overview
+# Default quality sweep
+npm run check
+
+# Full CI-equivalent confidence sweep
+npm run verify
 ```
 
-## Repo structure
+Useful repository commands:
 
-```
-packages/      internal packages (@flighthq/*)
-examples/      example apps
-tests/         integration, API, and size tests
-tools/         dev tooling (explorer)
-scripts/       build utilities
+| Command            | Purpose                                                                 |
+| ------------------ | ----------------------------------------------------------------------- |
+| `npm run api`      | Print compact public API signatures                                     |
+| `npm run coverage` | Check that exported functions have colocated tests                      |
+| `npm run order`    | Check source export and test `describe` ordering                        |
+| `npm run size`     | Build matching examples and report gzip sizes against the baseline      |
+| `npm run validate` | Check package shape, exports, references, and side-effect-free patterns |
+
+## Repo Structure
+
+```text
+packages/      Workspace packages published as @flighthq/*
+examples/      Standalone Vite example apps
+tests/         Integration, API, browser API, and size tests
+tools/         Development tools, including the example explorer
+scripts/       Validation, API, coverage, ordering, size, and build scripts
 ```
