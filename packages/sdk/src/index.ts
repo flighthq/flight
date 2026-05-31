@@ -1,3 +1,4 @@
+export * from '@flighthq/application';
 export * from '@flighthq/assets';
 // export * from '@flighthq/surface';
 export * from '@flighthq/entity';

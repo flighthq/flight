@@ -28,6 +28,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/application": "*",
     "@flighthq/assets": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
