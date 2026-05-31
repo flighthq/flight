@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
-import { gzipSync } from 'zlib';
 import { build } from 'vite';
+import { gzipSync } from 'zlib';
 
 export const RENDERERS = ['dom', 'canvas', 'webgl'] as const;
 export type Render = (typeof RENDERERS)[number];

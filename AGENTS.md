@@ -4,25 +4,49 @@ This repository is a TypeScript monorepo for a tree-shakable 2D rendering SDK in
 
 This document should stay useful, not ornamental. Prefer making architecture and API behavior obvious in source, tests, package manifests, and generated API output. Use this file for project-level rules and architecture that are hard to infer from one or two files.
 
-## Environment
+## Read This First
+
+Read this file once at the start of a fresh agent session, then revisit the relevant section when a task touches package shape, exports, examples, rendering, graph internals, or publishing.
 
 - Use `npm`, not `pnpm` or `yarn`.
 - On Windows, prefer Bash (Git Bash or WSL) over PowerShell when running shell commands. If Bash is unavailable, `cmd.exe` is preferred over PowerShell.
 - After editing source files, run `npm run fix` to apply linting, ordering, and formatting in one step. This is not optional. Unformatted or unlinted code will fail CI.
+- Keep modules tree-shakable. Packages expose small subpaths and avoid forcing convenience APIs into low-level users' bundles.
+- Packages are designed to be import side-effect-free and declare `"sideEffects": false`. Do not register renderers, patch globals, start listeners/timers, or mutate shared state at module top level. Expose explicit `register*`, `init*`, or `create*` functions instead, and let callers opt in.
+- Packages must not import from `@flighthq/sdk`. Examples usually import from `@flighthq/sdk` when demonstrating application usage, but may import individual packages when intentionally demonstrating lower-level or tree-shaken usage.
+- Shared types - interfaces, type aliases, and kind symbols that cross package boundaries - belong in `@flighthq/types`. Do not define cross-package types inline in individual package files.
+- `import type { Foo }` must be on its own `import type { }` line. Never mix type imports inline with value imports as `import { type Foo, bar }`.
+
+## Task Triggers
+
+- Run `npm run validate` after package-level changes such as package manifests, workspace references, exports, build targets, or side-effect behavior.
+- Run `npm run coverage` after adding, removing, or renaming exported functions.
+- Run `npm run order` after adding, removing, or renaming exported functions or test `describe` blocks. Use `npm run order:fix` when you want the repository tool to rewrite order for you.
+- Run `npm run api` after public API changes to scan signatures and naming symmetry.
+- Run `npm run size` after changes to examples, package exports, barrel files, renderer registration, dependencies, or anything that may affect tree-shaking.
+- Run the closest meaningful tests while iterating: a touched test file, a package workspace, or a Vitest project filter. Broaden once the local behavior is understood.
+- Run `npm run check` or `npm run check:strict` for narrower completed changes. Run `npm run verify` before calling broad refactors, public API reshapes, example changes, packaging changes, or tree-shaking-sensitive work done.
+
+## Bundle Size Discipline
+
+This SDK should behave like a hardware store: users can import one small tool without pulling in the whole building.
+
+- `npm run size` is the direct size-reporting command and the preferred command for agents.
+- `npm run size piratepig` filters by example name.
+- `npm run size piratepig report=json` prints machine-readable JSON for easier agent parsing.
+- `npm run size piratepig output=size-report.json` writes a JSON report file and prints `SIZE_REPORT_PATH:<path>`.
+- `npm run size render=canvas` filters by renderer. Filters can be combined, for example `npm run size piratepig render=webgl report=json`.
+- Prefer small package imports in examples when the example is intentionally demonstrating low-level or tree-shaken usage. Use `@flighthq/sdk` in examples that are meant to demonstrate application-level convenience.
+- Do not add convenience exports, eager registration, shared top-level mutable state, or new dependencies that make small examples larger unless the size tradeoff is intentional and measured.
 
 ## Design Constraints
 
 - Prefer globally unique exported function names, especially from package roots and the SDK barrel.
-- Keep modules tree-shakable. Packages expose small subpaths and avoid forcing convenience APIs into low-level users' bundles.
 - Allocation should be explicit. `create*`, `clone*`, and pool `acquire*` functions may allocate; math, transform, bounds, and update functions generally write to an `out` parameter.
 - `Readonly<T>` marks inputs that should not be modified. Mutable outputs are usually named `out` or `target`.
 - Out-parameter functions should be safe when `out` is the same object as one input unless the function documents otherwise. Read all input values into locals before writing any output fields to avoid clobbering a value you still need to read.
 - Prefer small functions over large abstractions. Users and agents can choose the layer they need.
 - Keep APIs portable to C/C++ style ownership and memory rules.
-- Packages are designed to be import side-effect-free and declare `"sideEffects": false`. Do not register renderers, patch globals, start listeners/timers, or mutate shared state at module top level. Expose explicit `register*`, `init*`, or `create*` functions instead, and let callers opt in.
-- Shared types — interfaces, type aliases, and kind symbols that cross package boundaries — belong in `@flighthq/types`. Do not define cross-package types inline in individual package files.
-- `import type { Foo }` must be on its own `import type { }` line. Never mix type imports inline with value imports as `import { type Foo, bar }`.
-- Packages must not import from `@flighthq/sdk`. Examples usually import from `@flighthq/sdk` when demonstrating application usage, but may import individual packages when intentionally demonstrating lower-level or tree-shaken usage.
 
 ## Source Style
 
@@ -42,13 +66,12 @@ This document should stay useful, not ornamental. Prefer making architecture and
 - `npm run api:json` prints the same API data as JSON for tools and agents.
 - `npm run check` is the default non-fixing quality sweep for agents and contributors. It runs `validate`, `coverage`, and the non-failing `order` report.
 - `npm run check:strict` runs the same sweep with `order:check` in failing mode. Use this for cleaned-up areas or future CI ratcheting.
-- `npm run verify` is the full confidence pass to run before calling a broad change done. It runs `build`, `check:strict`, unit/API/integration tests, and `test:size`.
+- `npm run verify` is the full confidence pass to run before calling a broad change done. It runs `build`, `check:strict`, unit/API/integration tests, and the size baseline gate.
 - `npm run validate` checks monorepo shape, package references, workspace dependency conventions, package export targets, packaging shape, and side-effect-free source invariants. Run this after any package-level change and fix everything it reports before moving on.
 - `npm run coverage` checks for missing test files and missing tests for exported functions.
 - `npm run order` reports exported functions and test `describe` blocks that are not alphabetized. `npm run order:check` runs the same check in failing mode once a package or area has been cleaned up. `npm run order:fix` rewrites files in place to apply the correct order; comments immediately preceding a declaration (with no blank line between them) are treated as attached and move with it.
 - `npm run test` runs the normal root Vitest workspace, excluding the heavier `size` project. This is usually faster than chaining package/API/integration test scripts separately.
-- `npm run test:size` builds every example and compares the gzip output size against the baseline. It is intentionally heavier than ordinary package tests, but it is the main example smoke test and tree-shaking regression check.
-- `npm run size` is a direct CLI entry point for the same size checks, with support for filtered runs, JSON reporting, and output file paths.
+- `npm run size` builds matching examples and reports gzip output size against the baseline. It supports filtered runs, JSON reporting, and output file paths.
 
 ## Core Patterns
 

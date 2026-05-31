@@ -1,7 +1,10 @@
 import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
 import pc from 'picocolors';
-import { runSizeChecks, SizeResult } from './size-runner.ts';
+
+import type { SizeResult } from './size-runner.ts';
+import { runSizeChecks } from './size-runner.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
