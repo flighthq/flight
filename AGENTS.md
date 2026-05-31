@@ -54,9 +54,9 @@ This document should stay useful, not ornamental. Prefer making architecture and
 
 Public objects are plain entities with data fields. Each entity has a paired, intentionally opaque runtime object that stores package-private state: graph state, caches, invalidation IDs, render nodes, child arrays, and renderer-specific data. Application code should treat runtime state as internal.
 
-Subsystems attach their own state directly to the runtime object. A subsystem calls `getEntityRuntime(source)` and reads or writes a property it owns on that object, for example `getEntityRuntime(source).imageCacheRecord`. The entity itself knows nothing about the subsystem. This keeps entities lean and decouples subsystems from each other. `@flighthq/image-cache` is the clearest example: it stores an `ImageCacheRecord` on the runtime and exposes `attachImageCache`, `detachImageCache`, and `getImageCache` rather than adding fields to the display object.
+Subsystems attach their own state directly to the runtime object. A subsystem reads or writes a nullable property it owns on the narrowest runtime tier that has the capability, for example `GraphNodeRuntime.imageCache` or `HasGraphHierarchyRuntime.graphSignals`. The entity itself knows nothing about the subsystem. This keeps entities lean and decouples subsystems from each other. `NodeRuntime` is the base extension point, but it should stay empty until a subsystem truly applies to every node kind.
 
-Use runtime slots for any internal mutable state that should not be part of the public API. Some render packages use an `internal.ts` cast (`state as RenderStateInternal`) to expose writable versions of read-only properties. This is a legacy approach. Do not extend it; prefer runtime slots instead.
+Use runtime slots for any internal mutable state that should not be part of the public API. Prefer adding nullable slots on the narrowest runtime tier that owns the capability, initializing them to `null`, and exposing lazy accessors if a subsystem needs convenience access. Some render packages use an `internal.ts` cast (`state as RenderStateInternal`) to expose writable versions of read-only properties. This is a legacy approach. Do not extend it; prefer runtime slots instead.
 
 ### Scene Graph
 
