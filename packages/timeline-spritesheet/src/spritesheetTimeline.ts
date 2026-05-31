@@ -14,7 +14,7 @@ export function attachSpritesheetTimeline(
 
   clip.data.timeline = createTimeline({
     frameRate: 1000 / animation.frameDuration,
-    onEnterFrame: (frame) => {
+    constructFrame: (frame: number) => {
       if (!spritesheet.atlas) return;
       const spritesheetFrame = spritesheet.frames[animation.frames[frame - 1]];
       if (!spritesheetFrame) return;
