@@ -13,6 +13,13 @@ const MAX_DELTA_TIME = 100;
 const kExit = Symbol();
 const kLoop = Symbol();
 
+export function attachApplicationExit(app: Application): void {
+  app.observers.get(kExit)?.();
+  const handler = () => emitSignal(app.onExit);
+  window.addEventListener('beforeunload', handler);
+  app.observers.set(kExit, () => window.removeEventListener('beforeunload', handler));
+}
+
 export function createApplication(): Application {
   return {
     frameRate: null,
@@ -21,6 +28,16 @@ export function createApplication(): Application {
     onRender: createSignal(),
     onUpdate: createSignal(),
   };
+}
+
+export function detachApplicationExit(app: Application): void {
+  app.observers.get(kExit)?.();
+  app.observers.delete(kExit);
+}
+
+export function disposeApplication(app: Application): void {
+  for (const cleanup of app.observers.values()) cleanup();
+  app.observers.clear();
 }
 
 export function startApplicationLoop(app: Application): void {
@@ -59,21 +76,4 @@ export function startApplicationLoop(app: Application): void {
 export function stopApplicationLoop(app: Application): void {
   app.observers.get(kLoop)?.();
   app.observers.delete(kLoop);
-}
-
-export function attachApplicationExit(app: Application): void {
-  app.observers.get(kExit)?.();
-  const handler = () => emitSignal(app.onExit);
-  window.addEventListener('beforeunload', handler);
-  app.observers.set(kExit, () => window.removeEventListener('beforeunload', handler));
-}
-
-export function detachApplicationExit(app: Application): void {
-  app.observers.get(kExit)?.();
-  app.observers.delete(kExit);
-}
-
-export function disposeApplication(app: Application): void {
-  for (const cleanup of app.observers.values()) cleanup();
-  app.observers.clear();
 }

@@ -9,6 +9,31 @@ import {
   stopApplicationLoop,
 } from './application';
 
+describe('attachApplicationExit', () => {
+  it('emits onExit on beforeunload', () => {
+    const app = createApplication();
+    let called = false;
+    connectSignal(app.onExit, () => { called = true; });
+
+    attachApplicationExit(app);
+    window.dispatchEvent(new Event('beforeunload'));
+
+    expect(called).toBe(true);
+  });
+
+  it('replaces a previous exit listener when called again', () => {
+    const app = createApplication();
+    let count = 0;
+    connectSignal(app.onExit, () => count++);
+
+    attachApplicationExit(app);
+    attachApplicationExit(app);
+    window.dispatchEvent(new Event('beforeunload'));
+
+    expect(count).toBe(1);
+  });
+});
+
 describe('createApplication', () => {
   it('returns signals and frameRate with no side effects', () => {
     const app = createApplication();
@@ -23,6 +48,43 @@ describe('createApplication', () => {
     const app = createApplication();
     app.frameRate = 30;
     expect(app.frameRate).toBe(30);
+  });
+});
+
+describe('detachApplicationExit', () => {
+  it('removes the listener', () => {
+    const app = createApplication();
+    let called = false;
+    connectSignal(app.onExit, () => { called = true; });
+
+    attachApplicationExit(app);
+    detachApplicationExit(app);
+    window.dispatchEvent(new Event('beforeunload'));
+
+    expect(called).toBe(false);
+  });
+});
+
+describe('disposeApplication', () => {
+  it('stops loop and removes exit listener', () => {
+    const caf = vi.fn();
+    vi.stubGlobal('requestAnimationFrame', vi.fn().mockReturnValue(99));
+    vi.stubGlobal('cancelAnimationFrame', caf);
+
+    const app = createApplication();
+    let exitCalled = false;
+    connectSignal(app.onExit, () => { exitCalled = true; });
+
+    startApplicationLoop(app);
+    attachApplicationExit(app);
+    disposeApplication(app);
+
+    expect(caf).toHaveBeenCalledWith(99);
+    window.dispatchEvent(new Event('beforeunload'));
+    expect(exitCalled).toBe(false);
+    expect(app.observers.size).toBe(0);
+
+    vi.unstubAllGlobals();
   });
 });
 
@@ -111,68 +173,6 @@ describe('stopApplicationLoop', () => {
     stopApplicationLoop(app);
 
     expect(caf).toHaveBeenCalledWith(42);
-    vi.unstubAllGlobals();
-  });
-});
-
-describe('attachApplicationExit', () => {
-  it('emits onExit on beforeunload', () => {
-    const app = createApplication();
-    let called = false;
-    connectSignal(app.onExit, () => { called = true; });
-
-    attachApplicationExit(app);
-    window.dispatchEvent(new Event('beforeunload'));
-
-    expect(called).toBe(true);
-  });
-
-  it('replaces a previous exit listener when called again', () => {
-    const app = createApplication();
-    let count = 0;
-    connectSignal(app.onExit, () => count++);
-
-    attachApplicationExit(app);
-    attachApplicationExit(app);
-    window.dispatchEvent(new Event('beforeunload'));
-
-    expect(count).toBe(1);
-  });
-});
-
-describe('detachApplicationExit', () => {
-  it('removes the listener', () => {
-    const app = createApplication();
-    let called = false;
-    connectSignal(app.onExit, () => { called = true; });
-
-    attachApplicationExit(app);
-    detachApplicationExit(app);
-    window.dispatchEvent(new Event('beforeunload'));
-
-    expect(called).toBe(false);
-  });
-});
-
-describe('disposeApplication', () => {
-  it('stops loop and removes exit listener', () => {
-    const caf = vi.fn();
-    vi.stubGlobal('requestAnimationFrame', vi.fn().mockReturnValue(99));
-    vi.stubGlobal('cancelAnimationFrame', caf);
-
-    const app = createApplication();
-    let exitCalled = false;
-    connectSignal(app.onExit, () => { exitCalled = true; });
-
-    startApplicationLoop(app);
-    attachApplicationExit(app);
-    disposeApplication(app);
-
-    expect(caf).toHaveBeenCalledWith(99);
-    window.dispatchEvent(new Event('beforeunload'));
-    expect(exitCalled).toBe(false);
-    expect(app.observers.size).toBe(0);
-
     vi.unstubAllGlobals();
   });
 });

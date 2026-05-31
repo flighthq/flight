@@ -31,6 +31,92 @@ const kRenderContext = Symbol();
 const kResize = Symbol();
 const kVisibility = Symbol();
 
+export function attachWindowDropFile(win: ApplicationWindow, element: HTMLElement): void {
+  win.observers.get(kDropFile)?.();
+  const onDragOver = (e: DragEvent) => e.preventDefault();
+  const onDrop = (e: DragEvent) => {
+    e.preventDefault();
+    for (const file of Array.from(e.dataTransfer?.files ?? [])) {
+      emitSignal(win.onDropFile, file.name);
+    }
+  };
+  element.addEventListener('dragover', onDragOver);
+  element.addEventListener('drop', onDrop);
+  win.observers.set(kDropFile, () => {
+    element.removeEventListener('dragover', onDragOver);
+    element.removeEventListener('drop', onDrop);
+  });
+}
+
+export function attachWindowFocus(win: ApplicationWindow, element: HTMLElement): void {
+  win.observers.get(kFocus)?.();
+  const onFocus = () => emitSignal(win.onFocusIn);
+  const onBlur = () => emitSignal(win.onFocusOut);
+  element.addEventListener('focus', onFocus);
+  element.addEventListener('blur', onBlur);
+  win.observers.set(kFocus, () => {
+    element.removeEventListener('focus', onFocus);
+    element.removeEventListener('blur', onBlur);
+  });
+}
+
+export function attachWindowFullscreen(win: ApplicationWindow): void {
+  win.observers.get(kFullscreen)?.();
+  const handler = () => emitSignal(win.onFullscreenChanged);
+  document.addEventListener('fullscreenchange', handler);
+  win.observers.set(kFullscreen, () => document.removeEventListener('fullscreenchange', handler));
+}
+
+export function attachWindowOrientation(win: ApplicationWindow): void {
+  win.observers.get(kOrientation)?.();
+  if (!screen.orientation) return;
+  const handler = () => emitSignal(win.onOrientationChanged);
+  screen.orientation.addEventListener('change', handler);
+  win.observers.set(kOrientation, () => screen.orientation.removeEventListener('change', handler));
+}
+
+export function attachWindowRenderContext(win: ApplicationWindow, canvas: HTMLCanvasElement): void {
+  win.observers.get(kRenderContext)?.();
+  const onContextLost = (e: Event) => {
+    e.preventDefault();
+    emitSignal(win.onRenderContextLost);
+  };
+  const onContextRestored = () => emitSignal(win.onRenderContextRestored);
+  canvas.addEventListener('webglcontextlost', onContextLost);
+  canvas.addEventListener('webglcontextrestored', onContextRestored);
+  win.observers.set(kRenderContext, () => {
+    canvas.removeEventListener('webglcontextlost', onContextLost);
+    canvas.removeEventListener('webglcontextrestored', onContextRestored);
+  });
+}
+
+export function attachWindowResize(win: ApplicationWindow, element: HTMLElement): void {
+  win.observers.get(kResize)?.();
+  const observer = new ResizeObserver((entries) => {
+    for (const entry of entries) {
+      win.width = Math.round(entry.contentRect.width);
+      win.height = Math.round(entry.contentRect.height);
+      win.devicePixelRatio = window.devicePixelRatio || 1;
+      emitSignal(win.onResize);
+    }
+  });
+  observer.observe(element);
+  win.observers.set(kResize, () => observer.disconnect());
+}
+
+export function attachWindowVisibility(win: ApplicationWindow): void {
+  win.observers.get(kVisibility)?.();
+  const handler = () => {
+    if (document.hidden) {
+      emitSignal(win.onDeactivate);
+    } else {
+      emitSignal(win.onActivate);
+    }
+  };
+  document.addEventListener('visibilitychange', handler);
+  win.observers.set(kVisibility, () => document.removeEventListener('visibilitychange', handler));
+}
+
 export function createApplicationWindow(): ApplicationWindow {
   return {
     devicePixelRatio: 1,
@@ -55,38 +141,9 @@ export function createApplicationWindow(): ApplicationWindow {
   };
 }
 
-export function attachWindowDropFile(win: ApplicationWindow, element: HTMLElement): void {
-  win.observers.get(kDropFile)?.();
-  const onDragOver = (e: DragEvent) => e.preventDefault();
-  const onDrop = (e: DragEvent) => {
-    e.preventDefault();
-    for (const file of Array.from(e.dataTransfer?.files ?? [])) {
-      emitSignal(win.onDropFile, file.name);
-    }
-  };
-  element.addEventListener('dragover', onDragOver);
-  element.addEventListener('drop', onDrop);
-  win.observers.set(kDropFile, () => {
-    element.removeEventListener('dragover', onDragOver);
-    element.removeEventListener('drop', onDrop);
-  });
-}
-
 export function detachWindowDropFile(win: ApplicationWindow): void {
   win.observers.get(kDropFile)?.();
   win.observers.delete(kDropFile);
-}
-
-export function attachWindowFocus(win: ApplicationWindow, element: HTMLElement): void {
-  win.observers.get(kFocus)?.();
-  const onFocus = () => emitSignal(win.onFocusIn);
-  const onBlur = () => emitSignal(win.onFocusOut);
-  element.addEventListener('focus', onFocus);
-  element.addEventListener('blur', onBlur);
-  win.observers.set(kFocus, () => {
-    element.removeEventListener('focus', onFocus);
-    element.removeEventListener('blur', onBlur);
-  });
 }
 
 export function detachWindowFocus(win: ApplicationWindow): void {
@@ -94,24 +151,9 @@ export function detachWindowFocus(win: ApplicationWindow): void {
   win.observers.delete(kFocus);
 }
 
-export function attachWindowFullscreen(win: ApplicationWindow): void {
-  win.observers.get(kFullscreen)?.();
-  const handler = () => emitSignal(win.onFullscreenChanged);
-  document.addEventListener('fullscreenchange', handler);
-  win.observers.set(kFullscreen, () => document.removeEventListener('fullscreenchange', handler));
-}
-
 export function detachWindowFullscreen(win: ApplicationWindow): void {
   win.observers.get(kFullscreen)?.();
   win.observers.delete(kFullscreen);
-}
-
-export function attachWindowOrientation(win: ApplicationWindow): void {
-  win.observers.get(kOrientation)?.();
-  if (!screen.orientation) return;
-  const handler = () => emitSignal(win.onOrientationChanged);
-  screen.orientation.addEventListener('change', handler);
-  win.observers.set(kOrientation, () => screen.orientation.removeEventListener('change', handler));
 }
 
 export function detachWindowOrientation(win: ApplicationWindow): void {
@@ -119,56 +161,14 @@ export function detachWindowOrientation(win: ApplicationWindow): void {
   win.observers.delete(kOrientation);
 }
 
-export function attachWindowRenderContext(win: ApplicationWindow, canvas: HTMLCanvasElement): void {
-  win.observers.get(kRenderContext)?.();
-  const onContextLost = (e: Event) => {
-    e.preventDefault();
-    emitSignal(win.onRenderContextLost);
-  };
-  const onContextRestored = () => emitSignal(win.onRenderContextRestored);
-  canvas.addEventListener('webglcontextlost', onContextLost);
-  canvas.addEventListener('webglcontextrestored', onContextRestored);
-  win.observers.set(kRenderContext, () => {
-    canvas.removeEventListener('webglcontextlost', onContextLost);
-    canvas.removeEventListener('webglcontextrestored', onContextRestored);
-  });
-}
-
 export function detachWindowRenderContext(win: ApplicationWindow): void {
   win.observers.get(kRenderContext)?.();
   win.observers.delete(kRenderContext);
 }
 
-export function attachWindowResize(win: ApplicationWindow, element: HTMLElement): void {
-  win.observers.get(kResize)?.();
-  const observer = new ResizeObserver((entries) => {
-    for (const entry of entries) {
-      win.width = Math.round(entry.contentRect.width);
-      win.height = Math.round(entry.contentRect.height);
-      win.devicePixelRatio = window.devicePixelRatio || 1;
-      emitSignal(win.onResize);
-    }
-  });
-  observer.observe(element);
-  win.observers.set(kResize, () => observer.disconnect());
-}
-
 export function detachWindowResize(win: ApplicationWindow): void {
   win.observers.get(kResize)?.();
   win.observers.delete(kResize);
-}
-
-export function attachWindowVisibility(win: ApplicationWindow): void {
-  win.observers.get(kVisibility)?.();
-  const handler = () => {
-    if (document.hidden) {
-      emitSignal(win.onDeactivate);
-    } else {
-      emitSignal(win.onActivate);
-    }
-  };
-  document.addEventListener('visibilitychange', handler);
-  win.observers.set(kVisibility, () => document.removeEventListener('visibilitychange', handler));
 }
 
 export function detachWindowVisibility(win: ApplicationWindow): void {
@@ -179,6 +179,10 @@ export function detachWindowVisibility(win: ApplicationWindow): void {
 export function disposeApplicationWindow(win: ApplicationWindow): void {
   for (const cleanup of win.observers.values()) cleanup();
   win.observers.clear();
+}
+
+export function exitFullscreen(): Promise<void> {
+  return document.exitFullscreen();
 }
 
 export function hardenElement(element: HTMLElement): void {
@@ -194,8 +198,4 @@ export function hardenElement(element: HTMLElement): void {
 
 export function requestFullscreen(element: HTMLElement): Promise<void> {
   return element.requestFullscreen();
-}
-
-export function exitFullscreen(): Promise<void> {
-  return document.exitFullscreen();
 }
