@@ -1,0 +1,20 @@
+export const KeyModifier = {
+  ALT: 0x0100 | 0x0200,
+  CAPS_LOCK: 0x2000,
+  CTRL: 0x0040 | 0x0080,
+  LEFT_ALT: 0x0100,
+  LEFT_CTRL: 0x0040,
+  LEFT_META: 0x0400,
+  LEFT_SHIFT: 0x0001,
+  META: 0x0400 | 0x0800,
+  MODE: 0x4000,
+  NONE: 0x0000,
+  NUM_LOCK: 0x1000,
+  RIGHT_ALT: 0x0200,
+  RIGHT_CTRL: 0x0080,
+  RIGHT_META: 0x0800,
+  RIGHT_SHIFT: 0x0002,
+  SHIFT: 0x0001 | 0x0002,
+} as const;
+
+export type KeyModifier = number;
