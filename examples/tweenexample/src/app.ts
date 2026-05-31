@@ -4,6 +4,7 @@ import {
   appendShapeCircle,
   appendShapeEndFill,
   connectSignal,
+  createApplication,
   createDisplayObject,
   createShape,
   createTween,
@@ -11,6 +12,7 @@ import {
   createTweenTimer,
   invalidateRender,
   Quad,
+  startApplicationLoop,
   updateDisplayObjectBeforeRender,
   updateTweens,
 } from '@flighthq/sdk';
@@ -62,16 +64,9 @@ for (let i = 0; i < CIRCLE_COUNT; i++) {
   connectSignal(timer.onComplete, createCircle);
 }
 
-let lastTime = 0;
-
-function enterFrame(time: number): void {
-  const delta = lastTime === 0 ? 0 : time - lastTime;
-  lastTime = time;
-  updateTweens(manager, delta);
-  if (updateDisplayObjectBeforeRender(state, root)) {
-    render(root);
-  }
-  requestAnimationFrame(enterFrame);
-}
-
-requestAnimationFrame(enterFrame);
+const app = createApplication();
+connectSignal(app.onUpdate, (delta) => updateTweens(manager, delta));
+connectSignal(app.onRender, () => {
+  if (updateDisplayObjectBeforeRender(state, root)) render(root);
+});
+startApplicationLoop(app);

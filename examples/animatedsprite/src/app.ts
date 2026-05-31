@@ -1,6 +1,8 @@
 import {
   addGraphChild,
   addTextureAtlasRegion,
+  connectSignal,
+  createApplication,
   createSprite,
   createSpritesheet,
   createSpritesheetAnimation,
@@ -13,6 +15,7 @@ import {
   setTransformX,
   setTransformY,
   showSpritesheetAnimation,
+  startApplicationLoop,
   updateSpriteBeforeRender,
   updateSpritesheetPlayer,
 } from '@flighthq/sdk';
@@ -76,23 +79,17 @@ const players = animationDefs.map(({ name }) => {
   return player;
 });
 
-let lastTime = performance.now();
-
-function enterFrame(time: number): void {
-  const deltaTime = time - lastTime;
-  lastTime = time;
-
+const app = createApplication();
+connectSignal(app.onUpdate, (delta) => {
   for (let i = 0; i < players.length; i++) {
-    if (updateSpritesheetPlayer(players[i], deltaTime)) {
+    if (updateSpritesheetPlayer(players[i], delta)) {
       const frame = getSpritesheetPlayerFrame(players[i], sheet);
       if (frame !== null) sprites[i].data.id = frame.id;
     }
   }
-
+});
+connectSignal(app.onRender, () => {
   updateSpriteBeforeRender(state, root);
   render(root);
-
-  requestAnimationFrame(enterFrame);
-}
-
-requestAnimationFrame(enterFrame);
+});
+startApplicationLoop(app);
