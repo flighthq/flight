@@ -8,7 +8,6 @@ export interface Application {
   onUpdate: Signal<(deltaTime: number) => void>;
 }
 
-const MAX_DELTA_TIME = 100;
 const kExit = Symbol();
 const kLoop = Symbol();
 
@@ -62,7 +61,7 @@ export function startApplicationLoop(app: Application): void {
   let rafId = 0;
 
   function tick(time: number): void {
-    const delta = lastTime < 0 ? 0 : Math.min(time - lastTime, MAX_DELTA_TIME);
+    const delta = lastTime < 0 ? 0 : time - lastTime;
     lastTime = time;
     emitSignal(app.onUpdate, delta);
     emitSignal(app.onRender);
