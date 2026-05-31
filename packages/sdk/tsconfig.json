@@ -9,6 +9,7 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../application" },
     { "path": "../assets" },
     { "path": "../surface" },
     { "path": "../entity" },
