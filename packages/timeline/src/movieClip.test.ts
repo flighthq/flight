@@ -154,7 +154,7 @@ describe('updateMovieClip', () => {
     clip.data.timeline = createTimeline({
       totalFrames: 3,
       frameRate: null,
-      onEnterFrame: (f) => frames.push(f),
+      constructFrame: (f) => frames.push(f),
     });
     playTimeline(clip.data.timeline);
     updateMovieClip(clip, 16);
@@ -162,12 +162,12 @@ describe('updateMovieClip', () => {
     expect(frames).toEqual([1, 2]);
   });
 
-  it('fires onEnterFrame for frame 1 on first update even when stopped', () => {
+  it('fires constructFrame for frame 1 on first update even when stopped', () => {
     const frames: number[] = [];
     const clip = createMovieClip();
     clip.data.timeline = createTimeline({
       totalFrames: 3,
-      onEnterFrame: (f) => frames.push(f),
+      constructFrame: (f) => frames.push(f),
     });
     updateMovieClip(clip, 0);
     expect(frames).toEqual([1]);

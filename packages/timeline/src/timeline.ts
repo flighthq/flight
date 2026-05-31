@@ -7,7 +7,7 @@ export function createTimeline(obj?: Partial<Timeline>): Timeline {
     isPlaying: obj?.isPlaying ?? false,
     labels: obj?.labels ?? [],
     lastFrameUpdate: -1,
-    onEnterFrame: obj?.onEnterFrame ?? null,
+    constructFrame: obj?.constructFrame ?? null,
     timeElapsed: 0,
     totalFrames: obj?.totalFrames ?? 1,
   };
@@ -51,7 +51,7 @@ export function updateTimeline(timeline: Timeline, deltaTime: number): void {
   if (timeline.isPlaying && timeline.frameRate !== null) {
     timeline.currentFrame = advanceFrame(timeline, deltaTime);
   }
-  fireEnterFrame(timeline);
+  fireConstructFrame(timeline);
   if (timeline.isPlaying && timeline.frameRate === null) {
     timeline.currentFrame = advanceFrame(timeline, deltaTime);
   }
@@ -70,10 +70,10 @@ function advanceFrame(timeline: Timeline, deltaTime: number): number {
   return next > timeline.totalFrames ? 1 : next;
 }
 
-function fireEnterFrame(timeline: Timeline): void {
+function fireConstructFrame(timeline: Timeline): void {
   if (timeline.currentFrame !== timeline.lastFrameUpdate) {
     timeline.lastFrameUpdate = timeline.currentFrame;
-    timeline.onEnterFrame?.(timeline.currentFrame);
+    timeline.constructFrame?.(timeline.currentFrame);
   }
 }
 
@@ -87,5 +87,5 @@ function resolveFrame(timeline: Readonly<Timeline>, frame: number | string): num
 function seekTimeline(timeline: Timeline, frame: number): void {
   timeline.currentFrame = Math.max(1, Math.min(frame, timeline.totalFrames));
   timeline.lastFrameUpdate = -1;
-  fireEnterFrame(timeline);
+  fireConstructFrame(timeline);
 }

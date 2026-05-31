@@ -39,9 +39,9 @@ describe('gotoAndPlayTimeline', () => {
     expect(t.isPlaying).toBe(true);
   });
 
-  it('fires onEnterFrame immediately for the target frame', () => {
+  it('fires constructFrame immediately for the target frame', () => {
     const frames: number[] = [];
-    const t = make({ onEnterFrame: (f) => frames.push(f) });
+    const t = make({ constructFrame: (f) => frames.push(f) });
     gotoAndPlayTimeline(t, 3);
     expect(frames).toEqual([3]);
   });
@@ -158,16 +158,16 @@ describe('stopTimeline', () => {
 });
 
 describe('updateTimeline', () => {
-  it('fires onEnterFrame for frame 1 on first update even when stopped', () => {
+  it('fires constructFrame for frame 1 on first update even when stopped', () => {
     const frames: number[] = [];
-    const t = make({ onEnterFrame: (f) => frames.push(f) });
+    const t = make({ constructFrame: (f) => frames.push(f) });
     updateTimeline(t, 0);
     expect(frames).toEqual([1]);
   });
 
-  it('does not double-fire onEnterFrame on repeated stopped updates', () => {
+  it('does not double-fire constructFrame on repeated stopped updates', () => {
     const frames: number[] = [];
-    const t = make({ onEnterFrame: (f) => frames.push(f) });
+    const t = make({ constructFrame: (f) => frames.push(f) });
     updateTimeline(t, 0);
     updateTimeline(t, 0);
     expect(frames).toEqual([1]);
@@ -175,7 +175,7 @@ describe('updateTimeline', () => {
 
   it('advances one frame per update when frameRate is null', () => {
     const frames: number[] = [];
-    const t = make({ frameRate: null, onEnterFrame: (f) => frames.push(f) });
+    const t = make({ frameRate: null, constructFrame: (f) => frames.push(f) });
     playTimeline(t);
     updateTimeline(t, 0);
     updateTimeline(t, 0);
@@ -185,7 +185,7 @@ describe('updateTimeline', () => {
 
   it('advances frame after enough time has elapsed for frameRate', () => {
     const frames: number[] = [];
-    const t = make({ frameRate: 10, onEnterFrame: (f) => frames.push(f) }); // 100ms/frame
+    const t = make({ frameRate: 10, constructFrame: (f) => frames.push(f) }); // 100ms/frame
     playTimeline(t);
     updateTimeline(t, 50);
     expect(frames).toEqual([1]);
@@ -195,7 +195,7 @@ describe('updateTimeline', () => {
 
   it('wraps around to frame 1 after the last frame', () => {
     const frames: number[] = [];
-    const t = make({ totalFrames: 3, frameRate: null, onEnterFrame: (f) => frames.push(f) });
+    const t = make({ totalFrames: 3, frameRate: null, constructFrame: (f) => frames.push(f) });
     playTimeline(t);
     updateTimeline(t, 0); // frame 1
     updateTimeline(t, 0); // frame 2
@@ -206,7 +206,7 @@ describe('updateTimeline', () => {
 
   it('can skip multiple frames in one large deltaTime', () => {
     const frames: number[] = [];
-    const t = make({ totalFrames: 4, frameRate: 10, onEnterFrame: (f) => frames.push(f) }); // 100ms/frame
+    const t = make({ totalFrames: 4, frameRate: 10, constructFrame: (f) => frames.push(f) }); // 100ms/frame
     playTimeline(t);
     updateTimeline(t, 250); // should advance 2 frames beyond current
     expect(t.currentFrame).toBe(3);

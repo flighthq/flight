@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@flighthq/scenegraph-display": "*",
+    "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

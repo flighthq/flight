@@ -1,4 +1,6 @@
-import type { MovieClip } from '@flighthq/types';
+import { createSignal } from '@flighthq/signals';
+import type { MovieClip, MovieClipRuntime, MovieClipSignals } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
 import {
   gotoAndPlayTimeline,
@@ -10,8 +12,21 @@ import {
   updateTimeline,
 } from './timeline';
 
+export function createMovieClipSignals(): MovieClipSignals {
+  return {
+    onEnterFrame: createSignal(),
+    onExitFrame: createSignal(),
+    onFrameConstructed: createSignal(),
+  };
+}
+
 export function getMovieClipCurrentFrame(clip: MovieClip): number {
   return clip.data.timeline?.currentFrame ?? 1;
+}
+
+export function getMovieClipSignals(clip: MovieClip): MovieClipSignals {
+  const runtime = clip[EntityRuntimeKey] as MovieClipRuntime;
+  return (runtime.movieClipSignals ??= createMovieClipSignals());
 }
 
 export function getMovieClipTotalFrames(clip: MovieClip): number {
