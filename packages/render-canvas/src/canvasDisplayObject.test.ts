@@ -2,6 +2,7 @@ import { createMatrix } from '@flighthq/geometry';
 import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { addGraphChild } from '@flighthq/scenegraph-core';
 import { createDisplayObject, getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
+import type { ImageCacheResult } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import {
@@ -95,7 +96,7 @@ describe('renderCanvasDisplayObject', () => {
     const state = makeState();
     const obj = createDisplayObject();
     const runtime = getDisplayObjectRuntime(obj) as ReturnType<typeof getDisplayObjectRuntime>;
-    (runtime as { imageCache: unknown }).imageCache = {
+    (runtime as { imageCache: ImageCacheResult | null }).imageCache = {
       canvas: document.createElement('canvas'),
       transform: createMatrix(),
     };
@@ -111,7 +112,7 @@ describe('renderCanvasDisplayObject', () => {
     const parent = createDisplayObject();
     const child = createDisplayObject();
     const childRuntime = getDisplayObjectRuntime(child);
-    (childRuntime as { imageCache: unknown }).imageCache = {
+    (childRuntime as { imageCache: ImageCacheResult | null }).imageCache = {
       canvas: document.createElement('canvas'),
       transform: createMatrix(),
     };
