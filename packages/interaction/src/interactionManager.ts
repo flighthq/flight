@@ -70,18 +70,21 @@ export function capturePointer<GraphKind extends symbol, Traits extends object>(
 export function connectInputToInteraction<GraphKind extends symbol, Traits extends object>(
   input: InteractionInputSource,
   manager: InteractionManager<GraphKind, Traits>,
+  coordScale: number = 1,
 ): () => void {
+  const sx = (v: number) => v * coordScale;
   const onKeyDown = (data: Readonly<InputKeyboardData>) => dispatchKeyDown(manager, data.key, data.keyCode, data);
   const onKeyUp = (data: Readonly<InputKeyboardData>) => dispatchKeyUp(manager, data.key, data.keyCode, data);
-  const onPointerCancel = (data: Readonly<InputPointerData>) => dispatchPointerCancel(manager, data.x, data.y, data);
+  const onPointerCancel = (data: Readonly<InputPointerData>) =>
+    dispatchPointerCancel(manager, sx(data.x), sx(data.y), data);
   const onPointerDown = (data: Readonly<InputPointerData>) =>
-    dispatchPointerDown(manager, data.x, data.y, data.button, data);
+    dispatchPointerDown(manager, sx(data.x), sx(data.y), data.button, data);
   const onPointerMove = (data: Readonly<InputPointerData>) =>
-    dispatchPointerMove(manager, data.x, data.y, data.button, data);
+    dispatchPointerMove(manager, sx(data.x), sx(data.y), data.button, data);
   const onPointerUp = (data: Readonly<InputPointerData>) =>
-    dispatchPointerUp(manager, data.x, data.y, data.button, Date.now(), data);
+    dispatchPointerUp(manager, sx(data.x), sx(data.y), data.button, Date.now(), data);
   const onWheel = (data: Readonly<InputPointerData>) =>
-    dispatchWheel(manager, data.x, data.y, data.deltaX, data.deltaY, data);
+    dispatchWheel(manager, sx(data.x), sx(data.y), data.deltaX, data.deltaY, data);
 
   connectSignal(input.onKeyDown, onKeyDown);
   connectSignal(input.onKeyUp, onKeyUp);
