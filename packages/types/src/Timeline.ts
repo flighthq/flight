@@ -6,7 +6,7 @@ export interface Timeline {
   isPlaying: boolean;
   labels: TimelineLabel[];
   lastFrameUpdate: number;
-  onEnterFrame: ((frame: number) => void) | null;
+  constructFrame: ((frame: number) => void) | null;
   timeElapsed: number;
   totalFrames: number;
 }

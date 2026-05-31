@@ -1,4 +1,3 @@
-import type { DisplayObjectInteractionSignals } from './DisplayObjectInteractionSignals';
 import type { BitmapFilter } from './Filter';
 import type {
   GraphNode,
@@ -30,9 +29,7 @@ export const DisplayGraph = Symbol('DisplayGraph');
 
 export type DisplayObjectRuntime = GraphNodeRuntime<typeof DisplayGraph, DisplayObjectTraits> &
   HasTransform2DRuntime &
-  HasBoundsRectRuntime & {
-    interactionSignals: DisplayObjectInteractionSignals | null;
-  };
+  HasBoundsRectRuntime;
 
 export type DisplayGraphNodeDataFactory = GraphNodeDataFactory<DisplayObjectData>;
 export type DisplayGraphNodeRuntimeFactory<R extends DisplayObjectRuntime> = GraphNodeRuntimeFactory<

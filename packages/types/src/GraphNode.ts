@@ -2,6 +2,7 @@ import type { EntityRuntimeKey } from './Entity';
 import type { GraphSignals } from './GraphNodeSignals';
 import type { HasGraphHierarchy, HasGraphHierarchyRuntime } from './HasGraphHierarchy';
 import type { ImageCacheResult } from './ImageCacheResult';
+import type { InteractionSignals } from './InteractionSignals';
 import type { Node, NodeData, NodeDataFactory, NodeRuntime, NodeRuntimeFactory } from './Node';
 
 export interface GraphNodeTraits {
@@ -23,6 +24,7 @@ export interface GraphNodeRuntime<GraphKind extends symbol = typeof NullGraph, T
   boundsUsingLocalTransformID: number;
   graph: GraphKind;
   imageCache: ImageCacheResult | null;
+  interactionSignals: InteractionSignals | null;
   localBoundsID: number;
   localBoundsUsingLocalBoundsID: number;
   localTransformID: number;
