@@ -1,4 +1,4 @@
-import type { AudioSource, DisplayObject, ImageSource, Text, TweenManager } from '@flighthq/sdk';
+import type { AudioSource, DisplayObject, ImageSource, InteractionManager, Text, TweenManager } from '@flighthq/sdk';
 import {
   addGraphChild,
   appendShapeBeginFill,
@@ -14,8 +14,16 @@ import {
   Quad,
 } from '@flighthq/sdk';
 
-import type { Tile } from './tile';
-import { createTile, initTile, moveTile, removeTileAnimated, removeTileImmediate, TILE_STEP } from './tile';
+import type { Tile, TileInteractionOptions } from './tile';
+import {
+  connectTileInteraction,
+  createTile,
+  initTile,
+  moveTile,
+  removeTileAnimated,
+  removeTileImmediate,
+  TILE_STEP,
+} from './tile';
 
 const NUM_COLUMNS = 8;
 const NUM_ROWS = 8;
@@ -30,6 +38,8 @@ export class PiratePigGame {
   currentScale: number = 1;
   currentScore: number = 0;
 
+  private interaction: InteractionManager;
+  private interactionOptions: TileInteractionOptions | undefined;
   private tileContainer: DisplayObject;
   private scoreText: Text;
   private tiles: (Tile | null)[][];
@@ -41,12 +51,16 @@ export class PiratePigGame {
 
   constructor(
     manager: TweenManager,
+    interactionManager: InteractionManager,
     tileImages: ImageSource[],
     logoImage: ImageSource,
     fontName: string,
     sounds: AudioSource[],
+    interactionOptions?: TileInteractionOptions,
   ) {
     this.manager = manager;
+    this.interaction = interactionManager;
+    this.interactionOptions = interactionOptions;
     this.tileImages = tileImages;
     this.sounds = sounds;
     this.obj = createDisplayObject();
@@ -126,44 +140,6 @@ export class PiratePigGame {
     invalidateRender(this.obj);
   }
 
-  hitTileAtStageXY(stageX: number, stageY: number): Tile | null {
-    const localX = (stageX - this.obj.x) / this.obj.scaleX - this.tileContainer.x;
-    const localY = (stageY - this.obj.y) / this.obj.scaleY - this.tileContainer.y;
-
-    const col = Math.floor(localX / TILE_STEP);
-    const row = Math.floor(localY / TILE_STEP);
-
-    if (row >= 0 && row < NUM_ROWS && col >= 0 && col < NUM_COLUMNS) {
-      return this.tiles[row][col] ?? null;
-    }
-    return null;
-  }
-
-  swapTile(tile: Tile, targetRow: number, targetColumn: number): void {
-    if (targetColumn < 0 || targetColumn >= NUM_COLUMNS || targetRow < 0 || targetRow >= NUM_ROWS) return;
-
-    const targetTile = this.tiles[targetRow][targetColumn];
-    if (targetTile === null || targetTile.moving) return;
-
-    this.tiles[targetRow][targetColumn] = tile;
-    this.tiles[tile.row][tile.column] = targetTile;
-
-    if (this.findMatches(true, false).length > 0 || this.findMatches(false, false).length > 0) {
-      const prevRow = tile.row;
-      const prevCol = tile.column;
-      targetTile.row = prevRow;
-      targetTile.column = prevCol;
-      tile.row = targetRow;
-      tile.column = targetColumn;
-      moveTile(this.manager, targetTile, 300, tileX(prevCol), tileY(prevRow));
-      moveTile(this.manager, tile, 300, tileX(targetColumn), tileY(targetRow));
-      this.needToCheckMatches = true;
-    } else {
-      this.tiles[targetRow][targetColumn] = targetTile;
-      this.tiles[tile.row][tile.column] = tile;
-    }
-  }
-
   // ── Private ────────────────────────────────────────────────────────────────
 
   private addTile(row: number, col: number, animate: boolean): void {
@@ -173,6 +149,21 @@ export class PiratePigGame {
     if (tile === null) {
       tile = createTile(this.tileImages[type], type);
       this.usedTiles.push(tile);
+      connectTileInteraction(
+        tile,
+        this.interaction,
+        (t, dx, dy) => {
+          let targetRow = t.row;
+          let targetCol = t.column;
+          if (Math.abs(dx) > Math.abs(dy)) {
+            targetCol += dx < 0 ? -1 : 1;
+          } else {
+            targetRow += dy < 0 ? -1 : 1;
+          }
+          this.swapTile(t, targetRow, targetCol);
+        },
+        this.interactionOptions,
+      );
     }
 
     initTile(tile);
@@ -282,6 +273,31 @@ export class PiratePigGame {
       removeTileAnimated(this.manager, tile, this.tileContainer);
     } else {
       removeTileImmediate(tile, this.tileContainer);
+    }
+  }
+
+  private swapTile(tile: Tile, targetRow: number, targetColumn: number): void {
+    if (targetColumn < 0 || targetColumn >= NUM_COLUMNS || targetRow < 0 || targetRow >= NUM_ROWS) return;
+
+    const targetTile = this.tiles[targetRow][targetColumn];
+    if (targetTile === null || targetTile.moving) return;
+
+    this.tiles[targetRow][targetColumn] = tile;
+    this.tiles[tile.row][tile.column] = targetTile;
+
+    if (this.findMatches(true, false).length > 0 || this.findMatches(false, false).length > 0) {
+      const prevRow = tile.row;
+      const prevCol = tile.column;
+      targetTile.row = prevRow;
+      targetTile.column = prevCol;
+      tile.row = targetRow;
+      tile.column = targetColumn;
+      moveTile(this.manager, targetTile, 300, tileX(prevCol), tileY(prevRow));
+      moveTile(this.manager, tile, 300, tileX(targetColumn), tileY(targetRow));
+      this.needToCheckMatches = true;
+    } else {
+      this.tiles[targetRow][targetColumn] = targetTile;
+      this.tiles[tile.row][tile.column] = tile;
     }
   }
 
