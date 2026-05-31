@@ -3,16 +3,15 @@ import { resolve } from 'path';
 import pc from 'picocolors';
 import { afterAll, describe, expect, test } from 'vitest';
 
-import type {
-  SizeResult} from '../../scripts/size-runner.ts';
+import type { SizeResult } from '../../scripts/size-runner';
 import {
   buildSample,
   collectSizeCases,
   formatSizeResult,
   getGzipSize,
   parseFilter,
-  readBaseline
-} from '../../scripts/size-runner.ts';
+  readBaseline,
+} from '../../scripts/size-runner';
 
 const baselineFile = resolve(__dirname, 'size.baseline.json');
 const updateBaseline = process.env.UPDATE_BASELINE === '1';

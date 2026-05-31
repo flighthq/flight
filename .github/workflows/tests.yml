@@ -46,7 +46,7 @@ jobs:
       - run: npm run build
 
   lint-typecheck:
-    name: Lint and typecheck
+    name: Quality checks
     needs: validate
     runs-on: ${{ matrix.os }}
     strategy:
@@ -61,8 +61,7 @@ jobs:
           node-version: 20
           cache: 'npm'
       - run: npm ci
-      - run: npm run lint:check
-      - run: npm run typecheck
+      - run: npm run check
 
   test:
     name: Test suites
@@ -98,4 +97,4 @@ jobs:
           node-version: 20
           cache: 'npm'
       - run: npm ci
-      - run: npm run test:size
+      - run: npm run size

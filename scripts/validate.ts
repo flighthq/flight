@@ -147,10 +147,31 @@ function getSourceFiles(dir: string): string[] {
   return files;
 }
 
+function skipOuterExpressions(expression: ts.Expression): ts.Expression {
+  let e: ts.Expression = expression;
+  while (true) {
+    if (ts.isParenthesizedExpression(e)) {
+      e = e.expression;
+      continue;
+    }
+    if (e.kind === ts.SyntaxKind.AsExpression) {
+      e = (e as unknown as { expression: ts.Expression }).expression;
+      continue;
+    }
+    // Type assertion (e.g., <T>expr)
+    if (e.kind === ts.SyntaxKind.TypeAssertionExpression) {
+      e = (e as unknown as { expression: ts.Expression }).expression;
+      continue;
+    }
+    break;
+  }
+  return e;
+}
+
 function isTopLevelSideEffectStatement(statement: ts.Statement): boolean {
   if (!ts.isExpressionStatement(statement)) return false;
 
-  const expression = ts.skipOuterExpressions(statement.expression);
+  const expression = skipOuterExpressions(statement.expression);
   return (
     ts.isCallExpression(expression) ||
     ts.isNewExpression(expression) ||
