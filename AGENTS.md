@@ -48,6 +48,7 @@ This document should stay useful, not ornamental. Prefer making architecture and
 - `npm run order` reports exported functions and test `describe` blocks that are not alphabetized. `npm run order:check` runs the same check in failing mode once a package or area has been cleaned up. `npm run order:fix` rewrites files in place to apply the correct order; comments immediately preceding a declaration (with no blank line between them) are treated as attached and move with it.
 - `npm run test` runs the normal root Vitest workspace, excluding the heavier `size` project. This is usually faster than chaining package/API/integration test scripts separately.
 - `npm run test:size` builds every example and compares the gzip output size against the baseline. It is intentionally heavier than ordinary package tests, but it is the main example smoke test and tree-shaking regression check.
+- `npm run size` is a direct CLI entry point for the same size checks, with support for filtered runs, JSON reporting, and output file paths.
 
 ## Core Patterns
 

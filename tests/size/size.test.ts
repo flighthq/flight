@@ -1,64 +1,30 @@
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
+import { writeFileSync } from 'fs';
 import pc from 'picocolors';
-import { build } from 'vite';
 import { afterAll, describe, expect, test } from 'vitest';
-import { gzipSync } from 'zlib';
+import {
+  buildSample,
+  collectSizeCases,
+  formatSizeResult,
+  getGzipSize,
+  parseFilter,
+  readBaseline,
+  SizeResult,
+} from '../../scripts/size-runner.ts';
 
 const baselineFile = resolve(__dirname, 'size.baseline.json');
 const updateBaseline = process.env.UPDATE_BASELINE === '1';
+const sizeReport = process.env.SIZE_REPORT?.toLowerCase() ?? '';
+const sizeOutputPath = process.env.SIZE_OUTPUT_PATH;
 
-const baseline: Record<string, number> = existsSync(baselineFile)
-  ? JSON.parse(readFileSync(baselineFile, 'utf-8'))
-  : {};
-
+const baseline: Record<string, number> = readBaseline(baselineFile);
 const pendingBaseline: Record<string, number> = { ...baseline };
 
-const BASELINE_ALLOWANCE = 1.05;
-const RENDERERS = ['dom', 'canvas', 'webgl'] as const;
 const examplesDir = resolve(__dirname, '../../examples');
-
 const sizeExampleFilter = parseFilter(process.env.SIZE_EXAMPLE_FILTER);
 const sizeRenderFilter = parseFilter(process.env.SIZE_RENDER_FILTER);
 
-const testCases = readdirSync(examplesDir, { withFileTypes: true })
-  .filter((d) => d.isDirectory() && existsSync(resolve(examplesDir, d.name, 'package.json')))
-  .sort((a, b) => a.name.localeCompare(b.name))
-  .flatMap(({ name }) =>
-    RENDERERS.filter((render) => existsSync(resolve(examplesDir, name, `src/render.${render}.ts`)))
-      .map((render) => ({ name, render }))
-      .filter((tc) => matchesExampleFilter(tc.name) && matchesRenderFilter(tc.render)),
-  );
-
-function parseFilter(value: string | undefined): string[] {
-  if (!value) return [];
-  return value
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .map((item) => item.toLowerCase());
-}
-
-function matchesExampleFilter(exampleName: string): boolean {
-  if (sizeExampleFilter.length === 0) return true;
-  const normalized = exampleName.toLowerCase();
-  return sizeExampleFilter.some((query) => normalized.includes(query));
-}
-
-function matchesRenderFilter(render: string): boolean {
-  if (sizeRenderFilter.length === 0) return true;
-  const normalized = render.toLowerCase();
-  return sizeRenderFilter.some((query) => normalized.includes(query));
-}
-
-interface SizeResult {
-  name: string;
-  render: string;
-  gzipKB: string;
-  baselineKB: string | null;
-  delta: string | null;
-  passed: boolean;
-}
+const testCases = collectSizeCases(examplesDir, sizeExampleFilter, sizeRenderFilter);
 
 const results: SizeResult[] = [];
 let lastPrintedExample = '';
@@ -74,13 +40,11 @@ function printGroup(name: string): void {
 
   const lines = group.map((r, i) => {
     const nameCell = i === 0 ? bgColor(' ' + r.name + ' ') + ''.padEnd(w.name - r.name.length - 2) : ''.padEnd(w.name);
-
     const deltaNum = r.delta != null ? parseFloat(r.delta) : null;
     const color = deltaNum == null ? pc.dim : deltaNum > 2 ? pc.red : deltaNum > 0 ? pc.yellow : pc.green;
     const deltaStr =
       r.delta == null ? pc.dim('—') : color(r.delta[0]) + color(r.delta.slice(1, -1)) + pc.dim(color('%'));
-
-    const baselineStr = pc.dim((r.baselineKB ? '~' + r.baselineKB + ' KB' : '—').padEnd(w.base));
+    const baselineStr = pc.dim((r.baselineKBStr ? '~' + r.baselineKBStr + ' KB' : '—').padEnd(w.base));
     const flag = r.passed ? '' : '  ' + pc.red('✗');
 
     return `${nameCell}  ${pc.dim(r.render.padEnd(w.render))}  ${(r.gzipKB + ' KB').padEnd(w.size)}  ${baselineStr}  ${deltaStr}${flag}`;
@@ -93,12 +57,38 @@ describe('bundle size checks', () => {
   afterAll(() => {
     if (updateBaseline) {
       writeFileSync(baselineFile, JSON.stringify(pendingBaseline, null, 2) + '\n');
-      console.log(`Baseline written to ${baselineFile}`);
+      if (!sizeOutputPath && sizeReport !== 'json') {
+        console.log(`Baseline written to ${baselineFile}`);
+      }
+    }
+
+    const shouldWriteJson = sizeReport === 'json' || Boolean(sizeOutputPath);
+    if (!shouldWriteJson) return;
+
+    const cases = results.map((r) => ({
+      example: r.name,
+      render: r.render,
+      gzipKB: parseFloat(r.gzipKB),
+      baselineKB: r.baselineKB,
+      deltaPercent: r.delta != null ? parseFloat(r.delta.replace('%', '')) : null,
+      passed: r.passed,
+    }));
+    const report = {
+      passed: results.every((r) => r.passed),
+      cases,
+    };
+
+    if (sizeOutputPath) {
+      const outputPath = resolve(process.cwd(), sizeOutputPath);
+      writeFileSync(outputPath, JSON.stringify(report, null, 2) + '\n');
+      console.log(`SIZE_REPORT_PATH:${outputPath}`);
+    } else {
+      console.log(`SIZE_REPORT_JSON:${JSON.stringify(report)}`);
     }
   });
 
   afterEach(() => {
-    if (results.length === 0) return;
+    if (results.length === 0 || sizeReport === 'json' || sizeOutputPath) return;
     const last = results[results.length - 1];
     if (last.name === lastPrintedExample) return;
     const expected = testCases.filter((tc) => tc.name === last.name).length;
@@ -113,17 +103,12 @@ describe('bundle size checks', () => {
     const root = resolve(examplesDir, name);
     const code = await buildSample(root, render);
     const gzipSize = getGzipSize(code);
-    const gzipKB = (gzipSize / 1024).toFixed(2);
     const key = `${name}:${render}`;
-    const baselineSize = baseline[key];
-    const baselineKB = baselineSize != null ? (baselineSize / 1024).toFixed(2) : null;
-    const rawDelta = baselineSize != null ? (((gzipSize - baselineSize) / baselineSize) * 100).toFixed(1) : null;
-    const delta = rawDelta != null ? (parseFloat(rawDelta) >= 0 ? `+${rawDelta}%` : `${rawDelta}%`) : null;
-    const threshold = baselineSize != null ? Math.ceil(baselineSize * BASELINE_ALLOWANCE) : null;
-    const passed = updateBaseline || threshold == null || gzipSize < threshold;
+    const baselineSize = baseline[key] ?? null;
+    const { gzipKB, baselineKB, baselineKBStr, delta, passed, threshold } = formatSizeResult(gzipSize, baselineSize);
 
     pendingBaseline[key] = gzipSize;
-    results.push({ name, render, gzipKB, baselineKB, delta, passed });
+    results.push({ name, render, gzipSize, gzipKB, baselineKB, baselineKBStr, delta, passed, threshold, key });
 
     if (!updateBaseline && threshold != null) {
       const thresholdKB = (threshold / 1024).toFixed(2);
@@ -133,37 +118,3 @@ describe('bundle size checks', () => {
 
   test('write baseline', () => {});
 });
-
-async function buildSample(root: string, render: string): Promise<string> {
-  const prev = process.env.RENDER;
-  process.env.RENDER = render;
-
-  try {
-    const result = await build({
-      root,
-      configFile: resolve(root, 'vite.config.ts'),
-      build: {
-        write: true,
-        emptyOutDir: true,
-        outDir: resolve(root, 'dist'),
-      },
-      logLevel: 'silent',
-    });
-
-    const jsFiles = (result as any).output.filter((f: any) => f.fileName.endsWith('.js'));
-    expect(jsFiles.length).toBeGreaterThan(0);
-
-    const mainChunk = jsFiles.find((f: any) => f.fileName.includes('main')) || jsFiles[0];
-    return mainChunk.code;
-  } finally {
-    if (prev === undefined) {
-      delete process.env.RENDER;
-    } else {
-      process.env.RENDER = prev;
-    }
-  }
-}
-
-function getGzipSize(code: string): number {
-  return gzipSync(code).length;
-}

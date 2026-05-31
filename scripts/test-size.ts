@@ -7,6 +7,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 interface ParsedArgs {
   exampleFilters: string[];
   renderFilters: string[];
+  report: string | null;
+  outputPath: string | null;
   forwardedArgs: string[];
   help: boolean;
 }
@@ -25,6 +27,15 @@ if (options.exampleFilters.length > 0) {
 }
 if (options.renderFilters.length > 0) {
   env.SIZE_RENDER_FILTER = options.renderFilters.join(',');
+}
+if (options.report) {
+  env.SIZE_REPORT = options.report;
+}
+if (options.outputPath) {
+  env.SIZE_OUTPUT_PATH = options.outputPath;
+  if (!options.report) {
+    env.SIZE_REPORT = 'json';
+  }
 }
 
 const vitestBin = resolve(
@@ -52,6 +63,7 @@ function parseArgs(args: string[]): ParsedArgs {
   const parsed: ParsedArgs = {
     exampleFilters: [],
     renderFilters: [],
+    report: null,
     forwardedArgs: [],
     help: false,
   };
@@ -113,6 +125,36 @@ function parseArgs(args: string[]): ParsedArgs {
       continue;
     }
 
+    if (arg.startsWith('report=')) {
+      parsed.report = arg.slice('report='.length).toLowerCase();
+      continue;
+    }
+
+    if (arg.startsWith('report:')) {
+      parsed.report = arg.slice('report:'.length).toLowerCase();
+      continue;
+    }
+
+    if (arg.startsWith('output=')) {
+      parsed.outputPath = arg.slice('output='.length);
+      continue;
+    }
+
+    if (arg.startsWith('output:')) {
+      parsed.outputPath = arg.slice('output:'.length);
+      continue;
+    }
+
+    if (arg.startsWith('out=')) {
+      parsed.outputPath = arg.slice('out='.length);
+      continue;
+    }
+
+    if (arg.startsWith('out:')) {
+      parsed.outputPath = arg.slice('out:'.length);
+      continue;
+    }
+
     parsed.exampleFilters.push(arg);
   }
 
@@ -130,6 +172,12 @@ function printUsage(): void {
   console.log('  npm run test:size package=addinganimation');
   console.log('  npm run test:size render=webgl');
   console.log('  npm run test:size package=addinganimation render=canvas');
+  console.log('');
+  console.log('Output examples:');
+  console.log('  npm run test:size report=json piratepig');
+  console.log('  npm run size report=json piratepig');
+  console.log('  npm run test:size output=size-report.json piratepig');
+  console.log('  npm run size output=size-report.json piratepig');
   console.log('');
   console.log('You can also pass direct vitest args after --:');
   console.log('  npm run test:size example=addinganimation -- -t "addinganimation"');
