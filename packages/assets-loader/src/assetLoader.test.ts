@@ -36,14 +36,16 @@ describe('queueAssetLoad', () => {
   it('fires onProgress after each item completes', async () => {
     const loader = createAssetLoader();
     const progress: Array<[number, number]> = [];
-    connectSignal(loader.onProgress, (loaded, total) => { progress.push([loaded, total]); });
+    connectSignal(loader.onProgress, (loaded, total) => {
+      progress.push([loaded, total]);
+    });
 
     queueAssetLoad(loader, () => Promise.resolve('a'));
     queueAssetLoad(loader, () => Promise.resolve('b'));
     queueAssetLoad(loader, () => Promise.resolve('c'));
     startAssetLoad(loader);
 
-    await new Promise<void>(resolve => connectSignal(loader.onComplete, resolve));
+    await new Promise<void>((resolve) => connectSignal(loader.onComplete, resolve));
 
     expect(progress).toHaveLength(3);
     expect(progress[2]).toEqual([3, 3]);
@@ -52,27 +54,31 @@ describe('queueAssetLoad', () => {
   it('fires onComplete after all items finish', async () => {
     const loader = createAssetLoader();
     let completed = false;
-    connectSignal(loader.onComplete, () => { completed = true; });
+    connectSignal(loader.onComplete, () => {
+      completed = true;
+    });
 
     queueAssetLoad(loader, () => Promise.resolve(1));
     queueAssetLoad(loader, () => Promise.resolve(2));
     startAssetLoad(loader);
 
-    await new Promise<void>(resolve => connectSignal(loader.onComplete, resolve));
+    await new Promise<void>((resolve) => connectSignal(loader.onComplete, resolve));
     expect(completed).toBe(true);
   });
 
   it('fires onError for a failed item but still completes', async () => {
     const loader = createAssetLoader();
     const errors: unknown[] = [];
-    connectSignal(loader.onError, (err) => { errors.push(err); });
+    connectSignal(loader.onError, (err) => {
+      errors.push(err);
+    });
 
     queueAssetLoad(loader, () => Promise.resolve('ok'));
     const failing = queueAssetLoad(loader, () => Promise.reject(new Error('oops')));
     failing.catch(() => {}); // handle rejection
     startAssetLoad(loader);
 
-    await new Promise<void>(resolve => connectSignal(loader.onComplete, resolve));
+    await new Promise<void>((resolve) => connectSignal(loader.onComplete, resolve));
 
     expect(errors).toHaveLength(1);
     expect((errors[0] as Error).message).toBe('oops');
@@ -82,11 +88,29 @@ describe('queueAssetLoad', () => {
     const loader = createAssetLoader();
     const order: number[] = [];
 
-    queueAssetLoad(loader, () => new Promise<number>(resolve => setTimeout(() => { order.push(1); resolve(1); }, 20)));
-    queueAssetLoad(loader, () => new Promise<number>(resolve => setTimeout(() => { order.push(2); resolve(2); }, 5)));
+    queueAssetLoad(
+      loader,
+      () =>
+        new Promise<number>((resolve) =>
+          setTimeout(() => {
+            order.push(1);
+            resolve(1);
+          }, 20),
+        ),
+    );
+    queueAssetLoad(
+      loader,
+      () =>
+        new Promise<number>((resolve) =>
+          setTimeout(() => {
+            order.push(2);
+            resolve(2);
+          }, 5),
+        ),
+    );
     startAssetLoad(loader);
 
-    await new Promise<void>(resolve => connectSignal(loader.onComplete, resolve));
+    await new Promise<void>((resolve) => connectSignal(loader.onComplete, resolve));
 
     // Parallel: item 2 (5ms) finishes before item 1 (20ms)
     expect(order).toEqual([2, 1]);
@@ -97,7 +121,9 @@ describe('startAssetLoad', () => {
   it('fires onComplete immediately when queue is empty', () => {
     const loader = createAssetLoader();
     let called = false;
-    connectSignal(loader.onComplete, () => { called = true; });
+    connectSignal(loader.onComplete, () => {
+      called = true;
+    });
     startAssetLoad(loader);
     expect(called).toBe(true);
   });
@@ -105,7 +131,9 @@ describe('startAssetLoad', () => {
   it('fires onProgress(0, 0) for an empty queue', () => {
     const loader = createAssetLoader();
     let args: [number, number] | null = null;
-    connectSignal(loader.onProgress, (loaded, total) => { args = [loaded, total]; });
+    connectSignal(loader.onProgress, (loaded, total) => {
+      args = [loaded, total];
+    });
     startAssetLoad(loader);
     expect(args).toEqual([0, 0]);
   });
@@ -113,7 +141,9 @@ describe('startAssetLoad', () => {
   it('is a no-op if called a second time', () => {
     const loader = createAssetLoader();
     let count = 0;
-    connectSignal(loader.onComplete, () => { count++; });
+    connectSignal(loader.onComplete, () => {
+      count++;
+    });
     startAssetLoad(loader);
     startAssetLoad(loader);
     expect(count).toBe(1);

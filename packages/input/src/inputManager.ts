@@ -90,10 +90,7 @@ export function attachPointerInput(
   };
 }
 
-export function attachRelativePointerInput(
-  manager: InputManager,
-  element: HTMLElement,
-): () => void {
+export function attachRelativePointerInput(manager: InputManager, element: HTMLElement): () => void {
   const target = element.ownerDocument;
   const handler = (e: Event) => {
     if (!manager.enabled) return;

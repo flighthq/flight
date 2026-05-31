@@ -189,8 +189,7 @@ export function hardenElement(element: HTMLElement): void {
   element.style.touchAction = 'none';
   element.style.userSelect = 'none';
   element.style.webkitUserSelect = 'none';
-  (element.style as CSSStyleDeclaration & { webkitTapHighlightColor: string }).webkitTapHighlightColor =
-    'transparent';
+  (element.style as CSSStyleDeclaration & { webkitTapHighlightColor: string }).webkitTapHighlightColor = 'transparent';
   if (element instanceof HTMLCanvasElement) {
     element.style.transform = 'translateZ(0)';
   }

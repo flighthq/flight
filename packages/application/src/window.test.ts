@@ -27,7 +27,9 @@ describe('attachWindowDropFile', () => {
     const element = document.createElement('div');
     const win = createApplicationWindow();
     let received: string | null = null;
-    connectSignal(win.onDropFile, (path) => { received = path; });
+    connectSignal(win.onDropFile, (path) => {
+      received = path;
+    });
     attachWindowDropFile(win, element);
 
     const event = new Event('drop') as Event & { dataTransfer: { files: { name: string }[] } };
@@ -45,7 +47,9 @@ describe('attachWindowFocus', () => {
     const element = document.createElement('div');
     const win = createApplicationWindow();
     let called = false;
-    connectSignal(win.onFocusIn, () => { called = true; });
+    connectSignal(win.onFocusIn, () => {
+      called = true;
+    });
     attachWindowFocus(win, element);
     element.dispatchEvent(new Event('focus'));
     expect(called).toBe(true);
@@ -55,7 +59,9 @@ describe('attachWindowFocus', () => {
     const element = document.createElement('div');
     const win = createApplicationWindow();
     let called = false;
-    connectSignal(win.onFocusOut, () => { called = true; });
+    connectSignal(win.onFocusOut, () => {
+      called = true;
+    });
     attachWindowFocus(win, element);
     element.dispatchEvent(new Event('blur'));
     expect(called).toBe(true);
@@ -66,7 +72,9 @@ describe('attachWindowFullscreen', () => {
   it('emits onFullscreenChanged', () => {
     const win = createApplicationWindow();
     let called = false;
-    connectSignal(win.onFullscreenChanged, () => { called = true; });
+    connectSignal(win.onFullscreenChanged, () => {
+      called = true;
+    });
     attachWindowFullscreen(win);
     document.dispatchEvent(new Event('fullscreenchange'));
     expect(called).toBe(true);
@@ -77,11 +85,18 @@ describe('attachWindowOrientation', () => {
   it('emits onOrientationChanged on change', () => {
     const win = createApplicationWindow();
     let called = false;
-    connectSignal(win.onOrientationChanged, () => { called = true; });
+    connectSignal(win.onOrientationChanged, () => {
+      called = true;
+    });
 
     let capturedHandler: (() => void) | null = null;
     Object.defineProperty(screen, 'orientation', {
-      value: { addEventListener: (_: string, fn: () => void) => { capturedHandler = fn; }, removeEventListener: vi.fn() },
+      value: {
+        addEventListener: (_: string, fn: () => void) => {
+          capturedHandler = fn;
+        },
+        removeEventListener: vi.fn(),
+      },
       configurable: true,
     });
 
@@ -96,7 +111,9 @@ describe('attachWindowRenderContext', () => {
     const canvas = document.createElement('canvas');
     const win = createApplicationWindow();
     let called = false;
-    connectSignal(win.onRenderContextLost, () => { called = true; });
+    connectSignal(win.onRenderContextLost, () => {
+      called = true;
+    });
     attachWindowRenderContext(win, canvas);
     canvas.dispatchEvent(new Event('webglcontextlost'));
     expect(called).toBe(true);
@@ -106,7 +123,9 @@ describe('attachWindowRenderContext', () => {
     const canvas = document.createElement('canvas');
     const win = createApplicationWindow();
     let called = false;
-    connectSignal(win.onRenderContextRestored, () => { called = true; });
+    connectSignal(win.onRenderContextRestored, () => {
+      called = true;
+    });
     attachWindowRenderContext(win, canvas);
     canvas.dispatchEvent(new Event('webglcontextrestored'));
     expect(called).toBe(true);
@@ -119,20 +138,29 @@ describe('attachWindowResize', () => {
 
   beforeEach(() => {
     disconnectFn = vi.fn();
-    vi.stubGlobal('ResizeObserver', class {
-      constructor(cb: ResizeObserverCallback) { resizeCallback = cb; }
-      observe() {}
-      disconnect = disconnectFn;
-    });
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(cb: ResizeObserverCallback) {
+          resizeCallback = cb;
+        }
+        observe() {}
+        disconnect = disconnectFn;
+      },
+    );
   });
 
-  afterEach(() => { vi.unstubAllGlobals(); });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
 
   it('emits onResize and updates dimensions', () => {
     vi.stubGlobal('devicePixelRatio', 2);
     const win = createApplicationWindow();
     let called = false;
-    connectSignal(win.onResize, () => { called = true; });
+    connectSignal(win.onResize, () => {
+      called = true;
+    });
 
     attachWindowResize(win, document.createElement('div'));
     resizeCallback([{ contentRect: { width: 1280, height: 720 } } as ResizeObserverEntry], {} as ResizeObserver);
@@ -155,7 +183,9 @@ describe('attachWindowVisibility', () => {
   it('emits onDeactivate when page is hidden', () => {
     const win = createApplicationWindow();
     let called = false;
-    connectSignal(win.onDeactivate, () => { called = true; });
+    connectSignal(win.onDeactivate, () => {
+      called = true;
+    });
 
     attachWindowVisibility(win);
     Object.defineProperty(document, 'hidden', { value: true, configurable: true });
@@ -168,7 +198,9 @@ describe('attachWindowVisibility', () => {
   it('emits onActivate when page becomes visible', () => {
     const win = createApplicationWindow();
     let called = false;
-    connectSignal(win.onActivate, () => { called = true; });
+    connectSignal(win.onActivate, () => {
+      called = true;
+    });
 
     attachWindowVisibility(win);
     Object.defineProperty(document, 'hidden', { value: false, configurable: true });
@@ -212,7 +244,9 @@ describe('detachWindowDropFile', () => {
     const element = document.createElement('div');
     const win = createApplicationWindow();
     let called = false;
-    connectSignal(win.onDropFile, () => { called = true; });
+    connectSignal(win.onDropFile, () => {
+      called = true;
+    });
     attachWindowDropFile(win, element);
     detachWindowDropFile(win);
 
@@ -229,7 +263,9 @@ describe('detachWindowFocus', () => {
     const element = document.createElement('div');
     const win = createApplicationWindow();
     let called = false;
-    connectSignal(win.onFocusIn, () => { called = true; });
+    connectSignal(win.onFocusIn, () => {
+      called = true;
+    });
     attachWindowFocus(win, element);
     detachWindowFocus(win);
     element.dispatchEvent(new Event('focus'));
@@ -241,7 +277,9 @@ describe('detachWindowFullscreen', () => {
   it('removes the listener', () => {
     const win = createApplicationWindow();
     let called = false;
-    connectSignal(win.onFullscreenChanged, () => { called = true; });
+    connectSignal(win.onFullscreenChanged, () => {
+      called = true;
+    });
     attachWindowFullscreen(win);
     detachWindowFullscreen(win);
     document.dispatchEvent(new Event('fullscreenchange'));
@@ -269,7 +307,9 @@ describe('detachWindowRenderContext', () => {
     const canvas = document.createElement('canvas');
     const win = createApplicationWindow();
     let called = false;
-    connectSignal(win.onRenderContextLost, () => { called = true; });
+    connectSignal(win.onRenderContextLost, () => {
+      called = true;
+    });
     attachWindowRenderContext(win, canvas);
     detachWindowRenderContext(win);
     canvas.dispatchEvent(new Event('webglcontextlost'));
@@ -280,11 +320,14 @@ describe('detachWindowRenderContext', () => {
 describe('detachWindowResize', () => {
   it('disconnects the observer', () => {
     const disconnectFn = vi.fn();
-    vi.stubGlobal('ResizeObserver', class {
-      constructor() {}
-      observe() {}
-      disconnect = disconnectFn;
-    });
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor() {}
+        observe() {}
+        disconnect = disconnectFn;
+      },
+    );
 
     const win = createApplicationWindow();
     attachWindowResize(win, document.createElement('div'));
@@ -299,7 +342,9 @@ describe('detachWindowVisibility', () => {
   it('removes the listener', () => {
     const win = createApplicationWindow();
     let called = false;
-    connectSignal(win.onDeactivate, () => { called = true; });
+    connectSignal(win.onDeactivate, () => {
+      called = true;
+    });
 
     attachWindowVisibility(win);
     detachWindowVisibility(win);
@@ -314,11 +359,14 @@ describe('detachWindowVisibility', () => {
 describe('disposeApplicationWindow', () => {
   it('runs all observers and clears the map', () => {
     const disconnectFn = vi.fn();
-    vi.stubGlobal('ResizeObserver', class {
-      constructor() {}
-      observe() {}
-      disconnect = disconnectFn;
-    });
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor() {}
+        observe() {}
+        disconnect = disconnectFn;
+      },
+    );
 
     const win = createApplicationWindow();
     attachWindowResize(win, document.createElement('div'));
@@ -330,7 +378,9 @@ describe('disposeApplicationWindow', () => {
     expect(disconnectFn).toHaveBeenCalled();
     expect(win.observers.size).toBe(0);
     let called = false;
-    connectSignal(win.onFullscreenChanged, () => { called = true; });
+    connectSignal(win.onFullscreenChanged, () => {
+      called = true;
+    });
     document.dispatchEvent(new Event('fullscreenchange'));
     expect(called).toBe(false);
 

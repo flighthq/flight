@@ -65,11 +65,7 @@ export function startAssetLoad(loader: AssetLoader): void {
   }
 }
 
-async function runQueuedItem(
-  item: QueuedItem,
-  internal: AssetLoaderInternal,
-  loader: AssetLoader,
-): Promise<void> {
+async function runQueuedItem(item: QueuedItem, internal: AssetLoaderInternal, loader: AssetLoader): Promise<void> {
   try {
     const value = await item.factory();
     item.resolve(value);
