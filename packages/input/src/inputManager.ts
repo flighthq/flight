@@ -10,28 +10,6 @@ export interface InputManager extends InputSignals {
   enabled: boolean;
 }
 
-export function createInputManager(): InputManager {
-  return {
-    ...createInputSignals(),
-    enabled: true,
-  };
-}
-
-export function createInputSignals(): InputSignals {
-  return {
-    onKeyDown: createSignal(),
-    onKeyUp: createSignal(),
-    onPointerCancel: createSignal(),
-    onPointerDown: createSignal(),
-    onPointerMove: createSignal(),
-    onPointerMoveRelative: createSignal(),
-    onPointerUp: createSignal(),
-    onTextEdit: createSignal(),
-    onTextInput: createSignal(),
-    onWheel: createSignal(),
-  };
-}
-
 export function attachKeyboardInput(
   manager: InputManager,
   target: EventTarget,
@@ -178,6 +156,28 @@ export function attachWheelInput(
   };
   element.addEventListener('wheel', handler, { passive: !preventDefault });
   return () => element.removeEventListener('wheel', handler);
+}
+
+export function createInputManager(): InputManager {
+  return {
+    ...createInputSignals(),
+    enabled: true,
+  };
+}
+
+export function createInputSignals(): InputSignals {
+  return {
+    onKeyDown: createSignal(),
+    onKeyUp: createSignal(),
+    onPointerCancel: createSignal(),
+    onPointerDown: createSignal(),
+    onPointerMove: createSignal(),
+    onPointerMoveRelative: createSignal(),
+    onPointerUp: createSignal(),
+    onTextEdit: createSignal(),
+    onTextInput: createSignal(),
+    onWheel: createSignal(),
+  };
 }
 
 export function getKeyCodeFromDOMKeyboardEvent(event: Readonly<KeyboardEvent>): number {
