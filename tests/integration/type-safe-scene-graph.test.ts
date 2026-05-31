@@ -1,7 +1,7 @@
 import { addGraphChild, getGraphNumChildren } from '@flighthq/scenegraph-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import { createSprite } from '@flighthq/scenegraph-sprite';
-import type { DisplayObject, SpriteBase } from '@flighthq/types';
+import type { DisplayObject, SpriteNode } from '@flighthq/types';
 
 test('can add display objects to display graph', () => {
   const parent = createDisplayObject();
@@ -14,7 +14,7 @@ test('can add display objects to display graph', () => {
 test('can add sprite objects to sprite graph', () => {
   const parent = createSprite();
   const child = createSprite();
-  const out: SpriteBase = addGraphChild(parent, child);
+  const out: SpriteNode = addGraphChild(parent, child);
   expect(getGraphNumChildren(parent)).toBe(1);
   expect(out).not.toBeNull();
 });
