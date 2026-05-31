@@ -9,10 +9,10 @@ import { Node, Project } from 'ts-morph';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const packagesDir = join(root, 'packages');
-const args = new Set(process.argv.slice(2));
-const colors = (pc as typeof pc & { createColors: (enabled?: boolean) => typeof pc }).createColors(
-  !args.has('--no-color'),
-);
+
+const rawArgs = process.argv.slice(2);
+const options = parseArgs(rawArgs);
+const colors = (pc as typeof pc & { createColors: (enabled?: boolean) => typeof pc }).createColors(!options.noColor);
 
 interface PackageInfo {
   name: string;
@@ -281,14 +281,158 @@ function findMatchingParen(source: string, openIndex: number): number {
   return -1;
 }
 
-const asJson = args.has('--json');
+interface ParsedArgs {
+  json: boolean;
+  noColor: boolean;
+  packageFilters: string[];
+  functionFilters: string[];
+  queryFilters: string[];
+  help: boolean;
+}
+
+function parseArgs(args: string[]): ParsedArgs {
+  const parsed: ParsedArgs = {
+    json: false,
+    noColor: false,
+    packageFilters: [],
+    functionFilters: [],
+    queryFilters: [],
+    help: false,
+  };
+
+  let i = 0;
+  while (i < args.length) {
+    const arg = args[i];
+    if (arg === '--json') {
+      parsed.json = true;
+    } else if (arg === '--no-color') {
+      parsed.noColor = true;
+    } else if (arg === '--help' || arg === '-h') {
+      parsed.help = true;
+    } else if (arg === '--package' || arg === '--pkg') {
+      i++;
+      if (i >= args.length) throw new Error('Missing value for --package');
+      parsed.packageFilters.push(args[i]);
+    } else if (arg.startsWith('--package=')) {
+      parsed.packageFilters.push(arg.slice('--package='.length));
+    } else if (arg.startsWith('package=')) {
+      parsed.packageFilters.push(arg.slice('package='.length));
+    } else if (arg.startsWith('pkg=')) {
+      parsed.packageFilters.push(arg.slice('pkg='.length));
+    } else if (arg.startsWith('package:')) {
+      parsed.packageFilters.push(arg.slice('package:'.length));
+    } else if (arg.startsWith('pkg:')) {
+      parsed.packageFilters.push(arg.slice('pkg:'.length));
+    } else if (arg === '--function' || arg === '--fn') {
+      i++;
+      if (i >= args.length) throw new Error('Missing value for --function');
+      parsed.functionFilters.push(args[i]);
+    } else if (arg.startsWith('--function=')) {
+      parsed.functionFilters.push(arg.slice('--function='.length));
+    } else if (arg.startsWith('function=')) {
+      parsed.functionFilters.push(arg.slice('function='.length));
+    } else if (arg.startsWith('fn=')) {
+      parsed.functionFilters.push(arg.slice('fn='.length));
+    } else if (arg.startsWith('function:')) {
+      parsed.functionFilters.push(arg.slice('function:'.length));
+    } else if (arg.startsWith('fn:')) {
+      parsed.functionFilters.push(arg.slice('fn:'.length));
+    } else if (arg === '--') {
+      parsed.queryFilters.push(...args.slice(i + 1));
+      break;
+    } else if (arg.startsWith('--')) {
+      throw new Error(`Unknown option: ${arg}`);
+    } else {
+      parsed.queryFilters.push(arg);
+    }
+    i += 1;
+  }
+
+  return parsed;
+}
+
+function printUsage(): void {
+  console.log('Usage: npm run api [--] [filters...] [--json] [--no-color]');
+  console.log('');
+  console.log('Filter examples:');
+  console.log('  npm run api application               # show @flighthq/application package');
+  console.log('  npm run api app                       # search packages and functions for "app"');
+  console.log('  npm run api package=application       # explicit package filter without npm --');
+  console.log('  npm run api package:application       # same as package=application');
+  console.log('  npm run api fn=register               # explicit function filter without npm --');
+  console.log('  npm run api fn:register               # same as fn=register');
+  console.log('');
+  console.log('Options:');
+  console.log('  --json        output API data as JSON');
+  console.log('  --no-color    disable colorized output');
+  console.log('  --package     only include matching package names');
+  console.log('  --function    only include matching exported functions');
+  console.log('  package=...   same as --package');
+  console.log('  function=...  same as --function');
+  console.log('  pkg=... fn=... synonyms');
+  console.log('  --help, -h    show this help message');
+}
+
+function normalizeQuery(value: string): string {
+  return value.toLowerCase();
+}
+
+function matchPackage(pkg: ApiPackage, query: string): boolean {
+  const normalized = normalizeQuery(query);
+  return normalizeQuery(pkg.name).includes(normalized);
+}
+
+function matchFunction(fn: ApiFunction, query: string): boolean {
+  const normalized = normalizeQuery(query);
+  return normalizeQuery(fn.name).includes(normalized);
+}
+
+function filterApi(packages: ApiPackage[], options: ParsedArgs): ApiPackage[] {
+  if (
+    options.packageFilters.length === 0 &&
+    options.functionFilters.length === 0 &&
+    options.queryFilters.length === 0
+  ) {
+    return packages;
+  }
+
+  const packageQueries = [...options.packageFilters, ...options.queryFilters];
+  const functionQueries = [...options.functionFilters, ...options.queryFilters];
+
+  return packages
+    .map((pkg) => {
+      const packageMatches = packageQueries.some((query) => matchPackage(pkg, query));
+      const functions = pkg.functions.filter((fn) => functionQueries.some((query) => matchFunction(fn, query)));
+
+      if (packageMatches && options.functionFilters.length === 0) {
+        return pkg;
+      }
+
+      if (functions.length === 0) {
+        return null;
+      }
+
+      return { ...pkg, functions };
+    })
+    .filter((pkg): pkg is ApiPackage => pkg !== null);
+}
+
+const asJson = options.json;
+
+if (options.help) {
+  printUsage();
+  process.exit(0);
+}
 
 const project = new Project({
   tsConfigFilePath: join(root, 'tsconfig.base.json'),
   skipAddingFilesFromTsConfig: true,
 });
 
-const api = topoSort(findPackages()).map((pkg) => collectPackageApi(project, pkg));
+const api = filterApi(
+  topoSort(findPackages()).map((pkg) => collectPackageApi(project, pkg)),
+  options,
+);
 
 if (asJson) {
   console.log(JSON.stringify({ packages: api }, null, 2));
