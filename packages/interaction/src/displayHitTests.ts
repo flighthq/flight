@@ -1,15 +1,15 @@
 import type { GraphNode, SpriteBatch } from '@flighthq/types';
 
+import { hitTestLocalBoundsRectangle } from './hitTests';
 import { defaultSpriteHitTestPoint } from './spriteHitTests';
 
 export function defaultBitmapHitTestPoint(
   source: GraphNode<symbol, object>,
   x: number,
   y: number,
-  shapeFlag: boolean,
+  _shapeFlag: boolean,
 ): boolean {
-  // TODO: Return true if within bitmap bounds, if shapeFlag true, check if pixel is non-transparent
-  return defaultDisplayObjectHitTestPoint(source, x, y, shapeFlag);
+  return hitTestLocalBoundsRectangle(source, x, y);
 }
 
 export function defaultDisplayObjectHitTestPoint(
@@ -22,52 +22,50 @@ export function defaultDisplayObjectHitTestPoint(
 }
 
 export function defaultDOMElementHitTestPoint(
-  source: GraphNode<symbol, object>,
-  x: number,
-  y: number,
-  shapeFlag: boolean,
+  _source: GraphNode<symbol, object>,
+  _x: number,
+  _y: number,
+  _shapeFlag: boolean,
 ): boolean {
-  // TODO: Is there a way to propagate this check?
-  return defaultDisplayObjectHitTestPoint(source, x, y, shapeFlag);
+  // DOM elements handle pointer events through the browser — not the canvas interaction system.
+  return false;
 }
 
 export function defaultInputTextHitTestPoint(
   source: GraphNode<symbol, object>,
   x: number,
   y: number,
-  shapeFlag: boolean,
+  _shapeFlag: boolean,
 ): boolean {
-  // TODO
-  return defaultDisplayObjectHitTestPoint(source, x, y, shapeFlag);
+  return hitTestLocalBoundsRectangle(source, x, y);
 }
 
 export function defaultMovieClipHitTestPoint(
-  source: GraphNode<symbol, object>,
-  x: number,
-  y: number,
-  shapeFlag: boolean,
+  _source: GraphNode<symbol, object>,
+  _x: number,
+  _y: number,
+  _shapeFlag: boolean,
 ): boolean {
-  return defaultDisplayObjectHitTestPoint(source, x, y, shapeFlag);
+  // Containers have no self hit area — findHitTarget traverses children separately.
+  return false;
 }
 
 export function defaultRichTextHitTestPoint(
   source: GraphNode<symbol, object>,
   x: number,
   y: number,
-  shapeFlag: boolean,
+  _shapeFlag: boolean,
 ): boolean {
-  // TODO
-  return defaultDisplayObjectHitTestPoint(source, x, y, shapeFlag);
+  return hitTestLocalBoundsRectangle(source, x, y);
 }
 
 export function defaultShapeHitTestPoint(
   source: GraphNode<symbol, object>,
   x: number,
   y: number,
-  shapeFlag: boolean,
+  _shapeFlag: boolean,
 ): boolean {
-  // TODO: Check actual shape geometry
-  return defaultDisplayObjectHitTestPoint(source, x, y, shapeFlag);
+  return hitTestLocalBoundsRectangle(source, x, y);
 }
 
 export function defaultSpriteBatchHitTestPoint(
@@ -84,30 +82,29 @@ export function defaultSpriteBatchHitTestPoint(
 }
 
 export function defaultStageHitTestPoint(
-  source: GraphNode<symbol, object>,
-  x: number,
-  y: number,
-  shapeFlag: boolean,
+  _source: GraphNode<symbol, object>,
+  _x: number,
+  _y: number,
+  _shapeFlag: boolean,
 ): boolean {
-  return defaultDisplayObjectHitTestPoint(source, x, y, shapeFlag);
+  // Containers have no self hit area — findHitTarget traverses children separately.
+  return false;
 }
 
 export function defaultTextHitTestPoint(
   source: GraphNode<symbol, object>,
   x: number,
   y: number,
-  shapeFlag: boolean,
+  _shapeFlag: boolean,
 ): boolean {
-  // TODO
-  return defaultDisplayObjectHitTestPoint(source, x, y, shapeFlag);
+  return hitTestLocalBoundsRectangle(source, x, y);
 }
 
 export function defaultVideoHitTestPoint(
   source: GraphNode<symbol, object>,
   x: number,
   y: number,
-  shapeFlag: boolean,
+  _shapeFlag: boolean,
 ): boolean {
-  // TODO
-  return defaultDisplayObjectHitTestPoint(source, x, y, shapeFlag);
+  return hitTestLocalBoundsRectangle(source, x, y);
 }
