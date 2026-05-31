@@ -42,8 +42,9 @@
     "test:api": "npm run test:api:node && npm run test:api:browser",
     "test:api:node": "vitest run tests/api",
     "test:api:browser": "vitest run tests/api/browser",
-    "test:size": "vitest run tests/size",
-    "test:size:baseline": "cross-env UPDATE_BASELINE=1 vitest run tests/size",
+    "test:size": "tsx ./scripts/test-size.ts",
+    "size": "npm run test:size",
+    "test:size:baseline": "cross-env UPDATE_BASELINE=1 tsx ./scripts/test-size.ts",
     "explorer": "npm run dev --workspace=tools/explorer"
   },
   "devDependencies": {
