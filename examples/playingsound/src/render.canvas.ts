@@ -20,7 +20,7 @@ document.body.appendChild(canvas);
 
 export const container = canvas;
 export const state = createCanvasRenderState(canvas, {
-  backgroundColor: 0xffffffff,
+  backgroundColor: 0xeeddccff,
   contextAttributes: { alpha: false },
 });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);

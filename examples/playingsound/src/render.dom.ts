@@ -17,7 +17,7 @@ element.style.height = `${window.innerHeight}px`;
 document.body.appendChild(element);
 
 export const container = element;
-export const state = createDOMRenderState(element, { backgroundColor: 0xffffffff });
+export const state = createDOMRenderState(element, { backgroundColor: 0xeeddccff });
 registerRenderer(state, ShapeKind, defaultDOMShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
 export const scale = 1;
