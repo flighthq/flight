@@ -7,7 +7,17 @@ import unicornPlugin from 'eslint-plugin-unicorn';
 
 export default [
   {
-    ignores: ['**/dist/**', '**/build/**', '**/coverage/**', '**/node_modules/**'],
+    ignores: [
+      '**/dist/**',
+      '**/build/**',
+      '**/coverage/**',
+      '**/node_modules/**',
+      '**/.git/**',
+      '**/.idea/**',
+      '**/.vscode/**',
+      '**/.claude/**',
+      '**/worktrees/**',
+    ],
   },
   {
     files: ['**/*.{ts,tsx}'],
@@ -72,7 +82,7 @@ export default [
       },
     },
 
-    ignores: ['dist', 'node_modules'],
+    ignores: ['dist', 'node_modules', '.git', '.idea', '.vscode', '.claude', 'worktrees'],
   },
 
   {
@@ -120,8 +130,8 @@ export default [
   },
 
   {
-    // examples and tools are allowed to import from the engine barrel
-    files: ['examples/**/*.{ts,tsx}', 'tools/**/*.{ts,tsx}'],
+    // examples, tools, and tests are allowed to import from the engine barrel
+    files: ['examples/**/*.{ts,tsx}', 'tools/**/*.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': 'off',
     },
