@@ -1,15 +1,17 @@
-import { resolve } from 'path';
 import { writeFileSync } from 'fs';
+import { resolve } from 'path';
 import pc from 'picocolors';
 import { afterAll, describe, expect, test } from 'vitest';
+
+import type {
+  SizeResult} from '../../scripts/size-runner.ts';
 import {
   buildSample,
   collectSizeCases,
   formatSizeResult,
   getGzipSize,
   parseFilter,
-  readBaseline,
-  SizeResult,
+  readBaseline
 } from '../../scripts/size-runner.ts';
 
 const baselineFile = resolve(__dirname, 'size.baseline.json');
