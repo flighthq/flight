@@ -14,7 +14,9 @@ describe('attachApplicationExit', () => {
   it('emits onExit on beforeunload', () => {
     const app = createApplication();
     let called = false;
-    connectSignal(app.onExit, () => { called = true; });
+    connectSignal(app.onExit, () => {
+      called = true;
+    });
 
     attachApplicationExit(app);
     window.dispatchEvent(new Event('beforeunload'));
@@ -85,7 +87,9 @@ describe('detachApplicationExit', () => {
   it('removes the listener', () => {
     const app = createApplication();
     let called = false;
-    connectSignal(app.onExit, () => { called = true; });
+    connectSignal(app.onExit, () => {
+      called = true;
+    });
 
     attachApplicationExit(app);
     detachApplicationExit(app);
@@ -103,7 +107,9 @@ describe('disposeApplication', () => {
 
     const app = createApplication();
     let exitCalled = false;
-    connectSignal(app.onExit, () => { exitCalled = true; });
+    connectSignal(app.onExit, () => {
+      exitCalled = true;
+    });
 
     startApplicationLoop(app);
     attachApplicationExit(app);
@@ -134,7 +140,10 @@ describe('startApplicationLoop', () => {
   it('replaces a previous loop when called again', () => {
     const caf = vi.fn();
     let rafId = 0;
-    vi.stubGlobal('requestAnimationFrame', vi.fn().mockImplementation(() => ++rafId));
+    vi.stubGlobal(
+      'requestAnimationFrame',
+      vi.fn().mockImplementation(() => ++rafId),
+    );
     vi.stubGlobal('cancelAnimationFrame', caf);
 
     const app = createApplication();
