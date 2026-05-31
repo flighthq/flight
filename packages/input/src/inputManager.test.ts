@@ -4,6 +4,7 @@ import { KeyCode, KeyModifier } from '@flighthq/types';
 import {
   attachKeyboardInput,
   attachPointerInput,
+  attachRelativePointerInput,
   attachTextInput,
   attachWheelInput,
   createInputManager,
@@ -86,6 +87,38 @@ describe('attachPointerInput', () => {
 
     detach();
     element.dispatchEvent(createPointerEvent('pointerdown'));
+    expect(fired).toBe(0);
+  });
+});
+
+describe('attachRelativePointerInput', () => {
+  it('emits onPointerMoveRelative with movement deltas from document mousemove', () => {
+    const manager = createInputManager();
+    const element = document.createElement('div');
+    attachRelativePointerInput(manager, element);
+
+    let receivedDeltaX = 0;
+    let receivedDeltaY = 0;
+    connectSignal(manager.onPointerMoveRelative, (data) => {
+      receivedDeltaX = data.deltaX;
+      receivedDeltaY = data.deltaY;
+    });
+
+    element.ownerDocument.dispatchEvent(new MouseEvent('mousemove', { movementX: 5, movementY: -3 }));
+    expect(receivedDeltaX).toBe(5);
+    expect(receivedDeltaY).toBe(-3);
+  });
+
+  it('returns a cleanup that removes the listener', () => {
+    const manager = createInputManager();
+    const element = document.createElement('div');
+    const detach = attachRelativePointerInput(manager, element);
+
+    let fired = 0;
+    connectSignal(manager.onPointerMoveRelative, () => fired++);
+
+    detach();
+    element.ownerDocument.dispatchEvent(new MouseEvent('mousemove'));
     expect(fired).toBe(0);
   });
 });
