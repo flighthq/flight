@@ -18,15 +18,38 @@ const BASELINE_ALLOWANCE = 1.05;
 const RENDERERS = ['dom', 'canvas', 'webgl'] as const;
 const examplesDir = resolve(__dirname, '../../examples');
 
+const sizeExampleFilter = parseFilter(process.env.SIZE_EXAMPLE_FILTER);
+const sizeRenderFilter = parseFilter(process.env.SIZE_RENDER_FILTER);
+
 const testCases = readdirSync(examplesDir, { withFileTypes: true })
   .filter((d) => d.isDirectory() && existsSync(resolve(examplesDir, d.name, 'package.json')))
   .sort((a, b) => a.name.localeCompare(b.name))
   .flatMap(({ name }) =>
-    RENDERERS.filter((r) => existsSync(resolve(examplesDir, name, `src/render.${r}.ts`))).map((render) => ({
-      name,
-      render,
-    })),
+    RENDERERS.filter((render) => existsSync(resolve(examplesDir, name, `src/render.${render}.ts`)))
+      .map((render) => ({ name, render }))
+      .filter((tc) => matchesExampleFilter(tc.name) && matchesRenderFilter(tc.render)),
   );
+
+function parseFilter(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => item.toLowerCase());
+}
+
+function matchesExampleFilter(exampleName: string): boolean {
+  if (sizeExampleFilter.length === 0) return true;
+  const normalized = exampleName.toLowerCase();
+  return sizeExampleFilter.some((query) => normalized.includes(query));
+}
+
+function matchesRenderFilter(render: string): boolean {
+  if (sizeRenderFilter.length === 0) return true;
+  const normalized = render.toLowerCase();
+  return sizeRenderFilter.some((query) => normalized.includes(query));
+}
 
 interface SizeResult {
   name: string;
