@@ -3,6 +3,7 @@ export * from '@flighthq/assets';
 export * from '@flighthq/entity';
 export * from '@flighthq/geometry';
 export * from '@flighthq/image-cache';
+export * from '@flighthq/input';
 export * from '@flighthq/interaction';
 export * from '@flighthq/materials';
 export * from '@flighthq/render-canvas';

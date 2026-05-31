@@ -38,6 +38,7 @@ This document should stay useful, not ornamental. Prefer making architecture and
 
 - `npm run fix` runs all auto-fixers in sequence: `lint:fix`, `order:fix`, then `format`. Run this after any edit session before committing.
 - `npm run api` prints compact exported function signatures for all packages.
+- `npm run api <query>` filters packages and exported functions by the given query. Example: `npm run api application` or `npm run api --function register`.
 - `npm run api:json` prints the same API data as JSON for tools and agents.
 - `npm run check` is the default non-fixing quality sweep for agents and contributors. It runs `validate`, `coverage`, and the non-failing `order` report.
 - `npm run check:strict` runs the same sweep with `order:check` in failing mode. Use this for cleaned-up areas or future CI ratcheting.

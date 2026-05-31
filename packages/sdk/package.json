@@ -32,6 +32,7 @@
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image-cache": "*",
+    "@flighthq/input": "*",
     "@flighthq/materials": "*",
     "@flighthq/render-canvas": "*",
     "@flighthq/render-core": "*",
