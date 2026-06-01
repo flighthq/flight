@@ -29,6 +29,10 @@
       "types": "./dist/canvasDisplayObject.d.ts",
       "default": "./dist/canvasDisplayObject.js"
     },
+    "./inputText": {
+      "types": "./dist/canvasInputText.d.ts",
+      "default": "./dist/canvasInputText.js"
+    },
     "./mask": {
       "types": "./dist/canvasMask.d.ts",
       "default": "./dist/canvasMask.js"
@@ -71,6 +75,7 @@
     "@flighthq/geometry": "*",
     "@flighthq/render-core": "*",
     "@flighthq/scenegraph-display": "*",
+    "@flighthq/text-input": "*",
     "@flighthq/text-layout": "*",
     "@flighthq/types": "*"
   },

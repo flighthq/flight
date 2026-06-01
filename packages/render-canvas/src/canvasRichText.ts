@@ -1,11 +1,24 @@
 import { createNullRendererData } from '@flighthq/render-core';
-import { createTextFormatRange, createTextLayoutResult, layoutText, mergeTextFormat } from '@flighthq/text-layout';
+import { getRichTextRuntime } from '@flighthq/scenegraph-display';
+import {
+  getRichTextContent,
+  getRichTextFieldHeight,
+  getRichTextFieldWidth,
+  getRichTextScrollYOffset,
+  getRichTextSelectionRectangles,
+  getTextLayoutResult,
+  layoutText,
+  resolveRichTextContent,
+} from '@flighthq/text-layout';
+import type { InputTextSelectionRectangle } from '@flighthq/types';
 import type {
   CanvasRenderState,
   DisplayObjectRenderer,
   DisplayObjectRenderNode,
   RichText,
+  RichTextRuntime,
   TextFormat,
+  TextRuntime,
 } from '@flighthq/types';
 
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
@@ -13,22 +26,38 @@ import { setCanvasBlendMode } from './canvasMaterials';
 import { colorToHex, formatToCanvasFont } from './canvasTextHelpers';
 import { setCanvasTransform } from './canvasTransform';
 
-const _richTextLayout = createTextLayoutResult();
-
 export function drawCanvasRichText(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
   drawCanvasDisplayObject(state, renderNode);
 
   const source = renderNode.source as RichText;
   const data = source.data;
-  const { text } = data;
-
   const context = state.context;
   setCanvasBlendMode(state, renderNode.blendMode);
   context.globalAlpha = renderNode.alpha;
   setCanvasTransform(state, context, renderNode.transform2D);
 
-  const fieldW = data.width;
-  const fieldH = data.height;
+  const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
+  const content = getRichTextContent(richTextRuntime);
+  resolveRichTextContent(content, data);
+  const { text } = content;
+
+  const measure = (t: string, fmt: TextFormat): number => {
+    context.font = formatToCanvasFont(fmt);
+    return context.measureText(t).width;
+  };
+
+  const result = getTextLayoutResult(richTextRuntime as TextRuntime);
+  layoutText(result, {
+    text,
+    formatRanges: content.formatRanges,
+    width: data.wordWrap ? data.width : 10000,
+    height: data.height,
+    measure,
+    multiline: data.multiline,
+    wordWrap: data.wordWrap,
+  });
+  const fieldW = getRichTextFieldWidth(data, result);
+  const fieldH = getRichTextFieldHeight(data, result);
 
   if (data.background) {
     context.fillStyle = colorToHex(data.backgroundColor);
@@ -43,28 +72,9 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
 
   if (text.length === 0) return;
 
-  const format: TextFormat = mergeTextFormat(data.defaultTextFormat, data.textFormat);
-  if (format.color === undefined) format.color = data.textColor;
-
-  const measure = (t: string, fmt: TextFormat): number => {
-    context.font = formatToCanvasFont(fmt);
-    return context.measureText(t).width;
-  };
-
-  layoutText(_richTextLayout, {
-    text,
-    formatRanges: [createTextFormatRange(format, 0, text.length)],
-    width: data.wordWrap ? fieldW : 10000,
-    height: fieldH,
-    measure,
-    multiline: data.multiline,
-    wordWrap: data.wordWrap,
-  });
-  const result = _richTextLayout;
-
   // scrollV is 1-based: first visible line index = scrollV - 1
   const firstVisibleLine = data.scrollV - 1;
-  const scrollYOffset = firstVisibleLine > 0 ? computeScrollYOffset(result.lineHeights, firstVisibleLine) : 0;
+  const scrollYOffset = firstVisibleLine > 0 ? getRichTextScrollYOffset(result.lineHeights, firstVisibleLine) : 0;
   const scrollXOffset = data.scrollH;
 
   context.save();
@@ -72,9 +82,20 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
   context.rect(0, 0, fieldW, fieldH);
   context.clip();
 
+  if (source.data.selectable && richTextRuntime.selectionBeginIndex !== richTextRuntime.selectionEndIndex) {
+    getRichTextSelectionRectangles(_richTextSelectionRects, richTextRuntime.selectionBeginIndex, richTextRuntime.selectionEndIndex, result);
+    context.fillStyle = SELECTION_COLOR;
+    context.globalAlpha = Math.min(1, renderNode.alpha * SELECTION_ALPHA);
+    for (const rect of _richTextSelectionRects) {
+      context.fillRect(rect.x - scrollXOffset, rect.y - scrollYOffset, rect.width, rect.height);
+    }
+    context.globalAlpha = renderNode.alpha;
+  }
+
   context.textBaseline = 'alphabetic';
   context.textAlign = 'start';
 
+  const bulletLines = new Set<number>();
   for (const group of result.groups) {
     if (group.lineIndex < firstVisibleLine) continue;
 
@@ -83,32 +104,47 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
     const slice = text.substring(group.startIndex, group.endIndex);
     const x = group.offsetX - scrollXOffset;
     const y = group.offsetY + group.ascent - scrollYOffset;
+
+    if (group.format.bullet && !bulletLines.has(group.lineIndex)) {
+      bulletLines.add(group.lineIndex);
+      const bulletW = context.measureText(BULLET_CHAR).width;
+      context.fillText(BULLET_CHAR, x - bulletW - BULLET_GAP, y);
+    }
+
     context.fillText(slice, x, y);
 
-    if (group.format.underline) {
-      const lineY = y + group.descent;
-      context.strokeStyle = colorToHex(group.format.color ?? data.textColor);
-      context.lineWidth = Math.max(1, (group.format.size ?? 12) / 16);
-      context.beginPath();
-      context.moveTo(x, lineY);
-      context.lineTo(x + group.width, lineY);
-      context.stroke();
+    const lineColor = colorToHex(group.format.color ?? data.textColor);
+    const lineWidth = Math.max(1, (group.format.size ?? 12) / 16);
+    if (group.format.underline || group.format.strikethrough) {
+      context.strokeStyle = lineColor;
+      context.lineWidth = lineWidth;
+      if (group.format.underline) {
+        context.beginPath();
+        context.moveTo(x, y + group.descent);
+        context.lineTo(x + group.width, y + group.descent);
+        context.stroke();
+      }
+      if (group.format.strikethrough) {
+        context.beginPath();
+        context.moveTo(x, y - group.ascent * 0.35);
+        context.lineTo(x + group.width, y - group.ascent * 0.35);
+        context.stroke();
+      }
     }
   }
 
   context.restore();
 }
 
-function computeScrollYOffset(lineHeights: readonly number[], firstVisibleLine: number): number {
-  let offset = 0;
-  const limit = Math.min(firstVisibleLine, lineHeights.length);
-  for (let i = 0; i < limit; i++) offset += lineHeights[i];
-  return offset;
-}
-
 export function drawCanvasRichTextMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
   drawCanvasDisplayObject(state, data);
 }
+
+const BULLET_CHAR = '•';
+const BULLET_GAP = 4;
+const SELECTION_ALPHA = 0.35;
+const SELECTION_COLOR = '#0078d7';
+const _richTextSelectionRects: InputTextSelectionRectangle[] = [];
 
 export const defaultCanvasRichTextRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,

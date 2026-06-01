@@ -1,11 +1,13 @@
 import { createNullRendererData } from '@flighthq/render-core';
-import { createTextFormatRange, createTextLayoutResult, layoutText } from '@flighthq/text-layout';
+import { getTextRuntime } from '@flighthq/scenegraph-display';
+import { createTextFormatRange, getTextLayoutResult, layoutText } from '@flighthq/text-layout';
 import type {
   CanvasRenderState,
   DisplayObjectRenderer,
   DisplayObjectRenderNode,
   Text,
   TextFormat,
+  TextRuntime,
 } from '@flighthq/types';
 
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
@@ -14,7 +16,6 @@ import { colorToHex, formatToCanvasFont } from './canvasTextHelpers';
 import { setCanvasTransform } from './canvasTransform';
 
 const LAYOUT_WIDTH = 10000;
-const _textLayout = createTextLayoutResult();
 
 export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
   drawCanvasDisplayObject(state, renderNode);
@@ -33,14 +34,14 @@ export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObje
     return context.measureText(t).width;
   };
 
-  layoutText(_textLayout, {
+  const result = getTextLayoutResult(getTextRuntime(source) as TextRuntime);
+  layoutText(result, {
     text,
     formatRanges: [createTextFormatRange(textFormat, 0, text.length)],
     width: LAYOUT_WIDTH,
     height: LAYOUT_WIDTH,
     measure,
   });
-  const result = _textLayout;
 
   context.textBaseline = 'alphabetic';
   context.textAlign = 'start';
