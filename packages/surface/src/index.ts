@@ -3,6 +3,7 @@ export * from './copy';
 export * from './draw';
 export * from './encode';
 export * from './fill';
+export * from './filter';
 export * from './imageChannel';
 export * from './pixel';
 export * from './query';
