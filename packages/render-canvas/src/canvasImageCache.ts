@@ -1,3 +1,4 @@
+import { createImageSourceFromCanvas } from '@flighthq/assets';
 import { createMatrix, createRectangle, identityMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry';
 import { computeBoundsRectangle, getLocalTransformMatrix } from '@flighthq/scenegraph-core';
 import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
@@ -33,13 +34,24 @@ export function endCanvasDisplayObjectImageCache(cacheState: CanvasRenderState, 
   const internal = cacheState as CanvasRenderStateInternal;
   internal.skipImageCache = false;
 
+  const canvas = internal.canvas;
+  let imageSource = internal.imageCacheSource;
+  if (imageSource === null) {
+    imageSource = createImageSourceFromCanvas(canvas);
+    internal.imageCacheSource = imageSource;
+  } else {
+    imageSource.width = canvas.width;
+    imageSource.height = canvas.height;
+    imageSource.version = (imageSource.version + 1) >>> 0;
+  }
+
   const runtime = getDisplayObjectRuntime(source) as DisplayObjectRuntime;
   const transform = runtime.imageCache?.transform ?? createMatrix();
   identityMatrix(transform);
   transform.tx = internal.imageCacheBoundsX;
   transform.ty = internal.imageCacheBoundsY;
 
-  runtime.imageCache = { canvas: internal.canvas, transform };
+  runtime.imageCache = { source: imageSource, transform };
 }
 
 const _tempBounds = createRectangle();

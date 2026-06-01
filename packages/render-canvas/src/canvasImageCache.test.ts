@@ -73,7 +73,7 @@ describe('endCanvasDisplayObjectImageCache', () => {
     expect((cacheState as CanvasRenderStateInternal).skipImageCache).toBe(false);
   });
 
-  it('sets imageCache on the source with the cache canvas', () => {
+  it('sets imageCache on the source with an ImageSource backed by the cache canvas', () => {
     const cacheState = makeCacheState();
     const source = createDisplayObject();
     setRectangle(getLocalBoundsRectangle(source), 0, 0, 32, 32);
@@ -83,7 +83,8 @@ describe('endCanvasDisplayObjectImageCache', () => {
 
     const cache = getImageCache(source);
     expect(cache).not.toBeNull();
-    expect(cache!.canvas).toBe((cacheState as CanvasRenderStateInternal).canvas);
+    expect(cache!.source).not.toBeNull();
+    expect(cache!.source!.src).toBe((cacheState as CanvasRenderStateInternal).canvas);
   });
 
   it('sets cache transform with bounds offset', () => {

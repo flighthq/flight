@@ -92,12 +92,15 @@ describe('renderCanvasDisplayObject', () => {
     expect(drawImageSpy).not.toHaveBeenCalled();
   });
 
-  it('draws from imageCache slot when canvas is set', () => {
+  it('draws from imageCache slot when source is set', () => {
     const state = makeState();
     const obj = createDisplayObject();
+    const canvas = document.createElement('canvas');
+    canvas.width = 50;
+    canvas.height = 50;
     const runtime = getDisplayObjectRuntime(obj) as ReturnType<typeof getDisplayObjectRuntime>;
     (runtime as { imageCache: ImageCacheResult | null }).imageCache = {
-      canvas: document.createElement('canvas'),
+      source: { src: canvas, width: canvas.width, height: canvas.height, version: 0 } as any,
       transform: createMatrix(),
     };
 
@@ -111,9 +114,12 @@ describe('renderCanvasDisplayObject', () => {
     const state = makeState();
     const parent = createDisplayObject();
     const child = createDisplayObject();
+    const canvas = document.createElement('canvas');
+    canvas.width = 50;
+    canvas.height = 50;
     const childRuntime = getDisplayObjectRuntime(child);
     (childRuntime as { imageCache: ImageCacheResult | null }).imageCache = {
-      canvas: document.createElement('canvas'),
+      source: { src: canvas, width: canvas.width, height: canvas.height, version: 0 } as any,
       transform: createMatrix(),
     };
     addGraphChild(parent, child);
