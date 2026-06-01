@@ -591,6 +591,11 @@ function createInputPointerData(x: number, y: number): InputPointerData {
 
 function createInputSource(): InputSignals {
   return {
+    onGamepadAxisMove: createSignal(),
+    onGamepadButtonDown: createSignal(),
+    onGamepadButtonUp: createSignal(),
+    onGamepadConnect: createSignal(),
+    onGamepadDisconnect: createSignal(),
     onKeyDown: createSignal(),
     onKeyUp: createSignal(),
     onPointerCancel: createSignal(),
