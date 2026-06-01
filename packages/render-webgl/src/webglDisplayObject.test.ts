@@ -1,5 +1,10 @@
 import { createMatrix } from '@flighthq/geometry';
-import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { setImageCache } from '@flighthq/image-cache';
+import {
+  getOrCreateDisplayObjectRenderNode,
+  registerRenderer,
+  updateDisplayObjectBeforeRender,
+} from '@flighthq/render-core';
 import { addGraphChild } from '@flighthq/scenegraph-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { WebGLRenderState } from '@flighthq/types';
@@ -89,6 +94,23 @@ describe('renderWebGLDisplayObject', () => {
 
     renderWebGLDisplayObject(state, obj);
 
+    expect(renderer.draw).not.toHaveBeenCalled();
+  });
+
+  it('uses image cache when source is set, skipping renderer.draw', () => {
+    const state = makeState();
+    const renderer = makeRenderer();
+    registerRenderer(state, DisplayObjectKind, renderer);
+
+    const obj = createDisplayObject();
+    const offscreen = document.createElement('canvas');
+    offscreen.width = 32;
+    offscreen.height = 32;
+    const imageSource = { src: offscreen, width: 32, height: 32, version: 0 } as any;
+    setImageCache(obj, { source: imageSource, transform: createMatrix() });
+
+    updateDisplayObjectBeforeRender(state, obj);
+    expect(() => renderWebGLDisplayObject(state, obj)).not.toThrow();
     expect(renderer.draw).not.toHaveBeenCalled();
   });
 
