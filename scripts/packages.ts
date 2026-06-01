@@ -36,6 +36,11 @@ interface TsConfigBuild {
   references?: { path: string }[];
 }
 
+interface CheckError {
+  label: string;
+  detail?: string;
+}
+
 function stripJsonComments(text: string): string {
   let result = '';
   let i = 0;
@@ -75,12 +80,8 @@ function readJson<T>(path: string): T | null {
   }
 }
 
-function check(label: string, ok: boolean, detail?: string): boolean {
-  if (ok) {
-    console.log(`  ${pc.green('✓')} ${label}`);
-  } else {
-    console.log(`  ${pc.red('✗')} ${label}${detail ? pc.dim(` — ${detail}`) : ''}`);
-  }
+function check(errors: CheckError[], label: string, ok: boolean, detail?: string): boolean {
+  if (!ok) errors.push({ label, detail });
   return ok;
 }
 
@@ -109,8 +110,7 @@ function getSourcePathForDistTarget(pkgDir: string, target: string): string | nu
   return join(pkgDir, 'src', sourceRel);
 }
 
-function checkPackageTargetPaths(pkgDir: string, targets: Iterable<string>): number {
-  let errors = 0;
+function checkPackageTargetPaths(errors: CheckError[], pkgDir: string, targets: Iterable<string>): void {
   const checkedSourcePaths = new Set<string>();
 
   for (const target of targets) {
@@ -119,12 +119,13 @@ function checkPackageTargetPaths(pkgDir: string, targets: Iterable<string>): num
     if (checkedSourcePaths.has(sourcePath)) continue;
     checkedSourcePaths.add(sourcePath);
 
-    const ok = existsSync(sourcePath);
-    if (!check(`${sourcePath.replace(pkgDir + '\\', '')} exists for package target`, ok, `referenced by ${target}`))
-      errors++;
+    check(
+      errors,
+      `${sourcePath.replace(pkgDir + '\\', '')} exists for package target`,
+      existsSync(sourcePath),
+      `referenced by ${target}`,
+    );
   }
-
-  return errors;
 }
 
 function getSourceFiles(dir: string): string[] {
@@ -158,7 +159,6 @@ function skipOuterExpressions(expression: ts.Expression): ts.Expression {
       e = (e as unknown as { expression: ts.Expression }).expression;
       continue;
     }
-    // Type assertion (e.g., <T>expr)
     if (e.kind === ts.SyntaxKind.TypeAssertionExpression) {
       e = (e as unknown as { expression: ts.Expression }).expression;
       continue;
@@ -183,8 +183,7 @@ function isTopLevelSideEffectStatement(statement: ts.Statement): boolean {
   );
 }
 
-function checkNoTopLevelSideEffects(pkgDir: string): number {
-  let errors = 0;
+function checkNoTopLevelSideEffects(errors: CheckError[], pkgDir: string): void {
   const sideEffects: string[] = [];
 
   for (const sourcePath of getSourceFiles(join(pkgDir, 'src'))) {
@@ -197,9 +196,7 @@ function checkNoTopLevelSideEffects(pkgDir: string): number {
     }
   }
 
-  const ok = sideEffects.length === 0;
-  if (!check('no top-level executable side effects in src modules', ok, sideEffects.join(', '))) errors++;
-  return errors;
+  check(errors, 'no top-level side effects in src modules', sideEffects.length === 0, sideEffects.join(', '));
 }
 
 // --- load tsconfig.base.json paths ---
@@ -232,113 +229,85 @@ const expectedCleanScript = 'tsc -b --clean';
 const expectedCleanDistScript = 'tsx ../../scripts/clean-package-dist.ts';
 const expectedPrepackScript = 'npm run clean && npm run clean:dist && npm run build';
 
-let totalErrors = 0;
+// --- check each package ---
+
+interface PackageResult {
+  name: string;
+  errors: CheckError[];
+}
+
+const results: PackageResult[] = [];
 
 for (const pkgDir of packageDirs) {
-  const pkgJsonPath = join(pkgDir, 'package.json');
-  const pkg = readJson<PackageJson>(pkgJsonPath);
+  const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'));
 
-  if (!pkg || !pkg.name) {
-    console.log(pc.yellow(`\nskip ${pkgDir} — no package.json or missing name`));
-    continue;
-  }
+  if (!pkg?.name) continue;
 
   const name = pkg.name;
-  console.log(`\n${pc.bold(name)}`);
+  const errors: CheckError[] = [];
 
-  let errors = 0;
-
-  // required files
-  const requiredFiles = ['vitest.config.ts', 'tsconfig.json', 'src/index.ts'];
-  for (const rel of requiredFiles) {
-    const ok = existsSync(join(pkgDir, rel));
-    if (!check(rel, ok, `missing ${join(pkgDir, rel)}`)) errors++;
+  for (const rel of ['vitest.config.ts', 'tsconfig.json', 'src/index.ts']) {
+    check(errors, `${rel} exists`, existsSync(join(pkgDir, rel)));
   }
 
-  const sideEffectsOk = check(
-    'sideEffects is false',
-    pkg.sideEffects === false,
-    `got ${JSON.stringify(pkg.sideEffects)}`,
-  );
-  if (!sideEffectsOk) errors++;
-  errors += checkNoTopLevelSideEffects(pkgDir);
+  check(errors, 'sideEffects is false', pkg.sideEffects === false, `got ${JSON.stringify(pkg.sideEffects)}`);
+  checkNoTopLevelSideEffects(errors, pkgDir);
 
-  const filesOk = check(
-    'package files include dist, source tests, and exclude compiled tests',
+  check(
+    errors,
+    'files field is correct',
     JSON.stringify(pkg.files ?? []) === JSON.stringify(expectedPackageFiles),
     `got ${JSON.stringify(pkg.files)}`,
   );
-  if (!filesOk) errors++;
 
-  const prepackOk = check(
-    'prepack cleans and builds package',
-    pkg.scripts?.prepack === expectedPrepackScript,
-    `got ${JSON.stringify(pkg.scripts?.prepack)}`,
-  );
-  if (!prepackOk) errors++;
+  check(errors, 'prepack script', pkg.scripts?.prepack === expectedPrepackScript, `got ${JSON.stringify(pkg.scripts?.prepack)}`);
+  check(errors, 'clean script', pkg.scripts?.clean === expectedCleanScript, `got ${JSON.stringify(pkg.scripts?.clean)}`);
+  check(errors, 'clean:dist script', pkg.scripts?.['clean:dist'] === expectedCleanDistScript, `got ${JSON.stringify(pkg.scripts?.['clean:dist'])}`);
 
-  const cleanOk = check(
-    'clean runs TypeScript project clean',
-    pkg.scripts?.clean === expectedCleanScript,
-    `got ${JSON.stringify(pkg.scripts?.clean)}`,
-  );
-  if (!cleanOk) errors++;
+  check(errors, `${name} in tsconfig.base.json paths`, name in tsconfigPaths);
+  check(errors, `${name}/* in tsconfig.base.json paths`, `${name}/*` in tsconfigPaths);
 
-  const cleanDistOk = check(
-    'clean:dist removes package dist output',
-    pkg.scripts?.['clean:dist'] === expectedCleanDistScript,
-    `got ${JSON.stringify(pkg.scripts?.['clean:dist'])}`,
-  );
-  if (!cleanDistOk) errors++;
-
-  // tsconfig.base.json paths entries
-  const pathKey = name;
-  const pathWildKey = `${name}/*`;
-  const hasPath = check(`${pathKey} in tsconfig.base.json paths`, pathKey in tsconfigPaths);
-  const hasWildPath = check(`${pathWildKey} in tsconfig.base.json paths`, pathWildKey in tsconfigPaths);
-  if (!hasPath) errors++;
-  if (!hasWildPath) errors++;
-
-  // tsconfig.build.json references
   const dirName = pkgDir.split(/[\\/]/).at(-1)!;
-  const inBuild = check(`${dirName} in tsconfig.build.json references`, buildRefs.has(dirName));
-  if (!inBuild) errors++;
+  check(errors, `${dirName} in tsconfig.build.json references`, buildRefs.has(dirName));
 
-  // workspace dependency version convention
   const allDeps: Record<string, string> = {
     ...pkg.dependencies,
     ...pkg.peerDependencies,
     ...pkg.devDependencies,
   };
   for (const [dep, version] of Object.entries(allDeps)) {
-    if (!dep.startsWith('@flighthq/')) continue;
-    const ok = version === '*';
-    if (!check(`${dep} uses "*"`, ok, `got "${version}"`)) errors++;
+    if (dep.startsWith('@flighthq/')) {
+      check(errors, `${dep} uses "*"`, version === '*', `got "${version}"`);
+    }
   }
 
-  // exports / main (optional warning, not an error)
-  const hasExports = pkg.exports !== undefined || pkg.main !== undefined || pkg.module !== undefined;
-  if (!hasExports) {
-    console.log(`  ${pc.dim('·')} ${pc.dim('no exports/main/module (optional)')}`);
-  }
-
-  // package entry target paths
   const packageTargets = new Set<string>();
   if (pkg.main) packageTargets.add(pkg.main);
   if (pkg.module) packageTargets.add(pkg.module);
   if (pkg.types) packageTargets.add(pkg.types);
   collectPackageTargetPaths(pkg.exports, packageTargets);
-  errors += checkPackageTargetPaths(pkgDir, packageTargets);
+  checkPackageTargetPaths(errors, pkgDir, packageTargets);
 
-  totalErrors += errors;
+  results.push({ name, errors });
 }
 
-console.log('');
+// --- report ---
+
+const failed = results.filter((r) => r.errors.length > 0);
+const totalErrors = failed.reduce((n, r) => n + r.errors.length, 0);
+
+for (const { name, errors } of failed) {
+  console.log(`\n${pc.bold(name)}`);
+  for (const { label, detail } of errors) {
+    console.log(`  ${pc.red('✗')} ${label}${detail ? pc.dim(` — ${detail}`) : ''}`);
+  }
+}
 
 if (totalErrors === 0) {
-  console.log(pc.green(`✓ All packages valid`));
+  console.log(pc.green(`✓ ${results.length} packages valid`));
   process.exit(0);
 } else {
-  console.log(pc.red(`✗ ${totalErrors} error${totalErrors === 1 ? '' : 's'} found`));
+  console.log('');
+  console.log(pc.red(`✗ ${totalErrors} error${totalErrors === 1 ? '' : 's'} across ${failed.length} package${failed.length === 1 ? '' : 's'}`));
   process.exit(1);
 }
