@@ -1,5 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
-import type { GraphNode, Rectangle, Sprite, TextureAtlas } from '@flighthq/types';
+import type { GraphNode, Rectangle, Sprite, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
 import { SpriteKind } from '@flighthq/types';
 
 import {
@@ -11,14 +11,74 @@ import {
 } from './sprite';
 
 describe('computeSpriteLocalBoundsRectangle', () => {
-  it('is a no-op that does not modify out', () => {
+  it('does not modify out when no atlas or rect is set', () => {
     const sprite = createSprite();
-    const out = createRectangle(1, 2, 3, 4);
+    const out = createRectangle(0, 0, 0, 0);
     computeSpriteLocalBoundsRectangle(out, sprite as unknown as GraphNode);
-    expect(out.x).toBe(1);
-    expect(out.y).toBe(2);
-    expect(out.width).toBe(3);
-    expect(out.height).toBe(4);
+    expect(out.width).toBe(0);
+    expect(out.height).toBe(0);
+  });
+
+  it('uses rect dimensions when rect is set', () => {
+    const sprite = createSprite({ data: { rect: createRectangle(0, 0, 64, 48) } });
+    const out = createRectangle();
+    computeSpriteLocalBoundsRectangle(out, sprite as unknown as GraphNode);
+    expect(out.width).toBe(64);
+    expect(out.height).toBe(48);
+  });
+
+  it('prefers rect over atlas when both are set', () => {
+    const region: TextureAtlasRegion = {
+      id: 1,
+      x: 0,
+      y: 0,
+      width: 32,
+      height: 32,
+      pivotX: null,
+      pivotY: null,
+    } as TextureAtlasRegion;
+    const atlas: TextureAtlas = { image: null, regions: [region] } as TextureAtlas;
+    const sprite = createSprite({ data: { atlas, id: 1, rect: createRectangle(0, 0, 64, 48) } });
+    const out = createRectangle();
+    computeSpriteLocalBoundsRectangle(out, sprite as unknown as GraphNode);
+    expect(out.width).toBe(64);
+    expect(out.height).toBe(48);
+  });
+
+  it('uses atlas region dimensions when atlas is set', () => {
+    const region: TextureAtlasRegion = {
+      id: 3,
+      x: 10,
+      y: 20,
+      width: 128,
+      height: 96,
+      pivotX: null,
+      pivotY: null,
+    } as TextureAtlasRegion;
+    const atlas: TextureAtlas = { image: null, regions: [region] } as TextureAtlas;
+    const sprite = createSprite({ data: { atlas, id: 3 } });
+    const out = createRectangle();
+    computeSpriteLocalBoundsRectangle(out, sprite as unknown as GraphNode);
+    expect(out.width).toBe(128);
+    expect(out.height).toBe(96);
+  });
+
+  it('does not modify out when atlas region id is not found', () => {
+    const region: TextureAtlasRegion = {
+      id: 5,
+      x: 0,
+      y: 0,
+      width: 32,
+      height: 32,
+      pivotX: null,
+      pivotY: null,
+    } as TextureAtlasRegion;
+    const atlas: TextureAtlas = { image: null, regions: [region] } as TextureAtlas;
+    const sprite = createSprite({ data: { atlas, id: 99 } });
+    const out = createRectangle(0, 0, 0, 0);
+    computeSpriteLocalBoundsRectangle(out, sprite as unknown as GraphNode);
+    expect(out.width).toBe(0);
+    expect(out.height).toBe(0);
   });
 });
 

@@ -3,8 +3,20 @@ import { SpriteKind } from '@flighthq/types';
 
 import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
 
-export function computeSpriteLocalBoundsRectangle(_out: Rectangle, _source: Readonly<GraphNode>): void {
-  // TODO: Get width/height from spritesheet reference
+export function computeSpriteLocalBoundsRectangle(out: Rectangle, source: Readonly<GraphNode>): void {
+  const data = (source as Sprite).data;
+  if (data.rect !== null) {
+    out.width = data.rect.width;
+    out.height = data.rect.height;
+    return;
+  }
+  if (data.atlas !== null) {
+    const region = data.atlas.regions.find((r) => r.id === data.id);
+    if (region !== undefined) {
+      out.width = region.width;
+      out.height = region.height;
+    }
+  }
 }
 
 export function createSprite(obj?: Readonly<PartialNode<Sprite>>): Sprite {
