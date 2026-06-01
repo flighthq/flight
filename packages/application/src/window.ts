@@ -185,7 +185,7 @@ export function exitFullscreen(): Promise<void> {
   return document.exitFullscreen();
 }
 
-export function hardenElement(element: HTMLElement): void {
+export function lockElement(element: HTMLElement): void {
   element.style.touchAction = 'none';
   element.style.userSelect = 'none';
   element.style.webkitUserSelect = 'none';

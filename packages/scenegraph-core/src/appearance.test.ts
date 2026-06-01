@@ -10,11 +10,11 @@ import {
   setAppearanceVisible,
 } from './appearance';
 import { createGraphNode } from './graphNode';
-import { initHasAppearance } from './hasAppearance';
+import { initAppearanceTrait } from './hasAppearance';
 
 function createTestNode(): TestNode {
   const node = createGraphNode(TestKind, TestKind) as TestNode;
-  initHasAppearance(node);
+  initAppearanceTrait(node);
   return node;
 }
 

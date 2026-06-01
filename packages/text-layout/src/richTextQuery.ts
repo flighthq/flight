@@ -37,14 +37,24 @@ export function getRichTextCharIndexAtPoint(
 
   let closestLineIndex = 0;
   let closestDist = Infinity;
+  let closestLineBottom = 0;
   for (let i = 0; i < layout.lineHeights.length; i++) {
     const lineTop = getLineOffsetY(layout, i);
-    const lineBottom = lineTop + layout.lineHeights[i];
+    const lineBottom = lineTop + (layout.lineHeights[i] ?? 0);
     const dist = y < lineTop ? lineTop - y : y > lineBottom ? y - lineBottom : 0;
     if (dist < closestDist) {
       closestDist = dist;
       closestLineIndex = i;
+      closestLineBottom = lineBottom;
     }
+  }
+
+  if (y > closestLineBottom) {
+    let lineEnd = 0;
+    for (const group of layout.groups) {
+      if (group.lineIndex === closestLineIndex) lineEnd = Math.max(lineEnd, group.endIndex);
+    }
+    return lineEnd;
   }
 
   let lineStart = text.length;
@@ -58,7 +68,7 @@ export function getRichTextCharIndexAtPoint(
       let gx = group.offsetX;
       for (let i = 0; i < group.positions.length; i++) {
         const advance = group.positions[i] ?? 0;
-        if (x < gx + advance / 2) return group.startIndex + i;
+        if (x <= gx + advance / 2) return group.startIndex + i;
         gx += advance;
       }
       return group.endIndex;
@@ -209,7 +219,7 @@ function getGroupContainingIndex(layout: Readonly<TextLayoutResult>, charIndex: 
   for (const group of layout.groups) {
     if (charIndex >= group.startIndex && charIndex < group.endIndex) return group;
   }
-  return layout.groups[layout.groups.length - 1] ?? null;
+  return null;
 }
 
 function getLineOffsetY(layout: Readonly<TextLayoutResult>, lineIndex: number): number {

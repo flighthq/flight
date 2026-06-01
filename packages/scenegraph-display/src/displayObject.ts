@@ -2,11 +2,11 @@ import {
   createGraphNode,
   createGraphNodeRuntime,
   getGraphNodeRuntime,
-  initHasAppearance,
-  initHasBoundsRectangle,
-  initHasBoundsRectangleRuntime,
-  initHasTransform,
-  initHasTransformRuntime,
+  initAppearanceTrait,
+  initBoundsRectRuntimeTrait,
+  initBoundsRectTrait,
+  initTransformRuntimeTrait,
+  initTransformTrait,
   invalidateAppearance,
 } from '@flighthq/scenegraph-core';
 import type {
@@ -43,9 +43,9 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
     createDisplayObjectRuntimeFactory ??
       (createDisplayObjectRuntime as GraphNodeRuntimeFactory<typeof DisplayGraph, DisplayObjectTraits, R>),
   ) as DisplayObject;
-  initHasTransform(out, obj);
-  initHasBoundsRectangle(out, obj);
-  initHasAppearance(out, obj);
+  initTransformTrait(out, obj);
+  initBoundsRectTrait(out, obj);
+  initAppearanceTrait(out, obj);
   out.filters = obj?.filters ?? null;
   out.mask = obj?.mask ?? null;
   out.scrollRect = obj?.scrollRect ?? null;
@@ -56,8 +56,8 @@ export function createDisplayObjectRuntime(
   methods?: Readonly<Partial<MethodsOf<DisplayObjectRuntime>>>,
 ): DisplayObjectRuntime {
   const out = createGraphNodeRuntime(methods) as DisplayObjectRuntime;
-  initHasTransformRuntime(out, methods);
-  initHasBoundsRectangleRuntime(out, methods);
+  initTransformRuntimeTrait(out, methods);
+  initBoundsRectRuntimeTrait(out, methods);
   return out;
 }
 

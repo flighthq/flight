@@ -9,10 +9,10 @@ import type {
   SpriteRenderNode,
 } from '@flighthq/types';
 
-import { updateAppearance } from './appearance';
+import { updateRenderNodeAppearance } from './appearance';
 import type { RenderStateInternal } from './internal';
 import { getOrCreateDisplayObjectRenderNode, getOrCreateSpriteRenderNode } from './renderNode2d';
-import { updateDisplayObjectRenderTransform, updateRenderTransform } from './transform2d';
+import { updateDisplayObjectRenderTransform, updateRenderNode2DTransform } from './transform2d';
 
 /**
  * First pass, update appearance, transforms, identify masks
@@ -50,7 +50,7 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
       }
     }
 
-    const appearanceDirty = updateAppearance(state, data, parentData);
+    const appearanceDirty = updateRenderNodeAppearance(state, data, parentData);
     const transformDirty = updateDisplayObjectRenderTransform(state, data, parentData);
 
     if (!treeDirty) {
@@ -113,8 +113,8 @@ export function updateSpriteBeforeRender(state: RenderState, source: SpriteNode)
       }
     }
 
-    const appearanceDirty = updateAppearance(state, data, parentData);
-    const transformDirty = updateRenderTransform(state, data, parentData);
+    const appearanceDirty = updateRenderNodeAppearance(state, data, parentData);
+    const transformDirty = updateRenderNode2DTransform(state, data, parentData);
 
     if (!treeDirty) {
       treeDirty = appearanceDirty || transformDirty;

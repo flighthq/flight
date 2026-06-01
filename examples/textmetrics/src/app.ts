@@ -4,6 +4,7 @@ import {
   appendShapeBeginFill,
   appendShapeRectangle,
   computeTextFormatFontString,
+  computeTextLayout,
   connectSignal,
   createApplication,
   createDisplayObject,
@@ -12,7 +13,6 @@ import {
   createTextFormatRange,
   createTextLayoutResult,
   invalidateRender,
-  layoutText,
   startApplicationLoop,
   updateDisplayObjectBeforeRender,
 } from '@flighthq/sdk';
@@ -66,7 +66,7 @@ const measure: TextMeasureFn = (t, fmt) => {
 };
 
 const result = createTextLayoutResult();
-layoutText(result, {
+computeTextLayout(result, {
   formatRanges: [createTextFormatRange(format, 0, TEXT.length)],
   height: FIELD_H,
   measure,

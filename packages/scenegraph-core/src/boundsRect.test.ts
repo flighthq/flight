@@ -10,8 +10,8 @@ import {
   addGraphChild,
   createGraphNode,
   ensureLocalTransformMatrix,
-  initHasTransform,
-  initHasTransformRuntime,
+  initTransformRuntimeTrait,
+  initTransformTrait,
   invalidateLocalTransform,
 } from '@flighthq/scenegraph-core';
 import type {
@@ -26,18 +26,18 @@ import type {
 
 import {
   computeBoundsRectangle,
-  ensureBoundsRectangle,
   ensureLocalBoundsRectangle,
+  ensureParentBoundsRectangle,
   ensureWorldBoundsRectangle,
-  getBoundsRectangle,
   getLocalBoundsRectangle,
+  getParentBoundsRectangle,
   getScaledBoundsHeight,
   getScaledBoundsWidth,
   getWorldBoundsRectangle,
   setScaledBoundsHeight,
   setScaledBoundsWidth,
 } from './boundsRect';
-import { initHasBoundsRectangle, initHasBoundsRectangleRuntime } from './hasBoundsRect';
+import { initBoundsRectRuntimeTrait, initBoundsRectTrait } from './hasBoundsRect';
 
 function getEntityRuntime<GraphKind extends symbol>(
   source: TestNode,
@@ -48,10 +48,10 @@ function getEntityRuntime<GraphKind extends symbol>(
 function createTestNode(): TestNode {
   const node = createGraphNode(TestKind, TestKind) as TestNode;
   const runtime = _getRuntime(node);
-  initHasBoundsRectangle(node);
-  initHasBoundsRectangleRuntime(runtime as HasBoundsRectRuntime);
-  initHasTransform(node);
-  initHasTransformRuntime(runtime as HasTransform2DRuntime);
+  initBoundsRectTrait(node);
+  initBoundsRectRuntimeTrait(runtime as HasBoundsRectRuntime);
+  initTransformTrait(node);
+  initTransformRuntimeTrait(runtime as HasTransform2DRuntime);
   return node;
 }
 
@@ -159,48 +159,6 @@ describe('computeBoundsRectangle', () => {
   });
 });
 
-describe('ensureBoundsRectangle', () => {
-  it('should ensure boundsRect is defined', () => {
-    const object = createTestNode();
-    const runtime = getEntityRuntime(object);
-    expect(runtime.boundsRect).toBeNull();
-    ensureBoundsRectangle(object);
-    expect(runtime.boundsRect).not.toBeNull();
-  });
-
-  it('should not recalculate if localBoundsID and localTransformID are unchanged', () => {
-    const object = createTestNode();
-    const runtime = getEntityRuntime(object);
-    ensureBoundsRectangle(object);
-    const cache = cloneAndInvalidateRect(runtime.boundsRect!);
-    ensureBoundsRectangle(object);
-    expect(runtime.boundsRect).not.toEqual(cache);
-  });
-
-  it('should recalculate if localBoundsID is changed', () => {
-    const object = createTestNode();
-    const runtime = getEntityRuntime(object);
-    runtime.computeLocalBoundsRect = (out: Rectangle, _source: GraphNode) => {
-      setEmpty(out);
-    };
-    ensureBoundsRectangle(object);
-    const cache = cloneAndInvalidateRect(runtime.boundsRect!);
-    runtime.localBoundsID++;
-    ensureBoundsRectangle(object);
-    expect(equalsRectangle(runtime.boundsRect, cache)).toBe(true);
-  });
-
-  it('should recalculate if localTransformID is changed', () => {
-    const object = createTestNode();
-    const runtime = getEntityRuntime(object);
-    ensureBoundsRectangle(object);
-    const cache = cloneAndInvalidateRect(runtime.boundsRect!);
-    runtime.localTransformID++;
-    ensureBoundsRectangle(object);
-    expect(equalsRectangle(runtime.boundsRect, cache)).toBe(true);
-  });
-});
-
 describe('ensureLocalBoundsRectangle', () => {
   it('should ensure localBoundsRect is defined', () => {
     const object = createTestNode();
@@ -246,6 +204,48 @@ describe('ensureLocalBoundsRectangle', () => {
     runtime.localTransformID++;
     ensureLocalBoundsRectangle(object);
     expect(runtime.localBoundsRect).not.toEqual(cache);
+  });
+});
+
+describe('ensureParentBoundsRectangle', () => {
+  it('should ensure boundsRect is defined', () => {
+    const object = createTestNode();
+    const runtime = getEntityRuntime(object);
+    expect(runtime.boundsRect).toBeNull();
+    ensureParentBoundsRectangle(object);
+    expect(runtime.boundsRect).not.toBeNull();
+  });
+
+  it('should not recalculate if localBoundsID and localTransformID are unchanged', () => {
+    const object = createTestNode();
+    const runtime = getEntityRuntime(object);
+    ensureParentBoundsRectangle(object);
+    const cache = cloneAndInvalidateRect(runtime.boundsRect!);
+    ensureParentBoundsRectangle(object);
+    expect(runtime.boundsRect).not.toEqual(cache);
+  });
+
+  it('should recalculate if localBoundsID is changed', () => {
+    const object = createTestNode();
+    const runtime = getEntityRuntime(object);
+    runtime.computeLocalBoundsRect = (out: Rectangle, _source: GraphNode) => {
+      setEmpty(out);
+    };
+    ensureParentBoundsRectangle(object);
+    const cache = cloneAndInvalidateRect(runtime.boundsRect!);
+    runtime.localBoundsID++;
+    ensureParentBoundsRectangle(object);
+    expect(equalsRectangle(runtime.boundsRect, cache)).toBe(true);
+  });
+
+  it('should recalculate if localTransformID is changed', () => {
+    const object = createTestNode();
+    const runtime = getEntityRuntime(object);
+    ensureParentBoundsRectangle(object);
+    const cache = cloneAndInvalidateRect(runtime.boundsRect!);
+    runtime.localTransformID++;
+    ensureParentBoundsRectangle(object);
+    expect(equalsRectangle(runtime.boundsRect, cache)).toBe(true);
   });
 });
 
@@ -337,17 +337,6 @@ describe('ensureWorldBoundsRectangle', () => {
   });
 });
 
-describe('getBoundsRectangle', () => {
-  it('should call ensure and return boundsRect', () => {
-    const object = createTestNode();
-    const runtime = getEntityRuntime(object);
-    expect(runtime.boundsRect).toBeNull();
-    const rect = getBoundsRectangle(object);
-    expect(rect).not.toBeNull();
-    expect(rect).toStrictEqual(runtime.boundsRect);
-  });
-});
-
 describe('getLocalBoundsRectangle', () => {
   it('should call ensure and return localBoundsRect', () => {
     const object = createTestNode();
@@ -356,6 +345,17 @@ describe('getLocalBoundsRectangle', () => {
     const rect = getLocalBoundsRectangle(object);
     expect(rect).not.toBeNull();
     expect(rect).toStrictEqual(runtime.localBoundsRect);
+  });
+});
+
+describe('getParentBoundsRectangle', () => {
+  it('should call ensure and return boundsRect', () => {
+    const object = createTestNode();
+    const runtime = getEntityRuntime(object);
+    expect(runtime.boundsRect).toBeNull();
+    const rect = getParentBoundsRectangle(object);
+    expect(rect).not.toBeNull();
+    expect(rect).toStrictEqual(runtime.boundsRect);
   });
 });
 

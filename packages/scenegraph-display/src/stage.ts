@@ -54,7 +54,7 @@ export function createStageSignals(): StageSignals {
   };
 }
 
-export function getStage(source: Readonly<DisplayObject>): Stage | null {
+export function getDisplayObjectStage(source: Readonly<DisplayObject>): Stage | null {
   const root = getGraphRoot(source);
   return root.kind === StageKind ? (root as Stage) : null;
 }

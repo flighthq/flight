@@ -2,13 +2,13 @@ import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } 
 import { getRichTextRuntime } from '@flighthq/scenegraph-display';
 import {
   computeRichTextContent,
+  computeTextLayout,
   getRichTextContent,
   getRichTextFieldHeight,
   getRichTextFieldWidth,
   getRichTextScrollYOffset,
   getRichTextSelectionRectangles,
   getTextLayoutResult,
-  layoutText,
 } from '@flighthq/text-layout';
 import type { InputTextSelectionRectangle } from '@flighthq/types';
 import type {
@@ -46,7 +46,7 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
   };
 
   const result = getTextLayoutResult(richTextRuntime as TextRuntime);
-  layoutText(result, {
+  computeTextLayout(result, {
     text,
     formatRanges: content.formatRanges,
     width: data.wordWrap ? data.width : 10000,

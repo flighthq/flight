@@ -2,38 +2,28 @@ import type { GraphNode, GraphNodeRuntime } from '@flighthq/types';
 
 import { getGraphNodeRuntime } from './graphNode';
 
-export function getAppearanceID<GraphKind extends symbol, Traits extends object>(
+export function getAppearanceRevision<GraphKind extends symbol, Traits extends object>(
   source: Readonly<GraphNode<GraphKind, Traits>>,
 ): number {
   return getGraphNodeRuntime(source).appearanceID;
 }
 
-export function getLocalBoundsID<GraphKind extends symbol, Traits extends object>(
+export function getLocalBoundsRevision<GraphKind extends symbol, Traits extends object>(
   source: Readonly<GraphNode<GraphKind, Traits>>,
 ): number {
   return getGraphNodeRuntime(source).localBoundsID;
 }
 
-export function getLocalTransformID<GraphKind extends symbol, Traits extends object>(
+export function getLocalTransformRevision<GraphKind extends symbol, Traits extends object>(
   source: Readonly<GraphNode<GraphKind, Traits>>,
 ): number {
   return getGraphNodeRuntime(source).localTransformID;
 }
 
-export function getWorldTransformID<GraphKind extends symbol, Traits extends object>(
+export function getWorldTransformRevision<GraphKind extends symbol, Traits extends object>(
   source: GraphNode<GraphKind, Traits>,
 ): number {
   return getGraphNodeRuntime(source).worldTransformID;
-}
-
-export function invalidate<GraphKind extends symbol, Traits extends object>(
-  target: GraphNode<GraphKind, Traits>,
-): void {
-  invalidateAppearance(target);
-  invalidateLocalBounds(target);
-  invalidateLocalTransform(target);
-  invalidateParentReference(target);
-  invalidateWorldBounds(target);
 }
 
 /**
@@ -44,6 +34,16 @@ export function invalidateAppearance<GraphKind extends symbol, Traits extends ob
 ): void {
   const runtime = getGraphNodeRuntime(target) as GraphNodeRuntime<GraphKind, Traits>;
   runtime.appearanceID = (runtime.appearanceID + 1) >>> 0;
+}
+
+export function invalidateGraphNode<GraphKind extends symbol, Traits extends object>(
+  target: GraphNode<GraphKind, Traits>,
+): void {
+  invalidateAppearance(target);
+  invalidateLocalBounds(target);
+  invalidateLocalTransform(target);
+  invalidateParentReference(target);
+  invalidateWorldBounds(target);
 }
 
 /**
@@ -98,7 +98,7 @@ export function invalidateWorldBounds<GraphKind extends symbol, Traits extends o
   runtime.worldBoundsUsingLocalBoundsID = -1;
 }
 
-export function recomputeWorldTransformID<GraphKind extends symbol, Traits extends object>(
+export function recomputeWorldTransformRevision<GraphKind extends symbol, Traits extends object>(
   runtime: GraphNodeRuntime<GraphKind, Traits>,
   parentRuntime?: Readonly<GraphNodeRuntime<GraphKind, Traits>>,
 ): void {

@@ -2,12 +2,12 @@ import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } 
 import { getRichTextRuntime } from '@flighthq/scenegraph-display';
 import {
   computeRichTextContent,
+  computeTextLayout,
   getRichTextContent,
   getRichTextFieldHeight,
   getRichTextFieldWidth,
   getRichTextScrollYOffset,
   getTextLayoutResult,
-  layoutText,
 } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
@@ -155,7 +155,7 @@ function layoutRichText(
   source: RichText,
   richTextRuntime: RichTextRuntime,
   text: string,
-  formatRanges: Parameters<typeof layoutText>[1]['formatRanges'],
+  formatRanges: Parameters<typeof computeTextLayout>[1]['formatRanges'],
 ): ReturnType<typeof getTextLayoutResult> {
   const data = source.data;
   const measure = (value: string, format: TextFormat): number => {
@@ -165,7 +165,7 @@ function layoutRichText(
   };
 
   const result = getTextLayoutResult(richTextRuntime as TextRuntime);
-  layoutText(result, {
+  computeTextLayout(result, {
     text,
     formatRanges,
     width: data.wordWrap ? data.width : 10000,

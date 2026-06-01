@@ -1,6 +1,6 @@
 import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } from '@flighthq/render-core';
 import { getTextRuntime } from '@flighthq/scenegraph-display';
-import { createTextFormatRange, getTextLayoutResult, layoutText } from '@flighthq/text-layout';
+import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderNode,
@@ -49,7 +49,7 @@ export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRende
   };
 
   const result = getTextLayoutResult(getTextRuntime(source) as TextRuntime);
-  layoutText(result, {
+  computeTextLayout(result, {
     text,
     formatRanges: [createTextFormatRange(textFormat, 0, text.length)],
     width: LAYOUT_WIDTH,

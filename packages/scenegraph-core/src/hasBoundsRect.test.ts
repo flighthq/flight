@@ -2,11 +2,7 @@ import { createRectangle } from '@flighthq/geometry';
 import type { GraphNode, GraphNodeRuntime, HasBoundsRect, HasBoundsRectRuntime } from '@flighthq/types';
 
 import { createGraphNode, createGraphNodeRuntime } from './graphNode';
-import {
-  defaultComputeLocalBoundsRectangle,
-  initHasBoundsRectangle,
-  initHasBoundsRectangleRuntime,
-} from './hasBoundsRect';
+import { defaultComputeLocalBoundsRectangle, initBoundsRectRuntimeTrait, initBoundsRectTrait } from './hasBoundsRect';
 
 describe('defaultComputeLocalBoundsRectangle', () => {
   it('is a no-op that does not modify out', () => {
@@ -20,24 +16,7 @@ describe('defaultComputeLocalBoundsRectangle', () => {
   });
 });
 
-describe('initHasBoundsRectangle', () => {
-  let node: HasBoundsRect;
-
-  beforeEach(() => {
-    node = createGraphNode(NodeTestKind, NodeTestKind) as GraphNode<typeof NodeTestKind, HasBoundsRect> & HasBoundsRect;
-  });
-
-  it('does nothing', () => {
-    initHasBoundsRectangle(node);
-  });
-
-  it('allows pre-defined values', () => {
-    const base = {};
-    initHasBoundsRectangle(node, base);
-  });
-});
-
-describe('initHasBoundsRectangleRuntime', () => {
+describe('initBoundsRectRuntimeTrait', () => {
   let runtime: HasBoundsRectRuntime;
 
   beforeEach(() => {
@@ -45,12 +24,29 @@ describe('initHasBoundsRectangleRuntime', () => {
   });
 
   it('initializes default values', () => {
-    initHasBoundsRectangleRuntime(runtime);
+    initBoundsRectRuntimeTrait(runtime);
 
     expect(runtime.boundsRect).toBeNull();
     expect(runtime.localBoundsRect).toBeNull();
     expect(runtime.worldBoundsRect).toBeNull();
     expect(runtime.computeLocalBoundsRect).toStrictEqual(defaultComputeLocalBoundsRectangle);
+  });
+});
+
+describe('initBoundsRectTrait', () => {
+  let node: HasBoundsRect;
+
+  beforeEach(() => {
+    node = createGraphNode(NodeTestKind, NodeTestKind) as GraphNode<typeof NodeTestKind, HasBoundsRect> & HasBoundsRect;
+  });
+
+  it('does nothing', () => {
+    initBoundsRectTrait(node);
+  });
+
+  it('allows pre-defined values', () => {
+    const base = {};
+    initBoundsRectTrait(node, base);
   });
 });
 

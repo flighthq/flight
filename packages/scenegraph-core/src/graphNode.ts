@@ -15,7 +15,7 @@ import type {
 } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
-import { invalidate } from './revision';
+import { invalidateGraphNode } from './revision';
 
 export function createGraphNode<
   GraphKind extends symbol,
@@ -99,5 +99,5 @@ export function setGraphNodeEnabled<GraphKind extends symbol, Traits extends obj
   value: boolean,
 ): void {
   target.enabled = value;
-  invalidate(target);
+  invalidateGraphNode(target);
 }

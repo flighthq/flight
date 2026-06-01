@@ -2,7 +2,7 @@ import { connectSignal, createSignal } from '@flighthq/signals';
 
 import {
   attachApplicationExit,
-  connectThrottle,
+  connectSignalThrottled,
   createApplication,
   detachApplicationExit,
   disposeApplication,
@@ -37,11 +37,11 @@ describe('attachApplicationExit', () => {
   });
 });
 
-describe('connectThrottle', () => {
+describe('connectSignalThrottled', () => {
   it('fires the slot only when accumulated delta reaches the period', () => {
     const source = createSignal<(delta: number) => void>();
     const fired: number[] = [];
-    connectThrottle(source, 10, (delta) => fired.push(delta)); // 10fps = 100ms period
+    connectSignalThrottled(source, 10, (delta) => fired.push(delta)); // 10fps = 100ms period
 
     source.emit(40);
     source.emit(40);
@@ -55,7 +55,7 @@ describe('connectThrottle', () => {
   it('accumulates remainder across firings', () => {
     const source = createSignal<(delta: number) => void>();
     const fired: number[] = [];
-    connectThrottle(source, 10, (delta) => fired.push(delta)); // 100ms period
+    connectSignalThrottled(source, 10, (delta) => fired.push(delta)); // 100ms period
 
     source.emit(110); // fires once, 10ms remainder
     source.emit(110); // 120ms total — fires again
@@ -65,7 +65,7 @@ describe('connectThrottle', () => {
   it('returns a cleanup that stops the slot', () => {
     const source = createSignal<(delta: number) => void>();
     let fired = 0;
-    const detach = connectThrottle(source, 10, () => fired++);
+    const detach = connectSignalThrottled(source, 10, () => fired++);
 
     detach();
     source.emit(200);

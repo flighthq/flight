@@ -53,7 +53,13 @@ export function dispatchSelectableRichTextPointerDown(
   manager.focused = target;
   const runtime = getMutableRuntime(target);
   const layout = runtime.textLayout;
-  if (layout === null) return;
+  if (layout === null) {
+    if (!extend) {
+      runtime.selectionBeginIndex = 0;
+      runtime.selectionEndIndex = 0;
+    }
+    return;
+  }
   const content = runtime.richTextContent;
   const text = content?.text ?? target.data.text;
   const index = getRichTextCharIndexAtPoint(text, layout, x, y);

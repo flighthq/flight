@@ -1,11 +1,11 @@
-export function getLineBreakIndex(lineBreaks: readonly number[], startIndex = 0): number {
+export function getTextLineBreakIndex(lineBreaks: readonly number[], startIndex = 0): number {
   for (const lb of lineBreaks) {
     if (lb >= startIndex) return lb;
   }
   return -1;
 }
 
-export function getLineBreaks(out: number[], text: string): void {
+export function getTextLineBreaks(out: number[], text: string): void {
   out.length = 0;
   let index = -1;
 

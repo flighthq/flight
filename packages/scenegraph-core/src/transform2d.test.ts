@@ -3,15 +3,15 @@ import { cloneMatrix, createVector2, equalsMatrix, setMatrix } from '@flighthq/g
 import { addGraphChild, createGraphNode } from '@flighthq/scenegraph-core';
 import type { GraphNode, GraphNodeRuntime, HasTransform2D, HasTransform2DRuntime, Matrix } from '@flighthq/types';
 
-import { initHasTransform, initHasTransformRuntime } from './hasTransform2d';
+import { initTransformRuntimeTrait, initTransformTrait } from './hasTransform2d';
 import { invalidateLocalTransform } from './revision';
 import {
   ensureLocalTransformMatrix,
   ensureWorldTransformMatrix,
   getLocalTransformMatrix,
   getWorldTransformMatrix,
-  globalVector2ToLocal,
-  localVector2ToGlobal,
+  graphGlobalToLocalVector2,
+  graphLocalToGlobalVector2,
   setTransformRotation,
   setTransformScaleX,
   setTransformScaleY,
@@ -22,8 +22,8 @@ import {
 function createTestNode(): TestNode {
   const node = createGraphNode(TestKind, TestKind) as TestNode;
   const runtime = getEntityRuntime(node);
-  initHasTransform(node);
-  initHasTransformRuntime(runtime as HasTransform2DRuntime);
+  initTransformTrait(node);
+  initTransformRuntimeTrait(runtime as HasTransform2DRuntime);
   return node;
 }
 
@@ -118,7 +118,7 @@ describe('getWorldTransformMatrix', () => {
   });
 });
 
-describe('globalVector2ToLocal', () => {
+describe('graphGlobalToLocalVector2', () => {
   let obj: TestNode;
 
   beforeEach(() => {
@@ -136,7 +136,7 @@ describe('globalVector2ToLocal', () => {
     const out = createVector2();
     const world = createVector2(14, 24);
 
-    globalVector2ToLocal(out, obj, world);
+    graphGlobalToLocalVector2(out, obj, world);
 
     expect(out.x).toBeCloseTo(2);
     expect(out.y).toBeCloseTo(2);
@@ -144,7 +144,7 @@ describe('globalVector2ToLocal', () => {
 
   it('reuses the output object', () => {
     const out = createVector2(999, 999);
-    globalVector2ToLocal(out, obj, createVector2(10, 20));
+    graphGlobalToLocalVector2(out, obj, createVector2(10, 20));
 
     expect(out).toEqual(expect.objectContaining({ x: 0, y: 0 }));
   });
@@ -160,14 +160,14 @@ describe('globalVector2ToLocal', () => {
     const out = { x: 0, y: 0 };
     const world = { x: 14, y: 24 };
 
-    globalVector2ToLocal(out, obj, world);
+    graphGlobalToLocalVector2(out, obj, world);
 
     expect(out.x).toBeCloseTo(2);
     expect(out.y).toBeCloseTo(2);
   });
 });
 
-describe('localVector2ToGlobal', () => {
+describe('graphLocalToGlobalVector2', () => {
   let obj: TestNode;
 
   beforeEach(() => {
@@ -178,7 +178,7 @@ describe('localVector2ToGlobal', () => {
     const local = createVector2(5, 5);
     const out = createVector2();
 
-    localVector2ToGlobal(out, obj, local);
+    graphLocalToGlobalVector2(out, obj, local);
 
     expect(out.x).toBe(5);
     expect(out.y).toBe(5);
@@ -193,7 +193,7 @@ describe('localVector2ToGlobal', () => {
     const local = createVector2(10, 20);
     const out = createVector2();
 
-    localVector2ToGlobal(out, obj, local);
+    graphLocalToGlobalVector2(out, obj, local);
 
     expect(out.x).toBe(60); // 50 + 10
     expect(out.y).toBe(50); // 30 + 20
@@ -208,9 +208,9 @@ describe('localVector2ToGlobal', () => {
     const p2 = createVector2(2, 2);
 
     const g1 = createVector2();
-    localVector2ToGlobal(g1, obj, p1);
+    graphLocalToGlobalVector2(g1, obj, p1);
     const g2 = createVector2();
-    localVector2ToGlobal(g2, obj, p2);
+    graphLocalToGlobalVector2(g2, obj, p2);
 
     expect(g1.x).toBe(2);
     expect(g1.y).toBe(3);
@@ -222,7 +222,7 @@ describe('localVector2ToGlobal', () => {
     const local = { x: 5, y: 5 };
     const out = { x: 0, y: 0 };
 
-    localVector2ToGlobal(out, obj, local);
+    graphLocalToGlobalVector2(out, obj, local);
 
     expect(out.x).toBe(5);
     expect(out.y).toBe(5);

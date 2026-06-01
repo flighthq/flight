@@ -37,7 +37,7 @@ export {
   mergeTextFormat,
 } from './textFormat';
 export { createTextFormatRange } from './textFormatRange';
-export { createTextLayoutResult, layoutText } from './textLayout';
+export { computeTextLayout, createTextLayoutResult } from './textLayout';
 export { createTextLayoutGroup } from './textLayoutGroup';
 export { clearTextLayoutResult, getTextLayoutResult } from './textLayoutRuntime';
-export { getLineBreakIndex, getLineBreaks } from './textLineBreaks';
+export { getTextLineBreakIndex, getTextLineBreaks } from './textLineBreaks';
