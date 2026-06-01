@@ -3,12 +3,23 @@ import type { GraphNode, RichText } from '@flighthq/types';
 import { RichTextKind } from '@flighthq/types';
 
 import {
+  clearRichTextFormatRanges,
   computeRichTextLocalBoundsRectangle,
   createRichText,
   createRichTextData,
   createRichTextRuntime,
   getRichTextRuntime,
+  setRichTextFormatRange,
 } from './richText';
+
+describe('clearRichTextFormatRanges', () => {
+  it('removes serialized format ranges', () => {
+    const richText = createRichText();
+    setRichTextFormatRange(richText, { bold: true }, 0, 1);
+    clearRichTextFormatRanges(richText);
+    expect(richText.data.textFormatRanges).toEqual([]);
+  });
+});
 
 describe('computeRichTextLocalBoundsRectangle', () => {
   it('sets out.width and out.height from data dimensions', () => {
@@ -41,8 +52,9 @@ describe('createRichText', () => {
     expect(richText.data.scrollH).toBe(0);
     expect(richText.data.scrollV).toBe(1);
     expect(richText.data.selectable).toBe(true);
-    expect(richText.data.styleSheet).toBe(undefined);
+    expect(richText.data.styleSheet).toBeNull();
     expect(richText.data.textColor).toBe(0);
+    expect(richText.data.textFormatRanges).toEqual([]);
     expect(richText.data.wordWrap).toBe(false);
     expect(richText.kind).toStrictEqual(RichTextKind);
   });
@@ -61,8 +73,9 @@ describe('createRichText', () => {
         mouseWheelEnabled: false,
         multiline: false,
         selectable: false,
-        styleSheet: undefined,
+        styleSheet: { p: { color: 0xff00ff } },
         textColor: 0xff,
+        textFormatRanges: [{ start: 0, end: 2, format: { bold: true } }],
         wordWrap: true,
       },
     };
@@ -80,6 +93,8 @@ describe('createRichText', () => {
     expect(obj.data.selectable).toStrictEqual(base.data.selectable);
     expect(obj.data.styleSheet).toStrictEqual(base.data.styleSheet);
     expect(obj.data.textColor).toStrictEqual(base.data.textColor);
+    expect(obj.data.textFormatRanges).toStrictEqual(base.data.textFormatRanges);
+    expect(obj.data.textFormatRanges).not.toBe(base.data.textFormatRanges);
     expect(obj.data.wordWrap).toStrictEqual(base.data.wordWrap);
   });
 
@@ -114,6 +129,16 @@ describe('createRichTextRuntime', () => {
     expect(runtime).not.toBeNull();
   });
 
+  it('starts without attached layout runtime state', () => {
+    const runtime = createRichTextRuntime();
+    expect(runtime.textLayout).toBeNull();
+  });
+
+  it('starts without attached content runtime state', () => {
+    const runtime = createRichTextRuntime();
+    expect(runtime.richTextContent).toBeNull();
+  });
+
   it('uses computeRichTextLocalBoundsRectangle', () => {
     const runtime = createRichTextRuntime();
     expect(runtime.computeLocalBoundsRect).toStrictEqual(computeRichTextLocalBoundsRectangle);
@@ -125,5 +150,13 @@ describe('getRichTextRuntime', () => {
     const richText = createRichText();
     const runtime = getRichTextRuntime(richText);
     expect(runtime).not.toBeNull();
+  });
+});
+
+describe('setRichTextFormatRange', () => {
+  it('adds a serialized format range', () => {
+    const richText = createRichText({ data: { text: 'hello' } });
+    setRichTextFormatRange(richText, { italic: true }, 1, 4);
+    expect(richText.data.textFormatRanges).toEqual([{ start: 1, end: 4, format: { italic: true } }]);
   });
 });

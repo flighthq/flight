@@ -16,7 +16,9 @@ export function createTextData(data?: Readonly<Partial<TextData>>): TextData {
 }
 
 export function createTextRuntime(): TextRuntime {
-  return createDisplayObjectRuntime() as TextRuntime;
+  const out = createDisplayObjectRuntime() as TextRuntime;
+  out.textLayout = null;
+  return out;
 }
 
 export function getTextRuntime(source: Readonly<Text>): Readonly<TextRuntime> {
