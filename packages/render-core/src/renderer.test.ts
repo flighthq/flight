@@ -1,6 +1,12 @@
 import type { Renderer, RenderState } from '@flighthq/types';
 
-import { copyRendererRegistrations, createNullRendererData, registerRenderer } from './renderer';
+import type { RenderStateInternal } from './internal';
+import {
+  copyRendererRegistrations,
+  createNullRendererData,
+  registerDisplayObjectKindTransformer,
+  registerRenderer,
+} from './renderer';
 import { createRenderState } from './renderState';
 
 describe('copyRendererRegistrations', () => {
@@ -37,6 +43,24 @@ describe('createNullRendererData', () => {
   it('returns null', () => {
     const state = createRenderState();
     expect(createNullRendererData(state, {} as any)).toBeNull();
+  });
+});
+
+describe('registerDisplayObjectKindTransformer', () => {
+  it('pushes the transformer into displayObjectKindTransformers', () => {
+    const state = createRenderState() as unknown as RenderStateInternal;
+    const transformer = vi.fn();
+    registerDisplayObjectKindTransformer(state as unknown as RenderState, transformer);
+    expect(state.displayObjectKindTransformers).toContain(transformer);
+  });
+
+  it('appends multiple transformers in registration order', () => {
+    const state = createRenderState() as unknown as RenderStateInternal;
+    const t1 = vi.fn();
+    const t2 = vi.fn();
+    registerDisplayObjectKindTransformer(state as unknown as RenderState, t1);
+    registerDisplayObjectKindTransformer(state as unknown as RenderState, t2);
+    expect(state.displayObjectKindTransformers).toEqual([t1, t2]);
   });
 });
 
