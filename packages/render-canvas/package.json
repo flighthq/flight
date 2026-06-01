@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "@flighthq/render-canvas",
   "version": "1.0.0",
   "type": "module",
@@ -16,10 +16,6 @@
     "./bitmap": {
       "types": "./dist/canvasBitmap.d.ts",
       "default": "./dist/canvasBitmap.js"
-    },
-    "./cacheAsBitmap": {
-      "types": "./dist/canvasCacheAsBitmap.d.ts",
-      "default": "./dist/canvasCacheAsBitmap.js"
     },
     "./clipRect": {
       "types": "./dist/canvasClipRect.d.ts",
@@ -86,3 +82,4 @@
   "description": "Canvas 2D renderer implementation",
   "sideEffects": false
 }
+
