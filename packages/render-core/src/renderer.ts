@@ -2,6 +2,12 @@ import type { Renderable, Renderer, RendererData, RenderState } from '@flighthq/
 
 import type { RenderStateInternal } from './internal';
 
+export function copyRendererRegistrations(target: RenderState, source: RenderState): void {
+  source.rendererMap.forEach((renderer, kind) => {
+    registerRenderer(target, kind, renderer);
+  });
+}
+
 export function createNullRendererData(_state: RenderState, _source: Renderable): RendererData | null {
   return null;
 }
