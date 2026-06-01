@@ -63,8 +63,21 @@ export function createRichTextRuntime(): RichTextRuntime {
   return out;
 }
 
+export function dispatchRichTextWheel(source: RichText, deltaLines: number, layout?: Readonly<TextLayoutResult>): void {
+  setRichTextScrollV(source, source.data.scrollV + Math.round(deltaLines), layout);
+}
+
 export function getRichTextRuntime(source: Readonly<RichText>): Readonly<RichTextRuntime> {
   return getDisplayObjectRuntime(source) as RichTextRuntime;
+}
+
+export function setRichTextFormatRange(
+  source: RichText,
+  format: TextFormat,
+  start = 0,
+  end = source.data.text.length,
+): void {
+  source.data.textFormatRanges.push({ end, format, start });
 }
 
 export function setRichTextScrollH(source: RichText, value: number, layout?: Readonly<TextLayoutResult>): void {
@@ -83,19 +96,6 @@ export function setRichTextScrollV(source: RichText, value: number, layout?: Rea
   if (_data.scrollV === clamped) return;
   _data.scrollV = clamped;
   invalidateAppearance(source);
-}
-
-export function dispatchRichTextWheel(source: RichText, deltaLines: number, layout?: Readonly<TextLayoutResult>): void {
-  setRichTextScrollV(source, source.data.scrollV + Math.round(deltaLines), layout);
-}
-
-export function setRichTextFormatRange(
-  source: RichText,
-  format: TextFormat,
-  start = 0,
-  end = source.data.text.length,
-): void {
-  source.data.textFormatRanges.push({ end, format, start });
 }
 
 const defaultMethods: Partial<MethodsOf<RichTextRuntime>> = {

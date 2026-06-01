@@ -166,24 +166,47 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
 const DOM_BULLET_GAP = 4;
 const _domFontAscentCache = new Map<string, number>();
 
+// Invalidate the cache when web fonts finish loading so the next render re-probes
+// with the real font rather than the fallback that was active at first call.
+if (typeof document !== 'undefined' && document.fonts) {
+  document.fonts.addEventListener('loadingdone', () => _domFontAscentCache.clear());
+}
+
 function getDomFontAscent(ctx: CanvasRenderingContext2D, font: string): number {
   const cached = _domFontAscentCache.get(font);
   if (cached !== undefined) return cached;
-  ctx.font = font;
-  // emHeightAscent: "distance from textBaseline to the top of the em square in the
-  // line box" — exactly the value CSS uses to place the baseline inside a
-  // line-height:1 element (no half-leading contribution). fontBoundingBoxAscent is
-  // the same browser-support tier (Chrome 87, Safari 11, Firefox 116) and a close
-  // fallback. Last resort: 85% of font-size covers most Latin fonts reasonably.
-  const metrics = ctx.measureText('H') as TextMetrics & {
-    emHeightAscent?: number;
-    fontBoundingBoxAscent?: number;
-  };
-  const sizeMatch = /(\d+(?:\.\d+)?)px/.exec(font);
-  const size = sizeMatch ? parseFloat(sizeMatch[1]) : 12;
-  const ascent = metrics.emHeightAscent ?? metrics.fontBoundingBoxAscent ?? size * 0.85;
+  // Measure the CSS alphabetic baseline directly: a zero-height inline-block with
+  // vertical-align:baseline sits with its top edge exactly on the line's baseline.
+  // getBoundingClientRect() gives the exact pixel distance CSS uses, with no
+  // inference from canvas metrics. Falls back to canvas measurement in non-browser env.
+  const ascent =
+    typeof document !== 'undefined' && document.body
+      ? probeCSSFontAscent(font)
+      : canvasFontAscentFallback(ctx, font);
   _domFontAscentCache.set(font, ascent);
   return ascent;
+}
+
+function probeCSSFontAscent(font: string): number {
+  const container = document.createElement('div');
+  container.style.cssText = `font:${font};line-height:1;position:fixed;top:0;left:0;visibility:hidden;pointer-events:none;white-space:nowrap`;
+  const probe = document.createElement('span');
+  probe.style.cssText = 'display:inline-block;height:0;vertical-align:baseline';
+  container.appendChild(document.createTextNode('H'));
+  container.appendChild(probe);
+  document.body.appendChild(container);
+  const containerTop = container.getBoundingClientRect().top;
+  const probeTop = probe.getBoundingClientRect().top;
+  document.body.removeChild(container);
+  return probeTop - containerTop;
+}
+
+function canvasFontAscentFallback(ctx: CanvasRenderingContext2D, font: string): number {
+  ctx.font = font;
+  const metrics = ctx.measureText('H') as TextMetrics & { fontBoundingBoxAscent?: number };
+  const sizeMatch = /(\d+(?:\.\d+)?)px/.exec(font);
+  const size = sizeMatch ? parseFloat(sizeMatch[1]) : 12;
+  return metrics.fontBoundingBoxAscent ?? size * 0.85;
 }
 const DOM_SELECTION_ALPHA = 0.35;
 const DOM_SELECTION_COLOR = '#0078d7';

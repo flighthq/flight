@@ -24,15 +24,15 @@ export function getRichTextMaxScrollV(data: Readonly<RichTextData>, layout: Read
   return Math.max(1, layout.numLines - getVisibleLineCount(data, layout) + 1);
 }
 
+export function getRichTextNumLines(layout: Readonly<TextLayoutResult>): number {
+  return layout.numLines;
+}
+
 export function getRichTextScrollYOffset(lineHeights: readonly number[], firstVisibleLine: number): number {
   let offset = 0;
   const limit = Math.min(firstVisibleLine, lineHeights.length);
   for (let i = 0; i < limit; i++) offset += lineHeights[i];
   return offset;
-}
-
-export function getRichTextNumLines(layout: Readonly<TextLayoutResult>): number {
-  return layout.numLines;
 }
 
 export function getRichTextTextHeight(layout: Readonly<TextLayoutResult>): number {

@@ -1,18 +1,10 @@
 import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/scenegraph-display';
 import { getRichTextCharIndexAtPoint } from '@flighthq/text-layout';
-import type { InputKeyboardData, RichText, RichTextRuntime, TextLayoutResult } from '@flighthq/types';
+import type { InputKeyboardData, RichText, RichTextRuntime } from '@flighthq/types';
 import { KeyCode } from '@flighthq/types';
 
 export interface SelectableRichTextManager {
   focused: RichText | null;
-}
-
-export function createSelectableRichTextManager(): SelectableRichTextManager {
-  return { focused: null };
-}
-
-export function focusSelectableRichText(manager: SelectableRichTextManager, target: RichText): void {
-  manager.focused = target;
 }
 
 export function blurSelectableRichText(manager: SelectableRichTextManager): void {
@@ -22,6 +14,33 @@ export function blurSelectableRichText(manager: SelectableRichTextManager): void
     runtime.selectionEndIndex = 0;
   }
   manager.focused = null;
+}
+
+export function createSelectableRichTextManager(): SelectableRichTextManager {
+  return { focused: null };
+}
+
+export function dispatchSelectableRichTextKeyDown(
+  manager: SelectableRichTextManager,
+  data: Readonly<InputKeyboardData>,
+): boolean {
+  const target = manager.focused;
+  if (target === null) return false;
+  if ((data.ctrlKey || data.metaKey) && (data.key.toLowerCase() === 'a' || data.keyCode === KeyCode.A)) {
+    const runtime = getMutableRuntime(target);
+    runtime.selectionBeginIndex = 0;
+    runtime.selectionEndIndex = target.data.text.length;
+    return true;
+  }
+  if ((data.ctrlKey || data.metaKey) && (data.key.toLowerCase() === 'c' || data.keyCode === KeyCode.C)) {
+    const runtime = getMutableRuntime(target);
+    const start = Math.min(runtime.selectionBeginIndex, runtime.selectionEndIndex);
+    const end = Math.max(runtime.selectionBeginIndex, runtime.selectionEndIndex);
+    const selected = target.data.text.slice(start, end);
+    if (selected.length > 0) navigator.clipboard?.writeText(selected);
+    return true;
+  }
+  return false;
 }
 
 export function dispatchSelectableRichTextPointerDown(
@@ -61,33 +80,14 @@ export function dispatchSelectableRichTextPointerMove(
   runtime.selectionEndIndex = getRichTextCharIndexAtPoint(text, layout, x, y);
 }
 
-export function dispatchSelectableRichTextKeyDown(
-  manager: SelectableRichTextManager,
-  data: Readonly<InputKeyboardData>,
-): boolean {
-  const target = manager.focused;
-  if (target === null) return false;
-  if ((data.ctrlKey || data.metaKey) && (data.key.toLowerCase() === 'a' || data.keyCode === KeyCode.A)) {
-    const runtime = getMutableRuntime(target);
-    runtime.selectionBeginIndex = 0;
-    runtime.selectionEndIndex = target.data.text.length;
-    return true;
-  }
-  if ((data.ctrlKey || data.metaKey) && (data.key.toLowerCase() === 'c' || data.keyCode === KeyCode.C)) {
-    const runtime = getMutableRuntime(target);
-    const start = Math.min(runtime.selectionBeginIndex, runtime.selectionEndIndex);
-    const end = Math.max(runtime.selectionBeginIndex, runtime.selectionEndIndex);
-    const selected = target.data.text.slice(start, end);
-    if (selected.length > 0) navigator.clipboard?.writeText(selected);
-    return true;
-  }
-  return false;
-}
-
 export function dispatchSelectableRichTextWheel(manager: SelectableRichTextManager, deltaLines: number): void {
   const target = manager.focused;
   if (target === null) return;
   setRichTextScrollV(target, target.data.scrollV + Math.round(deltaLines));
+}
+
+export function focusSelectableRichText(manager: SelectableRichTextManager, target: RichText): void {
+  manager.focused = target;
 }
 
 export function getSelectableRichTextSelectionText(manager: SelectableRichTextManager): string {

@@ -155,6 +155,25 @@ export function getRichTextLineText(
   return start === Infinity ? '' : text.slice(start, end);
 }
 
+export function getRichTextLinkAtPoint(
+  layout: Readonly<TextLayoutResult>,
+  x: number,
+  y: number,
+): string | null {
+  for (const group of layout.groups) {
+    if (!group.format.url) continue;
+    if (
+      x >= group.offsetX &&
+      x <= group.offsetX + group.width &&
+      y >= group.offsetY &&
+      y <= group.offsetY + group.height
+    ) {
+      return group.format.url;
+    }
+  }
+  return null;
+}
+
 export function getRichTextParagraphLength(text: string, charIndex: number): number {
   const start = getRichTextFirstCharInParagraph(text, charIndex);
   const newline = text.indexOf('\n', start);
@@ -182,25 +201,6 @@ export function getRichTextSelectionRectangles(
     const right = getCaretX(group, groupEnd);
     out.push({ height: group.height, lineIndex: group.lineIndex, width: right - x, x, y: group.offsetY });
   }
-}
-
-export function getRichTextLinkAtPoint(
-  layout: Readonly<TextLayoutResult>,
-  x: number,
-  y: number,
-): string | null {
-  for (const group of layout.groups) {
-    if (!group.format.url) continue;
-    if (
-      x >= group.offsetX &&
-      x <= group.offsetX + group.width &&
-      y >= group.offsetY &&
-      y <= group.offsetY + group.height
-    ) {
-      return group.format.url;
-    }
-  }
-  return null;
 }
 
 function getCaretX(group: Readonly<TextLayoutGroup>, index: number): number {

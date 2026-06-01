@@ -12,6 +12,7 @@
     { "path": "../scenegraph-core" },
     { "path": "../scenegraph-display" },
     { "path": "../signals" },
+    { "path": "../text-layout" },
     { "path": "../types" }
   ],
   "include": ["src"]

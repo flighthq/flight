@@ -15,12 +15,15 @@ import {
   getInputTextSelectionBeginIndex,
   getInputTextSelectionEndIndex,
   getInputTextSelectionRectangles,
+  getInputTextSelectionText,
   handleInputTextKeyboard,
   insertInputText,
   moveInputTextCaret,
   replaceInputText,
   replaceSelectedInputText,
   selectAllInputText,
+  selectLineAtInputTextIndex,
+  selectWordAtInputTextIndex,
   setInputTextSelection,
 } from './inputTextEditing';
 
@@ -212,6 +215,20 @@ describe('getInputTextSelectionRectangles', () => {
   });
 });
 
+describe('getInputTextSelectionText', () => {
+  it('returns the selected slice of text', () => {
+    const text = createInputText({ data: { text: 'hello world' } });
+    setInputTextSelection(text, 6, 11);
+    expect(getInputTextSelectionText(text)).toBe('world');
+  });
+
+  it('returns empty string for a collapsed selection', () => {
+    const text = createInputText({ data: { text: 'hello' } });
+    setInputTextSelection(text, 2, 2);
+    expect(getInputTextSelectionText(text)).toBe('');
+  });
+});
+
 describe('handleInputTextKeyboard', () => {
   it('handles arrow movement', () => {
     const text = createInputText({ data: { text: 'abc' } });
@@ -329,6 +346,24 @@ describe('selectAllInputText', () => {
     selectAllInputText(text);
     expect(getInputTextSelectionBeginIndex(text)).toBe(0);
     expect(getInputTextSelectionEndIndex(text)).toBe(3);
+  });
+});
+
+describe('selectLineAtInputTextIndex', () => {
+  it('selects from the start to the end of the line', () => {
+    const text = createInputText({ data: { text: 'hello\nworld' } });
+    selectLineAtInputTextIndex(text, 8);
+    expect(getInputTextSelectionBeginIndex(text)).toBe(6);
+    expect(getInputTextSelectionEndIndex(text)).toBe(11);
+  });
+});
+
+describe('selectWordAtInputTextIndex', () => {
+  it('selects the word at the given index', () => {
+    const text = createInputText({ data: { text: 'hello world' } });
+    selectWordAtInputTextIndex(text, 1);
+    expect(getInputTextSelectionBeginIndex(text)).toBe(0);
+    expect(getInputTextSelectionEndIndex(text)).toBe(5);
   });
 });
 

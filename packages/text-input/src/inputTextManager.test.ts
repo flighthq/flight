@@ -13,6 +13,9 @@ import {
   createInputTextManager,
   dispatchInputTextInput,
   dispatchInputTextKeyDown,
+  dispatchInputTextPointerDown,
+  dispatchInputTextPointerMove,
+  dispatchInputTextWheel,
   focusInputText,
 } from './inputTextManager';
 
@@ -90,6 +93,37 @@ describe('dispatchInputTextKeyDown', () => {
     focusInputText(manager, target);
     expect(dispatchInputTextKeyDown(manager, keyData)).toBe(true);
     expect(target.data.text).toBe('ac');
+  });
+});
+
+describe('dispatchInputTextPointerDown', () => {
+  it('focuses the target', () => {
+    const manager = createInputTextManager();
+    const target = createInputText({ data: { text: 'hello' } });
+    dispatchInputTextPointerDown(manager, target, 0, 0);
+    expect(manager.focused).toBe(target);
+    expect(getInputTextRuntime(target).focused).toBe(true);
+  });
+});
+
+describe('dispatchInputTextPointerMove', () => {
+  it('does not throw when nothing is focused', () => {
+    expect(() => dispatchInputTextPointerMove(createInputTextManager(), 0, 0)).not.toThrow();
+  });
+});
+
+describe('dispatchInputTextWheel', () => {
+  it('advances scrollV by the given delta', () => {
+    const manager = createInputTextManager();
+    const target = createInputText({ data: { text: 'hello' } });
+    focusInputText(manager, target);
+    expect(target.data.scrollV).toBe(1);
+    dispatchInputTextWheel(manager, 2);
+    expect(target.data.scrollV).toBe(3);
+  });
+
+  it('does not throw when nothing is focused', () => {
+    expect(() => dispatchInputTextWheel(createInputTextManager(), 1)).not.toThrow();
   });
 });
 

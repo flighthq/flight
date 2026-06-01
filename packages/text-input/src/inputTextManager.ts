@@ -87,12 +87,6 @@ export function dispatchInputTextPointerDown(
   }
 }
 
-export function dispatchInputTextWheel(manager: InputTextManager, deltaLines: number): void {
-  const target = manager.focused;
-  if (target === null || !target.enabled) return;
-  setRichTextScrollV(target, target.data.scrollV + Math.round(deltaLines));
-}
-
 export function dispatchInputTextPointerMove(
   manager: InputTextManager,
   x: number,
@@ -104,6 +98,12 @@ export function dispatchInputTextPointerMove(
   if (runtime.textLayout === null) return;
   const index = getInputTextCharacterIndexAtPoint(target, runtime.textLayout, x, y);
   moveInputTextCaret(target, index, true);
+}
+
+export function dispatchInputTextWheel(manager: InputTextManager, deltaLines: number): void {
+  const target = manager.focused;
+  if (target === null || !target.enabled) return;
+  setRichTextScrollV(target, target.data.scrollV + Math.round(deltaLines));
 }
 
 export function focusInputText(manager: InputTextManager, target: InputText): void {
