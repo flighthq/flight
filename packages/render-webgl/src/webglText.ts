@@ -12,7 +12,6 @@ import type {
 
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';
-import { setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
 
 const LAYOUT_WIDTH = 10000;
 
@@ -100,10 +99,7 @@ export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRende
   }
   updateWebGLTexture(internal, texture, _offscreenCanvas!);
 
-  const gl = internal.gl;
-  const { shaderLoc, matrixArray } = internal;
-  setWebGLBaseUniforms(gl, shaderLoc, renderNode);
-  setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, renderNode.transform2D, internal.canvas);
+  internal.defaultBitmapShader.bind(internal.gl, internal, renderNode);
 
   drawWebGLQuad(internal, 0, 0, w, h, 0, 0, 1, 1);
 }

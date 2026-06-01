@@ -34,6 +34,16 @@ describe('defaultWebGLRichTextRenderer', () => {
 });
 
 describe('drawWebGLRichText', () => {
+  it('binds the active bitmap shader when drawing rich text', () => {
+    const { state } = makeWebGLState();
+    const renderNode = makeRichTextNode();
+    (renderNode.source as RichText).data.text = 'hello';
+
+    drawWebGLRichText(state, renderNode);
+
+    expect(state.defaultBitmapShader.bind).toHaveBeenCalledWith(state.gl, state, renderNode);
+  });
+
   it('returns early without drawing when text and chrome are empty', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLRichText(state, makeRichTextNode());

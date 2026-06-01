@@ -23,9 +23,9 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
     const shouldRender = data.visible && data.alpha > 0 && (data.transform2D.a !== 0 || data.transform2D.d !== 0);
     if (!shouldRender) continue;
 
-    const cache = getDisplayObjectRuntime(current).imageCache;
-    if (cache !== null && cache.source !== null && cache.source.src !== null) {
-      drawWebGLImageCacheResult(internal, data, cache);
+    if (data.imageCacheSource !== null && data.imageCacheSource.src !== null) {
+      const cache = getDisplayObjectRuntime(current).imageCache;
+      if (cache !== null) drawWebGLImageCacheResult(internal, data, cache);
     } else if (data.renderer !== null) {
       data.renderer.draw(internal, data);
     }

@@ -11,14 +11,16 @@ export function drawWebGLImageCacheResult(
   renderNode: DisplayObjectRenderNode,
   cache: ImageCacheResult,
 ): void {
-  if (cache.source === null || cache.source.src === null) return;
-  const source = cache.source;
-  if (source.width <= 0 || source.height <= 0) return;
+  const cacheSource = cache.source;
+  if (cacheSource === null) return;
+  const src = cacheSource.src;
+  if (src === null) return;
+  if (cacheSource.width <= 0 || cacheSource.height <= 0) return;
 
   const internal = state as WebGLRenderStateInternal;
   useWebGLProgram(internal);
   setWebGLBlendMode(internal, renderNode.blendMode);
-  bindWebGLTexture(internal, source.src);
+  bindWebGLTexture(internal, src);
 
   const quadTransform = acquireMatrix();
   multiplyMatrix(quadTransform, renderNode.transform2D, cache.transform);
@@ -29,5 +31,5 @@ export function drawWebGLImageCacheResult(
   setWebGLBaseUniforms(gl, shaderLoc, renderNode);
   releaseMatrix(quadTransform);
 
-  drawWebGLQuad(internal, 0, 0, source.width, source.height, 0, 0, 1, 1);
+  drawWebGLQuad(internal, 0, 0, cacheSource.width, cacheSource.height, 0, 0, 1, 1);
 }
