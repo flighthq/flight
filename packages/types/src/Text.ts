@@ -5,8 +5,10 @@ import type { TextLayoutResult } from './TextLayout';
 
 export interface TextData extends DisplayObjectData {
   autoSize: TextAutoSize;
+  height: number;
   text: string;
   textFormat: TextFormat;
+  width: number;
 }
 
 export interface TextRuntime extends DisplayObjectRuntime {
