@@ -3,9 +3,27 @@ import { addGraphChild } from '@flighthq/scenegraph-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
-import { setRenderStateBackgroundColor, updateColorTransform } from './color';
-import { getDisplayObjectRenderNode } from './renderNode2d';
+import { rgbaToHexString, setRenderStateBackgroundColor, updateColorTransform } from './color';
+import { getOrCreateDisplayObjectRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
+
+describe('rgbaToHexString', () => {
+  it('converts basic RGB colors to CSS hex strings', () => {
+    expect(rgbaToHexString(0xff0000)).toBe('#ff0000');
+    expect(rgbaToHexString(0x00ff00)).toBe('#00ff00');
+    expect(rgbaToHexString(0x0000ff)).toBe('#0000ff');
+  });
+
+  it('pads short values with leading zeros', () => {
+    expect(rgbaToHexString(0x000001)).toBe('#000001');
+    expect(rgbaToHexString(0)).toBe('#000000');
+  });
+
+  it('masks out alpha/upper bits', () => {
+    expect(rgbaToHexString(0xff112233)).toBe('#112233');
+    expect(rgbaToHexString(0xaaff0000)).toBe('#ff0000');
+  });
+});
 
 describe('setRenderStateBackgroundColor', () => {
   let state: RenderState;
@@ -62,8 +80,8 @@ describe('updateColorTransform', () => {
     child = createDisplayObject();
     addGraphChild(parent, child);
     state = createRenderState();
-    parentData = getDisplayObjectRenderNode(state, parent);
-    childData = getDisplayObjectRenderNode(state, child);
+    parentData = getOrCreateDisplayObjectRenderNode(state, parent);
+    childData = getOrCreateDisplayObjectRenderNode(state, child);
   });
 
   it('sets useColorTransform to false if source does not use color transform', () => {

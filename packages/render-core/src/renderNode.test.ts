@@ -4,8 +4,8 @@ import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import { createRenderNode, getRenderNode } from './renderNode';
-import { createDisplayObjectRenderNode, getDisplayObjectRenderNode } from './renderNode2d';
+import { createRenderNode, getOrCreateRenderNode } from './renderNode';
+import { createDisplayObjectRenderNode, getOrCreateDisplayObjectRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
 
 describe('createDisplayObjectRenderNode', () => {
@@ -51,21 +51,21 @@ describe('createRenderNode', () => {
   });
 });
 
-describe('getDisplayObjectRenderNode', () => {
+describe('getOrCreateDisplayObjectRenderNode', () => {
   it('creates renderable data if not present already', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     expect(state.renderNodeMap.has(source)).toBe(false);
-    getDisplayObjectRenderNode(state, source);
+    getOrCreateDisplayObjectRenderNode(state, source);
     expect(state.renderNodeMap.has(source)).toBe(true);
   });
 });
 
-describe('getRenderNode', () => {
+describe('getOrCreateRenderNode', () => {
   it('creates and caches a render node on first call', () => {
     const state = createRenderState();
     const source = createDisplayObject();
-    const node = getRenderNode(state, source, createDisplayObjectRenderNode);
+    const node = getOrCreateRenderNode(state, source, createDisplayObjectRenderNode);
     expect(state.renderNodeMap.has(source)).toBe(true);
     expect(node.source).toBe(source);
   });
@@ -73,8 +73,8 @@ describe('getRenderNode', () => {
   it('returns the same node on subsequent calls', () => {
     const state = createRenderState();
     const source = createDisplayObject();
-    const first = getRenderNode(state, source, createDisplayObjectRenderNode);
-    const second = getRenderNode(state, source, createDisplayObjectRenderNode);
+    const first = getOrCreateRenderNode(state, source, createDisplayObjectRenderNode);
+    const second = getOrCreateRenderNode(state, source, createDisplayObjectRenderNode);
     expect(first).toBe(second);
   });
 });

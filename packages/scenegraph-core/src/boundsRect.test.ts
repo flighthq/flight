@@ -25,7 +25,7 @@ import type {
 } from '@flighthq/types';
 
 import {
-  calculateBoundsRectangle,
+  computeBoundsRectangle,
   ensureBoundsRectangle,
   ensureLocalBoundsRectangle,
   ensureWorldBoundsRectangle,
@@ -55,7 +55,7 @@ function createTestNode(): TestNode {
   return node;
 }
 
-describe('calculateBoundsRectangle', () => {
+describe('computeBoundsRectangle', () => {
   let root: TestNode;
   let child: TestNode;
   let grandChild: TestNode;
@@ -79,19 +79,19 @@ describe('calculateBoundsRectangle', () => {
 
   it('should equal local bounds when targetCoordinateSpace is self and there are no children', () => {
     const out = createRectangle();
-    calculateBoundsRectangle(out, grandChild, grandChild);
+    computeBoundsRectangle(out, grandChild, grandChild);
     expect(equalsRectangle(out, getLocalBoundsRectangle(grandChild))).toBe(true);
   });
 
   it('should include children bounds when targetCoordinateSpace is self', () => {
     const out = createRectangle();
-    calculateBoundsRectangle(out, child, child);
+    computeBoundsRectangle(out, child, child);
     expect(equalsRectangle(out, { x: 5, y: 5, width: 100, height: 100 })).toBe(true);
   });
 
   it('should compute bounds relative to parent', () => {
     const out = createRectangle();
-    calculateBoundsRectangle(out, child, root);
+    computeBoundsRectangle(out, child, root);
     expect(out.x).toBeCloseTo(105);
     expect(out.y).toBeCloseTo(105);
     expect(out.width).toBeCloseTo(100);
@@ -100,7 +100,7 @@ describe('calculateBoundsRectangle', () => {
 
   it('should compute bounds relative to nested child', () => {
     const out = createRectangle();
-    calculateBoundsRectangle(out, root, grandChild);
+    computeBoundsRectangle(out, root, grandChild);
     expect(out.width).toBeGreaterThan(0);
     expect(out.height).toBeGreaterThan(0);
     // exact numbers depend on transforms
@@ -112,7 +112,7 @@ describe('calculateBoundsRectangle', () => {
     child.scaleY = 3;
 
     const out = createRectangle();
-    calculateBoundsRectangle(out, child, root);
+    computeBoundsRectangle(out, child, root);
 
     expect(out.width).toBeCloseTo(100 * 2);
     expect(out.height).toBeCloseTo(100 * 3);
@@ -123,7 +123,7 @@ describe('calculateBoundsRectangle', () => {
     child.y = 7;
 
     const out = createRectangle();
-    calculateBoundsRectangle(out, grandChild, root);
+    computeBoundsRectangle(out, grandChild, root);
 
     // grandChild localBounds at (5,5) with no scaling
     expect(out.x).toBeCloseTo(5 + 5); // parent offset + grandChild offset
@@ -134,27 +134,27 @@ describe('calculateBoundsRectangle', () => {
     child.rotation = 90;
 
     const out = createRectangle();
-    calculateBoundsRectangle(out, child, root);
+    computeBoundsRectangle(out, child, root);
     expect(out.width).toBeCloseTo(100); // roughly unchanged
     expect(out.height).toBeCloseTo(100);
   });
 
   it('should allow a rectangle-like object', () => {
     const out = { x: 0, y: 0, width: 0, height: 0 };
-    calculateBoundsRectangle(out, grandChild, grandChild);
+    computeBoundsRectangle(out, grandChild, grandChild);
     expect(equalsRectangle(out, getLocalBoundsRectangle(grandChild))).toBe(true);
   });
 
   it('should compute bounds relative to an unrelated target', () => {
     const out = createRectangle();
     const unrelatedTarget = createTestNode(); // another object in a separate scene graph
-    calculateBoundsRectangle(out, child, unrelatedTarget);
+    computeBoundsRectangle(out, child, unrelatedTarget);
     expect(equalsRectangle(out, getWorldBoundsRectangle(child))).toBe(true);
   });
 
   it('should return world bounds if the target coordinate space is root', () => {
     const out = createRectangle();
-    calculateBoundsRectangle(out, child, root);
+    computeBoundsRectangle(out, child, root);
     expect(equalsRectangle(out, getWorldBoundsRectangle(child))).toBe(true);
   });
 });

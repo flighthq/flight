@@ -1,4 +1,5 @@
 import { createEntity } from '@flighthq/entity';
+import { computeTextFormatFontString, rgbaToHexString } from '@flighthq/render-core';
 import { getTextRuntime } from '@flighthq/scenegraph-display';
 import { createTextFormatRange, getTextLayoutResult, layoutText } from '@flighthq/text-layout';
 import type {
@@ -14,7 +15,7 @@ import type {
 } from '@flighthq/types';
 
 import { applyDOMStyle, initDOMElement } from './domStyle';
-import { colorToCSS, formatToFont, htmlEscape } from './domTextHelpers';
+import { htmlEscape } from './domTextHelpers';
 
 interface DOMTextData extends RendererData {
   div: HTMLDivElement | null;
@@ -53,7 +54,7 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
   }
 
   const measure = (t: string, format: TextFormat): number => {
-    ctx.font = formatToFont(format);
+    ctx.font = computeTextFormatFontString(format);
     return ctx.measureText(t).width;
   };
 
@@ -76,8 +77,8 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
     const x = group.offsetX;
     const y = group.offsetY;
 
-    let style = `position:absolute;left:${x}px;top:${y}px;font:${formatToFont(fmt)};`;
-    style += `color:${colorToCSS(fmt.color ?? 0)};white-space:nowrap;`;
+    let style = `position:absolute;left:${x}px;top:${y}px;font:${computeTextFormatFontString(fmt)};`;
+    style += `color:${rgbaToHexString(fmt.color ?? 0)};white-space:nowrap;`;
     if (fmt.underline) style += 'text-decoration:underline;';
 
     html += `<div style="${style}">${slice}</div>`;

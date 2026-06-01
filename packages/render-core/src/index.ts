@@ -5,5 +5,6 @@ export * from './renderer';
 export * from './renderNode';
 export * from './renderNode2d';
 export * from './renderState';
+export * from './textFormat';
 export * from './transform2d';
 export * from './update';

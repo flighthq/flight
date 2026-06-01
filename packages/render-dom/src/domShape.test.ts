@@ -1,5 +1,5 @@
 import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/render-canvas';
-import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import {
   appendShapeBeginFill,
   appendShapeEndFill,
@@ -34,7 +34,7 @@ describe('drawDOMShape', () => {
   it('does not append anything when commands array is empty', () => {
     const state = makeState();
     const shape = createShape();
-    const renderNode = getDisplayObjectRenderNode(state, shape);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, shape);
 
     drawDOMShape(state, renderNode);
 
@@ -47,7 +47,7 @@ describe('drawDOMShape', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 50, 50);
     appendShapeEndFill(shape);
-    const renderNode = getDisplayObjectRenderNode(state, shape);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, shape);
 
     drawDOMShape(state, renderNode);
 
@@ -61,7 +61,7 @@ describe('drawDOMShape', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 0, 0);
     appendShapeEndFill(shape);
-    const renderNode = getDisplayObjectRenderNode(state, shape);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, shape);
 
     drawDOMShape(state, renderNode);
 
@@ -76,7 +76,7 @@ describe('drawDOMShape', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 40, 40);
     appendShapeEndFill(shape);
-    const renderNode = getDisplayObjectRenderNode(state, shape);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, shape);
 
     drawDOMShape(state, renderNode);
     const firstCanvas = state.element.children[0];
@@ -93,7 +93,7 @@ describe('drawDOMShapeMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const shape = createShape();
-    const renderNode = getDisplayObjectRenderNode(state, shape);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, shape);
     expect(() => drawDOMShapeMask(state, renderNode)).not.toThrow();
   });
 });

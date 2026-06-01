@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { addGraphChild } from '@flighthq/scenegraph-core';
 import { createDisplayObject, getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type { ImageCacheResult } from '@flighthq/types';
@@ -34,14 +34,14 @@ describe('drawCanvasDisplayObject', () => {
   it('does not throw', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     expect(() => drawCanvasDisplayObject(state, data)).not.toThrow();
   });
 
   it('does not call fillRect (no visual geometry)', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     const spy = vi.spyOn(state.context, 'fillRect');
 
     drawCanvasDisplayObject(state, data);
@@ -54,14 +54,14 @@ describe('drawCanvasDisplayObjectMask', () => {
   it('does not throw when no children', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     expect(() => drawCanvasDisplayObjectMask(state, data)).not.toThrow();
   });
 
   it('does not call context.rect for a childless display object', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     const rectSpy = vi.spyOn(state.context, 'rect');
 
     drawCanvasDisplayObjectMask(state, data);
@@ -83,7 +83,7 @@ describe('renderCanvasDisplayObject', () => {
     const state = makeState();
     const obj = createDisplayObject();
     obj.visible = false;
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     data.visible = false;
     const drawImageSpy = vi.spyOn(state.context, 'drawImage');
 

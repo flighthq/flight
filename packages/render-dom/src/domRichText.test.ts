@@ -1,4 +1,4 @@
-import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { createRichText } from '@flighthq/scenegraph-display';
 import { RichTextKind } from '@flighthq/types';
 
@@ -25,7 +25,7 @@ describe('drawDOMRichText', () => {
     const state = makeState();
     const node = createRichText();
     node.data.text = '';
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
     expect(() => drawDOMRichText(state, renderNode)).not.toThrow();
   });
 
@@ -33,7 +33,7 @@ describe('drawDOMRichText', () => {
     const state = makeState();
     const node = createRichText();
     node.data.text = '';
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMRichText(state, renderNode);
 
@@ -44,7 +44,7 @@ describe('drawDOMRichText', () => {
     const state = makeState();
     const node = createRichText();
     node.data.text = 'hello';
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
     drawDOMRichText(state, renderNode);
 
     while (state.element.firstChild) state.element.removeChild(state.element.firstChild);
@@ -59,7 +59,7 @@ describe('drawDOMRichText', () => {
     const state = makeState();
     const node = createRichText();
     node.data.text = 'hello';
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMRichText(state, renderNode);
 
@@ -73,7 +73,7 @@ describe('drawDOMRichText', () => {
     node.data.text = 'hello';
     node.data.width = 200;
     node.data.height = 100;
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMRichText(state, renderNode);
 
@@ -86,7 +86,7 @@ describe('drawDOMRichText', () => {
     const state = makeState();
     const node = createRichText();
     node.data.text = 'world';
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMRichText(state, renderNode);
 
@@ -98,7 +98,7 @@ describe('drawDOMRichText', () => {
     const state = makeState();
     const node = createRichText();
     node.data.htmlText = '<b>Bold</b><font color="#00ff00">Green</font>';
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMRichText(state, renderNode);
 
@@ -115,7 +115,7 @@ describe('drawDOMRichText', () => {
     node.data.text = 'hi';
     node.data.background = true;
     node.data.backgroundColor = 0xff0000;
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMRichText(state, renderNode);
 
@@ -128,7 +128,7 @@ describe('drawDOMRichText', () => {
     const node = createRichText();
     node.data.text = 'hi';
     node.data.background = false;
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMRichText(state, renderNode);
 
@@ -141,7 +141,7 @@ describe('drawDOMRichTextMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const node = createRichText();
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
     expect(() => drawDOMRichTextMask(state, renderNode)).not.toThrow();
   });
 });

@@ -12,9 +12,9 @@ import {
   getSpritesheetAnimation,
   getSpritesheetPlayerFrame,
   loadImageSourceFromURL,
+  playSpritesheetAnimation,
   setTransformX,
   setTransformY,
-  showSpritesheetAnimation,
   startApplicationLoop,
   updateSpriteBeforeRender,
   updateSpritesheetPlayer,
@@ -75,7 +75,7 @@ const sprites = animationDefs.map((def, i) => {
 
 const players = animationDefs.map(({ name }) => {
   const player = createSpritesheetPlayer();
-  showSpritesheetAnimation(player, getSpritesheetAnimation(sheet, name)!);
+  playSpritesheetAnimation(player, getSpritesheetAnimation(sheet, name)!);
   return player;
 });
 

@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render-core';
+import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } from '@flighthq/render-core';
 import { getTextRuntime } from '@flighthq/scenegraph-display';
 import { createTextFormatRange, getTextLayoutResult, layoutText } from '@flighthq/text-layout';
 import type {
@@ -12,7 +12,6 @@ import type {
 
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { setCanvasBlendMode } from './canvasMaterials';
-import { colorToHex, formatToCanvasFont } from './canvasTextHelpers';
 import { setCanvasTransform } from './canvasTransform';
 
 const LAYOUT_WIDTH = 10000;
@@ -30,7 +29,7 @@ export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObje
   setCanvasTransform(state, context, renderNode.transform2D);
 
   const measure = (t: string, format: TextFormat): number => {
-    context.font = formatToCanvasFont(format);
+    context.font = computeTextFormatFontString(format);
     return context.measureText(t).width;
   };
 
@@ -47,8 +46,8 @@ export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObje
   context.textAlign = 'start';
 
   for (const group of result.groups) {
-    context.font = formatToCanvasFont(group.format);
-    context.fillStyle = colorToHex(group.format.color ?? 0);
+    context.font = computeTextFormatFontString(group.format);
+    context.fillStyle = rgbaToHexString(group.format.color ?? 0);
     const slice = text.substring(group.startIndex, group.endIndex);
     const x = group.offsetX;
     // group.ascent = font-size; CSS places the alphabetic baseline at ~80% of the em-size.
@@ -58,7 +57,7 @@ export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObje
 
     if (group.format.underline) {
       const lineY = y + group.descent;
-      context.strokeStyle = colorToHex(group.format.color ?? 0);
+      context.strokeStyle = rgbaToHexString(group.format.color ?? 0);
       context.lineWidth = Math.max(1, (group.format.size ?? 12) / 16);
       context.beginPath();
       context.moveTo(x, lineY);

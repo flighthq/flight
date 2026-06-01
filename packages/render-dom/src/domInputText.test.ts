@@ -1,4 +1,4 @@
-import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { createInputText, getInputTextRuntime } from '@flighthq/scenegraph-display';
 import { setInputTextSelection } from '@flighthq/text-input';
 import { InputTextKind } from '@flighthq/types';
@@ -25,7 +25,7 @@ describe('drawDOMInputText', () => {
     const node = createInputText({ data: { text: 'hello', width: 100, height: 40 } });
     (getInputTextRuntime(node) as ReturnType<typeof getInputTextRuntime> & { focused: boolean }).focused = true;
     setInputTextSelection(node, 2, 2);
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMInputText(state, renderNode);
 
@@ -38,7 +38,7 @@ describe('drawDOMInputText', () => {
     const node = createInputText({ data: { text: 'hello', width: 100, height: 40 } });
     (getInputTextRuntime(node) as ReturnType<typeof getInputTextRuntime> & { focused: boolean }).focused = true;
     setInputTextSelection(node, 1, 4);
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMInputText(state, renderNode);
 

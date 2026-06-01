@@ -131,43 +131,43 @@ function recomputeWorldTransform2D<GraphKind extends symbol, Traits extends obje
 }
 
 export function setTransformRotation<GraphKind extends symbol, Traits extends object>(
-  source: GraphTransform2DNode<GraphKind, Traits>,
+  target: GraphTransform2DNode<GraphKind, Traits>,
   value: number,
 ): void {
-  source.rotation = value;
-  invalidateLocalTransform(source);
+  target.rotation = value;
+  invalidateLocalTransform(target);
 }
 
 export function setTransformScaleX<GraphKind extends symbol, Traits extends object>(
-  source: GraphTransform2DNode<GraphKind, Traits>,
+  target: GraphTransform2DNode<GraphKind, Traits>,
   value: number,
 ): void {
-  source.scaleX = value;
-  invalidateLocalTransform(source);
+  target.scaleX = value;
+  invalidateLocalTransform(target);
 }
 
 export function setTransformScaleY<GraphKind extends symbol, Traits extends object>(
-  source: GraphTransform2DNode<GraphKind, Traits>,
+  target: GraphTransform2DNode<GraphKind, Traits>,
   value: number,
 ): void {
-  source.scaleY = value;
-  invalidateLocalTransform(source);
+  target.scaleY = value;
+  invalidateLocalTransform(target);
 }
 
 export function setTransformX<GraphKind extends symbol, Traits extends object>(
-  source: GraphTransform2DNode<GraphKind, Traits>,
+  target: GraphTransform2DNode<GraphKind, Traits>,
   value: number,
 ): void {
-  source.x = value;
-  invalidateLocalTransform(source);
+  target.x = value;
+  invalidateLocalTransform(target);
 }
 
 export function setTransformY<GraphKind extends symbol, Traits extends object>(
-  source: GraphTransform2DNode<GraphKind, Traits>,
+  target: GraphTransform2DNode<GraphKind, Traits>,
   value: number,
 ): void {
-  source.y = value;
-  invalidateLocalTransform(source);
+  target.y = value;
+  invalidateLocalTransform(target);
 }
 
 const DEG_TO_RAD = Math.PI / 180;

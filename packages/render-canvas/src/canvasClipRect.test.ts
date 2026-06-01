@@ -1,5 +1,5 @@
 import { createMatrix, createRectangle } from '@flighthq/geometry';
-import { getDisplayObjectRenderNode } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, Matrix, Rectangle } from '@flighthq/types';
 
@@ -26,7 +26,7 @@ describe('Clip and Scroll Rect Functions', () => {
     transform2D = createMatrix();
     source = createDisplayObject();
     source.scrollRect = rect;
-    data = getDisplayObjectRenderNode(state, source);
+    data = getOrCreateDisplayObjectRenderNode(state, source);
     data.transform2D = transform2D;
   });
 
@@ -112,7 +112,7 @@ describe('pushCanvasScrollRectangle', () => {
     const state = createCanvasRenderState(c);
     const source = createDisplayObject();
     source.scrollRect = createRectangle(0, 0, 50, 50);
-    const data = getDisplayObjectRenderNode(state, source);
+    const data = getOrCreateDisplayObjectRenderNode(state, source);
     data.transform2D = createMatrix();
     const before = state.currentScrollRectDepth;
     pushCanvasScrollRectangle(state, data);

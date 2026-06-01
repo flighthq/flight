@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { DisplayObjectRenderer } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
@@ -26,7 +26,7 @@ describe('applyCanvasMask', () => {
     registerRenderer(state, DisplayObjectKind, renderer);
 
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
 
     applyCanvasMask(state, data);
 
@@ -36,7 +36,7 @@ describe('applyCanvasMask', () => {
   it('does not throw when renderer is null', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     data.renderer = null;
 
     expect(() => applyCanvasMask(state, data)).not.toThrow();
@@ -58,7 +58,7 @@ describe('pushCanvasMask', () => {
   it('calls save, beginPath, closePath, and clip', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     data.transform2D = createMatrix();
 
     const saveSpy = vi.spyOn(state.context, 'save');
@@ -83,7 +83,7 @@ describe('pushCanvasMask', () => {
     registerRenderer(state, DisplayObjectKind, renderer);
 
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     data.transform2D = createMatrix();
 
     pushCanvasMask(state, data);

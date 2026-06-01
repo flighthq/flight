@@ -5,6 +5,18 @@ export function cloneRectangle(source: Readonly<RectangleLike>): Rectangle {
   return createRectangle(source.x, source.y, source.width, source.height);
 }
 
+export function containsRectanglePoint(source: Readonly<RectangleLike>, vector: Readonly<Vector2Like>): boolean {
+  return containsRectanglePointXY(source, vector.x, vector.y);
+}
+
+export function containsRectanglePointXY(source: Readonly<RectangleLike>, x: number, y: number): boolean {
+  const x0 = Math.min(source.x, source.x + source.width);
+  const x1 = Math.max(source.x, source.x + source.width);
+  const y0 = Math.min(source.y, source.y + source.height);
+  const y1 = Math.max(source.y, source.y + source.height);
+  return x >= x0 && x < x1 && y >= y0 && y < y1;
+}
+
 export function copyRectangle(out: RectangleLike, source: Readonly<RectangleLike>): void {
   if (out !== source) {
     out.x = source.x;
@@ -21,6 +33,21 @@ export function createRectangle(x?: number, y?: number, width?: number, height?:
     width: width ?? 0,
     height: height ?? 0,
   });
+}
+
+export function enclosesRectangle(source: Readonly<RectangleLike>, other: Readonly<RectangleLike>): boolean {
+  const sx0 = Math.min(source.x, source.x + source.width);
+  const sx1 = Math.max(source.x, source.x + source.width);
+  const sy0 = Math.min(source.y, source.y + source.height);
+  const sy1 = Math.max(source.y, source.y + source.height);
+
+  const ox0 = Math.min(other.x, other.x + other.width);
+  const ox1 = Math.max(other.x, other.x + other.width);
+  const oy0 = Math.min(other.y, other.y + other.height);
+  const oy1 = Math.max(other.y, other.y + other.height);
+
+  // A rectangle contains another if all corners are inside (exclusive right/bottom)
+  return ox0 >= sx0 && oy0 >= sy0 && ox1 <= sx1 && oy1 <= sy1;
 }
 
 export function equalsRectangle(
@@ -187,33 +214,6 @@ export function offsetRectangleByPoint(
   out.y = source.y + point.y;
   out.width = source.width;
   out.height = source.height;
-}
-
-export function rectangleContains(source: Readonly<RectangleLike>, x: number, y: number): boolean {
-  const x0 = Math.min(source.x, source.x + source.width);
-  const x1 = Math.max(source.x, source.x + source.width);
-  const y0 = Math.min(source.y, source.y + source.height);
-  const y1 = Math.max(source.y, source.y + source.height);
-  return x >= x0 && x < x1 && y >= y0 && y < y1;
-}
-
-export function rectangleContainsPoint(source: Readonly<RectangleLike>, vector: Readonly<Vector2Like>): boolean {
-  return rectangleContains(source, vector.x, vector.y);
-}
-
-export function rectangleEncloses(source: Readonly<RectangleLike>, other: Readonly<RectangleLike>): boolean {
-  const sx0 = Math.min(source.x, source.x + source.width);
-  const sx1 = Math.max(source.x, source.x + source.width);
-  const sy0 = Math.min(source.y, source.y + source.height);
-  const sy1 = Math.max(source.y, source.y + source.height);
-
-  const ox0 = Math.min(other.x, other.x + other.width);
-  const ox1 = Math.max(other.x, other.x + other.width);
-  const oy0 = Math.min(other.y, other.y + other.height);
-  const oy1 = Math.max(other.y, other.y + other.height);
-
-  // A rectangle contains another if all corners are inside (exclusive right/bottom)
-  return ox0 >= sx0 && oy0 >= sy0 && ox1 <= sx1 && oy1 <= sy1;
 }
 
 export function setEmptyRectangle(out: RectangleLike): void {

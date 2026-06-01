@@ -1,4 +1,4 @@
-import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { createText } from '@flighthq/scenegraph-display';
 import { TextKind } from '@flighthq/types';
 
@@ -25,7 +25,7 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = '';
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
     expect(() => drawDOMText(state, renderNode)).not.toThrow();
   });
 
@@ -33,7 +33,7 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = '';
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMText(state, renderNode);
 
@@ -44,7 +44,7 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = 'hello';
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMText(state, renderNode);
 
@@ -56,7 +56,7 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = 'hello';
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMText(state, renderNode);
 
@@ -68,7 +68,7 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = 'world';
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMText(state, renderNode);
 
@@ -80,7 +80,7 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = 'hello';
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMText(state, renderNode);
     const firstDiv = state.element.children[0];
@@ -97,7 +97,7 @@ describe('drawDOMTextMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const node = createText();
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
     expect(() => drawDOMTextMask(state, renderNode)).not.toThrow();
   });
 });

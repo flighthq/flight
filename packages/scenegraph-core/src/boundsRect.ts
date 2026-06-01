@@ -26,7 +26,7 @@ import { ensureWorldTransformMatrix, getLocalTransformMatrix, getWorldTransformM
  * Writes a rectangle which defines the area of the scene node
  * relative to the coordinate system of the `targetCoordinateSpace` object.
  **/
-export function calculateBoundsRectangle<GraphKind extends symbol, Traits extends object>(
+export function computeBoundsRectangle<GraphKind extends symbol, Traits extends object>(
   out: RectangleLike,
   source: GraphSpatial2DNode<GraphKind, Traits>,
   targetCoordinateSpace: GraphSpatial2DNode<GraphKind, Traits> | null | undefined,
@@ -121,7 +121,7 @@ export function getLocalBoundsRectangle<GraphKind extends symbol, Traits extends
 export function getScaledBoundsHeight<GraphKind extends symbol, Traits extends object>(
   source: GraphSpatial2DNode<GraphKind, Traits>,
 ): number {
-  calculateBoundsRectangle(
+  computeBoundsRectangle(
     _tempBoundsRect,
     source,
     getGraphParent(source) as unknown as GraphSpatial2DNode<GraphKind, Traits> | null,
@@ -132,7 +132,7 @@ export function getScaledBoundsHeight<GraphKind extends symbol, Traits extends o
 export function getScaledBoundsWidth<GraphKind extends symbol, Traits extends object>(
   source: GraphSpatial2DNode<GraphKind, Traits>,
 ): number {
-  calculateBoundsRectangle(
+  computeBoundsRectangle(
     _tempBoundsRect,
     source,
     getGraphParent(source) as unknown as GraphSpatial2DNode<GraphKind, Traits> | null,
@@ -151,21 +151,21 @@ export function getWorldBoundsRectangle<GraphKind extends symbol, Traits extends
 }
 
 export function setScaledBoundsHeight<GraphKind extends symbol, Traits extends object>(
-  source: GraphSpatial2DNode<GraphKind, Traits>,
+  target: GraphSpatial2DNode<GraphKind, Traits>,
   value: number,
 ): void {
-  if (source.scaleY === 0) return;
-  source.scaleY = (value * source.scaleY) / getScaledBoundsHeight(source);
-  invalidateLocalTransform(source);
+  if (target.scaleY === 0) return;
+  target.scaleY = (value * target.scaleY) / getScaledBoundsHeight(target);
+  invalidateLocalTransform(target);
 }
 
 export function setScaledBoundsWidth<GraphKind extends symbol, Traits extends object>(
-  source: GraphSpatial2DNode<GraphKind, Traits>,
+  target: GraphSpatial2DNode<GraphKind, Traits>,
   value: number,
 ): void {
-  if (source.scaleX === 0) return;
-  source.scaleX = (value * source.scaleX) / getScaledBoundsWidth(source);
-  invalidateLocalTransform(source);
+  if (target.scaleX === 0) return;
+  target.scaleX = (value * target.scaleX) / getScaledBoundsWidth(target);
+  invalidateLocalTransform(target);
 }
 
 function recomputeBoundsRect<GraphKind extends symbol, Traits extends object>(

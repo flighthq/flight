@@ -2,12 +2,12 @@ import type { Timeline } from '@flighthq/types';
 
 import {
   createTimeline,
+  findTimelineLabel,
   gotoAndPlayTimeline,
   gotoAndStopTimeline,
   nextFrameTimeline,
   playTimeline,
   prevFrameTimeline,
-  resolveTimelineLabel,
   stopTimeline,
   updateTimeline,
 } from './timeline';
@@ -28,6 +28,23 @@ describe('createTimeline', () => {
     const t = make({ currentFrame: 3, frameRate: 24 });
     expect(t.currentFrame).toBe(3);
     expect(t.frameRate).toBe(24);
+  });
+});
+
+describe('findTimelineLabel', () => {
+  it('returns the matching label', () => {
+    const t = make({
+      labels: [
+        { name: 'idle', frame: 1 },
+        { name: 'run', frame: 3 },
+      ],
+    });
+    expect(findTimelineLabel(t, 'run')?.frame).toBe(3);
+  });
+
+  it('returns null for an unknown name', () => {
+    const t = make();
+    expect(findTimelineLabel(t, 'missing')).toBeNull();
   });
 });
 
@@ -128,23 +145,6 @@ describe('prevFrameTimeline', () => {
     const t = make();
     prevFrameTimeline(t);
     expect(t.currentFrame).toBe(1);
-  });
-});
-
-describe('resolveTimelineLabel', () => {
-  it('returns the matching label', () => {
-    const t = make({
-      labels: [
-        { name: 'idle', frame: 1 },
-        { name: 'run', frame: 3 },
-      ],
-    });
-    expect(resolveTimelineLabel(t, 'run')?.frame).toBe(3);
-  });
-
-  it('returns null for an unknown name', () => {
-    const t = make();
-    expect(resolveTimelineLabel(t, 'missing')).toBeNull();
   });
 });
 

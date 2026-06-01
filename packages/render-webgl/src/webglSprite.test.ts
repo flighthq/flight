@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import { getSpriteRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateSpriteRenderNode, registerRenderer } from '@flighthq/render-core';
 import { addGraphChild } from '@flighthq/scenegraph-core';
 import { createSprite } from '@flighthq/scenegraph-sprite';
 import type { WebGLRenderState } from '@flighthq/types';
@@ -35,7 +35,7 @@ describe('renderWebGLSprite', () => {
     registerRenderer(state, SpriteKind, renderer);
 
     const sprite = createSprite();
-    const data = getSpriteRenderNode(state, sprite);
+    const data = getOrCreateSpriteRenderNode(state, sprite);
     data.visible = true;
     data.alpha = 1;
     data.transform2D = createMatrix();
@@ -51,7 +51,7 @@ describe('renderWebGLSprite', () => {
     const renderer = makeRenderer();
 
     const sprite = createSprite();
-    const data = getSpriteRenderNode(state, sprite);
+    const data = getOrCreateSpriteRenderNode(state, sprite);
     data.visible = false;
     data.renderer = renderer;
 
@@ -65,7 +65,7 @@ describe('renderWebGLSprite', () => {
     const renderer = makeRenderer();
 
     const sprite = createSprite();
-    const data = getSpriteRenderNode(state, sprite);
+    const data = getOrCreateSpriteRenderNode(state, sprite);
     data.visible = true;
     data.alpha = 0;
     data.renderer = renderer;
@@ -83,13 +83,13 @@ describe('renderWebGLSprite', () => {
     const child = createSprite();
     addGraphChild(parent, child);
 
-    const parentData = getSpriteRenderNode(state, parent);
+    const parentData = getOrCreateSpriteRenderNode(state, parent);
     parentData.visible = true;
     parentData.alpha = 1;
     parentData.transform2D = createMatrix();
     parentData.renderer = null;
 
-    const childData = getSpriteRenderNode(state, child);
+    const childData = getOrCreateSpriteRenderNode(state, child);
     childData.visible = true;
     childData.alpha = 1;
     childData.transform2D = createMatrix();

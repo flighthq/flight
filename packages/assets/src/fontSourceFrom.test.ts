@@ -10,7 +10,10 @@ let mockFace: { load: ReturnType<typeof vi.fn> };
 
 beforeEach(() => {
   mockFace = { load: vi.fn().mockResolvedValue(undefined) };
-  vi.stubGlobal('FontFace', vi.fn(() => mockFace));
+  vi.stubGlobal(
+    'FontFace',
+    vi.fn(() => mockFace),
+  );
   vi.spyOn(document.fonts, 'add').mockImplementation(() => document.fonts);
   vi.spyOn(document.fonts, 'load').mockResolvedValue([mockFace as unknown as FontFace]);
 });
@@ -60,10 +63,7 @@ describe('loadFontSourceFromURL', () => {
 describe('loadFontSourceFromURLs', () => {
   it('builds a multi-source src string and loads the face', async () => {
     const source = createFontSource('TestFont');
-    const result = await loadFontSourceFromURLs(source, [
-      { url: 'font.woff2', format: 'woff2' },
-      { url: 'font.ttf' },
-    ]);
+    const result = await loadFontSourceFromURLs(source, [{ url: 'font.woff2', format: 'woff2' }, { url: 'font.ttf' }]);
     expect(result).toBe(source);
     expect(source.face).toBe(mockFace);
     expect(document.fonts.add).toHaveBeenCalledWith(mockFace);

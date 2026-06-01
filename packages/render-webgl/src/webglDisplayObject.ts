@@ -1,4 +1,4 @@
-import { getDisplayObjectRenderNode } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-core';
 import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type { DisplayObject, WebGLRenderState } from '@flighthq/types';
 
@@ -14,7 +14,7 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as DisplayObject;
-    const data = getDisplayObjectRenderNode(state, current);
+    const data = getOrCreateDisplayObjectRenderNode(state, current);
 
     const isMask = data.isMaskFrameID === currentFrameID;
     if (isMask) continue;

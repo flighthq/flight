@@ -1,4 +1,4 @@
-import { createNullRendererData, getDisplayObjectRenderNode } from '@flighthq/render-core';
+import { createNullRendererData, getOrCreateDisplayObjectRenderNode } from '@flighthq/render-core';
 import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
 
@@ -14,7 +14,7 @@ export function drawCanvasDisplayObjectMask(state: CanvasRenderState, data: Disp
   const children = getDisplayObjectRuntime(data.source).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
-      const child = getDisplayObjectRenderNode(state, children[i] as DisplayObject);
+      const child = getOrCreateDisplayObjectRenderNode(state, children[i] as DisplayObject);
       applyCanvasMask(state, child);
     }
   }
@@ -29,7 +29,7 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as DisplayObject;
-    const data = getDisplayObjectRenderNode(state, current);
+    const data = getOrCreateDisplayObjectRenderNode(state, current);
 
     const isMask = data.isMaskFrameID === currentFrameID;
     if (isMask) continue;
@@ -79,7 +79,7 @@ function pushMaskObject(
   const source = data.source;
   if (handleScrollRect && source.scrollRect != null)
     pushCanvasClipRectangle(state, source.scrollRect, data.transform2D);
-  if (source.mask !== null) pushCanvasMask(state, getDisplayObjectRenderNode(state, source.mask));
+  if (source.mask !== null) pushCanvasMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask));
 }
 
 export const defaultCanvasDisplayObjectRenderer: DisplayObjectRenderer = {

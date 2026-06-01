@@ -11,7 +11,7 @@ import type {
 
 import { updateAppearance } from './appearance';
 import type { RenderStateInternal } from './internal';
-import { getDisplayObjectRenderNode, getSpriteRenderNode } from './renderNode2d';
+import { getOrCreateDisplayObjectRenderNode, getOrCreateSpriteRenderNode } from './renderNode2d';
 import { updateDisplayObjectRenderTransform, updateRenderTransform } from './transform2d';
 
 /**
@@ -33,7 +33,7 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as DisplayObject;
     if (!current.enabled) continue;
-    const data = getDisplayObjectRenderNode(state, current);
+    const data = getOrCreateDisplayObjectRenderNode(state, current);
 
     if (current !== source) {
       const parent = getGraphParent(current);
@@ -43,7 +43,7 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
         scrollRectDepth = 0;
         maskDepth = 0;
       } else if (parent !== lastParent) {
-        parentData = getDisplayObjectRenderNode(state, parent);
+        parentData = getOrCreateDisplayObjectRenderNode(state, parent);
         lastParent = parent;
         scrollRectDepth = parentData.scrollRectDepth;
         maskDepth = parentData.maskDepth;
@@ -65,7 +65,7 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
 
     const mask = current.mask;
     if (mask !== null) {
-      const maskData = getDisplayObjectRenderNode(state, mask);
+      const maskData = getOrCreateDisplayObjectRenderNode(state, mask);
       maskData.isMaskFrameID = currentFrameID;
       maskData.scrollRectDepth = 0;
       maskData.maskDepth = 0;
@@ -100,7 +100,7 @@ export function updateSpriteBeforeRender(state: RenderState, source: SpriteNode)
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as SpriteNode;
     if (!current.enabled) continue;
-    const data = getSpriteRenderNode(state, current);
+    const data = getOrCreateSpriteRenderNode(state, current);
 
     if (current !== source) {
       const parent = getGraphParent(current);
@@ -108,7 +108,7 @@ export function updateSpriteBeforeRender(state: RenderState, source: SpriteNode)
         parentData = undefined;
         lastParent = null;
       } else if (parent !== lastParent) {
-        parentData = getSpriteRenderNode(state, parent);
+        parentData = getOrCreateSpriteRenderNode(state, parent);
         lastParent = parent;
       }
     }

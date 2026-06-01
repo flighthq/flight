@@ -13,6 +13,10 @@ export function createTimeline(obj?: Partial<Timeline>): Timeline {
   };
 }
 
+export function findTimelineLabel(timeline: Readonly<Timeline>, name: string): TimelineLabel | null {
+  return timeline.labels.find((l) => l.name === name) ?? null;
+}
+
 export function gotoAndPlayTimeline(timeline: Timeline, frame: number | string): void {
   playTimeline(timeline);
   seekTimeline(timeline, resolveFrame(timeline, frame));
@@ -37,10 +41,6 @@ export function playTimeline(timeline: Timeline): void {
 export function prevFrameTimeline(timeline: Timeline): void {
   stopTimeline(timeline);
   seekTimeline(timeline, timeline.currentFrame - 1);
-}
-
-export function resolveTimelineLabel(timeline: Readonly<Timeline>, name: string): TimelineLabel | null {
-  return timeline.labels.find((l) => l.name === name) ?? null;
 }
 
 export function stopTimeline(timeline: Timeline): void {
@@ -79,7 +79,7 @@ function fireConstructFrame(timeline: Timeline): void {
 
 function resolveFrame(timeline: Readonly<Timeline>, frame: number | string): number {
   if (typeof frame === 'number') return frame;
-  const label = resolveTimelineLabel(timeline, frame);
+  const label = findTimelineLabel(timeline, frame);
   if (!label) throw new Error(`Frame label "${frame}" not found`);
   return label.frame;
 }

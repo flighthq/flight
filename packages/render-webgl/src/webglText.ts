@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render-core';
+import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } from '@flighthq/render-core';
 import { getTextRuntime } from '@flighthq/scenegraph-display';
 import { createTextFormatRange, getTextLayoutResult, layoutText } from '@flighthq/text-layout';
 import type {
@@ -13,7 +13,6 @@ import type {
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';
 import { setWebGLMatrixFromTransform } from './webglShader';
-import { colorToHex, formatToCanvasFont } from './webglTextHelpers';
 
 const LAYOUT_WIDTH = 10000;
 
@@ -45,7 +44,7 @@ export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRende
   // Layout text to get total bounds
   const measure = (t: string, format: TextFormat): number => {
     const offCtx = getOffscreenCanvas(1, 1);
-    offCtx.font = formatToCanvasFont(format);
+    offCtx.font = computeTextFormatFontString(format);
     return offCtx.measureText(t).width;
   };
 
@@ -81,8 +80,8 @@ export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRende
   offCtx.textAlign = 'start';
 
   for (const group of result.groups) {
-    offCtx.font = formatToCanvasFont(group.format);
-    offCtx.fillStyle = colorToHex(group.format.color ?? 0);
+    offCtx.font = computeTextFormatFontString(group.format);
+    offCtx.fillStyle = rgbaToHexString(group.format.color ?? 0);
     const slice = text.substring(group.startIndex, group.endIndex);
     const x = group.offsetX;
     // group.ascent = font-size; CSS places the alphabetic baseline at ~80% of the em-size.

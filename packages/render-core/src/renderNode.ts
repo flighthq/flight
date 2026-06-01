@@ -22,7 +22,7 @@ export function createRenderNode(state: RenderState, source: Renderable): Render
   });
 }
 
-export function getRenderNode<Source extends Renderable, NodeType extends RenderNode>(
+export function getOrCreateRenderNode<Source extends Renderable, NodeType extends RenderNode>(
   state: RenderState,
   source: Source,
   createNode: (state: RenderState, src: Source) => NodeType,

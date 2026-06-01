@@ -1,8 +1,8 @@
 export {
   clearRichTextContent,
+  computeRichTextContent,
   createRichTextContent,
   getRichTextContent,
-  resolveRichTextContent,
 } from './richTextContent';
 export {
   getRichTextBottomScrollV,

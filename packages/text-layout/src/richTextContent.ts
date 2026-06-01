@@ -6,18 +6,7 @@ export function clearRichTextContent(runtime: RichTextRuntime): void {
   runtime.richTextContent = null;
 }
 
-export function createRichTextContent(): RichTextContent {
-  return { formatRanges: [], text: '' };
-}
-
-export function getRichTextContent(runtime: RichTextRuntime): RichTextContent {
-  if (runtime.richTextContent === null) {
-    runtime.richTextContent = createRichTextContent();
-  }
-  return runtime.richTextContent;
-}
-
-export function resolveRichTextContent(out: RichTextContent, data: Readonly<RichTextData>): void {
+export function computeRichTextContent(out: RichTextContent, data: Readonly<RichTextData>): void {
   out.text = '';
   out.formatRanges.length = 0;
 
@@ -33,6 +22,17 @@ export function resolveRichTextContent(out: RichTextContent, data: Readonly<Rich
 
   clampRanges(out.formatRanges, out.text.length);
   applyTextFormatRanges(out, data.textFormatRanges);
+}
+
+export function createRichTextContent(): RichTextContent {
+  return { formatRanges: [], text: '' };
+}
+
+export function getRichTextContent(runtime: RichTextRuntime): RichTextContent {
+  if (runtime.richTextContent === null) {
+    runtime.richTextContent = createRichTextContent();
+  }
+  return runtime.richTextContent;
 }
 
 function appendLineBreak(out: RichTextContent, maxChars: number): void {

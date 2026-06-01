@@ -1,4 +1,4 @@
-import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import {
   appendShapeBeginFill,
   appendShapeEndFill,
@@ -32,7 +32,7 @@ describe('drawCanvasShape', () => {
     const state = createCanvasRenderState(canvas);
     registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
     const shape = createShape();
-    const data = getDisplayObjectRenderNode(state, shape);
+    const data = getOrCreateDisplayObjectRenderNode(state, shape);
     expect(() => drawCanvasShape(state, data)).not.toThrow();
   });
 
@@ -46,7 +46,7 @@ describe('drawCanvasShape', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 50, 50);
     appendShapeEndFill(shape);
-    const data = getDisplayObjectRenderNode(state, shape);
+    const data = getOrCreateDisplayObjectRenderNode(state, shape);
     const spy = vi.spyOn(state.context, 'fill');
     drawCanvasShape(state, data);
     expect(spy).toHaveBeenCalled();

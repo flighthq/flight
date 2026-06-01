@@ -1,5 +1,5 @@
 import { addTextureAtlasRegion, createImageSourceFromCanvas, createTextureAtlas } from '@flighthq/assets';
-import { getSpriteRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateSpriteRenderNode, registerRenderer } from '@flighthq/render-core';
 import { createTilemap } from '@flighthq/scenegraph-sprite';
 import { TilemapKind } from '@flighthq/types';
 
@@ -35,7 +35,7 @@ describe('drawDOMTilemap', () => {
     const state = makeState();
     const tilemap = createTilemap();
     tilemap.data.tileset = null;
-    const renderNode = getSpriteRenderNode(state, tilemap);
+    const renderNode = getOrCreateSpriteRenderNode(state, tilemap);
 
     drawDOMTilemap(state, renderNode);
 
@@ -48,7 +48,7 @@ describe('drawDOMTilemap', () => {
     tilemap.data.tileset = makeTileset();
     tilemap.data.columns = 0;
     tilemap.data.rows = 0;
-    const renderNode = getSpriteRenderNode(state, tilemap);
+    const renderNode = getOrCreateSpriteRenderNode(state, tilemap);
 
     drawDOMTilemap(state, renderNode);
 
@@ -62,7 +62,7 @@ describe('drawDOMTilemap', () => {
     tilemap.data.columns = 2;
     tilemap.data.rows = 2;
     tilemap.data.tiles = new Int16Array([0, 0, 0, 0]);
-    const renderNode = getSpriteRenderNode(state, tilemap);
+    const renderNode = getOrCreateSpriteRenderNode(state, tilemap);
     renderNode.rendererData = null;
 
     drawDOMTilemap(state, renderNode);
@@ -77,7 +77,7 @@ describe('drawDOMTilemap', () => {
     tilemap.data.columns = 2;
     tilemap.data.rows = 2;
     tilemap.data.tiles = new Int16Array([0, 0, 0, 0]);
-    const renderNode = getSpriteRenderNode(state, tilemap);
+    const renderNode = getOrCreateSpriteRenderNode(state, tilemap);
 
     drawDOMTilemap(state, renderNode);
 
