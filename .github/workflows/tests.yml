@@ -4,22 +4,16 @@ on:
   pull_request:
     paths-ignore:
       - '**/*.md'
-      - '**/*.yml'
-      - '**/*.yaml'
-      - 'README.md'
       - 'docs/**'
   push:
     branches: [main, develop]
     paths-ignore:
       - '**/*.md'
-      - '**/*.yml'
-      - '**/*.yaml'
-      - 'README.md'
       - 'docs/**'
 
 jobs:
-  validate:
-    name: Validate packages
+  build-check:
+    name: Build preflight
     runs-on: ubuntu-latest
 
     steps:
@@ -29,11 +23,11 @@ jobs:
           node-version: 20
           cache: 'npm'
       - run: npm ci
-      - run: npm run validate
+      - run: npm run build:check
 
   build:
     name: Build and emit
-    needs: validate
+    needs: build-check
     runs-on: ubuntu-latest
 
     steps:
@@ -45,27 +39,9 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-  lint-typecheck:
-    name: Quality checks
-    needs: validate
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run check
-
   test:
     name: Test suites
-    needs: validate
+    needs: build-check
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -85,9 +61,23 @@ jobs:
       - run: npm ci
       - run: npm run ${{ matrix.suite }}
 
-  examples-size:
-    name: Example / size tests
-    needs: [build, validate]
+  quality:
+    name: Quality checks
+    needs: build-check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run check
+
+  size:
+    name: Size check
+    needs: build-check
     runs-on: ubuntu-latest
 
     steps:

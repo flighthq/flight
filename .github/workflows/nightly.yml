@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  verify:
-    name: Verify and build
+  full-check:
+    name: Full build and quality
     runs-on: ubuntu-latest
 
     steps:
@@ -17,11 +17,14 @@ jobs:
           node-version: 20
           cache: 'npm'
       - run: npm ci
-      - run: npm run verify
+      - run: npm run build:check
+      - run: npm run build
+      - run: npm run check
+      - run: npm run test
 
   api:
     name: API generation
-    needs: verify
+    needs: full-check
     runs-on: ubuntu-latest
 
     steps:
