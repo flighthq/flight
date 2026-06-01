@@ -1,5 +1,5 @@
 import { copyMatrix, multiplyMatrix, translateMatrixByVectorXY } from '@flighthq/geometry';
-import { getLocalTransformID, getLocalTransformMatrix } from '@flighthq/scenegraph-core';
+import { getLocalTransformMatrix, getLocalTransformRevision } from '@flighthq/scenegraph-core';
 import type { DisplayObjectRenderNode, GraphNode, HasTransform2D, RenderNode2D, RenderState } from '@flighthq/types';
 
 export function updateDisplayObjectRenderTransform(
@@ -13,15 +13,19 @@ export function updateDisplayObjectRenderTransform(
     // scrollRect contributes to the render transform but isn't tracked by localTransformID,
     // so always recalculate when it is set.
     recalculateRenderTransform2D(state, data, parentData);
-    data.lastLocalTransformID = getLocalTransformID(data.source as GraphNode);
+    data.lastLocalTransformID = getLocalTransformRevision(data.source as GraphNode);
     translateMatrixByVectorXY(data.transform2D, data.transform2D, -scrollRect.x, -scrollRect.y);
     return true;
   }
-  return updateRenderTransform(state, data, parentData);
+  return updateRenderNode2DTransform(state, data, parentData);
 }
 
-export function updateRenderTransform(state: RenderState, data: RenderNode2D, parentData?: RenderNode2D): boolean {
-  const localTransformID = getLocalTransformID(data.source as GraphNode);
+export function updateRenderNode2DTransform(
+  state: RenderState,
+  data: RenderNode2D,
+  parentData?: RenderNode2D,
+): boolean {
+  const localTransformID = getLocalTransformRevision(data.source as GraphNode);
   if (
     (parentData !== undefined && parentData.transformFrameID === state.currentFrameID) ||
     data.lastLocalTransformID !== localTransformID

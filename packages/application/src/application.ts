@@ -18,7 +18,7 @@ export function attachApplicationExit(app: Application): void {
   app.observers.set(kExit, () => window.removeEventListener('beforeunload', handler));
 }
 
-export function connectThrottle(
+export function connectSignalThrottled(
   source: Signal<(deltaTime: number) => void>,
   fps: number,
   slot: (deltaTime: number) => void,

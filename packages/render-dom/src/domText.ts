@@ -1,7 +1,7 @@
 import { createEntity } from '@flighthq/entity';
 import { computeTextFormatFontString, rgbaToHexString } from '@flighthq/render-core';
 import { getTextRuntime } from '@flighthq/scenegraph-display';
-import { createTextFormatRange, getTextLayoutResult, layoutText } from '@flighthq/text-layout';
+import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderNode,
@@ -15,7 +15,7 @@ import type {
 } from '@flighthq/types';
 
 import { applyDOMStyle, initDOMElement } from './domStyle';
-import { htmlEscape } from './domTextHelpers';
+import { escapeHtmlString } from './domTextHelpers';
 
 interface DOMTextData extends RendererData {
   div: HTMLDivElement | null;
@@ -59,7 +59,7 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
   };
 
   const result = getTextLayoutResult(getTextRuntime(source) as TextRuntime);
-  layoutText(result, {
+  computeTextLayout(result, {
     text,
     formatRanges: [createTextFormatRange(textFormat, 0, text.length)],
     width: LAYOUT_WIDTH,
@@ -73,7 +73,7 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
   let html = '';
   for (const group of result.groups) {
     const fmt = group.format;
-    const slice = htmlEscape(text.substring(group.startIndex, group.endIndex));
+    const slice = escapeHtmlString(text.substring(group.startIndex, group.endIndex));
     const x = group.offsetX;
     const y = group.offsetY;
 

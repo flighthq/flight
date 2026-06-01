@@ -1,6 +1,6 @@
 import type { GraphNode, SpriteBatch } from '@flighthq/types';
 
-import { hitTestLocalBoundsRectangle } from './hitTests';
+import { graphHitTestLocalBounds } from './hitTests';
 import { defaultSpriteHitTestPoint } from './spriteHitTests';
 
 export function defaultBitmapHitTestPoint(
@@ -9,7 +9,7 @@ export function defaultBitmapHitTestPoint(
   y: number,
   _shapeFlag: boolean,
 ): boolean {
-  return hitTestLocalBoundsRectangle(source, x, y);
+  return graphHitTestLocalBounds(source, x, y);
 }
 
 export function defaultDisplayObjectHitTestPoint(
@@ -37,7 +37,7 @@ export function defaultInputTextHitTestPoint(
   y: number,
   _shapeFlag: boolean,
 ): boolean {
-  return hitTestLocalBoundsRectangle(source, x, y);
+  return graphHitTestLocalBounds(source, x, y);
 }
 
 export function defaultMovieClipHitTestPoint(
@@ -46,7 +46,7 @@ export function defaultMovieClipHitTestPoint(
   _y: number,
   _shapeFlag: boolean,
 ): boolean {
-  // Containers have no self hit area — findHitTarget traverses children separately.
+  // Containers have no self hit area — findGraphHitTarget traverses children separately.
   return false;
 }
 
@@ -56,7 +56,7 @@ export function defaultRichTextHitTestPoint(
   y: number,
   _shapeFlag: boolean,
 ): boolean {
-  return hitTestLocalBoundsRectangle(source, x, y);
+  return graphHitTestLocalBounds(source, x, y);
 }
 
 export function defaultShapeHitTestPoint(
@@ -65,7 +65,7 @@ export function defaultShapeHitTestPoint(
   y: number,
   _shapeFlag: boolean,
 ): boolean {
-  return hitTestLocalBoundsRectangle(source, x, y);
+  return graphHitTestLocalBounds(source, x, y);
 }
 
 export function defaultSpriteBatchHitTestPoint(
@@ -87,7 +87,7 @@ export function defaultStageHitTestPoint(
   _y: number,
   _shapeFlag: boolean,
 ): boolean {
-  // Containers have no self hit area — findHitTarget traverses children separately.
+  // Containers have no self hit area — findGraphHitTarget traverses children separately.
   return false;
 }
 
@@ -97,7 +97,7 @@ export function defaultTextHitTestPoint(
   y: number,
   _shapeFlag: boolean,
 ): boolean {
-  return hitTestLocalBoundsRectangle(source, x, y);
+  return graphHitTestLocalBounds(source, x, y);
 }
 
 export function defaultVideoHitTestPoint(
@@ -106,5 +106,5 @@ export function defaultVideoHitTestPoint(
   y: number,
   _shapeFlag: boolean,
 ): boolean {
-  return hitTestLocalBoundsRectangle(source, x, y);
+  return graphHitTestLocalBounds(source, x, y);
 }

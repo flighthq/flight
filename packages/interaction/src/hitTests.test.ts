@@ -5,18 +5,18 @@ import type { DisplayObject, DisplayObjectRuntime } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import {
-  findHitTarget,
-  hitTestLocalBoundsRectangle,
-  hitTestObject,
-  hitTestPoint,
+  findGraphHitTarget,
+  graphHitTestLocalBounds,
+  graphHitTestPoint,
+  hitTestDisplayObjects,
   registerHitTestPoint,
 } from './hitTests';
 
-describe('findHitTarget', () => {
+describe('findGraphHitTarget', () => {
   it('returns null when node is disabled', () => {
     const obj = createDisplayObject();
     obj.enabled = false;
-    expect(findHitTarget(obj, 50, 50)).toBeNull();
+    expect(findGraphHitTarget(obj, 50, 50)).toBeNull();
   });
 
   it('returns a child node registered with a hit handler', () => {
@@ -24,27 +24,107 @@ describe('findHitTarget', () => {
     const child = createDisplayObjectGeneric(DisplayObjectKind);
     setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
     addGraphChild(parent, child);
-    registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRectangle);
-    const hit = findHitTarget(parent, 50, 50);
+    registerHitTestPoint(DisplayObjectKind, graphHitTestLocalBounds);
+    const hit = findGraphHitTarget(parent, 50, 50);
     expect(hit).toBe(child);
   });
 });
 
-describe('hitTestLocalBoundsRectangle', () => {
+describe('graphHitTestLocalBounds', () => {
   it('returns true when world-space point is inside local bounds', () => {
     const obj = createDisplayObject();
     setRectangle(getLocalBoundsRectangle(obj), 0, 0, 100, 100);
-    expect(hitTestLocalBoundsRectangle(obj, 50, 50)).toBe(true);
+    expect(graphHitTestLocalBounds(obj, 50, 50)).toBe(true);
   });
 
   it('returns false when world-space point is outside local bounds', () => {
     const obj = createDisplayObject();
     setRectangle(getLocalBoundsRectangle(obj), 0, 0, 100, 100);
-    expect(hitTestLocalBoundsRectangle(obj, 200, 200)).toBe(false);
+    expect(graphHitTestLocalBounds(obj, 200, 200)).toBe(false);
   });
 });
 
-describe('hitTestObject', () => {
+describe('graphHitTestPoint', () => {
+  let obj: DisplayObject;
+
+  beforeAll(() => {
+    registerHitTestPoint(DisplayObjectKind, graphHitTestLocalBounds);
+  });
+
+  beforeEach(() => {
+    obj = createDisplayObject();
+    setRectangle(getLocalBoundsRectangle(obj), 0, 0, 100, 100);
+  });
+
+  it('returns true for point inside bounds', () => {
+    const result = graphHitTestPoint(obj, 50, 50);
+    expect(result).toBe(true);
+  });
+
+  it('returns false for point outside bounds', () => {
+    const result = graphHitTestPoint(obj, 200, 200);
+    expect(result).toBe(false);
+  });
+
+  it('returns false if object is not enabled', () => {
+    obj.enabled = false;
+    const result = graphHitTestPoint(obj, 50, 50);
+    expect(result).toBe(false);
+  });
+
+  it('returns false when point is outside bounds', () => {
+    const result = graphHitTestPoint(obj, 200, 200);
+    expect(result).toBe(false);
+  });
+
+  it('respects world transform', () => {
+    obj.x = 100;
+    obj.y = 100;
+    invalidateLocalTransform(obj);
+    const inside = graphHitTestPoint(obj, 150, 150);
+    const outside = graphHitTestPoint(obj, 50, 50);
+
+    expect(inside).toBe(true);
+    expect(outside).toBe(false);
+  });
+
+  it('works with the default shapeFlag param', () => {
+    const result = graphHitTestPoint(obj, 50, 50);
+    expect(result).toBe(true);
+
+    const resultExplicit = graphHitTestPoint(obj, 50, 50, true);
+    expect(resultExplicit).toBe(true);
+  });
+
+  it('returns true when a child is hit even if the parent has no local bounds', () => {
+    const child = createDisplayObject();
+    setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
+    addGraphChild(obj, child);
+
+    setRectangle(getLocalBoundsRectangle(obj), 0, 0, 0, 0);
+    expect(graphHitTestPoint(obj, 50, 50)).toBe(true);
+  });
+
+  it('does not test children of a disabled parent', () => {
+    obj.enabled = false;
+
+    const child = createDisplayObject();
+    setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
+    addGraphChild(obj, child);
+
+    expect(graphHitTestPoint(obj, 50, 50)).toBe(false);
+  });
+
+  it('uses a registered handler for a custom kind', () => {
+    const CustomKind = Symbol('CustomKind');
+    registerHitTestPoint(CustomKind, () => true);
+    const custom = createDisplayObjectGeneric(CustomKind);
+
+    expect(graphHitTestPoint(custom, 50, 50)).toBe(true);
+  });
+});
+
+describe('hitTestDisplayObjects', () => {
   let a: DisplayObject;
   let b: DisplayObject;
 
@@ -68,7 +148,7 @@ describe('hitTestObject', () => {
   });
 
   it('returns true when bounds intersect', () => {
-    const result = hitTestObject(a, b);
+    const result = hitTestDisplayObjects(a, b);
     expect(result).toBe(true);
   });
 
@@ -77,14 +157,14 @@ describe('hitTestObject', () => {
     b.y = 20;
     invalidateLocalTransform(b);
 
-    const result = hitTestObject(a, b);
+    const result = hitTestDisplayObjects(a, b);
     expect(result).toBe(false);
   });
 
   it('returns false if either object has no parent', () => {
     (getDisplayObjectRuntime(b) as DisplayObjectRuntime).parent = null;
 
-    const result = hitTestObject(a, b);
+    const result = hitTestDisplayObjects(a, b);
     expect(result).toBe(false);
   });
 
@@ -96,7 +176,7 @@ describe('hitTestObject', () => {
     b.y = 5;
     invalidateLocalTransform(b);
 
-    const result = hitTestObject(a, b);
+    const result = hitTestDisplayObjects(a, b);
     expect(result).toBe(true);
   });
 
@@ -112,95 +192,15 @@ describe('hitTestObject', () => {
     b.y = 100;
     invalidateLocalTransform(b);
 
-    expect(hitTestObject(a, b)).toBe(true);
-  });
-});
-
-describe('hitTestPoint', () => {
-  let obj: DisplayObject;
-
-  beforeAll(() => {
-    registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRectangle);
-  });
-
-  beforeEach(() => {
-    obj = createDisplayObject();
-    setRectangle(getLocalBoundsRectangle(obj), 0, 0, 100, 100);
-  });
-
-  it('returns true for point inside bounds', () => {
-    const result = hitTestPoint(obj, 50, 50);
-    expect(result).toBe(true);
-  });
-
-  it('returns false for point outside bounds', () => {
-    const result = hitTestPoint(obj, 200, 200);
-    expect(result).toBe(false);
-  });
-
-  it('returns false if object is not enabled', () => {
-    obj.enabled = false;
-    const result = hitTestPoint(obj, 50, 50);
-    expect(result).toBe(false);
-  });
-
-  it('returns false when point is outside bounds', () => {
-    const result = hitTestPoint(obj, 200, 200);
-    expect(result).toBe(false);
-  });
-
-  it('respects world transform', () => {
-    obj.x = 100;
-    obj.y = 100;
-    invalidateLocalTransform(obj);
-    const inside = hitTestPoint(obj, 150, 150);
-    const outside = hitTestPoint(obj, 50, 50);
-
-    expect(inside).toBe(true);
-    expect(outside).toBe(false);
-  });
-
-  it('works with the default shapeFlag param', () => {
-    const result = hitTestPoint(obj, 50, 50);
-    expect(result).toBe(true);
-
-    const resultExplicit = hitTestPoint(obj, 50, 50, true);
-    expect(resultExplicit).toBe(true);
-  });
-
-  it('returns true when a child is hit even if the parent has no local bounds', () => {
-    const child = createDisplayObject();
-    setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
-    addGraphChild(obj, child);
-
-    setRectangle(getLocalBoundsRectangle(obj), 0, 0, 0, 0);
-    expect(hitTestPoint(obj, 50, 50)).toBe(true);
-  });
-
-  it('does not test children of a disabled parent', () => {
-    obj.enabled = false;
-
-    const child = createDisplayObject();
-    setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
-    addGraphChild(obj, child);
-
-    expect(hitTestPoint(obj, 50, 50)).toBe(false);
-  });
-
-  it('uses a registered handler for a custom kind', () => {
-    const CustomKind = Symbol('CustomKind');
-    registerHitTestPoint(CustomKind, () => true);
-    const custom = createDisplayObjectGeneric(CustomKind);
-
-    expect(hitTestPoint(custom, 50, 50)).toBe(true);
+    expect(hitTestDisplayObjects(a, b)).toBe(true);
   });
 });
 
 describe('registerHitTestPoint', () => {
-  it('registers a handler that hitTestPoint will use', () => {
+  it('registers a handler that graphHitTestPoint will use', () => {
     const kind = Symbol('RegisterTest');
     registerHitTestPoint(kind, () => true);
     const node = createDisplayObjectGeneric(kind);
-    expect(hitTestPoint(node, 0, 0)).toBe(true);
+    expect(graphHitTestPoint(node, 0, 0)).toBe(true);
   });
 });

@@ -6,7 +6,7 @@ import {
   matrixTransformPointXY,
   multiplyMatrix,
 } from '@flighthq/geometry';
-import { invalidateLocalTransform, recomputeWorldTransformID } from '@flighthq/scenegraph-core';
+import { invalidateLocalTransform, recomputeWorldTransformRevision } from '@flighthq/scenegraph-core';
 import type {
   GraphNodeRuntime,
   GraphTransform2DNode,
@@ -65,7 +65,7 @@ export function getWorldTransformMatrix<GraphKind extends symbol, Traits extends
  * Converts the `vector` object from the Stage (global) coordinates
  * to the display object's (local) coordinates.
  **/
-export function globalVector2ToLocal<GraphKind extends symbol, Traits extends object>(
+export function graphGlobalToLocalVector2<GraphKind extends symbol, Traits extends object>(
   out: Vector2Like,
   source: GraphTransform2DNode<GraphKind, Traits>,
   vector: Readonly<Vector2Like>,
@@ -77,7 +77,7 @@ export function globalVector2ToLocal<GraphKind extends symbol, Traits extends ob
  * Converts the `vector` object from the display object's (local)
  * coordinates to world coordinates.
  **/
-export function localVector2ToGlobal<GraphKind extends symbol, Traits extends object>(
+export function graphLocalToGlobalVector2<GraphKind extends symbol, Traits extends object>(
   out: Vector2Like,
   source: GraphTransform2DNode<GraphKind, Traits>,
   vector: Readonly<Vector2Like>,
@@ -127,7 +127,7 @@ function recomputeWorldTransform2D<GraphKind extends symbol, Traits extends obje
   } else {
     copyMatrix(runtime.worldTransform2D, runtime.localTransform2D!);
   }
-  recomputeWorldTransformID(runtime, parentRuntime);
+  recomputeWorldTransformRevision(runtime, parentRuntime);
 }
 
 export function setTransformRotation<GraphKind extends symbol, Traits extends object>(

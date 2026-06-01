@@ -3,13 +3,13 @@ import { computeTextFormatFontString, rgbaToHexString } from '@flighthq/render-c
 import { getRichTextRuntime } from '@flighthq/scenegraph-display';
 import {
   computeRichTextContent,
+  computeTextLayout,
   getRichTextContent,
   getRichTextFieldHeight,
   getRichTextFieldWidth,
   getRichTextScrollYOffset,
   getRichTextSelectionRectangles,
   getTextLayoutResult,
-  layoutText,
 } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
@@ -26,7 +26,7 @@ import type {
 
 import { getDomFontAscentCached, setDomFontAscentCached } from './domFontSource';
 import { applyDOMStyle, initDOMElement } from './domStyle';
-import { htmlEscape } from './domTextHelpers';
+import { escapeHtmlString } from './domTextHelpers';
 
 interface DOMRichTextData extends RendererData {
   div: HTMLDivElement | null;
@@ -72,7 +72,7 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
   };
 
   const result = getTextLayoutResult(richTextRuntime as TextRuntime);
-  layoutText(result, {
+  computeTextLayout(result, {
     text,
     formatRanges: content.formatRanges,
     width: wordWrap ? source.data.width : 10000,
@@ -119,7 +119,7 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
     if (group.lineIndex < firstVisibleLine) continue;
 
     const fmt = group.format;
-    const slice = htmlEscape(text.substring(group.startIndex, group.endIndex));
+    const slice = escapeHtmlString(text.substring(group.startIndex, group.endIndex));
     const x = group.offsetX - scrollXOffset;
     const fontStr = computeTextFormatFontString(fmt);
     // Align the CSS alphabetic baseline with canvas: canvas draws at offsetY + group.ascent

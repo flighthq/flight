@@ -43,7 +43,7 @@ export function computeBoundsRectangle<GraphKind extends symbol, Traits extends 
       bounds = getLocalBoundsRectangle(source);
     } else if (targetCoordinateSpace === (getGraphParent(source) as GraphSpatial2DNode<GraphKind, Traits> | null)) {
       // fast path, return bounds for parent
-      bounds = getBoundsRectangle(source);
+      bounds = getParentBoundsRectangle(source);
     }
   }
   if (!bounds) {
@@ -58,7 +58,16 @@ export function computeBoundsRectangle<GraphKind extends symbol, Traits extends 
   }
 }
 
-export function ensureBoundsRectangle<GraphKind extends symbol, Traits extends object>(
+export function ensureLocalBoundsRectangle<GraphKind extends symbol, Traits extends object>(
+  target: GraphBoundsNode<GraphKind, Traits>,
+): void {
+  const runtime = getEntityRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime;
+  if (runtime.localBoundsUsingLocalBoundsID !== runtime.localBoundsID) {
+    recomputeLocalBoundsRect(target, runtime);
+  }
+}
+
+export function ensureParentBoundsRectangle<GraphKind extends symbol, Traits extends object>(
   target: GraphSpatial2DNode<GraphKind, Traits>,
 ): void {
   const runtime = getEntityRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime;
@@ -67,15 +76,6 @@ export function ensureBoundsRectangle<GraphKind extends symbol, Traits extends o
     runtime.boundsUsingLocalTransformID !== runtime.localTransformID
   ) {
     recomputeBoundsRect(target, runtime);
-  }
-}
-
-export function ensureLocalBoundsRectangle<GraphKind extends symbol, Traits extends object>(
-  target: GraphBoundsNode<GraphKind, Traits>,
-): void {
-  const runtime = getEntityRuntime(target) as GraphNodeRuntime<GraphKind, Traits> & HasBoundsRectRuntime;
-  if (runtime.localBoundsUsingLocalBoundsID !== runtime.localBoundsID) {
-    recomputeLocalBoundsRect(target, runtime);
   }
 }
 
@@ -99,16 +99,6 @@ export function ensureWorldBoundsRectangle<GraphKind extends symbol, Traits exte
 }
 
 /**
- * localBoundsRect * localTransform
- */
-export function getBoundsRectangle<GraphKind extends symbol, Traits extends object>(
-  target: GraphSpatial2DNode<GraphKind, Traits>,
-): Readonly<Rectangle> {
-  ensureBoundsRectangle(target);
-  return (getEntityRuntime(target) as HasBoundsRectRuntime).boundsRect!;
-}
-
-/**
  * Object's own bounds (not including children)
  */
 export function getLocalBoundsRectangle<GraphKind extends symbol, Traits extends object>(
@@ -116,6 +106,16 @@ export function getLocalBoundsRectangle<GraphKind extends symbol, Traits extends
 ): Readonly<Rectangle> {
   ensureLocalBoundsRectangle(target);
   return (getEntityRuntime(target) as HasBoundsRectRuntime).localBoundsRect!;
+}
+
+/**
+ * localBoundsRect * localTransform
+ */
+export function getParentBoundsRectangle<GraphKind extends symbol, Traits extends object>(
+  target: GraphSpatial2DNode<GraphKind, Traits>,
+): Readonly<Rectangle> {
+  ensureParentBoundsRectangle(target);
+  return (getEntityRuntime(target) as HasBoundsRectRuntime).boundsRect!;
 }
 
 export function getScaledBoundsHeight<GraphKind extends symbol, Traits extends object>(

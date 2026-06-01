@@ -5,7 +5,7 @@ import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@fligh
 
 import { getOrCreateDisplayObjectRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
-import { updateDisplayObjectRenderTransform, updateRenderTransform } from './transform2d';
+import { updateDisplayObjectRenderTransform, updateRenderNode2DTransform } from './transform2d';
 
 describe('updateDisplayObjectRenderTransform', () => {
   let parent: DisplayObject;
@@ -43,7 +43,7 @@ describe('updateDisplayObjectRenderTransform', () => {
   });
 });
 
-describe('updateRenderTransform', () => {
+describe('updateRenderNode2DTransform', () => {
   let parent: DisplayObject;
   let parentData: DisplayObjectRenderNode;
   let child: DisplayObject;
@@ -60,36 +60,36 @@ describe('updateRenderTransform', () => {
   });
 
   it('recalculates the first time', () => {
-    const calc = updateRenderTransform(state, parentData);
+    const calc = updateRenderNode2DTransform(state, parentData);
     expect(calc).toBe(true);
   });
 
   it('does not recalculate the second time', () => {
-    updateRenderTransform(state, parentData);
-    const calc = updateRenderTransform(state, parentData);
+    updateRenderNode2DTransform(state, parentData);
+    const calc = updateRenderNode2DTransform(state, parentData);
     expect(calc).toBe(false);
   });
 
   it('recalculates if local transform changed the second time', () => {
-    updateRenderTransform(state, parentData);
+    updateRenderNode2DTransform(state, parentData);
     invalidateLocalTransform(parent);
-    const calc = updateRenderTransform(state, parentData);
+    const calc = updateRenderNode2DTransform(state, parentData);
     expect(calc).toBe(true);
   });
 
   it('does not recalculate if local transform changed on a child', () => {
-    updateRenderTransform(state, parentData);
-    updateRenderTransform(state, childData, parentData);
+    updateRenderNode2DTransform(state, parentData);
+    updateRenderNode2DTransform(state, childData, parentData);
     invalidateLocalTransform(child);
-    const calc = updateRenderTransform(state, parentData);
+    const calc = updateRenderNode2DTransform(state, parentData);
     expect(calc).toBe(false);
   });
 
   it('propagates if a parent was dirty', () => {
-    updateRenderTransform(state, parentData);
+    updateRenderNode2DTransform(state, parentData);
     invalidateLocalTransform(parent);
-    updateRenderTransform(state, parentData);
-    const calc = updateRenderTransform(state, childData, parentData);
+    updateRenderNode2DTransform(state, parentData);
+    const calc = updateRenderNode2DTransform(state, childData, parentData);
     expect(calc).toBe(true);
   });
 
@@ -98,7 +98,7 @@ describe('updateRenderTransform', () => {
     parent.y = 50;
     parent.rotation = 90; // rotate 90 degrees
 
-    updateRenderTransform(state, parentData);
+    updateRenderNode2DTransform(state, parentData);
 
     const t = parentData.transform2D;
     // The tx/ty should remain at parent position
@@ -121,8 +121,8 @@ describe('updateRenderTransform', () => {
     child.y = 0;
     child.rotation = 0;
 
-    updateRenderTransform(state, parentData);
-    updateRenderTransform(state, childData, parentData);
+    updateRenderNode2DTransform(state, parentData);
+    updateRenderNode2DTransform(state, childData, parentData);
 
     const t = childData.transform2D;
     // child world position: (10, 0) in parent space, rotated 90° → (100, 60) in world
@@ -143,8 +143,8 @@ describe('updateRenderTransform', () => {
     child.x = 10;
     child.y = 5;
 
-    updateRenderTransform(state, parentData);
-    updateRenderTransform(state, childData, parentData);
+    updateRenderNode2DTransform(state, parentData);
+    updateRenderNode2DTransform(state, childData, parentData);
 
     const t = childData.transform2D;
     expect(t.tx).toBe(40);
@@ -160,8 +160,8 @@ describe('updateRenderTransform', () => {
     child.x = 10;
     child.y = 5;
 
-    updateRenderTransform(state, parentData);
-    updateRenderTransform(state, childData, parentData);
+    updateRenderNode2DTransform(state, parentData);
+    updateRenderNode2DTransform(state, childData, parentData);
 
     const t = childData.transform2D;
     expect(t.tx).toBe(60);
@@ -173,7 +173,7 @@ describe('updateRenderTransform', () => {
     parent.y = 100;
     parent.rotation = -90;
 
-    updateRenderTransform(state, parentData);
+    updateRenderNode2DTransform(state, parentData);
 
     const t = parentData.transform2D;
     expect(t.tx).toBeCloseTo(200);

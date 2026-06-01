@@ -10,24 +10,48 @@ export type { TextLayoutParams, TextLayoutResult, TextMeasureFn } from '@flighth
 
 import { getTextFormatAscent, getTextFormatDescent, getTextFormatLeading, mergeTextFormat } from './textFormat';
 import { createTextLayoutGroup } from './textLayoutGroup';
-import { getLineBreaks } from './textLineBreaks';
+import { getTextLineBreaks } from './textLineBreaks';
 
 const GUTTER = 2;
 const _lineBreaks: number[] = [];
 const _charAdvances: number[] = [];
 
-export function createTextLayoutResult(): TextLayoutResult {
-  return {
-    groups: [],
-    lineAscents: [],
-    lineDescents: [],
-    lineHeights: [],
-    lineLeadings: [],
-    lineWidths: [],
-    numLines: 0,
-    textHeight: 0,
-    textWidth: 0,
-  };
+export function computeTextLayout(out: TextLayoutResult, params: TextLayoutParams): void {
+  const {
+    text,
+    formatRanges,
+    width,
+    measure,
+    wordWrap = false,
+    multiline = false,
+    autoSize = 'none',
+    border = false,
+  } = params;
+
+  if (!text || formatRanges.length === 0) {
+    out.groups.length = 0;
+    out.lineAscents.length = 0;
+    out.lineDescents.length = 0;
+    out.lineHeights.length = 0;
+    out.lineLeadings.length = 0;
+    out.lineWidths.length = 0;
+    out.numLines = 1;
+    out.textHeight = 0;
+    out.textWidth = 0;
+    return;
+  }
+
+  getTextLineBreaks(_lineBreaks, text);
+  buildGroups(out.groups, text, formatRanges, _lineBreaks, width, measure, wordWrap, multiline);
+  writeLineMetrics(out, out.groups);
+
+  // Alignment shifts require knowing per-line widths first.
+  applyAlignment(out.groups, width, out.lineWidths);
+
+  // autoSize is intentionally not applied here — callers (scene graph /
+  // renderer) own the node's width/height and apply the result themselves.
+  void autoSize;
+  void border;
 }
 
 // ---------------------------------------------------------------------------
@@ -465,40 +489,16 @@ function writeLineMetrics(out: TextLayoutResult, groups: readonly TextLayoutGrou
 // Public entry point
 // ---------------------------------------------------------------------------
 
-export function layoutText(out: TextLayoutResult, params: TextLayoutParams): void {
-  const {
-    text,
-    formatRanges,
-    width,
-    measure,
-    wordWrap = false,
-    multiline = false,
-    autoSize = 'none',
-    border = false,
-  } = params;
-
-  if (!text || formatRanges.length === 0) {
-    out.groups.length = 0;
-    out.lineAscents.length = 0;
-    out.lineDescents.length = 0;
-    out.lineHeights.length = 0;
-    out.lineLeadings.length = 0;
-    out.lineWidths.length = 0;
-    out.numLines = 1;
-    out.textHeight = 0;
-    out.textWidth = 0;
-    return;
-  }
-
-  getLineBreaks(_lineBreaks, text);
-  buildGroups(out.groups, text, formatRanges, _lineBreaks, width, measure, wordWrap, multiline);
-  writeLineMetrics(out, out.groups);
-
-  // Alignment shifts require knowing per-line widths first.
-  applyAlignment(out.groups, width, out.lineWidths);
-
-  // autoSize is intentionally not applied here — callers (scene graph /
-  // renderer) own the node's width/height and apply the result themselves.
-  void autoSize;
-  void border;
+export function createTextLayoutResult(): TextLayoutResult {
+  return {
+    groups: [],
+    lineAscents: [],
+    lineDescents: [],
+    lineHeights: [],
+    lineLeadings: [],
+    lineWidths: [],
+    numLines: 0,
+    textHeight: 0,
+    textWidth: 0,
+  };
 }

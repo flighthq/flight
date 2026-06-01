@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createTextFormatRange } from './textFormatRange';
 import type { TextLayoutParams, TextLayoutResult } from './textLayout';
-import { createTextLayoutResult, layoutText } from './textLayout';
+import { computeTextLayout, createTextLayoutResult } from './textLayout';
 
 // Fixed-width measure: every character is 10px regardless of font settings.
 const fixedMeasure = (text: string) => text.length * 10;
@@ -23,7 +23,7 @@ function singleRangeParams(text: string, width = 1000, overrides: object = {}): 
 
 function doLayout(params: TextLayoutParams): TextLayoutResult {
   const out = createTextLayoutResult();
-  layoutText(out, params);
+  computeTextLayout(out, params);
   return out;
 }
 
@@ -31,26 +31,7 @@ function doLayout(params: TextLayoutParams): TextLayoutResult {
 // createTextLayoutResult
 // ---------------------------------------------------------------------------
 
-describe('createTextLayoutResult', () => {
-  it('returns default zero values', () => {
-    const result = createTextLayoutResult();
-    expect(result.groups).toHaveLength(0);
-    expect(result.lineAscents).toHaveLength(0);
-    expect(result.lineDescents).toHaveLength(0);
-    expect(result.lineHeights).toHaveLength(0);
-    expect(result.lineLeadings).toHaveLength(0);
-    expect(result.lineWidths).toHaveLength(0);
-    expect(result.numLines).toBe(0);
-    expect(result.textHeight).toBe(0);
-    expect(result.textWidth).toBe(0);
-  });
-
-  it('returns a new object each call', () => {
-    expect(createTextLayoutResult()).not.toBe(createTextLayoutResult());
-  });
-});
-
-describe('layoutText', () => {
+describe('computeTextLayout', () => {
   it('returns groups and line metrics for simple text', () => {
     const result = doLayout(singleRangeParams('hi'));
     expect(result.groups).not.toBeNull();
@@ -239,5 +220,24 @@ describe('layoutText', () => {
       );
       expect(result.numLines).toBeGreaterThan(1);
     });
+  });
+});
+
+describe('createTextLayoutResult', () => {
+  it('returns default zero values', () => {
+    const result = createTextLayoutResult();
+    expect(result.groups).toHaveLength(0);
+    expect(result.lineAscents).toHaveLength(0);
+    expect(result.lineDescents).toHaveLength(0);
+    expect(result.lineHeights).toHaveLength(0);
+    expect(result.lineLeadings).toHaveLength(0);
+    expect(result.lineWidths).toHaveLength(0);
+    expect(result.numLines).toBe(0);
+    expect(result.textHeight).toBe(0);
+    expect(result.textWidth).toBe(0);
+  });
+
+  it('returns a new object each call', () => {
+    expect(createTextLayoutResult()).not.toBe(createTextLayoutResult());
   });
 });

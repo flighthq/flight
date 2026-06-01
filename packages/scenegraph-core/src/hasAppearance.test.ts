@@ -2,7 +2,7 @@ import type { HasAppearance } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { createGraphNode } from './graphNode';
-import { initHasAppearance } from './hasAppearance';
+import { initAppearanceTrait } from './hasAppearance';
 
 const TestKind: unique symbol = Symbol('Test');
 
@@ -11,10 +11,10 @@ function makeTarget(): HasAppearance {
   return node;
 }
 
-describe('initHasAppearance', () => {
+describe('initAppearanceTrait', () => {
   it('sets default values when called with no options', () => {
     const target = makeTarget();
-    initHasAppearance(target);
+    initAppearanceTrait(target);
 
     expect(target.alpha).toBe(1);
     expect(target.blendMode).toBeNull();
@@ -25,7 +25,7 @@ describe('initHasAppearance', () => {
 
   it('applies partial overrides', () => {
     const target = makeTarget();
-    initHasAppearance(target, { alpha: 0.5, visible: false });
+    initAppearanceTrait(target, { alpha: 0.5, visible: false });
 
     expect(target.alpha).toBe(0.5);
     expect(target.visible).toBe(false);
@@ -34,7 +34,7 @@ describe('initHasAppearance', () => {
 
   it('applies blendMode override', () => {
     const target = makeTarget();
-    initHasAppearance(target, { blendMode: BlendMode.Add });
+    initAppearanceTrait(target, { blendMode: BlendMode.Add });
 
     expect(target.blendMode).toBe(BlendMode.Add);
   });
@@ -42,7 +42,7 @@ describe('initHasAppearance', () => {
   it('applies colorTransform override', () => {
     const ct = {} as any;
     const target = makeTarget();
-    initHasAppearance(target, { colorTransform: ct });
+    initAppearanceTrait(target, { colorTransform: ct });
 
     expect(target.colorTransform).toBe(ct);
   });
@@ -50,15 +50,15 @@ describe('initHasAppearance', () => {
   it('applies shader override', () => {
     const shader = {} as any;
     const target = makeTarget();
-    initHasAppearance(target, { shader });
+    initAppearanceTrait(target, { shader });
 
     expect(target.shader).toBe(shader);
   });
 
   it('overwrites existing values', () => {
     const target = makeTarget();
-    initHasAppearance(target);
-    initHasAppearance(target, { alpha: 0.25 });
+    initAppearanceTrait(target);
+    initAppearanceTrait(target, { alpha: 0.25 });
 
     expect(target.alpha).toBe(0.25);
   });

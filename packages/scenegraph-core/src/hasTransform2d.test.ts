@@ -1,9 +1,30 @@
 import type { GraphNode, GraphNodeRuntime, HasTransform2D, HasTransform2DRuntime } from '@flighthq/types';
 
 import { createGraphNode, createGraphNodeRuntime } from './graphNode';
-import { initHasTransform, initHasTransformRuntime } from './hasTransform2d';
+import { initTransformRuntimeTrait, initTransformTrait } from './hasTransform2d';
 
-describe('initHasTransform', () => {
+describe('initTransformRuntimeTrait', () => {
+  let runtime: GraphNodeRuntime<typeof NodeTestKind, HasTransform2D> & HasTransform2DRuntime;
+
+  beforeEach(() => {
+    runtime = createGraphNodeRuntime() as GraphNodeRuntime<typeof NodeTestKind, HasTransform2D> & HasTransform2DRuntime;
+  });
+
+  it('initializes default values', () => {
+    initTransformRuntimeTrait(runtime);
+
+    expect(runtime.localTransform2D).toBeNull();
+    expect(runtime.rotationAngle).toStrictEqual(0);
+    expect(runtime.rotationCosine).toStrictEqual(1);
+    expect(runtime.rotationSine).toStrictEqual(0);
+    expect(runtime.worldTransform2D).toBeNull();
+
+    // inherited graph runtime fields
+    expect(runtime.appearanceID).toStrictEqual(0);
+  });
+});
+
+describe('initTransformTrait', () => {
   let node: HasTransform2D;
 
   beforeEach(() => {
@@ -12,7 +33,7 @@ describe('initHasTransform', () => {
   });
 
   it('initializes default values', () => {
-    initHasTransform(node);
+    initTransformTrait(node);
 
     expect(node.rotation).toStrictEqual(0);
     expect(node.scaleX).toStrictEqual(1);
@@ -29,33 +50,12 @@ describe('initHasTransform', () => {
       x: 100,
       y: 200,
     };
-    initHasTransform(node, base);
+    initTransformTrait(node, base);
     expect(base.scaleX).toStrictEqual(base.scaleX);
     expect(base.scaleY).toStrictEqual(base.scaleY);
     expect(base.rotation).toStrictEqual(base.rotation);
     expect(base.x).toStrictEqual(base.x);
     expect(base.y).toStrictEqual(base.y);
-  });
-});
-
-describe('initHasTransformRuntime', () => {
-  let runtime: GraphNodeRuntime<typeof NodeTestKind, HasTransform2D> & HasTransform2DRuntime;
-
-  beforeEach(() => {
-    runtime = createGraphNodeRuntime() as GraphNodeRuntime<typeof NodeTestKind, HasTransform2D> & HasTransform2DRuntime;
-  });
-
-  it('initializes default values', () => {
-    initHasTransformRuntime(runtime);
-
-    expect(runtime.localTransform2D).toBeNull();
-    expect(runtime.rotationAngle).toStrictEqual(0);
-    expect(runtime.rotationCosine).toStrictEqual(1);
-    expect(runtime.rotationSine).toStrictEqual(0);
-    expect(runtime.worldTransform2D).toBeNull();
-
-    // inherited graph runtime fields
-    expect(runtime.appearanceID).toStrictEqual(0);
   });
 });
 

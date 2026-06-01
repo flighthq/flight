@@ -11,7 +11,7 @@ import { connectSignal, createSignal, emitSignal } from '@flighthq/signals';
 import type { InputKeyboardData, InputPointerData, InputSignals } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { hitTestLocalBoundsRectangle } from './hitTests';
+import { graphHitTestLocalBounds } from './hitTests';
 import { registerHitTestPoint } from './hitTests';
 import {
   capturePointer,
@@ -33,7 +33,7 @@ import {
 } from './interactionManager';
 
 beforeAll(() => {
-  registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRectangle);
+  registerHitTestPoint(DisplayObjectKind, graphHitTestLocalBounds);
 });
 
 describe('capturePointer', () => {

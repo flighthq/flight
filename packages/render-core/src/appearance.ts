@@ -1,11 +1,11 @@
-import { getAppearanceID } from '@flighthq/scenegraph-core';
+import { getAppearanceRevision } from '@flighthq/scenegraph-core';
 import type { GraphNode, RenderNode, RenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import { updateColorTransform } from './color';
+import { updateRenderNodeColorTransform } from './color';
 
-export function updateAppearance(state: RenderState, data: RenderNode, parentData?: RenderNode): boolean {
-  const appearanceID = getAppearanceID(data.source as GraphNode);
+export function updateRenderNodeAppearance(state: RenderState, data: RenderNode, parentData?: RenderNode): boolean {
+  const appearanceID = getAppearanceRevision(data.source as GraphNode);
   if (
     (parentData !== undefined && parentData.appearanceFrameID === state.currentFrameID) ||
     data.lastAppearanceID !== appearanceID
@@ -24,7 +24,7 @@ function recalculateAppearance(state: RenderState, data: RenderNode, parentData?
     if (!data.visible) return;
     data.alpha = source.alpha * parentData.alpha;
     if (data.alpha <= 0) return;
-    updateColorTransform(state, data, parentData);
+    updateRenderNodeColorTransform(state, data, parentData);
     data.blendMode = parentData.blendMode !== BlendMode.Normal ? parentData.blendMode : source.blendMode;
     data.shader = parentData.shader !== null ? parentData.shader : source.shader;
   } else {
@@ -32,7 +32,7 @@ function recalculateAppearance(state: RenderState, data: RenderNode, parentData?
     if (!data.visible) return;
     data.alpha = source.alpha * state.renderAlpha;
     if (data.alpha <= 0) return;
-    updateColorTransform(state, data);
+    updateRenderNodeColorTransform(state, data);
     data.blendMode = state.renderBlendMode !== null ? state.renderBlendMode : source.blendMode;
     data.shader = state.renderShader !== null ? state.renderShader : source.shader;
   }

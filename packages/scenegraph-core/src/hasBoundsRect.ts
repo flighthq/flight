@@ -3,9 +3,7 @@ import type { GraphBoundsNode, HasBoundsRect, HasBoundsRectRuntime, MethodsOf, R
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- unique symbol variance prevents a tighter type here
 export function defaultComputeLocalBoundsRectangle(_out: Rectangle, _source: Readonly<GraphBoundsNode<any, any>>) {}
 
-export function initHasBoundsRectangle(_target: HasBoundsRect, _obj?: Readonly<Partial<HasBoundsRect>>): void {}
-
-export function initHasBoundsRectangleRuntime(
+export function initBoundsRectRuntimeTrait(
   target: HasBoundsRectRuntime,
   methods?: Readonly<Partial<MethodsOf<HasBoundsRectRuntime>>>,
 ): void {
@@ -14,3 +12,5 @@ export function initHasBoundsRectangleRuntime(
   target.worldBoundsRect = null;
   target.computeLocalBoundsRect = methods?.computeLocalBoundsRect ?? defaultComputeLocalBoundsRectangle;
 }
+
+export function initBoundsRectTrait(_target: HasBoundsRect, _obj?: Readonly<Partial<HasBoundsRect>>): void {}

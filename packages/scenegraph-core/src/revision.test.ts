@@ -2,18 +2,18 @@ import { createGraphNode, getGraphNodeRuntime } from '@flighthq/scenegraph-core'
 import type { GraphNode, GraphNodeRuntime } from '@flighthq/types';
 
 import {
-  getAppearanceID,
-  getLocalBoundsID,
-  getLocalTransformID,
-  getWorldTransformID,
-  invalidate,
+  getAppearanceRevision,
+  getLocalBoundsRevision,
+  getLocalTransformRevision,
+  getWorldTransformRevision,
   invalidateAppearance,
+  invalidateGraphNode,
   invalidateLocalBounds,
   invalidateLocalTransform,
   invalidateParentReference,
   invalidateRender,
   invalidateWorldBounds,
-  recomputeWorldTransformID,
+  recomputeWorldTransformRevision,
 } from './revision';
 
 function createTestNode(): TestNode {
@@ -29,58 +29,35 @@ function getEntityRuntime(source: TestNode) {
   return getGraphNodeRuntime(source) as GraphNodeRuntime<typeof TestGraph>;
 }
 
-describe('getAppearanceID', () => {
+describe('getAppearanceRevision', () => {
   it('returns appearanceID', () => {
     const runtime = getEntityRuntime(node);
     runtime.appearanceID = 100;
-    expect(getAppearanceID(node)).toStrictEqual(runtime.appearanceID);
+    expect(getAppearanceRevision(node)).toStrictEqual(runtime.appearanceID);
   });
 });
 
-describe('getLocalBoundsID', () => {
+describe('getLocalBoundsRevision', () => {
   it('returns localBoundsID', () => {
     const runtime = getEntityRuntime(node);
     runtime.localBoundsID = 100;
-    expect(getLocalBoundsID(node)).toStrictEqual(runtime.localBoundsID);
+    expect(getLocalBoundsRevision(node)).toStrictEqual(runtime.localBoundsID);
   });
 });
 
-describe('getLocalTransformID', () => {
+describe('getLocalTransformRevision', () => {
   it('returns localTransformID', () => {
     const runtime = getEntityRuntime(node);
     runtime.localTransformID = 100;
-    expect(getLocalTransformID(node)).toStrictEqual(runtime.localTransformID);
+    expect(getLocalTransformRevision(node)).toStrictEqual(runtime.localTransformID);
   });
 });
 
-describe('getWorldTransformID', () => {
+describe('getWorldTransformRevision', () => {
   it('returns worldTransformID', () => {
     const runtime = getEntityRuntime(node);
     runtime.worldTransformID = 100;
-    expect(getWorldTransformID(node)).toStrictEqual(runtime.worldTransformID);
-  });
-});
-
-describe('invalidate', () => {
-  it('increments appearanceID, localBoundsID, localTransformID', () => {
-    const appearanceID = getEntityRuntime(node).appearanceID;
-    const localBoundsID = getEntityRuntime(node).localBoundsID;
-    const localTransformID = getEntityRuntime(node).localTransformID;
-    invalidate(node);
-    expect(getEntityRuntime(node).appearanceID).toBe(appearanceID + 1);
-    expect(getEntityRuntime(node).localBoundsID).toBe(localBoundsID + 1);
-    expect(getEntityRuntime(node).localTransformID).toBe(localTransformID + 1);
-  });
-
-  it('invalidates parent reference', () => {
-    invalidate(node);
-    expect(getEntityRuntime(node).worldTransformUsingParentTransformID).toBe(-1);
-  });
-
-  it('invalidates world bounds', () => {
-    invalidate(node);
-    expect(getEntityRuntime(node).worldBoundsUsingWorldTransformID).toBe(-1);
-    expect(getEntityRuntime(node).worldBoundsUsingLocalBoundsID).toBe(-1);
+    expect(getWorldTransformRevision(node)).toStrictEqual(runtime.worldTransformID);
   });
 });
 
@@ -96,6 +73,29 @@ describe('invalidateAppearance', () => {
     runtime.appearanceID = 0xffffffff; // max 32-bit uint
     invalidateAppearance(node);
     expect(getEntityRuntime(node).appearanceID).toBe(0);
+  });
+});
+
+describe('invalidateGraphNode', () => {
+  it('increments appearanceID, localBoundsID, localTransformID', () => {
+    const appearanceID = getEntityRuntime(node).appearanceID;
+    const localBoundsID = getEntityRuntime(node).localBoundsID;
+    const localTransformID = getEntityRuntime(node).localTransformID;
+    invalidateGraphNode(node);
+    expect(getEntityRuntime(node).appearanceID).toBe(appearanceID + 1);
+    expect(getEntityRuntime(node).localBoundsID).toBe(localBoundsID + 1);
+    expect(getEntityRuntime(node).localTransformID).toBe(localTransformID + 1);
+  });
+
+  it('invalidates parent reference', () => {
+    invalidateGraphNode(node);
+    expect(getEntityRuntime(node).worldTransformUsingParentTransformID).toBe(-1);
+  });
+
+  it('invalidates world bounds', () => {
+    invalidateGraphNode(node);
+    expect(getEntityRuntime(node).worldBoundsUsingWorldTransformID).toBe(-1);
+    expect(getEntityRuntime(node).worldBoundsUsingLocalBoundsID).toBe(-1);
   });
 });
 
@@ -160,11 +160,11 @@ describe('invalidateWorldBounds', () => {
   });
 });
 
-describe('recomputeWorldTransformID', () => {
+describe('recomputeWorldTransformRevision', () => {
   it('updates worldTransformID based on local and parent transform IDs', () => {
     const runtime = getEntityRuntime(node);
     runtime.localTransformID = 3;
-    recomputeWorldTransformID(runtime);
+    recomputeWorldTransformRevision(runtime);
     expect(runtime.worldTransformUsingLocalTransformID).toBe(3);
     expect(runtime.worldTransformUsingParentTransformID).toBe(0);
   });
@@ -174,7 +174,7 @@ describe('recomputeWorldTransformID', () => {
     const parentRuntime = getEntityRuntime(parentNode);
     parentRuntime.worldTransformID = 7;
     const runtime = getEntityRuntime(node);
-    recomputeWorldTransformID(runtime, parentRuntime);
+    recomputeWorldTransformRevision(runtime, parentRuntime);
     expect(runtime.worldTransformUsingParentTransformID).toBe(7);
   });
 });

@@ -12,7 +12,7 @@ export * from './domShape';
 export * from './domSprite';
 export * from './domStyle';
 export * from './domText';
-export { htmlEscape } from './domTextHelpers';
+export { escapeHtmlString } from './domTextHelpers';
 export * from './domTilemap';
 export * from './domTransform';
 export * from './domVideo';

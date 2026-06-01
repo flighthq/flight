@@ -18,7 +18,7 @@ import {
   detachWindowVisibility,
   disposeApplicationWindow,
   exitFullscreen,
-  hardenElement,
+  lockElement,
   requestFullscreen,
 } from './window';
 
@@ -397,23 +397,23 @@ describe('exitFullscreen', () => {
   });
 });
 
-describe('hardenElement', () => {
+describe('lockElement', () => {
   it('sets touch-action and user-select', () => {
     const element = document.createElement('div');
-    hardenElement(element);
+    lockElement(element);
     expect(element.style.touchAction).toBe('none');
     expect(element.style.userSelect).toBe('none');
   });
 
   it('sets transform on canvas elements', () => {
     const canvas = document.createElement('canvas');
-    hardenElement(canvas);
+    lockElement(canvas);
     expect(canvas.style.transform).toBe('translateZ(0)');
   });
 
   it('does not set transform on non-canvas elements', () => {
     const div = document.createElement('div');
-    hardenElement(div);
+    lockElement(div);
     expect(div.style.transform).toBe('');
   });
 });

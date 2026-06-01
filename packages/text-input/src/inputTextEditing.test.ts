@@ -1,4 +1,4 @@
-import { getAppearanceID } from '@flighthq/scenegraph-core';
+import { getAppearanceRevision } from '@flighthq/scenegraph-core';
 import { createInputText, setRichTextFormatRange } from '@flighthq/scenegraph-display';
 import type { KeyboardData, TextLayoutResult } from '@flighthq/types';
 import { KeyCode } from '@flighthq/types';
@@ -297,12 +297,12 @@ describe('moveInputTextCaret', () => {
 describe('replaceInputText', () => {
   it('replaces a range and collapses selection after inserted text', () => {
     const text = createInputText({ data: { text: 'hello world' } });
-    const before = getAppearanceID(text);
+    const before = getAppearanceRevision(text);
     replaceInputText(text, 6, 11, 'Flight');
     expect(text.data.text).toBe('hello Flight');
     expect(getInputTextSelectionBeginIndex(text)).toBe(12);
     expect(getInputTextSelectionEndIndex(text)).toBe(12);
-    expect(getAppearanceID(text)).not.toBe(before);
+    expect(getAppearanceRevision(text)).not.toBe(before);
   });
 
   it('updates serialized text format ranges after insertion', () => {

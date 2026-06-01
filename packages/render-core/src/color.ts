@@ -22,7 +22,7 @@ export function setRenderStateBackgroundColor(state: RenderState, color: number)
   _state.backgroundColorString = '#' + uint.toString(16).padStart(8, '0').toUpperCase();
 }
 
-export function updateColorTransform(state: RenderState, data: RenderNode, parentData?: RenderNode): void {
+export function updateRenderNodeColorTransform(state: RenderState, data: RenderNode, parentData?: RenderNode): void {
   const source = data.source;
   const transform = source.colorTransform ?? null;
   let parentTransform = null;

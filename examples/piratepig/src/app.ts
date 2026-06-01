@@ -14,7 +14,7 @@ import {
   createInteractionManager,
   createTweenManager,
   DisplayObjectKind,
-  hitTestLocalBoundsRectangle,
+  graphHitTestLocalBounds,
   invalidateRender,
   loadAudioSourceFromURLs,
   loadFontFromURL,
@@ -54,7 +54,7 @@ const sounds = [
 
 // ── Scene ──────────────────────────────────────────────────────────────────
 
-registerHitTestPoint(DisplayObjectKind, hitTestLocalBoundsRectangle);
+registerHitTestPoint(DisplayObjectKind, graphHitTestLocalBounds);
 
 const manager = createTweenManager();
 const root = createDisplayObject();

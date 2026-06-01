@@ -13,7 +13,7 @@ export interface ColorTransformData {
 
 export type ThresholdOperation = '!=' | '<' | '<=' | '==' | '>' | '>=';
 
-export function colorTransformSurface(
+export function applySurfaceColorTransform(
   dest: Surface,
   x: number,
   y: number,
@@ -34,6 +34,54 @@ export function colorTransformSurface(
       dest.data[i + 3] = Math.max(0, Math.min(255, Math.round(dest.data[i + 3] * ct.alphaMultiplier + ct.alphaOffset)));
     }
   }
+}
+
+export function applySurfaceThreshold(
+  source: Readonly<Surface>,
+  sx: number,
+  sy: number,
+  sw: number,
+  sh: number,
+  dest: Surface,
+  dx: number,
+  dy: number,
+  operation: ThresholdOperation,
+  thresholdValue: number,
+  color: number = 0,
+  mask: number = 0xffffffff,
+  copySource: boolean = false,
+): number {
+  const x2 = Math.min(sw, source.width - sx, dest.width - dx);
+  const y2 = Math.min(sh, source.height - sy, dest.height - dy);
+  let changed = 0;
+  for (let py = 0; py < y2; py++) {
+    for (let px = 0; px < x2; px++) {
+      const si = ((sy + py) * source.width + (sx + px)) * 4;
+      const di = ((dy + py) * dest.width + (dx + px)) * 4;
+      const pixel =
+        (((source.data[si + 3] << 24) | (source.data[si] << 16) | (source.data[si + 1] << 8) | source.data[si + 2]) &
+          mask) >>>
+        0;
+      const passes = compare(pixel, operation, thresholdValue >>> 0);
+      if (passes) {
+        const cr = (color >> 16) & 0xff;
+        const cg = (color >> 8) & 0xff;
+        const cb = color & 0xff;
+        const ca = (color >>> 24) & 0xff;
+        dest.data[di] = cr;
+        dest.data[di + 1] = cg;
+        dest.data[di + 2] = cb;
+        dest.data[di + 3] = ca;
+        changed++;
+      } else if (copySource) {
+        dest.data[di] = source.data[si];
+        dest.data[di + 1] = source.data[si + 1];
+        dest.data[di + 2] = source.data[si + 2];
+        dest.data[di + 3] = source.data[si + 3];
+      }
+    }
+  }
+  return changed;
 }
 
 export function mergeSurface(
@@ -85,54 +133,6 @@ export function scrollSurface(dest: Surface, dx: number, dy: number): void {
       dest.data[di + 3] = copy[si + 3];
     }
   }
-}
-
-export function thresholdSurface(
-  source: Readonly<Surface>,
-  sx: number,
-  sy: number,
-  sw: number,
-  sh: number,
-  dest: Surface,
-  dx: number,
-  dy: number,
-  operation: ThresholdOperation,
-  thresholdValue: number,
-  color: number = 0,
-  mask: number = 0xffffffff,
-  copySource: boolean = false,
-): number {
-  const x2 = Math.min(sw, source.width - sx, dest.width - dx);
-  const y2 = Math.min(sh, source.height - sy, dest.height - dy);
-  let changed = 0;
-  for (let py = 0; py < y2; py++) {
-    for (let px = 0; px < x2; px++) {
-      const si = ((sy + py) * source.width + (sx + px)) * 4;
-      const di = ((dy + py) * dest.width + (dx + px)) * 4;
-      const pixel =
-        (((source.data[si + 3] << 24) | (source.data[si] << 16) | (source.data[si + 1] << 8) | source.data[si + 2]) &
-          mask) >>>
-        0;
-      const passes = compare(pixel, operation, thresholdValue >>> 0);
-      if (passes) {
-        const cr = (color >> 16) & 0xff;
-        const cg = (color >> 8) & 0xff;
-        const cb = color & 0xff;
-        const ca = (color >>> 24) & 0xff;
-        dest.data[di] = cr;
-        dest.data[di + 1] = cg;
-        dest.data[di + 2] = cb;
-        dest.data[di + 3] = ca;
-        changed++;
-      } else if (copySource) {
-        dest.data[di] = source.data[si];
-        dest.data[di + 1] = source.data[si + 1];
-        dest.data[di + 2] = source.data[si + 2];
-        dest.data[di + 3] = source.data[si + 3];
-      }
-    }
-  }
-  return changed;
 }
 
 function compare(a: number, op: ThresholdOperation, b: number): boolean {

@@ -1,27 +1,27 @@
-import { htmlEscape } from './domTextHelpers';
+import { escapeHtmlString } from './domTextHelpers';
 
-describe('htmlEscape', () => {
+describe('escapeHtmlString', () => {
   it('escapes ampersands', () => {
-    expect(htmlEscape('a&b')).toBe('a&amp;b');
+    expect(escapeHtmlString('a&b')).toBe('a&amp;b');
   });
 
   it('escapes greater-than signs', () => {
-    expect(htmlEscape('a>b')).toBe('a&gt;b');
+    expect(escapeHtmlString('a>b')).toBe('a&gt;b');
   });
 
   it('escapes less-than signs', () => {
-    expect(htmlEscape('a<b')).toBe('a&lt;b');
+    expect(escapeHtmlString('a<b')).toBe('a&lt;b');
   });
 
   it('escapes multiple special characters in sequence', () => {
-    expect(htmlEscape('<a & b>')).toBe('&lt;a&nbsp;&amp;&nbsp;b&gt;');
+    expect(escapeHtmlString('<a & b>')).toBe('&lt;a&nbsp;&amp;&nbsp;b&gt;');
   });
 
   it('escapes spaces to &nbsp;', () => {
-    expect(htmlEscape('a b')).toBe('a&nbsp;b');
+    expect(escapeHtmlString('a b')).toBe('a&nbsp;b');
   });
 
   it('returns unchanged string when no special characters', () => {
-    expect(htmlEscape('hello')).toBe('hello');
+    expect(escapeHtmlString('hello')).toBe('hello');
   });
 });

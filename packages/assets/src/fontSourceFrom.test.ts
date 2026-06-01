@@ -12,8 +12,15 @@ beforeEach(() => {
   mockFace = { load: vi.fn().mockResolvedValue(undefined) };
   vi.stubGlobal(
     'FontFace',
-    vi.fn(() => mockFace),
+    vi.fn(function () {
+      return mockFace;
+    }),
   );
+  Object.defineProperty(document, 'fonts', {
+    value: { add: vi.fn(), load: vi.fn() },
+    configurable: true,
+    writable: true,
+  });
   vi.spyOn(document.fonts, 'add').mockImplementation(() => document.fonts);
   vi.spyOn(document.fonts, 'load').mockResolvedValue([mockFace as unknown as FontFace]);
 });
@@ -70,7 +77,9 @@ describe('loadFontSourceFromURLs', () => {
   });
 
   it('infers format from file extension when no format is provided', async () => {
-    const MockFontFace = vi.fn(() => mockFace);
+    const MockFontFace = vi.fn(function () {
+      return mockFace;
+    });
     vi.stubGlobal('FontFace', MockFontFace);
     const source = createFontSource('TestFont');
     await loadFontSourceFromURLs(source, [{ url: 'font.otf' }]);

@@ -16,7 +16,7 @@ import type {
   SignalConnectOptions,
 } from '@flighthq/types';
 
-import { findHitTarget } from './hitTests';
+import { findGraphHitTarget } from './hitTests';
 
 export interface InteractionManager<GraphKind extends symbol = symbol, Traits extends object = object> {
   doubleClickDelay: number;
@@ -470,7 +470,7 @@ function findInteractionTarget<GraphKind extends symbol, Traits extends object>(
   if (!manager.enabled) return null;
   const captured = manager.pointerCaptures.get(pointerId);
   if (captured !== undefined) return captured;
-  return findHitTarget(manager.root, x, y) as GraphNode<GraphKind, Traits> | null;
+  return findGraphHitTarget(manager.root, x, y) as GraphNode<GraphKind, Traits> | null;
 }
 
 function getInteractionPointerState<GraphKind extends symbol, Traits extends object>(

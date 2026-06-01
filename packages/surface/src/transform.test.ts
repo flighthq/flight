@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { getSurfacePixel32, setSurfacePixel32 } from './pixel';
 import { createSurface } from './surface';
-import { colorTransformSurface, mergeSurface, scrollSurface, thresholdSurface } from './transform';
+import { applySurfaceColorTransform, applySurfaceThreshold, mergeSurface, scrollSurface } from './transform';
 
 const identity = {
   redMultiplier: 1,
@@ -15,10 +15,10 @@ const identity = {
   alphaOffset: 0,
 };
 
-describe('colorTransformSurface', () => {
+describe('applySurfaceColorTransform', () => {
   it('applies multiplier', () => {
     const img = createSurface(2, 2, 0xff808080);
-    colorTransformSurface(img, 0, 0, 2, 2, { ...identity, redMultiplier: 0 });
+    applySurfaceColorTransform(img, 0, 0, 2, 2, { ...identity, redMultiplier: 0 });
     expect(img.data[0]).toBe(0);
     expect(img.data[1]).toBe(0x80);
   });
@@ -26,23 +26,50 @@ describe('colorTransformSurface', () => {
   it('applies offset', () => {
     const img = createSurface(1, 1);
     setSurfacePixel32(img, 0, 0, 0xff000000);
-    colorTransformSurface(img, 0, 0, 1, 1, { ...identity, redOffset: 100 });
+    applySurfaceColorTransform(img, 0, 0, 1, 1, { ...identity, redOffset: 100 });
     expect(img.data[0]).toBe(100);
   });
 
   it('clamps to 0-255', () => {
     const img = createSurface(1, 1, 0xff808080);
-    colorTransformSurface(img, 0, 0, 1, 1, { ...identity, redMultiplier: 10, redOffset: 100 });
+    applySurfaceColorTransform(img, 0, 0, 1, 1, { ...identity, redMultiplier: 10, redOffset: 100 });
     expect(img.data[0]).toBe(255);
-    colorTransformSurface(img, 0, 0, 1, 1, { ...identity, redMultiplier: 0, redOffset: -100 });
+    applySurfaceColorTransform(img, 0, 0, 1, 1, { ...identity, redMultiplier: 0, redOffset: -100 });
     expect(img.data[0]).toBe(0);
   });
 
   it('only affects the specified rect', () => {
     const img = createSurface(2, 2, 0xff808080);
-    colorTransformSurface(img, 0, 0, 1, 1, { ...identity, redMultiplier: 0 });
+    applySurfaceColorTransform(img, 0, 0, 1, 1, { ...identity, redMultiplier: 0 });
     expect(img.data[0]).toBe(0);
     expect(img.data[4]).toBe(0x80);
+  });
+});
+
+describe('applySurfaceThreshold', () => {
+  it('replaces pixels that pass the test', () => {
+    const src = createSurface(2, 1);
+    setSurfacePixel32(src, 0, 0, 0xff808080);
+    setSurfacePixel32(src, 1, 0, 0xff404040);
+    const dst = createSurface(2, 1);
+    const count = applySurfaceThreshold(src, 0, 0, 2, 1, dst, 0, 0, '>', 0xff607060, 0xffffffff);
+    expect(count).toBe(1);
+    expect(getSurfacePixel32(dst, 0, 0)).toBe(0xffffffff);
+    expect(getSurfacePixel32(dst, 1, 0)).toBe(0x00000000);
+  });
+
+  it('copies source when copySource is true and test fails', () => {
+    const src = createSurface(1, 1, 0xff112233);
+    const dst = createSurface(1, 1);
+    applySurfaceThreshold(src, 0, 0, 1, 1, dst, 0, 0, '>', 0xffffffff, 0xffffffff, 0xffffffff, true);
+    expect(getSurfacePixel32(dst, 0, 0)).toBe(0xff112233);
+  });
+
+  it('returns zero when no pixels pass', () => {
+    const src = createSurface(2, 2, 0xff000000);
+    const dst = createSurface(2, 2);
+    const count = applySurfaceThreshold(src, 0, 0, 2, 2, dst, 0, 0, '>', 0xffffffff);
+    expect(count).toBe(0);
   });
 });
 
@@ -86,32 +113,5 @@ describe('scrollSurface', () => {
     setSurfacePixel32(img, 3, 0, 0xffaabbcc);
     scrollSurface(img, 1, 0);
     expect(getSurfacePixel32(img, 0, 0)).toBe(0xffaabbcc);
-  });
-});
-
-describe('thresholdSurface', () => {
-  it('replaces pixels that pass the test', () => {
-    const src = createSurface(2, 1);
-    setSurfacePixel32(src, 0, 0, 0xff808080);
-    setSurfacePixel32(src, 1, 0, 0xff404040);
-    const dst = createSurface(2, 1);
-    const count = thresholdSurface(src, 0, 0, 2, 1, dst, 0, 0, '>', 0xff607060, 0xffffffff);
-    expect(count).toBe(1);
-    expect(getSurfacePixel32(dst, 0, 0)).toBe(0xffffffff);
-    expect(getSurfacePixel32(dst, 1, 0)).toBe(0x00000000);
-  });
-
-  it('copies source when copySource is true and test fails', () => {
-    const src = createSurface(1, 1, 0xff112233);
-    const dst = createSurface(1, 1);
-    thresholdSurface(src, 0, 0, 1, 1, dst, 0, 0, '>', 0xffffffff, 0xffffffff, 0xffffffff, true);
-    expect(getSurfacePixel32(dst, 0, 0)).toBe(0xff112233);
-  });
-
-  it('returns zero when no pixels pass', () => {
-    const src = createSurface(2, 2, 0xff000000);
-    const dst = createSurface(2, 2);
-    const count = thresholdSurface(src, 0, 0, 2, 2, dst, 0, 0, '>', 0xffffffff);
-    expect(count).toBe(0);
   });
 });
