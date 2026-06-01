@@ -11,6 +11,7 @@
   "references": [
     { "path": "../application" },
     { "path": "../assets" },
+    { "path": "../assets-loader" },
     { "path": "../surface" },
     { "path": "../entity" },
     { "path": "../geometry" },
@@ -29,6 +30,8 @@
     { "path": "../scenegraph-world" },
     { "path": "../signals" },
     { "path": "../spritesheet" },
+    { "path": "../text-input" },
+    { "path": "../text-layout" },
     { "path": "../timeline" },
     { "path": "../timeline-spritesheet" },
     { "path": "../tween" },

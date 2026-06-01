@@ -23,6 +23,7 @@
     { "path": "./packages/scenegraph-world" },
     { "path": "./packages/signals" },
     { "path": "./packages/spritesheet" },
+    { "path": "./packages/text-input" },
     { "path": "./packages/text-layout" },
     { "path": "./packages/timeline" },
     { "path": "./packages/timeline-spritesheet" },

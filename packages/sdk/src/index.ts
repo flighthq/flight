@@ -1,6 +1,6 @@
 export * from '@flighthq/application';
 export * from '@flighthq/assets';
-// export * from '@flighthq/surface';
+export * from '@flighthq/assets-loader';
 export * from '@flighthq/entity';
 export * from '@flighthq/geometry';
 export * from '@flighthq/image-cache';
@@ -15,9 +15,12 @@ export * from '@flighthq/render-webgl';
 export * from '@flighthq/scenegraph-core';
 export * from '@flighthq/scenegraph-display';
 export * from '@flighthq/scenegraph-sprite';
-// export * from '@flighthq/scenegraph-world';
+// export * from '@flighthq/scenegraph-world'; // no exports yet
 export * from '@flighthq/signals';
 export * from '@flighthq/spritesheet';
+export * from '@flighthq/surface';
+export * from '@flighthq/text-input';
+export * from '@flighthq/text-layout';
 export * from '@flighthq/timeline';
 export * from '@flighthq/timeline-spritesheet';
 export * from '@flighthq/tween';
