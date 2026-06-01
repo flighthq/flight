@@ -14,7 +14,9 @@ export function createMovieClipData(data?: Readonly<Partial<MovieClipData>>): Mo
 }
 
 export function createMovieClipRuntime(): MovieClipRuntime {
-  return createDisplayObjectRuntime() as MovieClipRuntime;
+  const out = createDisplayObjectRuntime() as MovieClipRuntime;
+  out.movieClipSignals = null;
+  return out;
 }
 
 export function getMovieClipRuntime(source: Readonly<MovieClip>): Readonly<MovieClipRuntime> {

@@ -50,6 +50,11 @@ describe('createMovieClipRuntime', () => {
     const runtime = createMovieClipRuntime();
     expect(runtime).not.toBeNull();
   });
+
+  it('initializes movieClipSignals to null', () => {
+    const runtime = createMovieClipRuntime();
+    expect(runtime.movieClipSignals).toBeNull();
+  });
 });
 
 describe('getMovieClipRuntime', () => {
