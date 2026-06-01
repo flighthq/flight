@@ -8,6 +8,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./inputText": {
+      "types": "./dist/webglInputText.d.ts",
+      "default": "./dist/webglInputText.js"
     }
   },
   "files": [
@@ -33,6 +37,7 @@
     "@flighthq/render-core": "*",
     "@flighthq/scenegraph-display": "*",
     "@flighthq/scenegraph-sprite": "*",
+    "@flighthq/text-input": "*",
     "@flighthq/text-layout": "*",
     "@flighthq/types": "*"
   },
