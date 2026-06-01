@@ -19,6 +19,7 @@ export * from './EasingFunction';
 export * from './Entity';
 export * from './Filter';
 export * from './Font';
+export * from './FontSource';
 export * from './GraphNode';
 export * from './GraphNodeSignals';
 export * from './HasAppearance';
