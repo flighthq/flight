@@ -15,6 +15,9 @@ export interface TextFormat {
   letterSpacing?: number;
   rightMargin?: number;
   size?: number;
+  strikethrough?: boolean;
   tabStops?: number[];
+  target?: string;
   underline?: boolean;
+  url?: string;
 }
