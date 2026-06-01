@@ -1,3 +1,5 @@
+import { createRenderState } from '@flighthq/render-core';
+
 import type { WebGLRenderStateInternal } from './internal';
 import type { WebGLShaderLocations } from './webglShaderTypes';
 
@@ -29,6 +31,13 @@ export function makeGL(): WebGL2RenderingContext {
     LINK_STATUS: 35714,
     BLEND: 3042,
     DEPTH_TEST: 2929,
+    SCISSOR_TEST: 3089,
+    STENCIL_TEST: 2960,
+    STENCIL_BUFFER_BIT: 1024,
+    ALWAYS: 519,
+    EQUAL: 514,
+    KEEP: 7680,
+    REPLACE: 7681,
     ONE: 1,
     ONE_MINUS_SRC_ALPHA: 771,
     COLOR_BUFFER_BIT: 16384,
@@ -46,7 +55,12 @@ export function makeGL(): WebGL2RenderingContext {
     blendFunc: vi.fn(),
     clearColor: vi.fn(),
     clear: vi.fn(),
+    colorMask: vi.fn(),
     viewport: vi.fn(),
+    scissor: vi.fn(),
+    stencilFunc: vi.fn(),
+    stencilMask: vi.fn(),
+    stencilOp: vi.fn(),
     useProgram: vi.fn(),
     uniform1f: vi.fn(),
     uniform1i: vi.fn(),
@@ -96,15 +110,19 @@ export function makeWebGLState(options?: { allowSmoothing?: boolean; backgroundC
   canvas.height = 100;
   const gl = makeGL();
   const shaderLoc = makeShaderLoc();
-  const state = {
+  const state = createRenderState({
+    allowSmoothing: options?.allowSmoothing ?? true,
+    backgroundColorRGBA: options?.backgroundColorRGBA ?? [0, 0, 0, 0],
+  }) as WebGLRenderStateInternal;
+
+  Object.assign(state, {
     canvas,
     gl,
-    allowSmoothing: options?.allowSmoothing ?? true,
     currentBlendMode: null,
+    currentMaskDepth: 0,
     currentProgram: null,
+    currentScissorRect: null,
     currentTexture: null,
-    backgroundColorRGBA: options?.backgroundColorRGBA ?? [0, 0, 0, 0],
-    backgroundColor: 0,
     textureCache: new WeakMap<CanvasImageSource, WebGLTexture>(),
     shaderLoc,
     defaultBitmapShader: { locations: shaderLoc, program: shaderLoc.program, bind: vi.fn() },
@@ -112,6 +130,7 @@ export function makeWebGLState(options?: { allowSmoothing?: boolean; backgroundC
     quadIndexBuffer: {} as WebGLBuffer,
     quadVertexData: new Float32Array(16),
     matrixArray: new Float32Array(9),
-  } as unknown as WebGLRenderStateInternal;
+    scissorStack: [],
+  });
   return { state, gl, canvas, shaderLoc };
 }

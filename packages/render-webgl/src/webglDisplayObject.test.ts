@@ -5,7 +5,12 @@ import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { WebGLRenderState } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { renderWebGLDisplayObject } from './webglDisplayObject';
+import {
+  defaultWebGLDisplayObjectRenderer,
+  drawWebGLDisplayObject,
+  drawWebGLDisplayObjectMask,
+  renderWebGLDisplayObject,
+} from './webglDisplayObject';
 import { createWebGLRenderState } from './webglRenderState';
 
 function makeState(): WebGLRenderState {
@@ -22,6 +27,37 @@ function makeRenderer() {
     drawMask: vi.fn(),
   } as any;
 }
+
+describe('defaultWebGLDisplayObjectRenderer', () => {
+  it('has draw, drawMask, and createData functions', () => {
+    expect(defaultWebGLDisplayObjectRenderer.createData({} as any, {} as any)).toBeNull();
+    expect(defaultWebGLDisplayObjectRenderer.draw).toBe(drawWebGLDisplayObject);
+    expect(defaultWebGLDisplayObjectRenderer.drawMask).toBe(drawWebGLDisplayObjectMask);
+  });
+});
+
+describe('drawWebGLDisplayObject', () => {
+  it('does not draw plain display object geometry', () => {
+    const state = makeState();
+    expect(() => drawWebGLDisplayObject(state, {} as any)).not.toThrow();
+  });
+});
+
+describe('drawWebGLDisplayObjectMask', () => {
+  it('applies child mask renderers', () => {
+    const state = makeState();
+    const parent = createDisplayObject();
+    const child = createDisplayObject();
+    const renderer = makeRenderer();
+    addGraphChild(parent, child);
+    const childData = getOrCreateDisplayObjectRenderNode(state, child);
+    childData.renderer = renderer;
+
+    drawWebGLDisplayObjectMask(state, getOrCreateDisplayObjectRenderNode(state, parent));
+
+    expect(renderer.drawMask).toHaveBeenCalledWith(state, childData);
+  });
+});
 
 describe('renderWebGLDisplayObject', () => {
   it('does not throw for an empty display object', () => {
@@ -115,5 +151,31 @@ describe('renderWebGLDisplayObject', () => {
     renderWebGLDisplayObject(state, parent);
 
     expect(renderer.draw).toHaveBeenCalledWith(state, childData);
+  });
+
+  it('applies masks around the object subtree', () => {
+    const state = makeState();
+    const renderer = makeRenderer();
+    const maskRenderer = makeRenderer();
+    const obj = createDisplayObject();
+    const mask = createDisplayObject();
+    obj.mask = mask;
+
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
+    data.visible = true;
+    data.alpha = 1;
+    data.transform2D = createMatrix();
+    data.renderer = renderer;
+
+    const maskData = getOrCreateDisplayObjectRenderNode(state, mask);
+    maskData.visible = true;
+    maskData.alpha = 1;
+    maskData.transform2D = createMatrix();
+    maskData.renderer = maskRenderer;
+
+    renderWebGLDisplayObject(state, obj);
+
+    expect(maskRenderer.drawMask).toHaveBeenCalledWith(state, maskData);
+    expect(renderer.draw).toHaveBeenCalledWith(state, data);
   });
 });

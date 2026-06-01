@@ -20,7 +20,7 @@ export function drawWebGLBitmap(state: RenderState, renderNode: DisplayObjectRen
 }
 
 export function drawWebGLBitmapMask(_state: RenderState, _data: DisplayObjectRenderNode): void {
-  // Masks not yet implemented in WebGL renderer
+  drawWebGLBitmap(_state, _data);
 }
 
 export const defaultWebGLBitmapRenderer: DisplayObjectRenderer = {

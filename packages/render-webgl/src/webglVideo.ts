@@ -37,7 +37,7 @@ export function drawWebGLVideo(state: RenderState, renderNode: DisplayObjectRend
 }
 
 export function drawWebGLVideoMask(_state: RenderState, _renderNode: DisplayObjectRenderNode): void {
-  // Masks not yet implemented in WebGL renderer
+  drawWebGLVideo(_state, _renderNode);
 }
 
 export const defaultWebGLVideoRenderer: DisplayObjectRenderer = {

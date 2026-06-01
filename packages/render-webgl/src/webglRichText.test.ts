@@ -76,9 +76,9 @@ describe('drawWebGLRichText', () => {
 });
 
 describe('drawWebGLRichTextMask', () => {
-  it('is a no-op that does not throw', () => {
+  it('uses the rich text draw path', () => {
     const { state, gl } = makeWebGLState();
-    expect(() => drawWebGLRichTextMask(state, {} as DisplayObjectRenderNode)).not.toThrow();
+    expect(() => drawWebGLRichTextMask(state, makeRichTextNode())).not.toThrow();
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 });

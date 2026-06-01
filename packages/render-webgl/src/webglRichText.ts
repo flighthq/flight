@@ -41,7 +41,9 @@ export function drawWebGLRichText(state: RenderState, renderNode: DisplayObjectR
   drawWebGLRichTextWithOverlay(state, renderNode);
 }
 
-export function drawWebGLRichTextMask(_state: RenderState, _data: DisplayObjectRenderNode): void {}
+export function drawWebGLRichTextMask(state: RenderState, data: DisplayObjectRenderNode): void {
+  drawWebGLRichText(state, data);
+}
 
 export function drawWebGLRichTextWithOverlay(
   state: RenderState,

@@ -90,7 +90,9 @@ export function drawWebGLShape(state: RenderState, renderNode: DisplayObjectRend
   drawWebGLQuad(internal, 0, 0, w, h, 0, 0, 1, 1);
 }
 
-export function drawWebGLShapeMask(_state: RenderState, _data: DisplayObjectRenderNode): void {}
+export function drawWebGLShapeMask(state: RenderState, data: DisplayObjectRenderNode): void {
+  drawWebGLShape(state, data);
+}
 
 export const defaultWebGLShapeRenderer: DisplayObjectRenderer = {
   createData: createWebGLShapeData,
