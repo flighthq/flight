@@ -1,6 +1,7 @@
+import { createRectangle } from '@flighthq/geometry';
 import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { addGraphChild } from '@flighthq/scenegraph-core';
-import { createDisplayObject } from '@flighthq/scenegraph-display';
+import { appendShapeRectangle, createDisplayObject, createShape } from '@flighthq/scenegraph-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { renderDOMDisplayObject } from './domDisplayObject';
@@ -195,5 +196,35 @@ describe('renderDOMDisplayObject', () => {
 
     expect(state.element.contains(elA)).toBe(true);
     expect(state.element.contains(elB)).toBe(false);
+  });
+
+  it('applies inherited scrollRect clipping to child elements', () => {
+    const state = makeState();
+    const parent = createDisplayObject();
+    parent.scrollRect = createRectangle(10, 20, 30, 40);
+    const child = createDisplayObject();
+    addGraphChild(parent, child);
+
+    const el = document.createElement('div');
+    setupRenderedNode(state, child, el);
+
+    renderDOMDisplayObject(state, parent);
+
+    expect(el.style.clipPath).toBe('polygon(10px 20px, 40px 20px, 40px 60px, 10px 60px)');
+  });
+
+  it('applies mask bounds clipping to masked elements', () => {
+    const state = makeState();
+    const obj = createDisplayObject();
+    const mask = createShape();
+    appendShapeRectangle(mask, 5, 6, 20, 30);
+    obj.mask = mask;
+
+    const el = document.createElement('div');
+    setupRenderedNode(state, obj, el);
+
+    renderDOMDisplayObject(state, obj);
+
+    expect(el.style.clipPath).toBe('polygon(5px 6px, 25px 6px, 25px 36px, 5px 36px)');
   });
 });

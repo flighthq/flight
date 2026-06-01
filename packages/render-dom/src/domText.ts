@@ -90,8 +90,8 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
   setDOMRendererElement(state, data.div);
 }
 
-export function drawDOMTextMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {
-  // Masking not yet supported in DOM renderer
+export function drawDOMTextMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+  drawDOMText(state, renderNode);
 }
 
 export const defaultDOMTextRenderer: DisplayObjectRenderer = {

@@ -95,8 +95,8 @@ function renderBitmapAsCanvas(
   setDOMRendererElement(state, data.canvas);
 }
 
-export function drawDOMBitmapMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {
-  // Masking not yet supported in DOM renderer
+export function drawDOMBitmapMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+  drawDOMBitmap(state, renderNode);
 }
 
 export const defaultDOMBitmapRenderer: DisplayObjectRenderer = {
