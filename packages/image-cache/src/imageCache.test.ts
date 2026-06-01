@@ -10,7 +10,7 @@ function makeObj(): GraphNode<symbol, object> {
 }
 
 function makeResult(): ImageCacheResult {
-  return { canvas: null, transform: createMatrix() };
+  return { source: null, transform: createMatrix() };
 }
 
 describe('clearImageCache', () => {
