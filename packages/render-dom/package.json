@@ -21,9 +21,9 @@
       "types": "./dist/domDisplayObject.d.ts",
       "default": "./dist/domDisplayObject.js"
     },
-    "./element": {
-      "types": "./dist/domElement.d.ts",
-      "default": "./dist/domElement.js"
+    "./htmlView": {
+      "types": "./dist/htmlView.d.ts",
+      "default": "./dist/htmlView.js"
     },
     "./inputText": {
       "types": "./dist/domInputText.d.ts",

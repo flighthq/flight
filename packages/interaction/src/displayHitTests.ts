@@ -21,13 +21,13 @@ export function defaultDisplayObjectHitTestPoint(
   return false;
 }
 
-export function defaultDOMElementHitTestPoint(
+export function defaultHTMLViewHitTestPoint(
   _source: GraphNode<symbol, object>,
   _x: number,
   _y: number,
   _shapeFlag: boolean,
 ): boolean {
-  // DOM elements handle pointer events through the browser — not the canvas interaction system.
+  // HTMLView elements handle pointer events through the browser — not the canvas interaction system.
   return false;
 }
 

@@ -5,7 +5,7 @@ import { createDisplayObject, createSpriteBatch } from '@flighthq/scenegraph-dis
 import {
   defaultBitmapHitTestPoint,
   defaultDisplayObjectHitTestPoint,
-  defaultDOMElementHitTestPoint,
+  defaultHTMLViewHitTestPoint,
   defaultInputTextHitTestPoint,
   defaultMovieClipHitTestPoint,
   defaultRichTextHitTestPoint,
@@ -43,10 +43,10 @@ describe('defaultDisplayObjectHitTestPoint', () => {
   });
 });
 
-describe('defaultDOMElementHitTestPoint', () => {
-  it('always returns false — browser manages DOM element hit testing', () => {
+describe('defaultHTMLViewHitTestPoint', () => {
+  it('always returns false — browser manages HTMLView hit testing', () => {
     const obj = makeDisplayObject();
-    expect(defaultDOMElementHitTestPoint(obj, 50, 50, false)).toBe(false);
+    expect(defaultHTMLViewHitTestPoint(obj, 50, 50, false)).toBe(false);
   });
 });
 
