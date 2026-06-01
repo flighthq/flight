@@ -8,6 +8,7 @@ import type {
   QuadBatchRuntime,
   QuadTransformType,
   Rectangle,
+  Vector2Like,
 } from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
 
@@ -48,6 +49,133 @@ export function getQuadBatchRuntime(source: Readonly<QuadBatch>): Readonly<QuadB
 
 export function getQuadTransformStride(transformType: QuadTransformType): number {
   return quadTransformStride[transformType];
+}
+
+export function hitTestQuadBatchPoint(source: Readonly<QuadBatch>, point: Readonly<Vector2Like>): number {
+  return hitTestQuadBatchPointXY(source, point.x, point.y);
+}
+
+export function hitTestQuadBatchPointXY(source: Readonly<QuadBatch>, x: number, y: number): number {
+  const { atlas, ids, instanceCount, transforms, transformType } = source.data;
+  if (atlas === null || instanceCount === 0) return -1;
+  const regions = atlas.regions;
+  const numRegions = regions.length;
+  if (transformType === 'vector2') {
+    for (let i = 0; i < instanceCount; i++) {
+      const id = ids[i];
+      if (id < 0 || id >= numRegions) continue;
+      const region = regions[id];
+      const dx = transforms[i * 2];
+      const dy = transforms[i * 2 + 1];
+      if (x >= dx && x < dx + region.width && y >= dy && y < dy + region.height) return i;
+    }
+  } else {
+    for (let i = 0; i < instanceCount; i++) {
+      const id = ids[i];
+      if (id < 0 || id >= numRegions) continue;
+      const region = regions[id];
+      if (region.width <= 0 || region.height <= 0) continue;
+      const o = i * 6;
+      const a = transforms[o];
+      const b = transforms[o + 1];
+      const c = transforms[o + 2];
+      const d = transforms[o + 3];
+      const tx = transforms[o + 4];
+      const ty = transforms[o + 5];
+      const w = region.width;
+      const h = region.height;
+      const x0 = tx;
+      const y0 = ty;
+      const x1 = a * w + tx;
+      const y1 = b * w + ty;
+      const x2 = c * h + tx;
+      const y2 = d * h + ty;
+      const x3 = a * w + c * h + tx;
+      const y3 = b * w + d * h + ty;
+      const minX = Math.min(x0, x1, x2, x3);
+      const minY = Math.min(y0, y1, y2, y3);
+      const maxX = Math.max(x0, x1, x2, x3);
+      const maxY = Math.max(y0, y1, y2, y3);
+      if (x >= minX && x < maxX && y >= minY && y < maxY) return i;
+    }
+  }
+  return -1;
+}
+
+export function measureQuadBatchBoundsRectangle(out: Rectangle, source: Readonly<QuadBatch>): void {
+  const { atlas, ids, instanceCount, transforms, transformType } = source.data;
+  if (atlas === null || instanceCount === 0) {
+    out.x = 0;
+    out.y = 0;
+    out.width = 0;
+    out.height = 0;
+    return;
+  }
+  const regions = atlas.regions;
+  const numRegions = regions.length;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  if (transformType === 'vector2') {
+    for (let i = 0; i < instanceCount; i++) {
+      const id = ids[i];
+      if (id < 0 || id >= numRegions) continue;
+      const region = regions[id];
+      if (region.width <= 0 || region.height <= 0) continue;
+      const dx = transforms[i * 2];
+      const dy = transforms[i * 2 + 1];
+      if (dx < minX) minX = dx;
+      if (dy < minY) minY = dy;
+      const rx = dx + region.width;
+      const ry = dy + region.height;
+      if (rx > maxX) maxX = rx;
+      if (ry > maxY) maxY = ry;
+    }
+  } else {
+    for (let i = 0; i < instanceCount; i++) {
+      const id = ids[i];
+      if (id < 0 || id >= numRegions) continue;
+      const region = regions[id];
+      if (region.width <= 0 || region.height <= 0) continue;
+      const o = i * 6;
+      const a = transforms[o];
+      const b = transforms[o + 1];
+      const c = transforms[o + 2];
+      const d = transforms[o + 3];
+      const tx = transforms[o + 4];
+      const ty = transforms[o + 5];
+      const w = region.width;
+      const h = region.height;
+      const x0 = tx;
+      const y0 = ty;
+      const x1 = a * w + tx;
+      const y1 = b * w + ty;
+      const x2 = c * h + tx;
+      const y2 = d * h + ty;
+      const x3 = a * w + c * h + tx;
+      const y3 = b * w + d * h + ty;
+      const qMinX = Math.min(x0, x1, x2, x3);
+      const qMinY = Math.min(y0, y1, y2, y3);
+      const qMaxX = Math.max(x0, x1, x2, x3);
+      const qMaxY = Math.max(y0, y1, y2, y3);
+      if (qMinX < minX) minX = qMinX;
+      if (qMinY < minY) minY = qMinY;
+      if (qMaxX > maxX) maxX = qMaxX;
+      if (qMaxY > maxY) maxY = qMaxY;
+    }
+  }
+  if (minX === Infinity) {
+    out.x = 0;
+    out.y = 0;
+    out.width = 0;
+    out.height = 0;
+  } else {
+    out.x = minX;
+    out.y = minY;
+    out.width = maxX - minX;
+    out.height = maxY - minY;
+  }
 }
 
 export function reserveQuadBatch(target: QuadBatch, capacity: number): void {
