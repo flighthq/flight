@@ -5,6 +5,7 @@ import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, DisplayOb
 import { drawImageCacheResult } from './canvasCacheAsBitmap';
 import { popCanvasClipRectangle, pushCanvasClipRectangle } from './canvasClipRect';
 import { applyCanvasMask, popCanvasMask, pushCanvasMask } from './canvasMask';
+import type { CanvasRenderStateInternal } from './internal';
 
 export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderNode: DisplayObjectRenderNode): void {
   // Plain display objects have no visual geometry of their own.
@@ -51,7 +52,8 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
 function drawObject(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
   if (data.renderer === null) return;
   pushMaskObject(state, data);
-  const cache = getDisplayObjectRuntime(data.source).imageCache;
+  const skipImageCache = (state as CanvasRenderStateInternal).skipImageCache;
+  const cache = skipImageCache ? null : getDisplayObjectRuntime(data.source).imageCache;
   if (cache !== null && cache.canvas !== null) {
     drawImageCacheResult(state, data, cache);
     popMaskObject(state, data);

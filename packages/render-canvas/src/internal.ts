@@ -4,4 +4,9 @@ export type CanvasRenderStateInternal = Omit<CanvasRenderState, 'canvas' | 'cont
   canvas: HTMLCanvasElement;
   context: CanvasRenderingContext2D;
   contextAttributes: CanvasRenderingContext2DSettings;
+  imageCacheBoundsX: number;
+  imageCacheBoundsY: number;
+  imageSmoothingEnabled: boolean;
+  imageSmoothingQuality: ImageSmoothingQuality;
+  skipImageCache: boolean;
 };
