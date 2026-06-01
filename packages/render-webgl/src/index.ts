@@ -3,6 +3,7 @@ export * from './webglBitmap';
 export * from './webglDisplayObject';
 export * from './webglElement';
 export * from './webglInputText';
+export * from './webglMaterials';
 export * from './webglQuadBatch';
 export * from './webglRenderState';
 export * from './webglRichText';

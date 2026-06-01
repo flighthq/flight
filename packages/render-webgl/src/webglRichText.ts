@@ -22,7 +22,7 @@ import type {
 
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';
-import { setWebGLMatrixFromTransform } from './webglShader';
+import { setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
 
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
@@ -94,8 +94,7 @@ export function drawWebGLRichTextWithOverlay(
 
   const gl = internal.gl;
   const { shaderLoc, matrixArray } = internal;
-  gl.uniform1f(shaderLoc.locAlpha, renderNode.alpha);
-  gl.uniform1i(shaderLoc.locTexture, 0);
+  setWebGLBaseUniforms(gl, shaderLoc, renderNode);
   setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, renderNode.transform2D, internal.canvas);
 
   drawWebGLQuad(internal, 0, 0, fieldW, fieldH, 0, 0, 1, 1);

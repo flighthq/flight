@@ -130,7 +130,8 @@ export function updateWebGLTexture(
 }
 
 export function useWebGLProgram(state: WebGLRenderStateInternal): void {
-  const program = state.shaderLoc.program;
+  state.shaderLoc = state.defaultBitmapShader.locations;
+  const program = state.defaultBitmapShader.program;
   if (state.currentProgram !== program) {
     state.gl.useProgram(program);
     state.currentProgram = program;

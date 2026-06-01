@@ -12,6 +12,10 @@
     "./inputText": {
       "types": "./dist/webglInputText.d.ts",
       "default": "./dist/webglInputText.js"
+    },
+    "./materials": {
+      "types": "./dist/webglMaterials.d.ts",
+      "default": "./dist/webglMaterials.js"
     }
   },
   "files": [

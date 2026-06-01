@@ -3,7 +3,7 @@ import type { RenderState, Sprite, SpriteRenderer, SpriteRenderNode } from '@fli
 
 import type { WebGLRenderStateInternal } from './internal';
 import { bindWebGLTexture, drawWebGLQuad, setWebGLBlendMode, useWebGLProgram } from './webglDraw';
-import { setWebGLMatrixFromTransform } from './webglShader';
+import { setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
 
 export function drawWebGLSpriteNode(state: RenderState, spriteNode: SpriteRenderNode): void {
   const internal = state as WebGLRenderStateInternal;
@@ -24,8 +24,7 @@ export function drawWebGLSpriteNode(state: RenderState, spriteNode: SpriteRender
   const gl = internal.gl;
   const { shaderLoc, matrixArray } = internal;
 
-  gl.uniform1f(shaderLoc.locAlpha, spriteNode.alpha);
-  gl.uniform1i(shaderLoc.locTexture, 0);
+  setWebGLBaseUniforms(gl, shaderLoc, spriteNode);
   setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, spriteNode.transform2D, internal.canvas);
 
   const iw = 1 / (atlas.image.width || 1);

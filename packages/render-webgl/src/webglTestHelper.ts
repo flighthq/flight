@@ -49,6 +49,7 @@ export function makeGL(): WebGL2RenderingContext {
     useProgram: vi.fn(),
     uniform1f: vi.fn(),
     uniform1i: vi.fn(),
+    uniform4f: vi.fn(),
     uniformMatrix3fv: vi.fn(),
     enableVertexAttribArray: vi.fn(),
     vertexAttribPointer: vi.fn(),
@@ -76,6 +77,9 @@ export function makeShaderLoc(): WebGLShaderLocations {
     locTexCoord: 1,
     locMatrix: {} as WebGLUniformLocation,
     locAlpha: {} as WebGLUniformLocation,
+    locColorMultiplier: {} as WebGLUniformLocation,
+    locColorOffset: {} as WebGLUniformLocation,
+    locHasColorTransform: {} as WebGLUniformLocation,
     locTexture: {} as WebGLUniformLocation,
   };
 }
@@ -102,7 +106,7 @@ export function makeWebGLState(options?: { allowSmoothing?: boolean; backgroundC
     backgroundColor: 0,
     textureCache: new WeakMap<CanvasImageSource, WebGLTexture>(),
     shaderLoc,
-    defaultBitmapShader: { program: shaderLoc.program, bind: vi.fn() },
+    defaultBitmapShader: { locations: shaderLoc, program: shaderLoc.program, bind: vi.fn() },
     quadVertexBuffer: {} as WebGLBuffer,
     quadIndexBuffer: {} as WebGLBuffer,
     quadVertexData: new Float32Array(16),
