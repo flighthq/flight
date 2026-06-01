@@ -54,7 +54,7 @@ function drawObject(state: CanvasRenderState, data: DisplayObjectRenderNode): vo
   pushMaskObject(state, data);
   const skipImageCache = (state as CanvasRenderStateInternal).skipImageCache;
   const cache = skipImageCache ? null : getDisplayObjectRuntime(data.source).imageCache;
-  if (cache !== null && cache.canvas !== null) {
+  if (cache !== null && cache.source !== null && cache.source.src !== null) {
     drawImageCacheResult(state, data, cache);
     popMaskObject(state, data);
     return;

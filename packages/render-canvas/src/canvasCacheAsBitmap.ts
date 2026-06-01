@@ -10,8 +10,8 @@ export function drawImageCacheResult(
   renderNode: DisplayObjectRenderNode,
   cache: ImageCacheResult,
 ): void {
-  if (cache.canvas === null) return;
+  if (cache.source === null || cache.source.src === null) return;
   multiplyMatrix(_tempDrawTransform, renderNode.transform2D, cache.transform);
   setCanvasTransform(state, state.context, _tempDrawTransform);
-  state.context.drawImage(cache.canvas, 0, 0);
+  state.context.drawImage(cache.source.src, 0, 0);
 }
