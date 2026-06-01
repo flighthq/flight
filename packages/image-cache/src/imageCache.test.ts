@@ -3,7 +3,7 @@ import { createGraphNode, getGraphNodeRuntime } from '@flighthq/scenegraph-core'
 import type { GraphNode, GraphNodeRuntime, ImageCacheResult } from '@flighthq/types';
 import { NullGraph } from '@flighthq/types';
 
-import { clearImageCache, getImageCache } from './imageCache';
+import { clearImageCache, getImageCache, setImageCache } from './imageCache';
 
 function makeObj(): GraphNode<symbol, object> {
   return createGraphNode(NullGraph, Symbol('TestNode'));
@@ -39,5 +39,23 @@ describe('getImageCache', () => {
     const result = makeResult();
     (getGraphNodeRuntime(obj) as GraphNodeRuntime<symbol, object>).imageCache = result;
     expect(getImageCache(obj)).toBe(result);
+  });
+});
+
+describe('setImageCache', () => {
+  it('sets the slot to the provided result', () => {
+    const obj = makeObj();
+    const result = makeResult();
+    setImageCache(obj, result);
+    expect(getImageCache(obj)).toBe(result);
+  });
+
+  it('replaces an existing result', () => {
+    const obj = makeObj();
+    const first = makeResult();
+    const second = makeResult();
+    setImageCache(obj, first);
+    setImageCache(obj, second);
+    expect(getImageCache(obj)).toBe(second);
   });
 });
