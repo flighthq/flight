@@ -63,7 +63,9 @@ export function drawWebGLRichTextWithOverlay(
   const fieldH = Math.ceil(getRichTextFieldHeight(data, result));
   if (fieldW <= 0 || fieldH <= 0) return;
 
-  const offCtx = getOffscreenCanvas(fieldW, fieldH);
+  const pixelRatio = internal.pixelRatio;
+  const offCtx = getOffscreenCanvas(fieldW, fieldH, pixelRatio);
+  offCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   offCtx.clearRect(0, 0, fieldW, fieldH);
 
   if (data.background) {
@@ -177,12 +179,14 @@ function layoutRichText(
   return result;
 }
 
-function getOffscreenCanvas(width: number, height: number): CanvasRenderingContext2D {
+function getOffscreenCanvas(width: number, height: number, pixelRatio: number = 1): CanvasRenderingContext2D {
   if (!_offscreenCanvas) {
     _offscreenCanvas = document.createElement('canvas');
     _offscreenCtx = _offscreenCanvas.getContext('2d')!;
   }
-  if (_offscreenCanvas.width !== width) _offscreenCanvas.width = width;
-  if (_offscreenCanvas.height !== height) _offscreenCanvas.height = height;
+  const pw = Math.ceil(width * pixelRatio);
+  const ph = Math.ceil(height * pixelRatio);
+  if (_offscreenCanvas.width !== pw) _offscreenCanvas.width = pw;
+  if (_offscreenCanvas.height !== ph) _offscreenCanvas.height = ph;
   return _offscreenCtx!;
 }
