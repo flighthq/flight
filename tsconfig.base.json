@@ -68,6 +68,8 @@
       "@flighthq/tween-easing/*": ["./packages/tween-easing/src/*"],
       "@flighthq/text-layout": ["./packages/text-layout/src/index.ts"],
       "@flighthq/text-layout/*": ["./packages/text-layout/src/*"],
+      "@flighthq/text-input": ["./packages/text-input/src/index.ts"],
+      "@flighthq/text-input/*": ["./packages/text-input/src/*"],
       "@flighthq/types": ["./packages/types/src/index.ts"],
       "@flighthq/types/*": ["./packages/types/src/*"]
     },

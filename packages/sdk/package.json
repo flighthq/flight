@@ -30,6 +30,7 @@
   "dependencies": {
     "@flighthq/application": "*",
     "@flighthq/assets": "*",
+    "@flighthq/assets-loader": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image-cache": "*",
@@ -47,6 +48,8 @@
     "@flighthq/signals": "*",
     "@flighthq/spritesheet": "*",
     "@flighthq/surface": "*",
+    "@flighthq/text-input": "*",
+    "@flighthq/text-layout": "*",
     "@flighthq/timeline": "*",
     "@flighthq/timeline-spritesheet": "*",
     "@flighthq/tween": "*",
