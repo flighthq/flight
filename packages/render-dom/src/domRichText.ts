@@ -25,6 +25,7 @@ import type {
 
 import { applyDOMStyle, initDOMElement } from './domStyle';
 import { colorToCSS, formatToFont, htmlEscape } from './domTextHelpers';
+import { getDomFontAscentCached, setDomFontAscentCached } from './domFontSource';
 
 interface DOMRichTextData extends RendererData {
   div: HTMLDivElement | null;
@@ -164,16 +165,9 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
 }
 
 const DOM_BULLET_GAP = 4;
-const _domFontAscentCache = new Map<string, number>();
-
-// Invalidate the cache when web fonts finish loading so the next render re-probes
-// with the real font rather than the fallback that was active at first call.
-if (typeof document !== 'undefined' && document.fonts) {
-  document.fonts.addEventListener('loadingdone', () => _domFontAscentCache.clear());
-}
 
 function getDomFontAscent(ctx: CanvasRenderingContext2D, font: string): number {
-  const cached = _domFontAscentCache.get(font);
+  const cached = getDomFontAscentCached(font);
   if (cached !== undefined) return cached;
   // Measure the CSS alphabetic baseline directly: a zero-height inline-block with
   // vertical-align:baseline sits with its top edge exactly on the line's baseline.
@@ -183,7 +177,7 @@ function getDomFontAscent(ctx: CanvasRenderingContext2D, font: string): number {
     typeof document !== 'undefined' && document.body
       ? probeCSSFontAscent(font)
       : canvasFontAscentFallback(ctx, font);
-  _domFontAscentCache.set(font, ascent);
+  setDomFontAscentCached(font, ascent);
   return ascent;
 }
 

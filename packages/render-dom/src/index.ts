@@ -1,5 +1,6 @@
 export * from './domBackground';
 export * from './domBitmap';
+export { connectFontSourceToDOMRenderer } from './domFontSource';
 export * from './domDisplayObject';
 export * from './domElement';
 export * from './domInputText';
