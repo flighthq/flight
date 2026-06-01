@@ -1,6 +1,6 @@
-import type { BitmapShader, DisplayObjectRenderNode, WebGLRenderState } from '@flighthq/types';
+import type { DisplayObjectRenderNode, RenderNode, WebGLRenderState } from '@flighthq/types';
 
-import type { WebGLShaderLocations } from './internal';
+import type { WebGLBitmapShader, WebGLShaderLocations } from './internal';
 
 const VERTEX_SRC = `#version 300 es
 in vec2 a_position;
@@ -55,14 +55,17 @@ export function compileDefaultProgram(gl: WebGL2RenderingContext): WebGLShaderLo
   };
 }
 
-export function createDefaultBitmapShader(shaderLoc: WebGLShaderLocations, matrixArray: Float32Array): BitmapShader {
+export function createDefaultBitmapShader(
+  shaderLoc: WebGLShaderLocations,
+  matrixArray: Float32Array,
+): WebGLBitmapShader {
   return {
+    locations: shaderLoc,
     program: shaderLoc.program,
     bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: DisplayObjectRenderNode): void {
       setWebGLAttribs(gl, shaderLoc);
       setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, renderNode.transform2D, state.canvas);
-      gl.uniform1f(shaderLoc.locAlpha, renderNode.alpha);
-      gl.uniform1i(shaderLoc.locTexture, 0);
+      setWebGLBaseUniforms(gl, shaderLoc, renderNode);
     },
   };
 }
@@ -72,6 +75,15 @@ export function setWebGLAttribs(gl: WebGL2RenderingContext, loc: WebGLShaderLoca
   gl.enableVertexAttribArray(loc.locTexCoord);
   gl.vertexAttribPointer(loc.locPosition, 2, gl.FLOAT, false, 16, 0);
   gl.vertexAttribPointer(loc.locTexCoord, 2, gl.FLOAT, false, 16, 8);
+}
+
+export function setWebGLBaseUniforms(
+  gl: WebGL2RenderingContext,
+  loc: WebGLShaderLocations,
+  renderNode: RenderNode,
+): void {
+  gl.uniform1f(loc.locAlpha, renderNode.alpha);
+  gl.uniform1i(loc.locTexture, 0);
 }
 
 export function setWebGLMatrixFromTransform(

@@ -6,13 +6,21 @@ export interface WebGLShaderLocations {
   locTexCoord: number;
   locMatrix: WebGLUniformLocation;
   locAlpha: WebGLUniformLocation;
+  locColorMultiplier?: WebGLUniformLocation;
+  locColorOffset?: WebGLUniformLocation;
+  locHasColorTransform?: WebGLUniformLocation;
   locTexture: WebGLUniformLocation;
 }
+
+export type WebGLBitmapShader = BitmapShader & {
+  readonly locations: WebGLShaderLocations;
+};
 
 export type WebGLRenderStateInternal = Omit<WebGLRenderState, 'canvas' | 'gl'> & {
   canvas: HTMLCanvasElement;
   gl: WebGL2RenderingContext;
-  defaultBitmapShader: BitmapShader;
+  colorTransformBitmapShader?: WebGLBitmapShader;
+  defaultBitmapShader: WebGLBitmapShader;
   shaderLoc: WebGLShaderLocations;
   textureCache: WeakMap<CanvasImageSource, WebGLTexture>;
   quadVertexBuffer: WebGLBuffer;

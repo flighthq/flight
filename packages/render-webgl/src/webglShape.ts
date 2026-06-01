@@ -11,7 +11,7 @@ import type {
 
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';
-import { setWebGLMatrixFromValues } from './webglShader';
+import { setWebGLBaseUniforms, setWebGLMatrixFromValues } from './webglShader';
 
 interface WebGLShapeData {
   canvas: HTMLCanvasElement;
@@ -71,8 +71,7 @@ export function drawWebGLShape(state: RenderState, renderNode: DisplayObjectRend
   }
 
   const { shaderLoc, matrixArray } = internal;
-  gl.uniform1f(shaderLoc.locAlpha, renderNode.alpha);
-  gl.uniform1i(shaderLoc.locTexture, 0);
+  setWebGLBaseUniforms(gl, shaderLoc, renderNode);
 
   const t = renderNode.transform2D;
   setWebGLMatrixFromValues(

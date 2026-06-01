@@ -11,7 +11,7 @@ import {
   setWebGLBlendMode,
   useWebGLProgram,
 } from './webglDraw';
-import { setWebGLMatrixFromTransform } from './webglShader';
+import { setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
 
 export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNode): void {
   const internal = state as WebGLRenderStateInternal;
@@ -34,8 +34,7 @@ export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNo
   const iw = 1 / (atlas.image.width || 1);
   const ih = 1 / (atlas.image.height || 1);
 
-  gl.uniform1f(shaderLoc.locAlpha, quadBatch.alpha);
-  gl.uniform1i(shaderLoc.locTexture, 0);
+  setWebGLBaseUniforms(gl, shaderLoc, quadBatch);
 
   if (stride === 6) {
     const quadTransform = acquireMatrix();

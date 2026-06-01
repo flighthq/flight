@@ -3,7 +3,7 @@ import type { RenderState, SpriteRenderer, SpriteRenderNode, Tilemap } from '@fl
 
 import type { WebGLRenderStateInternal } from './internal';
 import { bindWebGLTexture, drawWebGLQuad, setWebGLBlendMode, useWebGLProgram } from './webglDraw';
-import { setWebGLMatrixFromValues } from './webglShader';
+import { setWebGLBaseUniforms, setWebGLMatrixFromValues } from './webglShader';
 
 export function drawWebGLTilemap(state: RenderState, tilemapNode: SpriteRenderNode): void {
   const internal = state as WebGLRenderStateInternal;
@@ -29,8 +29,7 @@ export function drawWebGLTilemap(state: RenderState, tilemapNode: SpriteRenderNo
   const iw = 1 / (atlas.image.width || 1);
   const ih = 1 / (atlas.image.height || 1);
 
-  gl.uniform1f(shaderLoc.locAlpha, tilemapNode.alpha);
-  gl.uniform1i(shaderLoc.locTexture, 0);
+  setWebGLBaseUniforms(gl, shaderLoc, tilemapNode);
 
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < columns; col++) {

@@ -2,6 +2,7 @@ import {
   compileDefaultProgram,
   createDefaultBitmapShader,
   setWebGLAttribs,
+  setWebGLBaseUniforms,
   setWebGLMatrixFromTransform,
   setWebGLMatrixFromValues,
 } from './webglShader';
@@ -59,6 +60,38 @@ describe('createDefaultBitmapShader', () => {
     const shader = createDefaultBitmapShader(loc, m);
     expect(typeof shader.bind).toBe('function');
   });
+
+  it('does not bind color transform uniforms for the default shader', () => {
+    const gl = makeGL();
+    const loc = makeShaderLoc();
+    loc.locColorMultiplier = undefined;
+    loc.locColorOffset = undefined;
+    loc.locHasColorTransform = undefined;
+    const m = new Float32Array(9);
+    const canvas = document.createElement('canvas');
+    canvas.width = 100;
+    canvas.height = 100;
+    const shader = createDefaultBitmapShader(loc, m);
+    const renderNode = {
+      alpha: 0.75,
+      colorTransform: {
+        redMultiplier: 0.5,
+        greenMultiplier: 0.25,
+        blueMultiplier: 1.5,
+        alphaMultiplier: 0.8,
+        redOffset: 10,
+        greenOffset: 20,
+        blueOffset: 30,
+        alphaOffset: 40,
+      },
+      transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
+      useColorTransform: true,
+    };
+
+    shader.bind(gl, { canvas } as never, renderNode as never);
+
+    expect(gl.uniform4f).not.toHaveBeenCalled();
+  });
 });
 
 describe('setWebGLAttribs', () => {
@@ -102,6 +135,44 @@ describe('setWebGLAttribs', () => {
       16,
       8,
     );
+  });
+});
+
+describe('setWebGLBaseUniforms', () => {
+  it('sets alpha and texture uniforms', () => {
+    const gl = makeGL();
+    const loc = makeShaderLoc();
+    const renderNode = {
+      alpha: 0.5,
+    };
+
+    setWebGLBaseUniforms(gl, loc, renderNode as never);
+
+    expect(gl.uniform1f).toHaveBeenCalledWith(loc.locAlpha, 0.5);
+    expect(gl.uniform1i).toHaveBeenCalledWith(loc.locTexture, 0);
+  });
+
+  it('does not bind feature-specific uniforms', () => {
+    const gl = makeGL();
+    const loc = makeShaderLoc();
+    const renderNode = {
+      alpha: 1,
+      colorTransform: {
+        redMultiplier: 0.2,
+        greenMultiplier: 0.4,
+        blueMultiplier: 0.6,
+        alphaMultiplier: 0.8,
+        redOffset: 25.5,
+        greenOffset: 51,
+        blueOffset: 76.5,
+        alphaOffset: 102,
+      },
+      useColorTransform: true,
+    };
+
+    setWebGLBaseUniforms(gl, loc, renderNode as never);
+
+    expect(gl.uniform4f).not.toHaveBeenCalled();
   });
 });
 
