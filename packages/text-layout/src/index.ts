@@ -1,14 +1,43 @@
 export {
+  clearRichTextContent,
+  createRichTextContent,
+  getRichTextContent,
+  resolveRichTextContent,
+} from './richTextContent';
+export {
+  getRichTextCharBoundaries,
+  getRichTextCharIndexAtPoint,
+  getRichTextFirstCharInParagraph,
+  getRichTextLinkAtPoint,
+  getRichTextLineIndexAtPoint,
+  getRichTextLineIndexOfChar,
+  getRichTextLineLength,
+  getRichTextLineMetrics,
+  getRichTextLineOffset,
+  getRichTextLineText,
+  getRichTextParagraphLength,
+  getRichTextSelectionRectangles,
+} from './richTextQuery';
+export {
+  getRichTextBottomScrollV,
+  getRichTextFieldHeight,
+  getRichTextFieldWidth,
+  getRichTextMaxScrollH,
+  getRichTextMaxScrollV,
+  getRichTextNumLines,
+  getRichTextScrollYOffset,
+  getRichTextTextHeight,
+  getRichTextTextWidth,
+} from './richTextMetrics';
+export {
   getTextFormatAscent,
   getTextFormatDescent,
   getTextFormatHeight,
   getTextFormatLeading,
   mergeTextFormat,
 } from './textFormat';
-export type { TextFormatRange } from './textFormatRange';
 export { createTextFormatRange } from './textFormatRange';
-export type { TextLayoutParams, TextLayoutResult, TextMeasureFn } from './textLayout';
 export { createTextLayoutResult, layoutText } from './textLayout';
-export type { TextLayoutGroup } from './textLayoutGroup';
 export { createTextLayoutGroup } from './textLayoutGroup';
+export { clearTextLayoutResult, getTextLayoutResult } from './textLayoutRuntime';
 export { getLineBreakIndex, getLineBreaks } from './textLineBreaks';

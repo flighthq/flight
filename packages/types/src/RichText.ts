@@ -1,6 +1,9 @@
+import type { RichTextContent } from './RichTextContent';
+import type { RichTextStyleSheet } from './RichTextStyleSheet';
 import type { Text, TextData, TextRuntime } from './Text';
 import type { TextAutoSize } from './TextAutoSize';
 import type { TextFormat } from './TextFormat';
+import type { TextFormatRange } from './TextFormatRange';
 
 export interface RichTextData extends TextData {
   autoSize: TextAutoSize;
@@ -18,9 +21,10 @@ export interface RichTextData extends TextData {
   readonly scrollH: number;
   readonly scrollV: number;
   selectable: boolean;
-  styleSheet: StyleSheet;
+  styleSheet: RichTextStyleSheet | null;
   text: string;
   textColor: number;
+  textFormatRanges: TextFormatRange[];
   width: number;
   wordWrap: boolean;
 
@@ -36,7 +40,11 @@ export interface RichTextData extends TextData {
   // getTextWidth(source: Readonly<DynamicText>): number;
 }
 
-export interface RichTextRuntime extends TextRuntime {}
+export interface RichTextRuntime extends TextRuntime {
+  richTextContent: RichTextContent | null;
+  selectionBeginIndex: number;
+  selectionEndIndex: number;
+}
 
 export interface RichText extends Text {
   data: RichTextData;

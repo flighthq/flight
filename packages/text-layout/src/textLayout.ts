@@ -1,40 +1,20 @@
-import type { TextAutoSize, TextFormat } from '@flighthq/types';
+import type {
+  TextFormat,
+  TextFormatRange,
+  TextLayoutGroup,
+  TextLayoutParams,
+  TextLayoutResult,
+  TextMeasureFn,
+} from '@flighthq/types';
+export type { TextLayoutParams, TextLayoutResult, TextMeasureFn } from '@flighthq/types';
 
 import { getTextFormatAscent, getTextFormatDescent, getTextFormatLeading, mergeTextFormat } from './textFormat';
-import type { TextFormatRange } from './textFormatRange';
-import type { TextLayoutGroup } from './textLayoutGroup';
 import { createTextLayoutGroup } from './textLayoutGroup';
 import { getLineBreaks } from './textLineBreaks';
 
 const GUTTER = 2;
 const _lineBreaks: number[] = [];
 const _charAdvances: number[] = [];
-
-export type TextMeasureFn = (text: string, format: TextFormat) => number;
-
-export interface TextLayoutParams {
-  autoSize?: TextAutoSize;
-  border?: boolean;
-  formatRanges: readonly TextFormatRange[];
-  height: number;
-  measure: TextMeasureFn;
-  multiline?: boolean;
-  text: string;
-  width: number;
-  wordWrap?: boolean;
-}
-
-export interface TextLayoutResult {
-  groups: TextLayoutGroup[];
-  lineAscents: number[];
-  lineDescents: number[];
-  lineHeights: number[];
-  lineLeadings: number[];
-  lineWidths: number[];
-  numLines: number;
-  textHeight: number;
-  textWidth: number;
-}
 
 export function createTextLayoutResult(): TextLayoutResult {
   return {
@@ -61,21 +41,34 @@ function charAdvances(
   start: number,
   end: number,
   measure: TextMeasureFn,
+  startX = 0,
 ): void {
   out.length = 0;
   const letterSpacing = format.letterSpacing ?? 0;
+  const tabStops = format.tabStops;
+  let currentX = startX;
 
   for (let i = start; i < end; i++) {
+    const char = text.charAt(i);
     let advance: number;
-    if (i < text.length - 1) {
+
+    if (char === '\t') {
+      advance = getTabAdvance(currentX, tabStops, measure, format);
+      out.push(advance);
+      currentX += advance;
+      continue;
+    }
+
+    if (i < text.length - 1 && text.charAt(i + 1) !== '\t') {
       // Pair-wise measurement accounts for kerning between adjacent characters.
       const nextW = measure(text.charAt(i + 1), format);
       const pairW = measure(text.substr(i, 2), format);
       advance = pairW - nextW;
     } else {
-      advance = measure(text.charAt(i), format);
+      advance = measure(char, format);
     }
     out.push(advance + letterSpacing);
+    currentX += advance + letterSpacing;
   }
 }
 
@@ -83,6 +76,23 @@ function sumAdvances(positions: number[]): number {
   let total = 0;
   for (const p of positions) total += p;
   return total;
+}
+
+function getTabAdvance(
+  currentX: number,
+  tabStops: number[] | undefined,
+  measure: TextMeasureFn,
+  format: TextFormat,
+): number {
+  if (tabStops != null && tabStops.length > 0) {
+    for (const stop of tabStops) {
+      if (stop > currentX) return stop - currentX;
+    }
+  }
+  // Default: advance to next multiple of 4 spaces
+  const spaceW = measure('    ', format) / 4;
+  const tabW = Math.max(spaceW, 1) * 4;
+  return tabW - (currentX % tabW);
 }
 
 // ---------------------------------------------------------------------------
@@ -186,6 +196,7 @@ function buildGroups(
     offsetX = 0;
     firstLineOfParagraph = false;
     activeGroup = null;
+    updateLineMetrics();
   }
 
   // Place a contiguous span [start, end) of text, respecting format range
@@ -206,7 +217,7 @@ function buildGroups(
           activeGroup.endIndex = rangeEnd;
         }
 
-        charAdvances(activeGroup.positions, text, currentFormat, idx, rangeEnd, measure);
+        charAdvances(activeGroup.positions, text, currentFormat, idx, rangeEnd, measure, offsetX + baseX());
         const spanWidth = sumAdvances(activeGroup.positions);
         activeGroup.offsetX = offsetX + baseX();
         activeGroup.ascent = ascent;
@@ -251,7 +262,7 @@ function buildGroups(
     while (idx < end) {
       const rangeEnd = Math.min(end, formatRange.end);
       if (idx < rangeEnd) {
-        charAdvances(_charAdvances, text, currentFormat, idx, rangeEnd, measure);
+        charAdvances(_charAdvances, text, currentFormat, idx, rangeEnd, measure, offsetX + baseX() + sumAdvances(allPositions));
         for (const p of _charAdvances) allPositions.push(p);
         idx = rangeEnd;
       }
@@ -273,7 +284,7 @@ function buildGroups(
     let remaining = textIndex;
 
     while (remaining < end) {
-      charAdvances(_charAdvances, text, currentFormat, remaining, end, measure);
+      charAdvances(_charAdvances, text, currentFormat, remaining, end, measure, offsetX + baseX());
       const totalW = sumAdvances(_charAdvances);
 
       if (offsetX + totalW <= wrapWidth()) {

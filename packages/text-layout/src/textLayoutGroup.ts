@@ -1,20 +1,4 @@
-import type { TextFormat } from '@flighthq/types';
-
-export interface TextLayoutGroup {
-  ascent: number;
-  descent: number;
-  endIndex: number;
-  format: TextFormat;
-  height: number;
-  leading: number;
-  lineIndex: number;
-  offsetX: number;
-  offsetY: number;
-  /** Per-character advance widths in pixels. */
-  positions: number[];
-  startIndex: number;
-  width: number;
-}
+import type { TextFormat, TextLayoutGroup } from '@flighthq/types';
 
 export function createTextLayoutGroup(format: TextFormat, startIndex: number, endIndex: number): TextLayoutGroup {
   return {
