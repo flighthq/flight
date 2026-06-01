@@ -2,6 +2,7 @@ export * from './webglBackground';
 export * from './webglBitmap';
 export * from './webglDisplayObject';
 export * from './webglElement';
+export * from './webglImageCache';
 export * from './webglInputText';
 export * from './webglMaterials';
 export * from './webglQuadBatch';

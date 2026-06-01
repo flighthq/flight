@@ -3,6 +3,7 @@ import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type { DisplayObject, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
+import { drawWebGLImageCacheResult } from './webglImageCache';
 
 export function renderWebGLDisplayObject(state: WebGLRenderState, source: DisplayObject): void {
   const internal = state as WebGLRenderStateInternal;
@@ -22,7 +23,10 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
     const shouldRender = data.visible && data.alpha > 0 && (data.transform2D.a !== 0 || data.transform2D.d !== 0);
     if (!shouldRender) continue;
 
-    if (data.renderer !== null) {
+    const cache = getDisplayObjectRuntime(current).imageCache;
+    if (cache !== null && cache.source !== null && cache.source.src !== null) {
+      drawWebGLImageCacheResult(internal, data, cache);
+    } else if (data.renderer !== null) {
       data.renderer.draw(internal, data);
     }
 
