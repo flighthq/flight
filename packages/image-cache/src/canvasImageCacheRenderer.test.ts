@@ -1,8 +1,12 @@
 import { createMatrix } from '@flighthq/geometry';
-import { getOrCreateDisplayObjectRenderNode, registerRenderer, updateDisplayObjectBeforeRender } from '@flighthq/render-core';
+import { createCanvasRenderState, renderCanvasDisplayObject } from '@flighthq/render-canvas';
+import {
+  getOrCreateDisplayObjectRenderNode,
+  registerRenderer,
+  updateDisplayObjectBeforeRender,
+} from '@flighthq/render-core';
 import { addGraphChild } from '@flighthq/scenegraph-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
-import { createCanvasRenderState, renderCanvasDisplayObject } from '@flighthq/render-canvas';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { enableCanvasImageCache } from './canvasImageCacheRenderer';
@@ -24,7 +28,10 @@ describe('enableCanvasImageCache', () => {
     const offscreen = document.createElement('canvas');
     offscreen.width = 50;
     offscreen.height = 50;
-    setImageCache(obj, { source: { src: offscreen, width: 50, height: 50, version: 0 } as any, transform: createMatrix() });
+    setImageCache(obj, {
+      source: { src: offscreen, width: 50, height: 50, version: 0 } as any,
+      transform: createMatrix(),
+    });
 
     updateDisplayObjectBeforeRender(state, obj);
     const drawImageSpy = vi.spyOn(state.context, 'drawImage');
@@ -42,7 +49,10 @@ describe('enableCanvasImageCache', () => {
     const offscreen = document.createElement('canvas');
     offscreen.width = 50;
     offscreen.height = 50;
-    setImageCache(obj, { source: { src: offscreen, width: 50, height: 50, version: 0 } as any, transform: createMatrix() });
+    setImageCache(obj, {
+      source: { src: offscreen, width: 50, height: 50, version: 0 } as any,
+      transform: createMatrix(),
+    });
 
     updateDisplayObjectBeforeRender(state, obj);
     renderCanvasDisplayObject(state, obj);
@@ -62,7 +72,10 @@ describe('enableCanvasImageCache', () => {
     const offscreen = document.createElement('canvas');
     offscreen.width = 50;
     offscreen.height = 50;
-    setImageCache(parent, { source: { src: offscreen, width: 50, height: 50, version: 0 } as any, transform: createMatrix() });
+    setImageCache(parent, {
+      source: { src: offscreen, width: 50, height: 50, version: 0 } as any,
+      transform: createMatrix(),
+    });
 
     updateDisplayObjectBeforeRender(state, parent);
     renderCanvasDisplayObject(state, parent);
@@ -79,7 +92,10 @@ describe('enableCanvasImageCache', () => {
     const offscreen = document.createElement('canvas');
     offscreen.width = 50;
     offscreen.height = 50;
-    setImageCache(obj, { source: { src: offscreen, width: 50, height: 50, version: 0 } as any, transform: createMatrix() });
+    setImageCache(obj, {
+      source: { src: offscreen, width: 50, height: 50, version: 0 } as any,
+      transform: createMatrix(),
+    });
     updateDisplayObjectBeforeRender(state, obj);
 
     const data = getOrCreateDisplayObjectRenderNode(state, obj);
