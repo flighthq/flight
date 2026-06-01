@@ -260,9 +260,24 @@ for (const pkgDir of packageDirs) {
     `got ${JSON.stringify(pkg.files)}`,
   );
 
-  check(errors, 'prepack script', pkg.scripts?.prepack === expectedPrepackScript, `got ${JSON.stringify(pkg.scripts?.prepack)}`);
-  check(errors, 'clean script', pkg.scripts?.clean === expectedCleanScript, `got ${JSON.stringify(pkg.scripts?.clean)}`);
-  check(errors, 'clean:dist script', pkg.scripts?.['clean:dist'] === expectedCleanDistScript, `got ${JSON.stringify(pkg.scripts?.['clean:dist'])}`);
+  check(
+    errors,
+    'prepack script',
+    pkg.scripts?.prepack === expectedPrepackScript,
+    `got ${JSON.stringify(pkg.scripts?.prepack)}`,
+  );
+  check(
+    errors,
+    'clean script',
+    pkg.scripts?.clean === expectedCleanScript,
+    `got ${JSON.stringify(pkg.scripts?.clean)}`,
+  );
+  check(
+    errors,
+    'clean:dist script',
+    pkg.scripts?.['clean:dist'] === expectedCleanDistScript,
+    `got ${JSON.stringify(pkg.scripts?.['clean:dist'])}`,
+  );
 
   check(errors, `${name} in tsconfig.base.json paths`, name in tsconfigPaths);
   check(errors, `${name}/* in tsconfig.base.json paths`, `${name}/*` in tsconfigPaths);
@@ -308,6 +323,10 @@ if (totalErrors === 0) {
   process.exit(0);
 } else {
   console.log('');
-  console.log(pc.red(`✗ ${totalErrors} error${totalErrors === 1 ? '' : 's'} across ${failed.length} package${failed.length === 1 ? '' : 's'}`));
+  console.log(
+    pc.red(
+      `✗ ${totalErrors} error${totalErrors === 1 ? '' : 's'} across ${failed.length} package${failed.length === 1 ? '' : 's'}`,
+    ),
+  );
   process.exit(1);
 }
