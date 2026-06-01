@@ -23,17 +23,6 @@ export {
   setInputTextSelection,
 } from './inputTextEditing';
 export type { InputTextInputSource, InputTextManager } from './inputTextManager';
-export type { SelectableRichTextManager } from './selectableRichTextManager';
-export {
-  blurSelectableRichText,
-  createSelectableRichTextManager,
-  dispatchSelectableRichTextKeyDown,
-  dispatchSelectableRichTextPointerDown,
-  dispatchSelectableRichTextPointerMove,
-  dispatchSelectableRichTextWheel,
-  focusSelectableRichText,
-  getSelectableRichTextSelectionText,
-} from './selectableRichTextManager';
 export {
   blurInputText,
   connectInputToInputText,
@@ -45,3 +34,14 @@ export {
   dispatchInputTextWheel,
   focusInputText,
 } from './inputTextManager';
+export type { SelectableRichTextManager } from './selectableRichTextManager';
+export {
+  blurSelectableRichText,
+  createSelectableRichTextManager,
+  dispatchSelectableRichTextKeyDown,
+  dispatchSelectableRichTextPointerDown,
+  dispatchSelectableRichTextPointerMove,
+  dispatchSelectableRichTextWheel,
+  focusSelectableRichText,
+  getSelectableRichTextSelectionText,
+} from './selectableRichTextManager';

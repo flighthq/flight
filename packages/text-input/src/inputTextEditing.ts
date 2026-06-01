@@ -129,10 +129,6 @@ export function getInputTextDisplayText(source: Readonly<InputText>): string {
   return passwordCharacter.repeat(source.data.text.length);
 }
 
-export function getInputTextSelectionText(source: Readonly<InputText>): string {
-  return source.data.text.slice(getInputTextSelectionBeginIndex(source), getInputTextSelectionEndIndex(source));
-}
-
 export function getInputTextSelectionBeginIndex(source: Readonly<InputText>): number {
   const runtime = getInputTextRuntime(source);
   return Math.min(
@@ -160,6 +156,10 @@ export function getInputTextSelectionRectangles(
     getInputTextSelectionEndIndex(source),
     layout,
   );
+}
+
+export function getInputTextSelectionText(source: Readonly<InputText>): string {
+  return source.data.text.slice(getInputTextSelectionBeginIndex(source), getInputTextSelectionEndIndex(source));
 }
 
 export function handleInputTextKeyboard(
@@ -270,6 +270,16 @@ export function selectAllInputText(source: InputText): void {
   setInputTextSelection(source, 0, source.data.text.length);
 }
 
+export function selectLineAtInputTextIndex(source: InputText, index: number): void {
+  const text = source.data.text;
+  const clamped = Math.max(0, Math.min(text.length, index));
+  let start = clamped;
+  let end = clamped;
+  while (start > 0 && text.charAt(start - 1) !== '\n') start--;
+  while (end < text.length && text.charAt(end) !== '\n') end++;
+  setInputTextSelection(source, start, end);
+}
+
 export function selectWordAtInputTextIndex(source: InputText, index: number): void {
   const text = source.data.text;
   const clamped = Math.max(0, Math.min(text.length, index));
@@ -281,16 +291,6 @@ export function selectWordAtInputTextIndex(source: InputText, index: number): vo
     while (start > 0 && !isWordChar(text.charAt(start - 1))) start--;
     while (end < text.length && !isWordChar(text.charAt(end))) end++;
   }
-  setInputTextSelection(source, start, end);
-}
-
-export function selectLineAtInputTextIndex(source: InputText, index: number): void {
-  const text = source.data.text;
-  const clamped = Math.max(0, Math.min(text.length, index));
-  let start = clamped;
-  let end = clamped;
-  while (start > 0 && text.charAt(start - 1) !== '\n') start--;
-  while (end < text.length && text.charAt(end) !== '\n') end++;
   setInputTextSelection(source, start, end);
 }
 

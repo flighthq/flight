@@ -31,6 +31,7 @@
     "@flighthq/scenegraph-core": "*",
     "@flighthq/scenegraph-display": "*",
     "@flighthq/signals": "*",
+    "@flighthq/text-layout": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

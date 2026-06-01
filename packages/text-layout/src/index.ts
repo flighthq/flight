@@ -5,20 +5,6 @@ export {
   resolveRichTextContent,
 } from './richTextContent';
 export {
-  getRichTextCharBoundaries,
-  getRichTextCharIndexAtPoint,
-  getRichTextFirstCharInParagraph,
-  getRichTextLinkAtPoint,
-  getRichTextLineIndexAtPoint,
-  getRichTextLineIndexOfChar,
-  getRichTextLineLength,
-  getRichTextLineMetrics,
-  getRichTextLineOffset,
-  getRichTextLineText,
-  getRichTextParagraphLength,
-  getRichTextSelectionRectangles,
-} from './richTextQuery';
-export {
   getRichTextBottomScrollV,
   getRichTextFieldHeight,
   getRichTextFieldWidth,
@@ -29,6 +15,20 @@ export {
   getRichTextTextHeight,
   getRichTextTextWidth,
 } from './richTextMetrics';
+export {
+  getRichTextCharBoundaries,
+  getRichTextCharIndexAtPoint,
+  getRichTextFirstCharInParagraph,
+  getRichTextLineIndexAtPoint,
+  getRichTextLineIndexOfChar,
+  getRichTextLineLength,
+  getRichTextLineMetrics,
+  getRichTextLineOffset,
+  getRichTextLineText,
+  getRichTextLinkAtPoint,
+  getRichTextParagraphLength,
+  getRichTextSelectionRectangles,
+} from './richTextQuery';
 export {
   getTextFormatAscent,
   getTextFormatDescent,

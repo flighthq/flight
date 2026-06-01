@@ -7,6 +7,7 @@ import {
   getRichTextMaxScrollH,
   getRichTextMaxScrollV,
   getRichTextNumLines,
+  getRichTextScrollYOffset,
   getRichTextTextHeight,
   getRichTextTextWidth,
 } from './richTextMetrics';
@@ -121,6 +122,20 @@ describe('getRichTextMaxScrollV', () => {
 describe('getRichTextNumLines', () => {
   it('returns the layout line count', () => {
     expect(getRichTextNumLines(createLayout({ numLines: 3 }))).toBe(3);
+  });
+});
+
+describe('getRichTextScrollYOffset', () => {
+  it('returns 0 when firstVisibleLine is 0', () => {
+    expect(getRichTextScrollYOffset([10, 12, 14], 0)).toBe(0);
+  });
+
+  it('returns the sum of the first N line heights', () => {
+    expect(getRichTextScrollYOffset([10, 12, 14], 2)).toBe(22);
+  });
+
+  it('clamps to the available line count', () => {
+    expect(getRichTextScrollYOffset([10, 12], 5)).toBe(22);
   });
 });
 

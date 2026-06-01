@@ -1,7 +1,29 @@
 import type { Video } from '@flighthq/types';
 import { VideoKind } from '@flighthq/types';
 
-import { createVideo, createVideoData, createVideoRuntime, getVideoRuntime } from './video';
+import { computeVideoLocalBoundsRectangle, createVideo, createVideoData, createVideoRuntime, getVideoRuntime } from './video';
+
+describe('computeVideoLocalBoundsRectangle', () => {
+  it('does not modify out when source element is null', () => {
+    const video = createVideo();
+    const out = { x: 0, y: 0, width: 0, height: 0 };
+    computeVideoLocalBoundsRectangle(out as never, video as never);
+    expect(out.width).toBe(0);
+    expect(out.height).toBe(0);
+  });
+
+  it('sets out dimensions from the video element', () => {
+    const video = createVideo();
+    const el = document.createElement('video');
+    Object.defineProperty(el, 'videoWidth', { get: () => 320 });
+    Object.defineProperty(el, 'videoHeight', { get: () => 240 });
+    video.data.source = { element: el } as never;
+    const out = { x: 0, y: 0, width: 0, height: 0 };
+    computeVideoLocalBoundsRectangle(out as never, video as never);
+    expect(out.width).toBe(320);
+    expect(out.height).toBe(240);
+  });
+});
 
 describe('createVideo', () => {
   let video: Video;

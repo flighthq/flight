@@ -8,8 +8,11 @@ import {
   createRichText,
   createRichTextData,
   createRichTextRuntime,
+  dispatchRichTextWheel,
   getRichTextRuntime,
   setRichTextFormatRange,
+  setRichTextScrollH,
+  setRichTextScrollV,
 } from './richText';
 
 describe('clearRichTextFormatRanges', () => {
@@ -145,6 +148,15 @@ describe('createRichTextRuntime', () => {
   });
 });
 
+describe('dispatchRichTextWheel', () => {
+  it('advances scrollV by the given delta', () => {
+    const richText = createRichText();
+    expect(richText.data.scrollV).toBe(1);
+    dispatchRichTextWheel(richText, 2);
+    expect(richText.data.scrollV).toBe(3);
+  });
+});
+
 describe('getRichTextRuntime', () => {
   it('returns the runtime for a RichText', () => {
     const richText = createRichText();
@@ -158,5 +170,33 @@ describe('setRichTextFormatRange', () => {
     const richText = createRichText({ data: { text: 'hello' } });
     setRichTextFormatRange(richText, { italic: true }, 1, 4);
     expect(richText.data.textFormatRanges).toEqual([{ start: 1, end: 4, format: { italic: true } }]);
+  });
+});
+
+describe('setRichTextScrollH', () => {
+  it('sets scrollH to the given value', () => {
+    const richText = createRichText();
+    setRichTextScrollH(richText, 10);
+    expect(richText.data.scrollH).toBe(10);
+  });
+
+  it('clamps scrollH to 0 minimum', () => {
+    const richText = createRichText();
+    setRichTextScrollH(richText, -5);
+    expect(richText.data.scrollH).toBe(0);
+  });
+});
+
+describe('setRichTextScrollV', () => {
+  it('sets scrollV to the given value', () => {
+    const richText = createRichText();
+    setRichTextScrollV(richText, 4);
+    expect(richText.data.scrollV).toBe(4);
+  });
+
+  it('clamps scrollV to 1 minimum', () => {
+    const richText = createRichText();
+    setRichTextScrollV(richText, 0);
+    expect(richText.data.scrollV).toBe(1);
   });
 });

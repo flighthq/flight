@@ -16,16 +16,20 @@ import type {
   RendererData,
 } from '@flighthq/types';
 
-import { colorToCSS } from './domTextHelpers';
 import { defaultDOMRichTextRenderer, drawDOMRichText, drawDOMRichTextMask } from './domRichText';
+import { colorToCSS } from './domTextHelpers';
 
-injectCaretBlinkKeyframes();
+let _keyframesInjected = false;
 
 interface DOMInputTextData extends RendererData {
   div: HTMLDivElement | null;
 }
 
 export function drawDOMInputText(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+  if (!_keyframesInjected) {
+    injectCaretBlinkKeyframes();
+    _keyframesInjected = true;
+  }
   drawDOMRichText(state, renderNode);
 
   const source = renderNode.source as InputText;
