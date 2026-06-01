@@ -1,8 +1,10 @@
+import type { DOMRenderState } from '@flighthq/sdk';
 import {
   createDisplayObject,
   createDOMRenderState,
   registerRenderer,
   renderDOMDisplayObject,
+  setDOMRendererElement,
   updateDisplayObjectBeforeRender,
 } from '@flighthq/sdk';
 import { DisplayObjectKind } from '@flighthq/sdk';
@@ -12,14 +14,15 @@ test('sdk browser barrel can render a display object to the DOM', () => {
   const state = createDOMRenderState(container);
   const obj = createDisplayObject();
 
+  const el = document.createElement('div');
+  el.textContent = 'rendered';
+
   const renderer = {
     createData() {
       return null;
     },
-    draw(state: { element: HTMLElement }, data: { source: unknown }) {
-      const el = document.createElement('div');
-      el.textContent = 'rendered';
-      state.element.appendChild(el);
+    draw(s: DOMRenderState) {
+      setDOMRendererElement(s, el);
     },
   };
 
