@@ -15,6 +15,7 @@
     { "path": "../render-core" },
     { "path": "../scenegraph-core" },
     { "path": "../scenegraph-display" },
+    { "path": "../text-input" },
     { "path": "../text-layout" },
     { "path": "../types" }
   ],
