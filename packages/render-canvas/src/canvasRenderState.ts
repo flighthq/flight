@@ -12,7 +12,7 @@ export function createCanvasRenderState(
   if (!context) throw new Error('Failed to get context for canvas.');
 
   const state = _createRenderState({
-    pixelRatio: options.pixelRatio ?? window.devicePixelRatio | 1,
+    pixelRatio: options.pixelRatio ?? (window.devicePixelRatio || 1),
     renderTransform2D: options.renderTransform ?? createMatrix(),
     roundPixels: options.roundPixels ?? false,
   }) as CanvasRenderStateInternal;
