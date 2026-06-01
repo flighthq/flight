@@ -1,38 +1,71 @@
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-core';
 import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
-import type { DisplayObject, WebGLRenderState } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
+import { popWebGLClipRectangle, pushWebGLClipRectangle } from './webglClipRect';
+import { applyWebGLMask, popWebGLMask, pushWebGLMask } from './webglMask';
+
+export function drawWebGLDisplayObject(_state: WebGLRenderState, _renderNode: DisplayObjectRenderNode): void {
+  // Plain display objects have no visual geometry of their own.
+}
+
+export function drawWebGLDisplayObjectMask(state: WebGLRenderState, data: DisplayObjectRenderNode): void {
+  const children = getDisplayObjectRuntime(data.source).children;
+  if (children !== null) {
+    for (let i = 0; i < children.length; i++) {
+      const child = getOrCreateDisplayObjectRenderNode(state, children[i] as DisplayObject);
+      applyWebGLMask(state as WebGLRenderStateInternal, child);
+    }
+  }
+}
 
 export function renderWebGLDisplayObject(state: WebGLRenderState, source: DisplayObject): void {
   const internal = state as WebGLRenderStateInternal;
-  const currentFrameID = state.currentFrameID;
-  const tempStack = state.tempStack;
-  let stackLength = 0;
+  drawNode(internal, source);
+}
 
-  tempStack[stackLength++] = source;
+export const defaultWebGLDisplayObjectRenderer: DisplayObjectRenderer = {
+  createData: () => null,
+  draw: drawWebGLDisplayObject,
+  drawMask: drawWebGLDisplayObjectMask,
+};
 
-  while (stackLength > 0) {
-    const current = tempStack[--stackLength] as DisplayObject;
-    const data = getOrCreateDisplayObjectRenderNode(state, current);
+function drawNode(state: WebGLRenderStateInternal, current: DisplayObject): void {
+  const data = getOrCreateDisplayObjectRenderNode(state, current);
 
-    const isMask = data.isMaskFrameID === currentFrameID;
-    if (isMask) continue;
+  const isMask = data.isMaskFrameID === state.currentFrameID;
+  if (isMask) return;
 
-    const shouldRender = data.visible && data.alpha > 0 && (data.transform2D.a !== 0 || data.transform2D.d !== 0);
-    if (!shouldRender) continue;
+  const shouldRender = data.visible && data.alpha > 0 && (data.transform2D.a !== 0 || data.transform2D.d !== 0);
+  if (!shouldRender) return;
 
-    if (data.renderer !== null) {
-      data.renderer.draw(internal, data);
-    }
+  pushObjectEffects(state, data);
 
-    if (!data.updateChildren) continue;
+  if (data.renderer !== null) {
+    data.renderer.draw(state, data);
+  }
 
+  if (data.updateChildren) {
     const children = getDisplayObjectRuntime(current).children;
     if (children !== null) {
-      for (let i = children.length - 1; i >= 0; i--) {
-        tempStack[stackLength++] = children[i] as DisplayObject;
+      for (let i = 0; i < children.length; i++) {
+        drawNode(state, children[i] as DisplayObject);
       }
     }
   }
+
+  popObjectEffects(state, data);
+}
+
+function popObjectEffects(state: WebGLRenderStateInternal, data: DisplayObjectRenderNode): void {
+  const source = data.source;
+  if (source.mask !== null) popWebGLMask(state);
+  if (source.scrollRect !== null) popWebGLClipRectangle(state);
+}
+
+function pushObjectEffects(state: WebGLRenderStateInternal, data: DisplayObjectRenderNode): void {
+  const source = data.source;
+  if (source.scrollRect !== null) pushWebGLClipRectangle(state, source.scrollRect, data.transform2D);
+  if (source.mask !== null) pushWebGLMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask));
 }

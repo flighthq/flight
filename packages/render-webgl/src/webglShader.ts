@@ -22,7 +22,9 @@ uniform sampler2D u_texture;
 uniform float u_alpha;
 out vec4 fragColor;
 void main() {
-  fragColor = texture(u_texture, v_texCoord) * clamp(u_alpha, 0.0, 1.0);
+  vec4 color = texture(u_texture, v_texCoord) * clamp(u_alpha, 0.0, 1.0);
+  if (color.a <= 0.0) discard;
+  fragColor = color;
 }`;
 
 function compileShader(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader {

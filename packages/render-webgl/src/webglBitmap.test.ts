@@ -61,9 +61,9 @@ describe('drawWebGLBitmap', () => {
 });
 
 describe('drawWebGLBitmapMask', () => {
-  it('is a no-op that does not throw', () => {
+  it('uses the bitmap draw path', () => {
     const { state, gl } = makeWebGLState();
-    expect(() => drawWebGLBitmapMask(state, {} as DisplayObjectRenderNode)).not.toThrow();
+    expect(() => drawWebGLBitmapMask(state, makeRenderNode(null))).not.toThrow();
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 });

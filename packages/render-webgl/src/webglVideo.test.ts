@@ -36,8 +36,9 @@ describe('drawWebGLVideo', () => {
 });
 
 describe('drawWebGLVideoMask', () => {
-  it('does not throw', () => {
-    const { state } = makeWebGLState();
-    expect(() => drawWebGLVideoMask(state, {} as DisplayObjectRenderNode)).not.toThrow();
+  it('uses the video draw path', () => {
+    const { state, gl } = makeWebGLState();
+    expect(() => drawWebGLVideoMask(state, makeVideoNode(null))).not.toThrow();
+    expect(gl.drawElements).not.toHaveBeenCalled();
   });
 });

@@ -13,6 +13,7 @@ export function createWebGLRenderState(
     alpha: true,
     antialias: options.antialias ?? false,
     powerPreference: options.powerPreference ?? 'default',
+    stencil: true,
     ...options.contextAttributes,
   };
 
@@ -45,7 +46,9 @@ export function createWebGLRenderState(
   state.canvas = canvas;
   state.gl = gl;
   state.currentBlendMode = null;
+  state.currentMaskDepth = 0;
   state.currentProgram = null;
+  state.currentScissorRect = null;
   state.currentTexture = null;
   state.defaultBitmapShader = defaultBitmapShader;
   state.shaderLoc = shaderLoc;
@@ -54,6 +57,7 @@ export function createWebGLRenderState(
   state.quadIndexBuffer = quadIndexBuffer;
   state.quadVertexData = new Float32Array(16);
   state.matrixArray = matrixArray;
+  state.scissorStack = [];
 
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);

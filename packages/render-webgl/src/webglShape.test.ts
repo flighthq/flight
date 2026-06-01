@@ -49,9 +49,9 @@ describe('drawWebGLShape', () => {
 });
 
 describe('drawWebGLShapeMask', () => {
-  it('is a no-op that does not throw', () => {
+  it('uses the shape draw path', () => {
     const { state, gl } = makeWebGLState();
-    expect(() => drawWebGLShapeMask(state, {} as DisplayObjectRenderNode)).not.toThrow();
+    expect(() => drawWebGLShapeMask(state, makeShapeNode({ commands: [] }))).not.toThrow();
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 });

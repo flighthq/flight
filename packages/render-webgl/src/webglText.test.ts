@@ -49,9 +49,9 @@ describe('drawWebGLText', () => {
 });
 
 describe('drawWebGLTextMask', () => {
-  it('is a no-op that does not throw', () => {
+  it('uses the text draw path', () => {
     const { state, gl } = makeWebGLState();
-    expect(() => drawWebGLTextMask(state, {} as DisplayObjectRenderNode)).not.toThrow();
+    expect(() => drawWebGLTextMask(state, makeTextNode(''))).not.toThrow();
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 });

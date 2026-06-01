@@ -104,7 +104,9 @@ export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRende
   drawWebGLQuad(internal, 0, 0, w, h, 0, 0, 1, 1);
 }
 
-export function drawWebGLTextMask(_state: RenderState, _data: DisplayObjectRenderNode): void {}
+export function drawWebGLTextMask(state: RenderState, data: DisplayObjectRenderNode): void {
+  drawWebGLText(state, data);
+}
 
 export const defaultWebGLTextRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
