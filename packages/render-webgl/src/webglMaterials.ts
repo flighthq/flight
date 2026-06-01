@@ -1,7 +1,9 @@
 import type { DisplayObjectRenderNode, RenderNode, WebGLRenderState } from '@flighthq/types';
 
-import type { WebGLBitmapShader, WebGLRenderStateInternal, WebGLShaderLocations } from './internal';
+import type { WebGLRenderStateInternal } from './internal';
 import { setWebGLAttribs, setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
+import { registerWebGLBitmapShader } from './webglShaderRegistry';
+import type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
 
 export function registerWebGLColorTransformShader(state: WebGLRenderState): void {
   const internal = state as WebGLRenderStateInternal;
@@ -9,7 +11,7 @@ export function registerWebGLColorTransformShader(state: WebGLRenderState): void
 
   const shaderLoc = compileWebGLColorTransformProgram(internal.gl);
   internal.colorTransformBitmapShader = createWebGLColorTransformBitmapShader(shaderLoc, internal.matrixArray);
-  internal.defaultBitmapShader = internal.colorTransformBitmapShader;
+  registerWebGLBitmapShader(state, internal.colorTransformBitmapShader);
 }
 
 function compileShader(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader {

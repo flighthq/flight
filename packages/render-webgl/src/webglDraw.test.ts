@@ -7,6 +7,7 @@ import {
   updateWebGLTexture,
   useWebGLProgram,
 } from './webglDraw';
+import { registerWebGLBitmapShader } from './webglShaderRegistry';
 import { makeWebGLState } from './webglTestHelper';
 
 describe('bindWebGLTexture', () => {
@@ -301,5 +302,22 @@ describe('useWebGLProgram', () => {
     state.currentProgram = null;
     useWebGLProgram(state);
     expect(state.currentProgram).toBe(state.shaderLoc.program);
+  });
+
+  it('uses the registered bitmap shader program and locations', () => {
+    const { state, gl } = makeWebGLState();
+    const shader = {
+      bind: vi.fn(),
+      locations: { ...state.shaderLoc, program: {} as WebGLProgram },
+      program: {} as WebGLProgram,
+    };
+    shader.locations.program = shader.program;
+
+    registerWebGLBitmapShader(state, shader);
+    useWebGLProgram(state);
+
+    expect(gl.useProgram).toHaveBeenCalledWith(shader.program);
+    expect(state.shaderLoc).toBe(shader.locations);
+    expect(state.currentProgram).toBe(shader.program);
   });
 });

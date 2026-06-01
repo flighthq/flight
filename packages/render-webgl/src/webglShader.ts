@@ -1,6 +1,8 @@
 import type { DisplayObjectRenderNode, RenderNode, WebGLRenderState } from '@flighthq/types';
 
-import type { WebGLBitmapShader, WebGLShaderLocations } from './internal';
+import type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
+
+export type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
 
 const VERTEX_SRC = `#version 300 es
 in vec2 a_position;

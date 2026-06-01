@@ -1,11 +1,15 @@
+import { createText } from '@flighthq/scenegraph-display';
 import type { DisplayObjectRenderNode } from '@flighthq/types';
 
 import { makeWebGLState } from './webglTestHelper';
 import { defaultWebGLTextRenderer, drawWebGLText, drawWebGLTextMask } from './webglText';
 
 function makeTextNode(text = '', textFormat = {}): DisplayObjectRenderNode {
+  const source = createText();
+  source.data.text = text;
+  source.data.textFormat = textFormat;
   return {
-    source: { data: { text, textFormat } },
+    source,
     blendMode: 0,
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
@@ -28,6 +32,15 @@ describe('defaultWebGLTextRenderer', () => {
 });
 
 describe('drawWebGLText', () => {
+  it('binds the active bitmap shader when drawing text', () => {
+    const { state } = makeWebGLState();
+    const renderNode = makeTextNode('hello');
+
+    drawWebGLText(state, renderNode);
+
+    expect(state.defaultBitmapShader.bind).toHaveBeenCalledWith(state.gl, state, renderNode);
+  });
+
   it('returns early without drawing when text is empty', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLText(state, makeTextNode(''));

@@ -16,6 +16,10 @@
     "./materials": {
       "types": "./dist/webglMaterials.d.ts",
       "default": "./dist/webglMaterials.js"
+    },
+    "./shader": {
+      "types": "./dist/webglShaderRegistry.d.ts",
+      "default": "./dist/webglShaderRegistry.js"
     }
   },
   "files": [

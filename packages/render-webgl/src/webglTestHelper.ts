@@ -1,4 +1,5 @@
-import type { WebGLRenderStateInternal, WebGLShaderLocations } from './internal';
+import type { WebGLRenderStateInternal } from './internal';
+import type { WebGLShaderLocations } from './webglShaderTypes';
 
 // makeGL returns a fresh isolated mock for unit tests that call GL functions
 // directly (e.g. shader math tests) and need a clean call-count slate.
