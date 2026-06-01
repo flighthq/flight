@@ -1,7 +1,9 @@
 import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime } from './DisplayObject';
+import type { VideoSource } from './VideoSource';
 
 export interface VideoData extends DisplayObjectData {
   smoothing: boolean;
+  source: VideoSource | null;
 }
 
 export interface VideoRuntime extends DisplayObjectRuntime {}

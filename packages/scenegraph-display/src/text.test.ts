@@ -56,6 +56,11 @@ describe('createTextRuntime', () => {
     const runtime = createTextRuntime();
     expect(runtime).not.toBeNull();
   });
+
+  it('starts without attached layout runtime state', () => {
+    const runtime = createTextRuntime();
+    expect(runtime.textLayout).toBeNull();
+  });
 });
 
 describe('getTextRuntime', () => {

@@ -39,14 +39,16 @@ describe('createInputTextData', () => {
   it('returns default values', () => {
     const data = createInputTextData();
     expect(data.displayAsPassword).toBe(false);
+    expect(data.passwordCharacter).toBe('\u2022');
     expect(data.restrict).toBe('');
     expect(data.text).toBe('');
     expect(data.htmlText).toBe('');
   });
 
   it('allows pre-defined values', () => {
-    const data = createInputTextData({ displayAsPassword: true, restrict: 'A-Z' });
+    const data = createInputTextData({ displayAsPassword: true, passwordCharacter: '*', restrict: 'A-Z' });
     expect(data.displayAsPassword).toBe(true);
+    expect(data.passwordCharacter).toBe('*');
     expect(data.restrict).toBe('A-Z');
   });
 });
@@ -55,6 +57,27 @@ describe('createInputTextRuntime', () => {
   it('returns a non-null runtime', () => {
     const runtime = createInputTextRuntime();
     expect(runtime).not.toBeNull();
+  });
+
+  it('starts without attached layout runtime state', () => {
+    const runtime = createInputTextRuntime();
+    expect(runtime.textLayout).toBeNull();
+  });
+
+  it('starts without attached content runtime state', () => {
+    const runtime = createInputTextRuntime();
+    expect(runtime.richTextContent).toBeNull();
+  });
+
+  it('starts with a collapsed selection', () => {
+    const runtime = createInputTextRuntime();
+    expect(runtime.caretIndex).toBe(0);
+    expect(runtime.selectionIndex).toBe(0);
+  });
+
+  it('starts without focus', () => {
+    const runtime = createInputTextRuntime();
+    expect(runtime.focused).toBe(false);
   });
 });
 

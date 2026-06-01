@@ -10,13 +10,23 @@ export function createInputText(obj?: Readonly<PartialNode<InputText>>): InputTe
 
 export function createInputTextData(data?: Readonly<Partial<InputTextData>>): InputTextData {
   const _data = createRichTextData(data) as InputTextData;
+  _data.alwaysShowSelection = data?.alwaysShowSelection ?? false;
   _data.displayAsPassword = data?.displayAsPassword ?? false;
+  _data.passwordCharacter = data?.passwordCharacter ?? '\u2022';
   _data.restrict = data?.restrict ?? '';
+  _data.selectionAlpha = data?.selectionAlpha ?? 0.35;
+  _data.selectionColor = data?.selectionColor ?? 0x0078d7;
   return _data;
 }
 
 export function createInputTextRuntime(): InputTextRuntime {
-  return createDisplayObjectRuntime(defaultMethods) as InputTextRuntime;
+  const out = createDisplayObjectRuntime(defaultMethods) as InputTextRuntime;
+  out.caretIndex = 0;
+  out.focused = false;
+  out.selectionIndex = 0;
+  out.textLayout = null;
+  out.richTextContent = null;
+  return out;
 }
 
 export function getInputTextRuntime(source: Readonly<InputText>): Readonly<InputTextRuntime> {
