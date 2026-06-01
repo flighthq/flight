@@ -8,6 +8,16 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../scenegraph-core" }, { "path": "../types" }],
+  "references": [
+    { "path": "../assets" },
+    { "path": "../geometry" },
+    { "path": "../render-canvas" },
+    { "path": "../render-core" },
+    { "path": "../render-dom" },
+    { "path": "../render-webgl" },
+    { "path": "../scenegraph-core" },
+    { "path": "../scenegraph-display" },
+    { "path": "../types" }
+  ],
   "include": ["src"]
 }
