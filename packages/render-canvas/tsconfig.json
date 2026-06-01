@@ -13,6 +13,7 @@
     { "path": "../geometry" },
     { "path": "../render-core" },
     { "path": "../scenegraph-display" },
+    { "path": "../text-input" },
     { "path": "../text-layout" },
     { "path": "../types" }
   ],
