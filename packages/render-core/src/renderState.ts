@@ -13,6 +13,7 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
     currentQueue: obj?.currentQueue ?? [],
     currentQueueLength: obj?.currentQueueLength ?? 0,
     currentScrollRectDepth: obj?.currentScrollRectDepth ?? 0,
+    displayObjectKindTransformers: [],
     pixelRatio: obj?.pixelRatio ?? 1,
     renderNodeMap: obj?.renderNodeMap ?? new WeakMap(),
     renderAlpha: obj?.renderAlpha ?? 1,

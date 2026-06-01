@@ -43,7 +43,15 @@ describe('processDOMNode', () => {
     const node = {} as any;
     const el = document.createElement('div');
 
-    const result = processDOMNode(internal, node, 0, () => { internal.domCurrentElement = el; }, 0);
+    const result = processDOMNode(
+      internal,
+      node,
+      0,
+      () => {
+        internal.domCurrentElement = el;
+      },
+      0,
+    );
 
     expect(result.newLength).toBe(1);
     expect(result.needsReconcile).toBe(true);
@@ -58,7 +66,15 @@ describe('processDOMNode', () => {
     internal.domElementMap.set(node, el);
 
     let called = false;
-    const result = processDOMNode(internal, node, 0, () => { called = true; }, 0);
+    const result = processDOMNode(
+      internal,
+      node,
+      0,
+      () => {
+        called = true;
+      },
+      0,
+    );
 
     expect(called).toBe(false);
     expect(result.needsReconcile).toBe(false);
@@ -72,7 +88,15 @@ describe('processDOMNode', () => {
     const newEl = document.createElement('canvas');
     internal.domElementMap.set(node, oldEl);
 
-    const result = processDOMNode(internal, node, 1, () => { internal.domCurrentElement = newEl; }, 0);
+    const result = processDOMNode(
+      internal,
+      node,
+      1,
+      () => {
+        internal.domCurrentElement = newEl;
+      },
+      0,
+    );
 
     expect(result.needsReconcile).toBe(true);
     expect(internal.domElementMap.get(node)).toBe(newEl);

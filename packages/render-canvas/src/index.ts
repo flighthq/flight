@@ -1,10 +1,8 @@
 export * from './canvasBackground';
 export * from './canvasBitmap';
-export * from './canvasCacheAsBitmap';
 export * from './canvasClipRect';
 export * from './canvasDisplayObject';
 export * from './canvasElement';
-export * from './canvasImageCache';
 export * from './canvasInputText';
 export * from './canvasMask';
 export * from './canvasMaterials';
@@ -20,3 +18,4 @@ export * from './canvasText';
 export * from './canvasTilemap';
 export * from './canvasTransform';
 export * from './canvasVideo';
+export type { CanvasRenderStateInternal } from './internal';

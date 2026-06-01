@@ -1,13 +1,15 @@
+export type { WebGLRenderStateInternal } from './internal';
 export * from './webglBackground';
 export * from './webglBitmap';
 export * from './webglDisplayObject';
+export * from './webglDraw';
 export * from './webglElement';
-export * from './webglImageCache';
 export * from './webglInputText';
 export * from './webglMaterials';
 export * from './webglQuadBatch';
 export * from './webglRenderState';
 export * from './webglRichText';
+export * from './webglShader';
 export * from './webglShape';
 export * from './webglSprite';
 export * from './webglSpriteRenderer';

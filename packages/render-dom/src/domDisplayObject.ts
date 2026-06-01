@@ -32,6 +32,8 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
       if (result.needsReconcile) needsReconcile = true;
     }
 
+    if (!data.updateChildren) continue;
+
     const children = getDisplayObjectRuntime(current).children;
     if (children !== null) {
       for (let i = children.length - 1; i >= 0; i--) {

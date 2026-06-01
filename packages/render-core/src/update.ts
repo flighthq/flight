@@ -14,12 +14,52 @@ import type { RenderStateInternal } from './internal';
 import { getOrCreateDisplayObjectRenderNode, getOrCreateSpriteRenderNode } from './renderNode2d';
 import { updateDisplayObjectRenderTransform, updateRenderNode2DTransform } from './transform2d';
 
+function applyKindTransformers(
+  state: RenderState,
+  internal: RenderStateInternal,
+  current: DisplayObject,
+  data: DisplayObjectRenderNode,
+  currentFrameID: number,
+): boolean {
+  const transformers = internal.displayObjectKindTransformers;
+  let result = null;
+  for (let i = 0; i < transformers.length; i++) {
+    result = transformers[i](state, current, data);
+    if (result !== null) break;
+  }
+
+  let dirty = false;
+  if (result !== null) {
+    const newRenderer = state.rendererMap.get(result.kind) ?? null;
+    if (data.renderer !== newRenderer) {
+      data.renderer = newRenderer;
+      data.appearanceFrameID = currentFrameID;
+      dirty = true;
+    } else if (result.dirty) {
+      data.appearanceFrameID = currentFrameID;
+      dirty = true;
+    }
+    data.updateChildren = result.updateChildren;
+  } else {
+    const normalRenderer = state.rendererMap.get(current.kind) ?? null;
+    if (data.renderer !== normalRenderer) {
+      data.renderer = normalRenderer;
+      data.appearanceFrameID = currentFrameID;
+      dirty = true;
+    }
+    data.updateChildren = true;
+  }
+  return dirty;
+}
+
 /**
  * First pass, update appearance, transforms, identify masks
  */
 export function updateDisplayObjectBeforeRender(state: RenderState, source: DisplayObject): boolean {
+  const internal = state as RenderStateInternal;
   const tempStack = state.tempStack;
-  const currentFrameID = ++(state as RenderStateInternal).currentFrameID;
+  const currentFrameID = ++internal.currentFrameID;
+  const hasTransformers = internal.displayObjectKindTransformers.length > 0;
 
   let stackLength = 1;
   tempStack[0] = source;
@@ -74,6 +114,15 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
     } else {
       data.maskDepth = maskDepth;
     }
+
+    data.updateChildren = true;
+    if (hasTransformers) {
+      if (applyKindTransformers(state, internal, current, data, currentFrameID)) {
+        treeDirty = true;
+      }
+    }
+
+    if (!data.updateChildren) continue;
 
     const children = getDisplayObjectRuntime(current).children;
     if (children !== null) {
