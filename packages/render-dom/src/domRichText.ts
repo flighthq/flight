@@ -210,8 +210,8 @@ const DOM_SELECTION_ALPHA = 0.35;
 const DOM_SELECTION_COLOR = '#0078d7';
 const _richTextSelectionRects: { height: number; lineIndex: number; width: number; x: number; y: number }[] = [];
 
-export function drawDOMRichTextMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {
-  // Masking not yet supported in DOM renderer
+export function drawDOMRichTextMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+  drawDOMRichText(state, renderNode);
 }
 
 export const defaultDOMRichTextRenderer: DisplayObjectRenderer = {

@@ -41,6 +41,10 @@
       "types": "./dist/domRichText.d.ts",
       "default": "./dist/domRichText.js"
     },
+    "./scale9": {
+      "types": "./dist/domScale9Shape.d.ts",
+      "default": "./dist/domScale9Shape.js"
+    },
     "./shape": {
       "types": "./dist/domShape.d.ts",
       "default": "./dist/domShape.js"

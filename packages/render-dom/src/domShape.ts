@@ -60,8 +60,8 @@ export function drawDOMShape(state: DOMRenderState, renderNode: DisplayObjectRen
   setDOMRendererElement(state, data.canvas);
 }
 
-export function drawDOMShapeMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {
-  // Masking not yet supported in DOM renderer
+export function drawDOMShapeMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+  drawDOMShape(state, renderNode);
 }
 
 export const defaultDOMShapeRenderer: DisplayObjectRenderer = {

@@ -39,8 +39,8 @@ export function drawDOMVideo(state: DOMRenderState, renderNode: DisplayObjectRen
   setDOMRendererElement(state, element);
 }
 
-export function drawDOMVideoMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {
-  // Masking not yet supported in DOM renderer
+export function drawDOMVideoMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+  drawDOMVideo(state, renderNode);
 }
 
 export const defaultDOMVideoRenderer: DisplayObjectRenderer = {

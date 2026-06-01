@@ -29,7 +29,7 @@ export function drawHTMLView(state: DOMRenderState, renderNode: DisplayObjectRen
 }
 
 export function drawHTMLViewMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {
-  // Masking not yet supported in DOM renderer
+  // HTMLView content is not converted into mask geometry by the DOM renderer.
 }
 
 export const defaultHTMLViewRenderer: DisplayObjectRenderer = {
