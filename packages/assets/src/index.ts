@@ -9,3 +9,5 @@ export * from './textureAtlasFrom';
 export * from './textureAtlasRegion';
 export * from './tileset';
 export * from './tilesetFrom';
+export * from './videoSource';
+export * from './videoSourceFrom';

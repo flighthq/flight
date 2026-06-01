@@ -52,6 +52,14 @@
     "./tilesetFrom": {
       "types": "./dist/tilesetFrom.d.ts",
       "default": "./dist/tilesetFrom.js"
+    },
+    "./videoSource": {
+      "types": "./dist/videoSource.d.ts",
+      "default": "./dist/videoSource.js"
+    },
+    "./videoSourceFrom": {
+      "types": "./dist/videoSourceFrom.d.ts",
+      "default": "./dist/videoSourceFrom.js"
     }
   },
   "files": [
