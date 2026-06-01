@@ -25,7 +25,7 @@
     "ci": "npm run build:check && npm run build && npm run check && npm run test && npm run size",
     "prepush": "npm run ci",
     "precommit": "npm run fix",
-    "packages:check": "tsx ./scripts/validate.ts",
+    "packages:check": "tsx ./scripts/packages.ts",
     "api": "tsx ./scripts/api.ts",
     "api:json": "tsx ./scripts/api.ts --json",
     "coverage": "tsx ./scripts/coverage.ts",
