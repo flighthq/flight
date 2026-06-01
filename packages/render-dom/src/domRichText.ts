@@ -1,5 +1,15 @@
 import { createEntity } from '@flighthq/entity';
-import { createTextFormatRange, createTextLayoutResult, layoutText, mergeTextFormat } from '@flighthq/text-layout';
+import { getRichTextRuntime } from '@flighthq/scenegraph-display';
+import {
+  getRichTextContent,
+  getRichTextFieldHeight,
+  getRichTextFieldWidth,
+  getRichTextScrollYOffset,
+  getRichTextSelectionRectangles,
+  getTextLayoutResult,
+  layoutText,
+  resolveRichTextContent,
+} from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderNode,
@@ -8,7 +18,9 @@ import type {
   RendererData,
   RenderState,
   RichText,
+  RichTextRuntime,
   TextFormat,
+  TextRuntime,
 } from '@flighthq/types';
 
 import { applyDOMStyle, initDOMElement } from './domStyle';
@@ -21,8 +33,6 @@ interface DOMRichTextData extends RendererData {
 function createDOMRichTextData(_state: RenderState, _source: Renderable): DOMRichTextData {
   return createEntity({ div: null });
 }
-
-const _richTextLayout = createTextLayoutResult();
 
 let _measureCtx: CanvasRenderingContext2D | null = null;
 
@@ -38,22 +48,7 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
   if (data === null) return;
 
   const source = renderNode.source as RichText;
-  const {
-    text,
-    defaultTextFormat,
-    textFormat,
-    background,
-    backgroundColor,
-    border,
-    borderColor,
-    width,
-    height,
-    wordWrap,
-    multiline,
-    scrollH,
-    scrollV,
-    textColor,
-  } = source.data;
+  const { background, backgroundColor, border, borderColor, wordWrap, multiline, scrollH, scrollV } = source.data;
 
   if (data.div === null) {
     data.div = document.createElement('div');
@@ -61,9 +56,34 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
     data.div.style.overflow = 'hidden';
   }
 
+  const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
+  const content = getRichTextContent(richTextRuntime);
+  resolveRichTextContent(content, source.data);
+  const { text } = content;
+
+  const ctx = getMeasureCtx();
+  if (ctx === null) return;
+
+  const measure = (t: string, fmt: TextFormat): number => {
+    ctx.font = formatToFont(fmt);
+    return ctx.measureText(t).width;
+  };
+
+  const result = getTextLayoutResult(richTextRuntime as TextRuntime);
+  layoutText(result, {
+    text,
+    formatRanges: content.formatRanges,
+    width: wordWrap ? source.data.width : 10000,
+    height: source.data.height,
+    measure,
+    multiline,
+    wordWrap,
+  });
+  const fieldW = getRichTextFieldWidth(source.data, result);
+  const fieldH = getRichTextFieldHeight(source.data, result);
   const div = data.div;
-  div.style.width = `${width}px`;
-  div.style.height = `${height}px`;
+  div.style.width = `${fieldW}px`;
+  div.style.height = `${fieldH}px`;
   div.style.backgroundColor = background ? colorToCSS(backgroundColor) : '';
   div.style.border = border ? `1px solid ${colorToCSS(borderColor)}` : '';
 
@@ -74,43 +94,49 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
     return;
   }
 
-  const ctx = getMeasureCtx();
-  if (ctx === null) return;
-
-  const format: TextFormat = mergeTextFormat(defaultTextFormat, textFormat);
-  if (format.color === undefined) format.color = textColor;
-
-  const measure = (t: string, fmt: TextFormat): number => {
-    ctx.font = formatToFont(fmt);
-    return ctx.measureText(t).width;
-  };
-
-  layoutText(_richTextLayout, {
-    text,
-    formatRanges: [createTextFormatRange(format, 0, text.length)],
-    width: wordWrap ? width : 10000,
-    height,
-    measure,
-    multiline,
-    wordWrap,
-  });
-
   const firstVisibleLine = scrollV - 1;
-  const scrollYOffset = firstVisibleLine > 0 ? computeScrollYOffset(_richTextLayout.lineHeights, firstVisibleLine) : 0;
+  const scrollYOffset = firstVisibleLine > 0 ? getRichTextScrollYOffset(result.lineHeights, firstVisibleLine) : 0;
   const scrollXOffset = scrollH;
 
   let html = '';
-  for (const group of _richTextLayout.groups) {
+
+  if (source.data.selectable && richTextRuntime.selectionBeginIndex !== richTextRuntime.selectionEndIndex) {
+    getRichTextSelectionRectangles(_richTextSelectionRects, richTextRuntime.selectionBeginIndex, richTextRuntime.selectionEndIndex, result);
+    for (const rect of _richTextSelectionRects) {
+      html += `<div style="position:absolute;left:${rect.x - scrollXOffset}px;top:${rect.y - scrollYOffset}px;width:${rect.width}px;height:${rect.height}px;background:${DOM_SELECTION_COLOR};opacity:${DOM_SELECTION_ALPHA};pointer-events:none;"></div>`;
+    }
+  }
+
+  const bulletLines = new Set<number>();
+  for (const group of result.groups) {
     if (group.lineIndex < firstVisibleLine) continue;
 
     const fmt = group.format;
     const slice = htmlEscape(text.substring(group.startIndex, group.endIndex));
     const x = group.offsetX - scrollXOffset;
-    const y = group.offsetY - scrollYOffset;
+    const fontStr = formatToFont(fmt);
+    // Align the CSS alphabetic baseline with canvas: canvas draws at offsetY + group.ascent
+    // (alphabetic baseline). CSS places the baseline at top + fontBoundingBoxAscent, so we
+    // shift the div top so the two positions coincide.
+    const fontAscent = getDomFontAscent(ctx, fontStr);
+    const y = group.offsetY + group.ascent - fontAscent - scrollYOffset;
 
-    let style = `position:absolute;left:${x}px;top:${y}px;font:${formatToFont(fmt)};`;
-    style += `color:${colorToCSS(fmt.color ?? textColor)};white-space:nowrap;`;
-    if (fmt.underline) style += 'text-decoration:underline;';
+    if (fmt.bullet && !bulletLines.has(group.lineIndex)) {
+      bulletLines.add(group.lineIndex);
+      const bulletSize = fmt.size ?? 12;
+      const bulletX = x - bulletSize * 0.7 - DOM_BULLET_GAP;
+      const bulletStyle = `position:absolute;left:${bulletX}px;top:${y}px;font:${fontStr};color:${colorToCSS(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
+      html += `<div style="${bulletStyle}">•</div>`;
+    }
+
+    let style = `position:absolute;left:${x}px;top:${y}px;font:${fontStr};`;
+    style += `color:${colorToCSS(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
+    if (fmt.underline || fmt.strikethrough) {
+      const decorations = [];
+      if (fmt.underline) decorations.push('underline');
+      if (fmt.strikethrough) decorations.push('line-through');
+      style += `text-decoration:${decorations.join(' ')};`;
+    }
 
     switch (fmt.align) {
       case 'center':
@@ -137,12 +163,24 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
   state.element.appendChild(div);
 }
 
-function computeScrollYOffset(lineHeights: readonly number[], firstVisibleLine: number): number {
-  let offset = 0;
-  const limit = Math.min(firstVisibleLine, lineHeights.length);
-  for (let i = 0; i < limit; i++) offset += lineHeights[i];
-  return offset;
+const DOM_BULLET_GAP = 4;
+const _domFontAscentCache = new Map<string, number>();
+
+function getDomFontAscent(ctx: CanvasRenderingContext2D, font: string): number {
+  const cached = _domFontAscentCache.get(font);
+  if (cached !== undefined) return cached;
+  ctx.font = font;
+  const metrics = ctx.measureText('Hg') as TextMetrics & { fontBoundingBoxAscent?: number };
+  // fontBoundingBoxAscent is the CSS line-box ascent — exactly what the browser uses
+  // to position the alphabetic baseline within an element. Fall back to actualBoundingBoxAscent
+  // of a tall character, which is a reasonable approximation.
+  const ascent = metrics.fontBoundingBoxAscent ?? ctx.measureText('H').actualBoundingBoxAscent;
+  _domFontAscentCache.set(font, ascent);
+  return ascent;
 }
+const DOM_SELECTION_ALPHA = 0.35;
+const DOM_SELECTION_COLOR = '#0078d7';
+const _richTextSelectionRects: { height: number; lineIndex: number; width: number; x: number; y: number }[] = [];
 
 export function drawDOMRichTextMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {
   // Masking not yet supported in DOM renderer

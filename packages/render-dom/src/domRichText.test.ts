@@ -94,6 +94,21 @@ describe('drawDOMRichText', () => {
     expect(div.innerHTML).toContain('world');
   });
 
+  it('renders resolved htmlText spans', () => {
+    const state = makeState();
+    const node = createRichText();
+    node.data.htmlText = '<b>Bold</b><font color="#00ff00">Green</font>';
+    const renderNode = getDisplayObjectRenderNode(state, node);
+
+    drawDOMRichText(state, renderNode);
+
+    const div = state.element.children[0] as HTMLElement;
+    expect(div.innerHTML).toContain('Bold');
+    expect(div.innerHTML).toContain('Green');
+    expect(div.innerHTML).toContain('bold');
+    expect(div.innerHTML).toContain('#00ff00');
+  });
+
   it('sets backgroundColor when background is enabled', () => {
     const state = makeState();
     const node = createRichText();

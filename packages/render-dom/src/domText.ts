@@ -1,5 +1,6 @@
 import { createEntity } from '@flighthq/entity';
-import { createTextFormatRange, createTextLayoutResult, layoutText } from '@flighthq/text-layout';
+import { getTextRuntime } from '@flighthq/scenegraph-display';
+import { createTextFormatRange, getTextLayoutResult, layoutText } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderNode,
@@ -9,6 +10,7 @@ import type {
   RenderState,
   Text,
   TextFormat,
+  TextRuntime,
 } from '@flighthq/types';
 
 import { applyDOMStyle, initDOMElement } from './domStyle';
@@ -21,8 +23,6 @@ interface DOMTextData extends RendererData {
 function createDOMTextData(_state: RenderState, _source: Renderable): DOMTextData {
   return createEntity({ div: null });
 }
-
-const _textLayout = createTextLayoutResult();
 
 let _measureCtx: CanvasRenderingContext2D | null = null;
 
@@ -57,7 +57,8 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
     return ctx.measureText(t).width;
   };
 
-  layoutText(_textLayout, {
+  const result = getTextLayoutResult(getTextRuntime(source) as TextRuntime);
+  layoutText(result, {
     text,
     formatRanges: [createTextFormatRange(textFormat, 0, text.length)],
     width: LAYOUT_WIDTH,
@@ -65,11 +66,11 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
     measure,
   });
 
-  data.div.style.width = `${_textLayout.textWidth}px`;
-  data.div.style.height = `${_textLayout.textHeight}px`;
+  data.div.style.width = `${result.textWidth}px`;
+  data.div.style.height = `${result.textHeight}px`;
 
   let html = '';
-  for (const group of _textLayout.groups) {
+  for (const group of result.groups) {
     const fmt = group.format;
     const slice = htmlEscape(text.substring(group.startIndex, group.endIndex));
     const x = group.offsetX;

@@ -25,6 +25,10 @@
       "types": "./dist/domElement.d.ts",
       "default": "./dist/domElement.js"
     },
+    "./inputText": {
+      "types": "./dist/domInputText.d.ts",
+      "default": "./dist/domInputText.js"
+    },
     "./materials": {
       "types": "./dist/domMaterials.d.ts",
       "default": "./dist/domMaterials.js"
@@ -74,6 +78,7 @@
     "@flighthq/render-core": "*",
     "@flighthq/scenegraph-core": "*",
     "@flighthq/scenegraph-display": "*",
+    "@flighthq/text-input": "*",
     "@flighthq/text-layout": "*",
     "@flighthq/types": "*"
   },
