@@ -21,13 +21,15 @@ const LAYOUT_WIDTH = 10000;
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
 
-function getOffscreenCanvas(width: number, height: number): CanvasRenderingContext2D {
+function getOffscreenCanvas(width: number, height: number, pixelRatio: number = 1): CanvasRenderingContext2D {
   if (!_offscreenCanvas) {
     _offscreenCanvas = document.createElement('canvas');
     _offscreenCtx = _offscreenCanvas.getContext('2d')!;
   }
-  if (_offscreenCanvas.width !== width) _offscreenCanvas.width = width;
-  if (_offscreenCanvas.height !== height) _offscreenCanvas.height = height;
+  const pw = Math.ceil(width * pixelRatio);
+  const ph = Math.ceil(height * pixelRatio);
+  if (_offscreenCanvas.width !== pw) _offscreenCanvas.width = pw;
+  if (_offscreenCanvas.height !== ph) _offscreenCanvas.height = ph;
   return _offscreenCtx!;
 }
 
@@ -71,7 +73,9 @@ export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRende
 
   const w = Math.ceil(maxX);
   const h = Math.ceil(maxY);
-  const offCtx = getOffscreenCanvas(w, h);
+  const pixelRatio = internal.pixelRatio;
+  const offCtx = getOffscreenCanvas(w, h, pixelRatio);
+  offCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   offCtx.clearRect(0, 0, w, h);
   offCtx.textBaseline = 'alphabetic';
   offCtx.textAlign = 'start';
