@@ -1,5 +1,7 @@
 import type { Renderable, RenderNode, RenderState } from '@flighthq/types';
 
+import type { DisplayObjectKindTransformer } from './renderer';
+
 export type RenderStateInternal = Omit<
   RenderState,
   | 'backgroundColor'
@@ -18,6 +20,7 @@ export type RenderStateInternal = Omit<
   currentFrameID: number;
   currentQueue: RenderNode[];
   currentQueueLength: number;
+  displayObjectKindTransformers: DisplayObjectKindTransformer[];
   renderNodeMap: WeakMap<Renderable, RenderNode>;
   rendererMapID: number;
   tempStack: Renderable[];

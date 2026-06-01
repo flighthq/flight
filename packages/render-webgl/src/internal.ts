@@ -2,6 +2,8 @@ import type { WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
 
+export type { WebGLBitmapShader, WebGLShaderLocations };
+
 export type WebGLRenderStateInternal = Omit<WebGLRenderState, 'canvas' | 'gl'> & {
   canvas: HTMLCanvasElement;
   gl: WebGL2RenderingContext;

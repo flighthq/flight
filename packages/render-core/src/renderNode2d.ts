@@ -18,6 +18,7 @@ export function createDisplayObjectRenderNode(state: RenderState, source: Displa
   out.isMaskFrameID = -1;
   out.maskDepth = 0;
   out.scrollRectDepth = 0;
+  out.updateChildren = true;
   return out;
 }
 

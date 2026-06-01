@@ -1,8 +1,5 @@
-import { createMatrix } from '@flighthq/geometry';
 import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { addGraphChild } from '@flighthq/scenegraph-core';
-import { createDisplayObject, getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
-import type { ImageCacheResult } from '@flighthq/types';
+import { createDisplayObject } from '@flighthq/scenegraph-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import {
@@ -90,43 +87,5 @@ describe('renderCanvasDisplayObject', () => {
     renderCanvasDisplayObject(state, obj);
 
     expect(drawImageSpy).not.toHaveBeenCalled();
-  });
-
-  it('draws from imageCache slot when source is set', () => {
-    const state = makeState();
-    const obj = createDisplayObject();
-    const canvas = document.createElement('canvas');
-    canvas.width = 50;
-    canvas.height = 50;
-    const runtime = getDisplayObjectRuntime(obj) as ReturnType<typeof getDisplayObjectRuntime>;
-    (runtime as { imageCache: ImageCacheResult | null }).imageCache = {
-      source: { src: canvas, width: canvas.width, height: canvas.height, version: 0 } as any,
-      transform: createMatrix(),
-    };
-
-    const drawImageSpy = vi.spyOn(state.context, 'drawImage');
-    renderCanvasDisplayObject(state, obj);
-
-    expect(drawImageSpy).toHaveBeenCalledOnce();
-  });
-
-  it('recurses into children with cached results', () => {
-    const state = makeState();
-    const parent = createDisplayObject();
-    const child = createDisplayObject();
-    const canvas = document.createElement('canvas');
-    canvas.width = 50;
-    canvas.height = 50;
-    const childRuntime = getDisplayObjectRuntime(child);
-    (childRuntime as { imageCache: ImageCacheResult | null }).imageCache = {
-      source: { src: canvas, width: canvas.width, height: canvas.height, version: 0 } as any,
-      transform: createMatrix(),
-    };
-    addGraphChild(parent, child);
-
-    const drawImageSpy = vi.spyOn(state.context, 'drawImage');
-    renderCanvasDisplayObject(state, parent);
-
-    expect(drawImageSpy).toHaveBeenCalledOnce();
   });
 });

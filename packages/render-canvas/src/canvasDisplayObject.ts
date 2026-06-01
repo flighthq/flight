@@ -2,10 +2,8 @@ import { createNullRendererData, getOrCreateDisplayObjectRenderNode } from '@fli
 import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
 
-import { drawImageCacheResult } from './canvasCacheAsBitmap';
 import { popCanvasClipRectangle, pushCanvasClipRectangle } from './canvasClipRect';
 import { applyCanvasMask, popCanvasMask, pushCanvasMask } from './canvasMask';
-import type { CanvasRenderStateInternal } from './internal';
 
 export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderNode: DisplayObjectRenderNode): void {
   // Plain display objects have no visual geometry of their own.
@@ -40,6 +38,8 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
 
     drawObject(state, data);
 
+    if (!data.updateChildren) continue;
+
     const children = getDisplayObjectRuntime(current).children;
     if (children !== null) {
       for (let i = children.length - 1; i >= 0; i--) {
@@ -52,13 +52,6 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
 function drawObject(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
   if (data.renderer === null) return;
   pushMaskObject(state, data);
-  const skipImageCache = (state as CanvasRenderStateInternal).skipImageCache;
-  const cache = skipImageCache ? null : getDisplayObjectRuntime(data.source).imageCache;
-  if (cache !== null && cache.source !== null && cache.source.src !== null) {
-    drawImageCacheResult(state, data, cache);
-    popMaskObject(state, data);
-    return;
-  }
   data.renderer.draw(state, data);
   popMaskObject(state, data);
 }
