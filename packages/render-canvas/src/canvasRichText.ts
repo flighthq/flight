@@ -83,7 +83,12 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
   context.clip();
 
   if (source.data.selectable && richTextRuntime.selectionBeginIndex !== richTextRuntime.selectionEndIndex) {
-    getRichTextSelectionRectangles(_richTextSelectionRects, richTextRuntime.selectionBeginIndex, richTextRuntime.selectionEndIndex, result);
+    getRichTextSelectionRectangles(
+      _richTextSelectionRects,
+      richTextRuntime.selectionBeginIndex,
+      richTextRuntime.selectionEndIndex,
+      result,
+    );
     context.fillStyle = SELECTION_COLOR;
     context.globalAlpha = Math.min(1, renderNode.alpha * SELECTION_ALPHA);
     for (const rect of _richTextSelectionRects) {

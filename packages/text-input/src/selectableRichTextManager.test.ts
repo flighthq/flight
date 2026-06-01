@@ -66,7 +66,10 @@ describe('dispatchSelectableRichTextKeyDown', () => {
     const manager = createSelectableRichTextManager();
     const richText = createRichText({ data: { text: 'hello' } });
     focusSelectableRichText(manager, richText);
-    const result = dispatchSelectableRichTextKeyDown(manager, makeKeyData({ ctrlKey: true, key: 'a', keyCode: KeyCode.A }));
+    const result = dispatchSelectableRichTextKeyDown(
+      manager,
+      makeKeyData({ ctrlKey: true, key: 'a', keyCode: KeyCode.A }),
+    );
     expect(result).toBe(true);
     const runtime = getRichTextRuntime(richText) as RichTextRuntime;
     expect(runtime.selectionBeginIndex).toBe(0);

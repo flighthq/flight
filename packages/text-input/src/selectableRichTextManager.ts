@@ -65,11 +65,7 @@ export function dispatchSelectableRichTextPointerDown(
   }
 }
 
-export function dispatchSelectableRichTextPointerMove(
-  manager: SelectableRichTextManager,
-  x: number,
-  y: number,
-): void {
+export function dispatchSelectableRichTextPointerMove(manager: SelectableRichTextManager, x: number, y: number): void {
   const target = manager.focused;
   if (target === null) return;
   const runtime = getMutableRuntime(target);

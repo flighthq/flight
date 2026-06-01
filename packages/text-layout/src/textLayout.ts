@@ -262,7 +262,15 @@ function buildGroups(
     while (idx < end) {
       const rangeEnd = Math.min(end, formatRange.end);
       if (idx < rangeEnd) {
-        charAdvances(_charAdvances, text, currentFormat, idx, rangeEnd, measure, offsetX + baseX() + sumAdvances(allPositions));
+        charAdvances(
+          _charAdvances,
+          text,
+          currentFormat,
+          idx,
+          rangeEnd,
+          measure,
+          offsetX + baseX() + sumAdvances(allPositions),
+        );
         for (const p of _charAdvances) allPositions.push(p);
         idx = rangeEnd;
       }
