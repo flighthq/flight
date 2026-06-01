@@ -22,8 +22,13 @@ export function createCanvasRenderState(
   state.canvas = canvas;
   state.context = context;
   state.contextAttributes = context.getContextAttributes();
+  state.imageCacheBoundsX = 0;
+  state.imageCacheBoundsY = 0;
+  state.imageSmoothingEnabled = options.imageSmoothingEnabled ?? true;
+  state.imageSmoothingQuality = options.imageSmoothingQuality ?? 'high';
+  state.skipImageCache = false;
 
-  context.imageSmoothingEnabled = options.imageSmoothingEnabled ?? true;
-  context.imageSmoothingQuality = options.imageSmoothingQuality ?? 'high';
+  context.imageSmoothingEnabled = state.imageSmoothingEnabled;
+  context.imageSmoothingQuality = state.imageSmoothingQuality;
   return state;
 }

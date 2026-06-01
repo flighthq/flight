@@ -4,6 +4,7 @@ export * from './canvasCacheAsBitmap';
 export * from './canvasClipRect';
 export * from './canvasDisplayObject';
 export * from './canvasElement';
+export * from './canvasImageCache';
 export * from './canvasInputText';
 export * from './canvasMask';
 export * from './canvasMaterials';
