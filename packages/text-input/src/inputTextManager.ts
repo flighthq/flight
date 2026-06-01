@@ -87,11 +87,7 @@ export function dispatchInputTextPointerDown(
   }
 }
 
-export function dispatchInputTextPointerMove(
-  manager: InputTextManager,
-  x: number,
-  y: number,
-): void {
+export function dispatchInputTextPointerMove(manager: InputTextManager, x: number, y: number): void {
   const target = manager.focused;
   if (target === null || !target.enabled) return;
   const runtime = getInputTextRuntime(target) as InputTextRuntime;

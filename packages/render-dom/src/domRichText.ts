@@ -23,9 +23,9 @@ import type {
   TextRuntime,
 } from '@flighthq/types';
 
+import { getDomFontAscentCached, setDomFontAscentCached } from './domFontSource';
 import { applyDOMStyle, initDOMElement } from './domStyle';
 import { colorToCSS, formatToFont, htmlEscape } from './domTextHelpers';
-import { getDomFontAscentCached, setDomFontAscentCached } from './domFontSource';
 
 interface DOMRichTextData extends RendererData {
   div: HTMLDivElement | null;
@@ -102,7 +102,12 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
   let html = '';
 
   if (source.data.selectable && richTextRuntime.selectionBeginIndex !== richTextRuntime.selectionEndIndex) {
-    getRichTextSelectionRectangles(_richTextSelectionRects, richTextRuntime.selectionBeginIndex, richTextRuntime.selectionEndIndex, result);
+    getRichTextSelectionRectangles(
+      _richTextSelectionRects,
+      richTextRuntime.selectionBeginIndex,
+      richTextRuntime.selectionEndIndex,
+      result,
+    );
     for (const rect of _richTextSelectionRects) {
       html += `<div style="position:absolute;left:${rect.x - scrollXOffset}px;top:${rect.y - scrollYOffset}px;width:${rect.width}px;height:${rect.height}px;background:${DOM_SELECTION_COLOR};opacity:${DOM_SELECTION_ALPHA};pointer-events:none;"></div>`;
     }
@@ -174,9 +179,7 @@ function getDomFontAscent(ctx: CanvasRenderingContext2D, font: string): number {
   // getBoundingClientRect() gives the exact pixel distance CSS uses, with no
   // inference from canvas metrics. Falls back to canvas measurement in non-browser env.
   const ascent =
-    typeof document !== 'undefined' && document.body
-      ? probeCSSFontAscent(font)
-      : canvasFontAscentFallback(ctx, font);
+    typeof document !== 'undefined' && document.body ? probeCSSFontAscent(font) : canvasFontAscentFallback(ctx, font);
   setDomFontAscentCached(font, ascent);
   return ascent;
 }

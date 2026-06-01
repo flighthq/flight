@@ -1,8 +1,8 @@
 export * from './domBackground';
 export * from './domBitmap';
-export { connectFontSourceToDOMRenderer } from './domFontSource';
 export * from './domDisplayObject';
 export * from './domElement';
+export { connectFontSourceToDOMRenderer } from './domFontSource';
 export * from './domInputText';
 export * from './domMaterials';
 export * from './domQuadBatch';

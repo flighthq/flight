@@ -1,7 +1,13 @@
 import type { Video } from '@flighthq/types';
 import { VideoKind } from '@flighthq/types';
 
-import { computeVideoLocalBoundsRectangle, createVideo, createVideoData, createVideoRuntime, getVideoRuntime } from './video';
+import {
+  computeVideoLocalBoundsRectangle,
+  createVideo,
+  createVideoData,
+  createVideoRuntime,
+  getVideoRuntime,
+} from './video';
 
 describe('computeVideoLocalBoundsRectangle', () => {
   it('does not modify out when source element is null', () => {

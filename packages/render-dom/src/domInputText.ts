@@ -35,7 +35,8 @@ export function drawDOMInputText(state: DOMRenderState, renderNode: DisplayObjec
   const source = renderNode.source as InputText;
   const runtime = getInputTextRuntime(source) as InputTextRuntime;
   const data = renderNode.rendererData as DOMInputTextData | null;
-  if ((!runtime.focused && !source.data.alwaysShowSelection) || runtime.textLayout === null || data?.div == null) return;
+  if ((!runtime.focused && !source.data.alwaysShowSelection) || runtime.textLayout === null || data?.div == null)
+    return;
 
   const firstVisibleLine = source.data.scrollV - 1;
   const scrollYOffset =

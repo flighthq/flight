@@ -1,4 +1,10 @@
-import type { InputTextSelectionRectangle, Rectangle, TextLayoutGroup, TextLayoutResult, TextLineMetrics } from '@flighthq/types';
+import type {
+  InputTextSelectionRectangle,
+  Rectangle,
+  TextLayoutGroup,
+  TextLayoutResult,
+  TextLineMetrics,
+} from '@flighthq/types';
 
 export function getRichTextCharBoundaries(
   out: Rectangle,
@@ -101,10 +107,7 @@ export function getRichTextLineLength(layout: Readonly<TextLayoutResult>, lineIn
   return start === Infinity ? 0 : end - start;
 }
 
-export function getRichTextLineMetrics(
-  layout: Readonly<TextLayoutResult>,
-  lineIndex: number,
-): TextLineMetrics | null {
+export function getRichTextLineMetrics(layout: Readonly<TextLayoutResult>, lineIndex: number): TextLineMetrics | null {
   let ascent = 0;
   let descent = 0;
   let leading = 0;
@@ -140,11 +143,7 @@ export function getRichTextLineOffset(layout: Readonly<TextLayoutResult>, lineIn
   return 0;
 }
 
-export function getRichTextLineText(
-  text: string,
-  layout: Readonly<TextLayoutResult>,
-  lineIndex: number,
-): string {
+export function getRichTextLineText(text: string, layout: Readonly<TextLayoutResult>, lineIndex: number): string {
   let start = Infinity;
   let end = 0;
   for (const group of layout.groups) {
@@ -155,11 +154,7 @@ export function getRichTextLineText(
   return start === Infinity ? '' : text.slice(start, end);
 }
 
-export function getRichTextLinkAtPoint(
-  layout: Readonly<TextLayoutResult>,
-  x: number,
-  y: number,
-): string | null {
+export function getRichTextLinkAtPoint(layout: Readonly<TextLayoutResult>, x: number, y: number): string | null {
   for (const group of layout.groups) {
     if (!group.format.url) continue;
     if (

@@ -108,7 +108,6 @@ export const defaultWebGLRichTextRenderer: DisplayObjectRenderer = {
   drawMask: drawWebGLRichTextMask,
 };
 
-
 function drawRichTextToCanvas(
   context: CanvasRenderingContext2D,
   source: RichText,
