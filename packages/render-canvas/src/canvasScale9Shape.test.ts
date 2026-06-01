@@ -1,4 +1,4 @@
-import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/scenegraph-display';
 import { Scale9ShapeKind } from '@flighthq/types';
 
@@ -22,7 +22,7 @@ describe('drawCanvasScale9Shape', () => {
     const state = createCanvasRenderState(canvas);
     registerRenderer(state, Scale9ShapeKind, defaultCanvasScale9ShapeRenderer);
     const shape = createScale9Shape(grid);
-    const data = getDisplayObjectRenderNode(state, shape);
+    const data = getOrCreateDisplayObjectRenderNode(state, shape);
     expect(() => drawCanvasScale9Shape(state, data)).not.toThrow();
   });
 });

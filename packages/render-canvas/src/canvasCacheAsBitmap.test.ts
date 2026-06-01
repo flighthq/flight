@@ -1,5 +1,5 @@
 import { createMatrix, setRectangle } from '@flighthq/geometry';
-import { getDisplayObjectRenderNode } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-core';
 import { getLocalBoundsRectangle } from '@flighthq/scenegraph-core';
 import { createDisplayObject, getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 
@@ -21,7 +21,7 @@ describe('drawImageCacheResult', () => {
     const canvas = document.createElement('canvas');
     const state = createCanvasRenderState(canvas);
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     const cache = { canvas: null, transform: createMatrix() };
 
     expect(() => drawImageCacheResult(state, data, cache)).not.toThrow();
@@ -30,7 +30,7 @@ describe('drawImageCacheResult', () => {
   it('calls drawImage when canvas is set', () => {
     const { state, obj } = makeStateAndObj();
     renderToImageCache(state, obj, null, 0xff0000);
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     const cache = getDisplayObjectRuntime(obj).imageCache!;
     const spy = vi.spyOn(state.context, 'drawImage');
 

@@ -1,5 +1,5 @@
 import { addTextureAtlasRegion, createImageSourceFromCanvas, createTextureAtlas } from '@flighthq/assets';
-import { getSpriteRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateSpriteRenderNode, registerRenderer } from '@flighthq/render-core';
 import { createQuadBatch, resizeQuadBatch } from '@flighthq/scenegraph-sprite';
 import { QuadBatchKind } from '@flighthq/types';
 
@@ -35,7 +35,7 @@ describe('drawDOMQuadBatch', () => {
     const state = makeState();
     const qb = createQuadBatch();
     qb.data.atlas = null;
-    const renderNode = getSpriteRenderNode(state, qb);
+    const renderNode = getOrCreateSpriteRenderNode(state, qb);
 
     drawDOMQuadBatch(state, renderNode);
 
@@ -47,7 +47,7 @@ describe('drawDOMQuadBatch', () => {
     const qb = createQuadBatch();
     qb.data.atlas = makeAtlas();
     qb.data.instanceCount = 0;
-    const renderNode = getSpriteRenderNode(state, qb);
+    const renderNode = getOrCreateSpriteRenderNode(state, qb);
 
     drawDOMQuadBatch(state, renderNode);
 
@@ -62,7 +62,7 @@ describe('drawDOMQuadBatch', () => {
     qb.data.ids[0] = 0;
     qb.data.transforms[0] = 0;
     qb.data.transforms[1] = 0;
-    const renderNode = getSpriteRenderNode(state, qb);
+    const renderNode = getOrCreateSpriteRenderNode(state, qb);
     renderNode.rendererData = null;
 
     drawDOMQuadBatch(state, renderNode);
@@ -78,7 +78,7 @@ describe('drawDOMQuadBatch', () => {
     qb.data.ids[0] = 0;
     qb.data.transforms[0] = 10;
     qb.data.transforms[1] = 10;
-    const renderNode = getSpriteRenderNode(state, qb);
+    const renderNode = getOrCreateSpriteRenderNode(state, qb);
 
     drawDOMQuadBatch(state, renderNode);
 

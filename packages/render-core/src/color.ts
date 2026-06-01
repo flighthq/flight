@@ -1,4 +1,8 @@
 import { concatColorTransform, copyColorTransform, isIdentityColorTransform } from '@flighthq/materials';
+
+export function rgbaToHexString(color: number): string {
+  return `#${(color & 0xffffff).toString(16).padStart(6, '0')}`;
+}
 import type { ColorTransform, RenderNode, RenderState } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';

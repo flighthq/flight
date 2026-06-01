@@ -5,7 +5,7 @@ import {
   createTileset,
   initTilesetRegions,
 } from '@flighthq/assets';
-import { getSpriteRenderNode, updateSpriteBeforeRender } from '@flighthq/render-core';
+import { getOrCreateSpriteRenderNode, updateSpriteBeforeRender } from '@flighthq/render-core';
 import { createTilemap, setTilemapTile } from '@flighthq/scenegraph-sprite';
 
 import { createCanvasRenderState } from './canvasRenderState';
@@ -39,7 +39,7 @@ describe('drawCanvasTilemap', () => {
     const state = makeState();
     const tilemap = createTilemap();
     updateSpriteBeforeRender(state, tilemap);
-    const renderNode = getSpriteRenderNode(state, tilemap);
+    const renderNode = getOrCreateSpriteRenderNode(state, tilemap);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasTilemap(state, renderNode);
     expect(spy).not.toHaveBeenCalled();
@@ -52,7 +52,7 @@ describe('drawCanvasTilemap', () => {
     setTilemapTile(tilemap, 0, 0, 0);
     setTilemapTile(tilemap, 1, 0, 1);
     updateSpriteBeforeRender(state, tilemap);
-    const renderNode = getSpriteRenderNode(state, tilemap);
+    const renderNode = getOrCreateSpriteRenderNode(state, tilemap);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasTilemap(state, renderNode);
     expect(spy).toHaveBeenCalledTimes(2);
@@ -65,7 +65,7 @@ describe('drawCanvasTilemap', () => {
     setTilemapTile(tilemap, 0, 0, 0);
     // cell (1,0) remains -1
     updateSpriteBeforeRender(state, tilemap);
-    const renderNode = getSpriteRenderNode(state, tilemap);
+    const renderNode = getOrCreateSpriteRenderNode(state, tilemap);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasTilemap(state, renderNode);
     expect(spy).toHaveBeenCalledTimes(1);

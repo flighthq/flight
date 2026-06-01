@@ -6,7 +6,7 @@ import { createSprite } from '@flighthq/scenegraph-sprite';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState, SpriteNode } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';
-import { getDisplayObjectRenderNode, getSpriteRenderNode } from './renderNode2d';
+import { getOrCreateDisplayObjectRenderNode, getOrCreateSpriteRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
 import { updateDisplayObjectBeforeRender, updateSpriteBeforeRender } from './update';
 
@@ -22,8 +22,8 @@ describe('updateDisplayObjectBeforeRender', () => {
     child = createDisplayObject();
     addGraphChild(parent, child);
     state = createRenderState();
-    parentData = getDisplayObjectRenderNode(state, parent);
-    childData = getDisplayObjectRenderNode(state, child);
+    parentData = getOrCreateDisplayObjectRenderNode(state, parent);
+    childData = getOrCreateDisplayObjectRenderNode(state, child);
   });
 
   it('updates appearance for all children', () => {
@@ -96,11 +96,11 @@ describe('updateDisplayObjectBeforeRender', () => {
     addGraphChild(parent2, childB);
     addGraphChild(childA, childA_child);
     addGraphChild(childB, childB_child);
-    parent2Data = getDisplayObjectRenderNode(state, parent2);
-    childAData = getDisplayObjectRenderNode(state, childA);
-    childBData = getDisplayObjectRenderNode(state, childB);
-    childA_childData = getDisplayObjectRenderNode(state, childA_child);
-    childB_childData = getDisplayObjectRenderNode(state, childB_child);
+    parent2Data = getOrCreateDisplayObjectRenderNode(state, parent2);
+    childAData = getOrCreateDisplayObjectRenderNode(state, childA);
+    childBData = getOrCreateDisplayObjectRenderNode(state, childB);
+    childA_childData = getOrCreateDisplayObjectRenderNode(state, childA_child);
+    childB_childData = getOrCreateDisplayObjectRenderNode(state, childB_child);
   });
 
   it('resets up the tree properly when siblings are not in a scroll rect', () => {
@@ -127,7 +127,7 @@ describe('updateDisplayObjectBeforeRender', () => {
     const mask = createDisplayObject();
     childA.mask = mask;
     updateDisplayObjectBeforeRender(state, parent2);
-    expect(getDisplayObjectRenderNode(state, mask).isMaskFrameID).toStrictEqual(state.currentFrameID);
+    expect(getOrCreateDisplayObjectRenderNode(state, mask).isMaskFrameID).toStrictEqual(state.currentFrameID);
   });
 
   it('updates appearance and transform for all objects, including mask children', () => {
@@ -137,7 +137,7 @@ describe('updateDisplayObjectBeforeRender', () => {
     updateDisplayObjectBeforeRender(state, parent2);
     const currentFrameID = state.currentFrameID;
     [parent2, childA, childB, childA_child, childB_child, mask, maskChild].every((obj) => {
-      const data = getDisplayObjectRenderNode(state, obj);
+      const data = getOrCreateDisplayObjectRenderNode(state, obj);
       expect(data.appearanceFrameID).toStrictEqual(currentFrameID);
       expect(data.transformFrameID).toStrictEqual(currentFrameID);
     });
@@ -164,7 +164,7 @@ describe('updateSpriteBeforeRender', () => {
 
     updateSpriteBeforeRender(state, root);
 
-    const t = getSpriteRenderNode(state, child).transform2D;
+    const t = getOrCreateSpriteRenderNode(state, child).transform2D;
     expect(t.tx).toBe(40);
     expect(t.ty).toBe(20);
     expect(t.a).toBe(4);
@@ -179,7 +179,7 @@ describe('updateSpriteBeforeRender', () => {
 
     updateSpriteBeforeRender(state, root);
 
-    const t = getSpriteRenderNode(state, child).transform2D;
+    const t = getOrCreateSpriteRenderNode(state, child).transform2D;
     expect(t.tx).toBe(60);
     expect(t.ty).toBe(35);
   });
@@ -194,7 +194,7 @@ describe('updateSpriteBeforeRender', () => {
 
     updateSpriteBeforeRender(state, root);
 
-    const t = getSpriteRenderNode(state, child).transform2D;
+    const t = getOrCreateSpriteRenderNode(state, child).transform2D;
     expect(t.tx).toBe(130); // 100 + 2*15
     expect(t.ty).toBe(100); // 80 + 2*10
   });

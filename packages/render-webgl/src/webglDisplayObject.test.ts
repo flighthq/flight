@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { addGraphChild } from '@flighthq/scenegraph-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { WebGLRenderState } from '@flighthq/types';
@@ -36,7 +36,7 @@ describe('renderWebGLDisplayObject', () => {
     registerRenderer(state, DisplayObjectKind, renderer);
 
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     data.visible = true;
     data.alpha = 1;
     data.transform2D = createMatrix();
@@ -52,7 +52,7 @@ describe('renderWebGLDisplayObject', () => {
     const renderer = makeRenderer();
 
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     data.visible = false;
     data.renderer = renderer;
 
@@ -66,7 +66,7 @@ describe('renderWebGLDisplayObject', () => {
     const renderer = makeRenderer();
 
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     data.visible = true;
     data.alpha = 0;
     data.renderer = renderer;
@@ -81,7 +81,7 @@ describe('renderWebGLDisplayObject', () => {
     const renderer = makeRenderer();
 
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     data.visible = true;
     data.alpha = 1;
     data.transform2D = createMatrix(0, 0, 0, 0);
@@ -100,13 +100,13 @@ describe('renderWebGLDisplayObject', () => {
     const child = createDisplayObject();
     addGraphChild(parent, child);
 
-    const parentData = getDisplayObjectRenderNode(state, parent);
+    const parentData = getOrCreateDisplayObjectRenderNode(state, parent);
     parentData.visible = true;
     parentData.alpha = 1;
     parentData.transform2D = createMatrix();
     parentData.renderer = null;
 
-    const childData = getDisplayObjectRenderNode(state, child);
+    const childData = getOrCreateDisplayObjectRenderNode(state, child);
     childData.visible = true;
     childData.alpha = 1;
     childData.transform2D = createMatrix();

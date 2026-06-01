@@ -1,5 +1,5 @@
 import { createImageSource, createImageSourceFromCanvas } from '@flighthq/assets';
-import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { createBitmap } from '@flighthq/scenegraph-display';
 import { BitmapKind } from '@flighthq/types';
 
@@ -42,7 +42,7 @@ describe('drawDOMBitmap', () => {
     const state = makeState();
     const bitmap = createBitmap();
     bitmap.data.image = null;
-    const renderNode = getDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
 
     drawDOMBitmap(state, renderNode);
 
@@ -53,7 +53,7 @@ describe('drawDOMBitmap', () => {
     const state = makeState();
     const bitmap = createBitmap();
     bitmap.data.image = makeHTMLImageSource();
-    const renderNode = getDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
 
     drawDOMBitmap(state, renderNode);
 
@@ -65,7 +65,7 @@ describe('drawDOMBitmap', () => {
     const state = makeState();
     const bitmap = createBitmap();
     bitmap.data.image = makeCanvasImageSource();
-    const renderNode = getDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
 
     drawDOMBitmap(state, renderNode);
 
@@ -77,7 +77,7 @@ describe('drawDOMBitmap', () => {
     const state = makeState();
     const bitmap = createBitmap();
     bitmap.data.image = makeHTMLImageSource();
-    const renderNode = getDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
 
     drawDOMBitmap(state, renderNode);
     const firstImg = state.element.children[0];
@@ -94,7 +94,7 @@ describe('drawDOMBitmap', () => {
     const state = makeState();
     const bitmap = createBitmap();
     bitmap.data.image = makeCanvasImageSource();
-    const renderNode = getDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
 
     drawDOMBitmap(state, renderNode);
 
@@ -108,7 +108,7 @@ describe('drawDOMBitmapMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const bitmap = createBitmap();
-    const renderNode = getDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
     expect(() => drawDOMBitmapMask(state, renderNode)).not.toThrow();
   });
 });

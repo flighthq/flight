@@ -3,6 +3,7 @@ import {
   addGraphChild,
   appendShapeBeginFill,
   appendShapeRectangle,
+  computeTextFormatFontString,
   connectSignal,
   createApplication,
   createDisplayObject,
@@ -10,7 +11,6 @@ import {
   createShape,
   createTextFormatRange,
   createTextLayoutResult,
-  formatToCanvasFont,
   invalidateRender,
   layoutText,
   startApplicationLoop,
@@ -61,7 +61,7 @@ textField.data.wordWrap = true;
 const measureCanvas = document.createElement('canvas');
 const measureCtx = measureCanvas.getContext('2d')!;
 const measure: TextMeasureFn = (t, fmt) => {
-  measureCtx.font = formatToCanvasFont(fmt);
+  measureCtx.font = computeTextFormatFontString(fmt);
   return measureCtx.measureText(t).width;
 };
 

@@ -3,7 +3,7 @@ import { addGraphChild, getWorldTransformMatrix, invalidateLocalTransform } from
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
-import { getDisplayObjectRenderNode } from './renderNode2d';
+import { getOrCreateDisplayObjectRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
 import { updateDisplayObjectRenderTransform, updateRenderTransform } from './transform2d';
 
@@ -19,8 +19,8 @@ describe('updateDisplayObjectRenderTransform', () => {
     child = createDisplayObject();
     addGraphChild(parent, child);
     state = createRenderState();
-    parentData = getDisplayObjectRenderNode(state, parent);
-    // childData = getDisplayObjectRenderNode(state, child);
+    parentData = getOrCreateDisplayObjectRenderNode(state, parent);
+    // childData = getOrCreateDisplayObjectRenderNode(state, child);
   });
 
   it('applies scrollRect offset in render transform but not world transform', () => {
@@ -55,8 +55,8 @@ describe('updateRenderTransform', () => {
     child = createDisplayObject();
     addGraphChild(parent, child);
     state = createRenderState();
-    parentData = getDisplayObjectRenderNode(state, parent);
-    childData = getDisplayObjectRenderNode(state, child);
+    parentData = getOrCreateDisplayObjectRenderNode(state, parent);
+    childData = getOrCreateDisplayObjectRenderNode(state, child);
   });
 
   it('recalculates the first time', () => {

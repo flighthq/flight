@@ -1,6 +1,7 @@
-import { createNullRendererData } from '@flighthq/render-core';
+import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } from '@flighthq/render-core';
 import { getRichTextRuntime } from '@flighthq/scenegraph-display';
 import {
+  computeRichTextContent,
   getRichTextContent,
   getRichTextFieldHeight,
   getRichTextFieldWidth,
@@ -8,7 +9,6 @@ import {
   getRichTextSelectionRectangles,
   getTextLayoutResult,
   layoutText,
-  resolveRichTextContent,
 } from '@flighthq/text-layout';
 import type { InputTextSelectionRectangle } from '@flighthq/types';
 import type {
@@ -23,7 +23,6 @@ import type {
 
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { setCanvasBlendMode } from './canvasMaterials';
-import { colorToHex, formatToCanvasFont } from './canvasTextHelpers';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasRichText(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
@@ -38,11 +37,11 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
 
   const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
   const content = getRichTextContent(richTextRuntime);
-  resolveRichTextContent(content, data);
+  computeRichTextContent(content, data);
   const { text } = content;
 
   const measure = (t: string, fmt: TextFormat): number => {
-    context.font = formatToCanvasFont(fmt);
+    context.font = computeTextFormatFontString(fmt);
     return context.measureText(t).width;
   };
 
@@ -60,12 +59,12 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
   const fieldH = getRichTextFieldHeight(data, result);
 
   if (data.background) {
-    context.fillStyle = colorToHex(data.backgroundColor);
+    context.fillStyle = rgbaToHexString(data.backgroundColor);
     context.fillRect(0, 0, fieldW, fieldH);
   }
 
   if (data.border) {
-    context.strokeStyle = colorToHex(data.borderColor);
+    context.strokeStyle = rgbaToHexString(data.borderColor);
     context.lineWidth = 1;
     context.strokeRect(0, 0, fieldW, fieldH);
   }
@@ -104,8 +103,8 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
   for (const group of result.groups) {
     if (group.lineIndex < firstVisibleLine) continue;
 
-    context.font = formatToCanvasFont(group.format);
-    context.fillStyle = colorToHex(group.format.color ?? data.textColor);
+    context.font = computeTextFormatFontString(group.format);
+    context.fillStyle = rgbaToHexString(group.format.color ?? data.textColor);
     const slice = text.substring(group.startIndex, group.endIndex);
     const x = group.offsetX - scrollXOffset;
     const y = group.offsetY + group.ascent - scrollYOffset;
@@ -118,7 +117,7 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
 
     context.fillText(slice, x, y);
 
-    const lineColor = colorToHex(group.format.color ?? data.textColor);
+    const lineColor = rgbaToHexString(group.format.color ?? data.textColor);
     const lineWidth = Math.max(1, (group.format.size ?? 12) / 16);
     if (group.format.underline || group.format.strikethrough) {
       context.strokeStyle = lineColor;

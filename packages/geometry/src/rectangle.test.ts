@@ -1,8 +1,11 @@
 import {
   cloneRectangle,
+  containsRectanglePoint,
+  containsRectanglePointXY,
   copyRectangle,
   createRectangle,
   createVector2,
+  enclosesRectangle,
   equalsRectangle,
   expandRectangleToPoint,
   getRectangleBottom,
@@ -27,9 +30,6 @@ import {
   normalizeRectangle,
   offsetRectangle,
   offsetRectangleByPoint,
-  rectangleContains,
-  rectangleContainsPoint,
-  rectangleEncloses,
   setEmptyRectangle,
   setRectangle,
   setRectangleBottom,
@@ -77,6 +77,39 @@ describe('cloneRectangle', () => {
   });
 });
 
+describe('containsRectanglePoint', () => {
+  it('delegates to contains', () => {
+    expect(containsRectanglePoint(r, createVector2(5, 10))).toBe(true);
+  });
+
+  it('allows point-like and rectangle-like objects', () => {
+    const r = { x: 0, y: 0, width: 100, height: 100 };
+    const p = { x: 5, y: 10 };
+    expect(containsRectanglePoint(r, p)).toBe(true);
+  });
+});
+
+describe('containsRectanglePointXY', () => {
+  it('returns true for a point inside', () => {
+    expect(containsRectanglePointXY(r, 5, 10)).toBe(true);
+  });
+
+  it('returns false for a point outside', () => {
+    expect(containsRectanglePointXY(r, -1, 0)).toBe(false);
+  });
+
+  it('works with flipped rectangle', () => {
+    r.width = -10;
+    r.height = -20;
+    expect(containsRectanglePointXY(r, -5, -10)).toBe(true);
+  });
+
+  it('allows a rectangle-like object', () => {
+    const r = { x: 0, y: 0, width: -10, height: -20 };
+    expect(containsRectanglePointXY(r, -5, -10)).toBe(true);
+  });
+});
+
 describe('copyRectangle', () => {
   it('copies values', () => {
     copyRectangle(r, r2);
@@ -117,6 +150,76 @@ describe('createRectangle', () => {
     expect(rect.y).toBe(2);
     expect(rect.width).toBe(3);
     expect(rect.height).toBe(4);
+  });
+});
+
+describe('enclosesRectangle', () => {
+  it('returns true if rectangle is fully inside', () => {
+    // r: 0,0,10,10
+    // r2: 2,2,5,5 fully inside r
+    r2.x = 2;
+    r2.y = 2;
+    r2.width = 5;
+    r2.height = 5;
+    expect(enclosesRectangle(r, r2)).toBe(true);
+  });
+
+  it('returns false if rectangle partially outside', () => {
+    r2.x = -1; // partially outside on the left
+    r2.y = 2;
+    r2.width = 5;
+    r2.height = 5;
+    expect(enclosesRectangle(r, r2)).toBe(false);
+  });
+
+  it('works with flipped rectangle fully inside', () => {
+    // Flipped rectangle: width and height negative
+    r2.x = 5;
+    r2.y = 6;
+    r2.width = -3; // left edge at 2
+    r2.height = -4; // top edge at 2
+    expect(enclosesRectangle(r, r2)).toBe(true);
+  });
+
+  it('returns false if flipped rectangle exceeds bounds', () => {
+    // Flipped rectangle exceeding bounds on left/top
+    r2.x = 15;
+    r2.y = 15;
+    r2.width = -20; // left edge at -5
+    r2.height = -20; // top edge at -5
+    expect(enclosesRectangle(r, r2)).toBe(false);
+  });
+
+  it('works if flipped rectangle exactly fits inside', () => {
+    // Flipped rectangle with exact bounds
+    r2.x = 10;
+    r2.y = 10;
+    r2.width = -10; // left edge 0
+    r2.height = -10; // top edge 0
+    expect(enclosesRectangle(r, r2)).toBe(true);
+  });
+
+  it('returns false if zero-size rectangle outside', () => {
+    r2.x = 20;
+    r2.y = 20;
+    r2.width = 0;
+    r2.height = 0;
+    expect(enclosesRectangle(r, r2)).toBe(false);
+  });
+
+  it('returns true if zero-size rectangle exactly on a corner', () => {
+    r2.x = 0;
+    r2.y = 0;
+    r2.width = 0;
+    r2.height = 0;
+    expect(enclosesRectangle(r, r2)).toBe(true);
+  });
+
+  it('allows a rectangle-like object', () => {
+    // r: 0,0,10,10
+    // r2: 2,2,5,5 fully inside r
+    const r2 = { x: 2, y: 2, width: 5, height: 5 };
+    expect(enclosesRectangle(r, r2)).toBe(true);
   });
 });
 
@@ -614,109 +717,6 @@ describe('offsetRectangleByPoint', () => {
     offsetRectangleByPoint(out, r, p);
     expect(out.x).toBe(3);
     expect(out.y).toBe(4);
-  });
-});
-
-describe('rectangleContains', () => {
-  it('returns true for a point inside', () => {
-    expect(rectangleContains(r, 5, 10)).toBe(true);
-  });
-
-  it('returns false for a point outside', () => {
-    expect(rectangleContains(r, -1, 0)).toBe(false);
-  });
-
-  it('works with flipped rectangle', () => {
-    r.width = -10;
-    r.height = -20;
-    expect(rectangleContains(r, -5, -10)).toBe(true);
-  });
-
-  it('allows a rectangle-like object', () => {
-    const r = { x: 0, y: 0, width: -10, height: -20 };
-    expect(rectangleContains(r, -5, -10)).toBe(true);
-  });
-});
-
-describe('rectangleContainsPoint', () => {
-  it('delegates to contains', () => {
-    expect(rectangleContainsPoint(r, createVector2(5, 10))).toBe(true);
-  });
-
-  it('allows point-like and rectangle-like objects', () => {
-    const r = { x: 0, y: 0, width: 100, height: 100 };
-    const p = { x: 5, y: 10 };
-    expect(rectangleContainsPoint(r, p)).toBe(true);
-  });
-});
-
-describe('rectangleEncloses', () => {
-  it('returns true if rectangle is fully inside', () => {
-    // r: 0,0,10,10
-    // r2: 2,2,5,5 fully inside r
-    r2.x = 2;
-    r2.y = 2;
-    r2.width = 5;
-    r2.height = 5;
-    expect(rectangleEncloses(r, r2)).toBe(true);
-  });
-
-  it('returns false if rectangle partially outside', () => {
-    r2.x = -1; // partially outside on the left
-    r2.y = 2;
-    r2.width = 5;
-    r2.height = 5;
-    expect(rectangleEncloses(r, r2)).toBe(false);
-  });
-
-  it('works with flipped rectangle fully inside', () => {
-    // Flipped rectangle: width and height negative
-    r2.x = 5;
-    r2.y = 6;
-    r2.width = -3; // left edge at 2
-    r2.height = -4; // top edge at 2
-    expect(rectangleEncloses(r, r2)).toBe(true);
-  });
-
-  it('returns false if flipped rectangle exceeds bounds', () => {
-    // Flipped rectangle exceeding bounds on left/top
-    r2.x = 15;
-    r2.y = 15;
-    r2.width = -20; // left edge at -5
-    r2.height = -20; // top edge at -5
-    expect(rectangleEncloses(r, r2)).toBe(false);
-  });
-
-  it('works if flipped rectangle exactly fits inside', () => {
-    // Flipped rectangle with exact bounds
-    r2.x = 10;
-    r2.y = 10;
-    r2.width = -10; // left edge 0
-    r2.height = -10; // top edge 0
-    expect(rectangleEncloses(r, r2)).toBe(true);
-  });
-
-  it('returns false if zero-size rectangle outside', () => {
-    r2.x = 20;
-    r2.y = 20;
-    r2.width = 0;
-    r2.height = 0;
-    expect(rectangleEncloses(r, r2)).toBe(false);
-  });
-
-  it('returns true if zero-size rectangle exactly on a corner', () => {
-    r2.x = 0;
-    r2.y = 0;
-    r2.width = 0;
-    r2.height = 0;
-    expect(rectangleEncloses(r, r2)).toBe(true);
-  });
-
-  it('allows a rectangle-like object', () => {
-    // r: 0,0,10,10
-    // r2: 2,2,5,5 fully inside r
-    const r2 = { x: 2, y: 2, width: 5, height: 5 };
-    expect(rectangleEncloses(r, r2)).toBe(true);
   });
 });
 

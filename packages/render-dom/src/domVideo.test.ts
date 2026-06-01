@@ -1,4 +1,4 @@
-import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { createVideo } from '@flighthq/scenegraph-display';
 import { VideoKind } from '@flighthq/types';
 
@@ -24,7 +24,7 @@ describe('drawDOMVideo', () => {
   it('does not throw when source element is null', () => {
     const state = makeState();
     const video = createVideo();
-    const renderNode = getDisplayObjectRenderNode(state, video);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, video);
     expect(() => drawDOMVideo(state, renderNode)).not.toThrow();
   });
 });
@@ -33,7 +33,7 @@ describe('drawDOMVideoMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const video = createVideo();
-    const renderNode = getDisplayObjectRenderNode(state, video);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, video);
     expect(() => drawDOMVideoMask(state, renderNode)).not.toThrow();
   });
 });

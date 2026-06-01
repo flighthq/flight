@@ -1,4 +1,4 @@
-import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { createDOMElement } from '@flighthq/scenegraph-display';
 import { DOMElementKind } from '@flighthq/types';
 
@@ -25,7 +25,7 @@ describe('drawDOMElement', () => {
     const state = makeState();
     const node = createDOMElement();
     node.data.element = null;
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMElement(state, renderNode);
 
@@ -36,7 +36,7 @@ describe('drawDOMElement', () => {
     const state = makeState();
     const inner = document.createElement('span');
     const node = createDOMElement({ data: { element: inner } });
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMElement(state, renderNode);
 
@@ -47,7 +47,7 @@ describe('drawDOMElement', () => {
     const state = makeState();
     const inner = document.createElement('div');
     const node = createDOMElement({ data: { element: inner } });
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMElement(state, renderNode);
 
@@ -63,7 +63,7 @@ describe('drawDOMElement', () => {
     inner.style.position = 'absolute';
     inner.style.left = '50px';
     const node = createDOMElement({ data: { element: inner } });
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMElement(state, renderNode);
 
@@ -74,7 +74,7 @@ describe('drawDOMElement', () => {
     const state = makeState();
     const inner = document.createElement('div');
     const node = createDOMElement({ data: { element: inner } });
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
     drawDOMElement(state, renderNode);
 
@@ -86,7 +86,7 @@ describe('drawDOMElementMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const node = createDOMElement();
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
     expect(() => drawDOMElementMask(state, renderNode)).not.toThrow();
   });
 });

@@ -3,7 +3,7 @@ import { createDisplayObject } from '@flighthq/scenegraph-display';
 import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
 import { updateAppearance } from './appearance';
-import { getDisplayObjectRenderNode } from './renderNode2d';
+import { getOrCreateDisplayObjectRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
 
 describe('updateAppearance', () => {
@@ -18,8 +18,8 @@ describe('updateAppearance', () => {
     child = createDisplayObject();
     addGraphChild(parent, child);
     state = createRenderState();
-    parentData = getDisplayObjectRenderNode(state, parent);
-    childData = getDisplayObjectRenderNode(state, child);
+    parentData = getOrCreateDisplayObjectRenderNode(state, parent);
+    childData = getOrCreateDisplayObjectRenderNode(state, child);
   });
 
   it('recalculates the first time', () => {

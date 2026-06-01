@@ -1,6 +1,6 @@
 import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
 import { registerRenderer, updateSpriteBeforeRender } from '@flighthq/render-core';
-import { getSpriteRenderNode } from '@flighthq/render-core';
+import { getOrCreateSpriteRenderNode } from '@flighthq/render-core';
 import {
   addGraphChild,
   setTransformScaleX,
@@ -39,7 +39,7 @@ describe('drawCanvasSprite', () => {
     sprite.data.atlas = atlas;
     sprite.data.id = 0;
     updateSpriteBeforeRender(state, sprite);
-    const renderNode = getSpriteRenderNode(state, sprite);
+    const renderNode = getOrCreateSpriteRenderNode(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasSprite(state, renderNode);
     expect(spy).toHaveBeenCalled();
@@ -49,7 +49,7 @@ describe('drawCanvasSprite', () => {
     const state = makeState();
     const sprite = createSprite();
     updateSpriteBeforeRender(state, sprite);
-    const renderNode = getSpriteRenderNode(state, sprite);
+    const renderNode = getOrCreateSpriteRenderNode(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasSprite(state, renderNode);
     expect(spy).not.toHaveBeenCalled();

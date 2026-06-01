@@ -95,9 +95,9 @@ export function getGraphSignals<GraphKind extends symbol, Traits extends object>
 }
 
 export function setGraphNodeEnabled<GraphKind extends symbol, Traits extends object>(
-  source: GraphNode<GraphKind, Traits>,
+  target: GraphNode<GraphKind, Traits>,
   value: boolean,
 ): void {
-  source.enabled = value;
-  invalidate(source);
+  target.enabled = value;
+  invalidate(target);
 }

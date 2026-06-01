@@ -1,4 +1,4 @@
-import { getSpriteRenderNode } from '@flighthq/render-core';
+import { getOrCreateSpriteRenderNode } from '@flighthq/render-core';
 import { getSpriteNodeRuntime } from '@flighthq/scenegraph-sprite';
 import type { SpriteNode, WebGLRenderState } from '@flighthq/types';
 
@@ -16,7 +16,7 @@ export function renderWebGLSprite(state: WebGLRenderState, source: SpriteNode): 
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as SpriteNode;
-    const data = getSpriteRenderNode(state, current);
+    const data = getOrCreateSpriteRenderNode(state, current);
 
     const shouldRender = data.visible && data.alpha > 0 && (data.transform2D.a !== 0 || data.transform2D.d !== 0);
     if (!shouldRender) continue;

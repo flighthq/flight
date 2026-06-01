@@ -1,4 +1,4 @@
-import { intersectsRectangle, inverseMatrixTransformPointXY, rectangleContains } from '@flighthq/geometry';
+import { containsRectanglePointXY, intersectsRectangle, inverseMatrixTransformPointXY } from '@flighthq/geometry';
 import {
   getGraphNodeRuntime,
   getGraphParent,
@@ -41,7 +41,7 @@ export function findHitTarget(
  **/
 export function hitTestLocalBoundsRectangle(source: GraphNode<symbol, object>, x: number, y: number): boolean {
   inverseMatrixTransformPointXY(hitTestLocalBoundsRectPoint, getWorldTransformMatrix(source as DisplayObject), x, y);
-  return rectangleContains(
+  return containsRectanglePointXY(
     getLocalBoundsRectangle(source as DisplayObject),
     hitTestLocalBoundsRectPoint.x,
     hitTestLocalBoundsRectPoint.y,

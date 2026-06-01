@@ -2,7 +2,7 @@ import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type { DisplayObject, Renderable, RenderState } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';
-import { getDisplayObjectRenderNode } from './renderNode2d';
+import { getOrCreateDisplayObjectRenderNode } from './renderNode2d';
 
 /**
  * Second pass, exclude non-renderable objects from queue
@@ -19,7 +19,7 @@ export function prepareRenderQueue(state: RenderState, source: Renderable): void
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as DisplayObject;
     if (!current.enabled) continue;
-    const data = getDisplayObjectRenderNode(state, current);
+    const data = getOrCreateDisplayObjectRenderNode(state, current);
     const isMask = data.isMaskFrameID === currentFrameID;
     if (!isMask) {
       const shouldRender = data.visible && data.alpha > 0 && !(data.transform2D.a === 0 && data.transform2D.d === 0);

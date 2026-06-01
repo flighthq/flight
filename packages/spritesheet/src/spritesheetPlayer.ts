@@ -23,11 +23,7 @@ export function getSpritesheetPlayerFrame(
   return spritesheet.frames[spriteFrameIndex] ?? null;
 }
 
-export function queueSpritesheetAnimation(player: SpritesheetPlayer, animation: Readonly<SpritesheetAnimation>): void {
-  player.queue.push(animation);
-}
-
-export function showSpritesheetAnimation(
+export function playSpritesheetAnimation(
   player: SpritesheetPlayer,
   animation: Readonly<SpritesheetAnimation> | null,
   restart = true,
@@ -38,6 +34,10 @@ export function showSpritesheetAnimation(
   player.elapsed = 0;
   player.frameIndex = 0;
   player.queue.length = 0;
+}
+
+export function queueSpritesheetAnimation(player: SpritesheetPlayer, animation: Readonly<SpritesheetAnimation>): void {
+  player.queue.push(animation);
 }
 
 export function updateSpritesheetPlayer(player: SpritesheetPlayer, deltaTime: number): boolean {

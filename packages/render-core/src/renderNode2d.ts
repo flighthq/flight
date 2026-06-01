@@ -11,7 +11,7 @@ import type {
   SpriteRenderNode,
 } from '@flighthq/types';
 
-import { createRenderNode, getRenderNode } from './renderNode';
+import { createRenderNode, getOrCreateRenderNode } from './renderNode';
 
 export function createDisplayObjectRenderNode(state: RenderState, source: DisplayObject): DisplayObjectRenderNode {
   const out = createRenderNode2D(state, source) as DisplayObjectRenderNode;
@@ -34,10 +34,10 @@ export function createSpriteRenderNode(state: RenderState, source: SpriteNode): 
   return createRenderNode2D(state, source) as SpriteRenderNode;
 }
 
-export function getDisplayObjectRenderNode(state: RenderState, source: DisplayObject): DisplayObjectRenderNode {
-  return getRenderNode(state, source, createDisplayObjectRenderNode);
+export function getOrCreateDisplayObjectRenderNode(state: RenderState, source: DisplayObject): DisplayObjectRenderNode {
+  return getOrCreateRenderNode(state, source, createDisplayObjectRenderNode);
 }
 
-export function getSpriteRenderNode(state: RenderState, source: SpriteNode): SpriteRenderNode {
-  return getRenderNode(state, source, createSpriteRenderNode);
+export function getOrCreateSpriteRenderNode(state: RenderState, source: SpriteNode): SpriteRenderNode {
+  return getOrCreateRenderNode(state, source, createSpriteRenderNode);
 }

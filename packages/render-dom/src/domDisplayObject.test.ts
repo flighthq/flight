@@ -1,4 +1,4 @@
-import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { addGraphChild } from '@flighthq/scenegraph-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import { DisplayObjectKind } from '@flighthq/types';
@@ -32,7 +32,7 @@ describe('renderDOMDisplayObject', () => {
   it('skips rendering when the object has zero scale', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     // Zero a and d means zero scale — should not render
     data.transform2D.a = 0;
     data.transform2D.d = 0;
@@ -49,7 +49,7 @@ describe('renderDOMDisplayObject', () => {
   it('skips rendering invisible objects', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     data.visible = false;
 
     const renderer = { draw: vi.fn(), drawMask: vi.fn(), createData: vi.fn() };
@@ -64,7 +64,7 @@ describe('renderDOMDisplayObject', () => {
   it('skips objects with zero alpha', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     data.alpha = 0;
 
     const renderer = { draw: vi.fn(), drawMask: vi.fn(), createData: vi.fn() };
@@ -79,7 +79,7 @@ describe('renderDOMDisplayObject', () => {
   it('calls draw when the object is visible and has a renderer', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const data = getDisplayObjectRenderNode(state, obj);
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
     data.visible = true;
     data.alpha = 1;
     data.transform2D.a = 1;
@@ -100,7 +100,7 @@ describe('renderDOMDisplayObject', () => {
     const child = createDisplayObject();
     addGraphChild(parent, child);
 
-    const childData = getDisplayObjectRenderNode(state, child);
+    const childData = getOrCreateDisplayObjectRenderNode(state, child);
     childData.visible = true;
     childData.alpha = 1;
     childData.transform2D.a = 1;

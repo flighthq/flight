@@ -1,5 +1,5 @@
 import { setMatrix } from '@flighthq/geometry';
-import { getDisplayObjectRenderNode } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-core';
 import { createDisplayObject } from '@flighthq/scenegraph-display';
 import { BlendMode } from '@flighthq/types';
 
@@ -16,7 +16,7 @@ describe('applyDOMStyle', () => {
     const state = makeState();
     const el = document.createElement('div');
     const obj = createDisplayObject();
-    const node = getDisplayObjectRenderNode(state, obj);
+    const node = getOrCreateDisplayObjectRenderNode(state, obj);
     setMatrix(node.transform2D, 1, 0, 0, 1, 10, 20);
 
     applyDOMStyle(state, el, node);
@@ -28,7 +28,7 @@ describe('applyDOMStyle', () => {
     const state = makeState();
     const el = document.createElement('div');
     const obj = createDisplayObject();
-    const node = getDisplayObjectRenderNode(state, obj);
+    const node = getOrCreateDisplayObjectRenderNode(state, obj);
     node.alpha = 0.5;
 
     applyDOMStyle(state, el, node);
@@ -41,7 +41,7 @@ describe('applyDOMStyle', () => {
     const el = document.createElement('div');
     el.style.opacity = '0.5';
     const obj = createDisplayObject();
-    const node = getDisplayObjectRenderNode(state, obj);
+    const node = getOrCreateDisplayObjectRenderNode(state, obj);
     node.alpha = 1;
 
     applyDOMStyle(state, el, node);
@@ -53,7 +53,7 @@ describe('applyDOMStyle', () => {
     const state = makeState();
     const el = document.createElement('div');
     const obj = createDisplayObject();
-    const node = getDisplayObjectRenderNode(state, obj);
+    const node = getOrCreateDisplayObjectRenderNode(state, obj);
     node.blendMode = BlendMode.Multiply;
 
     applyDOMStyle(state, el, node);

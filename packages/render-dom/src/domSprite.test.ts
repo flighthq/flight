@@ -1,5 +1,5 @@
 import { addTextureAtlasRegion, createImageSourceFromCanvas, createTextureAtlas } from '@flighthq/assets';
-import { getSpriteRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateSpriteRenderNode, registerRenderer } from '@flighthq/render-core';
 import { createSprite } from '@flighthq/scenegraph-sprite';
 import { SpriteKind } from '@flighthq/types';
 
@@ -35,7 +35,7 @@ describe('drawDOMSprite', () => {
     const state = makeState();
     const sprite = createSprite();
     sprite.data.atlas = null;
-    const renderNode = getSpriteRenderNode(state, sprite);
+    const renderNode = getOrCreateSpriteRenderNode(state, sprite);
 
     drawDOMSprite(state, renderNode);
 
@@ -47,7 +47,7 @@ describe('drawDOMSprite', () => {
     const sprite = createSprite();
     sprite.data.atlas = createTextureAtlas({ image: null });
     sprite.data.atlas.regions.push({ x: 0, y: 0, width: 32, height: 32 } as any);
-    const renderNode = getSpriteRenderNode(state, sprite);
+    const renderNode = getOrCreateSpriteRenderNode(state, sprite);
 
     drawDOMSprite(state, renderNode);
 
@@ -59,7 +59,7 @@ describe('drawDOMSprite', () => {
     const sprite = createSprite();
     sprite.data.atlas = makeAtlas();
     sprite.data.id = 0;
-    const renderNode = getSpriteRenderNode(state, sprite);
+    const renderNode = getOrCreateSpriteRenderNode(state, sprite);
     renderNode.rendererData = null;
 
     drawDOMSprite(state, renderNode);
@@ -72,7 +72,7 @@ describe('drawDOMSprite', () => {
     const sprite = createSprite();
     sprite.data.atlas = makeAtlas();
     sprite.data.id = 0;
-    const renderNode = getSpriteRenderNode(state, sprite);
+    const renderNode = getOrCreateSpriteRenderNode(state, sprite);
 
     drawDOMSprite(state, renderNode);
 
@@ -89,7 +89,7 @@ describe('drawDOMSprite', () => {
     const sprite = createSprite();
     sprite.data.atlas = atlas;
     sprite.data.id = 0;
-    const renderNode = getSpriteRenderNode(state, sprite);
+    const renderNode = getOrCreateSpriteRenderNode(state, sprite);
 
     drawDOMSprite(state, renderNode);
 

@@ -5,8 +5,8 @@ import {
   createDisplayObjectRenderNode,
   createRenderNode2D,
   createSpriteRenderNode,
-  getDisplayObjectRenderNode,
-  getSpriteRenderNode,
+  getOrCreateDisplayObjectRenderNode,
+  getOrCreateSpriteRenderNode,
 } from './renderNode2d';
 import { createRenderState } from './renderState';
 
@@ -41,23 +41,23 @@ describe('createSpriteRenderNode', () => {
   });
 });
 
-describe('getDisplayObjectRenderNode', () => {
+describe('getOrCreateDisplayObjectRenderNode', () => {
   it('creates and caches the render node on the state', () => {
     const state = createRenderState();
     const source = createDisplayObject();
-    const first = getDisplayObjectRenderNode(state, source);
-    const second = getDisplayObjectRenderNode(state, source);
+    const first = getOrCreateDisplayObjectRenderNode(state, source);
+    const second = getOrCreateDisplayObjectRenderNode(state, source);
     expect(first).toBe(second);
     expect(state.renderNodeMap.has(source)).toBe(true);
   });
 });
 
-describe('getSpriteRenderNode', () => {
+describe('getOrCreateSpriteRenderNode', () => {
   it('creates and caches the sprite render node', () => {
     const state = createRenderState();
     const sprite = createSprite();
-    const first = getSpriteRenderNode(state, sprite);
-    const second = getSpriteRenderNode(state, sprite);
+    const first = getOrCreateSpriteRenderNode(state, sprite);
+    const second = getOrCreateSpriteRenderNode(state, sprite);
     expect(first).toBe(second);
     expect(first.source).toBe(sprite);
   });

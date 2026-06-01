@@ -1,5 +1,5 @@
 import { createMatrix, createRectangle, identityMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry';
-import { calculateBoundsRectangle } from '@flighthq/scenegraph-core';
+import { computeBoundsRectangle } from '@flighthq/scenegraph-core';
 import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type {
   CanvasRenderState,
@@ -32,7 +32,7 @@ export function renderToImageCache(
   matrix: Readonly<Matrix> | null = null,
   opaqueBackground: number | null = null,
 ): void {
-  calculateBoundsRectangle(_tempBounds, source, source);
+  computeBoundsRectangle(_tempBounds, source, source);
 
   const w = Math.ceil(_tempBounds.width);
   const h = Math.ceil(_tempBounds.height);

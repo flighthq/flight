@@ -1,4 +1,4 @@
-import { getDisplayObjectRenderNode } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-core';
 import { createText } from '@flighthq/scenegraph-display';
 
 import { createCanvasRenderState } from './canvasRenderState';
@@ -16,7 +16,7 @@ describe('drawCanvasText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = '';
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
     expect(() => drawCanvasText(state, renderNode)).not.toThrow();
   });
 
@@ -24,7 +24,7 @@ describe('drawCanvasText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = 'hello';
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
     const spy = vi.spyOn(state.context, 'fillText');
     drawCanvasText(state, renderNode);
     expect(spy).toHaveBeenCalled();
@@ -35,7 +35,7 @@ describe('drawCanvasTextMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const node = createText();
-    const renderNode = getDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
     expect(() => drawCanvasTextMask(state, renderNode)).not.toThrow();
   });
 });

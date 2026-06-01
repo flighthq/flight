@@ -1,3 +1,4 @@
+import { rgbaToHexString } from '@flighthq/render-core';
 import { getInputTextRuntime } from '@flighthq/scenegraph-display';
 import {
   getInputTextCaretRectangle,
@@ -17,7 +18,6 @@ import type {
 } from '@flighthq/types';
 
 import { defaultDOMRichTextRenderer, drawDOMRichText, drawDOMRichTextMask } from './domRichText';
-import { colorToCSS } from './domTextHelpers';
 
 let _keyframesInjected = false;
 
@@ -42,7 +42,7 @@ export function drawDOMInputText(state: DOMRenderState, renderNode: DisplayObjec
   const scrollYOffset =
     firstVisibleLine > 0 ? getRichTextScrollYOffset(runtime.textLayout.lineHeights, firstVisibleLine) : 0;
   const scrollXOffset = source.data.scrollH;
-  const selColor = colorToCSS(source.data.selectionColor);
+  const selColor = rgbaToHexString(source.data.selectionColor);
   const selAlpha = source.data.selectionAlpha;
   let html = '';
 

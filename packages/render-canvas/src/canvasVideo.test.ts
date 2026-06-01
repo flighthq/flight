@@ -1,4 +1,4 @@
-import { getDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
 import { createVideo } from '@flighthq/scenegraph-display';
 import { VideoKind } from '@flighthq/types';
 
@@ -26,7 +26,7 @@ describe('drawCanvasVideo', () => {
   it('does not throw when source is null', () => {
     const state = makeState();
     const video = createVideo();
-    const renderNode = getDisplayObjectRenderNode(state, video);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, video);
     expect(() => drawCanvasVideo(state, renderNode)).not.toThrow();
   });
 
@@ -35,7 +35,7 @@ describe('drawCanvasVideo', () => {
     const video = createVideo();
     const el = document.createElement('video');
     video.data.source = { element: el } as never;
-    const renderNode = getDisplayObjectRenderNode(state, video);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, video);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasVideo(state, renderNode);
     expect(spy).not.toHaveBeenCalled();
@@ -46,7 +46,7 @@ describe('drawCanvasVideoMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const video = createVideo();
-    const renderNode = getDisplayObjectRenderNode(state, video);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, video);
     expect(() => drawCanvasVideoMask(state, renderNode)).not.toThrow();
   });
 });

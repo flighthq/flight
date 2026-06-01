@@ -7,8 +7,8 @@ import { createSpritesheetFrame } from './spritesheetFrame';
 import {
   createSpritesheetPlayer,
   getSpritesheetPlayerFrame,
+  playSpritesheetAnimation,
   queueSpritesheetAnimation,
-  showSpritesheetAnimation,
   updateSpritesheetPlayer,
 } from './spritesheetPlayer';
 
@@ -53,7 +53,7 @@ describe('getSpritesheetPlayerFrame', () => {
     const sheet = makeSheet(4);
     const anim = makeAnimation([0, 1, 2, 3], 100);
     const player = createSpritesheetPlayer();
-    showSpritesheetAnimation(player, anim);
+    playSpritesheetAnimation(player, anim);
 
     updateSpritesheetPlayer(player, 200);
     const frame = getSpritesheetPlayerFrame(player, sheet);
@@ -65,15 +65,68 @@ describe('getSpritesheetPlayerFrame', () => {
     const sheet = makeSheet(1);
     const anim = makeAnimation([2], 100);
     const player = createSpritesheetPlayer();
-    showSpritesheetAnimation(player, anim);
+    playSpritesheetAnimation(player, anim);
     expect(getSpritesheetPlayerFrame(player, sheet)).toBeNull();
   });
 
   it('returns null when the current animation has no frames', () => {
     const sheet = makeSheet(1);
     const player = createSpritesheetPlayer();
-    showSpritesheetAnimation(player, makeAnimation([], 100));
+    playSpritesheetAnimation(player, makeAnimation([], 100));
     expect(getSpritesheetPlayerFrame(player, sheet)).toBeNull();
+  });
+});
+
+describe('playSpritesheetAnimation', () => {
+  it('sets animation and resets state', () => {
+    const player = createSpritesheetPlayer();
+    const anim = makeAnimation([0, 1, 2], 100);
+    playSpritesheetAnimation(player, anim);
+    expect(player.animation).toBe(anim);
+    expect(player.elapsed).toBe(0);
+    expect(player.frameIndex).toBe(0);
+    expect(player.complete).toBe(false);
+  });
+
+  it('clears the queue', () => {
+    const player = createSpritesheetPlayer();
+    const anim = makeAnimation([0, 1], 100);
+    const queued = makeAnimation([2, 3], 100);
+    playSpritesheetAnimation(player, anim);
+    queueSpritesheetAnimation(player, queued);
+    playSpritesheetAnimation(player, anim);
+    expect(player.queue).toEqual([]);
+  });
+
+  it('does not restart if same animation and restart=false', () => {
+    const player = createSpritesheetPlayer();
+    const anim = makeAnimation([0, 1, 2], 100);
+    playSpritesheetAnimation(player, anim);
+    player.elapsed = 150;
+    playSpritesheetAnimation(player, anim, false);
+    expect(player.elapsed).toBe(150);
+  });
+
+  it('restarts if same animation and restart=true', () => {
+    const player = createSpritesheetPlayer();
+    const anim = makeAnimation([0, 1, 2], 100);
+    playSpritesheetAnimation(player, anim);
+    player.elapsed = 150;
+    playSpritesheetAnimation(player, anim, true);
+    expect(player.elapsed).toBe(0);
+  });
+
+  it('clears animation and marks complete when animation is null', () => {
+    const player = createSpritesheetPlayer();
+    const anim = makeAnimation([0, 1], 100);
+    playSpritesheetAnimation(player, anim);
+    queueSpritesheetAnimation(player, makeAnimation([2], 100));
+    playSpritesheetAnimation(player, null);
+    expect(player.animation).toBeNull();
+    expect(player.complete).toBe(true);
+    expect(player.elapsed).toBe(0);
+    expect(player.frameIndex).toBe(0);
+    expect(player.queue).toEqual([]);
   });
 });
 
@@ -97,59 +150,6 @@ describe('queueSpritesheetAnimation', () => {
   });
 });
 
-describe('showSpritesheetAnimation', () => {
-  it('sets animation and resets state', () => {
-    const player = createSpritesheetPlayer();
-    const anim = makeAnimation([0, 1, 2], 100);
-    showSpritesheetAnimation(player, anim);
-    expect(player.animation).toBe(anim);
-    expect(player.elapsed).toBe(0);
-    expect(player.frameIndex).toBe(0);
-    expect(player.complete).toBe(false);
-  });
-
-  it('clears the queue', () => {
-    const player = createSpritesheetPlayer();
-    const anim = makeAnimation([0, 1], 100);
-    const queued = makeAnimation([2, 3], 100);
-    showSpritesheetAnimation(player, anim);
-    queueSpritesheetAnimation(player, queued);
-    showSpritesheetAnimation(player, anim);
-    expect(player.queue).toEqual([]);
-  });
-
-  it('does not restart if same animation and restart=false', () => {
-    const player = createSpritesheetPlayer();
-    const anim = makeAnimation([0, 1, 2], 100);
-    showSpritesheetAnimation(player, anim);
-    player.elapsed = 150;
-    showSpritesheetAnimation(player, anim, false);
-    expect(player.elapsed).toBe(150);
-  });
-
-  it('restarts if same animation and restart=true', () => {
-    const player = createSpritesheetPlayer();
-    const anim = makeAnimation([0, 1, 2], 100);
-    showSpritesheetAnimation(player, anim);
-    player.elapsed = 150;
-    showSpritesheetAnimation(player, anim, true);
-    expect(player.elapsed).toBe(0);
-  });
-
-  it('clears animation and marks complete when animation is null', () => {
-    const player = createSpritesheetPlayer();
-    const anim = makeAnimation([0, 1], 100);
-    showSpritesheetAnimation(player, anim);
-    queueSpritesheetAnimation(player, makeAnimation([2], 100));
-    showSpritesheetAnimation(player, null);
-    expect(player.animation).toBeNull();
-    expect(player.complete).toBe(true);
-    expect(player.elapsed).toBe(0);
-    expect(player.frameIndex).toBe(0);
-    expect(player.queue).toEqual([]);
-  });
-});
-
 describe('updateSpritesheetPlayer', () => {
   it('returns false when no animation', () => {
     const player = createSpritesheetPlayer();
@@ -158,14 +158,14 @@ describe('updateSpritesheetPlayer', () => {
 
   it('returns false for an animation with no frames', () => {
     const player = createSpritesheetPlayer();
-    showSpritesheetAnimation(player, makeAnimation([], 100));
+    playSpritesheetAnimation(player, makeAnimation([], 100));
     expect(updateSpritesheetPlayer(player, 16)).toBe(false);
   });
 
   it('advances elapsed time', () => {
     const player = createSpritesheetPlayer();
     const anim = makeAnimation([0, 1, 2, 3], 100);
-    showSpritesheetAnimation(player, anim);
+    playSpritesheetAnimation(player, anim);
     updateSpritesheetPlayer(player, 50);
     expect(player.elapsed).toBe(50);
   });
@@ -173,7 +173,7 @@ describe('updateSpritesheetPlayer', () => {
   it('selects correct frame index from elapsed time', () => {
     const player = createSpritesheetPlayer();
     const anim = makeAnimation([0, 1, 2, 3], 100);
-    showSpritesheetAnimation(player, anim);
+    playSpritesheetAnimation(player, anim);
 
     updateSpritesheetPlayer(player, 0);
     expect(player.frameIndex).toBe(0);
@@ -188,7 +188,7 @@ describe('updateSpritesheetPlayer', () => {
   it('loops back to frame 0 after full loop', () => {
     const player = createSpritesheetPlayer();
     const anim = makeAnimation([0, 1, 2, 3], 100);
-    showSpritesheetAnimation(player, anim);
+    playSpritesheetAnimation(player, anim);
     updateSpritesheetPlayer(player, 400);
     expect(player.frameIndex).toBe(0);
     expect(player.complete).toBe(false);
@@ -197,7 +197,7 @@ describe('updateSpritesheetPlayer', () => {
   it('clamps to last frame and marks complete for non-looping animation', () => {
     const player = createSpritesheetPlayer();
     const anim = makeAnimation([0, 1, 2, 3], 100, false);
-    showSpritesheetAnimation(player, anim);
+    playSpritesheetAnimation(player, anim);
     updateSpritesheetPlayer(player, 500);
     expect(player.frameIndex).toBe(3);
     expect(player.complete).toBe(true);
@@ -206,7 +206,7 @@ describe('updateSpritesheetPlayer', () => {
   it('returns false after non-looping animation completes', () => {
     const player = createSpritesheetPlayer();
     const anim = makeAnimation([0, 1], 100, false);
-    showSpritesheetAnimation(player, anim);
+    playSpritesheetAnimation(player, anim);
     updateSpritesheetPlayer(player, 300);
     expect(updateSpritesheetPlayer(player, 100)).toBe(false);
   });
@@ -215,7 +215,7 @@ describe('updateSpritesheetPlayer', () => {
     const player = createSpritesheetPlayer();
     const first = makeAnimation([0, 1], 100, false);
     const second = makeAnimation([2, 3], 100, false);
-    showSpritesheetAnimation(player, first);
+    playSpritesheetAnimation(player, first);
     queueSpritesheetAnimation(player, second);
     updateSpritesheetPlayer(player, 300);
     expect(player.animation).toBe(second);
@@ -230,7 +230,7 @@ describe('updateSpritesheetPlayer', () => {
     const second = makeAnimation([1], 100, false);
     let fired = 0;
     connectSignal(player.onComplete, () => fired++);
-    showSpritesheetAnimation(player, first);
+    playSpritesheetAnimation(player, first);
     queueSpritesheetAnimation(player, second);
     updateSpritesheetPlayer(player, 200);
     expect(player.animation).toBe(second);
@@ -242,7 +242,7 @@ describe('updateSpritesheetPlayer', () => {
     const first = makeAnimation([0], 100, false);
     const second = makeAnimation([1], 100, false);
     const third = makeAnimation([2], 100, false);
-    showSpritesheetAnimation(player, first);
+    playSpritesheetAnimation(player, first);
     queueSpritesheetAnimation(player, second);
     queueSpritesheetAnimation(player, third);
 
@@ -259,7 +259,7 @@ describe('updateSpritesheetPlayer', () => {
   it('emits onComplete when non-looping animation finishes', () => {
     const player = createSpritesheetPlayer();
     const anim = makeAnimation([0, 1, 2], 100, false);
-    showSpritesheetAnimation(player, anim);
+    playSpritesheetAnimation(player, anim);
     let fired = 0;
     connectSignal(player.onComplete, () => fired++);
     updateSpritesheetPlayer(player, 400);
@@ -271,7 +271,7 @@ describe('updateSpritesheetPlayer', () => {
   it('does not emit onComplete for looping animation', () => {
     const player = createSpritesheetPlayer();
     const anim = makeAnimation([0, 1, 2], 100, true);
-    showSpritesheetAnimation(player, anim);
+    playSpritesheetAnimation(player, anim);
     let fired = 0;
     connectSignal(player.onComplete, () => fired++);
     updateSpritesheetPlayer(player, 400);
@@ -281,7 +281,7 @@ describe('updateSpritesheetPlayer', () => {
   it('emits onLoop each time a looping animation cycles', () => {
     const player = createSpritesheetPlayer();
     const anim = makeAnimation([0, 1, 2, 3], 100, true);
-    showSpritesheetAnimation(player, anim);
+    playSpritesheetAnimation(player, anim);
     let loops = 0;
     connectSignal(player.onLoop, () => loops++);
     updateSpritesheetPlayer(player, 400);
@@ -293,7 +293,7 @@ describe('updateSpritesheetPlayer', () => {
   it('does not emit onLoop for non-looping animation', () => {
     const player = createSpritesheetPlayer();
     const anim = makeAnimation([0, 1, 2, 3], 100, false);
-    showSpritesheetAnimation(player, anim);
+    playSpritesheetAnimation(player, anim);
     let loops = 0;
     connectSignal(player.onLoop, () => loops++);
     updateSpritesheetPlayer(player, 500);
@@ -304,7 +304,7 @@ describe('updateSpritesheetPlayer', () => {
     const player = createSpritesheetPlayer();
     const looping = makeAnimation([0, 1], 100, true);
     const queued = makeAnimation([2, 3], 100, false);
-    showSpritesheetAnimation(player, looping);
+    playSpritesheetAnimation(player, looping);
     queueSpritesheetAnimation(player, queued);
     updateSpritesheetPlayer(player, 500);
     expect(player.animation).toBe(looping);
