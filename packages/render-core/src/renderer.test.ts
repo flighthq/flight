@@ -1,7 +1,37 @@
 import type { Renderer, RenderState } from '@flighthq/types';
 
-import { createNullRendererData, registerRenderer } from './renderer';
+import { copyRendererRegistrations, createNullRendererData, registerRenderer } from './renderer';
 import { createRenderState } from './renderState';
+
+describe('copyRendererRegistrations', () => {
+  it('copies all registrations from source to target', () => {
+    const source = createRenderState();
+    const target = createRenderState();
+    const kind = Symbol('kind');
+    const renderer = { createData: vi.fn(), draw: vi.fn() } as unknown as Renderer;
+    registerRenderer(source, kind, renderer);
+    copyRendererRegistrations(target, source);
+    expect(target.rendererMap.get(kind)).toBe(renderer);
+  });
+
+  it('is a no-op when source has no registrations', () => {
+    const source = createRenderState();
+    const target = createRenderState();
+    copyRendererRegistrations(target, source);
+    expect(target.rendererMap.size).toBe(0);
+  });
+
+  it('does not affect source rendererMapID', () => {
+    const source = createRenderState();
+    const target = createRenderState();
+    const kind = Symbol('kind');
+    const renderer = { createData: vi.fn(), draw: vi.fn() } as unknown as Renderer;
+    registerRenderer(source, kind, renderer);
+    const sourceIDBeforeCopy = source.rendererMapID;
+    copyRendererRegistrations(target, source);
+    expect(source.rendererMapID).toBe(sourceIDBeforeCopy);
+  });
+});
 
 describe('createNullRendererData', () => {
   it('returns null', () => {
