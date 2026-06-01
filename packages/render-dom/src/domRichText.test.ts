@@ -4,12 +4,19 @@ import { RichTextKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
 import { defaultDOMRichTextRenderer, drawDOMRichText, drawDOMRichTextMask } from './domRichText';
+import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
   const container = document.createElement('div');
   const state = createDOMRenderState(container);
   registerRenderer(state, RichTextKind, defaultDOMRichTextRenderer);
   return state;
+}
+
+function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTMLElement | null {
+  (state as unknown as DOMRenderStateInternal).domCurrentElement = null;
+  drawFn();
+  return (state as unknown as DOMRenderStateInternal).domCurrentElement;
 }
 
 describe('defaultDOMRichTextRenderer', () => {
@@ -29,15 +36,15 @@ describe('drawDOMRichText', () => {
     expect(() => drawDOMRichText(state, renderNode)).not.toThrow();
   });
 
-  it('appends the div even when text is empty', () => {
+  it('produces a div even when text is empty', () => {
     const state = makeState();
     const node = createRichText();
     node.data.text = '';
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawDOMRichText(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMRichText(state, renderNode));
 
-    expect(state.element.children.length).toBe(1);
+    expect(el).not.toBeNull();
   });
 
   it('clears innerHTML when text is empty', () => {
@@ -47,24 +54,22 @@ describe('drawDOMRichText', () => {
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
     drawDOMRichText(state, renderNode);
 
-    while (state.element.firstChild) state.element.removeChild(state.element.firstChild);
     node.data.text = '';
-    drawDOMRichText(state, renderNode);
+    const div = drawGetEl(state, () => drawDOMRichText(state, renderNode));
 
-    const div = state.element.children[0] as HTMLElement;
-    expect(div.innerHTML).toBe('');
+    expect(div!.innerHTML).toBe('');
   });
 
-  it('appends a div when text is non-empty', () => {
+  it('produces a div when text is non-empty', () => {
     const state = makeState();
     const node = createRichText();
     node.data.text = 'hello';
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawDOMRichText(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMRichText(state, renderNode));
 
-    expect(state.element.children.length).toBe(1);
-    expect(state.element.children[0].tagName).toBe('DIV');
+    expect(el).not.toBeNull();
+    expect(el!.tagName).toBe('DIV');
   });
 
   it('sets div width and height from source data', () => {
@@ -75,9 +80,7 @@ describe('drawDOMRichText', () => {
     node.data.height = 100;
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawDOMRichText(state, renderNode);
-
-    const div = state.element.children[0] as HTMLElement;
+    const div = drawGetEl(state, () => drawDOMRichText(state, renderNode))!;
     expect(div.style.width).toBe('200px');
     expect(div.style.height).toBe('100px');
   });
@@ -88,9 +91,7 @@ describe('drawDOMRichText', () => {
     node.data.text = 'world';
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawDOMRichText(state, renderNode);
-
-    const div = state.element.children[0] as HTMLElement;
+    const div = drawGetEl(state, () => drawDOMRichText(state, renderNode))!;
     expect(div.innerHTML).toContain('world');
   });
 
@@ -100,9 +101,7 @@ describe('drawDOMRichText', () => {
     node.data.htmlText = '<b>Bold</b><font color="#00ff00">Green</font>';
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawDOMRichText(state, renderNode);
-
-    const div = state.element.children[0] as HTMLElement;
+    const div = drawGetEl(state, () => drawDOMRichText(state, renderNode))!;
     expect(div.innerHTML).toContain('Bold');
     expect(div.innerHTML).toContain('Green');
     expect(div.innerHTML).toContain('bold');
@@ -117,9 +116,7 @@ describe('drawDOMRichText', () => {
     node.data.backgroundColor = 0xff0000;
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawDOMRichText(state, renderNode);
-
-    const div = state.element.children[0] as HTMLElement;
+    const div = drawGetEl(state, () => drawDOMRichText(state, renderNode))!;
     expect(div.style.backgroundColor).not.toBe('');
   });
 
@@ -130,9 +127,7 @@ describe('drawDOMRichText', () => {
     node.data.background = false;
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawDOMRichText(state, renderNode);
-
-    const div = state.element.children[0] as HTMLElement;
+    const div = drawGetEl(state, () => drawDOMRichText(state, renderNode))!;
     expect(div.style.backgroundColor).toBe('');
   });
 });

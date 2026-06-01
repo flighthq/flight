@@ -12,7 +12,9 @@ import type {
   SpriteRenderNode,
 } from '@flighthq/types';
 
-import { applyDOMStyle, initDOMElement } from './domStyle';
+import { detectDOMStructureChange, processDOMNode, reconcileDOMContainer, swapDOMOrderLists } from './domReconcile';
+import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
+import type { DOMRenderStateInternal } from './internal';
 
 interface DOMSpriteData extends RendererData {
   canvas: HTMLCanvasElement | null;
@@ -64,14 +66,17 @@ export function drawDOMSprite(state: DOMRenderState, spriteNode: SpriteRenderNod
   );
 
   applyDOMStyle(state, data.canvas, spriteNode);
-  state.element.appendChild(data.canvas);
+  setDOMRendererElement(state, data.canvas);
 }
 
 export function renderDOMSprite(state: DOMRenderState, source: SpriteNode): void {
+  const internal = state as DOMRenderStateInternal;
   const container = state.element;
-  while (container.firstChild) container.removeChild(container.firstChild);
-
+  const currentFrameID = state.currentFrameID;
   const tempStack = state.tempStack;
+
+  let newLength = 0;
+  let needsReconcile = false;
   let stackLength = 0;
   tempStack[stackLength++] = source;
 
@@ -83,7 +88,9 @@ export function renderDOMSprite(state: DOMRenderState, source: SpriteNode): void
     if (!shouldRender) continue;
 
     if (data.renderer !== null) {
-      data.renderer.draw(state, data);
+      const result = processDOMNode(internal, data, currentFrameID, () => data.renderer!.draw(state, data), newLength);
+      newLength = result.newLength;
+      if (result.needsReconcile) needsReconcile = true;
     }
 
     const children = getSpriteNodeRuntime(current).children;
@@ -93,6 +100,12 @@ export function renderDOMSprite(state: DOMRenderState, source: SpriteNode): void
       }
     }
   }
+
+  if (detectDOMStructureChange(internal, newLength, needsReconcile)) {
+    reconcileDOMContainer(container, internal, newLength);
+  }
+
+  swapDOMOrderLists(internal, newLength);
 }
 
 export const defaultDOMSpriteRenderer: SpriteRenderer = {

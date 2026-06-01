@@ -2,16 +2,18 @@ import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-core';
 import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
 import type { DisplayObject, DOMRenderState } from '@flighthq/types';
 
+import { detectDOMStructureChange, processDOMNode, reconcileDOMContainer, swapDOMOrderLists } from './domReconcile';
+import type { DOMRenderStateInternal } from './internal';
+
 export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObject): void {
+  const internal = state as DOMRenderStateInternal;
   const container = state.element;
-
-  // Clear container for this frame's render pass
-  while (container.firstChild) container.removeChild(container.firstChild);
-
   const currentFrameID = state.currentFrameID;
   const tempStack = state.tempStack;
-  let stackLength = 0;
 
+  let newLength = 0;
+  let needsReconcile = false;
+  let stackLength = 0;
   tempStack[stackLength++] = source;
 
   while (stackLength > 0) {
@@ -25,7 +27,9 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
     if (!shouldRender) continue;
 
     if (data.renderer !== null) {
-      data.renderer.draw(state, data);
+      const result = processDOMNode(internal, data, currentFrameID, () => data.renderer!.draw(state, data), newLength);
+      newLength = result.newLength;
+      if (result.needsReconcile) needsReconcile = true;
     }
 
     const children = getDisplayObjectRuntime(current).children;
@@ -35,4 +39,10 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
       }
     }
   }
+
+  if (detectDOMStructureChange(internal, newLength, needsReconcile)) {
+    reconcileDOMContainer(container, internal, newLength);
+  }
+
+  swapDOMOrderLists(internal, newLength);
 }

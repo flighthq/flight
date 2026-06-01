@@ -4,12 +4,19 @@ import { TextKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
 import { defaultDOMTextRenderer, drawDOMText, drawDOMTextMask } from './domText';
+import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
   const container = document.createElement('div');
   const state = createDOMRenderState(container);
   registerRenderer(state, TextKind, defaultDOMTextRenderer);
   return state;
+}
+
+function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTMLElement | null {
+  (state as unknown as DOMRenderStateInternal).domCurrentElement = null;
+  drawFn();
+  return (state as unknown as DOMRenderStateInternal).domCurrentElement;
 }
 
 describe('defaultDOMTextRenderer', () => {
@@ -29,27 +36,27 @@ describe('drawDOMText', () => {
     expect(() => drawDOMText(state, renderNode)).not.toThrow();
   });
 
-  it('does not append anything when text is empty', () => {
+  it('produces no element when text is empty', () => {
     const state = makeState();
     const node = createText();
     node.data.text = '';
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawDOMText(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMText(state, renderNode));
 
-    expect(state.element.children.length).toBe(0);
+    expect(el).toBeNull();
   });
 
-  it('appends a div when text is non-empty', () => {
+  it('produces a div when text is non-empty', () => {
     const state = makeState();
     const node = createText();
     node.data.text = 'hello';
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawDOMText(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMText(state, renderNode));
 
-    expect(state.element.children.length).toBe(1);
-    expect(state.element.children[0].tagName).toBe('DIV');
+    expect(el).not.toBeNull();
+    expect(el!.tagName).toBe('DIV');
   });
 
   it('sets overflow:hidden on the div', () => {
@@ -58,9 +65,7 @@ describe('drawDOMText', () => {
     node.data.text = 'hello';
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawDOMText(state, renderNode);
-
-    const div = state.element.children[0] as HTMLElement;
+    const div = drawGetEl(state, () => drawDOMText(state, renderNode))!;
     expect(div.style.overflow).toBe('hidden');
   });
 
@@ -70,9 +75,7 @@ describe('drawDOMText', () => {
     node.data.text = 'world';
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawDOMText(state, renderNode);
-
-    const div = state.element.children[0] as HTMLElement;
+    const div = drawGetEl(state, () => drawDOMText(state, renderNode))!;
     expect(div.innerHTML).toContain('world');
   });
 
@@ -82,12 +85,8 @@ describe('drawDOMText', () => {
     node.data.text = 'hello';
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawDOMText(state, renderNode);
-    const firstDiv = state.element.children[0];
-
-    while (state.element.firstChild) state.element.removeChild(state.element.firstChild);
-    drawDOMText(state, renderNode);
-    const secondDiv = state.element.children[0];
+    const firstDiv = drawGetEl(state, () => drawDOMText(state, renderNode));
+    const secondDiv = drawGetEl(state, () => drawDOMText(state, renderNode));
 
     expect(firstDiv).toBe(secondDiv);
   });

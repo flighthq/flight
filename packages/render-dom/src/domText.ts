@@ -14,7 +14,7 @@ import type {
   TextRuntime,
 } from '@flighthq/types';
 
-import { applyDOMStyle, initDOMElement } from './domStyle';
+import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
 import { escapeHtmlString } from './domTextHelpers';
 
 interface DOMTextData extends RendererData {
@@ -87,7 +87,7 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
   data.div.innerHTML = html;
 
   applyDOMStyle(state, data.div, renderNode);
-  state.element.appendChild(data.div);
+  setDOMRendererElement(state, data.div);
 }
 
 export function drawDOMTextMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {

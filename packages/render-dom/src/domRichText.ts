@@ -25,7 +25,7 @@ import type {
 } from '@flighthq/types';
 
 import { getDomFontAscentCached, setDomFontAscentCached } from './domFontSource';
-import { applyDOMStyle, initDOMElement } from './domStyle';
+import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
 import { escapeHtmlString } from './domTextHelpers';
 
 interface DOMRichTextData extends RendererData {
@@ -92,7 +92,7 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
   if (text.length === 0) {
     div.innerHTML = '';
     applyDOMStyle(state, div, renderNode);
-    state.element.appendChild(div);
+    setDOMRendererElement(state, div);
     return;
   }
 
@@ -167,7 +167,7 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
   div.innerHTML = html;
 
   applyDOMStyle(state, div, renderNode);
-  state.element.appendChild(div);
+  setDOMRendererElement(state, div);
 }
 
 const DOM_BULLET_GAP = 4;

@@ -4,7 +4,8 @@ import { createDisplayObject } from '@flighthq/scenegraph-display';
 import { BlendMode } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
-import { applyDOMStyle, initDOMElement } from './domStyle';
+import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
+import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
   const container = document.createElement('div');
@@ -86,5 +87,17 @@ describe('initDOMElement', () => {
     const el = document.createElement('div');
     initDOMElement(el);
     expect(el.style.pointerEvents).toBe('none');
+  });
+});
+
+describe('setDOMRendererElement', () => {
+  it('writes the element to domCurrentElement on the internal state', () => {
+    const container = document.createElement('div');
+    const state = createDOMRenderState(container);
+    const el = document.createElement('canvas');
+
+    setDOMRendererElement(state, el);
+
+    expect((state as unknown as DOMRenderStateInternal).domCurrentElement).toBe(el);
   });
 });

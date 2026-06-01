@@ -9,7 +9,7 @@ import type {
   Video,
 } from '@flighthq/types';
 
-import { applyDOMStyle, initDOMElement } from './domStyle';
+import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
 
 interface DOMVideoData extends RendererData {
   element: HTMLVideoElement | null;
@@ -36,7 +36,7 @@ export function drawDOMVideo(state: DOMRenderState, renderNode: DisplayObjectRen
   element.style.height = `${element.videoHeight}px`;
 
   applyDOMStyle(state, element, renderNode);
-  state.element.appendChild(element);
+  setDOMRendererElement(state, element);
 }
 
 export function drawDOMVideoMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {

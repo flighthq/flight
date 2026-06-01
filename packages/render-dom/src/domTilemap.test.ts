@@ -5,12 +5,19 @@ import { TilemapKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
 import { defaultDOMTilemapRenderer, drawDOMTilemap } from './domTilemap';
+import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
   const container = document.createElement('div');
   const state = createDOMRenderState(container);
   registerRenderer(state, TilemapKind, defaultDOMTilemapRenderer);
   return state;
+}
+
+function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTMLElement | null {
+  (state as unknown as DOMRenderStateInternal).domCurrentElement = null;
+  drawFn();
+  return (state as unknown as DOMRenderStateInternal).domCurrentElement;
 }
 
 function makeTileset() {
@@ -37,9 +44,9 @@ describe('drawDOMTilemap', () => {
     tilemap.data.tileset = null;
     const renderNode = getOrCreateSpriteRenderNode(state, tilemap);
 
-    drawDOMTilemap(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMTilemap(state, renderNode));
 
-    expect(state.element.children.length).toBe(0);
+    expect(el).toBeNull();
   });
 
   it('does nothing when rows or columns are zero', () => {
@@ -50,9 +57,9 @@ describe('drawDOMTilemap', () => {
     tilemap.data.rows = 0;
     const renderNode = getOrCreateSpriteRenderNode(state, tilemap);
 
-    drawDOMTilemap(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMTilemap(state, renderNode));
 
-    expect(state.element.children.length).toBe(0);
+    expect(el).toBeNull();
   });
 
   it('does nothing when rendererData is null', () => {
@@ -65,12 +72,12 @@ describe('drawDOMTilemap', () => {
     const renderNode = getOrCreateSpriteRenderNode(state, tilemap);
     renderNode.rendererData = null;
 
-    drawDOMTilemap(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMTilemap(state, renderNode));
 
-    expect(state.element.children.length).toBe(0);
+    expect(el).toBeNull();
   });
 
-  it('appends a canvas when tileset, rows, and columns are valid', () => {
+  it('produces a canvas when tileset, rows, and columns are valid', () => {
     const state = makeState();
     const tilemap = createTilemap();
     tilemap.data.tileset = makeTileset();
@@ -79,9 +86,9 @@ describe('drawDOMTilemap', () => {
     tilemap.data.tiles = new Int16Array([0, 0, 0, 0]);
     const renderNode = getOrCreateSpriteRenderNode(state, tilemap);
 
-    drawDOMTilemap(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMTilemap(state, renderNode));
 
-    expect(state.element.children.length).toBe(1);
-    expect(state.element.children[0].tagName).toBe('CANVAS');
+    expect(el).not.toBeNull();
+    expect(el!.tagName).toBe('CANVAS');
   });
 });

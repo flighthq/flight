@@ -6,9 +6,33 @@ import { DisplayObjectKind } from '@flighthq/types';
 import { renderDOMDisplayObject } from './domDisplayObject';
 import { createDOMRenderState } from './domRenderState';
 
+type ManagedState = ReturnType<typeof makeState> & { domCurrentElement: HTMLElement | null };
+
 function makeState() {
   const container = document.createElement('div');
   return createDOMRenderState(container);
+}
+
+// Sets up a node with a mock renderer that registers a specific element without going
+// through registerRenderer (which would change rendererMapID and overwrite other nodes).
+function setupRenderedNode(
+  state: ReturnType<typeof makeState>,
+  obj: ReturnType<typeof createDisplayObject>,
+  el: HTMLElement,
+) {
+  const data = getOrCreateDisplayObjectRenderNode(state, obj);
+  data.visible = true;
+  data.alpha = 1;
+  data.transform2D.a = 1;
+  data.transform2D.d = 1;
+  data.renderer = {
+    createData: vi.fn(),
+    draw: vi.fn().mockImplementation(() => {
+      (state as ManagedState).domCurrentElement = el;
+    }),
+  };
+  data.rendererMapID = state.rendererMapID;
+  return data;
 }
 
 describe('renderDOMDisplayObject', () => {
@@ -18,22 +42,21 @@ describe('renderDOMDisplayObject', () => {
     expect(() => renderDOMDisplayObject(state, obj)).not.toThrow();
   });
 
-  it('clears the container before rendering', () => {
+  it('removes foreign elements from the container on first render', () => {
     const state = makeState();
-    const child = document.createElement('span');
-    state.element.appendChild(child);
+    const foreign = document.createElement('span');
+    state.element.appendChild(foreign);
 
     const obj = createDisplayObject();
     renderDOMDisplayObject(state, obj);
 
-    expect(state.element.contains(child)).toBe(false);
+    expect(state.element.contains(foreign)).toBe(false);
   });
 
   it('skips rendering when the object has zero scale', () => {
     const state = makeState();
     const obj = createDisplayObject();
     const data = getOrCreateDisplayObjectRenderNode(state, obj);
-    // Zero a and d means zero scale — should not render
     data.transform2D.a = 0;
     data.transform2D.d = 0;
 
@@ -112,7 +135,65 @@ describe('renderDOMDisplayObject', () => {
 
     renderDOMDisplayObject(state, parent);
 
-    // Both parent and child are DisplayObjectKind and get the registered renderer
     expect(renderer.draw).toHaveBeenCalledTimes(2);
+  });
+
+  it('skips draw on fully static nodes after first render', () => {
+    const state = makeState();
+    const obj = createDisplayObject();
+    const el = document.createElement('div');
+    const data = setupRenderedNode(state, obj, el);
+
+    // First render: node is new, draw must be called.
+    renderDOMDisplayObject(state, obj);
+    expect(data.renderer!.draw).toHaveBeenCalledTimes(1);
+
+    // Second render: nothing changed, draw should be skipped.
+    renderDOMDisplayObject(state, obj);
+    expect(data.renderer!.draw).toHaveBeenCalledTimes(1);
+  });
+
+  it('places rendered elements in scene-graph order', () => {
+    const state = makeState();
+    const parent = createDisplayObject();
+    const childA = createDisplayObject();
+    const childB = createDisplayObject();
+    addGraphChild(parent, childA);
+    addGraphChild(parent, childB);
+
+    const elA = document.createElement('div');
+    const elB = document.createElement('span');
+    setupRenderedNode(state, childA, elA);
+    setupRenderedNode(state, childB, elB);
+
+    renderDOMDisplayObject(state, parent);
+
+    const children = Array.from(state.element.children);
+    expect(children.indexOf(elA)).toBeLessThan(children.indexOf(elB));
+  });
+
+  it('reconciles DOM when a child is removed', () => {
+    const state = makeState();
+    const parent = createDisplayObject();
+    const childA = createDisplayObject();
+    const childB = createDisplayObject();
+    addGraphChild(parent, childA);
+    addGraphChild(parent, childB);
+
+    const elA = document.createElement('div');
+    const elB = document.createElement('span');
+    setupRenderedNode(state, childA, elA);
+    const dataB = setupRenderedNode(state, childB, elB);
+
+    renderDOMDisplayObject(state, parent);
+    expect(state.element.children.length).toBe(2);
+
+    // Hide childB — reconciliation should remove its element.
+    dataB.visible = false;
+
+    renderDOMDisplayObject(state, parent);
+
+    expect(state.element.contains(elA)).toBe(true);
+    expect(state.element.contains(elB)).toBe(false);
   });
 });
