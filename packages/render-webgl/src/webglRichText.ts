@@ -1,0 +1,188 @@
+import { createNullRendererData } from '@flighthq/render-core';
+import { getRichTextRuntime } from '@flighthq/scenegraph-display';
+import {
+  getRichTextContent,
+  getRichTextFieldHeight,
+  getRichTextFieldWidth,
+  getRichTextScrollYOffset,
+  getTextLayoutResult,
+  layoutText,
+  resolveRichTextContent,
+} from '@flighthq/text-layout';
+import type {
+  DisplayObjectRenderer,
+  DisplayObjectRenderNode,
+  RenderState,
+  RichText,
+  RichTextRuntime,
+  TextFormat,
+  TextLayoutResult,
+  TextRuntime,
+} from '@flighthq/types';
+
+import type { WebGLRenderStateInternal } from './internal';
+import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';
+import { setWebGLMatrixFromTransform } from './webglShader';
+import { colorToHex, formatToCanvasFont } from './webglTextHelpers';
+
+let _offscreenCanvas: HTMLCanvasElement | null = null;
+let _offscreenCtx: CanvasRenderingContext2D | null = null;
+
+const _textureMap = new WeakMap<DisplayObjectRenderNode, WebGLTexture>();
+
+export type WebGLRichTextOverlay = (
+  context: CanvasRenderingContext2D,
+  source: RichText,
+  result: TextLayoutResult,
+  fieldW: number,
+  fieldH: number,
+  text: string,
+) => void;
+
+export function drawWebGLRichText(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+  drawWebGLRichTextWithOverlay(state, renderNode);
+}
+
+export function drawWebGLRichTextMask(_state: RenderState, _data: DisplayObjectRenderNode): void {}
+
+export function drawWebGLRichTextWithOverlay(
+  state: RenderState,
+  renderNode: DisplayObjectRenderNode,
+  overlay?: WebGLRichTextOverlay,
+): void {
+  const internal = state as WebGLRenderStateInternal;
+  const source = renderNode.source as RichText;
+  const data = source.data;
+  const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
+  const content = getRichTextContent(richTextRuntime);
+  resolveRichTextContent(content, data);
+  if (content.text.length === 0 && !data.background && !data.border) return;
+
+  const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges);
+  const fieldW = Math.ceil(getRichTextFieldWidth(data, result));
+  const fieldH = Math.ceil(getRichTextFieldHeight(data, result));
+  if (fieldW <= 0 || fieldH <= 0) return;
+
+  const offCtx = getOffscreenCanvas(fieldW, fieldH);
+  offCtx.clearRect(0, 0, fieldW, fieldH);
+
+  if (data.background) {
+    offCtx.fillStyle = colorToHex(data.backgroundColor);
+    offCtx.fillRect(0, 0, fieldW, fieldH);
+  }
+
+  if (data.border) {
+    offCtx.strokeStyle = colorToHex(data.borderColor);
+    offCtx.lineWidth = 1;
+    offCtx.strokeRect(0, 0, fieldW, fieldH);
+  }
+
+  if (content.text.length > 0) {
+    drawRichTextToCanvas(offCtx, source, result, fieldW, fieldH, content.text);
+  }
+  overlay?.(offCtx, source, result, fieldW, fieldH, content.text);
+
+  useWebGLProgram(internal);
+
+  let texture = _textureMap.get(renderNode);
+  if (!texture) {
+    texture = createWebGLTexture(internal);
+    _textureMap.set(renderNode, texture);
+  }
+  updateWebGLTexture(internal, texture, _offscreenCanvas!);
+
+  const gl = internal.gl;
+  const { shaderLoc, matrixArray } = internal;
+  gl.uniform1f(shaderLoc.locAlpha, renderNode.alpha);
+  gl.uniform1i(shaderLoc.locTexture, 0);
+  setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, renderNode.transform2D, internal.canvas);
+
+  drawWebGLQuad(internal, 0, 0, fieldW, fieldH, 0, 0, 1, 1);
+}
+
+export const defaultWebGLRichTextRenderer: DisplayObjectRenderer = {
+  createData: createNullRendererData,
+  draw: drawWebGLRichText,
+  drawMask: drawWebGLRichTextMask,
+};
+
+
+function drawRichTextToCanvas(
+  context: CanvasRenderingContext2D,
+  source: RichText,
+  result: ReturnType<typeof getTextLayoutResult>,
+  fieldW: number,
+  fieldH: number,
+  text: string,
+): void {
+  const data = source.data;
+  const firstVisibleLine = data.scrollV - 1;
+  const scrollYOffset = firstVisibleLine > 0 ? getRichTextScrollYOffset(result.lineHeights, firstVisibleLine) : 0;
+  const scrollXOffset = data.scrollH;
+
+  context.save();
+  context.beginPath();
+  context.rect(0, 0, fieldW, fieldH);
+  context.clip();
+  context.textBaseline = 'alphabetic';
+  context.textAlign = 'start';
+
+  for (const group of result.groups) {
+    if (group.lineIndex < firstVisibleLine) continue;
+
+    context.font = formatToCanvasFont(group.format);
+    context.fillStyle = colorToHex(group.format.color ?? data.textColor);
+    const slice = text.substring(group.startIndex, group.endIndex);
+    const x = group.offsetX - scrollXOffset;
+    const y = group.offsetY + group.ascent - scrollYOffset;
+    context.fillText(slice, x, y);
+
+    if (group.format.underline) {
+      const lineY = y + group.descent;
+      context.strokeStyle = colorToHex(group.format.color ?? data.textColor);
+      context.lineWidth = Math.max(1, (group.format.size ?? 12) / 16);
+      context.beginPath();
+      context.moveTo(x, lineY);
+      context.lineTo(x + group.width, lineY);
+      context.stroke();
+    }
+  }
+
+  context.restore();
+}
+
+function layoutRichText(
+  source: RichText,
+  richTextRuntime: RichTextRuntime,
+  text: string,
+  formatRanges: Parameters<typeof layoutText>[1]['formatRanges'],
+): ReturnType<typeof getTextLayoutResult> {
+  const data = source.data;
+  const measure = (value: string, format: TextFormat): number => {
+    const context = getOffscreenCanvas(1, 1);
+    context.font = formatToCanvasFont(format);
+    return context.measureText(value).width;
+  };
+
+  const result = getTextLayoutResult(richTextRuntime as TextRuntime);
+  layoutText(result, {
+    text,
+    formatRanges,
+    width: data.wordWrap ? data.width : 10000,
+    height: data.height,
+    measure,
+    multiline: data.multiline,
+    wordWrap: data.wordWrap,
+  });
+  return result;
+}
+
+function getOffscreenCanvas(width: number, height: number): CanvasRenderingContext2D {
+  if (!_offscreenCanvas) {
+    _offscreenCanvas = document.createElement('canvas');
+    _offscreenCtx = _offscreenCanvas.getContext('2d')!;
+  }
+  if (_offscreenCanvas.width !== width) _offscreenCanvas.width = width;
+  if (_offscreenCanvas.height !== height) _offscreenCanvas.height = height;
+  return _offscreenCtx!;
+}

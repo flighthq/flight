@@ -45,6 +45,7 @@ export function makeGL(): WebGL2RenderingContext {
     blendFunc: vi.fn(),
     clearColor: vi.fn(),
     clear: vi.fn(),
+    viewport: vi.fn(),
     useProgram: vi.fn(),
     uniform1f: vi.fn(),
     uniform1i: vi.fn(),

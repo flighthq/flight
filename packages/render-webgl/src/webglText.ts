@@ -1,6 +1,14 @@
 import { createNullRendererData } from '@flighthq/render-core';
-import { createTextFormatRange, createTextLayoutResult, layoutText } from '@flighthq/text-layout';
-import type { DisplayObjectRenderer, DisplayObjectRenderNode, RenderState, Text, TextFormat } from '@flighthq/types';
+import { getTextRuntime } from '@flighthq/scenegraph-display';
+import { createTextFormatRange, getTextLayoutResult, layoutText } from '@flighthq/text-layout';
+import type {
+  DisplayObjectRenderer,
+  DisplayObjectRenderNode,
+  RenderState,
+  Text,
+  TextFormat,
+  TextRuntime,
+} from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';
@@ -8,7 +16,6 @@ import { setWebGLMatrixFromTransform } from './webglShader';
 import { colorToHex, formatToCanvasFont } from './webglTextHelpers';
 
 const LAYOUT_WIDTH = 10000;
-const _textLayout = createTextLayoutResult();
 
 // Offscreen canvas for rasterising text
 let _offscreenCanvas: HTMLCanvasElement | null = null;
@@ -40,7 +47,8 @@ export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRende
     return offCtx.measureText(t).width;
   };
 
-  layoutText(_textLayout, {
+  const result = getTextLayoutResult(getTextRuntime(source) as TextRuntime);
+  layoutText(result, {
     text,
     formatRanges: [createTextFormatRange(textFormat, 0, text.length)],
     width: LAYOUT_WIDTH,
@@ -48,7 +56,6 @@ export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRende
     measure,
   });
 
-  const result = _textLayout;
   if (result.groups.length === 0) return;
 
   // Determine canvas size from laid-out groups

@@ -2,13 +2,16 @@ export * from './webglBackground';
 export * from './webglBitmap';
 export * from './webglDisplayObject';
 export * from './webglElement';
+export * from './webglInputText';
 export * from './webglQuadBatch';
 export * from './webglRenderState';
+export * from './webglRichText';
 export * from './webglShape';
 export * from './webglSprite';
 export * from './webglSpriteRenderer';
 export * from './webglText';
 export * from './webglTilemap';
+export * from './webglVideo';
 
 // Re-export shape commands from canvas (shapes deferred to canvas for now)
 export {
