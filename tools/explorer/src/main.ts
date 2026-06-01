@@ -8,6 +8,7 @@ interface Entry {
 // Flat list of all navigable items
 const entries: Entry[] = examples.flatMap((e) => e.renderers.map((r) => ({ name: e.name, render: r })));
 
+const STORAGE_KEY = 'explorer-selected-index';
 let selectedIndex = 0;
 
 const sidebar = document.getElementById('sidebar')!;
@@ -37,6 +38,7 @@ function buildSidebar(): void {
 
 function select(index: number): void {
   selectedIndex = index;
+  sessionStorage.setItem(STORAGE_KEY, String(index));
   buildSidebar();
   sidebar.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
   const { name, render } = entries[index];
@@ -51,5 +53,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+const saved = parseInt(sessionStorage.getItem(STORAGE_KEY) ?? '0', 10);
 buildSidebar();
-select(0);
+select(isNaN(saved) || saved >= entries.length ? 0 : saved);
