@@ -1,7 +1,6 @@
 export * from './domBackground';
 export * from './domBitmap';
 export * from './domDisplayObject';
-export * from './domElement';
 export { invalidateDOMFontSource } from './domFontSource';
 export * from './domInputText';
 export * from './domMaterials';
@@ -16,3 +15,4 @@ export { escapeHtmlString } from './domTextHelpers';
 export * from './domTilemap';
 export * from './domTransform';
 export * from './domVideo';
+export * from './htmlView';
