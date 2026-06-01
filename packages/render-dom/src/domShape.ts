@@ -12,7 +12,7 @@ import type {
 } from '@flighthq/types';
 
 import { setDOMBlendMode } from './domMaterials';
-import { initDOMElement } from './domStyle';
+import { initDOMElement, setDOMRendererElement } from './domStyle';
 import { setDOMTransformWithOffset } from './domTransform';
 
 interface DOMShapeData extends RendererData {
@@ -57,7 +57,7 @@ export function drawDOMShape(state: DOMRenderState, renderNode: DisplayObjectRen
   setDOMBlendMode(data.canvas, renderNode.blendMode);
   setDOMTransformWithOffset(data.canvas, renderNode.transform2D, bounds.x, bounds.y, state.roundPixels);
 
-  state.element.appendChild(data.canvas);
+  setDOMRendererElement(state, data.canvas);
 }
 
 export function drawDOMShapeMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {

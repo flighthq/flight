@@ -10,6 +10,7 @@ import { ShapeKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
 import { defaultDOMShapeRenderer, drawDOMShape, drawDOMShapeMask } from './domShape';
+import type { DOMRenderStateInternal } from './internal';
 
 beforeAll(() => {
   registerCanvasShapeCommands(defaultCanvasShapeCommands);
@@ -22,6 +23,12 @@ function makeState() {
   return state;
 }
 
+function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTMLElement | null {
+  (state as unknown as DOMRenderStateInternal).domCurrentElement = null;
+  drawFn();
+  return (state as unknown as DOMRenderStateInternal).domCurrentElement;
+}
+
 describe('defaultDOMShapeRenderer', () => {
   it('has draw, drawMask, and createData', () => {
     expect(typeof defaultDOMShapeRenderer.draw).toBe('function');
@@ -31,17 +38,17 @@ describe('defaultDOMShapeRenderer', () => {
 });
 
 describe('drawDOMShape', () => {
-  it('does not append anything when commands array is empty', () => {
+  it('does not produce an element when commands array is empty', () => {
     const state = makeState();
     const shape = createShape();
     const renderNode = getOrCreateDisplayObjectRenderNode(state, shape);
 
-    drawDOMShape(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMShape(state, renderNode));
 
-    expect(state.element.children.length).toBe(0);
+    expect(el).toBeNull();
   });
 
-  it('appends a canvas element when the shape has draw commands', () => {
+  it('produces a canvas element when the shape has draw commands', () => {
     const state = makeState();
     const shape = createShape();
     appendShapeBeginFill(shape, 0xff0000);
@@ -49,10 +56,10 @@ describe('drawDOMShape', () => {
     appendShapeEndFill(shape);
     const renderNode = getOrCreateDisplayObjectRenderNode(state, shape);
 
-    drawDOMShape(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMShape(state, renderNode));
 
-    expect(state.element.children.length).toBe(1);
-    expect(state.element.children[0].tagName).toBe('CANVAS');
+    expect(el).not.toBeNull();
+    expect(el!.tagName).toBe('CANVAS');
   });
 
   it('sets canvas size to at least 1x1 for zero-size shapes', () => {
@@ -63,9 +70,7 @@ describe('drawDOMShape', () => {
     appendShapeEndFill(shape);
     const renderNode = getOrCreateDisplayObjectRenderNode(state, shape);
 
-    drawDOMShape(state, renderNode);
-
-    const canvas = state.element.children[0] as HTMLCanvasElement;
+    const canvas = drawGetEl(state, () => drawDOMShape(state, renderNode)) as HTMLCanvasElement;
     expect(canvas.width).toBeGreaterThanOrEqual(1);
     expect(canvas.height).toBeGreaterThanOrEqual(1);
   });
@@ -78,12 +83,8 @@ describe('drawDOMShape', () => {
     appendShapeEndFill(shape);
     const renderNode = getOrCreateDisplayObjectRenderNode(state, shape);
 
-    drawDOMShape(state, renderNode);
-    const firstCanvas = state.element.children[0];
-
-    while (state.element.firstChild) state.element.removeChild(state.element.firstChild);
-    drawDOMShape(state, renderNode);
-    const secondCanvas = state.element.children[0];
+    const firstCanvas = drawGetEl(state, () => drawDOMShape(state, renderNode));
+    const secondCanvas = drawGetEl(state, () => drawDOMShape(state, renderNode));
 
     expect(firstCanvas).toBe(secondCanvas);
   });

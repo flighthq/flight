@@ -16,6 +16,11 @@ export function createDOMRenderState(element: HTMLElement, options: Partial<DOMR
   state.element = element;
   state.currentBlendMode = null;
   state.allowSmoothing = options.imageSmoothingEnabled ?? true;
+  state.domCurrentElement = null;
+  state.domElementMap = new WeakMap();
+  state.domNextOrderList = [];
+  state.domOrderLength = -1; // -1 = never rendered; forces first-call reconciliation
+  state.domOrderList = [];
 
   element.style.position = 'relative';
   element.style.overflow = 'hidden';

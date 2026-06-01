@@ -5,12 +5,19 @@ import { SpriteKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
 import { defaultDOMSpriteRenderer, drawDOMSprite, renderDOMSprite } from './domSprite';
+import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
   const container = document.createElement('div');
   const state = createDOMRenderState(container);
   registerRenderer(state, SpriteKind, defaultDOMSpriteRenderer);
   return state;
+}
+
+function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTMLElement | null {
+  (state as unknown as DOMRenderStateInternal).domCurrentElement = null;
+  drawFn();
+  return (state as unknown as DOMRenderStateInternal).domCurrentElement;
 }
 
 function makeAtlas() {
@@ -37,9 +44,9 @@ describe('drawDOMSprite', () => {
     sprite.data.atlas = null;
     const renderNode = getOrCreateSpriteRenderNode(state, sprite);
 
-    drawDOMSprite(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMSprite(state, renderNode));
 
-    expect(state.element.children.length).toBe(0);
+    expect(el).toBeNull();
   });
 
   it('does nothing when atlas image is null', () => {
@@ -49,9 +56,9 @@ describe('drawDOMSprite', () => {
     sprite.data.atlas.regions.push({ x: 0, y: 0, width: 32, height: 32 } as any);
     const renderNode = getOrCreateSpriteRenderNode(state, sprite);
 
-    drawDOMSprite(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMSprite(state, renderNode));
 
-    expect(state.element.children.length).toBe(0);
+    expect(el).toBeNull();
   });
 
   it('does nothing when rendererData is null', () => {
@@ -62,22 +69,22 @@ describe('drawDOMSprite', () => {
     const renderNode = getOrCreateSpriteRenderNode(state, sprite);
     renderNode.rendererData = null;
 
-    drawDOMSprite(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMSprite(state, renderNode));
 
-    expect(state.element.children.length).toBe(0);
+    expect(el).toBeNull();
   });
 
-  it('appends a canvas when atlas and image are valid', () => {
+  it('produces a canvas when atlas and image are valid', () => {
     const state = makeState();
     const sprite = createSprite();
     sprite.data.atlas = makeAtlas();
     sprite.data.id = 0;
     const renderNode = getOrCreateSpriteRenderNode(state, sprite);
 
-    drawDOMSprite(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMSprite(state, renderNode));
 
-    expect(state.element.children.length).toBe(1);
-    expect(state.element.children[0].tagName).toBe('CANVAS');
+    expect(el).not.toBeNull();
+    expect(el!.tagName).toBe('CANVAS');
   });
 
   it('does nothing when region has zero size', () => {
@@ -91,22 +98,22 @@ describe('drawDOMSprite', () => {
     sprite.data.id = 0;
     const renderNode = getOrCreateSpriteRenderNode(state, sprite);
 
-    drawDOMSprite(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMSprite(state, renderNode));
 
-    expect(state.element.children.length).toBe(0);
+    expect(el).toBeNull();
   });
 });
 
 describe('renderDOMSprite', () => {
-  it('clears the container before rendering', () => {
+  it('removes foreign elements from the container on first render', () => {
     const state = makeState();
-    const child = document.createElement('span');
-    state.element.appendChild(child);
+    const foreign = document.createElement('span');
+    state.element.appendChild(foreign);
     const sprite = createSprite();
 
     renderDOMSprite(state, sprite);
 
-    expect(state.element.contains(child)).toBe(false);
+    expect(state.element.contains(foreign)).toBe(false);
   });
 
   it('does not throw for an empty sprite tree', () => {

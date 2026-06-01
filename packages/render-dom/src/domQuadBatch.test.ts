@@ -5,12 +5,19 @@ import { QuadBatchKind } from '@flighthq/types';
 
 import { defaultDOMQuadBatchRenderer, drawDOMQuadBatch } from './domQuadBatch';
 import { createDOMRenderState } from './domRenderState';
+import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
   const container = document.createElement('div');
   const state = createDOMRenderState(container);
   registerRenderer(state, QuadBatchKind, defaultDOMQuadBatchRenderer);
   return state;
+}
+
+function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTMLElement | null {
+  (state as unknown as DOMRenderStateInternal).domCurrentElement = null;
+  drawFn();
+  return (state as unknown as DOMRenderStateInternal).domCurrentElement;
 }
 
 function makeAtlas() {
@@ -37,9 +44,9 @@ describe('drawDOMQuadBatch', () => {
     qb.data.atlas = null;
     const renderNode = getOrCreateSpriteRenderNode(state, qb);
 
-    drawDOMQuadBatch(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMQuadBatch(state, renderNode));
 
-    expect(state.element.children.length).toBe(0);
+    expect(el).toBeNull();
   });
 
   it('does nothing when instanceCount is zero', () => {
@@ -49,9 +56,9 @@ describe('drawDOMQuadBatch', () => {
     qb.data.instanceCount = 0;
     const renderNode = getOrCreateSpriteRenderNode(state, qb);
 
-    drawDOMQuadBatch(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMQuadBatch(state, renderNode));
 
-    expect(state.element.children.length).toBe(0);
+    expect(el).toBeNull();
   });
 
   it('does nothing when rendererData is null', () => {
@@ -65,12 +72,12 @@ describe('drawDOMQuadBatch', () => {
     const renderNode = getOrCreateSpriteRenderNode(state, qb);
     renderNode.rendererData = null;
 
-    drawDOMQuadBatch(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMQuadBatch(state, renderNode));
 
-    expect(state.element.children.length).toBe(0);
+    expect(el).toBeNull();
   });
 
-  it('appends a canvas when atlas and instances are valid', () => {
+  it('produces a canvas when atlas and instances are valid', () => {
     const state = makeState();
     const qb = createQuadBatch();
     qb.data.atlas = makeAtlas();
@@ -80,9 +87,9 @@ describe('drawDOMQuadBatch', () => {
     qb.data.transforms[1] = 10;
     const renderNode = getOrCreateSpriteRenderNode(state, qb);
 
-    drawDOMQuadBatch(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMQuadBatch(state, renderNode));
 
-    expect(state.element.children.length).toBe(1);
-    expect(state.element.children[0].tagName).toBe('CANVAS');
+    expect(el).not.toBeNull();
+    expect(el!.tagName).toBe('CANVAS');
   });
 });

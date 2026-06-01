@@ -11,7 +11,7 @@ import type {
   SpriteRenderNode,
 } from '@flighthq/types';
 
-import { applyDOMStyle, initDOMElement } from './domStyle';
+import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
 
 interface DOMQuadBatchData extends RendererData {
   canvas: HTMLCanvasElement | null;
@@ -132,7 +132,7 @@ export function drawDOMQuadBatch(state: DOMRenderState, quadBatch: SpriteRenderN
   }
 
   applyDOMStyle(state, data.canvas, quadBatch);
-  state.element.appendChild(data.canvas);
+  setDOMRendererElement(state, data.canvas);
 }
 
 export const defaultDOMQuadBatchRenderer: SpriteRenderer = {

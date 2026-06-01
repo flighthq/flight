@@ -5,12 +5,19 @@ import { BitmapKind } from '@flighthq/types';
 
 import { defaultDOMBitmapRenderer, drawDOMBitmap, drawDOMBitmapMask } from './domBitmap';
 import { createDOMRenderState } from './domRenderState';
+import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
   const container = document.createElement('div');
   const state = createDOMRenderState(container);
   registerRenderer(state, BitmapKind, defaultDOMBitmapRenderer);
   return state;
+}
+
+function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTMLElement | null {
+  (state as unknown as DOMRenderStateInternal).domCurrentElement = null;
+  drawFn();
+  return (state as unknown as DOMRenderStateInternal).domCurrentElement;
 }
 
 function makeHTMLImageSource() {
@@ -44,33 +51,33 @@ describe('drawDOMBitmap', () => {
     bitmap.data.image = null;
     const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
 
-    drawDOMBitmap(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMBitmap(state, renderNode));
 
-    expect(state.element.children.length).toBe(0);
+    expect(el).toBeNull();
   });
 
-  it('appends an img element when source is HTMLImageElement', () => {
+  it('produces an img element when source is HTMLImageElement', () => {
     const state = makeState();
     const bitmap = createBitmap();
     bitmap.data.image = makeHTMLImageSource();
     const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
 
-    drawDOMBitmap(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMBitmap(state, renderNode));
 
-    expect(state.element.children.length).toBe(1);
-    expect(state.element.children[0].tagName).toBe('IMG');
+    expect(el).not.toBeNull();
+    expect(el!.tagName).toBe('IMG');
   });
 
-  it('appends a canvas element when source is not HTMLImageElement', () => {
+  it('produces a canvas element when source is not HTMLImageElement', () => {
     const state = makeState();
     const bitmap = createBitmap();
     bitmap.data.image = makeCanvasImageSource();
     const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
 
-    drawDOMBitmap(state, renderNode);
+    const el = drawGetEl(state, () => drawDOMBitmap(state, renderNode));
 
-    expect(state.element.children.length).toBe(1);
-    expect(state.element.children[0].tagName).toBe('CANVAS');
+    expect(el).not.toBeNull();
+    expect(el!.tagName).toBe('CANVAS');
   });
 
   it('reuses the same img element across multiple draws', () => {
@@ -79,13 +86,8 @@ describe('drawDOMBitmap', () => {
     bitmap.data.image = makeHTMLImageSource();
     const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
 
-    drawDOMBitmap(state, renderNode);
-    const firstImg = state.element.children[0];
-
-    // Simulate a second frame — clear and redraw
-    while (state.element.firstChild) state.element.removeChild(state.element.firstChild);
-    drawDOMBitmap(state, renderNode);
-    const secondImg = state.element.children[0];
+    const firstImg = drawGetEl(state, () => drawDOMBitmap(state, renderNode));
+    const secondImg = drawGetEl(state, () => drawDOMBitmap(state, renderNode));
 
     expect(firstImg).toBe(secondImg);
   });
@@ -96,9 +98,7 @@ describe('drawDOMBitmap', () => {
     bitmap.data.image = makeCanvasImageSource();
     const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
 
-    drawDOMBitmap(state, renderNode);
-
-    const canvas = state.element.children[0] as HTMLCanvasElement;
+    const canvas = drawGetEl(state, () => drawDOMBitmap(state, renderNode)) as HTMLCanvasElement;
     expect(canvas.width).toBe(64);
     expect(canvas.height).toBe(64);
   });

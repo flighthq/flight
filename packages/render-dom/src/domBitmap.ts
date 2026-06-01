@@ -9,7 +9,7 @@ import type {
   RenderState,
 } from '@flighthq/types';
 
-import { applyDOMStyle, initDOMElement } from './domStyle';
+import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
 
 interface DOMBitmapData extends RendererData {
   canvas: HTMLCanvasElement | null;
@@ -60,7 +60,7 @@ function renderBitmapAsImage(
   }
 
   applyDOMStyle(state, data.image, renderNode);
-  state.element.appendChild(data.image);
+  setDOMRendererElement(state, data.image);
 }
 
 function renderBitmapAsCanvas(
@@ -92,7 +92,7 @@ function renderBitmapAsCanvas(
   ctx.drawImage(src, 0, 0, width, height);
 
   applyDOMStyle(state, data.canvas, renderNode);
-  state.element.appendChild(data.canvas);
+  setDOMRendererElement(state, data.canvas);
 }
 
 export function drawDOMBitmapMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {

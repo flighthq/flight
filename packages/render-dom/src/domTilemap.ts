@@ -9,7 +9,7 @@ import type {
   Tilemap,
 } from '@flighthq/types';
 
-import { applyDOMStyle, initDOMElement } from './domStyle';
+import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
 
 interface DOMTilemapData extends RendererData {
   canvas: HTMLCanvasElement | null;
@@ -91,7 +91,7 @@ export function drawDOMTilemap(state: DOMRenderState, tilemapNode: SpriteRenderN
   }
 
   applyDOMStyle(state, data.canvas, tilemapNode);
-  state.element.appendChild(data.canvas);
+  setDOMRendererElement(state, data.canvas);
 }
 
 export const defaultDOMTilemapRenderer: SpriteRenderer = {

@@ -4,12 +4,19 @@ import { HTMLViewKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
 import { defaultHTMLViewRenderer, drawHTMLView, drawHTMLViewMask } from './htmlView';
+import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
   const container = document.createElement('div');
   const state = createDOMRenderState(container);
   registerRenderer(state, HTMLViewKind, defaultHTMLViewRenderer);
   return state;
+}
+
+function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTMLElement | null {
+  (state as unknown as DOMRenderStateInternal).domCurrentElement = null;
+  drawFn();
+  return (state as unknown as DOMRenderStateInternal).domCurrentElement;
 }
 
 describe('defaultHTMLViewRenderer', () => {
@@ -21,26 +28,26 @@ describe('defaultHTMLViewRenderer', () => {
 });
 
 describe('drawHTMLView', () => {
-  it('does not append anything when source element is null', () => {
+  it('produces no element when source element is null', () => {
     const state = makeState();
     const node = createHTMLView();
     node.data.element = null;
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawHTMLView(state, renderNode);
+    const el = drawGetEl(state, () => drawHTMLView(state, renderNode));
 
-    expect(state.element.children.length).toBe(0);
+    expect(el).toBeNull();
   });
 
-  it('appends the source element to the container', () => {
+  it('produces the source element', () => {
     const state = makeState();
     const inner = document.createElement('span');
     const node = createHTMLView({ data: { element: inner } });
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawHTMLView(state, renderNode);
+    const el = drawGetEl(state, () => drawHTMLView(state, renderNode));
 
-    expect(state.element.contains(inner)).toBe(true);
+    expect(el).toBe(inner);
   });
 
   it('initializes position and overflow styles on first draw', () => {

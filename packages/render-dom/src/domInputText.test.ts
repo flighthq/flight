@@ -5,12 +5,19 @@ import { InputTextKind } from '@flighthq/types';
 
 import { defaultDOMInputTextRenderer, drawDOMInputText } from './domInputText';
 import { createDOMRenderState } from './domRenderState';
+import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
   const container = document.createElement('div');
   const state = createDOMRenderState(container);
   registerRenderer(state, InputTextKind, defaultDOMInputTextRenderer);
   return state;
+}
+
+function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTMLElement | null {
+  (state as unknown as DOMRenderStateInternal).domCurrentElement = null;
+  drawFn();
+  return (state as unknown as DOMRenderStateInternal).domCurrentElement;
 }
 
 describe('defaultDOMInputTextRenderer', () => {
@@ -27,10 +34,8 @@ describe('drawDOMInputText', () => {
     setInputTextSelection(node, 2, 2);
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawDOMInputText(state, renderNode);
-
-    const div = state.element.children[0] as HTMLElement;
-    expect(div.innerHTML).toContain('background:#000000');
+    const div = drawGetEl(state, () => drawDOMInputText(state, renderNode));
+    expect(div!.innerHTML).toContain('background:#000000');
   });
 
   it('appends selection rectangles for the focused expanded selection', () => {
@@ -40,9 +45,7 @@ describe('drawDOMInputText', () => {
     setInputTextSelection(node, 1, 4);
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawDOMInputText(state, renderNode);
-
-    const div = state.element.children[0] as HTMLElement;
-    expect(div.innerHTML).toContain('background:#0078d7');
+    const div = drawGetEl(state, () => drawDOMInputText(state, renderNode));
+    expect(div!.innerHTML).toContain('background:#0078d7');
   });
 });

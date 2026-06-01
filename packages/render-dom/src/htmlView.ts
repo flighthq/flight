@@ -2,6 +2,7 @@ import { createNullRendererData } from '@flighthq/render-core';
 import type { DisplayObjectRenderer, DisplayObjectRenderNode, DOMRenderState, HTMLView } from '@flighthq/types';
 
 import { setDOMBlendMode } from './domMaterials';
+import { setDOMRendererElement } from './domStyle';
 import { setDOMTransform } from './domTransform';
 
 export function drawHTMLView(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
@@ -24,7 +25,7 @@ export function drawHTMLView(state: DOMRenderState, renderNode: DisplayObjectRen
   element.style.opacity = renderNode.alpha < 1 ? String(renderNode.alpha) : '';
   setDOMBlendMode(element, renderNode.blendMode);
 
-  state.element.appendChild(element);
+  setDOMRendererElement(state, element);
 }
 
 export function drawHTMLViewMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {
