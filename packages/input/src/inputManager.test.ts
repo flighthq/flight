@@ -2,6 +2,7 @@ import { connectSignal } from '@flighthq/signals';
 import { KeyCode, KeyModifier } from '@flighthq/types';
 
 import {
+  attachGamepadInput,
   attachKeyboardInput,
   attachPointerInput,
   attachRelativePointerInput,
@@ -12,7 +13,60 @@ import {
   getKeyCodeFromDOMKeyboardEvent,
   getKeyModifierFromDOMKeyboardEvent,
   getMouseWheelModeFromDOMWheelEvent,
+  pollGamepadInput,
 } from './inputManager';
+
+describe('attachGamepadInput', () => {
+  it('emits onGamepadConnect when a gamepad connects', () => {
+    const manager = createInputManager();
+    attachGamepadInput(manager, window);
+
+    let received: { gamepad: number; id: string } | null = null;
+    connectSignal(manager.onGamepadConnect, (data) => {
+      received = { gamepad: data.gamepad, id: data.id };
+    });
+
+    window.dispatchEvent(createGamepadEvent('gamepadconnected', 0, 'Xbox Controller'));
+    expect(received).toEqual({ gamepad: 0, id: 'Xbox Controller' });
+  });
+
+  it('emits onGamepadDisconnect when a gamepad disconnects', () => {
+    const manager = createInputManager();
+    attachGamepadInput(manager, window);
+
+    let received: { gamepad: number } | null = null;
+    connectSignal(manager.onGamepadDisconnect, (data) => {
+      received = { gamepad: data.gamepad };
+    });
+
+    window.dispatchEvent(createGamepadEvent('gamepaddisconnected', 1, 'Generic Gamepad'));
+    expect(received).toEqual({ gamepad: 1 });
+  });
+
+  it('returns a cleanup function that removes listeners', () => {
+    const manager = createInputManager();
+    const detach = attachGamepadInput(manager, window);
+
+    let fired = 0;
+    connectSignal(manager.onGamepadConnect, () => fired++);
+
+    detach();
+    window.dispatchEvent(createGamepadEvent('gamepadconnected', 0, 'Pad'));
+    expect(fired).toBe(0);
+  });
+
+  it('respects the enabled flag', () => {
+    const manager = createInputManager();
+    attachGamepadInput(manager, window);
+
+    let fired = 0;
+    connectSignal(manager.onGamepadConnect, () => fired++);
+
+    manager.enabled = false;
+    window.dispatchEvent(createGamepadEvent('gamepadconnected', 0, 'Pad'));
+    expect(fired).toBe(0);
+  });
+});
 
 describe('attachKeyboardInput', () => {
   it('emits keyboard signals from the configured keyboard target', () => {
@@ -175,6 +229,11 @@ describe('createInputManager', () => {
 describe('createInputSignals', () => {
   it('returns all input signals', () => {
     const signals = createInputSignals();
+    expect(signals.onGamepadAxisMove).toBeDefined();
+    expect(signals.onGamepadButtonDown).toBeDefined();
+    expect(signals.onGamepadButtonUp).toBeDefined();
+    expect(signals.onGamepadConnect).toBeDefined();
+    expect(signals.onGamepadDisconnect).toBeDefined();
     expect(signals.onKeyDown).toBeDefined();
     expect(signals.onKeyUp).toBeDefined();
     expect(signals.onPointerCancel).toBeDefined();
@@ -237,6 +296,42 @@ describe('getMouseWheelModeFromDOMWheelEvent', () => {
   });
 });
 
+describe('pollGamepadInput', () => {
+  beforeEach(() => {
+    Object.defineProperty(navigator, 'getGamepads', {
+      configurable: true,
+      value: () => [],
+    });
+  });
+
+  it('emits onGamepadButtonDown when a button transitions to pressed', () => {
+    const manager = createInputManager();
+    const mockPad = { index: 0, axes: [], buttons: [{ pressed: true, value: 1, touched: true }] } as unknown as Gamepad;
+    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
+
+    let received: { button: number; gamepad: number } | null = null;
+    connectSignal(manager.onGamepadButtonDown, (data) => {
+      received = { button: data.button, gamepad: data.gamepad };
+    });
+
+    pollGamepadInput(manager);
+    expect(received).toEqual({ button: 0, gamepad: 0 });
+  });
+
+  it('does not emit when state is unchanged', () => {
+    const manager = createInputManager();
+    const mockPad = { index: 0, axes: [], buttons: [{ pressed: true, value: 1, touched: true }] } as unknown as Gamepad;
+    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
+
+    pollGamepadInput(manager);
+
+    let fired = 0;
+    connectSignal(manager.onGamepadButtonDown, () => fired++);
+    pollGamepadInput(manager);
+    expect(fired).toBe(0);
+  });
+});
+
 function createInputEvent(type: string, data: string): InputEvent {
   return new InputEvent(type, { bubbles: true, data });
 }
@@ -277,4 +372,19 @@ function createWheelEvent(options: WheelEventInit = {}): WheelEvent {
     deltaY: 0,
     ...options,
   });
+}
+
+function createGamepadEvent(type: string, index: number, id: string): Event {
+  const event = new Event(type, { bubbles: false }) as GamepadEvent;
+  const gamepad = {
+    axes: [],
+    buttons: [],
+    connected: true,
+    id,
+    index,
+    mapping: 'standard',
+    timestamp: 0,
+  } as unknown as Gamepad;
+  Object.defineProperty(event, 'gamepad', { value: gamepad });
+  return event;
 }

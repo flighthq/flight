@@ -1,5 +1,14 @@
 import { createSignal, emitSignal } from '@flighthq/signals';
-import type { InputKeyboardData, InputPointerData, InputSignals, MouseWheelMode, TextInputData } from '@flighthq/types';
+import type {
+  InputGamepadAxisData,
+  InputGamepadButtonData,
+  InputGamepadConnectData,
+  InputKeyboardData,
+  InputPointerData,
+  InputSignals,
+  MouseWheelMode,
+  TextInputData,
+} from '@flighthq/types';
 import { KeyCode, KeyModifier } from '@flighthq/types';
 
 export interface AttachInputOptions {
@@ -8,6 +17,49 @@ export interface AttachInputOptions {
 
 export interface InputManager extends InputSignals {
   enabled: boolean;
+}
+
+export function attachGamepadInput(manager: InputManager, target: Window): () => void {
+  const onGamepadConnected = (e: Event) => {
+    if (!manager.enabled) return;
+    const pad = (e as GamepadEvent).gamepad;
+    const prev = getOrCreateGamepadPollState(manager);
+    prev.axes.set(pad.index, Array.from(pad.axes));
+    prev.buttons.set(
+      pad.index,
+      Array.from(pad.buttons, (b) => b.pressed),
+    );
+    _connectData.gamepad = pad.index;
+    _connectData.id = pad.id;
+    emitSignal(manager.onGamepadConnect, _connectData);
+  };
+
+  const onGamepadDisconnected = (e: Event) => {
+    if (!manager.enabled) return;
+    const pad = (e as GamepadEvent).gamepad;
+    const prev = getOrCreateGamepadPollState(manager);
+    prev.axes.delete(pad.index);
+    prev.buttons.delete(pad.index);
+    _connectData.gamepad = pad.index;
+    _connectData.id = pad.id;
+    emitSignal(manager.onGamepadDisconnect, _connectData);
+  };
+
+  let rafId = 0;
+  const loop = () => {
+    pollGamepadInput(manager);
+    rafId = requestAnimationFrame(loop);
+  };
+
+  target.addEventListener('gamepadconnected', onGamepadConnected);
+  target.addEventListener('gamepaddisconnected', onGamepadDisconnected);
+  rafId = requestAnimationFrame(loop);
+
+  return () => {
+    target.removeEventListener('gamepadconnected', onGamepadConnected);
+    target.removeEventListener('gamepaddisconnected', onGamepadDisconnected);
+    cancelAnimationFrame(rafId);
+  };
 }
 
 export function attachKeyboardInput(
@@ -164,6 +216,11 @@ export function createInputManager(): InputManager {
 
 export function createInputSignals(): InputSignals {
   return {
+    onGamepadAxisMove: createSignal(),
+    onGamepadButtonDown: createSignal(),
+    onGamepadButtonUp: createSignal(),
+    onGamepadConnect: createSignal(),
+    onGamepadDisconnect: createSignal(),
     onKeyDown: createSignal(),
     onKeyUp: createSignal(),
     onPointerCancel: createSignal(),
@@ -207,6 +264,44 @@ export function getMouseWheelModeFromDOMWheelEvent(event: Readonly<WheelEvent>):
   if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) return 'lines';
   if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) return 'pages';
   return 'unknown';
+}
+
+export function pollGamepadInput(manager: InputManager): void {
+  if (!manager.enabled || typeof navigator.getGamepads !== 'function') return;
+  const prev = getOrCreateGamepadPollState(manager);
+  const gamepads = navigator.getGamepads();
+  for (const pad of gamepads) {
+    if (pad === null) continue;
+    const prevAxes = prev.axes.get(pad.index) ?? [];
+    const prevButtons = prev.buttons.get(pad.index) ?? [];
+    for (let i = 0; i < pad.axes.length; i++) {
+      const value = pad.axes[i]!;
+      if (value !== prevAxes[i]) {
+        prevAxes[i] = value;
+        _axisData.axis = i;
+        _axisData.gamepad = pad.index;
+        _axisData.value = value;
+        emitSignal(manager.onGamepadAxisMove, _axisData);
+      }
+    }
+    for (let i = 0; i < pad.buttons.length; i++) {
+      const btn = pad.buttons[i]!;
+      const wasPressed = prevButtons[i] ?? false;
+      if (btn.pressed !== wasPressed) {
+        prevButtons[i] = btn.pressed;
+        _buttonData.button = i;
+        _buttonData.gamepad = pad.index;
+        _buttonData.value = btn.value;
+        if (btn.pressed) {
+          emitSignal(manager.onGamepadButtonDown, _buttonData);
+        } else {
+          emitSignal(manager.onGamepadButtonUp, _buttonData);
+        }
+      }
+    }
+    prev.axes.set(pad.index, prevAxes);
+    prev.buttons.set(pad.index, prevButtons);
+  }
 }
 
 function getKeyCodeFromDOMKeyboardCode(code: string, location: number): number {
@@ -383,3 +478,23 @@ const _textData: TextInputData = {
   start: 0,
   text: '',
 };
+
+interface GamepadPollState {
+  axes: Map<number, number[]>;
+  buttons: Map<number, boolean[]>;
+}
+
+const _gamepadPollStates = new WeakMap<InputManager, GamepadPollState>();
+
+function getOrCreateGamepadPollState(manager: InputManager): GamepadPollState {
+  let state = _gamepadPollStates.get(manager);
+  if (state === undefined) {
+    state = { axes: new Map(), buttons: new Map() };
+    _gamepadPollStates.set(manager, state);
+  }
+  return state;
+}
+
+const _axisData: InputGamepadAxisData = { axis: 0, gamepad: 0, value: 0 };
+const _buttonData: InputGamepadButtonData = { button: 0, gamepad: 0, value: 0 };
+const _connectData: InputGamepadConnectData = { gamepad: 0, id: '' };
