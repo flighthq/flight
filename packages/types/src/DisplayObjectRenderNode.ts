@@ -6,4 +6,5 @@ export interface DisplayObjectRenderNode extends RenderNode2D {
   maskDepth: number;
   scrollRectDepth: number;
   readonly source: DisplayObject;
+  updateChildren: boolean;
 }
