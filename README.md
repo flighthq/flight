@@ -229,18 +229,18 @@ npm run fix
 npm run check
 
 # Full CI-equivalent confidence sweep
-npm run verify
+npm run ci
 ```
 
 Useful repository commands:
 
-| Command            | Purpose                                                                 |
-| ------------------ | ----------------------------------------------------------------------- |
-| `npm run api`      | Print compact public API signatures                                     |
-| `npm run coverage` | Check that exported functions have colocated tests                      |
-| `npm run order`    | Check source export and test `describe` ordering                        |
-| `npm run size`     | Build matching examples and report gzip sizes against the baseline      |
-| `npm run validate` | Check package shape, exports, references, and side-effect-free patterns |
+| Command                  | Purpose                                                                 |
+| ------------------------ | ----------------------------------------------------------------------- |
+| `npm run api`            | Print compact public API signatures                                     |
+| `npm run coverage`       | Check that exported functions have colocated tests                      |
+| `npm run order`          | Check source export and test `describe` ordering                        |
+| `npm run size`           | Build matching examples and report gzip sizes against the baseline      |
+| `npm run packages:check` | Check package shape, exports, references, and side-effect-free patterns |
 
 ## Repo Structure
 

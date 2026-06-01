@@ -19,13 +19,13 @@ Read this file once at the start of a fresh agent session, then revisit the rele
 
 ## Task Triggers
 
-- Run `npm run validate` after package-level changes such as package manifests, workspace references, exports, build targets, or side-effect behavior.
+- Run `npm run packages:check` after package-level changes such as package manifests, workspace references, exports, build targets, or side-effect behavior.
 - Run `npm run coverage` after adding, removing, or renaming exported functions.
 - Run `npm run order` after adding, removing, or renaming exported functions or test `describe` blocks. Use `npm run order:fix` when you want the repository tool to rewrite order for you.
 - Run `npm run api` after public API changes to scan signatures and naming symmetry.
 - Run `npm run size` after changes to examples, package exports, barrel files, renderer registration, dependencies, or anything that may affect tree-shaking.
 - Run the closest meaningful tests while iterating: a touched test file, a package workspace, or a Vitest project filter. Broaden once the local behavior is understood.
-- Run `npm run check` for narrower completed changes. Run `npm run verify` before calling broad refactors, public API reshapes, example changes, packaging changes, or tree-shaking-sensitive work done.
+- Run `npm run check` for narrower completed changes. Run `npm run ci` before calling broad refactors, public API reshapes, example changes, packaging changes, or tree-shaking-sensitive work done.
 
 ## Bundle Size Discipline
 
@@ -64,10 +64,8 @@ This SDK should behave like a hardware store: users can import one small tool wi
 - `npm run api` prints compact exported function signatures for all packages.
 - `npm run api <query>` filters packages and exported functions by the given query. Example: `npm run api application` or `npm run api --function register`.
 - `npm run api:json` prints the same API data as JSON for tools and agents.
-- `npm run check` is the default non-fixing quality sweep for agents and contributors. It runs `validate`, `coverage`, failing `order:check`, `lint:check`, and `typecheck`.
-- `npm run check:strict` is an alias for `npm run check` kept for compatibility.
-- `npm run verify` is an alias for `npm run ci`, kept as the agent-friendly full confidence command before calling broad changes done.
-- `npm run validate` checks monorepo shape, package references, workspace dependency conventions, package export targets, packaging shape, and side-effect-free source invariants. Run this after any package-level change and fix everything it reports before moving on.
+- `npm run check` is the default non-fixing quality sweep for agents and contributors. It runs `packages:check`, `coverage`, failing `order:check`, `lint`, and `typecheck`.
+- `npm run packages:check` checks monorepo shape, package references, workspace dependency conventions, package export targets, packaging shape, and side-effect-free source invariants. Run this after any package-level change and fix everything it reports before moving on.
 - `npm run coverage` checks for missing test files and missing tests for exported functions.
 - `npm run order` reports exported functions and test `describe` blocks that are not alphabetized. `npm run order:check` runs the same check in failing mode once a package or area has been cleaned up. `npm run order:fix` rewrites files in place to apply the correct order; comments immediately preceding a declaration (with no blank line between them) are treated as attached and move with it.
 - `npm run test` runs the normal root Vitest workspace, excluding the heavier `size` project. This is usually faster than chaining package/API/integration test scripts separately.
@@ -121,12 +119,12 @@ Geometry types (rectangles, vectors, matrices) follow explicit allocation and ow
 - Browser-facing packages (`render-canvas`, `render-webgl`, `render-dom`, etc.) use the `jsdom` test environment.
 - `vitest-webgl-canvas-mock` mocks `'webgl'` and `'experimental-webgl'` contexts only, not `'webgl2'`. Tests in `render-webgl` that need a WebGL2 render state must mock `canvas.getContext` to return a fake `WebGL2RenderingContext`.
 - While iterating, prefer the narrowest meaningful Vitest run: a touched test file, a package workspace, or a Vitest project filter. Broaden only after the local change is understood.
-- Run a package's tests with `npm run test:run --workspace=packages/<name>`.
+- Run a package's tests with `npm run test --workspace=packages/<name>`.
 - Root API and integration tests are for cross-package behavior that is awkward or less meaningful in one package's colocated unit tests. Prefer adding colocated unit tests first, then add API/integration coverage when the behavior crosses package boundaries, validates public SDK import paths, or demonstrates a complete user-facing flow.
 
 ## Packaging and Publishing
 
-Packaging policy should be enforced by scripts and `npm run validate` rather than by memory. Treat this section as orientation for the current package shape, not as the source of truth.
+Packaging policy should be enforced by scripts and `npm run packages:check` rather than by memory. Treat this section as orientation for the current package shape, not as the source of truth.
 
 - Packages currently publish `dist` plus colocated source `*.test.ts` files. Tests are intentionally included as examples and AI-readable documentation.
 - Compiled test outputs are excluded from published packages.
@@ -154,12 +152,12 @@ Packaging policy should be enforced by scripts and `npm run validate` rather tha
 
 ## Review Hints
 
-- After any package-level change, run `npm run validate` and fix everything it reports. It catches stale subpaths, missing `tsconfig.json` references, workspace dependency mismatches, packaging drift, and top-level side-effect statements.
+- After any package-level change, run `npm run packages:check` and fix everything it reports. It catches stale subpaths, missing `tsconfig.json` references, workspace dependency mismatches, packaging drift, and top-level side-effect statements.
 - When adding or renaming exported functions, run `npm run coverage` to find missing test files and missing `describe` coverage.
 - When adding or renaming exported functions or `describe` blocks, run `npm run order` to check the scan order. Prefer leaving touched files cleaner than you found them.
 - When changing public APIs, check naming symmetry across packages and run `npm run api` to scan signatures.
-- Before declaring a broad refactor complete, run `npm run verify`. For narrower changes, run the closest package tests plus `check`; use `verify` when examples, public API names, packaging, or tree-shaking may have been affected.
+- Before declaring a broad refactor complete, run `npm run ci`. For narrower changes, run the closest package tests plus `check`; use `ci` when examples, public API names, packaging, or tree-shaking may have been affected.
 - Do not use broad test runs as a substitute for reading the nearby source and tests. Broad runs are confidence gates; focused tests are the normal editing loop.
 - When changing an `out`-parameter function, test both a distinct output object and aliasing where `out` is also an input.
-- When adding a new package, copy the package shape from a nearby package and then run `npm run validate`.
+- When adding a new package, copy the package shape from a nearby package and then run `npm run packages:check`.
 - Subsystem state belongs on the runtime object, not as new fields on the entity or as new casts in `internal.ts`.
