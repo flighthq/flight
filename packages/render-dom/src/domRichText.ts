@@ -125,11 +125,11 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
       bulletLines.add(group.lineIndex);
       const bulletSize = fmt.size ?? 12;
       const bulletX = x - bulletSize * 0.7 - DOM_BULLET_GAP;
-      const bulletStyle = `position:absolute;left:${bulletX}px;top:${y}px;font:${fontStr};color:${colorToCSS(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
+      const bulletStyle = `position:absolute;left:${bulletX}px;top:${y}px;font:${fontStr};line-height:1;color:${colorToCSS(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
       html += `<div style="${bulletStyle}">•</div>`;
     }
 
-    let style = `position:absolute;left:${x}px;top:${y}px;font:${fontStr};`;
+    let style = `position:absolute;left:${x}px;top:${y}px;font:${fontStr};line-height:1;`;
     style += `color:${colorToCSS(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
     if (fmt.underline || fmt.strikethrough) {
       const decorations = [];
@@ -170,11 +170,18 @@ function getDomFontAscent(ctx: CanvasRenderingContext2D, font: string): number {
   const cached = _domFontAscentCache.get(font);
   if (cached !== undefined) return cached;
   ctx.font = font;
-  const metrics = ctx.measureText('Hg') as TextMetrics & { fontBoundingBoxAscent?: number };
-  // fontBoundingBoxAscent is the CSS line-box ascent — exactly what the browser uses
-  // to position the alphabetic baseline within an element. Fall back to actualBoundingBoxAscent
-  // of a tall character, which is a reasonable approximation.
-  const ascent = metrics.fontBoundingBoxAscent ?? ctx.measureText('H').actualBoundingBoxAscent;
+  // emHeightAscent: "distance from textBaseline to the top of the em square in the
+  // line box" — exactly the value CSS uses to place the baseline inside a
+  // line-height:1 element (no half-leading contribution). fontBoundingBoxAscent is
+  // the same browser-support tier (Chrome 87, Safari 11, Firefox 116) and a close
+  // fallback. Last resort: 85% of font-size covers most Latin fonts reasonably.
+  const metrics = ctx.measureText('H') as TextMetrics & {
+    emHeightAscent?: number;
+    fontBoundingBoxAscent?: number;
+  };
+  const sizeMatch = /(\d+(?:\.\d+)?)px/.exec(font);
+  const size = sizeMatch ? parseFloat(sizeMatch[1]) : 12;
+  const ascent = metrics.emHeightAscent ?? metrics.fontBoundingBoxAscent ?? size * 0.85;
   _domFontAscentCache.set(font, ascent);
   return ascent;
 }
