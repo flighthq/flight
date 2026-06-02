@@ -3,7 +3,7 @@ import { createCanvasRenderState } from '@flighthq/render-canvas';
 import { getLocalBoundsRectangle } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 
-import { beginCanvasDisplayObjectImageCache, endCanvasDisplayObjectImageCache } from './canvasImageCacheCapture';
+import { beginDisplayObjectImageCacheCapture, endDisplayObjectImageCacheCapture } from './canvasImageCacheCapture';
 import { getImageCache } from './imageCache';
 
 function makeCacheState() {
@@ -11,13 +11,13 @@ function makeCacheState() {
   return createCanvasRenderState(canvas);
 }
 
-describe('beginCanvasDisplayObjectImageCache', () => {
+describe('beginDisplayObjectImageCacheCapture', () => {
   it('resizes the canvas to the source bounds', () => {
     const cacheState = makeCacheState();
     const source = createDisplayObject();
     setRectangle(getLocalBoundsRectangle(source), 0, 0, 64, 48);
 
-    beginCanvasDisplayObjectImageCache(cacheState, source);
+    beginDisplayObjectImageCacheCapture(cacheState, source);
 
     expect(cacheState.canvas.width).toBe(64);
     expect(cacheState.canvas.height).toBe(48);
@@ -27,7 +27,7 @@ describe('beginCanvasDisplayObjectImageCache', () => {
     const cacheState = makeCacheState();
     const source = createDisplayObject();
 
-    beginCanvasDisplayObjectImageCache(cacheState, source);
+    beginDisplayObjectImageCacheCapture(cacheState, source);
 
     expect(cacheState.canvas.width).toBe(1);
     expect(cacheState.canvas.height).toBe(1);
@@ -36,18 +36,18 @@ describe('beginCanvasDisplayObjectImageCache', () => {
   it('does not throw', () => {
     const cacheState = makeCacheState();
     const source = createDisplayObject();
-    expect(() => beginCanvasDisplayObjectImageCache(cacheState, source)).not.toThrow();
+    expect(() => beginDisplayObjectImageCacheCapture(cacheState, source)).not.toThrow();
   });
 });
 
-describe('endCanvasDisplayObjectImageCache', () => {
+describe('endDisplayObjectImageCacheCapture', () => {
   it('sets imageCache on the source with an ImageSource backed by the cache canvas', () => {
     const cacheState = makeCacheState();
     const source = createDisplayObject();
     setRectangle(getLocalBoundsRectangle(source), 0, 0, 32, 32);
-    beginCanvasDisplayObjectImageCache(cacheState, source);
+    beginDisplayObjectImageCacheCapture(cacheState, source);
 
-    endCanvasDisplayObjectImageCache(cacheState, source);
+    endDisplayObjectImageCacheCapture(cacheState, source);
 
     const cache = getImageCache(source);
     expect(cache).not.toBeNull();
@@ -59,9 +59,9 @@ describe('endCanvasDisplayObjectImageCache', () => {
     const cacheState = makeCacheState();
     const source = createDisplayObject();
     setRectangle(getLocalBoundsRectangle(source), 5, 10, 64, 48);
-    beginCanvasDisplayObjectImageCache(cacheState, source);
+    beginDisplayObjectImageCacheCapture(cacheState, source);
 
-    endCanvasDisplayObjectImageCache(cacheState, source);
+    endDisplayObjectImageCacheCapture(cacheState, source);
 
     const cache = getImageCache(source);
     expect(cache!.transform.tx).toBe(5);
@@ -73,12 +73,12 @@ describe('endCanvasDisplayObjectImageCache', () => {
     const source = createDisplayObject();
     setRectangle(getLocalBoundsRectangle(source), 0, 0, 32, 32);
 
-    beginCanvasDisplayObjectImageCache(cacheState, source);
-    endCanvasDisplayObjectImageCache(cacheState, source);
+    beginDisplayObjectImageCacheCapture(cacheState, source);
+    endDisplayObjectImageCacheCapture(cacheState, source);
     const v1 = getImageCache(source)!.source!.version;
 
-    beginCanvasDisplayObjectImageCache(cacheState, source);
-    endCanvasDisplayObjectImageCache(cacheState, source);
+    beginDisplayObjectImageCacheCapture(cacheState, source);
+    endDisplayObjectImageCacheCapture(cacheState, source);
     const v2 = getImageCache(source)!.source!.version;
 
     expect(v2).toBe((v1 + 1) >>> 0);
@@ -87,7 +87,7 @@ describe('endCanvasDisplayObjectImageCache', () => {
   it('does not throw', () => {
     const cacheState = makeCacheState();
     const source = createDisplayObject();
-    beginCanvasDisplayObjectImageCache(cacheState, source);
-    expect(() => endCanvasDisplayObjectImageCache(cacheState, source)).not.toThrow();
+    beginDisplayObjectImageCacheCapture(cacheState, source);
+    expect(() => endDisplayObjectImageCacheCapture(cacheState, source)).not.toThrow();
   });
 });

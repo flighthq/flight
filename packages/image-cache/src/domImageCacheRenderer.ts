@@ -14,7 +14,7 @@ import type {
 } from '@flighthq/types';
 
 import { isImageCachePrimitive } from './imageCachePrimitive';
-import { registerImageCacheRenderer } from './imageCacheRenderNodeResolver';
+import { registerImageCacheRenderer } from './imageCacheSceneNodeResolver';
 
 const _canvases = new WeakMap<
   DisplayObjectRenderTreeNode,

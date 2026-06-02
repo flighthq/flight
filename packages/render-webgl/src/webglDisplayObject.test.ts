@@ -12,7 +12,7 @@ import {
   drawWebGLDisplayObjectMask,
   renderWebGLDisplayObject,
 } from './webglDisplayObject';
-import { registerWebGLMaskSupport } from './webglMask';
+import { enableWebGLMaskSupport } from './webglMask';
 import { createWebGLRenderState } from './webglRenderState';
 
 function makeState(): WebGLRenderState {
@@ -156,7 +156,7 @@ describe('renderWebGLDisplayObject', () => {
 
   it('applies masks around the object subtree', () => {
     const state = makeState();
-    registerWebGLMaskSupport(state);
+    enableWebGLMaskSupport(state);
     const renderer = makeRenderer();
     const maskRenderer = makeRenderer();
     registerDisplayObjectMaskRenderer(state, DisplayObjectKind, maskRenderer);

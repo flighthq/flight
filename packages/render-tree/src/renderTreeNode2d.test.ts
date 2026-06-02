@@ -12,13 +12,13 @@ import {
 } from './renderTreeNode2d';
 
 describe('createDisplayObjectRenderNode', () => {
-  it('initializes isMaskFrameID, maskDepth, scrollRectDepth', () => {
+  it('initializes isMaskFrameID, maskDepth, scrollRectangleDepth', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     const node = createDisplayObjectRenderNode(state, source);
     expect(node.isMaskFrameID).toBe(-1);
     expect(node.maskDepth).toBe(0);
-    expect(node.scrollRectDepth).toBe(0);
+    expect(node.scrollRectangleDepth).toBe(0);
   });
 });
 

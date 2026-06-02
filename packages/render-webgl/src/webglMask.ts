@@ -10,7 +10,7 @@ import type {
 
 import type { WebGLRenderStateInternal } from './internal';
 
-export function applyWebGLMask(state: WebGLRenderStateInternal, data: DisplayObjectRenderTreeNode): void {
+export function drawWebGLMask(state: WebGLRenderStateInternal, data: DisplayObjectRenderTreeNode): void {
   state.displayObjectMaskRendererMap.get(data.source.kind)?.drawMask(state, data);
 
   if (!data.updateChildren) return;
@@ -19,7 +19,7 @@ export function applyWebGLMask(state: WebGLRenderStateInternal, data: DisplayObj
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
       const child = getOrCreateDisplayObjectRenderNode(state, children[i] as DisplayObject);
-      applyWebGLMask(state, child);
+      drawWebGLMask(state, child);
     }
   }
 }
@@ -52,7 +52,7 @@ export function pushWebGLMask(state: WebGLRenderStateInternal, data: DisplayObje
   gl.stencilFunc(gl.ALWAYS, nextDepth, 0xff);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
 
-  applyWebGLMask(state, data);
+  drawWebGLMask(state, data);
 
   gl.colorMask(true, true, true, true);
   gl.stencilMask(0x00);
@@ -61,7 +61,7 @@ export function pushWebGLMask(state: WebGLRenderStateInternal, data: DisplayObje
   state.currentMaskDepth = nextDepth;
 }
 
-export function registerWebGLMaskSupport(state: WebGLRenderState): void {
+export function enableWebGLMaskSupport(state: WebGLRenderState): void {
   setDisplayObjectMaskHooks(state, webGLMaskHooks);
 }
 

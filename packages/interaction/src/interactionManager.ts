@@ -2,7 +2,7 @@ import { inverseMatrixTransformPointXY } from '@flighthq/geometry';
 import { getSceneNodeRuntime, getSceneParent, getWorldTransformMatrix } from '@flighthq/scene';
 import { connectSignal, createSignal, disconnectSignal, emitSignal, isSlotConnected } from '@flighthq/signals';
 import type {
-  GraphTransform2DNode,
+  SceneTransform2DNode,
   InputKeyboardData,
   InputPointerData,
   InputSignals,
@@ -680,7 +680,7 @@ function setTrackedInteractionSignalSlot<
 }
 
 function setPointerDataLocalPosition(data: PointerData, currentTarget: SceneNode<symbol, object>): void {
-  if (!isGraphTransform2DNode(currentTarget)) {
+  if (!isSceneTransform2DNode(currentTarget)) {
     data.localX = data.worldX;
     data.localY = data.worldY;
     return;
@@ -690,7 +690,7 @@ function setPointerDataLocalPosition(data: PointerData, currentTarget: SceneNode
   data.localY = _localPoint.y;
 }
 
-function isGraphTransform2DNode(source: Readonly<SceneNode<symbol, object>>): source is GraphTransform2DNode {
+function isSceneTransform2DNode(source: Readonly<SceneNode<symbol, object>>): source is SceneTransform2DNode {
   const runtime = getSceneNodeRuntime(source) as SceneNodeRuntime & { worldTransform2D?: unknown };
   return 'worldTransform2D' in runtime;
 }

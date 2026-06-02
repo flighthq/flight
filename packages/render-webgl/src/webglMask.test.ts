@@ -4,7 +4,7 @@ import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { applyWebGLMask, popWebGLMask, pushWebGLMask, registerWebGLMaskSupport } from './webglMask';
+import { drawWebGLMask, popWebGLMask, pushWebGLMask, enableWebGLMaskSupport } from './webglMask';
 import { makeWebGLState } from './webglTestHelper';
 
 function makeRenderer() {
@@ -15,7 +15,7 @@ function makeRenderer() {
   };
 }
 
-describe('applyWebGLMask', () => {
+describe('drawWebGLMask', () => {
   it('calls drawMask on the renderer when present', () => {
     const { state } = makeWebGLState();
     const source = createDisplayObject();
@@ -23,7 +23,7 @@ describe('applyWebGLMask', () => {
     registerDisplayObjectMaskRenderer(state, DisplayObjectKind, renderer);
     const data = getOrCreateDisplayObjectRenderNode(state, source);
 
-    applyWebGLMask(state, data);
+    drawWebGLMask(state, data);
 
     expect(renderer.drawMask).toHaveBeenCalledWith(state, data);
   });
@@ -38,7 +38,7 @@ describe('applyWebGLMask', () => {
     const parentData = getOrCreateDisplayObjectRenderNode(state, parent);
     const childData = getOrCreateDisplayObjectRenderNode(state, child);
 
-    applyWebGLMask(state, parentData);
+    drawWebGLMask(state, parentData);
 
     expect(renderer.drawMask).toHaveBeenCalledWith(state, childData);
   });
@@ -77,11 +77,11 @@ describe('pushWebGLMask', () => {
   });
 });
 
-describe('registerWebGLMaskSupport', () => {
+describe('enableWebGLMaskSupport', () => {
   it('sets WebGL mask hooks on the render state', () => {
     const { state } = makeWebGLState();
 
-    registerWebGLMaskSupport(state);
+    enableWebGLMaskSupport(state);
 
     expect(state.displayObjectMaskHooks).not.toBeNull();
   });

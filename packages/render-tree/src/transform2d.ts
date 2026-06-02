@@ -16,13 +16,13 @@ export function updateDisplayObjectRenderTransform(
   parentData?: DisplayObjectRenderTreeNode,
 ): boolean {
   const source = data.source;
-  const scrollRect = source.scrollRect;
-  if (hasRenderFeatures(state, RenderFeatures.ScrollRect) && scrollRect !== null) {
-    // scrollRect contributes to the render transform but isn't tracked by localTransformID,
+  const scrollRectangle = source.scrollRectangle;
+  if (hasRenderFeatures(state, RenderFeatures.ScrollRectangle) && scrollRectangle !== null) {
+    // scrollRectangle contributes to the render transform but isn't tracked by localTransformID,
     // so always recalculate when it is set.
     recalculateRenderTransform2D(state, data, parentData);
     data.lastLocalTransformID = getLocalTransformRevision(data.source as SceneNode);
-    translateMatrixByVectorXY(data.transform2D, data.transform2D, -scrollRect.x, -scrollRect.y);
+    translateMatrixByVectorXY(data.transform2D, data.transform2D, -scrollRectangle.x, -scrollRectangle.y);
     applyPresentationTransform2D(data);
     return true;
   }

@@ -14,7 +14,7 @@ export function pushDOMMaskRectangle(rectangles: DOMStageRectangle[], data: Disp
   rectangles.push(createDOMStageRectangle(bounds, data.transform2D));
 }
 
-export function registerDOMMaskSupport(state: DOMRenderState): void {
+export function enableDOMMaskSupport(state: DOMRenderState): void {
   setDisplayObjectMaskHooks(state, domMaskHooks);
   setDOMClipHooks(state);
 }

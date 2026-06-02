@@ -18,7 +18,7 @@ export interface DisplayObjectMaskHooks {
   pushMask(state: RenderState, node: DisplayObjectRenderTreeNode, context?: unknown): void;
 }
 
-export interface ScrollRectHooks {
+export interface ScrollRectangleHooks {
   pop(state: RenderState): void;
   push(state: RenderState, data: DisplayObjectRenderTreeNode): void;
 }

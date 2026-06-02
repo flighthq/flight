@@ -45,7 +45,7 @@ describe('createRenderState', () => {
       renderAlpha: 0.5,
       renderBlendMode: BlendMode.Multiply,
       renderColorTransform: createColorTransform(),
-      renderFeatures: RenderFeatures.Masks | RenderFeatures.ScrollRect,
+      renderFeatures: RenderFeatures.Masks | RenderFeatures.ScrollRectangle,
       renderShader: null,
       renderTransform2D: createMatrix(),
       roundPixels: true,

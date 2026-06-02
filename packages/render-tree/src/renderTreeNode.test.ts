@@ -29,7 +29,7 @@ describe('createDisplayObjectRenderNode', () => {
     expect(data.lastLocalTransformID).toStrictEqual(-1);
     expect(data.maskDepth).toStrictEqual(0);
     expect(data.presentationTransform2D).toStrictEqual(null);
-    expect(data.scrollRectDepth).toStrictEqual(0);
+    expect(data.scrollRectangleDepth).toStrictEqual(0);
     expect(data.shader).toStrictEqual(null);
     expect(data.source).toStrictEqual(source);
     expect(data.transform2D).toStrictEqual(createMatrix());

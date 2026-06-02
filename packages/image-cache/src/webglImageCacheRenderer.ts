@@ -18,7 +18,7 @@ import type {
 } from '@flighthq/types';
 
 import { isImageCachePrimitive } from './imageCachePrimitive';
-import { registerImageCacheRenderer } from './imageCacheRenderNodeResolver';
+import { registerImageCacheRenderer } from './imageCacheSceneNodeResolver';
 
 function drawWebGLImageCache(state: RenderState, renderNode: DisplayObjectRenderTreeNode): void {
   const source = renderNode.presentationSource;

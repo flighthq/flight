@@ -13,8 +13,8 @@ import type {
   MethodsOf,
   PartialNode,
   SceneNode,
-  SpriteGraphNodeDataFactory,
-  SpriteGraphNodeRuntimeFactory,
+  SpriteNodeDataFactory,
+  SpriteNodeRuntimeFactory,
   SpriteNode,
   SpriteNodeRuntime,
 } from '@flighthq/types';
@@ -23,8 +23,8 @@ import { SpriteGraph } from '@flighthq/types';
 export function createSpriteNode<Runtime extends SpriteNodeRuntime>(
   kind: symbol,
   obj?: Readonly<PartialNode<SpriteNode>>,
-  createData?: SpriteGraphNodeDataFactory,
-  createSpriteNodeRuntimeFactory?: SpriteGraphNodeRuntimeFactory<Runtime>,
+  createData?: SpriteNodeDataFactory,
+  createSpriteNodeRuntimeFactory?: SpriteNodeRuntimeFactory<Runtime>,
 ): SpriteNode {
   const out = createSceneNode(
     SpriteGraph,

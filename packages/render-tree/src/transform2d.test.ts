@@ -24,18 +24,18 @@ describe('updateDisplayObjectRenderTransform', () => {
     // childData = getOrCreateDisplayObjectRenderNode(state, child);
   });
 
-  it('applies scrollRect offset in render transform but not world transform', () => {
-    enableRenderFeatures(state, RenderFeatures.ScrollRect);
+  it('applies scrollRectangle offset in render transform but not world transform', () => {
+    enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
     parent.x = 50;
     parent.y = 50;
-    parent.scrollRect = createRectangle(10, 5, 100, 100);
+    parent.scrollRectangle = createRectangle(10, 5, 100, 100);
 
     updateDisplayObjectRenderTransform(state, parentData);
 
     const tRender = parentData.transform2D;
     const tWorld = getWorldTransformMatrix(parent);
 
-    // Render transform is offset by scrollRect
+    // Render transform is offset by scrollRectangle
     expect(tRender.tx).toBeCloseTo(40); // 50 - 10
     expect(tRender.ty).toBeCloseTo(45); // 50 - 5
 
@@ -44,11 +44,11 @@ describe('updateDisplayObjectRenderTransform', () => {
     expect(tWorld.ty).toBeCloseTo(50);
   });
 
-  it('applies presentation transform after scrollRect offset', () => {
-    enableRenderFeatures(state, RenderFeatures.ScrollRect);
+  it('applies presentation transform after scrollRectangle offset', () => {
+    enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
     parent.x = 50;
     parent.y = 50;
-    parent.scrollRect = createRectangle(10, 5, 100, 100);
+    parent.scrollRectangle = createRectangle(10, 5, 100, 100);
     parentData.presentationTransform2D = createMatrix(1, 0, 0, 1, 3, 4);
 
     updateDisplayObjectRenderTransform(state, parentData);
@@ -57,10 +57,10 @@ describe('updateDisplayObjectRenderTransform', () => {
     expect(parentData.transform2D.ty).toBeCloseTo(49);
   });
 
-  it('ignores scrollRect offset when scroll rect support is not enabled', () => {
+  it('ignores scrollRectangle offset when scroll rect support is not enabled', () => {
     parent.x = 50;
     parent.y = 50;
-    parent.scrollRect = createRectangle(10, 5, 100, 100);
+    parent.scrollRectangle = createRectangle(10, 5, 100, 100);
 
     updateDisplayObjectRenderTransform(state, parentData);
 

@@ -25,7 +25,7 @@ describe('Clip and Scroll Rect Functions', () => {
     rect = createRectangle(10, 10, 100, 100);
     transform2D = createMatrix();
     source = createDisplayObject();
-    source.scrollRect = rect;
+    source.scrollRectangle =rect;
     data = getOrCreateDisplayObjectRenderNode(state, source);
     data.transform2D = transform2D;
   });
@@ -36,12 +36,12 @@ describe('Clip and Scroll Rect Functions', () => {
     expect(restoreSpy).toHaveBeenCalled();
   });
 
-  it('should call context.restore() and decrement currentScrollRectDepth when popScrollRect is called', () => {
-    state.currentScrollRectDepth = 1;
+  it('should call context.restore() and decrement currentScrollRectangleDepth when popScrollRect is called', () => {
+    state.currentScrollRectangleDepth = 1;
     const restoreSpy = vi.spyOn(state.context, 'restore');
     popCanvasScrollRectangle(state);
     expect(restoreSpy).toHaveBeenCalled();
-    expect(state.currentScrollRectDepth).toBe(0);
+    expect(state.currentScrollRectangleDepth).toBe(0);
   });
 
   it('should call context.save(), setTransform, and context.clip() when pushClipRect is called', () => {
@@ -60,13 +60,13 @@ describe('Clip and Scroll Rect Functions', () => {
     expect(clipSpy).toHaveBeenCalled();
   });
 
-  // it('should call pushClipRect and increment currentScrollRectDepth when pushScrollRect is called', () => {
+  // it('should call pushClipRect and increment currentScrollRectangleDepth when pushScrollRect is called', () => {
   //   const pushClipRectSpy = vi.spyOn(pushClipRect, 'bind');
 
   //   pushScrollRect(state, data);
 
   //   expect(pushClipRectSpy).toHaveBeenCalledWith(state, rect, transform);
-  //   expect(state.currentScrollRectDepth).toBe(1);
+  //   expect(state.currentScrollRectangleDepth).toBe(1);
   // });
 });
 
@@ -81,14 +81,14 @@ describe('popCanvasClipRectangle', () => {
 });
 
 describe('popCanvasScrollRectangle', () => {
-  it('calls context.restore() and decrements currentScrollRectDepth', () => {
+  it('calls context.restore() and decrements currentScrollRectangleDepth', () => {
     const c = document.createElement('canvas');
     const state = createCanvasRenderState(c);
-    state.currentScrollRectDepth = 1;
+    state.currentScrollRectangleDepth = 1;
     const spy = vi.spyOn(state.context, 'restore');
     popCanvasScrollRectangle(state);
     expect(spy).toHaveBeenCalled();
-    expect(state.currentScrollRectDepth).toBe(0);
+    expect(state.currentScrollRectangleDepth).toBe(0);
   });
 });
 
@@ -107,15 +107,15 @@ describe('pushCanvasClipRectangle', () => {
 });
 
 describe('pushCanvasScrollRectangle', () => {
-  it('increments currentScrollRectDepth', () => {
+  it('increments currentScrollRectangleDepth', () => {
     const c = document.createElement('canvas');
     const state = createCanvasRenderState(c);
     const source = createDisplayObject();
-    source.scrollRect = createRectangle(0, 0, 50, 50);
+    source.scrollRectangle =createRectangle(0, 0, 50, 50);
     const data = getOrCreateDisplayObjectRenderNode(state, source);
     data.transform2D = createMatrix();
-    const before = state.currentScrollRectDepth;
+    const before = state.currentScrollRectangleDepth;
     pushCanvasScrollRectangle(state, data);
-    expect(state.currentScrollRectDepth).toBe(before + 1);
+    expect(state.currentScrollRectangleDepth).toBe(before + 1);
   });
 });

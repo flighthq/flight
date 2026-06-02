@@ -15,15 +15,15 @@ import { createImageCachePrimitive } from './imageCachePrimitive';
 
 const _capturingStates = new WeakSet<RenderState>();
 
-export function createImageCacheResolver(): ImageCacheResolver {
-  return new ImageCacheResolver();
+export function createImageCacheSceneNodeResolver(): ImageCacheSceneNodeResolver {
+  return new ImageCacheSceneNodeResolver();
 }
 
-export function isImageCacheResolver(value: unknown): value is ImageCacheResolver {
-  return value instanceof ImageCacheResolver;
+export function isImageCacheSceneNodeResolver(value: unknown): value is ImageCacheSceneNodeResolver {
+  return value instanceof ImageCacheSceneNodeResolver;
 }
 
-export class ImageCacheResolver implements SceneNodeResolver {
+export class ImageCacheSceneNodeResolver implements SceneNodeResolver {
   readonly updateChildren = false;
   result: ImageCacheResult | null = null;
 
@@ -86,7 +86,7 @@ export class ImageCacheResolver implements SceneNodeResolver {
   }
 }
 
-export function markImageCacheCapturing(state: RenderState): void {
+export function beginImageCacheCapture(state: RenderState): void {
   _capturingStates.add(state);
 }
 
@@ -94,6 +94,6 @@ export function registerImageCacheRenderer(state: RenderState, renderer: Rendere
   registerRenderer(state, ImageCacheKind, renderer);
 }
 
-export function unmarkImageCacheCapturing(state: RenderState): void {
+export function endImageCacheCapture(state: RenderState): void {
   _capturingStates.delete(state);
 }

@@ -8,7 +8,7 @@ import {
 } from '@flighthq/geometry';
 import { invalidateLocalTransform, recomputeWorldTransformRevision } from '@flighthq/scene';
 import type {
-  GraphTransform2DNode,
+  SceneTransform2DNode,
   HasTransform2DRuntime,
   Matrix,
   SceneNodeRuntime,
@@ -16,7 +16,7 @@ import type {
 } from '@flighthq/types';
 
 export function ensureLocalTransformMatrix<SceneKind extends symbol, Traits extends object>(
-  target: GraphTransform2DNode<SceneKind, Traits>,
+  target: SceneTransform2DNode<SceneKind, Traits>,
 ): void {
   const runtime = getEntityRuntime(target) as SceneNodeRuntime<SceneKind, Traits> & HasTransform2DRuntime;
   if (runtime.localTransformUsingLocalTransformID !== runtime.localTransformID) {
@@ -25,10 +25,10 @@ export function ensureLocalTransformMatrix<SceneKind extends symbol, Traits exte
 }
 
 export function ensureWorldTransformMatrix<SceneKind extends symbol, Traits extends object>(
-  target: GraphTransform2DNode<SceneKind, Traits>,
+  target: SceneTransform2DNode<SceneKind, Traits>,
 ): void {
   const runtime = getEntityRuntime(target) as SceneNodeRuntime<SceneKind, Traits> & HasTransform2DRuntime;
-  const parent = runtime.parent as GraphTransform2DNode<SceneKind, Traits>;
+  const parent = runtime.parent as SceneTransform2DNode<SceneKind, Traits>;
 
   let parentRuntime: (SceneNodeRuntime<SceneKind, Traits> & HasTransform2DRuntime) | undefined;
   let parentWorldTransformID = 0;
@@ -48,14 +48,14 @@ export function ensureWorldTransformMatrix<SceneKind extends symbol, Traits exte
 }
 
 export function getLocalTransformMatrix<SceneKind extends symbol, Traits extends object>(
-  target: GraphTransform2DNode<SceneKind, Traits>,
+  target: SceneTransform2DNode<SceneKind, Traits>,
 ): Readonly<Matrix> {
   ensureLocalTransformMatrix(target);
   return (getEntityRuntime(target) as SceneNodeRuntime<SceneKind, Traits> & HasTransform2DRuntime).localTransform2D!;
 }
 
 export function getWorldTransformMatrix<SceneKind extends symbol, Traits extends object>(
-  target: GraphTransform2DNode<SceneKind, Traits>,
+  target: SceneTransform2DNode<SceneKind, Traits>,
 ): Readonly<Matrix> {
   ensureWorldTransformMatrix(target);
   return (getEntityRuntime(target) as SceneNodeRuntime<SceneKind, Traits> & HasTransform2DRuntime).worldTransform2D!;
@@ -67,7 +67,7 @@ export function getWorldTransformMatrix<SceneKind extends symbol, Traits extends
  **/
 export function sceneGlobalToLocalVector2<SceneKind extends symbol, Traits extends object>(
   out: Vector2Like,
-  source: GraphTransform2DNode<SceneKind, Traits>,
+  source: SceneTransform2DNode<SceneKind, Traits>,
   vector: Readonly<Vector2Like>,
 ): void {
   inverseMatrixTransformPointXY(out, getWorldTransformMatrix(source), vector.x, vector.y);
@@ -79,14 +79,14 @@ export function sceneGlobalToLocalVector2<SceneKind extends symbol, Traits exten
  **/
 export function sceneLocalToGlobalVector2<SceneKind extends symbol, Traits extends object>(
   out: Vector2Like,
-  source: GraphTransform2DNode<SceneKind, Traits>,
+  source: SceneTransform2DNode<SceneKind, Traits>,
   vector: Readonly<Vector2Like>,
 ): void {
   matrixTransformPointXY(out, getWorldTransformMatrix(source), vector.x, vector.y);
 }
 
 function recomputeLocalTransform2D<SceneKind extends symbol, Traits extends object>(
-  target: GraphTransform2DNode<SceneKind, Traits>,
+  target: SceneTransform2DNode<SceneKind, Traits>,
   runtime: SceneNodeRuntime<SceneKind, Traits> & HasTransform2DRuntime,
 ): void {
   if (target.rotation !== runtime.rotationAngle) {
@@ -116,7 +116,7 @@ function recomputeLocalTransform2D<SceneKind extends symbol, Traits extends obje
 }
 
 function recomputeWorldTransform2D<SceneKind extends symbol, Traits extends object>(
-  target: GraphTransform2DNode<SceneKind, Traits>,
+  target: SceneTransform2DNode<SceneKind, Traits>,
   runtime: SceneNodeRuntime<SceneKind, Traits> & HasTransform2DRuntime,
   parentRuntime?: Readonly<SceneNodeRuntime<SceneKind, Traits> & HasTransform2DRuntime>,
 ): void {
@@ -131,7 +131,7 @@ function recomputeWorldTransform2D<SceneKind extends symbol, Traits extends obje
 }
 
 export function setTransformRotation<SceneKind extends symbol, Traits extends object>(
-  target: GraphTransform2DNode<SceneKind, Traits>,
+  target: SceneTransform2DNode<SceneKind, Traits>,
   value: number,
 ): void {
   target.rotation = value;
@@ -139,7 +139,7 @@ export function setTransformRotation<SceneKind extends symbol, Traits extends ob
 }
 
 export function setTransformScaleX<SceneKind extends symbol, Traits extends object>(
-  target: GraphTransform2DNode<SceneKind, Traits>,
+  target: SceneTransform2DNode<SceneKind, Traits>,
   value: number,
 ): void {
   target.scaleX = value;
@@ -147,7 +147,7 @@ export function setTransformScaleX<SceneKind extends symbol, Traits extends obje
 }
 
 export function setTransformScaleY<SceneKind extends symbol, Traits extends object>(
-  target: GraphTransform2DNode<SceneKind, Traits>,
+  target: SceneTransform2DNode<SceneKind, Traits>,
   value: number,
 ): void {
   target.scaleY = value;
@@ -155,7 +155,7 @@ export function setTransformScaleY<SceneKind extends symbol, Traits extends obje
 }
 
 export function setTransformX<SceneKind extends symbol, Traits extends object>(
-  target: GraphTransform2DNode<SceneKind, Traits>,
+  target: SceneTransform2DNode<SceneKind, Traits>,
   value: number,
 ): void {
   target.x = value;
@@ -163,7 +163,7 @@ export function setTransformX<SceneKind extends symbol, Traits extends object>(
 }
 
 export function setTransformY<SceneKind extends symbol, Traits extends object>(
-  target: GraphTransform2DNode<SceneKind, Traits>,
+  target: SceneTransform2DNode<SceneKind, Traits>,
   value: number,
 ): void {
   target.y = value;

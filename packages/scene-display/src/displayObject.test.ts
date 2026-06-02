@@ -174,15 +174,15 @@ describe('setDisplayObjectScrollRectangle', () => {
     obj = createDisplayObject();
   });
 
-  it('sets scrollRect', () => {
+  it('sets scrollRectangle', () => {
     const rect = createRectangle();
     setDisplayObjectScrollRectangle(obj, rect);
-    expect(obj.scrollRect).toBe(rect);
+    expect(obj.scrollRectangle).toBe(rect);
   });
 
   it('accepts null', () => {
     setDisplayObjectScrollRectangle(obj, null);
-    expect(obj.scrollRect).toBeNull();
+    expect(obj.scrollRectangle).toBeNull();
   });
 
   it('invalidates appearance', () => {

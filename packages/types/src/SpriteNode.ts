@@ -28,5 +28,5 @@ export type SpriteNodeRuntime = SceneNodeRuntime<typeof SpriteGraph, SpriteNodeT
   HasTransform2DRuntime &
   HasBoundsRectRuntime;
 
-export type SpriteGraphNodeDataFactory = SceneNodeDataFactory<SpriteNodeData>;
-export type SpriteGraphNodeRuntimeFactory<Runtime extends SpriteNodeRuntime> = SceneNodeRuntimeFactory<Runtime>;
+export type SpriteNodeDataFactory = SceneNodeDataFactory<SpriteNodeData>;
+export type SpriteNodeRuntimeFactory<Runtime extends SpriteNodeRuntime> = SceneNodeRuntimeFactory<Runtime>;

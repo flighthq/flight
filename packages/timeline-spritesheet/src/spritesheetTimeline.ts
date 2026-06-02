@@ -18,7 +18,7 @@ export function attachSpritesheetTimeline(
       if (!spritesheet.atlas) return;
       const spritesheetFrame = spritesheet.frames[animation.frames[frame - 1]];
       if (!spritesheetFrame) return;
-      bitmap.scrollRect = spritesheet.atlas.regions[spritesheetFrame.id];
+      bitmap.scrollRectangle = spritesheet.atlas.regions[spritesheetFrame.id];
       setTransformX(bitmap, spritesheetFrame.offsetX - animation.originX);
       setTransformY(bitmap, spritesheetFrame.offsetY - animation.originY);
     },

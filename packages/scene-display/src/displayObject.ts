@@ -44,7 +44,7 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   initBoundsRectTrait(out, obj);
   initAppearanceTrait(out, obj);
   out.mask = obj?.mask ?? null;
-  out.scrollRect = obj?.scrollRect ?? null;
+  out.scrollRectangle = obj?.scrollRectangle ?? null;
   return out;
 }
 
@@ -72,6 +72,6 @@ export function setDisplayObjectMask(source: DisplayObject, value: DisplayObject
 }
 
 export function setDisplayObjectScrollRectangle(source: DisplayObject, value: Rectangle | null): void {
-  source.scrollRect = value;
+  source.scrollRectangle = value;
   invalidateAppearance(source);
 }

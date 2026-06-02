@@ -18,7 +18,7 @@ export interface HasTransform2DRuntime extends EntityRuntime {
   worldTransform2D: Matrix | null;
 }
 
-export type GraphTransform2DNode<
+export type SceneTransform2DNode<
   SceneKind extends symbol = typeof NullScene,
   Traits extends object = SceneNodeTraits,
 > = SceneNode<SceneKind, Traits> & HasTransform2D;

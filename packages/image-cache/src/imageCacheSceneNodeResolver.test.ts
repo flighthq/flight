@@ -8,12 +8,12 @@ import { setImageCache } from './imageCache';
 import { ImageCacheKind } from './imageCacheKind';
 import { isImageCachePrimitive } from './imageCachePrimitive';
 import {
-  createImageCacheResolver,
-  isImageCacheResolver,
-  markImageCacheCapturing,
+  createImageCacheSceneNodeResolver,
+  isImageCacheSceneNodeResolver,
+  beginImageCacheCapture,
   registerImageCacheRenderer,
-  unmarkImageCacheCapturing,
-} from './imageCacheRenderNodeResolver';
+  endImageCacheCapture,
+} from './imageCacheSceneNodeResolver';
 
 function makeCanvasState() {
   const canvas = document.createElement('canvas');
@@ -36,15 +36,15 @@ function makeImageCache() {
   };
 }
 
-describe('createImageCacheResolver', () => {
+describe('createImageCacheSceneNodeResolver', () => {
   it('creates an image cache scene node resolver', () => {
-    const resolver = createImageCacheResolver();
-    expect(isImageCacheResolver(resolver)).toBe(true);
+    const resolver = createImageCacheSceneNodeResolver();
+    expect(isImageCacheSceneNodeResolver(resolver)).toBe(true);
     expect(resolver.updateChildren).toBe(false);
   });
 });
 
-describe('ImageCacheResolver via setImageCache', () => {
+describe('ImageCacheSceneNodeResolver via setImageCache', () => {
   it('resolves active caches to an image cache presentation primitive', () => {
     const state = createRenderState();
     const renderer = { createData: vi.fn(() => null), draw: vi.fn() };
@@ -78,14 +78,14 @@ describe('ImageCacheResolver via setImageCache', () => {
   });
 });
 
-describe('isImageCacheResolver', () => {
+describe('isImageCacheSceneNodeResolver', () => {
   it('returns false for non-image-cache resolver values', () => {
-    expect(isImageCacheResolver(null)).toBe(false);
-    expect(isImageCacheResolver({ updateChildren: false })).toBe(false);
+    expect(isImageCacheSceneNodeResolver(null)).toBe(false);
+    expect(isImageCacheSceneNodeResolver({ updateChildren: false })).toBe(false);
   });
 });
 
-describe('markImageCacheCapturing', () => {
+describe('beginImageCacheCapture', () => {
   it('suppresses the image cache resolver while capturing', () => {
     const state = makeCanvasState();
     const mockRenderer = makeRenderer();
@@ -94,7 +94,7 @@ describe('markImageCacheCapturing', () => {
     const obj = createDisplayObject();
     setImageCache(obj, makeImageCache());
 
-    markImageCacheCapturing(state);
+    beginImageCacheCapture(state);
     updateDisplayObjectBeforeRender(state, obj);
     renderCanvasDisplayObject(state, obj);
 
@@ -120,7 +120,7 @@ describe('registerImageCacheRenderer', () => {
   });
 });
 
-describe('unmarkImageCacheCapturing', () => {
+describe('endImageCacheCapture', () => {
   it('restores the image cache resolver after unmarking', () => {
     const state = makeCanvasState();
     const mockRenderer = makeRenderer();
@@ -129,8 +129,8 @@ describe('unmarkImageCacheCapturing', () => {
     const obj = createDisplayObject();
     setImageCache(obj, makeImageCache());
 
-    markImageCacheCapturing(state);
-    unmarkImageCacheCapturing(state);
+    beginImageCacheCapture(state);
+    endImageCacheCapture(state);
 
     updateDisplayObjectBeforeRender(state, obj);
     renderCanvasDisplayObject(state, obj);
@@ -146,7 +146,7 @@ describe('unmarkImageCacheCapturing', () => {
     const obj = createDisplayObject();
     setImageCache(obj, makeImageCache());
 
-    unmarkImageCacheCapturing(state);
+    endImageCacheCapture(state);
     updateDisplayObjectBeforeRender(state, obj);
     renderCanvasDisplayObject(state, obj);
 

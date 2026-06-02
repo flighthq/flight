@@ -62,20 +62,20 @@ function drawObject(state: CanvasRenderState, data: DisplayObjectRenderTreeNode)
 function popMaskObject(
   state: CanvasRenderState,
   data: DisplayObjectRenderTreeNode,
-  handleScrollRect: boolean = true,
+  handleScrollRectangle: boolean = true,
 ): void {
   const source = data.source;
   if (source.mask !== null) state.displayObjectMaskHooks?.popMask(state, data);
-  if (handleScrollRect && source.scrollRect !== null) state.scrollRectHooks?.pop(state);
+  if (handleScrollRectangle && source.scrollRectangle !== null) state.scrollRectangleHooks?.pop(state);
 }
 
 function pushMaskObject(
   state: CanvasRenderState,
   data: DisplayObjectRenderTreeNode,
-  handleScrollRect: boolean = true,
+  handleScrollRectangle: boolean = true,
 ): void {
   const source = data.source;
-  if (handleScrollRect && source.scrollRect !== null) state.scrollRectHooks?.push(state, data);
+  if (handleScrollRectangle && source.scrollRectangle !== null) state.scrollRectangleHooks?.push(state, data);
   if (source.mask !== null)
     state.displayObjectMaskHooks?.pushMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask));
 }
