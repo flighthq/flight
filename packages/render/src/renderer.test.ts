@@ -6,7 +6,9 @@ import {
   disableRenderFeatures,
   enableRenderFeatures,
   hasRenderFeatures,
+  registerDisplayObjectMaskRenderer,
   registerRenderer,
+  setDisplayObjectMaskHooks,
 } from './renderer';
 import { createRenderState } from './renderState';
 
@@ -19,6 +21,21 @@ describe('copyRendererRegistrations', () => {
     registerRenderer(source, kind, renderer);
     copyRendererRegistrations(target, source);
     expect(target.rendererMap.get(kind)).toBe(renderer);
+  });
+
+  it('copies mask renderer registrations and hooks from source to target', () => {
+    const source = createRenderState();
+    const target = createRenderState();
+    const kind = Symbol('kind');
+    const maskRenderer = { drawMask: vi.fn() };
+    const hooks = { popMask: vi.fn(), pushMask: vi.fn() };
+    registerDisplayObjectMaskRenderer(source, kind, maskRenderer);
+    setDisplayObjectMaskHooks(source, hooks);
+
+    copyRendererRegistrations(target, source);
+
+    expect(target.displayObjectMaskRendererMap.get(kind)).toBe(maskRenderer);
+    expect(target.displayObjectMaskHooks).toBe(hooks);
   });
 
   it('is a no-op when source has no registrations', () => {
@@ -68,6 +85,32 @@ describe('hasRenderFeatures', () => {
     const state = createRenderState({ renderFeatures: RenderFeatures.Masks });
     expect(hasRenderFeatures(state, RenderFeatures.Masks)).toBe(true);
     expect(hasRenderFeatures(state, RenderFeatures.Masks | RenderFeatures.ScrollRect)).toBe(false);
+  });
+});
+
+describe('registerDisplayObjectMaskRenderer', () => {
+  it('registers a mask renderer and enables mask support', () => {
+    const state = createRenderState();
+    const kind = Symbol('kind');
+    const renderer = { drawMask: vi.fn() };
+
+    registerDisplayObjectMaskRenderer(state, kind, renderer);
+
+    expect(state.displayObjectMaskRendererMap.get(kind)).toBe(renderer);
+    expect(state.displayObjectMaskRendererMapID).toBe(1);
+    expect(hasRenderFeatures(state, RenderFeatures.Masks)).toBe(true);
+  });
+
+  it('does not increment displayObjectMaskRendererMapID for the same renderer', () => {
+    const state = createRenderState();
+    const kind = Symbol('kind');
+    const renderer = { drawMask: vi.fn() };
+    registerDisplayObjectMaskRenderer(state, kind, renderer);
+    const id = state.displayObjectMaskRendererMapID;
+
+    registerDisplayObjectMaskRenderer(state, kind, renderer);
+
+    expect(state.displayObjectMaskRendererMapID).toBe(id);
   });
 });
 
@@ -121,5 +164,26 @@ describe('registerRenderer', () => {
     state.rendererMapID = 0xffffffff;
     registerRenderer(state, kindA, renderer1);
     expect(state.rendererMapID).toBe(0);
+  });
+});
+
+describe('setDisplayObjectMaskHooks', () => {
+  it('sets mask hooks and enables mask support', () => {
+    const state = createRenderState();
+    const hooks = { popMask: vi.fn(), pushMask: vi.fn() };
+
+    setDisplayObjectMaskHooks(state, hooks);
+
+    expect(state.displayObjectMaskHooks).toBe(hooks);
+    expect(hasRenderFeatures(state, RenderFeatures.Masks)).toBe(true);
+  });
+
+  it('clears mask hooks without changing existing feature flags', () => {
+    const state = createRenderState({ renderFeatures: RenderFeatures.Masks });
+
+    setDisplayObjectMaskHooks(state, null);
+
+    expect(state.displayObjectMaskHooks).toBeNull();
+    expect(hasRenderFeatures(state, RenderFeatures.Masks)).toBe(true);
   });
 });

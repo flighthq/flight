@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/render-core",
+  "name": "@flighthq/render",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
