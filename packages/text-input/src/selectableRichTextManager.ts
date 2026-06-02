@@ -1,4 +1,4 @@
-import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/scenegraph-display';
+import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/scene-display';
 import { getRichTextCharIndexAtPoint } from '@flighthq/text-layout';
 import type { InputKeyboardData, RichText, RichTextRuntime } from '@flighthq/types';
 import { KeyCode } from '@flighthq/types';

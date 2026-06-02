@@ -1,5 +1,5 @@
-import { invalidateAppearance } from '@flighthq/scenegraph-core';
-import { getInputTextRuntime } from '@flighthq/scenegraph-display';
+import { invalidateAppearance } from '@flighthq/scene-core';
+import { getInputTextRuntime } from '@flighthq/scene-display';
 import { getRichTextSelectionRectangles } from '@flighthq/text-layout';
 import type {
   InputText,

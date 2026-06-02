@@ -1,12 +1,12 @@
 import { setRectangle } from '@flighthq/geometry';
 import {
-  addGraphChild,
-  createGraphNode,
+  addSceneChild,
+  createSceneNode,
   getLocalBoundsRectangle,
   setTransformX,
   setTransformY,
-} from '@flighthq/scenegraph-core';
-import { createDisplayObject } from '@flighthq/scenegraph-display';
+} from '@flighthq/scene-core';
+import { createDisplayObject } from '@flighthq/scene-display';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals';
 import type { InputKeyboardData, InputPointerData, InputSignals } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
@@ -80,7 +80,7 @@ describe('connectInputToInteraction', () => {
 describe('connectInteractionSignal', () => {
   it('can use tracked subscribers without scanning for direct signal connections', () => {
     const kind = Symbol('TrackedSubscriberHitTest');
-    const root = createGraphNode(Symbol('Graph'), kind);
+    const root = createSceneNode(Symbol('Graph'), kind);
     const manager = createInteractionManager(root, { trackedSubscribersOnly: true });
     let fired = 0;
     let hitTests = 0;
@@ -102,7 +102,7 @@ describe('connectInteractionSignal', () => {
 
   it('clears tracked once subscribers after dispatch', () => {
     const kind = Symbol('TrackedOnceHitTest');
-    const root = createGraphNode(Symbol('Graph'), kind);
+    const root = createSceneNode(Symbol('Graph'), kind);
     const manager = createInteractionManager(root, { trackedSubscribersOnly: true });
     let fired = 0;
     let hitTests = 0;
@@ -172,7 +172,7 @@ describe('createInteractionSignals', () => {
 describe('disconnectInteractionSignal', () => {
   it('disconnects a tracked subscriber and removes the dispatch cost', () => {
     const kind = Symbol('DisconnectTrackedHitTest');
-    const root = createGraphNode(Symbol('Graph'), kind);
+    const root = createSceneNode(Symbol('Graph'), kind);
     const manager = createInteractionManager(root, { trackedSubscribersOnly: true });
     let fired = 0;
     let hitTests = 0;
@@ -256,7 +256,7 @@ describe('dispatchPointerCancel', () => {
 describe('dispatchPointerDown', () => {
   it('does not hit test when no dependent signal has subscribers', () => {
     const kind = Symbol('NoSubscriberHitTest');
-    const root = createGraphNode(Symbol('Graph'), kind);
+    const root = createSceneNode(Symbol('Graph'), kind);
     const manager = createInteractionManager(root);
     let hitTests = 0;
     registerHitTestPoint(kind, () => {
@@ -270,7 +270,7 @@ describe('dispatchPointerDown', () => {
 
   it('does not hit test when only unrelated signals have subscribers', () => {
     const kind = Symbol('UnrelatedSubscriberHitTest');
-    const root = createGraphNode(Symbol('Graph'), kind);
+    const root = createSceneNode(Symbol('Graph'), kind);
     const manager = createInteractionManager(root);
     let hitTests = 0;
     registerHitTestPoint(kind, () => {
@@ -293,7 +293,7 @@ describe('dispatchPointerDown', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
     setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
-    addGraphChild(root, child);
+    addSceneChild(root, child);
 
     const signals = getInteractionSignals(child);
     const manager = createInteractionManager(root, { enabled: false });
@@ -308,7 +308,7 @@ describe('dispatchPointerDown', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
     setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
-    addGraphChild(root, child);
+    addSceneChild(root, child);
 
     const signals = getInteractionSignals(child);
     const manager = createInteractionManager(root);
@@ -323,7 +323,7 @@ describe('dispatchPointerDown', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
     setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
-    addGraphChild(root, child);
+    addSceneChild(root, child);
 
     const signals = getInteractionSignals(child);
     const manager = createInteractionManager(root);
@@ -345,7 +345,7 @@ describe('dispatchPointerDown', () => {
     setTransformX(child, 10);
     setTransformY(child, 20);
     setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
-    addGraphChild(root, child);
+    addSceneChild(root, child);
 
     const manager = createInteractionManager(root);
     let receivedCurrentTarget = null;
@@ -381,8 +381,8 @@ describe('dispatchPointerDown', () => {
     setTransformX(child, 5);
     setTransformY(child, 7);
     setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
-    addGraphChild(root, parent);
-    addGraphChild(parent, child);
+    addSceneChild(root, parent);
+    addSceneChild(parent, child);
 
     const manager = createInteractionManager(root);
     let receivedCurrentTarget = null;
@@ -549,7 +549,7 @@ function createHitScene() {
   const root = createDisplayObject();
   const child = createDisplayObject();
   setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
-  addGraphChild(root, child);
+  addSceneChild(root, child);
   return { child, manager: createInteractionManager(root), root };
 }
 

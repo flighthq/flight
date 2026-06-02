@@ -1,4 +1,4 @@
-import { getInputTextRuntime, setRichTextScrollV } from '@flighthq/scenegraph-display';
+import { getInputTextRuntime, setRichTextScrollV } from '@flighthq/scene-display';
 import { connectSignal, disconnectSignal } from '@flighthq/signals';
 import type { InputKeyboardData, InputSignals, InputText, InputTextRuntime, TextInputData } from '@flighthq/types';
 

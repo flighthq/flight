@@ -10,8 +10,8 @@
   },
   "references": [
     { "path": "../assets" },
-    { "path": "../scenegraph-core" },
-    { "path": "../scenegraph-display" },
+    { "path": "../scene-core" },
+    { "path": "../scene-display" },
     { "path": "../spritesheet" },
     { "path": "../timeline" },
     { "path": "../types" }

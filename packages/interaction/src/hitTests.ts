@@ -1,12 +1,12 @@
 import { containsRectanglePointXY, intersectsRectangle, inverseMatrixTransformPointXY } from '@flighthq/geometry';
 import {
-  getGraphNodeRuntime,
-  getGraphParent,
   getLocalBoundsRectangle,
+  getSceneNodeRuntime,
+  getSceneParent,
   getWorldBoundsRectangle,
   getWorldTransformMatrix,
-} from '@flighthq/scenegraph-core';
-import type { DisplayObject, GraphHitTestFn, GraphNode } from '@flighthq/types';
+} from '@flighthq/scene-core';
+import type { DisplayObject, GraphHitTestFn, SceneNode } from '@flighthq/types';
 
 /**
  * Walks the scene graph depth-first in reverse child order (front-to-back) and
@@ -14,17 +14,17 @@ import type { DisplayObject, GraphHitTestFn, GraphNode } from '@flighthq/types';
  * coordinates, or null if nothing was hit.
  **/
 export function findGraphHitTarget(
-  source: GraphNode<symbol, object>,
+  source: SceneNode<symbol, object>,
   x: number,
   y: number,
   shapeFlag: boolean = false,
-): GraphNode<symbol, object> | null {
+): SceneNode<symbol, object> | null {
   if (!source.enabled) return null;
 
-  const children = getGraphNodeRuntime(source).children;
+  const children = getSceneNodeRuntime(source).children;
   if (children !== null) {
     for (let i = children.length - 1; i >= 0; i--) {
-      const hit = findGraphHitTarget(children[i] as GraphNode<symbol, object>, x, y, shapeFlag);
+      const hit = findGraphHitTarget(children[i] as SceneNode<symbol, object>, x, y, shapeFlag);
       if (hit !== null) return hit;
     }
   }
@@ -39,7 +39,7 @@ export function findGraphHitTarget(
  * Tests whether world-space (x, y) falls within the node's local bounds rect,
  * after inverting through the node's world transform.
  **/
-export function graphHitTestLocalBounds(source: GraphNode<symbol, object>, x: number, y: number): boolean {
+export function graphHitTestLocalBounds(source: SceneNode<symbol, object>, x: number, y: number): boolean {
   inverseMatrixTransformPointXY(hitTestLocalBoundsRectPoint, getWorldTransformMatrix(source as DisplayObject), x, y);
   return containsRectanglePointXY(
     getLocalBoundsRectangle(source as DisplayObject),
@@ -57,8 +57,8 @@ export function graphHitTestLocalBounds(source: GraphNode<symbol, object>, x: nu
  *
  * @param shapeFlag Passed to the registered hit function; interpretation is kind-specific.
  **/
-export function graphHitTestPoint<GraphKind extends symbol, Traits extends object>(
-  source: GraphNode<GraphKind, Traits>,
+export function graphHitTestPoint<SceneKind extends symbol, Traits extends object>(
+  source: SceneNode<SceneKind, Traits>,
   x: number,
   y: number,
   shapeFlag: boolean = false,
@@ -66,12 +66,12 @@ export function graphHitTestPoint<GraphKind extends symbol, Traits extends objec
   if (!source.enabled) return false;
 
   const hitTestSelf = hitTestPointRegistry.get(source.kind);
-  if (hitTestSelf?.(source as GraphNode<symbol, object>, x, y, shapeFlag)) return true;
+  if (hitTestSelf?.(source as SceneNode<symbol, object>, x, y, shapeFlag)) return true;
 
-  const children = getGraphNodeRuntime(source).children;
+  const children = getSceneNodeRuntime(source).children;
   if (children !== null) {
     for (const child of children) {
-      if (graphHitTestPoint(child as GraphNode<GraphKind, Traits>, x, y, shapeFlag)) return true;
+      if (graphHitTestPoint(child as SceneNode<SceneKind, Traits>, x, y, shapeFlag)) return true;
     }
   }
 
@@ -83,7 +83,7 @@ export function graphHitTestPoint<GraphKind extends symbol, Traits extends objec
  * intersects with the bounding box of the `obj` display object.
  **/
 export function hitTestDisplayObjects(source: DisplayObject, other: DisplayObject): boolean {
-  if (getGraphParent(source) !== null && getGraphParent(other) !== null) {
+  if (getSceneParent(source) !== null && getSceneParent(other) !== null) {
     return intersectsRectangle(getWorldBoundsRectangle(source), getWorldBoundsRectangle(other));
   }
   return false;

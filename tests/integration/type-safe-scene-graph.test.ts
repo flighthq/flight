@@ -1,21 +1,21 @@
-import { addGraphChild, getGraphNumChildren } from '@flighthq/scenegraph-core';
-import { createDisplayObject } from '@flighthq/scenegraph-display';
-import { createSprite } from '@flighthq/scenegraph-sprite';
+﻿import { addSceneChild, getSceneNumChildren } from '@flighthq/scene-core';
+import { createDisplayObject } from '@flighthq/scene-display';
+import { createSprite } from '@flighthq/scene-sprite';
 import type { DisplayObject, SpriteNode } from '@flighthq/types';
 
 test('can add display objects to display graph', () => {
   const parent = createDisplayObject();
   const child = createDisplayObject();
-  const out: DisplayObject = addGraphChild(parent, child);
-  expect(getGraphNumChildren(parent)).toBe(1);
+  const out: DisplayObject = addSceneChild(parent, child);
+  expect(getSceneNumChildren(parent)).toBe(1);
   expect(out).not.toBeNull();
 });
 
 test('can add sprite objects to sprite graph', () => {
   const parent = createSprite();
   const child = createSprite();
-  const out: SpriteNode = addGraphChild(parent, child);
-  expect(getGraphNumChildren(parent)).toBe(1);
+  const out: SpriteNode = addSceneChild(parent, child);
+  expect(getSceneNumChildren(parent)).toBe(1);
   expect(out).not.toBeNull();
 });
 
@@ -23,12 +23,12 @@ test('cannot add display objects to sprite graph', () => {
   const parent = createSprite();
   const child = createDisplayObject();
   // @ts-expect-error: parent and child have different graph types
-  addGraphChild(parent, child);
+  addSceneChild(parent, child);
 });
 
 test('cannot add sprite objects to standard display graph', () => {
   const parent = createDisplayObject();
   const child = createSprite();
   // @ts-expect-error: parent and child have different graph types
-  addGraphChild(parent, child);
+  addSceneChild(parent, child);
 });

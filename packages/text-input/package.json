@@ -27,8 +27,8 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/scenegraph-core": "*",
-    "@flighthq/scenegraph-display": "*",
+    "@flighthq/scene-core": "*",
+    "@flighthq/scene-display": "*",
     "@flighthq/signals": "*",
     "@flighthq/text-layout": "*",
     "@flighthq/types": "*"

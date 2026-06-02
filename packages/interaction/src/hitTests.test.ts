@@ -1,6 +1,6 @@
 import { setRectangle } from '@flighthq/geometry';
-import { addGraphChild, getLocalBoundsRectangle, invalidateLocalTransform } from '@flighthq/scenegraph-core';
-import { createDisplayObject, createDisplayObjectGeneric, getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
+import { addSceneChild, getLocalBoundsRectangle, invalidateLocalTransform } from '@flighthq/scene-core';
+import { createDisplayObject, createDisplayObjectGeneric, getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type { DisplayObject, DisplayObjectRuntime } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
@@ -23,7 +23,7 @@ describe('findGraphHitTarget', () => {
     const parent = createDisplayObject();
     const child = createDisplayObjectGeneric(DisplayObjectKind);
     setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
-    addGraphChild(parent, child);
+    addSceneChild(parent, child);
     registerHitTestPoint(DisplayObjectKind, graphHitTestLocalBounds);
     const hit = findGraphHitTarget(parent, 50, 50);
     expect(hit).toBe(child);
@@ -99,7 +99,7 @@ describe('graphHitTestPoint', () => {
   it('returns true when a child is hit even if the parent has no local bounds', () => {
     const child = createDisplayObject();
     setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
-    addGraphChild(obj, child);
+    addSceneChild(obj, child);
 
     setRectangle(getLocalBoundsRectangle(obj), 0, 0, 0, 0);
     expect(graphHitTestPoint(obj, 50, 50)).toBe(true);
@@ -110,7 +110,7 @@ describe('graphHitTestPoint', () => {
 
     const child = createDisplayObject();
     setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
-    addGraphChild(obj, child);
+    addSceneChild(obj, child);
 
     expect(graphHitTestPoint(obj, 50, 50)).toBe(false);
   });
@@ -132,8 +132,8 @@ describe('hitTestDisplayObjects', () => {
     a = createDisplayObject();
     b = createDisplayObject();
 
-    addGraphChild(createDisplayObject(), a);
-    addGraphChild(createDisplayObject(), b);
+    addSceneChild(createDisplayObject(), a);
+    addSceneChild(createDisplayObject(), b);
 
     setRectangle(getLocalBoundsRectangle(a), 0, 0, 10, 10);
     setRectangle(getLocalBoundsRectangle(b), 0, 0, 10, 10);
@@ -186,7 +186,7 @@ describe('hitTestDisplayObjects', () => {
     child.y = 90;
     invalidateLocalTransform(child);
     setRectangle(getLocalBoundsRectangle(child), 0, 0, 20, 20);
-    addGraphChild(a, child);
+    addSceneChild(a, child);
 
     b.x = 100;
     b.y = 100;

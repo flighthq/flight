@@ -1,4 +1,4 @@
-import { createInputText, getInputTextRuntime } from '@flighthq/scenegraph-display';
+import { createInputText, getInputTextRuntime } from '@flighthq/scene-display';
 import { createSignal, emitSignal } from '@flighthq/signals';
 import { KeyCode } from '@flighthq/types';
 

@@ -1,5 +1,5 @@
-import { addGraphChild, setTransformX, setTransformY } from '@flighthq/scenegraph-core';
-import { createBitmap } from '@flighthq/scenegraph-display';
+import { addSceneChild, setTransformX, setTransformY } from '@flighthq/scene-core';
+import { createBitmap } from '@flighthq/scene-display';
 import { createTimeline, playMovieClip } from '@flighthq/timeline';
 import type { MovieClip, Spritesheet, SpritesheetAnimation } from '@flighthq/types';
 
@@ -10,7 +10,7 @@ export function attachSpritesheetTimeline(
 ): void {
   const bitmap = createBitmap();
   bitmap.data.image = spritesheet.atlas?.image ?? null;
-  addGraphChild(clip, bitmap);
+  addSceneChild(clip, bitmap);
 
   clip.data.timeline = createTimeline({
     frameRate: 1000 / animation.frameDuration,
