@@ -308,8 +308,23 @@ for (const pkgDir of packageDirs) {
 
 // --- report ---
 
+const jsonMode = process.argv.includes('--json');
 const failed = results.filter((r) => r.errors.length > 0);
 const totalErrors = failed.reduce((n, r) => n + r.errors.length, 0);
+
+if (jsonMode) {
+  console.log(
+    JSON.stringify(
+      {
+        passed: totalErrors === 0,
+        packages: results.map((r) => ({ name: r.name, errors: r.errors })),
+      },
+      null,
+      2,
+    ),
+  );
+  process.exit(totalErrors === 0 ? 0 : 1);
+}
 
 for (const { name, errors } of failed) {
   console.log(`\n${pc.bold(name)}`);
