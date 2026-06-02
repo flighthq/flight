@@ -1,4 +1,5 @@
 import type { QuadTransformType } from './QuadTransformType';
+import type { Rectangle } from './Rectangle';
 import type { SpriteNode, SpriteNodeData, SpriteNodeRuntime } from './SpriteNode';
 import type { TextureAtlas } from './TextureAtlas';
 
@@ -10,7 +11,10 @@ export interface QuadBatchData extends SpriteNodeData {
   transformType: QuadTransformType;
 }
 
-export interface QuadBatchRuntime extends SpriteNodeRuntime {}
+export interface QuadBatchRuntime extends SpriteNodeRuntime {
+  // Bounds from the last measureQuadBatchBoundsRectangle() call; null until first measurement.
+  measuredBoundsRect: Rectangle | null;
+}
 
 export interface QuadBatch extends SpriteNode {
   data: QuadBatchData;
