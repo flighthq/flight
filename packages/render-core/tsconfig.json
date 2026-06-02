@@ -11,8 +11,8 @@
   "references": [
     { "path": "../geometry" },
     { "path": "../materials" },
-    { "path": "../scenegraph-display" },
-    { "path": "../scenegraph-sprite" },
+    { "path": "../scene-display" },
+    { "path": "../scene-sprite" },
     { "path": "../types" }
   ],
   "include": ["src"]

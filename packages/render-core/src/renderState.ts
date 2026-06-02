@@ -1,9 +1,8 @@
 import { createEntity } from '@flighthq/entity';
-import { BlendMode, type RenderState } from '@flighthq/types';
+import { BlendMode, RenderFeatures, type RenderState } from '@flighthq/types';
 
 export function createRenderState(obj?: Partial<RenderState>): RenderState {
   return createEntity({
-    allowFilters: obj?.allowFilters ?? true,
     allowSmoothing: obj?.allowSmoothing ?? true,
     backgroundColor: obj?.backgroundColor ?? 0,
     backgroundColorRGBA: obj?.backgroundColorRGBA ?? [],
@@ -13,12 +12,13 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
     currentQueue: obj?.currentQueue ?? [],
     currentQueueLength: obj?.currentQueueLength ?? 0,
     currentScrollRectDepth: obj?.currentScrollRectDepth ?? 0,
-    displayObjectKindTransformers: [],
+    displayObjectRenderNodeResolvers: [],
     pixelRatio: obj?.pixelRatio ?? 1,
     renderNodeMap: obj?.renderNodeMap ?? new WeakMap(),
     renderAlpha: obj?.renderAlpha ?? 1,
     renderBlendMode: obj?.renderBlendMode ?? BlendMode.Normal,
     renderColorTransform: obj?.renderColorTransform ?? null,
+    renderFeatures: obj?.renderFeatures ?? RenderFeatures.None,
     renderShader: obj?.renderShader ?? null,
     renderTransform2D: obj?.renderTransform2D ?? null,
     rendererMap: obj?.rendererMap ?? new Map(),

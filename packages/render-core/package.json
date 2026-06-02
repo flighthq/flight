@@ -9,41 +9,17 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./appearance": {
-      "types": "./dist/appearance.d.ts",
-      "default": "./dist/appearance.js"
-    },
     "./color": {
       "types": "./dist/color.d.ts",
       "default": "./dist/color.js"
-    },
-    "./queue": {
-      "types": "./dist/queue.d.ts",
-      "default": "./dist/queue.js"
     },
     "./renderer": {
       "types": "./dist/renderer.d.ts",
       "default": "./dist/renderer.js"
     },
-    "./renderNode": {
-      "types": "./dist/renderNode.d.ts",
-      "default": "./dist/renderNode.js"
-    },
-    "./renderNode2d": {
-      "types": "./dist/renderNode2d.d.ts",
-      "default": "./dist/renderNode2d.js"
-    },
     "./renderState": {
       "types": "./dist/renderState.d.ts",
       "default": "./dist/renderState.js"
-    },
-    "./transform2d": {
-      "types": "./dist/transform2d.d.ts",
-      "default": "./dist/transform2d.js"
-    },
-    "./update": {
-      "types": "./dist/update.d.ts",
-      "default": "./dist/update.js"
     }
   },
   "files": [
@@ -65,13 +41,13 @@
   "dependencies": {
     "@flighthq/geometry": "*",
     "@flighthq/materials": "*",
-    "@flighthq/scenegraph-display": "*",
-    "@flighthq/scenegraph-sprite": "*",
+    "@flighthq/scene-display": "*",
+    "@flighthq/scene-sprite": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Renderer abstraction: render state, node tracking, transform and color update pipeline",
+  "description": "Renderer registration, render state, render queue, and backend draw contracts",
   "sideEffects": false
 }
