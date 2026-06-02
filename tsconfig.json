@@ -13,6 +13,7 @@
     "packages/**/src/**/*.test.ts", // Include test files here
     "packages/**/src/**/*.spec.ts",
     "packages/**/__tests__/**/*.ts",
+    "examples/**/src/**/*.ts",
     "tests/**/*.test.ts",
     "scripts/**/*.ts"
   ],

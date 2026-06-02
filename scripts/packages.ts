@@ -9,6 +9,19 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const packagesDir = join(root, 'packages');
 
+interface ExamplePackageJson {
+  name?: string;
+  private?: boolean;
+  type?: string;
+  dependencies?: Record<string, string>;
+  scripts?: Record<string, string>;
+}
+
+interface ExampleTsConfig {
+  extends?: string;
+  references?: { path: string }[];
+}
+
 interface PackageJson {
   name?: string;
   main?: string;
@@ -201,8 +214,8 @@ function checkNoTopLevelSideEffects(errors: CheckError[], pkgDir: string): void 
 
 // --- load tsconfig.base.json paths ---
 
-const tsconfigPath = join(root, 'tsconfig.base.json');
-const tsconfig = readJson<TsConfigBase>(tsconfigPath);
+const tsconfigBasePath = join(root, 'tsconfig.base.json');
+const tsconfig = readJson<TsConfigBase>(tsconfigBasePath);
 const tsconfigPaths = tsconfig?.compilerOptions?.paths ?? {};
 
 // --- load tsconfig.build.json references ---
@@ -306,11 +319,75 @@ for (const pkgDir of packageDirs) {
   results.push({ name, errors });
 }
 
+// --- check each example ---
+
+const examplesDir = join(root, 'examples');
+
+const exampleDirs = readdirSync(examplesDir, { withFileTypes: true })
+  .filter((e) => e.isDirectory())
+  .map((e) => join(examplesDir, e.name));
+
+const exampleResults: PackageResult[] = [];
+
+for (const exampleDir of exampleDirs) {
+  const pkg = readJson<ExamplePackageJson>(join(exampleDir, 'package.json'));
+
+  if (!pkg?.name) continue;
+
+  const name = pkg.name;
+  const errors: CheckError[] = [];
+
+  check(errors, 'private is true', pkg.private === true, `got ${JSON.stringify(pkg.private)}`);
+  check(errors, 'type is "module"', pkg.type === 'module', `got ${JSON.stringify(pkg.type)}`);
+
+  for (const rel of ['tsconfig.json', 'vite.config.ts', 'index.html', 'src/app.ts']) {
+    check(errors, `${rel} exists`, existsSync(join(exampleDir, rel)));
+  }
+
+  check(errors, 'dev script exists', typeof pkg.scripts?.dev === 'string');
+  check(errors, 'build script exists', typeof pkg.scripts?.build === 'string');
+
+  for (const [dep, version] of Object.entries(pkg.dependencies ?? {})) {
+    if (dep.startsWith('@flighthq/')) {
+      check(errors, `${dep} uses "*"`, version === '*', `got "${version}"`);
+    }
+  }
+
+  const tsconfigPath = join(exampleDir, 'tsconfig.json');
+  if (existsSync(tsconfigPath)) {
+    const exampleTsConfig = readJson<ExampleTsConfig>(tsconfigPath);
+
+    check(
+      errors,
+      'tsconfig.json extends base',
+      exampleTsConfig?.extends === '../../tsconfig.base.json',
+      `got ${JSON.stringify(exampleTsConfig?.extends)}`,
+    );
+
+    const refs = new Set((exampleTsConfig?.references ?? []).map((r) => r.path));
+    const flightDeps = Object.keys(pkg.dependencies ?? {}).filter((d) => d.startsWith('@flighthq/'));
+
+    for (const dep of flightDeps) {
+      const pkgName = dep.replace('@flighthq/', '');
+      const expectedRef = `../../packages/${pkgName}`;
+      check(errors, `tsconfig.json references ${pkgName}`, refs.has(expectedRef));
+    }
+  }
+
+  exampleResults.push({ name, errors });
+}
+
 // --- report ---
 
 const jsonMode = process.argv.includes('--json');
-const failed = results.filter((r) => r.errors.length > 0);
-const totalErrors = failed.reduce((n, r) => n + r.errors.length, 0);
+
+const failedPackages = results.filter((r) => r.errors.length > 0);
+const packageErrors = failedPackages.reduce((n, r) => n + r.errors.length, 0);
+
+const failedExamples = exampleResults.filter((r) => r.errors.length > 0);
+const exampleErrors = failedExamples.reduce((n, r) => n + r.errors.length, 0);
+
+const totalErrors = packageErrors + exampleErrors;
 
 if (jsonMode) {
   console.log(
@@ -318,6 +395,7 @@ if (jsonMode) {
       {
         passed: totalErrors === 0,
         packages: results.map((r) => ({ name: r.name, errors: r.errors })),
+        examples: exampleResults.map((r) => ({ name: r.name, errors: r.errors })),
       },
       null,
       2,
@@ -326,7 +404,14 @@ if (jsonMode) {
   process.exit(totalErrors === 0 ? 0 : 1);
 }
 
-for (const { name, errors } of failed) {
+for (const { name, errors } of failedPackages) {
+  console.log(`\n${pc.bold(name)}`);
+  for (const { label, detail } of errors) {
+    console.log(`  ${pc.red('✗')} ${label}${detail ? pc.dim(` — ${detail}`) : ''}`);
+  }
+}
+
+for (const { name, errors } of failedExamples) {
   console.log(`\n${pc.bold(name)}`);
   for (const { label, detail } of errors) {
     console.log(`  ${pc.red('✗')} ${label}${detail ? pc.dim(` — ${detail}`) : ''}`);
@@ -334,14 +419,19 @@ for (const { name, errors } of failed) {
 }
 
 if (totalErrors === 0) {
-  console.log(pc.green(`✓ ${results.length} packages valid`));
+  console.log(pc.green(`✓ ${results.length} packages and ${exampleResults.length} examples valid`));
   process.exit(0);
 } else {
   console.log('');
-  console.log(
-    pc.red(
-      `✗ ${totalErrors} error${totalErrors === 1 ? '' : 's'} across ${failed.length} package${failed.length === 1 ? '' : 's'}`,
-    ),
-  );
+  const parts: string[] = [];
+  if (packageErrors > 0)
+    parts.push(
+      `${packageErrors} error${packageErrors === 1 ? '' : 's'} across ${failedPackages.length} package${failedPackages.length === 1 ? '' : 's'}`,
+    );
+  if (exampleErrors > 0)
+    parts.push(
+      `${exampleErrors} error${exampleErrors === 1 ? '' : 's'} across ${failedExamples.length} example${failedExamples.length === 1 ? '' : 's'}`,
+    );
+  console.log(pc.red(`✗ ${parts.join(', ')}`));
   process.exit(1);
 }
