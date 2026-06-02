@@ -1,5 +1,5 @@
 import {
-  addGraphChild,
+  addSceneChild,
   addTextureAtlasRegion,
   connectSignal,
   createApplication,
@@ -69,7 +69,7 @@ const sprites = animationDefs.map((def, i) => {
   sprite.data.atlas = atlas;
   setTransformX(sprite, (gap + i * (spriteScreenSize + gap)) / SCALE);
   setTransformY(sprite, yLocal);
-  addGraphChild(root, sprite);
+  addSceneChild(root, sprite);
   return sprite;
 });
 

@@ -1,19 +1,19 @@
 import type { DisplayObject, GraphNode, ImageSource, InteractionManager, TweenManager } from '@flighthq/sdk';
 import {
-  addGraphChild,
-  addGraphChildAt,
+  addSceneChild,
+  addSceneChildAt,
   capturePointer,
   connectSignal,
   createBitmap,
   createDisplayObject,
   createTween,
-  getGraphParent,
   getInteractionSignals,
   getLocalBoundsRectangle,
+  getSceneParent,
   invalidateRender,
   Quad,
   releasePointer,
-  removeGraphChild,
+  removeSceneChild,
   setRectangle,
 } from '@flighthq/sdk';
 
@@ -88,7 +88,7 @@ export function createTile(image: ImageSource, type: number): Tile {
   const bitmap = createBitmap();
   bitmap.data.image = image;
   bitmap.data.smoothing = true;
-  addGraphChild(obj, bitmap);
+  addSceneChild(obj, bitmap);
   return { obj, column: 0, row: 0, type, moving: false, removed: false };
 }
 
@@ -115,7 +115,7 @@ export function removeTileAnimated(manager: TweenManager, tile: Tile, tileContai
   tile.removed = true;
 
   const half = TILE_SIZE / 2;
-  addGraphChildAt(tileContainer, tile.obj, 0);
+  addSceneChildAt(tileContainer, tile.obj, 0);
 
   const tween = createTween(
     manager,
@@ -126,15 +126,15 @@ export function removeTileAnimated(manager: TweenManager, tile: Tile, tileContai
   );
   connectSignal(tween.onUpdate, () => invalidateRender(tile.obj));
   connectSignal(tween.onComplete, () => {
-    const parent = getGraphParent(tile.obj) as DisplayObject | null;
-    if (parent !== null) removeGraphChild(parent, tile.obj);
+    const parent = getSceneParent(tile.obj) as DisplayObject | null;
+    if (parent !== null) removeSceneChild(parent, tile.obj);
     invalidateRender(tileContainer);
   });
 }
 
 export function removeTileImmediate(tile: Tile, tileContainer: DisplayObject): void {
   tile.removed = true;
-  const parent = getGraphParent(tile.obj) as DisplayObject | null;
-  if (parent !== null) removeGraphChild(parent, tile.obj);
+  const parent = getSceneParent(tile.obj) as DisplayObject | null;
+  if (parent !== null) removeSceneChild(parent, tile.obj);
   invalidateRender(tileContainer);
 }

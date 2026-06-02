@@ -1,6 +1,6 @@
 import type { Shape } from '@flighthq/sdk';
 import {
-  addGraphChild,
+  addSceneChild,
   appendShapeBeginFill,
   appendShapeCircle,
   appendShapeCurveTo,
@@ -39,42 +39,42 @@ appendShapeBeginFill(square, 0x24afc4);
 appendShapeRectangle(square, 0, 0, 100, 100);
 setTransformX(square, 20);
 setTransformY(square, 20);
-addGraphChild(main, square);
+addSceneChild(main, square);
 
 const rectangle = createShape();
 appendShapeBeginFill(rectangle, 0x24afc4);
 appendShapeRectangle(rectangle, 0, 0, 120, 100);
 setTransformX(rectangle, 140);
 setTransformY(rectangle, 20);
-addGraphChild(main, rectangle);
+addSceneChild(main, rectangle);
 
 const circle = createShape();
 appendShapeBeginFill(circle, 0x24afc4);
 appendShapeCircle(circle, 50, 50, 50);
 setTransformX(circle, 280);
 setTransformY(circle, 20);
-addGraphChild(main, circle);
+addSceneChild(main, circle);
 
 const ellipse = createShape();
 appendShapeBeginFill(ellipse, 0x24afc4);
 appendShapeEllipse(ellipse, 0, 0, 120, 100);
 setTransformX(ellipse, 400);
 setTransformY(ellipse, 20);
-addGraphChild(main, ellipse);
+addSceneChild(main, ellipse);
 
 const roundSquare = createShape();
 appendShapeBeginFill(roundSquare, 0x24afc4);
 appendShapeRoundRectangle(roundSquare, 0, 0, 100, 100, 40, 40);
 setTransformX(roundSquare, 540);
 setTransformY(roundSquare, 20);
-addGraphChild(main, roundSquare);
+addSceneChild(main, roundSquare);
 
 const roundRectangle = createShape();
 appendShapeBeginFill(roundRectangle, 0x24afc4);
 appendShapeRoundRectangle(roundRectangle, 0, 0, 120, 100, 40, 40);
 setTransformX(roundRectangle, 660);
 setTransformY(roundRectangle, 20);
-addGraphChild(main, roundRectangle);
+addSceneChild(main, roundRectangle);
 
 // ── Row 2: polygons ────────────────────────────────────────────────────────
 
@@ -86,42 +86,42 @@ appendShapeLineTo(triangle, 100, 100);
 appendShapeLineTo(triangle, 0, 100);
 setTransformX(triangle, 20);
 setTransformY(triangle, 150);
-addGraphChild(main, triangle);
+addSceneChild(main, triangle);
 
 const pentagon = createShape();
 appendShapeBeginFill(pentagon, 0x24afc4);
 drawPolygon(pentagon, 50, 50, 50, 5);
 setTransformX(pentagon, 145);
 setTransformY(pentagon, 150);
-addGraphChild(main, pentagon);
+addSceneChild(main, pentagon);
 
 const hexagon = createShape();
 appendShapeBeginFill(hexagon, 0x24afc4);
 drawPolygon(hexagon, 50, 50, 50, 6);
 setTransformX(hexagon, 270);
 setTransformY(hexagon, 150);
-addGraphChild(main, hexagon);
+addSceneChild(main, hexagon);
 
 const heptagon = createShape();
 appendShapeBeginFill(heptagon, 0x24afc4);
 drawPolygon(heptagon, 50, 50, 50, 7);
 setTransformX(heptagon, 395);
 setTransformY(heptagon, 150);
-addGraphChild(main, heptagon);
+addSceneChild(main, heptagon);
 
 const octagon = createShape();
 appendShapeBeginFill(octagon, 0x24afc4);
 drawPolygon(octagon, 50, 50, 50, 8);
 setTransformX(octagon, 520);
 setTransformY(octagon, 150);
-addGraphChild(main, octagon);
+addSceneChild(main, octagon);
 
 const decagon = createShape();
 appendShapeBeginFill(decagon, 0x24afc4);
 drawPolygon(decagon, 50, 50, 50, 10);
 setTransformX(decagon, 650);
 setTransformY(decagon, 150);
-addGraphChild(main, decagon);
+addSceneChild(main, decagon);
 
 // ── Row 3: lines and curves ───────────────────────────────────────────────
 
@@ -130,14 +130,14 @@ appendShapeLineStyle(line, 10, 0x24afc4);
 appendShapeLineTo(line, 755, 0);
 setTransformX(line, 20);
 setTransformY(line, 280);
-addGraphChild(main, line);
+addSceneChild(main, line);
 
 const curve = createShape();
 appendShapeLineStyle(curve, 10, 0x24afc4);
 appendShapeCurveTo(curve, 327.5, -50, 755, 0);
 setTransformX(curve, 20);
 setTransformY(curve, 340);
-addGraphChild(main, curve);
+addSceneChild(main, curve);
 
 // ── Render loop ───────────────────────────────────────────────────────────
 

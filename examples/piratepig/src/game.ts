@@ -1,6 +1,6 @@
 import type { AudioSource, DisplayObject, ImageSource, InteractionManager, Text, TweenManager } from '@flighthq/sdk';
 import {
-  addGraphChild,
+  addSceneChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
@@ -70,7 +70,7 @@ export class PiratePigGame {
     scoreText.data.textFormat = { font: fontName, size: 60, color: 0x000000, align: 'right' };
     scoreText.x = CONTENT_WIDTH - 200;
     scoreText.y = 12;
-    addGraphChild(this.obj, scoreText);
+    addSceneChild(this.obj, scoreText);
     this.scoreText = scoreText;
 
     const backgroundPanel = createShape();
@@ -78,12 +78,12 @@ export class PiratePigGame {
     appendShapeBeginFill(backgroundPanel, 0xffffff, 0.4);
     appendShapeRectangle(backgroundPanel, 0, 0, CONTENT_WIDTH, CONTENT_HEIGHT);
     appendShapeEndFill(backgroundPanel);
-    addGraphChild(this.obj, backgroundPanel);
+    addSceneChild(this.obj, backgroundPanel);
 
     const tileContainer = createDisplayObject();
     tileContainer.x = TILE_CONTAINER_X;
     tileContainer.y = TILE_CONTAINER_Y;
-    addGraphChild(this.obj, tileContainer);
+    addSceneChild(this.obj, tileContainer);
     this.tileContainer = tileContainer;
 
     this.tiles = Array.from({ length: NUM_ROWS }, () => new Array(NUM_COLUMNS).fill(null));
@@ -195,7 +195,7 @@ export class PiratePigGame {
       tile.obj.y = tileY(row);
     }
 
-    addGraphChild(this.tileContainer, tile.obj);
+    addSceneChild(this.tileContainer, tile.obj);
     this.needToCheckMatches = true;
   }
 

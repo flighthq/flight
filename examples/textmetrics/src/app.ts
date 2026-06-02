@@ -1,6 +1,6 @@
 import type { Shape, TextFormat, TextMeasureFn } from '@flighthq/sdk';
 import {
-  addGraphChild,
+  addSceneChild,
   appendShapeBeginFill,
   appendShapeRectangle,
   computeTextFormatFontString,
@@ -135,12 +135,12 @@ loremText.data.wordWrap = true;
 
 // ---- Scene graph (z-order: bg → vizBg → textField → vizLines → lorem → outText) ----
 
-addGraphChild(root, vizBg);
-addGraphChild(root, textField);
-addGraphChild(root, vizLines);
-addGraphChild(root, whiteBg);
-addGraphChild(root, loremText);
-addGraphChild(root, outText);
+addSceneChild(root, vizBg);
+addSceneChild(root, textField);
+addSceneChild(root, vizLines);
+addSceneChild(root, whiteBg);
+addSceneChild(root, loremText);
+addSceneChild(root, outText);
 
 invalidateRender(root);
 

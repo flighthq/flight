@@ -1,6 +1,6 @@
 import type { VideoChannel } from '@flighthq/sdk';
 import {
-  addGraphChild,
+  addSceneChild,
   appendShapeBeginFill,
   appendShapeRectangle,
   attachPointerInput,
@@ -32,15 +32,15 @@ const videoSource = await loadVideoSourceFromURL('assets/example.mp4');
 
 const videoNode = createVideo();
 videoNode.data.source = videoSource;
-addGraphChild(root, videoNode);
+addSceneChild(root, videoNode);
 
 const overlay = createShape();
 const prompt = createText();
 prompt.data.text = 'Click to play';
 prompt.data.textFormat.color = 0xffffffff;
 prompt.data.textFormat.size = 24;
-addGraphChild(root, overlay);
-addGraphChild(root, prompt);
+addSceneChild(root, overlay);
+addSceneChild(root, prompt);
 
 let channel: VideoChannel | null = null;
 
