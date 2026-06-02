@@ -1,27 +1,11 @@
-import type { Renderable, RenderNode, RenderState } from '@flighthq/types';
-
-import type { DisplayObjectKindTransformer } from './renderer';
+import type { RenderState } from '@flighthq/types';
 
 export type RenderStateInternal = Omit<
   RenderState,
-  | 'backgroundColor'
-  | 'backgroundColorRGBA'
-  | 'backgroundColorString'
-  | 'currentFrameID'
-  | 'currentQueue'
-  | 'currentQueueLength'
-  | 'renderNodeMap'
-  | 'rendererMapID'
-  | 'tempStack'
+  'backgroundColor' | 'backgroundColorRGBA' | 'backgroundColorString' | 'rendererMapID'
 > & {
   backgroundColor: number;
   backgroundColorRGBA: number[];
   backgroundColorString: string;
-  currentFrameID: number;
-  currentQueue: RenderNode[];
-  currentQueueLength: number;
-  displayObjectKindTransformers: DisplayObjectKindTransformer[];
-  renderNodeMap: WeakMap<Renderable, RenderNode>;
   rendererMapID: number;
-  tempStack: Renderable[];
 };

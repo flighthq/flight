@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry';
 import { createColorTransform } from '@flighthq/materials';
-import { BlendMode, type RenderState } from '@flighthq/types';
+import { BlendMode, RenderFeatures, type RenderState } from '@flighthq/types';
 
 import { createRenderState } from './renderState';
 
@@ -12,7 +12,6 @@ describe('createRenderState', () => {
   });
 
   it('initializes default values', () => {
-    expect(state.allowFilters).toStrictEqual(true);
     expect(state.allowSmoothing).toStrictEqual(true);
     expect(state.backgroundColor).toStrictEqual(0);
     expect(state.backgroundColorRGBA).toStrictEqual([]);
@@ -25,6 +24,7 @@ describe('createRenderState', () => {
     expect(state.renderAlpha).toStrictEqual(1);
     expect(state.renderBlendMode).toStrictEqual(BlendMode.Normal);
     expect(state.renderColorTransform).toStrictEqual(null);
+    expect(state.renderFeatures).toStrictEqual(RenderFeatures.None);
     expect(state.renderShader).toStrictEqual(null);
     expect(state.renderTransform2D).toStrictEqual(null);
     expect(state.roundPixels).toStrictEqual(false);
@@ -33,7 +33,6 @@ describe('createRenderState', () => {
 
   it('allows pre-defined values', () => {
     const base = {
-      allowFilters: false,
       allowSmoothing: false,
       backgroundColor: 0xff,
       backgroundColorRGBA: [1, 0, 0, 0],
@@ -46,13 +45,13 @@ describe('createRenderState', () => {
       renderAlpha: 0.5,
       renderBlendMode: BlendMode.Multiply,
       renderColorTransform: createColorTransform(),
+      renderFeatures: RenderFeatures.Masks | RenderFeatures.ScrollRect,
       renderShader: null,
       renderTransform2D: createMatrix(),
       roundPixels: true,
       tempStack: [],
     };
     const obj = createRenderState(base);
-    expect(obj.allowFilters).toStrictEqual(base.allowFilters);
     expect(obj.allowSmoothing).toStrictEqual(base.allowSmoothing);
     expect(obj.backgroundColor).toStrictEqual(base.backgroundColor);
     expect(obj.backgroundColorRGBA).toStrictEqual(base.backgroundColorRGBA);
@@ -65,6 +64,7 @@ describe('createRenderState', () => {
     expect(obj.renderAlpha).toStrictEqual(base.renderAlpha);
     expect(obj.renderBlendMode).toStrictEqual(base.renderBlendMode);
     expect(obj.renderColorTransform).toStrictEqual(base.renderColorTransform);
+    expect(obj.renderFeatures).toStrictEqual(base.renderFeatures);
     expect(obj.renderShader).toStrictEqual(base.renderShader);
     expect(obj.renderTransform2D).toStrictEqual(base.renderTransform2D);
     expect(obj.roundPixels).toStrictEqual(base.roundPixels);

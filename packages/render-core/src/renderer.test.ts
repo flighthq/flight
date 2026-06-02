@@ -1,10 +1,11 @@
-import type { Renderer, RenderState } from '@flighthq/types';
+import { type Renderer, RenderFeatures, type RenderState } from '@flighthq/types';
 
-import type { RenderStateInternal } from './internal';
 import {
   copyRendererRegistrations,
   createNullRendererData,
-  registerDisplayObjectKindTransformer,
+  disableRenderFeatures,
+  enableRenderFeatures,
+  hasRenderFeatures,
   registerRenderer,
 } from './renderer';
 import { createRenderState } from './renderState';
@@ -46,21 +47,27 @@ describe('createNullRendererData', () => {
   });
 });
 
-describe('registerDisplayObjectKindTransformer', () => {
-  it('pushes the transformer into displayObjectKindTransformers', () => {
-    const state = createRenderState() as unknown as RenderStateInternal;
-    const transformer = vi.fn();
-    registerDisplayObjectKindTransformer(state as unknown as RenderState, transformer);
-    expect(state.displayObjectKindTransformers).toContain(transformer);
+describe('disableRenderFeatures', () => {
+  it('removes feature flags from the render state', () => {
+    const state = createRenderState({ renderFeatures: RenderFeatures.Masks | RenderFeatures.ScrollRect });
+    disableRenderFeatures(state, RenderFeatures.Masks);
+    expect(state.renderFeatures).toBe(RenderFeatures.ScrollRect);
   });
+});
 
-  it('appends multiple transformers in registration order', () => {
-    const state = createRenderState() as unknown as RenderStateInternal;
-    const t1 = vi.fn();
-    const t2 = vi.fn();
-    registerDisplayObjectKindTransformer(state as unknown as RenderState, t1);
-    registerDisplayObjectKindTransformer(state as unknown as RenderState, t2);
-    expect(state.displayObjectKindTransformers).toEqual([t1, t2]);
+describe('enableRenderFeatures', () => {
+  it('adds feature flags to the render state', () => {
+    const state = createRenderState();
+    enableRenderFeatures(state, RenderFeatures.Masks | RenderFeatures.ScrollRect);
+    expect(state.renderFeatures).toBe(RenderFeatures.Masks | RenderFeatures.ScrollRect);
+  });
+});
+
+describe('hasRenderFeatures', () => {
+  it('returns whether all requested features are enabled', () => {
+    const state = createRenderState({ renderFeatures: RenderFeatures.Masks });
+    expect(hasRenderFeatures(state, RenderFeatures.Masks)).toBe(true);
+    expect(hasRenderFeatures(state, RenderFeatures.Masks | RenderFeatures.ScrollRect)).toBe(false);
   });
 });
 
@@ -74,26 +81,21 @@ describe('registerRenderer', () => {
   beforeEach(() => {
     kindA = Symbol('kindA');
     kindB = Symbol('kindB');
-
     renderer1 = { render: vi.fn() } as unknown as Renderer;
     renderer2 = { render: vi.fn() } as unknown as Renderer;
-
     state = createRenderState();
   });
 
   it('should register a new renderer', () => {
     expect(state.rendererMap.has(kindA)).toBe(false);
-
     registerRenderer(state, kindA, renderer1);
-
     expect(state.rendererMap.get(kindA)).toBe(renderer1);
-    expect(state.rendererMapID).toBe(1); // incremented
+    expect(state.rendererMapID).toBe(1);
   });
 
   it('should increment rendererMapID for each new renderer', () => {
     registerRenderer(state, kindA, renderer1);
     const idAfterFirst = state.rendererMapID;
-
     registerRenderer(state, kindB, renderer2);
     expect(state.rendererMap.get(kindB)).toBe(renderer2);
     expect(state.rendererMapID).toBe(idAfterFirst + 1);
@@ -102,28 +104,22 @@ describe('registerRenderer', () => {
   it('should not increment rendererMapID if the same renderer is registered', () => {
     registerRenderer(state, kindA, renderer1);
     const idBefore = state.rendererMapID;
-
-    // register same renderer again
     registerRenderer(state, kindA, renderer1);
-
     expect(state.rendererMap.get(kindA)).toBe(renderer1);
-    expect(state.rendererMapID).toBe(idBefore); // no change
+    expect(state.rendererMapID).toBe(idBefore);
   });
 
   it('should update renderer and increment rendererMapID if different renderer is registered', () => {
     registerRenderer(state, kindA, renderer1);
     const idBefore = state.rendererMapID;
-
-    // register a different renderer for same kind
     registerRenderer(state, kindA, renderer2);
-
     expect(state.rendererMap.get(kindA)).toBe(renderer2);
-    expect(state.rendererMapID).toBe(idBefore + 1); // incremented
+    expect(state.rendererMapID).toBe(idBefore + 1);
   });
 
   it('should wrap around rendererMapID correctly using >>> 0', () => {
-    state.rendererMapID = 0xffffffff; // max 32-bit uint
+    state.rendererMapID = 0xffffffff;
     registerRenderer(state, kindA, renderer1);
-    expect(state.rendererMapID).toBe(0); // wrapped to 0
+    expect(state.rendererMapID).toBe(0);
   });
 });
