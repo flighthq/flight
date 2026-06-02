@@ -10,13 +10,14 @@
   },
   "references": [
     { "path": "../assets" },
+    { "path": "../render-tree" },
     { "path": "../geometry" },
     { "path": "../render-canvas" },
     { "path": "../render-core" },
     { "path": "../render-dom" },
     { "path": "../render-webgl" },
-    { "path": "../scenegraph-core" },
-    { "path": "../scenegraph-display" },
+    { "path": "../scene-core" },
+    { "path": "../scene-display" },
     { "path": "../types" }
   ],
   "include": ["src"]

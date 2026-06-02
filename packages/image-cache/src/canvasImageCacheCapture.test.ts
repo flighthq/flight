@@ -1,7 +1,7 @@
 import { setRectangle } from '@flighthq/geometry';
 import { createCanvasRenderState } from '@flighthq/render-canvas';
-import { getLocalBoundsRectangle } from '@flighthq/scenegraph-core';
-import { createDisplayObject } from '@flighthq/scenegraph-display';
+import { getLocalBoundsRectangle } from '@flighthq/scene-core';
+import { createDisplayObject } from '@flighthq/scene-display';
 
 import { beginCanvasDisplayObjectImageCache, endCanvasDisplayObjectImageCache } from './canvasImageCacheCapture';
 import { getImageCache } from './imageCache';

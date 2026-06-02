@@ -28,18 +28,19 @@
   },
   "dependencies": {
     "@flighthq/assets": "*",
+    "@flighthq/render-tree": "*",
     "@flighthq/geometry": "*",
     "@flighthq/render-canvas": "*",
     "@flighthq/render-core": "*",
     "@flighthq/render-dom": "*",
     "@flighthq/render-webgl": "*",
-    "@flighthq/scenegraph-core": "*",
-    "@flighthq/scenegraph-display": "*",
+    "@flighthq/scene-core": "*",
+    "@flighthq/scene-display": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Image cache subsystem — WeakMap-keyed per-display-object off-screen canvas with opaqueBackground and matrix options",
+  "description": "Image cache subsystem with render-tree presentation primitives for cached display object images",
   "sideEffects": false
 }

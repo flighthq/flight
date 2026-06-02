@@ -1,15 +1,19 @@
 import { createMatrix } from '@flighthq/geometry';
 import { createCanvasRenderState, renderCanvasDisplayObject } from '@flighthq/render-canvas';
-import { createRenderState, updateDisplayObjectBeforeRender } from '@flighthq/render-core';
-import { createDisplayObject } from '@flighthq/scenegraph-display';
+import { createRenderState } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render-tree';
+import { createDisplayObject } from '@flighthq/scene-display';
 
 import { setImageCache } from './imageCache';
 import { ImageCacheKind } from './imageCacheKind';
+import { isImageCachePrimitive } from './imageCachePrimitive';
 import {
+  createImageCacheResolver,
+  isImageCacheResolver,
   markImageCacheCapturing,
   registerImageCacheRenderer,
   unmarkImageCacheCapturing,
-} from './imageCacheTransformer';
+} from './imageCacheRenderNodeResolver';
 
 function makeCanvasState() {
   const canvas = document.createElement('canvas');
@@ -32,8 +36,57 @@ function makeImageCache() {
   };
 }
 
+describe('createImageCacheResolver', () => {
+  it('creates an image cache scene node resolver', () => {
+    const resolver = createImageCacheResolver();
+    expect(isImageCacheResolver(resolver)).toBe(true);
+    expect(resolver.updateChildren).toBe(false);
+  });
+});
+
+describe('ImageCacheResolver via setImageCache', () => {
+  it('resolves active caches to an image cache presentation primitive', () => {
+    const state = createRenderState();
+    const renderer = { createData: vi.fn(() => null), draw: vi.fn(), drawMask: vi.fn() };
+    registerImageCacheRenderer(state, renderer);
+
+    const obj = createDisplayObject();
+    const cache = makeImageCache();
+    setImageCache(obj, cache);
+
+    updateDisplayObjectBeforeRender(state, obj);
+
+    const node = getOrCreateDisplayObjectRenderNode(state, obj);
+    expect(node.kind).toBe(ImageCacheKind);
+    expect(node.presentationTransform2D).toBe(cache.transform);
+    expect(isImageCachePrimitive(node.presentationSource)).toBe(true);
+    expect(node.presentationSource).toMatchObject({ cache, owner: obj });
+    expect(renderer.createData).toHaveBeenCalledWith(state, node.presentationSource);
+  });
+
+  it('does not walk children when cache is active', () => {
+    const state = createRenderState();
+    registerImageCacheRenderer(state, makeRenderer());
+
+    const obj = createDisplayObject();
+    setImageCache(obj, makeImageCache());
+
+    updateDisplayObjectBeforeRender(state, obj);
+
+    const node = getOrCreateDisplayObjectRenderNode(state, obj);
+    expect(node.updateChildren).toBe(false);
+  });
+});
+
+describe('isImageCacheResolver', () => {
+  it('returns false for non-image-cache resolver values', () => {
+    expect(isImageCacheResolver(null)).toBe(false);
+    expect(isImageCacheResolver({ updateChildren: false })).toBe(false);
+  });
+});
+
 describe('markImageCacheCapturing', () => {
-  it('suppresses the image cache transformer while capturing', () => {
+  it('suppresses the image cache resolver while capturing', () => {
     const state = makeCanvasState();
     const mockRenderer = makeRenderer();
     registerImageCacheRenderer(state, mockRenderer);
@@ -57,13 +110,6 @@ describe('registerImageCacheRenderer', () => {
     expect(state.rendererMap.get(ImageCacheKind)).toBe(renderer);
   });
 
-  it('adds the kind transformer exactly once per state', () => {
-    const state = createRenderState();
-    registerImageCacheRenderer(state, makeRenderer());
-    registerImageCacheRenderer(state, makeRenderer());
-    expect((state as any).displayObjectKindTransformers).toHaveLength(1);
-  });
-
   it('updates the renderer when called again with a different renderer', () => {
     const state = createRenderState();
     const r1 = makeRenderer();
@@ -75,7 +121,7 @@ describe('registerImageCacheRenderer', () => {
 });
 
 describe('unmarkImageCacheCapturing', () => {
-  it('restores the image cache transformer after unmarking', () => {
+  it('restores the image cache resolver after unmarking', () => {
     const state = makeCanvasState();
     const mockRenderer = makeRenderer();
     registerImageCacheRenderer(state, mockRenderer);

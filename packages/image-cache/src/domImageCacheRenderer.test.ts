@@ -1,11 +1,8 @@
 import { createMatrix } from '@flighthq/geometry';
-import {
-  getOrCreateDisplayObjectRenderNode,
-  registerRenderer,
-  updateDisplayObjectBeforeRender,
-} from '@flighthq/render-core';
+import { registerRenderer } from '@flighthq/render-core';
 import { createDOMRenderState, renderDOMDisplayObject } from '@flighthq/render-dom';
-import { createDisplayObject } from '@flighthq/scenegraph-display';
+import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render-tree';
+import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { enableDOMImageCache } from './domImageCacheRenderer';

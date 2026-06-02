@@ -1,5 +1,3 @@
-import { multiplyMatrix } from '@flighthq/geometry';
-import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
 import { createNullRendererData } from '@flighthq/render-core';
 import {
   bindWebGLTexture,
@@ -11,14 +9,20 @@ import {
   useWebGLProgram,
   type WebGLRenderStateInternal,
 } from '@flighthq/render-webgl';
-import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
-import type { DisplayObjectRenderer, DisplayObjectRenderNode, RenderState, WebGLRenderState } from '@flighthq/types';
+import type {
+  DisplayObjectRenderer,
+  DisplayObjectRenderTreeNode,
+  RenderState,
+  WebGLRenderState,
+} from '@flighthq/types';
 
-import { registerImageCacheRenderer } from './imageCacheTransformer';
+import { isImageCachePrimitive } from './imageCachePrimitive';
+import { registerImageCacheRenderer } from './imageCacheRenderNodeResolver';
 
-function drawWebGLImageCache(state: RenderState, renderNode: DisplayObjectRenderNode): void {
-  const cache = getDisplayObjectRuntime(renderNode.source).imageCache;
-  if (cache === null) return;
+function drawWebGLImageCache(state: RenderState, renderNode: DisplayObjectRenderTreeNode): void {
+  const source = renderNode.presentationSource;
+  if (!isImageCachePrimitive(source)) return;
+  const cache = source.cache;
   const cacheSource = cache.source;
   if (cacheSource === null) return;
   const src = cacheSource.src;
@@ -30,19 +34,17 @@ function drawWebGLImageCache(state: RenderState, renderNode: DisplayObjectRender
   setWebGLBlendMode(state as WebGLRenderState, renderNode.blendMode);
   bindWebGLTexture(internal, src);
 
-  const quadTransform = acquireMatrix();
-  multiplyMatrix(quadTransform, renderNode.transform2D, cache.transform);
-
   const { gl, shaderLoc, matrixArray } = internal;
   setWebGLAttribs(gl, shaderLoc);
-  setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, quadTransform, internal.canvas);
+  setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, renderNode.transform2D, internal.canvas);
   setWebGLBaseUniforms(gl, shaderLoc, renderNode);
-  releaseMatrix(quadTransform);
 
   drawWebGLQuad(internal, 0, 0, cacheSource.width, cacheSource.height, 0, 0, 1, 1);
 }
 
-function drawWebGLImageCacheMask(_state: RenderState, _node: DisplayObjectRenderNode): void {}
+function drawWebGLImageCacheMask(state: RenderState, node: DisplayObjectRenderTreeNode): void {
+  drawWebGLImageCache(state, node);
+}
 
 export const defaultWebGLImageCacheRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
