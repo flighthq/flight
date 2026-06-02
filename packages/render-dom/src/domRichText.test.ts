@@ -1,4 +1,4 @@
-import { registerRenderer } from '@flighthq/render-core';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import { createRichText } from '@flighthq/scene-display';
 import { RichTextKind } from '@flighthq/types';
@@ -21,9 +21,8 @@ function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTM
 }
 
 describe('defaultDOMRichTextRenderer', () => {
-  it('has draw, drawMask, and createData', () => {
+  it('has draw, and createData', () => {
     expect(typeof defaultDOMRichTextRenderer.draw).toBe('function');
-    expect(typeof defaultDOMRichTextRenderer.drawMask).toBe('function');
     expect(typeof defaultDOMRichTextRenderer.createData).toBe('function');
   });
 });

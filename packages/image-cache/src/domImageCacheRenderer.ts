@@ -1,11 +1,17 @@
-import { createNullRendererData } from '@flighthq/render-core';
+import { createNullRendererData } from '@flighthq/render';
 import {
   initDOMElement,
   setDOMBlendMode,
   setDOMRendererElement,
   setDOMTransformWithOffset,
 } from '@flighthq/render-dom';
-import type { DisplayObjectRenderer, DisplayObjectRenderTreeNode, DOMRenderState, RenderState } from '@flighthq/types';
+import type {
+  DisplayObjectMaskRenderer,
+  DisplayObjectRenderer,
+  DisplayObjectRenderTreeNode,
+  DOMRenderState,
+  RenderState,
+} from '@flighthq/types';
 
 import { isImageCachePrimitive } from './imageCachePrimitive';
 import { registerImageCacheRenderer } from './imageCacheRenderNodeResolver';
@@ -54,6 +60,9 @@ function drawDOMImageCacheMask(_state: RenderState, _node: DisplayObjectRenderTr
 export const defaultDOMImageCacheRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
   draw: drawDOMImageCache,
+};
+
+export const defaultDOMImageCacheMaskRenderer: DisplayObjectMaskRenderer = {
   drawMask: drawDOMImageCacheMask,
 };
 

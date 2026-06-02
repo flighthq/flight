@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render-core';
+import { createNullRendererData } from '@flighthq/render';
 import type { CanvasRenderState, SpriteRenderer, SpriteRenderTreeNode, Tilemap } from '@flighthq/types';
 
 import { setCanvasBlendMode } from './canvasMaterials';

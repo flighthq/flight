@@ -1,8 +1,8 @@
 import { createMatrix } from '@flighthq/geometry';
 import { createCanvasRenderState, renderCanvasDisplayObject } from '@flighthq/render-canvas';
-import { registerRenderer } from '@flighthq/render-core';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render-tree';
-import { addSceneChild } from '@flighthq/scene-core';
+import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
@@ -39,7 +39,7 @@ describe('enableCanvasImageCache', () => {
 
   it('skips the original renderer when cache is active', () => {
     const state = makeState();
-    const renderer = { createData: vi.fn(), draw: vi.fn(), drawMask: vi.fn() };
+    const renderer = { createData: vi.fn(), draw: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
 
     const obj = createDisplayObject();
@@ -59,7 +59,7 @@ describe('enableCanvasImageCache', () => {
 
   it('suppresses children when cache is active', () => {
     const state = makeState();
-    const childRenderer = { createData: vi.fn(), draw: vi.fn(), drawMask: vi.fn() };
+    const childRenderer = { createData: vi.fn(), draw: vi.fn() };
     registerRenderer(state, DisplayObjectKind, childRenderer);
 
     const parent = createDisplayObject();
@@ -82,7 +82,7 @@ describe('enableCanvasImageCache', () => {
 
   it('restores normal rendering when cache is cleared', () => {
     const state = makeState();
-    const renderer = { createData: vi.fn(), draw: vi.fn(), drawMask: vi.fn() };
+    const renderer = { createData: vi.fn(), draw: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
 
     const obj = createDisplayObject();

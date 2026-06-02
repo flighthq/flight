@@ -12,7 +12,7 @@
     { "path": "../render-tree" },
     { "path": "../geometry" },
     { "path": "../render-canvas" },
-    { "path": "../render-core" },
+    { "path": "../render" },
     { "path": "../scene-display" },
     { "path": "../scene-sprite" },
     { "path": "../text-input" },

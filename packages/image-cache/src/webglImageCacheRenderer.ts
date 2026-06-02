@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render-core';
+import { createNullRendererData } from '@flighthq/render';
 import {
   bindWebGLTexture,
   drawWebGLQuad,
@@ -10,6 +10,7 @@ import {
   type WebGLRenderStateInternal,
 } from '@flighthq/render-webgl';
 import type {
+  DisplayObjectMaskRenderer,
   DisplayObjectRenderer,
   DisplayObjectRenderTreeNode,
   RenderState,
@@ -49,6 +50,9 @@ function drawWebGLImageCacheMask(state: RenderState, node: DisplayObjectRenderTr
 export const defaultWebGLImageCacheRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
   draw: drawWebGLImageCache,
+};
+
+export const defaultWebGLImageCacheMaskRenderer: DisplayObjectMaskRenderer = {
   drawMask: drawWebGLImageCacheMask,
 };
 

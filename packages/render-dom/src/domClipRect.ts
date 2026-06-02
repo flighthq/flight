@@ -1,6 +1,9 @@
-import type { DisplayObjectRenderTreeNode, Matrix, MatrixLike, Rectangle } from '@flighthq/types';
+import { enableRenderFeatures, hasRenderFeatures } from '@flighthq/render';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+import type { DisplayObjectRenderTreeNode, DOMRenderState, Matrix, MatrixLike, Rectangle } from '@flighthq/types';
+import { RenderFeatures } from '@flighthq/types';
 
-import type { DOMRenderStateInternal } from './internal';
+import type { DOMClipHooks, DOMRenderStateInternal } from './internal';
 
 export interface DOMStageRectangle {
   bottom: number;
@@ -132,3 +135,41 @@ function mapStageRectangleToElement(rect: DOMStageRectangle, element: HTMLElemen
 }
 
 const EMPTY_CLIP_PATH = 'inset(0 100% 100% 0)';
+
+export function registerDOMScrollRectSupport(state: DOMRenderState): void {
+  enableRenderFeatures(state, RenderFeatures.ScrollRect);
+  setDOMClipHooks(state);
+}
+
+export function setDOMClipHooks(state: DOMRenderState): void {
+  const internal = state as DOMRenderStateInternal;
+  if (internal.domClipHooks === null) internal.domClipHooks = domClipHooksImpl;
+}
+
+const domClipHooksImpl: DOMClipHooks = {
+  push(state: DOMRenderState, data: DisplayObjectRenderTreeNode): number {
+    const internal = state as DOMRenderStateInternal;
+    const stack = internal.domClipStack;
+    let pushed = 0;
+    const source = data.source;
+    if (source.scrollRect !== null && hasRenderFeatures(state, RenderFeatures.ScrollRect)) {
+      pushDOMScrollRectangle(stack, data);
+      pushed++;
+    }
+    if (source.mask !== null) {
+      const maskHooks = state.displayObjectMaskHooks;
+      if (maskHooks !== null) {
+        maskHooks.pushMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask), stack);
+        pushed++;
+      }
+    }
+    return pushed;
+  },
+  apply(state: DOMRenderState, data: DisplayObjectRenderTreeNode): void {
+    const internal = state as DOMRenderStateInternal;
+    applyDOMClipRectangles(internal, data, internal.domClipStack);
+  },
+  pop(state: DOMRenderState, pushed: number): void {
+    (state as DOMRenderStateInternal).domClipStack.length -= pushed;
+  },
+};

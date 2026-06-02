@@ -1,4 +1,4 @@
-import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } from '@flighthq/render-core';
+import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } from '@flighthq/render';
 import { getRichTextRuntime } from '@flighthq/scene-display';
 import {
   computeRichTextContent,
@@ -101,7 +101,6 @@ export function drawWebGLRichTextWithOverlay(
 export const defaultWebGLRichTextRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
   draw: drawWebGLRichText,
-  drawMask: drawWebGLRichTextMask,
 };
 
 function drawRichTextToCanvas(

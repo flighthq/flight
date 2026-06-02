@@ -1,4 +1,4 @@
-import { setRenderStateBackgroundColor } from '@flighthq/render-core';
+import { setRenderStateBackgroundColor } from '@flighthq/render';
 import type { CanvasRenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 

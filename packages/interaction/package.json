@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@flighthq/geometry": "*",
-    "@flighthq/scene-core": "*",
+    "@flighthq/scene": "*",
     "@flighthq/scene-display": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*",

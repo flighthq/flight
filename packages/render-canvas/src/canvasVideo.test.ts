@@ -1,4 +1,4 @@
-import { registerRenderer } from '@flighthq/render-core';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import { createVideo } from '@flighthq/scene-display';
 import { VideoKind } from '@flighthq/types';
@@ -16,9 +16,8 @@ function makeState() {
 }
 
 describe('defaultCanvasVideoRenderer', () => {
-  it('has draw, drawMask, and createData functions', () => {
+  it('has draw, and createData functions', () => {
     expect(typeof defaultCanvasVideoRenderer.draw).toBe('function');
-    expect(typeof defaultCanvasVideoRenderer.drawMask).toBe('function');
     expect(typeof defaultCanvasVideoRenderer.createData).toBe('function');
   });
 });

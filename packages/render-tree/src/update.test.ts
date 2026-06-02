@@ -1,8 +1,8 @@
 import { createRectangle } from '@flighthq/geometry';
-import { createRenderState, enableRenderFeatures } from '@flighthq/render-core';
+import { createRenderState, enableRenderFeatures } from '@flighthq/render';
 import type { RenderTreeStateInternal } from '@flighthq/render-tree';
-import { addSceneChild } from '@flighthq/scene-core';
-import { setTransformScaleX, setTransformScaleY, setTransformX, setTransformY } from '@flighthq/scene-core';
+import { addSceneChild } from '@flighthq/scene';
+import { setTransformScaleX, setTransformScaleY, setTransformX, setTransformY } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { createSprite } from '@flighthq/scene-sprite';
 import type { DisplayObject, DisplayObjectRenderTreeNode, RenderState, SpriteNode } from '@flighthq/types';

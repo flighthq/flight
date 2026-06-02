@@ -1,4 +1,4 @@
-import { registerRenderer } from '@flighthq/render-core';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/scene-display';
 import { Scale9ShapeKind } from '@flighthq/types';

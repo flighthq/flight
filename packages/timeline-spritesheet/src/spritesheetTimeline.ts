@@ -1,4 +1,4 @@
-import { addSceneChild, setTransformX, setTransformY } from '@flighthq/scene-core';
+import { addSceneChild, setTransformX, setTransformY } from '@flighthq/scene';
 import { createBitmap } from '@flighthq/scene-display';
 import { createTimeline, playMovieClip } from '@flighthq/timeline';
 import type { MovieClip, Spritesheet, SpritesheetAnimation } from '@flighthq/types';

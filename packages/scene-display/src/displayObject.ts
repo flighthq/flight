@@ -8,7 +8,7 @@ import {
   initTransformRuntimeTrait,
   initTransformTrait,
   invalidateAppearance,
-} from '@flighthq/scene-core';
+} from '@flighthq/scene';
 import type {
   DisplayGraphNodeDataFactory,
   DisplayGraphNodeRuntimeFactory,

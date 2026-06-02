@@ -1,6 +1,6 @@
 import { getEntityRuntime } from '@flighthq/entity';
 import { createRectangle } from '@flighthq/geometry';
-import { createSceneNode } from '@flighthq/scene-core';
+import { createSceneNode } from '@flighthq/scene';
 import type {
   DisplayObject,
   DisplayObjectData,

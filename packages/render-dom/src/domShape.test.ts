@@ -1,5 +1,5 @@
 import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/render-canvas';
-import { registerRenderer } from '@flighthq/render-core';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/scene-display';
 import { ShapeKind } from '@flighthq/types';
@@ -26,9 +26,8 @@ function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTM
 }
 
 describe('defaultDOMShapeRenderer', () => {
-  it('has draw, drawMask, and createData', () => {
+  it('has draw, and createData', () => {
     expect(typeof defaultDOMShapeRenderer.draw).toBe('function');
-    expect(typeof defaultDOMShapeRenderer.drawMask).toBe('function');
     expect(typeof defaultDOMShapeRenderer.createData).toBe('function');
   });
 });

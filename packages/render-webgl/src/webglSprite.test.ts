@@ -1,7 +1,7 @@
 import { createMatrix } from '@flighthq/geometry';
-import { registerRenderer } from '@flighthq/render-core';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateSpriteRenderNode } from '@flighthq/render-tree';
-import { addSceneChild } from '@flighthq/scene-core';
+import { addSceneChild } from '@flighthq/scene';
 import { createSprite } from '@flighthq/scene-sprite';
 import type { WebGLRenderState } from '@flighthq/types';
 import { SpriteKind } from '@flighthq/types';

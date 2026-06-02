@@ -1,5 +1,5 @@
-import { createRenderState } from '@flighthq/render-core';
-import { addSceneChild, invalidateAppearance } from '@flighthq/scene-core';
+import { createRenderState } from '@flighthq/render';
+import { addSceneChild, invalidateAppearance } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import type { DisplayObject, DisplayObjectRenderTreeNode, RenderState } from '@flighthq/types';
 

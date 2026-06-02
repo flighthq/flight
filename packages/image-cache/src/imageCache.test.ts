@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import { createSceneNode, getSceneNodeRuntime } from '@flighthq/scene-core';
+import { createSceneNode, getSceneNodeRuntime } from '@flighthq/scene';
 import type { ImageCacheResult, SceneNode, SceneNodeRuntime } from '@flighthq/types';
 import { NullScene } from '@flighthq/types';
 

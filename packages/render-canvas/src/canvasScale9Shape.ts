@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render-core';
+import { createNullRendererData } from '@flighthq/render';
 import type {
   CanvasRenderState,
   DisplayObjectRenderer,
@@ -115,7 +115,6 @@ export function remapScale9Commands(out: unknown[], source: readonly unknown[], 
 export const defaultCanvasScale9ShapeRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
   draw: drawCanvasScale9Shape,
-  drawMask: drawCanvasScale9Shape,
 };
 
 function applyStrippedTransform(

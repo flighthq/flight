@@ -1,4 +1,4 @@
-import { createRenderState } from '@flighthq/render-core';
+import { createRenderState } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { createSprite } from '@flighthq/scene-sprite';
 

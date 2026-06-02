@@ -1,4 +1,4 @@
-import { registerRenderer } from '@flighthq/render-core';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
@@ -21,9 +21,8 @@ function makeState() {
 }
 
 describe('defaultCanvasDisplayObjectRenderer', () => {
-  it('has draw, drawMask, and createData', () => {
+  it('has draw, and createData', () => {
     expect(typeof defaultCanvasDisplayObjectRenderer.draw).toBe('function');
-    expect(typeof defaultCanvasDisplayObjectRenderer.drawMask).toBe('function');
     expect(typeof defaultCanvasDisplayObjectRenderer.createData).toBe('function');
   });
 });

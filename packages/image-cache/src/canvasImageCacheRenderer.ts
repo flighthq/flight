@@ -1,7 +1,8 @@
 import { setCanvasTransform } from '@flighthq/render-canvas';
-import { createNullRendererData } from '@flighthq/render-core';
+import { createNullRendererData } from '@flighthq/render';
 import type {
   CanvasRenderState,
+  DisplayObjectMaskRenderer,
   DisplayObjectRenderer,
   DisplayObjectRenderTreeNode,
   RenderState,
@@ -32,6 +33,9 @@ function drawCanvasImageCacheMask(state: RenderState, renderNode: DisplayObjectR
 export const defaultCanvasImageCacheRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
   draw: drawCanvasImageCache,
+};
+
+export const defaultCanvasImageCacheMaskRenderer: DisplayObjectMaskRenderer = {
   drawMask: drawCanvasImageCacheMask,
 };
 

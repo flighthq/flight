@@ -27,7 +27,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/scene-core": "*",
+    "@flighthq/scene": "*",
     "@flighthq/scene-display": "*",
     "@flighthq/timeline": "*",
     "@flighthq/types": "*"

@@ -9,7 +9,7 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../scene-core" },
+    { "path": "../scene" },
     { "path": "../scene-display" },
     { "path": "../signals" },
     { "path": "../text-layout" },

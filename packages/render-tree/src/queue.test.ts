@@ -1,6 +1,6 @@
-import { createRenderState, enableRenderFeatures } from '@flighthq/render-core';
+import { createRenderState, enableRenderFeatures } from '@flighthq/render';
 import { updateDisplayObjectBeforeRender } from '@flighthq/render-tree';
-import { addSceneChild } from '@flighthq/scene-core';
+import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import type { DisplayObject, RenderState } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';

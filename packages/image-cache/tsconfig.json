@@ -13,10 +13,10 @@
     { "path": "../render-tree" },
     { "path": "../geometry" },
     { "path": "../render-canvas" },
-    { "path": "../render-core" },
+    { "path": "../render" },
     { "path": "../render-dom" },
     { "path": "../render-webgl" },
-    { "path": "../scene-core" },
+    { "path": "../scene" },
     { "path": "../scene-display" },
     { "path": "../types" }
   ],

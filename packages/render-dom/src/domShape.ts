@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity';
 import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
-import { getLocalBoundsRectangle } from '@flighthq/scene-core';
+import { getLocalBoundsRectangle } from '@flighthq/scene';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderTreeNode,
@@ -67,5 +67,4 @@ export function drawDOMShapeMask(state: DOMRenderState, renderNode: DisplayObjec
 export const defaultDOMShapeRenderer: DisplayObjectRenderer = {
   createData: createDOMShapeData,
   draw: drawDOMShape,
-  drawMask: drawDOMShapeMask,
 };

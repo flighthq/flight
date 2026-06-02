@@ -10,7 +10,7 @@
   },
   "references": [
     { "path": "../assets" },
-    { "path": "../scene-core" },
+    { "path": "../scene" },
     { "path": "../scene-display" },
     { "path": "../spritesheet" },
     { "path": "../timeline" },

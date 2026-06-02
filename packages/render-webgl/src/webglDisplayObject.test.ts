@@ -1,10 +1,10 @@
 import { createMatrix } from '@flighthq/geometry';
-import { enableRenderFeatures, registerRenderer } from '@flighthq/render-core';
+import { registerDisplayObjectMaskRenderer, registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
-import { addSceneChild } from '@flighthq/scene-core';
+import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import type { WebGLRenderState } from '@flighthq/types';
-import { DisplayObjectKind, RenderFeatures } from '@flighthq/types';
+import { DisplayObjectKind } from '@flighthq/types';
 
 import {
   defaultWebGLDisplayObjectRenderer,
@@ -12,6 +12,7 @@ import {
   drawWebGLDisplayObjectMask,
   renderWebGLDisplayObject,
 } from './webglDisplayObject';
+import { registerWebGLMaskSupport } from './webglMask';
 import { createWebGLRenderState } from './webglRenderState';
 
 function makeState(): WebGLRenderState {
@@ -30,10 +31,9 @@ function makeRenderer() {
 }
 
 describe('defaultWebGLDisplayObjectRenderer', () => {
-  it('has draw, drawMask, and createData functions', () => {
+  it('has draw, and createData functions', () => {
     expect(defaultWebGLDisplayObjectRenderer.createData({} as any, {} as any)).toBeNull();
     expect(defaultWebGLDisplayObjectRenderer.draw).toBe(drawWebGLDisplayObject);
-    expect(defaultWebGLDisplayObjectRenderer.drawMask).toBe(drawWebGLDisplayObjectMask);
   });
 });
 
@@ -50,9 +50,9 @@ describe('drawWebGLDisplayObjectMask', () => {
     const parent = createDisplayObject();
     const child = createDisplayObject();
     const renderer = makeRenderer();
+    registerDisplayObjectMaskRenderer(state, DisplayObjectKind, renderer);
     addSceneChild(parent, child);
     const childData = getOrCreateDisplayObjectRenderNode(state, child);
-    childData.renderer = renderer;
 
     drawWebGLDisplayObjectMask(state, getOrCreateDisplayObjectRenderNode(state, parent));
 
@@ -156,9 +156,10 @@ describe('renderWebGLDisplayObject', () => {
 
   it('applies masks around the object subtree', () => {
     const state = makeState();
-    enableRenderFeatures(state, RenderFeatures.Masks);
+    registerWebGLMaskSupport(state);
     const renderer = makeRenderer();
     const maskRenderer = makeRenderer();
+    registerDisplayObjectMaskRenderer(state, DisplayObjectKind, maskRenderer);
     const obj = createDisplayObject();
     const mask = createDisplayObject();
     obj.mask = mask;
@@ -173,7 +174,6 @@ describe('renderWebGLDisplayObject', () => {
     maskData.visible = true;
     maskData.alpha = 1;
     maskData.transform2D = createMatrix();
-    maskData.renderer = maskRenderer;
 
     renderWebGLDisplayObject(state, obj);
 

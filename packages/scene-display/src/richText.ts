@@ -1,4 +1,4 @@
-import { invalidateAppearance } from '@flighthq/scene-core';
+import { invalidateAppearance } from '@flighthq/scene';
 import type {
   MethodsOf,
   PartialNode,

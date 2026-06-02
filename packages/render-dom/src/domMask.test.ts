@@ -3,7 +3,7 @@ import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import { appendShapeRectangle, createShape } from '@flighthq/scene-display';
 
 import type { DOMStageRectangle } from './domClipRect';
-import { pushDOMMaskRectangle } from './domMask';
+import { pushDOMMaskRectangle, registerDOMMaskSupport } from './domMask';
 import { createDOMRenderState } from './domRenderState';
 
 describe('pushDOMMaskRectangle', () => {
@@ -18,5 +18,15 @@ describe('pushDOMMaskRectangle', () => {
     pushDOMMaskRectangle(rectangles, data);
 
     expect(rectangles).toEqual([{ bottom: 66, left: 15, right: 45, top: 26 }]);
+  });
+});
+
+describe('registerDOMMaskSupport', () => {
+  it('sets DOM mask hooks on the render state', () => {
+    const state = createDOMRenderState(document.createElement('div'));
+
+    registerDOMMaskSupport(state);
+
+    expect(state.displayObjectMaskHooks).not.toBeNull();
   });
 });

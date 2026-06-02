@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity';
-import { computeTextFormatFontString, rgbaToHexString } from '@flighthq/render-core';
+import { computeTextFormatFontString, rgbaToHexString } from '@flighthq/render';
 import { getTextRuntime } from '@flighthq/scene-display';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
@@ -97,5 +97,4 @@ export function drawDOMTextMask(state: DOMRenderState, renderNode: DisplayObject
 export const defaultDOMTextRenderer: DisplayObjectRenderer = {
   createData: createDOMTextData,
   draw: drawDOMText,
-  drawMask: drawDOMTextMask,
 };

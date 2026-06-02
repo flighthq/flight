@@ -1,8 +1,10 @@
+import { registerDisplayObjectMaskRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
-import { addSceneChild } from '@flighthq/scene-core';
+import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
+import { DisplayObjectKind } from '@flighthq/types';
 
-import { applyWebGLMask, popWebGLMask, pushWebGLMask } from './webglMask';
+import { applyWebGLMask, popWebGLMask, pushWebGLMask, registerWebGLMaskSupport } from './webglMask';
 import { makeWebGLState } from './webglTestHelper';
 
 function makeRenderer() {
@@ -18,8 +20,8 @@ describe('applyWebGLMask', () => {
     const { state } = makeWebGLState();
     const source = createDisplayObject();
     const renderer = makeRenderer();
+    registerDisplayObjectMaskRenderer(state, DisplayObjectKind, renderer);
     const data = getOrCreateDisplayObjectRenderNode(state, source);
-    data.renderer = renderer;
 
     applyWebGLMask(state, data);
 
@@ -31,10 +33,10 @@ describe('applyWebGLMask', () => {
     const parent = createDisplayObject();
     const child = createDisplayObject();
     const renderer = makeRenderer();
+    registerDisplayObjectMaskRenderer(state, DisplayObjectKind, renderer);
     addSceneChild(parent, child);
     const parentData = getOrCreateDisplayObjectRenderNode(state, parent);
     const childData = getOrCreateDisplayObjectRenderNode(state, child);
-    childData.renderer = renderer;
 
     applyWebGLMask(state, parentData);
 
@@ -47,7 +49,7 @@ describe('popWebGLMask', () => {
     const { state, gl } = makeWebGLState();
     state.currentMaskDepth = 1;
 
-    popWebGLMask(state);
+    popWebGLMask(state, {} as any);
 
     expect(state.currentMaskDepth).toBe(0);
     expect(gl.disable).toHaveBeenCalledWith(gl.STENCIL_TEST);
@@ -60,8 +62,8 @@ describe('pushWebGLMask', () => {
     const { state, gl } = makeWebGLState();
     const source = createDisplayObject();
     const renderer = makeRenderer();
+    registerDisplayObjectMaskRenderer(state, DisplayObjectKind, renderer);
     const data = getOrCreateDisplayObjectRenderNode(state, source);
-    data.renderer = renderer;
 
     pushWebGLMask(state, data);
 
@@ -72,5 +74,15 @@ describe('pushWebGLMask', () => {
     expect(gl.colorMask).toHaveBeenLastCalledWith(true, true, true, true);
     expect(gl.stencilFunc).toHaveBeenLastCalledWith(gl.EQUAL, 1, 0xff);
     expect(state.currentMaskDepth).toBe(1);
+  });
+});
+
+describe('registerWebGLMaskSupport', () => {
+  it('sets WebGL mask hooks on the render state', () => {
+    const { state } = makeWebGLState();
+
+    registerWebGLMaskSupport(state);
+
+    expect(state.displayObjectMaskHooks).not.toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-import { registerRenderer } from '@flighthq/render-core';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import { createHTMLView } from '@flighthq/scene-display';
 import { HTMLViewKind } from '@flighthq/types';
@@ -21,9 +21,8 @@ function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTM
 }
 
 describe('defaultHTMLViewRenderer', () => {
-  it('has draw, drawMask, and createData', () => {
+  it('has draw, and createData', () => {
     expect(typeof defaultHTMLViewRenderer.draw).toBe('function');
-    expect(typeof defaultHTMLViewRenderer.drawMask).toBe('function');
     expect(typeof defaultHTMLViewRenderer.createData).toBe('function');
   });
 });

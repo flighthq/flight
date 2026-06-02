@@ -1,5 +1,5 @@
 import { createImageSource, createImageSourceFromCanvas } from '@flighthq/assets';
-import { registerRenderer } from '@flighthq/render-core';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import { createBitmap } from '@flighthq/scene-display';
 import { BitmapKind } from '@flighthq/types';
@@ -38,9 +38,8 @@ function makeCanvasImageSource() {
 }
 
 describe('defaultDOMBitmapRenderer', () => {
-  it('has draw, drawMask, and createData', () => {
+  it('has draw, and createData', () => {
     expect(typeof defaultDOMBitmapRenderer.draw).toBe('function');
-    expect(typeof defaultDOMBitmapRenderer.drawMask).toBe('function');
     expect(typeof defaultDOMBitmapRenderer.createData).toBe('function');
   });
 });

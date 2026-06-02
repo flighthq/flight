@@ -1,4 +1,4 @@
-﻿import { addSceneChild, getSceneNumChildren } from '@flighthq/scene-core';
+import { addSceneChild, getSceneNumChildren } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { createSprite } from '@flighthq/scene-sprite';
 import type { DisplayObject, SpriteNode } from '@flighthq/types';

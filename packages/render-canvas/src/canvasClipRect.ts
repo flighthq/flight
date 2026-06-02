@@ -1,4 +1,12 @@
-import type { CanvasRenderState, DisplayObjectRenderTreeNode, Matrix, Rectangle } from '@flighthq/types';
+import { enableRenderFeatures } from '@flighthq/render';
+import type {
+  CanvasRenderState,
+  DisplayObjectRenderTreeNode,
+  Matrix,
+  Rectangle,
+  ScrollRectHooks,
+} from '@flighthq/types';
+import { RenderFeatures } from '@flighthq/types';
 
 import { setCanvasTransform } from './canvasTransform';
 
@@ -25,3 +33,13 @@ export function pushCanvasScrollRectangle(state: CanvasRenderState, data: Displa
   pushCanvasClipRectangle(state, data.source.scrollRect!, data.transform2D);
   state.currentScrollRectDepth++;
 }
+
+export function registerCanvasScrollRectSupport(state: CanvasRenderState): void {
+  state.scrollRectHooks = canvasScrollRectHooks;
+  enableRenderFeatures(state, RenderFeatures.ScrollRect);
+}
+
+const canvasScrollRectHooks: ScrollRectHooks = {
+  pop: (state) => popCanvasClipRectangle(state as CanvasRenderState),
+  push: (state, data) => pushCanvasClipRectangle(state as CanvasRenderState, data.source.scrollRect!, data.transform2D),
+};

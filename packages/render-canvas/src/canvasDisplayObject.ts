@@ -1,5 +1,4 @@
-import { createNullRendererData } from '@flighthq/render-core';
-import { hasRenderFeatures } from '@flighthq/render-core';
+import { createNullRendererData } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type {
@@ -8,10 +7,6 @@ import type {
   DisplayObjectRenderer,
   DisplayObjectRenderTreeNode,
 } from '@flighthq/types';
-import { RenderFeatures } from '@flighthq/types';
-
-import { popCanvasClipRectangle, pushCanvasClipRectangle } from './canvasClipRect';
-import { applyCanvasMask, popCanvasMask, pushCanvasMask } from './canvasMask';
 
 export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderNode: DisplayObjectRenderTreeNode): void {
   // Plain display objects have no visual geometry of their own.
@@ -22,7 +17,7 @@ export function drawCanvasDisplayObjectMask(state: CanvasRenderState, data: Disp
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
       const child = getOrCreateDisplayObjectRenderNode(state, children[i] as DisplayObject);
-      applyCanvasMask(state, child);
+      state.displayObjectMaskRendererMap.get(child.source.kind)?.drawMask(state, child);
     }
   }
 }
@@ -70,9 +65,8 @@ function popMaskObject(
   handleScrollRect: boolean = true,
 ): void {
   const source = data.source;
-  if (hasRenderFeatures(state, RenderFeatures.Masks) && source.mask !== null) popCanvasMask(state);
-  if (handleScrollRect && hasRenderFeatures(state, RenderFeatures.ScrollRect) && source.scrollRect !== null)
-    popCanvasClipRectangle(state);
+  if (source.mask !== null) state.displayObjectMaskHooks?.popMask(state, data);
+  if (handleScrollRect && source.scrollRect !== null) state.scrollRectHooks?.pop(state);
 }
 
 function pushMaskObject(
@@ -81,14 +75,12 @@ function pushMaskObject(
   handleScrollRect: boolean = true,
 ): void {
   const source = data.source;
-  if (handleScrollRect && hasRenderFeatures(state, RenderFeatures.ScrollRect) && source.scrollRect != null)
-    pushCanvasClipRectangle(state, source.scrollRect, data.transform2D);
-  if (hasRenderFeatures(state, RenderFeatures.Masks) && source.mask !== null)
-    pushCanvasMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask));
+  if (handleScrollRect && source.scrollRect !== null) state.scrollRectHooks?.push(state, data);
+  if (source.mask !== null)
+    state.displayObjectMaskHooks?.pushMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask));
 }
 
 export const defaultCanvasDisplayObjectRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
   draw: drawCanvasDisplayObject,
-  drawMask: drawCanvasDisplayObjectMask,
 };

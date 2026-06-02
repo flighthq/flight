@@ -1,4 +1,4 @@
-import { hasRenderFeatures } from '@flighthq/render-core';
+import { hasRenderFeatures } from '@flighthq/render';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type { DisplayObject, Renderable, RenderState } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';

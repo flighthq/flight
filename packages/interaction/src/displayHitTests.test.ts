@@ -1,5 +1,5 @@
 import { setRectangle } from '@flighthq/geometry';
-import { getLocalBoundsRectangle } from '@flighthq/scene-core';
+import { getLocalBoundsRectangle } from '@flighthq/scene';
 import { createDisplayObject, createSpriteBatch } from '@flighthq/scene-display';
 
 import {

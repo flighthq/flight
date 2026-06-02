@@ -1,4 +1,4 @@
-import { invalidateAppearance } from '@flighthq/scene-core';
+import { invalidateAppearance } from '@flighthq/scene';
 import { getInputTextRuntime } from '@flighthq/scene-display';
 import { getRichTextSelectionRectangles } from '@flighthq/text-layout';
 import type {

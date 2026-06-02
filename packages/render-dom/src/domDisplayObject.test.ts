@@ -1,11 +1,12 @@
 import { createRectangle } from '@flighthq/geometry';
-import { enableRenderFeatures, registerRenderer } from '@flighthq/render-core';
+import { enableRenderFeatures, registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
-import { addSceneChild } from '@flighthq/scene-core';
+import { addSceneChild } from '@flighthq/scene';
 import { appendShapeRectangle, createDisplayObject, createShape } from '@flighthq/scene-display';
 import { DisplayObjectKind, RenderFeatures } from '@flighthq/types';
 
 import { renderDOMDisplayObject } from './domDisplayObject';
+import { registerDOMMaskSupport } from './domMask';
 import { createDOMRenderState } from './domRenderState';
 
 type ManagedState = ReturnType<typeof makeState> & { domCurrentElement: HTMLElement | null };
@@ -62,7 +63,7 @@ describe('renderDOMDisplayObject', () => {
     data.transform2D.a = 0;
     data.transform2D.d = 0;
 
-    const renderer = { draw: vi.fn(), drawMask: vi.fn(), createData: vi.fn() };
+    const renderer = { createData: vi.fn(), draw: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
     data.renderer = renderer;
 
@@ -77,7 +78,7 @@ describe('renderDOMDisplayObject', () => {
     const data = getOrCreateDisplayObjectRenderNode(state, obj);
     data.visible = false;
 
-    const renderer = { draw: vi.fn(), drawMask: vi.fn(), createData: vi.fn() };
+    const renderer = { createData: vi.fn(), draw: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
     data.renderer = renderer;
 
@@ -92,7 +93,7 @@ describe('renderDOMDisplayObject', () => {
     const data = getOrCreateDisplayObjectRenderNode(state, obj);
     data.alpha = 0;
 
-    const renderer = { draw: vi.fn(), drawMask: vi.fn(), createData: vi.fn() };
+    const renderer = { createData: vi.fn(), draw: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
     data.renderer = renderer;
 
@@ -110,7 +111,7 @@ describe('renderDOMDisplayObject', () => {
     data.transform2D.a = 1;
     data.transform2D.d = 1;
 
-    const renderer = { draw: vi.fn(), drawMask: vi.fn(), createData: vi.fn() };
+    const renderer = { createData: vi.fn(), draw: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
     data.renderer = renderer;
 
@@ -131,7 +132,7 @@ describe('renderDOMDisplayObject', () => {
     childData.transform2D.a = 1;
     childData.transform2D.d = 1;
 
-    const renderer = { draw: vi.fn(), drawMask: vi.fn(), createData: vi.fn() };
+    const renderer = { createData: vi.fn(), draw: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
     childData.renderer = renderer;
 
@@ -190,7 +191,7 @@ describe('renderDOMDisplayObject', () => {
     renderDOMDisplayObject(state, parent);
     expect(state.element.children.length).toBe(2);
 
-    // Hide childB â€” reconciliation should remove its element.
+    // Hide childB; reconciliation should remove its element.
     dataB.visible = false;
 
     renderDOMDisplayObject(state, parent);
@@ -217,7 +218,7 @@ describe('renderDOMDisplayObject', () => {
 
   it('applies mask bounds clipping to masked elements', () => {
     const state = makeState();
-    enableRenderFeatures(state, RenderFeatures.Masks);
+    registerDOMMaskSupport(state);
     const obj = createDisplayObject();
     const mask = createShape();
     appendShapeRectangle(mask, 5, 6, 20, 30);

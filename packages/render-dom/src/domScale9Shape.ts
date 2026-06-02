@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity';
 import { remapScale9Commands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
-import { getLocalBoundsRectangle } from '@flighthq/scene-core';
+import { getLocalBoundsRectangle } from '@flighthq/scene';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderTreeNode,
@@ -76,7 +76,6 @@ export function drawDOMScale9ShapeMask(state: DOMRenderState, renderNode: Displa
 export const defaultDOMScale9ShapeRenderer: DisplayObjectRenderer = {
   createData: createDOMScale9ShapeData,
   draw: drawDOMScale9Shape,
-  drawMask: drawDOMScale9ShapeMask,
 };
 
 function setStrippedDOMTransform(

@@ -1,5 +1,6 @@
 import type { BlendMode } from './BlendMode';
 import type { ColorTransform } from './ColorTransform';
+import type { DisplayObjectMaskHooks, DisplayObjectMaskRenderer, ScrollRectHooks } from './DisplayObjectRenderer';
 import type { Entity } from './Entity';
 import type { Matrix } from './Matrix';
 import type { Renderable } from './Renderable';
@@ -18,6 +19,10 @@ export interface RenderState extends Entity {
   readonly currentQueue: RenderTreeNode[];
   readonly currentQueueLength: number;
   currentScrollRectDepth: number;
+  displayObjectMaskHooks: DisplayObjectMaskHooks | null;
+  scrollRectHooks: ScrollRectHooks | null;
+  readonly displayObjectMaskRendererMap: Map<symbol, DisplayObjectMaskRenderer>;
+  readonly displayObjectMaskRendererMapID: number;
   pixelRatio: number;
   readonly renderNodeMap: WeakMap<Renderable, RenderTreeNode>;
   renderAlpha: number;
