@@ -5,5 +5,6 @@ export * from './hasBoundsRect';
 export * from './hasTransform2d';
 export * from './hierarchy';
 export * from './revision';
+export * from './scene';
 export * from './sceneNode';
 export * from './transform2d';

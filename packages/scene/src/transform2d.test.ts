@@ -1,6 +1,6 @@
 import { getEntityRuntime } from '@flighthq/entity';
 import { cloneMatrix, createVector2, equalsMatrix, setMatrix } from '@flighthq/geometry';
-import { addSceneChild, createSceneNode } from '@flighthq/scene-core';
+import { addSceneChild, createSceneNode } from '@flighthq/scene';
 import type { HasTransform2D, HasTransform2DRuntime, Matrix, SceneNode, SceneNodeRuntime } from '@flighthq/types';
 
 import { initTransformRuntimeTrait, initTransformTrait } from './hasTransform2d';

@@ -13,7 +13,7 @@ import {
   initTransformRuntimeTrait,
   initTransformTrait,
   invalidateLocalTransform,
-} from '@flighthq/scene-core';
+} from '@flighthq/scene';
 import type {
   HasBoundsRect,
   HasBoundsRectRuntime,

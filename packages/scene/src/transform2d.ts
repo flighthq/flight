@@ -6,7 +6,7 @@ import {
   matrixTransformPointXY,
   multiplyMatrix,
 } from '@flighthq/geometry';
-import { invalidateLocalTransform, recomputeWorldTransformRevision } from '@flighthq/scene-core';
+import { invalidateLocalTransform, recomputeWorldTransformRevision } from '@flighthq/scene';
 import type {
   GraphTransform2DNode,
   HasTransform2DRuntime,
