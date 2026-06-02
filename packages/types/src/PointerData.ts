@@ -1,11 +1,11 @@
-import type { GraphNode } from './GraphNode';
+import type { SceneNode } from './SceneNode';
 
 export interface PointerData {
   altKey: boolean;
   button: number;
   buttons: number;
   ctrlKey: boolean;
-  currentTarget: GraphNode<symbol, object> | null;
+  currentTarget: SceneNode<symbol, object> | null;
   deltaX: number;
   deltaY: number;
   localX: number;
@@ -14,7 +14,7 @@ export interface PointerData {
   pointerId: number;
   pointerType: PointerType;
   shiftKey: boolean;
-  target: GraphNode<symbol, object> | null;
+  target: SceneNode<symbol, object> | null;
   worldX: number;
   worldY: number;
   x: number;

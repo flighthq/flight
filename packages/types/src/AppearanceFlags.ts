@@ -6,8 +6,6 @@ export enum AppearanceFlags {
   ScrollRect = 1 << 3,
   Scale9Grid = 1 << 4,
   Mask = 1 << 5,
-  CacheAsBitmap = 1 << 6,
-  Filters = 1 << 7,
 
   Any = 1 << 31,
 }
