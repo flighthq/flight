@@ -17,6 +17,7 @@ const root = join(__dirname, '..');
 const packagesDir = join(root, 'packages');
 const checkMode = process.argv.includes('--check');
 const fixMode = process.argv.includes('--fix');
+const jsonMode = process.argv.includes('--json');
 const verboseMode = process.argv.includes('--verbose');
 
 // ---- fix mode ---------------------------------------------------------------
@@ -61,6 +62,11 @@ for (const path of getPackageSourceFiles()) {
     );
     if (issue) issues.push(issue);
   }
+}
+
+if (jsonMode) {
+  console.log(JSON.stringify({ passed: issues.length === 0, issues }, null, 2));
+  process.exit(issues.length > 0 && checkMode ? 1 : 0);
 }
 
 if (issues.length === 0) {

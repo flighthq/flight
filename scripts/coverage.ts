@@ -23,6 +23,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const packagesDir = join(root, 'packages');
 const verboseMode = process.argv.includes('--verbose');
+const jsonMode = process.argv.includes('--json');
 const maxDefaultNames = 8;
 
 const project = new Project({
@@ -52,6 +53,27 @@ const missing = results.filter((result) => result.missingTestFile);
 const partial = results.filter((result) => !result.missingTestFile && result.uncovered.length > 0);
 const full = results.filter((result) => !result.missingTestFile && result.uncovered.length === 0);
 const total = results.length;
+
+if (jsonMode) {
+  console.log(
+    JSON.stringify(
+      {
+        passed: missing.length === 0 && partial.length === 0,
+        summary: { total, full: full.length, partial: partial.length, missing: missing.length },
+        missing: missing.map((r) => ({ file: r.file.rel, exports: r.exports })),
+        partial: partial.map((r) => ({
+          file: r.file.rel,
+          covered: r.covered,
+          uncovered: r.uncovered,
+          total: r.exports.length,
+        })),
+      },
+      null,
+      2,
+    ),
+  );
+  process.exit(0);
+}
 
 if (missing.length > 0) {
   printHeading('Missing test files', missing.length, pc.red);
