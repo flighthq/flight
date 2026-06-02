@@ -1,21 +1,17 @@
 import type { Entity, EntityRuntime } from './Entity';
 
+export type SceneNodeData = object;
+
+export type SceneNodeDataFactory<D extends SceneNodeData> = (obj?: Readonly<Partial<D>>) => D;
+
+export type SceneNodeRuntimeFactory<R extends EntityRuntime> = (obj?: Readonly<Partial<R>>) => R;
+
+/**
+ * Minimal base retained for transition. SceneNode (in SceneNode.ts) is the
+ * canonical authored scene graph node type.
+ */
 export interface Node extends Entity {
-  data: NodeData | null;
+  data: SceneNodeData | null;
   kind: symbol;
   name: string | null;
 }
-
-/**
- * Base runtime for all nodes. Add a nullable slot here when a subsystem
- * applies to every node kind. Initialize it to null in createNodeRuntime.
- */
-export interface NodeRuntime extends EntityRuntime {}
-
-export type NodeData = object;
-
-export type NodeDataFactory<D extends NodeData> = (obj?: Readonly<Partial<D>>) => D;
-
-export type NodeRuntimeFactory<R extends NodeRuntime> = (obj?: Readonly<Partial<R>>) => R;
-
-export const NodeKind: unique symbol = Symbol('Node');

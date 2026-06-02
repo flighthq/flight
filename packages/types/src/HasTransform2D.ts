@@ -1,6 +1,6 @@
 import type { Entity, EntityRuntime } from './Entity';
-import type { GraphNode, GraphNodeTraits, NullGraph } from './GraphNode';
 import type { Matrix } from './Matrix';
+import type { NullScene, SceneNode, SceneNodeTraits } from './SceneNode';
 
 export interface HasTransform2D extends Entity {
   rotation: number;
@@ -19,6 +19,6 @@ export interface HasTransform2DRuntime extends EntityRuntime {
 }
 
 export type GraphTransform2DNode<
-  GraphKind extends symbol = typeof NullGraph,
-  Traits extends object = GraphNodeTraits,
-> = GraphNode<GraphKind, Traits> & HasTransform2D;
+  SceneKind extends symbol = typeof NullScene,
+  Traits extends object = SceneNodeTraits,
+> = SceneNode<SceneKind, Traits> & HasTransform2D;

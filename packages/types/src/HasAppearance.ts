@@ -1,6 +1,6 @@
 import type { BlendMode } from './BlendMode';
 import type { ColorTransform } from './ColorTransform';
-import type { GraphNode, GraphNodeTraits, NullGraph } from './GraphNode';
+import type { NullScene, SceneNode, SceneNodeTraits } from './SceneNode';
 import type { BitmapShader } from './Shader';
 
 export interface HasAppearance {
@@ -12,6 +12,6 @@ export interface HasAppearance {
 }
 
 export type GraphAppearanceNode<
-  GraphKind extends symbol = typeof NullGraph,
-  Traits extends object = GraphNodeTraits,
-> = GraphNode<GraphKind, Traits> & HasAppearance;
+  SceneKind extends symbol = typeof NullScene,
+  Traits extends object = SceneNodeTraits,
+> = SceneNode<SceneKind, Traits> & HasAppearance;

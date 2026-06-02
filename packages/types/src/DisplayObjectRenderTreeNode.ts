@@ -1,7 +1,7 @@
 import type { DisplayObject } from './DisplayObject';
-import type { RenderNode2D } from './RenderNode2D';
+import type { RenderTreeNode2D } from './RenderTreeNode2D';
 
-export interface DisplayObjectRenderNode extends RenderNode2D {
+export interface DisplayObjectRenderTreeNode extends RenderTreeNode2D {
   isMaskFrameID: number;
   maskDepth: number;
   scrollRectDepth: number;

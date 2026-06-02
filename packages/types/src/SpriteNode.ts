@@ -1,20 +1,20 @@
-import type {
-  GraphNode,
-  GraphNodeData,
-  GraphNodeDataFactory,
-  GraphNodeRuntime,
-  GraphNodeRuntimeFactory,
-} from './GraphNode';
 import type { HasAppearance } from './HasAppearance';
 import type { HasBoundsRect, HasBoundsRectRuntime } from './HasBoundsRect';
-import type { HasGraphHierarchy } from './HasGraphHierarchy';
+import type { HasSceneHierarchy } from './HasSceneHierarchy';
 import type { HasTransform2D, HasTransform2DRuntime } from './HasTransform2D';
+import type {
+  SceneNode,
+  SceneNodeData,
+  SceneNodeDataFactory,
+  SceneNodeRuntime,
+  SceneNodeRuntimeFactory,
+} from './SceneNode';
 
 export const SpriteGraph = Symbol('SpriteGraph');
 
-export type SpriteNode = GraphNode<typeof SpriteGraph, SpriteNodeTraits> & SpriteNodeTraits;
+export type SpriteNode = SceneNode<typeof SpriteGraph, SpriteNodeTraits> & SpriteNodeTraits;
 
-export interface SpriteNodeTraits extends HasAppearance, HasBoundsRect, HasGraphHierarchy, HasTransform2D {
+export interface SpriteNodeTraits extends HasAppearance, HasBoundsRect, HasSceneHierarchy, HasTransform2D {
   alphaEnabled: boolean;
   blendModeEnabled: boolean;
   colorTransformEnabled: boolean;
@@ -22,15 +22,11 @@ export interface SpriteNodeTraits extends HasAppearance, HasBoundsRect, HasGraph
   originY: number;
 }
 
-export interface SpriteNodeData extends GraphNodeData {}
+export interface SpriteNodeData extends SceneNodeData {}
 
-export type SpriteNodeRuntime = GraphNodeRuntime<typeof SpriteGraph, SpriteNodeTraits> &
+export type SpriteNodeRuntime = SceneNodeRuntime<typeof SpriteGraph, SpriteNodeTraits> &
   HasTransform2DRuntime &
   HasBoundsRectRuntime;
 
-export type SpriteGraphNodeDataFactory = GraphNodeDataFactory<SpriteNodeData>;
-export type SpriteGraphNodeRuntimeFactory<Runtime extends SpriteNodeRuntime> = GraphNodeRuntimeFactory<
-  typeof SpriteGraph,
-  SpriteNodeTraits,
-  Runtime
->;
+export type SpriteGraphNodeDataFactory = SceneNodeDataFactory<SpriteNodeData>;
+export type SpriteGraphNodeRuntimeFactory<Runtime extends SpriteNodeRuntime> = SceneNodeRuntimeFactory<Runtime>;
