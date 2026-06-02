@@ -1,9 +1,9 @@
 import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } from '@flighthq/render-core';
-import { getTextRuntime } from '@flighthq/scenegraph-display';
+import { getTextRuntime } from '@flighthq/scene-display';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
+  DisplayObjectRenderTreeNode,
   RenderState,
   Text,
   TextFormat,
@@ -32,9 +32,9 @@ function getOffscreenCanvas(width: number, height: number, pixelRatio: number = 
 }
 
 // Per-render-node WebGL texture for text
-const _textureMap = new WeakMap<DisplayObjectRenderNode, WebGLTexture>();
+const _textureMap = new WeakMap<DisplayObjectRenderTreeNode, WebGLTexture>();
 
-export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRenderTreeNode): void {
   const internal = state as WebGLRenderStateInternal;
   const source = renderNode.source as Text;
   const { text, textFormat } = source.data;
@@ -104,7 +104,7 @@ export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRende
   drawWebGLQuad(internal, 0, 0, w, h, 0, 0, 1, 1);
 }
 
-export function drawWebGLTextMask(state: RenderState, data: DisplayObjectRenderNode): void {
+export function drawWebGLTextMask(state: RenderState, data: DisplayObjectRenderTreeNode): void {
   drawWebGLText(state, data);
 }
 

@@ -1,5 +1,5 @@
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-core';
-import { createText } from '@flighthq/scenegraph-display';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+import { createText } from '@flighthq/scene-display';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { drawCanvasText, drawCanvasTextMask } from './canvasText';

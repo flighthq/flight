@@ -1,11 +1,11 @@
 import { createNullRendererData } from '@flighthq/render-core';
-import type { RenderState, SpriteRenderer, SpriteRenderNode, Tilemap } from '@flighthq/types';
+import type { RenderState, SpriteRenderer, SpriteRenderTreeNode, Tilemap } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { bindWebGLTexture, drawWebGLQuad, setWebGLBlendMode, useWebGLProgram } from './webglDraw';
 import { setWebGLBaseUniforms, setWebGLMatrixFromValues } from './webglShader';
 
-export function drawWebGLTilemap(state: RenderState, tilemapNode: SpriteRenderNode): void {
+export function drawWebGLTilemap(state: RenderState, tilemapNode: SpriteRenderTreeNode): void {
   const internal = state as WebGLRenderStateInternal;
   const source = tilemapNode.source as Tilemap;
   const { tileset, columns, rows, tiles } = source.data;

@@ -1,5 +1,5 @@
 import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } from '@flighthq/render-core';
-import { getRichTextRuntime } from '@flighthq/scenegraph-display';
+import { getRichTextRuntime } from '@flighthq/scene-display';
 import {
   computeRichTextContent,
   computeTextLayout,
@@ -14,7 +14,7 @@ import type { InputTextSelectionRectangle } from '@flighthq/types';
 import type {
   CanvasRenderState,
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
+  DisplayObjectRenderTreeNode,
   RichText,
   RichTextRuntime,
   TextFormat,
@@ -25,7 +25,7 @@ import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { setCanvasBlendMode } from './canvasMaterials';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasRichText(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawCanvasRichText(state: CanvasRenderState, renderNode: DisplayObjectRenderTreeNode): void {
   drawCanvasDisplayObject(state, renderNode);
 
   const source = renderNode.source as RichText;
@@ -140,11 +140,11 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
   context.restore();
 }
 
-export function drawCanvasRichTextMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
+export function drawCanvasRichTextMask(state: CanvasRenderState, data: DisplayObjectRenderTreeNode): void {
   drawCanvasDisplayObject(state, data);
 }
 
-const BULLET_CHAR = '•';
+const BULLET_CHAR = 'â€¢';
 const BULLET_GAP = 4;
 const SELECTION_ALPHA = 0.35;
 const SELECTION_COLOR = '#0078d7';

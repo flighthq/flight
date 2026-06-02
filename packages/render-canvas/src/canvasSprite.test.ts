@@ -1,14 +1,15 @@
 import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
-import { registerRenderer, updateSpriteBeforeRender } from '@flighthq/render-core';
-import { getOrCreateSpriteRenderNode } from '@flighthq/render-core';
+import { registerRenderer } from '@flighthq/render-core';
+import { updateSpriteBeforeRender } from '@flighthq/render-tree';
+import { getOrCreateSpriteRenderNode } from '@flighthq/render-tree';
 import {
-  addGraphChild,
+  addSceneChild,
   setTransformScaleX,
   setTransformScaleY,
   setTransformX,
   setTransformY,
-} from '@flighthq/scenegraph-core';
-import { createSprite } from '@flighthq/scenegraph-sprite';
+} from '@flighthq/scene-core';
+import { createSprite } from '@flighthq/scene-sprite';
 import { SpriteKind } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';
@@ -70,7 +71,7 @@ describe('renderCanvasSprite', () => {
     child.data.id = 0;
     setTransformX(child, 10);
     setTransformY(child, 5);
-    addGraphChild(root, child);
+    addSceneChild(root, child);
 
     const spy = vi.spyOn(state.context, 'setTransform');
 

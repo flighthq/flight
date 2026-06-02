@@ -1,5 +1,5 @@
 import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } from '@flighthq/render-core';
-import { getRichTextRuntime } from '@flighthq/scenegraph-display';
+import { getRichTextRuntime } from '@flighthq/scene-display';
 import {
   computeRichTextContent,
   computeTextLayout,
@@ -11,7 +11,7 @@ import {
 } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
+  DisplayObjectRenderTreeNode,
   RenderState,
   RichText,
   RichTextRuntime,
@@ -26,7 +26,7 @@ import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram 
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
 
-const _textureMap = new WeakMap<DisplayObjectRenderNode, WebGLTexture>();
+const _textureMap = new WeakMap<DisplayObjectRenderTreeNode, WebGLTexture>();
 
 export type WebGLRichTextOverlay = (
   context: CanvasRenderingContext2D,
@@ -37,17 +37,17 @@ export type WebGLRichTextOverlay = (
   text: string,
 ) => void;
 
-export function drawWebGLRichText(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawWebGLRichText(state: RenderState, renderNode: DisplayObjectRenderTreeNode): void {
   drawWebGLRichTextWithOverlay(state, renderNode);
 }
 
-export function drawWebGLRichTextMask(state: RenderState, data: DisplayObjectRenderNode): void {
+export function drawWebGLRichTextMask(state: RenderState, data: DisplayObjectRenderTreeNode): void {
   drawWebGLRichText(state, data);
 }
 
 export function drawWebGLRichTextWithOverlay(
   state: RenderState,
-  renderNode: DisplayObjectRenderNode,
+  renderNode: DisplayObjectRenderTreeNode,
   overlay?: WebGLRichTextOverlay,
 ): void {
   const internal = state as WebGLRenderStateInternal;

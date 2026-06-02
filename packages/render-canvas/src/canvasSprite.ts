@@ -1,10 +1,11 @@
-import { createNullRendererData, getOrCreateSpriteRenderNode } from '@flighthq/render-core';
-import { getSpriteNodeRuntime } from '@flighthq/scenegraph-sprite';
-import type { CanvasRenderState, Sprite, SpriteNode, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
+import { createNullRendererData } from '@flighthq/render-core';
+import { getOrCreateSpriteRenderNode } from '@flighthq/render-tree';
+import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
+import type { CanvasRenderState, Sprite, SpriteNode, SpriteRenderer, SpriteRenderTreeNode } from '@flighthq/types';
 
 import { setCanvasBlendMode } from './canvasMaterials';
 
-export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRenderNode): void {
+export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRenderTreeNode): void {
   const source = spriteNode.source as Sprite;
   const { atlas, id } = source.data;
   if (atlas === null || atlas.image === null || atlas.image.src === null) return;
@@ -44,7 +45,7 @@ export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRen
   }
 }
 
-function drawObject(state: CanvasRenderState, data: SpriteRenderNode): void {
+function drawObject(state: CanvasRenderState, data: SpriteRenderTreeNode): void {
   if (data.renderer === null) return;
   data.renderer.draw(state, data);
 }
@@ -64,13 +65,13 @@ export function renderCanvasSprite(state: CanvasRenderState, source: SpriteNode)
     const shouldRender = data.visible && data.alpha > 0 && (data.transform2D.a !== 0 || data.transform2D.d !== 0);
     if (!shouldRender) continue;
 
-    // ── Draw current object first (pre-order) ──
+    // â”€â”€ Draw current object first (pre-order) â”€â”€
     drawObject(state, data);
 
     // Then push children in forward order (so we pop & draw index 0 first)
     const children = getSpriteNodeRuntime(current).children;
     if (children !== null) {
-      // Push from last to first → pop gives index 0 first
+      // Push from last to first â†’ pop gives index 0 first
       for (let i = children.length - 1; i >= 0; i--) {
         tempStack[stackLength++] = children[i] as SpriteNode;
       }

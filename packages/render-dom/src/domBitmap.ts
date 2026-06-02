@@ -2,7 +2,7 @@ import { createEntity } from '@flighthq/entity';
 import type {
   Bitmap,
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
+  DisplayObjectRenderTreeNode,
   DOMRenderState,
   Renderable,
   RendererData,
@@ -21,7 +21,7 @@ function createDOMBitmapData(_state: RenderState, _source: Renderable): DOMBitma
   return createEntity({ canvas: null, context: null, image: null });
 }
 
-export function drawDOMBitmap(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMBitmap(state: DOMRenderState, renderNode: DisplayObjectRenderTreeNode): void {
   const data = renderNode.rendererData as DOMBitmapData | null;
   if (data === null) return;
 
@@ -40,7 +40,7 @@ export function drawDOMBitmap(state: DOMRenderState, renderNode: DisplayObjectRe
 
 function renderBitmapAsImage(
   state: DOMRenderState,
-  renderNode: DisplayObjectRenderNode,
+  renderNode: DisplayObjectRenderTreeNode,
   data: DOMBitmapData,
   src: HTMLImageElement,
 ): void {
@@ -65,7 +65,7 @@ function renderBitmapAsImage(
 
 function renderBitmapAsCanvas(
   state: DOMRenderState,
-  renderNode: DisplayObjectRenderNode,
+  renderNode: DisplayObjectRenderTreeNode,
   data: DOMBitmapData,
   width: number,
   height: number,
@@ -95,7 +95,7 @@ function renderBitmapAsCanvas(
   setDOMRendererElement(state, data.canvas);
 }
 
-export function drawDOMBitmapMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMBitmapMask(state: DOMRenderState, renderNode: DisplayObjectRenderTreeNode): void {
   drawDOMBitmap(state, renderNode);
 }
 

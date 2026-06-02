@@ -1,6 +1,6 @@
 import { setMatrix } from '@flighthq/geometry';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-core';
-import { createDisplayObject } from '@flighthq/scenegraph-display';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+import { createDisplayObject } from '@flighthq/scene-display';
 import { BlendMode } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';

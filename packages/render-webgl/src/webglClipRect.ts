@@ -1,4 +1,4 @@
-import type { DisplayObjectRenderNode, Matrix, Rectangle } from '@flighthq/types';
+import type { DisplayObjectRenderTreeNode, Matrix, Rectangle } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal, WebGLScissorRect } from './internal';
 
@@ -30,7 +30,7 @@ export function pushWebGLClipRectangle(
   gl.scissor(next.x, next.y, next.width, next.height);
 }
 
-export function pushWebGLScrollRectangle(state: WebGLRenderStateInternal, data: DisplayObjectRenderNode): void {
+export function pushWebGLScrollRectangle(state: WebGLRenderStateInternal, data: DisplayObjectRenderTreeNode): void {
   pushWebGLClipRectangle(state, data.source.scrollRect!, data.transform2D);
 }
 

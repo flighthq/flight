@@ -43,11 +43,12 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/render-tree": "*",
     "@flighthq/geometry": "*",
     "@flighthq/render-canvas": "*",
     "@flighthq/render-core": "*",
-    "@flighthq/scenegraph-display": "*",
-    "@flighthq/scenegraph-sprite": "*",
+    "@flighthq/scene-display": "*",
+    "@flighthq/scene-sprite": "*",
     "@flighthq/text-input": "*",
     "@flighthq/text-layout": "*",
     "@flighthq/types": "*"

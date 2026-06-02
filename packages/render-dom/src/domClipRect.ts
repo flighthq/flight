@@ -1,4 +1,4 @@
-import type { DisplayObjectRenderNode, Matrix, MatrixLike, Rectangle } from '@flighthq/types';
+import type { DisplayObjectRenderTreeNode, Matrix, MatrixLike, Rectangle } from '@flighthq/types';
 
 import type { DOMRenderStateInternal } from './internal';
 
@@ -11,7 +11,7 @@ export interface DOMStageRectangle {
 
 export function applyDOMClipRectangles(
   state: DOMRenderStateInternal,
-  data: DisplayObjectRenderNode,
+  data: DisplayObjectRenderTreeNode,
   rectangles: readonly DOMStageRectangle[],
 ): void {
   const element = state.domElementMap.get(data);
@@ -62,7 +62,7 @@ export function pushDOMClipRectangle(
   rectangles.push(createDOMStageRectangle(rect, transform));
 }
 
-export function pushDOMScrollRectangle(rectangles: DOMStageRectangle[], data: DisplayObjectRenderNode): void {
+export function pushDOMScrollRectangle(rectangles: DOMStageRectangle[], data: DisplayObjectRenderTreeNode): void {
   pushDOMClipRectangle(rectangles, data.source.scrollRect!, data.transform2D);
 }
 

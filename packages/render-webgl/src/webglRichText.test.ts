@@ -1,5 +1,5 @@
-import { createRichText } from '@flighthq/scenegraph-display';
-import type { DisplayObjectRenderNode, RichText } from '@flighthq/types';
+import { createRichText } from '@flighthq/scene-display';
+import type { DisplayObjectRenderTreeNode, RichText } from '@flighthq/types';
 
 import {
   defaultWebGLRichTextRenderer,
@@ -9,14 +9,14 @@ import {
 } from './webglRichText';
 import { makeWebGLState } from './webglTestHelper';
 
-function makeRichTextNode(): DisplayObjectRenderNode {
+function makeRichTextNode(): DisplayObjectRenderTreeNode {
   return {
     source: createRichText(),
     blendMode: 0,
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     rendererData: null,
-  } as unknown as DisplayObjectRenderNode;
+  } as unknown as DisplayObjectRenderTreeNode;
 }
 
 describe('defaultWebGLRichTextRenderer', () => {

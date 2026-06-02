@@ -5,7 +5,7 @@ import type {
   RendererData,
   RenderState,
   SpriteRenderer,
-  SpriteRenderNode,
+  SpriteRenderTreeNode,
   Tilemap,
 } from '@flighthq/types';
 
@@ -20,7 +20,7 @@ function createDOMTilemapData(_state: RenderState, _source: Renderable): DOMTile
   return createEntity({ canvas: null, context: null });
 }
 
-export function drawDOMTilemap(state: DOMRenderState, tilemapNode: SpriteRenderNode): void {
+export function drawDOMTilemap(state: DOMRenderState, tilemapNode: SpriteRenderTreeNode): void {
   const source = tilemapNode.source as Tilemap;
   const { tileset, columns, rows, tiles } = source.data;
 

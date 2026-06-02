@@ -1,10 +1,10 @@
 import { createEntity } from '@flighthq/entity';
 import { computeTextFormatFontString, rgbaToHexString } from '@flighthq/render-core';
-import { getTextRuntime } from '@flighthq/scenegraph-display';
+import { getTextRuntime } from '@flighthq/scene-display';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
+  DisplayObjectRenderTreeNode,
   DOMRenderState,
   Renderable,
   RendererData,
@@ -36,7 +36,7 @@ function getMeasureCtx(): CanvasRenderingContext2D | null {
 
 const LAYOUT_WIDTH = 10000;
 
-export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRenderTreeNode): void {
   const data = renderNode.rendererData as DOMTextData | null;
   if (data === null) return;
 
@@ -90,7 +90,7 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
   setDOMRendererElement(state, data.div);
 }
 
-export function drawDOMTextMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMTextMask(state: DOMRenderState, renderNode: DisplayObjectRenderTreeNode): void {
   drawDOMText(state, renderNode);
 }
 

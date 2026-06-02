@@ -1,7 +1,8 @@
 import { createMatrix } from '@flighthq/geometry';
-import { getOrCreateSpriteRenderNode, registerRenderer } from '@flighthq/render-core';
-import { addGraphChild } from '@flighthq/scenegraph-core';
-import { createSprite } from '@flighthq/scenegraph-sprite';
+import { registerRenderer } from '@flighthq/render-core';
+import { getOrCreateSpriteRenderNode } from '@flighthq/render-tree';
+import { addSceneChild } from '@flighthq/scene-core';
+import { createSprite } from '@flighthq/scene-sprite';
 import type { WebGLRenderState } from '@flighthq/types';
 import { SpriteKind } from '@flighthq/types';
 
@@ -81,7 +82,7 @@ describe('renderWebGLSprite', () => {
 
     const parent = createSprite();
     const child = createSprite();
-    addGraphChild(parent, child);
+    addSceneChild(parent, child);
 
     const parentData = getOrCreateSpriteRenderNode(state, parent);
     parentData.visible = true;

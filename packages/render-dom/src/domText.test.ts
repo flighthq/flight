@@ -1,5 +1,6 @@
-import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { createText } from '@flighthq/scenegraph-display';
+import { registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+import { createText } from '@flighthq/scene-display';
 import { TextKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';

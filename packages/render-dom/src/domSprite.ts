@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity';
-import { getOrCreateSpriteRenderNode } from '@flighthq/render-core';
-import { getSpriteNodeRuntime } from '@flighthq/scenegraph-sprite';
+import { getOrCreateSpriteRenderNode } from '@flighthq/render-tree';
+import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
 import type {
   DOMRenderState,
   Renderable,
@@ -9,7 +9,7 @@ import type {
   Sprite,
   SpriteNode,
   SpriteRenderer,
-  SpriteRenderNode,
+  SpriteRenderTreeNode,
 } from '@flighthq/types';
 
 import { detectDOMStructureChange, processDOMNode, reconcileDOMContainer, swapDOMOrderLists } from './domReconcile';
@@ -25,7 +25,7 @@ function createDOMSpriteData(_state: RenderState, _source: Renderable): DOMSprit
   return createEntity({ canvas: null, context: null });
 }
 
-export function drawDOMSprite(state: DOMRenderState, spriteNode: SpriteRenderNode): void {
+export function drawDOMSprite(state: DOMRenderState, spriteNode: SpriteRenderTreeNode): void {
   const source = spriteNode.source as Sprite;
   const { atlas, id } = source.data;
   if (atlas === null || atlas.image === null || atlas.image.src === null) return;

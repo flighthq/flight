@@ -10,9 +10,10 @@
   },
   "references": [
     { "path": "../assets" },
+    { "path": "../render-tree" },
     { "path": "../geometry" },
     { "path": "../render-core" },
-    { "path": "../scenegraph-display" },
+    { "path": "../scene-display" },
     { "path": "../text-input" },
     { "path": "../text-layout" },
     { "path": "../types" }

@@ -1,10 +1,10 @@
-import { createText } from '@flighthq/scenegraph-display';
-import type { DisplayObjectRenderNode } from '@flighthq/types';
+import { createText } from '@flighthq/scene-display';
+import type { DisplayObjectRenderTreeNode } from '@flighthq/types';
 
 import { makeWebGLState } from './webglTestHelper';
 import { defaultWebGLTextRenderer, drawWebGLText, drawWebGLTextMask } from './webglText';
 
-function makeTextNode(text = '', textFormat = {}): DisplayObjectRenderNode {
+function makeTextNode(text = '', textFormat = {}): DisplayObjectRenderTreeNode {
   const source = createText();
   source.data.text = text;
   source.data.textFormat = textFormat;
@@ -14,7 +14,7 @@ function makeTextNode(text = '', textFormat = {}): DisplayObjectRenderNode {
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     rendererData: null,
-  } as unknown as DisplayObjectRenderNode;
+  } as unknown as DisplayObjectRenderTreeNode;
 }
 
 describe('defaultWebGLTextRenderer', () => {

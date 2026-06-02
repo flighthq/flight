@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry';
-import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render-core';
-import { createDisplayObject } from '@flighthq/scenegraph-display';
+import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render-tree';
+import { createDisplayObject } from '@flighthq/scene-display';
 
 import { drawWebGLImageCacheResult } from './webglImageCache';
 import { createWebGLRenderState } from './webglRenderState';

@@ -1,8 +1,9 @@
 import { createRectangle } from '@flighthq/geometry';
-import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { addGraphChild } from '@flighthq/scenegraph-core';
-import { appendShapeRectangle, createDisplayObject, createShape } from '@flighthq/scenegraph-display';
-import { DisplayObjectKind } from '@flighthq/types';
+import { enableRenderFeatures, registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+import { addSceneChild } from '@flighthq/scene-core';
+import { appendShapeRectangle, createDisplayObject, createShape } from '@flighthq/scene-display';
+import { DisplayObjectKind, RenderFeatures } from '@flighthq/types';
 
 import { renderDOMDisplayObject } from './domDisplayObject';
 import { createDOMRenderState } from './domRenderState';
@@ -122,7 +123,7 @@ describe('renderDOMDisplayObject', () => {
     const state = makeState();
     const parent = createDisplayObject();
     const child = createDisplayObject();
-    addGraphChild(parent, child);
+    addSceneChild(parent, child);
 
     const childData = getOrCreateDisplayObjectRenderNode(state, child);
     childData.visible = true;
@@ -159,8 +160,8 @@ describe('renderDOMDisplayObject', () => {
     const parent = createDisplayObject();
     const childA = createDisplayObject();
     const childB = createDisplayObject();
-    addGraphChild(parent, childA);
-    addGraphChild(parent, childB);
+    addSceneChild(parent, childA);
+    addSceneChild(parent, childB);
 
     const elA = document.createElement('div');
     const elB = document.createElement('span');
@@ -178,8 +179,8 @@ describe('renderDOMDisplayObject', () => {
     const parent = createDisplayObject();
     const childA = createDisplayObject();
     const childB = createDisplayObject();
-    addGraphChild(parent, childA);
-    addGraphChild(parent, childB);
+    addSceneChild(parent, childA);
+    addSceneChild(parent, childB);
 
     const elA = document.createElement('div');
     const elB = document.createElement('span');
@@ -189,7 +190,7 @@ describe('renderDOMDisplayObject', () => {
     renderDOMDisplayObject(state, parent);
     expect(state.element.children.length).toBe(2);
 
-    // Hide childB — reconciliation should remove its element.
+    // Hide childB â€” reconciliation should remove its element.
     dataB.visible = false;
 
     renderDOMDisplayObject(state, parent);
@@ -200,10 +201,11 @@ describe('renderDOMDisplayObject', () => {
 
   it('applies inherited scrollRect clipping to child elements', () => {
     const state = makeState();
+    enableRenderFeatures(state, RenderFeatures.ScrollRect);
     const parent = createDisplayObject();
     parent.scrollRect = createRectangle(10, 20, 30, 40);
     const child = createDisplayObject();
-    addGraphChild(parent, child);
+    addSceneChild(parent, child);
 
     const el = document.createElement('div');
     setupRenderedNode(state, child, el);
@@ -215,6 +217,7 @@ describe('renderDOMDisplayObject', () => {
 
   it('applies mask bounds clipping to masked elements', () => {
     const state = makeState();
+    enableRenderFeatures(state, RenderFeatures.Masks);
     const obj = createDisplayObject();
     const mask = createShape();
     appendShapeRectangle(mask, 5, 6, 20, 30);

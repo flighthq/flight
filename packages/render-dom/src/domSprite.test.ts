@@ -1,6 +1,7 @@
 import { addTextureAtlasRegion, createImageSourceFromCanvas, createTextureAtlas } from '@flighthq/assets';
-import { getOrCreateSpriteRenderNode, registerRenderer } from '@flighthq/render-core';
-import { createSprite } from '@flighthq/scenegraph-sprite';
+import { registerRenderer } from '@flighthq/render-core';
+import { getOrCreateSpriteRenderNode } from '@flighthq/render-tree';
+import { createSprite } from '@flighthq/scene-sprite';
 import { SpriteKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';

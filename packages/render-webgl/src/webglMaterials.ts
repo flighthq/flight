@@ -1,4 +1,4 @@
-import type { DisplayObjectRenderNode, RenderNode, WebGLRenderState } from '@flighthq/types';
+import type { DisplayObjectRenderTreeNode, RenderTreeNode, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { setWebGLAttribs, setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
@@ -56,7 +56,7 @@ function createWebGLColorTransformBitmapShader(
   return {
     locations: shaderLoc,
     program: shaderLoc.program,
-    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: DisplayObjectRenderNode): void {
+    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: DisplayObjectRenderTreeNode): void {
       setWebGLAttribs(gl, shaderLoc);
       setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, renderNode.transform2D, state.canvas);
       setWebGLBaseUniforms(gl, shaderLoc, renderNode);
@@ -68,7 +68,7 @@ function createWebGLColorTransformBitmapShader(
 function setWebGLColorTransformUniforms(
   gl: WebGL2RenderingContext,
   loc: WebGLShaderLocations,
-  renderNode: RenderNode,
+  renderNode: RenderTreeNode,
 ): void {
   gl.uniform1i(loc.locHasColorTransform!, renderNode.useColorTransform ? 1 : 0);
 

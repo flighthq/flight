@@ -1,16 +1,23 @@
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-core';
-import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
-import type { DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode, WebGLRenderState } from '@flighthq/types';
+import { hasRenderFeatures } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+import { getDisplayObjectRuntime } from '@flighthq/scene-display';
+import type {
+  DisplayObject,
+  DisplayObjectRenderer,
+  DisplayObjectRenderTreeNode,
+  WebGLRenderState,
+} from '@flighthq/types';
+import { RenderFeatures } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { popWebGLClipRectangle, pushWebGLClipRectangle } from './webglClipRect';
 import { applyWebGLMask, popWebGLMask, pushWebGLMask } from './webglMask';
 
-export function drawWebGLDisplayObject(_state: WebGLRenderState, _renderNode: DisplayObjectRenderNode): void {
+export function drawWebGLDisplayObject(_state: WebGLRenderState, _renderNode: DisplayObjectRenderTreeNode): void {
   // Plain display objects have no visual geometry of their own.
 }
 
-export function drawWebGLDisplayObjectMask(state: WebGLRenderState, data: DisplayObjectRenderNode): void {
+export function drawWebGLDisplayObjectMask(state: WebGLRenderState, data: DisplayObjectRenderTreeNode): void {
   const children = getDisplayObjectRuntime(data.source).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
@@ -58,14 +65,16 @@ function drawNode(state: WebGLRenderStateInternal, current: DisplayObject): void
   popObjectEffects(state, data);
 }
 
-function popObjectEffects(state: WebGLRenderStateInternal, data: DisplayObjectRenderNode): void {
+function popObjectEffects(state: WebGLRenderStateInternal, data: DisplayObjectRenderTreeNode): void {
   const source = data.source;
-  if (source.mask !== null) popWebGLMask(state);
-  if (source.scrollRect !== null) popWebGLClipRectangle(state);
+  if (hasRenderFeatures(state, RenderFeatures.Masks) && source.mask !== null) popWebGLMask(state);
+  if (hasRenderFeatures(state, RenderFeatures.ScrollRect) && source.scrollRect !== null) popWebGLClipRectangle(state);
 }
 
-function pushObjectEffects(state: WebGLRenderStateInternal, data: DisplayObjectRenderNode): void {
+function pushObjectEffects(state: WebGLRenderStateInternal, data: DisplayObjectRenderTreeNode): void {
   const source = data.source;
-  if (source.scrollRect !== null) pushWebGLClipRectangle(state, source.scrollRect, data.transform2D);
-  if (source.mask !== null) pushWebGLMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask));
+  if (hasRenderFeatures(state, RenderFeatures.ScrollRect) && source.scrollRect !== null)
+    pushWebGLClipRectangle(state, source.scrollRect, data.transform2D);
+  if (hasRenderFeatures(state, RenderFeatures.Masks) && source.mask !== null)
+    pushWebGLMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask));
 }

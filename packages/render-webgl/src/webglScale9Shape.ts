@@ -1,8 +1,8 @@
 import { remapScale9Commands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
-import { getLocalBoundsRectangle } from '@flighthq/scenegraph-core';
+import { getLocalBoundsRectangle } from '@flighthq/scene-core';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
+  DisplayObjectRenderTreeNode,
   MatrixLike,
   Renderable,
   RendererData,
@@ -49,7 +49,7 @@ export function createWebGLScale9ShapeData(state: RenderState, _source: Renderab
   } as unknown as RendererData;
 }
 
-export function drawWebGLScale9Shape(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawWebGLScale9Shape(state: RenderState, renderNode: DisplayObjectRenderTreeNode): void {
   const internal = state as WebGLRenderStateInternal;
   const source = renderNode.source as Scale9Shape;
   const { commands, scale9Grid, version } = source.data;
@@ -109,7 +109,7 @@ export function drawWebGLScale9Shape(state: RenderState, renderNode: DisplayObje
   drawWebGLQuad(internal, 0, 0, w, h, 0, 0, 1, 1);
 }
 
-export function drawWebGLScale9ShapeMask(state: RenderState, data: DisplayObjectRenderNode): void {
+export function drawWebGLScale9ShapeMask(state: RenderState, data: DisplayObjectRenderTreeNode): void {
   drawWebGLScale9Shape(state, data);
 }
 

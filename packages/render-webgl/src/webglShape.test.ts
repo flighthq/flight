@@ -1,9 +1,9 @@
-import type { DisplayObjectRenderNode } from '@flighthq/types';
+import type { DisplayObjectRenderTreeNode } from '@flighthq/types';
 
 import { defaultWebGLShapeRenderer, drawWebGLShape, drawWebGLShapeMask } from './webglShape';
 import { makeWebGLState } from './webglTestHelper';
 
-function makeShapeNode(data: Record<string, unknown> = {}, rendererData: unknown = null): DisplayObjectRenderNode {
+function makeShapeNode(data: Record<string, unknown> = {}, rendererData: unknown = null): DisplayObjectRenderTreeNode {
   return {
     source: {
       data: {
@@ -13,11 +13,11 @@ function makeShapeNode(data: Record<string, unknown> = {}, rendererData: unknown
       },
       // getLocalBoundsRectangle is called on source itself
     },
-    rendererData,
+    rendererData: rendererData,
     blendMode: 0,
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
-  } as unknown as DisplayObjectRenderNode;
+  } as unknown as DisplayObjectRenderTreeNode;
 }
 
 describe('defaultWebGLShapeRenderer', () => {
