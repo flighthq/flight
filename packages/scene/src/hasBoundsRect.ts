@@ -1,4 +1,4 @@
-import type { SceneBoundsNode, HasBoundsRect, HasBoundsRectRuntime, MethodsOf, Rectangle } from '@flighthq/types';
+import type { HasBoundsRect, HasBoundsRectRuntime, MethodsOf, Rectangle, SceneBoundsNode } from '@flighthq/types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- unique symbol variance prevents a tighter type here
 export function defaultComputeLocalBoundsRectangle(_out: Rectangle, _source: Readonly<SceneBoundsNode<any, any>>) {}

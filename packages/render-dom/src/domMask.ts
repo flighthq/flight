@@ -4,6 +4,11 @@ import type { DisplayObjectMaskHooks, DisplayObjectRenderTreeNode, DOMRenderStat
 
 import { createDOMStageRectangle, type DOMStageRectangle, setDOMClipHooks } from './domClipRect';
 
+export function enableDOMMaskSupport(state: DOMRenderState): void {
+  setDisplayObjectMaskHooks(state, domMaskHooks);
+  setDOMClipHooks(state);
+}
+
 export function pushDOMMaskRectangle(rectangles: DOMStageRectangle[], data: DisplayObjectRenderTreeNode): void {
   const bounds = getLocalBoundsRectangle(data.source);
   if (bounds.width <= 0 || bounds.height <= 0) {
@@ -12,11 +17,6 @@ export function pushDOMMaskRectangle(rectangles: DOMStageRectangle[], data: Disp
   }
 
   rectangles.push(createDOMStageRectangle(bounds, data.transform2D));
-}
-
-export function enableDOMMaskSupport(state: DOMRenderState): void {
-  setDisplayObjectMaskHooks(state, domMaskHooks);
-  setDOMClipHooks(state);
 }
 
 function popDOMMask(_state: RenderState, _data: DisplayObjectRenderTreeNode, _context?: unknown): void {}

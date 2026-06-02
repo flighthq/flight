@@ -2,7 +2,6 @@ import { inverseMatrixTransformPointXY } from '@flighthq/geometry';
 import { getSceneNodeRuntime, getSceneParent, getWorldTransformMatrix } from '@flighthq/scene';
 import { connectSignal, createSignal, disconnectSignal, emitSignal, isSlotConnected } from '@flighthq/signals';
 import type {
-  SceneTransform2DNode,
   InputKeyboardData,
   InputPointerData,
   InputSignals,
@@ -12,6 +11,7 @@ import type {
   PointerType,
   SceneNode,
   SceneNodeRuntime,
+  SceneTransform2DNode,
   Signal,
   SignalConnectOptions,
 } from '@flighthq/types';

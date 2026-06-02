@@ -1,9 +1,9 @@
-﻿import {
+﻿import { registerRenderer } from '@flighthq/render';
+import {
   createCanvasRenderState,
   defaultCanvasDisplayObjectRenderer,
   renderCanvasDisplayObject,
 } from '@flighthq/render-canvas';
-import { registerRenderer } from '@flighthq/render';
 import { updateDisplayObjectBeforeRender } from '@flighthq/render-tree';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';

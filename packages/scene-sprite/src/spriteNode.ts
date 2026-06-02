@@ -13,10 +13,10 @@ import type {
   MethodsOf,
   PartialNode,
   SceneNode,
-  SpriteNodeDataFactory,
-  SpriteNodeRuntimeFactory,
   SpriteNode,
+  SpriteNodeDataFactory,
   SpriteNodeRuntime,
+  SpriteNodeRuntimeFactory,
 } from '@flighthq/types';
 import { SpriteGraph } from '@flighthq/types';
 

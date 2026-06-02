@@ -2,8 +2,21 @@ import { createMatrix, createRectangle } from '@flighthq/geometry';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import { createDisplayObject } from '@flighthq/scene-display';
 
-import { popWebGLClipRectangle, pushWebGLClipRectangle, pushWebGLScrollRectangle } from './webglClipRect';
+import {
+  enableWebGLScrollRectangleSupport,
+  popWebGLClipRectangle,
+  pushWebGLClipRectangle,
+  pushWebGLScrollRectangle,
+} from './webglClipRect';
 import { makeWebGLState } from './webglTestHelper';
+
+describe('enableWebGLScrollRectangleSupport', () => {
+  it('sets scroll rectangle hooks and enables the ScrollRectangle feature', () => {
+    const { state } = makeWebGLState();
+    enableWebGLScrollRectangleSupport(state);
+    expect(state.scrollRectangleHooks).not.toBeNull();
+  });
+});
 
 describe('popWebGLClipRectangle', () => {
   it('restores the previous scissor rectangle', () => {

@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry';
-import { createCanvasRenderState, renderCanvasDisplayObject } from '@flighthq/render-canvas';
 import { registerRenderer } from '@flighthq/render';
+import { createCanvasRenderState, renderCanvasDisplayObject } from '@flighthq/render-canvas';
 import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render-tree';
 import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';

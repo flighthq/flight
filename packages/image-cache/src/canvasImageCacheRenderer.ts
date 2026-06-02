@@ -1,5 +1,5 @@
-import { setCanvasTransform } from '@flighthq/render-canvas';
 import { createNullRendererData } from '@flighthq/render';
+import { setCanvasTransform } from '@flighthq/render-canvas';
 import type {
   CanvasRenderState,
   DisplayObjectMaskRenderer,

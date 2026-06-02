@@ -1,4 +1,4 @@
-import type { DisplayObject, GraphNode, ImageSource, InteractionManager, TweenManager } from '@flighthq/sdk';
+import type { DisplayObject, ImageSource, InteractionManager, SceneNode, TweenManager } from '@flighthq/sdk';
 import {
   addSceneChild,
   addSceneChildAt,
@@ -43,7 +43,7 @@ export function connectTileInteraction(
   const coordScale = options?.coordScale ?? 1;
   const cursorElement = options?.cursorElement ?? null;
   const dragThreshold = 10 * coordScale;
-  const node = tile.obj as GraphNode<symbol, object>;
+  const node = tile.obj as SceneNode<symbol, object>;
   const signals = getInteractionSignals(node);
   let startX = 0;
   let startY = 0;

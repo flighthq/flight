@@ -10,10 +10,9 @@ import {
 
 import type { RenderStateInternal } from './internal';
 
-export function copyRenderersFromRenderState(target: RenderState, source: RenderState): void {
-  source.rendererMap.forEach((renderer, kind) => {
-    registerRenderer(target, kind, renderer);
-  });
+export function copyFromRenderState(target: RenderState, source: RenderState): void {
+  copyRenderersFromRenderState(target, source);
+  copyMaskRenderersFromRenderState(target, source);
 }
 
 export function copyMaskRenderersFromRenderState(target: RenderState, source: RenderState): void {
@@ -23,9 +22,10 @@ export function copyMaskRenderersFromRenderState(target: RenderState, source: Re
   if (source.displayObjectMaskHooks !== null) setDisplayObjectMaskHooks(target, source.displayObjectMaskHooks);
 }
 
-export function copyFromRenderState(target: RenderState, source: RenderState): void {
-  copyRenderersFromRenderState(target, source);
-  copyMaskRenderersFromRenderState(target, source);
+export function copyRenderersFromRenderState(target: RenderState, source: RenderState): void {
+  source.rendererMap.forEach((renderer, kind) => {
+    registerRenderer(target, kind, renderer);
+  });
 }
 
 export function createNullRendererData(_state: RenderState, _source: Renderable): RendererData | null {

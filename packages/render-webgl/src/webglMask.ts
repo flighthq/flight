@@ -24,6 +24,10 @@ export function drawWebGLMask(state: WebGLRenderStateInternal, data: DisplayObje
   }
 }
 
+export function enableWebGLMaskSupport(state: WebGLRenderState): void {
+  setDisplayObjectMaskHooks(state, webGLMaskHooks);
+}
+
 export function popWebGLMask(state: WebGLRenderStateInternal, _data: DisplayObjectRenderTreeNode): void {
   const gl = state.gl;
   const nextDepth = Math.max(0, (state.currentMaskDepth ?? 0) - 1);
@@ -59,10 +63,6 @@ export function pushWebGLMask(state: WebGLRenderStateInternal, data: DisplayObje
   gl.stencilFunc(gl.EQUAL, nextDepth, 0xff);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
   state.currentMaskDepth = nextDepth;
-}
-
-export function enableWebGLMaskSupport(state: WebGLRenderState): void {
-  setDisplayObjectMaskHooks(state, webGLMaskHooks);
 }
 
 const webGLMaskHooks: DisplayObjectMaskHooks = {

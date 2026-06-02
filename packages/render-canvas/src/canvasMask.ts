@@ -7,6 +7,10 @@ export function drawCanvasMask(state: CanvasRenderState, data: DisplayObjectRend
   state.displayObjectMaskRendererMap.get(data.source.kind)?.drawMask(state, data);
 }
 
+export function enableCanvasMaskSupport(state: CanvasRenderState): void {
+  setDisplayObjectMaskHooks(state, canvasMaskHooks);
+}
+
 export function popCanvasMask(state: CanvasRenderState, _data: DisplayObjectRenderTreeNode): void {
   state.context.restore();
   // state.currentMaskDepth--;
@@ -22,10 +26,6 @@ export function pushCanvasMask(state: CanvasRenderState, data: DisplayObjectRend
   state.context.closePath();
 
   state.context.clip();
-}
-
-export function enableCanvasMaskSupport(state: CanvasRenderState): void {
-  setDisplayObjectMaskHooks(state, canvasMaskHooks);
 }
 
 const canvasMaskHooks: DisplayObjectMaskHooks = {

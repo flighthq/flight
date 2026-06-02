@@ -4,7 +4,7 @@ import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { drawWebGLMask, popWebGLMask, pushWebGLMask, enableWebGLMaskSupport } from './webglMask';
+import { drawWebGLMask, enableWebGLMaskSupport, popWebGLMask, pushWebGLMask } from './webglMask';
 import { makeWebGLState } from './webglTestHelper';
 
 function makeRenderer() {
@@ -44,6 +44,16 @@ describe('drawWebGLMask', () => {
   });
 });
 
+describe('enableWebGLMaskSupport', () => {
+  it('sets WebGL mask hooks on the render state', () => {
+    const { state } = makeWebGLState();
+
+    enableWebGLMaskSupport(state);
+
+    expect(state.displayObjectMaskHooks).not.toBeNull();
+  });
+});
+
 describe('popWebGLMask', () => {
   it('disables stencil testing when the last mask is popped', () => {
     const { state, gl } = makeWebGLState();
@@ -74,15 +84,5 @@ describe('pushWebGLMask', () => {
     expect(gl.colorMask).toHaveBeenLastCalledWith(true, true, true, true);
     expect(gl.stencilFunc).toHaveBeenLastCalledWith(gl.EQUAL, 1, 0xff);
     expect(state.currentMaskDepth).toBe(1);
-  });
-});
-
-describe('enableWebGLMaskSupport', () => {
-  it('sets WebGL mask hooks on the render state', () => {
-    const { state } = makeWebGLState();
-
-    enableWebGLMaskSupport(state);
-
-    expect(state.displayObjectMaskHooks).not.toBeNull();
   });
 });
