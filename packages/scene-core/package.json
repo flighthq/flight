@@ -1,0 +1,68 @@
+{
+  "name": "@flighthq/scene-core",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./boundsRect": {
+      "types": "./dist/boundsRect.d.ts",
+      "default": "./dist/boundsRect.js"
+    },
+    "./sceneNode": {
+      "types": "./dist/sceneNode.d.ts",
+      "default": "./dist/sceneNode.js"
+    },
+    "./hasBoundsRect": {
+      "types": "./dist/hasBoundsRect.d.ts",
+      "default": "./dist/hasBoundsRect.js"
+    },
+    "./hasTransform2d": {
+      "types": "./dist/hasTransform2d.d.ts",
+      "default": "./dist/hasTransform2d.js"
+    },
+    "./hierarchy": {
+      "types": "./dist/hierarchy.d.ts",
+      "default": "./dist/hierarchy.js"
+    },
+    "./revision": {
+      "types": "./dist/revision.d.ts",
+      "default": "./dist/revision.js"
+    },
+    "./transform2d": {
+      "types": "./dist/transform2d.d.ts",
+      "default": "./dist/transform2d.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src/**/*.test.ts",
+    "!dist/**/*.test.js",
+    "!dist/**/*.test.d.ts",
+    "!dist/**/*.test.js.map",
+    "!dist/**/*.test.d.ts.map"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --watch --config vitest.config.ts",
+    "prepack": "npm run clean && npm run clean:dist && npm run build",
+    "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
+  },
+  "dependencies": {
+    "@flighthq/entity": "*",
+    "@flighthq/geometry": "*",
+    "@flighthq/signals": "*",
+    "@flighthq/types": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  },
+  "description": "Base scene graph: transform hierarchy, bounds, appearance traits, child management",
+  "sideEffects": false
+}
