@@ -1,12 +1,12 @@
 import { createMatrix } from '@flighthq/geometry';
-import { createGraphNode, getGraphNodeRuntime } from '@flighthq/scenegraph-core';
-import type { GraphNode, GraphNodeRuntime, ImageCacheResult } from '@flighthq/types';
-import { NullGraph } from '@flighthq/types';
+import { createSceneNode, getSceneNodeRuntime } from '@flighthq/scene-core';
+import type { ImageCacheResult, SceneNode, SceneNodeRuntime } from '@flighthq/types';
+import { NullScene } from '@flighthq/types';
 
 import { clearImageCache, getImageCache, setImageCache } from './imageCache';
 
-function makeObj(): GraphNode<symbol, object> {
-  return createGraphNode(NullGraph, Symbol('TestNode'));
+function makeObj(): SceneNode<symbol, object> {
+  return createSceneNode(NullScene, Symbol('TestNode'));
 }
 
 function makeResult(): ImageCacheResult {
@@ -14,11 +14,11 @@ function makeResult(): ImageCacheResult {
 }
 
 describe('clearImageCache', () => {
-  it('sets the slot to null', () => {
+  it('removes the resolver', () => {
     const obj = makeObj();
-    const result = makeResult();
-    (getGraphNodeRuntime(obj) as GraphNodeRuntime<symbol, object>).imageCache = result;
+    setImageCache(obj, makeResult());
     clearImageCache(obj);
+    expect((getSceneNodeRuntime(obj) as SceneNodeRuntime<symbol, object>).resolver).toBeNull();
     expect(getImageCache(obj)).toBeNull();
   });
 
@@ -29,21 +29,21 @@ describe('clearImageCache', () => {
 });
 
 describe('getImageCache', () => {
-  it('returns null when slot is empty', () => {
+  it('returns null when no resolver is set', () => {
     const obj = makeObj();
     expect(getImageCache(obj)).toBeNull();
   });
 
-  it('returns the result when slot is set', () => {
+  it('returns the result when set via setImageCache', () => {
     const obj = makeObj();
     const result = makeResult();
-    (getGraphNodeRuntime(obj) as GraphNodeRuntime<symbol, object>).imageCache = result;
+    setImageCache(obj, result);
     expect(getImageCache(obj)).toBe(result);
   });
 });
 
 describe('setImageCache', () => {
-  it('sets the slot to the provided result', () => {
+  it('sets the result on the resolver', () => {
     const obj = makeObj();
     const result = makeResult();
     setImageCache(obj, result);
@@ -57,5 +57,14 @@ describe('setImageCache', () => {
     setImageCache(obj, first);
     setImageCache(obj, second);
     expect(getImageCache(obj)).toBe(second);
+  });
+
+  it('reuses the same ImageCacheResolver across calls', () => {
+    const obj = makeObj();
+    setImageCache(obj, makeResult());
+    const r1 = (getSceneNodeRuntime(obj) as SceneNodeRuntime<symbol, object>).resolver;
+    setImageCache(obj, makeResult());
+    const r2 = (getSceneNodeRuntime(obj) as SceneNodeRuntime<symbol, object>).resolver;
+    expect(r1).toBe(r2);
   });
 });

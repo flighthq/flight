@@ -1,12 +1,9 @@
 import { createMatrix } from '@flighthq/geometry';
 import { createCanvasRenderState, renderCanvasDisplayObject } from '@flighthq/render-canvas';
-import {
-  getOrCreateDisplayObjectRenderNode,
-  registerRenderer,
-  updateDisplayObjectBeforeRender,
-} from '@flighthq/render-core';
-import { addGraphChild } from '@flighthq/scenegraph-core';
-import { createDisplayObject } from '@flighthq/scenegraph-display';
+import { registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render-tree';
+import { addSceneChild } from '@flighthq/scene-core';
+import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { enableCanvasImageCache } from './canvasImageCacheRenderer';
@@ -67,7 +64,7 @@ describe('enableCanvasImageCache', () => {
 
     const parent = createDisplayObject();
     const child = createDisplayObject();
-    addGraphChild(parent, child);
+    addSceneChild(parent, child);
 
     const offscreen = document.createElement('canvas');
     offscreen.width = 50;

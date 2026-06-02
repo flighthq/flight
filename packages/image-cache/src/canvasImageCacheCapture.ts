@@ -1,11 +1,11 @@
 import { createImageSourceFromCanvas } from '@flighthq/assets';
 import { createMatrix, createRectangle, identityMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry';
 import type { CanvasRenderStateInternal } from '@flighthq/render-canvas';
-import { computeBoundsRectangle, getLocalTransformMatrix } from '@flighthq/scenegraph-core';
-import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
-import type { CanvasRenderState, DisplayObject, DisplayObjectRuntime, Matrix } from '@flighthq/types';
+import { computeBoundsRectangle, getLocalTransformMatrix } from '@flighthq/scene-core';
+import type { CanvasRenderState, DisplayObject, Matrix } from '@flighthq/types';
 
-import { markImageCacheCapturing, unmarkImageCacheCapturing } from './imageCacheTransformer';
+import { getImageCache, setImageCache } from './imageCache';
+import { markImageCacheCapturing, unmarkImageCacheCapturing } from './imageCacheRenderNodeResolver';
 
 type CaptureData = {
   boundsX: number;
@@ -67,13 +67,13 @@ export function endCanvasDisplayObjectImageCache(cacheState: CanvasRenderState, 
     imageSource.version = (imageSource.version + 1) >>> 0;
   }
 
-  const runtime = getDisplayObjectRuntime(source) as DisplayObjectRuntime;
-  const transform = runtime.imageCache?.transform ?? createMatrix();
+  const existingCache = getImageCache(source);
+  const transform = existingCache?.transform ?? createMatrix();
   identityMatrix(transform);
   transform.tx = capture.boundsX;
   transform.ty = capture.boundsY;
 
-  runtime.imageCache = { source: imageSource, transform };
+  setImageCache(source, { source: imageSource, transform });
 }
 
 const _tempBounds = createRectangle();

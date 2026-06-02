@@ -1,24 +1,33 @@
-import { createMatrix, multiplyMatrix } from '@flighthq/geometry';
 import { setCanvasTransform } from '@flighthq/render-canvas';
 import { createNullRendererData } from '@flighthq/render-core';
-import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
-import type { CanvasRenderState, DisplayObjectRenderer, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
+import type {
+  CanvasRenderState,
+  DisplayObjectRenderer,
+  DisplayObjectRenderTreeNode,
+  RenderState,
+} from '@flighthq/types';
 
-import { registerImageCacheRenderer } from './imageCacheTransformer';
+import { isImageCachePrimitive } from './imageCachePrimitive';
+import { registerImageCacheRenderer } from './imageCacheRenderNodeResolver';
 
-const _tempDrawTransform = createMatrix();
-
-function drawCanvasImageCache(state: RenderState, renderNode: DisplayObjectRenderNode): void {
-  const cache = getDisplayObjectRuntime(renderNode.source).imageCache;
-  if (cache === null) return;
+function drawCanvasImageCache(state: RenderState, renderNode: DisplayObjectRenderTreeNode): void {
+  const source = renderNode.presentationSource;
+  if (!isImageCachePrimitive(source)) return;
+  const cache = source.cache;
   if (cache.source === null || cache.source.src === null) return;
-  multiplyMatrix(_tempDrawTransform, renderNode.transform2D, cache.transform);
   const canvasState = state as CanvasRenderState;
-  setCanvasTransform(canvasState, canvasState.context, _tempDrawTransform);
+  setCanvasTransform(canvasState, canvasState.context, renderNode.transform2D);
   canvasState.context.drawImage(cache.source.src, 0, 0);
 }
 
-function drawCanvasImageCacheMask(_state: RenderState, _node: DisplayObjectRenderNode): void {}
+function drawCanvasImageCacheMask(state: RenderState, renderNode: DisplayObjectRenderTreeNode): void {
+  const source = renderNode.presentationSource;
+  if (!isImageCachePrimitive(source)) return;
+  const cache = source.cache;
+  if (cache.source === null || cache.source.src === null) return;
+  const canvasState = state as CanvasRenderState;
+  canvasState.context.rect(0, 0, cache.source.width, cache.source.height);
+}
 
 export const defaultCanvasImageCacheRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,

@@ -5,19 +5,20 @@ import {
   setDOMRendererElement,
   setDOMTransformWithOffset,
 } from '@flighthq/render-dom';
-import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
-import type { DisplayObjectRenderer, DisplayObjectRenderNode, DOMRenderState, RenderState } from '@flighthq/types';
+import type { DisplayObjectRenderer, DisplayObjectRenderTreeNode, DOMRenderState, RenderState } from '@flighthq/types';
 
-import { registerImageCacheRenderer } from './imageCacheTransformer';
+import { isImageCachePrimitive } from './imageCachePrimitive';
+import { registerImageCacheRenderer } from './imageCacheRenderNodeResolver';
 
 const _canvases = new WeakMap<
-  DisplayObjectRenderNode,
+  DisplayObjectRenderTreeNode,
   { canvas: HTMLCanvasElement; context: CanvasRenderingContext2D }
 >();
 
-function drawDOMImageCache(state: RenderState, data: DisplayObjectRenderNode): void {
-  const cache = getDisplayObjectRuntime(data.source).imageCache;
-  if (cache === null) return;
+function drawDOMImageCache(state: RenderState, data: DisplayObjectRenderTreeNode): void {
+  const source = data.presentationSource;
+  if (!isImageCachePrimitive(source)) return;
+  const cache = source.cache;
   const imageSource = cache.source;
   if (imageSource === null || imageSource.src === null) return;
 
@@ -40,7 +41,7 @@ function drawDOMImageCache(state: RenderState, data: DisplayObjectRenderNode): v
   context.drawImage(imageSource.src, 0, 0, w, h);
 
   const domState = state as DOMRenderState;
-  setDOMTransformWithOffset(canvas, data.transform2D, cache.transform.tx, cache.transform.ty, domState.roundPixels);
+  setDOMTransformWithOffset(canvas, data.transform2D, 0, 0, domState.roundPixels);
   canvas.style.opacity = data.alpha < 1 ? String(data.alpha) : '';
   canvas.style.imageRendering = state.allowSmoothing ? '' : 'pixelated';
   setDOMBlendMode(canvas, data.blendMode);
@@ -48,7 +49,7 @@ function drawDOMImageCache(state: RenderState, data: DisplayObjectRenderNode): v
   setDOMRendererElement(state as DOMRenderState, canvas);
 }
 
-function drawDOMImageCacheMask(_state: RenderState, _node: DisplayObjectRenderNode): void {}
+function drawDOMImageCacheMask(_state: RenderState, _node: DisplayObjectRenderTreeNode): void {}
 
 export const defaultDOMImageCacheRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
