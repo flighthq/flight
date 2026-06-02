@@ -1,6 +1,6 @@
 import { setRectangle } from '@flighthq/geometry';
-import { getLocalBoundsRectangle } from '@flighthq/scenegraph-core';
-import { createDisplayObject, createSpriteBatch } from '@flighthq/scenegraph-display';
+import { getLocalBoundsRectangle } from '@flighthq/scene-core';
+import { createDisplayObject, createSpriteBatch } from '@flighthq/scene-display';
 
 import {
   defaultBitmapHitTestPoint,
@@ -35,7 +35,7 @@ describe('defaultBitmapHitTestPoint', () => {
 });
 
 describe('defaultDisplayObjectHitTestPoint', () => {
-  it('always returns false — plain display objects have no hit geometry', () => {
+  it('always returns false â€” plain display objects have no hit geometry', () => {
     const obj = makeDisplayObject();
     expect(defaultDisplayObjectHitTestPoint(obj, 50, 50, false)).toBe(false);
     expect(defaultDisplayObjectHitTestPoint(obj, 0, 0, false)).toBe(false);
@@ -44,7 +44,7 @@ describe('defaultDisplayObjectHitTestPoint', () => {
 });
 
 describe('defaultHTMLViewHitTestPoint', () => {
-  it('always returns false — browser manages HTMLView hit testing', () => {
+  it('always returns false â€” browser manages HTMLView hit testing', () => {
     const obj = makeDisplayObject();
     expect(defaultHTMLViewHitTestPoint(obj, 50, 50, false)).toBe(false);
   });
@@ -63,7 +63,7 @@ describe('defaultInputTextHitTestPoint', () => {
 });
 
 describe('defaultMovieClipHitTestPoint', () => {
-  it('always returns false — containers have no self hit area', () => {
+  it('always returns false â€” containers have no self hit area', () => {
     const obj = makeDisplayObject();
     expect(defaultMovieClipHitTestPoint(obj, 50, 50, false)).toBe(false);
   });
@@ -102,7 +102,7 @@ describe('defaultSpriteBatchHitTestPoint', () => {
 });
 
 describe('defaultStageHitTestPoint', () => {
-  it('always returns false — containers have no self hit area', () => {
+  it('always returns false â€” containers have no self hit area', () => {
     const obj = makeDisplayObject();
     expect(defaultStageHitTestPoint(obj, 50, 50, false)).toBe(false);
   });

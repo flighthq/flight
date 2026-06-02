@@ -1,4 +1,4 @@
-import { createRichText, getRichTextRuntime } from '@flighthq/scenegraph-display';
+import { createRichText, getRichTextRuntime } from '@flighthq/scene-display';
 import type { InputKeyboardData, RichTextRuntime } from '@flighthq/types';
 import { KeyCode } from '@flighthq/types';
 

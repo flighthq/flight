@@ -44,14 +44,14 @@
   },
   "dependencies": {
     "@flighthq/geometry": "*",
-    "@flighthq/scenegraph-core": "*",
-    "@flighthq/scenegraph-display": "*",
+    "@flighthq/scene-core": "*",
+    "@flighthq/scene-display": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*",
-    "@flighthq/scenegraph-world": "*"
+    "@flighthq/scene-world": "*"
   },
   "devDependencies": {
-    "@flighthq/scenegraph-sprite": "*",
+    "@flighthq/scene-sprite": "*",
     "typescript": "^5.3.0"
   },
   "description": "Hit testing: point-in-node tests and object overlap detection",

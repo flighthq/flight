@@ -11,11 +11,12 @@ export * from '@flighthq/media';
 export * from '@flighthq/render-canvas';
 export * from '@flighthq/render-core';
 export * from '@flighthq/render-dom';
+export * from '@flighthq/render-tree';
 export * from '@flighthq/render-webgl';
-export * from '@flighthq/scenegraph-core';
-export * from '@flighthq/scenegraph-display';
-export * from '@flighthq/scenegraph-sprite';
-// export * from '@flighthq/scenegraph-world'; // no exports yet
+export * from '@flighthq/scene-core';
+export * from '@flighthq/scene-display';
+export * from '@flighthq/scene-sprite';
+// export * from '@flighthq/scene-world'; // no exports yet
 export * from '@flighthq/signals';
 export * from '@flighthq/spritesheet';
 export * from '@flighthq/surface';

@@ -9,8 +9,8 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../scenegraph-core" },
-    { "path": "../scenegraph-display" },
+    { "path": "../scene-core" },
+    { "path": "../scene-display" },
     { "path": "../signals" },
     { "path": "../text-layout" },
     { "path": "../types" }

@@ -1,5 +1,5 @@
-import { getAppearanceRevision } from '@flighthq/scenegraph-core';
-import { createInputText, setRichTextFormatRange } from '@flighthq/scenegraph-display';
+import { getAppearanceRevision } from '@flighthq/scene-core';
+import { createInputText, setRichTextFormatRange } from '@flighthq/scene-display';
 import type { KeyboardData, TextLayoutResult } from '@flighthq/types';
 import { KeyCode } from '@flighthq/types';
 

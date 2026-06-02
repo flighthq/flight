@@ -1,13 +1,13 @@
 import { setRectangle } from '@flighthq/geometry';
-import { addGraphChild, getLocalBoundsRectangle } from '@flighthq/scenegraph-core';
-import { createQuadBatch, createSprite, createTilemap } from '@flighthq/scenegraph-sprite';
+import { addSceneChild, getLocalBoundsRectangle } from '@flighthq/scene-core';
+import { createQuadBatch, createSprite, createTilemap } from '@flighthq/scene-sprite';
 
 import { defaultQuadBatchHitTestPoint, defaultSpriteHitTestPoint, defaultTilemapHitTestPoint } from './spriteHitTests';
 
 function makeSprite(boundsW = 100, boundsH = 100) {
   const parent = createSprite();
   const sprite = createSprite();
-  addGraphChild(parent, sprite);
+  addSceneChild(parent, sprite);
   setRectangle(getLocalBoundsRectangle(sprite), 0, 0, boundsW, boundsH);
   return sprite;
 }
@@ -16,7 +16,7 @@ describe('defaultQuadBatchHitTestPoint', () => {
   it('returns true inside bounds', () => {
     const parent = createSprite();
     const qb = createQuadBatch();
-    addGraphChild(parent, qb);
+    addSceneChild(parent, qb);
     setRectangle(getLocalBoundsRectangle(qb), 0, 0, 100, 100);
     expect(defaultQuadBatchHitTestPoint(qb, 50, 50, false)).toBe(true);
   });
@@ -24,7 +24,7 @@ describe('defaultQuadBatchHitTestPoint', () => {
   it('returns false outside bounds', () => {
     const parent = createSprite();
     const qb = createQuadBatch();
-    addGraphChild(parent, qb);
+    addSceneChild(parent, qb);
     setRectangle(getLocalBoundsRectangle(qb), 0, 0, 100, 100);
     expect(defaultQuadBatchHitTestPoint(qb, 200, 200, false)).toBe(false);
   });
@@ -57,7 +57,7 @@ describe('defaultTilemapHitTestPoint', () => {
   it('returns true inside bounds', () => {
     const parent = createSprite();
     const tilemap = createTilemap();
-    addGraphChild(parent, tilemap);
+    addSceneChild(parent, tilemap);
     setRectangle(getLocalBoundsRectangle(tilemap), 0, 0, 100, 100);
     expect(defaultTilemapHitTestPoint(tilemap, 10, 10, false)).toBe(true);
   });
@@ -65,7 +65,7 @@ describe('defaultTilemapHitTestPoint', () => {
   it('returns false outside bounds', () => {
     const parent = createSprite();
     const tilemap = createTilemap();
-    addGraphChild(parent, tilemap);
+    addSceneChild(parent, tilemap);
     setRectangle(getLocalBoundsRectangle(tilemap), 0, 0, 100, 100);
     expect(defaultTilemapHitTestPoint(tilemap, 999, 999, false)).toBe(false);
   });

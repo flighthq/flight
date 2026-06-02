@@ -1,4 +1,4 @@
-import { createMovieClip } from '@flighthq/scenegraph-display';
+import { createMovieClip } from '@flighthq/scene-display';
 
 import {
   createMovieClipSignals,
