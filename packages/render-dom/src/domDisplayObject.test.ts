@@ -6,7 +6,7 @@ import { appendShapeRectangle, createDisplayObject, createShape } from '@flighth
 import { DisplayObjectKind, RenderFeatures } from '@flighthq/types';
 
 import { renderDOMDisplayObject } from './domDisplayObject';
-import { registerDOMMaskSupport } from './domMask';
+import { enableDOMMaskSupport } from './domMask';
 import { createDOMRenderState } from './domRenderState';
 
 type ManagedState = ReturnType<typeof makeState> & { domCurrentElement: HTMLElement | null };
@@ -200,11 +200,11 @@ describe('renderDOMDisplayObject', () => {
     expect(state.element.contains(elB)).toBe(false);
   });
 
-  it('applies inherited scrollRect clipping to child elements', () => {
+  it('applies inherited scrollRectangle clipping to child elements', () => {
     const state = makeState();
-    enableRenderFeatures(state, RenderFeatures.ScrollRect);
+    enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
     const parent = createDisplayObject();
-    parent.scrollRect = createRectangle(10, 20, 30, 40);
+    parent.scrollRectangle = createRectangle(10, 20, 30, 40);
     const child = createDisplayObject();
     addSceneChild(parent, child);
 
@@ -218,7 +218,7 @@ describe('renderDOMDisplayObject', () => {
 
   it('applies mask bounds clipping to masked elements', () => {
     const state = makeState();
-    registerDOMMaskSupport(state);
+    enableDOMMaskSupport(state);
     const obj = createDisplayObject();
     const mask = createShape();
     appendShapeRectangle(mask, 5, 6, 20, 30);

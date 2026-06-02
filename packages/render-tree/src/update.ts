@@ -44,11 +44,11 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
 
   let parentData: DisplayObjectRenderTreeNode | undefined = undefined;
   let lastParent: DisplayObject | null = null;
-  let scrollRectDepth: number = 0;
+  let scrollRectangleDepth: number = 0;
   let maskDepth: number = 0;
   let treeDirty = false;
   const hasMasks = hasRenderFeatures(state, RenderFeatures.Masks);
-  const hasScrollRects = hasRenderFeatures(state, RenderFeatures.ScrollRect);
+  const hasScrollRects = hasRenderFeatures(state, RenderFeatures.ScrollRectangle);
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as DisplayObject;
@@ -61,12 +61,12 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
       if (parent === null) {
         parentData = undefined;
         lastParent = null;
-        scrollRectDepth = 0;
+        scrollRectangleDepth = 0;
         maskDepth = 0;
       } else if (parent !== lastParent) {
         parentData = getOrCreateDisplayObjectRenderNode(state, parent);
         lastParent = parent;
-        scrollRectDepth = hasScrollRects ? parentData.scrollRectDepth : 0;
+        scrollRectangleDepth = hasScrollRects ? parentData.scrollRectangleDepth : 0;
         maskDepth = hasMasks ? parentData.maskDepth : 0;
       }
     }
@@ -83,17 +83,17 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
       treeDirty = appearanceDirty || transformDirty;
     }
 
-    if (hasScrollRects && current.scrollRect !== null) {
-      data.scrollRectDepth = ++scrollRectDepth;
+    if (hasScrollRects && current.scrollRectangle !== null) {
+      data.scrollRectangleDepth = ++scrollRectangleDepth;
     } else {
-      data.scrollRectDepth = scrollRectDepth;
+      data.scrollRectangleDepth = scrollRectangleDepth;
     }
 
     const mask = current.mask;
     if (hasMasks && mask !== null) {
       const maskData = getOrCreateDisplayObjectRenderNode(state, mask);
       maskData.isMaskFrameID = currentFrameID;
-      maskData.scrollRectDepth = 0;
+      maskData.scrollRectangleDepth = 0;
       maskData.maskDepth = 0;
       tempStack[stackLength++] = mask;
       data.maskDepth = ++maskDepth;

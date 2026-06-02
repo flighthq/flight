@@ -85,7 +85,7 @@ Use runtime slots for any internal mutable state that should not be part of the 
 
 Scene graph hierarchy is shared across graph kinds. Functions such as `addGraphChild`, `removeGraphChild`, `getGraphParent`, `getGraphRoot`, `containsGraphChild`, and `swapGraphChildren` operate on `HasGraphHierarchy` nodes, which is why the same hierarchy code supports display objects, sprite graphs, and future graph families.
 
-Use graph-feature aliases for reusable graph APIs: `GraphHierarchyNode`, `GraphAppearanceNode`, `GraphTransform2DNode`, `GraphBoundsNode`, and `GraphSpatial2DNode`. These preserve graph-kind compatibility while making APIs depend on features rather than concrete graph families.
+Use graph-feature aliases for reusable graph APIs: `GraphHierarchyNode`, `GraphAppearanceNode`, `SceneTransform2DNode`, `SceneBoundsNode`, and `SceneSpatial2DNode`. These preserve graph-kind compatibility while making APIs depend on features rather than concrete graph families.
 
 ### Renderer Registration
 
@@ -136,9 +136,9 @@ Packaging policy should be enforced by scripts and `npm run packages:check` rath
 - `@flighthq/types`: shared interfaces, kind symbols, and cross-package type contracts.
 - `@flighthq/entity`: entity/runtime primitives used by higher-level packages.
 - `@flighthq/geometry`: rectangles, vectors, matrices, typed-array capacity helpers, and pools.
-- `@flighthq/scenegraph-core`: graph hierarchy, transforms, bounds, appearance, and invalidation.
-- `@flighthq/scenegraph-display`: Flash/OpenFL-style display objects such as bitmaps, shapes, text, containers, masks, stages, and videos.
-- `@flighthq/scenegraph-sprite`: sprite/tilemap/quad-batch graph for atlas-based batch rendering.
+- `@flighthq/scene-core`: graph hierarchy, transforms, bounds, appearance, and invalidation.
+- `@flighthq/scene-display`: Flash/OpenFL-style display objects such as bitmaps, shapes, text, containers, masks, stages, and videos.
+- `@flighthq/scene-sprite`: sprite/tilemap/quad-batch graph for atlas-based batch rendering.
 - `@flighthq/render-core`: renderer registration, render node data, update pipeline, transform/color propagation.
 - `@flighthq/render-canvas`, `@flighthq/render-dom`, `@flighthq/render-webgl`: concrete renderers.
 - `@flighthq/image-cache`: opt-in bitmap caching and opaque background hints, attached to display objects via `attachImageCache`. The `cacheAsBitmap`, `cacheAsBitmapMatrix`, and `opaqueBackground` properties were removed from `DisplayObjectTraits`; do not add them back.

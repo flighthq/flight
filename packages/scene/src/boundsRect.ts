@@ -8,8 +8,8 @@ import {
 } from '@flighthq/geometry';
 import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
 import type {
-  GraphBoundsNode,
-  GraphSpatial2DNode,
+  SceneBoundsNode,
+  SceneSpatial2DNode,
   HasBoundsRectRuntime,
   HasTransform2DRuntime,
   Rectangle,
@@ -28,8 +28,8 @@ import { ensureWorldTransformMatrix, getLocalTransformMatrix, getWorldTransformM
  **/
 export function computeBoundsRectangle<SceneKind extends symbol, Traits extends object>(
   out: RectangleLike,
-  source: GraphSpatial2DNode<SceneKind, Traits>,
-  targetCoordinateSpace: GraphSpatial2DNode<SceneKind, Traits> | null | undefined,
+  source: SceneSpatial2DNode<SceneKind, Traits>,
+  targetCoordinateSpace: SceneSpatial2DNode<SceneKind, Traits> | null | undefined,
 ): void {
   if (!targetCoordinateSpace) targetCoordinateSpace = source;
   let bounds;
@@ -41,7 +41,7 @@ export function computeBoundsRectangle<SceneKind extends symbol, Traits extends 
     if (targetCoordinateSpace === source) {
       // fast path, return local bounds for self
       bounds = getLocalBoundsRectangle(source);
-    } else if (targetCoordinateSpace === (getSceneParent(source) as GraphSpatial2DNode<SceneKind, Traits> | null)) {
+    } else if (targetCoordinateSpace === (getSceneParent(source) as SceneSpatial2DNode<SceneKind, Traits> | null)) {
       // fast path, return bounds for parent
       bounds = getParentBoundsRectangle(source);
     }
@@ -59,7 +59,7 @@ export function computeBoundsRectangle<SceneKind extends symbol, Traits extends 
 }
 
 export function ensureLocalBoundsRectangle<SceneKind extends symbol, Traits extends object>(
-  target: GraphBoundsNode<SceneKind, Traits>,
+  target: SceneBoundsNode<SceneKind, Traits>,
 ): void {
   const runtime = getEntityRuntime(target) as SceneNodeRuntime<SceneKind, Traits> & HasBoundsRectRuntime;
   if (runtime.localBoundsUsingLocalBoundsID !== runtime.localBoundsID) {
@@ -68,7 +68,7 @@ export function ensureLocalBoundsRectangle<SceneKind extends symbol, Traits exte
 }
 
 export function ensureParentBoundsRectangle<SceneKind extends symbol, Traits extends object>(
-  target: GraphSpatial2DNode<SceneKind, Traits>,
+  target: SceneSpatial2DNode<SceneKind, Traits>,
 ): void {
   const runtime = getEntityRuntime(target) as SceneNodeRuntime<SceneKind, Traits> & HasBoundsRectRuntime;
   if (
@@ -80,7 +80,7 @@ export function ensureParentBoundsRectangle<SceneKind extends symbol, Traits ext
 }
 
 export function ensureWorldBoundsRectangle<SceneKind extends symbol, Traits extends object>(
-  target: GraphSpatial2DNode<SceneKind, Traits>,
+  target: SceneSpatial2DNode<SceneKind, Traits>,
 ): void {
   const runtime = getEntityRuntime(target) as SceneNodeRuntime<SceneKind, Traits> &
     HasBoundsRectRuntime &
@@ -102,7 +102,7 @@ export function ensureWorldBoundsRectangle<SceneKind extends symbol, Traits exte
  * Object's own bounds (not including children)
  */
 export function getLocalBoundsRectangle<SceneKind extends symbol, Traits extends object>(
-  target: GraphBoundsNode<SceneKind, Traits>,
+  target: SceneBoundsNode<SceneKind, Traits>,
 ): Readonly<Rectangle> {
   ensureLocalBoundsRectangle(target);
   return (getEntityRuntime(target) as HasBoundsRectRuntime).localBoundsRect!;
@@ -112,30 +112,30 @@ export function getLocalBoundsRectangle<SceneKind extends symbol, Traits extends
  * localBoundsRect * localTransform
  */
 export function getParentBoundsRectangle<SceneKind extends symbol, Traits extends object>(
-  target: GraphSpatial2DNode<SceneKind, Traits>,
+  target: SceneSpatial2DNode<SceneKind, Traits>,
 ): Readonly<Rectangle> {
   ensureParentBoundsRectangle(target);
   return (getEntityRuntime(target) as HasBoundsRectRuntime).boundsRect!;
 }
 
 export function getScaledBoundsHeight<SceneKind extends symbol, Traits extends object>(
-  source: GraphSpatial2DNode<SceneKind, Traits>,
+  source: SceneSpatial2DNode<SceneKind, Traits>,
 ): number {
   computeBoundsRectangle(
     _tempBoundsRect,
     source,
-    getSceneParent(source) as unknown as GraphSpatial2DNode<SceneKind, Traits> | null,
+    getSceneParent(source) as unknown as SceneSpatial2DNode<SceneKind, Traits> | null,
   );
   return _tempBoundsRect.height;
 }
 
 export function getScaledBoundsWidth<SceneKind extends symbol, Traits extends object>(
-  source: GraphSpatial2DNode<SceneKind, Traits>,
+  source: SceneSpatial2DNode<SceneKind, Traits>,
 ): number {
   computeBoundsRectangle(
     _tempBoundsRect,
     source,
-    getSceneParent(source) as unknown as GraphSpatial2DNode<SceneKind, Traits> | null,
+    getSceneParent(source) as unknown as SceneSpatial2DNode<SceneKind, Traits> | null,
   );
   return _tempBoundsRect.width;
 }
@@ -144,14 +144,14 @@ export function getScaledBoundsWidth<SceneKind extends symbol, Traits extends ob
  * Object's bounds in world space (including children)
  */
 export function getWorldBoundsRectangle<SceneKind extends symbol, Traits extends object>(
-  target: GraphSpatial2DNode<SceneKind, Traits>,
+  target: SceneSpatial2DNode<SceneKind, Traits>,
 ): Readonly<Rectangle> {
   ensureWorldBoundsRectangle(target);
   return (getEntityRuntime(target) as HasBoundsRectRuntime).worldBoundsRect!;
 }
 
 export function setScaledBoundsHeight<SceneKind extends symbol, Traits extends object>(
-  target: GraphSpatial2DNode<SceneKind, Traits>,
+  target: SceneSpatial2DNode<SceneKind, Traits>,
   value: number,
 ): void {
   if (target.scaleY === 0) return;
@@ -160,7 +160,7 @@ export function setScaledBoundsHeight<SceneKind extends symbol, Traits extends o
 }
 
 export function setScaledBoundsWidth<SceneKind extends symbol, Traits extends object>(
-  target: GraphSpatial2DNode<SceneKind, Traits>,
+  target: SceneSpatial2DNode<SceneKind, Traits>,
   value: number,
 ): void {
   if (target.scaleX === 0) return;
@@ -169,7 +169,7 @@ export function setScaledBoundsWidth<SceneKind extends symbol, Traits extends ob
 }
 
 function recomputeBoundsRect<SceneKind extends symbol, Traits extends object>(
-  target: GraphSpatial2DNode<SceneKind, Traits>,
+  target: SceneSpatial2DNode<SceneKind, Traits>,
   runtime: SceneNodeRuntime<SceneKind, Traits> & HasBoundsRectRuntime,
 ): void {
   if (runtime.boundsRect === null) runtime.boundsRect = createRectangle();
@@ -179,7 +179,7 @@ function recomputeBoundsRect<SceneKind extends symbol, Traits extends object>(
 }
 
 function recomputeLocalBoundsRect<SceneKind extends symbol, Traits extends object>(
-  target: GraphBoundsNode<SceneKind, Traits>,
+  target: SceneBoundsNode<SceneKind, Traits>,
   runtime: SceneNodeRuntime<SceneKind, Traits> & HasBoundsRectRuntime,
 ): void {
   if (runtime.localBoundsRect === null) runtime.localBoundsRect = createRectangle();
@@ -188,7 +188,7 @@ function recomputeLocalBoundsRect<SceneKind extends symbol, Traits extends objec
 }
 
 function recomputeWorldBoundsRect<SceneKind extends symbol, Traits extends object>(
-  target: GraphSpatial2DNode<SceneKind, Traits>,
+  target: SceneSpatial2DNode<SceneKind, Traits>,
   runtime: SceneNodeRuntime<SceneKind, Traits> & HasBoundsRectRuntime & HasTransform2DRuntime,
 ) {
   if (runtime.worldBoundsRect === null) runtime.worldBoundsRect = createRectangle();
@@ -197,7 +197,7 @@ function recomputeWorldBoundsRect<SceneKind extends symbol, Traits extends objec
   if (children !== null) {
     for (const child of children) {
       if (!child.enabled) continue;
-      const childWorldBounds = getWorldBoundsRectangle(child as GraphSpatial2DNode<SceneKind, Traits>);
+      const childWorldBounds = getWorldBoundsRectangle(child as SceneSpatial2DNode<SceneKind, Traits>);
       if (childWorldBounds.width !== 0 && childWorldBounds.height !== 0) {
         unionRectangle(runtime.worldBoundsRect, runtime.worldBoundsRect, childWorldBounds);
       }
@@ -208,7 +208,7 @@ function recomputeWorldBoundsRect<SceneKind extends symbol, Traits extends objec
 }
 
 function tryFastRecomputeWorldBoundsRect<SceneKind extends symbol, Traits extends object>(
-  target: GraphSpatial2DNode<SceneKind, Traits>,
+  target: SceneSpatial2DNode<SceneKind, Traits>,
   runtime: HasBoundsRectRuntime & HasTransform2DRuntime,
 ): boolean {
   if (runtime.worldBoundsRect !== null && runtime.worldTransform2D !== null) {

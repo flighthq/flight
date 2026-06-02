@@ -51,7 +51,7 @@ describe('pushWebGLScrollRectangle', () => {
   it('uses the render node scroll rectangle and transform', () => {
     const { state, gl } = makeWebGLState();
     const source = createDisplayObject();
-    source.scrollRect = createRectangle(0, 0, 20, 10);
+    source.scrollRectangle = createRectangle(0, 0, 20, 10);
     const data = getOrCreateDisplayObjectRenderNode(state, source);
     data.transform2D = createMatrix(1, 0, 0, 1, 2, 3);
 

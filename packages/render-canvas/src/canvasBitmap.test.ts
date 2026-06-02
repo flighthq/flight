@@ -57,12 +57,12 @@ describe('drawCanvasBitmap', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it('uses scrollRect region when scrollRect is set', () => {
+  it('uses scrollRectangle region when scrollRectangle is set', () => {
     const state = makeState();
-    enableRenderFeatures(state, RenderFeatures.ScrollRect);
+    enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
     const bitmap = createBitmap();
     bitmap.data.image = makeImageSource();
-    bitmap.scrollRect = createRectangle(10, 20, 32, 32);
+    bitmap.scrollRectangle = createRectangle(10, 20, 32, 32);
     const data = getOrCreateDisplayObjectRenderNode(state, bitmap);
     const spy = vi.spyOn(state.context, 'drawImage');
 
@@ -76,11 +76,11 @@ describe('drawCanvasBitmap', () => {
     expect(args[4]).toBe(32); // sh
   });
 
-  it('ignores scrollRect when scroll rect support is not enabled', () => {
+  it('ignores scrollRectangle when scroll rect support is not enabled', () => {
     const state = makeState();
     const bitmap = createBitmap();
     bitmap.data.image = makeImageSource();
-    bitmap.scrollRect = createRectangle(10, 20, 32, 32);
+    bitmap.scrollRectangle = createRectangle(10, 20, 32, 32);
     const data = getOrCreateDisplayObjectRenderNode(state, bitmap);
     const spy = vi.spyOn(state.context, 'drawImage');
 

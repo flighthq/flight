@@ -61,12 +61,12 @@ describe('updateDisplayObjectBeforeRender', () => {
   });
 
   it('marks how many scroll rects apply to the current object', () => {
-    enableRenderFeatures(state, RenderFeatures.ScrollRect);
-    parent.scrollRect = createRectangle();
-    child.scrollRect = createRectangle();
+    enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
+    parent.scrollRectangle = createRectangle();
+    child.scrollRectangle = createRectangle();
     updateDisplayObjectBeforeRender(state, parent);
-    expect(parentData.scrollRectDepth).toBe(1);
-    expect(childData.scrollRectDepth).toBe(2);
+    expect(parentData.scrollRectangleDepth).toBe(1);
+    expect(childData.scrollRectangleDepth).toBe(2);
   });
 
   it('marks how many masks apply to the current object', () => {
@@ -107,14 +107,14 @@ describe('updateDisplayObjectBeforeRender', () => {
   });
 
   it('resets up the tree properly when siblings are not in a scroll rect', () => {
-    enableRenderFeatures(state, RenderFeatures.ScrollRect);
-    childA.scrollRect = createRectangle();
+    enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
+    childA.scrollRectangle = createRectangle();
     updateDisplayObjectBeforeRender(state, parent2);
-    expect(parent2Data.scrollRectDepth).toBe(0);
-    expect(childAData.scrollRectDepth).toBe(1);
-    expect(childA_childData.scrollRectDepth).toBe(1);
-    expect(childBData.scrollRectDepth).toBe(0);
-    expect(childB_childData.scrollRectDepth).toBe(0);
+    expect(parent2Data.scrollRectangleDepth).toBe(0);
+    expect(childAData.scrollRectangleDepth).toBe(1);
+    expect(childA_childData.scrollRectangleDepth).toBe(1);
+    expect(childBData.scrollRectangleDepth).toBe(0);
+    expect(childB_childData.scrollRectangleDepth).toBe(0);
   });
 
   it('resets up the tree properly when siblings are not in a mask', () => {
@@ -152,10 +152,10 @@ describe('updateDisplayObjectBeforeRender', () => {
 
   it('ignores mask and scroll rect intents when those render features are not enabled', () => {
     parent.mask = createDisplayObject();
-    parent.scrollRect = createRectangle();
+    parent.scrollRectangle = createRectangle();
     updateDisplayObjectBeforeRender(state, parent);
     expect(parentData.maskDepth).toBe(0);
-    expect(parentData.scrollRectDepth).toBe(0);
+    expect(parentData.scrollRectangleDepth).toBe(0);
     expect(getOrCreateDisplayObjectRenderNode(state, parent.mask).isMaskFrameID).toBe(-1);
   });
 });

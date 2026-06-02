@@ -60,12 +60,12 @@ function drawNode(state: WebGLRenderState, current: DisplayObject): void {
 function popObjectEffects(state: WebGLRenderState, data: DisplayObjectRenderTreeNode): void {
   const source = data.source;
   if (source.mask !== null) state.displayObjectMaskHooks?.popMask(state, data);
-  if (source.scrollRect !== null) state.scrollRectHooks?.pop(state);
+  if (source.scrollRectangle !== null) state.scrollRectangleHooks?.pop(state);
 }
 
 function pushObjectEffects(state: WebGLRenderState, data: DisplayObjectRenderTreeNode): void {
   const source = data.source;
-  if (source.scrollRect !== null) state.scrollRectHooks?.push(state, data);
+  if (source.scrollRectangle !== null) state.scrollRectangleHooks?.push(state, data);
   if (source.mask !== null)
     state.displayObjectMaskHooks?.pushMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask));
 }

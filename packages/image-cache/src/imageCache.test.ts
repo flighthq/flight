@@ -59,7 +59,7 @@ describe('setImageCache', () => {
     expect(getImageCache(obj)).toBe(second);
   });
 
-  it('reuses the same ImageCacheResolver across calls', () => {
+  it('reuses the same ImageCacheSceneNodeResolver across calls', () => {
     const obj = makeObj();
     setImageCache(obj, makeResult());
     const r1 = (getSceneNodeRuntime(obj) as SceneNodeRuntime<symbol, object>).resolver;

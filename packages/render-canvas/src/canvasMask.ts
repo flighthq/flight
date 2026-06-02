@@ -3,7 +3,7 @@ import type { CanvasRenderState, DisplayObjectMaskHooks, DisplayObjectRenderTree
 
 import { setCanvasTransform } from './canvasTransform';
 
-export function applyCanvasMask(state: CanvasRenderState, data: DisplayObjectRenderTreeNode): void {
+export function drawCanvasMask(state: CanvasRenderState, data: DisplayObjectRenderTreeNode): void {
   state.displayObjectMaskRendererMap.get(data.source.kind)?.drawMask(state, data);
 }
 
@@ -18,13 +18,13 @@ export function pushCanvasMask(state: CanvasRenderState, data: DisplayObjectRend
   setCanvasTransform(state, state.context, data.transform2D);
 
   state.context.beginPath();
-  applyCanvasMask(state, data);
+  drawCanvasMask(state, data);
   state.context.closePath();
 
   state.context.clip();
 }
 
-export function registerCanvasMaskSupport(state: CanvasRenderState): void {
+export function enableCanvasMaskSupport(state: CanvasRenderState): void {
   setDisplayObjectMaskHooks(state, canvasMaskHooks);
 }
 

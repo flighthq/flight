@@ -4,7 +4,7 @@ import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { applyCanvasMask, popCanvasMask, pushCanvasMask, registerCanvasMaskSupport } from './canvasMask';
+import { drawCanvasMask, popCanvasMask, pushCanvasMask, enableCanvasMaskSupport } from './canvasMask';
 import { createCanvasRenderState } from './canvasRenderState';
 
 function makeState() {
@@ -14,7 +14,7 @@ function makeState() {
   return createCanvasRenderState(canvas);
 }
 
-describe('applyCanvasMask', () => {
+describe('drawCanvasMask', () => {
   it('calls renderer.drawMask when renderer is set', () => {
     const state = makeState();
     const drawMaskFn = vi.fn();
@@ -23,7 +23,7 @@ describe('applyCanvasMask', () => {
     const obj = createDisplayObject();
     const data = getOrCreateDisplayObjectRenderNode(state, obj);
 
-    applyCanvasMask(state, data);
+    drawCanvasMask(state, data);
 
     expect(drawMaskFn).toHaveBeenCalledOnce();
   });
@@ -34,7 +34,7 @@ describe('applyCanvasMask', () => {
     const data = getOrCreateDisplayObjectRenderNode(state, obj);
     data.renderer = null;
 
-    expect(() => applyCanvasMask(state, data)).not.toThrow();
+    expect(() => drawCanvasMask(state, data)).not.toThrow();
   });
 });
 
@@ -82,11 +82,11 @@ describe('pushCanvasMask', () => {
   });
 });
 
-describe('registerCanvasMaskSupport', () => {
+describe('enableCanvasMaskSupport', () => {
   it('sets canvas mask hooks on the render state', () => {
     const state = makeState();
 
-    registerCanvasMaskSupport(state);
+    enableCanvasMaskSupport(state);
 
     expect(state.displayObjectMaskHooks).not.toBeNull();
   });

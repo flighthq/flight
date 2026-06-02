@@ -5,7 +5,7 @@ import { computeBoundsRectangle, getLocalTransformMatrix } from '@flighthq/scene
 import type { CanvasRenderState, DisplayObject, Matrix } from '@flighthq/types';
 
 import { getImageCache, setImageCache } from './imageCache';
-import { markImageCacheCapturing, unmarkImageCacheCapturing } from './imageCacheRenderNodeResolver';
+import { beginImageCacheCapture, endImageCacheCapture } from './imageCacheSceneNodeResolver';
 
 type CaptureData = {
   boundsX: number;
@@ -24,7 +24,7 @@ function getCaptureData(state: CanvasRenderState): CaptureData {
   return data;
 }
 
-export function beginCanvasDisplayObjectImageCache(cacheState: CanvasRenderState, source: DisplayObject): void {
+export function beginDisplayObjectImageCacheCapture(cacheState: CanvasRenderState, source: DisplayObject): void {
   computeBoundsRectangle(_tempBounds, source, source);
 
   const w = Math.ceil(_tempBounds.width);
@@ -47,11 +47,11 @@ export function beginCanvasDisplayObjectImageCache(cacheState: CanvasRenderState
   capture.boundsX = _tempBounds.x;
   capture.boundsY = _tempBounds.y;
 
-  markImageCacheCapturing(cacheState);
+  beginImageCacheCapture(cacheState);
 }
 
-export function endCanvasDisplayObjectImageCache(cacheState: CanvasRenderState, source: DisplayObject): void {
-  unmarkImageCacheCapturing(cacheState);
+export function endDisplayObjectImageCacheCapture(cacheState: CanvasRenderState, source: DisplayObject): void {
+  endImageCacheCapture(cacheState);
 
   const internal = cacheState as CanvasRenderStateInternal;
   const capture = getCaptureData(cacheState);

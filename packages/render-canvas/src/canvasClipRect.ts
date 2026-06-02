@@ -4,7 +4,7 @@ import type {
   DisplayObjectRenderTreeNode,
   Matrix,
   Rectangle,
-  ScrollRectHooks,
+  ScrollRectangleHooks,
 } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
 
@@ -16,7 +16,7 @@ export function popCanvasClipRectangle(state: CanvasRenderState): void {
 
 export function popCanvasScrollRectangle(state: CanvasRenderState): void {
   state.context.restore();
-  state.currentScrollRectDepth--;
+  state.currentScrollRectangleDepth--;
 }
 
 export function pushCanvasClipRectangle(state: CanvasRenderState, rect: Rectangle, transform: Matrix): void {
@@ -30,16 +30,16 @@ export function pushCanvasClipRectangle(state: CanvasRenderState, rect: Rectangl
 }
 
 export function pushCanvasScrollRectangle(state: CanvasRenderState, data: DisplayObjectRenderTreeNode): void {
-  pushCanvasClipRectangle(state, data.source.scrollRect!, data.transform2D);
-  state.currentScrollRectDepth++;
+  pushCanvasClipRectangle(state, data.source.scrollRectangle!, data.transform2D);
+  state.currentScrollRectangleDepth++;
 }
 
-export function registerCanvasScrollRectSupport(state: CanvasRenderState): void {
-  state.scrollRectHooks = canvasScrollRectHooks;
-  enableRenderFeatures(state, RenderFeatures.ScrollRect);
+export function enableCanvasScrollRectangleSupport(state: CanvasRenderState): void {
+  state.scrollRectangleHooks = canvasScrollRectangleHooks;
+  enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
 }
 
-const canvasScrollRectHooks: ScrollRectHooks = {
+const canvasScrollRectangleHooks: ScrollRectangleHooks = {
   pop: (state) => popCanvasClipRectangle(state as CanvasRenderState),
-  push: (state, data) => pushCanvasClipRectangle(state as CanvasRenderState, data.source.scrollRect!, data.transform2D),
+  push: (state, data) => pushCanvasClipRectangle(state as CanvasRenderState, data.source.scrollRectangle!, data.transform2D),
 };

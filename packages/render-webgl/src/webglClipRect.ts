@@ -3,7 +3,7 @@ import type {
   DisplayObjectRenderTreeNode,
   Matrix,
   Rectangle,
-  ScrollRectHooks,
+  ScrollRectangleHooks,
   WebGLRenderState,
 } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
@@ -39,18 +39,18 @@ export function pushWebGLClipRectangle(
 }
 
 export function pushWebGLScrollRectangle(state: WebGLRenderStateInternal, data: DisplayObjectRenderTreeNode): void {
-  pushWebGLClipRectangle(state, data.source.scrollRect!, data.transform2D);
+  pushWebGLClipRectangle(state, data.source.scrollRectangle!, data.transform2D);
 }
 
-export function registerWebGLScrollRectSupport(state: WebGLRenderState): void {
-  state.scrollRectHooks = webglScrollRectHooks;
-  enableRenderFeatures(state, RenderFeatures.ScrollRect);
+export function enableWebGLScrollRectangleSupport(state: WebGLRenderState): void {
+  state.scrollRectangleHooks = webglScrollRectangleHooks;
+  enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
 }
 
-const webglScrollRectHooks: ScrollRectHooks = {
+const webglScrollRectangleHooks: ScrollRectangleHooks = {
   pop: (state) => popWebGLClipRectangle(state as WebGLRenderStateInternal),
   push: (state, data) =>
-    pushWebGLClipRectangle(state as WebGLRenderStateInternal, data.source.scrollRect!, data.transform2D),
+    pushWebGLClipRectangle(state as WebGLRenderStateInternal, data.source.scrollRectangle!, data.transform2D),
 };
 
 function computeScissorRect(

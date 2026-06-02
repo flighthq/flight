@@ -18,7 +18,7 @@ export function createDisplayObjectRenderNode(state: RenderState, source: Displa
   const out = createRenderNode2D(state, source) as DisplayObjectRenderTreeNode;
   out.isMaskFrameID = -1;
   out.maskDepth = 0;
-  out.scrollRectDepth = 0;
+  out.scrollRectangleDepth = 0;
   out.updateChildren = true;
   return out;
 }

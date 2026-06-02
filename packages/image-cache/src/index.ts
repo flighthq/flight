@@ -4,5 +4,5 @@ export * from './domImageCacheRenderer';
 export * from './imageCache';
 export * from './imageCacheKind';
 export * from './imageCachePrimitive';
-export * from './imageCacheRenderNodeResolver';
+export * from './imageCacheSceneNodeResolver';
 export * from './webglImageCacheRenderer';
