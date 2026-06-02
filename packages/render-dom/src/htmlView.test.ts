@@ -1,5 +1,6 @@
-import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { createHTMLView } from '@flighthq/scenegraph-display';
+import { registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+import { createHTMLView } from '@flighthq/scene-display';
 import { HTMLViewKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';

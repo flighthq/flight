@@ -1,7 +1,7 @@
 import { createEntity } from '@flighthq/entity';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
+  DisplayObjectRenderTreeNode,
   DOMRenderState,
   Renderable,
   RendererData,
@@ -19,7 +19,7 @@ function createDOMVideoData(_state: RenderState, _source: Renderable): DOMVideoD
   return createEntity({ element: null });
 }
 
-export function drawDOMVideo(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMVideo(state: DOMRenderState, renderNode: DisplayObjectRenderTreeNode): void {
   const data = renderNode.rendererData as DOMVideoData | null;
   if (data === null) return;
 
@@ -39,7 +39,7 @@ export function drawDOMVideo(state: DOMRenderState, renderNode: DisplayObjectRen
   setDOMRendererElement(state, element);
 }
 
-export function drawDOMVideoMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMVideoMask(state: DOMRenderState, renderNode: DisplayObjectRenderTreeNode): void {
   drawDOMVideo(state, renderNode);
 }
 

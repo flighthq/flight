@@ -1,21 +1,22 @@
-import { createNullRendererData } from '@flighthq/render-core';
-import type { Bitmap, CanvasRenderState, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
+import { createNullRendererData, hasRenderFeatures } from '@flighthq/render-core';
+import type { Bitmap, CanvasRenderState, DisplayObjectRenderer, DisplayObjectRenderTreeNode } from '@flighthq/types';
+import { RenderFeatures } from '@flighthq/types';
 
 import { drawCanvasDisplayObject, drawCanvasDisplayObjectMask } from './canvasDisplayObject';
 import { setCanvasBlendMode } from './canvasMaterials';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasBitmap(state: CanvasRenderState, bitmap: DisplayObjectRenderNode): void {
+export function drawCanvasBitmap(state: CanvasRenderState, bitmap: DisplayObjectRenderTreeNode): void {
   drawCanvasDisplayObject(state, bitmap);
   const source = bitmap.source as Bitmap;
   const imageSource = source.data.image;
   if (imageSource !== null && imageSource.src !== null) {
     const context = state.context;
 
-    setCanvasBlendMode(state, bitmap.blendMode);
+    if (hasRenderFeatures(state, RenderFeatures.BlendMode)) setCanvasBlendMode(state, bitmap.blendMode);
 
     context.globalAlpha = bitmap.alpha;
-    const scrollRect = source.scrollRect;
+    const scrollRect = hasRenderFeatures(state, RenderFeatures.ScrollRect) ? source.scrollRect : null;
 
     setCanvasTransform(state, context, bitmap.transform2D);
 
@@ -45,7 +46,7 @@ export function drawCanvasBitmap(state: CanvasRenderState, bitmap: DisplayObject
   }
 }
 
-export function drawCanvasBitmapMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
+export function drawCanvasBitmapMask(state: CanvasRenderState, data: DisplayObjectRenderTreeNode): void {
   drawCanvasDisplayObjectMask(state, data);
 }
 

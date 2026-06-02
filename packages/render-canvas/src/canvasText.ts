@@ -1,10 +1,10 @@
 import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } from '@flighthq/render-core';
-import { getTextRuntime } from '@flighthq/scenegraph-display';
+import { getTextRuntime } from '@flighthq/scene-display';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
   CanvasRenderState,
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
+  DisplayObjectRenderTreeNode,
   Text,
   TextFormat,
   TextRuntime,
@@ -16,7 +16,7 @@ import { setCanvasTransform } from './canvasTransform';
 
 const LAYOUT_WIDTH = 10000;
 
-export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObjectRenderTreeNode): void {
   drawCanvasDisplayObject(state, renderNode);
 
   const source = renderNode.source as Text;
@@ -67,7 +67,7 @@ export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObje
   }
 }
 
-export function drawCanvasTextMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
+export function drawCanvasTextMask(state: CanvasRenderState, data: DisplayObjectRenderTreeNode): void {
   drawCanvasDisplayObject(state, data);
 }
 

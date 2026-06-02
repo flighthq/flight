@@ -1,5 +1,6 @@
-import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { createVideo } from '@flighthq/scenegraph-display';
+import { registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+import { createVideo } from '@flighthq/scene-display';
 import { VideoKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';

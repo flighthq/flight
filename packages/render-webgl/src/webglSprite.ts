@@ -1,5 +1,5 @@
-import { getOrCreateSpriteRenderNode } from '@flighthq/render-core';
-import { getSpriteNodeRuntime } from '@flighthq/scenegraph-sprite';
+import { getOrCreateSpriteRenderNode } from '@flighthq/render-tree';
+import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
 import type { SpriteNode, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';

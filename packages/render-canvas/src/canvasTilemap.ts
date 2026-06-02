@@ -1,9 +1,9 @@
 import { createNullRendererData } from '@flighthq/render-core';
-import type { CanvasRenderState, SpriteRenderer, SpriteRenderNode, Tilemap } from '@flighthq/types';
+import type { CanvasRenderState, SpriteRenderer, SpriteRenderTreeNode, Tilemap } from '@flighthq/types';
 
 import { setCanvasBlendMode } from './canvasMaterials';
 
-export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: SpriteRenderNode): void {
+export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: SpriteRenderTreeNode): void {
   const source = tilemapNode.source as Tilemap;
   const { tileset, columns, rows, tiles } = source.data;
 

@@ -1,6 +1,6 @@
 import { multiplyMatrix } from '@flighthq/geometry';
 import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
-import type { DisplayObjectRenderNode, ImageCacheResult, WebGLRenderState } from '@flighthq/types';
+import type { DisplayObjectRenderTreeNode, ImageCacheResult, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { bindWebGLTexture, drawWebGLQuad, setWebGLBlendMode, useWebGLProgram } from './webglDraw';
@@ -8,7 +8,7 @@ import { setWebGLAttribs, setWebGLBaseUniforms, setWebGLMatrixFromTransform } fr
 
 export function drawWebGLImageCacheResult(
   state: WebGLRenderState,
-  renderNode: DisplayObjectRenderNode,
+  renderNode: DisplayObjectRenderTreeNode,
   cache: ImageCacheResult,
 ): void {
   const cacheSource = cache.source;

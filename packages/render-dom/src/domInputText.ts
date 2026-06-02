@@ -1,5 +1,5 @@
 import { rgbaToHexString } from '@flighthq/render-core';
-import { getInputTextRuntime } from '@flighthq/scenegraph-display';
+import { getInputTextRuntime } from '@flighthq/scene-display';
 import {
   getInputTextCaretRectangle,
   getInputTextSelectionBeginIndex,
@@ -9,7 +9,7 @@ import {
 import { getRichTextScrollYOffset } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
+  DisplayObjectRenderTreeNode,
   DOMRenderState,
   InputText,
   InputTextRuntime,
@@ -25,7 +25,7 @@ interface DOMInputTextData extends RendererData {
   div: HTMLDivElement | null;
 }
 
-export function drawDOMInputText(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMInputText(state: DOMRenderState, renderNode: DisplayObjectRenderTreeNode): void {
   if (!_keyframesInjected) {
     injectCaretBlinkKeyframes();
     _keyframesInjected = true;

@@ -1,8 +1,8 @@
 import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
-import { getLocalBoundsRectangle } from '@flighthq/scenegraph-core';
+import { getLocalBoundsRectangle } from '@flighthq/scene-core';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
+  DisplayObjectRenderTreeNode,
   Renderable,
   RendererData,
   RenderState,
@@ -32,7 +32,7 @@ function createWebGLShapeData(state: RenderState, _source: Renderable): Renderer
   return { canvas, ctx, texture, lastVersion: -1, lastW: 0, lastH: 0 } as unknown as RendererData;
 }
 
-export function drawWebGLShape(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawWebGLShape(state: RenderState, renderNode: DisplayObjectRenderTreeNode): void {
   const internal = state as WebGLRenderStateInternal;
   const source = renderNode.source as Shape;
   const { commands, version } = source.data;
@@ -90,7 +90,7 @@ export function drawWebGLShape(state: RenderState, renderNode: DisplayObjectRend
   drawWebGLQuad(internal, 0, 0, w, h, 0, 0, 1, 1);
 }
 
-export function drawWebGLShapeMask(state: RenderState, data: DisplayObjectRenderNode): void {
+export function drawWebGLShapeMask(state: RenderState, data: DisplayObjectRenderTreeNode): void {
   drawWebGLShape(state, data);
 }
 

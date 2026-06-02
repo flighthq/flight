@@ -68,10 +68,11 @@
   },
   "dependencies": {
     "@flighthq/assets": "*",
+    "@flighthq/render-tree": "*",
     "@flighthq/geometry": "*",
     "@flighthq/render-core": "*",
-    "@flighthq/scenegraph-core": "*",
-    "@flighthq/scenegraph-display": "*",
+    "@flighthq/scene-core": "*",
+    "@flighthq/scene-display": "*",
     "@flighthq/text-input": "*",
     "@flighthq/text-layout": "*",
     "@flighthq/types": "*"

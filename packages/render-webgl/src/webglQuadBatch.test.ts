@@ -1,4 +1,4 @@
-import type { SpriteRenderNode } from '@flighthq/types';
+import type { SpriteRenderTreeNode } from '@flighthq/types';
 
 import { defaultWebGLQuadBatchRenderer, drawWebGLQuadBatch } from './webglQuadBatch';
 import { makeWebGLState } from './webglTestHelper';
@@ -11,7 +11,7 @@ function makeAtlas() {
   };
 }
 
-function makeQuadBatchNode(data: Record<string, unknown> = {}): SpriteRenderNode {
+function makeQuadBatchNode(data: Record<string, unknown> = {}): SpriteRenderTreeNode {
   return {
     source: {
       data: {
@@ -26,7 +26,7 @@ function makeQuadBatchNode(data: Record<string, unknown> = {}): SpriteRenderNode
     blendMode: 0,
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
-  } as unknown as SpriteRenderNode;
+  } as unknown as SpriteRenderTreeNode;
 }
 
 describe('defaultWebGLQuadBatchRenderer', () => {

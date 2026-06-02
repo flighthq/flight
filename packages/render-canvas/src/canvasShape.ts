@@ -3,7 +3,7 @@ import type {
   CanvasRenderState,
   CanvasShapeDrawState,
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
+  DisplayObjectRenderTreeNode,
   Shape,
 } from '@flighthq/types';
 
@@ -12,7 +12,7 @@ import { setCanvasBlendMode } from './canvasMaterials';
 import { getCanvasShapeCommand } from './canvasShapeRegistry';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasShape(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawCanvasShape(state: CanvasRenderState, renderNode: DisplayObjectRenderTreeNode): void {
   drawCanvasDisplayObject(state, renderNode);
 
   const source = renderNode.source as Shape;

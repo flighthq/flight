@@ -1,5 +1,6 @@
-import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { createInputText, getInputTextRuntime } from '@flighthq/scenegraph-display';
+import { registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+import { createInputText, getInputTextRuntime } from '@flighthq/scene-display';
 import { setInputTextSelection } from '@flighthq/text-input';
 import { InputTextKind } from '@flighthq/types';
 

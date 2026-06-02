@@ -1,7 +1,7 @@
 import { multiplyMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry';
 import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
 import { createNullRendererData } from '@flighthq/render-core';
-import type { QuadBatch, RenderState, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
+import type { QuadBatch, RenderState, SpriteRenderer, SpriteRenderTreeNode } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import {
@@ -13,7 +13,7 @@ import {
 } from './webglDraw';
 import { setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
 
-export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNode): void {
+export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderTreeNode): void {
   const internal = state as WebGLRenderStateInternal;
   const source = quadBatch.source as QuadBatch;
   const data = source.data;

@@ -10,11 +10,12 @@
   },
   "references": [
     { "path": "../entity" },
+    { "path": "../render-tree" },
     { "path": "../geometry" },
     { "path": "../render-canvas" },
     { "path": "../render-core" },
-    { "path": "../scenegraph-core" },
-    { "path": "../scenegraph-display" },
+    { "path": "../scene-core" },
+    { "path": "../scene-display" },
     { "path": "../text-input" },
     { "path": "../text-layout" },
     { "path": "../types" }

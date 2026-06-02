@@ -1,6 +1,8 @@
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-core';
-import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
-import type { DisplayObject, DisplayObjectRenderNode, DOMRenderState } from '@flighthq/types';
+import { hasRenderFeatures } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+import { getDisplayObjectRuntime } from '@flighthq/scene-display';
+import type { DisplayObject, DisplayObjectRenderTreeNode, DOMRenderState } from '@flighthq/types';
+import { RenderFeatures } from '@flighthq/types';
 
 import { applyDOMClipRectangles, type DOMStageRectangle, pushDOMScrollRectangle } from './domClipRect';
 import { pushDOMMaskRectangle } from './domMask';
@@ -60,14 +62,18 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
   swapDOMOrderLists(internal, newLength);
 }
 
-function pushDOMEffects(state: DOMRenderState, rectangles: DOMStageRectangle[], data: DisplayObjectRenderNode): number {
+function pushDOMEffects(
+  state: DOMRenderState,
+  rectangles: DOMStageRectangle[],
+  data: DisplayObjectRenderTreeNode,
+): number {
   let pushed = 0;
   const source = data.source;
-  if (source.scrollRect !== null) {
+  if (hasRenderFeatures(state, RenderFeatures.ScrollRect) && source.scrollRect !== null) {
     pushDOMScrollRectangle(rectangles, data);
     pushed++;
   }
-  if (source.mask !== null) {
+  if (hasRenderFeatures(state, RenderFeatures.Masks) && source.mask !== null) {
     pushDOMMaskRectangle(rectangles, getOrCreateDisplayObjectRenderNode(state, source.mask));
     pushed++;
   }

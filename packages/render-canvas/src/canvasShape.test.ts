@@ -1,11 +1,12 @@
-import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
+import { registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeLineStyle,
   appendShapeRectangle,
   createShape,
-} from '@flighthq/scenegraph-display';
+} from '@flighthq/scene-display';
 import { ShapeKind } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';

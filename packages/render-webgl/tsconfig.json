@@ -9,11 +9,12 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../render-tree" },
     { "path": "../geometry" },
     { "path": "../render-canvas" },
     { "path": "../render-core" },
-    { "path": "../scenegraph-display" },
-    { "path": "../scenegraph-sprite" },
+    { "path": "../scene-display" },
+    { "path": "../scene-sprite" },
     { "path": "../text-input" },
     { "path": "../text-layout" },
     { "path": "../types" }

@@ -1,7 +1,7 @@
 import { createMatrix, createRectangle } from '@flighthq/geometry';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-core';
-import { createDisplayObject } from '@flighthq/scenegraph-display';
-import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, Matrix, Rectangle } from '@flighthq/types';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+import { createDisplayObject } from '@flighthq/scene-display';
+import type { CanvasRenderState, DisplayObject, DisplayObjectRenderTreeNode, Matrix, Rectangle } from '@flighthq/types';
 
 import {
   popCanvasClipRectangle,
@@ -17,7 +17,7 @@ describe('Clip and Scroll Rect Functions', () => {
   let rect: Rectangle;
   let transform2D: Matrix;
   let source: DisplayObject;
-  let data: DisplayObjectRenderNode;
+  let data: DisplayObjectRenderTreeNode;
 
   beforeEach(() => {
     canvas = document.createElement('canvas');

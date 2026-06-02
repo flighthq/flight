@@ -1,15 +1,23 @@
-import { createNullRendererData, getOrCreateDisplayObjectRenderNode } from '@flighthq/render-core';
-import { getDisplayObjectRuntime } from '@flighthq/scenegraph-display';
-import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
+import { createNullRendererData } from '@flighthq/render-core';
+import { hasRenderFeatures } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+import { getDisplayObjectRuntime } from '@flighthq/scene-display';
+import type {
+  CanvasRenderState,
+  DisplayObject,
+  DisplayObjectRenderer,
+  DisplayObjectRenderTreeNode,
+} from '@flighthq/types';
+import { RenderFeatures } from '@flighthq/types';
 
 import { popCanvasClipRectangle, pushCanvasClipRectangle } from './canvasClipRect';
 import { applyCanvasMask, popCanvasMask, pushCanvasMask } from './canvasMask';
 
-export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderNode: DisplayObjectRenderNode): void {
+export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderNode: DisplayObjectRenderTreeNode): void {
   // Plain display objects have no visual geometry of their own.
 }
 
-export function drawCanvasDisplayObjectMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
+export function drawCanvasDisplayObjectMask(state: CanvasRenderState, data: DisplayObjectRenderTreeNode): void {
   const children = getDisplayObjectRuntime(data.source).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
@@ -49,7 +57,7 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
   }
 }
 
-function drawObject(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
+function drawObject(state: CanvasRenderState, data: DisplayObjectRenderTreeNode): void {
   if (data.renderer === null) return;
   pushMaskObject(state, data);
   data.renderer.draw(state, data);
@@ -58,23 +66,25 @@ function drawObject(state: CanvasRenderState, data: DisplayObjectRenderNode): vo
 
 function popMaskObject(
   state: CanvasRenderState,
-  data: DisplayObjectRenderNode,
+  data: DisplayObjectRenderTreeNode,
   handleScrollRect: boolean = true,
 ): void {
   const source = data.source;
-  if (source.mask !== null) popCanvasMask(state);
-  if (handleScrollRect && source.scrollRect !== null) popCanvasClipRectangle(state);
+  if (hasRenderFeatures(state, RenderFeatures.Masks) && source.mask !== null) popCanvasMask(state);
+  if (handleScrollRect && hasRenderFeatures(state, RenderFeatures.ScrollRect) && source.scrollRect !== null)
+    popCanvasClipRectangle(state);
 }
 
 function pushMaskObject(
   state: CanvasRenderState,
-  data: DisplayObjectRenderNode,
+  data: DisplayObjectRenderTreeNode,
   handleScrollRect: boolean = true,
 ): void {
   const source = data.source;
-  if (handleScrollRect && source.scrollRect != null)
+  if (handleScrollRect && hasRenderFeatures(state, RenderFeatures.ScrollRect) && source.scrollRect != null)
     pushCanvasClipRectangle(state, source.scrollRect, data.transform2D);
-  if (source.mask !== null) pushCanvasMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask));
+  if (hasRenderFeatures(state, RenderFeatures.Masks) && source.mask !== null)
+    pushCanvasMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask));
 }
 
 export const defaultCanvasDisplayObjectRenderer: DisplayObjectRenderer = {

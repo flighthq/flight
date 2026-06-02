@@ -1,4 +1,4 @@
-import { appendShapeRectangle, createShape } from '@flighthq/scenegraph-display';
+import { appendShapeRectangle, createShape } from '@flighthq/scene-display';
 
 import { buildScale9Mapper } from './canvasScale9Mapper';
 
@@ -29,7 +29,7 @@ describe('buildScale9Mapper', () => {
     appendShapeRectangle(shape, 0, 0, 100, 100);
     const mapper = buildScale9Mapper(shape.data.commands, makeGrid(10, 10, 80, 80), 2, 2)!;
     expect(mapper).not.toBeNull();
-    // x=5 is in the start (corner) region — should not move
+    // x=5 is in the start (corner) region â€” should not move
     expect(mapper.mapX(5)).toBeCloseTo(5);
     expect(mapper.mapY(5)).toBeCloseTo(5);
   });

@@ -1,4 +1,4 @@
-import type { SpriteRenderNode } from '@flighthq/types';
+import type { SpriteRenderTreeNode } from '@flighthq/types';
 
 import { makeWebGLState } from './webglTestHelper';
 import { defaultWebGLTilemapRenderer, drawWebGLTilemap } from './webglTilemap';
@@ -19,7 +19,7 @@ function makeTileset(atlasOverride?: unknown) {
   };
 }
 
-function makeTilemapNode(data: Record<string, unknown> = {}): SpriteRenderNode {
+function makeTilemapNode(data: Record<string, unknown> = {}): SpriteRenderTreeNode {
   return {
     source: {
       data: {
@@ -33,7 +33,7 @@ function makeTilemapNode(data: Record<string, unknown> = {}): SpriteRenderNode {
     blendMode: 0,
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
-  } as unknown as SpriteRenderNode;
+  } as unknown as SpriteRenderTreeNode;
 }
 
 describe('defaultWebGLTilemapRenderer', () => {

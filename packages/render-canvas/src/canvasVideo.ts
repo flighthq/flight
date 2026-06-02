@@ -1,11 +1,11 @@
 import { createNullRendererData } from '@flighthq/render-core';
-import type { CanvasRenderState, DisplayObjectRenderer, DisplayObjectRenderNode, Video } from '@flighthq/types';
+import type { CanvasRenderState, DisplayObjectRenderer, DisplayObjectRenderTreeNode, Video } from '@flighthq/types';
 
 import { drawCanvasDisplayObject, drawCanvasDisplayObjectMask } from './canvasDisplayObject';
 import { setCanvasBlendMode } from './canvasMaterials';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasVideo(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawCanvasVideo(state: CanvasRenderState, renderNode: DisplayObjectRenderTreeNode): void {
   drawCanvasDisplayObject(state, renderNode);
   const source = renderNode.source as Video;
   const element = source.data.source?.element;
@@ -24,7 +24,7 @@ export function drawCanvasVideo(state: CanvasRenderState, renderNode: DisplayObj
   }
 }
 
-export function drawCanvasVideoMask(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawCanvasVideoMask(state: CanvasRenderState, renderNode: DisplayObjectRenderTreeNode): void {
   drawCanvasDisplayObjectMask(state, renderNode);
 }
 

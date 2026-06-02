@@ -1,6 +1,6 @@
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-core';
-import { addGraphChild } from '@flighthq/scenegraph-core';
-import { createDisplayObject } from '@flighthq/scenegraph-display';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+import { addSceneChild } from '@flighthq/scene-core';
+import { createDisplayObject } from '@flighthq/scene-display';
 
 import { applyWebGLMask, popWebGLMask, pushWebGLMask } from './webglMask';
 import { makeWebGLState } from './webglTestHelper';
@@ -31,7 +31,7 @@ describe('applyWebGLMask', () => {
     const parent = createDisplayObject();
     const child = createDisplayObject();
     const renderer = makeRenderer();
-    addGraphChild(parent, child);
+    addSceneChild(parent, child);
     const parentData = getOrCreateDisplayObjectRenderNode(state, parent);
     const childData = getOrCreateDisplayObjectRenderNode(state, child);
     childData.renderer = renderer;

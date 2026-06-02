@@ -1,6 +1,7 @@
 import { createImageSource, createImageSourceFromCanvas } from '@flighthq/assets';
-import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render-core';
-import { createBitmap } from '@flighthq/scenegraph-display';
+import { registerRenderer } from '@flighthq/render-core';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+import { createBitmap } from '@flighthq/scene-display';
 import { BitmapKind } from '@flighthq/types';
 
 import { defaultDOMBitmapRenderer, drawDOMBitmap, drawDOMBitmapMask } from './domBitmap';
