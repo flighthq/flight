@@ -1,5 +1,5 @@
 import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
-import { getLocalBoundsRectangle } from '@flighthq/scene-core';
+import { getLocalBoundsRectangle } from '@flighthq/scene';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderTreeNode,
@@ -97,5 +97,4 @@ export function drawWebGLShapeMask(state: RenderState, data: DisplayObjectRender
 export const defaultWebGLShapeRenderer: DisplayObjectRenderer = {
   createData: createWebGLShapeData,
   draw: drawWebGLShape,
-  drawMask: drawWebGLShapeMask,
 };

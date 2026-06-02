@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render-core';
+import { createNullRendererData } from '@flighthq/render';
 import type { Bitmap, DisplayObjectRenderer, DisplayObjectRenderTreeNode, RenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
@@ -26,5 +26,4 @@ export function drawWebGLBitmapMask(_state: RenderState, _data: DisplayObjectRen
 export const defaultWebGLBitmapRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
   draw: drawWebGLBitmap,
-  drawMask: drawWebGLBitmapMask,
 };

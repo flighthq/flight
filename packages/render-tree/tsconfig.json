@@ -10,7 +10,7 @@
   },
   "references": [
     { "path": "../entity" },
-    { "path": "../render-core" },
+    { "path": "../render" },
     { "path": "../geometry" },
     { "path": "../materials" },
     { "path": "../scene-display" },

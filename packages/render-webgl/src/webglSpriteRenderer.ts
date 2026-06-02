@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render-core';
+import { createNullRendererData } from '@flighthq/render';
 import type { RenderState, Sprite, SpriteRenderer, SpriteRenderTreeNode } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';

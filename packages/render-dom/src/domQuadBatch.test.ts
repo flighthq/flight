@@ -1,5 +1,5 @@
 import { addTextureAtlasRegion, createImageSourceFromCanvas, createTextureAtlas } from '@flighthq/assets';
-import { registerRenderer } from '@flighthq/render-core';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateSpriteRenderNode } from '@flighthq/render-tree';
 import { createQuadBatch, resizeQuadBatch } from '@flighthq/scene-sprite';
 import { QuadBatchKind } from '@flighthq/types';

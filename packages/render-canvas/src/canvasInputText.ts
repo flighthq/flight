@@ -1,4 +1,4 @@
-import { createNullRendererData, rgbaToHexString } from '@flighthq/render-core';
+import { createNullRendererData, rgbaToHexString } from '@flighthq/render';
 import { getInputTextRuntime } from '@flighthq/scene-display';
 import {
   getInputTextCaretRectangle,
@@ -9,6 +9,7 @@ import {
 import { getRichTextFieldHeight, getRichTextFieldWidth, getRichTextScrollYOffset } from '@flighthq/text-layout';
 import type {
   CanvasRenderState,
+  DisplayObjectMaskRenderer,
   DisplayObjectRenderer,
   DisplayObjectRenderTreeNode,
   InputText,
@@ -69,7 +70,14 @@ export function drawCanvasInputText(state: CanvasRenderState, renderNode: Displa
 export const defaultCanvasInputTextRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
   draw: drawCanvasInputText,
-  drawMask: drawCanvasRichTextMask,
+};
+
+function drawCanvasInputTextMask(state: CanvasRenderState, renderNode: DisplayObjectRenderTreeNode): void {
+  drawCanvasRichTextMask(state, renderNode);
+}
+
+export const defaultCanvasInputTextMaskRenderer: DisplayObjectMaskRenderer = {
+  drawMask: drawCanvasInputTextMask,
 };
 
 const CARET_BLINK_MS = 530;

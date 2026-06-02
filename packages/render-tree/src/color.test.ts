@@ -1,6 +1,6 @@
 import { createColorTransform } from '@flighthq/materials';
-import { createRenderState, rgbaToHexString, setRenderStateBackgroundColor } from '@flighthq/render-core';
-import { addSceneChild } from '@flighthq/scene-core';
+import { createRenderState, rgbaToHexString, setRenderStateBackgroundColor } from '@flighthq/render';
+import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import type { DisplayObject, DisplayObjectRenderTreeNode, RenderState } from '@flighthq/types';
 

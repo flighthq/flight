@@ -1,4 +1,4 @@
-import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } from '@flighthq/render-core';
+import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } from '@flighthq/render';
 import { getRichTextRuntime } from '@flighthq/scene-display';
 import {
   computeRichTextContent,
@@ -153,5 +153,4 @@ const _richTextSelectionRects: InputTextSelectionRectangle[] = [];
 export const defaultCanvasRichTextRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
   draw: drawCanvasRichText,
-  drawMask: drawCanvasRichTextMask,
 };

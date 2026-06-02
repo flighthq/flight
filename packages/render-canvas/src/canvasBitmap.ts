@@ -1,4 +1,4 @@
-import { createNullRendererData, hasRenderFeatures } from '@flighthq/render-core';
+import { createNullRendererData, hasRenderFeatures } from '@flighthq/render';
 import type { Bitmap, CanvasRenderState, DisplayObjectRenderer, DisplayObjectRenderTreeNode } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
 
@@ -53,5 +53,4 @@ export function drawCanvasBitmapMask(state: CanvasRenderState, data: DisplayObje
 export const defaultCanvasBitmapRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
   draw: drawCanvasBitmap,
-  drawMask: drawCanvasBitmapMask,
 };

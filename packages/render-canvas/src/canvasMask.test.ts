@@ -1,11 +1,10 @@
 import { createMatrix } from '@flighthq/geometry';
-import { registerRenderer } from '@flighthq/render-core';
+import { registerDisplayObjectMaskRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import { createDisplayObject } from '@flighthq/scene-display';
-import type { DisplayObjectRenderer } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { applyCanvasMask, popCanvasMask, pushCanvasMask } from './canvasMask';
+import { applyCanvasMask, popCanvasMask, pushCanvasMask, registerCanvasMaskSupport } from './canvasMask';
 import { createCanvasRenderState } from './canvasRenderState';
 
 function makeState() {
@@ -19,12 +18,7 @@ describe('applyCanvasMask', () => {
   it('calls renderer.drawMask when renderer is set', () => {
     const state = makeState();
     const drawMaskFn = vi.fn();
-    const renderer: DisplayObjectRenderer = {
-      createData: () => null,
-      draw: vi.fn(),
-      drawMask: drawMaskFn,
-    };
-    registerRenderer(state, DisplayObjectKind, renderer);
+    registerDisplayObjectMaskRenderer(state, DisplayObjectKind, { drawMask: drawMaskFn });
 
     const obj = createDisplayObject();
     const data = getOrCreateDisplayObjectRenderNode(state, obj);
@@ -49,7 +43,7 @@ describe('popCanvasMask', () => {
     const state = makeState();
     const spy = vi.spyOn(state.context, 'restore');
 
-    popCanvasMask(state);
+    popCanvasMask(state, {} as any);
 
     expect(spy).toHaveBeenCalledOnce();
   });
@@ -76,12 +70,7 @@ describe('pushCanvasMask', () => {
   it('calls drawMask on the renderer when present', () => {
     const state = makeState();
     const drawMaskFn = vi.fn();
-    const renderer: DisplayObjectRenderer = {
-      createData: () => null,
-      draw: vi.fn(),
-      drawMask: drawMaskFn,
-    };
-    registerRenderer(state, DisplayObjectKind, renderer);
+    registerDisplayObjectMaskRenderer(state, DisplayObjectKind, { drawMask: drawMaskFn });
 
     const obj = createDisplayObject();
     const data = getOrCreateDisplayObjectRenderNode(state, obj);
@@ -90,5 +79,15 @@ describe('pushCanvasMask', () => {
     pushCanvasMask(state, data);
 
     expect(drawMaskFn).toHaveBeenCalledOnce();
+  });
+});
+
+describe('registerCanvasMaskSupport', () => {
+  it('sets canvas mask hooks on the render state', () => {
+    const state = makeState();
+
+    registerCanvasMaskSupport(state);
+
+    expect(state.displayObjectMaskHooks).not.toBeNull();
   });
 });

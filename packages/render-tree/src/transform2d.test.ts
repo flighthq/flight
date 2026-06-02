@@ -1,6 +1,6 @@
 import { createMatrix, createRectangle } from '@flighthq/geometry';
-import { createRenderState, enableRenderFeatures } from '@flighthq/render-core';
-import { addSceneChild, getWorldTransformMatrix, invalidateLocalTransform } from '@flighthq/scene-core';
+import { createRenderState, enableRenderFeatures } from '@flighthq/render';
+import { addSceneChild, getWorldTransformMatrix, invalidateLocalTransform } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import type { DisplayObject, DisplayObjectRenderTreeNode, RenderState } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';

@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity';
-import { computeTextFormatFontString, rgbaToHexString } from '@flighthq/render-core';
+import { computeTextFormatFontString, rgbaToHexString } from '@flighthq/render';
 import { getRichTextRuntime } from '@flighthq/scene-display';
 import {
   computeRichTextContent,
@@ -217,5 +217,4 @@ export function drawDOMRichTextMask(state: DOMRenderState, renderNode: DisplayOb
 export const defaultDOMRichTextRenderer: DisplayObjectRenderer = {
   createData: createDOMRichTextData,
   draw: drawDOMRichText,
-  drawMask: drawDOMRichTextMask,
 };

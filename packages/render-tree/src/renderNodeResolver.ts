@@ -1,4 +1,4 @@
-import { getSceneNodeRuntime } from '@flighthq/scene-core';
+import { getSceneNodeRuntime } from '@flighthq/scene';
 import type { DisplayObject, DisplayObjectRenderTreeNode, RenderState } from '@flighthq/types';
 
 import type { RenderTreeStateInternal } from './internal';

@@ -1,5 +1,5 @@
-import { hasRenderFeatures } from '@flighthq/render-core';
-import { getSceneParent } from '@flighthq/scene-core';
+import { hasRenderFeatures } from '@flighthq/render';
+import { getSceneParent } from '@flighthq/scene';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
 import type {

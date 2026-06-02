@@ -1,7 +1,7 @@
 import { createImageSourceFromCanvas } from '@flighthq/assets';
 import { createMatrix, createRectangle, identityMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry';
 import type { CanvasRenderStateInternal } from '@flighthq/render-canvas';
-import { computeBoundsRectangle, getLocalTransformMatrix } from '@flighthq/scene-core';
+import { computeBoundsRectangle, getLocalTransformMatrix } from '@flighthq/scene';
 import type { CanvasRenderState, DisplayObject, Matrix } from '@flighthq/types';
 
 import { getImageCache, setImageCache } from './imageCache';

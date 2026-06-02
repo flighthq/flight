@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry';
 import { createCanvasRenderState, renderCanvasDisplayObject } from '@flighthq/render-canvas';
-import { createRenderState } from '@flighthq/render-core';
+import { createRenderState } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render-tree';
 import { createDisplayObject } from '@flighthq/scene-display';
 
@@ -23,7 +23,7 @@ function makeCanvasState() {
 }
 
 function makeRenderer() {
-  return { createData: () => null, draw: vi.fn(), drawMask: vi.fn() };
+  return { createData: () => null, draw: vi.fn() };
 }
 
 function makeImageCache() {
@@ -47,7 +47,7 @@ describe('createImageCacheResolver', () => {
 describe('ImageCacheResolver via setImageCache', () => {
   it('resolves active caches to an image cache presentation primitive', () => {
     const state = createRenderState();
-    const renderer = { createData: vi.fn(() => null), draw: vi.fn(), drawMask: vi.fn() };
+    const renderer = { createData: vi.fn(() => null), draw: vi.fn() };
     registerImageCacheRenderer(state, renderer);
 
     const obj = createDisplayObject();

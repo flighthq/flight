@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render-core';
+import { createNullRendererData } from '@flighthq/render';
 import type { DisplayObjectRenderer, DisplayObjectRenderTreeNode, RenderState, Video } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
@@ -43,5 +43,4 @@ export function drawWebGLVideoMask(_state: RenderState, _renderNode: DisplayObje
 export const defaultWebGLVideoRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
   draw: drawWebGLVideo,
-  drawMask: drawWebGLVideoMask,
 };

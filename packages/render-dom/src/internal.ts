@@ -1,4 +1,12 @@
-import type { DOMRenderState, RenderTreeNode2D } from '@flighthq/types';
+import type { DisplayObjectRenderTreeNode, DOMRenderState, RenderTreeNode2D } from '@flighthq/types';
+
+import type { DOMStageRectangle } from './domClipRect';
+
+export interface DOMClipHooks {
+  apply(state: DOMRenderState, data: DisplayObjectRenderTreeNode): void;
+  pop(state: DOMRenderState, pushed: number): void;
+  push(state: DOMRenderState, data: DisplayObjectRenderTreeNode): number;
+}
 
 export type DOMRenderStateInternal = Omit<DOMRenderState, 'element'> & {
   element: HTMLElement;
@@ -12,4 +20,8 @@ export type DOMRenderStateInternal = Omit<DOMRenderState, 'element'> & {
   domOrderList: RenderTreeNode2D[];
   domOrderLength: number;
   domNextOrderList: RenderTreeNode2D[];
+  // Clip hooks: set when registerDOMScrollRectSupport or registerDOMMaskSupport is called.
+  domClipHooks: DOMClipHooks | null;
+  // Clip rectangle stack shared between scroll rect and mask clip effects.
+  domClipStack: DOMStageRectangle[];
 };

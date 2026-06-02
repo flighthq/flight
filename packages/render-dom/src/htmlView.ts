@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render-core';
+import { createNullRendererData } from '@flighthq/render';
 import type { DisplayObjectRenderer, DisplayObjectRenderTreeNode, DOMRenderState, HTMLView } from '@flighthq/types';
 
 import { setDOMBlendMode } from './domMaterials';
@@ -35,5 +35,4 @@ export function drawHTMLViewMask(_state: DOMRenderState, _renderNode: DisplayObj
 export const defaultHTMLViewRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
   draw: drawHTMLView,
-  drawMask: drawHTMLViewMask,
 };

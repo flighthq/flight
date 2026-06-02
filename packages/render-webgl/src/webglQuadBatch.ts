@@ -1,6 +1,6 @@
 import { multiplyMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry';
 import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
-import { createNullRendererData } from '@flighthq/render-core';
+import { createNullRendererData } from '@flighthq/render';
 import type { QuadBatch, RenderState, SpriteRenderer, SpriteRenderTreeNode } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';

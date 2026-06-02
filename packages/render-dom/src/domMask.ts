@@ -1,7 +1,8 @@
-import { getLocalBoundsRectangle } from '@flighthq/scene-core';
-import type { DisplayObjectRenderTreeNode } from '@flighthq/types';
+import { setDisplayObjectMaskHooks } from '@flighthq/render';
+import { getLocalBoundsRectangle } from '@flighthq/scene';
+import type { DisplayObjectMaskHooks, DisplayObjectRenderTreeNode, DOMRenderState, RenderState } from '@flighthq/types';
 
-import { createDOMStageRectangle, type DOMStageRectangle } from './domClipRect';
+import { createDOMStageRectangle, type DOMStageRectangle, setDOMClipHooks } from './domClipRect';
 
 export function pushDOMMaskRectangle(rectangles: DOMStageRectangle[], data: DisplayObjectRenderTreeNode): void {
   const bounds = getLocalBoundsRectangle(data.source);
@@ -12,3 +13,19 @@ export function pushDOMMaskRectangle(rectangles: DOMStageRectangle[], data: Disp
 
   rectangles.push(createDOMStageRectangle(bounds, data.transform2D));
 }
+
+export function registerDOMMaskSupport(state: DOMRenderState): void {
+  setDisplayObjectMaskHooks(state, domMaskHooks);
+  setDOMClipHooks(state);
+}
+
+function popDOMMask(_state: RenderState, _data: DisplayObjectRenderTreeNode, _context?: unknown): void {}
+
+function pushDOMMask(_state: RenderState, data: DisplayObjectRenderTreeNode, context?: unknown): void {
+  pushDOMMaskRectangle(context as DOMStageRectangle[], data);
+}
+
+const domMaskHooks: DisplayObjectMaskHooks = {
+  popMask: popDOMMask,
+  pushMask: pushDOMMask,
+};

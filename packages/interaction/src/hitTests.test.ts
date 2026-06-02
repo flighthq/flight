@@ -1,5 +1,5 @@
 import { setRectangle } from '@flighthq/geometry';
-import { addSceneChild, getLocalBoundsRectangle, invalidateLocalTransform } from '@flighthq/scene-core';
+import { addSceneChild, getLocalBoundsRectangle, invalidateLocalTransform } from '@flighthq/scene';
 import { createDisplayObject, createDisplayObjectGeneric, getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type { DisplayObject, DisplayObjectRuntime } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';

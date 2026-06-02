@@ -1,4 +1,4 @@
-import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } from '@flighthq/render-core';
+import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } from '@flighthq/render';
 import { getTextRuntime } from '@flighthq/scene-display';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
@@ -111,5 +111,4 @@ export function drawWebGLTextMask(state: RenderState, data: DisplayObjectRenderT
 export const defaultWebGLTextRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
   draw: drawWebGLText,
-  drawMask: drawWebGLTextMask,
 };

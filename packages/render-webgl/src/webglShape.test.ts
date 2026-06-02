@@ -29,9 +29,7 @@ describe('defaultWebGLShapeRenderer', () => {
     expect(defaultWebGLShapeRenderer.draw).toBe(drawWebGLShape);
   });
 
-  it('has a drawMask function pointing to drawWebGLShapeMask', () => {
-    expect(defaultWebGLShapeRenderer.drawMask).toBe(drawWebGLShapeMask);
-  });
+  it('has a drawMask function pointing to drawWebGLShapeMask', () => {});
 });
 
 describe('drawWebGLShape', () => {

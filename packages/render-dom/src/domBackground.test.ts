@@ -1,4 +1,4 @@
-import { setRenderStateBackgroundColor } from '@flighthq/render-core';
+import { setRenderStateBackgroundColor } from '@flighthq/render';
 
 import { renderDOMBackground } from './domBackground';
 import { createDOMRenderState } from './domRenderState';

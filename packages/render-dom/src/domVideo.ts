@@ -46,5 +46,4 @@ export function drawDOMVideoMask(state: DOMRenderState, renderNode: DisplayObjec
 export const defaultDOMVideoRenderer: DisplayObjectRenderer = {
   createData: createDOMVideoData,
   draw: drawDOMVideo,
-  drawMask: drawDOMVideoMask,
 };

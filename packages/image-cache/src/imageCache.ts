@@ -1,4 +1,4 @@
-import { getSceneNodeRuntime } from '@flighthq/scene-core';
+import { getSceneNodeRuntime } from '@flighthq/scene';
 import type { ImageCacheResult, SceneNode, SceneNodeRuntime } from '@flighthq/types';
 
 import type { ImageCacheResolver } from './imageCacheRenderNodeResolver';

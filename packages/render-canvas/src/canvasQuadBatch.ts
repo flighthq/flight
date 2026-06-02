@@ -1,6 +1,6 @@
 import { multiplyMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry';
 import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
-import { createNullRendererData } from '@flighthq/render-core';
+import { createNullRendererData } from '@flighthq/render';
 import type { CanvasRenderState, QuadBatch, SpriteRenderer, SpriteRenderTreeNode } from '@flighthq/types';
 
 import { setCanvasBlendMode } from './canvasMaterials';

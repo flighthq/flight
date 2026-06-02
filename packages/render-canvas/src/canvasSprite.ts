@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render-core';
+import { createNullRendererData } from '@flighthq/render';
 import { getOrCreateSpriteRenderNode } from '@flighthq/render-tree';
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
 import type { CanvasRenderState, Sprite, SpriteNode, SpriteRenderer, SpriteRenderTreeNode } from '@flighthq/types';

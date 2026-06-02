@@ -1,5 +1,5 @@
-import { hasRenderFeatures } from '@flighthq/render-core';
-import { getAppearanceRevision } from '@flighthq/scene-core';
+import { hasRenderFeatures } from '@flighthq/render';
+import { getAppearanceRevision } from '@flighthq/scene';
 import type { HasAppearance, RenderState, RenderTreeNode, SceneNode } from '@flighthq/types';
 import { BlendMode, RenderFeatures } from '@flighthq/types';
 

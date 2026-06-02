@@ -1,4 +1,4 @@
-import { invalidateLocalBounds } from '@flighthq/scene-core';
+import { invalidateLocalBounds } from '@flighthq/scene';
 import type {
   HTMLView,
   HTMLViewData,

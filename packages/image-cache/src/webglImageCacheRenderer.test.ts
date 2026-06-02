@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import { registerRenderer } from '@flighthq/render-core';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render-tree';
 import { createWebGLRenderState, renderWebGLDisplayObject } from '@flighthq/render-webgl';
 import { createDisplayObject } from '@flighthq/scene-display';
@@ -45,7 +45,7 @@ describe('enableWebGLImageCache', () => {
   it('skips the original renderer when cache is active', () => {
     const state = makeState();
     enableWebGLImageCache(state);
-    const renderer = { createData: vi.fn(), draw: vi.fn(), drawMask: vi.fn() };
+    const renderer = { createData: vi.fn(), draw: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
 
     const obj = createDisplayObject();
@@ -60,7 +60,7 @@ describe('enableWebGLImageCache', () => {
   it('restores normal rendering when cache is cleared', () => {
     const state = makeState();
     enableWebGLImageCache(state);
-    const renderer = { createData: vi.fn(), draw: vi.fn(), drawMask: vi.fn() };
+    const renderer = { createData: vi.fn(), draw: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
 
     const obj = createDisplayObject();

@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import { createRenderState as _createRenderState, setRenderStateBackgroundColor } from '@flighthq/render-core';
+import { createRenderState as _createRenderState, setRenderStateBackgroundColor } from '@flighthq/render';
 import type { CanvasRenderOptions, CanvasRenderState } from '@flighthq/types';
 
 import type { CanvasRenderStateInternal } from './internal';

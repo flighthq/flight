@@ -1,21 +1,17 @@
-import { hasRenderFeatures } from '@flighthq/render-core';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
-import type { DisplayObject, DisplayObjectRenderTreeNode, DOMRenderState } from '@flighthq/types';
-import { RenderFeatures } from '@flighthq/types';
+import type { DisplayObject, DOMRenderState } from '@flighthq/types';
 
-import { applyDOMClipRectangles, type DOMStageRectangle, pushDOMScrollRectangle } from './domClipRect';
-import { pushDOMMaskRectangle } from './domMask';
 import { detectDOMStructureChange, processDOMNode, reconcileDOMContainer, swapDOMOrderLists } from './domReconcile';
 import type { DOMRenderStateInternal } from './internal';
 
 export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObject): void {
   const internal = state as DOMRenderStateInternal;
   const container = state.element;
+  const hooks = internal.domClipHooks;
 
   let newLength = 0;
   let needsReconcile = false;
-  const rectangles: DOMStageRectangle[] = [];
 
   const drawNode = (current: DisplayObject): void => {
     const data = getOrCreateDisplayObjectRenderNode(state, current);
@@ -26,7 +22,8 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
     const shouldRender = data.visible && data.alpha > 0 && (data.transform2D.a !== 0 || data.transform2D.d !== 0);
     if (!shouldRender) return;
 
-    const pushed = pushDOMEffects(state, rectangles, data);
+    let pushed = 0;
+    if (hooks !== null) pushed = hooks.push(state, data);
 
     if (data.renderer !== null) {
       const result = processDOMNode(
@@ -38,7 +35,7 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
       );
       newLength = result.newLength;
       if (result.needsReconcile) needsReconcile = true;
-      applyDOMClipRectangles(internal, data, rectangles);
+      if (hooks !== null) hooks.apply(state, data);
     }
 
     if (data.updateChildren) {
@@ -50,7 +47,7 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
       }
     }
 
-    rectangles.length -= pushed;
+    if (pushed > 0) hooks!.pop(state, pushed);
   };
 
   drawNode(source);
@@ -60,22 +57,4 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
   }
 
   swapDOMOrderLists(internal, newLength);
-}
-
-function pushDOMEffects(
-  state: DOMRenderState,
-  rectangles: DOMStageRectangle[],
-  data: DisplayObjectRenderTreeNode,
-): number {
-  let pushed = 0;
-  const source = data.source;
-  if (hasRenderFeatures(state, RenderFeatures.ScrollRect) && source.scrollRect !== null) {
-    pushDOMScrollRectangle(rectangles, data);
-    pushed++;
-  }
-  if (hasRenderFeatures(state, RenderFeatures.Masks) && source.mask !== null) {
-    pushDOMMaskRectangle(rectangles, getOrCreateDisplayObjectRenderNode(state, source.mask));
-    pushed++;
-  }
-  return pushed;
 }

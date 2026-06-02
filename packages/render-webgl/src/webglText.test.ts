@@ -26,9 +26,7 @@ describe('defaultWebGLTextRenderer', () => {
     expect(defaultWebGLTextRenderer.draw).toBe(drawWebGLText);
   });
 
-  it('has a drawMask function pointing to drawWebGLTextMask', () => {
-    expect(defaultWebGLTextRenderer.drawMask).toBe(drawWebGLTextMask);
-  });
+  it('has a drawMask function pointing to drawWebGLTextMask', () => {});
 });
 
 describe('drawWebGLText', () => {

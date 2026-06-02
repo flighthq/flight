@@ -1,7 +1,7 @@
 import { createEntity } from '@flighthq/entity';
 import { createMatrix } from '@flighthq/geometry';
 import { createColorTransform } from '@flighthq/materials';
-import { createRenderState, registerRenderer } from '@flighthq/render-core';
+import { createRenderState, registerRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 import type { DisplayObject, DisplayObjectRenderTreeNode, RenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';

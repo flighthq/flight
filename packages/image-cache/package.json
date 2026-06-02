@@ -31,10 +31,10 @@
     "@flighthq/render-tree": "*",
     "@flighthq/geometry": "*",
     "@flighthq/render-canvas": "*",
-    "@flighthq/render-core": "*",
+    "@flighthq/render": "*",
     "@flighthq/render-dom": "*",
     "@flighthq/render-webgl": "*",
-    "@flighthq/scene-core": "*",
+    "@flighthq/scene": "*",
     "@flighthq/scene-display": "*",
     "@flighthq/types": "*"
   },

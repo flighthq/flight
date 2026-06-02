@@ -1,5 +1,5 @@
 import { remapScale9Commands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
-import { getLocalBoundsRectangle } from '@flighthq/scene-core';
+import { getLocalBoundsRectangle } from '@flighthq/scene';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderTreeNode,
@@ -137,7 +137,6 @@ export function remapWebGLScale9Commands(
 export const defaultWebGLScale9ShapeRenderer: DisplayObjectRenderer = {
   createData: createWebGLScale9ShapeData,
   draw: drawWebGLScale9Shape,
-  drawMask: drawWebGLScale9ShapeMask,
 };
 
 function setStrippedWebGLMatrixFromValues(

@@ -1,6 +1,6 @@
 import { copyMatrix, multiplyMatrix, translateMatrixByVectorXY } from '@flighthq/geometry';
-import { hasRenderFeatures } from '@flighthq/render-core';
-import { getLocalTransformMatrix, getLocalTransformRevision } from '@flighthq/scene-core';
+import { hasRenderFeatures } from '@flighthq/render';
+import { getLocalTransformMatrix, getLocalTransformRevision } from '@flighthq/scene';
 import type {
   DisplayObjectRenderTreeNode,
   HasTransform2D,

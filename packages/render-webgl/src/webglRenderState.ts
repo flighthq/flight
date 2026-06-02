@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import { createRenderState as _createRenderState, setRenderStateBackgroundColor } from '@flighthq/render-core';
+import { createRenderState as _createRenderState, setRenderStateBackgroundColor } from '@flighthq/render';
 import type { WebGLRenderOptions, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';

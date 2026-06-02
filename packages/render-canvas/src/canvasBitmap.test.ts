@@ -1,6 +1,6 @@
 import { createImageSource } from '@flighthq/assets';
 import { createRectangle } from '@flighthq/geometry';
-import { enableRenderFeatures, registerRenderer } from '@flighthq/render-core';
+import { enableRenderFeatures, registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import { createBitmap } from '@flighthq/scene-display';
 import { BitmapKind, RenderFeatures } from '@flighthq/types';
@@ -26,9 +26,8 @@ function makeImageSource() {
 }
 
 describe('defaultCanvasBitmapRenderer', () => {
-  it('has draw and drawMask and createData', () => {
+  it('has draw and createData', () => {
     expect(typeof defaultCanvasBitmapRenderer.draw).toBe('function');
-    expect(typeof defaultCanvasBitmapRenderer.drawMask).toBe('function');
     expect(typeof defaultCanvasBitmapRenderer.createData).toBe('function');
   });
 });

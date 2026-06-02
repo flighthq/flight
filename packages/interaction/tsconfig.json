@@ -11,7 +11,7 @@
   "references": [
     { "path": "../geometry" },
     { "path": "../materials" },
-    { "path": "../scene-core" },
+    { "path": "../scene" },
     { "path": "../scene-display" },
     { "path": "../scene-sprite" },
     { "path": "../scene-world" },

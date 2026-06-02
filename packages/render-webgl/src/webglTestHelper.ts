@@ -1,4 +1,4 @@
-import { createRenderState } from '@flighthq/render-core';
+import { createRenderState } from '@flighthq/render';
 
 import type { WebGLRenderStateInternal } from './internal';
 import type { WebGLShaderLocations } from './webglShaderTypes';
