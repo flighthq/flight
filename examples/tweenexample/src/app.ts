@@ -1,5 +1,5 @@
 import {
-  addGraphChildAt,
+  addSceneChildAt,
   appendShapeBeginFill,
   appendShapeCircle,
   appendShapeEndFill,
@@ -54,7 +54,7 @@ function createCircle(): void {
   circle.x = Math.random() * STAGE_WIDTH;
   circle.y = Math.random() * STAGE_HEIGHT;
 
-  addGraphChildAt(root, circle, 0);
+  addSceneChildAt(root, circle, 0);
   animateCircle(circle);
 }
 

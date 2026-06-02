@@ -1,5 +1,5 @@
 import {
-  addGraphChild,
+  addSceneChild,
   attachPointerInput,
   attachWindowResize,
   attachWindowVisibility,
@@ -64,12 +64,12 @@ root.scaleY = scale;
 const background = createBitmap();
 background.data.image = bgImage;
 background.data.smoothing = true;
-addGraphChild(root, background);
+addSceneChild(root, background);
 
 const footer = createBitmap();
 footer.data.image = footerImage;
 footer.data.smoothing = true;
-addGraphChild(root, footer);
+addSceneChild(root, footer);
 
 const interactionManager = createInteractionManager(root);
 const game = new PiratePigGame(manager, interactionManager, tileImages, logoImage, font.name, sounds, {
@@ -80,9 +80,9 @@ const game = new PiratePigGame(manager, interactionManager, tileImages, logoImag
 const logo = createBitmap();
 logo.data.image = logoImage;
 logo.data.smoothing = true;
-addGraphChild(game.obj, logo);
+addSceneChild(game.obj, logo);
 
-addGraphChild(root, game.obj);
+addSceneChild(root, game.obj);
 
 // ── Layout ─────────────────────────────────────────────────────────────────
 

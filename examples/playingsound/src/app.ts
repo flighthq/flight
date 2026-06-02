@@ -1,6 +1,6 @@
 import type { AudioChannel } from '@flighthq/sdk';
 import {
-  addGraphChild,
+  addSceneChild,
   appendShapeBeginFill,
   appendShapeRectangle,
   attachPointerInput,
@@ -34,7 +34,7 @@ root.scaleY = scale;
 
 const background = createShape();
 background.alpha = 0.1;
-addGraphChild(root, background);
+addSceneChild(root, background);
 
 const sound = await loadAudioSourceFromURLs([{ url: 'assets/stars.ogg' }, { url: 'assets/stars.mp3' }]);
 

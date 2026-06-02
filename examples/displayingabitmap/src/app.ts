@@ -1,5 +1,5 @@
 import {
-  addGraphChild,
+  addSceneChild,
   createBitmap,
   createDisplayObject,
   loadImageSourceFromURL,
@@ -17,7 +17,7 @@ const image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
 bitmap.data.image = image;
 bitmap.x = (550 - image.width) / 2;
 bitmap.y = (400 - image.height) / 2;
-addGraphChild(main, bitmap);
+addSceneChild(main, bitmap);
 
 function enterFrame() {
   if (updateDisplayObjectBeforeRender(state, main)) {
