@@ -1,7 +1,6 @@
 import { createMatrix } from '@flighthq/geometry';
 import type { HasBoundsRectRuntime } from '@flighthq/types';
 
-import { createSceneNode, getSceneNodeRuntime } from './sceneNode';
 import {
   computeSceneAlignX,
   computeSceneAlignY,
@@ -10,6 +9,7 @@ import {
   computeSceneRenderTransform,
   createScene,
 } from './scene';
+import { createSceneNode, getSceneNodeRuntime } from './sceneNode';
 
 const TestGraph: unique symbol = Symbol('TestGraph');
 const TestNodeKind: unique symbol = Symbol('TestNode');
@@ -90,21 +90,6 @@ describe('computeSceneFitScale', () => {
   });
 });
 
-describe('createScene', () => {
-  it('returns default values', () => {
-    const scene = createScene();
-    expect(scene.root).toBeNull();
-    expect(scene.scaleMode).toBe('noscale');
-    expect(scene.align).toBe('topleft');
-  });
-
-  it('accepts overrides', () => {
-    const scene = createScene({ scaleMode: 'showall', align: 'top' });
-    expect(scene.scaleMode).toBe('showall');
-    expect(scene.align).toBe('top');
-  });
-});
-
 describe('computeSceneRenderTransform', () => {
   it('sets identity when root is null', () => {
     const m = createMatrix();
@@ -137,7 +122,12 @@ describe('computeSceneRenderTransform', () => {
 
   it('noscale with topleft: identity scale at origin', () => {
     const m = createMatrix();
-    computeSceneRenderTransform(m, createScene({ root: makeNodeWithBounds(400, 300), scaleMode: 'noscale', align: 'topleft' }), 800, 600);
+    computeSceneRenderTransform(
+      m,
+      createScene({ root: makeNodeWithBounds(400, 300), scaleMode: 'noscale', align: 'topleft' }),
+      800,
+      600,
+    );
     expect(m.a).toBe(1);
     expect(m.d).toBe(1);
     expect(m.tx).toBe(0);
@@ -146,7 +136,12 @@ describe('computeSceneRenderTransform', () => {
 
   it('noscale with top alignment: centers horizontally', () => {
     const m = createMatrix();
-    computeSceneRenderTransform(m, createScene({ root: makeNodeWithBounds(400, 300), scaleMode: 'noscale', align: 'top' }), 800, 600);
+    computeSceneRenderTransform(
+      m,
+      createScene({ root: makeNodeWithBounds(400, 300), scaleMode: 'noscale', align: 'top' }),
+      800,
+      600,
+    );
     expect(m.a).toBe(1);
     expect(m.d).toBe(1);
     expect(m.tx).toBe(200);
@@ -155,7 +150,12 @@ describe('computeSceneRenderTransform', () => {
 
   it('exactfit: scales to fill viewport exactly', () => {
     const m = createMatrix();
-    computeSceneRenderTransform(m, createScene({ root: makeNodeWithBounds(400, 300), scaleMode: 'exactfit', align: 'topleft' }), 800, 600);
+    computeSceneRenderTransform(
+      m,
+      createScene({ root: makeNodeWithBounds(400, 300), scaleMode: 'exactfit', align: 'topleft' }),
+      800,
+      600,
+    );
     expect(m.a).toBe(2);
     expect(m.d).toBe(2);
     expect(m.tx).toBe(0);
@@ -164,7 +164,12 @@ describe('computeSceneRenderTransform', () => {
 
   it('exactfit: uses independent x/y scales', () => {
     const m = createMatrix();
-    computeSceneRenderTransform(m, createScene({ root: makeNodeWithBounds(400, 300), scaleMode: 'exactfit', align: 'topleft' }), 800, 450);
+    computeSceneRenderTransform(
+      m,
+      createScene({ root: makeNodeWithBounds(400, 300), scaleMode: 'exactfit', align: 'topleft' }),
+      800,
+      450,
+    );
     expect(m.a).toBe(2);
     expect(m.d).toBe(1.5);
   });
@@ -172,7 +177,12 @@ describe('computeSceneRenderTransform', () => {
   it('showall: fits content within viewport with uniform scale', () => {
     const m = createMatrix();
     // viewport 800x400, content 400x300: min(2, 400/300) = 400/300
-    computeSceneRenderTransform(m, createScene({ root: makeNodeWithBounds(400, 300), scaleMode: 'showall', align: 'topleft' }), 800, 400);
+    computeSceneRenderTransform(
+      m,
+      createScene({ root: makeNodeWithBounds(400, 300), scaleMode: 'showall', align: 'topleft' }),
+      800,
+      400,
+    );
     expect(m.a).toBeCloseTo(400 / 300);
     expect(m.d).toBeCloseTo(400 / 300);
   });
@@ -180,15 +190,40 @@ describe('computeSceneRenderTransform', () => {
   it('noborder: fills viewport with uniform scale', () => {
     const m = createMatrix();
     // viewport 800x400, content 400x300: max(2, 400/300) = 2
-    computeSceneRenderTransform(m, createScene({ root: makeNodeWithBounds(400, 300), scaleMode: 'noborder', align: 'topleft' }), 800, 400);
+    computeSceneRenderTransform(
+      m,
+      createScene({ root: makeNodeWithBounds(400, 300), scaleMode: 'noborder', align: 'topleft' }),
+      800,
+      400,
+    );
     expect(m.a).toBe(2);
     expect(m.d).toBe(2);
   });
 
   it('sets b and c to 0', () => {
     const m = createMatrix();
-    computeSceneRenderTransform(m, createScene({ root: makeNodeWithBounds(400, 300), scaleMode: 'showall', align: 'topleft' }), 800, 600);
+    computeSceneRenderTransform(
+      m,
+      createScene({ root: makeNodeWithBounds(400, 300), scaleMode: 'showall', align: 'topleft' }),
+      800,
+      600,
+    );
     expect(m.b).toBe(0);
     expect(m.c).toBe(0);
+  });
+});
+
+describe('createScene', () => {
+  it('returns default values', () => {
+    const scene = createScene();
+    expect(scene.root).toBeNull();
+    expect(scene.scaleMode).toBe('noscale');
+    expect(scene.align).toBe('topleft');
+  });
+
+  it('accepts overrides', () => {
+    const scene = createScene({ scaleMode: 'showall', align: 'top' });
+    expect(scene.scaleMode).toBe('showall');
+    expect(scene.align).toBe('top');
   });
 });

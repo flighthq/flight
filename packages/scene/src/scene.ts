@@ -1,6 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
-import type { HasBoundsRectRuntime, MatrixLike, Rectangle, Scene, SceneAlign, SceneScaleMode } from '@flighthq/types';
-import { NullScene } from '@flighthq/types';
+import type { HasBoundsRectRuntime, MatrixLike, NullScene, Rectangle, Scene, SceneAlign } from '@flighthq/types';
 
 import { getSceneNodeRuntime } from './sceneNode';
 
@@ -34,9 +33,9 @@ export function computeSceneFitScale(
   return Math.min(viewWidth / contentWidth, viewHeight / contentHeight);
 }
 
-export function computeSceneRenderTransform(
+export function computeSceneRenderTransform<SceneKind extends symbol>(
   out: MatrixLike,
-  scene: Scene,
+  scene: Scene<SceneKind>,
   viewWidth: number,
   viewHeight: number,
 ): void {

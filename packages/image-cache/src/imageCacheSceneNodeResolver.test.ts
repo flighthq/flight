@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry';
-import { createCanvasRenderState, renderCanvasDisplayObject } from '@flighthq/render-canvas';
 import { createRenderState } from '@flighthq/render';
+import { createCanvasRenderState, renderCanvasDisplayObject } from '@flighthq/render-canvas';
 import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render-tree';
 import { createDisplayObject } from '@flighthq/scene-display';
 
@@ -8,11 +8,11 @@ import { setImageCache } from './imageCache';
 import { ImageCacheKind } from './imageCacheKind';
 import { isImageCachePrimitive } from './imageCachePrimitive';
 import {
-  createImageCacheSceneNodeResolver,
-  isImageCacheSceneNodeResolver,
   beginImageCacheCapture,
-  registerImageCacheRenderer,
+  createImageCacheSceneNodeResolver,
   endImageCacheCapture,
+  isImageCacheSceneNodeResolver,
+  registerImageCacheRenderer,
 } from './imageCacheSceneNodeResolver';
 
 function makeCanvasState() {
@@ -36,11 +36,62 @@ function makeImageCache() {
   };
 }
 
+describe('beginImageCacheCapture', () => {
+  it('suppresses the image cache resolver while capturing', () => {
+    const state = makeCanvasState();
+    const mockRenderer = makeRenderer();
+    registerImageCacheRenderer(state, mockRenderer);
+
+    const obj = createDisplayObject();
+    setImageCache(obj, makeImageCache());
+
+    beginImageCacheCapture(state);
+    updateDisplayObjectBeforeRender(state, obj);
+    renderCanvasDisplayObject(state, obj);
+
+    expect(mockRenderer.draw).not.toHaveBeenCalled();
+  });
+});
+
 describe('createImageCacheSceneNodeResolver', () => {
   it('creates an image cache scene node resolver', () => {
     const resolver = createImageCacheSceneNodeResolver();
     expect(isImageCacheSceneNodeResolver(resolver)).toBe(true);
     expect(resolver.updateChildren).toBe(false);
+  });
+});
+
+describe('endImageCacheCapture', () => {
+  it('restores the image cache resolver after unmarking', () => {
+    const state = makeCanvasState();
+    const mockRenderer = makeRenderer();
+    registerImageCacheRenderer(state, mockRenderer);
+
+    const obj = createDisplayObject();
+    setImageCache(obj, makeImageCache());
+
+    beginImageCacheCapture(state);
+    endImageCacheCapture(state);
+
+    updateDisplayObjectBeforeRender(state, obj);
+    renderCanvasDisplayObject(state, obj);
+
+    expect(mockRenderer.draw).toHaveBeenCalledOnce();
+  });
+
+  it('is a no-op when state was not marked', () => {
+    const state = makeCanvasState();
+    const mockRenderer = makeRenderer();
+    registerImageCacheRenderer(state, mockRenderer);
+
+    const obj = createDisplayObject();
+    setImageCache(obj, makeImageCache());
+
+    endImageCacheCapture(state);
+    updateDisplayObjectBeforeRender(state, obj);
+    renderCanvasDisplayObject(state, obj);
+
+    expect(mockRenderer.draw).toHaveBeenCalledOnce();
   });
 });
 
@@ -85,23 +136,6 @@ describe('isImageCacheSceneNodeResolver', () => {
   });
 });
 
-describe('beginImageCacheCapture', () => {
-  it('suppresses the image cache resolver while capturing', () => {
-    const state = makeCanvasState();
-    const mockRenderer = makeRenderer();
-    registerImageCacheRenderer(state, mockRenderer);
-
-    const obj = createDisplayObject();
-    setImageCache(obj, makeImageCache());
-
-    beginImageCacheCapture(state);
-    updateDisplayObjectBeforeRender(state, obj);
-    renderCanvasDisplayObject(state, obj);
-
-    expect(mockRenderer.draw).not.toHaveBeenCalled();
-  });
-});
-
 describe('registerImageCacheRenderer', () => {
   it('registers the renderer for ImageCacheKind', () => {
     const state = createRenderState();
@@ -117,39 +151,5 @@ describe('registerImageCacheRenderer', () => {
     registerImageCacheRenderer(state, r1);
     registerImageCacheRenderer(state, r2);
     expect(state.rendererMap.get(ImageCacheKind)).toBe(r2);
-  });
-});
-
-describe('endImageCacheCapture', () => {
-  it('restores the image cache resolver after unmarking', () => {
-    const state = makeCanvasState();
-    const mockRenderer = makeRenderer();
-    registerImageCacheRenderer(state, mockRenderer);
-
-    const obj = createDisplayObject();
-    setImageCache(obj, makeImageCache());
-
-    beginImageCacheCapture(state);
-    endImageCacheCapture(state);
-
-    updateDisplayObjectBeforeRender(state, obj);
-    renderCanvasDisplayObject(state, obj);
-
-    expect(mockRenderer.draw).toHaveBeenCalledOnce();
-  });
-
-  it('is a no-op when state was not marked', () => {
-    const state = makeCanvasState();
-    const mockRenderer = makeRenderer();
-    registerImageCacheRenderer(state, mockRenderer);
-
-    const obj = createDisplayObject();
-    setImageCache(obj, makeImageCache());
-
-    endImageCacheCapture(state);
-    updateDisplayObjectBeforeRender(state, obj);
-    renderCanvasDisplayObject(state, obj);
-
-    expect(mockRenderer.draw).toHaveBeenCalledOnce();
   });
 });

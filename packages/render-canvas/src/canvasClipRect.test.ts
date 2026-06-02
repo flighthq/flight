@@ -4,6 +4,7 @@ import { createDisplayObject } from '@flighthq/scene-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderTreeNode, Matrix, Rectangle } from '@flighthq/types';
 
 import {
+  enableCanvasScrollRectangleSupport,
   popCanvasClipRectangle,
   popCanvasScrollRectangle,
   pushCanvasClipRectangle,
@@ -25,7 +26,7 @@ describe('Clip and Scroll Rect Functions', () => {
     rect = createRectangle(10, 10, 100, 100);
     transform2D = createMatrix();
     source = createDisplayObject();
-    source.scrollRectangle =rect;
+    source.scrollRectangle = rect;
     data = getOrCreateDisplayObjectRenderNode(state, source);
     data.transform2D = transform2D;
   });
@@ -70,6 +71,15 @@ describe('Clip and Scroll Rect Functions', () => {
   // });
 });
 
+describe('enableCanvasScrollRectangleSupport', () => {
+  it('sets scroll rectangle hooks and enables the ScrollRectangle feature', () => {
+    const c = document.createElement('canvas');
+    const state = createCanvasRenderState(c);
+    enableCanvasScrollRectangleSupport(state);
+    expect(state.scrollRectangleHooks).not.toBeNull();
+  });
+});
+
 describe('popCanvasClipRectangle', () => {
   it('calls context.restore()', () => {
     const c = document.createElement('canvas');
@@ -111,7 +121,7 @@ describe('pushCanvasScrollRectangle', () => {
     const c = document.createElement('canvas');
     const state = createCanvasRenderState(c);
     const source = createDisplayObject();
-    source.scrollRectangle =createRectangle(0, 0, 50, 50);
+    source.scrollRectangle = createRectangle(0, 0, 50, 50);
     const data = getOrCreateDisplayObjectRenderNode(state, source);
     data.transform2D = createMatrix();
     const before = state.currentScrollRectangleDepth;

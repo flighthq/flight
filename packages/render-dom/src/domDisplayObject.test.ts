@@ -1,10 +1,11 @@
 import { createRectangle } from '@flighthq/geometry';
-import { enableRenderFeatures, registerRenderer } from '@flighthq/render';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import { addSceneChild } from '@flighthq/scene';
 import { appendShapeRectangle, createDisplayObject, createShape } from '@flighthq/scene-display';
-import { DisplayObjectKind, RenderFeatures } from '@flighthq/types';
+import { DisplayObjectKind } from '@flighthq/types';
 
+import { enableDOMScrollRectangleSupport } from './domClipRect';
 import { renderDOMDisplayObject } from './domDisplayObject';
 import { enableDOMMaskSupport } from './domMask';
 import { createDOMRenderState } from './domRenderState';
@@ -202,7 +203,7 @@ describe('renderDOMDisplayObject', () => {
 
   it('applies inherited scrollRectangle clipping to child elements', () => {
     const state = makeState();
-    enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
+    enableDOMScrollRectangleSupport(state);
     const parent = createDisplayObject();
     parent.scrollRectangle = createRectangle(10, 20, 30, 40);
     const child = createDisplayObject();

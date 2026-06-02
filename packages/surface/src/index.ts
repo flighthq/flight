@@ -10,3 +10,4 @@ export * from './query';
 export * from './surface';
 export * from './surfaceFrom';
 export * from './transform';
+export type { Surface } from '@flighthq/types';

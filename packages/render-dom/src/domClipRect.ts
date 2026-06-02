@@ -57,6 +57,11 @@ export function createDOMStageRectangle(rect: Readonly<Rectangle>, transform: Re
   };
 }
 
+export function enableDOMScrollRectangleSupport(state: DOMRenderState): void {
+  enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
+  setDOMClipHooks(state);
+}
+
 export function pushDOMClipRectangle(
   rectangles: DOMStageRectangle[],
   rect: Readonly<Rectangle>,
@@ -67,6 +72,11 @@ export function pushDOMClipRectangle(
 
 export function pushDOMScrollRectangle(rectangles: DOMStageRectangle[], data: DisplayObjectRenderTreeNode): void {
   pushDOMClipRectangle(rectangles, data.source.scrollRectangle!, data.transform2D);
+}
+
+export function setDOMClipHooks(state: DOMRenderState): void {
+  const internal = state as DOMRenderStateInternal;
+  if (internal.domClipHooks === null) internal.domClipHooks = domClipHooksImpl;
 }
 
 function getElementMatrix(element: HTMLElement): MatrixLike {
@@ -135,16 +145,6 @@ function mapStageRectangleToElement(rect: DOMStageRectangle, element: HTMLElemen
 }
 
 const EMPTY_CLIP_PATH = 'inset(0 100% 100% 0)';
-
-export function enableDOMScrollRectangleSupport(state: DOMRenderState): void {
-  enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
-  setDOMClipHooks(state);
-}
-
-export function setDOMClipHooks(state: DOMRenderState): void {
-  const internal = state as DOMRenderStateInternal;
-  if (internal.domClipHooks === null) internal.domClipHooks = domClipHooksImpl;
-}
 
 const domClipHooksImpl: DOMClipHooks = {
   push(state: DOMRenderState, data: DisplayObjectRenderTreeNode): number {

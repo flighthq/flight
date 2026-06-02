@@ -6,8 +6,10 @@ import {
   applyDOMClipRectangles,
   createDOMStageRectangle,
   type DOMStageRectangle,
+  enableDOMScrollRectangleSupport,
   pushDOMClipRectangle,
   pushDOMScrollRectangle,
+  setDOMClipHooks,
 } from './domClipRect';
 import { createDOMRenderState } from './domRenderState';
 import type { DOMRenderStateInternal } from './internal';
@@ -55,6 +57,14 @@ describe('createDOMStageRectangle', () => {
   });
 });
 
+describe('enableDOMScrollRectangleSupport', () => {
+  it('sets DOM clip hooks and enables the ScrollRectangle feature', () => {
+    const state = makeState();
+    enableDOMScrollRectangleSupport(state);
+    expect(state.domClipHooks).not.toBeNull();
+  });
+});
+
 describe('pushDOMClipRectangle', () => {
   it('pushes a transformed stage rectangle', () => {
     const rectangles: DOMStageRectangle[] = [];
@@ -77,5 +87,21 @@ describe('pushDOMScrollRectangle', () => {
     pushDOMScrollRectangle(rectangles, data);
 
     expect(rectangles).toEqual([{ bottom: 15, left: 4, right: 14, top: 5 }]);
+  });
+});
+
+describe('setDOMClipHooks', () => {
+  it('sets DOM clip hooks on the render state', () => {
+    const state = makeState();
+    setDOMClipHooks(state);
+    expect(state.domClipHooks).not.toBeNull();
+  });
+
+  it('is idempotent', () => {
+    const state = makeState();
+    setDOMClipHooks(state);
+    const first = state.domClipHooks;
+    setDOMClipHooks(state);
+    expect(state.domClipHooks).toBe(first);
   });
 });

@@ -8,10 +8,10 @@ import {
 } from '@flighthq/geometry';
 import { invalidateLocalTransform, recomputeWorldTransformRevision } from '@flighthq/scene';
 import type {
-  SceneTransform2DNode,
   HasTransform2DRuntime,
   Matrix,
   SceneNodeRuntime,
+  SceneTransform2DNode,
   Vector2Like,
 } from '@flighthq/types';
 

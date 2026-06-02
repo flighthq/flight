@@ -14,33 +14,30 @@ import {
 } from './renderer';
 import { createRenderState } from './renderState';
 
-describe('copyRenderersFromRenderState', () => {
-  it('copies all renderer registrations from source to target', () => {
+describe('copyFromRenderState', () => {
+  it('copies all registrations from source to target', () => {
     const source = createRenderState();
     const target = createRenderState();
     const kind = Symbol('kind');
     const renderer = { createData: vi.fn(), draw: vi.fn() } as unknown as Renderer;
+    const maskRenderer = { drawMask: vi.fn() };
+    const hooks = { popMask: vi.fn(), pushMask: vi.fn() };
     registerRenderer(source, kind, renderer);
-    copyRenderersFromRenderState(target, source);
+    registerDisplayObjectMaskRenderer(source, kind, maskRenderer);
+    setDisplayObjectMaskHooks(source, hooks);
+
+    copyFromRenderState(target, source);
+
     expect(target.rendererMap.get(kind)).toBe(renderer);
+    expect(target.displayObjectMaskRendererMap.get(kind)).toBe(maskRenderer);
+    expect(target.displayObjectMaskHooks).toBe(hooks);
   });
 
-  it('is a no-op when source has no renderer registrations', () => {
+  it('is a no-op when source has no registrations', () => {
     const source = createRenderState();
     const target = createRenderState();
-    copyRenderersFromRenderState(target, source);
+    copyFromRenderState(target, source);
     expect(target.rendererMap.size).toBe(0);
-  });
-
-  it('does not affect source rendererMapID', () => {
-    const source = createRenderState();
-    const target = createRenderState();
-    const kind = Symbol('kind');
-    const renderer = { createData: vi.fn(), draw: vi.fn() } as unknown as Renderer;
-    registerRenderer(source, kind, renderer);
-    const sourceIDBeforeCopy = source.rendererMapID;
-    copyRenderersFromRenderState(target, source);
-    expect(source.rendererMapID).toBe(sourceIDBeforeCopy);
   });
 });
 
@@ -69,30 +66,33 @@ describe('copyMaskRenderersFromRenderState', () => {
   });
 });
 
-describe('copyFromRenderState', () => {
-  it('copies all registrations from source to target', () => {
+describe('copyRenderersFromRenderState', () => {
+  it('copies all renderer registrations from source to target', () => {
     const source = createRenderState();
     const target = createRenderState();
     const kind = Symbol('kind');
     const renderer = { createData: vi.fn(), draw: vi.fn() } as unknown as Renderer;
-    const maskRenderer = { drawMask: vi.fn() };
-    const hooks = { popMask: vi.fn(), pushMask: vi.fn() };
     registerRenderer(source, kind, renderer);
-    registerDisplayObjectMaskRenderer(source, kind, maskRenderer);
-    setDisplayObjectMaskHooks(source, hooks);
-
-    copyFromRenderState(target, source);
-
+    copyRenderersFromRenderState(target, source);
     expect(target.rendererMap.get(kind)).toBe(renderer);
-    expect(target.displayObjectMaskRendererMap.get(kind)).toBe(maskRenderer);
-    expect(target.displayObjectMaskHooks).toBe(hooks);
   });
 
-  it('is a no-op when source has no registrations', () => {
+  it('is a no-op when source has no renderer registrations', () => {
     const source = createRenderState();
     const target = createRenderState();
-    copyFromRenderState(target, source);
+    copyRenderersFromRenderState(target, source);
     expect(target.rendererMap.size).toBe(0);
+  });
+
+  it('does not affect source rendererMapID', () => {
+    const source = createRenderState();
+    const target = createRenderState();
+    const kind = Symbol('kind');
+    const renderer = { createData: vi.fn(), draw: vi.fn() } as unknown as Renderer;
+    registerRenderer(source, kind, renderer);
+    const sourceIDBeforeCopy = source.rendererMapID;
+    copyRenderersFromRenderState(target, source);
+    expect(source.rendererMapID).toBe(sourceIDBeforeCopy);
   });
 });
 

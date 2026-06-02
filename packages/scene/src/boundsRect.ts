@@ -8,13 +8,13 @@ import {
 } from '@flighthq/geometry';
 import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
 import type {
-  SceneBoundsNode,
-  SceneSpatial2DNode,
   HasBoundsRectRuntime,
   HasTransform2DRuntime,
   Rectangle,
   RectangleLike,
+  SceneBoundsNode,
   SceneNodeRuntime,
+  SceneSpatial2DNode,
 } from '@flighthq/types';
 
 import { getSceneNumChildren, getSceneParent } from './hierarchy';
