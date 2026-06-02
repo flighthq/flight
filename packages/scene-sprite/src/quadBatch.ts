@@ -1,4 +1,5 @@
-import { reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
+import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
+import { invalidateLocalBounds } from '@flighthq/scene';
 import type {
   MethodsOf,
   PartialNode,
@@ -14,8 +15,11 @@ import { QuadBatchKind } from '@flighthq/types';
 
 import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
 
-export function computeQuadBatchLocalBoundsRectangle(_out: Rectangle, _source: Readonly<SceneNode>): void {
-  // TODO
+export function computeQuadBatchLocalBoundsRectangle(out: Rectangle, source: Readonly<SceneNode>): void {
+  // Bounds are not auto-computed — iterating all instances on each invalidation is too costly.
+  // Call measureQuadBatchBoundsRectangle() after mutating the batch; this copies that cached result.
+  const runtime = getSpriteNodeRuntime(source as QuadBatch) as QuadBatchRuntime;
+  if (runtime.measuredBoundsRect !== null) copyRectangle(out, runtime.measuredBoundsRect);
 }
 
 export function createQuadBatch(obj?: Readonly<PartialNode<QuadBatch>>): QuadBatch {
@@ -33,7 +37,9 @@ export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): Qu
 }
 
 export function createQuadBatchRuntime(): QuadBatchRuntime {
-  return createSpriteNodeRuntime(defaultMethods) as QuadBatchRuntime;
+  const runtime = createSpriteNodeRuntime(defaultMethods) as QuadBatchRuntime;
+  runtime.measuredBoundsRect = null;
+  return runtime;
 }
 
 export function getQuadBatchCapacity(source: Readonly<QuadBatch>): number {
@@ -176,6 +182,10 @@ export function measureQuadBatchBoundsRectangle(out: Rectangle, source: Readonly
     out.width = maxX - minX;
     out.height = maxY - minY;
   }
+  const runtime = getSpriteNodeRuntime(source) as unknown as QuadBatchRuntime;
+  if (runtime.measuredBoundsRect === null) runtime.measuredBoundsRect = createRectangle();
+  copyRectangle(runtime.measuredBoundsRect, out);
+  invalidateLocalBounds(source);
 }
 
 export function reserveQuadBatch(target: QuadBatch, capacity: number): void {

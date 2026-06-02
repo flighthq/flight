@@ -1,4 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
+import { getLocalBoundsRectangle } from '@flighthq/scene';
 import type { QuadBatch, QuadTransformType, SceneNode, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
 
@@ -18,7 +19,7 @@ import {
 } from './quadBatch';
 
 describe('computeQuadBatchLocalBoundsRectangle', () => {
-  it('is a no-op that does not modify out', () => {
+  it('leaves out unchanged when no measurement has been taken', () => {
     const quadBatch = createQuadBatch();
     const out = createRectangle(1, 2, 3, 4);
     computeQuadBatchLocalBoundsRectangle(out, quadBatch as unknown as SceneNode);
@@ -26,6 +27,21 @@ describe('computeQuadBatchLocalBoundsRectangle', () => {
     expect(out.y).toBe(2);
     expect(out.width).toBe(3);
     expect(out.height).toBe(4);
+  });
+
+  it('copies cached bounds after measureQuadBatchBoundsRectangle has been called', () => {
+    const region = { id: 0, x: 0, y: 0, width: 32, height: 16, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const atlas = { image: null, regions: [region] } as TextureAtlas;
+    const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1 } });
+    quadBatch.data.ids = new Uint16Array([0]);
+    quadBatch.data.transforms = new Float32Array([10, 20]);
+    measureQuadBatchBoundsRectangle(createRectangle(), quadBatch);
+    const out = createRectangle();
+    computeQuadBatchLocalBoundsRectangle(out, quadBatch as unknown as SceneNode);
+    expect(out.x).toBe(10);
+    expect(out.y).toBe(20);
+    expect(out.width).toBe(32);
+    expect(out.height).toBe(16);
   });
 });
 
@@ -274,6 +290,27 @@ describe('measureQuadBatchBoundsRectangle', () => {
     expect(out.y).toBe(5);
     expect(out.width).toBe(10);
     expect(out.height).toBe(10);
+  });
+
+  it('caches bounds so getLocalBoundsRectangle reflects the measurement', () => {
+    const region = { id: 0, x: 0, y: 0, width: 32, height: 16, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const atlas = { image: null, regions: [region] } as TextureAtlas;
+    const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1 } });
+    quadBatch.data.ids = new Uint16Array([0]);
+    quadBatch.data.transforms = new Float32Array([10, 20]);
+    measureQuadBatchBoundsRectangle(createRectangle(), quadBatch);
+    const local = getLocalBoundsRectangle(quadBatch);
+    expect(local.x).toBe(10);
+    expect(local.y).toBe(20);
+    expect(local.width).toBe(32);
+    expect(local.height).toBe(16);
+  });
+
+  it('returns zero bounds via getLocalBoundsRectangle before any measurement', () => {
+    const quadBatch = createQuadBatch();
+    const local = getLocalBoundsRectangle(quadBatch);
+    expect(local.width).toBe(0);
+    expect(local.height).toBe(0);
   });
 });
 
