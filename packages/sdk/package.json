@@ -38,7 +38,6 @@
     "@flighthq/media": "*",
     "@flighthq/render-canvas": "*",
     "@flighthq/render": "*",
-    "@flighthq/render-tree": "*",
     "@flighthq/render-dom": "*",
     "@flighthq/render-webgl": "*",
     "@flighthq/scene": "*",

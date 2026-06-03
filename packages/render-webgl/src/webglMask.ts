@@ -1,5 +1,5 @@
-import { setDisplayObjectMaskHooks } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+﻿import { setDisplayObjectMaskHooks } from '@flighthq/render';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type {
   DisplayObject,

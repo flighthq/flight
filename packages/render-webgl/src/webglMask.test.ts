@@ -1,5 +1,5 @@
-import { registerDisplayObjectMaskRenderer } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+﻿import { registerDisplayObjectMaskRenderer } from '@flighthq/render';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';

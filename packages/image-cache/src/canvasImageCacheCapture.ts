@@ -1,4 +1,4 @@
-import { createImageSourceFromCanvas } from '@flighthq/assets';
+﻿import { createImageSourceFromCanvas } from '@flighthq/assets';
 import { copyMatrix, createMatrix, createRectangle } from '@flighthq/geometry';
 import type { CanvasRenderStateInternal } from '@flighthq/render-canvas';
 import {
@@ -8,13 +8,13 @@ import {
   renderCanvasDisplayObject,
   resizeCanvasRenderTarget,
 } from '@flighthq/render-canvas';
-import { updateDisplayObjectBeforeRender } from '@flighthq/render-tree';
+import { updateDisplayObjectBeforeRender } from '@flighthq/render';
 import { computeBoundsRectangle } from '@flighthq/scene';
 import type { CanvasRenderState, DisplayObject, Matrix } from '@flighthq/types';
 
 import { getImageCache, setImageCache } from './imageCache';
 import { beginImageCacheCapture, endImageCacheCapture } from './imageCacheSceneNodeResolver';
-import { computeRenderTargetSize, updateDisplayObjectRenderTargetPlacement } from './renderTargetPlacement';
+import { computeRenderTargetSize, updateDisplayObjectRenderTargetPlacement } from '@flighthq/render';
 
 export type CaptureImageCacheOptions = {
   /** Uniform padding (pixels) added around the source bounds. Defaults to 0. */
@@ -25,7 +25,7 @@ export type CaptureImageCacheOptions = {
   minHeight?: number;
 };
 
-// ─── Per-state data for begin/end pair ───────────────────────────────────────
+// â”€â”€â”€ Per-state data for begin/end pair â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type CaptureData = {
   /** Pre-allocated cache transform, updated on each begin and passed to setImageCache. */
@@ -47,11 +47,11 @@ function getCaptureData(state: CanvasRenderState): CaptureData {
   return data;
 }
 
-// ─── Per-source render targets for captureDisplayObjectImageCache ─────────────
+// â”€â”€â”€ Per-source render targets for captureDisplayObjectImageCache â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const _captureTargets = new WeakMap<DisplayObject, ReturnType<typeof createCanvasRenderTarget>>();
 
-// ─── begin/end API (backward-compatible, dedicated cacheState pattern) ────────
+// â”€â”€â”€ begin/end API (backward-compatible, dedicated cacheState pattern) â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Prepares `cacheState` to render `source` into its own canvas. Resizes the
@@ -149,7 +149,7 @@ export function captureDisplayObjectImageCache(
   setImageCache(source, { source: imageSource, transform });
 }
 
-// ─── One-shot convenience ─────────────────────────────────────────────────────
+// â”€â”€â”€ One-shot convenience â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Finalises the capture started by `beginDisplayObjectImageCacheCapture`.

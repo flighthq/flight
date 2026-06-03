@@ -15,7 +15,6 @@
     { "path": "./packages/media" },
     { "path": "./packages/render-canvas" },
     { "path": "./packages/render" },
-    { "path": "./packages/render-tree" },
     { "path": "./packages/render-dom" },
     { "path": "./packages/render-webgl" },
     { "path": "./packages/scene" },

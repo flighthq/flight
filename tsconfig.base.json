@@ -38,8 +38,6 @@
       "@flighthq/media/*": ["./packages/media/src/*"],
       "@flighthq/render-canvas": ["./packages/render-canvas/src/index.ts"],
       "@flighthq/render-canvas/*": ["./packages/render-canvas/src/*"],
-      "@flighthq/render-tree": ["./packages/render-tree/src/index.ts"],
-      "@flighthq/render-tree/*": ["./packages/render-tree/src/*"],
       "@flighthq/render": ["./packages/render/src/index.ts"],
       "@flighthq/render/*": ["./packages/render/src/*"],
       "@flighthq/render-dom": ["./packages/render-dom/src/index.ts"],

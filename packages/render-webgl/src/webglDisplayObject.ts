@@ -1,4 +1,4 @@
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+﻿import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type {
   DisplayObject,

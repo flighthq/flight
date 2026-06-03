@@ -1,5 +1,5 @@
-import { createMatrix } from '@flighthq/geometry';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+﻿import { createMatrix } from '@flighthq/geometry';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { appendShapeRectangle, createShape } from '@flighthq/scene-display';
 
 import type { DOMStageRectangle } from './domClipRect';

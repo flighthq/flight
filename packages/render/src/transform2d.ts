@@ -1,5 +1,4 @@
 import { copyMatrix, multiplyMatrix, translateMatrixByVectorXY } from '@flighthq/geometry';
-import { hasRenderFeatures } from '@flighthq/render';
 import { getLocalTransformMatrix, getLocalTransformRevision } from '@flighthq/scene';
 import type {
   DisplayObjectRenderTreeNode,
@@ -9,6 +8,8 @@ import type {
   SceneNode,
 } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
+
+import { hasRenderFeatures } from './renderer';
 
 export function updateDisplayObjectRenderTransform(
   state: RenderState,

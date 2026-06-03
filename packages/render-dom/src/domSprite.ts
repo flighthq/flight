@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity';
-import { getOrCreateSpriteRenderNode } from '@flighthq/render-tree';
+﻿import { createEntity } from '@flighthq/entity';
+import { getOrCreateSpriteRenderNode } from '@flighthq/render';
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
 import type {
   DOMRenderState,

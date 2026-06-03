@@ -1,4 +1,4 @@
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+﻿import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { createInputText, getInputTextRuntime } from '@flighthq/scene-display';
 import { setInputTextSelection } from '@flighthq/text-input';
 

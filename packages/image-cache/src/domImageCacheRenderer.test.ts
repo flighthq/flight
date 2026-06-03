@@ -1,7 +1,7 @@
-import { createMatrix } from '@flighthq/geometry';
+﻿import { createMatrix } from '@flighthq/geometry';
 import { registerRenderer } from '@flighthq/render';
 import { createDOMRenderState, renderDOMDisplayObject } from '@flighthq/render-dom';
-import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render-tree';
+import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 

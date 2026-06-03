@@ -6,7 +6,7 @@ import {
   computeRenderTargetSize,
   createDisplayObjectRenderTargetPlacement,
   updateDisplayObjectRenderTargetPlacement,
-} from './renderTargetPlacement';
+} from '@flighthq/render';
 
 describe('computeRenderTargetSize', () => {
   it('returns content dimensions with no padding', () => {

@@ -1,6 +1,6 @@
-import { createRectangle } from '@flighthq/geometry';
+﻿import { createRectangle } from '@flighthq/geometry';
 import { registerRenderer } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { addSceneChild } from '@flighthq/scene';
 import { appendShapeRectangle, createDisplayObject, createShape } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';

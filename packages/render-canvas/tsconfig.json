@@ -10,7 +10,6 @@
   },
   "references": [
     { "path": "../assets" },
-    { "path": "../render-tree" },
     { "path": "../geometry" },
     { "path": "../render" },
     { "path": "../scene-display" },

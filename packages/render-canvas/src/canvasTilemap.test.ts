@@ -1,11 +1,11 @@
-import {
+﻿import {
   addTextureAtlasRegion,
   createImageSource,
   createTextureAtlas,
   createTileset,
   initTilesetRegions,
 } from '@flighthq/assets';
-import { getOrCreateSpriteRenderNode, updateSpriteBeforeRender } from '@flighthq/render-tree';
+import { getOrCreateSpriteRenderNode, updateSpriteBeforeRender } from '@flighthq/render';
 import { createTilemap, setTilemapTile } from '@flighthq/scene-sprite';
 
 import { createCanvasRenderState } from './canvasRenderState';

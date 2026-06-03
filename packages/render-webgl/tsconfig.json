@@ -9,7 +9,6 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../render-tree" },
     { "path": "../geometry" },
     { "path": "../render-canvas" },
     { "path": "../render" },

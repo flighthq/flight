@@ -1,7 +1,7 @@
-import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
+﻿import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
 import { registerRenderer } from '@flighthq/render';
-import { updateSpriteBeforeRender } from '@flighthq/render-tree';
-import { getOrCreateSpriteRenderNode } from '@flighthq/render-tree';
+import { updateSpriteBeforeRender } from '@flighthq/render';
+import { getOrCreateSpriteRenderNode } from '@flighthq/render';
 import { addSceneChild, setTransformScaleX, setTransformScaleY, setTransformX, setTransformY } from '@flighthq/scene';
 import { createSprite } from '@flighthq/scene-sprite';
 import { SpriteKind } from '@flighthq/types';

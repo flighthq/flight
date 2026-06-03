@@ -1,4 +1,4 @@
-import { getOrCreateSpriteRenderNode } from '@flighthq/render-tree';
+﻿import { getOrCreateSpriteRenderNode } from '@flighthq/render';
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
 import type { SpriteNode, WebGLRenderState } from '@flighthq/types';
 

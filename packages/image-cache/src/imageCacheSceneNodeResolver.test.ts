@@ -1,7 +1,7 @@
-import { createMatrix } from '@flighthq/geometry';
+﻿import { createMatrix } from '@flighthq/geometry';
 import { createRenderState } from '@flighthq/render';
 import { createCanvasRenderState, renderCanvasDisplayObject } from '@flighthq/render-canvas';
-import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render-tree';
+import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 
 import { setImageCache } from './imageCache';

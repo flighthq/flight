@@ -1,4 +1,4 @@
-export * from '@flighthq/application';
+﻿export * from '@flighthq/application';
 export * from '@flighthq/assets';
 export * from '@flighthq/assets-loader';
 export * from '@flighthq/entity';
@@ -11,7 +11,7 @@ export * from '@flighthq/media';
 export * from '@flighthq/render';
 export * from '@flighthq/render-canvas';
 export * from '@flighthq/render-dom';
-export * from '@flighthq/render-tree';
+export * from '@flighthq/render';
 export * from '@flighthq/render-webgl';
 export * from '@flighthq/scene';
 export * from '@flighthq/scene-display';

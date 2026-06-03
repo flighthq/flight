@@ -9,8 +9,10 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../entity" },
     { "path": "../geometry" },
     { "path": "../materials" },
+    { "path": "../scene" },
     { "path": "../scene-display" },
     { "path": "../scene-sprite" },
     { "path": "../types" }

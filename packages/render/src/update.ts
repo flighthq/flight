@@ -1,4 +1,3 @@
-import { hasRenderFeatures } from '@flighthq/render';
 import { getSceneParent } from '@flighthq/scene';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
@@ -12,7 +11,8 @@ import type {
 import { RenderFeatures } from '@flighthq/types';
 
 import { updateRenderNodeAppearance } from './appearance';
-import type { RenderTreeStateInternal } from './internal';
+import { hasRenderFeatures } from './renderer';
+import type { RenderTreeStateInternal } from './renderTreeInternal';
 import { resolveDisplayObjectRenderNode } from './renderNodeResolver';
 import {
   getOrCreateDefaultDisplayObjectRenderNode,
