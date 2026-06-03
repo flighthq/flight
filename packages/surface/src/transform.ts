@@ -1,15 +1,4 @@
-import type { Surface } from '@flighthq/types';
-
-export interface ColorTransformData {
-  alphaMultiplier: number;
-  alphaOffset: number;
-  blueMultiplier: number;
-  blueOffset: number;
-  greenMultiplier: number;
-  greenOffset: number;
-  redMultiplier: number;
-  redOffset: number;
-}
+import type { ColorTransformLike, Surface } from '@flighthq/types';
 
 export type ThresholdOperation = '!=' | '<' | '<=' | '==' | '>' | '>=';
 
@@ -19,7 +8,7 @@ export function applySurfaceColorTransform(
   y: number,
   width: number,
   height: number,
-  ct: Readonly<ColorTransformData>,
+  ct: Readonly<ColorTransformLike>,
 ): void {
   const x1 = Math.max(0, x);
   const y1 = Math.max(0, y);

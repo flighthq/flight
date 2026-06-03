@@ -1,6 +1,6 @@
 import { createMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry';
 import { getLocalTransformMatrix } from '@flighthq/scene';
-import type { DisplayObject, Matrix, Rectangle } from '@flighthq/types';
+import type { DisplayObject, Matrix, MatrixLike, RectangleLike } from '@flighthq/types';
 
 export type RenderTargetPlacement = {
   /**
@@ -30,7 +30,7 @@ export type RenderTargetPlacementOptions = {
  * symmetric `padding` and optional minimum size.
  */
 export function computeRenderTargetSize(
-  bounds: Readonly<Rectangle>,
+  bounds: Readonly<RectangleLike>,
   padding: number = 0,
   minWidth: number = 1,
   minHeight: number = 1,
@@ -54,7 +54,7 @@ export function computeRenderTargetSize(
  */
 export function createDisplayObjectRenderTargetPlacement(
   source: DisplayObject,
-  bounds: Readonly<Rectangle>,
+  bounds: Readonly<RectangleLike>,
   options?: RenderTargetPlacementOptions,
 ): RenderTargetPlacement {
   const contentX = options?.contentX ?? 0;
@@ -102,9 +102,9 @@ export function createDisplayObjectRenderTargetPlacement(
  */
 export function updateDisplayObjectRenderTargetPlacement(
   source: DisplayObject,
-  bounds: Readonly<Rectangle>,
-  outRenderTransform: Matrix,
-  outCacheTransform: Matrix,
+  bounds: Readonly<RectangleLike>,
+  outRenderTransform: MatrixLike,
+  outCacheTransform: MatrixLike,
   options?: RenderTargetPlacementOptions,
 ): void {
   const contentX = options?.contentX ?? 0;

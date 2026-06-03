@@ -1,5 +1,5 @@
 import { concatColorTransform, copyColorTransform, isIdentityColorTransform } from '@flighthq/materials';
-import type { ColorTransform, HasAppearance, RenderState, RenderTreeNode } from '@flighthq/types';
+import type { ColorTransformLike, HasAppearance, RenderState, RenderTreeNode } from '@flighthq/types';
 
 export function updateRenderNodeColorTransform(
   state: RenderState,
@@ -22,9 +22,9 @@ export function updateRenderNodeColorTransform(
 }
 
 function recalculateColorTransform(
-  out: ColorTransform,
-  transform: Readonly<ColorTransform> | null,
-  parentTransform: Readonly<ColorTransform> | null,
+  out: ColorTransformLike,
+  transform: Readonly<ColorTransformLike> | null,
+  parentTransform: Readonly<ColorTransformLike> | null,
 ): boolean {
   if (parentTransform !== null && !isIdentityColorTransform(parentTransform)) {
     if (transform !== null) {

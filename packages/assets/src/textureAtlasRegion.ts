@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity';
-import type { RectangleLike, TextureAtlas, TextureAtlasRegion, Vector2Like } from '@flighthq/types';
+import type { RectangleLike, TextureAtlas, TextureAtlasRegion, TextureAtlasRegionLike, Vector2Like } from '@flighthq/types';
 
 export function addTextureAtlasRegion(
   target: TextureAtlas,
@@ -68,7 +68,7 @@ export function addTextureAtlasRegionVector2(
   );
 }
 
-export function createTextureAtlasRegion(obj?: Partial<TextureAtlasRegion>): TextureAtlasRegion {
+export function createTextureAtlasRegion(obj?: Partial<TextureAtlasRegionLike>): TextureAtlasRegion {
   return createEntity({
     x: obj?.x ?? 0,
     y: obj?.y ?? 0,

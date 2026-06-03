@@ -47,7 +47,7 @@ export * from './MovieClipSignals';
 export * from './Node';
 export * from './PartialNode';
 export * from './PointerData';
-export * from './PresentationRenderable';
+export * from './RenderPrimitive';
 export * from './QuadBatch';
 export * from './QuadTransformType';
 export * from './Rectangle';

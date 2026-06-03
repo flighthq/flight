@@ -1,14 +1,14 @@
 import { createEntity } from '@flighthq/entity';
-import type { ColorTransform } from '@flighthq/types';
+import type { ColorTransform, ColorTransformLike } from '@flighthq/types';
 
-export function cloneColorTransform(source: Readonly<ColorTransform>): ColorTransform {
+export function cloneColorTransform(source: Readonly<ColorTransformLike>): ColorTransform {
   return createColorTransform(source);
 }
 
 export function concatColorTransform(
-  out: ColorTransform,
-  source: Readonly<ColorTransform>,
-  other: Readonly<ColorTransform>,
+  out: ColorTransformLike,
+  source: Readonly<ColorTransformLike>,
+  other: Readonly<ColorTransformLike>,
 ): void {
   out.redOffset = source.redMultiplier * other.redOffset + source.redOffset;
   out.greenOffset = source.greenMultiplier * other.greenOffset + source.greenOffset;
@@ -20,7 +20,7 @@ export function concatColorTransform(
   out.alphaMultiplier = source.alphaMultiplier * other.alphaMultiplier;
 }
 
-export function copyColorTransform(out: ColorTransform, source: Readonly<ColorTransform>): void {
+export function copyColorTransform(out: ColorTransformLike, source: Readonly<ColorTransformLike>): void {
   out.redMultiplier = source.redMultiplier;
   out.greenMultiplier = source.greenMultiplier;
   out.blueMultiplier = source.blueMultiplier;
@@ -34,7 +34,7 @@ export function copyColorTransform(out: ColorTransform, source: Readonly<ColorTr
 export function copyColorTransformToArrays(
   outColorMultipliers: number[],
   outColorOffsets: number[],
-  source: Readonly<ColorTransform>,
+  source: Readonly<ColorTransformLike>,
 ): void {
   outColorMultipliers[0] = source.redMultiplier;
   outColorMultipliers[1] = source.greenMultiplier;
@@ -46,7 +46,7 @@ export function copyColorTransformToArrays(
   outColorOffsets[3] = source.alphaOffset;
 }
 
-export function createColorTransform(obj?: Partial<ColorTransform>): ColorTransform {
+export function createColorTransform(obj?: Partial<ColorTransformLike>): ColorTransform {
   return createEntity({
     redMultiplier: obj?.redMultiplier ?? 1,
     greenMultiplier: obj?.greenMultiplier ?? 1,
@@ -59,13 +59,13 @@ export function createColorTransform(obj?: Partial<ColorTransform>): ColorTransf
   });
 }
 
-export function equalsColorTransform(a: Readonly<ColorTransform>, b: Readonly<ColorTransform>): boolean {
+export function equalsColorTransform(a: Readonly<ColorTransformLike>, b: Readonly<ColorTransformLike>): boolean {
   return equalsColorTransformOffsets(a, b) && equalsColorTransformMultipliers(a, b);
 }
 
 export function equalsColorTransformMultipliers(
-  a: Readonly<ColorTransform>,
-  b: Readonly<ColorTransform>,
+  a: Readonly<ColorTransformLike>,
+  b: Readonly<ColorTransformLike>,
   compareAlpha: boolean = true,
 ): boolean {
   return (
@@ -77,8 +77,8 @@ export function equalsColorTransformMultipliers(
 }
 
 export function equalsColorTransformOffsets(
-  a: Readonly<ColorTransform>,
-  b: Readonly<ColorTransform>,
+  a: Readonly<ColorTransformLike>,
+  b: Readonly<ColorTransformLike>,
   compareAlpha: boolean = true,
 ): boolean {
   return (
@@ -89,13 +89,13 @@ export function equalsColorTransformOffsets(
   );
 }
 
-export function getColorTransformOffsetRGB(source: Readonly<ColorTransform>): number {
+export function getColorTransformOffsetRGB(source: Readonly<ColorTransformLike>): number {
   return (
     (Math.fround(source.redOffset) << 16) | (Math.fround(source.greenOffset) << 8) | Math.fround(source.blueOffset)
   );
 }
 
-export function getColorTransformOffsetRGBA(source: Readonly<ColorTransform>): number {
+export function getColorTransformOffsetRGBA(source: Readonly<ColorTransformLike>): number {
   return (
     (Math.fround(source.redOffset) << 24) |
     (Math.fround(source.greenOffset) << 16) |
@@ -108,7 +108,7 @@ export function identityColorTransform(out: ColorTransform): void {
   setColorTransform(out, 1, 1, 1, 1, 0, 0, 0, 0);
 }
 
-export function invertColorTransform(out: ColorTransform, source: Readonly<ColorTransform>): void {
+export function invertColorTransform(out: ColorTransformLike, source: Readonly<ColorTransformLike>): void {
   out.redMultiplier = source.redMultiplier !== 0 ? 1 / source.redMultiplier : 1;
   out.greenMultiplier = source.greenMultiplier !== 0 ? 1 / source.greenMultiplier : 1;
   out.blueMultiplier = source.blueMultiplier !== 0 ? 1 / source.blueMultiplier : 1;
@@ -120,7 +120,7 @@ export function invertColorTransform(out: ColorTransform, source: Readonly<Color
 }
 
 export function isIdentityColorTransform(
-  source: Readonly<ColorTransform>,
+  source: Readonly<ColorTransformLike>,
   compareAlphaMultiplier: boolean = true,
 ): boolean {
   return (
@@ -130,7 +130,7 @@ export function isIdentityColorTransform(
 }
 
 export function setColorTransform(
-  out: ColorTransform,
+  out: ColorTransformLike,
   redMultiplier: number,
   greenMultiplier: number,
   blueMultiplier: number,
@@ -150,7 +150,7 @@ export function setColorTransform(
   out.alphaOffset = alphaOffset;
 }
 
-export function setColorTransformOffsetRGB(out: ColorTransform, value: number): void {
+export function setColorTransformOffsetRGB(out: ColorTransformLike, value: number): void {
   out.redOffset = (value >> 16) & 0xff;
   out.greenOffset = (value >> 8) & 0xff;
   out.blueOffset = value & 0xff;
@@ -161,7 +161,7 @@ export function setColorTransformOffsetRGB(out: ColorTransform, value: number): 
   out.alphaMultiplier = 1;
 }
 
-export function setColorTransformOffsetRGBA(out: ColorTransform, value: number): void {
+export function setColorTransformOffsetRGBA(out: ColorTransformLike, value: number): void {
   out.redOffset = (value >> 24) & 0xff;
   out.greenOffset = (value >> 16) & 0xff;
   out.blueOffset = (value >> 8) & 0xff;

@@ -1,5 +1,5 @@
 import type { DisplayObject } from './DisplayObject';
-import type { PresentationRenderable } from './PresentationRenderable';
+import type { RenderPrimitive } from './RenderPrimitive';
 import type { SpriteNode } from './SpriteNode';
 
-export type Renderable = DisplayObject | PresentationRenderable | SpriteNode;
+export type Renderable = DisplayObject | RenderPrimitive | SpriteNode;

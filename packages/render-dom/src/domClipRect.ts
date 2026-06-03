@@ -1,6 +1,6 @@
 import { enableRenderFeatures, hasRenderFeatures } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
-import type { DisplayObjectRenderTreeNode, DOMRenderState, Matrix, MatrixLike, Rectangle } from '@flighthq/types';
+import type { DisplayObjectRenderTreeNode, DOMRenderState, MatrixLike, RectangleLike } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
 
 import type { DOMClipHooks, DOMRenderStateInternal } from './internal';
@@ -39,7 +39,7 @@ export function applyDOMClipRectangles(
   (element.style as CSSStyleDeclaration & { webkitClipPath: string }).webkitClipPath = clipPath;
 }
 
-export function createDOMStageRectangle(rect: Readonly<Rectangle>, transform: Readonly<Matrix>): DOMStageRectangle {
+export function createDOMStageRectangle(rect: Readonly<RectangleLike>, transform: Readonly<MatrixLike>): DOMStageRectangle {
   const x0 = transform.a * rect.x + transform.c * rect.y + transform.tx;
   const y0 = transform.b * rect.x + transform.d * rect.y + transform.ty;
   const x1 = transform.a * (rect.x + rect.width) + transform.c * rect.y + transform.tx;
@@ -64,8 +64,8 @@ export function enableDOMScrollRectangleSupport(state: DOMRenderState): void {
 
 export function pushDOMClipRectangle(
   rectangles: DOMStageRectangle[],
-  rect: Readonly<Rectangle>,
-  transform: Readonly<Matrix>,
+  rect: Readonly<RectangleLike>,
+  transform: Readonly<MatrixLike>,
 ): void {
   rectangles.push(createDOMStageRectangle(rect, transform));
 }
