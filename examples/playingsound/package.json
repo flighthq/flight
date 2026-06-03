@@ -23,6 +23,7 @@
     "build:canvas": "cross-env RENDER=canvas vite build",
     "build:dom": "cross-env RENDER=dom vite build",
     "build:webgl": "cross-env RENDER=webgl vite build",
+    "test": "npm run build",
     "preview": "vite preview"
   }
 }
