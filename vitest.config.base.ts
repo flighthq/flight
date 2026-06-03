@@ -3,7 +3,7 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vitest/config';
 
 const rootDir = __dirname;
-const rootTsconfig = path.resolve(rootDir, 'tsconfig.base.json');
+const rootTsconfig = path.resolve(rootDir, 'tsconfig.json');
 
 export default defineConfig({
   plugins: [tsconfigPaths({ projects: [rootTsconfig], root: rootDir })],
