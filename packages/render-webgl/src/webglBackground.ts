@@ -5,7 +5,8 @@ import type { WebGLRenderStateInternal } from './internal';
 export function renderWebGLBackground(state: WebGLRenderState): void {
   const internal = state as WebGLRenderStateInternal;
   const gl = internal.gl;
-  gl.viewport(0, 0, internal.canvas.width, internal.canvas.height);
+  const viewport = internal.renderTargetViewport ?? internal.canvas;
+  gl.viewport(0, 0, viewport.width, viewport.height);
   const rgba = state.backgroundColorRGBA;
   if (rgba.length >= 4 && rgba[3] > 0) {
     gl.clearColor(rgba[0], rgba[1], rgba[2], rgba[3]);

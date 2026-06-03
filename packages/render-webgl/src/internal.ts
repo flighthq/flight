@@ -11,6 +11,18 @@ export type WebGLRenderStateInternal = Omit<WebGLRenderState, 'canvas' | 'gl'> &
   defaultBitmapShader: WebGLBitmapShader;
   currentMaskDepth?: number;
   currentScissorRect?: WebGLScissorRect | null;
+  /**
+   * The framebuffer currently bound for rendering. Null means the default
+   * (screen) framebuffer. Maintained internally so begin/end render target
+   * can restore the previous binding without a gl.getParameter() call.
+   */
+  currentFramebuffer: WebGLFramebuffer | null;
+  /**
+   * When rendering into a WebGLRenderTarget, overrides the canvas dimensions
+   * used for clip-space projection and scissor rect computation. Null means
+   * use canvas.width / canvas.height (normal on-screen rendering).
+   */
+  renderTargetViewport: { width: number; height: number } | null;
   shaderLoc: WebGLShaderLocations;
   textureCache: WeakMap<CanvasImageSource, WebGLTexture>;
   quadVertexBuffer: WebGLBuffer;

@@ -41,15 +41,17 @@ export function createWebGLRenderState(
     roundPixels: options.roundPixels ?? false,
   }) as WebGLRenderStateInternal;
 
-  if (options.backgroundColor) setRenderStateBackgroundColor(state, options.backgroundColor);
+  if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
 
   state.canvas = canvas;
   state.gl = gl;
   state.currentBlendMode = null;
+  state.currentFramebuffer = null;
   state.currentMaskDepth = 0;
   state.currentProgram = null;
   state.currentScissorRect = null;
   state.currentTexture = null;
+  state.renderTargetViewport = null;
   state.defaultBitmapShader = defaultBitmapShader;
   state.shaderLoc = shaderLoc;
   state.textureCache = new WeakMap();

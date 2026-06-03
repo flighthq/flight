@@ -18,8 +18,11 @@ export function updateDisplayObjectRenderTransform(
   const source = data.source;
   const scrollRectangle = source.scrollRectangle;
   if (hasRenderFeatures(state, RenderFeatures.ScrollRectangle) && scrollRectangle !== null) {
-    // scrollRectangle contributes to the render transform but isn't tracked by localTransformID,
-    // so always recalculate when it is set.
+    // scrollRectangle shifts the render transform by (-x, -y) so that content at (x, y) in local
+    // space lands at the object's world position on screen. Renderers then clip to (x, y, w, h)
+    // in shifted local space and draw source crops at the same (x, y) offset — both of which
+    // map back to the object's origin in screen space. scrollRectangle is not tracked by
+    // localTransformID, so always recalculate when it is set.
     recalculateRenderTransform2D(state, data, parentData);
     data.lastLocalTransformID = getLocalTransformRevision(data.source as SceneNode);
     translateMatrixByVectorXY(data.transform2D, data.transform2D, -scrollRectangle.x, -scrollRectangle.y);
