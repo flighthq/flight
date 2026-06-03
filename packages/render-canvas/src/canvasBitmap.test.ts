@@ -73,8 +73,8 @@ describe('drawCanvasBitmap', () => {
     expect(args[2]).toBe(20); // sy
     expect(args[3]).toBe(32); // sw
     expect(args[4]).toBe(32); // sh
-    expect(args[5]).toBe(0);  // dx
-    expect(args[6]).toBe(0);  // dy
+    expect(args[5]).toBe(0); // dx
+    expect(args[6]).toBe(0); // dy
   });
 
   it('disables imageSmoothingEnabled when smoothing is false', () => {
