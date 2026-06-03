@@ -1,11 +1,11 @@
-import { multiplyMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry';
+﻿import { multiplyMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry';
 import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
 import { createNullRendererData } from '@flighthq/render';
-import type { CanvasRenderState, QuadBatch, SpriteRenderer, SpriteRenderTreeNode } from '@flighthq/types';
+import type { CanvasRenderState, QuadBatch, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 import { setCanvasBlendMode } from './canvasMaterials';
 
-export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: SpriteRenderTreeNode): void {
+export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: SpriteRenderNode): void {
   const source = quadBatch.source as QuadBatch;
   const data = source.data;
   const { atlas, instanceCount, ids, transforms } = data;

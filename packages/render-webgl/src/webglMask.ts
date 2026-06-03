@@ -4,13 +4,13 @@ import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type {
   DisplayObject,
   DisplayObjectMaskHooks,
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   WebGLRenderState,
 } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 
-export function drawWebGLMask(state: WebGLRenderStateInternal, data: DisplayObjectRenderTreeNode): void {
+export function drawWebGLMask(state: WebGLRenderStateInternal, data: DisplayObjectRenderNode): void {
   state.displayObjectMaskRendererMap.get(data.source.kind)?.drawMask(state, data);
 
   if (!data.updateChildren) return;
@@ -28,7 +28,7 @@ export function enableWebGLMaskSupport(state: WebGLRenderState): void {
   setDisplayObjectMaskHooks(state, webGLMaskHooks);
 }
 
-export function popWebGLMask(state: WebGLRenderStateInternal, _data: DisplayObjectRenderTreeNode): void {
+export function popWebGLMask(state: WebGLRenderStateInternal, _data: DisplayObjectRenderNode): void {
   const gl = state.gl;
   const nextDepth = Math.max(0, (state.currentMaskDepth ?? 0) - 1);
   state.currentMaskDepth = nextDepth;
@@ -41,7 +41,7 @@ export function popWebGLMask(state: WebGLRenderStateInternal, _data: DisplayObje
   }
 }
 
-export function pushWebGLMask(state: WebGLRenderStateInternal, data: DisplayObjectRenderTreeNode): void {
+export function pushWebGLMask(state: WebGLRenderStateInternal, data: DisplayObjectRenderNode): void {
   const gl = state.gl;
   const depth = state.currentMaskDepth ?? 0;
   const nextDepth = depth + 1;

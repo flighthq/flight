@@ -1,10 +1,10 @@
-import type { HasBoundsRect } from './HasBoundsRect';
+﻿import type { HasBoundsRect } from './HasBoundsRect';
 import type { HasTransform2D } from './HasTransform2D';
 import type { Matrix } from './Matrix';
 import type { Renderable } from './Renderable';
-import type { RenderTreeNode } from './RenderTreeNode';
+import type { RenderNode } from './RenderNode';
 
-export interface RenderTreeNode2D extends RenderTreeNode {
+export interface RenderNode2D extends RenderNode {
   presentationTransform2D: Matrix | null;
   readonly source: Renderable & HasTransform2D & HasBoundsRect;
   transform2D: Matrix;

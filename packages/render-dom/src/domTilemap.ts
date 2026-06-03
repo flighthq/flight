@@ -1,11 +1,11 @@
-import { createEntity } from '@flighthq/entity';
+﻿import { createEntity } from '@flighthq/entity';
 import type {
   DOMRenderState,
   Renderable,
   RendererData,
   RenderState,
   SpriteRenderer,
-  SpriteRenderTreeNode,
+  SpriteRenderNode,
   Tilemap,
 } from '@flighthq/types';
 
@@ -20,7 +20,7 @@ function createDOMTilemapData(_state: RenderState, _source: Renderable): DOMTile
   return createEntity({ canvas: null, context: null });
 }
 
-export function drawDOMTilemap(state: DOMRenderState, tilemapNode: SpriteRenderTreeNode): void {
+export function drawDOMTilemap(state: DOMRenderState, tilemapNode: SpriteRenderNode): void {
   const source = tilemapNode.source as Tilemap;
   const { tileset, columns, rows, tiles } = source.data;
 

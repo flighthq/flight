@@ -1,4 +1,4 @@
-import type { RenderTreeNode2D } from '@flighthq/types';
+﻿import type { RenderNode2D } from '@flighthq/types';
 
 import type { DOMRenderStateInternal } from './internal';
 
@@ -17,7 +17,7 @@ export function detectDOMStructureChange(
 
 export function processDOMNode(
   internal: DOMRenderStateInternal,
-  data: RenderTreeNode2D,
+  data: RenderNode2D,
   currentFrameID: number,
   drawFn: () => void,
   newLength: number,

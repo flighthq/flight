@@ -1,30 +1,30 @@
-import { getSceneParent } from '@flighthq/scene';
+﻿import { getSceneParent } from '@flighthq/scene';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
 import type {
   DisplayObject,
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   RenderState,
   SpriteNode,
-  SpriteRenderTreeNode,
+  SpriteRenderNode,
 } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
 
 import { updateRenderNodeAppearance } from './appearance';
 import { hasRenderFeatures } from './renderer';
-import type { RenderTreeStateInternal } from './renderTreeInternal';
+import type { RenderNodeStateInternal } from './renderNodeInternal';
 import { resolveDisplayObjectRenderNode } from './renderNodeResolver';
 import {
   getOrCreateDefaultDisplayObjectRenderNode,
   getOrCreateDisplayObjectRenderNode,
   getOrCreateSpriteRenderNode,
-} from './renderTreeNode2d';
+} from './renderNode2d';
 import { updateDisplayObjectRenderTransform, updateRenderNode2DTransform } from './transform2d';
 
 function resolveDisplayObjectNodeForUpdate(
   state: RenderState,
   current: DisplayObject,
-): { data: DisplayObjectRenderTreeNode; dirty: boolean } {
+): { data: DisplayObjectRenderNode; dirty: boolean } {
   const resolution = resolveDisplayObjectRenderNode(state, current, () =>
     getOrCreateDefaultDisplayObjectRenderNode(state, current),
   );
@@ -35,14 +35,14 @@ function resolveDisplayObjectNodeForUpdate(
  * First pass, update appearance, transforms, identify masks
  */
 export function updateDisplayObjectBeforeRender(state: RenderState, source: DisplayObject): boolean {
-  const internal = state as RenderTreeStateInternal;
+  const internal = state as RenderNodeStateInternal;
   const tempStack = state.tempStack;
   const currentFrameID = ++internal.currentFrameID;
 
   let stackLength = 1;
   tempStack[0] = source;
 
-  let parentData: DisplayObjectRenderTreeNode | undefined = undefined;
+  let parentData: DisplayObjectRenderNode | undefined = undefined;
   let lastParent: DisplayObject | null = null;
   let scrollRectangleDepth: number = 0;
   let maskDepth: number = 0;
@@ -116,12 +116,12 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
 
 export function updateSpriteBeforeRender(state: RenderState, source: SpriteNode): boolean {
   const tempStack = state.tempStack;
-  ++(state as RenderTreeStateInternal).currentFrameID;
+  ++(state as RenderNodeStateInternal).currentFrameID;
 
   let stackLength = 1;
   tempStack[0] = source;
 
-  let parentData: SpriteRenderTreeNode | undefined = undefined;
+  let parentData: SpriteRenderNode | undefined = undefined;
   let lastParent: SpriteNode | null = null;
   let treeDirty = false;
 

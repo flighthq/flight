@@ -1,6 +1,6 @@
 ﻿import { enableRenderFeatures, hasRenderFeatures } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import type { DisplayObjectRenderTreeNode, DOMRenderState, MatrixLike, RectangleLike } from '@flighthq/types';
+import type { DisplayObjectRenderNode, DOMRenderState, MatrixLike, RectangleLike } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
 
 import type { DOMClipHooks, DOMRenderStateInternal } from './internal';
@@ -14,7 +14,7 @@ export interface DOMStageRectangle {
 
 export function applyDOMClipRectangles(
   state: DOMRenderStateInternal,
-  data: DisplayObjectRenderTreeNode,
+  data: DisplayObjectRenderNode,
   rectangles: readonly DOMStageRectangle[],
 ): void {
   const element = state.domElementMap.get(data);
@@ -70,7 +70,7 @@ export function pushDOMClipRectangle(
   rectangles.push(createDOMStageRectangle(rect, transform));
 }
 
-export function pushDOMScrollRectangle(rectangles: DOMStageRectangle[], data: DisplayObjectRenderTreeNode): void {
+export function pushDOMScrollRectangle(rectangles: DOMStageRectangle[], data: DisplayObjectRenderNode): void {
   pushDOMClipRectangle(rectangles, data.source.scrollRectangle!, data.transform2D);
 }
 
@@ -147,7 +147,7 @@ function mapStageRectangleToElement(rect: DOMStageRectangle, element: HTMLElemen
 const EMPTY_CLIP_PATH = 'inset(0 100% 100% 0)';
 
 const domClipHooksImpl: DOMClipHooks = {
-  push(state: DOMRenderState, data: DisplayObjectRenderTreeNode): number {
+  push(state: DOMRenderState, data: DisplayObjectRenderNode): number {
     const internal = state as DOMRenderStateInternal;
     const stack = internal.domClipStack;
     let pushed = 0;
@@ -165,7 +165,7 @@ const domClipHooksImpl: DOMClipHooks = {
     }
     return pushed;
   },
-  apply(state: DOMRenderState, data: DisplayObjectRenderTreeNode): void {
+  apply(state: DOMRenderState, data: DisplayObjectRenderNode): void {
     const internal = state as DOMRenderStateInternal;
     applyDOMClipRectangles(internal, data, internal.domClipStack);
   },

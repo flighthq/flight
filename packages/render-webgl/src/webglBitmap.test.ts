@@ -1,16 +1,16 @@
-import type { DisplayObjectRenderTreeNode } from '@flighthq/types';
+﻿import type { DisplayObjectRenderNode } from '@flighthq/types';
 
 import { defaultWebGLBitmapRenderer, drawWebGLBitmap, drawWebGLBitmapMask } from './webglBitmap';
 import { makeWebGLState } from './webglTestHelper';
 
-function makeRenderNode(image: unknown = null): DisplayObjectRenderTreeNode {
+function makeRenderNode(image: unknown = null): DisplayObjectRenderNode {
   return {
     source: { data: { image } },
     blendMode: 0,
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     rendererData: null,
-  } as unknown as DisplayObjectRenderTreeNode;
+  } as unknown as DisplayObjectRenderNode;
 }
 
 function makeImageSource(src: unknown = null, width = 32, height = 32) {

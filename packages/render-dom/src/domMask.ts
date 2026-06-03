@@ -1,6 +1,6 @@
-import { setDisplayObjectMaskHooks } from '@flighthq/render';
+﻿import { setDisplayObjectMaskHooks } from '@flighthq/render';
 import { getLocalBoundsRectangle } from '@flighthq/scene';
-import type { DisplayObjectMaskHooks, DisplayObjectRenderTreeNode, DOMRenderState, RenderState } from '@flighthq/types';
+import type { DisplayObjectMaskHooks, DisplayObjectRenderNode, DOMRenderState, RenderState } from '@flighthq/types';
 
 import { createDOMStageRectangle, type DOMStageRectangle, setDOMClipHooks } from './domClipRect';
 
@@ -9,7 +9,7 @@ export function enableDOMMaskSupport(state: DOMRenderState): void {
   setDOMClipHooks(state);
 }
 
-export function pushDOMMaskRectangle(rectangles: DOMStageRectangle[], data: DisplayObjectRenderTreeNode): void {
+export function pushDOMMaskRectangle(rectangles: DOMStageRectangle[], data: DisplayObjectRenderNode): void {
   const bounds = getLocalBoundsRectangle(data.source);
   if (bounds.width <= 0 || bounds.height <= 0) {
     rectangles.push({ bottom: 0, left: 0, right: 0, top: 0 });
@@ -19,9 +19,9 @@ export function pushDOMMaskRectangle(rectangles: DOMStageRectangle[], data: Disp
   rectangles.push(createDOMStageRectangle(bounds, data.transform2D));
 }
 
-function popDOMMask(_state: RenderState, _data: DisplayObjectRenderTreeNode, _context?: unknown): void {}
+function popDOMMask(_state: RenderState, _data: DisplayObjectRenderNode, _context?: unknown): void {}
 
-function pushDOMMask(_state: RenderState, data: DisplayObjectRenderTreeNode, context?: unknown): void {
+function pushDOMMask(_state: RenderState, data: DisplayObjectRenderNode, context?: unknown): void {
   pushDOMMaskRectangle(context as DOMStageRectangle[], data);
 }
 

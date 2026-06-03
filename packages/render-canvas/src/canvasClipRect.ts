@@ -1,7 +1,7 @@
-import { enableRenderFeatures } from '@flighthq/render';
+﻿import { enableRenderFeatures } from '@flighthq/render';
 import type {
   CanvasRenderState,
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   Matrix,
   RectangleLike,
   ScrollRectangleHooks,
@@ -40,7 +40,7 @@ export function pushCanvasClipRectangle(state: CanvasRenderState, rect: Readonly
   state.context.clip();
 }
 
-export function pushCanvasScrollRectangle(state: CanvasRenderState, data: DisplayObjectRenderTreeNode): void {
+export function pushCanvasScrollRectangle(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
   pushCanvasClipRectangle(state, data.source.scrollRectangle!, data.transform2D);
   state.currentScrollRectangleDepth++;
 }

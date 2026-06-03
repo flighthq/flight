@@ -1,31 +1,31 @@
-import { getSceneNodeRuntime } from '@flighthq/scene';
-import type { DisplayObject, DisplayObjectRenderTreeNode, RenderState } from '@flighthq/types';
+﻿import { getSceneNodeRuntime } from '@flighthq/scene';
+import type { DisplayObject, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
-import type { RenderTreeStateInternal } from './renderTreeInternal';
+import type { RenderNodeStateInternal } from './renderNodeInternal';
 
 export type DisplayObjectRenderNodeResolution = {
   dirty?: boolean;
-  node: DisplayObjectRenderTreeNode;
+  node: DisplayObjectRenderNode;
   updateChildren: boolean;
 };
 
 export type DisplayObjectRenderNodeResolver = (
   state: RenderState,
   source: DisplayObject,
-  next: () => DisplayObjectRenderTreeNode,
+  next: () => DisplayObjectRenderNode,
 ) => DisplayObjectRenderNodeResolution | null;
 
 export function registerDisplayObjectRenderNodeResolver(
   state: RenderState,
   resolver: DisplayObjectRenderNodeResolver,
 ): void {
-  (state as RenderTreeStateInternal).displayObjectRenderNodeResolvers.push(resolver);
+  (state as RenderNodeStateInternal).displayObjectRenderNodeResolvers.push(resolver);
 }
 
 export function resolveDisplayObjectRenderNode(
   state: RenderState,
   source: DisplayObject,
-  next: () => DisplayObjectRenderTreeNode,
+  next: () => DisplayObjectRenderNode,
 ): DisplayObjectRenderNodeResolution {
   const nodeResolver = getSceneNodeRuntime(source).resolver;
   if (nodeResolver !== null) {
@@ -36,7 +36,7 @@ export function resolveDisplayObjectRenderNode(
     }
   }
 
-  const resolvers = (state as RenderTreeStateInternal).displayObjectRenderNodeResolvers;
+  const resolvers = (state as RenderNodeStateInternal).displayObjectRenderNodeResolvers;
   for (let i = 0; i < resolvers.length; i++) {
     const result = resolvers[i](state, source, next);
     if (result !== null) {

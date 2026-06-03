@@ -3,15 +3,15 @@ import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type {
   DisplayObject,
   DisplayObjectRenderer,
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   WebGLRenderState,
 } from '@flighthq/types';
 
-export function drawWebGLDisplayObject(_state: WebGLRenderState, _renderNode: DisplayObjectRenderTreeNode): void {
+export function drawWebGLDisplayObject(_state: WebGLRenderState, _renderNode: DisplayObjectRenderNode): void {
   // Plain display objects have no visual geometry of their own.
 }
 
-export function drawWebGLDisplayObjectMask(state: WebGLRenderState, data: DisplayObjectRenderTreeNode): void {
+export function drawWebGLDisplayObjectMask(state: WebGLRenderState, data: DisplayObjectRenderNode): void {
   const children = getDisplayObjectRuntime(data.source).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
@@ -57,13 +57,13 @@ function drawNode(state: WebGLRenderState, current: DisplayObject): void {
   popObjectEffects(state, data);
 }
 
-function popObjectEffects(state: WebGLRenderState, data: DisplayObjectRenderTreeNode): void {
+function popObjectEffects(state: WebGLRenderState, data: DisplayObjectRenderNode): void {
   const source = data.source;
   if (source.mask !== null) state.displayObjectMaskHooks?.popMask(state, data);
   if (source.scrollRectangle !== null) state.scrollRectangleHooks?.pop(state);
 }
 
-function pushObjectEffects(state: WebGLRenderState, data: DisplayObjectRenderTreeNode): void {
+function pushObjectEffects(state: WebGLRenderState, data: DisplayObjectRenderNode): void {
   const source = data.source;
   if (source.scrollRectangle !== null) state.scrollRectangleHooks?.push(state, data);
   if (source.mask !== null)

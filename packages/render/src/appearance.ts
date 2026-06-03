@@ -1,5 +1,5 @@
-import { getAppearanceRevision } from '@flighthq/scene';
-import type { HasAppearance, RenderState, RenderTreeNode, SceneNode } from '@flighthq/types';
+﻿import { getAppearanceRevision } from '@flighthq/scene';
+import type { HasAppearance, RenderState, RenderNode, SceneNode } from '@flighthq/types';
 import { BlendMode, RenderFeatures } from '@flighthq/types';
 
 import { updateRenderNodeColorTransform } from './renderNodeColor';
@@ -7,8 +7,8 @@ import { hasRenderFeatures } from './renderer';
 
 export function updateRenderNodeAppearance(
   state: RenderState,
-  data: RenderTreeNode,
-  parentData?: RenderTreeNode,
+  data: RenderNode,
+  parentData?: RenderNode,
 ): boolean {
   const appearanceID = getAppearanceRevision(data.source as SceneNode);
   if (
@@ -22,7 +22,7 @@ export function updateRenderNodeAppearance(
   return false;
 }
 
-function recalculateAppearance(state: RenderState, data: RenderTreeNode, parentData?: RenderTreeNode) {
+function recalculateAppearance(state: RenderState, data: RenderNode, parentData?: RenderNode) {
   const source = data.source as HasAppearance;
   const hasBlendMode = hasRenderFeatures(state, RenderFeatures.BlendMode);
   const hasColorTransform = hasRenderFeatures(state, RenderFeatures.ColorTransform);

@@ -1,18 +1,18 @@
-import { createInputText, getInputTextRuntime } from '@flighthq/scene-display';
+﻿import { createInputText, getInputTextRuntime } from '@flighthq/scene-display';
 import { setInputTextSelection } from '@flighthq/text-input';
-import type { DisplayObjectRenderTreeNode, InputText } from '@flighthq/types';
+import type { DisplayObjectRenderNode, InputText } from '@flighthq/types';
 
 import { defaultWebGLInputTextRenderer, drawWebGLInputText } from './webglInputText';
 import { makeWebGLState } from './webglTestHelper';
 
-function makeInputTextNode(): DisplayObjectRenderTreeNode {
+function makeInputTextNode(): DisplayObjectRenderNode {
   return {
     source: createInputText({ data: { height: 40, text: 'hello', width: 100 } }),
     blendMode: 0,
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     rendererData: null,
-  } as unknown as DisplayObjectRenderTreeNode;
+  } as unknown as DisplayObjectRenderNode;
 }
 
 describe('defaultWebGLInputTextRenderer', () => {

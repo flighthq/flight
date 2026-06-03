@@ -1,17 +1,17 @@
-import { createNullRendererData } from '@flighthq/render';
+﻿import { createNullRendererData } from '@flighthq/render';
 import { setCanvasTransform } from '@flighthq/render-canvas';
 import type {
   CanvasRenderState,
   DisplayObjectMaskRenderer,
   DisplayObjectRenderer,
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   RenderState,
 } from '@flighthq/types';
 
 import { isImageCachePrimitive } from './imageCachePrimitive';
 import { registerImageCacheRenderer } from './imageCacheSceneNodeResolver';
 
-function drawCanvasImageCache(state: RenderState, renderNode: DisplayObjectRenderTreeNode): void {
+function drawCanvasImageCache(state: RenderState, renderNode: DisplayObjectRenderNode): void {
   const source = renderNode.presentationSource;
   if (!isImageCachePrimitive(source)) return;
   const cache = source.cache;
@@ -21,7 +21,7 @@ function drawCanvasImageCache(state: RenderState, renderNode: DisplayObjectRende
   canvasState.context.drawImage(cache.source.src, 0, 0);
 }
 
-function drawCanvasImageCacheMask(state: RenderState, renderNode: DisplayObjectRenderTreeNode): void {
+function drawCanvasImageCacheMask(state: RenderState, renderNode: DisplayObjectRenderNode): void {
   const source = renderNode.presentationSource;
   if (!isImageCachePrimitive(source)) return;
   const cache = source.cache;

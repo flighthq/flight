@@ -1,11 +1,11 @@
 ﻿import { createNullRendererData } from '@flighthq/render';
 import { getOrCreateSpriteRenderNode } from '@flighthq/render';
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
-import type { CanvasRenderState, Sprite, SpriteNode, SpriteRenderer, SpriteRenderTreeNode } from '@flighthq/types';
+import type { CanvasRenderState, Sprite, SpriteNode, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 import { setCanvasBlendMode } from './canvasMaterials';
 
-export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRenderTreeNode): void {
+export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRenderNode): void {
   const source = spriteNode.source as Sprite;
   const { atlas, id } = source.data;
   if (atlas === null || atlas.image === null || atlas.image.src === null) return;
@@ -45,7 +45,7 @@ export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRen
   }
 }
 
-function drawObject(state: CanvasRenderState, data: SpriteRenderTreeNode): void {
+function drawObject(state: CanvasRenderState, data: SpriteRenderNode): void {
   if (data.renderer === null) return;
   data.renderer.draw(state, data);
 }

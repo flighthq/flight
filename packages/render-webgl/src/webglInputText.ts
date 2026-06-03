@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render';
+﻿import { createNullRendererData } from '@flighthq/render';
 import { getInputTextRuntime } from '@flighthq/scene-display';
 import {
   getInputTextCaretRectangle,
@@ -10,7 +10,7 @@ import { getRichTextScrollYOffset } from '@flighthq/text-layout';
 import type {
   DisplayObjectMaskRenderer,
   DisplayObjectRenderer,
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   InputText,
   InputTextRuntime,
   InputTextSelectionRectangle,
@@ -21,7 +21,7 @@ import type {
 
 import { drawWebGLRichTextMask, drawWebGLRichTextWithOverlay } from './webglRichText';
 
-export function drawWebGLInputText(state: RenderState, renderNode: DisplayObjectRenderTreeNode): void {
+export function drawWebGLInputText(state: RenderState, renderNode: DisplayObjectRenderNode): void {
   drawWebGLRichTextWithOverlay(state, renderNode, drawWebGLInputTextOverlay);
 }
 
@@ -30,7 +30,7 @@ export const defaultWebGLInputTextRenderer: DisplayObjectRenderer = {
   draw: drawWebGLInputText,
 };
 
-function drawWebGLInputTextMask(state: RenderState, renderNode: DisplayObjectRenderTreeNode): void {
+function drawWebGLInputTextMask(state: RenderState, renderNode: DisplayObjectRenderNode): void {
   drawWebGLRichTextMask(state, renderNode);
 }
 

@@ -1,6 +1,6 @@
-import { enableRenderFeatures } from '@flighthq/render';
+﻿import { enableRenderFeatures } from '@flighthq/render';
 import type {
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   MatrixLike,
   RectangleLike,
   ScrollRectangleHooks,
@@ -49,7 +49,7 @@ export function pushWebGLClipRectangle(
   gl.scissor(next.x, next.y, next.width, next.height);
 }
 
-export function pushWebGLScrollRectangle(state: WebGLRenderStateInternal, data: DisplayObjectRenderTreeNode): void {
+export function pushWebGLScrollRectangle(state: WebGLRenderStateInternal, data: DisplayObjectRenderNode): void {
   pushWebGLClipRectangle(state, data.source.scrollRectangle!, data.transform2D);
 }
 

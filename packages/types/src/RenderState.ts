@@ -1,4 +1,4 @@
-import type { BlendMode } from './BlendMode';
+﻿import type { BlendMode } from './BlendMode';
 import type { ColorTransform } from './ColorTransform';
 import type { DisplayObjectMaskHooks, DisplayObjectMaskRenderer, ScrollRectangleHooks } from './DisplayObjectRenderer';
 import type { Entity } from './Entity';
@@ -6,7 +6,7 @@ import type { Matrix } from './Matrix';
 import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
 import type { RenderFeatures } from './RenderFeatures';
-import type { RenderTreeNode } from './RenderTreeNode';
+import type { RenderNode } from './RenderNode';
 import type { BitmapShader } from './Shader';
 
 export interface RenderState extends Entity {
@@ -16,7 +16,7 @@ export interface RenderState extends Entity {
   readonly backgroundColorString: string;
   readonly currentFrameID: number;
   currentMaskDepth: number;
-  readonly currentQueue: RenderTreeNode[];
+  readonly currentQueue: RenderNode[];
   readonly currentQueueLength: number;
   currentScrollRectangleDepth: number;
   displayObjectMaskHooks: DisplayObjectMaskHooks | null;
@@ -24,7 +24,7 @@ export interface RenderState extends Entity {
   readonly displayObjectMaskRendererMap: Map<symbol, DisplayObjectMaskRenderer>;
   readonly displayObjectMaskRendererMapID: number;
   pixelRatio: number;
-  readonly renderNodeMap: WeakMap<Renderable, RenderTreeNode>;
+  readonly renderNodeMap: WeakMap<Renderable, RenderNode>;
   renderAlpha: number;
   renderBlendMode: BlendMode | null;
   renderColorTransform: ColorTransform | null;

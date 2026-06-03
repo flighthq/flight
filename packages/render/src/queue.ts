@@ -1,10 +1,10 @@
-import { getDisplayObjectRuntime } from '@flighthq/scene-display';
+﻿import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type { DisplayObject, Renderable, RenderState } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
 
 import { hasRenderFeatures } from './renderer';
-import type { RenderTreeStateInternal } from './renderTreeInternal';
-import { getOrCreateDisplayObjectRenderNode } from './renderTreeNode2d';
+import type { RenderNodeStateInternal } from './renderNodeInternal';
+import { getOrCreateDisplayObjectRenderNode } from './renderNode2d';
 
 /**
  * Second pass, exclude non-renderable objects from queue
@@ -39,5 +39,5 @@ export function prepareRenderQueue(state: RenderState, source: Renderable): void
     }
   }
 
-  (state as RenderTreeStateInternal).currentQueueLength = currentQueueIndex;
+  (state as RenderNodeStateInternal).currentQueueLength = currentQueueIndex;
 }
