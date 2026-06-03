@@ -1,8 +1,9 @@
-﻿import type {
+import type {
   DisplayObject,
   DisplayObjectRenderNode,
   HasBoundsRect,
   HasTransform2D,
+  Matrix,
   Renderable,
   RenderNode2D,
   RenderState,
@@ -26,9 +27,7 @@ export function createRenderNode2D(
   state: RenderState,
   source: Renderable & HasTransform2D & HasBoundsRect,
 ): RenderNode2D {
-  const out = createRenderNode(state, source) as RenderNode2D;
-  out.presentationTransform2D = null;
-  return out;
+  return createRenderNode(state, source) as RenderNode2D;
 }
 
 export function createSpriteRenderNode(state: RenderState, source: SpriteNode): SpriteRenderNode {
@@ -42,8 +41,17 @@ export function getOrCreateDefaultDisplayObjectRenderNode(
   return getOrCreateRenderNode(state, source, createDisplayObjectRenderNode);
 }
 
-export function getOrCreateDisplayObjectRenderNode(state: RenderState, source: DisplayObject): DisplayObjectRenderNode {
-  return resolveDisplayObjectRenderNode(state, source, () => getOrCreateDefaultDisplayObjectRenderNode(state, source));
+export function getOrCreateDisplayObjectRenderNode(
+  state: RenderState,
+  source: DisplayObject,
+  parentTransform: Matrix | null = null,
+): DisplayObjectRenderNode {
+  return resolveDisplayObjectRenderNode(
+    state,
+    source,
+    () => getOrCreateDefaultDisplayObjectRenderNode(state, source),
+    parentTransform,
+  );
 }
 
 export function getOrCreateSpriteRenderNode(state: RenderState, source: SpriteNode): SpriteRenderNode {

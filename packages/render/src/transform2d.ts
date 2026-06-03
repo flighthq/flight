@@ -1,6 +1,12 @@
 import { copyMatrix, multiplyMatrix, translateMatrixByVectorXY } from '@flighthq/geometry';
 import { getLocalTransformMatrix, getLocalTransformRevision } from '@flighthq/scene';
-import type { DisplayObjectRenderNode, HasTransform2D, RenderNode2D, RenderState, SceneNode } from '@flighthq/types';
+import type {
+  DisplayObjectRenderNode,
+  HasTransform2D,
+  RenderState,
+  RenderNode2D,
+  SceneNode,
+} from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
 
 import { hasRenderFeatures } from './renderer';
@@ -10,6 +16,8 @@ export function updateDisplayObjectRenderTransform(
   data: DisplayObjectRenderNode,
   parentData?: DisplayObjectRenderNode,
 ): boolean {
+  if (data.resolver !== null) return false;
+
   const owner = data.owner;
   const scrollRectangle = owner.scrollRectangle;
   if (hasRenderFeatures(state, RenderFeatures.ScrollRectangle) && scrollRectangle !== null) {
@@ -21,7 +29,6 @@ export function updateDisplayObjectRenderTransform(
     recalculateRenderTransform2D(state, data, parentData);
     data.lastLocalTransformID = getLocalTransformRevision(data.owner as SceneNode);
     translateMatrixByVectorXY(data.transform2D, data.transform2D, -scrollRectangle.x, -scrollRectangle.y);
-    applyPresentationTransform2D(data);
     return true;
   }
   return updateRenderNode2DTransform(state, data, parentData);
@@ -32,13 +39,14 @@ export function updateRenderNode2DTransform(
   data: RenderNode2D,
   parentData?: RenderNode2D,
 ): boolean {
+  if (data.resolver !== null) return false;
+
   const localTransformID = getLocalTransformRevision(data.owner as SceneNode);
   if (
     (parentData !== undefined && parentData.transformFrameID === state.currentFrameID) ||
     data.lastLocalTransformID !== localTransformID
   ) {
     recalculateRenderTransform2D(state, data, parentData);
-    applyPresentationTransform2D(data);
     data.lastLocalTransformID = localTransformID;
     return true;
   }
@@ -54,10 +62,4 @@ function recalculateRenderTransform2D(state: RenderState, data: RenderNode2D, pa
     copyMatrix(data.transform2D, transform2D);
   }
   data.transformFrameID = state.currentFrameID;
-}
-
-function applyPresentationTransform2D(data: RenderNode2D): void {
-  if (data.presentationTransform2D !== null) {
-    multiplyMatrix(data.transform2D, data.transform2D, data.presentationTransform2D);
-  }
 }

@@ -1,9 +1,11 @@
 import { createEntity } from '@flighthq/entity';
-import { getSceneNodeRuntime, invalidateAppearance } from '@flighthq/scene';
+import { copyMatrix, multiplyMatrix } from '@flighthq/geometry';
+import { getLocalTransformMatrix, getSceneNodeRuntime, invalidateAppearance } from '@flighthq/scene';
 import type {
   DisplayObject,
   DisplayObjectRenderNode,
   ImageRenderCacheResult,
+  Matrix,
   Renderer,
   RenderNodeResolver,
   RenderPrimitive,
@@ -61,7 +63,7 @@ export function createRenderImageCacheResolver(): ImageRenderCacheResolver {
   const resolver: ImageRenderCacheResolver = {
     result: null,
 
-    resolve(state: RenderState, source: DisplayObject): boolean | null {
+    resolve(state: RenderState, source: DisplayObject, parentTransform: Matrix | null): boolean | null {
       if (_capturingStates.has(state)) return null;
       const cache = resolver.result;
       if (cache?.source?.src == null) return null;
@@ -81,7 +83,17 @@ export function createRenderImageCacheResolver(): ImageRenderCacheResolver {
       }
       node.source = primitive;
       node.kind = primitive.kind;
-      node.presentationTransform2D = cache.transform;
+
+      // Bake final transform: parentTransform * ownerLocalTransform * cacheOffset
+      const ownerLocal = getLocalTransformMatrix(source);
+      if (parentTransform !== null) {
+        multiplyMatrix(node.transform2D, parentTransform, ownerLocal);
+      } else {
+        copyMatrix(node.transform2D, ownerLocal);
+      }
+      multiplyMatrix(node.transform2D, node.transform2D, cache.transform);
+      node.transformFrameID = state.currentFrameID;
+
       syncRenderNodeRenderer(state, node);
 
       return false;

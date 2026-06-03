@@ -31,8 +31,8 @@ export function computeDisplayObjectRenderTargetTransform(
 }
 
 /**
- * Writes into outCacheTransform the presentationTransform2D to store on the resolved
- * render node so the cached image is placed back at the original scene position.
+ * Writes into outCacheTransform the transform to pass to the cache resolver so the
+ * cached image is placed back at the original scene position.
  */
 export function computeImageRenderCacheTransform(
   outCacheTransform: MatrixLike,
