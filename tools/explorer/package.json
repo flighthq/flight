@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "predev": "tsx ../../scripts/download-all-assets.ts",
-    "dev": "vite --config vite.config.ts"
+    "dev": "vite --config vite.config.ts",
+    "test": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "vite": "*"

@@ -10,6 +10,7 @@
     "dev:canvas": "cross-env RENDER=canvas vite",
     "build": "npm run build:canvas",
     "build:canvas": "cross-env RENDER=canvas vite build",
+    "test": "npm run build",
     "preview": "vite preview"
   }
 }
