@@ -30,7 +30,7 @@ export function drawDOMBitmap(state: DOMRenderState, renderNode: DisplayObjectRe
   if (imageSource === null || imageSource.src === null) return;
 
   const src = imageSource.src;
-  const sr = source.data.sourceRectangle;
+  const sr = source.data.sourceRectangle ?? null;
 
   if (sr === null && src instanceof HTMLImageElement) {
     renderBitmapAsImage(state, renderNode, data, src);

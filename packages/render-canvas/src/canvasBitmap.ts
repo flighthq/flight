@@ -16,7 +16,7 @@ export function drawCanvasBitmap(state: CanvasRenderState, bitmap: DisplayObject
     if (hasRenderFeatures(state, RenderFeatures.BlendMode)) setCanvasBlendMode(state, bitmap.blendMode);
 
     context.globalAlpha = bitmap.alpha;
-    const sourceRectangle = source.data.sourceRectangle;
+    const sourceRectangle = source.data.sourceRectangle ?? null;
 
     setCanvasTransform(state, context, bitmap.transform2D);
 
