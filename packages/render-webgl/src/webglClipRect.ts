@@ -1,8 +1,8 @@
 import { enableRenderFeatures } from '@flighthq/render';
 import type {
   DisplayObjectRenderTreeNode,
-  Matrix,
-  Rectangle,
+  MatrixLike,
+  RectangleLike,
   ScrollRectangleHooks,
   WebGLRenderState,
 } from '@flighthq/types';
@@ -37,8 +37,8 @@ export function popWebGLClipRectangle(state: WebGLRenderStateInternal): void {
 
 export function pushWebGLClipRectangle(
   state: WebGLRenderStateInternal,
-  rect: Readonly<Rectangle>,
-  transform: Readonly<Matrix>,
+  rect: Readonly<RectangleLike>,
+  transform: Readonly<MatrixLike>,
 ): void {
   const next = intersectScissorRect(state.currentScissorRect ?? null, computeScissorRect(state, rect, transform));
   state.currentScissorRect = next;
@@ -55,8 +55,8 @@ export function pushWebGLScrollRectangle(state: WebGLRenderStateInternal, data: 
 
 function computeScissorRect(
   state: WebGLRenderStateInternal,
-  rect: Readonly<Rectangle>,
-  transform: Readonly<Matrix>,
+  rect: Readonly<RectangleLike>,
+  transform: Readonly<MatrixLike>,
 ): WebGLScissorRect {
   const x0 = transform.a * rect.x + transform.c * rect.y + transform.tx;
   const y0 = transform.b * rect.x + transform.d * rect.y + transform.ty;

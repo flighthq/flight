@@ -3,7 +3,7 @@ import type {
   CanvasRenderState,
   DisplayObjectRenderTreeNode,
   Matrix,
-  Rectangle,
+  RectangleLike,
   ScrollRectangleHooks,
 } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
@@ -30,7 +30,7 @@ export function popCanvasScrollRectangle(state: CanvasRenderState): void {
   state.currentScrollRectangleDepth--;
 }
 
-export function pushCanvasClipRectangle(state: CanvasRenderState, rect: Rectangle, transform: Matrix): void {
+export function pushCanvasClipRectangle(state: CanvasRenderState, rect: Readonly<RectangleLike>, transform: Matrix): void {
   state.context.save();
 
   setCanvasTransform(state, state.context, transform);

@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity, EntityWithoutRuntime } from './Entity';
 
 export interface TextureAtlasRegion extends Entity {
   height: number;
@@ -9,3 +9,5 @@ export interface TextureAtlasRegion extends Entity {
   y: number;
   width: number;
 }
+
+export type TextureAtlasRegionLike = EntityWithoutRuntime<TextureAtlasRegion>;

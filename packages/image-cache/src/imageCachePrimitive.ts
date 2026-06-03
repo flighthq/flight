@@ -1,9 +1,9 @@
 import { createEntity } from '@flighthq/entity';
-import type { DisplayObject, ImageCacheResult, PresentationRenderable } from '@flighthq/types';
+import type { DisplayObject, ImageCacheResult, RenderPrimitive } from '@flighthq/types';
 
 import { ImageCacheKind } from './imageCacheKind';
 
-export interface ImageCachePrimitive extends PresentationRenderable {
+export interface ImageCachePrimitive extends RenderPrimitive {
   cache: ImageCacheResult;
   owner: DisplayObject;
 }

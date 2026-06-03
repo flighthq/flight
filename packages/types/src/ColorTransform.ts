@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity, EntityWithoutRuntime } from './Entity';
 
 export interface ColorTransform extends Entity {
   alphaMultiplier: number;
@@ -10,3 +10,5 @@ export interface ColorTransform extends Entity {
   redMultiplier: number;
   redOffset: number;
 }
+
+export type ColorTransformLike = EntityWithoutRuntime<ColorTransform>;

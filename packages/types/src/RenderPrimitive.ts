@@ -1,5 +1,5 @@
 import type { Entity } from './Entity';
 
-export interface PresentationRenderable extends Entity {
+export interface RenderPrimitive extends Entity {
   kind: symbol;
 }
