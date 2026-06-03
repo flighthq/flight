@@ -36,7 +36,7 @@
     "order:check:json": "tsx ./scripts/order.ts --check --json",
     "order:fix": "tsx ./scripts/order.ts --fix",
     "test": "vitest run --project=!size",
-    "test:unit": "npm run test --workspaces --if-present",
+    "test:unit": "npm run test --workspace='packages/**' --if-present",
     "test:integration": "vitest run tests/integration",
     "test:api": "npm run test:api:node && npm run test:api:browser",
     "test:api:node": "vitest run tests/api",

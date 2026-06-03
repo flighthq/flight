@@ -61,6 +61,21 @@ jobs:
       - run: npm ci
       - run: npm run ${{ matrix.suite }}
 
+  tools:
+    name: Tools check
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - run: npm test --workspace=tools/explorer
+
   quality:
     name: Quality checks
     needs: build-check
