@@ -1,5 +1,3 @@
-import { describe, expect, it } from 'vitest';
-
 import { fillSurfaceRectangle } from './fill';
 import { getSurfaceColorBoundsRectangle } from './query';
 import { createSurface } from './surface';

@@ -1,5 +1,3 @@
-import { describe, expect, it } from 'vitest';
-
 import { encodeSurface } from './encode';
 import { createSurface } from './surface';
 

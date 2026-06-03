@@ -1,5 +1,3 @@
-import { describe, expect, it } from 'vitest';
-
 import { createTextFormatRange } from './textFormatRange';
 import type { TextLayoutParams, TextLayoutResult } from './textLayout';
 import { computeTextLayout, createTextLayoutResult } from './textLayout';

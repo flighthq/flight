@@ -1,5 +1,4 @@
 import { createImageSource } from '@flighthq/assets';
-import { describe, expect, it } from 'vitest';
 
 import { createSurface } from './surface';
 import { createImageSourceFromSurface, createSurfaceFromCanvas, createSurfaceFromImageSource } from './surfaceFrom';
