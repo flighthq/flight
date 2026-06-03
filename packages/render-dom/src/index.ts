@@ -7,6 +7,7 @@ export * from './domInputText';
 export * from './domMask';
 export * from './domMaterials';
 export * from './domQuadBatch';
+export * from './domRenderCache';
 export * from './domRenderState';
 export * from './domRichText';
 export * from './domShape';

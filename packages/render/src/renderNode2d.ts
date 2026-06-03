@@ -43,8 +43,7 @@ export function getOrCreateDefaultDisplayObjectRenderNode(
 }
 
 export function getOrCreateDisplayObjectRenderNode(state: RenderState, source: DisplayObject): DisplayObjectRenderNode {
-  return resolveDisplayObjectRenderNode(state, source, () => getOrCreateDefaultDisplayObjectRenderNode(state, source))
-    .node;
+  return resolveDisplayObjectRenderNode(state, source, () => getOrCreateDefaultDisplayObjectRenderNode(state, source));
 }
 
 export function getOrCreateSpriteRenderNode(state: RenderState, source: SpriteNode): SpriteRenderNode {

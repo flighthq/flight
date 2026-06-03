@@ -32,7 +32,6 @@
     "@flighthq/assets-loader": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
-    "@flighthq/image-cache": "*",
     "@flighthq/input": "*",
     "@flighthq/materials": "*",
     "@flighthq/media": "*",

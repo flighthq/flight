@@ -3,11 +3,11 @@ import { createSignal } from '@flighthq/signals';
 import type {
   MethodsOf,
   PartialNode,
+  RenderNodeResolver,
   SceneHierarchyNode,
   SceneNode,
   SceneNodeData,
   SceneNodeDataFactory,
-  SceneNodeResolver,
   SceneNodeRuntime,
   SceneNodeRuntimeFactory,
   SceneNodeTraits,
@@ -106,7 +106,7 @@ export function setSceneNodeEnabled<SceneKind extends symbol, Traits extends obj
 
 export function setSceneNodeResolver<SceneKind extends symbol, Traits extends object>(
   target: SceneNode<SceneKind, Traits>,
-  resolver: SceneNodeResolver | null,
+  resolver: RenderNodeResolver | null,
 ): void {
   (getEntityRuntime(target) as SceneNodeRuntime<SceneKind, Traits>).resolver = resolver;
 }
