@@ -3,7 +3,11 @@ import { createCanvasRenderState } from '@flighthq/render-canvas';
 import { getLocalBoundsRectangle } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 
-import { beginDisplayObjectImageCacheCapture, endDisplayObjectImageCacheCapture } from './canvasImageCacheCapture';
+import {
+  beginDisplayObjectImageCacheCapture,
+  captureDisplayObjectImageCache,
+  endDisplayObjectImageCacheCapture,
+} from './canvasImageCacheCapture';
 import { getImageCache } from './imageCache';
 
 function makeCacheState() {
@@ -37,6 +41,88 @@ describe('beginDisplayObjectImageCacheCapture', () => {
     const cacheState = makeCacheState();
     const source = createDisplayObject();
     expect(() => beginDisplayObjectImageCacheCapture(cacheState, source)).not.toThrow();
+  });
+});
+
+describe('captureDisplayObjectImageCache', () => {
+  it('sets imageCache on the source', () => {
+    const state = makeCacheState();
+    const source = createDisplayObject();
+    setRectangle(getLocalBoundsRectangle(source), 0, 0, 64, 48);
+
+    captureDisplayObjectImageCache(state, source);
+
+    const cache = getImageCache(source);
+    expect(cache).not.toBeNull();
+    expect(cache!.source).not.toBeNull();
+  });
+
+  it('uses a separate render target canvas, not the state canvas', () => {
+    const state = makeCacheState();
+    const source = createDisplayObject();
+    setRectangle(getLocalBoundsRectangle(source), 0, 0, 64, 48);
+
+    captureDisplayObjectImageCache(state, source);
+
+    const cache = getImageCache(source);
+    expect(cache!.source!.src).not.toBe(state.canvas);
+    expect(cache!.source!.src).toBeInstanceOf(HTMLCanvasElement);
+  });
+
+  it('sets cache transform with zero offset when there is no padding', () => {
+    const state = makeCacheState();
+    const source = createDisplayObject();
+    setRectangle(getLocalBoundsRectangle(source), 5, 10, 64, 48);
+
+    captureDisplayObjectImageCache(state, source);
+
+    const cache = getImageCache(source);
+    expect(cache!.transform.tx).toBe(5);
+    expect(cache!.transform.ty).toBe(10);
+  });
+
+  it('shifts the cache transform outward by padding', () => {
+    const state = makeCacheState();
+    const source = createDisplayObject();
+    setRectangle(getLocalBoundsRectangle(source), 5, 10, 64, 48);
+
+    captureDisplayObjectImageCache(state, source, { padding: 8 });
+
+    const cache = getImageCache(source);
+    // cacheTransform.tx = bounds.x - contentX = 5 - 8 = -3
+    expect(cache!.transform.tx).toBe(-3);
+    expect(cache!.transform.ty).toBe(2);
+  });
+
+  it('increments version on subsequent captures', () => {
+    const state = makeCacheState();
+    const source = createDisplayObject();
+    setRectangle(getLocalBoundsRectangle(source), 0, 0, 32, 32);
+
+    captureDisplayObjectImageCache(state, source);
+    const v1 = getImageCache(source)!.source!.version;
+
+    captureDisplayObjectImageCache(state, source);
+    const v2 = getImageCache(source)!.source!.version;
+
+    expect(v2).toBe((v1 + 1) >>> 0);
+  });
+
+  it('restores the state canvas after capture', () => {
+    const state = makeCacheState();
+    const originalCanvas = state.canvas;
+    const source = createDisplayObject();
+    setRectangle(getLocalBoundsRectangle(source), 0, 0, 32, 32);
+
+    captureDisplayObjectImageCache(state, source);
+
+    expect(state.canvas).toBe(originalCanvas);
+  });
+
+  it('does not throw with zero bounds', () => {
+    const state = makeCacheState();
+    const source = createDisplayObject();
+    expect(() => captureDisplayObjectImageCache(state, source)).not.toThrow();
   });
 });
 
