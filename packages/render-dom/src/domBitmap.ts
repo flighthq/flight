@@ -94,7 +94,17 @@ function renderBitmapAsCanvas(
   const ctx = data.context!;
   ctx.imageSmoothingEnabled = smoothing;
   if (sourceRectangle !== null) {
-    ctx.drawImage(src, sourceRectangle.x, sourceRectangle.y, sourceRectangle.width, sourceRectangle.height, 0, 0, sourceRectangle.width, sourceRectangle.height);
+    ctx.drawImage(
+      src,
+      sourceRectangle.x,
+      sourceRectangle.y,
+      sourceRectangle.width,
+      sourceRectangle.height,
+      0,
+      0,
+      sourceRectangle.width,
+      sourceRectangle.height,
+    );
   } else {
     ctx.drawImage(src, 0, 0, width, height);
   }
