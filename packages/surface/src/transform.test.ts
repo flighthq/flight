@@ -1,5 +1,3 @@
-import { describe, expect, it } from 'vitest';
-
 import { getSurfacePixel32, setSurfacePixel32 } from './pixel';
 import { createSurface } from './surface';
 import { applySurfaceColorTransform, applySurfaceThreshold, mergeSurface, scrollSurface } from './transform';

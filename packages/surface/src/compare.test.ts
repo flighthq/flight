@@ -1,5 +1,4 @@
 import type { Surface } from '@flighthq/types';
-import { describe, expect, it } from 'vitest';
 
 import { compareSurface } from './compare';
 import { setSurfacePixel32 } from './pixel';

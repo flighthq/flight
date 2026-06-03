@@ -12,7 +12,7 @@ function makeState() {
   return createCanvasRenderState(document.createElement('canvas'));
 }
 
-describe('beginCanvasRenderTarget / endCanvasRenderTarget', () => {
+describe('beginCanvasRenderTarget', () => {
   it('switches the state canvas to the target canvas', () => {
     const state = makeState();
     const target = createCanvasRenderTarget(64, 48);
@@ -21,17 +21,6 @@ describe('beginCanvasRenderTarget / endCanvasRenderTarget', () => {
     beginCanvasRenderTarget(state, target, renderTransform);
 
     expect(state.canvas).toBe(target.canvas);
-  });
-
-  it('restores the original canvas after end', () => {
-    const state = makeState();
-    const originalCanvas = state.canvas;
-    const target = createCanvasRenderTarget(64, 48);
-
-    beginCanvasRenderTarget(state, target, createMatrix());
-    endCanvasRenderTarget(state);
-
-    expect(state.canvas).toBe(originalCanvas);
   });
 
   it('sets renderTransform2D to the provided transform', () => {
@@ -47,34 +36,7 @@ describe('beginCanvasRenderTarget / endCanvasRenderTarget', () => {
     expect(state.renderTransform2D!.ty).toBe(20);
   });
 
-  it('restores the original renderTransform2D after end', () => {
-    const state = makeState();
-    const originalTx = state.renderTransform2D?.tx ?? 0;
-    const target = createCanvasRenderTarget(64, 48);
-    const renderTransform = createMatrix();
-    renderTransform.tx = 99;
-
-    beginCanvasRenderTarget(state, target, renderTransform);
-    endCanvasRenderTarget(state);
-
-    expect(state.renderTransform2D?.tx).toBe(originalTx);
-  });
-
-  it('does not mutate the outer renderTransform2D matrix when inside a target', () => {
-    const state = makeState();
-    const outerTransform = state.renderTransform2D!;
-    const target = createCanvasRenderTarget(64, 48);
-    const renderTransform = createMatrix();
-    renderTransform.tx = 50;
-
-    beginCanvasRenderTarget(state, target, renderTransform);
-    endCanvasRenderTarget(state);
-
-    expect(state.renderTransform2D).toBe(outerTransform);
-    expect(outerTransform.tx).not.toBe(50);
-  });
-
-  it('supports nested begin/end pairs', () => {
+  it('supports nested pairs', () => {
     const state = makeState();
     const outerCanvas = state.canvas;
     const targetA = createCanvasRenderTarget(64, 48);
@@ -91,13 +53,6 @@ describe('beginCanvasRenderTarget / endCanvasRenderTarget', () => {
 
     endCanvasRenderTarget(state);
     expect(state.canvas).toBe(outerCanvas);
-  });
-
-  it('endCanvasRenderTarget without a matching begin is a no-op', () => {
-    const state = makeState();
-    const original = state.canvas;
-    expect(() => endCanvasRenderTarget(state)).not.toThrow();
-    expect(state.canvas).toBe(original);
   });
 });
 
@@ -120,6 +75,53 @@ describe('createCanvasRenderTarget', () => {
     const target = createCanvasRenderTarget(10.3, 20.9);
     expect(target.canvas.width).toBe(11);
     expect(target.canvas.height).toBe(21);
+  });
+});
+
+describe('endCanvasRenderTarget', () => {
+  it('restores the original canvas', () => {
+    const state = makeState();
+    const originalCanvas = state.canvas;
+    const target = createCanvasRenderTarget(64, 48);
+
+    beginCanvasRenderTarget(state, target, createMatrix());
+    endCanvasRenderTarget(state);
+
+    expect(state.canvas).toBe(originalCanvas);
+  });
+
+  it('restores the original renderTransform2D', () => {
+    const state = makeState();
+    const originalTx = state.renderTransform2D?.tx ?? 0;
+    const target = createCanvasRenderTarget(64, 48);
+    const renderTransform = createMatrix();
+    renderTransform.tx = 99;
+
+    beginCanvasRenderTarget(state, target, renderTransform);
+    endCanvasRenderTarget(state);
+
+    expect(state.renderTransform2D?.tx).toBe(originalTx);
+  });
+
+  it('does not mutate the outer renderTransform2D matrix', () => {
+    const state = makeState();
+    const outerTransform = state.renderTransform2D!;
+    const target = createCanvasRenderTarget(64, 48);
+    const renderTransform = createMatrix();
+    renderTransform.tx = 50;
+
+    beginCanvasRenderTarget(state, target, renderTransform);
+    endCanvasRenderTarget(state);
+
+    expect(state.renderTransform2D).toBe(outerTransform);
+    expect(outerTransform.tx).not.toBe(50);
+  });
+
+  it('without a matching begin is a no-op', () => {
+    const state = makeState();
+    const original = state.canvas;
+    expect(() => endCanvasRenderTarget(state)).not.toThrow();
+    expect(state.canvas).toBe(original);
   });
 });
 

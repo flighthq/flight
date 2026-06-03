@@ -1,5 +1,3 @@
-import { describe, expect, it } from 'vitest';
-
 import { getTextLineBreakIndex, getTextLineBreaks } from './textLineBreaks';
 
 describe('getTextLineBreakIndex', () => {

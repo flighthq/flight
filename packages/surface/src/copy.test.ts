@@ -1,5 +1,3 @@
-import { describe, expect, it } from 'vitest';
-
 import { copySurfaceChannel, copySurfacePixels } from './copy';
 import { ImageChannel } from './imageChannel';
 import { getSurfacePixel32, setSurfacePixel32 } from './pixel';

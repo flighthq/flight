@@ -1,5 +1,3 @@
-import { describe, expect, it } from 'vitest';
-
 import { fillSurfaceRectangle, floodFillSurface } from './fill';
 import { getSurfacePixel32 } from './pixel';
 import { createSurface } from './surface';
