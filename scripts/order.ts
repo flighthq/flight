@@ -19,6 +19,7 @@ const checkMode = process.argv.includes('--check');
 const fixMode = process.argv.includes('--fix');
 const jsonMode = process.argv.includes('--json');
 const verboseMode = process.argv.includes('--verbose');
+const pathFilters = process.argv.slice(2).filter((arg) => !arg.startsWith('--'));
 
 // ---- fix mode ---------------------------------------------------------------
 
@@ -315,7 +316,10 @@ function getPackageSourceFiles(): string[] {
     files.push(...getSourceFiles(join(packagesDir, entry.name, 'src')));
   }
 
-  return files;
+  if (pathFilters.length === 0) return files;
+  return files.filter((f) =>
+    pathFilters.some((filter) => f.replaceAll('\\', '/').includes(filter.replaceAll('\\', '/'))),
+  );
 }
 
 function getSourceFiles(dir: string): string[] {
