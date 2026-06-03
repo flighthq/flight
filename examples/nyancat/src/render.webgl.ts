@@ -4,7 +4,6 @@ import {
   createWebGLElement,
   createWebGLRenderState,
   defaultWebGLBitmapRenderer,
-  enableWebGLScrollRectangleSupport,
   registerRenderer,
   renderWebGLBackground,
   renderWebGLDisplayObject,
@@ -20,7 +19,6 @@ export const state = createWebGLRenderState(canvas, {
   imageSmoothingEnabled: false,
 });
 registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);
-enableWebGLScrollRectangleSupport(state);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {

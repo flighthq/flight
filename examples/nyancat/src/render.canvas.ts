@@ -4,7 +4,6 @@ import {
   createCanvasElement,
   createCanvasRenderState,
   defaultCanvasBitmapRenderer,
-  enableCanvasScrollRectangleSupport,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
@@ -20,7 +19,6 @@ export const state = createCanvasRenderState(canvas, {
   imageSmoothingEnabled: false,
 });
 registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
-enableCanvasScrollRectangleSupport(state);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
