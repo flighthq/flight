@@ -1,5 +1,5 @@
-import { registerRenderer } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+﻿import { registerRenderer } from '@flighthq/render';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/scene-display';
 import { Scale9ShapeKind } from '@flighthq/types';
 
@@ -52,7 +52,7 @@ describe('remapScale9Commands', () => {
   it('remaps drawRectangle corners and recomputes size', () => {
     const mapper = { mapX: (x: number) => x * 2, mapY: (y: number) => y * 2 };
     remapScale9Commands(out, ['drawRectangle', 4, 10, 20, 50, 30], mapper);
-    // x=10â†’20, y=20â†’40, x+w=60â†’120 (w=100), y+h=50â†’100 (h=60)
+    // x=10Ã¢â€ â€™20, y=20Ã¢â€ â€™40, x+w=60Ã¢â€ â€™120 (w=100), y+h=50Ã¢â€ â€™100 (h=60)
     expect(out).toEqual(['drawRectangle', 4, 20, 40, 100, 60]);
   });
 

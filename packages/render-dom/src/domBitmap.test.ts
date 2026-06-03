@@ -1,6 +1,6 @@
-import { createImageSource, createImageSourceFromCanvas } from '@flighthq/assets';
+﻿import { createImageSource, createImageSourceFromCanvas } from '@flighthq/assets';
 import { registerRenderer } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { createBitmap } from '@flighthq/scene-display';
 import { BitmapKind } from '@flighthq/types';
 

@@ -68,7 +68,6 @@
   },
   "dependencies": {
     "@flighthq/assets": "*",
-    "@flighthq/render-tree": "*",
     "@flighthq/geometry": "*",
     "@flighthq/render": "*",
     "@flighthq/scene": "*",

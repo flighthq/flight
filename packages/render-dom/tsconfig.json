@@ -10,7 +10,6 @@
   },
   "references": [
     { "path": "../entity" },
-    { "path": "../render-tree" },
     { "path": "../geometry" },
     { "path": "../render-canvas" },
     { "path": "../render" },

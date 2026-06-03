@@ -1,5 +1,5 @@
-import { createNullRendererData } from '@flighthq/render';
-import { getOrCreateSpriteRenderNode } from '@flighthq/render-tree';
+﻿import { createNullRendererData } from '@flighthq/render';
+import { getOrCreateSpriteRenderNode } from '@flighthq/render';
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
 import type { CanvasRenderState, Sprite, SpriteNode, SpriteRenderer, SpriteRenderTreeNode } from '@flighthq/types';
 
@@ -65,13 +65,13 @@ export function renderCanvasSprite(state: CanvasRenderState, source: SpriteNode)
     const shouldRender = data.visible && data.alpha > 0 && (data.transform2D.a !== 0 || data.transform2D.d !== 0);
     if (!shouldRender) continue;
 
-    // â”€â”€ Draw current object first (pre-order) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Draw current object first (pre-order) Ã¢â€â‚¬Ã¢â€â‚¬
     drawObject(state, data);
 
     // Then push children in forward order (so we pop & draw index 0 first)
     const children = getSpriteNodeRuntime(current).children;
     if (children !== null) {
-      // Push from last to first â†’ pop gives index 0 first
+      // Push from last to first Ã¢â€ â€™ pop gives index 0 first
       for (let i = children.length - 1; i >= 0; i--) {
         tempStack[stackLength++] = children[i] as SpriteNode;
       }

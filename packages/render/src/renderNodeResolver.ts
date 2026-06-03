@@ -1,7 +1,7 @@
 import { getSceneNodeRuntime } from '@flighthq/scene';
 import type { DisplayObject, DisplayObjectRenderTreeNode, RenderState } from '@flighthq/types';
 
-import type { RenderTreeStateInternal } from './internal';
+import type { RenderTreeStateInternal } from './renderTreeInternal';
 
 export type DisplayObjectRenderNodeResolution = {
   dirty?: boolean;

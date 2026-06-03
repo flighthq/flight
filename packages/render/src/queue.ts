@@ -1,9 +1,9 @@
-import { hasRenderFeatures } from '@flighthq/render';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type { DisplayObject, Renderable, RenderState } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
 
-import type { RenderTreeStateInternal } from './internal';
+import { hasRenderFeatures } from './renderer';
+import type { RenderTreeStateInternal } from './renderTreeInternal';
 import { getOrCreateDisplayObjectRenderNode } from './renderTreeNode2d';
 
 /**

@@ -1,5 +1,5 @@
-import { registerRenderer } from '@flighthq/render';
-import { createDisplayObjectRenderNode, syncRenderNodeRenderer } from '@flighthq/render-tree';
+﻿import { registerRenderer } from '@flighthq/render';
+import { createDisplayObjectRenderNode, syncRenderNodeRenderer } from '@flighthq/render';
 import type {
   DisplayObject,
   DisplayObjectRenderTreeNode,

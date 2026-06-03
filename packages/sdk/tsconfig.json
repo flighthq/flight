@@ -21,7 +21,6 @@
     { "path": "../materials" },
     { "path": "../media" },
     { "path": "../render" },
-    { "path": "../render-tree" },
     { "path": "../render-canvas" },
     { "path": "../render-dom" },
     { "path": "../render-webgl" },

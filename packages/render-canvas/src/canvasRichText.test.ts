@@ -1,4 +1,4 @@
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+﻿import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { createRichText } from '@flighthq/scene-display';
 
 import { createCanvasRenderState } from './canvasRenderState';

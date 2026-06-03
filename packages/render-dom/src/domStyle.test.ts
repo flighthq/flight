@@ -1,5 +1,5 @@
-import { setMatrix } from '@flighthq/geometry';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+﻿import { setMatrix } from '@flighthq/geometry';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { BlendMode } from '@flighthq/types';
 

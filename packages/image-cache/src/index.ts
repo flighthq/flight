@@ -5,5 +5,4 @@ export * from './imageCache';
 export * from './imageCacheKind';
 export * from './imageCachePrimitive';
 export * from './imageCacheSceneNodeResolver';
-export * from './renderTargetPlacement';
 export * from './webglImageCacheRenderer';

@@ -1,5 +1,5 @@
-import { createNullRendererData } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+﻿import { createNullRendererData } from '@flighthq/render';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type {
   CanvasRenderState,

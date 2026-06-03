@@ -1,4 +1,4 @@
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
+﻿import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/scene-display';
 
 import { createDOMRenderState } from './domRenderState';
