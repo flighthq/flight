@@ -16,7 +16,7 @@ export function drawWebGLBitmap(state: RenderState, renderNode: DisplayObjectRen
 
   internal.defaultBitmapShader.bind(internal.gl, internal, renderNode);
 
-  const sr = source.data.sourceRectangle;
+  const sr = source.data.sourceRectangle ?? null;
   if (sr === null) {
     drawWebGLQuad(internal, 0, 0, imageSource.width, imageSource.height, 0, 0, 1, 1);
   } else {
