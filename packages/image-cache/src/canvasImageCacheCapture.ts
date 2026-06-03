@@ -1,5 +1,7 @@
 ﻿import { createImageSourceFromCanvas } from '@flighthq/assets';
 import { copyMatrix, createMatrix, createRectangle } from '@flighthq/geometry';
+import { updateDisplayObjectBeforeRender } from '@flighthq/render';
+import { computeRenderTargetSize, updateDisplayObjectRenderTargetPlacement } from '@flighthq/render';
 import type { CanvasRenderStateInternal } from '@flighthq/render-canvas';
 import {
   beginCanvasRenderTarget,
@@ -8,13 +10,11 @@ import {
   renderCanvasDisplayObject,
   resizeCanvasRenderTarget,
 } from '@flighthq/render-canvas';
-import { updateDisplayObjectBeforeRender } from '@flighthq/render';
 import { computeBoundsRectangle } from '@flighthq/scene';
 import type { CanvasRenderState, DisplayObject, Matrix } from '@flighthq/types';
 
 import { getImageCache, setImageCache } from './imageCache';
 import { beginImageCacheCapture, endImageCacheCapture } from './imageCacheSceneNodeResolver';
-import { computeRenderTargetSize, updateDisplayObjectRenderTargetPlacement } from '@flighthq/render';
 
 export type CaptureImageCacheOptions = {
   /** Uniform padding (pixels) added around the source bounds. Defaults to 0. */

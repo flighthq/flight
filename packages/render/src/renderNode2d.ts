@@ -1,18 +1,17 @@
-﻿import { createMatrix } from '@flighthq/geometry';
-import type {
+﻿import type {
   DisplayObject,
   DisplayObjectRenderNode,
   HasBoundsRect,
   HasTransform2D,
   Renderable,
-  RenderState,
   RenderNode2D,
+  RenderState,
   SpriteNode,
   SpriteRenderNode,
 } from '@flighthq/types';
 
-import { resolveDisplayObjectRenderNode } from './renderNodeResolver';
 import { createRenderNode, getOrCreateRenderNode } from './renderNode';
+import { resolveDisplayObjectRenderNode } from './renderNodeResolver';
 
 export function createDisplayObjectRenderNode(state: RenderState, source: DisplayObject): DisplayObjectRenderNode {
   const out = createRenderNode2D(state, source) as DisplayObjectRenderNode;
@@ -29,7 +28,6 @@ export function createRenderNode2D(
 ): RenderNode2D {
   const out = createRenderNode(state, source) as RenderNode2D;
   out.presentationTransform2D = null;
-  out.transform2D = createMatrix();
   return out;
 }
 
@@ -44,10 +42,7 @@ export function getOrCreateDefaultDisplayObjectRenderNode(
   return getOrCreateRenderNode(state, source, createDisplayObjectRenderNode);
 }
 
-export function getOrCreateDisplayObjectRenderNode(
-  state: RenderState,
-  source: DisplayObject,
-): DisplayObjectRenderNode {
+export function getOrCreateDisplayObjectRenderNode(state: RenderState, source: DisplayObject): DisplayObjectRenderNode {
   return resolveDisplayObjectRenderNode(state, source, () => getOrCreateDefaultDisplayObjectRenderNode(state, source))
     .node;
 }

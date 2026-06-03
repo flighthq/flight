@@ -3,8 +3,8 @@ import type { DisplayObject, Renderable, RenderState } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
 
 import { hasRenderFeatures } from './renderer';
-import type { RenderNodeStateInternal } from './renderNodeInternal';
 import { getOrCreateDisplayObjectRenderNode } from './renderNode2d';
+import type { RenderNodeStateInternal } from './renderNodeInternal';
 
 /**
  * Second pass, exclude non-renderable objects from queue

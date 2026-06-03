@@ -1,7 +1,7 @@
 ﻿import { createMatrix } from '@flighthq/geometry';
 import { createRenderState } from '@flighthq/render';
-import { createCanvasRenderState, renderCanvasDisplayObject } from '@flighthq/render-canvas';
 import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render';
+import { createCanvasRenderState, renderCanvasDisplayObject } from '@flighthq/render-canvas';
 import { createDisplayObject } from '@flighthq/scene-display';
 
 import { setImageCache } from './imageCache';
@@ -110,9 +110,9 @@ describe('ImageCacheSceneNodeResolver via setImageCache', () => {
     const node = getOrCreateDisplayObjectRenderNode(state, obj);
     expect(node.kind).toBe(ImageCacheKind);
     expect(node.presentationTransform2D).toBe(cache.transform);
-    expect(isImageCachePrimitive(node.presentationSource)).toBe(true);
-    expect(node.presentationSource).toMatchObject({ cache, owner: obj });
-    expect(renderer.createData).toHaveBeenCalledWith(state, node.presentationSource);
+    expect(isImageCachePrimitive(node.source)).toBe(true);
+    expect(node.source).toMatchObject({ cache, owner: obj });
+    expect(renderer.createData).toHaveBeenCalledWith(state, node.source);
   });
 
   it('does not walk children when cache is active', () => {

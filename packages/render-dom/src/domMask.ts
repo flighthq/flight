@@ -10,7 +10,7 @@ export function enableDOMMaskSupport(state: DOMRenderState): void {
 }
 
 export function pushDOMMaskRectangle(rectangles: DOMStageRectangle[], data: DisplayObjectRenderNode): void {
-  const bounds = getLocalBoundsRectangle(data.source);
+  const bounds = getLocalBoundsRectangle(data.owner);
   if (bounds.width <= 0 || bounds.height <= 0) {
     rectangles.push({ bottom: 0, left: 0, right: 0, top: 0 });
     return;

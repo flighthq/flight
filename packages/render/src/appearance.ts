@@ -1,16 +1,12 @@
 ﻿import { getAppearanceRevision } from '@flighthq/scene';
-import type { HasAppearance, RenderState, RenderNode, SceneNode } from '@flighthq/types';
+import type { HasAppearance, RenderNode, RenderState, SceneNode } from '@flighthq/types';
 import { BlendMode, RenderFeatures } from '@flighthq/types';
 
-import { updateRenderNodeColorTransform } from './renderNodeColor';
 import { hasRenderFeatures } from './renderer';
+import { updateRenderNodeColorTransform } from './renderNodeColor';
 
-export function updateRenderNodeAppearance(
-  state: RenderState,
-  data: RenderNode,
-  parentData?: RenderNode,
-): boolean {
-  const appearanceID = getAppearanceRevision(data.source as SceneNode);
+export function updateRenderNodeAppearance(state: RenderState, data: RenderNode, parentData?: RenderNode): boolean {
+  const appearanceID = getAppearanceRevision(data.owner as SceneNode);
   if (
     (parentData !== undefined && parentData.appearanceFrameID === state.currentFrameID) ||
     data.lastAppearanceID !== appearanceID
@@ -23,7 +19,7 @@ export function updateRenderNodeAppearance(
 }
 
 function recalculateAppearance(state: RenderState, data: RenderNode, parentData?: RenderNode) {
-  const source = data.source as HasAppearance;
+  const source = data.owner as HasAppearance;
   const hasBlendMode = hasRenderFeatures(state, RenderFeatures.BlendMode);
   const hasColorTransform = hasRenderFeatures(state, RenderFeatures.ColorTransform);
   const hasShaders = hasRenderFeatures(state, RenderFeatures.Shaders);

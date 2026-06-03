@@ -12,13 +12,13 @@ import { RenderFeatures } from '@flighthq/types';
 
 import { updateRenderNodeAppearance } from './appearance';
 import { hasRenderFeatures } from './renderer';
-import type { RenderNodeStateInternal } from './renderNodeInternal';
-import { resolveDisplayObjectRenderNode } from './renderNodeResolver';
 import {
   getOrCreateDefaultDisplayObjectRenderNode,
   getOrCreateDisplayObjectRenderNode,
   getOrCreateSpriteRenderNode,
 } from './renderNode2d';
+import type { RenderNodeStateInternal } from './renderNodeInternal';
+import { resolveDisplayObjectRenderNode } from './renderNodeResolver';
 import { updateDisplayObjectRenderTransform, updateRenderNode2DTransform } from './transform2d';
 
 function resolveDisplayObjectNodeForUpdate(

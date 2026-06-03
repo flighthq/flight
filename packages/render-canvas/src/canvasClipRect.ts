@@ -13,7 +13,7 @@ import { setCanvasTransform } from './canvasTransform';
 const canvasScrollRectangleHooks: ScrollRectangleHooks = {
   pop: (state) => popCanvasClipRectangle(state as CanvasRenderState),
   push: (state, data) =>
-    pushCanvasClipRectangle(state as CanvasRenderState, data.source.scrollRectangle!, data.transform2D),
+    pushCanvasClipRectangle(state as CanvasRenderState, data.owner.scrollRectangle!, data.transform2D),
 };
 
 export function enableCanvasScrollRectangleSupport(state: CanvasRenderState): void {
@@ -30,7 +30,11 @@ export function popCanvasScrollRectangle(state: CanvasRenderState): void {
   state.currentScrollRectangleDepth--;
 }
 
-export function pushCanvasClipRectangle(state: CanvasRenderState, rect: Readonly<RectangleLike>, transform: Matrix): void {
+export function pushCanvasClipRectangle(
+  state: CanvasRenderState,
+  rect: Readonly<RectangleLike>,
+  transform: Matrix,
+): void {
   state.context.save();
 
   setCanvasTransform(state, state.context, transform);
@@ -41,6 +45,6 @@ export function pushCanvasClipRectangle(state: CanvasRenderState, rect: Readonly
 }
 
 export function pushCanvasScrollRectangle(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
-  pushCanvasClipRectangle(state, data.source.scrollRectangle!, data.transform2D);
+  pushCanvasClipRectangle(state, data.owner.scrollRectangle!, data.transform2D);
   state.currentScrollRectangleDepth++;
 }

@@ -74,8 +74,8 @@ export class ImageCacheSceneNodeResolver implements SceneNodeResolver {
       node = createDisplayObjectRenderNode(state, source);
       this._nodesByState.set(state, node);
     }
+    node.source = primitive;
     node.kind = primitive.kind;
-    node.presentationSource = primitive;
     node.presentationTransform2D = primitive.cache.transform;
     syncRenderNodeRenderer(state, node);
     return node;
