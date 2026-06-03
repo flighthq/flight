@@ -1,5 +1,6 @@
 import type { DisplayObjectRenderTreeNode, RenderTreeNode, WebGLRenderState } from '@flighthq/types';
 
+import type { WebGLRenderStateInternal } from './internal';
 import type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
 
 export type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
@@ -67,8 +68,15 @@ export function createDefaultBitmapShader(
     locations: shaderLoc,
     program: shaderLoc.program,
     bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: DisplayObjectRenderTreeNode): void {
+      const internal = state as WebGLRenderStateInternal;
       setWebGLAttribs(gl, shaderLoc);
-      setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, renderNode.transform2D, state.canvas);
+      setWebGLMatrixFromTransform(
+        gl,
+        shaderLoc,
+        matrixArray,
+        renderNode.transform2D,
+        internal.renderTargetViewport ?? state.canvas,
+      );
       setWebGLBaseUniforms(gl, shaderLoc, renderNode);
     },
   };
@@ -95,10 +103,10 @@ export function setWebGLMatrixFromTransform(
   loc: WebGLShaderLocations,
   m: Float32Array,
   t: { a: number; b: number; c: number; d: number; tx: number; ty: number },
-  canvas: HTMLCanvasElement,
+  viewport: { width: number; height: number },
 ): void {
-  const iw = 2 / canvas.width;
-  const ih = 2 / canvas.height;
+  const iw = 2 / viewport.width;
+  const ih = 2 / viewport.height;
   m[0] = t.a * iw;
   m[1] = -t.b * ih;
   m[2] = 0;
@@ -121,10 +129,10 @@ export function setWebGLMatrixFromValues(
   d: number,
   tx: number,
   ty: number,
-  canvas: HTMLCanvasElement,
+  viewport: { width: number; height: number },
 ): void {
-  const iw = 2 / canvas.width;
-  const ih = 2 / canvas.height;
+  const iw = 2 / viewport.width;
+  const ih = 2 / viewport.height;
   m[0] = a * iw;
   m[1] = -b * ih;
   m[2] = 0;

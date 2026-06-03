@@ -97,7 +97,7 @@ export function setQuadMatrixFromOffset(
     d,
     tx + a * dx + c * dy,
     ty + b * dx + d * dy,
-    state.canvas,
+    state.renderTargetViewport ?? state.canvas,
   );
 }
 

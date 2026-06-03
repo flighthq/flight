@@ -8,6 +8,7 @@ export * from './canvasMask';
 export * from './canvasMaterials';
 export * from './canvasQuadBatch';
 export * from './canvasRenderState';
+export * from './canvasRenderTarget';
 export * from './canvasRichText';
 export * from './canvasScale9Shape';
 export * from './canvasShape';

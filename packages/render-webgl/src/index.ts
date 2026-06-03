@@ -10,6 +10,7 @@ export * from './webglMask';
 export * from './webglMaterials';
 export * from './webglQuadBatch';
 export * from './webglRenderState';
+export * from './webglRenderTarget';
 export * from './webglRichText';
 export * from './webglShader';
 export * from './webglShape';

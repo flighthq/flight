@@ -17,11 +17,12 @@ export function createCanvasRenderState(
     roundPixels: options.roundPixels ?? false,
   }) as CanvasRenderStateInternal;
 
-  if (options.backgroundColor) setRenderStateBackgroundColor(state, options.backgroundColor);
+  if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
 
   state.canvas = canvas;
   state.context = context;
   state.contextAttributes = context.getContextAttributes();
+  state.currentBlendMode = null;
   state.imageSmoothingEnabled = options.imageSmoothingEnabled ?? true;
   state.imageSmoothingQuality = options.imageSmoothingQuality ?? 'high';
 
