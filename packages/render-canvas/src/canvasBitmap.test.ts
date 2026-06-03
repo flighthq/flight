@@ -1,9 +1,9 @@
 import { createImageSource } from '@flighthq/assets';
 import { createRectangle } from '@flighthq/geometry';
-import { enableRenderFeatures, registerRenderer } from '@flighthq/render';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render-tree';
 import { createBitmap } from '@flighthq/scene-display';
-import { BitmapKind, RenderFeatures } from '@flighthq/types';
+import { BitmapKind } from '@flighthq/types';
 
 import { defaultCanvasBitmapRenderer, drawCanvasBitmap, drawCanvasBitmapMask } from './canvasBitmap';
 import { createCanvasRenderState } from './canvasRenderState';
@@ -57,12 +57,11 @@ describe('drawCanvasBitmap', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it('uses scrollRectangle region when scrollRectangle is set', () => {
+  it('crops to sourceRectangle when set', () => {
     const state = makeState();
-    enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
     const bitmap = createBitmap();
     bitmap.data.image = makeImageSource();
-    bitmap.scrollRectangle = createRectangle(10, 20, 32, 32);
+    bitmap.data.sourceRectangle = createRectangle(10, 20, 32, 32);
     const data = getOrCreateDisplayObjectRenderNode(state, bitmap);
     const spy = vi.spyOn(state.context, 'drawImage');
 
@@ -74,24 +73,8 @@ describe('drawCanvasBitmap', () => {
     expect(args[2]).toBe(20); // sy
     expect(args[3]).toBe(32); // sw
     expect(args[4]).toBe(32); // sh
-  });
-
-  it('ignores scrollRectangle when scroll rect support is not enabled', () => {
-    const state = makeState();
-    const bitmap = createBitmap();
-    bitmap.data.image = makeImageSource();
-    bitmap.scrollRectangle = createRectangle(10, 20, 32, 32);
-    const data = getOrCreateDisplayObjectRenderNode(state, bitmap);
-    const spy = vi.spyOn(state.context, 'drawImage');
-
-    drawCanvasBitmap(state, data);
-
-    expect(spy).toHaveBeenCalledOnce();
-    const args = spy.mock.calls[0] as number[];
-    expect(args[1]).toBe(0);
-    expect(args[2]).toBe(0);
-    expect(args[3]).toBe(64);
-    expect(args[4]).toBe(64);
+    expect(args[5]).toBe(0);  // dx
+    expect(args[6]).toBe(0);  // dy
   });
 
   it('disables imageSmoothingEnabled when smoothing is false', () => {

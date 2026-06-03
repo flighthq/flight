@@ -16,7 +16,7 @@ export function drawCanvasBitmap(state: CanvasRenderState, bitmap: DisplayObject
     if (hasRenderFeatures(state, RenderFeatures.BlendMode)) setCanvasBlendMode(state, bitmap.blendMode);
 
     context.globalAlpha = bitmap.alpha;
-    const scrollRectangle = hasRenderFeatures(state, RenderFeatures.ScrollRectangle) ? source.scrollRectangle : null;
+    const sourceRectangle = source.data.sourceRectangle;
 
     setCanvasTransform(state, context, bitmap.transform2D);
 
@@ -24,19 +24,19 @@ export function drawCanvasBitmap(state: CanvasRenderState, bitmap: DisplayObject
       context.imageSmoothingEnabled = false;
     }
 
-    if (scrollRectangle === null) {
+    if (sourceRectangle === null) {
       context.drawImage(imageSource.src, 0, 0, imageSource.width, imageSource.height);
     } else {
       context.drawImage(
         imageSource.src,
-        scrollRectangle.x,
-        scrollRectangle.y,
-        scrollRectangle.width,
-        scrollRectangle.height,
-        scrollRectangle.x,
-        scrollRectangle.y,
-        scrollRectangle.width,
-        scrollRectangle.height,
+        sourceRectangle.x,
+        sourceRectangle.y,
+        sourceRectangle.width,
+        sourceRectangle.height,
+        0,
+        0,
+        sourceRectangle.width,
+        sourceRectangle.height,
       );
     }
 

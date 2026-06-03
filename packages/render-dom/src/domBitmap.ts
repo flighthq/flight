@@ -30,11 +30,12 @@ export function drawDOMBitmap(state: DOMRenderState, renderNode: DisplayObjectRe
   if (imageSource === null || imageSource.src === null) return;
 
   const src = imageSource.src;
+  const sr = source.data.sourceRectangle;
 
-  if (src instanceof HTMLImageElement) {
+  if (sr === null && src instanceof HTMLImageElement) {
     renderBitmapAsImage(state, renderNode, data, src);
   } else {
-    renderBitmapAsCanvas(state, renderNode, data, imageSource.width, imageSource.height, src);
+    renderBitmapAsCanvas(state, renderNode, data, imageSource.width, imageSource.height, src, sr);
   }
 }
 
@@ -70,6 +71,7 @@ function renderBitmapAsCanvas(
   width: number,
   height: number,
   src: CanvasImageSource,
+  sourceRectangle: { x: number; y: number; width: number; height: number } | null = null,
 ): void {
   if (data.image !== null) {
     data.image = null;
@@ -84,12 +86,18 @@ function renderBitmapAsCanvas(
   const source = renderNode.source as Bitmap;
   const smoothing = source.data.smoothing && state.allowSmoothing;
 
-  data.canvas.width = width;
-  data.canvas.height = height;
+  const drawWidth = sourceRectangle !== null ? sourceRectangle.width : width;
+  const drawHeight = sourceRectangle !== null ? sourceRectangle.height : height;
+  data.canvas.width = drawWidth;
+  data.canvas.height = drawHeight;
 
   const ctx = data.context!;
   ctx.imageSmoothingEnabled = smoothing;
-  ctx.drawImage(src, 0, 0, width, height);
+  if (sourceRectangle !== null) {
+    ctx.drawImage(src, sourceRectangle.x, sourceRectangle.y, sourceRectangle.width, sourceRectangle.height, 0, 0, sourceRectangle.width, sourceRectangle.height);
+  } else {
+    ctx.drawImage(src, 0, 0, width, height);
+  }
 
   applyDOMStyle(state, data.canvas, renderNode);
   setDOMRendererElement(state, data.canvas);

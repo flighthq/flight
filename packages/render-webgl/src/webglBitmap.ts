@@ -16,7 +16,16 @@ export function drawWebGLBitmap(state: RenderState, renderNode: DisplayObjectRen
 
   internal.defaultBitmapShader.bind(internal.gl, internal, renderNode);
 
-  drawWebGLQuad(internal, 0, 0, imageSource.width, imageSource.height, 0, 0, 1, 1);
+  const sr = source.data.sourceRectangle;
+  if (sr === null) {
+    drawWebGLQuad(internal, 0, 0, imageSource.width, imageSource.height, 0, 0, 1, 1);
+  } else {
+    const u0 = sr.x / imageSource.width;
+    const v0 = sr.y / imageSource.height;
+    const u1 = (sr.x + sr.width) / imageSource.width;
+    const v1 = (sr.y + sr.height) / imageSource.height;
+    drawWebGLQuad(internal, 0, 0, sr.width, sr.height, u0, v0, u1, v1);
+  }
 }
 
 export function drawWebGLBitmapMask(_state: RenderState, _data: DisplayObjectRenderTreeNode): void {
