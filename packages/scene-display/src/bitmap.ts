@@ -5,7 +5,10 @@ import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjec
 
 export function computeBitmapLocalBoundsRectangle(out: Rectangle, source: Readonly<SceneNode>): void {
   const bitmapData: BitmapData = source.data as BitmapData;
-  if (bitmapData.image) {
+  if (bitmapData.sourceRectangle !== null) {
+    out.width = bitmapData.sourceRectangle.width;
+    out.height = bitmapData.sourceRectangle.height;
+  } else if (bitmapData.image) {
     out.width = bitmapData.image.width;
     out.height = bitmapData.image.height;
   }
@@ -19,6 +22,7 @@ export function createBitmapData(data?: Readonly<Partial<BitmapData>>): BitmapDa
   return {
     image: data?.image ?? null,
     smoothing: data?.smoothing ?? true,
+    sourceRectangle: data?.sourceRectangle ?? null,
   };
 }
 
