@@ -7,7 +7,6 @@
     { "path": "./packages/sdk" },
     { "path": "./packages/entity" },
     { "path": "./packages/geometry" },
-    { "path": "./packages/image-cache" },
     { "path": "./packages/input" },
     { "path": "./packages/surface" },
     { "path": "./packages/interaction" },

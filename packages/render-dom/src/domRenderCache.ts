@@ -1,10 +1,5 @@
-﻿import { createNullRendererData } from '@flighthq/render';
-import {
-  initDOMElement,
-  setDOMBlendMode,
-  setDOMRendererElement,
-  setDOMTransformWithOffset,
-} from '@flighthq/render-dom';
+import { createNullRendererData } from '@flighthq/render';
+import { isImageRenderCachePrimitive, registerImageRenderCacheRenderer } from '@flighthq/render';
 import type {
   DisplayObjectMaskRenderer,
   DisplayObjectRenderer,
@@ -13,17 +8,18 @@ import type {
   RenderState,
 } from '@flighthq/types';
 
-import { isImageCachePrimitive } from './imageCachePrimitive';
-import { registerImageCacheRenderer } from './imageCacheSceneNodeResolver';
+import { setDOMBlendMode } from './domMaterials';
+import { initDOMElement, setDOMRendererElement } from './domStyle';
+import { setDOMTransformWithOffset } from './domTransform';
 
 const _canvases = new WeakMap<
   DisplayObjectRenderNode,
   { canvas: HTMLCanvasElement; context: CanvasRenderingContext2D }
 >();
 
-function drawDOMImageCache(state: RenderState, data: DisplayObjectRenderNode): void {
+function drawDOMRenderImageCache(state: RenderState, data: DisplayObjectRenderNode): void {
   const source = data.source;
-  if (!isImageCachePrimitive(source)) return;
+  if (!isImageRenderCachePrimitive(source)) return;
   const cache = source.cache;
   const imageSource = cache.source;
   if (imageSource === null || imageSource.src === null) return;
@@ -55,17 +51,17 @@ function drawDOMImageCache(state: RenderState, data: DisplayObjectRenderNode): v
   setDOMRendererElement(state as DOMRenderState, canvas);
 }
 
-function drawDOMImageCacheMask(_state: RenderState, _node: DisplayObjectRenderNode): void {}
+function drawDOMRenderImageCacheMask(_state: RenderState, _node: DisplayObjectRenderNode): void {}
 
-export const defaultDOMImageCacheRenderer: DisplayObjectRenderer = {
+export const defaultDOMRenderImageCacheRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,
-  draw: drawDOMImageCache,
+  draw: drawDOMRenderImageCache,
 };
 
-export const defaultDOMImageCacheMaskRenderer: DisplayObjectMaskRenderer = {
-  drawMask: drawDOMImageCacheMask,
+export const defaultDOMRenderImageCacheMaskRenderer: DisplayObjectMaskRenderer = {
+  drawMask: drawDOMRenderImageCacheMask,
 };
 
-export function enableDOMImageCache(state: RenderState): void {
-  registerImageCacheRenderer(state, defaultDOMImageCacheRenderer);
+export function enableDOMRenderImageCache(state: RenderState): void {
+  registerImageRenderCacheRenderer(state, defaultDOMRenderImageCacheRenderer);
 }

@@ -21,14 +21,10 @@ import type { RenderNodeStateInternal } from './renderNodeInternal';
 import { resolveDisplayObjectRenderNode } from './renderNodeResolver';
 import { updateDisplayObjectRenderTransform, updateRenderNode2DTransform } from './transform2d';
 
-function resolveDisplayObjectNodeForUpdate(
-  state: RenderState,
-  current: DisplayObject,
-): { data: DisplayObjectRenderNode; dirty: boolean } {
-  const resolution = resolveDisplayObjectRenderNode(state, current, () =>
+function resolveDisplayObjectNodeForUpdate(state: RenderState, current: DisplayObject): DisplayObjectRenderNode {
+  return resolveDisplayObjectRenderNode(state, current, () =>
     getOrCreateDefaultDisplayObjectRenderNode(state, current),
   );
-  return { data: resolution.node, dirty: resolution.dirty === true };
 }
 
 /**
@@ -53,8 +49,7 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as DisplayObject;
     if (!current.enabled) continue;
-    const resolved = resolveDisplayObjectNodeForUpdate(state, current);
-    const data = resolved.data;
+    const data = resolveDisplayObjectNodeForUpdate(state, current);
 
     if (current !== source) {
       const parent = getSceneParent(current);
@@ -69,11 +64,6 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
         scrollRectangleDepth = hasScrollRects ? parentData.scrollRectangleDepth : 0;
         maskDepth = hasMasks ? parentData.maskDepth : 0;
       }
-    }
-
-    if (resolved.dirty) {
-      data.lastAppearanceID = -1;
-      data.lastLocalTransformID = -1;
     }
 
     const appearanceDirty = updateRenderNodeAppearance(state, data, parentData);

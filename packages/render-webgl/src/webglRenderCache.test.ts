@@ -2,7 +2,7 @@
 import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 
-import { drawWebGLImageCacheResult } from './webglImageCache';
+import { drawWebGLImageCacheResult } from './webglRenderCache';
 import { createWebGLRenderState } from './webglRenderState';
 
 function makeState() {

@@ -15,7 +15,6 @@
     { "path": "../surface" },
     { "path": "../entity" },
     { "path": "../geometry" },
-    { "path": "../image-cache" },
     { "path": "../input" },
     { "path": "../interaction" },
     { "path": "../materials" },

@@ -2,7 +2,7 @@ import type { EntityRuntime, EntityRuntimeKey } from './Entity';
 import type { HasSceneHierarchy, HasSceneHierarchyRuntime } from './HasSceneHierarchy';
 import type { InteractionSignals } from './InteractionSignals';
 import type { SceneNodeData, SceneNodeDataFactory, SceneNodeRuntimeFactory } from './Node';
-import type { SceneNodeResolver } from './SceneNodeResolver';
+import type { RenderNodeResolver } from './RenderNodeResolver';
 import type { SceneSignals } from './SceneNodeSignals';
 
 export interface SceneNodeTraits {
@@ -23,7 +23,7 @@ export interface SceneNodeRuntime<SceneKind extends symbol = typeof NullScene, T
   boundsUsingLocalBoundsID: number;
   boundsUsingLocalTransformID: number;
   graph: SceneKind;
-  resolver: SceneNodeResolver | null;
+  resolver: RenderNodeResolver | null;
   interactionSignals: InteractionSignals | null;
   localBoundsID: number;
   localBoundsUsingLocalBoundsID: number;
