@@ -13,7 +13,7 @@ import type { WebGLRenderStateInternal, WebGLScissorRect } from './internal';
 const webglScrollRectangleHooks: ScrollRectangleHooks = {
   pop: (state) => popWebGLClipRectangle(state as WebGLRenderStateInternal),
   push: (state, data) =>
-    pushWebGLClipRectangle(state as WebGLRenderStateInternal, data.source.scrollRectangle!, data.transform2D),
+    pushWebGLClipRectangle(state as WebGLRenderStateInternal, data.owner.scrollRectangle!, data.transform2D),
 };
 
 export function enableWebGLScrollRectangleSupport(state: WebGLRenderState): void {
@@ -50,7 +50,7 @@ export function pushWebGLClipRectangle(
 }
 
 export function pushWebGLScrollRectangle(state: WebGLRenderStateInternal, data: DisplayObjectRenderNode): void {
-  pushWebGLClipRectangle(state, data.source.scrollRectangle!, data.transform2D);
+  pushWebGLClipRectangle(state, data.owner.scrollRectangle!, data.transform2D);
 }
 
 function computeScissorRect(

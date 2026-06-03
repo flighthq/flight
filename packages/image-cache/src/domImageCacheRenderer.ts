@@ -22,7 +22,7 @@ const _canvases = new WeakMap<
 >();
 
 function drawDOMImageCache(state: RenderState, data: DisplayObjectRenderNode): void {
-  const source = data.presentationSource;
+  const source = data.source;
   if (!isImageCachePrimitive(source)) return;
   const cache = source.cache;
   const imageSource = cache.source;

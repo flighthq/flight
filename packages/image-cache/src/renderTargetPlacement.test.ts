@@ -1,12 +1,11 @@
 import { createMatrix, createRectangle, setRectangle } from '@flighthq/geometry';
-import { getLocalBoundsRectangle } from '@flighthq/scene';
-import { createDisplayObject } from '@flighthq/scene-display';
-
 import {
   computeRenderTargetSize,
   createDisplayObjectRenderTargetPlacement,
   updateDisplayObjectRenderTargetPlacement,
 } from '@flighthq/render';
+import { getLocalBoundsRectangle } from '@flighthq/scene';
+import { createDisplayObject } from '@flighthq/scene-display';
 
 describe('computeRenderTargetSize', () => {
   it('returns content dimensions with no padding', () => {

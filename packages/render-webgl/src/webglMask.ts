@@ -1,12 +1,7 @@
 ﻿import { setDisplayObjectMaskHooks } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
-import type {
-  DisplayObject,
-  DisplayObjectMaskHooks,
-  DisplayObjectRenderNode,
-  WebGLRenderState,
-} from '@flighthq/types';
+import type { DisplayObject, DisplayObjectMaskHooks, DisplayObjectRenderNode, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 
@@ -15,7 +10,7 @@ export function drawWebGLMask(state: WebGLRenderStateInternal, data: DisplayObje
 
   if (!data.updateChildren) return;
 
-  const children = getDisplayObjectRuntime(data.source).children;
+  const children = getDisplayObjectRuntime(data.owner).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
       const child = getOrCreateDisplayObjectRenderNode(state, children[i] as DisplayObject);

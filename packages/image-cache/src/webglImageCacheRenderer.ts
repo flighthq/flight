@@ -21,7 +21,7 @@ import { isImageCachePrimitive } from './imageCachePrimitive';
 import { registerImageCacheRenderer } from './imageCacheSceneNodeResolver';
 
 function drawWebGLImageCache(state: RenderState, renderNode: DisplayObjectRenderNode): void {
-  const source = renderNode.presentationSource;
+  const source = renderNode.source;
   if (!isImageCachePrimitive(source)) return;
   const cache = source.cache;
   const cacheSource = cache.source;

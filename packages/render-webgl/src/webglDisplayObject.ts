@@ -1,18 +1,13 @@
 ﻿import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
-import type {
-  DisplayObject,
-  DisplayObjectRenderer,
-  DisplayObjectRenderNode,
-  WebGLRenderState,
-} from '@flighthq/types';
+import type { DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode, WebGLRenderState } from '@flighthq/types';
 
 export function drawWebGLDisplayObject(_state: WebGLRenderState, _renderNode: DisplayObjectRenderNode): void {
   // Plain display objects have no visual geometry of their own.
 }
 
 export function drawWebGLDisplayObjectMask(state: WebGLRenderState, data: DisplayObjectRenderNode): void {
-  const children = getDisplayObjectRuntime(data.source).children;
+  const children = getDisplayObjectRuntime(data.owner).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
       const child = getOrCreateDisplayObjectRenderNode(state, children[i] as DisplayObject);
@@ -58,14 +53,14 @@ function drawNode(state: WebGLRenderState, current: DisplayObject): void {
 }
 
 function popObjectEffects(state: WebGLRenderState, data: DisplayObjectRenderNode): void {
-  const source = data.source;
-  if (source.mask !== null) state.displayObjectMaskHooks?.popMask(state, data);
-  if (source.scrollRectangle !== null) state.scrollRectangleHooks?.pop(state);
+  const owner = data.owner;
+  if (owner.mask !== null) state.displayObjectMaskHooks?.popMask(state, data);
+  if (owner.scrollRectangle !== null) state.scrollRectangleHooks?.pop(state);
 }
 
 function pushObjectEffects(state: WebGLRenderState, data: DisplayObjectRenderNode): void {
-  const source = data.source;
-  if (source.scrollRectangle !== null) state.scrollRectangleHooks?.push(state, data);
-  if (source.mask !== null)
-    state.displayObjectMaskHooks?.pushMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask));
+  const owner = data.owner;
+  if (owner.scrollRectangle !== null) state.scrollRectangleHooks?.push(state, data);
+  if (owner.mask !== null)
+    state.displayObjectMaskHooks?.pushMask(state, getOrCreateDisplayObjectRenderNode(state, owner.mask));
 }

@@ -39,7 +39,10 @@ export function applyDOMClipRectangles(
   (element.style as CSSStyleDeclaration & { webkitClipPath: string }).webkitClipPath = clipPath;
 }
 
-export function createDOMStageRectangle(rect: Readonly<RectangleLike>, transform: Readonly<MatrixLike>): DOMStageRectangle {
+export function createDOMStageRectangle(
+  rect: Readonly<RectangleLike>,
+  transform: Readonly<MatrixLike>,
+): DOMStageRectangle {
   const x0 = transform.a * rect.x + transform.c * rect.y + transform.tx;
   const y0 = transform.b * rect.x + transform.d * rect.y + transform.ty;
   const x1 = transform.a * (rect.x + rect.width) + transform.c * rect.y + transform.tx;
@@ -71,7 +74,7 @@ export function pushDOMClipRectangle(
 }
 
 export function pushDOMScrollRectangle(rectangles: DOMStageRectangle[], data: DisplayObjectRenderNode): void {
-  pushDOMClipRectangle(rectangles, data.source.scrollRectangle!, data.transform2D);
+  pushDOMClipRectangle(rectangles, data.owner.scrollRectangle!, data.transform2D);
 }
 
 export function setDOMClipHooks(state: DOMRenderState): void {
@@ -151,15 +154,15 @@ const domClipHooksImpl: DOMClipHooks = {
     const internal = state as DOMRenderStateInternal;
     const stack = internal.domClipStack;
     let pushed = 0;
-    const source = data.source;
-    if (source.scrollRectangle !== null && hasRenderFeatures(state, RenderFeatures.ScrollRectangle)) {
+    const owner = data.owner;
+    if (owner.scrollRectangle !== null && hasRenderFeatures(state, RenderFeatures.ScrollRectangle)) {
       pushDOMScrollRectangle(stack, data);
       pushed++;
     }
-    if (source.mask !== null) {
+    if (owner.mask !== null) {
       const maskHooks = state.displayObjectMaskHooks;
       if (maskHooks !== null) {
-        maskHooks.pushMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask), stack);
+        maskHooks.pushMask(state, getOrCreateDisplayObjectRenderNode(state, owner.mask), stack);
         pushed++;
       }
     }

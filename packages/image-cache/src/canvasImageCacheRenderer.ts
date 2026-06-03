@@ -12,7 +12,7 @@ import { isImageCachePrimitive } from './imageCachePrimitive';
 import { registerImageCacheRenderer } from './imageCacheSceneNodeResolver';
 
 function drawCanvasImageCache(state: RenderState, renderNode: DisplayObjectRenderNode): void {
-  const source = renderNode.presentationSource;
+  const source = renderNode.source;
   if (!isImageCachePrimitive(source)) return;
   const cache = source.cache;
   if (cache.source === null || cache.source.src === null) return;
@@ -22,7 +22,7 @@ function drawCanvasImageCache(state: RenderState, renderNode: DisplayObjectRende
 }
 
 function drawCanvasImageCacheMask(state: RenderState, renderNode: DisplayObjectRenderNode): void {
-  const source = renderNode.presentationSource;
+  const source = renderNode.source;
   if (!isImageCachePrimitive(source)) return;
   const cache = source.cache;
   if (cache.source === null || cache.source.src === null) return;
