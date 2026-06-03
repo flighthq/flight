@@ -3,7 +3,6 @@ import {
   BitmapKind,
   createDOMRenderState,
   defaultDOMBitmapRenderer,
-  enableDOMScrollRectangleSupport,
   registerRenderer,
   renderDOMBackground,
   renderDOMDisplayObject,
@@ -17,7 +16,6 @@ document.getElementById('app')!.appendChild(container);
 
 export const state = createDOMRenderState(container, { backgroundColor: 0x000000ff, imageSmoothingEnabled: false });
 registerRenderer(state, BitmapKind, defaultDOMBitmapRenderer);
-enableDOMScrollRectangleSupport(state);
 export const scale = 1;
 
 export function render(root: DisplayObject): void {
