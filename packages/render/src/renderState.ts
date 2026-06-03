@@ -12,7 +12,6 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
     currentQueue: obj?.currentQueue ?? [],
     currentQueueLength: obj?.currentQueueLength ?? 0,
     currentScrollRectangleDepth: obj?.currentScrollRectangleDepth ?? 0,
-    displayObjectRenderNodeResolvers: [],
     displayObjectMaskHooks: obj?.displayObjectMaskHooks ?? null,
     scrollRectangleHooks: obj?.scrollRectangleHooks ?? null,
     displayObjectMaskRendererMap: obj?.displayObjectMaskRendererMap ?? new Map(),

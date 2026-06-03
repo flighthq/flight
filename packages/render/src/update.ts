@@ -1,9 +1,10 @@
-﻿import { getSceneParent } from '@flighthq/scene';
+import { getSceneParent } from '@flighthq/scene';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
 import type {
   DisplayObject,
   DisplayObjectRenderNode,
+  Matrix,
   RenderState,
   SpriteNode,
   SpriteRenderNode,
@@ -20,12 +21,6 @@ import {
 import type { RenderNodeStateInternal } from './renderNodeInternal';
 import { resolveDisplayObjectRenderNode } from './renderNodeResolver';
 import { updateDisplayObjectRenderTransform, updateRenderNode2DTransform } from './transform2d';
-
-function resolveDisplayObjectNodeForUpdate(state: RenderState, current: DisplayObject): DisplayObjectRenderNode {
-  return resolveDisplayObjectRenderNode(state, current, () =>
-    getOrCreateDefaultDisplayObjectRenderNode(state, current),
-  );
-}
 
 /**
  * First pass, update appearance, transforms, identify masks
@@ -49,8 +44,9 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as DisplayObject;
     if (!current.enabled) continue;
-    const data = resolveDisplayObjectNodeForUpdate(state, current);
 
+    // Compute parent before resolving so resolvers receive the current parent transform.
+    let parentTransform: Matrix | null;
     if (current !== source) {
       const parent = getSceneParent(current);
       if (parent === null) {
@@ -64,7 +60,17 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
         scrollRectangleDepth = hasScrollRects ? parentData.scrollRectangleDepth : 0;
         maskDepth = hasMasks ? parentData.maskDepth : 0;
       }
+      parentTransform = parentData?.transform2D ?? null;
+    } else {
+      parentTransform = state.renderTransform2D;
     }
+
+    const data = resolveDisplayObjectRenderNode(
+      state,
+      current,
+      () => getOrCreateDefaultDisplayObjectRenderNode(state, current),
+      parentTransform,
+    );
 
     const appearanceDirty = updateRenderNodeAppearance(state, data, parentData);
     const transformDirty = updateDisplayObjectRenderTransform(state, data, parentData);
