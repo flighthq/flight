@@ -1,6 +1,12 @@
 ﻿import { setDisplayObjectMaskHooks } from '@flighthq/render';
 import { getLocalBoundsRectangle } from '@flighthq/scene';
-import type { DisplayObjectMaskHooks, DisplayObjectRenderNode, DOMRenderState, RenderState } from '@flighthq/types';
+import type {
+  DisplayObject,
+  DisplayObjectMaskHooks,
+  DisplayObjectRenderNode,
+  DOMRenderState,
+  RenderState,
+} from '@flighthq/types';
 
 import { createDOMStageRectangle, type DOMStageRectangle, setDOMClipHooks } from './domClipRect';
 
@@ -10,7 +16,7 @@ export function enableDOMMaskSupport(state: DOMRenderState): void {
 }
 
 export function pushDOMMaskRectangle(rectangles: DOMStageRectangle[], data: DisplayObjectRenderNode): void {
-  const bounds = getLocalBoundsRectangle(data.owner);
+  const bounds = getLocalBoundsRectangle(data.source as DisplayObject);
   if (bounds.width <= 0 || bounds.height <= 0) {
     rectangles.push({ bottom: 0, left: 0, right: 0, top: 0 });
     return;

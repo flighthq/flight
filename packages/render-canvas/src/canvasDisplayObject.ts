@@ -8,7 +8,7 @@ export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderNode: 
 }
 
 export function drawCanvasDisplayObjectMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
-  const children = getDisplayObjectRuntime(data.owner).children;
+  const children = getDisplayObjectRuntime(data.source as DisplayObject).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
       const child = getOrCreateDisplayObjectRenderNode(state, children[i] as DisplayObject);
@@ -59,9 +59,9 @@ function popMaskObject(
   data: DisplayObjectRenderNode,
   handleScrollRectangle: boolean = true,
 ): void {
-  const owner = data.owner;
-  if (owner.mask !== null) state.displayObjectMaskHooks?.popMask(state, data);
-  if (handleScrollRectangle && owner.scrollRectangle !== null) state.scrollRectangleHooks?.pop(state);
+  const source = data.source as DisplayObject;
+  if (source.mask !== null) state.displayObjectMaskHooks?.popMask(state, data);
+  if (handleScrollRectangle && source.scrollRectangle !== null) state.scrollRectangleHooks?.pop(state);
 }
 
 function pushMaskObject(
@@ -69,10 +69,10 @@ function pushMaskObject(
   data: DisplayObjectRenderNode,
   handleScrollRectangle: boolean = true,
 ): void {
-  const owner = data.owner;
-  if (handleScrollRectangle && owner.scrollRectangle !== null) state.scrollRectangleHooks?.push(state, data);
-  if (owner.mask !== null)
-    state.displayObjectMaskHooks?.pushMask(state, getOrCreateDisplayObjectRenderNode(state, owner.mask));
+  const source = data.source as DisplayObject;
+  if (handleScrollRectangle && source.scrollRectangle !== null) state.scrollRectangleHooks?.push(state, data);
+  if (source.mask !== null)
+    state.displayObjectMaskHooks?.pushMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask));
 }
 
 export const defaultCanvasDisplayObjectRenderer: DisplayObjectRenderer = {

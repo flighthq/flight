@@ -1,11 +1,12 @@
-import { getSceneParent } from '@flighthq/scene';
+import { getAppearanceRevision, getLocalTransformRevision, getSceneNodeRuntime, getSceneParent } from '@flighthq/scene';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
 import type {
   DisplayObject,
   DisplayObjectRenderNode,
-  Matrix,
+  RenderNodeAdapter,
   RenderState,
+  SceneNode,
   SpriteNode,
   SpriteRenderNode,
 } from '@flighthq/types';
@@ -13,13 +14,9 @@ import { RenderFeatures } from '@flighthq/types';
 
 import { updateRenderNodeAppearance } from './appearance';
 import { hasRenderFeatures } from './renderer';
-import {
-  getOrCreateDefaultDisplayObjectRenderNode,
-  getOrCreateDisplayObjectRenderNode,
-  getOrCreateSpriteRenderNode,
-} from './renderNode2d';
+import { syncRenderNodeRenderer } from './renderNode';
+import { getOrCreateDefaultDisplayObjectRenderNode, getOrCreateSpriteRenderNode } from './renderNode2d';
 import type { RenderNodeStateInternal } from './renderNodeInternal';
-import { resolveDisplayObjectRenderNode } from './renderNodeResolver';
 import { updateDisplayObjectRenderTransform, updateRenderNode2DTransform } from './transform2d';
 
 /**
@@ -45,8 +42,6 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
     const current = tempStack[--stackLength] as DisplayObject;
     if (!current.enabled) continue;
 
-    // Compute parent before resolving so resolvers receive the current parent transform.
-    let parentTransform: Matrix | null;
     if (current !== source) {
       const parent = getSceneParent(current);
       if (parent === null) {
@@ -55,28 +50,43 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
         scrollRectangleDepth = 0;
         maskDepth = 0;
       } else if (parent !== lastParent) {
-        parentData = getOrCreateDisplayObjectRenderNode(state, parent);
+        parentData = getOrCreateDefaultDisplayObjectRenderNode(state, parent);
         lastParent = parent;
         scrollRectangleDepth = hasScrollRects ? parentData.scrollRectangleDepth : 0;
         maskDepth = hasMasks ? parentData.maskDepth : 0;
       }
-      parentTransform = parentData?.transform2D ?? null;
-    } else {
-      parentTransform = state.renderTransform2D;
     }
 
-    const data = resolveDisplayObjectRenderNode(
-      state,
-      current,
-      () => getOrCreateDefaultDisplayObjectRenderNode(state, current),
-      parentTransform,
-    );
+    const data = getOrCreateDefaultDisplayObjectRenderNode(state, current);
 
-    const appearanceDirty = updateRenderNodeAppearance(state, data, parentData);
-    const transformDirty = updateDisplayObjectRenderTransform(state, data, parentData);
+    // Pre-check dirtiness using the scene node directly (data.source may be a cache primitive)
+    const parentDirty =
+      parentData !== undefined &&
+      (parentData.transformFrameID === state.currentFrameID || parentData.appearanceFrameID === state.currentFrameID);
+    const localDirty =
+      data.lastLocalTransformID !== getLocalTransformRevision(current as SceneNode) ||
+      data.lastAppearanceID !== getAppearanceRevision(current as SceneNode);
 
-    if (!treeDirty) {
-      treeDirty = appearanceDirty || transformDirty;
+    if (parentDirty || localDirty) {
+      data.resolver = getSceneNodeRuntime(current).resolver;
+      data.source = current;
+      // Reset so updateRenderNode2DTransform always recomputes a fresh base for the adapter
+      data.lastLocalTransformID = -1;
+
+      updateRenderNodeAppearance(state, data, parentData);
+      updateDisplayObjectRenderTransform(state, data, parentData);
+
+      treeDirty = true;
+
+      let updateChildren = true;
+      if (data.resolver !== null) {
+        const result = (data.resolver as RenderNodeAdapter).adapt(state, current, data);
+        if (result !== null) {
+          updateChildren = result;
+          syncRenderNodeRenderer(state, data);
+        }
+      }
+      data.updateChildren = updateChildren;
     }
 
     if (hasScrollRects && current.scrollRectangle !== null) {
@@ -87,7 +97,7 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
 
     const mask = current.mask;
     if (hasMasks && mask !== null) {
-      const maskData = getOrCreateDisplayObjectRenderNode(state, mask);
+      const maskData = getOrCreateDefaultDisplayObjectRenderNode(state, mask);
       maskData.isMaskFrameID = currentFrameID;
       maskData.scrollRectangleDepth = 0;
       maskData.maskDepth = 0;
@@ -137,12 +147,35 @@ export function updateSpriteBeforeRender(state: RenderState, source: SpriteNode)
       }
     }
 
-    const appearanceDirty = updateRenderNodeAppearance(state, data, parentData);
-    const transformDirty = updateRenderNode2DTransform(state, data, parentData);
+    const parentDirty =
+      parentData !== undefined &&
+      (parentData.transformFrameID === state.currentFrameID || parentData.appearanceFrameID === state.currentFrameID);
+    const localDirty =
+      data.lastLocalTransformID !== getLocalTransformRevision(current as SceneNode) ||
+      data.lastAppearanceID !== getAppearanceRevision(current as SceneNode);
 
-    if (!treeDirty) {
-      treeDirty = appearanceDirty || transformDirty;
+    if (parentDirty || localDirty) {
+      data.resolver = getSceneNodeRuntime(current).resolver;
+      data.source = current;
+      data.lastLocalTransformID = -1;
+
+      updateRenderNodeAppearance(state, data, parentData);
+      updateRenderNode2DTransform(state, data, parentData);
+
+      treeDirty = true;
+
+      let updateChildren = true;
+      if (data.resolver !== null) {
+        const result = (data.resolver as RenderNodeAdapter).adapt(state, current, data);
+        if (result !== null) {
+          updateChildren = result;
+          syncRenderNodeRenderer(state, data);
+        }
+      }
+      data.updateChildren = updateChildren;
     }
+
+    if (!data.updateChildren) continue;
 
     const children = getSpriteNodeRuntime(current).children;
     if (children !== null) {

@@ -1,8 +1,13 @@
 ﻿import { createMatrix } from '@flighthq/geometry';
 import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render';
+import { ImageRenderCacheKind } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 
-import { drawWebGLImageCacheResult } from './webglRenderCache';
+import {
+  defaultWebGLRenderImageCacheRenderer,
+  drawWebGLImageCacheResult,
+  enableWebGLRenderImageCache,
+} from './webglRenderCache';
 import { createWebGLRenderState } from './webglRenderState';
 
 function makeState() {
@@ -65,5 +70,13 @@ describe('drawWebGLImageCacheResult', () => {
     expect(() =>
       drawWebGLImageCacheResult(state, data, { source: imageSource, transform: createMatrix() }),
     ).not.toThrow();
+  });
+});
+
+describe('enableWebGLRenderImageCache', () => {
+  it('registers the image cache renderer for the image cache kind', () => {
+    const state = makeState();
+    enableWebGLRenderImageCache(state);
+    expect(state.rendererMap.get(ImageRenderCacheKind)).toBe(defaultWebGLRenderImageCacheRenderer);
   });
 });

@@ -7,7 +7,7 @@ export function drawWebGLDisplayObject(_state: WebGLRenderState, _renderNode: Di
 }
 
 export function drawWebGLDisplayObjectMask(state: WebGLRenderState, data: DisplayObjectRenderNode): void {
-  const children = getDisplayObjectRuntime(data.owner).children;
+  const children = getDisplayObjectRuntime(data.source as DisplayObject).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
       const child = getOrCreateDisplayObjectRenderNode(state, children[i] as DisplayObject);
@@ -53,14 +53,14 @@ function drawNode(state: WebGLRenderState, current: DisplayObject): void {
 }
 
 function popObjectEffects(state: WebGLRenderState, data: DisplayObjectRenderNode): void {
-  const owner = data.owner;
-  if (owner.mask !== null) state.displayObjectMaskHooks?.popMask(state, data);
-  if (owner.scrollRectangle !== null) state.scrollRectangleHooks?.pop(state);
+  const source = data.source as DisplayObject;
+  if (source.mask !== null) state.displayObjectMaskHooks?.popMask(state, data);
+  if (source.scrollRectangle !== null) state.scrollRectangleHooks?.pop(state);
 }
 
 function pushObjectEffects(state: WebGLRenderState, data: DisplayObjectRenderNode): void {
-  const owner = data.owner;
-  if (owner.scrollRectangle !== null) state.scrollRectangleHooks?.push(state, data);
-  if (owner.mask !== null)
-    state.displayObjectMaskHooks?.pushMask(state, getOrCreateDisplayObjectRenderNode(state, owner.mask));
+  const source = data.source as DisplayObject;
+  if (source.scrollRectangle !== null) state.scrollRectangleHooks?.push(state, data);
+  if (source.mask !== null)
+    state.displayObjectMaskHooks?.pushMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask));
 }

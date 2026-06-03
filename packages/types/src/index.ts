@@ -56,7 +56,7 @@ export * from './RendererData';
 export * from './RenderFeatures';
 export * from './RenderNode';
 export * from './RenderNode2D';
-export * from './RenderNodeResolver';
+export * from './RenderNodeAdapter';
 export * from './RenderPrimitive';
 export * from './RenderState';
 export * from './RichText';

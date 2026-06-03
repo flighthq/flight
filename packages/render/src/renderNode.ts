@@ -1,15 +1,12 @@
 import { createEntity } from '@flighthq/entity';
-import { createMatrix } from '@flighthq/geometry';
 import { createColorTransform } from '@flighthq/materials';
 import { BlendMode, type Renderable, type RenderNode, type RenderState } from '@flighthq/types';
 
 export function createRenderNode(state: RenderState, source: Renderable): RenderNode {
   const renderer = state.rendererMap.get(source.kind) ?? null;
   return createEntity({
-    owner: source,
     source: source,
     kind: source.kind,
-    transform2D: createMatrix(),
     resolver: null,
     next: null,
     alpha: 1,

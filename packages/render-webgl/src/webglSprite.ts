@@ -1,4 +1,4 @@
-﻿import { getOrCreateSpriteRenderNode } from '@flighthq/render';
+import { getOrCreateSpriteRenderNode } from '@flighthq/render';
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
 import type { SpriteNode, WebGLRenderState } from '@flighthq/types';
 
@@ -24,6 +24,8 @@ export function renderWebGLSprite(state: WebGLRenderState, source: SpriteNode): 
     if (data.renderer !== null) {
       data.renderer.draw(internal, data);
     }
+
+    if (!data.updateChildren) continue;
 
     const children = getSpriteNodeRuntime(current).children;
     if (children !== null) {

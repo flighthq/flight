@@ -51,7 +51,7 @@ export function drawWebGLRichTextWithOverlay(
   overlay?: WebGLRichTextOverlay,
 ): void {
   const internal = state as WebGLRenderStateInternal;
-  const source = renderNode.owner as RichText;
+  const source = renderNode.source as RichText;
   const data = source.data;
   const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
   const content = getRichTextContent(richTextRuntime);

@@ -8,7 +8,6 @@ import { makeWebGLState } from './webglTestHelper';
 function makeInputTextNode(): DisplayObjectRenderNode {
   const inputText = createInputText({ data: { height: 40, text: 'hello', width: 100 } });
   return {
-    owner: inputText,
     source: inputText,
     blendMode: 0,
     alpha: 1,
@@ -27,7 +26,7 @@ describe('drawWebGLInputText', () => {
   it('renders a focused collapsed selection without throwing', () => {
     const { state, gl } = makeWebGLState();
     const renderNode = makeInputTextNode();
-    const source = renderNode.owner as InputText;
+    const source = renderNode.source as InputText;
     (getInputTextRuntime(source) as ReturnType<typeof getInputTextRuntime> & { focused: boolean }).focused = true;
     setInputTextSelection(source, 2, 2);
 
@@ -38,7 +37,7 @@ describe('drawWebGLInputText', () => {
   it('renders a focused expanded selection without throwing', () => {
     const { state, gl } = makeWebGLState();
     const renderNode = makeInputTextNode();
-    const source = renderNode.owner as InputText;
+    const source = renderNode.source as InputText;
     (getInputTextRuntime(source) as ReturnType<typeof getInputTextRuntime> & { focused: boolean }).focused = true;
     setInputTextSelection(source, 1, 4);
 
