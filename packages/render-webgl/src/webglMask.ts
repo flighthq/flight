@@ -10,7 +10,7 @@ export function drawWebGLMask(state: WebGLRenderStateInternal, data: DisplayObje
 
   if (!data.updateChildren) return;
 
-  const children = getDisplayObjectRuntime(data.owner).children;
+  const children = getDisplayObjectRuntime(data.source as DisplayObject).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
       const child = getOrCreateDisplayObjectRenderNode(state, children[i] as DisplayObject);

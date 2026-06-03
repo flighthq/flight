@@ -1,13 +1,12 @@
 import { createEntity } from '@flighthq/entity';
-import { copyMatrix, multiplyMatrix } from '@flighthq/geometry';
-import { getLocalTransformMatrix, getSceneNodeRuntime, invalidateAppearance } from '@flighthq/scene';
+import { multiplyMatrix } from '@flighthq/geometry';
+import { getSceneNodeRuntime, invalidateAppearance } from '@flighthq/scene';
 import type {
-  DisplayObject,
-  DisplayObjectRenderNode,
   ImageRenderCacheResult,
-  Matrix,
+  Renderable,
   Renderer,
-  RenderNodeResolver,
+  RenderNode2D,
+  RenderNodeAdapter,
   RenderPrimitive,
   RenderState,
   SceneNode,
@@ -15,8 +14,6 @@ import type {
 } from '@flighthq/types';
 
 import { registerRenderer } from './renderer';
-import { syncRenderNodeRenderer } from './renderNode';
-import { createDisplayObjectRenderNode } from './renderNode2d';
 
 export const ImageRenderCacheKind: unique symbol = Symbol('ImageRenderCache');
 export type ImageRenderCacheKind = typeof ImageRenderCacheKind;
@@ -24,17 +21,16 @@ export type ImageRenderCacheKind = typeof ImageRenderCacheKind;
 export interface ImageRenderCachePrimitive extends RenderPrimitive {
   cache: ImageRenderCacheResult;
   kind: ImageRenderCacheKind;
-  owner: DisplayObject;
+  owner: Renderable;
 }
 
 // ─── Capture state ────────────────────────────────────────────────────────────
 
 const _capturingStates = new WeakSet<RenderState>();
 
-// ─── Resolver ─────────────────────────────────────────────────────────────────
+// ─── Adapter ──────────────────────────────────────────────────────────────────
 
-type ImageRenderCacheResolver = RenderNodeResolver & {
-  getNode: (state: RenderState, source: DisplayObject) => DisplayObjectRenderNode;
+type ImageRenderCacheAdapter = RenderNodeAdapter & {
   result: ImageRenderCacheResult | null;
 };
 
@@ -50,22 +46,21 @@ export function clearImageRenderCache(source: SceneNode<symbol, object>): void {
 }
 
 export function createImageRenderCachePrimitive(
-  owner: DisplayObject,
+  owner: Renderable,
   cache: ImageRenderCacheResult,
 ): ImageRenderCachePrimitive {
   return createEntity({ cache, kind: ImageRenderCacheKind, owner });
 }
 
-export function createRenderImageCacheResolver(): ImageRenderCacheResolver {
+export function createRenderImageCacheAdapter(): ImageRenderCacheAdapter {
   const _primitivesByState = new WeakMap<RenderState, ImageRenderCachePrimitive>();
-  const _nodesByState = new WeakMap<RenderState, DisplayObjectRenderNode>();
 
-  const resolver: ImageRenderCacheResolver = {
+  const adapter: ImageRenderCacheAdapter = {
     result: null,
 
-    resolve(state: RenderState, source: DisplayObject, parentTransform: Matrix | null): boolean | null {
+    adapt(state: RenderState, source: Renderable, node: RenderNode2D): boolean | null {
       if (_capturingStates.has(state)) return null;
-      const cache = resolver.result;
+      const cache = adapter.result;
       if (cache?.source?.src == null) return null;
 
       let primitive = _primitivesByState.get(state);
@@ -76,40 +71,16 @@ export function createRenderImageCacheResolver(): ImageRenderCacheResolver {
         primitive.cache = cache;
       }
 
-      let node = _nodesByState.get(state);
-      if (node === undefined) {
-        node = createDisplayObjectRenderNode(state, source);
-        _nodesByState.set(state, node);
-      }
       node.source = primitive;
       node.kind = primitive.kind;
-
-      // Bake final transform: parentTransform * ownerLocalTransform * cacheOffset
-      const ownerLocal = getLocalTransformMatrix(source);
-      if (parentTransform !== null) {
-        multiplyMatrix(node.transform2D, parentTransform, ownerLocal);
-      } else {
-        copyMatrix(node.transform2D, ownerLocal);
-      }
+      // Apply cache offset to the already-computed world transform
       multiplyMatrix(node.transform2D, node.transform2D, cache.transform);
-      node.transformFrameID = state.currentFrameID;
-
-      syncRenderNodeRenderer(state, node);
 
       return false;
     },
-
-    getNode(state: RenderState, source: DisplayObject): DisplayObjectRenderNode {
-      let node = _nodesByState.get(state);
-      if (node === undefined) {
-        node = createDisplayObjectRenderNode(state, source);
-        _nodesByState.set(state, node);
-      }
-      return node;
-    },
   };
 
-  return resolver;
+  return adapter;
 }
 
 export function endImageRenderCacheCapture(state: RenderState): void {
@@ -117,8 +88,8 @@ export function endImageRenderCacheCapture(state: RenderState): void {
 }
 
 export function getImageRenderCache(source: SceneNode<symbol, object>): ImageRenderCacheResult | null {
-  const resolver = (getSceneNodeRuntime(source) as SceneNodeRuntime<symbol, object>).resolver;
-  return isRenderImageCacheResolver(resolver) ? resolver.result : null;
+  const adapter = (getSceneNodeRuntime(source) as SceneNodeRuntime<symbol, object>).resolver;
+  return isRenderImageCacheAdapter(adapter) ? adapter.result : null;
 }
 
 export function isImageRenderCachePrimitive(source: unknown): source is ImageRenderCachePrimitive {
@@ -127,11 +98,11 @@ export function isImageRenderCachePrimitive(source: unknown): source is ImageRen
   );
 }
 
-export function isRenderImageCacheResolver(value: unknown): value is ImageRenderCacheResolver {
+export function isRenderImageCacheAdapter(value: unknown): value is ImageRenderCacheAdapter {
   return (
     typeof value === 'object' &&
     value !== null &&
-    typeof (value as ImageRenderCacheResolver).resolve === 'function' &&
+    typeof (value as ImageRenderCacheAdapter).adapt === 'function' &&
     'result' in value
   );
 }
@@ -142,9 +113,9 @@ export function registerImageRenderCacheRenderer(state: RenderState, renderer: R
 
 export function setImageRenderCache(source: SceneNode<symbol, object>, result: ImageRenderCacheResult): void {
   const runtime = getSceneNodeRuntime(source) as SceneNodeRuntime<symbol, object>;
-  if (!isRenderImageCacheResolver(runtime.resolver)) {
-    runtime.resolver = createRenderImageCacheResolver();
+  if (!isRenderImageCacheAdapter(runtime.resolver)) {
+    runtime.resolver = createRenderImageCacheAdapter();
   }
-  (runtime.resolver as ImageRenderCacheResolver).result = result;
+  (runtime.resolver as ImageRenderCacheAdapter).result = result;
   invalidateAppearance(source);
 }

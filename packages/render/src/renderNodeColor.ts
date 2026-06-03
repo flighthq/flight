@@ -1,8 +1,8 @@
-﻿import { concatColorTransform, copyColorTransform, isIdentityColorTransform } from '@flighthq/materials';
+import { concatColorTransform, copyColorTransform, isIdentityColorTransform } from '@flighthq/materials';
 import type { ColorTransformLike, HasAppearance, RenderNode, RenderState } from '@flighthq/types';
 
 export function updateRenderNodeColorTransform(state: RenderState, data: RenderNode, parentData?: RenderNode): void {
-  const source = data.owner as HasAppearance;
+  const source = data.source as HasAppearance;
   const transform = source.colorTransform ?? null;
   let parentTransform = null;
   if (parentData !== undefined) {

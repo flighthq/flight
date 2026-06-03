@@ -1,17 +1,14 @@
 import type { BlendMode } from './BlendMode';
 import type { ColorTransform } from './ColorTransform';
 import type { Entity } from './Entity';
-import type { Matrix } from './Matrix';
 import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
 import type { RendererData } from './RendererData';
 import type { Shader } from './Shader';
 
 export interface RenderNode extends Entity {
-  owner: Renderable;
   source: Renderable;
   kind: symbol;
-  transform2D: Matrix;
   resolver: object | null;
   next: RenderNode | null;
 

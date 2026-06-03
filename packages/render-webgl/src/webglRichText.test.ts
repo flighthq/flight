@@ -12,7 +12,6 @@ import { makeWebGLState } from './webglTestHelper';
 function makeRichTextNode(): DisplayObjectRenderNode {
   const richText = createRichText();
   return {
-    owner: richText,
     source: richText,
     blendMode: 0,
     alpha: 1,
@@ -37,7 +36,7 @@ describe('drawWebGLRichText', () => {
   it('binds the active bitmap shader when drawing rich text', () => {
     const { state } = makeWebGLState();
     const renderNode = makeRichTextNode();
-    (renderNode.owner as RichText).data.text = 'hello';
+    (renderNode.source as RichText).data.text = 'hello';
 
     drawWebGLRichText(state, renderNode);
 
@@ -53,7 +52,7 @@ describe('drawWebGLRichText', () => {
   it('draws when text is non-empty', () => {
     const { state, gl } = makeWebGLState();
     const renderNode = makeRichTextNode();
-    (renderNode.owner as RichText).data.text = 'hello';
+    (renderNode.source as RichText).data.text = 'hello';
     drawWebGLRichText(state, renderNode);
     expect(gl.drawElements).toHaveBeenCalled();
   });
@@ -61,7 +60,7 @@ describe('drawWebGLRichText', () => {
   it('draws resolved htmlText spans', () => {
     const { state, gl } = makeWebGLState();
     const renderNode = makeRichTextNode();
-    (renderNode.owner as RichText).data.htmlText = '<b>Bold</b><font color="#00ff00">Green</font>';
+    (renderNode.source as RichText).data.htmlText = '<b>Bold</b><font color="#00ff00">Green</font>';
     drawWebGLRichText(state, renderNode);
     expect(gl.drawElements).toHaveBeenCalled();
   });
@@ -69,7 +68,7 @@ describe('drawWebGLRichText', () => {
   it('draws field chrome even when text is empty', () => {
     const { state, gl } = makeWebGLState();
     const renderNode = makeRichTextNode();
-    (renderNode.owner as RichText).data.background = true;
+    (renderNode.source as RichText).data.background = true;
     drawWebGLRichText(state, renderNode);
     expect(gl.drawElements).toHaveBeenCalled();
   });
@@ -87,7 +86,7 @@ describe('drawWebGLRichTextWithOverlay', () => {
   it('runs an optional canvas overlay after layout', () => {
     const { state } = makeWebGLState();
     const renderNode = makeRichTextNode();
-    (renderNode.owner as RichText).data.text = 'hello';
+    (renderNode.source as RichText).data.text = 'hello';
     const overlay = vi.fn();
 
     drawWebGLRichTextWithOverlay(state, renderNode, overlay);

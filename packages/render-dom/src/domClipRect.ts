@@ -1,6 +1,12 @@
 ﻿import { enableRenderFeatures, hasRenderFeatures } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import type { DisplayObjectRenderNode, DOMRenderState, MatrixLike, RectangleLike } from '@flighthq/types';
+import type {
+  DisplayObject,
+  DisplayObjectRenderNode,
+  DOMRenderState,
+  MatrixLike,
+  RectangleLike,
+} from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
 
 import type { DOMClipHooks, DOMRenderStateInternal } from './internal';
@@ -74,7 +80,7 @@ export function pushDOMClipRectangle(
 }
 
 export function pushDOMScrollRectangle(rectangles: DOMStageRectangle[], data: DisplayObjectRenderNode): void {
-  pushDOMClipRectangle(rectangles, data.owner.scrollRectangle!, data.transform2D);
+  pushDOMClipRectangle(rectangles, (data.source as DisplayObject).scrollRectangle!, data.transform2D);
 }
 
 export function setDOMClipHooks(state: DOMRenderState): void {
@@ -154,15 +160,15 @@ const domClipHooksImpl: DOMClipHooks = {
     const internal = state as DOMRenderStateInternal;
     const stack = internal.domClipStack;
     let pushed = 0;
-    const owner = data.owner;
-    if (owner.scrollRectangle !== null && hasRenderFeatures(state, RenderFeatures.ScrollRectangle)) {
+    const source = data.source as DisplayObject;
+    if (source.scrollRectangle !== null && hasRenderFeatures(state, RenderFeatures.ScrollRectangle)) {
       pushDOMScrollRectangle(stack, data);
       pushed++;
     }
-    if (owner.mask !== null) {
+    if (source.mask !== null) {
       const maskHooks = state.displayObjectMaskHooks;
       if (maskHooks !== null) {
-        maskHooks.pushMask(state, getOrCreateDisplayObjectRenderNode(state, owner.mask), stack);
+        maskHooks.pushMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask), stack);
         pushed++;
       }
     }

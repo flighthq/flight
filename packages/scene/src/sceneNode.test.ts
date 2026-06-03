@@ -7,8 +7,8 @@ import {
   defaultSceneNodeRuntimeCanAddChild,
   getSceneNodeRuntime,
   getSceneSignals,
+  setSceneNodeAdapter,
   setSceneNodeEnabled,
-  setSceneNodeResolver,
 } from './sceneNode';
 
 describe('createSceneNode', () => {
@@ -170,6 +170,23 @@ describe('getSceneSignals', () => {
   });
 });
 
+describe('setSceneNodeAdapter', () => {
+  it('sets the runtime adapter', () => {
+    const node = createSceneNode(TestGraph, NodeTestKind);
+    const adapter = { adapt: vi.fn() };
+    setSceneNodeAdapter(node, adapter);
+    expect(getSceneNodeRuntime(node).resolver).toBe(adapter);
+  });
+
+  it('accepts null', () => {
+    const node = createSceneNode(TestGraph, NodeTestKind);
+    const adapter = { adapt: vi.fn() };
+    setSceneNodeAdapter(node, adapter);
+    setSceneNodeAdapter(node, null);
+    expect(getSceneNodeRuntime(node).resolver).toBeNull();
+  });
+});
+
 describe('setSceneNodeEnabled', () => {
   it('sets enabled to false', () => {
     const node = createSceneNode(TestGraph, NodeTestKind);
@@ -182,23 +199,6 @@ describe('setSceneNodeEnabled', () => {
     setSceneNodeEnabled(node, false);
     setSceneNodeEnabled(node, true);
     expect(node.enabled).toBe(true);
-  });
-});
-
-describe('setSceneNodeResolver', () => {
-  it('sets the runtime resolver', () => {
-    const node = createSceneNode(TestGraph, NodeTestKind);
-    const resolver = { resolve: vi.fn(), updateChildren: false };
-    setSceneNodeResolver(node, resolver);
-    expect(getSceneNodeRuntime(node).resolver).toBe(resolver);
-  });
-
-  it('accepts null', () => {
-    const node = createSceneNode(TestGraph, NodeTestKind);
-    const resolver = { resolve: vi.fn(), updateChildren: false };
-    setSceneNodeResolver(node, resolver);
-    setSceneNodeResolver(node, null);
-    expect(getSceneNodeRuntime(node).resolver).toBeNull();
   });
 });
 
