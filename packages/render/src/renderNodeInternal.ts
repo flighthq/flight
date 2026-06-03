@@ -1,16 +1,16 @@
-import type { Renderable, RenderState, RenderTreeNode } from '@flighthq/types';
+﻿import type { Renderable, RenderState, RenderNode } from '@flighthq/types';
 
 import type { DisplayObjectRenderNodeResolver } from './renderNodeResolver';
 
-export type RenderTreeStateInternal = Omit<
+export type RenderNodeStateInternal = Omit<
   RenderState,
   'currentFrameID' | 'currentQueue' | 'currentQueueLength' | 'renderNodeMap' | 'rendererMapID' | 'tempStack'
 > & {
   currentFrameID: number;
-  currentQueue: RenderTreeNode[];
+  currentQueue: RenderNode[];
   currentQueueLength: number;
   displayObjectRenderNodeResolvers: DisplayObjectRenderNodeResolver[];
-  renderNodeMap: WeakMap<Renderable, RenderTreeNode>;
+  renderNodeMap: WeakMap<Renderable, RenderNode>;
   rendererMapID: number;
   tempStack: Renderable[];
 };

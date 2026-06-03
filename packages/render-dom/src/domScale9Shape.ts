@@ -1,9 +1,9 @@
-import { createEntity } from '@flighthq/entity';
+﻿import { createEntity } from '@flighthq/entity';
 import { remapScale9Commands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import { getLocalBoundsRectangle } from '@flighthq/scene';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   DOMRenderState,
   MatrixLike,
   Renderable,
@@ -28,7 +28,7 @@ export function createDOMScale9ShapeData(_state: RenderState, _source: Renderabl
   return createEntity({ canvas: null, context: null });
 }
 
-export function drawDOMScale9Shape(state: DOMRenderState, renderNode: DisplayObjectRenderTreeNode): void {
+export function drawDOMScale9Shape(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
   const data = renderNode.rendererData as DOMScale9ShapeData | null;
   if (data === null) return;
 
@@ -69,7 +69,7 @@ export function drawDOMScale9Shape(state: DOMRenderState, renderNode: DisplayObj
   setDOMRendererElement(state, data.canvas);
 }
 
-export function drawDOMScale9ShapeMask(state: DOMRenderState, renderNode: DisplayObjectRenderTreeNode): void {
+export function drawDOMScale9ShapeMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
   drawDOMScale9Shape(state, renderNode);
 }
 

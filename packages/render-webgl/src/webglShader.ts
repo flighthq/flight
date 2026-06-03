@@ -1,4 +1,4 @@
-import type { DisplayObjectRenderTreeNode, RenderTreeNode, WebGLRenderState } from '@flighthq/types';
+﻿import type { DisplayObjectRenderNode, RenderNode, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
@@ -67,7 +67,7 @@ export function createDefaultBitmapShader(
   return {
     locations: shaderLoc,
     program: shaderLoc.program,
-    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: DisplayObjectRenderTreeNode): void {
+    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: DisplayObjectRenderNode): void {
       const internal = state as WebGLRenderStateInternal;
       setWebGLAttribs(gl, shaderLoc);
       setWebGLMatrixFromTransform(
@@ -92,7 +92,7 @@ export function setWebGLAttribs(gl: WebGL2RenderingContext, loc: WebGLShaderLoca
 export function setWebGLBaseUniforms(
   gl: WebGL2RenderingContext,
   loc: WebGLShaderLocations,
-  renderNode: RenderTreeNode,
+  renderNode: RenderNode,
 ): void {
   gl.uniform1f(loc.locAlpha, renderNode.alpha);
   gl.uniform1i(loc.locTexture, 0);

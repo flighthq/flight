@@ -1,5 +1,5 @@
-import type { DisplayObject } from './DisplayObject';
-import type { DisplayObjectRenderTreeNode } from './DisplayObjectRenderTreeNode';
+﻿import type { DisplayObject } from './DisplayObject';
+import type { DisplayObjectRenderNode } from './DisplayObjectRenderNode';
 import type { RenderState } from './RenderState';
 
 export interface SceneNodeResolver {
@@ -7,6 +7,6 @@ export interface SceneNodeResolver {
   resolve(
     state: RenderState,
     source: DisplayObject,
-    next: () => DisplayObjectRenderTreeNode,
-  ): { node: DisplayObjectRenderTreeNode; dirty?: boolean } | null;
+    next: () => DisplayObjectRenderNode,
+  ): { node: DisplayObjectRenderNode; dirty?: boolean } | null;
 }

@@ -1,8 +1,8 @@
-import { createEntity } from '@flighthq/entity';
+﻿import { createEntity } from '@flighthq/entity';
 import { createColorTransform } from '@flighthq/materials';
-import { BlendMode, type Renderable, type RenderState, type RenderTreeNode } from '@flighthq/types';
+import { BlendMode, type Renderable, type RenderState, type RenderNode } from '@flighthq/types';
 
-export function createRenderNode(state: RenderState, source: Renderable): RenderTreeNode {
+export function createRenderNode(state: RenderState, source: Renderable): RenderNode {
   const renderer = state.rendererMap.get(source.kind) ?? null;
   return createEntity({
     alpha: 1,
@@ -26,7 +26,7 @@ export function createRenderNode(state: RenderState, source: Renderable): Render
   });
 }
 
-export function getOrCreateRenderNode<Source extends Renderable, NodeType extends RenderTreeNode>(
+export function getOrCreateRenderNode<Source extends Renderable, NodeType extends RenderNode>(
   state: RenderState,
   source: Source,
   createNode: (state: RenderState, src: Source) => NodeType,
@@ -43,7 +43,7 @@ export function getOrCreateRenderNode<Source extends Renderable, NodeType extend
   return node as NodeType;
 }
 
-export function syncRenderNodeRenderer(state: RenderState, node: RenderTreeNode): void {
+export function syncRenderNodeRenderer(state: RenderState, node: RenderNode): void {
   const renderer = state.rendererMap.get(node.kind) ?? null;
   const rendererDataSource = node.presentationSource ?? node.source;
   if (node.renderer !== renderer || node.rendererDataSource !== rendererDataSource) {

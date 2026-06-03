@@ -1,12 +1,12 @@
-import { createNullRendererData, hasRenderFeatures } from '@flighthq/render';
-import type { Bitmap, CanvasRenderState, DisplayObjectRenderer, DisplayObjectRenderTreeNode } from '@flighthq/types';
+﻿import { createNullRendererData, hasRenderFeatures } from '@flighthq/render';
+import type { Bitmap, CanvasRenderState, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
 
 import { drawCanvasDisplayObject, drawCanvasDisplayObjectMask } from './canvasDisplayObject';
 import { setCanvasBlendMode } from './canvasMaterials';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasBitmap(state: CanvasRenderState, bitmap: DisplayObjectRenderTreeNode): void {
+export function drawCanvasBitmap(state: CanvasRenderState, bitmap: DisplayObjectRenderNode): void {
   drawCanvasDisplayObject(state, bitmap);
   const source = bitmap.source as Bitmap;
   const imageSource = source.data.image;
@@ -46,7 +46,7 @@ export function drawCanvasBitmap(state: CanvasRenderState, bitmap: DisplayObject
   }
 }
 
-export function drawCanvasBitmapMask(state: CanvasRenderState, data: DisplayObjectRenderTreeNode): void {
+export function drawCanvasBitmapMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
   drawCanvasDisplayObjectMask(state, data);
 }
 

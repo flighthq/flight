@@ -2,7 +2,7 @@
 import { createDisplayObjectRenderNode, syncRenderNodeRenderer } from '@flighthq/render';
 import type {
   DisplayObject,
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   ImageCacheResult,
   Renderer,
   RenderState,
@@ -24,14 +24,14 @@ export class ImageCacheSceneNodeResolver implements SceneNodeResolver {
   result: ImageCacheResult | null = null;
 
   private _primitivesByState = new WeakMap<RenderState, ImageCachePrimitive>();
-  private _nodesByState = new WeakMap<RenderState, DisplayObjectRenderTreeNode>();
+  private _nodesByState = new WeakMap<RenderState, DisplayObjectRenderNode>();
   private _versionsByState = new WeakMap<RenderState, number>();
 
   resolve(
     state: RenderState,
     source: DisplayObject,
-    _next: () => DisplayObjectRenderTreeNode,
-  ): { node: DisplayObjectRenderTreeNode; dirty?: boolean } | null {
+    _next: () => DisplayObjectRenderNode,
+  ): { node: DisplayObjectRenderNode; dirty?: boolean } | null {
     if (_capturingStates.has(state)) return null;
 
     const cache = this.result;
@@ -68,7 +68,7 @@ export class ImageCacheSceneNodeResolver implements SceneNodeResolver {
     state: RenderState,
     source: DisplayObject,
     primitive: ImageCachePrimitive,
-  ): DisplayObjectRenderTreeNode {
+  ): DisplayObjectRenderNode {
     let node = this._nodesByState.get(state);
     if (node === undefined) {
       node = createDisplayObjectRenderNode(state, source);

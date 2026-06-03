@@ -1,4 +1,4 @@
-import { createNullRendererData, rgbaToHexString } from '@flighthq/render';
+﻿import { createNullRendererData, rgbaToHexString } from '@flighthq/render';
 import { getInputTextRuntime } from '@flighthq/scene-display';
 import {
   getInputTextCaretRectangle,
@@ -11,7 +11,7 @@ import type {
   CanvasRenderState,
   DisplayObjectMaskRenderer,
   DisplayObjectRenderer,
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   InputText,
   InputTextRuntime,
   InputTextSelectionRectangle,
@@ -20,7 +20,7 @@ import type {
 import { drawCanvasRichText, drawCanvasRichTextMask } from './canvasRichText';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasInputText(state: CanvasRenderState, renderNode: DisplayObjectRenderTreeNode): void {
+export function drawCanvasInputText(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
   drawCanvasRichText(state, renderNode);
 
   const source = renderNode.source as InputText;
@@ -72,7 +72,7 @@ export const defaultCanvasInputTextRenderer: DisplayObjectRenderer = {
   draw: drawCanvasInputText,
 };
 
-function drawCanvasInputTextMask(state: CanvasRenderState, renderNode: DisplayObjectRenderTreeNode): void {
+function drawCanvasInputTextMask(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
   drawCanvasRichTextMask(state, renderNode);
 }
 

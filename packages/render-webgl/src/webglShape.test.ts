@@ -1,9 +1,9 @@
-import type { DisplayObjectRenderTreeNode } from '@flighthq/types';
+﻿import type { DisplayObjectRenderNode } from '@flighthq/types';
 
 import { defaultWebGLShapeRenderer, drawWebGLShape, drawWebGLShapeMask } from './webglShape';
 import { makeWebGLState } from './webglTestHelper';
 
-function makeShapeNode(data: Record<string, unknown> = {}, rendererData: unknown = null): DisplayObjectRenderTreeNode {
+function makeShapeNode(data: Record<string, unknown> = {}, rendererData: unknown = null): DisplayObjectRenderNode {
   return {
     source: {
       data: {
@@ -17,7 +17,7 @@ function makeShapeNode(data: Record<string, unknown> = {}, rendererData: unknown
     blendMode: 0,
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
-  } as unknown as DisplayObjectRenderTreeNode;
+  } as unknown as DisplayObjectRenderNode;
 }
 
 describe('defaultWebGLShapeRenderer', () => {

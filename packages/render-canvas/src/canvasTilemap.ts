@@ -1,9 +1,9 @@
-import { createNullRendererData } from '@flighthq/render';
-import type { CanvasRenderState, SpriteRenderer, SpriteRenderTreeNode, Tilemap } from '@flighthq/types';
+﻿import { createNullRendererData } from '@flighthq/render';
+import type { CanvasRenderState, SpriteRenderer, SpriteRenderNode, Tilemap } from '@flighthq/types';
 
 import { setCanvasBlendMode } from './canvasMaterials';
 
-export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: SpriteRenderTreeNode): void {
+export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: SpriteRenderNode): void {
   const source = tilemapNode.source as Tilemap;
   const { tileset, columns, rows, tiles } = source.data;
 
@@ -25,7 +25,7 @@ export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: SpriteR
   context.globalAlpha = tilemapNode.alpha;
   if (!state.allowSmoothing) context.imageSmoothingEnabled = false;
 
-  // Apply the node's world transform once — tile positions are local offsets within it.
+  // Apply the node's world transform once â€” tile positions are local offsets within it.
   context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
 
   for (let row = 0; row < rows; row++) {

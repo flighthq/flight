@@ -1,10 +1,10 @@
-import { copyMatrix, multiplyMatrix, translateMatrixByVectorXY } from '@flighthq/geometry';
+﻿import { copyMatrix, multiplyMatrix, translateMatrixByVectorXY } from '@flighthq/geometry';
 import { getLocalTransformMatrix, getLocalTransformRevision } from '@flighthq/scene';
 import type {
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   HasTransform2D,
   RenderState,
-  RenderTreeNode2D,
+  RenderNode2D,
   SceneNode,
 } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
@@ -13,15 +13,15 @@ import { hasRenderFeatures } from './renderer';
 
 export function updateDisplayObjectRenderTransform(
   state: RenderState,
-  data: DisplayObjectRenderTreeNode,
-  parentData?: DisplayObjectRenderTreeNode,
+  data: DisplayObjectRenderNode,
+  parentData?: DisplayObjectRenderNode,
 ): boolean {
   const source = data.source;
   const scrollRectangle = source.scrollRectangle;
   if (hasRenderFeatures(state, RenderFeatures.ScrollRectangle) && scrollRectangle !== null) {
     // scrollRectangle shifts the render transform by (-x, -y) so that content at (x, y) in local
     // space lands at the object's world position on screen. Renderers then clip to (x, y, w, h)
-    // in shifted local space and draw source crops at the same (x, y) offset — both of which
+    // in shifted local space and draw source crops at the same (x, y) offset â€” both of which
     // map back to the object's origin in screen space. scrollRectangle is not tracked by
     // localTransformID, so always recalculate when it is set.
     recalculateRenderTransform2D(state, data, parentData);
@@ -35,8 +35,8 @@ export function updateDisplayObjectRenderTransform(
 
 export function updateRenderNode2DTransform(
   state: RenderState,
-  data: RenderTreeNode2D,
-  parentData?: RenderTreeNode2D,
+  data: RenderNode2D,
+  parentData?: RenderNode2D,
 ): boolean {
   const localTransformID = getLocalTransformRevision(data.source as SceneNode);
   if (
@@ -51,7 +51,7 @@ export function updateRenderNode2DTransform(
   return false;
 }
 
-function recalculateRenderTransform2D(state: RenderState, data: RenderTreeNode2D, parentData?: RenderTreeNode2D): void {
+function recalculateRenderTransform2D(state: RenderState, data: RenderNode2D, parentData?: RenderNode2D): void {
   const source = data.source;
   const transform2D = getLocalTransformMatrix(source as SceneNode & HasTransform2D);
   const parentTransform2D = parentData !== undefined ? parentData.transform2D : state.renderTransform2D;
@@ -63,7 +63,7 @@ function recalculateRenderTransform2D(state: RenderState, data: RenderTreeNode2D
   data.transformFrameID = state.currentFrameID;
 }
 
-function applyPresentationTransform2D(data: RenderTreeNode2D): void {
+function applyPresentationTransform2D(data: RenderNode2D): void {
   if (data.presentationTransform2D !== null) {
     multiplyMatrix(data.transform2D, data.transform2D, data.presentationTransform2D);
   }

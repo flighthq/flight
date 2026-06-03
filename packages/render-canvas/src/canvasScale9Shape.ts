@@ -1,8 +1,8 @@
-import { createNullRendererData } from '@flighthq/render';
+﻿import { createNullRendererData } from '@flighthq/render';
 import type {
   CanvasRenderState,
   DisplayObjectRenderer,
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   MatrixLike,
   Scale9Shape,
 } from '@flighthq/types';
@@ -16,7 +16,7 @@ import { setCanvasTransform } from './canvasTransform';
 const _remappedCommands: unknown[] = [];
 const _remappedPathData: number[] = [];
 
-export function drawCanvasScale9Shape(state: CanvasRenderState, renderNode: DisplayObjectRenderTreeNode): void {
+export function drawCanvasScale9Shape(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
   drawCanvasDisplayObject(state, renderNode);
 
   const source = renderNode.source as Scale9Shape;

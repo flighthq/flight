@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render';
+﻿import { createNullRendererData } from '@flighthq/render';
 import {
   initDOMElement,
   setDOMBlendMode,
@@ -8,7 +8,7 @@ import {
 import type {
   DisplayObjectMaskRenderer,
   DisplayObjectRenderer,
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   DOMRenderState,
   RenderState,
 } from '@flighthq/types';
@@ -17,11 +17,11 @@ import { isImageCachePrimitive } from './imageCachePrimitive';
 import { registerImageCacheRenderer } from './imageCacheSceneNodeResolver';
 
 const _canvases = new WeakMap<
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   { canvas: HTMLCanvasElement; context: CanvasRenderingContext2D }
 >();
 
-function drawDOMImageCache(state: RenderState, data: DisplayObjectRenderTreeNode): void {
+function drawDOMImageCache(state: RenderState, data: DisplayObjectRenderNode): void {
   const source = data.presentationSource;
   if (!isImageCachePrimitive(source)) return;
   const cache = source.cache;
@@ -55,7 +55,7 @@ function drawDOMImageCache(state: RenderState, data: DisplayObjectRenderTreeNode
   setDOMRendererElement(state as DOMRenderState, canvas);
 }
 
-function drawDOMImageCacheMask(_state: RenderState, _node: DisplayObjectRenderTreeNode): void {}
+function drawDOMImageCacheMask(_state: RenderState, _node: DisplayObjectRenderNode): void {}
 
 export const defaultDOMImageCacheRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,

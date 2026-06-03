@@ -1,9 +1,9 @@
-import { createEntity } from '@flighthq/entity';
+﻿import { createEntity } from '@flighthq/entity';
 import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import { getLocalBoundsRectangle } from '@flighthq/scene';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   DOMRenderState,
   Renderable,
   RendererData,
@@ -24,7 +24,7 @@ function createDOMShapeData(_state: RenderState, _source: Renderable): DOMShapeD
   return createEntity({ canvas: null, context: null });
 }
 
-export function drawDOMShape(state: DOMRenderState, renderNode: DisplayObjectRenderTreeNode): void {
+export function drawDOMShape(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
   const data = renderNode.rendererData as DOMShapeData | null;
   if (data === null) return;
 
@@ -60,7 +60,7 @@ export function drawDOMShape(state: DOMRenderState, renderNode: DisplayObjectRen
   setDOMRendererElement(state, data.canvas);
 }
 
-export function drawDOMShapeMask(state: DOMRenderState, renderNode: DisplayObjectRenderTreeNode): void {
+export function drawDOMShapeMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
   drawDOMShape(state, renderNode);
 }
 

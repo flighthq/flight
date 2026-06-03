@@ -1,11 +1,11 @@
-import { createNullRendererData } from '@flighthq/render';
-import type { RenderState, Sprite, SpriteRenderer, SpriteRenderTreeNode } from '@flighthq/types';
+﻿import { createNullRendererData } from '@flighthq/render';
+import type { RenderState, Sprite, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { bindWebGLTexture, drawWebGLQuad, setWebGLBlendMode, useWebGLProgram } from './webglDraw';
 import { setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
 
-export function drawWebGLSpriteNode(state: RenderState, spriteNode: SpriteRenderTreeNode): void {
+export function drawWebGLSpriteNode(state: RenderState, spriteNode: SpriteRenderNode): void {
   const internal = state as WebGLRenderStateInternal;
   const source = spriteNode.source as Sprite;
   const { atlas, id } = source.data;

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity';
+﻿import { createEntity } from '@flighthq/entity';
 import { setMatrixFromFloat32Array } from '@flighthq/geometry';
 import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
 import type {
@@ -8,7 +8,7 @@ import type {
   RendererData,
   RenderState,
   SpriteRenderer,
-  SpriteRenderTreeNode,
+  SpriteRenderNode,
 } from '@flighthq/types';
 
 import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
@@ -22,7 +22,7 @@ function createDOMQuadBatchData(_state: RenderState, _source: Renderable): DOMQu
   return createEntity({ canvas: null, context: null });
 }
 
-export function drawDOMQuadBatch(state: DOMRenderState, quadBatch: SpriteRenderTreeNode): void {
+export function drawDOMQuadBatch(state: DOMRenderState, quadBatch: SpriteRenderNode): void {
   const source = quadBatch.source as QuadBatch;
   const { atlas, instanceCount, ids, transforms } = source.data;
   if (atlas === null || atlas.image === null || atlas.image.src === null || instanceCount === 0) return;

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity';
+﻿import { createEntity } from '@flighthq/entity';
 import { computeTextFormatFontString, rgbaToHexString } from '@flighthq/render';
 import { getRichTextRuntime } from '@flighthq/scene-display';
 import {
@@ -13,7 +13,7 @@ import {
 } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   DOMRenderState,
   Renderable,
   RendererData,
@@ -45,7 +45,7 @@ function getMeasureCtx(): CanvasRenderingContext2D | null {
   return _measureCtx;
 }
 
-export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObjectRenderTreeNode): void {
+export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
   const data = renderNode.rendererData as DOMRichTextData | null;
   if (data === null) return;
 
@@ -133,7 +133,7 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
       const bulletSize = fmt.size ?? 12;
       const bulletX = x - bulletSize * 0.7 - DOM_BULLET_GAP;
       const bulletStyle = `position:absolute;left:${bulletX}px;top:${y}px;font:${fontStr};line-height:1;color:${rgbaToHexString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
-      html += `<div style="${bulletStyle}">â€¢</div>`;
+      html += `<div style="${bulletStyle}">Ã¢â‚¬Â¢</div>`;
     }
 
     let style = `position:absolute;left:${x}px;top:${y}px;font:${fontStr};line-height:1;`;
@@ -210,7 +210,7 @@ const DOM_SELECTION_ALPHA = 0.35;
 const DOM_SELECTION_COLOR = '#0078d7';
 const _richTextSelectionRects: { height: number; lineIndex: number; width: number; x: number; y: number }[] = [];
 
-export function drawDOMRichTextMask(state: DOMRenderState, renderNode: DisplayObjectRenderTreeNode): void {
+export function drawDOMRichTextMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
   drawDOMRichText(state, renderNode);
 }
 

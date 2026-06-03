@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render';
+﻿import { createNullRendererData } from '@flighthq/render';
 import {
   bindWebGLTexture,
   drawWebGLQuad,
@@ -12,7 +12,7 @@ import {
 import type {
   DisplayObjectMaskRenderer,
   DisplayObjectRenderer,
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
   RenderState,
   WebGLRenderState,
 } from '@flighthq/types';
@@ -20,7 +20,7 @@ import type {
 import { isImageCachePrimitive } from './imageCachePrimitive';
 import { registerImageCacheRenderer } from './imageCacheSceneNodeResolver';
 
-function drawWebGLImageCache(state: RenderState, renderNode: DisplayObjectRenderTreeNode): void {
+function drawWebGLImageCache(state: RenderState, renderNode: DisplayObjectRenderNode): void {
   const source = renderNode.presentationSource;
   if (!isImageCachePrimitive(source)) return;
   const cache = source.cache;
@@ -43,7 +43,7 @@ function drawWebGLImageCache(state: RenderState, renderNode: DisplayObjectRender
   drawWebGLQuad(internal, 0, 0, cacheSource.width, cacheSource.height, 0, 0, 1, 1);
 }
 
-function drawWebGLImageCacheMask(state: RenderState, node: DisplayObjectRenderTreeNode): void {
+function drawWebGLImageCacheMask(state: RenderState, node: DisplayObjectRenderNode): void {
   drawWebGLImageCache(state, node);
 }
 

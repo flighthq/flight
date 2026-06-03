@@ -5,14 +5,14 @@ import type {
   CanvasRenderState,
   DisplayObject,
   DisplayObjectRenderer,
-  DisplayObjectRenderTreeNode,
+  DisplayObjectRenderNode,
 } from '@flighthq/types';
 
-export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderNode: DisplayObjectRenderTreeNode): void {
+export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderNode: DisplayObjectRenderNode): void {
   // Plain display objects have no visual geometry of their own.
 }
 
-export function drawCanvasDisplayObjectMask(state: CanvasRenderState, data: DisplayObjectRenderTreeNode): void {
+export function drawCanvasDisplayObjectMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
   const children = getDisplayObjectRuntime(data.source).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
@@ -52,7 +52,7 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
   }
 }
 
-function drawObject(state: CanvasRenderState, data: DisplayObjectRenderTreeNode): void {
+function drawObject(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
   if (data.renderer === null) return;
   pushMaskObject(state, data);
   data.renderer.draw(state, data);
@@ -61,7 +61,7 @@ function drawObject(state: CanvasRenderState, data: DisplayObjectRenderTreeNode)
 
 function popMaskObject(
   state: CanvasRenderState,
-  data: DisplayObjectRenderTreeNode,
+  data: DisplayObjectRenderNode,
   handleScrollRectangle: boolean = true,
 ): void {
   const source = data.source;
@@ -71,7 +71,7 @@ function popMaskObject(
 
 function pushMaskObject(
   state: CanvasRenderState,
-  data: DisplayObjectRenderTreeNode,
+  data: DisplayObjectRenderNode,
   handleScrollRectangle: boolean = true,
 ): void {
   const source = data.source;
