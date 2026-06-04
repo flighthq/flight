@@ -4,6 +4,7 @@ import type { DisplayObjectMaskHooks, DisplayObjectMaskRenderer, ScrollRectangle
 import type { Entity } from './Entity';
 import type { Matrix } from './Matrix';
 import type { Renderable } from './Renderable';
+import type { RenderCommandPool } from './RenderCommandPool';
 import type { Renderer } from './Renderer';
 import type { RenderFeatures } from './RenderFeatures';
 import type { RenderNode } from './RenderNode';
@@ -11,6 +12,7 @@ import type { BitmapShader } from './Shader';
 
 export interface RenderState extends Entity {
   allowSmoothing: boolean;
+  readonly commandPool: RenderCommandPool;
   readonly backgroundColor: number;
   readonly backgroundColorRGBA: number[];
   readonly backgroundColorString: string;

@@ -1,9 +1,12 @@
 import { createEntity } from '@flighthq/entity';
 import { BlendMode, RenderFeatures, type RenderState } from '@flighthq/types';
 
+import { createRenderCommandPool } from './renderCommandPool';
+
 export function createRenderState(obj?: Partial<RenderState>): RenderState {
   return createEntity({
     allowSmoothing: obj?.allowSmoothing ?? true,
+    commandPool: obj?.commandPool ?? createRenderCommandPool(),
     backgroundColor: obj?.backgroundColor ?? 0,
     backgroundColorRGBA: obj?.backgroundColorRGBA ?? [],
     backgroundColorString: obj?.backgroundColorString ?? '',

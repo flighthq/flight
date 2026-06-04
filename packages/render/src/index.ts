@@ -2,6 +2,7 @@ export * from './appearance';
 export * from './color';
 export * from './queue';
 export * from './renderCache';
+export * from './renderCommandPool';
 export * from './renderer';
 export * from './renderNode';
 export * from './renderNode2d';
