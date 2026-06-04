@@ -4,9 +4,10 @@ import {
   createCanvasElement,
   createCanvasRenderState,
   defaultCanvasBitmapRenderer,
+  prepareCanvasDisplayObjectRender,
   registerRenderer,
+  renderCanvas,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -22,6 +23,7 @@ registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
+  if (!prepareCanvasDisplayObjectRender(state, root)) return;
   renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, root);
+  renderCanvas(state);
 }

@@ -3,9 +3,10 @@ import {
   createCanvasElement,
   createCanvasRenderState,
   defaultCanvasTilemapRenderer,
+  prepareCanvasSpriteRender,
   registerRenderer,
+  renderCanvas,
   renderCanvasBackground,
-  renderCanvasSprite,
   TilemapKind,
 } from '@flighthq/sdk';
 
@@ -22,6 +23,7 @@ registerRenderer(state, TilemapKind, defaultCanvasTilemapRenderer);
 export const scale = pixelRatio;
 
 export function render(root: Tilemap): void {
+  if (!prepareCanvasSpriteRender(state, root)) return;
   renderCanvasBackground(state);
-  renderCanvasSprite(state, root);
+  renderCanvas(state);
 }

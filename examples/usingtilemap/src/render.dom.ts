@@ -2,9 +2,10 @@ import type { Tilemap } from '@flighthq/sdk';
 import {
   createDOMRenderState,
   defaultDOMTilemapRenderer,
+  prepareDOMSpriteRender,
   registerRenderer,
+  renderDOM,
   renderDOMBackground,
-  renderDOMSprite,
   TilemapKind,
 } from '@flighthq/sdk';
 
@@ -19,6 +20,7 @@ registerRenderer(state, TilemapKind, defaultDOMTilemapRenderer);
 export const scale = 1;
 
 export function render(root: Tilemap): void {
+  if (!prepareDOMSpriteRender(state, root)) return;
   renderDOMBackground(state);
-  renderDOMSprite(state, root);
+  renderDOM(state);
 }

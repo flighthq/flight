@@ -3,9 +3,10 @@ import {
   BitmapKind,
   createDOMRenderState,
   defaultDOMBitmapRenderer,
+  prepareDOMDisplayObjectRender,
   registerRenderer,
+  renderDOM,
   renderDOMBackground,
-  renderDOMDisplayObject,
 } from '@flighthq/sdk';
 
 const container = document.createElement('div');
@@ -23,6 +24,7 @@ registerRenderer(state, BitmapKind, defaultDOMBitmapRenderer);
 export const scale = 1;
 
 export function render(root: DisplayObject): void {
+  if (!prepareDOMDisplayObjectRender(state, root)) return;
   renderDOMBackground(state);
-  renderDOMDisplayObject(state, root);
+  renderDOM(state);
 }

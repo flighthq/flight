@@ -22,12 +22,11 @@ import {
   registerHitTestPoint,
   startApplicationLoop,
   stopApplicationLoop,
-  updateDisplayObjectBeforeRender,
   updateTweens,
 } from '@flighthq/sdk';
 
 import { PiratePigGame } from './game';
-import { container, render, scale, setSize, state } from './render';
+import { container, render, scale, setSize } from './render';
 
 // ── Assets ─────────────────────────────────────────────────────────────────
 
@@ -128,8 +127,6 @@ connectSignal(app.onUpdate, (delta) => {
   game.onEnterFrame();
 });
 connectSignal(app.onRender, () => {
-  if (updateDisplayObjectBeforeRender(state, root)) {
-    render(root);
-  }
+  render(root);
 });
 startApplicationLoop(app);

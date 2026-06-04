@@ -4,11 +4,10 @@ import {
   createTextureAtlas,
   loadImageSourceFromURL,
   resizeQuadBatch,
-  updateSpriteBeforeRender,
 } from '@flighthq/sdk';
 import Stats from 'stats.js';
 
-import { canvas, render, scale, state } from './render';
+import { canvas, render, scale } from './render';
 
 const GRAVITY = 0.5;
 const WIDTH = 550;
@@ -104,7 +103,6 @@ function enterFrame(): void {
 
   counter.textContent = posX.length + ' bunnies';
 
-  updateSpriteBeforeRender(state, quadBatch);
   render(quadBatch);
 
   stats.end();

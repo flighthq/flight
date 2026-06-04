@@ -2,9 +2,10 @@ import type { Sprite } from '@flighthq/sdk';
 import {
   createDOMRenderState,
   defaultDOMSpriteRenderer,
+  prepareDOMSpriteRender,
   registerRenderer,
+  renderDOM,
   renderDOMBackground,
-  renderDOMSprite,
   SpriteKind,
 } from '@flighthq/sdk';
 
@@ -19,6 +20,7 @@ registerRenderer(state, SpriteKind, defaultDOMSpriteRenderer);
 export const scale = 1;
 
 export function render(root: Sprite): void {
+  if (!prepareDOMSpriteRender(state, root)) return;
   renderDOMBackground(state);
-  renderDOMSprite(state, root);
+  renderDOM(state);
 }

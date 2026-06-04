@@ -2,10 +2,11 @@ import type { QuadBatch } from '@flighthq/sdk';
 import {
   createDOMRenderState,
   defaultDOMQuadBatchRenderer,
+  prepareDOMSpriteRender,
   QuadBatchKind,
   registerRenderer,
+  renderDOM,
   renderDOMBackground,
-  renderDOMSprite,
 } from '@flighthq/sdk';
 
 const container = document.createElement('div');
@@ -20,6 +21,7 @@ registerRenderer(state, QuadBatchKind, defaultDOMQuadBatchRenderer);
 export const scale = 1;
 
 export function render(root: QuadBatch): void {
+  if (!prepareDOMSpriteRender(state, root)) return;
   renderDOMBackground(state);
-  renderDOMSprite(state, root);
+  renderDOM(state);
 }

@@ -3,9 +3,10 @@ import {
   createWebGLElement,
   createWebGLRenderState,
   defaultWebGLSpriteRenderer,
+  prepareWebGLSpriteRender,
   registerRenderer,
+  renderWebGL,
   renderWebGLBackground,
-  renderWebGLSprite,
   SpriteKind,
 } from '@flighthq/sdk';
 
@@ -22,6 +23,7 @@ registerRenderer(state, SpriteKind, defaultWebGLSpriteRenderer);
 export const scale = pixelRatio;
 
 export function render(root: Sprite): void {
+  if (!prepareWebGLSpriteRender(state, root)) return;
   renderWebGLBackground(state);
-  renderWebGLSprite(state, root);
+  renderWebGL(state);
 }

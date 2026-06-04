@@ -21,11 +21,10 @@ import {
   setAudioChannelGain,
   startApplicationLoop,
   stopAudioChannel,
-  updateDisplayObjectBeforeRender,
   updateTweens,
 } from '@flighthq/sdk';
 
-import { container, render, scale, setSize, state } from './render';
+import { container, render, scale, setSize } from './render';
 
 const manager = createTweenManager({ defaultEase: Quad.easeOut });
 const root = createDisplayObject();
@@ -122,6 +121,6 @@ connectSignal(app.onUpdate, (delta) => {
   updateTweens(manager, delta);
 });
 connectSignal(app.onRender, () => {
-  if (updateDisplayObjectBeforeRender(state, root)) render(root);
+  render(root);
 });
 startApplicationLoop(app);

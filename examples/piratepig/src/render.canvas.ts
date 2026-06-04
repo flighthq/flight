@@ -6,10 +6,11 @@ import {
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   defaultCanvasTextRenderer,
+  prepareCanvasDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
+  renderCanvas,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
   ShapeKind,
   TextKind,
 } from '@flighthq/sdk';
@@ -38,6 +39,7 @@ export function setSize(w: number, h: number): void {
 }
 
 export function render(root: DisplayObject): void {
+  if (!prepareCanvasDisplayObjectRender(state, root)) return;
   renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, root);
+  renderCanvas(state);
 }

@@ -4,9 +4,10 @@ import {
   createWebGLElement,
   createWebGLRenderState,
   defaultWebGLBitmapRenderer,
+  prepareWebGLDisplayObjectRender,
   registerRenderer,
+  renderWebGL,
   renderWebGLBackground,
-  renderWebGLDisplayObject,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -21,6 +22,7 @@ registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
+  if (!prepareWebGLDisplayObjectRender(state, root)) return;
   renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
+  renderWebGL(state);
 }

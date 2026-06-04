@@ -1,12 +1,6 @@
-import {
-  addSceneChild,
-  createBitmap,
-  createDisplayObject,
-  loadImageSourceFromURL,
-  updateDisplayObjectBeforeRender,
-} from '@flighthq/sdk';
+import { addSceneChild, createBitmap, createDisplayObject, loadImageSourceFromURL } from '@flighthq/sdk';
 
-import { render, scale, state } from './render';
+import { render, scale } from './render';
 
 const main = createDisplayObject();
 main.scaleX = scale;
@@ -20,9 +14,7 @@ bitmap.y = (400 - image.height) / 2;
 addSceneChild(main, bitmap);
 
 function enterFrame() {
-  if (updateDisplayObjectBeforeRender(state, main)) {
-    render(main);
-  }
+  render(main);
   requestAnimationFrame(enterFrame);
 }
 

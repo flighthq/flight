@@ -3,9 +3,10 @@ import {
   createCanvasElement,
   createCanvasRenderState,
   defaultCanvasTextRenderer,
+  prepareCanvasDisplayObjectRender,
   registerRenderer,
+  renderCanvas,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
   TextKind,
 } from '@flighthq/sdk';
 
@@ -21,6 +22,7 @@ registerRenderer(state, TextKind, defaultCanvasTextRenderer);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
+  if (!prepareCanvasDisplayObjectRender(state, root)) return;
   renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, root);
+  renderCanvas(state);
 }
