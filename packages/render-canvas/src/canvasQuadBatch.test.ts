@@ -43,7 +43,7 @@ describe('drawCanvasQuadBatch', () => {
     qb.data.instanceCount = 1;
     qb.data.atlas = null;
 
-    updateSprite(state, qb);
+    updateSpriteBeforeRender(state, qb);
     const renderNode = getOrCreateSpriteRenderNode(state, qb);
     const spy = vi.spyOn(state.context, 'drawImage');
 
@@ -66,7 +66,7 @@ describe('drawCanvasQuadBatch', () => {
     qb.data.transforms[2] = 30;
     qb.data.transforms[3] = 40;
 
-    updateSprite(state, qb);
+    updateSpriteBeforeRender(state, qb);
     const renderNode = getOrCreateSpriteRenderNode(state, qb);
     const spy = vi.spyOn(state.context, 'drawImage');
 
@@ -84,7 +84,7 @@ describe('drawCanvasQuadBatch', () => {
     qb.data.instanceCount = 1;
     qb.data.ids[0] = 99; // out of range
 
-    updateSprite(state, qb);
+    updateSpriteBeforeRender(state, qb);
     const renderNode = getOrCreateSpriteRenderNode(state, qb);
     const spy = vi.spyOn(state.context, 'drawImage');
 
@@ -108,7 +108,7 @@ describe('drawCanvasQuadBatch', () => {
     qb.data.instanceCount = 1;
     qb.data.ids[0] = 0;
 
-    updateSprite(state, qb);
+    updateSpriteBeforeRender(state, qb);
     const renderNode = getOrCreateSpriteRenderNode(state, qb);
     const spy = vi.spyOn(state.context, 'drawImage');
 

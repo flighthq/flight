@@ -11,7 +11,7 @@ import { createRenderState } from './renderState';
 import { updateDisplayObject } from './update';
 
 function makeVisibleNode(state: ReturnType<typeof createRenderState>, obj: ReturnType<typeof createDisplayObject>) {
-  updateDisplayObject(state, obj);
+  updateDisplayObjectBeforeRender(state, obj);
   const data = getOrCreateDefaultDisplayObjectRenderNode(state, obj);
   data.visible = true;
   data.alpha = 1;
@@ -36,7 +36,7 @@ describe('buildRenderCommands', () => {
   it('produces no commands for an invisible object', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    updateDisplayObject(state, obj);
+    updateDisplayObjectBeforeRender(state, obj);
     const data = getOrCreateDefaultDisplayObjectRenderNode(state, obj);
     data.visible = false;
     buildRenderCommands(state, obj);
@@ -46,7 +46,7 @@ describe('buildRenderCommands', () => {
   it('produces no commands for zero alpha', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    updateDisplayObject(state, obj);
+    updateDisplayObjectBeforeRender(state, obj);
     const data = getOrCreateDefaultDisplayObjectRenderNode(state, obj);
     data.visible = true;
     data.alpha = 0;
@@ -59,7 +59,7 @@ describe('buildRenderCommands', () => {
   it('produces no commands for zero scale', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    updateDisplayObject(state, obj);
+    updateDisplayObjectBeforeRender(state, obj);
     const data = getOrCreateDefaultDisplayObjectRenderNode(state, obj);
     data.visible = true;
     data.alpha = 1;
@@ -128,7 +128,7 @@ describe('buildRenderCommands', () => {
       const maskObj = createDisplayObject();
       makeVisibleNode(state, maskObj);
       obj.mask = maskObj;
-      updateDisplayObject(state, obj);
+      updateDisplayObjectBeforeRender(state, obj);
       buildRenderCommands(state, obj);
       const maskData = getOrCreateDefaultDisplayObjectRenderNode(state, maskObj);
       const drawNodes = commands(state).filter((c) => c.kind === RenderCommandKind.DrawNode);
@@ -143,7 +143,7 @@ describe('buildRenderCommands', () => {
       obj.mask = maskObj;
       makeVisibleNode(state, obj);
       makeVisibleNode(state, maskObj);
-      updateDisplayObject(state, obj);
+      updateDisplayObjectBeforeRender(state, obj);
       buildRenderCommands(state, obj);
       const cmds = commands(state);
       expect(cmds.map((c) => c.kind)).toEqual([
@@ -164,7 +164,7 @@ describe('buildRenderCommands', () => {
       makeVisibleNode(state, parent);
       makeVisibleNode(state, child);
       makeVisibleNode(state, maskObj);
-      updateDisplayObject(state, parent);
+      updateDisplayObjectBeforeRender(state, parent);
       buildRenderCommands(state, parent);
       const kinds = commands(state).map((c) => c.kind);
       expect(kinds).toEqual([
@@ -195,7 +195,7 @@ describe('buildRenderCommands', () => {
       makeVisibleNode(state, childB);
       makeVisibleNode(state, maskA);
       makeVisibleNode(state, maskB);
-      updateDisplayObject(state, root);
+      updateDisplayObjectBeforeRender(state, root);
       buildRenderCommands(state, root);
 
       const kinds = commands(state).map((c) => c.kind);
@@ -268,7 +268,7 @@ describe('buildRenderCommands', () => {
       makeVisibleNode(state, parent);
       makeVisibleNode(state, child);
       makeVisibleNode(state, maskObj);
-      updateDisplayObject(state, parent);
+      updateDisplayObjectBeforeRender(state, parent);
       buildRenderCommands(state, parent);
       const kinds = commands(state).map((c) => c.kind);
       expect(kinds).toEqual([

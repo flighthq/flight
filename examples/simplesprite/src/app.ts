@@ -6,7 +6,7 @@ import {
   loadImageSourceFromURL,
   setTransformX,
   setTransformY,
-  updateSprite,
+  updateSpriteBeforeRender,
 } from '@flighthq/sdk';
 
 import { render, scale, state } from './render';
@@ -52,7 +52,7 @@ for (let i = 0; i < creatureIDs.length; i++) {
 }
 
 function enterFrame(): void {
-  if (updateSprite(state, root)) {
+  if (updateSpriteBeforeRender(state, root)) {
     render(root);
   }
   requestAnimationFrame(enterFrame);

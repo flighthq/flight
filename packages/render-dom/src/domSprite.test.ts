@@ -134,7 +134,7 @@ describe('renderDOMSprite', () => {
     quadBatch.data.transforms[0] = 10;
     quadBatch.data.transforms[1] = 10;
 
-    updateSprite(state, quadBatch);
+    updateSpriteBeforeRender(state, quadBatch);
     renderDOMSprite(state, quadBatch);
     const canvas = state.element.firstChild as HTMLCanvasElement;
     expect(canvas.style.width).toBe('42px');
@@ -142,7 +142,7 @@ describe('renderDOMSprite', () => {
     quadBatch.data.transforms[0] = 50;
     quadBatch.data.transforms[1] = 10;
 
-    expect(updateSprite(state, quadBatch)).toBe(false);
+    expect(updateSpriteBeforeRender(state, quadBatch)).toBe(false);
     renderDOMSprite(state, quadBatch);
 
     expect(canvas.style.width).toBe('82px');

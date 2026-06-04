@@ -4,7 +4,7 @@ import {
   createTextureAtlas,
   loadImageSourceFromURL,
   resizeQuadBatch,
-  updateSprite,
+  updateSpriteBeforeRender,
 } from '@flighthq/sdk';
 import Stats from 'stats.js';
 
@@ -104,7 +104,7 @@ function enterFrame(): void {
 
   counter.textContent = posX.length + ' bunnies';
 
-  updateSprite(state, quadBatch);
+  updateSpriteBeforeRender(state, quadBatch);
   render(quadBatch);
 
   stats.end();
