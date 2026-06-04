@@ -6,9 +6,9 @@ import type { RenderNodeAdapter } from '@flighthq/types';
 
 import { getOrCreateDefaultDisplayObjectRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
-import { updateDisplayObjectBeforeRender, updateSprite } from './update';
+import { updateDisplayObjectBeforeRender, updateSpriteBeforeRender } from './update';
 
-describe('updateDisplayObject', () => {
+describe('updateDisplayObjectBeforeRender', () => {
   it('returns true (dirty) on first call', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
@@ -82,7 +82,7 @@ describe('updateDisplayObject', () => {
   });
 });
 
-describe('updateSprite', () => {
+describe('updateSpriteBeforeRender', () => {
   it('returns true (dirty) on first call', () => {
     const state = createRenderState();
     const sprite = createSprite();
