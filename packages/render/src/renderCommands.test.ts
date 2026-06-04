@@ -8,7 +8,7 @@ import { buildRenderCommands, executeRenderCommands } from './renderCommands';
 import { enableRenderFeatures } from './renderer';
 import { getOrCreateDefaultDisplayObjectRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
-import { updateDisplayObject } from './update';
+import { updateDisplayObjectBeforeRender } from './update';
 
 function makeVisibleNode(state: ReturnType<typeof createRenderState>, obj: ReturnType<typeof createDisplayObject>) {
   updateDisplayObjectBeforeRender(state, obj);

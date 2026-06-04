@@ -1,4 +1,10 @@
-import { addSceneChild, createDisplayObject, createText, loadFontFromURL, updateDisplayObjectBeforeRender } from '@flighthq/sdk';
+import {
+  addSceneChild,
+  createDisplayObject,
+  createText,
+  loadFontFromURL,
+  updateDisplayObjectBeforeRender,
+} from '@flighthq/sdk';
 
 import { render, scale, state } from './render';
 

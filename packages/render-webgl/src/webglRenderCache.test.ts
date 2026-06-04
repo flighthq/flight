@@ -1,5 +1,5 @@
 ﻿import { createMatrix } from '@flighthq/geometry';
-import { getOrCreateDisplayObjectRenderNode, updateDisplayObject } from '@flighthq/render';
+import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render';
 import { ImageRenderCacheKind } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 
