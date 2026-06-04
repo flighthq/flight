@@ -1,4 +1,4 @@
-import { createNullRendererData, getOrCreateDisplayObjectRenderNode, renderDisplayObjectTree } from '@flighthq/render';
+import { createNullRendererData, getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type { DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode, WebGLRenderState } from '@flighthq/types';
 
@@ -14,10 +14,6 @@ export function drawWebGLDisplayObjectMask(state: WebGLRenderState, data: Displa
       state.displayObjectMaskRendererMap.get(child.source.kind)?.drawMask(state, child);
     }
   }
-}
-
-export function renderWebGLDisplayObject(state: WebGLRenderState, source: DisplayObject): void {
-  renderDisplayObjectTree(state, source);
 }
 
 export const defaultWebGLDisplayObjectRenderer: DisplayObjectRenderer = {

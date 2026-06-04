@@ -1,13 +1,12 @@
-﻿import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
-import { registerRenderer } from '@flighthq/render';
-import { updateSpriteBeforeRender } from '@flighthq/render';
-import { getOrCreateSpriteRenderNode } from '@flighthq/render';
+import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
+import { getOrCreateSpriteRenderNode, registerRenderer } from '@flighthq/render';
 import { addSceneChild, setTransformScaleX, setTransformScaleY, setTransformX, setTransformY } from '@flighthq/scene';
 import { createSprite } from '@flighthq/scene-sprite';
 import { SpriteKind } from '@flighthq/types';
 
+import { prepareCanvasSpriteRender, renderCanvas } from './canvasRender';
 import { createCanvasRenderState } from './canvasRenderState';
-import { defaultCanvasSpriteRenderer, drawCanvasSprite, renderCanvasSprite } from './canvasSprite';
+import { defaultCanvasSpriteRenderer, drawCanvasSprite } from './canvasSprite';
 
 function makeAtlas() {
   const img = document.createElement('img') as HTMLImageElement;
@@ -33,7 +32,7 @@ describe('drawCanvasSprite', () => {
     const sprite = createSprite();
     sprite.data.atlas = atlas;
     sprite.data.id = 0;
-    updateSpriteBeforeRender(state, sprite);
+    prepareCanvasSpriteRender(state, sprite);
     const renderNode = getOrCreateSpriteRenderNode(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasSprite(state, renderNode);
@@ -43,7 +42,7 @@ describe('drawCanvasSprite', () => {
   it('skips draw when atlas is null', () => {
     const state = makeState();
     const sprite = createSprite();
-    updateSpriteBeforeRender(state, sprite);
+    prepareCanvasSpriteRender(state, sprite);
     const renderNode = getOrCreateSpriteRenderNode(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasSprite(state, renderNode);
@@ -51,7 +50,7 @@ describe('drawCanvasSprite', () => {
   });
 });
 
-describe('renderCanvasSprite', () => {
+describe('prepareCanvasSpriteRender + renderCanvas', () => {
   it('calls setTransform with child world transform scaled by parent', () => {
     const atlas = makeAtlas();
     const state = makeState();
@@ -69,8 +68,8 @@ describe('renderCanvasSprite', () => {
 
     const spy = vi.spyOn(state.context, 'setTransform');
 
-    updateSpriteBeforeRender(state, root);
-    renderCanvasSprite(state, root);
+    prepareCanvasSpriteRender(state, root);
+    renderCanvas(state);
 
     const calls = spy.mock.calls as unknown as [number, number, number, number, number, number][];
     expect(calls.some(([a, , , d, tx, ty]) => a === 4 && d === 4 && tx === 40 && ty === 20)).toBe(true);
@@ -86,8 +85,8 @@ describe('renderCanvasSprite', () => {
 
     const spy = vi.spyOn(state.context, 'drawImage');
 
-    updateSpriteBeforeRender(state, sprite);
-    renderCanvasSprite(state, sprite);
+    prepareCanvasSpriteRender(state, sprite);
+    renderCanvas(state);
 
     expect(spy).toHaveBeenCalledOnce();
     const [, sx, sy, sw, sh, dx, dy] = spy.mock.calls[0] as number[];
@@ -105,8 +104,41 @@ describe('renderCanvasSprite', () => {
 
     const spy = vi.spyOn(state.context, 'drawImage');
 
-    updateSpriteBeforeRender(state, sprite);
-    renderCanvasSprite(state, sprite);
+    prepareCanvasSpriteRender(state, sprite);
+    renderCanvas(state);
+
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('skips invisible sprites', () => {
+    const atlas = makeAtlas();
+    const state = makeState();
+    const sprite = createSprite();
+    sprite.data.atlas = atlas;
+    sprite.data.id = 0;
+    sprite.visible = false;
+
+    const spy = vi.spyOn(state.context, 'drawImage');
+
+    prepareCanvasSpriteRender(state, sprite);
+    renderCanvas(state);
+
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('skips sprites with zero scale', () => {
+    const atlas = makeAtlas();
+    const state = makeState();
+    const sprite = createSprite();
+    sprite.data.atlas = atlas;
+    sprite.data.id = 0;
+    setTransformScaleX(sprite, 0);
+    setTransformScaleY(sprite, 0);
+
+    const spy = vi.spyOn(state.context, 'drawImage');
+
+    prepareCanvasSpriteRender(state, sprite);
+    renderCanvas(state);
 
     expect(spy).not.toHaveBeenCalled();
   });

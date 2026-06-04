@@ -1,12 +1,12 @@
 ﻿import { addTextureAtlasRegion, createImageSourceFromCanvas, createTextureAtlas } from '@flighthq/assets';
-import { registerRenderer, updateSpriteBeforeRender } from '@flighthq/render';
-import { getOrCreateSpriteRenderNode } from '@flighthq/render';
+import { getOrCreateSpriteRenderNode, registerRenderer } from '@flighthq/render';
 import { createQuadBatch, createSprite, resizeQuadBatch } from '@flighthq/scene-sprite';
-import { QuadBatchKind, SpriteKind } from '@flighthq/types';
+import { QuadBatchKind, SpriteKind, TilemapKind } from '@flighthq/types';
 
 import { defaultDOMQuadBatchRenderer } from './domQuadBatch';
+import { prepareDOMSpriteRender } from './domRender';
 import { createDOMRenderState } from './domRenderState';
-import { defaultDOMSpriteRenderer, drawDOMSprite, renderDOMSprite } from './domSprite';
+import { defaultDOMSpriteRenderer, drawDOMSprite, isMutableSpriteBatchKind } from './domSprite';
 import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
@@ -106,14 +106,25 @@ describe('drawDOMSprite', () => {
   });
 });
 
-describe('renderDOMSprite', () => {
+describe('isMutableSpriteBatchKind', () => {
+  it('returns true for QuadBatchKind and TilemapKind', () => {
+    expect(isMutableSpriteBatchKind(QuadBatchKind)).toBe(true);
+    expect(isMutableSpriteBatchKind(TilemapKind)).toBe(true);
+  });
+
+  it('returns false for SpriteKind', () => {
+    expect(isMutableSpriteBatchKind(SpriteKind)).toBe(false);
+  });
+});
+
+describe('prepareDOMSpriteRender', () => {
   it('removes foreign elements from the container on first render', () => {
     const state = makeState();
     const foreign = document.createElement('span');
     state.element.appendChild(foreign);
     const sprite = createSprite();
 
-    renderDOMSprite(state, sprite);
+    prepareDOMSpriteRender(state, sprite);
 
     expect(state.element.contains(foreign)).toBe(false);
   });
@@ -121,7 +132,7 @@ describe('renderDOMSprite', () => {
   it('does not throw for an empty sprite tree', () => {
     const state = makeState();
     const sprite = createSprite();
-    expect(() => renderDOMSprite(state, sprite)).not.toThrow();
+    expect(() => prepareDOMSpriteRender(state, sprite)).not.toThrow();
   });
 
   it('redraws quad batch data changes even when the node transform is clean', () => {
@@ -134,16 +145,14 @@ describe('renderDOMSprite', () => {
     quadBatch.data.transforms[0] = 10;
     quadBatch.data.transforms[1] = 10;
 
-    updateSpriteBeforeRender(state, quadBatch);
-    renderDOMSprite(state, quadBatch);
+    prepareDOMSpriteRender(state, quadBatch);
     const canvas = state.element.firstChild as HTMLCanvasElement;
     expect(canvas.style.width).toBe('42px');
 
     quadBatch.data.transforms[0] = 50;
     quadBatch.data.transforms[1] = 10;
 
-    expect(updateSpriteBeforeRender(state, quadBatch)).toBe(false);
-    renderDOMSprite(state, quadBatch);
+    prepareDOMSpriteRender(state, quadBatch);
 
     expect(canvas.style.width).toBe('82px');
   });

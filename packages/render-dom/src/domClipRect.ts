@@ -80,7 +80,20 @@ export function pushDOMClipRectangle(
 }
 
 export function pushDOMScrollRectangle(rectangles: DOMStageRectangle[], data: DisplayObjectRenderNode): void {
-  pushDOMClipRectangle(rectangles, (data.source as DisplayObject).scrollRectangle!, data.transform2D);
+  const rect = (data.source as DisplayObject).scrollRectangle!;
+  const m = data.transform2D;
+  // data.transform2D has the scroll offset (-rect.x, -rect.y) baked in by
+  // updateDisplayObjectRenderTransform. Recover the pre-scroll world transform so that the
+  // clip rectangle is placed correctly in stage space.
+  const preScrollTransform = {
+    a: m.a,
+    b: m.b,
+    c: m.c,
+    d: m.d,
+    tx: m.tx + m.a * rect.x + m.c * rect.y,
+    ty: m.ty + m.b * rect.x + m.d * rect.y,
+  };
+  pushDOMClipRectangle(rectangles, rect, preScrollTransform);
 }
 
 export function setDOMClipHooks(state: DOMRenderState): void {

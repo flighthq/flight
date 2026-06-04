@@ -22,7 +22,7 @@ export function initDOMElement(element: HTMLElement): void {
 /**
  * Registers the element produced by a renderer for this draw call.
  * Placement into the container is always handled by the render loop
- * (renderDOMDisplayObject / renderDOMSprite), never by individual draw functions.
+ * (prepareDOMDisplayObjectRender / prepareDOMSpriteRender), never by individual draw functions.
  */
 export function setDOMRendererElement(state: DOMRenderState, element: HTMLElement): void {
   (state as DOMRenderStateInternal).domCurrentElement = element;
