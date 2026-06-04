@@ -12,8 +12,6 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
     backgroundColorString: obj?.backgroundColorString ?? '',
     currentFrameID: obj?.currentFrameID ?? 0,
     currentMaskDepth: obj?.currentMaskDepth ?? 0,
-    currentQueue: obj?.currentQueue ?? [],
-    currentQueueLength: obj?.currentQueueLength ?? 0,
     currentScrollRectangleDepth: obj?.currentScrollRectangleDepth ?? 0,
     displayObjectMaskHooks: obj?.displayObjectMaskHooks ?? null,
     scrollRectangleHooks: obj?.scrollRectangleHooks ?? null,

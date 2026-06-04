@@ -1,10 +1,14 @@
 ﻿import { createMatrix } from '@flighthq/geometry';
-import { registerDisplayObjectMaskRenderer, registerRenderer } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import {
+  enableRenderFeatures,
+  getOrCreateDisplayObjectRenderNode,
+  registerDisplayObjectMaskRenderer,
+  registerRenderer,
+} from '@flighthq/render';
 import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import type { WebGLRenderState } from '@flighthq/types';
-import { DisplayObjectKind } from '@flighthq/types';
+import { DisplayObjectKind, RenderFeatures } from '@flighthq/types';
 
 import {
   defaultWebGLDisplayObjectRenderer,
@@ -157,6 +161,7 @@ describe('renderWebGLDisplayObject', () => {
   it('applies masks around the object subtree', () => {
     const state = makeState();
     enableWebGLMaskSupport(state);
+    enableRenderFeatures(state, RenderFeatures.Masks);
     const renderer = makeRenderer();
     const maskRenderer = makeRenderer();
     registerDisplayObjectMaskRenderer(state, DisplayObjectKind, maskRenderer);

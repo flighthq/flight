@@ -17,8 +17,7 @@ describe('createRenderState', () => {
     expect(state.backgroundColorRGBA).toStrictEqual([]);
     expect(state.backgroundColorString).toStrictEqual('');
     expect(state.currentFrameID).toStrictEqual(0);
-    expect(state.currentQueue).toStrictEqual([]);
-    expect(state.currentQueueLength).toStrictEqual(0);
+    expect(state.commandPool.commandCount).toStrictEqual(0);
     expect(state.pixelRatio).toStrictEqual(1);
     expect(state.renderNodeMap).toStrictEqual(new WeakMap());
     expect(state.renderAlpha).toStrictEqual(1);
@@ -38,8 +37,6 @@ describe('createRenderState', () => {
       backgroundColorRGBA: [1, 0, 0, 0],
       backgroundColorString: '#FF000000',
       currentFrameID: 10,
-      currentQueue: [],
-      currentQueueLength: 100,
       pixelRatio: 5,
       renderNodeMap: new WeakMap(),
       renderAlpha: 0.5,
@@ -57,8 +54,6 @@ describe('createRenderState', () => {
     expect(obj.backgroundColorRGBA).toStrictEqual(base.backgroundColorRGBA);
     expect(obj.backgroundColorString).toStrictEqual(base.backgroundColorString);
     expect(obj.currentFrameID).toStrictEqual(base.currentFrameID);
-    expect(obj.currentQueue).toStrictEqual(base.currentQueue);
-    expect(obj.currentQueueLength).toStrictEqual(base.currentQueueLength);
     expect(obj.pixelRatio).toStrictEqual(base.pixelRatio);
     expect(obj.renderNodeMap).toStrictEqual(base.renderNodeMap);
     expect(obj.renderAlpha).toStrictEqual(base.renderAlpha);

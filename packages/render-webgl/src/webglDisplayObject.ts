@@ -1,6 +1,8 @@
-﻿import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+﻿import { buildRenderCommands } from '@flighthq/render';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type { DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode, WebGLRenderState } from '@flighthq/types';
+import { RenderCommandKind } from '@flighthq/types';
 
 export function drawWebGLDisplayObject(_state: WebGLRenderState, _renderNode: DisplayObjectRenderNode): void {
   // Plain display objects have no visual geometry of their own.
@@ -17,50 +19,36 @@ export function drawWebGLDisplayObjectMask(state: WebGLRenderState, data: Displa
 }
 
 export function renderWebGLDisplayObject(state: WebGLRenderState, source: DisplayObject): void {
-  drawNode(state, source);
+  buildRenderCommands(state, source);
+
+  const pool = state.commandPool;
+  const count = pool.commandCount;
+  const cmds = pool.commands;
+
+  for (let i = 0; i < count; i++) {
+    const cmd = cmds[i];
+    const data = cmd.node as DisplayObjectRenderNode;
+    switch (cmd.kind) {
+      case RenderCommandKind.DrawNode:
+        if (data.renderer !== null) data.renderer.draw(state, data);
+        break;
+      case RenderCommandKind.PushMask:
+        state.displayObjectMaskHooks?.pushMask(state, data);
+        break;
+      case RenderCommandKind.PopMask:
+        state.displayObjectMaskHooks?.popMask(state, data);
+        break;
+      case RenderCommandKind.PushScrollRect:
+        state.scrollRectangleHooks?.push(state, data);
+        break;
+      case RenderCommandKind.PopScrollRect:
+        state.scrollRectangleHooks?.pop(state);
+        break;
+    }
+  }
 }
 
 export const defaultWebGLDisplayObjectRenderer: DisplayObjectRenderer = {
   createData: () => null,
   draw: drawWebGLDisplayObject,
 };
-
-function drawNode(state: WebGLRenderState, current: DisplayObject): void {
-  const data = getOrCreateDisplayObjectRenderNode(state, current);
-
-  const isMask = data.isMaskFrameID === state.currentFrameID;
-  if (isMask) return;
-
-  const shouldRender = data.visible && data.alpha > 0 && (data.transform2D.a !== 0 || data.transform2D.d !== 0);
-  if (!shouldRender) return;
-
-  pushObjectEffects(state, data);
-
-  if (data.renderer !== null) {
-    data.renderer.draw(state, data);
-  }
-
-  if (data.updateChildren) {
-    const children = getDisplayObjectRuntime(current).children;
-    if (children !== null) {
-      for (let i = 0; i < children.length; i++) {
-        drawNode(state, children[i] as DisplayObject);
-      }
-    }
-  }
-
-  popObjectEffects(state, data);
-}
-
-function popObjectEffects(state: WebGLRenderState, data: DisplayObjectRenderNode): void {
-  const source = data.source as DisplayObject;
-  if (source.mask !== null) state.displayObjectMaskHooks?.popMask(state, data);
-  if (source.scrollRectangle !== null) state.scrollRectangleHooks?.pop(state);
-}
-
-function pushObjectEffects(state: WebGLRenderState, data: DisplayObjectRenderNode): void {
-  const source = data.source as DisplayObject;
-  if (source.scrollRectangle !== null) state.scrollRectangleHooks?.push(state, data);
-  if (source.mask !== null)
-    state.displayObjectMaskHooks?.pushMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask));
-}
