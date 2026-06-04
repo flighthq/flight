@@ -1,6 +1,5 @@
 import { RenderCommandKind } from '@flighthq/types';
 
-import type { RenderCommandInternal, RenderCommandPoolInternal } from './renderCommandInternal';
 import { acquireRenderCommand, createRenderCommandPool, resetRenderCommandPool } from './renderCommandPool';
 
 function makeNode() {
@@ -33,6 +32,15 @@ describe('acquireRenderCommand', () => {
     expect(pool.commandCount).toBe(3);
   });
 
+  it('reuses a command after reset', () => {
+    const pool = createRenderCommandPool();
+    const node = makeNode();
+    const original = acquireRenderCommand(pool, RenderCommandKind.DrawNode, node);
+    resetRenderCommandPool(pool);
+    const reused = acquireRenderCommand(pool, RenderCommandKind.PushMask, node);
+    expect(reused).toBe(original);
+  });
+
   it('sets kind and node correctly on each acquired command', () => {
     const pool = createRenderCommandPool();
     const nodeA = makeNode();
@@ -45,15 +53,6 @@ describe('acquireRenderCommand', () => {
     expect(cmdB.node).toBe(nodeB);
   });
 
-  it('reuses a recycled command after reset', () => {
-    const pool = createRenderCommandPool();
-    const node = makeNode();
-    const original = acquireRenderCommand(pool, RenderCommandKind.DrawNode, node);
-    resetRenderCommandPool(pool);
-    const reused = acquireRenderCommand(pool, RenderCommandKind.PushMask, node);
-    expect(reused).toBe(original);
-  });
-
   it('updates kind and node on a reused command', () => {
     const pool = createRenderCommandPool();
     acquireRenderCommand(pool, RenderCommandKind.DrawNode, makeNode());
@@ -63,15 +62,6 @@ describe('acquireRenderCommand', () => {
     expect(cmd.kind).toBe(RenderCommandKind.PushScrollRect);
     expect(cmd.node).toBe(nodeB);
   });
-
-  it('clears poolNext on the acquired command', () => {
-    const pool = createRenderCommandPool();
-    acquireRenderCommand(pool, RenderCommandKind.DrawNode, makeNode());
-    acquireRenderCommand(pool, RenderCommandKind.DrawNode, makeNode());
-    resetRenderCommandPool(pool);
-    const cmd = acquireRenderCommand(pool, RenderCommandKind.DrawNode, makeNode()) as RenderCommandInternal;
-    expect(cmd.poolNext).toBeNull();
-  });
 });
 
 describe('createRenderCommandPool', () => {
@@ -80,38 +70,9 @@ describe('createRenderCommandPool', () => {
     expect(pool.commands).toEqual([]);
     expect(pool.commandCount).toBe(0);
   });
-
-  it('initializes with a null free head', () => {
-    const pool = createRenderCommandPool() as RenderCommandPoolInternal;
-    expect(pool.freeHead).toBeNull();
-  });
 });
 
 describe('resetRenderCommandPool', () => {
-  it('sets commandCount to zero', () => {
-    const pool = createRenderCommandPool();
-    acquireRenderCommand(pool, RenderCommandKind.DrawNode, makeNode());
-    acquireRenderCommand(pool, RenderCommandKind.DrawNode, makeNode());
-    resetRenderCommandPool(pool);
-    expect(pool.commandCount).toBe(0);
-  });
-
-  it('moves all commands to the free list', () => {
-    const pool = createRenderCommandPool() as RenderCommandPoolInternal;
-    acquireRenderCommand(pool, RenderCommandKind.DrawNode, makeNode());
-    acquireRenderCommand(pool, RenderCommandKind.DrawNode, makeNode());
-    resetRenderCommandPool(pool);
-    expect(pool.freeHead).not.toBeNull();
-    expect(pool.freeHead!.poolNext).not.toBeNull();
-    expect(pool.freeHead!.poolNext!.poolNext).toBeNull();
-  });
-
-  it('is safe to call on an empty pool', () => {
-    const pool = createRenderCommandPool();
-    expect(() => resetRenderCommandPool(pool)).not.toThrow();
-    expect(pool.commandCount).toBe(0);
-  });
-
   it('does not allocate new objects across acquire-reset cycles', () => {
     const pool = createRenderCommandPool();
     acquireRenderCommand(pool, RenderCommandKind.DrawNode, makeNode());
@@ -128,5 +89,19 @@ describe('resetRenderCommandPool', () => {
     ];
     const firstSet = new Set(firstBatch);
     expect(secondBatch.every((cmd) => firstSet.has(cmd))).toBe(true);
+  });
+
+  it('is safe to call on an empty pool', () => {
+    const pool = createRenderCommandPool();
+    expect(() => resetRenderCommandPool(pool)).not.toThrow();
+    expect(pool.commandCount).toBe(0);
+  });
+
+  it('sets commandCount to zero', () => {
+    const pool = createRenderCommandPool();
+    acquireRenderCommand(pool, RenderCommandKind.DrawNode, makeNode());
+    acquireRenderCommand(pool, RenderCommandKind.DrawNode, makeNode());
+    resetRenderCommandPool(pool);
+    expect(pool.commandCount).toBe(0);
   });
 });

@@ -1,12 +1,18 @@
 import { createRectangle } from '@flighthq/geometry';
 import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
+import { createSprite } from '@flighthq/scene-sprite';
 import { RenderCommandKind, RenderFeatures } from '@flighthq/types';
 
 import { acquireRenderCommand } from './renderCommandPool';
-import { buildRenderCommands, executeRenderCommands } from './renderCommands';
+import {
+  buildRenderCommands,
+  executeRenderCommands,
+  renderDisplayObjectTree,
+  renderSpriteTree,
+} from './renderCommands';
 import { enableRenderFeatures } from './renderer';
-import { getOrCreateDefaultDisplayObjectRenderNode } from './renderNode2d';
+import { getOrCreateDefaultDisplayObjectRenderNode, getOrCreateSpriteRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
 import { updateDisplayObjectBeforeRender } from './update';
 
@@ -320,5 +326,125 @@ describe('executeRenderCommands', () => {
     expect(popMask).toHaveBeenCalledWith(state, node);
     expect(pushScrollRectangle).toHaveBeenCalledWith(state, node);
     expect(popScrollRectangle).toHaveBeenCalledWith(state);
+  });
+});
+
+describe('renderDisplayObjectTree', () => {
+  it('draws nodes and dispatches hooks in tree order', () => {
+    const state = createRenderState();
+    enableRenderFeatures(state, RenderFeatures.Masks | RenderFeatures.ScrollRectangle);
+
+    const parent = createDisplayObject();
+    const child = createDisplayObject();
+    const maskObj = createDisplayObject();
+    addSceneChild(parent, child);
+    parent.mask = maskObj;
+    parent.scrollRectangle = createRectangle(0, 0, 100, 100);
+
+    const calls: string[] = [];
+    const parentData = makeVisibleNode(state, parent);
+    const childData = makeVisibleNode(state, child);
+    makeVisibleNode(state, maskObj);
+    updateDisplayObjectBeforeRender(state, parent);
+
+    parentData.renderer = {
+      createData: () => null,
+      draw: () => calls.push('draw-parent'),
+    };
+    childData.renderer = {
+      createData: () => null,
+      draw: () => calls.push('draw-child'),
+    };
+    state.displayObjectMaskHooks = {
+      popMask: () => calls.push('pop-mask'),
+      pushMask: () => calls.push('push-mask'),
+    };
+    state.scrollRectangleHooks = {
+      pop: () => calls.push('pop-scroll-rect'),
+      push: () => calls.push('push-scroll-rect'),
+    };
+
+    renderDisplayObjectTree(state, parent);
+
+    expect(calls).toEqual([
+      'push-mask',
+      'draw-parent',
+      'push-scroll-rect',
+      'draw-child',
+      'pop-scroll-rect',
+      'pop-mask',
+    ]);
+  });
+
+  it('does not write commands while rendering directly', () => {
+    const state = createRenderState();
+    const obj = createDisplayObject();
+    const data = makeVisibleNode(state, obj);
+    data.renderer = {
+      createData: () => null,
+      draw: () => undefined,
+    };
+
+    renderDisplayObjectTree(state, obj);
+
+    expect(state.commandPool.commandCount).toBe(0);
+  });
+});
+
+describe('renderSpriteTree', () => {
+  it('draws nodes in tree order', () => {
+    const state = createRenderState();
+    const parent = createSprite();
+    const child = createSprite();
+    addSceneChild(parent, child);
+
+    const calls: string[] = [];
+    const parentData = getOrCreateSpriteRenderNode(state, parent);
+    parentData.visible = true;
+    parentData.alpha = 1;
+    parentData.renderer = {
+      createData: () => null,
+      draw: () => calls.push('draw-parent'),
+    };
+
+    const childData = getOrCreateSpriteRenderNode(state, child);
+    childData.visible = true;
+    childData.alpha = 1;
+    childData.renderer = {
+      createData: () => null,
+      draw: () => calls.push('draw-child'),
+    };
+
+    renderSpriteTree(state, parent);
+
+    expect(calls).toEqual(['draw-parent', 'draw-child']);
+  });
+
+  it('respects updateChildren=false from an adapter', () => {
+    const state = createRenderState();
+    const parent = createSprite();
+    const child = createSprite();
+    addSceneChild(parent, child);
+
+    const parentData = getOrCreateSpriteRenderNode(state, parent);
+    parentData.visible = true;
+    parentData.alpha = 1;
+    parentData.updateChildren = false;
+    parentData.renderer = {
+      createData: () => null,
+      draw: () => undefined,
+    };
+
+    const childData = getOrCreateSpriteRenderNode(state, child);
+    childData.visible = true;
+    childData.alpha = 1;
+    childData.renderer = {
+      createData: () => null,
+      draw: vi.fn(),
+    };
+
+    renderSpriteTree(state, parent);
+
+    expect(childData.renderer.draw).not.toHaveBeenCalled();
   });
 });
