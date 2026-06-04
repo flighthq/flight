@@ -1,10 +1,4 @@
-import {
-  addSceneChild,
-  createDisplayObject,
-  createText,
-  loadFontFromURL,
-  updateDisplayObjectBeforeRender,
-} from '@flighthq/sdk';
+import { addSceneChild, createDisplayObject, createText, loadFontFromURL, updateDisplayObject } from '@flighthq/sdk';
 
 import { render, scale, state } from './render';
 
@@ -22,7 +16,7 @@ textField.y = 50;
 addSceneChild(root, textField);
 
 function enterFrame(): void {
-  if (updateDisplayObjectBeforeRender(state, root)) {
+  if (updateDisplayObject(state, root)) {
     render(root);
   }
   requestAnimationFrame(enterFrame);

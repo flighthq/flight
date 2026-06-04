@@ -22,7 +22,7 @@ import {
   registerHitTestPoint,
   startApplicationLoop,
   stopApplicationLoop,
-  updateDisplayObjectBeforeRender,
+  updateDisplayObject,
   updateTweens,
 } from '@flighthq/sdk';
 
@@ -128,7 +128,7 @@ connectSignal(app.onUpdate, (delta) => {
   game.onEnterFrame();
 });
 connectSignal(app.onRender, () => {
-  if (updateDisplayObjectBeforeRender(state, root)) {
+  if (updateDisplayObject(state, root)) {
     render(root);
   }
 });
