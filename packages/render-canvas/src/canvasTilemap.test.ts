@@ -38,7 +38,7 @@ describe('drawCanvasTilemap', () => {
   it('does not draw when tileset is null', () => {
     const state = makeState();
     const tilemap = createTilemap();
-    updateSprite(state, tilemap);
+    updateSpriteBeforeRender(state, tilemap);
     const renderNode = getOrCreateSpriteRenderNode(state, tilemap);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasTilemap(state, renderNode);
@@ -51,7 +51,7 @@ describe('drawCanvasTilemap', () => {
     const tilemap = createTilemap({ data: { columns: 2, rows: 1, tileset } });
     setTilemapTile(tilemap, 0, 0, 0);
     setTilemapTile(tilemap, 1, 0, 1);
-    updateSprite(state, tilemap);
+    updateSpriteBeforeRender(state, tilemap);
     const renderNode = getOrCreateSpriteRenderNode(state, tilemap);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasTilemap(state, renderNode);
@@ -64,7 +64,7 @@ describe('drawCanvasTilemap', () => {
     const tilemap = createTilemap({ data: { columns: 2, rows: 1, tileset } });
     setTilemapTile(tilemap, 0, 0, 0);
     // cell (1,0) remains -1
-    updateSprite(state, tilemap);
+    updateSpriteBeforeRender(state, tilemap);
     const renderNode = getOrCreateSpriteRenderNode(state, tilemap);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasTilemap(state, renderNode);

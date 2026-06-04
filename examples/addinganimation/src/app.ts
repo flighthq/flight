@@ -10,7 +10,7 @@ import {
   invalidateRender,
   loadImageSourceFromURL,
   startApplicationLoop,
-  updateDisplayObject,
+  updateDisplayObjectBeforeRender,
   updateTweens,
 } from '@flighthq/sdk';
 
@@ -52,6 +52,6 @@ connectSignal(tween.onUpdate, () => invalidateRender(container));
 const app = createApplication();
 connectSignal(app.onUpdate, (delta) => updateTweens(manager, delta));
 connectSignal(app.onRender, () => {
-  if (updateDisplayObject(state, main)) render(main);
+  if (updateDisplayObjectBeforeRender(state, main)) render(main);
 });
 startApplicationLoop(app);

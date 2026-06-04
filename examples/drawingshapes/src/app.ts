@@ -14,7 +14,7 @@ import {
   createShape,
   setTransformX,
   setTransformY,
-  updateDisplayObject,
+  updateDisplayObjectBeforeRender,
 } from '@flighthq/sdk';
 
 import { render, scale, state } from './render';
@@ -142,7 +142,7 @@ addSceneChild(main, curve);
 // ── Render loop ───────────────────────────────────────────────────────────
 
 function enterFrame(): void {
-  if (updateDisplayObject(state, main)) {
+  if (updateDisplayObjectBeforeRender(state, main)) {
     render(main);
   }
   requestAnimationFrame(enterFrame);

@@ -5,7 +5,7 @@ import {
   registerRenderer,
   renderDOMDisplayObject,
   setDOMRendererElement,
-  updateDisplayObject,
+  updateDisplayObjectBeforeRender,
 } from '@flighthq/sdk';
 import { DisplayObjectKind } from '@flighthq/sdk';
 
@@ -27,7 +27,7 @@ test('sdk browser barrel can render a display object to the DOM', () => {
   };
 
   registerRenderer(state, DisplayObjectKind, renderer as any);
-  updateDisplayObject(state, obj);
+  updateDisplayObjectBeforeRender(state, obj);
   renderDOMDisplayObject(state, obj);
 
   expect(container.firstChild).not.toBeNull();

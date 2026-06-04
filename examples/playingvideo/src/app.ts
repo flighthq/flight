@@ -19,7 +19,7 @@ import {
   playVideoSource,
   startApplicationLoop,
   stopVideoChannel,
-  updateDisplayObject,
+  updateDisplayObjectBeforeRender,
 } from '@flighthq/sdk';
 
 import { container, render, scale, setSize, state } from './render';
@@ -95,6 +95,6 @@ connectSignal(app.onUpdate, () => {
   if (channel !== null && channel.state === 'playing') invalidateRender(videoNode);
 });
 connectSignal(app.onRender, () => {
-  if (updateDisplayObject(state, root)) render(root);
+  if (updateDisplayObjectBeforeRender(state, root)) render(root);
 });
 startApplicationLoop(app);

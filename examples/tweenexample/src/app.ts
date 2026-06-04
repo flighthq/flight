@@ -13,7 +13,7 @@ import {
   invalidateRender,
   Quad,
   startApplicationLoop,
-  updateDisplayObject,
+  updateDisplayObjectBeforeRender,
   updateTweens,
 } from '@flighthq/sdk';
 
@@ -67,6 +67,6 @@ for (let i = 0; i < CIRCLE_COUNT; i++) {
 const app = createApplication();
 connectSignal(app.onUpdate, (delta) => updateTweens(manager, delta));
 connectSignal(app.onRender, () => {
-  if (updateDisplayObject(state, root)) render(root);
+  if (updateDisplayObjectBeforeRender(state, root)) render(root);
 });
 startApplicationLoop(app);

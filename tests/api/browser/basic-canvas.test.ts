@@ -17,6 +17,6 @@ test('attach renderer to new canvas', () => {
   const obj = createDisplayObject();
 
   registerRenderer(renderState, DisplayObjectKind, defaultCanvasDisplayObjectRenderer);
-  updateDisplayObject(renderState, obj);
+  updateDisplayObjectBeforeRender(renderState, obj);
   renderCanvasDisplayObject(renderState, obj);
 });

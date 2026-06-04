@@ -16,7 +16,7 @@ import {
   setTransformX,
   setTransformY,
   startApplicationLoop,
-  updateSprite,
+  updateSpriteBeforeRender,
   updateSpritesheetPlayer,
 } from '@flighthq/sdk';
 
@@ -89,7 +89,7 @@ connectSignal(app.onUpdate, (delta) => {
   }
 });
 connectSignal(app.onRender, () => {
-  updateSprite(state, root);
+  updateSpriteBeforeRender(state, root);
   render(root);
 });
 startApplicationLoop(app);

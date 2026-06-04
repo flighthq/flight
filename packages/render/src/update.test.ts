@@ -6,44 +6,44 @@ import type { RenderNodeAdapter } from '@flighthq/types';
 
 import { getOrCreateDefaultDisplayObjectRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
-import { updateDisplayObject, updateSprite } from './update';
+import { updateDisplayObjectBeforeRender, updateSprite } from './update';
 
 describe('updateDisplayObject', () => {
   it('returns true (dirty) on first call', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    expect(updateDisplayObject(state, obj)).toBe(true);
+    expect(updateDisplayObjectBeforeRender(state, obj)).toBe(true);
   });
 
   it('returns false (not dirty) on second call without changes', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    updateDisplayObject(state, obj);
-    expect(updateDisplayObject(state, obj)).toBe(false);
+    updateDisplayObjectBeforeRender(state, obj);
+    expect(updateDisplayObjectBeforeRender(state, obj)).toBe(false);
   });
 
   it('returns true after appearance changes', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    updateDisplayObject(state, obj);
+    updateDisplayObjectBeforeRender(state, obj);
     obj.alpha = 0.5;
     invalidateAppearance(obj);
-    expect(updateDisplayObject(state, obj)).toBe(true);
+    expect(updateDisplayObjectBeforeRender(state, obj)).toBe(true);
   });
 
   it('returns true after transform changes', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    updateDisplayObject(state, obj);
+    updateDisplayObjectBeforeRender(state, obj);
     setTransformX(obj, 20);
-    expect(updateDisplayObject(state, obj)).toBe(true);
+    expect(updateDisplayObjectBeforeRender(state, obj)).toBe(true);
   });
 
   it('skips disabled objects', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
     obj.enabled = false;
-    expect(updateDisplayObject(state, obj)).toBe(false);
+    expect(updateDisplayObjectBeforeRender(state, obj)).toBe(false);
   });
 
   it('adapter is called when set and node is dirty', () => {
@@ -52,7 +52,7 @@ describe('updateDisplayObject', () => {
     const adapt = vi.fn().mockReturnValue(null);
     const adapter: RenderNodeAdapter = { adapt };
     setSceneNodeAdapter(obj as any, adapter);
-    updateDisplayObject(state, obj);
+    updateDisplayObjectBeforeRender(state, obj);
     expect(adapt).toHaveBeenCalledOnce();
   });
 
@@ -64,7 +64,7 @@ describe('updateDisplayObject', () => {
     const adapt = vi.fn().mockReturnValue(false);
     const adapter: RenderNodeAdapter = { adapt };
     setSceneNodeAdapter(obj as any, adapter);
-    updateDisplayObject(state, obj);
+    updateDisplayObjectBeforeRender(state, obj);
     const data = getOrCreateDefaultDisplayObjectRenderNode(state, obj);
     expect(data.updateChildren).toBe(false);
   });
@@ -75,9 +75,9 @@ describe('updateDisplayObject', () => {
     const adapt = vi.fn().mockReturnValue(null);
     const adapter: RenderNodeAdapter = { adapt };
     setSceneNodeAdapter(obj as any, adapter);
-    updateDisplayObject(state, obj);
+    updateDisplayObjectBeforeRender(state, obj);
     adapt.mockClear();
-    updateDisplayObject(state, obj);
+    updateDisplayObjectBeforeRender(state, obj);
     expect(adapt).not.toHaveBeenCalled();
   });
 });
@@ -86,28 +86,28 @@ describe('updateSprite', () => {
   it('returns true (dirty) on first call', () => {
     const state = createRenderState();
     const sprite = createSprite();
-    expect(updateSprite(state, sprite)).toBe(true);
+    expect(updateSpriteBeforeRender(state, sprite)).toBe(true);
   });
 
   it('returns false (not dirty) on second call without changes', () => {
     const state = createRenderState();
     const sprite = createSprite();
-    updateSprite(state, sprite);
-    expect(updateSprite(state, sprite)).toBe(false);
+    updateSpriteBeforeRender(state, sprite);
+    expect(updateSpriteBeforeRender(state, sprite)).toBe(false);
   });
 
   it('returns true after transform changes', () => {
     const state = createRenderState();
     const sprite = createSprite();
-    updateSprite(state, sprite);
+    updateSpriteBeforeRender(state, sprite);
     setTransformX(sprite, 15);
-    expect(updateSprite(state, sprite)).toBe(true);
+    expect(updateSpriteBeforeRender(state, sprite)).toBe(true);
   });
 
   it('skips disabled sprites', () => {
     const state = createRenderState();
     const sprite = createSprite();
     sprite.enabled = false;
-    expect(updateSprite(state, sprite)).toBe(false);
+    expect(updateSpriteBeforeRender(state, sprite)).toBe(false);
   });
 });
