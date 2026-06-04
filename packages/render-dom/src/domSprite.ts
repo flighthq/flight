@@ -11,6 +11,7 @@ import type {
   SpriteRenderer,
   SpriteRenderNode,
 } from '@flighthq/types';
+import { QuadBatchKind, TilemapKind } from '@flighthq/types';
 
 import { detectDOMStructureChange, processDOMNode, reconcileDOMContainer, swapDOMOrderLists } from './domReconcile';
 import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
@@ -88,7 +89,14 @@ export function renderDOMSprite(state: DOMRenderState, source: SpriteNode): void
     if (!shouldRender) continue;
 
     if (data.renderer !== null) {
-      const result = processDOMNode(internal, data, currentFrameID, () => data.renderer!.draw(state, data), newLength);
+      const result = processDOMNode(
+        internal,
+        data,
+        currentFrameID,
+        () => data.renderer!.draw(state, data),
+        newLength,
+        isMutableSpriteBatchKind(current.kind),
+      );
       newLength = result.newLength;
       if (result.needsReconcile) needsReconcile = true;
     }
@@ -112,3 +120,7 @@ export const defaultDOMSpriteRenderer: SpriteRenderer = {
   createData: createDOMSpriteData as SpriteRenderer['createData'],
   draw: drawDOMSprite,
 };
+
+function isMutableSpriteBatchKind(kind: symbol): boolean {
+  return kind === QuadBatchKind || kind === TilemapKind;
+}

@@ -1,9 +1,10 @@
 ﻿import { addTextureAtlasRegion, createImageSourceFromCanvas, createTextureAtlas } from '@flighthq/assets';
-import { registerRenderer } from '@flighthq/render';
+import { registerRenderer, updateSprite } from '@flighthq/render';
 import { getOrCreateSpriteRenderNode } from '@flighthq/render';
-import { createSprite } from '@flighthq/scene-sprite';
-import { SpriteKind } from '@flighthq/types';
+import { createQuadBatch, createSprite, resizeQuadBatch } from '@flighthq/scene-sprite';
+import { QuadBatchKind, SpriteKind } from '@flighthq/types';
 
+import { defaultDOMQuadBatchRenderer } from './domQuadBatch';
 import { createDOMRenderState } from './domRenderState';
 import { defaultDOMSpriteRenderer, drawDOMSprite, renderDOMSprite } from './domSprite';
 import type { DOMRenderStateInternal } from './internal';
@@ -121,5 +122,29 @@ describe('renderDOMSprite', () => {
     const state = makeState();
     const sprite = createSprite();
     expect(() => renderDOMSprite(state, sprite)).not.toThrow();
+  });
+
+  it('redraws quad batch data changes even when the node transform is clean', () => {
+    const state = makeState();
+    registerRenderer(state, QuadBatchKind, defaultDOMQuadBatchRenderer);
+    const quadBatch = createQuadBatch();
+    quadBatch.data.atlas = makeAtlas();
+    resizeQuadBatch(quadBatch, 1);
+    quadBatch.data.ids[0] = 0;
+    quadBatch.data.transforms[0] = 10;
+    quadBatch.data.transforms[1] = 10;
+
+    updateSprite(state, quadBatch);
+    renderDOMSprite(state, quadBatch);
+    const canvas = state.element.firstChild as HTMLCanvasElement;
+    expect(canvas.style.width).toBe('42px');
+
+    quadBatch.data.transforms[0] = 50;
+    quadBatch.data.transforms[1] = 10;
+
+    expect(updateSprite(state, quadBatch)).toBe(false);
+    renderDOMSprite(state, quadBatch);
+
+    expect(canvas.style.width).toBe('82px');
   });
 });

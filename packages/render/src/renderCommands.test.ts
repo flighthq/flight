@@ -3,14 +3,15 @@ import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { RenderCommandKind, RenderFeatures } from '@flighthq/types';
 
-import { buildRenderCommands } from './renderCommands';
+import { acquireRenderCommand } from './renderCommandPool';
+import { buildRenderCommands, executeRenderCommands } from './renderCommands';
 import { enableRenderFeatures } from './renderer';
 import { getOrCreateDefaultDisplayObjectRenderNode } from './renderNode2d';
 import { createRenderState } from './renderState';
-import { updateDisplayObjectBeforeRender } from './update';
+import { updateDisplayObject } from './update';
 
 function makeVisibleNode(state: ReturnType<typeof createRenderState>, obj: ReturnType<typeof createDisplayObject>) {
-  updateDisplayObjectBeforeRender(state, obj);
+  updateDisplayObject(state, obj);
   const data = getOrCreateDefaultDisplayObjectRenderNode(state, obj);
   data.visible = true;
   data.alpha = 1;
@@ -35,7 +36,7 @@ describe('buildRenderCommands', () => {
   it('produces no commands for an invisible object', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    updateDisplayObjectBeforeRender(state, obj);
+    updateDisplayObject(state, obj);
     const data = getOrCreateDefaultDisplayObjectRenderNode(state, obj);
     data.visible = false;
     buildRenderCommands(state, obj);
@@ -45,7 +46,7 @@ describe('buildRenderCommands', () => {
   it('produces no commands for zero alpha', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    updateDisplayObjectBeforeRender(state, obj);
+    updateDisplayObject(state, obj);
     const data = getOrCreateDefaultDisplayObjectRenderNode(state, obj);
     data.visible = true;
     data.alpha = 0;
@@ -58,7 +59,7 @@ describe('buildRenderCommands', () => {
   it('produces no commands for zero scale', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    updateDisplayObjectBeforeRender(state, obj);
+    updateDisplayObject(state, obj);
     const data = getOrCreateDefaultDisplayObjectRenderNode(state, obj);
     data.visible = true;
     data.alpha = 1;
@@ -127,7 +128,7 @@ describe('buildRenderCommands', () => {
       const maskObj = createDisplayObject();
       makeVisibleNode(state, maskObj);
       obj.mask = maskObj;
-      updateDisplayObjectBeforeRender(state, obj);
+      updateDisplayObject(state, obj);
       buildRenderCommands(state, obj);
       const maskData = getOrCreateDefaultDisplayObjectRenderNode(state, maskObj);
       const drawNodes = commands(state).filter((c) => c.kind === RenderCommandKind.DrawNode);
@@ -142,7 +143,7 @@ describe('buildRenderCommands', () => {
       obj.mask = maskObj;
       makeVisibleNode(state, obj);
       makeVisibleNode(state, maskObj);
-      updateDisplayObjectBeforeRender(state, obj);
+      updateDisplayObject(state, obj);
       buildRenderCommands(state, obj);
       const cmds = commands(state);
       expect(cmds.map((c) => c.kind)).toEqual([
@@ -163,7 +164,7 @@ describe('buildRenderCommands', () => {
       makeVisibleNode(state, parent);
       makeVisibleNode(state, child);
       makeVisibleNode(state, maskObj);
-      updateDisplayObjectBeforeRender(state, parent);
+      updateDisplayObject(state, parent);
       buildRenderCommands(state, parent);
       const kinds = commands(state).map((c) => c.kind);
       expect(kinds).toEqual([
@@ -194,7 +195,7 @@ describe('buildRenderCommands', () => {
       makeVisibleNode(state, childB);
       makeVisibleNode(state, maskA);
       makeVisibleNode(state, maskB);
-      updateDisplayObjectBeforeRender(state, root);
+      updateDisplayObject(state, root);
       buildRenderCommands(state, root);
 
       const kinds = commands(state).map((c) => c.kind);
@@ -267,7 +268,7 @@ describe('buildRenderCommands', () => {
       makeVisibleNode(state, parent);
       makeVisibleNode(state, child);
       makeVisibleNode(state, maskObj);
-      updateDisplayObjectBeforeRender(state, parent);
+      updateDisplayObject(state, parent);
       buildRenderCommands(state, parent);
       const kinds = commands(state).map((c) => c.kind);
       expect(kinds).toEqual([
@@ -279,5 +280,45 @@ describe('buildRenderCommands', () => {
         RenderCommandKind.PopMask,
       ]);
     });
+  });
+});
+
+describe('executeRenderCommands', () => {
+  it('dispatches command kinds to renderers and hooks', () => {
+    const state = createRenderState();
+    const obj = createDisplayObject();
+    const node = makeVisibleNode(state, obj);
+    const draw = vi.fn();
+    const pushMask = vi.fn();
+    const popMask = vi.fn();
+    const pushScrollRectangle = vi.fn();
+    const popScrollRectangle = vi.fn();
+
+    node.renderer = {
+      createData: () => null,
+      draw,
+    };
+    state.displayObjectMaskHooks = {
+      popMask,
+      pushMask,
+    };
+    state.scrollRectangleHooks = {
+      pop: popScrollRectangle,
+      push: pushScrollRectangle,
+    };
+
+    acquireRenderCommand(state.commandPool, RenderCommandKind.DrawNode, node);
+    acquireRenderCommand(state.commandPool, RenderCommandKind.PushMask, node);
+    acquireRenderCommand(state.commandPool, RenderCommandKind.PopMask, node);
+    acquireRenderCommand(state.commandPool, RenderCommandKind.PushScrollRect, node);
+    acquireRenderCommand(state.commandPool, RenderCommandKind.PopScrollRect, node);
+
+    executeRenderCommands(state);
+
+    expect(draw).toHaveBeenCalledWith(state, node);
+    expect(pushMask).toHaveBeenCalledWith(state, node);
+    expect(popMask).toHaveBeenCalledWith(state, node);
+    expect(pushScrollRectangle).toHaveBeenCalledWith(state, node);
+    expect(popScrollRectangle).toHaveBeenCalledWith(state);
   });
 });
