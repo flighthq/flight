@@ -1,6 +1,28 @@
 import { createEntity } from '@flighthq/entity';
+import { createMatrix } from '@flighthq/geometry';
 import { createColorTransform } from '@flighthq/materials';
-import { BlendMode, type Renderable, type RenderNode, type RenderState } from '@flighthq/types';
+import {
+  BlendMode,
+  type DisplayObject,
+  type DisplayObjectRenderNode,
+  type HasBoundsRect,
+  type HasTransform2D,
+  type Renderable,
+  type RenderNode,
+  type RenderNode2D,
+  type RenderState,
+  type SpriteNode,
+  type SpriteRenderNode,
+} from '@flighthq/types';
+
+export function createDisplayObjectRenderNode(state: RenderState, source: DisplayObject): DisplayObjectRenderNode {
+  const out = createRenderNode2D(state, source) as DisplayObjectRenderNode;
+  out.isMaskFrameID = -1;
+  out.maskDepth = 0;
+  out.scrollRectangleDepth = 0;
+  out.updateChildren = true;
+  return out;
+}
 
 export function createRenderNode(state: RenderState, source: Renderable): RenderNode {
   const renderer = state.rendererMap.get(source.kind) ?? null;
@@ -27,6 +49,25 @@ export function createRenderNode(state: RenderState, source: Renderable): Render
   });
 }
 
+export function createRenderNode2D(
+  state: RenderState,
+  source: Renderable & HasTransform2D & HasBoundsRect,
+): RenderNode2D {
+  const node = createRenderNode(state, source) as RenderNode2D;
+  node.transform2D = createMatrix();
+  return node;
+}
+
+export function createSpriteRenderNode(state: RenderState, source: SpriteNode): SpriteRenderNode {
+  const out = createRenderNode2D(state, source) as SpriteRenderNode;
+  out.updateChildren = true;
+  return out;
+}
+
+export function getOrCreateDisplayObjectRenderNode(state: RenderState, source: DisplayObject): DisplayObjectRenderNode {
+  return getOrCreateRenderNode(state, source, createDisplayObjectRenderNode);
+}
+
 export function getOrCreateRenderNode<Source extends Renderable, NodeType extends RenderNode>(
   state: RenderState,
   source: Source,
@@ -42,6 +83,14 @@ export function getOrCreateRenderNode<Source extends Renderable, NodeType extend
     syncRenderNodeRenderer(state, node);
   }
   return node as NodeType;
+}
+
+export function getOrCreateSpriteRenderNode(state: RenderState, source: SpriteNode): SpriteRenderNode {
+  return getOrCreateRenderNode(state, source, createSpriteRenderNode);
+}
+
+export function isRenderNodeVisible(data: RenderNode2D): boolean {
+  return data.visible && data.alpha > 0 && !(data.transform2D.a === 0 && data.transform2D.d === 0);
 }
 
 export function syncRenderNodeRenderer(state: RenderState, node: RenderNode): void {

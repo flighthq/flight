@@ -13,9 +13,8 @@ import {
   isRenderImageCacheAdapter,
   registerImageRenderCacheRenderer,
   setImageRenderCache,
-} from './renderCache';
-import { registerRenderer } from './renderer';
-import { createDisplayObjectRenderNode } from './renderNode2d';
+} from './imageRenderCache';
+import { createDisplayObjectRenderNode } from './renderNode';
 import { createRenderState } from './renderState';
 
 function makeImageSource() {
@@ -56,21 +55,16 @@ describe('createImageRenderCachePrimitive', () => {
 });
 
 describe('createRenderImageCacheAdapter', () => {
-  it('returns an object with an adapt method and result field', () => {
-    const adapter = createRenderImageCacheAdapter();
-    expect(typeof adapter.adapt).toBe('function');
-    expect('result' in adapter).toBe(true);
-  });
-
-  it('adapt returns null when state is capturing', () => {
+  it('adapt returns false and updates node when result is valid', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
     const data = createDisplayObjectRenderNode(state, obj);
     const adapter = createRenderImageCacheAdapter();
     adapter.result = makeCacheResult();
-    beginImageRenderCacheCapture(state);
-    expect(adapter.adapt(state, obj, data)).toBeNull();
-    endImageRenderCacheCapture(state);
+    const result = adapter.adapt(state, obj, data);
+    expect(result).toBe(false);
+    expect(data.kind).toBe(ImageRenderCacheKind);
+    expect(isImageRenderCachePrimitive(data.source)).toBe(true);
   });
 
   it('adapt returns null when result is null', () => {
@@ -92,16 +86,15 @@ describe('createRenderImageCacheAdapter', () => {
     expect(adapter.adapt(state, obj, data)).toBeNull();
   });
 
-  it('adapt returns false and updates node when result is valid', () => {
+  it('adapt returns null when state is capturing', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
     const data = createDisplayObjectRenderNode(state, obj);
     const adapter = createRenderImageCacheAdapter();
     adapter.result = makeCacheResult();
-    const result = adapter.adapt(state, obj, data);
-    expect(result).toBe(false);
-    expect(data.kind).toBe(ImageRenderCacheKind);
-    expect(isImageRenderCachePrimitive(data.source)).toBe(true);
+    beginImageRenderCacheCapture(state);
+    expect(adapter.adapt(state, obj, data)).toBeNull();
+    endImageRenderCacheCapture(state);
   });
 
   it('adapt reuses the same primitive across calls', () => {
@@ -117,6 +110,12 @@ describe('createRenderImageCacheAdapter', () => {
     const data2 = createDisplayObjectRenderNode(state, obj2);
     adapter.adapt(state, obj2, data2);
     expect(data2.source).toBe(source1);
+  });
+
+  it('returns an object with an adapt method and result field', () => {
+    const adapter = createRenderImageCacheAdapter();
+    expect(typeof adapter.adapt).toBe('function');
+    expect('result' in adapter).toBe(true);
   });
 });
 
@@ -148,37 +147,37 @@ describe('getImageRenderCache', () => {
 });
 
 describe('isImageRenderCachePrimitive', () => {
-  it('returns true for a valid primitive', () => {
-    const owner = createDisplayObject();
-    const primitive = createImageRenderCachePrimitive(owner, makeCacheResult());
-    expect(isImageRenderCachePrimitive(primitive)).toBe(true);
+  it('returns false for a plain object without the correct kind', () => {
+    expect(isImageRenderCachePrimitive({ kind: Symbol('other') })).toBe(false);
   });
 
   it('returns false for null', () => {
     expect(isImageRenderCachePrimitive(null)).toBe(false);
   });
 
-  it('returns false for a plain object without the correct kind', () => {
-    expect(isImageRenderCachePrimitive({ kind: Symbol('other') })).toBe(false);
+  it('returns true for a valid primitive', () => {
+    const owner = createDisplayObject();
+    const primitive = createImageRenderCachePrimitive(owner, makeCacheResult());
+    expect(isImageRenderCachePrimitive(primitive)).toBe(true);
   });
 });
 
 describe('isRenderImageCacheAdapter', () => {
-  it('returns true for a valid adapter', () => {
-    const adapter = createRenderImageCacheAdapter();
-    expect(isRenderImageCacheAdapter(adapter)).toBe(true);
-  });
-
-  it('returns false for null', () => {
-    expect(isRenderImageCacheAdapter(null)).toBe(false);
-  });
-
   it('returns false for an object without adapt', () => {
     expect(isRenderImageCacheAdapter({ result: null })).toBe(false);
   });
 
   it('returns false for an object without result', () => {
     expect(isRenderImageCacheAdapter({ adapt: () => null })).toBe(false);
+  });
+
+  it('returns false for null', () => {
+    expect(isRenderImageCacheAdapter(null)).toBe(false);
+  });
+
+  it('returns true for a valid adapter', () => {
+    const adapter = createRenderImageCacheAdapter();
+    expect(isRenderImageCacheAdapter(adapter)).toBe(true);
   });
 });
 

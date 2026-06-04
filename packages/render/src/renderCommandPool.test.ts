@@ -1,6 +1,14 @@
+import { createDisplayObject } from '@flighthq/scene-display';
 import { RenderCommandKind } from '@flighthq/types';
 
-import { acquireRenderCommand, createRenderCommandPool, resetRenderCommandPool } from './renderCommandPool';
+import {
+  acquireRenderCommand,
+  createRenderCommandPool,
+  executeRenderCommands,
+  resetRenderCommandPool,
+} from './renderCommandPool';
+import { getOrCreateDisplayObjectRenderNode } from './renderNode';
+import { createRenderState } from './renderState';
 
 function makeNode() {
   return {} as any;
@@ -69,6 +77,46 @@ describe('createRenderCommandPool', () => {
     const pool = createRenderCommandPool();
     expect(pool.commands).toEqual([]);
     expect(pool.commandCount).toBe(0);
+  });
+});
+
+describe('executeRenderCommands', () => {
+  it('dispatches command kinds to renderers and hooks', () => {
+    const state = createRenderState();
+    const obj = createDisplayObject();
+    const node = getOrCreateDisplayObjectRenderNode(state, obj);
+    const draw = vi.fn();
+    const pushMask = vi.fn();
+    const popMask = vi.fn();
+    const pushScrollRectangle = vi.fn();
+    const popScrollRectangle = vi.fn();
+
+    node.renderer = {
+      createData: () => null,
+      draw,
+    };
+    state.displayObjectMaskHooks = {
+      popMask,
+      pushMask,
+    };
+    state.scrollRectangleHooks = {
+      pop: popScrollRectangle,
+      push: pushScrollRectangle,
+    };
+
+    acquireRenderCommand(state.commandPool, RenderCommandKind.DrawNode, node);
+    acquireRenderCommand(state.commandPool, RenderCommandKind.PushMask, node);
+    acquireRenderCommand(state.commandPool, RenderCommandKind.PopMask, node);
+    acquireRenderCommand(state.commandPool, RenderCommandKind.PushScrollRect, node);
+    acquireRenderCommand(state.commandPool, RenderCommandKind.PopScrollRect, node);
+
+    executeRenderCommands(state);
+
+    expect(draw).toHaveBeenCalledWith(state, node);
+    expect(pushMask).toHaveBeenCalledWith(state, node);
+    expect(popMask).toHaveBeenCalledWith(state, node);
+    expect(pushScrollRectangle).toHaveBeenCalledWith(state, node);
+    expect(popScrollRectangle).toHaveBeenCalledWith(state);
   });
 });
 
