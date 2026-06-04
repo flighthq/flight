@@ -33,7 +33,7 @@
     "order:fix": "tsx ./scripts/order.ts --fix",
     "packages:check": "tsx ./scripts/packages.ts",
     "packages:check:json": "tsx ./scripts/packages.ts --json",
-    "precommit": "npm run fix",
+    "precommit": "lint-staged",
     "prepush": "npm run ci",
     "size": "tsx ./scripts/size.ts",
     "size:baseline": "cross-env UPDATE_BASELINE=1 tsx ./scripts/size.ts",
@@ -66,6 +66,7 @@
     "eslint-plugin-unicorn": "^62.0.0",
     "jiti": "^2.6.1",
     "jsdom": "^27.4.0",
+    "lint-staged": "^17.0.7",
     "picocolors": "^1.1.1",
     "prettier": "3.8.1",
     "simple-git-hooks": "^2.13.1",
@@ -83,6 +84,14 @@
   "simple-git-hooks": {
     "pre-commit": "npm run precommit",
     "pre-push": "npm run prepush"
+  },
+  "lint-staged": {
+    "packages/*/src/**/*.ts": "tsx ./scripts/order.ts --fix",
+    "**/*.ts": [
+      "eslint -c eslint.config.ts --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "**/*.{json,md}": "prettier --write"
   },
   "dependencies": {
     "@vitejs/plugin-vue": "^6.0.3",
