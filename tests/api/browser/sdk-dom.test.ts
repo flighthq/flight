@@ -2,10 +2,10 @@ import type { DOMRenderState } from '@flighthq/sdk';
 import {
   createDisplayObject,
   createDOMRenderState,
+  prepareDOMDisplayObjectRender,
   registerRenderer,
-  renderDOMDisplayObject,
+  renderDOM,
   setDOMRendererElement,
-  updateDisplayObjectBeforeRender,
 } from '@flighthq/sdk';
 import { DisplayObjectKind } from '@flighthq/sdk';
 
@@ -27,8 +27,8 @@ test('sdk browser barrel can render a display object to the DOM', () => {
   };
 
   registerRenderer(state, DisplayObjectKind, renderer as any);
-  updateDisplayObjectBeforeRender(state, obj);
-  renderDOMDisplayObject(state, obj);
+  prepareDOMDisplayObjectRender(state, obj);
+  renderDOM(state);
 
   expect(container.firstChild).not.toBeNull();
   expect((container.firstChild as HTMLElement).textContent).toBe('rendered');
