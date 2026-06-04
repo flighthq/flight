@@ -3,9 +3,9 @@ import { setTransformX } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { RenderFeatures } from '@flighthq/types';
 
+import type { RenderNodeStateInternal } from './internal';
 import { enableRenderFeatures } from './renderer';
-import { createDisplayObjectRenderNode } from './renderNode2d';
-import type { RenderNodeStateInternal } from './renderNodeInternal';
+import { createDisplayObjectRenderNode } from './renderNode';
 import { createRenderState } from './renderState';
 import { updateDisplayObjectRenderTransform, updateRenderNode2DTransform } from './transform2d';
 

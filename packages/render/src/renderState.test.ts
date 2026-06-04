@@ -2,7 +2,18 @@ import { createMatrix } from '@flighthq/geometry';
 import { createColorTransform } from '@flighthq/materials';
 import { BlendMode, RenderFeatures, type RenderState } from '@flighthq/types';
 
-import { createRenderState } from './renderState';
+import { beginFrame, createRenderState } from './renderState';
+
+describe('beginFrame', () => {
+  it('increments and returns the current frame id', () => {
+    const state = createRenderState();
+
+    expect(beginFrame(state)).toBe(1);
+    expect(state.currentFrameID).toBe(1);
+    expect(beginFrame(state)).toBe(2);
+    expect(state.currentFrameID).toBe(2);
+  });
+});
 
 describe('createRenderState', () => {
   let state: RenderState;

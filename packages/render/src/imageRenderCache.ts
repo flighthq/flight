@@ -24,17 +24,11 @@ export interface ImageRenderCachePrimitive extends RenderPrimitive {
   owner: Renderable;
 }
 
-// ─── Capture state ────────────────────────────────────────────────────────────
-
-const _capturingStates = new WeakSet<RenderState>();
-
-// ─── Adapter ──────────────────────────────────────────────────────────────────
-
-type ImageRenderCacheAdapter = RenderNodeAdapter & {
+export type ImageRenderCacheAdapter = RenderNodeAdapter & {
   result: ImageRenderCacheResult | null;
 };
 
-// ─── Exported functions (alphabetical) ───────────────────────────────────────
+const _capturingStates = new WeakSet<RenderState>();
 
 export function beginImageRenderCacheCapture(state: RenderState): void {
   _capturingStates.add(state);
@@ -73,7 +67,6 @@ export function createRenderImageCacheAdapter(): ImageRenderCacheAdapter {
 
       node.source = primitive;
       node.kind = primitive.kind;
-      // Apply cache offset to the already-computed world transform
       multiplyMatrix(node.transform2D, node.transform2D, cache.transform);
 
       return false;
