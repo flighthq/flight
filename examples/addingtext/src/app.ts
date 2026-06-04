@@ -1,12 +1,6 @@
-import {
-  addSceneChild,
-  createDisplayObject,
-  createText,
-  loadFontFromURL,
-  updateDisplayObjectBeforeRender,
-} from '@flighthq/sdk';
+import { addSceneChild, createDisplayObject, createText, loadFontFromURL } from '@flighthq/sdk';
 
-import { render, scale, state } from './render';
+import { render, scale } from './render';
 
 const font = await loadFontFromURL('assets/KatamotzIkasi.woff', 'Katamotz Ikasi');
 
@@ -22,9 +16,7 @@ textField.y = 50;
 addSceneChild(root, textField);
 
 function enterFrame(): void {
-  if (updateDisplayObjectBeforeRender(state, root)) {
-    render(root);
-  }
+  render(root);
   requestAnimationFrame(enterFrame);
 }
 

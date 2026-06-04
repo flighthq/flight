@@ -3,10 +3,11 @@ import {
   createWebGLElement,
   createWebGLRenderState,
   defaultWebGLQuadBatchRenderer,
+  prepareWebGLSpriteRender,
   QuadBatchKind,
   registerRenderer,
+  renderWebGL,
   renderWebGLBackground,
-  renderWebGLSprite,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -21,6 +22,7 @@ registerRenderer(state, QuadBatchKind, defaultWebGLQuadBatchRenderer);
 export const scale = pixelRatio;
 
 export function render(root: QuadBatch): void {
+  if (!prepareWebGLSpriteRender(state, root)) return;
   renderWebGLBackground(state);
-  renderWebGLSprite(state, root);
+  renderWebGL(state);
 }

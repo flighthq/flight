@@ -1,13 +1,6 @@
-import {
-  createTilemap,
-  loadTilesetFromURL,
-  setTilemapTile,
-  setTransformX,
-  setTransformY,
-  updateSpriteBeforeRender,
-} from '@flighthq/sdk';
+import { createTilemap, loadTilesetFromURL, setTilemapTile, setTransformX, setTransformY } from '@flighthq/sdk';
 
-import { render, scale, state } from './render';
+import { render, scale } from './render';
 
 const TILE_W = 32;
 const TILE_H = 32;
@@ -34,9 +27,7 @@ for (let r = 0; r < ROWS; r++) {
 }
 
 function enterFrame(): void {
-  if (updateSpriteBeforeRender(state, tilemap)) {
-    render(tilemap);
-  }
+  render(tilemap);
   requestAnimationFrame(enterFrame);
 }
 

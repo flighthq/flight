@@ -6,10 +6,11 @@ import {
   defaultDOMBitmapRenderer,
   defaultDOMShapeRenderer,
   defaultDOMTextRenderer,
+  prepareDOMDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
+  renderDOM,
   renderDOMBackground,
-  renderDOMDisplayObject,
   ShapeKind,
   TextKind,
 } from '@flighthq/sdk';
@@ -30,6 +31,7 @@ export function setSize(w: number, h: number): void {
 }
 
 export function render(root: DisplayObject): void {
+  if (!prepareDOMDisplayObjectRender(state, root)) return;
   renderDOMBackground(state);
-  renderDOMDisplayObject(state, root);
+  renderDOM(state);
 }

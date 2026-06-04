@@ -3,9 +3,10 @@ import {
   createWebGLElement,
   createWebGLRenderState,
   defaultWebGLTextRenderer,
+  prepareWebGLDisplayObjectRender,
   registerRenderer,
+  renderWebGL,
   renderWebGLBackground,
-  renderWebGLDisplayObject,
   TextKind,
 } from '@flighthq/sdk';
 
@@ -21,6 +22,7 @@ registerRenderer(state, TextKind, defaultWebGLTextRenderer);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
+  if (!prepareWebGLDisplayObjectRender(state, root)) return;
   renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
+  renderWebGL(state);
 }

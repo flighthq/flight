@@ -2,9 +2,10 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   createDOMRenderState,
   defaultDOMTextRenderer,
+  prepareDOMDisplayObjectRender,
   registerRenderer,
+  renderDOM,
   renderDOMBackground,
-  renderDOMDisplayObject,
   TextKind,
 } from '@flighthq/sdk';
 
@@ -19,6 +20,7 @@ registerRenderer(state, TextKind, defaultDOMTextRenderer);
 export const scale = 1;
 
 export function render(root: DisplayObject): void {
+  if (!prepareDOMDisplayObjectRender(state, root)) return;
   renderDOMBackground(state);
-  renderDOMDisplayObject(state, root);
+  renderDOM(state);
 }

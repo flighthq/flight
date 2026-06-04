@@ -6,10 +6,9 @@ import {
   loadImageSourceFromURL,
   setTransformX,
   setTransformY,
-  updateSpriteBeforeRender,
 } from '@flighthq/sdk';
 
-import { render, scale, state } from './render';
+import { render, scale } from './render';
 
 const SCALE = 4;
 const TILE_SIZE = 32;
@@ -52,9 +51,7 @@ for (let i = 0; i < creatureIDs.length; i++) {
 }
 
 function enterFrame(): void {
-  if (updateSpriteBeforeRender(state, root)) {
-    render(root);
-  }
+  render(root);
   requestAnimationFrame(enterFrame);
 }
 

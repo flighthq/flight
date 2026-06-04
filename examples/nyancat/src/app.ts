@@ -10,11 +10,10 @@ import {
   createTextureAtlas,
   loadImageSourceFromURL,
   startApplicationLoop,
-  updateDisplayObjectBeforeRender,
   updateMovieClip,
 } from '@flighthq/sdk';
 
-import { render, scale, state } from './render';
+import { render, scale } from './render';
 
 const FRAME_W = 220;
 const FRAME_H = 220;
@@ -55,6 +54,6 @@ clip.scaleY = scale;
 const app = createApplication();
 connectSignal(app.onUpdate, (delta) => updateMovieClip(clip, delta));
 connectSignal(app.onRender, () => {
-  if (updateDisplayObjectBeforeRender(state, clip)) render(clip);
+  render(clip);
 });
 startApplicationLoop(app);

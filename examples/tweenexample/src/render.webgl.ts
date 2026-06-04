@@ -6,10 +6,11 @@ import {
   defaultWebGLDrawCircle,
   defaultWebGLEndFill,
   defaultWebGLShapeRenderer,
+  prepareWebGLDisplayObjectRender,
   registerRenderer,
   registerWebGLShapeCommands,
+  renderWebGL,
   renderWebGLBackground,
-  renderWebGLDisplayObject,
   ShapeKind,
 } from '@flighthq/sdk';
 
@@ -26,6 +27,7 @@ registerWebGLShapeCommands([defaultWebGLBeginFill, defaultWebGLEndFill, defaultW
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
+  if (!prepareWebGLDisplayObjectRender(state, root)) return;
   renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
+  renderWebGL(state);
 }

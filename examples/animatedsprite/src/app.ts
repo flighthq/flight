@@ -16,11 +16,10 @@ import {
   setTransformX,
   setTransformY,
   startApplicationLoop,
-  updateSpriteBeforeRender,
   updateSpritesheetPlayer,
 } from '@flighthq/sdk';
 
-import { render, scale, state } from './render';
+import { render, scale } from './render';
 
 const SCALE = 4;
 const TILE_SIZE = 32;
@@ -89,7 +88,6 @@ connectSignal(app.onUpdate, (delta) => {
   }
 });
 connectSignal(app.onRender, () => {
-  updateSpriteBeforeRender(state, root);
   render(root);
 });
 startApplicationLoop(app);

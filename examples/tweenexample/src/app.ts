@@ -13,11 +13,10 @@ import {
   invalidateRender,
   Quad,
   startApplicationLoop,
-  updateDisplayObjectBeforeRender,
   updateTweens,
 } from '@flighthq/sdk';
 
-import { render, scale, state } from './render';
+import { render, scale } from './render';
 
 const STAGE_WIDTH = 550;
 const STAGE_HEIGHT = 400;
@@ -67,6 +66,6 @@ for (let i = 0; i < CIRCLE_COUNT; i++) {
 const app = createApplication();
 connectSignal(app.onUpdate, (delta) => updateTweens(manager, delta));
 connectSignal(app.onRender, () => {
-  if (updateDisplayObjectBeforeRender(state, root)) render(root);
+  render(root);
 });
 startApplicationLoop(app);

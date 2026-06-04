@@ -3,9 +3,10 @@ import {
   createWebGLElement,
   createWebGLRenderState,
   defaultWebGLTilemapRenderer,
+  prepareWebGLSpriteRender,
   registerRenderer,
+  renderWebGL,
   renderWebGLBackground,
-  renderWebGLSprite,
   TilemapKind,
 } from '@flighthq/sdk';
 
@@ -22,6 +23,7 @@ registerRenderer(state, TilemapKind, defaultWebGLTilemapRenderer);
 export const scale = pixelRatio;
 
 export function render(root: Tilemap): void {
+  if (!prepareWebGLSpriteRender(state, root)) return;
   renderWebGLBackground(state);
-  renderWebGLSprite(state, root);
+  renderWebGL(state);
 }
