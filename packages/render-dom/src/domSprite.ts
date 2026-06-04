@@ -85,7 +85,7 @@ export function renderDOMSprite(state: DOMRenderState, source: SpriteNode): void
     const current = tempStack[--stackLength] as SpriteNode;
     const data = getOrCreateSpriteRenderNode(state, current);
 
-    const shouldRender = data.visible && data.alpha > 0 && (data.transform2D.a !== 0 || data.transform2D.d !== 0);
+    const shouldRender = data.visible && data.alpha > 0 && !(data.transform2D.a === 0 && data.transform2D.d === 0);
     if (!shouldRender) continue;
 
     if (data.renderer !== null) {
@@ -101,10 +101,12 @@ export function renderDOMSprite(state: DOMRenderState, source: SpriteNode): void
       if (result.needsReconcile) needsReconcile = true;
     }
 
-    const children = getSpriteNodeRuntime(current).children;
-    if (children !== null) {
-      for (let i = children.length - 1; i >= 0; i--) {
-        tempStack[stackLength++] = children[i] as SpriteNode;
+    if (data.updateChildren) {
+      const children = getSpriteNodeRuntime(current).children;
+      if (children !== null) {
+        for (let i = children.length - 1; i >= 0; i--) {
+          tempStack[stackLength++] = children[i] as SpriteNode;
+        }
       }
     }
   }

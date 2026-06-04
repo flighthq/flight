@@ -1,6 +1,4 @@
-﻿import { createNullRendererData } from '@flighthq/render';
-import { getOrCreateSpriteRenderNode } from '@flighthq/render';
-import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
+﻿import { createNullRendererData, renderSpriteTree } from '@flighthq/render';
 import type { CanvasRenderState, Sprite, SpriteNode, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 import { setCanvasBlendMode } from './canvasMaterials';
@@ -45,38 +43,8 @@ export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRen
   }
 }
 
-function drawObject(state: CanvasRenderState, data: SpriteRenderNode): void {
-  if (data.renderer === null) return;
-  data.renderer.draw(state, data);
-}
-
 export function renderCanvasSprite(state: CanvasRenderState, source: SpriteNode): void {
-  // const currentFrameID = state.currentFrameID;
-  const tempStack = state.tempStack;
-  let stackLength = 0;
-
-  // Start with root
-  tempStack[stackLength++] = source;
-
-  while (stackLength > 0) {
-    const current = tempStack[--stackLength] as SpriteNode;
-    const data = getOrCreateSpriteRenderNode(state, current);
-
-    const shouldRender = data.visible && data.alpha > 0 && (data.transform2D.a !== 0 || data.transform2D.d !== 0);
-    if (!shouldRender) continue;
-
-    // Ã¢â€â‚¬Ã¢â€â‚¬ Draw current object first (pre-order) Ã¢â€â‚¬Ã¢â€â‚¬
-    drawObject(state, data);
-
-    // Then push children in forward order (so we pop & draw index 0 first)
-    const children = getSpriteNodeRuntime(current).children;
-    if (children !== null) {
-      // Push from last to first Ã¢â€ â€™ pop gives index 0 first
-      for (let i = children.length - 1; i >= 0; i--) {
-        tempStack[stackLength++] = children[i] as SpriteNode;
-      }
-    }
-  }
+  renderSpriteTree(state, source);
 }
 
 export const defaultCanvasSpriteRenderer: SpriteRenderer = {
