@@ -1,5 +1,5 @@
 ﻿import { registerRenderer } from '@flighthq/render';
-import { updateDisplayObjectBeforeRender } from '@flighthq/render';
+import { updateDisplayObject } from '@flighthq/render';
 import {
   createCanvasRenderState,
   defaultCanvasDisplayObjectRenderer,
@@ -17,6 +17,6 @@ test('attach renderer to new canvas', () => {
   const obj = createDisplayObject();
 
   registerRenderer(renderState, DisplayObjectKind, defaultCanvasDisplayObjectRenderer);
-  updateDisplayObjectBeforeRender(renderState, obj);
+  updateDisplayObject(renderState, obj);
   renderCanvasDisplayObject(renderState, obj);
 });
