@@ -18,8 +18,6 @@ export interface RenderState extends Entity {
   readonly backgroundColorString: string;
   readonly currentFrameID: number;
   currentMaskDepth: number;
-  readonly currentQueue: RenderNode[];
-  readonly currentQueueLength: number;
   currentScrollRectangleDepth: number;
   displayObjectMaskHooks: DisplayObjectMaskHooks | null;
   scrollRectangleHooks: ScrollRectangleHooks | null;
