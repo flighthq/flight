@@ -1,6 +1,6 @@
 ﻿import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
 import { registerRenderer } from '@flighthq/render';
-import { updateSpriteBeforeRender } from '@flighthq/render';
+import { updateSprite } from '@flighthq/render';
 import { getOrCreateSpriteRenderNode } from '@flighthq/render';
 import { addSceneChild, setTransformScaleX, setTransformScaleY, setTransformX, setTransformY } from '@flighthq/scene';
 import { createSprite } from '@flighthq/scene-sprite';
@@ -33,7 +33,7 @@ describe('drawCanvasSprite', () => {
     const sprite = createSprite();
     sprite.data.atlas = atlas;
     sprite.data.id = 0;
-    updateSpriteBeforeRender(state, sprite);
+    updateSprite(state, sprite);
     const renderNode = getOrCreateSpriteRenderNode(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasSprite(state, renderNode);
@@ -43,7 +43,7 @@ describe('drawCanvasSprite', () => {
   it('skips draw when atlas is null', () => {
     const state = makeState();
     const sprite = createSprite();
-    updateSpriteBeforeRender(state, sprite);
+    updateSprite(state, sprite);
     const renderNode = getOrCreateSpriteRenderNode(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasSprite(state, renderNode);
@@ -69,7 +69,7 @@ describe('renderCanvasSprite', () => {
 
     const spy = vi.spyOn(state.context, 'setTransform');
 
-    updateSpriteBeforeRender(state, root);
+    updateSprite(state, root);
     renderCanvasSprite(state, root);
 
     const calls = spy.mock.calls as unknown as [number, number, number, number, number, number][];
@@ -86,7 +86,7 @@ describe('renderCanvasSprite', () => {
 
     const spy = vi.spyOn(state.context, 'drawImage');
 
-    updateSpriteBeforeRender(state, sprite);
+    updateSprite(state, sprite);
     renderCanvasSprite(state, sprite);
 
     expect(spy).toHaveBeenCalledOnce();
@@ -105,7 +105,7 @@ describe('renderCanvasSprite', () => {
 
     const spy = vi.spyOn(state.context, 'drawImage');
 
-    updateSpriteBeforeRender(state, sprite);
+    updateSprite(state, sprite);
     renderCanvasSprite(state, sprite);
 
     expect(spy).not.toHaveBeenCalled();

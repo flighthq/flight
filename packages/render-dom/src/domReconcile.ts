@@ -21,13 +21,14 @@ export function processDOMNode(
   currentFrameID: number,
   drawFn: () => void,
   newLength: number,
+  forceDraw = false,
 ): { newLength: number; needsReconcile: boolean } {
   const isNew = !internal.domElementMap.has(data);
   const appearanceDirty = data.appearanceFrameID === currentFrameID;
   const transformDirty = data.transformFrameID === currentFrameID;
   let needsReconcile = false;
 
-  if (isNew || appearanceDirty || transformDirty) {
+  if (isNew || appearanceDirty || transformDirty || forceDraw) {
     const prevElement = isNew ? undefined : internal.domElementMap.get(data);
     internal.domCurrentElement = null;
     drawFn();
@@ -35,6 +36,9 @@ export function processDOMNode(
     if (newElement !== null) {
       internal.domElementMap.set(data, newElement);
       if (newElement !== prevElement) needsReconcile = true;
+    } else if (prevElement !== undefined) {
+      internal.domElementMap.delete(data);
+      needsReconcile = true;
     }
   }
 

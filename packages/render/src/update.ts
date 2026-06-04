@@ -22,7 +22,7 @@ import { updateDisplayObjectRenderTransform, updateRenderNode2DTransform } from 
 /**
  * First pass, update appearance, transforms, identify masks
  */
-export function updateDisplayObjectBeforeRender(state: RenderState, source: DisplayObject): boolean {
+export function updateDisplayObject(state: RenderState, source: DisplayObject): boolean {
   const internal = state as RenderNodeStateInternal;
   const tempStack = state.tempStack;
   const currentFrameID = ++internal.currentFrameID;
@@ -120,7 +120,7 @@ export function updateDisplayObjectBeforeRender(state: RenderState, source: Disp
   return treeDirty;
 }
 
-export function updateSpriteBeforeRender(state: RenderState, source: SpriteNode): boolean {
+export function updateSprite(state: RenderState, source: SpriteNode): boolean {
   const tempStack = state.tempStack;
   ++(state as RenderNodeStateInternal).currentFrameID;
 

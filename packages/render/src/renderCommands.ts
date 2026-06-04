@@ -77,7 +77,7 @@ export function buildRenderCommands(state: RenderState, source: DisplayObject): 
           popActions.push({ kind: RenderCommandKind.PopMask, node: maskData, atStackLength: prePushLength });
         }
 
-        // ScrollRect wraps children only — skip if none were pushed.
+        // ScrollRect wraps children only - skip if none were pushed.
         if (hasScrollRects && current.scrollRectangle !== null && stackLength > prePushLength) {
           acquireRenderCommand(pool, RenderCommandKind.PushScrollRect, data);
           // PushScrollRect is scheduled AFTER PopMask so it fires (pops) BEFORE PopMask.
@@ -89,9 +89,37 @@ export function buildRenderCommands(state: RenderState, source: DisplayObject): 
     drainPops(pool, popActions, stackLength);
   }
 
-  // Safety drain — should not occur in valid, fully-connected trees.
+  // Safety drain - should not occur in valid, fully-connected trees.
   for (let i = popActions.length - 1; i >= 0; i--) {
     acquireRenderCommand(pool, popActions[i].kind, popActions[i].node);
+  }
+}
+
+export function executeRenderCommands(state: RenderState): void {
+  const pool = state.commandPool;
+  const count = pool.commandCount;
+  const cmds = pool.commands;
+
+  for (let i = 0; i < count; i++) {
+    const cmd = cmds[i];
+    const data = cmd.node as DisplayObjectRenderNode;
+    switch (cmd.kind) {
+      case RenderCommandKind.DrawNode:
+        if (data.renderer !== null) data.renderer.draw(state, data);
+        break;
+      case RenderCommandKind.PushMask:
+        state.displayObjectMaskHooks?.pushMask(state, data);
+        break;
+      case RenderCommandKind.PopMask:
+        state.displayObjectMaskHooks?.popMask(state, data);
+        break;
+      case RenderCommandKind.PushScrollRect:
+        state.scrollRectangleHooks?.push(state, data);
+        break;
+      case RenderCommandKind.PopScrollRect:
+        state.scrollRectangleHooks?.pop(state);
+        break;
+    }
   }
 }
 
