@@ -1,12 +1,12 @@
 export * from './domBackground';
 export * from './domBitmap';
 export * from './domClipRect';
-export * from './domDisplayObject';
 export { invalidateDOMFontSource } from './domFontSource';
 export * from './domInputText';
 export * from './domMask';
 export * from './domMaterials';
 export * from './domQuadBatch';
+export * from './domRender';
 export * from './domRenderCache';
 export * from './domRenderState';
 export * from './domRichText';

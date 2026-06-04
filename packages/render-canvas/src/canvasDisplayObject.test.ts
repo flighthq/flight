@@ -7,7 +7,6 @@ import {
   defaultCanvasDisplayObjectRenderer,
   drawCanvasDisplayObject,
   drawCanvasDisplayObjectMask,
-  renderCanvasDisplayObject,
 } from './canvasDisplayObject';
 import { createCanvasRenderState } from './canvasRenderState';
 
@@ -64,28 +63,5 @@ describe('drawCanvasDisplayObjectMask', () => {
     drawCanvasDisplayObjectMask(state, data);
 
     expect(rectSpy).not.toHaveBeenCalled();
-  });
-});
-
-describe('renderCanvasDisplayObject', () => {
-  it('does not throw for a simple visible object', () => {
-    const state = makeState();
-    const obj = createDisplayObject();
-    obj.visible = true;
-
-    expect(() => renderCanvasDisplayObject(state, obj)).not.toThrow();
-  });
-
-  it('skips invisible objects', () => {
-    const state = makeState();
-    const obj = createDisplayObject();
-    obj.visible = false;
-    const data = getOrCreateDisplayObjectRenderNode(state, obj);
-    data.visible = false;
-    const drawImageSpy = vi.spyOn(state.context, 'drawImage');
-
-    renderCanvasDisplayObject(state, obj);
-
-    expect(drawImageSpy).not.toHaveBeenCalled();
   });
 });

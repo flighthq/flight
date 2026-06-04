@@ -17,10 +17,6 @@
       "types": "./dist/domBitmap.d.ts",
       "default": "./dist/domBitmap.js"
     },
-    "./displayObject": {
-      "types": "./dist/domDisplayObject.d.ts",
-      "default": "./dist/domDisplayObject.js"
-    },
     "./htmlView": {
       "types": "./dist/htmlView.d.ts",
       "default": "./dist/htmlView.js"

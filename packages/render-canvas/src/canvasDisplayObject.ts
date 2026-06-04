@@ -1,5 +1,4 @@
-﻿import { createNullRendererData } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode, renderDisplayObjectTree } from '@flighthq/render';
+import { createNullRendererData, getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
 
@@ -15,10 +14,6 @@ export function drawCanvasDisplayObjectMask(state: CanvasRenderState, data: Disp
       state.displayObjectMaskRendererMap.get(child.source.kind)?.drawMask(state, child);
     }
   }
-}
-
-export function renderCanvasDisplayObject(state: CanvasRenderState, source: DisplayObject): void {
-  renderDisplayObjectTree(state, source);
 }
 
 export const defaultCanvasDisplayObjectRenderer: DisplayObjectRenderer = {

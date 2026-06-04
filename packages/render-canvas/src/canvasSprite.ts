@@ -1,5 +1,5 @@
-﻿import { createNullRendererData, renderSpriteTree } from '@flighthq/render';
-import type { CanvasRenderState, Sprite, SpriteNode, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
+import { createNullRendererData } from '@flighthq/render';
+import type { CanvasRenderState, Sprite, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 import { setCanvasBlendMode } from './canvasMaterials';
 
@@ -41,10 +41,6 @@ export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRen
   if (!state.allowSmoothing) {
     context.imageSmoothingEnabled = true;
   }
-}
-
-export function renderCanvasSprite(state: CanvasRenderState, source: SpriteNode): void {
-  renderSpriteTree(state, source);
 }
 
 export const defaultCanvasSpriteRenderer: SpriteRenderer = {

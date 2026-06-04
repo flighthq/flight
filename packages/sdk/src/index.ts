@@ -8,14 +8,12 @@ export * from '@flighthq/interaction';
 export * from '@flighthq/materials';
 export * from '@flighthq/media';
 export * from '@flighthq/render';
-export * from '@flighthq/render';
 export * from '@flighthq/render-canvas';
 export * from '@flighthq/render-dom';
 export * from '@flighthq/render-webgl';
 export * from '@flighthq/scene';
 export * from '@flighthq/scene-display';
 export * from '@flighthq/scene-sprite';
-// export * from '@flighthq/scene-world'; // no exports yet
 export * from '@flighthq/signals';
 export * from '@flighthq/spritesheet';
 export * from '@flighthq/surface';

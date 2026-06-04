@@ -1,8 +1,8 @@
 ﻿import { createMatrix } from '@flighthq/geometry';
-import { getOrCreateDisplayObjectRenderNode, updateDisplayObjectBeforeRender } from '@flighthq/render';
-import { ImageRenderCacheKind } from '@flighthq/render';
+import { getOrCreateDisplayObjectRenderNode, ImageRenderCacheKind } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 
+import { prepareWebGLDisplayObjectRender } from './webglRender';
 import {
   defaultWebGLRenderImageCacheRenderer,
   drawWebGLImageCacheResult,
@@ -25,7 +25,7 @@ describe('drawWebGLImageCacheResult', () => {
   it('does not throw when source is null', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    updateDisplayObjectBeforeRender(state, obj);
+    prepareWebGLDisplayObjectRender(state, obj);
     const data = getOrCreateDisplayObjectRenderNode(state, obj);
 
     expect(() => drawWebGLImageCacheResult(state, data, { source: null, transform: createMatrix() })).not.toThrow();
@@ -34,7 +34,7 @@ describe('drawWebGLImageCacheResult', () => {
   it('does not throw when source.src is null', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    updateDisplayObjectBeforeRender(state, obj);
+    prepareWebGLDisplayObjectRender(state, obj);
     const data = getOrCreateDisplayObjectRenderNode(state, obj);
     const imageSource = { src: null, width: 32, height: 32, version: 0 } as any;
 
@@ -46,7 +46,7 @@ describe('drawWebGLImageCacheResult', () => {
   it('does not throw when source dimensions are zero', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    updateDisplayObjectBeforeRender(state, obj);
+    prepareWebGLDisplayObjectRender(state, obj);
     const data = getOrCreateDisplayObjectRenderNode(state, obj);
     const canvas = document.createElement('canvas');
     const imageSource = { src: canvas, width: 0, height: 0, version: 0 } as any;
@@ -59,7 +59,7 @@ describe('drawWebGLImageCacheResult', () => {
   it('does not throw when source is valid', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    updateDisplayObjectBeforeRender(state, obj);
+    prepareWebGLDisplayObjectRender(state, obj);
     const data = getOrCreateDisplayObjectRenderNode(state, obj);
     data.alpha = 1;
     const canvas = document.createElement('canvas');
