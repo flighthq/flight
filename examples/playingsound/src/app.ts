@@ -21,7 +21,7 @@ import {
   setAudioChannelGain,
   startApplicationLoop,
   stopAudioChannel,
-  updateDisplayObjectBeforeRender,
+  updateDisplayObject,
   updateTweens,
 } from '@flighthq/sdk';
 
@@ -122,6 +122,6 @@ connectSignal(app.onUpdate, (delta) => {
   updateTweens(manager, delta);
 });
 connectSignal(app.onRender, () => {
-  if (updateDisplayObjectBeforeRender(state, root)) render(root);
+  if (updateDisplayObject(state, root)) render(root);
 });
 startApplicationLoop(app);

@@ -3,7 +3,7 @@ import {
   createBitmap,
   createDisplayObject,
   loadImageSourceFromURL,
-  updateDisplayObjectBeforeRender,
+  updateDisplayObject,
 } from '@flighthq/sdk';
 
 import { render, scale, state } from './render';
@@ -20,7 +20,7 @@ bitmap.y = (400 - image.height) / 2;
 addSceneChild(main, bitmap);
 
 function enterFrame() {
-  if (updateDisplayObjectBeforeRender(state, main)) {
+  if (updateDisplayObject(state, main)) {
     render(main);
   }
   requestAnimationFrame(enterFrame);

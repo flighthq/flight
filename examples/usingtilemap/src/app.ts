@@ -4,7 +4,7 @@ import {
   setTilemapTile,
   setTransformX,
   setTransformY,
-  updateSpriteBeforeRender,
+  updateSprite,
 } from '@flighthq/sdk';
 
 import { render, scale, state } from './render';
@@ -34,7 +34,7 @@ for (let r = 0; r < ROWS; r++) {
 }
 
 function enterFrame(): void {
-  if (updateSpriteBeforeRender(state, tilemap)) {
+  if (updateSprite(state, tilemap)) {
     render(tilemap);
   }
   requestAnimationFrame(enterFrame);

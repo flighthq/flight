@@ -14,7 +14,7 @@ import {
   createTextLayoutResult,
   invalidateRender,
   startApplicationLoop,
-  updateDisplayObjectBeforeRender,
+  updateDisplayObject,
 } from '@flighthq/sdk';
 
 import { render, scale, state } from './render';
@@ -148,7 +148,7 @@ invalidateRender(root);
 
 const app = createApplication();
 connectSignal(app.onRender, () => {
-  if (updateDisplayObjectBeforeRender(state, root)) render(root);
+  if (updateDisplayObject(state, root)) render(root);
 });
 startApplicationLoop(app);
 
