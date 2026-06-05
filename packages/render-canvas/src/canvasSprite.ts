@@ -1,4 +1,4 @@
-import { createNullRendererData, isRenderNodeVisible } from '@flighthq/render';
+import { createNullRendererData, getSpriteRenderNode, isRenderNodeVisible } from '@flighthq/render';
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
 import type { CanvasRenderState, Sprite, SpriteNode, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
@@ -56,8 +56,8 @@ export function renderCanvasSprite(state: CanvasRenderState, source: SpriteNode)
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as SpriteNode;
-    const data = state.renderNodeMap.get(current) as SpriteRenderNode | undefined;
-
+    if (!current.enabled) continue;
+    const data = getSpriteRenderNode(state, current);
     if (data === undefined || !isRenderNodeVisible(data)) continue;
 
     if (data.renderer !== null) data.renderer.draw(state, data);

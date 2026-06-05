@@ -1,6 +1,6 @@
-import { isRenderNodeVisible } from '@flighthq/render';
+import { getSpriteRenderNode, isRenderNodeVisible } from '@flighthq/render';
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
-import type { SpriteNode, SpriteRenderNode, WebGLRenderState } from '@flighthq/types';
+import type { SpriteNode, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { useWebGLProgram } from './webglDraw';
@@ -8,17 +8,15 @@ import { useWebGLProgram } from './webglDraw';
 export function renderWebGLSprite(state: WebGLRenderState, source: SpriteNode): void {
   const internal = state as WebGLRenderStateInternal;
   const tempStack = state.tempStack;
-  let stackLength = 0;
+  let stackLength = 1;
+  tempStack[0] = source;
 
   useWebGLProgram(internal);
 
-  tempStack[stackLength++] = source;
-
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as SpriteNode;
-
-    const data = state.renderNodeMap.get(current) as SpriteRenderNode | undefined;
-
+    if (!current.enabled) continue;
+    const data = getSpriteRenderNode(state, current);
     if (data === undefined || !isRenderNodeVisible(data)) continue;
 
     data.renderer?.draw(internal, data);

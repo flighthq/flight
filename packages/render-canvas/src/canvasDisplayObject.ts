@@ -37,7 +37,7 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
 
     if (!current.enabled) continue;
 
-    const data = state.renderNodeMap.get(current) as DisplayObjectRenderNode | undefined;
+    const data = getDisplayObjectRenderNode(state, current);
     if (data === undefined) continue;
 
     if (data.isMaskFrameID === frameID) continue;

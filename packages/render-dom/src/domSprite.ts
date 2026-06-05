@@ -1,5 +1,5 @@
 ﻿import { createEntity } from '@flighthq/entity';
-import { isRenderNodeVisible } from '@flighthq/render';
+import { getSpriteRenderNode, isRenderNodeVisible } from '@flighthq/render';
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
 import type {
   DOMRenderState,
@@ -92,8 +92,8 @@ export function renderDOMSprite(state: DOMRenderState, source: SpriteNode): void
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as SpriteNode;
-    const data = state.renderNodeMap.get(current) as SpriteRenderNode | undefined;
-
+    if (!current.enabled) continue;
+    const data = getSpriteRenderNode(state, current);
     if (data === undefined || !isRenderNodeVisible(data)) continue;
 
     if (data.renderer !== null) {

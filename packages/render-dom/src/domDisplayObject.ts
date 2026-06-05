@@ -8,7 +8,9 @@ import type { DOMRenderStateInternal } from './internal';
 export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObject): void {
   const internal = state as DOMRenderStateInternal;
   const container = state.element;
-  const hooks = internal.domClipHooks;
+  const maskHooks = state.displayObjectMaskHooks;
+  const scrollRectHooks = state.scrollRectangleHooks;
+  const clipHooks = internal.domClipHooks;
   const frameID = state.currentFrameID;
   const tempStack = state.tempStack;
 
@@ -17,7 +19,8 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
 
   let newLength = 0;
   let needsReconcile = false;
-  let currentClipDepth = 0;
+  let currentMaskDepth = 0;
+  let currentScrollRectDepth = 0;
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as DisplayObject;
@@ -27,26 +30,33 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
     const data = getDisplayObjectRenderNode(state, current);
     if (data === undefined || data.isMaskFrameID === frameID) continue;
 
-    if (hooks !== null) {
-      const targetDepth = data.maskDepth + data.scrollRectangleDepth;
-      if (currentClipDepth > targetDepth) {
-        hooks.pop(state, currentClipDepth - targetDepth);
-        currentClipDepth = targetDepth;
-      }
+    while (maskHooks !== null && currentMaskDepth > data.maskDepth) {
+      maskHooks.popMask(state);
+      currentMaskDepth--;
+    }
+    while (scrollRectHooks !== null && currentScrollRectDepth > data.scrollRectangleDepth) {
+      scrollRectHooks.pop(state);
+      currentScrollRectDepth--;
     }
 
     if (!isRenderNodeVisible(data)) continue;
 
-    let pushed = 0;
-    if (hooks !== null) pushed = hooks.push(state, data);
-    currentClipDepth += pushed;
+    if (maskHooks !== null && current.mask !== null) {
+      const maskData = getDisplayObjectRenderNode(state, current.mask);
+      if (maskData !== undefined) {
+        maskHooks.pushMask(state, maskData);
+        currentMaskDepth++;
+      }
+    }
 
     if (data.renderer !== null) {
       const result = processDOMNode(internal, data, frameID, () => data.renderer!.draw(state, data), newLength);
       newLength = result.newLength;
       if (result.needsReconcile) needsReconcile = true;
-      if (hooks !== null) hooks.apply(state, data);
+      if (clipHooks !== null) clipHooks.apply(state, data);
     }
+
+    const prePushLength = stackLength;
 
     if (data.traverseChildren) {
       const children = getDisplayObjectRuntime(current).children;
@@ -56,9 +66,15 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
         }
       }
     }
+
+    if (scrollRectHooks !== null && current.scrollRectangle !== null && stackLength > prePushLength) {
+      scrollRectHooks.push(state, data);
+      currentScrollRectDepth++;
+    }
   }
 
-  if (hooks !== null && currentClipDepth > 0) hooks.pop(state, currentClipDepth);
+  while (currentMaskDepth-- > 0) maskHooks!.popMask(state);
+  while (currentScrollRectDepth-- > 0) scrollRectHooks!.pop(state);
 
   if (detectDOMStructureChange(internal, newLength, needsReconcile)) {
     reconcileDOMContainer(container, internal, newLength);
