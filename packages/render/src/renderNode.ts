@@ -106,6 +106,10 @@ export function getOrCreateSpriteRenderNode(state: RenderState, source: SpriteNo
   return getOrCreateRenderNode(state, source, createSpriteRenderNode);
 }
 
+export function getSpriteRenderNode(state: RenderState, source: SpriteNode): SpriteRenderNode | undefined {
+  return state.renderNodeMap.get(source) as SpriteRenderNode | undefined;
+}
+
 export function isRenderNodeVisible(data: RenderNode2D): boolean {
   return data.visible && data.alpha > 0 && !(data.transform2D.a === 0 && data.transform2D.d === 0);
 }

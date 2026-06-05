@@ -4,8 +4,6 @@ import type { DOMStageRectangle } from './domClipRect';
 
 export interface DOMClipHooks {
   apply(state: DOMRenderState, data: DisplayObjectRenderNode): void;
-  pop(state: DOMRenderState, pushed: number): void;
-  push(state: DOMRenderState, data: DisplayObjectRenderNode): number;
 }
 
 export type DOMRenderStateInternal = Omit<DOMRenderState, 'element'> & {

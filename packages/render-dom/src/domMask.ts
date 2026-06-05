@@ -10,6 +10,7 @@ import type {
 import { RenderFeatures } from '@flighthq/types';
 
 import { createDOMStageRectangle, type DOMStageRectangle, setDOMClipHooks } from './domClipRect';
+import type { DOMRenderStateInternal } from './internal';
 
 export function enableDOMMaskSupport(state: DOMRenderState): void {
   enableRenderFeatures(state, RenderFeatures.Masks);
@@ -27,10 +28,12 @@ export function pushDOMMaskRectangle(rectangles: DOMStageRectangle[], data: Disp
   rectangles.push(createDOMStageRectangle(bounds, data.transform2D));
 }
 
-function popDOMMask(_state: RenderState): void {}
+function popDOMMask(state: RenderState): void {
+  (state as DOMRenderStateInternal).domClipStack.length--;
+}
 
-function pushDOMMask(_state: RenderState, data: DisplayObjectRenderNode, context?: unknown): void {
-  pushDOMMaskRectangle(context as DOMStageRectangle[], data);
+function pushDOMMask(state: RenderState, data: DisplayObjectRenderNode): void {
+  pushDOMMaskRectangle((state as DOMRenderStateInternal).domClipStack, data);
 }
 
 const domMaskHooks: DisplayObjectMaskHooks = {

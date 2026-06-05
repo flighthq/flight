@@ -1,11 +1,11 @@
-﻿import { enableRenderFeatures, hasRenderFeatures } from '@flighthq/render';
-import { getDisplayObjectRenderNode } from '@flighthq/render';
+﻿import { enableRenderFeatures } from '@flighthq/render';
 import type {
   DisplayObject,
   DisplayObjectRenderNode,
   DOMRenderState,
   MatrixLike,
   RectangleLike,
+  ScrollRectangleHooks,
 } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
 
@@ -68,6 +68,7 @@ export function createDOMStageRectangle(
 
 export function enableDOMScrollRectangleSupport(state: DOMRenderState): void {
   enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
+  state.scrollRectangleHooks = domScrollRectangleHooks;
   setDOMClipHooks(state);
 }
 
@@ -168,33 +169,16 @@ function mapStageRectangleToElement(rect: DOMStageRectangle, element: HTMLElemen
 
 const EMPTY_CLIP_PATH = 'inset(0 100% 100% 0)';
 
-const domClipHooksImpl: DOMClipHooks = {
-  push(state: DOMRenderState, data: DisplayObjectRenderNode): number {
-    const internal = state as DOMRenderStateInternal;
-    const stack = internal.domClipStack;
-    let pushed = 0;
-    const source = data.source as DisplayObject;
-    if (source.scrollRectangle !== null && hasRenderFeatures(state, RenderFeatures.ScrollRectangle)) {
-      pushDOMScrollRectangle(stack, data);
-      pushed++;
-    }
-    if (source.mask !== null) {
-      const maskHooks = state.displayObjectMaskHooks;
-      if (maskHooks !== null) {
-        const maskData = getDisplayObjectRenderNode(state, source.mask);
-        if (maskData !== undefined) {
-          maskHooks.pushMask(state, maskData, stack);
-          pushed++;
-        }
-      }
-    }
-    return pushed;
+const domScrollRectangleHooks: ScrollRectangleHooks = {
+  pop: (state) => {
+    (state as DOMRenderStateInternal).domClipStack.length--;
   },
+  push: (state, data) => pushDOMScrollRectangle((state as DOMRenderStateInternal).domClipStack, data),
+};
+
+const domClipHooksImpl: DOMClipHooks = {
   apply(state: DOMRenderState, data: DisplayObjectRenderNode): void {
     const internal = state as DOMRenderStateInternal;
     applyDOMClipRectangles(internal, data, internal.domClipStack);
-  },
-  pop(state: DOMRenderState, pushed: number): void {
-    (state as DOMRenderStateInternal).domClipStack.length -= pushed;
   },
 };
