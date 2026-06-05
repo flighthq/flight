@@ -1,30 +1,6 @@
-import { enableRenderFeatures } from '@flighthq/render';
-import type {
-  CanvasRenderState,
-  DisplayObject,
-  DisplayObjectRenderNode,
-  Matrix,
-  RectangleLike,
-  ScrollRectangleHooks,
-} from '@flighthq/types';
-import { RenderFeatures } from '@flighthq/types';
+import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, Matrix, RectangleLike } from '@flighthq/types';
 
 import { setCanvasTransform } from './canvasTransform';
-
-const canvasScrollRectangleHooks: ScrollRectangleHooks = {
-  pop: (state) => popCanvasClipRectangle(state as CanvasRenderState),
-  push: (state, data) =>
-    pushCanvasClipRectangle(
-      state as CanvasRenderState,
-      (data.source as DisplayObject).scrollRectangle!,
-      data.transform2D,
-    ),
-};
-
-export function enableCanvasScrollRectangleSupport(state: CanvasRenderState): void {
-  state.scrollRectangleHooks = canvasScrollRectangleHooks;
-  enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
-}
 
 export function popCanvasClipRectangle(state: CanvasRenderState): void {
   state.context.restore();

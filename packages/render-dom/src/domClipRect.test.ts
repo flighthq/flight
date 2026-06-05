@@ -2,11 +2,11 @@
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 
+import { enableDOMScrollRectangleSupport } from './domClip';
 import {
   applyDOMClipRectangles,
   createDOMStageRectangle,
   type DOMStageRectangle,
-  enableDOMScrollRectangleSupport,
   pushDOMClipRectangle,
   pushDOMScrollRectangle,
   setDOMClipHooks,

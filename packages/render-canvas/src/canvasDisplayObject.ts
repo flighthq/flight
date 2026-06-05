@@ -24,47 +24,28 @@ export const defaultCanvasDisplayObjectRenderer: DisplayObjectRenderer = {
 export function renderCanvasDisplayObject(state: CanvasRenderState, source: DisplayObject): void {
   const tempStack = state.tempStack;
   const frameID = state.currentFrameID;
-  const maskHooks = state.displayObjectMaskHooks;
-  const scrollRectHooks = state.scrollRectangleHooks;
+  const clipHooks = state.displayObjectClipHooks;
 
   let stackLength = 1;
   tempStack[0] = source;
-  let currentMaskDepth = 0;
-  let currentScrollRectDepth = 0;
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as DisplayObject;
-
     if (!current.enabled) continue;
 
     const data = getDisplayObjectRenderNode(state, current);
-    if (data === undefined) continue;
+    if (data === undefined || data.isMaskFrameID === frameID) continue;
 
-    if (data.isMaskFrameID === frameID) continue;
-
-    while (maskHooks !== null && currentMaskDepth > data.maskDepth) {
-      maskHooks.popMask(state);
-      currentMaskDepth--;
-    }
-    while (scrollRectHooks !== null && currentScrollRectDepth > data.scrollRectangleDepth) {
-      scrollRectHooks.pop(state);
-      currentScrollRectDepth--;
-    }
+    clipHooks?.popMask(state, data);
+    clipHooks?.popScrollRectangle(state, data);
 
     if (!isRenderNodeVisible(data)) continue;
 
-    if (maskHooks !== null && current.mask !== null) {
-      const maskData = state.renderNodeMap.get(current.mask) as DisplayObjectRenderNode | undefined;
-      if (maskData !== undefined) {
-        maskHooks.pushMask(state, maskData);
-        currentMaskDepth++;
-      }
-    }
+    clipHooks?.pushMask(state, current);
 
     if (data.renderer !== null) data.renderer.draw(state, data);
 
     const prePushLength = stackLength;
-
     if (data.traverseChildren) {
       const children = getDisplayObjectRuntime(current).children;
       if (children !== null) {
@@ -74,12 +55,8 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
       }
     }
 
-    if (scrollRectHooks !== null && current.scrollRectangle !== null && stackLength > prePushLength) {
-      scrollRectHooks.push(state, data);
-      currentScrollRectDepth++;
-    }
+    clipHooks?.pushScrollRectangle(state, data, current, stackLength > prePushLength);
   }
 
-  while (currentMaskDepth-- > 0) maskHooks!.popMask(state);
-  while (currentScrollRectDepth-- > 0) scrollRectHooks!.pop(state);
+  clipHooks?.finalize(state);
 }

@@ -4,7 +4,8 @@ import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { drawWebGLMask, enableWebGLMaskSupport, popWebGLMask, pushWebGLMask } from './webglMask';
+import { enableWebGLMaskSupport } from './webglClip';
+import { drawWebGLMask, popWebGLMask, pushWebGLMask } from './webglMask';
 import { makeWebGLState } from './webglTestHelper';
 
 function makeRenderer() {
@@ -50,7 +51,7 @@ describe('enableWebGLMaskSupport', () => {
 
     enableWebGLMaskSupport(state);
 
-    expect(state.displayObjectMaskHooks).not.toBeNull();
+    expect(state.displayObjectClipHooks).not.toBeNull();
   });
 });
 

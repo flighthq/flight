@@ -2,8 +2,9 @@
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { appendShapeRectangle, createShape } from '@flighthq/scene-display';
 
+import { enableDOMMaskSupport } from './domClip';
 import type { DOMStageRectangle } from './domClipRect';
-import { enableDOMMaskSupport, pushDOMMaskRectangle } from './domMask';
+import { pushDOMMaskRectangle } from './domMask';
 import { createDOMRenderState } from './domRenderState';
 
 describe('enableDOMMaskSupport', () => {
@@ -12,7 +13,7 @@ describe('enableDOMMaskSupport', () => {
 
     enableDOMMaskSupport(state);
 
-    expect(state.displayObjectMaskHooks).not.toBeNull();
+    expect(state.displayObjectClipHooks).not.toBeNull();
   });
 });
 

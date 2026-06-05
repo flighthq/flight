@@ -13,12 +13,15 @@ export interface DisplayObjectMaskRenderer {
   drawMask(state: RenderState, node: DisplayObjectRenderNode): void;
 }
 
-export interface DisplayObjectMaskHooks {
-  popMask(state: RenderState): void;
-  pushMask(state: RenderState, node: DisplayObjectRenderNode): void;
-}
-
-export interface ScrollRectangleHooks {
-  pop(state: RenderState): void;
-  push(state: RenderState, data: DisplayObjectRenderNode): void;
+export interface DisplayObjectClipHooks {
+  finalize(state: RenderState): void;
+  popMask(state: RenderState, data: DisplayObjectRenderNode): void;
+  popScrollRectangle(state: RenderState, data: DisplayObjectRenderNode): void;
+  pushMask(state: RenderState, source: DisplayObject): void;
+  pushScrollRectangle(
+    state: RenderState,
+    data: DisplayObjectRenderNode,
+    source: DisplayObject,
+    hasChildren: boolean,
+  ): void;
 }

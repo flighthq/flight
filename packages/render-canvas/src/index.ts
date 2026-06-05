@@ -1,5 +1,6 @@
 export * from './canvasBackground';
 export * from './canvasBitmap';
+export * from './canvasClip';
 export * from './canvasClipRect';
 export * from './canvasDisplayObject';
 export * from './canvasElement';

@@ -11,13 +11,13 @@ import { createDisplayObject } from '@flighthq/scene-display';
 import type { WebGLRenderState } from '@flighthq/types';
 import { DisplayObjectKind, RenderFeatures } from '@flighthq/types';
 
+import { enableWebGLMaskSupport } from './webglClip';
 import {
   defaultWebGLDisplayObjectRenderer,
   drawWebGLDisplayObject,
   drawWebGLDisplayObjectMask,
   renderWebGLDisplayObject,
 } from './webglDisplayObject';
-import { enableWebGLMaskSupport } from './webglMask';
 import { createWebGLRenderState } from './webglRenderState';
 
 function makeState(): WebGLRenderState {

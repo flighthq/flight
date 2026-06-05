@@ -4,7 +4,8 @@ import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { drawCanvasMask, enableCanvasMaskSupport, popCanvasMask, pushCanvasMask } from './canvasMask';
+import { enableCanvasMaskSupport } from './canvasClip';
+import { drawCanvasMask, popCanvasMask, pushCanvasMask } from './canvasMask';
 import { createCanvasRenderState } from './canvasRenderState';
 
 function makeState() {
@@ -44,7 +45,7 @@ describe('enableCanvasMaskSupport', () => {
 
     enableCanvasMaskSupport(state);
 
-    expect(state.displayObjectMaskHooks).not.toBeNull();
+    expect(state.displayObjectClipHooks).not.toBeNull();
   });
 });
 

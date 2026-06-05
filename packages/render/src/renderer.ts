@@ -1,5 +1,4 @@
 import {
-  type DisplayObjectMaskHooks,
   type DisplayObjectMaskRenderer,
   type Renderable,
   type Renderer,
@@ -19,7 +18,7 @@ export function copyMaskRenderersFromRenderState(target: RenderState, source: Re
   source.displayObjectMaskRendererMap.forEach((renderer, kind) => {
     registerDisplayObjectMaskRenderer(target, kind, renderer);
   });
-  if (source.displayObjectMaskHooks !== null) setDisplayObjectMaskHooks(target, source.displayObjectMaskHooks);
+  if (source.displayObjectClipHooks !== null) target.displayObjectClipHooks = source.displayObjectClipHooks;
 }
 
 export function copyRenderersFromRenderState(target: RenderState, source: RenderState): void {
@@ -59,9 +58,4 @@ export function registerRenderer(state: RenderState, kind: symbol, renderer: Ren
   if (state.rendererMap.get(kind) === renderer) return;
   (state as RenderStateInternal).rendererMapID = (state.rendererMapID + 1) >>> 0;
   state.rendererMap.set(kind, renderer);
-}
-
-export function setDisplayObjectMaskHooks(state: RenderState, hooks: DisplayObjectMaskHooks | null): void {
-  state.displayObjectMaskHooks = hooks;
-  if (hooks !== null) enableRenderFeatures(state, RenderFeatures.Masks);
 }
