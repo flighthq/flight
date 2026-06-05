@@ -1,5 +1,5 @@
 ﻿import { setDisplayObjectMaskHooks } from '@flighthq/render';
-import type { CanvasRenderState, DisplayObjectMaskHooks } from '@flighthq/types';
+import type { CanvasRenderState, DisplayObjectMaskHooks, DisplayObjectRenderNode } from '@flighthq/types';
 
 import { setCanvasTransform } from './canvasTransform';
 

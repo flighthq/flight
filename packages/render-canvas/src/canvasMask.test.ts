@@ -53,7 +53,7 @@ describe('popCanvasMask', () => {
     const state = makeState();
     const spy = vi.spyOn(state.context, 'restore');
 
-    popCanvasMask(state, {} as any);
+    popCanvasMask(state);
 
     expect(spy).toHaveBeenCalledOnce();
   });

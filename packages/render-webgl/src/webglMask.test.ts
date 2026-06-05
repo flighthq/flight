@@ -59,7 +59,7 @@ describe('popWebGLMask', () => {
     const { state, gl } = makeWebGLState();
     state.currentMaskDepth = 1;
 
-    popWebGLMask(state, {} as any);
+    popWebGLMask(state);
 
     expect(state.currentMaskDepth).toBe(0);
     expect(gl.disable).toHaveBeenCalledWith(gl.STENCIL_TEST);

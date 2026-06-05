@@ -1,4 +1,4 @@
-﻿import { setDisplayObjectMaskHooks } from '@flighthq/render';
+﻿import { enableRenderFeatures, setDisplayObjectMaskHooks } from '@flighthq/render';
 import { getLocalBoundsRectangle } from '@flighthq/scene';
 import type {
   DisplayObject,
@@ -7,10 +7,12 @@ import type {
   DOMRenderState,
   RenderState,
 } from '@flighthq/types';
+import { RenderFeatures } from '@flighthq/types';
 
 import { createDOMStageRectangle, type DOMStageRectangle, setDOMClipHooks } from './domClipRect';
 
 export function enableDOMMaskSupport(state: DOMRenderState): void {
+  enableRenderFeatures(state, RenderFeatures.Masks);
   setDisplayObjectMaskHooks(state, domMaskHooks);
   setDOMClipHooks(state);
 }
