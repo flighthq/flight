@@ -1,6 +1,6 @@
-﻿import { getDisplayObjectRenderNode, setDisplayObjectMaskHooks } from '@flighthq/render';
+import { getDisplayObjectRenderNode } from '@flighthq/render';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
-import type { DisplayObject, DisplayObjectMaskHooks, DisplayObjectRenderNode, WebGLRenderState } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectRenderNode } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 
@@ -16,10 +16,6 @@ export function drawWebGLMask(state: WebGLRenderStateInternal, data: DisplayObje
       if (child !== undefined) drawWebGLMask(state, child);
     }
   }
-}
-
-export function enableWebGLMaskSupport(state: WebGLRenderState): void {
-  setDisplayObjectMaskHooks(state, webGLMaskHooks);
 }
 
 export function popWebGLMask(state: WebGLRenderStateInternal): void {
@@ -58,8 +54,3 @@ export function pushWebGLMask(state: WebGLRenderStateInternal, data: DisplayObje
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
   state.currentMaskDepth = nextDepth;
 }
-
-const webGLMaskHooks: DisplayObjectMaskHooks = {
-  popMask: popWebGLMask,
-  pushMask: pushWebGLMask,
-};

@@ -25,47 +25,30 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
   const internal = state as WebGLRenderStateInternal;
   const frameID = state.currentFrameID;
   const tempStack = state.tempStack;
-  const maskHooks = state.displayObjectMaskHooks;
-  const scrollRectHooks = state.scrollRectangleHooks;
+  const clipHooks = state.displayObjectClipHooks;
 
   let stackLength = 1;
   tempStack[0] = source;
-  let currentMaskDepth = 0;
-  let currentScrollRectDepth = 0;
 
   useWebGLProgram(internal);
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as DisplayObject;
-
     if (!current.enabled) continue;
 
     const data = getDisplayObjectRenderNode(state, current);
     if (data === undefined || data.isMaskFrameID === frameID) continue;
 
-    while (maskHooks !== null && currentMaskDepth > data.maskDepth) {
-      maskHooks.popMask(state);
-      currentMaskDepth--;
-    }
-    while (scrollRectHooks !== null && currentScrollRectDepth > data.scrollRectangleDepth) {
-      scrollRectHooks.pop(state);
-      currentScrollRectDepth--;
-    }
+    clipHooks?.popMask(state, data);
+    clipHooks?.popScrollRectangle(state, data);
 
     if (!isRenderNodeVisible(data)) continue;
 
-    if (maskHooks !== null && current.mask !== null) {
-      const maskData = getDisplayObjectRenderNode(state, current.mask);
-      if (maskData !== undefined) {
-        maskHooks.pushMask(state, maskData);
-        currentMaskDepth++;
-      }
-    }
+    clipHooks?.pushMask(state, current);
 
     data.renderer?.draw(internal, data);
 
     const prePushLength = stackLength;
-
     if (data.traverseChildren) {
       const children = getDisplayObjectRuntime(current).children;
       if (children !== null) {
@@ -75,14 +58,10 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
       }
     }
 
-    if (scrollRectHooks !== null && current.scrollRectangle !== null && stackLength > prePushLength) {
-      scrollRectHooks.push(state, data);
-      currentScrollRectDepth++;
-    }
+    clipHooks?.pushScrollRectangle(state, data, current, stackLength > prePushLength);
   }
 
-  while (currentMaskDepth-- > 0) maskHooks!.popMask(state);
-  while (currentScrollRectDepth-- > 0) scrollRectHooks!.pop(state);
+  clipHooks?.finalize(state);
 }
 
 export const defaultWebGLDisplayObjectRenderer: DisplayObjectRenderer = {

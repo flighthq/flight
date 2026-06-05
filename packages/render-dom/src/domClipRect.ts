@@ -1,13 +1,4 @@
-﻿import { enableRenderFeatures } from '@flighthq/render';
-import type {
-  DisplayObject,
-  DisplayObjectRenderNode,
-  DOMRenderState,
-  MatrixLike,
-  RectangleLike,
-  ScrollRectangleHooks,
-} from '@flighthq/types';
-import { RenderFeatures } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectRenderNode, MatrixLike, RectangleLike } from '@flighthq/types';
 
 import type { DOMClipHooks, DOMRenderStateInternal } from './internal';
 
@@ -66,12 +57,6 @@ export function createDOMStageRectangle(
   };
 }
 
-export function enableDOMScrollRectangleSupport(state: DOMRenderState): void {
-  enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
-  state.scrollRectangleHooks = domScrollRectangleHooks;
-  setDOMClipHooks(state);
-}
-
 export function pushDOMClipRectangle(
   rectangles: DOMStageRectangle[],
   rect: Readonly<RectangleLike>,
@@ -97,9 +82,8 @@ export function pushDOMScrollRectangle(rectangles: DOMStageRectangle[], data: Di
   pushDOMClipRectangle(rectangles, rect, preScrollTransform);
 }
 
-export function setDOMClipHooks(state: DOMRenderState): void {
-  const internal = state as DOMRenderStateInternal;
-  if (internal.domClipHooks === null) internal.domClipHooks = domClipHooksImpl;
+export function setDOMClipHooks(state: DOMRenderStateInternal): void {
+  if (state.domClipHooks === null) state.domClipHooks = domClipHooksImpl;
 }
 
 function getElementMatrix(element: HTMLElement): MatrixLike {
@@ -169,16 +153,8 @@ function mapStageRectangleToElement(rect: DOMStageRectangle, element: HTMLElemen
 
 const EMPTY_CLIP_PATH = 'inset(0 100% 100% 0)';
 
-const domScrollRectangleHooks: ScrollRectangleHooks = {
-  pop: (state) => {
-    (state as DOMRenderStateInternal).domClipStack.length--;
-  },
-  push: (state, data) => pushDOMScrollRectangle((state as DOMRenderStateInternal).domClipStack, data),
-};
-
 const domClipHooksImpl: DOMClipHooks = {
-  apply(state: DOMRenderState, data: DisplayObjectRenderNode): void {
-    const internal = state as DOMRenderStateInternal;
-    applyDOMClipRectangles(internal, data, internal.domClipStack);
+  apply(state, data): void {
+    applyDOMClipRectangles(state as DOMRenderStateInternal, data, (state as DOMRenderStateInternal).domClipStack);
   },
 };

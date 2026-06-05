@@ -4,9 +4,8 @@ import { addSceneChild, setTransformScaleX, setTransformScaleY } from '@flighthq
 import { appendShapeRectangle, createDisplayObject, createShape } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { enableDOMScrollRectangleSupport } from './domClipRect';
+import { enableDOMMaskSupport, enableDOMScrollRectangleSupport } from './domClip';
 import { renderDOMDisplayObject } from './domDisplayObject';
-import { enableDOMMaskSupport } from './domMask';
 import { createDOMRenderState } from './domRenderState';
 
 type ManagedState = ReturnType<typeof makeState> & { domCurrentElement: HTMLElement | null };

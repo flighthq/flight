@@ -1,4 +1,4 @@
-import { type Renderer, RenderFeatures, type RenderState } from '@flighthq/types';
+import { type DisplayObjectClipHooks, type Renderer, RenderFeatures, type RenderState } from '@flighthq/types';
 
 import {
   copyFromRenderState,
@@ -10,7 +10,6 @@ import {
   hasRenderFeatures,
   registerDisplayObjectMaskRenderer,
   registerRenderer,
-  setDisplayObjectMaskHooks,
 } from './renderer';
 import { createRenderState } from './renderState';
 
@@ -21,16 +20,22 @@ describe('copyFromRenderState', () => {
     const kind = Symbol('kind');
     const renderer = { createData: vi.fn(), draw: vi.fn() } as unknown as Renderer;
     const maskRenderer = { drawMask: vi.fn() };
-    const hooks = { popMask: vi.fn(), pushMask: vi.fn() };
+    const hooks = {
+      finalize: vi.fn(),
+      popMask: vi.fn(),
+      popScrollRectangle: vi.fn(),
+      pushMask: vi.fn(),
+      pushScrollRectangle: vi.fn(),
+    } as unknown as DisplayObjectClipHooks;
     registerRenderer(source, kind, renderer);
     registerDisplayObjectMaskRenderer(source, kind, maskRenderer);
-    setDisplayObjectMaskHooks(source, hooks);
+    source.displayObjectClipHooks = hooks;
 
     copyFromRenderState(target, source);
 
     expect(target.rendererMap.get(kind)).toBe(renderer);
     expect(target.displayObjectMaskRendererMap.get(kind)).toBe(maskRenderer);
-    expect(target.displayObjectMaskHooks).toBe(hooks);
+    expect(target.displayObjectClipHooks).toBe(hooks);
   });
 
   it('is a no-op when source has no registrations', () => {
@@ -42,19 +47,25 @@ describe('copyFromRenderState', () => {
 });
 
 describe('copyMaskRenderersFromRenderState', () => {
-  it('copies mask renderer registrations and hooks from source to target', () => {
+  it('copies mask renderer registrations and clip hooks from source to target', () => {
     const source = createRenderState();
     const target = createRenderState();
     const kind = Symbol('kind');
     const maskRenderer = { drawMask: vi.fn() };
-    const hooks = { popMask: vi.fn(), pushMask: vi.fn() };
+    const hooks = {
+      finalize: vi.fn(),
+      popMask: vi.fn(),
+      popScrollRectangle: vi.fn(),
+      pushMask: vi.fn(),
+      pushScrollRectangle: vi.fn(),
+    } as unknown as DisplayObjectClipHooks;
     registerDisplayObjectMaskRenderer(source, kind, maskRenderer);
-    setDisplayObjectMaskHooks(source, hooks);
+    source.displayObjectClipHooks = hooks;
 
     copyMaskRenderersFromRenderState(target, source);
 
     expect(target.displayObjectMaskRendererMap.get(kind)).toBe(maskRenderer);
-    expect(target.displayObjectMaskHooks).toBe(hooks);
+    expect(target.displayObjectClipHooks).toBe(hooks);
   });
 
   it('is a no-op when source has no mask registrations', () => {
@@ -62,7 +73,7 @@ describe('copyMaskRenderersFromRenderState', () => {
     const target = createRenderState();
     copyMaskRenderersFromRenderState(target, source);
     expect(target.displayObjectMaskRendererMap.size).toBe(0);
-    expect(target.displayObjectMaskHooks).toBeNull();
+    expect(target.displayObjectClipHooks).toBeNull();
   });
 });
 
@@ -203,26 +214,5 @@ describe('registerRenderer', () => {
     state.rendererMapID = 0xffffffff;
     registerRenderer(state, kindA, renderer1);
     expect(state.rendererMapID).toBe(0);
-  });
-});
-
-describe('setDisplayObjectMaskHooks', () => {
-  it('sets mask hooks and enables mask support', () => {
-    const state = createRenderState();
-    const hooks = { popMask: vi.fn(), pushMask: vi.fn() };
-
-    setDisplayObjectMaskHooks(state, hooks);
-
-    expect(state.displayObjectMaskHooks).toBe(hooks);
-    expect(hasRenderFeatures(state, RenderFeatures.Masks)).toBe(true);
-  });
-
-  it('clears mask hooks without changing existing feature flags', () => {
-    const state = createRenderState({ renderFeatures: RenderFeatures.Masks });
-
-    setDisplayObjectMaskHooks(state, null);
-
-    expect(state.displayObjectMaskHooks).toBeNull();
-    expect(hasRenderFeatures(state, RenderFeatures.Masks)).toBe(true);
   });
 });
