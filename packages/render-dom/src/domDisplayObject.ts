@@ -1,4 +1,4 @@
-import { getOrCreateDisplayObjectRenderNode, isRenderNodeVisible } from '@flighthq/render';
+import { getDisplayObjectRenderNode, isRenderNodeVisible } from '@flighthq/render';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type { DisplayObject, DOMRenderState } from '@flighthq/types';
 
@@ -17,31 +17,29 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
 
   let newLength = 0;
   let needsReconcile = false;
-
-  const pendingClips: DOMClipAction[] = [];
+  let currentClipDepth = 0;
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as DisplayObject;
 
-    if (!current.enabled) {
-      drainDOMClips(state, hooks, pendingClips, stackLength);
-      continue;
+    if (!current.enabled) continue;
+
+    const data = getDisplayObjectRenderNode(state, current);
+    if (data === undefined || data.isMaskFrameID === frameID) continue;
+
+    if (hooks !== null) {
+      const targetDepth = data.maskDepth + data.scrollRectangleDepth;
+      if (currentClipDepth > targetDepth) {
+        hooks.pop(state, currentClipDepth - targetDepth);
+        currentClipDepth = targetDepth;
+      }
     }
 
-    const data = getOrCreateDisplayObjectRenderNode(state, current);
-
-    if (data.isMaskFrameID === frameID) {
-      drainDOMClips(state, hooks, pendingClips, stackLength);
-      continue;
-    }
-
-    if (!isRenderNodeVisible(data)) {
-      drainDOMClips(state, hooks, pendingClips, stackLength);
-      continue;
-    }
+    if (!isRenderNodeVisible(data)) continue;
 
     let pushed = 0;
     if (hooks !== null) pushed = hooks.push(state, data);
+    currentClipDepth += pushed;
 
     if (data.renderer !== null) {
       const result = processDOMNode(internal, data, frameID, () => data.renderer!.draw(state, data), newLength);
@@ -49,8 +47,6 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
       if (result.needsReconcile) needsReconcile = true;
       if (hooks !== null) hooks.apply(state, data);
     }
-
-    const prePushLength = stackLength;
 
     if (data.traverseChildren) {
       const children = getDisplayObjectRuntime(current).children;
@@ -60,40 +56,13 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
         }
       }
     }
-
-    if (pushed > 0) {
-      pendingClips.push({ atStackLength: prePushLength, count: pushed });
-    }
-
-    drainDOMClips(state, hooks, pendingClips, stackLength);
   }
 
-  for (let i = pendingClips.length - 1; i >= 0; i--) {
-    hooks!.pop(state, pendingClips[i].count);
-  }
+  if (hooks !== null && currentClipDepth > 0) hooks.pop(state, currentClipDepth);
 
   if (detectDOMStructureChange(internal, newLength, needsReconcile)) {
     reconcileDOMContainer(container, internal, newLength);
   }
 
   swapDOMOrderLists(internal, newLength);
-}
-
-interface DOMClipAction {
-  atStackLength: number;
-  count: number;
-}
-
-function drainDOMClips(
-  state: DOMRenderState,
-  hooks: DOMRenderStateInternal['domClipHooks'],
-  pendingClips: DOMClipAction[],
-  stackLength: number,
-): void {
-  while (pendingClips.length > 0) {
-    const top = pendingClips[pendingClips.length - 1];
-    if (top.atStackLength < stackLength) break;
-    pendingClips.pop();
-    hooks!.pop(state, top.count);
-  }
 }

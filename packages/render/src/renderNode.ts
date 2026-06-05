@@ -74,6 +74,13 @@ export function createSpriteRenderNode(state: RenderState, source: SpriteNode): 
   return out;
 }
 
+export function getDisplayObjectRenderNode(
+  state: RenderState,
+  source: DisplayObject,
+): DisplayObjectRenderNode | undefined {
+  return state.renderNodeMap.get(source) as DisplayObjectRenderNode | undefined;
+}
+
 export function getOrCreateDisplayObjectRenderNode(state: RenderState, source: DisplayObject): DisplayObjectRenderNode {
   return getOrCreateRenderNode(state, source, createDisplayObjectRenderNode);
 }

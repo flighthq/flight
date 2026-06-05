@@ -1,5 +1,5 @@
 ﻿import { enableRenderFeatures, hasRenderFeatures } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import { getDisplayObjectRenderNode } from '@flighthq/render';
 import type {
   DisplayObject,
   DisplayObjectRenderNode,
@@ -181,8 +181,11 @@ const domClipHooksImpl: DOMClipHooks = {
     if (source.mask !== null) {
       const maskHooks = state.displayObjectMaskHooks;
       if (maskHooks !== null) {
-        maskHooks.pushMask(state, getOrCreateDisplayObjectRenderNode(state, source.mask), stack);
-        pushed++;
+        const maskData = getDisplayObjectRenderNode(state, source.mask);
+        if (maskData !== undefined) {
+          maskHooks.pushMask(state, maskData, stack);
+          pushed++;
+        }
       }
     }
     return pushed;
