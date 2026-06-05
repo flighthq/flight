@@ -1,9 +1,8 @@
-import { registerRenderer } from '@flighthq/render';
+import { prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
 import {
   createCanvasRenderState,
   defaultCanvasDisplayObjectRenderer,
-  prepareCanvasDisplayObjectRender,
-  renderCanvas,
+  renderCanvasDisplayObject,
 } from '@flighthq/render-canvas';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
@@ -17,6 +16,6 @@ test('attach renderer to new canvas', () => {
   const obj = createDisplayObject();
 
   registerRenderer(renderState, DisplayObjectKind, defaultCanvasDisplayObjectRenderer);
-  prepareCanvasDisplayObjectRender(renderState, obj);
-  renderCanvas(renderState);
+  prepareDisplayObjectRender(renderState, obj);
+  renderCanvasDisplayObject(renderState, obj);
 });

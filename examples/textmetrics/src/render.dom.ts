@@ -4,11 +4,11 @@ import {
   defaultCanvasShapeCommands,
   defaultDOMRichTextRenderer,
   defaultDOMShapeRenderer,
-  prepareDOMDisplayObjectRender,
+  prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
-  renderDOM,
   renderDOMBackground,
+  renderDOMDisplayObject,
   RichTextKind,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -28,9 +28,9 @@ registerCanvasShapeCommands(defaultCanvasShapeCommands);
 export const scale = 1;
 
 export function render(root: DisplayObject): void {
-  if (!prepareDOMDisplayObjectRender(state, root)) return;
+  if (!prepareDisplayObjectRender(state, root)) return;
   renderDOMBackground(state);
-  renderDOM(state);
+  renderDOMDisplayObject(state, root);
 }
 
 export function setSize(w: number, h: number): void {

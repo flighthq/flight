@@ -6,11 +6,11 @@ import {
   defaultWebGLShapeCommands,
   defaultWebGLShapeRenderer,
   defaultWebGLTextRenderer,
-  prepareWebGLDisplayObjectRender,
+  prepareDisplayObjectRender,
   registerRenderer,
   registerWebGLShapeCommands,
-  renderWebGL,
   renderWebGLBackground,
+  renderWebGLDisplayObject,
   ShapeKind,
   TextKind,
 } from '@flighthq/sdk';
@@ -39,7 +39,7 @@ export function setSize(w: number, h: number): void {
 }
 
 export function render(root: DisplayObject): void {
-  if (!prepareWebGLDisplayObjectRender(state, root)) return;
+  if (!prepareDisplayObjectRender(state, root)) return;
   renderWebGLBackground(state);
-  renderWebGL(state);
+  renderWebGLDisplayObject(state, root);
 }
