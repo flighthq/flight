@@ -1,30 +1,27 @@
 import { getAppearanceRevision, getLocalTransformRevision, getSceneNodeRuntime } from '@flighthq/scene';
-import type { Renderable, RenderNode, RenderNode2D, RenderNodeAdapter, RenderState, SceneNode } from '@flighthq/types';
+import type { Renderable, RenderNode, RenderNode2D, RenderState, SceneNode } from '@flighthq/types';
 
 import { syncRenderNodeRenderer } from './renderNode';
 
 export function adaptRenderNode(
   state: RenderState,
   source: Renderable,
-  data: RenderNode2D & { updateChildren: boolean },
+  data: RenderNode2D & { traverseChildren: boolean },
 ): void {
-  const resolver = data.resolver;
-  let updateChildren = true;
+  const resolver = getSceneNodeRuntime(source as SceneNode).resolver;
+  data.resolver = resolver;
+  let traverseChildren = true;
   if (resolver !== null) {
-    const result = (resolver as RenderNodeAdapter).adapt(state, source, data);
+    const result = resolver.adapt(state, source, data);
     if (result !== null) {
-      updateChildren = result;
+      traverseChildren = result;
       syncRenderNodeRenderer(state, data);
     }
   }
-  data.updateChildren = updateChildren;
+  data.traverseChildren = traverseChildren;
 }
 
-export function beginRenderNodeUpdate(source: Renderable, data: RenderNode): void {
-  data.resolver = getSceneNodeRuntime(source as SceneNode).resolver;
-  data.source = source;
-  data.lastLocalTransformID = -1;
-}
+export function beginRenderNodeUpdate(_source: Renderable, _data: RenderNode): void {}
 
 export function isRenderNodeDirty(
   state: RenderState,
@@ -32,11 +29,13 @@ export function isRenderNodeDirty(
   data: RenderNode,
   parentData?: RenderNode,
 ): boolean {
+  const runtime = getSceneNodeRuntime(source as SceneNode);
   const parentDirty =
     parentData !== undefined &&
     (parentData.transformFrameID === state.currentFrameID || parentData.appearanceFrameID === state.currentFrameID);
   const localDirty =
     data.lastLocalTransformID !== getLocalTransformRevision(source as SceneNode) ||
     data.lastAppearanceID !== getAppearanceRevision(source as SceneNode);
-  return parentDirty || localDirty;
+  const resolverDirty = data.resolver !== runtime.resolver;
+  return parentDirty || localDirty || resolverDirty;
 }

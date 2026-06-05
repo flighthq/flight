@@ -15,29 +15,29 @@ import { adaptRenderNode, beginRenderNodeUpdate, isRenderNodeDirty } from './ren
 import { createRenderState } from './renderState';
 
 describe('adaptRenderNode', () => {
-  it('sets updateChildren to true when no resolver is attached', () => {
+  it('sets traverseChildren to true when no resolver is attached', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     const data = createDisplayObjectRenderNode(state, source);
-    data.updateChildren = false;
+    data.traverseChildren = false;
 
     adaptRenderNode(state, source, data);
 
-    expect(data.updateChildren).toBe(true);
+    expect(data.traverseChildren).toBe(true);
   });
 
-  it('sets updateChildren from a non-null adapter result', () => {
+  it('sets traverseChildren from a non-null adapter result', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     const data = createDisplayObjectRenderNode(state, source);
     const adapter: RenderNodeAdapter = {
       adapt: vi.fn().mockReturnValue(false),
     };
-    data.resolver = adapter;
+    setSceneNodeAdapter(source, adapter);
 
     adaptRenderNode(state, source, data);
 
-    expect(data.updateChildren).toBe(false);
+    expect(data.traverseChildren).toBe(false);
   });
 
   it('syncs renderer when the adapter changes the node kind', () => {
@@ -53,7 +53,7 @@ describe('adaptRenderNode', () => {
         return true;
       },
     };
-    data.resolver = adapter;
+    setSceneNodeAdapter(source, adapter);
 
     adaptRenderNode(state, source, data);
 
@@ -62,31 +62,11 @@ describe('adaptRenderNode', () => {
 });
 
 describe('beginRenderNodeUpdate', () => {
-  it('copies the scene resolver onto the render node', () => {
+  it('is a no-op and does not throw', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     const data = createDisplayObjectRenderNode(state, source);
-    const adapter: RenderNodeAdapter = {
-      adapt: vi.fn().mockReturnValue(null),
-    };
-    setSceneNodeAdapter(source, adapter);
-
-    beginRenderNodeUpdate(source, data);
-
-    expect(data.resolver).toBe(adapter);
-  });
-
-  it('resets source and local transform revision', () => {
-    const state = createRenderState();
-    const source = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, source);
-    data.source = { kind: Symbol('Other') } as any;
-    data.lastLocalTransformID = 10;
-
-    beginRenderNodeUpdate(source, data);
-
-    expect(data.source).toBe(source);
-    expect(data.lastLocalTransformID).toBe(-1);
+    expect(() => beginRenderNodeUpdate(source, data)).not.toThrow();
   });
 });
 
