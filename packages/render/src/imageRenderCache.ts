@@ -35,7 +35,7 @@ export function beginImageRenderCacheCapture(state: RenderState): void {
 }
 
 export function clearImageRenderCache(source: SceneNode<symbol, object>): void {
-  (getSceneNodeRuntime(source) as SceneNodeRuntime<symbol, object>).resolver = null;
+  (getSceneNodeRuntime(source) as SceneNodeRuntime<symbol, object>).renderAdapter = null;
   invalidateAppearance(source);
 }
 
@@ -81,7 +81,7 @@ export function endImageRenderCacheCapture(state: RenderState): void {
 }
 
 export function getImageRenderCache(source: SceneNode<symbol, object>): ImageRenderCacheResult | null {
-  const adapter = (getSceneNodeRuntime(source) as SceneNodeRuntime<symbol, object>).resolver;
+  const adapter = (getSceneNodeRuntime(source) as SceneNodeRuntime<symbol, object>).renderAdapter;
   return isRenderImageCacheAdapter(adapter) ? adapter.result : null;
 }
 
@@ -106,9 +106,9 @@ export function registerImageRenderCacheRenderer(state: RenderState, renderer: R
 
 export function setImageRenderCache(source: SceneNode<symbol, object>, result: ImageRenderCacheResult): void {
   const runtime = getSceneNodeRuntime(source) as SceneNodeRuntime<symbol, object>;
-  if (!isRenderImageCacheAdapter(runtime.resolver)) {
-    runtime.resolver = createRenderImageCacheAdapter();
+  if (!isRenderImageCacheAdapter(runtime.renderAdapter)) {
+    runtime.renderAdapter = createRenderImageCacheAdapter();
   }
-  (runtime.resolver as ImageRenderCacheAdapter).result = result;
+  (runtime.renderAdapter as ImageRenderCacheAdapter).result = result;
   invalidateAppearance(source);
 }

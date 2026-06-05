@@ -23,7 +23,7 @@ export interface SceneNodeRuntime<SceneKind extends symbol = typeof NullScene, T
   boundsUsingLocalBoundsID: number;
   boundsUsingLocalTransformID: number;
   graph: SceneKind;
-  resolver: RenderNodeAdapter | null;
+  renderAdapter: RenderNodeAdapter | null;
   interactionSignals: InteractionSignals | null;
   localBoundsID: number;
   localBoundsUsingLocalBoundsID: number;
