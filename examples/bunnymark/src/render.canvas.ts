@@ -3,11 +3,11 @@ import {
   createCanvasElement,
   createCanvasRenderState,
   defaultCanvasQuadBatchRenderer,
-  prepareCanvasSpriteRender,
+  prepareSpriteRender,
   QuadBatchKind,
   registerRenderer,
-  renderCanvas,
   renderCanvasBackground,
+  renderCanvasSprite,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -22,7 +22,7 @@ registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
 export const scale = pixelRatio;
 
 export function render(root: QuadBatch): void {
-  if (!prepareCanvasSpriteRender(state, root)) return;
+  if (!prepareSpriteRender(state, root)) return;
   renderCanvasBackground(state);
-  renderCanvas(state);
+  renderCanvasSprite(state, root);
 }

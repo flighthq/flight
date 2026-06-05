@@ -5,11 +5,11 @@ import {
   defaultCanvasDrawCircle,
   defaultCanvasEndFill,
   defaultDOMShapeRenderer,
-  prepareDOMDisplayObjectRender,
+  prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
-  renderDOM,
   renderDOMBackground,
+  renderDOMDisplayObject,
   ShapeKind,
 } from '@flighthq/sdk';
 
@@ -25,7 +25,7 @@ registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasEndFill, defau
 export const scale = 1;
 
 export function render(root: DisplayObject): void {
-  if (!prepareDOMDisplayObjectRender(state, root)) return;
+  if (!prepareDisplayObjectRender(state, root)) return;
   renderDOMBackground(state);
-  renderDOM(state);
+  renderDOMDisplayObject(state, root);
 }

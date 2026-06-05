@@ -2,10 +2,10 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   createDOMRenderState,
   defaultDOMVideoRenderer,
-  prepareDOMDisplayObjectRender,
+  prepareDisplayObjectRender,
   registerRenderer,
-  renderDOM,
   renderDOMBackground,
+  renderDOMDisplayObject,
   VideoKind,
 } from '@flighthq/sdk';
 
@@ -23,9 +23,9 @@ registerRenderer(state, VideoKind, defaultDOMVideoRenderer);
 export const scale = 1;
 
 export function render(root: DisplayObject): void {
-  if (!prepareDOMDisplayObjectRender(state, root)) return;
+  if (!prepareDisplayObjectRender(state, root)) return;
   renderDOMBackground(state);
-  renderDOM(state);
+  renderDOMDisplayObject(state, root);
 }
 
 export function setSize(w: number, h: number): void {

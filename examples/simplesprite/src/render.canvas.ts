@@ -3,10 +3,10 @@ import {
   createCanvasElement,
   createCanvasRenderState,
   defaultCanvasSpriteRenderer,
-  prepareCanvasSpriteRender,
+  prepareSpriteRender,
   registerRenderer,
-  renderCanvas,
   renderCanvasBackground,
+  renderCanvasSprite,
   SpriteKind,
 } from '@flighthq/sdk';
 
@@ -23,7 +23,7 @@ registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
 export const scale = pixelRatio;
 
 export function render(root: Sprite): void {
-  if (!prepareCanvasSpriteRender(state, root)) return;
+  if (!prepareSpriteRender(state, root)) return;
   renderCanvasBackground(state);
-  renderCanvas(state);
+  renderCanvasSprite(state, root);
 }

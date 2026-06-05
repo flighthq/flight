@@ -3,11 +3,11 @@ import {
   createWebGLRenderState,
   defaultWebGLShapeCommands,
   defaultWebGLShapeRenderer,
-  prepareWebGLDisplayObjectRender,
+  prepareDisplayObjectRender,
   registerRenderer,
   registerWebGLShapeCommands,
-  renderWebGL,
   renderWebGLBackground,
+  renderWebGLDisplayObject,
   ShapeKind,
 } from '@flighthq/sdk';
 
@@ -29,9 +29,9 @@ registerWebGLShapeCommands(defaultWebGLShapeCommands);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
-  if (!prepareWebGLDisplayObjectRender(state, root)) return;
+  if (!prepareDisplayObjectRender(state, root)) return;
   renderWebGLBackground(state);
-  renderWebGL(state);
+  renderWebGLDisplayObject(state, root);
 }
 
 export function setSize(w: number, h: number): void {

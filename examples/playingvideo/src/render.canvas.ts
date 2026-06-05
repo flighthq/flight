@@ -6,11 +6,11 @@ import {
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   defaultCanvasVideoRenderer,
-  prepareCanvasDisplayObjectRender,
+  prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
-  renderCanvas,
   renderCanvasBackground,
+  renderCanvasDisplayObject,
   ShapeKind,
   VideoKind,
 } from '@flighthq/sdk';
@@ -35,9 +35,9 @@ registerCanvasShapeCommands(defaultCanvasShapeCommands);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
-  if (!prepareCanvasDisplayObjectRender(state, root)) return;
+  if (!prepareDisplayObjectRender(state, root)) return;
   renderCanvasBackground(state);
-  renderCanvas(state);
+  renderCanvasDisplayObject(state, root);
 }
 
 export function setSize(w: number, h: number): void {
