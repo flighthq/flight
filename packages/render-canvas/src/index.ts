@@ -7,7 +7,6 @@ export * from './canvasInputText';
 export * from './canvasMask';
 export * from './canvasMaterials';
 export * from './canvasQuadBatch';
-export * from './canvasRender';
 export * from './canvasRenderCache';
 export * from './canvasRenderCacheCapture';
 export * from './canvasRenderState';

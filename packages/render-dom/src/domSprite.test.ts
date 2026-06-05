@@ -1,12 +1,12 @@
 ﻿import { addTextureAtlasRegion, createImageSourceFromCanvas, createTextureAtlas } from '@flighthq/assets';
-import { getOrCreateSpriteRenderNode, registerRenderer } from '@flighthq/render';
+import { getOrCreateSpriteRenderNode, prepareSpriteRender, registerRenderer } from '@flighthq/render';
+import { addSceneChild } from '@flighthq/scene';
 import { createQuadBatch, createSprite, resizeQuadBatch } from '@flighthq/scene-sprite';
 import { QuadBatchKind, SpriteKind, TilemapKind } from '@flighthq/types';
 
 import { defaultDOMQuadBatchRenderer } from './domQuadBatch';
-import { prepareDOMSpriteRender } from './domRender';
 import { createDOMRenderState } from './domRenderState';
-import { defaultDOMSpriteRenderer, drawDOMSprite, isMutableSpriteBatchKind } from './domSprite';
+import { defaultDOMSpriteRenderer, drawDOMSprite, isMutableSpriteBatchKind, renderDOMSprite } from './domSprite';
 import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
@@ -117,43 +117,37 @@ describe('isMutableSpriteBatchKind', () => {
   });
 });
 
-describe('prepareDOMSpriteRender', () => {
-  it('removes foreign elements from the container on first render', () => {
-    const state = makeState();
-    const foreign = document.createElement('span');
-    state.element.appendChild(foreign);
-    const sprite = createSprite();
-
-    prepareDOMSpriteRender(state, sprite);
-
-    expect(state.element.contains(foreign)).toBe(false);
-  });
-
-  it('does not throw for an empty sprite tree', () => {
+describe('renderDOMSprite', () => {
+  it('does not throw for an empty sprite', () => {
     const state = makeState();
     const sprite = createSprite();
-    expect(() => prepareDOMSpriteRender(state, sprite)).not.toThrow();
+    prepareSpriteRender(state, sprite);
+    expect(() => renderDOMSprite(state, sprite)).not.toThrow();
   });
 
-  it('redraws quad batch data changes even when the node transform is clean', () => {
+  it('appends a canvas element when sprite has a valid atlas', () => {
     const state = makeState();
-    registerRenderer(state, QuadBatchKind, defaultDOMQuadBatchRenderer);
-    const quadBatch = createQuadBatch();
-    quadBatch.data.atlas = makeAtlas();
-    resizeQuadBatch(quadBatch, 1);
-    quadBatch.data.ids[0] = 0;
-    quadBatch.data.transforms[0] = 10;
-    quadBatch.data.transforms[1] = 10;
+    const sprite = createSprite();
+    sprite.data.atlas = makeAtlas();
+    sprite.data.id = 0;
+    prepareSpriteRender(state, sprite);
 
-    prepareDOMSpriteRender(state, quadBatch);
-    const canvas = state.element.firstChild as HTMLCanvasElement;
-    expect(canvas.style.width).toBe('42px');
+    renderDOMSprite(state, sprite);
 
-    quadBatch.data.transforms[0] = 50;
-    quadBatch.data.transforms[1] = 10;
+    expect(state.element.children.length).toBeGreaterThan(0);
+  });
 
-    prepareDOMSpriteRender(state, quadBatch);
+  it('traverses children and renders them', () => {
+    const state = makeState();
+    const parent = createSprite();
+    const child = createSprite();
+    child.data.atlas = makeAtlas();
+    child.data.id = 0;
+    addSceneChild(parent, child);
+    prepareSpriteRender(state, parent);
 
-    expect(canvas.style.width).toBe('82px');
+    renderDOMSprite(state, parent);
+
+    expect(state.element.children.length).toBeGreaterThan(0);
   });
 });

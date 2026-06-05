@@ -1,12 +1,12 @@
 import { createRectangle } from '@flighthq/geometry';
-import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render';
+import { getOrCreateDisplayObjectRenderNode, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
 import { addSceneChild, setTransformScaleX, setTransformScaleY } from '@flighthq/scene';
 import { appendShapeRectangle, createDisplayObject, createShape } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { enableDOMScrollRectangleSupport } from './domClipRect';
+import { renderDOMDisplayObject } from './domDisplayObject';
 import { enableDOMMaskSupport } from './domMask';
-import { prepareDOMDisplayObjectRender } from './domRender';
 import { createDOMRenderState } from './domRenderState';
 
 type ManagedState = ReturnType<typeof makeState> & { domCurrentElement: HTMLElement | null };
@@ -38,11 +38,11 @@ function setupRenderedNode(
   return data;
 }
 
-describe('prepareDOMDisplayObjectRender', () => {
+describe('renderDOMDisplayObject', () => {
   it('does not throw for a simple visible object', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    expect(() => prepareDOMDisplayObjectRender(state, obj)).not.toThrow();
+    expect(() => renderDOMDisplayObject(state, obj)).not.toThrow();
   });
 
   it('removes foreign elements from the container on first render', () => {
@@ -51,7 +51,7 @@ describe('prepareDOMDisplayObjectRender', () => {
     state.element.appendChild(foreign);
 
     const obj = createDisplayObject();
-    prepareDOMDisplayObjectRender(state, obj);
+    renderDOMDisplayObject(state, obj);
 
     expect(state.element.contains(foreign)).toBe(false);
   });
@@ -64,8 +64,8 @@ describe('prepareDOMDisplayObjectRender', () => {
 
     const renderer = { createData: vi.fn(), draw: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
-
-    prepareDOMDisplayObjectRender(state, obj);
+    prepareDisplayObjectRender(state, obj);
+    renderDOMDisplayObject(state, obj);
 
     expect(renderer.draw).not.toHaveBeenCalled();
   });
@@ -77,8 +77,8 @@ describe('prepareDOMDisplayObjectRender', () => {
 
     const renderer = { createData: vi.fn(), draw: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
-
-    prepareDOMDisplayObjectRender(state, obj);
+    prepareDisplayObjectRender(state, obj);
+    renderDOMDisplayObject(state, obj);
 
     expect(renderer.draw).not.toHaveBeenCalled();
   });
@@ -90,8 +90,8 @@ describe('prepareDOMDisplayObjectRender', () => {
 
     const renderer = { createData: vi.fn(), draw: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
-
-    prepareDOMDisplayObjectRender(state, obj);
+    prepareDisplayObjectRender(state, obj);
+    renderDOMDisplayObject(state, obj);
 
     expect(renderer.draw).not.toHaveBeenCalled();
   });
@@ -102,7 +102,7 @@ describe('prepareDOMDisplayObjectRender', () => {
     const el = document.createElement('div');
     const data = setupRenderedNode(state, obj, el);
 
-    prepareDOMDisplayObjectRender(state, obj);
+    renderDOMDisplayObject(state, obj);
 
     expect(data.renderer!.draw).toHaveBeenCalledOnce();
   });
@@ -116,7 +116,7 @@ describe('prepareDOMDisplayObjectRender', () => {
     const childEl = document.createElement('div');
     const childData = setupRenderedNode(state, child, childEl);
 
-    prepareDOMDisplayObjectRender(state, parent);
+    renderDOMDisplayObject(state, parent);
 
     expect(childData.renderer!.draw).toHaveBeenCalled();
   });
@@ -128,11 +128,11 @@ describe('prepareDOMDisplayObjectRender', () => {
     const data = setupRenderedNode(state, obj, el);
 
     // First render: node is new, draw must be called.
-    prepareDOMDisplayObjectRender(state, obj);
+    renderDOMDisplayObject(state, obj);
     expect(data.renderer!.draw).toHaveBeenCalledTimes(1);
 
     // Second render: nothing changed, draw should be skipped.
-    prepareDOMDisplayObjectRender(state, obj);
+    renderDOMDisplayObject(state, obj);
     expect(data.renderer!.draw).toHaveBeenCalledTimes(1);
   });
 
@@ -149,7 +149,7 @@ describe('prepareDOMDisplayObjectRender', () => {
     setupRenderedNode(state, childA, elA);
     setupRenderedNode(state, childB, elB);
 
-    prepareDOMDisplayObjectRender(state, parent);
+    renderDOMDisplayObject(state, parent);
 
     const children = Array.from(state.element.children);
     expect(children.indexOf(elA)).toBeLessThan(children.indexOf(elB));
@@ -168,12 +168,12 @@ describe('prepareDOMDisplayObjectRender', () => {
     setupRenderedNode(state, childA, elA);
     const dataB = setupRenderedNode(state, childB, elB);
 
-    prepareDOMDisplayObjectRender(state, parent);
+    renderDOMDisplayObject(state, parent);
     expect(state.element.children.length).toBe(2);
 
     dataB.visible = false;
 
-    prepareDOMDisplayObjectRender(state, parent);
+    renderDOMDisplayObject(state, parent);
 
     expect(state.element.contains(elA)).toBe(true);
     expect(state.element.contains(elB)).toBe(false);
@@ -187,10 +187,11 @@ describe('prepareDOMDisplayObjectRender', () => {
     const child = createDisplayObject();
     addSceneChild(parent, child);
 
+    prepareDisplayObjectRender(state, parent);
     const el = document.createElement('div');
     setupRenderedNode(state, child, el);
 
-    prepareDOMDisplayObjectRender(state, parent);
+    renderDOMDisplayObject(state, parent);
 
     expect(el.style.clipPath).toBe('polygon(10px 20px, 40px 20px, 40px 60px, 10px 60px)');
   });
@@ -206,7 +207,7 @@ describe('prepareDOMDisplayObjectRender', () => {
     const el = document.createElement('div');
     setupRenderedNode(state, obj, el);
 
-    prepareDOMDisplayObjectRender(state, obj);
+    renderDOMDisplayObject(state, obj);
 
     expect(el.style.clipPath).toBe('polygon(5px 6px, 25px 6px, 25px 36px, 5px 36px)');
   });

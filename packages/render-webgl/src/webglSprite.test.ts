@@ -1,22 +1,22 @@
-import { getOrCreateSpriteRenderNode, registerRenderer } from '@flighthq/render';
+import { getOrCreateSpriteRenderNode, prepareSpriteRender, registerRenderer } from '@flighthq/render';
 import { addSceneChild } from '@flighthq/scene';
 import { createSprite } from '@flighthq/scene-sprite';
 import { SpriteKind } from '@flighthq/types';
 
-import { prepareWebGLSpriteRender, renderWebGL } from './webglRender';
+import { renderWebGLSprite } from './webglSprite';
 import { makeWebGLState } from './webglTestHelper';
 
 function makeRenderer() {
   return { createData: () => null, draw: vi.fn() } as any;
 }
 
-describe('prepareWebGLSpriteRender + renderWebGL', () => {
+describe('renderWebGLSprite', () => {
   it('does not throw for an empty sprite node', () => {
     const { state } = makeWebGLState();
     const sprite = createSprite();
     expect(() => {
-      prepareWebGLSpriteRender(state, sprite);
-      renderWebGL(state);
+      prepareSpriteRender(state, sprite);
+      renderWebGLSprite(state, sprite);
     }).not.toThrow();
   });
 
@@ -28,8 +28,8 @@ describe('prepareWebGLSpriteRender + renderWebGL', () => {
     const sprite = createSprite();
     const data = getOrCreateSpriteRenderNode(state, sprite);
 
-    prepareWebGLSpriteRender(state, sprite);
-    renderWebGL(state);
+    prepareSpriteRender(state, sprite);
+    renderWebGLSprite(state, sprite);
 
     expect(renderer.draw).toHaveBeenCalledWith(state, data);
   });
@@ -42,8 +42,8 @@ describe('prepareWebGLSpriteRender + renderWebGL', () => {
     const sprite = createSprite();
     sprite.visible = false;
 
-    prepareWebGLSpriteRender(state, sprite);
-    renderWebGL(state);
+    prepareSpriteRender(state, sprite);
+    renderWebGLSprite(state, sprite);
 
     expect(renderer.draw).not.toHaveBeenCalled();
   });
@@ -56,8 +56,8 @@ describe('prepareWebGLSpriteRender + renderWebGL', () => {
     const sprite = createSprite();
     sprite.alpha = 0;
 
-    prepareWebGLSpriteRender(state, sprite);
-    renderWebGL(state);
+    prepareSpriteRender(state, sprite);
+    renderWebGLSprite(state, sprite);
 
     expect(renderer.draw).not.toHaveBeenCalled();
   });
@@ -71,8 +71,8 @@ describe('prepareWebGLSpriteRender + renderWebGL', () => {
     const child = createSprite();
     addSceneChild(parent, child);
 
-    prepareWebGLSpriteRender(state, parent);
-    renderWebGL(state);
+    prepareSpriteRender(state, parent);
+    renderWebGLSprite(state, parent);
 
     expect(renderer.draw).toHaveBeenCalledTimes(2);
   });

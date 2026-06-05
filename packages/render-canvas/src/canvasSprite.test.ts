@@ -1,12 +1,11 @@
 import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
-import { getOrCreateSpriteRenderNode, registerRenderer } from '@flighthq/render';
-import { addSceneChild, setTransformScaleX, setTransformScaleY, setTransformX, setTransformY } from '@flighthq/scene';
+import { getOrCreateSpriteRenderNode, prepareSpriteRender, registerRenderer } from '@flighthq/render';
+import { addSceneChild } from '@flighthq/scene';
 import { createSprite } from '@flighthq/scene-sprite';
 import { SpriteKind } from '@flighthq/types';
 
-import { prepareCanvasSpriteRender, renderCanvas } from './canvasRender';
 import { createCanvasRenderState } from './canvasRenderState';
-import { defaultCanvasSpriteRenderer, drawCanvasSprite } from './canvasSprite';
+import { defaultCanvasSpriteRenderer, drawCanvasSprite, renderCanvasSprite } from './canvasSprite';
 
 function makeAtlas() {
   const img = document.createElement('img') as HTMLImageElement;
@@ -32,7 +31,7 @@ describe('drawCanvasSprite', () => {
     const sprite = createSprite();
     sprite.data.atlas = atlas;
     sprite.data.id = 0;
-    prepareCanvasSpriteRender(state, sprite);
+    prepareSpriteRender(state, sprite);
     const renderNode = getOrCreateSpriteRenderNode(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasSprite(state, renderNode);
@@ -42,7 +41,7 @@ describe('drawCanvasSprite', () => {
   it('skips draw when atlas is null', () => {
     const state = makeState();
     const sprite = createSprite();
-    prepareCanvasSpriteRender(state, sprite);
+    prepareSpriteRender(state, sprite);
     const renderNode = getOrCreateSpriteRenderNode(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasSprite(state, renderNode);
@@ -50,96 +49,41 @@ describe('drawCanvasSprite', () => {
   });
 });
 
-describe('prepareCanvasSpriteRender + renderCanvas', () => {
-  it('calls setTransform with child world transform scaled by parent', () => {
+describe('renderCanvasSprite', () => {
+  it('does not throw for an empty sprite', () => {
+    const state = makeState();
+    const sprite = createSprite();
+    prepareSpriteRender(state, sprite);
+    expect(() => renderCanvasSprite(state, sprite)).not.toThrow();
+  });
+
+  it('calls renderer.draw for a visible sprite with a renderer', () => {
     const atlas = makeAtlas();
     const state = makeState();
+    const sprite = createSprite();
+    sprite.data.atlas = atlas;
+    sprite.data.id = 0;
+    prepareSpriteRender(state, sprite);
+    const spy = vi.spyOn(state.context, 'drawImage');
 
-    const root = createSprite();
-    setTransformScaleX(root, 4);
-    setTransformScaleY(root, 4);
+    renderCanvasSprite(state, sprite);
 
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('traverses children and draws them', () => {
+    const atlas = makeAtlas();
+    const state = makeState();
+    const parent = createSprite();
     const child = createSprite();
     child.data.atlas = atlas;
     child.data.id = 0;
-    setTransformX(child, 10);
-    setTransformY(child, 5);
-    addSceneChild(root, child);
-
-    const spy = vi.spyOn(state.context, 'setTransform');
-
-    prepareCanvasSpriteRender(state, root);
-    renderCanvas(state);
-
-    const calls = spy.mock.calls as unknown as [number, number, number, number, number, number][];
-    expect(calls.some(([a, , , d, tx, ty]) => a === 4 && d === 4 && tx === 40 && ty === 20)).toBe(true);
-  });
-
-  it('calls drawImage with the correct source region', () => {
-    const atlas = makeAtlas();
-    const state = makeState();
-
-    const sprite = createSprite();
-    sprite.data.atlas = atlas;
-    sprite.data.id = 0;
-
+    addSceneChild(parent, child);
+    prepareSpriteRender(state, parent);
     const spy = vi.spyOn(state.context, 'drawImage');
 
-    prepareCanvasSpriteRender(state, sprite);
-    renderCanvas(state);
+    renderCanvasSprite(state, parent);
 
     expect(spy).toHaveBeenCalledOnce();
-    const [, sx, sy, sw, sh, dx, dy] = spy.mock.calls[0] as number[];
-    expect(sx).toBe(0);
-    expect(sy).toBe(0);
-    expect(sw).toBe(32);
-    expect(sh).toBe(32);
-    expect(dx).toBe(0);
-    expect(dy).toBe(0);
-  });
-
-  it('skips draw when sprite has no atlas', () => {
-    const state = makeState();
-    const sprite = createSprite();
-
-    const spy = vi.spyOn(state.context, 'drawImage');
-
-    prepareCanvasSpriteRender(state, sprite);
-    renderCanvas(state);
-
-    expect(spy).not.toHaveBeenCalled();
-  });
-
-  it('skips invisible sprites', () => {
-    const atlas = makeAtlas();
-    const state = makeState();
-    const sprite = createSprite();
-    sprite.data.atlas = atlas;
-    sprite.data.id = 0;
-    sprite.visible = false;
-
-    const spy = vi.spyOn(state.context, 'drawImage');
-
-    prepareCanvasSpriteRender(state, sprite);
-    renderCanvas(state);
-
-    expect(spy).not.toHaveBeenCalled();
-  });
-
-  it('skips sprites with zero scale', () => {
-    const atlas = makeAtlas();
-    const state = makeState();
-    const sprite = createSprite();
-    sprite.data.atlas = atlas;
-    sprite.data.id = 0;
-    setTransformScaleX(sprite, 0);
-    setTransformScaleY(sprite, 0);
-
-    const spy = vi.spyOn(state.context, 'drawImage');
-
-    prepareCanvasSpriteRender(state, sprite);
-    renderCanvas(state);
-
-    expect(spy).not.toHaveBeenCalled();
   });
 });

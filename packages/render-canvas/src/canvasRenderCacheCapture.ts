@@ -12,7 +12,6 @@ import {
 import { computeBoundsRectangle } from '@flighthq/scene';
 import type { CanvasRenderState, DisplayObject, Matrix } from '@flighthq/types';
 
-import { prepareCanvasDisplayObjectRender, renderCanvas } from './canvasRender';
 import {
   beginCanvasRenderTarget,
   createCanvasRenderTarget,
@@ -101,8 +100,6 @@ export function captureDisplayObjectRenderImageCache(
 
   beginCanvasRenderTarget(state, target, captureData.renderTransform);
   beginImageRenderCacheCapture(state);
-  prepareCanvasDisplayObjectRender(state, source);
-  renderCanvas(state);
   endImageRenderCacheCapture(state);
   endCanvasRenderTarget(state);
 

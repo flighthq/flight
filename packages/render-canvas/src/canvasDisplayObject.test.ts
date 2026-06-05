@@ -1,5 +1,5 @@
-﻿import { registerRenderer } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+﻿import { getOrCreateDisplayObjectRenderNode, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
+import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
@@ -7,6 +7,7 @@ import {
   defaultCanvasDisplayObjectRenderer,
   drawCanvasDisplayObject,
   drawCanvasDisplayObjectMask,
+  renderCanvasDisplayObject,
 } from './canvasDisplayObject';
 import { createCanvasRenderState } from './canvasRenderState';
 
@@ -63,5 +64,53 @@ describe('drawCanvasDisplayObjectMask', () => {
     drawCanvasDisplayObjectMask(state, data);
 
     expect(rectSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('renderCanvasDisplayObject', () => {
+  it('does not throw for a simple visible object', () => {
+    const state = makeState();
+    const obj = createDisplayObject();
+    prepareDisplayObjectRender(state, obj);
+    expect(() => renderCanvasDisplayObject(state, obj)).not.toThrow();
+  });
+
+  it('calls renderer.draw for a visible object with a renderer', () => {
+    const state = makeState();
+    const obj = createDisplayObject();
+    const renderer = { createData: vi.fn().mockReturnValue(null), draw: vi.fn() };
+    registerRenderer(state, DisplayObjectKind, renderer);
+    prepareDisplayObjectRender(state, obj);
+
+    renderCanvasDisplayObject(state, obj);
+
+    expect(renderer.draw).toHaveBeenCalledOnce();
+  });
+
+  it('does not call renderer.draw for a hidden object', () => {
+    const state = makeState();
+    const obj = createDisplayObject();
+    obj.visible = false;
+    const renderer = { createData: vi.fn().mockReturnValue(null), draw: vi.fn() };
+    registerRenderer(state, DisplayObjectKind, renderer);
+    prepareDisplayObjectRender(state, obj);
+
+    renderCanvasDisplayObject(state, obj);
+
+    expect(renderer.draw).not.toHaveBeenCalled();
+  });
+
+  it('traverses and draws children', () => {
+    const state = makeState();
+    const parent = createDisplayObject();
+    const child = createDisplayObject();
+    addSceneChild(parent, child);
+    const renderer = { createData: vi.fn().mockReturnValue(null), draw: vi.fn() };
+    registerRenderer(state, DisplayObjectKind, renderer);
+    prepareDisplayObjectRender(state, parent);
+
+    renderCanvasDisplayObject(state, parent);
+
+    expect(renderer.draw).toHaveBeenCalledTimes(2);
   });
 });

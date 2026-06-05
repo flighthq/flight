@@ -23,9 +23,8 @@ const _targetStack = new WeakMap<WebGLRenderState, SavedWebGLState[]>();
  * the current framebuffer binding, renderTargetViewport, and renderTransform2D
  * so they can be fully restored by `endWebGLRenderTarget`. Supports nesting.
  *
- * The caller must call `prepareWebGLDisplayObjectRender` with the desired
- * `renderTransform` already set (via this function) before rendering into the
- * target to ensure the render tree's transform2D values are correct.
+ * The caller must set the desired `renderTransform` (via this function) before
+ * rendering into the target to ensure the render tree's transform2D values are correct.
  */
 export function beginWebGLRenderTarget(
   state: WebGLRenderState,

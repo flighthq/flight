@@ -8,7 +8,7 @@ import type { WebGLRenderStateInternal } from './internal';
 export function drawWebGLMask(state: WebGLRenderStateInternal, data: DisplayObjectRenderNode): void {
   state.displayObjectMaskRendererMap.get(data.source.kind)?.drawMask(state, data);
 
-  if (!data.updateChildren) return;
+  if (!data.traverseChildren) return;
 
   const children = getDisplayObjectRuntime(data.source as DisplayObject).children;
   if (children !== null) {

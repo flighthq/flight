@@ -2,18 +2,7 @@ import { createMatrix } from '@flighthq/geometry';
 import { createColorTransform } from '@flighthq/materials';
 import { BlendMode, RenderFeatures, type RenderState } from '@flighthq/types';
 
-import { beginFrame, createRenderState } from './renderState';
-
-describe('beginFrame', () => {
-  it('increments and returns the current frame id', () => {
-    const state = createRenderState();
-
-    expect(beginFrame(state)).toBe(1);
-    expect(state.currentFrameID).toBe(1);
-    expect(beginFrame(state)).toBe(2);
-    expect(state.currentFrameID).toBe(2);
-  });
-});
+import { createRenderState } from './renderState';
 
 describe('createRenderState', () => {
   let state: RenderState;
@@ -28,7 +17,6 @@ describe('createRenderState', () => {
     expect(state.backgroundColorRGBA).toStrictEqual([]);
     expect(state.backgroundColorString).toStrictEqual('');
     expect(state.currentFrameID).toStrictEqual(0);
-    expect(state.commandPool.commandCount).toStrictEqual(0);
     expect(state.pixelRatio).toStrictEqual(1);
     expect(state.renderNodeMap).toStrictEqual(new WeakMap());
     expect(state.renderAlpha).toStrictEqual(1);

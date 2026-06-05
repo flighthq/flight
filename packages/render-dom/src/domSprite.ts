@@ -1,16 +1,21 @@
 ﻿import { createEntity } from '@flighthq/entity';
+import { isRenderNodeVisible } from '@flighthq/render';
+import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
 import type {
   DOMRenderState,
   Renderable,
   RendererData,
   RenderState,
   Sprite,
+  SpriteNode,
   SpriteRenderer,
   SpriteRenderNode,
 } from '@flighthq/types';
 import { QuadBatchKind, TilemapKind } from '@flighthq/types';
 
+import { detectDOMStructureChange, processDOMNode, reconcileDOMContainer, swapDOMOrderLists } from './domReconcile';
 import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
+import type { DOMRenderStateInternal } from './internal';
 
 interface DOMSpriteData extends RendererData {
   canvas: HTMLCanvasElement | null;
@@ -72,4 +77,51 @@ export const defaultDOMSpriteRenderer: SpriteRenderer = {
 
 export function isMutableSpriteBatchKind(kind: symbol): boolean {
   return kind === QuadBatchKind || kind === TilemapKind;
+}
+
+export function renderDOMSprite(state: DOMRenderState, source: SpriteNode): void {
+  const internal = state as DOMRenderStateInternal;
+  const container = state.element;
+  const tempStack = state.tempStack;
+
+  let stackLength = 1;
+  tempStack[0] = source;
+
+  let newLength = 0;
+  let needsReconcile = false;
+
+  while (stackLength > 0) {
+    const current = tempStack[--stackLength] as SpriteNode;
+    const data = state.renderNodeMap.get(current) as SpriteRenderNode | undefined;
+
+    if (data === undefined || !isRenderNodeVisible(data)) continue;
+
+    if (data.renderer !== null) {
+      const result = processDOMNode(
+        internal,
+        data,
+        state.currentFrameID,
+        () => data.renderer!.draw(state, data),
+        newLength,
+        isMutableSpriteBatchKind(current.kind),
+      );
+      newLength = result.newLength;
+      if (result.needsReconcile) needsReconcile = true;
+    }
+
+    if (data.traverseChildren) {
+      const children = getSpriteNodeRuntime(current).children;
+      if (children !== null) {
+        for (let i = children.length - 1; i >= 0; i--) {
+          tempStack[stackLength++] = children[i] as SpriteNode;
+        }
+      }
+    }
+  }
+
+  if (detectDOMStructureChange(internal, newLength, needsReconcile)) {
+    reconcileDOMContainer(container, internal, newLength);
+  }
+
+  swapDOMOrderLists(internal, newLength);
 }

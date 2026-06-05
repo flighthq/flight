@@ -1,5 +1,6 @@
-import { createNullRendererData } from '@flighthq/render';
-import type { CanvasRenderState, Sprite, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
+import { createNullRendererData, isRenderNodeVisible } from '@flighthq/render';
+import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
+import type { CanvasRenderState, Sprite, SpriteNode, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 import { setCanvasBlendMode } from './canvasMaterials';
 
@@ -47,3 +48,27 @@ export const defaultCanvasSpriteRenderer: SpriteRenderer = {
   createData: createNullRendererData,
   draw: drawCanvasSprite,
 };
+
+export function renderCanvasSprite(state: CanvasRenderState, source: SpriteNode): void {
+  const tempStack = state.tempStack;
+  let stackLength = 1;
+  tempStack[0] = source;
+
+  while (stackLength > 0) {
+    const current = tempStack[--stackLength] as SpriteNode;
+    const data = state.renderNodeMap.get(current) as SpriteRenderNode | undefined;
+
+    if (data === undefined || !isRenderNodeVisible(data)) continue;
+
+    if (data.renderer !== null) data.renderer.draw(state, data);
+
+    if (data.traverseChildren) {
+      const children = getSpriteNodeRuntime(current).children;
+      if (children !== null) {
+        for (let i = children.length - 1; i >= 0; i--) {
+          tempStack[stackLength++] = children[i] as SpriteNode;
+        }
+      }
+    }
+  }
+}

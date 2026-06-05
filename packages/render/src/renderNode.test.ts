@@ -1,7 +1,9 @@
+import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { createSprite } from '@flighthq/scene-sprite';
+import { RenderFeatures } from '@flighthq/types';
 
-import { registerRenderer } from './renderer';
+import { enableRenderFeatures, registerRenderer } from './renderer';
 import {
   createDisplayObjectRenderNode,
   createRenderNode,
@@ -11,6 +13,8 @@ import {
   getOrCreateRenderNode,
   getOrCreateSpriteRenderNode,
   isRenderNodeVisible,
+  prepareDisplayObjectRender,
+  prepareSpriteRender,
   syncRenderNodeRenderer,
 } from './renderNode';
 import { createRenderState } from './renderState';
@@ -40,7 +44,7 @@ describe('createDisplayObjectRenderNode', () => {
     expect(node.isMaskFrameID).toBe(-1);
     expect(node.maskDepth).toBe(0);
     expect(node.scrollRectangleDepth).toBe(0);
-    expect(node.updateChildren).toBe(true);
+    expect(node.traverseChildren).toBe(true);
   });
 });
 
@@ -108,11 +112,11 @@ describe('createSpriteRenderNode', () => {
     expect(node.transform2D).toBeDefined();
   });
 
-  it('initializes updateChildren to true', () => {
+  it('initializes traverseChildren to true', () => {
     const state = createRenderState();
     const sprite = createSprite();
     const node = createSpriteRenderNode(state, sprite);
-    expect(node.updateChildren).toBe(true);
+    expect(node.traverseChildren).toBe(true);
   });
 });
 
@@ -170,7 +174,7 @@ describe('getOrCreateSpriteRenderNode', () => {
     const sprite = createSprite();
     const node = getOrCreateSpriteRenderNode(state, sprite);
     expect(node.source).toBe(sprite);
-    expect(node.updateChildren).toBe(true);
+    expect(node.traverseChildren).toBe(true);
   });
 
   it('returns the same node on subsequent calls', () => {
@@ -217,6 +221,104 @@ describe('isRenderNodeVisible', () => {
     const node = createDisplayObjectRenderNode(state, obj);
 
     expect(isRenderNodeVisible(node)).toBe(true);
+  });
+});
+
+describe('prepareDisplayObjectRender', () => {
+  it('creates render nodes for all enabled nodes in the tree', () => {
+    const state = createRenderState();
+    const root = createDisplayObject();
+    const child = createDisplayObject();
+    addSceneChild(root, child);
+
+    prepareDisplayObjectRender(state, root);
+
+    expect(state.renderNodeMap.get(root)).toBeDefined();
+    expect(state.renderNodeMap.get(child)).toBeDefined();
+  });
+
+  it('skips disabled nodes', () => {
+    const state = createRenderState();
+    const root = createDisplayObject();
+    const child = createDisplayObject();
+    addSceneChild(root, child);
+    child.enabled = false;
+
+    prepareDisplayObjectRender(state, root);
+
+    expect(state.renderNodeMap.get(root)).toBeDefined();
+    expect(state.renderNodeMap.get(child)).toBeUndefined();
+  });
+
+  it('returns true when tree is dirty', () => {
+    const state = createRenderState();
+    const root = createDisplayObject();
+
+    expect(prepareDisplayObjectRender(state, root)).toBe(true);
+  });
+
+  it('returns false when tree is clean', () => {
+    const state = createRenderState();
+    const root = createDisplayObject();
+    prepareDisplayObjectRender(state, root);
+
+    expect(prepareDisplayObjectRender(state, root)).toBe(false);
+  });
+
+  it('marks mask nodes with the current frame id', () => {
+    const state = createRenderState();
+    enableRenderFeatures(state, RenderFeatures.Masks);
+    const root = createDisplayObject();
+    const mask = createDisplayObject();
+    root.mask = mask;
+
+    prepareDisplayObjectRender(state, root);
+
+    const maskNode = state.renderNodeMap.get(mask) as any;
+    expect(maskNode).toBeDefined();
+    expect(maskNode.isMaskFrameID).toBe(state.currentFrameID);
+  });
+});
+
+describe('prepareSpriteRender', () => {
+  it('creates render nodes for all enabled nodes in the tree', () => {
+    const state = createRenderState();
+    const root = createSprite();
+    const child = createSprite();
+    addSceneChild(root, child);
+
+    prepareSpriteRender(state, root);
+
+    expect(state.renderNodeMap.get(root)).toBeDefined();
+    expect(state.renderNodeMap.get(child)).toBeDefined();
+  });
+
+  it('skips disabled nodes', () => {
+    const state = createRenderState();
+    const root = createSprite();
+    const child = createSprite();
+    addSceneChild(root, child);
+    child.enabled = false;
+
+    prepareSpriteRender(state, root);
+
+    expect(state.renderNodeMap.get(root)).toBeDefined();
+    expect(state.renderNodeMap.get(child)).toBeUndefined();
+  });
+
+  it('returns true when tree is dirty', () => {
+    const state = createRenderState();
+    const root = createSprite();
+
+    expect(prepareSpriteRender(state, root)).toBe(true);
+  });
+
+  it('returns false when tree is clean', () => {
+    const state = createRenderState();
+    const root = createSprite();
+    prepareSpriteRender(state, root);
+
+    expect(prepareSpriteRender(state, root)).toBe(false);
   });
 });
 

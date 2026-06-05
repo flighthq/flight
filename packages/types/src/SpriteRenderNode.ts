@@ -1,5 +1,5 @@
 import type { RenderNode2D } from './RenderNode2D';
 
 export interface SpriteRenderNode extends RenderNode2D {
-  updateChildren: boolean;
+  traverseChildren: boolean;
 }

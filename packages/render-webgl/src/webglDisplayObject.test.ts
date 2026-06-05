@@ -2,6 +2,7 @@
 import {
   enableRenderFeatures,
   getOrCreateDisplayObjectRenderNode,
+  prepareDisplayObjectRender,
   registerDisplayObjectMaskRenderer,
   registerRenderer,
 } from '@flighthq/render';
@@ -14,6 +15,7 @@ import {
   defaultWebGLDisplayObjectRenderer,
   drawWebGLDisplayObject,
   drawWebGLDisplayObjectMask,
+  renderWebGLDisplayObject,
 } from './webglDisplayObject';
 import { enableWebGLMaskSupport } from './webglMask';
 import { createWebGLRenderState } from './webglRenderState';
@@ -60,5 +62,54 @@ describe('drawWebGLDisplayObjectMask', () => {
     drawWebGLDisplayObjectMask(state, getOrCreateDisplayObjectRenderNode(state, parent));
 
     expect(renderer.drawMask).toHaveBeenCalledWith(state, childData);
+  });
+});
+
+describe('renderWebGLDisplayObject', () => {
+  it('does not throw for an empty display object', () => {
+    const state = makeState();
+    const obj = createDisplayObject();
+    prepareDisplayObjectRender(state, obj);
+    expect(() => renderWebGLDisplayObject(state, obj)).not.toThrow();
+  });
+
+  it('calls renderer.draw for a visible object with a renderer', () => {
+    const state = makeState();
+    const renderer = makeRenderer();
+    registerRenderer(state, DisplayObjectKind, renderer);
+    const obj = createDisplayObject();
+    const data = getOrCreateDisplayObjectRenderNode(state, obj);
+    prepareDisplayObjectRender(state, obj);
+
+    renderWebGLDisplayObject(state, obj);
+
+    expect(renderer.draw).toHaveBeenCalledWith(state, data);
+  });
+
+  it('skips objects with zero alpha', () => {
+    const state = makeState();
+    const renderer = makeRenderer();
+    registerRenderer(state, DisplayObjectKind, renderer);
+    const obj = createDisplayObject();
+    obj.alpha = 0;
+    prepareDisplayObjectRender(state, obj);
+
+    renderWebGLDisplayObject(state, obj);
+
+    expect(renderer.draw).not.toHaveBeenCalled();
+  });
+
+  it('traverses children and draws visible ones', () => {
+    const state = makeState();
+    const renderer = makeRenderer();
+    registerRenderer(state, DisplayObjectKind, renderer);
+    const parent = createDisplayObject();
+    const child = createDisplayObject();
+    addSceneChild(parent, child);
+    prepareDisplayObjectRender(state, parent);
+
+    renderWebGLDisplayObject(state, parent);
+
+    expect(renderer.draw).toHaveBeenCalledTimes(2);
   });
 });
