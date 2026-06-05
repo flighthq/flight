@@ -11,7 +11,6 @@ import {
   type HasBoundsRect,
   type HasTransform2D,
   type Renderable,
-  RenderFeatures,
   type RenderNode,
   type RenderNode2D,
   type RenderState,
@@ -21,7 +20,6 @@ import {
 
 import { updateRenderNodeAppearance } from './appearance';
 import type { RenderNodeStateInternal } from './internal';
-import { hasRenderFeatures } from './renderer';
 import { adaptRenderNode, isRenderNodeDirty } from './renderNodeAdapter';
 import { updateDisplayObjectRenderTransform, updateRenderNode2DTransform } from './transform2d';
 
@@ -39,7 +37,7 @@ export function createRenderNode(state: RenderState, source: Renderable): Render
   return createEntity({
     source: source,
     kind: source.kind,
-    resolver: null,
+    renderAdapter: null,
     next: null,
     alpha: 1,
     appearanceFrameID: -1,
@@ -118,9 +116,6 @@ export function prepareDisplayObjectRender(state: RenderState, source: DisplayOb
   const frameID = ++(state as RenderNodeStateInternal).currentFrameID;
 
   const tempStack = state.tempStack;
-  const hasMasks = hasRenderFeatures(state, RenderFeatures.Masks);
-  const hasScrollRects = hasRenderFeatures(state, RenderFeatures.ScrollRectangle);
-
   let stackLength = 1;
   tempStack[0] = source;
 
@@ -144,8 +139,8 @@ export function prepareDisplayObjectRender(state: RenderState, source: DisplayOb
       } else if (parent !== lastParent) {
         parentData = getOrCreateDisplayObjectRenderNode(state, parent as DisplayObject);
         lastParent = parent as DisplayObject;
-        scrollRectangleDepth = hasScrollRects ? parentData.scrollRectangleDepth : 0;
-        maskDepth = hasMasks ? parentData.maskDepth : 0;
+        scrollRectangleDepth = parentData.scrollRectangleDepth;
+        maskDepth = parentData.maskDepth;
       }
     }
 
@@ -158,14 +153,14 @@ export function prepareDisplayObjectRender(state: RenderState, source: DisplayOb
       treeDirty = true;
     }
 
-    if (hasScrollRects && current.scrollRectangle !== null) {
+    if (current.scrollRectangle !== null) {
       data.scrollRectangleDepth = ++scrollRectangleDepth;
     } else {
       data.scrollRectangleDepth = scrollRectangleDepth;
     }
 
     const mask = current.mask;
-    if (hasMasks && mask !== null) {
+    if (mask !== null) {
       const maskData = getOrCreateDisplayObjectRenderNode(state, mask);
       maskData.isMaskFrameID = frameID;
       tempStack[stackLength++] = mask;
@@ -174,7 +169,7 @@ export function prepareDisplayObjectRender(state: RenderState, source: DisplayOb
       data.maskDepth = maskDepth;
     }
 
-    if (hasMasks && data.isMaskFrameID === frameID) continue;
+    if (data.isMaskFrameID === frameID) continue;
 
     if (!isRenderNodeVisible(data)) continue;
 

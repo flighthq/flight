@@ -55,7 +55,7 @@ describe('createRenderNode', () => {
     const node = createRenderNode(state, source);
     expect(node.source).toBe(source);
     expect(node.kind).toBe(source.kind);
-    expect(node.resolver).toBeNull();
+    expect(node.renderAdapter).toBeNull();
     expect(node.next).toBeNull();
     expect(node.alpha).toBe(1);
     expect(node.appearanceFrameID).toBe(-1);

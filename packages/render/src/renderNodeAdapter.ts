@@ -8,11 +8,11 @@ export function adaptRenderNode(
   source: Renderable,
   data: RenderNode2D & { traverseChildren: boolean },
 ): void {
-  const resolver = getSceneNodeRuntime(source as SceneNode).resolver;
-  data.resolver = resolver;
+  const renderAdapter = getSceneNodeRuntime(source as SceneNode).renderAdapter;
+  data.renderAdapter = renderAdapter;
   let traverseChildren = true;
-  if (resolver !== null) {
-    const result = resolver.adapt(state, source, data);
+  if (renderAdapter !== null) {
+    const result = renderAdapter.adapt(state, source, data);
     if (result !== null) {
       traverseChildren = result;
       syncRenderNodeRenderer(state, data);
@@ -36,6 +36,6 @@ export function isRenderNodeDirty(
   const localDirty =
     data.lastLocalTransformID !== getLocalTransformRevision(source as SceneNode) ||
     data.lastAppearanceID !== getAppearanceRevision(source as SceneNode);
-  const resolverDirty = data.resolver !== runtime.resolver;
-  return parentDirty || localDirty || resolverDirty;
+  const renderAdapterDirty = data.renderAdapter !== runtime.renderAdapter;
+  return parentDirty || localDirty || renderAdapterDirty;
 }

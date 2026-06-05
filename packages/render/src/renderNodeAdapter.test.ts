@@ -3,7 +3,7 @@ import {
   getAppearanceRevision,
   getLocalTransformRevision,
   invalidateAppearance,
-  setSceneNodeAdapter,
+  setSceneNodeRenderAdapter,
   setTransformX,
 } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
@@ -33,7 +33,7 @@ describe('adaptRenderNode', () => {
     const adapter: RenderNodeAdapter = {
       adapt: vi.fn().mockReturnValue(false),
     };
-    setSceneNodeAdapter(source, adapter);
+    setSceneNodeRenderAdapter(source, adapter);
 
     adaptRenderNode(state, source, data);
 
@@ -53,7 +53,7 @@ describe('adaptRenderNode', () => {
         return true;
       },
     };
-    setSceneNodeAdapter(source, adapter);
+    setSceneNodeRenderAdapter(source, adapter);
 
     adaptRenderNode(state, source, data);
 
