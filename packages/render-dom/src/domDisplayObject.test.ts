@@ -116,6 +116,7 @@ describe('renderDOMDisplayObject', () => {
     const childEl = document.createElement('div');
     const childData = setupRenderedNode(state, child, childEl);
 
+    prepareDisplayObjectRender(state, parent);
     renderDOMDisplayObject(state, parent);
 
     expect(childData.renderer!.draw).toHaveBeenCalled();
@@ -149,6 +150,7 @@ describe('renderDOMDisplayObject', () => {
     setupRenderedNode(state, childA, elA);
     setupRenderedNode(state, childB, elB);
 
+    prepareDisplayObjectRender(state, parent);
     renderDOMDisplayObject(state, parent);
 
     const children = Array.from(state.element.children);
@@ -168,6 +170,7 @@ describe('renderDOMDisplayObject', () => {
     setupRenderedNode(state, childA, elA);
     const dataB = setupRenderedNode(state, childB, elB);
 
+    prepareDisplayObjectRender(state, parent);
     renderDOMDisplayObject(state, parent);
     expect(state.element.children.length).toBe(2);
 
@@ -207,6 +210,7 @@ describe('renderDOMDisplayObject', () => {
     const el = document.createElement('div');
     setupRenderedNode(state, obj, el);
 
+    prepareDisplayObjectRender(state, obj);
     renderDOMDisplayObject(state, obj);
 
     expect(el.style.clipPath).toBe('polygon(5px 6px, 25px 6px, 25px 36px, 5px 36px)');
