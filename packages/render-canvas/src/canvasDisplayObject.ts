@@ -1,13 +1,6 @@
-import { createNullRendererData, getOrCreateDisplayObjectRenderNode, isRenderNodeVisible } from '@flighthq/render';
+import { createNullRendererData, getDisplayObjectRenderNode, isRenderNodeVisible } from '@flighthq/render';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
-import type {
-  CanvasRenderState,
-  DisplayObject,
-  DisplayObjectMaskHooks,
-  DisplayObjectRenderer,
-  DisplayObjectRenderNode,
-  ScrollRectangleHooks,
-} from '@flighthq/types';
+import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
 
 export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderNode: DisplayObjectRenderNode): void {
   // Plain display objects have no visual geometry of their own.
@@ -17,8 +10,8 @@ export function drawCanvasDisplayObjectMask(state: CanvasRenderState, data: Disp
   const children = getDisplayObjectRuntime(data.source as DisplayObject).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
-      const child = getOrCreateDisplayObjectRenderNode(state, children[i] as DisplayObject);
-      state.displayObjectMaskRendererMap.get(child.source.kind)?.drawMask(state, child);
+      const child = getDisplayObjectRenderNode(state, children[i] as DisplayObject);
+      if (child !== undefined) state.displayObjectMaskRendererMap.get(child.source.kind)?.drawMask(state, child);
     }
   }
 }
@@ -36,38 +29,36 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
 
   let stackLength = 1;
   tempStack[0] = source;
-
-  const pendingPops: CanvasRenderPop[] = [];
+  let currentMaskDepth = 0;
+  let currentScrollRectDepth = 0;
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as DisplayObject;
 
-    if (!current.enabled) {
-      drainCanvasPops(state, maskHooks, scrollRectHooks, pendingPops, stackLength);
-      continue;
-    }
+    if (!current.enabled) continue;
 
     const data = state.renderNodeMap.get(current) as DisplayObjectRenderNode | undefined;
-    if (data === undefined) {
-      drainCanvasPops(state, maskHooks, scrollRectHooks, pendingPops, stackLength);
-      continue;
+    if (data === undefined) continue;
+
+    if (data.isMaskFrameID === frameID) continue;
+
+    while (maskHooks !== null && currentMaskDepth > data.maskDepth) {
+      maskHooks.popMask(state);
+      currentMaskDepth--;
+    }
+    while (scrollRectHooks !== null && currentScrollRectDepth > data.scrollRectangleDepth) {
+      scrollRectHooks.pop(state);
+      currentScrollRectDepth--;
     }
 
-    if (data.isMaskFrameID === frameID) {
-      drainCanvasPops(state, maskHooks, scrollRectHooks, pendingPops, stackLength);
-      continue;
-    }
+    if (!isRenderNodeVisible(data)) continue;
 
-    if (!isRenderNodeVisible(data)) {
-      drainCanvasPops(state, maskHooks, scrollRectHooks, pendingPops, stackLength);
-      continue;
-    }
-
-    const mask = current.mask;
-    let maskData: DisplayObjectRenderNode | undefined;
-    if (maskHooks !== null && mask !== null) {
-      maskData = state.renderNodeMap.get(mask) as DisplayObjectRenderNode | undefined;
-      if (maskData !== undefined) maskHooks.pushMask(state, maskData);
+    if (maskHooks !== null && current.mask !== null) {
+      const maskData = state.renderNodeMap.get(current.mask) as DisplayObjectRenderNode | undefined;
+      if (maskData !== undefined) {
+        maskHooks.pushMask(state, maskData);
+        currentMaskDepth++;
+      }
     }
 
     if (data.renderer !== null) data.renderer.draw(state, data);
@@ -83,43 +74,12 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
       }
     }
 
-    if (maskData !== undefined) {
-      pendingPops.push({ atStackLength: prePushLength, kind: 'mask', node: maskData });
-    }
-
     if (scrollRectHooks !== null && current.scrollRectangle !== null && stackLength > prePushLength) {
       scrollRectHooks.push(state, data);
-      pendingPops.push({ atStackLength: prePushLength, kind: 'scrollRect', node: data });
+      currentScrollRectDepth++;
     }
-
-    drainCanvasPops(state, maskHooks, scrollRectHooks, pendingPops, stackLength);
   }
 
-  for (let i = pendingPops.length - 1; i >= 0; i--) {
-    const pop = pendingPops[i];
-    if (pop.kind === 'mask') maskHooks!.popMask(state, pop.node);
-    else scrollRectHooks!.pop(state);
-  }
-}
-
-interface CanvasRenderPop {
-  atStackLength: number;
-  kind: 'mask' | 'scrollRect';
-  node: DisplayObjectRenderNode;
-}
-
-function drainCanvasPops(
-  state: CanvasRenderState,
-  maskHooks: DisplayObjectMaskHooks | null,
-  scrollRectHooks: ScrollRectangleHooks | null,
-  pendingPops: CanvasRenderPop[],
-  stackLength: number,
-): void {
-  while (pendingPops.length > 0) {
-    const top = pendingPops[pendingPops.length - 1];
-    if (top.atStackLength < stackLength) break;
-    pendingPops.pop();
-    if (top.kind === 'mask') maskHooks!.popMask(state, top.node);
-    else scrollRectHooks!.pop(state);
-  }
+  while (currentMaskDepth-- > 0) maskHooks!.popMask(state);
+  while (currentScrollRectDepth-- > 0) scrollRectHooks!.pop(state);
 }

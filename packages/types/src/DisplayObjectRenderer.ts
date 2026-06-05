@@ -14,7 +14,7 @@ export interface DisplayObjectMaskRenderer {
 }
 
 export interface DisplayObjectMaskHooks {
-  popMask(state: RenderState, node: DisplayObjectRenderNode, context?: unknown): void;
+  popMask(state: RenderState): void;
   pushMask(state: RenderState, node: DisplayObjectRenderNode, context?: unknown): void;
 }
 

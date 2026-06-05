@@ -25,7 +25,7 @@ export function pushDOMMaskRectangle(rectangles: DOMStageRectangle[], data: Disp
   rectangles.push(createDOMStageRectangle(bounds, data.transform2D));
 }
 
-function popDOMMask(_state: RenderState, _data: DisplayObjectRenderNode, _context?: unknown): void {}
+function popDOMMask(_state: RenderState): void {}
 
 function pushDOMMask(_state: RenderState, data: DisplayObjectRenderNode, context?: unknown): void {
   pushDOMMaskRectangle(context as DOMStageRectangle[], data);

@@ -1,5 +1,5 @@
 ﻿import { setDisplayObjectMaskHooks } from '@flighthq/render';
-import type { CanvasRenderState, DisplayObjectMaskHooks, DisplayObjectRenderNode } from '@flighthq/types';
+import type { CanvasRenderState, DisplayObjectMaskHooks } from '@flighthq/types';
 
 import { setCanvasTransform } from './canvasTransform';
 
@@ -11,9 +11,8 @@ export function enableCanvasMaskSupport(state: CanvasRenderState): void {
   setDisplayObjectMaskHooks(state, canvasMaskHooks);
 }
 
-export function popCanvasMask(state: CanvasRenderState, _data: DisplayObjectRenderNode): void {
+export function popCanvasMask(state: CanvasRenderState): void {
   state.context.restore();
-  // state.currentMaskDepth--;
 }
 
 export function pushCanvasMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
