@@ -7,6 +7,7 @@ import {
   defaultWebGLRichTextRenderer,
   defaultWebGLShapeCommands,
   defaultWebGLShapeRenderer,
+  enableWebGLScrollRectangleSupport,
   prepareDisplayObjectRender,
   registerRenderer,
   registerWebGLShapeCommands,
@@ -24,6 +25,7 @@ export const state = createWebGLRenderState(canvas, {
   backgroundColor: 0xff000000,
   contextAttributes: { alpha: false },
 });
+enableWebGLScrollRectangleSupport(state);
 registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
 registerWebGLShapeCommands(defaultWebGLShapeCommands);
 registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);

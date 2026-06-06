@@ -5,6 +5,7 @@ import {
   clearShapeCommands,
   createDisplayContainer,
   createShape,
+  invalidateAppearance,
 } from '@flighthq/sdk';
 
 import { height, render, scale, width } from './render';
@@ -79,6 +80,7 @@ function enterFrame(): void {
 
   appendShapeBeginFill(randomRect, color);
   appendShapeRectangle(randomRect, pos(x), pos(y), pos(w), pos(h));
+  invalidateAppearance(randomRect);
 
   render(root);
   requestAnimationFrame(enterFrame);
