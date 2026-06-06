@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-drop-shadow",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

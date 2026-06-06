@@ -45,7 +45,7 @@ export async function downloadAssets(assets: Asset[], targetDir: string) {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   (async () => {
-    const exampleDir = process.cwd();
+    const exampleDir = process.argv[2] ? path.resolve(process.argv[2]) : process.cwd();
     const manifestPath = path.join(exampleDir, 'assets.manifest.json');
     const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8'));
     await downloadAssets(manifest.assets, path.join(exampleDir, 'public/assets'));
