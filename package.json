@@ -23,6 +23,7 @@
     "test:completeness:json": "tsx ./scripts/completeness.ts --json",
     "test:coverage": "vitest run --coverage --project=!size",
     "explorer": "npm run dev --workspace=tools/explorer",
+    "test:functional": "npm run dev --workspace=tools/functional",
     "fix": "npm run order:fix && npm run lint:fix && npm run format",
     "format": "prettier . --write",
     "format:check": "prettier . --check",

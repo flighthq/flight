@@ -1,0 +1,13 @@
+{
+  "name": "@flighthq/functional",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config vite.config.ts",
+    "test": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "vite": "*"
+  }
+}
