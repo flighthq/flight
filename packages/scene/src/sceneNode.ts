@@ -3,7 +3,6 @@ import { createSignal } from '@flighthq/signals';
 import type {
   MethodsOf,
   PartialNode,
-  RenderNodeAdapter,
   SceneHierarchyNode,
   SceneNode,
   SceneNodeData,
@@ -52,7 +51,6 @@ export function createSceneNodeRuntime<SceneKind extends symbol, Traits extends 
   out.canAddChild = methods?.canAddChild ?? defaultSceneNodeRuntimeCanAddChild;
   out.children = null;
   out.sceneSignals = createSceneSignals();
-  out.renderAdapter = null;
   out.interactionSignals = null;
   out.localBoundsID = 0;
   out.localBoundsUsingLocalBoundsID = -1;
@@ -102,11 +100,4 @@ export function setSceneNodeEnabled<SceneKind extends symbol, Traits extends obj
 ): void {
   target.enabled = value;
   invalidateSceneNode(target);
-}
-
-export function setSceneNodeRenderAdapter<SceneKind extends symbol, Traits extends object>(
-  target: SceneNode<SceneKind, Traits>,
-  adapter: RenderNodeAdapter | null,
-): void {
-  (getEntityRuntime(target) as SceneNodeRuntime<SceneKind, Traits>).renderAdapter = adapter;
 }

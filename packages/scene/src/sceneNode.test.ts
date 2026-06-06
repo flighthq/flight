@@ -8,7 +8,6 @@ import {
   getSceneNodeRuntime,
   getSceneSignals,
   setSceneNodeEnabled,
-  setSceneNodeRenderAdapter,
 } from './sceneNode';
 
 describe('createSceneNode', () => {
@@ -95,7 +94,6 @@ describe('createSceneNodeRuntime', () => {
     expect(runtime.boundsUsingLocalTransformID).toStrictEqual(-1);
     expect(runtime.children).toBeNull();
     expect(runtime.sceneSignals).toBeDefined();
-    expect(runtime.renderAdapter).toBeNull();
     expect(runtime.localBoundsID).toStrictEqual(0);
     expect(runtime.localBoundsUsingLocalBoundsID).toStrictEqual(-1);
     expect(runtime.localTransformID).toStrictEqual(0);
@@ -182,23 +180,6 @@ describe('setSceneNodeEnabled', () => {
     setSceneNodeEnabled(node, false);
     setSceneNodeEnabled(node, true);
     expect(node.enabled).toBe(true);
-  });
-});
-
-describe('setSceneNodeRenderAdapter', () => {
-  it('sets the runtime adapter', () => {
-    const node = createSceneNode(TestGraph, NodeTestKind);
-    const adapter = { adapt: vi.fn() };
-    setSceneNodeRenderAdapter(node, adapter);
-    expect(getSceneNodeRuntime(node).renderAdapter).toBe(adapter);
-  });
-
-  it('accepts null', () => {
-    const node = createSceneNode(TestGraph, NodeTestKind);
-    const adapter = { adapt: vi.fn() };
-    setSceneNodeRenderAdapter(node, adapter);
-    setSceneNodeRenderAdapter(node, null);
-    expect(getSceneNodeRuntime(node).renderAdapter).toBeNull();
   });
 });
 
