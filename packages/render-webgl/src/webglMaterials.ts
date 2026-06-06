@@ -74,7 +74,7 @@ function setWebGLColorTransformUniforms(
 
   if (!renderNode.useColorTransform) return;
 
-  const colorTransform = renderNode.colorTransform;
+  const colorTransform = renderNode.colorTransform!;
   gl.uniform4f(
     loc.locColorMultiplier!,
     colorTransform.redMultiplier,

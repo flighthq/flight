@@ -1,6 +1,5 @@
 import { createEntity } from '@flighthq/entity';
 import { createMatrix } from '@flighthq/geometry';
-import { createColorTransform } from '@flighthq/materials';
 import { getSceneParent } from '@flighthq/scene';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
@@ -42,7 +41,7 @@ export function createRenderNode(state: RenderState, source: Renderable): Render
     alpha: 1,
     appearanceFrameID: -1,
     blendMode: BlendMode.Normal,
-    colorTransform: createColorTransform(),
+    colorTransform: null,
     lastAppearanceID: -1,
     lastLocalTransformID: -1,
     name: null,
