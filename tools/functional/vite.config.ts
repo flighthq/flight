@@ -115,6 +115,31 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${name} · ${render}</title>
   <style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { overflow: hidden; }</style>
+  <script>
+    function __ftShowError(msg) {
+      var el = document.getElementById('ft-error');
+      if (!el) {
+        el = document.createElement('pre');
+        el.id = 'ft-error';
+        el.style.cssText = 'position:fixed;inset:0;margin:0;padding:1em;background:#1a0000;color:#ff6b6b;font-size:13px;font-family:monospace;overflow:auto;z-index:9999;white-space:pre-wrap;word-break:break-word;';
+        document.body.appendChild(el);
+      }
+      el.textContent = msg;
+      try { window.parent.console.error('[${name}/${render}]', msg); } catch (_) {}
+    }
+    window.addEventListener('error', function(e) {
+      __ftShowError((e.error && e.error.stack) || e.message || String(e));
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+      __ftShowError((e.reason && e.reason.stack) || String(e.reason));
+    });
+    window.addEventListener('pagehide', function() {
+      document.querySelectorAll('canvas').forEach(function(c) {
+        var gl = c.getContext('webgl2') || c.getContext('webgl');
+        if (gl) { var ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); }
+      });
+    });
+  </script>
 </head>
 <body>
   <div id="app"></div>
@@ -124,6 +149,7 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
 </html>`;
 
           res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          res.setHeader('Cache-Control', 'no-store');
           res.end(html);
         });
       },
@@ -149,7 +175,7 @@ export default defineConfig(() => {
     },
 
     optimizeDeps: {
-      exclude: workspacePackages.map((p) => p.name),
+      include: workspacePackages.map((p) => p.name),
     },
 
     server: {
