@@ -15,7 +15,7 @@ export interface RenderNode extends Entity {
   alpha: number;
   appearanceFrameID: number;
   blendMode: BlendMode | null;
-  colorTransform: ColorTransform;
+  colorTransform: ColorTransform | null;
   lastAppearanceID: number;
   lastLocalTransformID: number;
   name: string | null;

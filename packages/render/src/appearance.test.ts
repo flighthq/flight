@@ -2,11 +2,10 @@ import { createColorTransform } from '@flighthq/materials';
 import { invalidateAppearance } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import type { HasAppearance } from '@flighthq/types';
-import { RenderFeatures } from '@flighthq/types';
 
-import { updateRenderNodeAppearance, updateRenderNodeColorTransform } from './appearance';
+import { updateRenderNodeAppearance } from './appearance';
+import { enableColorTransformSupport, updateRenderNodeColorTransform } from './colorTransform';
 import type { RenderNodeStateInternal } from './internal';
-import { enableRenderFeatures } from './renderer';
 import { createRenderNode } from './renderNode';
 import { createRenderState } from './renderState';
 
@@ -15,6 +14,40 @@ function makeSource(ct = createColorTransform()): HasAppearance {
   obj.colorTransform = ct;
   return obj;
 }
+
+describe('enableColorTransformSupport', () => {
+  it('installs appearanceHooks on the render state', () => {
+    const state = createRenderState();
+    expect(state.appearanceHooks).toBeNull();
+    enableColorTransformSupport(state);
+    expect(state.appearanceHooks).not.toBeNull();
+  });
+
+  it('causes updateRenderNodeAppearance to compute color transforms', () => {
+    const state = createRenderState();
+    enableColorTransformSupport(state);
+    const source = createDisplayObject();
+    const ct = createColorTransform();
+    ct.redMultiplier = 0.5;
+    source.colorTransform = ct;
+    const data = createRenderNode(state, source);
+    updateRenderNodeAppearance(state, data);
+    expect(data.useColorTransform).toBe(true);
+    expect(data.colorTransform!.redMultiplier).toBeCloseTo(0.5);
+  });
+
+  it('leaves colorTransform null when not enabled', () => {
+    const state = createRenderState();
+    const source = createDisplayObject();
+    const ct = createColorTransform();
+    ct.redMultiplier = 0.5;
+    source.colorTransform = ct;
+    const data = createRenderNode(state, source);
+    updateRenderNodeAppearance(state, data);
+    expect(data.useColorTransform).toBe(false);
+    expect(data.colorTransform).toBeNull();
+  });
+});
 
 describe('updateRenderNodeAppearance', () => {
   it('returns true on first call (lastAppearanceID starts at -1)', () => {
@@ -101,13 +134,19 @@ describe('updateRenderNodeAppearance', () => {
     expect(data.appearanceFrameID).toBe(7);
   });
 
-  it('respects BlendMode feature flag', () => {
+  it('propagates blend mode from parent', () => {
     const state = createRenderState();
-    enableRenderFeatures(state, RenderFeatures.BlendMode);
+    (state as RenderNodeStateInternal).currentFrameID = 1;
     const obj = createDisplayObject();
+    const parentObj = createDisplayObject();
     const data = createRenderNode(state, obj);
-    updateRenderNodeAppearance(state, data);
-    expect(data.blendMode).not.toBeNull();
+    const parentData = createRenderNode(state, parentObj);
+    parentData.blendMode = 'multiply' as any;
+    parentData.visible = true;
+    parentData.alpha = 1;
+    parentData.appearanceFrameID = state.currentFrameID;
+    updateRenderNodeAppearance(state, data, parentData);
+    expect(data.blendMode).toBe('multiply');
   });
 });
 
@@ -130,7 +169,7 @@ describe('updateRenderNodeColorTransform', () => {
 
     updateRenderNodeColorTransform(state, data, parentData);
     expect(data.useColorTransform).toBe(true);
-    expect(data.colorTransform.redMultiplier).toBeCloseTo(0.25);
+    expect(data.colorTransform!.redMultiplier).toBeCloseTo(0.25);
   });
 
   it('copies parent color transform when source has identity transform', () => {
@@ -148,7 +187,7 @@ describe('updateRenderNodeColorTransform', () => {
 
     updateRenderNodeColorTransform(state, data, parentData);
     expect(data.useColorTransform).toBe(true);
-    expect(data.colorTransform.redMultiplier).toBeCloseTo(0.3);
+    expect(data.colorTransform!.redMultiplier).toBeCloseTo(0.3);
   });
 
   it('sets useColorTransform to false when both transforms are identity', () => {

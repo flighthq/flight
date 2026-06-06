@@ -1,6 +1,5 @@
-﻿import { createNullRendererData, hasRenderFeatures } from '@flighthq/render';
+﻿import { createNullRendererData } from '@flighthq/render';
 import type { Bitmap, CanvasRenderState, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
-import { RenderFeatures } from '@flighthq/types';
 
 import { drawCanvasDisplayObject, drawCanvasDisplayObjectMask } from './canvasDisplayObject';
 import { setCanvasBlendMode } from './canvasMaterials';
@@ -13,7 +12,7 @@ export function drawCanvasBitmap(state: CanvasRenderState, bitmap: DisplayObject
   if (imageSource !== null && imageSource.src !== null) {
     const context = state.context;
 
-    if (hasRenderFeatures(state, RenderFeatures.BlendMode)) setCanvasBlendMode(state, bitmap.blendMode);
+    setCanvasBlendMode(state, bitmap.blendMode);
 
     context.globalAlpha = bitmap.alpha;
     const sourceRectangle = source.data.sourceRectangle ?? null;

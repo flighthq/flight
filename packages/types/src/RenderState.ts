@@ -1,6 +1,6 @@
 ﻿import type { BlendMode } from './BlendMode';
 import type { ColorTransform } from './ColorTransform';
-import type { DisplayObjectClipHooks, DisplayObjectMaskRenderer } from './DisplayObjectRenderer';
+import type { AppearanceHooks, DisplayObjectClipHooks, DisplayObjectMaskRenderer } from './DisplayObjectRenderer';
 import type { Entity } from './Entity';
 import type { Matrix } from './Matrix';
 import type { Renderable } from './Renderable';
@@ -11,6 +11,7 @@ import type { BitmapShader } from './Shader';
 
 export interface RenderState extends Entity {
   allowSmoothing: boolean;
+  appearanceHooks: AppearanceHooks | null;
   readonly backgroundColor: number;
   readonly backgroundColorRGBA: number[];
   readonly backgroundColorString: string;

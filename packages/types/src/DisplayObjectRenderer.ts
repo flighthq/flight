@@ -2,6 +2,7 @@
 import type { DisplayObjectRenderNode } from './DisplayObjectRenderNode';
 import type { Renderer } from './Renderer';
 import type { RendererData } from './RendererData';
+import type { RenderNode } from './RenderNode';
 import type { RenderState } from './RenderState';
 
 export interface DisplayObjectRenderer extends Renderer {
@@ -11,6 +12,10 @@ export interface DisplayObjectRenderer extends Renderer {
 
 export interface DisplayObjectMaskRenderer {
   drawMask(state: RenderState, node: DisplayObjectRenderNode): void;
+}
+
+export interface AppearanceHooks {
+  update(state: RenderState, data: RenderNode, parentData: RenderNode | undefined): void;
 }
 
 export interface DisplayObjectClipHooks {

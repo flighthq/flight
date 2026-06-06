@@ -1,5 +1,6 @@
 export * from './appearance';
 export * from './color';
+export * from './colorTransform';
 export * from './imageRenderCache';
 export * from './renderer';
 export * from './renderNode';
