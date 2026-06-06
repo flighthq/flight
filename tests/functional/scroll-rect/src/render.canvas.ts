@@ -7,6 +7,7 @@ import {
   defaultCanvasRichTextRenderer,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
+  enableCanvasScrollRectangleSupport,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
@@ -24,6 +25,7 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xff000000,
   contextAttributes: { alpha: false },
 });
+enableCanvasScrollRectangleSupport(state);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
 registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);

@@ -1,4 +1,4 @@
-import { addSceneChild, createDisplayContainer, createRichText } from '@flighthq/sdk';
+import { addSceneChild, createDisplayContainer, createRichText, invalidateAppearance } from '@flighthq/sdk';
 
 import { height, render, scale, width } from './render';
 
@@ -46,6 +46,7 @@ function enterFrame(): void {
   textWidth += widthInc;
   if (textWidth <= 5 || textWidth >= maxWidth) widthInc = -widthInc;
   field.data.width = textWidth;
+  invalidateAppearance(field);
 
   render(root);
   requestAnimationFrame(enterFrame);

@@ -6,6 +6,7 @@ import {
   defaultWebGLBitmapRenderer,
   defaultWebGLShapeCommands,
   defaultWebGLShapeRenderer,
+  enableWebGLMaskSupport,
   prepareDisplayObjectRender,
   registerRenderer,
   registerWebGLShapeCommands,
@@ -22,6 +23,7 @@ export const state = createWebGLRenderState(canvas, {
   backgroundColor: 0xffffffff,
   contextAttributes: { alpha: false },
 });
+enableWebGLMaskSupport(state);
 registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
 registerWebGLShapeCommands(defaultWebGLShapeCommands);
 registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);

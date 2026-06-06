@@ -4,6 +4,7 @@ import {
   createDOMRenderState,
   defaultDOMBitmapRenderer,
   defaultDOMShapeRenderer,
+  enableDOMMaskSupport,
   prepareDisplayObjectRender,
   registerRenderer,
   renderDOMBackground,
@@ -18,6 +19,7 @@ container.style.height = '600px';
 document.body.appendChild(container);
 
 export const state = createDOMRenderState(container, { backgroundColor: 0xffffffff });
+enableDOMMaskSupport(state);
 registerRenderer(state, ShapeKind, defaultDOMShapeRenderer);
 registerRenderer(state, BitmapKind, defaultDOMBitmapRenderer);
 export const scale = 1;

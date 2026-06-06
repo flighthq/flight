@@ -10,6 +10,8 @@ import {
   createDisplayContainer,
   createRichText,
   createShape,
+  setTransformX,
+  setTransformY,
 } from '@flighthq/sdk';
 
 import { height, render, scale, width } from './render';
@@ -93,8 +95,8 @@ function enterFrame(): void {
   const dt = (now - lastTime) / 1000;
   lastTime = now;
   angle += (dt / (60 / RPM)) * Math.PI * 2;
-  group.x = cx + radius * Math.cos(angle);
-  group.y = cy + radius * Math.sin(angle);
+  setTransformX(group, cx + radius * Math.cos(angle));
+  setTransformY(group, cy + radius * Math.sin(angle));
   render(root);
   requestAnimationFrame(enterFrame);
 }

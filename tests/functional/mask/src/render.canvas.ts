@@ -6,6 +6,7 @@ import {
   defaultCanvasBitmapRenderer,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
+  enableCanvasMaskSupport,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
@@ -22,6 +23,7 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xffffffff,
   contextAttributes: { alpha: false },
 });
+enableCanvasMaskSupport(state);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
 registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);

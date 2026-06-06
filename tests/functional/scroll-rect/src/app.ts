@@ -128,6 +128,7 @@ function enterFrame(): void {
   setDisplayObjectScrollRectangle(textSprite, { x: 0, y: textRectY, width: textRect.width, height: textRect.height });
 
   owlRectX += owlInc;
+  if (owlRectX >= owlImg.width || owlRectX <= 0) owlInc = -owlInc;
   setDisplayObjectScrollRectangle(owlSprite, { x: owlRectX, y: 300, width: 200, height: 250 });
 
   outerAngle += outerInc;

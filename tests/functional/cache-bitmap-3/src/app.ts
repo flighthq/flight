@@ -11,6 +11,8 @@ import {
   createRichText,
   createShape,
   loadImageSourceFromURL,
+  setAppearanceAlpha,
+  setTransformX,
 } from '@flighthq/sdk';
 
 import { height, render, scale, width } from './render';
@@ -119,10 +121,10 @@ function enterFrame(): void {
   if (menuX <= 0 || menuX >= maxX) menuXInc = -menuXInc;
 
   const alpha = (maxX - menuX) / maxX;
-  posters.x = menuX;
-  menuGroup.x = menuX;
-  menuGroup.alpha = alpha;
-  posters.alpha = alpha;
+  setTransformX(posters, menuX);
+  setTransformX(menuGroup, menuX);
+  setAppearanceAlpha(menuGroup, alpha);
+  setAppearanceAlpha(posters, alpha);
 
   render(root);
   requestAnimationFrame(enterFrame);
