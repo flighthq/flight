@@ -3,7 +3,6 @@ import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, Matrix, Rectangle } from '@flighthq/types';
 
-import { enableCanvasScrollRectangleSupport } from './canvasClip';
 import {
   popCanvasClipRectangle,
   popCanvasScrollRectangle,
@@ -69,15 +68,6 @@ describe('Clip and Scroll Rect Functions', () => {
   //   expect(pushClipRectSpy).toHaveBeenCalledWith(state, rect, transform);
   //   expect(state.currentScrollRectangleDepth).toBe(1);
   // });
-});
-
-describe('enableCanvasScrollRectangleSupport', () => {
-  it('sets scroll rectangle hooks and enables the ScrollRectangle feature', () => {
-    const c = document.createElement('canvas');
-    const state = createCanvasRenderState(c);
-    enableCanvasScrollRectangleSupport(state);
-    expect(state.displayObjectClipHooks).not.toBeNull();
-  });
 });
 
 describe('popCanvasClipRectangle', () => {

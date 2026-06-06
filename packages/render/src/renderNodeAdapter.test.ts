@@ -1,11 +1,9 @@
-import { createMatrix } from '@flighthq/geometry';
-import { getAppearanceRevision, getLocalTransformRevision, invalidateAppearance, setTransformX } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import type { RenderNodeAdapter } from '@flighthq/types';
 
 import { registerRenderer } from './renderer';
-import { beginRenderNodeUpdate, createDisplayObjectRenderNode, isRenderNodeDirty } from './renderNode';
-import { adaptRenderNode, setRenderNodeAdapter } from './renderNodeAdapter';
+import { createDisplayObjectRenderNode } from './renderNode';
+import { adaptRenderNode, getRenderNodeAdapter, setRenderNodeAdapter } from './renderNodeAdapter';
 import { createRenderState } from './renderState';
 
 describe('adaptRenderNode', () => {
@@ -55,58 +53,35 @@ describe('adaptRenderNode', () => {
   });
 });
 
-describe('beginRenderNodeUpdate', () => {
-  it('is a no-op and does not throw', () => {
-    const state = createRenderState();
+describe('getRenderNodeAdapter', () => {
+  it('returns null when no adapter is set', () => {
     const source = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, source);
-    expect(() => beginRenderNodeUpdate(source, data)).not.toThrow();
+    expect(getRenderNodeAdapter(source)).toBeNull();
+  });
+
+  it('returns the adapter after setRenderNodeAdapter', () => {
+    const source = createDisplayObject();
+    const adapter: RenderNodeAdapter = { adapt: vi.fn() };
+    setRenderNodeAdapter(source, adapter);
+    expect(getRenderNodeAdapter(source)).toBe(adapter);
+    setRenderNodeAdapter(source, null);
   });
 });
 
-describe('isRenderNodeDirty', () => {
-  it('returns false when source and parent are clean', () => {
-    const state = createRenderState();
+describe('setRenderNodeAdapter', () => {
+  it('sets an adapter for the source', () => {
     const source = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, source);
-    data.lastAppearanceID = getAppearanceRevision(source);
-    data.lastLocalTransformID = getLocalTransformRevision(source);
-
-    expect(isRenderNodeDirty(state, source, data)).toBe(false);
+    const adapter: RenderNodeAdapter = { adapt: vi.fn() };
+    setRenderNodeAdapter(source, adapter);
+    expect(getRenderNodeAdapter(source)).toBe(adapter);
+    setRenderNodeAdapter(source, null);
   });
 
-  it('returns true when appearance changes', () => {
-    const state = createRenderState();
+  it('removes the adapter when passed null', () => {
     const source = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, source);
-    data.lastAppearanceID = getAppearanceRevision(source);
-    data.lastLocalTransformID = getLocalTransformRevision(source);
-    invalidateAppearance(source);
-
-    expect(isRenderNodeDirty(state, source, data)).toBe(true);
-  });
-
-  it('returns true when parent was updated this frame', () => {
-    const state = createRenderState();
-    const source = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, source);
-    data.lastAppearanceID = getAppearanceRevision(source);
-    data.lastLocalTransformID = getLocalTransformRevision(source);
-    const parentData = createDisplayObjectRenderNode(state, createDisplayObject());
-    parentData.transformFrameID = state.currentFrameID;
-
-    expect(isRenderNodeDirty(state, source, data, parentData)).toBe(true);
-  });
-
-  it('returns true when transform changes', () => {
-    const state = createRenderState();
-    const source = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, source);
-    data.transform2D = createMatrix();
-    data.lastAppearanceID = getAppearanceRevision(source);
-    data.lastLocalTransformID = getLocalTransformRevision(source);
-    setTransformX(source, 10);
-
-    expect(isRenderNodeDirty(state, source, data)).toBe(true);
+    const adapter: RenderNodeAdapter = { adapt: vi.fn() };
+    setRenderNodeAdapter(source, adapter);
+    setRenderNodeAdapter(source, null);
+    expect(getRenderNodeAdapter(source)).toBeNull();
   });
 });

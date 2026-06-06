@@ -2,17 +2,8 @@
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 
-import { enableWebGLScrollRectangleSupport } from './webglClip';
 import { popWebGLClipRectangle, pushWebGLClipRectangle, pushWebGLScrollRectangle } from './webglClipRect';
 import { makeWebGLState } from './webglTestHelper';
-
-describe('enableWebGLScrollRectangleSupport', () => {
-  it('sets scroll rectangle hooks and enables the ScrollRectangle feature', () => {
-    const { state } = makeWebGLState();
-    enableWebGLScrollRectangleSupport(state);
-    expect(state.displayObjectClipHooks).not.toBeNull();
-  });
-});
 
 describe('popWebGLClipRectangle', () => {
   it('restores the previous scissor rectangle', () => {

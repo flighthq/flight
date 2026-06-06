@@ -1,17 +1,29 @@
-import { addSceneChild } from '@flighthq/scene';
+import { createMatrix } from '@flighthq/geometry';
+import {
+  addSceneChild,
+  getAppearanceRevision,
+  getLocalTransformRevision,
+  invalidateAppearance,
+  setTransformX,
+} from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { createSprite } from '@flighthq/scene-sprite';
 import { RenderFeatures } from '@flighthq/types';
 
 import { enableRenderFeatures, registerRenderer } from './renderer';
 import {
+  beginRenderNodeUpdate,
   createDisplayObjectRenderNode,
   createRenderNode,
   createRenderNode2D,
   createSpriteRenderNode,
+  getDisplayObjectRenderNode,
   getOrCreateDisplayObjectRenderNode,
   getOrCreateRenderNode,
   getOrCreateSpriteRenderNode,
+  getSpriteRenderNode,
+  installAdaptHook,
+  isRenderNodeDirty,
   isRenderNodeVisible,
   prepareDisplayObjectRender,
   prepareSpriteRender,
@@ -28,6 +40,15 @@ function makeSource() {
 function makeRenderer() {
   return { createData: () => ({ tag: 'data' }), draw: vi.fn() };
 }
+
+describe('beginRenderNodeUpdate', () => {
+  it('is a no-op and does not throw', () => {
+    const state = createRenderState();
+    const source = createDisplayObject();
+    const data = createDisplayObjectRenderNode(state, source);
+    expect(() => beginRenderNodeUpdate(source, data)).not.toThrow();
+  });
+});
 
 describe('createDisplayObjectRenderNode', () => {
   it('includes a transform2D matrix', () => {
@@ -119,6 +140,21 @@ describe('createSpriteRenderNode', () => {
   });
 });
 
+describe('getDisplayObjectRenderNode', () => {
+  it('returns undefined when no node has been created', () => {
+    const state = createRenderState();
+    const obj = createDisplayObject();
+    expect(getDisplayObjectRenderNode(state, obj)).toBeUndefined();
+  });
+
+  it('returns the node after getOrCreateDisplayObjectRenderNode', () => {
+    const state = createRenderState();
+    const obj = createDisplayObject();
+    const created = getOrCreateDisplayObjectRenderNode(state, obj);
+    expect(getDisplayObjectRenderNode(state, obj)).toBe(created);
+  });
+});
+
 describe('getOrCreateDisplayObjectRenderNode', () => {
   it('creates a node on first call', () => {
     const state = createRenderState();
@@ -182,6 +218,74 @@ describe('getOrCreateSpriteRenderNode', () => {
     const a = getOrCreateSpriteRenderNode(state, sprite);
     const b = getOrCreateSpriteRenderNode(state, sprite);
     expect(a).toBe(b);
+  });
+});
+
+describe('getSpriteRenderNode', () => {
+  it('returns undefined when no node has been created', () => {
+    const state = createRenderState();
+    const sprite = createSprite();
+    expect(getSpriteRenderNode(state, sprite)).toBeUndefined();
+  });
+
+  it('returns the node after getOrCreateSpriteRenderNode', () => {
+    const state = createRenderState();
+    const sprite = createSprite();
+    const created = getOrCreateSpriteRenderNode(state, sprite);
+    expect(getSpriteRenderNode(state, sprite)).toBe(created);
+  });
+});
+
+describe('installAdaptHook', () => {
+  it('does not throw when installing a hook', () => {
+    expect(() => installAdaptHook(vi.fn())).not.toThrow();
+  });
+});
+
+describe('isRenderNodeDirty', () => {
+  it('returns false when source and parent are clean', () => {
+    const state = createRenderState();
+    const source = createDisplayObject();
+    const data = createDisplayObjectRenderNode(state, source);
+    data.lastAppearanceID = getAppearanceRevision(source);
+    data.lastLocalTransformID = getLocalTransformRevision(source);
+
+    expect(isRenderNodeDirty(state, source, data)).toBe(false);
+  });
+
+  it('returns true when appearance changes', () => {
+    const state = createRenderState();
+    const source = createDisplayObject();
+    const data = createDisplayObjectRenderNode(state, source);
+    data.lastAppearanceID = getAppearanceRevision(source);
+    data.lastLocalTransformID = getLocalTransformRevision(source);
+    invalidateAppearance(source);
+
+    expect(isRenderNodeDirty(state, source, data)).toBe(true);
+  });
+
+  it('returns true when parent was updated this frame', () => {
+    const state = createRenderState();
+    const source = createDisplayObject();
+    const data = createDisplayObjectRenderNode(state, source);
+    data.lastAppearanceID = getAppearanceRevision(source);
+    data.lastLocalTransformID = getLocalTransformRevision(source);
+    const parentData = createDisplayObjectRenderNode(state, createDisplayObject());
+    parentData.transformFrameID = state.currentFrameID;
+
+    expect(isRenderNodeDirty(state, source, data, parentData)).toBe(true);
+  });
+
+  it('returns true when transform changes', () => {
+    const state = createRenderState();
+    const source = createDisplayObject();
+    const data = createDisplayObjectRenderNode(state, source);
+    data.transform2D = createMatrix();
+    data.lastAppearanceID = getAppearanceRevision(source);
+    data.lastLocalTransformID = getLocalTransformRevision(source);
+    setTransformX(source, 10);
+
+    expect(isRenderNodeDirty(state, source, data)).toBe(true);
   });
 });
 
