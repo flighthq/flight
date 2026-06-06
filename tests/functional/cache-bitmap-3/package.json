@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-cache-bitmap-3",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

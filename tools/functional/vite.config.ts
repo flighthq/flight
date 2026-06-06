@@ -95,12 +95,15 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
 
           if (assetParts.length > 0) {
             const assetRel = assetParts.join('/');
-            const publicFile = join(testsDir, name, 'public', assetRel);
-            if (existsSync(publicFile)) {
-              const mime = MIME[extname(publicFile)] ?? 'application/octet-stream';
-              res.setHeader('Content-Type', mime);
-              res.end(readFileSync(publicFile));
-              return;
+            // Check test-specific public dir first, then shared tests/functional/public
+            const candidates = [join(testsDir, name, 'public', assetRel), join(testsDir, 'public', assetRel)];
+            for (const candidate of candidates) {
+              if (existsSync(candidate)) {
+                const mime = MIME[extname(candidate)] ?? 'application/octet-stream';
+                res.setHeader('Content-Type', mime);
+                res.end(readFileSync(candidate));
+                return;
+              }
             }
             return next();
           }
