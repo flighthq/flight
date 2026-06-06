@@ -11,7 +11,7 @@ const STORAGE_KEY = 'functional-tests-selected-index';
 let selectedIndex = 0;
 
 const sidebar = document.getElementById('sidebar')!;
-const preview = document.getElementById('preview') as HTMLIFrameElement;
+let preview = document.getElementById('preview') as HTMLIFrameElement;
 
 function buildSidebar(): void {
   sidebar.innerHTML = '';
@@ -41,7 +41,32 @@ function select(index: number): void {
   buildSidebar();
   sidebar.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
   const { name, render } = entries[index];
-  preview.src = `/tests/${name}/${render}/`;
+  navigateTo(`/tests/${name}/${render}/`);
+}
+
+function navigateTo(url: string): void {
+  try {
+    const oldDoc = preview.contentDocument;
+    if (oldDoc) {
+      oldDoc.querySelectorAll('canvas').forEach((el) => {
+        const c = el as HTMLCanvasElement;
+        const gl = c.getContext('webgl2') || c.getContext('webgl');
+        if (gl) {
+          const ext = (gl as WebGLRenderingContext).getExtension('WEBGL_lose_context');
+          if (ext) ext.loseContext();
+        }
+        c.width = 0;
+        c.height = 0;
+      });
+    }
+  } catch (_) {} // eslint-disable-line
+
+  const wrap = preview.parentElement!;
+  const newFrame = document.createElement('iframe');
+  newFrame.id = 'preview';
+  wrap.replaceChild(newFrame, preview);
+  preview = newFrame;
+  newFrame.src = url;
 }
 
 document.addEventListener('keydown', (e) => {
@@ -49,8 +74,18 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     const next = selectedIndex + (e.key === 'ArrowDown' ? 1 : -1);
     select(Math.max(0, Math.min(entries.length - 1, next)));
+  } else if (e.key === 'r' || e.key === 'R') {
+    if (!e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      reload();
+    }
   }
 });
+
+function reload(): void {
+  const { name, render } = entries[selectedIndex];
+  navigateTo(`/tests/${name}/${render}/`);
+}
 
 const saved = parseInt(sessionStorage.getItem(STORAGE_KEY) ?? '0', 10);
 buildSidebar();
