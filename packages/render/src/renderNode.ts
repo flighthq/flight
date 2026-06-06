@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity';
 import { createMatrix } from '@flighthq/geometry';
-import { getSceneParent } from '@flighthq/scene';
+import { getAppearanceRevision, getLocalTransformRevision, getSceneParent } from '@flighthq/scene';
 import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
 import {
@@ -13,14 +13,18 @@ import {
   type RenderNode,
   type RenderNode2D,
   type RenderState,
+  type SceneNode,
   type SpriteNode,
   type SpriteRenderNode,
 } from '@flighthq/types';
 
 import { updateRenderNodeAppearance } from './appearance';
 import type { RenderNodeStateInternal } from './internal';
-import { adaptRenderNode, isRenderNodeDirty } from './renderNodeAdapter';
 import { updateDisplayObjectRenderTransform, updateRenderNode2DTransform } from './transform2d';
+
+type AdaptHook = (state: RenderState, source: Renderable, data: RenderNode2D & { traverseChildren: boolean }) => void;
+let _adaptHook: AdaptHook | null = null;
+export function beginRenderNodeUpdate(_source: Renderable, _data: RenderNode): void {}
 
 export function createDisplayObjectRenderNode(state: RenderState, source: DisplayObject): DisplayObjectRenderNode {
   const out = createRenderNode2D(state, source) as DisplayObjectRenderNode;
@@ -36,7 +40,6 @@ export function createRenderNode(state: RenderState, source: Renderable): Render
   return createEntity({
     source: source,
     kind: source.kind,
-    renderAdapter: null,
     next: null,
     alpha: 1,
     appearanceFrameID: -1,
@@ -107,6 +110,25 @@ export function getSpriteRenderNode(state: RenderState, source: SpriteNode): Spr
   return state.renderNodeMap.get(source) as SpriteRenderNode | undefined;
 }
 
+export function installAdaptHook(fn: AdaptHook): void {
+  _adaptHook = fn;
+}
+
+export function isRenderNodeDirty(
+  state: RenderState,
+  source: Renderable,
+  data: RenderNode,
+  parentData?: RenderNode,
+): boolean {
+  const parentDirty =
+    parentData !== undefined &&
+    (parentData.transformFrameID === state.currentFrameID || parentData.appearanceFrameID === state.currentFrameID);
+  const localDirty =
+    data.lastLocalTransformID !== getLocalTransformRevision(source as SceneNode) ||
+    data.lastAppearanceID !== getAppearanceRevision(source as SceneNode);
+  return parentDirty || localDirty;
+}
+
 export function isRenderNodeVisible(data: RenderNode2D): boolean {
   return data.visible && data.alpha > 0 && !(data.transform2D.a === 0 && data.transform2D.d === 0);
 }
@@ -148,7 +170,7 @@ export function prepareDisplayObjectRender(state: RenderState, source: DisplayOb
     if (isRenderNodeDirty(state, current, data, parentData)) {
       updateRenderNodeAppearance(state, data, parentData);
       updateDisplayObjectRenderTransform(state, data, parentData);
-      adaptRenderNode(state, current, data);
+      _adaptHook?.(state, current, data);
       treeDirty = true;
     }
 
@@ -216,7 +238,7 @@ export function prepareSpriteRender(state: RenderState, source: SpriteNode): boo
     if (isRenderNodeDirty(state, current, data, parentData)) {
       updateRenderNodeAppearance(state, data, parentData);
       updateRenderNode2DTransform(state, data, parentData);
-      adaptRenderNode(state, current, data);
+      _adaptHook?.(state, current, data);
       treeDirty = true;
     }
 

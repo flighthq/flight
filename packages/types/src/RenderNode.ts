@@ -9,7 +9,6 @@ import type { Shader } from './Shader';
 export interface RenderNode extends Entity {
   source: Renderable;
   kind: symbol;
-  renderAdapter: object | null;
   next: RenderNode | null;
 
   alpha: number;

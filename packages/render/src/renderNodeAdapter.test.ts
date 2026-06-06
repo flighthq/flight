@@ -1,17 +1,11 @@
 import { createMatrix } from '@flighthq/geometry';
-import {
-  getAppearanceRevision,
-  getLocalTransformRevision,
-  invalidateAppearance,
-  setSceneNodeRenderAdapter,
-  setTransformX,
-} from '@flighthq/scene';
+import { getAppearanceRevision, getLocalTransformRevision, invalidateAppearance, setTransformX } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import type { RenderNodeAdapter } from '@flighthq/types';
 
 import { registerRenderer } from './renderer';
-import { createDisplayObjectRenderNode } from './renderNode';
-import { adaptRenderNode, beginRenderNodeUpdate, isRenderNodeDirty } from './renderNodeAdapter';
+import { beginRenderNodeUpdate, createDisplayObjectRenderNode, isRenderNodeDirty } from './renderNode';
+import { adaptRenderNode, setRenderNodeAdapter } from './renderNodeAdapter';
 import { createRenderState } from './renderState';
 
 describe('adaptRenderNode', () => {
@@ -33,7 +27,7 @@ describe('adaptRenderNode', () => {
     const adapter: RenderNodeAdapter = {
       adapt: vi.fn().mockReturnValue(false),
     };
-    setSceneNodeRenderAdapter(source, adapter);
+    setRenderNodeAdapter(source, adapter);
 
     adaptRenderNode(state, source, data);
 
@@ -53,7 +47,7 @@ describe('adaptRenderNode', () => {
         return true;
       },
     };
-    setSceneNodeRenderAdapter(source, adapter);
+    setRenderNodeAdapter(source, adapter);
 
     adaptRenderNode(state, source, data);
 

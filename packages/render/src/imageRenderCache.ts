@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity';
 import { multiplyMatrix } from '@flighthq/geometry';
-import { getSceneNodeRuntime, invalidateAppearance } from '@flighthq/scene';
+import { invalidateAppearance } from '@flighthq/scene';
 import type {
   ImageRenderCacheResult,
   Renderable,
@@ -10,10 +10,10 @@ import type {
   RenderPrimitive,
   RenderState,
   SceneNode,
-  SceneNodeRuntime,
 } from '@flighthq/types';
 
 import { registerRenderer } from './renderer';
+import { getRenderNodeAdapter, setRenderNodeAdapter } from './renderNodeAdapter';
 
 export const ImageRenderCacheKind: unique symbol = Symbol('ImageRenderCache');
 export type ImageRenderCacheKind = typeof ImageRenderCacheKind;
@@ -35,8 +35,7 @@ export function beginImageRenderCacheCapture(state: RenderState): void {
 }
 
 export function clearImageRenderCache(source: SceneNode<symbol, object>): void {
-  (getSceneNodeRuntime(source) as SceneNodeRuntime<symbol, object>).renderAdapter = null;
-  invalidateAppearance(source);
+  setRenderNodeAdapter(source, null);
 }
 
 export function createImageRenderCachePrimitive(
@@ -81,7 +80,7 @@ export function endImageRenderCacheCapture(state: RenderState): void {
 }
 
 export function getImageRenderCache(source: SceneNode<symbol, object>): ImageRenderCacheResult | null {
-  const adapter = (getSceneNodeRuntime(source) as SceneNodeRuntime<symbol, object>).renderAdapter;
+  const adapter = getRenderNodeAdapter(source);
   return isRenderImageCacheAdapter(adapter) ? adapter.result : null;
 }
 
@@ -105,10 +104,11 @@ export function registerImageRenderCacheRenderer(state: RenderState, renderer: R
 }
 
 export function setImageRenderCache(source: SceneNode<symbol, object>, result: ImageRenderCacheResult): void {
-  const runtime = getSceneNodeRuntime(source) as SceneNodeRuntime<symbol, object>;
-  if (!isRenderImageCacheAdapter(runtime.renderAdapter)) {
-    runtime.renderAdapter = createRenderImageCacheAdapter();
+  let adapter = getRenderNodeAdapter(source);
+  if (!isRenderImageCacheAdapter(adapter)) {
+    adapter = createRenderImageCacheAdapter();
+    setRenderNodeAdapter(source, adapter);
   }
-  (runtime.renderAdapter as ImageRenderCacheAdapter).result = result;
+  (adapter as ImageRenderCacheAdapter).result = result;
   invalidateAppearance(source);
 }
