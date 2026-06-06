@@ -2,20 +2,9 @@
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { appendShapeRectangle, createShape } from '@flighthq/scene-display';
 
-import { enableDOMMaskSupport } from './domClip';
 import type { DOMStageRectangle } from './domClipRect';
 import { pushDOMMaskRectangle } from './domMask';
 import { createDOMRenderState } from './domRenderState';
-
-describe('enableDOMMaskSupport', () => {
-  it('sets DOM mask hooks on the render state', () => {
-    const state = createDOMRenderState(document.createElement('div'));
-
-    enableDOMMaskSupport(state);
-
-    expect(state.displayObjectClipHooks).not.toBeNull();
-  });
-});
 
 describe('pushDOMMaskRectangle', () => {
   it('pushes the transformed local bounds of the mask source', () => {

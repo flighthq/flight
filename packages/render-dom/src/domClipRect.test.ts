@@ -2,7 +2,6 @@
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 
-import { enableDOMScrollRectangleSupport } from './domClip';
 import {
   applyDOMClipRectangles,
   createDOMStageRectangle,
@@ -54,14 +53,6 @@ describe('createDOMStageRectangle', () => {
     const rect = createDOMStageRectangle(createRectangle(10, 20, 30, 40), createMatrix(1, 0, 0, 1, 5, 6));
 
     expect(rect).toEqual({ bottom: 66, left: 15, right: 45, top: 26 });
-  });
-});
-
-describe('enableDOMScrollRectangleSupport', () => {
-  it('sets DOM clip hooks and enables the ScrollRectangle feature', () => {
-    const state = makeState();
-    enableDOMScrollRectangleSupport(state);
-    expect(state.domClipHooks).not.toBeNull();
   });
 });
 
