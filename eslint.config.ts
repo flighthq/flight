@@ -17,6 +17,7 @@ export default [
       '**/.vscode/**',
       '**/.claude/**',
       '**/worktrees/**',
+      'tests/reference/**',
     ],
   },
   {

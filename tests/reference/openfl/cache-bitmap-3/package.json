@@ -1,0 +1,8 @@
+{
+  "name": "reference-openfl-cache-bitmap-3",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "openfl": "^9.3.2"
+  }
+}
