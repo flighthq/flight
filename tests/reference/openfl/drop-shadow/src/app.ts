@@ -1,0 +1,71 @@
+// Requires: assets/wabbit_alpha.png
+// Port of DropShadowTest. Shows 6 bitmaps with drop shadow filter variants.
+// Variants: normal, inner, knockout, inner+knockout, hideObject, inner+hideObject
+import Bitmap from 'openfl/display/Bitmap';
+import type BitmapData from 'openfl/display/BitmapData';
+import Loader from 'openfl/display/Loader';
+import Shape from 'openfl/display/Shape';
+import Sprite from 'openfl/display/Sprite';
+import Stage from 'openfl/display/Stage';
+import Event from 'openfl/events/Event';
+import DropShadowFilter from 'openfl/filters/DropShadowFilter';
+import URLRequest from 'openfl/net/URLRequest';
+import TextField from 'openfl/text/TextField';
+import TextFormat from 'openfl/text/TextFormat';
+
+const WIDTH = 800;
+const HEIGHT = 400;
+
+const stage = new Stage(WIDTH, HEIGHT, 0xffffff);
+document.getElementById('app')!.appendChild((stage as any).element);
+const root = new Sprite();
+stage.addChild(root);
+
+const bg = new Shape();
+bg.graphics.beginFill(0xffffff);
+bg.graphics.drawRect(0, 0, WIDTH, HEIGHT);
+bg.graphics.endFill();
+root.addChild(bg);
+
+function loadBitmapData(url: string): Promise<BitmapData> {
+  return new Promise<BitmapData>((resolve) => {
+    const loader = new Loader();
+    loader.contentLoaderInfo.addEventListener(Event.COMPLETE, () => {
+      resolve((loader.content as Bitmap).bitmapData!);
+    });
+    loader.load(new URLRequest(url));
+  });
+}
+
+const shadowConfigs: { inner: boolean; knockout: boolean; hideObject: boolean }[] = [
+  { inner: false, knockout: false, hideObject: false },
+  { inner: true, knockout: false, hideObject: false },
+  { inner: false, knockout: true, hideObject: false },
+  { inner: true, knockout: true, hideObject: false },
+  { inner: false, knockout: false, hideObject: true },
+  { inner: true, knockout: false, hideObject: true },
+];
+const labels = ['normal', 'inner', 'knockout', 'inner + knockout', 'hideObject', 'inner + hideObject'];
+
+(async () => {
+  const bd = await loadBitmapData('assets/wabbit_alpha.png');
+
+  for (let i = 0; i < 6; i++) {
+    const bmp = new Bitmap(bd);
+    bmp.smoothing = true;
+    bmp.x = 50 + i * (bd.width + 50);
+    bmp.y = 50;
+    const { inner, knockout, hideObject } = shadowConfigs[i];
+    bmp.filters = [new DropShadowFilter(4, 45, 0x000000, 0.8, 8, 8, 1, 1, inner, knockout, hideObject)];
+    root.addChild(bmp);
+
+    const lbl = new TextField();
+    lbl.defaultTextFormat = new TextFormat('sans-serif', 12, 0x444444);
+    lbl.x = bmp.x;
+    lbl.y = bmp.y + bd.height + 8;
+    lbl.width = bd.width + 40;
+    lbl.height = 24;
+    lbl.text = labels[i];
+    root.addChild(lbl);
+  }
+})();

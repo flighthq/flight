@@ -27,8 +27,8 @@
     "fix": "npm run order:fix && npm run lint:fix && npm run format",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "lint": "eslint -c eslint.config.ts . --cache --max-warnings=0",
-    "lint:fix": "eslint -c eslint.config.ts . --fix",
+    "lint": "eslint -c eslint.config.ts . --cache --max-warnings=0 --no-warn-ignored",
+    "lint:fix": "eslint -c eslint.config.ts . --fix --no-warn-ignored",
     "order": "tsx ./scripts/order.ts",
     "order:check": "tsx ./scripts/order.ts --check",
     "order:check:json": "tsx ./scripts/order.ts --check --json",
@@ -90,7 +90,7 @@
   "lint-staged": {
     "packages/*/src/**/*.ts": "tsx ./scripts/order.ts --fix",
     "**/*.ts": [
-      "eslint -c eslint.config.ts --fix --max-warnings=0",
+      "eslint -c eslint.config.ts --fix --max-warnings=0 --no-warn-ignored",
       "prettier --write"
     ],
     "**/*.{json,md}": "prettier --write"

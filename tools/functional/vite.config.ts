@@ -10,11 +10,12 @@ type Renderer = (typeof RENDERERS)[number];
 
 interface FunctionalTest {
   name: string;
-  renderers: Renderer[];
+  renderers: string[];
 }
 
 const projectRoot = resolve(__dirname, '../..');
 const testsDir = join(projectRoot, 'tests/functional');
+const referenceBaseDir = join(projectRoot, 'tests/reference');
 
 const MIME: Record<string, string> = {
   '.png': 'image/png',
@@ -27,7 +28,25 @@ const MIME: Record<string, string> = {
   '.wav': 'audio/wav',
   '.ogg': 'audio/ogg',
   '.json': 'application/json',
+  '.ttf': 'font/ttf',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.utf8': 'text/plain; charset=utf-8',
 };
+
+function splitFirst(str: string, sep: string): [string, string] {
+  const i = str.indexOf(sep);
+  if (i === -1) return [str, ''];
+  return [str.slice(0, i), str.slice(i + sep.length)];
+}
+
+function discoverReferenceRenderers(testName: string): string[] {
+  if (!existsSync(referenceBaseDir)) return [];
+  return readdirSync(referenceBaseDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && existsSync(join(referenceBaseDir, d.name, testName, 'src', 'app.ts')))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((d) => `reference:${d.name}`);
+}
 
 function discoverTests(): FunctionalTest[] {
   if (!existsSync(testsDir)) return [];
@@ -36,7 +55,10 @@ function discoverTests(): FunctionalTest[] {
     .sort((a, b) => a.name.localeCompare(b.name))
     .map(({ name }) => ({
       name,
-      renderers: RENDERERS.filter((r) => existsSync(join(testsDir, name, `src/render.${r}.ts`))),
+      renderers: [
+        ...(RENDERERS.filter((r) => existsSync(join(testsDir, name, `src/render.${r}.ts`))) as Renderer[]),
+        ...discoverReferenceRenderers(name),
+      ],
     }))
     .filter((t) => t.renderers.length > 0);
 }
@@ -53,7 +75,7 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
         if (source.startsWith('virtual:ft-entry:')) return '\0' + source;
 
         if (source.startsWith('___ft___')) {
-          const [name, render] = source.slice('___ft___'.length).split(':');
+          const [name, render] = splitFirst(source.slice('___ft___'.length), ':');
           const appPath = join(testsDir, name, 'src', 'app.ts');
           return appPath + '?render=' + render;
         }
@@ -73,7 +95,14 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
         }
 
         if (id.startsWith('\0virtual:ft-entry:')) {
-          const [name, render] = id.slice('\0virtual:ft-entry:'.length).split(':');
+          const [name, render] = splitFirst(id.slice('\0virtual:ft-entry:'.length), ':');
+
+          if (render.startsWith('reference:')) {
+            const refFolder = render.slice('reference:'.length);
+            const appPath = join(referenceBaseDir, refFolder, name, 'src', 'app.ts');
+            return `import ${JSON.stringify(appPath)};`;
+          }
+
           return `import '___ft___${name}:${render}';`;
         }
       },
@@ -90,13 +119,21 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
           if (parts[0] !== 'tests' || parts.length < 3) return next();
           const [, name, render, ...assetParts] = parts;
 
-          const test = tests.find((t) => t.name === name && (t.renderers as readonly string[]).includes(render));
+          const test = tests.find((t) => t.name === name && t.renderers.includes(render));
           if (!test) return next();
 
           if (assetParts.length > 0) {
             const assetRel = assetParts.join('/');
-            // Check test-specific public dir first, then shared tests/functional/public
-            const candidates = [join(testsDir, name, 'public', assetRel), join(testsDir, 'public', assetRel)];
+            const candidates: string[] = [];
+
+            if (render.startsWith('reference:')) {
+              const refFolder = render.slice('reference:'.length);
+              candidates.push(join(referenceBaseDir, refFolder, name, 'public', assetRel));
+            } else {
+              candidates.push(join(testsDir, name, 'public', assetRel));
+            }
+            candidates.push(join(testsDir, 'public', assetRel));
+
             for (const candidate of candidates) {
               if (existsSync(candidate)) {
                 const mime = MIME[extname(candidate)] ?? 'application/octet-stream';
@@ -160,9 +197,10 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
 export default defineConfig(() => {
   const tests = discoverTests();
 
-  const alias: Record<string, string> = Object.fromEntries(
-    workspacePackages.map((pkg) => [pkg.name, pkg.dir + '/src']),
-  );
+  const alias: Record<string, string> = {
+    ...Object.fromEntries(workspacePackages.map((pkg) => [pkg.name, pkg.dir + '/src'])),
+    openfl: join(projectRoot, 'node_modules', 'openfl', 'lib', 'openfl'),
+  };
 
   return {
     root: __dirname,
