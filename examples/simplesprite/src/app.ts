@@ -3,9 +3,8 @@ import {
   addTextureAtlasRegion,
   createSprite,
   createTextureAtlas,
+  invalidateLocalTransform,
   loadImageSourceFromURL,
-  setTransformX,
-  setTransformY,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -45,8 +44,9 @@ for (let i = 0; i < creatureIDs.length; i++) {
   const sprite = createSprite();
   sprite.data.atlas = atlas;
   sprite.data.id = creatureIDs[i];
-  setTransformX(sprite, (gap + i * (spriteScreenSize + gap)) / SCALE);
-  setTransformY(sprite, yLocal);
+  sprite.x = (gap + i * (spriteScreenSize + gap)) / SCALE;
+  sprite.y = yLocal;
+  invalidateLocalTransform(sprite);
   addSceneChild(root, sprite);
 }
 

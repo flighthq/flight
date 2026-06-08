@@ -12,10 +12,9 @@ import {
   getSpritesheetAnimation,
   getSpritesheetPlayerFrame,
   invalidateAppearance,
+  invalidateLocalTransform,
   loadImageSourceFromURL,
   playSpritesheetAnimation,
-  setTransformX,
-  setTransformY,
   startApplicationLoop,
   updateSpritesheetPlayer,
 } from '@flighthq/sdk';
@@ -67,8 +66,9 @@ const yLocal = (STAGE_HEIGHT - spriteScreenSize) / 2 / SCALE;
 const sprites = animationDefs.map((def, i) => {
   const sprite = createSprite();
   sprite.data.atlas = atlas;
-  setTransformX(sprite, (gap + i * (spriteScreenSize + gap)) / SCALE);
-  setTransformY(sprite, yLocal);
+  sprite.x = (gap + i * (spriteScreenSize + gap)) / SCALE;
+  sprite.y = yLocal;
+  invalidateLocalTransform(sprite);
   addSceneChild(root, sprite);
   return sprite;
 });

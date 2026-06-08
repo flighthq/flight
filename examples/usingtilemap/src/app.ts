@@ -1,4 +1,4 @@
-import { createTilemap, loadTilesetFromURL, setTilemapTile, setTransformX, setTransformY } from '@flighthq/sdk';
+import { createTilemap, invalidateLocalTransform, loadTilesetFromURL, writeTilemapTile } from '@flighthq/sdk';
 
 import { render, scale } from './render';
 
@@ -14,15 +14,16 @@ const tileset = await loadTilesetFromURL('assets/tileset.png', TILE_W, TILE_H);
 const tilemap = createTilemap({ data: { columns: COLS, rows: ROWS, tileset } });
 tilemap.scaleX = SCALE * scale;
 tilemap.scaleY = SCALE * scale;
-setTransformX(tilemap, PAD * scale);
-setTransformY(tilemap, PAD * scale);
+tilemap.x = PAD * scale;
+tilemap.y = PAD * scale;
+invalidateLocalTransform(tilemap);
 
 // Each row shows the idle frame of one character.
 // Character n's first frame = n * tileset.columns (row-major stride).
 const stride = tileset.columns;
 for (let r = 0; r < ROWS; r++) {
   for (let c = 0; c < COLS; c++) {
-    setTilemapTile(tilemap, c, r, r * stride);
+    writeTilemapTile(tilemap, c, r, r * stride);
   }
 }
 
