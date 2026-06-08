@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'fs';
+import { cpSync, existsSync, readdirSync, readFileSync } from 'fs';
 import { dirname, extname, join, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
@@ -41,12 +41,53 @@ const MIME: Record<string, string> = {
 };
 
 function explorerPlugin(examples: Example[]): Plugin[] {
+  let viteBase = '/';
+  let outDir = resolve(__dirname, 'dist');
+
   return [
     {
       name: 'explorer:modules',
       enforce: 'pre',
 
+      config(_, { command }) {
+        if (command !== 'build') return;
+
+        const input: Record<string, string> = {
+          main: resolve(__dirname, 'index.html'),
+        };
+
+        for (const example of examples) {
+          for (const render of example.renderers) {
+            input[`examples/${example.name}/${render}/index`] = `virtual-build-entry:${example.name}:${render}`;
+          }
+        }
+
+        return {
+          build: {
+            rollupOptions: {
+              input,
+              output: {
+                entryFileNames(chunk) {
+                  if (chunk.facadeModuleId?.startsWith('\0virtual-build-entry:')) {
+                    const [name, renderer] = chunk.facadeModuleId.slice('\0virtual-build-entry:'.length).split(':');
+                    return `examples/${name}/${renderer}/index.js`;
+                  }
+                  return 'assets/[name]-[hash].js';
+                },
+              },
+            },
+          },
+        };
+      },
+
+      configResolved(config) {
+        viteBase = config.base;
+        outDir = resolve(config.root, config.build.outDir);
+      },
+
       resolveId(source, importer) {
+        if (source.startsWith('virtual-build-entry:')) return '\0' + source;
+
         // Virtual examples list
         if (source === 'virtual:explorer-examples') return '\0virtual:explorer-examples';
 
@@ -72,6 +113,11 @@ function explorerPlugin(examples: Example[]): Plugin[] {
       },
 
       load(id) {
+        if (id.startsWith('\0virtual-build-entry:')) {
+          const [name, render] = id.slice('\0virtual-build-entry:'.length).split(':');
+          return `import '___app___${name}:${render}';`;
+        }
+
         if (id === '\0virtual:explorer-examples') {
           return `export const examples = ${JSON.stringify(examples)};`;
         }
@@ -79,6 +125,52 @@ function explorerPlugin(examples: Example[]): Plugin[] {
         if (id.startsWith('\0virtual:entry:')) {
           const [name, render] = id.slice('\0virtual:entry:'.length).split(':');
           return `import '___app___${name}:${render}';`;
+        }
+      },
+
+      generateBundle(_, bundle) {
+        for (const example of examples) {
+          for (const render of example.renderers) {
+            const entryId = `\0virtual-build-entry:${example.name}:${render}`;
+            const chunk = Object.values(bundle).find(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (c) => c.type === 'chunk' && (c as any).facadeModuleId === entryId,
+            ) as { fileName: string } | undefined;
+
+            if (!chunk) continue;
+
+            this.emitFile({
+              type: 'asset',
+              fileName: `examples/${example.name}/${render}/index.html`,
+              source: [
+                '<!DOCTYPE html>',
+                '<html lang="en">',
+                '<head>',
+                '  <meta charset="UTF-8" />',
+                '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
+                `  <title>${example.name} \xB7 ${render}</title>`,
+                '  <style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { overflow: hidden; }</style>',
+                '</head>',
+                '<body>',
+                '  <div id="app"></div>',
+                `  <script type="module" src="${viteBase}${chunk.fileName}"></script>`,
+                '</body>',
+                '</html>',
+              ].join('\n'),
+            });
+          }
+        }
+      },
+
+      writeBundle() {
+        for (const example of examples) {
+          const publicDir = join(examplesDir, example.name, 'public');
+          if (!existsSync(publicDir)) continue;
+
+          for (const render of example.renderers) {
+            const destDir = join(outDir, 'examples', example.name, render);
+            cpSync(publicDir, destDir, { recursive: true });
+          }
         }
       },
     },
@@ -144,6 +236,7 @@ export default defineConfig(() => {
 
   return {
     root: __dirname,
+    base: process.env.VITE_BASE ?? '/',
 
     plugins: explorerPlugin(examples),
 

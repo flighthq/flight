@@ -6,6 +6,8 @@
   "scripts": {
     "predev": "tsx ../../scripts/download-all-assets.ts",
     "dev": "vite --config vite.config.ts",
+    "prebuild": "tsx ../../scripts/download-all-assets.ts",
+    "build": "vite build --config vite.config.ts",
     "test": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
