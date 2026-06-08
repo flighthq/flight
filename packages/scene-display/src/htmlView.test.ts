@@ -82,7 +82,7 @@ describe('createHTMLViewRuntime', () => {
 
   it('uses computeHTMLViewLocalBoundsRectangle', () => {
     const runtime = createHTMLViewRuntime();
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeHTMLViewLocalBoundsRectangle);
+    expect(runtime.computeLocalBoundsRectangle).toStrictEqual(computeHTMLViewLocalBoundsRectangle);
   });
 });
 

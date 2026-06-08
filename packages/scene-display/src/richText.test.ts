@@ -146,7 +146,7 @@ describe('createRichTextRuntime', () => {
 
   it('uses computeRichTextLocalBoundsRectangle', () => {
     const runtime = createRichTextRuntime();
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeRichTextLocalBoundsRectangle);
+    expect(runtime.computeLocalBoundsRectangle).toStrictEqual(computeRichTextLocalBoundsRectangle);
   });
 });
 

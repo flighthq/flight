@@ -34,5 +34,5 @@ export function getTextRuntime(source: Readonly<Text>): Readonly<TextRuntime> {
 }
 
 const defaultMethods: Partial<MethodsOf<TextRuntime>> = {
-  computeLocalBoundsRect: computeTextLocalBoundsRectangle,
+  computeLocalBoundsRectangle: computeTextLocalBoundsRectangle,
 };

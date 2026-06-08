@@ -75,5 +75,5 @@ export function writeTilemapTile(tilemap: Tilemap, col: number, row: number, id:
 }
 
 const defaultMethods: Partial<MethodsOf<TilemapRuntime>> = {
-  computeLocalBoundsRect: computeTilemapLocalBoundsRectangle,
+  computeLocalBoundsRectangle: computeTilemapLocalBoundsRectangle,
 };

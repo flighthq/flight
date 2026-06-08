@@ -7,7 +7,7 @@ import {
   BlendMode,
   type DisplayObject,
   type DisplayObjectRenderNode,
-  type HasBoundsRect,
+  type HasBoundsRectangle,
   type HasTransform2D,
   type Renderable,
   type RenderNode,
@@ -61,7 +61,7 @@ export function createRenderNode(state: RenderState, source: Renderable): Render
 
 export function createRenderNode2D(
   state: RenderState,
-  source: Renderable & HasTransform2D & HasBoundsRect,
+  source: Renderable & HasTransform2D & HasBoundsRectangle,
 ): RenderNode2D {
   const node = createRenderNode(state, source) as RenderNode2D;
   node.transform2D = createMatrix();

@@ -85,7 +85,7 @@ describe('createTextRuntime', () => {
 
   it('uses computeTextLocalBoundsRectangle', () => {
     const runtime = createTextRuntime();
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeTextLocalBoundsRectangle);
+    expect(runtime.computeLocalBoundsRectangle).toStrictEqual(computeTextLocalBoundsRectangle);
   });
 });
 

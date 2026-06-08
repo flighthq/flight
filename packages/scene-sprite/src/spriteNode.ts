@@ -3,8 +3,8 @@ import {
   createSceneNodeRuntime,
   getSceneNodeRuntime,
   initAppearanceTrait,
-  initBoundsRectRuntimeTrait,
-  initBoundsRectTrait,
+  initBoundsRectangleRuntimeTrait,
+  initBoundsRectangleTrait,
   initTransformRuntimeTrait,
   initTransformTrait,
 } from '@flighthq/scene';
@@ -34,7 +34,7 @@ export function createSpriteNode<Runtime extends SpriteNodeRuntime>(
     createSpriteNodeRuntimeFactory ?? (createSpriteNodeRuntime as unknown as SceneNodeRuntimeFactory<Runtime>),
   ) as SpriteNode;
   initTransformTrait(out, obj);
-  initBoundsRectTrait(out, obj);
+  initBoundsRectangleTrait(out, obj);
   initAppearanceTrait(out, obj);
   out.alphaEnabled = obj?.alphaEnabled ?? true;
   out.blendModeEnabled = obj?.blendModeEnabled ?? true;
@@ -47,7 +47,7 @@ export function createSpriteNode<Runtime extends SpriteNodeRuntime>(
 export function createSpriteNodeRuntime(methods?: Readonly<Partial<MethodsOf<SpriteNodeRuntime>>>): SpriteNodeRuntime {
   const out = createSceneNodeRuntime(methods) as SpriteNodeRuntime;
   initTransformRuntimeTrait(out, methods);
-  initBoundsRectRuntimeTrait(out, methods);
+  initBoundsRectangleRuntimeTrait(out, methods);
   return out;
 }
 

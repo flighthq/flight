@@ -116,8 +116,8 @@ describe('createDisplayObjectRuntime', () => {
 
   it('allows a custom bounds calculation', () => {
     const func = (_out: Rectangle, _source: Readonly<SceneNode>) => {};
-    const runtime = createDisplayObjectRuntime({ computeLocalBoundsRect: func });
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(func);
+    const runtime = createDisplayObjectRuntime({ computeLocalBoundsRectangle: func });
+    expect(runtime.computeLocalBoundsRectangle).toStrictEqual(func);
   });
 });
 

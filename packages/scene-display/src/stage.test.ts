@@ -86,7 +86,7 @@ describe('createStageRuntime', () => {
 
   it('uses computeStageLocalBoundsRectangle', () => {
     const runtime = createStageRuntime();
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeStageLocalBoundsRectangle);
+    expect(runtime.computeLocalBoundsRectangle).toStrictEqual(computeStageLocalBoundsRectangle);
   });
 });
 

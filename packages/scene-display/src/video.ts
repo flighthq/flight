@@ -33,5 +33,5 @@ export function getVideoRuntime(source: Readonly<Video>): Readonly<VideoRuntime>
 import type { MethodsOf } from '@flighthq/types';
 
 const defaultMethods: Partial<MethodsOf<VideoRuntime>> = {
-  computeLocalBoundsRect: computeVideoLocalBoundsRectangle,
+  computeLocalBoundsRectangle: computeVideoLocalBoundsRectangle,
 };

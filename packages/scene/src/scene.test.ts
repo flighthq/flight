@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import type { HasBoundsRectRuntime } from '@flighthq/types';
+import type { HasBoundsRectangleRuntime } from '@flighthq/types';
 
 import {
   computeSceneAlignX,
@@ -16,8 +16,8 @@ const TestNodeKind: unique symbol = Symbol('TestNode');
 
 function makeNodeWithBounds(width: number, height: number) {
   const node = createSceneNode(TestGraph, TestNodeKind);
-  const runtime = getSceneNodeRuntime(node) as unknown as HasBoundsRectRuntime;
-  runtime.computeLocalBoundsRect = (out) => {
+  const runtime = getSceneNodeRuntime(node) as unknown as HasBoundsRectangleRuntime;
+  runtime.computeLocalBoundsRectangle = (out) => {
     out.width = width;
     out.height = height;
   };
@@ -112,7 +112,7 @@ describe('computeSceneRenderTransform', () => {
     expect(m.ty).toBe(0);
   });
 
-  it('sets identity when root computeLocalBoundsRect returns zero size', () => {
+  it('sets identity when root computeLocalBoundsRectangle returns zero size', () => {
     const m = createMatrix();
     const root = makeNodeWithBounds(0, 0);
     computeSceneRenderTransform(m, createScene({ root }), 800, 600);

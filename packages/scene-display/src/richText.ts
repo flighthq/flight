@@ -104,7 +104,7 @@ export function setRichTextText(source: RichText, value: string): void {
 }
 
 const defaultMethods: Partial<MethodsOf<RichTextRuntime>> = {
-  computeLocalBoundsRect: computeRichTextLocalBoundsRectangle,
+  computeLocalBoundsRectangle: computeRichTextLocalBoundsRectangle,
 };
 
 function getRichTextMaxScrollHFromLayout(data: Readonly<RichTextData>, layout: Readonly<TextLayoutResult>): number {

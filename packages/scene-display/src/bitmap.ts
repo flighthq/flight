@@ -42,5 +42,5 @@ export function setBitmapImage(source: Bitmap, value: BitmapData['image']): void
 }
 
 const defaultMethods: Partial<MethodsOf<BitmapRuntime>> = {
-  computeLocalBoundsRect: computeBitmapLocalBoundsRectangle,
+  computeLocalBoundsRectangle: computeBitmapLocalBoundsRectangle,
 };

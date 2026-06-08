@@ -1,5 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
-import type { HasBoundsRectRuntime, MatrixLike, NullScene, Rectangle, Scene, SceneAlign } from '@flighthq/types';
+import type { HasBoundsRectangleRuntime, MatrixLike, NullScene, Rectangle, Scene, SceneAlign } from '@flighthq/types';
 
 import { getSceneNodeRuntime } from './sceneNode';
 
@@ -44,14 +44,14 @@ export function computeSceneRenderTransform<SceneKind extends symbol>(
 
   if (scene.root !== null) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const runtime = getSceneNodeRuntime(scene.root as any) as unknown as Partial<HasBoundsRectRuntime> | undefined;
-    if (runtime?.computeLocalBoundsRect !== undefined) {
-      _tempRect.width = 0;
-      _tempRect.height = 0;
+    const runtime = getSceneNodeRuntime(scene.root as any) as unknown as Partial<HasBoundsRectangleRuntime> | undefined;
+    if (runtime?.computeLocalBoundsRectangle !== undefined) {
+      _tempRectangle.width = 0;
+      _tempRectangle.height = 0;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      runtime.computeLocalBoundsRect(_tempRect, scene.root as any);
-      contentWidth = _tempRect.width;
-      contentHeight = _tempRect.height;
+      runtime.computeLocalBoundsRectangle(_tempRectangle, scene.root as any);
+      contentWidth = _tempRectangle.width;
+      contentHeight = _tempRectangle.height;
     }
   }
 
@@ -97,4 +97,4 @@ export function createScene<SceneKind extends symbol = typeof NullScene>(
   };
 }
 
-const _tempRect: Rectangle = createRectangle();
+const _tempRectangle: Rectangle = createRectangle();
