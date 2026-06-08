@@ -4,7 +4,7 @@ import {
   getAppearanceRevision,
   getLocalTransformRevision,
   invalidateAppearance,
-  setTransformX,
+  invalidateLocalTransform,
 } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { createSprite } from '@flighthq/scene-sprite';
@@ -283,7 +283,8 @@ describe('isRenderNodeDirty', () => {
     data.transform2D = createMatrix();
     data.lastAppearanceID = getAppearanceRevision(source);
     data.lastLocalTransformID = getLocalTransformRevision(source);
-    setTransformX(source, 10);
+    source.x = 10;
+    invalidateLocalTransform(source);
 
     expect(isRenderNodeDirty(state, source, data)).toBe(true);
   });

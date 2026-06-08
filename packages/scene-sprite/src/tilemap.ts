@@ -68,7 +68,7 @@ export function resizeTilemap(tilemap: Tilemap, columns: number, rows: number): 
   data.tiles = newTiles;
 }
 
-export function setTilemapTile(tilemap: Tilemap, col: number, row: number, id: number): void {
+export function writeTilemapTile(tilemap: Tilemap, col: number, row: number, id: number): void {
   const { columns, rows, tiles } = tilemap.data;
   if (col < 0 || col >= columns || row < 0 || row >= rows) return;
   tiles[row * columns + col] = id;

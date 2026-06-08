@@ -1,4 +1,3 @@
-export * from './appearance';
 export * from './boundsRect';
 export * from './hasAppearance';
 export * from './hasBoundsRect';

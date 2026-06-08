@@ -1,6 +1,6 @@
 import { createRectangle } from '@flighthq/geometry';
 import { getOrCreateDisplayObjectRenderNode, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
-import { addSceneChild, setTransformScaleX, setTransformScaleY } from '@flighthq/scene';
+import { addSceneChild, invalidateLocalTransform } from '@flighthq/scene';
 import { appendShapeRectangle, createDisplayObject, createShape } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
@@ -58,8 +58,9 @@ describe('renderDOMDisplayObject', () => {
   it('skips rendering when the object has zero scale', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    setTransformScaleX(obj, 0);
-    setTransformScaleY(obj, 0);
+    obj.scaleX = 0;
+    obj.scaleY = 0;
+    invalidateLocalTransform(obj);
 
     const renderer = { createData: vi.fn(), draw: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);

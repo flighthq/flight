@@ -12,11 +12,6 @@ import {
   getWorldTransformMatrix,
   sceneGlobalToLocalVector2,
   sceneLocalToGlobalVector2,
-  setTransformRotation,
-  setTransformScaleX,
-  setTransformScaleY,
-  setTransformX,
-  setTransformY,
 } from './transform2d';
 
 function createTestNode(): TestNode {
@@ -227,107 +222,6 @@ describe('sceneLocalToGlobalVector2', () => {
     expect(out.x).toBe(5);
     expect(out.y).toBe(5);
     expect(out).not.toBe(local); // out is a separate object
-  });
-});
-
-describe('setTransformRotation', () => {
-  it('updates rotation on the node', () => {
-    setTransformRotation(node, 45);
-    expect(node.rotation).toBe(45);
-  });
-
-  it('invalidates the local transform', () => {
-    const before = cloneMatrix(getLocalTransformMatrix(node));
-    setTransformRotation(node, 90);
-    const after = getLocalTransformMatrix(node);
-    expect(equalsMatrix(before, after)).toBe(false);
-  });
-
-  it('affects the resulting matrix', () => {
-    setTransformRotation(node, 90);
-    const m = getLocalTransformMatrix(node);
-    expect(m.a).toBeCloseTo(0);
-    expect(m.b).toBeCloseTo(1);
-  });
-});
-
-describe('setTransformScaleX', () => {
-  it('updates scaleX on the node', () => {
-    setTransformScaleX(node, 3);
-    expect(node.scaleX).toBe(3);
-  });
-
-  it('invalidates the local transform', () => {
-    const before = cloneMatrix(getLocalTransformMatrix(node));
-    setTransformScaleX(node, 2);
-    const after = getLocalTransformMatrix(node);
-    expect(equalsMatrix(before, after)).toBe(false);
-  });
-
-  it('affects the resulting matrix', () => {
-    setTransformScaleX(node, 4);
-    const m = getLocalTransformMatrix(node);
-    expect(m.a).toBeCloseTo(4);
-  });
-});
-
-describe('setTransformScaleY', () => {
-  it('updates scaleY on the node', () => {
-    setTransformScaleY(node, 3);
-    expect(node.scaleY).toBe(3);
-  });
-
-  it('invalidates the local transform', () => {
-    const before = cloneMatrix(getLocalTransformMatrix(node));
-    setTransformScaleY(node, 2);
-    const after = getLocalTransformMatrix(node);
-    expect(equalsMatrix(before, after)).toBe(false);
-  });
-
-  it('affects the resulting matrix', () => {
-    setTransformScaleY(node, 5);
-    const m = getLocalTransformMatrix(node);
-    expect(m.d).toBeCloseTo(5);
-  });
-});
-
-describe('setTransformX', () => {
-  it('updates x on the node', () => {
-    setTransformX(node, 50);
-    expect(node.x).toBe(50);
-  });
-
-  it('invalidates the local transform', () => {
-    const before = cloneMatrix(getLocalTransformMatrix(node));
-    setTransformX(node, 100);
-    const after = getLocalTransformMatrix(node);
-    expect(equalsMatrix(before, after)).toBe(false);
-  });
-
-  it('affects the resulting matrix', () => {
-    setTransformX(node, 42);
-    const m = getLocalTransformMatrix(node);
-    expect(m.tx).toBe(42);
-  });
-});
-
-describe('setTransformY', () => {
-  it('updates y on the node', () => {
-    setTransformY(node, 75);
-    expect(node.y).toBe(75);
-  });
-
-  it('invalidates the local transform', () => {
-    const before = cloneMatrix(getLocalTransformMatrix(node));
-    setTransformY(node, 100);
-    const after = getLocalTransformMatrix(node);
-    expect(equalsMatrix(before, after)).toBe(false);
-  });
-
-  it('affects the resulting matrix', () => {
-    setTransformY(node, 99);
-    const m = getLocalTransformMatrix(node);
-    expect(m.ty).toBe(99);
   });
 });
 

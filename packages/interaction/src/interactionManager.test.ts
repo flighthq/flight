@@ -1,5 +1,5 @@
 import { setRectangle } from '@flighthq/geometry';
-import { addSceneChild, createSceneNode, getLocalBoundsRectangle, setTransformX, setTransformY } from '@flighthq/scene';
+import { addSceneChild, createSceneNode, getLocalBoundsRectangle, invalidateLocalTransform } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals';
 import type { InputKeyboardData, InputPointerData, InputSignals } from '@flighthq/types';
@@ -336,8 +336,9 @@ describe('dispatchPointerDown', () => {
   it('passes target, current target, local coordinates, and pointer metadata', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
-    setTransformX(child, 10);
-    setTransformY(child, 20);
+    child.x = 10;
+    child.y = 20;
+    invalidateLocalTransform(child);
     setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
     addSceneChild(root, child);
 
@@ -370,10 +371,12 @@ describe('dispatchPointerDown', () => {
     const root = createDisplayObject();
     const parent = createDisplayObject();
     const child = createDisplayObject();
-    setTransformX(parent, 10);
-    setTransformY(parent, 20);
-    setTransformX(child, 5);
-    setTransformY(child, 7);
+    parent.x = 10;
+    parent.y = 20;
+    invalidateLocalTransform(parent);
+    child.x = 5;
+    child.y = 7;
+    invalidateLocalTransform(child);
     setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
     addSceneChild(root, parent);
     addSceneChild(parent, child);

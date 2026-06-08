@@ -1,3 +1,4 @@
+import { invalidateAppearance } from '@flighthq/scene';
 import type { InputText, InputTextData, InputTextRuntime, MethodsOf, PartialNode } from '@flighthq/types';
 import { InputTextKind } from '@flighthq/types';
 
@@ -31,6 +32,11 @@ export function createInputTextRuntime(): InputTextRuntime {
 
 export function getInputTextRuntime(source: Readonly<InputText>): Readonly<InputTextRuntime> {
   return getDisplayObjectRuntime(source) as InputTextRuntime;
+}
+
+export function setInputTextText(source: InputText, value: string): void {
+  source.data.text = value;
+  invalidateAppearance(source);
 }
 
 const defaultMethods: Partial<MethodsOf<InputTextRuntime>> = {

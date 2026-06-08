@@ -1,4 +1,4 @@
-import { addSceneChild, setTransformX, setTransformY } from '@flighthq/scene';
+import { addSceneChild, invalidateLocalTransform } from '@flighthq/scene';
 import { createBitmap } from '@flighthq/scene-display';
 import { createTimeline, playMovieClip } from '@flighthq/timeline';
 import type { MovieClip, Spritesheet, SpritesheetAnimation } from '@flighthq/types';
@@ -19,8 +19,9 @@ export function attachSpritesheetTimeline(
       const spritesheetFrame = spritesheet.frames[animation.frames[frame - 1]];
       if (!spritesheetFrame) return;
       bitmap.data.sourceRectangle = spritesheet.atlas.regions[spritesheetFrame.id];
-      setTransformX(bitmap, spritesheetFrame.offsetX - animation.originX);
-      setTransformY(bitmap, spritesheetFrame.offsetY - animation.originY);
+      bitmap.x = spritesheetFrame.offsetX - animation.originX;
+      bitmap.y = spritesheetFrame.offsetY - animation.originY;
+      invalidateLocalTransform(bitmap);
     },
     totalFrames: animation.frames.length,
   });

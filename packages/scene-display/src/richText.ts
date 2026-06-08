@@ -98,6 +98,11 @@ export function setRichTextScrollV(source: RichText, value: number, layout?: Rea
   invalidateAppearance(source);
 }
 
+export function setRichTextText(source: RichText, value: string): void {
+  source.data.text = value;
+  invalidateAppearance(source);
+}
+
 const defaultMethods: Partial<MethodsOf<RichTextRuntime>> = {
   computeLocalBoundsRect: computeRichTextLocalBoundsRectangle,
 };

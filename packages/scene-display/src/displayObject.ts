@@ -16,7 +16,6 @@ import type {
   DisplayObjectRuntime,
   MethodsOf,
   PartialNode,
-  Rectangle,
   SceneNode,
   SceneNodeRuntimeFactory,
 } from '@flighthq/types';
@@ -68,10 +67,5 @@ export function isDisplayObject(source: Readonly<SceneNode<any, any>>): boolean 
 
 export function setDisplayObjectMask(source: DisplayObject, value: DisplayObject | null): void {
   source.mask = value;
-  invalidateAppearance(source);
-}
-
-export function setDisplayObjectScrollRectangle(source: DisplayObject, value: Rectangle | null): void {
-  source.scrollRectangle = value;
   invalidateAppearance(source);
 }

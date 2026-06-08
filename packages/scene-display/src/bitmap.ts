@@ -1,3 +1,4 @@
+import { invalidateAppearance, invalidateLocalBounds } from '@flighthq/scene';
 import type { Bitmap, BitmapData, BitmapRuntime, MethodsOf, PartialNode, Rectangle, SceneNode } from '@flighthq/types';
 import { BitmapKind } from '@flighthq/types';
 
@@ -32,6 +33,12 @@ export function createBitmapRuntime(): BitmapRuntime {
 
 export function getBitmapRuntime(source: Readonly<Bitmap>): Readonly<BitmapRuntime> {
   return getDisplayObjectRuntime(source) as BitmapRuntime;
+}
+
+export function setBitmapImage(source: Bitmap, value: BitmapData['image']): void {
+  source.data.image = value;
+  invalidateLocalBounds(source);
+  invalidateAppearance(source);
 }
 
 const defaultMethods: Partial<MethodsOf<BitmapRuntime>> = {
