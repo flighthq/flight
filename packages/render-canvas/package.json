@@ -17,9 +17,9 @@
       "types": "./dist/canvasBitmap.d.ts",
       "default": "./dist/canvasBitmap.js"
     },
-    "./clipRect": {
-      "types": "./dist/canvasClipRect.d.ts",
-      "default": "./dist/canvasClipRect.js"
+    "./clipRectangle": {
+      "types": "./dist/canvasClipRectangle.d.ts",
+      "default": "./dist/canvasClipRectangle.js"
     },
     "./displayObject": {
       "types": "./dist/canvasDisplayObject.d.ts",

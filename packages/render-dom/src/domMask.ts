@@ -1,7 +1,7 @@
 import { getLocalBoundsRectangle } from '@flighthq/scene';
 import type { DisplayObject, DisplayObjectRenderNode } from '@flighthq/types';
 
-import { createDOMStageRectangle, type DOMStageRectangle } from './domClipRect';
+import { createDOMStageRectangle, type DOMStageRectangle } from './domClipRectangle';
 
 export function pushDOMMaskRectangle(rectangles: DOMStageRectangle[], data: DisplayObjectRenderNode): void {
   const bounds = getLocalBoundsRectangle(data.source as DisplayObject);

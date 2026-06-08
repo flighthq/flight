@@ -8,7 +8,7 @@ import {
   type DOMStageRectangle,
   pushDOMClipRectangle,
   setDOMClipHooks,
-} from './domClipRect';
+} from './domClipRectangle';
 import { createDOMRenderState } from './domRenderState';
 import type { DOMRenderStateInternal } from './internal';
 

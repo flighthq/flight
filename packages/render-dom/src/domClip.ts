@@ -8,7 +8,7 @@ import type {
 } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
 
-import { pushDOMClipRectangle, setDOMClipHooks } from './domClipRect';
+import { pushDOMClipRectangle, setDOMClipHooks } from './domClipRectangle';
 import { pushDOMMaskRectangle } from './domMask';
 import type { DOMRenderStateInternal } from './internal';
 

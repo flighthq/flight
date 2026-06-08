@@ -1,6 +1,6 @@
 import { createMatrix, createRectangle } from '@flighthq/geometry';
 
-import { popWebGLClipRectangle, pushWebGLClipRectangle } from './webglClipRect';
+import { popWebGLClipRectangle, pushWebGLClipRectangle } from './webglClipRectangle';
 import { makeWebGLState } from './webglTestHelper';
 
 describe('popWebGLClipRectangle', () => {

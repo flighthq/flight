@@ -40,11 +40,16 @@ export function findGraphHitTarget(
  * after inverting through the node's world transform.
  **/
 export function graphHitTestLocalBounds(source: SceneNode<symbol, object>, x: number, y: number): boolean {
-  inverseMatrixTransformPointXY(hitTestLocalBoundsRectPoint, getWorldTransformMatrix(source as DisplayObject), x, y);
+  inverseMatrixTransformPointXY(
+    hitTestLocalBoundsRectanglePoint,
+    getWorldTransformMatrix(source as DisplayObject),
+    x,
+    y,
+  );
   return containsRectanglePointXY(
     getLocalBoundsRectangle(source as DisplayObject),
-    hitTestLocalBoundsRectPoint.x,
-    hitTestLocalBoundsRectPoint.y,
+    hitTestLocalBoundsRectanglePoint.x,
+    hitTestLocalBoundsRectanglePoint.y,
   );
 }
 
@@ -97,5 +102,5 @@ export function registerHitTestPoint(kind: symbol, fn: GraphHitTestFn): void {
   hitTestPointRegistry.set(kind, fn);
 }
 
-const hitTestLocalBoundsRectPoint = { x: 0, y: 0 };
+const hitTestLocalBoundsRectanglePoint = { x: 0, y: 0 };
 const hitTestPointRegistry = new Map<symbol, GraphHitTestFn>();

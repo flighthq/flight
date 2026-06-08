@@ -3,10 +3,10 @@ import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, Matrix, Rectangle } from '@flighthq/types';
 
-import { popCanvasClipRectangle, pushCanvasClipRectangle } from './canvasClipRect';
+import { popCanvasClipRectangle, pushCanvasClipRectangle } from './canvasClipRectangle';
 import { createCanvasRenderState } from './canvasRenderState';
 
-describe('Clip Rect Functions', () => {
+describe('Clip Rectangle Functions', () => {
   let canvas: HTMLCanvasElement;
   let state: CanvasRenderState;
   let rect: Rectangle;
@@ -25,13 +25,13 @@ describe('Clip Rect Functions', () => {
     data.transform2D = transform2D;
   });
 
-  it('should call context.restore() when popClipRect is called', () => {
+  it('should call context.restore() when popClipRectangle is called', () => {
     const restoreSpy = vi.spyOn(state.context, 'restore');
     popCanvasClipRectangle(state);
     expect(restoreSpy).toHaveBeenCalled();
   });
 
-  it('should call context.save(), setTransform, and context.clip() when pushClipRect is called', () => {
+  it('should call context.save(), setTransform, and context.clip() when pushClipRectangle is called', () => {
     const saveSpy = vi.spyOn(state.context, 'save');
     const beginPathSpy = vi.spyOn(state.context, 'beginPath');
     const rectSpy = vi.spyOn(state.context, 'rect');

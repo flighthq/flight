@@ -17,6 +17,7 @@ import {
   createDisplayObjectRuntime,
   getDisplayObjectRuntime,
   isDisplayObject,
+  setDisplayObjectClipRectangle,
   setDisplayObjectMask,
 } from './displayObject';
 
@@ -139,6 +140,30 @@ describe('isDisplayObject', () => {
     const TestGraph: unique symbol = Symbol('TestGraph');
     const node = createSceneNode(TestGraph, DisplayObjectKind);
     expect(isDisplayObject(node)).toBe(false);
+  });
+});
+
+describe('setDisplayObjectClipRectangle', () => {
+  let obj: DisplayObject;
+  beforeEach(() => {
+    obj = createDisplayObject();
+  });
+
+  it('sets clipRectangle', () => {
+    const rect = { x: 0, y: 0, width: 100, height: 50 } as Rectangle;
+    setDisplayObjectClipRectangle(obj, rect);
+    expect(obj.clipRectangle).toBe(rect);
+  });
+
+  it('accepts null', () => {
+    setDisplayObjectClipRectangle(obj, null);
+    expect(obj.clipRectangle).toBeNull();
+  });
+
+  it('invalidates appearance', () => {
+    const idBefore = getRuntime_(obj).appearanceID;
+    setDisplayObjectClipRectangle(obj, { x: 0, y: 0, width: 10, height: 10 } as Rectangle);
+    expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
   });
 });
 

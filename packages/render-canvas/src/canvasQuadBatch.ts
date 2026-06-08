@@ -84,7 +84,7 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: SpriteR
     context.imageSmoothingEnabled = true;
   }
 
-  // popClipRect(state);
+  // popClipRectangle(state);
   // rectanglePool.releaseMatrix(rect);
 }
 

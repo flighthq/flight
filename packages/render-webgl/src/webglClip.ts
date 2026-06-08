@@ -9,7 +9,7 @@ import type {
 import { RenderFeatures } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { popWebGLClipRectangle, pushWebGLClipRectangle } from './webglClipRect';
+import { popWebGLClipRectangle, pushWebGLClipRectangle } from './webglClipRectangle';
 import { popWebGLMask, pushWebGLMask } from './webglMask';
 
 export function enableWebGLClipRectangleSupport(state: WebGLRenderState): void {
