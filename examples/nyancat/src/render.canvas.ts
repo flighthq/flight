@@ -16,7 +16,6 @@ document.getElementById('app')!.appendChild(canvas);
 
 export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0x000000ff,
-  contextAttributes: { alpha: false },
   imageSmoothingEnabled: false,
 });
 registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);

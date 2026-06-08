@@ -16,7 +16,6 @@ document.body.appendChild(canvas);
 
 export const state = createWebGLRenderState(canvas, {
   backgroundColor: 0xffffffff,
-  contextAttributes: { alpha: false },
 });
 registerRenderer(state, TextKind, defaultWebGLTextRenderer);
 export const scale = pixelRatio;

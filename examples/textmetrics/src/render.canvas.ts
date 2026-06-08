@@ -26,7 +26,6 @@ export const container = canvas;
 export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xa0a0a0ff,
   pixelRatio,
-  contextAttributes: { alpha: false },
 });
 registerRenderer(state, RichTextKind, defaultCanvasRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
