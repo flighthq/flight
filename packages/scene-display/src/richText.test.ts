@@ -1,5 +1,6 @@
+import { getEntityRuntime } from '@flighthq/entity';
 import { createRectangle } from '@flighthq/geometry';
-import type { RichText, SceneNode } from '@flighthq/types';
+import type { RichText, RichTextRuntime, SceneNode } from '@flighthq/types';
 import { RichTextKind } from '@flighthq/types';
 
 import {
@@ -13,6 +14,7 @@ import {
   setRichTextFormatRange,
   setRichTextScrollH,
   setRichTextScrollV,
+  setRichTextText,
 } from './richText';
 
 describe('clearRichTextFormatRanges', () => {
@@ -198,5 +200,21 @@ describe('setRichTextScrollV', () => {
     const richText = createRichText();
     setRichTextScrollV(richText, 0);
     expect(richText.data.scrollV).toBe(1);
+  });
+});
+
+describe('setRichTextText', () => {
+  it('sets the text', () => {
+    const richText = createRichText();
+    setRichTextText(richText, 'hello');
+    expect(richText.data.text).toBe('hello');
+  });
+
+  it('invalidates appearance', () => {
+    const richText = createRichText();
+    const runtime = getEntityRuntime(richText) as RichTextRuntime;
+    const idBefore = runtime.appearanceID;
+    setRichTextText(richText, 'hello');
+    expect(runtime.appearanceID).not.toBe(idBefore);
   });
 });

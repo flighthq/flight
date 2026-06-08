@@ -1,5 +1,6 @@
+import { getEntityRuntime } from '@flighthq/entity';
 import { createRectangle } from '@flighthq/geometry';
-import type { Bitmap, ImageSource, SceneNode } from '@flighthq/types';
+import type { Bitmap, BitmapRuntime, ImageSource, SceneNode } from '@flighthq/types';
 import { BitmapKind } from '@flighthq/types';
 
 import {
@@ -8,6 +9,7 @@ import {
   createBitmapData,
   createBitmapRuntime,
   getBitmapRuntime,
+  setBitmapImage,
 } from './bitmap';
 
 describe('computeBitmapLocalBoundsRectangle', () => {
@@ -93,5 +95,36 @@ describe('getBitmapRuntime', () => {
     const bitmap = createBitmap();
     const runtime = getBitmapRuntime(bitmap);
     expect(runtime).not.toBeNull();
+  });
+});
+
+describe('setBitmapImage', () => {
+  it('sets the image', () => {
+    const bitmap = createBitmap();
+    const image = { width: 64, height: 64 } as ImageSource;
+    setBitmapImage(bitmap, image);
+    expect(bitmap.data.image).toBe(image);
+  });
+
+  it('accepts null', () => {
+    const bitmap = createBitmap({ data: { image: { width: 1, height: 1 } as ImageSource } });
+    setBitmapImage(bitmap, null);
+    expect(bitmap.data.image).toBeNull();
+  });
+
+  it('invalidates local bounds', () => {
+    const bitmap = createBitmap();
+    const runtime = getEntityRuntime(bitmap) as BitmapRuntime;
+    const idBefore = runtime.localBoundsID;
+    setBitmapImage(bitmap, { width: 64, height: 64 } as ImageSource);
+    expect(runtime.localBoundsID).not.toBe(idBefore);
+  });
+
+  it('invalidates appearance', () => {
+    const bitmap = createBitmap();
+    const runtime = getEntityRuntime(bitmap) as BitmapRuntime;
+    const idBefore = runtime.appearanceID;
+    setBitmapImage(bitmap, { width: 64, height: 64 } as ImageSource);
+    expect(runtime.appearanceID).not.toBe(idBefore);
   });
 });

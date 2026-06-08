@@ -1,7 +1,14 @@
-import type { InputText, PartialNode } from '@flighthq/types';
+import { getEntityRuntime } from '@flighthq/entity';
+import type { InputText, InputTextRuntime, PartialNode } from '@flighthq/types';
 import { InputTextKind } from '@flighthq/types';
 
-import { createInputText, createInputTextData, createInputTextRuntime, getInputTextRuntime } from './inputText';
+import {
+  createInputText,
+  createInputTextData,
+  createInputTextRuntime,
+  getInputTextRuntime,
+  setInputTextText,
+} from './inputText';
 
 describe('createInputText', () => {
   let text: InputText;
@@ -86,5 +93,21 @@ describe('getInputTextRuntime', () => {
     const text = createInputText();
     const runtime = getInputTextRuntime(text);
     expect(runtime).not.toBeNull();
+  });
+});
+
+describe('setInputTextText', () => {
+  it('sets the text', () => {
+    const text = createInputText();
+    setInputTextText(text, 'hello');
+    expect(text.data.text).toBe('hello');
+  });
+
+  it('invalidates appearance', () => {
+    const text = createInputText();
+    const runtime = getEntityRuntime(text) as InputTextRuntime;
+    const idBefore = runtime.appearanceID;
+    setInputTextText(text, 'hello');
+    expect(runtime.appearanceID).not.toBe(idBefore);
   });
 });
