@@ -1,5 +1,4 @@
 import { getEntityRuntime } from '@flighthq/entity';
-import { createRectangle } from '@flighthq/geometry';
 import { createSceneNode } from '@flighthq/scene';
 import type {
   DisplayObject,
@@ -19,7 +18,6 @@ import {
   getDisplayObjectRuntime,
   isDisplayObject,
   setDisplayObjectMask,
-  setDisplayObjectScrollRectangle,
 } from './displayObject';
 
 function getRuntime_(obj: DisplayObject): DisplayObjectRuntime {
@@ -164,30 +162,6 @@ describe('setDisplayObjectMask', () => {
   it('invalidates appearance', () => {
     const idBefore = getRuntime_(obj).appearanceID;
     setDisplayObjectMask(obj, createDisplayObject());
-    expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
-  });
-});
-
-describe('setDisplayObjectScrollRectangle', () => {
-  let obj: DisplayObject;
-  beforeEach(() => {
-    obj = createDisplayObject();
-  });
-
-  it('sets scrollRectangle', () => {
-    const rect = createRectangle();
-    setDisplayObjectScrollRectangle(obj, rect);
-    expect(obj.scrollRectangle).toBe(rect);
-  });
-
-  it('accepts null', () => {
-    setDisplayObjectScrollRectangle(obj, null);
-    expect(obj.scrollRectangle).toBeNull();
-  });
-
-  it('invalidates appearance', () => {
-    const idBefore = getRuntime_(obj).appearanceID;
-    setDisplayObjectScrollRectangle(obj, createRectangle());
     expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
   });
 });

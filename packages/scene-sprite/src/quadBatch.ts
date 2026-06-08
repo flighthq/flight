@@ -1,5 +1,4 @@
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
-import { invalidateLocalBounds } from '@flighthq/scene';
 import type {
   MethodsOf,
   PartialNode,
@@ -185,7 +184,6 @@ export function measureQuadBatchBoundsRectangle(out: Rectangle, source: Readonly
   const runtime = getSpriteNodeRuntime(source) as unknown as QuadBatchRuntime;
   if (runtime.measuredBoundsRect === null) runtime.measuredBoundsRect = createRectangle();
   copyRectangle(runtime.measuredBoundsRect, out);
-  invalidateLocalBounds(source);
 }
 
 export function reserveQuadBatch(target: QuadBatch, capacity: number): void {

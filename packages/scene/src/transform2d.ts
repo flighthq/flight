@@ -6,7 +6,7 @@ import {
   matrixTransformPointXY,
   multiplyMatrix,
 } from '@flighthq/geometry';
-import { invalidateLocalTransform, recomputeWorldTransformRevision } from '@flighthq/scene';
+import { recomputeWorldTransformRevision } from '@flighthq/scene';
 import type {
   HasTransform2DRuntime,
   Matrix,
@@ -128,46 +128,6 @@ function recomputeWorldTransform2D<SceneKind extends symbol, Traits extends obje
     copyMatrix(runtime.worldTransform2D, runtime.localTransform2D!);
   }
   recomputeWorldTransformRevision(runtime, parentRuntime);
-}
-
-export function setTransformRotation<SceneKind extends symbol, Traits extends object>(
-  target: SceneTransform2DNode<SceneKind, Traits>,
-  value: number,
-): void {
-  target.rotation = value;
-  invalidateLocalTransform(target);
-}
-
-export function setTransformScaleX<SceneKind extends symbol, Traits extends object>(
-  target: SceneTransform2DNode<SceneKind, Traits>,
-  value: number,
-): void {
-  target.scaleX = value;
-  invalidateLocalTransform(target);
-}
-
-export function setTransformScaleY<SceneKind extends symbol, Traits extends object>(
-  target: SceneTransform2DNode<SceneKind, Traits>,
-  value: number,
-): void {
-  target.scaleY = value;
-  invalidateLocalTransform(target);
-}
-
-export function setTransformX<SceneKind extends symbol, Traits extends object>(
-  target: SceneTransform2DNode<SceneKind, Traits>,
-  value: number,
-): void {
-  target.x = value;
-  invalidateLocalTransform(target);
-}
-
-export function setTransformY<SceneKind extends symbol, Traits extends object>(
-  target: SceneTransform2DNode<SceneKind, Traits>,
-  value: number,
-): void {
-  target.y = value;
-  invalidateLocalTransform(target);
 }
 
 const DEG_TO_RAD = Math.PI / 180;

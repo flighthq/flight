@@ -1,5 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
-import { setTransformX } from '@flighthq/scene';
+import { invalidateLocalTransform } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { RenderFeatures } from '@flighthq/types';
 
@@ -30,7 +30,8 @@ describe('updateDisplayObjectRenderTransform', () => {
     const obj = createDisplayObject();
     const data = createDisplayObjectRenderNode(state, obj);
     updateDisplayObjectRenderTransform(state, data);
-    setTransformX(obj, 10);
+    obj.x = 10;
+    invalidateLocalTransform(obj);
     expect(updateDisplayObjectRenderTransform(state, data)).toBe(true);
   });
 
