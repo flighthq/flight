@@ -12,8 +12,7 @@ import {
   appendShapeRoundRectangle,
   createDisplayObject,
   createShape,
-  setTransformX,
-  setTransformY,
+  invalidateLocalTransform,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -36,43 +35,49 @@ function drawPolygon(g: Shape, x: number, y: number, radius: number, sides: numb
 const square = createShape();
 appendShapeBeginFill(square, 0x24afc4);
 appendShapeRectangle(square, 0, 0, 100, 100);
-setTransformX(square, 20);
-setTransformY(square, 20);
+square.x = 20;
+square.y = 20;
+invalidateLocalTransform(square);
 addSceneChild(main, square);
 
 const rectangle = createShape();
 appendShapeBeginFill(rectangle, 0x24afc4);
 appendShapeRectangle(rectangle, 0, 0, 120, 100);
-setTransformX(rectangle, 140);
-setTransformY(rectangle, 20);
+rectangle.x = 140;
+rectangle.y = 20;
+invalidateLocalTransform(rectangle);
 addSceneChild(main, rectangle);
 
 const circle = createShape();
 appendShapeBeginFill(circle, 0x24afc4);
 appendShapeCircle(circle, 50, 50, 50);
-setTransformX(circle, 280);
-setTransformY(circle, 20);
+circle.x = 280;
+circle.y = 20;
+invalidateLocalTransform(circle);
 addSceneChild(main, circle);
 
 const ellipse = createShape();
 appendShapeBeginFill(ellipse, 0x24afc4);
 appendShapeEllipse(ellipse, 0, 0, 120, 100);
-setTransformX(ellipse, 400);
-setTransformY(ellipse, 20);
+ellipse.x = 400;
+ellipse.y = 20;
+invalidateLocalTransform(ellipse);
 addSceneChild(main, ellipse);
 
 const roundSquare = createShape();
 appendShapeBeginFill(roundSquare, 0x24afc4);
 appendShapeRoundRectangle(roundSquare, 0, 0, 100, 100, 40, 40);
-setTransformX(roundSquare, 540);
-setTransformY(roundSquare, 20);
+roundSquare.x = 540;
+roundSquare.y = 20;
+invalidateLocalTransform(roundSquare);
 addSceneChild(main, roundSquare);
 
 const roundRectangle = createShape();
 appendShapeBeginFill(roundRectangle, 0x24afc4);
 appendShapeRoundRectangle(roundRectangle, 0, 0, 120, 100, 40, 40);
-setTransformX(roundRectangle, 660);
-setTransformY(roundRectangle, 20);
+roundRectangle.x = 660;
+roundRectangle.y = 20;
+invalidateLocalTransform(roundRectangle);
 addSceneChild(main, roundRectangle);
 
 // ── Row 2: polygons ────────────────────────────────────────────────────────
@@ -83,43 +88,49 @@ appendShapeMoveTo(triangle, 0, 100);
 appendShapeLineTo(triangle, 50, 0);
 appendShapeLineTo(triangle, 100, 100);
 appendShapeLineTo(triangle, 0, 100);
-setTransformX(triangle, 20);
-setTransformY(triangle, 150);
+triangle.x = 20;
+triangle.y = 150;
+invalidateLocalTransform(triangle);
 addSceneChild(main, triangle);
 
 const pentagon = createShape();
 appendShapeBeginFill(pentagon, 0x24afc4);
 drawPolygon(pentagon, 50, 50, 50, 5);
-setTransformX(pentagon, 145);
-setTransformY(pentagon, 150);
+pentagon.x = 145;
+pentagon.y = 150;
+invalidateLocalTransform(pentagon);
 addSceneChild(main, pentagon);
 
 const hexagon = createShape();
 appendShapeBeginFill(hexagon, 0x24afc4);
 drawPolygon(hexagon, 50, 50, 50, 6);
-setTransformX(hexagon, 270);
-setTransformY(hexagon, 150);
+hexagon.x = 270;
+hexagon.y = 150;
+invalidateLocalTransform(hexagon);
 addSceneChild(main, hexagon);
 
 const heptagon = createShape();
 appendShapeBeginFill(heptagon, 0x24afc4);
 drawPolygon(heptagon, 50, 50, 50, 7);
-setTransformX(heptagon, 395);
-setTransformY(heptagon, 150);
+heptagon.x = 395;
+heptagon.y = 150;
+invalidateLocalTransform(heptagon);
 addSceneChild(main, heptagon);
 
 const octagon = createShape();
 appendShapeBeginFill(octagon, 0x24afc4);
 drawPolygon(octagon, 50, 50, 50, 8);
-setTransformX(octagon, 520);
-setTransformY(octagon, 150);
+octagon.x = 520;
+octagon.y = 150;
+invalidateLocalTransform(octagon);
 addSceneChild(main, octagon);
 
 const decagon = createShape();
 appendShapeBeginFill(decagon, 0x24afc4);
 drawPolygon(decagon, 50, 50, 50, 10);
-setTransformX(decagon, 650);
-setTransformY(decagon, 150);
+decagon.x = 650;
+decagon.y = 150;
+invalidateLocalTransform(decagon);
 addSceneChild(main, decagon);
 
 // ── Row 3: lines and curves ───────────────────────────────────────────────
@@ -127,15 +138,17 @@ addSceneChild(main, decagon);
 const line = createShape();
 appendShapeLineStyle(line, 10, 0x24afc4);
 appendShapeLineTo(line, 755, 0);
-setTransformX(line, 20);
-setTransformY(line, 280);
+line.x = 20;
+line.y = 280;
+invalidateLocalTransform(line);
 addSceneChild(main, line);
 
 const curve = createShape();
 appendShapeLineStyle(curve, 10, 0x24afc4);
 appendShapeCurveTo(curve, 327.5, -50, 755, 0);
-setTransformX(curve, 20);
-setTransformY(curve, 340);
+curve.x = 20;
+curve.y = 340;
+invalidateLocalTransform(curve);
 addSceneChild(main, curve);
 
 // ── Render loop ───────────────────────────────────────────────────────────
