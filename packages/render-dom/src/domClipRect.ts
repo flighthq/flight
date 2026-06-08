@@ -1,4 +1,4 @@
-import type { MatrixLike, RectangleLike } from '@flighthq/types';
+import type { DisplayObjectRenderNode, MatrixLike, RectangleLike } from '@flighthq/types';
 
 import type { DOMClipHooks, DOMRenderStateInternal } from './internal';
 
