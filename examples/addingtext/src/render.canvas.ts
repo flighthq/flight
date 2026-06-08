@@ -16,7 +16,6 @@ document.body.appendChild(canvas);
 
 export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xffffffff,
-  contextAttributes: { alpha: false },
 });
 registerRenderer(state, TextKind, defaultCanvasTextRenderer);
 export const scale = pixelRatio;

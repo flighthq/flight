@@ -26,7 +26,6 @@ document.body.appendChild(canvas);
 export const container = canvas;
 export const state = createWebGLRenderState(canvas, {
   backgroundColor: 0xa0a0a0ff,
-  contextAttributes: { alpha: false },
 });
 registerRenderer(state, RichTextKind, defaultWebGLRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);

@@ -20,7 +20,6 @@ document.body.appendChild(canvas);
 
 export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xeeddccff,
-  contextAttributes: { alpha: false },
 });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasEndFill, defaultCanvasDrawCircle]);

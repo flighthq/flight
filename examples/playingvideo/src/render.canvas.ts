@@ -25,7 +25,6 @@ document.body.appendChild(canvas);
 export const container = canvas;
 export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0x000000ff,
-  contextAttributes: { alpha: false },
 });
 registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);

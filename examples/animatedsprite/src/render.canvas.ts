@@ -16,7 +16,6 @@ document.body.appendChild(canvas);
 
 export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xeeddccff,
-  contextAttributes: { alpha: false },
   imageSmoothingEnabled: false,
 });
 registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
