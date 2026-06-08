@@ -42,7 +42,7 @@ function select(index: number): void {
   buildSidebar();
   sidebar.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
   const { name, render } = entries[index];
-  preview.src = `/examples/${name}/${render}/`;
+  preview.src = `${import.meta.env.BASE_URL}examples/${name}/${render}/`;
 }
 
 document.addEventListener('keydown', (e) => {
