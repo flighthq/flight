@@ -35,15 +35,20 @@ function buildSidebar(): void {
   });
 }
 
+// Parses #/explorer/name or #/explorer/name/render (hash value after stripping '#')
 function indexFromHash(hash: string): number {
-  const colonIdx = hash.indexOf(':');
-  if (colonIdx >= 0) {
-    const name = hash.slice(0, colonIdx);
-    const render = hash.slice(colonIdx + 1);
+  const parts = hash.replace(/^\//, '').split('/');
+  if (parts[0] !== 'explorer' || !parts[1]) return -1;
+  const name = parts[1];
+  const render = parts[2];
+  if (render) {
     return entries.findIndex((e) => e.name === name && e.render === render);
   }
-  // Example name only — pick its first available renderer
-  return entries.findIndex((e) => e.name === hash);
+  return entries.findIndex((e) => e.name === name);
+}
+
+function hashForEntry(name: string, render: string): string {
+  return `/explorer/${name}/${render}`;
 }
 
 function showEntry(index: number): void {
@@ -51,14 +56,14 @@ function showEntry(index: number): void {
   buildSidebar();
   sidebar.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
   const { name, render } = entries[index];
-  sessionStorage.setItem(STORAGE_KEY, `${name}:${render}`);
+  sessionStorage.setItem(STORAGE_KEY, hashForEntry(name, render));
   preview.src = `${import.meta.env.BASE_URL}examples/${name}/${render}/`;
 }
 
 function select(index: number): void {
   showEntry(index);
   const { name, render } = entries[index];
-  location.hash = `${name}:${render}`;
+  location.hash = hashForEntry(name, render);
 }
 
 document.addEventListener('keydown', (e) => {
@@ -91,5 +96,5 @@ const initIndex = (() => {
 
 showEntry(initIndex);
 if (!initHash && entries.length > 0) {
-  history.replaceState(null, '', `#${entries[initIndex].name}:${entries[initIndex].render}`);
+  history.replaceState(null, '', `#${hashForEntry(entries[initIndex].name, entries[initIndex].render)}`);
 }
