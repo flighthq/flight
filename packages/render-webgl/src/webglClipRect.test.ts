@@ -1,8 +1,6 @@
-﻿import { createMatrix, createRectangle } from '@flighthq/geometry';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import { createDisplayObject } from '@flighthq/scene-display';
+import { createMatrix, createRectangle } from '@flighthq/geometry';
 
-import { popWebGLClipRectangle, pushWebGLClipRectangle, pushWebGLScrollRectangle } from './webglClipRect';
+import { popWebGLClipRectangle, pushWebGLClipRectangle } from './webglClipRect';
 import { makeWebGLState } from './webglTestHelper';
 
 describe('popWebGLClipRectangle', () => {
@@ -44,19 +42,5 @@ describe('pushWebGLClipRectangle', () => {
     pushWebGLClipRectangle(state, createRectangle(50, 25, 100, 50), createMatrix());
 
     expect(gl.scissor).toHaveBeenLastCalledWith(50, 25, 50, 50);
-  });
-});
-
-describe('pushWebGLScrollRectangle', () => {
-  it('uses the render node scroll rectangle and transform', () => {
-    const { state, gl } = makeWebGLState();
-    const source = createDisplayObject();
-    source.scrollRectangle = createRectangle(0, 0, 20, 10);
-    const data = getOrCreateDisplayObjectRenderNode(state, source);
-    data.transform2D = createMatrix(1, 0, 0, 1, 2, 3);
-
-    pushWebGLScrollRectangle(state, data);
-
-    expect(gl.scissor).toHaveBeenLastCalledWith(2, 87, 20, 10);
   });
 });

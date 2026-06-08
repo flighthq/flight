@@ -1,35 +1,12 @@
-import { copyMatrix, multiplyMatrix, translateMatrixByVectorXY } from '@flighthq/geometry';
+import { copyMatrix, multiplyMatrix } from '@flighthq/geometry';
 import { getLocalTransformMatrix, getLocalTransformRevision } from '@flighthq/scene';
-import type {
-  DisplayObject,
-  DisplayObjectRenderNode,
-  HasTransform2D,
-  RenderNode2D,
-  RenderState,
-  SceneNode,
-} from '@flighthq/types';
-import { RenderFeatures } from '@flighthq/types';
-
-import { hasRenderFeatures } from './renderer';
+import type { DisplayObjectRenderNode, HasTransform2D, RenderNode2D, RenderState, SceneNode } from '@flighthq/types';
 
 export function updateDisplayObjectRenderTransform(
   state: RenderState,
   data: DisplayObjectRenderNode,
   parentData?: DisplayObjectRenderNode,
 ): boolean {
-  const source = data.source as DisplayObject;
-  const scrollRectangle = source.scrollRectangle;
-  if (hasRenderFeatures(state, RenderFeatures.ScrollRectangle) && scrollRectangle !== null) {
-    // scrollRectangle shifts the render transform by (-x, -y) so that content at (x, y) in local
-    // space lands at the object's world position on screen. Renderers then clip to (x, y, w, h)
-    // in shifted local space and draw source crops at the same (x, y) offset — both of which
-    // map back to the object's origin in screen space. scrollRectangle is not tracked by
-    // localTransformID, so always recalculate when it is set.
-    recalculateRenderTransform2D(state, data, parentData);
-    data.lastLocalTransformID = getLocalTransformRevision(data.source as SceneNode);
-    translateMatrixByVectorXY(data.transform2D, data.transform2D, -scrollRectangle.x, -scrollRectangle.y);
-    return true;
-  }
   return updateRenderNode2DTransform(state, data, parentData);
 }
 

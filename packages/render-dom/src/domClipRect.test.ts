@@ -1,4 +1,4 @@
-﻿import { createMatrix, createRectangle } from '@flighthq/geometry';
+import { createMatrix, createRectangle } from '@flighthq/geometry';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 
@@ -7,7 +7,6 @@ import {
   createDOMStageRectangle,
   type DOMStageRectangle,
   pushDOMClipRectangle,
-  pushDOMScrollRectangle,
   setDOMClipHooks,
 } from './domClipRect';
 import { createDOMRenderState } from './domRenderState';
@@ -63,21 +62,6 @@ describe('pushDOMClipRectangle', () => {
     pushDOMClipRectangle(rectangles, createRectangle(0, 0, 10, 20), createMatrix(1, 0, 0, 1, 2, 3));
 
     expect(rectangles).toEqual([{ bottom: 23, left: 2, right: 12, top: 3 }]);
-  });
-});
-
-describe('pushDOMScrollRectangle', () => {
-  it('uses the source scroll rectangle', () => {
-    const state = makeState();
-    const source = createDisplayObject();
-    source.scrollRectangle = createRectangle(0, 0, 10, 10);
-    const data = getOrCreateDisplayObjectRenderNode(state, source);
-    data.transform2D = createMatrix(1, 0, 0, 1, 4, 5);
-    const rectangles: DOMStageRectangle[] = [];
-
-    pushDOMScrollRectangle(rectangles, data);
-
-    expect(rectangles).toEqual([{ bottom: 15, left: 4, right: 14, top: 5 }]);
   });
 });
 

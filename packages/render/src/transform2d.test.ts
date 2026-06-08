@@ -1,10 +1,7 @@
-import { createRectangle } from '@flighthq/geometry';
 import { invalidateLocalTransform } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
-import { RenderFeatures } from '@flighthq/types';
 
 import type { RenderNodeStateInternal } from './internal';
-import { enableRenderFeatures } from './renderer';
 import { createDisplayObjectRenderNode } from './renderNode';
 import { createRenderState } from './renderState';
 import { updateDisplayObjectRenderTransform, updateRenderNode2DTransform } from './transform2d';
@@ -42,17 +39,6 @@ describe('updateDisplayObjectRenderTransform', () => {
     const data = createDisplayObjectRenderNode(state, obj);
     updateDisplayObjectRenderTransform(state, data);
     expect(data.transformFrameID).toBe(3);
-  });
-
-  it('handles scrollRectangle by always recalculating', () => {
-    const state = createRenderState();
-    enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
-    const obj = createDisplayObject();
-    obj.scrollRectangle = createRectangle(5, 10, 100, 80);
-    const data = createDisplayObjectRenderNode(state, obj);
-    updateDisplayObjectRenderTransform(state, data);
-    updateDisplayObjectRenderTransform(state, data);
-    expect(data.transformFrameID).toBe(state.currentFrameID);
   });
 });
 

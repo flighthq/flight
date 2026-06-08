@@ -10,7 +10,7 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
     backgroundColorString: obj?.backgroundColorString ?? '',
     currentFrameID: obj?.currentFrameID ?? 0,
     currentMaskDepth: obj?.currentMaskDepth ?? 0,
-    currentScrollRectangleDepth: obj?.currentScrollRectangleDepth ?? 0,
+    currentClipRectangleDepth: obj?.currentClipRectangleDepth ?? 0,
     displayObjectClipHooks: obj?.displayObjectClipHooks ?? null,
     displayObjectMaskRendererMap: obj?.displayObjectMaskRendererMap ?? new Map(),
     displayObjectMaskRendererMapID: obj?.displayObjectMaskRendererMapID ?? 0,

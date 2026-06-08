@@ -17,7 +17,7 @@ export interface RenderState extends Entity {
   readonly backgroundColorString: string;
   readonly currentFrameID: number;
   currentMaskDepth: number;
-  currentScrollRectangleDepth: number;
+  currentClipRectangleDepth: number;
   displayObjectClipHooks: DisplayObjectClipHooks | null;
   readonly displayObjectMaskRendererMap: Map<symbol, DisplayObjectMaskRenderer>;
   readonly displayObjectMaskRendererMapID: number;

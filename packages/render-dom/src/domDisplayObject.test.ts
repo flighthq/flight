@@ -4,7 +4,7 @@ import { addSceneChild, invalidateLocalTransform } from '@flighthq/scene';
 import { appendShapeRectangle, createDisplayObject, createShape } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { enableDOMMaskSupport, enableDOMScrollRectangleSupport } from './domClip';
+import { enableDOMClipRectangleSupport, enableDOMMaskSupport } from './domClip';
 import { renderDOMDisplayObject } from './domDisplayObject';
 import { createDOMRenderState } from './domRenderState';
 
@@ -182,11 +182,11 @@ describe('renderDOMDisplayObject', () => {
     expect(state.element.contains(elB)).toBe(false);
   });
 
-  it('applies inherited scrollRectangle clipping to child elements', () => {
+  it('applies inherited clipRectangle clipping to child elements', () => {
     const state = makeState();
-    enableDOMScrollRectangleSupport(state);
+    enableDOMClipRectangleSupport(state);
     const parent = createDisplayObject();
-    parent.scrollRectangle = createRectangle(10, 20, 30, 40);
+    parent.clipRectangle = createRectangle(10, 20, 30, 40);
     const child = createDisplayObject();
     addSceneChild(parent, child);
 

@@ -11,14 +11,14 @@ import { RenderFeatures } from '@flighthq/types';
 import { popCanvasClipRectangle, pushCanvasClipRectangle } from './canvasClipRect';
 import { popCanvasMask, pushCanvasMask } from './canvasMask';
 
+export function enableCanvasClipRectangleSupport(state: CanvasRenderState): void {
+  state.displayObjectClipHooks = canvasClipHooks;
+  enableRenderFeatures(state, RenderFeatures.ClipRectangle);
+}
+
 export function enableCanvasMaskSupport(state: CanvasRenderState): void {
   state.displayObjectClipHooks = canvasClipHooks;
   enableRenderFeatures(state, RenderFeatures.Masks);
-}
-
-export function enableCanvasScrollRectangleSupport(state: CanvasRenderState): void {
-  state.displayObjectClipHooks = canvasClipHooks;
-  enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
 }
 
 const canvasClipHooks: DisplayObjectClipHooks = {
@@ -28,9 +28,9 @@ const canvasClipHooks: DisplayObjectClipHooks = {
       popCanvasMask(s);
       s.currentMaskDepth--;
     }
-    while (s.currentScrollRectangleDepth > 0) {
+    while (s.currentClipRectangleDepth > 0) {
       popCanvasClipRectangle(s);
-      s.currentScrollRectangleDepth--;
+      s.currentClipRectangleDepth--;
     }
   },
   popMask(state: RenderState, data: DisplayObjectRenderNode): void {
@@ -40,11 +40,11 @@ const canvasClipHooks: DisplayObjectClipHooks = {
       s.currentMaskDepth--;
     }
   },
-  popScrollRectangle(state: RenderState, data: DisplayObjectRenderNode): void {
+  popClipRectangle(state: RenderState, data: DisplayObjectRenderNode): void {
     const s = state as CanvasRenderState;
-    while (s.currentScrollRectangleDepth > data.scrollRectangleDepth) {
+    while (s.currentClipRectangleDepth > data.clipRectangleDepth) {
       popCanvasClipRectangle(s);
-      s.currentScrollRectangleDepth--;
+      s.currentClipRectangleDepth--;
     }
   },
   pushMask(state: RenderState, source: DisplayObject): void {
@@ -54,14 +54,14 @@ const canvasClipHooks: DisplayObjectClipHooks = {
     pushCanvasMask(state as CanvasRenderState, maskData);
     state.currentMaskDepth++;
   },
-  pushScrollRectangle(
+  pushClipRectangle(
     state: RenderState,
     data: DisplayObjectRenderNode,
     source: DisplayObject,
     hasChildren: boolean,
   ): void {
-    if (!hasChildren || source.scrollRectangle === null) return;
-    pushCanvasClipRectangle(state as CanvasRenderState, source.scrollRectangle, data.transform2D);
-    state.currentScrollRectangleDepth++;
+    if (!hasChildren || source.clipRectangle === null) return;
+    pushCanvasClipRectangle(state as CanvasRenderState, source.clipRectangle, data.transform2D);
+    state.currentClipRectangleDepth++;
   },
 };

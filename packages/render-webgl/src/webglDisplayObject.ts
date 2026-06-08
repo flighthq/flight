@@ -40,7 +40,7 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
     if (data === undefined || data.isMaskFrameID === frameID) continue;
 
     clipHooks?.popMask(state, data);
-    clipHooks?.popScrollRectangle(state, data);
+    clipHooks?.popClipRectangle(state, data);
 
     if (!isRenderNodeVisible(data)) continue;
 
@@ -58,7 +58,7 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
       }
     }
 
-    clipHooks?.pushScrollRectangle(state, data, current, stackLength > prePushLength);
+    clipHooks?.pushClipRectangle(state, data, current, stackLength > prePushLength);
   }
 
   clipHooks?.finalize(state);

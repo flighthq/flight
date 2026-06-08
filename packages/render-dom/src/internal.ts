@@ -18,7 +18,7 @@ export type DOMRenderStateInternal = Omit<DOMRenderState, 'element'> & {
   domOrderList: RenderNode2D[];
   domOrderLength: number;
   domNextOrderList: RenderNode2D[];
-  // Clip hooks: set when enableDOMScrollRectangleSupport or enableDOMMaskSupport is called.
+  // Clip hooks: set when enableDOMClipRectangleSupport or enableDOMMaskSupport is called.
   domClipHooks: DOMClipHooks | null;
   // Clip rectangle stack shared between scroll rect and mask clip effects.
   domClipStack: DOMStageRectangle[];

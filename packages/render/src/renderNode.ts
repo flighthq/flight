@@ -30,7 +30,7 @@ export function createDisplayObjectRenderNode(state: RenderState, source: Displa
   const out = createRenderNode2D(state, source) as DisplayObjectRenderNode;
   out.isMaskFrameID = -1;
   out.maskDepth = 0;
-  out.scrollRectangleDepth = 0;
+  out.clipRectangleDepth = 0;
   out.traverseChildren = true;
   return out;
 }
@@ -142,7 +142,7 @@ export function prepareDisplayObjectRender(state: RenderState, source: DisplayOb
 
   let parentData: DisplayObjectRenderNode | undefined = undefined;
   let lastParent: DisplayObject | null = null;
-  let scrollRectangleDepth = 0;
+  let clipRectangleDepth = 0;
   let maskDepth = 0;
   let treeDirty = false;
 
@@ -155,12 +155,12 @@ export function prepareDisplayObjectRender(state: RenderState, source: DisplayOb
       if (parent === null) {
         parentData = undefined;
         lastParent = null;
-        scrollRectangleDepth = 0;
+        clipRectangleDepth = 0;
         maskDepth = 0;
       } else if (parent !== lastParent) {
         parentData = getOrCreateDisplayObjectRenderNode(state, parent as DisplayObject);
         lastParent = parent as DisplayObject;
-        scrollRectangleDepth = parentData.scrollRectangleDepth;
+        clipRectangleDepth = parentData.clipRectangleDepth;
         maskDepth = parentData.maskDepth;
       }
     }
@@ -174,10 +174,10 @@ export function prepareDisplayObjectRender(state: RenderState, source: DisplayOb
       treeDirty = true;
     }
 
-    if (current.scrollRectangle !== null) {
-      data.scrollRectangleDepth = ++scrollRectangleDepth;
+    if (current.clipRectangle !== null) {
+      data.clipRectangleDepth = ++clipRectangleDepth;
     } else {
-      data.scrollRectangleDepth = scrollRectangleDepth;
+      data.clipRectangleDepth = clipRectangleDepth;
     }
 
     const mask = current.mask;

@@ -3,7 +3,7 @@ export enum AppearanceFlags {
   Visible = 1 << 0,
   Alpha = 1 << 1,
   BlendMode = 1 << 2,
-  ScrollRectangle = 1 << 3,
+  ClipRectangle = 1 << 3,
   Scale9Grid = 1 << 4,
   Mask = 1 << 5,
 
