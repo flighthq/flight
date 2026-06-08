@@ -104,13 +104,13 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
 
   if (source.data.selectable && richTextRuntime.selectionBeginIndex !== richTextRuntime.selectionEndIndex) {
     getRichTextSelectionRectangles(
-      _richTextSelectionRects,
+      _richTextSelectionRectangles,
       richTextRuntime.selectionBeginIndex,
       richTextRuntime.selectionEndIndex,
       result,
     );
-    for (const rect of _richTextSelectionRects) {
-      html += `<div style="position:absolute;left:${rect.x - scrollXOffset}px;top:${rect.y - scrollYOffset}px;width:${rect.width}px;height:${rect.height}px;background:${DOM_SELECTION_COLOR};opacity:${DOM_SELECTION_ALPHA};pointer-events:none;"></div>`;
+    for (const rectangle of _richTextSelectionRectangles) {
+      html += `<div style="position:absolute;left:${rectangle.x - scrollXOffset}px;top:${rectangle.y - scrollYOffset}px;width:${rectangle.width}px;height:${rectangle.height}px;background:${DOM_SELECTION_COLOR};opacity:${DOM_SELECTION_ALPHA};pointer-events:none;"></div>`;
     }
   }
 
@@ -208,7 +208,7 @@ function canvasFontAscentFallback(ctx: CanvasRenderingContext2D, font: string): 
 }
 const DOM_SELECTION_ALPHA = 0.35;
 const DOM_SELECTION_COLOR = '#0078d7';
-const _richTextSelectionRects: { height: number; lineIndex: number; width: number; x: number; y: number }[] = [];
+const _richTextSelectionRectangles: { height: number; lineIndex: number; width: number; x: number; y: number }[] = [];
 
 export function drawDOMRichTextMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
   drawDOMRichText(state, renderNode);

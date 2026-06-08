@@ -2,7 +2,7 @@ export type { WebGLRenderStateInternal } from './internal';
 export * from './webglBackground';
 export * from './webglBitmap';
 export * from './webglClip';
-export * from './webglClipRect';
+export * from './webglClipRectangle';
 export * from './webglDisplayObject';
 export * from './webglDraw';
 export * from './webglElement';

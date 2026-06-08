@@ -83,15 +83,15 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
 
   if (source.data.selectable && richTextRuntime.selectionBeginIndex !== richTextRuntime.selectionEndIndex) {
     getRichTextSelectionRectangles(
-      _richTextSelectionRects,
+      _richTextSelectionRectangles,
       richTextRuntime.selectionBeginIndex,
       richTextRuntime.selectionEndIndex,
       result,
     );
     context.fillStyle = SELECTION_COLOR;
     context.globalAlpha = Math.min(1, renderNode.alpha * SELECTION_ALPHA);
-    for (const rect of _richTextSelectionRects) {
-      context.fillRect(rect.x - scrollXOffset, rect.y - scrollYOffset, rect.width, rect.height);
+    for (const rectangle of _richTextSelectionRectangles) {
+      context.fillRect(rectangle.x - scrollXOffset, rectangle.y - scrollYOffset, rectangle.width, rectangle.height);
     }
     context.globalAlpha = renderNode.alpha;
   }
@@ -148,7 +148,7 @@ const BULLET_CHAR = 'Ã¢â‚¬Â¢';
 const BULLET_GAP = 4;
 const SELECTION_ALPHA = 0.35;
 const SELECTION_COLOR = '#0078d7';
-const _richTextSelectionRects: InputTextSelectionRectangle[] = [];
+const _richTextSelectionRectangles: InputTextSelectionRectangle[] = [];
 
 export const defaultCanvasRichTextRenderer: DisplayObjectRenderer = {
   createData: createNullRendererData,

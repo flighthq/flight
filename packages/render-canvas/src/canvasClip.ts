@@ -8,7 +8,7 @@ import type {
 } from '@flighthq/types';
 import { RenderFeatures } from '@flighthq/types';
 
-import { popCanvasClipRectangle, pushCanvasClipRectangle } from './canvasClipRect';
+import { popCanvasClipRectangle, pushCanvasClipRectangle } from './canvasClipRectangle';
 import { popCanvasMask, pushCanvasMask } from './canvasMask';
 
 export function enableCanvasClipRectangleSupport(state: CanvasRenderState): void {
