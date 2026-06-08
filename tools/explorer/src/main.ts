@@ -5,10 +5,9 @@ interface Entry {
   render: string;
 }
 
-// Flat list of all navigable items
-const entries: Entry[] = examples.flatMap((e) => e.renderers.map((r) => ({ name: e.name, render: r })));
+const STORAGE_KEY = 'explorer-selected';
 
-const STORAGE_KEY = 'explorer-selected-index';
+const entries: Entry[] = examples.flatMap((e) => e.renderers.map((r) => ({ name: e.name, render: r })));
 let selectedIndex = 0;
 
 const sidebar = document.getElementById('sidebar')!;
@@ -36,13 +35,30 @@ function buildSidebar(): void {
   });
 }
 
-function select(index: number): void {
+function indexFromHash(hash: string): number {
+  const colonIdx = hash.indexOf(':');
+  if (colonIdx >= 0) {
+    const name = hash.slice(0, colonIdx);
+    const render = hash.slice(colonIdx + 1);
+    return entries.findIndex((e) => e.name === name && e.render === render);
+  }
+  // Example name only — pick its first available renderer
+  return entries.findIndex((e) => e.name === hash);
+}
+
+function showEntry(index: number): void {
   selectedIndex = index;
-  sessionStorage.setItem(STORAGE_KEY, String(index));
   buildSidebar();
   sidebar.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
   const { name, render } = entries[index];
+  sessionStorage.setItem(STORAGE_KEY, `${name}:${render}`);
   preview.src = `${import.meta.env.BASE_URL}examples/${name}/${render}/`;
+}
+
+function select(index: number): void {
+  showEntry(index);
+  const { name, render } = entries[index];
+  location.hash = `${name}:${render}`;
 }
 
 document.addEventListener('keydown', (e) => {
@@ -53,6 +69,27 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-const saved = parseInt(sessionStorage.getItem(STORAGE_KEY) ?? '0', 10);
-buildSidebar();
-select(isNaN(saved) || saved >= entries.length ? 0 : saved);
+window.addEventListener('hashchange', () => {
+  const index = indexFromHash(location.hash.slice(1));
+  if (index >= 0 && index !== selectedIndex) showEntry(index);
+});
+
+// Priority: URL hash > sessionStorage (survives HMR soft-reloads) > first entry
+const initHash = location.hash.slice(1);
+const initIndex = (() => {
+  if (initHash) {
+    const i = indexFromHash(initHash);
+    if (i >= 0) return i;
+  }
+  const saved = sessionStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    const i = indexFromHash(saved);
+    if (i >= 0) return i;
+  }
+  return 0;
+})();
+
+showEntry(initIndex);
+if (!initHash && entries.length > 0) {
+  history.replaceState(null, '', `#${entries[initIndex].name}:${entries[initIndex].render}`);
+}
