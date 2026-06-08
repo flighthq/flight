@@ -2,6 +2,7 @@ import {
   addTextureAtlasRegion,
   createQuadBatch,
   createTextureAtlas,
+  invalidateAppearance,
   loadImageSourceFromURL,
   resizeQuadBatch,
 } from '@flighthq/sdk';
@@ -47,6 +48,7 @@ let addingBunnies = false;
 
 function addBunny(): void {
   resizeQuadBatch(quadBatch, posX.length + 1);
+  invalidateAppearance(quadBatch);
   posX.push(0);
   posY.push(0);
   speedX.push(Math.random() * 5);
@@ -94,6 +96,8 @@ function enterFrame(): void {
     transforms[i * 2] = posX[i];
     transforms[i * 2 + 1] = posY[i];
   }
+
+  invalidateAppearance(quadBatch);
 
   if (addingBunnies) {
     for (let i = 0; i < BATCH_SIZE; i++) {

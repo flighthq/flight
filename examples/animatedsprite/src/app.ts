@@ -11,6 +11,7 @@ import {
   createTextureAtlas,
   getSpritesheetAnimation,
   getSpritesheetPlayerFrame,
+  invalidateAppearance,
   loadImageSourceFromURL,
   playSpritesheetAnimation,
   setTransformX,
@@ -83,7 +84,10 @@ connectSignal(app.onUpdate, (delta) => {
   for (let i = 0; i < players.length; i++) {
     if (updateSpritesheetPlayer(players[i], delta)) {
       const frame = getSpritesheetPlayerFrame(players[i], sheet);
-      if (frame !== null) sprites[i].data.id = frame.id;
+      if (frame !== null) {
+        sprites[i].data.id = frame.id;
+        invalidateAppearance(sprites[i]);
+      }
     }
   }
 });
