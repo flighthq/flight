@@ -87,7 +87,7 @@ describe('createTilemapRuntime', () => {
 
   it('uses computeTilemapLocalBoundsRectangle', () => {
     const runtime = createTilemapRuntime();
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeTilemapLocalBoundsRectangle);
+    expect(runtime.computeLocalBoundsRectangle).toStrictEqual(computeTilemapLocalBoundsRectangle);
   });
 });
 

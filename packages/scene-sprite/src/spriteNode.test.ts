@@ -85,8 +85,8 @@ describe('createSpriteNodeRuntime', () => {
 
   it('allows a custom bounds calculation', () => {
     const func = (_out: Rectangle, _source: Readonly<SceneNode>) => {};
-    const runtime = createSpriteNodeRuntime({ computeLocalBoundsRect: func });
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(func);
+    const runtime = createSpriteNodeRuntime({ computeLocalBoundsRectangle: func });
+    expect(runtime.computeLocalBoundsRectangle).toStrictEqual(func);
   });
 });
 

@@ -12,8 +12,7 @@ export interface QuadBatchData extends SpriteNodeData {
 }
 
 export interface QuadBatchRuntime extends SpriteNodeRuntime {
-  // Bounds from the last measureQuadBatchBoundsRectangle() call; null until first measurement.
-  measuredBoundsRect: Rectangle | null;
+  localBoundsRectangle: Rectangle | null;
 }
 
 export interface QuadBatch extends SpriteNode {

@@ -46,5 +46,5 @@ export function setHTMLViewSize(source: HTMLView, width: number, height: number)
 }
 
 const defaultMethods: Partial<MethodsOf<HTMLViewRuntime>> = {
-  computeLocalBoundsRect: computeHTMLViewLocalBoundsRectangle,
+  computeLocalBoundsRectangle: computeHTMLViewLocalBoundsRectangle,
 };

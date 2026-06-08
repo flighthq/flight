@@ -3,8 +3,8 @@ import {
   createSceneNodeRuntime,
   getSceneNodeRuntime,
   initAppearanceTrait,
-  initBoundsRectRuntimeTrait,
-  initBoundsRectTrait,
+  initBoundsRectangleRuntimeTrait,
+  initBoundsRectangleTrait,
   initTransformRuntimeTrait,
   initTransformTrait,
   invalidateAppearance,
@@ -41,7 +41,7 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
     createDisplayObjectRuntimeFactory ?? (createDisplayObjectRuntime as unknown as SceneNodeRuntimeFactory<R>),
   ) as DisplayObject;
   initTransformTrait(out, obj);
-  initBoundsRectTrait(out, obj);
+  initBoundsRectangleTrait(out, obj);
   initAppearanceTrait(out, obj);
   out.mask = obj?.mask ?? null;
   out.clipRectangle = obj?.clipRectangle ?? null;
@@ -53,7 +53,7 @@ export function createDisplayObjectRuntime(
 ): DisplayObjectRuntime {
   const out = createSceneNodeRuntime(methods) as DisplayObjectRuntime;
   initTransformRuntimeTrait(out, methods);
-  initBoundsRectRuntimeTrait(out, methods);
+  initBoundsRectangleRuntimeTrait(out, methods);
   return out;
 }
 

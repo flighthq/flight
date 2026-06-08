@@ -71,5 +71,5 @@ export function setStageSize(stage: Stage, width: number, height: number): void 
 }
 
 const defaultMethods: Partial<MethodsOf<StageRuntime>> = {
-  computeLocalBoundsRect: computeStageLocalBoundsRectangle,
+  computeLocalBoundsRectangle: computeStageLocalBoundsRectangle,
 };

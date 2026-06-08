@@ -40,5 +40,5 @@ export function getSpriteRuntime(source: Readonly<Sprite>): Readonly<SpriteRunti
 }
 
 const defaultMethods: Partial<MethodsOf<SpriteRuntime>> = {
-  computeLocalBoundsRect: computeSpriteLocalBoundsRectangle,
+  computeLocalBoundsRectangle: computeSpriteLocalBoundsRectangle,
 };

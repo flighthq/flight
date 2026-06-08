@@ -1,4 +1,5 @@
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
+import { invalidateLocalBounds } from '@flighthq/scene';
 import type {
   MethodsOf,
   PartialNode,
@@ -14,100 +15,12 @@ import { QuadBatchKind } from '@flighthq/types';
 
 import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
 
-export function computeQuadBatchLocalBoundsRectangle(out: Rectangle, source: Readonly<SceneNode>): void {
-  // Bounds are not auto-computed — iterating all instances on each invalidation is too costly.
-  // Call measureQuadBatchBoundsRectangle() after mutating the batch; this copies that cached result.
+function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<SceneNode>): void {
   const runtime = getSpriteNodeRuntime(source as QuadBatch) as QuadBatchRuntime;
-  if (runtime.measuredBoundsRect !== null) copyRectangle(out, runtime.measuredBoundsRect);
+  if (runtime.localBoundsRectangle !== null) copyRectangle(out, runtime.localBoundsRectangle);
 }
 
-export function createQuadBatch(obj?: Readonly<PartialNode<QuadBatch>>): QuadBatch {
-  return createSpriteNode(QuadBatchKind, obj, createQuadBatchData, createQuadBatchRuntime) as QuadBatch;
-}
-
-export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): QuadBatchData {
-  return {
-    atlas: data?.atlas ?? null,
-    ids: data?.ids ?? new Uint16Array(),
-    instanceCount: data?.instanceCount ?? 0,
-    transforms: data?.transforms ?? new Float32Array(),
-    transformType: data?.transformType ?? 'vector2',
-  };
-}
-
-export function createQuadBatchRuntime(): QuadBatchRuntime {
-  const runtime = createSpriteNodeRuntime(defaultMethods) as QuadBatchRuntime;
-  runtime.measuredBoundsRect = null;
-  return runtime;
-}
-
-export function getQuadBatchCapacity(source: Readonly<QuadBatch>): number {
-  const data = source.data;
-  const stride = getQuadTransformStride(data.transformType);
-  const transformCapacity = (data.transforms.length / stride) | 0;
-  return Math.min(data.ids.length, transformCapacity);
-}
-
-export function getQuadBatchRuntime(source: Readonly<QuadBatch>): Readonly<QuadBatchRuntime> {
-  return getSpriteNodeRuntime(source) as QuadBatchRuntime;
-}
-
-export function getQuadTransformStride(transformType: QuadTransformType): number {
-  return quadTransformStride[transformType];
-}
-
-export function hitTestQuadBatchPoint(source: Readonly<QuadBatch>, point: Readonly<Vector2Like>): number {
-  return hitTestQuadBatchPointXY(source, point.x, point.y);
-}
-
-export function hitTestQuadBatchPointXY(source: Readonly<QuadBatch>, x: number, y: number): number {
-  const { atlas, ids, instanceCount, transforms, transformType } = source.data;
-  if (atlas === null || instanceCount === 0) return -1;
-  const regions = atlas.regions;
-  const numRegions = regions.length;
-  if (transformType === 'vector2') {
-    for (let i = 0; i < instanceCount; i++) {
-      const id = ids[i];
-      if (id < 0 || id >= numRegions) continue;
-      const region = regions[id];
-      const dx = transforms[i * 2];
-      const dy = transforms[i * 2 + 1];
-      if (x >= dx && x < dx + region.width && y >= dy && y < dy + region.height) return i;
-    }
-  } else {
-    for (let i = 0; i < instanceCount; i++) {
-      const id = ids[i];
-      if (id < 0 || id >= numRegions) continue;
-      const region = regions[id];
-      if (region.width <= 0 || region.height <= 0) continue;
-      const o = i * 6;
-      const a = transforms[o];
-      const b = transforms[o + 1];
-      const c = transforms[o + 2];
-      const d = transforms[o + 3];
-      const tx = transforms[o + 4];
-      const ty = transforms[o + 5];
-      const w = region.width;
-      const h = region.height;
-      const x0 = tx;
-      const y0 = ty;
-      const x1 = a * w + tx;
-      const y1 = b * w + ty;
-      const x2 = c * h + tx;
-      const y2 = d * h + ty;
-      const x3 = a * w + c * h + tx;
-      const y3 = b * w + d * h + ty;
-      const minX = Math.min(x0, x1, x2, x3);
-      const minY = Math.min(y0, y1, y2, y3);
-      const maxX = Math.max(x0, x1, x2, x3);
-      const maxY = Math.max(y0, y1, y2, y3);
-      if (x >= minX && x < maxX && y >= minY && y < maxY) return i;
-    }
-  }
-  return -1;
-}
-
-export function measureQuadBatchBoundsRectangle(out: Rectangle, source: Readonly<QuadBatch>): void {
+export function computeQuadBatchLocalBoundsRectangle(out: Rectangle, source: Readonly<QuadBatch>): void {
   const { atlas, ids, instanceCount, transforms, transformType } = source.data;
   if (atlas === null || instanceCount === 0) {
     out.x = 0;
@@ -181,9 +94,92 @@ export function measureQuadBatchBoundsRectangle(out: Rectangle, source: Readonly
     out.width = maxX - minX;
     out.height = maxY - minY;
   }
-  const runtime = getSpriteNodeRuntime(source) as unknown as QuadBatchRuntime;
-  if (runtime.measuredBoundsRect === null) runtime.measuredBoundsRect = createRectangle();
-  copyRectangle(runtime.measuredBoundsRect, out);
+}
+
+export function createQuadBatch(obj?: Readonly<PartialNode<QuadBatch>>): QuadBatch {
+  return createSpriteNode(QuadBatchKind, obj, createQuadBatchData, createQuadBatchRuntime) as QuadBatch;
+}
+
+export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): QuadBatchData {
+  return {
+    atlas: data?.atlas ?? null,
+    ids: data?.ids ?? new Uint16Array(),
+    instanceCount: data?.instanceCount ?? 0,
+    transforms: data?.transforms ?? new Float32Array(),
+    transformType: data?.transformType ?? 'vector2',
+  };
+}
+
+export function createQuadBatchRuntime(): QuadBatchRuntime {
+  const runtime = createSpriteNodeRuntime(defaultMethods) as QuadBatchRuntime;
+  runtime.localBoundsRectangle = null;
+  return runtime;
+}
+
+export function getQuadBatchCapacity(source: Readonly<QuadBatch>): number {
+  const data = source.data;
+  const stride = getQuadTransformStride(data.transformType);
+  const transformCapacity = (data.transforms.length / stride) | 0;
+  return Math.min(data.ids.length, transformCapacity);
+}
+
+export function getQuadBatchRuntime(source: Readonly<QuadBatch>): Readonly<QuadBatchRuntime> {
+  return getSpriteNodeRuntime(source) as QuadBatchRuntime;
+}
+
+export function getQuadTransformStride(transformType: QuadTransformType): number {
+  return quadTransformStride[transformType];
+}
+
+export function hitTestQuadBatchPoint(source: Readonly<QuadBatch>, point: Readonly<Vector2Like>): number {
+  return hitTestQuadBatchPointXY(source, point.x, point.y);
+}
+
+export function hitTestQuadBatchPointXY(source: Readonly<QuadBatch>, x: number, y: number): number {
+  const { atlas, ids, instanceCount, transforms, transformType } = source.data;
+  if (atlas === null || instanceCount === 0) return -1;
+  const regions = atlas.regions;
+  const numRegions = regions.length;
+  if (transformType === 'vector2') {
+    for (let i = 0; i < instanceCount; i++) {
+      const id = ids[i];
+      if (id < 0 || id >= numRegions) continue;
+      const region = regions[id];
+      const dx = transforms[i * 2];
+      const dy = transforms[i * 2 + 1];
+      if (x >= dx && x < dx + region.width && y >= dy && y < dy + region.height) return i;
+    }
+  } else {
+    for (let i = 0; i < instanceCount; i++) {
+      const id = ids[i];
+      if (id < 0 || id >= numRegions) continue;
+      const region = regions[id];
+      if (region.width <= 0 || region.height <= 0) continue;
+      const o = i * 6;
+      const a = transforms[o];
+      const b = transforms[o + 1];
+      const c = transforms[o + 2];
+      const d = transforms[o + 3];
+      const tx = transforms[o + 4];
+      const ty = transforms[o + 5];
+      const w = region.width;
+      const h = region.height;
+      const x0 = tx;
+      const y0 = ty;
+      const x1 = a * w + tx;
+      const y1 = b * w + ty;
+      const x2 = c * h + tx;
+      const y2 = d * h + ty;
+      const x3 = a * w + c * h + tx;
+      const y3 = b * w + d * h + ty;
+      const minX = Math.min(x0, x1, x2, x3);
+      const minY = Math.min(y0, y1, y2, y3);
+      const maxX = Math.max(x0, x1, x2, x3);
+      const maxY = Math.max(y0, y1, y2, y3);
+      if (x >= minX && x < maxX && y >= minY && y < maxY) return i;
+    }
+  }
+  return -1;
 }
 
 export function reserveQuadBatch(target: QuadBatch, capacity: number): void {
@@ -206,8 +202,15 @@ export function resizeQuadBatch(target: QuadBatch, instanceCount: number): void 
   }
 }
 
+export function setQuadBatchLocalBoundsRectangle(target: QuadBatch, rect: Readonly<Rectangle>): void {
+  const runtime = getSpriteNodeRuntime(target) as unknown as QuadBatchRuntime;
+  if (runtime.localBoundsRectangle === null) runtime.localBoundsRectangle = createRectangle();
+  copyRectangle(runtime.localBoundsRectangle, rect);
+  invalidateLocalBounds(target);
+}
+
 const defaultMethods: Partial<MethodsOf<QuadBatchRuntime>> = {
-  computeLocalBoundsRect: computeQuadBatchLocalBoundsRectangle,
+  computeLocalBoundsRectangle: copyLocalBoundsRectangle,
 };
 
 const quadTransformStride = {

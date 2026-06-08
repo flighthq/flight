@@ -19,7 +19,7 @@ export * from './Entity';
 export * from './Font';
 export * from './FontSource';
 export * from './HasAppearance';
-export * from './HasBoundsRect';
+export * from './HasBoundsRectangle';
 export * from './HasSceneHierarchy';
 export * from './HasTransform2D';
 export * from './HitTestPoint';

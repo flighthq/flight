@@ -209,7 +209,7 @@ export function createShapeData(data?: Readonly<Partial<ShapeData>>): ShapeData 
 }
 
 export function createShapeRuntime(): ShapeRuntime {
-  return createDisplayObjectRuntime({ computeLocalBoundsRect: computeShapeLocalBoundsRectangle }) as ShapeRuntime;
+  return createDisplayObjectRuntime({ computeLocalBoundsRectangle: computeShapeLocalBoundsRectangle }) as ShapeRuntime;
 }
 
 export function getShapeRuntime(source: Readonly<Shape>): Readonly<ShapeRuntime> {

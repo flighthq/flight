@@ -8,7 +8,7 @@ import {
 } from '@flighthq/geometry';
 import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
 import type {
-  HasBoundsRectRuntime,
+  HasBoundsRectangleRuntime,
   HasTransform2DRuntime,
   Rectangle,
   RectangleLike,
@@ -61,21 +61,21 @@ export function computeBoundsRectangle<SceneKind extends symbol, Traits extends 
 export function ensureLocalBoundsRectangle<SceneKind extends symbol, Traits extends object>(
   target: SceneBoundsNode<SceneKind, Traits>,
 ): void {
-  const runtime = getEntityRuntime(target) as SceneNodeRuntime<SceneKind, Traits> & HasBoundsRectRuntime;
+  const runtime = getEntityRuntime(target) as SceneNodeRuntime<SceneKind, Traits> & HasBoundsRectangleRuntime;
   if (runtime.localBoundsUsingLocalBoundsID !== runtime.localBoundsID) {
-    recomputeLocalBoundsRect(target, runtime);
+    recomputeLocalBoundsRectangle(target, runtime);
   }
 }
 
 export function ensureParentBoundsRectangle<SceneKind extends symbol, Traits extends object>(
   target: SceneSpatial2DNode<SceneKind, Traits>,
 ): void {
-  const runtime = getEntityRuntime(target) as SceneNodeRuntime<SceneKind, Traits> & HasBoundsRectRuntime;
+  const runtime = getEntityRuntime(target) as SceneNodeRuntime<SceneKind, Traits> & HasBoundsRectangleRuntime;
   if (
     runtime.boundsUsingLocalBoundsID !== runtime.localBoundsID ||
     runtime.boundsUsingLocalTransformID !== runtime.localTransformID
   ) {
-    recomputeBoundsRect(target, runtime);
+    recomputeBoundsRectangle(target, runtime);
   }
 }
 
@@ -83,18 +83,18 @@ export function ensureWorldBoundsRectangle<SceneKind extends symbol, Traits exte
   target: SceneSpatial2DNode<SceneKind, Traits>,
 ): void {
   const runtime = getEntityRuntime(target) as SceneNodeRuntime<SceneKind, Traits> &
-    HasBoundsRectRuntime &
+    HasBoundsRectangleRuntime &
     HasTransform2DRuntime;
   const localBoundsInvalid = runtime.worldBoundsUsingLocalBoundsID !== runtime.localBoundsID;
   const hasChildren = getSceneNumChildren(target) !== 0;
   let forceRecompute = false;
   if (!hasChildren && !localBoundsInvalid) {
-    if (tryFastRecomputeWorldBoundsRect(target, runtime)) return;
+    if (tryFastRecomputeWorldBoundsRectangle(target, runtime)) return;
     forceRecompute = true;
   }
   ensureWorldTransformMatrix(target);
   if (forceRecompute || localBoundsInvalid || runtime.worldBoundsUsingWorldTransformID !== runtime.worldTransformID) {
-    recomputeWorldBoundsRect(target, runtime);
+    recomputeWorldBoundsRectangle(target, runtime);
   }
 }
 
@@ -105,39 +105,39 @@ export function getLocalBoundsRectangle<SceneKind extends symbol, Traits extends
   target: SceneBoundsNode<SceneKind, Traits>,
 ): Readonly<Rectangle> {
   ensureLocalBoundsRectangle(target);
-  return (getEntityRuntime(target) as HasBoundsRectRuntime).localBoundsRect!;
+  return (getEntityRuntime(target) as HasBoundsRectangleRuntime).localBoundsRectangle!;
 }
 
 /**
- * localBoundsRect * localTransform
+ * localBoundsRectangle * localTransform
  */
 export function getParentBoundsRectangle<SceneKind extends symbol, Traits extends object>(
   target: SceneSpatial2DNode<SceneKind, Traits>,
 ): Readonly<Rectangle> {
   ensureParentBoundsRectangle(target);
-  return (getEntityRuntime(target) as HasBoundsRectRuntime).boundsRect!;
+  return (getEntityRuntime(target) as HasBoundsRectangleRuntime).boundsRectangle!;
 }
 
 export function getScaledBoundsHeight<SceneKind extends symbol, Traits extends object>(
   source: SceneSpatial2DNode<SceneKind, Traits>,
 ): number {
   computeBoundsRectangle(
-    _tempBoundsRect,
+    _tempBoundsRectangle,
     source,
     getSceneParent(source) as unknown as SceneSpatial2DNode<SceneKind, Traits> | null,
   );
-  return _tempBoundsRect.height;
+  return _tempBoundsRectangle.height;
 }
 
 export function getScaledBoundsWidth<SceneKind extends symbol, Traits extends object>(
   source: SceneSpatial2DNode<SceneKind, Traits>,
 ): number {
   computeBoundsRectangle(
-    _tempBoundsRect,
+    _tempBoundsRectangle,
     source,
     getSceneParent(source) as unknown as SceneSpatial2DNode<SceneKind, Traits> | null,
   );
-  return _tempBoundsRect.width;
+  return _tempBoundsRectangle.width;
 }
 
 /**
@@ -147,7 +147,7 @@ export function getWorldBoundsRectangle<SceneKind extends symbol, Traits extends
   target: SceneSpatial2DNode<SceneKind, Traits>,
 ): Readonly<Rectangle> {
   ensureWorldBoundsRectangle(target);
-  return (getEntityRuntime(target) as HasBoundsRectRuntime).worldBoundsRect!;
+  return (getEntityRuntime(target) as HasBoundsRectangleRuntime).worldBoundsRectangle!;
 }
 
 export function setScaledBoundsHeight<SceneKind extends symbol, Traits extends object>(
@@ -168,38 +168,42 @@ export function setScaledBoundsWidth<SceneKind extends symbol, Traits extends ob
   invalidateLocalTransform(target);
 }
 
-function recomputeBoundsRect<SceneKind extends symbol, Traits extends object>(
+function recomputeBoundsRectangle<SceneKind extends symbol, Traits extends object>(
   target: SceneSpatial2DNode<SceneKind, Traits>,
-  runtime: SceneNodeRuntime<SceneKind, Traits> & HasBoundsRectRuntime,
+  runtime: SceneNodeRuntime<SceneKind, Traits> & HasBoundsRectangleRuntime,
 ): void {
-  if (runtime.boundsRect === null) runtime.boundsRect = createRectangle();
-  matrixTransformRectangle(runtime.boundsRect, getLocalTransformMatrix(target), getLocalBoundsRectangle(target));
+  if (runtime.boundsRectangle === null) runtime.boundsRectangle = createRectangle();
+  matrixTransformRectangle(runtime.boundsRectangle, getLocalTransformMatrix(target), getLocalBoundsRectangle(target));
   runtime.boundsUsingLocalBoundsID = runtime.localBoundsID;
   runtime.boundsUsingLocalTransformID = runtime.localTransformID;
 }
 
-function recomputeLocalBoundsRect<SceneKind extends symbol, Traits extends object>(
+function recomputeLocalBoundsRectangle<SceneKind extends symbol, Traits extends object>(
   target: SceneBoundsNode<SceneKind, Traits>,
-  runtime: SceneNodeRuntime<SceneKind, Traits> & HasBoundsRectRuntime,
+  runtime: SceneNodeRuntime<SceneKind, Traits> & HasBoundsRectangleRuntime,
 ): void {
-  if (runtime.localBoundsRect === null) runtime.localBoundsRect = createRectangle();
-  runtime.computeLocalBoundsRect(runtime.localBoundsRect, target);
+  if (runtime.localBoundsRectangle === null) runtime.localBoundsRectangle = createRectangle();
+  runtime.computeLocalBoundsRectangle(runtime.localBoundsRectangle, target);
   runtime.localBoundsUsingLocalBoundsID = runtime.localBoundsID;
 }
 
-function recomputeWorldBoundsRect<SceneKind extends symbol, Traits extends object>(
+function recomputeWorldBoundsRectangle<SceneKind extends symbol, Traits extends object>(
   target: SceneSpatial2DNode<SceneKind, Traits>,
-  runtime: SceneNodeRuntime<SceneKind, Traits> & HasBoundsRectRuntime & HasTransform2DRuntime,
+  runtime: SceneNodeRuntime<SceneKind, Traits> & HasBoundsRectangleRuntime & HasTransform2DRuntime,
 ) {
-  if (runtime.worldBoundsRect === null) runtime.worldBoundsRect = createRectangle();
-  matrixTransformRectangle(runtime.worldBoundsRect, getWorldTransformMatrix(target), getLocalBoundsRectangle(target));
+  if (runtime.worldBoundsRectangle === null) runtime.worldBoundsRectangle = createRectangle();
+  matrixTransformRectangle(
+    runtime.worldBoundsRectangle,
+    getWorldTransformMatrix(target),
+    getLocalBoundsRectangle(target),
+  );
   const children = getSceneNodeRuntime(target).children;
   if (children !== null) {
     for (const child of children) {
       if (!child.enabled) continue;
       const childWorldBounds = getWorldBoundsRectangle(child as SceneSpatial2DNode<SceneKind, Traits>);
       if (childWorldBounds.width !== 0 && childWorldBounds.height !== 0) {
-        unionRectangle(runtime.worldBoundsRect, runtime.worldBoundsRect, childWorldBounds);
+        unionRectangle(runtime.worldBoundsRectangle, runtime.worldBoundsRectangle, childWorldBounds);
       }
     }
   }
@@ -207,11 +211,11 @@ function recomputeWorldBoundsRect<SceneKind extends symbol, Traits extends objec
   runtime.worldBoundsUsingLocalBoundsID = runtime.localBoundsID;
 }
 
-function tryFastRecomputeWorldBoundsRect<SceneKind extends symbol, Traits extends object>(
+function tryFastRecomputeWorldBoundsRectangle<SceneKind extends symbol, Traits extends object>(
   target: SceneSpatial2DNode<SceneKind, Traits>,
-  runtime: HasBoundsRectRuntime & HasTransform2DRuntime,
+  runtime: HasBoundsRectangleRuntime & HasTransform2DRuntime,
 ): boolean {
-  if (runtime.worldBoundsRect !== null && runtime.worldTransform2D !== null) {
+  if (runtime.worldBoundsRectangle !== null && runtime.worldTransform2D !== null) {
     const { a: _a, b: _b, c: _c, d: _d, tx: _tx, ty: _ty } = runtime.worldTransform2D;
     ensureWorldTransformMatrix(target);
     const { a, b, c, d, tx, ty } = runtime.worldTransform2D;
@@ -219,8 +223,8 @@ function tryFastRecomputeWorldBoundsRect<SceneKind extends symbol, Traits extend
     if (a === _a && b === _b && c === _c && d === _d) {
       // offset only
       if (tx !== _tx || ty !== _ty) {
-        runtime.worldBoundsRect.x += tx - _tx;
-        runtime.worldBoundsRect.y += ty - _ty;
+        runtime.worldBoundsRectangle.x += tx - _tx;
+        runtime.worldBoundsRectangle.y += ty - _ty;
       }
       return true;
     }
@@ -228,4 +232,4 @@ function tryFastRecomputeWorldBoundsRect<SceneKind extends symbol, Traits extend
   return false;
 }
 
-const _tempBoundsRect = createRectangle();
+const _tempBoundsRectangle = createRectangle();

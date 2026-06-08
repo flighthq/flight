@@ -86,7 +86,7 @@ describe('createBitmapRuntime', () => {
 
   it('uses computeBitmapLocalBoundsRectangle', () => {
     const runtime = createBitmapRuntime();
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeBitmapLocalBoundsRectangle);
+    expect(runtime.computeLocalBoundsRectangle).toStrictEqual(computeBitmapLocalBoundsRectangle);
   });
 });
 

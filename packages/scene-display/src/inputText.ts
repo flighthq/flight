@@ -40,5 +40,5 @@ export function setInputTextText(source: InputText, value: string): void {
 }
 
 const defaultMethods: Partial<MethodsOf<InputTextRuntime>> = {
-  computeLocalBoundsRect: computeRichTextLocalBoundsRectangle,
+  computeLocalBoundsRectangle: computeRichTextLocalBoundsRectangle,
 };

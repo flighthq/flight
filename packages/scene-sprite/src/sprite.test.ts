@@ -141,7 +141,7 @@ describe('createSpriteRuntime', () => {
 
   it('uses computeSpriteLocalBoundsRectangle', () => {
     const runtime = createSpriteRuntime();
-    expect(runtime.computeLocalBoundsRect).toStrictEqual(computeSpriteLocalBoundsRectangle);
+    expect(runtime.computeLocalBoundsRectangle).toStrictEqual(computeSpriteLocalBoundsRectangle);
   });
 });
 
