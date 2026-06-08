@@ -150,6 +150,7 @@ function explorerPlugin(examples: Example[]): Plugin[] {
                 '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
                 `  <title>${example.name} \xB7 ${render}</title>`,
                 '  <style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { overflow: hidden; }</style>',
+                "  <script>window.addEventListener('pagehide',function(){document.querySelectorAll('canvas').forEach(function(c){var gl=c.getContext('webgl2')||c.getContext('webgl');if(gl){var ext=gl.getExtension('WEBGL_lose_context');if(ext)ext.loseContext();}});});</script>",
                 '</head>',
                 '<body>',
                 '  <div id="app"></div>',
@@ -211,6 +212,7 @@ function explorerPlugin(examples: Example[]): Plugin[] {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${name} · ${render}</title>
   <style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { overflow: hidden; }</style>
+  <script>window.addEventListener('pagehide',function(){document.querySelectorAll('canvas').forEach(function(c){var gl=c.getContext('webgl2')||c.getContext('webgl');if(gl){var ext=gl.getExtension('WEBGL_lose_context');if(ext)ext.loseContext();}});});</script>
 </head>
 <body>
   <div id="app"></div>

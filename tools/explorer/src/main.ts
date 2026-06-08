@@ -11,7 +11,7 @@ const entries: Entry[] = examples.flatMap((e) => e.renderers.map((r) => ({ name:
 let selectedIndex = 0;
 
 const sidebar = document.getElementById('sidebar')!;
-const preview = document.getElementById('preview') as HTMLIFrameElement;
+let preview = document.getElementById('preview') as HTMLIFrameElement;
 
 function buildSidebar(): void {
   sidebar.innerHTML = '';
@@ -22,8 +22,8 @@ function buildSidebar(): void {
       lastExample = entry.name;
       const heading = document.createElement('div');
       heading.className = 'example-heading';
-      heading.textContent = entry.name;
       heading.title = entry.name;
+      heading.textContent = entry.name;
       sidebar.appendChild(heading);
     }
 
@@ -51,13 +51,34 @@ function hashForEntry(name: string, render: string): string {
   return `/explorer/${name}/${render}`;
 }
 
+function navigateTo(url: string): void {
+  try {
+    const doc = preview.contentDocument;
+    if (doc) {
+      doc.querySelectorAll('canvas').forEach((c) => {
+        const gl = c.getContext('webgl2') ?? c.getContext('webgl');
+        if (gl) gl.getExtension('WEBGL_lose_context')?.loseContext();
+        c.width = 0;
+        c.height = 0;
+      });
+    }
+  } catch (_) {} // eslint-disable-line
+
+  const wrap = preview.parentElement!;
+  const next = document.createElement('iframe');
+  next.id = 'preview';
+  wrap.replaceChild(next, preview);
+  preview = next;
+  next.src = url;
+}
+
 function showEntry(index: number): void {
   selectedIndex = index;
   buildSidebar();
   sidebar.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
   const { name, render } = entries[index];
   sessionStorage.setItem(STORAGE_KEY, hashForEntry(name, render));
-  preview.src = `${import.meta.env.BASE_URL}examples/${name}/${render}/`;
+  navigateTo(`${import.meta.env.BASE_URL}examples/${name}/${render}/`);
 }
 
 function select(index: number): void {
