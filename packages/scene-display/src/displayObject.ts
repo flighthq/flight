@@ -16,6 +16,7 @@ import type {
   DisplayObjectRuntime,
   MethodsOf,
   PartialNode,
+  Rectangle,
   SceneNode,
   SceneNodeRuntimeFactory,
 } from '@flighthq/types';
@@ -43,7 +44,7 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   initBoundsRectTrait(out, obj);
   initAppearanceTrait(out, obj);
   out.mask = obj?.mask ?? null;
-  out.scrollRectangle = obj?.scrollRectangle ?? null;
+  out.clipRectangle = obj?.clipRectangle ?? null;
   return out;
 }
 
@@ -63,6 +64,11 @@ export function getDisplayObjectRuntime(source: Readonly<DisplayObject>): Readon
 // eslint-disable-next-line
 export function isDisplayObject(source: Readonly<SceneNode<any, any>>): boolean {
   return getSceneNodeRuntime(source).graph === DisplayGraph;
+}
+
+export function setDisplayObjectClipRectangle(source: DisplayObject, value: Rectangle | null): void {
+  source.clipRectangle = value;
+  invalidateAppearance(source);
 }
 
 export function setDisplayObjectMask(source: DisplayObject, value: DisplayObject | null): void {

@@ -64,7 +64,7 @@ describe('createDisplayObjectRenderNode', () => {
     const node = createDisplayObjectRenderNode(state, obj);
     expect(node.isMaskFrameID).toBe(-1);
     expect(node.maskDepth).toBe(0);
-    expect(node.scrollRectangleDepth).toBe(0);
+    expect(node.clipRectangleDepth).toBe(0);
     expect(node.traverseChildren).toBe(true);
   });
 });

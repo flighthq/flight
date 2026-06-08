@@ -21,9 +21,9 @@ export interface AppearanceHooks {
 export interface DisplayObjectClipHooks {
   finalize(state: RenderState): void;
   popMask(state: RenderState, data: DisplayObjectRenderNode): void;
-  popScrollRectangle(state: RenderState, data: DisplayObjectRenderNode): void;
+  popClipRectangle(state: RenderState, data: DisplayObjectRenderNode): void;
   pushMask(state: RenderState, source: DisplayObject): void;
-  pushScrollRectangle(
+  pushClipRectangle(
     state: RenderState,
     data: DisplayObjectRenderNode,
     source: DisplayObject,

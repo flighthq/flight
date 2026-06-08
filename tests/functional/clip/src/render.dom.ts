@@ -4,7 +4,7 @@ import {
   createDOMRenderState,
   defaultDOMBitmapRenderer,
   defaultDOMShapeRenderer,
-  enableDOMScrollRectangleSupport,
+  enableDOMClipRectangleSupport,
   prepareDisplayObjectRender,
   registerRenderer,
   renderDOMBackground,
@@ -19,7 +19,7 @@ container.style.height = '600px';
 document.body.appendChild(container);
 
 export const state = createDOMRenderState(container, { backgroundColor: 0xffffffff });
-enableDOMScrollRectangleSupport(state);
+enableDOMClipRectangleSupport(state);
 registerRenderer(state, ShapeKind, defaultDOMShapeRenderer);
 registerRenderer(state, BitmapKind, defaultDOMBitmapRenderer);
 export const scale = 1;

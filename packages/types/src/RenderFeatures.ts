@@ -3,10 +3,10 @@ export enum RenderFeatures {
   BlendMode = 1 << 0,
   ColorTransform = 1 << 1,
   Masks = 1 << 2,
-  ScrollRectangle = 1 << 3,
+  ClipRectangle = 1 << 3,
   Shaders = 1 << 4,
 
-  All = BlendMode | ColorTransform | Masks | ScrollRectangle | Shaders,
+  All = BlendMode | ColorTransform | Masks | ClipRectangle | Shaders,
 }
 
 export namespace RenderFeatures {

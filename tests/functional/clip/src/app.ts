@@ -10,7 +10,7 @@ import {
   createRichText,
   createShape,
   loadImageSourceFromURL,
-  setDisplayObjectScrollRectangle,
+  setDisplayObjectClipRectangle,
 } from '@flighthq/sdk';
 
 import { height, render, scale, width } from './render';
@@ -52,9 +52,9 @@ for (let i = 0; i < 4; i++) {
   bmp.y = ih / 2;
   addSceneChild(root, bmp);
 
-  if (i === 1) setDisplayObjectScrollRectangle(bmp, { x: 0, y: 0, width: iw / 2, height: ih / 2 });
-  if (i === 2) setDisplayObjectScrollRectangle(bmp, { x: iw / 2, y: ih / 2, width: iw / 2, height: ih / 2 });
-  if (i === 3) setDisplayObjectScrollRectangle(bmp, { x: W * 2, y: H * 2, width: W * 10, height: H * 10 });
+  if (i === 1) setDisplayObjectClipRectangle(bmp, { x: 0, y: 0, width: iw / 2, height: ih / 2 });
+  if (i === 2) setDisplayObjectClipRectangle(bmp, { x: iw / 2, y: ih / 2, width: iw / 2, height: ih / 2 });
+  if (i === 3) setDisplayObjectClipRectangle(bmp, { x: W * 2, y: H * 2, width: W * 10, height: H * 10 });
 }
 
 // Bottom row: 4 text fields with different scroll rect configurations
@@ -70,9 +70,9 @@ for (let i = 0; i < 4; i++) {
   tf.data.text = textValues[i];
   addSceneChild(root, tf);
 
-  if (i === 1) setDisplayObjectScrollRectangle(tf, { x: 0, y: 0, width: 200, height: 200 });
-  if (i === 2) setDisplayObjectScrollRectangle(tf, { x: 0, y: 40, width: 200, height: 20 });
-  if (i === 3) setDisplayObjectScrollRectangle(tf, { x: W * 2, y: H * 2, width: W * 10, height: H * 10 });
+  if (i === 1) setDisplayObjectClipRectangle(tf, { x: 0, y: 0, width: 200, height: 200 });
+  if (i === 2) setDisplayObjectClipRectangle(tf, { x: 0, y: 40, width: 200, height: 20 });
+  if (i === 3) setDisplayObjectClipRectangle(tf, { x: W * 2, y: H * 2, width: W * 10, height: H * 10 });
 }
 
 render(root);

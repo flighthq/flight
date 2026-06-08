@@ -23,9 +23,9 @@ describe('copyFromRenderState', () => {
     const hooks = {
       finalize: vi.fn(),
       popMask: vi.fn(),
-      popScrollRectangle: vi.fn(),
+      popClipRectangle: vi.fn(),
       pushMask: vi.fn(),
-      pushScrollRectangle: vi.fn(),
+      pushClipRectangle: vi.fn(),
     } as unknown as DisplayObjectClipHooks;
     registerRenderer(source, kind, renderer);
     registerDisplayObjectMaskRenderer(source, kind, maskRenderer);
@@ -55,9 +55,9 @@ describe('copyMaskRenderersFromRenderState', () => {
     const hooks = {
       finalize: vi.fn(),
       popMask: vi.fn(),
-      popScrollRectangle: vi.fn(),
+      popClipRectangle: vi.fn(),
       pushMask: vi.fn(),
-      pushScrollRectangle: vi.fn(),
+      pushClipRectangle: vi.fn(),
     } as unknown as DisplayObjectClipHooks;
     registerDisplayObjectMaskRenderer(source, kind, maskRenderer);
     source.displayObjectClipHooks = hooks;
@@ -116,17 +116,17 @@ describe('createNullRendererData', () => {
 
 describe('disableRenderFeatures', () => {
   it('removes feature flags from the render state', () => {
-    const state = createRenderState({ renderFeatures: RenderFeatures.Masks | RenderFeatures.ScrollRectangle });
+    const state = createRenderState({ renderFeatures: RenderFeatures.Masks | RenderFeatures.ClipRectangle });
     disableRenderFeatures(state, RenderFeatures.Masks);
-    expect(state.renderFeatures).toBe(RenderFeatures.ScrollRectangle);
+    expect(state.renderFeatures).toBe(RenderFeatures.ClipRectangle);
   });
 });
 
 describe('enableRenderFeatures', () => {
   it('adds feature flags to the render state', () => {
     const state = createRenderState();
-    enableRenderFeatures(state, RenderFeatures.Masks | RenderFeatures.ScrollRectangle);
-    expect(state.renderFeatures).toBe(RenderFeatures.Masks | RenderFeatures.ScrollRectangle);
+    enableRenderFeatures(state, RenderFeatures.Masks | RenderFeatures.ClipRectangle);
+    expect(state.renderFeatures).toBe(RenderFeatures.Masks | RenderFeatures.ClipRectangle);
   });
 });
 
@@ -134,7 +134,7 @@ describe('hasRenderFeatures', () => {
   it('returns whether all requested features are enabled', () => {
     const state = createRenderState({ renderFeatures: RenderFeatures.Masks });
     expect(hasRenderFeatures(state, RenderFeatures.Masks)).toBe(true);
-    expect(hasRenderFeatures(state, RenderFeatures.Masks | RenderFeatures.ScrollRectangle)).toBe(false);
+    expect(hasRenderFeatures(state, RenderFeatures.Masks | RenderFeatures.ClipRectangle)).toBe(false);
   });
 });
 

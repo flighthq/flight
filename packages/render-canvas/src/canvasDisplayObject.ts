@@ -37,7 +37,7 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
     if (data === undefined || data.isMaskFrameID === frameID) continue;
 
     clipHooks?.popMask(state, data);
-    clipHooks?.popScrollRectangle(state, data);
+    clipHooks?.popClipRectangle(state, data);
 
     if (!isRenderNodeVisible(data)) continue;
 
@@ -55,7 +55,7 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
       }
     }
 
-    clipHooks?.pushScrollRectangle(state, data, current, stackLength > prePushLength);
+    clipHooks?.pushClipRectangle(state, data, current, stackLength > prePushLength);
   }
 
   clipHooks?.finalize(state);

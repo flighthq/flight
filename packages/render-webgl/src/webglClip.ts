@@ -12,34 +12,34 @@ import type { WebGLRenderStateInternal } from './internal';
 import { popWebGLClipRectangle, pushWebGLClipRectangle } from './webglClipRect';
 import { popWebGLMask, pushWebGLMask } from './webglMask';
 
+export function enableWebGLClipRectangleSupport(state: WebGLRenderState): void {
+  state.displayObjectClipHooks = webglClipHooks;
+  enableRenderFeatures(state, RenderFeatures.ClipRectangle);
+}
+
 export function enableWebGLMaskSupport(state: WebGLRenderState): void {
   state.displayObjectClipHooks = webglClipHooks;
   enableRenderFeatures(state, RenderFeatures.Masks);
-}
-
-export function enableWebGLScrollRectangleSupport(state: WebGLRenderState): void {
-  state.displayObjectClipHooks = webglClipHooks;
-  enableRenderFeatures(state, RenderFeatures.ScrollRectangle);
 }
 
 const webglClipHooks: DisplayObjectClipHooks = {
   finalize(state: RenderState): void {
     const s = state as WebGLRenderStateInternal;
     while (s.currentMaskDepth > 0) popWebGLMask(s);
-    while (s.currentScrollRectangleDepth > 0) {
+    while (s.currentClipRectangleDepth > 0) {
       popWebGLClipRectangle(s);
-      s.currentScrollRectangleDepth--;
+      s.currentClipRectangleDepth--;
     }
   },
   popMask(state: RenderState, data: DisplayObjectRenderNode): void {
     const s = state as WebGLRenderStateInternal;
     while (s.currentMaskDepth > data.maskDepth) popWebGLMask(s);
   },
-  popScrollRectangle(state: RenderState, data: DisplayObjectRenderNode): void {
+  popClipRectangle(state: RenderState, data: DisplayObjectRenderNode): void {
     const s = state as WebGLRenderStateInternal;
-    while (s.currentScrollRectangleDepth > data.scrollRectangleDepth) {
+    while (s.currentClipRectangleDepth > data.clipRectangleDepth) {
       popWebGLClipRectangle(s);
-      s.currentScrollRectangleDepth--;
+      s.currentClipRectangleDepth--;
     }
   },
   pushMask(state: RenderState, source: DisplayObject): void {
@@ -48,14 +48,14 @@ const webglClipHooks: DisplayObjectClipHooks = {
     if (maskData === undefined) return;
     pushWebGLMask(state as WebGLRenderStateInternal, maskData);
   },
-  pushScrollRectangle(
+  pushClipRectangle(
     state: RenderState,
     data: DisplayObjectRenderNode,
     source: DisplayObject,
     hasChildren: boolean,
   ): void {
-    if (!hasChildren || source.scrollRectangle === null) return;
-    pushWebGLClipRectangle(state as WebGLRenderStateInternal, source.scrollRectangle, data.transform2D);
-    state.currentScrollRectangleDepth++;
+    if (!hasChildren || source.clipRectangle === null) return;
+    pushWebGLClipRectangle(state as WebGLRenderStateInternal, source.clipRectangle, data.transform2D);
+    state.currentClipRectangleDepth++;
   },
 };

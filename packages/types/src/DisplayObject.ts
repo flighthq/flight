@@ -16,7 +16,7 @@ export type DisplayObject = SceneNode<typeof DisplayGraph, DisplayObjectTraits> 
 export interface DisplayObjectTraits extends HasAppearance, HasBoundsRect, HasSceneHierarchy, HasTransform2D {
   data: DisplayObjectData | null;
   mask: DisplayObject | null;
-  scrollRectangle: Rectangle | null;
+  clipRectangle: Rectangle | null;
 }
 
 export interface DisplayObjectData extends SceneNodeData {}

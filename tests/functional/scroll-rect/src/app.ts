@@ -1,5 +1,5 @@
-// Requires: assets/wabbit_alpha.png, assets/OwlAlpha.png
-// Port of ScrollRectTest1. Tests nested scrollRectangle clipping with animation.
+// Requires: assets/OwlAlpha.png
+// Demonstrates clip rectangle + child positioning as the compositional scroll pattern.
 import {
   addSceneChild,
   appendShapeBeginFill,
@@ -10,7 +10,7 @@ import {
   createRichText,
   createShape,
   loadImageSourceFromURL,
-  setDisplayObjectScrollRectangle,
+  setDisplayObjectClipRectangle,
 } from '@flighthq/sdk';
 
 import { height, render, scale, width } from './render';
@@ -29,23 +29,23 @@ root.scaleY = scale;
 const W = width / scale;
 const H = height / scale;
 
-const [/*openflImg,*/ owlImg] = await Promise.all([
-  // loadImageSourceFromURL('assets/wabbit_alpha.png'),
-  loadImageSourceFromURL('assets/OwlAlpha.png'),
-]);
+const owlImg = await loadImageSourceFromURL('assets/OwlAlpha.png');
 
-// Owl in its own scroll rect (shows just the eyes region)
-const owlSprite = createDisplayContainer();
+// Owl clip: container clips to the eyes region; content moves to pan across the image.
+const owlClip = createDisplayContainer();
+setDisplayObjectClipRectangle(owlClip, { x: 0, y: 0, width: 200, height: 250 });
+owlClip.x = 100;
+owlClip.y = 630;
+
+const owlContent = createDisplayContainer();
+owlContent.y = -300;
 const owlBitmap = createBitmap();
 owlBitmap.data.image = owlImg;
 owlBitmap.data.smoothing = true;
-addSceneChild(owlSprite, owlBitmap);
-setDisplayObjectScrollRectangle(owlSprite, { x: 0, y: 300, width: 200, height: 250 });
-owlSprite.x = 100;
-owlSprite.y = 630;
+addSceneChild(owlContent, owlBitmap);
+addSceneChild(owlClip, owlContent);
 
-// Text list
-const textSprite = createDisplayContainer();
+// Text list: container clips to the visible area; content moves to scroll.
 const textFmt = { font: 'sans-serif', size: 28, color: 0xe8c343 };
 const movies = [
   'The Shawshank Redemption (1994)',
@@ -69,6 +69,19 @@ const movies = [
   'The Matrix (1999)',
   'The Lord of the Rings: The Two Towers (2002)',
 ];
+
+const CLIP_W = 400;
+const CLIP_H = 300;
+
+const textClip = createDisplayContainer();
+setDisplayObjectClipRectangle(textClip, { x: 0, y: 0, width: CLIP_W, height: CLIP_H });
+textClip.x = pos(300);
+textClip.y = pos(350);
+
+const textContent = createDisplayContainer();
+addSceneChild(textClip, owlClip);
+addSceneChild(textClip, textContent);
+
 const textField = createRichText();
 textField.data.defaultTextFormat = textFmt;
 textField.data.width = pos(1280);
@@ -76,15 +89,9 @@ textField.data.height = pos(2000);
 textField.data.multiline = true;
 textField.data.wordWrap = false;
 textField.data.text = movies.join('\n');
-addSceneChild(textSprite, textField);
-addSceneChild(textSprite, owlSprite);
-textSprite.x = pos(300);
-textSprite.y = pos(350);
+addSceneChild(textContent, textField);
 
-const textRect = { x: 0, y: 0, width: 400, height: 300 };
-setDisplayObjectScrollRectangle(textSprite, { ...textRect });
-
-// Border around text area
+// Border around text clip area
 const outerSprite = createDisplayContainer();
 const borderColor = 0xe8c343;
 function addBorderRect(x: number, y: number, w: number, h: number): void {
@@ -94,15 +101,19 @@ function addBorderRect(x: number, y: number, w: number, h: number): void {
   appendShapeEndFill(s);
   addSceneChild(outerSprite, s);
 }
-addBorderRect(textSprite.x - 2, textSprite.y - 2, textRect.width + 4, 2);
-addBorderRect(textSprite.x - 2, textSprite.y - 2, 2, textRect.height + 4);
-addBorderRect(textSprite.x + textRect.width, textSprite.y - 2, 2, textRect.height + 4);
-addBorderRect(textSprite.x - 2, textSprite.y + textRect.height, textRect.width + 4, 2);
-addSceneChild(outerSprite, textSprite);
+addBorderRect(textClip.x - 2, textClip.y - 2, CLIP_W + 4, 2);
+addBorderRect(textClip.x - 2, textClip.y - 2, 2, CLIP_H + 4);
+addBorderRect(textClip.x + CLIP_W, textClip.y - 2, 2, CLIP_H + 4);
+addBorderRect(textClip.x - 2, textClip.y + CLIP_H, CLIP_W + 4, 2);
+addSceneChild(outerSprite, textClip);
 
-const outerRect = { x: 0, y: 0, width: W, height: H };
-setDisplayObjectScrollRectangle(outerSprite, { ...outerRect });
-addSceneChild(root, outerSprite);
+// Outer clip: orbits by moving the content while the clip window stays fixed.
+const outerClip = createDisplayContainer();
+setDisplayObjectClipRectangle(outerClip, { x: 0, y: 0, width: W, height: H });
+const outerContent = createDisplayContainer();
+addSceneChild(outerContent, outerSprite);
+addSceneChild(outerClip, outerContent);
+addSceneChild(root, outerClip);
 
 // Status label
 const status = createRichText();
@@ -111,31 +122,32 @@ status.x = 0;
 status.y = 0;
 status.data.width = pos(400);
 status.data.height = pos(50);
-status.data.text = 'scrollRect test';
+status.data.text = 'clip rectangle test';
 addSceneChild(root, status);
 
 let inc = pos(5);
 let owlInc = pos(5);
-let owlRectX = 0;
-let textRectY = 0;
+let owlScrollX = 0;
+let textScrollY = 0;
 let outerAngle = 0;
 const outerInc = (2 * Math.PI) / FRAMES_PER_ROTATION;
 
 function enterFrame(): void {
-  textRectY += inc;
-  if (textRectY >= pos(550)) inc = -pos(5);
-  else if (textRectY <= 0) inc = pos(5);
-  setDisplayObjectScrollRectangle(textSprite, { x: 0, y: textRectY, width: textRect.width, height: textRect.height });
+  textScrollY += inc;
+  if (textScrollY >= pos(550)) inc = -pos(5);
+  else if (textScrollY <= 0) inc = pos(5);
+  textContent.y = -textScrollY;
 
-  owlRectX += owlInc;
-  if (owlRectX >= owlImg.width || owlRectX <= 0) owlInc = -owlInc;
-  setDisplayObjectScrollRectangle(owlSprite, { x: owlRectX, y: 300, width: 200, height: 250 });
+  owlScrollX += owlInc;
+  if (owlScrollX >= owlImg.width || owlScrollX <= 0) owlInc = -owlInc;
+  owlContent.x = -owlScrollX;
 
   outerAngle += outerInc;
   if (outerAngle > 2 * Math.PI) outerAngle -= 2 * Math.PI;
-  outerRect.x = RADIUS + RADIUS * Math.cos(outerAngle);
-  outerRect.y = RADIUS + RADIUS * Math.sin(outerAngle) + (720 - H) / 2;
-  setDisplayObjectScrollRectangle(outerSprite, { ...outerRect });
+  const ox = RADIUS + RADIUS * Math.cos(outerAngle);
+  const oy = RADIUS + RADIUS * Math.sin(outerAngle) + (720 - H) / 2;
+  outerContent.x = -ox;
+  outerContent.y = -oy;
 
   render(root);
   requestAnimationFrame(enterFrame);
