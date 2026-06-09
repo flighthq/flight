@@ -2,7 +2,11 @@
 import type { DisplayObjectRenderer, DisplayObjectRenderNode, RenderState, Video } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
+<<<<<<< HEAD
 import { createWebGLTexture, drawWebGLQuad, useWebGLProgram } from './webglDraw';
+=======
+import { createWebGLTexture, drawWebGLQuad, setWebGLBlendMode, useWebGLProgram } from './webglDraw';
+>>>>>>> 316a391 (render-webgl: Add wiring for custom shader)
 import { selectWebGLShader } from './webglShaderBinding';
 
 export function drawWebGLVideo(state: RenderState, renderNode: DisplayObjectRenderNode): void {
@@ -19,7 +23,11 @@ export function drawWebGLVideo(state: RenderState, renderNode: DisplayObjectRend
 
   const shader = selectWebGLShader(internal, renderNode);
   useWebGLProgram(internal, shader);
+<<<<<<< HEAD
   internal.applyBlendMode?.(internal, renderNode.blendMode);
+=======
+  setWebGLBlendMode(internal, renderNode.blendMode);
+>>>>>>> 316a391 (render-webgl: Add wiring for custom shader)
 
   let texture = textureCache.get(element);
   if (!texture) {
