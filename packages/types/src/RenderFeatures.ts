@@ -5,8 +5,9 @@ export enum RenderFeatures {
   Masks = 1 << 2,
   ClipRectangle = 1 << 3,
   Shaders = 1 << 4,
+  CSSFilter = 1 << 5,
 
-  All = BlendMode | ColorTransform | Masks | ClipRectangle | Shaders,
+  All = BlendMode | ColorTransform | Masks | ClipRectangle | Shaders | CSSFilter,
 }
 
 export namespace RenderFeatures {

@@ -3,6 +3,7 @@ import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
+import { setCanvasCSSFilter } from './canvasCSSFilterBinding';
 import {
   defaultCanvasDisplayObjectRenderer,
   drawCanvasDisplayObject,
@@ -112,5 +113,25 @@ describe('renderCanvasDisplayObject', () => {
     renderCanvasDisplayObject(state, parent);
 
     expect(renderer.draw).toHaveBeenCalledTimes(2);
+  });
+
+  it('applies a bound canvas filter around the node draw and resets after', () => {
+    const state = makeState();
+    const obj = createDisplayObject();
+    let observed: string | undefined;
+    const renderer = {
+      createData: vi.fn().mockReturnValue(null),
+      draw: vi.fn(() => {
+        observed = state.context.filter;
+      }),
+    };
+    registerRenderer(state, DisplayObjectKind, renderer);
+    setCanvasCSSFilter(state, obj, 'blur(3px)');
+    prepareDisplayObjectRender(state, obj);
+
+    renderCanvasDisplayObject(state, obj);
+
+    expect(observed).toBe('blur(3px)');
+    expect(state.context.filter).toBe('none');
   });
 });

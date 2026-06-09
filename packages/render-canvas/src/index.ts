@@ -2,6 +2,7 @@ export * from './canvasBackground';
 export * from './canvasBitmap';
 export * from './canvasClip';
 export * from './canvasClipRectangle';
+export * from './canvasCSSFilterBinding';
 export * from './canvasDisplayObject';
 export * from './canvasElement';
 export * from './canvasInputText';
