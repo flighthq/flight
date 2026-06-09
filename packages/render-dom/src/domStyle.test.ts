@@ -3,8 +3,8 @@ import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { BlendMode } from '@flighthq/types';
 
-import { enableDOMBlendModeSupport } from './domMaterials';
 import { setDOMCSSFilter } from './domCSSFilterBinding';
+import { enableDOMBlendModeSupport } from './domMaterials';
 import { createDOMRenderState } from './domRenderState';
 import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
 import type { DOMRenderStateInternal } from './internal';
