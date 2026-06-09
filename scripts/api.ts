@@ -83,15 +83,15 @@ function getRelativeSourcePath(node: Node): string {
   return relative(root, node.getSourceFile().getFilePath()).replaceAll('\\', '/');
 }
 
-function getFunctionName(node: Node, fallback: string): string {
-  if (Node.isFunctionDeclaration(node)) return node.getName() ?? fallback;
-  if (Node.isVariableDeclaration(node)) return node.getName();
-  return fallback;
+function getFunctionName(_node: Node, exportedName: string): string {
+  return exportedName;
 }
 
 function getFunctionSignatures(node: Node, fallback: string): string[] {
   if (Node.isFunctionDeclaration(node)) {
-    const declarations = node.getSymbol()?.getDeclarations().filter(Node.isFunctionDeclaration) ?? [node];
+    const allDecls = node.getSymbol()?.getDeclarations().filter(Node.isFunctionDeclaration) ?? [node];
+    const overloads = allDecls.filter((d) => !d.hasBody());
+    const declarations = overloads.length > 0 ? overloads : allDecls;
     return [...new Set(declarations.map((decl) => formatFunctionDeclaration(decl, fallback)))];
   }
 
@@ -109,8 +109,8 @@ function getFunctionSignatures(node: Node, fallback: string): string[] {
   return [`${fallback}: ${type}`];
 }
 
-function formatFunctionDeclaration(node: FunctionDeclaration, fallback: string): string {
-  const name = node.getName() ?? fallback;
+function formatFunctionDeclaration(node: FunctionDeclaration, exportedName: string): string {
+  const name = exportedName;
   const typeParameters = node.getTypeParameters().map((param) => param.getText());
   const params = node.getParameters().map((param) => param.getText());
   const returnType = node.getReturnTypeNode()?.getText() ?? node.getReturnType().getText(node);
