@@ -1,4 +1,4 @@
-import { createNodeRuntime, getEntityRuntime } from '@flighthq/entity';
+import { createEntityRuntime, getEntityRuntime } from '@flighthq/entity';
 import { createSignal } from '@flighthq/signals';
 import type {
   MethodsOf,
@@ -22,7 +22,7 @@ export function createSceneNode<
   Data extends SceneNodeData = SceneNodeData,
   Runtime extends SceneNodeRuntime<SceneKind, Traits> = SceneNodeRuntime<SceneKind, Traits>,
 >(
-  graph: SceneKind,
+  sceneKind: SceneKind,
   nodeKind: symbol,
   obj?: Readonly<PartialNode<SceneNode<SceneKind, Traits>>>,
   createData?: SceneNodeDataFactory<Data>,
@@ -36,7 +36,7 @@ export function createSceneNode<
     kind: nodeKind,
     [EntityRuntimeKey]: runtimeFactory(),
   } as SceneNode<SceneKind, Traits> & Traits;
-  out[EntityRuntimeKey]!.graph = graph;
+  out[EntityRuntimeKey]!.graph = sceneKind;
   out.enabled = obj?.enabled ?? true;
   return out;
 }
@@ -44,7 +44,7 @@ export function createSceneNode<
 export function createSceneNodeRuntime<SceneKind extends symbol, Traits extends object>(
   methods?: Readonly<Partial<MethodsOf<SceneNodeRuntime<SceneKind, Traits>>>>,
 ): SceneNodeRuntime<SceneKind, Traits> {
-  const out = createNodeRuntime() as SceneNodeRuntime<SceneKind, Traits>;
+  const out = createEntityRuntime() as SceneNodeRuntime<SceneKind, Traits>;
   out.appearanceID = 0;
   out.boundsUsingLocalBoundsID = -1;
   out.boundsUsingLocalTransformID = -1;
