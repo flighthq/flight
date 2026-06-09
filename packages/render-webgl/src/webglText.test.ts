@@ -1,6 +1,8 @@
-﻿import { createText } from '@flighthq/scene-display';
-import type { DisplayObjectRenderNode } from '@flighthq/types';
+﻿import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import { createText } from '@flighthq/scene-display';
+import type { DisplayObject, DisplayObjectRenderNode } from '@flighthq/types';
 
+import { setWebGLShader } from './webglShaderBinding';
 import { makeWebGLState } from './webglTestHelper';
 import { defaultWebGLTextRenderer, drawWebGLText, drawWebGLTextMask } from './webglText';
 
@@ -37,6 +39,25 @@ describe('drawWebGLText', () => {
     drawWebGLText(state, renderNode);
 
     expect(state.defaultBitmapShader.bind).toHaveBeenCalledWith(state.gl, state, renderNode);
+  });
+
+  it('uses a per-node bound shader instead of the default', () => {
+    const { state } = makeWebGLState();
+    const source = createText();
+    source.data.text = 'hello';
+    source.data.textFormat = {};
+    const node = source as unknown as DisplayObject;
+    const customShader = { locations: state.shaderLoc, program: state.shaderLoc.program, bind: vi.fn() };
+    setWebGLShader(state, node, customShader);
+
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    renderNode.alpha = 1;
+    renderNode.blendMode = 0;
+
+    drawWebGLText(state, renderNode);
+
+    expect(customShader.bind).toHaveBeenCalled();
+    expect(state.defaultBitmapShader.bind).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when text is empty', () => {

@@ -3,6 +3,7 @@ import type { DisplayObjectRenderer, DisplayObjectRenderNode, RenderState, Video
 
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, useWebGLProgram } from './webglDraw';
+import { selectWebGLShader } from './webglShaderBinding';
 
 export function drawWebGLVideo(state: RenderState, renderNode: DisplayObjectRenderNode): void {
   const internal = state as WebGLRenderStateInternal;
@@ -16,7 +17,8 @@ export function drawWebGLVideo(state: RenderState, renderNode: DisplayObjectRend
 
   const { gl, textureCache } = internal;
 
-  useWebGLProgram(internal);
+  const shader = selectWebGLShader(internal, renderNode);
+  useWebGLProgram(internal, shader);
   internal.applyBlendMode?.(internal, renderNode.blendMode);
 
   let texture = textureCache.get(element);
@@ -32,7 +34,7 @@ export function drawWebGLVideo(state: RenderState, renderNode: DisplayObjectRend
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, element);
 
-  internal.defaultBitmapShader.bind(gl, internal, renderNode);
+  shader.bind(gl, internal, renderNode);
   drawWebGLQuad(internal, 0, 0, vw, vh, 0, 0, 1, 1);
 }
 
