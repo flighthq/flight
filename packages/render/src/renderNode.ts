@@ -52,7 +52,6 @@ export function createRenderNode(state: RenderState, source: Renderable): Render
     rendererData: renderer?.createData(state, source) ?? null,
     rendererDataSource: source,
     rendererMapID: state.rendererMapID,
-    shader: null,
     transformFrameID: -1,
     useColorTransform: false,
     visible: true,

@@ -4,7 +4,6 @@ import type { Entity } from './Entity';
 import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
 import type { RendererData } from './RendererData';
-import type { Shader } from './Shader';
 
 export interface RenderNode extends Entity {
   source: Renderable;
@@ -22,7 +21,6 @@ export interface RenderNode extends Entity {
   rendererData: RendererData | null;
   rendererDataSource: Renderable | null;
   rendererMapID: number;
-  shader: Shader | null;
   transformFrameID: number;
   useColorTransform: boolean;
   visible: boolean;

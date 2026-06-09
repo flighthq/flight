@@ -1,5 +1,5 @@
 import { createSceneNode } from '@flighthq/scene';
-import type { PartialNode, Rectangle, SceneNode, Shader, SpriteNode, SpriteNodeData } from '@flighthq/types';
+import type { PartialNode, Rectangle, SceneNode, SpriteNode, SpriteNodeData } from '@flighthq/types';
 import { BlendMode, DisplayObjectKind, SpriteGraph } from '@flighthq/types';
 
 import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
@@ -15,7 +15,6 @@ describe('createSpriteNode', () => {
   it('initializes default values', () => {
     expect(spriteNode.alpha).toBe(1);
     expect(spriteNode.blendMode).toBeNull();
-    expect(spriteNode.shader).toBeNull();
     expect(spriteNode.visible).toBe(true);
     expect(spriteNode.kind).toBe(SpriteNodeTestKind);
   });
@@ -28,7 +27,6 @@ describe('createSpriteNode', () => {
       rotation: 45,
       scaleX: 2,
       scaleY: 3,
-      shader: {} as Shader,
       visible: false,
       x: 100,
       y: 200,
@@ -40,7 +38,6 @@ describe('createSpriteNode', () => {
     expect(obj.rotation).toStrictEqual(base.rotation);
     expect(obj.scaleX).toStrictEqual(base.scaleX);
     expect(obj.scaleY).toStrictEqual(base.scaleY);
-    expect(obj.shader).toStrictEqual(base.shader);
     expect(obj.visible).toStrictEqual(base.visible);
     expect(obj.x).toStrictEqual(base.x);
     expect(obj.y).toStrictEqual(base.y);
