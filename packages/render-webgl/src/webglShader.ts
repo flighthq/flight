@@ -39,8 +39,22 @@ function compileShader(gl: WebGL2RenderingContext, type: number, src: string): W
 }
 
 export function compileDefaultProgram(gl: WebGL2RenderingContext): WebGLShaderLocations {
+  return compileWebGLBitmapProgram(gl);
+}
+
+/**
+ * Compiles a bitmap program, reusing the standard quad vertex shader. Pass a
+ * custom fragment source to build a custom shader; it must declare the interface
+ * the draw path drives — `in vec2 v_texCoord`, `uniform sampler2D u_texture`,
+ * `uniform float u_alpha` — and may add its own uniforms, resolved against the
+ * returned `program`.
+ */
+export function compileWebGLBitmapProgram(
+  gl: WebGL2RenderingContext,
+  fragmentSrc: string = FRAGMENT_SRC,
+): WebGLShaderLocations {
   const vs = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SRC);
-  const fs = compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SRC);
+  const fs = compileShader(gl, gl.FRAGMENT_SHADER, fragmentSrc);
   const program = gl.createProgram()!;
   gl.attachShader(program, vs);
   gl.attachShader(program, fs);
@@ -78,6 +92,38 @@ export function createDefaultBitmapShader(
         internal.renderTargetViewport ?? state.canvas,
       );
       setWebGLBaseUniforms(gl, shaderLoc, renderNode);
+    },
+  };
+}
+
+/**
+ * Builds a custom bitmap shader from a fragment shader source, ready to pass to
+ * `setWebGLShader(state, node, shader)`. The standard quad vertex shader is
+ * reused, so the fragment shader must sample `u_texture` and respect `u_alpha`;
+ * any extra uniforms can be set per draw via `onBind` (resolve them against
+ * `locations.program`).
+ */
+export function createWebGLBitmapShader(
+  gl: WebGL2RenderingContext,
+  fragmentSrc: string,
+  onBind?: (gl: WebGL2RenderingContext, locations: WebGLShaderLocations, renderNode: DisplayObjectRenderNode) => void,
+): WebGLBitmapShader {
+  const locations = compileWebGLBitmapProgram(gl, fragmentSrc);
+  return {
+    locations,
+    program: locations.program,
+    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: DisplayObjectRenderNode): void {
+      const internal = state as WebGLRenderStateInternal;
+      setWebGLAttribs(gl, locations);
+      setWebGLMatrixFromTransform(
+        gl,
+        locations,
+        internal.matrixArray,
+        renderNode.transform2D,
+        internal.renderTargetViewport ?? state.canvas,
+      );
+      setWebGLBaseUniforms(gl, locations, renderNode);
+      onBind?.(gl, locations, renderNode);
     },
   };
 }
