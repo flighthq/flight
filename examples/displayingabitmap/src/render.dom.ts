@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
   createDOMRenderState,
@@ -16,6 +16,7 @@ container.style.height = '400px';
 document.body.appendChild(container);
 
 export const state = createDOMRenderState(container, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xeeddccff,
 });
 

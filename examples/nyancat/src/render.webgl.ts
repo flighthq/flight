@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
   createWebGLElement,
@@ -15,6 +15,7 @@ const canvas = createWebGLElement(220, 220, pixelRatio);
 document.getElementById('app')!.appendChild(canvas);
 
 export const state = createWebGLRenderState(canvas, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0x000000ff,
   imageSmoothingEnabled: false,
 });

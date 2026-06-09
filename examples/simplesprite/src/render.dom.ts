@@ -1,4 +1,4 @@
-import type { Sprite } from '@flighthq/sdk';
+﻿import type { Sprite } from '@flighthq/sdk';
 import {
   createDOMRenderState,
   defaultDOMSpriteRenderer,
@@ -15,7 +15,11 @@ container.style.width = '800px';
 container.style.height = '400px';
 document.body.appendChild(container);
 
-export const state = createDOMRenderState(container, { backgroundColor: 0xeeddccff, imageSmoothingEnabled: false });
+export const state = createDOMRenderState(container, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
+  backgroundColor: 0xeeddccff,
+  imageSmoothingEnabled: false,
+});
 registerRenderer(state, SpriteKind, defaultDOMSpriteRenderer);
 export const scale = 1;
 

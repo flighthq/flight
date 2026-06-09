@@ -1,4 +1,4 @@
-import type { QuadBatch } from '@flighthq/sdk';
+﻿import type { QuadBatch } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
@@ -15,6 +15,7 @@ export const canvas = createCanvasElement(550, 400, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createCanvasRenderState(canvas, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xeeddccff,
 });
 registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);

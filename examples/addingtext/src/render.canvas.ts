@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
@@ -15,6 +15,7 @@ const canvas = createCanvasElement(400, 200, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createCanvasRenderState(canvas, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, TextKind, defaultCanvasTextRenderer);

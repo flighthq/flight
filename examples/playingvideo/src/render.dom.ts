@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   createDOMRenderState,
   defaultDOMVideoRenderer,
@@ -18,7 +18,10 @@ document.body.style.background = '#000';
 document.body.appendChild(element);
 
 export const container = element;
-export const state = createDOMRenderState(element, { backgroundColor: 0x000000ff });
+export const state = createDOMRenderState(element, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
+  backgroundColor: 0x000000ff,
+});
 registerRenderer(state, VideoKind, defaultDOMVideoRenderer);
 export const scale = 1;
 

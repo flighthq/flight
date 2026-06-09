@@ -1,4 +1,4 @@
-import type { Tilemap } from '@flighthq/sdk';
+﻿import type { Tilemap } from '@flighthq/sdk';
 import {
   createDOMRenderState,
   defaultDOMTilemapRenderer,
@@ -15,7 +15,11 @@ container.style.width = '592px';
 container.style.height = '592px';
 document.getElementById('app')!.appendChild(container);
 
-export const state = createDOMRenderState(container, { backgroundColor: 0xeeddccff, imageSmoothingEnabled: false });
+export const state = createDOMRenderState(container, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
+  backgroundColor: 0xeeddccff,
+  imageSmoothingEnabled: false,
+});
 registerRenderer(state, TilemapKind, defaultDOMTilemapRenderer);
 export const scale = 1;
 

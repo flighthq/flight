@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   createDOMRenderState,
   defaultCanvasShapeCommands,
@@ -21,7 +21,10 @@ document.body.style.margin = '0';
 document.body.appendChild(element);
 
 export const container = element;
-export const state = createDOMRenderState(element, { backgroundColor: 0xa0a0a0ff });
+export const state = createDOMRenderState(element, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
+  backgroundColor: 0xa0a0a0ff,
+});
 registerRenderer(state, RichTextKind, defaultDOMRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultDOMShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
