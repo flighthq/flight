@@ -109,7 +109,7 @@ export function getSpriteRenderNode(state: RenderState, source: SpriteNode): Spr
   return state.renderNodeMap.get(source) as SpriteRenderNode | undefined;
 }
 
-export function installAdaptHook(fn: AdaptHook): void {
+export function installRenderAdaptHook(fn: AdaptHook): void {
   _adaptHook = fn;
 }
 

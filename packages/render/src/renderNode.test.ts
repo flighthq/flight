@@ -22,7 +22,7 @@ import {
   getOrCreateRenderNode,
   getOrCreateSpriteRenderNode,
   getSpriteRenderNode,
-  installAdaptHook,
+  installRenderAdaptHook,
   isRenderNodeDirty,
   isRenderNodeVisible,
   prepareDisplayObjectRender,
@@ -235,9 +235,9 @@ describe('getSpriteRenderNode', () => {
   });
 });
 
-describe('installAdaptHook', () => {
+describe('installRenderAdaptHook', () => {
   it('does not throw when installing a hook', () => {
-    expect(() => installAdaptHook(vi.fn())).not.toThrow();
+    expect(() => installRenderAdaptHook(vi.fn())).not.toThrow();
   });
 });
 
