@@ -8,6 +8,23 @@ function makeShader() {
   return { locations: {} as never, program: {} as never, bind: vi.fn() };
 }
 
+describe('getWebGLShader', () => {
+  it('returns the shader bound to a render node', () => {
+    const { state } = makeWebGLState();
+    const node = {} as DisplayObject;
+    const shader = makeShader();
+    setWebGLShader(state, node, shader);
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    expect(getWebGLShader(renderNode)).toBe(shader);
+  });
+
+  it('returns undefined for a render node with no binding', () => {
+    const { state } = makeWebGLState();
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, {} as DisplayObject);
+    expect(getWebGLShader(renderNode)).toBeUndefined();
+  });
+});
+
 describe('selectWebGLShader', () => {
   it('returns the default bitmap shader when no binding is set', () => {
     const { state } = makeWebGLState();
@@ -32,7 +49,7 @@ describe('selectWebGLShader', () => {
   });
 });
 
-describe('setWebGLShader / getWebGLShader', () => {
+describe('setWebGLShader', () => {
   it('stores a shader keyed by the per-state render node', () => {
     const { state } = makeWebGLState();
     const node = {} as DisplayObject;

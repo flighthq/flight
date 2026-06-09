@@ -22,6 +22,7 @@ import type {
 
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';
+import { selectWebGLShader } from './webglShaderBinding';
 
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
@@ -84,7 +85,8 @@ export function drawWebGLRichTextWithOverlay(
   }
   overlay?.(offCtx, source, result, fieldW, fieldH, content.text);
 
-  useWebGLProgram(internal);
+  const shader = selectWebGLShader(internal, renderNode);
+  useWebGLProgram(internal, shader);
 
   let texture = _textureMap.get(renderNode);
   if (!texture) {
@@ -93,7 +95,7 @@ export function drawWebGLRichTextWithOverlay(
   }
   updateWebGLTexture(internal, texture, _offscreenCanvas!);
 
-  internal.defaultBitmapShader.bind(internal.gl, internal, renderNode);
+  shader.bind(internal.gl, internal, renderNode);
 
   drawWebGLQuad(internal, 0, 0, fieldW, fieldH, 0, 0, 1, 1);
 }

@@ -12,6 +12,7 @@ import type {
 
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';
+import { selectWebGLShader } from './webglShaderBinding';
 
 const LAYOUT_WIDTH = 10000;
 
@@ -89,7 +90,8 @@ export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRende
     offCtx.fillText(slice, x, y);
   }
 
-  useWebGLProgram(internal);
+  const shader = selectWebGLShader(internal, renderNode);
+  useWebGLProgram(internal, shader);
 
   // Get or create a texture for this render node
   let texture = _textureMap.get(renderNode);
@@ -99,7 +101,7 @@ export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRende
   }
   updateWebGLTexture(internal, texture, _offscreenCanvas!);
 
-  internal.defaultBitmapShader.bind(internal.gl, internal, renderNode);
+  shader.bind(internal.gl, internal, renderNode);
 
   drawWebGLQuad(internal, 0, 0, w, h, 0, 0, 1, 1);
 }
