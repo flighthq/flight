@@ -31,4 +31,20 @@ describe('applyWebGLGlowFilter', () => {
     const { state } = makeWebGLState();
     expect(() => applyWebGLGlowFilter(state, makeRenderTarget(), makeRenderTarget())).not.toThrow();
   });
+
+  it('is a no-op when inner is true', () => {
+    const { state, gl } = makeWebGLState();
+    applyWebGLGlowFilter(state, makeRenderTarget(), makeRenderTarget(), { inner: true });
+    expect(gl.drawElements).not.toHaveBeenCalled();
+  });
+
+  it('produces more composite passes for strength > 1', () => {
+    const { state: s1, gl: gl1 } = makeWebGLState();
+    const { state: s2, gl: gl2 } = makeWebGLState();
+    applyWebGLGlowFilter(s1, makeRenderTarget(), makeRenderTarget(), { strength: 1 });
+    applyWebGLGlowFilter(s2, makeRenderTarget(), makeRenderTarget(), { strength: 2 });
+    expect((gl2.drawElements as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(
+      (gl1.drawElements as ReturnType<typeof vi.fn>).mock.calls.length,
+    );
+  });
 });

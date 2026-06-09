@@ -49,7 +49,12 @@ void main() {
   sum += u_bias / 255.0;
   sum = clamp(sum, 0.0, 1.0);
   if (u_preserveAlpha) {
-    sum.a = texture(u_texture, v_texCoord).a;
+    // sum is premultiplied against the convolved alpha; unmultiply, then
+    // remultiply against the original alpha so RGB is not contaminated by the
+    // convolved alpha value.
+    float origAlpha = texture(u_texture, v_texCoord).a;
+    vec3 straightRGB = (sum.a > 0.0) ? clamp(sum.rgb / sum.a, 0.0, 1.0) : vec3(0.0);
+    sum = vec4(straightRGB * origAlpha, origAlpha);
   }
   fragColor = sum;
 }`;

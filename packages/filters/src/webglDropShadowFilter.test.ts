@@ -33,4 +33,26 @@ describe('applyWebGLDropShadowFilter', () => {
     expect(() => applyWebGLDropShadowFilter(state, makeRenderTarget(), makeRenderTarget())).not.toThrow();
     expect(gl.drawElements).toHaveBeenCalled();
   });
+
+  it('is a no-op when inner is true', () => {
+    const { state, gl } = makeWebGLState();
+    applyWebGLDropShadowFilter(state, makeRenderTarget(), makeRenderTarget(), { inner: true });
+    expect(gl.drawElements).not.toHaveBeenCalled();
+  });
+
+  it('is a no-op when knockout is true', () => {
+    const { state, gl } = makeWebGLState();
+    applyWebGLDropShadowFilter(state, makeRenderTarget(), makeRenderTarget(), { knockout: true });
+    expect(gl.drawElements).not.toHaveBeenCalled();
+  });
+
+  it('produces more composite passes for strength > 1', () => {
+    const { state: s1, gl: gl1 } = makeWebGLState();
+    const { state: s2, gl: gl2 } = makeWebGLState();
+    applyWebGLDropShadowFilter(s1, makeRenderTarget(), makeRenderTarget(), { strength: 1 });
+    applyWebGLDropShadowFilter(s2, makeRenderTarget(), makeRenderTarget(), { strength: 2 });
+    expect((gl2.drawElements as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(
+      (gl1.drawElements as ReturnType<typeof vi.fn>).mock.calls.length,
+    );
+  });
 });
