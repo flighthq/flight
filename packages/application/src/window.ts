@@ -159,11 +159,11 @@ export function disposeApplicationWindow(win: ApplicationWindow): void {
   win.observers.clear();
 }
 
-export function exitFullscreen(): Promise<void> {
+export function exitApplicationFullscreen(): Promise<void> {
   return document.exitFullscreen();
 }
 
-export function lockElement(element: HTMLElement): void {
+export function lockApplicationElement(element: HTMLElement): void {
   element.style.touchAction = 'none';
   element.style.userSelect = 'none';
   element.style.webkitUserSelect = 'none';
@@ -173,6 +173,6 @@ export function lockElement(element: HTMLElement): void {
   }
 }
 
-export function requestFullscreen(element: HTMLElement): Promise<void> {
+export function requestApplicationFullscreen(element: HTMLElement): Promise<void> {
   return element.requestFullscreen();
 }

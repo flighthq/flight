@@ -1,7 +1,7 @@
 import { invalidateAppearance } from '@flighthq/scene';
 import type { Renderable, RenderNode2D, RenderNodeAdapter, RenderState, SceneNode } from '@flighthq/types';
 
-import { installAdaptHook, syncRenderNodeRenderer } from './renderNode';
+import { installRenderAdaptHook, syncRenderNodeRenderer } from './renderNode';
 
 const _adapters = new WeakMap<Renderable, RenderNodeAdapter>();
 let _installed = false;
@@ -29,7 +29,7 @@ export function getRenderNodeAdapter(source: Renderable): RenderNodeAdapter | nu
 
 export function setRenderNodeAdapter(source: Renderable, adapter: RenderNodeAdapter | null): void {
   if (!_installed) {
-    installAdaptHook(adaptRenderNode);
+    installRenderAdaptHook(adaptRenderNode);
     _installed = true;
   }
   if (adapter === null) {

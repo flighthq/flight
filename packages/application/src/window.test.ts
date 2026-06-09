@@ -17,9 +17,9 @@ import {
   detachWindowResize,
   detachWindowVisibility,
   disposeApplicationWindow,
-  exitFullscreen,
-  lockElement,
-  requestFullscreen,
+  exitApplicationFullscreen,
+  lockApplicationElement,
+  requestApplicationFullscreen,
 } from './window';
 
 describe('attachWindowDropFile', () => {
@@ -388,42 +388,42 @@ describe('disposeApplicationWindow', () => {
   });
 });
 
-describe('exitFullscreen', () => {
-  it('calls document.exitFullscreen', async () => {
+describe('exitApplicationFullscreen', () => {
+  it('calls document.exitApplicationFullscreen', async () => {
     const mock = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(document, 'exitFullscreen', { value: mock, configurable: true });
-    await exitFullscreen();
+    Object.defineProperty(document, 'exitApplicationFullscreen', { value: mock, configurable: true });
+    await exitApplicationFullscreen();
     expect(mock).toHaveBeenCalled();
   });
 });
 
-describe('lockElement', () => {
+describe('lockApplicationElement', () => {
   it('sets touch-action and user-select', () => {
     const element = document.createElement('div');
-    lockElement(element);
+    lockApplicationElement(element);
     expect(element.style.touchAction).toBe('none');
     expect(element.style.userSelect).toBe('none');
   });
 
   it('sets transform on canvas elements', () => {
     const canvas = document.createElement('canvas');
-    lockElement(canvas);
+    lockApplicationElement(canvas);
     expect(canvas.style.transform).toBe('translateZ(0)');
   });
 
   it('does not set transform on non-canvas elements', () => {
     const div = document.createElement('div');
-    lockElement(div);
+    lockApplicationElement(div);
     expect(div.style.transform).toBe('');
   });
 });
 
-describe('requestFullscreen', () => {
-  it('calls requestFullscreen on the element', async () => {
+describe('requestApplicationFullscreen', () => {
+  it('calls requestApplicationFullscreen on the element', async () => {
     const element = document.createElement('div');
     const mock = vi.fn().mockResolvedValue(undefined);
-    element.requestFullscreen = mock;
-    await requestFullscreen(element);
+    element.requestApplicationFullscreen = mock;
+    await requestApplicationFullscreen(element);
     expect(mock).toHaveBeenCalled();
   });
 });
