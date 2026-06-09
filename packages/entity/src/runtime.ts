@@ -7,10 +7,6 @@ export function createEntityRuntime(): EntityRuntime {
   };
 }
 
-export function createNodeRuntime(): EntityRuntime {
-  return createEntityRuntime();
-}
-
 export function getEntityRuntime(source: Readonly<Entity>): Readonly<EntityRuntime> {
   return source[EntityRuntimeKey]!;
 }
