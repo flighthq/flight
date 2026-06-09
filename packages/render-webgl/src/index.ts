@@ -15,6 +15,7 @@ export * from './webglRenderState';
 export * from './webglRenderTarget';
 export * from './webglRichText';
 export * from './webglShader';
+export * from './webglShaderBinding';
 export * from './webglShape';
 export * from './webglSprite';
 export * from './webglSpriteRenderer';

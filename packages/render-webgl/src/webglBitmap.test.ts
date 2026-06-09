@@ -1,6 +1,8 @@
-﻿import type { DisplayObjectRenderNode } from '@flighthq/types';
+﻿import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import type { DisplayObject, DisplayObjectRenderNode } from '@flighthq/types';
 
 import { defaultWebGLBitmapRenderer, drawWebGLBitmap, drawWebGLBitmapMask } from './webglBitmap';
+import { setWebGLShader } from './webglShaderBinding';
 import { makeWebGLState } from './webglTestHelper';
 
 function makeRenderNode(image: unknown = null): DisplayObjectRenderNode {
@@ -55,6 +57,23 @@ describe('drawWebGLBitmap', () => {
     const node = makeRenderNode(makeImageSource(img));
     drawWebGLBitmap(state, node);
     expect(state.defaultBitmapShader.bind).toHaveBeenCalledWith(state.gl, state, node);
+  });
+
+  it('uses a per-node bound shader instead of the default', () => {
+    const { state, gl } = makeWebGLState();
+    const img = document.createElement('img');
+    const sceneNode = {} as DisplayObject;
+    const customShader = { locations: state.shaderLoc, program: state.shaderLoc.program, bind: vi.fn() };
+    setWebGLShader(state, sceneNode, customShader);
+
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, sceneNode);
+    (renderNode as unknown as { source: unknown }).source = { data: { image: makeImageSource(img) } };
+    renderNode.alpha = 1;
+    renderNode.blendMode = 0;
+
+    drawWebGLBitmap(state, renderNode);
+    expect(customShader.bind).toHaveBeenCalledWith(gl, state, renderNode);
+    expect(state.defaultBitmapShader.bind).not.toHaveBeenCalled();
   });
 });
 

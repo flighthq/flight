@@ -3,6 +3,7 @@ import type { Bitmap, DisplayObjectRenderer, DisplayObjectRenderNode, RenderStat
 
 import type { WebGLRenderStateInternal } from './internal';
 import { bindWebGLTexture, drawWebGLQuad, setWebGLBlendMode, useWebGLProgram } from './webglDraw';
+import { selectWebGLShader } from './webglShaderBinding';
 
 export function drawWebGLBitmap(state: RenderState, renderNode: DisplayObjectRenderNode): void {
   const internal = state as WebGLRenderStateInternal;
@@ -10,11 +11,12 @@ export function drawWebGLBitmap(state: RenderState, renderNode: DisplayObjectRen
   const imageSource = source.data.image;
   if (imageSource === null || imageSource.src === null) return;
 
-  useWebGLProgram(internal);
+  const shader = selectWebGLShader(internal, renderNode);
+  useWebGLProgram(internal, shader);
   setWebGLBlendMode(internal, renderNode.blendMode);
   bindWebGLTexture(internal, imageSource.src);
 
-  internal.defaultBitmapShader.bind(internal.gl, internal, renderNode);
+  shader.bind(internal.gl, internal, renderNode);
 
   const sr = source.data.sourceRectangle ?? null;
   if (sr === null) {

@@ -2,6 +2,7 @@ import type { WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { setWebGLAttribs, setWebGLMatrixFromValues } from './webglShader';
+import type { WebGLBitmapShader } from './webglShaderTypes';
 
 export function bindWebGLTexture(state: WebGLRenderStateInternal, imageSource: CanvasImageSource): WebGLTexture {
   const { gl, textureCache } = state;
@@ -129,9 +130,12 @@ export function updateWebGLTexture(
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
 }
 
-export function useWebGLProgram(state: WebGLRenderStateInternal): void {
-  state.shaderLoc = state.defaultBitmapShader.locations;
-  const program = state.defaultBitmapShader.program;
+export function useWebGLProgram(
+  state: WebGLRenderStateInternal,
+  shader: WebGLBitmapShader = state.defaultBitmapShader,
+): void {
+  state.shaderLoc = shader.locations;
+  const program = shader.program;
   if (state.currentProgram !== program) {
     state.gl.useProgram(program);
     state.currentProgram = program;
