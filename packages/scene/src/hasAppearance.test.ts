@@ -19,7 +19,6 @@ describe('initAppearanceTrait', () => {
     expect(target.alpha).toBe(1);
     expect(target.blendMode).toBeNull();
     expect(target.colorTransform).toBeNull();
-    expect(target.shader).toBeNull();
     expect(target.visible).toBe(true);
   });
 
@@ -45,14 +44,6 @@ describe('initAppearanceTrait', () => {
     initAppearanceTrait(target, { colorTransform: ct });
 
     expect(target.colorTransform).toBe(ct);
-  });
-
-  it('applies shader override', () => {
-    const shader = {} as any;
-    const target = makeTarget();
-    initAppearanceTrait(target, { shader });
-
-    expect(target.shader).toBe(shader);
   });
 
   it('overwrites existing values', () => {

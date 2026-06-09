@@ -24,7 +24,6 @@ function recalculateAppearance(state: RenderState, data: RenderNode, parentData?
     if (data.alpha <= 0) return;
     state.appearanceHooks?.update(state, data, parentData);
     data.blendMode = parentData.blendMode !== BlendMode.Normal ? parentData.blendMode : source.blendMode;
-    data.shader = parentData.shader !== null ? parentData.shader : source.shader;
   } else {
     data.visible = source.visible;
     if (!data.visible) return;
@@ -32,7 +31,6 @@ function recalculateAppearance(state: RenderState, data: RenderNode, parentData?
     if (data.alpha <= 0) return;
     state.appearanceHooks?.update(state, data, undefined);
     data.blendMode = state.renderBlendMode !== null ? state.renderBlendMode : source.blendMode;
-    data.shader = state.renderShader !== null ? state.renderShader : source.shader;
   }
   data.appearanceFrameID = state.currentFrameID;
 }

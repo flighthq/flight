@@ -7,7 +7,6 @@ import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
 import type { RenderFeatures } from './RenderFeatures';
 import type { RenderNode } from './RenderNode';
-import type { BitmapShader } from './Shader';
 
 export interface RenderState extends Entity {
   allowSmoothing: boolean;
@@ -27,7 +26,6 @@ export interface RenderState extends Entity {
   renderBlendMode: BlendMode | null;
   renderColorTransform: ColorTransform | null;
   renderFeatures: RenderFeatures;
-  renderShader: BitmapShader | null;
   renderTransform2D: Matrix | null;
   readonly rendererMap: Map<symbol, Renderer>;
   readonly rendererMapID: number;

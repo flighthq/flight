@@ -86,7 +86,6 @@ describe('createRenderNode', () => {
     expect(node.rendererData).toBeNull();
     expect(node.rendererDataSource).toBe(source);
     expect(node.visible).toBe(true);
-    expect(node.shader).toBeNull();
   });
 
   it('picks up a registered renderer', () => {

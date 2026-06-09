@@ -1,4 +1,4 @@
-import type { BitmapShader } from '@flighthq/types';
+import type { WebGLShader } from '@flighthq/types';
 
 export interface WebGLShaderLocations {
   program: WebGLProgram;
@@ -12,6 +12,6 @@ export interface WebGLShaderLocations {
   locTexture: WebGLUniformLocation;
 }
 
-export type WebGLBitmapShader = BitmapShader & {
+export type WebGLBitmapShader = WebGLShader & {
   readonly locations: WebGLShaderLocations;
 };

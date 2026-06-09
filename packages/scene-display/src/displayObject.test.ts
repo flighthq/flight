@@ -7,7 +7,6 @@ import type {
   PartialNode,
   Rectangle,
   SceneNode,
-  Shader,
 } from '@flighthq/types';
 import { BlendMode, DisplayGraph, DisplayObjectKind } from '@flighthq/types';
 
@@ -37,7 +36,6 @@ describe('createDisplayObject', () => {
     expect(displayObject.blendMode).toBeNull();
     expect(displayObject.mask).toBeNull();
     expect(displayObject.name).toBeNull();
-    expect(displayObject.shader).toBeNull();
     expect(displayObject.visible).toBe(true);
     expect(displayObject.kind).toBe(DisplayObjectKind);
   });
@@ -51,7 +49,6 @@ describe('createDisplayObject', () => {
       rotation: 45,
       scaleX: 2,
       scaleY: 3,
-      shader: {} as Shader,
       visible: false,
       x: 100,
       y: 200,
@@ -64,7 +61,6 @@ describe('createDisplayObject', () => {
     expect(obj.rotation).toStrictEqual(base.rotation);
     expect(obj.scaleX).toStrictEqual(base.scaleX);
     expect(obj.scaleY).toStrictEqual(base.scaleY);
-    expect(obj.shader).toStrictEqual(base.shader);
     expect(obj.visible).toStrictEqual(base.visible);
     expect(obj.x).toStrictEqual(base.x);
     expect(obj.y).toStrictEqual(base.y);
