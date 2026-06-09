@@ -1,6 +1,8 @@
 import {
   compileDefaultProgram,
+  compileWebGLBitmapProgram,
   createDefaultBitmapShader,
+  createWebGLBitmapShader,
   setWebGLAttribs,
   setWebGLBaseUniforms,
   setWebGLMatrixFromTransform,
@@ -43,6 +45,30 @@ describe('compileDefaultProgram', () => {
     const gl = makeGL();
     (gl.getProgramParameter as ReturnType<typeof vi.fn>).mockReturnValue(false);
     expect(() => compileDefaultProgram(gl)).toThrow('Program link error');
+  });
+});
+
+describe('compileWebGLBitmapProgram', () => {
+  it('compiles a program from the default fragment shader when none is given', () => {
+    const gl = makeGL();
+    const loc = compileWebGLBitmapProgram(gl);
+    expect(loc.program).toBeDefined();
+    expect(loc.locAlpha).toBeDefined();
+    expect(loc.locTexture).toBeDefined();
+  });
+
+  it('uses a provided custom fragment shader source', () => {
+    const gl = makeGL();
+    const frag =
+      '#version 300 es\nprecision mediump float;\nout vec4 fragColor;\nvoid main() { fragColor = vec4(1.0); }';
+    compileWebGLBitmapProgram(gl, frag);
+    expect(gl.shaderSource).toHaveBeenCalledWith(expect.anything(), frag);
+  });
+
+  it('throws when program linking fails', () => {
+    const gl = makeGL();
+    (gl.getProgramParameter as ReturnType<typeof vi.fn>).mockReturnValue(false);
+    expect(() => compileWebGLBitmapProgram(gl, 'frag')).toThrow('Program link error');
   });
 });
 
@@ -91,6 +117,34 @@ describe('createDefaultBitmapShader', () => {
     shader.bind(gl, { canvas } as never, renderNode as never);
 
     expect(gl.uniform4f).not.toHaveBeenCalled();
+  });
+});
+
+describe('createWebGLBitmapShader', () => {
+  it('returns a shader compiled from the fragment source', () => {
+    const gl = makeGL();
+    const shader = createWebGLBitmapShader(gl, '#version 300 es\nvoid main() {}');
+    expect(shader.program).toBeDefined();
+    expect(shader.locations).toBeDefined();
+    expect(typeof shader.bind).toBe('function');
+  });
+
+  it('invokes the onBind hook with the locations and render node during bind', () => {
+    const gl = makeGL();
+    const onBind = vi.fn();
+    const shader = createWebGLBitmapShader(gl, '#version 300 es\nvoid main() {}', onBind);
+    const canvas = document.createElement('canvas');
+    canvas.width = 100;
+    canvas.height = 100;
+    const renderNode = { alpha: 1, transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 } };
+
+    shader.bind(
+      gl,
+      { canvas, matrixArray: new Float32Array(9), renderTargetViewport: null } as never,
+      renderNode as never,
+    );
+
+    expect(onBind).toHaveBeenCalledWith(gl, shader.locations, renderNode);
   });
 });
 
