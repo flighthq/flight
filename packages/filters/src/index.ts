@@ -117,14 +117,20 @@ export function filterToCSS(filter: BitmapFilter): string | null {
       const distance = filter.distance ?? 4;
       const dx = Math.round(Math.cos(angle) * distance);
       const dy = Math.round(Math.sin(angle) * distance);
-      const blur = filter.blurX ?? 4;
+      const blurX = filter.blurX ?? 4;
+      const blurY = filter.blurY ?? 4;
+      if (blurX !== blurY) return null;
+      const blur = blurX;
       const color = filter.color ?? 0;
       const alpha = filter.alpha ?? 1;
       return `drop-shadow(${dx}px ${dy}px ${blur}px ${rgbaFromInt(color, alpha)})`;
     }
     case 'glow': {
       if (filter.inner || filter.knockout) return null;
-      const blur = filter.blurX ?? 6;
+      const blurX = filter.blurX ?? 6;
+      const blurY = filter.blurY ?? 6;
+      if (blurX !== blurY) return null;
+      const blur = blurX;
       const color = filter.color ?? 0xff0000;
       const alpha = filter.alpha ?? 1;
       return `drop-shadow(0px 0px ${blur}px ${rgbaFromInt(color, alpha)})`;

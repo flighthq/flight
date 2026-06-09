@@ -23,8 +23,12 @@ describe('filterToCSS', () => {
 
   describe('dropShadow', () => {
     it('returns drop-shadow CSS for a basic shadow', () => {
-      const result = filterToCSS({ type: 'dropShadow', angle: 0, distance: 4, blurX: 2, color: 0, alpha: 1 });
+      const result = filterToCSS({ type: 'dropShadow', angle: 0, distance: 4, blurX: 2, blurY: 2, color: 0, alpha: 1 });
       expect(result).toBe('drop-shadow(4px 0px 2px rgba(0,0,0,1.000))');
+    });
+
+    it('returns null for anisotropic blur', () => {
+      expect(filterToCSS({ type: 'dropShadow', blurX: 2, blurY: 8 })).toBeNull();
     });
 
     it('returns null when inner is true', () => {
@@ -45,6 +49,10 @@ describe('filterToCSS', () => {
     it('returns drop-shadow at 0,0 for basic glow', () => {
       const result = filterToCSS({ type: 'glow', blurX: 6, color: 0xff0000, alpha: 1 });
       expect(result).toBe('drop-shadow(0px 0px 6px rgba(255,0,0,1.000))');
+    });
+
+    it('returns null for anisotropic blur', () => {
+      expect(filterToCSS({ type: 'glow', blurX: 4, blurY: 8 })).toBeNull();
     });
 
     it('returns null when inner is true', () => {

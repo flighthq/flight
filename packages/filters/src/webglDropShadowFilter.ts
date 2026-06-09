@@ -21,6 +21,8 @@ export function applyWebGLDropShadowFilter(
   dest: WebGLRenderTarget,
   options: Omit<DropShadowFilter, 'type'> = {},
 ): void {
+  if (options.inner || options.knockout) return;
+
   const angle = ((options.angle ?? 45) * Math.PI) / 180;
   const distance = options.distance ?? 4;
   const dx = Math.cos(angle) * distance;
@@ -33,6 +35,10 @@ export function applyWebGLDropShadowFilter(
   const quality = options.quality ?? 1;
   const hideObject = options.hideObject ?? false;
 
+  // strength > 1: composite the blurred shadow multiple times (iterative pass accumulation).
+  const tintStrength = Math.min(1, strength);
+  const shadowPasses = Math.max(1, Math.floor(strength));
+
   const w = source.width;
   const h = source.height;
 
@@ -40,18 +46,20 @@ export function applyWebGLDropShadowFilter(
   const blurTemp = createWebGLRenderTarget(state, w, h);
 
   // Pass 1: extract alpha and tint with shadow color → mask
-  applyTintPass(state, source, mask, color, alpha, strength);
+  applyTintPass(state, source, mask, color, alpha, tintStrength);
 
   // Pass 2–3: blur the tinted mask (mask ↔ blurTemp ping-pong)
   applyWebGLBlurFilter(state, mask, blurTemp, { blurX, blurY, quality });
 
   // blurTemp now holds the blurred, tinted shadow mask.
 
-  // Pass 4: clear dest, draw shadow at offset
+  // Pass 4+: clear dest, draw shadow at offset; repeated for strength > 1
   clearWebGLFilterTarget(state, dest);
-  applyBlitOffsetPass(state, blurTemp, dest, dx, dy);
+  for (let i = 0; i < shadowPasses; i++) {
+    applyBlitOffsetPass(state, blurTemp, dest, dx, dy);
+  }
 
-  // Pass 5: composite source over shadow (unless hideObject)
+  // Final: composite source over shadow (unless hideObject)
   if (!hideObject) {
     applyBlitPass(state, source, dest);
   }

@@ -18,6 +18,8 @@ export function applyWebGLGlowFilter(
   dest: WebGLRenderTarget,
   options: Omit<GlowFilter, 'type'> = {},
 ): void {
+  if (options.inner) return;
+
   const color = options.color ?? 0xff0000;
   const alpha = options.alpha ?? 1;
   const strength = options.strength ?? 1;
@@ -26,6 +28,11 @@ export function applyWebGLGlowFilter(
   const quality = options.quality ?? 1;
   const knockout = options.knockout ?? false;
 
+  // strength > 1: composite the blurred glow multiple times (iterative pass accumulation).
+  // The tint pass uses min(1, strength) to avoid per-pixel saturation on the raw source alpha.
+  const tintStrength = Math.min(1, strength);
+  const glowPasses = Math.max(1, Math.floor(strength));
+
   const w = source.width;
   const h = source.height;
 
@@ -33,16 +40,18 @@ export function applyWebGLGlowFilter(
   const blurred = createWebGLRenderTarget(state, w, h);
 
   // Pass 1: tint source alpha with glow color → mask
-  applyTintPass(state, source, mask, color, alpha, strength);
+  applyTintPass(state, source, mask, color, alpha, tintStrength);
 
   // Pass 2–3: blur the tinted mask
   applyWebGLBlurFilter(state, mask, blurred, { blurX, blurY, quality });
 
-  // Pass 4: clear dest, draw glow (centered, no offset)
+  // Pass 4+: clear dest, composite glow (centered, no offset); repeated for strength > 1
   clearWebGLFilterTarget(state, dest);
-  applyBlitPass(state, blurred, dest);
+  for (let i = 0; i < glowPasses; i++) {
+    applyBlitPass(state, blurred, dest);
+  }
 
-  // Pass 5: composite source on top (unless knockout)
+  // Final: composite source on top (unless knockout)
   if (!knockout) {
     applyBlitPass(state, source, dest);
   }
