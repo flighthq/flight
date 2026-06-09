@@ -17,6 +17,8 @@
       "@flighthq/application": ["./packages/application/src/index.ts"],
       "@flighthq/application/*": ["./packages/application/src/*"],
       "@flighthq/assets": ["./packages/assets/src/index.ts"],
+      "@flighthq/filters": ["./packages/filters/src/index.ts"],
+      "@flighthq/filters/*": ["./packages/filters/src/*"],
       "@flighthq/assets-loader": ["./packages/assets-loader/src/index.ts"],
       "@flighthq/assets-loader/*": ["./packages/assets-loader/src/*"],
       "@flighthq/assets/*": ["./packages/assets/src/*"],
