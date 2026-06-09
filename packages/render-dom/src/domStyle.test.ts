@@ -4,6 +4,7 @@ import { createDisplayObject } from '@flighthq/scene-display';
 import { BlendMode } from '@flighthq/types';
 
 import { enableDOMBlendModeSupport } from './domMaterials';
+import { setDOMCSSFilter } from './domCSSFilterBinding';
 import { createDOMRenderState } from './domRenderState';
 import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
 import type { DOMRenderStateInternal } from './internal';
@@ -74,6 +75,18 @@ describe('applyDOMStyle', () => {
     applyDOMStyle(state, el, node);
 
     expect(el.style.mixBlendMode).toBe('');
+  });
+
+  it('applies a bound CSS filter to the element', () => {
+    const state = makeState();
+    const el = document.createElement('div');
+    const obj = createDisplayObject();
+    setDOMCSSFilter(state, obj, 'blur(3px)');
+    const node = getOrCreateDisplayObjectRenderNode(state, obj);
+
+    applyDOMStyle(state, el, node);
+
+    expect(el.style.filter).toBe('blur(3px)');
   });
 });
 

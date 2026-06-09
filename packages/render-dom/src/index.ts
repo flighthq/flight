@@ -2,6 +2,7 @@ export * from './domBackground';
 export * from './domBitmap';
 export * from './domClip';
 export * from './domClipRectangle';
+export * from './domCSSFilterBinding';
 export * from './domDisplayObject';
 export { invalidateDOMFontSource } from './domFontSource';
 export * from './domInputText';
