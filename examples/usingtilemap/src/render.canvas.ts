@@ -1,4 +1,4 @@
-import type { Tilemap } from '@flighthq/sdk';
+﻿import type { Tilemap } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
@@ -15,6 +15,7 @@ const canvas = createCanvasElement(592, 592, pixelRatio);
 document.getElementById('app')!.appendChild(canvas);
 
 export const state = createCanvasRenderState(canvas, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xeeddccff,
   imageSmoothingEnabled: false,
 });

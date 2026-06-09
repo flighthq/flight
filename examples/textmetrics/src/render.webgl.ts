@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   createWebGLRenderState,
   defaultWebGLRichTextRenderer,
@@ -25,6 +25,7 @@ document.body.appendChild(canvas);
 
 export const container = canvas;
 export const state = createWebGLRenderState(canvas, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xa0a0a0ff,
 });
 registerRenderer(state, RichTextKind, defaultWebGLRichTextRenderer);

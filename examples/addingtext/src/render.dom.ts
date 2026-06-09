@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   createDOMRenderState,
   defaultDOMTextRenderer,
@@ -15,7 +15,10 @@ container.style.width = '400px';
 container.style.height = '200px';
 document.body.appendChild(container);
 
-export const state = createDOMRenderState(container, { backgroundColor: 0xffffffff });
+export const state = createDOMRenderState(container, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
+  backgroundColor: 0xffffffff,
+});
 registerRenderer(state, TextKind, defaultDOMTextRenderer);
 export const scale = 1;
 

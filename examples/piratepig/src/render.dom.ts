@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
   createDOMRenderState,
@@ -18,7 +18,10 @@ import {
 export const container = document.createElement('div');
 document.body.appendChild(container);
 
-export const state = createDOMRenderState(container, { backgroundColor: 0x000000ff });
+export const state = createDOMRenderState(container, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
+  backgroundColor: 0x000000ff,
+});
 registerRenderer(state, BitmapKind, defaultDOMBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultDOMShapeRenderer);
 registerRenderer(state, TextKind, defaultDOMTextRenderer);

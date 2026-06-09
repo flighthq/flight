@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   createWebGLElement,
   createWebGLRenderState,
@@ -15,6 +15,7 @@ const canvas = createWebGLElement(400, 200, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createWebGLRenderState(canvas, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, TextKind, defaultWebGLTextRenderer);

@@ -1,4 +1,4 @@
-import type { QuadBatch } from '@flighthq/sdk';
+﻿import type { QuadBatch } from '@flighthq/sdk';
 import {
   createDOMRenderState,
   defaultDOMQuadBatchRenderer,
@@ -16,7 +16,10 @@ container.style.height = '400px';
 document.body.appendChild(container);
 
 export const canvas = container;
-export const state = createDOMRenderState(container, { backgroundColor: 0xeeddccff });
+export const state = createDOMRenderState(container, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
+  backgroundColor: 0xeeddccff,
+});
 registerRenderer(state, QuadBatchKind, defaultDOMQuadBatchRenderer);
 export const scale = 1;
 

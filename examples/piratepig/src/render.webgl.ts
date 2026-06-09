@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/sdk';
+﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
   createWebGLRenderState,
@@ -24,7 +24,10 @@ canvas.style.height = `${window.innerHeight}px`;
 document.body.appendChild(canvas);
 
 export const container = canvas;
-export const state = createWebGLRenderState(canvas, { backgroundColor: 0x000000ff });
+export const state = createWebGLRenderState(canvas, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
+  backgroundColor: 0x000000ff,
+});
 registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
 registerRenderer(state, TextKind, defaultWebGLTextRenderer);

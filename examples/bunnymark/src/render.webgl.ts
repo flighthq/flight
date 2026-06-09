@@ -1,4 +1,4 @@
-import type { QuadBatch } from '@flighthq/sdk';
+﻿import type { QuadBatch } from '@flighthq/sdk';
 import {
   createWebGLElement,
   createWebGLRenderState,
@@ -15,6 +15,7 @@ export const canvas = createWebGLElement(550, 400, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createWebGLRenderState(canvas, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xeeddccff,
 });
 registerRenderer(state, QuadBatchKind, defaultWebGLQuadBatchRenderer);
