@@ -243,7 +243,7 @@ describe('installAdaptHook', () => {
 
 describe('isRenderNodeDirty', () => {
   it('returns false when source and parent are clean', () => {
-    const state = createRenderState();
+    const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
     const source = createDisplayObject();
     const data = createDisplayObjectRenderNode(state, source);
     data.lastAppearanceID = getAppearanceRevision(source);
@@ -361,7 +361,7 @@ describe('prepareDisplayObjectRender', () => {
   });
 
   it('returns false when tree is clean', () => {
-    const state = createRenderState();
+    const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
     const root = createDisplayObject();
     prepareDisplayObjectRender(state, root);
 
@@ -417,7 +417,7 @@ describe('prepareSpriteRender', () => {
   });
 
   it('returns false when tree is clean', () => {
-    const state = createRenderState();
+    const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
     const root = createSprite();
     prepareSpriteRender(state, root);
 

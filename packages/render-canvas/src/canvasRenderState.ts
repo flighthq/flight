@@ -15,6 +15,7 @@ export function createCanvasRenderState(
     pixelRatio: options.pixelRatio ?? (window.devicePixelRatio || 1),
     renderTransform2D: options.renderTransform ?? createMatrix(),
     roundPixels: options.roundPixels ?? false,
+    sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
   }) as CanvasRenderStateInternal;
 
   if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);

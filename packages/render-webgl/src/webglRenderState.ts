@@ -39,6 +39,7 @@ export function createWebGLRenderState(
     pixelRatio: options.pixelRatio ?? (window.devicePixelRatio || 1),
     renderTransform2D: createMatrix(),
     roundPixels: options.roundPixels ?? false,
+    sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
   }) as WebGLRenderStateInternal;
 
   if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);

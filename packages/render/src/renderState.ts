@@ -24,6 +24,7 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
     rendererMap: obj?.rendererMap ?? new Map(),
     rendererMapID: obj?.rendererMapID ?? 0,
     roundPixels: obj?.roundPixels ?? false,
+    sceneGraphSyncPolicy: obj?.sceneGraphSyncPolicy ?? 'refreshDerivedState',
     tempStack: obj?.tempStack ?? [],
   });
 }
