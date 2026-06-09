@@ -2,7 +2,6 @@
 import type { CanvasRenderState, DisplayObjectRenderer, DisplayObjectRenderNode, Video } from '@flighthq/types';
 
 import { drawCanvasDisplayObject, drawCanvasDisplayObjectMask } from './canvasDisplayObject';
-import { setCanvasBlendMode } from './canvasMaterials';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasVideo(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
@@ -11,7 +10,7 @@ export function drawCanvasVideo(state: CanvasRenderState, renderNode: DisplayObj
   const element = source.data.source?.element;
   if (element !== undefined && element !== null && element.readyState >= 2) {
     const context = state.context;
-    setCanvasBlendMode(state, renderNode.blendMode);
+    state.applyBlendMode?.(state, renderNode.blendMode);
     context.globalAlpha = renderNode.alpha;
     setCanvasTransform(state, context, renderNode.transform2D);
     if (!state.allowSmoothing || !source.data.smoothing) {

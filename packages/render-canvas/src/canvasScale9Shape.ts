@@ -8,7 +8,6 @@ import type {
 } from '@flighthq/types';
 
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
-import { setCanvasBlendMode } from './canvasMaterials';
 import { buildScale9Mapper, type Scale9Mapper } from './canvasScale9Mapper';
 import { renderCanvasShapeCommands } from './canvasShape';
 import { setCanvasTransform } from './canvasTransform';
@@ -24,7 +23,7 @@ export function drawCanvasScale9Shape(state: CanvasRenderState, renderNode: Disp
   if (commands.length === 0) return;
 
   const ctx = state.context;
-  setCanvasBlendMode(state, renderNode.blendMode);
+  state.applyBlendMode?.(state, renderNode.blendMode);
   ctx.globalAlpha = renderNode.alpha;
 
   const { scaleX, scaleY } = source;

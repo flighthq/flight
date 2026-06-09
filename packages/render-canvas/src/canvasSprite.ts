@@ -2,8 +2,6 @@ import { createNullRendererData, getSpriteRenderNode, isRenderNodeVisible } from
 import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
 import type { CanvasRenderState, Sprite, SpriteNode, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
-import { setCanvasBlendMode } from './canvasMaterials';
-
 export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRenderNode): void {
   const source = spriteNode.source as Sprite;
   const { atlas, id } = source.data;
@@ -15,7 +13,7 @@ export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRen
   const region = regions[id];
   if (region.width <= 0 || region.height <= 0) return;
 
-  setCanvasBlendMode(state, spriteNode.blendMode);
+  state.applyBlendMode?.(state, spriteNode.blendMode);
 
   const context = state.context;
   const transform = spriteNode.transform2D;

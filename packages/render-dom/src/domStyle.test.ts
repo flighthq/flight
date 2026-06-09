@@ -3,6 +3,7 @@ import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { BlendMode } from '@flighthq/types';
 
+import { enableDOMBlendModeSupport } from './domMaterials';
 import { createDOMRenderState } from './domRenderState';
 import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
 import type { DOMRenderStateInternal } from './internal';
@@ -50,8 +51,9 @@ describe('applyDOMStyle', () => {
     expect(el.style.opacity).toBe('');
   });
 
-  it('sets mixBlendMode for non-default blend mode', () => {
+  it('sets mixBlendMode for non-default blend mode when blend support is enabled', () => {
     const state = makeState();
+    enableDOMBlendModeSupport(state);
     const el = document.createElement('div');
     const obj = createDisplayObject();
     const node = getOrCreateDisplayObjectRenderNode(state, obj);
@@ -60,6 +62,18 @@ describe('applyDOMStyle', () => {
     applyDOMStyle(state, el, node);
 
     expect(el.style.mixBlendMode).toBe('multiply');
+  });
+
+  it('leaves mixBlendMode untouched when blend support is not enabled', () => {
+    const state = makeState();
+    const el = document.createElement('div');
+    const obj = createDisplayObject();
+    const node = getOrCreateDisplayObjectRenderNode(state, obj);
+    node.blendMode = BlendMode.Multiply;
+
+    applyDOMStyle(state, el, node);
+
+    expect(el.style.mixBlendMode).toBe('');
   });
 });
 

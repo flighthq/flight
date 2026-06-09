@@ -12,7 +12,7 @@ import type {
 } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { bindWebGLTexture, drawWebGLQuad, setWebGLBlendMode, useWebGLProgram } from './webglDraw';
+import { bindWebGLTexture, drawWebGLQuad, useWebGLProgram } from './webglDraw';
 import { setWebGLAttribs, setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
 
 export function drawWebGLImageCacheResult(
@@ -28,7 +28,7 @@ export function drawWebGLImageCacheResult(
 
   const internal = state as WebGLRenderStateInternal;
   useWebGLProgram(internal);
-  setWebGLBlendMode(internal, renderNode.blendMode);
+  internal.applyBlendMode?.(internal, renderNode.blendMode);
   bindWebGLTexture(internal, src);
 
   const quadTransform = acquireMatrix();
@@ -55,7 +55,7 @@ function drawWebGLRenderImageCache(state: RenderState, renderNode: DisplayObject
 
   const internal = state as WebGLRenderStateInternal;
   useWebGLProgram(internal);
-  setWebGLBlendMode(state as WebGLRenderState, renderNode.blendMode);
+  internal.applyBlendMode?.(internal, renderNode.blendMode);
   bindWebGLTexture(internal, src);
 
   const { gl, shaderLoc, matrixArray } = internal;

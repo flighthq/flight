@@ -1,7 +1,6 @@
 ﻿import { createNullRendererData } from '@flighthq/render';
 import type { DisplayObjectRenderer, DisplayObjectRenderNode, DOMRenderState, HTMLView } from '@flighthq/types';
 
-import { setDOMBlendMode } from './domMaterials';
 import { setDOMRendererElement } from './domStyle';
 import { setDOMTransform } from './domTransform';
 
@@ -23,7 +22,7 @@ export function drawHTMLView(state: DOMRenderState, renderNode: DisplayObjectRen
   element.style.height = `${data.height}px`;
   setDOMTransform(element, renderNode.transform2D, state.roundPixels);
   element.style.opacity = renderNode.alpha < 1 ? String(renderNode.alpha) : '';
-  setDOMBlendMode(element, renderNode.blendMode);
+  state.applyBlendMode?.(element, renderNode.blendMode);
 
   setDOMRendererElement(state, element);
 }

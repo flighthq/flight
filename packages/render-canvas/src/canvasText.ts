@@ -11,7 +11,6 @@ import type {
 } from '@flighthq/types';
 
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
-import { setCanvasBlendMode } from './canvasMaterials';
 import { setCanvasTransform } from './canvasTransform';
 
 const LAYOUT_WIDTH = 10000;
@@ -24,7 +23,7 @@ export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObje
   if (text.length === 0) return;
 
   const context = state.context;
-  setCanvasBlendMode(state, renderNode.blendMode);
+  state.applyBlendMode?.(state, renderNode.blendMode);
   context.globalAlpha = renderNode.alpha;
   setCanvasTransform(state, context, renderNode.transform2D);
 

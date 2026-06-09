@@ -1,6 +1,5 @@
 import { getAppearanceRevision } from '@flighthq/scene';
 import type { HasAppearance, RenderNode, RenderState, SceneNode } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
 
 export function updateRenderNodeAppearance(state: RenderState, data: RenderNode, parentData?: RenderNode): boolean {
   const appearanceID = getAppearanceRevision(data.source as SceneNode);
@@ -23,7 +22,7 @@ function recalculateAppearance(state: RenderState, data: RenderNode, parentData?
     data.alpha = source.alpha * parentData.alpha;
     if (data.alpha <= 0) return;
     state.appearanceHooks?.update(state, data, parentData);
-    data.blendMode = parentData.blendMode !== BlendMode.Normal ? parentData.blendMode : source.blendMode;
+    data.blendMode = source.blendMode;
   } else {
     data.visible = source.visible;
     if (!data.visible) return;

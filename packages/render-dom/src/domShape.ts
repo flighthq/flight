@@ -11,7 +11,6 @@ import type {
   Shape,
 } from '@flighthq/types';
 
-import { setDOMBlendMode } from './domMaterials';
 import { initDOMElement, setDOMRendererElement } from './domStyle';
 import { setDOMTransformWithOffset } from './domTransform';
 
@@ -54,7 +53,7 @@ export function drawDOMShape(state: DOMRenderState, renderNode: DisplayObjectRen
   renderCanvasShapeCommands(ctx, commands);
 
   data.canvas.style.opacity = renderNode.alpha < 1 ? String(renderNode.alpha) : '';
-  setDOMBlendMode(data.canvas, renderNode.blendMode);
+  state.applyBlendMode?.(data.canvas, renderNode.blendMode);
   setDOMTransformWithOffset(data.canvas, renderNode.transform2D, bounds.x, bounds.y, state.roundPixels);
 
   setDOMRendererElement(state, data.canvas);

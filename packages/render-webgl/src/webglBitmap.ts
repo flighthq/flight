@@ -2,7 +2,7 @@
 import type { Bitmap, DisplayObjectRenderer, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { bindWebGLTexture, drawWebGLQuad, setWebGLBlendMode, useWebGLProgram } from './webglDraw';
+import { bindWebGLTexture, drawWebGLQuad, useWebGLProgram } from './webglDraw';
 import { selectWebGLShader } from './webglShaderBinding';
 
 export function drawWebGLBitmap(state: RenderState, renderNode: DisplayObjectRenderNode): void {
@@ -13,7 +13,7 @@ export function drawWebGLBitmap(state: RenderState, renderNode: DisplayObjectRen
 
   const shader = selectWebGLShader(internal, renderNode);
   useWebGLProgram(internal, shader);
-  setWebGLBlendMode(internal, renderNode.blendMode);
+  internal.applyBlendMode?.(internal, renderNode.blendMode);
   bindWebGLTexture(internal, imageSource.src);
 
   shader.bind(internal.gl, internal, renderNode);

@@ -12,7 +12,6 @@ import type {
   Scale9Shape,
 } from '@flighthq/types';
 
-import { setDOMBlendMode } from './domMaterials';
 import { buildDOMScale9Mapper } from './domScale9Mapper';
 import { drawDOMShape } from './domShape';
 import { initDOMElement, setDOMRendererElement } from './domStyle';
@@ -64,7 +63,7 @@ export function drawDOMScale9Shape(state: DOMRenderState, renderNode: DisplayObj
 
   data.canvas.style.opacity = renderNode.alpha < 1 ? String(renderNode.alpha) : '';
   data.canvas.style.imageRendering = state.allowSmoothing ? '' : 'pixelated';
-  setDOMBlendMode(data.canvas, renderNode.blendMode);
+  state.applyBlendMode?.(data.canvas, renderNode.blendMode);
   setStrippedDOMTransform(data.canvas, renderNode.transform2D, source.scaleX, source.scaleY, state.roundPixels);
   setDOMRendererElement(state, data.canvas);
 }

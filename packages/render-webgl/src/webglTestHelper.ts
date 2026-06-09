@@ -118,6 +118,7 @@ export function makeWebGLState(options?: { allowSmoothing?: boolean; backgroundC
   Object.assign(state, {
     canvas,
     gl,
+    applyBlendMode: null,
     currentBlendMode: null,
     currentMaskDepth: 0,
     currentProgram: null,

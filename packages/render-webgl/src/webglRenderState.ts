@@ -43,6 +43,7 @@ export function createWebGLRenderState(
 
   if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
 
+  state.applyBlendMode = null;
   state.canvas = canvas;
   state.gl = gl;
   state.currentBlendMode = null;
