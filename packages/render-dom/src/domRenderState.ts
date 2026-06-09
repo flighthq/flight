@@ -13,6 +13,7 @@ export function createDOMRenderState(element: HTMLElement, options: Partial<DOMR
 
   if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
 
+  state.applyBlendMode = null;
   state.element = element;
   state.currentBlendMode = null;
   state.allowSmoothing = options.imageSmoothingEnabled ?? true;

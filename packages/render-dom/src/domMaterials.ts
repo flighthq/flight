@@ -1,33 +1,33 @@
-import { BlendMode } from '@flighthq/types';
+import { enableRenderFeatures } from '@flighthq/render';
+import type { DOMRenderState } from '@flighthq/types';
+import { BlendMode, RenderFeatures } from '@flighthq/types';
 
-export function setDOMBlendMode(element: HTMLElement, value: BlendMode | null): void {
-  switch (value) {
-    case BlendMode.Add:
-      element.style.mixBlendMode = 'screen';
-      break;
-    case BlendMode.Darken:
-      element.style.mixBlendMode = 'darken';
-      break;
-    case BlendMode.Difference:
-      element.style.mixBlendMode = 'difference';
-      break;
-    case BlendMode.Hardlight:
-      element.style.mixBlendMode = 'hard-light';
-      break;
-    case BlendMode.Lighten:
-      element.style.mixBlendMode = 'lighten';
-      break;
-    case BlendMode.Multiply:
-      element.style.mixBlendMode = 'multiply';
-      break;
-    case BlendMode.Overlay:
-      element.style.mixBlendMode = 'overlay';
-      break;
-    case BlendMode.Screen:
-      element.style.mixBlendMode = 'screen';
-      break;
-    default:
-      element.style.mixBlendMode = '';
-      break;
-  }
+// Auditable map from a blend-mode intent to the CSS mix-blend-mode value that realizes
+// it. `null` means there is no faithful CSS equivalent, so the mode degrades to normal
+// compositing (the empty string, i.e. mix-blend-mode: normal).
+const DOM_BLEND_MODE: Record<BlendMode, string | null> = {
+  [BlendMode.Add]: 'screen',
+  [BlendMode.Alpha]: null,
+  [BlendMode.Darken]: 'darken',
+  [BlendMode.Difference]: 'difference',
+  [BlendMode.Erase]: null,
+  [BlendMode.Hardlight]: 'hard-light',
+  [BlendMode.Invert]: null,
+  [BlendMode.Layer]: '',
+  [BlendMode.Lighten]: 'lighten',
+  [BlendMode.Multiply]: 'multiply',
+  [BlendMode.Normal]: '',
+  [BlendMode.Overlay]: 'overlay',
+  [BlendMode.Screen]: 'screen',
+  [BlendMode.Shader]: null,
+  [BlendMode.Subtract]: null,
+};
+
+export function applyDOMBlendMode(element: HTMLElement, value: BlendMode | null): void {
+  element.style.mixBlendMode = (value !== null ? DOM_BLEND_MODE[value] : null) ?? '';
+}
+
+export function enableDOMBlendModeSupport(state: DOMRenderState): void {
+  state.applyBlendMode = applyDOMBlendMode;
+  enableRenderFeatures(state, RenderFeatures.BlendMode);
 }

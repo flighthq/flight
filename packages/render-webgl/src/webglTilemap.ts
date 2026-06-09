@@ -2,7 +2,7 @@
 import type { RenderState, SpriteRenderer, SpriteRenderNode, Tilemap } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { bindWebGLTexture, drawWebGLQuad, setWebGLBlendMode, useWebGLProgram } from './webglDraw';
+import { bindWebGLTexture, drawWebGLQuad, useWebGLProgram } from './webglDraw';
 import { setWebGLBaseUniforms, setWebGLMatrixFromValues } from './webglShader';
 
 export function drawWebGLTilemap(state: RenderState, tilemapNode: SpriteRenderNode): void {
@@ -16,7 +16,7 @@ export function drawWebGLTilemap(state: RenderState, tilemapNode: SpriteRenderNo
   if (columns === 0 || rows === 0) return;
 
   useWebGLProgram(internal);
-  setWebGLBlendMode(internal, tilemapNode.blendMode);
+  internal.applyBlendMode?.(internal, tilemapNode.blendMode);
   bindWebGLTexture(internal, atlas.image.src);
 
   const gl = internal.gl;

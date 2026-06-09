@@ -7,6 +7,7 @@ import {
   defaultCanvasRichTextRenderer,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
+  enableCanvasBlendModeSupport,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
@@ -24,6 +25,7 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xffffffff,
   contextAttributes: { alpha: false },
 });
+enableCanvasBlendModeSupport(state);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
 registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);

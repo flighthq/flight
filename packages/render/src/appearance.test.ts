@@ -1,5 +1,6 @@
 import { invalidateAppearance } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
+import { BlendMode } from '@flighthq/types';
 
 import { updateRenderNodeAppearance } from './appearance';
 import type { RenderNodeStateInternal } from './internal';
@@ -91,18 +92,19 @@ describe('updateRenderNodeAppearance', () => {
     expect(data.appearanceFrameID).toBe(7);
   });
 
-  it('propagates blend mode from parent', () => {
+  it("uses the node's own blend mode and does not inherit from the parent", () => {
     const state = createRenderState();
     (state as RenderNodeStateInternal).currentFrameID = 1;
     const obj = createDisplayObject();
+    obj.blendMode = BlendMode.Screen;
     const parentObj = createDisplayObject();
     const data = createRenderNode(state, obj);
     const parentData = createRenderNode(state, parentObj);
-    parentData.blendMode = 'multiply' as any;
+    parentData.blendMode = BlendMode.Multiply;
     parentData.visible = true;
     parentData.alpha = 1;
     parentData.appearanceFrameID = state.currentFrameID;
     updateRenderNodeAppearance(state, data, parentData);
-    expect(data.blendMode).toBe('multiply');
+    expect(data.blendMode).toBe(BlendMode.Screen);
   });
 });

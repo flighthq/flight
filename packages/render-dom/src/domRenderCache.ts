@@ -8,7 +8,6 @@ import type {
   RenderState,
 } from '@flighthq/types';
 
-import { setDOMBlendMode } from './domMaterials';
 import { initDOMElement, setDOMRendererElement } from './domStyle';
 import { setDOMTransformWithOffset } from './domTransform';
 
@@ -46,7 +45,7 @@ function drawDOMRenderImageCache(state: RenderState, data: DisplayObjectRenderNo
   setDOMTransformWithOffset(canvas, data.transform2D, 0, 0, domState.roundPixels);
   canvas.style.opacity = data.alpha < 1 ? String(data.alpha) : '';
   canvas.style.imageRendering = state.allowSmoothing ? '' : 'pixelated';
-  setDOMBlendMode(canvas, data.blendMode);
+  domState.applyBlendMode?.(canvas, data.blendMode);
 
   setDOMRendererElement(state as DOMRenderState, canvas);
 }

@@ -1,6 +1,5 @@
 ﻿import type { DOMRenderState, RenderNode2D } from '@flighthq/types';
 
-import { setDOMBlendMode } from './domMaterials';
 import { setDOMTransform } from './domTransform';
 import type { DOMRenderStateInternal } from './internal';
 
@@ -8,7 +7,7 @@ export function applyDOMStyle(state: DOMRenderState, element: HTMLElement, node:
   setDOMTransform(element, node.transform2D, state.roundPixels);
   element.style.opacity = node.alpha < 1 ? String(node.alpha) : '';
   element.style.imageRendering = state.allowSmoothing ? '' : 'pixelated';
-  setDOMBlendMode(element, node.blendMode);
+  state.applyBlendMode?.(element, node.blendMode);
 }
 
 export function initDOMElement(element: HTMLElement): void {

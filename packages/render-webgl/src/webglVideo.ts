@@ -2,7 +2,7 @@
 import type { DisplayObjectRenderer, DisplayObjectRenderNode, RenderState, Video } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { createWebGLTexture, drawWebGLQuad, setWebGLBlendMode, useWebGLProgram } from './webglDraw';
+import { createWebGLTexture, drawWebGLQuad, useWebGLProgram } from './webglDraw';
 
 export function drawWebGLVideo(state: RenderState, renderNode: DisplayObjectRenderNode): void {
   const internal = state as WebGLRenderStateInternal;
@@ -17,7 +17,7 @@ export function drawWebGLVideo(state: RenderState, renderNode: DisplayObjectRend
   const { gl, textureCache } = internal;
 
   useWebGLProgram(internal);
-  setWebGLBlendMode(internal, renderNode.blendMode);
+  internal.applyBlendMode?.(internal, renderNode.blendMode);
 
   let texture = textureCache.get(element);
   if (!texture) {

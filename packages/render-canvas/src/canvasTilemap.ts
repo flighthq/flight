@@ -1,8 +1,6 @@
 ﻿import { createNullRendererData } from '@flighthq/render';
 import type { CanvasRenderState, SpriteRenderer, SpriteRenderNode, Tilemap } from '@flighthq/types';
 
-import { setCanvasBlendMode } from './canvasMaterials';
-
 export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: SpriteRenderNode): void {
   const source = tilemapNode.source as Tilemap;
   const { tileset, columns, rows, tiles } = source.data;
@@ -12,7 +10,7 @@ export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: SpriteR
   if (atlas === null || atlas.image === null || atlas.image.src === null) return;
   if (columns === 0 || rows === 0) return;
 
-  setCanvasBlendMode(state, tilemapNode.blendMode);
+  state.applyBlendMode?.(state, tilemapNode.blendMode);
 
   const context = state.context;
   const image = atlas.image.src;

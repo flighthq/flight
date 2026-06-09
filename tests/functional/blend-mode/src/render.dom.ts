@@ -5,6 +5,7 @@ import {
   defaultDOMBitmapRenderer,
   defaultDOMRichTextRenderer,
   defaultDOMShapeRenderer,
+  enableDOMBlendModeSupport,
   prepareDisplayObjectRender,
   registerRenderer,
   renderDOMBackground,
@@ -20,6 +21,7 @@ container.style.height = '700px';
 document.body.appendChild(container);
 
 export const state = createDOMRenderState(container, { backgroundColor: 0xffffffff });
+enableDOMBlendModeSupport(state);
 registerRenderer(state, ShapeKind, defaultDOMShapeRenderer);
 registerRenderer(state, BitmapKind, defaultDOMBitmapRenderer);
 registerRenderer(state, RichTextKind, defaultDOMRichTextRenderer);

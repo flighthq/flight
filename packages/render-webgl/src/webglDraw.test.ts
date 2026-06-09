@@ -1,14 +1,59 @@
+import { BlendMode } from '@flighthq/types';
+
 import {
+  applyWebGLBlendMode,
   bindWebGLTexture,
   createWebGLTexture,
   drawWebGLQuad,
   setQuadMatrixFromOffset,
-  setWebGLBlendMode,
   updateWebGLTexture,
   useWebGLProgram,
 } from './webglDraw';
 import { registerWebGLBitmapShader } from './webglShaderRegistry';
 import { makeWebGLState } from './webglTestHelper';
+
+describe('applyWebGLBlendMode', () => {
+  it('does not call blendFunc when blend mode has not changed', () => {
+    const { state, gl } = makeWebGLState();
+    state.currentBlendMode = BlendMode.Normal;
+    applyWebGLBlendMode(state, BlendMode.Normal);
+    expect(gl.blendFunc).not.toHaveBeenCalled();
+  });
+
+  it('sets normal blend (ONE, ONE_MINUS_SRC_ALPHA) for BlendMode.Normal', () => {
+    const { state, gl } = makeWebGLState();
+    applyWebGLBlendMode(state, BlendMode.Normal);
+    const g = gl as unknown as { ONE: number; ONE_MINUS_SRC_ALPHA: number };
+    expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_ALPHA);
+  });
+
+  it('sets additive blend (ONE, ONE) for BlendMode.Add', () => {
+    const { state, gl } = makeWebGLState();
+    applyWebGLBlendMode(state, BlendMode.Add);
+    const g = gl as unknown as { ONE: number };
+    expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE);
+  });
+
+  it('falls back to normal blend for a mode with no fixed-function equivalent', () => {
+    const { state, gl } = makeWebGLState();
+    applyWebGLBlendMode(state, BlendMode.Multiply);
+    const g = gl as unknown as { ONE: number; ONE_MINUS_SRC_ALPHA: number };
+    expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_ALPHA);
+  });
+
+  it('updates currentBlendMode after the change', () => {
+    const { state } = makeWebGLState();
+    applyWebGLBlendMode(state, BlendMode.Add);
+    expect(state.currentBlendMode).toBe(BlendMode.Add);
+  });
+
+  it('calls blendFunc again when mode switches', () => {
+    const { state, gl } = makeWebGLState();
+    applyWebGLBlendMode(state, BlendMode.Normal);
+    applyWebGLBlendMode(state, BlendMode.Add);
+    expect(gl.blendFunc).toHaveBeenCalledTimes(2);
+  });
+});
 
 describe('bindWebGLTexture', () => {
   it('creates a new texture for an uncached image source', () => {
@@ -195,42 +240,6 @@ describe('setQuadMatrixFromOffset', () => {
     setQuadMatrixFromOffset(state, 2, 0, 0, 2, 0, 0, 5, 0);
     // tx * 2/200 - 1 = 10 * 0.01 - 1 = -0.9
     expect(state.matrixArray[6]).toBeCloseTo(-0.9);
-  });
-});
-
-describe('setWebGLBlendMode', () => {
-  it('does not call blendFunc when blend mode has not changed', () => {
-    const { state, gl } = makeWebGLState();
-    state.currentBlendMode = 0;
-    setWebGLBlendMode(state, 0);
-    expect(gl.blendFunc).not.toHaveBeenCalled();
-  });
-
-  it('sets normal blend (ONE, ONE_MINUS_SRC_ALPHA) for mode 0', () => {
-    const { state, gl } = makeWebGLState();
-    setWebGLBlendMode(state, 0);
-    const g = gl as unknown as { ONE: number; ONE_MINUS_SRC_ALPHA: number };
-    expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_ALPHA);
-  });
-
-  it('sets additive blend (ONE, ONE) for mode 1', () => {
-    const { state, gl } = makeWebGLState();
-    setWebGLBlendMode(state, 1);
-    const g = gl as unknown as { ONE: number };
-    expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE);
-  });
-
-  it('updates currentBlendMode after the change', () => {
-    const { state } = makeWebGLState();
-    setWebGLBlendMode(state, 1);
-    expect(state.currentBlendMode).toBe(1);
-  });
-
-  it('calls blendFunc again when mode switches', () => {
-    const { state, gl } = makeWebGLState();
-    setWebGLBlendMode(state, 0);
-    setWebGLBlendMode(state, 1);
-    expect(gl.blendFunc).toHaveBeenCalledTimes(2);
   });
 });
 

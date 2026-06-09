@@ -2,7 +2,7 @@
 import type { RenderState, Sprite, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { bindWebGLTexture, drawWebGLQuad, setWebGLBlendMode, useWebGLProgram } from './webglDraw';
+import { bindWebGLTexture, drawWebGLQuad, useWebGLProgram } from './webglDraw';
 import { setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
 
 export function drawWebGLSpriteNode(state: RenderState, spriteNode: SpriteRenderNode): void {
@@ -18,7 +18,7 @@ export function drawWebGLSpriteNode(state: RenderState, spriteNode: SpriteRender
   if (region.width <= 0 || region.height <= 0) return;
 
   useWebGLProgram(internal);
-  setWebGLBlendMode(internal, spriteNode.blendMode);
+  internal.applyBlendMode?.(internal, spriteNode.blendMode);
   bindWebGLTexture(internal, atlas.image.src);
 
   const gl = internal.gl;

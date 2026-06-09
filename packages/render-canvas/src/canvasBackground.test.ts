@@ -52,12 +52,14 @@ describe('renderCanvasBackground', () => {
     expect(state.context.globalAlpha).toBe(1);
   });
 
-  it('restores the previous blend mode after rendering', () => {
+  it('resets to normal compositing directly, without using the blend-mode map', () => {
     const { state } = makeState();
     state.currentBlendMode = BlendMode.Multiply;
+    state.context.globalCompositeOperation = 'multiply';
 
     renderCanvasBackground(state);
 
-    expect(state.currentBlendMode).toBe(BlendMode.Multiply);
+    expect(state.currentBlendMode).toBe(BlendMode.Normal);
+    expect(state.context.globalCompositeOperation).toBe('source-over');
   });
 });

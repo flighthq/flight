@@ -22,7 +22,6 @@ import type {
 } from '@flighthq/types';
 
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
-import { setCanvasBlendMode } from './canvasMaterials';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasRichText(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
@@ -31,7 +30,7 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
   const source = renderNode.source as RichText;
   const data = source.data;
   const context = state.context;
-  setCanvasBlendMode(state, renderNode.blendMode);
+  state.applyBlendMode?.(state, renderNode.blendMode);
   context.globalAlpha = renderNode.alpha;
   setCanvasTransform(state, context, renderNode.transform2D);
 

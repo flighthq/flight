@@ -8,7 +8,6 @@ import type {
 } from '@flighthq/types';
 
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
-import { setCanvasBlendMode } from './canvasMaterials';
 import { getCanvasShapeCommand } from './canvasShapeRegistry';
 import { setCanvasTransform } from './canvasTransform';
 
@@ -20,7 +19,7 @@ export function drawCanvasShape(state: CanvasRenderState, renderNode: DisplayObj
   if (commands.length === 0) return;
 
   const context = state.context;
-  setCanvasBlendMode(state, renderNode.blendMode);
+  state.applyBlendMode?.(state, renderNode.blendMode);
   context.globalAlpha = renderNode.alpha;
   setCanvasTransform(state, context, renderNode.transform2D);
 

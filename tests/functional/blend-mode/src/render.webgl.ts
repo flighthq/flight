@@ -7,6 +7,7 @@ import {
   defaultWebGLRichTextRenderer,
   defaultWebGLShapeCommands,
   defaultWebGLShapeRenderer,
+  enableWebGLBlendModeSupport,
   prepareDisplayObjectRender,
   registerRenderer,
   registerWebGLShapeCommands,
@@ -24,6 +25,7 @@ export const state = createWebGLRenderState(canvas, {
   backgroundColor: 0xffffffff,
   contextAttributes: { alpha: false },
 });
+enableWebGLBlendModeSupport(state);
 registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
 registerWebGLShapeCommands(defaultWebGLShapeCommands);
 registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);

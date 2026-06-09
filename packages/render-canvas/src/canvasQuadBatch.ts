@@ -3,15 +3,13 @@ import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
 import { createNullRendererData } from '@flighthq/render';
 import type { CanvasRenderState, QuadBatch, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
-import { setCanvasBlendMode } from './canvasMaterials';
-
 export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: SpriteRenderNode): void {
   const source = quadBatch.source as QuadBatch;
   const data = source.data;
   const { atlas, instanceCount, ids, transforms } = data;
   if (atlas === null || atlas.image === null || atlas.image.src === null || instanceCount === 0) return;
 
-  setCanvasBlendMode(state, quadBatch.blendMode);
+  state.applyBlendMode?.(state, quadBatch.blendMode);
 
   const context = state.context;
   const image = atlas.image.src;

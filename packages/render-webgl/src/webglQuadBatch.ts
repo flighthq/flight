@@ -4,13 +4,7 @@ import { createNullRendererData } from '@flighthq/render';
 import type { QuadBatch, RenderState, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import {
-  bindWebGLTexture,
-  drawWebGLQuad,
-  setQuadMatrixFromOffset,
-  setWebGLBlendMode,
-  useWebGLProgram,
-} from './webglDraw';
+import { bindWebGLTexture, drawWebGLQuad, setQuadMatrixFromOffset, useWebGLProgram } from './webglDraw';
 import { setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
 
 export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNode): void {
@@ -21,7 +15,7 @@ export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNo
   if (atlas === null || atlas.image === null || atlas.image.src === null || instanceCount === 0) return;
 
   useWebGLProgram(internal);
-  setWebGLBlendMode(internal, quadBatch.blendMode);
+  internal.applyBlendMode?.(internal, quadBatch.blendMode);
   bindWebGLTexture(internal, atlas.image.src);
 
   const gl = internal.gl;

@@ -1,8 +1,43 @@
+import { enableRenderFeatures } from '@flighthq/render';
 import type { WebGLRenderState } from '@flighthq/types';
+import { BlendMode, RenderFeatures } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { setWebGLAttribs, setWebGLMatrixFromValues } from './webglShader';
 import type { WebGLBitmapShader } from './webglShaderTypes';
+
+type WebGLBlendFactor = 'ONE' | 'ONE_MINUS_SRC_ALPHA';
+
+const NORMAL_BLEND: readonly [WebGLBlendFactor, WebGLBlendFactor] = ['ONE', 'ONE_MINUS_SRC_ALPHA'];
+
+// Auditable map from a blend-mode intent to the WebGL fixed-function blendFunc factors
+// (premultiplied alpha) that realize it. `null` means there is no fixed-function
+// equivalent — such modes would need shader-based blending — so the intent degrades to
+// normal compositing.
+const WEBGL_BLEND_MODE: Record<BlendMode, readonly [WebGLBlendFactor, WebGLBlendFactor] | null> = {
+  [BlendMode.Add]: ['ONE', 'ONE'],
+  [BlendMode.Alpha]: null,
+  [BlendMode.Darken]: null,
+  [BlendMode.Difference]: null,
+  [BlendMode.Erase]: null,
+  [BlendMode.Hardlight]: null,
+  [BlendMode.Invert]: null,
+  [BlendMode.Layer]: NORMAL_BLEND,
+  [BlendMode.Lighten]: null,
+  [BlendMode.Multiply]: null,
+  [BlendMode.Normal]: NORMAL_BLEND,
+  [BlendMode.Overlay]: null,
+  [BlendMode.Screen]: null,
+  [BlendMode.Shader]: null,
+  [BlendMode.Subtract]: null,
+};
+
+export function applyWebGLBlendMode(state: WebGLRenderState, blendMode: BlendMode | null): void {
+  if (blendMode === state.currentBlendMode) return;
+  state.currentBlendMode = blendMode;
+  const [src, dst] = (blendMode !== null ? WEBGL_BLEND_MODE[blendMode] : null) ?? NORMAL_BLEND;
+  state.gl.blendFunc(state.gl[src], state.gl[dst]);
+}
 
 export function bindWebGLTexture(state: WebGLRenderStateInternal, imageSource: CanvasImageSource): WebGLTexture {
   const { gl, textureCache } = state;
@@ -77,6 +112,11 @@ export function drawWebGLQuad(
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 }
 
+export function enableWebGLBlendModeSupport(state: WebGLRenderState): void {
+  state.applyBlendMode = applyWebGLBlendMode;
+  enableRenderFeatures(state, RenderFeatures.BlendMode);
+}
+
 export function setQuadMatrixFromOffset(
   state: WebGLRenderStateInternal,
   a: number,
@@ -100,18 +140,6 @@ export function setQuadMatrixFromOffset(
     ty + b * dx + d * dy,
     state.renderTargetViewport ?? state.canvas,
   );
-}
-
-export function setWebGLBlendMode(state: WebGLRenderState, blendMode: number | null): void {
-  if (blendMode === state.currentBlendMode) return;
-  state.currentBlendMode = blendMode;
-  const gl = state.gl;
-  // BlendMode.Add = 1, Normal = 0 (matches render-canvas ordering)
-  if (blendMode === 1 /* Add */) {
-    gl.blendFunc(gl.ONE, gl.ONE);
-  } else {
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-  }
 }
 
 export function updateWebGLTexture(
