@@ -15,6 +15,7 @@
     "packages/**/__tests__/**/*.ts",
     "examples/**/src/**/*.ts",
     "tests/**/*.test.ts",
+    "tests/setup/**/*.ts",
     "scripts/**/*.ts"
   ],
   "exclude": ["node_modules", "dist", ".claude"]
