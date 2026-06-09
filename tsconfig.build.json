@@ -28,6 +28,7 @@
     { "path": "./packages/timeline-spritesheet" },
     { "path": "./packages/tween" },
     { "path": "./packages/tween-easing" },
-    { "path": "./packages/types" }
+    { "path": "./packages/types" },
+    { "path": "./packages/filters" }
   ]
 }
