@@ -1,3 +1,5 @@
+import type { SceneGraphSyncPolicy } from './RenderState';
+
 export interface WebGLRenderOptions {
   allowSmoothing?: boolean;
   antialias?: boolean;
@@ -7,4 +9,5 @@ export interface WebGLRenderOptions {
   pixelRatio?: number;
   powerPreference?: WebGLPowerPreference;
   roundPixels?: boolean;
+  sceneGraphSyncPolicy?: SceneGraphSyncPolicy;
 }

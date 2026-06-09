@@ -123,6 +123,7 @@ export function isRenderNodeDirty(
     parentData !== undefined &&
     (parentData.transformFrameID === state.currentFrameID || parentData.appearanceFrameID === state.currentFrameID);
   const localDirty =
+    state.sceneGraphSyncPolicy === 'refreshDerivedState' ||
     data.lastLocalTransformID !== getLocalTransformRevision(source as SceneNode) ||
     data.lastAppearanceID !== getAppearanceRevision(source as SceneNode);
   return parentDirty || localDirty;

@@ -9,6 +9,7 @@ export function createDOMRenderState(element: HTMLElement, options: Partial<DOMR
     pixelRatio: options.pixelRatio ?? window.devicePixelRatio | 1,
     renderTransform2D: createMatrix(),
     roundPixels: options.roundPixels ?? false,
+    sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
   }) as DOMRenderStateInternal;
 
   if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);

@@ -8,6 +8,15 @@ import type { Renderer } from './Renderer';
 import type { RenderFeatures } from './RenderFeatures';
 import type { RenderNode } from './RenderNode';
 
+/**
+ * Controls whether a subsystem refreshes derived scene graph state from raw
+ * fields before use, or trusts invalidate* calls to mark stale derived state.
+ *
+ * Direct field writes such as `object.x = 10` require explicit invalidate*
+ * calls when this policy is "requiresInvalidation".
+ */
+export type SceneGraphSyncPolicy = 'refreshDerivedState' | 'requiresInvalidation';
+
 export interface RenderState extends Entity {
   allowSmoothing: boolean;
   appearanceHooks: AppearanceHooks | null;
@@ -28,6 +37,7 @@ export interface RenderState extends Entity {
   renderFeatures: RenderFeatures;
   renderTransform2D: Matrix | null;
   readonly rendererMap: Map<symbol, Renderer>;
+  sceneGraphSyncPolicy: SceneGraphSyncPolicy;
   readonly rendererMapID: number;
   roundPixels: boolean;
   readonly tempStack: Renderable[];
