@@ -46,6 +46,7 @@ export * from './MovieClip';
 export * from './MovieClipSignals';
 export * from './Node';
 export * from './PartialNode';
+export * from './ParticleEmitter';
 export * from './PointerData';
 export * from './QuadBatch';
 export * from './QuadTransformType';
