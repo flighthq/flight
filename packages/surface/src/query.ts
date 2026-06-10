@@ -23,7 +23,7 @@ export function getSurfaceColorBoundsRectangle(
     for (let px = 0; px < source.width; px++) {
       const i = (py * source.width + px) * 4;
       const pixel =
-        (((source.data[i + 3] << 24) | (source.data[i] << 16) | (source.data[i + 1] << 8) | source.data[i + 2]) >>> 0) &
+        (((source.data[i] << 24) | (source.data[i + 1] << 16) | (source.data[i + 2] << 8) | source.data[i + 3]) >>> 0) &
         (mask >>> 0);
       const matches = pixel === maskedColor;
       if (matches === findColor) {

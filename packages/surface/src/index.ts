@@ -1,13 +1,14 @@
 export * from './compare';
+export * from './composite';
 export * from './copy';
 export * from './draw';
 export * from './encode';
 export * from './fill';
-export * from './filter';
+export * from './format';
 export * from './imageChannel';
 export * from './pixel';
 export * from './query';
 export * from './surface';
 export * from './surfaceFrom';
 export * from './transform';
-export type { Surface } from '@flighthq/types';
+export type { Surface, SurfaceRegion } from '@flighthq/types';

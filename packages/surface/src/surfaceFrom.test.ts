@@ -5,7 +5,7 @@ import { createImageSourceFromSurface, createSurfaceFromCanvas, createSurfaceFro
 
 describe('createImageSourceFromSurface', () => {
   it('returns an ImageSource with matching dimensions', () => {
-    const img = createSurface(4, 4, 0xff112233);
+    const img = createSurface(4, 4, 0x112233ff);
     const source = createImageSourceFromSurface(img);
     expect(source.width).toBe(4);
     expect(source.height).toBe(4);
