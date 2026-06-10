@@ -2,8 +2,16 @@ import type { ColorTransformLike, Surface } from '@flighthq/types';
 
 export type ThresholdOperation = '!=' | '<' | '<=' | '==' | '>' | '>=';
 
+let _scrollScratch: Uint8ClampedArray | null = null;
+
+/**
+ * Applies a color transform to a rectangular region of `source`, writing
+ * into the same region of `out`. Safe to pass the same surface as both
+ * `out` and `source` for in-place modification.
+ */
 export function applySurfaceColorTransform(
-  dest: Surface,
+  out: Surface,
+  source: Readonly<Surface>,
   x: number,
   y: number,
   width: number,
@@ -12,41 +20,46 @@ export function applySurfaceColorTransform(
 ): void {
   const x1 = Math.max(0, x);
   const y1 = Math.max(0, y);
-  const x2 = Math.min(dest.width, x + width);
-  const y2 = Math.min(dest.height, y + height);
+  const x2 = Math.min(out.width, source.width, x + width);
+  const y2 = Math.min(out.height, source.height, y + height);
   for (let py = y1; py < y2; py++) {
     for (let px = x1; px < x2; px++) {
-      const i = (py * dest.width + px) * 4;
-      dest.data[i] = Math.max(0, Math.min(255, Math.round(dest.data[i] * ct.redMultiplier + ct.redOffset)));
-      dest.data[i + 1] = Math.max(0, Math.min(255, Math.round(dest.data[i + 1] * ct.greenMultiplier + ct.greenOffset)));
-      dest.data[i + 2] = Math.max(0, Math.min(255, Math.round(dest.data[i + 2] * ct.blueMultiplier + ct.blueOffset)));
-      dest.data[i + 3] = Math.max(0, Math.min(255, Math.round(dest.data[i + 3] * ct.alphaMultiplier + ct.alphaOffset)));
+      const si = (py * source.width + px) * 4;
+      const di = (py * out.width + px) * 4;
+      const r = source.data[si];
+      const g = source.data[si + 1];
+      const b = source.data[si + 2];
+      const a = source.data[si + 3];
+      out.data[di] = Math.max(0, Math.min(255, Math.round(r * ct.redMultiplier + ct.redOffset)));
+      out.data[di + 1] = Math.max(0, Math.min(255, Math.round(g * ct.greenMultiplier + ct.greenOffset)));
+      out.data[di + 2] = Math.max(0, Math.min(255, Math.round(b * ct.blueMultiplier + ct.blueOffset)));
+      out.data[di + 3] = Math.max(0, Math.min(255, Math.round(a * ct.alphaMultiplier + ct.alphaOffset)));
     }
   }
 }
 
 export function applySurfaceThreshold(
+  out: Surface,
+  dx: number,
+  dy: number,
   source: Readonly<Surface>,
   sx: number,
   sy: number,
   sw: number,
   sh: number,
-  dest: Surface,
-  dx: number,
-  dy: number,
   operation: ThresholdOperation,
   thresholdValue: number,
   color: number = 0,
   mask: number = 0xffffffff,
   copySource: boolean = false,
 ): number {
-  const x2 = Math.min(sw, source.width - sx, dest.width - dx);
-  const y2 = Math.min(sh, source.height - sy, dest.height - dy);
+  const x2 = Math.min(sw, source.width - sx, out.width - dx);
+  const y2 = Math.min(sh, source.height - sy, out.height - dy);
   let changed = 0;
   for (let py = 0; py < y2; py++) {
     for (let px = 0; px < x2; px++) {
       const si = ((sy + py) * source.width + (sx + px)) * 4;
-      const di = ((dy + py) * dest.width + (dx + px)) * 4;
+      const di = ((dy + py) * out.width + (dx + px)) * 4;
       const pixel =
         (((source.data[si + 3] << 24) | (source.data[si] << 16) | (source.data[si + 1] << 8) | source.data[si + 2]) &
           mask) >>>
@@ -57,16 +70,16 @@ export function applySurfaceThreshold(
         const cg = (color >> 8) & 0xff;
         const cb = color & 0xff;
         const ca = (color >>> 24) & 0xff;
-        dest.data[di] = cr;
-        dest.data[di + 1] = cg;
-        dest.data[di + 2] = cb;
-        dest.data[di + 3] = ca;
+        out.data[di] = cr;
+        out.data[di + 1] = cg;
+        out.data[di + 2] = cb;
+        out.data[di + 3] = ca;
         changed++;
       } else if (copySource) {
-        dest.data[di] = source.data[si];
-        dest.data[di + 1] = source.data[si + 1];
-        dest.data[di + 2] = source.data[si + 2];
-        dest.data[di + 3] = source.data[si + 3];
+        out.data[di] = source.data[si];
+        out.data[di + 1] = source.data[si + 1];
+        out.data[di + 2] = source.data[si + 2];
+        out.data[di + 3] = source.data[si + 3];
       }
     }
   }
@@ -74,52 +87,62 @@ export function applySurfaceThreshold(
 }
 
 export function mergeSurface(
+  out: Surface,
+  dx: number,
+  dy: number,
   source: Readonly<Surface>,
   sx: number,
   sy: number,
   sw: number,
   sh: number,
-  dest: Surface,
-  dx: number,
-  dy: number,
   redMultiplier: number,
   greenMultiplier: number,
   blueMultiplier: number,
   alphaMultiplier: number,
 ): void {
-  const x2 = Math.min(sw, source.width - sx, dest.width - dx);
-  const y2 = Math.min(sh, source.height - sy, dest.height - dy);
+  const x2 = Math.min(sw, source.width - sx, out.width - dx);
+  const y2 = Math.min(sh, source.height - sy, out.height - dy);
   for (let py = 0; py < y2; py++) {
     for (let px = 0; px < x2; px++) {
       const si = ((sy + py) * source.width + (sx + px)) * 4;
-      const di = ((dy + py) * dest.width + (dx + px)) * 4;
-      dest.data[di] = Math.round((source.data[si] * redMultiplier + dest.data[di] * (256 - redMultiplier)) / 256);
-      dest.data[di + 1] = Math.round(
-        (source.data[si + 1] * greenMultiplier + dest.data[di + 1] * (256 - greenMultiplier)) / 256,
+      const di = ((dy + py) * out.width + (dx + px)) * 4;
+      out.data[di] = Math.round((source.data[si] * redMultiplier + out.data[di] * (256 - redMultiplier)) / 256);
+      out.data[di + 1] = Math.round(
+        (source.data[si + 1] * greenMultiplier + out.data[di + 1] * (256 - greenMultiplier)) / 256,
       );
-      dest.data[di + 2] = Math.round(
-        (source.data[si + 2] * blueMultiplier + dest.data[di + 2] * (256 - blueMultiplier)) / 256,
+      out.data[di + 2] = Math.round(
+        (source.data[si + 2] * blueMultiplier + out.data[di + 2] * (256 - blueMultiplier)) / 256,
       );
-      dest.data[di + 3] = Math.round(
-        (source.data[si + 3] * alphaMultiplier + dest.data[di + 3] * (256 - alphaMultiplier)) / 256,
+      out.data[di + 3] = Math.round(
+        (source.data[si + 3] * alphaMultiplier + out.data[di + 3] * (256 - alphaMultiplier)) / 256,
       );
     }
   }
 }
 
-export function scrollSurface(dest: Surface, dx: number, dy: number): void {
-  const copy = new Uint8ClampedArray(dest.data);
-  dest.data.fill(0);
-  for (let py = 0; py < dest.height; py++) {
-    const srcY = (((py - dy) % dest.height) + dest.height) % dest.height;
-    for (let px = 0; px < dest.width; px++) {
-      const srcX = (((px - dx) % dest.width) + dest.width) % dest.width;
-      const si = (srcY * dest.width + srcX) * 4;
-      const di = (py * dest.width + px) * 4;
-      dest.data[di] = copy[si];
-      dest.data[di + 1] = copy[si + 1];
-      dest.data[di + 2] = copy[si + 2];
-      dest.data[di + 3] = copy[si + 3];
+/**
+ * Scrolls the content of `out` by `(dx, dy)`, wrapping at the edges.
+ * Uses a module-level scratch buffer that grows as needed and is reused
+ * across calls.
+ */
+export function scrollSurface(out: Surface, dx: number, dy: number): void {
+  const needed = out.data.length;
+  if (_scrollScratch === null || _scrollScratch.length < needed) {
+    _scrollScratch = new Uint8ClampedArray(needed);
+  }
+  _scrollScratch.set(out.data, 0);
+
+  out.data.fill(0);
+  for (let py = 0; py < out.height; py++) {
+    const srcY = (((py - dy) % out.height) + out.height) % out.height;
+    for (let px = 0; px < out.width; px++) {
+      const srcX = (((px - dx) % out.width) + out.width) % out.width;
+      const si = (srcY * out.width + srcX) * 4;
+      const di = (py * out.width + px) * 4;
+      out.data[di] = _scrollScratch[si];
+      out.data[di + 1] = _scrollScratch[si + 1];
+      out.data[di + 2] = _scrollScratch[si + 2];
+      out.data[di + 3] = _scrollScratch[si + 3];
     }
   }
 }
