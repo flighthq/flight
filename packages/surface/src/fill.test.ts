@@ -55,4 +55,11 @@ describe('floodFillSurface', () => {
     floodFillSurface(img, 0, 0, 0xff112233);
     expect(getSurfacePixel32(img, 0, 0)).toBe(0xff112233);
   });
+
+  it('reuses the scratch buffer across calls', () => {
+    const img = createSurface(4, 4, 0xffffffff);
+    floodFillSurface(img, 0, 0, 0xff000000);
+    floodFillSurface(img, 0, 0, 0xffffffff); // second call reuses buffer
+    expect(getSurfacePixel32(img, 0, 0)).toBe(0xffffffff);
+  });
 });
