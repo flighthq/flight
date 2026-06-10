@@ -5,6 +5,7 @@ import type { TextureAtlas } from './TextureAtlas';
 export interface ParticleEmitterData extends SpriteNodeData {
   alphas: Float32Array;
   atlas: TextureAtlas | null;
+  colors: Float32Array; // [r, g, b] × capacity — interpolated from colorStart→colorEnd
   ids: Uint16Array;
   particleCount: number;
   transforms: Float32Array; // [x, y, rotation, scale] × capacity — 4 floats/particle

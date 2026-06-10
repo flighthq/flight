@@ -3,6 +3,7 @@ import type { TextureAtlas } from '@flighthq/types';
 
 import { createParticleEmitterConfig } from './particleEmitterConfig';
 import { createParticleEmitterState } from './particleEmitterState';
+import { prewarmParticleEmitter } from './prewarmParticleEmitter';
 import { updateParticleEmitter } from './updateParticleEmitter';
 
 function makeAtlas(): TextureAtlas {
@@ -135,5 +136,218 @@ describe('updateParticleEmitter', () => {
     const { transforms } = emitter.data;
     updateParticleEmitter(emitter, state, config, 1);
     expect(emitter.data.transforms).toBe(transforms);
+  });
+
+  it('interpolates color from colorStart to colorEnd over lifetime', () => {
+    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const state = createParticleEmitterState();
+    const config = createParticleEmitterConfig({
+      spawnRate: 1,
+      lifetimeMin: 1,
+      lifetimeMax: 1,
+      speedMin: 0,
+      speedMax: 0,
+      colorStartR: 1,
+      colorStartG: 0,
+      colorStartB: 0,
+      colorEndR: 0,
+      colorEndG: 0,
+      colorEndB: 1,
+    });
+    updateParticleEmitter(emitter, state, config, 1); // spawn
+    updateParticleEmitter(emitter, state, config, 0.5); // half-life
+    expect(emitter.data.colors[0]).toBeCloseTo(0.5, 1); // R
+    expect(emitter.data.colors[1]).toBeCloseTo(0, 1); // G
+    expect(emitter.data.colors[2]).toBeCloseTo(0.5, 1); // B
+  });
+
+  it('animates scale over lifetime when scaleEnd differs from 1', () => {
+    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const state = createParticleEmitterState();
+    const config = createParticleEmitterConfig({
+      spawnRate: 1,
+      lifetimeMin: 1,
+      lifetimeMax: 1,
+      speedMin: 0,
+      speedMax: 0,
+      scaleMin: 2,
+      scaleMax: 2,
+      scaleEnd: 0,
+    });
+    updateParticleEmitter(emitter, state, config, 1); // spawn with scale=2
+    updateParticleEmitter(emitter, state, config, 0.5); // half-life → scale=1
+    expect(emitter.data.transforms[3]).toBeCloseTo(1, 1);
+  });
+
+  it('rotates particles at their individual rotation speed', () => {
+    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const state = createParticleEmitterState();
+    const config = createParticleEmitterConfig({
+      spawnRate: 1,
+      lifetimeMin: 10,
+      lifetimeMax: 10,
+      speedMin: 0,
+      speedMax: 0,
+      spread: 0,
+      directionX: 0,
+      directionY: -1,
+      rotationSpeedMin: Math.PI,
+      rotationSpeedMax: Math.PI,
+    });
+    updateParticleEmitter(emitter, state, config, 1); // spawn
+    const rotBefore = emitter.data.transforms[2];
+    updateParticleEmitter(emitter, state, config, 1); // advance 1s at π rad/s
+    const rotAfter = emitter.data.transforms[2];
+    expect(rotAfter - rotBefore).toBeCloseTo(Math.PI, 3);
+  });
+
+  it('spawns particles within the circle radius', () => {
+    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const state = createParticleEmitterState();
+    const config = createParticleEmitterConfig({
+      spawnRate: 50,
+      maxParticles: 50,
+      lifetimeMin: 10,
+      lifetimeMax: 10,
+      speedMin: 0,
+      speedMax: 0,
+      emitterShape: 'circle',
+      emitterRadius: 100,
+    });
+    updateParticleEmitter(emitter, state, config, 1);
+    for (let i = 0; i < emitter.data.particleCount; i++) {
+      const x = emitter.data.transforms[i * 4];
+      const y = emitter.data.transforms[i * 4 + 1];
+      expect(Math.sqrt(x * x + y * y)).toBeLessThanOrEqual(100 + 1e-4);
+    }
+  });
+
+  it('spawns particles within the rect bounds', () => {
+    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const state = createParticleEmitterState();
+    const config = createParticleEmitterConfig({
+      spawnRate: 50,
+      maxParticles: 50,
+      lifetimeMin: 10,
+      lifetimeMax: 10,
+      speedMin: 0,
+      speedMax: 0,
+      emitterShape: 'rect',
+      emitterWidth: 200,
+      emitterHeight: 100,
+    });
+    updateParticleEmitter(emitter, state, config, 1);
+    for (let i = 0; i < emitter.data.particleCount; i++) {
+      const x = emitter.data.transforms[i * 4];
+      const y = emitter.data.transforms[i * 4 + 1];
+      expect(Math.abs(x)).toBeLessThanOrEqual(100 + 1e-4);
+      expect(Math.abs(y)).toBeLessThanOrEqual(50 + 1e-4);
+    }
+  });
+
+  it('fires a one-shot burst on the first frame', () => {
+    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const state = createParticleEmitterState();
+    const config = createParticleEmitterConfig({
+      spawnRate: 0,
+      burstCount: 20,
+      burstInterval: 0,
+      maxParticles: 100,
+      lifetimeMin: 10,
+      lifetimeMax: 10,
+    });
+    updateParticleEmitter(emitter, state, config, 1 / 60);
+    expect(emitter.data.particleCount).toBe(20);
+    updateParticleEmitter(emitter, state, config, 1 / 60);
+    expect(emitter.data.particleCount).toBe(20); // no second burst
+  });
+
+  it('fires repeated bursts at the configured interval', () => {
+    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const state = createParticleEmitterState();
+    const config = createParticleEmitterConfig({
+      spawnRate: 0,
+      burstCount: 5,
+      burstInterval: 1,
+      maxParticles: 100,
+      lifetimeMin: 10,
+      lifetimeMax: 10,
+    });
+    updateParticleEmitter(emitter, state, config, 0.01); // burst 1 fires (burstTimer=0)
+    expect(emitter.data.particleCount).toBe(5);
+    updateParticleEmitter(emitter, state, config, 1.0); // burst 2 fires after 1s
+    expect(emitter.data.particleCount).toBe(10);
+  });
+
+  it('advances flipbook frame based on age and frameRate', () => {
+    const atlas = {
+      image: null,
+      regions: [
+        { id: 0, x: 0, y: 0, width: 16, height: 16, pivotX: null, pivotY: null },
+        { id: 1, x: 16, y: 0, width: 16, height: 16, pivotX: null, pivotY: null },
+        { id: 2, x: 32, y: 0, width: 16, height: 16, pivotX: null, pivotY: null },
+      ],
+    } as TextureAtlas;
+    const emitter = createParticleEmitter({ data: { atlas } });
+    const state = createParticleEmitterState();
+    const config = createParticleEmitterConfig({
+      spawnRate: 1,
+      lifetimeMin: 10,
+      lifetimeMax: 10,
+      speedMin: 0,
+      speedMax: 0,
+      regionIdMin: 0,
+      frameCount: 3,
+      frameRate: 1,
+    });
+    updateParticleEmitter(emitter, state, config, 1); // spawn → frame 0
+    expect(emitter.data.ids[0]).toBe(0);
+    updateParticleEmitter(emitter, state, config, 1); // +1s → frame 1
+    expect(emitter.data.ids[0]).toBe(1);
+    updateParticleEmitter(emitter, state, config, 1); // +1s → frame 2
+    expect(emitter.data.ids[0]).toBe(2);
+    updateParticleEmitter(emitter, state, config, 1); // +1s → frame 0 (wraps)
+    expect(emitter.data.ids[0]).toBe(0);
+  });
+
+  it('fires onSpawn callback for each spawned particle', () => {
+    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const state = createParticleEmitterState();
+    const config = createParticleEmitterConfig({ spawnRate: 3, lifetimeMin: 10, lifetimeMax: 10 });
+    let spawnCount = 0;
+    updateParticleEmitter(emitter, state, config, 1, {
+      onSpawn: () => {
+        spawnCount++;
+      },
+    });
+    expect(spawnCount).toBe(3);
+  });
+
+  it('fires onDeath callback with particle position when it expires', () => {
+    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const state = createParticleEmitterState();
+    const config = createParticleEmitterConfig({
+      spawnRate: 1,
+      lifetimeMin: 0.5,
+      lifetimeMax: 0.5,
+      speedMin: 0,
+      speedMax: 0,
+    });
+    updateParticleEmitter(emitter, state, config, 1); // spawn
+    let deathFired = false;
+    updateParticleEmitter(emitter, state, config, 0.6, {
+      onDeath: () => {
+        deathFired = true;
+      },
+    });
+    expect(deathFired).toBe(true);
+  });
+
+  it('prewarm produces a non-empty particle state', () => {
+    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const state = createParticleEmitterState();
+    const config = createParticleEmitterConfig({ spawnRate: 10, lifetimeMin: 2, lifetimeMax: 2 });
+    prewarmParticleEmitter(emitter, state, config, 1);
+    expect(emitter.data.particleCount).toBeGreaterThan(0);
   });
 });
