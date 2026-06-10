@@ -1,0 +1,9 @@
+{
+  "name": "functional-test-particle-emitter",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/particles": "*",
+    "@flighthq/sdk": "*"
+  }
+}
