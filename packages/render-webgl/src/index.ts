@@ -9,6 +9,7 @@ export * from './webglElement';
 export * from './webglInputText';
 export * from './webglMask';
 export * from './webglMaterials';
+export * from './webglParticleEmitter';
 export * from './webglQuadBatch';
 export * from './webglRenderCache';
 export * from './webglRenderState';
