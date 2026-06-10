@@ -1,4 +1,4 @@
-﻿import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } from '@flighthq/render';
+﻿import { computeTextFormatFontString, createNullRendererData, rgbToHexString } from '@flighthq/render';
 import { getRichTextRuntime } from '@flighthq/scene-display';
 import {
   computeRichTextContent,
@@ -58,12 +58,12 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
   const fieldH = getRichTextFieldHeight(data, result);
 
   if (data.background) {
-    context.fillStyle = rgbaToHexString(data.backgroundColor);
+    context.fillStyle = rgbToHexString(data.backgroundColor);
     context.fillRect(0, 0, fieldW, fieldH);
   }
 
   if (data.border) {
-    context.strokeStyle = rgbaToHexString(data.borderColor);
+    context.strokeStyle = rgbToHexString(data.borderColor);
     context.lineWidth = 1;
     context.strokeRect(0, 0, fieldW, fieldH);
   }
@@ -103,7 +103,7 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
     if (group.lineIndex < firstVisibleLine) continue;
 
     context.font = computeTextFormatFontString(group.format);
-    context.fillStyle = rgbaToHexString(group.format.color ?? data.textColor);
+    context.fillStyle = rgbToHexString(group.format.color ?? data.textColor);
     const slice = text.substring(group.startIndex, group.endIndex);
     const x = group.offsetX - scrollXOffset;
     const y = group.offsetY + group.ascent - scrollYOffset;
@@ -116,7 +116,7 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
 
     context.fillText(slice, x, y);
 
-    const lineColor = rgbaToHexString(group.format.color ?? data.textColor);
+    const lineColor = rgbToHexString(group.format.color ?? data.textColor);
     const lineWidth = Math.max(1, (group.format.size ?? 12) / 16);
     if (group.format.underline || group.format.strikethrough) {
       context.strokeStyle = lineColor;
