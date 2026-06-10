@@ -10,10 +10,10 @@ export function fillSurfaceRectangle(
   height: number,
   color: number,
 ): void {
-  const r = (color >> 16) & 0xff;
-  const g = (color >> 8) & 0xff;
-  const b = color & 0xff;
-  const a = (color >>> 24) & 0xff;
+  const r = (color >>> 24) & 0xff;
+  const g = (color >> 16) & 0xff;
+  const b = (color >> 8) & 0xff;
+  const a = color & 0xff;
   const x1 = Math.max(0, x);
   const y1 = Math.max(0, y);
   const x2 = Math.min(out.width, x + width);
@@ -36,10 +36,10 @@ export function fillSurfaceRectangle(
 export function floodFillSurface(out: Surface, x: number, y: number, color: number): void {
   if (x < 0 || x >= out.width || y < 0 || y >= out.height) return;
 
-  const fillR = (color >> 16) & 0xff;
-  const fillG = (color >> 8) & 0xff;
-  const fillB = color & 0xff;
-  const fillA = (color >>> 24) & 0xff;
+  const fillR = (color >>> 24) & 0xff;
+  const fillG = (color >> 16) & 0xff;
+  const fillB = (color >> 8) & 0xff;
+  const fillA = color & 0xff;
 
   const targetI = (y * out.width + x) * 4;
   const targetR = out.data[targetI];

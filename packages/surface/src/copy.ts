@@ -2,6 +2,12 @@ import type { Surface } from '@flighthq/types';
 
 import type { ImageChannel } from './imageChannel';
 
+/**
+ * Copies one channel of a source region into a channel of `out`. Safe to pass
+ * the same surface as both `out` and `source` as long as `destChannel` and
+ * `sourceChannel` differ (each pixel writes a different byte than it reads).
+ * Copying a channel to itself is always a no-op regardless of aliasing.
+ */
 export function copySurfaceChannel(
   out: Surface,
   destChannel: ImageChannel,
@@ -25,6 +31,12 @@ export function copySurfaceChannel(
   }
 }
 
+/**
+ * Copies a rectangular region of `source` into `out` at `(dx, dy)`. Safe to
+ * pass the same surface as both `out` and `source` when the source and
+ * destination regions do not overlap. Overlapping regions produce undefined
+ * results because pixels are written before all source reads are complete.
+ */
 export function copySurfacePixels(
   out: Surface,
   dx: number,
