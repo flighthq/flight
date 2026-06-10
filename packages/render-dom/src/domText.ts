@@ -1,5 +1,5 @@
 ﻿import { createEntity } from '@flighthq/entity';
-import { computeTextFormatFontString, rgbaToHexString } from '@flighthq/render';
+import { computeTextFormatFontString, rgbToHexString } from '@flighthq/render';
 import { getTextRuntime } from '@flighthq/scene-display';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
@@ -78,7 +78,7 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
     const y = group.offsetY;
 
     let style = `position:absolute;left:${x}px;top:${y}px;font:${computeTextFormatFontString(fmt)};`;
-    style += `color:${rgbaToHexString(fmt.color ?? 0)};white-space:nowrap;`;
+    style += `color:${rgbToHexString(fmt.color ?? 0)};white-space:nowrap;`;
     if (fmt.underline) style += 'text-decoration:underline;';
 
     html += `<div style="${style}">${slice}</div>`;

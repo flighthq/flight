@@ -1,4 +1,4 @@
-﻿import { rgbaToHexString } from '@flighthq/render';
+﻿import { rgbToHexString } from '@flighthq/render';
 import { getInputTextRuntime } from '@flighthq/scene-display';
 import {
   getInputTextCaretRectangle,
@@ -43,7 +43,7 @@ export function drawDOMInputText(state: DOMRenderState, renderNode: DisplayObjec
   const scrollYOffset =
     firstVisibleLine > 0 ? getRichTextScrollYOffset(runtime.textLayout.lineHeights, firstVisibleLine) : 0;
   const scrollXOffset = source.data.scrollH;
-  const selColor = rgbaToHexString(source.data.selectionColor);
+  const selColor = rgbToHexString(source.data.selectionColor);
   const selAlpha = source.data.selectionAlpha;
   let html = '';
 

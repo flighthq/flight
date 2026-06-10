@@ -1,13 +1,13 @@
-import { rgbaToHexString, setRenderStateBackgroundColor } from './color';
+import { rgbToHexString, setRenderStateBackgroundColor } from './color';
 import { createRenderState } from './renderState';
 
-describe('rgbaToHexString', () => {
+describe('rgbToHexString', () => {
   it('returns a 6-digit hex string of the lower 24 bits', () => {
-    expect(rgbaToHexString(0x00ff0000)).toBe('#ff0000');
-    expect(rgbaToHexString(0x0000ff00)).toBe('#00ff00');
-    expect(rgbaToHexString(0x000000ff)).toBe('#0000ff');
-    expect(rgbaToHexString(0x00000000)).toBe('#000000');
-    expect(rgbaToHexString(0x00ffffff)).toBe('#ffffff');
+    expect(rgbToHexString(0x00ff0000)).toBe('#ff0000');
+    expect(rgbToHexString(0x0000ff00)).toBe('#00ff00');
+    expect(rgbToHexString(0x000000ff)).toBe('#0000ff');
+    expect(rgbToHexString(0x00000000)).toBe('#000000');
+    expect(rgbToHexString(0x00ffffff)).toBe('#ffffff');
   });
 });
 

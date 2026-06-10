@@ -1,5 +1,5 @@
 ﻿import { createEntity } from '@flighthq/entity';
-import { computeTextFormatFontString, rgbaToHexString } from '@flighthq/render';
+import { computeTextFormatFontString, rgbToHexString } from '@flighthq/render';
 import { getRichTextRuntime } from '@flighthq/scene-display';
 import {
   computeRichTextContent,
@@ -86,8 +86,8 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
   const div = data.div;
   div.style.width = `${fieldW}px`;
   div.style.height = `${fieldH}px`;
-  div.style.backgroundColor = background ? rgbaToHexString(backgroundColor) : '';
-  div.style.border = border ? `1px solid ${rgbaToHexString(borderColor)}` : '';
+  div.style.backgroundColor = background ? rgbToHexString(backgroundColor) : '';
+  div.style.border = border ? `1px solid ${rgbToHexString(borderColor)}` : '';
 
   if (text.length === 0) {
     div.innerHTML = '';
@@ -132,12 +132,12 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
       bulletLines.add(group.lineIndex);
       const bulletSize = fmt.size ?? 12;
       const bulletX = x - bulletSize * 0.7 - DOM_BULLET_GAP;
-      const bulletStyle = `position:absolute;left:${bulletX}px;top:${y}px;font:${fontStr};line-height:1;color:${rgbaToHexString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
+      const bulletStyle = `position:absolute;left:${bulletX}px;top:${y}px;font:${fontStr};line-height:1;color:${rgbToHexString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
       html += `<div style="${bulletStyle}">Ã¢â‚¬Â¢</div>`;
     }
 
     let style = `position:absolute;left:${x}px;top:${y}px;font:${fontStr};line-height:1;`;
-    style += `color:${rgbaToHexString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
+    style += `color:${rgbToHexString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
     if (fmt.underline || fmt.strikethrough) {
       const decorations = [];
       if (fmt.underline) decorations.push('underline');
