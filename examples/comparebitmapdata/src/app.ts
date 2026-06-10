@@ -45,7 +45,7 @@ function createBall(color: number, alpha = 255): Surface {
       const dx = x + 0.5 - cx;
       const dy = y + 0.5 - cy;
       if (dx * dx + dy * dy <= r * r) {
-        setSurfacePixel32(img, x, y, ((alpha & 0xff) * 0x1000000 + (color & 0xffffff)) >>> 0);
+        setSurfacePixel32(img, x, y, (((color & 0xffffff) << 8) | (alpha & 0xff)) >>> 0);
       }
     }
   }
@@ -59,15 +59,15 @@ function createRect(color: number, inset = 4): Surface {
 }
 
 const sources: Array<{ label: string; img: Surface | null }> = [
-  { label: 'Checkers', img: createCheckers(0xffffffff, 0xff000000) },
-  { label: 'Checkers2', img: createCheckers(0xffffffff, 0xff808080) },
+  { label: 'Checkers', img: createCheckers(0xffffffff, 0x000000ff) },
+  { label: 'Checkers2', img: createCheckers(0xffffffff, 0x808080ff) },
   { label: 'Noise 1', img: createNoise(0xdeadbeef) },
   { label: 'Noise 2', img: createNoise(0xcafebabe) },
   { label: 'Red Ball', img: createBall(0xff0000) },
   { label: 'Yellow Ball', img: createBall(0xffff00) },
   { label: 'Half Alpha', img: createBall(0xff0000, 128) },
-  { label: 'Rect', img: createRect(0xff0000ff) },
-  { label: 'Rect 2', img: createRect(0xff00ffff, 8) },
+  { label: 'Rect', img: createRect(0x0000ffff) },
+  { label: 'Rect 2', img: createRect(0x00ffffff, 8) },
   { label: 'Clone', img: null },
   { label: 'Null', img: null },
 ];
