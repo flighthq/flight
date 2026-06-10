@@ -195,6 +195,14 @@ export function applySurfaceGlowFilter(
   }
 }
 
+// Box-blur radius whose `passes`-fold repetition matches the variance of a Gaussian
+// of standard deviation `sigma`, so blurX/blurY mean "Gaussian standard deviation in
+// pixels" — consistent with the CSS blur() and WebGL filter paths.
+function boxRadiusForSigma(sigma: number, passes: number): number {
+  if (sigma <= 0) return 0;
+  return Math.max(0, Math.round((-1 + Math.sqrt(1 + (12 * sigma * sigma) / passes)) / 2));
+}
+
 function blurPixels(
   source: Uint8ClampedArray,
   width: number,
@@ -204,8 +212,8 @@ function blurPixels(
   quality: number,
 ): Uint8ClampedArray {
   const passes = Math.max(1, Math.round(quality));
-  const radiusX = Math.max(0, Math.round(blurX / 2));
-  const radiusY = Math.max(0, Math.round(blurY / 2));
+  const radiusX = boxRadiusForSigma(blurX, passes);
+  const radiusY = boxRadiusForSigma(blurY, passes);
   let current = new Uint8ClampedArray(source);
   let scratch = new Uint8ClampedArray(source.length);
 

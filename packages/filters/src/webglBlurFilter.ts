@@ -1,6 +1,4 @@
-import type { WebGLRenderTarget } from '@flighthq/render-webgl';
-import type { WebGLRenderStateInternal } from '@flighthq/render-webgl';
-import { createWebGLRenderTarget, destroyWebGLRenderTarget } from '@flighthq/render-webgl';
+import type { WebGLRenderStateInternal, WebGLRenderTarget } from '@flighthq/render-webgl';
 import type { WebGLRenderState } from '@flighthq/types';
 
 import type { BlurFilter } from './index';
@@ -55,20 +53,27 @@ function getBlurShader(state: WebGLRenderState): BlurShaderLocations {
 }
 
 /**
- * Applies a box blur filter to `source` and writes the result to `dest`.
- * Uses a separable two-pass (horizontal then vertical) approach. For quality > 1
- * the pass pair is repeated, converging toward a Gaussian. Source and dest must
- * be different render targets of the same dimensions.
+ * Applies a Gaussian-approximating blur to `source` and writes the result to
+ * `dest`. `blurX`/`blurY` are the Gaussian standard deviation in pixels; the
+ * separable box passes are variance-matched to that sigma so the result agrees
+ * with the CSS `blur()` and surface paths. `quality` is the number of box passes
+ * per axis (higher = closer to a true Gaussian).
+ *
+ * `temp` is a caller-provided scratch target of the same dimensions as `dest`,
+ * used to ping-pong the separable passes — the filter allocates nothing itself.
+ * `source` is read-only (never written), so it may safely be reused afterwards.
+ * `source`, `dest`, and `temp` must be three distinct targets.
  */
 export function applyWebGLBlurFilter(
   state: WebGLRenderState,
   source: WebGLRenderTarget,
   dest: WebGLRenderTarget,
+  temp: WebGLRenderTarget,
   options: Omit<BlurFilter, 'type'> = {},
 ): void {
   const passes = Math.max(1, Math.round(options.quality ?? 1));
-  const radiusX = Math.max(0, Math.round((options.blurX ?? 4) / 2));
-  const radiusY = Math.max(0, Math.round((options.blurY ?? 4) / 2));
+  const radiusX = boxRadiusForSigma(options.blurX ?? 4, passes);
+  const radiusY = boxRadiusForSigma(options.blurY ?? 4, passes);
 
   if (radiusX === 0 && radiusY === 0) {
     applyBlurBlit(state, source, dest);
@@ -76,33 +81,41 @@ export function applyWebGLBlurFilter(
   }
 
   const loc = getBlurShader(state);
-  // One temp target is enough for any quality level: ping-pong between temp and dest.
-  const temp = createWebGLRenderTarget(state, dest.width, dest.height);
 
-  // First half-pass: source → temp (H or V depending on which is non-zero)
-  // For quality=1: source→temp (H), temp→dest (V)
-  // For quality=2: source→temp (H), temp→dest (V), dest→temp (H), temp→dest (V)
-  let current: WebGLRenderTarget = source;
-  let next: WebGLRenderTarget = temp;
+  // Ping-pong between temp and dest, keeping source read-only: the first pass
+  // reads source; every later pass reads the previous pass's output.
+  let read: WebGLRenderTarget = source;
+  let write: WebGLRenderTarget = temp;
 
   for (let pass = 0; pass < passes; pass++) {
     if (radiusX > 0) {
-      applyBlurPass(state, current, next, loc, radiusX, 1, 0);
-      [current, next] = [next, current];
+      applyBlurPass(state, read, write, loc, radiusX, 1, 0);
+      read = write;
+      write = write === temp ? dest : temp;
     }
     if (radiusY > 0) {
-      applyBlurPass(state, current, next, loc, radiusY, 0, 1);
-      [current, next] = [next, current];
+      applyBlurPass(state, read, write, loc, radiusY, 0, 1);
+      read = write;
+      write = write === temp ? dest : temp;
     }
   }
 
-  // If the last written target is temp (current === temp), blit to dest.
-  // If current === dest, it's already there.
-  if (current !== dest) {
-    applyBlurBlit(state, current, dest);
+  if (read !== dest) {
+    applyBlurBlit(state, read, dest);
   }
+}
 
-  destroyWebGLRenderTarget(state, temp);
+/**
+ * Computes the box-blur radius whose `passes`-fold repetition has the same
+ * variance as a Gaussian of standard deviation `sigma` (a box of radius r has
+ * variance (r²+r)/3, and variances add across passes). This makes `blurX`/`blurY`
+ * mean "Gaussian standard deviation in pixels" — matching the CSS `blur()` and
+ * surface paths — while `quality` (the pass count) controls how closely the
+ * repeated box converges to a true Gaussian, not the blur amount.
+ */
+export function boxRadiusForSigma(sigma: number, passes: number): number {
+  if (sigma <= 0) return 0;
+  return Math.max(0, Math.round((-1 + Math.sqrt(1 + (12 * sigma * sigma) / passes)) / 2));
 }
 
 function applyBlurPass(

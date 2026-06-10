@@ -1,12 +1,20 @@
 import { getOrCreateDisplayObjectRenderNode, hasRenderFeatures } from '@flighthq/render';
 import { type DisplayObject, RenderFeatures } from '@flighthq/types';
 
-import { getDOMCSSFilter, selectDOMCSSFilter, setDOMCSSFilter } from './domCSSFilterBinding';
+import { enableDOMCSSFilterSupport, getDOMCSSFilter, setDOMCSSFilter } from './domCSSFilterBinding';
 import { createDOMRenderState } from './domRenderState';
 
 function makeState() {
   return createDOMRenderState(document.createElement('div'));
 }
+
+describe('enableDOMCSSFilterSupport', () => {
+  it('enables the CSSFilter render feature', () => {
+    const state = makeState();
+    enableDOMCSSFilterSupport(state);
+    expect(hasRenderFeatures(state, RenderFeatures.CSSFilter)).toBe(true);
+  });
+});
 
 describe('getDOMCSSFilter', () => {
   it('returns the filter bound to a render node', () => {
@@ -24,22 +32,6 @@ describe('getDOMCSSFilter', () => {
   });
 });
 
-describe('selectDOMCSSFilter', () => {
-  it('returns null when no filter is set', () => {
-    const state = makeState();
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, {} as DisplayObject);
-    expect(selectDOMCSSFilter(state, renderNode)).toBeNull();
-  });
-
-  it('returns the bound filter when CSS filter support is enabled', () => {
-    const state = makeState();
-    const node = {} as DisplayObject;
-    setDOMCSSFilter(state, node, 'grayscale(1)');
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
-    expect(selectDOMCSSFilter(state, renderNode)).toBe('grayscale(1)');
-  });
-});
-
 describe('setDOMCSSFilter', () => {
   it('stores a filter keyed by the per-state render node', () => {
     const state = makeState();
@@ -47,12 +39,6 @@ describe('setDOMCSSFilter', () => {
     setDOMCSSFilter(state, node, 'blur(2px)');
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
     expect(getDOMCSSFilter(renderNode)).toBe('blur(2px)');
-  });
-
-  it('enables the CSSFilter render feature', () => {
-    const state = makeState();
-    setDOMCSSFilter(state, {} as DisplayObject, 'blur(2px)');
-    expect(hasRenderFeatures(state, RenderFeatures.CSSFilter)).toBe(true);
   });
 
   it('clears the binding when passed null', () => {

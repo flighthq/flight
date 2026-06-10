@@ -13,6 +13,15 @@ import {
 // the per-state WebGL shader bindings.
 const _cssFilterBindings = new WeakMap<DisplayObjectRenderNode, string>();
 
+/**
+ * Enables CSS filter support for the render state. Bindings made via
+ * setCanvasCSSFilter are only applied while support is enabled — call this once
+ * during setup, mirroring enableCanvasBlendModeSupport and the other opt-ins.
+ */
+export function enableCanvasCSSFilterSupport(state: CanvasRenderState): void {
+  enableRenderFeatures(state, RenderFeatures.CSSFilter);
+}
+
 export function getCanvasCSSFilter(renderNode: DisplayObjectRenderNode): string | undefined {
   return _cssFilterBindings.get(renderNode);
 }
@@ -44,5 +53,4 @@ export function setCanvasCSSFilter(state: CanvasRenderState, node: DisplayObject
     return;
   }
   _cssFilterBindings.set(renderNode, filter);
-  enableRenderFeatures(state, RenderFeatures.CSSFilter);
 }

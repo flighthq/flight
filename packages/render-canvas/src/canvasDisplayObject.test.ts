@@ -3,7 +3,7 @@ import { addSceneChild } from '@flighthq/scene';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { setCanvasCSSFilter } from './canvasCSSFilterBinding';
+import { enableCanvasCSSFilterSupport, setCanvasCSSFilter } from './canvasCSSFilterBinding';
 import {
   defaultCanvasDisplayObjectRenderer,
   drawCanvasDisplayObject,
@@ -126,6 +126,7 @@ describe('renderCanvasDisplayObject', () => {
       }),
     };
     registerRenderer(state, DisplayObjectKind, renderer);
+    enableCanvasCSSFilterSupport(state);
     setCanvasCSSFilter(state, obj, 'blur(3px)');
     prepareDisplayObjectRender(state, obj);
 

@@ -10,7 +10,7 @@ import { type BitmapFilter, filterToCSS } from './index';
  * The filter is applied via `ctx.filter` around a `drawImage` call, so it
  * benefits from the browser's GPU-accelerated filter pipeline.
  */
-export function applyCanvasFilter(
+export function applyCanvasCSSFilter(
   dest: CanvasRenderingContext2D,
   source: CanvasImageSource,
   dx: number,

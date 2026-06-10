@@ -1,5 +1,4 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
-import { createWebGLRenderTarget, destroyWebGLRenderTarget } from '@flighthq/render-webgl';
 import type { WebGLRenderState } from '@flighthq/types';
 
 import type { BevelFilter } from './index';
@@ -17,11 +16,16 @@ import { applyBlitOffsetPass, applyBlitPass, applyTintPass } from './webglTintSh
  *
  * The bevel uses the blurred source alpha as the basis for both highlight and
  * shadow, giving soft beveled edges. For a hard bevel, set blurX/blurY to 0.
+ *
+ * `scratch` is a caller-provided array of three scratch targets of the same
+ * dimensions as `dest` (tint buffer, blurred basis, and the blur's ping-pong
+ * temp); the filter allocates nothing itself.
  */
 export function applyWebGLBevelFilter(
   state: WebGLRenderState,
   source: WebGLRenderTarget,
   dest: WebGLRenderTarget,
+  scratch: WebGLRenderTarget[],
   options: Omit<BevelFilter, 'type'> = {},
 ): void {
   const angle = ((options.angle ?? 45) * Math.PI) / 180;
@@ -38,16 +42,14 @@ export function applyWebGLBevelFilter(
   const quality = options.quality ?? 1;
   const knockout = options.knockout ?? false;
 
-  const w = source.width;
-  const h = source.height;
-
-  const tinted = createWebGLRenderTarget(state, w, h);
-  const blurred = createWebGLRenderTarget(state, w, h);
+  const tinted = scratch[0];
+  const blurred = scratch[1];
+  const blurTemp = scratch[2];
 
   // Extract alpha for bevel basis — using highlight color (white) to keep
   // the tint neutral for the shared blur.
   applyTintPass(state, source, tinted, 0xffffff, 1, strength);
-  applyWebGLBlurFilter(state, tinted, blurred, { blurX, blurY, quality });
+  applyWebGLBlurFilter(state, tinted, blurred, blurTemp, { blurX, blurY, quality });
 
   // Composite: shadow at +offset (bottom-right light hits bottom-right edge)
   clearWebGLFilterTarget(state, dest);
@@ -64,7 +66,4 @@ export function applyWebGLBevelFilter(
   if (!knockout) {
     applyBlitPass(state, source, dest);
   }
-
-  destroyWebGLRenderTarget(state, tinted);
-  destroyWebGLRenderTarget(state, blurred);
 }

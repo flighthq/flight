@@ -50,3 +50,7 @@ export function makeRenderTarget(width = 64, height = 64): WebGLRenderTarget {
     height,
   };
 }
+
+export function makeScratch(count = 3, width = 64, height = 64): WebGLRenderTarget[] {
+  return Array.from({ length: count }, () => makeRenderTarget(width, height));
+}
