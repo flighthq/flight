@@ -29,6 +29,7 @@
     { "path": "./packages/tween" },
     { "path": "./packages/tween-easing" },
     { "path": "./packages/types" },
-    { "path": "./packages/filters" }
+    { "path": "./packages/filters" },
+    { "path": "./packages/particles" }
   ]
 }
