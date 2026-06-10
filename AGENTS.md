@@ -1,8 +1,21 @@
 # Flight Codebase Map
 
-This repository is a TypeScript monorepo for a tree-shakable 2D rendering SDK inspired by OpenFL and Lime. It is written with AI code agents and a future C/C++ port in mind, so names, module boundaries, allocation behavior, and grepability are part of the design surface.
+This repository is a TypeScript monorepo for a tree-shakable 2D rendering SDK. The goal is to cover the full feature set of OpenFL and Lime — every capability they offer should be reachable here — without adopting their API shape or their reliance on implicit, stateful runtime behavior. It is written with AI code agents and a future C/C++ port of this codebase in mind, so names, module boundaries, allocation behavior, and grepability are part of the design surface.
 
 This document should stay useful, not ornamental. Prefer making architecture and API behavior obvious in source, tests, package manifests, and generated API output. Use this file for project-level rules and architecture that are hard to infer from one or two files.
+
+## Relationship to OpenFL and Lime
+
+OpenFL and Lime define the feature target, not the API. When deciding what to build, aim to support what they support — display objects, shapes, filters, blend modes, text, tilemaps, particle emitters, audio/video, and so on. When deciding how to expose it, design from scratch around Flight's constraints instead of mirroring OpenFL's classes, property setters, or implicit runtime behavior.
+
+In practice:
+
+- Prefer explicit data over runtime objects with hidden behavior. A filter is a plain data descriptor applied by an explicit per-backend function (a Canvas/CSS filter string or a multi-pass WebGL shader), not a `BitmapFilter` instance assigned to `displayObject.filters` that the runtime quietly applies on the next frame.
+- Prefer plain values over wrapper types and accessors. Colors are packed RGBA integers (for example `0xeeddccff`) with one consistent convention across the SDK, not a color type or a mix of RGB-with-separate-alpha conventions.
+- Prefer small, side-effect-free functions with explicit inputs and `out` parameters over methods that mutate shared state. Nothing "magic" should happen internally that the caller did not ask for: rendering, allocation, and update passes are all things the caller invokes by name.
+- Accept more verbose user code when it buys clarity. Spelling out renderer registration, the pre-render update pass, and allocation is preferred over convenience that hides where work and memory go. Examples demonstrate this verbosity on purpose.
+
+When a feature exists in OpenFL but the natural OpenFL API would require hidden state, eager side effects, or non-tree-shakable coupling, redesign the API to fit Flight's rules and keep the feature. The feature is the goal; the API shape is ours to choose.
 
 ## Read This First
 
@@ -20,7 +33,7 @@ Read this file once at the start of a fresh agent session, then revisit the rele
 ## Task Triggers
 
 - Run `npm run packages:check` after package-level changes such as package manifests, workspace references, exports, build targets, or side-effect behavior.
-- Run `npm run coverage` after adding, removing, or renaming exported functions.
+- Run `npm run test:completeness` after adding, removing, or renaming exported functions to confirm every export has a colocated test.
 - Run `npm run order` after adding, removing, or renaming exported functions or test `describe` blocks. Use `npm run order:fix` when you want the repository tool to rewrite order for you.
 - Run `npm run api` after public API changes to scan signatures and naming symmetry.
 - Run `npm run size` after changes to examples, package exports, barrel files, renderer registration, dependencies, or anything that may affect tree-shaking.
@@ -64,12 +77,13 @@ This SDK should behave like a hardware store: users can import one small tool wi
 - `npm run api` prints compact exported function signatures for all packages.
 - `npm run api <query>` filters packages and exported functions by the given query. Example: `npm run api application` or `npm run api --function register`.
 - `npm run api:json` prints the same API data as JSON for tools and agents.
-- `npm run check` is the default non-fixing quality sweep for agents and contributors. It runs `packages:check`, `coverage`, failing `order:check`, `lint`, and `typecheck`.
+- `npm run check` is the default non-fixing quality sweep for agents and contributors. It runs `packages:check`, `typecheck`, `lint`, `format:check`, failing `order:check`, and `test:completeness`.
 - `npm run packages:check` checks monorepo shape, package references, workspace dependency conventions, package export targets, packaging shape, and side-effect-free source invariants. Run this after any package-level change and fix everything it reports before moving on.
-- `npm run coverage` checks for missing test files and missing tests for exported functions.
+- `npm run test:completeness` checks for missing test files and missing tests for exported functions.
 - `npm run order` reports exported functions and test `describe` blocks that are not alphabetized. `npm run order:check` runs the same check in failing mode once a package or area has been cleaned up. `npm run order:fix` rewrites files in place to apply the correct order; comments immediately preceding a declaration (with no blank line between them) are treated as attached and move with it.
 - `npm run test` runs the normal root Vitest workspace, excluding the heavier `size` project. This is usually faster than chaining package/API/integration test scripts separately.
 - `npm run size` builds matching examples and reports gzip output size against the baseline. It supports filtered runs, JSON reporting, and output file paths.
+- `npm run test:functional` launches the functional test tool in `tools/functional`, a browser dev server that runs each functional test across its renderers (Canvas/DOM/WebGL) for visual and behavioral checks you cannot get from jsdom unit tests.
 
 ## Core Patterns
 
@@ -97,7 +111,7 @@ A renderer object provides:
 - `draw(state, renderNode)`: renders the node each frame.
 - `drawMask(state, renderNode)`: renders the node as a mask (display objects only).
 
-Render states hold these registrations. Before drawing, an update pass must run to propagate transforms, alpha, visibility, and blend mode from the scene graph into render nodes. Call `updateDisplayObjectBeforeRender(state, source)` or `updateSpriteBeforeRender(state, source)` before any draw call. Tests that skip this step will see incorrect or default render node values.
+Render states hold these registrations. Before drawing, an update pass must run to propagate transforms, alpha, visibility, and blend mode from the scene graph into render nodes. Call `prepareDisplayObjectRender(state, source)` or `prepareSpriteRender(state, source)` before any draw call. Tests that skip this step will see incorrect or default render node values.
 
 Do not call `registerRenderer` at module top level; expose a `register*` function and let callers opt in.
 
@@ -136,24 +150,27 @@ Packaging policy should be enforced by scripts and `npm run packages:check` rath
 - `@flighthq/types`: shared interfaces, kind symbols, and cross-package type contracts.
 - `@flighthq/entity`: entity/runtime primitives used by higher-level packages.
 - `@flighthq/geometry`: rectangles, vectors, matrices, typed-array capacity helpers, and pools.
-- `@flighthq/scene-core`: graph hierarchy, transforms, bounds, appearance, and invalidation.
+- `@flighthq/scene`: graph hierarchy, transforms, bounds, appearance, and invalidation.
 - `@flighthq/scene-display`: Flash/OpenFL-style display objects such as bitmaps, shapes, text, containers, masks, stages, and videos.
 - `@flighthq/scene-sprite`: sprite/tilemap/quad-batch graph for atlas-based batch rendering.
-- `@flighthq/render-core`: renderer registration, render node data, update pipeline, transform/color propagation.
+- `@flighthq/scene-world`: experimental 3D world graph for spatial scene management.
+- `@flighthq/render`: renderer registration, render state/queue, render node data, update pipeline, transform/color propagation. Image render caching lives in the renderer packages (`imageRenderCache`, `canvasRenderCache`, `webglRenderCache`, `domRenderCache`), not in a standalone package. The `cacheAsBitmap`, `cacheAsBitmapMatrix`, and `opaqueBackground` properties were removed from `DisplayObjectTraits`; do not add them back.
 - `@flighthq/render-canvas`, `@flighthq/render-dom`, `@flighthq/render-webgl`: concrete renderers.
-- `@flighthq/image-cache`: opt-in bitmap caching and opaque background hints, attached to display objects via `attachImageCache`. The `cacheAsBitmap`, `cacheAsBitmapMatrix`, and `opaqueBackground` properties were removed from `DisplayObjectTraits`; do not add them back.
-- `@flighthq/interaction`: hit testing and pointer dispatch.
-- `@flighthq/materials`: color transforms, filters, and material utilities.
+- `@flighthq/filters`: blur, glow, bevel, drop-shadow, color-matrix, and convolution filters as plain data descriptors with explicit Canvas/CSS and multi-pass WebGL backends. Not OpenFL-style filter objects.
+- `@flighthq/interaction`: hit testing, pointer dispatch, and object overlap detection.
+- `@flighthq/materials`: color transform and material utilities.
 - `@flighthq/signals`: strictly-typed signals and slots for event dispatching.
-- `@flighthq/assets`, `@flighthq/spritesheet`, `@flighthq/timeline`, `@flighthq/timeline-spritesheet`: asset and animation helpers.
+- `@flighthq/assets`, `@flighthq/assets-loader`, `@flighthq/spritesheet`, `@flighthq/timeline`, `@flighthq/timeline-spritesheet`: asset loading and animation helpers.
 - `@flighthq/tween` and `@flighthq/tween-easing`: tween managers, tweens, timers, and easing families.
+- `@flighthq/input`, `@flighthq/text-input`, `@flighthq/text-layout`: input normalization, editable-text editing, and renderer-agnostic glyph layout.
+- `@flighthq/application`, `@flighthq/media`: application/window host loop and audio/video playback channels.
 - `@flighthq/surface`: pixel-level image manipulation using browser image data.
 - `@flighthq/sdk`: convenience barrel for applications and examples.
 
 ## Review Hints
 
 - After any package-level change, run `npm run packages:check` and fix everything it reports. It catches stale subpaths, missing `tsconfig.json` references, workspace dependency mismatches, packaging drift, and top-level side-effect statements.
-- When adding or renaming exported functions, run `npm run coverage` to find missing test files and missing `describe` coverage.
+- When adding or renaming exported functions, run `npm run test:completeness` to find missing test files and missing `describe` coverage.
 - When adding or renaming exported functions or `describe` blocks, run `npm run order` to check the scan order. Prefer leaving touched files cleaner than you found them.
 - When changing public APIs, check naming symmetry across packages and run `npm run api` to scan signatures.
 - Before declaring a broad refactor complete, run `npm run ci`. For narrower changes, run the closest package tests plus `check`; use `ci` when examples, public API names, packaging, or tree-shaking may have been affected.

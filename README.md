@@ -1,6 +1,8 @@
 # Flight
 
-Flight is a TypeScript monorepo for a tree-shakable 2D rendering SDK inspired by OpenFL and Lime. It provides scene graph packages, renderer packages, animation and asset helpers, and a convenience `@flighthq/sdk` barrel for applications and examples.
+Flight is a TypeScript monorepo for a tree-shakable 2D rendering SDK. The same scene graph draws through Canvas, DOM, and WebGL2 renderers, which are first-class and interchangeable: you build a scene once and choose a backend by registering the renderers you want.
+
+The design favors data-oriented entities, explicit allocation, and small functions with no hidden side effects, so application code stays easy to reason about and bundles stay small. It provides scene graph packages, renderer packages, animation and asset helpers, and a convenience `@flighthq/sdk` barrel for applications and examples.
 
 The codebase is organized so low-level users can import small subpaths without pulling in renderer registration, app helpers, or unrelated graph families. Packages are intended to be import side-effect-free; renderers and platform listeners are registered explicitly by the caller.
 
@@ -14,36 +16,37 @@ import { addGraphChild, createBitmap, createShape } from '@flighthq/sdk';
 
 Library code should prefer the smallest package or subpath that provides the needed API.
 
-| Package                          | Purpose                                                            |
-| -------------------------------- | ------------------------------------------------------------------ |
-| `@flighthq/application`          | Application loop and browser window lifecycle helpers              |
-| `@flighthq/assets`               | Image source, texture atlas, tileset, font, and audio utilities    |
-| `@flighthq/assets-loader`        | Group asset loading with progress and completion signals           |
-| `@flighthq/entity`               | Entity, node, runtime, and binding primitives                      |
-| `@flighthq/geometry`             | Vectors, matrices, rectangles, typed-array helpers, and pools      |
-| `@flighthq/image-cache`          | Runtime image cache access for display-object bitmap caching       |
-| `@flighthq/input`                | Keyboard, pointer, wheel, and text input normalization             |
-| `@flighthq/interaction`          | Hit testing and pointer dispatch                                   |
-| `@flighthq/materials`            | Color transforms, filters, blend modes, and material utilities     |
-| `@flighthq/media`                | Audio and video playback channels                                  |
-| `@flighthq/render-canvas`        | Canvas 2D renderer                                                 |
-| `@flighthq/render-core`          | Renderer registration, render nodes, and render update pipeline    |
-| `@flighthq/render-dom`           | DOM renderer                                                       |
-| `@flighthq/render-webgl`         | WebGL2 renderer                                                    |
-| `@flighthq/scenegraph-core`      | Shared hierarchy, transforms, bounds, appearance, and invalidation |
-| `@flighthq/scenegraph-display`   | Display-object graph: bitmaps, shapes, text, masks, and video      |
-| `@flighthq/scenegraph-sprite`    | Sprite graph: sprites, quad batches, and tilemaps                  |
-| `@flighthq/scenegraph-world`     | Experimental 3D world graph                                        |
-| `@flighthq/sdk`                  | Application-level convenience barrel                               |
-| `@flighthq/signals`              | Strictly typed signals and slots                                   |
-| `@flighthq/spritesheet`          | Spritesheet frame animation playback                               |
-| `@flighthq/surface`              | Pixel-level image manipulation using browser `ImageData`           |
-| `@flighthq/text-layout`          | Renderer-agnostic glyph measuring and text layout                  |
-| `@flighthq/timeline`             | Timeline-based animation sequencing                                |
-| `@flighthq/timeline-spritesheet` | Spritesheet animation driven by timelines                          |
-| `@flighthq/tween`                | Tween managers, tweens, and timers                                 |
-| `@flighthq/tween-easing`         | Easing functions for animation                                     |
-| `@flighthq/types`                | Shared interfaces, kind symbols, and cross-package contracts       |
+| Package | Purpose |
+| --- | --- |
+| `@flighthq/application` | Application loop and browser window/host lifecycle helpers |
+| `@flighthq/assets` | Image source, texture atlas, tileset, font, and audio utilities |
+| `@flighthq/assets-loader` | Group asset loading with progress and completion signals |
+| `@flighthq/entity` | Entity, node, runtime, and binding primitives |
+| `@flighthq/filters` | Blur, glow, bevel, drop-shadow, color-matrix, and convolution filters with Canvas/CSS and WebGL backends |
+| `@flighthq/geometry` | Vectors, matrices, rectangles, typed-array helpers, and pools |
+| `@flighthq/input` | Keyboard, pointer, wheel, and text input normalization |
+| `@flighthq/interaction` | Hit testing, pointer dispatch, and object overlap detection |
+| `@flighthq/materials` | Color transform and material utilities |
+| `@flighthq/media` | Audio and video playback channels |
+| `@flighthq/render` | Renderer registration, render state/queue, render nodes, and the update pipeline |
+| `@flighthq/render-canvas` | Canvas 2D renderer |
+| `@flighthq/render-dom` | DOM renderer |
+| `@flighthq/render-webgl` | WebGL2 renderer |
+| `@flighthq/scene` | Shared hierarchy, transforms, bounds, appearance, and invalidation |
+| `@flighthq/scene-display` | Display-object graph: bitmaps, shapes, text, containers, masks, and video |
+| `@flighthq/scene-sprite` | Sprite graph: sprites, quad batches, and tilemaps |
+| `@flighthq/scene-world` | Experimental 3D world graph |
+| `@flighthq/sdk` | Application-level convenience barrel |
+| `@flighthq/signals` | Strictly typed signals and slots |
+| `@flighthq/spritesheet` | Spritesheet frame animation playback |
+| `@flighthq/surface` | Pixel-level image manipulation using browser `ImageData` |
+| `@flighthq/text-input` | Editable text helpers: selection, replacement, and input restriction |
+| `@flighthq/text-layout` | Renderer-agnostic glyph measuring and text layout |
+| `@flighthq/timeline` | Timeline-based animation sequencing |
+| `@flighthq/timeline-spritesheet` | Spritesheet animation driven by timelines |
+| `@flighthq/tween` | Tween managers, tweens, and timers |
+| `@flighthq/tween-easing` | Easing functions for animation |
+| `@flighthq/types` | Shared interfaces, kind symbols, and cross-package contracts |
 
 ## Getting Started
 
@@ -65,10 +68,10 @@ import {
   createDisplayObject,
   defaultCanvasBitmapRenderer,
   loadImageSourceFromURL,
+  prepareDisplayObjectRender,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
-  updateDisplayObjectBeforeRender,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -91,7 +94,7 @@ bitmap.data.image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
 addGraphChild(root, bitmap);
 
 function enterFrame(): void {
-  if (updateDisplayObjectBeforeRender(state, root)) {
+  if (prepareDisplayObjectRender(state, root)) {
     renderCanvasBackground(state);
     renderCanvasDisplayObject(state, root);
   }
@@ -101,6 +104,8 @@ function enterFrame(): void {
 
 enterFrame();
 ```
+
+The same scene renders through DOM or WebGL2 by creating the matching render state and registering that backend's renderers — `createWebGLRenderState` with `defaultWebGLBitmapRenderer` and `renderWebGLDisplayObject`, or the `*DOM*` equivalents — with no change to the scene graph itself.
 
 ### Shapes
 
@@ -161,7 +166,7 @@ connectSignal(tween.onUpdate, () => invalidateRender(sprite));
 
 connectSignal(app.onUpdate, (deltaMs) => updateTweens(tweens, deltaMs));
 connectSignal(app.onRender, () => {
-  if (updateDisplayObjectBeforeRender(state, root)) {
+  if (prepareDisplayObjectRender(state, root)) {
     render(root);
   }
 });
@@ -171,7 +176,7 @@ startApplicationLoop(app);
 
 ## Examples
 
-Examples live in `examples/`. Each example is a standalone Vite app and most can target Canvas, DOM, or WebGL through renderer-specific scripts.
+Examples live in `examples/`. Each example is a standalone Vite app. Examples expose renderer-specific scripts for the backends they implement; an example may target Canvas, DOM, WebGL, or any combination.
 
 | Example             | Description                                      |
 | ------------------- | ------------------------------------------------ |
@@ -183,9 +188,12 @@ Examples live in `examples/`. Each example is a standalone Vite app and most can
 | `displayingabitmap` | Minimal bitmap display                           |
 | `drawingshapes`     | Shape primitives, lines, curves, and polygons    |
 | `nyancat`           | Frame animation                                  |
-| `playingsound`      | Sound playback with pause, resume, and fades     |
 | `piratepig`         | Match-3 game with tweens, audio, text, and input |
+| `playingsound`      | Sound playback with pause, resume, and fades     |
+| `playingvideo`      | Video playback through the media channels        |
 | `simplesprite`      | Minimal sprite graph example                     |
+| `sparktrail`        | WebGL particle-emitter trail                     |
+| `textmetrics`       | Text measurement and layout metrics              |
 | `tweenexample`      | Animated circles using tweens and timers         |
 | `usingtilemap`      | Tilemap rendering                                |
 
@@ -201,11 +209,12 @@ Build a specific example:
 npm run build --workspace=examples/drawingshapes
 ```
 
-Run a renderer-specific example dev server:
+Run a renderer-specific example dev server. Use whichever backend the example implements:
 
 ```sh
-npm run dev:canvas --workspace=examples/drawingshapes
-npm run dev:dom --workspace=examples/drawingshapes
+npm run dev:canvas --workspace=examples/textmetrics
+npm run dev:dom --workspace=examples/textmetrics
+npm run dev:webgl --workspace=examples/textmetrics
 ```
 
 ## Development
@@ -234,13 +243,13 @@ npm run ci
 
 Useful repository commands:
 
-| Command                  | Purpose                                                                 |
-| ------------------------ | ----------------------------------------------------------------------- |
-| `npm run api`            | Print compact public API signatures                                     |
-| `npm run coverage`       | Check that exported functions have colocated tests                      |
-| `npm run order`          | Check source export and test `describe` ordering                        |
-| `npm run size`           | Build matching examples and report gzip sizes against the baseline      |
-| `npm run packages:check` | Check package shape, exports, references, and side-effect-free patterns |
+| Command                     | Purpose                                                                 |
+| --------------------------- | ----------------------------------------------------------------------- |
+| `npm run api`               | Print compact public API signatures                                     |
+| `npm run test:completeness` | Check that exported functions have colocated tests                      |
+| `npm run order`             | Check source export and test `describe` ordering                        |
+| `npm run size`              | Build matching examples and report gzip sizes against the baseline      |
+| `npm run packages:check`    | Check package shape, exports, references, and side-effect-free patterns |
 
 ## Repo Structure
 
