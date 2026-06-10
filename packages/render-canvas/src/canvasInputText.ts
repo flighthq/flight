@@ -1,4 +1,4 @@
-﻿import { createNullRendererData, rgbaToHexString } from '@flighthq/render';
+﻿import { createNullRendererData, rgbToHexString } from '@flighthq/render';
 import { getInputTextRuntime } from '@flighthq/scene-display';
 import {
   getInputTextCaretRectangle,
@@ -43,7 +43,7 @@ export function drawCanvasInputText(state: CanvasRenderState, renderNode: Displa
 
   getInputTextSelectionRectangles(selectionRectangles, source, runtime.textLayout);
   if (selectionRectangles.length > 0) {
-    context.fillStyle = rgbaToHexString(source.data.selectionColor);
+    context.fillStyle = rgbToHexString(source.data.selectionColor);
     context.globalAlpha = Math.min(1, renderNode.alpha * source.data.selectionAlpha);
     for (const rect of selectionRectangles) {
       context.fillRect(rect.x - scrollXOffset, rect.y - scrollYOffset, rect.width, rect.height);

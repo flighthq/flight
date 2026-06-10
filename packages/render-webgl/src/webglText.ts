@@ -1,4 +1,4 @@
-﻿import { computeTextFormatFontString, createNullRendererData, rgbaToHexString } from '@flighthq/render';
+﻿import { computeTextFormatFontString, createNullRendererData, rgbToHexString } from '@flighthq/render';
 import { getTextRuntime } from '@flighthq/scene-display';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
@@ -80,7 +80,7 @@ export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRende
 
   for (const group of result.groups) {
     offCtx.font = computeTextFormatFontString(group.format);
-    offCtx.fillStyle = rgbaToHexString(group.format.color ?? 0);
+    offCtx.fillStyle = rgbToHexString(group.format.color ?? 0);
     const slice = text.substring(group.startIndex, group.endIndex);
     const x = group.offsetX;
     // group.ascent = font-size; CSS places the alphabetic baseline at ~80% of the em-size.
