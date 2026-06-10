@@ -2,7 +2,7 @@ import { cloneSurface, createSurface } from './surface';
 
 describe('cloneSurface', () => {
   it('produces identical values', () => {
-    const img = createSurface(2, 2, 0xff102030);
+    const img = createSurface(2, 2, 0x102030ff);
     const clone = cloneSurface(img);
     expect(clone.width).toBe(img.width);
     expect(clone.height).toBe(img.height);
@@ -10,7 +10,7 @@ describe('cloneSurface', () => {
   });
 
   it('is a deep copy', () => {
-    const img = createSurface(2, 2, 0xff102030);
+    const img = createSurface(2, 2, 0x102030ff);
     const clone = cloneSurface(img);
     clone.data[0] = 0;
     expect(img.data[0]).toBe(0x10);
@@ -27,7 +27,7 @@ describe('createSurface', () => {
   });
 
   it('fills with the given color', () => {
-    const img = createSurface(2, 2, 0xff112233);
+    const img = createSurface(2, 2, 0x112233ff);
     expect(img.data[0]).toBe(0x11);
     expect(img.data[1]).toBe(0x22);
     expect(img.data[2]).toBe(0x33);

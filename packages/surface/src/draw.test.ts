@@ -3,7 +3,7 @@ import { createSurface } from './surface';
 
 describe('drawSurface', () => {
   it('does not throw when drawing onto a canvas', () => {
-    const src = createSurface(2, 2, 0xff112233);
+    const src = createSurface(2, 2, 0x112233ff);
     const canvas = document.createElement('canvas');
     canvas.width = 4;
     canvas.height = 4;
@@ -11,7 +11,7 @@ describe('drawSurface', () => {
   });
 
   it('does not throw when drawing at an offset', () => {
-    const src = createSurface(2, 2, 0xff112233);
+    const src = createSurface(2, 2, 0x112233ff);
     const canvas = document.createElement('canvas');
     canvas.width = 8;
     canvas.height = 8;

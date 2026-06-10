@@ -38,6 +38,14 @@ export function applySurfaceColorTransform(
   }
 }
 
+/**
+ * Tests each pixel in the source region and writes `color` into `out` where
+ * the test passes, or optionally copies the source pixel where it fails.
+ * Returns the number of pixels that passed the test.
+ *
+ * Safe to pass the same surface as both `out` and `source` (each pixel is
+ * read before it is written).
+ */
 export function applySurfaceThreshold(
   out: Surface,
   dx: number,
@@ -61,15 +69,15 @@ export function applySurfaceThreshold(
       const si = ((sy + py) * source.width + (sx + px)) * 4;
       const di = ((dy + py) * out.width + (dx + px)) * 4;
       const pixel =
-        (((source.data[si + 3] << 24) | (source.data[si] << 16) | (source.data[si + 1] << 8) | source.data[si + 2]) &
+        (((source.data[si] << 24) | (source.data[si + 1] << 16) | (source.data[si + 2] << 8) | source.data[si + 3]) &
           mask) >>>
         0;
       const passes = compare(pixel, operation, thresholdValue >>> 0);
       if (passes) {
-        const cr = (color >> 16) & 0xff;
-        const cg = (color >> 8) & 0xff;
-        const cb = color & 0xff;
-        const ca = (color >>> 24) & 0xff;
+        const cr = (color >>> 24) & 0xff;
+        const cg = (color >> 16) & 0xff;
+        const cb = (color >> 8) & 0xff;
+        const ca = color & 0xff;
         out.data[di] = cr;
         out.data[di + 1] = cg;
         out.data[di + 2] = cb;
@@ -86,6 +94,17 @@ export function applySurfaceThreshold(
   return changed;
 }
 
+/**
+ * Blends each channel of `source` into `out` at `(dx, dy)` using per-channel
+ * multipliers in the range [0, 256]: 0 keeps `out`, 256 replaces with
+ * `source`, intermediate values blend proportionally.
+ *
+ * `out` and `source` must not be the same surface when the source and
+ * destination regions overlap — the blend formula reads both surfaces, so
+ * a write to `out` corrupts later reads from `source` at different positions.
+ * Passing the same surface is safe only when dx=sx and dy=sy (identical
+ * regions), in which case the result equals `out` for every multiplier.
+ */
 export function mergeSurface(
   out: Surface,
   dx: number,
