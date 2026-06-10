@@ -1,7 +1,10 @@
 // Requires: assets/wabbit_alpha.png
-// Port of BlurTest1. Shows 3 bitmaps with blur filters at different quality levels.
-// TODO: animated blur amount requires display-object-level filter support.
-// Currently shows the bitmaps unfiltered as a placeholder layout.
+// Three bitmaps with blur filters of increasing strength (Gaussian standard deviation
+// 4 / 8 / 12 px). Demonstrates the createBlurFilter → filterToCSS → setCanvasCSSFilter
+// seam: the abstract filter descriptor is created here, and the render layer realizes it
+// per backend (CSS filter on canvas/DOM; the offscreen path on WebGL).
+import { type BitmapFilter, createBlurFilter } from '@flighthq/filters';
+import type { DisplayObject } from '@flighthq/sdk';
 import {
   addSceneChild,
   appendShapeBeginFill,
@@ -14,7 +17,7 @@ import {
   loadImageSourceFromURL,
 } from '@flighthq/sdk';
 
-import { height, render, scale, width } from './render';
+import { applyFilters, height, render, scale, width } from './render';
 
 const root = createDisplayContainer();
 root.scaleX = scale;
@@ -31,6 +34,8 @@ addSceneChild(root, bg);
 
 const image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
 
+const filtered: { node: DisplayObject; filter: BitmapFilter }[] = [];
+
 for (let i = 0; i < 3; i++) {
   const bmp = createBitmap();
   bmp.data.image = image;
@@ -39,23 +44,20 @@ for (let i = 0; i < 3; i++) {
   bmp.y = 50;
   addSceneChild(root, bmp);
 
+  // blurX/blurY are the Gaussian standard deviation in pixels — consistent across the
+  // CSS, surface, and WebGL paths.
+  const sigma = (i + 1) * 4;
+  filtered.push({ node: bmp, filter: createBlurFilter({ blurX: sigma, blurY: sigma }) });
+
   const lbl = createRichText();
   lbl.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x444444 };
   lbl.x = bmp.x;
   lbl.y = bmp.y + image.height + 8;
   lbl.data.width = image.width;
   lbl.data.height = 24;
-  lbl.data.text = `quality ${i + 1}`;
+  lbl.data.text = `blur σ=${sigma}px`;
   addSceneChild(root, lbl);
 }
 
-const todo = createRichText();
-todo.data.defaultTextFormat = { font: 'sans-serif', size: 16, color: 0xff0000 };
-todo.x = 10;
-todo.y = H - 30;
-todo.data.width = W - 20;
-todo.data.height = 24;
-todo.data.text = 'TODO: animated blur requires display-object-level filter support';
-addSceneChild(root, todo);
-
+applyFilters(filtered);
 render(root);
