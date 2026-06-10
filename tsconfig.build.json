@@ -9,6 +9,7 @@
     { "path": "./packages/geometry" },
     { "path": "./packages/input" },
     { "path": "./packages/surface" },
+    { "path": "./packages/surface-filters" },
     { "path": "./packages/interaction" },
     { "path": "./packages/materials" },
     { "path": "./packages/media" },
