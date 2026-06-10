@@ -4,11 +4,28 @@ import type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes
 
 export type { WebGLBitmapShader, WebGLShaderLocations };
 
+export interface WebGLParticleShader {
+  program: WebGLProgram;
+  locCorner: number;
+  locPos: number;
+  locCosScale: number;
+  locSinScale: number;
+  locColor: number;
+  locUVRect: number;
+  locSize: number;
+  locWorldMatrix: WebGLUniformLocation;
+  locTexture: WebGLUniformLocation;
+}
+
 export type WebGLRenderStateInternal = Omit<WebGLRenderState, 'canvas' | 'gl'> & {
   canvas: HTMLCanvasElement;
   gl: WebGL2RenderingContext;
   colorTransformBitmapShader?: WebGLBitmapShader;
   defaultBitmapShader: WebGLBitmapShader;
+  particleShader?: WebGLParticleShader;
+  particleCornerBuffer?: WebGLBuffer;
+  particleInstanceBuffer?: WebGLBuffer;
+  particleInstanceData?: Float32Array;
   currentMaskDepth?: number;
   currentScissorRect?: WebGLScissorRect | null;
   /**

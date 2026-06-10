@@ -1,0 +1,57 @@
+import { createNullRendererData } from '@flighthq/render';
+import type { CanvasRenderState, ParticleEmitter, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
+
+// Canvas 2D does not support per-pixel color multiplication, so only alpha
+// and transform (position, rotation, scale) are applied. Color tint values
+// from the emitter config are silently ignored. Use the WebGL renderer for
+// full color-over-lifetime support.
+export function drawCanvasParticleEmitter(state: CanvasRenderState, renderNode: SpriteRenderNode): void {
+  const source = renderNode.source as ParticleEmitter;
+  const { atlas, alphas, ids, particleCount, transforms } = source.data;
+  if (atlas === null || atlas.image === null || atlas.image.src === null || particleCount === 0) return;
+
+  const regions = atlas.regions;
+  const numRegions = regions.length;
+  const nodeAlpha = renderNode.alpha;
+  const t = renderNode.transform2D;
+  const imageSource = atlas.image.src;
+  const context = state.context;
+
+  state.applyBlendMode?.(state, renderNode.blendMode);
+
+  if (!state.allowSmoothing) context.imageSmoothingEnabled = false;
+
+  for (let i = 0; i < particleCount; i++) {
+    const id = ids[i];
+    if (id < 0 || id >= numRegions) continue;
+    const region = regions[id];
+    if (region.width <= 0 || region.height <= 0) continue;
+
+    const tt = i * 4;
+    const px = transforms[tt];
+    const py = transforms[tt + 1];
+    const rotation = transforms[tt + 2];
+    const scale = transforms[tt + 3];
+
+    // Build world matrix: node transform × particle local (rotate+scale+translate).
+    const cosR = Math.cos(rotation) * scale;
+    const sinR = Math.sin(rotation) * scale;
+    const a = t.a * cosR + t.c * sinR;
+    const b = t.b * cosR + t.d * sinR;
+    const c = t.a * -sinR + t.c * cosR;
+    const d = t.b * -sinR + t.d * cosR;
+    const tx = t.a * px + t.c * py + t.tx;
+    const ty = t.b * px + t.d * py + t.ty;
+
+    context.globalAlpha = nodeAlpha * alphas[i];
+    context.setTransform(a, b, c, d, tx, ty);
+    context.drawImage(imageSource, region.x, region.y, region.width, region.height, 0, 0, region.width, region.height);
+  }
+
+  if (!state.allowSmoothing) context.imageSmoothingEnabled = true;
+}
+
+export const defaultCanvasParticleEmitterRenderer: SpriteRenderer = {
+  createData: createNullRendererData,
+  draw: drawCanvasParticleEmitter,
+};
