@@ -1,0 +1,14 @@
+{
+  "name": "sparktrail",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/particles": "*",
+    "@flighthq/sdk": "*"
+  },
+  "scripts": {
+    "dev": "cross-env RENDER=webgl vite",
+    "build": "cross-env RENDER=webgl vite build",
+    "preview": "vite preview"
+  }
+}
