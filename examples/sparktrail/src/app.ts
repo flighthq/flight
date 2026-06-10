@@ -33,8 +33,8 @@ const emitter = createParticleEmitter();
 emitter.data.atlas = atlas;
 emitter.scaleX = scale;
 emitter.scaleY = scale;
-emitter.x = WIDTH / 2;
-emitter.y = HEIGHT / 2;
+emitter.x = (WIDTH * scale) / 2;
+emitter.y = (HEIGHT * scale) / 2;
 
 const config = createParticleEmitterConfig({
   spawnRate: 250,
@@ -54,6 +54,24 @@ const config = createParticleEmitterConfig({
   maxParticles: 3000,
 });
 
+const configPressed = createParticleEmitterConfig({
+  spawnRate: 1500,
+  lifetimeMin: 0.3,
+  lifetimeMax: 0.8,
+  speedMin: 100,
+  speedMax: 350,
+  spread: Math.PI * 2,
+  directionX: 0,
+  directionY: -1,
+  gravityX: 0,
+  gravityY: 300,
+  alphaStart: 1,
+  alphaEnd: 0,
+  scaleMin: 0.6,
+  scaleMax: 2.0,
+  maxParticles: 3000,
+});
+
 const simState = createParticleEmitterState();
 
 // Stats overlay
@@ -66,14 +84,26 @@ counter.style.cssText =
   'position:fixed;bottom:0;right:0;padding:4px 8px;background:rgba(0,0,0,0.6);color:#ccc;font:11px monospace;z-index:10000';
 document.body.appendChild(counter);
 
-// Pointer tracking — coordinates in CSS pixels, matching emitter's local space.
-let mouseX = WIDTH / 2;
-let mouseY = HEIGHT / 2;
+let mouseX = (WIDTH * scale) / 2;
+let mouseY = (HEIGHT * scale) / 2;
+let pointerDown = false;
+let emitterVelX = 0;
+let emitterVelY = 0;
+
+const SPRING = 300;
+const DAMPING = 22;
 
 canvas.addEventListener('pointermove', (e) => {
   const rect = canvas.getBoundingClientRect();
-  mouseX = (e.clientX - rect.left) * (WIDTH / rect.width);
-  mouseY = (e.clientY - rect.top) * (HEIGHT / rect.height);
+  mouseX = (e.clientX - rect.left) * (WIDTH / rect.width) * scale;
+  mouseY = (e.clientY - rect.top) * (HEIGHT / rect.height) * scale;
+});
+
+canvas.addEventListener('pointerdown', () => {
+  pointerDown = true;
+});
+canvas.addEventListener('pointerup', () => {
+  pointerDown = false;
 });
 
 let lastTime = performance.now();
@@ -85,11 +115,13 @@ function enterFrame(): void {
   const dt = Math.min((now - lastTime) / 1000, 0.05);
   lastTime = now;
 
-  emitter.x = mouseX;
-  emitter.y = mouseY;
+  emitterVelX += ((mouseX - emitter.x) * SPRING - emitterVelX * DAMPING) * dt;
+  emitterVelY += ((mouseY - emitter.y) * SPRING - emitterVelY * DAMPING) * dt;
+  emitter.x += emitterVelX * dt;
+  emitter.y += emitterVelY * dt;
   invalidateLocalTransform(emitter);
 
-  updateParticleEmitter(emitter, simState, config, dt);
+  updateParticleEmitter(emitter, simState, pointerDown ? configPressed : config, dt);
   invalidateAppearance(emitter);
 
   counter.textContent = `${emitter.data.particleCount} particles`;
