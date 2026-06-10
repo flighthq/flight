@@ -30,6 +30,7 @@
     { "path": "./packages/tween-easing" },
     { "path": "./packages/types" },
     { "path": "./packages/filters" },
-    { "path": "./packages/particles" }
+    { "path": "./packages/particles" },
+    { "path": "./packages/particles-formats" }
   ]
 }
