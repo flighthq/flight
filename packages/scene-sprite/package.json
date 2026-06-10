@@ -9,6 +9,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./particleEmitter": {
+      "types": "./dist/particleEmitter.d.ts",
+      "default": "./dist/particleEmitter.js"
+    },
     "./quadBatch": {
       "types": "./dist/quadBatch.d.ts",
       "default": "./dist/quadBatch.js"
