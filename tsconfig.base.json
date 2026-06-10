@@ -58,6 +58,8 @@
       "@flighthq/spritesheet/*": ["./packages/spritesheet/src/*"],
       "@flighthq/surface": ["./packages/surface/src/index.ts"],
       "@flighthq/surface/*": ["./packages/surface/src/*"],
+      "@flighthq/surface-filters": ["./packages/surface-filters/src/index.ts"],
+      "@flighthq/surface-filters/*": ["./packages/surface-filters/src/*"],
       "@flighthq/timeline": ["./packages/timeline/src/index.ts"],
       "@flighthq/timeline/*": ["./packages/timeline/src/*"],
       "@flighthq/timeline-spritesheet": ["./packages/timeline-spritesheet/src/index.ts"],

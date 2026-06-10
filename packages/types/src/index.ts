@@ -86,6 +86,7 @@ export * from './Stage';
 export * from './StageSignals';
 export * from './StopTweenOptions';
 export * from './Surface';
+export * from './SurfaceRegion';
 export * from './Text';
 export * from './TextAutoSize';
 export * from './TextFormat';
