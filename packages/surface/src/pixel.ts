@@ -30,37 +30,37 @@ export function getSurfacePixels(
   }
 }
 
-export function setSurfacePixel(dest: Surface, x: number, y: number, color: number): void {
-  const i = (y * dest.width + x) * 4;
-  dest.data[i] = (color >> 16) & 0xff;
-  dest.data[i + 1] = (color >> 8) & 0xff;
-  dest.data[i + 2] = color & 0xff;
+export function setSurfacePixel(out: Surface, x: number, y: number, color: number): void {
+  const i = (y * out.width + x) * 4;
+  out.data[i] = (color >> 16) & 0xff;
+  out.data[i + 1] = (color >> 8) & 0xff;
+  out.data[i + 2] = color & 0xff;
 }
 
-export function setSurfacePixel32(dest: Surface, x: number, y: number, color: number): void {
-  const i = (y * dest.width + x) * 4;
-  dest.data[i] = (color >> 16) & 0xff;
-  dest.data[i + 1] = (color >> 8) & 0xff;
-  dest.data[i + 2] = color & 0xff;
-  dest.data[i + 3] = (color >>> 24) & 0xff;
+export function setSurfacePixel32(out: Surface, x: number, y: number, color: number): void {
+  const i = (y * out.width + x) * 4;
+  out.data[i] = (color >> 16) & 0xff;
+  out.data[i + 1] = (color >> 8) & 0xff;
+  out.data[i + 2] = color & 0xff;
+  out.data[i + 3] = (color >>> 24) & 0xff;
 }
 
 export function setSurfacePixels(
-  dest: Surface,
+  out: Surface,
   x: number,
   y: number,
   width: number,
   height: number,
-  data: Uint8ClampedArray,
+  pixels: Uint8ClampedArray,
 ): void {
   for (let py = 0; py < height; py++) {
     for (let px = 0; px < width; px++) {
       const si = (py * width + px) * 4;
-      const di = ((y + py) * dest.width + (x + px)) * 4;
-      dest.data[di] = data[si];
-      dest.data[di + 1] = data[si + 1];
-      dest.data[di + 2] = data[si + 2];
-      dest.data[di + 3] = data[si + 3];
+      const di = ((y + py) * out.width + (x + px)) * 4;
+      out.data[di] = pixels[si];
+      out.data[di + 1] = pixels[si + 1];
+      out.data[di + 2] = pixels[si + 2];
+      out.data[di + 3] = pixels[si + 3];
     }
   }
 }
