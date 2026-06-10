@@ -1,5 +1,4 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
-import { createWebGLRenderTarget, destroyWebGLRenderTarget } from '@flighthq/render-webgl';
 import type { WebGLRenderState } from '@flighthq/types';
 
 import type { DropShadowFilter } from './index';
@@ -10,8 +9,11 @@ import { applyBlitOffsetPass, applyBlitPass, applyTintPass } from './webglTintSh
 /**
  * Applies a drop shadow filter to `source` and writes the result to `dest`.
  * Rendering order: shadow (at offset, behind object) → source (unless
- * hideObject is true). Uses three internal render targets for the tint,
- * blur, and final composition passes.
+ * hideObject is true).
+ *
+ * `scratch` is a caller-provided array of three scratch targets of the same
+ * dimensions as `dest` (tint mask, blurred shadow, and the blur's ping-pong
+ * temp); the filter allocates nothing itself.
  *
  * inner and knockout shadows are not yet supported by the WebGL path.
  */
@@ -19,6 +21,7 @@ export function applyWebGLDropShadowFilter(
   state: WebGLRenderState,
   source: WebGLRenderTarget,
   dest: WebGLRenderTarget,
+  scratch: WebGLRenderTarget[],
   options: Omit<DropShadowFilter, 'type'> = {},
 ): void {
   if (options.inner || options.knockout) return;
@@ -39,31 +42,24 @@ export function applyWebGLDropShadowFilter(
   const tintStrength = Math.min(1, strength);
   const shadowPasses = Math.max(1, Math.floor(strength));
 
-  const w = source.width;
-  const h = source.height;
-
-  const mask = createWebGLRenderTarget(state, w, h);
-  const blurTemp = createWebGLRenderTarget(state, w, h);
+  const mask = scratch[0];
+  const blurred = scratch[1];
+  const blurTemp = scratch[2];
 
   // Pass 1: extract alpha and tint with shadow color → mask
   applyTintPass(state, source, mask, color, alpha, tintStrength);
 
-  // Pass 2–3: blur the tinted mask (mask ↔ blurTemp ping-pong)
-  applyWebGLBlurFilter(state, mask, blurTemp, { blurX, blurY, quality });
-
-  // blurTemp now holds the blurred, tinted shadow mask.
+  // Pass 2–3: blur the tinted mask → blurred
+  applyWebGLBlurFilter(state, mask, blurred, blurTemp, { blurX, blurY, quality });
 
   // Pass 4+: clear dest, draw shadow at offset; repeated for strength > 1
   clearWebGLFilterTarget(state, dest);
   for (let i = 0; i < shadowPasses; i++) {
-    applyBlitOffsetPass(state, blurTemp, dest, dx, dy);
+    applyBlitOffsetPass(state, blurred, dest, dx, dy);
   }
 
   // Final: composite source over shadow (unless hideObject)
   if (!hideObject) {
     applyBlitPass(state, source, dest);
   }
-
-  destroyWebGLRenderTarget(state, mask);
-  destroyWebGLRenderTarget(state, blurTemp);
 }

@@ -1,4 +1,4 @@
-import { enableRenderFeatures, getOrCreateDisplayObjectRenderNode, hasRenderFeatures } from '@flighthq/render';
+import { enableRenderFeatures, getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { type DisplayObject, type DOMRenderState, RenderFeatures, type RenderNode2D } from '@flighthq/types';
 
 // Per-state DOM CSS filter bindings, keyed by the render node. Render nodes are
@@ -8,21 +8,17 @@ import { type DisplayObject, type DOMRenderState, RenderFeatures, type RenderNod
 // the per-state canvas CSS filter and WebGL shader bindings.
 const _cssFilterBindings = new WeakMap<RenderNode2D, string>();
 
-export function getDOMCSSFilter(renderNode: RenderNode2D): string | undefined {
-  return _cssFilterBindings.get(renderNode);
+/**
+ * Enables CSS filter support for the render state. Bindings made via
+ * setDOMCSSFilter are only applied while support is enabled — call this once
+ * during setup, mirroring enableDOMBlendModeSupport and the other opt-ins.
+ */
+export function enableDOMCSSFilterSupport(state: DOMRenderState): void {
+  enableRenderFeatures(state, RenderFeatures.CSSFilter);
 }
 
-/**
- * Returns the CSS filter to style renderNode's element with, or null when none is
- * bound or CSS filter support is disabled for the state. The feature gate keeps the
- * lookup off the hot path until at least one filter has been bound.
- */
-export function selectDOMCSSFilter(state: DOMRenderState, renderNode: RenderNode2D): string | null {
-  if (hasRenderFeatures(state, RenderFeatures.CSSFilter)) {
-    const filter = _cssFilterBindings.get(renderNode);
-    if (filter !== undefined) return filter;
-  }
-  return null;
+export function getDOMCSSFilter(renderNode: RenderNode2D): string | undefined {
+  return _cssFilterBindings.get(renderNode);
 }
 
 /**
@@ -30,7 +26,7 @@ export function selectDOMCSSFilter(state: DOMRenderState, renderNode: RenderNode
  * DOM render state, or clears it when filter is null. The binding lives on the
  * render state side, not the scene graph, so the same display object can carry a
  * different filter (or none) in different render states. The filter is applied via
- * the element's `style.filter`.
+ * the element's `style.filter` while CSS filter support is enabled.
  */
 export function setDOMCSSFilter(state: DOMRenderState, node: DisplayObject, filter: string | null): void {
   const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
@@ -39,5 +35,4 @@ export function setDOMCSSFilter(state: DOMRenderState, node: DisplayObject, filt
     return;
   }
   _cssFilterBindings.set(renderNode, filter);
-  enableRenderFeatures(state, RenderFeatures.CSSFilter);
 }

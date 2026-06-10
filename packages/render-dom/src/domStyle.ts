@@ -1,6 +1,7 @@
-﻿import type { DOMRenderState, RenderNode2D } from '@flighthq/types';
+﻿import { hasRenderFeatures } from '@flighthq/render';
+import { type DOMRenderState, RenderFeatures, type RenderNode2D } from '@flighthq/types';
 
-import { selectDOMCSSFilter } from './domCSSFilterBinding';
+import { getDOMCSSFilter } from './domCSSFilterBinding';
 import { setDOMTransform } from './domTransform';
 import type { DOMRenderStateInternal } from './internal';
 
@@ -8,7 +9,7 @@ export function applyDOMStyle(state: DOMRenderState, element: HTMLElement, node:
   setDOMTransform(element, node.transform2D, state.roundPixels);
   element.style.opacity = node.alpha < 1 ? String(node.alpha) : '';
   element.style.imageRendering = state.allowSmoothing ? '' : 'pixelated';
-  element.style.filter = selectDOMCSSFilter(state, node) ?? '';
+  if (hasRenderFeatures(state, RenderFeatures.CSSFilter)) element.style.filter = getDOMCSSFilter(node) ?? '';
   state.applyBlendMode?.(element, node.blendMode);
 }
 

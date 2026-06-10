@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { applyCanvasFilter } from './canvas';
+import { applyCanvasCSSFilter } from './canvas';
 
 function makeContext() {
   return {
@@ -11,11 +11,11 @@ function makeContext() {
   } as unknown as CanvasRenderingContext2D;
 }
 
-describe('applyCanvasFilter', () => {
+describe('applyCanvasCSSFilter', () => {
   it('sets filter, draws, and restores for a supported filter', () => {
     const ctx = makeContext();
     const source = {} as CanvasImageSource;
-    const result = applyCanvasFilter(ctx, source, 0, 0, { type: 'blur', blurX: 4, blurY: 4 });
+    const result = applyCanvasCSSFilter(ctx, source, 0, 0, { type: 'blur', blurX: 4, blurY: 4 });
 
     expect(result).toBe(true);
     expect(ctx.save).toHaveBeenCalled();
@@ -25,7 +25,7 @@ describe('applyCanvasFilter', () => {
 
   it('does not draw and returns false for an unsupported filter', () => {
     const ctx = makeContext();
-    const result = applyCanvasFilter(ctx, {} as CanvasImageSource, 0, 0, {
+    const result = applyCanvasCSSFilter(ctx, {} as CanvasImageSource, 0, 0, {
       type: 'convolution',
       matrix: [1],
       matrixX: 1,
@@ -39,7 +39,7 @@ describe('applyCanvasFilter', () => {
   it('passes dx and dy to drawImage', () => {
     const ctx = makeContext();
     const source = {} as CanvasImageSource;
-    applyCanvasFilter(ctx, source, 10, 20, { type: 'blur', blurX: 2, blurY: 2 });
+    applyCanvasCSSFilter(ctx, source, 10, 20, { type: 'blur', blurX: 2, blurY: 2 });
     expect(ctx.drawImage).toHaveBeenCalledWith(source, 10, 20);
   });
 });

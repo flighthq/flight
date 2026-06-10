@@ -3,7 +3,7 @@ import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene-display';
 import { BlendMode } from '@flighthq/types';
 
-import { setDOMCSSFilter } from './domCSSFilterBinding';
+import { enableDOMCSSFilterSupport, setDOMCSSFilter } from './domCSSFilterBinding';
 import { enableDOMBlendModeSupport } from './domMaterials';
 import { createDOMRenderState } from './domRenderState';
 import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
@@ -81,6 +81,7 @@ describe('applyDOMStyle', () => {
     const state = makeState();
     const el = document.createElement('div');
     const obj = createDisplayObject();
+    enableDOMCSSFilterSupport(state);
     setDOMCSSFilter(state, obj, 'blur(3px)');
     const node = getOrCreateDisplayObjectRenderNode(state, obj);
 
