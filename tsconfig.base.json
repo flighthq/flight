@@ -36,6 +36,8 @@
       "@flighthq/interaction/*": ["./packages/interaction/src/*"],
       "@flighthq/materials": ["./packages/materials/src/index.ts"],
       "@flighthq/materials/*": ["./packages/materials/src/*"],
+      "@flighthq/particles": ["./packages/particles/src/index.ts"],
+      "@flighthq/particles/*": ["./packages/particles/src/*"],
       "@flighthq/media": ["./packages/media/src/index.ts"],
       "@flighthq/media/*": ["./packages/media/src/*"],
       "@flighthq/render-canvas": ["./packages/render-canvas/src/index.ts"],
