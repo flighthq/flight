@@ -94,6 +94,7 @@ export function createParticleEmitterData(data?: Readonly<Partial<ParticleEmitte
   return {
     alphas: data?.alphas ?? new Float32Array(),
     atlas: data?.atlas ?? null,
+    colors: data?.colors ?? new Float32Array(),
     ids: data?.ids ?? new Uint16Array(),
     particleCount: data?.particleCount ?? 0,
     transforms: data?.transforms ?? new Float32Array(),
@@ -120,6 +121,7 @@ export function reserveParticleEmitter(target: ParticleEmitter, capacity: number
   if (getParticleEmitterCapacity(target) >= capacity) return;
   const data = target.data;
   data.alphas = reserveFloat32Array(data.alphas, capacity);
+  data.colors = reserveFloat32Array(data.colors, capacity * 3);
   data.ids = reserveUint16Array(data.ids, capacity);
   data.transforms = reserveFloat32Array(data.transforms, capacity * PARTICLE_TRANSFORM_STRIDE);
 }

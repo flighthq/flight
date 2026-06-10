@@ -20,6 +20,7 @@ function makeParticleEmitterNode(data: Record<string, unknown> = {}): SpriteRend
         ids: new Uint16Array([0]),
         transforms: new Float32Array([0, 0, 0, 1]),
         alphas: new Float32Array([1]),
+        colors: new Float32Array([1, 1, 1]),
         ...data,
       },
     },
@@ -61,10 +62,10 @@ describe('drawWebGLParticleEmitter', () => {
   it('returns early without drawing when particleCount is 0', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLParticleEmitter(state, makeParticleEmitterNode({ particleCount: 0 }));
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
-  it('draws one quad per live particle', () => {
+  it('draws all live particles in a single instanced draw call', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLParticleEmitter(
       state,
@@ -73,12 +74,14 @@ describe('drawWebGLParticleEmitter', () => {
         ids: new Uint16Array([0, 0, 0]),
         transforms: new Float32Array([0, 0, 0, 1, 10, 10, 0, 1, 20, 20, 0, 1]),
         alphas: new Float32Array([1, 0.5, 0.25]),
+        colors: new Float32Array([1, 1, 1, 1, 1, 1, 1, 1, 1]),
       }),
     );
-    expect(gl.drawElements).toHaveBeenCalledTimes(3);
+    expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
+    expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 3);
   });
 
-  it('skips particles with out-of-range region ids', () => {
+  it('skips out-of-range region ids and draws only valid particles', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLParticleEmitter(
       state,
@@ -87,8 +90,9 @@ describe('drawWebGLParticleEmitter', () => {
         ids: new Uint16Array([0, 99, 0]),
         transforms: new Float32Array([0, 0, 0, 1, 10, 10, 0, 1, 20, 20, 0, 1]),
         alphas: new Float32Array([1, 1, 1]),
+        colors: new Float32Array([1, 1, 1, 1, 1, 1, 1, 1, 1]),
       }),
     );
-    expect(gl.drawElements).toHaveBeenCalledTimes(2);
+    expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
   });
 });
