@@ -1,5 +1,11 @@
-import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/particles';
-import { createParticleEmitterConfig } from '@flighthq/particles';
+import type {
+  ColorKeyframe,
+  CurveKeyframe,
+  ParticleBlendMode,
+  ParticleCurve,
+  ParticleEmitterConfig,
+} from '@flighthq/particles';
+import { colorCurveFromKeyframes, createParticleEmitterConfig, curveFromKeyframes } from '@flighthq/particles';
 
 import type {
   UnityColor,
@@ -141,6 +147,13 @@ function rawToConfig(raw: Record<string, unknown>, ppu: number): ParticleEmitter
   const FADE: UnityColor = { r: 1, g: 1, b: 1, a: 0 };
   const startColor = colEnabled ? colorAt(colRaw?.colorStart, WHITE) : colorAt(raw.startColor, WHITE);
   const endColor = colEnabled ? colorAt(colRaw?.colorEnd, FADE) : colorAt(raw.startColor, WHITE);
+  // A multi-stop gradient (Unity's standard colorOverLifetime export) bakes into
+  // lifetime curves so the full gradient survives import, not just the endpoints.
+  const gradient = colEnabled ? (colRaw?.gradient as Record<string, unknown> | undefined) : undefined;
+  const colorCurve = colorKeysToCurve(gradient?.colorKeys);
+  const alphaCurve = alphaKeysToCurve(gradient?.alphaKeys);
+  // A size-over-lifetime AnimationCurve with intermediate keys bakes into a scale curve.
+  const scaleCurve = solEnabled ? sizeKeysToCurve(solRaw?.curve) : null;
 
   const rolRaw = raw.rotationOverLifetime as Record<string, unknown> | undefined;
   const rolEnabled = rb(rolRaw?.enabled, false);
@@ -180,6 +193,9 @@ function rawToConfig(raw: Record<string, unknown>, ppu: number): ParticleEmitter
     colorEndB: endColor.b,
     alphaStart: startColor.a,
     alphaEnd: endColor.a,
+    colorCurve,
+    alphaCurve,
+    scaleCurve,
     rotationSpeedMin: rotLow,
     rotationSpeedMax: rotHigh,
     burstCount,
@@ -218,14 +234,44 @@ function collectUnityWarnings(raw: Record<string, unknown>): string[] {
   const bursts = Array.isArray(em?.bursts) ? em.bursts : [];
   if (bursts.length > 1) warnings.push(`Only the first of ${bursts.length} emission bursts was imported`);
 
-  const col = raw.colorOverLifetime as Record<string, unknown> | undefined;
-  if (col != null && rb(col.enabled, false)) {
-    const grad = col.gradient as Record<string, unknown> | undefined;
-    const keys = grad != null && Array.isArray(grad.colorKeys) ? grad.colorKeys.length : 0;
-    if (keys > 2) warnings.push(`Color gradient with ${keys} keys was collapsed to start/end colors`);
-  }
-
+  // Multi-stop color gradients are now baked into a colorCurve, so they no longer warn.
   return warnings;
+}
+
+// Unity gradient colorKeys → baked color curve, but only for genuine multi-stop
+// gradients (≤2 stops are exactly the linear start→end path already handled).
+function colorKeysToCurve(arr: unknown): ParticleCurve | null {
+  if (!Array.isArray(arr) || arr.length <= 2) return null;
+  const keys: ColorKeyframe[] = [];
+  for (let i = 0; i < arr.length; i++) {
+    const k = arr[i] as Record<string, unknown>;
+    const c = (k.color ?? k) as Record<string, unknown>; // color may be nested or inline
+    keys.push({ time: rn(k.time, i / (arr.length - 1)), r: rn(c.r, 1), g: rn(c.g, 1), b: rn(c.b, 1) });
+  }
+  return colorCurveFromKeyframes(keys);
+}
+
+function alphaKeysToCurve(arr: unknown): ParticleCurve | null {
+  if (!Array.isArray(arr) || arr.length <= 2) return null;
+  const keys: CurveKeyframe[] = [];
+  for (let i = 0; i < arr.length; i++) {
+    const k = arr[i] as Record<string, unknown>;
+    keys.push({ time: rn(k.time, i / (arr.length - 1)), value: rn(k.alpha, 1) });
+  }
+  return curveFromKeyframes(keys);
+}
+
+// Unity size-over-lifetime AnimationCurve { keys: [{ time, value }] } → scale curve.
+function sizeKeysToCurve(curve: unknown): ParticleCurve | null {
+  if (curve == null || typeof curve !== 'object') return null;
+  const arr = (curve as Record<string, unknown>).keys;
+  if (!Array.isArray(arr) || arr.length <= 2) return null;
+  const keys: CurveKeyframe[] = [];
+  for (let i = 0; i < arr.length; i++) {
+    const k = arr[i] as Record<string, unknown>;
+    keys.push({ time: rn(k.time, i / (arr.length - 1)), value: rn(k.value, 1) });
+  }
+  return curveFromKeyframes(keys);
 }
 
 function unityBlendMode(raw: Record<string, unknown>): ParticleBlendMode | null {

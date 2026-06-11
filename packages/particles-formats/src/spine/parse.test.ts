@@ -1,3 +1,5 @@
+import { sampleColorCurve, sampleCurve } from '@flighthq/particles';
+
 import { loadSpineParticle, parseSpineParticle } from './parse';
 import { serializeSpineParticle } from './serialize';
 
@@ -55,7 +57,7 @@ describe('loadSpineParticle — import warnings', () => {
     expect(loadSpineParticle(SPARK_JSON).warnings).toEqual([]);
   });
 
-  it('warns when tint/alpha timelines have more than two keyframes', () => {
+  it('does NOT warn for multi-keyframe tint timelines (they are baked into curves)', () => {
     const json = JSON.stringify({
       ...JSON.parse(SPARK_JSON),
       tint: [
@@ -64,7 +66,8 @@ describe('loadSpineParticle — import warnings', () => {
         { time: 1, color: '0000ff' },
       ],
     });
-    expect(loadSpineParticle(json).warnings.some((w) => w.includes('Tint'))).toBe(true);
+    const { warnings } = loadSpineParticle(json);
+    expect(warnings.some((w) => w.includes('Tint'))).toBe(false);
   });
 
   it('warns about unsupported lifeOffset', () => {
@@ -186,6 +189,46 @@ describe('parseSpineParticle — malformed input', () => {
     expect(Number.isFinite(c.lifetimeMin)).toBe(true);
     expect(Number.isFinite(c.spawnRate)).toBe(true);
     expect(Number.isFinite(c.colorStartR)).toBe(true);
+  });
+});
+
+describe('parseSpineParticle — multi-stop timelines bake into curves', () => {
+  it('leaves curves null for a 2-stop tint/alpha (linear path)', () => {
+    const c = parseSpineParticle(SPARK_JSON); // tint/alpha each have 2 keyframes
+    expect(c.colorCurve).toBeNull();
+    expect(c.alphaCurve).toBeNull();
+  });
+
+  it('bakes a 3-stop tint timeline into colorCurve preserving the middle stop', () => {
+    const json = JSON.stringify({
+      ...JSON.parse(SPARK_JSON),
+      tint: [
+        { time: 0, color: 'ff0000' }, // red
+        { time: 0.5, color: '00ff00' }, // green
+        { time: 1, color: '0000ff' }, // blue
+      ],
+    });
+    const c = parseSpineParticle(json);
+    expect(c.colorCurve).not.toBeNull();
+    const out = [0, 0, 0];
+    sampleColorCurve(c.colorCurve!, 0.5, out, 0);
+    expect(out[1]).toBeGreaterThan(0.8); // green dominant at mid-life
+    expect(out[0]).toBeLessThan(0.2);
+  });
+
+  it('bakes a 3-stop alpha timeline into alphaCurve', () => {
+    const json = JSON.stringify({
+      ...JSON.parse(SPARK_JSON),
+      alpha: [
+        { time: 0, alpha: 0 },
+        { time: 0.5, alpha: 1 }, // peak mid-life
+        { time: 1, alpha: 0 },
+      ],
+    });
+    const c = parseSpineParticle(json);
+    expect(c.alphaCurve).not.toBeNull();
+    expect(sampleCurve(c.alphaCurve!, 0.5)).toBeGreaterThan(0.9);
+    expect(sampleCurve(c.alphaCurve!, 0)).toBeLessThan(0.1);
   });
 });
 
