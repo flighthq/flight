@@ -8,10 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./inputManager": {
-      "types": "./dist/inputManager.d.ts",
-      "default": "./dist/inputManager.js"
     }
   },
   "files": [

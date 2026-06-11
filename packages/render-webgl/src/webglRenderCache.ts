@@ -1,5 +1,4 @@
-import { multiplyMatrix } from '@flighthq/geometry';
-import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
+import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry';
 import { createNullRendererData } from '@flighthq/render';
 import { isImageRenderCachePrimitive, registerImageRenderCacheRenderer } from '@flighthq/render';
 import type {

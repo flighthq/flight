@@ -8,22 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./displayHitTests": {
-      "types": "./dist/displayHitTests.d.ts",
-      "default": "./dist/displayHitTests.js"
-    },
-    "./hitTests": {
-      "types": "./dist/hitTests.d.ts",
-      "default": "./dist/hitTests.js"
-    },
-    "./interactionManager": {
-      "types": "./dist/interactionManager.d.ts",
-      "default": "./dist/interactionManager.js"
-    },
-    "./spriteHitTests": {
-      "types": "./dist/spriteHitTests.d.ts",
-      "default": "./dist/spriteHitTests.js"
     }
   },
   "files": [

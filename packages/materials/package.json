@@ -8,10 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./colorTransform": {
-      "types": "./dist/colorTransform.d.ts",
-      "default": "./dist/colorTransform.js"
     }
   },
   "files": [

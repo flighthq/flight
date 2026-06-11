@@ -8,14 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./movieClip": {
-      "types": "./dist/movieClip.d.ts",
-      "default": "./dist/movieClip.js"
-    },
-    "./timeline": {
-      "types": "./dist/timeline.d.ts",
-      "default": "./dist/timeline.js"
     }
   },
   "files": [

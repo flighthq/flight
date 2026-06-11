@@ -8,34 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./boundsRectangle": {
-      "types": "./dist/boundsRectangle.d.ts",
-      "default": "./dist/boundsRectangle.js"
-    },
-    "./sceneNode": {
-      "types": "./dist/sceneNode.d.ts",
-      "default": "./dist/sceneNode.js"
-    },
-    "./hasBoundsRectangle": {
-      "types": "./dist/hasBoundsRectangle.d.ts",
-      "default": "./dist/hasBoundsRectangle.js"
-    },
-    "./hasTransform2d": {
-      "types": "./dist/hasTransform2d.d.ts",
-      "default": "./dist/hasTransform2d.js"
-    },
-    "./hierarchy": {
-      "types": "./dist/hierarchy.d.ts",
-      "default": "./dist/hierarchy.js"
-    },
-    "./revision": {
-      "types": "./dist/revision.d.ts",
-      "default": "./dist/revision.js"
-    },
-    "./transform2d": {
-      "types": "./dist/transform2d.d.ts",
-      "default": "./dist/transform2d.js"
     }
   },
   "files": [
