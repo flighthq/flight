@@ -1,30 +1,20 @@
 import { invalidateLocalBounds } from '@flighthq/scene';
 import { reserveParticleEmitter } from '@flighthq/scene-sprite';
-import type { ParticleEmitter } from '@flighthq/types';
+import type {
+  ParticleEmitter,
+  ParticleEmitterCallbacks,
+  ParticleEmitterConfig,
+  ParticleEmitterState,
+  WorldTransform2D,
+} from '@flighthq/types';
 
 import { sampleColorCurve, sampleCurve } from './curve';
-import type { ParticleEmitterConfig } from './particleEmitterConfig';
-import type { ParticleEmitterState } from './particleEmitterState';
 import { ensureParticleEmitterStateCapacity } from './particleEmitterState';
+
+export type { ParticleEmitterCallbacks, WorldTransform2D };
 
 const PARTICLE_TRANSFORM_STRIDE = 4; // must match scene-sprite/particleEmitter.ts
 const TWO_PI = Math.PI * 2;
-
-export interface ParticleEmitterCallbacks {
-  onDeath?: (x: number, y: number) => void;
-  onSpawn?: (x: number, y: number) => void;
-}
-
-/** 2-D affine transform used to convert emitter-local coordinates to world space.
- *  Required when `config.worldSpace = true`. Matches the shape of SpriteRenderNode.transform2D. */
-export interface WorldTransform2D {
-  a: number;
-  b: number;
-  c: number;
-  d: number;
-  tx: number;
-  ty: number;
-}
 
 /** True once a finite, non-looping emitter has finished emitting AND all of its
  *  particles have died — i.e. a one-shot effect that is safe to recycle/remove.

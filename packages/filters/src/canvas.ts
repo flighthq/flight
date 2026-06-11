@@ -1,4 +1,6 @@
-import { type BitmapFilter, filterToCSS } from './index';
+import type { BitmapFilter } from '@flighthq/types';
+
+import { filterToCSS } from './index';
 
 /**
  * Applies a bitmap filter to `source` and draws the result onto `dest` at

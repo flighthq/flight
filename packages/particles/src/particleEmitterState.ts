@@ -1,26 +1,5 @@
 import { reserveFloat32Array } from '@flighthq/geometry';
-
-import type { RandomSource } from './random';
-
-export interface ParticleEmitterState {
-  burstTimer: number;
-  // Per-particle randomised birth/death colors — only populated when colorVariance > 0
-  colorBirth: Float32Array; // [r, g, b] × capacity
-  colorDeath: Float32Array; // [r, g, b] × capacity
-  // Seconds the emitter has been emitting; only advanced for finite, non-looping
-  // emitters (config.duration > 0 && !config.loop) to drive auto-stop/completion.
-  emitterAge: number;
-  lifetimes: Float32Array; // [age, maxAge] × capacity
-  prevX: number; // emitter x (or world tx) from previous frame; NaN = uninitialised
-  prevY: number;
-  // Source of randomness for spawning. Defaults to Math.random; pass a seeded
-  // generator (see createSeededRandom) for deterministic simulation.
-  random: RandomSource;
-  rotationSpeeds: Float32Array; // rad/s × capacity
-  scales: Float32Array; // spawn scale × capacity
-  spawnAccumulator: number;
-  velocities: Float32Array; // [vx, vy] × capacity
-}
+import type { ParticleEmitterState, RandomSource } from '@flighthq/types';
 
 export function createParticleEmitterState(random: RandomSource = Math.random): ParticleEmitterState {
   return {

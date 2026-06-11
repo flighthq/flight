@@ -1,9 +1,8 @@
 import { reserveParticleEmitter } from '@flighthq/scene-sprite';
 import type { ParticleEmitter } from '@flighthq/types';
+import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types';
 
 import { sampleColorCurve, sampleCurve } from './curve';
-import type { ParticleEmitterConfig } from './particleEmitterConfig';
-import type { ParticleEmitterState } from './particleEmitterState';
 import { ensureParticleEmitterStateCapacity } from './particleEmitterState';
 
 const PARTICLE_TRANSFORM_STRIDE = 4;

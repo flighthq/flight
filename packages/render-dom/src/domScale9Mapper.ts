@@ -1,16 +1,11 @@
-import type { RectangleLike } from '@flighthq/types';
-
-export interface DOMScale9Mapper {
-  mapX(x: number): number;
-  mapY(y: number): number;
-}
+import type { RectangleLike, Scale9Mapper } from '@flighthq/types';
 
 export function buildDOMScale9Mapper(
   bounds: Readonly<RectangleLike>,
   scale9Grid: Readonly<RectangleLike>,
   scaleX: number,
   scaleY: number,
-): DOMScale9Mapper | null {
+): Scale9Mapper | null {
   if (scaleX <= 0 || scaleY <= 0 || bounds.width <= 0 || bounds.height <= 0) return null;
 
   const gx = scale9Grid.x;

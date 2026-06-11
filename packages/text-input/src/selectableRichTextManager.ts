@@ -1,11 +1,7 @@
 import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/scene-display';
 import { getRichTextCharIndexAtPoint } from '@flighthq/text-layout';
-import type { InputKeyboardData, RichText, RichTextRuntime } from '@flighthq/types';
+import type { InputKeyboardData, RichText, RichTextRuntime, SelectableRichTextManager } from '@flighthq/types';
 import { KeyCode } from '@flighthq/types';
-
-export interface SelectableRichTextManager {
-  focused: RichText | null;
-}
 
 export function blurSelectableRichText(manager: SelectableRichTextManager): void {
   if (manager.focused !== null) {

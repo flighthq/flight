@@ -1,11 +1,4 @@
-import type { SurfaceRegion } from '@flighthq/types';
-
-export interface ColorBoundsRectangle {
-  height: number;
-  width: number;
-  x: number;
-  y: number;
-}
+import type { ColorBoundsRectangle, SurfaceRegion } from '@flighthq/types';
 
 /**
  * Scans the `source` region for pixels matching `color` under `mask`

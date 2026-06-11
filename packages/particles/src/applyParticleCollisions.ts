@@ -1,51 +1,15 @@
-import type { ParticleEmitter } from '@flighthq/types';
+import type {
+  CircleCollider,
+  ParticleCollider,
+  ParticleEmitter,
+  ParticleEmitterState,
+  ParticleObject,
+  ParticleObjectsState,
+  PlaneCollider,
+  RectCollider,
+} from '@flighthq/types';
 
-import type { ParticleEmitterState } from './particleEmitterState';
-import type { ParticleObjectsState } from './particleObjectsState';
-import type { ParticleObject } from './updateParticleObjects';
-
-/** Shared bounce/slide response tuning for any collider. */
-interface CollisionResponse {
-  /** Bounciness of the normal velocity component, 0 (stop) … 1 (perfect bounce). Default 0. */
-  restitution?: number;
-  /** Tangential velocity damping on contact, 0 (frictionless) … 1 (stick). Default 0. */
-  friction?: number;
-}
-
-/** Infinite half-plane. The valid region is `nx·x + ny·y >= distance`; particles
- *  that cross to the other side are pushed back to the surface. (nx, ny) must be
- *  a unit normal pointing into the valid region — e.g. a floor at y=500 with
- *  "up" being −y is `{ nx: 0, ny: -1, distance: -500 }`. */
-export interface PlaneCollider extends CollisionResponse {
-  type: 'plane';
-  nx: number;
-  ny: number;
-  distance: number;
-}
-
-/** Circle collider. `mode: 'exclude'` keeps particles outside the disc (a round
- *  obstacle); `mode: 'contain'` keeps them inside it (a circular boundary). */
-export interface CircleCollider extends CollisionResponse {
-  type: 'circle';
-  x: number;
-  y: number;
-  radius: number;
-  mode: 'exclude' | 'contain';
-}
-
-/** Axis-aligned box, centered at (x, y) with full width/height. `mode: 'contain'`
- *  keeps particles inside (screen/world bounds); `mode: 'exclude'` keeps them out
- *  (a solid box obstacle). */
-export interface RectCollider extends CollisionResponse {
-  type: 'rect';
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  mode: 'exclude' | 'contain';
-}
-
-export type ParticleCollider = PlaneCollider | CircleCollider | RectCollider;
+export type { CircleCollider, ParticleCollider, PlaneCollider, RectCollider };
 
 // [px, py, vx, vy] scratch reused across particles to avoid per-iteration allocation.
 const s: [number, number, number, number] = [0, 0, 0, 0];

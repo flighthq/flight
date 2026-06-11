@@ -2,13 +2,18 @@ import { inverseMatrixTransformPointXY } from '@flighthq/geometry';
 import { getSceneNodeRuntime, getSceneParent, getWorldTransformMatrix } from '@flighthq/scene';
 import { connectSignal, createSignal, disconnectSignal, emitSignal, isSlotConnected } from '@flighthq/signals';
 import type {
+  AnyInteractionSignalSlot,
   InputKeyboardData,
   InputPointerData,
-  InputSignals,
+  InteractionInputSource,
+  InteractionManager,
+  InteractionManagerOptions,
+  InteractionPointerOptions,
+  InteractionPointerState,
+  InteractionSignalName,
   InteractionSignals,
   KeyboardData,
   PointerData,
-  PointerType,
   SceneNode,
   SceneNodeRuntime,
   SceneTransform2DNode,
@@ -17,47 +22,6 @@ import type {
 } from '@flighthq/types';
 
 import { findGraphHitTarget } from './hitTests';
-
-export interface InteractionManager<SceneKind extends symbol = symbol, Traits extends object = object> {
-  doubleClickDelay: number;
-  enabled: boolean;
-  pointerCaptures: Map<number, SceneNode<SceneKind, Traits>>;
-  pointerStates: Map<number, InteractionPointerState<SceneKind, Traits>>;
-  root: SceneNode<SceneKind, Traits>;
-  signalSubscriberCounts: Map<InteractionSignalName, number>;
-  trackedSignalSlots: Map<
-    SceneNode<SceneKind, Traits>,
-    Map<InteractionSignalName, Map<AnyInteractionSignalSlot, AnyInteractionSignalSlot>>
-  >;
-  trackedSubscribersOnly: boolean;
-}
-
-export interface InteractionManagerOptions {
-  enabled?: boolean;
-  trackedSubscribersOnly?: boolean;
-}
-
-export type InteractionInputSource = Pick<
-  InputSignals,
-  'onKeyDown' | 'onKeyUp' | 'onPointerCancel' | 'onPointerDown' | 'onPointerMove' | 'onPointerUp' | 'onWheel'
->;
-
-export interface InteractionPointerOptions {
-  altKey?: boolean;
-  buttons?: number;
-  ctrlKey?: boolean;
-  metaKey?: boolean;
-  pointerId?: number;
-  pointerType?: PointerType;
-  shiftKey?: boolean;
-}
-
-export interface InteractionPointerState<SceneKind extends symbol = symbol, Traits extends object = object> {
-  lastClickTarget: SceneNode<SceneKind, Traits> | null;
-  lastClickTime: number;
-  pointerDownTarget: SceneNode<SceneKind, Traits> | null;
-  pointerOverTarget: SceneNode<SceneKind, Traits> | null;
-}
 
 export function capturePointer<SceneKind extends symbol, Traits extends object>(
   manager: InteractionManager<SceneKind, Traits>,
@@ -695,7 +659,6 @@ function isSceneTransform2DNode(source: Readonly<SceneNode<symbol, object>>): so
   return 'worldTransform2D' in runtime;
 }
 
-type InteractionSignalName = keyof InteractionSignals;
 type KeyboardSignalName = 'onKeyDown' | 'onKeyUp';
 type PointerSignalName = Exclude<InteractionSignalName, KeyboardSignalName>;
 
@@ -703,7 +666,6 @@ type InteractionSignalPayload<Name extends InteractionSignalName> = Name extends
   ? Readonly<KeyboardData>
   : Readonly<PointerData>;
 type InteractionSignalSlot<Name extends InteractionSignalName> = (value: InteractionSignalPayload<Name>) => void;
-type AnyInteractionSignalSlot = (value: InteractionSignalPayload<InteractionSignalName>) => void;
 
 const cancelSignalNames = ['onPointerCancel', 'onPointerOut', 'onPointerRollOut'] as const;
 const downSignalNames = ['onClick', 'onDoubleClick', 'onPointerCancel', 'onPointerDown', 'onReleaseOutside'] as const;

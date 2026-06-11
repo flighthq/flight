@@ -1,15 +1,8 @@
-import type { ParticleEmitterConfig } from './particleEmitterConfig';
+import type { ParticleConfigIssue, ParticleEmitterConfig } from '@flighthq/types';
+
 import { createParticleEmitterConfig } from './particleEmitterConfig';
 
-export interface ParticleConfigIssue {
-  /** The config field the issue concerns. */
-  field: keyof ParticleEmitterConfig;
-  /** Human-readable description, suitable for an asset-pipeline / editor warning. */
-  message: string;
-  /** `error` = would break or corrupt the simulation (non-finite, hang).
-   *  `warning` = simulates, but the result is probably not what the author intended. */
-  severity: 'error' | 'warning';
-}
+export type { ParticleConfigIssue };
 
 // Every numeric field of ParticleEmitterConfig. Kept as a typed tuple so the
 // validate/sanitize passes can iterate without missing a field as the config grows.

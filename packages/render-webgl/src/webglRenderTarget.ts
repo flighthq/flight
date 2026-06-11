@@ -1,14 +1,7 @@
 import { copyMatrix, createMatrix } from '@flighthq/geometry';
-import type { Matrix, WebGLRenderState } from '@flighthq/types';
+import type { Matrix, WebGLRenderState, WebGLRenderTarget } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-
-export type WebGLRenderTarget = {
-  framebuffer: WebGLFramebuffer;
-  texture: WebGLTexture;
-  width: number;
-  height: number;
-};
 
 type SavedWebGLState = {
   framebuffer: WebGLFramebuffer | null;

@@ -1,4 +1,4 @@
-import type { ParticleEmitterConfig } from '@flighthq/particles';
+import type { ParticleEmitterConfig } from '@flighthq/types';
 
 import type { ParticleDesignerDocument } from './schema';
 

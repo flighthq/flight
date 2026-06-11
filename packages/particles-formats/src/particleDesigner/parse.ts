@@ -1,5 +1,5 @@
-import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/particles';
 import { createParticleEmitterConfig } from '@flighthq/particles';
+import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/types';
 
 import type { ParticleDesignerDocument, ParticleDesignerRawDict } from './schema';
 

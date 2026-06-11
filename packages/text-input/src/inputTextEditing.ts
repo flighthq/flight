@@ -2,25 +2,18 @@ import { invalidateAppearance } from '@flighthq/scene';
 import { getInputTextRuntime } from '@flighthq/scene-display';
 import { getRichTextSelectionRectangles } from '@flighthq/text-layout';
 import type {
+  HandleInputTextKeyboardOptions,
   InputText,
   InputTextData,
   InputTextRuntime,
   InputTextSelectionRectangle,
   KeyboardData,
+  ReplaceInputTextOptions,
   TextFormatRange,
   TextLayoutGroup,
   TextLayoutResult,
 } from '@flighthq/types';
 import { KeyCode } from '@flighthq/types';
-
-export interface ReplaceInputTextOptions {
-  applyInputRules?: boolean;
-}
-
-export interface HandleInputTextKeyboardOptions {
-  clipboardText?: string;
-  onCopy?: (text: string) => void;
-}
 
 export function appendInputText(source: InputText, text: string): void {
   replaceInputText(source, source.data.text.length, source.data.text.length, text);

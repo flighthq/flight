@@ -1,5 +1,5 @@
-import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/particles';
 import { colorCurveToKeyframes, curveToKeyframes } from '@flighthq/particles';
+import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/types';
 
 import type { SpineAlphaKeyframe, SpineParticleDocument, SpineTintKeyframe } from './schema';
 

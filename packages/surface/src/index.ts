@@ -19,4 +19,13 @@ export * from './rotate';
 export * from './surface';
 export * from './surfaceFrom';
 export * from './transform';
-export type { Surface, SurfaceRegion } from '@flighthq/types';
+export type {
+  ColorBoundsRectangle,
+  ImageFormat,
+  PixelOrder,
+  Surface,
+  SurfaceHistogram,
+  SurfaceRegion,
+  SurfaceResizeMode,
+  ThresholdOperation,
+} from '@flighthq/types';

@@ -1,12 +1,5 @@
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals';
-import type { Signal } from '@flighthq/types';
-
-export interface Application {
-  observers: Map<symbol, () => void>;
-  onExit: Signal<() => void>;
-  onRender: Signal<() => void>;
-  onUpdate: Signal<(deltaTime: number) => void>;
-}
+import type { Application, Signal } from '@flighthq/types';
 
 const kExit = Symbol();
 const kLoop = Symbol();

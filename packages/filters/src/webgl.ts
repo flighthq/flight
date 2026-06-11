@@ -10,8 +10,8 @@ export { applyBlitOffsetPass, applyBlitPass, applyTintPass } from './webglTintSh
 
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
 import type { WebGLRenderState } from '@flighthq/types';
+import type { BitmapFilter } from '@flighthq/types';
 
-import type { BitmapFilter } from './index';
 import { applyWebGLBevelFilter } from './webglBevelFilter';
 import { applyWebGLBlurFilter } from './webglBlurFilter';
 import { applyWebGLColorMatrixFilter } from './webglColorMatrixFilter';
