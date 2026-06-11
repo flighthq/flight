@@ -1,6 +1,7 @@
 export * from './compare';
 export * from './composite';
 export * from './copy';
+export * from './dissolve';
 export * from './draw';
 export * from './encode';
 export * from './fill';
