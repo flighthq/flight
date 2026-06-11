@@ -1,18 +1,53 @@
-﻿import type { QuadBatch } from '@flighthq/sdk';
+import type { QuadBatch } from '@flighthq/sdk';
 import {
+  createCanvasElement,
+  createCanvasRenderState,
   createDOMRenderState,
-  defaultDOMQuadBatchRenderer,
+  createRenderView,
+  defaultCanvasQuadBatchRenderer,
+  defaultDOMRenderViewRenderer,
+  prepareDisplayObjectRender,
   prepareSpriteRender,
   QuadBatchKind,
   registerRenderer,
+  renderCanvasBackground,
+  renderCanvasSprite,
   renderDOMBackground,
-  renderDOMSprite,
+  renderDOMDisplayObject,
+  RenderViewKind,
 } from '@flighthq/sdk';
+
+const WIDTH = 550;
+const HEIGHT = 400;
+
+const spriteCanvas = createCanvasElement(WIDTH, HEIGHT);
+const spriteState = createCanvasRenderState(spriteCanvas, {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
+  backgroundColor: 0xeeddccff,
+});
+registerRenderer(spriteState, QuadBatchKind, defaultCanvasQuadBatchRenderer);
+
+let spriteRoot: QuadBatch | null = null;
+const renderView = createRenderView({
+  data: {
+    width: WIDTH,
+    height: HEIGHT,
+    renderer: {
+      canvas: spriteCanvas,
+      render() {
+        if (spriteRoot === null) return;
+        if (!prepareSpriteRender(spriteState, spriteRoot)) return;
+        renderCanvasBackground(spriteState);
+        renderCanvasSprite(spriteState, spriteRoot);
+      },
+    },
+  },
+});
 
 const container = document.createElement('div');
 container.style.position = 'relative';
-container.style.width = '550px';
-container.style.height = '400px';
+container.style.width = `${WIDTH}px`;
+container.style.height = `${HEIGHT}px`;
 document.body.appendChild(container);
 
 export const canvas = container;
@@ -20,11 +55,12 @@ export const state = createDOMRenderState(container, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xeeddccff,
 });
-registerRenderer(state, QuadBatchKind, defaultDOMQuadBatchRenderer);
+registerRenderer(state, RenderViewKind, defaultDOMRenderViewRenderer);
 export const scale = 1;
 
 export function render(root: QuadBatch): void {
-  if (!prepareSpriteRender(state, root)) return;
+  spriteRoot = root;
+  if (!prepareDisplayObjectRender(state, renderView)) return;
   renderDOMBackground(state);
-  renderDOMSprite(state, root);
+  renderDOMDisplayObject(state, renderView);
 }

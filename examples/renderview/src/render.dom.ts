@@ -17,8 +17,8 @@ import {
   SpriteKind,
 } from '@flighthq/sdk';
 
-const WIDTH = 800;
-const HEIGHT = 400;
+const WIDTH = 256;
+const HEIGHT = 256;
 
 const spriteCanvas = createCanvasElement(WIDTH, HEIGHT);
 const spriteState = createCanvasRenderState(spriteCanvas, {
