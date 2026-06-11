@@ -13,6 +13,39 @@ function makeAtlas(): TextureAtlas {
   } as TextureAtlas;
 }
 
+describe('isEmitterComplete', () => {
+  it('isEmitterComplete is true once a one-shot emitter has finished and all particles died', () => {
+    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const state = createParticleEmitterState();
+    const config = createParticleEmitterConfig({
+      spawnRate: 10,
+      maxParticles: 1000,
+      lifetimeMin: 0.5,
+      lifetimeMax: 0.5,
+      duration: 1,
+      loop: false,
+    });
+    expect(isEmitterComplete(emitter, state, config)).toBe(false);
+    // Emit for 1s.
+    for (let i = 0; i < 10; i++) updateParticleEmitter(emitter, state, config, 0.1);
+    expect(emitter.data.particleCount).toBeGreaterThan(0);
+    expect(isEmitterComplete(emitter, state, config)).toBe(false); // particles still alive
+    // Let every particle die out (lifetime 0.5s).
+    for (let i = 0; i < 10; i++) updateParticleEmitter(emitter, state, config, 0.1);
+    expect(emitter.data.particleCount).toBe(0);
+    expect(isEmitterComplete(emitter, state, config)).toBe(true);
+  });
+
+  it('isEmitterComplete is always false for infinite or looping emitters', () => {
+    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const state = createParticleEmitterState();
+    const infinite = createParticleEmitterConfig({ spawnRate: 0, duration: 0 });
+    expect(isEmitterComplete(emitter, state, infinite)).toBe(false);
+    const looping = createParticleEmitterConfig({ spawnRate: 0, duration: 1, loop: true });
+    expect(isEmitterComplete(emitter, state, looping)).toBe(false);
+  });
+});
+
 describe('updateParticleEmitter', () => {
   it('spawns particles up to spawnRate × dt', () => {
     const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
@@ -550,36 +583,5 @@ describe('updateParticleEmitter', () => {
     for (let i = 0; i < 30; i++) updateParticleEmitter(emitter, state, config, 0.1);
     // 3 seconds at rate 10 → ~30 particles, well past the 1s duration.
     expect(emitter.data.particleCount).toBeGreaterThan(20);
-  });
-
-  it('isEmitterComplete is true once a one-shot emitter has finished and all particles died', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
-    const state = createParticleEmitterState();
-    const config = createParticleEmitterConfig({
-      spawnRate: 10,
-      maxParticles: 1000,
-      lifetimeMin: 0.5,
-      lifetimeMax: 0.5,
-      duration: 1,
-      loop: false,
-    });
-    expect(isEmitterComplete(emitter, state, config)).toBe(false);
-    // Emit for 1s.
-    for (let i = 0; i < 10; i++) updateParticleEmitter(emitter, state, config, 0.1);
-    expect(emitter.data.particleCount).toBeGreaterThan(0);
-    expect(isEmitterComplete(emitter, state, config)).toBe(false); // particles still alive
-    // Let every particle die out (lifetime 0.5s).
-    for (let i = 0; i < 10; i++) updateParticleEmitter(emitter, state, config, 0.1);
-    expect(emitter.data.particleCount).toBe(0);
-    expect(isEmitterComplete(emitter, state, config)).toBe(true);
-  });
-
-  it('isEmitterComplete is always false for infinite or looping emitters', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
-    const state = createParticleEmitterState();
-    const infinite = createParticleEmitterConfig({ spawnRate: 0, duration: 0 });
-    expect(isEmitterComplete(emitter, state, infinite)).toBe(false);
-    const looping = createParticleEmitterConfig({ spawnRate: 0, duration: 1, loop: true });
-    expect(isEmitterComplete(emitter, state, looping)).toBe(false);
   });
 });

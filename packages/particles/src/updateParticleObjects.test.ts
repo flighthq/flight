@@ -271,31 +271,33 @@ describe('updateParticleObjects', () => {
     expect(objects.filter((o) => o.visible).length).toBe(liveAfterDuration);
   });
 
-  it('isParticleObjectsComplete is true once finished and all objects are dead', () => {
-    const objects = Array.from({ length: 50 }, makeObject);
-    const state = createParticleObjectsState(50);
-    const config = createParticleEmitterConfig({
-      spawnRate: 10,
-      lifetimeMin: 0.5,
-      lifetimeMax: 0.5,
-      duration: 1,
-      loop: false,
+  describe('isParticleObjectsComplete', () => {
+    it('is true once finished and all objects are dead', () => {
+      const objects = Array.from({ length: 50 }, makeObject);
+      const state = createParticleObjectsState(50);
+      const config = createParticleEmitterConfig({
+        spawnRate: 10,
+        lifetimeMin: 0.5,
+        lifetimeMax: 0.5,
+        duration: 1,
+        loop: false,
+      });
+      expect(isParticleObjectsComplete(objects, state, config)).toBe(false);
+      for (let i = 0; i < 10; i++) updateParticleObjects(objects, state, config, 0.1); // emit 1s
+      expect(isParticleObjectsComplete(objects, state, config)).toBe(false); // still alive
+      for (let i = 0; i < 10; i++) updateParticleObjects(objects, state, config, 0.1); // let them die
+      expect(objects.some((o) => o.visible)).toBe(false);
+      expect(isParticleObjectsComplete(objects, state, config)).toBe(true);
     });
-    expect(isParticleObjectsComplete(objects, state, config)).toBe(false);
-    for (let i = 0; i < 10; i++) updateParticleObjects(objects, state, config, 0.1); // emit 1s
-    expect(isParticleObjectsComplete(objects, state, config)).toBe(false); // still alive
-    for (let i = 0; i < 10; i++) updateParticleObjects(objects, state, config, 0.1); // let them die
-    expect(objects.some((o) => o.visible)).toBe(false);
-    expect(isParticleObjectsComplete(objects, state, config)).toBe(true);
-  });
 
-  it('isParticleObjectsComplete is always false for infinite or looping emitters', () => {
-    const objects = [makeObject()];
-    const state = createParticleObjectsState(1);
-    expect(isParticleObjectsComplete(objects, state, createParticleEmitterConfig({ duration: 0 }))).toBe(false);
-    expect(isParticleObjectsComplete(objects, state, createParticleEmitterConfig({ duration: 1, loop: true }))).toBe(
-      false,
-    );
+    it('is always false for infinite or looping emitters', () => {
+      const objects = [makeObject()];
+      const state = createParticleObjectsState(1);
+      expect(isParticleObjectsComplete(objects, state, createParticleEmitterConfig({ duration: 0 }))).toBe(false);
+      expect(isParticleObjectsComplete(objects, state, createParticleEmitterConfig({ duration: 1, loop: true }))).toBe(
+        false,
+      );
+    });
   });
 
   it('applies alpha and scale curves over lifetime', () => {
