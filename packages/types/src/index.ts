@@ -12,7 +12,6 @@ export * from './CanvasRenderTarget';
 export * from './CanvasShapeDrawState';
 export * from './CanvasShapeRegistry';
 export * from './CaptureImageRenderCacheOptions';
-export * from './ColorBoundsRectangle';
 export * from './ColorTransform';
 export * from './DisplayContainer';
 export * from './DisplayObject';
