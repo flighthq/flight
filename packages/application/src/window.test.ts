@@ -389,9 +389,9 @@ describe('disposeApplicationWindow', () => {
 });
 
 describe('exitApplicationFullscreen', () => {
-  it('calls document.exitApplicationFullscreen', async () => {
+  it('calls document.exitFullscreen', async () => {
     const mock = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(document, 'exitApplicationFullscreen', { value: mock, configurable: true });
+    Object.defineProperty(document, 'exitFullscreen', { value: mock, configurable: true });
     await exitApplicationFullscreen();
     expect(mock).toHaveBeenCalled();
   });
@@ -419,10 +419,10 @@ describe('lockApplicationElement', () => {
 });
 
 describe('requestApplicationFullscreen', () => {
-  it('calls requestApplicationFullscreen on the element', async () => {
+  it('calls requestFullscreen on the element', async () => {
     const element = document.createElement('div');
     const mock = vi.fn().mockResolvedValue(undefined);
-    element.requestApplicationFullscreen = mock;
+    element.requestFullscreen = mock;
     await requestApplicationFullscreen(element);
     expect(mock).toHaveBeenCalled();
   });
