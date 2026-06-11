@@ -62,6 +62,8 @@
       "@flighthq/signals/*": ["./packages/signals/src/*"],
       "@flighthq/spritesheet": ["./packages/spritesheet/src/index.ts"],
       "@flighthq/spritesheet/*": ["./packages/spritesheet/src/*"],
+      "@flighthq/spritesheet-formats": ["./packages/spritesheet-formats/src/index.ts"],
+      "@flighthq/spritesheet-formats/*": ["./packages/spritesheet-formats/src/*"],
       "@flighthq/surface": ["./packages/surface/src/index.ts"],
       "@flighthq/surface/*": ["./packages/surface/src/*"],
       "@flighthq/surface-filters": ["./packages/surface-filters/src/index.ts"],

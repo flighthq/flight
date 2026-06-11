@@ -32,6 +32,7 @@
     { "path": "./packages/types" },
     { "path": "./packages/filters" },
     { "path": "./packages/particles" },
-    { "path": "./packages/particles-formats" }
+    { "path": "./packages/particles-formats" },
+    { "path": "./packages/spritesheet-formats" }
   ]
 }
