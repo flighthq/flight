@@ -23,6 +23,7 @@ export * from './webglSpriteRenderer';
 export * from './webglText';
 export * from './webglTilemap';
 export * from './webglVideo';
+export type { WebGLRenderTarget } from '@flighthq/types';
 
 // Re-export shape commands from canvas (shapes deferred to canvas for now)
 export {

@@ -1,58 +1,18 @@
-import type { ParticleEmitter } from '@flighthq/types';
+import type {
+  AttractorForce,
+  DragForce,
+  ForceFalloff,
+  ParticleEmitter,
+  ParticleEmitterState,
+  ParticleForce,
+  ParticleObject,
+  ParticleObjectsState,
+  TurbulenceForce,
+  VortexForce,
+  WindForce,
+} from '@flighthq/types';
 
-import type { ParticleEmitterState } from './particleEmitterState';
-import type { ParticleObjectsState } from './particleObjectsState';
-import type { ParticleObject } from './updateParticleObjects';
-
-/** Strength-vs-distance shape for radial forces. */
-export type ForceFalloff = 'none' | 'linear' | 'inverseSquare';
-
-/** Pull toward (positive strength) or push away from (negative) a point. */
-export interface AttractorForce {
-  type: 'attractor';
-  x: number;
-  y: number;
-  /** Acceleration magnitude at the source (px/s²). Negative repels. */
-  strength: number;
-  /** Hard cutoff distance; beyond it the force is zero. Omit for infinite range. */
-  radius?: number;
-  /** How strength scales with distance within range (default 'none'). */
-  falloff?: ForceFalloff;
-}
-
-/** Swirl particles tangentially around a point (positive = counter-clockwise). */
-export interface VortexForce {
-  type: 'vortex';
-  x: number;
-  y: number;
-  strength: number;
-  radius?: number;
-  falloff?: ForceFalloff;
-}
-
-/** Air resistance: acceleration opposing velocity (a = -strength · v). */
-export interface DragForce {
-  type: 'drag';
-  strength: number;
-}
-
-/** Constant directional acceleration (px/s²), e.g. wind. */
-export interface WindForce {
-  type: 'wind';
-  x: number;
-  y: number;
-}
-
-/** Position-based turbulence using cheap deterministic value noise. */
-export interface TurbulenceForce {
-  type: 'turbulence';
-  /** Acceleration magnitude (px/s²). */
-  strength: number;
-  /** Spatial frequency of the noise field (higher = more chaotic). */
-  scale: number;
-}
-
-export type ParticleForce = AttractorForce | VortexForce | DragForce | WindForce | TurbulenceForce;
+export type { AttractorForce, DragForce, ForceFalloff, ParticleForce, TurbulenceForce, VortexForce, WindForce };
 
 // Per-particle acceleration scratch, reused across the loop to avoid allocation.
 const accel: [number, number] = [0, 0];

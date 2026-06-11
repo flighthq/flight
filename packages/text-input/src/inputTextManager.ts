@@ -1,6 +1,13 @@
 import { getInputTextRuntime, setRichTextScrollV } from '@flighthq/scene-display';
 import { connectSignal, disconnectSignal } from '@flighthq/signals';
-import type { InputKeyboardData, InputSignals, InputText, InputTextRuntime, TextInputData } from '@flighthq/types';
+import type {
+  InputKeyboardData,
+  InputText,
+  InputTextInputSource,
+  InputTextManager,
+  InputTextRuntime,
+  TextInputData,
+} from '@flighthq/types';
 
 import {
   getInputTextCharacterIndexAtPoint,
@@ -10,13 +17,6 @@ import {
   selectLineAtInputTextIndex,
   selectWordAtInputTextIndex,
 } from './inputTextEditing';
-
-export interface InputTextManager {
-  enabled: boolean;
-  focused: InputText | null;
-}
-
-export type InputTextInputSource = Pick<InputSignals, 'onKeyDown' | 'onTextInput'>;
 
 export function blurInputText(manager: InputTextManager): void {
   const target = manager.focused;
@@ -60,7 +60,7 @@ export function dispatchInputTextKeyDown(
   if (target === null) return false;
   return handleInputTextKeyboard(target, data, {
     clipboardText,
-    onCopy: (text) => {
+    onCopy: (text: string) => {
       navigator.clipboard?.writeText(text);
     },
   });

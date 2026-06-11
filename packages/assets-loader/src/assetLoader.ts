@@ -1,11 +1,5 @@
 import { createSignal, emitSignal } from '@flighthq/signals';
-import type { Signal } from '@flighthq/types';
-
-export interface AssetLoader {
-  onComplete: Signal<() => void>;
-  onError: Signal<(error: unknown) => void>;
-  onProgress: Signal<(loaded: number, total: number) => void>;
-}
+import type { AssetLoader } from '@flighthq/types';
 
 interface QueuedItem {
   factory: () => Promise<unknown>;

@@ -1,5 +1,5 @@
-import type { ParticleEmitterConfig } from '@flighthq/particles';
 import { colorCurveToKeyframes, curveToKeyframes } from '@flighthq/particles';
+import type { ParticleEmitterConfig } from '@flighthq/types';
 
 import type { UnityAnimationCurve, UnityColor, UnityGradient, UnityMinMaxValue, UnityParticleDocument } from './schema';
 

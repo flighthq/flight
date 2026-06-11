@@ -1,4 +1,4 @@
-export type PixelOrder = 'ABGR' | 'ARGB' | 'BGRA' | 'RGBA';
+import type { PixelOrder } from '@flighthq/types';
 
 /**
  * Converts a packed pixel buffer from one channel order to another.

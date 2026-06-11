@@ -1,11 +1,11 @@
+import { colorCurveFromKeyframes, createParticleEmitterConfig, curveFromKeyframes } from '@flighthq/particles';
 import type {
   ColorKeyframe,
   CurveKeyframe,
   ParticleBlendMode,
   ParticleCurve,
   ParticleEmitterConfig,
-} from '@flighthq/particles';
-import { colorCurveFromKeyframes, createParticleEmitterConfig, curveFromKeyframes } from '@flighthq/particles';
+} from '@flighthq/types';
 
 import type { SpineAlphaKeyframe, SpineParticleDocument, SpineTintKeyframe } from './schema';
 

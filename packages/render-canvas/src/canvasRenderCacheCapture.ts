@@ -10,7 +10,7 @@ import {
   setImageRenderCache,
 } from '@flighthq/render';
 import { computeBoundsRectangle } from '@flighthq/scene';
-import type { CanvasRenderState, DisplayObject, Matrix } from '@flighthq/types';
+import type { CanvasRenderState, CaptureImageRenderCacheOptions, DisplayObject, Matrix } from '@flighthq/types';
 
 import {
   beginCanvasRenderTarget,
@@ -19,12 +19,6 @@ import {
   resizeCanvasRenderTarget,
 } from './canvasRenderTarget';
 import type { CanvasRenderStateInternal } from './internal';
-
-export type CaptureImageRenderCacheOptions = {
-  padding?: number;
-  minWidth?: number;
-  minHeight?: number;
-};
 
 // ─── Per-state data for begin/end pair ────────────────────────────────────────
 

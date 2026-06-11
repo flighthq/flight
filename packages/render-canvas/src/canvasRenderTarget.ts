@@ -1,14 +1,7 @@
 import { copyMatrix, createMatrix } from '@flighthq/geometry';
-import type { CanvasRenderState, Matrix } from '@flighthq/types';
+import type { CanvasRenderState, CanvasRenderTarget, Matrix } from '@flighthq/types';
 
 import type { CanvasRenderStateInternal } from './internal';
-
-export type CanvasRenderTarget = {
-  canvas: HTMLCanvasElement;
-  context: CanvasRenderingContext2D;
-  width: number;
-  height: number;
-};
 
 type SavedCanvasState = {
   canvas: HTMLCanvasElement;

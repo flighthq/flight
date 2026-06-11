@@ -1,23 +1,17 @@
 import { createSignal, emitSignal } from '@flighthq/signals';
 import type {
+  AttachInputOptions,
   InputGamepadAxisData,
   InputGamepadButtonData,
   InputGamepadConnectData,
   InputKeyboardData,
+  InputManager,
   InputPointerData,
   InputSignals,
   MouseWheelMode,
   TextInputData,
 } from '@flighthq/types';
 import { KeyCode, KeyModifier } from '@flighthq/types';
-
-export interface AttachInputOptions {
-  preventDefault?: boolean;
-}
-
-export interface InputManager extends InputSignals {
-  enabled: boolean;
-}
 
 export function attachGamepadInput(manager: InputManager, target: Window): () => void {
   const onGamepadConnected = (e: Event) => {

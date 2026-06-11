@@ -1,7 +1,6 @@
 import type { ParticleEmitter } from '@flighthq/types';
+import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types';
 
-import type { ParticleEmitterConfig } from './particleEmitterConfig';
-import type { ParticleEmitterState } from './particleEmitterState';
 import type { ParticleEmitterCallbacks, WorldTransform2D } from './updateParticleEmitter';
 import { updateParticleEmitter } from './updateParticleEmitter';
 

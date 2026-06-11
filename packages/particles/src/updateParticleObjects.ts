@@ -1,23 +1,16 @@
-import type { HasAppearance, HasTransform2D } from '@flighthq/types';
+import type {
+  ParticleEmitterConfig,
+  ParticleObject,
+  ParticleObjectsState,
+  ParticleObjectsUpdateOptions,
+} from '@flighthq/types';
 
 import { sampleCurve } from './curve';
-import type { ParticleEmitterConfig } from './particleEmitterConfig';
-import type { ParticleObjectsState } from './particleObjectsState';
 import { ensureParticleObjectsStateCapacity } from './particleObjectsState';
 
-export type ParticleObject = HasTransform2D & HasAppearance;
+export type { ParticleObject, ParticleObjectsUpdateOptions };
 
 const TWO_PI = Math.PI * 2;
-
-export interface ParticleObjectsUpdateOptions {
-  callbacks?: {
-    onDeath?: () => void;
-    onSpawn?: (x: number, y: number) => void;
-  };
-  /** Current emitter position in parent space — used for velocity inheritance. */
-  emitterX?: number;
-  emitterY?: number;
-}
 
 /** True once a finite, non-looping object emitter has finished emitting AND all of
  *  its objects are dead (invisible) — a one-shot effect that is safe to recycle.

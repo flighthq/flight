@@ -1,13 +1,6 @@
-import type { DisplayObjectRenderNode, MatrixLike, RectangleLike } from '@flighthq/types';
+import type { DisplayObjectRenderNode, DOMStageRectangle, MatrixLike, RectangleLike } from '@flighthq/types';
 
 import type { DOMClipHooks, DOMRenderStateInternal } from './internal';
-
-export interface DOMStageRectangle {
-  bottom: number;
-  left: number;
-  right: number;
-  top: number;
-}
 
 export function applyDOMClipRectangles(
   state: DOMRenderStateInternal,

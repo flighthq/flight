@@ -2,31 +2,22 @@ import { createEntity } from '@flighthq/entity';
 import { multiplyMatrix } from '@flighthq/geometry';
 import { invalidateAppearance } from '@flighthq/scene';
 import type {
+  ImageRenderCacheAdapter,
+  ImageRenderCachePrimitive,
   ImageRenderCacheResult,
   Renderable,
   Renderer,
   RenderNode2D,
-  RenderNodeAdapter,
-  RenderPrimitive,
   RenderState,
   SceneNode,
 } from '@flighthq/types';
+import { ImageRenderCacheKind } from '@flighthq/types';
 
 import { registerRenderer } from './renderer';
 import { getRenderNodeAdapter, setRenderNodeAdapter } from './renderNodeAdapter';
 
-export const ImageRenderCacheKind: unique symbol = Symbol('ImageRenderCache');
-export type ImageRenderCacheKind = typeof ImageRenderCacheKind;
-
-export interface ImageRenderCachePrimitive extends RenderPrimitive {
-  cache: ImageRenderCacheResult;
-  kind: ImageRenderCacheKind;
-  owner: Renderable;
-}
-
-export type ImageRenderCacheAdapter = RenderNodeAdapter & {
-  result: ImageRenderCacheResult | null;
-};
+export { ImageRenderCacheKind };
+export type { ImageRenderCacheAdapter, ImageRenderCachePrimitive };
 
 const _capturingStates = new WeakSet<RenderState>();
 

@@ -1,6 +1,4 @@
-import type { SurfaceRegion } from '@flighthq/types';
-
-export type SurfaceResizeMode = 'bilinear' | 'nearest';
+import type { SurfaceRegion, SurfaceResizeMode } from '@flighthq/types';
 
 /**
  * Resamples the `source` region into the `dest` region; `dest`'s dimensions

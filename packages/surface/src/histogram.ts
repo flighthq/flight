@@ -1,11 +1,4 @@
-import type { SurfaceRegion } from '@flighthq/types';
-
-export interface SurfaceHistogram {
-  alpha: number[];
-  blue: number[];
-  green: number[];
-  red: number[];
-}
+import type { SurfaceHistogram, SurfaceRegion } from '@flighthq/types';
 
 /**
  * Counts how many pixels in the `source` region fall into each 0..255 value,

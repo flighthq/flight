@@ -1,8 +1,6 @@
-/** A source of uniformly-distributed random numbers in [0, 1), matching the
- *  signature of `Math.random`. Provide a deterministic implementation (see
- *  {@link createSeededRandom}) when the simulation must be reproducible — for
- *  lockstep netcode, replays, deterministic prewarm, or golden-image tests. */
-export type RandomSource = () => number;
+import type { RandomSource } from '@flighthq/types';
+
+export type { RandomSource };
 
 /** Create a fast, deterministic pseudo-random generator seeded by an integer.
  *

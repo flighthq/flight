@@ -1,7 +1,7 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
 import type { WebGLRenderState } from '@flighthq/types';
+import type { DropShadowFilter } from '@flighthq/types';
 
-import type { DropShadowFilter } from './index';
 import { applyWebGLBlurFilter } from './webglBlurFilter';
 import { clearWebGLFilterTarget } from './webglFilterPass';
 import { applyBlitOffsetPass, applyBlitPass, applyTintPass } from './webglTintShader';

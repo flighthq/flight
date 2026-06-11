@@ -1,9 +1,4 @@
-import type { RectangleLike } from '@flighthq/types';
-
-export interface Scale9Mapper {
-  mapX(x: number): number;
-  mapY(y: number): number;
-}
+import type { RectangleLike, Scale9Mapper } from '@flighthq/types';
 
 /**
  * Builds a coordinate mapper for 9-slice scaled rendering.

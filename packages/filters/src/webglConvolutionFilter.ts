@@ -1,8 +1,8 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
 import type { WebGLRenderStateInternal } from '@flighthq/render-webgl';
 import type { WebGLRenderState } from '@flighthq/types';
+import type { ConvolutionFilter } from '@flighthq/types';
 
-import type { ConvolutionFilter } from './index';
 import type { WebGLFilterLocations } from './webglFilterPass';
 import { compileWebGLFilterProgram, drawWebGLFilterPass } from './webglFilterPass';
 

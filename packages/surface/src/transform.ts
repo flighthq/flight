@@ -1,6 +1,4 @@
-import type { ColorTransformLike, Surface, SurfaceRegion } from '@flighthq/types';
-
-export type ThresholdOperation = '!=' | '<' | '<=' | '==' | '>' | '>=';
+import type { ColorTransformLike, Surface, SurfaceRegion, ThresholdOperation } from '@flighthq/types';
 
 let _scrollScratch: Uint8ClampedArray | null = null;
 

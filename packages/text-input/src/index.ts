@@ -1,4 +1,3 @@
-export type { HandleInputTextKeyboardOptions, ReplaceInputTextOptions } from './inputTextEditing';
 export {
   appendInputText,
   applyInputTextRestriction,
@@ -22,7 +21,6 @@ export {
   selectWordAtInputTextIndex,
   setInputTextSelection,
 } from './inputTextEditing';
-export type { InputTextInputSource, InputTextManager } from './inputTextManager';
 export {
   blurInputText,
   connectInputToInputText,
@@ -34,7 +32,6 @@ export {
   dispatchInputTextWheel,
   focusInputText,
 } from './inputTextManager';
-export type { SelectableRichTextManager } from './selectableRichTextManager';
 export {
   blurSelectableRichText,
   createSelectableRichTextManager,

@@ -4,11 +4,12 @@ import type {
   DisplayObjectRenderer,
   DisplayObjectRenderNode,
   MatrixLike,
+  Scale9Mapper,
   Scale9Shape,
 } from '@flighthq/types';
 
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
-import { buildScale9Mapper, type Scale9Mapper } from './canvasScale9Mapper';
+import { buildScale9Mapper } from './canvasScale9Mapper';
 import { renderCanvasShapeCommands } from './canvasShape';
 import { setCanvasTransform } from './canvasTransform';
 

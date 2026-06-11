@@ -1,6 +1,4 @@
-import type { Surface } from '@flighthq/types';
-
-export type ImageFormat = 'jpeg' | 'png';
+import type { ImageFormat, Surface } from '@flighthq/types';
 
 export function encodeSurface(
   source: Readonly<Surface>,

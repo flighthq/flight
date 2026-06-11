@@ -1,12 +1,6 @@
-/** A baked lifetime curve: values sampled at uniform positions across the
- *  particle's normalised age (t = 0 at birth, 1 at death), evaluated with linear
- *  interpolation between samples. A plain number array so it round-trips through
- *  JSON configs. Build one with {@link bakeCurve} / {@link bakeColorCurve}, or
- *  supply your own samples (a `colorCurve` is interleaved RGB, length = N×3).
- *
- *  Lifetime curves are entirely opt-in: an emitter with no curves runs the
- *  original linear interpolation path and pays nothing for the feature. */
-export type ParticleCurve = ReadonlyArray<number>;
+import type { ColorKeyframe, CurveKeyframe, ParticleCurve } from '@flighthq/types';
+
+export type { ColorKeyframe, CurveKeyframe, ParticleCurve };
 
 /** Bake an RGB function f:[0,1]→[r,g,b] into an interleaved curve LUT (length N×3). */
 export function bakeColorCurve(f: (t: number) => readonly [number, number, number], samples = 33): number[] {
@@ -27,20 +21,6 @@ export function bakeCurve(f: (t: number) => number, samples = 33): number[] {
   const lut = new Array<number>(n);
   for (let i = 0; i < n; i++) lut[i] = f(i / (n - 1));
   return lut;
-}
-
-/** A scalar timeline keyframe (`time` normalised to 0–1 over the lifetime). */
-export interface CurveKeyframe {
-  time: number;
-  value: number;
-}
-
-/** An RGB timeline keyframe (`time` normalised to 0–1, channels 0–1). */
-export interface ColorKeyframe {
-  time: number;
-  r: number;
-  g: number;
-  b: number;
 }
 
 /** Bake a piecewise-linear RGB timeline (e.g. an imported color gradient) into a
