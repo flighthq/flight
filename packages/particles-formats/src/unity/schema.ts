@@ -54,11 +54,43 @@ export interface UnityShape {
   scale: { x: number; y: number; z: number };
 }
 
+/** A Unity gradient key (RGB stop at a normalised lifetime position). */
+export interface UnityGradientColorKey {
+  time: number; // 0–1
+  color: { r: number; g: number; b: number };
+}
+
+/** A Unity gradient alpha key. */
+export interface UnityGradientAlphaKey {
+  time: number; // 0–1
+  alpha: number;
+}
+
+/** Multi-stop gradient (full MinMaxGradient fidelity). */
+export interface UnityGradient {
+  colorKeys: UnityGradientColorKey[];
+  alphaKeys: UnityGradientAlphaKey[];
+}
+
+/** A Unity AnimationCurve key. */
+export interface UnityCurveKey {
+  time: number; // 0–1
+  value: number;
+}
+
+/** Multi-key AnimationCurve. */
+export interface UnityAnimationCurve {
+  keys: UnityCurveKey[];
+}
+
 export interface UnityColorOverLifetime {
   enabled: boolean;
   /** Color at start and end of lifetime */
   colorStart: UnityColor;
   colorEnd: UnityColor;
+  /** Full multi-stop gradient; when present it carries the complete color/alpha
+   *  timeline that colorStart/colorEnd only approximate. */
+  gradient?: UnityGradient;
 }
 
 export interface UnitySizeOverLifetime {
@@ -66,6 +98,8 @@ export interface UnitySizeOverLifetime {
   /** Size multiplier at start and end of lifetime */
   sizeStart: number;
   sizeEnd: number;
+  /** Full AnimationCurve; when present it carries the complete size-over-lifetime shape. */
+  curve?: UnityAnimationCurve;
 }
 
 export interface UnityRotationOverLifetime {

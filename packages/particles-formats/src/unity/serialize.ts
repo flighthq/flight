@@ -1,6 +1,7 @@
 import type { ParticleEmitterConfig } from '@flighthq/particles';
+import { colorCurveToKeyframes, curveToKeyframes } from '@flighthq/particles';
 
-import type { UnityColor, UnityMinMaxValue, UnityParticleDocument } from './schema';
+import type { UnityAnimationCurve, UnityColor, UnityGradient, UnityMinMaxValue, UnityParticleDocument } from './schema';
 
 export interface UnitySerializeOptions {
   /** Pixels-per-unit — reverses the conversion applied during parsing.  Defaults to 100. */
@@ -91,17 +92,41 @@ function configToDocument(
       enabled: true,
       colorStart: color(config.colorStartR, config.colorStartG, config.colorStartB, config.alphaStart),
       colorEnd: color(config.colorEndR, config.colorEndG, config.colorEndB, config.alphaEnd),
+      // Emit a full gradient when the config carries baked color/alpha curves so
+      // the complete timeline round-trips back out (not just the endpoints).
+      ...(config.colorCurve || config.alphaCurve ? { gradient: buildGradient(config) } : {}),
     },
     sizeOverLifetime: {
-      enabled: config.scaleEnd !== 1,
+      enabled: config.scaleEnd !== 1 || config.scaleCurve != null,
       sizeStart: 1,
       sizeEnd: config.scaleEnd,
+      ...(config.scaleCurve ? { curve: buildSizeCurve(config.scaleCurve) } : {}),
     },
     rotationOverLifetime: {
       enabled: hasRotation,
       angularVelocity: hasRotation ? twoConst(rotSpeedDegLow, rotSpeedDegHigh) : constant(0),
     },
   };
+}
+
+function buildGradient(config: Readonly<ParticleEmitterConfig>): UnityGradient {
+  const colorKeys = config.colorCurve
+    ? colorCurveToKeyframes(config.colorCurve).map((k) => ({ time: k.time, color: { r: k.r, g: k.g, b: k.b } }))
+    : [
+        { time: 0, color: { r: config.colorStartR, g: config.colorStartG, b: config.colorStartB } },
+        { time: 1, color: { r: config.colorEndR, g: config.colorEndG, b: config.colorEndB } },
+      ];
+  const alphaKeys = config.alphaCurve
+    ? curveToKeyframes(config.alphaCurve).map((k) => ({ time: k.time, alpha: k.value }))
+    : [
+        { time: 0, alpha: config.alphaStart },
+        { time: 1, alpha: config.alphaEnd },
+      ];
+  return { colorKeys, alphaKeys };
+}
+
+function buildSizeCurve(scaleCurve: ReadonlyArray<number>): UnityAnimationCurve {
+  return { keys: curveToKeyframes(scaleCurve).map((k) => ({ time: k.time, value: k.value })) };
 }
 
 /** Serialise a ParticleEmitterConfig to a Unity Shuriken particle system JSON string.

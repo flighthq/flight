@@ -1,4 +1,10 @@
-import { sampleColorCurve, sampleCurve } from '@flighthq/particles';
+import {
+  colorCurveFromKeyframes,
+  createParticleEmitterConfig,
+  curveFromKeyframes,
+  sampleColorCurve,
+  sampleCurve,
+} from '@flighthq/particles';
 
 import { loadUnityParticle, parseUnityParticle } from './parse';
 import { serializeUnityParticle } from './serialize';
@@ -276,5 +282,43 @@ describe('serializeUnityParticle', () => {
 
   it('produces valid JSON', () => {
     expect(() => JSON.parse(serializeUnityParticle(parseUnityParticle(SMOKE_JSON)))).not.toThrow();
+  });
+});
+
+describe('serializeUnityParticle — curve round-trip', () => {
+  it('emits baked color/alpha/scale curves as gradient + AnimationCurve that re-import identically', () => {
+    const colorCurve = colorCurveFromKeyframes([
+      { time: 0, r: 1, g: 0, b: 0 },
+      { time: 0.5, r: 0, g: 1, b: 0 },
+      { time: 1, r: 0, g: 0, b: 1 },
+    ]);
+    const alphaCurve = curveFromKeyframes([
+      { time: 0, value: 0 },
+      { time: 0.5, value: 1 },
+      { time: 1, value: 0 },
+    ]);
+    const scaleCurve = curveFromKeyframes([
+      { time: 0, value: 0 },
+      { time: 0.5, value: 1 },
+      { time: 1, value: 0 },
+    ]);
+    const config = createParticleEmitterConfig({ colorCurve, alphaCurve, scaleCurve });
+    const json = serializeUnityParticle(config, undefined, { pixelsPerUnit: PPU });
+    // The serialized JSON should carry a gradient and a size AnimationCurve.
+    const doc = JSON.parse(json) as Record<string, unknown>;
+    const col = doc.colorOverLifetime as Record<string, unknown>;
+    expect(col.gradient).toBeDefined();
+    const size = doc.sizeOverLifetime as Record<string, unknown>;
+    expect(size.curve).toBeDefined();
+    // ...and re-importing reproduces the curves.
+    const c2 = parseUnityParticle(json, { pixelsPerUnit: PPU });
+    expect(c2.colorCurve).not.toBeNull();
+    expect(c2.alphaCurve).not.toBeNull();
+    expect(c2.scaleCurve).not.toBeNull();
+    const out = [0, 0, 0];
+    sampleColorCurve(c2.colorCurve!, 0.5, out, 0);
+    expect(out[1]).toBeGreaterThan(0.8);
+    expect(sampleCurve(c2.alphaCurve!, 0.5)).toBeGreaterThan(0.9);
+    expect(sampleCurve(c2.scaleCurve!, 0.5)).toBeGreaterThan(sampleCurve(c2.scaleCurve!, 0));
   });
 });
