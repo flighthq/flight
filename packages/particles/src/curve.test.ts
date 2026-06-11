@@ -1,7 +1,14 @@
 import { createParticleEmitter } from '@flighthq/scene-sprite';
 import type { TextureAtlas } from '@flighthq/types';
 
-import { bakeColorCurve, bakeCurve, sampleColorCurve, sampleCurve } from './curve';
+import {
+  bakeColorCurve,
+  bakeCurve,
+  colorCurveFromKeyframes,
+  curveFromKeyframes,
+  sampleColorCurve,
+  sampleCurve,
+} from './curve';
 import { createParticleEmitterConfig } from './particleEmitterConfig';
 import { createParticleEmitterState } from './particleEmitterState';
 import { updateParticleEmitter } from './updateParticleEmitter';
@@ -27,6 +34,55 @@ describe('bakeCurve / bakeColorCurve', () => {
     expect(lut.length).toBe(9);
     expect(lut[0]).toBe(0); // R at t=0
     expect(lut[2]).toBe(1); // B at t=0
+  });
+});
+
+describe('curveFromKeyframes / colorCurveFromKeyframes', () => {
+  it('interpolates a 3-stop scalar timeline through its middle stop', () => {
+    const lut = curveFromKeyframes([
+      { time: 0, value: 0 },
+      { time: 0.5, value: 1 },
+      { time: 1, value: 0 },
+    ]);
+    expect(sampleCurve(lut, 0)).toBeCloseTo(0, 2);
+    expect(sampleCurve(lut, 0.5)).toBeGreaterThan(0.9);
+    expect(sampleCurve(lut, 1)).toBeCloseTo(0, 2);
+  });
+
+  it('sorts unsorted keyframes by time', () => {
+    const lut = curveFromKeyframes([
+      { time: 1, value: 10 },
+      { time: 0, value: 0 },
+    ]);
+    expect(sampleCurve(lut, 0)).toBeCloseTo(0, 1);
+    expect(sampleCurve(lut, 1)).toBeCloseTo(10, 1);
+  });
+
+  it('handles non-normalized key times by clamping at the ends', () => {
+    const lut = curveFromKeyframes([
+      { time: 0.25, value: 2 },
+      { time: 0.75, value: 6 },
+    ]);
+    expect(sampleCurve(lut, 0)).toBeCloseTo(2, 1); // below first key → first value
+    expect(sampleCurve(lut, 1)).toBeCloseTo(6, 1); // above last key → last value
+    expect(sampleCurve(lut, 0.5)).toBeCloseTo(4, 1); // midway between keys
+  });
+
+  it('a single keyframe yields a constant curve', () => {
+    const lut = curveFromKeyframes([{ time: 0.5, value: 3 }]);
+    expect(sampleCurve(lut, 0)).toBeCloseTo(3);
+    expect(sampleCurve(lut, 1)).toBeCloseTo(3);
+  });
+
+  it('bakes an RGB timeline through its middle stop', () => {
+    const lut = colorCurveFromKeyframes([
+      { time: 0, r: 1, g: 0, b: 0 },
+      { time: 0.5, r: 0, g: 1, b: 0 },
+      { time: 1, r: 0, g: 0, b: 1 },
+    ]);
+    const out = [0, 0, 0];
+    sampleColorCurve(lut, 0.5, out, 0);
+    expect(out[1]).toBeGreaterThan(0.8); // green at mid
   });
 });
 
