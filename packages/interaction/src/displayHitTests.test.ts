@@ -1,6 +1,6 @@
 import { setRectangle } from '@flighthq/geometry';
 import { getLocalBoundsRectangle } from '@flighthq/scene';
-import { createDisplayObject, createSpriteBatch } from '@flighthq/scene-display';
+import { createDisplayObject } from '@flighthq/scene-display';
 
 import {
   defaultBitmapHitTestPoint,
@@ -8,9 +8,9 @@ import {
   defaultHTMLViewHitTestPoint,
   defaultInputTextHitTestPoint,
   defaultMovieClipHitTestPoint,
+  defaultRenderViewHitTestPoint,
   defaultRichTextHitTestPoint,
   defaultShapeHitTestPoint,
-  defaultSpriteBatchHitTestPoint,
   defaultStageHitTestPoint,
   defaultTextHitTestPoint,
   defaultVideoHitTestPoint,
@@ -69,6 +69,18 @@ describe('defaultMovieClipHitTestPoint', () => {
   });
 });
 
+describe('defaultRenderViewHitTestPoint', () => {
+  it('returns true when point is within local bounds', () => {
+    const obj = makeDisplayObject();
+    expect(defaultRenderViewHitTestPoint(obj, 50, 50, false)).toBe(true);
+  });
+
+  it('returns false when point is outside local bounds', () => {
+    const obj = makeDisplayObject();
+    expect(defaultRenderViewHitTestPoint(obj, 200, 200, false)).toBe(false);
+  });
+});
+
 describe('defaultRichTextHitTestPoint', () => {
   it('returns true when point is within local bounds', () => {
     const obj = makeDisplayObject();
@@ -90,14 +102,6 @@ describe('defaultShapeHitTestPoint', () => {
   it('returns false when point is outside local bounds', () => {
     const obj = makeDisplayObject();
     expect(defaultShapeHitTestPoint(obj, 200, 200, false)).toBe(false);
-  });
-});
-
-describe('defaultSpriteBatchHitTestPoint', () => {
-  it('returns false when graph is null', () => {
-    const batch = createSpriteBatch();
-    batch.data.graph = null;
-    expect(defaultSpriteBatchHitTestPoint(batch, 50, 50, false)).toBe(false);
   });
 });
 

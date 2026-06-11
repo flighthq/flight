@@ -1,7 +1,6 @@
-import type { SceneNode, SpriteBatch } from '@flighthq/types';
+import type { SceneNode } from '@flighthq/types';
 
 import { graphHitTestLocalBounds } from './hitTests';
-import { defaultSpriteHitTestPoint } from './spriteHitTests';
 
 export function defaultBitmapHitTestPoint(
   source: SceneNode<symbol, object>,
@@ -50,6 +49,15 @@ export function defaultMovieClipHitTestPoint(
   return false;
 }
 
+export function defaultRenderViewHitTestPoint(
+  source: SceneNode<symbol, object>,
+  x: number,
+  y: number,
+  _shapeFlag: boolean,
+): boolean {
+  return graphHitTestLocalBounds(source, x, y);
+}
+
 export function defaultRichTextHitTestPoint(
   source: SceneNode<symbol, object>,
   x: number,
@@ -66,19 +74,6 @@ export function defaultShapeHitTestPoint(
   _shapeFlag: boolean,
 ): boolean {
   return graphHitTestLocalBounds(source, x, y);
-}
-
-export function defaultSpriteBatchHitTestPoint(
-  source: SceneNode<symbol, object>,
-  x: number,
-  y: number,
-  shapeFlag: boolean,
-): boolean {
-  const spriteBatch = source as SpriteBatch;
-  if (spriteBatch.data.graph !== null) {
-    return defaultSpriteHitTestPoint(spriteBatch.data.graph, x, y, shapeFlag);
-  }
-  return defaultDisplayObjectHitTestPoint(source, x, y, shapeFlag);
 }
 
 export function defaultStageHitTestPoint(
