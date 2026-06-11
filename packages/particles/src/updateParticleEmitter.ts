@@ -14,16 +14,69 @@ export interface ParticleEmitterCallbacks {
   onSpawn?: (x: number, y: number) => void;
 }
 
+/** 2-D affine transform used to convert emitter-local coordinates to world space.
+ *  Required when `config.worldSpace = true`. Matches the shape of SpriteRenderNode.transform2D. */
+export interface WorldTransform2D {
+  a: number;
+  b: number;
+  c: number;
+  d: number;
+  tx: number;
+  ty: number;
+}
+
+/** True once a finite, non-looping emitter has finished emitting AND all of its
+ *  particles have died — i.e. a one-shot effect that is safe to recycle/remove.
+ *  Always false for infinite or looping emitters (they never finish). */
+export function isEmitterComplete(
+  emitter: ParticleEmitter,
+  state: Readonly<ParticleEmitterState>,
+  config: Readonly<ParticleEmitterConfig>,
+): boolean {
+  if (config.duration <= 0 || config.loop) return false;
+  return state.emitterAge >= config.duration && emitter.data.particleCount === 0;
+}
+
+/** Whether an emitter with the given config is still spawning, given how long it
+ *  has been emitting. Infinite (duration <= 0) and looping emitters always emit. */
+function isEmitting(config: Readonly<ParticleEmitterConfig>, emitterAge: number): boolean {
+  return config.duration <= 0 || config.loop || emitterAge < config.duration;
+}
+
 export function updateParticleEmitter(
   emitter: ParticleEmitter,
   state: ParticleEmitterState,
   config: Readonly<ParticleEmitterConfig>,
   dt: number,
   callbacks?: ParticleEmitterCallbacks,
+  worldTransform?: Readonly<WorldTransform2D>,
 ): void {
   const data = emitter.data;
 
-  // Phase 1: age all live particles, compact dead ones to the tail by swap-with-last.
+  // Sync world-space flag to data so renderers can read it.
+  data.worldSpace = config.worldSpace;
+
+  // Guard against a zero or negative time step: no time has elapsed, so there is
+  // nothing to age, move, or spawn. Critically, this avoids dividing by dt when
+  // computing emitter velocity below — a zero-dt frame that still fires a burst
+  // would otherwise bake Infinity/NaN velocities into freshly spawned particles
+  // and corrupt them for the rest of their lifetime.
+  if (dt <= 0) return;
+
+  // ── Emitter velocity (for velocity inheritance and trail interpolation) ───────
+  // In world-space mode we track the world origin; in local-space mode we track
+  // the emitter node position in parent space.
+  const trackX = config.worldSpace && worldTransform != null ? worldTransform.tx : emitter.x;
+  const trackY = config.worldSpace && worldTransform != null ? worldTransform.ty : emitter.y;
+  const hasVelInherit = config.velocityInheritance !== 0;
+  let emitterVelX = 0;
+  let emitterVelY = 0;
+  if (!isNaN(state.prevX)) {
+    emitterVelX = (trackX - state.prevX) / dt;
+    emitterVelY = (trackY - state.prevY) / dt;
+  }
+
+  // ── Phase 1: age all live particles, compact dead ones ──────────────────────
   const lifetimes = state.lifetimes;
   const velocities = state.velocities;
   const scales = state.scales;
@@ -31,7 +84,15 @@ export function updateParticleEmitter(
   const gx = config.gravityX * dt;
   const gy = config.gravityY * dt;
   const { colorStartR, colorStartG, colorStartB, colorEndR, colorEndG, colorEndB } = config;
-  const hasColorGradient = colorStartR !== colorEndR || colorStartG !== colorEndG || colorStartB !== colorEndB;
+  const hasColorVariance =
+    config.colorStartVarianceR !== 0 ||
+    config.colorStartVarianceG !== 0 ||
+    config.colorStartVarianceB !== 0 ||
+    config.colorEndVarianceR !== 0 ||
+    config.colorEndVarianceG !== 0 ||
+    config.colorEndVarianceB !== 0;
+  const hasColorGradient =
+    hasColorVariance || colorStartR !== colorEndR || colorStartG !== colorEndG || colorStartB !== colorEndB;
   const hasScaleAnim = config.scaleEnd !== 1;
   const hasRotationSpeed = config.rotationSpeedMin !== 0 || config.rotationSpeedMax !== 0;
   const hasFlipbook = config.frameCount > 1;
@@ -44,7 +105,6 @@ export function updateParticleEmitter(
     const lt = i * 2;
     lifetimes[lt] += dt;
     if (lifetimes[lt] >= lifetimes[lt + 1]) {
-      // Kill: notify, then swap with last live particle.
       if (onDeath !== undefined) {
         const tt = i * PARTICLE_TRANSFORM_STRIDE;
         onDeath(data.transforms[tt], data.transforms[tt + 1]);
@@ -73,12 +133,18 @@ export function updateParticleEmitter(
         data.colors[ct + 2] = data.colors[ct2 + 2];
         scales[i] = scales[liveCount];
         rotationSpeeds[i] = rotationSpeeds[liveCount];
+        if (hasColorVariance) {
+          state.colorBirth[ct] = state.colorBirth[ct2];
+          state.colorBirth[ct + 1] = state.colorBirth[ct2 + 1];
+          state.colorBirth[ct + 2] = state.colorBirth[ct2 + 2];
+          state.colorDeath[ct] = state.colorDeath[ct2];
+          state.colorDeath[ct + 1] = state.colorDeath[ct2 + 1];
+          state.colorDeath[ct + 2] = state.colorDeath[ct2 + 2];
+        }
       }
-      // Re-process slot i (now holds a different particle).
       continue;
     }
 
-    // Integrate: gravity → velocity → position.
     const vt = i * 2;
     velocities[vt] += gx;
     velocities[vt + 1] += gy;
@@ -88,28 +154,31 @@ export function updateParticleEmitter(
 
     const lifeFraction = lifetimes[lt] / lifetimes[lt + 1];
 
-    // Alpha.
     data.alphas[i] = config.alphaStart + (config.alphaEnd - config.alphaStart) * lifeFraction;
 
-    // Color.
     if (hasColorGradient) {
       const ct = i * 3;
-      data.colors[ct] = colorStartR + (colorEndR - colorStartR) * lifeFraction;
-      data.colors[ct + 1] = colorStartG + (colorEndG - colorStartG) * lifeFraction;
-      data.colors[ct + 2] = colorStartB + (colorEndB - colorStartB) * lifeFraction;
+      if (hasColorVariance) {
+        data.colors[ct] = state.colorBirth[ct] + (state.colorDeath[ct] - state.colorBirth[ct]) * lifeFraction;
+        data.colors[ct + 1] =
+          state.colorBirth[ct + 1] + (state.colorDeath[ct + 1] - state.colorBirth[ct + 1]) * lifeFraction;
+        data.colors[ct + 2] =
+          state.colorBirth[ct + 2] + (state.colorDeath[ct + 2] - state.colorBirth[ct + 2]) * lifeFraction;
+      } else {
+        data.colors[ct] = colorStartR + (colorEndR - colorStartR) * lifeFraction;
+        data.colors[ct + 1] = colorStartG + (colorEndG - colorStartG) * lifeFraction;
+        data.colors[ct + 2] = colorStartB + (colorEndB - colorStartB) * lifeFraction;
+      }
     }
 
-    // Scale over lifetime.
     if (hasScaleAnim) {
       data.transforms[tt + 3] = scales[i] * (1 + (config.scaleEnd - 1) * lifeFraction);
     }
 
-    // Rotation speed.
     if (hasRotationSpeed) {
       data.transforms[tt + 2] += rotationSpeeds[i] * dt;
     }
 
-    // Flipbook: step through atlas regions based on age.
     if (hasFlipbook) {
       const frame = Math.floor(lifetimes[lt] * config.frameRate) % config.frameCount;
       data.ids[i] = config.regionIdMin + frame;
@@ -119,13 +188,17 @@ export function updateParticleEmitter(
   }
   data.particleCount = liveCount;
 
-  // Phase 2: spawn new particles (continuous rate).
-  state.spawnAccumulator += config.spawnRate * dt;
+  // ── Phase 2: spawn new particles ─────────────────────────────────────────────
+  // A finite, non-looping emitter stops spawning once its duration elapses;
+  // existing particles keep ageing out (use isEmitterComplete to detect the end).
+  const emitting = isEmitting(config, state.emitterAge);
+  if (config.duration > 0 && !config.loop) state.emitterAge += dt;
+
+  state.spawnAccumulator += emitting ? config.spawnRate * dt : 0;
   let toSpawn = Math.floor(state.spawnAccumulator);
   state.spawnAccumulator -= toSpawn;
 
-  // Burst emission.
-  if (config.burstCount > 0) {
+  if (emitting && config.burstCount > 0) {
     state.burstTimer -= dt;
     if (state.burstTimer <= 0) {
       toSpawn += config.burstCount;
@@ -139,42 +212,78 @@ export function updateParticleEmitter(
   if (toSpawn > 0) {
     const newCount = liveCount + toSpawn;
     reserveParticleEmitter(emitter, newCount);
-    ensureStateCapacity(state, newCount);
+    ensureStateCapacity(state, newCount, hasColorVariance);
 
     const baseAngle = Math.atan2(config.directionY, config.directionX);
     const regionRange = config.regionIdMax - config.regionIdMin;
     const regionIdMin = config.regionIdMin;
-    const hasRotSpeed = config.rotationSpeedMin !== 0 || config.rotationSpeedMax !== 0;
     const rotSpeedRange = config.rotationSpeedMax - config.rotationSpeedMin;
+    const hasRotSpeed = config.rotationSpeedMin !== 0 || config.rotationSpeedMax !== 0;
+
+    // World-space trail: distribute spawn origins along the path from prevPos → currentPos.
+    const doTrail = config.worldSpace && worldTransform != null && !isNaN(state.prevX);
+    const prevPathX = doTrail ? state.prevX : trackX;
+    const prevPathY = doTrail ? state.prevY : trackY;
 
     for (let s = 0; s < toSpawn; s++) {
       const idx = liveCount + s;
-      const lifetime = config.lifetimeMin + Math.random() * (config.lifetimeMax - config.lifetimeMin);
+
+      // Lifetime
+      const lifetime = config.lifetimeMin + state.random() * (config.lifetimeMax - config.lifetimeMin);
       const lt = idx * 2;
       state.lifetimes[lt] = 0;
       state.lifetimes[lt + 1] = lifetime;
 
-      const angle = baseAngle + (Math.random() - 0.5) * 2 * config.spread;
-      const speed = config.speedMin + Math.random() * (config.speedMax - config.speedMin);
-      const vt = idx * 2;
-      state.velocities[vt] = Math.cos(angle) * speed;
-      state.velocities[vt + 1] = Math.sin(angle) * speed;
+      // Velocity direction in local/emitter space
+      const angle = baseAngle + (state.random() - 0.5) * 2 * config.spread;
+      const speed = config.speedMin + state.random() * (config.speedMax - config.speedMin);
+      let vx = Math.cos(angle) * speed;
+      let vy = Math.sin(angle) * speed;
 
-      // Spawn position based on emitter shape.
+      // Spawn position (local to emitter, or shape offset)
       let spawnX = 0;
       let spawnY = 0;
       if (config.emitterShape === 'circle' && config.emitterRadius > 0) {
-        const r = Math.sqrt(Math.random()) * config.emitterRadius;
-        const a = Math.random() * TWO_PI;
+        const r = Math.sqrt(state.random()) * config.emitterRadius;
+        const a = state.random() * TWO_PI;
         spawnX = Math.cos(a) * r;
         spawnY = Math.sin(a) * r;
       } else if (config.emitterShape === 'rect' && (config.emitterWidth > 0 || config.emitterHeight > 0)) {
-        spawnX = (Math.random() - 0.5) * config.emitterWidth;
-        spawnY = (Math.random() - 0.5) * config.emitterHeight;
+        spawnX = (state.random() - 0.5) * config.emitterWidth;
+        spawnY = (state.random() - 0.5) * config.emitterHeight;
       }
 
-      const spawnScale = config.scaleMin + Math.random() * (config.scaleMax - config.scaleMin);
-      // Write to state arrays directly after ensureStateCapacity may have reallocated them.
+      // World-space: transform spawn position and velocity into world space,
+      // and distribute origins along the emitter's movement path (trail interpolation).
+      if (config.worldSpace && worldTransform != null) {
+        const wt = worldTransform;
+        // Trail: interpolate origin between prev and current world position
+        const t = toSpawn > 1 ? s / (toSpawn - 1) : 1;
+        const originX = prevPathX + (trackX - prevPathX) * t;
+        const originY = prevPathY + (trackY - prevPathY) * t;
+        // Apply rotation+scale of world transform to shape offset, then add trail origin
+        const wx = wt.a * spawnX + wt.c * spawnY + originX;
+        const wy = wt.b * spawnX + wt.d * spawnY + originY;
+        spawnX = wx;
+        spawnY = wy;
+        // Rotate velocity by world transform (no translation for vectors)
+        const wvx = wt.a * vx + wt.c * vy;
+        const wvy = wt.b * vx + wt.d * vy;
+        vx = wvx;
+        vy = wvy;
+      }
+
+      // Velocity inheritance: blend emitter velocity into new particle velocity
+      if (hasVelInherit && !isNaN(state.prevX)) {
+        vx += emitterVelX * config.velocityInheritance;
+        vy += emitterVelY * config.velocityInheritance;
+      }
+
+      const vt = idx * 2;
+      state.velocities[vt] = vx;
+      state.velocities[vt + 1] = vy;
+
+      const spawnScale = config.scaleMin + state.random() * (config.scaleMax - config.scaleMin);
       state.scales[idx] = spawnScale;
 
       const tt = idx * PARTICLE_TRANSFORM_STRIDE;
@@ -184,31 +293,58 @@ export function updateParticleEmitter(
       data.transforms[tt + 3] = spawnScale;
       data.alphas[idx] = config.alphaStart;
 
-      // Color at birth.
+      // Color — use variance if set, otherwise config constants
       const ct = idx * 3;
-      data.colors[ct] = colorStartR;
-      data.colors[ct + 1] = colorStartG;
-      data.colors[ct + 2] = colorStartB;
+      if (hasColorVariance) {
+        const r0 = clamp01(colorStartR + (state.random() - 0.5) * 2 * config.colorStartVarianceR);
+        const g0 = clamp01(colorStartG + (state.random() - 0.5) * 2 * config.colorStartVarianceG);
+        const b0 = clamp01(colorStartB + (state.random() - 0.5) * 2 * config.colorStartVarianceB);
+        const r1 = clamp01(colorEndR + (state.random() - 0.5) * 2 * config.colorEndVarianceR);
+        const g1 = clamp01(colorEndG + (state.random() - 0.5) * 2 * config.colorEndVarianceG);
+        const b1 = clamp01(colorEndB + (state.random() - 0.5) * 2 * config.colorEndVarianceB);
+        state.colorBirth[ct] = r0;
+        state.colorBirth[ct + 1] = g0;
+        state.colorBirth[ct + 2] = b0;
+        state.colorDeath[ct] = r1;
+        state.colorDeath[ct + 1] = g1;
+        state.colorDeath[ct + 2] = b1;
+        data.colors[ct] = r0;
+        data.colors[ct + 1] = g0;
+        data.colors[ct + 2] = b0;
+      } else {
+        data.colors[ct] = colorStartR;
+        data.colors[ct + 1] = colorStartG;
+        data.colors[ct + 2] = colorStartB;
+      }
 
-      // Flipbook: start at first frame.
       data.ids[idx] =
-        regionIdMin + (config.frameCount > 1 ? 0 : regionRange > 0 ? (Math.random() * regionRange) | 0 : 0);
-
-      // Per-particle rotation speed.
-      state.rotationSpeeds[idx] = hasRotSpeed ? config.rotationSpeedMin + Math.random() * rotSpeedRange : 0;
+        regionIdMin + (config.frameCount > 1 ? 0 : regionRange > 0 ? (state.random() * regionRange) | 0 : 0);
+      state.rotationSpeeds[idx] = hasRotSpeed ? config.rotationSpeedMin + state.random() * rotSpeedRange : 0;
 
       onSpawn?.(spawnX, spawnY);
     }
     data.particleCount = newCount;
   }
 
+  // Update prev-position tracking for next frame.
+  state.prevX = trackX;
+  state.prevY = trackY;
+
   invalidateLocalBounds(emitter);
 }
 
-function ensureStateCapacity(state: ParticleEmitterState, capacity: number): void {
+function clamp01(v: number): number {
+  return v < 0 ? 0 : v > 1 ? 1 : v;
+}
+
+function ensureStateCapacity(state: ParticleEmitterState, capacity: number, hasColorVariance: boolean): void {
   if (state.lifetimes.length >= capacity * 2) return;
   state.lifetimes = reserveFloat32Array(state.lifetimes, capacity * 2);
   state.velocities = reserveFloat32Array(state.velocities, capacity * 2);
   state.scales = reserveFloat32Array(state.scales, capacity);
   state.rotationSpeeds = reserveFloat32Array(state.rotationSpeeds, capacity);
+  if (hasColorVariance) {
+    state.colorBirth = reserveFloat32Array(state.colorBirth, capacity * 3);
+    state.colorDeath = reserveFloat32Array(state.colorDeath, capacity * 3);
+  }
 }
