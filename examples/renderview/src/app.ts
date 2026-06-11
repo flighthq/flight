@@ -23,8 +23,8 @@ root.data.atlas = atlas;
 root.data.id = 0;
 root.scaleX = SCALE * scale;
 root.scaleY = SCALE * scale;
-root.x = (WIDTH - TILE_SIZE * SCALE * scale) / 2;
-root.y = (HEIGHT - TILE_SIZE * SCALE * scale) / 2;
+root.x = ((WIDTH - TILE_SIZE * SCALE) * scale) / 2;
+root.y = ((HEIGHT - TILE_SIZE * SCALE) * scale) / 2;
 invalidateLocalTransform(root);
 
 function enterFrame(): void {
