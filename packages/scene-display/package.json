@@ -53,10 +53,6 @@
       "types": "./dist/shapeHitTestRegistry.d.ts",
       "default": "./dist/shapeHitTestRegistry.js"
     },
-    "./spriteBatch": {
-      "types": "./dist/spriteBatch.d.ts",
-      "default": "./dist/spriteBatch.js"
-    },
     "./stage": {
       "types": "./dist/stage.d.ts",
       "default": "./dist/stage.js"
