@@ -1,4 +1,4 @@
-import type { ParticleEmitterConfig } from '@flighthq/particles';
+import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/particles';
 import { createParticleEmitterConfig } from '@flighthq/particles';
 
 import type { ParticleDesignerDocument, ParticleDesignerRawDict } from './schema';
@@ -45,7 +45,7 @@ function parsePlistRawDict(xml: string): ParticleDesignerRawDict {
       } else if (currentKey !== null) {
         if (name === 'integer' && inTag === 'integer') result[currentKey] = parseInt(text, 10);
         else if (name === 'real' && inTag === 'real') result[currentKey] = parseFloat(text);
-        else if (name === 'string' && inTag === 'string') result[currentKey] = text;
+        else if (name === 'string' && inTag === 'string') result[currentKey] = unescapeXml(text);
         if (['integer', 'real', 'string'].includes(name)) {
           currentKey = null;
           inTag = null;
@@ -56,9 +56,20 @@ function parsePlistRawDict(xml: string): ParticleDesignerRawDict {
   return result;
 }
 
+function unescapeXml(s: string): string {
+  return s
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&');
+}
+
 function num(d: ParticleDesignerRawDict, key: string, def = 0): number {
   const v = d[key];
-  return typeof v === 'number' ? v : def;
+  // Reject NaN (e.g. from an empty or malformed <integer>/<real> tag) so a
+  // corrupt field falls back to its default instead of poisoning the config.
+  return typeof v === 'number' && Number.isFinite(v) ? v : def;
 }
 function str(d: ParticleDesignerRawDict, key: string, def = ''): string {
   const v = d[key];
@@ -87,8 +98,13 @@ function rawDictToConfig(d: ParticleDesignerRawDict, textureSize: number): Parti
   const rotSpeedMid = ((rotStart + rotEnd) * 0.5 * DEG2RAD) / lifetimeMid;
   const rotSpeedVar = (Math.max(rotStartVar, rotEndVar) * DEG2RAD) / lifetimeMid;
 
+  // Particle Designer `duration` is in seconds; -1 (or 0) means emit forever.
+  const pdDuration = num(d, 'duration', -1);
+
   return createParticleEmitterConfig({
     maxParticles: num(d, 'maxParticles', 200) | 0,
+    loop: pdDuration <= 0,
+    duration: pdDuration > 0 ? pdDuration : 0,
     lifetimeMin: Math.max(0, lifespan - lifespanVar),
     lifetimeMax: lifespan + lifespanVar,
     speedMin: Math.max(0, speed - speedVar),
@@ -108,14 +124,29 @@ function rawDictToConfig(d: ParticleDesignerRawDict, textureSize: number): Parti
     colorStartR: num(d, 'startColorRed', 1),
     colorStartG: num(d, 'startColorGreen', 1),
     colorStartB: num(d, 'startColorBlue', 1),
+    colorStartVarianceR: num(d, 'startColorVarianceRed', 0),
+    colorStartVarianceG: num(d, 'startColorVarianceGreen', 0),
+    colorStartVarianceB: num(d, 'startColorVarianceBlue', 0),
     colorEndR: num(d, 'finishColorRed', 1),
     colorEndG: num(d, 'finishColorGreen', 1),
     colorEndB: num(d, 'finishColorBlue', 1),
+    colorEndVarianceR: num(d, 'finishColorVarianceRed', 0),
+    colorEndVarianceG: num(d, 'finishColorVarianceGreen', 0),
+    colorEndVarianceB: num(d, 'finishColorVarianceBlue', 0),
     alphaStart: num(d, 'startColorAlpha', 1),
     alphaEnd: num(d, 'finishColorAlpha', 0),
     rotationSpeedMin: rotSpeedMid - rotSpeedVar,
     rotationSpeedMax: rotSpeedMid + rotSpeedVar,
+    blendMode: pdBlendMode(num(d, 'blendFuncSource', 770), num(d, 'blendFuncDestination', 771)),
   });
+}
+
+function pdBlendMode(src: number, dst: number): ParticleBlendMode | null {
+  // GL_ONE=1, GL_SRC_ALPHA=770, GL_ONE_MINUS_SRC_ALPHA=771
+  if ((src === 770 || src === 1) && dst === 1) return 'add';
+  if (src === 770 && dst === 771) return 'normal';
+  if (src === 1 && dst === 771) return 'normal'; // premultiplied alpha
+  return null;
 }
 
 // ─── Public API ──────────────────────────────────────────────────────────────

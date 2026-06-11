@@ -1,4 +1,4 @@
-import type { ParticleEmitterConfig } from '@flighthq/particles';
+import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/particles';
 import { createParticleEmitterConfig } from '@flighthq/particles';
 
 import type { SpineAlphaKeyframe, SpineParticleDocument, SpineTintKeyframe } from './schema';
@@ -11,6 +11,25 @@ export interface SpineParsed {
 const DEG2RAD = Math.PI / 180;
 
 // ─── Value helpers (operate on raw JSON, no document allocation) ─────────────
+
+/** Parse a JSON string and assert the root is a plain object, throwing a clear,
+ *  format-tagged error otherwise. Particle assets are frequently hand-edited or
+ *  produced by external tools, so a corrupt or empty file must fail with an
+ *  actionable message rather than a cryptic `Cannot read properties of null`. */
+function parseSpineJson(json: string): Record<string, unknown> {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(json);
+  } catch (e) {
+    throw new Error(`Invalid Spine particle JSON: ${(e as Error).message}`);
+  }
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error(
+      `Invalid Spine particle document: expected a JSON object, got ${raw === null ? 'null' : Array.isArray(raw) ? 'array' : typeof raw}`,
+    );
+  }
+  return raw as Record<string, unknown>;
+}
 
 function rangeMid(obj: unknown, def = 0): number {
   if (obj != null && typeof obj === 'object') {
@@ -37,7 +56,13 @@ function rangeHigh(obj: unknown, def = 0): number {
 }
 function hexToRgb(hex: string): [number, number, number] {
   const s = hex.replace('#', '').padEnd(6, 'f');
-  return [parseInt(s.slice(0, 2), 16) / 255, parseInt(s.slice(2, 4), 16) / 255, parseInt(s.slice(4, 6), 16) / 255];
+  // Fall back to a full channel (1) for any non-hex pair so a malformed color
+  // string never injects NaN into the config (which would poison the simulation).
+  const channel = (i: number): number => {
+    const v = parseInt(s.slice(i, i + 2), 16);
+    return Number.isFinite(v) ? v / 255 : 1;
+  };
+  return [channel(0), channel(2), channel(4)];
 }
 function firstTintColor(arr: unknown): [number, number, number] {
   return hexToRgb(
@@ -75,10 +100,15 @@ function rawToConfig(raw: Record<string, unknown>): ParticleEmitterConfig {
   const endScaleMid = rangeMid(raw.scaleEnd, 0);
   const startTint = firstTintColor(raw.tint);
   const endTint = lastTintColor(raw.tint);
+  // A continuous Spine emitter emits forever; otherwise `duration` (ms) bounds it.
+  const continuous = typeof raw.continuous === 'boolean' ? raw.continuous : true;
+  const durationMs = typeof raw.duration === 'number' ? raw.duration : -1;
 
   return createParticleEmitterConfig({
     maxParticles: typeof raw.maxParticles === 'number' ? raw.maxParticles | 0 : 500,
     spawnRate: rangeMid(raw.emission, 20),
+    loop: continuous,
+    duration: !continuous && durationMs > 0 ? durationMs / 1000 : 0,
     lifetimeMin: lifeLow,
     lifetimeMax: lifeHigh,
     speedMin: rangeLow(raw.velocity, 50),
@@ -105,7 +135,16 @@ function rawToConfig(raw: Record<string, unknown>): ParticleEmitterConfig {
     alphaEnd: lastAlpha(raw.alpha),
     rotationSpeedMin: rangeLow(raw.rotation, 0) * DEG2RAD,
     rotationSpeedMax: rangeHigh(raw.rotation, 0) * DEG2RAD,
+    blendMode: spineBlendMode(typeof raw.blendMode === 'string' ? raw.blendMode : 'normal'),
   });
+}
+
+function spineBlendMode(mode: string): ParticleBlendMode | null {
+  if (mode === 'additive') return 'add';
+  if (mode === 'multiply') return 'multiply';
+  if (mode === 'screen') return 'screen';
+  if (mode === 'normal') return 'normal';
+  return null;
 }
 
 // ─── Document construction (load path only) ──────────────────────────────────
@@ -187,7 +226,7 @@ function rawToDocument(raw: Record<string, unknown>): SpineParticleDocument {
 /** Parse a Spine particle effect JSON string and preserve the full document for
  *  round-trip serialisation via `serializeSpineParticle`. */
 export function loadSpineParticle(json: string): SpineParsed {
-  const raw = JSON.parse(json) as Record<string, unknown>;
+  const raw = parseSpineJson(json);
   return { config: rawToConfig(raw), document: rawToDocument(raw) };
 }
 
@@ -196,5 +235,5 @@ export function loadSpineParticle(json: string): SpineParsed {
  *  Single-pass: no intermediate document object is allocated.
  *  Use `loadSpineParticle` instead when you need round-trip serialisation. */
 export function parseSpineParticle(json: string): ParticleEmitterConfig {
-  return rawToConfig(JSON.parse(json) as Record<string, unknown>);
+  return rawToConfig(parseSpineJson(json));
 }

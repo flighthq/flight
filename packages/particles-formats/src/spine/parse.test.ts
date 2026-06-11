@@ -50,6 +50,24 @@ describe('loadSpineParticle — full round-trip, returns { config, document }', 
   });
 });
 
+describe('parseSpineParticle — blend mode', () => {
+  it('maps additive blendMode to "add"', () => {
+    expect(parseSpineParticle(SPARK_JSON).blendMode).toBe('add');
+  });
+
+  it('maps normal blendMode to "normal"', () => {
+    const json = JSON.stringify({ ...JSON.parse(SPARK_JSON), blendMode: 'normal' });
+    expect(parseSpineParticle(json).blendMode).toBe('normal');
+  });
+
+  it('round-trips blendMode through serialize', () => {
+    const config = parseSpineParticle(SPARK_JSON);
+    const { document } = loadSpineParticle(SPARK_JSON);
+    const config2 = parseSpineParticle(serializeSpineParticle(config, document));
+    expect(config2.blendMode).toBe('add');
+  });
+});
+
 describe('parseSpineParticle — lightweight, returns config directly', () => {
   it('returns a ParticleEmitterConfig (not a Parsed object)', () => {
     const result = parseSpineParticle(SPARK_JSON);
@@ -106,6 +124,45 @@ describe('parseSpineParticle — lightweight, returns config directly', () => {
     const c = parseSpineParticle(SPARK_JSON);
     expect(c.rotationSpeedMin).toBeCloseTo(0);
     expect(c.rotationSpeedMax).toBeCloseTo((360 * Math.PI) / 180, 3);
+  });
+
+  it('maps continuous=true to a looping emitter (emit forever)', () => {
+    const c = parseSpineParticle(SPARK_JSON);
+    expect(c.loop).toBe(true);
+    expect(c.duration).toBe(0);
+  });
+
+  it('maps continuous=false with a duration to a finite, non-looping emitter', () => {
+    const json = JSON.stringify({ ...JSON.parse(SPARK_JSON), continuous: false, duration: 2000 });
+    const c = parseSpineParticle(json);
+    expect(c.loop).toBe(false);
+    expect(c.duration).toBeCloseTo(2); // 2000 ms → 2 s
+  });
+});
+
+describe('parseSpineParticle — malformed input', () => {
+  it('throws a clear, format-tagged error on invalid JSON', () => {
+    expect(() => parseSpineParticle('{not valid')).toThrow(/Invalid Spine particle JSON/);
+  });
+
+  it('throws a clear error when the root is not an object', () => {
+    expect(() => parseSpineParticle('null')).toThrow(/expected a JSON object/);
+    expect(() => parseSpineParticle('"a string"')).toThrow(/expected a JSON object/);
+    expect(() => parseSpineParticle('[1,2,3]')).toThrow(/expected a JSON object/);
+  });
+
+  it('falls back to safe channel values for an unparseable tint color (no NaN)', () => {
+    const c = parseSpineParticle(JSON.stringify({ tint: [{ time: 0, color: 'zzzzzz' }] }));
+    expect(Number.isFinite(c.colorStartR)).toBe(true);
+    expect(Number.isFinite(c.colorStartG)).toBe(true);
+    expect(Number.isFinite(c.colorStartB)).toBe(true);
+  });
+
+  it('falls back to defaults for an empty object rather than producing NaN', () => {
+    const c = parseSpineParticle('{}');
+    expect(Number.isFinite(c.lifetimeMin)).toBe(true);
+    expect(Number.isFinite(c.spawnRate)).toBe(true);
+    expect(Number.isFinite(c.colorStartR)).toBe(true);
   });
 });
 

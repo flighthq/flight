@@ -1,4 +1,4 @@
-import type { ParticleEmitterConfig } from '@flighthq/particles';
+import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/particles';
 
 import type { SpineParticleDocument } from './schema';
 
@@ -22,8 +22,8 @@ function configToDocument(
   return {
     name: existing.name ?? '',
     maxParticles: config.maxParticles,
-    continuous: existing.continuous ?? true,
-    duration: existing.duration ?? -1,
+    continuous: config.loop,
+    duration: config.duration > 0 && !config.loop ? config.duration * 1000 : (existing.duration ?? -1),
     emission: { low: config.spawnRate * 0.8, high: config.spawnRate * 1.2 },
     life: { low: config.lifetimeMin * 1000, high: config.lifetimeMax * 1000 },
     lifeOffset: existing.lifeOffset ?? { low: 0, high: 0 },
@@ -60,10 +60,18 @@ function configToDocument(
       { time: 0, alpha: config.alphaStart },
       { time: 1, alpha: config.alphaEnd },
     ],
-    blendMode: existing.blendMode ?? 'normal',
+    blendMode: configToSpineBlendMode(config.blendMode) ?? existing.blendMode ?? 'normal',
     premultiplied: existing.premultiplied ?? false,
     images: existing.images ?? [],
   };
+}
+
+function configToSpineBlendMode(mode: ParticleBlendMode | null): SpineParticleDocument['blendMode'] | null {
+  if (mode === 'add') return 'additive';
+  if (mode === 'multiply') return 'multiply';
+  if (mode === 'screen') return 'screen';
+  if (mode === 'normal') return 'normal';
+  return null;
 }
 
 /** Serialise a ParticleEmitterConfig to a Spine particle effect JSON string.

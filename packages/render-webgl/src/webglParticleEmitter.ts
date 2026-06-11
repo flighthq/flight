@@ -207,18 +207,32 @@ export function drawWebGLParticleEmitter(state: RenderState, renderNode: SpriteR
   }
 
   // Compute and upload the emitter node → clip-space world matrix.
+  // In world-space mode particle positions ARE already in world (pixel) space,
+  // so we skip the node transform and map directly through the viewport.
   const clipW = 2 / viewport.width;
   const clipH = 2 / viewport.height;
   const m = internal.matrixArray;
-  m[0] = t.a * clipW;
-  m[1] = -t.b * clipH;
-  m[2] = 0;
-  m[3] = t.c * clipW;
-  m[4] = -t.d * clipH;
-  m[5] = 0;
-  m[6] = t.tx * clipW - 1;
-  m[7] = -t.ty * clipH + 1;
-  m[8] = 1;
+  if (source.data.worldSpace) {
+    m[0] = clipW;
+    m[1] = 0;
+    m[2] = 0;
+    m[3] = 0;
+    m[4] = -clipH;
+    m[5] = 0;
+    m[6] = -1;
+    m[7] = 1;
+    m[8] = 1;
+  } else {
+    m[0] = t.a * clipW;
+    m[1] = -t.b * clipH;
+    m[2] = 0;
+    m[3] = t.c * clipW;
+    m[4] = -t.d * clipH;
+    m[5] = 0;
+    m[6] = t.tx * clipW - 1;
+    m[7] = -t.ty * clipH + 1;
+    m[8] = 1;
+  }
   gl.uniformMatrix3fv(shader.locWorldMatrix, false, m);
   gl.uniform1i(shader.locTexture, 0);
 

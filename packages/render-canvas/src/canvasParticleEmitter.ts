@@ -33,15 +33,26 @@ export function drawCanvasParticleEmitter(state: CanvasRenderState, renderNode: 
     const rotation = transforms[tt + 2];
     const scale = transforms[tt + 3];
 
-    // Build world matrix: node transform × particle local (rotate+scale+translate).
+    // Build world matrix. In world-space mode particle positions are already in
+    // world (pixel) space, so we skip the node transform.
     const cosR = Math.cos(rotation) * scale;
     const sinR = Math.sin(rotation) * scale;
-    const a = t.a * cosR + t.c * sinR;
-    const b = t.b * cosR + t.d * sinR;
-    const c = t.a * -sinR + t.c * cosR;
-    const d = t.b * -sinR + t.d * cosR;
-    const tx = t.a * px + t.c * py + t.tx;
-    const ty = t.b * px + t.d * py + t.ty;
+    let a: number, b: number, c: number, d: number, tx: number, ty: number;
+    if (source.data.worldSpace) {
+      a = cosR;
+      b = sinR;
+      c = -sinR;
+      d = cosR;
+      tx = px;
+      ty = py;
+    } else {
+      a = t.a * cosR + t.c * sinR;
+      b = t.b * cosR + t.d * sinR;
+      c = t.a * -sinR + t.c * cosR;
+      d = t.b * -sinR + t.d * cosR;
+      tx = t.a * px + t.c * py + t.tx;
+      ty = t.b * px + t.d * py + t.ty;
+    }
 
     context.globalAlpha = nodeAlpha * alphas[i];
     context.setTransform(a, b, c, d, tx, ty);

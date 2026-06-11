@@ -1,4 +1,4 @@
-import type { ParticleEmitterConfig } from '@flighthq/particles';
+import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/particles';
 import { createParticleEmitterConfig } from '@flighthq/particles';
 
 import type {
@@ -28,6 +28,25 @@ const DEFAULT_PPU = 100;
 const DEFAULT_GRAVITY = 9.81;
 
 // ─── Value helpers (shared by both paths) ────────────────────────────────────
+
+/** Parse a JSON string and assert the root is a plain object, throwing a clear,
+ *  format-tagged error otherwise. Particle assets are frequently hand-edited or
+ *  produced by external tools, so a corrupt or empty file must fail with an
+ *  actionable message rather than a cryptic `Cannot read properties of null`. */
+function parseUnityJson(json: string): Record<string, unknown> {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(json);
+  } catch (e) {
+    throw new Error(`Invalid Unity particle JSON: ${(e as Error).message}`);
+  }
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error(
+      `Invalid Unity particle document: expected a JSON object, got ${raw === null ? 'null' : Array.isArray(raw) ? 'array' : typeof raw}`,
+    );
+  }
+  return raw as Record<string, unknown>;
+}
 
 function rn(obj: unknown, def = 0): number {
   return typeof obj === 'number' ? obj : def;
@@ -125,9 +144,15 @@ function rawToConfig(raw: Record<string, unknown>, ppu: number): ParticleEmitter
   const rotLow = rolEnabled ? mmLow(rolRaw?.angularVelocity, 0) * DEG2RAD : 0;
   const rotHigh = rolEnabled ? mmHigh(rolRaw?.angularVelocity, 0) * DEG2RAD : 0;
 
+  // A looping Unity system emits forever (duration is just the cycle length);
+  // a non-looping one emits for `duration` seconds then stops.
+  const looping = rb(raw.looping, true);
+
   return createParticleEmitterConfig({
     maxParticles: rn(raw.maxParticles, 1000) | 0,
     spawnRate,
+    loop: looping,
+    duration: looping ? 0 : Math.max(0, rn(raw.duration, 5)),
     lifetimeMin: mmLow(raw.startLifetime, 1),
     lifetimeMax: mmHigh(raw.startLifetime, 1),
     speedMin: mmLow(raw.startSpeed, 5) * ppu,
@@ -156,7 +181,19 @@ function rawToConfig(raw: Record<string, unknown>, ppu: number): ParticleEmitter
     rotationSpeedMax: rotHigh,
     burstCount,
     burstInterval,
+    blendMode: unityBlendMode(raw),
   });
+}
+
+function unityBlendMode(raw: Record<string, unknown>): ParticleBlendMode | null {
+  // Unity exposes blend mode via the renderer module; a common export convention
+  // uses a top-level 'blendMode' or 'renderMode' string field.
+  const mode = typeof raw.blendMode === 'string' ? raw.blendMode.toLowerCase() : null;
+  if (mode === 'additive' || mode === 'add') return 'add';
+  if (mode === 'multiply') return 'multiply';
+  if (mode === 'screen') return 'screen';
+  if (mode === 'normal' || mode === 'alpha') return 'normal';
+  return null;
 }
 
 // ─── Document construction (load path only) ──────────────────────────────────
@@ -252,7 +289,7 @@ function rawToDocument(raw: Record<string, unknown>): UnityParticleDocument {
  *  for round-trip serialisation via `serializeUnityParticle`. */
 export function loadUnityParticle(json: string, options?: UnityParseOptions): UnityParsed {
   const ppu = options?.pixelsPerUnit ?? DEFAULT_PPU;
-  const raw = JSON.parse(json) as Record<string, unknown>;
+  const raw = parseUnityJson(json);
   return { config: rawToConfig(raw, ppu), document: rawToDocument(raw) };
 }
 
@@ -261,5 +298,5 @@ export function loadUnityParticle(json: string, options?: UnityParseOptions): Un
  *  Single-pass: no intermediate document object is allocated.
  *  Use `loadUnityParticle` instead when you need round-trip serialisation. */
 export function parseUnityParticle(json: string, options?: UnityParseOptions): ParticleEmitterConfig {
-  return rawToConfig(JSON.parse(json) as Record<string, unknown>, options?.pixelsPerUnit ?? DEFAULT_PPU);
+  return rawToConfig(parseUnityJson(json), options?.pixelsPerUnit ?? DEFAULT_PPU);
 }

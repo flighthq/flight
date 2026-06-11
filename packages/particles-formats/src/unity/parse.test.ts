@@ -105,6 +105,19 @@ describe('parseUnityParticle — lightweight, returns config directly', () => {
     expect(c.rotationSpeedMax).toBeCloseTo((45 * Math.PI) / 180, 3);
   });
 
+  it('maps a looping system to loop=true / duration=0 (emit forever)', () => {
+    const c = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
+    expect(c.loop).toBe(true);
+    expect(c.duration).toBe(0);
+  });
+
+  it('maps a non-looping system to loop=false with its duration', () => {
+    const json = JSON.stringify({ ...JSON.parse(SMOKE_JSON), looping: false, duration: 3 });
+    const c = parseUnityParticle(json, { pixelsPerUnit: PPU });
+    expect(c.loop).toBe(false);
+    expect(c.duration).toBeCloseTo(3);
+  });
+
   it('maps burst count and interval', () => {
     const json = JSON.stringify({
       ...JSON.parse(SMOKE_JSON),
@@ -116,6 +129,26 @@ describe('parseUnityParticle — lightweight, returns config directly', () => {
     const c = parseUnityParticle(json, { pixelsPerUnit: PPU });
     expect(c.burstCount).toBe(25);
     expect(c.burstInterval).toBe(2);
+  });
+});
+
+describe('parseUnityParticle — malformed input', () => {
+  it('throws a clear, format-tagged error on invalid JSON', () => {
+    expect(() => parseUnityParticle('{not valid')).toThrow(/Invalid Unity particle JSON/);
+  });
+
+  it('throws a clear error when the root is not an object', () => {
+    expect(() => parseUnityParticle('null')).toThrow(/expected a JSON object/);
+    expect(() => parseUnityParticle('42')).toThrow(/expected a JSON object/);
+    expect(() => parseUnityParticle('[]')).toThrow(/expected a JSON object/);
+  });
+
+  it('falls back to defaults for an empty object rather than producing NaN', () => {
+    const c = parseUnityParticle('{}');
+    expect(Number.isFinite(c.maxParticles)).toBe(true);
+    expect(Number.isFinite(c.lifetimeMin)).toBe(true);
+    expect(Number.isFinite(c.gravityY)).toBe(true);
+    expect(Number.isFinite(c.spawnRate)).toBe(true);
   });
 });
 

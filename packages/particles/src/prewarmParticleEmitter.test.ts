@@ -57,4 +57,12 @@ describe('prewarmParticleEmitter', () => {
     prewarmParticleEmitter(emitter, state, config, 0);
     expect(emitter.data.particleCount).toBe(0);
   });
+
+  it('does not hang when stepDt is zero (falls back to a single step)', () => {
+    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const state = createParticleEmitterState();
+    const config = createParticleEmitterConfig({ spawnRate: 10, lifetimeMin: 10, lifetimeMax: 10 });
+    prewarmParticleEmitter(emitter, state, config, 1, 0);
+    expect(emitter.data.particleCount).toBeGreaterThan(0);
+  });
 });
