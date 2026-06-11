@@ -2,7 +2,7 @@ import { createImageSourceFromCanvas } from '@flighthq/assets';
 import { createEntity } from '@flighthq/entity';
 import type { ImageSource, Surface } from '@flighthq/types';
 
-export function createImageSourceFromSurface(source: Surface): ImageSource {
+export function createImageSourceFromSurface(source: Readonly<Surface>): ImageSource {
   const canvas = document.createElement('canvas');
   canvas.width = source.width;
   canvas.height = source.height;
@@ -33,7 +33,7 @@ export function createSurfaceFromCanvas(
   });
 }
 
-export function createSurfaceFromImageSource(source: ImageSource): Surface {
+export function createSurfaceFromImageSource(source: Readonly<ImageSource>): Surface {
   const canvas = document.createElement('canvas');
   canvas.width = source.width;
   canvas.height = source.height;

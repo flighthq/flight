@@ -2,7 +2,7 @@ import type { Surface } from '@flighthq/types';
 
 import { createSurface } from './surface';
 
-export function compareSurface(source: Surface, other: Surface | null): Surface | 0 | -1 | -2 | -3 {
+export function compareSurface(source: Readonly<Surface>, other: Readonly<Surface> | null): Surface | 0 | -1 | -2 | -3 {
   if (other === null) return -1;
   if (source.width !== other.width) return -2;
   if (source.height !== other.height) return -3;

@@ -7,7 +7,7 @@ export type PixelOrder = 'ABGR' | 'ARGB' | 'BGRA' | 'RGBA';
  */
 export function convertSurfacePixelOrder(
   out: Uint8ClampedArray,
-  source: Uint8ClampedArray,
+  source: Readonly<Uint8ClampedArray>,
   length: number,
   from: PixelOrder,
   to: PixelOrder,
@@ -35,7 +35,11 @@ export function convertSurfacePixelOrder(
  * a separate buffer. RGB channels are multiplied by alpha/255.
  * Safe to pass the same buffer as both `out` and `source`.
  */
-export function premultiplySurfacePixels(out: Uint8ClampedArray, source: Uint8ClampedArray, length: number): void {
+export function premultiplySurfacePixels(
+  out: Uint8ClampedArray,
+  source: Readonly<Uint8ClampedArray>,
+  length: number,
+): void {
   for (let i = 0; i < length; i += 4) {
     const a = source[i + 3] / 255;
     out[i] = Math.round(source[i] * a);
@@ -50,7 +54,11 @@ export function premultiplySurfacePixels(out: Uint8ClampedArray, source: Uint8Cl
  * into a separate buffer. Pixels with alpha=0 are written as (0,0,0,0).
  * Safe to pass the same buffer as both `out` and `source`.
  */
-export function unpremultiplySurfacePixels(out: Uint8ClampedArray, source: Uint8ClampedArray, length: number): void {
+export function unpremultiplySurfacePixels(
+  out: Uint8ClampedArray,
+  source: Readonly<Uint8ClampedArray>,
+  length: number,
+): void {
   for (let i = 0; i < length; i += 4) {
     const a = source[i + 3];
     if (a === 0) {
@@ -67,8 +75,6 @@ export function unpremultiplySurfacePixels(out: Uint8ClampedArray, source: Uint8
     }
   }
 }
-
-// ─── Private helpers ──────────────────────────────────────────────────────────
 
 function channelOffsets(order: PixelOrder): [number, number, number, number] {
   switch (order) {
