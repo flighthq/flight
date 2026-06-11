@@ -98,6 +98,34 @@ export function extractSurfacePixels(out: Uint8ClampedArray, source: Readonly<Su
 }
 
 /**
+ * Copies `source` into `out` as one packed `0xRRGGBBAA` color per pixel
+ * (the packing `getSurfacePixel32` returns), in row-major order with
+ * stride = source.width. `out` must hold at least
+ * `source.width * source.height` entries.
+ *
+ * This is the bulk, color-per-element counterpart to the byte-per-channel
+ * `extractSurfacePixels`: use it when you want to read or compare whole
+ * regions of colors without reassembling channel bytes.
+ */
+export function extractSurfacePixels32(out: Uint32Array, source: Readonly<SurfaceRegion>): void {
+  for (let py = 0; py < source.height; py++) {
+    const sourceY = source.y + py;
+    if (sourceY < 0 || sourceY >= source.surface.height) continue;
+    for (let px = 0; px < source.width; px++) {
+      const sourceX = source.x + px;
+      if (sourceX < 0 || sourceX >= source.surface.width) continue;
+      const si = (sourceY * source.surface.width + sourceX) * 4;
+      out[py * source.width + px] =
+        ((source.surface.data[si] << 24) |
+          (source.surface.data[si + 1] << 16) |
+          (source.surface.data[si + 2] << 8) |
+          source.surface.data[si + 3]) >>>
+        0;
+    }
+  }
+}
+
+/**
  * Writes `pixels` into `dest`, overwriting existing content.
  * `pixels` must be at least `dest.width * dest.height * 4` bytes in
  * row-major RGBA order.
@@ -115,6 +143,29 @@ export function writeSurfacePixels(dest: Readonly<SurfaceRegion>, pixels: Readon
       dest.surface.data[di + 1] = pixels[si + 1];
       dest.surface.data[di + 2] = pixels[si + 2];
       dest.surface.data[di + 3] = pixels[si + 3];
+    }
+  }
+}
+
+/**
+ * Writes `pixels` into `dest`, overwriting existing content. Each entry is a
+ * packed `0xRRGGBBAA` color (the form `setSurfacePixel32` takes), read in
+ * row-major order. `pixels` must hold at least `dest.width * dest.height`
+ * entries. This is the color-per-element counterpart to `writeSurfacePixels`.
+ */
+export function writeSurfacePixels32(dest: Readonly<SurfaceRegion>, pixels: Readonly<Uint32Array>): void {
+  for (let py = 0; py < dest.height; py++) {
+    const y = dest.y + py;
+    if (y < 0 || y >= dest.surface.height) continue;
+    for (let px = 0; px < dest.width; px++) {
+      const x = dest.x + px;
+      if (x < 0 || x >= dest.surface.width) continue;
+      const color = pixels[py * dest.width + px];
+      const di = (y * dest.surface.width + x) * 4;
+      dest.surface.data[di] = (color >>> 24) & 0xff;
+      dest.surface.data[di + 1] = (color >> 16) & 0xff;
+      dest.surface.data[di + 2] = (color >> 8) & 0xff;
+      dest.surface.data[di + 3] = color & 0xff;
     }
   }
 }

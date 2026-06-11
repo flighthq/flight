@@ -1,6 +1,13 @@
 import { BlendMode } from '@flighthq/types';
 
-import { compositeSurfacePixels, compositeSurfaceRegion, extractSurfacePixels, writeSurfacePixels } from './composite';
+import {
+  compositeSurfacePixels,
+  compositeSurfaceRegion,
+  extractSurfacePixels,
+  extractSurfacePixels32,
+  writeSurfacePixels,
+  writeSurfacePixels32,
+} from './composite';
 import { createSurface } from './surface';
 
 function region(
@@ -157,6 +164,44 @@ describe('extractSurfacePixels', () => {
   });
 });
 
+describe('extractSurfacePixels32', () => {
+  it('packs each pixel into one 0xRRGGBBAA entry', () => {
+    const source = createSurface(2, 2);
+    const i = (1 * 2 + 1) * 4;
+    source.data[i] = 0x11;
+    source.data[i + 1] = 0x22;
+    source.data[i + 2] = 0x33;
+    source.data[i + 3] = 0x44;
+    const out = new Uint32Array(1);
+    extractSurfacePixels32(out, region(source, 1, 1, 1, 1));
+    expect(out[0]).toBe(0x11223344);
+  });
+
+  it('round-trips with writeSurfacePixels32', () => {
+    const source = createSurface(3, 2);
+    for (let p = 0; p < 6; p++) {
+      const i = p * 4;
+      source.data[i] = p * 10 + 1;
+      source.data[i + 1] = p * 10 + 2;
+      source.data[i + 2] = p * 10 + 3;
+      source.data[i + 3] = p * 10 + 4;
+    }
+    const packed = new Uint32Array(6);
+    extractSurfacePixels32(packed, region(source));
+    const dest = createSurface(3, 2);
+    writeSurfacePixels32(region(dest), packed);
+    expect(Array.from(dest.data)).toEqual(Array.from(source.data));
+  });
+
+  it('silently skips pixels outside source bounds', () => {
+    const source = createSurface(1, 1, 0xffffffff);
+    const out = new Uint32Array(4);
+    extractSurfacePixels32(out, region(source, -1, -1, 2, 2));
+    expect(out[1 * 2 + 1]).toBe(0xffffffff);
+    expect(out[0]).toBe(0);
+  });
+});
+
 describe('writeSurfacePixels', () => {
   it('writes pixels at the given destination region', () => {
     const dest = createSurface(3, 3);
@@ -181,6 +226,31 @@ describe('writeSurfacePixels', () => {
     const dest = createSurface(1, 1);
     const pixels = new Uint8ClampedArray([0xff, 0xff, 0xff, 0xff]);
     writeSurfacePixels(region(dest, 5, 5, 1, 1), pixels);
+    expect(dest.data[3]).toBe(0);
+  });
+});
+
+describe('writeSurfacePixels32', () => {
+  it('unpacks each 0xRRGGBBAA entry into the destination region', () => {
+    const dest = createSurface(3, 3);
+    writeSurfacePixels32(region(dest, 1, 1, 1, 1), new Uint32Array([0x33669900 | 0xff]));
+    const i = (1 * 3 + 1) * 4;
+    expect(dest.data[i]).toBe(0x33);
+    expect(dest.data[i + 1]).toBe(0x66);
+    expect(dest.data[i + 2]).toBe(0x99);
+    expect(dest.data[i + 3]).toBe(0xff);
+  });
+
+  it('overwrites existing content', () => {
+    const dest = createSurface(1, 1, 0x0000ffff);
+    writeSurfacePixels32(region(dest), new Uint32Array([0xff0000ff]));
+    expect(dest.data[0]).toBe(0xff);
+    expect(dest.data[2]).toBe(0);
+  });
+
+  it('silently clips writes outside destination bounds', () => {
+    const dest = createSurface(1, 1);
+    writeSurfacePixels32(region(dest, 5, 5, 1, 1), new Uint32Array([0xffffffff]));
     expect(dest.data[3]).toBe(0);
   });
 });
