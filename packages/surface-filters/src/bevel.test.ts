@@ -21,20 +21,20 @@ function edgeStrip() {
 
 describe('applySurfaceBevelFilter', () => {
   it('highlights the light-facing edge and shades the opposite edge', () => {
-    // Light from the left (angle π). With blurX=2 the blurred alpha is
+    // Light from the left (angle π). With radiusX=1 the blurred alpha is
     // [0, 85, 170, 255, 255]; the gradient highlights the left edge of the
     // shape and shadows the right edge.
     const source = edgeStrip();
     const out = new Uint8ClampedArray(5 * 4);
-    const blurBuffer = new Uint8ClampedArray(5 * 4);
-    applySurfaceBevelFilter(out, blurBuffer, region(source), {
+    const scratch = new Uint8ClampedArray(5 * 4);
+    applySurfaceBevelFilter(out, scratch, region(source), {
       angle: Math.PI,
       distance: 1,
-      blurX: 2,
-      blurY: 0,
-      type: 'full',
-      highlightColor: 0xffffff,
-      shadowColor: 0x000000,
+      radiusX: 1,
+      radiusY: 0,
+      type: 'both',
+      highlightColor: 0xffffffff,
+      shadowColor: 0x000000ff,
     });
     // Left edge: white highlight.
     expect(out[2 * 4 + 0]).toBe(255);
@@ -51,12 +51,12 @@ describe('applySurfaceBevelFilter', () => {
   it("'inner' type clips the bevel to inside the shape", () => {
     const source = edgeStrip();
     const out = new Uint8ClampedArray(5 * 4);
-    const blurBuffer = new Uint8ClampedArray(5 * 4);
-    applySurfaceBevelFilter(out, blurBuffer, region(source), {
+    const scratch = new Uint8ClampedArray(5 * 4);
+    applySurfaceBevelFilter(out, scratch, region(source), {
       angle: Math.PI,
       distance: 1,
-      blurX: 2,
-      blurY: 0,
+      radiusX: 1,
+      radiusY: 0,
       type: 'inner',
     });
     // x0/x1 are outside the shape (source alpha 0) → clipped to 0.

@@ -6,10 +6,10 @@ export interface SurfaceSharpenFilterOptions {
   /** Sharpen strength. 0 is a no-op; 1 is a moderate sharpen; >1 is stronger. Default 1. */
   amount?: number;
   /** Blur radius of the unsharp mask, in pixels. Larger radii sharpen coarser detail. Default 2. */
-  blurX?: number;
-  blurY?: number;
+  radiusX?: number;
+  radiusY?: number;
   /** Blur pass count, forwarded to the box blur. Default 1. */
-  quality?: number;
+  passes?: number;
 }
 
 /**
@@ -18,7 +18,7 @@ export interface SurfaceSharpenFilterOptions {
  * radius-based sharpen photo tools use; a fixed 3×3 sharpen is also available
  * via `applySurfaceConvolutionFilter`.
  *
- * `blurBuffer` is ping-pong scratch, at least `source.width * source.height * 4`
+ * `scratch` is ping-pong scratch, at least `source.width * source.height * 4`
  * bytes; its contents are undefined after the call. Alpha is left as the source
  * alpha (only RGB is sharpened).
  *
@@ -27,15 +27,15 @@ export interface SurfaceSharpenFilterOptions {
  */
 export function applySurfaceSharpenFilter(
   out: Uint8ClampedArray,
-  blurBuffer: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
   options: Readonly<SurfaceSharpenFilterOptions> = {},
 ): void {
   const amount = options.amount ?? 1;
-  applySurfaceBoxBlurFilter(out, blurBuffer, source, {
-    blurX: options.blurX ?? 2,
-    blurY: options.blurY ?? 2,
-    quality: options.quality ?? 1,
+  applySurfaceBoxBlurFilter(out, scratch, source, {
+    radiusX: options.radiusX ?? 2,
+    radiusY: options.radiusY ?? 2,
+    passes: options.passes ?? 1,
   });
 
   const w = source.width;

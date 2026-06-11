@@ -31,7 +31,7 @@ describe('applySurfaceSharpenFilter', () => {
     for (let i = 0; i < 5; i++) source.data[i * 4 + 3] = 255;
     const out = new Uint8ClampedArray(5 * 4);
     const scratch = new Uint8ClampedArray(5 * 4);
-    applySurfaceSharpenFilter(out, scratch, region(source), { amount: 1, blurX: 4, blurY: 0 });
+    applySurfaceSharpenFilter(out, scratch, region(source), { amount: 1, radiusX: 4, radiusY: 0 });
     expect(out[2 * 4]).toBeGreaterThan(100);
   });
 

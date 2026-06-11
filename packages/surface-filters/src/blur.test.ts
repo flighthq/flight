@@ -26,7 +26,7 @@ describe('applySurfaceBoxBlurFilter', () => {
     source.data[7] = 255; // center pixel opaque
     const out = new Uint8ClampedArray(3 * 4);
     const scratch = new Uint8ClampedArray(3 * 4);
-    applySurfaceBoxBlurFilter(out, scratch, region(source), { blurX: 2, blurY: 0 });
+    applySurfaceBoxBlurFilter(out, scratch, region(source), { radiusX: 2, radiusY: 0 });
     expect(out[3]).toBeGreaterThan(0);
     expect(out[11]).toBeGreaterThan(0);
   });
@@ -35,7 +35,7 @@ describe('applySurfaceBoxBlurFilter', () => {
     const source = createSurface(1, 1, 0x336699ff);
     const out = new Uint8ClampedArray(4);
     const scratch = new Uint8ClampedArray(4);
-    applySurfaceBoxBlurFilter(out, scratch, region(source), { blurX: 0, blurY: 0 });
+    applySurfaceBoxBlurFilter(out, scratch, region(source), { radiusX: 0, radiusY: 0 });
     expect(out[0]).toBe(0x33);
     expect(out[3]).toBe(0xff);
   });
@@ -44,7 +44,7 @@ describe('applySurfaceBoxBlurFilter', () => {
     const source = createSurface(3, 3, 0xffffff88);
     const out = new Uint8ClampedArray(3 * 3 * 4);
     const scratch = new Uint8ClampedArray(3 * 3 * 4);
-    applySurfaceBoxBlurFilter(out, scratch, region(source), { blurX: 2, blurY: 0 });
+    applySurfaceBoxBlurFilter(out, scratch, region(source), { radiusX: 2, radiusY: 0 });
     expect(out[3]).toBeGreaterThan(0);
   });
 
@@ -52,7 +52,7 @@ describe('applySurfaceBoxBlurFilter', () => {
     const surface = createSurface(3, 1);
     surface.data[7] = 255;
     const scratch = new Uint8ClampedArray(3 * 4);
-    applySurfaceBoxBlurFilter(surface.data, scratch, region(surface), { blurX: 2, blurY: 0 });
+    applySurfaceBoxBlurFilter(surface.data, scratch, region(surface), { radiusX: 2, radiusY: 0 });
     expect(surface.data[3]).toBeGreaterThan(0);
     expect(surface.data[11]).toBeGreaterThan(0);
   });
@@ -65,7 +65,7 @@ describe('applySurfaceBoxBlurFilter', () => {
     surface.data[2 * 4 + 3] = 100;
     const out = new Uint8ClampedArray(2 * 4);
     const scratch = new Uint8ClampedArray(2 * 4);
-    applySurfaceBoxBlurFilter(out, scratch, region(surface, 1, 0, 2, 1), { blurX: 2, blurY: 0 });
+    applySurfaceBoxBlurFilter(out, scratch, region(surface, 1, 0, 2, 1), { radiusX: 2, radiusY: 0 });
     expect(out[3]).toBe(178); // round((255 + 100) / 2)
     expect(out[7]).toBe(178);
   });
