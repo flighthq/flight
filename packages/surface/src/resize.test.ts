@@ -1,4 +1,4 @@
-import { getSurfacePixel32 } from './pixel';
+import { getSurfacePixel } from './pixel';
 import { resizeSurface } from './resize';
 import { createSurface } from './surface';
 
@@ -19,10 +19,10 @@ describe('resizeSurface', () => {
     source.data.set([40, 50, 60, 255], 4);
     const out = createSurface(4, 1);
     resizeSurface(region(out), region(source), 'nearest');
-    expect(getSurfacePixel32(out, 0, 0)).toBe(getSurfacePixel32(source, 0, 0));
-    expect(getSurfacePixel32(out, 1, 0)).toBe(getSurfacePixel32(source, 0, 0));
-    expect(getSurfacePixel32(out, 2, 0)).toBe(getSurfacePixel32(source, 1, 0));
-    expect(getSurfacePixel32(out, 3, 0)).toBe(getSurfacePixel32(source, 1, 0));
+    expect(getSurfacePixel(out, 0, 0)).toBe(getSurfacePixel(source, 0, 0));
+    expect(getSurfacePixel(out, 1, 0)).toBe(getSurfacePixel(source, 0, 0));
+    expect(getSurfacePixel(out, 2, 0)).toBe(getSurfacePixel(source, 1, 0));
+    expect(getSurfacePixel(out, 3, 0)).toBe(getSurfacePixel(source, 1, 0));
   });
 
   it('bilinear interpolates between source pixels', () => {
@@ -35,6 +35,33 @@ describe('resizeSurface', () => {
     expect(out.data[4]).toBeGreaterThanOrEqual(out.data[0]);
     expect(out.data[8]).toBeGreaterThan(out.data[4]);
     expect(out.data[12]).toBe(100);
+  });
+
+  it('bicubic produces a smoother interpolation than bilinear', () => {
+    const source = createSurface(2, 1);
+    source.data.set([0, 0, 0, 255], 0);
+    source.data.set([200, 200, 200, 255], 4);
+    const out = createSurface(4, 1);
+    resizeSurface(region(out), region(source), 'bicubic');
+    // Bicubic should produce a monotonically increasing sequence
+    expect(out.data[4]).toBeGreaterThanOrEqual(out.data[0]);
+    expect(out.data[8]).toBeGreaterThanOrEqual(out.data[4]);
+    expect(out.data[12]).toBeGreaterThanOrEqual(out.data[8]);
+  });
+
+  it('premultiplied option prevents dark-halo bleed at transparent edges', () => {
+    // Red pixel adjacent to fully transparent. Straight-alpha blend mixes the
+    // hidden black of the transparent pixel into the output. Premultiplied
+    // blending keeps the red pure on the opaque side.
+    const source = createSurface(2, 1);
+    source.data.set([255, 0, 0, 255], 0); // opaque red
+    source.data.set([0, 0, 0, 0], 4); // transparent
+    const straight = createSurface(4, 1);
+    resizeSurface(region(straight), region(source), 'bilinear');
+    const premul = createSurface(4, 1);
+    resizeSurface(region(premul), region(source), { mode: 'bilinear', premultiplied: true });
+    // At the boundary (pixel 1), premultiplied keeps red higher than straight
+    expect(premul.data[4]).toBeGreaterThanOrEqual(straight.data[4]);
   });
 
   it('downscales by averaging toward the source values', () => {

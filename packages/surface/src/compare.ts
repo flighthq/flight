@@ -2,10 +2,18 @@ import type { Surface } from '@flighthq/types';
 
 import { createSurface } from './surface';
 
-export function compareSurface(source: Readonly<Surface>, other: Readonly<Surface> | null): Surface | 0 | -1 | -2 | -3 {
-  if (other === null) return -1;
-  if (source.width !== other.width) return -2;
-  if (source.height !== other.height) return -3;
+/**
+ * Compares two surfaces pixel by pixel. Returns `null` if they are identical,
+ * or a new Surface showing per-channel absolute differences (with alpha set to
+ * 255 wherever any channel differs). Throws if the surfaces have different
+ * dimensions — comparing incompatible surfaces is a programmer error.
+ */
+export function compareSurface(source: Readonly<Surface>, other: Readonly<Surface>): Surface | null {
+  if (source.width !== other.width || source.height !== other.height) {
+    throw new Error(
+      `compareSurface: surface dimensions do not match (${source.width}×${source.height} vs ${other.width}×${other.height})`,
+    );
+  }
 
   const result = createSurface(source.width, source.height);
   let hasDiff = false;
@@ -24,5 +32,5 @@ export function compareSurface(source: Readonly<Surface>, other: Readonly<Surfac
     }
   }
 
-  return hasDiff ? result : 0;
+  return hasDiff ? result : null;
 }

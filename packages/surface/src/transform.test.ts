@@ -1,4 +1,4 @@
-import { getSurfacePixel32, setSurfacePixel32 } from './pixel';
+import { getSurfacePixel, setSurfacePixel } from './pixel';
 import { createSurface } from './surface';
 import { applySurfaceColorTransform, applySurfaceThreshold, mergeSurface, scrollSurface } from './transform';
 
@@ -33,7 +33,7 @@ describe('applySurfaceColorTransform', () => {
 
   it('applies offset', () => {
     const img = createSurface(1, 1);
-    setSurfacePixel32(img, 0, 0, 0x000000ff);
+    setSurfacePixel(img, 0, 0, 0x000000ff);
     applySurfaceColorTransform(region(img), region(img), { ...identity, redOffset: 100 });
     expect(img.data[0]).toBe(100);
   });
@@ -66,20 +66,20 @@ describe('applySurfaceColorTransform', () => {
 describe('applySurfaceThreshold', () => {
   it('replaces pixels that pass the test', () => {
     const src = createSurface(2, 1);
-    setSurfacePixel32(src, 0, 0, 0x808080ff);
-    setSurfacePixel32(src, 1, 0, 0x404040ff);
+    setSurfacePixel(src, 0, 0, 0x808080ff);
+    setSurfacePixel(src, 1, 0, 0x404040ff);
     const dst = createSurface(2, 1);
     const count = applySurfaceThreshold(region(dst), region(src), '>', 0x607060ff, 0xffffffff);
     expect(count).toBe(1);
-    expect(getSurfacePixel32(dst, 0, 0)).toBe(0xffffffff);
-    expect(getSurfacePixel32(dst, 1, 0)).toBe(0x00000000);
+    expect(getSurfacePixel(dst, 0, 0)).toBe(0xffffffff);
+    expect(getSurfacePixel(dst, 1, 0)).toBe(0x00000000);
   });
 
   it('copies source when copySource is true and test fails', () => {
     const src = createSurface(1, 1, 0x112233ff);
     const dst = createSurface(1, 1);
     applySurfaceThreshold(region(dst), region(src), '>', 0xffffffff, 0xffffffff, 0xffffffff, true);
-    expect(getSurfacePixel32(dst, 0, 0)).toBe(0x112233ff);
+    expect(getSurfacePixel(dst, 0, 0)).toBe(0x112233ff);
   });
 
   it('returns zero when no pixels pass', () => {
@@ -91,15 +91,15 @@ describe('applySurfaceThreshold', () => {
 });
 
 describe('mergeSurface', () => {
-  it('with mult=256 copies source', () => {
+  it('with multiplier 1 copies source', () => {
     const src = createSurface(1, 1, 0xff0000ff);
     const dst = createSurface(1, 1, 0x0000ffff);
-    mergeSurface(region(dst), region(src), 256, 256, 256, 256);
+    mergeSurface(region(dst), region(src), 1, 1, 1, 1);
     expect(dst.data[0]).toBe(0xff);
     expect(dst.data[2]).toBe(0x00);
   });
 
-  it('with mult=0 keeps destination', () => {
+  it('with multiplier 0 keeps destination', () => {
     const src = createSurface(1, 1, 0xff0000ff);
     const dst = createSurface(1, 1, 0x0000ffff);
     mergeSurface(region(dst), region(src), 0, 0, 0, 0);
@@ -107,10 +107,10 @@ describe('mergeSurface', () => {
     expect(dst.data[2]).toBe(0xff);
   });
 
-  it('with mult=128 blends evenly', () => {
+  it('with multiplier 0.5 blends evenly', () => {
     const src = createSurface(1, 1, 0x200000ff);
     const dst = createSurface(1, 1, 0x000020ff);
-    mergeSurface(region(dst), region(src), 128, 0, 128, 0);
+    mergeSurface(region(dst), region(src), 0.5, 0, 0.5, 0);
     expect(dst.data[0]).toBeCloseTo(16, 0);
     expect(dst.data[2]).toBeCloseTo(16, 0);
   });
@@ -119,16 +119,16 @@ describe('mergeSurface', () => {
 describe('scrollSurface', () => {
   it('shifts content right with wrapping', () => {
     const img = createSurface(4, 1);
-    setSurfacePixel32(img, 0, 0, 0xff0000ff);
+    setSurfacePixel(img, 0, 0, 0xff0000ff);
     scrollSurface(img, 1, 0);
-    expect(getSurfacePixel32(img, 1, 0)).toBe(0xff0000ff);
-    expect(getSurfacePixel32(img, 0, 0)).toBe(0x00000000);
+    expect(getSurfacePixel(img, 1, 0)).toBe(0xff0000ff);
+    expect(getSurfacePixel(img, 0, 0)).toBe(0x00000000);
   });
 
   it('wraps pixels around the edge', () => {
     const img = createSurface(4, 1);
-    setSurfacePixel32(img, 3, 0, 0xaabbccff);
+    setSurfacePixel(img, 3, 0, 0xaabbccff);
     scrollSurface(img, 1, 0);
-    expect(getSurfacePixel32(img, 0, 0)).toBe(0xaabbccff);
+    expect(getSurfacePixel(img, 0, 0)).toBe(0xaabbccff);
   });
 });
