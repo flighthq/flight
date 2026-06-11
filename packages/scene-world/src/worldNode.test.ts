@@ -6,8 +6,11 @@ import { initTransform3DRuntimeTrait, initTransform3DTrait } from './hasTransfor
 import { addWorldChild, getWorldNumChildren, getWorldParent, getWorldRoot, removeWorldChild } from './worldHierarchy';
 import {
   createWorldNode,
+  createWorldNodeRuntime,
   getWorldNodeRuntime,
+  getWorldNodeSignals,
   invalidateLocalTransform,
+  invalidateParentReference,
   WorldNodeKind,
   type WorldNodeRuntime,
 } from './worldNode';
@@ -45,6 +48,32 @@ describe('createWorldNode', () => {
   });
 });
 
+describe('createWorldNodeRuntime', () => {
+  it('initializes transform bookkeeping ids', () => {
+    const runtime = createWorldNodeRuntime();
+    expect(runtime.localTransformID).toBe(0);
+    expect(runtime.worldTransformID).toBe(0);
+    expect(runtime.worldTransformUsingLocalTransformID).toBe(-1);
+    expect(runtime.worldTransformUsingParentTransformID).toBe(-1);
+  });
+
+  it('creates the full set of world node signals', () => {
+    const runtime = createWorldNodeRuntime();
+    expect(runtime.worldNodeSignals.onChildAdded).toBeDefined();
+    expect(runtime.worldNodeSignals.onChildRemoved).toBeDefined();
+    expect(runtime.worldNodeSignals.onChildrenChanged).toBeDefined();
+    expect(runtime.worldNodeSignals.onChildrenOrderChanged).toBeDefined();
+    expect(runtime.worldNodeSignals.onParentChanged).toBeDefined();
+  });
+});
+
+describe('getWorldNodeSignals', () => {
+  it('returns the runtime signal bag for the node', () => {
+    const node = createWorldNode();
+    expect(getWorldNodeSignals(node)).toBe(getWorldNodeRuntime(node).worldNodeSignals);
+  });
+});
+
 describe('initTransform3DTrait', () => {
   it('sets an identity localMatrix by default', () => {
     const node = createTransformNode();
@@ -64,6 +93,24 @@ describe('initTransform3DTrait', () => {
     existing.m[12] = 42;
     initTransform3DTrait(node, { localMatrix: existing });
     expect(node.localMatrix.m[12]).toBe(42);
+  });
+});
+
+describe('invalidateLocalTransform', () => {
+  it('increments the local transform id', () => {
+    const node = createWorldNode();
+    const before = getWorldNodeRuntime(node).localTransformID;
+    invalidateLocalTransform(node);
+    expect(getWorldNodeRuntime(node).localTransformID).toBe(before + 1);
+  });
+});
+
+describe('invalidateParentReference', () => {
+  it('resets the cached parent transform id so the world matrix recomputes', () => {
+    const node = createWorldNode();
+    getWorldNodeRuntime(node).worldTransformUsingParentTransformID = 5;
+    invalidateParentReference(node);
+    expect(getWorldNodeRuntime(node).worldTransformUsingParentTransformID).toBe(-1);
   });
 });
 
