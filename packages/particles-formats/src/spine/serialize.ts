@@ -1,6 +1,7 @@
 import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/particles';
+import { colorCurveToKeyframes, curveToKeyframes } from '@flighthq/particles';
 
-import type { SpineParticleDocument } from './schema';
+import type { SpineAlphaKeyframe, SpineParticleDocument, SpineTintKeyframe } from './schema';
 
 const RAD2DEG = 180 / Math.PI;
 
@@ -52,14 +53,22 @@ function configToDocument(
       low: config.scaleMin * config.scaleEnd,
       high: config.scaleMax * config.scaleEnd,
     },
-    tint: [
-      { time: 0, color: rgbToHex(config.colorStartR, config.colorStartG, config.colorStartB) },
-      { time: 1, color: rgbToHex(config.colorEndR, config.colorEndG, config.colorEndB) },
-    ],
-    alpha: [
-      { time: 0, alpha: config.alphaStart },
-      { time: 1, alpha: config.alphaEnd },
-    ],
+    // A baked color/alpha curve serializes back to a full multi-stop timeline;
+    // otherwise emit the 2-stop start→end timeline.
+    tint: config.colorCurve
+      ? colorCurveToKeyframes(config.colorCurve).map(
+          (k): SpineTintKeyframe => ({ time: k.time, color: rgbToHex(k.r, k.g, k.b) }),
+        )
+      : [
+          { time: 0, color: rgbToHex(config.colorStartR, config.colorStartG, config.colorStartB) },
+          { time: 1, color: rgbToHex(config.colorEndR, config.colorEndG, config.colorEndB) },
+        ],
+    alpha: config.alphaCurve
+      ? curveToKeyframes(config.alphaCurve).map((k): SpineAlphaKeyframe => ({ time: k.time, alpha: k.value }))
+      : [
+          { time: 0, alpha: config.alphaStart },
+          { time: 1, alpha: config.alphaEnd },
+        ],
     blendMode: configToSpineBlendMode(config.blendMode) ?? existing.blendMode ?? 'normal',
     premultiplied: existing.premultiplied ?? false,
     images: existing.images ?? [],

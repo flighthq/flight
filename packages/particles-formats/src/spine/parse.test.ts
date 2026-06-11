@@ -1,4 +1,10 @@
-import { sampleColorCurve, sampleCurve } from '@flighthq/particles';
+import {
+  colorCurveFromKeyframes,
+  createParticleEmitterConfig,
+  curveFromKeyframes,
+  sampleColorCurve,
+  sampleCurve,
+} from '@flighthq/particles';
 
 import { loadSpineParticle, parseSpineParticle } from './parse';
 import { serializeSpineParticle } from './serialize';
@@ -251,5 +257,29 @@ describe('serializeSpineParticle', () => {
 
   it('produces valid JSON', () => {
     expect(() => JSON.parse(serializeSpineParticle(parseSpineParticle(SPARK_JSON)))).not.toThrow();
+  });
+});
+
+describe('serializeSpineParticle — curve round-trip', () => {
+  it('emits a baked color/alpha curve as a multi-stop timeline that re-imports identically', () => {
+    const colorCurve = colorCurveFromKeyframes([
+      { time: 0, r: 1, g: 0, b: 0 },
+      { time: 0.5, r: 0, g: 1, b: 0 },
+      { time: 1, r: 0, g: 0, b: 1 },
+    ]);
+    const alphaCurve = curveFromKeyframes([
+      { time: 0, value: 0 },
+      { time: 0.5, value: 1 },
+      { time: 1, value: 0 },
+    ]);
+    const config = createParticleEmitterConfig({ colorCurve, alphaCurve });
+    const c2 = parseSpineParticle(serializeSpineParticle(config));
+    expect(c2.colorCurve).not.toBeNull();
+    expect(c2.alphaCurve).not.toBeNull();
+    const out = [0, 0, 0];
+    sampleColorCurve(c2.colorCurve!, 0.5, out, 0);
+    expect(out[1]).toBeGreaterThan(0.8); // green still peaks mid-life
+    expect(sampleCurve(c2.alphaCurve!, 0.5)).toBeGreaterThan(0.9);
+    expect(sampleCurve(c2.alphaCurve!, 0)).toBeLessThan(0.1);
   });
 });
