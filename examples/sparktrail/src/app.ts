@@ -1,4 +1,11 @@
-import { createParticleEmitterConfig, createParticleEmitterState, updateParticleEmitter } from '@flighthq/particles';
+import {
+  applyParticleForces,
+  bakeCurve,
+  colorCurveFromKeyframes,
+  createParticleEmitterConfig,
+  createParticleEmitterState,
+  updateParticleEmitter,
+} from '@flighthq/particles';
 import {
   addTextureAtlasRegion,
   createImageSource,
@@ -31,46 +38,79 @@ addTextureAtlasRegion(atlas, 0, 0, 16, 16);
 
 const emitter = createParticleEmitter();
 emitter.data.atlas = atlas;
-emitter.scaleX = scale;
-emitter.scaleY = scale;
+// World-space particles are rendered directly in physical pixels and ignore the
+// emitter node's transform, so the node stays unscaled and we author magnitudes
+// in physical px below (× scale).
+emitter.scaleX = 1;
+emitter.scaleY = 1;
 emitter.x = (WIDTH * scale) / 2;
 emitter.y = (HEIGHT * scale) / 2;
 
+// Shared lifetime curves (normalised over each spark's life, resolution-independent).
+// Scale pops on spawn then shrinks to nothing; alpha stays bright then fades with a
+// tail; tint runs white-hot → orange → ember-red.
+const scaleCurve = bakeCurve((t) => {
+  const pop = t < 0.15 ? 0.7 + (1 - 0.7) * (t / 0.15) : 1; // 0.7 → 1.0 over first 15%
+  return pop * (1 - t); // then taper to 0 by end of life
+});
+const alphaCurve = bakeCurve((t) => 1 - t * t); // bright, then accelerating fade
+const colorCurve = colorCurveFromKeyframes([
+  { time: 0, r: 1, g: 1, b: 0.85 },
+  { time: 0.35, r: 1, g: 0.5, b: 0.1 },
+  { time: 1, r: 0.55, g: 0.05, b: 0 },
+]);
+
+// World-space emission gives a real trail: sparks are left behind in the world
+// (they don't drag with the cursor), spawn positions are interpolated along the
+// cursor's path for continuous streaks, and they inherit some cursor momentum.
 const config = createParticleEmitterConfig({
+  worldSpace: true,
+  velocityInheritance: 0.35,
   spawnRate: 250,
   lifetimeMin: 0.2,
   lifetimeMax: 0.55,
-  speedMin: 40,
-  speedMax: 130,
+  speedMin: 40 * scale,
+  speedMax: 130 * scale,
   spread: Math.PI * 2,
   directionX: 0,
   directionY: -1,
   gravityX: 0,
-  gravityY: 200,
-  alphaStart: 1,
-  alphaEnd: 0,
-  scaleMin: 0.4,
-  scaleMax: 1.4,
+  gravityY: 200 * scale,
+  alphaCurve,
+  scaleCurve,
+  colorCurve,
+  scaleMin: 0.4 * scale,
+  scaleMax: 1.4 * scale,
   maxParticles: 3000,
 });
 
 const configPressed = createParticleEmitterConfig({
+  worldSpace: true,
+  velocityInheritance: 0.35,
   spawnRate: 1500,
   lifetimeMin: 0.3,
   lifetimeMax: 0.8,
-  speedMin: 100,
-  speedMax: 350,
+  speedMin: 100 * scale,
+  speedMax: 350 * scale,
   spread: Math.PI * 2,
   directionX: 0,
   directionY: -1,
   gravityX: 0,
-  gravityY: 300,
-  alphaStart: 1,
-  alphaEnd: 0,
-  scaleMin: 0.6,
-  scaleMax: 2.0,
+  gravityY: 300 * scale,
+  alphaCurve,
+  scaleCurve,
+  colorCurve,
+  scaleMin: 0.6 * scale,
+  scaleMax: 2.0 * scale,
   maxParticles: 3000,
 });
+
+// Opt-in force pass: light air drag so sparks decelerate, plus gentle turbulence
+// so the trail shimmers instead of moving in clean arcs.
+const forces = [
+  { type: 'drag', strength: 0.9 },
+  { type: 'turbulence', strength: 90 * scale, scale: 0.01 },
+] as const;
 
 const simState = createParticleEmitterState();
 
@@ -121,7 +161,12 @@ function enterFrame(): void {
   emitter.y += emitterVelY * dt;
   invalidateLocalTransform(emitter);
 
-  updateParticleEmitter(emitter, simState, pointerDown ? configPressed : config, dt);
+  // Emitter world matrix: translation only (sizes/speeds are already physical px).
+  const worldTransform = { a: 1, b: 0, c: 0, d: 1, tx: emitter.x, ty: emitter.y };
+
+  // Forces act on last frame's live particles before this frame integrates them.
+  applyParticleForces(emitter, simState, forces, dt);
+  updateParticleEmitter(emitter, simState, pointerDown ? configPressed : config, dt, undefined, worldTransform);
   invalidateAppearance(emitter);
 
   counter.textContent = `${emitter.data.particleCount} particles`;
