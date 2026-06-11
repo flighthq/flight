@@ -1,7 +1,7 @@
 import { createEntity } from '@flighthq/entity';
 import type { Surface } from '@flighthq/types';
 
-export function cloneSurface(source: Surface): Surface {
+export function cloneSurface(source: Readonly<Surface>): Surface {
   return createEntity({
     colorSpace: source.colorSpace,
     data: new Uint8ClampedArray(source.data),

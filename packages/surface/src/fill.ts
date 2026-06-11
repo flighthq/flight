@@ -1,30 +1,27 @@
-import type { Surface } from '@flighthq/types';
+import type { Surface, SurfaceRegion } from '@flighthq/types';
 
 let _floodFillVisited: Uint8Array | null = null;
 
-export function fillSurfaceRectangle(
-  out: Surface,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  color: number,
-): void {
+/**
+ * Fills the rectangular `dest` region with a packed RGBA `color`. Pixels of the
+ * region that fall outside the surface are skipped.
+ */
+export function fillSurfaceRectangle(dest: Readonly<SurfaceRegion>, color: number): void {
   const r = (color >>> 24) & 0xff;
   const g = (color >> 16) & 0xff;
   const b = (color >> 8) & 0xff;
   const a = color & 0xff;
-  const x1 = Math.max(0, x);
-  const y1 = Math.max(0, y);
-  const x2 = Math.min(out.width, x + width);
-  const y2 = Math.min(out.height, y + height);
-  for (let py = y1; py < y2; py++) {
-    for (let px = x1; px < x2; px++) {
-      const i = (py * out.width + px) * 4;
-      out.data[i] = r;
-      out.data[i + 1] = g;
-      out.data[i + 2] = b;
-      out.data[i + 3] = a;
+  for (let py = 0; py < dest.height; py++) {
+    const y = dest.y + py;
+    if (y < 0 || y >= dest.surface.height) continue;
+    for (let px = 0; px < dest.width; px++) {
+      const x = dest.x + px;
+      if (x < 0 || x >= dest.surface.width) continue;
+      const i = (y * dest.surface.width + x) * 4;
+      dest.surface.data[i] = r;
+      dest.surface.data[i + 1] = g;
+      dest.surface.data[i + 2] = b;
+      dest.surface.data[i + 3] = a;
     }
   }
 }

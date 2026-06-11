@@ -2,7 +2,11 @@ import type { Surface } from '@flighthq/types';
 
 export type ImageFormat = 'jpeg' | 'png';
 
-export function encodeSurface(source: Surface, format: ImageFormat = 'png', quality: number = 0.9): Uint8Array {
+export function encodeSurface(
+  source: Readonly<Surface>,
+  format: ImageFormat = 'png',
+  quality: number = 0.9,
+): Uint8Array {
   const canvas = document.createElement('canvas');
   canvas.width = source.width;
   canvas.height = source.height;

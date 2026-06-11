@@ -1,0 +1,58 @@
+import { getSurfacePixel32 } from './pixel';
+import { rotateSurface180, rotateSurfaceClockwise, rotateSurfaceCounterClockwise } from './rotate';
+import { createSurface } from './surface';
+
+function region(
+  surface: ReturnType<typeof createSurface>,
+  x = 0,
+  y = 0,
+  width = surface.width,
+  height = surface.height,
+) {
+  return { surface, x, y, width, height };
+}
+
+// 2x1 surface: pixel (0,0) = A, pixel (1,0) = B.
+function ab() {
+  const surface = createSurface(2, 1);
+  surface.data.set([0xa0, 0, 0, 255], 0);
+  surface.data.set([0xb0, 0, 0, 255], 4);
+  return surface;
+}
+
+describe('rotateSurface180', () => {
+  it('reverses pixel order with matching dimensions', () => {
+    const source = ab();
+    const out = createSurface(2, 1);
+    rotateSurface180(region(out), region(source));
+    expect(out.data[0]).toBe(0xb0);
+    expect(out.data[4]).toBe(0xa0);
+  });
+
+  it('rotates in place when dest and source are the same region', () => {
+    const surface = ab();
+    rotateSurface180(region(surface), region(surface));
+    expect(surface.data[0]).toBe(0xb0);
+    expect(surface.data[4]).toBe(0xa0);
+  });
+});
+
+describe('rotateSurfaceClockwise', () => {
+  it('rotates a row into a column, left element on top', () => {
+    const source = ab();
+    const out = createSurface(1, 2);
+    rotateSurfaceClockwise(region(out), region(source));
+    expect(getSurfacePixel32(out, 0, 0)).toBe(getSurfacePixel32(source, 0, 0));
+    expect(getSurfacePixel32(out, 0, 1)).toBe(getSurfacePixel32(source, 1, 0));
+  });
+});
+
+describe('rotateSurfaceCounterClockwise', () => {
+  it('rotates a row into a column, right element on top', () => {
+    const source = ab();
+    const out = createSurface(1, 2);
+    rotateSurfaceCounterClockwise(region(out), region(source));
+    expect(getSurfacePixel32(out, 0, 0)).toBe(getSurfacePixel32(source, 1, 0));
+    expect(getSurfacePixel32(out, 0, 1)).toBe(getSurfacePixel32(source, 0, 0));
+  });
+});

@@ -63,6 +63,42 @@ describe('compositeSurfacePixels', () => {
     expect(dest.data[0]).toBe(0);
     expect(dest.data[2]).toBe(255);
   });
+
+  it('overlay blend mode darkens on dark backdrops', () => {
+    const dest = createSurface(1, 1, 0x400000ff); // RGBA: R=64
+    const pixels = new Uint8ClampedArray([200, 0, 0, 255]);
+    compositeSurfacePixels(region(dest), pixels, BlendMode.Overlay);
+    expect(dest.data[0]).toBe(100); // 2 * 64 * 200 / 255
+  });
+
+  it('hardlight blend mode is overlay with operands swapped', () => {
+    const dest = createSurface(1, 1, 0xc80000ff); // RGBA: R=200
+    const pixels = new Uint8ClampedArray([64, 0, 0, 255]);
+    compositeSurfacePixels(region(dest), pixels, BlendMode.Hardlight);
+    expect(dest.data[0]).toBe(100); // 2 * 200 * 64 / 255
+  });
+
+  it('invert blend mode inverts the backdrop, ignoring source color', () => {
+    const dest = createSurface(1, 1, 0xc80000ff); // RGBA: R=200
+    const pixels = new Uint8ClampedArray([0, 0, 0, 255]);
+    compositeSurfacePixels(region(dest), pixels, BlendMode.Invert);
+    expect(dest.data[0]).toBe(55); // 255 - 200
+  });
+
+  it('erase blend mode knocks alpha out of the backdrop, keeping color', () => {
+    const dest = createSurface(1, 1, 0xff0000ff); // RGBA: opaque red
+    const pixels = new Uint8ClampedArray([0, 0, 0, 128]);
+    compositeSurfacePixels(region(dest), pixels, BlendMode.Erase);
+    expect(dest.data[0]).toBe(255); // color untouched
+    expect(dest.data[3]).toBe(127); // 255 * (1 - 128/255)
+  });
+
+  it('throws for blend modes with no surface meaning', () => {
+    const dest = createSurface(1, 1);
+    const pixels = new Uint8ClampedArray([0, 0, 0, 255]);
+    expect(() => compositeSurfacePixels(region(dest), pixels, BlendMode.Shader)).toThrow(/not supported/);
+    expect(() => compositeSurfacePixels(region(dest), pixels, BlendMode.Alpha)).toThrow(/not supported/);
+  });
 });
 
 describe('compositeSurfaceRegion', () => {

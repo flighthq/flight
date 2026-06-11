@@ -5,15 +5,18 @@ import { BlendMode } from '@flighthq/types';
  * Alpha-composites `pixels` over `dest`. `pixels` must be at least
  * `dest.width * dest.height * 4` bytes in row-major RGBA order.
  *
- * `blendMode` selects the separable blend applied to the source color before
- * the Porter-Duff source-over. Supported: Normal (default), Multiply, Screen,
- * Add, Subtract, Darken, Lighten, Difference. Other modes fall back to Normal.
+ * `blendMode` selects how the source combines with the backdrop. Separable
+ * blends applied before the Porter-Duff source-over: Normal (default) and Layer
+ * (= Normal), Multiply, Screen, Add, Subtract, Darken, Lighten, Difference,
+ * Overlay, Hardlight, Invert. Erase is a destination-out knockout. Alpha and
+ * Shader are display-list concepts with no surface meaning and throw.
  */
 export function compositeSurfacePixels(
-  dest: SurfaceRegion,
-  pixels: Uint8ClampedArray,
+  dest: Readonly<SurfaceRegion>,
+  pixels: Readonly<Uint8ClampedArray>,
   blendMode: BlendMode = BlendMode.Normal,
 ): void {
+  assertCompositeBlendMode(blendMode);
   for (let py = 0; py < dest.height; py++) {
     const y = dest.y + py;
     if (y < 0 || y >= dest.surface.height) continue;
@@ -39,10 +42,11 @@ export function compositeSurfacePixels(
  * `blendMode` semantics.
  */
 export function compositeSurfaceRegion(
-  dest: SurfaceRegion,
+  dest: Readonly<SurfaceRegion>,
   source: Readonly<SurfaceRegion>,
   blendMode: BlendMode = BlendMode.Normal,
 ): void {
+  assertCompositeBlendMode(blendMode);
   const sw = Math.min(dest.width, source.width);
   const sh = Math.min(dest.height, source.height);
   for (let py = 0; py < sh; py++) {
@@ -98,7 +102,7 @@ export function extractSurfacePixels(out: Uint8ClampedArray, source: Readonly<Su
  * `pixels` must be at least `dest.width * dest.height * 4` bytes in
  * row-major RGBA order.
  */
-export function writeSurfacePixels(dest: SurfaceRegion, pixels: Uint8ClampedArray): void {
+export function writeSurfacePixels(dest: Readonly<SurfaceRegion>, pixels: Readonly<Uint8ClampedArray>): void {
   for (let py = 0; py < dest.height; py++) {
     const y = dest.y + py;
     if (y < 0 || y >= dest.surface.height) continue;
@@ -115,10 +119,17 @@ export function writeSurfacePixels(dest: SurfaceRegion, pixels: Uint8ClampedArra
   }
 }
 
-// ─── Private helpers ──────────────────────────────────────────────────────────
+// Throws once, up front, for blend modes that have no surface-compositing meaning,
+// rather than silently degrading to Normal mid-loop.
+function assertCompositeBlendMode(blendMode: BlendMode): void {
+  if (blendMode === BlendMode.Alpha || blendMode === BlendMode.Shader) {
+    throw new Error(`BlendMode.${BlendMode[blendMode]} is not supported by surface compositing`);
+  }
+}
 
-// Separable per-channel blend on 0..255 values. Normal (and any unsupported mode)
-// returns the source channel unchanged, reducing the composite to source-over.
+// Separable per-channel blend on 0..255 values. Normal/Layer (and any mode not
+// listed) return the source channel unchanged, reducing the composite to
+// source-over.
 function blendChannel(mode: BlendMode, cb: number, cs: number): number {
   switch (mode) {
     case BlendMode.Multiply:
@@ -135,6 +146,12 @@ function blendChannel(mode: BlendMode, cb: number, cs: number): number {
       return Math.max(cb, cs);
     case BlendMode.Difference:
       return Math.abs(cb - cs);
+    case BlendMode.Overlay:
+      return cb < 128 ? (2 * cb * cs) / 255 : 255 - (2 * (255 - cb) * (255 - cs)) / 255;
+    case BlendMode.Hardlight:
+      return cs < 128 ? (2 * cb * cs) / 255 : 255 - (2 * (255 - cb) * (255 - cs)) / 255;
+    case BlendMode.Invert:
+      return 255 - cb;
     default:
       return cs;
   }
@@ -151,6 +168,18 @@ function compositePixelInto(
 ): void {
   const srcA = a / 255;
   const dstA = dest[di + 3] / 255;
+  // Erase is a destination-out knockout: the source alpha carves into the
+  // backdrop's alpha, leaving its color untouched.
+  if (blendMode === BlendMode.Erase) {
+    const eraseA = dstA * (1 - srcA);
+    if (eraseA <= 0) {
+      dest[di] = 0;
+      dest[di + 1] = 0;
+      dest[di + 2] = 0;
+    }
+    dest[di + 3] = Math.round(eraseA * 255);
+    return;
+  }
   const outA = srcA + dstA * (1 - srcA);
   if (outA <= 0) {
     dest[di] = 0;

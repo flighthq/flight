@@ -1,93 +1,89 @@
-import type { ColorTransformLike, Surface } from '@flighthq/types';
+import type { ColorTransformLike, Surface, SurfaceRegion } from '@flighthq/types';
 
 export type ThresholdOperation = '!=' | '<' | '<=' | '==' | '>' | '>=';
 
 let _scrollScratch: Uint8ClampedArray | null = null;
 
 /**
- * Applies a color transform to a rectangular region of `source`, writing
- * into the same region of `out`. Safe to pass the same surface as both
- * `out` and `source` for in-place modification.
+ * Applies a color transform to `source`, writing into `dest`. The transformed
+ * size is the overlap of the two regions; pixels outside either surface are
+ * skipped. Safe to pass the same surface and region in `dest` and `source` for
+ * in-place modification (each pixel is read before it is written).
  */
 export function applySurfaceColorTransform(
-  out: Surface,
-  source: Readonly<Surface>,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
+  dest: Readonly<SurfaceRegion>,
+  source: Readonly<SurfaceRegion>,
   ct: Readonly<ColorTransformLike>,
 ): void {
-  const x1 = Math.max(0, x);
-  const y1 = Math.max(0, y);
-  const x2 = Math.min(out.width, source.width, x + width);
-  const y2 = Math.min(out.height, source.height, y + height);
-  for (let py = y1; py < y2; py++) {
-    for (let px = x1; px < x2; px++) {
-      const si = (py * source.width + px) * 4;
-      const di = (py * out.width + px) * 4;
-      const r = source.data[si];
-      const g = source.data[si + 1];
-      const b = source.data[si + 2];
-      const a = source.data[si + 3];
-      out.data[di] = Math.max(0, Math.min(255, Math.round(r * ct.redMultiplier + ct.redOffset)));
-      out.data[di + 1] = Math.max(0, Math.min(255, Math.round(g * ct.greenMultiplier + ct.greenOffset)));
-      out.data[di + 2] = Math.max(0, Math.min(255, Math.round(b * ct.blueMultiplier + ct.blueOffset)));
-      out.data[di + 3] = Math.max(0, Math.min(255, Math.round(a * ct.alphaMultiplier + ct.alphaOffset)));
+  const w = Math.min(dest.width, source.width);
+  const h = Math.min(dest.height, source.height);
+  for (let py = 0; py < h; py++) {
+    const sy = source.y + py;
+    const dy = dest.y + py;
+    if (sy < 0 || sy >= source.surface.height || dy < 0 || dy >= dest.surface.height) continue;
+    for (let px = 0; px < w; px++) {
+      const sx = source.x + px;
+      const dx = dest.x + px;
+      if (sx < 0 || sx >= source.surface.width || dx < 0 || dx >= dest.surface.width) continue;
+      const si = (sy * source.surface.width + sx) * 4;
+      const di = (dy * dest.surface.width + dx) * 4;
+      const r = source.surface.data[si];
+      const g = source.surface.data[si + 1];
+      const b = source.surface.data[si + 2];
+      const a = source.surface.data[si + 3];
+      dest.surface.data[di] = Math.max(0, Math.min(255, Math.round(r * ct.redMultiplier + ct.redOffset)));
+      dest.surface.data[di + 1] = Math.max(0, Math.min(255, Math.round(g * ct.greenMultiplier + ct.greenOffset)));
+      dest.surface.data[di + 2] = Math.max(0, Math.min(255, Math.round(b * ct.blueMultiplier + ct.blueOffset)));
+      dest.surface.data[di + 3] = Math.max(0, Math.min(255, Math.round(a * ct.alphaMultiplier + ct.alphaOffset)));
     }
   }
 }
 
 /**
- * Tests each pixel in the source region and writes `color` into `out` where
- * the test passes, or optionally copies the source pixel where it fails.
- * Returns the number of pixels that passed the test.
+ * Tests each pixel of `source` and writes `color` into `dest` where the test
+ * passes, or optionally copies the source pixel where it fails. The tested size
+ * is the overlap of the two regions. Returns the number of pixels that passed.
  *
- * Safe to pass the same surface as both `out` and `source` (each pixel is
- * read before it is written).
+ * Safe to pass the same surface and region in `dest` and `source` (each pixel
+ * is read before it is written).
  */
 export function applySurfaceThreshold(
-  out: Surface,
-  dx: number,
-  dy: number,
-  source: Readonly<Surface>,
-  sx: number,
-  sy: number,
-  sw: number,
-  sh: number,
+  dest: Readonly<SurfaceRegion>,
+  source: Readonly<SurfaceRegion>,
   operation: ThresholdOperation,
   thresholdValue: number,
   color: number = 0,
   mask: number = 0xffffffff,
   copySource: boolean = false,
 ): number {
-  const x2 = Math.min(sw, source.width - sx, out.width - dx);
-  const y2 = Math.min(sh, source.height - sy, out.height - dy);
+  const w = Math.min(dest.width, source.width);
+  const h = Math.min(dest.height, source.height);
+  const sd = source.surface.data;
+  const dd = dest.surface.data;
   let changed = 0;
-  for (let py = 0; py < y2; py++) {
-    for (let px = 0; px < x2; px++) {
-      const si = ((sy + py) * source.width + (sx + px)) * 4;
-      const di = ((dy + py) * out.width + (dx + px)) * 4;
-      const pixel =
-        (((source.data[si] << 24) | (source.data[si + 1] << 16) | (source.data[si + 2] << 8) | source.data[si + 3]) &
-          mask) >>>
-        0;
+  for (let py = 0; py < h; py++) {
+    const sy = source.y + py;
+    const dy = dest.y + py;
+    if (sy < 0 || sy >= source.surface.height || dy < 0 || dy >= dest.surface.height) continue;
+    for (let px = 0; px < w; px++) {
+      const sx = source.x + px;
+      const dx = dest.x + px;
+      if (sx < 0 || sx >= source.surface.width || dx < 0 || dx >= dest.surface.width) continue;
+      const si = (sy * source.surface.width + sx) * 4;
+      const di = (dy * dest.surface.width + dx) * 4;
+      const pixel = (((sd[si] << 24) | (sd[si + 1] << 16) | (sd[si + 2] << 8) | sd[si + 3]) & mask) >>> 0;
       const passes = compare(pixel, operation, thresholdValue >>> 0);
       if (passes) {
-        const cr = (color >>> 24) & 0xff;
-        const cg = (color >> 16) & 0xff;
-        const cb = (color >> 8) & 0xff;
-        const ca = color & 0xff;
-        out.data[di] = cr;
-        out.data[di + 1] = cg;
-        out.data[di + 2] = cb;
-        out.data[di + 3] = ca;
+        dd[di] = (color >>> 24) & 0xff;
+        dd[di + 1] = (color >> 16) & 0xff;
+        dd[di + 2] = (color >> 8) & 0xff;
+        dd[di + 3] = color & 0xff;
         changed++;
       } else if (copySource) {
-        out.data[di] = source.data[si];
-        out.data[di + 1] = source.data[si + 1];
-        out.data[di + 2] = source.data[si + 2];
-        out.data[di + 3] = source.data[si + 3];
+        dd[di] = sd[si];
+        dd[di + 1] = sd[si + 1];
+        dd[di + 2] = sd[si + 2];
+        dd[di + 3] = sd[si + 3];
       }
     }
   }
@@ -95,46 +91,42 @@ export function applySurfaceThreshold(
 }
 
 /**
- * Blends each channel of `source` into `out` at `(dx, dy)` using per-channel
- * multipliers in the range [0, 256]: 0 keeps `out`, 256 replaces with
- * `source`, intermediate values blend proportionally.
+ * Blends each channel of `source` into `dest` using per-channel multipliers in
+ * the range [0, 256]: 0 keeps `dest`, 256 replaces with `source`, intermediate
+ * values blend proportionally. The blended size is the overlap of the two
+ * regions; pixels outside either surface are skipped.
  *
- * `out` and `source` must not be the same surface when the source and
- * destination regions overlap — the blend formula reads both surfaces, so
- * a write to `out` corrupts later reads from `source` at different positions.
- * Passing the same surface is safe only when dx=sx and dy=sy (identical
- * regions), in which case the result equals `out` for every multiplier.
+ * `dest` and `source` must not reference the same surface when their regions
+ * overlap at different offsets — the blend reads both, so a write to `dest`
+ * corrupts later reads from `source`. The same region in both is safe (the
+ * result equals `dest` for every multiplier).
  */
 export function mergeSurface(
-  out: Surface,
-  dx: number,
-  dy: number,
-  source: Readonly<Surface>,
-  sx: number,
-  sy: number,
-  sw: number,
-  sh: number,
+  dest: Readonly<SurfaceRegion>,
+  source: Readonly<SurfaceRegion>,
   redMultiplier: number,
   greenMultiplier: number,
   blueMultiplier: number,
   alphaMultiplier: number,
 ): void {
-  const x2 = Math.min(sw, source.width - sx, out.width - dx);
-  const y2 = Math.min(sh, source.height - sy, out.height - dy);
-  for (let py = 0; py < y2; py++) {
-    for (let px = 0; px < x2; px++) {
-      const si = ((sy + py) * source.width + (sx + px)) * 4;
-      const di = ((dy + py) * out.width + (dx + px)) * 4;
-      out.data[di] = Math.round((source.data[si] * redMultiplier + out.data[di] * (256 - redMultiplier)) / 256);
-      out.data[di + 1] = Math.round(
-        (source.data[si + 1] * greenMultiplier + out.data[di + 1] * (256 - greenMultiplier)) / 256,
-      );
-      out.data[di + 2] = Math.round(
-        (source.data[si + 2] * blueMultiplier + out.data[di + 2] * (256 - blueMultiplier)) / 256,
-      );
-      out.data[di + 3] = Math.round(
-        (source.data[si + 3] * alphaMultiplier + out.data[di + 3] * (256 - alphaMultiplier)) / 256,
-      );
+  const w = Math.min(dest.width, source.width);
+  const h = Math.min(dest.height, source.height);
+  const sd = source.surface.data;
+  const dd = dest.surface.data;
+  for (let py = 0; py < h; py++) {
+    const sy = source.y + py;
+    const dy = dest.y + py;
+    if (sy < 0 || sy >= source.surface.height || dy < 0 || dy >= dest.surface.height) continue;
+    for (let px = 0; px < w; px++) {
+      const sx = source.x + px;
+      const dx = dest.x + px;
+      if (sx < 0 || sx >= source.surface.width || dx < 0 || dx >= dest.surface.width) continue;
+      const si = (sy * source.surface.width + sx) * 4;
+      const di = (dy * dest.surface.width + dx) * 4;
+      dd[di] = Math.round((sd[si] * redMultiplier + dd[di] * (256 - redMultiplier)) / 256);
+      dd[di + 1] = Math.round((sd[si + 1] * greenMultiplier + dd[di + 1] * (256 - greenMultiplier)) / 256);
+      dd[di + 2] = Math.round((sd[si + 2] * blueMultiplier + dd[di + 2] * (256 - blueMultiplier)) / 256);
+      dd[di + 3] = Math.round((sd[si + 3] * alphaMultiplier + dd[di + 3] * (256 - alphaMultiplier)) / 256);
     }
   }
 }

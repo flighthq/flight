@@ -2,24 +2,34 @@ import { fillSurfaceRectangle, floodFillSurface } from './fill';
 import { getSurfacePixel32 } from './pixel';
 import { createSurface } from './surface';
 
+function region(
+  surface: ReturnType<typeof createSurface>,
+  x = 0,
+  y = 0,
+  width = surface.width,
+  height = surface.height,
+) {
+  return { surface, x, y, width, height };
+}
+
 describe('fillSurfaceRectangle', () => {
   it('fills the specified region', () => {
     const img = createSurface(4, 4);
-    fillSurfaceRectangle(img, 1, 1, 2, 2, 0xaabbccff);
+    fillSurfaceRectangle(region(img, 1, 1, 2, 2), 0xaabbccff);
     expect(getSurfacePixel32(img, 1, 1)).toBe(0xaabbccff);
     expect(getSurfacePixel32(img, 2, 2)).toBe(0xaabbccff);
   });
 
   it('does not affect pixels outside the region', () => {
     const img = createSurface(4, 4);
-    fillSurfaceRectangle(img, 1, 1, 2, 2, 0xaabbccff);
+    fillSurfaceRectangle(region(img, 1, 1, 2, 2), 0xaabbccff);
     expect(getSurfacePixel32(img, 0, 0)).toBe(0x00000000);
     expect(getSurfacePixel32(img, 3, 3)).toBe(0x00000000);
   });
 
-  it('clamps to image bounds', () => {
+  it('skips pixels outside the surface bounds', () => {
     const img = createSurface(2, 2, 0x000000ff);
-    fillSurfaceRectangle(img, -1, -1, 4, 4, 0xffffffff);
+    fillSurfaceRectangle(region(img, -1, -1, 4, 4), 0xffffffff);
     expect(getSurfacePixel32(img, 0, 0)).toBe(0xffffffff);
     expect(getSurfacePixel32(img, 1, 1)).toBe(0xffffffff);
   });
