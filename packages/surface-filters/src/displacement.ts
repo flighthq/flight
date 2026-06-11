@@ -9,16 +9,17 @@ export interface SurfaceDisplacementMapFilterOptions {
   componentX?: number;
   /** Channel index (0=R, 1=G, 2=B, 3=A) of `map` that drives Y displacement. Default 1. */
   componentY?: number;
-  /** X displacement scale. A map value of 128 is neutral (no shift). Default 0. */
+  /**
+   * X displacement scale in pixels. A map value of 128 produces no shift; 0
+   * shifts by -0.5 × scaleX; 255 shifts by +0.5 × scaleX. Default 0.
+   */
   scaleX?: number;
-  /** Y displacement scale. Default 0. */
+  /** Y displacement scale in pixels. Default 0. */
   scaleY?: number;
   /** How to handle sample positions that fall outside the source region. Default 'wrap'. */
   mode?: SurfaceDisplacementMapMode;
-  /** Packed RGB fill used when `mode` is 'color'. Default 0. */
-  color?: number;
-  /** Fill alpha (0..1) used when `mode` is 'color'. Default 0. */
-  alpha?: number;
+  /** Packed 0xRRGGBBAA fill used when `mode` is 'color'. Default 0. */
+  fillColor?: number;
 }
 
 /**
@@ -26,13 +27,13 @@ export interface SurfaceDisplacementMapFilterOptions {
  * writing into `out`. The displacement for pixel (px, py) is read from `map` at
  * the aligned position and scaled:
  *
- *   dx = ((mapValueX - 128) * scaleX) / 256
- *   dy = ((mapValueY - 128) * scaleY) / 256
+ *   dx = (mapValueX / 255 - 0.5) * scaleX
+ *   dy = (mapValueY / 255 - 0.5) * scaleY
  *
- * Sampling is nearest-neighbor (the displaced position is rounded). `mode`
- * controls sample positions outside the source region: 'wrap' tiles, 'clamp'
- * holds the edge, 'ignore' leaves the undisplaced source pixel, and 'color'
- * fills with `color`/`alpha`.
+ * A map value of 128 is approximately neutral (< 0.2px shift). Sampling uses
+ * bilinear interpolation. `mode` controls sample positions outside the source
+ * region: 'wrap' tiles, 'clamp' holds the edge, 'ignore' leaves the undisplaced
+ * source pixel, and 'color' fills with `fillColor`.
  *
  * `out` must be at least `source.width * source.height * 4` bytes and must NOT
  * alias `source.surface.data` — output pixels read arbitrary source positions.
@@ -50,27 +51,31 @@ export function applySurfaceDisplacementMapFilter(
   const scaleX = options.scaleX ?? 0;
   const scaleY = options.scaleY ?? 0;
   const mode = options.mode ?? 'wrap';
-  const color = options.color ?? 0;
-  const fillR = (color >> 16) & 0xff;
-  const fillG = (color >> 8) & 0xff;
-  const fillB = color & 0xff;
-  const fillA = Math.round(Math.max(0, Math.min(1, options.alpha ?? 0)) * 255);
+  const fillColor = options.fillColor ?? 0;
+  const fillR = (fillColor >>> 24) & 0xff;
+  const fillG = (fillColor >> 16) & 0xff;
+  const fillB = (fillColor >> 8) & 0xff;
+  const fillA = fillColor & 0xff;
 
   for (let py = 0; py < h; py++) {
     for (let px = 0; px < w; px++) {
       const di = (py * w + px) * 4;
       const mapVx = sampleMapChannel(map, px, py, componentX);
       const mapVy = sampleMapChannel(map, px, py, componentY);
-      let sampleX = px + Math.round(((mapVx - 128) * scaleX) / 256);
-      let sampleY = py + Math.round(((mapVy - 128) * scaleY) / 256);
+      // Symmetric: value 0 → -0.5×scale, value 128 ≈ 0, value 255 → +0.5×scale
+      const rawSampleX = px + (mapVx / 255 - 0.5) * scaleX;
+      const rawSampleY = py + (mapVy / 255 - 0.5) * scaleY;
 
-      if (sampleX < 0 || sampleX >= w || sampleY < 0 || sampleY >= h) {
+      let sampleX = rawSampleX;
+      let sampleY = rawSampleY;
+
+      if (rawSampleX < 0 || rawSampleX >= w || rawSampleY < 0 || rawSampleY >= h) {
         if (mode === 'wrap') {
-          sampleX = ((sampleX % w) + w) % w;
-          sampleY = ((sampleY % h) + h) % h;
+          sampleX = ((rawSampleX % w) + w) % w;
+          sampleY = ((rawSampleY % h) + h) % h;
         } else if (mode === 'clamp') {
-          sampleX = Math.max(0, Math.min(w - 1, sampleX));
-          sampleY = Math.max(0, Math.min(h - 1, sampleY));
+          sampleX = Math.max(0, Math.min(w - 1, rawSampleX));
+          sampleY = Math.max(0, Math.min(h - 1, rawSampleY));
         } else if (mode === 'ignore') {
           sampleX = px;
           sampleY = py;
@@ -83,25 +88,40 @@ export function applySurfaceDisplacementMapFilter(
         }
       }
 
-      const sx = source.x + sampleX;
-      const sy = source.y + sampleY;
-      if (sx < 0 || sx >= source.surface.width || sy < 0 || sy >= source.surface.height) {
+      // Bilinear sample from source at (sampleX, sampleY).
+      const x0 = Math.floor(sampleX);
+      const y0 = Math.floor(sampleY);
+      const tx = sampleX - x0;
+      const ty = sampleY - y0;
+      const sStride = source.surface.width;
+      const sData = source.surface.data;
+      const x0c = source.x + Math.max(0, Math.min(w - 1, x0));
+      const x1c = source.x + Math.max(0, Math.min(w - 1, x0 + 1));
+      const y0c = source.y + Math.max(0, Math.min(h - 1, y0));
+      const y1c = source.y + Math.max(0, Math.min(h - 1, y0 + 1));
+
+      if (x0c < 0 || x0c >= sData.length / 4 || y0c < 0) {
         out[di] = 0;
         out[di + 1] = 0;
         out[di + 2] = 0;
         out[di + 3] = 0;
         continue;
       }
-      const si = (sy * source.surface.width + sx) * 4;
-      out[di] = source.surface.data[si];
-      out[di + 1] = source.surface.data[si + 1];
-      out[di + 2] = source.surface.data[si + 2];
-      out[di + 3] = source.surface.data[si + 3];
+
+      const i00 = (y0c * sStride + x0c) * 4;
+      const i10 = (y0c * sStride + x1c) * 4;
+      const i01 = (y1c * sStride + x0c) * 4;
+      const i11 = (y1c * sStride + x1c) * 4;
+      for (let c = 0; c < 4; c++) {
+        const top = sData[i00 + c] * (1 - tx) + sData[i10 + c] * tx;
+        const bottom = sData[i01 + c] * (1 - tx) + sData[i11 + c] * tx;
+        out[di + c] = Math.round(top * (1 - ty) + bottom * ty);
+      }
     }
   }
 }
 
-// A map sample outside the map's bounds is neutral (128) — no displacement.
+// A map sample outside the map's bounds returns 128 (neutral — no displacement).
 function sampleMapChannel(map: Readonly<SurfaceRegion>, px: number, py: number, component: number): number {
   const mx = map.x + px;
   const my = map.y + py;

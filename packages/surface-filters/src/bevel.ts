@@ -2,26 +2,22 @@ import type { SurfaceRegion } from '@flighthq/types';
 
 import { blurSurfacePixelsHorizontal, blurSurfacePixelsVertical } from './blur';
 
-export type SurfaceBevelType = 'full' | 'inner' | 'outer';
+export type SurfaceBevelType = 'both' | 'inner' | 'outer';
 
 export interface SurfaceBevelFilterOptions {
   /** Light direction in radians, pointing toward the light source. Default π/4. */
   angle?: number;
   /** Sampling offset along the light axis, in pixels. Default 4. */
   distance?: number;
-  blurX?: number;
-  blurY?: number;
-  quality?: number;
-  /** Packed RGB of the lit edge. Default 0xffffff. */
+  radiusX?: number;
+  radiusY?: number;
+  passes?: number;
+  /** Packed 0xRRGGBBAA color of the lit edge. Default 0xffffffff. */
   highlightColor?: number;
-  /** Highlight opacity 0..1. Default 1. */
-  highlightAlpha?: number;
-  /** Packed RGB of the shaded edge. Default 0x000000. */
+  /** Packed 0xRRGGBBAA color of the shaded edge. Default 0x000000ff. */
   shadowColor?: number;
-  /** Shadow opacity 0..1. Default 1. */
-  shadowAlpha?: number;
   /** Overall intensity multiplier. Default 1. */
-  strength?: number;
+  intensity?: number;
   /** Where the bevel is drawn relative to the shape. Default 'inner'. */
   type?: SurfaceBevelType;
 }
@@ -36,11 +32,11 @@ export interface SurfaceBevelFilterOptions {
  * light) draws the highlight color; a negative gradient draws the shadow color.
  *
  * `type` clips the result: 'inner' keeps it inside the shape, 'outer' outside,
- * 'full' both.
+ * 'both' applies no clipping.
  *
  * To complete the effect, composite `out` over the original source.
  *
- * `blurBuffer` must be at least `source.width * source.height * 4` bytes; it must
+ * `scratch` must be at least `source.width * source.height * 4` bytes; it must
  * be a distinct buffer from `out` (the blurred alpha is sampled while `out` is
  * written). Its contents are undefined after the call.
  *
@@ -49,7 +45,7 @@ export interface SurfaceBevelFilterOptions {
  */
 export function applySurfaceBevelFilter(
   out: Uint8ClampedArray,
-  blurBuffer: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
   options: Readonly<SurfaceBevelFilterOptions> = {},
 ): void {
@@ -60,45 +56,43 @@ export function applySurfaceBevelFilter(
   const offsetX = Math.round(Math.cos(angle) * distance);
   const offsetY = Math.round(Math.sin(angle) * distance);
   const type = options.type ?? 'inner';
-  const strength = options.strength ?? 1;
-  const highlightColor = options.highlightColor ?? 0xffffff;
-  const shadowColor = options.shadowColor ?? 0;
-  const highlightAlpha = options.highlightAlpha ?? 1;
-  const shadowAlpha = options.shadowAlpha ?? 1;
+  const intensity = options.intensity ?? 1;
+  const highlightColor = options.highlightColor ?? 0xffffffff;
+  const shadowColor = options.shadowColor ?? 0x000000ff;
 
-  // Build the blurred alpha field `m` in blurBuffer, using out as ping-pong scratch.
+  // Build the blurred alpha field `m` in scratch, using out as ping-pong buffer.
   for (let py = 0; py < h; py++) {
     for (let px = 0; px < w; px++) {
       const di = (py * w + px) * 4;
-      blurBuffer[di] = 0;
-      blurBuffer[di + 1] = 0;
-      blurBuffer[di + 2] = 0;
-      blurBuffer[di + 3] = readSourceAlpha(source, px, py);
+      scratch[di] = 0;
+      scratch[di + 1] = 0;
+      scratch[di + 2] = 0;
+      scratch[di + 3] = readSourceAlpha(source, px, py);
     }
   }
-  blurField(blurBuffer, out, w, h, options.blurX, options.blurY, options.quality);
+  blurField(scratch, out, w, h, options.radiusX, options.radiusY, options.passes);
 
   for (let py = 0; py < h; py++) {
     for (let px = 0; px < w; px++) {
       const di = (py * w + px) * 4;
-      const lit = sampleField(blurBuffer, w, h, px - offsetX, py - offsetY);
-      const shade = sampleField(blurBuffer, w, h, px + offsetX, py + offsetY);
+      const lit = sampleField(scratch, w, h, px - offsetX, py - offsetY);
+      const shade = sampleField(scratch, w, h, px + offsetX, py + offsetY);
       const gradient = lit - shade;
 
       const color = gradient >= 0 ? highlightColor : shadowColor;
-      const baseAlpha = gradient >= 0 ? highlightAlpha : shadowAlpha;
+      const colorAlpha = (color & 0xff) / 255;
       const clip =
         type === 'inner'
           ? readSourceAlpha(source, px, py) / 255
           : type === 'outer'
             ? 1 - readSourceAlpha(source, px, py) / 255
             : 1;
-      const intensity = Math.min(1, Math.abs(gradient) * strength);
+      const edgeIntensity = Math.min(1, Math.abs(gradient) * intensity);
 
-      out[di] = (color >> 16) & 0xff;
-      out[di + 1] = (color >> 8) & 0xff;
-      out[di + 2] = color & 0xff;
-      out[di + 3] = Math.round(intensity * baseAlpha * clip * 255);
+      out[di] = (color >>> 24) & 0xff;
+      out[di + 1] = (color >> 16) & 0xff;
+      out[di + 2] = (color >> 8) & 0xff;
+      out[di + 3] = Math.round(edgeIntensity * colorAlpha * clip * 255);
     }
   }
 }
@@ -108,24 +102,24 @@ function blurField(
   scratch: Uint8ClampedArray,
   w: number,
   h: number,
-  blurX: number | undefined,
-  blurY: number | undefined,
-  quality: number | undefined,
+  radiusX: number | undefined,
+  radiusY: number | undefined,
+  passes: number | undefined,
 ): void {
-  const radiusX = Math.max(0, Math.round((blurX ?? 4) / 2));
-  const radiusY = Math.max(0, Math.round((blurY ?? 4) / 2));
-  const passes = Math.max(1, Math.round(quality ?? 1));
+  const rx = Math.max(0, Math.round(radiusX ?? 2));
+  const ry = Math.max(0, Math.round(radiusY ?? 2));
+  const p = Math.max(1, Math.round(passes ?? 1));
   let a = field;
   let b = scratch;
-  for (let pass = 0; pass < passes; pass++) {
-    if (radiusX > 0) {
-      blurSurfacePixelsHorizontal(b, a, w, h, radiusX);
+  for (let pass = 0; pass < p; pass++) {
+    if (rx > 0) {
+      blurSurfacePixelsHorizontal(b, a, w, h, rx);
       const t = a;
       a = b;
       b = t;
     }
-    if (radiusY > 0) {
-      blurSurfacePixelsVertical(b, a, w, h, radiusY);
+    if (ry > 0) {
+      blurSurfacePixelsVertical(b, a, w, h, ry);
       const t = a;
       a = b;
       b = t;

@@ -21,13 +21,13 @@ describe('applySurfaceGradientBevelFilter', () => {
     const ramp = new Uint8ClampedArray(256 * 4);
     buildSurfaceGradientRamp(ramp, [0x000000, 0x808080, 0xffffff], [1, 0, 1], [0, 128, 255]);
     const out = new Uint8ClampedArray(5 * 4);
-    const blurBuffer = new Uint8ClampedArray(5 * 4);
-    applySurfaceGradientBevelFilter(out, blurBuffer, region(source), ramp, {
+    const scratch = new Uint8ClampedArray(5 * 4);
+    applySurfaceGradientBevelFilter(out, scratch, region(source), ramp, {
       angle: Math.PI,
       distance: 1,
-      blurX: 2,
-      blurY: 0,
-      type: 'full',
+      radiusX: 1,
+      radiusY: 0,
+      type: 'both',
     });
     // Light-facing edge (x2) is on the highlight half of the ramp → bright.
     expect(out[2 * 4 + 0]).toBeGreaterThan(150);
@@ -45,8 +45,8 @@ describe('applySurfaceGradientGlowFilter', () => {
     buildSurfaceGradientRamp(ramp, [0x00ff00, 0x00ff00], [0, 1], [0, 255]);
     const source = createSurface(1, 1, 0xffffffff);
     const out = new Uint8ClampedArray(4);
-    const blurBuffer = new Uint8ClampedArray(4);
-    applySurfaceGradientGlowFilter(out, blurBuffer, region(source), ramp, { blurX: 0, blurY: 0 });
+    const scratch = new Uint8ClampedArray(4);
+    applySurfaceGradientGlowFilter(out, scratch, region(source), ramp, { radiusX: 0, radiusY: 0 });
     // Full alpha (255) → ramp[255] = opaque green.
     expect(out[0]).toBe(0);
     expect(out[1]).toBe(0xff);
@@ -54,13 +54,13 @@ describe('applySurfaceGradientGlowFilter', () => {
     expect(out[3]).toBe(255);
   });
 
-  it('scales the ramp alpha by strength', () => {
+  it('scales the ramp alpha by intensity', () => {
     const ramp = new Uint8ClampedArray(256 * 4);
     buildSurfaceGradientRamp(ramp, [0x00ff00, 0x00ff00], [1, 1], [0, 255]);
     const source = createSurface(1, 1, 0xffffffff);
     const out = new Uint8ClampedArray(4);
-    const blurBuffer = new Uint8ClampedArray(4);
-    applySurfaceGradientGlowFilter(out, blurBuffer, region(source), ramp, { blurX: 0, blurY: 0, strength: 0.5 });
+    const scratch = new Uint8ClampedArray(4);
+    applySurfaceGradientGlowFilter(out, scratch, region(source), ramp, { radiusX: 0, radiusY: 0, intensity: 0.5 });
     expect(out[3]).toBe(128);
   });
 
@@ -68,8 +68,8 @@ describe('applySurfaceGradientGlowFilter', () => {
     const ramp = new Uint8ClampedArray(256 * 4);
     buildSurfaceGradientRamp(ramp, [0x00ff00, 0x00ff00], [0, 1], [0, 255]);
     const surface = createSurface(1, 1, 0xffffffff);
-    const blurBuffer = new Uint8ClampedArray(4);
-    applySurfaceGradientGlowFilter(surface.data, blurBuffer, region(surface), ramp, { blurX: 0, blurY: 0 });
+    const scratch = new Uint8ClampedArray(4);
+    applySurfaceGradientGlowFilter(surface.data, scratch, region(surface), ramp, { radiusX: 0, radiusY: 0 });
     expect(surface.data[1]).toBe(0xff);
     expect(surface.data[3]).toBe(255);
   });

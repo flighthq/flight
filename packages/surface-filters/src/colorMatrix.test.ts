@@ -123,20 +123,30 @@ describe('buildGrayscaleColorMatrix', () => {
 describe('buildHueRotationColorMatrix', () => {
   it('leaves grey unchanged at any angle (rotation around the luma axis)', () => {
     const m = new Array<number>(20);
-    buildHueRotationColorMatrix(m, 1.234);
+    // 70.7° ≈ 1.234 radians — same geometric rotation, now expressed in degrees
+    buildHueRotationColorMatrix(m, 70.7);
     const out = applyTo(0x808080ff, m);
     expect(out[0]).toBe(128);
     expect(out[1]).toBe(128);
     expect(out[2]).toBe(128);
   });
 
-  it('is identity at angle 0', () => {
+  it('is identity at 0 degrees', () => {
     const m = new Array<number>(20);
     buildHueRotationColorMatrix(m, 0);
     const out = applyTo(0xc86432ff, m);
     expect(out[0]).toBe(200);
     expect(out[1]).toBe(100);
     expect(out[2]).toBe(50);
+  });
+
+  it('is identity at 360 degrees', () => {
+    const m = new Array<number>(20);
+    buildHueRotationColorMatrix(m, 360);
+    const out = applyTo(0xc86432ff, m);
+    expect(out[0]).toBeCloseTo(200, 0);
+    expect(out[1]).toBeCloseTo(100, 0);
+    expect(out[2]).toBeCloseTo(50, 0);
   });
 });
 

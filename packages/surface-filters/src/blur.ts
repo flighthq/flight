@@ -2,33 +2,36 @@ import { extractSurfacePixels } from '@flighthq/surface';
 import type { SurfaceRegion } from '@flighthq/types';
 
 export interface SurfaceBoxBlurFilterOptions {
-  blurX?: number;
-  blurY?: number;
-  quality?: number;
+  radiusX?: number;
+  radiusY?: number;
+  passes?: number;
 }
 
 /**
  * Applies a box blur to `source` and writes the result into `out`.
- * `blurBuffer` is a ping-pong scratch; its contents are undefined after the
+ * `scratch` is a ping-pong buffer; its contents are undefined after the
  * call. Both must be at least `source.width * source.height * 4` bytes.
+ *
+ * `radiusX` and `radiusY` are the blur radius in pixels (default 2). `passes`
+ * repeats the H+V pass pair (default 1); multiple passes approximate a Gaussian.
  *
  * Safe to pass `source.surface.data` as `out` when the region covers the
  * full surface.
  */
 export function applySurfaceBoxBlurFilter(
   out: Uint8ClampedArray,
-  blurBuffer: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
   options: Readonly<SurfaceBoxBlurFilterOptions> = {},
 ): void {
-  const radiusX = Math.max(0, Math.round((options.blurX ?? 4) / 2));
-  const radiusY = Math.max(0, Math.round((options.blurY ?? 4) / 2));
-  const passes = Math.max(1, Math.round(options.quality ?? 1));
+  const radiusX = Math.max(0, Math.round(options.radiusX ?? 2));
+  const radiusY = Math.max(0, Math.round(options.radiusY ?? 2));
+  const passes = Math.max(1, Math.round(options.passes ?? 1));
 
   extractSurfacePixels(out, source);
 
   let a = out;
-  let b = blurBuffer;
+  let b = scratch;
 
   for (let pass = 0; pass < passes; pass++) {
     if (radiusX > 0) {
@@ -52,26 +55,25 @@ export function applySurfaceBoxBlurFilter(
 
 /**
  * Applies a Gaussian blur to `source` and writes the result into `out`.
- * `blurBuffer` is a ping-pong scratch; its contents are undefined after the
+ * `scratch` is a ping-pong buffer; its contents are undefined after the
  * call. Both must be at least `source.width * source.height * 4` bytes.
  *
- * `sigmaX` and `sigmaY` control the spread. `sigmaY` defaults to `sigmaX`.
- * `quality` repeats the H+V pass pair (default 1). A Gaussian kernel is
- * allocated internally per call; for hot paths compute it once with
- * `computeGaussianKernel` and call the weighted pass functions directly.
+ * `sigmaX` and `sigmaY` are the standard deviation of the Gaussian (CSS
+ * `blur(Xpx)` uses sigma = X). `sigmaY` defaults to `sigmaX`. `passes`
+ * repeats the H+V pass pair (default 1).
  *
  * Safe to pass `source.surface.data` as `out` when the region covers the
  * full surface.
  */
 export function applySurfaceGaussianBlurFilter(
   out: Uint8ClampedArray,
-  blurBuffer: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
   sigmaX: number,
   sigmaY: number = sigmaX,
-  quality: number = 1,
+  passes: number = 1,
 ): void {
-  const passes = Math.max(1, Math.round(quality));
+  const passCount = Math.max(1, Math.round(passes));
 
   const radiusX = Math.max(0, Math.ceil(sigmaX * 3));
   const radiusY = Math.max(0, Math.ceil(sigmaY * 3));
@@ -83,9 +85,9 @@ export function applySurfaceGaussianBlurFilter(
   extractSurfacePixels(out, source);
 
   let a = out;
-  let b = blurBuffer;
+  let b = scratch;
 
-  for (let pass = 0; pass < passes; pass++) {
+  for (let pass = 0; pass < passCount; pass++) {
     if (kernelX) {
       blurSurfacePixelsHorizontalWeighted(b, a, source.width, source.height, kernelX);
       const t = a;
