@@ -29,6 +29,68 @@ export function bakeCurve(f: (t: number) => number, samples = 33): number[] {
   return lut;
 }
 
+/** A scalar timeline keyframe (`time` normalised to 0–1 over the lifetime). */
+export interface CurveKeyframe {
+  time: number;
+  value: number;
+}
+
+/** An RGB timeline keyframe (`time` normalised to 0–1, channels 0–1). */
+export interface ColorKeyframe {
+  time: number;
+  r: number;
+  g: number;
+  b: number;
+}
+
+/** Bake a piecewise-linear RGB timeline (e.g. an imported color gradient) into a
+ *  uniform interleaved LUT (length N×3). */
+export function colorCurveFromKeyframes(keys: ReadonlyArray<ColorKeyframe>, samples = 33): number[] {
+  if (keys.length === 0) return [0, 0, 0, 0, 0, 0];
+  const sorted = keys.slice().sort((a, b) => a.time - b.time);
+  return bakeColorCurve((t) => {
+    const seg = locateKeyframe(sorted, t);
+    if (seg.f === 0) return [sorted[seg.i].r, sorted[seg.i].g, sorted[seg.i].b];
+    const a = sorted[seg.i];
+    const b = sorted[seg.i + 1];
+    return [a.r + (b.r - a.r) * seg.f, a.g + (b.g - a.g) * seg.f, a.b + (b.b - a.b) * seg.f];
+  }, samples);
+}
+
+/** Bake a piecewise-linear scalar timeline (e.g. an imported alpha-over-lifetime
+ *  curve) into a uniform LUT. Keyframes need not be sorted; times are clamped to
+ *  the [first, last] range. */
+export function curveFromKeyframes(keys: ReadonlyArray<CurveKeyframe>, samples = 33): number[] {
+  if (keys.length === 0) return [0, 0];
+  const sorted = keys.slice().sort((a, b) => a.time - b.time);
+  return bakeCurve((t) => interpKeyframe(sorted, t), samples);
+}
+
+function interpKeyframe(sorted: ReadonlyArray<CurveKeyframe>, t: number): number {
+  const seg = locateKeyframe(sorted, t);
+  if (seg.f === 0) return sorted[seg.i].value;
+  const a = sorted[seg.i].value;
+  const b = sorted[seg.i + 1].value;
+  return a + (b - a) * seg.f;
+}
+
+// Find the keyframe segment containing t: returns the lower index `i` and the
+// fractional position `f` into segment [i, i+1] (f = 0 means "use sorted[i] exactly").
+function locateKeyframe(sorted: ReadonlyArray<{ time: number }>, t: number): { f: number; i: number } {
+  const n = sorted.length;
+  if (t <= sorted[0].time) return { f: 0, i: 0 };
+  if (t >= sorted[n - 1].time) return { f: 0, i: n - 1 };
+  for (let i = 0; i < n - 1; i++) {
+    const t0 = sorted[i].time;
+    const t1 = sorted[i + 1].time;
+    if (t <= t1) {
+      const span = t1 - t0;
+      return { f: span <= 0 ? 0 : (t - t0) / span, i };
+    }
+  }
+  return { f: 0, i: n - 1 };
+}
+
 /** Sample an interleaved RGB curve (length N×3) at t∈[0,1], writing the three
  *  channels into `out` starting at `offset`. */
 export function sampleColorCurve(
