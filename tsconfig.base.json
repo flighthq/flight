@@ -19,6 +19,8 @@
       "@flighthq/assets": ["./packages/assets/src/index.ts"],
       "@flighthq/filters": ["./packages/filters/src/index.ts"],
       "@flighthq/filters/*": ["./packages/filters/src/*"],
+      "@flighthq/filters-webgl": ["./packages/filters-webgl/src/index.ts"],
+      "@flighthq/filters-webgl/*": ["./packages/filters-webgl/src/*"],
       "@flighthq/assets-loader": ["./packages/assets-loader/src/index.ts"],
       "@flighthq/assets-loader/*": ["./packages/assets-loader/src/*"],
       "@flighthq/assets/*": ["./packages/assets/src/*"],
