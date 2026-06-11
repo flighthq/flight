@@ -65,10 +65,12 @@ export function buildGrayscaleColorMatrix(out: number[]): void {
 }
 
 /**
- * Writes a hue-rotation color matrix into `out` (length 20). `radians` rotates
+ * Writes a hue-rotation color matrix into `out` (length 20). `degrees` rotates
  * hue around the luma axis (CSS `hue-rotate()` semantics, W3C coefficients).
+ * 0° is identity; 180° inverts hue; values outside 0..360 wrap naturally.
  */
-export function buildHueRotationColorMatrix(out: number[], radians: number): void {
+export function buildHueRotationColorMatrix(out: number[], degrees: number): void {
+  const radians = (degrees * Math.PI) / 180;
   const c = Math.cos(radians);
   const s = Math.sin(radians);
   setColorMatrix(

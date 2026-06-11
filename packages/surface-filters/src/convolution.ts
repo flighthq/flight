@@ -1,9 +1,16 @@
 import type { SurfaceRegion } from '@flighthq/types';
 
+export type SurfaceConvolutionEdge = 'clamp' | 'fill' | 'wrap';
+
 export interface SurfaceConvolutionFilterOptions {
   bias?: number;
-  clamp?: boolean;
-  color?: number;
+  /** How to handle kernel samples outside the surface. Default 'clamp'. */
+  edge?: SurfaceConvolutionEdge;
+  /**
+   * Packed 0xRRGGBBAA fill color used when `edge` is 'fill'. Default 0 (transparent black).
+   * @deprecated Use `edge: 'fill'` and `fillColor` instead of the old `clamp`/`color` pair.
+   */
+  fillColor?: number;
   divisor?: number;
   matrix: ReadonlyArray<number>;
   matrixX: number;
@@ -18,6 +25,11 @@ export interface SurfaceConvolutionFilterOptions {
  * `out` must not alias `source.surface.data` — convolution reads neighboring
  * pixels during kernel evaluation; overlapping source and destination produces
  * undefined results.
+ *
+ * Edge modes:
+ *   - `'clamp'` (default): repeat the nearest edge pixel
+ *   - `'fill'`: use `fillColor` for out-of-bounds samples
+ *   - `'wrap'`: tile the surface toroidally
  */
 export function applySurfaceConvolutionFilter(
   out: Uint8ClampedArray,
@@ -28,23 +40,21 @@ export function applySurfaceConvolutionFilter(
   if (matrixX <= 0 || matrixY <= 0) throw new Error('Convolution filter matrix dimensions must be positive');
   if (matrix.length < matrixX * matrixY) throw new Error('Convolution filter matrix does not match its dimensions');
 
-  // A user-supplied divisor of 0 (or an all-zero matrix) would divide by zero;
-  // fall back to 1 so the weighted sum passes through unscaled.
   const rawDivisor = options.divisor ?? getConvolutionDivisor(matrix, matrixX * matrixY);
   const divisor = rawDivisor === 0 ? 1 : rawDivisor;
   const bias = options.bias ?? 0;
-  const clampEdge = options.clamp ?? true;
+  const edge = options.edge ?? 'clamp';
   const preserveAlpha = options.preserveAlpha ?? true;
-  const color = options.color ?? 0;
+  const fillColor = options.fillColor ?? 0;
   const offsetX = Math.floor(matrixX / 2);
   const offsetY = Math.floor(matrixY / 2);
   const surfaceWidth = source.surface.width;
   const surfaceHeight = source.surface.height;
   const data = source.surface.data;
-  const fillR = (color >>> 24) & 0xff;
-  const fillG = (color >> 16) & 0xff;
-  const fillB = (color >> 8) & 0xff;
-  const fillA = color & 0xff;
+  const fillR = (fillColor >>> 24) & 0xff;
+  const fillG = (fillColor >> 16) & 0xff;
+  const fillB = (fillColor >> 8) & 0xff;
+  const fillA = fillColor & 0xff;
 
   for (let py = 0; py < source.height; py++) {
     for (let px = 0; px < source.width; px++) {
@@ -53,25 +63,42 @@ export function applySurfaceConvolutionFilter(
       let b = 0;
       let a = 0;
       for (let ky = 0; ky < matrixY; ky++) {
-        const sampleY = source.y + py + ky - offsetY;
-        const clampedY = sampleY < 0 ? 0 : sampleY >= surfaceHeight ? surfaceHeight - 1 : sampleY;
-        const rowInBounds = sampleY >= 0 && sampleY < surfaceHeight;
+        const rawSampleY = source.y + py + ky - offsetY;
+        const weight_row_start = ky * matrixX;
         for (let kx = 0; kx < matrixX; kx++) {
-          const sampleX = source.x + px + kx - offsetX;
-          const weight = matrix[ky * matrixX + kx];
-          if (!clampEdge && (!rowInBounds || sampleX < 0 || sampleX >= surfaceWidth)) {
-            r += fillR * weight;
-            g += fillG * weight;
-            b += fillB * weight;
-            a += fillA * weight;
-            continue;
+          const rawSampleX = source.x + px + kx - offsetX;
+          const weight = matrix[weight_row_start + kx];
+          let sampleX: number;
+          let sampleY: number;
+          let outOfBounds = false;
+
+          if (rawSampleY < 0 || rawSampleY >= surfaceHeight || rawSampleX < 0 || rawSampleX >= surfaceWidth) {
+            if (edge === 'fill') {
+              r += fillR * weight;
+              g += fillG * weight;
+              b += fillB * weight;
+              a += fillA * weight;
+              continue;
+            } else if (edge === 'wrap') {
+              sampleX = ((rawSampleX % surfaceWidth) + surfaceWidth) % surfaceWidth;
+              sampleY = ((rawSampleY % surfaceHeight) + surfaceHeight) % surfaceHeight;
+            } else {
+              // clamp
+              sampleX = rawSampleX < 0 ? 0 : rawSampleX >= surfaceWidth ? surfaceWidth - 1 : rawSampleX;
+              sampleY = rawSampleY < 0 ? 0 : rawSampleY >= surfaceHeight ? surfaceHeight - 1 : rawSampleY;
+            }
+          } else {
+            sampleX = rawSampleX;
+            sampleY = rawSampleY;
           }
-          const clampedX = sampleX < 0 ? 0 : sampleX >= surfaceWidth ? surfaceWidth - 1 : sampleX;
-          const i = (clampedY * surfaceWidth + clampedX) * 4;
-          r += data[i] * weight;
-          g += data[i + 1] * weight;
-          b += data[i + 2] * weight;
-          a += data[i + 3] * weight;
+
+          if (!outOfBounds) {
+            const i = (sampleY * surfaceWidth + sampleX) * 4;
+            r += data[i] * weight;
+            g += data[i + 1] * weight;
+            b += data[i + 2] * weight;
+            a += data[i + 3] * weight;
+          }
         }
       }
       const di = (py * source.width + px) * 4;

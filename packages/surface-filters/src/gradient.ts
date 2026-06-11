@@ -8,21 +8,21 @@ export interface SurfaceGradientBevelFilterOptions {
   angle?: number;
   /** Sampling offset along the light axis, in pixels. Default 4. */
   distance?: number;
-  blurX?: number;
-  blurY?: number;
-  quality?: number;
+  radiusX?: number;
+  radiusY?: number;
+  passes?: number;
   /** Overall opacity multiplier. Default 1. */
-  strength?: number;
+  intensity?: number;
   /** Where the bevel is drawn relative to the shape. Default 'inner'. */
   type?: SurfaceBevelType;
 }
 
 export interface SurfaceGradientGlowFilterOptions {
-  blurX?: number;
-  blurY?: number;
-  quality?: number;
+  radiusX?: number;
+  radiusY?: number;
+  passes?: number;
   /** Overall opacity multiplier. Default 1. */
-  strength?: number;
+  intensity?: number;
 }
 
 /**
@@ -32,7 +32,7 @@ export interface SurfaceGradientGlowFilterOptions {
  * 128 (flat, typically transparent), +1 to 255 (highlight side).
  *
  * `ramp` must be 256 RGBA entries (1024 bytes); build it with
- * `buildSurfaceGradientRamp`. `blurBuffer` must be a distinct buffer from `out`,
+ * `buildSurfaceGradientRamp`. `scratch` must be a distinct buffer from `out`,
  * at least `source.width * source.height * 4` bytes; its contents are undefined
  * after the call.
  *
@@ -41,7 +41,7 @@ export interface SurfaceGradientGlowFilterOptions {
  */
 export function applySurfaceGradientBevelFilter(
   out: Uint8ClampedArray,
-  blurBuffer: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
   ramp: Readonly<Uint8ClampedArray>,
   options: Readonly<SurfaceGradientBevelFilterOptions> = {},
@@ -53,24 +53,24 @@ export function applySurfaceGradientBevelFilter(
   const offsetX = Math.round(Math.cos(angle) * distance);
   const offsetY = Math.round(Math.sin(angle) * distance);
   const type = options.type ?? 'inner';
-  const strength = options.strength ?? 1;
+  const intensity = options.intensity ?? 1;
 
   for (let py = 0; py < h; py++) {
     for (let px = 0; px < w; px++) {
       const di = (py * w + px) * 4;
-      blurBuffer[di] = 0;
-      blurBuffer[di + 1] = 0;
-      blurBuffer[di + 2] = 0;
-      blurBuffer[di + 3] = readSourceAlpha(source, px, py);
+      scratch[di] = 0;
+      scratch[di + 1] = 0;
+      scratch[di + 2] = 0;
+      scratch[di + 3] = readSourceAlpha(source, px, py);
     }
   }
-  blurAlphaField(blurBuffer, out, w, h, options.blurX, options.blurY, options.quality);
+  blurAlphaField(scratch, out, w, h, options.radiusX, options.radiusY, options.passes);
 
   for (let py = 0; py < h; py++) {
     for (let px = 0; px < w; px++) {
       const di = (py * w + px) * 4;
-      const lit = sampleField(blurBuffer, w, h, px - offsetX, py - offsetY);
-      const shade = sampleField(blurBuffer, w, h, px + offsetX, py + offsetY);
+      const lit = sampleField(scratch, w, h, px - offsetX, py - offsetY);
+      const shade = sampleField(scratch, w, h, px + offsetX, py + offsetY);
       const gradient = lit - shade;
       const idx = Math.max(0, Math.min(255, Math.round((gradient * 0.5 + 0.5) * 255)));
       const ri = idx * 4;
@@ -83,7 +83,7 @@ export function applySurfaceGradientBevelFilter(
       out[di] = ramp[ri];
       out[di + 1] = ramp[ri + 1];
       out[di + 2] = ramp[ri + 2];
-      out[di + 3] = Math.min(255, Math.round(ramp[ri + 3] * strength * clip));
+      out[di + 3] = Math.min(255, Math.round(ramp[ri + 3] * intensity * clip));
     }
   }
 }
@@ -94,20 +94,20 @@ export function applySurfaceGradientBevelFilter(
  * opacity, so the glow color varies with distance from the shape.
  *
  * `ramp` must be 256 RGBA entries (1024 bytes); build it with
- * `buildSurfaceGradientRamp`. `blurBuffer` must be at least
+ * `buildSurfaceGradientRamp`. `scratch` must be at least
  * `source.width * source.height * 4` bytes; its contents are undefined after the
  * call. Safe to pass `source.surface.data` as `out` for a full-surface region.
  */
 export function applySurfaceGradientGlowFilter(
   out: Uint8ClampedArray,
-  blurBuffer: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
   ramp: Readonly<Uint8ClampedArray>,
   options: Readonly<SurfaceGradientGlowFilterOptions> = {},
 ): void {
   const w = source.width;
   const h = source.height;
-  const strength = options.strength ?? 1;
+  const intensity = options.intensity ?? 1;
 
   for (let py = 0; py < h; py++) {
     for (let px = 0; px < w; px++) {
@@ -118,7 +118,7 @@ export function applySurfaceGradientGlowFilter(
       out[di + 3] = readSourceAlpha(source, px, py);
     }
   }
-  blurAlphaField(out, blurBuffer, w, h, options.blurX, options.blurY, options.quality);
+  blurAlphaField(out, scratch, w, h, options.radiusX, options.radiusY, options.passes);
 
   for (let py = 0; py < h; py++) {
     for (let px = 0; px < w; px++) {
@@ -127,17 +127,17 @@ export function applySurfaceGradientGlowFilter(
       out[di] = ramp[ri];
       out[di + 1] = ramp[ri + 1];
       out[di + 2] = ramp[ri + 2];
-      out[di + 3] = Math.min(255, Math.round(ramp[ri + 3] * strength));
+      out[di + 3] = Math.min(255, Math.round(ramp[ri + 3] * intensity));
     }
   }
 }
 
 /**
  * Fills `out` (256 RGBA entries, 1024 bytes) with a gradient lookup table built
- * from parallel `colors` (packed RGB), `alphas` (0..1), and `ratios` (0..255,
- * ascending) arrays — the Flash gradient convention. Indices below the first
- * ratio take the first stop; indices above the last take the last stop; in
- * between, channels are linearly interpolated.
+ * from parallel `colors` (packed 0xRRGGBB), `alphas` (0..1), and `ratios`
+ * (0..255, ascending) arrays. Indices below the first ratio take the first stop;
+ * indices above the last take the last stop; in between, channels are linearly
+ * interpolated.
  */
 export function buildSurfaceGradientRamp(
   out: Uint8ClampedArray,
@@ -188,24 +188,24 @@ function blurAlphaField(
   scratch: Uint8ClampedArray,
   w: number,
   h: number,
-  blurX: number | undefined,
-  blurY: number | undefined,
-  quality: number | undefined,
+  radiusX: number | undefined,
+  radiusY: number | undefined,
+  passes: number | undefined,
 ): void {
-  const radiusX = Math.max(0, Math.round((blurX ?? 4) / 2));
-  const radiusY = Math.max(0, Math.round((blurY ?? 4) / 2));
-  const passes = Math.max(1, Math.round(quality ?? 1));
+  const rx = Math.max(0, Math.round(radiusX ?? 2));
+  const ry = Math.max(0, Math.round(radiusY ?? 2));
+  const p = Math.max(1, Math.round(passes ?? 1));
   let a = field;
   let b = scratch;
-  for (let pass = 0; pass < passes; pass++) {
-    if (radiusX > 0) {
-      blurSurfacePixelsHorizontal(b, a, w, h, radiusX);
+  for (let pass = 0; pass < p; pass++) {
+    if (rx > 0) {
+      blurSurfacePixelsHorizontal(b, a, w, h, rx);
       const t = a;
       a = b;
       b = t;
     }
-    if (radiusY > 0) {
-      blurSurfacePixelsVertical(b, a, w, h, radiusY);
+    if (ry > 0) {
+      blurSurfacePixelsVertical(b, a, w, h, ry);
       const t = a;
       a = b;
       b = t;
