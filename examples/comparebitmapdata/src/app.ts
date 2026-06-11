@@ -5,7 +5,7 @@ import {
   createSurface,
   drawSurface,
   fillSurfaceRectangle,
-  setSurfacePixel32,
+  setSurfacePixel,
 } from '@flighthq/surface';
 
 const IMG_SIZE = 40;
@@ -20,7 +20,7 @@ function createCheckers(color1: number, color2: number, tileSize = 8): Surface {
   for (let y = 0; y < IMG_SIZE; y++) {
     for (let x = 0; x < IMG_SIZE; x++) {
       if (((Math.floor(x / tileSize) + Math.floor(y / tileSize)) & 1) === 1) {
-        setSurfacePixel32(img, x, y, color2);
+        setSurfacePixel(img, x, y, color2);
       }
     }
   }
@@ -47,7 +47,7 @@ function createBall(color: number, alpha = 255): Surface {
       const dx = x + 0.5 - cx;
       const dy = y + 0.5 - cy;
       if (dx * dx + dy * dy <= r * r) {
-        setSurfacePixel32(img, x, y, (((color & 0xffffff) << 8) | (alpha & 0xff)) >>> 0);
+        setSurfacePixel(img, x, y, (((color & 0xffffff) << 8) | (alpha & 0xff)) >>> 0);
       }
     }
   }
@@ -139,12 +139,28 @@ for (let row = 0; row < n; row++) {
   for (let col = 0; col < n; col++) {
     const x = LABEL_SIZE + col * CELL_SIZE;
     const { img: colImg } = sources[col];
-    if (rowImg === null) {
-      drawCell(ctx, canvas, x + 2, y + 2, -1, true);
+    if (rowImg === null || colImg === null) {
+      drawNullCell(ctx, x + 2, y + 2);
+    } else if (rowImg.width !== colImg.width || rowImg.height !== colImg.height) {
+      drawIncompatibleCell(ctx, x + 2, y + 2);
     } else {
-      drawCell(ctx, canvas, x + 2, y + 2, compareSurface(rowImg, colImg), false);
+      drawCell(ctx, canvas, x + 2, y + 2, compareSurface(rowImg, colImg));
     }
   }
+}
+
+function drawNullCell(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+  ctx.fillStyle = '#2a2a2a';
+  ctx.fillRect(x, y, IMG_SIZE, IMG_SIZE);
+}
+
+function drawIncompatibleCell(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+  ctx.fillStyle = '#2a1a1a';
+  ctx.fillRect(x, y, IMG_SIZE, IMG_SIZE);
+  ctx.fillStyle = '#f44';
+  ctx.font = 'bold 11px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('≠', x + IMG_SIZE / 2, y + IMG_SIZE / 2 + 4);
 }
 
 function drawCell(
@@ -152,33 +168,15 @@ function drawCell(
   canvas: HTMLCanvasElement,
   x: number,
   y: number,
-  result: Surface | 0 | -1 | -2 | -3,
-  sourceIsNull: boolean,
+  result: Surface | null,
 ): void {
-  if (sourceIsNull) {
-    ctx.fillStyle = '#2a2a2a';
-    ctx.fillRect(x, y, IMG_SIZE, IMG_SIZE);
-    return;
-  }
-
-  if (result === 0) {
+  if (result === null) {
     ctx.fillStyle = '#1a4a1a';
     ctx.fillRect(x, y, IMG_SIZE, IMG_SIZE);
     ctx.fillStyle = '#4caf50';
     ctx.font = 'bold 11px monospace';
     ctx.textAlign = 'center';
     ctx.fillText('=', x + IMG_SIZE / 2, y + IMG_SIZE / 2 + 4);
-    return;
-  }
-
-  if (typeof result === 'number') {
-    ctx.fillStyle = '#2a1a1a';
-    ctx.fillRect(x, y, IMG_SIZE, IMG_SIZE);
-    ctx.fillStyle = '#f44';
-    ctx.font = 'bold 11px monospace';
-    ctx.textAlign = 'center';
-    const label = result === -1 ? 'null' : result === -2 ? 'W≠' : 'H≠';
-    ctx.fillText(label, x + IMG_SIZE / 2, y + IMG_SIZE / 2 + 4);
     return;
   }
 
