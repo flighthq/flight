@@ -27,10 +27,11 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/render-webgl": "*",
+    "@flighthq/surface-filters": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/surface": "*",
     "typescript": "^5.3.0"
   },
   "description": "Visual filter effects for bitmap surfaces, canvas, and WebGL",

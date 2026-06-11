@@ -1,25 +1,62 @@
-import type { BitmapFilter } from '@flighthq/types';
+import type { BlurFilter, DropShadowFilter, OuterGlowFilter } from '@flighthq/types';
 
-import { filterToCSS } from './index';
+import { blurFilterToCSS, dropShadowFilterToCSS, outerGlowFilterToCSS } from './css';
 
 /**
- * Applies a bitmap filter to `source` and draws the result onto `dest` at
- * (dx, dy) using the canvas 2D CSS filter path. Returns true if the filter
- * was applied; returns false if the filter has no CSS equivalent (inner
- * shadows, knockout, convolution, bevel, anisotropic blur). In that case
- * the caller should fall back to the surface or WebGL paths.
- *
- * The filter is applied via `ctx.filter` around a `drawImage` call, so it
- * benefits from the browser's GPU-accelerated filter pipeline.
+ * Applies a blur filter to `source` and draws the result onto `dest` at (dx, dy)
+ * via the canvas 2D CSS filter path. Returns false if the filter has no CSS
+ * equivalent (anisotropic blur where blurX !== blurY).
  */
-export function applyCanvasCSSFilter(
+export function applyBlurFilterToCanvas(
   dest: CanvasRenderingContext2D,
   source: CanvasImageSource,
   dx: number,
   dy: number,
-  filter: BitmapFilter,
+  filter: BlurFilter,
 ): boolean {
-  const css = filterToCSS(filter);
+  const css = blurFilterToCSS(filter);
+  if (css === null) return false;
+  dest.save();
+  dest.filter = css;
+  dest.drawImage(source, dx, dy);
+  dest.restore();
+  return true;
+}
+
+/**
+ * Applies a drop shadow filter to `source` and draws the result onto `dest` at
+ * (dx, dy) via the canvas 2D CSS filter path. Returns false if the filter has no
+ * CSS equivalent (knockout, anisotropic blur).
+ */
+export function applyDropShadowFilterToCanvas(
+  dest: CanvasRenderingContext2D,
+  source: CanvasImageSource,
+  dx: number,
+  dy: number,
+  filter: DropShadowFilter,
+): boolean {
+  const css = dropShadowFilterToCSS(filter);
+  if (css === null) return false;
+  dest.save();
+  dest.filter = css;
+  dest.drawImage(source, dx, dy);
+  dest.restore();
+  return true;
+}
+
+/**
+ * Applies an outer glow filter to `source` and draws the result onto `dest` at
+ * (dx, dy) via the canvas 2D CSS filter path. Returns false if the filter has no
+ * CSS equivalent (knockout, anisotropic blur).
+ */
+export function applyOuterGlowFilterToCanvas(
+  dest: CanvasRenderingContext2D,
+  source: CanvasImageSource,
+  dx: number,
+  dy: number,
+  filter: OuterGlowFilter,
+): boolean {
+  const css = outerGlowFilterToCSS(filter);
   if (css === null) return false;
   dest.save();
   dest.filter = css;
