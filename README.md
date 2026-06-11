@@ -1,60 +1,21 @@
 # Flight
 
-Flight is a TypeScript monorepo for a tree-shakable 2D rendering SDK. The same scene graph draws through Canvas, DOM, and WebGL2 renderers, which are first-class and interchangeable: you build a scene once and choose a backend by registering the renderers you want.
+Flight is a 2D graphics library designed for AI agents. Its API is cellular — every function is self-contained, legible in isolation, and free of hidden state. Explicit inputs, explicit outputs, no globals to trace, no implicit runtime behavior. An agent reading one function understands and applies it without context from anywhere else in the codebase.
 
-The design favors data-oriented entities, explicit allocation, and small functions with no hidden side effects, so application code stays easy to reason about and bundles stay small. It provides scene graph packages, renderer packages, animation and asset helpers, and a convenience `@flighthq/sdk` barrel for applications and examples.
+The same design properties that make Flight easy to reason over also make bundles small. Nothing runs at import time: renderers, update loops, and event listeners are all opt-in. A minimal bitmap display gzips to 3.9 KB. A full match-3 game with tweens, audio, text, and input gzips to 14.9 KB.
 
-The codebase is organized so low-level users can import small subpaths without pulling in renderer registration, app helpers, or unrelated graph families. Packages are intended to be import side-effect-free; renderers and platform listeners are registered explicitly by the caller.
+It provides a scene graph, three interchangeable renderers (Canvas 2D, DOM, and WebGL2), and everything needed for a complete interactive application — animation, input, audio, video, text, filters, and effects. Build a scene once; choose a backend by registering it.
 
-## Packages
+## Try It
 
-Applications and examples can import from the SDK barrel:
-
-```ts
-import { addGraphChild, createBitmap, createShape } from '@flighthq/sdk';
-```
-
-Library code should prefer the smallest package or subpath that provides the needed API.
-
-| Package | Purpose |
-| --- | --- |
-| `@flighthq/application` | Application loop and browser window/host lifecycle helpers |
-| `@flighthq/assets` | Image source, texture atlas, tileset, font, and audio utilities |
-| `@flighthq/assets-loader` | Group asset loading with progress and completion signals |
-| `@flighthq/entity` | Entity, node, runtime, and binding primitives |
-| `@flighthq/filters` | Blur, glow, bevel, drop-shadow, color-matrix, and convolution filters with Canvas/CSS and WebGL backends |
-| `@flighthq/geometry` | Vectors, matrices, rectangles, typed-array helpers, and pools |
-| `@flighthq/input` | Keyboard, pointer, wheel, and text input normalization |
-| `@flighthq/interaction` | Hit testing, pointer dispatch, and object overlap detection |
-| `@flighthq/materials` | Color transform and material utilities |
-| `@flighthq/media` | Audio and video playback channels |
-| `@flighthq/render` | Renderer registration, render state/queue, render nodes, and the update pipeline |
-| `@flighthq/render-canvas` | Canvas 2D renderer |
-| `@flighthq/render-dom` | DOM renderer |
-| `@flighthq/render-webgl` | WebGL2 renderer |
-| `@flighthq/scene` | Shared hierarchy, transforms, bounds, appearance, and invalidation |
-| `@flighthq/scene-display` | Display-object graph: bitmaps, shapes, text, containers, masks, and video |
-| `@flighthq/scene-sprite` | Sprite graph: sprites, quad batches, and tilemaps |
-| `@flighthq/scene-world` | Experimental 3D world graph |
-| `@flighthq/sdk` | Application-level convenience barrel |
-| `@flighthq/signals` | Strictly typed signals and slots |
-| `@flighthq/spritesheet` | Spritesheet frame animation playback |
-| `@flighthq/surface` | Pixel-level image manipulation using browser `ImageData` |
-| `@flighthq/text-input` | Editable text helpers: selection, replacement, and input restriction |
-| `@flighthq/text-layout` | Renderer-agnostic glyph measuring and text layout |
-| `@flighthq/timeline` | Timeline-based animation sequencing |
-| `@flighthq/timeline-spritesheet` | Spritesheet animation driven by timelines |
-| `@flighthq/tween` | Tween managers, tweens, and timers |
-| `@flighthq/tween-easing` | Easing functions for animation |
-| `@flighthq/types` | Shared interfaces, kind symbols, and cross-package contracts |
-
-## Getting Started
-
-Install dependencies with npm:
+Browse the live example explorer at [flighthq.github.io/flight](https://flighthq.github.io/flight), or run it locally:
 
 ```sh
 npm install
+npm run explorer
 ```
+
+## Getting Started
 
 Create a display-object scene, register the renderer kinds you use, update the render graph, then draw:
 
@@ -107,41 +68,6 @@ enterFrame();
 
 The same scene renders through DOM or WebGL2 by creating the matching render state and registering that backend's renderers — `createWebGLRenderState` with `defaultWebGLBitmapRenderer` and `renderWebGLDisplayObject`, or the `*DOM*` equivalents — with no change to the scene graph itself.
 
-### Shapes
-
-Shapes store drawing commands on a `Shape` node. Canvas rendering also needs the shape renderer and shape-command draw handlers registered for the commands you use:
-
-```ts
-import {
-  appendShapeBeginFill,
-  appendShapeCircle,
-  appendShapeLineStyle,
-  appendShapeLineTo,
-  appendShapeRectangle,
-  createShape,
-  defaultCanvasShapeCommands,
-  defaultCanvasShapeRenderer,
-  registerCanvasShapeCommands,
-  registerRenderer,
-  ShapeKind,
-} from '@flighthq/sdk';
-
-registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
-
-const box = createShape();
-appendShapeBeginFill(box, 0x24afc4);
-appendShapeRectangle(box, 0, 0, 100, 100);
-
-const circle = createShape();
-appendShapeBeginFill(circle, 0xff6644);
-appendShapeCircle(circle, 50, 50, 50);
-
-const line = createShape();
-appendShapeLineStyle(line, 4, 0xffffff);
-appendShapeLineTo(line, 200, 0);
-```
-
 ### Animation
 
 The application package provides a request-animation-frame loop with typed update and render signals:
@@ -174,9 +100,58 @@ connectSignal(app.onRender, () => {
 startApplicationLoop(app);
 ```
 
-## Examples
+### Interaction
 
-Examples live in `examples/`. Each example is a standalone Vite app. Examples expose renderer-specific scripts for the backends they implement; an example may target Canvas, DOM, WebGL, or any combination.
+Wire up pointer events on any scene node. Register a hit-test strategy once, then create an interaction manager and connect it to the input system:
+
+```ts
+import {
+  attachPointerInput,
+  connectInputToInteraction,
+  connectSignal,
+  createInputManager,
+  createInteractionManager,
+  DisplayObjectKind,
+  getInteractionSignals,
+  graphHitTestLocalBounds,
+  invalidateRender,
+  registerHitTestPoint,
+} from '@flighthq/sdk';
+
+registerHitTestPoint(DisplayObjectKind, graphHitTestLocalBounds);
+
+const interaction = createInteractionManager(root);
+const input = createInputManager();
+attachPointerInput(input, canvas);
+connectInputToInteraction(input, interaction, pixelRatio);
+
+const signals = getInteractionSignals(bitmap);
+connectSignal(signals.onPointerDown, () => {
+  bitmap.alpha = 0.5;
+  invalidateRender(bitmap);
+});
+connectSignal(signals.onPointerUp, () => {
+  bitmap.alpha = 1;
+  invalidateRender(bitmap);
+});
+```
+
+### Sound
+
+Load an audio source with fallback formats, then play it:
+
+```ts
+import { loadAudioSourceFromURLs, playAudioSource } from '@flighthq/sdk';
+
+const sound = await loadAudioSourceFromURLs([
+  { url: 'assets/click.ogg' },
+  { url: 'assets/click.mp3' },
+]);
+
+connectSignal(signals.onPointerDown, () => playAudioSource(sound));
+```
+
+## Examples
 
 | Example             | Description                                      |
 | ------------------- | ------------------------------------------------ |
@@ -197,12 +172,6 @@ Examples live in `examples/`. Each example is a standalone Vite app. Examples ex
 | `tweenexample`      | Animated circles using tweens and timers         |
 | `usingtilemap`      | Tilemap rendering                                |
 
-Run the example explorer:
-
-```sh
-npm run explorer
-```
-
 Build a specific example:
 
 ```sh
@@ -217,41 +186,55 @@ npm run dev:dom --workspace=examples/textmetrics
 npm run dev:webgl --workspace=examples/textmetrics
 ```
 
-## Development
+## Packages
 
-```sh
-npm install
+Applications and examples import from the SDK barrel:
 
-# Build packages
-npm run build
-
-# Run the normal Vitest workspace, excluding size tests
-npm run test
-
-# Run package unit tests through workspace scripts
-npm run test:unit
-
-# Lint, order, and format with auto-fixes
-npm run fix
-
-# Default quality sweep
-npm run check
-
-# Full CI-equivalent confidence sweep
-npm run ci
+```ts
+import { addGraphChild, createBitmap, createShape } from '@flighthq/sdk';
 ```
 
-Useful repository commands:
+Library code should prefer the smallest package or subpath that provides the needed API.
 
-| Command                     | Purpose                                                                 |
-| --------------------------- | ----------------------------------------------------------------------- |
-| `npm run api`               | Print compact public API signatures                                     |
-| `npm run test:completeness` | Check that exported functions have colocated tests                      |
-| `npm run order`             | Check source export and test `describe` ordering                        |
-| `npm run size`              | Build matching examples and report gzip sizes against the baseline      |
-| `npm run packages:check`    | Check package shape, exports, references, and side-effect-free patterns |
+| Package | Purpose |
+| --- | --- |
+| `@flighthq/application` | Application loop and browser window/host lifecycle helpers |
+| `@flighthq/assets` | Image source, texture atlas, tileset, font, and audio utilities |
+| `@flighthq/assets-loader` | Group asset loading with progress and completion signals |
+| `@flighthq/entity` | Entity, node, runtime, and binding primitives |
+| `@flighthq/filters` | Blur, glow, bevel, drop-shadow, color-matrix, and convolution filters with Canvas/CSS and WebGL backends |
+| `@flighthq/geometry` | Vectors, matrices, rectangles, typed-array helpers, and pools |
+| `@flighthq/input` | Keyboard, pointer, wheel, and text input normalization |
+| `@flighthq/interaction` | Hit testing, pointer dispatch, and object overlap detection |
+| `@flighthq/materials` | Color transform and material utilities |
+| `@flighthq/media` | Audio and video playback channels |
+| `@flighthq/render` | Renderer registration, render state/queue, render nodes, and the update pipeline |
+| `@flighthq/render-canvas` | Canvas 2D renderer |
+| `@flighthq/render-dom` | DOM renderer |
+| `@flighthq/render-webgl` | WebGL2 renderer |
+| `@flighthq/scene` | Shared hierarchy, transforms, bounds, appearance, and invalidation |
+| `@flighthq/scene-display` | Display-object graph: bitmaps, shapes, text, containers, masks, and video |
+| `@flighthq/scene-sprite` | Sprite graph: sprites, quad batches, and tilemaps |
+| `@flighthq/scene-world` | Experimental 3D world graph |
+| `@flighthq/sdk` | Application-level convenience barrel |
+| `@flighthq/signals` | Strictly typed signals and slots |
+| `@flighthq/spritesheet` | Spritesheet frame animation playback |
+| `@flighthq/surface` | Pixel-level image manipulation using browser `ImageData` |
+| `@flighthq/text-input` | Editable text helpers: selection, replacement, and input restriction |
+| `@flighthq/text-layout` | Renderer-agnostic glyph measuring and text layout |
+| `@flighthq/timeline` | Timeline-based animation sequencing |
+| `@flighthq/timeline-spritesheet` | Spritesheet animation driven by timelines |
+| `@flighthq/tween` | Tween managers, tweens, and timers |
+| `@flighthq/tween-easing` | Easing functions for animation |
+| `@flighthq/types` | Shared interfaces, kind symbols, and cross-package contracts |
 
-## Repo Structure
+## Contributing
+
+```sh
+git clone https://github.com/flighthq/flight.git
+cd flight
+npm install
+```
 
 ```text
 packages/      Workspace packages published as @flighthq/*
