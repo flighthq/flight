@@ -143,10 +143,7 @@ Load an audio source with fallback formats, then play it:
 ```ts
 import { loadAudioSourceFromURLs, playAudioSource } from '@flighthq/sdk';
 
-const sound = await loadAudioSourceFromURLs([
-  { url: 'assets/click.ogg' },
-  { url: 'assets/click.mp3' },
-]);
+const sound = await loadAudioSourceFromURLs([{ url: 'assets/click.ogg' }, { url: 'assets/click.mp3' }]);
 
 connectSignal(signals.onPointerDown, () => playAudioSource(sound));
 ```
@@ -166,7 +163,6 @@ connectSignal(signals.onPointerDown, () => playAudioSource(sound));
 | `piratepig`         | Match-3 game with tweens, audio, text, and input |
 | `playingsound`      | Sound playback with pause, resume, and fades     |
 | `playingvideo`      | Video playback through the media channels        |
-| `simplesprite`      | Minimal sprite graph example                     |
 | `sparktrail`        | WebGL particle-emitter trail                     |
 | `textmetrics`       | Text measurement and layout metrics              |
 | `tweenexample`      | Animated circles using tweens and timers         |
