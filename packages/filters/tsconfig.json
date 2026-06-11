@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../render-webgl" }, { "path": "../types" }],
+  "references": [{ "path": "../surface-filters" }, { "path": "../types" }],
   "include": ["src"]
 }
