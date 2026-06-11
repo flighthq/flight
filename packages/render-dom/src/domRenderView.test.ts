@@ -4,7 +4,7 @@ import type { RenderViewRenderer } from '@flighthq/types';
 import { RenderViewKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
-import { defaultDOMRenderViewRenderer, drawDOMRenderView } from './domRenderView';
+import { defaultDOMRenderViewRenderer, drawDOMRenderView, drawDOMRenderViewMask } from './domRenderView';
 import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
@@ -66,5 +66,14 @@ describe('drawDOMRenderView', () => {
     expect(renderer.canvas.style.position).toBe('absolute');
     expect(renderer.canvas.style.transformOrigin).toBe('0 0');
     expect(renderer.canvas.style.pointerEvents).toBe('none');
+  });
+});
+
+describe('drawDOMRenderViewMask', () => {
+  it('is a no-op and does not throw', () => {
+    const state = makeState();
+    const view = createRenderView({ data: { renderer: makeRenderer(), width: 100, height: 100 } });
+    const renderNode = getOrCreateDisplayObjectRenderNode(state, view);
+    expect(() => drawDOMRenderViewMask(state, renderNode)).not.toThrow();
   });
 });

@@ -1,7 +1,7 @@
 import type { CanvasRenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import { applyCanvasBlendMode } from './canvasMaterials';
+import { applyCanvasBlendMode, enableCanvasBlendModeSupport } from './canvasMaterials';
 import { createCanvasRenderState } from './canvasRenderState';
 
 describe('applyCanvasBlendMode', () => {
@@ -63,5 +63,23 @@ describe('applyCanvasBlendMode', () => {
   it('should set globalCompositeOperation to "source-over" for default case', () => {
     applyCanvasBlendMode(state, null);
     expect(state.context.globalCompositeOperation).toBe('source-over');
+  });
+});
+
+describe('enableCanvasBlendModeSupport', () => {
+  it('wires applyBlendMode onto the state', () => {
+    const canvas = document.createElement('canvas');
+    const s = createCanvasRenderState(canvas);
+    expect(s.applyBlendMode).toBeNull();
+    enableCanvasBlendModeSupport(s);
+    expect(s.applyBlendMode).not.toBeNull();
+  });
+
+  it('causes blend modes to be applied to the canvas context', () => {
+    const canvas = document.createElement('canvas');
+    const s = createCanvasRenderState(canvas);
+    enableCanvasBlendModeSupport(s);
+    s.applyBlendMode!(s, BlendMode.Multiply);
+    expect(s.context.globalCompositeOperation).toBe('multiply');
   });
 });

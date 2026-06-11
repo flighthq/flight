@@ -5,6 +5,7 @@ import {
   bindWebGLTexture,
   createWebGLTexture,
   drawWebGLQuad,
+  enableWebGLBlendModeSupport,
   setQuadMatrixFromOffset,
   updateWebGLTexture,
   useWebGLProgram,
@@ -219,6 +220,22 @@ describe('drawWebGLQuad', () => {
     drawWebGLQuad(state, 0, 0, 100, 50, 0, 0, 1, 1);
     const g = gl as unknown as { TRIANGLES: number; UNSIGNED_SHORT: number };
     expect(gl.drawElements).toHaveBeenCalledWith(g.TRIANGLES, 6, g.UNSIGNED_SHORT, 0);
+  });
+});
+
+describe('enableWebGLBlendModeSupport', () => {
+  it('wires applyBlendMode onto the state', () => {
+    const { state } = makeWebGLState();
+    expect(state.applyBlendMode).toBeNull();
+    enableWebGLBlendModeSupport(state);
+    expect(state.applyBlendMode).not.toBeNull();
+  });
+
+  it('causes blend modes to be applied via gl.blendFunc', () => {
+    const { state, gl } = makeWebGLState();
+    enableWebGLBlendModeSupport(state);
+    state.applyBlendMode!(state, BlendMode.Add);
+    expect(gl.blendFunc).toHaveBeenCalled();
   });
 });
 
