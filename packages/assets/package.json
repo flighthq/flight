@@ -8,58 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./audioSource": {
-      "types": "./dist/audioSource.d.ts",
-      "default": "./dist/audioSource.js"
-    },
-    "./audioSourceFrom": {
-      "types": "./dist/audioSourceFrom.d.ts",
-      "default": "./dist/audioSourceFrom.js"
-    },
-    "./font": {
-      "types": "./dist/font.d.ts",
-      "default": "./dist/font.js"
-    },
-    "./fontFrom": {
-      "types": "./dist/fontFrom.d.ts",
-      "default": "./dist/fontFrom.js"
-    },
-    "./imageSource": {
-      "types": "./dist/imageSource.d.ts",
-      "default": "./dist/imageSource.js"
-    },
-    "./imageSourceFrom": {
-      "types": "./dist/imageSourceFrom.d.ts",
-      "default": "./dist/imageSourceFrom.js"
-    },
-    "./textureAtlas": {
-      "types": "./dist/textureAtlas.d.ts",
-      "default": "./dist/textureAtlas.js"
-    },
-    "./textureAtlasFrom": {
-      "types": "./dist/textureAtlasFrom.d.ts",
-      "default": "./dist/textureAtlasFrom.js"
-    },
-    "./textureAtlasRegion": {
-      "types": "./dist/textureAtlasRegion.d.ts",
-      "default": "./dist/textureAtlasRegion.js"
-    },
-    "./tileset": {
-      "types": "./dist/tileset.d.ts",
-      "default": "./dist/tileset.js"
-    },
-    "./tilesetFrom": {
-      "types": "./dist/tilesetFrom.d.ts",
-      "default": "./dist/tilesetFrom.js"
-    },
-    "./videoSource": {
-      "types": "./dist/videoSource.d.ts",
-      "default": "./dist/videoSource.js"
-    },
-    "./videoSourceFrom": {
-      "types": "./dist/videoSourceFrom.d.ts",
-      "default": "./dist/videoSourceFrom.js"
     }
   },
   "files": [

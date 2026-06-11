@@ -1,4 +1,4 @@
-import { extractSurfacePixels } from '@flighthq/surface/composite';
+import { extractSurfacePixels } from '@flighthq/surface';
 import type { SurfaceRegion } from '@flighthq/types';
 
 export interface SurfaceBoxBlurFilterOptions {

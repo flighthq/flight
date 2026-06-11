@@ -1,5 +1,4 @@
-import { premultiplySurfacePixels, unpremultiplySurfacePixels } from '@flighthq/surface/format';
-import { createSurface } from '@flighthq/surface/surface';
+import { createSurface, premultiplySurfacePixels, unpremultiplySurfacePixels } from '@flighthq/surface';
 
 import {
   applySurfaceBoxBlurFilter,

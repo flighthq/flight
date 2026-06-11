@@ -1,5 +1,4 @@
-﻿import { multiplyMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry';
-import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
+﻿import { acquireMatrix, multiplyMatrix, releaseMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry';
 import { createNullRendererData } from '@flighthq/render';
 import type { CanvasRenderState, QuadBatch, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 

@@ -8,62 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./bitmap": {
-      "types": "./dist/bitmap.d.ts",
-      "default": "./dist/bitmap.js"
-    },
-    "./displayContainer": {
-      "types": "./dist/displayContainer.d.ts",
-      "default": "./dist/displayContainer.js"
-    },
-    "./displayObject": {
-      "types": "./dist/displayObject.d.ts",
-      "default": "./dist/displayObject.js"
-    },
-    "./htmlView": {
-      "types": "./dist/htmlView.d.ts",
-      "default": "./dist/htmlView.js"
-    },
-    "./inputText": {
-      "types": "./dist/inputText.d.ts",
-      "default": "./dist/inputText.js"
-    },
-    "./movieClip": {
-      "types": "./dist/movieClip.d.ts",
-      "default": "./dist/movieClip.js"
-    },
-    "./richText": {
-      "types": "./dist/richText.d.ts",
-      "default": "./dist/richText.js"
-    },
-    "./shape": {
-      "types": "./dist/shape.d.ts",
-      "default": "./dist/shape.js"
-    },
-    "./scale9Shape": {
-      "types": "./dist/scale9Shape.d.ts",
-      "default": "./dist/scale9Shape.js"
-    },
-    "./shapeCommands": {
-      "types": "./dist/shapeCommands.d.ts",
-      "default": "./dist/shapeCommands.js"
-    },
-    "./shapeHitTestRegistry": {
-      "types": "./dist/shapeHitTestRegistry.d.ts",
-      "default": "./dist/shapeHitTestRegistry.js"
-    },
-    "./stage": {
-      "types": "./dist/stage.d.ts",
-      "default": "./dist/stage.js"
-    },
-    "./text": {
-      "types": "./dist/text.d.ts",
-      "default": "./dist/text.js"
-    },
-    "./video": {
-      "types": "./dist/video.d.ts",
-      "default": "./dist/video.js"
     }
   },
   "files": [

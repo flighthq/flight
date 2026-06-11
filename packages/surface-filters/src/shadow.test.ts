@@ -1,5 +1,4 @@
-import { compositeSurfacePixels, compositeSurfaceRegion } from '@flighthq/surface/composite';
-import { createSurface } from '@flighthq/surface/surface';
+import { compositeSurfacePixels, compositeSurfaceRegion, createSurface } from '@flighthq/surface';
 
 import {
   applySurfaceDropShadowFilter,

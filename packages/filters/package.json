@@ -8,14 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./canvas": {
-      "types": "./dist/canvas.d.ts",
-      "default": "./dist/canvas.js"
-    },
-    "./webgl": {
-      "types": "./dist/webgl.d.ts",
-      "default": "./dist/webgl.js"
     }
   },
   "files": [

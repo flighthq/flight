@@ -8,58 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./compare": {
-      "types": "./dist/compare.d.ts",
-      "default": "./dist/compare.js"
-    },
-    "./composite": {
-      "types": "./dist/composite.d.ts",
-      "default": "./dist/composite.js"
-    },
-    "./copy": {
-      "types": "./dist/copy.d.ts",
-      "default": "./dist/copy.js"
-    },
-    "./draw": {
-      "types": "./dist/draw.d.ts",
-      "default": "./dist/draw.js"
-    },
-    "./encode": {
-      "types": "./dist/encode.d.ts",
-      "default": "./dist/encode.js"
-    },
-    "./fill": {
-      "types": "./dist/fill.d.ts",
-      "default": "./dist/fill.js"
-    },
-    "./format": {
-      "types": "./dist/format.d.ts",
-      "default": "./dist/format.js"
-    },
-    "./imageChannel": {
-      "types": "./dist/imageChannel.d.ts",
-      "default": "./dist/imageChannel.js"
-    },
-    "./pixel": {
-      "types": "./dist/pixel.d.ts",
-      "default": "./dist/pixel.js"
-    },
-    "./query": {
-      "types": "./dist/query.d.ts",
-      "default": "./dist/query.js"
-    },
-    "./surface": {
-      "types": "./dist/surface.d.ts",
-      "default": "./dist/surface.js"
-    },
-    "./surfaceFrom": {
-      "types": "./dist/surfaceFrom.d.ts",
-      "default": "./dist/surfaceFrom.js"
-    },
-    "./transform": {
-      "types": "./dist/transform.d.ts",
-      "default": "./dist/transform.js"
     }
   },
   "files": [

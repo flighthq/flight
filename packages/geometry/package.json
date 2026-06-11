@@ -8,66 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./matrix": {
-      "types": "./dist/matrix.d.ts",
-      "default": "./dist/matrix.js"
-    },
-    "./matrixPool": {
-      "types": "./dist/matrixPool.d.ts",
-      "default": "./dist/matrixPool.js"
-    },
-    "./matrix3": {
-      "types": "./dist/matrix3.d.ts",
-      "default": "./dist/matrix3.js"
-    },
-    "./matrix3Pool": {
-      "types": "./dist/matrix3Pool.d.ts",
-      "default": "./dist/matrix3Pool.js"
-    },
-    "./matrix4": {
-      "types": "./dist/matrix4.d.ts",
-      "default": "./dist/matrix4.js"
-    },
-    "./matrix4Pool": {
-      "types": "./dist/matrix4Pool.d.ts",
-      "default": "./dist/matrix4Pool.js"
-    },
-    "./rectangle": {
-      "types": "./dist/rectangle.d.ts",
-      "default": "./dist/rectangle.js"
-    },
-    "./rectanglePool": {
-      "types": "./dist/rectanglePool.d.ts",
-      "default": "./dist/rectanglePool.js"
-    },
-    "./vector2": {
-      "types": "./dist/vector2.d.ts",
-      "default": "./dist/vector2.js"
-    },
-    "./vector2Pool": {
-      "types": "./dist/vector2Pool.d.ts",
-      "default": "./dist/vector2Pool.js"
-    },
-    "./vector3": {
-      "types": "./dist/vector3.d.ts",
-      "default": "./dist/vector3.js"
-    },
-    "./vector3Pool": {
-      "types": "./dist/vector3Pool.d.ts",
-      "default": "./dist/vector3Pool.js"
-    },
-    "./vector4": {
-      "types": "./dist/vector4.d.ts",
-      "default": "./dist/vector4.js"
-    },
-    "./vector4Pool": {
-      "types": "./dist/vector4Pool.d.ts",
-      "default": "./dist/vector4Pool.js"
-    },
-    "./typedarray": {
-      "types": "./dist/typedarray.d.ts",
-      "default": "./dist/typedarray.js"
     }
   },
   "files": [

@@ -8,46 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./background": {
-      "types": "./dist/canvasBackground.d.ts",
-      "default": "./dist/canvasBackground.js"
-    },
-    "./bitmap": {
-      "types": "./dist/canvasBitmap.d.ts",
-      "default": "./dist/canvasBitmap.js"
-    },
-    "./clipRectangle": {
-      "types": "./dist/canvasClipRectangle.d.ts",
-      "default": "./dist/canvasClipRectangle.js"
-    },
-    "./displayObject": {
-      "types": "./dist/canvasDisplayObject.d.ts",
-      "default": "./dist/canvasDisplayObject.js"
-    },
-    "./inputText": {
-      "types": "./dist/canvasInputText.d.ts",
-      "default": "./dist/canvasInputText.js"
-    },
-    "./mask": {
-      "types": "./dist/canvasMask.d.ts",
-      "default": "./dist/canvasMask.js"
-    },
-    "./materials": {
-      "types": "./dist/canvasMaterials.d.ts",
-      "default": "./dist/canvasMaterials.js"
-    },
-    "./quadBatch": {
-      "types": "./dist/canvasQuadBatch.d.ts",
-      "default": "./dist/canvasQuadBatch.js"
-    },
-    "./renderState": {
-      "types": "./dist/canvasRenderState.d.ts",
-      "default": "./dist/canvasRenderState.js"
-    },
-    "./transform": {
-      "types": "./dist/canvasTransform.d.ts",
-      "default": "./dist/canvasTransform.js"
     }
   },
   "files": [

@@ -1,12 +1,13 @@
 import { getEntityRuntime } from '@flighthq/entity';
 import {
+  acquireMatrix,
   copyRectangle,
   createRectangle,
   inverseMatrix,
   matrixTransformRectangle,
+  releaseMatrix,
   unionRectangle,
 } from '@flighthq/geometry';
-import { acquireMatrix, releaseMatrix } from '@flighthq/geometry/matrixPool';
 import type {
   HasBoundsRectangleRuntime,
   HasTransform2DRuntime,

@@ -8,18 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./color": {
-      "types": "./dist/color.d.ts",
-      "default": "./dist/color.js"
-    },
-    "./renderer": {
-      "types": "./dist/renderer.d.ts",
-      "default": "./dist/renderer.js"
-    },
-    "./renderState": {
-      "types": "./dist/renderState.d.ts",
-      "default": "./dist/renderState.js"
     }
   },
   "files": [

@@ -8,22 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./inputText": {
-      "types": "./dist/webglInputText.d.ts",
-      "default": "./dist/webglInputText.js"
-    },
-    "./materials": {
-      "types": "./dist/webglMaterials.d.ts",
-      "default": "./dist/webglMaterials.js"
-    },
-    "./scale9": {
-      "types": "./dist/webglScale9Shape.d.ts",
-      "default": "./dist/webglScale9Shape.js"
-    },
-    "./shader": {
-      "types": "./dist/webglShaderRegistry.d.ts",
-      "default": "./dist/webglShaderRegistry.js"
     }
   },
   "files": [

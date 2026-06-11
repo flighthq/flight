@@ -8,14 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./spritesheet": {
-      "types": "./dist/spritesheet.d.ts",
-      "default": "./dist/spritesheet.js"
-    },
-    "./spritesheetAnimation": {
-      "types": "./dist/spritesheetAnimation.d.ts",
-      "default": "./dist/spritesheetAnimation.js"
     }
   },
   "files": [

@@ -1,4 +1,4 @@
-import { createSurface } from '@flighthq/surface/surface';
+import { createSurface } from '@flighthq/surface';
 
 import { applySurfaceSharpenFilter } from './sharpen';
 

@@ -8,22 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./blur": {
-      "types": "./dist/blur.d.ts",
-      "default": "./dist/blur.js"
-    },
-    "./colorMatrix": {
-      "types": "./dist/colorMatrix.d.ts",
-      "default": "./dist/colorMatrix.js"
-    },
-    "./convolution": {
-      "types": "./dist/convolution.d.ts",
-      "default": "./dist/convolution.js"
-    },
-    "./shadow": {
-      "types": "./dist/shadow.d.ts",
-      "default": "./dist/shadow.js"
     }
   },
   "files": [
