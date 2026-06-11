@@ -50,6 +50,29 @@ describe('loadSpineParticle — full round-trip, returns { config, document }', 
   });
 });
 
+describe('loadSpineParticle — import warnings', () => {
+  it('has no warnings for a 2-keyframe tint/alpha effect', () => {
+    expect(loadSpineParticle(SPARK_JSON).warnings).toEqual([]);
+  });
+
+  it('warns when tint/alpha timelines have more than two keyframes', () => {
+    const json = JSON.stringify({
+      ...JSON.parse(SPARK_JSON),
+      tint: [
+        { time: 0, color: 'ff0000' },
+        { time: 0.5, color: '00ff00' },
+        { time: 1, color: '0000ff' },
+      ],
+    });
+    expect(loadSpineParticle(json).warnings.some((w) => w.includes('Tint'))).toBe(true);
+  });
+
+  it('warns about unsupported lifeOffset', () => {
+    const json = JSON.stringify({ ...JSON.parse(SPARK_JSON), lifeOffset: { low: 100, high: 200 } });
+    expect(loadSpineParticle(json).warnings.some((w) => w.includes('lifeOffset'))).toBe(true);
+  });
+});
+
 describe('parseSpineParticle — blend mode', () => {
   it('maps additive blendMode to "add"', () => {
     expect(parseSpineParticle(SPARK_JSON).blendMode).toBe('add');

@@ -21,6 +21,9 @@ export interface UnityParseOptions {
 export interface UnityParsed {
   config: ParticleEmitterConfig;
   document: UnityParticleDocument;
+  /** Features present in the source that the common-subset importer cannot
+   *  represent and silently dropped — surface these in your asset pipeline. */
+  warnings: string[];
 }
 
 const DEG2RAD = Math.PI / 180;
@@ -185,6 +188,46 @@ function rawToConfig(raw: Record<string, unknown>, ppu: number): ParticleEmitter
   });
 }
 
+// Unity modules with no equivalent in ParticleEmitterConfig. If present and
+// enabled in the source, their effect is lost on import.
+const UNSUPPORTED_UNITY_MODULES: ReadonlyArray<readonly [string, string]> = [
+  ['velocityOverLifetime', 'velocity-over-lifetime'],
+  ['forceOverLifetime', 'force-over-lifetime'],
+  ['limitVelocityOverLifetime', 'limit-velocity-over-lifetime'],
+  ['inheritVelocity', 'inherit-velocity'],
+  ['noise', 'noise'],
+  ['collision', 'collision'],
+  ['subEmitters', 'sub-emitters'],
+  ['trails', 'trails'],
+  ['textureSheetAnimation', 'texture-sheet-animation'],
+  ['externalForces', 'external-forces'],
+  ['lights', 'lights'],
+];
+
+function collectUnityWarnings(raw: Record<string, unknown>): string[] {
+  const warnings: string[] = [];
+
+  for (const [key, label] of UNSUPPORTED_UNITY_MODULES) {
+    const mod = raw[key];
+    if (mod != null && typeof mod === 'object' && rb((mod as Record<string, unknown>).enabled, false)) {
+      warnings.push(`Unity ${label} module is not supported and was ignored`);
+    }
+  }
+
+  const em = raw.emission as Record<string, unknown> | undefined;
+  const bursts = Array.isArray(em?.bursts) ? em.bursts : [];
+  if (bursts.length > 1) warnings.push(`Only the first of ${bursts.length} emission bursts was imported`);
+
+  const col = raw.colorOverLifetime as Record<string, unknown> | undefined;
+  if (col != null && rb(col.enabled, false)) {
+    const grad = col.gradient as Record<string, unknown> | undefined;
+    const keys = grad != null && Array.isArray(grad.colorKeys) ? grad.colorKeys.length : 0;
+    if (keys > 2) warnings.push(`Color gradient with ${keys} keys was collapsed to start/end colors`);
+  }
+
+  return warnings;
+}
+
 function unityBlendMode(raw: Record<string, unknown>): ParticleBlendMode | null {
   // Unity exposes blend mode via the renderer module; a common export convention
   // uses a top-level 'blendMode' or 'renderMode' string field.
@@ -290,7 +333,7 @@ function rawToDocument(raw: Record<string, unknown>): UnityParticleDocument {
 export function loadUnityParticle(json: string, options?: UnityParseOptions): UnityParsed {
   const ppu = options?.pixelsPerUnit ?? DEFAULT_PPU;
   const raw = parseUnityJson(json);
-  return { config: rawToConfig(raw, ppu), document: rawToDocument(raw) };
+  return { config: rawToConfig(raw, ppu), document: rawToDocument(raw), warnings: collectUnityWarnings(raw) };
 }
 
 /** Parse a Unity Shuriken particle system JSON string directly to a ParticleEmitterConfig.

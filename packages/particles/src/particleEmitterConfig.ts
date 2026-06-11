@@ -1,3 +1,5 @@
+import type { ParticleCurve } from './curve';
+
 export type ParticleEmitterShape = 'point' | 'circle' | 'rect';
 
 /** Blend mode hint stored in the config for round-tripping through format parsers.
@@ -68,15 +70,24 @@ export interface ParticleEmitterConfig {
   readonly rotationSpeedMin: number;
   // Velocity inheritance — fraction of emitter velocity added to newly spawned particles (0–1)
   readonly velocityInheritance: number;
+  // Opt-in non-linear lifetime ramps (null = use the linear start→end path).
+  // alphaCurve/scaleCurve are scalar LUTs; colorCurve is interleaved RGB (N×3).
+  // A curve overrides the corresponding linear/variance interpolation.
+  readonly alphaCurve: ParticleCurve | null;
+  readonly colorCurve: ParticleCurve | null;
+  readonly scaleCurve: ParticleCurve | null;
   // World-space emission: particles store world-space positions and don't move with the emitter
   readonly worldSpace: boolean;
 }
 
 export function createParticleEmitterConfig(config?: Partial<ParticleEmitterConfig>): ParticleEmitterConfig {
   return {
+    alphaCurve: config?.alphaCurve ?? null,
     alphaEnd: config?.alphaEnd ?? 0,
     alphaStart: config?.alphaStart ?? 1,
     blendMode: config?.blendMode ?? null,
+    colorCurve: config?.colorCurve ?? null,
+    scaleCurve: config?.scaleCurve ?? null,
     burstCount: config?.burstCount ?? 0,
     burstInterval: config?.burstInterval ?? 0,
     duration: config?.duration ?? 0,
