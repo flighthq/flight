@@ -87,4 +87,21 @@ describe('applySurfaceDisplacementMapFilter', () => {
     expect(out[2 * 4 + 2]).toBe(255);
     expect(out[2 * 4 + 3]).toBe(255);
   });
+
+  it('samples through the source region offset', () => {
+    // 4px [red, green, blue, white]; a neutral map over region (1,0,2,1) copies
+    // source pixels 1 and 2 (green, blue), proving the offset is applied.
+    const source = createSurface(4, 1);
+    source.data.set([255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255]);
+    const map = createSurface(2, 1);
+    map.data.fill(128); // neutral — no displacement
+    const out = new Uint8ClampedArray(2 * 4);
+    applySurfaceDisplacementMapFilter(out, region(source, 1, 0, 2, 1), {
+      map: region(map),
+      scaleX: 256,
+      scaleY: 256,
+    });
+    expect(Array.from(out.subarray(0, 4))).toEqual([0, 255, 0, 255]); // green
+    expect(Array.from(out.subarray(4, 8))).toEqual([0, 0, 255, 255]); // blue
+  });
 });

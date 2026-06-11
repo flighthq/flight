@@ -1,6 +1,17 @@
 import { createSurface } from '@flighthq/surface/surface';
 
-import { applySurfaceColorMatrixFilter } from './colorMatrix';
+import {
+  applySurfaceColorMatrixFilter,
+  buildBrightnessColorMatrix,
+  buildContrastColorMatrix,
+  buildGrayscaleColorMatrix,
+  buildHueRotationColorMatrix,
+  buildInvertColorMatrix,
+  buildSaturationColorMatrix,
+  buildSepiaColorMatrix,
+  concatColorMatrix,
+  identityColorMatrix,
+} from './colorMatrix';
 
 function region(
   surface: ReturnType<typeof createSurface>,
@@ -10,6 +21,14 @@ function region(
   height = surface.height,
 ) {
   return { surface, x, y, width, height };
+}
+
+// Build a 1x1 surface, apply `matrix`, and return its RGBA bytes.
+function applyTo(rgba: number, matrix: ReadonlyArray<number>): Uint8ClampedArray {
+  const surface = createSurface(1, 1, rgba);
+  const out = new Uint8ClampedArray(4);
+  applySurfaceColorMatrixFilter(out, region(surface), matrix);
+  return out;
 }
 
 describe('applySurfaceColorMatrixFilter', () => {
@@ -65,5 +84,138 @@ describe('applySurfaceColorMatrixFilter', () => {
     const i = (1 * 2 + 1) * 4;
     expect(out[i]).toBe(0xff);
     expect(out[0]).toBe(0);
+  });
+});
+
+describe('buildBrightnessColorMatrix', () => {
+  it('multiplies RGB by the amount', () => {
+    const m = new Array<number>(20);
+    buildBrightnessColorMatrix(m, 0.5);
+    const out = applyTo(0xc86432ff, m); // R=200 G=100 B=50
+    expect(out[0]).toBe(100);
+    expect(out[1]).toBe(50);
+    expect(out[2]).toBe(25);
+    expect(out[3]).toBe(0xff);
+  });
+});
+
+describe('buildContrastColorMatrix', () => {
+  it('amount 0 flattens every channel to mid grey', () => {
+    const m = new Array<number>(20);
+    buildContrastColorMatrix(m, 0);
+    const out = applyTo(0xc80000ff, m); // R=200
+    expect(out[0]).toBe(128); // round(127.5)
+    expect(out[1]).toBe(128);
+  });
+});
+
+describe('buildGrayscaleColorMatrix', () => {
+  it('maps pure red to its luma in every channel', () => {
+    const m = new Array<number>(20);
+    buildGrayscaleColorMatrix(m);
+    const out = applyTo(0xff0000ff, m);
+    expect(out[0]).toBe(54); // round(0.213 * 255)
+    expect(out[1]).toBe(54);
+    expect(out[2]).toBe(54);
+  });
+});
+
+describe('buildHueRotationColorMatrix', () => {
+  it('leaves grey unchanged at any angle (rotation around the luma axis)', () => {
+    const m = new Array<number>(20);
+    buildHueRotationColorMatrix(m, 1.234);
+    const out = applyTo(0x808080ff, m);
+    expect(out[0]).toBe(128);
+    expect(out[1]).toBe(128);
+    expect(out[2]).toBe(128);
+  });
+
+  it('is identity at angle 0', () => {
+    const m = new Array<number>(20);
+    buildHueRotationColorMatrix(m, 0);
+    const out = applyTo(0xc86432ff, m);
+    expect(out[0]).toBe(200);
+    expect(out[1]).toBe(100);
+    expect(out[2]).toBe(50);
+  });
+});
+
+describe('buildInvertColorMatrix', () => {
+  it('inverts RGB and preserves alpha', () => {
+    const m = new Array<number>(20);
+    buildInvertColorMatrix(m);
+    const out = applyTo(0xc83200ff, m); // R=200 G=50 B=0
+    expect(out[0]).toBe(55);
+    expect(out[1]).toBe(205);
+    expect(out[2]).toBe(255);
+    expect(out[3]).toBe(0xff);
+  });
+});
+
+describe('buildSaturationColorMatrix', () => {
+  it('amount 1 is identity', () => {
+    const m = new Array<number>(20);
+    buildSaturationColorMatrix(m, 1);
+    const out = applyTo(0xc86432ff, m);
+    expect(out[0]).toBe(200);
+    expect(out[1]).toBe(100);
+    expect(out[2]).toBe(50);
+  });
+
+  it('amount 0 equals grayscale', () => {
+    const m = new Array<number>(20);
+    buildSaturationColorMatrix(m, 0);
+    const out = applyTo(0xff0000ff, m);
+    expect(out[0]).toBe(54);
+    expect(out[1]).toBe(54);
+  });
+});
+
+describe('buildSepiaColorMatrix', () => {
+  it('maps pure red to the sepia tone', () => {
+    const m = new Array<number>(20);
+    buildSepiaColorMatrix(m);
+    const out = applyTo(0xff0000ff, m);
+    expect(out[0]).toBe(100); // round(0.393 * 255)
+    expect(out[1]).toBe(89); // round(0.349 * 255)
+    expect(out[2]).toBe(69); // round(0.272 * 255)
+  });
+});
+
+describe('concatColorMatrix', () => {
+  it('composes two matrices (apply first, then second)', () => {
+    const bright2 = new Array<number>(20);
+    const half = new Array<number>(20);
+    buildBrightnessColorMatrix(bright2, 2);
+    buildBrightnessColorMatrix(half, 0.5);
+    const out = new Array<number>(20);
+    concatColorMatrix(out, bright2, half); // *2 then *0.5 = identity
+    const pixel = applyTo(0xc86432ff, out);
+    expect(pixel[0]).toBe(200);
+    expect(pixel[1]).toBe(100);
+    expect(pixel[2]).toBe(50);
+  });
+
+  it('carries the offset through composition', () => {
+    const identity = new Array<number>(20);
+    const invert = new Array<number>(20);
+    identityColorMatrix(identity);
+    buildInvertColorMatrix(invert);
+    const out = new Array<number>(20);
+    concatColorMatrix(out, identity, invert);
+    const pixel = applyTo(0xc80000ff, out); // R=200 -> 55
+    expect(pixel[0]).toBe(55);
+  });
+});
+
+describe('identityColorMatrix', () => {
+  it('leaves the pixel unchanged', () => {
+    const m = new Array<number>(20);
+    identityColorMatrix(m);
+    const out = applyTo(0xc86432ff, m);
+    expect(out[0]).toBe(200);
+    expect(out[1]).toBe(100);
+    expect(out[2]).toBe(50);
+    expect(out[3]).toBe(0xff);
   });
 });

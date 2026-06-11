@@ -34,8 +34,10 @@ export interface SurfaceGradientGlowFilterOptions {
  * `ramp` must be 256 RGBA entries (1024 bytes); build it with
  * `buildSurfaceGradientRamp`. `blurBuffer` must be a distinct buffer from `out`,
  * at least `source.width * source.height * 4` bytes; its contents are undefined
- * after the call. Safe to pass `source.surface.data` as `out` for a full-surface
- * region.
+ * after the call.
+ *
+ * `out` must NOT alias `source.surface.data`: `out` is used as the blur scratch,
+ * and the source alpha is read again afterward for `inner`/`outer` clipping.
  */
 export function applySurfaceGradientBevelFilter(
   out: Uint8ClampedArray,
@@ -180,8 +182,6 @@ export function buildSurfaceGradientRamp(
     out[oi + 3] = Math.round(a * 255);
   }
 }
-
-// ─── Private helpers ──────────────────────────────────────────────────────────
 
 function blurAlphaField(
   field: Uint8ClampedArray,

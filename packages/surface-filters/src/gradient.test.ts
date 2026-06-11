@@ -63,6 +63,16 @@ describe('applySurfaceGradientGlowFilter', () => {
     applySurfaceGradientGlowFilter(out, blurBuffer, region(source), ramp, { blurX: 0, blurY: 0, strength: 0.5 });
     expect(out[3]).toBe(128);
   });
+
+  it('source.surface.data can be used as out for a full-surface region', () => {
+    const ramp = new Uint8ClampedArray(256 * 4);
+    buildSurfaceGradientRamp(ramp, [0x00ff00, 0x00ff00], [0, 1], [0, 255]);
+    const surface = createSurface(1, 1, 0xffffffff);
+    const blurBuffer = new Uint8ClampedArray(4);
+    applySurfaceGradientGlowFilter(surface.data, blurBuffer, region(surface), ramp, { blurX: 0, blurY: 0 });
+    expect(surface.data[1]).toBe(0xff);
+    expect(surface.data[3]).toBe(255);
+  });
 });
 
 describe('buildSurfaceGradientRamp', () => {
