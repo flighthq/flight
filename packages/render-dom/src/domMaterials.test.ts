@@ -1,6 +1,7 @@
 import { BlendMode } from '@flighthq/types';
 
-import { applyDOMBlendMode } from './domMaterials';
+import { applyDOMBlendMode, enableDOMBlendModeSupport } from './domMaterials';
+import { createDOMRenderState } from './domRenderState';
 
 describe('applyDOMBlendMode', () => {
   let el: HTMLElement;
@@ -59,5 +60,22 @@ describe('applyDOMBlendMode', () => {
     el.style.mixBlendMode = 'multiply';
     applyDOMBlendMode(el, BlendMode.Normal);
     expect(el.style.mixBlendMode).toBe('');
+  });
+});
+
+describe('enableDOMBlendModeSupport', () => {
+  it('wires applyBlendMode onto the state', () => {
+    const state = createDOMRenderState(document.createElement('div'));
+    expect(state.applyBlendMode).toBeNull();
+    enableDOMBlendModeSupport(state);
+    expect(state.applyBlendMode).not.toBeNull();
+  });
+
+  it('causes blend modes to be applied to elements', () => {
+    const state = createDOMRenderState(document.createElement('div'));
+    enableDOMBlendModeSupport(state);
+    const el = document.createElement('div');
+    state.applyBlendMode!(el, BlendMode.Multiply);
+    expect(el.style.mixBlendMode).toBe('multiply');
   });
 });
