@@ -1,3 +1,5 @@
+import { sampleColorCurve, sampleCurve } from '@flighthq/particles';
+
 import { loadUnityParticle, parseUnityParticle } from './parse';
 import { serializeUnityParticle } from './serialize';
 
@@ -85,6 +87,79 @@ describe('loadUnityParticle — import warnings', () => {
       },
     });
     expect(loadUnityParticle(json).warnings.some((w) => w.includes('burst'))).toBe(true);
+  });
+});
+
+describe('parseUnityParticle — gradient / size curves bake into curves', () => {
+  it('leaves curves null when colorOverLifetime has only start/end', () => {
+    const c = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
+    expect(c.colorCurve).toBeNull();
+    expect(c.alphaCurve).toBeNull();
+    expect(c.scaleCurve).toBeNull();
+  });
+
+  it('bakes a multi-stop gradient (colorKeys + alphaKeys) into curves', () => {
+    const json = JSON.stringify({
+      ...JSON.parse(SMOKE_JSON),
+      colorOverLifetime: {
+        enabled: true,
+        gradient: {
+          colorKeys: [
+            { time: 0, color: { r: 1, g: 0, b: 0 } },
+            { time: 0.5, color: { r: 0, g: 1, b: 0 } },
+            { time: 1, color: { r: 0, g: 0, b: 1 } },
+          ],
+          alphaKeys: [
+            { time: 0, alpha: 0 },
+            { time: 0.5, alpha: 1 },
+            { time: 1, alpha: 0 },
+          ],
+        },
+      },
+    });
+    const c = parseUnityParticle(json, { pixelsPerUnit: PPU });
+    expect(c.colorCurve).not.toBeNull();
+    expect(c.alphaCurve).not.toBeNull();
+    const out = [0, 0, 0];
+    sampleColorCurve(c.colorCurve!, 0.5, out, 0);
+    expect(out[1]).toBeGreaterThan(0.8); // green mid-life
+    expect(sampleCurve(c.alphaCurve!, 0.5)).toBeGreaterThan(0.9); // alpha peaks mid-life
+  });
+
+  it('bakes a size-over-lifetime AnimationCurve into scaleCurve', () => {
+    const json = JSON.stringify({
+      ...JSON.parse(SMOKE_JSON),
+      sizeOverLifetime: {
+        enabled: true,
+        curve: {
+          keys: [
+            { time: 0, value: 0 },
+            { time: 0.5, value: 1 },
+            { time: 1, value: 0 },
+          ],
+        },
+      },
+    });
+    const c = parseUnityParticle(json, { pixelsPerUnit: PPU });
+    expect(c.scaleCurve).not.toBeNull();
+    expect(sampleCurve(c.scaleCurve!, 0.5)).toBeGreaterThan(sampleCurve(c.scaleCurve!, 0));
+  });
+
+  it('does not warn about a gradient now that it is baked', () => {
+    const json = JSON.stringify({
+      ...JSON.parse(SMOKE_JSON),
+      colorOverLifetime: {
+        enabled: true,
+        gradient: {
+          colorKeys: [
+            { time: 0, color: { r: 1, g: 1, b: 1 } },
+            { time: 0.5, color: { r: 0.5, g: 0.5, b: 0.5 } },
+            { time: 1, color: { r: 0, g: 0, b: 0 } },
+          ],
+        },
+      },
+    });
+    expect(loadUnityParticle(json).warnings.some((w) => w.toLowerCase().includes('gradient'))).toBe(false);
   });
 });
 

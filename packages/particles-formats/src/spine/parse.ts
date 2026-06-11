@@ -1,5 +1,11 @@
-import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/particles';
-import { createParticleEmitterConfig } from '@flighthq/particles';
+import type {
+  ColorKeyframe,
+  CurveKeyframe,
+  ParticleBlendMode,
+  ParticleCurve,
+  ParticleEmitterConfig,
+} from '@flighthq/particles';
+import { colorCurveFromKeyframes, createParticleEmitterConfig, curveFromKeyframes } from '@flighthq/particles';
 
 import type { SpineAlphaKeyframe, SpineParticleDocument, SpineTintKeyframe } from './schema';
 
@@ -103,6 +109,10 @@ function rawToConfig(raw: Record<string, unknown>): ParticleEmitterConfig {
   const endScaleMid = rangeMid(raw.scaleEnd, 0);
   const startTint = firstTintColor(raw.tint);
   const endTint = lastTintColor(raw.tint);
+  // Multi-stop tint/alpha timelines bake into lifetime curves (preserves the full
+  // shape); 2-stop timelines fall back to the linear start→end path.
+  const colorCurve = tintKeyframesToCurve(raw.tint);
+  const alphaCurve = alphaKeyframesToCurve(raw.alpha);
   // A continuous Spine emitter emits forever; otherwise `duration` (ms) bounds it.
   const continuous = typeof raw.continuous === 'boolean' ? raw.continuous : true;
   const durationMs = typeof raw.duration === 'number' ? raw.duration : -1;
@@ -112,6 +122,8 @@ function rawToConfig(raw: Record<string, unknown>): ParticleEmitterConfig {
     spawnRate: rangeMid(raw.emission, 20),
     loop: continuous,
     duration: !continuous && durationMs > 0 ? durationMs / 1000 : 0,
+    colorCurve,
+    alphaCurve,
     lifetimeMin: lifeLow,
     lifetimeMax: lifeHigh,
     speedMin: rangeLow(raw.velocity, 50),
@@ -145,15 +157,8 @@ function rawToConfig(raw: Record<string, unknown>): ParticleEmitterConfig {
 function collectSpineWarnings(raw: Record<string, unknown>): string[] {
   const warnings: string[] = [];
 
-  const tint = raw.tint;
-  if (Array.isArray(tint) && tint.length > 2) {
-    warnings.push(`Tint timeline with ${tint.length} keyframes was collapsed to start/end colors`);
-  }
-  const alpha = raw.alpha;
-  if (Array.isArray(alpha) && alpha.length > 2) {
-    warnings.push(`Alpha timeline with ${alpha.length} keyframes was collapsed to start/end`);
-  }
-
+  // Multi-stop tint/alpha timelines are now baked into lifetime curves, so they
+  // no longer warn. Remaining unsupported features:
   const nonZeroRange = (key: string): boolean => {
     const o = raw[key];
     if (o == null || typeof o !== 'object') return false;
@@ -166,6 +171,32 @@ function collectSpineWarnings(raw: Record<string, unknown>): string[] {
   }
 
   return warnings;
+}
+
+// Build a color curve from a tint timeline, but only when it has more than two
+// stops (a 2-stop timeline is exactly the linear start→end path, so we skip it).
+function tintKeyframesToCurve(arr: unknown): ParticleCurve | null {
+  if (!Array.isArray(arr) || arr.length <= 2) return null;
+  const keys: ColorKeyframe[] = [];
+  for (let i = 0; i < arr.length; i++) {
+    const k = arr[i] as Record<string, unknown>;
+    const [r, g, b] = hexToRgb(typeof k.color === 'string' ? k.color : 'ffffff');
+    keys.push({ time: typeof k.time === 'number' ? k.time : i / (arr.length - 1), r, g, b });
+  }
+  return colorCurveFromKeyframes(keys);
+}
+
+function alphaKeyframesToCurve(arr: unknown): ParticleCurve | null {
+  if (!Array.isArray(arr) || arr.length <= 2) return null;
+  const keys: CurveKeyframe[] = [];
+  for (let i = 0; i < arr.length; i++) {
+    const k = arr[i] as Record<string, unknown>;
+    keys.push({
+      time: typeof k.time === 'number' ? k.time : i / (arr.length - 1),
+      value: typeof k.alpha === 'number' ? k.alpha : 1,
+    });
+  }
+  return curveFromKeyframes(keys);
 }
 
 function spineBlendMode(mode: string): ParticleBlendMode | null {
