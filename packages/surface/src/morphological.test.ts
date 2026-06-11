@@ -1,5 +1,5 @@
-import { createSurface } from './surface';
 import { dilateSurface, erodeSurface } from './morphological';
+import { createSurface } from './surface';
 
 function region(
   surface: ReturnType<typeof createSurface>,
