@@ -1,1 +1,1 @@
-export type SurfaceResizeMode = 'bilinear' | 'nearest';
+export type SurfaceResizeMode = 'bicubic' | 'bilinear' | 'nearest';
