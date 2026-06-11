@@ -52,8 +52,8 @@ function configToDocument(
 
   return {
     name: existing.name ?? '',
-    duration: existing.duration ?? 5,
-    looping: existing.looping ?? true,
+    duration: config.duration > 0 ? config.duration : (existing.duration ?? 5),
+    looping: config.loop,
     prewarm: existing.prewarm ?? false,
     maxParticles: config.maxParticles,
     startLifetime: twoConst(config.lifetimeMin, config.lifetimeMax),

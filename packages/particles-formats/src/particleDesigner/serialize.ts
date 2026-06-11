@@ -44,7 +44,7 @@ function configToDocument(
   return {
     maxParticles: config.maxParticles,
     emitterType: existing.emitterType ?? 0,
-    duration: existing.duration ?? -1,
+    duration: config.duration > 0 && !config.loop ? config.duration : (existing.duration ?? -1),
     particleLifespan: (config.lifetimeMin + config.lifetimeMax) * 0.5,
     particleLifespanVariance: (config.lifetimeMax - config.lifetimeMin) * 0.5,
     speed: (config.speedMin + config.speedMax) * 0.5,
@@ -63,17 +63,23 @@ function configToDocument(
     startColorGreen: config.colorStartG,
     startColorBlue: config.colorStartB,
     startColorAlpha: config.alphaStart,
-    startColorVarianceRed: existing.startColorVarianceRed ?? 0,
-    startColorVarianceGreen: existing.startColorVarianceGreen ?? 0,
-    startColorVarianceBlue: existing.startColorVarianceBlue ?? 0,
+    startColorVarianceRed:
+      config.colorStartVarianceR !== 0 ? config.colorStartVarianceR : (existing.startColorVarianceRed ?? 0),
+    startColorVarianceGreen:
+      config.colorStartVarianceG !== 0 ? config.colorStartVarianceG : (existing.startColorVarianceGreen ?? 0),
+    startColorVarianceBlue:
+      config.colorStartVarianceB !== 0 ? config.colorStartVarianceB : (existing.startColorVarianceBlue ?? 0),
     startColorVarianceAlpha: existing.startColorVarianceAlpha ?? 0,
     finishColorRed: config.colorEndR,
     finishColorGreen: config.colorEndG,
     finishColorBlue: config.colorEndB,
     finishColorAlpha: config.alphaEnd,
-    finishColorVarianceRed: existing.finishColorVarianceRed ?? 0,
-    finishColorVarianceGreen: existing.finishColorVarianceGreen ?? 0,
-    finishColorVarianceBlue: existing.finishColorVarianceBlue ?? 0,
+    finishColorVarianceRed:
+      config.colorEndVarianceR !== 0 ? config.colorEndVarianceR : (existing.finishColorVarianceRed ?? 0),
+    finishColorVarianceGreen:
+      config.colorEndVarianceG !== 0 ? config.colorEndVarianceG : (existing.finishColorVarianceGreen ?? 0),
+    finishColorVarianceBlue:
+      config.colorEndVarianceB !== 0 ? config.colorEndVarianceB : (existing.finishColorVarianceBlue ?? 0),
     finishColorVarianceAlpha: existing.finishColorVarianceAlpha ?? 0,
     rotationStart: rotStart,
     rotationStartVariance: rotVar,
@@ -85,8 +91,8 @@ function configToDocument(
     minRadiusVariance: existing.minRadiusVariance ?? 0,
     rotatePerSecond: existing.rotatePerSecond ?? 0,
     rotatePerSecondVariance: existing.rotatePerSecondVariance ?? 0,
-    blendFuncSource: existing.blendFuncSource ?? 770,
-    blendFuncDestination: existing.blendFuncDestination ?? 771,
+    blendFuncSource: blendModeToSrc(config.blendMode, existing.blendFuncSource ?? 770),
+    blendFuncDestination: blendModeToDst(config.blendMode, existing.blendFuncDestination ?? 771),
     textureFileName: existing.textureFileName ?? '',
   };
 }
@@ -107,7 +113,7 @@ function documentToPlist(doc: ParticleDesignerDocument): string {
       if (Number.isInteger(value)) lines.push(`\t<integer>${value}</integer>`);
       else lines.push(`\t<real>${value}</real>`);
     } else {
-      lines.push(`\t<string>${value}</string>`);
+      lines.push(`\t<string>${escapeXml(value)}</string>`);
     }
   }
 
@@ -161,6 +167,22 @@ function documentToPlist(doc: ParticleDesignerDocument): string {
   lines.push('</dict>');
   lines.push('</plist>');
   return lines.join('\n');
+}
+
+function escapeXml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function blendModeToSrc(mode: string | null | undefined, fallback: number): number {
+  if (mode === 'add') return 770; // GL_SRC_ALPHA
+  if (mode === 'normal') return 770;
+  return fallback;
+}
+
+function blendModeToDst(mode: string | null | undefined, fallback: number): number {
+  if (mode === 'add') return 1; // GL_ONE
+  if (mode === 'normal') return 771; // GL_ONE_MINUS_SRC_ALPHA
+  return fallback;
 }
 
 /** Serialise a ParticleEmitterConfig to a Particle Designer plist XML string.

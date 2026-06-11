@@ -9,6 +9,7 @@ export interface ParticleEmitterData extends SpriteNodeData {
   ids: Uint16Array;
   particleCount: number;
   transforms: Float32Array; // [x, y, rotation, scale] × capacity — 4 floats/particle
+  worldSpace: boolean; // when true, particle positions are world-space; renderers skip node transform
 }
 
 export interface ParticleEmitterRuntime extends SpriteNodeRuntime {

@@ -98,6 +98,7 @@ export function createParticleEmitterData(data?: Readonly<Partial<ParticleEmitte
     ids: data?.ids ?? new Uint16Array(),
     particleCount: data?.particleCount ?? 0,
     transforms: data?.transforms ?? new Float32Array(),
+    worldSpace: data?.worldSpace ?? false,
   };
 }
 

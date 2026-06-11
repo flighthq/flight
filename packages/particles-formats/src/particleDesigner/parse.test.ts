@@ -74,6 +74,38 @@ describe('loadParticleDesignerPlist — full round-trip, returns { config, docum
   });
 });
 
+describe('parseParticleDesignerPlist — color variance and blend mode', () => {
+  it('maps startColorVariance fields to colorStartVariance', () => {
+    const plist = FIRE_PLIST.replace(
+      '<key>startColorVarianceRed</key><real>0</real>',
+      '<key>startColorVarianceRed</key><real>0.3</real>',
+    );
+    const c = parseParticleDesignerPlist(plist);
+    expect(c.colorStartVarianceR).toBeCloseTo(0.3);
+  });
+
+  it('maps additive blend func (770, 1) to blendMode="add"', () => {
+    const plist = FIRE_PLIST.replace(
+      '<key>blendFuncDestination</key><integer>771</integer>',
+      '<key>blendFuncDestination</key><integer>1</integer>',
+    );
+    const c = parseParticleDesignerPlist(plist);
+    expect(c.blendMode).toBe('add');
+  });
+
+  it('round-trips color variance through serialize', () => {
+    const modified = FIRE_PLIST.replace(
+      '<key>startColorVarianceGreen</key><real>0</real>',
+      '<key>startColorVarianceGreen</key><real>0.2</real>',
+    );
+    const config = parseParticleDesignerPlist(modified);
+    const { document } = loadParticleDesignerPlist(modified);
+    const xml = serializeParticleDesignerPlist(config, document);
+    const config2 = parseParticleDesignerPlist(xml);
+    expect(config2.colorStartVarianceG).toBeCloseTo(0.2, 3);
+  });
+});
+
 describe('parseParticleDesignerPlist — lightweight, returns config directly', () => {
   it('returns a ParticleEmitterConfig (not a Parsed object)', () => {
     const result = parseParticleDesignerPlist(FIRE_PLIST);
@@ -143,6 +175,40 @@ describe('parseParticleDesignerPlist — lightweight, returns config directly', 
   it('uses point emitter shape when sourcePositionVariance is zero', () => {
     expect(parseParticleDesignerPlist(FIRE_PLIST).emitterShape).toBe('point');
   });
+
+  it('maps duration=-1 to an infinite (looping) emitter', () => {
+    const c = parseParticleDesignerPlist(FIRE_PLIST);
+    expect(c.loop).toBe(true);
+    expect(c.duration).toBe(0);
+  });
+
+  it('maps a positive duration to a finite, non-looping emitter', () => {
+    const plist = FIRE_PLIST.replace('<key>duration</key><real>-1</real>', '<key>duration</key><real>2.5</real>');
+    const c = parseParticleDesignerPlist(plist);
+    expect(c.loop).toBe(false);
+    expect(c.duration).toBeCloseTo(2.5);
+  });
+});
+
+describe('parseParticleDesignerPlist — malformed input', () => {
+  it('falls back to defaults (not NaN) for empty numeric tags', () => {
+    const xml =
+      '<plist><dict>' +
+      '<key>maxParticles</key><integer></integer>' +
+      '<key>speed</key><real></real>' +
+      '</dict></plist>';
+    const c = parseParticleDesignerPlist(xml);
+    expect(c.maxParticles).toBe(200); // default, not NaN-coerced 0
+    expect(Number.isFinite(c.speedMin)).toBe(true);
+    expect(Number.isFinite(c.speedMax)).toBe(true);
+  });
+
+  it('returns an all-defaults config for empty/garbage input without throwing', () => {
+    expect(() => parseParticleDesignerPlist('')).not.toThrow();
+    const c = parseParticleDesignerPlist('not xml at all');
+    expect(Number.isFinite(c.maxParticles)).toBe(true);
+    expect(Number.isFinite(c.gravityY)).toBe(true);
+  });
 });
 
 describe('serializeParticleDesignerPlist', () => {
@@ -169,5 +235,15 @@ describe('serializeParticleDesignerPlist', () => {
     const xml = serializeParticleDesignerPlist(config);
     expect(xml).toContain('<?xml version="1.0"');
     expect(xml).toContain('<plist version="1.0">');
+  });
+
+  it('escapes XML special characters in the texture filename and round-trips them', () => {
+    const config = parseParticleDesignerPlist(FIRE_PLIST);
+    const xml = serializeParticleDesignerPlist(config, { textureFileName: 'a&b<c>.png' });
+    // Raw special characters must not appear unescaped (would be invalid XML).
+    expect(xml).not.toContain('a&b<c>');
+    expect(xml).toContain('&amp;');
+    // ...and the original value survives a parse round-trip intact.
+    expect(loadParticleDesignerPlist(xml).document.textureFileName).toBe('a&b<c>.png');
   });
 });
