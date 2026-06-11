@@ -1,37 +1,32 @@
 import type { Surface } from '@flighthq/types';
 
 import { compareSurface } from './compare';
-import { setSurfacePixel32 } from './pixel';
+import { setSurfacePixel } from './pixel';
 import { cloneSurface, createSurface } from './surface';
 
 describe('compareSurface', () => {
-  it('returns -1 when other is null', () => {
-    const a = createSurface(4, 4, 0x0000ffff);
-    expect(compareSurface(a, null)).toBe(-1);
-  });
-
-  it('returns -2 when widths differ', () => {
+  it('throws when widths differ', () => {
     const a = createSurface(4, 4);
     const b = createSurface(8, 4);
-    expect(compareSurface(a, b)).toBe(-2);
+    expect(() => compareSurface(a, b)).toThrow();
   });
 
-  it('returns -3 when heights differ', () => {
+  it('throws when heights differ', () => {
     const a = createSurface(4, 4);
     const b = createSurface(4, 8);
-    expect(compareSurface(a, b)).toBe(-3);
+    expect(() => compareSurface(a, b)).toThrow();
   });
 
-  it('returns 0 for identical images', () => {
+  it('returns null for identical images', () => {
     const a = createSurface(4, 4, 0x0000ffff);
     const b = cloneSurface(a);
-    expect(compareSurface(a, b)).toBe(0);
+    expect(compareSurface(a, b)).toBeNull();
   });
 
   it('returns diff Surface for different pixels', () => {
     const a = createSurface(2, 1, 0x000000ff);
     const b = createSurface(2, 1, 0x000000ff);
-    setSurfacePixel32(b, 0, 0, 0x102030ff);
+    setSurfacePixel(b, 0, 0, 0x102030ff);
     const result = compareSurface(a, b) as Surface;
     expect(result.width).toBe(2);
     expect(result.height).toBe(1);
@@ -55,7 +50,7 @@ describe('compareSurface', () => {
   it('unchanged pixels in diff have zero alpha', () => {
     const a = createSurface(2, 1, 0x000000ff);
     const b = cloneSurface(a);
-    setSurfacePixel32(b, 1, 0, 0xff0000ff);
+    setSurfacePixel(b, 1, 0, 0xff0000ff);
     const result = compareSurface(a, b) as Surface;
     expect(result.data[3]).toBe(0);
     expect(result.data[7]).toBe(255);

@@ -99,7 +99,7 @@ export function extractSurfacePixels(out: Uint8ClampedArray, source: Readonly<Su
 
 /**
  * Copies `source` into `out` as one packed `0xRRGGBBAA` color per pixel
- * (the packing `getSurfacePixel32` returns), in row-major order with
+ * (`0xRRGGBBAA` packed colors, the same packing `getSurfacePixel` returns), in row-major order with
  * stride = source.width. `out` must hold at least
  * `source.width * source.height` entries.
  *
@@ -149,7 +149,7 @@ export function writeSurfacePixels(dest: Readonly<SurfaceRegion>, pixels: Readon
 
 /**
  * Writes `pixels` into `dest`, overwriting existing content. Each entry is a
- * packed `0xRRGGBBAA` color (the form `setSurfacePixel32` takes), read in
+ * packed `0xRRGGBBAA` color (the form `setSurfacePixel` takes), read in
  * row-major order. `pixels` must hold at least `dest.width * dest.height`
  * entries. This is the color-per-element counterpart to `writeSurfacePixels`.
  */

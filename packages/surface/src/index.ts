@@ -9,6 +9,7 @@ export * from './flip';
 export * from './format';
 export * from './histogram';
 export * from './imageChannel';
+export * from './morphological';
 export * from './noise';
 export * from './paletteMap';
 export * from './pixel';
@@ -20,9 +21,9 @@ export * from './surface';
 export * from './surfaceFrom';
 export * from './transform';
 export type {
-  ColorBoundsRectangle,
   ImageFormat,
   PixelOrder,
+  RectangleLike,
   Surface,
   SurfaceHistogram,
   SurfaceRegion,

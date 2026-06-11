@@ -42,6 +42,10 @@ export function applySurfaceColorTransform(
  * passes, or optionally copies the source pixel where it fails. The tested size
  * is the overlap of the two regions. Returns the number of pixels that passed.
  *
+ * The comparison is performed on the full packed 0xRRGGBBAA pixel value under
+ * `mask`. To test a single channel, supply a mask that isolates it — for
+ * example 0x000000ff tests only the alpha byte, and 0xff000000 tests only red.
+ *
  * Safe to pass the same surface and region in `dest` and `source` (each pixel
  * is read before it is written).
  */
@@ -90,9 +94,9 @@ export function applySurfaceThreshold(
 
 /**
  * Blends each channel of `source` into `dest` using per-channel multipliers in
- * the range [0, 256]: 0 keeps `dest`, 256 replaces with `source`, intermediate
- * values blend proportionally. The blended size is the overlap of the two
- * regions; pixels outside either surface are skipped.
+ * [0, 1]: 0 keeps `dest`, 1 replaces with `source`, intermediate values blend
+ * proportionally. The blended size is the overlap of the two regions; pixels
+ * outside either surface are skipped.
  *
  * `dest` and `source` must not reference the same surface when their regions
  * overlap at different offsets — the blend reads both, so a write to `dest`
@@ -121,10 +125,10 @@ export function mergeSurface(
       if (sx < 0 || sx >= source.surface.width || dx < 0 || dx >= dest.surface.width) continue;
       const si = (sy * source.surface.width + sx) * 4;
       const di = (dy * dest.surface.width + dx) * 4;
-      dd[di] = Math.round((sd[si] * redMultiplier + dd[di] * (256 - redMultiplier)) / 256);
-      dd[di + 1] = Math.round((sd[si + 1] * greenMultiplier + dd[di + 1] * (256 - greenMultiplier)) / 256);
-      dd[di + 2] = Math.round((sd[si + 2] * blueMultiplier + dd[di + 2] * (256 - blueMultiplier)) / 256);
-      dd[di + 3] = Math.round((sd[si + 3] * alphaMultiplier + dd[di + 3] * (256 - alphaMultiplier)) / 256);
+      dd[di] = Math.round(sd[si] * redMultiplier + dd[di] * (1 - redMultiplier));
+      dd[di + 1] = Math.round(sd[si + 1] * greenMultiplier + dd[di + 1] * (1 - greenMultiplier));
+      dd[di + 2] = Math.round(sd[si + 2] * blueMultiplier + dd[di + 2] * (1 - blueMultiplier));
+      dd[di + 3] = Math.round(sd[si + 3] * alphaMultiplier + dd[di + 3] * (1 - alphaMultiplier));
     }
   }
 }

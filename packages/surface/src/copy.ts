@@ -35,8 +35,9 @@ export function copySurfaceChannel(
 
 /**
  * Copies `source` into `dest`. The copied size is the overlap of the two
- * regions; pixels outside either surface are skipped. When `mergeAlpha` is
- * true, `source` is alpha-composited over `dest` instead of overwriting it.
+ * regions; pixels outside either surface are skipped. When `composite` is
+ * true, `source` is alpha-composited (Porter-Duff source-over) over `dest`
+ * instead of overwriting it.
  *
  * Safe to pass the same surface in `dest` and `source` when the regions do not
  * overlap. Overlapping regions produce undefined results because pixels are
@@ -45,7 +46,7 @@ export function copySurfaceChannel(
 export function copySurfacePixels(
   dest: Readonly<SurfaceRegion>,
   source: Readonly<SurfaceRegion>,
-  mergeAlpha: boolean = false,
+  composite: boolean = false,
 ): void {
   const w = Math.min(dest.width, source.width);
   const h = Math.min(dest.height, source.height);
@@ -61,7 +62,7 @@ export function copySurfacePixels(
       if (sx < 0 || sx >= source.surface.width || dx < 0 || dx >= dest.surface.width) continue;
       const si = (sy * source.surface.width + sx) * 4;
       const di = (dy * dest.surface.width + dx) * 4;
-      if (mergeAlpha) {
+      if (composite) {
         const srcA = sd[si + 3] / 255;
         const dstA = dd[di + 3] / 255;
         const outA = srcA + dstA * (1 - srcA);

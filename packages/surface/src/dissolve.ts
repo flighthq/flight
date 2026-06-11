@@ -13,8 +13,8 @@ import type { SurfaceRegion } from '@flighthq/types';
  * in the region's dimensions.
  *
  * When `source` is the same region as `dest` (same surface and identical
- * bounds), dissolved pixels are set to `fillColor` (packed `0xRRGGBBAA`, matching
- * `setSurfacePixel32`); otherwise each is copied from the matching pixel in
+ * bounds), dissolved pixels are set to `fillColor` (packed `0xRRGGBBAA`);
+ * otherwise each is copied from the matching pixel in
  * `source` and `fillColor` is ignored. Pixels that fall outside the surface are
  * clipped but still consume a step of the sequence.
  */

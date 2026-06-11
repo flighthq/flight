@@ -1,5 +1,30 @@
 import type { SurfaceHistogram, SurfaceRegion } from '@flighthq/types';
 
+import { applySurfacePaletteMap } from './paletteMap';
+
+/**
+ * Applies histogram equalization to `source`, writing into `dest`. Each RGB
+ * channel is equalized independently using its cumulative distribution function,
+ * spreading the tonal range across the full 0..255 output. The alpha channel is
+ * copied unchanged.
+ *
+ * Safe to pass the same surface and region in `dest` and `source` for in-place
+ * equalization (the palette map reads each pixel before writing it).
+ */
+export function equalizeSurfaceHistogram(dest: Readonly<SurfaceRegion>, source: Readonly<SurfaceRegion>): void {
+  const histogram = getSurfaceHistogram(source);
+  const total = source.width * source.height;
+
+  applySurfacePaletteMap(
+    dest,
+    source,
+    buildEqualizeMap(histogram.red, total),
+    buildEqualizeMap(histogram.green, total),
+    buildEqualizeMap(histogram.blue, total),
+    null,
+  );
+}
+
 /**
  * Counts how many pixels in the `source` region fall into each 0..255 value,
  * per channel, and returns four 256-entry arrays. Region pixels outside the
@@ -28,4 +53,16 @@ export function getSurfaceHistogram(source: Readonly<SurfaceRegion>): SurfaceHis
     }
   }
   return { alpha, blue, green, red };
+}
+
+function buildEqualizeMap(bins: number[], total: number): number[] {
+  const map = new Array<number>(256);
+  let cdf = 0;
+  let cdfMin = -1;
+  for (let i = 0; i < 256; i++) {
+    cdf += bins[i];
+    if (bins[i] > 0 && cdfMin === -1) cdfMin = cdf;
+    map[i] = total === cdfMin ? i : Math.round(((cdf - cdfMin) / (total - cdfMin)) * 255);
+  }
+  return map;
 }

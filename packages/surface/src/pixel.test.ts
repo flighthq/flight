@@ -1,63 +1,92 @@
-import { getSurfacePixel, getSurfacePixel32, setSurfacePixel, setSurfacePixel32 } from './pixel';
+import { ImageChannel } from './imageChannel';
+import {
+  getSurfacePixel,
+  getSurfacePixelChannel,
+  getSurfacePixelLuminance,
+  getSurfacePixelRGB,
+  setSurfacePixel,
+  setSurfacePixelRGB,
+} from './pixel';
 import { createSurface } from './surface';
 
 describe('getSurfacePixel', () => {
-  it('reads back an RGB value written by setSurfacePixel', () => {
+  it('reads back a full 0xRRGGBBAA value written by setSurfacePixel', () => {
     const img = createSurface(2, 2);
-    setSurfacePixel(img, 0, 0, 0xaabbcc);
-    expect(getSurfacePixel(img, 0, 0)).toBe(0xaabbcc);
+    setSurfacePixel(img, 0, 0, 0xaabbcc80);
+    expect(getSurfacePixel(img, 0, 0)).toBe(0xaabbcc80);
   });
-});
 
-describe('getSurfacePixel / setSurfacePixel', () => {
-  it('round-trips an RGB value', () => {
+  it('round-trips an RGBA value', () => {
     const img = createSurface(4, 4);
-    setSurfacePixel(img, 1, 2, 0x112233);
-    expect(getSurfacePixel(img, 1, 2)).toBe(0x112233);
-  });
-
-  it('does not touch alpha', () => {
-    const img = createSurface(2, 2, 0x000000ff);
-    setSurfacePixel(img, 0, 0, 0xaabbcc);
-    expect(img.data[3]).toBe(0xff);
-  });
-});
-
-describe('getSurfacePixel32', () => {
-  it('reads back an ARGB value including alpha', () => {
-    const img = createSurface(2, 2);
-    setSurfacePixel32(img, 0, 0, 0xaabbcc80);
-    expect(getSurfacePixel32(img, 0, 0)).toBe(0xaabbcc80);
-  });
-});
-
-describe('getSurfacePixel32 / setSurfacePixel32', () => {
-  it('round-trips an ARGB value', () => {
-    const img = createSurface(4, 4);
-    setSurfacePixel32(img, 2, 1, 0x11223380);
-    expect(getSurfacePixel32(img, 2, 1)).toBe(0x11223380);
+    setSurfacePixel(img, 1, 2, 0x11223380);
+    expect(getSurfacePixel(img, 1, 2)).toBe(0x11223380);
   });
 
   it('stores alpha in the fourth byte', () => {
     const img = createSurface(2, 2);
-    setSurfacePixel32(img, 0, 0, 0x112233de);
+    setSurfacePixel(img, 0, 0, 0x112233de);
     expect(img.data[3]).toBe(0xde);
   });
 });
 
-describe('setSurfacePixel', () => {
-  it('writes RGB channels without touching alpha', () => {
-    const img = createSurface(2, 2, 0x000000ff);
-    setSurfacePixel(img, 0, 0, 0x112233);
-    expect(img.data[3]).toBe(0xff);
-    expect(getSurfacePixel(img, 0, 0)).toBe(0x112233);
+describe('getSurfacePixelChannel', () => {
+  it('reads a single channel by index', () => {
+    const img = createSurface(2, 2);
+    setSurfacePixel(img, 0, 0, 0xaabbccdd);
+    expect(getSurfacePixelChannel(img, 0, 0, ImageChannel.Red)).toBe(0xaa);
+    expect(getSurfacePixelChannel(img, 0, 0, ImageChannel.Green)).toBe(0xbb);
+    expect(getSurfacePixelChannel(img, 0, 0, ImageChannel.Blue)).toBe(0xcc);
+    expect(getSurfacePixelChannel(img, 0, 0, ImageChannel.Alpha)).toBe(0xdd);
   });
 });
 
-describe('setSurfacePixel32', () => {
-  it('writes all four ARGB channels', () => {
+describe('getSurfacePixelLuminance', () => {
+  it('returns 0 for black', () => {
+    const img = createSurface(1, 1, 0x000000ff);
+    expect(getSurfacePixelLuminance(img, 0, 0)).toBe(0);
+  });
+
+  it('returns 255 for white', () => {
+    const img = createSurface(1, 1, 0xffffffff);
+    expect(getSurfacePixelLuminance(img, 0, 0)).toBe(255);
+  });
+
+  it('uses W3C luma weighting (green is heaviest)', () => {
+    const red = createSurface(1, 1, 0xff0000ff);
+    const green = createSurface(1, 1, 0x00ff00ff);
+    const blue = createSurface(1, 1, 0x0000ffff);
+    expect(getSurfacePixelLuminance(green, 0, 0)).toBeGreaterThan(getSurfacePixelLuminance(red, 0, 0));
+    expect(getSurfacePixelLuminance(red, 0, 0)).toBeGreaterThan(getSurfacePixelLuminance(blue, 0, 0));
+  });
+});
+
+describe('getSurfacePixelRGB', () => {
+  it('reads back a 0xRRGGBB value without alpha', () => {
     const img = createSurface(2, 2);
-    setSurfacePixel32(img, 1, 0, 0xadbeefde);
-    expect(getSurfacePixel32(img, 1, 0)).toBe(0xadbeefde);
+    setSurfacePixelRGB(img, 0, 0, 0xaabbcc);
+    expect(getSurfacePixelRGB(img, 0, 0)).toBe(0xaabbcc);
+  });
+
+  it('round-trips an RGB value', () => {
+    const img = createSurface(4, 4);
+    setSurfacePixelRGB(img, 1, 2, 0x112233);
+    expect(getSurfacePixelRGB(img, 1, 2)).toBe(0x112233);
+  });
+});
+
+describe('setSurfacePixel', () => {
+  it('writes all four RGBA channels', () => {
+    const img = createSurface(2, 2);
+    setSurfacePixel(img, 1, 0, 0xadbeefde);
+    expect(getSurfacePixel(img, 1, 0)).toBe(0xadbeefde);
+  });
+});
+
+describe('setSurfacePixelRGB', () => {
+  it('writes RGB channels without touching alpha', () => {
+    const img = createSurface(2, 2, 0x000000ff);
+    setSurfacePixelRGB(img, 0, 0, 0x112233);
+    expect(img.data[3]).toBe(0xff);
+    expect(getSurfacePixelRGB(img, 0, 0)).toBe(0x112233);
   });
 });
