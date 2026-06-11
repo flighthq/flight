@@ -4,4 +4,7 @@ export * from './colorMatrix';
 export * from './convolution';
 export * from './displacement';
 export * from './gradient';
+export * from './median';
+export * from './pixelate';
 export * from './shadow';
+export * from './sharpen';

@@ -1,15 +1,11 @@
 import { extractSurfacePixels } from '@flighthq/surface/composite';
 import type { SurfaceRegion } from '@flighthq/types';
 
-// ─── Option types ─────────────────────────────────────────────────────────────
-
 export interface SurfaceBoxBlurFilterOptions {
   blurX?: number;
   blurY?: number;
   quality?: number;
 }
-
-// ─── Kernel ───────────────────────────────────────────────────────────────────
 
 /**
  * Applies a box blur to `source` and writes the result into `out`.
@@ -53,8 +49,6 @@ export function applySurfaceBoxBlurFilter(
     out.set(a.subarray(0, source.width * source.height * 4));
   }
 }
-
-// ─── Raw pixel-buffer passes ──────────────────────────────────────────────────
 
 /**
  * Applies a Gaussian blur to `source` and writes the result into `out`.
@@ -118,7 +112,7 @@ export function applySurfaceGaussianBlurFilter(
  */
 export function blurSurfacePixelsHorizontal(
   out: Uint8ClampedArray,
-  source: Uint8ClampedArray,
+  source: Readonly<Uint8ClampedArray>,
   width: number,
   height: number,
   radius: number,
@@ -174,10 +168,10 @@ export function blurSurfacePixelsHorizontal(
  */
 export function blurSurfacePixelsHorizontalWeighted(
   out: Uint8ClampedArray,
-  source: Uint8ClampedArray,
+  source: Readonly<Uint8ClampedArray>,
   width: number,
   height: number,
-  kernel: Float32Array,
+  kernel: Readonly<Float32Array>,
 ): void {
   const radius = (kernel.length - 1) >> 1;
   for (let y = 0; y < height; y++) {
@@ -211,7 +205,7 @@ export function blurSurfacePixelsHorizontalWeighted(
  */
 export function blurSurfacePixelsVertical(
   out: Uint8ClampedArray,
-  source: Uint8ClampedArray,
+  source: Readonly<Uint8ClampedArray>,
   width: number,
   height: number,
   radius: number,
@@ -259,8 +253,6 @@ export function blurSurfacePixelsVertical(
   }
 }
 
-// ─── High-level filter functions ──────────────────────────────────────────────
-
 /**
  * Single vertical weighted blur pass. Kernel weights are applied at each
  * position; `kernel.length` must be odd (2 * radius + 1). Reads from
@@ -268,10 +260,10 @@ export function blurSurfacePixelsVertical(
  */
 export function blurSurfacePixelsVerticalWeighted(
   out: Uint8ClampedArray,
-  source: Uint8ClampedArray,
+  source: Readonly<Uint8ClampedArray>,
   width: number,
   height: number,
-  kernel: Float32Array,
+  kernel: Readonly<Float32Array>,
 ): void {
   const radius = (kernel.length - 1) >> 1;
   for (let y = 0; y < height; y++) {
@@ -305,6 +297,13 @@ export function blurSurfacePixelsVerticalWeighted(
  */
 export function computeGaussianKernel(out: Float32Array, radius: number, sigma: number): void {
   const len = 2 * radius + 1;
+  // sigma <= 0 has no spread: a unit impulse at the center (an identity blur).
+  // Computing exp(-x² / 0) would otherwise fill the kernel with NaN.
+  if (sigma <= 0) {
+    out.fill(0, 0, len);
+    out[radius] = 1;
+    return;
+  }
   let sum = 0;
   const twoSigmaSq = 2 * sigma * sigma;
   for (let i = 0; i < len; i++) {

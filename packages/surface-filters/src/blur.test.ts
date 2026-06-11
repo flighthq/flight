@@ -1,3 +1,4 @@
+import { premultiplySurfacePixels, unpremultiplySurfacePixels } from '@flighthq/surface/format';
 import { createSurface } from '@flighthq/surface/surface';
 
 import {
@@ -19,8 +20,6 @@ function region(
 ) {
   return { surface, x, y, width, height };
 }
-
-// ─── computeGaussianKernel ────────────────────────────────────────────────────
 
 describe('applySurfaceBoxBlurFilter', () => {
   it('spreads alpha into neighboring pixels', () => {
@@ -58,9 +57,20 @@ describe('applySurfaceBoxBlurFilter', () => {
     expect(surface.data[3]).toBeGreaterThan(0);
     expect(surface.data[11]).toBeGreaterThan(0);
   });
-});
 
-// ─── blurSurfacePixelsHorizontal ──────────────────────────────────────────────
+  it('blurs only the offset sub-region, reading from the right source pixels', () => {
+    // 4 px alpha: [_, 255, 100, _]. Blurring region (1,0,2,1) extracts [255,100]
+    // and averages them — proving the source x-offset is honored, not ignored.
+    const surface = createSurface(4, 1);
+    surface.data[1 * 4 + 3] = 255;
+    surface.data[2 * 4 + 3] = 100;
+    const out = new Uint8ClampedArray(2 * 4);
+    const scratch = new Uint8ClampedArray(2 * 4);
+    applySurfaceBoxBlurFilter(out, scratch, region(surface, 1, 0, 2, 1), { blurX: 2, blurY: 0 });
+    expect(out[3]).toBe(178); // round((255 + 100) / 2)
+    expect(out[7]).toBe(178);
+  });
+});
 
 describe('applySurfaceGaussianBlurFilter', () => {
   it('spreads alpha into neighboring pixels', () => {
@@ -100,8 +110,6 @@ describe('applySurfaceGaussianBlurFilter', () => {
   });
 });
 
-// ─── blurSurfacePixelsVertical ────────────────────────────────────────────────
-
 describe('blurSurfacePixelsHorizontal', () => {
   it('spreads alpha into horizontal neighbors', () => {
     const source = new Uint8ClampedArray([0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0]);
@@ -119,6 +127,25 @@ describe('blurSurfacePixelsHorizontal', () => {
     expect(out[7]).toBe(0);
   });
 
+  it('premultiplying before blur avoids the dark-halo artifact at transparent edges', () => {
+    // [opaque red, transparent]. Straight-alpha blur bleeds the transparent
+    // pixel's hidden black into the red; a premultiplied blur keeps it pure red.
+    const buf = new Uint8ClampedArray([255, 0, 0, 255, 0, 0, 0, 0]);
+
+    const straight = new Uint8ClampedArray(8);
+    blurSurfacePixelsHorizontal(straight, buf, 2, 1, 1);
+    expect(straight[4]).toBe(128); // transparent pixel's red darkened toward black
+
+    const premul = new Uint8ClampedArray(8);
+    premultiplySurfacePixels(premul, buf, 8);
+    const blurred = new Uint8ClampedArray(8);
+    blurSurfacePixelsHorizontal(blurred, premul, 2, 1, 1);
+    const result = new Uint8ClampedArray(8);
+    unpremultiplySurfacePixels(result, blurred, 8);
+    expect(result[4]).toBe(255); // red stays pure
+    expect(result[7]).toBe(128); // alpha still half
+  });
+
   it('produces correct edge average for a single row', () => {
     // pixels: [0, 255, 0] alpha only; radius=1
     // x=0: avg([0,255])/2 = 128 (approx); x=1: avg([0,255,0])/3 = 85; x=2: avg([255,0])/2 = 128
@@ -130,8 +157,6 @@ describe('blurSurfacePixelsHorizontal', () => {
     expect(out[11]).toBe(128); // (255+0)/2
   });
 });
-
-// ─── blurSurfacePixelsHorizontalWeighted ─────────────────────────────────────
 
 describe('blurSurfacePixelsHorizontalWeighted', () => {
   it('applies Gaussian weights to horizontal neighbors', () => {
@@ -155,8 +180,6 @@ describe('blurSurfacePixelsHorizontalWeighted', () => {
   });
 });
 
-// ─── blurSurfacePixelsVerticalWeighted ───────────────────────────────────────
-
 describe('blurSurfacePixelsVertical', () => {
   it('spreads alpha into vertical neighbors', () => {
     const source = new Uint8ClampedArray([0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0]);
@@ -166,8 +189,6 @@ describe('blurSurfacePixelsVertical', () => {
     expect(out[11]).toBeGreaterThan(0);
   });
 });
-
-// ─── applySurfaceBoxBlurFilter ────────────────────────────────────────────────
 
 describe('blurSurfacePixelsVerticalWeighted', () => {
   it('applies Gaussian weights to vertical neighbors', () => {
@@ -179,8 +200,6 @@ describe('blurSurfacePixelsVerticalWeighted', () => {
     expect(out[7]).toBeGreaterThan(out[3]);
   });
 });
-
-// ─── applySurfaceGaussianBlurFilter ──────────────────────────────────────────
 
 describe('computeGaussianKernel', () => {
   it('produces a kernel that sums to 1', () => {
@@ -209,5 +228,14 @@ describe('computeGaussianKernel', () => {
     const kernel = new Float32Array(1);
     computeGaussianKernel(kernel, 0, 1.0);
     expect(kernel[0]).toBeCloseTo(1, 10);
+  });
+
+  it('sigma <= 0 produces a unit impulse rather than a NaN kernel', () => {
+    const kernel = new Float32Array(5).fill(9);
+    computeGaussianKernel(kernel, 2, 0);
+    expect(kernel[2]).toBe(1);
+    expect(kernel[0]).toBe(0);
+    expect(kernel[4]).toBe(0);
+    expect(kernel.every((v) => !Number.isNaN(v))).toBe(true);
   });
 });

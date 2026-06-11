@@ -2,8 +2,6 @@ import type { SurfaceRegion } from '@flighthq/types';
 
 import { blurSurfacePixelsHorizontal, blurSurfacePixelsVertical } from './blur';
 
-// ─── Option types ─────────────────────────────────────────────────────────────
-
 export interface SurfaceBlurOptions {
   blurX?: number;
   blurY?: number;
@@ -33,8 +31,6 @@ export interface SurfaceInnerShadowFilterOptions extends SurfaceBlurOptions {
   color?: number;
   strength?: number;
 }
-
-// ─── Filter functions ─────────────────────────────────────────────────────────
 
 /**
  * Produces the blurred shadow mask for a drop shadow effect, writing into
@@ -174,8 +170,6 @@ export function tintSurfaceAlphaMask(
     }
   }
 }
-
-// ─── Private helpers ──────────────────────────────────────────────────────────
 
 function applyInnerEffect(
   out: Uint8ClampedArray,

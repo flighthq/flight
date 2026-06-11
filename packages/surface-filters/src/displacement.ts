@@ -101,8 +101,6 @@ export function applySurfaceDisplacementMapFilter(
   }
 }
 
-// ─── Private helpers ──────────────────────────────────────────────────────────
-
 // A map sample outside the map's bounds is neutral (128) — no displacement.
 function sampleMapChannel(map: Readonly<SurfaceRegion>, px: number, py: number, component: number): number {
   const mx = map.x + px;

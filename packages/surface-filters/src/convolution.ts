@@ -28,12 +28,23 @@ export function applySurfaceConvolutionFilter(
   if (matrixX <= 0 || matrixY <= 0) throw new Error('Convolution filter matrix dimensions must be positive');
   if (matrix.length < matrixX * matrixY) throw new Error('Convolution filter matrix does not match its dimensions');
 
-  const divisor = options.divisor ?? getConvolutionDivisor(matrix, matrixX * matrixY);
+  // A user-supplied divisor of 0 (or an all-zero matrix) would divide by zero;
+  // fall back to 1 so the weighted sum passes through unscaled.
+  const rawDivisor = options.divisor ?? getConvolutionDivisor(matrix, matrixX * matrixY);
+  const divisor = rawDivisor === 0 ? 1 : rawDivisor;
   const bias = options.bias ?? 0;
   const clampEdge = options.clamp ?? true;
   const preserveAlpha = options.preserveAlpha ?? true;
+  const color = options.color ?? 0;
   const offsetX = Math.floor(matrixX / 2);
   const offsetY = Math.floor(matrixY / 2);
+  const surfaceWidth = source.surface.width;
+  const surfaceHeight = source.surface.height;
+  const data = source.surface.data;
+  const fillR = (color >>> 24) & 0xff;
+  const fillG = (color >> 16) & 0xff;
+  const fillB = (color >> 8) & 0xff;
+  const fillA = color & 0xff;
 
   for (let py = 0; py < source.height; py++) {
     for (let px = 0; px < source.width; px++) {
@@ -42,32 +53,41 @@ export function applySurfaceConvolutionFilter(
       let b = 0;
       let a = 0;
       for (let ky = 0; ky < matrixY; ky++) {
+        const sampleY = source.y + py + ky - offsetY;
+        const clampedY = sampleY < 0 ? 0 : sampleY >= surfaceHeight ? surfaceHeight - 1 : sampleY;
+        const rowInBounds = sampleY >= 0 && sampleY < surfaceHeight;
         for (let kx = 0; kx < matrixX; kx++) {
-          const sample = sampleConvolutionPixel(
-            source,
-            source.x + px + kx - offsetX,
-            source.y + py + ky - offsetY,
-            clampEdge,
-            options.color ?? 0,
-          );
+          const sampleX = source.x + px + kx - offsetX;
           const weight = matrix[ky * matrixX + kx];
-          r += sample.r * weight;
-          g += sample.g * weight;
-          b += sample.b * weight;
-          a += sample.a * weight;
+          if (!clampEdge && (!rowInBounds || sampleX < 0 || sampleX >= surfaceWidth)) {
+            r += fillR * weight;
+            g += fillG * weight;
+            b += fillB * weight;
+            a += fillA * weight;
+            continue;
+          }
+          const clampedX = sampleX < 0 ? 0 : sampleX >= surfaceWidth ? surfaceWidth - 1 : sampleX;
+          const i = (clampedY * surfaceWidth + clampedX) * 4;
+          r += data[i] * weight;
+          g += data[i + 1] * weight;
+          b += data[i + 2] * weight;
+          a += data[i + 3] * weight;
         }
       }
       const di = (py * source.width + px) * 4;
-      const center = sampleConvolutionPixel(source, source.x + px, source.y + py, true, 0);
       out[di] = clampByte(r / divisor + bias);
       out[di + 1] = clampByte(g / divisor + bias);
       out[di + 2] = clampByte(b / divisor + bias);
-      out[di + 3] = preserveAlpha ? center.a : clampByte(a / divisor + bias);
+      if (preserveAlpha) {
+        const cy = Math.max(0, Math.min(surfaceHeight - 1, source.y + py));
+        const cx = Math.max(0, Math.min(surfaceWidth - 1, source.x + px));
+        out[di + 3] = data[(cy * surfaceWidth + cx) * 4 + 3];
+      } else {
+        out[di + 3] = clampByte(a / divisor + bias);
+      }
     }
   }
 }
-
-// ─── Private helpers ──────────────────────────────────────────────────────────
 
 function clampByte(value: number): number {
   return Math.max(0, Math.min(255, Math.round(value)));
@@ -79,31 +99,4 @@ function getConvolutionDivisor(matrix: ReadonlyArray<number>, length: number): n
     sum += matrix[i];
   }
   return sum === 0 ? 1 : sum;
-}
-
-function sampleConvolutionPixel(
-  source: Readonly<SurfaceRegion>,
-  x: number,
-  y: number,
-  clampEdge: boolean,
-  color: number,
-): { a: number; b: number; g: number; r: number } {
-  if (clampEdge) {
-    x = Math.max(0, Math.min(source.surface.width - 1, x));
-    y = Math.max(0, Math.min(source.surface.height - 1, y));
-  } else if (x < 0 || x >= source.surface.width || y < 0 || y >= source.surface.height) {
-    return {
-      a: color & 0xff,
-      b: (color >> 8) & 0xff,
-      g: (color >> 16) & 0xff,
-      r: (color >>> 24) & 0xff,
-    };
-  }
-  const i = (y * source.surface.width + x) * 4;
-  return {
-    a: source.surface.data[i + 3],
-    b: source.surface.data[i + 2],
-    g: source.surface.data[i + 1],
-    r: source.surface.data[i],
-  };
 }

@@ -42,8 +42,10 @@ export interface SurfaceBevelFilterOptions {
  *
  * `blurBuffer` must be at least `source.width * source.height * 4` bytes; it must
  * be a distinct buffer from `out` (the blurred alpha is sampled while `out` is
- * written). Its contents are undefined after the call. Safe to pass
- * `source.surface.data` as `out` when the region covers the full surface.
+ * written). Its contents are undefined after the call.
+ *
+ * `out` must NOT alias `source.surface.data`: `out` is used as the blur scratch,
+ * and the source alpha is read again afterward for `inner`/`outer` clipping.
  */
 export function applySurfaceBevelFilter(
   out: Uint8ClampedArray,
@@ -100,8 +102,6 @@ export function applySurfaceBevelFilter(
     }
   }
 }
-
-// ─── Private helpers ──────────────────────────────────────────────────────────
 
 function blurField(
   field: Uint8ClampedArray,

@@ -67,4 +67,18 @@ describe('applySurfaceConvolutionFilter', () => {
     const out = new Uint8ClampedArray(4);
     expect(() => applySurfaceConvolutionFilter(out, region(source), { matrix: [1], matrixX: 3, matrixY: 3 })).toThrow();
   });
+
+  it('treats an explicit divisor of 0 as passthrough (no division by zero)', () => {
+    const source = createSurface(1, 1, 0x804020ff);
+    const out = new Uint8ClampedArray(4);
+    applySurfaceConvolutionFilter(out, region(source), {
+      divisor: 0,
+      matrix: [1],
+      matrixX: 1,
+      matrixY: 1,
+      preserveAlpha: false,
+    });
+    expect(out[0]).toBe(0x80);
+    expect(Number.isNaN(out[0])).toBe(false);
+  });
 });

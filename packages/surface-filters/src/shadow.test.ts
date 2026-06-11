@@ -19,8 +19,6 @@ function region(
   return { surface, x, y, width, height };
 }
 
-// ─── tintSurfaceAlphaMask ─────────────────────────────────────────────────────
-
 describe('applySurfaceDropShadowFilter', () => {
   it('produces a tinted alpha mask in out', () => {
     const source = createSurface(1, 1, 0xffffffff);
@@ -58,9 +56,15 @@ describe('applySurfaceDropShadowFilter', () => {
     expect(dest.data[0]).toBe(0xff);
     expect(dest.data[3]).toBe(0xff);
   });
-});
 
-// ─── applySurfaceDropShadowFilter ─────────────────────────────────────────────
+  it('source.surface.data can be used as out for a full-surface region', () => {
+    const surface = createSurface(1, 1, 0xffffffff);
+    const scratch = new Uint8ClampedArray(4);
+    applySurfaceDropShadowFilter(surface.data, scratch, region(surface), { blurX: 0, blurY: 0, color: 0x0000ff });
+    expect(surface.data[2]).toBe(0xff); // tinted blue
+    expect(surface.data[3]).toBe(0xff); // alpha carried from source
+  });
+});
 
 describe('applySurfaceGlowFilter', () => {
   it('produces a tinted alpha mask in out', () => {
@@ -93,6 +97,14 @@ describe('applySurfaceGlowFilter', () => {
     compositeSurfaceRegion(region(dest), region(source));
     expect(dest.data[0]).toBe(0xff);
     expect(dest.data[3]).toBe(0xff);
+  });
+
+  it('source.surface.data can be used as out for a full-surface region', () => {
+    const surface = createSurface(1, 1, 0xffffffff);
+    const scratch = new Uint8ClampedArray(4);
+    applySurfaceGlowFilter(surface.data, scratch, region(surface), { blurX: 0, blurY: 0, color: 0x00ff00 });
+    expect(surface.data[1]).toBe(0xff);
+    expect(surface.data[3]).toBe(0xff);
   });
 });
 
