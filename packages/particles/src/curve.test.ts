@@ -5,7 +5,9 @@ import {
   bakeColorCurve,
   bakeCurve,
   colorCurveFromKeyframes,
+  colorCurveToKeyframes,
   curveFromKeyframes,
+  curveToKeyframes,
   sampleColorCurve,
   sampleCurve,
 } from './curve';
@@ -20,15 +22,7 @@ function makeAtlas(): TextureAtlas {
   } as TextureAtlas;
 }
 
-describe('bakeCurve / bakeColorCurve', () => {
-  it('bakes a scalar function into a LUT sampled at the endpoints', () => {
-    const lut = bakeCurve((t) => t * t, 5);
-    expect(lut.length).toBe(5);
-    expect(lut[0]).toBe(0);
-    expect(lut[4]).toBe(1);
-    expect(sampleCurve(lut, 0.5)).toBeCloseTo(0.25, 1);
-  });
-
+describe('bakeColorCurve', () => {
   it('bakes an RGB function into an interleaved LUT', () => {
     const lut = bakeColorCurve((t) => [t, 0, 1 - t], 3);
     expect(lut.length).toBe(9);
@@ -37,7 +31,62 @@ describe('bakeCurve / bakeColorCurve', () => {
   });
 });
 
-describe('curveFromKeyframes / colorCurveFromKeyframes', () => {
+describe('bakeCurve', () => {
+  it('bakes a scalar function into a LUT sampled at the endpoints', () => {
+    const lut = bakeCurve((t) => t * t, 5);
+    expect(lut.length).toBe(5);
+    expect(lut[0]).toBe(0);
+    expect(lut[4]).toBe(1);
+    expect(sampleCurve(lut, 0.5)).toBeCloseTo(0.25, 1);
+  });
+});
+
+describe('colorCurveFromKeyframes', () => {
+  it('bakes an RGB timeline through its middle stop', () => {
+    const lut = colorCurveFromKeyframes([
+      { time: 0, r: 1, g: 0, b: 0 },
+      { time: 0.5, r: 0, g: 1, b: 0 },
+      { time: 1, r: 0, g: 0, b: 1 },
+    ]);
+    const out = [0, 0, 0];
+    sampleColorCurve(lut, 0.5, out, 0);
+    expect(out[1]).toBeGreaterThan(0.8); // green at mid
+  });
+
+  it('an empty keyframe list yields a flat transparent curve', () => {
+    const lut = colorCurveFromKeyframes([]);
+    const out = [9, 9, 9];
+    sampleColorCurve(lut, 0.5, out, 0);
+    expect(out).toEqual([0, 0, 0]);
+  });
+});
+
+describe('colorCurveToKeyframes', () => {
+  it('emits one RGB keyframe per LUT sample at uniform times', () => {
+    const keys = colorCurveToKeyframes([1, 0, 0, 0, 0, 1]); // red → blue
+    expect(keys).toEqual([
+      { time: 0, r: 1, g: 0, b: 0 },
+      { time: 1, r: 0, g: 0, b: 1 },
+    ]);
+  });
+
+  it('round-trips a baked color curve back to keyframes', () => {
+    const lut = colorCurveFromKeyframes([
+      { time: 0, r: 1, g: 0, b: 0 },
+      { time: 1, r: 0, g: 0, b: 1 },
+    ]);
+    const keys = colorCurveToKeyframes(lut);
+    expect(keys[0]).toEqual({ time: 0, r: 1, g: 0, b: 0 });
+    expect(keys[keys.length - 1]).toEqual({ time: 1, r: 0, g: 0, b: 1 });
+  });
+
+  it('handles empty and single-entry LUTs', () => {
+    expect(colorCurveToKeyframes([])).toEqual([]);
+    expect(colorCurveToKeyframes([0.2, 0.4, 0.6])).toEqual([{ time: 0, r: 0.2, g: 0.4, b: 0.6 }]);
+  });
+});
+
+describe('curveFromKeyframes', () => {
   it('interpolates a 3-stop scalar timeline through its middle stop', () => {
     const lut = curveFromKeyframes([
       { time: 0, value: 0 },
@@ -74,15 +123,38 @@ describe('curveFromKeyframes / colorCurveFromKeyframes', () => {
     expect(sampleCurve(lut, 1)).toBeCloseTo(3);
   });
 
-  it('bakes an RGB timeline through its middle stop', () => {
-    const lut = colorCurveFromKeyframes([
-      { time: 0, r: 1, g: 0, b: 0 },
-      { time: 0.5, r: 0, g: 1, b: 0 },
-      { time: 1, r: 0, g: 0, b: 1 },
+  it('an empty keyframe list yields a flat zero curve', () => {
+    const lut = curveFromKeyframes([]);
+    expect(sampleCurve(lut, 0)).toBe(0);
+    expect(sampleCurve(lut, 1)).toBe(0);
+  });
+});
+
+describe('curveToKeyframes', () => {
+  it('emits one keyframe per LUT sample at uniform times', () => {
+    const keys = curveToKeyframes([0, 0.5, 1]);
+    expect(keys).toEqual([
+      { time: 0, value: 0 },
+      { time: 0.5, value: 0.5 },
+      { time: 1, value: 1 },
     ]);
-    const out = [0, 0, 0];
-    sampleColorCurve(lut, 0.5, out, 0);
-    expect(out[1]).toBeGreaterThan(0.8); // green at mid
+  });
+
+  it('round-trips a baked scalar curve back to keyframes', () => {
+    const lut = curveFromKeyframes([
+      { time: 0, value: 0 },
+      { time: 1, value: 10 },
+    ]);
+    const keys = curveToKeyframes(lut);
+    expect(keys[0]).toEqual({ time: 0, value: 0 });
+    expect(keys[keys.length - 1]).toEqual({ time: 1, value: 10 });
+    // Reconstructing from the keyframes reproduces the original samples.
+    expect(sampleCurve(curveFromKeyframes(keys, lut.length), 0.5)).toBeCloseTo(sampleCurve(lut, 0.5), 5);
+  });
+
+  it('handles empty and single-entry LUTs', () => {
+    expect(curveToKeyframes([])).toEqual([]);
+    expect(curveToKeyframes([7])).toEqual([{ time: 0, value: 7 }]);
   });
 });
 

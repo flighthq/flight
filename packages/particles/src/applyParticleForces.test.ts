@@ -31,7 +31,7 @@ function oneParticle() {
   return { emitter, state };
 }
 
-describe('applyParticleForces (emitter)', () => {
+describe('applyParticleForces', () => {
   it('attractor pulls velocity toward the point', () => {
     const { emitter, state } = oneParticle();
     emitter.data.transforms[0] = 0;
@@ -151,7 +151,7 @@ function makeObject(): ParticleObject {
   } as HasTransform2D & HasAppearance;
 }
 
-describe('applyParticleObjectForces (object pool)', () => {
+describe('applyParticleObjectForces', () => {
   it('applies forces only to live objects', () => {
     const objects = [makeObject(), makeObject()];
     const state = createParticleObjectsState(2);
