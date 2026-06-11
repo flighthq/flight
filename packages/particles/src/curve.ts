@@ -57,6 +57,17 @@ export function colorCurveFromKeyframes(keys: ReadonlyArray<ColorKeyframe>, samp
   }, samples);
 }
 
+/** Convert a baked interleaved RGB curve LUT (length N×3) back into color
+ *  keyframes (one per sample, at uniform times). */
+export function colorCurveToKeyframes(lut: ParticleCurve): ColorKeyframe[] {
+  const n = Math.floor(lut.length / 3);
+  if (n === 0) return [];
+  if (n === 1) return [{ time: 0, r: lut[0], g: lut[1], b: lut[2] }];
+  const keys: ColorKeyframe[] = new Array(n);
+  for (let i = 0; i < n; i++) keys[i] = { time: i / (n - 1), r: lut[i * 3], g: lut[i * 3 + 1], b: lut[i * 3 + 2] };
+  return keys;
+}
+
 /** Bake a piecewise-linear scalar timeline (e.g. an imported alpha-over-lifetime
  *  curve) into a uniform LUT. Keyframes need not be sorted; times are clamped to
  *  the [first, last] range. */
@@ -64,6 +75,18 @@ export function curveFromKeyframes(keys: ReadonlyArray<CurveKeyframe>, samples =
   if (keys.length === 0) return [0, 0];
   const sorted = keys.slice().sort((a, b) => a.time - b.time);
   return bakeCurve((t) => interpKeyframe(sorted, t), samples);
+}
+
+/** Convert a baked scalar curve LUT back into keyframes (one per sample, at
+ *  uniform times). The inverse of {@link curveFromKeyframes} for the common case
+ *  of a 33-sample LUT — used by format serializers to round-trip authored curves. */
+export function curveToKeyframes(lut: ParticleCurve): CurveKeyframe[] {
+  const n = lut.length;
+  if (n === 0) return [];
+  if (n === 1) return [{ time: 0, value: lut[0] }];
+  const keys: CurveKeyframe[] = new Array(n);
+  for (let i = 0; i < n; i++) keys[i] = { time: i / (n - 1), value: lut[i] };
+  return keys;
 }
 
 function interpKeyframe(sorted: ReadonlyArray<CurveKeyframe>, t: number): number {
