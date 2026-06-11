@@ -13,6 +13,8 @@ const CELL_SIZE = IMG_SIZE + 4;
 const LABEL_SIZE = 56;
 const PAD = 8;
 
+const fullRegion = (surface: Surface) => ({ surface, x: 0, y: 0, width: surface.width, height: surface.height });
+
 function createCheckers(color1: number, color2: number, tileSize = 8): Surface {
   const img = createSurface(IMG_SIZE, IMG_SIZE, color1);
   for (let y = 0; y < IMG_SIZE; y++) {
@@ -54,7 +56,10 @@ function createBall(color: number, alpha = 255): Surface {
 
 function createRect(color: number, inset = 4): Surface {
   const img = createSurface(IMG_SIZE, IMG_SIZE);
-  fillSurfaceRectangle(img, inset, inset, IMG_SIZE - inset * 2, IMG_SIZE - inset * 2, color);
+  fillSurfaceRectangle(
+    { surface: img, x: inset, y: inset, width: IMG_SIZE - inset * 2, height: IMG_SIZE - inset * 2 },
+    color,
+  );
   return img;
 }
 
@@ -91,7 +96,7 @@ for (let col = 0; col < n; col++) {
   const { label, img } = sources[col];
 
   if (img) {
-    drawSurface(canvas, img, x + 2, 2);
+    drawSurface(canvas, fullRegion(img), x + 2, 2);
   } else {
     ctx.fillStyle = '#333';
     ctx.fillRect(x + 2, 2, IMG_SIZE, IMG_SIZE);
@@ -116,7 +121,7 @@ for (let row = 0; row < n; row++) {
   const { label: rowLabel, img: rowImg } = sources[row];
 
   if (rowImg) {
-    drawSurface(canvas, rowImg, 2, y + 2);
+    drawSurface(canvas, fullRegion(rowImg), 2, y + 2);
   } else {
     ctx.fillStyle = '#333';
     ctx.fillRect(2, y + 2, IMG_SIZE, IMG_SIZE);
@@ -177,5 +182,5 @@ function drawCell(
     return;
   }
 
-  drawSurface(canvas, result, x, y);
+  drawSurface(canvas, fullRegion(result), x, y);
 }
