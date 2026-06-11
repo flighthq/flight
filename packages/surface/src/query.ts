@@ -1,17 +1,21 @@
-import type { ColorBoundsRectangle, SurfaceRegion } from '@flighthq/types';
+import type { RectangleLike, SurfaceRegion } from '@flighthq/types';
 
 /**
  * Scans the `source` region for pixels matching `color` under `mask`
  * (`findColor` true) or not matching it (false), and returns the tightest
  * bounding rectangle of those pixels in surface-absolute coordinates, or `null`
  * if none match. Region pixels outside the surface are skipped.
+ *
+ * The comparison is performed on the full packed 0xRRGGBBAA pixel value. To
+ * match by a subset of channels, supply a `mask` that isolates the relevant
+ * bytes — e.g. 0xffffff00 to ignore alpha.
  */
 export function getSurfaceColorBoundsRectangle(
   source: Readonly<SurfaceRegion>,
   mask: number,
   color: number,
   findColor: boolean = true,
-): ColorBoundsRectangle | null {
+): RectangleLike | null {
   const data = source.surface.data;
   const surfaceWidth = source.surface.width;
   const maskedColor = (color >>> 0) & (mask >>> 0);

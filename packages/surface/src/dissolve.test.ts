@@ -1,5 +1,5 @@
 import { dissolveSurfacePixels } from './dissolve';
-import { getSurfacePixel32, setSurfacePixel32 } from './pixel';
+import { getSurfacePixel, setSurfacePixel } from './pixel';
 import { createSurfaceRegion } from './region';
 import { createSurface } from './surface';
 
@@ -29,7 +29,7 @@ describe('dissolveSurfacePixels', () => {
 
   it('eventually covers every pixel exactly once so dest matches source', () => {
     const source = createSurface(5, 3);
-    for (let i = 0; i < 5 * 3; i++) setSurfacePixel32(source, i % 5, (i / 5) | 0, (0x01010100 * (i + 1)) >>> 0);
+    for (let i = 0; i < 5 * 3; i++) setSurfacePixel(source, i % 5, (i / 5) | 0, (0x01010100 * (i + 1)) >>> 0);
     const dest = createSurface(5, 3, 0x00000000);
     const sourceRegion = createSurfaceRegion(source);
     const destRegion = createSurfaceRegion(dest);
@@ -69,7 +69,7 @@ describe('dissolveSurfacePixels', () => {
     const region = createSurfaceRegion(surface);
     let seed = 0;
     for (let call = 0; call < 9; call++) seed = dissolveSurfacePixels(region, region, seed, 1, 0x99887766);
-    for (let i = 0; i < 9; i++) expect(getSurfacePixel32(surface, i % 3, (i / 3) | 0)).toBe(0x99887766);
+    for (let i = 0; i < 9; i++) expect(getSurfacePixel(surface, i % 3, (i / 3) | 0)).toBe(0x99887766);
   });
 
   it('ignores fillColor and copies from source when regions differ', () => {

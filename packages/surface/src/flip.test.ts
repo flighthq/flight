@@ -1,5 +1,5 @@
 import { flipSurfaceHorizontal, flipSurfaceVertical } from './flip';
-import { getSurfacePixel32 } from './pixel';
+import { getSurfacePixel } from './pixel';
 import { createSurface } from './surface';
 
 function region(
@@ -46,8 +46,8 @@ describe('flipSurfaceVertical', () => {
     const source = ramp(1, 3);
     const out = createSurface(1, 3);
     flipSurfaceVertical(region(out), region(source));
-    expect(getSurfacePixel32(out, 0, 0)).toBe(getSurfacePixel32(source, 0, 2));
-    expect(getSurfacePixel32(out, 0, 2)).toBe(getSurfacePixel32(source, 0, 0));
+    expect(getSurfacePixel(out, 0, 0)).toBe(getSurfacePixel(source, 0, 2));
+    expect(getSurfacePixel(out, 0, 2)).toBe(getSurfacePixel(source, 0, 0));
   });
 
   it('mirrors in place when dest and source are the same region', () => {
