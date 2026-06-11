@@ -74,6 +74,28 @@ describe('loadParticleDesignerPlist — full round-trip, returns { config, docum
   });
 });
 
+describe('loadParticleDesignerPlist — import warnings', () => {
+  it('has no warnings for a standard gravity emitter', () => {
+    expect(loadParticleDesignerPlist(FIRE_PLIST).warnings).toEqual([]);
+  });
+
+  it('warns that a radial emitter is approximated', () => {
+    const plist = FIRE_PLIST.replace(
+      '<key>emitterType</key><integer>0</integer>',
+      '<key>emitterType</key><integer>1</integer>',
+    );
+    expect(loadParticleDesignerPlist(plist).warnings.some((w) => w.toLowerCase().includes('radial'))).toBe(true);
+  });
+
+  it('warns about unsupported radial/tangential acceleration', () => {
+    const plist = FIRE_PLIST.replace(
+      '<key>maxParticles</key><integer>200</integer>',
+      '<key>maxParticles</key><integer>200</integer><key>radialAcceleration</key><real>50</real>',
+    );
+    expect(loadParticleDesignerPlist(plist).warnings.some((w) => w.includes('radialAcceleration'))).toBe(true);
+  });
+});
+
 describe('parseParticleDesignerPlist — color variance and blend mode', () => {
   it('maps startColorVariance fields to colorStartVariance', () => {
     const plist = FIRE_PLIST.replace(

@@ -1,10 +1,11 @@
-import { reserveFloat32Array } from '@flighthq/geometry';
 import { invalidateLocalBounds } from '@flighthq/scene';
 import { reserveParticleEmitter } from '@flighthq/scene-sprite';
 import type { ParticleEmitter } from '@flighthq/types';
 
+import { sampleColorCurve, sampleCurve } from './curve';
 import type { ParticleEmitterConfig } from './particleEmitterConfig';
 import type { ParticleEmitterState } from './particleEmitterState';
+import { ensureParticleEmitterStateCapacity } from './particleEmitterState';
 
 const PARTICLE_TRANSFORM_STRIDE = 4; // must match scene-sprite/particleEmitter.ts
 const TWO_PI = Math.PI * 2;
@@ -93,7 +94,16 @@ export function updateParticleEmitter(
     config.colorEndVarianceB !== 0;
   const hasColorGradient =
     hasColorVariance || colorStartR !== colorEndR || colorStartG !== colorEndG || colorStartB !== colorEndB;
-  const hasScaleAnim = config.scaleEnd !== 1;
+  // Opt-in lifetime curves override the linear paths below; an emitter without
+  // curves never touches these branches beyond a predicted-not-taken check.
+  const alphaCurve = config.alphaCurve;
+  const colorCurve = config.colorCurve;
+  const scaleCurve = config.scaleCurve;
+  const hasAlphaCurve = alphaCurve != null && alphaCurve.length > 0;
+  const hasColorCurve = colorCurve != null && colorCurve.length >= 3;
+  const hasScaleCurve = scaleCurve != null && scaleCurve.length > 0;
+  const hasScaleAnim = config.scaleEnd !== 1 || hasScaleCurve;
+  const hasColorWork = hasColorCurve || hasColorGradient;
   const hasRotationSpeed = config.rotationSpeedMin !== 0 || config.rotationSpeedMax !== 0;
   const hasFlipbook = config.frameCount > 1;
   const onDeath = callbacks?.onDeath;
@@ -154,11 +164,15 @@ export function updateParticleEmitter(
 
     const lifeFraction = lifetimes[lt] / lifetimes[lt + 1];
 
-    data.alphas[i] = config.alphaStart + (config.alphaEnd - config.alphaStart) * lifeFraction;
+    data.alphas[i] = hasAlphaCurve
+      ? sampleCurve(alphaCurve, lifeFraction)
+      : config.alphaStart + (config.alphaEnd - config.alphaStart) * lifeFraction;
 
-    if (hasColorGradient) {
+    if (hasColorWork) {
       const ct = i * 3;
-      if (hasColorVariance) {
+      if (hasColorCurve) {
+        sampleColorCurve(colorCurve, lifeFraction, data.colors, ct);
+      } else if (hasColorVariance) {
         data.colors[ct] = state.colorBirth[ct] + (state.colorDeath[ct] - state.colorBirth[ct]) * lifeFraction;
         data.colors[ct + 1] =
           state.colorBirth[ct + 1] + (state.colorDeath[ct + 1] - state.colorBirth[ct + 1]) * lifeFraction;
@@ -172,7 +186,10 @@ export function updateParticleEmitter(
     }
 
     if (hasScaleAnim) {
-      data.transforms[tt + 3] = scales[i] * (1 + (config.scaleEnd - 1) * lifeFraction);
+      const scaleFactor = hasScaleCurve
+        ? sampleCurve(scaleCurve, lifeFraction)
+        : 1 + (config.scaleEnd - 1) * lifeFraction;
+      data.transforms[tt + 3] = scales[i] * scaleFactor;
     }
 
     if (hasRotationSpeed) {
@@ -212,7 +229,7 @@ export function updateParticleEmitter(
   if (toSpawn > 0) {
     const newCount = liveCount + toSpawn;
     reserveParticleEmitter(emitter, newCount);
-    ensureStateCapacity(state, newCount, hasColorVariance);
+    ensureParticleEmitterStateCapacity(state, newCount, hasColorVariance);
 
     const baseAngle = Math.atan2(config.directionY, config.directionX);
     const regionRange = config.regionIdMax - config.regionIdMin;
@@ -290,12 +307,14 @@ export function updateParticleEmitter(
       data.transforms[tt] = spawnX;
       data.transforms[tt + 1] = spawnY;
       data.transforms[tt + 2] = angle;
-      data.transforms[tt + 3] = spawnScale;
-      data.alphas[idx] = config.alphaStart;
+      data.transforms[tt + 3] = hasScaleCurve ? spawnScale * sampleCurve(scaleCurve, 0) : spawnScale;
+      data.alphas[idx] = hasAlphaCurve ? sampleCurve(alphaCurve, 0) : config.alphaStart;
 
-      // Color — use variance if set, otherwise config constants
+      // Color — curve takes precedence, then per-particle variance, then constants
       const ct = idx * 3;
-      if (hasColorVariance) {
+      if (hasColorCurve) {
+        sampleColorCurve(colorCurve, 0, data.colors, ct);
+      } else if (hasColorVariance) {
         const r0 = clamp01(colorStartR + (state.random() - 0.5) * 2 * config.colorStartVarianceR);
         const g0 = clamp01(colorStartG + (state.random() - 0.5) * 2 * config.colorStartVarianceG);
         const b0 = clamp01(colorStartB + (state.random() - 0.5) * 2 * config.colorStartVarianceB);
@@ -335,16 +354,4 @@ export function updateParticleEmitter(
 
 function clamp01(v: number): number {
   return v < 0 ? 0 : v > 1 ? 1 : v;
-}
-
-function ensureStateCapacity(state: ParticleEmitterState, capacity: number, hasColorVariance: boolean): void {
-  if (state.lifetimes.length >= capacity * 2) return;
-  state.lifetimes = reserveFloat32Array(state.lifetimes, capacity * 2);
-  state.velocities = reserveFloat32Array(state.velocities, capacity * 2);
-  state.scales = reserveFloat32Array(state.scales, capacity);
-  state.rotationSpeeds = reserveFloat32Array(state.rotationSpeeds, capacity);
-  if (hasColorVariance) {
-    state.colorBirth = reserveFloat32Array(state.colorBirth, capacity * 3);
-    state.colorDeath = reserveFloat32Array(state.colorDeath, capacity * 3);
-  }
 }

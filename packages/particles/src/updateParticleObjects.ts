@@ -1,5 +1,6 @@
 import type { HasAppearance, HasTransform2D } from '@flighthq/types';
 
+import { sampleCurve } from './curve';
 import type { ParticleEmitterConfig } from './particleEmitterConfig';
 import type { ParticleObjectsState } from './particleObjectsState';
 import { ensureParticleObjectsStateCapacity } from './particleObjectsState';
@@ -52,7 +53,13 @@ export function updateParticleObjects(
   const { lifetimes, velocities, scales, rotationSpeeds } = state;
   const gx = config.gravityX * dt;
   const gy = config.gravityY * dt;
-  const hasScaleAnim = config.scaleEnd !== 1;
+  // Opt-in lifetime curves (objects have alpha + scale; color lives on the
+  // typed-array emitter). Absent curves keep the original linear path.
+  const alphaCurve = config.alphaCurve;
+  const scaleCurve = config.scaleCurve;
+  const hasAlphaCurve = alphaCurve != null && alphaCurve.length > 0;
+  const hasScaleCurve = scaleCurve != null && scaleCurve.length > 0;
+  const hasScaleAnim = config.scaleEnd !== 1 || hasScaleCurve;
   const hasRotSpeed = config.rotationSpeedMin !== 0 || config.rotationSpeedMax !== 0;
 
   // Emitter velocity for inheritance
@@ -83,9 +90,12 @@ export function updateParticleObjects(
     objects[i].x += velocities[vt] * dt;
     objects[i].y += velocities[vt + 1] * dt;
     const lifeFraction = lifetimes[lt] / lifetimes[lt + 1];
-    objects[i].alpha = config.alphaStart + (config.alphaEnd - config.alphaStart) * lifeFraction;
+    objects[i].alpha = hasAlphaCurve
+      ? sampleCurve(alphaCurve, lifeFraction)
+      : config.alphaStart + (config.alphaEnd - config.alphaStart) * lifeFraction;
     if (hasScaleAnim) {
-      const s = scales[i] * (1 + (config.scaleEnd - 1) * lifeFraction);
+      const factor = hasScaleCurve ? sampleCurve(scaleCurve, lifeFraction) : 1 + (config.scaleEnd - 1) * lifeFraction;
+      const s = scales[i] * factor;
       objects[i].scaleX = s;
       objects[i].scaleY = s;
     }
@@ -154,9 +164,10 @@ export function updateParticleObjects(
       obj.x = spawnX;
       obj.y = spawnY;
       obj.rotation = angle;
-      obj.scaleX = spawnScale;
-      obj.scaleY = spawnScale;
-      obj.alpha = config.alphaStart;
+      const spawnFactor = hasScaleCurve ? spawnScale * sampleCurve(scaleCurve, 0) : spawnScale;
+      obj.scaleX = spawnFactor;
+      obj.scaleY = spawnFactor;
+      obj.alpha = hasAlphaCurve ? sampleCurve(alphaCurve, 0) : config.alphaStart;
       obj.visible = true;
       toSpawn--;
       onSpawn?.(spawnX, spawnY);

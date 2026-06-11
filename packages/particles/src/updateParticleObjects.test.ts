@@ -298,6 +298,26 @@ describe('updateParticleObjects', () => {
     );
   });
 
+  it('applies alpha and scale curves over lifetime', () => {
+    const objects = [makeObject()];
+    const state = createParticleObjectsState(1);
+    const config = createParticleEmitterConfig({
+      spawnRate: 1,
+      lifetimeMin: 1,
+      lifetimeMax: 1,
+      speedMin: 0,
+      speedMax: 0,
+      scaleMin: 4,
+      scaleMax: 4,
+      alphaCurve: [1, 0, 1],
+      scaleCurve: [1, 0.5, 0],
+    });
+    updateParticleObjects(objects, state, config, 1); // spawn
+    updateParticleObjects(objects, state, config, 0.5); // mid-life
+    expect(objects[0].alpha).toBeCloseTo(0, 2); // alpha curve dips to 0
+    expect(objects[0].scaleX).toBeCloseTo(2, 2); // 4 * 0.5
+  });
+
   it('uses the injected RNG for deterministic spawning', () => {
     const config = createParticleEmitterConfig({
       spawnRate: 5,

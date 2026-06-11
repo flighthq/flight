@@ -12,6 +12,9 @@ export interface ParticleDesignerParseOptions {
 export interface ParticleDesignerParsed {
   config: ParticleEmitterConfig;
   document: ParticleDesignerDocument;
+  /** Features present in the source that the common-subset importer cannot
+   *  represent and silently dropped — surface these in your asset pipeline. */
+  warnings: string[];
 }
 
 const DEG2RAD = Math.PI / 180;
@@ -207,7 +210,23 @@ export function loadParticleDesignerPlist(
     blendFuncDestination: num(d, 'blendFuncDestination', 771),
     textureFileName: str(d, 'textureFileName', ''),
   };
-  return { config: rawDictToConfig(d, textureSize), document };
+  return { config: rawDictToConfig(d, textureSize), document, warnings: collectParticleDesignerWarnings(d) };
+}
+
+function collectParticleDesignerWarnings(d: ParticleDesignerRawDict): string[] {
+  const warnings: string[] = [];
+  if (num(d, 'emitterType', 0) === 1) {
+    warnings.push(
+      'Radial (emitterType=1) emitter was approximated as a gravity emitter; radial motion is not simulated',
+    );
+  }
+  if (num(d, 'radialAcceleration', 0) !== 0 || num(d, 'radialAccelVariance', 0) !== 0) {
+    warnings.push('radialAcceleration is not supported and was ignored');
+  }
+  if (num(d, 'tangentialAcceleration', 0) !== 0 || num(d, 'tangentialAccelVariance', 0) !== 0) {
+    warnings.push('tangentialAcceleration is not supported and was ignored');
+  }
+  return warnings;
 }
 
 /** Parse a Particle Designer plist XML string directly to a ParticleEmitterConfig.

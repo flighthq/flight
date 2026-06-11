@@ -55,6 +55,39 @@ describe('loadUnityParticle — full round-trip, returns { config, document }', 
   });
 });
 
+describe('loadUnityParticle — import warnings', () => {
+  it('has no warnings for a config-representable system', () => {
+    expect(loadUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU }).warnings).toEqual([]);
+  });
+
+  it('warns about unsupported modules that are enabled', () => {
+    const json = JSON.stringify({
+      ...JSON.parse(SMOKE_JSON),
+      noise: { enabled: true },
+      collision: { enabled: true },
+      trails: { enabled: false }, // disabled → no warning
+    });
+    const { warnings } = loadUnityParticle(json, { pixelsPerUnit: PPU });
+    expect(warnings.some((w) => w.includes('noise'))).toBe(true);
+    expect(warnings.some((w) => w.includes('collision'))).toBe(true);
+    expect(warnings.some((w) => w.includes('trails'))).toBe(false);
+  });
+
+  it('warns when more than one burst is present', () => {
+    const json = JSON.stringify({
+      ...JSON.parse(SMOKE_JSON),
+      emission: {
+        rateOverTime: { mode: 'constant', constant: 0 },
+        bursts: [
+          { time: 0, count: 5 },
+          { time: 1, count: 5 },
+        ],
+      },
+    });
+    expect(loadUnityParticle(json).warnings.some((w) => w.includes('burst'))).toBe(true);
+  });
+});
+
 describe('parseUnityParticle — lightweight, returns config directly', () => {
   it('returns a ParticleEmitterConfig (not a Parsed object)', () => {
     const result = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
