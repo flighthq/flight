@@ -6,6 +6,9 @@ import type { SpineAlphaKeyframe, SpineParticleDocument, SpineTintKeyframe } fro
 export interface SpineParsed {
   config: ParticleEmitterConfig;
   document: SpineParticleDocument;
+  /** Features present in the source that the common-subset importer cannot
+   *  represent and silently dropped — surface these in your asset pipeline. */
+  warnings: string[];
 }
 
 const DEG2RAD = Math.PI / 180;
@@ -139,6 +142,32 @@ function rawToConfig(raw: Record<string, unknown>): ParticleEmitterConfig {
   });
 }
 
+function collectSpineWarnings(raw: Record<string, unknown>): string[] {
+  const warnings: string[] = [];
+
+  const tint = raw.tint;
+  if (Array.isArray(tint) && tint.length > 2) {
+    warnings.push(`Tint timeline with ${tint.length} keyframes was collapsed to start/end colors`);
+  }
+  const alpha = raw.alpha;
+  if (Array.isArray(alpha) && alpha.length > 2) {
+    warnings.push(`Alpha timeline with ${alpha.length} keyframes was collapsed to start/end`);
+  }
+
+  const nonZeroRange = (key: string): boolean => {
+    const o = raw[key];
+    if (o == null || typeof o !== 'object') return false;
+    const r = o as Record<string, unknown>;
+    return (typeof r.low === 'number' && r.low !== 0) || (typeof r.high === 'number' && r.high !== 0);
+  };
+  if (nonZeroRange('lifeOffset')) warnings.push('Spine lifeOffset is not supported and was ignored');
+  if (nonZeroRange('x') || nonZeroRange('y')) {
+    warnings.push('Spine emitter x/y position ranges are not supported and were ignored');
+  }
+
+  return warnings;
+}
+
 function spineBlendMode(mode: string): ParticleBlendMode | null {
   if (mode === 'additive') return 'add';
   if (mode === 'multiply') return 'multiply';
@@ -227,7 +256,7 @@ function rawToDocument(raw: Record<string, unknown>): SpineParticleDocument {
  *  round-trip serialisation via `serializeSpineParticle`. */
 export function loadSpineParticle(json: string): SpineParsed {
   const raw = parseSpineJson(json);
-  return { config: rawToConfig(raw), document: rawToDocument(raw) };
+  return { config: rawToConfig(raw), document: rawToDocument(raw), warnings: collectSpineWarnings(raw) };
 }
 
 /** Parse a Spine particle effect JSON string directly to a ParticleEmitterConfig.

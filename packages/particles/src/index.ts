@@ -1,3 +1,7 @@
+export * from './applyParticleCollisions';
+export * from './applyParticleForces';
+export * from './curve';
+export * from './emitParticleBurst';
 export * from './particleEmitterConfig';
 export * from './particleEmitterState';
 export * from './particleObjectsState';
@@ -5,3 +9,4 @@ export * from './prewarmParticleEmitter';
 export * from './random';
 export * from './updateParticleEmitter';
 export * from './updateParticleObjects';
+export * from './validateParticleEmitterConfig';
