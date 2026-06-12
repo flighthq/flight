@@ -152,3 +152,7 @@ public
 *.js
 
 .claude
+
+# Packed npm cache produced by `npm run cache`
+.npm-cache.tgz
+.npm-cache.tgz.lock-sha256

@@ -26,6 +26,8 @@
     "build:explorer": "npm run build --workspace=tools/explorer",
     "test:functional": "npm run dev --workspace=tools/functional",
     "fix": "npm run order:fix && npm run lint:fix && npm run format",
+    "cache": "node ./scripts/cache.mjs",
+    "setup": "node ./scripts/setup.mjs",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "lint": "eslint -c eslint.config.ts . --cache --max-warnings=0 --no-warn-ignored",
