@@ -14,7 +14,7 @@
 //   FLIGHT_NPM_CACHE_TARBALL  input tarball              (default: <worktree>/.npm-cache.tgz)
 
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync } from 'node:fs'
+import { existsSync, lstatSync, mkdirSync, rmSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -22,6 +22,13 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const CACHE = process.env.FLIGHT_NPM_CACHE || join(homedir(), '.flight', 'npm-cache')
 const TARBALL = process.env.FLIGHT_NPM_CACHE_TARBALL || join(ROOT, '.npm-cache.tgz')
+
+// A plain file named node_modules is never valid — npm only ever creates it as a
+// directory. A stray 0-byte stub (e.g. left on the shared mount by an interrupted
+// op) makes `npm ci` fail with a confusing "exists but isn't a directory" error
+// that reads like filesystem corruption. Clear it up front, or fail with the
+// exact fix, so nobody re-derives the cause from scratch.
+clearStrayNodeModules(join(ROOT, 'node_modules'))
 
 if (existsSync(TARBALL)) {
   // Extract to a LOCAL cache dir (under home), keeping the tens of thousands of
@@ -61,6 +68,33 @@ function run(cmd, args, shell = false) {
   const res = spawnSync(cmd, args, { stdio: 'inherit', cwd: ROOT, shell })
   if (res.error) fail(`${cmd} failed to start: ${res.error.message}`)
   if (res.status !== 0) fail(`${cmd} exited with code ${res.status}`)
+}
+
+// Remove a stray non-directory node_modules so `npm ci` can create the real one.
+// Leaves a genuine directory or an intentional symlink alone; only a plain file
+// is unambiguously bogus. If it can't be removed (e.g. owned by another user on a
+// shared mount), fail with the precise host-side fix instead of a vague error.
+function clearStrayNodeModules(p) {
+  let st
+  try {
+    st = lstatSync(p)
+  } catch {
+    return // absent — nothing to do
+  }
+  if (st.isDirectory() || st.isSymbolicLink()) return
+  try {
+    rmSync(p, { force: true })
+    console.log(`==> Removed stray non-directory node_modules: ${p}`)
+  } catch (err) {
+    fail(
+      `node_modules exists but is a ${st.isFile() ? 'file' : 'non-directory'}, not a directory, ` +
+        `and could not be removed:\n` +
+        `    ${err.message}\n` +
+        `    It is almost certainly a stray entry on the shared filesystem owned by another user.\n` +
+        `    On the HOST run:  rm -f ${p}\n` +
+        `    then re-run: npm run setup`,
+    )
+  }
 }
 
 function fail(msg) {
