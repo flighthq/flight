@@ -51,18 +51,18 @@ export function applyBevelFilterToSurface(
   const quality = filter.quality ?? 1;
   const radiusX = boxRadiusForSigma(filter.blurX ?? 4, quality);
   const radiusY = boxRadiusForSigma(filter.blurY ?? 4, quality);
+  const highlightColor = ((filter.highlightColor ?? 0xffffff) << 8) | Math.round((filter.highlightAlpha ?? 1) * 255);
+  const shadowColor = ((filter.shadowColor ?? 0x000000) << 8) | Math.round((filter.shadowAlpha ?? 1) * 255);
   applySurfaceBevelFilter(out, blurBuffer, source, {
     angle: filter.angle,
-    blurX: radiusX * 2,
-    blurY: radiusY * 2,
     distance: filter.distance,
-    highlightAlpha: filter.highlightAlpha,
-    highlightColor: filter.highlightColor,
-    quality,
-    shadowAlpha: filter.shadowAlpha,
-    shadowColor: filter.shadowColor,
-    strength: filter.strength,
-    type: filter.bevelType,
+    highlightColor,
+    intensity: filter.strength,
+    passes: quality,
+    radiusX,
+    radiusY,
+    shadowColor,
+    type: filter.bevelType === 'full' ? 'both' : filter.bevelType,
   });
 }
 
@@ -84,9 +84,9 @@ export function applyBlurFilterToSurface(
   const radiusX = boxRadiusForSigma(filter.blurX ?? 4, quality);
   const radiusY = boxRadiusForSigma(filter.blurY ?? 4, quality);
   applySurfaceBoxBlurFilter(out, blurBuffer, source, {
-    blurX: radiusX * 2,
-    blurY: radiusY * 2,
-    quality,
+    passes: quality,
+    radiusX,
+    radiusY,
   });
 }
 
@@ -129,10 +129,9 @@ export function applyDisplacementMapFilterToSurface(
   filter: DisplacementMapFilter,
 ): void {
   applySurfaceDisplacementMapFilter(out, source, {
-    alpha: filter.alpha,
-    color: filter.color,
     componentX: filter.componentX,
     componentY: filter.componentY,
+    fillColor: ((filter.color ?? 0) << 8) | Math.round((filter.alpha ?? 0) * 255),
     map,
     mode: filter.mode,
     scaleX: filter.scaleX,
@@ -159,12 +158,11 @@ export function applyDropShadowFilterToSurface(
   const radiusX = boxRadiusForSigma(filter.blurX ?? 4, quality);
   const radiusY = boxRadiusForSigma(filter.blurY ?? 4, quality);
   applySurfaceDropShadowFilter(out, blurBuffer, source, {
-    alpha: filter.alpha,
-    blurX: radiusX * 2,
-    blurY: radiusY * 2,
-    color: filter.color,
-    quality,
-    strength: filter.strength,
+    color: ((filter.color ?? 0x000000) << 8) | Math.round((filter.alpha ?? 1) * 255),
+    intensity: filter.strength,
+    passes: quality,
+    radiusX,
+    radiusY,
   });
 }
 
@@ -189,12 +187,12 @@ export function applyGradientBevelFilterToSurface(
   const radiusY = boxRadiusForSigma(filter.blurY ?? 4, quality);
   applySurfaceGradientBevelFilter(out, blurBuffer, source, ramp, {
     angle: filter.angle,
-    blurX: radiusX * 2,
-    blurY: radiusY * 2,
     distance: filter.distance,
-    quality,
-    strength: filter.strength,
-    type: filter.bevelType,
+    intensity: filter.strength,
+    passes: quality,
+    radiusX,
+    radiusY,
+    type: filter.bevelType === 'full' ? 'both' : filter.bevelType,
   });
 }
 
@@ -219,10 +217,10 @@ export function applyGradientGlowFilterToSurface(
   const radiusX = boxRadiusForSigma(filter.blurX ?? 4, quality);
   const radiusY = boxRadiusForSigma(filter.blurY ?? 4, quality);
   applySurfaceGradientGlowFilter(out, blurBuffer, source, ramp, {
-    blurX: radiusX * 2,
-    blurY: radiusY * 2,
-    quality,
-    strength: filter.strength,
+    intensity: filter.strength,
+    passes: quality,
+    radiusX,
+    radiusY,
   });
 }
 
@@ -244,12 +242,11 @@ export function applyInnerGlowFilterToSurface(
   const radiusX = boxRadiusForSigma(filter.blurX ?? 6, quality);
   const radiusY = boxRadiusForSigma(filter.blurY ?? 6, quality);
   applySurfaceInnerGlowFilter(out, blurBuffer, source, {
-    alpha: filter.alpha,
-    blurX: radiusX * 2,
-    blurY: radiusY * 2,
-    color: filter.color,
-    quality,
-    strength: filter.strength,
+    color: ((filter.color ?? 0xff0000) << 8) | Math.round((filter.alpha ?? 1) * 255),
+    intensity: filter.strength,
+    passes: quality,
+    radiusX,
+    radiusY,
   });
 }
 
@@ -274,12 +271,11 @@ export function applyInnerShadowFilterToSurface(
   const radiusX = boxRadiusForSigma(filter.blurX ?? 4, quality);
   const radiusY = boxRadiusForSigma(filter.blurY ?? 4, quality);
   applySurfaceInnerShadowFilter(out, blurBuffer, source, {
-    alpha: filter.alpha,
-    blurX: radiusX * 2,
-    blurY: radiusY * 2,
-    color: filter.color,
-    quality,
-    strength: filter.strength,
+    color: ((filter.color ?? 0x000000) << 8) | Math.round((filter.alpha ?? 1) * 255),
+    intensity: filter.strength,
+    passes: quality,
+    radiusX,
+    radiusY,
   });
 }
 
@@ -314,12 +310,11 @@ export function applyOuterGlowFilterToSurface(
   const radiusX = boxRadiusForSigma(filter.blurX ?? 6, quality);
   const radiusY = boxRadiusForSigma(filter.blurY ?? 6, quality);
   applySurfaceGlowFilter(out, blurBuffer, source, {
-    alpha: filter.alpha,
-    blurX: radiusX * 2,
-    blurY: radiusY * 2,
-    color: filter.color,
-    quality,
-    strength: filter.strength,
+    color: ((filter.color ?? 0xff0000) << 8) | Math.round((filter.alpha ?? 1) * 255),
+    intensity: filter.strength,
+    passes: quality,
+    radiusX,
+    radiusY,
   });
 }
 
@@ -354,8 +349,8 @@ export function applySharpenFilterToSurface(
   const radiusY = boxRadiusForSigma(filter.blurY ?? 2, quality);
   applySurfaceSharpenFilter(out, blurBuffer, source, {
     amount: filter.amount,
-    blurX: radiusX * 2,
-    blurY: radiusY * 2,
-    quality,
+    passes: quality,
+    radiusX,
+    radiusY,
   });
 }
