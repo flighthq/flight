@@ -12,8 +12,8 @@ export function rotateSurface(
   dest: Readonly<SurfaceRegion>,
   source: Readonly<SurfaceRegion>,
   angle: number,
-  pivotX: number = source.width / 2,
-  pivotY: number = source.height / 2,
+  pivotX: number = (source.width - 1) / 2,
+  pivotY: number = (source.height - 1) / 2,
 ): void {
   const cosA = Math.cos(-angle);
   const sinA = Math.sin(-angle);
@@ -25,8 +25,8 @@ export function rotateSurface(
   const dd = dest.surface.data;
   const sStride = source.surface.width;
   const dStride = dest.surface.width;
-  const destPivotX = dw / 2;
-  const destPivotY = dh / 2;
+  const destPivotX = (dw - 1) / 2;
+  const destPivotY = (dh - 1) / 2;
 
   for (let dy = 0; dy < dh; dy++) {
     const oy = dest.y + dy;
