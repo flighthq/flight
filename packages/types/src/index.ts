@@ -152,4 +152,3 @@ export * from './WebGLRenderTarget';
 export * from './WebGLShader';
 export * from './WebGLShaderLocations';
 export * from './WorldNode';
-export * from './WorldNodeSignals';
