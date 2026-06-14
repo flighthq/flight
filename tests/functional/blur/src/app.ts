@@ -52,13 +52,11 @@ for (let i = 0; i < 3; i++) {
   bmp.y = 50;
   addNodeChild(root, bmp);
 
-  // blurX/blurY are the Gaussian standard deviation in pixels — consistent across the
-  // CSS, surface, and WebGL paths. quality is the number of box-blur passes the surface and
-  // WebGL paths run: a single box pass looks boxy, but three passes converge on a Gaussian
-  // (central limit theorem), matching the true Gaussian the CSS blur() paths produce. The
-  // per-pass radius is scaled down so σ stays the same — more passes only smooth the shape.
+  // blurX/blurY are the Gaussian standard deviation in pixels (CSS blur(Xpx) uses sigma = X).
+  // The BlurFilter intent maps to a true Gaussian on every backend — CSS blur() on DOM/Canvas,
+  // applyGaussianBlurFilterToWebGL on WebGL — so the three columns match.
   const sigma = (i + 1) * 4;
-  filtered.push({ node: bmp, filter: createBlurFilter({ blurX: sigma, blurY: sigma, quality: 3 }) });
+  filtered.push({ node: bmp, filter: createBlurFilter({ blurX: sigma, blurY: sigma }) });
 
   const lbl = createRichText();
   lbl.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x444444 };
