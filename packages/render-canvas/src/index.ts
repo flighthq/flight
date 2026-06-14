@@ -1,5 +1,6 @@
 export * from './canvasBackground';
 export * from './canvasBitmap';
+export * from './canvasCacheAdapter';
 export * from './canvasClip';
 export * from './canvasClipRectangle';
 export * from './canvasCSSFilterBinding';
