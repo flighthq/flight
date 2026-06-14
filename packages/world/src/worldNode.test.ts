@@ -1,25 +1,33 @@
 import { setMatrix4Identity } from '@flighthq/geometry';
-import type { HasTransform3DRuntime, Matrix4, WorldTransform3DNode } from '@flighthq/types';
+import {
+  addNodeChild,
+  ensureNodeWorldTransformMatrix4,
+  getNodeChildCount,
+  getNodeParent,
+  getNodeRoot,
+  getNodeWorldTransformMatrix4,
+  initTransform3DRuntimeTrait,
+  initTransform3DTrait,
+  invalidateNodeLocalTransform,
+  invalidateNodeParentReference,
+  removeNodeChild,
+} from '@flighthq/node';
+import type { Matrix4, WorldNode } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
-import { initTransform3DRuntimeTrait, initTransform3DTrait } from './hasTransform3d';
-import { addWorldChild, getWorldChildCount, getWorldParent, getWorldRoot, removeWorldChild } from './worldHierarchy';
 import {
   createWorldNode,
   createWorldNodeRuntime,
   getWorldNodeRuntime,
   getWorldNodeSignals,
-  invalidateNodeLocalTransform,
-  invalidateNodeParentReference,
   WorldNodeKind,
   type WorldNodeRuntime,
 } from './worldNode';
-import { ensureWorldTransformMatrix, getWorldTransformMatrix } from './worldTransform';
 
-function createTransformNode(): WorldTransform3DNode {
-  const node = createWorldNode() as WorldTransform3DNode;
+function createTransformNode(): WorldNode {
+  const node = createWorldNode();
   initTransform3DTrait(node);
-  initTransform3DRuntimeTrait(getWorldNodeRuntime(node) as WorldNodeRuntime & HasTransform3DRuntime);
+  initTransform3DRuntimeTrait(getWorldNodeRuntime(node));
   return node;
 }
 
@@ -57,25 +65,9 @@ describe('createWorldNodeRuntime', () => {
     expect(runtime.worldTransformUsingParentTransformID).toBe(-1);
   });
 
-  it('creates the full set of world node signals', () => {
+  it('initializes worldMatrix to null', () => {
     const runtime = createWorldNodeRuntime();
-    expect(runtime.worldNodeSignals.onChildAdded).toBeDefined();
-    expect(runtime.worldNodeSignals.onChildRemoved).toBeDefined();
-    expect(runtime.worldNodeSignals.onChildrenChanged).toBeDefined();
-    expect(runtime.worldNodeSignals.onChildrenOrderChanged).toBeDefined();
-    expect(runtime.worldNodeSignals.onParentChanged).toBeDefined();
-  });
-});
-
-describe('createWorldNodeSignals', () => {
-  it('returns an object with all expected signal fields', () => {
-    const node = createWorldNode();
-    const signals = getWorldNodeSignals(node);
-    expect(signals.onChildAdded).toBeDefined();
-    expect(signals.onChildRemoved).toBeDefined();
-    expect(signals.onChildrenChanged).toBeDefined();
-    expect(signals.onChildrenOrderChanged).toBeDefined();
-    expect(signals.onParentChanged).toBeDefined();
+    expect(runtime.worldMatrix).toBeNull();
   });
 });
 
@@ -91,7 +83,17 @@ describe('getWorldNodeRuntime', () => {
 describe('getWorldNodeSignals', () => {
   it('returns the runtime signal bag for the node', () => {
     const node = createWorldNode();
-    expect(getWorldNodeSignals(node)).toBe(getWorldNodeRuntime(node).worldNodeSignals);
+    const signals = getWorldNodeSignals(node);
+    expect(signals.onChildAdded).toBeDefined();
+    expect(signals.onChildRemoved).toBeDefined();
+    expect(signals.onChildrenChanged).toBeDefined();
+    expect(signals.onChildrenOrderChanged).toBeDefined();
+    expect(signals.onParentChanged).toBeDefined();
+  });
+
+  it('returns the nodeSignals from the runtime', () => {
+    const node = createWorldNode();
+    expect(getWorldNodeSignals(node)).toBe(getWorldNodeRuntime(node).nodeSignals);
   });
 });
 
@@ -109,7 +111,7 @@ describe('initTransform3DTrait', () => {
   });
 
   it('accepts an existing matrix', () => {
-    const node = createWorldNode() as WorldTransform3DNode;
+    const node = createWorldNode();
     const existing = { m: new Float32Array(16) } as unknown as Matrix4;
     existing.m[12] = 42;
     initTransform3DTrait(node, { localMatrix: existing });
@@ -136,58 +138,58 @@ describe('invalidateNodeParentReference', () => {
 });
 
 describe('worldHierarchy', () => {
-  it('addWorldChild links parent and child', () => {
+  it('addNodeChild links parent and child', () => {
     const parent = createWorldNode();
     const child = createWorldNode();
-    addWorldChild(parent, child);
-    expect(getWorldParent(child)).toBe(parent);
-    expect(getWorldChildCount(parent)).toBe(1);
+    addNodeChild(parent, child);
+    expect(getNodeParent(child)).toBe(parent);
+    expect(getNodeChildCount(parent)).toBe(1);
   });
 
   it('reparents a child from one node to another', () => {
     const a = createWorldNode();
     const b = createWorldNode();
     const child = createWorldNode();
-    addWorldChild(a, child);
-    addWorldChild(b, child);
-    expect(getWorldParent(child)).toBe(b);
-    expect(getWorldChildCount(a)).toBe(0);
-    expect(getWorldChildCount(b)).toBe(1);
+    addNodeChild(a, child);
+    addNodeChild(b, child);
+    expect(getNodeParent(child)).toBe(b);
+    expect(getNodeChildCount(a)).toBe(0);
+    expect(getNodeChildCount(b)).toBe(1);
   });
 
-  it('removeWorldChild unlinks parent and child', () => {
+  it('removeNodeChild unlinks parent and child', () => {
     const parent = createWorldNode();
     const child = createWorldNode();
-    addWorldChild(parent, child);
-    removeWorldChild(parent, child);
-    expect(getWorldParent(child)).toBe(null);
-    expect(getWorldChildCount(parent)).toBe(0);
+    addNodeChild(parent, child);
+    removeNodeChild(parent, child);
+    expect(getNodeParent(child)).toBe(null);
+    expect(getNodeChildCount(parent)).toBe(0);
   });
 
-  it('getWorldRoot traverses to the top ancestor', () => {
+  it('getNodeRoot traverses to the top ancestor', () => {
     const root = createWorldNode();
     const mid = createWorldNode();
     const leaf = createWorldNode();
-    addWorldChild(root, mid);
-    addWorldChild(mid, leaf);
-    expect(getWorldRoot(leaf)).toBe(root);
-    expect(getWorldRoot(mid)).toBe(root);
-    expect(getWorldRoot(root)).toBe(root);
+    addNodeChild(root, mid);
+    addNodeChild(mid, leaf);
+    expect(getNodeRoot(leaf)).toBe(root);
+    expect(getNodeRoot(mid)).toBe(root);
+    expect(getNodeRoot(root)).toBe(root);
   });
 
   it('throws when adding a node as its own child', () => {
     const node = createWorldNode();
-    expect(() => addWorldChild(node, node)).toThrow(TypeError);
+    expect(() => addNodeChild(node, node)).toThrow(TypeError);
   });
 });
 
 describe('WorldNodeRuntime', () => {
   it('starts with no parent, no children, and null worldMatrix', () => {
     const node = createTransformNode();
-    const runtime = getWorldNodeRuntime(node);
+    const runtime = getWorldNodeRuntime(node) as WorldNodeRuntime;
     expect(runtime.parent).toBe(null);
     expect(runtime.children).toBe(null);
-    expect((runtime as ReturnType<typeof getWorldNodeRuntime> & { worldMatrix: unknown }).worldMatrix).toBe(null);
+    expect(runtime.worldMatrix).toBe(null);
   });
 });
 
@@ -199,7 +201,7 @@ describe('worldTransform', () => {
     node.localMatrix.m[14] = 30;
     invalidateNodeLocalTransform(node);
 
-    const world = getWorldTransformMatrix(node);
+    const world = getNodeWorldTransformMatrix4(node);
     expect(world.m[12]).toBe(10);
     expect(world.m[13]).toBe(20);
     expect(world.m[14]).toBe(30);
@@ -208,7 +210,7 @@ describe('worldTransform', () => {
   it('world matrix is parent * local for a child node', () => {
     const parent = createTransformNode();
     const child = createTransformNode();
-    addWorldChild(parent, child);
+    addNodeChild(parent, child);
 
     parent.localMatrix.m[12] = 5;
     invalidateNodeLocalTransform(parent);
@@ -216,20 +218,20 @@ describe('worldTransform', () => {
     child.localMatrix.m[12] = 3;
     invalidateNodeLocalTransform(child);
 
-    const world = getWorldTransformMatrix(child);
+    const world = getNodeWorldTransformMatrix4(child);
     expect(world.m[12]).toBeCloseTo(8);
   });
 
   it('world matrix is recomputed after localMatrix changes', () => {
     const node = createTransformNode();
     invalidateNodeLocalTransform(node);
-    ensureWorldTransformMatrix(node);
+    ensureNodeWorldTransformMatrix4(node);
     const first = getWorldNodeRuntime(node).worldTransformID;
 
     node.localMatrix.m[12] = 99;
     invalidateNodeLocalTransform(node);
 
-    ensureWorldTransformMatrix(node);
+    ensureNodeWorldTransformMatrix4(node);
     const second = getWorldNodeRuntime(node).worldTransformID;
 
     expect(second).not.toBe(first);
@@ -237,9 +239,9 @@ describe('worldTransform', () => {
 
   it('world matrix is cached when nothing changes', () => {
     const node = createTransformNode();
-    ensureWorldTransformMatrix(node);
+    ensureNodeWorldTransformMatrix4(node);
     const id1 = getWorldNodeRuntime(node).worldTransformID;
-    ensureWorldTransformMatrix(node);
+    ensureNodeWorldTransformMatrix4(node);
     const id2 = getWorldNodeRuntime(node).worldTransformID;
     expect(id1).toBe(id2);
   });
@@ -247,7 +249,7 @@ describe('worldTransform', () => {
   it('child world matrix updates when parent localMatrix changes', () => {
     const parent = createTransformNode();
     const child = createTransformNode();
-    addWorldChild(parent, child);
+    addNodeChild(parent, child);
 
     setMatrix4Identity(parent.localMatrix);
     setMatrix4Identity(child.localMatrix);
@@ -257,7 +259,7 @@ describe('worldTransform', () => {
     parent.localMatrix.m[12] = 7;
     invalidateNodeLocalTransform(parent);
 
-    const world = getWorldTransformMatrix(child);
+    const world = getNodeWorldTransformMatrix4(child);
     expect(world.m[12]).toBeCloseTo(7);
   });
 });

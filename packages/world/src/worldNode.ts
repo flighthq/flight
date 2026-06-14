@@ -1,58 +1,30 @@
-import { createEntity, createEntityRuntime, getEntityRuntime } from '@flighthq/entity';
-import { createSignal } from '@flighthq/signals';
-import type { WorldNode, WorldNodeRuntime, WorldNodeSignals } from '@flighthq/types';
-import { EntityRuntimeKey, WorldNodeKind } from '@flighthq/types';
+import { createMatrix4 } from '@flighthq/geometry';
+import { createNode, createNodeRuntime, getNodeRuntime, getNodeSignals } from '@flighthq/node';
+import type { NodeSignals, WorldNode, WorldNodeRuntime, WorldNodeTraits } from '@flighthq/types';
+import { WorldGraph, WorldNodeKind } from '@flighthq/types';
 
-export type { WorldNode, WorldNodeRuntime, WorldNodeSignals } from '@flighthq/types';
-export { NullWorld, WorldNodeKind } from '@flighthq/types';
+export type { WorldNode, WorldNodeRuntime, WorldNodeTraits } from '@flighthq/types';
+export { WorldGraph, WorldNodeKind } from '@flighthq/types';
 
 export function createWorldNode(
   kind: symbol = WorldNodeKind,
   obj?: Readonly<Partial<Pick<WorldNode, 'enabled' | 'name'>>>,
 ): WorldNode {
-  const out = createEntity({} as WorldNode);
-  out[EntityRuntimeKey] = createWorldNodeRuntime();
-  out.enabled = obj?.enabled ?? true;
-  out.kind = kind;
-  out.name = obj?.name ?? null;
-  return out;
+  const node = createNode<typeof WorldGraph, WorldNodeTraits>(WorldGraph, kind, obj, undefined, createWorldNodeRuntime);
+  node.localMatrix = createMatrix4();
+  return node as WorldNode;
 }
 
 export function createWorldNodeRuntime(): WorldNodeRuntime {
-  const out = createEntityRuntime() as WorldNodeRuntime;
-  out.children = null;
-  out.localTransformID = 0;
-  out.parent = null;
-  out.worldNodeSignals = createWorldNodeSignals();
-  out.worldTransformID = 0;
-  out.worldTransformUsingLocalTransformID = -1;
-  out.worldTransformUsingParentTransformID = -1;
+  const out = createNodeRuntime<typeof WorldGraph, WorldNodeTraits>() as WorldNodeRuntime;
+  out.worldMatrix = null;
   return out;
 }
 
-export function createWorldNodeSignals(): WorldNodeSignals {
-  return {
-    onChildAdded: createSignal(),
-    onChildRemoved: createSignal(),
-    onChildrenChanged: createSignal(),
-    onChildrenOrderChanged: createSignal(),
-    onParentChanged: createSignal(),
-  };
-}
-
 export function getWorldNodeRuntime(source: Readonly<WorldNode>): WorldNodeRuntime {
-  return getEntityRuntime(source) as WorldNodeRuntime;
+  return getNodeRuntime(source) as WorldNodeRuntime;
 }
 
-export function getWorldNodeSignals(source: WorldNode): WorldNodeSignals {
-  return getWorldNodeRuntime(source).worldNodeSignals;
-}
-
-export function invalidateNodeLocalTransform(target: WorldNode): void {
-  const runtime = getWorldNodeRuntime(target);
-  runtime.localTransformID = (runtime.localTransformID + 1) >>> 0;
-}
-
-export function invalidateNodeParentReference(target: WorldNode): void {
-  getWorldNodeRuntime(target).worldTransformUsingParentTransformID = -1;
+export function getWorldNodeSignals(source: WorldNode): NodeSignals {
+  return getNodeSignals(source);
 }

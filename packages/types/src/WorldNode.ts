@@ -1,22 +1,11 @@
-import type { Entity, EntityRuntime, EntityRuntimeKey } from './Entity';
-import type { WorldNodeSignals } from './WorldNodeSignals';
+import type { HasTransform3D, HasTransform3DRuntime } from './HasTransform3D';
+import type { Node, NodeRuntime } from './Node';
 
-export interface WorldNode extends Entity {
-  [EntityRuntimeKey]: WorldNodeRuntime | undefined;
-  enabled: boolean;
-  kind: symbol;
-  name: string | null;
-}
-
-export interface WorldNodeRuntime extends EntityRuntime {
-  children: WorldNode[] | null;
-  localTransformID: number;
-  parent: WorldNode | null;
-  worldNodeSignals: WorldNodeSignals;
-  worldTransformID: number;
-  worldTransformUsingLocalTransformID: number;
-  worldTransformUsingParentTransformID: number;
-}
-
-export const NullWorld: unique symbol = Symbol('NullWorld');
+export const WorldGraph: unique symbol = Symbol('WorldGraph');
 export const WorldNodeKind: unique symbol = Symbol('WorldNode');
+
+export interface WorldNodeTraits extends HasTransform3D {}
+
+export type WorldNode = Node<typeof WorldGraph, WorldNodeTraits> & WorldNodeTraits;
+
+export type WorldNodeRuntime = NodeRuntime<typeof WorldGraph, WorldNodeTraits> & HasTransform3DRuntime;
