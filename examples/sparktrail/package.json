@@ -8,7 +8,9 @@
   },
   "scripts": {
     "dev": "cross-env RENDER=webgl vite",
+    "dev:webgpu": "cross-env RENDER=webgpu vite",
     "build": "cross-env RENDER=webgl vite build",
+    "build:webgpu": "cross-env RENDER=webgpu vite build",
     "preview": "vite preview"
   }
 }
