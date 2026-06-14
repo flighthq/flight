@@ -13,6 +13,7 @@ export * from '@flighthq/render';
 export * from '@flighthq/render-canvas';
 export * from '@flighthq/render-dom';
 export * from '@flighthq/render-webgl';
+export * from '@flighthq/render-webgpu';
 export * from '@flighthq/signals';
 export * from '@flighthq/sprite';
 export * from '@flighthq/spritesheet';
