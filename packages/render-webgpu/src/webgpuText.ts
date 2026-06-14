@@ -13,8 +13,6 @@ import type {
 import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
 import { createWebGPUTextureEntry, drawWebGPUQuad, updateWebGPUTextureEntry } from './webgpuDraw';
 
-const LAYOUT_WIDTH = 10_000;
-
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
 
@@ -50,8 +48,8 @@ export function drawWebGPUText(state: RenderState, renderNode: DisplayObjectRend
   computeTextLayout(result, {
     text,
     formatRanges: [createTextFormatRange(textFormat, 0, text.length)],
-    width: LAYOUT_WIDTH,
-    height: LAYOUT_WIDTH,
+    width: source.data.width,
+    height: source.data.height,
     measure,
   });
 
