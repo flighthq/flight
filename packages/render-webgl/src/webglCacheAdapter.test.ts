@@ -2,6 +2,7 @@ import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
 import { createRenderState, setRenderNodeAdapter } from '@flighthq/render';
 import { connectSignal } from '@flighthq/signals';
+import type { WebGLRenderState, WebGLRenderTarget } from '@flighthq/types';
 
 import {
   createWebGLCache,
@@ -9,8 +10,38 @@ import {
   defaultWebGLCacheRenderer,
   enableWebGLCache,
   enableWebGLCacheAdapterSignals,
+  ensureWebGLCacheSize,
+  resizeWebGLCache,
   WebGLCacheKind,
 } from './webglCacheAdapter';
+import type * as WebGLRenderTargetModule from './webglRenderTarget';
+
+vi.mock('./webglRenderTarget', async (importOriginal) => {
+  const actual = await importOriginal<typeof WebGLRenderTargetModule>();
+  return {
+    ...actual,
+    createWebGLRenderTarget: vi.fn(
+      (_state: unknown, width: number, height: number): WebGLRenderTarget => ({
+        framebuffer: {} as WebGLFramebuffer,
+        texture: {} as WebGLTexture,
+        width,
+        height,
+      }),
+    ),
+    resizeWebGLRenderTarget: vi.fn((_state: unknown, target: WebGLRenderTarget, width: number, height: number) => {
+      target.width = width;
+      target.height = height;
+    }),
+  };
+});
+
+function fakeState() {
+  return createRenderState() as unknown as WebGLRenderState;
+}
+
+function fakeTarget(width: number, height: number): WebGLRenderTarget {
+  return { framebuffer: {} as WebGLFramebuffer, texture: {} as WebGLTexture, width, height };
+}
 
 describe('createWebGLCache', () => {
   it('creates a cache with WebGLCacheKind', () => {
@@ -109,6 +140,71 @@ describe('enableWebGLCacheAdapterSignals', () => {
     const first = adapter.signals;
     enableWebGLCacheAdapterSignals(adapter);
     expect(adapter.signals).toBe(first);
+  });
+});
+
+describe('ensureWebGLCacheSize', () => {
+  it('creates a target when cache has none', () => {
+    const state = fakeState();
+    const cache = createWebGLCache();
+    ensureWebGLCacheSize(state, cache, 100, 200);
+    expect(cache.target).not.toBeNull();
+    expect(cache.target!.width).toBe(100);
+    expect(cache.target!.height).toBe(200);
+  });
+
+  it('returns true when a resize occurred', () => {
+    const state = fakeState();
+    const cache = createWebGLCache();
+    expect(ensureWebGLCacheSize(state, cache, 100, 100)).toBe(true);
+  });
+
+  it('returns false when target already fits', () => {
+    const state = fakeState();
+    const cache = createWebGLCache();
+    cache.target = fakeTarget(200, 200);
+    expect(ensureWebGLCacheSize(state, cache, 100, 100)).toBe(false);
+    expect(ensureWebGLCacheSize(state, cache, 200, 200)).toBe(false);
+  });
+
+  it('grows only the dimension that is too small', () => {
+    const state = fakeState();
+    const cache = createWebGLCache();
+    cache.target = fakeTarget(200, 100);
+    ensureWebGLCacheSize(state, cache, 100, 300);
+    expect(cache.target!.width).toBe(200);
+    expect(cache.target!.height).toBe(300);
+  });
+
+  it('never shrinks an existing dimension', () => {
+    const state = fakeState();
+    const cache = createWebGLCache();
+    cache.target = fakeTarget(200, 200);
+    ensureWebGLCacheSize(state, cache, 50, 50);
+    expect(cache.target!.width).toBe(200);
+    expect(cache.target!.height).toBe(200);
+  });
+});
+
+describe('resizeWebGLCache', () => {
+  it('creates a target when cache has none', () => {
+    const state = fakeState();
+    const cache = createWebGLCache();
+    resizeWebGLCache(state, cache, 128, 64);
+    expect(cache.target).not.toBeNull();
+    expect(cache.target!.width).toBe(128);
+    expect(cache.target!.height).toBe(64);
+  });
+
+  it('resizes an existing target to the exact dimensions', () => {
+    const state = fakeState();
+    const cache = createWebGLCache();
+    cache.target = fakeTarget(128, 128);
+    const first = cache.target;
+    resizeWebGLCache(state, cache, 32, 32);
+    expect(cache.target).toBe(first);
+    expect(cache.target!.width).toBe(32);
+    expect(cache.target!.height).toBe(32);
   });
 });
 
