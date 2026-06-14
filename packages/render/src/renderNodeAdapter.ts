@@ -3,7 +3,6 @@ import type { Node, Renderable, RenderNode2D, RenderNodeAdapter, RenderState } f
 
 import { installRenderAdaptHook, updateRenderNodeRenderer } from './renderNode';
 
-const _adapters = new WeakMap<Renderable, RenderNodeAdapter>();
 let _installed = false;
 
 export function applyRenderNodeAdapter(
@@ -11,7 +10,7 @@ export function applyRenderNodeAdapter(
   source: Renderable,
   data: RenderNode2D & { traverseChildren: boolean },
 ): void {
-  const renderAdapter = _adapters.get(source) ?? null;
+  const renderAdapter = state.renderNodeAdapterMap.get(source) ?? null;
   let traverseChildren = true;
   if (renderAdapter !== null) {
     const result = renderAdapter.adapt(state, source, data);
@@ -23,19 +22,19 @@ export function applyRenderNodeAdapter(
   data.traverseChildren = traverseChildren;
 }
 
-export function getRenderNodeAdapter(source: Renderable): RenderNodeAdapter | null {
-  return _adapters.get(source) ?? null;
+export function getRenderNodeAdapter(state: RenderState, source: Renderable): RenderNodeAdapter | null {
+  return state.renderNodeAdapterMap.get(source) ?? null;
 }
 
-export function setRenderNodeAdapter(source: Renderable, adapter: RenderNodeAdapter | null): void {
+export function setRenderNodeAdapter(state: RenderState, source: Renderable, adapter: RenderNodeAdapter | null): void {
   if (!_installed) {
     installRenderAdaptHook(applyRenderNodeAdapter);
     _installed = true;
   }
   if (adapter === null) {
-    _adapters.delete(source);
+    state.renderNodeAdapterMap.delete(source);
   } else {
-    _adapters.set(source, adapter);
+    state.renderNodeAdapterMap.set(source, adapter);
   }
   invalidateNodeAppearance(source as Node);
 }

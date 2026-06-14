@@ -97,7 +97,7 @@ export function captureDisplayObjectRenderImageCache(
   endImageRenderCacheCapture(state);
   endCanvasRenderTarget(state);
 
-  const existingCache = getImageRenderCache(source);
+  const existingCache = getImageRenderCache(state, source);
   const existingImageSource = existingCache?.source;
   let imageSource: ReturnType<typeof createImageSourceFromCanvas>;
   if (existingImageSource != null && existingImageSource.src === target.canvas) {
@@ -111,7 +111,7 @@ export function captureDisplayObjectRenderImageCache(
 
   const transform = existingCache?.transform ?? createMatrix();
   copyMatrix(transform, captureData.cacheTransform);
-  setImageRenderCache(source, { source: imageSource, transform });
+  setImageRenderCache(state, source, { source: imageSource, transform });
 }
 
 export function endDisplayObjectImageRenderCacheCapture(cacheState: CanvasRenderState, source: DisplayObject): void {
@@ -131,11 +131,11 @@ export function endDisplayObjectImageRenderCacheCapture(cacheState: CanvasRender
     imageSource.version = (imageSource.version + 1) >>> 0;
   }
 
-  const existingCache = getImageRenderCache(source);
+  const existingCache = getImageRenderCache(cacheState, source);
   const transform = existingCache?.transform ?? captureData.cacheTransform;
   if (existingCache !== null) copyMatrix(transform, captureData.cacheTransform);
 
-  setImageRenderCache(source, { source: imageSource, transform });
+  setImageRenderCache(cacheState, source, { source: imageSource, transform });
 }
 
 const _tempBounds = createRectangle();

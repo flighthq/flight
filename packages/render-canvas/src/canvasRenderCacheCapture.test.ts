@@ -44,7 +44,7 @@ describe('captureDisplayObjectRenderImageCache', () => {
     const state = makeState();
     const obj = createDisplayObject();
     captureDisplayObjectRenderImageCache(state, obj);
-    expect(getImageRenderCache(obj as any)).not.toBeNull();
+    expect(getImageRenderCache(state, obj as any)).not.toBeNull();
   });
 
   it('accepts padding and min size options', () => {
@@ -59,9 +59,9 @@ describe('captureDisplayObjectRenderImageCache', () => {
     const state = makeState();
     const obj = createDisplayObject();
     captureDisplayObjectRenderImageCache(state, obj);
-    const firstSource = getImageRenderCache(obj as any)?.source;
+    const firstSource = getImageRenderCache(state, obj as any)?.source;
     captureDisplayObjectRenderImageCache(state, obj);
-    const secondSource = getImageRenderCache(obj as any)?.source;
+    const secondSource = getImageRenderCache(state, obj as any)?.source;
     expect(secondSource).toBe(firstSource);
   });
 });
@@ -79,6 +79,6 @@ describe('endDisplayObjectImageRenderCacheCapture', () => {
     const obj = createDisplayObject();
     beginDisplayObjectImageRenderCacheCapture(state, obj);
     endDisplayObjectImageRenderCacheCapture(state, obj);
-    expect(getImageRenderCache(obj as any)).not.toBeNull();
+    expect(getImageRenderCache(state, obj as any)).not.toBeNull();
   });
 });

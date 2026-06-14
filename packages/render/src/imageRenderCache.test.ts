@@ -35,11 +35,12 @@ describe('beginImageRenderCacheCapture', () => {
 
 describe('clearImageRenderCache', () => {
   it('removes the adapter from the scene node', () => {
+    const state = createRenderState();
     const obj = createDisplayObject();
     const cache = makeCacheResult();
-    setImageRenderCache(obj as any, cache);
-    clearImageRenderCache(obj as any);
-    expect(getImageRenderCache(obj as any)).toBeNull();
+    setImageRenderCache(state, obj as any, cache);
+    clearImageRenderCache(state, obj as any);
+    expect(getImageRenderCache(state, obj as any)).toBeNull();
   });
 });
 
@@ -106,9 +107,8 @@ describe('createRenderImageCacheAdapter', () => {
     adapter.adapt(state, obj, data1);
     const source1 = data1.source;
 
-    const obj2 = createDisplayObject();
-    const data2 = createDisplayObjectRenderNode(state, obj2);
-    adapter.adapt(state, obj2, data2);
+    const data2 = createDisplayObjectRenderNode(state, obj);
+    adapter.adapt(state, obj, data2);
     expect(data2.source).toBe(source1);
   });
 
@@ -134,15 +134,17 @@ describe('endImageRenderCacheCapture', () => {
 
 describe('getImageRenderCache', () => {
   it('returns null when no cache is set', () => {
+    const state = createRenderState();
     const obj = createDisplayObject();
-    expect(getImageRenderCache(obj as any)).toBeNull();
+    expect(getImageRenderCache(state, obj as any)).toBeNull();
   });
 
   it('returns the cache result after setImageRenderCache', () => {
+    const state = createRenderState();
     const obj = createDisplayObject();
     const cache = makeCacheResult();
-    setImageRenderCache(obj as any, cache);
-    expect(getImageRenderCache(obj as any)).toBe(cache);
+    setImageRenderCache(state, obj as any, cache);
+    expect(getImageRenderCache(state, obj as any)).toBe(cache);
   });
 });
 
@@ -192,18 +194,30 @@ describe('registerImageRenderCacheRenderer', () => {
 
 describe('setImageRenderCache', () => {
   it('creates a cache adapter and sets the result', () => {
+    const state = createRenderState();
     const obj = createDisplayObject();
     const cache = makeCacheResult();
-    setImageRenderCache(obj as any, cache);
-    expect(getImageRenderCache(obj as any)).toBe(cache);
+    setImageRenderCache(state, obj as any, cache);
+    expect(getImageRenderCache(state, obj as any)).toBe(cache);
   });
 
   it('reuses an existing adapter on subsequent calls', () => {
+    const state = createRenderState();
     const obj = createDisplayObject();
     const cache1 = makeCacheResult();
     const cache2 = makeCacheResult();
-    setImageRenderCache(obj as any, cache1);
-    setImageRenderCache(obj as any, cache2);
-    expect(getImageRenderCache(obj as any)).toBe(cache2);
+    setImageRenderCache(state, obj as any, cache1);
+    setImageRenderCache(state, obj as any, cache2);
+    expect(getImageRenderCache(state, obj as any)).toBe(cache2);
+  });
+
+  it('isolates cache between render states', () => {
+    const stateA = createRenderState();
+    const stateB = createRenderState();
+    const obj = createDisplayObject();
+    const cache = makeCacheResult();
+    setImageRenderCache(stateA, obj as any, cache);
+    expect(getImageRenderCache(stateA, obj as any)).toBe(cache);
+    expect(getImageRenderCache(stateB, obj as any)).toBeNull();
   });
 });

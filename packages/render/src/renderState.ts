@@ -15,6 +15,7 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
     displayObjectMaskRendererMap: obj?.displayObjectMaskRendererMap ?? new Map(),
     displayObjectMaskRendererMapID: obj?.displayObjectMaskRendererMapID ?? 0,
     pixelRatio: obj?.pixelRatio ?? 1,
+    renderNodeAdapterMap: obj?.renderNodeAdapterMap ?? new WeakMap(),
     renderNodeMap: obj?.renderNodeMap ?? new WeakMap(),
     renderAlpha: obj?.renderAlpha ?? 1,
     renderBlendMode: obj?.renderBlendMode ?? BlendMode.Normal,

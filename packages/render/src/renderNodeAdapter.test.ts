@@ -25,7 +25,7 @@ describe('applyRenderNodeAdapter', () => {
     const adapter: RenderNodeAdapter = {
       adapt: vi.fn().mockReturnValue(false),
     };
-    setRenderNodeAdapter(source, adapter);
+    setRenderNodeAdapter(state, source, adapter);
 
     applyRenderNodeAdapter(state, source, data);
 
@@ -45,7 +45,7 @@ describe('applyRenderNodeAdapter', () => {
         return true;
       },
     };
-    setRenderNodeAdapter(source, adapter);
+    setRenderNodeAdapter(state, source, adapter);
 
     applyRenderNodeAdapter(state, source, data);
 
@@ -55,33 +55,47 @@ describe('applyRenderNodeAdapter', () => {
 
 describe('getRenderNodeAdapter', () => {
   it('returns null when no adapter is set', () => {
+    const state = createRenderState();
     const source = createDisplayObject();
-    expect(getRenderNodeAdapter(source)).toBeNull();
+    expect(getRenderNodeAdapter(state, source)).toBeNull();
   });
 
   it('returns the adapter after setRenderNodeAdapter', () => {
+    const state = createRenderState();
     const source = createDisplayObject();
     const adapter: RenderNodeAdapter = { adapt: vi.fn() };
-    setRenderNodeAdapter(source, adapter);
-    expect(getRenderNodeAdapter(source)).toBe(adapter);
-    setRenderNodeAdapter(source, null);
+    setRenderNodeAdapter(state, source, adapter);
+    expect(getRenderNodeAdapter(state, source)).toBe(adapter);
+    setRenderNodeAdapter(state, source, null);
   });
 });
 
 describe('setRenderNodeAdapter', () => {
   it('sets an adapter for the source', () => {
+    const state = createRenderState();
     const source = createDisplayObject();
     const adapter: RenderNodeAdapter = { adapt: vi.fn() };
-    setRenderNodeAdapter(source, adapter);
-    expect(getRenderNodeAdapter(source)).toBe(adapter);
-    setRenderNodeAdapter(source, null);
+    setRenderNodeAdapter(state, source, adapter);
+    expect(getRenderNodeAdapter(state, source)).toBe(adapter);
+    setRenderNodeAdapter(state, source, null);
+  });
+
+  it('isolates adapters between render states', () => {
+    const stateA = createRenderState();
+    const stateB = createRenderState();
+    const source = createDisplayObject();
+    const adapter: RenderNodeAdapter = { adapt: vi.fn() };
+    setRenderNodeAdapter(stateA, source, adapter);
+    expect(getRenderNodeAdapter(stateA, source)).toBe(adapter);
+    expect(getRenderNodeAdapter(stateB, source)).toBeNull();
   });
 
   it('removes the adapter when passed null', () => {
+    const state = createRenderState();
     const source = createDisplayObject();
     const adapter: RenderNodeAdapter = { adapt: vi.fn() };
-    setRenderNodeAdapter(source, adapter);
-    setRenderNodeAdapter(source, null);
-    expect(getRenderNodeAdapter(source)).toBeNull();
+    setRenderNodeAdapter(state, source, adapter);
+    setRenderNodeAdapter(state, source, null);
+    expect(getRenderNodeAdapter(state, source)).toBeNull();
   });
 });
