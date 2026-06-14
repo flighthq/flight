@@ -2,7 +2,7 @@ import type { WebGLRenderStateInternal, WebGLRenderTarget } from '@flighthq/rend
 import type { GradientBevelFilter } from '@flighthq/types';
 import type { WebGLRenderState } from '@flighthq/types';
 
-import { applyBlurFilterToWebGL } from './blurFilter';
+import { applyBoxBlurFilterToWebGL } from './blurFilter';
 import type { WebGLFilterLocations } from './filterPass';
 import { clearWebGLFilterTarget, compileWebGLFilterProgram, drawWebGLFilterPass } from './filterPass';
 import { createWebGLGradientRampTexture } from './gradientRamp';
@@ -77,7 +77,7 @@ export function applyGradientBevelFilterToWebGL(
 
   // Build blur basis → s1
   applyTintPass(state, source, s0, 0xffffff, 1, Math.min(1, strength));
-  applyBlurFilterToWebGL(state, s0, s1, s2, { blurX: filter.blurX ?? 4, blurY: filter.blurY ?? 4, quality });
+  applyBoxBlurFilterToWebGL(state, s0, s1, s2, { blurX: filter.blurX ?? 4, blurY: filter.blurY ?? 4, passes: quality });
 
   // Encode bevel value from blurred alpha offset samples → s0
   const dx = Math.cos(angle) * distance;

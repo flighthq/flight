@@ -2,11 +2,12 @@ import {
   applyBevelFilterToWebGL,
   applyBlitOffsetPass,
   applyBlitPass,
-  applyBlurFilterToWebGL,
+  applyBoxBlurFilterToWebGL,
   applyColorMatrixFilterToWebGL,
   applyConvolutionFilterToWebGL,
   applyDisplacementMapFilterToWebGL,
   applyDropShadowFilterToWebGL,
+  applyGaussianBlurFilterToWebGL,
   applyGradientBevelFilterToWebGL,
   applyGradientGlowFilterToWebGL,
   applyInnerGlowFilterToWebGL,
@@ -19,7 +20,6 @@ import {
   applyTintPass,
   clearWebGLFilterTarget,
   compileWebGLFilterProgram,
-  computeBoxBlurRadiusWebGL,
   createWebGLGradientRampTexture,
   drawWebGLDualSourcePass,
   drawWebGLFilterPass,
@@ -28,11 +28,12 @@ import {
 describe('index', () => {
   it('exports all filter functions', () => {
     expect(applyBevelFilterToWebGL).toBeDefined();
-    expect(applyBlurFilterToWebGL).toBeDefined();
+    expect(applyBoxBlurFilterToWebGL).toBeDefined();
     expect(applyColorMatrixFilterToWebGL).toBeDefined();
     expect(applyConvolutionFilterToWebGL).toBeDefined();
     expect(applyDisplacementMapFilterToWebGL).toBeDefined();
     expect(applyDropShadowFilterToWebGL).toBeDefined();
+    expect(applyGaussianBlurFilterToWebGL).toBeDefined();
     expect(applyGradientBevelFilterToWebGL).toBeDefined();
     expect(applyGradientGlowFilterToWebGL).toBeDefined();
     expect(applyInnerGlowFilterToWebGL).toBeDefined();
@@ -52,7 +53,6 @@ describe('index', () => {
     expect(applyBlitPass).toBeDefined();
     expect(applyInvertTintPass).toBeDefined();
     expect(applyTintPass).toBeDefined();
-    expect(computeBoxBlurRadiusWebGL).toBeDefined();
     expect(createWebGLGradientRampTexture).toBeDefined();
   });
 });

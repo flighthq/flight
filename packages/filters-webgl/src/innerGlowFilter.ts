@@ -2,7 +2,7 @@ import type { WebGLRenderStateInternal, WebGLRenderTarget } from '@flighthq/rend
 import type { InnerGlowFilter } from '@flighthq/types';
 import type { WebGLRenderState } from '@flighthq/types';
 
-import { applyBlurFilterToWebGL } from './blurFilter';
+import { applyBoxBlurFilterToWebGL } from './blurFilter';
 import type { WebGLDualSourceLocations } from './filterPass';
 import { clearWebGLFilterTarget, compileWebGLFilterProgram, drawWebGLDualSourcePass } from './filterPass';
 import { applyBlitPass, applyInvertTintPass } from './tintShader';
@@ -58,7 +58,7 @@ export function applyInnerGlowFilterToWebGL(
   applyInvertTintPass(state, source, s0, color, alpha, strength);
 
   // Pass 2: blur → s1 (s2 is ping-pong temp)
-  applyBlurFilterToWebGL(state, s0, s1, s2, { blurX: filter.blurX ?? 6, blurY: filter.blurY ?? 6, quality });
+  applyBoxBlurFilterToWebGL(state, s0, s1, s2, { blurX: filter.blurX ?? 6, blurY: filter.blurY ?? 6, passes: quality });
 
   // Pass 3: clip blurred glow (s1) to source alpha, output to s0 (s1 no longer needed)
   applyInnerClipPass(state, s1, source, s0);
