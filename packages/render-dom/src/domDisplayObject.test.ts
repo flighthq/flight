@@ -1,6 +1,6 @@
 import { appendShapeRectangle, createDisplayObject, createShape } from '@flighthq/displayobject';
 import { createRectangle } from '@flighthq/geometry';
-import { addSceneChild, invalidateLocalTransform } from '@flighthq/node';
+import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { getOrCreateDisplayObjectRenderNode, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
 import { DisplayObjectKind } from '@flighthq/types';
 
@@ -60,7 +60,7 @@ describe('renderDOMDisplayObject', () => {
     const obj = createDisplayObject();
     obj.scaleX = 0;
     obj.scaleY = 0;
-    invalidateLocalTransform(obj);
+    invalidateNodeLocalTransform(obj);
 
     const renderer = { createData: vi.fn(), draw: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
@@ -111,7 +111,7 @@ describe('renderDOMDisplayObject', () => {
     const state = makeState();
     const parent = createDisplayObject();
     const child = createDisplayObject();
-    addSceneChild(parent, child);
+    addNodeChild(parent, child);
 
     const childEl = document.createElement('div');
     const childData = setupRenderedNode(state, child, childEl);
@@ -142,8 +142,8 @@ describe('renderDOMDisplayObject', () => {
     const parent = createDisplayObject();
     const childA = createDisplayObject();
     const childB = createDisplayObject();
-    addSceneChild(parent, childA);
-    addSceneChild(parent, childB);
+    addNodeChild(parent, childA);
+    addNodeChild(parent, childB);
 
     const elA = document.createElement('div');
     const elB = document.createElement('span');
@@ -162,8 +162,8 @@ describe('renderDOMDisplayObject', () => {
     const parent = createDisplayObject();
     const childA = createDisplayObject();
     const childB = createDisplayObject();
-    addSceneChild(parent, childA);
-    addSceneChild(parent, childB);
+    addNodeChild(parent, childA);
+    addNodeChild(parent, childB);
 
     const elA = document.createElement('div');
     const elB = document.createElement('span');
@@ -188,7 +188,7 @@ describe('renderDOMDisplayObject', () => {
     const parent = createDisplayObject();
     parent.clipRectangle = createRectangle(10, 20, 30, 40);
     const child = createDisplayObject();
-    addSceneChild(parent, child);
+    addNodeChild(parent, child);
 
     prepareDisplayObjectRender(state, parent);
     const el = document.createElement('div');

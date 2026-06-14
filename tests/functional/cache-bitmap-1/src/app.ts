@@ -2,7 +2,7 @@
 // this test verifies that alpha-blended rounded-rect shapes render correctly
 // while orbiting the screen.
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
@@ -34,7 +34,7 @@ const H = height / scale;
 const stageBg = createShape();
 appendShapeBeginFill(stageBg, 0x000000);
 appendShapeRectangle(stageBg, 0, 0, W, H);
-addSceneChild(root, stageBg);
+addNodeChild(root, stageBg);
 
 // Static background rects with varying alpha
 const bgRects: { color: number; alpha: number; x: number; y: number }[] = [
@@ -47,17 +47,17 @@ for (const { color, alpha, x, y } of bgRects) {
   appendShapeBeginFill(s, color, alpha);
   appendShapeRectangle(s, x, y, pos(200), pos(200));
   appendShapeEndFill(s);
-  addSceneChild(root, s);
+  addNodeChild(root, s);
 }
 
 // Orbiting group
 const group = createDisplayContainer();
-addSceneChild(root, group);
+addNodeChild(root, group);
 
 const redBase = createShape();
 appendShapeBeginFill(redBase, 0xff0000);
 appendShapeRectangle(redBase, pos(75), pos(25), pos(125), pos(125));
-addSceneChild(group, redBase);
+addNodeChild(group, redBase);
 
 const roundedRects = [
   { color: COLORS[0], x: 0, y: 0, rx: pos(100), ry: pos(100) },
@@ -71,7 +71,7 @@ for (const { color, x, y, rx, ry } of roundedRects) {
   appendShapeBeginFill(s, color);
   appendShapeRoundRectangle(s, x, y, pos(100), pos(100), rx, ry);
   appendShapeEndFill(s);
-  addSceneChild(group, s);
+  addNodeChild(group, s);
 }
 
 // Status label
@@ -82,7 +82,7 @@ status.y = pos(10);
 status.data.width = pos(860);
 status.data.height = pos(40);
 status.data.text = 'cacheAsBitmap: n/a (not in flight)';
-addSceneChild(root, status);
+addNodeChild(root, status);
 
 const cx = pos(527);
 const cy = pos(255);

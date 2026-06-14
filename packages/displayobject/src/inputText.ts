@@ -1,4 +1,4 @@
-import { invalidateAppearance } from '@flighthq/node';
+import { invalidateNodeAppearance } from '@flighthq/node';
 import type { InputText, InputTextData, InputTextRuntime, MethodsOf, PartialNode } from '@flighthq/types';
 import { InputTextKind } from '@flighthq/types';
 
@@ -36,7 +36,7 @@ export function getInputTextRuntime(source: Readonly<InputText>): Readonly<Input
 
 export function setInputTextText(source: InputText, value: string): void {
   source.data.text = value;
-  invalidateAppearance(source);
+  invalidateNodeAppearance(source);
 }
 
 const defaultMethods: Partial<MethodsOf<InputTextRuntime>> = {

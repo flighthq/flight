@@ -12,9 +12,9 @@
     { "path": "../entity" },
     { "path": "../geometry" },
     { "path": "../materials" },
-    { "path": "../scene" },
-    { "path": "../scene-display" },
-    { "path": "../scene-sprite" },
+    { "path": "../node" },
+    { "path": "../displayobject" },
+    { "path": "../sprite" },
     { "path": "../types" }
   ],
   "include": ["src"]

@@ -1,5 +1,5 @@
 import { createInputText, setRichTextFormatRange } from '@flighthq/displayobject';
-import { getAppearanceRevision } from '@flighthq/node';
+import { getNodeAppearanceRevision } from '@flighthq/node';
 import type { KeyboardData, TextLayoutResult } from '@flighthq/types';
 import { KeyCode } from '@flighthq/types';
 
@@ -297,12 +297,12 @@ describe('moveInputTextCaret', () => {
 describe('replaceInputText', () => {
   it('replaces a range and collapses selection after inserted text', () => {
     const text = createInputText({ data: { text: 'hello world' } });
-    const before = getAppearanceRevision(text);
+    const before = getNodeAppearanceRevision(text);
     replaceInputText(text, 6, 11, 'Flight');
     expect(text.data.text).toBe('hello Flight');
     expect(getInputTextSelectionBeginIndex(text)).toBe(12);
     expect(getInputTextSelectionEndIndex(text)).toBe(12);
-    expect(getAppearanceRevision(text)).not.toBe(before);
+    expect(getNodeAppearanceRevision(text)).not.toBe(before);
   });
 
   it('updates serialized text format ranges after insertion', () => {

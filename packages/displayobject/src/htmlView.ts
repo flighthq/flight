@@ -1,18 +1,10 @@
-import { invalidateLocalBounds } from '@flighthq/node';
-import type {
-  HTMLView,
-  HTMLViewData,
-  HTMLViewRuntime,
-  MethodsOf,
-  PartialNode,
-  Rectangle,
-  SceneNode,
-} from '@flighthq/types';
+import { invalidateNodeLocalBounds } from '@flighthq/node';
+import type { HTMLView, HTMLViewData, HTMLViewRuntime, MethodsOf, Node, PartialNode, Rectangle } from '@flighthq/types';
 import { HTMLViewKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
 
-export function computeHTMLViewLocalBoundsRectangle(out: Rectangle, source: Readonly<SceneNode>): void {
+export function computeHTMLViewLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const data = (source as HTMLView).data;
   out.width = data.width;
   out.height = data.height;
@@ -42,7 +34,7 @@ export function setHTMLViewSize(source: HTMLView, width: number, height: number)
   if (source.data.width === width && source.data.height === height) return;
   source.data.width = width;
   source.data.height = height;
-  invalidateLocalBounds(source);
+  invalidateNodeLocalBounds(source);
 }
 
 const defaultMethods: Partial<MethodsOf<HTMLViewRuntime>> = {

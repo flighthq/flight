@@ -1,7 +1,7 @@
 // Requires: assets/BlendSquare.png, assets/BlendCircle.png
 // Port of BlendModeTest1.
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
@@ -43,7 +43,7 @@ const bg = createShape();
 appendShapeBeginFill(bg, 0xffffff);
 appendShapeRectangle(bg, 0, 0, W, H);
 appendShapeEndFill(bg);
-addSceneChild(root, bg);
+addNodeChild(root, bg);
 
 const [squareImg, circleImg] = await Promise.all([
   loadImageSourceFromURL('assets/BlendSquare.png'),
@@ -67,7 +67,7 @@ for (let i = 0; i < BLEND_MODES.length; i++) {
   square.data.smoothing = true;
   square.x = cx - squareImg.width / 2;
   square.y = cy - squareImg.height / 2;
-  addSceneChild(root, square);
+  addNodeChild(root, square);
 
   const circle = createBitmap();
   circle.data.image = circleImg;
@@ -75,7 +75,7 @@ for (let i = 0; i < BLEND_MODES.length; i++) {
   circle.x = cx - 10;
   circle.y = cy - 10;
   circle.blendMode = mode;
-  addSceneChild(root, circle);
+  addNodeChild(root, circle);
 
   const lbl = createRichText();
   lbl.data.defaultTextFormat = { font: 'sans-serif', size: 14, bold: true, color: 0x222222 };
@@ -84,7 +84,7 @@ for (let i = 0; i < BLEND_MODES.length; i++) {
   lbl.data.width = 200;
   lbl.data.height = 30;
   lbl.data.text = name;
-  addSceneChild(root, lbl);
+  addNodeChild(root, lbl);
 }
 
 render(root);

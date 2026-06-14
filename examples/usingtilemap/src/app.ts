@@ -1,4 +1,4 @@
-import { createTilemap, invalidateLocalTransform, loadTilesetFromURL, writeTilemapTile } from '@flighthq/sdk';
+import { createTilemap, invalidateNodeLocalTransform, loadTilesetFromURL, writeTilemapTile } from '@flighthq/sdk';
 
 import { render, scale } from './render';
 
@@ -16,7 +16,7 @@ tilemap.scaleX = SCALE * scale;
 tilemap.scaleY = SCALE * scale;
 tilemap.x = PAD * scale;
 tilemap.y = PAD * scale;
-invalidateLocalTransform(tilemap);
+invalidateNodeLocalTransform(tilemap);
 
 // Each row shows the idle frame of one character.
 // Character n's first frame = n * tileset.columns (row-major stride).

@@ -1,9 +1,9 @@
-import type { PartialNode, Rectangle, SceneNode, Video, VideoData, VideoRuntime } from '@flighthq/types';
+import type { Node, PartialNode, Rectangle, Video, VideoData, VideoRuntime } from '@flighthq/types';
 import { VideoKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
 
-export function computeVideoLocalBoundsRectangle(out: Rectangle, source: Readonly<SceneNode>): void {
+export function computeVideoLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const element = (source.data as VideoData).source?.element;
   if (element !== undefined && element !== null) {
     out.width = element.videoWidth;

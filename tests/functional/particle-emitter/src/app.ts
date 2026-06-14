@@ -11,14 +11,14 @@ import {
 } from '@flighthq/particles';
 import type { Sprite } from '@flighthq/sdk';
 import {
-  addSceneChild,
+  addNodeChild,
   addTextureAtlasRegion,
   createImageSource,
   createParticleEmitter,
   createSprite,
   createTextureAtlas,
-  invalidateAppearance,
-  invalidateLocalTransform,
+  invalidateNodeAppearance,
+  invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 
 import { canvas, render, scale } from './render';
@@ -54,7 +54,7 @@ function makeAtlas(r: number, g: number, b: number) {
 const root = createSprite();
 root.scaleX = scale;
 root.scaleY = scale;
-invalidateLocalTransform(root);
+invalidateNodeLocalTransform(root);
 
 // ---------------------------------------------------------------------------
 // Panel A (left): fire column
@@ -64,8 +64,8 @@ const fireEmitter = createParticleEmitter();
 fireEmitter.data.atlas = makeAtlas(255, 80, 0);
 fireEmitter.x = 133;
 fireEmitter.y = 420;
-addSceneChild(root, fireEmitter);
-invalidateLocalTransform(fireEmitter);
+addNodeChild(root, fireEmitter);
+invalidateNodeLocalTransform(fireEmitter);
 
 const fireConfig = createParticleEmitterConfig({
   spawnRate: 120,
@@ -94,8 +94,8 @@ const burstEmitter = createParticleEmitter();
 burstEmitter.data.atlas = makeAtlas(80, 160, 255);
 burstEmitter.x = 400;
 burstEmitter.y = 225;
-addSceneChild(root, burstEmitter);
-invalidateLocalTransform(burstEmitter);
+addNodeChild(root, burstEmitter);
+invalidateNodeLocalTransform(burstEmitter);
 
 const burstConfig = createParticleEmitterConfig({
   spawnRate: 3000,
@@ -131,16 +131,16 @@ const poolAtlas = makeAtlas(60, 220, 120);
 const poolContainer = createSprite();
 poolContainer.x = 667;
 poolContainer.y = 225;
-addSceneChild(root, poolContainer);
-invalidateLocalTransform(poolContainer);
+addNodeChild(root, poolContainer);
+invalidateNodeLocalTransform(poolContainer);
 
 const poolSprites: Sprite[] = Array.from({ length: POOL_SIZE }, () => {
   const s = createSprite();
   s.data.atlas = poolAtlas;
   s.data.id = 0;
   s.visible = false;
-  addSceneChild(poolContainer, s);
-  invalidateLocalTransform(s);
+  addNodeChild(poolContainer, s);
+  invalidateNodeLocalTransform(s);
   return s;
 });
 
@@ -186,18 +186,18 @@ function enterFrame(): void {
 
   // Panel A — fire
   updateParticleEmitter(fireEmitter, fireState, fireConfig, dt);
-  invalidateAppearance(fireEmitter);
+  invalidateNodeAppearance(fireEmitter);
 
   // Panel B — burst
   burstTimer = Math.max(0, burstTimer - dt);
   updateParticleEmitter(burstEmitter, burstState, burstTimer > 0 ? burstConfig : idleConfig, dt);
-  invalidateAppearance(burstEmitter);
+  invalidateNodeAppearance(burstEmitter);
 
   // Panel C — object pool
   updateParticleObjects(poolSprites, poolState, poolConfig, dt);
   for (const s of poolSprites) {
-    invalidateLocalTransform(s);
-    invalidateAppearance(s);
+    invalidateNodeLocalTransform(s);
+    invalidateNodeAppearance(s);
   }
 
   render(root);

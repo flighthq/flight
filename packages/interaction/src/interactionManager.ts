@@ -1,5 +1,5 @@
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry';
-import { getSceneNodeRuntime, getSceneParent, getWorldTransformMatrix } from '@flighthq/node';
+import { getNodeParent, getNodeRuntime, getNodeWorldTransformMatrix } from '@flighthq/node';
 import { connectSignal, createSignal, disconnectSignal, emitSignal, isSlotConnected } from '@flighthq/signals';
 import type {
   AnyInteractionSignalSlot,
@@ -13,27 +13,27 @@ import type {
   InteractionSignalName,
   InteractionSignals,
   KeyboardData,
+  Node,
+  NodeRuntime,
   PointerData,
-  SceneNode,
-  SceneNodeRuntime,
-  SceneTransform2DNode,
   Signal,
   SignalConnectOptions,
+  Transform2DNode,
 } from '@flighthq/types';
 
 import { findGraphHitTarget } from './hitTests';
 
-export function capturePointer<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+export function capturePointer<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   pointerId: number,
-  target: SceneNode<SceneKind, Traits>,
+  target: Node<Kind, Traits>,
 ): void {
   manager.pointerCaptures.set(pointerId, target);
 }
 
-export function connectInputToInteraction<SceneKind extends symbol, Traits extends object>(
+export function connectInputToInteraction<Kind extends symbol, Traits extends object>(
   input: InteractionInputSource,
-  manager: InteractionManager<SceneKind, Traits>,
+  manager: InteractionManager<Kind, Traits>,
   coordScale: number = 1,
 ): () => void {
   const sx = (v: number) => v * coordScale;
@@ -70,12 +70,12 @@ export function connectInputToInteraction<SceneKind extends symbol, Traits exten
 }
 
 export function connectInteractionSignal<
-  SceneKind extends symbol,
+  Kind extends symbol,
   Traits extends object,
   Name extends InteractionSignalName,
 >(
-  manager: InteractionManager<SceneKind, Traits>,
-  target: SceneNode<SceneKind, Traits>,
+  manager: InteractionManager<Kind, Traits>,
+  target: Node<Kind, Traits>,
   name: Name,
   slot: InteractionSignalSlot<Name>,
   options?: Readonly<SignalConnectOptions>,
@@ -104,10 +104,10 @@ export function connectInteractionSignal<
   incrementInteractionSignalSubscriberCount(manager, name);
 }
 
-export function createInteractionManager<SceneKind extends symbol, Traits extends object>(
-  root: SceneNode<SceneKind, Traits>,
+export function createInteractionManager<Kind extends symbol, Traits extends object>(
+  root: Node<Kind, Traits>,
   options: Readonly<InteractionManagerOptions> = {},
-): InteractionManager<SceneKind, Traits> {
+): InteractionManager<Kind, Traits> {
   return {
     doubleClickDelay: 500,
     enabled: options.enabled ?? true,
@@ -141,12 +141,12 @@ export function createInteractionSignals(): InteractionSignals {
 }
 
 export function disconnectInteractionSignal<
-  SceneKind extends symbol,
+  Kind extends symbol,
   Traits extends object,
   Name extends InteractionSignalName,
 >(
-  manager: InteractionManager<SceneKind, Traits>,
-  target: SceneNode<SceneKind, Traits>,
+  manager: InteractionManager<Kind, Traits>,
+  target: Node<Kind, Traits>,
   name: Name,
   slot: InteractionSignalSlot<Name>,
 ): void {
@@ -162,8 +162,8 @@ export function disconnectInteractionSignal<
   decrementInteractionSignalSubscriberCount(manager, name);
 }
 
-export function dispatchContextMenu<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+export function dispatchContextMenu<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   x: number,
   y: number,
   button: number = 2,
@@ -172,8 +172,8 @@ export function dispatchContextMenu<SceneKind extends symbol, Traits extends obj
   dispatchPointerSignalAt(manager, 'onContextMenu', x, y, button, 0, 0, options);
 }
 
-export function dispatchKeyDown<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+export function dispatchKeyDown<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   key: string,
   keyCode: number = 0,
   modifiers?: Readonly<Partial<KeyboardData>>,
@@ -181,8 +181,8 @@ export function dispatchKeyDown<SceneKind extends symbol, Traits extends object>
   dispatchKeyboardSignal(manager, 'onKeyDown', key, keyCode, modifiers);
 }
 
-export function dispatchKeyUp<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+export function dispatchKeyUp<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   key: string,
   keyCode: number = 0,
   modifiers?: Readonly<Partial<KeyboardData>>,
@@ -190,8 +190,8 @@ export function dispatchKeyUp<SceneKind extends symbol, Traits extends object>(
   dispatchKeyboardSignal(manager, 'onKeyUp', key, keyCode, modifiers);
 }
 
-export function dispatchPointerCancel<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+export function dispatchPointerCancel<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   x: number,
   y: number,
   options?: Readonly<InteractionPointerOptions>,
@@ -216,8 +216,8 @@ export function dispatchPointerCancel<SceneKind extends symbol, Traits extends o
   }
 }
 
-export function dispatchPointerDown<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+export function dispatchPointerDown<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   x: number,
   y: number,
   button: number = 0,
@@ -235,8 +235,8 @@ export function dispatchPointerDown<SceneKind extends symbol, Traits extends obj
   emitInteractionSignal(target, manager.root, 'onPointerDown', _pointerData);
 }
 
-export function dispatchPointerMove<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+export function dispatchPointerMove<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   x: number,
   y: number,
   button: number = 0,
@@ -262,8 +262,8 @@ export function dispatchPointerMove<SceneKind extends symbol, Traits extends obj
   }
 }
 
-export function dispatchPointerUp<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+export function dispatchPointerUp<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   x: number,
   y: number,
   button: number = 0,
@@ -300,8 +300,8 @@ export function dispatchPointerUp<SceneKind extends symbol, Traits extends objec
   }
 }
 
-export function dispatchWheel<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+export function dispatchWheel<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   x: number,
   y: number,
   deltaX: number = 0,
@@ -311,22 +311,22 @@ export function dispatchWheel<SceneKind extends symbol, Traits extends object>(
   dispatchPointerSignalAt(manager, 'onWheel', x, y, 0, deltaX, deltaY, options);
 }
 
-export function getInteractionSignals<SceneKind extends symbol, Traits extends object>(
-  source: SceneNode<SceneKind, Traits>,
+export function getInteractionSignals<Kind extends symbol, Traits extends object>(
+  source: Node<Kind, Traits>,
 ): InteractionSignals {
-  const runtime = getSceneNodeRuntime(source) as SceneNodeRuntime<SceneKind, Traits>;
+  const runtime = getNodeRuntime(source) as NodeRuntime<Kind, Traits>;
   return (runtime.interactionSignals ??= createInteractionSignals());
 }
 
-export function releasePointer<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+export function releasePointer<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   pointerId: number,
 ): void {
   manager.pointerCaptures.delete(pointerId);
 }
 
-function dispatchKeyboardSignal<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+function dispatchKeyboardSignal<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   name: KeyboardSignalName,
   key: string,
   keyCode: number,
@@ -337,10 +337,10 @@ function dispatchKeyboardSignal<SceneKind extends symbol, Traits extends object>
   emitInteractionSignal(manager.root, manager.root, name, _keyboardData);
 }
 
-function dispatchPointerRolloverChange<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
-  oldTarget: SceneNode<SceneKind, Traits> | null,
-  target: SceneNode<SceneKind, Traits> | null,
+function dispatchPointerRolloverChange<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
+  oldTarget: Node<Kind, Traits> | null,
+  target: Node<Kind, Traits> | null,
 ): void {
   if (oldTarget !== null) {
     emitInteractionSignal(oldTarget, manager.root, 'onPointerOut', _pointerData);
@@ -369,8 +369,8 @@ function dispatchPointerRolloverChange<SceneKind extends symbol, Traits extends 
   }
 }
 
-function dispatchPointerSignalAt<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+function dispatchPointerSignalAt<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   name: PointerSignalName,
   x: number,
   y: number,
@@ -388,33 +388,33 @@ function dispatchPointerSignalAt<SceneKind extends symbol, Traits extends object
   emitInteractionSignal(target, manager.root, name, _pointerData);
 }
 
-function emitInteractionSignal<SceneKind extends symbol, Traits extends object, Name extends InteractionSignalName>(
-  target: SceneNode<SceneKind, Traits>,
-  root: SceneNode<SceneKind, Traits>,
+function emitInteractionSignal<Kind extends symbol, Traits extends object, Name extends InteractionSignalName>(
+  target: Node<Kind, Traits>,
+  root: Node<Kind, Traits>,
   name: Name,
   data: InteractionSignalPayload<Name>,
 ): void {
-  let current: SceneNode<SceneKind, Traits> | null = target;
+  let current: Node<Kind, Traits> | null = target;
   while (current !== null) {
     setInteractionSignalCurrentTarget(data, target, current);
     emitInteractionSignalDirect(current, name, data);
     if (isInteractionSignalCancelled(current, name)) break;
     if (current === root) break;
-    current = getSceneParent(current) as SceneNode<SceneKind, Traits> | null;
+    current = getNodeParent(current) as Node<Kind, Traits> | null;
   }
 }
 
-function emitInteractionSignalDirect<
-  SceneKind extends symbol,
-  Traits extends object,
-  Name extends InteractionSignalName,
->(target: SceneNode<SceneKind, Traits>, name: Name, data: InteractionSignalPayload<Name>): void {
+function emitInteractionSignalDirect<Kind extends symbol, Traits extends object, Name extends InteractionSignalName>(
+  target: Node<Kind, Traits>,
+  name: Name,
+  data: InteractionSignalPayload<Name>,
+): void {
   const signal = getInteractionSignal(target, name);
   if (signal !== null) emitSignal(signal as Signal<(value: InteractionSignalPayload<Name>) => void>, data);
 }
 
-function decrementInteractionSignalSubscriberCount<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+function decrementInteractionSignalSubscriberCount<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   name: InteractionSignalName,
 ): void {
   const count = manager.signalSubscriberCounts.get(name) ?? 0;
@@ -425,22 +425,22 @@ function decrementInteractionSignalSubscriberCount<SceneKind extends symbol, Tra
   }
 }
 
-function findInteractionTarget<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+function findInteractionTarget<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   x: number,
   y: number,
   pointerId: number,
-): SceneNode<SceneKind, Traits> | null {
+): Node<Kind, Traits> | null {
   if (!manager.enabled) return null;
   const captured = manager.pointerCaptures.get(pointerId);
   if (captured !== undefined) return captured;
-  return findGraphHitTarget(manager.root, x, y) as SceneNode<SceneKind, Traits> | null;
+  return findGraphHitTarget(manager.root, x, y) as Node<Kind, Traits> | null;
 }
 
-function getInteractionPointerState<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+function getInteractionPointerState<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   pointerId: number,
-): InteractionPointerState<SceneKind, Traits> {
+): InteractionPointerState<Kind, Traits> {
   let state = manager.pointerStates.get(pointerId);
   if (state === undefined) {
     state = {
@@ -454,35 +454,35 @@ function getInteractionPointerState<SceneKind extends symbol, Traits extends obj
   return state;
 }
 
-function getInteractionChain<SceneKind extends symbol, Traits extends object>(
-  target: SceneNode<SceneKind, Traits>,
-  root: SceneNode<SceneKind, Traits>,
-): SceneNode<SceneKind, Traits>[] {
-  const out: SceneNode<SceneKind, Traits>[] = [];
-  let current: SceneNode<SceneKind, Traits> | null = target;
+function getInteractionChain<Kind extends symbol, Traits extends object>(
+  target: Node<Kind, Traits>,
+  root: Node<Kind, Traits>,
+): Node<Kind, Traits>[] {
+  const out: Node<Kind, Traits>[] = [];
+  let current: Node<Kind, Traits> | null = target;
   while (current !== null) {
     out.push(current);
     if (current === root) break;
-    current = getSceneParent(current) as SceneNode<SceneKind, Traits> | null;
+    current = getNodeParent(current) as Node<Kind, Traits> | null;
   }
   return out;
 }
 
-function getInteractionSignal<SceneKind extends symbol, Traits extends object, Name extends InteractionSignalName>(
-  source: Readonly<SceneNode<SceneKind, Traits>>,
+function getInteractionSignal<Kind extends symbol, Traits extends object, Name extends InteractionSignalName>(
+  source: Readonly<Node<Kind, Traits>>,
   name: Name,
 ): InteractionSignals[Name] | null {
-  const signals = getSceneNodeRuntime(source).interactionSignals;
+  const signals = getNodeRuntime(source).interactionSignals;
   return signals !== null ? signals[name] : null;
 }
 
 function getTrackedInteractionSignalSlot<
-  SceneKind extends symbol,
+  Kind extends symbol,
   Traits extends object,
   Name extends InteractionSignalName,
 >(
-  manager: InteractionManager<SceneKind, Traits>,
-  target: SceneNode<SceneKind, Traits>,
+  manager: InteractionManager<Kind, Traits>,
+  target: Node<Kind, Traits>,
   name: Name,
   slot: InteractionSignalSlot<Name>,
 ): AnyInteractionSignalSlot | null {
@@ -494,8 +494,8 @@ function getTrackedInteractionSignalSlot<
   );
 }
 
-function hasInteractionSignalSubscriber<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+function hasInteractionSignalSubscriber<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   name: InteractionSignalName,
 ): boolean {
   if ((manager.signalSubscriberCounts.get(name) ?? 0) > 0) return true;
@@ -503,39 +503,39 @@ function hasInteractionSignalSubscriber<SceneKind extends symbol, Traits extends
   return hasInteractionSignalSubscriberInGraph(manager.root, name);
 }
 
-function hasInteractionSignalSubscriberInGraph<SceneKind extends symbol, Traits extends object>(
-  source: Readonly<SceneNode<SceneKind, Traits>>,
+function hasInteractionSignalSubscriberInGraph<Kind extends symbol, Traits extends object>(
+  source: Readonly<Node<Kind, Traits>>,
   name: InteractionSignalName,
 ): boolean {
   const signal = getInteractionSignal(source, name);
   if (signal?.data !== null && signal !== null) return true;
 
-  const children = getSceneNodeRuntime(source).children;
+  const children = getNodeRuntime(source).children;
   if (children !== null) {
     for (const child of children) {
-      if (hasInteractionSignalSubscriberInGraph(child as SceneNode<SceneKind, Traits>, name)) return true;
+      if (hasInteractionSignalSubscriberInGraph(child as Node<Kind, Traits>, name)) return true;
     }
   }
 
   return false;
 }
 
-function incrementInteractionSignalSubscriberCount<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+function incrementInteractionSignalSubscriberCount<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   name: InteractionSignalName,
 ): void {
   manager.signalSubscriberCounts.set(name, (manager.signalSubscriberCounts.get(name) ?? 0) + 1);
 }
 
-function isInteractionSignalCancelled<SceneKind extends symbol, Traits extends object>(
-  source: Readonly<SceneNode<SceneKind, Traits>>,
+function isInteractionSignalCancelled<Kind extends symbol, Traits extends object>(
+  source: Readonly<Node<Kind, Traits>>,
   name: InteractionSignalName,
 ): boolean {
   return getInteractionSignal(source, name)?.data?.cancelled === true;
 }
 
-function isPointerSignalNeeded<SceneKind extends symbol, Traits extends object>(
-  manager: InteractionManager<SceneKind, Traits>,
+function isPointerSignalNeeded<Kind extends symbol, Traits extends object>(
+  manager: InteractionManager<Kind, Traits>,
   names: readonly InteractionSignalName[],
 ): boolean {
   if (!manager.enabled) return false;
@@ -546,12 +546,12 @@ function isPointerSignalNeeded<SceneKind extends symbol, Traits extends object>(
 }
 
 function removeTrackedInteractionSignalSlot<
-  SceneKind extends symbol,
+  Kind extends symbol,
   Traits extends object,
   Name extends InteractionSignalName,
 >(
-  manager: InteractionManager<SceneKind, Traits>,
-  target: SceneNode<SceneKind, Traits>,
+  manager: InteractionManager<Kind, Traits>,
+  target: Node<Kind, Traits>,
   name: Name,
   slot: InteractionSignalSlot<Name>,
 ): void {
@@ -575,8 +575,8 @@ function setKeyboardData(key: string, keyCode: number, modifiers: Readonly<Parti
 
 function setInteractionSignalCurrentTarget<Name extends InteractionSignalName>(
   data: InteractionSignalPayload<Name>,
-  target: SceneNode<symbol, object>,
-  currentTarget: SceneNode<symbol, object>,
+  target: Node<symbol, object>,
+  currentTarget: Node<symbol, object>,
 ): void {
   if ('currentTarget' in data) {
     const pointerData = data as PointerData;
@@ -587,8 +587,8 @@ function setInteractionSignalCurrentTarget<Name extends InteractionSignalName>(
 }
 
 function setPointerData(
-  target: SceneNode<symbol, object> | null,
-  currentTarget: SceneNode<symbol, object> | null,
+  target: Node<symbol, object> | null,
+  currentTarget: Node<symbol, object> | null,
   x: number,
   y: number,
   button: number,
@@ -618,12 +618,12 @@ function setPointerData(
 }
 
 function setTrackedInteractionSignalSlot<
-  SceneKind extends symbol,
+  Kind extends symbol,
   Traits extends object,
   Name extends InteractionSignalName,
 >(
-  manager: InteractionManager<SceneKind, Traits>,
-  target: SceneNode<SceneKind, Traits>,
+  manager: InteractionManager<Kind, Traits>,
+  target: Node<Kind, Traits>,
   name: Name,
   slot: InteractionSignalSlot<Name>,
   connectedSlot: InteractionSignalSlot<Name>,
@@ -643,19 +643,19 @@ function setTrackedInteractionSignalSlot<
   signalSlots.set(slot as AnyInteractionSignalSlot, connectedSlot as AnyInteractionSignalSlot);
 }
 
-function setPointerDataLocalPosition(data: PointerData, currentTarget: SceneNode<symbol, object>): void {
-  if (!isSceneTransform2DNode(currentTarget)) {
+function setPointerDataLocalPosition(data: PointerData, currentTarget: Node<symbol, object>): void {
+  if (!isTransform2DNode(currentTarget)) {
     data.localX = data.worldX;
     data.localY = data.worldY;
     return;
   }
-  inverseMatrixTransformPointXY(_localPoint, getWorldTransformMatrix(currentTarget), data.worldX, data.worldY);
+  inverseMatrixTransformPointXY(_localPoint, getNodeWorldTransformMatrix(currentTarget), data.worldX, data.worldY);
   data.localX = _localPoint.x;
   data.localY = _localPoint.y;
 }
 
-function isSceneTransform2DNode(source: Readonly<SceneNode<symbol, object>>): source is SceneTransform2DNode {
-  const runtime = getSceneNodeRuntime(source) as SceneNodeRuntime & { worldTransform2D?: unknown };
+function isTransform2DNode(source: Readonly<Node<symbol, object>>): source is Transform2DNode {
+  const runtime = getNodeRuntime(source) as NodeRuntime & { worldTransform2D?: unknown };
   return 'worldTransform2D' in runtime;
 }
 

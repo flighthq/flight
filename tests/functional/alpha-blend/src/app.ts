@@ -1,5 +1,5 @@
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
@@ -38,7 +38,7 @@ for (let y = 0; y < ROWS; y++) {
   appendShapeBeginFill(ref, solidColor);
   appendShapeRectangle(ref, 0, y * cellH, cellW, cellH);
   appendShapeEndFill(ref);
-  addSceneChild(root, ref);
+  addNodeChild(root, ref);
 
   // Columns 1 & 2 — white base + semi-transparent black overlay
   for (const col of [1, 2]) {
@@ -46,13 +46,13 @@ for (let y = 0; y < ROWS; y++) {
     appendShapeBeginFill(base, 0xffffff);
     appendShapeRectangle(base, col * cellW, y * cellH, cellW, cellH);
     appendShapeEndFill(base);
-    addSceneChild(root, base);
+    addNodeChild(root, base);
 
     const overlay = createShape();
     appendShapeBeginFill(overlay, 0x000000, 1 - alpha);
     appendShapeRectangle(overlay, col * cellW, y * cellH, cellW, cellH);
     appendShapeEndFill(overlay);
-    addSceneChild(root, overlay);
+    addNodeChild(root, overlay);
   }
 
   // Column 3 — white base + color with alpha baked into fill alpha parameter
@@ -60,13 +60,13 @@ for (let y = 0; y < ROWS; y++) {
   appendShapeBeginFill(base3, 0xffffff);
   appendShapeRectangle(base3, 3 * cellW, y * cellH, cellW, cellH);
   appendShapeEndFill(base3);
-  addSceneChild(root, base3);
+  addNodeChild(root, base3);
 
   const overlay3 = createShape();
   appendShapeBeginFill(overlay3, solidColor, alpha);
   appendShapeRectangle(overlay3, 3 * cellW, y * cellH, cellW, cellH);
   appendShapeEndFill(overlay3);
-  addSceneChild(root, overlay3);
+  addNodeChild(root, overlay3);
 }
 
 render(root);

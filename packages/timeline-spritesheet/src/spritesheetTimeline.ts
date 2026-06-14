@@ -1,5 +1,5 @@
 import { createBitmap } from '@flighthq/displayobject';
-import { addSceneChild, invalidateLocalTransform } from '@flighthq/node';
+import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createTimeline, playMovieClip } from '@flighthq/timeline';
 import type { MovieClip, Spritesheet, SpritesheetAnimation } from '@flighthq/types';
 
@@ -10,7 +10,7 @@ export function attachSpritesheetTimeline(
 ): void {
   const bitmap = createBitmap();
   bitmap.data.image = spritesheet.atlas?.image ?? null;
-  addSceneChild(clip, bitmap);
+  addNodeChild(clip, bitmap);
 
   clip.data.timeline = createTimeline({
     frameRate: 1000 / animation.frameDuration,
@@ -21,7 +21,7 @@ export function attachSpritesheetTimeline(
       bitmap.data.sourceRectangle = spritesheet.atlas.regions[spritesheetFrame.id];
       bitmap.x = spritesheetFrame.offsetX - animation.originX;
       bitmap.y = spritesheetFrame.offsetY - animation.originY;
-      invalidateLocalTransform(bitmap);
+      invalidateNodeLocalTransform(bitmap);
     },
     totalFrames: animation.frames.length,
   });

@@ -1,11 +1,11 @@
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeRectangle,
   clearShapeCommands,
   createDisplayContainer,
   createShape,
-  invalidateAppearance,
+  invalidateNodeAppearance,
 } from '@flighthq/sdk';
 
 import { height, render, scale, width } from './render';
@@ -48,26 +48,26 @@ root.scaleY = scale;
 const bg = createShape();
 appendShapeBeginFill(bg, 0x000000);
 appendShapeRectangle(bg, 0, 0, width / scale, height / scale);
-addSceneChild(root, bg);
+addNodeChild(root, bg);
 
 const redSquare = createShape();
 appendShapeBeginFill(redSquare, 0xff0000);
 appendShapeRectangle(redSquare, pos(148), pos(67), pos(370), pos(273));
-addSceneChild(root, redSquare);
+addNodeChild(root, redSquare);
 
 const blueSquare = createShape();
 appendShapeBeginFill(blueSquare, 0x0000ff);
 appendShapeRectangle(blueSquare, pos(281), pos(201), pos(501), pos(447));
-addSceneChild(root, blueSquare);
+addNodeChild(root, blueSquare);
 
 const greenSquare = createShape();
 appendShapeBeginFill(greenSquare, 0x00ff00);
 appendShapeRectangle(greenSquare, pos(420), pos(224), pos(182), pos(97));
-addSceneChild(root, greenSquare);
+addNodeChild(root, greenSquare);
 
 // Animated random rectangle drawn each frame
 const randomRect = createShape();
-addSceneChild(root, randomRect);
+addNodeChild(root, randomRect);
 
 function enterFrame(): void {
   clearShapeCommands(randomRect.data);
@@ -80,7 +80,7 @@ function enterFrame(): void {
 
   appendShapeBeginFill(randomRect, color);
   appendShapeRectangle(randomRect, pos(x), pos(y), pos(w), pos(h));
-  invalidateAppearance(randomRect);
+  invalidateNodeAppearance(randomRect);
 
   render(root);
   requestAnimationFrame(enterFrame);

@@ -1,5 +1,5 @@
 import { getInputTextRuntime } from '@flighthq/displayobject';
-import { invalidateAppearance } from '@flighthq/node';
+import { invalidateNodeAppearance } from '@flighthq/node';
 import { getRichTextSelectionRectangles } from '@flighthq/text-layout';
 import type {
   HandleInputTextKeyboardOptions,
@@ -217,7 +217,7 @@ export function moveInputTextCaret(source: InputText, index: number, extendSelec
   const runtime = getMutableRuntime(source);
   runtime.caretIndex = caret;
   if (!extendSelection) runtime.selectionIndex = caret;
-  invalidateAppearance(source);
+  invalidateNodeAppearance(source);
 }
 
 export function replaceInputText(
@@ -242,7 +242,7 @@ export function replaceInputText(
   data.text = data.text.slice(0, start) + value + data.text.slice(end);
   adjustTextFormatRanges(data.textFormatRanges, data.defaultTextFormat, start, end, value.length);
   setInputTextSelection(source, start + value.length, start + value.length);
-  invalidateAppearance(source);
+  invalidateNodeAppearance(source);
 }
 
 export function replaceSelectedInputText(
@@ -291,7 +291,7 @@ export function setInputTextSelection(source: InputText, beginIndex: number, end
   const runtime = getMutableRuntime(source);
   runtime.selectionIndex = clampIndex(beginIndex, source.data.text.length);
   runtime.caretIndex = clampIndex(endIndex, source.data.text.length);
-  invalidateAppearance(source);
+  invalidateNodeAppearance(source);
 }
 
 function adjustTextFormatRanges(

@@ -1,5 +1,5 @@
 ﻿import { createDisplayObject } from '@flighthq/displayobject';
-import { addSceneChild } from '@flighthq/node';
+import { addNodeChild } from '@flighthq/node';
 import { getOrCreateDisplayObjectRenderNode, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
 import { DisplayObjectKind } from '@flighthq/types';
 
@@ -105,7 +105,7 @@ describe('renderCanvasDisplayObject', () => {
     const state = makeState();
     const parent = createDisplayObject();
     const child = createDisplayObject();
-    addSceneChild(parent, child);
+    addNodeChild(parent, child);
     const renderer = { createData: vi.fn().mockReturnValue(null), draw: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
     prepareDisplayObjectRender(state, parent);

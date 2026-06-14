@@ -1,4 +1,4 @@
-import { addSceneChild, createDisplayContainer, createRichText } from '@flighthq/sdk';
+import { addNodeChild, createDisplayContainer, createRichText } from '@flighthq/sdk';
 
 import { render, scale } from './render';
 
@@ -30,6 +30,6 @@ field.data.htmlText =
   '<br><br><h1>Header h1</h1><h2>Header h2</h2><br><br>Hello world<br><br>' +
   '<redText>This text <i>will be red</i></redText><br><br>' +
   "<h1><span class='typewriter'>typewriter</span></h1>";
-addSceneChild(root, field);
+addNodeChild(root, field);
 
 render(root);

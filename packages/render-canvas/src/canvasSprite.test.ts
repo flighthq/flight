@@ -1,5 +1,5 @@
 import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
-import { addSceneChild } from '@flighthq/node';
+import { addNodeChild } from '@flighthq/node';
 import { getOrCreateSpriteRenderNode, prepareSpriteRender, registerRenderer } from '@flighthq/render';
 import { createSprite } from '@flighthq/sprite';
 import { SpriteKind } from '@flighthq/types';
@@ -78,7 +78,7 @@ describe('renderCanvasSprite', () => {
     const child = createSprite();
     child.data.atlas = atlas;
     child.data.id = 0;
-    addSceneChild(parent, child);
+    addNodeChild(parent, child);
     prepareSpriteRender(state, parent);
     const spy = vi.spyOn(state.context, 'drawImage');
 

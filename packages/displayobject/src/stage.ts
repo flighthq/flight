@@ -1,11 +1,11 @@
-import { getSceneRoot, invalidateLocalBounds } from '@flighthq/node';
+import { getNodeRoot, invalidateNodeLocalBounds } from '@flighthq/node';
 import { createSignal, emitSignal } from '@flighthq/signals';
 import type {
   DisplayObject,
   MethodsOf,
+  Node,
   PartialNode,
   Rectangle,
-  SceneNode,
   Stage,
   StageData,
   StageRuntime,
@@ -15,7 +15,7 @@ import { EntityRuntimeKey, StageKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
 
-export function computeStageLocalBoundsRectangle(out: Rectangle, source: Readonly<SceneNode>): void {
+export function computeStageLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const data = (source as Stage).data;
   out.width = data.stageWidth;
   out.height = data.stageHeight;
@@ -48,7 +48,7 @@ export function createStageSignals(): StageSignals {
 }
 
 export function getDisplayObjectStage(source: Readonly<DisplayObject>): Stage | null {
-  const root = getSceneRoot(source);
+  const root = getNodeRoot(source);
   return root.kind === StageKind ? (root as Stage) : null;
 }
 
@@ -65,7 +65,7 @@ export function setStageSize(stage: Stage, width: number, height: number): void 
   if (stage.data.stageWidth === width && stage.data.stageHeight === height) return;
   stage.data.stageWidth = width;
   stage.data.stageHeight = height;
-  invalidateLocalBounds(stage);
+  invalidateNodeLocalBounds(stage);
   const runtime = stage[EntityRuntimeKey] as StageRuntime;
   if (runtime.stageSignals) emitSignal(runtime.stageSignals.onResize);
 }

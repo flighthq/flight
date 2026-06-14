@@ -1,5 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
-import { getLocalBoundsRectangle, getLocalBoundsRevision } from '@flighthq/node';
+import { getNodeLocalBoundsRectangle, getNodeLocalBoundsRevision } from '@flighthq/node';
 import type { ParticleEmitter, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
 import { ParticleEmitterKind } from '@flighthq/types';
 
@@ -86,10 +86,10 @@ describe('computeParticleEmitterLocalBoundsRectangle', () => {
     const emitter = createParticleEmitter({ data: { atlas, particleCount: 1 } });
     emitter.data.ids = new Uint16Array([0]);
     emitter.data.transforms = new Float32Array([0, 0, 0, 1]);
-    const revisionBefore = getLocalBoundsRevision(emitter);
+    const revisionBefore = getNodeLocalBoundsRevision(emitter);
     computeParticleEmitterLocalBoundsRectangle(createRectangle(), emitter);
-    expect(getLocalBoundsRevision(emitter)).toBe(revisionBefore);
-    expect(getLocalBoundsRectangle(emitter).width).toBe(0);
+    expect(getNodeLocalBoundsRevision(emitter)).toBe(revisionBefore);
+    expect(getNodeLocalBoundsRectangle(emitter).width).toBe(0);
   });
 });
 
@@ -208,10 +208,10 @@ describe('reserveParticleEmitter', () => {
 });
 
 describe('setParticleEmitterLocalBoundsRectangle', () => {
-  it('makes getLocalBoundsRectangle reflect the new bounds', () => {
+  it('makes getNodeLocalBoundsRectangle reflect the new bounds', () => {
     const emitter = createParticleEmitter();
     setParticleEmitterLocalBoundsRectangle(emitter, createRectangle(10, 20, 32, 16));
-    const local = getLocalBoundsRectangle(emitter);
+    const local = getNodeLocalBoundsRectangle(emitter);
     expect(local.x).toBe(10);
     expect(local.y).toBe(20);
     expect(local.width).toBe(32);
@@ -223,13 +223,13 @@ describe('setParticleEmitterLocalBoundsRectangle', () => {
     const rect = createRectangle(10, 20, 32, 16);
     setParticleEmitterLocalBoundsRectangle(emitter, rect);
     rect.width = 999;
-    expect(getLocalBoundsRectangle(emitter).width).toBe(32);
+    expect(getNodeLocalBoundsRectangle(emitter).width).toBe(32);
   });
 
   it('invalidates local bounds', () => {
     const emitter = createParticleEmitter();
-    const before = getLocalBoundsRevision(emitter);
+    const before = getNodeLocalBoundsRevision(emitter);
     setParticleEmitterLocalBoundsRectangle(emitter, createRectangle());
-    expect(getLocalBoundsRevision(emitter)).not.toBe(before);
+    expect(getNodeLocalBoundsRevision(emitter)).not.toBe(before);
   });
 });

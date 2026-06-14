@@ -1,6 +1,6 @@
 import { getEntityRuntime } from '@flighthq/entity';
 import { createRectangle } from '@flighthq/geometry';
-import type { Bitmap, BitmapRuntime, ImageSource, SceneNode } from '@flighthq/types';
+import type { Bitmap, BitmapRuntime, ImageSource, Node } from '@flighthq/types';
 import { BitmapKind } from '@flighthq/types';
 
 import {
@@ -16,7 +16,7 @@ describe('computeBitmapLocalBoundsRectangle', () => {
   it('sets out dimensions from image when image is present', () => {
     const bitmap = createBitmap({ data: { image: { width: 100, height: 200 } as ImageSource } });
     const out = createRectangle();
-    computeBitmapLocalBoundsRectangle(out, bitmap as unknown as SceneNode);
+    computeBitmapLocalBoundsRectangle(out, bitmap as unknown as Node);
     expect(out.width).toBe(100);
     expect(out.height).toBe(200);
   });
@@ -24,7 +24,7 @@ describe('computeBitmapLocalBoundsRectangle', () => {
   it('does not modify out when image is null', () => {
     const bitmap = createBitmap();
     const out = createRectangle(0, 0, 50, 60);
-    computeBitmapLocalBoundsRectangle(out, bitmap as unknown as SceneNode);
+    computeBitmapLocalBoundsRectangle(out, bitmap as unknown as Node);
     expect(out.width).toBe(50);
     expect(out.height).toBe(60);
   });

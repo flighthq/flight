@@ -1,70 +1,68 @@
-import type { PartialNode, SceneNode, SceneNodeData, SceneNodeRuntime } from '@flighthq/types';
+import type { Node, NodeData, NodeRuntime, PartialNode } from '@flighthq/types';
 
 import {
-  createSceneNode,
-  createSceneNodeRuntime,
-  createSceneSignals,
-  defaultSceneNodeRuntimeCanAddChild,
-  getSceneNodeRuntime,
-  getSceneSignals,
-  setSceneNodeEnabled,
-} from './sceneNode';
+  createNode,
+  createNodeRuntime,
+  createNodeSignals,
+  defaultNodeRuntimeCanAddChild,
+  getNodeRuntime,
+  getNodeSignals,
+  setNodeEnabled,
+} from './node';
 
-describe('createSceneNode', () => {
-  let node: SceneNode<typeof TestGraph>;
+describe('createNode', () => {
+  let node: Node<typeof TestGraph>;
 
   beforeEach(() => {
-    node = createSceneNode(TestGraph, NodeTestKind);
+    node = createNode(TestGraph, NodeTestKind);
   });
 
   it('initializes default values', () => {
     expect(node.enabled).toBe(true);
-    expect(getSceneNodeRuntime(node).graph).toStrictEqual(TestGraph);
+    expect(getNodeRuntime(node).graph).toStrictEqual(TestGraph);
   });
 
   it('allows pre-defined values', () => {
     const base = {
-      parent: createSceneNode(TestGraph, NodeTestKind),
+      parent: createNode(TestGraph, NodeTestKind),
       children: [],
       enabled: false,
     };
-    node = createSceneNode(TestGraph, NodeTestKind, base);
+    node = createNode(TestGraph, NodeTestKind, base);
     expect(node.enabled).toStrictEqual(base.enabled);
   });
 
   it('returns a new object for better hidden-class performance', () => {
     const base = {};
-    node = createSceneNode(TestGraph, NodeTestKind, base);
+    node = createNode(TestGraph, NodeTestKind, base);
     expect(node).not.toStrictEqual(base);
   });
 
   it('allows creation of a type without a data field', () => {
-    const node = createSceneNode(TestGraph, NodeTestKind);
+    const node = createNode(TestGraph, NodeTestKind);
     expect(node.data).toBeNull();
   });
 
   it('makes a default runtime object if none passed in', () => {
-    const node = createSceneNode(TestGraph, NodeTestKind);
-    const runtime = getSceneNodeRuntime(node);
+    const node = createNode(TestGraph, NodeTestKind);
+    const runtime = getNodeRuntime(node);
     expect(runtime).not.toBeNull();
   });
 
   it('allows a custom type', () => {
-    const node = createSceneNode(TestGraph, NodeTestKind);
+    const node = createNode(TestGraph, NodeTestKind);
     expect(node.kind).toBe(NodeTestKind);
   });
 
   it('returns a new object', () => {
     const obj: PartialNode<NodeTest<typeof TestGraph>> = {};
-    const node: NodeTest<typeof TestGraph> = createSceneNode(TestGraph, NodeTestKind, obj) as NodeTest<
-      typeof TestGraph
-    >;
+    const node: NodeTest<typeof TestGraph> = createNode(TestGraph, NodeTestKind, obj) as NodeTest<typeof TestGraph>;
     expect(node).not.toStrictEqual(obj);
   });
 
   it('allows use of a data initializer', () => {
     const obj: PartialNode<NodeTest<typeof TestGraph>> = {};
-    const node: NodeTest<typeof TestGraph> = createSceneNode(
+    const node: NodeTest<typeof TestGraph> = createNode(
       TestGraph,
       NodeTestKind,
       obj,
@@ -75,17 +73,17 @@ describe('createSceneNode', () => {
 
   it('allows use of a runtime initializer', () => {
     const obj: PartialNode<NodeTest<typeof TestGraph>> = {};
-    const node = createSceneNode(TestGraph, NodeTestKind, obj, undefined, createGraphNodeTestRuntime);
-    const runtime = getSceneNodeRuntime(node);
+    const node = createNode(TestGraph, NodeTestKind, obj, undefined, createGraphNodeTestRuntime);
+    const runtime = getNodeRuntime(node);
     expect((runtime as NodeTestRuntime<typeof TestGraph>).testRuntimeField).toBe('testRuntimeField');
   });
 });
 
-describe('createSceneNodeRuntime', () => {
-  let runtime: SceneNodeRuntime<typeof TestGraph>;
+describe('createNodeRuntime', () => {
+  let runtime: NodeRuntime<typeof TestGraph>;
 
   beforeEach(() => {
-    runtime = createSceneNodeRuntime();
+    runtime = createNodeRuntime();
   });
 
   it('initializes default values', () => {
@@ -93,7 +91,7 @@ describe('createSceneNodeRuntime', () => {
     expect(runtime.boundsUsingLocalBoundsID).toStrictEqual(-1);
     expect(runtime.boundsUsingLocalTransformID).toStrictEqual(-1);
     expect(runtime.children).toBeNull();
-    expect(runtime.sceneSignals).toBeDefined();
+    expect(runtime.nodeSignals).toBeDefined();
     expect(runtime.localBoundsID).toStrictEqual(0);
     expect(runtime.localBoundsUsingLocalBoundsID).toStrictEqual(-1);
     expect(runtime.localTransformID).toStrictEqual(0);
@@ -104,26 +102,26 @@ describe('createSceneNodeRuntime', () => {
     expect(runtime.worldTransformID).toStrictEqual(0);
     expect(runtime.worldTransformUsingLocalTransformID).toStrictEqual(-1);
     expect(runtime.worldTransformUsingParentTransformID).toStrictEqual(-1);
-    expect(runtime.canAddChild).toStrictEqual(defaultSceneNodeRuntimeCanAddChild);
+    expect(runtime.canAddChild).toStrictEqual(defaultNodeRuntimeCanAddChild);
   });
 
   it('does not initialize graph', () => {
-    // done in createSceneNode constructor
+    // done in createNode constructor
     expect(runtime.graph).toBeUndefined();
   });
 
   it('allows custom canAddChild', () => {
     const methods = {
-      canAddChild: (_parent: SceneNode<typeof TestGraph>, _child: SceneNode<typeof TestGraph>) => true,
+      canAddChild: (_parent: Node<typeof TestGraph>, _child: Node<typeof TestGraph>) => true,
     };
-    runtime = createSceneNodeRuntime(methods);
+    runtime = createNodeRuntime(methods);
     expect(runtime.canAddChild).toStrictEqual(methods.canAddChild);
   });
 });
 
-describe('createSceneSignals', () => {
+describe('createNodeSignals', () => {
   it('returns an object with all signal properties', () => {
-    const signals = createSceneSignals();
+    const signals = createNodeSignals();
     expect(signals.onChildAdded).toBeDefined();
     expect(signals.onChildRemoved).toBeDefined();
     expect(signals.onChildrenChanged).toBeDefined();
@@ -132,53 +130,53 @@ describe('createSceneSignals', () => {
   });
 });
 
-describe('defaultSceneNodeRuntimeCanAddChild', () => {
+describe('defaultNodeRuntimeCanAddChild', () => {
   it('always returns true', () => {
-    const parent = createSceneNode(TestGraph, NodeTestKind);
-    const child = createSceneNode(TestGraph, NodeTestKind);
-    expect(defaultSceneNodeRuntimeCanAddChild(parent, child)).toBe(true);
+    const parent = createNode(TestGraph, NodeTestKind);
+    const child = createNode(TestGraph, NodeTestKind);
+    expect(defaultNodeRuntimeCanAddChild(parent, child)).toBe(true);
   });
 });
 
-describe('getSceneNodeRuntime', () => {
+describe('getNodeRuntime', () => {
   it('assumes runtime is defined', () => {
     const node = { kind: NodeTestKind };
-    const runtime = getSceneNodeRuntime(node as SceneNode<typeof TestGraph>);
+    const runtime = getNodeRuntime(node as Node<typeof TestGraph>);
     expect(runtime).toBeUndefined();
   });
 
   it('returns runtime when defined', () => {
-    const node = createSceneNode(TestGraph, NodeTestKind);
-    const runtime = getSceneNodeRuntime(node);
+    const node = createNode(TestGraph, NodeTestKind);
+    const runtime = getNodeRuntime(node);
     expect(runtime).not.toBeUndefined();
   });
 });
 
-describe('getSceneSignals', () => {
+describe('getNodeSignals', () => {
   it('returns the signals object', () => {
-    const node = createSceneNode(TestGraph, NodeTestKind);
-    const signals = getSceneSignals(node);
+    const node = createNode(TestGraph, NodeTestKind);
+    const signals = getNodeSignals(node);
     expect(signals).toBeDefined();
     expect(signals.onChildrenChanged).toBeDefined();
   });
 
   it('returns the same object on subsequent calls', () => {
-    const node = createSceneNode(TestGraph, NodeTestKind);
-    expect(getSceneSignals(node)).toBe(getSceneSignals(node));
+    const node = createNode(TestGraph, NodeTestKind);
+    expect(getNodeSignals(node)).toBe(getNodeSignals(node));
   });
 });
 
-describe('setSceneNodeEnabled', () => {
+describe('setNodeEnabled', () => {
   it('sets enabled to false', () => {
-    const node = createSceneNode(TestGraph, NodeTestKind);
-    setSceneNodeEnabled(node, false);
+    const node = createNode(TestGraph, NodeTestKind);
+    setNodeEnabled(node, false);
     expect(node.enabled).toBe(false);
   });
 
   it('sets enabled back to true', () => {
-    const node = createSceneNode(TestGraph, NodeTestKind);
-    setSceneNodeEnabled(node, false);
-    setSceneNodeEnabled(node, true);
+    const node = createNode(TestGraph, NodeTestKind);
+    setNodeEnabled(node, false);
+    setNodeEnabled(node, true);
     expect(node.enabled).toBe(true);
   });
 });
@@ -187,15 +185,15 @@ const TestGraph: unique symbol = Symbol('TestGraph');
 
 const NodeTestKind: unique symbol = Symbol('NodeTest');
 
-interface NodeTest<SceneKind extends symbol> extends SceneNode<SceneKind> {
+interface NodeTest<Kind extends symbol> extends Node<Kind> {
   data: NodeTestData;
 }
 
-interface NodeTestData extends SceneNodeData {
+interface NodeTestData extends NodeData {
   testDataField: string;
 }
 
-interface NodeTestRuntime<SceneKind extends symbol> extends SceneNodeRuntime<SceneKind> {
+interface NodeTestRuntime<Kind extends symbol> extends NodeRuntime<Kind> {
   testRuntimeField: string;
 }
 
@@ -205,8 +203,8 @@ function createGraphNodeTestData(data?: Partial<NodeTestData>): NodeTestData {
   };
 }
 
-function createGraphNodeTestRuntime<SceneKind extends symbol>(): NodeTestRuntime<SceneKind> {
-  const obj = createSceneNodeRuntime() as NodeTestRuntime<SceneKind>;
+function createGraphNodeTestRuntime<Kind extends symbol>(): NodeTestRuntime<Kind> {
+  const obj = createNodeRuntime() as NodeTestRuntime<Kind>;
   obj.testRuntimeField = 'testRuntimeField';
   return obj;
 }

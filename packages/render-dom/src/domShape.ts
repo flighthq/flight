@@ -1,5 +1,5 @@
 ﻿import { createEntity } from '@flighthq/entity';
-import { getLocalBoundsRectangle } from '@flighthq/node';
+import { getNodeLocalBoundsRectangle } from '@flighthq/node';
 import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import type {
   DisplayObjectRenderer,
@@ -37,7 +37,7 @@ export function drawDOMShape(state: DOMRenderState, renderNode: DisplayObjectRen
     initDOMElement(data.canvas);
   }
 
-  const bounds = getLocalBoundsRectangle(source);
+  const bounds = getNodeLocalBoundsRectangle(source);
   const w = Math.max(1, Math.ceil(bounds.width));
   const h = Math.max(1, Math.ceil(bounds.height));
 

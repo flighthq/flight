@@ -2,12 +2,12 @@ import type { HasAppearance } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { initAppearanceTrait } from './hasAppearance';
-import { createSceneNode } from './sceneNode';
+import { createNode } from './node';
 
 const TestKind: unique symbol = Symbol('Test');
 
 function makeTarget(): HasAppearance {
-  const node = createSceneNode(TestKind, TestKind) as unknown as HasAppearance;
+  const node = createNode(TestKind, TestKind) as unknown as HasAppearance;
   return node;
 }
 

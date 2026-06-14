@@ -1,17 +1,9 @@
-import type {
-  MethodsOf,
-  PartialNode,
-  Rectangle,
-  SceneNode,
-  Tilemap,
-  TilemapData,
-  TilemapRuntime,
-} from '@flighthq/types';
+import type { MethodsOf, Node, PartialNode, Rectangle, Tilemap, TilemapData, TilemapRuntime } from '@flighthq/types';
 import { TilemapKind } from '@flighthq/types';
 
 import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
 
-export function computeTilemapLocalBoundsRectangle(out: Rectangle, source: Readonly<SceneNode>): void {
+export function computeTilemapLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const tilemap = source as Tilemap;
   const { tileset, columns, rows } = tilemap.data;
   out.x = 0;

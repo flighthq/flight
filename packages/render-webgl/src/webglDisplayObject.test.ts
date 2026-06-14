@@ -1,6 +1,6 @@
 ﻿import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
-import { addSceneChild } from '@flighthq/node';
+import { addNodeChild } from '@flighthq/node';
 import {
   enableRenderFeatures,
   getOrCreateDisplayObjectRenderNode,
@@ -56,7 +56,7 @@ describe('drawWebGLDisplayObjectMask', () => {
     const child = createDisplayObject();
     const renderer = makeRenderer();
     registerDisplayObjectMaskRenderer(state, DisplayObjectKind, renderer);
-    addSceneChild(parent, child);
+    addNodeChild(parent, child);
     const childData = getOrCreateDisplayObjectRenderNode(state, child);
 
     drawWebGLDisplayObjectMask(state, getOrCreateDisplayObjectRenderNode(state, parent));
@@ -105,7 +105,7 @@ describe('renderWebGLDisplayObject', () => {
     registerRenderer(state, DisplayObjectKind, renderer);
     const parent = createDisplayObject();
     const child = createDisplayObject();
-    addSceneChild(parent, child);
+    addNodeChild(parent, child);
     prepareDisplayObjectRender(state, parent);
 
     renderWebGLDisplayObject(state, parent);

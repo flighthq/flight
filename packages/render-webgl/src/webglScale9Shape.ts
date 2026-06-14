@@ -1,4 +1,4 @@
-﻿import { getLocalBoundsRectangle } from '@flighthq/node';
+﻿import { getNodeLocalBoundsRectangle } from '@flighthq/node';
 import { remapScale9Commands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import type {
   DisplayObjectRenderer,
@@ -56,7 +56,7 @@ export function drawWebGLScale9Shape(state: RenderState, renderNode: DisplayObje
   if (commands.length === 0) return;
   if (renderNode.rendererData === null) return;
 
-  const bounds = getLocalBoundsRectangle(source);
+  const bounds = getNodeLocalBoundsRectangle(source);
   const mapper = buildWebGLScale9Mapper(bounds, scale9Grid, source.scaleX, source.scaleY);
   if (mapper === null) {
     drawWebGLShape(state, renderNode);

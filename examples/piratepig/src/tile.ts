@@ -1,19 +1,19 @@
-import type { DisplayObject, ImageSource, InteractionManager, SceneNode, TweenManager } from '@flighthq/sdk';
+import type { DisplayObject, ImageSource, InteractionManager, Node, TweenManager } from '@flighthq/sdk';
 import {
-  addSceneChild,
-  addSceneChildAt,
+  addNodeChild,
+  addNodeChildAt,
   capturePointer,
   connectSignal,
   createBitmap,
   createDisplayObject,
   createTween,
   getInteractionSignals,
-  getLocalBoundsRectangle,
-  getSceneParent,
-  invalidateRender,
+  getNodeLocalBoundsRectangle,
+  getNodeParent,
+  invalidateNodeRender,
   Quad,
   releasePointer,
-  removeSceneChild,
+  removeNodeChild,
   setRectangle,
 } from '@flighthq/sdk';
 
@@ -43,7 +43,7 @@ export function connectTileInteraction(
   const coordScale = options?.coordScale ?? 1;
   const cursorElement = options?.cursorElement ?? null;
   const dragThreshold = 10 * coordScale;
-  const node = tile.obj as SceneNode<symbol, object>;
+  const node = tile.obj as Node<symbol, object>;
   const signals = getInteractionSignals(node);
   let startX = 0;
   let startY = 0;
@@ -84,11 +84,11 @@ export function connectTileInteraction(
 
 export function createTile(image: ImageSource, type: number): Tile {
   const obj = createDisplayObject();
-  setRectangle(getLocalBoundsRectangle(obj), 0, 0, TILE_SIZE, TILE_SIZE);
+  setRectangle(getNodeLocalBoundsRectangle(obj), 0, 0, TILE_SIZE, TILE_SIZE);
   const bitmap = createBitmap();
   bitmap.data.image = image;
   bitmap.data.smoothing = true;
-  addSceneChild(obj, bitmap);
+  addNodeChild(obj, bitmap);
   return { obj, column: 0, row: 0, type, moving: false, removed: false };
 }
 
@@ -103,10 +103,10 @@ export function initTile(tile: Tile): void {
 export function moveTile(manager: TweenManager, tile: Tile, duration: number, targetX: number, targetY: number): void {
   tile.moving = true;
   const tween = createTween(manager, tile.obj, duration, { x: targetX, y: targetY }, { ease: Quad.easeOut });
-  connectSignal(tween.onUpdate, () => invalidateRender(tile.obj));
+  connectSignal(tween.onUpdate, () => invalidateNodeRender(tile.obj));
   connectSignal(tween.onComplete, () => {
     tile.moving = false;
-    invalidateRender(tile.obj);
+    invalidateNodeRender(tile.obj);
   });
 }
 
@@ -115,7 +115,7 @@ export function removeTileAnimated(manager: TweenManager, tile: Tile, tileContai
   tile.removed = true;
 
   const half = TILE_SIZE / 2;
-  addSceneChildAt(tileContainer, tile.obj, 0);
+  addNodeChildAt(tileContainer, tile.obj, 0);
 
   const tween = createTween(
     manager,
@@ -124,17 +124,17 @@ export function removeTileAnimated(manager: TweenManager, tile: Tile, tileContai
     { alpha: 0, scaleX: 2, scaleY: 2, x: tile.obj.x - half, y: tile.obj.y - half },
     { ease: Quad.easeOut },
   );
-  connectSignal(tween.onUpdate, () => invalidateRender(tile.obj));
+  connectSignal(tween.onUpdate, () => invalidateNodeRender(tile.obj));
   connectSignal(tween.onComplete, () => {
-    const parent = getSceneParent(tile.obj) as DisplayObject | null;
-    if (parent !== null) removeSceneChild(parent, tile.obj);
-    invalidateRender(tileContainer);
+    const parent = getNodeParent(tile.obj) as DisplayObject | null;
+    if (parent !== null) removeNodeChild(parent, tile.obj);
+    invalidateNodeRender(tileContainer);
   });
 }
 
 export function removeTileImmediate(tile: Tile, tileContainer: DisplayObject): void {
   tile.removed = true;
-  const parent = getSceneParent(tile.obj) as DisplayObject | null;
-  if (parent !== null) removeSceneChild(parent, tile.obj);
-  invalidateRender(tileContainer);
+  const parent = getNodeParent(tile.obj) as DisplayObject | null;
+  if (parent !== null) removeNodeChild(parent, tile.obj);
+  invalidateNodeRender(tileContainer);
 }
