@@ -1,5 +1,5 @@
-import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals';
-import type { Application, Signal } from '@flighthq/types';
+import { createSignal, emitSignal } from '@flighthq/signals';
+import type { Application } from '@flighthq/types';
 
 const kExit = Symbol();
 const kLoop = Symbol();
@@ -9,24 +9,6 @@ export function attachApplicationExit(app: Application): void {
   const handler = () => emitSignal(app.onExit);
   window.addEventListener('beforeunload', handler);
   app.observers.set(kExit, () => window.removeEventListener('beforeunload', handler));
-}
-
-export function connectSignalThrottled(
-  source: Signal<(deltaTime: number) => void>,
-  fps: number,
-  slot: (deltaTime: number) => void,
-): () => void {
-  const period = 1000 / fps;
-  let elapsed = 0;
-  const handler = (delta: number) => {
-    elapsed += delta;
-    if (elapsed >= period) {
-      slot(elapsed);
-      elapsed %= period;
-    }
-  };
-  connectSignal(source, handler);
-  return () => disconnectSignal(source, handler);
 }
 
 export function createApplication(): Application {
