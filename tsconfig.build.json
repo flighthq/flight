@@ -17,6 +17,7 @@
     { "path": "./packages/render" },
     { "path": "./packages/render-dom" },
     { "path": "./packages/render-webgl" },
+    { "path": "./packages/render-webgpu" },
     { "path": "./packages/node" },
     { "path": "./packages/displayobject" },
     { "path": "./packages/sprite" },

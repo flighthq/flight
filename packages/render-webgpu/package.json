@@ -1,7 +1,9 @@
 {
-  "name": "@flighthq/types",
+  "name": "@flighthq/render-webgpu",
   "version": "1.0.0",
   "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -24,10 +26,19 @@
     "prepack": "npm run clean && npm run clean:dist && npm run build",
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
+  "dependencies": {
+    "@flighthq/geometry": "*",
+    "@flighthq/render": "*",
+    "@flighthq/displayobject": "*",
+    "@flighthq/sprite": "*",
+    "@flighthq/text-input": "*",
+    "@flighthq/text-layout": "*",
+    "@flighthq/types": "*"
+  },
   "devDependencies": {
     "@webgpu/types": "*",
     "typescript": "^5.3.0"
   },
-  "description": "Shared TypeScript interfaces, enums, and symbol constants used across all packages",
+  "description": "WebGPU renderer implementation",
   "sideEffects": false
 }

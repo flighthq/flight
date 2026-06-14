@@ -7,7 +7,17 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
+  "references": [
+    { "path": "../geometry" },
+    { "path": "../render" },
+    { "path": "../displayobject" },
+    { "path": "../sprite" },
+    { "path": "../text-input" },
+    { "path": "../text-layout" },
+    { "path": "../types" }
+  ],
   "include": ["src"]
 }
