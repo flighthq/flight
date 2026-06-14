@@ -29,6 +29,7 @@
   "dependencies": {
     "@flighthq/geometry": "*",
     "@flighthq/render": "*",
+    "@flighthq/render-canvas": "*",
     "@flighthq/displayobject": "*",
     "@flighthq/sprite": "*",
     "@flighthq/text-input": "*",
