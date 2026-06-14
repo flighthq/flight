@@ -10,6 +10,8 @@ import {
   defaultCanvasCacheRenderer,
   enableCanvasCache,
   enableCanvasCacheAdapterSignals,
+  ensureCanvasCacheSize,
+  resizeCanvasCache,
 } from './canvasCacheAdapter';
 import { createCanvasRenderState } from './canvasRenderState';
 
@@ -125,6 +127,64 @@ describe('enableCanvasCacheAdapterSignals', () => {
     const first = adapter.signals;
     enableCanvasCacheAdapterSignals(adapter);
     expect(adapter.signals).toBe(first);
+  });
+});
+
+describe('ensureCanvasCacheSize', () => {
+  it('creates a target when cache has none', () => {
+    const cache = createCanvasCache();
+    ensureCanvasCacheSize(cache, 100, 200);
+    expect(cache.target).not.toBeNull();
+    expect(cache.target!.width).toBe(100);
+    expect(cache.target!.height).toBe(200);
+  });
+
+  it('returns true when a resize occurred', () => {
+    const cache = createCanvasCache();
+    expect(ensureCanvasCacheSize(cache, 100, 100)).toBe(true);
+  });
+
+  it('returns false when target already fits', () => {
+    const cache = createCanvasCache();
+    ensureCanvasCacheSize(cache, 100, 100);
+    expect(ensureCanvasCacheSize(cache, 100, 100)).toBe(false);
+    expect(ensureCanvasCacheSize(cache, 50, 50)).toBe(false);
+  });
+
+  it('grows only the dimension that is too small', () => {
+    const cache = createCanvasCache();
+    ensureCanvasCacheSize(cache, 200, 100);
+    ensureCanvasCacheSize(cache, 100, 300);
+    expect(cache.target!.width).toBe(200);
+    expect(cache.target!.height).toBe(300);
+  });
+
+  it('never shrinks an existing dimension', () => {
+    const cache = createCanvasCache();
+    ensureCanvasCacheSize(cache, 200, 200);
+    ensureCanvasCacheSize(cache, 50, 50);
+    expect(cache.target!.width).toBe(200);
+    expect(cache.target!.height).toBe(200);
+  });
+});
+
+describe('resizeCanvasCache', () => {
+  it('creates a target when cache has none', () => {
+    const cache = createCanvasCache();
+    resizeCanvasCache(cache, 128, 64);
+    expect(cache.target).not.toBeNull();
+    expect(cache.target!.width).toBe(128);
+    expect(cache.target!.height).toBe(64);
+  });
+
+  it('resizes an existing target to the exact dimensions', () => {
+    const cache = createCanvasCache();
+    resizeCanvasCache(cache, 128, 64);
+    const first = cache.target;
+    resizeCanvasCache(cache, 32, 32);
+    expect(cache.target).toBe(first);
+    expect(cache.target!.width).toBe(32);
+    expect(cache.target!.height).toBe(32);
   });
 });
 
