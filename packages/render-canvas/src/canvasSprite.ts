@@ -1,5 +1,5 @@
 import { createNullRendererData, getSpriteRenderNode, isRenderNodeVisible } from '@flighthq/render';
-import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
+import { getSpriteNodeRuntime } from '@flighthq/sprite';
 import type { CanvasRenderState, Sprite, SpriteNode, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRenderNode): void {

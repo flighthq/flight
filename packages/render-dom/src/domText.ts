@@ -1,6 +1,6 @@
-﻿import { createEntity } from '@flighthq/entity';
+﻿import { getTextRuntime } from '@flighthq/displayobject';
+import { createEntity } from '@flighthq/entity';
 import { computeTextFormatFontString, rgbToHexString } from '@flighthq/render';
-import { getTextRuntime } from '@flighthq/scene-display';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,

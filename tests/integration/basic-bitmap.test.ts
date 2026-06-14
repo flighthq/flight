@@ -1,6 +1,6 @@
 import { createImageSource } from '@flighthq/assets';
-import { addSceneChild, getSceneParent } from '@flighthq/scene';
-import { createBitmap, createDisplayObject } from '@flighthq/scene-display';
+import { createBitmap, createDisplayObject } from '@flighthq/displayobject';
+import { addSceneChild, getSceneParent } from '@flighthq/node';
 
 export function loadImageAndDecode(): Promise<HTMLImageElement> {
   return new Promise((resolve) => {

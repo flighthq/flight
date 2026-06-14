@@ -1,6 +1,6 @@
-﻿import { createMatrix } from '@flighthq/geometry';
+﻿import { appendShapeRectangle, createShape } from '@flighthq/displayobject';
+import { createMatrix } from '@flighthq/geometry';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import { appendShapeRectangle, createShape } from '@flighthq/scene-display';
 import type { DOMStageRectangle } from '@flighthq/types';
 
 import { pushDOMMaskRectangle } from './domMask';

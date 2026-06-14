@@ -1,4 +1,4 @@
-import { getLocalBoundsRectangle } from '@flighthq/scene';
+import { getLocalBoundsRectangle } from '@flighthq/node';
 import type { DisplayObject, DisplayObjectRenderNode, DOMStageRectangle } from '@flighthq/types';
 
 import { createDOMStageRectangle } from './domClipRectangle';

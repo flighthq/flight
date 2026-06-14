@@ -6,7 +6,7 @@
   initTilesetRegions,
 } from '@flighthq/assets';
 import { getOrCreateSpriteRenderNode, prepareSpriteRender } from '@flighthq/render';
-import { createTilemap, writeTilemapTile } from '@flighthq/scene-sprite';
+import { createTilemap, writeTilemapTile } from '@flighthq/sprite';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { drawCanvasTilemap } from './canvasTilemap';

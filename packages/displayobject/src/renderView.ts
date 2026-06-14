@@ -1,4 +1,4 @@
-import { invalidateLocalBounds } from '@flighthq/scene';
+import { invalidateLocalBounds } from '@flighthq/node';
 import type {
   MethodsOf,
   PartialNode,

@@ -1,4 +1,4 @@
-import { createSceneNode } from '@flighthq/scene';
+import { createSceneNode } from '@flighthq/node';
 import type { PartialNode, Rectangle, SceneNode, SpriteNode, SpriteNodeData } from '@flighthq/types';
 import { BlendMode, DisplayObjectKind, SpriteGraph } from '@flighthq/types';
 

@@ -30,9 +30,9 @@
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/materials": "*",
-    "@flighthq/scene": "*",
-    "@flighthq/scene-display": "*",
-    "@flighthq/scene-sprite": "*",
+    "@flighthq/node": "*",
+    "@flighthq/displayobject": "*",
+    "@flighthq/sprite": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

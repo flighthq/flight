@@ -30,8 +30,8 @@
     "@flighthq/geometry": "*",
     "@flighthq/render-canvas": "*",
     "@flighthq/render": "*",
-    "@flighthq/scene-display": "*",
-    "@flighthq/scene-sprite": "*",
+    "@flighthq/displayobject": "*",
+    "@flighthq/sprite": "*",
     "@flighthq/text-input": "*",
     "@flighthq/text-layout": "*",
     "@flighthq/types": "*"

@@ -1,5 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
-import { addSceneChild } from '@flighthq/scene';
+import { addSceneChild } from '@flighthq/node';
 import { connectSignal } from '@flighthq/signals';
 import type { PartialNode, SceneNode, Stage } from '@flighthq/types';
 import { StageKind } from '@flighthq/types';

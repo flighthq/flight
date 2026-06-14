@@ -1,8 +1,8 @@
+import { getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { createEntity } from '@flighthq/entity';
 import { createMatrix } from '@flighthq/geometry';
-import { getAppearanceRevision, getLocalTransformRevision, getSceneParent } from '@flighthq/scene';
-import { getDisplayObjectRuntime } from '@flighthq/scene-display';
-import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
+import { getAppearanceRevision, getLocalTransformRevision, getSceneParent } from '@flighthq/node';
+import { getSpriteNodeRuntime } from '@flighthq/sprite';
 import {
   BlendMode,
   type DisplayObject,

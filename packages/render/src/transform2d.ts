@@ -1,5 +1,5 @@
 import { copyMatrix, multiplyMatrix } from '@flighthq/geometry';
-import { getLocalTransformMatrix, getLocalTransformRevision } from '@flighthq/scene';
+import { getLocalTransformMatrix, getLocalTransformRevision } from '@flighthq/node';
 import type { DisplayObjectRenderNode, HasTransform2D, RenderNode2D, RenderState, SceneNode } from '@flighthq/types';
 
 export function updateDisplayObjectRenderTransform(

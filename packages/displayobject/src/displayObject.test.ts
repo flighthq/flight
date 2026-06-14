@@ -1,5 +1,5 @@
 import { getEntityRuntime } from '@flighthq/entity';
-import { createSceneNode } from '@flighthq/scene';
+import { createSceneNode } from '@flighthq/node';
 import type {
   DisplayObject,
   DisplayObjectData,

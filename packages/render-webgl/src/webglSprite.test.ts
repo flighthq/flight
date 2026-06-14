@@ -1,6 +1,6 @@
+import { addSceneChild } from '@flighthq/node';
 import { getOrCreateSpriteRenderNode, prepareSpriteRender, registerRenderer } from '@flighthq/render';
-import { addSceneChild } from '@flighthq/scene';
-import { createSprite } from '@flighthq/scene-sprite';
+import { createSprite } from '@flighthq/sprite';
 import { SpriteKind } from '@flighthq/types';
 
 import { renderWebGLSprite } from './webglSprite';

@@ -5,7 +5,7 @@ import {
   getSceneParent,
   getWorldBoundsRectangle,
   getWorldTransformMatrix,
-} from '@flighthq/scene';
+} from '@flighthq/node';
 import type { DisplayObject, GraphHitTestFn, SceneNode } from '@flighthq/types';
 
 /**

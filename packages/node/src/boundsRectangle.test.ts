@@ -13,7 +13,7 @@ import {
   initTransformRuntimeTrait,
   initTransformTrait,
   invalidateLocalTransform,
-} from '@flighthq/scene';
+} from '@flighthq/node';
 import type {
   HasBoundsRectangle,
   HasBoundsRectangleRuntime,

@@ -1,4 +1,4 @@
-﻿import { createInputText, getInputTextRuntime } from '@flighthq/scene-display';
+﻿import { createInputText, getInputTextRuntime } from '@flighthq/displayobject';
 import { setInputTextSelection } from '@flighthq/text-input';
 import type { DisplayObjectRenderNode, InputText } from '@flighthq/types';
 

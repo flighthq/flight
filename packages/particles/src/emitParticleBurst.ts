@@ -1,4 +1,4 @@
-import { reserveParticleEmitter } from '@flighthq/scene-sprite';
+import { reserveParticleEmitter } from '@flighthq/sprite';
 import type { ParticleEmitter } from '@flighthq/types';
 import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types';
 

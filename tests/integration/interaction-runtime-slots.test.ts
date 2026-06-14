@@ -1,5 +1,5 @@
-﻿import { getInteractionSignals } from '@flighthq/interaction';
-import { createDisplayObject, getDisplayObjectRuntime } from '@flighthq/scene-display';
+﻿import { createDisplayObject, getDisplayObjectRuntime } from '@flighthq/displayobject';
+import { getInteractionSignals } from '@flighthq/interaction';
 
 test('interaction signals are lazily attached to graph node runtime', () => {
   const obj = createDisplayObject();

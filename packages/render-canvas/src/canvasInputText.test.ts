@@ -1,5 +1,5 @@
-﻿import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import { createInputText, getInputTextRuntime } from '@flighthq/scene-display';
+﻿import { createInputText, getInputTextRuntime } from '@flighthq/displayobject';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { setInputTextSelection } from '@flighthq/text-input';
 
 import { defaultCanvasInputTextRenderer, drawCanvasInputText } from './canvasInputText';

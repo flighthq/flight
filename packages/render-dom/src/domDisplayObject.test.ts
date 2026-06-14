@@ -1,7 +1,7 @@
+import { appendShapeRectangle, createDisplayObject, createShape } from '@flighthq/displayobject';
 import { createRectangle } from '@flighthq/geometry';
+import { addSceneChild, invalidateLocalTransform } from '@flighthq/node';
 import { getOrCreateDisplayObjectRenderNode, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
-import { addSceneChild, invalidateLocalTransform } from '@flighthq/scene';
-import { appendShapeRectangle, createDisplayObject, createShape } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { enableDOMClipRectangleSupport, enableDOMMaskSupport } from './domClip';

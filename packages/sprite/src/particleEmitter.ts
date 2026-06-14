@@ -1,5 +1,5 @@
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
-import { invalidateLocalBounds } from '@flighthq/scene';
+import { invalidateLocalBounds } from '@flighthq/node';
 import type {
   MethodsOf,
   PartialNode,

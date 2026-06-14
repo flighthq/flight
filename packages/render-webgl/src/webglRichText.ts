@@ -1,5 +1,5 @@
-﻿import { computeTextFormatFontString, createNullRendererData, rgbToHexString } from '@flighthq/render';
-import { getRichTextRuntime } from '@flighthq/scene-display';
+﻿import { getRichTextRuntime } from '@flighthq/displayobject';
+import { computeTextFormatFontString, createNullRendererData, rgbToHexString } from '@flighthq/render';
 import {
   computeRichTextContent,
   computeTextLayout,

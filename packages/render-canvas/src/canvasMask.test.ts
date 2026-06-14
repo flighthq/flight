@@ -1,7 +1,7 @@
-﻿import { createMatrix } from '@flighthq/geometry';
+﻿import { createDisplayObject } from '@flighthq/displayobject';
+import { createMatrix } from '@flighthq/geometry';
 import { registerDisplayObjectMaskRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { drawCanvasMask, popCanvasMask, pushCanvasMask } from './canvasMask';

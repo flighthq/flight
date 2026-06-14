@@ -1,7 +1,7 @@
-﻿import { registerDisplayObjectMaskRenderer } from '@flighthq/render';
+﻿import { createDisplayObject } from '@flighthq/displayobject';
+import { addSceneChild } from '@flighthq/node';
+import { registerDisplayObjectMaskRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import { addSceneChild } from '@flighthq/scene';
-import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { drawWebGLMask, popWebGLMask, pushWebGLMask } from './webglMask';

@@ -1,5 +1,5 @@
-﻿import { createNullRendererData, rgbToHexString } from '@flighthq/render';
-import { getInputTextRuntime } from '@flighthq/scene-display';
+﻿import { getInputTextRuntime } from '@flighthq/displayobject';
+import { createNullRendererData, rgbToHexString } from '@flighthq/render';
 import {
   getInputTextCaretRectangle,
   getInputTextSelectionBeginIndex,

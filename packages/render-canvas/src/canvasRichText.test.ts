@@ -1,5 +1,5 @@
-﻿import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import { createRichText } from '@flighthq/scene-display';
+﻿import { createRichText } from '@flighthq/displayobject';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { defaultCanvasRichTextRenderer, drawCanvasRichText, drawCanvasRichTextMask } from './canvasRichText';

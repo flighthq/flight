@@ -31,8 +31,8 @@
     "@flighthq/geometry": "*",
     "@flighthq/render-canvas": "*",
     "@flighthq/render": "*",
-    "@flighthq/scene": "*",
-    "@flighthq/scene-display": "*",
+    "@flighthq/node": "*",
+    "@flighthq/displayobject": "*",
     "@flighthq/text-input": "*",
     "@flighthq/text-layout": "*",
     "@flighthq/types": "*"

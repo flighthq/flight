@@ -1,4 +1,4 @@
-import { createSceneNode, getSceneNodeRuntime } from '@flighthq/scene';
+import { createSceneNode, getSceneNodeRuntime } from '@flighthq/node';
 import type { SceneNode, SceneNodeRuntime } from '@flighthq/types';
 
 import {

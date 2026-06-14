@@ -1,4 +1,4 @@
-import { invalidateAppearance } from '@flighthq/scene';
+import { invalidateAppearance } from '@flighthq/node';
 import type { Renderable, RenderNode2D, RenderNodeAdapter, RenderState, SceneNode } from '@flighthq/types';
 
 import { installRenderAdaptHook, syncRenderNodeRenderer } from './renderNode';

@@ -1,5 +1,5 @@
-﻿import { remapScale9Commands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
-import { getLocalBoundsRectangle } from '@flighthq/scene';
+﻿import { getLocalBoundsRectangle } from '@flighthq/node';
+import { remapScale9Commands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderNode,

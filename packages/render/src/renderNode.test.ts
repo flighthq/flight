@@ -1,3 +1,4 @@
+import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
 import {
   addSceneChild,
@@ -5,9 +6,8 @@ import {
   getLocalTransformRevision,
   invalidateAppearance,
   invalidateLocalTransform,
-} from '@flighthq/scene';
-import { createDisplayObject } from '@flighthq/scene-display';
-import { createSprite } from '@flighthq/scene-sprite';
+} from '@flighthq/node';
+import { createSprite } from '@flighthq/sprite';
 import { RenderFeatures } from '@flighthq/types';
 
 import { enableRenderFeatures, registerRenderer } from './renderer';

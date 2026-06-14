@@ -1,4 +1,4 @@
-import { getSceneRoot, invalidateLocalBounds } from '@flighthq/scene';
+import { getSceneRoot, invalidateLocalBounds } from '@flighthq/node';
 import { createSignal, emitSignal } from '@flighthq/signals';
 import type {
   DisplayObject,

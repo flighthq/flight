@@ -1,5 +1,5 @@
+import { getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { createNullRendererData, getDisplayObjectRenderNode, isRenderNodeVisible } from '@flighthq/render';
-import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type { DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';

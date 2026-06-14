@@ -1,4 +1,4 @@
-import { appendShapeRectangle, createShape } from '@flighthq/scene-display';
+import { appendShapeRectangle, createShape } from '@flighthq/displayobject';
 
 import { buildScale9Mapper } from './canvasScale9Mapper';
 

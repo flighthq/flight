@@ -1,5 +1,5 @@
+import { createRenderView } from '@flighthq/displayobject';
 import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render';
-import { createRenderView } from '@flighthq/scene-display';
 import type { RenderViewRenderer } from '@flighthq/types';
 import { RenderViewKind } from '@flighthq/types';
 

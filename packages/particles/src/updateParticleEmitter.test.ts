@@ -1,4 +1,4 @@
-import { createParticleEmitter, reserveParticleEmitter } from '@flighthq/scene-sprite';
+import { createParticleEmitter, reserveParticleEmitter } from '@flighthq/sprite';
 import type { TextureAtlas } from '@flighthq/types';
 
 import { createParticleEmitterConfig } from './particleEmitterConfig';

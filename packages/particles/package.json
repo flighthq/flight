@@ -28,8 +28,8 @@
   },
   "dependencies": {
     "@flighthq/geometry": "*",
-    "@flighthq/scene": "*",
-    "@flighthq/scene-sprite": "*",
+    "@flighthq/node": "*",
+    "@flighthq/sprite": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

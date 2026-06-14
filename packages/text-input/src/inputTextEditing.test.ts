@@ -1,5 +1,5 @@
-import { getAppearanceRevision } from '@flighthq/scene';
-import { createInputText, setRichTextFormatRange } from '@flighthq/scene-display';
+import { createInputText, setRichTextFormatRange } from '@flighthq/displayobject';
+import { getAppearanceRevision } from '@flighthq/node';
 import type { KeyboardData, TextLayoutResult } from '@flighthq/types';
 import { KeyCode } from '@flighthq/types';
 

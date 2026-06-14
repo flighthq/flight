@@ -1,4 +1,4 @@
-﻿import { createRichText } from '@flighthq/scene-display';
+﻿import { createRichText } from '@flighthq/displayobject';
 import type { DisplayObjectRenderNode, RichText } from '@flighthq/types';
 
 import {

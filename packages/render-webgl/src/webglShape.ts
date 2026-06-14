@@ -1,5 +1,5 @@
-﻿import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
-import { getLocalBoundsRectangle } from '@flighthq/scene';
+﻿import { getLocalBoundsRectangle } from '@flighthq/node';
+import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderNode,

@@ -1,6 +1,6 @@
 ﻿import { createEntity } from '@flighthq/entity';
+import { getLocalBoundsRectangle } from '@flighthq/node';
 import { remapScale9Commands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
-import { getLocalBoundsRectangle } from '@flighthq/scene';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderNode,

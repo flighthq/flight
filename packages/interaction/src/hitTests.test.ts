@@ -1,6 +1,6 @@
+import { createDisplayObject, createDisplayObjectGeneric, getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { setRectangle } from '@flighthq/geometry';
-import { addSceneChild, getLocalBoundsRectangle, invalidateLocalTransform } from '@flighthq/scene';
-import { createDisplayObject, createDisplayObjectGeneric, getDisplayObjectRuntime } from '@flighthq/scene-display';
+import { addSceneChild, getLocalBoundsRectangle, invalidateLocalTransform } from '@flighthq/node';
 import type { DisplayObject, DisplayObjectRuntime } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
