@@ -1,7 +1,7 @@
 // Requires: assets/wabbit_alpha.png
 // Port of MaskTest1. Tests display object masking with various offset configurations.
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
@@ -25,7 +25,7 @@ const bg = createShape();
 appendShapeBeginFill(bg, 0xffffff);
 appendShapeRectangle(bg, 0, 0, W, H);
 appendShapeEndFill(bg);
-addSceneChild(root, bg);
+addNodeChild(root, bg);
 
 const image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
 const iw = image.width;
@@ -54,7 +54,7 @@ for (let i = 0; i < 4; i++) {
   ghost.alpha = 0.3;
   ghost.x = cx;
   ghost.y = cy;
-  addSceneChild(root, ghost);
+  addNodeChild(root, ghost);
 
   // Ghost at mask position
   const ghostMask = createBitmap();
@@ -63,7 +63,7 @@ for (let i = 0; i < 4; i++) {
   ghostMask.alpha = 0.3;
   ghostMask.x = cx + maskOffsets[i].dx;
   ghostMask.y = cy + maskOffsets[i].dy;
-  addSceneChild(root, ghostMask);
+  addNodeChild(root, ghostMask);
 
   // Bitmap
   const bmp = createBitmap();
@@ -71,7 +71,7 @@ for (let i = 0; i < 4; i++) {
   bmp.data.smoothing = true;
   bmp.x = cx;
   bmp.y = cy;
-  addSceneChild(root, bmp);
+  addNodeChild(root, bmp);
 
   // Mask bitmap
   const mask = createBitmap();
@@ -79,7 +79,7 @@ for (let i = 0; i < 4; i++) {
   mask.data.smoothing = true;
   mask.x = cx + maskOffsets[i].dx;
   mask.y = cy + maskOffsets[i].dy;
-  addSceneChild(root, mask);
+  addNodeChild(root, mask);
 
   setDisplayObjectMask(bmp, mask);
 }

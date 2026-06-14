@@ -1,12 +1,12 @@
 import { getEntityRuntime } from '@flighthq/entity';
-import { createSceneNode } from '@flighthq/node';
+import { createNode } from '@flighthq/node';
 import type {
   DisplayObject,
   DisplayObjectData,
   DisplayObjectRuntime,
+  Node,
   PartialNode,
   Rectangle,
-  SceneNode,
 } from '@flighthq/types';
 import { BlendMode, DisplayGraph, DisplayObjectKind } from '@flighthq/types';
 
@@ -112,7 +112,7 @@ describe('createDisplayObjectRuntime', () => {
   });
 
   it('allows a custom bounds calculation', () => {
-    const func = (_out: Rectangle, _source: Readonly<SceneNode>) => {};
+    const func = (_out: Rectangle, _source: Readonly<Node>) => {};
     const runtime = createDisplayObjectRuntime({ computeLocalBoundsRectangle: func });
     expect(runtime.computeLocalBoundsRectangle).toStrictEqual(func);
   });
@@ -134,7 +134,7 @@ describe('isDisplayObject', () => {
 
   it('returns false for a different graph type', () => {
     const TestGraph: unique symbol = Symbol('TestGraph');
-    const node = createSceneNode(TestGraph, DisplayObjectKind);
+    const node = createNode(TestGraph, DisplayObjectKind);
     expect(isDisplayObject(node)).toBe(false);
   });
 });

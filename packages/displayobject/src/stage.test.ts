@@ -1,7 +1,7 @@
 import { createRectangle } from '@flighthq/geometry';
-import { addSceneChild } from '@flighthq/node';
+import { addNodeChild } from '@flighthq/node';
 import { connectSignal } from '@flighthq/signals';
-import type { PartialNode, SceneNode, Stage } from '@flighthq/types';
+import type { Node, PartialNode, Stage } from '@flighthq/types';
 import { StageKind } from '@flighthq/types';
 
 import { createDisplayObject } from './displayObject';
@@ -21,7 +21,7 @@ describe('computeStageLocalBoundsRectangle', () => {
   it('sets out dimensions from stageWidth and stageHeight', () => {
     const stage = createStage({ data: { stageWidth: 800, stageHeight: 600 } });
     const out = createRectangle();
-    computeStageLocalBoundsRectangle(out, stage as unknown as SceneNode);
+    computeStageLocalBoundsRectangle(out, stage as unknown as Node);
     expect(out.width).toBe(800);
     expect(out.height).toBe(600);
   });
@@ -108,14 +108,14 @@ describe('getDisplayObjectStage', () => {
   it('returns null when the root is not a Stage', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
-    addSceneChild(root, child);
+    addNodeChild(root, child);
     expect(getDisplayObjectStage(child)).toBeNull();
   });
 
   it('returns the Stage when it is the root', () => {
     const stage = createStage();
     const child = createDisplayObject();
-    addSceneChild(stage, child);
+    addNodeChild(stage, child);
     expect(getDisplayObjectStage(child)).toBe(stage);
   });
 
@@ -123,8 +123,8 @@ describe('getDisplayObjectStage', () => {
     const stage = createStage();
     const mid = createDisplayObject();
     const leaf = createDisplayObject();
-    addSceneChild(stage, mid);
-    addSceneChild(mid, leaf);
+    addNodeChild(stage, mid);
+    addNodeChild(mid, leaf);
     expect(getDisplayObjectStage(leaf)).toBe(stage);
   });
 });

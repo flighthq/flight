@@ -1,5 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
-import { getLocalBoundsRectangle, getLocalBoundsRevision } from '@flighthq/node';
+import { getNodeLocalBoundsRectangle, getNodeLocalBoundsRevision } from '@flighthq/node';
 import type { QuadBatch, QuadTransformType, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
 
@@ -86,10 +86,10 @@ describe('computeQuadBatchLocalBoundsRectangle', () => {
     const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1 } });
     quadBatch.data.ids = new Uint16Array([0]);
     quadBatch.data.transforms = new Float32Array([10, 20]);
-    const revisionBefore = getLocalBoundsRevision(quadBatch);
+    const revisionBefore = getNodeLocalBoundsRevision(quadBatch);
     computeQuadBatchLocalBoundsRectangle(createRectangle(), quadBatch);
-    expect(getLocalBoundsRevision(quadBatch)).toBe(revisionBefore);
-    expect(getLocalBoundsRectangle(quadBatch).width).toBe(0);
+    expect(getNodeLocalBoundsRevision(quadBatch)).toBe(revisionBefore);
+    expect(getNodeLocalBoundsRectangle(quadBatch).width).toBe(0);
   });
 });
 
@@ -329,10 +329,10 @@ describe('resizeQuadBatch', () => {
 });
 
 describe('setQuadBatchLocalBoundsRectangle', () => {
-  it('makes getLocalBoundsRectangle reflect the new bounds', () => {
+  it('makes getNodeLocalBoundsRectangle reflect the new bounds', () => {
     const quadBatch = createQuadBatch();
     setQuadBatchLocalBoundsRectangle(quadBatch, createRectangle(10, 20, 32, 16));
-    const local = getLocalBoundsRectangle(quadBatch);
+    const local = getNodeLocalBoundsRectangle(quadBatch);
     expect(local.x).toBe(10);
     expect(local.y).toBe(20);
     expect(local.width).toBe(32);
@@ -344,19 +344,19 @@ describe('setQuadBatchLocalBoundsRectangle', () => {
     const rect = createRectangle(10, 20, 32, 16);
     setQuadBatchLocalBoundsRectangle(quadBatch, rect);
     rect.width = 999;
-    expect(getLocalBoundsRectangle(quadBatch).width).toBe(32);
+    expect(getNodeLocalBoundsRectangle(quadBatch).width).toBe(32);
   });
 
   it('invalidates local bounds', () => {
     const quadBatch = createQuadBatch();
-    const before = getLocalBoundsRevision(quadBatch);
+    const before = getNodeLocalBoundsRevision(quadBatch);
     setQuadBatchLocalBoundsRectangle(quadBatch, createRectangle());
-    expect(getLocalBoundsRevision(quadBatch)).not.toBe(before);
+    expect(getNodeLocalBoundsRevision(quadBatch)).not.toBe(before);
   });
 
-  it('returns zero bounds via getLocalBoundsRectangle before any set', () => {
+  it('returns zero bounds via getNodeLocalBoundsRectangle before any set', () => {
     const quadBatch = createQuadBatch();
-    const local = getLocalBoundsRectangle(quadBatch);
+    const local = getNodeLocalBoundsRectangle(quadBatch);
     expect(local.width).toBe(0);
     expect(local.height).toBe(0);
   });

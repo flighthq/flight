@@ -1,5 +1,5 @@
 import {
-  addSceneChild,
+  addNodeChild,
   connectSignal,
   createApplication,
   createBitmap,
@@ -7,7 +7,7 @@ import {
   createTween,
   createTweenManager,
   Elastic,
-  invalidateRender,
+  invalidateNodeRender,
   loadImageSourceFromURL,
   startApplicationLoop,
   updateTweens,
@@ -31,8 +31,8 @@ container.scaleY = 0;
 container.x = STAGE_WIDTH / 2;
 container.y = STAGE_HEIGHT / 2;
 
-addSceneChild(container, bitmap);
-addSceneChild(main, container);
+addNodeChild(container, bitmap);
+addNodeChild(main, container);
 
 const image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
 bitmap.data.image = image;
@@ -46,7 +46,7 @@ const tween = createTween(
   { alpha: 1, scaleX: 2, scaleY: 2 },
   { ease: Elastic.easeOut, repeat: -1, reflect: true },
 );
-connectSignal(tween.onUpdate, () => invalidateRender(container));
+connectSignal(tween.onUpdate, () => invalidateNodeRender(container));
 
 const app = createApplication();
 connectSignal(app.onUpdate, (delta) => updateTweens(manager, delta));

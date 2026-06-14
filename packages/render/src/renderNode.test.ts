@@ -1,11 +1,11 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
 import {
-  addSceneChild,
-  getAppearanceRevision,
-  getLocalTransformRevision,
-  invalidateAppearance,
-  invalidateLocalTransform,
+  addNodeChild,
+  getNodeAppearanceRevision,
+  getNodeLocalTransformRevision,
+  invalidateNodeAppearance,
+  invalidateNodeLocalTransform,
 } from '@flighthq/node';
 import { createSprite } from '@flighthq/sprite';
 import { RenderFeatures } from '@flighthq/types';
@@ -246,8 +246,8 @@ describe('isRenderNodeDirty', () => {
     const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
     const source = createDisplayObject();
     const data = createDisplayObjectRenderNode(state, source);
-    data.lastAppearanceID = getAppearanceRevision(source);
-    data.lastLocalTransformID = getLocalTransformRevision(source);
+    data.lastAppearanceID = getNodeAppearanceRevision(source);
+    data.lastLocalTransformID = getNodeLocalTransformRevision(source);
 
     expect(isRenderNodeDirty(state, source, data)).toBe(false);
   });
@@ -256,9 +256,9 @@ describe('isRenderNodeDirty', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     const data = createDisplayObjectRenderNode(state, source);
-    data.lastAppearanceID = getAppearanceRevision(source);
-    data.lastLocalTransformID = getLocalTransformRevision(source);
-    invalidateAppearance(source);
+    data.lastAppearanceID = getNodeAppearanceRevision(source);
+    data.lastLocalTransformID = getNodeLocalTransformRevision(source);
+    invalidateNodeAppearance(source);
 
     expect(isRenderNodeDirty(state, source, data)).toBe(true);
   });
@@ -267,8 +267,8 @@ describe('isRenderNodeDirty', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     const data = createDisplayObjectRenderNode(state, source);
-    data.lastAppearanceID = getAppearanceRevision(source);
-    data.lastLocalTransformID = getLocalTransformRevision(source);
+    data.lastAppearanceID = getNodeAppearanceRevision(source);
+    data.lastLocalTransformID = getNodeLocalTransformRevision(source);
     const parentData = createDisplayObjectRenderNode(state, createDisplayObject());
     parentData.transformFrameID = state.currentFrameID;
 
@@ -280,10 +280,10 @@ describe('isRenderNodeDirty', () => {
     const source = createDisplayObject();
     const data = createDisplayObjectRenderNode(state, source);
     data.transform2D = createMatrix();
-    data.lastAppearanceID = getAppearanceRevision(source);
-    data.lastLocalTransformID = getLocalTransformRevision(source);
+    data.lastAppearanceID = getNodeAppearanceRevision(source);
+    data.lastLocalTransformID = getNodeLocalTransformRevision(source);
     source.x = 10;
-    invalidateLocalTransform(source);
+    invalidateNodeLocalTransform(source);
 
     expect(isRenderNodeDirty(state, source, data)).toBe(true);
   });
@@ -332,7 +332,7 @@ describe('prepareDisplayObjectRender', () => {
     const state = createRenderState();
     const root = createDisplayObject();
     const child = createDisplayObject();
-    addSceneChild(root, child);
+    addNodeChild(root, child);
 
     prepareDisplayObjectRender(state, root);
 
@@ -344,7 +344,7 @@ describe('prepareDisplayObjectRender', () => {
     const state = createRenderState();
     const root = createDisplayObject();
     const child = createDisplayObject();
-    addSceneChild(root, child);
+    addNodeChild(root, child);
     child.enabled = false;
 
     prepareDisplayObjectRender(state, root);
@@ -388,7 +388,7 @@ describe('prepareSpriteRender', () => {
     const state = createRenderState();
     const root = createSprite();
     const child = createSprite();
-    addSceneChild(root, child);
+    addNodeChild(root, child);
 
     prepareSpriteRender(state, root);
 
@@ -400,7 +400,7 @@ describe('prepareSpriteRender', () => {
     const state = createRenderState();
     const root = createSprite();
     const child = createSprite();
-    addSceneChild(root, child);
+    addNodeChild(root, child);
     child.enabled = false;
 
     prepareSpriteRender(state, root);

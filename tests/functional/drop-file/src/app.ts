@@ -1,5 +1,5 @@
 // Tests file drop via HTML5 drag-and-drop. Drop a file onto the window to see its path/name.
-import { addSceneChild, createDisplayContainer, createRichText } from '@flighthq/sdk';
+import { addNodeChild, createDisplayContainer, createRichText } from '@flighthq/sdk';
 
 import { height, render, scale, width } from './render';
 
@@ -17,7 +17,7 @@ instructions.y = 20;
 instructions.data.width = W - 40;
 instructions.data.height = 40;
 instructions.data.text = 'Drop a file onto this window';
-addSceneChild(root, instructions);
+addNodeChild(root, instructions);
 
 const result = createRichText();
 result.data.defaultTextFormat = { font: 'monospace', size: 16, color: 0x000000 };
@@ -27,7 +27,7 @@ result.data.width = W - 40;
 result.data.height = H - 100;
 result.data.multiline = true;
 result.data.wordWrap = true;
-addSceneChild(root, result);
+addNodeChild(root, result);
 
 render(root);
 

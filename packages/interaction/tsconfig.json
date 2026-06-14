@@ -11,10 +11,10 @@
   "references": [
     { "path": "../geometry" },
     { "path": "../materials" },
-    { "path": "../scene" },
-    { "path": "../scene-display" },
-    { "path": "../scene-sprite" },
-    { "path": "../scene-world" },
+    { "path": "../node" },
+    { "path": "../displayobject" },
+    { "path": "../sprite" },
+    { "path": "../world" },
     { "path": "../types" }
   ],
   "include": ["src"]

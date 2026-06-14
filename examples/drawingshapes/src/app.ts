@@ -1,6 +1,6 @@
 import type { Shape } from '@flighthq/sdk';
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeCircle,
   appendShapeCurveTo,
@@ -12,7 +12,7 @@ import {
   appendShapeRoundRectangle,
   createDisplayObject,
   createShape,
-  invalidateLocalTransform,
+  invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -37,48 +37,48 @@ appendShapeBeginFill(square, 0x24afc4);
 appendShapeRectangle(square, 0, 0, 100, 100);
 square.x = 20;
 square.y = 20;
-invalidateLocalTransform(square);
-addSceneChild(main, square);
+invalidateNodeLocalTransform(square);
+addNodeChild(main, square);
 
 const rectangle = createShape();
 appendShapeBeginFill(rectangle, 0x24afc4);
 appendShapeRectangle(rectangle, 0, 0, 120, 100);
 rectangle.x = 140;
 rectangle.y = 20;
-invalidateLocalTransform(rectangle);
-addSceneChild(main, rectangle);
+invalidateNodeLocalTransform(rectangle);
+addNodeChild(main, rectangle);
 
 const circle = createShape();
 appendShapeBeginFill(circle, 0x24afc4);
 appendShapeCircle(circle, 50, 50, 50);
 circle.x = 280;
 circle.y = 20;
-invalidateLocalTransform(circle);
-addSceneChild(main, circle);
+invalidateNodeLocalTransform(circle);
+addNodeChild(main, circle);
 
 const ellipse = createShape();
 appendShapeBeginFill(ellipse, 0x24afc4);
 appendShapeEllipse(ellipse, 0, 0, 120, 100);
 ellipse.x = 400;
 ellipse.y = 20;
-invalidateLocalTransform(ellipse);
-addSceneChild(main, ellipse);
+invalidateNodeLocalTransform(ellipse);
+addNodeChild(main, ellipse);
 
 const roundSquare = createShape();
 appendShapeBeginFill(roundSquare, 0x24afc4);
 appendShapeRoundRectangle(roundSquare, 0, 0, 100, 100, 40, 40);
 roundSquare.x = 540;
 roundSquare.y = 20;
-invalidateLocalTransform(roundSquare);
-addSceneChild(main, roundSquare);
+invalidateNodeLocalTransform(roundSquare);
+addNodeChild(main, roundSquare);
 
 const roundRectangle = createShape();
 appendShapeBeginFill(roundRectangle, 0x24afc4);
 appendShapeRoundRectangle(roundRectangle, 0, 0, 120, 100, 40, 40);
 roundRectangle.x = 660;
 roundRectangle.y = 20;
-invalidateLocalTransform(roundRectangle);
-addSceneChild(main, roundRectangle);
+invalidateNodeLocalTransform(roundRectangle);
+addNodeChild(main, roundRectangle);
 
 // ── Row 2: polygons ────────────────────────────────────────────────────────
 
@@ -90,48 +90,48 @@ appendShapeLineTo(triangle, 100, 100);
 appendShapeLineTo(triangle, 0, 100);
 triangle.x = 20;
 triangle.y = 150;
-invalidateLocalTransform(triangle);
-addSceneChild(main, triangle);
+invalidateNodeLocalTransform(triangle);
+addNodeChild(main, triangle);
 
 const pentagon = createShape();
 appendShapeBeginFill(pentagon, 0x24afc4);
 drawPolygon(pentagon, 50, 50, 50, 5);
 pentagon.x = 145;
 pentagon.y = 150;
-invalidateLocalTransform(pentagon);
-addSceneChild(main, pentagon);
+invalidateNodeLocalTransform(pentagon);
+addNodeChild(main, pentagon);
 
 const hexagon = createShape();
 appendShapeBeginFill(hexagon, 0x24afc4);
 drawPolygon(hexagon, 50, 50, 50, 6);
 hexagon.x = 270;
 hexagon.y = 150;
-invalidateLocalTransform(hexagon);
-addSceneChild(main, hexagon);
+invalidateNodeLocalTransform(hexagon);
+addNodeChild(main, hexagon);
 
 const heptagon = createShape();
 appendShapeBeginFill(heptagon, 0x24afc4);
 drawPolygon(heptagon, 50, 50, 50, 7);
 heptagon.x = 395;
 heptagon.y = 150;
-invalidateLocalTransform(heptagon);
-addSceneChild(main, heptagon);
+invalidateNodeLocalTransform(heptagon);
+addNodeChild(main, heptagon);
 
 const octagon = createShape();
 appendShapeBeginFill(octagon, 0x24afc4);
 drawPolygon(octagon, 50, 50, 50, 8);
 octagon.x = 520;
 octagon.y = 150;
-invalidateLocalTransform(octagon);
-addSceneChild(main, octagon);
+invalidateNodeLocalTransform(octagon);
+addNodeChild(main, octagon);
 
 const decagon = createShape();
 appendShapeBeginFill(decagon, 0x24afc4);
 drawPolygon(decagon, 50, 50, 50, 10);
 decagon.x = 650;
 decagon.y = 150;
-invalidateLocalTransform(decagon);
-addSceneChild(main, decagon);
+invalidateNodeLocalTransform(decagon);
+addNodeChild(main, decagon);
 
 // ── Row 3: lines and curves ───────────────────────────────────────────────
 
@@ -140,16 +140,16 @@ appendShapeLineStyle(line, 10, 0x24afc4);
 appendShapeLineTo(line, 755, 0);
 line.x = 20;
 line.y = 280;
-invalidateLocalTransform(line);
-addSceneChild(main, line);
+invalidateNodeLocalTransform(line);
+addNodeChild(main, line);
 
 const curve = createShape();
 appendShapeLineStyle(curve, 10, 0x24afc4);
 appendShapeCurveTo(curve, 327.5, -50, 755, 0);
 curve.x = 20;
 curve.y = 340;
-invalidateLocalTransform(curve);
-addSceneChild(main, curve);
+invalidateNodeLocalTransform(curve);
+addNodeChild(main, curve);
 
 // ── Render loop ───────────────────────────────────────────────────────────
 

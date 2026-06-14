@@ -1,4 +1,4 @@
-import { addSceneChild, createDisplayObject, createRectangle, getSceneParent } from '@flighthq/sdk';
+import { addNodeChild, createDisplayObject, createRectangle, getNodeParent } from '@flighthq/sdk';
 
 test('sdk barrel exports geometry and scenegraph primitives', () => {
   const rect = createRectangle();
@@ -10,8 +10,8 @@ test('sdk barrel exports geometry and scenegraph primitives', () => {
 
   const parent = createDisplayObject();
   const child = createDisplayObject();
-  const out = addSceneChild(parent, child);
+  const out = addNodeChild(parent, child);
 
-  expect(getSceneParent(child)).toBe(parent);
+  expect(getNodeParent(child)).toBe(parent);
   expect(out).toBe(child);
 });

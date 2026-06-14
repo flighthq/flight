@@ -1,4 +1,4 @@
-import type { PartialNode, Rectangle, SceneNode, Shape, ShapeData, ShapeRuntime } from '@flighthq/types';
+import type { Node, PartialNode, Rectangle, Shape, ShapeData, ShapeRuntime } from '@flighthq/types';
 import { ShapeKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
@@ -8,7 +8,7 @@ export function clearShapeCommands(data: ShapeData): void {
   data.version++;
 }
 
-export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonly<SceneNode>): void {
+export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const shape = source as Shape;
   const commands = shape.data.commands;
 

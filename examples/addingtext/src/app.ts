@@ -1,4 +1,4 @@
-import { addSceneChild, createDisplayObject, createText, loadFontFromURL } from '@flighthq/sdk';
+import { addNodeChild, createDisplayObject, createText, loadFontFromURL } from '@flighthq/sdk';
 
 import { render, scale } from './render';
 
@@ -13,7 +13,7 @@ textField.data.text = 'Hello World';
 textField.data.textFormat = { font: font.name, size: 30, color: 0x7a0026 };
 textField.x = 50;
 textField.y = 50;
-addSceneChild(root, textField);
+addNodeChild(root, textField);
 
 function enterFrame(): void {
   render(root);

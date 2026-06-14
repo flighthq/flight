@@ -48,11 +48,11 @@ export function getWorldNodeSignals(source: WorldNode): WorldNodeSignals {
   return getWorldNodeRuntime(source).worldNodeSignals;
 }
 
-export function invalidateLocalTransform(target: WorldNode): void {
+export function invalidateNodeLocalTransform(target: WorldNode): void {
   const runtime = getWorldNodeRuntime(target);
   runtime.localTransformID = (runtime.localTransformID + 1) >>> 0;
 }
 
-export function invalidateParentReference(target: WorldNode): void {
+export function invalidateNodeParentReference(target: WorldNode): void {
   getWorldNodeRuntime(target).worldTransformUsingParentTransformID = -1;
 }

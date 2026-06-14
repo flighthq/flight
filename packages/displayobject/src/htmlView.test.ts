@@ -1,5 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
-import type { HTMLView, SceneNode } from '@flighthq/types';
+import type { HTMLView, Node } from '@flighthq/types';
 import { HTMLViewKind } from '@flighthq/types';
 
 import {
@@ -15,7 +15,7 @@ describe('computeHTMLViewLocalBoundsRectangle', () => {
   it('sets out dimensions from data width and height', () => {
     const htmlView = createHTMLView({ data: { width: 320, height: 240 } });
     const out = createRectangle();
-    computeHTMLViewLocalBoundsRectangle(out, htmlView as unknown as SceneNode);
+    computeHTMLViewLocalBoundsRectangle(out, htmlView as unknown as Node);
     expect(out.width).toBe(320);
     expect(out.height).toBe(240);
   });

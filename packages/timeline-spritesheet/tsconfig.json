@@ -10,8 +10,8 @@
   },
   "references": [
     { "path": "../assets" },
-    { "path": "../scene" },
-    { "path": "../scene-display" },
+    { "path": "../node" },
+    { "path": "../displayobject" },
     { "path": "../spritesheet" },
     { "path": "../timeline" },
     { "path": "../types" }

@@ -1,5 +1,5 @@
 ﻿import { createDisplayObject } from '@flighthq/displayobject';
-import { addSceneChild } from '@flighthq/node';
+import { addNodeChild } from '@flighthq/node';
 import { registerDisplayObjectMaskRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { DisplayObjectKind } from '@flighthq/types';
@@ -34,7 +34,7 @@ describe('drawWebGLMask', () => {
     const child = createDisplayObject();
     const renderer = makeRenderer();
     registerDisplayObjectMaskRenderer(state, DisplayObjectKind, renderer);
-    addSceneChild(parent, child);
+    addNodeChild(parent, child);
     const parentData = getOrCreateDisplayObjectRenderNode(state, parent);
     const childData = getOrCreateDisplayObjectRenderNode(state, child);
 

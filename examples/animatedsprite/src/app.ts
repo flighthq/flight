@@ -1,5 +1,5 @@
 import {
-  addSceneChild,
+  addNodeChild,
   addTextureAtlasRegion,
   connectSignal,
   createApplication,
@@ -11,8 +11,8 @@ import {
   createTextureAtlas,
   getSpritesheetAnimation,
   getSpritesheetPlayerFrame,
-  invalidateAppearance,
-  invalidateLocalTransform,
+  invalidateNodeAppearance,
+  invalidateNodeLocalTransform,
   loadImageSourceFromURL,
   playSpritesheetAnimation,
   startApplicationLoop,
@@ -68,8 +68,8 @@ const sprites = animationDefs.map((def, i) => {
   sprite.data.atlas = atlas;
   sprite.x = (gap + i * (spriteScreenSize + gap)) / SCALE;
   sprite.y = yLocal;
-  invalidateLocalTransform(sprite);
-  addSceneChild(root, sprite);
+  invalidateNodeLocalTransform(sprite);
+  addNodeChild(root, sprite);
   return sprite;
 });
 
@@ -86,7 +86,7 @@ connectSignal(app.onUpdate, (delta) => {
       const frame = getSpritesheetPlayerFrame(players[i], sheet);
       if (frame !== null) {
         sprites[i].data.id = frame.id;
-        invalidateAppearance(sprites[i]);
+        invalidateNodeAppearance(sprites[i]);
       }
     }
   }

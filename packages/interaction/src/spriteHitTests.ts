@@ -1,9 +1,9 @@
-import type { SceneNode } from '@flighthq/types';
+import type { Node } from '@flighthq/types';
 
 import { graphHitTestLocalBounds } from './hitTests';
 
 export function defaultQuadBatchHitTestPoint(
-  source: SceneNode<symbol, object>,
+  source: Node<symbol, object>,
   x: number,
   y: number,
   shapeFlag: boolean,
@@ -13,7 +13,7 @@ export function defaultQuadBatchHitTestPoint(
 }
 
 export function defaultSpriteHitTestPoint(
-  source: SceneNode<symbol, object>,
+  source: Node<symbol, object>,
   x: number,
   y: number,
   _shapeFlag: boolean,
@@ -22,7 +22,7 @@ export function defaultSpriteHitTestPoint(
 }
 
 export function defaultTilemapHitTestPoint(
-  source: SceneNode<symbol, object>,
+  source: Node<symbol, object>,
   x: number,
   y: number,
   shapeFlag: boolean,

@@ -1,21 +1,21 @@
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
-import { invalidateLocalBounds } from '@flighthq/node';
+import { invalidateNodeLocalBounds } from '@flighthq/node';
 import type {
   MethodsOf,
+  Node,
   PartialNode,
   QuadBatch,
   QuadBatchData,
   QuadBatchRuntime,
   QuadTransformType,
   Rectangle,
-  SceneNode,
   Vector2Like,
 } from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
 
 import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
 
-function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<SceneNode>): void {
+function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const runtime = getSpriteNodeRuntime(source as QuadBatch) as QuadBatchRuntime;
   if (runtime.localBoundsRectangle !== null) copyRectangle(out, runtime.localBoundsRectangle);
 }
@@ -206,7 +206,7 @@ export function setQuadBatchLocalBoundsRectangle(target: QuadBatch, rect: Readon
   const runtime = getSpriteNodeRuntime(target) as unknown as QuadBatchRuntime;
   if (runtime.localBoundsRectangle === null) runtime.localBoundsRectangle = createRectangle();
   copyRectangle(runtime.localBoundsRectangle, rect);
-  invalidateLocalBounds(target);
+  invalidateNodeLocalBounds(target);
 }
 
 const defaultMethods: Partial<MethodsOf<QuadBatchRuntime>> = {

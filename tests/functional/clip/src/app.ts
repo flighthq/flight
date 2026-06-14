@@ -1,7 +1,7 @@
 // Requires: assets/wabbit_alpha.png
 // Port of ClipTest1. Tests scrollRectangle clipping on bitmaps and rich text.
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
@@ -26,7 +26,7 @@ const bg = createShape();
 appendShapeBeginFill(bg, 0xffffff);
 appendShapeRectangle(bg, 0, 0, W, H);
 appendShapeEndFill(bg);
-addSceneChild(root, bg);
+addNodeChild(root, bg);
 
 const image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
 const iw = image.width;
@@ -40,7 +40,7 @@ for (let i = 0; i < 4; i++) {
   ghost.x = i * (W / 4) + W / 8 - iw / 2;
   ghost.y = ih / 2;
   ghost.alpha = 0.3;
-  addSceneChild(root, ghost);
+  addNodeChild(root, ghost);
 }
 
 // Top row: 4 bitmaps with different scroll rect configurations
@@ -50,7 +50,7 @@ for (let i = 0; i < 4; i++) {
   bmp.data.smoothing = true;
   bmp.x = i * (W / 4) + W / 8 - iw / 2;
   bmp.y = ih / 2;
-  addSceneChild(root, bmp);
+  addNodeChild(root, bmp);
 
   if (i === 1) setDisplayObjectClipRectangle(bmp, { x: 0, y: 0, width: iw / 2, height: ih / 2 });
   if (i === 2) setDisplayObjectClipRectangle(bmp, { x: iw / 2, y: ih / 2, width: iw / 2, height: ih / 2 });
@@ -68,7 +68,7 @@ for (let i = 0; i < 4; i++) {
   tf.data.width = 400;
   tf.data.height = 400;
   tf.data.text = textValues[i];
-  addSceneChild(root, tf);
+  addNodeChild(root, tf);
 
   if (i === 1) setDisplayObjectClipRectangle(tf, { x: 0, y: 0, width: 200, height: 200 });
   if (i === 2) setDisplayObjectClipRectangle(tf, { x: 0, y: 40, width: 200, height: 20 });

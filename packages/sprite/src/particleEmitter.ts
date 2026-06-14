@@ -1,13 +1,13 @@
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
-import { invalidateLocalBounds } from '@flighthq/node';
+import { invalidateNodeLocalBounds } from '@flighthq/node';
 import type {
   MethodsOf,
+  Node,
   PartialNode,
   ParticleEmitter,
   ParticleEmitterData,
   ParticleEmitterRuntime,
   Rectangle,
-  SceneNode,
   SpriteNode,
 } from '@flighthq/types';
 import { ParticleEmitterKind } from '@flighthq/types';
@@ -16,7 +16,7 @@ import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from 
 
 const PARTICLE_TRANSFORM_STRIDE = 4; // [x, y, rotation, scale] per particle
 
-function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<SceneNode>): void {
+function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const runtime = getSpriteNodeRuntime(source as SpriteNode) as ParticleEmitterRuntime;
   if (runtime.localBoundsRectangle !== null) copyRectangle(out, runtime.localBoundsRectangle);
 }
@@ -131,7 +131,7 @@ export function setParticleEmitterLocalBoundsRectangle(target: ParticleEmitter, 
   const runtime = getSpriteNodeRuntime(target) as ParticleEmitterRuntime;
   if (runtime.localBoundsRectangle === null) runtime.localBoundsRectangle = createRectangle();
   copyRectangle(runtime.localBoundsRectangle, rect);
-  invalidateLocalBounds(target);
+  invalidateNodeLocalBounds(target);
 }
 
 const defaultMethods: Partial<MethodsOf<ParticleEmitterRuntime>> = {

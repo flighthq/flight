@@ -9,8 +9,8 @@ import {
   createWorldNodeRuntime,
   getWorldNodeRuntime,
   getWorldNodeSignals,
-  invalidateLocalTransform,
-  invalidateParentReference,
+  invalidateNodeLocalTransform,
+  invalidateNodeParentReference,
   WorldNodeKind,
   type WorldNodeRuntime,
 } from './worldNode';
@@ -96,20 +96,20 @@ describe('initTransform3DTrait', () => {
   });
 });
 
-describe('invalidateLocalTransform', () => {
+describe('invalidateNodeLocalTransform', () => {
   it('increments the local transform id', () => {
     const node = createWorldNode();
     const before = getWorldNodeRuntime(node).localTransformID;
-    invalidateLocalTransform(node);
+    invalidateNodeLocalTransform(node);
     expect(getWorldNodeRuntime(node).localTransformID).toBe(before + 1);
   });
 });
 
-describe('invalidateParentReference', () => {
+describe('invalidateNodeParentReference', () => {
   it('resets the cached parent transform id so the world matrix recomputes', () => {
     const node = createWorldNode();
     getWorldNodeRuntime(node).worldTransformUsingParentTransformID = 5;
-    invalidateParentReference(node);
+    invalidateNodeParentReference(node);
     expect(getWorldNodeRuntime(node).worldTransformUsingParentTransformID).toBe(-1);
   });
 });
@@ -176,7 +176,7 @@ describe('worldTransform', () => {
     node.localMatrix.m[12] = 10;
     node.localMatrix.m[13] = 20;
     node.localMatrix.m[14] = 30;
-    invalidateLocalTransform(node);
+    invalidateNodeLocalTransform(node);
 
     const world = getWorldMatrix(node);
     expect(world.m[12]).toBe(10);
@@ -190,10 +190,10 @@ describe('worldTransform', () => {
     addWorldChild(parent, child);
 
     parent.localMatrix.m[12] = 5;
-    invalidateLocalTransform(parent);
+    invalidateNodeLocalTransform(parent);
 
     child.localMatrix.m[12] = 3;
-    invalidateLocalTransform(child);
+    invalidateNodeLocalTransform(child);
 
     const world = getWorldMatrix(child);
     expect(world.m[12]).toBeCloseTo(8);
@@ -201,12 +201,12 @@ describe('worldTransform', () => {
 
   it('world matrix is recomputed after localMatrix changes', () => {
     const node = createTransformNode();
-    invalidateLocalTransform(node);
+    invalidateNodeLocalTransform(node);
     ensureWorldMatrix(node);
     const first = getWorldNodeRuntime(node).worldTransformID;
 
     node.localMatrix.m[12] = 99;
-    invalidateLocalTransform(node);
+    invalidateNodeLocalTransform(node);
 
     ensureWorldMatrix(node);
     const second = getWorldNodeRuntime(node).worldTransformID;
@@ -230,11 +230,11 @@ describe('worldTransform', () => {
 
     identityMatrix4(parent.localMatrix);
     identityMatrix4(child.localMatrix);
-    invalidateLocalTransform(parent);
-    invalidateLocalTransform(child);
+    invalidateNodeLocalTransform(parent);
+    invalidateNodeLocalTransform(child);
 
     parent.localMatrix.m[12] = 7;
-    invalidateLocalTransform(parent);
+    invalidateNodeLocalTransform(parent);
 
     const world = getWorldMatrix(child);
     expect(world.m[12]).toBeCloseTo(7);

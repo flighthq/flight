@@ -1,5 +1,5 @@
 ﻿import { createEntity } from '@flighthq/entity';
-import { getLocalBoundsRectangle } from '@flighthq/node';
+import { getNodeLocalBoundsRectangle } from '@flighthq/node';
 import { remapScale9Commands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import type {
   DisplayObjectRenderer,
@@ -35,7 +35,7 @@ export function drawDOMScale9Shape(state: DOMRenderState, renderNode: DisplayObj
   const { commands, scale9Grid } = source.data;
   if (commands.length === 0) return;
 
-  const bounds = getLocalBoundsRectangle(source);
+  const bounds = getNodeLocalBoundsRectangle(source);
   const mapper = buildDOMScale9Mapper(bounds, scale9Grid, source.scaleX, source.scaleY);
   if (mapper === null) {
     drawDOMShape(state, renderNode);

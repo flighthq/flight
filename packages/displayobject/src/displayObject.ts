@@ -1,13 +1,13 @@
 import {
-  createSceneNode,
-  createSceneNodeRuntime,
-  getSceneNodeRuntime,
+  createNode,
+  createNodeRuntime,
+  getNodeRuntime,
   initAppearanceTrait,
   initBoundsRectangleRuntimeTrait,
   initBoundsRectangleTrait,
   initTransformRuntimeTrait,
   initTransformTrait,
-  invalidateAppearance,
+  invalidateNodeAppearance,
 } from '@flighthq/node';
 import type {
   DisplayGraphNodeDataFactory,
@@ -15,10 +15,10 @@ import type {
   DisplayObject,
   DisplayObjectRuntime,
   MethodsOf,
+  Node,
+  NodeRuntimeFactory,
   PartialNode,
   Rectangle,
-  SceneNode,
-  SceneNodeRuntimeFactory,
 } from '@flighthq/types';
 import { DisplayGraph } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
@@ -33,12 +33,12 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   createData?: DisplayGraphNodeDataFactory,
   createDisplayObjectRuntimeFactory?: DisplayGraphNodeRuntimeFactory<R>,
 ): DisplayObject {
-  const out = createSceneNode(
+  const out = createNode(
     DisplayGraph,
     kind,
     obj,
     createData,
-    createDisplayObjectRuntimeFactory ?? (createDisplayObjectRuntime as unknown as SceneNodeRuntimeFactory<R>),
+    createDisplayObjectRuntimeFactory ?? (createDisplayObjectRuntime as unknown as NodeRuntimeFactory<R>),
   ) as DisplayObject;
   initTransformTrait(out, obj);
   initBoundsRectangleTrait(out, obj);
@@ -51,27 +51,27 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
 export function createDisplayObjectRuntime(
   methods?: Readonly<Partial<MethodsOf<DisplayObjectRuntime>>>,
 ): DisplayObjectRuntime {
-  const out = createSceneNodeRuntime(methods) as DisplayObjectRuntime;
+  const out = createNodeRuntime(methods) as DisplayObjectRuntime;
   initTransformRuntimeTrait(out, methods);
   initBoundsRectangleRuntimeTrait(out, methods);
   return out;
 }
 
 export function getDisplayObjectRuntime(source: Readonly<DisplayObject>): Readonly<DisplayObjectRuntime> {
-  return getSceneNodeRuntime(source) as DisplayObjectRuntime;
+  return getNodeRuntime(source) as DisplayObjectRuntime;
 }
 
 // eslint-disable-next-line
-export function isDisplayObject(source: Readonly<SceneNode<any, any>>): boolean {
-  return getSceneNodeRuntime(source).graph === DisplayGraph;
+export function isDisplayObject(source: Readonly<Node<any, any>>): boolean {
+  return getNodeRuntime(source).graph === DisplayGraph;
 }
 
 export function setDisplayObjectClipRectangle(source: DisplayObject, value: Rectangle | null): void {
   source.clipRectangle = value;
-  invalidateAppearance(source);
+  invalidateNodeAppearance(source);
 }
 
 export function setDisplayObjectMask(source: DisplayObject, value: DisplayObject | null): void {
   source.mask = value;
-  invalidateAppearance(source);
+  invalidateNodeAppearance(source);
 }

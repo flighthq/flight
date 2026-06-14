@@ -1,18 +1,18 @@
-import { invalidateLocalBounds } from '@flighthq/node';
+import { invalidateNodeLocalBounds } from '@flighthq/node';
 import type {
   MethodsOf,
+  Node,
   PartialNode,
   Rectangle,
   RenderView,
   RenderViewData,
   RenderViewRuntime,
-  SceneNode,
 } from '@flighthq/types';
 import { RenderViewKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
 
-export function computeRenderViewLocalBoundsRectangle(out: Rectangle, source: Readonly<SceneNode>): void {
+export function computeRenderViewLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const data = (source as RenderView).data;
   out.width = data.width;
   out.height = data.height;
@@ -42,7 +42,7 @@ export function setRenderViewSize(source: RenderView, width: number, height: num
   if (source.data.width === width && source.data.height === height) return;
   source.data.width = width;
   source.data.height = height;
-  invalidateLocalBounds(source);
+  invalidateNodeLocalBounds(source);
 }
 
 const defaultMethods: Partial<MethodsOf<RenderViewRuntime>> = {

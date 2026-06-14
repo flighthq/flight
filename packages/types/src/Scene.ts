@@ -1,9 +1,9 @@
+import type { Node, NullScene } from './Node';
 import type { SceneAlign } from './SceneAlign';
-import type { NullScene, SceneNode } from './SceneNode';
 import type { SceneScaleMode } from './SceneScaleMode';
 
-export interface Scene<SceneKind extends symbol = typeof NullScene> {
+export interface Scene<Kind extends symbol = typeof NullScene> {
   align: SceneAlign;
-  root: SceneNode<SceneKind> | null;
+  root: Node<Kind> | null;
   scaleMode: SceneScaleMode;
 }

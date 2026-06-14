@@ -11,7 +11,7 @@ function makeShapeNode(data: Record<string, unknown> = {}, rendererData: unknown
         version: 0,
         ...data,
       },
-      // getLocalBoundsRectangle is called on source itself
+      // getNodeLocalBoundsRectangle is called on source itself
     },
     rendererData: rendererData,
     blendMode: 0,

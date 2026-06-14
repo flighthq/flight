@@ -1,6 +1,6 @@
 import { emitSignal } from '@flighthq/signals';
 
-import { getWorldNodeRuntime, invalidateParentReference, type WorldNode } from './worldNode';
+import { getWorldNodeRuntime, invalidateNodeParentReference, type WorldNode } from './worldNode';
 
 export function addWorldChild(target: WorldNode, child: WorldNode): WorldNode {
   return addWorldChildAt(target, child, getWorldNumChildren(target));
@@ -44,7 +44,7 @@ export function addWorldChildAt(target: WorldNode, child: WorldNode, index: numb
     childRuntime.parent = target;
     emitSignal(targetRuntime.worldNodeSignals.onChildAdded, child);
     emitSignal(childRuntime.worldNodeSignals.onParentChanged);
-    invalidateParentReference(child);
+    invalidateNodeParentReference(child);
   }
 
   return child;
@@ -113,7 +113,7 @@ export function removeWorldChild(target: WorldNode, child: WorldNode): WorldNode
   if (children !== null && childRuntime.parent === target) {
     childRuntime.parent = null;
     emitSignal(childRuntime.worldNodeSignals.onParentChanged);
-    invalidateParentReference(child);
+    invalidateNodeParentReference(child);
     const i = children.indexOf(child);
     if (i !== -1) {
       children.splice(i, 1);

@@ -1,6 +1,6 @@
 // Requires: assets/data.utf8, assets/unifont-8.0.01.ttf
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeRectangle,
   createDisplayContainer,
@@ -23,7 +23,7 @@ const H = height / scale;
 const bg = createShape();
 appendShapeBeginFill(bg, 0xffffff);
 appendShapeRectangle(bg, 0, 0, W, H);
-addSceneChild(root, bg);
+addNodeChild(root, bg);
 
 const fmt = { font: unifont.name, size: 18, color: 0x000000 };
 
@@ -37,7 +37,7 @@ full.x = 50;
 full.y = 50;
 full.data.width = 300;
 full.data.height = 50;
-addSceneChild(root, full);
+addNodeChild(root, full);
 
 const lengthLabel = createRichText();
 lengthLabel.data.defaultTextFormat = fmt;
@@ -46,7 +46,7 @@ lengthLabel.x = 400;
 lengthLabel.y = 50;
 lengthLabel.data.width = 100;
 lengthLabel.data.height = 30;
-addSceneChild(root, lengthLabel);
+addNodeChild(root, lengthLabel);
 
 for (let i = 0; i < utf8str.length; i++) {
   const tf = createRichText();
@@ -56,7 +56,7 @@ for (let i = 0; i < utf8str.length; i++) {
   tf.y = 50;
   tf.data.width = 30;
   tf.data.height = 30;
-  addSceneChild(root, tf);
+  addNodeChild(root, tf);
 }
 
 for (let i = 0; i < Math.floor(utf8str.length / 2); i++) {
@@ -67,7 +67,7 @@ for (let i = 0; i < Math.floor(utf8str.length / 2); i++) {
   tf.y = 100;
   tf.data.width = 60;
   tf.data.height = 30;
-  addSceneChild(root, tf);
+  addNodeChild(root, tf);
 }
 
 render(root);

@@ -1,5 +1,5 @@
-import { createSceneNode } from '@flighthq/node';
-import type { PartialNode, Rectangle, SceneNode, SpriteNode, SpriteNodeData } from '@flighthq/types';
+import { createNode } from '@flighthq/node';
+import type { Node, PartialNode, Rectangle, SpriteNode, SpriteNodeData } from '@flighthq/types';
 import { BlendMode, DisplayObjectKind, SpriteGraph } from '@flighthq/types';
 
 import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
@@ -81,7 +81,7 @@ describe('createSpriteNodeRuntime', () => {
   });
 
   it('allows a custom bounds calculation', () => {
-    const func = (_out: Rectangle, _source: Readonly<SceneNode>) => {};
+    const func = (_out: Rectangle, _source: Readonly<Node>) => {};
     const runtime = createSpriteNodeRuntime({ computeLocalBoundsRectangle: func });
     expect(runtime.computeLocalBoundsRectangle).toStrictEqual(func);
   });
@@ -108,7 +108,7 @@ describe('isSpriteNode', () => {
 
   it('returns false for a different graph type', () => {
     const TestGraph: unique symbol = Symbol('TestGraph');
-    const node = createSceneNode(TestGraph, SpriteNodeTestKind);
+    const node = createNode(TestGraph, SpriteNodeTestKind);
     expect(isSpriteNode(node)).toBe(false);
   });
 });

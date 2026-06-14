@@ -1,7 +1,7 @@
 // Requires: assets/OwlAlpha.png
 // Demonstrates clip rectangle + child positioning as the compositional scroll pattern.
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
@@ -42,8 +42,8 @@ owlContent.y = -300;
 const owlBitmap = createBitmap();
 owlBitmap.data.image = owlImg;
 owlBitmap.data.smoothing = true;
-addSceneChild(owlContent, owlBitmap);
-addSceneChild(owlClip, owlContent);
+addNodeChild(owlContent, owlBitmap);
+addNodeChild(owlClip, owlContent);
 
 // Text list: container clips to the visible area; content moves to scroll.
 const textFmt = { font: 'sans-serif', size: 28, color: 0xe8c343 };
@@ -79,8 +79,8 @@ textClip.x = pos(300);
 textClip.y = pos(350);
 
 const textContent = createDisplayContainer();
-addSceneChild(textClip, owlClip);
-addSceneChild(textClip, textContent);
+addNodeChild(textClip, owlClip);
+addNodeChild(textClip, textContent);
 
 const textField = createRichText();
 textField.data.defaultTextFormat = textFmt;
@@ -89,7 +89,7 @@ textField.data.height = pos(2000);
 textField.data.multiline = true;
 textField.data.wordWrap = false;
 textField.data.text = movies.join('\n');
-addSceneChild(textContent, textField);
+addNodeChild(textContent, textField);
 
 // Border around text clip area
 const outerSprite = createDisplayContainer();
@@ -99,21 +99,21 @@ function addBorderRect(x: number, y: number, w: number, h: number): void {
   appendShapeBeginFill(s, borderColor);
   appendShapeRectangle(s, x, y, w, h);
   appendShapeEndFill(s);
-  addSceneChild(outerSprite, s);
+  addNodeChild(outerSprite, s);
 }
 addBorderRect(textClip.x - 2, textClip.y - 2, CLIP_W + 4, 2);
 addBorderRect(textClip.x - 2, textClip.y - 2, 2, CLIP_H + 4);
 addBorderRect(textClip.x + CLIP_W, textClip.y - 2, 2, CLIP_H + 4);
 addBorderRect(textClip.x - 2, textClip.y + CLIP_H, CLIP_W + 4, 2);
-addSceneChild(outerSprite, textClip);
+addNodeChild(outerSprite, textClip);
 
 // Outer clip: orbits by moving the content while the clip window stays fixed.
 const outerClip = createDisplayContainer();
 setDisplayObjectClipRectangle(outerClip, { x: 0, y: 0, width: W, height: H });
 const outerContent = createDisplayContainer();
-addSceneChild(outerContent, outerSprite);
-addSceneChild(outerClip, outerContent);
-addSceneChild(root, outerClip);
+addNodeChild(outerContent, outerSprite);
+addNodeChild(outerClip, outerContent);
+addNodeChild(root, outerClip);
 
 // Status label
 const status = createRichText();
@@ -123,7 +123,7 @@ status.y = 0;
 status.data.width = pos(400);
 status.data.height = pos(50);
 status.data.text = 'clip rectangle test';
-addSceneChild(root, status);
+addNodeChild(root, status);
 
 let inc = pos(5);
 let owlInc = pos(5);

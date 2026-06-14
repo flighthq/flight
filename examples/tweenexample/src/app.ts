@@ -1,5 +1,5 @@
 import {
-  addSceneChildAt,
+  addNodeChildAt,
   appendShapeBeginFill,
   appendShapeCircle,
   appendShapeEndFill,
@@ -10,7 +10,7 @@ import {
   createTween,
   createTweenManager,
   createTweenTimer,
-  invalidateRender,
+  invalidateNodeRender,
   Quad,
   startApplicationLoop,
   updateTweens,
@@ -38,7 +38,7 @@ function animateCircle(circle: ReturnType<typeof createShape>): void {
   const targetY = Math.random() * STAGE_HEIGHT;
   const tween = createTween(manager, circle, duration, { x: targetX, y: targetY }, { ease: Quad.easeOut });
   connectSignal(tween.onComplete, () => animateCircle(circle));
-  connectSignal(tween.onUpdate, () => invalidateRender(circle));
+  connectSignal(tween.onUpdate, () => invalidateNodeRender(circle));
 }
 
 function createCircle(): void {
@@ -53,7 +53,7 @@ function createCircle(): void {
   circle.x = Math.random() * STAGE_WIDTH;
   circle.y = Math.random() * STAGE_HEIGHT;
 
-  addSceneChildAt(root, circle, 0);
+  addNodeChildAt(root, circle, 0);
   animateCircle(circle);
 }
 

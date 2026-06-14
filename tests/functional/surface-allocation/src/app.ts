@@ -5,7 +5,7 @@
 // 1: add 1000x1000          4: remove oldest 1000x1000
 // 5: remove all
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
@@ -14,7 +14,7 @@ import {
   createImageSourceFromCanvas,
   createRichText,
   createShape,
-  removeSceneChild,
+  removeNodeChild,
 } from '@flighthq/sdk';
 
 import { height, render, scale, width } from './render';
@@ -70,7 +70,7 @@ const stageBg = createShape();
 appendShapeBeginFill(stageBg, 0x000000);
 appendShapeRectangle(stageBg, 0, 0, W, H);
 appendShapeEndFill(stageBg);
-addSceneChild(root, stageBg);
+addNodeChild(root, stageBg);
 
 const label = createRichText();
 label.data.defaultTextFormat = { font: 'sans-serif', size: 44, bold: true, color: 0xffffff };
@@ -79,7 +79,7 @@ label.y = 50;
 label.data.width = 400;
 label.data.height = 60;
 label.data.text = '0×100, 0×500, 0×1000';
-addSceneChild(root, label);
+addNodeChild(root, label);
 
 const instructions = createRichText();
 instructions.data.defaultTextFormat = { font: 'sans-serif', size: 16, color: 0xaaaaaa };
@@ -89,7 +89,7 @@ instructions.data.width = W - 40;
 instructions.data.height = 50;
 instructions.data.text =
   '↑ add 100 · ↓ remove 100 · → add 500 · ← remove 500 · 1 add 1000 · 4 remove 1000 · 5 clear all';
-addSceneChild(root, instructions);
+addNodeChild(root, instructions);
 
 const bitmaps100: ReturnType<typeof createBitmap>[] = [];
 const bitmaps500: ReturnType<typeof createBitmap>[] = [];
@@ -101,7 +101,7 @@ let nextY = 100;
 function placeBitmap(bmp: ReturnType<typeof createBitmap>): void {
   bmp.x = nextX;
   bmp.y = nextY;
-  addSceneChild(root, bmp);
+  addNodeChild(root, bmp);
   nextX += 30;
   nextY += 30;
   if (nextX >= W - 100 || nextY >= H - 100) {
@@ -137,21 +137,21 @@ document.addEventListener('keydown', (e) => {
     }
     case 'ArrowDown':
       if (bitmaps100.length > 0) {
-        removeSceneChild(root, bitmaps100.shift()!);
+        removeNodeChild(root, bitmaps100.shift()!);
       }
       break;
     case 'ArrowLeft':
       if (bitmaps500.length > 0) {
-        removeSceneChild(root, bitmaps500.shift()!);
+        removeNodeChild(root, bitmaps500.shift()!);
       }
       break;
     case '4':
       if (bitmaps1000.length > 0) {
-        removeSceneChild(root, bitmaps1000.shift()!);
+        removeNodeChild(root, bitmaps1000.shift()!);
       }
       break;
     case '5':
-      for (const b of [...bitmaps100, ...bitmaps500, ...bitmaps1000]) removeSceneChild(root, b);
+      for (const b of [...bitmaps100, ...bitmaps500, ...bitmaps1000]) removeNodeChild(root, b);
       bitmaps100.length = 0;
       bitmaps500.length = 0;
       bitmaps1000.length = 0;

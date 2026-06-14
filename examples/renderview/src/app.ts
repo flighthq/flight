@@ -2,7 +2,7 @@ import {
   addTextureAtlasRegion,
   createSprite,
   createTextureAtlas,
-  invalidateLocalTransform,
+  invalidateNodeLocalTransform,
   loadImageSourceFromURL,
 } from '@flighthq/sdk';
 
@@ -25,7 +25,7 @@ root.scaleX = SCALE * scale;
 root.scaleY = SCALE * scale;
 root.x = ((WIDTH - TILE_SIZE * SCALE) * scale) / 2;
 root.y = ((HEIGHT - TILE_SIZE * SCALE) * scale) / 2;
-invalidateLocalTransform(root);
+invalidateNodeLocalTransform(root);
 
 function enterFrame(): void {
   render(root);

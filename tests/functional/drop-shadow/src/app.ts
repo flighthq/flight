@@ -4,7 +4,7 @@
 // Currently shows the bitmaps unfiltered as a placeholder layout.
 // Variants: normal, inner, knockout, inner+knockout, hideObject, inner+hideObject
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
@@ -28,7 +28,7 @@ const bg = createShape();
 appendShapeBeginFill(bg, 0xffffff);
 appendShapeRectangle(bg, 0, 0, W, H);
 appendShapeEndFill(bg);
-addSceneChild(root, bg);
+addNodeChild(root, bg);
 
 const image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
 
@@ -39,7 +39,7 @@ for (let i = 0; i < 6; i++) {
   bmp.data.smoothing = true;
   bmp.x = 50 + i * (image.width + 50);
   bmp.y = 50;
-  addSceneChild(root, bmp);
+  addNodeChild(root, bmp);
 
   const lbl = createRichText();
   lbl.data.defaultTextFormat = { font: 'sans-serif', size: 12, color: 0x444444 };
@@ -48,7 +48,7 @@ for (let i = 0; i < 6; i++) {
   lbl.data.width = image.width + 40;
   lbl.data.height = 24;
   lbl.data.text = labels[i];
-  addSceneChild(root, lbl);
+  addNodeChild(root, lbl);
 }
 
 const todo = createRichText();
@@ -58,6 +58,6 @@ todo.y = H - 30;
 todo.data.width = W - 20;
 todo.data.height = 24;
 todo.data.text = 'TODO: animated drop shadow requires display-object-level filter support';
-addSceneChild(root, todo);
+addNodeChild(root, todo);
 
 render(root);

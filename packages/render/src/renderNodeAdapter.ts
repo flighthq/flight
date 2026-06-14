@@ -1,5 +1,5 @@
-import { invalidateAppearance } from '@flighthq/node';
-import type { Renderable, RenderNode2D, RenderNodeAdapter, RenderState, SceneNode } from '@flighthq/types';
+import { invalidateNodeAppearance } from '@flighthq/node';
+import type { Node, Renderable, RenderNode2D, RenderNodeAdapter, RenderState } from '@flighthq/types';
 
 import { installRenderAdaptHook, syncRenderNodeRenderer } from './renderNode';
 
@@ -37,5 +37,5 @@ export function setRenderNodeAdapter(source: Renderable, adapter: RenderNodeAdap
   } else {
     _adapters.set(source, adapter);
   }
-  invalidateAppearance(source as SceneNode);
+  invalidateNodeAppearance(source as Node);
 }

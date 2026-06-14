@@ -1,5 +1,5 @@
 import { createDisplayObject } from '@flighthq/displayobject';
-import { invalidateAppearance } from '@flighthq/node';
+import { invalidateNodeAppearance } from '@flighthq/node';
 import { BlendMode } from '@flighthq/types';
 
 import { updateRenderNodeAppearance } from './appearance';
@@ -23,12 +23,12 @@ describe('updateRenderNodeAppearance', () => {
     expect(updateRenderNodeAppearance(state, data)).toBe(false);
   });
 
-  it('returns true after invalidateAppearance is called', () => {
+  it('returns true after invalidateNodeAppearance is called', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
     const data = createRenderNode(state, obj);
     updateRenderNodeAppearance(state, data);
-    invalidateAppearance(obj);
+    invalidateNodeAppearance(obj);
     expect(updateRenderNodeAppearance(state, data)).toBe(true);
   });
 

@@ -8,11 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [
-    { "path": "../geometry" },
-    { "path": "../scene" },
-    { "path": "../scene-sprite" },
-    { "path": "../types" }
-  ],
+  "references": [{ "path": "../geometry" }, { "path": "../node" }, { "path": "../sprite" }, { "path": "../types" }],
   "include": ["src"]
 }

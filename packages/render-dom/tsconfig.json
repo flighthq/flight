@@ -13,8 +13,8 @@
     { "path": "../geometry" },
     { "path": "../render-canvas" },
     { "path": "../render" },
-    { "path": "../scene" },
-    { "path": "../scene-display" },
+    { "path": "../node" },
+    { "path": "../displayobject" },
     { "path": "../text-input" },
     { "path": "../text-layout" },
     { "path": "../types" }

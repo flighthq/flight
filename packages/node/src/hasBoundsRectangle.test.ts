@@ -1,18 +1,18 @@
 import { createRectangle } from '@flighthq/geometry';
-import type { HasBoundsRectangle, HasBoundsRectangleRuntime, SceneNode, SceneNodeRuntime } from '@flighthq/types';
+import type { HasBoundsRectangle, HasBoundsRectangleRuntime, Node, NodeRuntime } from '@flighthq/types';
 
 import {
   defaultComputeLocalBoundsRectangle,
   initBoundsRectangleRuntimeTrait,
   initBoundsRectangleTrait,
 } from './hasBoundsRectangle';
-import { createSceneNode, createSceneNodeRuntime } from './sceneNode';
+import { createNode, createNodeRuntime } from './node';
 
 describe('defaultComputeLocalBoundsRectangle', () => {
   it('is a no-op that does not modify out', () => {
     const out = createRectangle(1, 2, 3, 4);
-    const node = createSceneNode(NodeTestKind, NodeTestKind);
-    defaultComputeLocalBoundsRectangle(out, node as unknown as SceneNode);
+    const node = createNode(NodeTestKind, NodeTestKind);
+    defaultComputeLocalBoundsRectangle(out, node as unknown as Node);
     expect(out.x).toBe(1);
     expect(out.y).toBe(2);
     expect(out.width).toBe(3);
@@ -24,8 +24,7 @@ describe('initBoundsRectangleRuntimeTrait', () => {
   let runtime: HasBoundsRectangleRuntime;
 
   beforeEach(() => {
-    runtime = createSceneNodeRuntime() as SceneNodeRuntime<typeof NodeTestKind, HasBoundsRectangle> &
-      HasBoundsRectangleRuntime;
+    runtime = createNodeRuntime() as NodeRuntime<typeof NodeTestKind, HasBoundsRectangle> & HasBoundsRectangleRuntime;
   });
 
   it('initializes default values', () => {
@@ -42,8 +41,7 @@ describe('initBoundsRectangleTrait', () => {
   let node: HasBoundsRectangle;
 
   beforeEach(() => {
-    node = createSceneNode(NodeTestKind, NodeTestKind) as SceneNode<typeof NodeTestKind, HasBoundsRectangle> &
-      HasBoundsRectangle;
+    node = createNode(NodeTestKind, NodeTestKind) as Node<typeof NodeTestKind, HasBoundsRectangle> & HasBoundsRectangle;
   });
 
   it('does nothing', () => {

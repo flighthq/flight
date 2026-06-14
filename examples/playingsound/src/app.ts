@@ -1,6 +1,6 @@
 import type { AudioChannel } from '@flighthq/sdk';
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeRectangle,
   attachPointerInput,
@@ -14,7 +14,7 @@ import {
   createShape,
   createTween,
   createTweenManager,
-  invalidateRender,
+  invalidateNodeRender,
   loadAudioSourceFromURLs,
   playAudioSource,
   Quad,
@@ -33,7 +33,7 @@ root.scaleY = scale;
 
 const background = createShape();
 background.alpha = 0.1;
-addSceneChild(root, background);
+addNodeChild(root, background);
 
 const sound = await loadAudioSourceFromURLs([{ url: 'assets/stars.ogg' }, { url: 'assets/stars.mp3' }]);
 
@@ -56,7 +56,7 @@ function pause(fadeOut = 1200): void {
   });
 
   const backgroundTween = createTween(manager, background, fadeOut, { alpha: 0.1 });
-  connectSignal(backgroundTween.onUpdate, () => invalidateRender(background));
+  connectSignal(backgroundTween.onUpdate, () => invalidateNodeRender(background));
 }
 
 function play(fadeIn = 3000): void {
@@ -76,7 +76,7 @@ function play(fadeIn = 3000): void {
     position = 0;
     if (channel === nextChannel) channel = null;
     background.alpha = 0.1;
-    invalidateRender(background);
+    invalidateNodeRender(background);
   });
 
   if (fadeIn > 0) {
@@ -85,7 +85,7 @@ function play(fadeIn = 3000): void {
   }
 
   const backgroundTween = createTween(manager, background, fadeIn, { alpha: 1 });
-  connectSignal(backgroundTween.onUpdate, () => invalidateRender(background));
+  connectSignal(backgroundTween.onUpdate, () => invalidateNodeRender(background));
 }
 
 function resize(w: number, h: number): void {
@@ -93,7 +93,7 @@ function resize(w: number, h: number): void {
   clearShapeCommands(background.data);
   appendShapeBeginFill(background, 0x24afc4);
   appendShapeRectangle(background, 0, 0, w, h);
-  invalidateRender(background);
+  invalidateNodeRender(background);
 }
 
 const win = createApplicationWindow();

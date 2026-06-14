@@ -1,6 +1,6 @@
 import type { BlendMode } from './BlendMode';
 import type { ColorTransform } from './ColorTransform';
-import type { NullScene, SceneNode, SceneNodeTraits } from './SceneNode';
+import type { Node, NodeTraits, NullScene } from './Node';
 
 export interface HasAppearance {
   alpha: number;
@@ -9,7 +9,8 @@ export interface HasAppearance {
   visible: boolean;
 }
 
-export type GraphAppearanceNode<
-  SceneKind extends symbol = typeof NullScene,
-  Traits extends object = SceneNodeTraits,
-> = SceneNode<SceneKind, Traits> & HasAppearance;
+export type GraphAppearanceNode<Kind extends symbol = typeof NullScene, Traits extends object = NodeTraits> = Node<
+  Kind,
+  Traits
+> &
+  HasAppearance;

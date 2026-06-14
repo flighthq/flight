@@ -2,7 +2,7 @@
 // Port of CacheBitmapTest3. Tests bitmap + rich text sliding with alpha animation.
 // cacheAsBitmap toggle replaced with a simple on/off label (not applicable in flight).
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
@@ -31,7 +31,7 @@ const H = height / scale;
 const stageBg = createShape();
 appendShapeBeginFill(stageBg, 0x000000);
 appendShapeRectangle(stageBg, 0, 0, W, H);
-addSceneChild(root, stageBg);
+addNodeChild(root, stageBg);
 
 const image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
 
@@ -42,7 +42,7 @@ bmp1.data.image = image;
 bmp1.data.smoothing = true;
 bmp1.scaleX = pos(1.0);
 bmp1.scaleY = pos(1.0);
-addSceneChild(posters, bmp1);
+addNodeChild(posters, bmp1);
 
 const bmp2 = createBitmap();
 bmp2.data.image = image;
@@ -51,7 +51,7 @@ bmp2.alpha = 0.5;
 bmp2.x = pos(125);
 bmp2.scaleX = pos(1.0);
 bmp2.scaleY = pos(1.0);
-addSceneChild(posters, bmp2);
+addNodeChild(posters, bmp2);
 
 const bmp3 = createBitmap();
 bmp3.data.image = image;
@@ -59,9 +59,9 @@ bmp3.data.smoothing = true;
 bmp3.x = pos(250);
 bmp3.scaleX = pos(1.0);
 bmp3.scaleY = pos(1.0);
-addSceneChild(posters, bmp3);
+addNodeChild(posters, bmp3);
 
-addSceneChild(root, posters);
+addNodeChild(root, posters);
 
 const menuGroup = createDisplayContainer();
 
@@ -69,7 +69,7 @@ const menuBg = createShape();
 appendShapeBeginFill(menuBg, 0xff22ff);
 appendShapeRectangle(menuBg, pos(109), pos(186), pos(1171), pos(572));
 appendShapeEndFill(menuBg);
-addSceneChild(menuGroup, menuBg);
+addNodeChild(menuGroup, menuBg);
 
 const title = createRichText();
 title.data.defaultTextFormat = { font: 'sans-serif', size: pos(44), color: 0xe8c343 };
@@ -78,7 +78,7 @@ title.y = pos(186);
 title.data.width = pos(500);
 title.data.height = pos(60);
 title.data.text = 'My Collection';
-addSceneChild(menuGroup, title);
+addNodeChild(menuGroup, title);
 
 const menuItems = [
   'Lady and the Tramp',
@@ -99,9 +99,9 @@ for (let i = 0; i < menuItems.length; i++) {
   item.data.width = pos(1000);
   item.data.height = pos(40);
   item.data.text = menuItems[i];
-  addSceneChild(menuGroup, item);
+  addNodeChild(menuGroup, item);
 }
-addSceneChild(root, menuGroup);
+addNodeChild(root, menuGroup);
 
 const statusLabel = createRichText();
 statusLabel.data.defaultTextFormat = { font: 'sans-serif', size: pos(28), color: 0xe8c343 };
@@ -110,7 +110,7 @@ statusLabel.y = 0;
 statusLabel.data.width = pos(400);
 statusLabel.data.height = pos(40);
 statusLabel.data.text = 'cacheAsBitmap: n/a';
-addSceneChild(root, statusLabel);
+addNodeChild(root, statusLabel);
 
 let menuX = 0;
 let menuXInc = pos(5);

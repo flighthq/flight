@@ -3,7 +3,7 @@ export * from './hasAppearance';
 export * from './hasBoundsRectangle';
 export * from './hasTransform2d';
 export * from './hierarchy';
+export * from './node';
 export * from './revision';
 export * from './scene';
-export * from './sceneNode';
 export * from './transform2d';

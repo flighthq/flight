@@ -1,6 +1,6 @@
 import { copyMatrix, multiplyMatrix } from '@flighthq/geometry';
-import { getLocalTransformMatrix, getLocalTransformRevision } from '@flighthq/node';
-import type { DisplayObjectRenderNode, HasTransform2D, RenderNode2D, RenderState, SceneNode } from '@flighthq/types';
+import { getNodeLocalTransformMatrix, getNodeLocalTransformRevision } from '@flighthq/node';
+import type { DisplayObjectRenderNode, HasTransform2D, Node, RenderNode2D, RenderState } from '@flighthq/types';
 
 export function updateDisplayObjectRenderTransform(
   state: RenderState,
@@ -15,7 +15,7 @@ export function updateRenderNode2DTransform(
   data: RenderNode2D,
   parentData?: RenderNode2D,
 ): boolean {
-  const localTransformID = getLocalTransformRevision(data.source as SceneNode);
+  const localTransformID = getNodeLocalTransformRevision(data.source as Node);
   const parentDirty = parentData !== undefined && parentData.transformFrameID === state.currentFrameID;
   const localDirty = data.lastLocalTransformID !== localTransformID;
 
@@ -28,7 +28,7 @@ export function updateRenderNode2DTransform(
 }
 
 function recalculateRenderTransform2D(state: RenderState, data: RenderNode2D, parentData?: RenderNode2D): void {
-  const transform2D = getLocalTransformMatrix(data.source as SceneNode & HasTransform2D);
+  const transform2D = getNodeLocalTransformMatrix(data.source as Node & HasTransform2D);
   const parentTransform2D = parentData !== undefined ? parentData.transform2D : state.renderTransform2D;
   if (parentTransform2D !== null) {
     multiplyMatrix(data.transform2D, parentTransform2D, transform2D);

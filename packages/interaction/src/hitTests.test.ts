@@ -1,6 +1,6 @@
 import { createDisplayObject, createDisplayObjectGeneric, getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { setRectangle } from '@flighthq/geometry';
-import { addSceneChild, getLocalBoundsRectangle, invalidateLocalTransform } from '@flighthq/node';
+import { addNodeChild, getNodeLocalBoundsRectangle, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { DisplayObject, DisplayObjectRuntime } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
@@ -22,8 +22,8 @@ describe('findGraphHitTarget', () => {
   it('returns a child node registered with a hit handler', () => {
     const parent = createDisplayObject();
     const child = createDisplayObjectGeneric(DisplayObjectKind);
-    setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
-    addSceneChild(parent, child);
+    setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
+    addNodeChild(parent, child);
     registerHitTestPoint(DisplayObjectKind, graphHitTestLocalBounds);
     const hit = findGraphHitTarget(parent, 50, 50);
     expect(hit).toBe(child);
@@ -33,13 +33,13 @@ describe('findGraphHitTarget', () => {
 describe('graphHitTestLocalBounds', () => {
   it('returns true when world-space point is inside local bounds', () => {
     const obj = createDisplayObject();
-    setRectangle(getLocalBoundsRectangle(obj), 0, 0, 100, 100);
+    setRectangle(getNodeLocalBoundsRectangle(obj), 0, 0, 100, 100);
     expect(graphHitTestLocalBounds(obj, 50, 50)).toBe(true);
   });
 
   it('returns false when world-space point is outside local bounds', () => {
     const obj = createDisplayObject();
-    setRectangle(getLocalBoundsRectangle(obj), 0, 0, 100, 100);
+    setRectangle(getNodeLocalBoundsRectangle(obj), 0, 0, 100, 100);
     expect(graphHitTestLocalBounds(obj, 200, 200)).toBe(false);
   });
 });
@@ -53,7 +53,7 @@ describe('graphHitTestPoint', () => {
 
   beforeEach(() => {
     obj = createDisplayObject();
-    setRectangle(getLocalBoundsRectangle(obj), 0, 0, 100, 100);
+    setRectangle(getNodeLocalBoundsRectangle(obj), 0, 0, 100, 100);
   });
 
   it('returns true for point inside bounds', () => {
@@ -80,7 +80,7 @@ describe('graphHitTestPoint', () => {
   it('respects world transform', () => {
     obj.x = 100;
     obj.y = 100;
-    invalidateLocalTransform(obj);
+    invalidateNodeLocalTransform(obj);
     const inside = graphHitTestPoint(obj, 150, 150);
     const outside = graphHitTestPoint(obj, 50, 50);
 
@@ -98,10 +98,10 @@ describe('graphHitTestPoint', () => {
 
   it('returns true when a child is hit even if the parent has no local bounds', () => {
     const child = createDisplayObject();
-    setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
-    addSceneChild(obj, child);
+    setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
+    addNodeChild(obj, child);
 
-    setRectangle(getLocalBoundsRectangle(obj), 0, 0, 0, 0);
+    setRectangle(getNodeLocalBoundsRectangle(obj), 0, 0, 0, 0);
     expect(graphHitTestPoint(obj, 50, 50)).toBe(true);
   });
 
@@ -109,8 +109,8 @@ describe('graphHitTestPoint', () => {
     obj.enabled = false;
 
     const child = createDisplayObject();
-    setRectangle(getLocalBoundsRectangle(child), 0, 0, 100, 100);
-    addSceneChild(obj, child);
+    setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
+    addNodeChild(obj, child);
 
     expect(graphHitTestPoint(obj, 50, 50)).toBe(false);
   });
@@ -132,11 +132,11 @@ describe('hitTestDisplayObjects', () => {
     a = createDisplayObject();
     b = createDisplayObject();
 
-    addSceneChild(createDisplayObject(), a);
-    addSceneChild(createDisplayObject(), b);
+    addNodeChild(createDisplayObject(), a);
+    addNodeChild(createDisplayObject(), b);
 
-    setRectangle(getLocalBoundsRectangle(a), 0, 0, 10, 10);
-    setRectangle(getLocalBoundsRectangle(b), 0, 0, 10, 10);
+    setRectangle(getNodeLocalBoundsRectangle(a), 0, 0, 10, 10);
+    setRectangle(getNodeLocalBoundsRectangle(b), 0, 0, 10, 10);
 
     a.x = 0;
     a.y = 0;
@@ -155,7 +155,7 @@ describe('hitTestDisplayObjects', () => {
   it('returns false when bounds do not intersect', () => {
     b.x = 20;
     b.y = 20;
-    invalidateLocalTransform(b);
+    invalidateNodeLocalTransform(b);
 
     const result = hitTestDisplayObjects(a, b);
     expect(result).toBe(false);
@@ -174,7 +174,7 @@ describe('hitTestDisplayObjects', () => {
 
     b.x = 5;
     b.y = 5;
-    invalidateLocalTransform(b);
+    invalidateNodeLocalTransform(b);
 
     const result = hitTestDisplayObjects(a, b);
     expect(result).toBe(true);
@@ -184,13 +184,13 @@ describe('hitTestDisplayObjects', () => {
     const child = createDisplayObject();
     child.x = 90;
     child.y = 90;
-    invalidateLocalTransform(child);
-    setRectangle(getLocalBoundsRectangle(child), 0, 0, 20, 20);
-    addSceneChild(a, child);
+    invalidateNodeLocalTransform(child);
+    setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 20, 20);
+    addNodeChild(a, child);
 
     b.x = 100;
     b.y = 100;
-    invalidateLocalTransform(b);
+    invalidateNodeLocalTransform(b);
 
     expect(hitTestDisplayObjects(a, b)).toBe(true);
   });

@@ -1,13 +1,13 @@
-import type { HasTransform2D, HasTransform2DRuntime, SceneNode, SceneNodeRuntime } from '@flighthq/types';
+import type { HasTransform2D, HasTransform2DRuntime, Node, NodeRuntime } from '@flighthq/types';
 
 import { initTransformRuntimeTrait, initTransformTrait } from './hasTransform2d';
-import { createSceneNode, createSceneNodeRuntime } from './sceneNode';
+import { createNode, createNodeRuntime } from './node';
 
 describe('initTransformRuntimeTrait', () => {
-  let runtime: SceneNodeRuntime<typeof NodeTestKind, HasTransform2D> & HasTransform2DRuntime;
+  let runtime: NodeRuntime<typeof NodeTestKind, HasTransform2D> & HasTransform2DRuntime;
 
   beforeEach(() => {
-    runtime = createSceneNodeRuntime() as SceneNodeRuntime<typeof NodeTestKind, HasTransform2D> & HasTransform2DRuntime;
+    runtime = createNodeRuntime() as NodeRuntime<typeof NodeTestKind, HasTransform2D> & HasTransform2DRuntime;
   });
 
   it('initializes default values', () => {
@@ -28,8 +28,7 @@ describe('initTransformTrait', () => {
   let node: HasTransform2D;
 
   beforeEach(() => {
-    node = createSceneNode(NodeTestKind, NodeTestKind) as SceneNode<typeof NodeTestKind, HasTransform2D> &
-      HasTransform2D;
+    node = createNode(NodeTestKind, NodeTestKind) as Node<typeof NodeTestKind, HasTransform2D> & HasTransform2D;
   });
 
   it('initializes default values', () => {

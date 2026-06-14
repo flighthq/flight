@@ -1,4 +1,4 @@
-﻿import { getLocalBoundsRectangle } from '@flighthq/node';
+﻿import { getNodeLocalBoundsRectangle } from '@flighthq/node';
 import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import type {
   DisplayObjectRenderer,
@@ -41,7 +41,7 @@ export function drawWebGLShape(state: RenderState, renderNode: DisplayObjectRend
 
   const shapeData = renderNode.rendererData as unknown as WebGLShapeData;
 
-  const bounds = getLocalBoundsRectangle(source);
+  const bounds = getNodeLocalBoundsRectangle(source);
   const w = Math.ceil(bounds.width);
   const h = Math.ceil(bounds.height);
   if (w <= 0 || h <= 0) return;

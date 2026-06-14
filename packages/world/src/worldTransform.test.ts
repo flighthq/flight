@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { initTransform3DRuntimeTrait, initTransform3DTrait } from './hasTransform3d';
 import { addWorldChild } from './worldHierarchy';
-import { createWorldNode, getWorldNodeRuntime, invalidateLocalTransform, type WorldNodeRuntime } from './worldNode';
+import { createWorldNode, getWorldNodeRuntime, invalidateNodeLocalTransform, type WorldNodeRuntime } from './worldNode';
 import { worldGlobalToLocal, worldLocalToGlobal } from './worldTransform';
 
 function createTransformNode(): WorldTransform3DNode {
@@ -32,7 +32,7 @@ describe('worldGlobalToLocal', () => {
     node.localMatrix.m[12] = 10;
     node.localMatrix.m[13] = 20;
     node.localMatrix.m[14] = 30;
-    invalidateLocalTransform(node);
+    invalidateNodeLocalTransform(node);
 
     const out = vec();
     worldGlobalToLocal(out, node, { x: 11, y: 21, z: 31 } as Vector3Like);
@@ -48,9 +48,9 @@ describe('worldGlobalToLocal', () => {
 
     parent.localMatrix.m[12] = 7;
     parent.localMatrix.m[13] = -2;
-    invalidateLocalTransform(parent);
+    invalidateNodeLocalTransform(parent);
     child.localMatrix.m[14] = 4;
-    invalidateLocalTransform(child);
+    invalidateNodeLocalTransform(child);
 
     const local = { x: 1.5, y: 2.5, z: 3.5 } as Vector3Like;
     const world = vec();
@@ -79,7 +79,7 @@ describe('worldLocalToGlobal', () => {
     node.localMatrix.m[12] = 10;
     node.localMatrix.m[13] = 20;
     node.localMatrix.m[14] = 30;
-    invalidateLocalTransform(node);
+    invalidateNodeLocalTransform(node);
 
     const out = vec();
     worldLocalToGlobal(out, node, { x: 1, y: 1, z: 1 } as Vector3Like);
@@ -94,9 +94,9 @@ describe('worldLocalToGlobal', () => {
     addWorldChild(parent, child);
 
     parent.localMatrix.m[12] = 5;
-    invalidateLocalTransform(parent);
+    invalidateNodeLocalTransform(parent);
     child.localMatrix.m[12] = 3;
-    invalidateLocalTransform(child);
+    invalidateNodeLocalTransform(child);
 
     const out = vec();
     worldLocalToGlobal(out, child, { x: 0, y: 0, z: 0 } as Vector3Like);

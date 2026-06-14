@@ -1,18 +1,18 @@
 import {
-  createSceneNode,
-  createSceneNodeRuntime,
-  getSceneNodeRuntime,
+  createNode,
+  createNodeRuntime,
+  getNodeRuntime,
   initAppearanceTrait,
   initBoundsRectangleRuntimeTrait,
   initBoundsRectangleTrait,
   initTransformRuntimeTrait,
   initTransformTrait,
 } from '@flighthq/node';
-import type { SceneNodeRuntimeFactory } from '@flighthq/types';
+import type { NodeRuntimeFactory } from '@flighthq/types';
 import type {
   MethodsOf,
+  Node,
   PartialNode,
-  SceneNode,
   SpriteNode,
   SpriteNodeDataFactory,
   SpriteNodeRuntime,
@@ -26,12 +26,12 @@ export function createSpriteNode<Runtime extends SpriteNodeRuntime>(
   createData?: SpriteNodeDataFactory,
   createSpriteNodeRuntimeFactory?: SpriteNodeRuntimeFactory<Runtime>,
 ): SpriteNode {
-  const out = createSceneNode(
+  const out = createNode(
     SpriteGraph,
     kind,
     obj,
     createData,
-    createSpriteNodeRuntimeFactory ?? (createSpriteNodeRuntime as unknown as SceneNodeRuntimeFactory<Runtime>),
+    createSpriteNodeRuntimeFactory ?? (createSpriteNodeRuntime as unknown as NodeRuntimeFactory<Runtime>),
   ) as SpriteNode;
   initTransformTrait(out, obj);
   initBoundsRectangleTrait(out, obj);
@@ -45,17 +45,17 @@ export function createSpriteNode<Runtime extends SpriteNodeRuntime>(
 }
 
 export function createSpriteNodeRuntime(methods?: Readonly<Partial<MethodsOf<SpriteNodeRuntime>>>): SpriteNodeRuntime {
-  const out = createSceneNodeRuntime(methods) as SpriteNodeRuntime;
+  const out = createNodeRuntime(methods) as SpriteNodeRuntime;
   initTransformRuntimeTrait(out, methods);
   initBoundsRectangleRuntimeTrait(out, methods);
   return out;
 }
 
 export function getSpriteNodeRuntime(source: Readonly<SpriteNode>): Readonly<SpriteNodeRuntime> {
-  return getSceneNodeRuntime(source) as SpriteNodeRuntime;
+  return getNodeRuntime(source) as SpriteNodeRuntime;
 }
 
 // eslint-disable-next-line
-export function isSpriteNode(source: Readonly<SceneNode<any, any>>): boolean {
-  return getSceneNodeRuntime(source).graph === SpriteGraph;
+export function isSpriteNode(source: Readonly<Node<any, any>>): boolean {
+  return getNodeRuntime(source).graph === SpriteGraph;
 }

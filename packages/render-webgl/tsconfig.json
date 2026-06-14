@@ -12,8 +12,8 @@
     { "path": "../geometry" },
     { "path": "../render-canvas" },
     { "path": "../render" },
-    { "path": "../scene-display" },
-    { "path": "../scene-sprite" },
+    { "path": "../displayobject" },
+    { "path": "../sprite" },
     { "path": "../text-input" },
     { "path": "../text-layout" },
     { "path": "../types" }

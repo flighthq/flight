@@ -1,5 +1,5 @@
 import { createDisplayObject } from '@flighthq/displayobject';
-import { invalidateLocalTransform } from '@flighthq/node';
+import { invalidateNodeLocalTransform } from '@flighthq/node';
 
 import type { RenderNodeStateInternal } from './internal';
 import { createDisplayObjectRenderNode } from './renderNode';
@@ -28,7 +28,7 @@ describe('updateDisplayObjectRenderTransform', () => {
     const data = createDisplayObjectRenderNode(state, obj);
     updateDisplayObjectRenderTransform(state, data);
     obj.x = 10;
-    invalidateLocalTransform(obj);
+    invalidateNodeLocalTransform(obj);
     expect(updateDisplayObjectRenderTransform(state, data)).toBe(true);
   });
 
