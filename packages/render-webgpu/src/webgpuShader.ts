@@ -264,6 +264,8 @@ export function getWebGPUPipeline(
     },
     depthStencil: {
       format: 'depth24plus-stencil8',
+      depthWriteEnabled: false,
+      depthCompare: 'always',
       stencilFront: stencilFace,
       stencilBack: stencilFace,
       stencilReadMask: 0xff,
