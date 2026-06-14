@@ -52,6 +52,8 @@
       "@flighthq/render-dom/*": ["./packages/render-dom/src/*"],
       "@flighthq/render-webgl": ["./packages/render-webgl/src/index.ts"],
       "@flighthq/render-webgl/*": ["./packages/render-webgl/src/*"],
+      "@flighthq/render-webgpu": ["./packages/render-webgpu/src/index.ts"],
+      "@flighthq/render-webgpu/*": ["./packages/render-webgpu/src/*"],
       "@flighthq/node": ["./packages/node/src/index.ts"],
       "@flighthq/node/*": ["./packages/node/src/*"],
       "@flighthq/displayobject": ["./packages/displayobject/src/index.ts"],
@@ -85,7 +87,7 @@
       "@flighthq/types": ["./packages/types/src/index.ts"],
       "@flighthq/types/*": ["./packages/types/src/*"]
     },
-    "types": ["@testing-library/jest-dom", "vitest/globals"] // Include Vitest globals for type-checking
+    "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"] // Include Vitest globals and WebGPU types for type-checking
   },
   "include": ["./packages/*/src"],
   "exclude": ["node_modules", "dist", ".claude"]

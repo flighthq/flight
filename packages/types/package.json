@@ -25,6 +25,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "devDependencies": {
+    "@webgpu/types": "*",
     "typescript": "^5.3.0"
   },
   "description": "Shared TypeScript interfaces, enums, and symbol constants used across all packages",
