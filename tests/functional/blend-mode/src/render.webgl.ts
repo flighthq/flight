@@ -1,7 +1,7 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
-  createWebGLElement,
+  createWebGLCanvasElement,
   createWebGLRenderState,
   defaultWebGLBitmapRenderer,
   defaultWebGLRichTextRenderer,
@@ -18,7 +18,7 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGLElement(1100, 700, pixelRatio);
+const canvas = createWebGLCanvasElement(1100, 700, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createWebGLRenderState(canvas, {

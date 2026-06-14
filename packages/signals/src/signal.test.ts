@@ -1,4 +1,4 @@
-import { createSignal, signalNoop } from './signal';
+import { createSignal, nullSignalEmit } from './signal';
 
 describe('createSignal', () => {
   it('initializes with data=null', () => {
@@ -7,12 +7,12 @@ describe('createSignal', () => {
   });
 });
 
-describe('signalNoop', () => {
+describe('nullSignalEmit', () => {
   it('is a function', () => {
-    expect(typeof signalNoop).toBe('function');
+    expect(typeof nullSignalEmit).toBe('function');
   });
 
   it('returns undefined', () => {
-    expect(signalNoop()).toBeUndefined();
+    expect(nullSignalEmit()).toBeUndefined();
   });
 });

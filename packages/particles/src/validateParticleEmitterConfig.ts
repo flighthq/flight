@@ -76,7 +76,7 @@ const NON_NEGATIVE_FIELDS = [
  *  `frameCount` is forced to >= 1. Range inversions (e.g. lifetimeMin > max) are
  *  left intact since they simulate correctly — use {@link validateParticleEmitterConfig}
  *  to surface those to the author. Safe to call on partial input. */
-export function sanitizeParticleEmitterConfig(config?: Partial<ParticleEmitterConfig>): ParticleEmitterConfig {
+export function normalizeParticleEmitterConfig(config?: Partial<ParticleEmitterConfig>): ParticleEmitterConfig {
   const out = createParticleEmitterConfig(config);
   const defaults = createParticleEmitterConfig();
 
@@ -117,7 +117,7 @@ export function sanitizeParticleEmitterConfig(config?: Partial<ParticleEmitterCo
 
 /** Report problems in a particle config without modifying it — for asset-import
  *  validation, editor inspectors, or CI checks on authored effects. Returns an
- *  empty array for a clean config. Use {@link sanitizeParticleEmitterConfig} to
+ *  empty array for a clean config. Use {@link normalizeParticleEmitterConfig} to
  *  get a corrected config for safe runtime use. */
 export function validateParticleEmitterConfig(config: Readonly<ParticleEmitterConfig>): ParticleConfigIssue[] {
   const issues: ParticleConfigIssue[] = [];

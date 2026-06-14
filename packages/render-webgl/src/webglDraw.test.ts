@@ -6,7 +6,7 @@ import {
   createWebGLTexture,
   drawWebGLQuad,
   enableWebGLBlendModeSupport,
-  setQuadMatrixFromOffset,
+  setWebGLQuadMatrixFromOffset,
   updateWebGLTexture,
   useWebGLProgram,
 } from './webglDraw';
@@ -239,11 +239,11 @@ describe('enableWebGLBlendModeSupport', () => {
   });
 });
 
-describe('setQuadMatrixFromOffset', () => {
+describe('setWebGLQuadMatrixFromOffset', () => {
   it('bakes the offset into the translation before setting the matrix', () => {
     const { state, gl } = makeWebGLState();
     // Identity transform + offset (dx=10, dy=20): effective tx = 0 + 1*10 + 0*20 = 10
-    setQuadMatrixFromOffset(state, 1, 0, 0, 1, 0, 0, 10, 20);
+    setWebGLQuadMatrixFromOffset(state, 1, 0, 0, 1, 0, 0, 10, 20);
     expect(gl.uniformMatrix3fv).toHaveBeenCalledWith(state.shaderLoc.locMatrix, false, state.matrixArray);
     // tx * 2/200 - 1 = 10 * 0.01 - 1 = -0.9
     expect(state.matrixArray[6]).toBeCloseTo(-0.9);
@@ -254,7 +254,7 @@ describe('setQuadMatrixFromOffset', () => {
   it('applies the offset through the transform matrix components', () => {
     const { state } = makeWebGLState();
     // Scale-2 transform with offset (dx=5, dy=0): effective tx = 0 + 2*5 + 0*0 = 10
-    setQuadMatrixFromOffset(state, 2, 0, 0, 2, 0, 0, 5, 0);
+    setWebGLQuadMatrixFromOffset(state, 2, 0, 0, 2, 0, 0, 5, 0);
     // tx * 2/200 - 1 = 10 * 0.01 - 1 = -0.9
     expect(state.matrixArray[6]).toBeCloseTo(-0.9);
   });

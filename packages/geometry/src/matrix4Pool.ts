@@ -1,10 +1,10 @@
 import type { Matrix4 } from '@flighthq/types';
 
-import { createMatrix4, identityMatrix4 } from './matrix4';
+import { createMatrix4, setMatrix4Identity } from './matrix4';
 
 export function acquireIdentityMatrix4(): Matrix4 {
   const m = acquireMatrix4();
-  identityMatrix4(m);
+  setMatrix4Identity(m);
   return m;
 }
 

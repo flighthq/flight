@@ -13,7 +13,7 @@ export function dropShadowFilterToCSS(filter: DropShadowFilter): string | null {
   const blurX = filter.blurX ?? 4;
   const blurY = filter.blurY ?? 4;
   if (blurX !== blurY) return null;
-  const { dx, dy } = filterShadowOffset(filter);
+  const { dx, dy } = getShadowFilterOffset(filter);
   return `drop-shadow(${dx}px ${dy}px ${blurX}px ${rgbaFromInt(filter.color ?? 0, filter.alpha ?? 1)})`;
 }
 
@@ -21,7 +21,7 @@ export function dropShadowFilterToCSS(filter: DropShadowFilter): string | null {
  * Computes the pixel offset for shadow and bevel effects from angle and distance.
  * Angle is in degrees; 0 points right, increasing clockwise.
  */
-export function filterShadowOffset(filter: DropShadowFilter | InnerShadowFilter | BevelFilter): {
+export function getShadowFilterOffset(filter: DropShadowFilter | InnerShadowFilter | BevelFilter): {
   dx: number;
   dy: number;
 } {

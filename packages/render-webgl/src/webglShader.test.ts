@@ -1,19 +1,19 @@
 import {
-  compileDefaultProgram,
+  compileDefaultWebGLProgram,
   compileWebGLBitmapProgram,
   createDefaultBitmapShader,
   createWebGLBitmapShader,
-  setWebGLAttribs,
+  setWebGLAttributes,
   setWebGLBaseUniforms,
   setWebGLMatrixFromTransform,
   setWebGLMatrixFromValues,
 } from './webglShader';
 import { makeGL, makeShaderLoc } from './webglTestHelper';
 
-describe('compileDefaultProgram', () => {
+describe('compileDefaultWebGLProgram', () => {
   it('returns shader locations with all required fields', () => {
     const gl = makeGL();
-    const loc = compileDefaultProgram(gl);
+    const loc = compileDefaultWebGLProgram(gl);
     expect(loc.program).toBeDefined();
     expect(typeof loc.locPosition).toBe('number');
     expect(typeof loc.locTexCoord).toBe('number');
@@ -24,27 +24,27 @@ describe('compileDefaultProgram', () => {
 
   it('compiles both vertex and fragment shaders', () => {
     const gl = makeGL();
-    compileDefaultProgram(gl);
+    compileDefaultWebGLProgram(gl);
     expect(gl.createShader).toHaveBeenCalledWith((gl as unknown as { VERTEX_SHADER: number }).VERTEX_SHADER);
     expect(gl.createShader).toHaveBeenCalledWith((gl as unknown as { FRAGMENT_SHADER: number }).FRAGMENT_SHADER);
   });
 
   it('deletes both shader objects after linking', () => {
     const gl = makeGL();
-    compileDefaultProgram(gl);
+    compileDefaultWebGLProgram(gl);
     expect(gl.deleteShader).toHaveBeenCalledTimes(2);
   });
 
   it('throws when vertex shader compilation fails', () => {
     const gl = makeGL();
     (gl.getShaderParameter as ReturnType<typeof vi.fn>).mockReturnValueOnce(false);
-    expect(() => compileDefaultProgram(gl)).toThrow('Shader compile error');
+    expect(() => compileDefaultWebGLProgram(gl)).toThrow('Shader compile error');
   });
 
   it('throws when program linking fails', () => {
     const gl = makeGL();
     (gl.getProgramParameter as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    expect(() => compileDefaultProgram(gl)).toThrow('Program link error');
+    expect(() => compileDefaultWebGLProgram(gl)).toThrow('Program link error');
   });
 });
 
@@ -148,25 +148,25 @@ describe('createWebGLBitmapShader', () => {
   });
 });
 
-describe('setWebGLAttribs', () => {
+describe('setWebGLAttributes', () => {
   it('enables the position vertex attrib array', () => {
     const gl = makeGL();
     const loc = makeShaderLoc();
-    setWebGLAttribs(gl, loc);
+    setWebGLAttributes(gl, loc);
     expect(gl.enableVertexAttribArray).toHaveBeenCalledWith(loc.locPosition);
   });
 
   it('enables the texCoord vertex attrib array', () => {
     const gl = makeGL();
     const loc = makeShaderLoc();
-    setWebGLAttribs(gl, loc);
+    setWebGLAttributes(gl, loc);
     expect(gl.enableVertexAttribArray).toHaveBeenCalledWith(loc.locTexCoord);
   });
 
   it('configures position attrib with stride 16 and offset 0', () => {
     const gl = makeGL();
     const loc = makeShaderLoc();
-    setWebGLAttribs(gl, loc);
+    setWebGLAttributes(gl, loc);
     expect(gl.vertexAttribPointer).toHaveBeenCalledWith(
       loc.locPosition,
       2,
@@ -180,7 +180,7 @@ describe('setWebGLAttribs', () => {
   it('configures texCoord attrib with stride 16 and offset 8', () => {
     const gl = makeGL();
     const loc = makeShaderLoc();
-    setWebGLAttribs(gl, loc);
+    setWebGLAttributes(gl, loc);
     expect(gl.vertexAttribPointer).toHaveBeenCalledWith(
       loc.locTexCoord,
       2,

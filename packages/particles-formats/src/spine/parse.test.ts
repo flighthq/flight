@@ -6,7 +6,7 @@ import {
   sampleCurve,
 } from '@flighthq/particles';
 
-import { loadSpineParticle, parseSpineParticle } from './parse';
+import { parseSpineParticle, parseSpineParticleDocument } from './parse';
 import { serializeSpineParticle } from './serialize';
 
 const SPARK_JSON = JSON.stringify({
@@ -42,46 +42,6 @@ const SPARK_JSON = JSON.stringify({
   images: ['spark.png'],
 });
 
-describe('loadSpineParticle — full round-trip, returns { config, document }', () => {
-  it('returns the same config values as parseSpineParticle', () => {
-    const config = parseSpineParticle(SPARK_JSON);
-    const { config: loaded } = loadSpineParticle(SPARK_JSON);
-    expect(loaded.maxParticles).toBe(config.maxParticles);
-    expect(loaded.gravityY).toBeCloseTo(config.gravityY, 5);
-  });
-
-  it('preserves name, blendMode, and images in document', () => {
-    const { document } = loadSpineParticle(SPARK_JSON);
-    expect(document.name).toBe('spark');
-    expect(document.blendMode).toBe('additive');
-    expect(document.images[0]).toBe('spark.png');
-  });
-});
-
-describe('loadSpineParticle — import warnings', () => {
-  it('has no warnings for a 2-keyframe tint/alpha effect', () => {
-    expect(loadSpineParticle(SPARK_JSON).warnings).toEqual([]);
-  });
-
-  it('does NOT warn for multi-keyframe tint timelines (they are baked into curves)', () => {
-    const json = JSON.stringify({
-      ...JSON.parse(SPARK_JSON),
-      tint: [
-        { time: 0, color: 'ff0000' },
-        { time: 0.5, color: '00ff00' },
-        { time: 1, color: '0000ff' },
-      ],
-    });
-    const { warnings } = loadSpineParticle(json);
-    expect(warnings.some((w) => w.includes('Tint'))).toBe(false);
-  });
-
-  it('warns about unsupported lifeOffset', () => {
-    const json = JSON.stringify({ ...JSON.parse(SPARK_JSON), lifeOffset: { low: 100, high: 200 } });
-    expect(loadSpineParticle(json).warnings.some((w) => w.includes('lifeOffset'))).toBe(true);
-  });
-});
-
 describe('parseSpineParticle — blend mode', () => {
   it('maps additive blendMode to "add"', () => {
     expect(parseSpineParticle(SPARK_JSON).blendMode).toBe('add');
@@ -94,7 +54,7 @@ describe('parseSpineParticle — blend mode', () => {
 
   it('round-trips blendMode through serialize', () => {
     const config = parseSpineParticle(SPARK_JSON);
-    const { document } = loadSpineParticle(SPARK_JSON);
+    const { document } = parseSpineParticleDocument(SPARK_JSON);
     const config2 = parseSpineParticle(serializeSpineParticle(config, document));
     expect(config2.blendMode).toBe('add');
   });
@@ -238,10 +198,50 @@ describe('parseSpineParticle — multi-stop timelines bake into curves', () => {
   });
 });
 
+describe('parseSpineParticleDocument — full round-trip, returns { config, document }', () => {
+  it('returns the same config values as parseSpineParticle', () => {
+    const config = parseSpineParticle(SPARK_JSON);
+    const { config: loaded } = parseSpineParticleDocument(SPARK_JSON);
+    expect(loaded.maxParticles).toBe(config.maxParticles);
+    expect(loaded.gravityY).toBeCloseTo(config.gravityY, 5);
+  });
+
+  it('preserves name, blendMode, and images in document', () => {
+    const { document } = parseSpineParticleDocument(SPARK_JSON);
+    expect(document.name).toBe('spark');
+    expect(document.blendMode).toBe('additive');
+    expect(document.images[0]).toBe('spark.png');
+  });
+});
+
+describe('parseSpineParticleDocument — import warnings', () => {
+  it('has no warnings for a 2-keyframe tint/alpha effect', () => {
+    expect(parseSpineParticleDocument(SPARK_JSON).warnings).toEqual([]);
+  });
+
+  it('does NOT warn for multi-keyframe tint timelines (they are baked into curves)', () => {
+    const json = JSON.stringify({
+      ...JSON.parse(SPARK_JSON),
+      tint: [
+        { time: 0, color: 'ff0000' },
+        { time: 0.5, color: '00ff00' },
+        { time: 1, color: '0000ff' },
+      ],
+    });
+    const { warnings } = parseSpineParticleDocument(json);
+    expect(warnings.some((w) => w.includes('Tint'))).toBe(false);
+  });
+
+  it('warns about unsupported lifeOffset', () => {
+    const json = JSON.stringify({ ...JSON.parse(SPARK_JSON), lifeOffset: { low: 100, high: 200 } });
+    expect(parseSpineParticleDocument(json).warnings.some((w) => w.includes('lifeOffset'))).toBe(true);
+  });
+});
+
 describe('serializeSpineParticle', () => {
   it('round-trips key config fields', () => {
     const config = parseSpineParticle(SPARK_JSON);
-    const { document } = loadSpineParticle(SPARK_JSON);
+    const { document } = parseSpineParticleDocument(SPARK_JSON);
     const config2 = parseSpineParticle(serializeSpineParticle(config, document));
     expect(config2.maxParticles).toBe(config.maxParticles);
     expect(config2.lifetimeMin).toBeCloseTo(config.lifetimeMin, 3);
@@ -251,8 +251,8 @@ describe('serializeSpineParticle', () => {
 
   it('preserves blendMode in round-trip', () => {
     const config = parseSpineParticle(SPARK_JSON);
-    const { document } = loadSpineParticle(SPARK_JSON);
-    expect(loadSpineParticle(serializeSpineParticle(config, document)).document.blendMode).toBe('additive');
+    const { document } = parseSpineParticleDocument(SPARK_JSON);
+    expect(parseSpineParticleDocument(serializeSpineParticle(config, document)).document.blendMode).toBe('additive');
   });
 
   it('produces valid JSON', () => {

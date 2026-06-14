@@ -34,7 +34,7 @@ export function getInputTextRuntime(source: Readonly<InputText>): Readonly<Input
   return getDisplayObjectRuntime(source) as InputTextRuntime;
 }
 
-export function setInputTextText(source: InputText, value: string): void {
+export function setInputTextString(source: InputText, value: string): void {
   source.data.text = value;
   invalidateNodeAppearance(source);
 }

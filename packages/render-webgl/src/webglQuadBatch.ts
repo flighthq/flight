@@ -1,9 +1,9 @@
 ﻿import { acquireMatrix, multiplyMatrix, releaseMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry';
-import { createNullRendererData } from '@flighthq/render';
+import { noopRendererData } from '@flighthq/render';
 import type { QuadBatch, RenderState, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { bindWebGLTexture, drawWebGLQuad, setQuadMatrixFromOffset, useWebGLProgram } from './webglDraw';
+import { bindWebGLTexture, drawWebGLQuad, setWebGLQuadMatrixFromOffset, useWebGLProgram } from './webglDraw';
 import { setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
 
 export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNode): void {
@@ -64,7 +64,7 @@ export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNo
       const dx = transforms[offset];
       const dy = transforms[offset + 1];
 
-      setQuadMatrixFromOffset(
+      setWebGLQuadMatrixFromOffset(
         internal,
         transform.a,
         transform.b,
@@ -87,6 +87,6 @@ export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNo
 }
 
 export const defaultWebGLQuadBatchRenderer: SpriteRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawWebGLQuadBatch,
 };

@@ -31,7 +31,7 @@ export function getCanvasCSSFilter(renderNode: DisplayObjectRenderNode): string 
  * CSS filter support is disabled for the state. The feature gate keeps the lookup
  * off the hot path until at least one filter has been bound.
  */
-export function selectCanvasCSSFilter(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): string | null {
+export function resolveCanvasCSSFilter(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): string | null {
   if (hasRenderFeatures(state, RenderFeatures.CSSFilter)) {
     const filter = _cssFilterBindings.get(renderNode);
     if (filter !== undefined) return filter;

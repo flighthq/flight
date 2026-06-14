@@ -19,7 +19,7 @@ const TWO_PI = Math.PI * 2;
 /** True once a finite, non-looping emitter has finished emitting AND all of its
  *  particles have died — i.e. a one-shot effect that is safe to recycle/remove.
  *  Always false for infinite or looping emitters (they never finish). */
-export function isEmitterComplete(
+export function isParticleEmitterComplete(
   emitter: ParticleEmitter,
   state: Readonly<ParticleEmitterState>,
   config: Readonly<ParticleEmitterConfig>,
@@ -197,7 +197,7 @@ export function updateParticleEmitter(
 
   // ── Phase 2: spawn new particles ─────────────────────────────────────────────
   // A finite, non-looping emitter stops spawning once its duration elapses;
-  // existing particles keep ageing out (use isEmitterComplete to detect the end).
+  // existing particles keep ageing out (use isParticleEmitterComplete to detect the end).
   const emitting = isEmitting(config, state.emitterAge);
   if (config.duration > 0 && !config.loop) state.emitterAge += dt;
 

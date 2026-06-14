@@ -32,9 +32,9 @@ export function createVector2(x?: number, y?: number): Vector2 {
   return createEntity({ x: x ?? 0, y: y ?? 0 });
 }
 
-export function createVector2FromPolar(len: number, angle: number): Vector2 {
+export function createVector2FromPolar(length: number, angle: number): Vector2 {
   const out = createVector2();
-  setVector2FromPolar(out, len, angle);
+  setVector2FromPolar(out, length, angle);
   return out;
 }
 
@@ -63,7 +63,12 @@ export function getVector2LengthSquared(source: Readonly<Vector2Like>): number {
 /**
  * Linear interpolation between points a and b
  */
-export function lerpVector2(out: Vector2Like, a: Readonly<Vector2Like>, b: Readonly<Vector2Like>, t: number): void {
+export function interpolateVector2(
+  out: Vector2Like,
+  a: Readonly<Vector2Like>,
+  b: Readonly<Vector2Like>,
+  t: number,
+): void {
   out.x = a.x + t * (b.x - a.x);
   out.y = a.y + t * (b.y - a.y);
 }
@@ -101,9 +106,9 @@ export function setVector2FromFloat32Array(out: Vector2Like, offset: number, sou
   out.y = source[offset + 1];
 }
 
-export function setVector2FromPolar(out: Vector2Like, len: number, angle: number): void {
-  out.x = len * Math.cos(angle);
-  out.y = len * Math.sin(angle);
+export function setVector2FromPolar(out: Vector2Like, length: number, angle: number): void {
+  out.x = length * Math.cos(angle);
+  out.y = length * Math.sin(angle);
 }
 
 export function subtractVector2(

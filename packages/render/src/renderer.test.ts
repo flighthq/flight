@@ -1,19 +1,19 @@
 import { type DisplayObjectClipHooks, type Renderer, RenderFeatures, type RenderState } from '@flighthq/types';
 
 import {
-  copyFromRenderState,
+  copyAllRenderersFromRenderState,
   copyMaskRenderersFromRenderState,
   copyRenderersFromRenderState,
-  createNullRendererData,
   disableRenderFeatures,
   enableRenderFeatures,
   hasRenderFeatures,
+  noopRendererData,
   registerDisplayObjectMaskRenderer,
   registerRenderer,
 } from './renderer';
 import { createRenderState } from './renderState';
 
-describe('copyFromRenderState', () => {
+describe('copyAllRenderersFromRenderState', () => {
   it('copies all registrations from source to target', () => {
     const source = createRenderState();
     const target = createRenderState();
@@ -31,7 +31,7 @@ describe('copyFromRenderState', () => {
     registerDisplayObjectMaskRenderer(source, kind, maskRenderer);
     source.displayObjectClipHooks = hooks;
 
-    copyFromRenderState(target, source);
+    copyAllRenderersFromRenderState(target, source);
 
     expect(target.rendererMap.get(kind)).toBe(renderer);
     expect(target.displayObjectMaskRendererMap.get(kind)).toBe(maskRenderer);
@@ -41,7 +41,7 @@ describe('copyFromRenderState', () => {
   it('is a no-op when source has no registrations', () => {
     const source = createRenderState();
     const target = createRenderState();
-    copyFromRenderState(target, source);
+    copyAllRenderersFromRenderState(target, source);
     expect(target.rendererMap.size).toBe(0);
   });
 });
@@ -107,13 +107,6 @@ describe('copyRenderersFromRenderState', () => {
   });
 });
 
-describe('createNullRendererData', () => {
-  it('returns null', () => {
-    const state = createRenderState();
-    expect(createNullRendererData(state, {} as any)).toBeNull();
-  });
-});
-
 describe('disableRenderFeatures', () => {
   it('removes feature flags from the render state', () => {
     const state = createRenderState({ renderFeatures: RenderFeatures.Masks | RenderFeatures.ClipRectangle });
@@ -135,6 +128,13 @@ describe('hasRenderFeatures', () => {
     const state = createRenderState({ renderFeatures: RenderFeatures.Masks });
     expect(hasRenderFeatures(state, RenderFeatures.Masks)).toBe(true);
     expect(hasRenderFeatures(state, RenderFeatures.Masks | RenderFeatures.ClipRectangle)).toBe(false);
+  });
+});
+
+describe('noopRendererData', () => {
+  it('returns null', () => {
+    const state = createRenderState();
+    expect(noopRendererData(state, {} as any)).toBeNull();
   });
 });
 

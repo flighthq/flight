@@ -1,4 +1,4 @@
-﻿import { createNullRendererData } from '@flighthq/render';
+﻿import { noopRendererData } from '@flighthq/render';
 import type {
   CanvasRenderState,
   DisplayObjectRenderer,
@@ -35,12 +35,12 @@ export function drawCanvasScale9Shape(state: CanvasRenderState, renderNode: Disp
     renderCanvasShapeCommands(ctx, commands);
   } else {
     applyStrippedTransform(state, ctx, renderNode.transform2D, scaleX, scaleY);
-    remapScale9Commands(_remappedCommands, commands, mapper);
+    mapScale9ShapeCommands(_remappedCommands, commands, mapper);
     renderCanvasShapeCommands(ctx, _remappedCommands);
   }
 }
 
-export function remapScale9Commands(out: unknown[], source: readonly unknown[], mapper: Scale9Mapper): void {
+export function mapScale9ShapeCommands(out: unknown[], source: readonly unknown[], mapper: Scale9Mapper): void {
   if (out !== (source as unknown[])) {
     out.length = source.length;
     for (let k = 0; k < source.length; k++) out[k] = source[k];
@@ -113,7 +113,7 @@ export function remapScale9Commands(out: unknown[], source: readonly unknown[], 
 }
 
 export const defaultCanvasScale9ShapeRenderer: DisplayObjectRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawCanvasScale9Shape,
 };
 

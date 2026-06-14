@@ -50,8 +50,8 @@ export function applyBlurFilterToWebGL(
   filter: Readonly<Omit<BlurFilter, 'type'>>,
 ): void {
   const passes = Math.max(1, Math.round(filter.quality ?? 1));
-  const radiusX = boxRadiusForSigmaWebGL(filter.blurX ?? 4, passes);
-  const radiusY = boxRadiusForSigmaWebGL(filter.blurY ?? 4, passes);
+  const radiusX = computeBoxBlurRadiusWebGL(filter.blurX ?? 4, passes);
+  const radiusY = computeBoxBlurRadiusWebGL(filter.blurY ?? 4, passes);
 
   if (radiusX === 0 && radiusY === 0) {
     applyBlurBlit(state, source, dest);
@@ -85,7 +85,7 @@ export function applyBlurFilterToWebGL(
  * repetition has the same variance. Matches the CSS `blur()` and surface paths so
  * all three substrates agree on what `blurX`/`blurY` mean.
  */
-export function boxRadiusForSigmaWebGL(sigma: number, passes: number): number {
+export function computeBoxBlurRadiusWebGL(sigma: number, passes: number): number {
   if (sigma <= 0) return 0;
   return Math.max(0, Math.round((-1 + Math.sqrt(1 + (12 * sigma * sigma) / passes)) / 2));
 }

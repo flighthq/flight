@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render';
+import { noopRendererData } from '@flighthq/render';
 import { isImageRenderCachePrimitive, registerImageRenderCacheRenderer } from '@flighthq/render';
 import type {
   DisplayObjectMaskRenderer,
@@ -8,7 +8,7 @@ import type {
   RenderState,
 } from '@flighthq/types';
 
-import { initDOMElement, setDOMRendererElement } from './domStyle';
+import { prepareDOMElement, setDOMRendererElement } from './domStyle';
 import { setDOMTransformWithOffset } from './domTransform';
 
 const _canvases = new WeakMap<
@@ -27,7 +27,7 @@ function drawDOMRenderImageCache(state: RenderState, data: DisplayObjectRenderNo
   if (entry === undefined) {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d')!;
-    initDOMElement(canvas);
+    prepareDOMElement(canvas);
     entry = { canvas, context };
     _canvases.set(data, entry);
   }
@@ -53,7 +53,7 @@ function drawDOMRenderImageCache(state: RenderState, data: DisplayObjectRenderNo
 function drawDOMRenderImageCacheMask(_state: RenderState, _node: DisplayObjectRenderNode): void {}
 
 export const defaultDOMRenderImageCacheRenderer: DisplayObjectRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawDOMRenderImageCache,
 };
 

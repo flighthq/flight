@@ -1,4 +1,4 @@
-import { applyBlurFilterToWebGL, boxRadiusForSigmaWebGL } from './blurFilter';
+import { applyBlurFilterToWebGL, computeBoxBlurRadiusWebGL } from './blurFilter';
 import { makeFilterState, makeRenderTarget, makeScratch } from './testHelper';
 
 describe('applyBlurFilterToWebGL', () => {
@@ -31,19 +31,19 @@ describe('applyBlurFilterToWebGL', () => {
   });
 });
 
-describe('boxRadiusForSigmaWebGL', () => {
+describe('computeBoxBlurRadiusWebGL', () => {
   it('returns 0 for sigma <= 0', () => {
-    expect(boxRadiusForSigmaWebGL(0, 1)).toBe(0);
-    expect(boxRadiusForSigmaWebGL(-1, 1)).toBe(0);
+    expect(computeBoxBlurRadiusWebGL(0, 1)).toBe(0);
+    expect(computeBoxBlurRadiusWebGL(-1, 1)).toBe(0);
   });
 
   it('returns a positive radius for positive sigma', () => {
-    expect(boxRadiusForSigmaWebGL(4, 1)).toBeGreaterThan(0);
+    expect(computeBoxBlurRadiusWebGL(4, 1)).toBeGreaterThan(0);
   });
 
   it('returns a smaller radius for more passes at the same sigma', () => {
-    const r1 = boxRadiusForSigmaWebGL(4, 1);
-    const r3 = boxRadiusForSigmaWebGL(4, 3);
+    const r1 = computeBoxBlurRadiusWebGL(4, 1);
+    const r3 = computeBoxBlurRadiusWebGL(4, 3);
     expect(r3).toBeLessThanOrEqual(r1);
   });
 });

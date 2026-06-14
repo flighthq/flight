@@ -283,17 +283,17 @@ function rawToDocument(raw: Record<string, unknown>): SpineParticleDocument {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
-/** Parse a Spine particle effect JSON string and preserve the full document for
- *  round-trip serialisation via `serializeSpineParticle`. */
-export function loadSpineParticle(json: string): SpineParsed {
-  const raw = parseSpineJson(json);
-  return { config: rawToConfig(raw), document: rawToDocument(raw), warnings: collectSpineWarnings(raw) };
-}
-
 /** Parse a Spine particle effect JSON string directly to a ParticleEmitterConfig.
  *
  *  Single-pass: no intermediate document object is allocated.
- *  Use `loadSpineParticle` instead when you need round-trip serialisation. */
+ *  Use `parseSpineParticleDocument` instead when you need round-trip serialisation. */
 export function parseSpineParticle(json: string): ParticleEmitterConfig {
   return rawToConfig(parseSpineJson(json));
+}
+
+/** Parse a Spine particle effect JSON string and preserve the full document for
+ *  round-trip serialisation via `serializeSpineParticle`. */
+export function parseSpineParticleDocument(json: string): SpineParsed {
+  const raw = parseSpineJson(json);
+  return { config: rawToConfig(raw), document: rawToDocument(raw), warnings: collectSpineWarnings(raw) };
 }

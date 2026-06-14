@@ -3,7 +3,7 @@ import { createRenderState as _createRenderState, setRenderStateBackgroundColor 
 import type { WebGLRenderOptions, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { compileDefaultProgram, createDefaultBitmapShader } from './webglShader';
+import { compileDefaultWebGLProgram, createDefaultBitmapShader } from './webglShader';
 
 export function createWebGLRenderState(
   canvas: HTMLCanvasElement,
@@ -20,7 +20,7 @@ export function createWebGLRenderState(
   const gl = canvas.getContext('webgl2', contextAttribs) as WebGL2RenderingContext | null;
   if (!gl) throw new Error('Failed to get WebGL2 context.');
 
-  const shaderLoc = compileDefaultProgram(gl);
+  const shaderLoc = compileDefaultWebGLProgram(gl);
   const matrixArray = new Float32Array(9);
   const defaultBitmapShader = createDefaultBitmapShader(shaderLoc, matrixArray);
 

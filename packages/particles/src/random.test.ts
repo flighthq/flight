@@ -3,7 +3,7 @@ import type { TextureAtlas } from '@flighthq/types';
 
 import { createParticleEmitterConfig } from './particleEmitterConfig';
 import { createParticleEmitterState } from './particleEmitterState';
-import { createSeededRandom } from './random';
+import { createSeededRandomSource } from './random';
 import { updateParticleEmitter } from './updateParticleEmitter';
 
 function makeAtlas(): TextureAtlas {
@@ -13,9 +13,9 @@ function makeAtlas(): TextureAtlas {
   } as TextureAtlas;
 }
 
-describe('createSeededRandom', () => {
+describe('createSeededRandomSource', () => {
   it('produces values in [0, 1)', () => {
-    const rng = createSeededRandom(1);
+    const rng = createSeededRandomSource(1);
     for (let i = 0; i < 1000; i++) {
       const v = rng();
       expect(v).toBeGreaterThanOrEqual(0);
@@ -24,21 +24,21 @@ describe('createSeededRandom', () => {
   });
 
   it('is deterministic — same seed yields the same sequence', () => {
-    const a = createSeededRandom(0xc0ffee);
-    const b = createSeededRandom(0xc0ffee);
+    const a = createSeededRandomSource(0xc0ffee);
+    const b = createSeededRandomSource(0xc0ffee);
     for (let i = 0; i < 100; i++) expect(a()).toBe(b());
   });
 
   it('different seeds yield different sequences', () => {
-    const a = createSeededRandom(1);
-    const b = createSeededRandom(2);
+    const a = createSeededRandomSource(1);
+    const b = createSeededRandomSource(2);
     let differs = false;
     for (let i = 0; i < 10; i++) if (a() !== b()) differs = true;
     expect(differs).toBe(true);
   });
 
   it('tolerates non-finite seeds without producing NaN', () => {
-    const rng = createSeededRandom(NaN);
+    const rng = createSeededRandomSource(NaN);
     const v = rng();
     expect(Number.isFinite(v)).toBe(true);
   });
@@ -47,7 +47,7 @@ describe('createSeededRandom', () => {
 describe('deterministic particle simulation', () => {
   function simulate(seed: number): number[] {
     const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
-    const state = createParticleEmitterState(createSeededRandom(seed));
+    const state = createParticleEmitterState(createSeededRandomSource(seed));
     const config = createParticleEmitterConfig({
       spawnRate: 20,
       maxParticles: 100,

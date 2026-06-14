@@ -7,8 +7,8 @@ import {
   containsWorldChild,
   getWorldChildAt,
   getWorldChildByName,
+  getWorldChildCount,
   getWorldChildIndex,
-  getWorldNumChildren,
   getWorldParent,
   getWorldRoot,
   removeWorldChild,
@@ -19,6 +19,25 @@ import {
   swapWorldChildrenAt,
 } from './worldHierarchy';
 import { createWorldNode, getWorldNodeSignals, WorldNodeKind } from './worldNode';
+
+describe('addWorldChild', () => {
+  it('appends a child to the end of the children list', () => {
+    const parent = createWorldNode();
+    const a = createWorldNode();
+    const b = createWorldNode();
+    addWorldChild(parent, a);
+    addWorldChild(parent, b);
+    expect(getWorldChildAt(parent, 0)).toBe(a);
+    expect(getWorldChildAt(parent, 1)).toBe(b);
+    expect(getWorldChildCount(parent)).toBe(2);
+  });
+
+  it('returns the child', () => {
+    const parent = createWorldNode();
+    const child = createWorldNode();
+    expect(addWorldChild(parent, child)).toBe(child);
+  });
+});
 
 describe('addWorldChildAt', () => {
   it('inserts a child at the requested index', () => {
@@ -38,7 +57,7 @@ describe('addWorldChildAt', () => {
     const parent = createWorldNode();
     const child = createWorldNode();
     addWorldChildAt(parent, child, 0);
-    expect(getWorldNumChildren(parent)).toBe(1);
+    expect(getWorldChildCount(parent)).toBe(1);
   });
 
   it('throws when the child is null', () => {
@@ -179,6 +198,20 @@ describe('getWorldChildByName', () => {
   });
 });
 
+describe('getWorldChildCount', () => {
+  it('returns 0 for a node with no children', () => {
+    const parent = createWorldNode();
+    expect(getWorldChildCount(parent)).toBe(0);
+  });
+
+  it('returns the number of direct children', () => {
+    const parent = createWorldNode();
+    addWorldChild(parent, createWorldNode());
+    addWorldChild(parent, createWorldNode());
+    expect(getWorldChildCount(parent)).toBe(2);
+  });
+});
+
 describe('getWorldChildIndex', () => {
   it('returns the index of a child', () => {
     const parent = createWorldNode();
@@ -201,6 +234,36 @@ describe('getWorldChildIndex', () => {
   });
 });
 
+describe('getWorldParent', () => {
+  it('returns null for a root node', () => {
+    const node = createWorldNode();
+    expect(getWorldParent(node)).toBeNull();
+  });
+
+  it('returns the direct parent', () => {
+    const parent = createWorldNode();
+    const child = createWorldNode();
+    addWorldChild(parent, child);
+    expect(getWorldParent(child)).toBe(parent);
+  });
+});
+
+describe('getWorldRoot', () => {
+  it('returns itself when it has no parent', () => {
+    const node = createWorldNode();
+    expect(getWorldRoot(node)).toBe(node);
+  });
+
+  it('returns the topmost ancestor', () => {
+    const root = createWorldNode();
+    const mid = createWorldNode();
+    const leaf = createWorldNode();
+    addWorldChild(root, mid);
+    addWorldChild(mid, leaf);
+    expect(getWorldRoot(leaf)).toBe(root);
+  });
+});
+
 describe('removeWorldChild', () => {
   it('returns the falsy child unchanged when none is supplied', () => {
     const parent = createWorldNode();
@@ -214,7 +277,7 @@ describe('removeWorldChild', () => {
     addWorldChild(a, child);
     removeWorldChild(b, child);
     expect(getWorldParent(child)).toBe(a);
-    expect(getWorldNumChildren(a)).toBe(1);
+    expect(getWorldChildCount(a)).toBe(1);
   });
 
   it('emits onChildRemoved when a child is unlinked', () => {
@@ -260,7 +323,7 @@ describe('removeWorldChildren', () => {
     addWorldChild(parent, createWorldNode());
     addWorldChild(parent, createWorldNode());
     removeWorldChildren(parent);
-    expect(getWorldNumChildren(parent)).toBe(0);
+    expect(getWorldChildCount(parent)).toBe(0);
   });
 
   it('removes only the requested range', () => {
@@ -290,7 +353,7 @@ describe('removeWorldChildren', () => {
     const a = createWorldNode();
     addWorldChild(parent, a);
     removeWorldChildren(parent, 5);
-    expect(getWorldNumChildren(parent)).toBe(1);
+    expect(getWorldChildCount(parent)).toBe(1);
   });
 
   it('throws when endIndex is before beginIndex', () => {

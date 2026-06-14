@@ -1,6 +1,6 @@
 ﻿import type { QuadBatch } from '@flighthq/sdk';
 import {
-  createWebGLElement,
+  createWebGLCanvasElement,
   createWebGLRenderState,
   defaultWebGLQuadBatchRenderer,
   prepareSpriteRender,
@@ -11,7 +11,7 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-export const canvas = createWebGLElement(550, 400, pixelRatio);
+export const canvas = createWebGLCanvasElement(550, 400, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createWebGLRenderState(canvas, {

@@ -1,4 +1,4 @@
-﻿import { createNullRendererData } from '@flighthq/render';
+﻿import { noopRendererData } from '@flighthq/render';
 import type { RenderState, SpriteRenderer, SpriteRenderNode, Tilemap } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
@@ -67,6 +67,6 @@ export function drawWebGLTilemap(state: RenderState, tilemapNode: SpriteRenderNo
 }
 
 export const defaultWebGLTilemapRenderer: SpriteRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawWebGLTilemap,
 };

@@ -1,11 +1,11 @@
-import { createTextureAtlas, createTileset, initTilesetRegions } from '@flighthq/assets';
+import { buildTilesetRegions, createTextureAtlas, createTileset } from '@flighthq/assets';
 
 import { createSpritesheetFromTileset } from './spritesheetFrom';
 
 function makeTileset(columns: number, rows: number) {
   const atlas = createTextureAtlas();
   const tileset = createTileset({ atlas, columns, rows, tileWidth: 32, tileHeight: 32 });
-  initTilesetRegions(tileset);
+  buildTilesetRegions(tileset);
   return tileset;
 }
 

@@ -9,10 +9,10 @@ import {
   equalsColorTransformOffsets,
   getColorTransformOffsetRGB,
   getColorTransformOffsetRGBA,
-  identityColorTransform,
   invertColorTransform,
   isIdentityColorTransform,
   setColorTransform,
+  setColorTransformIdentity,
   setColorTransformOffsetRGB,
   setColorTransformOffsetRGBA,
 } from '@flighthq/materials';
@@ -35,7 +35,7 @@ describe('cloneColorTransform', () => {
 });
 
 describe('concatColorTransform', () => {
-  it('composes two identityColorTransform transforms into identityColorTransform', () => {
+  it('composes two setColorTransformIdentity transforms into setColorTransformIdentity', () => {
     const a = createColorTransform();
     const b = createColorTransform();
     const out = createColorTransform({ redMultiplier: 0, greenMultiplier: 0, blueMultiplier: 0, alphaMultiplier: 0 });
@@ -152,7 +152,7 @@ describe('createColorTransform', () => {
 });
 
 describe('equalsColorTransform', () => {
-  it('returns true for two identityColorTransform transforms', () => {
+  it('returns true for two setColorTransformIdentity transforms', () => {
     expect(equalsColorTransform(createColorTransform(), createColorTransform())).toBe(true);
   });
 
@@ -163,7 +163,7 @@ describe('equalsColorTransform', () => {
     expect(equalsColorTransform(createColorTransform({ alphaOffset: 1 }), createColorTransform())).toBe(false);
   });
 
-  it('returns true for matching non-identityColorTransform transforms', () => {
+  it('returns true for matching non-setColorTransformIdentity transforms', () => {
     const a = createColorTransform({ redMultiplier: 0.5, greenOffset: 128 });
     const b = createColorTransform({ redMultiplier: 0.5, greenOffset: 128 });
     expect(equalsColorTransform(a, b)).toBe(true);
@@ -253,21 +253,6 @@ describe('getColorTransformOffsetRGBA', () => {
   });
 });
 
-describe('identityColorTransform', () => {
-  it('resets multipliers to 1 and offsets to 0', () => {
-    const ct = createColorTransform({ redMultiplier: 0.5, greenOffset: 128, alphaMultiplier: 0, blueOffset: 64 });
-    identityColorTransform(ct);
-    expect(ct.redMultiplier).toBe(1);
-    expect(ct.greenMultiplier).toBe(1);
-    expect(ct.blueMultiplier).toBe(1);
-    expect(ct.alphaMultiplier).toBe(1);
-    expect(ct.redOffset).toBe(0);
-    expect(ct.greenOffset).toBe(0);
-    expect(ct.blueOffset).toBe(0);
-    expect(ct.alphaOffset).toBe(0);
-  });
-});
-
 describe('invertColorTransform', () => {
   it('reciprocates multipliers', () => {
     const source = createColorTransform({
@@ -340,6 +325,21 @@ describe('setColorTransform', () => {
     expect(ct.greenOffset).toBe(20);
     expect(ct.blueOffset).toBe(30);
     expect(ct.alphaOffset).toBe(40);
+  });
+});
+
+describe('setColorTransformIdentity', () => {
+  it('resets multipliers to 1 and offsets to 0', () => {
+    const ct = createColorTransform({ redMultiplier: 0.5, greenOffset: 128, alphaMultiplier: 0, blueOffset: 64 });
+    setColorTransformIdentity(ct);
+    expect(ct.redMultiplier).toBe(1);
+    expect(ct.greenMultiplier).toBe(1);
+    expect(ct.blueMultiplier).toBe(1);
+    expect(ct.alphaMultiplier).toBe(1);
+    expect(ct.redOffset).toBe(0);
+    expect(ct.greenOffset).toBe(0);
+    expect(ct.blueOffset).toBe(0);
+    expect(ct.alphaOffset).toBe(0);
   });
 });
 

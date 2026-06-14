@@ -1,9 +1,9 @@
 ﻿import {
   addTextureAtlasRegion,
+  buildTilesetRegions,
   createImageSource,
   createTextureAtlas,
   createTileset,
-  initTilesetRegions,
 } from '@flighthq/assets';
 import { getOrCreateSpriteRenderNode, prepareSpriteRender } from '@flighthq/render';
 import { createTilemap, writeTilemapTile } from '@flighthq/sprite';
@@ -30,7 +30,7 @@ function makeTilesetAtlas(tileWidth = 32, tileHeight = 32, cols = 2, rows = 1) {
     }
   }
   const tileset = createTileset({ atlas, tileWidth, tileHeight, columns: cols, rows });
-  initTilesetRegions(tileset);
+  buildTilesetRegions(tileset);
   return tileset;
 }
 

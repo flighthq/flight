@@ -1,5 +1,6 @@
 import {
   cloneRectangle,
+  computeRectangleIntersection,
   containsRectanglePoint,
   containsRectanglePointXY,
   copyRectangle,
@@ -22,11 +23,11 @@ import {
   getRectangleTop,
   getRectangleTopLeft,
   inflateRectangle,
-  intersectionRectangle,
   intersectsRectangle,
   isEmptyRectangle,
   isFlippedXRectangle,
   isFlippedYRectangle,
+  mergeRectangle,
   normalizeRectangle,
   offsetRectangle,
   offsetRectangleByPoint,
@@ -39,7 +40,6 @@ import {
   setRectangleSize,
   setRectangleTop,
   setRectangleTopLeft,
-  unionRectangle,
 } from '@flighthq/geometry';
 import type { Rectangle } from '@flighthq/types';
 
@@ -74,6 +74,73 @@ describe('cloneRectangle', () => {
     const r = { x: 1, y: 1, width: 100, height: 100 };
     const c: Rectangle = cloneRectangle(r);
     expect(c).not.toBeNull();
+  });
+});
+
+describe('computeRectangleIntersection', () => {
+  it('returns intersection rectangle', () => {
+    const r3 = createRectangle(5, 10, 10, 10);
+    const result = createRectangle();
+    computeRectangleIntersection(result, r, r3);
+    expect(result.x).toBe(5);
+    expect(result.y).toBe(10);
+    expect(result.width).toBe(5);
+    expect(result.height).toBe(10);
+  });
+
+  it('returns empty rectangle if no intersection', () => {
+    const r3 = createRectangle(20, 20, 5, 5);
+    const result = createRectangle();
+    computeRectangleIntersection(result, r, r3);
+    expect(isEmptyRectangle(result)).toBe(true);
+  });
+
+  it('correctly modifies the original rectangle when intersection is empty', () => {
+    const r1 = createRectangle(0, 0, 10, 10);
+    const r2 = createRectangle(20, 20, 5, 5);
+    const result = r1;
+    computeRectangleIntersection(r1, r1, r2); // r1 is both source and target
+
+    // Ensure the result is empty (since no intersection)
+    expect(result.width).toBe(0);
+    expect(result.height).toBe(0);
+
+    // Ensure r1 is also modified correctly (should be set to empty)
+    expect(r1.width).toBe(0); // r1's width should be 0
+    expect(r1.height).toBe(0); // r1's height should be 0
+  });
+
+  it('correctly modifies the target when intersection occurs', () => {
+    const r1 = createRectangle(0, 0, 10, 10);
+    const r2 = createRectangle(5, 5, 10, 10);
+    const result = r1;
+    computeRectangleIntersection(r1, r1, r2); // r1 is both source and target
+
+    // Ensure r1 is correctly modified
+    expect(result.width).toBe(5); // Correct intersection width
+    expect(result.height).toBe(5); // Correct intersection height
+    expect(r1.width).toBe(5); // Ensure r1 got updated
+    expect(r1.height).toBe(5); // Ensure r1 got updated
+  });
+
+  it('supports out === b', () => {
+    const r1 = createRectangle(0, 0, 10, 10);
+    const r2 = createRectangle(5, 5, 10, 10);
+    computeRectangleIntersection(r2, r1, r2);
+    expect(r2.x).toBe(5);
+    expect(r2.y).toBe(5);
+    expect(r2.width).toBe(5);
+    expect(r2.height).toBe(5);
+  });
+
+  it('allows rectangle-like objects', () => {
+    const r3 = { x: 5, y: 10, width: 10, height: 10 };
+    const result = { x: 0, y: 0, width: 0, height: 0 };
+    computeRectangleIntersection(result, r, r3);
+    expect(result.x).toBe(5);
+    expect(result.y).toBe(10);
+    expect(result.width).toBe(5);
+    expect(result.height).toBe(10);
   });
 });
 
@@ -496,73 +563,6 @@ describe('inflateRectangle', () => {
   });
 });
 
-describe('intersectionRectangle', () => {
-  it('returns intersection rectangle', () => {
-    const r3 = createRectangle(5, 10, 10, 10);
-    const result = createRectangle();
-    intersectionRectangle(result, r, r3);
-    expect(result.x).toBe(5);
-    expect(result.y).toBe(10);
-    expect(result.width).toBe(5);
-    expect(result.height).toBe(10);
-  });
-
-  it('returns empty rectangle if no intersection', () => {
-    const r3 = createRectangle(20, 20, 5, 5);
-    const result = createRectangle();
-    intersectionRectangle(result, r, r3);
-    expect(isEmptyRectangle(result)).toBe(true);
-  });
-
-  it('correctly modifies the original rectangle when intersection is empty', () => {
-    const r1 = createRectangle(0, 0, 10, 10);
-    const r2 = createRectangle(20, 20, 5, 5);
-    const result = r1;
-    intersectionRectangle(r1, r1, r2); // r1 is both source and target
-
-    // Ensure the result is empty (since no intersection)
-    expect(result.width).toBe(0);
-    expect(result.height).toBe(0);
-
-    // Ensure r1 is also modified correctly (should be set to empty)
-    expect(r1.width).toBe(0); // r1's width should be 0
-    expect(r1.height).toBe(0); // r1's height should be 0
-  });
-
-  it('correctly modifies the target when intersection occurs', () => {
-    const r1 = createRectangle(0, 0, 10, 10);
-    const r2 = createRectangle(5, 5, 10, 10);
-    const result = r1;
-    intersectionRectangle(r1, r1, r2); // r1 is both source and target
-
-    // Ensure r1 is correctly modified
-    expect(result.width).toBe(5); // Correct intersection width
-    expect(result.height).toBe(5); // Correct intersection height
-    expect(r1.width).toBe(5); // Ensure r1 got updated
-    expect(r1.height).toBe(5); // Ensure r1 got updated
-  });
-
-  it('supports out === b', () => {
-    const r1 = createRectangle(0, 0, 10, 10);
-    const r2 = createRectangle(5, 5, 10, 10);
-    intersectionRectangle(r2, r1, r2);
-    expect(r2.x).toBe(5);
-    expect(r2.y).toBe(5);
-    expect(r2.width).toBe(5);
-    expect(r2.height).toBe(5);
-  });
-
-  it('allows rectangle-like objects', () => {
-    const r3 = { x: 5, y: 10, width: 10, height: 10 };
-    const result = { x: 0, y: 0, width: 0, height: 0 };
-    intersectionRectangle(result, r, r3);
-    expect(result.x).toBe(5);
-    expect(result.y).toBe(10);
-    expect(result.width).toBe(5);
-    expect(result.height).toBe(10);
-  });
-});
-
 describe('intersectsRectangle', () => {
   it('returns true if rectangles overlap', () => {
     const r3 = createRectangle(5, 10, 10, 10);
@@ -630,6 +630,123 @@ describe('isFlippedYRectangle', () => {
   it('allows a rectangle-like object', () => {
     const r = { x: 0, y: 0, width: 100, height: 100 };
     expect(isFlippedYRectangle(r)).toBe(false);
+  });
+});
+
+describe('mergeRectangle', () => {
+  it('returns union of two rectangles', () => {
+    const r3 = createRectangle(5, 15, 10, 10);
+    const u = createRectangle();
+    mergeRectangle(u, r, r3);
+    expect(u.x).toBe(0);
+    expect(u.y).toBe(0);
+    expect(u.width).toBe(15);
+    expect(u.height).toBe(25);
+  });
+
+  it('union works with zero-width rectangle', () => {
+    const r3 = createRectangle(5, 15, 0, 0);
+    const u = createRectangle();
+    mergeRectangle(u, r, r3);
+    expect(equalsRectangle(u, r)).toBe(true);
+  });
+
+  it('has the values of the right-hand rectangle if the left-hand is degenerate', () => {
+    const lh = createRectangle();
+    const rh = createRectangle(5, 15, 100, 100);
+    const out = createRectangle();
+    mergeRectangle(out, lh, rh);
+    expect(equalsRectangle(out, rh)).toBe(true);
+  });
+
+  it('has the values of the left-hand rectangle if the right-hand is degenerate', () => {
+    const lh = createRectangle(5, 15, 100, 100);
+    const rh = createRectangle();
+    const out = createRectangle();
+    mergeRectangle(out, lh, rh);
+    expect(equalsRectangle(out, lh)).toBe(true);
+  });
+
+  it('returns an empty rectangle if both are degenerate', () => {
+    const lh = createRectangle(-50, -150, 0, 0);
+    const rh = createRectangle(-5, -15, 0, 0);
+    const out = createRectangle();
+    mergeRectangle(out, lh, rh);
+    expect(isEmptyRectangle(out)).toBe(true);
+  });
+
+  it('returns the x/y of the left-hand rectangle if both are degenerate', () => {
+    const lh = createRectangle(-50, -150, 0, 0);
+    const rh = createRectangle(-5, -15, 0, 0);
+    const out = createRectangle();
+    mergeRectangle(out, lh, rh);
+    expect(equalsRectangle(out, lh)).toBe(true);
+  });
+
+  it('does nothing if right-hand is empty and source===out', () => {
+    const lh = createRectangle(-50, -150, 0, 0);
+    const rh = createRectangle(-5, -15, 0, 0);
+    const cache = createRectangle();
+    copyRectangle(cache, lh);
+    mergeRectangle(lh, lh, rh);
+    expect(equalsRectangle(cache, lh)).toBe(true);
+  });
+
+  it('union works with flipped rectangles', () => {
+    const r3 = createRectangle(15, 20, -10, -10);
+    const u = createRectangle();
+    mergeRectangle(u, r, r3);
+    expect(u.x).toBe(0);
+    expect(u.y).toBe(0);
+    expect(u.width).toBe(15);
+    expect(u.height).toBe(20);
+  });
+
+  it('correctly modifies the target when union occurs', () => {
+    const r1 = createRectangle(0, 0, 10, 10);
+    const r2 = createRectangle(5, 5, 10, 10);
+    const result = r1;
+    mergeRectangle(r1, r1, r2); // r1 is both source and target
+
+    // Ensure r1 is correctly updated
+    expect(result.width).toBe(15); // Correct union width
+    expect(result.height).toBe(15); // Correct union height
+    expect(r1.width).toBe(15); // r1 should be updated
+    expect(r1.height).toBe(15); // r1 should be updated
+  });
+
+  it('correctly handles union of non-overlapping rectangles', () => {
+    const r1 = createRectangle(0, 0, 10, 10);
+    const r2 = createRectangle(20, 20, 5, 5);
+    const result = r1;
+    mergeRectangle(r1, r1, r2); // r1 is both source and target
+
+    // Ensure r1 is correctly updated
+    expect(result.width).toBe(25); // Correct union width
+    expect(result.height).toBe(25); // Correct union height
+    expect(r1.width).toBe(25); // r1 should be updated
+    expect(r1.height).toBe(25); // r1 should be updated
+  });
+
+  it('supports out === other', () => {
+    const r1 = createRectangle(0, 0, 10, 10);
+    const r2 = createRectangle(5, 5, 10, 10);
+    mergeRectangle(r2, r1, r2);
+    expect(r2.x).toBe(0);
+    expect(r2.y).toBe(0);
+    expect(r2.width).toBe(15);
+    expect(r2.height).toBe(15);
+  });
+
+  it('allows rectangle-like objects', () => {
+    const r = { x: 0, y: 0, width: 10, height: 20 };
+    const r3 = { x: 5, y: 15, width: 10, height: 10 };
+    const u = { x: 0, y: 0, width: 0, height: 0 };
+    mergeRectangle(u, r, r3);
+    expect(u.x).toBe(0);
+    expect(u.y).toBe(0);
+    expect(u.width).toBe(15);
+    expect(u.height).toBe(25);
   });
 });
 
@@ -861,122 +978,5 @@ describe('setTo', () => {
     expect(rect.y).toBe(0);
     expect(rect.width).toBe(0);
     expect(rect.height).toBe(0);
-  });
-});
-
-describe('unionRectangle', () => {
-  it('returns union of two rectangles', () => {
-    const r3 = createRectangle(5, 15, 10, 10);
-    const u = createRectangle();
-    unionRectangle(u, r, r3);
-    expect(u.x).toBe(0);
-    expect(u.y).toBe(0);
-    expect(u.width).toBe(15);
-    expect(u.height).toBe(25);
-  });
-
-  it('union works with zero-width rectangle', () => {
-    const r3 = createRectangle(5, 15, 0, 0);
-    const u = createRectangle();
-    unionRectangle(u, r, r3);
-    expect(equalsRectangle(u, r)).toBe(true);
-  });
-
-  it('has the values of the right-hand rectangle if the left-hand is degenerate', () => {
-    const lh = createRectangle();
-    const rh = createRectangle(5, 15, 100, 100);
-    const out = createRectangle();
-    unionRectangle(out, lh, rh);
-    expect(equalsRectangle(out, rh)).toBe(true);
-  });
-
-  it('has the values of the left-hand rectangle if the right-hand is degenerate', () => {
-    const lh = createRectangle(5, 15, 100, 100);
-    const rh = createRectangle();
-    const out = createRectangle();
-    unionRectangle(out, lh, rh);
-    expect(equalsRectangle(out, lh)).toBe(true);
-  });
-
-  it('returns an empty rectangle if both are degenerate', () => {
-    const lh = createRectangle(-50, -150, 0, 0);
-    const rh = createRectangle(-5, -15, 0, 0);
-    const out = createRectangle();
-    unionRectangle(out, lh, rh);
-    expect(isEmptyRectangle(out)).toBe(true);
-  });
-
-  it('returns the x/y of the left-hand rectangle if both are degenerate', () => {
-    const lh = createRectangle(-50, -150, 0, 0);
-    const rh = createRectangle(-5, -15, 0, 0);
-    const out = createRectangle();
-    unionRectangle(out, lh, rh);
-    expect(equalsRectangle(out, lh)).toBe(true);
-  });
-
-  it('does nothing if right-hand is empty and source===out', () => {
-    const lh = createRectangle(-50, -150, 0, 0);
-    const rh = createRectangle(-5, -15, 0, 0);
-    const cache = createRectangle();
-    copyRectangle(cache, lh);
-    unionRectangle(lh, lh, rh);
-    expect(equalsRectangle(cache, lh)).toBe(true);
-  });
-
-  it('union works with flipped rectangles', () => {
-    const r3 = createRectangle(15, 20, -10, -10);
-    const u = createRectangle();
-    unionRectangle(u, r, r3);
-    expect(u.x).toBe(0);
-    expect(u.y).toBe(0);
-    expect(u.width).toBe(15);
-    expect(u.height).toBe(20);
-  });
-
-  it('correctly modifies the target when union occurs', () => {
-    const r1 = createRectangle(0, 0, 10, 10);
-    const r2 = createRectangle(5, 5, 10, 10);
-    const result = r1;
-    unionRectangle(r1, r1, r2); // r1 is both source and target
-
-    // Ensure r1 is correctly updated
-    expect(result.width).toBe(15); // Correct union width
-    expect(result.height).toBe(15); // Correct union height
-    expect(r1.width).toBe(15); // r1 should be updated
-    expect(r1.height).toBe(15); // r1 should be updated
-  });
-
-  it('correctly handles union of non-overlapping rectangles', () => {
-    const r1 = createRectangle(0, 0, 10, 10);
-    const r2 = createRectangle(20, 20, 5, 5);
-    const result = r1;
-    unionRectangle(r1, r1, r2); // r1 is both source and target
-
-    // Ensure r1 is correctly updated
-    expect(result.width).toBe(25); // Correct union width
-    expect(result.height).toBe(25); // Correct union height
-    expect(r1.width).toBe(25); // r1 should be updated
-    expect(r1.height).toBe(25); // r1 should be updated
-  });
-
-  it('supports out === other', () => {
-    const r1 = createRectangle(0, 0, 10, 10);
-    const r2 = createRectangle(5, 5, 10, 10);
-    unionRectangle(r2, r1, r2);
-    expect(r2.x).toBe(0);
-    expect(r2.y).toBe(0);
-    expect(r2.width).toBe(15);
-    expect(r2.height).toBe(15);
-  });
-
-  it('allows rectangle-like objects', () => {
-    const r = { x: 0, y: 0, width: 10, height: 20 };
-    const r3 = { x: 5, y: 15, width: 10, height: 10 };
-    const u = { x: 0, y: 0, width: 0, height: 0 };
-    unionRectangle(u, r, r3);
-    expect(u.x).toBe(0);
-    expect(u.y).toBe(0);
-    expect(u.width).toBe(15);
-    expect(u.height).toBe(25);
   });
 });

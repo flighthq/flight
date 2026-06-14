@@ -8,7 +8,7 @@ import {
   addTextureAtlasRegionRectangleXY,
   addTextureAtlasRegionVector2,
   createTextureAtlasRegion,
-  initTextureAtlasRegion,
+  setTextureAtlasRegion,
 } from './textureAtlasRegion';
 
 describe('addTextureAtlasRegion', () => {
@@ -143,10 +143,10 @@ describe('createTextureAtlasRegion', () => {
   });
 });
 
-describe('initTextureAtlasRegion', () => {
+describe('setTextureAtlasRegion', () => {
   it('sets all fields on an existing region', () => {
     const region = createTextureAtlasRegion();
-    const result = initTextureAtlasRegion(region, 10, 20, 30, 40, 5, 6);
+    const result = setTextureAtlasRegion(region, 10, 20, 30, 40, 5, 6);
     expect(result).toBeUndefined();
     expect(region.x).toBe(10);
     expect(region.y).toBe(20);
@@ -159,7 +159,7 @@ describe('initTextureAtlasRegion', () => {
   it('reuses the existing region object', () => {
     const region = createTextureAtlasRegion();
     const target = region;
-    initTextureAtlasRegion(region, 10, 20, 30, 40, 5, 6);
+    setTextureAtlasRegion(region, 10, 20, 30, 40, 5, 6);
     expect(region).toBe(target);
     expect(region.x).toBe(10);
     expect(region.y).toBe(20);
@@ -171,7 +171,7 @@ describe('initTextureAtlasRegion', () => {
 
   it('defaults optional parameters to 0', () => {
     const region = createTextureAtlasRegion();
-    initTextureAtlasRegion(region, 5);
+    setTextureAtlasRegion(region, 5);
     expect(region.x).toBe(5);
     expect(region.y).toBe(0);
     expect(region.width).toBe(0);

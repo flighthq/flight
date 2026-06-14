@@ -1,4 +1,4 @@
-﻿import { createNullRendererData } from '@flighthq/render';
+﻿import { noopRendererData } from '@flighthq/render';
 import type { DisplayObjectRenderer, DisplayObjectRenderNode, DOMRenderState, HTMLView } from '@flighthq/types';
 
 import { setDOMRendererElement } from './domStyle';
@@ -32,6 +32,6 @@ export function drawHTMLViewMask(_state: DOMRenderState, _renderNode: DisplayObj
 }
 
 export const defaultHTMLViewRenderer: DisplayObjectRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawHTMLView,
 };

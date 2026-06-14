@@ -374,18 +374,18 @@ function rawToDocument(raw: Record<string, unknown>): UnityParticleDocument {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
-/** Parse a Unity Shuriken particle system JSON string and preserve the full document
- *  for round-trip serialisation via `serializeUnityParticle`. */
-export function loadUnityParticle(json: string, options?: UnityParseOptions): UnityParsed {
-  const ppu = options?.pixelsPerUnit ?? DEFAULT_PPU;
-  const raw = parseUnityJson(json);
-  return { config: rawToConfig(raw, ppu), document: rawToDocument(raw), warnings: collectUnityWarnings(raw) };
-}
-
 /** Parse a Unity Shuriken particle system JSON string directly to a ParticleEmitterConfig.
  *
  *  Single-pass: no intermediate document object is allocated.
- *  Use `loadUnityParticle` instead when you need round-trip serialisation. */
+ *  Use `parseUnityParticleDocument` instead when you need round-trip serialisation. */
 export function parseUnityParticle(json: string, options?: UnityParseOptions): ParticleEmitterConfig {
   return rawToConfig(parseUnityJson(json), options?.pixelsPerUnit ?? DEFAULT_PPU);
+}
+
+/** Parse a Unity Shuriken particle system JSON string and preserve the full document
+ *  for round-trip serialisation via `serializeUnityParticle`. */
+export function parseUnityParticleDocument(json: string, options?: UnityParseOptions): UnityParsed {
+  const ppu = options?.pixelsPerUnit ?? DEFAULT_PPU;
+  const raw = parseUnityJson(json);
+  return { config: rawToConfig(raw, ppu), document: rawToDocument(raw), warnings: collectUnityWarnings(raw) };
 }

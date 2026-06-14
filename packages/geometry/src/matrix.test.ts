@@ -14,7 +14,6 @@ import {
   equalsMatrix,
   getRectangleBottom,
   getRectangleRight,
-  identityMatrix,
   inverseMatrix,
   inverseMatrixTransformPoint,
   inverseMatrixTransformPointXY,
@@ -35,6 +34,7 @@ import {
   setMatrixFromFloat32Array,
   setMatrixFromMatrix3,
   setMatrixFromMatrix4,
+  setMatrixIdentity,
   setTransformMatrix,
   translateMatrix,
   translateMatrixByVector,
@@ -280,19 +280,6 @@ describe('equalsMatrix', () => {
     const mat2 = createMatrix();
     mat2.tx = 100;
     expect(equalsMatrix(mat1, mat2, true)).toBe(false);
-  });
-});
-
-describe('identityMatrix', () => {
-  it('resets a modified matrix to identity', () => {
-    const m = createMatrix(2, 3, 4, 5, 6, 7);
-    identityMatrix(m);
-    expect(m.a).toBe(1);
-    expect(m.b).toBe(0);
-    expect(m.c).toBe(0);
-    expect(m.d).toBe(1);
-    expect(m.tx).toBe(0);
-    expect(m.ty).toBe(0);
   });
 });
 
@@ -1034,11 +1021,11 @@ describe('setMatrixFromMatrix4', () => {
   });
 
   it('should correctly handle a 2D identity matrix3x2 in Matrix4x4 format', () => {
-    const identityMatrix4x4: Matrix4Like = {
+    const setMatrix4Identityx4: Matrix4Like = {
       m: new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), // 4x4 identity matrix3x2 (no scaling, no translation)
     };
 
-    setMatrixFromMatrix4(mat2D, identityMatrix4x4);
+    setMatrixFromMatrix4(mat2D, setMatrix4Identityx4);
 
     expect(mat2D.a).toEqual(1);
     expect(mat2D.b).toEqual(0);
@@ -1046,6 +1033,19 @@ describe('setMatrixFromMatrix4', () => {
     expect(mat2D.c).toEqual(0);
     expect(mat2D.d).toEqual(1);
     expect(mat2D.ty).toEqual(0);
+  });
+});
+
+describe('setMatrixIdentity', () => {
+  it('resets a modified matrix to identity', () => {
+    const m = createMatrix(2, 3, 4, 5, 6, 7);
+    setMatrixIdentity(m);
+    expect(m.a).toBe(1);
+    expect(m.b).toBe(0);
+    expect(m.c).toBe(0);
+    expect(m.d).toBe(1);
+    expect(m.tx).toBe(0);
+    expect(m.ty).toBe(0);
   });
 });
 

@@ -18,7 +18,7 @@ import {
   detachWindowVisibility,
   disposeApplicationWindow,
   exitApplicationFullscreen,
-  lockApplicationElement,
+  lockApplicationPointer,
   requestApplicationFullscreen,
 } from './window';
 
@@ -397,23 +397,23 @@ describe('exitApplicationFullscreen', () => {
   });
 });
 
-describe('lockApplicationElement', () => {
+describe('lockApplicationPointer', () => {
   it('sets touch-action and user-select', () => {
     const element = document.createElement('div');
-    lockApplicationElement(element);
+    lockApplicationPointer(element);
     expect(element.style.touchAction).toBe('none');
     expect(element.style.userSelect).toBe('none');
   });
 
   it('sets transform on canvas elements', () => {
     const canvas = document.createElement('canvas');
-    lockApplicationElement(canvas);
+    lockApplicationPointer(canvas);
     expect(canvas.style.transform).toBe('translateZ(0)');
   });
 
   it('does not set transform on non-canvas elements', () => {
     const div = document.createElement('div');
-    lockApplicationElement(div);
+    lockApplicationPointer(div);
     expect(div.style.transform).toBe('');
   });
 });

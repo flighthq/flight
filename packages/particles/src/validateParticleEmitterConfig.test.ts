@@ -4,7 +4,7 @@ import type { TextureAtlas } from '@flighthq/types';
 import { createParticleEmitterConfig } from './particleEmitterConfig';
 import { createParticleEmitterState } from './particleEmitterState';
 import { updateParticleEmitter } from './updateParticleEmitter';
-import { sanitizeParticleEmitterConfig, validateParticleEmitterConfig } from './validateParticleEmitterConfig';
+import { normalizeParticleEmitterConfig, validateParticleEmitterConfig } from './validateParticleEmitterConfig';
 
 function makeAtlas(): TextureAtlas {
   return {
@@ -13,10 +13,10 @@ function makeAtlas(): TextureAtlas {
   } as TextureAtlas;
 }
 
-describe('sanitizeParticleEmitterConfig', () => {
+describe('normalizeParticleEmitterConfig', () => {
   it('leaves a valid config materially unchanged', () => {
     const input = createParticleEmitterConfig({ spawnRate: 25, maxParticles: 500, lifetimeMin: 1, lifetimeMax: 2 });
-    const out = sanitizeParticleEmitterConfig(input);
+    const out = normalizeParticleEmitterConfig(input);
     expect(out.spawnRate).toBe(25);
     expect(out.maxParticles).toBe(500);
     expect(out.lifetimeMin).toBe(1);
@@ -24,14 +24,14 @@ describe('sanitizeParticleEmitterConfig', () => {
   });
 
   it('replaces non-finite fields with their defaults', () => {
-    const out = sanitizeParticleEmitterConfig({ gravityY: NaN, spawnRate: Infinity, lifetimeMax: -Infinity });
+    const out = normalizeParticleEmitterConfig({ gravityY: NaN, spawnRate: Infinity, lifetimeMax: -Infinity });
     expect(out.gravityY).toBe(0); // default
     expect(out.spawnRate).toBe(10); // default
     expect(Number.isFinite(out.lifetimeMax)).toBe(true);
   });
 
   it('clamps negatives and floors integer fields', () => {
-    const out = sanitizeParticleEmitterConfig({
+    const out = normalizeParticleEmitterConfig({
       maxParticles: -3,
       spawnRate: -10,
       burstCount: 4.7,
@@ -46,12 +46,12 @@ describe('sanitizeParticleEmitterConfig', () => {
   });
 
   it('keeps regionIdMax >= regionIdMin', () => {
-    const out = sanitizeParticleEmitterConfig({ regionIdMin: 5, regionIdMax: 2 });
+    const out = normalizeParticleEmitterConfig({ regionIdMin: 5, regionIdMax: 2 });
     expect(out.regionIdMax).toBeGreaterThanOrEqual(out.regionIdMin);
   });
 
   it('drops a curve containing non-finite samples (falls back to linear)', () => {
-    const out = sanitizeParticleEmitterConfig({
+    const out = normalizeParticleEmitterConfig({
       alphaCurve: [1, NaN, 0],
       scaleCurve: [],
       colorCurve: [0, 0, 0, 1, 1, 1],
@@ -76,7 +76,7 @@ describe('sanitizeParticleEmitterConfig', () => {
       speedMin: NaN,
       speedMax: NaN,
     });
-    const safe = sanitizeParticleEmitterConfig(corrupt);
+    const safe = normalizeParticleEmitterConfig(corrupt);
     const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     for (let i = 0; i < 30; i++) updateParticleEmitter(emitter, state, safe, 1 / 60);

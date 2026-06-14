@@ -5,6 +5,27 @@ export function cloneRectangle(source: Readonly<RectangleLike>): Rectangle {
   return createRectangle(source.x, source.y, source.width, source.height);
 }
 
+export function computeRectangleIntersection(
+  out: RectangleLike,
+  a: Readonly<RectangleLike>,
+  b: Readonly<RectangleLike>,
+): void {
+  const x0 = Math.max(getRectangleMinX(a), getRectangleMinX(b));
+  const x1 = Math.min(getRectangleMaxX(a), getRectangleMaxX(b));
+  const y0 = Math.max(getRectangleMinY(a), getRectangleMinY(b));
+  const y1 = Math.min(getRectangleMaxY(a), getRectangleMaxY(b));
+
+  if (x1 <= x0 || y1 <= y0) {
+    setEmptyRectangle(out);
+    return;
+  }
+
+  out.x = x0;
+  out.y = y0;
+  out.width = x1 - x0;
+  out.height = y1 - y0;
+}
+
 export function containsRectanglePoint(source: Readonly<RectangleLike>, vector: Readonly<Vector2Like>): boolean {
   return containsRectanglePointXY(source, vector.x, vector.y);
 }
@@ -140,27 +161,6 @@ export function inflateRectangle(out: RectangleLike, source: Readonly<RectangleL
   out.height = source.height + dy * 2;
 }
 
-export function intersectionRectangle(
-  out: RectangleLike,
-  a: Readonly<RectangleLike>,
-  b: Readonly<RectangleLike>,
-): void {
-  const x0 = Math.max(getRectangleMinX(a), getRectangleMinX(b));
-  const x1 = Math.min(getRectangleMaxX(a), getRectangleMaxX(b));
-  const y0 = Math.max(getRectangleMinY(a), getRectangleMinY(b));
-  const y1 = Math.min(getRectangleMaxY(a), getRectangleMaxY(b));
-
-  if (x1 <= x0 || y1 <= y0) {
-    setEmptyRectangle(out);
-    return;
-  }
-
-  out.x = x0;
-  out.y = y0;
-  out.width = x1 - x0;
-  out.height = y1 - y0;
-}
-
 export function intersectsRectangle(a: Readonly<RectangleLike>, b: Readonly<RectangleLike>): boolean {
   return !(
     getRectangleMaxX(a) <= getRectangleMinX(b) ||
@@ -185,6 +185,44 @@ export function isFlippedXRectangle(source: Readonly<RectangleLike>): boolean {
 
 export function isFlippedYRectangle(source: Readonly<RectangleLike>): boolean {
   return source.height < 0;
+}
+
+export function mergeRectangle(
+  out: RectangleLike,
+  source: Readonly<RectangleLike>,
+  other: Readonly<RectangleLike>,
+): void {
+  const { x: sx, y: sy, width: sw, height: sh } = source;
+  const { x: ox, y: oy, width: ow, height: oh } = other;
+  const sEmpty = sw === 0 || sh === 0;
+  const oEmpty = ow === 0 || oh === 0;
+  if (sEmpty || oEmpty) {
+    if (oEmpty && source === out) return;
+    out.x = oEmpty ? sx : ox;
+    out.y = oEmpty ? sy : oy;
+    out.width = oEmpty ? sw : ow;
+    out.height = oEmpty ? sh : oh;
+  } else {
+    const sourceLeft = Math.min(sx, sx + sw);
+    const sourceRight = Math.max(sx, sx + sw);
+    const sourceTop = Math.min(sy, sy + sh);
+    const sourceBottom = Math.max(sy, sy + sh);
+
+    const otherLeft = Math.min(ox, ox + ow);
+    const otherRight = Math.max(ox, ox + ow);
+    const otherTop = Math.min(oy, oy + oh);
+    const otherBottom = Math.max(oy, oy + oh);
+
+    let x0 = Math.min(sourceLeft, otherLeft);
+    const x1 = Math.max(sourceRight, otherRight);
+    const y0 = Math.min(sourceTop, otherTop);
+    const y1 = Math.max(sourceBottom, otherBottom);
+
+    out.x = x0;
+    out.y = y0;
+    out.width = x1 - x0;
+    out.height = y1 - y0;
+  }
 }
 
 export function normalizeRectangle(out: RectangleLike, source: Readonly<RectangleLike>): void {
@@ -258,42 +296,4 @@ export function setRectangleTop(target: RectangleLike, value: number): void {
 export function setRectangleTopLeft(out: RectangleLike, point: Readonly<Vector2Like>): void {
   out.x = point.x;
   out.y = point.y;
-}
-
-export function unionRectangle(
-  out: RectangleLike,
-  source: Readonly<RectangleLike>,
-  other: Readonly<RectangleLike>,
-): void {
-  const { x: sx, y: sy, width: sw, height: sh } = source;
-  const { x: ox, y: oy, width: ow, height: oh } = other;
-  const sEmpty = sw === 0 || sh === 0;
-  const oEmpty = ow === 0 || oh === 0;
-  if (sEmpty || oEmpty) {
-    if (oEmpty && source === out) return;
-    out.x = oEmpty ? sx : ox;
-    out.y = oEmpty ? sy : oy;
-    out.width = oEmpty ? sw : ow;
-    out.height = oEmpty ? sh : oh;
-  } else {
-    const sourceLeft = Math.min(sx, sx + sw);
-    const sourceRight = Math.max(sx, sx + sw);
-    const sourceTop = Math.min(sy, sy + sh);
-    const sourceBottom = Math.max(sy, sy + sh);
-
-    const otherLeft = Math.min(ox, ox + ow);
-    const otherRight = Math.max(ox, ox + ow);
-    const otherTop = Math.min(oy, oy + oh);
-    const otherBottom = Math.max(oy, oy + oh);
-
-    let x0 = Math.min(sourceLeft, otherLeft);
-    const x1 = Math.max(sourceRight, otherRight);
-    const y0 = Math.min(sourceTop, otherTop);
-    const y1 = Math.max(sourceBottom, otherBottom);
-
-    out.x = x0;
-    out.y = y0;
-    out.width = x1 - x0;
-    out.height = y1 - y0;
-  }
 }

@@ -3,7 +3,7 @@ import { emitSignal } from '@flighthq/signals';
 import { getWorldNodeRuntime, invalidateNodeParentReference, type WorldNode } from './worldNode';
 
 export function addWorldChild(target: WorldNode, child: WorldNode): WorldNode {
-  return addWorldChildAt(target, child, getWorldNumChildren(target));
+  return addWorldChildAt(target, child, getWorldChildCount(target));
 }
 
 export function addWorldChildAt(target: WorldNode, child: WorldNode, index: number): WorldNode {
@@ -76,6 +76,11 @@ export function getWorldChildByName(source: Readonly<WorldNode>, name: string): 
   return null;
 }
 
+export function getWorldChildCount(source: Readonly<WorldNode>): number {
+  const children = getWorldNodeRuntime(source).children;
+  return children !== null ? children.length : 0;
+}
+
 export function getWorldChildIndex(source: Readonly<WorldNode>, child: Readonly<WorldNode>): number {
   const children = getWorldNodeRuntime(source).children;
   if (children !== null) {
@@ -84,11 +89,6 @@ export function getWorldChildIndex(source: Readonly<WorldNode>, child: Readonly<
     }
   }
   return -1;
-}
-
-export function getWorldNumChildren(source: Readonly<WorldNode>): number {
-  const children = getWorldNodeRuntime(source).children;
-  return children !== null ? children.length : 0;
 }
 
 export function getWorldParent(source: Readonly<WorldNode>): WorldNode | null {

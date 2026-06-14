@@ -1,5 +1,5 @@
 ﻿import { getTextRuntime } from '@flighthq/displayobject';
-import { computeTextFormatFontString, createNullRendererData, rgbToHexString } from '@flighthq/render';
+import { computeTextFormatFontString, noopRendererData, rgb24ToHexString } from '@flighthq/render';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
@@ -12,7 +12,7 @@ import type {
 
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';
-import { selectWebGLShader } from './webglShaderBinding';
+import { resolveWebGLShader } from './webglShaderBinding';
 
 const LAYOUT_WIDTH = 10000;
 
@@ -81,7 +81,7 @@ export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRende
 
   for (const group of result.groups) {
     offCtx.font = computeTextFormatFontString(group.format);
-    offCtx.fillStyle = rgbToHexString(group.format.color ?? 0);
+    offCtx.fillStyle = rgb24ToHexString(group.format.color ?? 0);
     const slice = text.substring(group.startIndex, group.endIndex);
     const x = group.offsetX;
     // group.ascent = font-size; CSS places the alphabetic baseline at ~80% of the em-size.
@@ -90,7 +90,7 @@ export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRende
     offCtx.fillText(slice, x, y);
   }
 
-  const shader = selectWebGLShader(internal, renderNode);
+  const shader = resolveWebGLShader(internal, renderNode);
   useWebGLProgram(internal, shader);
 
   // Get or create a texture for this render node
@@ -111,6 +111,6 @@ export function drawWebGLTextMask(state: RenderState, data: DisplayObjectRenderN
 }
 
 export const defaultWebGLTextRenderer: DisplayObjectRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawWebGLText,
 };

@@ -3,17 +3,17 @@ import type { RenderNodeAdapter } from '@flighthq/types';
 
 import { registerRenderer } from './renderer';
 import { createDisplayObjectRenderNode } from './renderNode';
-import { adaptRenderNode, getRenderNodeAdapter, setRenderNodeAdapter } from './renderNodeAdapter';
+import { applyRenderNodeAdapter, getRenderNodeAdapter, setRenderNodeAdapter } from './renderNodeAdapter';
 import { createRenderState } from './renderState';
 
-describe('adaptRenderNode', () => {
+describe('applyRenderNodeAdapter', () => {
   it('sets traverseChildren to true when no resolver is attached', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     const data = createDisplayObjectRenderNode(state, source);
     data.traverseChildren = false;
 
-    adaptRenderNode(state, source, data);
+    applyRenderNodeAdapter(state, source, data);
 
     expect(data.traverseChildren).toBe(true);
   });
@@ -27,7 +27,7 @@ describe('adaptRenderNode', () => {
     };
     setRenderNodeAdapter(source, adapter);
 
-    adaptRenderNode(state, source, data);
+    applyRenderNodeAdapter(state, source, data);
 
     expect(data.traverseChildren).toBe(false);
   });
@@ -47,7 +47,7 @@ describe('adaptRenderNode', () => {
     };
     setRenderNodeAdapter(source, adapter);
 
-    adaptRenderNode(state, source, data);
+    applyRenderNodeAdapter(state, source, data);
 
     expect(data.renderer).toBe(renderer);
   });

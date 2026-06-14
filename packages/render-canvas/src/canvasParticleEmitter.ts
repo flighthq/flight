@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render';
+import { noopRendererData } from '@flighthq/render';
 import type { CanvasRenderState, ParticleEmitter, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 // Canvas 2D does not support per-pixel color multiplication, so only alpha
@@ -63,6 +63,6 @@ export function drawCanvasParticleEmitter(state: CanvasRenderState, renderNode: 
 }
 
 export const defaultCanvasParticleEmitterRenderer: SpriteRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawCanvasParticleEmitter,
 };

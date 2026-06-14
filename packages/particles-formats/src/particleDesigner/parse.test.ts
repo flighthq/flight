@@ -1,4 +1,4 @@
-import { loadParticleDesignerPlist, parseParticleDesignerPlist } from './parse';
+import { parseParticleDesignerPlist, parseParticleDesignerPlistDocument } from './parse';
 import { serializeParticleDesignerPlist } from './serialize';
 
 const FIRE_PLIST = `<?xml version="1.0" encoding="utf-8"?>
@@ -54,48 +54,6 @@ const FIRE_PLIST = `<?xml version="1.0" encoding="utf-8"?>
 </dict>
 </plist>`;
 
-describe('loadParticleDesignerPlist — full round-trip, returns { config, document }', () => {
-  it('returns the same config values as parseParticleDesignerPlist', () => {
-    const config = parseParticleDesignerPlist(FIRE_PLIST, { textureSize: 32 });
-    const { config: loadedConfig } = loadParticleDesignerPlist(FIRE_PLIST, { textureSize: 32 });
-    expect(loadedConfig.maxParticles).toBe(config.maxParticles);
-    expect(loadedConfig.directionY).toBeCloseTo(config.directionY, 5);
-    expect(loadedConfig.gravityY).toBeCloseTo(config.gravityY, 5);
-  });
-
-  it('preserves textureFileName in document', () => {
-    expect(loadParticleDesignerPlist(FIRE_PLIST).document.textureFileName).toBe('fire.png');
-  });
-
-  it('preserves blend function in document', () => {
-    const { document } = loadParticleDesignerPlist(FIRE_PLIST);
-    expect(document.blendFuncSource).toBe(770);
-    expect(document.blendFuncDestination).toBe(771);
-  });
-});
-
-describe('loadParticleDesignerPlist — import warnings', () => {
-  it('has no warnings for a standard gravity emitter', () => {
-    expect(loadParticleDesignerPlist(FIRE_PLIST).warnings).toEqual([]);
-  });
-
-  it('warns that a radial emitter is approximated', () => {
-    const plist = FIRE_PLIST.replace(
-      '<key>emitterType</key><integer>0</integer>',
-      '<key>emitterType</key><integer>1</integer>',
-    );
-    expect(loadParticleDesignerPlist(plist).warnings.some((w) => w.toLowerCase().includes('radial'))).toBe(true);
-  });
-
-  it('warns about unsupported radial/tangential acceleration', () => {
-    const plist = FIRE_PLIST.replace(
-      '<key>maxParticles</key><integer>200</integer>',
-      '<key>maxParticles</key><integer>200</integer><key>radialAcceleration</key><real>50</real>',
-    );
-    expect(loadParticleDesignerPlist(plist).warnings.some((w) => w.includes('radialAcceleration'))).toBe(true);
-  });
-});
-
 describe('parseParticleDesignerPlist — color variance and blend mode', () => {
   it('maps startColorVariance fields to colorStartVariance', () => {
     const plist = FIRE_PLIST.replace(
@@ -121,7 +79,7 @@ describe('parseParticleDesignerPlist — color variance and blend mode', () => {
       '<key>startColorVarianceGreen</key><real>0.2</real>',
     );
     const config = parseParticleDesignerPlist(modified);
-    const { document } = loadParticleDesignerPlist(modified);
+    const { document } = parseParticleDesignerPlistDocument(modified);
     const xml = serializeParticleDesignerPlist(config, document);
     const config2 = parseParticleDesignerPlist(xml);
     expect(config2.colorStartVarianceG).toBeCloseTo(0.2, 3);
@@ -233,10 +191,54 @@ describe('parseParticleDesignerPlist — malformed input', () => {
   });
 });
 
+describe('parseParticleDesignerPlistDocument — full round-trip, returns { config, document }', () => {
+  it('returns the same config values as parseParticleDesignerPlist', () => {
+    const config = parseParticleDesignerPlist(FIRE_PLIST, { textureSize: 32 });
+    const { config: loadedConfig } = parseParticleDesignerPlistDocument(FIRE_PLIST, { textureSize: 32 });
+    expect(loadedConfig.maxParticles).toBe(config.maxParticles);
+    expect(loadedConfig.directionY).toBeCloseTo(config.directionY, 5);
+    expect(loadedConfig.gravityY).toBeCloseTo(config.gravityY, 5);
+  });
+
+  it('preserves textureFileName in document', () => {
+    expect(parseParticleDesignerPlistDocument(FIRE_PLIST).document.textureFileName).toBe('fire.png');
+  });
+
+  it('preserves blend function in document', () => {
+    const { document } = parseParticleDesignerPlistDocument(FIRE_PLIST);
+    expect(document.blendFuncSource).toBe(770);
+    expect(document.blendFuncDestination).toBe(771);
+  });
+});
+
+describe('parseParticleDesignerPlistDocument — import warnings', () => {
+  it('has no warnings for a standard gravity emitter', () => {
+    expect(parseParticleDesignerPlistDocument(FIRE_PLIST).warnings).toEqual([]);
+  });
+
+  it('warns that a radial emitter is approximated', () => {
+    const plist = FIRE_PLIST.replace(
+      '<key>emitterType</key><integer>0</integer>',
+      '<key>emitterType</key><integer>1</integer>',
+    );
+    expect(parseParticleDesignerPlistDocument(plist).warnings.some((w) => w.toLowerCase().includes('radial'))).toBe(
+      true,
+    );
+  });
+
+  it('warns about unsupported radial/tangential acceleration', () => {
+    const plist = FIRE_PLIST.replace(
+      '<key>maxParticles</key><integer>200</integer>',
+      '<key>maxParticles</key><integer>200</integer><key>radialAcceleration</key><real>50</real>',
+    );
+    expect(parseParticleDesignerPlistDocument(plist).warnings.some((w) => w.includes('radialAcceleration'))).toBe(true);
+  });
+});
+
 describe('serializeParticleDesignerPlist', () => {
   it('round-trips key config fields', () => {
     const config = parseParticleDesignerPlist(FIRE_PLIST, { textureSize: 32 });
-    const { document } = loadParticleDesignerPlist(FIRE_PLIST, { textureSize: 32 });
+    const { document } = parseParticleDesignerPlistDocument(FIRE_PLIST, { textureSize: 32 });
     const xml = serializeParticleDesignerPlist(config, document, { textureSize: 32 });
     const config2 = parseParticleDesignerPlist(xml, { textureSize: 32 });
     expect(config2.maxParticles).toBe(config.maxParticles);
@@ -248,7 +250,7 @@ describe('serializeParticleDesignerPlist', () => {
 
   it('preserves textureFileName', () => {
     const config = parseParticleDesignerPlist(FIRE_PLIST);
-    const { document } = loadParticleDesignerPlist(FIRE_PLIST);
+    const { document } = parseParticleDesignerPlistDocument(FIRE_PLIST);
     expect(serializeParticleDesignerPlist(config, document)).toContain('fire.png');
   });
 
@@ -266,6 +268,6 @@ describe('serializeParticleDesignerPlist', () => {
     expect(xml).not.toContain('a&b<c>');
     expect(xml).toContain('&amp;');
     // ...and the original value survives a parse round-trip intact.
-    expect(loadParticleDesignerPlist(xml).document.textureFileName).toBe('a&b<c>.png');
+    expect(parseParticleDesignerPlistDocument(xml).document.textureFileName).toBe('a&b<c>.png');
   });
 });

@@ -7,14 +7,14 @@ import {
   loadImageSourceFromURL,
 } from './imageSourceFrom';
 import { createTextureAtlas } from './textureAtlas';
-import { createTileset, initTilesetRegions } from './tileset';
+import { buildTilesetRegions, createTileset } from './tileset';
 
 export function createTilesetFromAtlas(atlas: TextureAtlas, tileWidth: number, tileHeight: number): Tileset {
   const image = atlas.image;
   const columns = image !== null ? Math.floor(image.width / tileWidth) : 0;
   const rows = image !== null ? Math.floor(image.height / tileHeight) : 0;
   const tileset = createTileset({ atlas, columns, rows, tileHeight, tileWidth });
-  initTilesetRegions(tileset);
+  buildTilesetRegions(tileset);
   return tileset;
 }
 

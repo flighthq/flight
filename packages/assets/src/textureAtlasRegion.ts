@@ -86,7 +86,7 @@ export function createTextureAtlasRegion(obj?: Partial<TextureAtlasRegionLike>):
   });
 }
 
-export function initTextureAtlasRegion(
+export function setTextureAtlasRegion(
   out: TextureAtlasRegion,
   x: number,
   y: number = 0,

@@ -6,7 +6,7 @@ import { BlendMode } from '@flighthq/types';
 import { enableDOMCSSFilterSupport, setDOMCSSFilter } from './domCSSFilterBinding';
 import { enableDOMBlendModeSupport } from './domMaterials';
 import { createDOMRenderState } from './domRenderState';
-import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
+import { applyDOMStyle, prepareDOMElement, setDOMRendererElement } from './domStyle';
 import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
@@ -91,29 +91,29 @@ describe('applyDOMStyle', () => {
   });
 });
 
-describe('initDOMElement', () => {
+describe('prepareDOMElement', () => {
   it('sets position to absolute', () => {
     const el = document.createElement('div');
-    initDOMElement(el);
+    prepareDOMElement(el);
     expect(el.style.position).toBe('absolute');
   });
 
   it('sets left and top to 0', () => {
     const el = document.createElement('div');
-    initDOMElement(el);
+    prepareDOMElement(el);
     expect(el.style.left).toBe('0px');
     expect(el.style.top).toBe('0px');
   });
 
   it('sets transformOrigin to "0 0"', () => {
     const el = document.createElement('div');
-    initDOMElement(el);
+    prepareDOMElement(el);
     expect(el.style.transformOrigin).toBe('0 0');
   });
 
   it('sets pointerEvents to none', () => {
     const el = document.createElement('div');
-    initDOMElement(el);
+    prepareDOMElement(el);
     expect(el.style.pointerEvents).toBe('none');
   });
 });

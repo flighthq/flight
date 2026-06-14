@@ -4,7 +4,7 @@ import { type DisplayObject, RenderFeatures } from '@flighthq/types';
 import {
   enableCanvasCSSFilterSupport,
   getCanvasCSSFilter,
-  selectCanvasCSSFilter,
+  resolveCanvasCSSFilter,
   setCanvasCSSFilter,
 } from './canvasCSSFilterBinding';
 import { createCanvasRenderState } from './canvasRenderState';
@@ -40,20 +40,20 @@ describe('getCanvasCSSFilter', () => {
   });
 });
 
-describe('selectCanvasCSSFilter', () => {
+describe('resolveCanvasCSSFilter', () => {
   it('returns null when support is not enabled, even with a binding', () => {
     const state = makeState();
     const node = {} as DisplayObject;
     setCanvasCSSFilter(state, node, 'blur(2px)');
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
-    expect(selectCanvasCSSFilter(state, renderNode)).toBeNull();
+    expect(resolveCanvasCSSFilter(state, renderNode)).toBeNull();
   });
 
   it('returns null when support is enabled but no filter is set', () => {
     const state = makeState();
     enableCanvasCSSFilterSupport(state);
     const renderNode = getOrCreateDisplayObjectRenderNode(state, {} as DisplayObject);
-    expect(selectCanvasCSSFilter(state, renderNode)).toBeNull();
+    expect(resolveCanvasCSSFilter(state, renderNode)).toBeNull();
   });
 
   it('returns the bound filter when support is enabled', () => {
@@ -62,7 +62,7 @@ describe('selectCanvasCSSFilter', () => {
     const node = {} as DisplayObject;
     setCanvasCSSFilter(state, node, 'grayscale(1)');
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
-    expect(selectCanvasCSSFilter(state, renderNode)).toBe('grayscale(1)');
+    expect(resolveCanvasCSSFilter(state, renderNode)).toBe('grayscale(1)');
   });
 });
 

@@ -1,8 +1,8 @@
 import { getDisplayObjectRuntime } from '@flighthq/displayobject';
-import { createNullRendererData, getDisplayObjectRenderNode, isRenderNodeVisible } from '@flighthq/render';
+import { getDisplayObjectRenderNode, isRenderNodeVisible, noopRendererData } from '@flighthq/render';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
 
-import { selectCanvasCSSFilter } from './canvasCSSFilterBinding';
+import { resolveCanvasCSSFilter } from './canvasCSSFilterBinding';
 
 export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderNode: DisplayObjectRenderNode): void {
   // Plain display objects have no visual geometry of their own.
@@ -19,7 +19,7 @@ export function drawCanvasDisplayObjectMask(state: CanvasRenderState, data: Disp
 }
 
 export const defaultCanvasDisplayObjectRenderer: DisplayObjectRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawCanvasDisplayObject,
 };
 
@@ -45,7 +45,7 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
 
     clipHooks?.pushMask(state, current);
 
-    const filter = selectCanvasCSSFilter(state, data);
+    const filter = resolveCanvasCSSFilter(state, data);
     if (filter !== null) state.context.filter = filter;
     if (data.renderer !== null) data.renderer.draw(state, data);
     if (filter !== null) state.context.filter = 'none';

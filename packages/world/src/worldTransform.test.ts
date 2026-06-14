@@ -4,7 +4,12 @@ import { describe, expect, it } from 'vitest';
 import { initTransform3DRuntimeTrait, initTransform3DTrait } from './hasTransform3d';
 import { addWorldChild } from './worldHierarchy';
 import { createWorldNode, getWorldNodeRuntime, invalidateNodeLocalTransform, type WorldNodeRuntime } from './worldNode';
-import { worldGlobalToLocal, worldLocalToGlobal } from './worldTransform';
+import {
+  ensureWorldTransformMatrix,
+  getWorldTransformMatrix,
+  worldGlobalToLocalVector3,
+  worldLocalToGlobalVector3,
+} from './worldTransform';
 
 function createTransformNode(): WorldTransform3DNode {
   const node = createWorldNode() as WorldTransform3DNode;
@@ -17,11 +22,54 @@ function vec(): Vector3Like {
   return { x: 0, y: 0, z: 0 } as Vector3Like;
 }
 
-describe('worldGlobalToLocal', () => {
+describe('ensureWorldTransformMatrix', () => {
+  it('computes the world matrix for a root node', () => {
+    const node = createTransformNode();
+    node.localMatrix.m[12] = 5;
+    invalidateNodeLocalTransform(node);
+    ensureWorldTransformMatrix(node);
+    const runtime = getWorldNodeRuntime(node) as WorldNodeRuntime & HasTransform3DRuntime;
+    expect(runtime.worldMatrix).not.toBeNull();
+    expect(runtime.worldMatrix!.m[12]).toBeCloseTo(5);
+  });
+
+  it('reuses a cached world matrix when no invalidation has occurred', () => {
+    const node = createTransformNode();
+    ensureWorldTransformMatrix(node);
+    const runtime = getWorldNodeRuntime(node) as WorldNodeRuntime & HasTransform3DRuntime;
+    const first = runtime.worldMatrix;
+    ensureWorldTransformMatrix(node);
+    expect(runtime.worldMatrix).toBe(first);
+  });
+});
+
+describe('getWorldTransformMatrix', () => {
+  it('returns the world matrix for a node', () => {
+    const node = createTransformNode();
+    node.localMatrix.m[12] = 3;
+    invalidateNodeLocalTransform(node);
+    const m = getWorldTransformMatrix(node);
+    expect(m.m[12]).toBeCloseTo(3);
+  });
+
+  it('composes parent and child local matrices', () => {
+    const parent = createTransformNode();
+    const child = createTransformNode();
+    addWorldChild(parent, child);
+    parent.localMatrix.m[12] = 10;
+    invalidateNodeLocalTransform(parent);
+    child.localMatrix.m[12] = 5;
+    invalidateNodeLocalTransform(child);
+    const m = getWorldTransformMatrix(child);
+    expect(m.m[12]).toBeCloseTo(15);
+  });
+});
+
+describe('worldGlobalToLocalVector3', () => {
   it('returns the point unchanged for an identity root node', () => {
     const node = createTransformNode();
     const out = vec();
-    worldGlobalToLocal(out, node, { x: 4, y: 5, z: 6 } as Vector3Like);
+    worldGlobalToLocalVector3(out, node, { x: 4, y: 5, z: 6 } as Vector3Like);
     expect(out.x).toBeCloseTo(4);
     expect(out.y).toBeCloseTo(5);
     expect(out.z).toBeCloseTo(6);
@@ -35,13 +83,13 @@ describe('worldGlobalToLocal', () => {
     invalidateNodeLocalTransform(node);
 
     const out = vec();
-    worldGlobalToLocal(out, node, { x: 11, y: 21, z: 31 } as Vector3Like);
+    worldGlobalToLocalVector3(out, node, { x: 11, y: 21, z: 31 } as Vector3Like);
     expect(out.x).toBeCloseTo(1);
     expect(out.y).toBeCloseTo(1);
     expect(out.z).toBeCloseTo(1);
   });
 
-  it('round-trips with worldLocalToGlobal', () => {
+  it('round-trips with worldLocalToGlobalVector3', () => {
     const parent = createTransformNode();
     const child = createTransformNode();
     addWorldChild(parent, child);
@@ -54,21 +102,21 @@ describe('worldGlobalToLocal', () => {
 
     const local = { x: 1.5, y: 2.5, z: 3.5 } as Vector3Like;
     const world = vec();
-    worldLocalToGlobal(world, child, local);
+    worldLocalToGlobalVector3(world, child, local);
 
     const back = vec();
-    worldGlobalToLocal(back, child, world);
+    worldGlobalToLocalVector3(back, child, world);
     expect(back.x).toBeCloseTo(local.x);
     expect(back.y).toBeCloseTo(local.y);
     expect(back.z).toBeCloseTo(local.z);
   });
 });
 
-describe('worldLocalToGlobal', () => {
+describe('worldLocalToGlobalVector3', () => {
   it('returns the point unchanged for an identity root node', () => {
     const node = createTransformNode();
     const out = vec();
-    worldLocalToGlobal(out, node, { x: 1, y: 2, z: 3 } as Vector3Like);
+    worldLocalToGlobalVector3(out, node, { x: 1, y: 2, z: 3 } as Vector3Like);
     expect(out.x).toBeCloseTo(1);
     expect(out.y).toBeCloseTo(2);
     expect(out.z).toBeCloseTo(3);
@@ -82,7 +130,7 @@ describe('worldLocalToGlobal', () => {
     invalidateNodeLocalTransform(node);
 
     const out = vec();
-    worldLocalToGlobal(out, node, { x: 1, y: 1, z: 1 } as Vector3Like);
+    worldLocalToGlobalVector3(out, node, { x: 1, y: 1, z: 1 } as Vector3Like);
     expect(out.x).toBeCloseTo(11);
     expect(out.y).toBeCloseTo(21);
     expect(out.z).toBeCloseTo(31);
@@ -99,7 +147,7 @@ describe('worldLocalToGlobal', () => {
     invalidateNodeLocalTransform(child);
 
     const out = vec();
-    worldLocalToGlobal(out, child, { x: 0, y: 0, z: 0 } as Vector3Like);
+    worldLocalToGlobalVector3(out, child, { x: 0, y: 0, z: 0 } as Vector3Like);
     expect(out.x).toBeCloseTo(8);
   });
 });

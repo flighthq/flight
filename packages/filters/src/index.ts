@@ -16,8 +16,8 @@ import type {
 } from '@flighthq/types';
 
 export { applyBlurFilterToCanvas, applyDropShadowFilterToCanvas, applyOuterGlowFilterToCanvas } from './canvas';
-export { blurFilterToCSS, dropShadowFilterToCSS, filterShadowOffset, outerGlowFilterToCSS } from './css';
-export { boxRadiusForSigma } from './math';
+export { blurFilterToCSS, dropShadowFilterToCSS, getShadowFilterOffset, outerGlowFilterToCSS } from './css';
+export { computeBoxBlurRadius } from './math';
 export {
   applyBevelFilterToSurface,
   applyBlurFilterToSurface,

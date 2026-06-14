@@ -1,4 +1,4 @@
-import { createNullRendererData, getSpriteRenderNode, isRenderNodeVisible } from '@flighthq/render';
+import { getSpriteRenderNode, isRenderNodeVisible, noopRendererData } from '@flighthq/render';
 import { getSpriteNodeRuntime } from '@flighthq/sprite';
 import type { CanvasRenderState, Sprite, SpriteNode, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
@@ -43,7 +43,7 @@ export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRen
 }
 
 export const defaultCanvasSpriteRenderer: SpriteRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawCanvasSprite,
 };
 

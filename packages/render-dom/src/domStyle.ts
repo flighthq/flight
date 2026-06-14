@@ -13,7 +13,7 @@ export function applyDOMStyle(state: DOMRenderState, element: HTMLElement, node:
   state.applyBlendMode?.(element, node.blendMode);
 }
 
-export function initDOMElement(element: HTMLElement): void {
+export function prepareDOMElement(element: HTMLElement): void {
   element.style.position = 'absolute';
   element.style.left = '0';
   element.style.top = '0';

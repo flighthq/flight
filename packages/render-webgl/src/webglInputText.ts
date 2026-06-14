@@ -1,5 +1,5 @@
 ﻿import { getInputTextRuntime } from '@flighthq/displayobject';
-import { createNullRendererData } from '@flighthq/render';
+import { noopRendererData } from '@flighthq/render';
 import {
   getInputTextCaretRectangle,
   getInputTextSelectionBeginIndex,
@@ -26,7 +26,7 @@ export function drawWebGLInputText(state: RenderState, renderNode: DisplayObject
 }
 
 export const defaultWebGLInputTextRenderer: DisplayObjectRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawWebGLInputText,
 };
 

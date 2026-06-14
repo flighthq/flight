@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render';
+import { noopRendererData } from '@flighthq/render';
 import type { ParticleEmitter, RenderState, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 import type { WebGLParticleShader, WebGLRenderStateInternal } from './internal';
@@ -283,6 +283,6 @@ export function drawWebGLParticleEmitter(state: RenderState, renderNode: SpriteR
 }
 
 export const defaultWebGLParticleEmitterRenderer: SpriteRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawWebGLParticleEmitter,
 };

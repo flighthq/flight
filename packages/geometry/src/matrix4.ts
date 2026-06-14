@@ -381,13 +381,6 @@ export function getMatrix4Position(out: Vector3Like, source: Readonly<Matrix4Lik
 }
 
 /**
- * Resets the current matrix using default identity values
- **/
-export function identityMatrix4(out: Matrix4Like): void {
-  setMatrix4(out, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-}
-
-/**
  * Interpolates from one `Matrix4Like` instance to another, given a percentage between the two
  **/
 export function interpolateMatrix4(
@@ -826,6 +819,13 @@ export function setMatrix4FromMatrix3(out: Matrix4Like, source: Readonly<Matrix3
   _out[2] = _source[6];
   _out[6] = _source[7];
   _out[10] = _source[8];
+}
+
+/**
+ * Resets the current matrix using default identity values
+ **/
+export function setMatrix4Identity(out: Matrix4Like): void {
+  setMatrix4(out, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 }
 
 export function setMatrix4Position(out: Matrix4Like, source: Readonly<Vector3Like>): void {

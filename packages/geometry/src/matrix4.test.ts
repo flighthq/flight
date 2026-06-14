@@ -19,7 +19,6 @@ import {
   getMatrix4Determinant,
   getMatrix4Element,
   getMatrix4Position,
-  identityMatrix4,
   interpolateMatrix4,
   inverseMatrix4,
   isAffineMatrix4,
@@ -38,6 +37,7 @@ import {
   setMatrix4From2D,
   setMatrix4FromMatrix,
   setMatrix4FromMatrix3,
+  setMatrix4Identity,
   setMatrix4Position,
   setOrthographicMatrix4,
   setPerspectiveMatrix4,
@@ -505,16 +505,6 @@ describe('getMatrix4Position', () => {
     getMatrix4Position(out, m);
 
     expect(Array.from(m.m)).toEqual(snapshot);
-  });
-});
-
-describe('identityMatrix4', () => {
-  it('resets a matrix to identity', () => {
-    const m = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
-
-    identityMatrix4(m);
-
-    expect(Array.from(m.m)).toEqual([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
   });
 });
 
@@ -1266,6 +1256,16 @@ describe('setMatrix4FromMatrix3', () => {
     expect(getMatrix4Element(mat, 3, 1)).toEqual(0);
     expect(getMatrix4Element(mat, 3, 2)).toEqual(0);
     expect(getMatrix4Element(mat, 3, 3)).toEqual(1);
+  });
+});
+
+describe('setMatrix4Identity', () => {
+  it('resets a matrix to identity', () => {
+    const m = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+
+    setMatrix4Identity(m);
+
+    expect(Array.from(m.m)).toEqual([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
   });
 });
 

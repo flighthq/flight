@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render';
+import { noopRendererData } from '@flighthq/render';
 import type { DisplayObjectRenderer, DisplayObjectRenderNode, DOMRenderState, RenderView } from '@flighthq/types';
 
 import { applyDOMStyle, setDOMRendererElement } from './domStyle';
@@ -26,6 +26,6 @@ export function drawDOMRenderView(state: DOMRenderState, renderNode: DisplayObje
 export function drawDOMRenderViewMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {}
 
 export const defaultDOMRenderViewRenderer: DisplayObjectRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawDOMRenderView,
 };

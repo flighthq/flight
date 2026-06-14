@@ -5,7 +5,7 @@ type AnyHitTestFn = (x: number, y: number, buf: unknown[], i: number) => boolean
 const hitTests = new Map<string, AnyHitTestFn>();
 
 // Tests the command at position i in buf. Args begin at i+2 (after key and argCount).
-export function hitTestShapeCommand(buf: unknown[], i: number, x: number, y: number): boolean | null {
+export function hitTestShapeCommandPoint(buf: unknown[], i: number, x: number, y: number): boolean | null {
   const key = buf[i] as string;
   const fn = hitTests.get(key);
   if (fn === undefined) return null;

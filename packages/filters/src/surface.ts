@@ -33,7 +33,7 @@ import type {
   SurfaceRegion,
 } from '@flighthq/types';
 
-import { boxRadiusForSigma } from './math';
+import { computeBoxBlurRadius } from './math';
 
 /**
  * Applies a bevel filter to `source`, writing the bevel mask into `out`.
@@ -49,8 +49,8 @@ export function applyBevelFilterToSurface(
   filter: BevelFilter,
 ): void {
   const quality = filter.quality ?? 1;
-  const radiusX = boxRadiusForSigma(filter.blurX ?? 4, quality);
-  const radiusY = boxRadiusForSigma(filter.blurY ?? 4, quality);
+  const radiusX = computeBoxBlurRadius(filter.blurX ?? 4, quality);
+  const radiusY = computeBoxBlurRadius(filter.blurY ?? 4, quality);
   const highlightColor = ((filter.highlightColor ?? 0xffffff) << 8) | Math.round((filter.highlightAlpha ?? 1) * 255);
   const shadowColor = ((filter.shadowColor ?? 0x000000) << 8) | Math.round((filter.shadowAlpha ?? 1) * 255);
   applySurfaceBevelFilter(out, blurBuffer, source, {
@@ -81,8 +81,8 @@ export function applyBlurFilterToSurface(
   filter: BlurFilter,
 ): void {
   const quality = filter.quality ?? 1;
-  const radiusX = boxRadiusForSigma(filter.blurX ?? 4, quality);
-  const radiusY = boxRadiusForSigma(filter.blurY ?? 4, quality);
+  const radiusX = computeBoxBlurRadius(filter.blurX ?? 4, quality);
+  const radiusY = computeBoxBlurRadius(filter.blurY ?? 4, quality);
   applySurfaceBoxBlurFilter(out, blurBuffer, source, {
     passes: quality,
     radiusX,
@@ -142,7 +142,7 @@ export function applyDisplacementMapFilterToSurface(
 /**
  * Produces the drop shadow mask for `source`, writing the tinted blurred alpha
  * mask into `out`. To complete the effect, composite `out` onto your destination
- * at the shadow offset (see `filterShadowOffset`), then composite the original
+ * at the shadow offset (see `getShadowFilterOffset`), then composite the original
  * source on top (omit if `filter.hideObject` is true).
  *
  * `blurBuffer` must be at least `source.width * source.height * 4` bytes.
@@ -155,8 +155,8 @@ export function applyDropShadowFilterToSurface(
   filter: DropShadowFilter,
 ): void {
   const quality = filter.quality ?? 1;
-  const radiusX = boxRadiusForSigma(filter.blurX ?? 4, quality);
-  const radiusY = boxRadiusForSigma(filter.blurY ?? 4, quality);
+  const radiusX = computeBoxBlurRadius(filter.blurX ?? 4, quality);
+  const radiusY = computeBoxBlurRadius(filter.blurY ?? 4, quality);
   applySurfaceDropShadowFilter(out, blurBuffer, source, {
     color: ((filter.color ?? 0x000000) << 8) | Math.round((filter.alpha ?? 1) * 255),
     intensity: filter.strength,
@@ -183,8 +183,8 @@ export function applyGradientBevelFilterToSurface(
   const ramp = new Uint8ClampedArray(1024);
   buildSurfaceGradientRamp(ramp, filter.colors, filter.alphas, filter.ratios);
   const quality = filter.quality ?? 1;
-  const radiusX = boxRadiusForSigma(filter.blurX ?? 4, quality);
-  const radiusY = boxRadiusForSigma(filter.blurY ?? 4, quality);
+  const radiusX = computeBoxBlurRadius(filter.blurX ?? 4, quality);
+  const radiusY = computeBoxBlurRadius(filter.blurY ?? 4, quality);
   applySurfaceGradientBevelFilter(out, blurBuffer, source, ramp, {
     angle: filter.angle,
     distance: filter.distance,
@@ -214,8 +214,8 @@ export function applyGradientGlowFilterToSurface(
   const ramp = new Uint8ClampedArray(1024);
   buildSurfaceGradientRamp(ramp, filter.colors, filter.alphas, filter.ratios);
   const quality = filter.quality ?? 1;
-  const radiusX = boxRadiusForSigma(filter.blurX ?? 4, quality);
-  const radiusY = boxRadiusForSigma(filter.blurY ?? 4, quality);
+  const radiusX = computeBoxBlurRadius(filter.blurX ?? 4, quality);
+  const radiusY = computeBoxBlurRadius(filter.blurY ?? 4, quality);
   applySurfaceGradientGlowFilter(out, blurBuffer, source, ramp, {
     intensity: filter.strength,
     passes: quality,
@@ -239,8 +239,8 @@ export function applyInnerGlowFilterToSurface(
   filter: InnerGlowFilter,
 ): void {
   const quality = filter.quality ?? 1;
-  const radiusX = boxRadiusForSigma(filter.blurX ?? 6, quality);
-  const radiusY = boxRadiusForSigma(filter.blurY ?? 6, quality);
+  const radiusX = computeBoxBlurRadius(filter.blurX ?? 6, quality);
+  const radiusY = computeBoxBlurRadius(filter.blurY ?? 6, quality);
   applySurfaceInnerGlowFilter(out, blurBuffer, source, {
     color: ((filter.color ?? 0xff0000) << 8) | Math.round((filter.alpha ?? 1) * 255),
     intensity: filter.strength,
@@ -268,8 +268,8 @@ export function applyInnerShadowFilterToSurface(
   filter: InnerShadowFilter,
 ): void {
   const quality = filter.quality ?? 1;
-  const radiusX = boxRadiusForSigma(filter.blurX ?? 4, quality);
-  const radiusY = boxRadiusForSigma(filter.blurY ?? 4, quality);
+  const radiusX = computeBoxBlurRadius(filter.blurX ?? 4, quality);
+  const radiusY = computeBoxBlurRadius(filter.blurY ?? 4, quality);
   applySurfaceInnerShadowFilter(out, blurBuffer, source, {
     color: ((filter.color ?? 0x000000) << 8) | Math.round((filter.alpha ?? 1) * 255),
     intensity: filter.strength,
@@ -307,8 +307,8 @@ export function applyOuterGlowFilterToSurface(
   filter: OuterGlowFilter,
 ): void {
   const quality = filter.quality ?? 1;
-  const radiusX = boxRadiusForSigma(filter.blurX ?? 6, quality);
-  const radiusY = boxRadiusForSigma(filter.blurY ?? 6, quality);
+  const radiusX = computeBoxBlurRadius(filter.blurX ?? 6, quality);
+  const radiusY = computeBoxBlurRadius(filter.blurY ?? 6, quality);
   applySurfaceGlowFilter(out, blurBuffer, source, {
     color: ((filter.color ?? 0xff0000) << 8) | Math.round((filter.alpha ?? 1) * 255),
     intensity: filter.strength,
@@ -345,8 +345,8 @@ export function applySharpenFilterToSurface(
   filter: SharpenFilter,
 ): void {
   const quality = filter.quality ?? 1;
-  const radiusX = boxRadiusForSigma(filter.blurX ?? 2, quality);
-  const radiusY = boxRadiusForSigma(filter.blurY ?? 2, quality);
+  const radiusX = computeBoxBlurRadius(filter.blurX ?? 2, quality);
+  const radiusY = computeBoxBlurRadius(filter.blurY ?? 2, quality);
   applySurfaceSharpenFilter(out, blurBuffer, source, {
     amount: filter.amount,
     passes: quality,
