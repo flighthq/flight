@@ -18,7 +18,6 @@ export type BlurFilter = {
   readonly type: 'blur';
   readonly blurX?: number;
   readonly blurY?: number;
-  readonly quality?: number;
 };
 
 export type ColorMatrixFilter = {
