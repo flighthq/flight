@@ -1,10 +1,22 @@
-import type { BitmapFilter } from '@flighthq/filters';
-import type { DisplayObject } from '@flighthq/sdk';
+import type { BlurFilter } from '@flighthq/filters';
+import { applyBlurFilterToWebGL, clearWebGLFilterTarget } from '@flighthq/filters-webgl';
+import type { DisplayObject, Matrix, WebGLRenderTarget } from '@flighthq/sdk';
 import {
+  beginWebGLRenderTarget,
   BitmapKind,
+  computeBoundsRectangle,
+  computeImageRenderCacheTransform,
+  computeRenderTargetSize,
+  copyMatrix,
+  createMatrix,
+  createRectangle,
   createWebGLCanvasElement,
   createWebGLRenderState,
+  createWebGLRenderTarget,
   defaultWebGLBitmapRenderer,
+  drawWebGLRenderTargetResult,
+  endWebGLRenderTarget,
+  getDisplayObjectRenderNode,
   prepareDisplayObjectRender,
   registerRenderer,
   renderWebGLBackground,
@@ -24,15 +36,99 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 400;
 
-export function applyFilters(_list: { node: DisplayObject; filter: BitmapFilter }[]): void {
-  // WebGL has no CSS filter binding. It realizes a blur via the offscreen filter path:
-  // render the node to a WebGLRenderTarget, applyWebGLBlurFilter (with caller-provided
-  // scratch via webglFilterScratchCount), then draw the result back as an image cache.
-  // Not wired in this demo — the WebGL view shows the bitmaps unfiltered.
+// WebGL has no CSS filter binding, so it realizes the blur with the offscreen filter path:
+// render each node into a WebGLRenderTarget at its logical size, run the separable box-blur
+// passes (applyBlurFilterToWebGL, target → target), then composite the blurred target back
+// onto the screen with drawWebGLRenderTargetResult. Targets are allocated once and reused.
+//
+// The composite applies the node's scene transform (which carries the stage's pixelRatio
+// scale), so a Gaussian σ in target pixels lands on screen as σ CSS pixels — matching the
+// canvas/DOM blurFilterToCSS paths.
+type BlurEntry = {
+  node: DisplayObject;
+  filter: Readonly<BlurFilter>;
+  source: WebGLRenderTarget;
+  blurred: WebGLRenderTarget;
+  scratch: WebGLRenderTarget;
+  cacheTransform: Matrix;
+  sceneTransform: Matrix;
+};
+
+export function applyBlurFilters(list: { node: DisplayObject; filter: BlurFilter }[]): void {
+  for (const { node, filter } of list) {
+    computeBoundsRectangle(_bounds, node, node);
+    const { width: w, height: h } = computeRenderTargetSize(_bounds, blurPadding(filter), 1, 1);
+    _entries.push({
+      node,
+      filter,
+      source: createWebGLRenderTarget(state, w, h),
+      blurred: createWebGLRenderTarget(state, w, h),
+      scratch: createWebGLRenderTarget(state, w, h),
+      cacheTransform: createMatrix(),
+      sceneTransform: createMatrix(),
+    });
+  }
 }
 
 export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
+  // One prepare pass builds the render nodes and their scene transforms. Capture each blurred
+  // node's scene transform now — the offscreen pass below overwrites transform2D in place.
+  prepareDisplayObjectRender(state, root);
+  for (const entry of _entries) {
+    const renderNode = getDisplayObjectRenderNode(state, entry.node);
+    if (renderNode !== undefined) copyMatrix(entry.sceneTransform, renderNode.transform2D);
+  }
+
+  // Offscreen: render + blur each node into its own target. We set the render node's transform
+  // directly to a content-origin translation rather than re-preparing — prepare only recomputes
+  // transforms for *dirty* nodes, and these are already clean, so a second prepare would leave
+  // them at their scene position and miss the target entirely.
+  for (const entry of _entries) {
+    const { node, filter, source, blurred, scratch } = entry;
+    const padding = blurPadding(filter);
+    computeBoundsRectangle(_bounds, node, node);
+    computeImageRenderCacheTransform(entry.cacheTransform, _bounds, padding, padding);
+
+    const renderNode = getDisplayObjectRenderNode(state, node);
+    if (renderNode === undefined) continue;
+    setTranslation(renderNode.transform2D, padding - _bounds.x, padding - _bounds.y);
+
+    beginWebGLRenderTarget(state, source, _identity);
+    clearWebGLFilterTarget(state, source);
+    renderWebGLDisplayObject(state, node);
+    // Run the blur while the render target is still active. The filter passes bind their own
+    // framebuffers and never restore the previous one, so endWebGLRenderTarget must run after
+    // them — it rebinds the screen framebuffer that the composite draws into.
+    applyBlurFilterToWebGL(state, source, blurred, scratch, filter);
+    endWebGLRenderTarget(state);
+  }
+
+  // Main pass: only BitmapKind has a renderer in this column, so drawing the tree would show the
+  // sharp originals. Instead clear the background and composite the blurred targets directly.
   renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
+  for (const entry of _entries) {
+    const renderNode = getDisplayObjectRenderNode(state, entry.node);
+    if (renderNode === undefined) continue;
+    copyMatrix(renderNode.transform2D, entry.sceneTransform);
+    drawWebGLRenderTargetResult(state, renderNode, entry.blurred, entry.cacheTransform);
+  }
 }
+
+// Box blur of standard deviation σ spreads a few σ past the bounds; pad generously so the
+// tail is not clipped at the target edge.
+function blurPadding(filter: Readonly<BlurFilter>): number {
+  return Math.ceil(Math.max(filter.blurX ?? 4, filter.blurY ?? 4) * 2.5);
+}
+
+function setTranslation(out: Matrix, tx: number, ty: number): void {
+  out.a = 1;
+  out.b = 0;
+  out.c = 0;
+  out.d = 1;
+  out.tx = tx;
+  out.ty = ty;
+}
+
+const _entries: BlurEntry[] = [];
+const _bounds = createRectangle();
+const _identity = createMatrix();
