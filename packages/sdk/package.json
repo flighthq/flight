@@ -39,6 +39,7 @@
     "@flighthq/render": "*",
     "@flighthq/render-dom": "*",
     "@flighthq/render-webgl": "*",
+    "@flighthq/render-webgpu": "*",
     "@flighthq/node": "*",
     "@flighthq/displayobject": "*",
     "@flighthq/sprite": "*",

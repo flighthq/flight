@@ -23,6 +23,7 @@
     { "path": "../render-canvas" },
     { "path": "../render-dom" },
     { "path": "../render-webgl" },
+    { "path": "../render-webgpu" },
     { "path": "../node" },
     { "path": "../displayobject" },
     { "path": "../sprite" },
