@@ -8,7 +8,7 @@ import {
   getVector2Distance,
   getVector2Length,
   getVector2LengthSquared,
-  lerpVector2,
+  interpolateVector2,
   normalizeVector2,
   offsetVector2,
   setVector2,
@@ -252,7 +252,7 @@ describe('getVector2LengthSquared', () => {
   });
 });
 
-describe('lerpVector2', () => {
+describe('interpolateVector2', () => {
   const cases = [
     { t: 0, expected: (a: number, _: number) => a },
     { t: 1, expected: (_: number, b: number) => b },
@@ -269,7 +269,7 @@ describe('lerpVector2', () => {
 
     for (const { t, expected } of cases) {
       const result = createVector2();
-      lerpVector2(result, pt, pt2, t);
+      interpolateVector2(result, pt, pt2, t);
       expect(result.x).toBe(expected(pt.x, pt2.x));
       expect(result.y).toBe(expected(pt.y, pt2.y));
     }
@@ -281,7 +281,7 @@ describe('lerpVector2', () => {
     pt2.x = 30;
     pt2.y = 40;
 
-    lerpVector2(pt, pt, pt2, 0.5);
+    interpolateVector2(pt, pt, pt2, 0.5);
     expect(pt.x).toBe(20);
     expect(pt.y).toBe(30);
     expect(pt2.x).toBe(30);
@@ -294,7 +294,7 @@ describe('lerpVector2', () => {
     pt2.x = 30;
     pt2.y = 40;
 
-    lerpVector2(pt2, pt, pt2, 0.5);
+    interpolateVector2(pt2, pt, pt2, 0.5);
     expect(pt.x).toBe(10);
     expect(pt.y).toBe(20);
     expect(pt2.x).toBe(20);
@@ -308,7 +308,7 @@ describe('lerpVector2', () => {
     pt2.y = 100;
 
     const result = createVector2();
-    lerpVector2(result, pt, pt2, 1000);
+    interpolateVector2(result, pt, pt2, 1000);
     expect(result.x).toBe(100000);
     expect(result.y).toBe(100000);
   });
@@ -319,7 +319,7 @@ describe('lerpVector2', () => {
 
     for (const { t, expected } of cases) {
       const result = { x: 0, y: 0 };
-      lerpVector2(result, pt, pt2, t);
+      interpolateVector2(result, pt, pt2, t);
       expect(result.x).toBe(expected(pt.x, pt2.x));
       expect(result.y).toBe(expected(pt.y, pt2.y));
     }

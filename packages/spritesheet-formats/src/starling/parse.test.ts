@@ -1,4 +1,4 @@
-import { loadStarling, parseStarling } from './parse';
+import { parseStarling, parseStarlingDocument } from './parse';
 import { serializeStarling } from './serialize';
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
@@ -27,40 +27,7 @@ const MINIMAL_XML = `<TextureAtlas imagePath="mini.png">
   <SubTexture name="tile" x="0" y="0" width="8" height="8"/>
 </TextureAtlas>`;
 
-// ─── loadStarling ────────────────────────────────────────────────────────────
-
-describe('loadStarling — full round-trip, returns { data, document }', () => {
-  it('returns the same data as parseStarling', () => {
-    const parsed = parseStarling(ATLAS_XML);
-    const { data } = loadStarling(ATLAS_XML);
-    expect(data.frames.length).toBe(parsed.frames.length);
-    expect(data.imageFile).toBe(parsed.imageFile);
-  });
-
-  it('preserves all SubTexture nodes in document', () => {
-    const { document } = loadStarling(ATLAS_XML);
-    expect(document.subTextures).toHaveLength(4);
-  });
-
-  it('preserves imagePath in document', () => {
-    const { document } = loadStarling(ATLAS_XML);
-    expect(document.imagePath).toBe('atlas.png');
-  });
-
-  it('preserves numeric attributes exactly', () => {
-    const { document } = loadStarling(ATLAS_XML);
-    const st = document.subTextures[0];
-    expect(st.name).toBe('hero_idle_0001');
-    expect(st.x).toBe(0);
-    expect(st.width).toBe(60);
-    expect(st.frameX).toBe(-2);
-    expect(st.frameY).toBe(-4);
-    expect(st.frameWidth).toBe(64);
-    expect(st.frameHeight).toBe(64);
-  });
-});
-
-// ─── parseStarling ───────────────────────────────────────────────────────────
+// ─── parseStarlingDocument ────────────────────────────────────────────────────────────
 
 describe('parseStarling — lightweight, returns SpritesheetData directly', () => {
   it('returns a SpritesheetData (not a Parsed object)', () => {
@@ -180,51 +147,84 @@ describe('parseStarling — lightweight, returns SpritesheetData directly', () =
   });
 });
 
+// ─── parseStarling ───────────────────────────────────────────────────────────
+
+describe('parseStarlingDocument — full round-trip, returns { data, document }', () => {
+  it('returns the same data as parseStarling', () => {
+    const parsed = parseStarling(ATLAS_XML);
+    const { data } = parseStarlingDocument(ATLAS_XML);
+    expect(data.frames.length).toBe(parsed.frames.length);
+    expect(data.imageFile).toBe(parsed.imageFile);
+  });
+
+  it('preserves all SubTexture nodes in document', () => {
+    const { document } = parseStarlingDocument(ATLAS_XML);
+    expect(document.subTextures).toHaveLength(4);
+  });
+
+  it('preserves imagePath in document', () => {
+    const { document } = parseStarlingDocument(ATLAS_XML);
+    expect(document.imagePath).toBe('atlas.png');
+  });
+
+  it('preserves numeric attributes exactly', () => {
+    const { document } = parseStarlingDocument(ATLAS_XML);
+    const st = document.subTextures[0];
+    expect(st.name).toBe('hero_idle_0001');
+    expect(st.x).toBe(0);
+    expect(st.width).toBe(60);
+    expect(st.frameX).toBe(-2);
+    expect(st.frameY).toBe(-4);
+    expect(st.frameWidth).toBe(64);
+    expect(st.frameHeight).toBe(64);
+  });
+});
+
 // ─── serializeStarling round-trips ───────────────────────────────────────────
 
-describe('serializeStarling — round-trip via loadStarling', () => {
+describe('serializeStarling — round-trip via parseStarlingDocument', () => {
   it('round-trips frame names', () => {
-    const { data, document } = loadStarling(ATLAS_XML);
+    const { data, document } = parseStarlingDocument(ATLAS_XML);
     const data2 = parseStarling(serializeStarling(data, document));
     expect(data2.frames.map((f) => f.name)).toEqual(data.frames.map((f) => f.name));
   });
 
   it('round-trips atlas positions', () => {
-    const { data, document } = loadStarling(ATLAS_XML);
+    const { data, document } = parseStarlingDocument(ATLAS_XML);
     const data2 = parseStarling(serializeStarling(data, document));
     expect(data2.frames[0].x).toBe(data.frames[0].x);
     expect(data2.frames[0].width).toBe(data.frames[0].width);
   });
 
   it('round-trips trim offsets', () => {
-    const { data, document } = loadStarling(ATLAS_XML);
+    const { data, document } = parseStarlingDocument(ATLAS_XML);
     const data2 = parseStarling(serializeStarling(data, document));
     expect(data2.frames[0].offsetX).toBe(data.frames[0].offsetX);
     expect(data2.frames[0].offsetY).toBe(data.frames[0].offsetY);
   });
 
   it('round-trips source size', () => {
-    const { data, document } = loadStarling(ATLAS_XML);
+    const { data, document } = parseStarlingDocument(ATLAS_XML);
     const data2 = parseStarling(serializeStarling(data, document));
     expect(data2.frames[0].sourceWidth).toBe(data.frames[0].sourceWidth);
     expect(data2.frames[0].sourceHeight).toBe(data.frames[0].sourceHeight);
   });
 
   it('round-trips pivot normalised values', () => {
-    const { data, document } = loadStarling(ATLAS_XML);
+    const { data, document } = parseStarlingDocument(ATLAS_XML);
     const data2 = parseStarling(serializeStarling(data, document));
     expect(data2.frames[0].pivotX).toBeCloseTo(data.frames[0].pivotX!);
     expect(data2.frames[0].pivotY).toBeCloseTo(data.frames[0].pivotY!);
   });
 
   it('round-trips rotated flag', () => {
-    const { data, document } = loadStarling(ROTATED_XML);
+    const { data, document } = parseStarlingDocument(ROTATED_XML);
     const data2 = parseStarling(serializeStarling(data, document));
     expect(data2.frames[0].rotated).toBe(true);
   });
 
   it('round-trips imagePath', () => {
-    const { data, document } = loadStarling(ATLAS_XML);
+    const { data, document } = parseStarlingDocument(ATLAS_XML);
     const data2 = parseStarling(serializeStarling(data, document));
     expect(data2.imageFile).toBe('atlas.png');
   });
@@ -246,7 +246,7 @@ describe('serializeStarling — round-trip via loadStarling', () => {
   });
 
   it('includes frameX/Y when offset is non-zero', () => {
-    const { data, document } = loadStarling(ATLAS_XML);
+    const { data, document } = parseStarlingDocument(ATLAS_XML);
     const xml = serializeStarling(data, document);
     expect(xml).toContain('frameX="-2"');
     expect(xml).toContain('frameY="-4"');

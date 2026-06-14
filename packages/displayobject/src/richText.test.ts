@@ -14,7 +14,7 @@ import {
   setRichTextFormatRange,
   setRichTextScrollH,
   setRichTextScrollV,
-  setRichTextText,
+  setRichTextString,
 } from './richText';
 
 describe('clearRichTextFormatRanges', () => {
@@ -203,10 +203,10 @@ describe('setRichTextScrollV', () => {
   });
 });
 
-describe('setRichTextText', () => {
+describe('setRichTextString', () => {
   it('sets the text', () => {
     const richText = createRichText();
-    setRichTextText(richText, 'hello');
+    setRichTextString(richText, 'hello');
     expect(richText.data.text).toBe('hello');
   });
 
@@ -214,7 +214,7 @@ describe('setRichTextText', () => {
     const richText = createRichText();
     const runtime = getEntityRuntime(richText) as RichTextRuntime;
     const idBefore = runtime.appearanceID;
-    setRichTextText(richText, 'hello');
+    setRichTextString(richText, 'hello');
     expect(runtime.appearanceID).not.toBe(idBefore);
   });
 });

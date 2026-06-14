@@ -154,9 +154,36 @@ function pdBlendMode(src: number, dst: number): ParticleBlendMode | null {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
+/** Parse a Particle Designer plist XML string directly to a ParticleEmitterConfig.
+ *
+ *  Single-pass: no intermediate document object is allocated.
+ *  Use `parseParticleDesignerPlistDocument` instead when you need round-trip serialisation. */
+export function parseParticleDesignerPlist(
+  plistXml: string,
+  options?: ParticleDesignerParseOptions,
+): ParticleEmitterConfig {
+  return rawDictToConfig(parsePlistRawDict(plistXml), options?.textureSize ?? 1);
+}
+
+function collectParticleDesignerWarnings(d: ParticleDesignerRawDict): string[] {
+  const warnings: string[] = [];
+  if (num(d, 'emitterType', 0) === 1) {
+    warnings.push(
+      'Radial (emitterType=1) emitter was approximated as a gravity emitter; radial motion is not simulated',
+    );
+  }
+  if (num(d, 'radialAcceleration', 0) !== 0 || num(d, 'radialAccelVariance', 0) !== 0) {
+    warnings.push('radialAcceleration is not supported and was ignored');
+  }
+  if (num(d, 'tangentialAcceleration', 0) !== 0 || num(d, 'tangentialAccelVariance', 0) !== 0) {
+    warnings.push('tangentialAcceleration is not supported and was ignored');
+  }
+  return warnings;
+}
+
 /** Parse a Particle Designer plist XML string and preserve the full document for
  *  round-trip serialisation via `serializeParticleDesignerPlist`. */
-export function loadParticleDesignerPlist(
+export function parseParticleDesignerPlistDocument(
   plistXml: string,
   options?: ParticleDesignerParseOptions,
 ): ParticleDesignerParsed {
@@ -211,31 +238,4 @@ export function loadParticleDesignerPlist(
     textureFileName: str(d, 'textureFileName', ''),
   };
   return { config: rawDictToConfig(d, textureSize), document, warnings: collectParticleDesignerWarnings(d) };
-}
-
-function collectParticleDesignerWarnings(d: ParticleDesignerRawDict): string[] {
-  const warnings: string[] = [];
-  if (num(d, 'emitterType', 0) === 1) {
-    warnings.push(
-      'Radial (emitterType=1) emitter was approximated as a gravity emitter; radial motion is not simulated',
-    );
-  }
-  if (num(d, 'radialAcceleration', 0) !== 0 || num(d, 'radialAccelVariance', 0) !== 0) {
-    warnings.push('radialAcceleration is not supported and was ignored');
-  }
-  if (num(d, 'tangentialAcceleration', 0) !== 0 || num(d, 'tangentialAccelVariance', 0) !== 0) {
-    warnings.push('tangentialAcceleration is not supported and was ignored');
-  }
-  return warnings;
-}
-
-/** Parse a Particle Designer plist XML string directly to a ParticleEmitterConfig.
- *
- *  Single-pass: no intermediate document object is allocated.
- *  Use `loadParticleDesignerPlist` instead when you need round-trip serialisation. */
-export function parseParticleDesignerPlist(
-  plistXml: string,
-  options?: ParticleDesignerParseOptions,
-): ParticleEmitterConfig {
-  return rawDictToConfig(parsePlistRawDict(plistXml), options?.textureSize ?? 1);
 }

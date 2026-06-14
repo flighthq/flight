@@ -104,10 +104,6 @@ export function getColorTransformOffsetRGBA(source: Readonly<ColorTransformLike>
   );
 }
 
-export function identityColorTransform(out: ColorTransform): void {
-  setColorTransform(out, 1, 1, 1, 1, 0, 0, 0, 0);
-}
-
 export function invertColorTransform(out: ColorTransformLike, source: Readonly<ColorTransformLike>): void {
   out.redMultiplier = source.redMultiplier !== 0 ? 1 / source.redMultiplier : 1;
   out.greenMultiplier = source.greenMultiplier !== 0 ? 1 / source.greenMultiplier : 1;
@@ -148,6 +144,10 @@ export function setColorTransform(
   out.greenOffset = greenOffset;
   out.blueOffset = blueOffset;
   out.alphaOffset = alphaOffset;
+}
+
+export function setColorTransformIdentity(out: ColorTransform): void {
+  setColorTransform(out, 1, 1, 1, 1, 0, 0, 0, 0);
 }
 
 export function setColorTransformOffsetRGB(out: ColorTransformLike, value: number): void {

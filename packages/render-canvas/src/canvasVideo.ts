@@ -1,4 +1,4 @@
-﻿import { createNullRendererData } from '@flighthq/render';
+﻿import { noopRendererData } from '@flighthq/render';
 import type { CanvasRenderState, DisplayObjectRenderer, DisplayObjectRenderNode, Video } from '@flighthq/types';
 
 import { drawCanvasDisplayObject, drawCanvasDisplayObjectMask } from './canvasDisplayObject';
@@ -28,6 +28,6 @@ export function drawCanvasVideoMask(state: CanvasRenderState, renderNode: Displa
 }
 
 export const defaultCanvasVideoRenderer: DisplayObjectRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawCanvasVideo,
 };

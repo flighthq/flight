@@ -98,7 +98,7 @@ export function setRichTextScrollV(source: RichText, value: number, layout?: Rea
   invalidateNodeAppearance(source);
 }
 
-export function setRichTextText(source: RichText, value: string): void {
+export function setRichTextString(source: RichText, value: string): void {
   source.data.text = value;
   invalidateNodeAppearance(source);
 }

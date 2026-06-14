@@ -3,7 +3,7 @@ import type { WebGLRenderState } from '@flighthq/types';
 import { BlendMode, RenderFeatures } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { setWebGLAttribs, setWebGLMatrixFromValues } from './webglShader';
+import { setWebGLAttributes, setWebGLMatrixFromValues } from './webglShader';
 import type { WebGLBitmapShader } from './webglShaderTypes';
 
 type WebGLBlendFactor = 'ONE' | 'ONE_MINUS_SRC_ALPHA';
@@ -108,7 +108,7 @@ export function drawWebGLQuad(
   gl.bindBuffer(gl.ARRAY_BUFFER, quadVertexBuffer);
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, v);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadIndexBuffer);
-  setWebGLAttribs(gl, shaderLoc);
+  setWebGLAttributes(gl, shaderLoc);
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 }
 
@@ -117,7 +117,7 @@ export function enableWebGLBlendModeSupport(state: WebGLRenderState): void {
   enableRenderFeatures(state, RenderFeatures.BlendMode);
 }
 
-export function setQuadMatrixFromOffset(
+export function setWebGLQuadMatrixFromOffset(
   state: WebGLRenderStateInternal,
   a: number,
   b: number,

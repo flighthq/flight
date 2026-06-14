@@ -133,10 +133,6 @@ export function getMatrix3Element(source: Readonly<Matrix3Like>, row: number, co
   return source.m[row * 3 + column];
 }
 
-export function identityMatrix3(out: Matrix3Like): void {
-  out.m.set(__identity);
-}
-
 /**
  * Attempts to invert a matrix, so long as it is invertable
  */
@@ -376,6 +372,10 @@ export function setMatrix3FromMatrix4(out: Matrix3Like, source: Readonly<Matrix4
   _out[6] = _source[2];
   _out[7] = _source[6];
   _out[8] = _source[10];
+}
+
+export function setMatrix3Identity(out: Matrix3Like): void {
+  out.m.set(__identity);
 }
 
 export function translateMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>, tx: number, ty: number): void {

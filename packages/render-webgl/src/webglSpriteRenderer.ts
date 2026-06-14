@@ -1,4 +1,4 @@
-﻿import { createNullRendererData } from '@flighthq/render';
+﻿import { noopRendererData } from '@flighthq/render';
 import type { RenderState, Sprite, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
@@ -38,6 +38,6 @@ export function drawWebGLSpriteNode(state: RenderState, spriteNode: SpriteRender
 }
 
 export const defaultWebGLSpriteRenderer: SpriteRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawWebGLSpriteNode,
 };

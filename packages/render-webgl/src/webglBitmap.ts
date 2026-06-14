@@ -1,9 +1,9 @@
-﻿import { createNullRendererData } from '@flighthq/render';
+﻿import { noopRendererData } from '@flighthq/render';
 import type { Bitmap, DisplayObjectRenderer, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { bindWebGLTexture, drawWebGLQuad, useWebGLProgram } from './webglDraw';
-import { selectWebGLShader } from './webglShaderBinding';
+import { resolveWebGLShader } from './webglShaderBinding';
 
 export function drawWebGLBitmap(state: RenderState, renderNode: DisplayObjectRenderNode): void {
   const internal = state as WebGLRenderStateInternal;
@@ -11,7 +11,7 @@ export function drawWebGLBitmap(state: RenderState, renderNode: DisplayObjectRen
   const imageSource = source.data.image;
   if (imageSource === null || imageSource.src === null) return;
 
-  const shader = selectWebGLShader(internal, renderNode);
+  const shader = resolveWebGLShader(internal, renderNode);
   useWebGLProgram(internal, shader);
   internal.applyBlendMode?.(internal, renderNode.blendMode);
   bindWebGLTexture(internal, imageSource.src);
@@ -35,6 +35,6 @@ export function drawWebGLBitmapMask(_state: RenderState, _data: DisplayObjectRen
 }
 
 export const defaultWebGLBitmapRenderer: DisplayObjectRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawWebGLBitmap,
 };

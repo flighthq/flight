@@ -98,7 +98,7 @@ function dataToArrayDocument(
 
 /** Serialise a SpritesheetData to an Aseprite JSON string.
  *
- *  Pass the `document` returned by `loadAseprite` to preserve any fields that
+ *  Pass the `document` returned by `parseAsepriteDocument` to preserve any fields that
  *  don't round-trip through the data (app name, layer list, tag colours).
  *  Per-frame durations in `animation.frameDurations` are written back to each
  *  frame's `duration` field so they survive a reload. */

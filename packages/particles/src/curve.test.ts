@@ -2,8 +2,8 @@ import { createParticleEmitter } from '@flighthq/sprite';
 import type { TextureAtlas } from '@flighthq/types';
 
 import {
-  bakeColorCurve,
-  bakeCurve,
+  buildColorCurveLUT,
+  buildCurveLUT,
   colorCurveFromKeyframes,
   colorCurveToKeyframes,
   curveFromKeyframes,
@@ -22,18 +22,18 @@ function makeAtlas(): TextureAtlas {
   } as TextureAtlas;
 }
 
-describe('bakeColorCurve', () => {
+describe('buildColorCurveLUT', () => {
   it('bakes an RGB function into an interleaved LUT', () => {
-    const lut = bakeColorCurve((t) => [t, 0, 1 - t], 3);
+    const lut = buildColorCurveLUT((t) => [t, 0, 1 - t], 3);
     expect(lut.length).toBe(9);
     expect(lut[0]).toBe(0); // R at t=0
     expect(lut[2]).toBe(1); // B at t=0
   });
 });
 
-describe('bakeCurve', () => {
+describe('buildCurveLUT', () => {
   it('bakes a scalar function into a LUT sampled at the endpoints', () => {
-    const lut = bakeCurve((t) => t * t, 5);
+    const lut = buildCurveLUT((t) => t * t, 5);
     expect(lut.length).toBe(5);
     expect(lut[0]).toBe(0);
     expect(lut[4]).toBe(1);

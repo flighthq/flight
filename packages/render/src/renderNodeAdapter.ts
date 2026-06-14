@@ -1,12 +1,12 @@
 import { invalidateNodeAppearance } from '@flighthq/node';
 import type { Node, Renderable, RenderNode2D, RenderNodeAdapter, RenderState } from '@flighthq/types';
 
-import { installRenderAdaptHook, syncRenderNodeRenderer } from './renderNode';
+import { installRenderAdaptHook, updateRenderNodeRenderer } from './renderNode';
 
 const _adapters = new WeakMap<Renderable, RenderNodeAdapter>();
 let _installed = false;
 
-export function adaptRenderNode(
+export function applyRenderNodeAdapter(
   state: RenderState,
   source: Renderable,
   data: RenderNode2D & { traverseChildren: boolean },
@@ -17,7 +17,7 @@ export function adaptRenderNode(
     const result = renderAdapter.adapt(state, source, data);
     if (result !== null) {
       traverseChildren = result;
-      syncRenderNodeRenderer(state, data);
+      updateRenderNodeRenderer(state, data);
     }
   }
   data.traverseChildren = traverseChildren;
@@ -29,7 +29,7 @@ export function getRenderNodeAdapter(source: Renderable): RenderNodeAdapter | nu
 
 export function setRenderNodeAdapter(source: Renderable, adapter: RenderNodeAdapter | null): void {
   if (!_installed) {
-    installRenderAdaptHook(adaptRenderNode);
+    installRenderAdaptHook(applyRenderNodeAdapter);
     _installed = true;
   }
   if (adapter === null) {

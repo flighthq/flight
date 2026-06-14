@@ -2,7 +2,7 @@
 
 import type { Signal, SignalConnectOptions, SignalData } from '@flighthq/types';
 
-import { signalNoop } from './signal';
+import { nullSignalEmit } from './signal';
 
 export type { SignalConnectOptions } from '@flighthq/types';
 
@@ -32,7 +32,7 @@ export function connectSignal<T extends (...args: any[]) => void>(
 }
 
 export function disconnectAllSignals<T extends (...args: any[]) => void>(signal: Signal<T>): void {
-  signal.emit = signalNoop as unknown as T;
+  signal.emit = nullSignalEmit as unknown as T;
   signal.data = null;
 }
 
@@ -50,7 +50,7 @@ export function disconnectSignal<T extends (...args: any[]) => void>(signal: Sig
   }
 
   if (data.slots.length === 0) {
-    signal.emit = signalNoop as unknown as T;
+    signal.emit = nullSignalEmit as unknown as T;
     signal.data = null;
   }
 }

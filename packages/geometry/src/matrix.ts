@@ -153,17 +153,6 @@ export function equalsMatrix(
 }
 
 /**
- * Sets each matrix property to a value that causes a null
- * transformation. An object transformed by applying an identity matrix
- * will be identical to the original.
- * After calling the `identity()` method, the resulting matrix has the
- * following properties: `a`=1, `b`=0, `c`=0, `d`=1, `tx`=0, `ty`=0.
- **/
-export function identityMatrix(out: MatrixLike): void {
-  setMatrix(out, 1, 0, 0, 1, 0, 0);
-}
-
-/**
  * Computes the inverse of a 2D affine matrix and writes it to out.
  *
  * Translation (tx, ty) is applied after the linear transformation (scale/rotation/shear) is inverted.
@@ -536,6 +525,17 @@ export function setMatrixFromMatrix4(out: MatrixLike, source: Readonly<Matrix4Li
   out.c = s[1];
   out.d = s[5];
   out.ty = s[13];
+}
+
+/**
+ * Sets each matrix property to a value that causes a null
+ * transformation. An object transformed by applying an identity matrix
+ * will be identical to the original.
+ * After calling the `identity()` method, the resulting matrix has the
+ * following properties: `a`=1, `b`=0, `c`=0, `d`=1, `tx`=0, `ty`=0.
+ **/
+export function setMatrixIdentity(out: MatrixLike): void {
+  setMatrix(out, 1, 0, 0, 1, 0, 0);
 }
 
 /**

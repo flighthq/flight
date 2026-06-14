@@ -1,4 +1,4 @@
-import { createNullRendererData } from '@flighthq/render';
+import { noopRendererData } from '@flighthq/render';
 import { isImageRenderCachePrimitive, registerImageRenderCacheRenderer } from '@flighthq/render';
 import type {
   CanvasRenderState,
@@ -30,7 +30,7 @@ function drawCanvasRenderImageCacheMask(state: RenderState, renderNode: DisplayO
 }
 
 export const defaultCanvasRenderImageCacheRenderer: DisplayObjectRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawCanvasRenderImageCache,
 };
 

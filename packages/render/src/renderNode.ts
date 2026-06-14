@@ -96,7 +96,7 @@ export function getOrCreateRenderNode<Source extends Renderable, NodeType extend
     renderNodeMap.set(source, node);
   }
   if (node.rendererMapID !== state.rendererMapID) {
-    syncRenderNodeRenderer(state, node);
+    updateRenderNodeRenderer(state, node);
   }
   return node as NodeType;
 }
@@ -257,7 +257,7 @@ export function prepareSpriteRender(state: RenderState, source: SpriteNode): boo
   return treeDirty;
 }
 
-export function syncRenderNodeRenderer(state: RenderState, node: RenderNode): void {
+export function updateRenderNodeRenderer(state: RenderState, node: RenderNode): void {
   const renderer = state.rendererMap.get(node.kind) ?? null;
   if (node.renderer !== renderer || node.rendererDataSource !== node.source) {
     node.renderer = renderer;

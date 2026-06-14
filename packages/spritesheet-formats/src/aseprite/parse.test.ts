@@ -1,4 +1,4 @@
-import { loadAseprite, parseAseprite } from './parse';
+import { parseAseprite, parseAsepriteDocument } from './parse';
 import { serializeAseprite } from './serialize';
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
@@ -107,35 +107,7 @@ const NO_TAGS_JSON = JSON.stringify({
   },
 });
 
-// ─── loadAseprite ────────────────────────────────────────────────────────────
-
-describe('loadAseprite — full round-trip, returns { data, document }', () => {
-  it('returns the same data as parseAseprite', () => {
-    const parsed = parseAseprite(HASH_JSON);
-    const { data } = loadAseprite(HASH_JSON);
-    expect(data.frames.length).toBe(parsed.frames.length);
-    expect(data.imageFile).toBe(parsed.imageFile);
-  });
-
-  it('preserves the original Hash document', () => {
-    const { document } = loadAseprite(HASH_JSON);
-    expect(Array.isArray(document.frames)).toBe(false);
-    expect((document.frames as Record<string, unknown>)['sprite 0.aseprite']).toBeDefined();
-  });
-
-  it('preserves the original Array document', () => {
-    const { document } = loadAseprite(ARRAY_JSON);
-    expect(Array.isArray(document.frames)).toBe(true);
-  });
-
-  it('preserves layers in document meta', () => {
-    const { document } = loadAseprite(HASH_JSON);
-    expect(document.meta.layers).toHaveLength(1);
-    expect(document.meta.layers![0].name).toBe('Layer 1');
-  });
-});
-
-// ─── parseAseprite ───────────────────────────────────────────────────────────
+// ─── parseAsepriteDocument ────────────────────────────────────────────────────────────
 
 describe('parseAseprite — lightweight, returns SpritesheetData directly', () => {
   it('returns a SpritesheetData (not a Parsed object)', () => {
@@ -239,17 +211,45 @@ describe('parseAseprite — lightweight, returns SpritesheetData directly', () =
   });
 });
 
+// ─── parseAseprite ───────────────────────────────────────────────────────────
+
+describe('parseAsepriteDocument — full round-trip, returns { data, document }', () => {
+  it('returns the same data as parseAseprite', () => {
+    const parsed = parseAseprite(HASH_JSON);
+    const { data } = parseAsepriteDocument(HASH_JSON);
+    expect(data.frames.length).toBe(parsed.frames.length);
+    expect(data.imageFile).toBe(parsed.imageFile);
+  });
+
+  it('preserves the original Hash document', () => {
+    const { document } = parseAsepriteDocument(HASH_JSON);
+    expect(Array.isArray(document.frames)).toBe(false);
+    expect((document.frames as Record<string, unknown>)['sprite 0.aseprite']).toBeDefined();
+  });
+
+  it('preserves the original Array document', () => {
+    const { document } = parseAsepriteDocument(ARRAY_JSON);
+    expect(Array.isArray(document.frames)).toBe(true);
+  });
+
+  it('preserves layers in document meta', () => {
+    const { document } = parseAsepriteDocument(HASH_JSON);
+    expect(document.meta.layers).toHaveLength(1);
+    expect(document.meta.layers![0].name).toBe('Layer 1');
+  });
+});
+
 // ─── serializeAseprite round-trips ───────────────────────────────────────────
 
-describe('serializeAseprite — round-trip via loadAseprite', () => {
+describe('serializeAseprite — round-trip via parseAsepriteDocument', () => {
   it('round-trips frame names', () => {
-    const { data, document } = loadAseprite(HASH_JSON);
+    const { data, document } = parseAsepriteDocument(HASH_JSON);
     const data2 = parseAseprite(serializeAseprite(data, document));
     expect(data2.frames.map((f) => f.name)).toEqual(data.frames.map((f) => f.name));
   });
 
   it('round-trips frame positions', () => {
-    const { data, document } = loadAseprite(HASH_JSON);
+    const { data, document } = parseAsepriteDocument(HASH_JSON);
     const data2 = parseAseprite(serializeAseprite(data, document));
     expect(data2.frames[0].x).toBe(data.frames[0].x);
     expect(data2.frames[0].width).toBe(data.frames[0].width);
@@ -257,20 +257,20 @@ describe('serializeAseprite — round-trip via loadAseprite', () => {
   });
 
   it('round-trips variable per-frame durations', () => {
-    const { data, document } = loadAseprite(HASH_JSON);
+    const { data, document } = parseAsepriteDocument(HASH_JSON);
     const data2 = parseAseprite(serializeAseprite(data, document));
     expect(data2.animations[0].frameDurations).toEqual([100, 150]);
   });
 
   it('round-trips uniform durations as null frameDurations', () => {
-    const { data, document } = loadAseprite(ARRAY_JSON);
+    const { data, document } = parseAsepriteDocument(ARRAY_JSON);
     const data2 = parseAseprite(serializeAseprite(data, document));
     expect(data2.animations[0].frameDurations).toBeNull();
     expect(data2.animations[0].frameDuration).toBe(80);
   });
 
   it('round-trips animation names and directions', () => {
-    const { data, document } = loadAseprite(HASH_JSON);
+    const { data, document } = parseAsepriteDocument(HASH_JSON);
     const data2 = parseAseprite(serializeAseprite(data, document));
     expect(data2.animations[0].name).toBe('run');
     expect(data2.animations[1].name).toBe('jump');
@@ -278,27 +278,27 @@ describe('serializeAseprite — round-trip via loadAseprite', () => {
   });
 
   it('preserves layer metadata through the document', () => {
-    const { data, document } = loadAseprite(HASH_JSON);
+    const { data, document } = parseAsepriteDocument(HASH_JSON);
     const json2 = serializeAseprite(data, document);
-    const { document: doc2 } = loadAseprite(json2);
+    const { document: doc2 } = parseAsepriteDocument(json2);
     expect(doc2.meta.layers).toHaveLength(1);
   });
 
   it('emits array variant when existing is array', () => {
-    const { data, document } = loadAseprite(ARRAY_JSON);
+    const { data, document } = parseAsepriteDocument(ARRAY_JSON);
     const parsed = JSON.parse(serializeAseprite(data, document));
     expect(Array.isArray(parsed.frames)).toBe(true);
     expect(parsed.frames[0].filename).toBeDefined();
   });
 
   it('emits hash variant by default', () => {
-    const { data, document } = loadAseprite(HASH_JSON);
+    const { data, document } = parseAsepriteDocument(HASH_JSON);
     const parsed = JSON.parse(serializeAseprite(data, document));
     expect(Array.isArray(parsed.frames)).toBe(false);
   });
 
   it('respects variant override option', () => {
-    const { data, document } = loadAseprite(HASH_JSON);
+    const { data, document } = parseAsepriteDocument(HASH_JSON);
     const parsed = JSON.parse(serializeAseprite(data, document, { variant: 'array' }));
     expect(Array.isArray(parsed.frames)).toBe(true);
   });

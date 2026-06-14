@@ -10,7 +10,7 @@ import {
   buildSaturationColorMatrix,
   buildSepiaColorMatrix,
   concatColorMatrix,
-  identityColorMatrix,
+  setColorMatrixIdentity,
 } from './colorMatrix';
 
 function region(
@@ -209,7 +209,7 @@ describe('concatColorMatrix', () => {
   it('carries the offset through composition', () => {
     const identity = new Array<number>(20);
     const invert = new Array<number>(20);
-    identityColorMatrix(identity);
+    setColorMatrixIdentity(identity);
     buildInvertColorMatrix(invert);
     const out = new Array<number>(20);
     concatColorMatrix(out, identity, invert);
@@ -218,10 +218,10 @@ describe('concatColorMatrix', () => {
   });
 });
 
-describe('identityColorMatrix', () => {
+describe('setColorMatrixIdentity', () => {
   it('leaves the pixel unchanged', () => {
     const m = new Array<number>(20);
-    identityColorMatrix(m);
+    setColorMatrixIdentity(m);
     const out = applyTo(0xc86432ff, m);
     expect(out[0]).toBe(200);
     expect(out[1]).toBe(100);

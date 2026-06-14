@@ -7,7 +7,7 @@ import {
   createInputTextData,
   createInputTextRuntime,
   getInputTextRuntime,
-  setInputTextText,
+  setInputTextString,
 } from './inputText';
 
 describe('createInputText', () => {
@@ -96,10 +96,10 @@ describe('getInputTextRuntime', () => {
   });
 });
 
-describe('setInputTextText', () => {
+describe('setInputTextString', () => {
   it('sets the text', () => {
     const text = createInputText();
-    setInputTextText(text, 'hello');
+    setInputTextString(text, 'hello');
     expect(text.data.text).toBe('hello');
   });
 
@@ -107,7 +107,7 @@ describe('setInputTextText', () => {
     const text = createInputText();
     const runtime = getEntityRuntime(text) as InputTextRuntime;
     const idBefore = runtime.appearanceID;
-    setInputTextText(text, 'hello');
+    setInputTextString(text, 'hello');
     expect(runtime.appearanceID).not.toBe(idBefore);
   });
 });

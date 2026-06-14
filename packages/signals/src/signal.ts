@@ -5,7 +5,7 @@ import type { Signal } from '@flighthq/types';
 export type { Signal } from '@flighthq/types';
 
 export function createSignal<T extends (...args: any[]) => void>(): Signal<T> {
-  return { emit: signalNoop as unknown as T, data: null };
+  return { emit: nullSignalEmit as unknown as T, data: null };
 }
 
-export const signalNoop = (): void => {};
+export const nullSignalEmit = (): void => {};

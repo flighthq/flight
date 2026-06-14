@@ -9,7 +9,7 @@ import type {
   Video,
 } from '@flighthq/types';
 
-import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
+import { applyDOMStyle, prepareDOMElement, setDOMRendererElement } from './domStyle';
 
 interface DOMVideoData extends RendererData {
   element: HTMLVideoElement | null;
@@ -29,7 +29,7 @@ export function drawDOMVideo(state: DOMRenderState, renderNode: DisplayObjectRen
 
   if (data.element !== element) {
     data.element = element;
-    initDOMElement(element);
+    prepareDOMElement(element);
   }
 
   element.style.width = `${element.videoWidth}px`;

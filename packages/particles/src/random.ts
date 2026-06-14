@@ -10,10 +10,10 @@ export type { RandomSource };
  *  sequence, so seeding two emitters identically makes them simulate in lockstep.
  *
  *  ```ts
- *  const state = createParticleEmitterState(createSeededRandom(0x1234));
+ *  const state = createParticleEmitterState(createSeededRandomSource(0x1234));
  *  ```
  */
-export function createSeededRandom(seed: number): RandomSource {
+export function createSeededRandomSource(seed: number): RandomSource {
   // Coerce to a 32-bit unsigned integer; non-finite seeds collapse to 0.
   let a = Number.isFinite(seed) ? seed >>> 0 : 0;
   return function seededRandom(): number {

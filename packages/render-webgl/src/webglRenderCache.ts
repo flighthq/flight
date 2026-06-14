@@ -1,5 +1,5 @@
 import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry';
-import { createNullRendererData } from '@flighthq/render';
+import { noopRendererData } from '@flighthq/render';
 import { isImageRenderCachePrimitive, registerImageRenderCacheRenderer } from '@flighthq/render';
 import type {
   DisplayObjectMaskRenderer,
@@ -12,7 +12,7 @@ import type {
 
 import type { WebGLRenderStateInternal } from './internal';
 import { bindWebGLTexture, drawWebGLQuad, useWebGLProgram } from './webglDraw';
-import { setWebGLAttribs, setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
+import { setWebGLAttributes, setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
 
 export function drawWebGLImageCacheResult(
   state: WebGLRenderState,
@@ -34,7 +34,7 @@ export function drawWebGLImageCacheResult(
   multiplyMatrix(quadTransform, renderNode.transform2D, cache.transform);
 
   const { gl, shaderLoc, matrixArray } = internal;
-  setWebGLAttribs(gl, shaderLoc);
+  setWebGLAttributes(gl, shaderLoc);
   setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, quadTransform, internal.canvas);
   setWebGLBaseUniforms(gl, shaderLoc, renderNode);
   releaseMatrix(quadTransform);
@@ -58,7 +58,7 @@ function drawWebGLRenderImageCache(state: RenderState, renderNode: DisplayObject
   bindWebGLTexture(internal, src);
 
   const { gl, shaderLoc, matrixArray } = internal;
-  setWebGLAttribs(gl, shaderLoc);
+  setWebGLAttributes(gl, shaderLoc);
   setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, renderNode.transform2D, internal.canvas);
   setWebGLBaseUniforms(gl, shaderLoc, renderNode);
 
@@ -70,7 +70,7 @@ function drawWebGLRenderImageCacheMask(state: RenderState, node: DisplayObjectRe
 }
 
 export const defaultWebGLRenderImageCacheRenderer: DisplayObjectRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawWebGLRenderImageCache,
 };
 

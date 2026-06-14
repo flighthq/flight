@@ -93,20 +93,20 @@ function documentToData(doc: AsepriteDocument): SpritesheetData {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
-/** Parse an Aseprite JSON string and preserve the full document for round-trip
- *  serialisation via `serializeAseprite`. */
-export function loadAseprite(json: string): AsepriteParsed {
-  const document = JSON.parse(json) as AsepriteDocument;
-  return { data: documentToData(document), document };
-}
-
 /** Parse an Aseprite JSON string directly to a SpritesheetData.
  *
  *  Single-pass: no intermediate document object is allocated.
- *  Use `loadAseprite` instead when you need round-trip serialisation.
+ *  Use `parseAsepriteDocument` instead when you need round-trip serialisation.
  *
  *  Per-frame durations from Aseprite are preserved in `animation.frameDurations`
  *  when frames within a tag have varying durations. */
 export function parseAseprite(json: string): SpritesheetData {
   return documentToData(JSON.parse(json) as AsepriteDocument);
+}
+
+/** Parse an Aseprite JSON string and preserve the full document for round-trip
+ *  serialisation via `serializeAseprite`. */
+export function parseAsepriteDocument(json: string): AsepriteParsed {
+  const document = JSON.parse(json) as AsepriteDocument;
+  return { data: documentToData(document), document };
 }

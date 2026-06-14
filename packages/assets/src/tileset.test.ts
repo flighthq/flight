@@ -2,7 +2,58 @@ import type { TextureAtlas, Tileset } from '@flighthq/types';
 
 import { createImageSourceFromImageElement } from './imageSourceFrom';
 import { createTextureAtlas } from './textureAtlas';
-import { createTileset, initTilesetRegions } from './tileset';
+import { buildTilesetRegions, createTileset } from './tileset';
+
+describe('buildTilesetRegions', () => {
+  it('does nothing when atlas is null', () => {
+    const tileset = createTileset({ columns: 2, rows: 2, tileWidth: 32, tileHeight: 32 });
+    expect(buildTilesetRegions(tileset)).toBeUndefined();
+    expect(tileset.atlas).toBeNull();
+  });
+
+  it('positions regions at (column * tileWidth, row * tileHeight)', () => {
+    const source = createImageSourceFromImageElement({ width: 64, height: 32 } as HTMLImageElement);
+    const atlas = createTextureAtlas({ image: source });
+    const tileset = createTileset({ atlas, columns: 2, rows: 1, tileWidth: 32, tileHeight: 32 });
+    buildTilesetRegions(tileset);
+    // region 0: column=0, row=0 → x=0, y=0
+    expect(atlas.regions[0].x).toBe(0);
+    expect(atlas.regions[0].y).toBe(0);
+    // region 1: column=1, row=0 → x=32, y=0
+    expect(atlas.regions[1].x).toBe(32);
+    expect(atlas.regions[1].y).toBe(0);
+  });
+
+  it('advances y by tileHeight for each row', () => {
+    const source = createImageSourceFromImageElement({ width: 32, height: 64 } as HTMLImageElement);
+    const atlas = createTextureAtlas({ image: source });
+    const tileset = createTileset({ atlas, columns: 1, rows: 2, tileWidth: 32, tileHeight: 32 });
+    buildTilesetRegions(tileset);
+    // region 0: column=0, row=0 → x=0, y=0
+    expect(atlas.regions[0].x).toBe(0);
+    expect(atlas.regions[0].y).toBe(0);
+    // region 1: column=0, row=1 → x=0, y=32
+    expect(atlas.regions[1].x).toBe(0);
+    expect(atlas.regions[1].y).toBe(32);
+  });
+
+  it('reuses existing region objects when capacity is already available', () => {
+    const source = createImageSourceFromImageElement({ width: 64, height: 32 } as HTMLImageElement);
+    const atlas = createTextureAtlas({ image: source });
+    const firstRegion = {} as TextureAtlas['regions'][number];
+    const secondRegion = {} as TextureAtlas['regions'][number];
+    atlas.regions.push(firstRegion, secondRegion);
+    const tileset = createTileset({ atlas, columns: 2, rows: 1, tileWidth: 32, tileHeight: 32 });
+
+    buildTilesetRegions(tileset);
+
+    expect(atlas.regions).toHaveLength(2);
+    expect(atlas.regions[0]).toBe(firstRegion);
+    expect(atlas.regions[1]).toBe(secondRegion);
+    expect(atlas.regions[0].x).toBe(0);
+    expect(atlas.regions[1].x).toBe(32);
+  });
+});
 
 describe('createTileset', () => {
   let tileset: Tileset;
@@ -39,56 +90,5 @@ describe('createTileset', () => {
     const base = {};
     const obj = createTileset(base);
     expect(obj).not.toStrictEqual(base);
-  });
-});
-
-describe('initTilesetRegions', () => {
-  it('does nothing when atlas is null', () => {
-    const tileset = createTileset({ columns: 2, rows: 2, tileWidth: 32, tileHeight: 32 });
-    expect(initTilesetRegions(tileset)).toBeUndefined();
-    expect(tileset.atlas).toBeNull();
-  });
-
-  it('positions regions at (column * tileWidth, row * tileHeight)', () => {
-    const source = createImageSourceFromImageElement({ width: 64, height: 32 } as HTMLImageElement);
-    const atlas = createTextureAtlas({ image: source });
-    const tileset = createTileset({ atlas, columns: 2, rows: 1, tileWidth: 32, tileHeight: 32 });
-    initTilesetRegions(tileset);
-    // region 0: column=0, row=0 → x=0, y=0
-    expect(atlas.regions[0].x).toBe(0);
-    expect(atlas.regions[0].y).toBe(0);
-    // region 1: column=1, row=0 → x=32, y=0
-    expect(atlas.regions[1].x).toBe(32);
-    expect(atlas.regions[1].y).toBe(0);
-  });
-
-  it('advances y by tileHeight for each row', () => {
-    const source = createImageSourceFromImageElement({ width: 32, height: 64 } as HTMLImageElement);
-    const atlas = createTextureAtlas({ image: source });
-    const tileset = createTileset({ atlas, columns: 1, rows: 2, tileWidth: 32, tileHeight: 32 });
-    initTilesetRegions(tileset);
-    // region 0: column=0, row=0 → x=0, y=0
-    expect(atlas.regions[0].x).toBe(0);
-    expect(atlas.regions[0].y).toBe(0);
-    // region 1: column=0, row=1 → x=0, y=32
-    expect(atlas.regions[1].x).toBe(0);
-    expect(atlas.regions[1].y).toBe(32);
-  });
-
-  it('reuses existing region objects when capacity is already available', () => {
-    const source = createImageSourceFromImageElement({ width: 64, height: 32 } as HTMLImageElement);
-    const atlas = createTextureAtlas({ image: source });
-    const firstRegion = {} as TextureAtlas['regions'][number];
-    const secondRegion = {} as TextureAtlas['regions'][number];
-    atlas.regions.push(firstRegion, secondRegion);
-    const tileset = createTileset({ atlas, columns: 2, rows: 1, tileWidth: 32, tileHeight: 32 });
-
-    initTilesetRegions(tileset);
-
-    expect(atlas.regions).toHaveLength(2);
-    expect(atlas.regions[0]).toBe(firstRegion);
-    expect(atlas.regions[1]).toBe(secondRegion);
-    expect(atlas.regions[0].x).toBe(0);
-    expect(atlas.regions[1].x).toBe(32);
   });
 });

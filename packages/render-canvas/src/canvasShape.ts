@@ -1,4 +1,4 @@
-﻿import { createNullRendererData } from '@flighthq/render';
+﻿import { noopRendererData } from '@flighthq/render';
 import type {
   CanvasRenderState,
   CanvasShapeDrawState,
@@ -43,7 +43,7 @@ export function renderCanvasShapeCommands(ctx: CanvasRenderingContext2D, command
 }
 
 export const defaultCanvasShapeRenderer: DisplayObjectRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawCanvasShape,
 };
 

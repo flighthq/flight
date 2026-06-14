@@ -3,7 +3,7 @@ import type { ColorKeyframe, CurveKeyframe, ParticleCurve } from '@flighthq/type
 export type { ColorKeyframe, CurveKeyframe, ParticleCurve };
 
 /** Bake an RGB function f:[0,1]→[r,g,b] into an interleaved curve LUT (length N×3). */
-export function bakeColorCurve(f: (t: number) => readonly [number, number, number], samples = 33): number[] {
+export function buildColorCurveLUT(f: (t: number) => readonly [number, number, number], samples = 33): number[] {
   const n = Math.max(2, samples | 0);
   const lut = new Array<number>(n * 3);
   for (let i = 0; i < n; i++) {
@@ -16,7 +16,7 @@ export function bakeColorCurve(f: (t: number) => readonly [number, number, numbe
 }
 
 /** Bake a scalar function f:[0,1]→value into an `samples`-entry curve LUT. */
-export function bakeCurve(f: (t: number) => number, samples = 33): number[] {
+export function buildCurveLUT(f: (t: number) => number, samples = 33): number[] {
   const n = Math.max(2, samples | 0);
   const lut = new Array<number>(n);
   for (let i = 0; i < n; i++) lut[i] = f(i / (n - 1));
@@ -28,7 +28,7 @@ export function bakeCurve(f: (t: number) => number, samples = 33): number[] {
 export function colorCurveFromKeyframes(keys: ReadonlyArray<ColorKeyframe>, samples = 33): number[] {
   if (keys.length === 0) return [0, 0, 0, 0, 0, 0];
   const sorted = keys.slice().sort((a, b) => a.time - b.time);
-  return bakeColorCurve((t) => {
+  return buildColorCurveLUT((t) => {
     const seg = locateKeyframe(sorted, t);
     if (seg.f === 0) return [sorted[seg.i].r, sorted[seg.i].g, sorted[seg.i].b];
     const a = sorted[seg.i];
@@ -54,7 +54,7 @@ export function colorCurveToKeyframes(lut: ParticleCurve): ColorKeyframe[] {
 export function curveFromKeyframes(keys: ReadonlyArray<CurveKeyframe>, samples = 33): number[] {
   if (keys.length === 0) return [0, 0];
   const sorted = keys.slice().sort((a, b) => a.time - b.time);
-  return bakeCurve((t) => interpKeyframe(sorted, t), samples);
+  return buildCurveLUT((t) => interpKeyframe(sorted, t), samples);
 }
 
 /** Convert a baked scalar curve LUT back into keyframes (one per sample, at

@@ -17,9 +17,9 @@ import {
   applyPixelateFilterToWebGL,
   applySharpenFilterToWebGL,
   applyTintPass,
-  boxRadiusForSigmaWebGL,
   clearWebGLFilterTarget,
   compileWebGLFilterProgram,
+  computeBoxBlurRadiusWebGL,
   createWebGLGradientRampTexture,
   drawWebGLDualSourcePass,
   drawWebGLFilterPass,
@@ -52,7 +52,7 @@ describe('index', () => {
     expect(applyBlitPass).toBeDefined();
     expect(applyInvertTintPass).toBeDefined();
     expect(applyTintPass).toBeDefined();
-    expect(boxRadiusForSigmaWebGL).toBeDefined();
+    expect(computeBoxBlurRadiusWebGL).toBeDefined();
     expect(createWebGLGradientRampTexture).toBeDefined();
   });
 });

@@ -1,6 +1,6 @@
 ﻿import { createEntity } from '@flighthq/entity';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node';
-import { remapScale9Commands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
+import { mapScale9ShapeCommands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderNode,
@@ -14,7 +14,7 @@ import type {
 
 import { buildDOMScale9Mapper } from './domScale9Mapper';
 import { drawDOMShape } from './domShape';
-import { initDOMElement, setDOMRendererElement } from './domStyle';
+import { prepareDOMElement, setDOMRendererElement } from './domStyle';
 
 interface DOMScale9ShapeData extends RendererData {
   canvas: HTMLCanvasElement | null;
@@ -45,7 +45,7 @@ export function drawDOMScale9Shape(state: DOMRenderState, renderNode: DisplayObj
   if (data.canvas === null) {
     data.canvas = document.createElement('canvas');
     data.context = data.canvas.getContext('2d');
-    initDOMElement(data.canvas);
+    prepareDOMElement(data.canvas);
   }
 
   const w = Math.max(1, Math.ceil(bounds.width * source.scaleX));
@@ -55,7 +55,7 @@ export function drawDOMScale9Shape(state: DOMRenderState, renderNode: DisplayObj
   data.canvas.height = h;
 
   const ctx = data.context!;
-  remapScale9Commands(_remappedCommands, commands, mapper);
+  mapScale9ShapeCommands(_remappedCommands, commands, mapper);
   if (bounds.x !== 0 || bounds.y !== 0) {
     ctx.translate(-bounds.x, -bounds.y);
   }
