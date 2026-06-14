@@ -5,7 +5,7 @@ import { defineConfig } from 'vite';
 
 import { workspacePackages } from '../../scripts/workspaces';
 
-const RENDERERS = ['dom', 'canvas', 'webgl'] as const;
+const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
 type Renderer = (typeof RENDERERS)[number];
 
 interface Example {
