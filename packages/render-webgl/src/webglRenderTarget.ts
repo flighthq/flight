@@ -1,7 +1,9 @@
-import { copyMatrix, createMatrix } from '@flighthq/geometry';
-import type { Matrix, WebGLRenderState, WebGLRenderTarget } from '@flighthq/types';
+import { acquireMatrix, copyMatrix, createMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry';
+import type { DisplayObjectRenderNode, Matrix, WebGLRenderState, WebGLRenderTarget } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
+import { drawWebGLQuad, useWebGLProgram } from './webglDraw';
+import { setWebGLAttribs, setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
 
 type SavedWebGLState = {
   framebuffer: WebGLFramebuffer | null;
@@ -93,6 +95,52 @@ export function destroyWebGLRenderTarget(state: WebGLRenderState, target: WebGLR
   const gl = internal.gl;
   gl.deleteFramebuffer(target.framebuffer);
   gl.deleteTexture(target.texture);
+}
+
+/**
+ * Composites `target`'s texture onto the current framebuffer as a positioned quad, using
+ * `renderNode`'s world transform and alpha. `transform` maps the target's pixel space into
+ * the node's local space (as produced by `computeImageRenderCacheTransform`). This mirrors
+ * `drawWebGLImageCacheResult` but sources a GPU render-target texture directly instead of an
+ * uploaded `CanvasImageSource`, closing the offscreen-filter loop: render a node into a
+ * target, run a filter pass (target → target), then composite the result back here.
+ *
+ * Render-target textures are stored with GL's bottom-left origin, so the rendered content's
+ * visual top sits at texture `v=1` — the opposite of uploaded canvas images. The quad's V
+ * coordinates are flipped (`v0=1, v1=0`) so the result composites upright.
+ */
+export function drawWebGLRenderTargetResult(
+  state: WebGLRenderState,
+  renderNode: DisplayObjectRenderNode,
+  target: Readonly<WebGLRenderTarget>,
+  transform: Readonly<Matrix>,
+): void {
+  if (target.width <= 0 || target.height <= 0) return;
+
+  const internal = state as WebGLRenderStateInternal;
+  useWebGLProgram(internal);
+  internal.applyBlendMode?.(internal, renderNode.blendMode);
+
+  const { gl, shaderLoc, matrixArray } = internal;
+  // The render target already owns a GPU texture — bind it directly rather than going through
+  // bindWebGLTexture, which uploads a CanvasImageSource.
+  gl.bindTexture(gl.TEXTURE_2D, target.texture);
+  internal.currentTexture = target.texture;
+
+  const quadTransform = acquireMatrix();
+  multiplyMatrix(quadTransform, renderNode.transform2D, transform);
+  setWebGLAttribs(gl, shaderLoc);
+  setWebGLMatrixFromTransform(
+    gl,
+    shaderLoc,
+    matrixArray,
+    quadTransform,
+    internal.renderTargetViewport ?? internal.canvas,
+  );
+  setWebGLBaseUniforms(gl, shaderLoc, renderNode);
+  releaseMatrix(quadTransform);
+
+  drawWebGLQuad(internal, 0, 0, target.width, target.height, 0, 1, 1, 0);
 }
 
 /**
