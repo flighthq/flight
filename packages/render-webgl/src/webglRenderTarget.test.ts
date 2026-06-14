@@ -1,6 +1,6 @@
+import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import { createDisplayObject } from '@flighthq/scene-display';
 
 import type { WebGLRenderStateInternal } from './internal';
 import {

@@ -3,7 +3,7 @@ import type { DisplayObjectRenderNode, Matrix, WebGLRenderState, WebGLRenderTarg
 
 import type { WebGLRenderStateInternal } from './internal';
 import { drawWebGLQuad, useWebGLProgram } from './webglDraw';
-import { setWebGLAttribs, setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
+import { setWebGLAttributes, setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
 
 type SavedWebGLState = {
   framebuffer: WebGLFramebuffer | null;
@@ -129,7 +129,7 @@ export function drawWebGLRenderTargetResult(
 
   const quadTransform = acquireMatrix();
   multiplyMatrix(quadTransform, renderNode.transform2D, transform);
-  setWebGLAttribs(gl, shaderLoc);
+  setWebGLAttributes(gl, shaderLoc);
   setWebGLMatrixFromTransform(
     gl,
     shaderLoc,
