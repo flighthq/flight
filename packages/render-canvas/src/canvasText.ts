@@ -13,8 +13,6 @@ import type {
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { setCanvasTransform } from './canvasTransform';
 
-const LAYOUT_WIDTH = 10000;
-
 export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
   drawCanvasDisplayObject(state, renderNode);
 
@@ -36,8 +34,8 @@ export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObje
   computeTextLayout(result, {
     text,
     formatRanges: [createTextFormatRange(textFormat, 0, text.length)],
-    width: LAYOUT_WIDTH,
-    height: LAYOUT_WIDTH,
+    width: source.data.width,
+    height: source.data.height,
     measure,
   });
 
