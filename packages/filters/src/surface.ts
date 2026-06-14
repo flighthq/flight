@@ -1,10 +1,10 @@
 import {
   applySurfaceBevelFilter,
-  applySurfaceBoxBlurFilter,
   applySurfaceColorMatrixFilter,
   applySurfaceConvolutionFilter,
   applySurfaceDisplacementMapFilter,
   applySurfaceDropShadowFilter,
+  applySurfaceGaussianBlurFilter,
   applySurfaceGlowFilter,
   applySurfaceGradientBevelFilter,
   applySurfaceGradientGlowFilter,
@@ -67,9 +67,11 @@ export function applyBevelFilterToSurface(
 }
 
 /**
- * Applies a box blur approximating Gaussian sigma to `source`, writing the
- * blurred result into `out`. `blurX` and `blurY` on the filter are Gaussian
- * standard deviations in pixels.
+ * Applies a true Gaussian blur to `source`, writing the blurred result into `out`. `blurX` and
+ * `blurY` on the filter are the Gaussian standard deviations in pixels (matching CSS `blur()`),
+ * so the BlurFilter intent renders the same on the surface, CSS, and WebGL Gaussian paths. For a
+ * cheaper box approximation, call `applySurfaceBoxBlurFilter` from `@flighthq/surface-filters`
+ * directly.
  *
  * `blurBuffer` must be at least `source.width * source.height * 4` bytes.
  * Safe to pass `source.surface.data` as `out` for a full-surface region.
@@ -80,14 +82,7 @@ export function applyBlurFilterToSurface(
   source: Readonly<SurfaceRegion>,
   filter: BlurFilter,
 ): void {
-  const quality = filter.quality ?? 1;
-  const radiusX = computeBoxBlurRadius(filter.blurX ?? 4, quality);
-  const radiusY = computeBoxBlurRadius(filter.blurY ?? 4, quality);
-  applySurfaceBoxBlurFilter(out, blurBuffer, source, {
-    passes: quality,
-    radiusX,
-    radiusY,
-  });
+  applySurfaceGaussianBlurFilter(out, blurBuffer, source, filter.blurX ?? 4, filter.blurY ?? 4);
 }
 
 /**

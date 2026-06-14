@@ -33,9 +33,9 @@ describe('createBlurFilter', () => {
   });
 
   it('spreads provided options', () => {
-    const f = createBlurFilter({ blurX: 8, quality: 3 });
+    const f = createBlurFilter({ blurX: 8, blurY: 4 });
     expect(f.blurX).toBe(8);
-    expect(f.quality).toBe(3);
+    expect(f.blurY).toBe(4);
   });
 });
 
