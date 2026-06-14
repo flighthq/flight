@@ -34,8 +34,6 @@ function getMeasureCtx(): CanvasRenderingContext2D | null {
   return _measureCtx;
 }
 
-const LAYOUT_WIDTH = 10000;
-
 export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
   const data = renderNode.rendererData as DOMTextData | null;
   if (data === null) return;
@@ -62,12 +60,12 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
   computeTextLayout(result, {
     text,
     formatRanges: [createTextFormatRange(textFormat, 0, text.length)],
-    width: LAYOUT_WIDTH,
-    height: LAYOUT_WIDTH,
+    width: source.data.width,
+    height: source.data.height,
     measure,
   });
 
-  data.div.style.width = `${result.textWidth}px`;
+  data.div.style.width = `${source.data.width}px`;
   data.div.style.height = `${result.textHeight}px`;
 
   let html = '';
