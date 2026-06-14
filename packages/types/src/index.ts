@@ -157,4 +157,7 @@ export * from './WebGLRenderState';
 export * from './WebGLRenderTarget';
 export * from './WebGLShader';
 export * from './WebGLShaderLocations';
+export * from './WebGPURenderOptions';
+export * from './WebGPURenderState';
+export * from './WebGPURenderTarget';
 export * from './WorldNode';
