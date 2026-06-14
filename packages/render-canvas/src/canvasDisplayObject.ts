@@ -1,5 +1,5 @@
+import { getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { createNullRendererData, getDisplayObjectRenderNode, isRenderNodeVisible } from '@flighthq/render';
-import { getDisplayObjectRuntime } from '@flighthq/scene-display';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
 
 import { selectCanvasCSSFilter } from './canvasCSSFilterBinding';

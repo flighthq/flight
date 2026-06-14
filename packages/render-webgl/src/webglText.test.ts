@@ -1,5 +1,5 @@
-﻿import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import { createText } from '@flighthq/scene-display';
+﻿import { createText } from '@flighthq/displayobject';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import type { DisplayObject, DisplayObjectRenderNode } from '@flighthq/types';
 
 import { setWebGLShader } from './webglShaderBinding';

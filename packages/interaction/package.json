@@ -28,14 +28,14 @@
   },
   "dependencies": {
     "@flighthq/geometry": "*",
-    "@flighthq/scene": "*",
-    "@flighthq/scene-display": "*",
+    "@flighthq/node": "*",
+    "@flighthq/displayobject": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*",
-    "@flighthq/scene-world": "*"
+    "@flighthq/world": "*"
   },
   "devDependencies": {
-    "@flighthq/scene-sprite": "*",
+    "@flighthq/sprite": "*",
     "typescript": "^5.3.0"
   },
   "description": "Hit testing: point-in-node tests and object overlap detection",

@@ -1,5 +1,5 @@
 import { createMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry';
-import { getLocalTransformMatrix } from '@flighthq/scene';
+import { getLocalTransformMatrix } from '@flighthq/node';
 import type { DisplayObject, MatrixLike, RectangleLike } from '@flighthq/types';
 
 export type RenderTargetSizeOptions = {

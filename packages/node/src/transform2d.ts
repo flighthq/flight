@@ -6,7 +6,7 @@ import {
   matrixTransformPointXY,
   multiplyMatrix,
 } from '@flighthq/geometry';
-import { recomputeWorldTransformRevision } from '@flighthq/scene';
+import { recomputeWorldTransformRevision } from '@flighthq/node';
 import type {
   HasTransform2DRuntime,
   Matrix,

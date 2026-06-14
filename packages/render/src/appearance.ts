@@ -1,4 +1,4 @@
-import { getAppearanceRevision } from '@flighthq/scene';
+import { getAppearanceRevision } from '@flighthq/node';
 import type { HasAppearance, RenderNode, RenderState, SceneNode } from '@flighthq/types';
 
 export function updateRenderNodeAppearance(state: RenderState, data: RenderNode, parentData?: RenderNode): boolean {

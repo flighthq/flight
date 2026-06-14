@@ -1,6 +1,6 @@
+import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix, createRectangle } from '@flighthq/geometry';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import { createDisplayObject } from '@flighthq/scene-display';
 import type { DOMStageRectangle } from '@flighthq/types';
 
 import {

@@ -1,6 +1,6 @@
+import { createDisplayObject } from '@flighthq/displayobject';
 import { setRectangle } from '@flighthq/geometry';
-import { addSceneChild, createSceneNode, getLocalBoundsRectangle, invalidateLocalTransform } from '@flighthq/scene';
-import { createDisplayObject } from '@flighthq/scene-display';
+import { addSceneChild, createSceneNode, getLocalBoundsRectangle, invalidateLocalTransform } from '@flighthq/node';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals';
 import type { InputKeyboardData, InputPointerData, InputSignals } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';

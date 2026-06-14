@@ -1,6 +1,6 @@
 import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
-import { createMovieClip } from '@flighthq/scene-display';
-import { getDisplayObjectRuntime } from '@flighthq/scene-display';
+import { createMovieClip } from '@flighthq/displayobject';
+import { getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { createSpritesheet, createSpritesheetAnimation, createSpritesheetFrame } from '@flighthq/spritesheet';
 
 import { attachSpritesheetTimeline } from './spritesheetTimeline';

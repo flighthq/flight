@@ -178,10 +178,10 @@ Packaging policy should be enforced by scripts and `npm run packages:check` rath
 - `@flighthq/types`: shared interfaces, kind symbols, and cross-package type contracts. This is the codebase's header layer — all public API shapes live here.
 - `@flighthq/entity`: entity/runtime primitives used by higher-level packages.
 - `@flighthq/geometry`: rectangles, vectors, matrices, typed-array capacity helpers, and pools.
-- `@flighthq/scene`: graph hierarchy, transforms, bounds, appearance, and invalidation.
-- `@flighthq/scene-display`: Flash/OpenFL-style display objects such as bitmaps, shapes, text, containers, masks, stages, and videos.
-- `@flighthq/scene-sprite`: sprite/tilemap/quad-batch graph for atlas-based batch rendering.
-- `@flighthq/scene-world`: 3D world graph for spatial scene management. A doorway for future development; the road is mostly untaken and the package is not yet built out.
+- `@flighthq/node`: graph hierarchy, transforms, bounds, appearance, and invalidation.
+- `@flighthq/displayobject`: Flash/OpenFL-style display objects such as bitmaps, shapes, text, containers, masks, stages, and videos.
+- `@flighthq/sprite`: sprite/tilemap/quad-batch graph for atlas-based batch rendering.
+- `@flighthq/world`: 3D world graph for spatial scene management. A doorway for future development; the road is mostly untaken and the package is not yet built out.
 - `@flighthq/render`: renderer registration, render state/queue, render node data, update pipeline, transform/color propagation. Image render caching lives in the renderer packages (`imageRenderCache`, `canvasRenderCache`, `webglRenderCache`, `domRenderCache`), not in a standalone package.
 - `@flighthq/render-canvas`, `@flighthq/render-dom`, `@flighthq/render-webgl`: concrete renderers.
 - `@flighthq/filters`: blur, glow, bevel, drop-shadow, color-matrix, and convolution filters as plain data descriptors with explicit Canvas/CSS and multi-pass WebGL backends. Not OpenFL-style filter objects.

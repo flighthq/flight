@@ -1,5 +1,5 @@
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry';
-import { getSceneNodeRuntime, getSceneParent, getWorldTransformMatrix } from '@flighthq/scene';
+import { getSceneNodeRuntime, getSceneParent, getWorldTransformMatrix } from '@flighthq/node';
 import { connectSignal, createSignal, disconnectSignal, emitSignal, isSlotConnected } from '@flighthq/signals';
 import type {
   AnyInteractionSignalSlot,

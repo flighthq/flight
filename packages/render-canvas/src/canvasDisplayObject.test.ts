@@ -1,6 +1,6 @@
-﻿import { getOrCreateDisplayObjectRenderNode, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
-import { addSceneChild } from '@flighthq/scene';
-import { createDisplayObject } from '@flighthq/scene-display';
+﻿import { createDisplayObject } from '@flighthq/displayobject';
+import { addSceneChild } from '@flighthq/node';
+import { getOrCreateDisplayObjectRenderNode, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { enableCanvasCSSFilterSupport, setCanvasCSSFilter } from './canvasCSSFilterBinding';

@@ -1,4 +1,4 @@
-import { invalidateAppearance, invalidateLocalBounds } from '@flighthq/scene';
+import { invalidateAppearance, invalidateLocalBounds } from '@flighthq/node';
 import type { Bitmap, BitmapData, BitmapRuntime, MethodsOf, PartialNode, Rectangle, SceneNode } from '@flighthq/types';
 import { BitmapKind } from '@flighthq/types';
 

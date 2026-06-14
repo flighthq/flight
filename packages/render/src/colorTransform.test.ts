@@ -1,5 +1,5 @@
+import { createDisplayObject } from '@flighthq/displayobject';
 import { createColorTransform } from '@flighthq/materials';
-import { createDisplayObject } from '@flighthq/scene-display';
 import type { HasAppearance } from '@flighthq/types';
 
 import { updateRenderNodeAppearance } from './appearance';

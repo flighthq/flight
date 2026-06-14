@@ -7,7 +7,7 @@ import {
   initBoundsRectangleTrait,
   initTransformRuntimeTrait,
   initTransformTrait,
-} from '@flighthq/scene';
+} from '@flighthq/node';
 import type { SceneNodeRuntimeFactory } from '@flighthq/types';
 import type {
   MethodsOf,

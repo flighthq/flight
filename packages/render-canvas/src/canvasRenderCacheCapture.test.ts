@@ -1,5 +1,5 @@
+import { createDisplayObject } from '@flighthq/displayobject';
 import { getImageRenderCache } from '@flighthq/render';
-import { createDisplayObject } from '@flighthq/scene-display';
 
 import { enableCanvasRenderImageCache } from './canvasRenderCache';
 import {

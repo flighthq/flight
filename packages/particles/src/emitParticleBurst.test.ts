@@ -1,4 +1,4 @@
-import { createParticleEmitter } from '@flighthq/scene-sprite';
+import { createParticleEmitter } from '@flighthq/sprite';
 import type { TextureAtlas } from '@flighthq/types';
 
 import { emitParticleBurst } from './emitParticleBurst';

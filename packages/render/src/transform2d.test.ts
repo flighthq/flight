@@ -1,5 +1,5 @@
-import { invalidateLocalTransform } from '@flighthq/scene';
-import { createDisplayObject } from '@flighthq/scene-display';
+import { createDisplayObject } from '@flighthq/displayobject';
+import { invalidateLocalTransform } from '@flighthq/node';
 
 import type { RenderNodeStateInternal } from './internal';
 import { createDisplayObjectRenderNode } from './renderNode';

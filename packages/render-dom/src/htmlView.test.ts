@@ -1,6 +1,6 @@
-﻿import { registerRenderer } from '@flighthq/render';
+﻿import { createHTMLView } from '@flighthq/displayobject';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import { createHTMLView } from '@flighthq/scene-display';
 import { HTMLViewKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';

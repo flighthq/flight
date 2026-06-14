@@ -1,10 +1,10 @@
+import { createDisplayObject } from '@flighthq/displayobject';
 import { prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
 import {
   createCanvasRenderState,
   defaultCanvasDisplayObjectRenderer,
   renderCanvasDisplayObject,
 } from '@flighthq/render-canvas';
-import { createDisplayObject } from '@flighthq/scene-display';
 import { DisplayObjectKind } from '@flighthq/types';
 
 test('attach renderer to new canvas', () => {
