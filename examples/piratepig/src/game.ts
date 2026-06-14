@@ -67,6 +67,7 @@ export class PiratePigGame {
 
     const scoreText = createText();
     scoreText.data.text = '0';
+    scoreText.data.width = 200;
     scoreText.data.textFormat = { font: fontName, size: 60, color: 0x000000, align: 'right' };
     scoreText.x = CONTENT_WIDTH - 200;
     scoreText.y = 12;
