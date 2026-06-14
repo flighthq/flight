@@ -1,9 +1,9 @@
-import type { MethodsOf, PartialNode, Rectangle, SceneNode, Text, TextData, TextRuntime } from '@flighthq/types';
+import type { MethodsOf, Node, PartialNode, Rectangle, Text, TextData, TextRuntime } from '@flighthq/types';
 import { TextKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
 
-export function computeTextLocalBoundsRectangle(out: Rectangle, source: Readonly<SceneNode>): void {
+export function computeTextLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const data = (source as Text).data;
   out.width = data.width;
   out.height = data.height;

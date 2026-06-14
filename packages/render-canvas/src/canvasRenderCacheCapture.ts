@@ -1,6 +1,6 @@
 import { createImageSourceFromCanvas } from '@flighthq/assets';
 import { copyMatrix, createMatrix, createRectangle } from '@flighthq/geometry';
-import { computeBoundsRectangle } from '@flighthq/node';
+import { computeNodeBoundsRectangle } from '@flighthq/node';
 import {
   beginImageRenderCacheCapture,
   computeDisplayObjectRenderTargetTransform,
@@ -46,7 +46,7 @@ const _captureTargets = new WeakMap<DisplayObject, ReturnType<typeof createCanva
 // ─── begin/end API ────────────────────────────────────────────────────────────
 
 export function beginDisplayObjectImageRenderCacheCapture(cacheState: CanvasRenderState, source: DisplayObject): void {
-  computeBoundsRectangle(_tempBounds, source, source);
+  computeNodeBoundsRectangle(_tempBounds, source, source);
 
   const w = Math.ceil(_tempBounds.width);
   const h = Math.ceil(_tempBounds.height);
@@ -74,7 +74,7 @@ export function captureDisplayObjectRenderImageCache(
   const minWidth = options?.minWidth ?? 1;
   const minHeight = options?.minHeight ?? 1;
 
-  computeBoundsRectangle(_tempBounds, source, source);
+  computeNodeBoundsRectangle(_tempBounds, source, source);
 
   const { width, height } = computeRenderTargetSize(_tempBounds, padding, minWidth, minHeight);
   const contentX = padding;

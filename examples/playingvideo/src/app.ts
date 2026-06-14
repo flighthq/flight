@@ -1,6 +1,6 @@
 import type { VideoChannel } from '@flighthq/sdk';
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeRectangle,
   attachPointerInput,
@@ -14,7 +14,7 @@ import {
   createShape,
   createText,
   createVideo,
-  invalidateRender,
+  invalidateNodeRender,
   loadVideoSourceFromURL,
   playVideoSource,
   startApplicationLoop,
@@ -31,22 +31,22 @@ const videoSource = await loadVideoSourceFromURL('assets/example.mp4');
 
 const videoNode = createVideo();
 videoNode.data.source = videoSource;
-addSceneChild(root, videoNode);
+addNodeChild(root, videoNode);
 
 const overlay = createShape();
 const prompt = createText();
 prompt.data.text = 'Click to play';
 prompt.data.textFormat.color = 0xffffffff;
 prompt.data.textFormat.size = 24;
-addSceneChild(root, overlay);
-addSceneChild(root, prompt);
+addNodeChild(root, overlay);
+addNodeChild(root, prompt);
 
 let channel: VideoChannel | null = null;
 
 function play(): void {
   overlay.visible = false;
   prompt.visible = false;
-  invalidateRender(overlay);
+  invalidateNodeRender(overlay);
   if (channel !== null) stopVideoChannel(channel);
   channel = playVideoSource(videoSource);
   if (channel === null) return;
@@ -54,7 +54,7 @@ function play(): void {
     channel = null;
     overlay.visible = true;
     prompt.visible = true;
-    invalidateRender(overlay);
+    invalidateNodeRender(overlay);
   });
 }
 
@@ -75,9 +75,9 @@ function resize(w: number, h: number): void {
   appendShapeRectangle(overlay, 0, 0, w, h);
   prompt.x = Math.round(w / 2 - 60);
   prompt.y = Math.round(h / 2 - 12);
-  invalidateRender(videoNode);
-  invalidateRender(overlay);
-  invalidateRender(prompt);
+  invalidateNodeRender(videoNode);
+  invalidateNodeRender(overlay);
+  invalidateNodeRender(prompt);
 }
 
 const win = createApplicationWindow();
@@ -91,7 +91,7 @@ connectSignal(input.onPointerDown, () => play());
 
 const app = createApplication();
 connectSignal(app.onUpdate, () => {
-  if (channel !== null && channel.state === 'playing') invalidateRender(videoNode);
+  if (channel !== null && channel.state === 'playing') invalidateNodeRender(videoNode);
 });
 connectSignal(app.onRender, () => {
   render(root);

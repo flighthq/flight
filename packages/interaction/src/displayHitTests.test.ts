@@ -1,6 +1,6 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { setRectangle } from '@flighthq/geometry';
-import { getLocalBoundsRectangle } from '@flighthq/node';
+import { getNodeLocalBoundsRectangle } from '@flighthq/node';
 
 import {
   defaultBitmapHitTestPoint,
@@ -18,7 +18,7 @@ import {
 
 function makeDisplayObject() {
   const obj = createDisplayObject();
-  setRectangle(getLocalBoundsRectangle(obj), 0, 0, 100, 100);
+  setRectangle(getNodeLocalBoundsRectangle(obj), 0, 0, 100, 100);
   return obj;
 }
 

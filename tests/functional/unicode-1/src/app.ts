@@ -1,5 +1,5 @@
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeRectangle,
   createDisplayContainer,
@@ -25,7 +25,7 @@ const H = height / scale;
 const bg = createShape();
 appendShapeBeginFill(bg, 0xffffff);
 appendShapeRectangle(bg, 0, 0, W, H);
-addSceneChild(root, bg);
+addNodeChild(root, bg);
 
 const fmt = { font: unifont.name, size: 18, color: 0x000000 };
 
@@ -38,7 +38,7 @@ for (let x = 0; x < COLS; x++) {
   tf.y = 20;
   tf.data.width = 50;
   tf.data.height = 30;
-  addSceneChild(root, tf);
+  addNodeChild(root, tf);
   colHeaders.push(tf);
 }
 
@@ -50,7 +50,7 @@ for (let y = 0; y < ROWS; y++) {
   tf.y = 75 + y * 30;
   tf.data.width = 120;
   tf.data.height = 30;
-  addSceneChild(root, tf);
+  addNodeChild(root, tf);
   rowLabels.push(tf);
 }
 
@@ -65,7 +65,7 @@ for (let y = 0; y < ROWS; y++) {
     tf.y = 75 + y * 30;
     tf.data.width = 50;
     tf.data.height = 30;
-    addSceneChild(root, tf);
+    addNodeChild(root, tf);
     row.push(tf);
   }
 }

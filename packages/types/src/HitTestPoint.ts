@@ -1,3 +1,3 @@
-import type { SceneNode } from './SceneNode';
+import type { Node } from './Node';
 
-export type GraphHitTestFn = (source: SceneNode<symbol, object>, x: number, y: number, shapeFlag: boolean) => boolean;
+export type GraphHitTestFn = (source: Node<symbol, object>, x: number, y: number, shapeFlag: boolean) => boolean;

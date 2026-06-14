@@ -1,6 +1,6 @@
 import { getEntityRuntime } from '@flighthq/entity';
 import { createRectangle } from '@flighthq/geometry';
-import type { RichText, RichTextRuntime, SceneNode } from '@flighthq/types';
+import type { Node, RichText, RichTextRuntime } from '@flighthq/types';
 import { RichTextKind } from '@flighthq/types';
 
 import {
@@ -30,7 +30,7 @@ describe('computeRichTextLocalBoundsRectangle', () => {
   it('sets out.width and out.height from data dimensions', () => {
     const richText = createRichText({ data: { width: 200, height: 150 } });
     const out = createRectangle();
-    computeRichTextLocalBoundsRectangle(out, richText as unknown as SceneNode);
+    computeRichTextLocalBoundsRectangle(out, richText as unknown as Node);
     expect(out.width).toBe(200);
     expect(out.height).toBe(150);
   });

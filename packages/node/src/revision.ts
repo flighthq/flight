@@ -1,68 +1,85 @@
-import type { SceneNode, SceneNodeRuntime } from '@flighthq/types';
+import type { Node, NodeRuntime } from '@flighthq/types';
 
-import { getSceneNodeRuntime } from './sceneNode';
+import { getNodeRuntime } from './node';
 
-export function getAppearanceRevision<SceneKind extends symbol, Traits extends object>(
-  source: Readonly<SceneNode<SceneKind, Traits>>,
-): number {
-  return getSceneNodeRuntime(source).appearanceID;
+export function computeNodeWorldTransformRevision<Kind extends symbol, Traits extends object>(
+  runtime: NodeRuntime<Kind, Traits>,
+  parentRuntime?: Readonly<NodeRuntime<Kind, Traits>>,
+): void {
+  const localTransformID = runtime.localTransformID;
+  const parentWorldTransformID = parentRuntime ? parentRuntime.worldTransformID : 0;
+  runtime.worldTransformUsingLocalTransformID = localTransformID;
+  runtime.worldTransformUsingParentTransformID = parentWorldTransformID;
+  runtime.worldTransformID = (localTransformID << 16) | (parentWorldTransformID & 0xffff);
 }
 
-export function getLocalBoundsRevision<SceneKind extends symbol, Traits extends object>(
-  source: Readonly<SceneNode<SceneKind, Traits>>,
+export function getNodeAppearanceRevision<Kind extends symbol, Traits extends object>(
+  source: Readonly<Node<Kind, Traits>>,
 ): number {
-  return getSceneNodeRuntime(source).localBoundsID;
+  return getNodeRuntime(source).appearanceID;
 }
 
-export function getLocalTransformRevision<SceneKind extends symbol, Traits extends object>(
-  source: Readonly<SceneNode<SceneKind, Traits>>,
+export function getNodeLocalBoundsRevision<Kind extends symbol, Traits extends object>(
+  source: Readonly<Node<Kind, Traits>>,
 ): number {
-  return getSceneNodeRuntime(source).localTransformID;
+  return getNodeRuntime(source).localBoundsID;
 }
 
-export function getWorldTransformRevision<SceneKind extends symbol, Traits extends object>(
-  source: SceneNode<SceneKind, Traits>,
+export function getNodeLocalTransformRevision<Kind extends symbol, Traits extends object>(
+  source: Readonly<Node<Kind, Traits>>,
 ): number {
-  return getSceneNodeRuntime(source).worldTransformID;
+  return getNodeRuntime(source).localTransformID;
+}
+
+export function getNodeWorldTransformRevision<Kind extends symbol, Traits extends object>(
+  source: Node<Kind, Traits>,
+): number {
+  return getNodeRuntime(source).worldTransformID;
+}
+
+export function invalidateNode<Kind extends symbol, Traits extends object>(target: Node<Kind, Traits>): void {
+  invalidateNodeAppearance(target);
+  invalidateNodeLocalBounds(target);
+  invalidateNodeLocalTransform(target);
+  invalidateNodeParentReference(target);
+  invalidateNodeWorldBounds(target);
 }
 
 /**
  * Target object's appearance changed (excluding transforms).
  */
-export function invalidateAppearance<SceneKind extends symbol, Traits extends object>(
-  target: SceneNode<SceneKind, Traits>,
-): void {
-  const runtime = getSceneNodeRuntime(target) as SceneNodeRuntime<SceneKind, Traits>;
+export function invalidateNodeAppearance<Kind extends symbol, Traits extends object>(target: Node<Kind, Traits>): void {
+  const runtime = getNodeRuntime(target) as NodeRuntime<Kind, Traits>;
   runtime.appearanceID = (runtime.appearanceID + 1) >>> 0;
 }
 
 /**
  * Target object's own dimensions (not including children) changed.
  */
-export function invalidateLocalBounds<SceneKind extends symbol, Traits extends object>(
-  target: SceneNode<SceneKind, Traits>,
+export function invalidateNodeLocalBounds<Kind extends symbol, Traits extends object>(
+  target: Node<Kind, Traits>,
 ): void {
-  const runtime = getSceneNodeRuntime(target) as SceneNodeRuntime<SceneKind, Traits>;
+  const runtime = getNodeRuntime(target) as NodeRuntime<Kind, Traits>;
   runtime.localBoundsID = (runtime.localBoundsID + 1) >>> 0;
 }
 
 /**
  * Target object's own transform (x, y, rotation, scaleX, scaleY) changed.
  */
-export function invalidateLocalTransform<SceneKind extends symbol, Traits extends object>(
-  target: SceneNode<SceneKind, Traits>,
+export function invalidateNodeLocalTransform<Kind extends symbol, Traits extends object>(
+  target: Node<Kind, Traits>,
 ): void {
-  const runtime = getSceneNodeRuntime(target) as SceneNodeRuntime<SceneKind, Traits>;
+  const runtime = getNodeRuntime(target) as NodeRuntime<Kind, Traits>;
   runtime.localTransformID = (runtime.localTransformID + 1) >>> 0;
 }
 
 /**
  * Target object's parent changed.
  */
-export function invalidateParentReference<SceneKind extends symbol, Traits extends object>(
-  target: SceneNode<SceneKind, Traits>,
+export function invalidateNodeParentReference<Kind extends symbol, Traits extends object>(
+  target: Node<Kind, Traits>,
 ): void {
-  const runtime = getSceneNodeRuntime(target) as SceneNodeRuntime<SceneKind, Traits>;
+  const runtime = getNodeRuntime(target) as NodeRuntime<Kind, Traits>;
   runtime.worldTransformUsingParentTransformID = -1;
 }
 
@@ -70,41 +87,18 @@ export function invalidateParentReference<SceneKind extends symbol, Traits exten
  * Target object's visual output changed (appearance or local transform).
  * Use this when animating properties like alpha, x, y, scaleX, scaleY, rotation.
  */
-export function invalidateRender<SceneKind extends symbol, Traits extends object>(
-  target: SceneNode<SceneKind, Traits>,
-): void {
-  invalidateAppearance(target);
-  invalidateLocalTransform(target);
-}
-
-export function invalidateSceneNode<SceneKind extends symbol, Traits extends object>(
-  target: SceneNode<SceneKind, Traits>,
-): void {
-  invalidateAppearance(target);
-  invalidateLocalBounds(target);
-  invalidateLocalTransform(target);
-  invalidateParentReference(target);
-  invalidateWorldBounds(target);
+export function invalidateNodeRender<Kind extends symbol, Traits extends object>(target: Node<Kind, Traits>): void {
+  invalidateNodeAppearance(target);
+  invalidateNodeLocalTransform(target);
 }
 
 /**
  * Target object's child bounds have changed.
  */
-export function invalidateWorldBounds<SceneKind extends symbol, Traits extends object>(
-  target: SceneNode<SceneKind, Traits>,
+export function invalidateNodeWorldBounds<Kind extends symbol, Traits extends object>(
+  target: Node<Kind, Traits>,
 ): void {
-  const runtime = getSceneNodeRuntime(target) as SceneNodeRuntime<SceneKind, Traits>;
+  const runtime = getNodeRuntime(target) as NodeRuntime<Kind, Traits>;
   runtime.worldBoundsUsingWorldTransformID = -1;
   runtime.worldBoundsUsingLocalBoundsID = -1;
-}
-
-export function recomputeWorldTransformRevision<SceneKind extends symbol, Traits extends object>(
-  runtime: SceneNodeRuntime<SceneKind, Traits>,
-  parentRuntime?: Readonly<SceneNodeRuntime<SceneKind, Traits>>,
-): void {
-  const localTransformID = runtime.localTransformID;
-  const parentWorldTransformID = parentRuntime ? parentRuntime.worldTransformID : 0;
-  runtime.worldTransformUsingLocalTransformID = localTransformID;
-  runtime.worldTransformUsingParentTransformID = parentWorldTransformID;
-  runtime.worldTransformID = (localTransformID << 16) | (parentWorldTransformID & 0xffff);
 }

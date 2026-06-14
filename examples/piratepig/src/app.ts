@@ -1,5 +1,5 @@
 import {
-  addSceneChild,
+  addNodeChild,
   attachPointerInput,
   attachWindowResize,
   attachWindowVisibility,
@@ -15,7 +15,7 @@ import {
   createTweenManager,
   DisplayObjectKind,
   graphHitTestLocalBounds,
-  invalidateRender,
+  invalidateNodeRender,
   loadAudioSourceFromURLs,
   loadFontFromURL,
   loadImageSourceFromURL,
@@ -63,12 +63,12 @@ root.scaleY = scale;
 const background = createBitmap();
 background.data.image = bgImage;
 background.data.smoothing = true;
-addSceneChild(root, background);
+addNodeChild(root, background);
 
 const footer = createBitmap();
 footer.data.image = footerImage;
 footer.data.smoothing = true;
-addSceneChild(root, footer);
+addNodeChild(root, footer);
 
 const interactionManager = createInteractionManager(root);
 const game = new PiratePigGame(manager, interactionManager, tileImages, logoImage, font.name, sounds, {
@@ -79,9 +79,9 @@ const game = new PiratePigGame(manager, interactionManager, tileImages, logoImag
 const logo = createBitmap();
 logo.data.image = logoImage;
 logo.data.smoothing = true;
-addSceneChild(game.obj, logo);
+addNodeChild(game.obj, logo);
 
-addSceneChild(root, game.obj);
+addNodeChild(root, game.obj);
 
 // ── Layout ─────────────────────────────────────────────────────────────────
 
@@ -90,7 +90,7 @@ function resize(w: number, h: number): void {
 
   background.scaleX = w / bgImage.width;
   background.scaleY = h / bgImage.height;
-  invalidateRender(background);
+  invalidateNodeRender(background);
 
   game.resize(w, h);
 
@@ -98,7 +98,7 @@ function resize(w: number, h: number): void {
   footer.scaleY = game.currentScale;
   footer.x = w / 2 - (footerImage.width * footer.scaleX) / 2;
   footer.y = h - footerImage.height * footer.scaleY;
-  invalidateRender(footer);
+  invalidateNodeRender(footer);
 }
 
 const win = createApplicationWindow();

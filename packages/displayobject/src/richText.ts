@@ -1,12 +1,12 @@
-import { invalidateAppearance } from '@flighthq/node';
+import { invalidateNodeAppearance } from '@flighthq/node';
 import type {
   MethodsOf,
+  Node,
   PartialNode,
   Rectangle,
   RichText,
   RichTextData,
   RichTextRuntime,
-  SceneNode,
   TextFormat,
   TextLayoutResult,
 } from '@flighthq/types';
@@ -20,7 +20,7 @@ export function clearRichTextFormatRanges(source: RichText): void {
   source.data.textFormatRanges.length = 0;
 }
 
-export function computeRichTextLocalBoundsRectangle(out: Rectangle, source: Readonly<SceneNode>): void {
+export function computeRichTextLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const data = (source as RichText).data;
   out.width = data.width;
   out.height = data.height;
@@ -86,7 +86,7 @@ export function setRichTextScrollH(source: RichText, value: number, layout?: Rea
   const clamped = Math.max(0, Math.min(max, Math.round(value)));
   if (_data.scrollH === clamped) return;
   _data.scrollH = clamped;
-  invalidateAppearance(source);
+  invalidateNodeAppearance(source);
 }
 
 export function setRichTextScrollV(source: RichText, value: number, layout?: Readonly<TextLayoutResult>): void {
@@ -95,12 +95,12 @@ export function setRichTextScrollV(source: RichText, value: number, layout?: Rea
   const clamped = Math.max(1, Math.min(max, Math.round(value)));
   if (_data.scrollV === clamped) return;
   _data.scrollV = clamped;
-  invalidateAppearance(source);
+  invalidateNodeAppearance(source);
 }
 
 export function setRichTextText(source: RichText, value: string): void {
   source.data.text = value;
-  invalidateAppearance(source);
+  invalidateNodeAppearance(source);
 }
 
 const defaultMethods: Partial<MethodsOf<RichTextRuntime>> = {

@@ -1,7 +1,7 @@
 // Port of CacheBitmapTest2. cacheAsBitmap is not applicable in flight;
 // this tests that nested alpha-blended containers render correctly while orbiting.
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
@@ -32,13 +32,13 @@ function makeChild(rects: { color: number; x: number; y: number }[]): ReturnType
     appendShapeRectangle(bg, x, y, pos(125), pos(125));
   }
   appendShapeEndFill(bg);
-  addSceneChild(c, bg);
+  addNodeChild(c, bg);
   for (const { color, x, y } of rects.slice(1)) {
     const s = createShape();
     appendShapeBeginFill(s, color);
     appendShapeRectangle(s, x, y, pos(100), pos(100));
     appendShapeEndFill(s);
-    addSceneChild(c, s);
+    addNodeChild(c, s);
   }
   return c;
 }
@@ -53,7 +53,7 @@ const H = height / scale;
 const stageBg = createShape();
 appendShapeBeginFill(stageBg, 0x000000);
 appendShapeRectangle(stageBg, 0, 0, W, H);
-addSceneChild(root, stageBg);
+addNodeChild(root, stageBg);
 
 const child1 = makeChild([
   { color: 0xff0000, x: pos(75), y: pos(25) },
@@ -78,7 +78,7 @@ const parentBg = createShape();
 appendShapeBeginFill(parentBg, 0xff0000);
 appendShapeRectangle(parentBg, 0, 0, pos(640), pos(480));
 appendShapeEndFill(parentBg);
-addSceneChild(parent, parentBg);
+addNodeChild(parent, parentBg);
 
 const parentRects = [
   { color: COLORS[8], x: pos(207), y: pos(300) },
@@ -91,12 +91,12 @@ for (const { color, x, y } of parentRects) {
   appendShapeBeginFill(s, color);
   appendShapeRectangle(s, x, y, pos(100), pos(100));
   appendShapeEndFill(s);
-  addSceneChild(parent, s);
+  addNodeChild(parent, s);
 }
 
-addSceneChild(parent, child1);
-addSceneChild(parent, child2);
-addSceneChild(root, parent);
+addNodeChild(parent, child1);
+addNodeChild(parent, child2);
+addNodeChild(root, parent);
 
 const status = createRichText();
 status.data.defaultTextFormat = { font: 'sans-serif', size: pos(32), color: 0xffffff };
@@ -105,7 +105,7 @@ status.y = pos(10);
 status.data.width = pos(1270);
 status.data.height = pos(40);
 status.data.text = 'cacheAsBitmap: n/a (not in flight)';
-addSceneChild(root, status);
+addNodeChild(root, status);
 
 const cx = pos(320);
 const cy = pos(120);

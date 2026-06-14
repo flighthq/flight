@@ -1,6 +1,6 @@
 import type { AudioSource, DisplayObject, ImageSource, InteractionManager, Text, TweenManager } from '@flighthq/sdk';
 import {
-  addSceneChild,
+  addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
@@ -9,7 +9,7 @@ import {
   createShape,
   createText,
   createTween,
-  invalidateRender,
+  invalidateNodeRender,
   playAudioSource,
   Quad,
 } from '@flighthq/sdk';
@@ -70,7 +70,7 @@ export class PiratePigGame {
     scoreText.data.textFormat = { font: fontName, size: 60, color: 0x000000, align: 'right' };
     scoreText.x = CONTENT_WIDTH - 200;
     scoreText.y = 12;
-    addSceneChild(this.obj, scoreText);
+    addNodeChild(this.obj, scoreText);
     this.scoreText = scoreText;
 
     const backgroundPanel = createShape();
@@ -78,12 +78,12 @@ export class PiratePigGame {
     appendShapeBeginFill(backgroundPanel, 0xffffff, 0.4);
     appendShapeRectangle(backgroundPanel, 0, 0, CONTENT_WIDTH, CONTENT_HEIGHT);
     appendShapeEndFill(backgroundPanel);
-    addSceneChild(this.obj, backgroundPanel);
+    addNodeChild(this.obj, backgroundPanel);
 
     const tileContainer = createDisplayObject();
     tileContainer.x = TILE_CONTAINER_X;
     tileContainer.y = TILE_CONTAINER_Y;
-    addSceneChild(this.obj, tileContainer);
+    addNodeChild(this.obj, tileContainer);
     this.tileContainer = tileContainer;
 
     this.tiles = Array.from({ length: NUM_ROWS }, () => new Array(NUM_COLUMNS).fill(null));
@@ -137,7 +137,7 @@ export class PiratePigGame {
     this.obj.scaleY = scale;
     this.obj.x = stageWidth / 2 - (CONTENT_WIDTH * scale) / 2;
 
-    invalidateRender(this.obj);
+    invalidateNodeRender(this.obj);
   }
 
   // ── Private ────────────────────────────────────────────────────────────────
@@ -189,13 +189,13 @@ export class PiratePigGame {
           ease: Quad.easeOut,
         },
       );
-      connectSignal(alphaTween.onUpdate, () => invalidateRender(tile.obj));
+      connectSignal(alphaTween.onUpdate, () => invalidateNodeRender(tile.obj));
     } else {
       tile.obj.x = tileX(col);
       tile.obj.y = tileY(row);
     }
 
-    addSceneChild(this.tileContainer, tile.obj);
+    addNodeChild(this.tileContainer, tile.obj);
     this.needToCheckMatches = true;
   }
 
@@ -303,7 +303,7 @@ export class PiratePigGame {
 
   private updateScore(): void {
     this.scoreText.data.text = String(this.currentScore);
-    invalidateRender(this.scoreText);
+    invalidateNodeRender(this.scoreText);
   }
 }
 

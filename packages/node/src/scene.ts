@@ -1,7 +1,7 @@
 import { createRectangle } from '@flighthq/geometry';
 import type { HasBoundsRectangleRuntime, MatrixLike, NullScene, Rectangle, Scene, SceneAlign } from '@flighthq/types';
 
-import { getSceneNodeRuntime } from './sceneNode';
+import { getNodeRuntime } from './node';
 
 export function computeSceneAlignX(scaledContentWidth: number, viewWidth: number, align: SceneAlign): number {
   if (align.includes('left')) return 0;
@@ -33,9 +33,9 @@ export function computeSceneFitScale(
   return Math.min(viewWidth / contentWidth, viewHeight / contentHeight);
 }
 
-export function computeSceneRenderTransform<SceneKind extends symbol>(
+export function computeSceneRenderTransform<Kind extends symbol>(
   out: MatrixLike,
-  scene: Scene<SceneKind>,
+  scene: Scene<Kind>,
   viewWidth: number,
   viewHeight: number,
 ): void {
@@ -44,7 +44,7 @@ export function computeSceneRenderTransform<SceneKind extends symbol>(
 
   if (scene.root !== null) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const runtime = getSceneNodeRuntime(scene.root as any) as unknown as Partial<HasBoundsRectangleRuntime> | undefined;
+    const runtime = getNodeRuntime(scene.root as any) as unknown as Partial<HasBoundsRectangleRuntime> | undefined;
     if (runtime?.computeLocalBoundsRectangle !== undefined) {
       _tempRectangle.width = 0;
       _tempRectangle.height = 0;
@@ -87,9 +87,7 @@ export function computeSceneRenderTransform<SceneKind extends symbol>(
   out.ty = computeSceneAlignY(contentHeight * sy, viewHeight, scene.align);
 }
 
-export function createScene<SceneKind extends symbol = typeof NullScene>(
-  obj?: Readonly<Partial<Scene<SceneKind>>>,
-): Scene<SceneKind> {
+export function createScene<Kind extends symbol = typeof NullScene>(obj?: Readonly<Partial<Scene<Kind>>>): Scene<Kind> {
   return {
     align: obj?.align ?? 'topleft',
     root: obj?.root ?? null,

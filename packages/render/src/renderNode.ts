@@ -1,7 +1,7 @@
 import { getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { createEntity } from '@flighthq/entity';
 import { createMatrix } from '@flighthq/geometry';
-import { getAppearanceRevision, getLocalTransformRevision, getSceneParent } from '@flighthq/node';
+import { getNodeAppearanceRevision, getNodeLocalTransformRevision, getNodeParent } from '@flighthq/node';
 import { getSpriteNodeRuntime } from '@flighthq/sprite';
 import {
   BlendMode,
@@ -9,11 +9,11 @@ import {
   type DisplayObjectRenderNode,
   type HasBoundsRectangle,
   type HasTransform2D,
+  type Node,
   type Renderable,
   type RenderNode,
   type RenderNode2D,
   type RenderState,
-  type SceneNode,
   type SpriteNode,
   type SpriteRenderNode,
 } from '@flighthq/types';
@@ -124,8 +124,8 @@ export function isRenderNodeDirty(
     (parentData.transformFrameID === state.currentFrameID || parentData.appearanceFrameID === state.currentFrameID);
   const localDirty =
     state.sceneGraphSyncPolicy === 'refreshDerivedState' ||
-    data.lastLocalTransformID !== getLocalTransformRevision(source as SceneNode) ||
-    data.lastAppearanceID !== getAppearanceRevision(source as SceneNode);
+    data.lastLocalTransformID !== getNodeLocalTransformRevision(source as Node) ||
+    data.lastAppearanceID !== getNodeAppearanceRevision(source as Node);
   return parentDirty || localDirty;
 }
 
@@ -151,7 +151,7 @@ export function prepareDisplayObjectRender(state: RenderState, source: DisplayOb
     if (!current.enabled) continue;
 
     if (current !== source) {
-      const parent = getSceneParent(current);
+      const parent = getNodeParent(current);
       if (parent === null) {
         parentData = undefined;
         lastParent = null;
@@ -223,7 +223,7 @@ export function prepareSpriteRender(state: RenderState, source: SpriteNode): boo
     if (!current.enabled) continue;
 
     if (current !== source) {
-      const parent = getSceneParent(current);
+      const parent = getNodeParent(current);
       if (parent === null) {
         parentData = undefined;
         lastParent = null;

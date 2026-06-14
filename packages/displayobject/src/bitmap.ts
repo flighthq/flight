@@ -1,10 +1,10 @@
-import { invalidateAppearance, invalidateLocalBounds } from '@flighthq/node';
-import type { Bitmap, BitmapData, BitmapRuntime, MethodsOf, PartialNode, Rectangle, SceneNode } from '@flighthq/types';
+import { invalidateNodeAppearance, invalidateNodeLocalBounds } from '@flighthq/node';
+import type { Bitmap, BitmapData, BitmapRuntime, MethodsOf, Node, PartialNode, Rectangle } from '@flighthq/types';
 import { BitmapKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
 
-export function computeBitmapLocalBoundsRectangle(out: Rectangle, source: Readonly<SceneNode>): void {
+export function computeBitmapLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const bitmapData: BitmapData = source.data as BitmapData;
   if (bitmapData.sourceRectangle !== null) {
     out.width = bitmapData.sourceRectangle.width;
@@ -37,8 +37,8 @@ export function getBitmapRuntime(source: Readonly<Bitmap>): Readonly<BitmapRunti
 
 export function setBitmapImage(source: Bitmap, value: BitmapData['image']): void {
   source.data.image = value;
-  invalidateLocalBounds(source);
-  invalidateAppearance(source);
+  invalidateNodeLocalBounds(source);
+  invalidateNodeAppearance(source);
 }
 
 const defaultMethods: Partial<MethodsOf<BitmapRuntime>> = {

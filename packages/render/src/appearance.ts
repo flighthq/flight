@@ -1,8 +1,8 @@
-import { getAppearanceRevision } from '@flighthq/node';
-import type { HasAppearance, RenderNode, RenderState, SceneNode } from '@flighthq/types';
+import { getNodeAppearanceRevision } from '@flighthq/node';
+import type { HasAppearance, Node, RenderNode, RenderState } from '@flighthq/types';
 
 export function updateRenderNodeAppearance(state: RenderState, data: RenderNode, parentData?: RenderNode): boolean {
-  const appearanceID = getAppearanceRevision(data.source as SceneNode);
+  const appearanceID = getNodeAppearanceRevision(data.source as Node);
   if (
     (parentData !== undefined && parentData.appearanceFrameID === state.currentFrameID) ||
     data.lastAppearanceID !== appearanceID

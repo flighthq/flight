@@ -1,5 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
-import type { Rectangle, SceneNode, Sprite, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
+import type { Node, Rectangle, Sprite, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
 import { SpriteKind } from '@flighthq/types';
 
 import {
@@ -14,7 +14,7 @@ describe('computeSpriteLocalBoundsRectangle', () => {
   it('does not modify out when no atlas or rect is set', () => {
     const sprite = createSprite();
     const out = createRectangle(0, 0, 0, 0);
-    computeSpriteLocalBoundsRectangle(out, sprite as unknown as SceneNode);
+    computeSpriteLocalBoundsRectangle(out, sprite as unknown as Node);
     expect(out.width).toBe(0);
     expect(out.height).toBe(0);
   });
@@ -22,7 +22,7 @@ describe('computeSpriteLocalBoundsRectangle', () => {
   it('uses rect dimensions when rect is set', () => {
     const sprite = createSprite({ data: { rect: createRectangle(0, 0, 64, 48) } });
     const out = createRectangle();
-    computeSpriteLocalBoundsRectangle(out, sprite as unknown as SceneNode);
+    computeSpriteLocalBoundsRectangle(out, sprite as unknown as Node);
     expect(out.width).toBe(64);
     expect(out.height).toBe(48);
   });
@@ -40,7 +40,7 @@ describe('computeSpriteLocalBoundsRectangle', () => {
     const atlas: TextureAtlas = { image: null, regions: [region] } as TextureAtlas;
     const sprite = createSprite({ data: { atlas, id: 1, rect: createRectangle(0, 0, 64, 48) } });
     const out = createRectangle();
-    computeSpriteLocalBoundsRectangle(out, sprite as unknown as SceneNode);
+    computeSpriteLocalBoundsRectangle(out, sprite as unknown as Node);
     expect(out.width).toBe(64);
     expect(out.height).toBe(48);
   });
@@ -58,7 +58,7 @@ describe('computeSpriteLocalBoundsRectangle', () => {
     const atlas: TextureAtlas = { image: null, regions: [region] } as TextureAtlas;
     const sprite = createSprite({ data: { atlas, id: 3 } });
     const out = createRectangle();
-    computeSpriteLocalBoundsRectangle(out, sprite as unknown as SceneNode);
+    computeSpriteLocalBoundsRectangle(out, sprite as unknown as Node);
     expect(out.width).toBe(128);
     expect(out.height).toBe(96);
   });
@@ -76,7 +76,7 @@ describe('computeSpriteLocalBoundsRectangle', () => {
     const atlas: TextureAtlas = { image: null, regions: [region] } as TextureAtlas;
     const sprite = createSprite({ data: { atlas, id: 99 } });
     const out = createRectangle(0, 0, 0, 0);
-    computeSpriteLocalBoundsRectangle(out, sprite as unknown as SceneNode);
+    computeSpriteLocalBoundsRectangle(out, sprite as unknown as Node);
     expect(out.width).toBe(0);
     expect(out.height).toBe(0);
   });

@@ -1,9 +1,9 @@
-import type { SceneNode } from '@flighthq/types';
+import type { Node } from '@flighthq/types';
 
 import { graphHitTestLocalBounds } from './hitTests';
 
 export function defaultBitmapHitTestPoint(
-  source: SceneNode<symbol, object>,
+  source: Node<symbol, object>,
   x: number,
   y: number,
   _shapeFlag: boolean,
@@ -12,7 +12,7 @@ export function defaultBitmapHitTestPoint(
 }
 
 export function defaultDisplayObjectHitTestPoint(
-  _source: SceneNode<symbol, object>,
+  _source: Node<symbol, object>,
   _x: number,
   _y: number,
   _shapeFlag: boolean,
@@ -21,7 +21,7 @@ export function defaultDisplayObjectHitTestPoint(
 }
 
 export function defaultHTMLViewHitTestPoint(
-  _source: SceneNode<symbol, object>,
+  _source: Node<symbol, object>,
   _x: number,
   _y: number,
   _shapeFlag: boolean,
@@ -31,7 +31,7 @@ export function defaultHTMLViewHitTestPoint(
 }
 
 export function defaultInputTextHitTestPoint(
-  source: SceneNode<symbol, object>,
+  source: Node<symbol, object>,
   x: number,
   y: number,
   _shapeFlag: boolean,
@@ -40,7 +40,7 @@ export function defaultInputTextHitTestPoint(
 }
 
 export function defaultMovieClipHitTestPoint(
-  _source: SceneNode<symbol, object>,
+  _source: Node<symbol, object>,
   _x: number,
   _y: number,
   _shapeFlag: boolean,
@@ -50,7 +50,7 @@ export function defaultMovieClipHitTestPoint(
 }
 
 export function defaultRenderViewHitTestPoint(
-  source: SceneNode<symbol, object>,
+  source: Node<symbol, object>,
   x: number,
   y: number,
   _shapeFlag: boolean,
@@ -59,7 +59,7 @@ export function defaultRenderViewHitTestPoint(
 }
 
 export function defaultRichTextHitTestPoint(
-  source: SceneNode<symbol, object>,
+  source: Node<symbol, object>,
   x: number,
   y: number,
   _shapeFlag: boolean,
@@ -68,7 +68,7 @@ export function defaultRichTextHitTestPoint(
 }
 
 export function defaultShapeHitTestPoint(
-  source: SceneNode<symbol, object>,
+  source: Node<symbol, object>,
   x: number,
   y: number,
   _shapeFlag: boolean,
@@ -77,7 +77,7 @@ export function defaultShapeHitTestPoint(
 }
 
 export function defaultStageHitTestPoint(
-  _source: SceneNode<symbol, object>,
+  _source: Node<symbol, object>,
   _x: number,
   _y: number,
   _shapeFlag: boolean,
@@ -87,7 +87,7 @@ export function defaultStageHitTestPoint(
 }
 
 export function defaultTextHitTestPoint(
-  source: SceneNode<symbol, object>,
+  source: Node<symbol, object>,
   x: number,
   y: number,
   _shapeFlag: boolean,
@@ -96,7 +96,7 @@ export function defaultTextHitTestPoint(
 }
 
 export function defaultVideoHitTestPoint(
-  source: SceneNode<symbol, object>,
+  source: Node<symbol, object>,
   x: number,
   y: number,
   _shapeFlag: boolean,

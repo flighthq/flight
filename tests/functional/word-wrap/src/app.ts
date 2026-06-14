@@ -1,4 +1,4 @@
-import { addSceneChild, createDisplayContainer, createRichText, invalidateAppearance } from '@flighthq/sdk';
+import { addNodeChild, createDisplayContainer, createRichText, invalidateNodeAppearance } from '@flighthq/sdk';
 
 import { height, render, scale, width } from './render';
 
@@ -36,7 +36,7 @@ field.data.htmlText =
   'unde excideris et age paenitentiam et prima opera fac sin ' +
   'autem venio tibi et movebo candelabrum tuum de loco suo nisi ' +
   'paenitentiam egeris.';
-addSceneChild(root, field);
+addNodeChild(root, field);
 
 const maxWidth = W - field.x - 100;
 let textWidth = 300;
@@ -46,7 +46,7 @@ function enterFrame(): void {
   textWidth += widthInc;
   if (textWidth <= 5 || textWidth >= maxWidth) widthInc = -widthInc;
   field.data.width = textWidth;
-  invalidateAppearance(field);
+  invalidateNodeAppearance(field);
 
   render(root);
   requestAnimationFrame(enterFrame);

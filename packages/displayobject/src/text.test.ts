@@ -1,5 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
-import type { PartialNode, SceneNode, Text } from '@flighthq/types';
+import type { Node, PartialNode, Text } from '@flighthq/types';
 import { TextKind } from '@flighthq/types';
 
 import { computeTextLocalBoundsRectangle, createText, createTextData, createTextRuntime, getTextRuntime } from './text';
@@ -8,7 +8,7 @@ describe('computeTextLocalBoundsRectangle', () => {
   it('sets out dimensions from data width and height', () => {
     const text = createText({ data: { width: 200, height: 50 } });
     const out = createRectangle();
-    computeTextLocalBoundsRectangle(out, text as unknown as SceneNode);
+    computeTextLocalBoundsRectangle(out, text as unknown as Node);
     expect(out.width).toBe(200);
     expect(out.height).toBe(50);
   });

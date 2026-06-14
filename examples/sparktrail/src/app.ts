@@ -11,8 +11,8 @@ import {
   createImageSource,
   createParticleEmitter,
   createTextureAtlas,
-  invalidateAppearance,
-  invalidateLocalTransform,
+  invalidateNodeAppearance,
+  invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 import Stats from 'stats.js';
 
@@ -159,7 +159,7 @@ function enterFrame(): void {
   emitterVelY += ((mouseY - emitter.y) * SPRING - emitterVelY * DAMPING) * dt;
   emitter.x += emitterVelX * dt;
   emitter.y += emitterVelY * dt;
-  invalidateLocalTransform(emitter);
+  invalidateNodeLocalTransform(emitter);
 
   // Emitter world matrix: translation only (sizes/speeds are already physical px).
   const worldTransform = { a: 1, b: 0, c: 0, d: 1, tx: emitter.x, ty: emitter.y };
@@ -167,7 +167,7 @@ function enterFrame(): void {
   // Forces act on last frame's live particles before this frame integrates them.
   applyParticleForces(emitter, simState, forces, dt);
   updateParticleEmitter(emitter, simState, pointerDown ? configPressed : config, dt, undefined, worldTransform);
-  invalidateAppearance(emitter);
+  invalidateNodeAppearance(emitter);
 
   counter.textContent = `${emitter.data.particleCount} particles`;
 
@@ -177,5 +177,5 @@ function enterFrame(): void {
   requestAnimationFrame(enterFrame);
 }
 
-invalidateLocalTransform(emitter);
+invalidateNodeLocalTransform(emitter);
 enterFrame();

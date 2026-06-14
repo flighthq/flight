@@ -12,7 +12,7 @@
     { "path": "../assets" },
     { "path": "../geometry" },
     { "path": "../render" },
-    { "path": "../scene-display" },
+    { "path": "../displayobject" },
     { "path": "../text-input" },
     { "path": "../text-layout" },
     { "path": "../types" }

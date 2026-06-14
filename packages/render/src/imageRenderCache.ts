@@ -1,15 +1,15 @@
 import { createEntity } from '@flighthq/entity';
 import { multiplyMatrix } from '@flighthq/geometry';
-import { invalidateAppearance } from '@flighthq/node';
+import { invalidateNodeAppearance } from '@flighthq/node';
 import type {
   ImageRenderCacheAdapter,
   ImageRenderCachePrimitive,
   ImageRenderCacheResult,
+  Node,
   Renderable,
   Renderer,
   RenderNode2D,
   RenderState,
-  SceneNode,
 } from '@flighthq/types';
 import { ImageRenderCacheKind } from '@flighthq/types';
 
@@ -25,7 +25,7 @@ export function beginImageRenderCacheCapture(state: RenderState): void {
   _capturingStates.add(state);
 }
 
-export function clearImageRenderCache(source: SceneNode<symbol, object>): void {
+export function clearImageRenderCache(source: Node<symbol, object>): void {
   setRenderNodeAdapter(source, null);
 }
 
@@ -70,7 +70,7 @@ export function endImageRenderCacheCapture(state: RenderState): void {
   _capturingStates.delete(state);
 }
 
-export function getImageRenderCache(source: SceneNode<symbol, object>): ImageRenderCacheResult | null {
+export function getImageRenderCache(source: Node<symbol, object>): ImageRenderCacheResult | null {
   const adapter = getRenderNodeAdapter(source);
   return isRenderImageCacheAdapter(adapter) ? adapter.result : null;
 }
@@ -94,12 +94,12 @@ export function registerImageRenderCacheRenderer(state: RenderState, renderer: R
   registerRenderer(state, ImageRenderCacheKind, renderer);
 }
 
-export function setImageRenderCache(source: SceneNode<symbol, object>, result: ImageRenderCacheResult): void {
+export function setImageRenderCache(source: Node<symbol, object>, result: ImageRenderCacheResult): void {
   let adapter = getRenderNodeAdapter(source);
   if (!isRenderImageCacheAdapter(adapter)) {
     adapter = createRenderImageCacheAdapter();
     setRenderNodeAdapter(source, adapter);
   }
   (adapter as ImageRenderCacheAdapter).result = result;
-  invalidateAppearance(source);
+  invalidateNodeAppearance(source);
 }

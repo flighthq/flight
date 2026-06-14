@@ -1,9 +1,9 @@
-import type { MethodsOf, PartialNode, Rectangle, SceneNode, Sprite, SpriteData, SpriteRuntime } from '@flighthq/types';
+import type { MethodsOf, Node, PartialNode, Rectangle, Sprite, SpriteData, SpriteRuntime } from '@flighthq/types';
 import { SpriteKind } from '@flighthq/types';
 
 import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
 
-export function computeSpriteLocalBoundsRectangle(out: Rectangle, source: Readonly<SceneNode>): void {
+export function computeSpriteLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const data = (source as Sprite).data;
   if (data.rect !== null) {
     out.width = data.rect.width;

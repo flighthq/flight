@@ -1,4 +1,4 @@
-import { invalidateLocalBounds } from '@flighthq/node';
+import { invalidateNodeLocalBounds } from '@flighthq/node';
 import { reserveParticleEmitter } from '@flighthq/sprite';
 import type {
   ParticleEmitter,
@@ -339,7 +339,7 @@ export function updateParticleEmitter(
   state.prevX = trackX;
   state.prevY = trackY;
 
-  invalidateLocalBounds(emitter);
+  invalidateNodeLocalBounds(emitter);
 }
 
 function clamp01(v: number): number {

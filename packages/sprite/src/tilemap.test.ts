@@ -1,5 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
-import type { SceneNode, Tileset } from '@flighthq/types';
+import type { Node, Tileset } from '@flighthq/types';
 import { TilemapKind } from '@flighthq/types';
 
 import {
@@ -19,7 +19,7 @@ describe('computeTilemapLocalBoundsRectangle', () => {
     const tileset = { tileWidth: 32, tileHeight: 16 } as Tileset;
     const tilemap = createTilemap({ data: { columns: 5, rows: 4, tileset } });
     const out = createRectangle();
-    computeTilemapLocalBoundsRectangle(out, tilemap as unknown as SceneNode);
+    computeTilemapLocalBoundsRectangle(out, tilemap as unknown as Node);
     expect(out.width).toBe(160);
     expect(out.height).toBe(64);
   });
@@ -27,7 +27,7 @@ describe('computeTilemapLocalBoundsRectangle', () => {
   it('sets zero dimensions when tileset is null', () => {
     const tilemap = createTilemap({ data: { columns: 5, rows: 4 } });
     const out = createRectangle(0, 0, 99, 99);
-    computeTilemapLocalBoundsRectangle(out, tilemap as unknown as SceneNode);
+    computeTilemapLocalBoundsRectangle(out, tilemap as unknown as Node);
     expect(out.width).toBe(0);
     expect(out.height).toBe(0);
   });

@@ -1,5 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
-import type { RenderView, RenderViewRenderer, SceneNode } from '@flighthq/types';
+import type { Node, RenderView, RenderViewRenderer } from '@flighthq/types';
 import { RenderViewKind } from '@flighthq/types';
 
 import {
@@ -22,7 +22,7 @@ describe('computeRenderViewLocalBoundsRectangle', () => {
   it('writes width and height from data', () => {
     const view = createRenderView({ data: { width: 400, height: 300 } });
     const out = createRectangle(0, 0, 0, 0);
-    computeRenderViewLocalBoundsRectangle(out, view as unknown as SceneNode);
+    computeRenderViewLocalBoundsRectangle(out, view as unknown as Node);
     expect(out.width).toBe(400);
     expect(out.height).toBe(300);
   });
