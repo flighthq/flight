@@ -1,9 +1,17 @@
 // Requires: assets/wabbit_alpha.png
 // Three bitmaps with blur filters of increasing strength (Gaussian standard deviation
-// 4 / 8 / 12 px). Demonstrates the createBlurFilter → filterToCSS → setCanvasCSSFilter
-// seam: the abstract filter descriptor is created here, and the render layer realizes it
-// per backend (CSS filter on canvas/DOM; the offscreen path on WebGL).
-import { type BitmapFilter, createBlurFilter } from '@flighthq/filters';
+// 4 / 8 / 12 px). The abstract blur descriptor is created here once; each render layer then
+// realizes it with the strategy that suits its substrate — there is no central dispatcher,
+// the blur function is chosen per renderer by name:
+//   - DOM:    element CSS filter (blurFilterToCSS → setDOMCSSFilter); the browser compositor
+//             caches the result.
+//   - Canvas: blurFilterToCSS baked once into an offscreen canvas registered as the node's
+//             image-render cache, so repeated frames blit the cached bitmap instead of
+//             re-running ctx.filter.
+//   - WebGL:  offscreen render target + applyBlurFilterToWebGL shader passes, composited back
+//             with drawWebGLRenderTargetResult.
+// All three read blurX/blurY as the same Gaussian σ, so the columns should match visually.
+import { type BlurFilter, createBlurFilter } from '@flighthq/filters';
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -17,7 +25,7 @@ import {
   loadImageSourceFromURL,
 } from '@flighthq/sdk';
 
-import { applyFilters, height, render, scale, width } from './render';
+import { applyBlurFilters, height, render, scale, width } from './render';
 
 const root = createDisplayContainer();
 root.scaleX = scale;
@@ -34,7 +42,7 @@ addNodeChild(root, bg);
 
 const image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
 
-const filtered: { node: DisplayObject; filter: BitmapFilter }[] = [];
+const filtered: { node: DisplayObject; filter: BlurFilter }[] = [];
 
 for (let i = 0; i < 3; i++) {
   const bmp = createBitmap();
@@ -45,9 +53,12 @@ for (let i = 0; i < 3; i++) {
   addNodeChild(root, bmp);
 
   // blurX/blurY are the Gaussian standard deviation in pixels — consistent across the
-  // CSS, surface, and WebGL paths.
+  // CSS, surface, and WebGL paths. quality is the number of box-blur passes the surface and
+  // WebGL paths run: a single box pass looks boxy, but three passes converge on a Gaussian
+  // (central limit theorem), matching the true Gaussian the CSS blur() paths produce. The
+  // per-pass radius is scaled down so σ stays the same — more passes only smooth the shape.
   const sigma = (i + 1) * 4;
-  filtered.push({ node: bmp, filter: createBlurFilter({ blurX: sigma, blurY: sigma }) });
+  filtered.push({ node: bmp, filter: createBlurFilter({ blurX: sigma, blurY: sigma, quality: 3 }) });
 
   const lbl = createRichText();
   lbl.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x444444 };
@@ -59,5 +70,5 @@ for (let i = 0; i < 3; i++) {
   addNodeChild(root, lbl);
 }
 
-applyFilters(filtered);
+applyBlurFilters(filtered);
 render(root);
