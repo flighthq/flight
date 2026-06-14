@@ -2,7 +2,7 @@ import type { WebGLRenderStateInternal, WebGLRenderTarget } from '@flighthq/rend
 import type { GradientGlowFilter } from '@flighthq/types';
 import type { WebGLRenderState } from '@flighthq/types';
 
-import { applyBlurFilterToWebGL } from './blurFilter';
+import { applyBoxBlurFilterToWebGL } from './blurFilter';
 import type { WebGLFilterLocations } from './filterPass';
 import { clearWebGLFilterTarget, compileWebGLFilterProgram, drawWebGLFilterPass } from './filterPass';
 import { createWebGLGradientRampTexture } from './gradientRamp';
@@ -55,7 +55,7 @@ export function applyGradientGlowFilterToWebGL(
 
   // Extract alpha as a neutral (white) mask, then blur → s1
   applyTintPass(state, source, s0, 0xffffff, 1, Math.min(1, strength));
-  applyBlurFilterToWebGL(state, s0, s1, s2, { blurX: filter.blurX ?? 6, blurY: filter.blurY ?? 6, quality });
+  applyBoxBlurFilterToWebGL(state, s0, s1, s2, { blurX: filter.blurX ?? 6, blurY: filter.blurY ?? 6, passes: quality });
 
   // Build gradient ramp texture and look up the blurred alpha → s0
   const ramp = createWebGLGradientRampTexture(gl, filter.colors, filter.alphas, filter.ratios);
