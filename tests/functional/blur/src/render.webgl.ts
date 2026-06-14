@@ -1,5 +1,5 @@
 import type { BlurFilter } from '@flighthq/filters';
-import { applyBlurFilterToWebGL, clearWebGLFilterTarget } from '@flighthq/filters-webgl';
+import { applyGaussianBlurFilterToWebGL, clearWebGLFilterTarget } from '@flighthq/filters-webgl';
 import type { DisplayObject, Matrix, WebGLRenderTarget } from '@flighthq/sdk';
 import {
   beginWebGLRenderTarget,
@@ -96,10 +96,11 @@ export function render(root: DisplayObject): void {
     beginWebGLRenderTarget(state, source, _identity);
     clearWebGLFilterTarget(state, source);
     renderWebGLDisplayObject(state, node);
-    // Run the blur while the render target is still active. The filter passes bind their own
-    // framebuffers and never restore the previous one, so endWebGLRenderTarget must run after
+    // The BlurFilter intent maps to a true Gaussian, matching the CSS blur() the DOM and Canvas
+    // columns use. Run it while the render target is still active: the filter passes bind their
+    // own framebuffers and never restore the previous one, so endWebGLRenderTarget must run after
     // them — it rebinds the screen framebuffer that the composite draws into.
-    applyBlurFilterToWebGL(state, source, blurred, scratch, filter);
+    applyGaussianBlurFilterToWebGL(state, source, blurred, scratch, filter);
     endWebGLRenderTarget(state);
   }
 
