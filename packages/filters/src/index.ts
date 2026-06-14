@@ -17,7 +17,7 @@ import type {
 
 export { applyBlurFilterToCanvas, applyDropShadowFilterToCanvas, applyOuterGlowFilterToCanvas } from './canvas';
 export { blurFilterToCSS, dropShadowFilterToCSS, getShadowFilterOffset, outerGlowFilterToCSS } from './css';
-export { computeBoxBlurRadius } from './math';
+export { computeBoxBlurPassRadius, computeBoxBlurRadius } from './math';
 export {
   applyBevelFilterToSurface,
   applyBlurFilterToSurface,

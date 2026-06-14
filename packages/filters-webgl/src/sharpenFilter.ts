@@ -2,7 +2,7 @@ import type { WebGLRenderStateInternal, WebGLRenderTarget } from '@flighthq/rend
 import type { SharpenFilter } from '@flighthq/types';
 import type { WebGLRenderState } from '@flighthq/types';
 
-import { applyBlurFilterToWebGL } from './blurFilter';
+import { applyBoxBlurFilterToWebGL } from './blurFilter';
 import type { WebGLDualSourceLocations } from './filterPass';
 import { compileWebGLFilterProgram, drawWebGLDualSourcePass } from './filterPass';
 
@@ -46,10 +46,10 @@ export function applySharpenFilterToWebGL(
 
   const [blurred, blurTemp] = scratch;
 
-  applyBlurFilterToWebGL(state, source, blurred, blurTemp, {
+  applyBoxBlurFilterToWebGL(state, source, blurred, blurTemp, {
     blurX: filter.blurX ?? 2,
     blurY: filter.blurY ?? 2,
-    quality,
+    passes: quality,
   });
 
   const loc = getShader(state);

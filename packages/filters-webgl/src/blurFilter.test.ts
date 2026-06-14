@@ -1,49 +1,58 @@
-import { applyBlurFilterToWebGL, computeBoxBlurRadiusWebGL } from './blurFilter';
+import { applyBoxBlurFilterToWebGL, applyGaussianBlurFilterToWebGL } from './blurFilter';
 import { makeFilterState, makeRenderTarget, makeScratch } from './testHelper';
 
-describe('applyBlurFilterToWebGL', () => {
+describe('applyBoxBlurFilterToWebGL', () => {
   it('runs without throwing with default options', () => {
     const { state } = makeFilterState();
     const [temp, dest] = makeScratch(2);
-    expect(() => applyBlurFilterToWebGL(state, makeRenderTarget(), dest, temp, {})).not.toThrow();
+    expect(() => applyBoxBlurFilterToWebGL(state, makeRenderTarget(), dest, temp, {})).not.toThrow();
   });
 
   it('runs without throwing with explicit sigma', () => {
     const { state } = makeFilterState();
     const [temp, dest] = makeScratch(2);
     expect(() =>
-      applyBlurFilterToWebGL(state, makeRenderTarget(), dest, temp, { blurX: 4, blurY: 4, quality: 1 }),
+      applyBoxBlurFilterToWebGL(state, makeRenderTarget(), dest, temp, { blurX: 4, blurY: 4, passes: 1 }),
     ).not.toThrow();
   });
 
   it('handles zero sigma (no-op blit)', () => {
     const { state } = makeFilterState();
     const [temp, dest] = makeScratch(2);
-    expect(() => applyBlurFilterToWebGL(state, makeRenderTarget(), dest, temp, { blurX: 0, blurY: 0 })).not.toThrow();
+    expect(() =>
+      applyBoxBlurFilterToWebGL(state, makeRenderTarget(), dest, temp, { blurX: 0, blurY: 0 }),
+    ).not.toThrow();
   });
 
-  it('runs multi-pass quality', () => {
+  it('runs multi-pass', () => {
     const { state } = makeFilterState();
     const [temp, dest] = makeScratch(2);
     expect(() =>
-      applyBlurFilterToWebGL(state, makeRenderTarget(), dest, temp, { blurX: 4, blurY: 4, quality: 3 }),
+      applyBoxBlurFilterToWebGL(state, makeRenderTarget(), dest, temp, { blurX: 4, blurY: 4, passes: 3 }),
     ).not.toThrow();
   });
 });
 
-describe('computeBoxBlurRadiusWebGL', () => {
-  it('returns 0 for sigma <= 0', () => {
-    expect(computeBoxBlurRadiusWebGL(0, 1)).toBe(0);
-    expect(computeBoxBlurRadiusWebGL(-1, 1)).toBe(0);
+describe('applyGaussianBlurFilterToWebGL', () => {
+  it('runs without throwing with default options', () => {
+    const { state } = makeFilterState();
+    const [temp, dest] = makeScratch(2);
+    expect(() => applyGaussianBlurFilterToWebGL(state, makeRenderTarget(), dest, temp, {})).not.toThrow();
   });
 
-  it('returns a positive radius for positive sigma', () => {
-    expect(computeBoxBlurRadiusWebGL(4, 1)).toBeGreaterThan(0);
+  it('runs without throwing with explicit sigma', () => {
+    const { state } = makeFilterState();
+    const [temp, dest] = makeScratch(2);
+    expect(() =>
+      applyGaussianBlurFilterToWebGL(state, makeRenderTarget(), dest, temp, { blurX: 4, blurY: 8 }),
+    ).not.toThrow();
   });
 
-  it('returns a smaller radius for more passes at the same sigma', () => {
-    const r1 = computeBoxBlurRadiusWebGL(4, 1);
-    const r3 = computeBoxBlurRadiusWebGL(4, 3);
-    expect(r3).toBeLessThanOrEqual(r1);
+  it('handles zero sigma (no-op blit)', () => {
+    const { state } = makeFilterState();
+    const [temp, dest] = makeScratch(2);
+    expect(() =>
+      applyGaussianBlurFilterToWebGL(state, makeRenderTarget(), dest, temp, { blurX: 0, blurY: 0 }),
+    ).not.toThrow();
   });
 });

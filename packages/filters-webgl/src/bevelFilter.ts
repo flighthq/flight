@@ -2,7 +2,7 @@ import type { WebGLRenderTarget } from '@flighthq/render-webgl';
 import type { BevelFilter } from '@flighthq/types';
 import type { WebGLRenderState } from '@flighthq/types';
 
-import { applyBlurFilterToWebGL } from './blurFilter';
+import { applyBoxBlurFilterToWebGL } from './blurFilter';
 import { clearWebGLFilterTarget } from './filterPass';
 import { applyBlitOffsetPass, applyBlitPass, applyTintPass } from './tintShader';
 
@@ -46,10 +46,10 @@ export function applyBevelFilterToWebGL(
 
   // Build the shared blur basis (neutral white tint preserves alpha shape)
   applyTintPass(state, source, tinted, 0xffffff, 1, strength);
-  applyBlurFilterToWebGL(state, tinted, blurred, blurTemp, {
+  applyBoxBlurFilterToWebGL(state, tinted, blurred, blurTemp, {
     blurX: filter.blurX ?? 4,
     blurY: filter.blurY ?? 4,
-    quality,
+    passes: quality,
   });
 
   clearWebGLFilterTarget(state, dest);

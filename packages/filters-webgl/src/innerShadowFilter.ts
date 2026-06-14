@@ -2,7 +2,7 @@ import type { WebGLRenderStateInternal, WebGLRenderTarget } from '@flighthq/rend
 import type { InnerShadowFilter } from '@flighthq/types';
 import type { WebGLRenderState } from '@flighthq/types';
 
-import { applyBlurFilterToWebGL } from './blurFilter';
+import { applyBoxBlurFilterToWebGL } from './blurFilter';
 import type { WebGLDualSourceLocations } from './filterPass';
 import { clearWebGLFilterTarget, compileWebGLFilterProgram, drawWebGLDualSourcePass } from './filterPass';
 import { applyBlitOffsetPass, applyBlitPass, applyInvertTintPass } from './tintShader';
@@ -60,7 +60,7 @@ export function applyInnerShadowFilterToWebGL(
   applyInvertTintPass(state, source, s0, color, alpha, strength);
 
   // Pass 2: blur → s1 (s2 is ping-pong temp)
-  applyBlurFilterToWebGL(state, s0, s1, s2, { blurX: filter.blurX ?? 4, blurY: filter.blurY ?? 4, quality });
+  applyBoxBlurFilterToWebGL(state, s0, s1, s2, { blurX: filter.blurX ?? 4, blurY: filter.blurY ?? 4, passes: quality });
 
   // Pass 3: shift the blurred shadow by the offset → s0 (s1 no longer needed)
   applyBlitOffsetPass(state, s1, s0, dx, dy);

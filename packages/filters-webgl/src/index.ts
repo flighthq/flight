@@ -1,5 +1,5 @@
 export { applyBevelFilterToWebGL } from './bevelFilter';
-export { applyBlurFilterToWebGL, computeBoxBlurRadiusWebGL } from './blurFilter';
+export { applyBoxBlurFilterToWebGL, applyGaussianBlurFilterToWebGL } from './blurFilter';
 export { applyColorMatrixFilterToWebGL } from './colorMatrixFilter';
 export { applyConvolutionFilterToWebGL } from './convolutionFilter';
 export { applyDisplacementMapFilterToWebGL } from './displacementMapFilter';

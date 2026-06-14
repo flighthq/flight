@@ -2,7 +2,7 @@ import type { WebGLRenderTarget } from '@flighthq/render-webgl';
 import type { OuterGlowFilter } from '@flighthq/types';
 import type { WebGLRenderState } from '@flighthq/types';
 
-import { applyBlurFilterToWebGL } from './blurFilter';
+import { applyBoxBlurFilterToWebGL } from './blurFilter';
 import { clearWebGLFilterTarget } from './filterPass';
 import { applyBlitPass, applyTintPass } from './tintShader';
 
@@ -33,10 +33,10 @@ export function applyOuterGlowFilterToWebGL(
   const [mask, blurred, blurTemp] = scratch;
 
   applyTintPass(state, source, mask, color, alpha, tintStrength);
-  applyBlurFilterToWebGL(state, mask, blurred, blurTemp, {
+  applyBoxBlurFilterToWebGL(state, mask, blurred, blurTemp, {
     blurX: filter.blurX ?? 6,
     blurY: filter.blurY ?? 6,
-    quality,
+    passes: quality,
   });
 
   clearWebGLFilterTarget(state, dest);
