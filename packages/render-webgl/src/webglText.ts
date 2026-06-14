@@ -14,8 +14,6 @@ import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';
 import { resolveWebGLShader } from './webglShaderBinding';
 
-const LAYOUT_WIDTH = 10000;
-
 // Offscreen canvas for rasterising text
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
@@ -52,8 +50,8 @@ export function drawWebGLText(state: RenderState, renderNode: DisplayObjectRende
   computeTextLayout(result, {
     text,
     formatRanges: [createTextFormatRange(textFormat, 0, text.length)],
-    width: LAYOUT_WIDTH,
-    height: LAYOUT_WIDTH,
+    width: source.data.width,
+    height: source.data.height,
     measure,
   });
 
