@@ -118,7 +118,7 @@ function findSourceFiles(): SourceFile[] {
       if (!name.endsWith('.ts')) continue;
       if (name.endsWith('.test.ts')) continue;
       if (name === 'index.ts' || name === 'internal.ts') continue;
-      if (name.endsWith('TestHelper.ts')) continue;
+      if (name.toLowerCase().endsWith('testhelper.ts')) continue;
 
       const absPath = join(srcDir, name);
       results.push({
