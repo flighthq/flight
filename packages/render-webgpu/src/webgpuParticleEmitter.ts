@@ -124,6 +124,8 @@ function ensureParticleResources(state: WebGPURenderStateInternal): WebGPUPartic
     },
     depthStencil: {
       format: 'depth24plus-stencil8',
+      depthWriteEnabled: false,
+      depthCompare: 'always',
       stencilFront: { compare: 'always', passOp: 'keep', failOp: 'keep', depthFailOp: 'keep' },
       stencilBack: { compare: 'always', passOp: 'keep', failOp: 'keep', depthFailOp: 'keep' },
       stencilReadMask: 0xff,

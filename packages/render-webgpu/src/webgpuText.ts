@@ -67,9 +67,11 @@ export function drawWebGPUText(state: RenderState, renderNode: DisplayObjectRend
   }
   if (maxX <= 0 || maxY <= 0) return;
 
-  const w = Math.ceil(maxX);
-  const h = Math.ceil(maxY);
+  const maxTexDim = internal.device.limits.maxTextureDimension2D;
   const pixelRatio = internal.pixelRatio;
+  const maxLogical = Math.floor(maxTexDim / pixelRatio);
+  const w = Math.min(Math.ceil(maxX), maxLogical);
+  const h = Math.min(Math.ceil(maxY), maxLogical);
   const offCtx = getOffscreenCanvas(w, h, pixelRatio);
   offCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   offCtx.clearRect(0, 0, w, h);
