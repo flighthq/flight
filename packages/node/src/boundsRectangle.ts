@@ -5,8 +5,8 @@ import {
   createRectangle,
   inverseMatrix,
   matrixTransformRectangle,
+  mergeRectangle,
   releaseMatrix,
-  unionRectangle,
 } from '@flighthq/geometry';
 import type {
   BoundsNode,
@@ -208,7 +208,7 @@ function recomputeWorldBoundsRectangle<Kind extends symbol, Traits extends objec
       if (!child.enabled) continue;
       const childWorldBounds = getNodeWorldBoundsRectangle(child as Spatial2DNode<Kind, Traits>);
       if (childWorldBounds.width !== 0 && childWorldBounds.height !== 0) {
-        unionRectangle(runtime.worldBoundsRectangle, runtime.worldBoundsRectangle, childWorldBounds);
+        mergeRectangle(runtime.worldBoundsRectangle, runtime.worldBoundsRectangle, childWorldBounds);
       }
     }
   }

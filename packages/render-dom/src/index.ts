@@ -15,7 +15,7 @@ export * from './domRichText';
 export * from './domShape';
 export * from './domStyle';
 export * from './domText';
-export { escapeHtmlString } from './domTextHelpers';
+export { escapeHTMLString } from './domTextHelpers';
 export * from './domTransform';
 export * from './domVideo';
 export * from './htmlView';

@@ -1,6 +1,6 @@
 import type { SpriteNode } from '@flighthq/sdk';
 import {
-  createWebGLElement,
+  createWebGLCanvasElement,
   createWebGLRenderState,
   defaultWebGLParticleEmitterRenderer,
   defaultWebGLSpriteRenderer,
@@ -13,7 +13,7 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-export const canvas = createWebGLElement(800, 450, pixelRatio);
+export const canvas = createWebGLCanvasElement(800, 450, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createWebGLRenderState(canvas, {

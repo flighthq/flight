@@ -1,7 +1,7 @@
 import { getOrCreateDisplayObjectRenderNode, hasRenderFeatures } from '@flighthq/render';
 import { type DisplayObject, RenderFeatures } from '@flighthq/types';
 
-import { getWebGLShader, selectWebGLShader, setWebGLShader } from './webglShaderBinding';
+import { getWebGLShader, resolveWebGLShader, setWebGLShader } from './webglShaderBinding';
 import { makeWebGLState } from './webglTestHelper';
 
 function makeShader() {
@@ -25,11 +25,11 @@ describe('getWebGLShader', () => {
   });
 });
 
-describe('selectWebGLShader', () => {
+describe('resolveWebGLShader', () => {
   it('returns the default bitmap shader when no binding is set', () => {
     const { state } = makeWebGLState();
     const renderNode = getOrCreateDisplayObjectRenderNode(state, {} as DisplayObject);
-    expect(selectWebGLShader(state, renderNode)).toBe(state.defaultBitmapShader);
+    expect(resolveWebGLShader(state, renderNode)).toBe(state.defaultBitmapShader);
   });
 
   it('returns the bound shader when shader support is enabled', () => {
@@ -38,14 +38,14 @@ describe('selectWebGLShader', () => {
     const shader = makeShader();
     setWebGLShader(state, node, shader);
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
-    expect(selectWebGLShader(state, renderNode)).toBe(shader);
+    expect(resolveWebGLShader(state, renderNode)).toBe(shader);
   });
 
   it('falls back to the default shader when the feature is disabled', () => {
     const { state } = makeWebGLState();
     const renderNode = getOrCreateDisplayObjectRenderNode(state, {} as DisplayObject);
     // No binding was made, so RenderFeatures.Shaders is off — lookup is skipped.
-    expect(selectWebGLShader(state, renderNode)).toBe(state.defaultBitmapShader);
+    expect(resolveWebGLShader(state, renderNode)).toBe(state.defaultBitmapShader);
   });
 });
 

@@ -1,10 +1,10 @@
 import type { Matrix } from '@flighthq/types';
 
-import { createMatrix, identityMatrix } from './matrix';
+import { createMatrix, setMatrixIdentity } from './matrix';
 
 export function acquireIdentityMatrix(): Matrix {
   const m = acquireMatrix();
-  identityMatrix(m);
+  setMatrixIdentity(m);
   return m;
 }
 

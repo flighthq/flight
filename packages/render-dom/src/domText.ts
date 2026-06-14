@@ -1,6 +1,6 @@
 ﻿import { getTextRuntime } from '@flighthq/displayobject';
 import { createEntity } from '@flighthq/entity';
-import { computeTextFormatFontString, rgbToHexString } from '@flighthq/render';
+import { computeTextFormatFontString, rgb24ToHexString } from '@flighthq/render';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
@@ -14,8 +14,8 @@ import type {
   TextRuntime,
 } from '@flighthq/types';
 
-import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
-import { escapeHtmlString } from './domTextHelpers';
+import { applyDOMStyle, prepareDOMElement, setDOMRendererElement } from './domStyle';
+import { escapeHTMLString } from './domTextHelpers';
 
 interface DOMTextData extends RendererData {
   div: HTMLDivElement | null;
@@ -49,7 +49,7 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
 
   if (data.div === null) {
     data.div = document.createElement('div');
-    initDOMElement(data.div);
+    prepareDOMElement(data.div);
     data.div.style.overflow = 'hidden';
   }
 
@@ -73,12 +73,12 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
   let html = '';
   for (const group of result.groups) {
     const fmt = group.format;
-    const slice = escapeHtmlString(text.substring(group.startIndex, group.endIndex));
+    const slice = escapeHTMLString(text.substring(group.startIndex, group.endIndex));
     const x = group.offsetX;
     const y = group.offsetY;
 
     let style = `position:absolute;left:${x}px;top:${y}px;font:${computeTextFormatFontString(fmt)};`;
-    style += `color:${rgbToHexString(fmt.color ?? 0)};white-space:nowrap;`;
+    style += `color:${rgb24ToHexString(fmt.color ?? 0)};white-space:nowrap;`;
     if (fmt.underline) style += 'text-decoration:underline;';
 
     html += `<div style="${style}">${slice}</div>`;

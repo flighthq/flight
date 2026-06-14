@@ -27,7 +27,7 @@ import {
   isRenderNodeVisible,
   prepareDisplayObjectRender,
   prepareSpriteRender,
-  syncRenderNodeRenderer,
+  updateRenderNodeRenderer,
 } from './renderNode';
 import { createRenderState } from './renderState';
 
@@ -425,7 +425,7 @@ describe('prepareSpriteRender', () => {
   });
 });
 
-describe('syncRenderNodeRenderer', () => {
+describe('updateRenderNodeRenderer', () => {
   it('sets renderer from the map matching the node kind', () => {
     const state = createRenderState();
     const source = makeSource();
@@ -433,7 +433,7 @@ describe('syncRenderNodeRenderer', () => {
     registerRenderer(state, source.kind, renderer as any);
     const node = createRenderNode(state, source);
     node.renderer = null;
-    syncRenderNodeRenderer(state, node);
+    updateRenderNodeRenderer(state, node);
     expect(node.renderer).toBe(renderer);
   });
 
@@ -442,7 +442,7 @@ describe('syncRenderNodeRenderer', () => {
     const source = makeSource();
     const node = createRenderNode(state, source);
     node.renderer = { createData: vi.fn(), draw: vi.fn() } as any;
-    syncRenderNodeRenderer(state, node);
+    updateRenderNodeRenderer(state, node);
     expect(node.renderer).toBeNull();
   });
 
@@ -451,7 +451,7 @@ describe('syncRenderNodeRenderer', () => {
     const source = makeSource();
     const node = createRenderNode(state, source);
     node.rendererMapID = -1;
-    syncRenderNodeRenderer(state, node);
+    updateRenderNodeRenderer(state, node);
     expect(node.rendererMapID).toBe(state.rendererMapID);
   });
 
@@ -463,7 +463,7 @@ describe('syncRenderNodeRenderer', () => {
     const node = createRenderNode(state, source);
     const newSource = makeSource();
     node.source = newSource;
-    syncRenderNodeRenderer(state, node);
+    updateRenderNodeRenderer(state, node);
     expect(node.rendererDataSource).toBe(newSource);
   });
 });

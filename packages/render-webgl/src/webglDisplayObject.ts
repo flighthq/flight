@@ -1,5 +1,5 @@
 import { getDisplayObjectRuntime } from '@flighthq/displayobject';
-import { createNullRendererData, getDisplayObjectRenderNode, isRenderNodeVisible } from '@flighthq/render';
+import { getDisplayObjectRenderNode, isRenderNodeVisible, noopRendererData } from '@flighthq/render';
 import type { DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
@@ -65,6 +65,6 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
 }
 
 export const defaultWebGLDisplayObjectRenderer: DisplayObjectRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawWebGLDisplayObject,
 };

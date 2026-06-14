@@ -1,4 +1,4 @@
-﻿import { createNullRendererData } from '@flighthq/render';
+﻿import { noopRendererData } from '@flighthq/render';
 import type { CanvasRenderState, SpriteRenderer, SpriteRenderNode, Tilemap } from '@flighthq/types';
 
 export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: SpriteRenderNode): void {
@@ -56,6 +56,6 @@ export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: SpriteR
 }
 
 export const defaultCanvasTilemapRenderer: SpriteRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawCanvasTilemap,
 };

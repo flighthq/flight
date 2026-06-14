@@ -10,7 +10,6 @@ import {
   createVector3,
   equalsMatrix3,
   getMatrix3Element,
-  identityMatrix3,
   inverseMatrix3,
   isAffineMatrix3,
   multiplyMatrix3,
@@ -20,6 +19,7 @@ import {
   setMatrix3Element,
   setMatrix3FromMatrix,
   setMatrix3FromMatrix4,
+  setMatrix3Identity,
   translateMatrix3,
 } from '@flighthq/geometry';
 import type { Matrix3 } from '@flighthq/types';
@@ -308,18 +308,6 @@ describe('getMatrix3Element', () => {
     expect(getMatrix3Element(m, 0, 2)).toBe(3);
     expect(getMatrix3Element(m, 1, 0)).toBe(4);
     expect(getMatrix3Element(m, 2, 2)).toBe(9);
-  });
-});
-
-describe('identityMatrix3', () => {
-  it('resets a matrix to the identity', () => {
-    const m = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
-    identityMatrix3(m);
-    expect(getMatrix3Element(m, 0, 0)).toBe(1);
-    expect(getMatrix3Element(m, 1, 1)).toBe(1);
-    expect(getMatrix3Element(m, 2, 2)).toBe(1);
-    expect(getMatrix3Element(m, 0, 1)).toBe(0);
-    expect(getMatrix3Element(m, 1, 0)).toBe(0);
   });
 });
 
@@ -625,6 +613,18 @@ describe('setMatrix3FromMatrix4', () => {
     const expectedMatrix3 = new Float32Array([2, 0, 0, 0, 3, 0, 0, 0, 4]);
 
     expect(mat.m).toEqual(expectedMatrix3);
+  });
+});
+
+describe('setMatrix3Identity', () => {
+  it('resets a matrix to the identity', () => {
+    const m = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
+    setMatrix3Identity(m);
+    expect(getMatrix3Element(m, 0, 0)).toBe(1);
+    expect(getMatrix3Element(m, 1, 1)).toBe(1);
+    expect(getMatrix3Element(m, 2, 2)).toBe(1);
+    expect(getMatrix3Element(m, 0, 1)).toBe(0);
+    expect(getMatrix3Element(m, 1, 0)).toBe(0);
   });
 });
 

@@ -9,7 +9,7 @@ import type {
   RenderState,
 } from '@flighthq/types';
 
-import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
+import { applyDOMStyle, prepareDOMElement, setDOMRendererElement } from './domStyle';
 
 interface DOMBitmapData extends RendererData {
   canvas: HTMLCanvasElement | null;
@@ -53,7 +53,7 @@ function renderBitmapAsImage(
   if (data.image === null) {
     data.image = document.createElement('img');
     data.image.crossOrigin = 'anonymous';
-    initDOMElement(data.image);
+    prepareDOMElement(data.image);
   }
 
   if (data.image.src !== src.src) {
@@ -80,7 +80,7 @@ function renderBitmapAsCanvas(
   if (data.canvas === null) {
     data.canvas = document.createElement('canvas');
     data.context = data.canvas.getContext('2d');
-    initDOMElement(data.canvas);
+    prepareDOMElement(data.canvas);
   }
 
   const source = renderNode.source as Bitmap;

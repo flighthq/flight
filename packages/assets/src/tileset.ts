@@ -1,7 +1,20 @@
 import { createEntity } from '@flighthq/entity';
 import type { Tileset } from '@flighthq/types';
 
-import { createTextureAtlasRegion, initTextureAtlasRegion } from './textureAtlasRegion';
+import { createTextureAtlasRegion, setTextureAtlasRegion } from './textureAtlasRegion';
+
+export function buildTilesetRegions(target: Tileset): void {
+  const { atlas, rows, columns, tileWidth, tileHeight } = target;
+  if (atlas === null) return;
+  let i = 0;
+  for (let row = 0; row < rows; row++) {
+    for (let column = 0; column < columns; column++) {
+      if (i >= atlas.regions.length) atlas.regions.push(createTextureAtlasRegion());
+      setTextureAtlasRegion(atlas.regions[i], column * tileWidth, row * tileHeight, tileWidth, tileHeight);
+      i++;
+    }
+  }
+}
 
 export function createTileset(obj?: Partial<Tileset>): Tileset {
   return createEntity({
@@ -11,17 +24,4 @@ export function createTileset(obj?: Partial<Tileset>): Tileset {
     rows: obj?.rows ?? 0,
     columns: obj?.columns ?? 0,
   });
-}
-
-export function initTilesetRegions(target: Tileset): void {
-  const { atlas, rows, columns, tileWidth, tileHeight } = target;
-  if (atlas === null) return;
-  let i = 0;
-  for (let row = 0; row < rows; row++) {
-    for (let column = 0; column < columns; column++) {
-      if (i >= atlas.regions.length) atlas.regions.push(createTextureAtlasRegion());
-      initTextureAtlasRegion(atlas.regions[i], column * tileWidth, row * tileHeight, tileWidth, tileHeight);
-      i++;
-    }
-  }
 }

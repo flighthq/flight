@@ -6,7 +6,7 @@ import {
   sampleCurve,
 } from '@flighthq/particles';
 
-import { loadUnityParticle, parseUnityParticle } from './parse';
+import { parseUnityParticle, parseUnityParticleDocument } from './parse';
 import { serializeUnityParticle } from './serialize';
 
 const SMOKE_JSON = JSON.stringify({
@@ -46,55 +46,6 @@ const SMOKE_JSON = JSON.stringify({
 });
 
 const PPU = 100;
-
-describe('loadUnityParticle — full round-trip, returns { config, document }', () => {
-  it('returns the same config values as parseUnityParticle', () => {
-    const config = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
-    const { config: loaded } = loadUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
-    expect(loaded.maxParticles).toBe(config.maxParticles);
-    expect(loaded.gravityY).toBeCloseTo(config.gravityY, 5);
-  });
-
-  it('preserves name, looping, and prewarm in document', () => {
-    const { document } = loadUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
-    expect(document.name).toBe('smoke');
-    expect(document.looping).toBe(true);
-    expect(document.prewarm).toBe(false);
-  });
-});
-
-describe('loadUnityParticle — import warnings', () => {
-  it('has no warnings for a config-representable system', () => {
-    expect(loadUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU }).warnings).toEqual([]);
-  });
-
-  it('warns about unsupported modules that are enabled', () => {
-    const json = JSON.stringify({
-      ...JSON.parse(SMOKE_JSON),
-      noise: { enabled: true },
-      collision: { enabled: true },
-      trails: { enabled: false }, // disabled → no warning
-    });
-    const { warnings } = loadUnityParticle(json, { pixelsPerUnit: PPU });
-    expect(warnings.some((w) => w.includes('noise'))).toBe(true);
-    expect(warnings.some((w) => w.includes('collision'))).toBe(true);
-    expect(warnings.some((w) => w.includes('trails'))).toBe(false);
-  });
-
-  it('warns when more than one burst is present', () => {
-    const json = JSON.stringify({
-      ...JSON.parse(SMOKE_JSON),
-      emission: {
-        rateOverTime: { mode: 'constant', constant: 0 },
-        bursts: [
-          { time: 0, count: 5 },
-          { time: 1, count: 5 },
-        ],
-      },
-    });
-    expect(loadUnityParticle(json).warnings.some((w) => w.includes('burst'))).toBe(true);
-  });
-});
 
 describe('parseUnityParticle — gradient / size curves bake into curves', () => {
   it('leaves curves null when colorOverLifetime has only start/end', () => {
@@ -165,7 +116,7 @@ describe('parseUnityParticle — gradient / size curves bake into curves', () =>
         },
       },
     });
-    expect(loadUnityParticle(json).warnings.some((w) => w.toLowerCase().includes('gradient'))).toBe(false);
+    expect(parseUnityParticleDocument(json).warnings.some((w) => w.toLowerCase().includes('gradient'))).toBe(false);
   });
 });
 
@@ -266,10 +217,59 @@ describe('parseUnityParticle — malformed input', () => {
   });
 });
 
+describe('parseUnityParticleDocument — full round-trip, returns { config, document }', () => {
+  it('returns the same config values as parseUnityParticle', () => {
+    const config = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
+    const { config: loaded } = parseUnityParticleDocument(SMOKE_JSON, { pixelsPerUnit: PPU });
+    expect(loaded.maxParticles).toBe(config.maxParticles);
+    expect(loaded.gravityY).toBeCloseTo(config.gravityY, 5);
+  });
+
+  it('preserves name, looping, and prewarm in document', () => {
+    const { document } = parseUnityParticleDocument(SMOKE_JSON, { pixelsPerUnit: PPU });
+    expect(document.name).toBe('smoke');
+    expect(document.looping).toBe(true);
+    expect(document.prewarm).toBe(false);
+  });
+});
+
+describe('parseUnityParticleDocument — import warnings', () => {
+  it('has no warnings for a config-representable system', () => {
+    expect(parseUnityParticleDocument(SMOKE_JSON, { pixelsPerUnit: PPU }).warnings).toEqual([]);
+  });
+
+  it('warns about unsupported modules that are enabled', () => {
+    const json = JSON.stringify({
+      ...JSON.parse(SMOKE_JSON),
+      noise: { enabled: true },
+      collision: { enabled: true },
+      trails: { enabled: false }, // disabled → no warning
+    });
+    const { warnings } = parseUnityParticleDocument(json, { pixelsPerUnit: PPU });
+    expect(warnings.some((w) => w.includes('noise'))).toBe(true);
+    expect(warnings.some((w) => w.includes('collision'))).toBe(true);
+    expect(warnings.some((w) => w.includes('trails'))).toBe(false);
+  });
+
+  it('warns when more than one burst is present', () => {
+    const json = JSON.stringify({
+      ...JSON.parse(SMOKE_JSON),
+      emission: {
+        rateOverTime: { mode: 'constant', constant: 0 },
+        bursts: [
+          { time: 0, count: 5 },
+          { time: 1, count: 5 },
+        ],
+      },
+    });
+    expect(parseUnityParticleDocument(json).warnings.some((w) => w.includes('burst'))).toBe(true);
+  });
+});
+
 describe('serializeUnityParticle', () => {
   it('round-trips key config fields', () => {
     const config = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
-    const { document } = loadUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
+    const { document } = parseUnityParticleDocument(SMOKE_JSON, { pixelsPerUnit: PPU });
     const config2 = parseUnityParticle(serializeUnityParticle(config, document, { pixelsPerUnit: PPU }), {
       pixelsPerUnit: PPU,
     });

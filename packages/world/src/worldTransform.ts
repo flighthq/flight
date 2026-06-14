@@ -3,7 +3,7 @@ import type { HasTransform3DRuntime, Matrix4Like, Vector3Like, WorldTransform3DN
 
 import { getWorldNodeRuntime, type WorldNodeRuntime } from './worldNode';
 
-export function ensureWorldMatrix(target: WorldTransform3DNode): void {
+export function ensureWorldTransformMatrix(target: WorldTransform3DNode): void {
   const runtime = getWorldNodeRuntime(target) as WorldNodeRuntime & HasTransform3DRuntime;
   const parent = runtime.parent as WorldTransform3DNode | null;
 
@@ -11,7 +11,7 @@ export function ensureWorldMatrix(target: WorldTransform3DNode): void {
   let parentWorldTransformID = 0;
 
   if (parent !== null) {
-    ensureWorldMatrix(parent);
+    ensureWorldTransformMatrix(parent);
     parentRuntime = getWorldNodeRuntime(parent) as WorldNodeRuntime & HasTransform3DRuntime;
     parentWorldTransformID = parentRuntime.worldTransformID;
   }
@@ -24,21 +24,29 @@ export function ensureWorldMatrix(target: WorldTransform3DNode): void {
   }
 }
 
-export function getWorldMatrix(target: WorldTransform3DNode): Readonly<Matrix4Like> {
-  ensureWorldMatrix(target);
+export function getWorldTransformMatrix(target: WorldTransform3DNode): Readonly<Matrix4Like> {
+  ensureWorldTransformMatrix(target);
   return (getWorldNodeRuntime(target) as WorldNodeRuntime & HasTransform3DRuntime).worldMatrix!;
 }
 
 /** Transforms a point from world space into the node's local space. */
-export function worldGlobalToLocal(out: Vector3Like, source: WorldTransform3DNode, point: Readonly<Vector3Like>): void {
+export function worldGlobalToLocalVector3(
+  out: Vector3Like,
+  source: WorldTransform3DNode,
+  point: Readonly<Vector3Like>,
+): void {
   const inv = createMatrix4();
-  inverseMatrix4(inv, getWorldMatrix(source));
+  inverseMatrix4(inv, getWorldTransformMatrix(source));
   matrix4TransformPoint(out, inv, point);
 }
 
 /** Transforms a point from the node's local space into world space. */
-export function worldLocalToGlobal(out: Vector3Like, source: WorldTransform3DNode, point: Readonly<Vector3Like>): void {
-  matrix4TransformPoint(out, getWorldMatrix(source), point);
+export function worldLocalToGlobalVector3(
+  out: Vector3Like,
+  source: WorldTransform3DNode,
+  point: Readonly<Vector3Like>,
+): void {
+  matrix4TransformPoint(out, getWorldTransformMatrix(source), point);
 }
 
 function recomputeWorldMatrix(

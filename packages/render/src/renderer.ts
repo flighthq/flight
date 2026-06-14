@@ -9,7 +9,7 @@ import {
 
 import type { RenderStateInternal } from './internal';
 
-export function copyFromRenderState(target: RenderState, source: RenderState): void {
+export function copyAllRenderersFromRenderState(target: RenderState, source: RenderState): void {
   copyRenderersFromRenderState(target, source);
   copyMaskRenderersFromRenderState(target, source);
 }
@@ -27,10 +27,6 @@ export function copyRenderersFromRenderState(target: RenderState, source: Render
   });
 }
 
-export function createNullRendererData(_state: RenderState, _source: Renderable): RendererData | null {
-  return null;
-}
-
 export function disableRenderFeatures(state: RenderState, features: RenderFeatures): void {
   state.renderFeatures = RenderFeatures.remove(state.renderFeatures, features);
 }
@@ -41,6 +37,10 @@ export function enableRenderFeatures(state: RenderState, features: RenderFeature
 
 export function hasRenderFeatures(state: RenderState, features: RenderFeatures): boolean {
   return RenderFeatures.has(state.renderFeatures, features);
+}
+
+export function noopRendererData(_state: RenderState, _source: Renderable): RendererData | null {
+  return null;
 }
 
 export function registerDisplayObjectMaskRenderer(

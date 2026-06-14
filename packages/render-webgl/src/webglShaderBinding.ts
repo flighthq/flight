@@ -26,7 +26,7 @@ export function getWebGLShader(renderNode: DisplayObjectRenderNode): WebGLBitmap
  * bitmap shader. The feature gate keeps the binding lookup off the hot path until
  * at least one shader has been bound.
  */
-export function selectWebGLShader(
+export function resolveWebGLShader(
   state: WebGLRenderStateInternal,
   renderNode: DisplayObjectRenderNode,
 ): WebGLBitmapShader {

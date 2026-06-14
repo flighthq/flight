@@ -11,7 +11,7 @@ import type {
   Shape,
 } from '@flighthq/types';
 
-import { initDOMElement, setDOMRendererElement } from './domStyle';
+import { prepareDOMElement, setDOMRendererElement } from './domStyle';
 import { setDOMTransformWithOffset } from './domTransform';
 
 interface DOMShapeData extends RendererData {
@@ -34,7 +34,7 @@ export function drawDOMShape(state: DOMRenderState, renderNode: DisplayObjectRen
   if (data.canvas === null) {
     data.canvas = document.createElement('canvas');
     data.context = data.canvas.getContext('2d');
-    initDOMElement(data.canvas);
+    prepareDOMElement(data.canvas);
   }
 
   const bounds = getNodeLocalBoundsRectangle(source);

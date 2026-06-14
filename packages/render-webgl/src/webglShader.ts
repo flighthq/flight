@@ -38,7 +38,7 @@ function compileShader(gl: WebGL2RenderingContext, type: number, src: string): W
   return shader;
 }
 
-export function compileDefaultProgram(gl: WebGL2RenderingContext): WebGLShaderLocations {
+export function compileDefaultWebGLProgram(gl: WebGL2RenderingContext): WebGLShaderLocations {
   return compileWebGLBitmapProgram(gl);
 }
 
@@ -83,7 +83,7 @@ export function createDefaultBitmapShader(
     program: shaderLoc.program,
     bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: DisplayObjectRenderNode): void {
       const internal = state as WebGLRenderStateInternal;
-      setWebGLAttribs(gl, shaderLoc);
+      setWebGLAttributes(gl, shaderLoc);
       setWebGLMatrixFromTransform(
         gl,
         shaderLoc,
@@ -114,7 +114,7 @@ export function createWebGLBitmapShader(
     program: locations.program,
     bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: DisplayObjectRenderNode): void {
       const internal = state as WebGLRenderStateInternal;
-      setWebGLAttribs(gl, locations);
+      setWebGLAttributes(gl, locations);
       setWebGLMatrixFromTransform(
         gl,
         locations,
@@ -128,7 +128,7 @@ export function createWebGLBitmapShader(
   };
 }
 
-export function setWebGLAttribs(gl: WebGL2RenderingContext, loc: WebGLShaderLocations): void {
+export function setWebGLAttributes(gl: WebGL2RenderingContext, loc: WebGLShaderLocations): void {
   gl.enableVertexAttribArray(loc.locPosition);
   gl.enableVertexAttribArray(loc.locTexCoord);
   gl.vertexAttribPointer(loc.locPosition, 2, gl.FLOAT, false, 16, 0);

@@ -163,7 +163,7 @@ export function exitApplicationFullscreen(): Promise<void> {
   return document.exitFullscreen();
 }
 
-export function lockApplicationElement(element: HTMLElement): void {
+export function lockApplicationPointer(element: HTMLElement): void {
   element.style.touchAction = 'none';
   element.style.userSelect = 'none';
   element.style.webkitUserSelect = 'none';

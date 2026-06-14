@@ -1,6 +1,6 @@
 import {
   applyParticleForces,
-  bakeCurve,
+  buildCurveLUT,
   colorCurveFromKeyframes,
   createParticleEmitterConfig,
   createParticleEmitterState,
@@ -49,11 +49,11 @@ emitter.y = (HEIGHT * scale) / 2;
 // Shared lifetime curves (normalised over each spark's life, resolution-independent).
 // Scale pops on spawn then shrinks to nothing; alpha stays bright then fades with a
 // tail; tint runs white-hot → orange → ember-red.
-const scaleCurve = bakeCurve((t) => {
+const scaleCurve = buildCurveLUT((t) => {
   const pop = t < 0.15 ? 0.7 + (1 - 0.7) * (t / 0.15) : 1; // 0.7 → 1.0 over first 15%
   return pop * (1 - t); // then taper to 0 by end of life
 });
-const alphaCurve = bakeCurve((t) => 1 - t * t); // bright, then accelerating fade
+const alphaCurve = buildCurveLUT((t) => 1 - t * t); // bright, then accelerating fade
 const colorCurve = colorCurveFromKeyframes([
   { time: 0, r: 1, g: 1, b: 0.85 },
   { time: 0.35, r: 1, g: 0.5, b: 0.1 },

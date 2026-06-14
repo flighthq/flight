@@ -145,7 +145,7 @@ export function concatColorMatrix(out: number[], first: ReadonlyArray<number>, s
 /**
  * Writes the identity color matrix into `out` (length 20).
  */
-export function identityColorMatrix(out: number[]): void {
+export function setColorMatrixIdentity(out: number[]): void {
   setColorMatrix(out, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0);
 }
 

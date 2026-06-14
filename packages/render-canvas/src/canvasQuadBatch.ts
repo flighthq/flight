@@ -1,5 +1,5 @@
 ﻿import { acquireMatrix, multiplyMatrix, releaseMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry';
-import { createNullRendererData } from '@flighthq/render';
+import { noopRendererData } from '@flighthq/render';
 import type { CanvasRenderState, QuadBatch, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: SpriteRenderNode): void {
@@ -86,6 +86,6 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: SpriteR
 }
 
 export const defaultCanvasQuadBatchRenderer: SpriteRenderer = {
-  createData: createNullRendererData,
+  createData: noopRendererData,
   draw: drawCanvasQuadBatch,
 };

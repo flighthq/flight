@@ -1,6 +1,6 @@
 ﻿import { getRichTextRuntime } from '@flighthq/displayobject';
 import { createEntity } from '@flighthq/entity';
-import { computeTextFormatFontString, rgbToHexString } from '@flighthq/render';
+import { computeTextFormatFontString, rgb24ToHexString } from '@flighthq/render';
 import {
   computeRichTextContent,
   computeTextLayout,
@@ -25,8 +25,8 @@ import type {
 } from '@flighthq/types';
 
 import { getDomFontAscentCached, setDomFontAscentCached } from './domFontSource';
-import { applyDOMStyle, initDOMElement, setDOMRendererElement } from './domStyle';
-import { escapeHtmlString } from './domTextHelpers';
+import { applyDOMStyle, prepareDOMElement, setDOMRendererElement } from './domStyle';
+import { escapeHTMLString } from './domTextHelpers';
 
 interface DOMRichTextData extends RendererData {
   div: HTMLDivElement | null;
@@ -54,7 +54,7 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
 
   if (data.div === null) {
     data.div = document.createElement('div');
-    initDOMElement(data.div);
+    prepareDOMElement(data.div);
     data.div.style.overflow = 'hidden';
   }
 
@@ -86,8 +86,8 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
   const div = data.div;
   div.style.width = `${fieldW}px`;
   div.style.height = `${fieldH}px`;
-  div.style.backgroundColor = background ? rgbToHexString(backgroundColor) : '';
-  div.style.border = border ? `1px solid ${rgbToHexString(borderColor)}` : '';
+  div.style.backgroundColor = background ? rgb24ToHexString(backgroundColor) : '';
+  div.style.border = border ? `1px solid ${rgb24ToHexString(borderColor)}` : '';
 
   if (text.length === 0) {
     div.innerHTML = '';
@@ -119,7 +119,7 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
     if (group.lineIndex < firstVisibleLine) continue;
 
     const fmt = group.format;
-    const slice = escapeHtmlString(text.substring(group.startIndex, group.endIndex));
+    const slice = escapeHTMLString(text.substring(group.startIndex, group.endIndex));
     const x = group.offsetX - scrollXOffset;
     const fontStr = computeTextFormatFontString(fmt);
     // Align the CSS alphabetic baseline with canvas: canvas draws at offsetY + group.ascent
@@ -132,12 +132,12 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
       bulletLines.add(group.lineIndex);
       const bulletSize = fmt.size ?? 12;
       const bulletX = x - bulletSize * 0.7 - DOM_BULLET_GAP;
-      const bulletStyle = `position:absolute;left:${bulletX}px;top:${y}px;font:${fontStr};line-height:1;color:${rgbToHexString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
+      const bulletStyle = `position:absolute;left:${bulletX}px;top:${y}px;font:${fontStr};line-height:1;color:${rgb24ToHexString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
       html += `<div style="${bulletStyle}">Ã¢â‚¬Â¢</div>`;
     }
 
     let style = `position:absolute;left:${x}px;top:${y}px;font:${fontStr};line-height:1;`;
-    style += `color:${rgbToHexString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
+    style += `color:${rgb24ToHexString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
     if (fmt.underline || fmt.strikethrough) {
       const decorations = [];
       if (fmt.underline) decorations.push('underline');
