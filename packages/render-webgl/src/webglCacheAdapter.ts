@@ -12,7 +12,7 @@ import type {
 } from '@flighthq/types';
 import { WebGLCacheKind } from '@flighthq/types';
 
-import { drawWebGLRenderTargetResult } from './webglRenderTarget';
+import { createWebGLRenderTarget, drawWebGLRenderTargetResult, resizeWebGLRenderTarget } from './webglRenderTarget';
 
 export { WebGLCacheKind };
 export type { WebGLCache, WebGLCacheAdapter };
@@ -44,6 +44,28 @@ export function enableWebGLCache(state: RenderState): void {
 
 export function enableWebGLCacheAdapterSignals(adapter: WebGLCacheAdapter): void {
   adapter.signals ??= { onPrepare: createSignal() };
+}
+
+export function ensureWebGLCacheSize(
+  state: WebGLRenderState,
+  cache: WebGLCache,
+  minWidth: number,
+  minHeight: number,
+): boolean {
+  const current = cache.target;
+  if (current !== null && current.width >= minWidth && current.height >= minHeight) return false;
+  const newWidth = current !== null ? Math.max(current.width, minWidth) : minWidth;
+  const newHeight = current !== null ? Math.max(current.height, minHeight) : minHeight;
+  resizeWebGLCache(state, cache, newWidth, newHeight);
+  return true;
+}
+
+export function resizeWebGLCache(state: WebGLRenderState, cache: WebGLCache, width: number, height: number): void {
+  if (cache.target === null) {
+    cache.target = createWebGLRenderTarget(state, width, height);
+  } else {
+    resizeWebGLRenderTarget(state, cache.target, width, height);
+  }
 }
 
 function drawWebGLCache(state: RenderState, renderNode: DisplayObjectRenderNode): void {
