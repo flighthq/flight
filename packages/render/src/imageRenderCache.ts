@@ -25,8 +25,8 @@ export function beginImageRenderCacheCapture(state: RenderState): void {
   _capturingStates.add(state);
 }
 
-export function clearImageRenderCache(source: Node<symbol, object>): void {
-  setRenderNodeAdapter(source, null);
+export function clearImageRenderCache(state: RenderState, source: Node<symbol, object>): void {
+  setRenderNodeAdapter(state, source, null);
 }
 
 export function createImageRenderCachePrimitive(
@@ -37,7 +37,7 @@ export function createImageRenderCachePrimitive(
 }
 
 export function createRenderImageCacheAdapter(): ImageRenderCacheAdapter {
-  const _primitivesByState = new WeakMap<RenderState, ImageRenderCachePrimitive>();
+  let _primitive: ImageRenderCachePrimitive | null = null;
 
   const adapter: ImageRenderCacheAdapter = {
     result: null,
@@ -47,16 +47,14 @@ export function createRenderImageCacheAdapter(): ImageRenderCacheAdapter {
       const cache = adapter.result;
       if (cache?.source?.src == null) return null;
 
-      let primitive = _primitivesByState.get(state);
-      if (primitive === undefined) {
-        primitive = createImageRenderCachePrimitive(source, cache);
-        _primitivesByState.set(state, primitive);
+      if (_primitive === null) {
+        _primitive = createImageRenderCachePrimitive(source, cache);
       } else {
-        primitive.cache = cache;
+        _primitive.cache = cache;
       }
 
-      node.source = primitive;
-      node.kind = primitive.kind;
+      node.source = _primitive;
+      node.kind = _primitive.kind;
       multiplyMatrix(node.transform2D, node.transform2D, cache.transform);
 
       return false;
@@ -70,8 +68,8 @@ export function endImageRenderCacheCapture(state: RenderState): void {
   _capturingStates.delete(state);
 }
 
-export function getImageRenderCache(source: Node<symbol, object>): ImageRenderCacheResult | null {
-  const adapter = getRenderNodeAdapter(source);
+export function getImageRenderCache(state: RenderState, source: Node<symbol, object>): ImageRenderCacheResult | null {
+  const adapter = getRenderNodeAdapter(state, source);
   return isRenderImageCacheAdapter(adapter) ? adapter.result : null;
 }
 
@@ -94,11 +92,15 @@ export function registerImageRenderCacheRenderer(state: RenderState, renderer: R
   registerRenderer(state, ImageRenderCacheKind, renderer);
 }
 
-export function setImageRenderCache(source: Node<symbol, object>, result: ImageRenderCacheResult): void {
-  let adapter = getRenderNodeAdapter(source);
+export function setImageRenderCache(
+  state: RenderState,
+  source: Node<symbol, object>,
+  result: ImageRenderCacheResult,
+): void {
+  let adapter = getRenderNodeAdapter(state, source);
   if (!isRenderImageCacheAdapter(adapter)) {
     adapter = createRenderImageCacheAdapter();
-    setRenderNodeAdapter(source, adapter);
+    setRenderNodeAdapter(state, source, adapter);
   }
   (adapter as ImageRenderCacheAdapter).result = result;
   invalidateNodeAppearance(source);
