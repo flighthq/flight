@@ -1,3 +1,4 @@
+export * from './math';
 export * from './matrix';
 export * from './matrix3';
 export * from './matrix3Pool';
