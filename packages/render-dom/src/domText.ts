@@ -65,7 +65,12 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
     measure,
   });
 
-  data.div.style.width = `${source.data.width}px`;
+  let divWidth = 0;
+  for (const group of result.groups) {
+    const right = group.offsetX + group.width;
+    if (right > divWidth) divWidth = right;
+  }
+  data.div.style.width = `${divWidth}px`;
   data.div.style.height = `${result.textHeight}px`;
 
   let html = '';
