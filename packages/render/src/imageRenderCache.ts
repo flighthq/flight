@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity';
 import { multiplyMatrix } from '@flighthq/geometry';
-import { invalidateAppearance } from '@flighthq/scene';
+import { invalidateAppearance } from '@flighthq/node';
 import type {
   ImageRenderCacheAdapter,
   ImageRenderCachePrimitive,

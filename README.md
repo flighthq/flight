@@ -208,10 +208,10 @@ Library code should prefer the smallest package or subpath that provides the nee
 | `@flighthq/render-canvas` | Canvas 2D renderer |
 | `@flighthq/render-dom` | DOM renderer |
 | `@flighthq/render-webgl` | WebGL2 renderer |
-| `@flighthq/scene` | Shared hierarchy, transforms, bounds, appearance, and invalidation |
-| `@flighthq/scene-display` | Display-object graph: bitmaps, shapes, text, containers, masks, and video |
-| `@flighthq/scene-sprite` | Sprite graph: sprites, quad batches, and tilemaps |
-| `@flighthq/scene-world` | Experimental 3D world graph |
+| `@flighthq/node` | Shared hierarchy, transforms, bounds, appearance, and invalidation |
+| `@flighthq/displayobject` | Display-object graph: bitmaps, shapes, text, containers, masks, and video |
+| `@flighthq/sprite` | Sprite graph: sprites, quad batches, and tilemaps |
+| `@flighthq/world` | Experimental 3D world graph |
 | `@flighthq/sdk` | Application-level convenience barrel |
 | `@flighthq/signals` | Strictly typed signals and slots |
 | `@flighthq/spritesheet` | Spritesheet frame animation playback |

@@ -1,5 +1,5 @@
-﻿import { computeTextFormatFontString, createNullRendererData, rgbToHexString } from '@flighthq/render';
-import { getTextRuntime } from '@flighthq/scene-display';
+﻿import { getTextRuntime } from '@flighthq/displayobject';
+import { computeTextFormatFontString, createNullRendererData, rgbToHexString } from '@flighthq/render';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,

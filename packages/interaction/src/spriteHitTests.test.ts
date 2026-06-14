@@ -1,6 +1,6 @@
 import { setRectangle } from '@flighthq/geometry';
-import { addSceneChild, getLocalBoundsRectangle } from '@flighthq/scene';
-import { createQuadBatch, createSprite, createTilemap } from '@flighthq/scene-sprite';
+import { addSceneChild, getLocalBoundsRectangle } from '@flighthq/node';
+import { createQuadBatch, createSprite, createTilemap } from '@flighthq/sprite';
 
 import { defaultQuadBatchHitTestPoint, defaultSpriteHitTestPoint, defaultTilemapHitTestPoint } from './spriteHitTests';
 

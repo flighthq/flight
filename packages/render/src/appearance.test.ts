@@ -1,5 +1,5 @@
-import { invalidateAppearance } from '@flighthq/scene';
-import { createDisplayObject } from '@flighthq/scene-display';
+import { createDisplayObject } from '@flighthq/displayobject';
+import { invalidateAppearance } from '@flighthq/node';
 import { BlendMode } from '@flighthq/types';
 
 import { updateRenderNodeAppearance } from './appearance';

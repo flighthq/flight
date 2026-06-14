@@ -1,5 +1,5 @@
-import { invalidateLocalBounds } from '@flighthq/scene';
-import { reserveParticleEmitter } from '@flighthq/scene-sprite';
+import { invalidateLocalBounds } from '@flighthq/node';
+import { reserveParticleEmitter } from '@flighthq/sprite';
 import type {
   ParticleEmitter,
   ParticleEmitterCallbacks,

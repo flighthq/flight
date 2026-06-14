@@ -1,5 +1,5 @@
+import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix, createRectangle } from '@flighthq/geometry';
-import { createDisplayObject } from '@flighthq/scene-display';
 
 import {
   computeDisplayObjectRenderTargetTransform,

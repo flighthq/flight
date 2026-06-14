@@ -1,7 +1,7 @@
-﻿import { registerRenderer } from '@flighthq/render';
+﻿import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/displayobject';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/render-canvas';
-import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/scene-display';
 import { ShapeKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';

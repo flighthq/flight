@@ -1,5 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
-import { getLocalBoundsRectangle, getLocalBoundsRevision } from '@flighthq/scene';
+import { getLocalBoundsRectangle, getLocalBoundsRevision } from '@flighthq/node';
 import type { QuadBatch, QuadTransformType, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
 

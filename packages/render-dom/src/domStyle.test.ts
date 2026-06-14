@@ -1,6 +1,6 @@
-﻿import { setMatrix } from '@flighthq/geometry';
+﻿import { createDisplayObject } from '@flighthq/displayobject';
+import { setMatrix } from '@flighthq/geometry';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import { createDisplayObject } from '@flighthq/scene-display';
 import { BlendMode } from '@flighthq/types';
 
 import { enableDOMCSSFilterSupport, setDOMCSSFilter } from './domCSSFilterBinding';

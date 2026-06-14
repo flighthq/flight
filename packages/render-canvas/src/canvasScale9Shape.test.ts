@@ -1,6 +1,6 @@
-﻿import { registerRenderer } from '@flighthq/render';
+﻿import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/displayobject';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/scene-display';
 import { Scale9ShapeKind } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';

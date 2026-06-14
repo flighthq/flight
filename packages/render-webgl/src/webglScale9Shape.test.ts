@@ -1,5 +1,5 @@
-﻿import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/scene-display';
+﻿import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/displayobject';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 
 import {
   createWebGLScale9ShapeData,

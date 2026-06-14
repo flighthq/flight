@@ -1,4 +1,4 @@
-import { createDisplayObject } from '@flighthq/scene-display';
+import { createDisplayObject } from '@flighthq/displayobject';
 import type { RenderNodeAdapter } from '@flighthq/types';
 
 import { registerRenderer } from './renderer';

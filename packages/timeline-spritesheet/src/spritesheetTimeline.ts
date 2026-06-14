@@ -1,5 +1,5 @@
-import { addSceneChild, invalidateLocalTransform } from '@flighthq/scene';
-import { createBitmap } from '@flighthq/scene-display';
+import { createBitmap } from '@flighthq/displayobject';
+import { addSceneChild, invalidateLocalTransform } from '@flighthq/node';
 import { createTimeline, playMovieClip } from '@flighthq/timeline';
 import type { MovieClip, Spritesheet, SpritesheetAnimation } from '@flighthq/types';
 

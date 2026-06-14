@@ -17,7 +17,7 @@ import {
   appendShapeRoundRectangle,
   createShape,
   GraphicsPathCommand,
-} from '@flighthq/scene-display';
+} from '@flighthq/displayobject';
 
 import { renderCanvasShapeCommands } from './canvasShape';
 import { defaultCanvasShapeCommands } from './canvasShapeCommands';

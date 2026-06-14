@@ -1,5 +1,6 @@
 import { createImageSourceFromCanvas } from '@flighthq/assets';
 import { copyMatrix, createMatrix, createRectangle } from '@flighthq/geometry';
+import { computeBoundsRectangle } from '@flighthq/node';
 import {
   beginImageRenderCacheCapture,
   computeDisplayObjectRenderTargetTransform,
@@ -9,7 +10,6 @@ import {
   getImageRenderCache,
   setImageRenderCache,
 } from '@flighthq/render';
-import { computeBoundsRectangle } from '@flighthq/scene';
 import type { CanvasRenderState, CaptureImageRenderCacheOptions, DisplayObject, Matrix } from '@flighthq/types';
 
 import {

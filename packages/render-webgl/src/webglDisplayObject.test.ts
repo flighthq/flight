@@ -1,4 +1,6 @@
-﻿import { createMatrix } from '@flighthq/geometry';
+﻿import { createDisplayObject } from '@flighthq/displayobject';
+import { createMatrix } from '@flighthq/geometry';
+import { addSceneChild } from '@flighthq/node';
 import {
   enableRenderFeatures,
   getOrCreateDisplayObjectRenderNode,
@@ -6,8 +8,6 @@ import {
   registerDisplayObjectMaskRenderer,
   registerRenderer,
 } from '@flighthq/render';
-import { addSceneChild } from '@flighthq/scene';
-import { createDisplayObject } from '@flighthq/scene-display';
 import type { WebGLRenderState } from '@flighthq/types';
 import { DisplayObjectKind, RenderFeatures } from '@flighthq/types';
 

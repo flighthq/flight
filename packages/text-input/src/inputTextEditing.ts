@@ -1,5 +1,5 @@
-import { invalidateAppearance } from '@flighthq/scene';
-import { getInputTextRuntime } from '@flighthq/scene-display';
+import { getInputTextRuntime } from '@flighthq/displayobject';
+import { invalidateAppearance } from '@flighthq/node';
 import { getRichTextSelectionRectangles } from '@flighthq/text-layout';
 import type {
   HandleInputTextKeyboardOptions,

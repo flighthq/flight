@@ -1,4 +1,4 @@
-import { createParticleEmitter } from '@flighthq/scene-sprite';
+import { createParticleEmitter } from '@flighthq/sprite';
 import type { HasAppearance, HasTransform2D, TextureAtlas } from '@flighthq/types';
 
 import { applyParticleForces, applyParticleObjectForces } from './applyParticleForces';

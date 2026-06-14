@@ -1,5 +1,5 @@
 import { getSpriteRenderNode, isRenderNodeVisible } from '@flighthq/render';
-import { getSpriteNodeRuntime } from '@flighthq/scene-sprite';
+import { getSpriteNodeRuntime } from '@flighthq/sprite';
 import type { SpriteNode, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
