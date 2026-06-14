@@ -12,6 +12,7 @@ import type {
 } from '@flighthq/types';
 import { CanvasCacheKind } from '@flighthq/types';
 
+import { createCanvasRenderTarget, resizeCanvasRenderTarget } from './canvasRenderTarget';
 import { setCanvasTransform } from './canvasTransform';
 
 export { CanvasCacheKind };
@@ -44,6 +45,23 @@ export function enableCanvasCache(state: RenderState): void {
 
 export function enableCanvasCacheAdapterSignals(adapter: CanvasCacheAdapter): void {
   adapter.signals ??= { onPrepare: createSignal() };
+}
+
+export function ensureCanvasCacheSize(cache: CanvasCache, minWidth: number, minHeight: number): boolean {
+  const current = cache.target;
+  if (current !== null && current.width >= minWidth && current.height >= minHeight) return false;
+  const newWidth = current !== null ? Math.max(current.width, minWidth) : minWidth;
+  const newHeight = current !== null ? Math.max(current.height, minHeight) : minHeight;
+  resizeCanvasCache(cache, newWidth, newHeight);
+  return true;
+}
+
+export function resizeCanvasCache(cache: CanvasCache, width: number, height: number): void {
+  if (cache.target === null) {
+    cache.target = createCanvasRenderTarget(width, height);
+  } else {
+    resizeCanvasRenderTarget(cache.target, width, height);
+  }
 }
 
 function drawCanvasCache(state: RenderState, renderNode: DisplayObjectRenderNode): void {
