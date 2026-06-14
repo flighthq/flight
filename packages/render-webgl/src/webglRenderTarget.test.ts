@@ -1,10 +1,13 @@
 import { createMatrix } from '@flighthq/geometry';
+import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import { createDisplayObject } from '@flighthq/scene-display';
 
 import type { WebGLRenderStateInternal } from './internal';
 import {
   beginWebGLRenderTarget,
   createWebGLRenderTarget,
   destroyWebGLRenderTarget,
+  drawWebGLRenderTargetResult,
   endWebGLRenderTarget,
   resizeWebGLRenderTarget,
 } from './webglRenderTarget';
@@ -132,6 +135,43 @@ describe('destroyWebGLRenderTarget', () => {
 
     expect(vi.mocked(gl.deleteFramebuffer)).toHaveBeenCalledWith(framebuffer);
     expect(vi.mocked(gl.deleteTexture)).toHaveBeenCalledWith(texture);
+  });
+});
+
+describe('drawWebGLRenderTargetResult', () => {
+  it('is a no-op when target dimensions are zero', () => {
+    const { state, gl } = makeState();
+    const node = getOrCreateDisplayObjectRenderNode(state, createDisplayObject());
+    const target = createWebGLRenderTarget(state, 1, 1);
+    target.width = 0;
+    vi.clearAllMocks();
+
+    drawWebGLRenderTargetResult(state, node, target, createMatrix());
+
+    expect(vi.mocked(gl.bindTexture)).not.toHaveBeenCalled();
+  });
+
+  it('composites a valid target without throwing', () => {
+    const { state } = makeState();
+    const node = getOrCreateDisplayObjectRenderNode(state, createDisplayObject());
+    node.alpha = 1;
+    const target = createWebGLRenderTarget(state, 64, 48);
+
+    expect(() => drawWebGLRenderTargetResult(state, node, target, createMatrix())).not.toThrow();
+  });
+
+  it('binds the target texture', () => {
+    const { state, gl } = makeState();
+    const node = getOrCreateDisplayObjectRenderNode(state, createDisplayObject());
+    const target = createWebGLRenderTarget(state, 64, 48);
+    vi.clearAllMocks();
+
+    drawWebGLRenderTargetResult(state, node, target, createMatrix());
+
+    expect(vi.mocked(gl.bindTexture)).toHaveBeenCalledWith(
+      (gl as unknown as { TEXTURE_2D: number }).TEXTURE_2D,
+      target.texture,
+    );
   });
 });
 
