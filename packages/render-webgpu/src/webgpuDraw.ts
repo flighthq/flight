@@ -54,7 +54,7 @@ export function bindWebGPUTexture(
 
   device.queue.copyExternalImageToTexture(
     { source: imageSource as GPUCopyExternalImageSource, flipY: false },
-    { texture, premultipliedAlpha: true },
+    { texture, premultipliedAlpha },
     [width, height],
   );
 
