@@ -80,27 +80,27 @@ const blitShaders = new WeakMap<WebGLRenderState, WebGLFilterLocations>();
  * Blits source into dest at a pixel offset (dx, dy in screen-space Y-down).
  * Pixels sampling outside the source bounds produce transparent output.
  */
-export function applyBlitOffsetPass(
+export function applyBlitOffsetPassWebGL(
   state: WebGLRenderState,
   source: WebGLRenderTarget,
   dest: WebGLRenderTarget,
   dx: number,
   dy: number,
 ): void {
-  const loc = getBlitOffsetShader(state);
+  const loc = getBlitOffsetShaderWebGL(state);
   drawWebGLFilterPass(state, source, dest, loc, (gl) => {
     gl.uniform2f(loc.locOffset, -dx / source.width, dy / source.height);
   });
 }
 
 /** Blits source directly into dest without modification. */
-export function applyBlitPass(state: WebGLRenderState, source: WebGLRenderTarget, dest: WebGLRenderTarget): void {
-  const loc = getBlitShader(state);
+export function applyBlitPassWebGL(state: WebGLRenderState, source: WebGLRenderTarget, dest: WebGLRenderTarget): void {
+  const loc = getBlitShaderWebGL(state);
   drawWebGLFilterPass(state, source, dest, loc, () => {});
 }
 
 /** Tints the INVERTED source alpha with color, outputs a premultiplied mask. Used for inner effects. */
-export function applyInvertTintPass(
+export function applyInvertTintPassWebGL(
   state: WebGLRenderState,
   source: WebGLRenderTarget,
   dest: WebGLRenderTarget,
@@ -108,7 +108,7 @@ export function applyInvertTintPass(
   alpha: number,
   strength: number,
 ): void {
-  const loc = getInvertTintShader(state);
+  const loc = getInvertTintShaderWebGL(state);
   drawWebGLFilterPass(state, source, dest, loc, (gl) => {
     gl.uniform3f(loc.locColor, ((color >> 16) & 0xff) / 255, ((color >> 8) & 0xff) / 255, (color & 0xff) / 255);
     gl.uniform1f(loc.locAlpha, alpha);
@@ -117,7 +117,7 @@ export function applyInvertTintPass(
 }
 
 /** Tints the source alpha with color, outputs a premultiplied mask into dest. */
-export function applyTintPass(
+export function applyTintPassWebGL(
   state: WebGLRenderState,
   source: WebGLRenderTarget,
   dest: WebGLRenderTarget,
@@ -125,7 +125,7 @@ export function applyTintPass(
   alpha: number,
   strength: number,
 ): void {
-  const loc = getTintShader(state);
+  const loc = getTintShaderWebGL(state);
   drawWebGLFilterPass(state, source, dest, loc, (gl) => {
     gl.uniform3f(loc.locColor, ((color >> 16) & 0xff) / 255, ((color >> 8) & 0xff) / 255, (color & 0xff) / 255);
     gl.uniform1f(loc.locAlpha, alpha);
@@ -133,7 +133,7 @@ export function applyTintPass(
   });
 }
 
-export function getBlitOffsetShader(state: WebGLRenderState): BlitOffsetShaderLocations {
+export function getBlitOffsetShaderWebGL(state: WebGLRenderState): BlitOffsetShaderLocations {
   let loc = blitOffsetShaders.get(state);
   if (loc === undefined) {
     const gl = (state as WebGLRenderStateInternal).gl;
@@ -144,7 +144,7 @@ export function getBlitOffsetShader(state: WebGLRenderState): BlitOffsetShaderLo
   return loc;
 }
 
-export function getBlitShader(state: WebGLRenderState): WebGLFilterLocations {
+export function getBlitShaderWebGL(state: WebGLRenderState): WebGLFilterLocations {
   let loc = blitShaders.get(state);
   if (loc === undefined) {
     const gl = (state as WebGLRenderStateInternal).gl;
@@ -154,7 +154,7 @@ export function getBlitShader(state: WebGLRenderState): WebGLFilterLocations {
   return loc;
 }
 
-export function getInvertTintShader(state: WebGLRenderState): TintShaderLocations {
+export function getInvertTintShaderWebGL(state: WebGLRenderState): TintShaderLocations {
   let loc = invertTintShaders.get(state);
   if (loc === undefined) {
     const gl = (state as WebGLRenderStateInternal).gl;
@@ -170,7 +170,7 @@ export function getInvertTintShader(state: WebGLRenderState): TintShaderLocation
   return loc;
 }
 
-export function getTintShader(state: WebGLRenderState): TintShaderLocations {
+export function getTintShaderWebGL(state: WebGLRenderState): TintShaderLocations {
   let loc = tintShaders.get(state);
   if (loc === undefined) {
     const gl = (state as WebGLRenderStateInternal).gl;
