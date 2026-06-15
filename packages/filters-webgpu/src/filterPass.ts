@@ -88,7 +88,10 @@ function getOrCreateFilterState(state: WebGPURenderState): WebGPUFilterState {
       {
         binding: 0,
         visibility: GPUShaderStage.FRAGMENT,
-        buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 16 },
+        // minBindingSize omitted (0): the bound range size (uniformStride) is validated at
+        // draw time instead of statically, so filters with structs larger than any fixed
+        // minimum (color matrix 80B, convolution 244B) share this one layout.
+        buffer: { type: 'uniform', hasDynamicOffset: true },
       },
     ],
   });
