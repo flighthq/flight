@@ -83,6 +83,9 @@ addNodeChild(game.obj, logo);
 
 addNodeChild(root, game.obj);
 
+// Blur the white score panel (OpenFL: Background.filters = [new BlurFilter(10, 10)]).
+const refreshBackgroundBlur = applyBackgroundBlur(game.backgroundPanel);
+
 // ── Layout ─────────────────────────────────────────────────────────────────
 
 function resize(w: number, h: number): void {
@@ -99,6 +102,9 @@ function resize(w: number, h: number): void {
   footer.x = w / 2 - (footerImage.width * footer.scaleX) / 2;
   footer.y = h - footerImage.height * footer.scaleY;
   invalidateNodeRender(footer);
+
+  // Re-bake the cached background blur for the new layout (a no-op on the CSS-filter backends).
+  refreshBackgroundBlur();
 }
 
 const win = createApplicationWindow();
@@ -108,9 +114,6 @@ connectSignal(win.onActivate, () => startApplicationLoop(app));
 attachWindowResize(win, container);
 attachWindowVisibility(win);
 resize(window.innerWidth, window.innerHeight);
-
-// Blur the white score panel (OpenFL: Background.filters = [new BlurFilter(10, 10)]).
-applyBackgroundBlur(game.backgroundPanel);
 
 // ── Game start ─────────────────────────────────────────────────────────────
 

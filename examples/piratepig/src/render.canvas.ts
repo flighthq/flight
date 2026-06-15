@@ -51,7 +51,9 @@ export function render(root: DisplayObject): void {
   renderCanvasDisplayObject(state, root);
 }
 
-// OpenFL: Background.filters = [new BlurFilter(10, 10)] — a CSS filter applied at draw.
-export function applyBackgroundBlur(node: DisplayObject): void {
+// OpenFL: Background.filters = [new BlurFilter(10, 10)] — a CSS filter applied at draw. The
+// returned callback is a no-op: the filter re-applies on every draw, so resizes need no re-bake.
+export function applyBackgroundBlur(node: DisplayObject): () => void {
   setCanvasCSSFilter(state, node, blurFilterToCSS(createBlurFilter({ blurX: 10, blurY: 10 })));
+  return () => {};
 }
