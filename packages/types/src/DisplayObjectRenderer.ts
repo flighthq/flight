@@ -7,7 +7,7 @@ import type { RenderState } from './RenderState';
 
 export interface DisplayObjectRenderer extends Renderer {
   createData(state: RenderState, source: DisplayObject): RendererData | null;
-  draw(state: RenderState, node: DisplayObjectRenderNode): void;
+  submit(state: RenderState, node: DisplayObjectRenderNode): void;
 }
 
 export interface DisplayObjectMaskRenderer {
