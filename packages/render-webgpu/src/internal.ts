@@ -74,6 +74,11 @@ export type WebGPURenderStateInternal = Omit<WebGPURenderState, 'canvas' | 'devi
   particleInstanceData: Float32Array | null;
   particleInstanceCapacity: number;
 
+  // Quad batch instance buffer (grown on demand)
+  quadBatchInstanceBuffer: GPUBuffer | null;
+  quadBatchInstanceData: Float32Array | null;
+  quadBatchInstanceCapacity: number;
+
   // Frame state: command encoder and current render pass
   commandEncoder: GPUCommandEncoder | null;
   renderPass: GPURenderPassEncoder | null;

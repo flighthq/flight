@@ -79,6 +79,9 @@ export function createWebGPUCacheState(screenState: WebGPURenderState): WebGPURe
   cacheState.particleInstanceBuffer = screen.particleInstanceBuffer;
   cacheState.particleInstanceData = screen.particleInstanceData;
   cacheState.particleInstanceCapacity = screen.particleInstanceCapacity;
+  cacheState.quadBatchInstanceBuffer = screen.quadBatchInstanceBuffer;
+  cacheState.quadBatchInstanceData = screen.quadBatchInstanceData;
+  cacheState.quadBatchInstanceCapacity = screen.quadBatchInstanceCapacity;
 
   // The baked subtree is recorded into the screen state's command encoder, so the cache
   // state must share the live per-frame encoder/pass surfaces rather than its own.
