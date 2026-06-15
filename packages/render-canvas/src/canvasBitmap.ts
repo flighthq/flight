@@ -50,5 +50,5 @@ export function drawCanvasBitmapMask(state: CanvasRenderState, data: DisplayObje
 
 export const defaultCanvasBitmapRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawCanvasBitmap,
+  submit: drawCanvasBitmap,
 };

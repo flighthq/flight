@@ -57,5 +57,5 @@ export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: SpriteR
 
 export const defaultCanvasTilemapRenderer: SpriteRenderer = {
   createData: noopRendererData,
-  draw: drawCanvasTilemap,
+  submit: drawCanvasTilemap,
 };

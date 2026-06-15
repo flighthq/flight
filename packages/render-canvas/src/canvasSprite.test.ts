@@ -57,7 +57,7 @@ describe('renderCanvasSprite', () => {
     expect(() => renderCanvasSprite(state, sprite)).not.toThrow();
   });
 
-  it('calls renderer.draw for a visible sprite with a renderer', () => {
+  it('calls renderer.submit for a visible sprite with a renderer', () => {
     const atlas = makeAtlas();
     const state = makeState();
     const sprite = createSprite();
