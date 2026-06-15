@@ -48,3 +48,7 @@ export function render(root: DisplayObject): void {
   renderWebGPUDisplayObject(state, root);
   submitWebGPURenderPass(state);
 }
+
+// No WebGPU blur filter exists yet (filters-webgpu pending); the panel renders unblurred here.
+// Once available, mirror render.webgl.ts: bake into a render cache, blur, composite.
+export function applyBackgroundBlur(_node: DisplayObject): void {}
