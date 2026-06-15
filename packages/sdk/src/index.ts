@@ -5,6 +5,7 @@ export * from '@flighthq/displayobject';
 export * from '@flighthq/entity';
 export * from '@flighthq/filters';
 export * from '@flighthq/filters-webgl';
+export * from '@flighthq/filters-webgpu';
 export * from '@flighthq/geometry';
 export * from '@flighthq/input';
 export * from '@flighthq/interaction';

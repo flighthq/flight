@@ -33,6 +33,7 @@
     { "path": "./packages/types" },
     { "path": "./packages/filters" },
     { "path": "./packages/filters-webgl" },
+    { "path": "./packages/filters-webgpu" },
     { "path": "./packages/particles" },
     { "path": "./packages/particles-formats" },
     { "path": "./packages/spritesheet-formats" }

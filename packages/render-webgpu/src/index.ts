@@ -1,3 +1,4 @@
+export type { WebGPURenderStateInternal } from './internal';
 export * from './webgpuBackground';
 export * from './webgpuBitmap';
 export * from './webgpuCache';
@@ -18,6 +19,7 @@ export * from './webgpuShaderBinding';
 export * from './webgpuShape';
 export * from './webgpuSprite';
 export * from './webgpuSpriteRenderer';
+export { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
 export * from './webgpuText';
 export * from './webgpuTilemap';
 export * from './webgpuVideo';

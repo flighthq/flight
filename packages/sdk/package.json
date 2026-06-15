@@ -33,6 +33,7 @@
     "@flighthq/entity": "*",
     "@flighthq/filters": "*",
     "@flighthq/filters-webgl": "*",
+    "@flighthq/filters-webgpu": "*",
     "@flighthq/geometry": "*",
     "@flighthq/input": "*",
     "@flighthq/interaction": "*",
