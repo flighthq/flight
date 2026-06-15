@@ -5,5 +5,5 @@ import type { RenderState } from './RenderState';
 
 export interface Renderer {
   createData(state: RenderState, source: Renderable): RendererData | null;
-  draw(state: RenderState, node: RenderNode): void;
+  submit(state: RenderState, node: RenderNode): void;
 }
