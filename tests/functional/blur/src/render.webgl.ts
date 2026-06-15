@@ -4,8 +4,8 @@ import type { DisplayObject, Matrix, WebGLRenderTarget } from '@flighthq/sdk';
 import {
   beginWebGLRenderTarget,
   BitmapKind,
-  computeBoundsRectangle,
-  computeImageRenderCacheTransform,
+  computeNodeBoundsRectangle,
+  computeRenderCacheTransform,
   computeRenderTargetSize,
   copyMatrix,
   createMatrix,
@@ -56,7 +56,7 @@ type BlurEntry = {
 
 export function applyBlurFilters(list: { node: DisplayObject; filter: BlurFilter }[]): void {
   for (const { node, filter } of list) {
-    computeBoundsRectangle(_bounds, node, node);
+    computeNodeBoundsRectangle(_bounds, node, node);
     const { width: w, height: h } = computeRenderTargetSize(_bounds, blurPadding(filter), 1, 1);
     _entries.push({
       node,
@@ -86,8 +86,8 @@ export function render(root: DisplayObject): void {
   for (const entry of _entries) {
     const { node, filter, source, blurred, scratch } = entry;
     const padding = blurPadding(filter);
-    computeBoundsRectangle(_bounds, node, node);
-    computeImageRenderCacheTransform(entry.cacheTransform, _bounds, padding, padding);
+    computeNodeBoundsRectangle(_bounds, node, node);
+    computeRenderCacheTransform(entry.cacheTransform, _bounds, padding, padding);
 
     const renderNode = getDisplayObjectRenderNode(state, node);
     if (renderNode === undefined) continue;
