@@ -2,21 +2,21 @@ import { type BlurFilter, blurFilterToCSS } from '@flighthq/filters';
 import type { Bitmap, DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
-  computeBoundsRectangle,
-  computeImageRenderCacheTransform,
+  computeNodeBoundsRectangle,
+  computeRenderCacheTransform,
   computeRenderTargetSize,
   createCanvasElement,
   createCanvasRenderState,
-  createImageSourceFromCanvas,
-  createMatrix,
   createRectangle,
+  createRenderCache,
   defaultCanvasBitmapRenderer,
-  enableCanvasRenderImageCache,
+  enableCanvasRenderCache,
+  ensureCanvasRenderCacheTarget,
   prepareDisplayObjectRender,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
-  setImageRenderCache,
+  useRenderCache,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -28,41 +28,42 @@ export const state = createCanvasRenderState(canvas, {
   contextAttributes: { alpha: false },
 });
 registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
-enableCanvasRenderImageCache(state);
+enableCanvasRenderCache(state);
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 400;
 
-// Bake each blurred bitmap once into an offscreen canvas and register it as the node's
-// image-render cache. The expensive ctx.filter blur runs here a single time; every
-// subsequent render() blits the cached bitmap through the image-cache renderer instead of
+// Bake each blurred bitmap once into its render cache: attach a RenderCache to the node, draw
+// the CSS-blurred bitmap into the cache's canvas target, and record the transform that places
+// it back in scene space. The expensive ctx.filter blur runs here a single time; every
+// subsequent render() blits the cached canvas through the render-cache renderer instead of
 // re-running the filter — the bake-once pattern a game would use for a static effect.
 //
-// (setCanvasCSSFilter would re-run ctx.filter on every draw, so it is deliberately not used
-// here. The convenience capture API can't bake a filter yet — it has no padding for the blur
-// to bleed into and reuses one image source per state — so this bakes through the underlying
-// setImageRenderCache with a per-node offscreen canvas.)
+// This is the custom-bake path: the content (a filtered image) is drawn by hand into the
+// cache target rather than engine-baked from the subtree, since the blur is a CSS filter the
+// normal render pass does not apply.
 export function applyBlurFilters(list: { node: DisplayObject; filter: BlurFilter }[]): void {
   for (const { node, filter } of list) {
     const image = (node as Bitmap).data.image;
     if (image === null || image.src === null) continue;
 
-    computeBoundsRectangle(_bounds, node, node);
+    computeNodeBoundsRectangle(_bounds, node, node);
     const padding = blurPadding(filter);
     const { width: w, height: h } = computeRenderTargetSize(_bounds, padding, 1, 1);
 
-    const cacheCanvas = document.createElement('canvas');
-    cacheCanvas.width = w;
-    cacheCanvas.height = h;
-    const ctx = cacheCanvas.getContext('2d')!;
+    const cache = createRenderCache();
+    useRenderCache(state, node, cache);
+    const target = ensureCanvasRenderCacheTarget(state, cache, w, h);
+
+    const ctx = target.context;
+    ctx.clearRect(0, 0, target.canvas.width, target.canvas.height);
     ctx.imageSmoothingEnabled = true;
     // blurFilterToCSS returns null for anisotropic blur (blurX !== blurY); fall back to no blur.
     ctx.filter = blurFilterToCSS(filter) ?? 'none';
     ctx.drawImage(image.src, padding - _bounds.x, padding - _bounds.y);
+    ctx.filter = 'none';
 
-    const transform = createMatrix();
-    computeImageRenderCacheTransform(transform, _bounds, padding, padding);
-    setImageRenderCache(node, { source: createImageSourceFromCanvas(cacheCanvas), transform });
+    computeRenderCacheTransform(cache.transform, _bounds, padding, padding);
   }
 }
 
