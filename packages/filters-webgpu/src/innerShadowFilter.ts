@@ -3,7 +3,12 @@ import type { WebGPURenderState, WebGPURenderTarget } from '@flighthq/types';
 
 import { applyBoxBlurFilterToWebGPU } from './blurFilter';
 import { clearWebGPUFilterTarget } from './filterPass';
-import { applyBlitOffsetPass, applyBlitPass, applyInnerClipPass, applyInvertTintPass } from './tintShader';
+import {
+  applyBlitOffsetPassWebGPU,
+  applyBlitPassWebGPU,
+  applyInnerClipPass,
+  applyInvertTintPassWebGPU,
+} from './tintShader';
 
 /**
  * Applies an inner shadow to `source`, writing the result to `dest`.
@@ -37,16 +42,16 @@ export function applyInnerShadowFilterToWebGPU(
 
   const [s0, s1, s2] = scratch;
 
-  applyInvertTintPass(state, source, s0, color, alpha, strength);
+  applyInvertTintPassWebGPU(state, source, s0, color, alpha, strength);
   applyBoxBlurFilterToWebGPU(state, s0, s1, s2, {
     blurX: filter.blurX ?? 4,
     blurY: filter.blurY ?? 4,
     passes: quality,
   });
-  applyBlitOffsetPass(state, s1, s0, dx, dy);
+  applyBlitOffsetPassWebGPU(state, s1, s0, dx, dy);
   applyInnerClipPass(state, s0, source, s1);
 
   clearWebGPUFilterTarget(state, dest);
-  applyBlitPass(state, source, dest);
-  applyBlitPass(state, s1, dest);
+  applyBlitPassWebGPU(state, source, dest);
+  applyBlitPassWebGPU(state, s1, dest);
 }
