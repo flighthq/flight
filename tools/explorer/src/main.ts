@@ -1,121 +1,223 @@
 import { examples } from 'virtual:explorer-examples';
 
-interface Entry {
-  name: string;
-  render: string;
-}
+type Renderer = 'dom' | 'canvas' | 'webgl' | 'webgpu';
 
+const ALL_RENDERERS: Renderer[] = ['dom', 'canvas', 'webgl', 'webgpu'];
 const STORAGE_KEY = 'explorer-selected';
+const FADE_MS = 250;
 
-const entries: Entry[] = examples.flatMap((e) => e.renderers.map((r) => ({ name: e.name, render: r })));
-let selectedIndex = 0;
+let exampleIndex = 0;
+let renderer: Renderer = 'canvas';
 
 const sidebar = document.getElementById('sidebar')!;
-let preview = document.getElementById('preview') as HTMLIFrameElement;
+const rendererBar = document.getElementById('renderer-bar')!;
+const previewWrap = document.getElementById('preview-wrap')!;
+
+let activeFrame: HTMLIFrameElement | null = null;
+let pendingFrame: HTMLIFrameElement | null = null;
+
+function currentExample() {
+  return examples[exampleIndex];
+}
+
+function hasRenderer(r: Renderer): boolean {
+  return (currentExample().renderers as string[]).includes(r);
+}
+
+function availableRenderers(): Renderer[] {
+  return ALL_RENDERERS.filter((r) => hasRenderer(r));
+}
+
+function resolveRenderer(preferred: Renderer): Renderer {
+  if (hasRenderer(preferred)) return preferred;
+  return currentExample().renderers[0] as Renderer;
+}
 
 function buildSidebar(): void {
   sidebar.innerHTML = '';
-  let lastExample = '';
-
-  entries.forEach((entry, i) => {
-    if (entry.name !== lastExample) {
-      lastExample = entry.name;
-      const heading = document.createElement('div');
-      heading.className = 'example-heading';
-      heading.title = entry.name;
-      heading.textContent = entry.name;
-      sidebar.appendChild(heading);
-    }
-
+  examples.forEach((e, i) => {
     const btn = document.createElement('button');
-    btn.className = 'renderer-btn' + (i === selectedIndex ? ' selected' : '');
-    btn.textContent = entry.render;
-    btn.addEventListener('click', () => select(i));
+    btn.className = 'example-btn' + (i === exampleIndex ? ' selected' : '');
+    btn.textContent = e.name;
+    btn.title = e.name;
+    btn.addEventListener('click', () => selectExample(i));
     sidebar.appendChild(btn);
+  });
+  sidebar.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
+}
+
+function buildRendererBar(): void {
+  rendererBar.innerHTML = '';
+  ALL_RENDERERS.forEach((r) => {
+    const available = hasRenderer(r);
+    const btn = document.createElement('button');
+    btn.className = 'renderer-btn' + (r === renderer ? ' selected' : '') + (available ? '' : ' unavailable');
+    btn.textContent = r;
+    btn.disabled = !available;
+    if (available) btn.addEventListener('click', () => selectRenderer(r));
+    rendererBar.appendChild(btn);
   });
 }
 
-// Parses #/explorer/name or #/explorer/name/render (hash value after stripping '#')
-function indexFromHash(hash: string): number {
-  const parts = hash.replace(/^\//, '').split('/');
-  if (parts[0] !== 'explorer' || !parts[1]) return -1;
-  const name = parts[1];
-  const render = parts[2];
-  if (render) {
-    return entries.findIndex((e) => e.name === name && e.render === render);
-  }
-  return entries.findIndex((e) => e.name === name);
-}
-
-function hashForEntry(name: string, render: string): string {
-  return `/explorer/${name}/${render}`;
-}
-
 function navigateTo(url: string): void {
-  try {
-    const doc = preview.contentDocument;
-    if (doc) {
-      doc.querySelectorAll('canvas').forEach((c) => {
-        const gl = c.getContext('webgl2') ?? c.getContext('webgl');
-        if (gl) gl.getExtension('WEBGL_lose_context')?.loseContext();
-        c.width = 0;
-        c.height = 0;
-      });
-    }
-  } catch (_) {} // eslint-disable-line
+  // Abandon any in-flight pending frame.
+  if (pendingFrame) {
+    pendingFrame.src = 'about:blank';
+    pendingFrame.remove();
+    pendingFrame = null;
+  }
 
-  const wrap = preview.parentElement!;
+  // Capture the frame we're replacing. Do NOT touch it yet — the old frame
+  // stays fully alive and rendering throughout the crossfade so there is
+  // nothing to blink. We clean it up only after the new frame is visible.
+  const prev = activeFrame;
+
   const next = document.createElement('iframe');
-  next.id = 'preview';
-  wrap.replaceChild(next, preview);
-  preview = next;
+  next.className = 'preview-frame';
+  next.style.opacity = '0';
+  pendingFrame = next;
+
+  next.addEventListener(
+    'load',
+    () => {
+      if (next !== pendingFrame) return; // Superseded by a later navigation.
+
+      // Wait for the child frame's first requestAnimationFrame tick. By that
+      // point the example's own RAF callback has run and the canvas has
+      // content, so the fade-in reveals a live frame rather than a blank page.
+      const reveal = () => {
+        if (next !== pendingFrame) return;
+        pendingFrame = null;
+        next.style.opacity = '1';
+        activeFrame = next;
+        if (prev) {
+          setTimeout(() => {
+            // New frame is fully visible — safe to destroy the old one now.
+            try {
+              prev.contentDocument?.querySelectorAll('canvas').forEach((c) => {
+                const gl = c.getContext('webgl2') ?? c.getContext('webgl');
+                if (gl) gl.getExtension('WEBGL_lose_context')?.loseContext();
+                c.width = 0;
+                c.height = 0;
+              });
+            } catch (_) {} // eslint-disable-line
+            prev.src = 'about:blank';
+            prev.remove();
+          }, FADE_MS + 50);
+        }
+      };
+
+      const cw = next.contentWindow;
+      if (cw) {
+        cw.requestAnimationFrame(reveal);
+      } else {
+        reveal();
+      }
+    },
+    { once: true },
+  );
+
+  previewWrap.appendChild(next);
   next.src = url;
 }
 
-function showEntry(index: number): void {
-  selectedIndex = index;
-  buildSidebar();
-  sidebar.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
-  const { name, render } = entries[index];
-  sessionStorage.setItem(STORAGE_KEY, hashForEntry(name, render));
-  navigateTo(`${import.meta.env.BASE_URL}examples/${name}/${render}/`);
+function hashForCurrent(): string {
+  return `/explorer/${currentExample().name}/${renderer}`;
 }
 
-function select(index: number): void {
-  showEntry(index);
-  const { name, render } = entries[index];
-  location.hash = hashForEntry(name, render);
+function showCurrent(): void {
+  buildSidebar();
+  buildRendererBar();
+  sessionStorage.setItem(STORAGE_KEY, hashForCurrent());
+  navigateTo(`${import.meta.env.BASE_URL}examples/${currentExample().name}/${renderer}/`);
+}
+
+function selectExample(i: number): void {
+  exampleIndex = Math.max(0, Math.min(examples.length - 1, i));
+  renderer = resolveRenderer(renderer);
+  showCurrent();
+  location.hash = hashForCurrent();
+}
+
+function selectRenderer(r: Renderer): void {
+  if (!hasRenderer(r)) return;
+  renderer = r;
+  buildRendererBar();
+  sessionStorage.setItem(STORAGE_KEY, hashForCurrent());
+  location.hash = hashForCurrent();
+  navigateTo(`${import.meta.env.BASE_URL}examples/${currentExample().name}/${renderer}/`);
+}
+
+function stateFromHash(hash: string): { exampleIndex: number; renderer: Renderer } | null {
+  const parts = hash.replace(/^\//, '').split('/');
+  if (parts[0] !== 'explorer' || !parts[1]) return null;
+  const name = parts[1];
+  const r = parts[2] as Renderer | undefined;
+  const i = examples.findIndex((e) => e.name === name);
+  if (i < 0) return null;
+  const ex = examples[i];
+  const resolved = r && (ex.renderers as string[]).includes(r) ? r : (ex.renderers[0] as Renderer);
+  return { exampleIndex: i, renderer: resolved };
 }
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+  if (e.key === 'ArrowUp') {
     e.preventDefault();
-    const next = selectedIndex + (e.key === 'ArrowDown' ? 1 : -1);
-    select(Math.max(0, Math.min(entries.length - 1, next)));
+    selectExample(exampleIndex - 1);
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    selectExample(exampleIndex + 1);
+  } else if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    const av = availableRenderers();
+    const i = av.indexOf(renderer);
+    if (i > 0) selectRenderer(av[i - 1]);
+  } else if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    const av = availableRenderers();
+    const i = av.indexOf(renderer);
+    if (i < av.length - 1) selectRenderer(av[i + 1]);
+  } else if (e.key === ' ') {
+    e.preventDefault();
+    const av = availableRenderers();
+    const i = av.indexOf(renderer);
+    if (i < av.length - 1) {
+      selectRenderer(av[i + 1]);
+    } else {
+      // Last renderer of this example — advance to next example (wrap around).
+      exampleIndex = (exampleIndex + 1) % examples.length;
+      renderer = currentExample().renderers[0] as Renderer;
+      showCurrent();
+      location.hash = hashForCurrent();
+    }
   }
 });
 
 window.addEventListener('hashchange', () => {
-  const index = indexFromHash(location.hash.slice(1));
-  if (index >= 0 && index !== selectedIndex) showEntry(index);
+  const state = stateFromHash(location.hash.slice(1));
+  if (!state) return;
+  if (state.exampleIndex === exampleIndex && state.renderer === renderer) return;
+  exampleIndex = state.exampleIndex;
+  renderer = state.renderer;
+  showCurrent();
 });
 
-// Priority: URL hash > sessionStorage (survives HMR soft-reloads) > first entry
-const initHash = location.hash.slice(1);
-const initIndex = (() => {
-  if (initHash) {
-    const i = indexFromHash(initHash);
-    if (i >= 0) return i;
-  }
+// Priority: URL hash > sessionStorage > first entry
+const initState = (() => {
+  const fromHash = stateFromHash(location.hash.slice(1));
+  if (fromHash) return fromHash;
   const saved = sessionStorage.getItem(STORAGE_KEY);
   if (saved) {
-    const i = indexFromHash(saved);
-    if (i >= 0) return i;
+    const fromSaved = stateFromHash(saved);
+    if (fromSaved) return fromSaved;
   }
-  return 0;
+  return { exampleIndex: 0, renderer: (examples[0]?.renderers[0] as Renderer) ?? 'canvas' };
 })();
 
-showEntry(initIndex);
-if (!initHash && entries.length > 0) {
-  history.replaceState(null, '', `#${hashForEntry(entries[initIndex].name, entries[initIndex].render)}`);
+exampleIndex = initState.exampleIndex;
+renderer = initState.renderer;
+showCurrent();
+
+if (!location.hash && examples.length > 0) {
+  history.replaceState(null, '', `#${hashForCurrent()}`);
 }
