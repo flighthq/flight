@@ -157,7 +157,7 @@ function getTargets(state: CanvasRenderState): WeakMap<RenderCache, CanvasRender
 
 export const defaultCanvasRenderCacheRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawCanvasRenderCache,
+  submit: drawCanvasRenderCache,
 };
 
 // The screen state owns each cache's target, keyed by the handle, so one handle can be

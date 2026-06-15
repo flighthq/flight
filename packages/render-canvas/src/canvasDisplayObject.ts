@@ -20,7 +20,7 @@ export function drawCanvasDisplayObjectMask(state: CanvasRenderState, data: Disp
 
 export const defaultCanvasDisplayObjectRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawCanvasDisplayObject,
+  submit: drawCanvasDisplayObject,
 };
 
 export function renderCanvasDisplayObject(state: CanvasRenderState, source: DisplayObject): void {
@@ -47,7 +47,7 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
 
     const filter = resolveCanvasCSSFilter(state, data);
     if (filter !== null) state.context.filter = filter;
-    if (data.renderer !== null) data.renderer.draw(state, data);
+    if (data.renderer !== null) data.renderer.submit(state, data);
     if (filter !== null) state.context.filter = 'none';
 
     const prePushLength = stackLength;

@@ -28,8 +28,8 @@ function makeState() {
 }
 
 describe('defaultCanvasQuadBatchRenderer', () => {
-  it('has draw and createData', () => {
-    expect(typeof defaultCanvasQuadBatchRenderer.draw).toBe('function');
+  it('has submit and createData', () => {
+    expect(typeof defaultCanvasQuadBatchRenderer.submit).toBe('function');
     expect(typeof defaultCanvasQuadBatchRenderer.createData).toBe('function');
   });
 });

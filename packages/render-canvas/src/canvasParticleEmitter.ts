@@ -64,5 +64,5 @@ export function drawCanvasParticleEmitter(state: CanvasRenderState, renderNode: 
 
 export const defaultCanvasParticleEmitterRenderer: SpriteRenderer = {
   createData: noopRendererData,
-  draw: drawCanvasParticleEmitter,
+  submit: drawCanvasParticleEmitter,
 };

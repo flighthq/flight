@@ -22,8 +22,8 @@ function makeState() {
 }
 
 describe('defaultCanvasDisplayObjectRenderer', () => {
-  it('has draw, and createData', () => {
-    expect(typeof defaultCanvasDisplayObjectRenderer.draw).toBe('function');
+  it('has submit, and createData', () => {
+    expect(typeof defaultCanvasDisplayObjectRenderer.submit).toBe('function');
     expect(typeof defaultCanvasDisplayObjectRenderer.createData).toBe('function');
   });
 });
@@ -76,29 +76,29 @@ describe('renderCanvasDisplayObject', () => {
     expect(() => renderCanvasDisplayObject(state, obj)).not.toThrow();
   });
 
-  it('calls renderer.draw for a visible object with a renderer', () => {
+  it('calls renderer.submit for a visible object with a renderer', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const renderer = { createData: vi.fn().mockReturnValue(null), draw: vi.fn() };
+    const renderer = { createData: vi.fn().mockReturnValue(null), submit: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
     prepareDisplayObjectRender(state, obj);
 
     renderCanvasDisplayObject(state, obj);
 
-    expect(renderer.draw).toHaveBeenCalledOnce();
+    expect(renderer.submit).toHaveBeenCalledOnce();
   });
 
-  it('does not call renderer.draw for a hidden object', () => {
+  it('does not call renderer.submit for a hidden object', () => {
     const state = makeState();
     const obj = createDisplayObject();
     obj.visible = false;
-    const renderer = { createData: vi.fn().mockReturnValue(null), draw: vi.fn() };
+    const renderer = { createData: vi.fn().mockReturnValue(null), submit: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
     prepareDisplayObjectRender(state, obj);
 
     renderCanvasDisplayObject(state, obj);
 
-    expect(renderer.draw).not.toHaveBeenCalled();
+    expect(renderer.submit).not.toHaveBeenCalled();
   });
 
   it('traverses and draws children', () => {
@@ -106,13 +106,13 @@ describe('renderCanvasDisplayObject', () => {
     const parent = createDisplayObject();
     const child = createDisplayObject();
     addNodeChild(parent, child);
-    const renderer = { createData: vi.fn().mockReturnValue(null), draw: vi.fn() };
+    const renderer = { createData: vi.fn().mockReturnValue(null), submit: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
     prepareDisplayObjectRender(state, parent);
 
     renderCanvasDisplayObject(state, parent);
 
-    expect(renderer.draw).toHaveBeenCalledTimes(2);
+    expect(renderer.submit).toHaveBeenCalledTimes(2);
   });
 
   it('applies a bound canvas filter around the node draw and resets after', () => {
@@ -121,7 +121,7 @@ describe('renderCanvasDisplayObject', () => {
     let observed: string | undefined;
     const renderer = {
       createData: vi.fn().mockReturnValue(null),
-      draw: vi.fn(() => {
+      submit: vi.fn(() => {
         observed = state.context.filter;
       }),
     };

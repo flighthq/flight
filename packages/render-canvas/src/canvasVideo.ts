@@ -29,5 +29,5 @@ export function drawCanvasVideoMask(state: CanvasRenderState, renderNode: Displa
 
 export const defaultCanvasVideoRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawCanvasVideo,
+  submit: drawCanvasVideo,
 };

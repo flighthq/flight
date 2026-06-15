@@ -16,8 +16,8 @@ function makeState() {
 }
 
 describe('defaultCanvasVideoRenderer', () => {
-  it('has draw, and createData functions', () => {
-    expect(typeof defaultCanvasVideoRenderer.draw).toBe('function');
+  it('has submit, and createData functions', () => {
+    expect(typeof defaultCanvasVideoRenderer.submit).toBe('function');
     expect(typeof defaultCanvasVideoRenderer.createData).toBe('function');
   });
 });

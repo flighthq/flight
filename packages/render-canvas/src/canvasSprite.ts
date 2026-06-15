@@ -44,7 +44,7 @@ export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRen
 
 export const defaultCanvasSpriteRenderer: SpriteRenderer = {
   createData: noopRendererData,
-  draw: drawCanvasSprite,
+  submit: drawCanvasSprite,
 };
 
 export function renderCanvasSprite(state: CanvasRenderState, source: SpriteNode): void {
@@ -58,7 +58,7 @@ export function renderCanvasSprite(state: CanvasRenderState, source: SpriteNode)
     const data = getSpriteRenderNode(state, current);
     if (data === undefined || !isRenderNodeVisible(data)) continue;
 
-    if (data.renderer !== null) data.renderer.draw(state, data);
+    if (data.renderer !== null) data.renderer.submit(state, data);
 
     if (data.traverseChildren) {
       const children = getSpriteNodeRuntime(current).children;
