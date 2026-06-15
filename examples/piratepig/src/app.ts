@@ -26,7 +26,7 @@ import {
 } from '@flighthq/sdk';
 
 import { PiratePigGame } from './game';
-import { container, render, scale, setSize } from './render';
+import { applyBackgroundBlur, container, render, scale, setSize } from './render';
 
 // ── Assets ─────────────────────────────────────────────────────────────────
 
@@ -108,6 +108,9 @@ connectSignal(win.onActivate, () => startApplicationLoop(app));
 attachWindowResize(win, container);
 attachWindowVisibility(win);
 resize(window.innerWidth, window.innerHeight);
+
+// Blur the white score panel (OpenFL: Background.filters = [new BlurFilter(10, 10)]).
+applyBackgroundBlur(game.backgroundPanel);
 
 // ── Game start ─────────────────────────────────────────────────────────────
 

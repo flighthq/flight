@@ -1,4 +1,12 @@
-import type { AudioSource, DisplayObject, ImageSource, InteractionManager, Text, TweenManager } from '@flighthq/sdk';
+import type {
+  AudioSource,
+  DisplayObject,
+  ImageSource,
+  InteractionManager,
+  Shape,
+  Text,
+  TweenManager,
+} from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -35,6 +43,7 @@ const TILE_CONTAINER_Y = BACKGROUND_Y + 14;
 
 export class PiratePigGame {
   obj: DisplayObject;
+  backgroundPanel: Shape;
   currentScale: number = 1;
   currentScore: number = 0;
 
@@ -80,6 +89,7 @@ export class PiratePigGame {
     appendShapeRectangle(backgroundPanel, 0, 0, CONTENT_WIDTH, CONTENT_HEIGHT);
     appendShapeEndFill(backgroundPanel);
     addNodeChild(this.obj, backgroundPanel);
+    this.backgroundPanel = backgroundPanel;
 
     const tileContainer = createDisplayObject();
     tileContainer.x = TILE_CONTAINER_X;

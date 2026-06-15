@@ -1,4 +1,5 @@
-﻿import type { DisplayObject } from '@flighthq/sdk';
+﻿import { blurFilterToCSS, createBlurFilter } from '@flighthq/filters';
+import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
   createCanvasRenderState,
@@ -6,11 +7,13 @@ import {
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   defaultCanvasTextRenderer,
+  enableCanvasCSSFilterSupport,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
+  setCanvasCSSFilter,
   ShapeKind,
   TextKind,
 } from '@flighthq/sdk';
@@ -32,6 +35,7 @@ registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerRenderer(state, TextKind, defaultCanvasTextRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
+enableCanvasCSSFilterSupport(state);
 export const scale = pixelRatio;
 
 export function setSize(w: number, h: number): void {
@@ -45,4 +49,9 @@ export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
   renderCanvasBackground(state);
   renderCanvasDisplayObject(state, root);
+}
+
+// OpenFL: Background.filters = [new BlurFilter(10, 10)] — a CSS filter applied at draw.
+export function applyBackgroundBlur(node: DisplayObject): void {
+  setCanvasCSSFilter(state, node, blurFilterToCSS(createBlurFilter({ blurX: 10, blurY: 10 })));
 }
