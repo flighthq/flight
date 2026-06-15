@@ -24,14 +24,14 @@ export { applyOuterGlowFilterToWebGPU } from './outerGlowFilter';
 export { applyPixelateFilterToWebGPU } from './pixelateFilter';
 export { applySharpenFilterToWebGPU } from './sharpenFilter';
 export {
-  applyBlitOffsetPass,
-  applyBlitPass,
+  applyBlitOffsetPassWebGPU,
+  applyBlitPassWebGPU,
   applyInnerClipPass,
-  applyInvertTintPass,
-  applyTintPass,
-  getBlitOffsetShader,
-  getBlitShader,
+  applyInvertTintPassWebGPU,
+  applyTintPassWebGPU,
+  getBlitOffsetShaderWebGPU,
+  getBlitShaderWebGPU,
   getInnerClipShader,
-  getInvertTintShader,
-  getTintShader,
+  getInvertTintShaderWebGPU,
+  getTintShaderWebGPU,
 } from './tintShader';

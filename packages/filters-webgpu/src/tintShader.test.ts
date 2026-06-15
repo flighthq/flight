@@ -2,49 +2,49 @@ import { describe, expect, it } from 'vitest';
 
 import { installWebGPUMock, makeFilterState, makeRenderTarget } from './testHelper';
 import {
-  applyBlitOffsetPass,
-  applyBlitPass,
+  applyBlitOffsetPassWebGPU,
+  applyBlitPassWebGPU,
   applyInnerClipPass,
-  applyInvertTintPass,
-  applyTintPass,
-  getBlitOffsetShader,
-  getBlitShader,
+  applyInvertTintPassWebGPU,
+  applyTintPassWebGPU,
+  getBlitOffsetShaderWebGPU,
+  getBlitShaderWebGPU,
   getInnerClipShader,
-  getInvertTintShader,
-  getTintShader,
+  getInvertTintShaderWebGPU,
+  getTintShaderWebGPU,
 } from './tintShader';
 
 installWebGPUMock();
 
-describe('applyBlitOffsetPass', () => {
+describe('applyBlitOffsetPassWebGPU', () => {
   it('applies without error', async () => {
     const state = await makeFilterState();
     const source = makeRenderTarget();
     const dest = makeRenderTarget();
-    expect(() => applyBlitOffsetPass(state, source, dest, 10, 5)).not.toThrow();
+    expect(() => applyBlitOffsetPassWebGPU(state, source, dest, 10, 5)).not.toThrow();
   });
 
   it('applies with negative offsets', async () => {
     const state = await makeFilterState();
     const source = makeRenderTarget();
     const dest = makeRenderTarget();
-    expect(() => applyBlitOffsetPass(state, source, dest, -10, -5)).not.toThrow();
+    expect(() => applyBlitOffsetPassWebGPU(state, source, dest, -10, -5)).not.toThrow();
   });
 
   it('applies with zero offset (passthrough)', async () => {
     const state = await makeFilterState();
     const source = makeRenderTarget();
     const dest = makeRenderTarget();
-    expect(() => applyBlitOffsetPass(state, source, dest, 0, 0)).not.toThrow();
+    expect(() => applyBlitOffsetPassWebGPU(state, source, dest, 0, 0)).not.toThrow();
   });
 });
 
-describe('applyBlitPass', () => {
+describe('applyBlitPassWebGPU', () => {
   it('applies without error', async () => {
     const state = await makeFilterState();
     const source = makeRenderTarget();
     const dest = makeRenderTarget();
-    expect(() => applyBlitPass(state, source, dest)).not.toThrow();
+    expect(() => applyBlitPassWebGPU(state, source, dest)).not.toThrow();
   });
 });
 
@@ -58,46 +58,46 @@ describe('applyInnerClipPass', () => {
   });
 });
 
-describe('applyInvertTintPass', () => {
+describe('applyInvertTintPassWebGPU', () => {
   it('applies without error with red color', async () => {
     const state = await makeFilterState();
     const source = makeRenderTarget();
     const dest = makeRenderTarget();
-    expect(() => applyInvertTintPass(state, source, dest, 0xff0000, 1, 1)).not.toThrow();
+    expect(() => applyInvertTintPassWebGPU(state, source, dest, 0xff0000, 1, 1)).not.toThrow();
   });
 });
 
-describe('applyTintPass', () => {
+describe('applyTintPassWebGPU', () => {
   it('applies without error with blue color and partial alpha', async () => {
     const state = await makeFilterState();
     const source = makeRenderTarget();
     const dest = makeRenderTarget();
-    expect(() => applyTintPass(state, source, dest, 0x0000ff, 0.5, 0.8)).not.toThrow();
+    expect(() => applyTintPassWebGPU(state, source, dest, 0x0000ff, 0.5, 0.8)).not.toThrow();
   });
 
   it('applies with black color (shadow tint)', async () => {
     const state = await makeFilterState();
     const source = makeRenderTarget();
     const dest = makeRenderTarget();
-    expect(() => applyTintPass(state, source, dest, 0x000000, 1, 1)).not.toThrow();
+    expect(() => applyTintPassWebGPU(state, source, dest, 0x000000, 1, 1)).not.toThrow();
   });
 });
 
-describe('getBlitOffsetShader', () => {
+describe('getBlitOffsetShaderWebGPU', () => {
   it('returns a pipeline lazily and caches it per state', async () => {
     const state = await makeFilterState();
-    const p1 = getBlitOffsetShader(state);
-    const p2 = getBlitOffsetShader(state);
+    const p1 = getBlitOffsetShaderWebGPU(state);
+    const p2 = getBlitOffsetShaderWebGPU(state);
     expect(p1).toBe(p2);
     expect(p1.pipeline).toBeDefined();
   });
 });
 
-describe('getBlitShader', () => {
+describe('getBlitShaderWebGPU', () => {
   it('returns a pipeline lazily and caches it per state', async () => {
     const state = await makeFilterState();
-    const p1 = getBlitShader(state);
-    const p2 = getBlitShader(state);
+    const p1 = getBlitShaderWebGPU(state);
+    const p2 = getBlitShaderWebGPU(state);
     expect(p1).toBe(p2);
     expect(p1.pipeline).toBeDefined();
   });
@@ -113,21 +113,21 @@ describe('getInnerClipShader', () => {
   });
 });
 
-describe('getInvertTintShader', () => {
+describe('getInvertTintShaderWebGPU', () => {
   it('returns a pipeline lazily and caches it per state', async () => {
     const state = await makeFilterState();
-    const p1 = getInvertTintShader(state);
-    const p2 = getInvertTintShader(state);
+    const p1 = getInvertTintShaderWebGPU(state);
+    const p2 = getInvertTintShaderWebGPU(state);
     expect(p1).toBe(p2);
     expect(p1.pipeline).toBeDefined();
   });
 });
 
-describe('getTintShader', () => {
+describe('getTintShaderWebGPU', () => {
   it('returns a pipeline lazily and caches it per state', async () => {
     const state = await makeFilterState();
-    const p1 = getTintShader(state);
-    const p2 = getTintShader(state);
+    const p1 = getTintShaderWebGPU(state);
+    const p2 = getTintShaderWebGPU(state);
     expect(p1).toBe(p2);
     expect(p1.pipeline).toBeDefined();
   });

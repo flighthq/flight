@@ -6,7 +6,7 @@ import { applyBoxBlurFilterToWebGPU } from './blurFilter';
 import type { WebGPUFilterPipeline } from './filterPass';
 import { clearWebGPUFilterTarget, FILTER_VERTEX_WGSL, getWebGPUFilterState } from './filterPass';
 import { createWebGPUGradientRampTexture } from './gradientRamp';
-import { applyBlitPass, applyTintPass } from './tintShader';
+import { applyBlitPassWebGPU, applyTintPassWebGPU } from './tintShader';
 
 // Samples the blurred alpha at +offset and -offset to compute a bevel value
 // in [-1, 1], mapped to [0, 1] for gradient lookup. Outputs the encoded value
@@ -130,7 +130,7 @@ export function applyGradientBevelFilterToWebGPU(
   const fs = getWebGPUFilterState(state);
 
   // Build blur basis → s1
-  applyTintPass(state, source, s0, 0xffffff, 1, Math.min(1, strength));
+  applyTintPassWebGPU(state, source, s0, 0xffffff, 1, Math.min(1, strength));
   applyBoxBlurFilterToWebGPU(state, s0, s1, s2, {
     blurX: filter.blurX ?? 4,
     blurY: filter.blurY ?? 4,
@@ -205,7 +205,7 @@ export function applyGradientBevelFilterToWebGPU(
 
   clearWebGPUFilterTarget(state, dest);
   if (!(filter.bevelType && filter.bevelType !== 'full')) {
-    applyBlitPass(state, source, dest);
+    applyBlitPassWebGPU(state, source, dest);
   }
-  applyBlitPass(state, s1, dest);
+  applyBlitPassWebGPU(state, s1, dest);
 }

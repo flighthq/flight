@@ -6,7 +6,7 @@ import { applyBoxBlurFilterToWebGPU } from './blurFilter';
 import type { WebGPUFilterPipeline } from './filterPass';
 import { clearWebGPUFilterTarget, FILTER_VERTEX_WGSL, getWebGPUFilterState } from './filterPass';
 import { createWebGPUGradientRampTexture } from './gradientRamp';
-import { applyBlitPass, applyTintPass } from './tintShader';
+import { applyBlitPassWebGPU, applyTintPassWebGPU } from './tintShader';
 
 // Uses the blurred alpha (group 1) to index into a gradient ramp texture (group 2).
 const GRADIENT_LOOKUP_FRAGMENT_WGSL = /* wgsl */ `
@@ -70,7 +70,7 @@ export function applyGradientGlowFilterToWebGPU(
   const { device } = internal;
   const fs = getWebGPUFilterState(state);
 
-  applyTintPass(state, source, s0, 0xffffff, 1, Math.min(1, strength));
+  applyTintPassWebGPU(state, source, s0, 0xffffff, 1, Math.min(1, strength));
   applyBoxBlurFilterToWebGPU(state, s0, s1, s2, {
     blurX: filter.blurX ?? 6,
     blurY: filter.blurY ?? 6,
@@ -108,6 +108,6 @@ export function applyGradientGlowFilterToWebGPU(
   rampTexture.destroy();
 
   clearWebGPUFilterTarget(state, dest);
-  applyBlitPass(state, s0, dest);
-  applyBlitPass(state, source, dest);
+  applyBlitPassWebGPU(state, s0, dest);
+  applyBlitPassWebGPU(state, source, dest);
 }

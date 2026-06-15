@@ -3,7 +3,7 @@ import type { WebGPURenderState, WebGPURenderTarget } from '@flighthq/types';
 
 import { applyBoxBlurFilterToWebGPU } from './blurFilter';
 import { clearWebGPUFilterTarget } from './filterPass';
-import { applyBlitOffsetPass, applyBlitPass, applyTintPass } from './tintShader';
+import { applyBlitOffsetPassWebGPU, applyBlitPassWebGPU, applyTintPassWebGPU } from './tintShader';
 
 /**
  * Applies a drop shadow filter to `source`, writing the result to `dest`.
@@ -39,7 +39,7 @@ export function applyDropShadowFilterToWebGPU(
 
   const [mask, blurred, blurTemp] = scratch;
 
-  applyTintPass(state, source, mask, color, alpha, tintStrength);
+  applyTintPassWebGPU(state, source, mask, color, alpha, tintStrength);
   applyBoxBlurFilterToWebGPU(state, mask, blurred, blurTemp, {
     blurX: filter.blurX ?? 4,
     blurY: filter.blurY ?? 4,
@@ -48,10 +48,10 @@ export function applyDropShadowFilterToWebGPU(
 
   clearWebGPUFilterTarget(state, dest);
   for (let i = 0; i < shadowPasses; i++) {
-    applyBlitOffsetPass(state, blurred, dest, dx, dy);
+    applyBlitOffsetPassWebGPU(state, blurred, dest, dx, dy);
   }
 
   if (!hideObject) {
-    applyBlitPass(state, source, dest);
+    applyBlitPassWebGPU(state, source, dest);
   }
 }

@@ -3,7 +3,7 @@ import type { WebGPURenderState, WebGPURenderTarget } from '@flighthq/types';
 
 import type { WebGPUFilterPipeline } from './filterPass';
 import { createWebGPUFilterPipeline, drawWebGPUFilterPass } from './filterPass';
-import { applyBlitPass } from './tintShader';
+import { applyBlitPassWebGPU } from './tintShader';
 
 // Uniforms layout (shared by box and Gaussian):
 //   offset  0: texelSize (vec2f)
@@ -158,7 +158,7 @@ export function applyBoxBlurFilterToWebGPU(
   }
 
   if (read !== dest) {
-    applyBlitPass(state, read, dest);
+    applyBlitPassWebGPU(state, read, dest);
   }
 }
 
@@ -182,7 +182,7 @@ export function applyGaussianBlurFilterToWebGPU(
   const radiusY = sigmaY > 0 ? Math.ceil(sigmaY * 3) : 0;
 
   if (radiusX === 0 && radiusY === 0) {
-    applyBlitPass(state, source, dest);
+    applyBlitPassWebGPU(state, source, dest);
     return;
   }
 
@@ -201,6 +201,6 @@ export function applyGaussianBlurFilterToWebGPU(
   }
 
   if (read !== dest) {
-    applyBlitPass(state, read, dest);
+    applyBlitPassWebGPU(state, read, dest);
   }
 }
