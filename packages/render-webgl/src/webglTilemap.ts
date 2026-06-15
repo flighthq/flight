@@ -1,9 +1,13 @@
-﻿import { noopRendererData } from '@flighthq/render';
+import { noopRendererData } from '@flighthq/render';
 import type { RenderState, SpriteRenderer, SpriteRenderNode, Tilemap } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { bindWebGLTexture, drawWebGLQuad, useWebGLProgram } from './webglDraw';
-import { setWebGLBaseUniforms, setWebGLMatrixFromValues } from './webglShader';
+import { bindWebGLTexture } from './webglDraw';
+import {
+  drawWebGLQuadBatchInstanced,
+  ensureWebGLQuadBatchCapacity,
+  ensureWebGLQuadBatchShader,
+} from './webglQuadBatch';
 
 export function drawWebGLTilemap(state: RenderState, tilemapNode: SpriteRenderNode): void {
   const internal = state as WebGLRenderStateInternal;
@@ -15,55 +19,48 @@ export function drawWebGLTilemap(state: RenderState, tilemapNode: SpriteRenderNo
   if (atlas === null || atlas.image === null || atlas.image.src === null) return;
   if (columns === 0 || rows === 0) return;
 
-  useWebGLProgram(internal);
+  ensureWebGLQuadBatchShader(internal);
+  ensureWebGLQuadBatchCapacity(internal, columns * rows);
+
   internal.applyBlendMode?.(internal, tilemapNode.blendMode);
   bindWebGLTexture(internal, atlas.image.src);
 
-  const gl = internal.gl;
-  const { shaderLoc, matrixArray } = internal;
   const regions = atlas.regions;
   const numRegions = regions.length;
-  const transform = tilemapNode.transform2D;
   const { tileWidth, tileHeight } = tileset;
-
   const iw = 1 / (atlas.image.width || 1);
   const ih = 1 / (atlas.image.height || 1);
+  const instanceData = internal.quadBatchInstanceData!;
 
-  setWebGLBaseUniforms(gl, shaderLoc, tilemapNode);
-
+  let base = 0;
+  let drawCount = 0;
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < columns; col++) {
       const id = tiles[row * columns + col];
       if (id < 0 || id >= numRegions) continue;
-
       const region = regions[id];
       if (region.width <= 0 || region.height <= 0) continue;
 
-      const dx = col * tileWidth;
-      const dy = row * tileHeight;
-
-      // Effective transform: tile's offset baked into the translation
-      setWebGLMatrixFromValues(
-        gl,
-        shaderLoc,
-        matrixArray,
-        transform.a,
-        transform.b,
-        transform.c,
-        transform.d,
-        transform.tx + transform.a * dx + transform.c * dy,
-        transform.ty + transform.b * dx + transform.d * dy,
-        internal.renderTargetViewport ?? internal.canvas,
-      );
-
-      const u0 = region.x * iw;
-      const v0 = region.y * ih;
-      const u1 = (region.x + region.width) * iw;
-      const v1 = (region.y + region.height) * ih;
-
-      drawWebGLQuad(internal, 0, 0, tileWidth, tileHeight, u0, v0, u1, v1);
+      instanceData[base] = 1;
+      instanceData[base + 1] = 0;
+      instanceData[base + 2] = 0;
+      instanceData[base + 3] = 1;
+      instanceData[base + 4] = col * tileWidth;
+      instanceData[base + 5] = row * tileHeight;
+      instanceData[base + 6] = tileWidth;
+      instanceData[base + 7] = tileHeight;
+      instanceData[base + 8] = region.x * iw;
+      instanceData[base + 9] = region.y * ih;
+      instanceData[base + 10] = (region.x + region.width) * iw;
+      instanceData[base + 11] = (region.y + region.height) * ih;
+      base += 12;
+      drawCount++;
     }
   }
+
+  if (drawCount === 0) return;
+
+  drawWebGLQuadBatchInstanced(internal, drawCount, tilemapNode.transform2D, tilemapNode.alpha);
 }
 
 export const defaultWebGLTilemapRenderer: SpriteRenderer = {
