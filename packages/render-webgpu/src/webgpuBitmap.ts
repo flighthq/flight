@@ -41,5 +41,5 @@ export function drawWebGPUBitmapMask(state: RenderState, renderNode: DisplayObje
 
 export const defaultWebGPUBitmapRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawWebGPUBitmap,
+  submit: drawWebGPUBitmap,
 };

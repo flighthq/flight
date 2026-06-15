@@ -40,7 +40,7 @@ export function renderWebGPUDisplayObject(state: WebGPURenderState, source: Disp
 
     clipHooks?.pushMask(state, current);
 
-    data.renderer?.draw(state, data);
+    data.renderer?.submit(state, data);
 
     const prePushLength = stackLength;
     if (data.traverseChildren) {
@@ -60,5 +60,5 @@ export function renderWebGPUDisplayObject(state: WebGPURenderState, source: Disp
 
 export const defaultWebGPUDisplayObjectRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawWebGPUDisplayObject,
+  submit: drawWebGPUDisplayObject,
 };

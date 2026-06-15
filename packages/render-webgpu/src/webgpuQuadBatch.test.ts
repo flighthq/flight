@@ -2,7 +2,8 @@ import { getSpriteRenderNode, prepareSpriteRender } from '@flighthq/render';
 import { createQuadBatch } from '@flighthq/sprite';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
-import { defaultWebGPUQuadBatchRenderer, drawWebGPUQuadBatch } from './webgpuQuadBatch';
+import { defaultWebGPUQuadBatchRenderer } from './webgpuQuadBatch';
+import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
 
 beforeAll(() => {
@@ -10,13 +11,16 @@ beforeAll(() => {
 });
 
 describe('defaultWebGPUQuadBatchRenderer', () => {
-  it('has createData and draw functions', () => {
+  it('has a createData function', () => {
     expect(typeof defaultWebGPUQuadBatchRenderer.createData).toBe('function');
-    expect(typeof defaultWebGPUQuadBatchRenderer.draw).toBe('function');
+  });
+
+  it('has a submit function', () => {
+    expect(typeof defaultWebGPUQuadBatchRenderer.submit).toBe('function');
   });
 });
 
-describe('drawWebGPUQuadBatch', () => {
+describe('defaultWebGPUQuadBatchRenderer.submit', () => {
   it('does not throw when atlas is null', async () => {
     const state = await createWebGPURenderStateForTest();
     renderWebGPUBackground(state);
@@ -25,7 +29,10 @@ describe('drawWebGPUQuadBatch', () => {
     prepareSpriteRender(state, batch);
     const renderNode = getSpriteRenderNode(state, batch)!;
 
-    expect(() => drawWebGPUQuadBatch(state, renderNode)).not.toThrow();
+    expect(() => {
+      defaultWebGPUQuadBatchRenderer.submit(state, renderNode);
+      flushWebGPUSpriteBatch(state as any);
+    }).not.toThrow();
     submitWebGPURenderPass(state);
   });
 });

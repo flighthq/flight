@@ -113,7 +113,7 @@ export function drawWebGPURichTextWithOverlay(
 
 export const defaultWebGPURichTextRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawWebGPURichText,
+  submit: drawWebGPURichText,
 };
 
 function drawRichTextToCanvas(

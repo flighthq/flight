@@ -18,6 +18,7 @@ export * from './webgpuShader';
 export * from './webgpuShaderBinding';
 export * from './webgpuShape';
 export * from './webgpuSprite';
+export * from './webgpuSpriteBatch';
 export * from './webgpuSpriteRenderer';
 export { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
 export * from './webgpuText';

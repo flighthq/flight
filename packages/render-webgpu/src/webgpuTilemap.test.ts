@@ -2,21 +2,25 @@ import { getSpriteRenderNode, prepareSpriteRender } from '@flighthq/render';
 import { createTilemap } from '@flighthq/sprite';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
+import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
-import { defaultWebGPUTilemapRenderer, drawWebGPUTilemap } from './webgpuTilemap';
+import { defaultWebGPUTilemapRenderer } from './webgpuTilemap';
 
 beforeAll(() => {
   installWebGPUMock();
 });
 
 describe('defaultWebGPUTilemapRenderer', () => {
-  it('has createData and draw functions', () => {
+  it('has a createData function', () => {
     expect(typeof defaultWebGPUTilemapRenderer.createData).toBe('function');
-    expect(typeof defaultWebGPUTilemapRenderer.draw).toBe('function');
+  });
+
+  it('has a submit function', () => {
+    expect(typeof defaultWebGPUTilemapRenderer.submit).toBe('function');
   });
 });
 
-describe('drawWebGPUTilemap', () => {
+describe('defaultWebGPUTilemapRenderer.submit', () => {
   it('does not throw when tileset is null', async () => {
     const state = await createWebGPURenderStateForTest();
     renderWebGPUBackground(state);
@@ -25,7 +29,10 @@ describe('drawWebGPUTilemap', () => {
     prepareSpriteRender(state, tilemap);
     const renderNode = getSpriteRenderNode(state, tilemap)!;
 
-    expect(() => drawWebGPUTilemap(state, renderNode)).not.toThrow();
+    expect(() => {
+      defaultWebGPUTilemapRenderer.submit(state, renderNode);
+      flushWebGPUSpriteBatch(state as any);
+    }).not.toThrow();
     submitWebGPURenderPass(state);
   });
 
@@ -35,6 +42,6 @@ describe('drawWebGPUTilemap', () => {
     prepareSpriteRender(state, tilemap);
     const renderNode = getSpriteRenderNode(state, tilemap)!;
 
-    expect(() => drawWebGPUTilemap(state, renderNode)).not.toThrow();
+    expect(() => defaultWebGPUTilemapRenderer.submit(state, renderNode)).not.toThrow();
   });
 });

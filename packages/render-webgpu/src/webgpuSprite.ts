@@ -2,7 +2,11 @@ import { getSpriteRenderNode, isRenderNodeVisible } from '@flighthq/render';
 import { getSpriteNodeRuntime } from '@flighthq/sprite';
 import type { SpriteNode, WebGPURenderState } from '@flighthq/types';
 
+import type { WebGPURenderStateInternal } from './internal';
+import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
+
 export function renderWebGPUSprite(state: WebGPURenderState, source: SpriteNode): void {
+  const internal = state as WebGPURenderStateInternal;
   const tempStack = state.tempStack;
   let stackLength = 1;
   tempStack[0] = source;
@@ -13,7 +17,7 @@ export function renderWebGPUSprite(state: WebGPURenderState, source: SpriteNode)
     const data = getSpriteRenderNode(state, current);
     if (data === undefined || !isRenderNodeVisible(data)) continue;
 
-    data.renderer?.draw(state, data);
+    data.renderer?.submit(internal, data);
 
     if (data.traverseChildren) {
       const children = getSpriteNodeRuntime(current).children;
@@ -24,4 +28,6 @@ export function renderWebGPUSprite(state: WebGPURenderState, source: SpriteNode)
       }
     }
   }
+
+  flushWebGPUSpriteBatch(internal);
 }
