@@ -1,6 +1,6 @@
 export * from './canvasBackground';
 export * from './canvasBitmap';
-export * from './canvasCacheAdapter';
+export * from './canvasCache';
 export * from './canvasClip';
 export * from './canvasClipRectangle';
 export * from './canvasCSSFilterBinding';
@@ -11,8 +11,6 @@ export * from './canvasMask';
 export * from './canvasMaterials';
 export * from './canvasParticleEmitter';
 export * from './canvasQuadBatch';
-export * from './canvasRenderCache';
-export * from './canvasRenderCacheCapture';
 export * from './canvasRenderState';
 export * from './canvasRenderTarget';
 export * from './canvasRichText';
