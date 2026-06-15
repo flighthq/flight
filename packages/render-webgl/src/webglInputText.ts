@@ -27,7 +27,7 @@ export function drawWebGLInputText(state: RenderState, renderNode: DisplayObject
 
 export const defaultWebGLInputTextRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawWebGLInputText,
+  submit: drawWebGLInputText,
 };
 
 function drawWebGLInputTextMask(state: RenderState, renderNode: DisplayObjectRenderNode): void {

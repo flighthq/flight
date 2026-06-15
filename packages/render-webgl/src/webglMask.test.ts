@@ -10,7 +10,6 @@ import { makeWebGLState } from './webglTestHelper';
 function makeRenderer() {
   return {
     createData: () => null,
-    draw: vi.fn(),
     drawMask: vi.fn(),
   };
 }

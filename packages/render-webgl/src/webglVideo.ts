@@ -44,5 +44,5 @@ export function drawWebGLVideoMask(_state: RenderState, _renderNode: DisplayObje
 
 export const defaultWebGLVideoRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawWebGLVideo,
+  submit: drawWebGLVideo,
 };

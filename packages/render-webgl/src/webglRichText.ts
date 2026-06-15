@@ -102,7 +102,7 @@ export function drawWebGLRichTextWithOverlay(
 
 export const defaultWebGLRichTextRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawWebGLRichText,
+  submit: drawWebGLRichText,
 };
 
 function drawRichTextToCanvas(

@@ -1,7 +1,8 @@
 import type { SpriteRenderNode } from '@flighthq/types';
 
+import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 import { makeWebGLState } from './webglTestHelper';
-import { defaultWebGLTilemapRenderer, drawWebGLTilemap } from './webglTilemap';
+import { defaultWebGLTilemapRenderer } from './webglTilemap';
 
 function makeAtlas() {
   const img = document.createElement('img');
@@ -32,6 +33,8 @@ function makeTilemapNode(data: Record<string, unknown> = {}): SpriteRenderNode {
     },
     blendMode: 0,
     alpha: 1,
+    renderer: null,
+    traverseChildren: false,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
   } as unknown as SpriteRenderNode;
 }
@@ -41,64 +44,72 @@ describe('defaultWebGLTilemapRenderer', () => {
     expect(typeof defaultWebGLTilemapRenderer.createData).toBe('function');
   });
 
-  it('has a draw function pointing to drawWebGLTilemap', () => {
-    expect(defaultWebGLTilemapRenderer.draw).toBe(drawWebGLTilemap);
+  it('has a submit function', () => {
+    expect(typeof defaultWebGLTilemapRenderer.submit).toBe('function');
   });
 });
 
-describe('drawWebGLTilemap', () => {
+describe('defaultWebGLTilemapRenderer.submit', () => {
   it('returns early without drawing when tileset is null', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLTilemap(state, makeTilemapNode({ tileset: null }));
+    defaultWebGLTilemapRenderer.submit(state, makeTilemapNode({ tileset: null }));
+    flushWebGLSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when atlas is null', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLTilemap(state, makeTilemapNode({ tileset: makeTileset(null) }));
+    defaultWebGLTilemapRenderer.submit(state, makeTilemapNode({ tileset: makeTileset(null) }));
+    flushWebGLSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when atlas.image is null', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLTilemap(
+    defaultWebGLTilemapRenderer.submit(
       state,
       makeTilemapNode({ tileset: { atlas: { image: null, regions: [] }, tileWidth: 16, tileHeight: 16 } }),
     );
+    flushWebGLSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when atlas.image.src is null', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLTilemap(
+    defaultWebGLTilemapRenderer.submit(
       state,
       makeTilemapNode({ tileset: { atlas: { image: { src: null }, regions: [] }, tileWidth: 16, tileHeight: 16 } }),
     );
+    flushWebGLSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when columns is 0', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLTilemap(state, makeTilemapNode({ columns: 0 }));
+    defaultWebGLTilemapRenderer.submit(state, makeTilemapNode({ columns: 0 }));
+    flushWebGLSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when rows is 0', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLTilemap(state, makeTilemapNode({ rows: 0 }));
+    defaultWebGLTilemapRenderer.submit(state, makeTilemapNode({ rows: 0 }));
+    flushWebGLSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('draws all valid tiles in a single instanced call', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLTilemap(state, makeTilemapNode());
+    defaultWebGLTilemapRenderer.submit(state, makeTilemapNode());
+    flushWebGLSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 4);
   });
 
   it('excludes out-of-range tile ids from the instanced draw count', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLTilemap(state, makeTilemapNode({ tiles: [0, 99, 99, 0] }));
+    defaultWebGLTilemapRenderer.submit(state, makeTilemapNode({ tiles: [0, 99, 99, 0] }));
+    flushWebGLSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
   });

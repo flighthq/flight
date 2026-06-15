@@ -24,8 +24,8 @@ describe('defaultWebGLBitmapRenderer', () => {
     expect(typeof defaultWebGLBitmapRenderer.createData).toBe('function');
   });
 
-  it('has a draw function pointing to drawWebGLBitmap', () => {
-    expect(defaultWebGLBitmapRenderer.draw).toBe(drawWebGLBitmap);
+  it('has a submit function pointing to drawWebGLBitmap', () => {
+    expect(defaultWebGLBitmapRenderer.submit).toBe(drawWebGLBitmap);
   });
 
   it('has a drawMask function pointing to drawWebGLBitmapMask', () => {});

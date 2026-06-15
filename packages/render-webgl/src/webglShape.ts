@@ -96,5 +96,5 @@ export function drawWebGLShapeMask(state: RenderState, data: DisplayObjectRender
 
 export const defaultWebGLShapeRenderer: DisplayObjectRenderer = {
   createData: createWebGLShapeData,
-  draw: drawWebGLShape,
+  submit: drawWebGLShape,
 };

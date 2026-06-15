@@ -25,8 +25,8 @@ describe('defaultWebGLRichTextRenderer', () => {
     expect(typeof defaultWebGLRichTextRenderer.createData).toBe('function');
   });
 
-  it('has a draw function pointing to drawWebGLRichText', () => {
-    expect(defaultWebGLRichTextRenderer.draw).toBe(drawWebGLRichText);
+  it('has a submit function pointing to drawWebGLRichText', () => {
+    expect(defaultWebGLRichTextRenderer.submit).toBe(drawWebGLRichText);
   });
 
   it('has a drawMask function pointing to drawWebGLRichTextMask', () => {});

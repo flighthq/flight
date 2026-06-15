@@ -25,8 +25,8 @@ describe('defaultWebGLShapeRenderer', () => {
     expect(typeof defaultWebGLShapeRenderer.createData).toBe('function');
   });
 
-  it('has a draw function pointing to drawWebGLShape', () => {
-    expect(defaultWebGLShapeRenderer.draw).toBe(drawWebGLShape);
+  it('has a submit function pointing to drawWebGLShape', () => {
+    expect(defaultWebGLShapeRenderer.submit).toBe(drawWebGLShape);
   });
 
   it('has a drawMask function pointing to drawWebGLShapeMask', () => {});
