@@ -38,8 +38,8 @@ function makeCanvasImageSource() {
 }
 
 describe('defaultDOMBitmapRenderer', () => {
-  it('has draw, and createData', () => {
-    expect(typeof defaultDOMBitmapRenderer.draw).toBe('function');
+  it('has submit, and createData', () => {
+    expect(typeof defaultDOMBitmapRenderer.submit).toBe('function');
     expect(typeof defaultDOMBitmapRenderer.createData).toBe('function');
   });
 });

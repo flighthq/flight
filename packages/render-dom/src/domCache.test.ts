@@ -22,7 +22,7 @@ function makeCacheNode(source: unknown): any {
 describe('defaultDOMRenderCacheRenderer', () => {
   it('is a no-op when no cache is attached to the source', () => {
     const state = makeState();
-    expect(() => defaultDOMRenderCacheRenderer.draw(state, makeCacheNode(createDisplayObject()))).not.toThrow();
+    expect(() => defaultDOMRenderCacheRenderer.submit(state, makeCacheNode(createDisplayObject()))).not.toThrow();
   });
 
   it('places the target canvas attached to the source node', () => {
@@ -31,7 +31,7 @@ describe('defaultDOMRenderCacheRenderer', () => {
     const cache = createRenderCache();
     useRenderCache(state, obj, cache);
     const target = ensureDOMRenderCacheTarget(state, cache, 16, 16);
-    defaultDOMRenderCacheRenderer.draw(state, makeCacheNode(obj));
+    defaultDOMRenderCacheRenderer.submit(state, makeCacheNode(obj));
     expect(target.canvas.style.transform).not.toBe('');
   });
 });

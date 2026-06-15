@@ -99,5 +99,5 @@ export function drawDOMTextMask(state: DOMRenderState, renderNode: DisplayObject
 
 export const defaultDOMTextRenderer: DisplayObjectRenderer = {
   createData: createDOMTextData,
-  draw: drawDOMText,
+  submit: drawDOMText,
 };

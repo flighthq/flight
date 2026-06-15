@@ -27,5 +27,5 @@ export function drawDOMRenderViewMask(_state: DOMRenderState, _renderNode: Displ
 
 export const defaultDOMRenderViewRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawDOMRenderView,
+  submit: drawDOMRenderView,
 };

@@ -76,7 +76,7 @@ function getTargets(state: DOMRenderState): WeakMap<RenderCache, CanvasRenderTar
 
 export const defaultDOMRenderCacheRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawDOMRenderCache,
+  submit: drawDOMRenderCache,
 };
 
 // The screen state owns each cache's target canvas, keyed by the handle.

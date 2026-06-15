@@ -216,5 +216,5 @@ export function drawDOMRichTextMask(state: DOMRenderState, renderNode: DisplayOb
 
 export const defaultDOMRichTextRenderer: DisplayObjectRenderer = {
   createData: createDOMRichTextData,
-  draw: drawDOMRichText,
+  submit: drawDOMRichText,
 };
