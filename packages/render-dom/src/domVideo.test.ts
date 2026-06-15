@@ -14,8 +14,8 @@ function makeState() {
 }
 
 describe('defaultDOMVideoRenderer', () => {
-  it('has draw, and createData functions', () => {
-    expect(typeof defaultDOMVideoRenderer.draw).toBe('function');
+  it('has submit, and createData functions', () => {
+    expect(typeof defaultDOMVideoRenderer.submit).toBe('function');
     expect(typeof defaultDOMVideoRenderer.createData).toBe('function');
   });
 });

@@ -21,8 +21,8 @@ function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTM
 }
 
 describe('defaultHTMLViewRenderer', () => {
-  it('has draw, and createData', () => {
-    expect(typeof defaultHTMLViewRenderer.draw).toBe('function');
+  it('has submit, and createData', () => {
+    expect(typeof defaultHTMLViewRenderer.submit).toBe('function');
     expect(typeof defaultHTMLViewRenderer.createData).toBe('function');
   });
 });

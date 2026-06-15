@@ -29,9 +29,9 @@ describe('createDOMScale9ShapeData', () => {
 });
 
 describe('defaultDOMScale9ShapeRenderer', () => {
-  it('has draw, and createData functions', () => {
+  it('has submit, and createData functions', () => {
     expect(defaultDOMScale9ShapeRenderer.createData).toBe(createDOMScale9ShapeData);
-    expect(defaultDOMScale9ShapeRenderer.draw).toBe(drawDOMScale9Shape);
+    expect(defaultDOMScale9ShapeRenderer.submit).toBe(drawDOMScale9Shape);
   });
 });
 
