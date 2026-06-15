@@ -44,9 +44,17 @@ export function bindWebGPUTexture(
     usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
   });
 
+  // Canvas2D and OffscreenCanvas already store premultiplied data internally.
+  // Setting premultipliedAlpha: true on those sources causes double-premultiplication
+  // (rgb · a²), making semi-transparent pixels too dark. Use false for canvas
+  // sources so the GPU stores the data as-is (already correctly premultiplied).
+  // HTMLImageElement and ImageBitmap carry straight alpha and need premultipliedAlpha: true.
+  const premultipliedAlpha =
+    imageSource instanceof HTMLCanvasElement || imageSource instanceof OffscreenCanvas ? false : true;
+
   device.queue.copyExternalImageToTexture(
     { source: imageSource as GPUCopyExternalImageSource, flipY: false },
-    { texture, premultipliedAlpha: true },
+    { texture, premultipliedAlpha },
     [width, height],
   );
 
@@ -84,7 +92,7 @@ export function createWebGPUTextureEntry(
 
   device.queue.copyExternalImageToTexture(
     { source: canvas as GPUCopyExternalImageSource, flipY: false },
-    { texture, premultipliedAlpha: true },
+    { texture, premultipliedAlpha: false },
     [w, h],
   );
 
@@ -237,7 +245,7 @@ export function updateWebGPUTextureEntry(
 
   device.queue.copyExternalImageToTexture(
     { source: canvas, flipY: false },
-    { texture: entry.texture, premultipliedAlpha: true },
+    { texture: entry.texture, premultipliedAlpha: false },
     [w, h],
   );
 }
