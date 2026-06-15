@@ -74,7 +74,7 @@ export function compileWebGLBitmapProgram(
   };
 }
 
-export function createDefaultBitmapShader(
+export function createDefaultWebGLBitmapShader(
   shaderLoc: WebGLShaderLocations,
   matrixArray: Float32Array,
 ): WebGLBitmapShader {

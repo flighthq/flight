@@ -6,10 +6,10 @@ import type {
   ParticleObject,
   ParticleObjectsState,
   PlaneCollider,
-  RectCollider,
+  RectangleCollider,
 } from '@flighthq/types';
 
-export type { CircleCollider, ParticleCollider, PlaneCollider, RectCollider };
+export type { CircleCollider, ParticleCollider, PlaneCollider, RectangleCollider };
 
 // [px, py, vx, vy] scratch reused across particles to avoid per-iteration allocation.
 const s: [number, number, number, number] = [0, 0, 0, 0];
@@ -122,7 +122,7 @@ function resolveCircle(c: CircleCollider, p: [number, number, number, number]): 
   return true;
 }
 
-function resolveRect(c: RectCollider, p: [number, number, number, number]): boolean {
+function resolveRect(c: RectangleCollider, p: [number, number, number, number]): boolean {
   const hw = c.width / 2;
   const hh = c.height / 2;
   const minX = c.x - hw;

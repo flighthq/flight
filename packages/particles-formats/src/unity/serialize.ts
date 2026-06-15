@@ -1,4 +1,4 @@
-import { colorCurveToKeyframes, curveToKeyframes } from '@flighthq/particles';
+import { particleColorCurveToKeyframes, particleCurveToKeyframes } from '@flighthq/particles';
 import type { ParticleEmitterConfig } from '@flighthq/types';
 
 import type { UnityAnimationCurve, UnityColor, UnityGradient, UnityMinMaxValue, UnityParticleDocument } from './schema';
@@ -111,13 +111,13 @@ function configToDocument(
 
 function buildGradient(config: Readonly<ParticleEmitterConfig>): UnityGradient {
   const colorKeys = config.colorCurve
-    ? colorCurveToKeyframes(config.colorCurve).map((k) => ({ time: k.time, color: { r: k.r, g: k.g, b: k.b } }))
+    ? particleColorCurveToKeyframes(config.colorCurve).map((k) => ({ time: k.time, color: { r: k.r, g: k.g, b: k.b } }))
     : [
         { time: 0, color: { r: config.colorStartR, g: config.colorStartG, b: config.colorStartB } },
         { time: 1, color: { r: config.colorEndR, g: config.colorEndG, b: config.colorEndB } },
       ];
   const alphaKeys = config.alphaCurve
-    ? curveToKeyframes(config.alphaCurve).map((k) => ({ time: k.time, alpha: k.value }))
+    ? particleCurveToKeyframes(config.alphaCurve).map((k) => ({ time: k.time, alpha: k.value }))
     : [
         { time: 0, alpha: config.alphaStart },
         { time: 1, alpha: config.alphaEnd },
@@ -126,7 +126,7 @@ function buildGradient(config: Readonly<ParticleEmitterConfig>): UnityGradient {
 }
 
 function buildSizeCurve(scaleCurve: ReadonlyArray<number>): UnityAnimationCurve {
-  return { keys: curveToKeyframes(scaleCurve).map((k) => ({ time: k.time, value: k.value })) };
+  return { keys: particleCurveToKeyframes(scaleCurve).map((k) => ({ time: k.time, value: k.value })) };
 }
 
 /** Serialise a ParticleEmitterConfig to a Unity Shuriken particle system JSON string.

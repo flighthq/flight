@@ -32,16 +32,16 @@ describe('index', () => {
   });
 
   it('exports tint shader primitives', () => {
-    expect(filtersWebGPU.applyTintPassWebGPU).toBeTypeOf('function');
-    expect(filtersWebGPU.applyInvertTintPassWebGPU).toBeTypeOf('function');
-    expect(filtersWebGPU.applyBlitPassWebGPU).toBeTypeOf('function');
-    expect(filtersWebGPU.applyBlitOffsetPassWebGPU).toBeTypeOf('function');
-    expect(filtersWebGPU.applyInnerClipPass).toBeTypeOf('function');
-    expect(filtersWebGPU.getTintShaderWebGPU).toBeTypeOf('function');
-    expect(filtersWebGPU.getInvertTintShaderWebGPU).toBeTypeOf('function');
-    expect(filtersWebGPU.getBlitShaderWebGPU).toBeTypeOf('function');
-    expect(filtersWebGPU.getBlitOffsetShaderWebGPU).toBeTypeOf('function');
-    expect(filtersWebGPU.getInnerClipShader).toBeTypeOf('function');
+    expect(filtersWebGPU.applyWebGPUTintPass).toBeTypeOf('function');
+    expect(filtersWebGPU.applyWebGPUInvertTintPass).toBeTypeOf('function');
+    expect(filtersWebGPU.applyWebGPUBlitPass).toBeTypeOf('function');
+    expect(filtersWebGPU.applyWebGPUBlitOffsetPass).toBeTypeOf('function');
+    expect(filtersWebGPU.applyWebGPUInnerClipPass).toBeTypeOf('function');
+    expect(filtersWebGPU.getWebGPUTintShader).toBeTypeOf('function');
+    expect(filtersWebGPU.getWebGPUInvertTintShader).toBeTypeOf('function');
+    expect(filtersWebGPU.getWebGPUBlitShader).toBeTypeOf('function');
+    expect(filtersWebGPU.getWebGPUBlitOffsetShader).toBeTypeOf('function');
+    expect(filtersWebGPU.getWebGPUInnerClipShader).toBeTypeOf('function');
   });
 
   it('exports gradient ramp utility', () => {

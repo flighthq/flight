@@ -124,9 +124,9 @@ Use runtime slots for any internal mutable state that should not be part of the 
 
 ### Scene Graph
 
-Scene graph hierarchy is shared across graph kinds. Functions such as `addGraphChild`, `removeGraphChild`, `getGraphParent`, `getGraphRoot`, `containsGraphChild`, and `swapGraphChildren` operate on `HasGraphHierarchy` nodes, which is why the same hierarchy code supports display objects, sprite graphs, and future graph families.
+Scene graph hierarchy is shared across graph kinds. Functions such as `addNodeChild`, `removeNodeChild`, `getNodeParent`, `getNodeRoot`, `containsNodeChild`, and `swapNodeChildren` operate on `HierarchyNode` nodes, which is why the same hierarchy code supports display objects, sprite graphs, and future graph families.
 
-Use graph-feature aliases for reusable graph APIs: `GraphHierarchyNode`, `GraphAppearanceNode`, `SceneTransform2DNode`, `SceneBoundsNode`, and `SceneSpatial2DNode`. These preserve graph-kind compatibility while making APIs depend on features rather than concrete graph families.
+Use graph-feature aliases for reusable graph APIs: `HierarchyNode`, `GraphAppearanceNode`, `Transform2DNode`, `BoundsNode`, and `Spatial2DNode`. These preserve graph-kind compatibility while making APIs depend on features rather than concrete graph families.
 
 ### Renderer Registration
 

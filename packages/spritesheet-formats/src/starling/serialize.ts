@@ -56,9 +56,12 @@ function documentToXml(doc: StarlingDocument): string {
 
 /** Serialise a SpritesheetData to a Starling / Sparrow XML atlas string.
  *
- *  Pass the `document` returned by `parseStarlingDocument` to preserve any fields that
+ *  Pass the `document` returned by `parseStarlingSpritesheetDocument` to preserve any fields that
  *  don't round-trip through the data (pivot values stored in the document). */
-export function serializeStarling(data: Readonly<SpritesheetData>, existing?: Partial<StarlingDocument>): string {
+export function serializeStarlingSpritesheet(
+  data: Readonly<SpritesheetData>,
+  existing?: Partial<StarlingDocument>,
+): string {
   const doc: StarlingDocument = {
     imagePath: data.imageFile || existing?.imagePath || '',
     subTextures: data.frames.map(frameToSubTexture),

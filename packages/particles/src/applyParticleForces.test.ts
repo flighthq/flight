@@ -78,7 +78,7 @@ describe('applyParticleForces', () => {
   it('wind adds constant acceleration', () => {
     const { emitter, state } = oneParticle();
     applyParticleForces(emitter, state, [{ type: 'wind', x: 5, y: -3 }], 2);
-    expect(state.velocities[0]).toBeCloseTo(10); // 5 * dt(2)
+    expect(state.velocities[0]).toBeCloseTo(10); // 5 * deltaTime(2)
     expect(state.velocities[1]).toBeCloseTo(-6);
   });
 
@@ -110,7 +110,7 @@ describe('applyParticleForces', () => {
     expect(state.velocities[0]).toBeCloseTo(15);
   });
 
-  it('is a no-op for an empty force list or zero dt', () => {
+  it('is a no-op for an empty force list or zero deltaTime', () => {
     const { emitter, state } = oneParticle();
     state.velocities[0] = 42;
     applyParticleForces(emitter, state, [], 1);
@@ -162,7 +162,7 @@ describe('applyParticleObjectForces', () => {
       speedMin: 0,
       speedMax: 0,
     });
-    updateParticleObjects(objects, state, config, 1); // spawn exactly one (spawnRate*dt = 1)
+    updateParticleObjects(objects, state, config, 1); // spawn exactly one (spawnRate*deltaTime = 1)
     const liveIndex = objects.findIndex((o) => o.visible);
     const deadIndex = liveIndex === 0 ? 1 : 0;
     objects[liveIndex].x = 0;

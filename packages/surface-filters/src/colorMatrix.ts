@@ -42,7 +42,7 @@ export function applySurfaceColorMatrixFilter(
  * Writes a brightness color matrix into `out` (length 20). Multiplies RGB by
  * `amount` (CSS `brightness()` semantics): 1 is identity, 0 is black, >1 brightens.
  */
-export function buildBrightnessColorMatrix(out: number[], amount: number): void {
+export function buildSurfaceBrightnessColorMatrix(out: number[], amount: number): void {
   setColorMatrix(out, amount, 0, 0, 0, 0, 0, amount, 0, 0, 0, 0, 0, amount, 0, 0, 0, 0, 0, 1, 0);
 }
 
@@ -51,17 +51,17 @@ export function buildBrightnessColorMatrix(out: number[], amount: number): void 
  * midpoint (CSS `contrast()` semantics): 1 is identity, 0 is flat grey, >1 raises
  * contrast.
  */
-export function buildContrastColorMatrix(out: number[], amount: number): void {
+export function buildSurfaceContrastColorMatrix(out: number[], amount: number): void {
   const t = 127.5 * (1 - amount);
   setColorMatrix(out, amount, 0, 0, 0, t, 0, amount, 0, 0, t, 0, 0, amount, 0, t, 0, 0, 0, 1, 0);
 }
 
 /**
  * Writes a grayscale color matrix into `out` (length 20). Equivalent to
- * `buildSaturationColorMatrix(out, 0)`; uses the W3C luma coefficients.
+ * `buildSurfaceSaturationColorMatrix(out, 0)`; uses the W3C luma coefficients.
  */
-export function buildGrayscaleColorMatrix(out: number[]): void {
-  buildSaturationColorMatrix(out, 0);
+export function buildSurfaceGrayscaleColorMatrix(out: number[]): void {
+  buildSurfaceSaturationColorMatrix(out, 0);
 }
 
 /**
@@ -69,7 +69,7 @@ export function buildGrayscaleColorMatrix(out: number[]): void {
  * hue around the luma axis (CSS `hue-rotate()` semantics, W3C coefficients).
  * 0° is identity; 180° inverts hue; values outside 0..360 wrap naturally.
  */
-export function buildHueRotationColorMatrix(out: number[], degrees: number): void {
+export function buildSurfaceHueRotationColorMatrix(out: number[], degrees: number): void {
   const radians = (degrees * Math.PI) / 180;
   const c = Math.cos(radians);
   const s = Math.sin(radians);
@@ -102,7 +102,7 @@ export function buildHueRotationColorMatrix(out: number[], degrees: number): voi
  * Writes an invert color matrix into `out` (length 20). Inverts RGB
  * (`255 - channel`); alpha is preserved.
  */
-export function buildInvertColorMatrix(out: number[]): void {
+export function buildSurfaceInvertColorMatrix(out: number[]): void {
   setColorMatrix(out, -1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0);
 }
 
@@ -111,7 +111,7 @@ export function buildInvertColorMatrix(out: number[]): void {
  * identity, 0 for grayscale, >1 for oversaturated (CSS `saturate()` semantics,
  * W3C luma coefficients).
  */
-export function buildSaturationColorMatrix(out: number[], amount: number): void {
+export function buildSurfaceSaturationColorMatrix(out: number[], amount: number): void {
   const inv = 1 - amount;
   const r = LUMA_R * inv;
   const g = LUMA_G * inv;
@@ -122,7 +122,7 @@ export function buildSaturationColorMatrix(out: number[], amount: number): void 
 /**
  * Writes a sepia color matrix into `out` (length 20), matching CSS `sepia(1)`.
  */
-export function buildSepiaColorMatrix(out: number[]): void {
+export function buildSurfaceSepiaColorMatrix(out: number[]): void {
   setColorMatrix(out, 0.393, 0.769, 0.189, 0, 0, 0.349, 0.686, 0.168, 0, 0, 0.272, 0.534, 0.131, 0, 0, 0, 0, 0, 1, 0);
 }
 
@@ -130,7 +130,11 @@ export function buildSepiaColorMatrix(out: number[]): void {
  * Composes two 4×5 color matrices into `out` (length 20): the result applies
  * `first`, then `second`. `out` must not alias `first` or `second`.
  */
-export function concatColorMatrix(out: number[], first: ReadonlyArray<number>, second: ReadonlyArray<number>): void {
+export function concatSurfaceColorMatrix(
+  out: number[],
+  first: ReadonlyArray<number>,
+  second: ReadonlyArray<number>,
+): void {
   for (let row = 0; row < 4; row++) {
     for (let col = 0; col < 5; col++) {
       let sum = col === 4 ? second[row * 5 + 4] : 0;
@@ -145,7 +149,7 @@ export function concatColorMatrix(out: number[], first: ReadonlyArray<number>, s
 /**
  * Writes the identity color matrix into `out` (length 20).
  */
-export function setColorMatrixIdentity(out: number[]): void {
+export function setSurfaceColorMatrixIdentity(out: number[]): void {
   setColorMatrix(out, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0);
 }
 

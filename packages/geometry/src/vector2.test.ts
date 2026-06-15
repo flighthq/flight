@@ -581,7 +581,7 @@ describe('subtractVector2', () => {
     expect(pt.y).toBe(6);
   });
 
-  it('supports out === toSubtract', () => {
+  it('supports out === other', () => {
     pt.x = 5;
     pt.y = 10;
     pt2.x = 2;

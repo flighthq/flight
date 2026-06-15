@@ -86,14 +86,14 @@ const blitPipelines = new WeakMap<WebGPURenderState, WebGPUFilterPipeline>();
  * because WebGPU texture UV y=0 is top (matching screen y-down), whereas WebGL
  * UV y=0 is bottom (opposite screen y-down).
  */
-export function applyBlitOffsetPassWebGPU(
+export function applyWebGPUBlitOffsetPass(
   state: WebGPURenderState,
   source: WebGPURenderTarget,
   dest: WebGPURenderTarget,
   dx: number,
   dy: number,
 ): void {
-  const pipeline = getBlitOffsetShaderWebGPU(state);
+  const pipeline = getWebGPUBlitOffsetShader(state);
   drawWebGPUFilterPass(state, source, dest, pipeline, (f32) => {
     f32[0] = -dx / source.width;
     f32[1] = -dy / source.height;
@@ -101,28 +101,28 @@ export function applyBlitOffsetPassWebGPU(
 }
 
 /** Blits source directly into dest without modification. */
-export function applyBlitPassWebGPU(
+export function applyWebGPUBlitPass(
   state: WebGPURenderState,
   source: WebGPURenderTarget,
   dest: WebGPURenderTarget,
 ): void {
-  const pipeline = getBlitShaderWebGPU(state);
+  const pipeline = getWebGPUBlitShader(state);
   drawWebGPUFilterPass(state, source, dest, pipeline, () => {});
 }
 
 /** Clips glow against source alpha: output = glow × source.a. */
-export function applyInnerClipPass(
+export function applyWebGPUInnerClipPass(
   state: WebGPURenderState,
   glow: WebGPURenderTarget,
   source: WebGPURenderTarget,
   dest: WebGPURenderTarget,
 ): void {
-  const pipeline = getInnerClipShader(state);
+  const pipeline = getWebGPUInnerClipShader(state);
   drawWebGPUDualSourcePass(state, glow, source, dest, pipeline, () => {});
 }
 
 /** Tints the INVERTED source alpha with color, outputs a premultiplied mask. Used for inner effects. */
-export function applyInvertTintPassWebGPU(
+export function applyWebGPUInvertTintPass(
   state: WebGPURenderState,
   source: WebGPURenderTarget,
   dest: WebGPURenderTarget,
@@ -131,7 +131,7 @@ export function applyInvertTintPassWebGPU(
   strength: number,
 ): void {
   const [r, g, b] = packColor(color);
-  const pipeline = getInvertTintShaderWebGPU(state);
+  const pipeline = getWebGPUInvertTintShader(state);
   drawWebGPUFilterPass(state, source, dest, pipeline, (f32) => {
     f32[0] = r;
     f32[1] = g;
@@ -146,7 +146,7 @@ function packColor(color: number): [number, number, number] {
 }
 
 /** Tints the source alpha with color, outputs a premultiplied mask into dest. */
-export function applyTintPassWebGPU(
+export function applyWebGPUTintPass(
   state: WebGPURenderState,
   source: WebGPURenderTarget,
   dest: WebGPURenderTarget,
@@ -155,7 +155,7 @@ export function applyTintPassWebGPU(
   strength: number,
 ): void {
   const [r, g, b] = packColor(color);
-  const pipeline = getTintShaderWebGPU(state);
+  const pipeline = getWebGPUTintShader(state);
   drawWebGPUFilterPass(state, source, dest, pipeline, (f32) => {
     f32[0] = r;
     f32[1] = g;
@@ -165,7 +165,7 @@ export function applyTintPassWebGPU(
   });
 }
 
-export function getBlitOffsetShaderWebGPU(state: WebGPURenderState): WebGPUFilterPipeline {
+export function getWebGPUBlitOffsetShader(state: WebGPURenderState): WebGPUFilterPipeline {
   let p = blitOffsetPipelines.get(state);
   if (p === undefined) {
     p = createWebGPUFilterPipeline(state, BLIT_OFFSET_WGSL);
@@ -174,7 +174,7 @@ export function getBlitOffsetShaderWebGPU(state: WebGPURenderState): WebGPUFilte
   return p;
 }
 
-export function getBlitShaderWebGPU(state: WebGPURenderState): WebGPUFilterPipeline {
+export function getWebGPUBlitShader(state: WebGPURenderState): WebGPUFilterPipeline {
   let p = blitPipelines.get(state);
   if (p === undefined) {
     p = createWebGPUFilterPipeline(state, BLIT_WGSL);
@@ -183,7 +183,7 @@ export function getBlitShaderWebGPU(state: WebGPURenderState): WebGPUFilterPipel
   return p;
 }
 
-export function getInnerClipShader(state: WebGPURenderState): WebGPUDualSourcePipeline {
+export function getWebGPUInnerClipShader(state: WebGPURenderState): WebGPUDualSourcePipeline {
   let p = innerClipPipelines.get(state);
   if (p === undefined) {
     p = createWebGPUDualSourcePipeline(state, INNER_CLIP_WGSL);
@@ -211,7 +211,7 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
 
 const innerClipPipelines = new WeakMap<WebGPURenderState, WebGPUDualSourcePipeline>();
 
-export function getInvertTintShaderWebGPU(state: WebGPURenderState): WebGPUFilterPipeline {
+export function getWebGPUInvertTintShader(state: WebGPURenderState): WebGPUFilterPipeline {
   let p = invertTintPipelines.get(state);
   if (p === undefined) {
     p = createWebGPUFilterPipeline(state, INVERT_TINT_WGSL);
@@ -220,7 +220,7 @@ export function getInvertTintShaderWebGPU(state: WebGPURenderState): WebGPUFilte
   return p;
 }
 
-export function getTintShaderWebGPU(state: WebGPURenderState): WebGPUFilterPipeline {
+export function getWebGPUTintShader(state: WebGPURenderState): WebGPUFilterPipeline {
   let p = tintPipelines.get(state);
   if (p === undefined) {
     p = createWebGPUFilterPipeline(state, TINT_WGSL);

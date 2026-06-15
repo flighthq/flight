@@ -88,14 +88,14 @@ function documentToData(doc: TexturePackerDocument): SpritesheetData {
 /** Parse a Texture Packer JSON string directly to a SpritesheetData.
  *
  *  Single-pass: no intermediate document object is allocated.
- *  Use `parseTexturePackerDocument` instead when you need round-trip serialisation. */
-export function parseTexturePacker(json: string): SpritesheetData {
+ *  Use `parseTexturePackerSpritesheetDocument` instead when you need round-trip serialisation. */
+export function parseTexturePackerSpritesheet(json: string): SpritesheetData {
   return documentToData(JSON.parse(json) as TexturePackerDocument);
 }
 
 /** Parse a Texture Packer JSON string and preserve the full document for
- *  round-trip serialisation via `serializeTexturePacker`. */
-export function parseTexturePackerDocument(json: string): TexturePackerParsed {
+ *  round-trip serialisation via `serializeTexturePackerSpritesheet`. */
+export function parseTexturePackerSpritesheetDocument(json: string): TexturePackerParsed {
   const document = JSON.parse(json) as TexturePackerDocument;
   return { data: documentToData(document), document };
 }

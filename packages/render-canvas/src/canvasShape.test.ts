@@ -56,41 +56,41 @@ describe('drawCanvasShape', () => {
 
 describe('renderCanvasShapeCommands', () => {
   it('does nothing when the command list is empty', () => {
-    const ctx = makeContext();
-    const spy = vi.spyOn(ctx, 'fill');
-    renderCanvasShapeCommands(ctx, createShape().data.commands);
+    const context = makeContext();
+    const spy = vi.spyOn(context, 'fill');
+    renderCanvasShapeCommands(context, createShape().data.commands);
     expect(spy).not.toHaveBeenCalled();
   });
 
   it('calls fill after beginFill + drawRectangle + endFill', () => {
-    const ctx = makeContext();
-    const spy = vi.spyOn(ctx, 'fill');
+    const context = makeContext();
+    const spy = vi.spyOn(context, 'fill');
     const shape = createShape();
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 100, 50);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(ctx, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands);
     expect(spy).toHaveBeenCalledOnce();
   });
 
   it('calls stroke once when lineStyle is set', () => {
-    const ctx = makeContext();
-    const spy = vi.spyOn(ctx, 'stroke');
+    const context = makeContext();
+    const spy = vi.spyOn(context, 'stroke');
     const shape = createShape();
     appendShapeLineStyle(shape, 2, 0x000000);
     appendShapeRectangle(shape, 0, 0, 100, 50);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(ctx, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands);
     expect(spy).toHaveBeenCalledOnce();
   });
 
   it('draws fill before stroke so strokes render on top', () => {
-    const ctx = makeContext();
+    const context = makeContext();
     const order: string[] = [];
-    vi.spyOn(ctx, 'fill').mockImplementation(() => {
+    vi.spyOn(context, 'fill').mockImplementation(() => {
       order.push('fill');
     });
-    vi.spyOn(ctx, 'stroke').mockImplementation(() => {
+    vi.spyOn(context, 'stroke').mockImplementation(() => {
       order.push('stroke');
     });
     const shape = createShape();
@@ -98,18 +98,18 @@ describe('renderCanvasShapeCommands', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 100, 50);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(ctx, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands);
     expect(order).toEqual(['fill', 'stroke']);
   });
 
   it('calls fill with evenodd winding rule by default', () => {
-    const ctx = makeContext();
-    const spy = vi.spyOn(ctx, 'fill');
+    const context = makeContext();
+    const spy = vi.spyOn(context, 'fill');
     const shape = createShape();
     appendShapeBeginFill(shape, 0xff0000, 1);
     appendShapeRectangle(shape, 0, 0, 10, 10);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(ctx, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands);
     expect(spy).toHaveBeenCalledWith('evenodd');
   });
 });

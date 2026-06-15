@@ -7,13 +7,13 @@ import { createBitmapPattern, createGradientPattern } from './canvasFillPattern'
 
 export const defaultCanvasBeginBitmapFill: CanvasShapeCommand<'beginBitmapFill'> = {
   key: 'beginBitmapFill',
-  draw(ctx, state, buf, i) {
+  draw(context, state, buf, i) {
     const bitmap = buf[i] as ImageSource;
     const matrix = buf[i + 1] as Matrix | null;
     const repeat = buf[i + 2] as boolean;
     const smooth = buf[i + 3] as boolean;
     if (state.hasPendingPath && (state.hasFill || state.hasStroke)) state.flush();
-    const pattern = createBitmapPattern(ctx, bitmap, repeat, smooth);
+    const pattern = createBitmapPattern(context, bitmap, repeat, smooth);
     state.hasFill = pattern !== null;
     state.fillStyle = pattern ?? '';
     state.fillMatrix = matrix;
@@ -45,7 +45,7 @@ export const defaultCanvasBeginFill: CanvasShapeCommand<'beginFill'> = {
 
 export const defaultCanvasBeginGradientFill: CanvasShapeCommand<'beginGradientFill'> = {
   key: 'beginGradientFill',
-  draw(ctx, state, buf, i) {
+  draw(context, state, buf, i) {
     const gradientType = buf[i] as never;
     const colors = buf[i + 1] as number[];
     const alphas = buf[i + 2] as number[];
@@ -56,7 +56,7 @@ export const defaultCanvasBeginGradientFill: CanvasShapeCommand<'beginGradientFi
     const focalPointRatio = buf[i + 7] as number;
     if (state.hasPendingPath && (state.hasFill || state.hasStroke)) state.flush();
     const pattern = createGradientPattern(
-      ctx,
+      context,
       gradientType,
       colors,
       alphas,
@@ -76,7 +76,7 @@ export const defaultCanvasBeginGradientFill: CanvasShapeCommand<'beginGradientFi
 
 export const defaultCanvasCubicCurveTo: CanvasShapeCommand<'cubicCurveTo'> = {
   key: 'cubicCurveTo',
-  draw(ctx, state, buf, i) {
+  draw(context, state, buf, i) {
     const controlX1 = buf[i] as number;
     const controlY1 = buf[i + 1] as number;
     const controlX2 = buf[i + 2] as number;
@@ -84,38 +84,38 @@ export const defaultCanvasCubicCurveTo: CanvasShapeCommand<'cubicCurveTo'> = {
     const anchorX = buf[i + 4] as number;
     const anchorY = buf[i + 5] as number;
     if (!state.hasCurrentPoint) {
-      ctx.moveTo(0, 0);
+      context.moveTo(0, 0);
       state.hasCurrentPoint = true;
     }
-    ctx.bezierCurveTo(controlX1, controlY1, controlX2, controlY2, anchorX, anchorY);
+    context.bezierCurveTo(controlX1, controlY1, controlX2, controlY2, anchorX, anchorY);
     state.hasPendingPath = true;
   },
 };
 
 export const defaultCanvasCurveTo: CanvasShapeCommand<'curveTo'> = {
   key: 'curveTo',
-  draw(ctx, state, buf, i) {
+  draw(context, state, buf, i) {
     const controlX = buf[i] as number;
     const controlY = buf[i + 1] as number;
     const anchorX = buf[i + 2] as number;
     const anchorY = buf[i + 3] as number;
     if (!state.hasCurrentPoint) {
-      ctx.moveTo(0, 0);
+      context.moveTo(0, 0);
       state.hasCurrentPoint = true;
     }
-    ctx.quadraticCurveTo(controlX, controlY, anchorX, anchorY);
+    context.quadraticCurveTo(controlX, controlY, anchorX, anchorY);
     state.hasPendingPath = true;
   },
 };
 
 export const defaultCanvasDrawCircle: CanvasShapeCommand<'drawCircle'> = {
   key: 'drawCircle',
-  draw(ctx, state, buf, i) {
+  draw(context, state, buf, i) {
     const x = buf[i] as number;
     const y = buf[i + 1] as number;
     const radius = buf[i + 2] as number;
-    ctx.moveTo(x + radius, y);
-    ctx.arc(x, y, radius, 0, Math.PI * 2, true);
+    context.moveTo(x + radius, y);
+    context.arc(x, y, radius, 0, Math.PI * 2, true);
     state.hasPendingPath = true;
     state.hasCurrentPoint = true;
   },
@@ -123,15 +123,15 @@ export const defaultCanvasDrawCircle: CanvasShapeCommand<'drawCircle'> = {
 
 export const defaultCanvasDrawEllipse: CanvasShapeCommand<'drawEllipse'> = {
   key: 'drawEllipse',
-  draw(ctx, state, buf, i) {
+  draw(context, state, buf, i) {
     const x = buf[i] as number;
     const y = buf[i + 1] as number;
     const width = buf[i + 2] as number;
     const height = buf[i + 3] as number;
     const ex = x + width / 2;
     const ey = y + height / 2;
-    ctx.moveTo(ex + width / 2, ey);
-    ctx.ellipse(ex, ey, width / 2, height / 2, 0, 0, Math.PI * 2);
+    context.moveTo(ex + width / 2, ey);
+    context.ellipse(ex, ey, width / 2, height / 2, 0, 0, Math.PI * 2);
     state.hasPendingPath = true;
     state.hasCurrentPoint = true;
   },
@@ -139,7 +139,7 @@ export const defaultCanvasDrawEllipse: CanvasShapeCommand<'drawEllipse'> = {
 
 export const defaultCanvasDrawPath: CanvasShapeCommand<'drawPath'> = {
   key: 'drawPath',
-  draw(ctx, state, buf, i) {
+  draw(context, state, buf, i) {
     const commands = buf[i] as number[];
     const data = buf[i + 1] as number[];
     const winding = buf[i + 2] as string;
@@ -150,50 +150,50 @@ export const defaultCanvasDrawPath: CanvasShapeCommand<'drawPath'> = {
         case 0: // NO_OP
           break;
         case 1: // MOVE_TO
-          ctx.moveTo(data[di], data[di + 1]);
+          context.moveTo(data[di], data[di + 1]);
           di += 2;
           state.hasPendingPath = true;
           state.hasCurrentPoint = true;
           break;
         case 2: // LINE_TO
           if (!state.hasCurrentPoint) {
-            ctx.moveTo(0, 0);
+            context.moveTo(0, 0);
             state.hasCurrentPoint = true;
           }
-          ctx.lineTo(data[di], data[di + 1]);
+          context.lineTo(data[di], data[di + 1]);
           di += 2;
           state.hasPendingPath = true;
           break;
         case 3: // CURVE_TO
           if (!state.hasCurrentPoint) {
-            ctx.moveTo(0, 0);
+            context.moveTo(0, 0);
             state.hasCurrentPoint = true;
           }
-          ctx.quadraticCurveTo(data[di], data[di + 1], data[di + 2], data[di + 3]);
+          context.quadraticCurveTo(data[di], data[di + 1], data[di + 2], data[di + 3]);
           di += 4;
           state.hasPendingPath = true;
           break;
         case 4: // WIDE_MOVE_TO
-          ctx.moveTo(data[di + 2], data[di + 3]);
+          context.moveTo(data[di + 2], data[di + 3]);
           di += 4;
           state.hasPendingPath = true;
           state.hasCurrentPoint = true;
           break;
         case 5: // WIDE_LINE_TO
           if (!state.hasCurrentPoint) {
-            ctx.moveTo(0, 0);
+            context.moveTo(0, 0);
             state.hasCurrentPoint = true;
           }
-          ctx.lineTo(data[di + 2], data[di + 3]);
+          context.lineTo(data[di + 2], data[di + 3]);
           di += 4;
           state.hasPendingPath = true;
           break;
         case 6: // CUBIC_CURVE_TO
           if (!state.hasCurrentPoint) {
-            ctx.moveTo(0, 0);
+            context.moveTo(0, 0);
             state.hasCurrentPoint = true;
           }
-          ctx.bezierCurveTo(data[di], data[di + 1], data[di + 2], data[di + 3], data[di + 4], data[di + 5]);
+          context.bezierCurveTo(data[di], data[di + 1], data[di + 2], data[di + 3], data[di + 4], data[di + 5]);
           di += 6;
           state.hasPendingPath = true;
           break;
@@ -204,7 +204,7 @@ export const defaultCanvasDrawPath: CanvasShapeCommand<'drawPath'> = {
 
 export const defaultCanvasDrawRectangle: CanvasShapeCommand<'drawRectangle'> = {
   key: 'drawRectangle',
-  draw(ctx, state, buf, i) {
+  draw(context, state, buf, i) {
     const x = buf[i] as number;
     const y = buf[i + 1] as number;
     const width = buf[i + 2] as number;
@@ -228,11 +228,11 @@ export const defaultCanvasDrawRectangle: CanvasShapeCommand<'drawRectangle'> = {
       }
       if (canOptimize && sl >= 0 && st >= 0 && sr <= state.bitmapW && sb <= state.bitmapH) {
         if (state.hasPendingPath && (state.hasFill || state.hasStroke)) state.flush();
-        ctx.drawImage(state.bitmapSrc, sl, st, sr - sl, sb - st, x, y, width, height);
+        context.drawImage(state.bitmapSrc, sl, st, sr - sl, sb - st, x, y, width, height);
         return;
       }
     }
-    ctx.rect(x, y, width, height);
+    context.rect(x, y, width, height);
     state.hasPendingPath = true;
     state.hasCurrentPoint = true;
   },
@@ -240,7 +240,7 @@ export const defaultCanvasDrawRectangle: CanvasShapeCommand<'drawRectangle'> = {
 
 export const defaultCanvasDrawRoundRectangle: CanvasShapeCommand<'drawRoundRectangle'> = {
   key: 'drawRoundRectangle',
-  draw(ctx, state, buf, i) {
+  draw(context, state, buf, i) {
     const x = buf[i] as number;
     const y = buf[i + 1] as number;
     const width = buf[i + 2] as number;
@@ -250,10 +250,10 @@ export const defaultCanvasDrawRoundRectangle: CanvasShapeCommand<'drawRoundRecta
     const rx = Math.min(ellipseWidth / 2, width / 2);
     const ry = Math.min(ellipseHeight / 2, height / 2);
     const radius = Math.min(rx, ry);
-    if (typeof ctx.roundRect === 'function') {
-      ctx.roundRect(x, y, width, height, radius);
+    if (typeof context.roundRect === 'function') {
+      context.roundRect(x, y, width, height, radius);
     } else {
-      ctx.rect(x, y, width, height);
+      context.rect(x, y, width, height);
     }
     state.hasPendingPath = true;
     state.hasCurrentPoint = true;
@@ -273,11 +273,11 @@ export const defaultCanvasEndFill: CanvasShapeCommand<'endFill'> = {
 
 export const defaultCanvasLineBitmapStyle: CanvasShapeCommand<'lineBitmapStyle'> = {
   key: 'lineBitmapStyle',
-  draw(ctx, state, buf, i) {
+  draw(context, state, buf, i) {
     const bitmap = buf[i] as ImageSource;
     const repeat = buf[i + 2] as boolean;
     const smooth = buf[i + 3] as boolean;
-    const pattern = createBitmapPattern(ctx, bitmap, repeat, smooth);
+    const pattern = createBitmapPattern(context, bitmap, repeat, smooth);
     if (pattern !== null) {
       state.strokeStyle = pattern;
       state.hasStroke = true;
@@ -287,7 +287,7 @@ export const defaultCanvasLineBitmapStyle: CanvasShapeCommand<'lineBitmapStyle'>
 
 export const defaultCanvasLineGradientStyle: CanvasShapeCommand<'lineGradientStyle'> = {
   key: 'lineGradientStyle',
-  draw(ctx, state, buf, i) {
+  draw(context, state, buf, i) {
     const gradientType = buf[i] as never;
     const colors = buf[i + 1] as number[];
     const alphas = buf[i + 2] as number[];
@@ -297,7 +297,7 @@ export const defaultCanvasLineGradientStyle: CanvasShapeCommand<'lineGradientSty
     const interpolationMethod = buf[i + 6] as never;
     const focalPointRatio = buf[i + 7] as number;
     const pattern = createGradientPattern(
-      ctx,
+      context,
       gradientType,
       colors,
       alphas,
@@ -316,7 +316,7 @@ export const defaultCanvasLineGradientStyle: CanvasShapeCommand<'lineGradientSty
 
 export const defaultCanvasLineStyle: CanvasShapeCommand<'lineStyle'> = {
   key: 'lineStyle',
-  draw(ctx, state, buf, i) {
+  draw(context, state, buf, i) {
     const thickness = buf[i] as number;
     const color = buf[i + 1] as number;
     const alpha = buf[i + 2] as number;
@@ -327,33 +327,33 @@ export const defaultCanvasLineStyle: CanvasShapeCommand<'lineStyle'> = {
     if (state.hasStroke) {
       state.strokeWidth = thickness;
       state.strokeStyle = rgbaString(color, alpha);
-      ctx.lineCap = caps === 'none' ? 'butt' : (caps as CanvasLineCap);
-      ctx.lineJoin = joints as CanvasLineJoin;
-      ctx.miterLimit = miterLimit;
+      context.lineCap = caps === 'none' ? 'butt' : (caps as CanvasLineCap);
+      context.lineJoin = joints as CanvasLineJoin;
+      context.miterLimit = miterLimit;
     }
   },
 };
 
 export const defaultCanvasLineTo: CanvasShapeCommand<'lineTo'> = {
   key: 'lineTo',
-  draw(ctx, state, buf, i) {
+  draw(context, state, buf, i) {
     const x = buf[i] as number;
     const y = buf[i + 1] as number;
     if (!state.hasCurrentPoint) {
-      ctx.moveTo(0, 0);
+      context.moveTo(0, 0);
       state.hasCurrentPoint = true;
     }
-    ctx.lineTo(x, y);
+    context.lineTo(x, y);
     state.hasPendingPath = true;
   },
 };
 
 export const defaultCanvasMoveTo: CanvasShapeCommand<'moveTo'> = {
   key: 'moveTo',
-  draw(ctx, state, buf, i) {
+  draw(context, state, buf, i) {
     const x = buf[i] as number;
     const y = buf[i + 1] as number;
-    ctx.moveTo(x, y);
+    context.moveTo(x, y);
     state.hasPendingPath = true;
     state.hasCurrentPoint = true;
   },
