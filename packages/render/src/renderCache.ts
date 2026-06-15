@@ -33,7 +33,10 @@ export function createRenderCacheAdapter(cache: RenderCache | null = null): Rend
       adapter.signals?.onPrepare.emit();
       const attached = adapter.cache ?? null;
       if (attached === null) return null;
-      node.source = attached;
+      // Switch the render node to the cache renderer and fold in the cache's placement
+      // transform, but keep node.source as the original scene node — the appearance and
+      // transform passes read node.source every (dirty) frame, and the handle is not a Node.
+      // The cache renderer resolves the handle from this adapter via getRenderNodeCache.
       node.kind = RenderCacheKind;
       multiplyMatrix(node.transform2D, node.transform2D, attached.transform);
       return false;
@@ -48,6 +51,15 @@ export function createRenderCacheAdapter(cache: RenderCache | null = null): Rend
  */
 export function enableRenderCacheAdapterSignals(adapter: RenderCacheAdapter): void {
   adapter.signals ??= { onPrepare: createSignal() };
+}
+
+/**
+ * Resolves the cache handle a cache renderer should composite for a render node, by reading the
+ * cache adapter attached to the node's source on this state. Returns null if none is attached.
+ */
+export function getRenderNodeCache(state: RenderState, source: Renderable): RenderCache | null {
+  const adapter = getRenderNodeAdapter(state, source);
+  return isRenderCacheAdapter(adapter) ? (adapter.cache ?? null) : null;
 }
 
 export function isRenderCache(source: unknown): source is RenderCache {
