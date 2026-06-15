@@ -21,7 +21,7 @@ test('sdk browser barrel can render a display object to the DOM', () => {
     createData() {
       return null;
     },
-    draw(s: DOMRenderState) {
+    submit(s: DOMRenderState) {
       setDOMRendererElement(s, el);
     },
   };
