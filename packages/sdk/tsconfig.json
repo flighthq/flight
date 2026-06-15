@@ -16,6 +16,7 @@
     { "path": "../entity" },
     { "path": "../filters" },
     { "path": "../filters-webgl" },
+    { "path": "../filters-webgpu" },
     { "path": "../geometry" },
     { "path": "../input" },
     { "path": "../interaction" },

@@ -21,6 +21,8 @@
       "@flighthq/filters/*": ["./packages/filters/src/*"],
       "@flighthq/filters-webgl": ["./packages/filters-webgl/src/index.ts"],
       "@flighthq/filters-webgl/*": ["./packages/filters-webgl/src/*"],
+      "@flighthq/filters-webgpu": ["./packages/filters-webgpu/src/index.ts"],
+      "@flighthq/filters-webgpu/*": ["./packages/filters-webgpu/src/*"],
       "@flighthq/assets-loader": ["./packages/assets-loader/src/index.ts"],
       "@flighthq/assets-loader/*": ["./packages/assets-loader/src/*"],
       "@flighthq/assets/*": ["./packages/assets/src/*"],
