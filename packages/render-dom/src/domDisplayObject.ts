@@ -33,7 +33,7 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
     clipHooks?.pushMask(state, current);
 
     if (data.renderer !== null) {
-      const result = processDOMNode(internal, data, frameID, () => data.renderer!.draw(state, data), newLength);
+      const result = processDOMNode(internal, data, frameID, () => data.renderer!.submit(state, data), newLength);
       newLength = result.newLength;
       if (result.needsReconcile) needsReconcile = true;
       applyClip?.apply(state, data);

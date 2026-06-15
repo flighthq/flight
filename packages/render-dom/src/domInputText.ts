@@ -65,7 +65,7 @@ export function drawDOMInputText(state: DOMRenderState, renderNode: DisplayObjec
 
 export const defaultDOMInputTextRenderer: DisplayObjectRenderer = {
   createData: defaultDOMRichTextRenderer.createData,
-  draw: drawDOMInputText,
+  submit: drawDOMInputText,
 };
 
 function drawDOMInputTextMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {

@@ -33,5 +33,5 @@ export function drawHTMLViewMask(_state: DOMRenderState, _renderNode: DisplayObj
 
 export const defaultHTMLViewRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawHTMLView,
+  submit: drawHTMLView,
 };

@@ -71,5 +71,5 @@ export function drawDOMShapeMask(state: DOMRenderState, renderNode: DisplayObjec
 
 export const defaultDOMShapeRenderer: DisplayObjectRenderer = {
   createData: createDOMShapeData,
-  draw: drawDOMShape,
+  submit: drawDOMShape,
 };

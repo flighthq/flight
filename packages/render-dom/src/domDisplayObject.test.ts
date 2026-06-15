@@ -29,7 +29,7 @@ function setupRenderedNode(
   data.transform2D.d = 1;
   data.renderer = {
     createData: vi.fn(),
-    draw: vi.fn().mockImplementation(() => {
+    submit: vi.fn().mockImplementation(() => {
       (state as ManagedState).domCurrentElement = el;
     }),
   };
@@ -62,12 +62,12 @@ describe('renderDOMDisplayObject', () => {
     obj.scaleY = 0;
     invalidateNodeLocalTransform(obj);
 
-    const renderer = { createData: vi.fn(), draw: vi.fn() };
+    const renderer = { createData: vi.fn(), submit: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
     prepareDisplayObjectRender(state, obj);
     renderDOMDisplayObject(state, obj);
 
-    expect(renderer.draw).not.toHaveBeenCalled();
+    expect(renderer.submit).not.toHaveBeenCalled();
   });
 
   it('skips rendering invisible objects', () => {
@@ -75,12 +75,12 @@ describe('renderDOMDisplayObject', () => {
     const obj = createDisplayObject();
     obj.visible = false;
 
-    const renderer = { createData: vi.fn(), draw: vi.fn() };
+    const renderer = { createData: vi.fn(), submit: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
     prepareDisplayObjectRender(state, obj);
     renderDOMDisplayObject(state, obj);
 
-    expect(renderer.draw).not.toHaveBeenCalled();
+    expect(renderer.submit).not.toHaveBeenCalled();
   });
 
   it('skips objects with zero alpha', () => {
@@ -88,12 +88,12 @@ describe('renderDOMDisplayObject', () => {
     const obj = createDisplayObject();
     obj.alpha = 0;
 
-    const renderer = { createData: vi.fn(), draw: vi.fn() };
+    const renderer = { createData: vi.fn(), submit: vi.fn() };
     registerRenderer(state, DisplayObjectKind, renderer);
     prepareDisplayObjectRender(state, obj);
     renderDOMDisplayObject(state, obj);
 
-    expect(renderer.draw).not.toHaveBeenCalled();
+    expect(renderer.submit).not.toHaveBeenCalled();
   });
 
   it('calls draw when the object is visible and has a renderer', () => {
@@ -104,7 +104,7 @@ describe('renderDOMDisplayObject', () => {
 
     renderDOMDisplayObject(state, obj);
 
-    expect(data.renderer!.draw).toHaveBeenCalledOnce();
+    expect(data.renderer!.submit).toHaveBeenCalledOnce();
   });
 
   it('traverses children', () => {
@@ -119,7 +119,7 @@ describe('renderDOMDisplayObject', () => {
     prepareDisplayObjectRender(state, parent);
     renderDOMDisplayObject(state, parent);
 
-    expect(childData.renderer!.draw).toHaveBeenCalled();
+    expect(childData.renderer!.submit).toHaveBeenCalled();
   });
 
   it('skips draw on fully static nodes after first render', () => {
@@ -130,11 +130,11 @@ describe('renderDOMDisplayObject', () => {
 
     // First render: node is new, draw must be called.
     renderDOMDisplayObject(state, obj);
-    expect(data.renderer!.draw).toHaveBeenCalledTimes(1);
+    expect(data.renderer!.submit).toHaveBeenCalledTimes(1);
 
     // Second render: nothing changed, draw should be skipped.
     renderDOMDisplayObject(state, obj);
-    expect(data.renderer!.draw).toHaveBeenCalledTimes(1);
+    expect(data.renderer!.submit).toHaveBeenCalledTimes(1);
   });
 
   it('places rendered elements in scene-graph order', () => {

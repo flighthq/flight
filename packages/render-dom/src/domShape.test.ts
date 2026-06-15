@@ -26,8 +26,8 @@ function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTM
 }
 
 describe('defaultDOMShapeRenderer', () => {
-  it('has draw, and createData', () => {
-    expect(typeof defaultDOMShapeRenderer.draw).toBe('function');
+  it('has submit, and createData', () => {
+    expect(typeof defaultDOMShapeRenderer.submit).toBe('function');
     expect(typeof defaultDOMShapeRenderer.createData).toBe('function');
   });
 });

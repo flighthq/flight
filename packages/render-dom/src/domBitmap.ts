@@ -119,5 +119,5 @@ export function drawDOMBitmapMask(state: DOMRenderState, renderNode: DisplayObje
 
 export const defaultDOMBitmapRenderer: DisplayObjectRenderer = {
   createData: createDOMBitmapData,
-  draw: drawDOMBitmap,
+  submit: drawDOMBitmap,
 };

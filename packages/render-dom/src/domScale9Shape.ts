@@ -74,7 +74,7 @@ export function drawDOMScale9ShapeMask(state: DOMRenderState, renderNode: Displa
 
 export const defaultDOMScale9ShapeRenderer: DisplayObjectRenderer = {
   createData: createDOMScale9ShapeData,
-  draw: drawDOMScale9Shape,
+  submit: drawDOMScale9Shape,
 };
 
 function setStrippedDOMTransform(

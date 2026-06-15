@@ -23,7 +23,7 @@ function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTM
 
 describe('defaultDOMInputTextRenderer', () => {
   it('uses the InputText draw function', () => {
-    expect(defaultDOMInputTextRenderer.draw).toBe(drawDOMInputText);
+    expect(defaultDOMInputTextRenderer.submit).toBe(drawDOMInputText);
   });
 });
 
