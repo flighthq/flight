@@ -18,7 +18,7 @@ describe('copyAllRenderersFromRenderState', () => {
     const source = createRenderState();
     const target = createRenderState();
     const kind = Symbol('kind');
-    const renderer = { createData: vi.fn(), draw: vi.fn() } as unknown as Renderer;
+    const renderer = { createData: vi.fn(), submit: vi.fn() } as unknown as Renderer;
     const maskRenderer = { drawMask: vi.fn() };
     const hooks = {
       finalize: vi.fn(),
@@ -82,7 +82,7 @@ describe('copyRenderersFromRenderState', () => {
     const source = createRenderState();
     const target = createRenderState();
     const kind = Symbol('kind');
-    const renderer = { createData: vi.fn(), draw: vi.fn() } as unknown as Renderer;
+    const renderer = { createData: vi.fn(), submit: vi.fn() } as unknown as Renderer;
     registerRenderer(source, kind, renderer);
     copyRenderersFromRenderState(target, source);
     expect(target.rendererMap.get(kind)).toBe(renderer);
@@ -99,7 +99,7 @@ describe('copyRenderersFromRenderState', () => {
     const source = createRenderState();
     const target = createRenderState();
     const kind = Symbol('kind');
-    const renderer = { createData: vi.fn(), draw: vi.fn() } as unknown as Renderer;
+    const renderer = { createData: vi.fn(), submit: vi.fn() } as unknown as Renderer;
     registerRenderer(source, kind, renderer);
     const sourceIDBeforeCopy = source.rendererMapID;
     copyRenderersFromRenderState(target, source);
