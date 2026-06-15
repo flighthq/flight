@@ -107,6 +107,7 @@ function makeDevice(): GPUDevice {
       copyExternalImageToTexture: () => {},
       submit: () => {},
       writeBuffer: () => {},
+      writeTexture: () => {},
     },
   } as unknown as GPUDevice;
 }
