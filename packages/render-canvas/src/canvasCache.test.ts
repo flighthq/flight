@@ -1,6 +1,6 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
-import { createRenderCache, getDisplayObjectRenderNode, RenderCacheKind } from '@flighthq/render';
+import { createRenderCache, getDisplayObjectRenderNode, RenderCacheKind, useRenderCache } from '@flighthq/render';
 
 import {
   createCanvasCacheState,
@@ -42,20 +42,21 @@ describe('createCanvasCacheState', () => {
 });
 
 describe('defaultCanvasRenderCacheRenderer', () => {
-  it('does nothing when the state holds no target for the cache', () => {
+  it('does nothing when no cache is attached to the source', () => {
     const state = makeCanvasState();
-    const cache = createRenderCache();
     const spy = vi.spyOn(state.context, 'drawImage');
-    defaultCanvasRenderCacheRenderer.draw(state, makeCacheNode(cache));
+    defaultCanvasRenderCacheRenderer.draw(state, makeCacheNode(createDisplayObject()));
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it('draws the cache target when one exists', () => {
+  it('draws the cache target attached to the source node', () => {
     const state = makeCanvasState();
+    const obj = createDisplayObject();
     const cache = createRenderCache();
+    useRenderCache(state, obj, cache);
     const target = ensureCanvasRenderCacheTarget(state, cache, 16, 16);
     const spy = vi.spyOn(state.context, 'drawImage');
-    defaultCanvasRenderCacheRenderer.draw(state, makeCacheNode(cache));
+    defaultCanvasRenderCacheRenderer.draw(state, makeCacheNode(obj));
     expect(spy).toHaveBeenCalledWith(target.canvas, 0, 0);
   });
 });
