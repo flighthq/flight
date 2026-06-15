@@ -34,7 +34,7 @@ export function computeDisplayObjectRenderTargetTransform(
  * Writes into outCacheTransform the transform to pass to the cache resolver so the
  * cached image is placed back at the original scene position.
  */
-export function computeImageRenderCacheTransform(
+export function computeRenderCacheTransform(
   outCacheTransform: MatrixLike,
   bounds: Readonly<RectangleLike>,
   contentX: number = 0,
