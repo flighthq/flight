@@ -44,9 +44,17 @@ export function bindWebGPUTexture(
     usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
   });
 
+  // Canvas2D and OffscreenCanvas store premultiplied data internally — pass it through
+  // as-is (premultipliedAlpha: false) to avoid a lossy 8-bit un-premultiply/re-premultiply
+  // round-trip. This mirrors WebGL's UNPACK_PREMULTIPLY_ALPHA_WEBGL = false for Canvas
+  // sources: "Canvas sources are already premultiplied by the 2D context."
+  // Image and ImageBitmap carry straight alpha and need premultipliedAlpha: true.
+  const premultipliedAlpha =
+    imageSource instanceof HTMLCanvasElement || imageSource instanceof OffscreenCanvas ? false : true;
+
   device.queue.copyExternalImageToTexture(
     { source: imageSource as GPUCopyExternalImageSource, flipY: false },
-    { texture, premultipliedAlpha: true },
+    { texture, premultipliedAlpha },
     [width, height],
   );
 
