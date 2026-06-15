@@ -17,6 +17,19 @@ export interface WebGLParticleShader {
   locTexture: WebGLUniformLocation;
 }
 
+export interface WebGLQuadBatchShader {
+  program: WebGLProgram;
+  locCorner: number;
+  locMatAB: number;
+  locMatCD: number;
+  locMatTXTY: number;
+  locSize: number;
+  locUVRect: number;
+  locWorldMatrix: WebGLUniformLocation;
+  locAlpha: WebGLUniformLocation;
+  locTexture: WebGLUniformLocation;
+}
+
 export type WebGLRenderStateInternal = Omit<WebGLRenderState, 'canvas' | 'gl'> & {
   canvas: HTMLCanvasElement;
   gl: WebGL2RenderingContext;
@@ -26,6 +39,10 @@ export type WebGLRenderStateInternal = Omit<WebGLRenderState, 'canvas' | 'gl'> &
   particleCornerBuffer?: WebGLBuffer;
   particleInstanceBuffer?: WebGLBuffer;
   particleInstanceData?: Float32Array;
+  quadBatchShader?: WebGLQuadBatchShader;
+  quadBatchCornerBuffer?: WebGLBuffer;
+  quadBatchInstanceBuffer?: WebGLBuffer;
+  quadBatchInstanceData?: Float32Array;
   currentMaskDepth?: number;
   currentScissorRect?: WebGLScissorRect | null;
   /**
