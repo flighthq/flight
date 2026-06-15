@@ -84,7 +84,7 @@ export function drawWebGLShape(state: RenderState, renderNode: DisplayObjectRend
     t.d,
     t.tx + t.a * bounds.x + t.c * bounds.y,
     t.ty + t.b * bounds.x + t.d * bounds.y,
-    internal.canvas,
+    internal.renderTargetViewport ?? internal.canvas,
   );
 
   drawWebGLQuad(internal, 0, 0, w, h, 0, 0, 1, 1);

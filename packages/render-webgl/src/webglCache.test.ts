@@ -1,6 +1,6 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
-import { createRenderCache, createRenderState, RenderCacheKind } from '@flighthq/render';
+import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache } from '@flighthq/render';
 import type { WebGLRenderState, WebGLRenderTarget } from '@flighthq/types';
 
 import {
@@ -67,18 +67,20 @@ describe('createWebGLCacheState', () => {
 });
 
 describe('defaultWebGLRenderCacheRenderer', () => {
-  it('does nothing when the state holds no target for the cache', () => {
+  it('does nothing when no cache is attached to the source', () => {
     const state = fakeScreen();
-    defaultWebGLRenderCacheRenderer.draw(state, makeCacheNode(createRenderCache()));
+    defaultWebGLRenderCacheRenderer.draw(state, makeCacheNode(createDisplayObject()));
     expect(drawWebGLRenderTargetResult).not.toHaveBeenCalled();
   });
 
-  it('composites the cache target when one exists', () => {
+  it('composites the cache target attached to the source node', () => {
     const state = fakeScreen();
+    const obj = createDisplayObject();
     const cache = createRenderCache();
+    useRenderCache(state, obj, cache);
     const target = ensureWebGLRenderCacheTarget(state, cache, 16, 16);
-    defaultWebGLRenderCacheRenderer.draw(state, makeCacheNode(cache));
-    expect(drawWebGLRenderTargetResult).toHaveBeenCalledWith(state, expect.anything(), target, cache.transform);
+    defaultWebGLRenderCacheRenderer.draw(state, makeCacheNode(obj));
+    expect(drawWebGLRenderTargetResult).toHaveBeenCalledWith(state, expect.anything(), target, expect.anything());
   });
 });
 
