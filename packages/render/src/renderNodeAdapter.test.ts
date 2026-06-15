@@ -37,7 +37,7 @@ describe('applyRenderNodeAdapter', () => {
     const source = createDisplayObject();
     const data = createDisplayObjectRenderNode(state, source);
     const kind = Symbol('Adapted');
-    const renderer = { createData: () => null, draw: vi.fn() };
+    const renderer = { createData: () => null, submit: vi.fn() };
     registerRenderer(state, kind, renderer);
     const adapter: RenderNodeAdapter = {
       adapt: (_state, _source, node) => {

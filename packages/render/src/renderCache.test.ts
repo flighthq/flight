@@ -115,7 +115,7 @@ describe('isRenderCacheAdapter', () => {
 describe('registerRenderCacheRenderer', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = createRenderState();
-    const renderer = { createData: () => null, draw: vi.fn() };
+    const renderer = { createData: () => null, submit: vi.fn() };
     registerRenderCacheRenderer(state, renderer as any);
     expect(state.rendererMap.get(RenderCacheKind)).toBe(renderer);
   });

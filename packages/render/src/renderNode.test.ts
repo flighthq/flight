@@ -38,7 +38,7 @@ function makeSource() {
 }
 
 function makeRenderer() {
-  return { createData: () => ({ tag: 'data' }), draw: vi.fn() };
+  return { createData: () => ({ tag: 'data' }), submit: vi.fn() };
 }
 
 describe('beginRenderNodeUpdate', () => {
@@ -441,7 +441,7 @@ describe('updateRenderNodeRenderer', () => {
     const state = createRenderState();
     const source = makeSource();
     const node = createRenderNode(state, source);
-    node.renderer = { createData: vi.fn(), draw: vi.fn() } as any;
+    node.renderer = { createData: vi.fn(), submit: vi.fn() } as any;
     updateRenderNodeRenderer(state, node);
     expect(node.renderer).toBeNull();
   });
