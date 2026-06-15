@@ -1,0 +1,169 @@
+import { createDisplayObject } from '@flighthq/displayobject';
+import { createMatrix } from '@flighthq/geometry';
+import { createRenderCache, createRenderState, RenderCacheKind } from '@flighthq/render';
+import type { WebGPURenderState, WebGPURenderTarget } from '@flighthq/types';
+
+import {
+  createWebGPUCacheState,
+  defaultWebGPURenderCacheRenderer,
+  enableWebGPURenderCache,
+  ensureWebGPURenderCacheTarget,
+  getWebGPURenderCacheTarget,
+  refreshWebGPURenderCache,
+  releaseWebGPURenderCache,
+} from './webgpuCache';
+import type * as WebGPUDisplayObjectModule from './webgpuDisplayObject';
+import { renderWebGPUDisplayObject } from './webgpuDisplayObject';
+import type * as WebGPURenderTargetModule from './webgpuRenderTarget';
+import { destroyWebGPURenderTarget, drawWebGPURenderTargetResult } from './webgpuRenderTarget';
+
+vi.mock('./webgpuRenderTarget', async (importOriginal) => {
+  const actual = await importOriginal<typeof WebGPURenderTargetModule>();
+  return {
+    ...actual,
+    beginWebGPURenderTarget: vi.fn(),
+    createWebGPURenderTarget: vi.fn(
+      (_state: unknown, width: number, height: number): WebGPURenderTarget => ({
+        depthStencilTexture: {} as GPUTexture,
+        depthStencilView: {} as GPUTextureView,
+        texture: {} as GPUTexture,
+        view: {} as GPUTextureView,
+        width,
+        height,
+      }),
+    ),
+    destroyWebGPURenderTarget: vi.fn(),
+    drawWebGPURenderTargetResult: vi.fn(),
+    endWebGPURenderTarget: vi.fn(),
+    resizeWebGPURenderTarget: vi.fn((_state: unknown, target: WebGPURenderTarget, width: number, height: number) => {
+      target.width = width;
+      target.height = height;
+    }),
+  };
+});
+
+vi.mock('./webgpuDisplayObject', async (importOriginal) => {
+  const actual = await importOriginal<typeof WebGPUDisplayObjectModule>();
+  return { ...actual, renderWebGPUDisplayObject: vi.fn() };
+});
+
+function fakeScreen(options = {}): WebGPURenderState {
+  const state = createRenderState(options) as unknown as WebGPURenderState;
+  (state as any).device = {} as GPUDevice;
+  (state as any).currentBlendMode = null;
+  return state;
+}
+
+function makeCacheNode(source: unknown): any {
+  return { source, kind: RenderCacheKind, transform2D: createMatrix(), alpha: 1, blendMode: null };
+}
+
+describe('createWebGPUCacheState', () => {
+  it('copies renderers and shares the GPU device but keeps its own node map', () => {
+    const screen = fakeScreen();
+    enableWebGPURenderCache(screen);
+    const cacheState = createWebGPUCacheState(screen);
+    expect(cacheState.rendererMap.get(RenderCacheKind)).toBe(defaultWebGPURenderCacheRenderer);
+    expect((cacheState as any).device).toBe((screen as any).device);
+    expect(cacheState.renderNodeMap).not.toBe(screen.renderNodeMap);
+  });
+});
+
+describe('defaultWebGPURenderCacheRenderer', () => {
+  it('does nothing when the state holds no target for the cache', () => {
+    const state = fakeScreen();
+    defaultWebGPURenderCacheRenderer.draw(state, makeCacheNode(createRenderCache()));
+    expect(drawWebGPURenderTargetResult).not.toHaveBeenCalled();
+  });
+
+  it('composites the cache target when one exists', () => {
+    const state = fakeScreen();
+    const cache = createRenderCache();
+    const target = ensureWebGPURenderCacheTarget(state, cache, 16, 16);
+    defaultWebGPURenderCacheRenderer.draw(state, makeCacheNode(cache));
+    expect(drawWebGPURenderTargetResult).toHaveBeenCalledWith(state, expect.anything(), target, cache.transform);
+  });
+});
+
+describe('enableWebGPURenderCache', () => {
+  it('registers the renderer for the render cache kind', () => {
+    const state = fakeScreen();
+    enableWebGPURenderCache(state);
+    expect(state.rendererMap.get(RenderCacheKind)).toBe(defaultWebGPURenderCacheRenderer);
+  });
+});
+
+describe('ensureWebGPURenderCacheTarget', () => {
+  it('creates a target sized to the request', () => {
+    const state = fakeScreen();
+    const target = ensureWebGPURenderCacheTarget(state, createRenderCache(), 64, 32);
+    expect(target.width).toBe(64);
+    expect(target.height).toBe(32);
+  });
+
+  it('reuses and resizes the same target on subsequent calls', () => {
+    const state = fakeScreen();
+    const cache = createRenderCache();
+    const first = ensureWebGPURenderCacheTarget(state, cache, 64, 32);
+    const second = ensureWebGPURenderCacheTarget(state, cache, 16, 16);
+    expect(second).toBe(first);
+    expect(second.width).toBe(16);
+  });
+
+  it('keeps targets isolated per state for the same handle', () => {
+    const stateA = fakeScreen();
+    const stateB = fakeScreen();
+    const cache = createRenderCache();
+    expect(ensureWebGPURenderCacheTarget(stateA, cache, 8, 8)).not.toBe(
+      ensureWebGPURenderCacheTarget(stateB, cache, 8, 8),
+    );
+  });
+});
+
+describe('getWebGPURenderCacheTarget', () => {
+  it('returns null before a target is allocated', () => {
+    expect(getWebGPURenderCacheTarget(fakeScreen(), createRenderCache())).toBeNull();
+  });
+
+  it('returns the allocated target', () => {
+    const state = fakeScreen();
+    const cache = createRenderCache();
+    const target = ensureWebGPURenderCacheTarget(state, cache, 8, 8);
+    expect(getWebGPURenderCacheTarget(state, cache)).toBe(target);
+  });
+});
+
+describe('refreshWebGPURenderCache', () => {
+  it('bakes on the first call and allocates the target on the screen state', () => {
+    const screen = fakeScreen();
+    const cacheState = createWebGPUCacheState(screen);
+    const cache = createRenderCache();
+    const obj = createDisplayObject();
+    const rebaked = refreshWebGPURenderCache(cacheState, cache, obj, { padding: 5 });
+    expect(rebaked).toBe(true);
+    expect(renderWebGPUDisplayObject).toHaveBeenCalled();
+    const target = getWebGPURenderCacheTarget(screen, cache);
+    expect(target).not.toBeNull();
+    expect(target!.width).toBe(10);
+  });
+
+  it('skips the bake under requiresInvalidation when nothing changed', () => {
+    const screen = fakeScreen({ sceneGraphSyncPolicy: 'requiresInvalidation' });
+    const cacheState = createWebGPUCacheState(screen);
+    const cache = createRenderCache();
+    const obj = createDisplayObject();
+    refreshWebGPURenderCache(cacheState, cache, obj, { padding: 5 });
+    expect(refreshWebGPURenderCache(cacheState, cache, obj, { padding: 5 })).toBe(false);
+  });
+});
+
+describe('releaseWebGPURenderCache', () => {
+  it('destroys and drops the target for the cache', () => {
+    const state = fakeScreen();
+    const cache = createRenderCache();
+    const target = ensureWebGPURenderCacheTarget(state, cache, 8, 8);
+    releaseWebGPURenderCache(state, cache);
+    expect(destroyWebGPURenderTarget).toHaveBeenCalledWith(state, target);
+    expect(getWebGPURenderCacheTarget(state, cache)).toBeNull();
+  });
+});

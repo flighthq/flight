@@ -1,5 +1,6 @@
 export * from './webgpuBackground';
 export * from './webgpuBitmap';
+export * from './webgpuCache';
 export * from './webgpuClip';
 export * from './webgpuClipRectangle';
 export * from './webgpuDisplayObject';
@@ -9,7 +10,6 @@ export * from './webgpuMask';
 export * from './webgpuMaterials';
 export * from './webgpuParticleEmitter';
 export * from './webgpuQuadBatch';
-export * from './webgpuRenderCache';
 export * from './webgpuRenderState';
 export * from './webgpuRenderTarget';
 export * from './webgpuRichText';
