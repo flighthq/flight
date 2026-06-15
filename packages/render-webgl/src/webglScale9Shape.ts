@@ -104,7 +104,15 @@ export function drawWebGLScale9Shape(state: RenderState, renderNode: DisplayObje
   setWebGLBaseUniforms(gl, shaderLoc, renderNode);
 
   const t = renderNode.transform2D;
-  setStrippedWebGLMatrixFromValues(gl, shaderLoc, matrixArray, t, source.scaleX, source.scaleY, internal.canvas);
+  setStrippedWebGLMatrixFromValues(
+    gl,
+    shaderLoc,
+    matrixArray,
+    t,
+    source.scaleX,
+    source.scaleY,
+    internal.renderTargetViewport ?? internal.canvas,
+  );
 
   drawWebGLQuad(internal, 0, 0, w, h, 0, 0, 1, 1);
 }
@@ -146,11 +154,11 @@ function setStrippedWebGLMatrixFromValues(
   t: Readonly<MatrixLike>,
   scaleX: number,
   scaleY: number,
-  canvas: HTMLCanvasElement,
+  viewport: Readonly<{ width: number; height: number }>,
 ): void {
   const a = scaleX !== 0 ? t.a / scaleX : t.a;
   const b = scaleX !== 0 ? t.b / scaleX : t.b;
   const c = scaleY !== 0 ? t.c / scaleY : t.c;
   const d = scaleY !== 0 ? t.d / scaleY : t.d;
-  setWebGLMatrixFromValues(gl, loc, m, a, b, c, d, t.tx, t.ty, canvas);
+  setWebGLMatrixFromValues(gl, loc, m, a, b, c, d, t.tx, t.ty, viewport);
 }

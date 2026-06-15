@@ -53,7 +53,7 @@ export function drawWebGLTilemap(state: RenderState, tilemapNode: SpriteRenderNo
         transform.d,
         transform.tx + transform.a * dx + transform.c * dy,
         transform.ty + transform.b * dx + transform.d * dy,
-        internal.canvas,
+        internal.renderTargetViewport ?? internal.canvas,
       );
 
       const u0 = region.x * iw;

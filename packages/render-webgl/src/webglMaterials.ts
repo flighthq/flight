@@ -58,7 +58,13 @@ function createWebGLColorTransformBitmapShader(
     program: shaderLoc.program,
     bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: DisplayObjectRenderNode): void {
       setWebGLAttributes(gl, shaderLoc);
-      setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, renderNode.transform2D, state.canvas);
+      setWebGLMatrixFromTransform(
+        gl,
+        shaderLoc,
+        matrixArray,
+        renderNode.transform2D,
+        (state as WebGLRenderStateInternal).renderTargetViewport ?? state.canvas,
+      );
       setWebGLBaseUniforms(gl, shaderLoc, renderNode);
       setWebGLColorTransformUniforms(gl, shaderLoc, renderNode);
     },

@@ -6,7 +6,7 @@ import {
   computeRenderTargetSize,
   copyAllRenderersFromRenderState,
   createRenderState,
-  isRenderCache,
+  getRenderNodeCache,
   noopRendererData,
   prepareDisplayObjectRender,
   registerRenderCacheRenderer,
@@ -146,9 +146,17 @@ export function refreshWebGLRenderCache(
   beginWebGLRenderTarget(cacheState, target, _renderTransform);
   const dirty = prepareDisplayObjectRender(cacheState, source);
   if (dirty || resized) {
-    const gl = (cacheState as WebGLRenderStateInternal).gl;
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    const internal = cacheState as WebGLRenderStateInternal;
+    // The cache state shares the screen's GL context, so the actual GL program/blend/scissor are
+    // whatever the screen render (or a prior blur pass) last left — state this cache state does not
+    // track. Reset its cached GL state so the bake re-establishes everything instead of skipping a
+    // rebind and setting uniforms on the wrong program.
+    internal.currentProgram = null;
+    internal.currentTexture = null;
+    internal.currentBlendMode = null;
+    internal.currentScissorRect = null;
+    internal.gl.clearColor(0, 0, 0, 0);
+    internal.gl.clear(internal.gl.COLOR_BUFFER_BIT);
     renderWebGLDisplayObject(cacheState, source);
   }
   endWebGLRenderTarget(cacheState);
@@ -171,12 +179,14 @@ export function releaseWebGLRenderCache(state: WebGLRenderState, cache: RenderCa
 }
 
 function drawWebGLRenderCache(state: RenderState, renderNode: DisplayObjectRenderNode): void {
-  const source = renderNode.source;
-  if (!isRenderCache(source)) return;
+  const cache = getRenderNodeCache(state, renderNode.source);
+  if (cache === null) return;
   const webglState = state as WebGLRenderState;
-  const target = getTargets(webglState).get(source);
+  const target = getTargets(webglState).get(cache);
   if (target === undefined) return;
-  drawWebGLRenderTargetResult(webglState, renderNode, target, source.transform);
+  // renderNode.transform2D already carries the cache placement transform (folded in by the
+  // adapter), so the target composites with an identity offset.
+  drawWebGLRenderTargetResult(webglState, renderNode, target, _identity);
 }
 
 function getTargets(state: WebGLRenderState): WeakMap<RenderCache, WebGLRenderTarget> {
@@ -200,3 +210,4 @@ const _renderCacheTargets = new WeakMap<WebGLRenderState, WeakMap<RenderCache, W
 const _cacheStateScreen = new WeakMap<WebGLRenderState, WebGLRenderState>();
 const _bounds = createRectangle();
 const _renderTransform = createMatrix() as Matrix;
+const _identity = createMatrix() as Matrix;

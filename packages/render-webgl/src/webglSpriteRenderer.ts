@@ -25,7 +25,13 @@ export function drawWebGLSpriteNode(state: RenderState, spriteNode: SpriteRender
   const { shaderLoc, matrixArray } = internal;
 
   setWebGLBaseUniforms(gl, shaderLoc, spriteNode);
-  setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, spriteNode.transform2D, internal.canvas);
+  setWebGLMatrixFromTransform(
+    gl,
+    shaderLoc,
+    matrixArray,
+    spriteNode.transform2D,
+    internal.renderTargetViewport ?? internal.canvas,
+  );
 
   const iw = 1 / (atlas.image.width || 1);
   const ih = 1 / (atlas.image.height || 1);
