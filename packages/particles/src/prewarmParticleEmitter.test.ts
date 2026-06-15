@@ -29,7 +29,7 @@ describe('prewarmParticleEmitter', () => {
     expect(emitter.data.particleCount).toBeLessThanOrEqual(10);
   });
 
-  it('accepts a custom stepDt and still produces particles', () => {
+  it('accepts a custom stepDeltaTime and still produces particles', () => {
     const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 10, lifetimeMin: 5, lifetimeMax: 5 });
@@ -58,7 +58,7 @@ describe('prewarmParticleEmitter', () => {
     expect(emitter.data.particleCount).toBe(0);
   });
 
-  it('does not hang when stepDt is zero (falls back to a single step)', () => {
+  it('does not hang when stepDeltaTime is zero (falls back to a single step)', () => {
     const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 10, lifetimeMin: 10, lifetimeMax: 10 });

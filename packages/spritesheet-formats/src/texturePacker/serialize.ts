@@ -86,11 +86,11 @@ function dataToArrayDocument(
 
 /** Serialise a SpritesheetData to a Texture Packer JSON string.
  *
- *  Pass the `document` returned by `parseTexturePackerDocument` to preserve any fields
+ *  Pass the `document` returned by `parseTexturePackerSpritesheetDocument` to preserve any fields
  *  that don't round-trip through the data (app name, format string, scale).
  *  The output variant (hash vs array) is inferred from the existing document or
  *  overridden via `options.variant`. */
-export function serializeTexturePacker(
+export function serializeTexturePackerSpritesheet(
   data: Readonly<SpritesheetData>,
   existing?: Partial<TexturePackerDocument>,
   options?: TexturePackerSerializeOptions,

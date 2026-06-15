@@ -12,10 +12,10 @@ import type {
   InteractionPointerState,
   InteractionSignalName,
   InteractionSignals,
-  KeyboardData,
+  KeyboardEventData,
   Node,
   NodeRuntime,
-  PointerData,
+  PointerEventData,
   Signal,
   SignalConnectOptions,
   Transform2DNode,
@@ -23,7 +23,7 @@ import type {
 
 import { findGraphHitTarget } from './hitTests';
 
-export function capturePointer<Kind extends symbol, Traits extends object>(
+export function captureInteractionPointer<Kind extends symbol, Traits extends object>(
   manager: InteractionManager<Kind, Traits>,
   pointerId: number,
   target: Node<Kind, Traits>,
@@ -37,18 +37,20 @@ export function connectInputToInteraction<Kind extends symbol, Traits extends ob
   coordScale: number = 1,
 ): () => void {
   const sx = (v: number) => v * coordScale;
-  const onKeyDown = (data: Readonly<InputKeyboardData>) => dispatchKeyDown(manager, data.key, data.keyCode, data);
-  const onKeyUp = (data: Readonly<InputKeyboardData>) => dispatchKeyUp(manager, data.key, data.keyCode, data);
+  const onKeyDown = (data: Readonly<InputKeyboardData>) =>
+    dispatchInteractionKeyDown(manager, data.key, data.keyCode, data);
+  const onKeyUp = (data: Readonly<InputKeyboardData>) =>
+    dispatchInteractionKeyUp(manager, data.key, data.keyCode, data);
   const onPointerCancel = (data: Readonly<InputPointerData>) =>
-    dispatchPointerCancel(manager, sx(data.x), sx(data.y), data);
+    dispatchInteractionPointerCancel(manager, sx(data.x), sx(data.y), data);
   const onPointerDown = (data: Readonly<InputPointerData>) =>
-    dispatchPointerDown(manager, sx(data.x), sx(data.y), data.button, data);
+    dispatchInteractionPointerDown(manager, sx(data.x), sx(data.y), data.button, data);
   const onPointerMove = (data: Readonly<InputPointerData>) =>
-    dispatchPointerMove(manager, sx(data.x), sx(data.y), data.button, data);
+    dispatchInteractionPointerMove(manager, sx(data.x), sx(data.y), data.button, data);
   const onPointerUp = (data: Readonly<InputPointerData>) =>
-    dispatchPointerUp(manager, sx(data.x), sx(data.y), data.button, Date.now(), data);
+    dispatchInteractionPointerUp(manager, sx(data.x), sx(data.y), data.button, Date.now(), data);
   const onWheel = (data: Readonly<InputPointerData>) =>
-    dispatchWheel(manager, sx(data.x), sx(data.y), data.deltaX, data.deltaY, data);
+    dispatchInteractionWheel(manager, sx(data.x), sx(data.y), data.deltaX, data.deltaY, data);
 
   connectSignal(input.onKeyDown, onKeyDown);
   connectSignal(input.onKeyUp, onKeyUp);
@@ -162,7 +164,7 @@ export function disconnectInteractionSignal<
   decrementInteractionSignalSubscriberCount(manager, name);
 }
 
-export function dispatchContextMenu<Kind extends symbol, Traits extends object>(
+export function dispatchInteractionContextMenu<Kind extends symbol, Traits extends object>(
   manager: InteractionManager<Kind, Traits>,
   x: number,
   y: number,
@@ -172,25 +174,25 @@ export function dispatchContextMenu<Kind extends symbol, Traits extends object>(
   dispatchPointerSignalAt(manager, 'onContextMenu', x, y, button, 0, 0, options);
 }
 
-export function dispatchKeyDown<Kind extends symbol, Traits extends object>(
+export function dispatchInteractionKeyDown<Kind extends symbol, Traits extends object>(
   manager: InteractionManager<Kind, Traits>,
   key: string,
   keyCode: number = 0,
-  modifiers?: Readonly<Partial<KeyboardData>>,
+  modifiers?: Readonly<Partial<KeyboardEventData>>,
 ): void {
   dispatchKeyboardSignal(manager, 'onKeyDown', key, keyCode, modifiers);
 }
 
-export function dispatchKeyUp<Kind extends symbol, Traits extends object>(
+export function dispatchInteractionKeyUp<Kind extends symbol, Traits extends object>(
   manager: InteractionManager<Kind, Traits>,
   key: string,
   keyCode: number = 0,
-  modifiers?: Readonly<Partial<KeyboardData>>,
+  modifiers?: Readonly<Partial<KeyboardEventData>>,
 ): void {
   dispatchKeyboardSignal(manager, 'onKeyUp', key, keyCode, modifiers);
 }
 
-export function dispatchPointerCancel<Kind extends symbol, Traits extends object>(
+export function dispatchInteractionPointerCancel<Kind extends symbol, Traits extends object>(
   manager: InteractionManager<Kind, Traits>,
   x: number,
   y: number,
@@ -216,7 +218,7 @@ export function dispatchPointerCancel<Kind extends symbol, Traits extends object
   }
 }
 
-export function dispatchPointerDown<Kind extends symbol, Traits extends object>(
+export function dispatchInteractionPointerDown<Kind extends symbol, Traits extends object>(
   manager: InteractionManager<Kind, Traits>,
   x: number,
   y: number,
@@ -235,7 +237,7 @@ export function dispatchPointerDown<Kind extends symbol, Traits extends object>(
   emitInteractionSignal(target, manager.root, 'onPointerDown', _pointerData);
 }
 
-export function dispatchPointerMove<Kind extends symbol, Traits extends object>(
+export function dispatchInteractionPointerMove<Kind extends symbol, Traits extends object>(
   manager: InteractionManager<Kind, Traits>,
   x: number,
   y: number,
@@ -262,7 +264,7 @@ export function dispatchPointerMove<Kind extends symbol, Traits extends object>(
   }
 }
 
-export function dispatchPointerUp<Kind extends symbol, Traits extends object>(
+export function dispatchInteractionPointerUp<Kind extends symbol, Traits extends object>(
   manager: InteractionManager<Kind, Traits>,
   x: number,
   y: number,
@@ -300,7 +302,7 @@ export function dispatchPointerUp<Kind extends symbol, Traits extends object>(
   }
 }
 
-export function dispatchWheel<Kind extends symbol, Traits extends object>(
+export function dispatchInteractionWheel<Kind extends symbol, Traits extends object>(
   manager: InteractionManager<Kind, Traits>,
   x: number,
   y: number,
@@ -318,7 +320,7 @@ export function getInteractionSignals<Kind extends symbol, Traits extends object
   return (runtime.interactionSignals ??= createInteractionSignals());
 }
 
-export function releasePointer<Kind extends symbol, Traits extends object>(
+export function releaseInteractionPointer<Kind extends symbol, Traits extends object>(
   manager: InteractionManager<Kind, Traits>,
   pointerId: number,
 ): void {
@@ -330,7 +332,7 @@ function dispatchKeyboardSignal<Kind extends symbol, Traits extends object>(
   name: KeyboardSignalName,
   key: string,
   keyCode: number,
-  modifiers?: Readonly<Partial<KeyboardData>>,
+  modifiers?: Readonly<Partial<KeyboardEventData>>,
 ): void {
   if (!manager.enabled || !hasInteractionSignalSubscriber(manager, name)) return;
   setKeyboardData(key, keyCode, modifiers);
@@ -564,7 +566,11 @@ function removeTrackedInteractionSignalSlot<
   if (targetSlots!.size === 0) manager.trackedSignalSlots.delete(target);
 }
 
-function setKeyboardData(key: string, keyCode: number, modifiers: Readonly<Partial<KeyboardData>> | undefined): void {
+function setKeyboardData(
+  key: string,
+  keyCode: number,
+  modifiers: Readonly<Partial<KeyboardEventData>> | undefined,
+): void {
   _keyboardData.altKey = modifiers?.altKey ?? false;
   _keyboardData.ctrlKey = modifiers?.ctrlKey ?? false;
   _keyboardData.key = key;
@@ -579,7 +585,7 @@ function setInteractionSignalCurrentTarget<Name extends InteractionSignalName>(
   currentTarget: Node<symbol, object>,
 ): void {
   if ('currentTarget' in data) {
-    const pointerData = data as PointerData;
+    const pointerData = data as PointerEventData;
     pointerData.target = target;
     pointerData.currentTarget = currentTarget;
     setPointerDataLocalPosition(pointerData, currentTarget);
@@ -643,7 +649,7 @@ function setTrackedInteractionSignalSlot<
   signalSlots.set(slot as AnyInteractionSignalSlot, connectedSlot as AnyInteractionSignalSlot);
 }
 
-function setPointerDataLocalPosition(data: PointerData, currentTarget: Node<symbol, object>): void {
+function setPointerDataLocalPosition(data: PointerEventData, currentTarget: Node<symbol, object>): void {
   if (!isTransform2DNode(currentTarget)) {
     data.localX = data.worldX;
     data.localY = data.worldY;
@@ -663,8 +669,8 @@ type KeyboardSignalName = 'onKeyDown' | 'onKeyUp';
 type PointerSignalName = Exclude<InteractionSignalName, KeyboardSignalName>;
 
 type InteractionSignalPayload<Name extends InteractionSignalName> = Name extends KeyboardSignalName
-  ? Readonly<KeyboardData>
-  : Readonly<PointerData>;
+  ? Readonly<KeyboardEventData>
+  : Readonly<PointerEventData>;
 type InteractionSignalSlot<Name extends InteractionSignalName> = (value: InteractionSignalPayload<Name>) => void;
 
 const cancelSignalNames = ['onPointerCancel', 'onPointerOut', 'onPointerRollOut'] as const;
@@ -678,7 +684,7 @@ const moveSignalNames = [
 ] as const;
 const upSignalNames = ['onClick', 'onDoubleClick', 'onPointerUp', 'onReleaseOutside'] as const;
 
-const _keyboardData: KeyboardData = {
+const _keyboardData: KeyboardEventData = {
   altKey: false,
   ctrlKey: false,
   key: '',
@@ -687,7 +693,7 @@ const _keyboardData: KeyboardData = {
   shiftKey: false,
 };
 const _localPoint = { x: 0, y: 0 };
-const _pointerData: PointerData = {
+const _pointerData: PointerEventData = {
   altKey: false,
   button: 0,
   buttons: 0,

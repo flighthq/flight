@@ -1,4 +1,4 @@
-import { createTilemap, invalidateNodeLocalTransform, loadTilesetFromURL, writeTilemapTile } from '@flighthq/sdk';
+import { createTilemap, invalidateNodeLocalTransform, loadTilesetFromURL, setTilemapTile } from '@flighthq/sdk';
 
 import { render, scale } from './render';
 
@@ -23,7 +23,7 @@ invalidateNodeLocalTransform(tilemap);
 const stride = tileset.columns;
 for (let r = 0; r < ROWS; r++) {
   for (let c = 0; c < COLS; c++) {
-    writeTilemapTile(tilemap, c, r, r * stride);
+    setTilemapTile(tilemap, c, r, r * stride);
   }
 }
 

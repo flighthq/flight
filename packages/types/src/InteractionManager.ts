@@ -1,11 +1,11 @@
 import type { InputSignals } from './InputSignals';
 import type { InteractionSignals } from './InteractionSignals';
-import type { KeyboardData } from './KeyboardData';
+import type { KeyboardEventData } from './KeyboardEventData';
 import type { Node } from './Node';
-import type { PointerData, PointerType } from './PointerData';
+import type { PointerEventData, PointerType } from './PointerEventData';
 
 export type InteractionSignalName = keyof InteractionSignals;
-export type AnyInteractionSignalSlot = (value: PointerData | KeyboardData) => void;
+export type AnyInteractionSignalSlot = (value: PointerEventData | KeyboardEventData) => void;
 
 export interface InteractionManager<Kind extends symbol = symbol, Traits extends object = object> {
   doubleClickDelay: number;

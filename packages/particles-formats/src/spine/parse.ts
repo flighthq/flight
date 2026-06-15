@@ -1,4 +1,8 @@
-import { colorCurveFromKeyframes, createParticleEmitterConfig, curveFromKeyframes } from '@flighthq/particles';
+import {
+  createParticleEmitterConfig,
+  particleColorCurveFromKeyframes,
+  particleCurveFromKeyframes,
+} from '@flighthq/particles';
 import type {
   ColorKeyframe,
   CurveKeyframe,
@@ -183,7 +187,7 @@ function tintKeyframesToCurve(arr: unknown): ParticleCurve | null {
     const [r, g, b] = hexToRgb(typeof k.color === 'string' ? k.color : 'ffffff');
     keys.push({ time: typeof k.time === 'number' ? k.time : i / (arr.length - 1), r, g, b });
   }
-  return colorCurveFromKeyframes(keys);
+  return particleColorCurveFromKeyframes(keys);
 }
 
 function alphaKeyframesToCurve(arr: unknown): ParticleCurve | null {
@@ -196,7 +200,7 @@ function alphaKeyframesToCurve(arr: unknown): ParticleCurve | null {
       value: typeof k.alpha === 'number' ? k.alpha : 1,
     });
   }
-  return curveFromKeyframes(keys);
+  return particleCurveFromKeyframes(keys);
 }
 
 function spineBlendMode(mode: string): ParticleBlendMode | null {

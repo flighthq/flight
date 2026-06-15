@@ -1,6 +1,6 @@
 import type { Node } from './Node';
 
-export interface PointerData {
+export interface PointerEventData {
   altKey: boolean;
   button: number;
   buttons: number;

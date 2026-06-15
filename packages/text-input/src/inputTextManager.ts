@@ -6,7 +6,7 @@ import type {
   InputTextInputSource,
   InputTextManager,
   InputTextRuntime,
-  TextInputData,
+  TextSelectionRange,
 } from '@flighthq/types';
 
 import {
@@ -26,7 +26,7 @@ export function blurInputText(manager: InputTextManager): void {
 
 export function connectInputToInputText(input: InputTextInputSource, manager: InputTextManager): () => void {
   const onKeyDown = (data: Readonly<InputKeyboardData>) => dispatchInputTextKeyDown(manager, data);
-  const onTextInput = (data: Readonly<TextInputData>) => dispatchInputTextInput(manager, data.text);
+  const onTextInput = (data: Readonly<TextSelectionRange>) => dispatchInputTextInput(manager, data.text);
 
   connectSignal(input.onKeyDown, onKeyDown);
   connectSignal(input.onTextInput, onTextInput);

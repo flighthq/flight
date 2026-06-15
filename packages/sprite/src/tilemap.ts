@@ -39,10 +39,10 @@ export function getTilemapRuntime(source: Readonly<Tilemap>): Readonly<TilemapRu
   return getSpriteNodeRuntime(source) as TilemapRuntime;
 }
 
-export function getTilemapTile(tilemap: Readonly<Tilemap>, col: number, row: number): number {
+export function getTilemapTile(tilemap: Readonly<Tilemap>, column: number, row: number): number {
   const { columns, rows, tiles } = tilemap.data;
-  if (col < 0 || col >= columns || row < 0 || row >= rows) return -1;
-  return tiles[row * columns + col];
+  if (column < 0 || column >= columns || row < 0 || row >= rows) return -1;
+  return tiles[row * columns + column];
 }
 
 export function resizeTilemap(tilemap: Tilemap, columns: number, rows: number): void {
@@ -60,10 +60,10 @@ export function resizeTilemap(tilemap: Tilemap, columns: number, rows: number): 
   data.tiles = newTiles;
 }
 
-export function writeTilemapTile(tilemap: Tilemap, col: number, row: number, id: number): void {
+export function setTilemapTile(tilemap: Tilemap, column: number, row: number, id: number): void {
   const { columns, rows, tiles } = tilemap.data;
-  if (col < 0 || col >= columns || row < 0 || row >= rows) return;
-  tiles[row * columns + col] = id;
+  if (column < 0 || column >= columns || row < 0 || row >= rows) return;
+  tiles[row * columns + column] = id;
 }
 
 const defaultMethods: Partial<MethodsOf<TilemapRuntime>> = {

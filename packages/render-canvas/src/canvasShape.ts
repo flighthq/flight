@@ -26,19 +26,19 @@ export function drawCanvasShape(state: CanvasRenderState, renderNode: DisplayObj
   renderCanvasShapeCommands(context, commands);
 }
 
-export function renderCanvasShapeCommands(ctx: CanvasRenderingContext2D, commands: unknown[]): void {
-  const drawState = createCanvasShapeDrawState(ctx);
-  ctx.beginPath();
+export function renderCanvasShapeCommands(context: CanvasRenderingContext2D, commands: unknown[]): void {
+  const drawState = createCanvasShapeDrawState(context);
+  context.beginPath();
   let i = 0;
   while (i < commands.length) {
     const key = commands[i] as string;
     const argCount = commands[i + 1] as number;
     const def = getCanvasShapeCommand(key);
-    if (def !== undefined) def.draw(ctx, drawState, commands, i + 2);
+    if (def !== undefined) def.draw(context, drawState, commands, i + 2);
     i += argCount + 2;
   }
   if (drawState.hasPendingPath && (drawState.hasFill || drawState.hasStroke)) {
-    flushCanvasShapePath(ctx, drawState);
+    flushCanvasShapePath(context, drawState);
   }
 }
 
@@ -47,7 +47,7 @@ export const defaultCanvasShapeRenderer: DisplayObjectRenderer = {
   submit: drawCanvasShape,
 };
 
-function createCanvasShapeDrawState(ctx: CanvasRenderingContext2D): CanvasShapeDrawState {
+function createCanvasShapeDrawState(context: CanvasRenderingContext2D): CanvasShapeDrawState {
   const state: CanvasShapeDrawState = {
     bitmapH: 0,
     bitmapSrc: null,
@@ -62,30 +62,30 @@ function createCanvasShapeDrawState(ctx: CanvasRenderingContext2D): CanvasShapeD
     strokeStyle: '',
     strokeWidth: 1,
     windingRule: 'evenodd',
-    flush: () => flushCanvasShapePath(ctx, state),
+    flush: () => flushCanvasShapePath(context, state),
   };
   return state;
 }
 
-function flushCanvasShapePath(ctx: CanvasRenderingContext2D, state: CanvasShapeDrawState): void {
+function flushCanvasShapePath(context: CanvasRenderingContext2D, state: CanvasShapeDrawState): void {
   if (state.hasFill) {
-    ctx.fillStyle = state.fillStyle;
+    context.fillStyle = state.fillStyle;
     if (state.fillMatrix !== null && state.fillMatrixInverse !== null) {
       const m = state.fillMatrix;
       const inv = state.fillMatrixInverse;
-      ctx.transform(m.a, m.b, m.c, m.d, m.tx, m.ty);
-      ctx.fill(state.windingRule);
-      ctx.transform(inv.a, inv.b, inv.c, inv.d, inv.tx, inv.ty);
+      context.transform(m.a, m.b, m.c, m.d, m.tx, m.ty);
+      context.fill(state.windingRule);
+      context.transform(inv.a, inv.b, inv.c, inv.d, inv.tx, inv.ty);
     } else {
-      ctx.fill(state.windingRule);
+      context.fill(state.windingRule);
     }
   }
   if (state.hasStroke) {
-    ctx.strokeStyle = state.strokeStyle;
-    ctx.lineWidth = state.strokeWidth;
-    ctx.stroke();
+    context.strokeStyle = state.strokeStyle;
+    context.lineWidth = state.strokeWidth;
+    context.stroke();
   }
   state.hasPendingPath = false;
   state.hasCurrentPoint = false;
-  ctx.beginPath();
+  context.beginPath();
 }

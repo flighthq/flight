@@ -21,7 +21,7 @@ export function applyTween<T extends object>(
   target: T,
   propertyMap: Readonly<NumericProps<T>>,
 ): void {
-  stopTween(manager, target, propertyMap);
+  stopTweens(manager, target, propertyMap);
   const t = target as Record<string, number>;
   const p = propertyMap as Record<string, number | undefined>;
   for (const key of Object.keys(p)) {
@@ -149,7 +149,7 @@ function registerTween<T extends object>(manager: TweenManager, tween: Tween<T>,
   list.push(tween);
 }
 
-export function resetTweens(manager: TweenManager): void {
+export function resetAllTweens(manager: TweenManager): void {
   manager.tweens.clear();
 }
 
@@ -175,7 +175,7 @@ export function stopAllTweens(manager: TweenManager): void {
   }
 }
 
-export function stopTween(
+export function stopTweens(
   manager: TweenManager,
   target: object,
   propertyMap?: Readonly<NumericProps<any>>,

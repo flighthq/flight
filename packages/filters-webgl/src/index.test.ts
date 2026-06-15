@@ -1,7 +1,5 @@
 import {
   applyBevelFilterToWebGL,
-  applyBlitOffsetPassWebGL,
-  applyBlitPassWebGL,
   applyBoxBlurFilterToWebGL,
   applyColorMatrixFilterToWebGL,
   applyConvolutionFilterToWebGL,
@@ -12,12 +10,14 @@ import {
   applyGradientGlowFilterToWebGL,
   applyInnerGlowFilterToWebGL,
   applyInnerShadowFilterToWebGL,
-  applyInvertTintPassWebGL,
   applyMedianFilterToWebGL,
   applyOuterGlowFilterToWebGL,
   applyPixelateFilterToWebGL,
   applySharpenFilterToWebGL,
-  applyTintPassWebGL,
+  applyWebGLBlitOffsetPass,
+  applyWebGLBlitPass,
+  applyWebGLInvertTintPass,
+  applyWebGLTintPass,
   clearWebGLFilterTarget,
   compileWebGLFilterProgram,
   createWebGLGradientRampTexture,
@@ -49,10 +49,10 @@ describe('index', () => {
     expect(compileWebGLFilterProgram).toBeDefined();
     expect(drawWebGLDualSourcePass).toBeDefined();
     expect(drawWebGLFilterPass).toBeDefined();
-    expect(applyBlitOffsetPassWebGL).toBeDefined();
-    expect(applyBlitPassWebGL).toBeDefined();
-    expect(applyInvertTintPassWebGL).toBeDefined();
-    expect(applyTintPassWebGL).toBeDefined();
+    expect(applyWebGLBlitOffsetPass).toBeDefined();
+    expect(applyWebGLBlitPass).toBeDefined();
+    expect(applyWebGLInvertTintPass).toBeDefined();
+    expect(applyWebGLTintPass).toBeDefined();
     expect(createWebGLGradientRampTexture).toBeDefined();
   });
 });

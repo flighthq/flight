@@ -1,4 +1,8 @@
-import { colorCurveFromKeyframes, createParticleEmitterConfig, curveFromKeyframes } from '@flighthq/particles';
+import {
+  createParticleEmitterConfig,
+  particleColorCurveFromKeyframes,
+  particleCurveFromKeyframes,
+} from '@flighthq/particles';
 import type {
   ColorKeyframe,
   CurveKeyframe,
@@ -248,7 +252,7 @@ function colorKeysToCurve(arr: unknown): ParticleCurve | null {
     const c = (k.color ?? k) as Record<string, unknown>; // color may be nested or inline
     keys.push({ time: rn(k.time, i / (arr.length - 1)), r: rn(c.r, 1), g: rn(c.g, 1), b: rn(c.b, 1) });
   }
-  return colorCurveFromKeyframes(keys);
+  return particleColorCurveFromKeyframes(keys);
 }
 
 function alphaKeysToCurve(arr: unknown): ParticleCurve | null {
@@ -258,7 +262,7 @@ function alphaKeysToCurve(arr: unknown): ParticleCurve | null {
     const k = arr[i] as Record<string, unknown>;
     keys.push({ time: rn(k.time, i / (arr.length - 1)), value: rn(k.alpha, 1) });
   }
-  return curveFromKeyframes(keys);
+  return particleCurveFromKeyframes(keys);
 }
 
 // Unity size-over-lifetime AnimationCurve { keys: [{ time, value }] } → scale curve.
@@ -271,7 +275,7 @@ function sizeKeysToCurve(curve: unknown): ParticleCurve | null {
     const k = arr[i] as Record<string, unknown>;
     keys.push({ time: rn(k.time, i / (arr.length - 1)), value: rn(k.value, 1) });
   }
-  return curveFromKeyframes(keys);
+  return particleCurveFromKeyframes(keys);
 }
 
 function unityBlendMode(raw: Record<string, unknown>): ParticleBlendMode | null {

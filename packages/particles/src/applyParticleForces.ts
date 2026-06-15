@@ -28,9 +28,9 @@ export function applyParticleForces(
   emitter: ParticleEmitter,
   state: ParticleEmitterState,
   forces: ReadonlyArray<ParticleForce>,
-  dt: number,
+  deltaTime: number,
 ): void {
-  if (dt <= 0 || forces.length === 0) return;
+  if (deltaTime <= 0 || forces.length === 0) return;
   const data = emitter.data;
   const count = data.particleCount;
   const transforms = data.transforms;
@@ -42,8 +42,8 @@ export function applyParticleForces(
     accel[0] = 0;
     accel[1] = 0;
     accumulateForces(forces, transforms[tt], transforms[tt + 1], velocities[vt], velocities[vt + 1], accel);
-    velocities[vt] += accel[0] * dt;
-    velocities[vt + 1] += accel[1] * dt;
+    velocities[vt] += accel[0] * deltaTime;
+    velocities[vt + 1] += accel[1] * deltaTime;
   }
 }
 
@@ -52,9 +52,9 @@ export function applyParticleObjectForces(
   objects: readonly ParticleObject[],
   state: ParticleObjectsState,
   forces: ReadonlyArray<ParticleForce>,
-  dt: number,
+  deltaTime: number,
 ): void {
-  if (dt <= 0 || forces.length === 0) return;
+  if (deltaTime <= 0 || forces.length === 0) return;
   const velocities = state.velocities;
   const lifetimes = state.lifetimes;
   for (let i = 0; i < objects.length; i++) {
@@ -63,8 +63,8 @@ export function applyParticleObjectForces(
     accel[0] = 0;
     accel[1] = 0;
     accumulateForces(forces, objects[i].x, objects[i].y, velocities[vt], velocities[vt + 1], accel);
-    velocities[vt] += accel[0] * dt;
-    velocities[vt + 1] += accel[1] * dt;
+    velocities[vt] += accel[0] * deltaTime;
+    velocities[vt + 1] += accel[1] * deltaTime;
   }
 }
 

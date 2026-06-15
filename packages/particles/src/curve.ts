@@ -3,7 +3,7 @@ import type { ColorKeyframe, CurveKeyframe, ParticleCurve } from '@flighthq/type
 export type { ColorKeyframe, CurveKeyframe, ParticleCurve };
 
 /** Bake an RGB function f:[0,1]→[r,g,b] into an interleaved curve LUT (length N×3). */
-export function buildColorCurveLUT(f: (t: number) => readonly [number, number, number], samples = 33): number[] {
+export function buildParticleColorCurve(f: (t: number) => readonly [number, number, number], samples = 33): number[] {
   const n = Math.max(2, samples | 0);
   const lut = new Array<number>(n * 3);
   for (let i = 0; i < n; i++) {
@@ -16,7 +16,7 @@ export function buildColorCurveLUT(f: (t: number) => readonly [number, number, n
 }
 
 /** Bake a scalar function f:[0,1]→value into an `samples`-entry curve LUT. */
-export function buildCurveLUT(f: (t: number) => number, samples = 33): number[] {
+export function buildParticleCurve(f: (t: number) => number, samples = 33): number[] {
   const n = Math.max(2, samples | 0);
   const lut = new Array<number>(n);
   for (let i = 0; i < n; i++) lut[i] = f(i / (n - 1));
@@ -25,10 +25,10 @@ export function buildCurveLUT(f: (t: number) => number, samples = 33): number[] 
 
 /** Bake a piecewise-linear RGB timeline (e.g. an imported color gradient) into a
  *  uniform interleaved LUT (length N×3). */
-export function colorCurveFromKeyframes(keys: ReadonlyArray<ColorKeyframe>, samples = 33): number[] {
+export function particleColorCurveFromKeyframes(keys: ReadonlyArray<ColorKeyframe>, samples = 33): number[] {
   if (keys.length === 0) return [0, 0, 0, 0, 0, 0];
   const sorted = keys.slice().sort((a, b) => a.time - b.time);
-  return buildColorCurveLUT((t) => {
+  return buildParticleColorCurve((t) => {
     const seg = locateKeyframe(sorted, t);
     if (seg.f === 0) return [sorted[seg.i].r, sorted[seg.i].g, sorted[seg.i].b];
     const a = sorted[seg.i];
@@ -39,7 +39,7 @@ export function colorCurveFromKeyframes(keys: ReadonlyArray<ColorKeyframe>, samp
 
 /** Convert a baked interleaved RGB curve LUT (length N×3) back into color
  *  keyframes (one per sample, at uniform times). */
-export function colorCurveToKeyframes(lut: ParticleCurve): ColorKeyframe[] {
+export function particleColorCurveToKeyframes(lut: ParticleCurve): ColorKeyframe[] {
   const n = Math.floor(lut.length / 3);
   if (n === 0) return [];
   if (n === 1) return [{ time: 0, r: lut[0], g: lut[1], b: lut[2] }];
@@ -51,16 +51,16 @@ export function colorCurveToKeyframes(lut: ParticleCurve): ColorKeyframe[] {
 /** Bake a piecewise-linear scalar timeline (e.g. an imported alpha-over-lifetime
  *  curve) into a uniform LUT. Keyframes need not be sorted; times are clamped to
  *  the [first, last] range. */
-export function curveFromKeyframes(keys: ReadonlyArray<CurveKeyframe>, samples = 33): number[] {
+export function particleCurveFromKeyframes(keys: ReadonlyArray<CurveKeyframe>, samples = 33): number[] {
   if (keys.length === 0) return [0, 0];
   const sorted = keys.slice().sort((a, b) => a.time - b.time);
-  return buildCurveLUT((t) => interpKeyframe(sorted, t), samples);
+  return buildParticleCurve((t) => interpKeyframe(sorted, t), samples);
 }
 
 /** Convert a baked scalar curve LUT back into keyframes (one per sample, at
- *  uniform times). The inverse of {@link curveFromKeyframes} for the common case
+ *  uniform times). The inverse of {@link particleCurveFromKeyframes} for the common case
  *  of a 33-sample LUT — used by format serializers to round-trip authored curves. */
-export function curveToKeyframes(lut: ParticleCurve): CurveKeyframe[] {
+export function particleCurveToKeyframes(lut: ParticleCurve): CurveKeyframe[] {
   const n = lut.length;
   if (n === 0) return [];
   if (n === 1) return [{ time: 0, value: lut[0] }];
@@ -96,7 +96,7 @@ function locateKeyframe(sorted: ReadonlyArray<{ time: number }>, t: number): { f
 
 /** Sample an interleaved RGB curve (length N×3) at t∈[0,1], writing the three
  *  channels into `out` starting at `offset`. */
-export function sampleColorCurve(
+export function sampleParticleColorCurve(
   lut: ParticleCurve,
   t: number,
   out: { [index: number]: number },
@@ -135,7 +135,7 @@ export function sampleColorCurve(
 /** Sample a uniformly-spaced scalar curve at t∈[0,1] with linear interpolation.
  *  Out-of-range t is clamped. An empty curve samples to 0; a single value is
  *  returned as-is. */
-export function sampleCurve(lut: ParticleCurve, t: number): number {
+export function sampleParticleCurve(lut: ParticleCurve, t: number): number {
   const n = lut.length;
   if (n === 0) return 0;
   if (n === 1) return lut[0];

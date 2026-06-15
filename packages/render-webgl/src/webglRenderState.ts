@@ -3,7 +3,7 @@ import { createRenderState as _createRenderState, setRenderStateBackgroundColor 
 import type { WebGLRenderOptions, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { compileDefaultWebGLProgram, createDefaultBitmapShader } from './webglShader';
+import { compileDefaultWebGLProgram, createDefaultWebGLBitmapShader } from './webglShader';
 
 export function createWebGLRenderState(
   canvas: HTMLCanvasElement,
@@ -22,7 +22,7 @@ export function createWebGLRenderState(
 
   const shaderLoc = compileDefaultWebGLProgram(gl);
   const matrixArray = new Float32Array(9);
-  const defaultBitmapShader = createDefaultBitmapShader(shaderLoc, matrixArray);
+  const defaultBitmapShader = createDefaultWebGLBitmapShader(shaderLoc, matrixArray);
 
   // Static index buffer [0, 1, 2, 0, 2, 3]
   const quadIndexBuffer = gl.createBuffer()!;

@@ -1,4 +1,4 @@
-import type { Shape, TextFormat, TextMeasureFn } from '@flighthq/sdk';
+import type { Shape, TextFormat, TextMeasureFunction } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -59,7 +59,7 @@ textField.data.wordWrap = true;
 
 const measureCanvas = document.createElement('canvas');
 const measureCtx = measureCanvas.getContext('2d')!;
-const measure: TextMeasureFn = (t, fmt) => {
+const measure: TextMeasureFunction = (t, fmt) => {
   measureCtx.font = computeTextFormatFontString(fmt);
   return measureCtx.measureText(t).width;
 };

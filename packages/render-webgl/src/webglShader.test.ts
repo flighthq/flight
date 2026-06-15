@@ -1,7 +1,7 @@
 import {
   compileDefaultWebGLProgram,
   compileWebGLBitmapProgram,
-  createDefaultBitmapShader,
+  createDefaultWebGLBitmapShader,
   createWebGLBitmapShader,
   setWebGLAttributes,
   setWebGLBaseUniforms,
@@ -72,18 +72,18 @@ describe('compileWebGLBitmapProgram', () => {
   });
 });
 
-describe('createDefaultBitmapShader', () => {
+describe('createDefaultWebGLBitmapShader', () => {
   it('returns a shader with the provided program', () => {
     const loc = makeShaderLoc();
     const m = new Float32Array(9);
-    const shader = createDefaultBitmapShader(loc, m);
+    const shader = createDefaultWebGLBitmapShader(loc, m);
     expect(shader.program).toBe(loc.program);
   });
 
   it('returns a shader with a bind method', () => {
     const loc = makeShaderLoc();
     const m = new Float32Array(9);
-    const shader = createDefaultBitmapShader(loc, m);
+    const shader = createDefaultWebGLBitmapShader(loc, m);
     expect(typeof shader.bind).toBe('function');
   });
 
@@ -97,7 +97,7 @@ describe('createDefaultBitmapShader', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 100;
     canvas.height = 100;
-    const shader = createDefaultBitmapShader(loc, m);
+    const shader = createDefaultWebGLBitmapShader(loc, m);
     const renderNode = {
       alpha: 0.75,
       colorTransform: {

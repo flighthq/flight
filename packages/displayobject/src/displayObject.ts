@@ -5,8 +5,8 @@ import {
   initAppearanceTrait,
   initBoundsRectangleRuntimeTrait,
   initBoundsRectangleTrait,
-  initTransformRuntimeTrait,
-  initTransformTrait,
+  initTransform2DRuntimeTrait,
+  initTransform2DTrait,
   invalidateNodeAppearance,
 } from '@flighthq/node';
 import type {
@@ -40,7 +40,7 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
     createData,
     createDisplayObjectRuntimeFactory ?? (createDisplayObjectRuntime as unknown as NodeRuntimeFactory<R>),
   ) as DisplayObject;
-  initTransformTrait(out, obj);
+  initTransform2DTrait(out, obj);
   initBoundsRectangleTrait(out, obj);
   initAppearanceTrait(out, obj);
   out.mask = obj?.mask ?? null;
@@ -52,7 +52,7 @@ export function createDisplayObjectRuntime(
   methods?: Readonly<Partial<MethodsOf<DisplayObjectRuntime>>>,
 ): DisplayObjectRuntime {
   const out = createNodeRuntime(methods) as DisplayObjectRuntime;
-  initTransformRuntimeTrait(out, methods);
+  initTransform2DRuntimeTrait(out, methods);
   initBoundsRectangleRuntimeTrait(out, methods);
   return out;
 }

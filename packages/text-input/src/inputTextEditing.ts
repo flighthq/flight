@@ -7,7 +7,7 @@ import type {
   InputTextData,
   InputTextRuntime,
   InputTextSelectionRectangle,
-  KeyboardData,
+  KeyboardEventData,
   ReplaceInputTextOptions,
   TextFormatRange,
   TextLayoutGroup,
@@ -157,7 +157,7 @@ export function getInputTextSelectionText(source: Readonly<InputText>): string {
 
 export function handleInputTextKeyboard(
   source: InputText,
-  data: Readonly<KeyboardData>,
+  data: Readonly<KeyboardEventData>,
   options?: Readonly<HandleInputTextKeyboardOptions>,
 ): boolean {
   const command = getKeyboardCommand(data);
@@ -350,7 +350,7 @@ function getFallbackLineHeight(layout: Readonly<TextLayoutResult>): number {
   return layout.lineHeights[0] ?? 12;
 }
 
-function getKeyboardCommand(data: Readonly<KeyboardData>): KeyboardCommand {
+function getKeyboardCommand(data: Readonly<KeyboardEventData>): KeyboardCommand {
   if (data.ctrlKey || data.metaKey) {
     const key = data.key.toLowerCase();
     if (key === 'a' || data.keyCode === KeyCode.A) return 'selectAll';

@@ -4,7 +4,7 @@ import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
 import { HTMLViewKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
-import { defaultHTMLViewRenderer, drawHTMLView, drawHTMLViewMask } from './htmlView';
+import { defaultHTMLViewRenderer, drawDOMHTMLView, drawDOMHTMLViewMask } from './htmlView';
 import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
@@ -27,14 +27,14 @@ describe('defaultHTMLViewRenderer', () => {
   });
 });
 
-describe('drawHTMLView', () => {
+describe('drawDOMHTMLView', () => {
   it('produces no element when source element is null', () => {
     const state = makeState();
     const node = createHTMLView();
     node.data.element = null;
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    const el = drawGetEl(state, () => drawHTMLView(state, renderNode));
+    const el = drawGetEl(state, () => drawDOMHTMLView(state, renderNode));
 
     expect(el).toBeNull();
   });
@@ -45,7 +45,7 @@ describe('drawHTMLView', () => {
     const node = createHTMLView({ data: { element: inner } });
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    const el = drawGetEl(state, () => drawHTMLView(state, renderNode));
+    const el = drawGetEl(state, () => drawDOMHTMLView(state, renderNode));
 
     expect(el).toBe(inner);
   });
@@ -56,7 +56,7 @@ describe('drawHTMLView', () => {
     const node = createHTMLView({ data: { element: inner } });
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawHTMLView(state, renderNode);
+    drawDOMHTMLView(state, renderNode);
 
     expect(inner.style.position).toBe('absolute');
     expect(inner.style.left).toBe('0px');
@@ -73,7 +73,7 @@ describe('drawHTMLView', () => {
     const node = createHTMLView({ data: { element: inner } });
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawHTMLView(state, renderNode);
+    drawDOMHTMLView(state, renderNode);
 
     expect(inner.style.left).toBe('50px');
   });
@@ -84,7 +84,7 @@ describe('drawHTMLView', () => {
     const node = createHTMLView({ data: { element: inner, width: 320, height: 240 } });
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawHTMLView(state, renderNode);
+    drawDOMHTMLView(state, renderNode);
 
     expect(inner.style.width).toBe('320px');
     expect(inner.style.height).toBe('240px');
@@ -96,10 +96,10 @@ describe('drawHTMLView', () => {
     const node = createHTMLView({ data: { element: inner, width: 100, height: 100 } });
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawHTMLView(state, renderNode);
+    drawDOMHTMLView(state, renderNode);
     node.data.width = 640;
     node.data.height = 480;
-    drawHTMLView(state, renderNode);
+    drawDOMHTMLView(state, renderNode);
 
     expect(inner.style.width).toBe('640px');
     expect(inner.style.height).toBe('480px');
@@ -111,17 +111,17 @@ describe('drawHTMLView', () => {
     const node = createHTMLView({ data: { element: inner } });
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
 
-    drawHTMLView(state, renderNode);
+    drawDOMHTMLView(state, renderNode);
 
     expect(inner.style.transform).toMatch(/^matrix\(/);
   });
 });
 
-describe('drawHTMLViewMask', () => {
+describe('drawDOMHTMLViewMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const node = createHTMLView();
     const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
-    expect(() => drawHTMLViewMask(state, renderNode)).not.toThrow();
+    expect(() => drawDOMHTMLViewMask(state, renderNode)).not.toThrow();
   });
 });

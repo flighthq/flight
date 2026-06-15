@@ -6,7 +6,7 @@ import {
   getNodeWorldBoundsRectangle,
   getNodeWorldTransformMatrix,
 } from '@flighthq/node';
-import type { DisplayObject, GraphHitTestFn, Node } from '@flighthq/types';
+import type { DisplayObject, GraphHitTestFunction, Node } from '@flighthq/types';
 
 /**
  * Walks the scene graph depth-first in reverse child order (front-to-back) and
@@ -36,10 +36,21 @@ export function findGraphHitTarget(
 }
 
 /**
+ * Evaluates the bounding box of the display object to see if it overlaps or
+ * intersects with the bounding box of the `obj` display object.
+ **/
+export function hitTestDisplayObjects(source: DisplayObject, other: DisplayObject): boolean {
+  if (getNodeParent(source) !== null && getNodeParent(other) !== null) {
+    return intersectsRectangle(getNodeWorldBoundsRectangle(source), getNodeWorldBoundsRectangle(other));
+  }
+  return false;
+}
+
+/**
  * Tests whether world-space (x, y) falls within the node's local bounds rect,
  * after inverting through the node's world transform.
  **/
-export function graphHitTestLocalBounds(source: Node<symbol, object>, x: number, y: number): boolean {
+export function hitTestGraphLocalBounds(source: Node<symbol, object>, x: number, y: number): boolean {
   inverseMatrixTransformPointXY(
     hitTestLocalBoundsRectanglePoint,
     getNodeWorldTransformMatrix(source as DisplayObject),
@@ -62,7 +73,7 @@ export function graphHitTestLocalBounds(source: Node<symbol, object>, x: number,
  *
  * @param shapeFlag Passed to the registered hit function; interpretation is kind-specific.
  **/
-export function graphHitTestPoint<Kind extends symbol, Traits extends object>(
+export function hitTestGraphPoint<Kind extends symbol, Traits extends object>(
   source: Node<Kind, Traits>,
   x: number,
   y: number,
@@ -76,7 +87,7 @@ export function graphHitTestPoint<Kind extends symbol, Traits extends object>(
   const children = getNodeRuntime(source).children;
   if (children !== null) {
     for (const child of children) {
-      if (graphHitTestPoint(child as Node<Kind, Traits>, x, y, shapeFlag)) return true;
+      if (hitTestGraphPoint(child as Node<Kind, Traits>, x, y, shapeFlag)) return true;
     }
   }
 
@@ -84,23 +95,12 @@ export function graphHitTestPoint<Kind extends symbol, Traits extends object>(
 }
 
 /**
- * Evaluates the bounding box of the display object to see if it overlaps or
- * intersects with the bounding box of the `obj` display object.
- **/
-export function hitTestDisplayObjects(source: DisplayObject, other: DisplayObject): boolean {
-  if (getNodeParent(source) !== null && getNodeParent(other) !== null) {
-    return intersectsRectangle(getNodeWorldBoundsRectangle(source), getNodeWorldBoundsRectangle(other));
-  }
-  return false;
-}
-
-/**
  * Registers an interaction handler for nodes of the given kind.
  * Call this once at startup to opt a node kind into interaction handling.
  **/
-export function registerHitTestPoint(kind: symbol, fn: GraphHitTestFn): void {
+export function registerHitTestPoint(kind: symbol, fn: GraphHitTestFunction): void {
   hitTestPointRegistry.set(kind, fn);
 }
 
 const hitTestLocalBoundsRectanglePoint = { x: 0, y: 0 };
-const hitTestPointRegistry = new Map<symbol, GraphHitTestFn>();
+const hitTestPointRegistry = new Map<symbol, GraphHitTestFunction>();

@@ -1,6 +1,6 @@
 import type { Node } from '@flighthq/types';
 
-import { graphHitTestLocalBounds } from './hitTests';
+import { hitTestGraphLocalBounds } from './hitTests';
 
 export function defaultQuadBatchHitTestPoint(
   source: Node<symbol, object>,
@@ -18,7 +18,7 @@ export function defaultSpriteHitTestPoint(
   y: number,
   _shapeFlag: boolean,
 ): boolean {
-  return graphHitTestLocalBounds(source, x, y);
+  return hitTestGraphLocalBounds(source, x, y);
 }
 
 export function defaultTilemapHitTestPoint(

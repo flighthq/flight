@@ -1,6 +1,6 @@
 import type { Node } from '@flighthq/types';
 
-import { graphHitTestLocalBounds } from './hitTests';
+import { hitTestGraphLocalBounds } from './hitTests';
 
 export function defaultBitmapHitTestPoint(
   source: Node<symbol, object>,
@@ -8,7 +8,7 @@ export function defaultBitmapHitTestPoint(
   y: number,
   _shapeFlag: boolean,
 ): boolean {
-  return graphHitTestLocalBounds(source, x, y);
+  return hitTestGraphLocalBounds(source, x, y);
 }
 
 export function defaultDisplayObjectHitTestPoint(
@@ -36,7 +36,7 @@ export function defaultInputTextHitTestPoint(
   y: number,
   _shapeFlag: boolean,
 ): boolean {
-  return graphHitTestLocalBounds(source, x, y);
+  return hitTestGraphLocalBounds(source, x, y);
 }
 
 export function defaultMovieClipHitTestPoint(
@@ -55,7 +55,7 @@ export function defaultRenderViewHitTestPoint(
   y: number,
   _shapeFlag: boolean,
 ): boolean {
-  return graphHitTestLocalBounds(source, x, y);
+  return hitTestGraphLocalBounds(source, x, y);
 }
 
 export function defaultRichTextHitTestPoint(
@@ -64,7 +64,7 @@ export function defaultRichTextHitTestPoint(
   y: number,
   _shapeFlag: boolean,
 ): boolean {
-  return graphHitTestLocalBounds(source, x, y);
+  return hitTestGraphLocalBounds(source, x, y);
 }
 
 export function defaultShapeHitTestPoint(
@@ -73,7 +73,7 @@ export function defaultShapeHitTestPoint(
   y: number,
   _shapeFlag: boolean,
 ): boolean {
-  return graphHitTestLocalBounds(source, x, y);
+  return hitTestGraphLocalBounds(source, x, y);
 }
 
 export function defaultStageHitTestPoint(
@@ -92,7 +92,7 @@ export function defaultTextHitTestPoint(
   y: number,
   _shapeFlag: boolean,
 ): boolean {
-  return graphHitTestLocalBounds(source, x, y);
+  return hitTestGraphLocalBounds(source, x, y);
 }
 
 export function defaultVideoHitTestPoint(
@@ -101,5 +101,5 @@ export function defaultVideoHitTestPoint(
   y: number,
   _shapeFlag: boolean,
 ): boolean {
-  return graphHitTestLocalBounds(source, x, y);
+  return hitTestGraphLocalBounds(source, x, y);
 }

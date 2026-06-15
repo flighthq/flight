@@ -14,6 +14,10 @@ export function getRichTextFieldWidth(data: Readonly<RichTextData>, layout: Read
   return Math.ceil(layout.textWidth + TEXT_FIELD_GUTTER * 2);
 }
 
+export function getRichTextLineCount(layout: Readonly<TextLayoutResult>): number {
+  return layout.numLines;
+}
+
 export function getRichTextMaxScrollH(data: Readonly<RichTextData>, layout: Readonly<TextLayoutResult>): number {
   const visibleWidth = Math.max(0, getRichTextFieldWidth(data, layout) - TEXT_FIELD_GUTTER * 2);
   return Math.max(0, Math.ceil(layout.textWidth - visibleWidth));
@@ -22,10 +26,6 @@ export function getRichTextMaxScrollH(data: Readonly<RichTextData>, layout: Read
 export function getRichTextMaxScrollV(data: Readonly<RichTextData>, layout: Readonly<TextLayoutResult>): number {
   if (layout.numLines <= 1) return 1;
   return Math.max(1, layout.numLines - getVisibleLineCount(data, layout) + 1);
-}
-
-export function getRichTextNumLines(layout: Readonly<TextLayoutResult>): number {
-  return layout.numLines;
 }
 
 export function getRichTextScrollYOffset(lineHeights: readonly number[], firstVisibleLine: number): number {

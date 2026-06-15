@@ -3,7 +3,7 @@ import type { WebGPURenderState, WebGPURenderTarget } from '@flighthq/types';
 
 import { applyBoxBlurFilterToWebGPU } from './blurFilter';
 import { clearWebGPUFilterTarget } from './filterPass';
-import { applyBlitOffsetPassWebGPU, applyBlitPassWebGPU, applyTintPassWebGPU } from './tintShader';
+import { applyWebGPUBlitOffsetPass, applyWebGPUBlitPass, applyWebGPUTintPass } from './tintShader';
 
 /**
  * Applies a bevel filter to `source`, writing the result to `dest`.
@@ -43,7 +43,7 @@ export function applyBevelFilterToWebGPU(
 
   const [tinted, blurred, blurTemp] = scratch;
 
-  applyTintPassWebGPU(state, source, tinted, 0xffffff, 1, strength);
+  applyWebGPUTintPass(state, source, tinted, 0xffffff, 1, strength);
   applyBoxBlurFilterToWebGPU(state, tinted, blurred, blurTemp, {
     blurX: filter.blurX ?? 4,
     blurY: filter.blurY ?? 4,
@@ -53,19 +53,19 @@ export function applyBevelFilterToWebGPU(
   clearWebGPUFilterTarget(state, dest);
 
   if (bevelType === 'full' || bevelType === 'outer') {
-    applyTintPassWebGPU(state, blurred, tinted, shadowColor, shadowAlpha, 1);
-    applyBlitOffsetPassWebGPU(state, tinted, dest, dx, dy);
-    applyTintPassWebGPU(state, blurred, tinted, highlightColor, highlightAlpha, 1);
-    applyBlitOffsetPassWebGPU(state, tinted, dest, -dx, -dy);
+    applyWebGPUTintPass(state, blurred, tinted, shadowColor, shadowAlpha, 1);
+    applyWebGPUBlitOffsetPass(state, tinted, dest, dx, dy);
+    applyWebGPUTintPass(state, blurred, tinted, highlightColor, highlightAlpha, 1);
+    applyWebGPUBlitOffsetPass(state, tinted, dest, -dx, -dy);
   } else {
     // inner: shadow at -offset, highlight at +offset
-    applyTintPassWebGPU(state, blurred, tinted, shadowColor, shadowAlpha, 1);
-    applyBlitOffsetPassWebGPU(state, tinted, dest, -dx, -dy);
-    applyTintPassWebGPU(state, blurred, tinted, highlightColor, highlightAlpha, 1);
-    applyBlitOffsetPassWebGPU(state, tinted, dest, dx, dy);
+    applyWebGPUTintPass(state, blurred, tinted, shadowColor, shadowAlpha, 1);
+    applyWebGPUBlitOffsetPass(state, tinted, dest, -dx, -dy);
+    applyWebGPUTintPass(state, blurred, tinted, highlightColor, highlightAlpha, 1);
+    applyWebGPUBlitOffsetPass(state, tinted, dest, dx, dy);
   }
 
   if (!knockout) {
-    applyBlitPassWebGPU(state, source, dest);
+    applyWebGPUBlitPass(state, source, dest);
   }
 }

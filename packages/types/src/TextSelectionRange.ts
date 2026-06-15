@@ -1,4 +1,4 @@
-export interface TextInputData {
+export interface TextSelectionRange {
   length: number;
   start: number;
   text: string;

@@ -4,9 +4,9 @@ import {
   getRichTextBottomScrollV,
   getRichTextFieldHeight,
   getRichTextFieldWidth,
+  getRichTextLineCount,
   getRichTextMaxScrollH,
   getRichTextMaxScrollV,
-  getRichTextNumLines,
   getRichTextScrollYOffset,
   getRichTextTextHeight,
   getRichTextTextWidth,
@@ -95,6 +95,12 @@ describe('getRichTextFieldWidth', () => {
   });
 });
 
+describe('getRichTextLineCount', () => {
+  it('returns the layout line count', () => {
+    expect(getRichTextLineCount(createLayout({ numLines: 3 }))).toBe(3);
+  });
+});
+
 describe('getRichTextMaxScrollH', () => {
   it('returns horizontal overflow beyond the visible field width', () => {
     const data = createData({ width: 54 });
@@ -116,12 +122,6 @@ describe('getRichTextMaxScrollV', () => {
 
   it('returns one for a single line', () => {
     expect(getRichTextMaxScrollV(createData(), createLayout({ numLines: 1 }))).toBe(1);
-  });
-});
-
-describe('getRichTextNumLines', () => {
-  it('returns the layout line count', () => {
-    expect(getRichTextNumLines(createLayout({ numLines: 3 }))).toBe(3);
   });
 });
 

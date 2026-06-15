@@ -4,9 +4,9 @@ import type {
   TextLayoutGroup,
   TextLayoutParams,
   TextLayoutResult,
-  TextMeasureFn,
+  TextMeasureFunction,
 } from '@flighthq/types';
-export type { TextLayoutParams, TextLayoutResult, TextMeasureFn } from '@flighthq/types';
+export type { TextLayoutParams, TextLayoutResult, TextMeasureFunction } from '@flighthq/types';
 
 import { getTextFormatAscent, getTextFormatDescent, getTextFormatLeading, mergeTextFormat } from './textFormat';
 import { createTextLayoutGroup } from './textLayoutGroup';
@@ -64,7 +64,7 @@ function charAdvances(
   format: TextFormat,
   start: number,
   end: number,
-  measure: TextMeasureFn,
+  measure: TextMeasureFunction,
   startX = 0,
 ): void {
   out.length = 0;
@@ -105,7 +105,7 @@ function sumAdvances(positions: number[]): number {
 function getTabAdvance(
   currentX: number,
   tabStops: number[] | undefined,
-  measure: TextMeasureFn,
+  measure: TextMeasureFunction,
   format: TextFormat,
 ): number {
   if (tabStops != null && tabStops.length > 0) {
@@ -129,7 +129,7 @@ function buildGroups(
   formatRanges: readonly TextFormatRange[],
   lineBreaks: number[],
   containerWidth: number,
-  measure: TextMeasureFn,
+  measure: TextMeasureFunction,
   wordWrap: boolean,
   multiline: boolean,
 ): void {

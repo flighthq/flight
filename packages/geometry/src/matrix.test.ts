@@ -19,8 +19,8 @@ import {
   inverseMatrixTransformPointXY,
   inverseMatrixTransformVector,
   inverseMatrixTransformVectorXY,
-  matrixTransformAABB,
-  matrixTransformAABBVector2,
+  matrixTransformBounds,
+  matrixTransformBoundsVector2,
   matrixTransformPoint,
   matrixTransformPointXY,
   matrixTransformRectangle,
@@ -443,11 +443,11 @@ describe('inverseMatrixTransformVectorXY', () => {
   });
 });
 
-describe('matrixTransformAABB', () => {
+describe('matrixTransformBounds', () => {
   it('should work when ax > bx or ay > by (flipped input)', () => {
     const m = createMatrix();
     const out = createRectangle();
-    matrixTransformAABB(out, m, 10, 10, 0, 0);
+    matrixTransformBounds(out, m, 10, 10, 0, 0);
     expect(out.x).toBe(0);
     expect(out.y).toBe(0);
     expect(out.width).toBe(10);
@@ -457,7 +457,7 @@ describe('matrixTransformAABB', () => {
   it('should handle negative scaling', () => {
     const m = createMatrix(-1, 0, 0, -1, 0, 0);
     const out = createRectangle();
-    matrixTransformAABB(out, m, 0, 0, 10, 10);
+    matrixTransformBounds(out, m, 0, 0, 10, 10);
     expect(out.width).toBe(10);
     expect(out.height).toBe(10);
   });
@@ -466,7 +466,7 @@ describe('matrixTransformAABB', () => {
     const m = createMatrix();
     rotateMatrix(m, m, Math.PI / 2);
     const out = createRectangle();
-    matrixTransformAABB(out, m, 0, 0, 10, 20);
+    matrixTransformBounds(out, m, 0, 0, 10, 20);
     expect(out.width).toBeCloseTo(20);
     expect(out.height).toBeCloseTo(10);
   });
@@ -476,7 +476,7 @@ describe('matrixTransformAABB', () => {
     const mat = createMatrix();
 
     const out = createRectangle();
-    matrixTransformAABB(out, mat, rect.x, rect.y, getRectangleRight(rect), getRectangleBottom(rect));
+    matrixTransformBounds(out, mat, rect.x, rect.y, getRectangleRight(rect), getRectangleBottom(rect));
 
     expect(out.x).toBeCloseTo(0);
     expect(out.y).toBeCloseTo(0);
@@ -489,20 +489,20 @@ describe('matrixTransformAABB', () => {
     const mat = createMatrix(-1, 0, 0, -1, 0, 0);
 
     const out = createRectangle();
-    matrixTransformAABB(out, mat, rect.x, rect.y, getRectangleRight(rect), getRectangleBottom(rect));
+    matrixTransformBounds(out, mat, rect.x, rect.y, getRectangleRight(rect), getRectangleBottom(rect));
 
     expect(out.width).toBeCloseTo(10);
     expect(out.height).toBeCloseTo(20);
   });
 });
 
-describe('matrixTransformAABBVector2', () => {
+describe('matrixTransformBoundsVector2', () => {
   it('should alias transformRectXY', () => {
     const m = createMatrix();
     const out = createRectangle();
     const a = createVector2(10, 10);
     const b = createVector2();
-    matrixTransformAABBVector2(out, m, a, b);
+    matrixTransformBoundsVector2(out, m, a, b);
     expect(out.x).toBe(0);
     expect(out.y).toBe(0);
     expect(out.width).toBe(10);
@@ -513,7 +513,7 @@ describe('matrixTransformAABBVector2', () => {
     const m = createMatrix(2, 0, 0, 3, 5, 7);
     const out = createRectangle(0, 0, 0, 0);
     const b = createVector2(10, 20);
-    matrixTransformAABBVector2(out, m, out, b);
+    matrixTransformBoundsVector2(out, m, out, b);
     expect(out.x).toBe(5);
     expect(out.y).toBe(7);
     expect(out.width).toBe(20);

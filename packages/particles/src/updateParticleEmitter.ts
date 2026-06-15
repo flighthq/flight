@@ -8,7 +8,7 @@ import type {
   WorldTransform2D,
 } from '@flighthq/types';
 
-import { sampleColorCurve, sampleCurve } from './curve';
+import { sampleParticleColorCurve, sampleParticleCurve } from './curve';
 import { ensureParticleEmitterStateCapacity } from './particleEmitterState';
 
 export type { ParticleEmitterCallbacks, WorldTransform2D };
@@ -38,7 +38,7 @@ export function updateParticleEmitter(
   emitter: ParticleEmitter,
   state: ParticleEmitterState,
   config: Readonly<ParticleEmitterConfig>,
-  dt: number,
+  deltaTime: number,
   callbacks?: ParticleEmitterCallbacks,
   worldTransform?: Readonly<WorldTransform2D>,
 ): void {
@@ -48,11 +48,11 @@ export function updateParticleEmitter(
   data.worldSpace = config.worldSpace;
 
   // Guard against a zero or negative time step: no time has elapsed, so there is
-  // nothing to age, move, or spawn. Critically, this avoids dividing by dt when
-  // computing emitter velocity below — a zero-dt frame that still fires a burst
+  // nothing to age, move, or spawn. Critically, this avoids dividing by deltaTime when
+  // computing emitter velocity below — a zero-deltaTime frame that still fires a burst
   // would otherwise bake Infinity/NaN velocities into freshly spawned particles
   // and corrupt them for the rest of their lifetime.
-  if (dt <= 0) return;
+  if (deltaTime <= 0) return;
 
   // ── Emitter velocity (for velocity inheritance and trail interpolation) ───────
   // In world-space mode we track the world origin; in local-space mode we track
@@ -63,8 +63,8 @@ export function updateParticleEmitter(
   let emitterVelX = 0;
   let emitterVelY = 0;
   if (!isNaN(state.prevX)) {
-    emitterVelX = (trackX - state.prevX) / dt;
-    emitterVelY = (trackY - state.prevY) / dt;
+    emitterVelX = (trackX - state.prevX) / deltaTime;
+    emitterVelY = (trackY - state.prevY) / deltaTime;
   }
 
   // ── Phase 1: age all live particles, compact dead ones ──────────────────────
@@ -72,8 +72,8 @@ export function updateParticleEmitter(
   const velocities = state.velocities;
   const scales = state.scales;
   const rotationSpeeds = state.rotationSpeeds;
-  const gx = config.gravityX * dt;
-  const gy = config.gravityY * dt;
+  const gx = config.gravityX * deltaTime;
+  const gy = config.gravityY * deltaTime;
   const { colorStartR, colorStartG, colorStartB, colorEndR, colorEndG, colorEndB } = config;
   const hasColorVariance =
     config.colorStartVarianceR !== 0 ||
@@ -103,7 +103,7 @@ export function updateParticleEmitter(
   let i = 0;
   while (i < liveCount) {
     const lt = i * 2;
-    lifetimes[lt] += dt;
+    lifetimes[lt] += deltaTime;
     if (lifetimes[lt] >= lifetimes[lt + 1]) {
       if (onDeath !== undefined) {
         const tt = i * PARTICLE_TRANSFORM_STRIDE;
@@ -149,19 +149,19 @@ export function updateParticleEmitter(
     velocities[vt] += gx;
     velocities[vt + 1] += gy;
     const tt = i * PARTICLE_TRANSFORM_STRIDE;
-    data.transforms[tt] += velocities[vt] * dt;
-    data.transforms[tt + 1] += velocities[vt + 1] * dt;
+    data.transforms[tt] += velocities[vt] * deltaTime;
+    data.transforms[tt + 1] += velocities[vt + 1] * deltaTime;
 
     const lifeFraction = lifetimes[lt] / lifetimes[lt + 1];
 
     data.alphas[i] = hasAlphaCurve
-      ? sampleCurve(alphaCurve, lifeFraction)
+      ? sampleParticleCurve(alphaCurve, lifeFraction)
       : config.alphaStart + (config.alphaEnd - config.alphaStart) * lifeFraction;
 
     if (hasColorWork) {
       const ct = i * 3;
       if (hasColorCurve) {
-        sampleColorCurve(colorCurve, lifeFraction, data.colors, ct);
+        sampleParticleColorCurve(colorCurve, lifeFraction, data.colors, ct);
       } else if (hasColorVariance) {
         data.colors[ct] = state.colorBirth[ct] + (state.colorDeath[ct] - state.colorBirth[ct]) * lifeFraction;
         data.colors[ct + 1] =
@@ -177,13 +177,13 @@ export function updateParticleEmitter(
 
     if (hasScaleAnim) {
       const scaleFactor = hasScaleCurve
-        ? sampleCurve(scaleCurve, lifeFraction)
+        ? sampleParticleCurve(scaleCurve, lifeFraction)
         : 1 + (config.scaleEnd - 1) * lifeFraction;
       data.transforms[tt + 3] = scales[i] * scaleFactor;
     }
 
     if (hasRotationSpeed) {
-      data.transforms[tt + 2] += rotationSpeeds[i] * dt;
+      data.transforms[tt + 2] += rotationSpeeds[i] * deltaTime;
     }
 
     if (hasFlipbook) {
@@ -199,14 +199,14 @@ export function updateParticleEmitter(
   // A finite, non-looping emitter stops spawning once its duration elapses;
   // existing particles keep ageing out (use isParticleEmitterComplete to detect the end).
   const emitting = isEmitting(config, state.emitterAge);
-  if (config.duration > 0 && !config.loop) state.emitterAge += dt;
+  if (config.duration > 0 && !config.loop) state.emitterAge += deltaTime;
 
-  state.spawnAccumulator += emitting ? config.spawnRate * dt : 0;
+  state.spawnAccumulator += emitting ? config.spawnRate * deltaTime : 0;
   let toSpawn = Math.floor(state.spawnAccumulator);
   state.spawnAccumulator -= toSpawn;
 
   if (emitting && config.burstCount > 0) {
-    state.burstTimer -= dt;
+    state.burstTimer -= deltaTime;
     if (state.burstTimer <= 0) {
       toSpawn += config.burstCount;
       state.burstTimer = config.burstInterval > 0 ? config.burstInterval : Infinity;
@@ -297,13 +297,13 @@ export function updateParticleEmitter(
       data.transforms[tt] = spawnX;
       data.transforms[tt + 1] = spawnY;
       data.transforms[tt + 2] = angle;
-      data.transforms[tt + 3] = hasScaleCurve ? spawnScale * sampleCurve(scaleCurve, 0) : spawnScale;
-      data.alphas[idx] = hasAlphaCurve ? sampleCurve(alphaCurve, 0) : config.alphaStart;
+      data.transforms[tt + 3] = hasScaleCurve ? spawnScale * sampleParticleCurve(scaleCurve, 0) : spawnScale;
+      data.alphas[idx] = hasAlphaCurve ? sampleParticleCurve(alphaCurve, 0) : config.alphaStart;
 
       // Color — curve takes precedence, then per-particle variance, then constants
       const ct = idx * 3;
       if (hasColorCurve) {
-        sampleColorCurve(colorCurve, 0, data.colors, ct);
+        sampleParticleColorCurve(colorCurve, 0, data.colors, ct);
       } else if (hasColorVariance) {
         const r0 = clamp01(colorStartR + (state.random() - 0.5) * 2 * config.colorStartVarianceR);
         const g0 = clamp01(colorStartG + (state.random() - 0.5) * 2 * config.colorStartVarianceG);

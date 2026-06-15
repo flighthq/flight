@@ -1,9 +1,9 @@
 import {
-  colorCurveFromKeyframes,
   createParticleEmitterConfig,
-  curveFromKeyframes,
-  sampleColorCurve,
-  sampleCurve,
+  particleColorCurveFromKeyframes,
+  particleCurveFromKeyframes,
+  sampleParticleColorCurve,
+  sampleParticleCurve,
 } from '@flighthq/particles';
 
 import { parseSpineParticle, parseSpineParticleDocument } from './parse';
@@ -177,7 +177,7 @@ describe('parseSpineParticle — multi-stop timelines bake into curves', () => {
     const c = parseSpineParticle(json);
     expect(c.colorCurve).not.toBeNull();
     const out = [0, 0, 0];
-    sampleColorCurve(c.colorCurve!, 0.5, out, 0);
+    sampleParticleColorCurve(c.colorCurve!, 0.5, out, 0);
     expect(out[1]).toBeGreaterThan(0.8); // green dominant at mid-life
     expect(out[0]).toBeLessThan(0.2);
   });
@@ -193,8 +193,8 @@ describe('parseSpineParticle — multi-stop timelines bake into curves', () => {
     });
     const c = parseSpineParticle(json);
     expect(c.alphaCurve).not.toBeNull();
-    expect(sampleCurve(c.alphaCurve!, 0.5)).toBeGreaterThan(0.9);
-    expect(sampleCurve(c.alphaCurve!, 0)).toBeLessThan(0.1);
+    expect(sampleParticleCurve(c.alphaCurve!, 0.5)).toBeGreaterThan(0.9);
+    expect(sampleParticleCurve(c.alphaCurve!, 0)).toBeLessThan(0.1);
   });
 });
 
@@ -262,12 +262,12 @@ describe('serializeSpineParticle', () => {
 
 describe('serializeSpineParticle — curve round-trip', () => {
   it('emits a baked color/alpha curve as a multi-stop timeline that re-imports identically', () => {
-    const colorCurve = colorCurveFromKeyframes([
+    const colorCurve = particleColorCurveFromKeyframes([
       { time: 0, r: 1, g: 0, b: 0 },
       { time: 0.5, r: 0, g: 1, b: 0 },
       { time: 1, r: 0, g: 0, b: 1 },
     ]);
-    const alphaCurve = curveFromKeyframes([
+    const alphaCurve = particleCurveFromKeyframes([
       { time: 0, value: 0 },
       { time: 0.5, value: 1 },
       { time: 1, value: 0 },
@@ -277,9 +277,9 @@ describe('serializeSpineParticle — curve round-trip', () => {
     expect(c2.colorCurve).not.toBeNull();
     expect(c2.alphaCurve).not.toBeNull();
     const out = [0, 0, 0];
-    sampleColorCurve(c2.colorCurve!, 0.5, out, 0);
+    sampleParticleColorCurve(c2.colorCurve!, 0.5, out, 0);
     expect(out[1]).toBeGreaterThan(0.8); // green still peaks mid-life
-    expect(sampleCurve(c2.alphaCurve!, 0.5)).toBeGreaterThan(0.9);
-    expect(sampleCurve(c2.alphaCurve!, 0)).toBeLessThan(0.1);
+    expect(sampleParticleCurve(c2.alphaCurve!, 0.5)).toBeGreaterThan(0.9);
+    expect(sampleParticleCurve(c2.alphaCurve!, 0)).toBeLessThan(0.1);
   });
 });

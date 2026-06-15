@@ -5,7 +5,7 @@ import type {
   ParticleObjectsUpdateOptions,
 } from '@flighthq/types';
 
-import { sampleCurve } from './curve';
+import { sampleParticleCurve } from './curve';
 import { ensureParticleObjectsStateCapacity } from './particleObjectsState';
 
 export type { ParticleObject, ParticleObjectsUpdateOptions };
@@ -32,20 +32,20 @@ export function updateParticleObjects(
   objects: readonly ParticleObject[],
   state: ParticleObjectsState,
   config: Readonly<ParticleEmitterConfig>,
-  dt: number,
+  deltaTime: number,
   options?: ParticleObjectsUpdateOptions,
 ): void {
   const n = objects.length;
   if (n === 0) return;
   // Skip zero/negative time steps: nothing to simulate, and it avoids dividing by
-  // dt for velocity inheritance (which would otherwise produce Infinity/NaN
-  // velocities on a zero-dt frame and permanently corrupt spawned objects).
-  if (dt <= 0) return;
+  // deltaTime for velocity inheritance (which would otherwise produce Infinity/NaN
+  // velocities on a zero-deltaTime frame and permanently corrupt spawned objects).
+  if (deltaTime <= 0) return;
   ensureParticleObjectsStateCapacity(state, n);
 
   const { lifetimes, velocities, scales, rotationSpeeds } = state;
-  const gx = config.gravityX * dt;
-  const gy = config.gravityY * dt;
+  const gx = config.gravityX * deltaTime;
+  const gy = config.gravityY * deltaTime;
   // Opt-in lifetime curves (objects have alpha + scale; color lives on the
   // typed-array emitter). Absent curves keep the original linear path.
   const alphaCurve = config.alphaCurve;
@@ -61,8 +61,8 @@ export function updateParticleObjects(
   let emitterVelX = 0;
   let emitterVelY = 0;
   if (config.velocityInheritance !== 0 && !isNaN(emitterX) && !isNaN(state.prevX)) {
-    emitterVelX = (emitterX - state.prevX) / dt;
-    emitterVelY = (emitterY - state.prevY) / dt;
+    emitterVelX = (emitterX - state.prevX) / deltaTime;
+    emitterVelY = (emitterY - state.prevY) / deltaTime;
   }
 
   // Phase 1: update live objects, kill expired ones.
@@ -70,7 +70,7 @@ export function updateParticleObjects(
   for (let i = 0; i < n; i++) {
     const lt = i * 2;
     if (lifetimes[lt + 1] <= 0) continue;
-    lifetimes[lt] += dt;
+    lifetimes[lt] += deltaTime;
     if (lifetimes[lt] >= lifetimes[lt + 1]) {
       lifetimes[lt + 1] = 0;
       objects[i].visible = false;
@@ -80,34 +80,36 @@ export function updateParticleObjects(
     const vt = i * 2;
     velocities[vt] += gx;
     velocities[vt + 1] += gy;
-    objects[i].x += velocities[vt] * dt;
-    objects[i].y += velocities[vt + 1] * dt;
+    objects[i].x += velocities[vt] * deltaTime;
+    objects[i].y += velocities[vt + 1] * deltaTime;
     const lifeFraction = lifetimes[lt] / lifetimes[lt + 1];
     objects[i].alpha = hasAlphaCurve
-      ? sampleCurve(alphaCurve, lifeFraction)
+      ? sampleParticleCurve(alphaCurve, lifeFraction)
       : config.alphaStart + (config.alphaEnd - config.alphaStart) * lifeFraction;
     if (hasScaleAnim) {
-      const factor = hasScaleCurve ? sampleCurve(scaleCurve, lifeFraction) : 1 + (config.scaleEnd - 1) * lifeFraction;
+      const factor = hasScaleCurve
+        ? sampleParticleCurve(scaleCurve, lifeFraction)
+        : 1 + (config.scaleEnd - 1) * lifeFraction;
       const s = scales[i] * factor;
       objects[i].scaleX = s;
       objects[i].scaleY = s;
     }
     if (hasRotSpeed) {
-      objects[i].rotation += rotationSpeeds[i] * dt;
+      objects[i].rotation += rotationSpeeds[i] * deltaTime;
     }
   }
 
   // Phase 2: emission. A finite, non-looping emitter stops spawning once its
   // duration elapses; live objects keep ageing out (use isParticleObjectsComplete).
   const emitting = config.duration <= 0 || config.loop || state.emitterAge < config.duration;
-  if (config.duration > 0 && !config.loop) state.emitterAge += dt;
+  if (config.duration > 0 && !config.loop) state.emitterAge += deltaTime;
 
-  state.spawnAccumulator += emitting ? config.spawnRate * dt : 0;
+  state.spawnAccumulator += emitting ? config.spawnRate * deltaTime : 0;
   let toSpawn = Math.floor(state.spawnAccumulator);
   state.spawnAccumulator -= toSpawn;
 
   if (emitting && config.burstCount > 0) {
-    state.burstTimer -= dt;
+    state.burstTimer -= deltaTime;
     if (state.burstTimer <= 0) {
       toSpawn += config.burstCount;
       state.burstTimer = config.burstInterval > 0 ? config.burstInterval : Infinity;
@@ -157,10 +159,10 @@ export function updateParticleObjects(
       obj.x = spawnX;
       obj.y = spawnY;
       obj.rotation = angle;
-      const spawnFactor = hasScaleCurve ? spawnScale * sampleCurve(scaleCurve, 0) : spawnScale;
+      const spawnFactor = hasScaleCurve ? spawnScale * sampleParticleCurve(scaleCurve, 0) : spawnScale;
       obj.scaleX = spawnFactor;
       obj.scaleY = spawnFactor;
-      obj.alpha = hasAlphaCurve ? sampleCurve(alphaCurve, 0) : config.alphaStart;
+      obj.alpha = hasAlphaCurve ? sampleParticleCurve(alphaCurve, 0) : config.alphaStart;
       obj.visible = true;
       toSpawn--;
       onSpawn?.(spawnX, spawnY);

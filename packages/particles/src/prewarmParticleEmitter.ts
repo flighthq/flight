@@ -9,17 +9,17 @@ export function prewarmParticleEmitter(
   state: ParticleEmitterState,
   config: Readonly<ParticleEmitterConfig>,
   duration: number,
-  stepDt = 1 / 60,
+  stepDeltaTime = 1 / 60,
   callbacks?: ParticleEmitterCallbacks,
   worldTransform?: Readonly<WorldTransform2D>,
 ): void {
   // A non-positive step would never advance `elapsed`, spinning forever; fall back
   // to a single step covering the whole duration instead of hanging.
-  const step = stepDt > 0 ? stepDt : duration;
+  const step = stepDeltaTime > 0 ? stepDeltaTime : duration;
   let elapsed = 0;
   while (elapsed < duration) {
-    const dt = Math.min(step, duration - elapsed);
-    updateParticleEmitter(emitter, state, config, dt, callbacks, worldTransform);
-    elapsed += dt;
+    const deltaTime = Math.min(step, duration - elapsed);
+    updateParticleEmitter(emitter, state, config, deltaTime, callbacks, worldTransform);
+    elapsed += deltaTime;
   }
 }

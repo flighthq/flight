@@ -157,28 +157,6 @@ const BLEND_MODES: Record<BlendMode, GPUBlendState | null> = {
 
 // ---- Pipeline creation ----
 
-export function buildWebGPUMatrixFromTransform(
-  matrixArray: Float32Array,
-  t: { a: number; b: number; c: number; d: number; tx: number; ty: number },
-  viewport: { width: number; height: number },
-): void {
-  const iw = 2 / viewport.width;
-  const ih = 2 / viewport.height;
-  // Column-major mat3x3 with vec3-to-16-byte padding:
-  // col0
-  matrixArray[0] = t.a * iw;
-  matrixArray[1] = -t.b * ih;
-  matrixArray[2] = 0;
-  // col1
-  matrixArray[3] = t.c * iw;
-  matrixArray[4] = -t.d * ih;
-  matrixArray[5] = 0;
-  // col2
-  matrixArray[6] = t.tx * iw - 1;
-  matrixArray[7] = -t.ty * ih + 1;
-  matrixArray[8] = 1;
-}
-
 export function createWebGPUBindGroupLayouts(device: GPUDevice): {
   uniformBindGroupLayout: GPUBindGroupLayout;
   textureBindGroupLayout: GPUBindGroupLayout;
@@ -203,16 +181,6 @@ export function createWebGPUBindGroupLayouts(device: GPUDevice): {
   return { uniformBindGroupLayout, textureBindGroupLayout };
 }
 
-function buildStencilFaceState(stencilMode: StencilMode): GPUStencilFaceState {
-  if (stencilMode === 'maskwrite') {
-    return { compare: 'always', passOp: 'replace', failOp: 'keep', depthFailOp: 'keep' };
-  }
-  if (stencilMode === 'masked') {
-    return { compare: 'equal', passOp: 'keep', failOp: 'keep', depthFailOp: 'keep' };
-  }
-  return { compare: 'always', passOp: 'keep', failOp: 'keep', depthFailOp: 'keep' };
-}
-
 export function createWebGPUPipelineLayout(
   device: GPUDevice,
   uniformBindGroupLayout: GPUBindGroupLayout,
@@ -223,12 +191,20 @@ export function createWebGPUPipelineLayout(
   });
 }
 
-export function getActivePipeline(state: WebGPURenderStateInternal): GPURenderPipeline {
+function buildStencilFaceState(stencilMode: StencilMode): GPUStencilFaceState {
+  if (stencilMode === 'maskwrite') {
+    return { compare: 'always', passOp: 'replace', failOp: 'keep', depthFailOp: 'keep' };
+  }
+  if (stencilMode === 'masked') {
+    return { compare: 'equal', passOp: 'keep', failOp: 'keep', depthFailOp: 'keep' };
+  }
+  return { compare: 'always', passOp: 'keep', failOp: 'keep', depthFailOp: 'keep' };
+}
+
+export function getActiveWebGPUPipeline(state: WebGPURenderStateInternal): GPURenderPipeline {
   const stencilMode: StencilMode = state.maskWriteMode ? 'maskwrite' : state.currentMaskDepth > 0 ? 'masked' : 'normal';
   return getWebGPUPipeline(state, state.currentBlendMode, stencilMode);
 }
-
-// ---- Matrix helpers ----
 
 export function getWebGPUPipeline(
   state: WebGPURenderStateInternal,
@@ -278,6 +254,30 @@ export function getWebGPUPipeline(
   return pipeline;
 }
 
+// ---- Matrix helpers ----
+
+export function setWebGPUMatrixFromTransform(
+  matrixArray: Float32Array,
+  t: { a: number; b: number; c: number; d: number; tx: number; ty: number },
+  viewport: { width: number; height: number },
+): void {
+  const iw = 2 / viewport.width;
+  const ih = 2 / viewport.height;
+  // Column-major mat3x3 with vec3-to-16-byte padding:
+  // col0
+  matrixArray[0] = t.a * iw;
+  matrixArray[1] = -t.b * ih;
+  matrixArray[2] = 0;
+  // col1
+  matrixArray[3] = t.c * iw;
+  matrixArray[4] = -t.d * ih;
+  matrixArray[5] = 0;
+  // col2
+  matrixArray[6] = t.tx * iw - 1;
+  matrixArray[7] = -t.ty * ih + 1;
+  matrixArray[8] = 1;
+}
+
 // ---- Uniform slot writing ----
 
 export function writeWebGPUMatrixOnlyUniforms(
@@ -298,7 +298,7 @@ export function writeWebGPUMatrixOnlyUniforms(
   const { uniformData, uniformDataU32, matrixArray } = state;
 
   const viewport = state.renderTargetViewport ?? state.canvas;
-  buildWebGPUMatrixFromTransform(matrixArray, transform, viewport);
+  setWebGPUMatrixFromTransform(matrixArray, transform, viewport);
 
   uniformData[floatBase + 0] = matrixArray[0];
   uniformData[floatBase + 1] = matrixArray[1];
@@ -371,7 +371,7 @@ export function writeWebGPUQuadUniforms(
   const { uniformData, uniformDataU32, matrixArray } = state;
 
   const viewport = state.renderTargetViewport ?? state.canvas;
-  buildWebGPUMatrixFromTransform(matrixArray, renderNode.transform2D, viewport);
+  setWebGPUMatrixFromTransform(matrixArray, renderNode.transform2D, viewport);
 
   // mat3x3 columns with per-column padding (4 floats each = 16 bytes):
   uniformData[floatBase + 0] = matrixArray[0];

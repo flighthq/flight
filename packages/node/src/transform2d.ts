@@ -9,6 +9,30 @@ import {
 import { computeNodeWorldTransformRevision } from '@flighthq/node';
 import type { HasTransform2DRuntime, Matrix, NodeRuntime, Transform2DNode, Vector2Like } from '@flighthq/types';
 
+/**
+ * Converts the `vector` object from the Stage (global) coordinates
+ * to the display object's (local) coordinates.
+ **/
+export function convertNodeVector2GlobalToLocal<Kind extends symbol, Traits extends object>(
+  out: Vector2Like,
+  source: Transform2DNode<Kind, Traits>,
+  vector: Readonly<Vector2Like>,
+): void {
+  inverseMatrixTransformPointXY(out, getNodeWorldTransformMatrix(source), vector.x, vector.y);
+}
+
+/**
+ * Converts the `vector` object from the display object's (local)
+ * coordinates to world coordinates.
+ **/
+export function convertNodeVector2LocalToGlobal<Kind extends symbol, Traits extends object>(
+  out: Vector2Like,
+  source: Transform2DNode<Kind, Traits>,
+  vector: Readonly<Vector2Like>,
+): void {
+  matrixTransformPointXY(out, getNodeWorldTransformMatrix(source), vector.x, vector.y);
+}
+
 export function ensureNodeLocalTransformMatrix<Kind extends symbol, Traits extends object>(
   target: Transform2DNode<Kind, Traits>,
 ): void {
@@ -53,30 +77,6 @@ export function getNodeWorldTransformMatrix<Kind extends symbol, Traits extends 
 ): Readonly<Matrix> {
   ensureNodeWorldTransformMatrix(target);
   return (getEntityRuntime(target) as NodeRuntime<Kind, Traits> & HasTransform2DRuntime).worldTransform2D!;
-}
-
-/**
- * Converts the `vector` object from the Stage (global) coordinates
- * to the display object's (local) coordinates.
- **/
-export function nodeGlobalToLocalVector2<Kind extends symbol, Traits extends object>(
-  out: Vector2Like,
-  source: Transform2DNode<Kind, Traits>,
-  vector: Readonly<Vector2Like>,
-): void {
-  inverseMatrixTransformPointXY(out, getNodeWorldTransformMatrix(source), vector.x, vector.y);
-}
-
-/**
- * Converts the `vector` object from the display object's (local)
- * coordinates to world coordinates.
- **/
-export function nodeLocalToGlobalVector2<Kind extends symbol, Traits extends object>(
-  out: Vector2Like,
-  source: Transform2DNode<Kind, Traits>,
-  vector: Readonly<Vector2Like>,
-): void {
-  matrixTransformPointXY(out, getNodeWorldTransformMatrix(source), vector.x, vector.y);
 }
 
 function recomputeLocalTransform2D<Kind extends symbol, Traits extends object>(

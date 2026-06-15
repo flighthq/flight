@@ -141,14 +141,14 @@ function documentToData(doc: StarlingDocument, frameDuration: number): Spriteshe
  *
  *  Single-pass: no intermediate document object is allocated.
  *  Animations are inferred from the standard `baseName_NNN` frame-naming convention.
- *  Use `parseStarlingDocument` instead when you need round-trip serialisation. */
-export function parseStarling(xml: string, options?: StarlingParseOptions): SpritesheetData {
+ *  Use `parseStarlingSpritesheetDocument` instead when you need round-trip serialisation. */
+export function parseStarlingSpritesheet(xml: string, options?: StarlingParseOptions): SpritesheetData {
   return documentToData(parseStarlingXml(xml), options?.frameDuration ?? 100);
 }
 
 /** Parse a Starling / Sparrow XML atlas string and preserve the full document
- *  for round-trip serialisation via `serializeStarling`. */
-export function parseStarlingDocument(xml: string, options?: StarlingParseOptions): StarlingParsed {
+ *  for round-trip serialisation via `serializeStarlingSpritesheet`. */
+export function parseStarlingSpritesheetDocument(xml: string, options?: StarlingParseOptions): StarlingParsed {
   const document = parseStarlingXml(xml);
   return { data: documentToData(document, options?.frameDuration ?? 100), document };
 }

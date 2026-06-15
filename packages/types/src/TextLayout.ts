@@ -2,7 +2,7 @@ import type { TextAutoSize } from './TextAutoSize';
 import type { TextFormat } from './TextFormat';
 import type { TextFormatRange } from './TextFormatRange';
 
-export type TextMeasureFn = (text: string, format: TextFormat) => number;
+export type TextMeasureFunction = (text: string, format: TextFormat) => number;
 
 export interface TextLayoutGroup {
   ascent: number;
@@ -25,7 +25,7 @@ export interface TextLayoutParams {
   border?: boolean;
   formatRanges: readonly TextFormatRange[];
   height: number;
-  measure: TextMeasureFn;
+  measure: TextMeasureFunction;
   multiline?: boolean;
   text: string;
   width: number;

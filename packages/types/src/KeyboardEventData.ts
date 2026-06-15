@@ -1,4 +1,4 @@
-export interface KeyboardData {
+export interface KeyboardEventData {
   altKey: boolean;
   ctrlKey: boolean;
   key: string;

@@ -6,12 +6,12 @@ import {
   pauseAllTweens,
   pauseTween,
   pauseTweens,
-  resetTweens,
+  resetAllTweens,
   resumeAllTweens,
   resumeTween,
   resumeTweens,
   stopAllTweens,
-  stopTween,
+  stopTweens,
 } from './tween';
 import { createTweenManager } from './tweenManager';
 import { updateTweens } from './updateTweens';
@@ -120,12 +120,12 @@ describe('pauseTweens', () => {
   });
 });
 
-describe('resetTweens', () => {
+describe('resetAllTweens', () => {
   it('removes all tweens from the manager without completing them', () => {
     const manager = createTweenManager();
     const a = createTween(manager, { x: 0 }, 1000, { x: 100 });
     const b = createTween(manager, { y: 0 }, 1000, { y: 100 });
-    resetTweens(manager);
+    resetAllTweens(manager);
     expect(manager.tweens.size).toBe(0);
     expect(a.complete).toBe(false);
     expect(b.complete).toBe(false);
@@ -171,13 +171,13 @@ describe('stopAllTweens', () => {
   });
 });
 
-describe('stopTween', () => {
+describe('stopTweens', () => {
   it('stops all tweens for a target', () => {
     const manager = createTweenManager();
     const target = { x: 0, y: 0 };
     const a = createTween(manager, target, 1000, { x: 100 });
     const b = createTween(manager, target, 1000, { y: 100 }, { overwrite: false });
-    stopTween(manager, target);
+    stopTweens(manager, target);
     expect(a.complete).toBe(true);
     expect(b.complete).toBe(true);
   });
@@ -187,7 +187,7 @@ describe('stopTween', () => {
     const target = { x: 0, y: 0 };
     const a = createTween(manager, target, 1000, { x: 100 });
     const b = createTween(manager, target, 1000, { y: 100 }, { overwrite: false });
-    stopTween(manager, target, { x: 0 });
+    stopTweens(manager, target, { x: 0 });
     expect(a.complete).toBe(true);
     expect(b.complete).toBe(false);
   });
@@ -198,7 +198,7 @@ describe('stopTween', () => {
     createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t });
     updateTweens(manager, 500);
     expect(target.x).toBeCloseTo(50);
-    stopTween(manager, target);
+    stopTweens(manager, target);
     expect(target.x).toBeCloseTo(50); // unchanged — use completeTween to jump to end instead
   });
 
@@ -207,7 +207,7 @@ describe('stopTween', () => {
     const target = { x: 0 };
     createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t });
     updateTweens(manager, 500);
-    stopTween(manager, target, undefined, { complete: true });
+    stopTweens(manager, target, undefined, { complete: true });
     expect(target.x).toBe(100);
   });
 
@@ -217,7 +217,7 @@ describe('stopTween', () => {
     const tween = createTween(manager, target, 1000, { x: 100 });
     let fired = 0;
     connectSignal(tween.onComplete, () => fired++);
-    stopTween(manager, target, undefined, { complete: true });
+    stopTweens(manager, target, undefined, { complete: true });
     expect(fired).toBe(1);
   });
 
@@ -227,7 +227,7 @@ describe('stopTween', () => {
     const tween = createTween(manager, target, 1000, { x: 100 });
     let fired = 0;
     connectSignal(tween.onComplete, () => fired++);
-    stopTween(manager, target, undefined, { complete: true, sendEvent: false });
+    stopTweens(manager, target, undefined, { complete: true, sendEvent: false });
     expect(fired).toBe(0);
     expect(target.x).toBe(100); // values still applied
   });

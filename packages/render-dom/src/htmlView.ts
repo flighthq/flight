@@ -4,7 +4,7 @@ import type { DisplayObjectRenderer, DisplayObjectRenderNode, DOMRenderState, HT
 import { setDOMRendererElement } from './domStyle';
 import { setDOMTransform } from './domTransform';
 
-export function drawHTMLView(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMHTMLView(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
   const source = renderNode.source as HTMLView;
   const data = source.data;
   const element = data.element;
@@ -27,11 +27,11 @@ export function drawHTMLView(state: DOMRenderState, renderNode: DisplayObjectRen
   setDOMRendererElement(state, element);
 }
 
-export function drawHTMLViewMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {
+export function drawDOMHTMLViewMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {
   // HTMLView content is not converted into mask geometry by the DOM renderer.
 }
 
 export const defaultHTMLViewRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  submit: drawHTMLView,
+  submit: drawDOMHTMLView,
 };

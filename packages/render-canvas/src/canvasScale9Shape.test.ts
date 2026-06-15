@@ -5,7 +5,11 @@ import { Scale9ShapeKind } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { buildScale9Mapper } from './canvasScale9Mapper';
-import { defaultCanvasScale9ShapeRenderer, drawCanvasScale9Shape, mapScale9ShapeCommands } from './canvasScale9Shape';
+import {
+  defaultCanvasScale9ShapeRenderer,
+  drawCanvasScale9Shape,
+  mapCanvasScale9ShapeCommands,
+} from './canvasScale9Shape';
 import { defaultCanvasShapeCommands } from './canvasShapeCommands';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
 
@@ -28,49 +32,49 @@ describe('drawCanvasScale9Shape', () => {
   });
 });
 
-describe('mapScale9ShapeCommands', () => {
+describe('mapCanvasScale9ShapeCommands', () => {
   const out: unknown[] = [];
 
   it('passes style commands through unchanged', () => {
     const mapper = { mapX: (x: number) => x, mapY: (y: number) => y };
-    mapScale9ShapeCommands(out, ['beginFill', 2, 0xff0000, 1], mapper);
+    mapCanvasScale9ShapeCommands(out, ['beginFill', 2, 0xff0000, 1], mapper);
     expect(out).toEqual(['beginFill', 2, 0xff0000, 1]);
   });
 
   it('remaps moveTo coordinates', () => {
     const mapper = { mapX: (x: number) => x * 2, mapY: (y: number) => y * 3 };
-    mapScale9ShapeCommands(out, ['moveTo', 2, 10, 20], mapper);
+    mapCanvasScale9ShapeCommands(out, ['moveTo', 2, 10, 20], mapper);
     expect(out).toEqual(['moveTo', 2, 20, 60]);
   });
 
   it('remaps lineTo coordinates', () => {
     const mapper = { mapX: (x: number) => x + 5, mapY: (y: number) => y + 10 };
-    mapScale9ShapeCommands(out, ['lineTo', 2, 100, 50], mapper);
+    mapCanvasScale9ShapeCommands(out, ['lineTo', 2, 100, 50], mapper);
     expect(out).toEqual(['lineTo', 2, 105, 60]);
   });
 
   it('remaps drawRectangle corners and recomputes size', () => {
     const mapper = { mapX: (x: number) => x * 2, mapY: (y: number) => y * 2 };
-    mapScale9ShapeCommands(out, ['drawRectangle', 4, 10, 20, 50, 30], mapper);
+    mapCanvasScale9ShapeCommands(out, ['drawRectangle', 4, 10, 20, 50, 30], mapper);
     // x=10Ã¢â€ â€™20, y=20Ã¢â€ â€™40, x+w=60Ã¢â€ â€™120 (w=100), y+h=50Ã¢â€ â€™100 (h=60)
     expect(out).toEqual(['drawRectangle', 4, 20, 40, 100, 60]);
   });
 
   it('remaps drawRoundRectangle corners but leaves ellipse radii unchanged', () => {
     const mapper = { mapX: (x: number) => x * 2, mapY: (y: number) => y * 2 };
-    mapScale9ShapeCommands(out, ['drawRoundRectangle', 6, 10, 20, 50, 30, 8, 8], mapper);
+    mapCanvasScale9ShapeCommands(out, ['drawRoundRectangle', 6, 10, 20, 50, 30, 8, 8], mapper);
     expect(out).toEqual(['drawRoundRectangle', 6, 20, 40, 100, 60, 8, 8]);
   });
 
   it('remaps drawCircle center but leaves radius unchanged', () => {
     const mapper = { mapX: (x: number) => x + 5, mapY: (y: number) => y + 10 };
-    mapScale9ShapeCommands(out, ['drawCircle', 3, 50, 50, 25], mapper);
+    mapCanvasScale9ShapeCommands(out, ['drawCircle', 3, 50, 50, 25], mapper);
     expect(out).toEqual(['drawCircle', 3, 55, 60, 25]);
   });
 
   it('remaps drawEllipse corners and recomputes size', () => {
     const mapper = { mapX: (x: number) => x * 2, mapY: (y: number) => y * 2 };
-    mapScale9ShapeCommands(out, ['drawEllipse', 4, 0, 0, 100, 50], mapper);
+    mapCanvasScale9ShapeCommands(out, ['drawEllipse', 4, 0, 0, 100, 50], mapper);
     expect(out).toEqual(['drawEllipse', 4, 0, 0, 200, 100]);
   });
 
@@ -79,7 +83,7 @@ describe('mapScale9ShapeCommands', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 100, 100);
     const mapper = buildScale9Mapper(shape.data.commands, grid, 2, 2)!;
-    mapScale9ShapeCommands(out, shape.data.commands, mapper);
+    mapCanvasScale9ShapeCommands(out, shape.data.commands, mapper);
     expect(out).toHaveLength(shape.data.commands.length);
   });
 });

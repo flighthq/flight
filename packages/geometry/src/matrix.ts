@@ -253,7 +253,7 @@ export function inverseMatrixTransformVectorXY(
  * This accounts for translation, rotation, scaling, and skew
  * from the source matrix.
  **/
-export function matrixTransformAABB(
+export function matrixTransformBounds(
   out: RectangleLike,
   source: Readonly<MatrixLike>,
   ax: number,
@@ -307,13 +307,13 @@ export function matrixTransformAABB(
   out.height = ty1 - ty0;
 }
 
-export function matrixTransformAABBVector2(
+export function matrixTransformBoundsVector2(
   out: RectangleLike,
   matrix: Readonly<MatrixLike>,
   a: Readonly<Vector2Like>,
   b: Readonly<Vector2Like>,
 ): void {
-  matrixTransformAABB(out, matrix, a.x, a.y, b.x, b.y);
+  matrixTransformBounds(out, matrix, a.x, a.y, b.x, b.y);
 }
 
 /**
@@ -343,15 +343,15 @@ export function matrixTransformPointXY(out: Vector2Like, source: Readonly<Matrix
  * This accounts for translation, rotation, scaling, and skew
  * from the given matrix.
  *
- * @see matrixTransformAABB
- * @see matrixTransformAABB
+ * @see matrixTransformBounds
+ * @see matrixTransformBounds
  **/
 export function matrixTransformRectangle(
   out: RectangleLike,
   matrix: Readonly<MatrixLike>,
   source: Readonly<RectangleLike>,
 ): void {
-  matrixTransformAABB(out, matrix, source.x, source.y, source.x + source.width, source.y + source.height);
+  matrixTransformBounds(out, matrix, source.x, source.y, source.x + source.width, source.y + source.height);
 }
 
 /**

@@ -4,7 +4,7 @@ import type { WebGLRenderState } from '@flighthq/types';
 
 import { applyBoxBlurFilterToWebGL } from './blurFilter';
 import { clearWebGLFilterTarget } from './filterPass';
-import { applyBlitOffsetPassWebGL, applyBlitPassWebGL, applyTintPassWebGL } from './tintShader';
+import { applyWebGLBlitOffsetPass, applyWebGLBlitPass, applyWebGLTintPass } from './tintShader';
 
 /**
  * Applies a bevel filter to `source`, writing the result to `dest`.
@@ -45,7 +45,7 @@ export function applyBevelFilterToWebGL(
   const [tinted, blurred, blurTemp] = scratch;
 
   // Build the shared blur basis (neutral white tint preserves alpha shape)
-  applyTintPassWebGL(state, source, tinted, 0xffffff, 1, strength);
+  applyWebGLTintPass(state, source, tinted, 0xffffff, 1, strength);
   applyBoxBlurFilterToWebGL(state, tinted, blurred, blurTemp, {
     blurX: filter.blurX ?? 4,
     blurY: filter.blurY ?? 4,
@@ -56,20 +56,20 @@ export function applyBevelFilterToWebGL(
 
   if (bevelType === 'full' || bevelType === 'outer') {
     // Shadow at +offset
-    applyTintPassWebGL(state, blurred, tinted, shadowColor, shadowAlpha, 1);
-    applyBlitOffsetPassWebGL(state, tinted, dest, dx, dy);
+    applyWebGLTintPass(state, blurred, tinted, shadowColor, shadowAlpha, 1);
+    applyWebGLBlitOffsetPass(state, tinted, dest, dx, dy);
     // Highlight at -offset
-    applyTintPassWebGL(state, blurred, tinted, highlightColor, highlightAlpha, 1);
-    applyBlitOffsetPassWebGL(state, tinted, dest, -dx, -dy);
+    applyWebGLTintPass(state, blurred, tinted, highlightColor, highlightAlpha, 1);
+    applyWebGLBlitOffsetPass(state, tinted, dest, -dx, -dy);
   } else {
     // inner: shadow at -offset (opposite direction puts it inside), highlight at +offset
-    applyTintPassWebGL(state, blurred, tinted, shadowColor, shadowAlpha, 1);
-    applyBlitOffsetPassWebGL(state, tinted, dest, -dx, -dy);
-    applyTintPassWebGL(state, blurred, tinted, highlightColor, highlightAlpha, 1);
-    applyBlitOffsetPassWebGL(state, tinted, dest, dx, dy);
+    applyWebGLTintPass(state, blurred, tinted, shadowColor, shadowAlpha, 1);
+    applyWebGLBlitOffsetPass(state, tinted, dest, -dx, -dy);
+    applyWebGLTintPass(state, blurred, tinted, highlightColor, highlightAlpha, 1);
+    applyWebGLBlitOffsetPass(state, tinted, dest, dx, dy);
   }
 
   if (!knockout) {
-    applyBlitPassWebGL(state, source, dest);
+    applyWebGLBlitPass(state, source, dest);
   }
 }

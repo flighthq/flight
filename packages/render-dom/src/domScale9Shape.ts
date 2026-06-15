@@ -1,6 +1,6 @@
 ﻿import { createEntity } from '@flighthq/entity';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node';
-import { mapScale9ShapeCommands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
+import { mapCanvasScale9ShapeCommands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderNode,
@@ -55,7 +55,7 @@ export function drawDOMScale9Shape(state: DOMRenderState, renderNode: DisplayObj
   data.canvas.height = h;
 
   const ctx = data.context!;
-  mapScale9ShapeCommands(_remappedCommands, commands, mapper);
+  mapCanvasScale9ShapeCommands(_remappedCommands, commands, mapper);
   if (bounds.x !== 0 || bounds.y !== 0) {
     ctx.translate(-bounds.x, -bounds.y);
   }

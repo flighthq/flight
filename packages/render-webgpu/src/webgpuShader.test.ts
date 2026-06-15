@@ -1,11 +1,11 @@
 import type { WebGPURenderStateInternal } from './internal';
 import { renderWebGPUBackground } from './webgpuBackground';
 import {
-  buildWebGPUMatrixFromTransform,
   createWebGPUBindGroupLayouts,
   createWebGPUPipelineLayout,
-  getActivePipeline,
+  getActiveWebGPUPipeline,
   getWebGPUPipeline,
+  setWebGPUMatrixFromTransform,
   UNIFORM_BYTE_SIZE,
   writeWebGPUMatrixOnlyUniforms,
   writeWebGPUQuadUniforms,
@@ -14,24 +14,6 @@ import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestH
 
 beforeAll(() => {
   installWebGPUMock();
-});
-
-describe('buildWebGPUMatrixFromTransform', () => {
-  it('builds a column-major clip-space matrix from an identity transform', () => {
-    const m = new Float32Array(9);
-    buildWebGPUMatrixFromTransform(m, { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 }, { width: 2, height: 2 });
-    // Identity scale on a 2×2 viewport: a*iw=1, -d*ih=-1, tx*iw-1=-1, -ty*ih+1=1
-    expect(m[0]).toBeCloseTo(1);
-    expect(m[4]).toBeCloseTo(-1);
-    expect(m[6]).toBeCloseTo(-1);
-    expect(m[7]).toBeCloseTo(1);
-  });
-
-  it('builds a distinct out from aliased inputs (out === input matrix)', () => {
-    const m = new Float32Array(9);
-    buildWebGPUMatrixFromTransform(m, { a: 2, b: 0, c: 0, d: 2, tx: 100, ty: 50 }, { width: 400, height: 300 });
-    expect(m[0]).toBeCloseTo(2 * (2 / 400));
-  });
 });
 
 describe('createWebGPUBindGroupLayouts', () => {
@@ -51,12 +33,12 @@ describe('createWebGPUPipelineLayout', () => {
   });
 });
 
-describe('getActivePipeline', () => {
+describe('getActiveWebGPUPipeline', () => {
   it('returns the normal pipeline when no mask is active', async () => {
     const state = (await createWebGPURenderStateForTest()) as unknown as WebGPURenderStateInternal;
     state.currentMaskDepth = 0;
     state.maskWriteMode = false;
-    const pipeline = getActivePipeline(state);
+    const pipeline = getActiveWebGPUPipeline(state);
     expect(pipeline).toBeDefined();
   });
 });
@@ -74,6 +56,24 @@ describe('getWebGPUPipeline', () => {
     const normal = getWebGPUPipeline(state, null, 'normal');
     const maskwrite = getWebGPUPipeline(state, null, 'maskwrite');
     expect(normal).not.toBe(maskwrite);
+  });
+});
+
+describe('setWebGPUMatrixFromTransform', () => {
+  it('builds a column-major clip-space matrix from an identity transform', () => {
+    const m = new Float32Array(9);
+    setWebGPUMatrixFromTransform(m, { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 }, { width: 2, height: 2 });
+    // Identity scale on a 2×2 viewport: a*iw=1, -d*ih=-1, tx*iw-1=-1, -ty*ih+1=1
+    expect(m[0]).toBeCloseTo(1);
+    expect(m[4]).toBeCloseTo(-1);
+    expect(m[6]).toBeCloseTo(-1);
+    expect(m[7]).toBeCloseTo(1);
+  });
+
+  it('builds a distinct out from aliased inputs (out === input matrix)', () => {
+    const m = new Float32Array(9);
+    setWebGPUMatrixFromTransform(m, { a: 2, b: 0, c: 0, d: 2, tx: 100, ty: 50 }, { width: 400, height: 300 });
+    expect(m[0]).toBeCloseTo(2 * (2 / 400));
   });
 });
 

@@ -1,6 +1,6 @@
 import { createInputText, setRichTextFormatRange } from '@flighthq/displayobject';
 import { getNodeAppearanceRevision } from '@flighthq/node';
-import type { KeyboardData, TextLayoutResult } from '@flighthq/types';
+import type { KeyboardEventData, TextLayoutResult } from '@flighthq/types';
 import { KeyCode } from '@flighthq/types';
 
 import {
@@ -27,7 +27,7 @@ import {
   setInputTextSelection,
 } from './inputTextEditing';
 
-function createKeyboardData(data: Partial<KeyboardData>): KeyboardData {
+function createKeyboardData(data: Partial<KeyboardEventData>): KeyboardEventData {
   return {
     altKey: false,
     ctrlKey: false,

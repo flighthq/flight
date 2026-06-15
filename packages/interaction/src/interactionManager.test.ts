@@ -5,39 +5,39 @@ import { connectSignal, createSignal, emitSignal } from '@flighthq/signals';
 import type { InputKeyboardData, InputPointerData, InputSignals } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { graphHitTestLocalBounds } from './hitTests';
+import { hitTestGraphLocalBounds } from './hitTests';
 import { registerHitTestPoint } from './hitTests';
 import {
-  capturePointer,
+  captureInteractionPointer,
   connectInputToInteraction,
   connectInteractionSignal,
   createInteractionManager,
   createInteractionSignals,
   disconnectInteractionSignal,
-  dispatchContextMenu,
-  dispatchKeyDown,
-  dispatchKeyUp,
-  dispatchPointerCancel,
-  dispatchPointerDown,
-  dispatchPointerMove,
-  dispatchPointerUp,
-  dispatchWheel,
+  dispatchInteractionContextMenu,
+  dispatchInteractionKeyDown,
+  dispatchInteractionKeyUp,
+  dispatchInteractionPointerCancel,
+  dispatchInteractionPointerDown,
+  dispatchInteractionPointerMove,
+  dispatchInteractionPointerUp,
+  dispatchInteractionWheel,
   getInteractionSignals,
-  releasePointer,
+  releaseInteractionPointer,
 } from './interactionManager';
 
 beforeAll(() => {
-  registerHitTestPoint(DisplayObjectKind, graphHitTestLocalBounds);
+  registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
 });
 
-describe('capturePointer', () => {
+describe('captureInteractionPointer', () => {
   it('routes pointer events to the captured target', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
     connectSignal(getInteractionSignals(child).onPointerMove, () => fired++);
 
-    capturePointer(manager, 3, child);
-    dispatchPointerMove(manager, 500, 500, 0, { pointerId: 3 });
+    captureInteractionPointer(manager, 3, child);
+    dispatchInteractionPointerMove(manager, 500, 500, 0, { pointerId: 3 });
     expect(fired).toBe(1);
   });
 });
@@ -84,12 +84,12 @@ describe('connectInteractionSignal', () => {
     });
 
     connectSignal(getInteractionSignals(root).onPointerDown, () => fired++);
-    dispatchPointerDown(manager, 50, 50);
+    dispatchInteractionPointerDown(manager, 50, 50);
     expect(fired).toBe(0);
     expect(hitTests).toBe(0);
 
     connectInteractionSignal(manager, root, 'onPointerDown', () => fired++);
-    dispatchPointerDown(manager, 50, 50);
+    dispatchInteractionPointerDown(manager, 50, 50);
     expect(fired).toBe(2);
     expect(hitTests).toBe(1);
   });
@@ -106,8 +106,8 @@ describe('connectInteractionSignal', () => {
     });
 
     connectInteractionSignal(manager, root, 'onPointerDown', () => fired++, { once: true });
-    dispatchPointerDown(manager, 50, 50);
-    dispatchPointerDown(manager, 50, 50);
+    dispatchInteractionPointerDown(manager, 50, 50);
+    dispatchInteractionPointerDown(manager, 50, 50);
     expect(fired).toBe(1);
     expect(hitTests).toBe(1);
   });
@@ -178,24 +178,24 @@ describe('disconnectInteractionSignal', () => {
 
     connectInteractionSignal(manager, root, 'onPointerDown', slot);
     disconnectInteractionSignal(manager, root, 'onPointerDown', slot);
-    dispatchPointerDown(manager, 50, 50);
+    dispatchInteractionPointerDown(manager, 50, 50);
     expect(fired).toBe(0);
     expect(hitTests).toBe(0);
   });
 });
 
-describe('dispatchContextMenu', () => {
+describe('dispatchInteractionContextMenu', () => {
   it('fires onContextMenu on a hit target', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
     connectSignal(getInteractionSignals(child).onContextMenu, () => fired++);
 
-    dispatchContextMenu(manager, 50, 50);
+    dispatchInteractionContextMenu(manager, 50, 50);
     expect(fired).toBe(1);
   });
 });
 
-describe('dispatchKeyDown', () => {
+describe('dispatchInteractionKeyDown', () => {
   it('fires onKeyDown on the manager root', () => {
     const root = createDisplayObject();
     const manager = createInteractionManager(root);
@@ -204,12 +204,12 @@ describe('dispatchKeyDown', () => {
       received = data.key;
     });
 
-    dispatchKeyDown(manager, 'a', 65);
+    dispatchInteractionKeyDown(manager, 'a', 65);
     expect(received).toBe('a');
   });
 });
 
-describe('dispatchKeyUp', () => {
+describe('dispatchInteractionKeyUp', () => {
   it('fires onKeyUp on the manager root', () => {
     const root = createDisplayObject();
     const manager = createInteractionManager(root);
@@ -218,19 +218,19 @@ describe('dispatchKeyUp', () => {
       received = data.keyCode;
     });
 
-    dispatchKeyUp(manager, 'a', 65);
+    dispatchInteractionKeyUp(manager, 'a', 65);
     expect(received).toBe(65);
   });
 });
 
-describe('dispatchPointerCancel', () => {
+describe('dispatchInteractionPointerCancel', () => {
   it('fires onPointerCancel on the active pointer target', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
     connectSignal(getInteractionSignals(child).onPointerCancel, () => fired++);
 
-    dispatchPointerDown(manager, 50, 50);
-    dispatchPointerCancel(manager, 60, 60);
+    dispatchInteractionPointerDown(manager, 50, 50);
+    dispatchInteractionPointerCancel(manager, 60, 60);
     expect(fired).toBe(1);
   });
 
@@ -240,14 +240,14 @@ describe('dispatchPointerCancel', () => {
     connectSignal(getInteractionSignals(child).onPointerCancel, () => fired++);
     connectSignal(getInteractionSignals(child).onPointerMove, () => fired++);
 
-    capturePointer(manager, 3, child);
-    dispatchPointerCancel(manager, 500, 500, { pointerId: 3 });
-    dispatchPointerMove(manager, 500, 500, 0, { pointerId: 3 });
+    captureInteractionPointer(manager, 3, child);
+    dispatchInteractionPointerCancel(manager, 500, 500, { pointerId: 3 });
+    dispatchInteractionPointerMove(manager, 500, 500, 0, { pointerId: 3 });
     expect(fired).toBe(1);
   });
 });
 
-describe('dispatchPointerDown', () => {
+describe('dispatchInteractionPointerDown', () => {
   it('does not hit test when no dependent signal has subscribers', () => {
     const kind = Symbol('NoSubscriberHitTest');
     const root = createNode(Symbol('Graph'), kind);
@@ -258,7 +258,7 @@ describe('dispatchPointerDown', () => {
       return true;
     });
 
-    dispatchPointerDown(manager, 50, 50);
+    dispatchInteractionPointerDown(manager, 50, 50);
     expect(hitTests).toBe(0);
   });
 
@@ -273,14 +273,14 @@ describe('dispatchPointerDown', () => {
     });
     connectSignal(getInteractionSignals(root).onWheel, () => {});
 
-    dispatchPointerDown(manager, 50, 50);
+    dispatchInteractionPointerDown(manager, 50, 50);
     expect(hitTests).toBe(0);
   });
 
   it('does nothing when no hit target is found', () => {
     const root = createDisplayObject();
     const manager = createInteractionManager(root);
-    expect(() => dispatchPointerDown(manager, 50, 50)).not.toThrow();
+    expect(() => dispatchInteractionPointerDown(manager, 50, 50)).not.toThrow();
   });
 
   it('does nothing when the manager is disabled', () => {
@@ -294,7 +294,7 @@ describe('dispatchPointerDown', () => {
     let fired = 0;
     connectSignal(signals.onPointerDown, () => fired++);
 
-    dispatchPointerDown(manager, 50, 50);
+    dispatchInteractionPointerDown(manager, 50, 50);
     expect(fired).toBe(0);
   });
 
@@ -309,7 +309,7 @@ describe('dispatchPointerDown', () => {
     let fired = 0;
     connectSignal(signals.onPointerDown, () => fired++);
 
-    dispatchPointerDown(manager, 50, 50);
+    dispatchInteractionPointerDown(manager, 50, 50);
     expect(fired).toBe(1);
   });
 
@@ -328,7 +328,7 @@ describe('dispatchPointerDown', () => {
       receivedY = data.y;
     });
 
-    dispatchPointerDown(manager, 30, 40);
+    dispatchInteractionPointerDown(manager, 30, 40);
     expect(receivedX).toBe(30);
     expect(receivedY).toBe(40);
   });
@@ -358,7 +358,7 @@ describe('dispatchPointerDown', () => {
       receivedTarget = data.target;
     });
 
-    dispatchPointerDown(manager, 30, 40, 0, { pointerId: 7, pointerType: 'pen' });
+    dispatchInteractionPointerDown(manager, 30, 40, 0, { pointerId: 7, pointerType: 'pen' });
     expect(receivedCurrentTarget).toBe(child);
     expect(receivedLocalX).toBe(20);
     expect(receivedLocalY).toBe(20);
@@ -393,7 +393,7 @@ describe('dispatchPointerDown', () => {
       receivedTarget = data.target;
     });
 
-    dispatchPointerDown(manager, 25, 37);
+    dispatchInteractionPointerDown(manager, 25, 37);
     expect(receivedCurrentTarget).toBe(parent);
     expect(receivedLocalX).toBe(15);
     expect(receivedLocalY).toBe(17);
@@ -405,19 +405,19 @@ describe('dispatchPointerDown', () => {
     let fired = 0;
     connectSignal(getInteractionSignals(child).onClick, () => fired++);
 
-    dispatchPointerDown(manager, 50, 50);
-    dispatchPointerUp(manager, 50, 50);
+    dispatchInteractionPointerDown(manager, 50, 50);
+    dispatchInteractionPointerUp(manager, 50, 50);
     expect(fired).toBe(1);
   });
 });
 
-describe('dispatchPointerMove', () => {
+describe('dispatchInteractionPointerMove', () => {
   it('fires onPointerMove on a hit target', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
     connectSignal(getInteractionSignals(child).onPointerMove, () => fired++);
 
-    dispatchPointerMove(manager, 50, 50);
+    dispatchInteractionPointerMove(manager, 50, 50);
     expect(fired).toBe(1);
   });
 
@@ -428,7 +428,7 @@ describe('dispatchPointerMove', () => {
     connectSignal(signals.onPointerOver, () => order.push('over'));
     connectSignal(signals.onPointerRollOver, () => order.push('rollOver'));
 
-    dispatchPointerMove(manager, 50, 50);
+    dispatchInteractionPointerMove(manager, 50, 50);
     expect(order).toEqual(['rollOver', 'over']);
   });
 
@@ -439,19 +439,19 @@ describe('dispatchPointerMove', () => {
     connectSignal(signals.onPointerOut, () => order.push('out'));
     connectSignal(signals.onPointerRollOut, () => order.push('rollOut'));
 
-    dispatchPointerMove(manager, 50, 50);
-    dispatchPointerMove(manager, 500, 500);
+    dispatchInteractionPointerMove(manager, 50, 50);
+    dispatchInteractionPointerMove(manager, 500, 500);
     expect(order).toEqual(['out', 'rollOut']);
   });
 });
 
-describe('dispatchPointerUp', () => {
+describe('dispatchInteractionPointerUp', () => {
   it('fires onPointerUp on a hit target', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
     connectSignal(getInteractionSignals(child).onPointerUp, () => fired++);
 
-    dispatchPointerUp(manager, 50, 50);
+    dispatchInteractionPointerUp(manager, 50, 50);
     expect(fired).toBe(1);
   });
 
@@ -460,8 +460,8 @@ describe('dispatchPointerUp', () => {
     let fired = 0;
     connectSignal(getInteractionSignals(child).onClick, () => fired++);
 
-    dispatchPointerDown(manager, 50, 50);
-    dispatchPointerUp(manager, 50, 50);
+    dispatchInteractionPointerDown(manager, 50, 50);
+    dispatchInteractionPointerUp(manager, 50, 50);
     expect(fired).toBe(1);
   });
 
@@ -470,10 +470,10 @@ describe('dispatchPointerUp', () => {
     let fired = 0;
     connectSignal(getInteractionSignals(child).onDoubleClick, () => fired++);
 
-    dispatchPointerDown(manager, 50, 50);
-    dispatchPointerUp(manager, 50, 50, 0, 1000);
-    dispatchPointerDown(manager, 50, 50);
-    dispatchPointerUp(manager, 50, 50, 0, 1200);
+    dispatchInteractionPointerDown(manager, 50, 50);
+    dispatchInteractionPointerUp(manager, 50, 50, 0, 1000);
+    dispatchInteractionPointerDown(manager, 50, 50);
+    dispatchInteractionPointerUp(manager, 50, 50, 0, 1200);
     expect(fired).toBe(1);
   });
 
@@ -482,12 +482,12 @@ describe('dispatchPointerUp', () => {
     let fired = 0;
     connectSignal(getInteractionSignals(child).onDoubleClick, () => fired++);
 
-    dispatchPointerDown(manager, 50, 50, 0, { pointerId: 1 });
-    dispatchPointerUp(manager, 50, 50, 0, 1000, { pointerId: 1 });
-    dispatchPointerDown(manager, 50, 50, 0, { pointerId: 2 });
-    dispatchPointerUp(manager, 50, 50, 0, 1200, { pointerId: 2 });
-    dispatchPointerDown(manager, 50, 50, 0, { pointerId: 1 });
-    dispatchPointerUp(manager, 50, 50, 0, 1300, { pointerId: 1 });
+    dispatchInteractionPointerDown(manager, 50, 50, 0, { pointerId: 1 });
+    dispatchInteractionPointerUp(manager, 50, 50, 0, 1000, { pointerId: 1 });
+    dispatchInteractionPointerDown(manager, 50, 50, 0, { pointerId: 2 });
+    dispatchInteractionPointerUp(manager, 50, 50, 0, 1200, { pointerId: 2 });
+    dispatchInteractionPointerDown(manager, 50, 50, 0, { pointerId: 1 });
+    dispatchInteractionPointerUp(manager, 50, 50, 0, 1300, { pointerId: 1 });
     expect(fired).toBe(1);
   });
 
@@ -496,13 +496,13 @@ describe('dispatchPointerUp', () => {
     let fired = 0;
     connectSignal(getInteractionSignals(child).onReleaseOutside, () => fired++);
 
-    dispatchPointerDown(manager, 50, 50);
-    dispatchPointerUp(manager, 500, 500);
+    dispatchInteractionPointerDown(manager, 50, 50);
+    dispatchInteractionPointerUp(manager, 500, 500);
     expect(fired).toBe(1);
   });
 });
 
-describe('dispatchWheel', () => {
+describe('dispatchInteractionWheel', () => {
   it('fires onWheel with delta values', () => {
     const { child, manager } = createHitScene();
     let receivedDeltaY = 0;
@@ -510,7 +510,7 @@ describe('dispatchWheel', () => {
       receivedDeltaY = data.deltaY;
     });
 
-    dispatchWheel(manager, 50, 50, 0, -120);
+    dispatchInteractionWheel(manager, 50, 50, 0, -120);
     expect(receivedDeltaY).toBe(-120);
   });
 });
@@ -529,15 +529,15 @@ describe('getInteractionSignals', () => {
   });
 });
 
-describe('releasePointer', () => {
+describe('releaseInteractionPointer', () => {
   it('stops routing pointer events to the captured target', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
     connectSignal(getInteractionSignals(child).onPointerMove, () => fired++);
 
-    capturePointer(manager, 3, child);
-    releasePointer(manager, 3);
-    dispatchPointerMove(manager, 500, 500, 0, { pointerId: 3 });
+    captureInteractionPointer(manager, 3, child);
+    releaseInteractionPointer(manager, 3);
+    dispatchInteractionPointerMove(manager, 500, 500, 0, { pointerId: 3 });
     expect(fired).toBe(0);
   });
 });

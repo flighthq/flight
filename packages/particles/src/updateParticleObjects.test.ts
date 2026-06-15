@@ -61,7 +61,7 @@ describe('updateParticleObjects', () => {
       speedMin: 0,
       speedMax: 0,
     });
-    updateParticleObjects(objects, state, config, 1); // spawn (spawnRate*dt=1)
+    updateParticleObjects(objects, state, config, 1); // spawn (spawnRate*deltaTime=1)
     expect(objects[0].visible).toBe(true);
     updateParticleObjects(objects, state, config, 0.6); // advance past lifetime
     expect(objects[0].visible).toBe(false);
@@ -218,7 +218,7 @@ describe('updateParticleObjects', () => {
     expect(count).toBe(2);
   });
 
-  it('ignores a zero-dt frame: no spawning or velocity corruption', () => {
+  it('ignores a zero-deltaTime frame: no spawning or velocity corruption', () => {
     const objects = [makeObject()];
     const state = createParticleObjectsState(1);
     const config = createParticleEmitterConfig({
@@ -232,7 +232,7 @@ describe('updateParticleObjects', () => {
       spread: 0,
       velocityInheritance: 1,
     });
-    // Establish a previous emitter position, then move it and step with dt=0.
+    // Establish a previous emitter position, then move it and step with deltaTime=0.
     updateParticleObjects(objects, state, config, 1 / 60, { emitterX: 0, emitterY: 0 });
     const liveBefore = objects.filter((o) => o.visible).length;
     state.burstTimer = 0; // arm a burst that would otherwise fire next step
@@ -242,7 +242,7 @@ describe('updateParticleObjects', () => {
     expect(Number.isFinite(state.velocities[1])).toBe(true);
   });
 
-  it('ignores a negative-dt frame', () => {
+  it('ignores a negative-deltaTime frame', () => {
     const objects = [makeObject(), makeObject()];
     const state = createParticleObjectsState(2);
     const config = createParticleEmitterConfig({ spawnRate: 10, lifetimeMin: 10, lifetimeMax: 10 });

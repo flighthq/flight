@@ -4,7 +4,7 @@ import type { WebGLRenderState } from '@flighthq/types';
 
 import { applyBoxBlurFilterToWebGL } from './blurFilter';
 import { clearWebGLFilterTarget } from './filterPass';
-import { applyBlitPassWebGL, applyTintPassWebGL } from './tintShader';
+import { applyWebGLBlitPass, applyWebGLTintPass } from './tintShader';
 
 /**
  * Applies an outer glow filter to `source`, writing the result to `dest`.
@@ -32,7 +32,7 @@ export function applyOuterGlowFilterToWebGL(
 
   const [mask, blurred, blurTemp] = scratch;
 
-  applyTintPassWebGL(state, source, mask, color, alpha, tintStrength);
+  applyWebGLTintPass(state, source, mask, color, alpha, tintStrength);
   applyBoxBlurFilterToWebGL(state, mask, blurred, blurTemp, {
     blurX: filter.blurX ?? 6,
     blurY: filter.blurY ?? 6,
@@ -41,10 +41,10 @@ export function applyOuterGlowFilterToWebGL(
 
   clearWebGLFilterTarget(state, dest);
   for (let i = 0; i < glowPasses; i++) {
-    applyBlitPassWebGL(state, blurred, dest);
+    applyWebGLBlitPass(state, blurred, dest);
   }
 
   if (!knockout) {
-    applyBlitPassWebGL(state, source, dest);
+    applyWebGLBlitPass(state, source, dest);
   }
 }

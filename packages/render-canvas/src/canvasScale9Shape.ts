@@ -23,24 +23,24 @@ export function drawCanvasScale9Shape(state: CanvasRenderState, renderNode: Disp
   const { commands, scale9Grid } = source.data;
   if (commands.length === 0) return;
 
-  const ctx = state.context;
+  const context = state.context;
   state.applyBlendMode?.(state, renderNode.blendMode);
-  ctx.globalAlpha = renderNode.alpha;
+  context.globalAlpha = renderNode.alpha;
 
   const { scaleX, scaleY } = source;
   const mapper = buildScale9Mapper(commands, scale9Grid, scaleX, scaleY);
 
   if (mapper === null) {
-    setCanvasTransform(state, ctx, renderNode.transform2D);
-    renderCanvasShapeCommands(ctx, commands);
+    setCanvasTransform(state, context, renderNode.transform2D);
+    renderCanvasShapeCommands(context, commands);
   } else {
-    applyStrippedTransform(state, ctx, renderNode.transform2D, scaleX, scaleY);
-    mapScale9ShapeCommands(_remappedCommands, commands, mapper);
-    renderCanvasShapeCommands(ctx, _remappedCommands);
+    applyStrippedTransform(state, context, renderNode.transform2D, scaleX, scaleY);
+    mapCanvasScale9ShapeCommands(_remappedCommands, commands, mapper);
+    renderCanvasShapeCommands(context, _remappedCommands);
   }
 }
 
-export function mapScale9ShapeCommands(out: unknown[], source: readonly unknown[], mapper: Scale9Mapper): void {
+export function mapCanvasScale9ShapeCommands(out: unknown[], source: readonly unknown[], mapper: Scale9Mapper): void {
   if (out !== (source as unknown[])) {
     out.length = source.length;
     for (let k = 0; k < source.length; k++) out[k] = source[k];
@@ -119,7 +119,7 @@ export const defaultCanvasScale9ShapeRenderer: DisplayObjectRenderer = {
 
 function applyStrippedTransform(
   state: CanvasRenderState,
-  ctx: CanvasRenderingContext2D,
+  context: CanvasRenderingContext2D,
   t: Readonly<MatrixLike>,
   scaleX: number,
   scaleY: number,
@@ -129,9 +129,9 @@ function applyStrippedTransform(
   const c = scaleY !== 0 ? t.c / scaleY : t.c;
   const d = scaleY !== 0 ? t.d / scaleY : t.d;
   if (state.roundPixels) {
-    ctx.setTransform(a, b, c, d, Math.fround(t.tx), Math.fround(t.ty));
+    context.setTransform(a, b, c, d, Math.fround(t.tx), Math.fround(t.ty));
   } else {
-    ctx.setTransform(a, b, c, d, t.tx, t.ty);
+    context.setTransform(a, b, c, d, t.tx, t.ty);
   }
 }
 
