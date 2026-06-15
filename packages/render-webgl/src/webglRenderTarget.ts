@@ -100,7 +100,7 @@ export function destroyWebGLRenderTarget(state: WebGLRenderState, target: WebGLR
 /**
  * Composites `target`'s texture onto the current framebuffer as a positioned quad, using
  * `renderNode`'s world transform and alpha. `transform` maps the target's pixel space into
- * the node's local space (as produced by `computeImageRenderCacheTransform`). This mirrors
+ * the node's local space (as produced by `computeRenderCacheTransform`). This mirrors
  * `drawWebGLImageCacheResult` but sources a GPU render-target texture directly instead of an
  * uploaded `CanvasImageSource`, closing the offscreen-filter loop: render a node into a
  * target, run a filter pass (target → target), then composite the result back here.

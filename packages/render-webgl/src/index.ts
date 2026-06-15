@@ -1,7 +1,7 @@
 export type { WebGLRenderStateInternal } from './internal';
 export * from './webglBackground';
 export * from './webglBitmap';
-export * from './webglCacheAdapter';
+export * from './webglCache';
 export * from './webglClip';
 export * from './webglClipRectangle';
 export * from './webglDisplayObject';
@@ -12,7 +12,6 @@ export * from './webglMask';
 export * from './webglMaterials';
 export * from './webglParticleEmitter';
 export * from './webglQuadBatch';
-export * from './webglRenderCache';
 export * from './webglRenderState';
 export * from './webglRenderTarget';
 export * from './webglRichText';
