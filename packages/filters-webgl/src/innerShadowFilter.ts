@@ -5,7 +5,7 @@ import type { WebGLRenderState } from '@flighthq/types';
 import { applyBoxBlurFilterToWebGL } from './blurFilter';
 import type { WebGLDualSourceLocations } from './filterPass';
 import { clearWebGLFilterTarget, compileWebGLFilterProgram, drawWebGLDualSourcePass } from './filterPass';
-import { applyBlitOffsetPass, applyBlitPass, applyInvertTintPass } from './tintShader';
+import { applyBlitOffsetPassWebGL, applyBlitPassWebGL, applyInvertTintPassWebGL } from './tintShader';
 
 // Same clip shader as innerGlowFilter — clips unit-0 glow to unit-1 source alpha.
 const INNER_CLIP_FRAGMENT_SRC = `#version 300 es
@@ -57,21 +57,21 @@ export function applyInnerShadowFilterToWebGL(
   const [s0, s1, s2] = scratch;
 
   // Pass 1: invert source alpha and tint with shadow color → s0
-  applyInvertTintPass(state, source, s0, color, alpha, strength);
+  applyInvertTintPassWebGL(state, source, s0, color, alpha, strength);
 
   // Pass 2: blur → s1 (s2 is ping-pong temp)
   applyBoxBlurFilterToWebGL(state, s0, s1, s2, { blurX: filter.blurX ?? 4, blurY: filter.blurY ?? 4, passes: quality });
 
   // Pass 3: shift the blurred shadow by the offset → s0 (s1 no longer needed)
-  applyBlitOffsetPass(state, s1, s0, dx, dy);
+  applyBlitOffsetPassWebGL(state, s1, s0, dx, dy);
 
   // Pass 4: clip offset shadow (s0) to source alpha → s1
   applyInnerClipPass(state, s0, source, s1);
 
   // Final composite: source first, then clipped shadow on top
   clearWebGLFilterTarget(state, dest);
-  applyBlitPass(state, source, dest);
-  applyBlitPass(state, s1, dest);
+  applyBlitPassWebGL(state, source, dest);
+  applyBlitPassWebGL(state, s1, dest);
 }
 
 function applyInnerClipPass(

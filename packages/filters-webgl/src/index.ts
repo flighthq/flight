@@ -20,5 +20,15 @@ export { applyMedianFilterToWebGL } from './medianFilter';
 export { applyOuterGlowFilterToWebGL } from './outerGlowFilter';
 export { applyPixelateFilterToWebGL } from './pixelateFilter';
 export { applySharpenFilterToWebGL } from './sharpenFilter';
-export { applyBlitOffsetPass, applyBlitPass, applyInvertTintPass, applyTintPass } from './tintShader';
-export { getBlitOffsetShader, getBlitShader, getInvertTintShader, getTintShader } from './tintShader';
+export {
+  applyBlitOffsetPassWebGL,
+  applyBlitPassWebGL,
+  applyInvertTintPassWebGL,
+  applyTintPassWebGL,
+} from './tintShader';
+export {
+  getBlitOffsetShaderWebGL,
+  getBlitShaderWebGL,
+  getInvertTintShaderWebGL,
+  getTintShaderWebGL,
+} from './tintShader';
