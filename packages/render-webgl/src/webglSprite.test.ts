@@ -7,7 +7,7 @@ import { renderWebGLSprite } from './webglSprite';
 import { makeWebGLState } from './webglTestHelper';
 
 function makeRenderer() {
-  return { createData: () => null, draw: vi.fn() } as any;
+  return { createData: () => null, submit: vi.fn() } as any;
 }
 
 describe('renderWebGLSprite', () => {
@@ -20,7 +20,7 @@ describe('renderWebGLSprite', () => {
     }).not.toThrow();
   });
 
-  it('calls renderer.draw for a visible sprite with a registered renderer', () => {
+  it('calls renderer.submit for a visible sprite with a registered renderer', () => {
     const { state } = makeWebGLState();
     const renderer = makeRenderer();
     registerRenderer(state, SpriteKind, renderer);
@@ -31,7 +31,7 @@ describe('renderWebGLSprite', () => {
     prepareSpriteRender(state, sprite);
     renderWebGLSprite(state, sprite);
 
-    expect(renderer.draw).toHaveBeenCalledWith(state, data);
+    expect(renderer.submit).toHaveBeenCalledWith(state, data);
   });
 
   it('skips a sprite node with visible set to false', () => {
@@ -45,7 +45,7 @@ describe('renderWebGLSprite', () => {
     prepareSpriteRender(state, sprite);
     renderWebGLSprite(state, sprite);
 
-    expect(renderer.draw).not.toHaveBeenCalled();
+    expect(renderer.submit).not.toHaveBeenCalled();
   });
 
   it('skips a sprite node with alpha at or below 0', () => {
@@ -59,7 +59,7 @@ describe('renderWebGLSprite', () => {
     prepareSpriteRender(state, sprite);
     renderWebGLSprite(state, sprite);
 
-    expect(renderer.draw).not.toHaveBeenCalled();
+    expect(renderer.submit).not.toHaveBeenCalled();
   });
 
   it('recurses into children and renders visible ones', () => {
@@ -74,6 +74,6 @@ describe('renderWebGLSprite', () => {
     prepareSpriteRender(state, parent);
     renderWebGLSprite(state, parent);
 
-    expect(renderer.draw).toHaveBeenCalledTimes(2);
+    expect(renderer.submit).toHaveBeenCalledTimes(2);
   });
 });

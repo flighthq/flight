@@ -69,7 +69,7 @@ describe('createWebGLCacheState', () => {
 describe('defaultWebGLRenderCacheRenderer', () => {
   it('does nothing when no cache is attached to the source', () => {
     const state = fakeScreen();
-    defaultWebGLRenderCacheRenderer.draw(state, makeCacheNode(createDisplayObject()));
+    defaultWebGLRenderCacheRenderer.submit(state, makeCacheNode(createDisplayObject()));
     expect(drawWebGLRenderTargetResult).not.toHaveBeenCalled();
   });
 
@@ -79,7 +79,7 @@ describe('defaultWebGLRenderCacheRenderer', () => {
     const cache = createRenderCache();
     useRenderCache(state, obj, cache);
     const target = ensureWebGLRenderCacheTarget(state, cache, 16, 16);
-    defaultWebGLRenderCacheRenderer.draw(state, makeCacheNode(obj));
+    defaultWebGLRenderCacheRenderer.submit(state, makeCacheNode(obj));
     expect(drawWebGLRenderTargetResult).toHaveBeenCalledWith(state, expect.anything(), target, expect.anything());
   });
 });

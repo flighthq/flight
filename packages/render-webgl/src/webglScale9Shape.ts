@@ -144,7 +144,7 @@ export function remapWebGLScale9Commands(
 
 export const defaultWebGLScale9ShapeRenderer: DisplayObjectRenderer = {
   createData: createWebGLScale9ShapeData,
-  draw: drawWebGLScale9Shape,
+  submit: drawWebGLScale9Shape,
 };
 
 function setStrippedWebGLMatrixFromValues(

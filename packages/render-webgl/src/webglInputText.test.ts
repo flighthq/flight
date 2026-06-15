@@ -18,7 +18,7 @@ function makeInputTextNode(): DisplayObjectRenderNode {
 
 describe('defaultWebGLInputTextRenderer', () => {
   it('uses the InputText draw function', () => {
-    expect(defaultWebGLInputTextRenderer.draw).toBe(drawWebGLInputText);
+    expect(defaultWebGLInputTextRenderer.submit).toBe(drawWebGLInputText);
   });
 });
 

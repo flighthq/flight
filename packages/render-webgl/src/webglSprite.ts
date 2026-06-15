@@ -3,7 +3,7 @@ import { getSpriteNodeRuntime } from '@flighthq/sprite';
 import type { SpriteNode, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { useWebGLProgram } from './webglDraw';
+import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 export function renderWebGLSprite(state: WebGLRenderState, source: SpriteNode): void {
   const internal = state as WebGLRenderStateInternal;
@@ -11,15 +11,13 @@ export function renderWebGLSprite(state: WebGLRenderState, source: SpriteNode): 
   let stackLength = 1;
   tempStack[0] = source;
 
-  useWebGLProgram(internal);
-
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as SpriteNode;
     if (!current.enabled) continue;
     const data = getSpriteRenderNode(state, current);
     if (data === undefined || !isRenderNodeVisible(data)) continue;
 
-    data.renderer?.draw(internal, data);
+    data.renderer?.submit(internal, data);
 
     if (data.traverseChildren) {
       const children = getSpriteNodeRuntime(current).children;
@@ -30,4 +28,6 @@ export function renderWebGLSprite(state: WebGLRenderState, source: SpriteNode): 
       }
     }
   }
+
+  flushWebGLSpriteBatch(internal);
 }

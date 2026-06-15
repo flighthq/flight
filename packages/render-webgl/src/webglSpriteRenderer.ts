@@ -1,11 +1,10 @@
-﻿import { noopRendererData } from '@flighthq/render';
+import { noopRendererData } from '@flighthq/render';
 import type { RenderState, Sprite, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { bindWebGLTexture, drawWebGLQuad, useWebGLProgram } from './webglDraw';
-import { setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
+import { ensureWebGLQuadBatchShader, prepareWebGLSpriteBatchWrite } from './webglSpriteBatch';
 
-export function drawWebGLSpriteNode(state: RenderState, spriteNode: SpriteRenderNode): void {
+function submitWebGLSpriteNode(state: RenderState, spriteNode: SpriteRenderNode): void {
   const internal = state as WebGLRenderStateInternal;
   const source = spriteNode.source as Sprite;
   const { atlas, id } = source.data;
@@ -17,33 +16,32 @@ export function drawWebGLSpriteNode(state: RenderState, spriteNode: SpriteRender
   const region = regions[id];
   if (region.width <= 0 || region.height <= 0) return;
 
-  useWebGLProgram(internal);
-  internal.applyBlendMode?.(internal, spriteNode.blendMode);
-  bindWebGLTexture(internal, atlas.image.src);
-
-  const gl = internal.gl;
-  const { shaderLoc, matrixArray } = internal;
-
-  setWebGLBaseUniforms(gl, shaderLoc, spriteNode);
-  setWebGLMatrixFromTransform(
-    gl,
-    shaderLoc,
-    matrixArray,
-    spriteNode.transform2D,
-    internal.renderTargetViewport ?? internal.canvas,
-  );
+  ensureWebGLQuadBatchShader(internal);
 
   const iw = 1 / (atlas.image.width || 1);
   const ih = 1 / (atlas.image.height || 1);
-  const u0 = region.x * iw;
-  const v0 = region.y * ih;
-  const u1 = (region.x + region.width) * iw;
-  const v1 = (region.y + region.height) * ih;
+  const t = spriteNode.transform2D;
 
-  drawWebGLQuad(internal, 0, 0, region.width, region.height, u0, v0, u1, v1);
+  const ct = spriteNode.useColorTransform ? spriteNode.colorTransform : null;
+  const base = prepareWebGLSpriteBatchWrite(internal, atlas.image.src, spriteNode.blendMode, ct, 1);
+  const d = internal.spriteBatchInstanceData;
+  d[base] = t.a;
+  d[base + 1] = t.b;
+  d[base + 2] = t.c;
+  d[base + 3] = t.d;
+  d[base + 4] = t.tx;
+  d[base + 5] = t.ty;
+  d[base + 6] = region.width;
+  d[base + 7] = region.height;
+  d[base + 8] = region.x * iw;
+  d[base + 9] = region.y * ih;
+  d[base + 10] = (region.x + region.width) * iw;
+  d[base + 11] = (region.y + region.height) * ih;
+  d[base + 12] = spriteNode.alpha;
+  internal.spriteBatchCount++;
 }
 
 export const defaultWebGLSpriteRenderer: SpriteRenderer = {
   createData: noopRendererData,
-  draw: drawWebGLSpriteNode,
+  submit: submitWebGLSpriteNode,
 };
