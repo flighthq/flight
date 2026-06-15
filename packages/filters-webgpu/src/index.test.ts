@@ -32,15 +32,15 @@ describe('index', () => {
   });
 
   it('exports tint shader primitives', () => {
-    expect(filtersWebGPU.applyTintPass).toBeTypeOf('function');
-    expect(filtersWebGPU.applyInvertTintPass).toBeTypeOf('function');
-    expect(filtersWebGPU.applyBlitPass).toBeTypeOf('function');
-    expect(filtersWebGPU.applyBlitOffsetPass).toBeTypeOf('function');
+    expect(filtersWebGPU.applyTintPassWebGPU).toBeTypeOf('function');
+    expect(filtersWebGPU.applyInvertTintPassWebGPU).toBeTypeOf('function');
+    expect(filtersWebGPU.applyBlitPassWebGPU).toBeTypeOf('function');
+    expect(filtersWebGPU.applyBlitOffsetPassWebGPU).toBeTypeOf('function');
     expect(filtersWebGPU.applyInnerClipPass).toBeTypeOf('function');
-    expect(filtersWebGPU.getTintShader).toBeTypeOf('function');
-    expect(filtersWebGPU.getInvertTintShader).toBeTypeOf('function');
-    expect(filtersWebGPU.getBlitShader).toBeTypeOf('function');
-    expect(filtersWebGPU.getBlitOffsetShader).toBeTypeOf('function');
+    expect(filtersWebGPU.getTintShaderWebGPU).toBeTypeOf('function');
+    expect(filtersWebGPU.getInvertTintShaderWebGPU).toBeTypeOf('function');
+    expect(filtersWebGPU.getBlitShaderWebGPU).toBeTypeOf('function');
+    expect(filtersWebGPU.getBlitOffsetShaderWebGPU).toBeTypeOf('function');
     expect(filtersWebGPU.getInnerClipShader).toBeTypeOf('function');
   });
 
