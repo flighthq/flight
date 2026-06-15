@@ -30,7 +30,7 @@ function makeState(): WebGLRenderState {
 function makeRenderer() {
   return {
     createData: () => null,
-    draw: vi.fn(),
+    submit: vi.fn(),
     drawMask: vi.fn(),
   } as any;
 }
@@ -38,7 +38,7 @@ function makeRenderer() {
 describe('defaultWebGLDisplayObjectRenderer', () => {
   it('has draw, and createData functions', () => {
     expect(defaultWebGLDisplayObjectRenderer.createData({} as any, {} as any)).toBeNull();
-    expect(defaultWebGLDisplayObjectRenderer.draw).toBe(drawWebGLDisplayObject);
+    expect(defaultWebGLDisplayObjectRenderer.submit).toBe(drawWebGLDisplayObject);
   });
 });
 
@@ -73,7 +73,7 @@ describe('renderWebGLDisplayObject', () => {
     expect(() => renderWebGLDisplayObject(state, obj)).not.toThrow();
   });
 
-  it('calls renderer.draw for a visible object with a renderer', () => {
+  it('calls renderer.submit for a visible object with a renderer', () => {
     const state = makeState();
     const renderer = makeRenderer();
     registerRenderer(state, DisplayObjectKind, renderer);
@@ -83,7 +83,7 @@ describe('renderWebGLDisplayObject', () => {
 
     renderWebGLDisplayObject(state, obj);
 
-    expect(renderer.draw).toHaveBeenCalledWith(state, data);
+    expect(renderer.submit).toHaveBeenCalledWith(state, data);
   });
 
   it('skips objects with zero alpha', () => {
@@ -96,7 +96,7 @@ describe('renderWebGLDisplayObject', () => {
 
     renderWebGLDisplayObject(state, obj);
 
-    expect(renderer.draw).not.toHaveBeenCalled();
+    expect(renderer.submit).not.toHaveBeenCalled();
   });
 
   it('traverses children and draws visible ones', () => {
@@ -110,6 +110,6 @@ describe('renderWebGLDisplayObject', () => {
 
     renderWebGLDisplayObject(state, parent);
 
-    expect(renderer.draw).toHaveBeenCalledTimes(2);
+    expect(renderer.submit).toHaveBeenCalledTimes(2);
   });
 });

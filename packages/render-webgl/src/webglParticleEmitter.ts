@@ -3,6 +3,7 @@ import type { ParticleEmitter, RenderState, SpriteRenderer, SpriteRenderNode } f
 
 import type { WebGLParticleShader, WebGLRenderStateInternal } from './internal';
 import { bindWebGLTexture } from './webglDraw';
+import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 // Per-instance layout (14 floats = 56 bytes):
 // [0]  px         float
@@ -284,5 +285,8 @@ export function drawWebGLParticleEmitter(state: RenderState, renderNode: SpriteR
 
 export const defaultWebGLParticleEmitterRenderer: SpriteRenderer = {
   createData: noopRendererData,
-  draw: drawWebGLParticleEmitter,
+  submit(state: RenderState, node: SpriteRenderNode): void {
+    flushWebGLSpriteBatch(state as WebGLRenderStateInternal);
+    drawWebGLParticleEmitter(state, node);
+  },
 };

@@ -36,5 +36,5 @@ export function drawWebGLBitmapMask(_state: RenderState, _data: DisplayObjectRen
 
 export const defaultWebGLBitmapRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawWebGLBitmap,
+  submit: drawWebGLBitmap,
 };

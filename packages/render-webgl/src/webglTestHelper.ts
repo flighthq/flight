@@ -60,6 +60,11 @@ export function makeWebGLState(options?: { allowSmoothing?: boolean; backgroundC
     quadVertexData: new Float32Array(16),
     matrixArray: new Float32Array(9),
     scissorStack: [],
+    spriteBatchBlendMode: null,
+    spriteBatchCount: 0,
+    spriteBatchInstanceBuffer: null,
+    spriteBatchInstanceData: new Float32Array(13 * 256),
+    spriteBatchTexture: null,
   });
   return { state, gl, canvas, shaderLoc };
 }

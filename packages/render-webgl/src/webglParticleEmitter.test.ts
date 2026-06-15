@@ -35,8 +35,8 @@ describe('defaultWebGLParticleEmitterRenderer', () => {
     expect(typeof defaultWebGLParticleEmitterRenderer.createData).toBe('function');
   });
 
-  it('has a draw function pointing to drawWebGLParticleEmitter', () => {
-    expect(defaultWebGLParticleEmitterRenderer.draw).toBe(drawWebGLParticleEmitter);
+  it('has a submit function', () => {
+    expect(typeof defaultWebGLParticleEmitterRenderer.submit).toBe('function');
   });
 });
 

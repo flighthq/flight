@@ -1,4 +1,4 @@
-import type { WebGLRenderState } from '@flighthq/types';
+import type { BlendMode, ColorTransform, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
 
@@ -25,9 +25,12 @@ export interface WebGLQuadBatchShader {
   locMatTXTY: number;
   locSize: number;
   locUVRect: number;
+  locAlpha: number;
   locWorldMatrix: WebGLUniformLocation;
-  locAlpha: WebGLUniformLocation;
   locTexture: WebGLUniformLocation;
+  locHasColorTransform: WebGLUniformLocation | null;
+  locColorMultiplier: WebGLUniformLocation | null;
+  locColorOffset: WebGLUniformLocation | null;
 }
 
 export type WebGLRenderStateInternal = Omit<WebGLRenderState, 'canvas' | 'gl'> & {
@@ -41,8 +44,12 @@ export type WebGLRenderStateInternal = Omit<WebGLRenderState, 'canvas' | 'gl'> &
   particleInstanceData?: Float32Array;
   quadBatchShader?: WebGLQuadBatchShader;
   quadBatchCornerBuffer?: WebGLBuffer;
-  quadBatchInstanceBuffer?: WebGLBuffer;
-  quadBatchInstanceData?: Float32Array;
+  spriteBatchBlendMode: BlendMode | null;
+  spriteBatchColorTransform: ColorTransform | null;
+  spriteBatchCount: number;
+  spriteBatchInstanceBuffer: WebGLBuffer | null;
+  spriteBatchInstanceData: Float32Array;
+  spriteBatchTexture: CanvasImageSource | null;
   currentMaskDepth?: number;
   currentScissorRect?: WebGLScissorRect | null;
   /**

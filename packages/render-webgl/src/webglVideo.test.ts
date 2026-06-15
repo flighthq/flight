@@ -14,8 +14,8 @@ function makeVideoNode(element: HTMLVideoElement | null = null): DisplayObjectRe
 }
 
 describe('defaultWebGLVideoRenderer', () => {
-  it('has draw, and createData functions', () => {
-    expect(typeof defaultWebGLVideoRenderer.draw).toBe('function');
+  it('has submit, and createData functions', () => {
+    expect(typeof defaultWebGLVideoRenderer.submit).toBe('function');
     expect(typeof defaultWebGLVideoRenderer.createData).toBe('function');
   });
 });

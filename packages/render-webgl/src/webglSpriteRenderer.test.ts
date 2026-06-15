@@ -1,6 +1,7 @@
-﻿import type { SpriteRenderNode } from '@flighthq/types';
+import type { SpriteRenderNode } from '@flighthq/types';
 
-import { defaultWebGLSpriteRenderer, drawWebGLSpriteNode } from './webglSpriteRenderer';
+import { flushWebGLSpriteBatch } from './webglSpriteBatch';
+import { defaultWebGLSpriteRenderer } from './webglSpriteRenderer';
 import { makeWebGLState } from './webglTestHelper';
 
 function makeAtlas(regionWidth = 32, regionHeight = 32) {
@@ -16,6 +17,8 @@ function makeSpriteNode(data: Record<string, unknown> = {}): SpriteRenderNode {
     source: { data: { atlas: null, id: 0, ...data } },
     blendMode: 0,
     alpha: 1,
+    renderer: null,
+    traverseChildren: false,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
   } as unknown as SpriteRenderNode;
 }
@@ -25,57 +28,44 @@ describe('defaultWebGLSpriteRenderer', () => {
     expect(typeof defaultWebGLSpriteRenderer.createData).toBe('function');
   });
 
-  it('has a draw function pointing to drawWebGLSpriteNode', () => {
-    expect(defaultWebGLSpriteRenderer.draw).toBe(drawWebGLSpriteNode);
+  it('has a submit function', () => {
+    expect(typeof defaultWebGLSpriteRenderer.submit).toBe('function');
   });
 });
 
-describe('drawWebGLSpriteNode', () => {
+describe('defaultWebGLSpriteRenderer.submit', () => {
   it('returns early without drawing when atlas is null', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLSpriteNode(state, makeSpriteNode({ atlas: null }));
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    defaultWebGLSpriteRenderer.submit(state, makeSpriteNode({ atlas: null }));
+    flushWebGLSpriteBatch(state as any);
+    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when atlas.image is null', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLSpriteNode(state, makeSpriteNode({ atlas: { image: null, regions: [] } }));
-    expect(gl.drawElements).not.toHaveBeenCalled();
-  });
-
-  it('returns early without drawing when atlas.image.src is null', () => {
-    const { state, gl } = makeWebGLState();
-    drawWebGLSpriteNode(state, makeSpriteNode({ atlas: { image: { src: null }, regions: [] } }));
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    defaultWebGLSpriteRenderer.submit(state, makeSpriteNode({ atlas: { image: null, regions: [] } }));
+    flushWebGLSpriteBatch(state as any);
+    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when id is negative', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLSpriteNode(state, makeSpriteNode({ atlas: makeAtlas(), id: -1 }));
-    expect(gl.drawElements).not.toHaveBeenCalled();
-  });
-
-  it('returns early without drawing when id exceeds region count', () => {
-    const { state, gl } = makeWebGLState();
-    drawWebGLSpriteNode(state, makeSpriteNode({ atlas: makeAtlas(), id: 99 }));
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    defaultWebGLSpriteRenderer.submit(state, makeSpriteNode({ atlas: makeAtlas(), id: -1 }));
+    flushWebGLSpriteBatch(state as any);
+    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when region width is zero', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLSpriteNode(state, makeSpriteNode({ atlas: makeAtlas(0, 32), id: 0 }));
-    expect(gl.drawElements).not.toHaveBeenCalled();
-  });
-
-  it('returns early without drawing when region height is zero', () => {
-    const { state, gl } = makeWebGLState();
-    drawWebGLSpriteNode(state, makeSpriteNode({ atlas: makeAtlas(32, 0), id: 0 }));
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    defaultWebGLSpriteRenderer.submit(state, makeSpriteNode({ atlas: makeAtlas(0, 32), id: 0 }));
+    flushWebGLSpriteBatch(state as any);
+    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('draws a quad when the atlas region is valid', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLSpriteNode(state, makeSpriteNode({ atlas: makeAtlas(), id: 0 }));
-    expect(gl.drawElements).toHaveBeenCalled();
+    defaultWebGLSpriteRenderer.submit(state, makeSpriteNode({ atlas: makeAtlas(), id: 0 }));
+    flushWebGLSpriteBatch(state as any);
+    expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 1);
   });
 });

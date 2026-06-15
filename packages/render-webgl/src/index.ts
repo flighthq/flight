@@ -19,6 +19,7 @@ export * from './webglShader';
 export * from './webglShaderBinding';
 export * from './webglShape';
 export * from './webglSprite';
+export * from './webglSpriteBatch';
 export * from './webglSpriteRenderer';
 export * from './webglText';
 export * from './webglTilemap';

@@ -67,8 +67,6 @@ export function createWebGLCacheState(screenState: WebGLRenderState): WebGLRende
   cacheState.particleInstanceData = screen.particleInstanceData;
   cacheState.quadBatchShader = screen.quadBatchShader;
   cacheState.quadBatchCornerBuffer = screen.quadBatchCornerBuffer;
-  cacheState.quadBatchInstanceBuffer = screen.quadBatchInstanceBuffer;
-  cacheState.quadBatchInstanceData = screen.quadBatchInstanceData;
   cacheState.shaderLoc = screen.shaderLoc;
   cacheState.textureCache = screen.textureCache;
   cacheState.quadVertexBuffer = screen.quadVertexBuffer;
@@ -84,6 +82,12 @@ export function createWebGLCacheState(screenState: WebGLRenderState): WebGLRende
   cacheState.currentTexture = null;
   cacheState.renderTargetViewport = null;
   cacheState.scissorStack = [];
+  cacheState.spriteBatchBlendMode = null;
+  cacheState.spriteBatchColorTransform = null;
+  cacheState.spriteBatchCount = 0;
+  cacheState.spriteBatchInstanceBuffer = null;
+  cacheState.spriteBatchInstanceData = new Float32Array(0);
+  cacheState.spriteBatchTexture = null;
 
   _cacheStateScreen.set(cacheState, screenState);
   return cacheState;
@@ -204,7 +208,7 @@ function getTargets(state: WebGLRenderState): WeakMap<RenderCache, WebGLRenderTa
 
 export const defaultWebGLRenderCacheRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawWebGLRenderCache,
+  submit: drawWebGLRenderCache,
 };
 
 // The screen state owns each cache's target, keyed by the handle, so one handle can be

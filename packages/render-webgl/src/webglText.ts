@@ -110,5 +110,5 @@ export function drawWebGLTextMask(state: RenderState, data: DisplayObjectRenderN
 
 export const defaultWebGLTextRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawWebGLText,
+  submit: drawWebGLText,
 };

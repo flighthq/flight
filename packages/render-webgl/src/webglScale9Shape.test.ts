@@ -25,9 +25,9 @@ describe('createWebGLScale9ShapeData', () => {
 });
 
 describe('defaultWebGLScale9ShapeRenderer', () => {
-  it('has draw, and createData functions', () => {
+  it('has submit and createData functions', () => {
     expect(defaultWebGLScale9ShapeRenderer.createData).toBe(createWebGLScale9ShapeData);
-    expect(defaultWebGLScale9ShapeRenderer.draw).toBe(drawWebGLScale9Shape);
+    expect(defaultWebGLScale9ShapeRenderer.submit).toBe(drawWebGLScale9Shape);
   });
 });
 

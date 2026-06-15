@@ -46,7 +46,7 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
 
     clipHooks?.pushMask(state, current);
 
-    data.renderer?.draw(internal, data);
+    data.renderer?.submit(internal, data);
 
     const prePushLength = stackLength;
     if (data.traverseChildren) {
@@ -66,5 +66,5 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
 
 export const defaultWebGLDisplayObjectRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawWebGLDisplayObject,
+  submit: drawWebGLDisplayObject,
 };

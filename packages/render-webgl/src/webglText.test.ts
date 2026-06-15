@@ -24,8 +24,8 @@ describe('defaultWebGLTextRenderer', () => {
     expect(typeof defaultWebGLTextRenderer.createData).toBe('function');
   });
 
-  it('has a draw function pointing to drawWebGLText', () => {
-    expect(defaultWebGLTextRenderer.draw).toBe(drawWebGLText);
+  it('has a submit function pointing to drawWebGLText', () => {
+    expect(defaultWebGLTextRenderer.submit).toBe(drawWebGLText);
   });
 
   it('has a drawMask function pointing to drawWebGLTextMask', () => {});
