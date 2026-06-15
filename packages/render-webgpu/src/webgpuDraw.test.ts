@@ -8,11 +8,11 @@ import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackgrou
 import {
   applyWebGPUBlendMode,
   bindWebGPUTexture,
+  buildWebGPURenderTargetBindGroup,
   createWebGPUTextureEntry,
   drawWebGPUQuad,
   drawWebGPUQuadWithTransform,
   enableWebGPUBlendModeSupport,
-  getOrCreateRenderTargetTextureBindGroup,
   updateWebGPUTextureEntry,
   warmWebGPUPipelines,
 } from './webgpuDraw';
@@ -47,6 +47,16 @@ describe('bindWebGPUTexture', () => {
     expect(entry).toBeDefined();
     expect(entry.texture).toBeDefined();
     expect(bindWebGPUTexture(internal, canvas)).toBe(entry);
+  });
+});
+
+describe('buildWebGPURenderTargetBindGroup', () => {
+  it('returns a bind group for a view', async () => {
+    const state = await createWebGPURenderStateForTest();
+    const internal = state as unknown as WebGPURenderStateInternal;
+    const fakeView = {} as GPUTextureView;
+    const bindGroup = buildWebGPURenderTargetBindGroup(internal, fakeView);
+    expect(bindGroup).toBeDefined();
   });
 });
 
@@ -104,16 +114,6 @@ describe('enableWebGPUBlendModeSupport', () => {
     enableWebGPUBlendModeSupport(state);
     expect(state.applyBlendMode).not.toBeNull();
     expect(hasRenderFeatures(state, RenderFeatures.BlendMode)).toBe(true);
-  });
-});
-
-describe('getOrCreateRenderTargetTextureBindGroup', () => {
-  it('returns a bind group for a view', async () => {
-    const state = await createWebGPURenderStateForTest();
-    const internal = state as unknown as WebGPURenderStateInternal;
-    const fakeView = {} as GPUTextureView;
-    const bindGroup = getOrCreateRenderTargetTextureBindGroup(internal, fakeView);
-    expect(bindGroup).toBeDefined();
   });
 });
 
