@@ -42,7 +42,13 @@ export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNo
       setMatrixFromFloat32Array(quadTransform, offset, transforms);
       multiplyMatrix(quadTransform, transform, quadTransform);
 
-      setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, quadTransform, internal.canvas);
+      setWebGLMatrixFromTransform(
+        gl,
+        shaderLoc,
+        matrixArray,
+        quadTransform,
+        internal.renderTargetViewport ?? internal.canvas,
+      );
 
       const u0 = region.x * iw;
       const v0 = region.y * ih;
