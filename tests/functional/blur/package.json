@@ -5,6 +5,8 @@
   "dependencies": {
     "@flighthq/filters": "*",
     "@flighthq/filters-webgl": "*",
+    "@flighthq/filters-webgpu": "*",
+    "@flighthq/render-webgpu": "*",
     "@flighthq/sdk": "*"
   }
 }
