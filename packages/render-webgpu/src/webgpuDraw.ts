@@ -33,7 +33,7 @@ export function bindWebGPUTexture(
   } else if (imageSource instanceof ImageBitmap) {
     width = imageSource.width || 1;
     height = imageSource.height || 1;
-  } else if (imageSource instanceof OffscreenCanvas) {
+  } else if (typeof OffscreenCanvas !== 'undefined' && imageSource instanceof OffscreenCanvas) {
     width = imageSource.width || 1;
     height = imageSource.height || 1;
   }
@@ -50,7 +50,10 @@ export function bindWebGPUTexture(
   // sources: "Canvas sources are already premultiplied by the 2D context."
   // Image and ImageBitmap carry straight alpha and need premultipliedAlpha: true.
   const premultipliedAlpha =
-    imageSource instanceof HTMLCanvasElement || imageSource instanceof OffscreenCanvas ? false : true;
+    imageSource instanceof HTMLCanvasElement ||
+    (typeof OffscreenCanvas !== 'undefined' && imageSource instanceof OffscreenCanvas)
+      ? false
+      : true;
 
   device.queue.copyExternalImageToTexture(
     { source: imageSource as GPUCopyExternalImageSource, flipY: false },
