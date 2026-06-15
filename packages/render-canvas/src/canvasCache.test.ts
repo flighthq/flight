@@ -45,7 +45,7 @@ describe('defaultCanvasRenderCacheRenderer', () => {
   it('does nothing when no cache is attached to the source', () => {
     const state = makeCanvasState();
     const spy = vi.spyOn(state.context, 'drawImage');
-    defaultCanvasRenderCacheRenderer.draw(state, makeCacheNode(createDisplayObject()));
+    defaultCanvasRenderCacheRenderer.submit(state, makeCacheNode(createDisplayObject()));
     expect(spy).not.toHaveBeenCalled();
   });
 
@@ -56,7 +56,7 @@ describe('defaultCanvasRenderCacheRenderer', () => {
     useRenderCache(state, obj, cache);
     const target = ensureCanvasRenderCacheTarget(state, cache, 16, 16);
     const spy = vi.spyOn(state.context, 'drawImage');
-    defaultCanvasRenderCacheRenderer.draw(state, makeCacheNode(obj));
+    defaultCanvasRenderCacheRenderer.submit(state, makeCacheNode(obj));
     expect(spy).toHaveBeenCalledWith(target.canvas, 0, 0);
   });
 });

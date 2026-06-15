@@ -114,7 +114,7 @@ export function mapScale9ShapeCommands(out: unknown[], source: readonly unknown[
 
 export const defaultCanvasScale9ShapeRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawCanvasScale9Shape,
+  submit: drawCanvasScale9Shape,
 };
 
 function applyStrippedTransform(

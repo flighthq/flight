@@ -44,7 +44,7 @@ export function renderCanvasShapeCommands(ctx: CanvasRenderingContext2D, command
 
 export const defaultCanvasShapeRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawCanvasShape,
+  submit: drawCanvasShape,
 };
 
 function createCanvasShapeDrawState(ctx: CanvasRenderingContext2D): CanvasShapeDrawState {

@@ -70,5 +70,5 @@ export function drawCanvasTextMask(state: CanvasRenderState, data: DisplayObject
 
 export const defaultCanvasTextRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawCanvasText,
+  submit: drawCanvasText,
 };

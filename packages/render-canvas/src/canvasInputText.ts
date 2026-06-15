@@ -69,7 +69,7 @@ export function drawCanvasInputText(state: CanvasRenderState, renderNode: Displa
 
 export const defaultCanvasInputTextRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawCanvasInputText,
+  submit: drawCanvasInputText,
 };
 
 function drawCanvasInputTextMask(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {

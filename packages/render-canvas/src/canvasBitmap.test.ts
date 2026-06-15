@@ -26,8 +26,8 @@ function makeImageSource() {
 }
 
 describe('defaultCanvasBitmapRenderer', () => {
-  it('has draw and createData', () => {
-    expect(typeof defaultCanvasBitmapRenderer.draw).toBe('function');
+  it('has submit and createData', () => {
+    expect(typeof defaultCanvasBitmapRenderer.submit).toBe('function');
     expect(typeof defaultCanvasBitmapRenderer.createData).toBe('function');
   });
 });

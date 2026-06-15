@@ -87,5 +87,5 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: SpriteR
 
 export const defaultCanvasQuadBatchRenderer: SpriteRenderer = {
   createData: noopRendererData,
-  draw: drawCanvasQuadBatch,
+  submit: drawCanvasQuadBatch,
 };

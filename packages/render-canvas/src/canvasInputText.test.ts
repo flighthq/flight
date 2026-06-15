@@ -14,7 +14,7 @@ function makeState() {
 
 describe('defaultCanvasInputTextRenderer', () => {
   it('uses the InputText draw function', () => {
-    expect(defaultCanvasInputTextRenderer.draw).toBe(drawCanvasInputText);
+    expect(defaultCanvasInputTextRenderer.submit).toBe(drawCanvasInputText);
   });
 });
 

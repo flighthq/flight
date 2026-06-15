@@ -151,5 +151,5 @@ const _richTextSelectionRectangles: InputTextSelectionRectangle[] = [];
 
 export const defaultCanvasRichTextRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawCanvasRichText,
+  submit: drawCanvasRichText,
 };
