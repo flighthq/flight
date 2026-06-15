@@ -1,18 +1,26 @@
-﻿import type { DisplayObject } from '@flighthq/sdk';
+﻿import { applyGaussianBlurFilterToWebGL } from '@flighthq/filters-webgl';
+import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
+  createRenderCache,
+  createWebGLCacheState,
   createWebGLRenderState,
+  createWebGLRenderTarget,
   defaultWebGLBitmapRenderer,
   defaultWebGLShapeCommands,
   defaultWebGLShapeRenderer,
   defaultWebGLTextRenderer,
+  destroyWebGLRenderTarget,
+  getWebGLRenderCacheTarget,
   prepareDisplayObjectRender,
+  refreshWebGLRenderCache,
   registerRenderer,
   registerWebGLShapeCommands,
   renderWebGLBackground,
   renderWebGLDisplayObject,
   ShapeKind,
   TextKind,
+  useRenderCache,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -45,4 +53,18 @@ export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
   renderWebGLBackground(state);
   renderWebGLDisplayObject(state, root);
+}
+
+// WebGL has no CSS filter; bake the static panel into a render cache once, blur the cached
+// texture with the offscreen Gaussian filter, then composite it each frame in place of the node.
+export function applyBackgroundBlur(node: DisplayObject): void {
+  const cache = createRenderCache();
+  useRenderCache(state, node, cache);
+  const cacheState = createWebGLCacheState(state);
+  refreshWebGLRenderCache(cacheState, cache, node, { padding: 30 });
+  const target = getWebGLRenderCacheTarget(state, cache);
+  if (target === null) return;
+  const temp = createWebGLRenderTarget(state, target.width, target.height);
+  applyGaussianBlurFilterToWebGL(state, target, target, temp, { blurX: 10, blurY: 10 });
+  destroyWebGLRenderTarget(state, temp);
 }
