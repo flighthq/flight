@@ -5,7 +5,7 @@ import type { WebGLRenderState } from '@flighthq/types';
 import { applyBoxBlurFilterToWebGL } from './blurFilter';
 import type { WebGLDualSourceLocations } from './filterPass';
 import { clearWebGLFilterTarget, compileWebGLFilterProgram, drawWebGLDualSourcePass } from './filterPass';
-import { applyBlitPass, applyInvertTintPass } from './tintShader';
+import { applyBlitPassWebGL, applyInvertTintPassWebGL } from './tintShader';
 
 // Clips unit-0 (blurred inverted-alpha mask) to the source alpha from unit-1.
 // The blurred inverted alpha is highest near interior edges; clipping to
@@ -55,7 +55,7 @@ export function applyInnerGlowFilterToWebGL(
   const [s0, s1, s2] = scratch;
 
   // Pass 1: invert source alpha and tint with glow color → s0
-  applyInvertTintPass(state, source, s0, color, alpha, strength);
+  applyInvertTintPassWebGL(state, source, s0, color, alpha, strength);
 
   // Pass 2: blur → s1 (s2 is ping-pong temp)
   applyBoxBlurFilterToWebGL(state, s0, s1, s2, { blurX: filter.blurX ?? 6, blurY: filter.blurY ?? 6, passes: quality });
@@ -65,8 +65,8 @@ export function applyInnerGlowFilterToWebGL(
 
   // Final composite: source first, then clipped glow on top
   clearWebGLFilterTarget(state, dest);
-  applyBlitPass(state, source, dest);
-  applyBlitPass(state, s0, dest);
+  applyBlitPassWebGL(state, source, dest);
+  applyBlitPassWebGL(state, s0, dest);
 }
 
 function applyInnerClipPass(
