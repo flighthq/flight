@@ -1,7 +1,7 @@
 import { createEntity } from '@flighthq/entity';
 import { createMatrix, multiplyMatrix } from '@flighthq/geometry';
 import { createSignal } from '@flighthq/signals';
-import type { Node, Renderable, RenderCache, RenderCacheAdapter, Renderer, RenderState } from '@flighthq/types';
+import type { Renderable, RenderCache, RenderCacheAdapter, Renderer, RenderState } from '@flighthq/types';
 import { RenderCacheKind } from '@flighthq/types';
 
 import { registerRenderer } from './renderer';
@@ -72,13 +72,13 @@ export function registerRenderCacheRenderer(state: RenderState, renderer: Render
  * instead of rendering the source subtree. Reuses an existing cache adapter on the source
  * if present. The cache shows nothing until it is refreshed with content.
  */
-export function useRenderCache(state: RenderState, source: Node, cache: RenderCache): RenderCacheAdapter {
-  const existing = getRenderNodeAdapter(state, source as Renderable);
+export function useRenderCache(state: RenderState, source: Renderable, cache: RenderCache): RenderCacheAdapter {
+  const existing = getRenderNodeAdapter(state, source);
   if (isRenderCacheAdapter(existing)) {
     existing.cache = cache;
     return existing;
   }
   const adapter = createRenderCacheAdapter(cache);
-  setRenderNodeAdapter(state, source as Renderable, adapter);
+  setRenderNodeAdapter(state, source, adapter);
   return adapter;
 }
