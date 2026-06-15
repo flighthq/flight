@@ -1,4 +1,4 @@
-﻿import type { SpriteRenderNode } from '@flighthq/types';
+import type { SpriteRenderNode } from '@flighthq/types';
 
 import { defaultWebGLQuadBatchRenderer, drawWebGLQuadBatch } from './webglQuadBatch';
 import { makeWebGLState } from './webglTestHelper';
@@ -43,28 +43,28 @@ describe('drawWebGLQuadBatch', () => {
   it('returns early without drawing when atlas is null', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLQuadBatch(state, makeQuadBatchNode({ atlas: null }));
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when atlas.image is null', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLQuadBatch(state, makeQuadBatchNode({ atlas: { image: null, regions: [] } }));
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when atlas.image.src is null', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLQuadBatch(state, makeQuadBatchNode({ atlas: { image: { src: null }, regions: [] } }));
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when instanceCount is 0', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLQuadBatch(state, makeQuadBatchNode({ instanceCount: 0 }));
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
-  it('draws one quad per valid instance with vector2 transform type', () => {
+  it('draws all valid instances in a single instanced call with vector2 transform type', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLQuadBatch(
       state,
@@ -75,10 +75,11 @@ describe('drawWebGLQuadBatch', () => {
         transformType: 'vector2',
       }),
     );
-    expect(gl.drawElements).toHaveBeenCalledTimes(2);
+    expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
+    expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
   });
 
-  it('skips instances with out-of-range ids', () => {
+  it('excludes out-of-range ids from the instanced draw count', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLQuadBatch(
       state,
@@ -89,10 +90,11 @@ describe('drawWebGLQuadBatch', () => {
         transformType: 'vector2',
       }),
     );
-    expect(gl.drawElements).toHaveBeenCalledTimes(2);
+    expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
+    expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
   });
 
-  it('draws one quad per valid instance with full matrix transform type', () => {
+  it('draws all valid instances in a single instanced call with full matrix transform type', () => {
     const { state, gl } = makeWebGLState();
     const transforms = new Float32Array([1, 0, 0, 1, 0, 0]);
     drawWebGLQuadBatch(
@@ -104,6 +106,7 @@ describe('drawWebGLQuadBatch', () => {
         transformType: 'matrix',
       }),
     );
-    expect(gl.drawElements).toHaveBeenCalledTimes(1);
+    expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
+    expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 1);
   });
 });

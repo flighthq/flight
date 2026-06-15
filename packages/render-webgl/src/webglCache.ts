@@ -65,6 +65,10 @@ export function createWebGLCacheState(screenState: WebGLRenderState): WebGLRende
   cacheState.particleCornerBuffer = screen.particleCornerBuffer;
   cacheState.particleInstanceBuffer = screen.particleInstanceBuffer;
   cacheState.particleInstanceData = screen.particleInstanceData;
+  cacheState.quadBatchShader = screen.quadBatchShader;
+  cacheState.quadBatchCornerBuffer = screen.quadBatchCornerBuffer;
+  cacheState.quadBatchInstanceBuffer = screen.quadBatchInstanceBuffer;
+  cacheState.quadBatchInstanceData = screen.quadBatchInstanceData;
   cacheState.shaderLoc = screen.shaderLoc;
   cacheState.textureCache = screen.textureCache;
   cacheState.quadVertexBuffer = screen.quadVertexBuffer;
