@@ -1,4 +1,4 @@
-import { createMatrix, createRectangle } from '@flighthq/geometry';
+import { createMatrix, createRectangle, multiplyMatrix } from '@flighthq/geometry';
 import { computeNodeBoundsRectangle } from '@flighthq/node';
 import {
   computeDisplayObjectRenderTargetTransform,
@@ -6,7 +6,7 @@ import {
   computeRenderTargetSize,
   copyAllRenderersFromRenderState,
   createRenderState,
-  isRenderCache,
+  getRenderNodeCache,
   noopRendererData,
   prepareDisplayObjectRender,
   registerRenderCacheRenderer,
@@ -148,6 +148,26 @@ export function refreshWebGPURenderCache(
   options?: Readonly<RenderCacheRefreshOptions>,
 ): boolean {
   const screenState = _cacheStateScreen.get(cacheState) ?? cacheState;
+  const cs = cacheState as WebGPURenderStateInternal;
+  const ss = screenState as WebGPURenderStateInternal;
+  // The bake records into the screen state's live, per-frame command encoder and render pass.
+  // createWebGPUCacheState captured those once at setup — stale now, since webgpu rebuilds them
+  // every frame — so sync them here. This requires refresh to run within a frame (after the
+  // encoder/pass have begun), unlike the immediate-mode WebGL backend.
+  cs.commandEncoder = ss.commandEncoder;
+  cs.renderPass = ss.renderPass;
+  cs.canvasTextureView = ss.canvasTextureView;
+  cs.canvasViewCleared = ss.canvasViewCleared;
+  cs.depthStencilTexture = ss.depthStencilTexture;
+  cs.depthStencilView = ss.depthStencilView;
+  cs.depthStencilWidth = ss.depthStencilWidth;
+  cs.depthStencilHeight = ss.depthStencilHeight;
+  // The cache state shares the screen state's uniform ring buffer (createWebGPUCacheState aliases
+  // uniformBuffer/uniformData). Continue from the screen's current cursor so the bake's draws claim
+  // a region the screen render won't overwrite — otherwise both start at 0, the later screen writes
+  // clobber the bake's uniforms, and the baked subtree draws with corrupted transforms.
+  cs.uniformOffset = ss.uniformOffset;
+
   const padding = options?.padding ?? 0;
   const minWidth = options?.minWidth ?? 1;
   const minHeight = options?.minHeight ?? 1;
@@ -162,7 +182,14 @@ export function refreshWebGPURenderCache(
   computeDisplayObjectRenderTargetTransform(_renderTransform, source, _bounds, padding, padding);
   computeRenderCacheTransform(cache.transform, _bounds, padding, padding);
 
-  beginWebGPURenderTarget(cacheState, target, _renderTransform);
+  // WebGPU render targets store content for a bottom-left UV origin (what drawWebGPURenderTargetResult's
+  // V-flip expects on composite), so bake with a Y-inverted render transform — unlike the WebGL backend,
+  // whose framebuffer convention needs no inversion.
+  _yInvert.d = -1;
+  _yInvert.ty = target.height;
+  multiplyMatrix(_bakeTransform, _yInvert, _renderTransform);
+
+  beginWebGPURenderTarget(cacheState, target, _bakeTransform);
   const dirty = prepareDisplayObjectRender(cacheState, source);
   if (dirty || resized) {
     // The render-target pass begins with a 'clear' load op, so the target starts transparent.
@@ -170,8 +197,16 @@ export function refreshWebGPURenderCache(
   }
   endWebGPURenderTarget(cacheState);
 
-  const screen = screenState as WebGPURenderStateInternal;
-  screen.currentBlendMode = null;
+  // endWebGPURenderTarget reopened a fresh canvas pass on the cache state — hand the live encoder
+  // and pass back to the screen state so its subsequent draws continue in the same frame.
+  ss.commandEncoder = cs.commandEncoder;
+  ss.renderPass = cs.renderPass;
+  ss.canvasTextureView = cs.canvasTextureView;
+  ss.canvasViewCleared = cs.canvasViewCleared;
+  ss.currentBlendMode = null;
+  // Advance the screen's cursor past the bake's uniform writes so its subsequent draws don't
+  // overwrite them in the shared ring buffer.
+  ss.uniformOffset = cs.uniformOffset;
   return dirty || resized;
 }
 
@@ -185,12 +220,14 @@ export function releaseWebGPURenderCache(state: WebGPURenderState, cache: Render
 }
 
 function drawWebGPURenderCache(state: RenderState, renderNode: DisplayObjectRenderNode): void {
-  const source = renderNode.source;
-  if (!isRenderCache(source)) return;
+  const cache = getRenderNodeCache(state, renderNode.source);
+  if (cache === null) return;
   const webgpuState = state as WebGPURenderState;
-  const target = getTargets(webgpuState).get(source);
+  const target = getTargets(webgpuState).get(cache);
   if (target === undefined) return;
-  drawWebGPURenderTargetResult(webgpuState, renderNode as never, target, source.transform);
+  // renderNode.transform2D already carries the cache placement transform (folded in by the
+  // adapter), so the target composites with an identity offset.
+  drawWebGPURenderTargetResult(webgpuState, renderNode as never, target, _identity);
 }
 
 function getTargets(state: WebGPURenderState): WeakMap<RenderCache, WebGPURenderTarget> {
@@ -214,3 +251,6 @@ const _renderCacheTargets = new WeakMap<WebGPURenderState, WeakMap<RenderCache, 
 const _cacheStateScreen = new WeakMap<WebGPURenderState, WebGPURenderState>();
 const _bounds = createRectangle();
 const _renderTransform = createMatrix() as Matrix;
+const _bakeTransform = createMatrix() as Matrix;
+const _yInvert = createMatrix() as Matrix;
+const _identity = createMatrix() as Matrix;
