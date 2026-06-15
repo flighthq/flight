@@ -5,6 +5,7 @@ import {
   createRenderCache,
   createRenderCacheAdapter,
   enableRenderCacheAdapterSignals,
+  getRenderNodeCache,
   isRenderCache,
   isRenderCacheAdapter,
   registerRenderCacheRenderer,
@@ -32,16 +33,19 @@ describe('createRenderCacheAdapter', () => {
     expect(adapter.adapt(state, obj, data)).toBeNull();
   });
 
-  it('adapt substitutes the cache handle and stops traversal when attached', () => {
+  it('switches the render node to the cache kind and stops traversal, keeping the source node', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
     const data = createDisplayObjectRenderNode(state, obj);
     const cache = createRenderCache();
+    cache.transform.tx = 7;
     const adapter = createRenderCacheAdapter(cache);
     const result = adapter.adapt(state, obj, data);
     expect(result).toBe(false);
     expect(data.kind).toBe(RenderCacheKind);
-    expect(data.source).toBe(cache);
+    // Source stays the original node so the appearance/transform passes keep working each frame.
+    expect(data.source).toBe(obj);
+    expect(data.transform2D.tx).toBe(7);
   });
 
   it('emits onPrepare when signals are enabled', () => {
@@ -71,6 +75,17 @@ describe('enableRenderCacheAdapterSignals', () => {
     const signals = adapter.signals;
     enableRenderCacheAdapterSignals(adapter);
     expect(adapter.signals).toBe(signals);
+  });
+});
+
+describe('getRenderNodeCache', () => {
+  it('returns the cache attached to a source, or null when none', () => {
+    const state = createRenderState();
+    const obj = createDisplayObject();
+    expect(getRenderNodeCache(state, obj as any)).toBeNull();
+    const cache = createRenderCache();
+    useRenderCache(state, obj as any, cache);
+    expect(getRenderNodeCache(state, obj as any)).toBe(cache);
   });
 });
 
