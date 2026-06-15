@@ -3,7 +3,7 @@ import { createMatrix, createRectangle } from '@flighthq/geometry';
 
 import {
   computeDisplayObjectRenderTargetTransform,
-  computeImageRenderCacheTransform,
+  computeRenderCacheTransform,
   computeRenderTargetSize,
 } from './renderTarget';
 
@@ -37,10 +37,10 @@ describe('computeDisplayObjectRenderTargetTransform', () => {
   });
 });
 
-describe('computeImageRenderCacheTransform', () => {
+describe('computeRenderCacheTransform', () => {
   it('produces a pure translation from bounds origin', () => {
     const out = createMatrix();
-    computeImageRenderCacheTransform(out, { x: 10, y: 20, width: 100, height: 80 });
+    computeRenderCacheTransform(out, { x: 10, y: 20, width: 100, height: 80 });
     expect(out.a).toBe(1);
     expect(out.b).toBe(0);
     expect(out.c).toBe(0);
@@ -51,7 +51,7 @@ describe('computeImageRenderCacheTransform', () => {
 
   it('subtracts contentX and contentY from the translation', () => {
     const out = createMatrix();
-    computeImageRenderCacheTransform(out, { x: 10, y: 20, width: 100, height: 80 }, 3, 7);
+    computeRenderCacheTransform(out, { x: 10, y: 20, width: 100, height: 80 }, 3, 7);
     expect(out.tx).toBe(7);
     expect(out.ty).toBe(13);
   });
