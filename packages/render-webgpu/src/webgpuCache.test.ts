@@ -24,6 +24,7 @@ vi.mock('./webgpuRenderTarget', async (importOriginal) => {
     beginWebGPURenderTarget: vi.fn(),
     createWebGPURenderTarget: vi.fn(
       (_state: unknown, width: number, height: number): WebGPURenderTarget => ({
+        bindGroup: {} as GPUBindGroup,
         depthStencilTexture: {} as GPUTexture,
         depthStencilView: {} as GPUTextureView,
         texture: {} as GPUTexture,

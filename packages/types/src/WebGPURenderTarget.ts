@@ -1,4 +1,5 @@
 export type WebGPURenderTarget = {
+  bindGroup: GPUBindGroup;
   depthStencilTexture: GPUTexture;
   depthStencilView: GPUTextureView;
   height: number;

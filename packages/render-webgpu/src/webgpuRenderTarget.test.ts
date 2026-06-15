@@ -47,11 +47,12 @@ describe('beginWebGPURenderTarget / endWebGPURenderTarget', () => {
 });
 
 describe('createWebGPURenderTarget', () => {
-  it('returns a target with texture, view, and depth-stencil', async () => {
+  it('returns a target with texture, view, bind group, and depth-stencil', async () => {
     const state = await createWebGPURenderStateForTest();
     const target = createWebGPURenderTarget(state, 256, 256);
     expect(target.texture).toBeDefined();
     expect(target.view).toBeDefined();
+    expect(target.bindGroup).toBeDefined();
     expect(target.depthStencilTexture).toBeDefined();
     expect(target.width).toBe(256);
     expect(target.height).toBe(256);
@@ -106,11 +107,14 @@ describe('endWebGPURenderTarget', () => {
 });
 
 describe('resizeWebGPURenderTarget', () => {
-  it('updates width and height', async () => {
+  it('updates width, height, and bind group', async () => {
     const state = await createWebGPURenderStateForTest();
     const target = createWebGPURenderTarget(state, 64, 64);
+    const previousBindGroup = target.bindGroup;
     resizeWebGPURenderTarget(state, target, 200, 150);
     expect(target.width).toBe(200);
     expect(target.height).toBe(150);
+    expect(target.bindGroup).toBeDefined();
+    expect(target.bindGroup).not.toBe(previousBindGroup);
   });
 });

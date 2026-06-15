@@ -3,7 +3,7 @@ import type { DisplayObjectRenderNode, RenderNode, WebGPURenderState } from '@fl
 import { BlendMode, RenderFeatures } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
-import { getActivePipeline, getWebGPUPipeline, writeWebGPUQuadUniforms } from './webgpuShader';
+import { getActiveWebGPUPipeline, getWebGPUPipeline, writeWebGPUQuadUniforms } from './webgpuShader';
 
 export function applyWebGPUBlendMode(state: WebGPURenderState, blendMode: BlendMode | null): void {
   state.currentBlendMode = blendMode;
@@ -77,6 +77,17 @@ export function bindWebGPUTexture(
   return entry;
 }
 
+export function buildWebGPURenderTargetBindGroup(state: WebGPURenderStateInternal, view: GPUTextureView): GPUBindGroup {
+  const sampler = state.allowSmoothing ? state.linearSampler : state.nearestSampler;
+  return state.device.createBindGroup({
+    layout: state.textureBindGroupLayout,
+    entries: [
+      { binding: 0, resource: view },
+      { binding: 1, resource: sampler },
+    ],
+  });
+}
+
 export function createWebGPUTextureEntry(
   state: WebGPURenderStateInternal,
   width: number,
@@ -130,7 +141,7 @@ export function drawWebGPUQuad(
   if (pass === null) return;
 
   const uniformOffset = writeWebGPUQuadUniforms(state, renderNode, x0, y0, x1, y1, u0, v0, u1, v1);
-  const pipeline = getActivePipeline(state);
+  const pipeline = getActiveWebGPUPipeline(state);
 
   pass.setPipeline(pipeline);
   pass.setBindGroup(0, state.uniformBindGroup, [uniformOffset]);
@@ -210,7 +221,7 @@ export function drawWebGPUQuadWithTransform(
 
   state.uniformOffset += state.uniformStride;
 
-  const pipeline = getActivePipeline(state);
+  const pipeline = getActiveWebGPUPipeline(state);
   pass.setPipeline(pipeline);
   pass.setBindGroup(0, state.uniformBindGroup, [byteOffset]);
   pass.setBindGroup(1, textureEntry.bindGroup);
@@ -221,20 +232,6 @@ export function drawWebGPUQuadWithTransform(
 export function enableWebGPUBlendModeSupport(state: WebGPURenderState): void {
   state.applyBlendMode = applyWebGPUBlendMode;
   enableRenderFeatures(state, RenderFeatures.BlendMode);
-}
-
-export function getOrCreateRenderTargetTextureBindGroup(
-  state: WebGPURenderStateInternal,
-  view: GPUTextureView,
-): GPUBindGroup {
-  const sampler = state.allowSmoothing ? state.linearSampler : state.nearestSampler;
-  return state.device.createBindGroup({
-    layout: state.textureBindGroupLayout,
-    entries: [
-      { binding: 0, resource: view },
-      { binding: 1, resource: sampler },
-    ],
-  });
 }
 
 export function updateWebGPUTextureEntry(

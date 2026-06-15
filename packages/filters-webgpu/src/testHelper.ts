@@ -14,6 +14,7 @@ export async function makeFilterState(): Promise<WebGPURenderState> {
 
 export function makeRenderTarget(width = 64, height = 64): WebGPURenderTarget {
   return {
+    bindGroup: {} as GPUBindGroup,
     texture: { destroy: () => {} } as unknown as GPUTexture,
     view: {} as GPUTextureView,
     depthStencilTexture: { destroy: () => {} } as unknown as GPUTexture,

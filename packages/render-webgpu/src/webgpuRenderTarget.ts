@@ -2,7 +2,7 @@ import { copyMatrix, createMatrix } from '@flighthq/geometry';
 import type { Matrix, WebGPURenderState, WebGPURenderTarget } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
-import { drawWebGPUQuadWithTransform, getOrCreateRenderTargetTextureBindGroup } from './webgpuDraw';
+import { buildWebGPURenderTargetBindGroup, drawWebGPUQuadWithTransform } from './webgpuDraw';
 
 function beginWebGPURenderPass(
   state: WebGPURenderStateInternal,
@@ -83,6 +83,7 @@ export function createWebGPURenderTarget(state: WebGPURenderState, width: number
     usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
   });
   const view = texture.createView();
+  const bindGroup = buildWebGPURenderTargetBindGroup(internal, view);
 
   const depthStencilTexture = device.createTexture({
     size: [w, h, 1],
@@ -91,7 +92,7 @@ export function createWebGPURenderTarget(state: WebGPURenderState, width: number
   });
   const depthStencilView = depthStencilTexture.createView();
 
-  return { texture, view, depthStencilTexture, depthStencilView, width: w, height: h };
+  return { bindGroup, texture, view, depthStencilTexture, depthStencilView, width: w, height: h };
 }
 
 export function destroyWebGPURenderTarget(_state: WebGPURenderState, target: WebGPURenderTarget): void {
@@ -115,8 +116,6 @@ export function drawWebGPURenderTargetResult(
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 
-  const textureBindGroup = getOrCreateRenderTargetTextureBindGroup(internal, target.view);
-
   // Compose the render node's transform with the cache offset transform
   const { a, b, c, d, tx, ty } = renderNode.transform2D;
   const { a: ta, b: tb, c: tc, d: td, tx: ttx, ty: tty } = transform;
@@ -134,7 +133,7 @@ export function drawWebGPURenderTargetResult(
     internal,
     renderNode as never,
     composedTransform,
-    { texture: target.texture, view: target.view, bindGroup: textureBindGroup },
+    { texture: target.texture, view: target.view, bindGroup: target.bindGroup },
     0,
     0,
     target.width,
@@ -204,6 +203,7 @@ export function resizeWebGPURenderTarget(
   });
   target.texture = newTexture;
   target.view = newTexture.createView();
+  target.bindGroup = buildWebGPURenderTargetBindGroup(internal, target.view);
 
   const newDepth = device.createTexture({
     size: [w, h, 1],
