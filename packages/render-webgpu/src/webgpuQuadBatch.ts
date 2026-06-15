@@ -73,7 +73,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4f {
 }
 `;
 
-interface WebGPUQuadBatchResources {
+export interface WebGPUQuadBatchResources {
   instanceBindGroupLayout: GPUBindGroupLayout;
   pipelineLayout: GPUPipelineLayout;
   module: GPUShaderModule;
@@ -92,105 +92,6 @@ const ADD_BLEND: GPUBlendState = {
   alpha: { srcFactor: 'one', dstFactor: 'one', operation: 'add' },
 };
 
-function ensureQuadBatchResources(state: WebGPURenderStateInternal): WebGPUQuadBatchResources {
-  const existing = _quadBatchResources.get(state.device);
-  if (existing !== undefined) return existing;
-
-  const { device, uniformBindGroupLayout, textureBindGroupLayout } = state;
-
-  const instanceBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.VERTEX,
-        buffer: { type: 'read-only-storage' },
-      },
-    ],
-  });
-
-  const pipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [uniformBindGroupLayout, textureBindGroupLayout, instanceBindGroupLayout],
-  });
-
-  const module = device.createShaderModule({ code: QUAD_BATCH_SHADER_SRC });
-
-  const resources: WebGPUQuadBatchResources = {
-    instanceBindGroupLayout,
-    pipelineLayout,
-    module,
-    pipelines: new Map(),
-  };
-  _quadBatchResources.set(device, resources);
-  return resources;
-}
-
-function getQuadBatchPipeline(
-  state: WebGPURenderStateInternal,
-  resources: WebGPUQuadBatchResources,
-  blendMode: BlendMode | null,
-): GPURenderPipeline {
-  const stencilMode = state.maskWriteMode ? 'maskwrite' : state.currentMaskDepth > 0 ? 'masked' : 'normal';
-  const key = `${blendMode ?? 'null'}-${stencilMode}`;
-  const cached = resources.pipelines.get(key);
-  if (cached !== undefined) return cached;
-
-  const { device, format } = state;
-  const blend = blendMode === BlendMode.Add ? ADD_BLEND : NORMAL_BLEND;
-  const isMaskWrite = stencilMode === 'maskwrite';
-
-  let stencilFace: GPUStencilFaceState;
-  if (isMaskWrite) {
-    stencilFace = { compare: 'always', passOp: 'replace', failOp: 'keep', depthFailOp: 'keep' };
-  } else if (stencilMode === 'masked') {
-    stencilFace = { compare: 'equal', passOp: 'keep', failOp: 'keep', depthFailOp: 'keep' };
-  } else {
-    stencilFace = { compare: 'always', passOp: 'keep', failOp: 'keep', depthFailOp: 'keep' };
-  }
-
-  const pipeline = device.createRenderPipeline({
-    layout: resources.pipelineLayout,
-    vertex: { module: resources.module, entryPoint: 'vs_main' },
-    fragment: {
-      module: resources.module,
-      entryPoint: 'fs_main',
-      targets: [
-        {
-          format,
-          blend: isMaskWrite ? undefined : blend,
-          writeMask: isMaskWrite ? 0 : GPUColorWrite.ALL,
-        },
-      ],
-    },
-    depthStencil: {
-      format: 'depth24plus-stencil8',
-      depthWriteEnabled: false,
-      depthCompare: 'always',
-      stencilFront: stencilFace,
-      stencilBack: stencilFace,
-      stencilReadMask: 0xff,
-      stencilWriteMask: isMaskWrite ? 0xff : 0x00,
-    },
-    primitive: { topology: 'triangle-list' },
-  });
-
-  resources.pipelines.set(key, pipeline);
-  return pipeline;
-}
-
-function ensureQuadBatchInstanceBuffer(state: WebGPURenderStateInternal, count: number): void {
-  const needed = count * INSTANCE_STRIDE;
-  if (state.quadBatchInstanceCapacity >= needed && state.quadBatchInstanceBuffer !== null) return;
-
-  state.quadBatchInstanceBuffer?.destroy();
-  const newCapacity = Math.max(needed, (state.quadBatchInstanceCapacity || 0) * 2);
-  state.quadBatchInstanceBuffer = state.device.createBuffer({
-    size: Math.max(newCapacity, INSTANCE_STRIDE),
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-  });
-  state.quadBatchInstanceCapacity = newCapacity;
-  state.quadBatchInstanceData = new Float32Array(newCapacity / 4);
-}
-
 export function drawWebGPUQuadBatch(state: RenderState, quadBatch: SpriteRenderNode): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
@@ -200,8 +101,8 @@ export function drawWebGPUQuadBatch(state: RenderState, quadBatch: SpriteRenderN
   const { atlas, instanceCount, ids, transforms } = data;
   if (atlas === null || atlas.image === null || atlas.image.src === null || instanceCount === 0) return;
 
-  const resources = ensureQuadBatchResources(internal);
-  ensureQuadBatchInstanceBuffer(internal, instanceCount);
+  const resources = ensureWebGPUQuadBatchResources(internal);
+  ensureWebGPUQuadBatchInstanceBuffer(internal, instanceCount);
 
   internal.applyBlendMode?.(internal, quadBatch.blendMode);
   const textureEntry = bindWebGPUTexture(internal, atlas.image.src);
@@ -253,7 +154,6 @@ export function drawWebGPUQuadBatch(state: RenderState, quadBatch: SpriteRenderN
   const { device } = internal;
   device.queue.writeBuffer(internal.quadBatchInstanceBuffer!, 0, instanceData.buffer, 0, drawCount * INSTANCE_STRIDE);
 
-  // One uniform slot for the whole batch: world transform + alpha.
   const uniformOffset = internal.uniformOffset;
   const floatBase = uniformOffset >> 2;
   const { uniformData, uniformDataU32, matrixArray } = internal;
@@ -283,7 +183,7 @@ export function drawWebGPUQuadBatch(state: RenderState, quadBatch: SpriteRenderN
     entries: [{ binding: 0, resource: { buffer: internal.quadBatchInstanceBuffer! } }],
   });
 
-  const pipeline = getQuadBatchPipeline(internal, resources, quadBatch.blendMode);
+  const pipeline = getWebGPUQuadBatchPipeline(internal, resources, quadBatch.blendMode);
   const pass = internal.renderPass!;
   pass.setPipeline(pipeline);
   pass.setBindGroup(0, internal.uniformBindGroup, [uniformOffset]);
@@ -291,6 +191,105 @@ export function drawWebGPUQuadBatch(state: RenderState, quadBatch: SpriteRenderN
   pass.setBindGroup(2, instanceBindGroup);
   if (internal.currentMaskDepth > 0) pass.setStencilReference(internal.currentMaskDepth);
   pass.draw(6, drawCount, 0, 0);
+}
+
+export function ensureWebGPUQuadBatchInstanceBuffer(state: WebGPURenderStateInternal, count: number): void {
+  const needed = count * INSTANCE_STRIDE;
+  if (state.quadBatchInstanceCapacity >= needed && state.quadBatchInstanceBuffer !== null) return;
+
+  state.quadBatchInstanceBuffer?.destroy();
+  const newCapacity = Math.max(needed, (state.quadBatchInstanceCapacity || 0) * 2);
+  state.quadBatchInstanceBuffer = state.device.createBuffer({
+    size: Math.max(newCapacity, INSTANCE_STRIDE),
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+  });
+  state.quadBatchInstanceCapacity = newCapacity;
+  state.quadBatchInstanceData = new Float32Array(newCapacity / 4);
+}
+
+export function ensureWebGPUQuadBatchResources(state: WebGPURenderStateInternal): WebGPUQuadBatchResources {
+  const existing = _quadBatchResources.get(state.device);
+  if (existing !== undefined) return existing;
+
+  const { device, uniformBindGroupLayout, textureBindGroupLayout } = state;
+
+  const instanceBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: { type: 'read-only-storage' },
+      },
+    ],
+  });
+
+  const pipelineLayout = device.createPipelineLayout({
+    bindGroupLayouts: [uniformBindGroupLayout, textureBindGroupLayout, instanceBindGroupLayout],
+  });
+
+  const module = device.createShaderModule({ code: QUAD_BATCH_SHADER_SRC });
+
+  const resources: WebGPUQuadBatchResources = {
+    instanceBindGroupLayout,
+    pipelineLayout,
+    module,
+    pipelines: new Map(),
+  };
+  _quadBatchResources.set(device, resources);
+  return resources;
+}
+
+export function getWebGPUQuadBatchPipeline(
+  state: WebGPURenderStateInternal,
+  resources: WebGPUQuadBatchResources,
+  blendMode: BlendMode | null,
+): GPURenderPipeline {
+  const stencilMode = state.maskWriteMode ? 'maskwrite' : state.currentMaskDepth > 0 ? 'masked' : 'normal';
+  const key = `${blendMode ?? 'null'}-${stencilMode}`;
+  const cached = resources.pipelines.get(key);
+  if (cached !== undefined) return cached;
+
+  const { device, format } = state;
+  const blend = blendMode === BlendMode.Add ? ADD_BLEND : NORMAL_BLEND;
+  const isMaskWrite = stencilMode === 'maskwrite';
+
+  let stencilFace: GPUStencilFaceState;
+  if (isMaskWrite) {
+    stencilFace = { compare: 'always', passOp: 'replace', failOp: 'keep', depthFailOp: 'keep' };
+  } else if (stencilMode === 'masked') {
+    stencilFace = { compare: 'equal', passOp: 'keep', failOp: 'keep', depthFailOp: 'keep' };
+  } else {
+    stencilFace = { compare: 'always', passOp: 'keep', failOp: 'keep', depthFailOp: 'keep' };
+  }
+
+  const pipeline = device.createRenderPipeline({
+    layout: resources.pipelineLayout,
+    vertex: { module: resources.module, entryPoint: 'vs_main' },
+    fragment: {
+      module: resources.module,
+      entryPoint: 'fs_main',
+      targets: [
+        {
+          format,
+          blend: isMaskWrite ? undefined : blend,
+          writeMask: isMaskWrite ? 0 : GPUColorWrite.ALL,
+        },
+      ],
+    },
+    depthStencil: {
+      format: 'depth24plus-stencil8',
+      depthWriteEnabled: false,
+      depthCompare: 'always',
+      stencilFront: stencilFace,
+      stencilBack: stencilFace,
+      stencilReadMask: 0xff,
+      stencilWriteMask: isMaskWrite ? 0xff : 0x00,
+    },
+    primitive: { topology: 'triangle-list' },
+  });
+
+  resources.pipelines.set(key, pipeline);
+  return pipeline;
 }
 
 export const defaultWebGPUQuadBatchRenderer: SpriteRenderer = {
