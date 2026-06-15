@@ -1,7 +1,10 @@
-﻿import { applyGaussianBlurFilterToWebGL } from '@flighthq/filters-webgl';
+﻿import { applyGaussianBlurFilterToWebGL, clearWebGLFilterTarget } from '@flighthq/filters-webgl';
 import type { DisplayObject } from '@flighthq/sdk';
 import {
+  beginWebGLRenderTarget,
   BitmapKind,
+  copyMatrix,
+  createMatrix,
   createRenderCache,
   createWebGLCacheState,
   createWebGLRenderState,
@@ -11,6 +14,9 @@ import {
   defaultWebGLShapeRenderer,
   defaultWebGLTextRenderer,
   destroyWebGLRenderTarget,
+  enableWebGLRenderCache,
+  endWebGLRenderTarget,
+  ensureWebGLRenderCacheTarget,
   getWebGLRenderCacheTarget,
   prepareDisplayObjectRender,
   refreshWebGLRenderCache,
@@ -40,6 +46,7 @@ registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
 registerRenderer(state, TextKind, defaultWebGLTextRenderer);
 registerWebGLShapeCommands(defaultWebGLShapeCommands);
+enableWebGLRenderCache(state);
 export const scale = pixelRatio;
 
 export function setSize(w: number, h: number): void {
@@ -55,16 +62,33 @@ export function render(root: DisplayObject): void {
   renderWebGLDisplayObject(state, root);
 }
 
-// WebGL has no CSS filter; bake the static panel into a render cache once, blur the cached
-// texture with the offscreen Gaussian filter, then composite it each frame in place of the node.
-export function applyBackgroundBlur(node: DisplayObject): void {
-  const cache = createRenderCache();
-  useRenderCache(state, node, cache);
+// WebGL has no CSS filter. Bake the panel into a "sharp" render cache, then blur that into a
+// separate "blurred" cache — the one composited in place of the node. Two caches are required
+// because the blur composites over its destination (premultiplied OVER): blurring in place would
+// leave the sharp bake showing through underneath. Returns a callback that re-bakes on resize.
+export function applyBackgroundBlur(node: DisplayObject): () => void {
+  const blurred = createRenderCache();
+  useRenderCache(state, node, blurred);
+  const sharp = createRenderCache();
   const cacheState = createWebGLCacheState(state);
-  refreshWebGLRenderCache(cacheState, cache, node, { padding: 30 });
-  const target = getWebGLRenderCacheTarget(state, cache);
-  if (target === null) return;
-  const temp = createWebGLRenderTarget(state, target.width, target.height);
-  applyGaussianBlurFilterToWebGL(state, target, target, temp, { blurX: 10, blurY: 10 });
-  destroyWebGLRenderTarget(state, temp);
+  // Force a full re-bake on every refresh — the panel's own revisions do not change on resize.
+  cacheState.sceneGraphSyncPolicy = 'refreshDerivedState';
+
+  const refresh = (): void => {
+    refreshWebGLRenderCache(cacheState, sharp, node, { padding: 30 });
+    const src = getWebGLRenderCacheTarget(state, sharp);
+    if (src === null) return;
+    const out = ensureWebGLRenderCacheTarget(state, blurred, src.width, src.height);
+    const temp = createWebGLRenderTarget(state, src.width, src.height);
+    // Run inside a render-target bracket so endWebGLRenderTarget rebinds the screen framebuffer the
+    // next render() draws into; clear the output first since the blur composites over it.
+    beginWebGLRenderTarget(state, out, createMatrix());
+    clearWebGLFilterTarget(state, out);
+    applyGaussianBlurFilterToWebGL(state, src, out, temp, { blurX: 10, blurY: 10 });
+    endWebGLRenderTarget(state);
+    destroyWebGLRenderTarget(state, temp);
+    copyMatrix(blurred.transform, sharp.transform);
+  };
+  refresh();
+  return refresh;
 }
