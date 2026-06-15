@@ -3,7 +3,7 @@ import { resolve } from 'path';
 import { build } from 'vite';
 import { gzipSync } from 'zlib';
 
-export const RENDERERS = ['dom', 'canvas', 'webgl'] as const;
+export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
 export type Render = (typeof RENDERERS)[number];
 
 export interface SizeCase {
