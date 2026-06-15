@@ -4,6 +4,24 @@ import type { HasTransform3DRuntime, Matrix4Like, NodeRuntime, Transform3DNode, 
 
 import { computeNodeWorldTransformRevision } from './revision';
 
+export function convertNodeVector3GlobalToLocal<Kind extends symbol, Traits extends object>(
+  out: Vector3Like,
+  source: Transform3DNode<Kind, Traits>,
+  point: Readonly<Vector3Like>,
+): void {
+  const inv = createMatrix4();
+  inverseMatrix4(inv, getNodeWorldTransformMatrix4(source));
+  matrix4TransformPoint(out, inv, point);
+}
+
+export function convertNodeVector3LocalToGlobal<Kind extends symbol, Traits extends object>(
+  out: Vector3Like,
+  source: Transform3DNode<Kind, Traits>,
+  point: Readonly<Vector3Like>,
+): void {
+  matrix4TransformPoint(out, getNodeWorldTransformMatrix4(source), point);
+}
+
 export function ensureNodeWorldTransformMatrix4<Kind extends symbol, Traits extends object>(
   target: Transform3DNode<Kind, Traits>,
 ): void {
@@ -32,24 +50,6 @@ export function getNodeWorldTransformMatrix4<Kind extends symbol, Traits extends
 ): Readonly<Matrix4Like> {
   ensureNodeWorldTransformMatrix4(target);
   return (getEntityRuntime(target) as NodeRuntime<Kind, Traits> & HasTransform3DRuntime).worldMatrix!;
-}
-
-export function nodeGlobalToLocalVector3<Kind extends symbol, Traits extends object>(
-  out: Vector3Like,
-  source: Transform3DNode<Kind, Traits>,
-  point: Readonly<Vector3Like>,
-): void {
-  const inv = createMatrix4();
-  inverseMatrix4(inv, getNodeWorldTransformMatrix4(source));
-  matrix4TransformPoint(out, inv, point);
-}
-
-export function nodeLocalToGlobalVector3<Kind extends symbol, Traits extends object>(
-  out: Vector3Like,
-  source: Transform3DNode<Kind, Traits>,
-  point: Readonly<Vector3Like>,
-): void {
-  matrix4TransformPoint(out, getNodeWorldTransformMatrix4(source), point);
 }
 
 function recomputeWorldTransform3D<Kind extends symbol, Traits extends object>(

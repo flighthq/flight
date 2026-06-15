@@ -2,7 +2,7 @@ import type { BlendMode, WebGPURenderState } from '@flighthq/types';
 
 import type { WebGPUBitmapShader, WebGPURenderStateInternal } from './internal';
 import { bindWebGPUTexture } from './webgpuDraw';
-import { getActivePipeline, writeWebGPUQuadUniforms } from './webgpuShader';
+import { getActiveWebGPUPipeline, writeWebGPUQuadUniforms } from './webgpuShader';
 
 // The color transform shader is the same WGSL as the bitmap shader since color transform
 // support is built directly into the standard WGSL uniform struct (hasColorTransform flag).
@@ -43,7 +43,7 @@ export function drawWebGPUColorTransformBitmap(
   state.applyBlendMode?.(state, renderNode.blendMode);
   const textureEntry = bindWebGPUTexture(state, imageSource);
   const uniformOffset = writeWebGPUQuadUniforms(state, renderNode, x0, y0, x1, y1, u0, v0, u1, v1);
-  const pipeline = getActivePipeline(state);
+  const pipeline = getActiveWebGPUPipeline(state);
 
   pass.setPipeline(pipeline);
   pass.setBindGroup(0, state.uniformBindGroup, [uniformOffset]);
@@ -60,7 +60,7 @@ export function registerWebGPUColorTransformShader(state: WebGPURenderState): vo
   // already baked into the uniform buffer and handled by the WGSL fragment shader.
   // This function exists for API symmetry with registerWebGLColorTransformShader.
   const shader: WebGPUBitmapShader = {
-    pipeline: null as never, // pipeline is resolved dynamically via getActivePipeline
+    pipeline: null as never, // pipeline is resolved dynamically via getActiveWebGPUPipeline
     bind(
       bindState: WebGPURenderStateInternal,
       renderNode: {

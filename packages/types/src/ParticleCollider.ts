@@ -18,7 +18,7 @@ export interface CircleCollider extends CollisionResponse {
   mode: 'exclude' | 'contain';
 }
 
-export interface RectCollider extends CollisionResponse {
+export interface RectangleCollider extends CollisionResponse {
   type: 'rect';
   x: number;
   y: number;
@@ -27,4 +27,4 @@ export interface RectCollider extends CollisionResponse {
   mode: 'exclude' | 'contain';
 }
 
-export type ParticleCollider = PlaneCollider | CircleCollider | RectCollider;
+export type ParticleCollider = PlaneCollider | CircleCollider | RectangleCollider;

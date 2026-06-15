@@ -9,7 +9,7 @@ import type {
   InputPointerData,
   InputSignals,
   MouseWheelMode,
-  TextInputData,
+  TextSelectionRange,
 } from '@flighthq/types';
 import { KeyCode, KeyModifier } from '@flighthq/types';
 
@@ -349,7 +349,7 @@ function setInputPointerData(
   out.y = event.clientY;
 }
 
-function setInputTextData(out: TextInputData, text: string, start: number, length: number): void {
+function setInputTextData(out: TextSelectionRange, text: string, start: number, length: number): void {
   out.length = length;
   out.start = start;
   out.text = text;
@@ -467,7 +467,7 @@ const _pointerData: InputPointerData = {
   y: 0,
 };
 
-const _textData: TextInputData = {
+const _textData: TextSelectionRange = {
   length: 0,
   start: 0,
   text: '',

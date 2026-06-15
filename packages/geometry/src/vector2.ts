@@ -111,13 +111,9 @@ export function setVector2FromPolar(out: Vector2Like, length: number, angle: num
   out.y = length * Math.sin(angle);
 }
 
-export function subtractVector2(
-  out: Vector2Like,
-  source: Readonly<Vector2Like>,
-  toSubtract: Readonly<Vector2Like>,
-): void {
-  out.x = source.x - toSubtract.x;
-  out.y = source.y - toSubtract.y;
+export function subtractVector2(out: Vector2Like, source: Readonly<Vector2Like>, other: Readonly<Vector2Like>): void {
+  out.x = source.x - other.x;
+  out.y = source.y - other.y;
 }
 
 export function writeVector2ToFloat32Array(out: Float32Array, offset: number, source: Readonly<Vector2Like>): void {

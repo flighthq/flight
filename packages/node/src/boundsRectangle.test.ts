@@ -10,8 +10,8 @@ import {
   addNodeChild,
   createNode,
   ensureNodeLocalTransformMatrix,
-  initTransformRuntimeTrait,
-  initTransformTrait,
+  initTransform2DRuntimeTrait,
+  initTransform2DTrait,
   invalidateNodeLocalTransform,
 } from '@flighthq/node';
 import type {
@@ -50,8 +50,8 @@ function createTestNode(): TestNode {
   const runtime = _getRuntime(node);
   initBoundsRectangleTrait(node);
   initBoundsRectangleRuntimeTrait(runtime as HasBoundsRectangleRuntime);
-  initTransformTrait(node);
-  initTransformRuntimeTrait(runtime as HasTransform2DRuntime);
+  initTransform2DTrait(node);
+  initTransform2DRuntimeTrait(runtime as HasTransform2DRuntime);
   return node;
 }
 

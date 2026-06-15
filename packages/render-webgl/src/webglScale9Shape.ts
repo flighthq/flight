@@ -1,5 +1,5 @@
 ﻿import { getNodeLocalBoundsRectangle } from '@flighthq/node';
-import { mapScale9ShapeCommands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
+import { mapCanvasScale9ShapeCommands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import type {
   DisplayObjectRenderer,
   DisplayObjectRenderNode,
@@ -124,9 +124,9 @@ export function drawWebGLScale9ShapeMask(state: RenderState, data: DisplayObject
 export function remapWebGLScale9Commands(
   out: unknown[],
   source: readonly unknown[],
-  mapper: Parameters<typeof mapScale9ShapeCommands>[2],
+  mapper: Parameters<typeof mapCanvasScale9ShapeCommands>[2],
 ): void {
-  mapScale9ShapeCommands(out, source, mapper);
+  mapCanvasScale9ShapeCommands(out, source, mapper);
 
   let i = 0;
   while (i < out.length) {

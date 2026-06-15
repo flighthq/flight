@@ -7,10 +7,10 @@ import { addNodeChild } from './hierarchy';
 import { createNode, getNodeRuntime } from './node';
 import { invalidateNodeLocalTransform } from './revision';
 import {
+  convertNodeVector3GlobalToLocal,
+  convertNodeVector3LocalToGlobal,
   ensureNodeWorldTransformMatrix4,
   getNodeWorldTransformMatrix4,
-  nodeGlobalToLocalVector3,
-  nodeLocalToGlobalVector3,
 } from './transform3d';
 
 const TestGraph: unique symbol = Symbol('TestGraph');
@@ -31,6 +31,93 @@ function createTestNode(): TestNode {
 function vec(): Vector3Like {
   return { x: 0, y: 0, z: 0 } as Vector3Like;
 }
+
+describe('convertNodeVector3GlobalToLocal', () => {
+  it('returns the point unchanged for an identity root node', () => {
+    const node = createTestNode();
+    const out = vec();
+    convertNodeVector3GlobalToLocal(out, node, { x: 4, y: 5, z: 6 } as Vector3Like);
+    expect(out.x).toBeCloseTo(4);
+    expect(out.y).toBeCloseTo(5);
+    expect(out.z).toBeCloseTo(6);
+  });
+
+  it('inverts the node translation', () => {
+    const node = createTestNode();
+    node.localMatrix.m[12] = 10;
+    node.localMatrix.m[13] = 20;
+    node.localMatrix.m[14] = 30;
+    invalidateNodeLocalTransform(node);
+
+    const out = vec();
+    convertNodeVector3GlobalToLocal(out, node, { x: 11, y: 21, z: 31 } as Vector3Like);
+    expect(out.x).toBeCloseTo(1);
+    expect(out.y).toBeCloseTo(1);
+    expect(out.z).toBeCloseTo(1);
+  });
+
+  it('round-trips with convertNodeVector3LocalToGlobal', () => {
+    const parent = createTestNode();
+    const child = createTestNode();
+    addNodeChild(parent, child);
+
+    parent.localMatrix.m[12] = 7;
+    parent.localMatrix.m[13] = -2;
+    invalidateNodeLocalTransform(parent);
+    child.localMatrix.m[14] = 4;
+    invalidateNodeLocalTransform(child);
+
+    const local = { x: 1.5, y: 2.5, z: 3.5 } as Vector3Like;
+    const world = vec();
+    convertNodeVector3LocalToGlobal(world, child, local);
+
+    const back = vec();
+    convertNodeVector3GlobalToLocal(back, child, world);
+    expect(back.x).toBeCloseTo(local.x);
+    expect(back.y).toBeCloseTo(local.y);
+    expect(back.z).toBeCloseTo(local.z);
+  });
+});
+
+describe('convertNodeVector3LocalToGlobal', () => {
+  it('returns the point unchanged for an identity root node', () => {
+    const node = createTestNode();
+    const out = vec();
+    convertNodeVector3LocalToGlobal(out, node, { x: 1, y: 2, z: 3 } as Vector3Like);
+    expect(out.x).toBeCloseTo(1);
+    expect(out.y).toBeCloseTo(2);
+    expect(out.z).toBeCloseTo(3);
+  });
+
+  it('applies the node translation to a local point', () => {
+    const node = createTestNode();
+    node.localMatrix.m[12] = 10;
+    node.localMatrix.m[13] = 20;
+    node.localMatrix.m[14] = 30;
+    invalidateNodeLocalTransform(node);
+
+    const out = vec();
+    convertNodeVector3LocalToGlobal(out, node, { x: 1, y: 1, z: 1 } as Vector3Like);
+    expect(out.x).toBeCloseTo(11);
+    expect(out.y).toBeCloseTo(21);
+    expect(out.z).toBeCloseTo(31);
+  });
+
+  it('composes parent and child translations', () => {
+    const parent = createTestNode();
+    const child = createTestNode();
+    addNodeChild(parent, child);
+
+    parent.localMatrix.m[12] = 5;
+    invalidateNodeLocalTransform(parent);
+    child.localMatrix.m[12] = 3;
+    invalidateNodeLocalTransform(child);
+
+    const out = vec();
+    convertNodeVector3LocalToGlobal(out, child, { x: 0, y: 0, z: 0 } as Vector3Like);
+    expect(out.x).toBeCloseTo(8);
+  });
+});
 
 describe('ensureNodeWorldTransformMatrix4', () => {
   it('computes the world matrix for a root node', () => {
@@ -114,92 +201,5 @@ describe('getNodeWorldTransformMatrix4', () => {
 
     const world = getNodeWorldTransformMatrix4(child);
     expect(world.m[12]).toBeCloseTo(7);
-  });
-});
-
-describe('nodeGlobalToLocalVector3', () => {
-  it('returns the point unchanged for an identity root node', () => {
-    const node = createTestNode();
-    const out = vec();
-    nodeGlobalToLocalVector3(out, node, { x: 4, y: 5, z: 6 } as Vector3Like);
-    expect(out.x).toBeCloseTo(4);
-    expect(out.y).toBeCloseTo(5);
-    expect(out.z).toBeCloseTo(6);
-  });
-
-  it('inverts the node translation', () => {
-    const node = createTestNode();
-    node.localMatrix.m[12] = 10;
-    node.localMatrix.m[13] = 20;
-    node.localMatrix.m[14] = 30;
-    invalidateNodeLocalTransform(node);
-
-    const out = vec();
-    nodeGlobalToLocalVector3(out, node, { x: 11, y: 21, z: 31 } as Vector3Like);
-    expect(out.x).toBeCloseTo(1);
-    expect(out.y).toBeCloseTo(1);
-    expect(out.z).toBeCloseTo(1);
-  });
-
-  it('round-trips with nodeLocalToGlobalVector3', () => {
-    const parent = createTestNode();
-    const child = createTestNode();
-    addNodeChild(parent, child);
-
-    parent.localMatrix.m[12] = 7;
-    parent.localMatrix.m[13] = -2;
-    invalidateNodeLocalTransform(parent);
-    child.localMatrix.m[14] = 4;
-    invalidateNodeLocalTransform(child);
-
-    const local = { x: 1.5, y: 2.5, z: 3.5 } as Vector3Like;
-    const world = vec();
-    nodeLocalToGlobalVector3(world, child, local);
-
-    const back = vec();
-    nodeGlobalToLocalVector3(back, child, world);
-    expect(back.x).toBeCloseTo(local.x);
-    expect(back.y).toBeCloseTo(local.y);
-    expect(back.z).toBeCloseTo(local.z);
-  });
-});
-
-describe('nodeLocalToGlobalVector3', () => {
-  it('returns the point unchanged for an identity root node', () => {
-    const node = createTestNode();
-    const out = vec();
-    nodeLocalToGlobalVector3(out, node, { x: 1, y: 2, z: 3 } as Vector3Like);
-    expect(out.x).toBeCloseTo(1);
-    expect(out.y).toBeCloseTo(2);
-    expect(out.z).toBeCloseTo(3);
-  });
-
-  it('applies the node translation to a local point', () => {
-    const node = createTestNode();
-    node.localMatrix.m[12] = 10;
-    node.localMatrix.m[13] = 20;
-    node.localMatrix.m[14] = 30;
-    invalidateNodeLocalTransform(node);
-
-    const out = vec();
-    nodeLocalToGlobalVector3(out, node, { x: 1, y: 1, z: 1 } as Vector3Like);
-    expect(out.x).toBeCloseTo(11);
-    expect(out.y).toBeCloseTo(21);
-    expect(out.z).toBeCloseTo(31);
-  });
-
-  it('composes parent and child translations', () => {
-    const parent = createTestNode();
-    const child = createTestNode();
-    addNodeChild(parent, child);
-
-    parent.localMatrix.m[12] = 5;
-    invalidateNodeLocalTransform(parent);
-    child.localMatrix.m[12] = 3;
-    invalidateNodeLocalTransform(child);
-
-    const out = vec();
-    nodeLocalToGlobalVector3(out, child, { x: 0, y: 0, z: 0 } as Vector3Like);
-    expect(out.x).toBeCloseTo(8);
   });
 });

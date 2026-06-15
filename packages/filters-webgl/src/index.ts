@@ -21,14 +21,14 @@ export { applyOuterGlowFilterToWebGL } from './outerGlowFilter';
 export { applyPixelateFilterToWebGL } from './pixelateFilter';
 export { applySharpenFilterToWebGL } from './sharpenFilter';
 export {
-  applyBlitOffsetPassWebGL,
-  applyBlitPassWebGL,
-  applyInvertTintPassWebGL,
-  applyTintPassWebGL,
+  applyWebGLBlitOffsetPass,
+  applyWebGLBlitPass,
+  applyWebGLInvertTintPass,
+  applyWebGLTintPass,
 } from './tintShader';
 export {
-  getBlitOffsetShaderWebGL,
   getBlitShaderWebGL,
-  getInvertTintShaderWebGL,
-  getTintShaderWebGL,
+  getWebGLBlitOffsetShader,
+  getWebGLInvertTintShader,
+  getWebGLTintShader,
 } from './tintShader';

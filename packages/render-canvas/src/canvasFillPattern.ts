@@ -5,18 +5,18 @@ import type { GradientType, ImageSource, InterpolationMethod, Matrix, MatrixLike
 const GRADIENT_HALF = 819.2;
 
 export function createBitmapPattern(
-  ctx: CanvasRenderingContext2D,
+  context: CanvasRenderingContext2D,
   bitmap: ImageSource,
   repeat: boolean,
   smooth = false,
 ): CanvasPattern | null {
   if (bitmap.src === null) return null;
-  setSmoothing(ctx, smooth);
-  return ctx.createPattern(bitmap.src, repeat ? 'repeat' : 'no-repeat');
+  setSmoothing(context, smooth);
+  return context.createPattern(bitmap.src, repeat ? 'repeat' : 'no-repeat');
 }
 
 export function createGradientPattern(
-  ctx: CanvasRenderingContext2D,
+  context: CanvasRenderingContext2D,
   gradientType: GradientType,
   colors: number[],
   alphas: number[],
@@ -29,9 +29,9 @@ export function createGradientPattern(
   const mat = m ?? IDENTITY;
 
   if (gradientType === 'radial') {
-    return createRadialGradient(ctx, colors, alphas, ratios, mat, focalPointRatio);
+    return createRadialGradient(context, colors, alphas, ratios, mat, focalPointRatio);
   }
-  return createLinearGradient(ctx, colors, alphas, ratios, mat, spreadMethod);
+  return createLinearGradient(context, colors, alphas, ratios, mat, spreadMethod);
 }
 
 // ---------------------------------------------------------------------------
@@ -52,7 +52,7 @@ function addColorStops(gradient: CanvasGradient, colors: number[], alphas: numbe
 }
 
 function createRadialGradient(
-  ctx: CanvasRenderingContext2D,
+  context: CanvasRenderingContext2D,
   colors: number[],
   alphas: number[],
   ratios: number[],
@@ -69,13 +69,13 @@ function createRadialGradient(
   const dy = ey - cy;
   const radius = Math.sqrt(dx * dx + dy * dy);
 
-  const gradient = ctx.createRadialGradient(fx, fy, 0, cx, cy, radius);
+  const gradient = context.createRadialGradient(fx, fy, 0, cx, cy, radius);
   addColorStops(gradient, colors, alphas, ratios);
   return gradient;
 }
 
 function createLinearGradient(
-  ctx: CanvasRenderingContext2D,
+  context: CanvasRenderingContext2D,
   colors: number[],
   alphas: number[],
   ratios: number[],
@@ -85,7 +85,7 @@ function createLinearGradient(
   if (spreadMethod === 'pad') {
     const [x1, y1] = tp(m, -GRADIENT_HALF, 0);
     const [x2, y2] = tp(m, GRADIENT_HALF, 0);
-    const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+    const gradient = context.createLinearGradient(x1, y1, x2, y2);
     addColorStops(gradient, colors, alphas, ratios);
     return gradient;
   }
@@ -101,8 +101,8 @@ function createLinearGradient(
   const dy = y2 - y1;
 
   const offscreen = document.createElement('canvas');
-  offscreen.width = ctx.canvas.width;
-  offscreen.height = ctx.canvas.height;
+  offscreen.width = context.canvas.width;
+  offscreen.height = context.canvas.height;
   const octx = offscreen.getContext('2d');
   if (octx === null) return null;
 
@@ -143,12 +143,12 @@ function createLinearGradient(
 
   octx.fillStyle = tiledGradient;
   octx.fillRect(0, 0, offscreen.width, offscreen.height);
-  return ctx.createPattern(offscreen, 'no-repeat');
+  return context.createPattern(offscreen, 'no-repeat');
 }
 
-function setSmoothing(ctx: CanvasRenderingContext2D, smooth: boolean): void {
-  if (ctx.imageSmoothingEnabled !== smooth) {
-    ctx.imageSmoothingEnabled = smooth;
+function setSmoothing(context: CanvasRenderingContext2D, smooth: boolean): void {
+  if (context.imageSmoothingEnabled !== smooth) {
+    context.imageSmoothingEnabled = smooth;
   }
 }
 

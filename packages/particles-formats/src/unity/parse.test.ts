@@ -1,9 +1,9 @@
 import {
-  colorCurveFromKeyframes,
   createParticleEmitterConfig,
-  curveFromKeyframes,
-  sampleColorCurve,
-  sampleCurve,
+  particleColorCurveFromKeyframes,
+  particleCurveFromKeyframes,
+  sampleParticleColorCurve,
+  sampleParticleCurve,
 } from '@flighthq/particles';
 
 import { parseUnityParticle, parseUnityParticleDocument } from './parse';
@@ -78,9 +78,9 @@ describe('parseUnityParticle — gradient / size curves bake into curves', () =>
     expect(c.colorCurve).not.toBeNull();
     expect(c.alphaCurve).not.toBeNull();
     const out = [0, 0, 0];
-    sampleColorCurve(c.colorCurve!, 0.5, out, 0);
+    sampleParticleColorCurve(c.colorCurve!, 0.5, out, 0);
     expect(out[1]).toBeGreaterThan(0.8); // green mid-life
-    expect(sampleCurve(c.alphaCurve!, 0.5)).toBeGreaterThan(0.9); // alpha peaks mid-life
+    expect(sampleParticleCurve(c.alphaCurve!, 0.5)).toBeGreaterThan(0.9); // alpha peaks mid-life
   });
 
   it('bakes a size-over-lifetime AnimationCurve into scaleCurve', () => {
@@ -99,7 +99,7 @@ describe('parseUnityParticle — gradient / size curves bake into curves', () =>
     });
     const c = parseUnityParticle(json, { pixelsPerUnit: PPU });
     expect(c.scaleCurve).not.toBeNull();
-    expect(sampleCurve(c.scaleCurve!, 0.5)).toBeGreaterThan(sampleCurve(c.scaleCurve!, 0));
+    expect(sampleParticleCurve(c.scaleCurve!, 0.5)).toBeGreaterThan(sampleParticleCurve(c.scaleCurve!, 0));
   });
 
   it('does not warn about a gradient now that it is baked', () => {
@@ -287,17 +287,17 @@ describe('serializeUnityParticle', () => {
 
 describe('serializeUnityParticle — curve round-trip', () => {
   it('emits baked color/alpha/scale curves as gradient + AnimationCurve that re-import identically', () => {
-    const colorCurve = colorCurveFromKeyframes([
+    const colorCurve = particleColorCurveFromKeyframes([
       { time: 0, r: 1, g: 0, b: 0 },
       { time: 0.5, r: 0, g: 1, b: 0 },
       { time: 1, r: 0, g: 0, b: 1 },
     ]);
-    const alphaCurve = curveFromKeyframes([
+    const alphaCurve = particleCurveFromKeyframes([
       { time: 0, value: 0 },
       { time: 0.5, value: 1 },
       { time: 1, value: 0 },
     ]);
-    const scaleCurve = curveFromKeyframes([
+    const scaleCurve = particleCurveFromKeyframes([
       { time: 0, value: 0 },
       { time: 0.5, value: 1 },
       { time: 1, value: 0 },
@@ -316,9 +316,9 @@ describe('serializeUnityParticle — curve round-trip', () => {
     expect(c2.alphaCurve).not.toBeNull();
     expect(c2.scaleCurve).not.toBeNull();
     const out = [0, 0, 0];
-    sampleColorCurve(c2.colorCurve!, 0.5, out, 0);
+    sampleParticleColorCurve(c2.colorCurve!, 0.5, out, 0);
     expect(out[1]).toBeGreaterThan(0.8);
-    expect(sampleCurve(c2.alphaCurve!, 0.5)).toBeGreaterThan(0.9);
-    expect(sampleCurve(c2.scaleCurve!, 0.5)).toBeGreaterThan(sampleCurve(c2.scaleCurve!, 0));
+    expect(sampleParticleCurve(c2.alphaCurve!, 0.5)).toBeGreaterThan(0.9);
+    expect(sampleParticleCurve(c2.scaleCurve!, 0.5)).toBeGreaterThan(sampleParticleCurve(c2.scaleCurve!, 0));
   });
 });

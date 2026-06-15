@@ -2,15 +2,15 @@ import { createSurface } from '@flighthq/surface';
 
 import {
   applySurfaceColorMatrixFilter,
-  buildBrightnessColorMatrix,
-  buildContrastColorMatrix,
-  buildGrayscaleColorMatrix,
-  buildHueRotationColorMatrix,
-  buildInvertColorMatrix,
-  buildSaturationColorMatrix,
-  buildSepiaColorMatrix,
-  concatColorMatrix,
-  setColorMatrixIdentity,
+  buildSurfaceBrightnessColorMatrix,
+  buildSurfaceContrastColorMatrix,
+  buildSurfaceGrayscaleColorMatrix,
+  buildSurfaceHueRotationColorMatrix,
+  buildSurfaceInvertColorMatrix,
+  buildSurfaceSaturationColorMatrix,
+  buildSurfaceSepiaColorMatrix,
+  concatSurfaceColorMatrix,
+  setSurfaceColorMatrixIdentity,
 } from './colorMatrix';
 
 function region(
@@ -87,10 +87,10 @@ describe('applySurfaceColorMatrixFilter', () => {
   });
 });
 
-describe('buildBrightnessColorMatrix', () => {
+describe('buildSurfaceBrightnessColorMatrix', () => {
   it('multiplies RGB by the amount', () => {
     const m = new Array<number>(20);
-    buildBrightnessColorMatrix(m, 0.5);
+    buildSurfaceBrightnessColorMatrix(m, 0.5);
     const out = applyTo(0xc86432ff, m); // R=200 G=100 B=50
     expect(out[0]).toBe(100);
     expect(out[1]).toBe(50);
@@ -99,20 +99,20 @@ describe('buildBrightnessColorMatrix', () => {
   });
 });
 
-describe('buildContrastColorMatrix', () => {
+describe('buildSurfaceContrastColorMatrix', () => {
   it('amount 0 flattens every channel to mid grey', () => {
     const m = new Array<number>(20);
-    buildContrastColorMatrix(m, 0);
+    buildSurfaceContrastColorMatrix(m, 0);
     const out = applyTo(0xc80000ff, m); // R=200
     expect(out[0]).toBe(128); // round(127.5)
     expect(out[1]).toBe(128);
   });
 });
 
-describe('buildGrayscaleColorMatrix', () => {
+describe('buildSurfaceGrayscaleColorMatrix', () => {
   it('maps pure red to its luma in every channel', () => {
     const m = new Array<number>(20);
-    buildGrayscaleColorMatrix(m);
+    buildSurfaceGrayscaleColorMatrix(m);
     const out = applyTo(0xff0000ff, m);
     expect(out[0]).toBe(54); // round(0.213 * 255)
     expect(out[1]).toBe(54);
@@ -120,11 +120,11 @@ describe('buildGrayscaleColorMatrix', () => {
   });
 });
 
-describe('buildHueRotationColorMatrix', () => {
+describe('buildSurfaceHueRotationColorMatrix', () => {
   it('leaves grey unchanged at any angle (rotation around the luma axis)', () => {
     const m = new Array<number>(20);
     // 70.7° ≈ 1.234 radians — same geometric rotation, now expressed in degrees
-    buildHueRotationColorMatrix(m, 70.7);
+    buildSurfaceHueRotationColorMatrix(m, 70.7);
     const out = applyTo(0x808080ff, m);
     expect(out[0]).toBe(128);
     expect(out[1]).toBe(128);
@@ -133,7 +133,7 @@ describe('buildHueRotationColorMatrix', () => {
 
   it('is identity at 0 degrees', () => {
     const m = new Array<number>(20);
-    buildHueRotationColorMatrix(m, 0);
+    buildSurfaceHueRotationColorMatrix(m, 0);
     const out = applyTo(0xc86432ff, m);
     expect(out[0]).toBe(200);
     expect(out[1]).toBe(100);
@@ -142,7 +142,7 @@ describe('buildHueRotationColorMatrix', () => {
 
   it('is identity at 360 degrees', () => {
     const m = new Array<number>(20);
-    buildHueRotationColorMatrix(m, 360);
+    buildSurfaceHueRotationColorMatrix(m, 360);
     const out = applyTo(0xc86432ff, m);
     expect(out[0]).toBeCloseTo(200, 0);
     expect(out[1]).toBeCloseTo(100, 0);
@@ -150,10 +150,10 @@ describe('buildHueRotationColorMatrix', () => {
   });
 });
 
-describe('buildInvertColorMatrix', () => {
+describe('buildSurfaceInvertColorMatrix', () => {
   it('inverts RGB and preserves alpha', () => {
     const m = new Array<number>(20);
-    buildInvertColorMatrix(m);
+    buildSurfaceInvertColorMatrix(m);
     const out = applyTo(0xc83200ff, m); // R=200 G=50 B=0
     expect(out[0]).toBe(55);
     expect(out[1]).toBe(205);
@@ -162,10 +162,10 @@ describe('buildInvertColorMatrix', () => {
   });
 });
 
-describe('buildSaturationColorMatrix', () => {
+describe('buildSurfaceSaturationColorMatrix', () => {
   it('amount 1 is identity', () => {
     const m = new Array<number>(20);
-    buildSaturationColorMatrix(m, 1);
+    buildSurfaceSaturationColorMatrix(m, 1);
     const out = applyTo(0xc86432ff, m);
     expect(out[0]).toBe(200);
     expect(out[1]).toBe(100);
@@ -174,17 +174,17 @@ describe('buildSaturationColorMatrix', () => {
 
   it('amount 0 equals grayscale', () => {
     const m = new Array<number>(20);
-    buildSaturationColorMatrix(m, 0);
+    buildSurfaceSaturationColorMatrix(m, 0);
     const out = applyTo(0xff0000ff, m);
     expect(out[0]).toBe(54);
     expect(out[1]).toBe(54);
   });
 });
 
-describe('buildSepiaColorMatrix', () => {
+describe('buildSurfaceSepiaColorMatrix', () => {
   it('maps pure red to the sepia tone', () => {
     const m = new Array<number>(20);
-    buildSepiaColorMatrix(m);
+    buildSurfaceSepiaColorMatrix(m);
     const out = applyTo(0xff0000ff, m);
     expect(out[0]).toBe(100); // round(0.393 * 255)
     expect(out[1]).toBe(89); // round(0.349 * 255)
@@ -192,14 +192,14 @@ describe('buildSepiaColorMatrix', () => {
   });
 });
 
-describe('concatColorMatrix', () => {
+describe('concatSurfaceColorMatrix', () => {
   it('composes two matrices (apply first, then second)', () => {
     const bright2 = new Array<number>(20);
     const half = new Array<number>(20);
-    buildBrightnessColorMatrix(bright2, 2);
-    buildBrightnessColorMatrix(half, 0.5);
+    buildSurfaceBrightnessColorMatrix(bright2, 2);
+    buildSurfaceBrightnessColorMatrix(half, 0.5);
     const out = new Array<number>(20);
-    concatColorMatrix(out, bright2, half); // *2 then *0.5 = identity
+    concatSurfaceColorMatrix(out, bright2, half); // *2 then *0.5 = identity
     const pixel = applyTo(0xc86432ff, out);
     expect(pixel[0]).toBe(200);
     expect(pixel[1]).toBe(100);
@@ -209,19 +209,19 @@ describe('concatColorMatrix', () => {
   it('carries the offset through composition', () => {
     const identity = new Array<number>(20);
     const invert = new Array<number>(20);
-    setColorMatrixIdentity(identity);
-    buildInvertColorMatrix(invert);
+    setSurfaceColorMatrixIdentity(identity);
+    buildSurfaceInvertColorMatrix(invert);
     const out = new Array<number>(20);
-    concatColorMatrix(out, identity, invert);
+    concatSurfaceColorMatrix(out, identity, invert);
     const pixel = applyTo(0xc80000ff, out); // R=200 -> 55
     expect(pixel[0]).toBe(55);
   });
 });
 
-describe('setColorMatrixIdentity', () => {
+describe('setSurfaceColorMatrixIdentity', () => {
   it('leaves the pixel unchanged', () => {
     const m = new Array<number>(20);
-    setColorMatrixIdentity(m);
+    setSurfaceColorMatrixIdentity(m);
     const out = applyTo(0xc86432ff, m);
     expect(out[0]).toBe(200);
     expect(out[1]).toBe(100);

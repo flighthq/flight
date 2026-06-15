@@ -61,12 +61,12 @@ export function getStageSignals(source: Stage): StageSignals {
   return (runtime.stageSignals ??= createStageSignals());
 }
 
-export function setStageSize(stage: Stage, width: number, height: number): void {
-  if (stage.data.stageWidth === width && stage.data.stageHeight === height) return;
-  stage.data.stageWidth = width;
-  stage.data.stageHeight = height;
-  invalidateNodeLocalBounds(stage);
-  const runtime = stage[EntityRuntimeKey] as StageRuntime;
+export function setStageSize(source: Stage, width: number, height: number): void {
+  if (source.data.stageWidth === width && source.data.stageHeight === height) return;
+  source.data.stageWidth = width;
+  source.data.stageHeight = height;
+  invalidateNodeLocalBounds(source);
+  const runtime = source[EntityRuntimeKey] as StageRuntime;
   if (runtime.stageSignals) emitSignal(runtime.stageSignals.onResize);
 }
 

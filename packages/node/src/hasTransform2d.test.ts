@@ -1,9 +1,9 @@
 import type { HasTransform2D, HasTransform2DRuntime, Node, NodeRuntime } from '@flighthq/types';
 
-import { initTransformRuntimeTrait, initTransformTrait } from './hasTransform2d';
+import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransform2d';
 import { createNode, createNodeRuntime } from './node';
 
-describe('initTransformRuntimeTrait', () => {
+describe('initTransform2DRuntimeTrait', () => {
   let runtime: NodeRuntime<typeof NodeTestKind, HasTransform2D> & HasTransform2DRuntime;
 
   beforeEach(() => {
@@ -11,7 +11,7 @@ describe('initTransformRuntimeTrait', () => {
   });
 
   it('initializes default values', () => {
-    initTransformRuntimeTrait(runtime);
+    initTransform2DRuntimeTrait(runtime);
 
     expect(runtime.localTransform2D).toBeNull();
     expect(runtime.rotationAngle).toStrictEqual(0);
@@ -24,7 +24,7 @@ describe('initTransformRuntimeTrait', () => {
   });
 });
 
-describe('initTransformTrait', () => {
+describe('initTransform2DTrait', () => {
   let node: HasTransform2D;
 
   beforeEach(() => {
@@ -32,7 +32,7 @@ describe('initTransformTrait', () => {
   });
 
   it('initializes default values', () => {
-    initTransformTrait(node);
+    initTransform2DTrait(node);
 
     expect(node.rotation).toStrictEqual(0);
     expect(node.scaleX).toStrictEqual(1);
@@ -49,7 +49,7 @@ describe('initTransformTrait', () => {
       x: 100,
       y: 200,
     };
-    initTransformTrait(node, base);
+    initTransform2DTrait(node, base);
     expect(base.scaleX).toStrictEqual(base.scaleX);
     expect(base.scaleY).toStrictEqual(base.scaleY);
     expect(base.rotation).toStrictEqual(base.rotation);

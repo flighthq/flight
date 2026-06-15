@@ -6,7 +6,7 @@ import { applyBoxBlurFilterToWebGL } from './blurFilter';
 import type { WebGLFilterLocations } from './filterPass';
 import { clearWebGLFilterTarget, compileWebGLFilterProgram, drawWebGLFilterPass } from './filterPass';
 import { createWebGLGradientRampTexture } from './gradientRamp';
-import { applyBlitPassWebGL, applyTintPassWebGL } from './tintShader';
+import { applyWebGLBlitPass, applyWebGLTintPass } from './tintShader';
 
 // Uses the blurred alpha (unit 0) to index into a gradient ramp texture (unit 1).
 // Outputs the gradient-colored glow at the correct intensity per pixel.
@@ -54,7 +54,7 @@ export function applyGradientGlowFilterToWebGL(
   const { gl } = internal;
 
   // Extract alpha as a neutral (white) mask, then blur → s1
-  applyTintPassWebGL(state, source, s0, 0xffffff, 1, Math.min(1, strength));
+  applyWebGLTintPass(state, source, s0, 0xffffff, 1, Math.min(1, strength));
   applyBoxBlurFilterToWebGL(state, s0, s1, s2, { blurX: filter.blurX ?? 6, blurY: filter.blurY ?? 6, passes: quality });
 
   // Build gradient ramp texture and look up the blurred alpha → s0
@@ -63,8 +63,8 @@ export function applyGradientGlowFilterToWebGL(
   gl.deleteTexture(ramp);
 
   clearWebGLFilterTarget(state, dest);
-  applyBlitPassWebGL(state, s0, dest);
-  applyBlitPassWebGL(state, source, dest);
+  applyWebGLBlitPass(state, s0, dest);
+  applyWebGLBlitPass(state, source, dest);
 }
 
 function applyGradientLookupPass(

@@ -2,7 +2,7 @@ import { reserveParticleEmitter } from '@flighthq/sprite';
 import type { ParticleEmitter } from '@flighthq/types';
 import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types';
 
-import { sampleColorCurve, sampleCurve } from './curve';
+import { sampleParticleColorCurve, sampleParticleCurve } from './curve';
 import { ensureParticleEmitterStateCapacity } from './particleEmitterState';
 
 const PARTICLE_TRANSFORM_STRIDE = 4;
@@ -93,12 +93,12 @@ export function emitParticleBurst(
     data.transforms[tt] = spawnX;
     data.transforms[tt + 1] = spawnY;
     data.transforms[tt + 2] = angle;
-    data.transforms[tt + 3] = hasScaleCurve ? spawnScale * sampleCurve(scaleCurve, 0) : spawnScale;
-    data.alphas[idx] = hasAlphaCurve ? sampleCurve(alphaCurve, 0) : config.alphaStart;
+    data.transforms[tt + 3] = hasScaleCurve ? spawnScale * sampleParticleCurve(scaleCurve, 0) : spawnScale;
+    data.alphas[idx] = hasAlphaCurve ? sampleParticleCurve(alphaCurve, 0) : config.alphaStart;
 
     const ct = idx * 3;
     if (hasColorCurve) {
-      sampleColorCurve(colorCurve, 0, data.colors, ct);
+      sampleParticleColorCurve(colorCurve, 0, data.colors, ct);
     } else if (hasColorVariance) {
       const r0 = clamp01(colorStartR + (random() - 0.5) * 2 * config.colorStartVarianceR);
       const g0 = clamp01(colorStartG + (random() - 0.5) * 2 * config.colorStartVarianceG);

@@ -6,7 +6,7 @@ import { applyBoxBlurFilterToWebGL } from './blurFilter';
 import type { WebGLFilterLocations } from './filterPass';
 import { clearWebGLFilterTarget, compileWebGLFilterProgram, drawWebGLFilterPass } from './filterPass';
 import { createWebGLGradientRampTexture } from './gradientRamp';
-import { applyBlitPassWebGL, applyTintPassWebGL } from './tintShader';
+import { applyWebGLBlitPass, applyWebGLTintPass } from './tintShader';
 
 // Samples the blurred alpha at +offset and -offset to compute a bevel value
 // in [-1, 1], mapped to [0, 1] for gradient lookup. Outputs the encoded
@@ -76,7 +76,7 @@ export function applyGradientBevelFilterToWebGL(
   const { gl } = internal;
 
   // Build blur basis → s1
-  applyTintPassWebGL(state, source, s0, 0xffffff, 1, Math.min(1, strength));
+  applyWebGLTintPass(state, source, s0, 0xffffff, 1, Math.min(1, strength));
   applyBoxBlurFilterToWebGL(state, s0, s1, s2, { blurX: filter.blurX ?? 4, blurY: filter.blurY ?? 4, passes: quality });
 
   // Encode bevel value from blurred alpha offset samples → s0
@@ -91,9 +91,9 @@ export function applyGradientBevelFilterToWebGL(
 
   clearWebGLFilterTarget(state, dest);
   if (!(filter.bevelType && filter.bevelType !== 'full')) {
-    applyBlitPassWebGL(state, source, dest);
+    applyWebGLBlitPass(state, source, dest);
   }
-  applyBlitPassWebGL(state, s1, dest);
+  applyWebGLBlitPass(state, s1, dest);
 }
 
 function applyBevelEncodePass(

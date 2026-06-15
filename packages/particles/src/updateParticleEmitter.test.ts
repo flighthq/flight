@@ -47,7 +47,7 @@ describe('isParticleEmitterComplete', () => {
 });
 
 describe('updateParticleEmitter', () => {
-  it('spawns particles up to spawnRate × dt', () => {
+  it('spawns particles up to spawnRate × deltaTime', () => {
     const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 10, maxParticles: 100 });
@@ -71,7 +71,7 @@ describe('updateParticleEmitter', () => {
       lifetimeMin: 10,
       lifetimeMax: 10,
     });
-    updateParticleEmitter(emitter, state, config, 1); // spawn 1 particle (spawnRate*dt=1)
+    updateParticleEmitter(emitter, state, config, 1); // spawn 1 particle (spawnRate*deltaTime=1)
     expect(emitter.data.particleCount).toBe(1);
     updateParticleEmitter(emitter, state, config, 0.1); // age by 0.1
     expect(state.lifetimes[0]).toBeCloseTo(0.1);
@@ -142,7 +142,7 @@ describe('updateParticleEmitter', () => {
       lifetimeMax: 10,
       maxParticles: 100,
     });
-    // 10 frames of dt=0.05 → total dt=0.5 → 5 particles
+    // 10 frames of deltaTime=0.05 → total deltaTime=0.5 → 5 particles
     for (let i = 0; i < 10; i++) updateParticleEmitter(emitter, state, config, 0.05);
     expect(emitter.data.particleCount).toBe(5);
   });
@@ -436,7 +436,7 @@ describe('updateParticleEmitter', () => {
   it('trail interpolation: particles spawned at interpolated positions along path', () => {
     const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
-    // spawnRate=5 with dt=1 → 5 particles per frame; maxParticles=10 leaves room for frame 2
+    // spawnRate=5 with deltaTime=1 → 5 particles per frame; maxParticles=10 leaves room for frame 2
     const config = createParticleEmitterConfig({
       spawnRate: 5,
       maxParticles: 10,
@@ -498,7 +498,7 @@ describe('updateParticleEmitter', () => {
     expect(vx).toBeGreaterThan(100);
   });
 
-  it('ignores a zero-dt frame: no spawning, aging, or velocity corruption', () => {
+  it('ignores a zero-deltaTime frame: no spawning, aging, or velocity corruption', () => {
     const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
@@ -512,23 +512,23 @@ describe('updateParticleEmitter', () => {
       spread: 0,
       velocityInheritance: 1,
     });
-    // Establish a previous position, then move the emitter and step with dt=0.
+    // Establish a previous position, then move the emitter and step with deltaTime=0.
     emitter.x = 0;
     updateParticleEmitter(emitter, state, config, 1 / 60);
     const countBefore = emitter.data.particleCount;
     state.burstTimer = 0; // arm a burst that would otherwise fire on the next step
     emitter.x = 100;
     updateParticleEmitter(emitter, state, config, 0);
-    // No new particles spawned on a zero-dt frame...
+    // No new particles spawned on a zero-deltaTime frame...
     expect(emitter.data.particleCount).toBe(countBefore);
-    // ...and existing particle velocities remain finite (no divide-by-dt poisoning).
+    // ...and existing particle velocities remain finite (no divide-by-deltaTime poisoning).
     for (let i = 0; i < emitter.data.particleCount; i++) {
       expect(Number.isFinite(state.velocities[i * 2])).toBe(true);
       expect(Number.isFinite(state.velocities[i * 2 + 1])).toBe(true);
     }
   });
 
-  it('ignores a negative-dt frame', () => {
+  it('ignores a negative-deltaTime frame', () => {
     const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 10, lifetimeMin: 10, lifetimeMax: 10 });
@@ -540,7 +540,7 @@ describe('updateParticleEmitter', () => {
     expect(state.spawnAccumulator).toBe(accBefore); // accumulator not driven negative
   });
 
-  it('still syncs the world-space flag on a zero-dt frame', () => {
+  it('still syncs the world-space flag on a zero-deltaTime frame', () => {
     const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ worldSpace: true, spawnRate: 10 });

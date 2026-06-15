@@ -5,8 +5,8 @@ import {
   initAppearanceTrait,
   initBoundsRectangleRuntimeTrait,
   initBoundsRectangleTrait,
-  initTransformRuntimeTrait,
-  initTransformTrait,
+  initTransform2DRuntimeTrait,
+  initTransform2DTrait,
 } from '@flighthq/node';
 import type { NodeRuntimeFactory } from '@flighthq/types';
 import type {
@@ -33,7 +33,7 @@ export function createSpriteNode<Runtime extends SpriteNodeRuntime>(
     createData,
     createSpriteNodeRuntimeFactory ?? (createSpriteNodeRuntime as unknown as NodeRuntimeFactory<Runtime>),
   ) as SpriteNode;
-  initTransformTrait(out, obj);
+  initTransform2DTrait(out, obj);
   initBoundsRectangleTrait(out, obj);
   initAppearanceTrait(out, obj);
   out.alphaEnabled = obj?.alphaEnabled ?? true;
@@ -46,7 +46,7 @@ export function createSpriteNode<Runtime extends SpriteNodeRuntime>(
 
 export function createSpriteNodeRuntime(methods?: Readonly<Partial<MethodsOf<SpriteNodeRuntime>>>): SpriteNodeRuntime {
   const out = createNodeRuntime(methods) as SpriteNodeRuntime;
-  initTransformRuntimeTrait(out, methods);
+  initTransform2DRuntimeTrait(out, methods);
   initBoundsRectangleRuntimeTrait(out, methods);
   return out;
 }

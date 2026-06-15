@@ -1,4 +1,4 @@
-import { colorCurveToKeyframes, curveToKeyframes } from '@flighthq/particles';
+import { particleColorCurveToKeyframes, particleCurveToKeyframes } from '@flighthq/particles';
 import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/types';
 
 import type { SpineAlphaKeyframe, SpineParticleDocument, SpineTintKeyframe } from './schema';
@@ -56,7 +56,7 @@ function configToDocument(
     // A baked color/alpha curve serializes back to a full multi-stop timeline;
     // otherwise emit the 2-stop start→end timeline.
     tint: config.colorCurve
-      ? colorCurveToKeyframes(config.colorCurve).map(
+      ? particleColorCurveToKeyframes(config.colorCurve).map(
           (k): SpineTintKeyframe => ({ time: k.time, color: rgbToHex(k.r, k.g, k.b) }),
         )
       : [
@@ -64,7 +64,7 @@ function configToDocument(
           { time: 1, color: rgbToHex(config.colorEndR, config.colorEndG, config.colorEndB) },
         ],
     alpha: config.alphaCurve
-      ? curveToKeyframes(config.alphaCurve).map((k): SpineAlphaKeyframe => ({ time: k.time, alpha: k.value }))
+      ? particleCurveToKeyframes(config.alphaCurve).map((k): SpineAlphaKeyframe => ({ time: k.time, alpha: k.value }))
       : [
           { time: 0, alpha: config.alphaStart },
           { time: 1, alpha: config.alphaEnd },

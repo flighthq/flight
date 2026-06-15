@@ -6,7 +6,7 @@
   createTileset,
 } from '@flighthq/assets';
 import { getOrCreateSpriteRenderNode, prepareSpriteRender } from '@flighthq/render';
-import { createTilemap, writeTilemapTile } from '@flighthq/sprite';
+import { createTilemap, setTilemapTile } from '@flighthq/sprite';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { drawCanvasTilemap } from './canvasTilemap';
@@ -49,8 +49,8 @@ describe('drawCanvasTilemap', () => {
     const state = makeState();
     const tileset = makeTilesetAtlas(32, 32, 2, 1);
     const tilemap = createTilemap({ data: { columns: 2, rows: 1, tileset } });
-    writeTilemapTile(tilemap, 0, 0, 0);
-    writeTilemapTile(tilemap, 1, 0, 1);
+    setTilemapTile(tilemap, 0, 0, 0);
+    setTilemapTile(tilemap, 1, 0, 1);
     prepareSpriteRender(state, tilemap);
     const renderNode = getOrCreateSpriteRenderNode(state, tilemap);
     const spy = vi.spyOn(state.context, 'drawImage');
@@ -62,7 +62,7 @@ describe('drawCanvasTilemap', () => {
     const state = makeState();
     const tileset = makeTilesetAtlas(32, 32, 2, 1);
     const tilemap = createTilemap({ data: { columns: 2, rows: 1, tileset } });
-    writeTilemapTile(tilemap, 0, 0, 0);
+    setTilemapTile(tilemap, 0, 0, 0);
     // cell (1,0) remains -1
     prepareSpriteRender(state, tilemap);
     const renderNode = getOrCreateSpriteRenderNode(state, tilemap);

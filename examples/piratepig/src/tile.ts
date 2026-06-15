@@ -2,7 +2,7 @@ import type { DisplayObject, ImageSource, InteractionManager, Node, TweenManager
 import {
   addNodeChild,
   addNodeChildAt,
-  capturePointer,
+  captureInteractionPointer,
   connectSignal,
   createBitmap,
   createDisplayObject,
@@ -12,7 +12,7 @@ import {
   getNodeParent,
   invalidateNodeRender,
   Quad,
-  releasePointer,
+  releaseInteractionPointer,
   removeNodeChild,
   setRectangle,
 } from '@flighthq/sdk';
@@ -51,14 +51,14 @@ export function connectTileInteraction(
 
   connectSignal(signals.onPointerDown, (data) => {
     if (tile.moving) return;
-    capturePointer(manager, data.pointerId, node);
+    captureInteractionPointer(manager, data.pointerId, node);
     startX = data.worldX;
     startY = data.worldY;
     isDragging = true;
   });
 
   connectSignal(signals.onPointerUp, (data) => {
-    releasePointer(manager, data.pointerId);
+    releaseInteractionPointer(manager, data.pointerId);
     if (!isDragging) return;
     isDragging = false;
     if (tile.moving) return;
