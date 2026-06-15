@@ -10,9 +10,12 @@ beforeAll(() => {
 });
 
 describe('defaultWebGPUParticleEmitterRenderer', () => {
-  it('has createData and draw functions', () => {
+  it('has a createData function', () => {
     expect(typeof defaultWebGPUParticleEmitterRenderer.createData).toBe('function');
-    expect(typeof defaultWebGPUParticleEmitterRenderer.draw).toBe('function');
+  });
+
+  it('has a submit function', () => {
+    expect(typeof defaultWebGPUParticleEmitterRenderer.submit).toBe('function');
   });
 });
 

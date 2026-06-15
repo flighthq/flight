@@ -17,7 +17,7 @@ beforeAll(() => {
 describe('defaultWebGPURichTextRenderer', () => {
   it('has createData and draw functions', () => {
     expect(typeof defaultWebGPURichTextRenderer.createData).toBe('function');
-    expect(typeof defaultWebGPURichTextRenderer.draw).toBe('function');
+    expect(typeof defaultWebGPURichTextRenderer.submit).toBe('function');
   });
 });
 
