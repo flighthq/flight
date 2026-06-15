@@ -1,4 +1,4 @@
-import { isRenderCache, noopRendererData, registerRenderCacheRenderer } from '@flighthq/render';
+import { getRenderNodeCache, noopRendererData, registerRenderCacheRenderer } from '@flighthq/render';
 import { createCanvasRenderTarget, resizeCanvasRenderTarget } from '@flighthq/render-canvas';
 import type {
   CanvasRenderTarget,
@@ -51,10 +51,10 @@ export function releaseDOMRenderCache(state: DOMRenderState, cache: RenderCache)
 }
 
 function drawDOMRenderCache(state: RenderState, data: DisplayObjectRenderNode): void {
-  const source = data.source;
-  if (!isRenderCache(source)) return;
+  const cache = getRenderNodeCache(state, data.source);
+  if (cache === null) return;
   const domState = state as DOMRenderState;
-  const target = getTargets(domState).get(source);
+  const target = getTargets(domState).get(cache);
   if (target === undefined) return;
 
   const canvas = target.canvas;

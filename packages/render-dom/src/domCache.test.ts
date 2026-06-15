@@ -1,5 +1,6 @@
+import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
-import { createRenderCache, RenderCacheKind } from '@flighthq/render';
+import { createRenderCache, RenderCacheKind, useRenderCache } from '@flighthq/render';
 
 import {
   defaultDOMRenderCacheRenderer,
@@ -19,16 +20,18 @@ function makeCacheNode(source: unknown): any {
 }
 
 describe('defaultDOMRenderCacheRenderer', () => {
-  it('is a no-op when the state holds no target for the cache', () => {
+  it('is a no-op when no cache is attached to the source', () => {
     const state = makeState();
-    expect(() => defaultDOMRenderCacheRenderer.draw(state, makeCacheNode(createRenderCache()))).not.toThrow();
+    expect(() => defaultDOMRenderCacheRenderer.draw(state, makeCacheNode(createDisplayObject()))).not.toThrow();
   });
 
-  it('places the target canvas when one exists', () => {
+  it('places the target canvas attached to the source node', () => {
     const state = makeState();
+    const obj = createDisplayObject();
     const cache = createRenderCache();
+    useRenderCache(state, obj, cache);
     const target = ensureDOMRenderCacheTarget(state, cache, 16, 16);
-    defaultDOMRenderCacheRenderer.draw(state, makeCacheNode(cache));
+    defaultDOMRenderCacheRenderer.draw(state, makeCacheNode(obj));
     expect(target.canvas.style.transform).not.toBe('');
   });
 });
