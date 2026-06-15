@@ -1,5 +1,6 @@
 export * from './domBackground';
 export * from './domBitmap';
+export * from './domCache';
 export * from './domClip';
 export * from './domClipRectangle';
 export * from './domCSSFilterBinding';
@@ -8,7 +9,6 @@ export { invalidateDOMFontSource } from './domFontSource';
 export * from './domInputText';
 export * from './domMask';
 export * from './domMaterials';
-export * from './domRenderCache';
 export * from './domRenderState';
 export * from './domRenderView';
 export * from './domRichText';
