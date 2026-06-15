@@ -6,5 +6,5 @@ import type { SpriteRenderNode } from './SpriteRenderNode';
 
 export interface SpriteRenderer extends Renderer {
   createData(state: RenderState, source: Sprite): RendererData | null;
-  draw(state: RenderState, node: SpriteRenderNode): void;
+  submit(state: RenderState, node: SpriteRenderNode): void;
 }
