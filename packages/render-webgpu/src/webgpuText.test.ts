@@ -10,9 +10,9 @@ beforeAll(() => {
 });
 
 describe('defaultWebGPUTextRenderer', () => {
-  it('has createData and draw functions', () => {
+  it('has createData and submit functions', () => {
     expect(typeof defaultWebGPUTextRenderer.createData).toBe('function');
-    expect(typeof defaultWebGPUTextRenderer.draw).toBe('function');
+    expect(typeof defaultWebGPUTextRenderer.submit).toBe('function');
   });
 });
 

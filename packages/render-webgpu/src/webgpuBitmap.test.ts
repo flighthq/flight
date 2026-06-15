@@ -12,7 +12,7 @@ beforeAll(() => {
 describe('defaultWebGPUBitmapRenderer', () => {
   it('has createData and draw functions', () => {
     expect(typeof defaultWebGPUBitmapRenderer.createData).toBe('function');
-    expect(typeof defaultWebGPUBitmapRenderer.draw).toBe('function');
+    expect(typeof defaultWebGPUBitmapRenderer.submit).toBe('function');
   });
 });
 

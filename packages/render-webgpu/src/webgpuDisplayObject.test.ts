@@ -16,7 +16,7 @@ beforeAll(() => {
 describe('defaultWebGPUDisplayObjectRenderer', () => {
   it('has createData and draw functions', () => {
     expect(typeof defaultWebGPUDisplayObjectRenderer.createData).toBe('function');
-    expect(typeof defaultWebGPUDisplayObjectRenderer.draw).toBe('function');
+    expect(typeof defaultWebGPUDisplayObjectRenderer.submit).toBe('function');
   });
 });
 

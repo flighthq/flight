@@ -62,5 +62,5 @@ export function drawWebGPUVideoMask(state: RenderState, renderNode: DisplayObjec
 
 export const defaultWebGPUVideoRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawWebGPUVideo,
+  submit: drawWebGPUVideo,
 };

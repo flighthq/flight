@@ -78,5 +78,5 @@ export function drawWebGPUShapeMask(state: RenderState, data: DisplayObjectRende
 
 export const defaultWebGPUShapeRenderer: DisplayObjectRenderer = {
   createData: createWebGPUShapeData,
-  draw: drawWebGPUShape,
+  submit: drawWebGPUShape,
 };

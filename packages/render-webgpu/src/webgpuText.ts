@@ -102,5 +102,5 @@ export function drawWebGPUTextMask(state: RenderState, data: DisplayObjectRender
 
 export const defaultWebGPUTextRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawWebGPUText,
+  submit: drawWebGPUText,
 };

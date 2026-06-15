@@ -1,5 +1,4 @@
-import type { Matrix } from '@flighthq/types';
-import type { WebGPURenderState } from '@flighthq/types';
+import type { BlendMode, ColorTransform, Matrix, WebGPURenderState } from '@flighthq/types';
 
 export interface WebGPUTextureEntry {
   bindGroup: GPUBindGroup;
@@ -74,10 +73,14 @@ export type WebGPURenderStateInternal = Omit<WebGPURenderState, 'canvas' | 'devi
   particleInstanceData: Float32Array | null;
   particleInstanceCapacity: number;
 
-  // Quad batch instance buffer (grown on demand)
-  quadBatchInstanceBuffer: GPUBuffer | null;
-  quadBatchInstanceData: Float32Array | null;
-  quadBatchInstanceCapacity: number;
+  // Universal sprite batch (cross-node batching for Sprite/QuadBatch/Tilemap)
+  spriteBatchBlendMode: BlendMode | null;
+  spriteBatchColorTransform: ColorTransform | null;
+  spriteBatchCount: number;
+  spriteBatchInstanceBuffer: GPUBuffer | null;
+  spriteBatchInstanceCapacity: number;
+  spriteBatchInstanceData: Float32Array;
+  spriteBatchTexture: CanvasImageSource | null;
 
   // Frame state: command encoder and current render pass
   commandEncoder: GPUCommandEncoder | null;

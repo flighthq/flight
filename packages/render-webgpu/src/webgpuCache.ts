@@ -79,10 +79,6 @@ export function createWebGPUCacheState(screenState: WebGPURenderState): WebGPURe
   cacheState.particleInstanceBuffer = screen.particleInstanceBuffer;
   cacheState.particleInstanceData = screen.particleInstanceData;
   cacheState.particleInstanceCapacity = screen.particleInstanceCapacity;
-  cacheState.quadBatchInstanceBuffer = screen.quadBatchInstanceBuffer;
-  cacheState.quadBatchInstanceData = screen.quadBatchInstanceData;
-  cacheState.quadBatchInstanceCapacity = screen.quadBatchInstanceCapacity;
-
   // The baked subtree is recorded into the screen state's command encoder, so the cache
   // state must share the live per-frame encoder/pass surfaces rather than its own.
   cacheState.commandEncoder = screen.commandEncoder;
@@ -97,6 +93,13 @@ export function createWebGPUCacheState(screenState: WebGPURenderState): WebGPURe
   cacheState.uniformOffset = 0;
   cacheState.currentBlendMode = null;
   cacheState.currentMaskDepth = 0;
+  cacheState.spriteBatchBlendMode = null;
+  cacheState.spriteBatchColorTransform = null;
+  cacheState.spriteBatchCount = 0;
+  cacheState.spriteBatchInstanceBuffer = null;
+  cacheState.spriteBatchInstanceCapacity = 0;
+  cacheState.spriteBatchInstanceData = new Float32Array(0);
+  cacheState.spriteBatchTexture = null;
   cacheState.maskWriteMode = false;
   cacheState.currentScissorRect = null;
   cacheState.scissorStack = [];
@@ -244,7 +247,7 @@ function getTargets(state: WebGPURenderState): WeakMap<RenderCache, WebGPURender
 
 export const defaultWebGPURenderCacheRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  draw: drawWebGPURenderCache,
+  submit: drawWebGPURenderCache,
 };
 
 // The screen state owns each cache's target, keyed by the handle, so one handle can be

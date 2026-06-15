@@ -2,7 +2,8 @@ import { getSpriteRenderNode, prepareSpriteRender } from '@flighthq/render';
 import { createSprite } from '@flighthq/sprite';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
-import { defaultWebGPUSpriteRenderer, drawWebGPUSpriteNode } from './webgpuSpriteRenderer';
+import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
+import { defaultWebGPUSpriteRenderer } from './webgpuSpriteRenderer';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
 
 beforeAll(() => {
@@ -10,13 +11,16 @@ beforeAll(() => {
 });
 
 describe('defaultWebGPUSpriteRenderer', () => {
-  it('has createData and draw functions', () => {
+  it('has a createData function', () => {
     expect(typeof defaultWebGPUSpriteRenderer.createData).toBe('function');
-    expect(typeof defaultWebGPUSpriteRenderer.draw).toBe('function');
+  });
+
+  it('has a submit function', () => {
+    expect(typeof defaultWebGPUSpriteRenderer.submit).toBe('function');
   });
 });
 
-describe('drawWebGPUSpriteNode', () => {
+describe('defaultWebGPUSpriteRenderer.submit', () => {
   it('does not throw when atlas is null', async () => {
     const state = await createWebGPURenderStateForTest();
     renderWebGPUBackground(state);
@@ -25,7 +29,10 @@ describe('drawWebGPUSpriteNode', () => {
     prepareSpriteRender(state, sprite);
     const renderNode = getSpriteRenderNode(state, sprite)!;
 
-    expect(() => drawWebGPUSpriteNode(state, renderNode)).not.toThrow();
+    expect(() => {
+      defaultWebGPUSpriteRenderer.submit(state, renderNode);
+      flushWebGPUSpriteBatch(state as any);
+    }).not.toThrow();
     submitWebGPURenderPass(state);
   });
 });

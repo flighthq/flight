@@ -10,9 +10,9 @@ beforeAll(() => {
 });
 
 describe('defaultWebGPUShapeRenderer', () => {
-  it('has createData and draw functions', () => {
+  it('has createData and submit functions', () => {
     expect(typeof defaultWebGPUShapeRenderer.createData).toBe('function');
-    expect(typeof defaultWebGPUShapeRenderer.draw).toBe('function');
+    expect(typeof defaultWebGPUShapeRenderer.submit).toBe('function');
   });
 });
 
