@@ -1,4 +1,4 @@
-﻿import type { SpriteRenderNode } from '@flighthq/types';
+import type { SpriteRenderNode } from '@flighthq/types';
 
 import { makeWebGLState } from './webglTestHelper';
 import { defaultWebGLTilemapRenderer, drawWebGLTilemap } from './webglTilemap';
@@ -50,13 +50,13 @@ describe('drawWebGLTilemap', () => {
   it('returns early without drawing when tileset is null', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLTilemap(state, makeTilemapNode({ tileset: null }));
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when atlas is null', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLTilemap(state, makeTilemapNode({ tileset: makeTileset(null) }));
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when atlas.image is null', () => {
@@ -65,7 +65,7 @@ describe('drawWebGLTilemap', () => {
       state,
       makeTilemapNode({ tileset: { atlas: { image: null, regions: [] }, tileWidth: 16, tileHeight: 16 } }),
     );
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when atlas.image.src is null', () => {
@@ -74,32 +74,32 @@ describe('drawWebGLTilemap', () => {
       state,
       makeTilemapNode({ tileset: { atlas: { image: { src: null }, regions: [] }, tileWidth: 16, tileHeight: 16 } }),
     );
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when columns is 0', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLTilemap(state, makeTilemapNode({ columns: 0 }));
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when rows is 0', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLTilemap(state, makeTilemapNode({ rows: 0 }));
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
-  it('draws once per tile with a valid region', () => {
+  it('draws all valid tiles in a single instanced call', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLTilemap(state, makeTilemapNode());
-    // 2x2 grid, all tiles reference region 0 (16Ã—16) which is valid
-    expect(gl.drawElements).toHaveBeenCalledTimes(4);
+    expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
+    expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 4);
   });
 
-  it('skips tiles with out-of-range ids', () => {
+  it('excludes out-of-range tile ids from the instanced draw count', () => {
     const { state, gl } = makeWebGLState();
-    // tile id 99 is out of range, only the valid tiles (id=0) should draw
     drawWebGLTilemap(state, makeTilemapNode({ tiles: [0, 99, 99, 0] }));
-    expect(gl.drawElements).toHaveBeenCalledTimes(2);
+    expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
+    expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
   });
 });

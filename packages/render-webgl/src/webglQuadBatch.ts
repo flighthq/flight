@@ -78,33 +78,6 @@ function compileQuadBatchShader(gl: WebGL2RenderingContext): WebGLQuadBatchShade
   };
 }
 
-function ensureQuadBatchShader(internal: WebGLRenderStateInternal): WebGLQuadBatchShader {
-  if (internal.quadBatchShader) return internal.quadBatchShader;
-
-  const gl = internal.gl;
-  internal.quadBatchShader = compileQuadBatchShader(gl);
-
-  const cornerData = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
-  const cornerBuf = gl.createBuffer()!;
-  gl.bindBuffer(gl.ARRAY_BUFFER, cornerBuf);
-  gl.bufferData(gl.ARRAY_BUFFER, cornerData, gl.STATIC_DRAW);
-  internal.quadBatchCornerBuffer = cornerBuf;
-
-  internal.quadBatchInstanceBuffer = gl.createBuffer()!;
-  internal.quadBatchInstanceData = new Float32Array(0);
-
-  return internal.quadBatchShader;
-}
-
-function ensureQuadBatchCapacity(internal: WebGLRenderStateInternal, count: number): void {
-  const needed = count * INSTANCE_FLOATS;
-  if ((internal.quadBatchInstanceData?.length ?? 0) >= needed) return;
-  const newSize = Math.max(needed, (internal.quadBatchInstanceData?.length ?? 0) * 2);
-  internal.quadBatchInstanceData = new Float32Array(newSize);
-  internal.gl.bindBuffer(internal.gl.ARRAY_BUFFER, internal.quadBatchInstanceBuffer!);
-  internal.gl.bufferData(internal.gl.ARRAY_BUFFER, newSize * 4, internal.gl.DYNAMIC_DRAW);
-}
-
 export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNode): void {
   const internal = state as WebGLRenderStateInternal;
   const source = quadBatch.source as QuadBatch;
@@ -112,13 +85,12 @@ export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNo
   const { atlas, instanceCount, ids, transforms } = data;
   if (atlas === null || atlas.image === null || atlas.image.src === null || instanceCount === 0) return;
 
-  const shader = ensureQuadBatchShader(internal);
-  ensureQuadBatchCapacity(internal, instanceCount);
+  ensureWebGLQuadBatchShader(internal);
+  ensureWebGLQuadBatchCapacity(internal, instanceCount);
 
   internal.applyBlendMode?.(internal, quadBatch.blendMode);
   bindWebGLTexture(internal, atlas.image.src);
 
-  const gl = internal.gl;
   const regions = atlas.regions;
   const numRegions = regions.length;
   const iw = 1 / (atlas.image.width || 1);
@@ -163,38 +135,52 @@ export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNo
 
   if (drawCount === 0) return;
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, internal.quadBatchInstanceBuffer!);
-  gl.bufferSubData(gl.ARRAY_BUFFER, 0, instanceData, 0, drawCount * INSTANCE_FLOATS);
+  drawWebGLQuadBatchInstanced(internal, drawCount, quadBatch.transform2D, quadBatch.alpha);
+}
 
-  if (internal.currentProgram !== shader.program) {
+// Uploads the first drawCount instances from state.quadBatchInstanceData, sets up
+// the quad batch shader and instanced draw call. Callers must invoke
+// ensureWebGLQuadBatchShader and ensureWebGLQuadBatchCapacity first.
+export function drawWebGLQuadBatchInstanced(
+  state: WebGLRenderStateInternal,
+  drawCount: number,
+  transform: { a: number; b: number; c: number; d: number; tx: number; ty: number },
+  alpha: number,
+): void {
+  const shader = state.quadBatchShader!;
+  const gl = state.gl;
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, state.quadBatchInstanceBuffer!);
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, state.quadBatchInstanceData!, 0, drawCount * INSTANCE_FLOATS);
+
+  if (state.currentProgram !== shader.program) {
     gl.useProgram(shader.program);
-    internal.currentProgram = shader.program;
+    state.currentProgram = shader.program;
   }
 
-  const t = quadBatch.transform2D;
-  const viewport = internal.renderTargetViewport ?? internal.canvas;
+  const viewport = state.renderTargetViewport ?? state.canvas;
   const clipW = 2 / viewport.width;
   const clipH = 2 / viewport.height;
-  const m = internal.matrixArray;
-  m[0] = t.a * clipW;
-  m[1] = -t.b * clipH;
+  const m = state.matrixArray;
+  m[0] = transform.a * clipW;
+  m[1] = -transform.b * clipH;
   m[2] = 0;
-  m[3] = t.c * clipW;
-  m[4] = -t.d * clipH;
+  m[3] = transform.c * clipW;
+  m[4] = -transform.d * clipH;
   m[5] = 0;
-  m[6] = t.tx * clipW - 1;
-  m[7] = -t.ty * clipH + 1;
+  m[6] = transform.tx * clipW - 1;
+  m[7] = -transform.ty * clipH + 1;
   m[8] = 1;
   gl.uniformMatrix3fv(shader.locWorldMatrix, false, m);
-  gl.uniform1f(shader.locAlpha, quadBatch.alpha);
+  gl.uniform1f(shader.locAlpha, alpha);
   gl.uniform1i(shader.locTexture, 0);
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, internal.quadBatchCornerBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, state.quadBatchCornerBuffer!);
   gl.enableVertexAttribArray(shader.locCorner);
   gl.vertexAttribPointer(shader.locCorner, 2, gl.FLOAT, false, 8, 0);
   gl.vertexAttribDivisor(shader.locCorner, 0);
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, internal.quadBatchInstanceBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, state.quadBatchInstanceBuffer!);
 
   gl.enableVertexAttribArray(shader.locMatAB);
   gl.vertexAttribPointer(shader.locMatAB, 2, gl.FLOAT, false, INSTANCE_STRIDE, 0);
@@ -216,7 +202,7 @@ export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNo
   gl.vertexAttribPointer(shader.locUVRect, 4, gl.FLOAT, false, INSTANCE_STRIDE, 32);
   gl.vertexAttribDivisor(shader.locUVRect, 1);
 
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, internal.quadIndexBuffer);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, state.quadIndexBuffer);
   gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0, drawCount);
 
   gl.vertexAttribDivisor(shader.locMatAB, 0);
@@ -224,6 +210,33 @@ export function drawWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNo
   gl.vertexAttribDivisor(shader.locMatTXTY, 0);
   gl.vertexAttribDivisor(shader.locSize, 0);
   gl.vertexAttribDivisor(shader.locUVRect, 0);
+}
+
+export function ensureWebGLQuadBatchCapacity(state: WebGLRenderStateInternal, count: number): void {
+  const needed = count * INSTANCE_FLOATS;
+  if ((state.quadBatchInstanceData?.length ?? 0) >= needed) return;
+  const newSize = Math.max(needed, (state.quadBatchInstanceData?.length ?? 0) * 2);
+  state.quadBatchInstanceData = new Float32Array(newSize);
+  state.gl.bindBuffer(state.gl.ARRAY_BUFFER, state.quadBatchInstanceBuffer!);
+  state.gl.bufferData(state.gl.ARRAY_BUFFER, newSize * 4, state.gl.DYNAMIC_DRAW);
+}
+
+export function ensureWebGLQuadBatchShader(state: WebGLRenderStateInternal): WebGLQuadBatchShader {
+  if (state.quadBatchShader) return state.quadBatchShader;
+
+  const gl = state.gl;
+  state.quadBatchShader = compileQuadBatchShader(gl);
+
+  const cornerData = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
+  const cornerBuf = gl.createBuffer()!;
+  gl.bindBuffer(gl.ARRAY_BUFFER, cornerBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, cornerData, gl.STATIC_DRAW);
+  state.quadBatchCornerBuffer = cornerBuf;
+
+  state.quadBatchInstanceBuffer = gl.createBuffer()!;
+  state.quadBatchInstanceData = new Float32Array(0);
+
+  return state.quadBatchShader;
 }
 
 export const defaultWebGLQuadBatchRenderer: SpriteRenderer = {
