@@ -228,7 +228,13 @@ describe('createApplicationWindow', () => {
     expect(win.onRenderContextRestored).toBeDefined();
     expect(win.onResize).toBeDefined();
     expect(win.onRestore).toBeDefined();
-    expect(win.observers.size).toBe(0);
+
+    let called = false;
+    connectSignal(win.onFullscreenChanged, () => {
+      called = true;
+    });
+    document.dispatchEvent(new Event('fullscreenchange'));
+    expect(called).toBe(false);
   });
 
   it('initializes dimensions and devicePixelRatio to defaults', () => {
@@ -357,7 +363,7 @@ describe('detachWindowVisibility', () => {
 });
 
 describe('disposeApplicationWindow', () => {
-  it('runs all observers and clears the map', () => {
+  it('runs all teardown so attached observers stop firing', () => {
     const disconnectFn = vi.fn();
     vi.stubGlobal(
       'ResizeObserver',
@@ -371,12 +377,10 @@ describe('disposeApplicationWindow', () => {
     const win = createApplicationWindow();
     attachWindowResize(win, document.createElement('div'));
     attachWindowFullscreen(win);
-    expect(win.observers.size).toBe(2);
 
     disposeApplicationWindow(win);
 
     expect(disconnectFn).toHaveBeenCalled();
-    expect(win.observers.size).toBe(0);
     let called = false;
     connectSignal(win.onFullscreenChanged, () => {
       called = true;
