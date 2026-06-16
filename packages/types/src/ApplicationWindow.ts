@@ -3,7 +3,6 @@ import type { Signal } from './Signal';
 export interface ApplicationWindow {
   devicePixelRatio: number;
   height: number;
-  observers: Map<symbol, () => void>;
   width: number;
   onActivate: Signal<() => void>;
   onClose: Signal<() => void>;
