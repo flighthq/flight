@@ -1,4 +1,4 @@
-import type { CanvasRenderState } from '@flighthq/types';
+import type { CanvasMaterialRenderer, CanvasRenderState } from '@flighthq/types';
 
 export type CanvasRenderStateInternal = Omit<CanvasRenderState, 'canvas' | 'context' | 'contextAttributes'> & {
   canvas: HTMLCanvasElement;
@@ -6,4 +6,5 @@ export type CanvasRenderStateInternal = Omit<CanvasRenderState, 'canvas' | 'cont
   contextAttributes: CanvasRenderingContext2DSettings;
   imageSmoothingEnabled: boolean;
   imageSmoothingQuality: ImageSmoothingQuality;
+  materialRendererMap?: Map<symbol, CanvasMaterialRenderer>;
 };

@@ -2,6 +2,8 @@
 import { noopRendererData } from '@flighthq/render';
 import type { CanvasRenderState, QuadBatch, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
+import { applyCanvasMaterial } from './canvasMaterialRegistry';
+
 export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: SpriteRenderNode): void {
   const source = quadBatch.source as QuadBatch;
   const data = source.data;
@@ -25,6 +27,8 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: SpriteR
   if (!state.allowSmoothing /*|| !quadBatch.smoothing*/) {
     context.imageSmoothingEnabled = false;
   }
+
+  const restoreMaterial = applyCanvasMaterial(state, quadBatch.material);
 
   context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
 
@@ -73,6 +77,8 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: SpriteR
       context.drawImage(image, region.x, region.y, region.width, region.height, 0, 0, region.width, region.height);
     }
   }
+
+  if (restoreMaterial) context.restore();
 
   context.setTransform(1, 0, 0, 1, 0, 0);
   releaseMatrix(quadTransform);
