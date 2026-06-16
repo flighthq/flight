@@ -1,4 +1,4 @@
-import { detectDOMStructureChange, processDOMNode, reconcileDOMContainer, swapDOMOrderLists } from './domReconcile';
+import { hasDOMStructureChanged, processDOMNode, reconcileDOMContainer, swapDOMOrderLists } from './domReconcile';
 import { createDOMRenderState } from './domRenderState';
 import type { DOMRenderStateInternal } from './internal';
 
@@ -7,16 +7,16 @@ function makeInternal() {
   return createDOMRenderState(container) as unknown as DOMRenderStateInternal;
 }
 
-describe('detectDOMStructureChange', () => {
+describe('hasDOMStructureChanged', () => {
   it('returns true when needsReconcile is already set', () => {
     const internal = makeInternal();
-    expect(detectDOMStructureChange(internal, 0, true)).toBe(true);
+    expect(hasDOMStructureChanged(internal, 0, true)).toBe(true);
   });
 
   it('returns true when lengths differ', () => {
     const internal = makeInternal();
     internal.domOrderLength = 2;
-    expect(detectDOMStructureChange(internal, 1, false)).toBe(true);
+    expect(hasDOMStructureChanged(internal, 1, false)).toBe(true);
   });
 
   it('returns false when order lists are identical', () => {
@@ -25,7 +25,7 @@ describe('detectDOMStructureChange', () => {
     internal.domOrderLength = 1;
     internal.domOrderList[0] = node;
     internal.domNextOrderList[0] = node;
-    expect(detectDOMStructureChange(internal, 1, false)).toBe(false);
+    expect(hasDOMStructureChanged(internal, 1, false)).toBe(false);
   });
 
   it('returns true when a node differs at any position', () => {
@@ -33,7 +33,7 @@ describe('detectDOMStructureChange', () => {
     internal.domOrderLength = 1;
     internal.domOrderList[0] = {} as any;
     internal.domNextOrderList[0] = {} as any;
-    expect(detectDOMStructureChange(internal, 1, false)).toBe(true);
+    expect(hasDOMStructureChanged(internal, 1, false)).toBe(true);
   });
 });
 
