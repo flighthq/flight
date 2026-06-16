@@ -11,76 +11,70 @@ import {
 } from './node';
 
 describe('createNode', () => {
-  let node: Node<typeof TestGraph>;
+  let node: Node;
 
   beforeEach(() => {
-    node = createNode(TestGraph, NodeTestKind);
+    node = createNode(NodeTestKind);
   });
 
   it('initializes default values', () => {
     expect(node.enabled).toBe(true);
-    expect(getNodeRuntime(node).graph).toStrictEqual(TestGraph);
   });
 
   it('allows pre-defined values', () => {
     const base = {
-      parent: createNode(TestGraph, NodeTestKind),
+      parent: createNode(NodeTestKind),
       children: [],
       enabled: false,
     };
-    node = createNode(TestGraph, NodeTestKind, base);
+    node = createNode(NodeTestKind, base);
     expect(node.enabled).toStrictEqual(base.enabled);
   });
 
   it('returns a new object for better hidden-class performance', () => {
     const base = {};
-    node = createNode(TestGraph, NodeTestKind, base);
+    node = createNode(NodeTestKind, base);
     expect(node).not.toStrictEqual(base);
   });
 
   it('allows creation of a type without a data field', () => {
-    const node = createNode(TestGraph, NodeTestKind);
+    const node = createNode(NodeTestKind);
     expect(node.data).toBeNull();
   });
 
   it('makes a default runtime object if none passed in', () => {
-    const node = createNode(TestGraph, NodeTestKind);
+    const node = createNode(NodeTestKind);
     const runtime = getNodeRuntime(node);
     expect(runtime).not.toBeNull();
   });
 
   it('allows a custom type', () => {
-    const node = createNode(TestGraph, NodeTestKind);
+    const node = createNode(NodeTestKind);
     expect(node.kind).toBe(NodeTestKind);
   });
 
   it('returns a new object', () => {
-    const obj: PartialNode<NodeTest<typeof TestGraph>> = {};
-    const node: NodeTest<typeof TestGraph> = createNode(TestGraph, NodeTestKind, obj) as NodeTest<typeof TestGraph>;
+    const obj: PartialNode<NodeTest> = {};
+    const node: NodeTest = createNode(NodeTestKind, obj) as NodeTest;
     expect(node).not.toStrictEqual(obj);
   });
 
   it('allows use of a data initializer', () => {
-    const obj: PartialNode<NodeTest<typeof TestGraph>> = {};
-    const node: NodeTest<typeof TestGraph> = createNode(
-      TestGraph,
-      NodeTestKind,
-      obj,
-      createGraphNodeTestData,
-    ) as NodeTest<typeof TestGraph>;
+    const obj: PartialNode<NodeTest> = {};
+    const node: NodeTest = createNode(NodeTestKind, obj, createGraphNodeTestData) as NodeTest;
     expect((node.data as NodeTestData).testDataField).toBe('testDataField');
   });
 
   it('allows use of a runtime initializer', () => {
-    const obj: PartialNode<NodeTest<typeof TestGraph>> = {};
-    const node = createNode(TestGraph, NodeTestKind, obj, undefined, createGraphNodeTestRuntime);
+    const obj: PartialNode<NodeTest> = {};
+    const node = createNode(NodeTestKind, obj, undefined, createGraphNodeTestRuntime);
     const runtime = getNodeRuntime(node);
-    expect((runtime as NodeTestRuntime<typeof TestGraph>).testRuntimeField).toBe('testRuntimeField');
+    expect((runtime as NodeTestRuntime).testRuntimeField).toBe('testRuntimeField');
   });
 });
 
 describe('createNodeRuntime', () => {
-  let runtime: NodeRuntime<typeof TestGraph>;
+  let runtime: NodeRuntime;
 
   beforeEach(() => {
     runtime = createNodeRuntime();
@@ -105,14 +99,13 @@ describe('createNodeRuntime', () => {
     expect(runtime.canAddChild).toStrictEqual(defaultNodeRuntimeCanAddChild);
   });
 
-  it('does not initialize graph', () => {
-    // done in createNode constructor
-    expect(runtime.graph).toBeUndefined();
+  it('does not set traits — concrete graph runtimes set it', () => {
+    expect(runtime.traits).toBeUndefined();
   });
 
   it('allows custom canAddChild', () => {
     const methods = {
-      canAddChild: (_parent: Node<typeof TestGraph>, _child: Node<typeof TestGraph>) => true,
+      canAddChild: (_parent: Node, _child: Node) => true,
     };
     runtime = createNodeRuntime(methods);
     expect(runtime.canAddChild).toStrictEqual(methods.canAddChild);
@@ -132,8 +125,8 @@ describe('createNodeSignals', () => {
 
 describe('defaultNodeRuntimeCanAddChild', () => {
   it('always returns true', () => {
-    const parent = createNode(TestGraph, NodeTestKind);
-    const child = createNode(TestGraph, NodeTestKind);
+    const parent = createNode(NodeTestKind);
+    const child = createNode(NodeTestKind);
     expect(defaultNodeRuntimeCanAddChild(parent, child)).toBe(true);
   });
 });
@@ -141,12 +134,12 @@ describe('defaultNodeRuntimeCanAddChild', () => {
 describe('getNodeRuntime', () => {
   it('assumes runtime is defined', () => {
     const node = { kind: NodeTestKind };
-    const runtime = getNodeRuntime(node as Node<typeof TestGraph>);
+    const runtime = getNodeRuntime(node as Node);
     expect(runtime).toBeUndefined();
   });
 
   it('returns runtime when defined', () => {
-    const node = createNode(TestGraph, NodeTestKind);
+    const node = createNode(NodeTestKind);
     const runtime = getNodeRuntime(node);
     expect(runtime).not.toBeUndefined();
   });
@@ -154,38 +147,36 @@ describe('getNodeRuntime', () => {
 
 describe('getNodeSignals', () => {
   it('returns the signals object', () => {
-    const node = createNode(TestGraph, NodeTestKind);
+    const node = createNode(NodeTestKind);
     const signals = getNodeSignals(node);
     expect(signals).toBeDefined();
     expect(signals.onChildrenChanged).toBeDefined();
   });
 
   it('returns the same object on subsequent calls', () => {
-    const node = createNode(TestGraph, NodeTestKind);
+    const node = createNode(NodeTestKind);
     expect(getNodeSignals(node)).toBe(getNodeSignals(node));
   });
 });
 
 describe('setNodeEnabled', () => {
   it('sets enabled to false', () => {
-    const node = createNode(TestGraph, NodeTestKind);
+    const node = createNode(NodeTestKind);
     setNodeEnabled(node, false);
     expect(node.enabled).toBe(false);
   });
 
   it('sets enabled back to true', () => {
-    const node = createNode(TestGraph, NodeTestKind);
+    const node = createNode(NodeTestKind);
     setNodeEnabled(node, false);
     setNodeEnabled(node, true);
     expect(node.enabled).toBe(true);
   });
 });
 
-const TestGraph: unique symbol = Symbol('TestGraph');
-
 const NodeTestKind: unique symbol = Symbol('NodeTest');
 
-interface NodeTest<Kind extends symbol> extends Node<Kind> {
+interface NodeTest extends Node {
   data: NodeTestData;
 }
 
@@ -193,7 +184,7 @@ interface NodeTestData extends NodeData {
   testDataField: string;
 }
 
-interface NodeTestRuntime<Kind extends symbol> extends NodeRuntime<Kind> {
+interface NodeTestRuntime extends NodeRuntime {
   testRuntimeField: string;
 }
 
@@ -203,8 +194,8 @@ function createGraphNodeTestData(data?: Partial<NodeTestData>): NodeTestData {
   };
 }
 
-function createGraphNodeTestRuntime<Kind extends symbol>(): NodeTestRuntime<Kind> {
-  const obj = createNodeRuntime() as NodeTestRuntime<Kind>;
+function createGraphNodeTestRuntime(): NodeTestRuntime {
+  const obj = createNodeRuntime() as NodeTestRuntime;
   obj.testRuntimeField = 'testRuntimeField';
   return obj;
 }

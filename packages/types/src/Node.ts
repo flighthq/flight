@@ -1,7 +1,10 @@
-import type { EntityRuntime, EntityRuntimeKey } from './Entity';
-import type { HasHierarchy, HasHierarchyRuntime } from './HasHierarchy';
+import type { Entity, EntityRuntime, EntityRuntimeKey } from './Entity';
 import type { InteractionSignals } from './InteractionSignals';
 import type { NodeSignals } from './NodeSignals';
+
+declare const NodeTraitsKey: unique symbol;
+
+export type NodeTraitsKey<T extends object> = symbol & { readonly [NodeTraitsKey]?: T };
 
 export type NodeData = object;
 
@@ -16,22 +19,24 @@ export interface NodeTraits {
   name: string | null;
 }
 
-export interface Node<Kind extends symbol = typeof NullScene, Traits extends object = NodeTraits>
-  extends NodeTraits, HasHierarchy {
-  [EntityRuntimeKey]: NodeRuntime<Kind, Traits> | undefined;
+export interface Node<Traits extends object = NodeTraits> extends NodeTraits, Entity {
+  [EntityRuntimeKey]: NodeRuntime<Traits> | undefined;
 }
 
-export interface NodeRuntime<Kind extends symbol = typeof NullScene, Traits extends object = NodeTraits>
-  extends EntityRuntime, HasHierarchyRuntime<Kind, Traits> {
+export interface NodeRuntime<Traits extends object = NodeTraits> extends EntityRuntime {
   appearanceID: number;
   boundsUsingLocalBoundsID: number;
   boundsUsingLocalTransformID: number;
-  graph: Kind;
+  canAddChild: (target: Node<Traits>, child: Node<Traits>) => boolean;
+  children: Node<Traits>[] | null;
+  traits?: NodeTraitsKey<Traits>;
   interactionSignals: InteractionSignals | null;
   localBoundsID: number;
   localBoundsUsingLocalBoundsID: number;
   localTransformID: number;
   localTransformUsingLocalTransformID: number;
+  nodeSignals: NodeSignals;
+  parent: Node<Traits> | null;
   worldBoundsUsingLocalBoundsID: number;
   worldBoundsUsingWorldTransformID: number;
   worldTransformID: number;
@@ -40,7 +45,14 @@ export interface NodeRuntime<Kind extends symbol = typeof NullScene, Traits exte
 }
 
 export const NodeKind: unique symbol = Symbol('Node');
-export type NodeOf<Kind extends symbol, Traits extends object> = Node<Kind, Traits> & Traits;
+export type NodeOf<Traits extends object> = Node<Traits> & Traits;
 export const NullScene: unique symbol = Symbol('NullScene');
+
+// Node<Traits> is invariant in Traits: canAddChild's parameter type makes it contravariant, and
+// children/parent make it covariant, so no concrete Traits is a structural supertype of all
+// graph families. NodeAny is the explicit escape hatch for parameters and fields that must
+// accept nodes from any graph without discriminating on Traits.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type NodeAny = Node<any>;
 
 export type { NodeSignals };

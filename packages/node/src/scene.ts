@@ -1,5 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
-import type { HasBoundsRectangleRuntime, MatrixLike, NullScene, Rectangle, Scene, SceneAlign } from '@flighthq/types';
+import type { HasBoundsRectangleRuntime, MatrixLike, NodeTraits, Rectangle, Scene, SceneAlign } from '@flighthq/types';
 
 import { getNodeRuntime } from './node';
 
@@ -33,9 +33,9 @@ export function computeSceneFitScale(
   return Math.min(viewWidth / contentWidth, viewHeight / contentHeight);
 }
 
-export function computeSceneRenderTransform<Kind extends symbol>(
+export function computeSceneRenderTransform<Traits extends object = NodeTraits>(
   out: MatrixLike,
-  scene: Scene<Kind>,
+  scene: Scene<Traits>,
   viewWidth: number,
   viewHeight: number,
 ): void {
@@ -87,7 +87,7 @@ export function computeSceneRenderTransform<Kind extends symbol>(
   out.ty = computeSceneAlignY(contentHeight * sy, viewHeight, scene.align);
 }
 
-export function createScene<Kind extends symbol = typeof NullScene>(obj?: Readonly<Partial<Scene<Kind>>>): Scene<Kind> {
+export function createScene<Traits extends object = NodeTraits>(obj?: Readonly<Partial<Scene<Traits>>>): Scene<Traits> {
   return {
     align: obj?.align ?? 'topleft',
     root: obj?.root ?? null,

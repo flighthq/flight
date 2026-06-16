@@ -39,14 +39,14 @@ import {
 } from './boundsRectangle';
 import { initBoundsRectangleRuntimeTrait, initBoundsRectangleTrait } from './hasBoundsRectangle';
 
-function getEntityRuntime<Kind extends symbol>(
+function getEntityRuntime(
   source: TestNode,
-): NodeRuntime<Kind, HasBoundsRectangle & HasTransform2D> & HasBoundsRectangleRuntime {
-  return _getRuntime(source) as NodeRuntime<Kind, HasBoundsRectangle & HasTransform2D> & HasBoundsRectangleRuntime;
+): NodeRuntime<HasBoundsRectangle & HasTransform2D> & HasBoundsRectangleRuntime {
+  return _getRuntime(source) as NodeRuntime<HasBoundsRectangle & HasTransform2D> & HasBoundsRectangleRuntime;
 }
 
 function createTestNode(): TestNode {
-  const node = createNode(TestKind, TestKind) as TestNode;
+  const node = createNode(TestKind) as TestNode;
   const runtime = _getRuntime(node);
   initBoundsRectangleTrait(node);
   initBoundsRectangleRuntimeTrait(runtime as HasBoundsRectangleRuntime);
@@ -490,6 +490,6 @@ function invalidateRect(rect: Rectangle | null): void {
   if (rect !== null) setRectangle(rect, NaN, NaN, NaN, NaN);
 }
 
-type TestNode = Node<typeof TestKind, HasTransform2D & HasBoundsRectangle> & HasTransform2D & HasBoundsRectangle;
+type TestNode = Node<HasTransform2D & HasBoundsRectangle> & HasTransform2D & HasBoundsRectangle;
 
 const TestKind: unique symbol = Symbol('Test');

@@ -6,25 +6,25 @@ import {
   getNodeWorldBoundsRectangle,
   getNodeWorldTransformMatrix,
 } from '@flighthq/node';
-import type { DisplayObject, GraphHitTestFunction, Node } from '@flighthq/types';
+import type { DisplayObject, HitTestFunction, Node, NodeAny } from '@flighthq/types';
 
 /**
  * Walks the scene graph depth-first in reverse child order (front-to-back) and
  * returns the first node that registers a hit at the given world-space
  * coordinates, or null if nothing was hit.
  **/
-export function findGraphHitTarget(
-  source: Node<symbol, object>,
+export function findGraphHitTarget<Traits extends object>(
+  source: Node<Traits>,
   x: number,
   y: number,
   shapeFlag: boolean = false,
-): Node<symbol, object> | null {
+): Node<Traits> | null {
   if (!source.enabled) return null;
 
   const children = getNodeRuntime(source).children;
   if (children !== null) {
     for (let i = children.length - 1; i >= 0; i--) {
-      const hit = findGraphHitTarget(children[i] as Node<symbol, object>, x, y, shapeFlag);
+      const hit = findGraphHitTarget(children[i], x, y, shapeFlag);
       if (hit !== null) return hit;
     }
   }
@@ -50,7 +50,7 @@ export function hitTestDisplayObjects(source: DisplayObject, other: DisplayObjec
  * Tests whether world-space (x, y) falls within the node's local bounds rect,
  * after inverting through the node's world transform.
  **/
-export function hitTestGraphLocalBounds(source: Node<symbol, object>, x: number, y: number): boolean {
+export function hitTestGraphLocalBounds<Traits extends object>(source: Node<Traits>, x: number, y: number): boolean {
   inverseMatrixTransformPointXY(
     hitTestLocalBoundsRectanglePoint,
     getNodeWorldTransformMatrix(source as DisplayObject),
@@ -73,8 +73,8 @@ export function hitTestGraphLocalBounds(source: Node<symbol, object>, x: number,
  *
  * @param shapeFlag Passed to the registered hit function; interpretation is kind-specific.
  **/
-export function hitTestGraphPoint<Kind extends symbol, Traits extends object>(
-  source: Node<Kind, Traits>,
+export function hitTestGraphPoint<Traits extends object>(
+  source: Node<Traits>,
   x: number,
   y: number,
   shapeFlag: boolean = false,
@@ -82,12 +82,12 @@ export function hitTestGraphPoint<Kind extends symbol, Traits extends object>(
   if (!source.enabled) return false;
 
   const hitTestSelf = hitTestPointRegistry.get(source.kind);
-  if (hitTestSelf?.(source as Node<symbol, object>, x, y, shapeFlag)) return true;
+  if (hitTestSelf?.(source as NodeAny, x, y, shapeFlag)) return true;
 
   const children = getNodeRuntime(source).children;
   if (children !== null) {
     for (const child of children) {
-      if (hitTestGraphPoint(child as Node<Kind, Traits>, x, y, shapeFlag)) return true;
+      if (hitTestGraphPoint(child as Node<Traits>, x, y, shapeFlag)) return true;
     }
   }
 
@@ -98,9 +98,9 @@ export function hitTestGraphPoint<Kind extends symbol, Traits extends object>(
  * Registers an interaction handler for nodes of the given kind.
  * Call this once at startup to opt a node kind into interaction handling.
  **/
-export function registerHitTestPoint(kind: symbol, fn: GraphHitTestFunction): void {
+export function registerHitTestPoint(kind: symbol, fn: HitTestFunction): void {
   hitTestPointRegistry.set(kind, fn);
 }
 
 const hitTestLocalBoundsRectanglePoint = { x: 0, y: 0 };
-const hitTestPointRegistry = new Map<symbol, GraphHitTestFunction>();
+const hitTestPointRegistry = new Map<symbol, HitTestFunction>();

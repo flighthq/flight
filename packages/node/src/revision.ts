@@ -2,9 +2,9 @@ import type { Node, NodeRuntime } from '@flighthq/types';
 
 import { getNodeRuntime } from './node';
 
-export function computeNodeWorldTransformRevision<Kind extends symbol, Traits extends object>(
-  runtime: NodeRuntime<Kind, Traits>,
-  parentRuntime?: Readonly<NodeRuntime<Kind, Traits>>,
+export function computeNodeWorldTransformRevision<Traits extends object>(
+  runtime: NodeRuntime<Traits>,
+  parentRuntime?: Readonly<NodeRuntime<Traits>>,
 ): void {
   const localTransformID = runtime.localTransformID;
   const parentWorldTransformID = parentRuntime ? parentRuntime.worldTransformID : 0;
@@ -13,31 +13,23 @@ export function computeNodeWorldTransformRevision<Kind extends symbol, Traits ex
   runtime.worldTransformID = (localTransformID << 16) | (parentWorldTransformID & 0xffff);
 }
 
-export function getNodeAppearanceRevision<Kind extends symbol, Traits extends object>(
-  source: Readonly<Node<Kind, Traits>>,
-): number {
+export function getNodeAppearanceRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
   return getNodeRuntime(source).appearanceID;
 }
 
-export function getNodeLocalBoundsRevision<Kind extends symbol, Traits extends object>(
-  source: Readonly<Node<Kind, Traits>>,
-): number {
+export function getNodeLocalBoundsRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
   return getNodeRuntime(source).localBoundsID;
 }
 
-export function getNodeLocalTransformRevision<Kind extends symbol, Traits extends object>(
-  source: Readonly<Node<Kind, Traits>>,
-): number {
+export function getNodeLocalTransformRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
   return getNodeRuntime(source).localTransformID;
 }
 
-export function getNodeWorldTransformRevision<Kind extends symbol, Traits extends object>(
-  source: Node<Kind, Traits>,
-): number {
+export function getNodeWorldTransformRevision<Traits extends object>(source: Node<Traits>): number {
   return getNodeRuntime(source).worldTransformID;
 }
 
-export function invalidateNode<Kind extends symbol, Traits extends object>(target: Node<Kind, Traits>): void {
+export function invalidateNode<Traits extends object>(target: Node<Traits>): void {
   invalidateNodeAppearance(target);
   invalidateNodeLocalBounds(target);
   invalidateNodeLocalTransform(target);
@@ -48,38 +40,32 @@ export function invalidateNode<Kind extends symbol, Traits extends object>(targe
 /**
  * Target object's appearance changed (excluding transforms).
  */
-export function invalidateNodeAppearance<Kind extends symbol, Traits extends object>(target: Node<Kind, Traits>): void {
-  const runtime = getNodeRuntime(target) as NodeRuntime<Kind, Traits>;
+export function invalidateNodeAppearance<Traits extends object>(target: Node<Traits>): void {
+  const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
   runtime.appearanceID = (runtime.appearanceID + 1) >>> 0;
 }
 
 /**
  * Target object's own dimensions (not including children) changed.
  */
-export function invalidateNodeLocalBounds<Kind extends symbol, Traits extends object>(
-  target: Node<Kind, Traits>,
-): void {
-  const runtime = getNodeRuntime(target) as NodeRuntime<Kind, Traits>;
+export function invalidateNodeLocalBounds<Traits extends object>(target: Node<Traits>): void {
+  const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
   runtime.localBoundsID = (runtime.localBoundsID + 1) >>> 0;
 }
 
 /**
  * Target object's own transform (x, y, rotation, scaleX, scaleY) changed.
  */
-export function invalidateNodeLocalTransform<Kind extends symbol, Traits extends object>(
-  target: Node<Kind, Traits>,
-): void {
-  const runtime = getNodeRuntime(target) as NodeRuntime<Kind, Traits>;
+export function invalidateNodeLocalTransform<Traits extends object>(target: Node<Traits>): void {
+  const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
   runtime.localTransformID = (runtime.localTransformID + 1) >>> 0;
 }
 
 /**
  * Target object's parent changed.
  */
-export function invalidateNodeParentReference<Kind extends symbol, Traits extends object>(
-  target: Node<Kind, Traits>,
-): void {
-  const runtime = getNodeRuntime(target) as NodeRuntime<Kind, Traits>;
+export function invalidateNodeParentReference<Traits extends object>(target: Node<Traits>): void {
+  const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
   runtime.worldTransformUsingParentTransformID = -1;
 }
 
@@ -87,7 +73,7 @@ export function invalidateNodeParentReference<Kind extends symbol, Traits extend
  * Target object's visual output changed (appearance or local transform).
  * Use this when animating properties like alpha, x, y, scaleX, scaleY, rotation.
  */
-export function invalidateNodeRender<Kind extends symbol, Traits extends object>(target: Node<Kind, Traits>): void {
+export function invalidateNodeRender<Traits extends object>(target: Node<Traits>): void {
   invalidateNodeAppearance(target);
   invalidateNodeLocalTransform(target);
 }
@@ -95,10 +81,8 @@ export function invalidateNodeRender<Kind extends symbol, Traits extends object>
 /**
  * Target object's child bounds have changed.
  */
-export function invalidateNodeWorldBounds<Kind extends symbol, Traits extends object>(
-  target: Node<Kind, Traits>,
-): void {
-  const runtime = getNodeRuntime(target) as NodeRuntime<Kind, Traits>;
+export function invalidateNodeWorldBounds<Traits extends object>(target: Node<Traits>): void {
+  const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
   runtime.worldBoundsUsingWorldTransformID = -1;
   runtime.worldBoundsUsingLocalBoundsID = -1;
 }

@@ -1,5 +1,5 @@
 import type { ColorTransform } from './ColorTransform';
-import type { Node, NodeTraits, NullScene } from './Node';
+import type { Node, NodeTraits } from './Node';
 
 // Opt-in node trait carrying a per-node color transform. A freshly created node does not
 // have this trait — color transform is no longer part of the universal HasAppearance set,
@@ -12,8 +12,4 @@ export interface HasColorTransform {
   colorTransform: ColorTransform | null;
 }
 
-export type GraphColorTransformNode<Kind extends symbol = typeof NullScene, Traits extends object = NodeTraits> = Node<
-  Kind,
-  Traits
-> &
-  HasColorTransform;
+export type ColorTransformNode<Traits extends object = NodeTraits> = Node<Traits> & HasColorTransform;

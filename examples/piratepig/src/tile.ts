@@ -1,4 +1,4 @@
-import type { DisplayObject, ImageSource, InteractionManager, Node, TweenManager } from '@flighthq/sdk';
+import type { DisplayObject, ImageSource, InteractionManager, TweenManager } from '@flighthq/sdk';
 import {
   addNodeChild,
   addNodeChildAt,
@@ -36,22 +36,21 @@ export interface TileInteractionOptions {
 
 export function connectTileInteraction(
   tile: Tile,
-  manager: InteractionManager,
+  manager: InteractionManager<DisplayObject>,
   onDrag: (tile: Tile, dx: number, dy: number) => void,
   options?: TileInteractionOptions,
 ): void {
   const coordScale = options?.coordScale ?? 1;
   const cursorElement = options?.cursorElement ?? null;
   const dragThreshold = 10 * coordScale;
-  const node = tile.obj as Node<symbol, object>;
-  const signals = getInteractionSignals(node);
+  const signals = getInteractionSignals(tile.obj);
   let startX = 0;
   let startY = 0;
   let isDragging = false;
 
   connectSignal(signals.onPointerDown, (data) => {
     if (tile.moving) return;
-    captureInteractionPointer(manager, data.pointerId, node);
+    captureInteractionPointer(manager, data.pointerId, tile.obj);
     startX = data.worldX;
     startY = data.worldY;
     isDragging = true;

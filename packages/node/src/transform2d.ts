@@ -13,9 +13,9 @@ import type { HasTransform2DRuntime, Matrix, NodeRuntime, Transform2DNode, Vecto
  * Converts the `vector` object from the Stage (global) coordinates
  * to the display object's (local) coordinates.
  **/
-export function convertNodeVector2GlobalToLocal<Kind extends symbol, Traits extends object>(
+export function convertNodeVector2GlobalToLocal<Traits extends object>(
   out: Vector2Like,
-  source: Transform2DNode<Kind, Traits>,
+  source: Transform2DNode<Traits>,
   vector: Readonly<Vector2Like>,
 ): void {
   inverseMatrixTransformPointXY(out, getNodeWorldTransformMatrix(source), vector.x, vector.y);
@@ -25,35 +25,31 @@ export function convertNodeVector2GlobalToLocal<Kind extends symbol, Traits exte
  * Converts the `vector` object from the display object's (local)
  * coordinates to world coordinates.
  **/
-export function convertNodeVector2LocalToGlobal<Kind extends symbol, Traits extends object>(
+export function convertNodeVector2LocalToGlobal<Traits extends object>(
   out: Vector2Like,
-  source: Transform2DNode<Kind, Traits>,
+  source: Transform2DNode<Traits>,
   vector: Readonly<Vector2Like>,
 ): void {
   matrixTransformPointXY(out, getNodeWorldTransformMatrix(source), vector.x, vector.y);
 }
 
-export function ensureNodeLocalTransformMatrix<Kind extends symbol, Traits extends object>(
-  target: Transform2DNode<Kind, Traits>,
-): void {
-  const runtime = getEntityRuntime(target) as NodeRuntime<Kind, Traits> & HasTransform2DRuntime;
+export function ensureNodeLocalTransformMatrix<Traits extends object>(target: Transform2DNode<Traits>): void {
+  const runtime = getEntityRuntime(target) as NodeRuntime<Traits> & HasTransform2DRuntime;
   if (runtime.localTransformUsingLocalTransformID !== runtime.localTransformID) {
     recomputeLocalTransform2D(target, runtime);
   }
 }
 
-export function ensureNodeWorldTransformMatrix<Kind extends symbol, Traits extends object>(
-  target: Transform2DNode<Kind, Traits>,
-): void {
-  const runtime = getEntityRuntime(target) as NodeRuntime<Kind, Traits> & HasTransform2DRuntime;
-  const parent = runtime.parent as Transform2DNode<Kind, Traits>;
+export function ensureNodeWorldTransformMatrix<Traits extends object>(target: Transform2DNode<Traits>): void {
+  const runtime = getEntityRuntime(target) as NodeRuntime<Traits> & HasTransform2DRuntime;
+  const parent = runtime.parent as Transform2DNode<Traits>;
 
-  let parentRuntime: (NodeRuntime<Kind, Traits> & HasTransform2DRuntime) | undefined;
+  let parentRuntime: (NodeRuntime<Traits> & HasTransform2DRuntime) | undefined;
   let parentWorldTransformID = 0;
 
   if (parent !== null) {
     ensureNodeWorldTransformMatrix(parent);
-    parentRuntime = getEntityRuntime(parent) as NodeRuntime<Kind, Traits> & HasTransform2DRuntime;
+    parentRuntime = getEntityRuntime(parent) as NodeRuntime<Traits> & HasTransform2DRuntime;
     parentWorldTransformID = parentRuntime.worldTransformID;
   }
 
@@ -65,23 +61,19 @@ export function ensureNodeWorldTransformMatrix<Kind extends symbol, Traits exten
   }
 }
 
-export function getNodeLocalTransformMatrix<Kind extends symbol, Traits extends object>(
-  target: Transform2DNode<Kind, Traits>,
-): Readonly<Matrix> {
+export function getNodeLocalTransformMatrix<Traits extends object>(target: Transform2DNode<Traits>): Readonly<Matrix> {
   ensureNodeLocalTransformMatrix(target);
-  return (getEntityRuntime(target) as NodeRuntime<Kind, Traits> & HasTransform2DRuntime).localTransform2D!;
+  return (getEntityRuntime(target) as NodeRuntime<Traits> & HasTransform2DRuntime).localTransform2D!;
 }
 
-export function getNodeWorldTransformMatrix<Kind extends symbol, Traits extends object>(
-  target: Transform2DNode<Kind, Traits>,
-): Readonly<Matrix> {
+export function getNodeWorldTransformMatrix<Traits extends object>(target: Transform2DNode<Traits>): Readonly<Matrix> {
   ensureNodeWorldTransformMatrix(target);
-  return (getEntityRuntime(target) as NodeRuntime<Kind, Traits> & HasTransform2DRuntime).worldTransform2D!;
+  return (getEntityRuntime(target) as NodeRuntime<Traits> & HasTransform2DRuntime).worldTransform2D!;
 }
 
-function recomputeLocalTransform2D<Kind extends symbol, Traits extends object>(
-  target: Transform2DNode<Kind, Traits>,
-  runtime: NodeRuntime<Kind, Traits> & HasTransform2DRuntime,
+function recomputeLocalTransform2D<Traits extends object>(
+  target: Transform2DNode<Traits>,
+  runtime: NodeRuntime<Traits> & HasTransform2DRuntime,
 ): void {
   if (target.rotation !== runtime.rotationAngle) {
     // Normalize from -180 to 180
@@ -109,10 +101,10 @@ function recomputeLocalTransform2D<Kind extends symbol, Traits extends object>(
   runtime.localTransformUsingLocalTransformID = runtime.localTransformID;
 }
 
-function recomputeWorldTransform2D<Kind extends symbol, Traits extends object>(
-  target: Transform2DNode<Kind, Traits>,
-  runtime: NodeRuntime<Kind, Traits> & HasTransform2DRuntime,
-  parentRuntime?: Readonly<NodeRuntime<Kind, Traits> & HasTransform2DRuntime>,
+function recomputeWorldTransform2D<Traits extends object>(
+  target: Transform2DNode<Traits>,
+  runtime: NodeRuntime<Traits> & HasTransform2DRuntime,
+  parentRuntime?: Readonly<NodeRuntime<Traits> & HasTransform2DRuntime>,
 ): void {
   if (runtime.worldTransform2D === null) runtime.worldTransform2D = createMatrix();
   ensureNodeLocalTransformMatrix(target);

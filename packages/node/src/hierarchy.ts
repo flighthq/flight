@@ -1,5 +1,5 @@
 import { emitSignal } from '@flighthq/signals';
-import type { HierarchyNode, HierarchyNodeOf, Node, NodeRuntime } from '@flighthq/types';
+import type { Node, NodeOf, NodeRuntime } from '@flighthq/types';
 
 import { getNodeRuntime } from './node';
 import { invalidateNodeParentReference } from './revision';
@@ -9,10 +9,7 @@ import { invalidateNodeParentReference } from './revision';
  * instance. The child is added to the front (top) of all other children in
  * this Node instance.
  **/
-export function addNodeChild<Kind extends symbol, Traits extends object>(
-  target: HierarchyNode<Kind, Traits>,
-  child: HierarchyNode<Kind, Traits>,
-): HierarchyNodeOf<Kind, Traits> {
+export function addNodeChild<Traits extends object>(target: Node<Traits>, child: Node<Traits>): NodeOf<Traits> {
   return addNodeChildAt(target, child, getNodeChildCount(target));
 }
 
@@ -22,12 +19,12 @@ export function addNodeChild<Kind extends symbol, Traits extends object>(
  * 0 represents the back (bottom) of the display list for this
  * Node object.
  **/
-export function addNodeChildAt<Kind extends symbol, Traits extends object>(
-  target: HierarchyNode<Kind, Traits>,
-  child: HierarchyNode<Kind, Traits>,
+export function addNodeChildAt<Traits extends object>(
+  target: Node<Traits>,
+  child: Node<Traits>,
   index: number,
-): HierarchyNodeOf<Kind, Traits> {
-  const targetRuntime = getNodeRuntime(target) as NodeRuntime<Kind, Traits>;
+): NodeOf<Traits> {
+  const targetRuntime = getNodeRuntime(target) as NodeRuntime<Traits>;
   let children = targetRuntime.children;
 
   if (!child) {
@@ -43,16 +40,16 @@ export function addNodeChildAt<Kind extends symbol, Traits extends object>(
   }
 
   if (children === null) {
-    children = targetRuntime.children = [] as Node<Kind, Traits>[];
+    children = targetRuntime.children = [] as Node<Traits>[];
   }
 
-  const childRuntime = getNodeRuntime(child) as NodeRuntime<Kind, Traits>;
-  const parent = childRuntime.parent as HierarchyNode<Kind, Traits>;
+  const childRuntime = getNodeRuntime(child) as NodeRuntime<Traits>;
+  const parent = childRuntime.parent as Node<Traits>;
 
   if (parent === target) {
     const i = children!.indexOf(child);
     if (i !== -1) {
-      if (i === index) return child as HierarchyNodeOf<Kind, Traits>;
+      if (i === index) return child as NodeOf<Traits>;
       children!.splice(i, 1);
     }
   } else {
@@ -66,23 +63,23 @@ export function addNodeChildAt<Kind extends symbol, Traits extends object>(
 
   if (parent !== target) {
     childRuntime.parent = target;
-    emitSignal(targetRuntime.nodeSignals.onChildAdded, child as HierarchyNode);
+    emitSignal(targetRuntime.nodeSignals.onChildAdded, child);
     emitSignal(childRuntime.nodeSignals.onParentChanged);
     invalidateNodeParentReference(child);
   }
 
-  return child as HierarchyNodeOf<Kind, Traits>;
+  return child as NodeOf<Traits>;
 }
 
 /**
  * Determines whether the specified scene node is a child of the
  * NodeContainer instance or the instance itself.
  **/
-export function containsNodeChild<Kind extends symbol, Traits extends object>(
-  source: Readonly<HierarchyNode<Kind, Traits>>,
-  child: Readonly<HierarchyNode<Kind, Traits>>,
+export function containsNodeChild<Traits extends object>(
+  source: Readonly<Node<Traits>>,
+  child: Readonly<Node<Traits>>,
 ): boolean {
-  let current: HierarchyNode<Kind, Traits> | null = child;
+  let current: Node<Traits> | null = child;
   while (current !== source && current !== null) {
     current = getNodeParent(current);
   }
@@ -93,13 +90,13 @@ export function containsNodeChild<Kind extends symbol, Traits extends object>(
  * Returns the child scene node instance that exists at the specified
  * index.
  **/
-export function getNodeChildAt<Kind extends symbol, Traits extends object>(
-  source: Readonly<HierarchyNode<Kind, Traits>>,
+export function getNodeChildAt<Traits extends object>(
+  source: Readonly<Node<Traits>>,
   index: number,
-): HierarchyNodeOf<Kind, Traits> | null {
+): NodeOf<Traits> | null {
   const children = getNodeRuntime(source).children;
   if (children !== null && index >= 0 && index < children.length) {
-    return children[index] as HierarchyNodeOf<Kind, Traits>;
+    return children[index] as NodeOf<Traits>;
   }
   return null;
 }
@@ -109,22 +106,20 @@ export function getNodeChildAt<Kind extends symbol, Traits extends object>(
  * more that one child scene node has the specified name, the method
  * returns the first object found.
  **/
-export function getNodeChildByName<Kind extends symbol, Traits extends object>(
-  source: Readonly<HierarchyNode<Kind, Traits>>,
+export function getNodeChildByName<Traits extends object>(
+  source: Readonly<Node<Traits>>,
   name: string,
-): HierarchyNodeOf<Kind, Traits> | null {
+): NodeOf<Traits> | null {
   const children = getNodeRuntime(source).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
-      if ((children[i] as Node).name === name) return children[i] as HierarchyNodeOf<Kind, Traits>;
+      if (children[i].name === name) return children[i] as NodeOf<Traits>;
     }
   }
   return null;
 }
 
-export function getNodeChildCount<Kind extends symbol, Traits extends object>(
-  source: Readonly<HierarchyNode<Kind, Traits>>,
-): number {
+export function getNodeChildCount<Traits extends object>(source: Readonly<Node<Traits>>): number {
   const children = getNodeRuntime(source).children;
   return children !== null ? children.length : 0;
 }
@@ -132,9 +127,9 @@ export function getNodeChildCount<Kind extends symbol, Traits extends object>(
 /**
  * Returns the index position of a `child` Node instance.
  **/
-export function getNodeChildIndex<Kind extends symbol, Traits extends object>(
-  source: Readonly<HierarchyNode<Kind, Traits>>,
-  child: Readonly<HierarchyNode<Kind, Traits>>,
+export function getNodeChildIndex<Traits extends object>(
+  source: Readonly<Node<Traits>>,
+  child: Readonly<Node<Traits>>,
 ): number {
   const children = getNodeRuntime(source).children;
   if (children !== null) {
@@ -145,26 +140,22 @@ export function getNodeChildIndex<Kind extends symbol, Traits extends object>(
   return -1;
 }
 
-export function getNodeParent<Kind extends symbol, Traits extends object>(
-  source: Readonly<HierarchyNode<Kind, Traits>>,
-): HierarchyNodeOf<Kind, Traits> | null {
-  return getNodeRuntime(source).parent as HierarchyNodeOf<Kind, Traits>;
+export function getNodeParent<Traits extends object>(source: Readonly<Node<Traits>>): NodeOf<Traits> | null {
+  return getNodeRuntime(source).parent as NodeOf<Traits>;
 }
 
 /**
  * Returns the topmost ancestor of the node, or the node itself if it has no
  * parent.
  **/
-export function getNodeRoot<Kind extends symbol, Traits extends object>(
-  source: Readonly<HierarchyNode<Kind, Traits>>,
-): HierarchyNodeOf<Kind, Traits> {
-  let current: HierarchyNodeOf<Kind, Traits> = source as HierarchyNodeOf<Kind, Traits>;
+export function getNodeRoot<Traits extends object>(source: Readonly<Node<Traits>>): NodeOf<Traits> {
+  let current: NodeOf<Traits> = source as NodeOf<Traits>;
   let parent = getNodeParent(current);
   while (parent !== null) {
     current = parent;
     parent = getNodeParent(current);
   }
-  return current as HierarchyNodeOf<Kind, Traits>;
+  return current as NodeOf<Traits>;
 }
 
 /**
@@ -175,13 +166,10 @@ export function getNodeRoot<Kind extends symbol, Traits extends object>(
  * positions of any scene nodes above the child in the
  * Node are decreased by 1.
  **/
-export function removeNodeChild<Kind extends symbol, Traits extends object>(
-  target: HierarchyNode<Kind, Traits>,
-  child: HierarchyNode<Kind, Traits>,
-): HierarchyNodeOf<Kind, Traits> {
+export function removeNodeChild<Traits extends object>(target: Node<Traits>, child: Node<Traits>): NodeOf<Traits> {
   if (!child) return child;
   const targetRuntime = getNodeRuntime(target);
-  const childRuntime = getNodeRuntime(child) as NodeRuntime<Kind, Traits>;
+  const childRuntime = getNodeRuntime(child) as NodeRuntime<Traits>;
   const children = targetRuntime.children;
   if (children !== null && childRuntime.parent === target) {
     childRuntime.parent = null;
@@ -191,10 +179,10 @@ export function removeNodeChild<Kind extends symbol, Traits extends object>(
     if (i !== -1) {
       children.splice(i, 1);
     }
-    emitSignal(targetRuntime.nodeSignals.onChildRemoved, child as HierarchyNode);
+    emitSignal(targetRuntime.nodeSignals.onChildRemoved, child);
     emitSignal(targetRuntime.nodeSignals.onChildrenChanged);
   }
-  return child as HierarchyNodeOf<Kind, Traits>;
+  return child as NodeOf<Traits>;
 }
 
 /**
@@ -205,13 +193,10 @@ export function removeNodeChild<Kind extends symbol, Traits extends object>(
  * references to the child exist. The index positions of any scene nodes
  * above the child in the Node are decreased by 1.
  **/
-export function removeNodeChildAt<Kind extends symbol, Traits extends object>(
-  target: HierarchyNode<Kind, Traits>,
-  index: number,
-): HierarchyNodeOf<Kind, Traits> | null {
+export function removeNodeChildAt<Traits extends object>(target: Node<Traits>, index: number): NodeOf<Traits> | null {
   const children = getNodeRuntime(target).children;
   if (children !== null && index >= 0 && index < children.length) {
-    return removeNodeChild(target, children[index] as HierarchyNodeOf<Kind, Traits>);
+    return removeNodeChild(target, children[index] as NodeOf<Traits>);
   }
   return null;
 }
@@ -221,8 +206,8 @@ export function removeNodeChildAt<Kind extends symbol, Traits extends object>(
  * instance. The `parent` property of the removed children is set to `null`, and the objects are
  * garbage collected if no other references to the children exist.
  **/
-export function removeNodeChildren<Kind extends symbol, Traits extends object>(
-  target: HierarchyNode<Kind, Traits>,
+export function removeNodeChildren<Traits extends object>(
+  target: Node<Traits>,
   beginIndex: number = 0,
   endIndex?: number,
 ): void {
@@ -249,9 +234,9 @@ export function removeNodeChildren<Kind extends symbol, Traits extends object>(
  * Changes the position of an existing child in the scene node container.
  * This affects the layering of child objects.
  **/
-export function setNodeChildIndex<Kind extends symbol, Traits extends object>(
-  target: HierarchyNode<Kind, Traits>,
-  child: HierarchyNode<Kind, Traits>,
+export function setNodeChildIndex<Traits extends object>(
+  target: Node<Traits>,
+  child: Node<Traits>,
   index: number,
 ): void {
   const targetRuntime = getNodeRuntime(target);
@@ -277,10 +262,10 @@ export function setNodeChildIndex<Kind extends symbol, Traits extends object>(
  * objects. All other child objects in the scene node container remain in
  * the same index positions.
  **/
-export function swapNodeChildren<Kind extends symbol, Traits extends object>(
-  target: HierarchyNode<Kind, Traits>,
-  child1: HierarchyNode<Kind, Traits>,
-  child2: HierarchyNode<Kind, Traits>,
+export function swapNodeChildren<Traits extends object>(
+  target: Node<Traits>,
+  child1: Node<Traits>,
+  child2: Node<Traits>,
 ): void {
   const targetRuntime = getNodeRuntime(target);
   const children = targetRuntime.children;
@@ -289,7 +274,7 @@ export function swapNodeChildren<Kind extends symbol, Traits extends object>(
     const index2 = children.indexOf(child2);
     children[index1] = child2;
     children[index2] = child1;
-    emitSignal(getNodeRuntime(target).nodeSignals.onChildrenOrderChanged);
+    emitSignal((getNodeRuntime(target) as NodeRuntime<Traits>).nodeSignals.onChildrenOrderChanged);
   }
 }
 
@@ -298,11 +283,7 @@ export function swapNodeChildren<Kind extends symbol, Traits extends object>(
  * specified index positions in the child list. All other child objects in
  * the scene node container remain in the same index positions.
  **/
-export function swapNodeChildrenAt<Kind extends symbol, Traits extends object>(
-  target: HierarchyNode<Kind, Traits>,
-  index1: number,
-  index2: number,
-): void {
+export function swapNodeChildrenAt<Traits extends object>(target: Node<Traits>, index1: number, index2: number): void {
   const targetRuntime = getNodeRuntime(target);
   const children = targetRuntime.children;
   if (children === null || index1 === index2) return;
@@ -310,7 +291,7 @@ export function swapNodeChildrenAt<Kind extends symbol, Traits extends object>(
   if (index1 < 0 || index2 < 0 || index1 >= len || index2 >= len) {
     throwOutOfBoundsError();
   }
-  const swap = children[index1] as Node<Kind, Traits>;
+  const swap = children[index1] as Node<Traits>;
   children[index1] = children[index2];
   children[index2] = swap;
   emitSignal(targetRuntime.nodeSignals.onChildrenOrderChanged);

@@ -1,7 +1,6 @@
 import { createEntityRuntime, getEntityRuntime } from '@flighthq/entity';
 import { createSignal } from '@flighthq/signals';
 import type {
-  HierarchyNode,
   MethodsOf,
   Node,
   NodeData,
@@ -17,33 +16,30 @@ import { EntityRuntimeKey } from '@flighthq/types';
 import { invalidateNode } from './revision';
 
 export function createNode<
-  Kind extends symbol,
   Traits extends object = NodeTraits,
   Data extends NodeData = NodeData,
-  Runtime extends NodeRuntime<Kind, Traits> = NodeRuntime<Kind, Traits>,
+  Runtime extends NodeRuntime<Traits> = NodeRuntime<Traits>,
 >(
-  sceneKind: Kind,
   nodeKind: symbol,
-  obj?: Readonly<PartialNode<Node<Kind, Traits>>>,
+  obj?: Readonly<PartialNode<Node<Traits>>>,
   createData?: NodeDataFactory<Data>,
   createNodeRuntimeFactory?: NodeRuntimeFactory<Runtime>,
-): Node<Kind, Traits> & Traits {
+): Node<Traits> & Traits {
   const runtimeFactory = createNodeRuntimeFactory ?? (createNodeRuntime as unknown as NodeRuntimeFactory<Runtime>);
   const out = {
     data: createData !== undefined ? createData(obj?.data as Partial<Data>) : null,
     name: obj?.name ?? null,
     kind: nodeKind,
     [EntityRuntimeKey]: runtimeFactory(),
-  } as Node<Kind, Traits> & Traits;
-  out[EntityRuntimeKey]!.graph = sceneKind;
+  } as Node<Traits> & Traits;
   out.enabled = obj?.enabled ?? true;
   return out;
 }
 
-export function createNodeRuntime<Kind extends symbol, Traits extends object>(
-  methods?: Readonly<Partial<MethodsOf<NodeRuntime<Kind, Traits>>>>,
-): NodeRuntime<Kind, Traits> {
-  const out = createEntityRuntime() as NodeRuntime<Kind, Traits>;
+export function createNodeRuntime<Traits extends object = NodeTraits>(
+  methods?: Readonly<Partial<MethodsOf<NodeRuntime<Traits>>>>,
+): NodeRuntime<Traits> {
+  const out = createEntityRuntime() as NodeRuntime<Traits>;
   out.appearanceID = 0;
   out.boundsUsingLocalBoundsID = -1;
   out.boundsUsingLocalTransformID = -1;
@@ -74,27 +70,24 @@ export function createNodeSignals(): NodeSignals {
   };
 }
 
-export function defaultNodeRuntimeCanAddChild<Kind extends symbol, Traits extends object>(
-  _target: HierarchyNode<Kind, Traits>,
-  _child: HierarchyNode<Kind, Traits>,
+export function defaultNodeRuntimeCanAddChild<Traits extends object>(
+  _target: Node<Traits>,
+  _child: Node<Traits>,
 ): boolean {
   return true;
 }
 
-export function getNodeRuntime<Kind extends symbol, Traits extends object>(
-  source: Readonly<Node<Kind, Traits>>,
-): Readonly<NodeRuntime<Kind, Traits>> {
-  return getEntityRuntime(source) as NodeRuntime<Kind, Traits>;
+export function getNodeRuntime<Traits extends object = NodeTraits>(
+  source: Readonly<Node<Traits>>,
+): Readonly<NodeRuntime<Traits>> {
+  return getEntityRuntime(source) as NodeRuntime<Traits>;
 }
 
-export function getNodeSignals<Kind extends symbol, Traits extends object>(source: Node<Kind, Traits>): NodeSignals {
-  return (getEntityRuntime(source) as NodeRuntime<Kind, Traits>).nodeSignals;
+export function getNodeSignals<Traits extends object = NodeTraits>(source: Node<Traits>): NodeSignals {
+  return (getEntityRuntime(source) as NodeRuntime<Traits>).nodeSignals;
 }
 
-export function setNodeEnabled<Kind extends symbol, Traits extends object>(
-  target: Node<Kind, Traits>,
-  value: boolean,
-): void {
+export function setNodeEnabled<Traits extends object = NodeTraits>(target: Node<Traits>, value: boolean): void {
   target.enabled = value;
   invalidateNode(target);
 }

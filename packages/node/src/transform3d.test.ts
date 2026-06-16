@@ -13,18 +13,15 @@ import {
   getNodeWorldTransformMatrix4,
 } from './transform3d';
 
-const TestGraph: unique symbol = Symbol('TestGraph');
 const TestNodeKind: unique symbol = Symbol('TestNode');
 
 interface TestTraits extends HasTransform3D {}
-type TestNode = Transform3DNode<typeof TestGraph, TestTraits>;
+type TestNode = Transform3DNode<TestTraits>;
 
 function createTestNode(): TestNode {
-  const node = createNode<typeof TestGraph, TestTraits>(TestGraph, TestNodeKind);
+  const node = createNode<TestTraits>(TestNodeKind);
   initTransform3DTrait(node);
-  initTransform3DRuntimeTrait(
-    getNodeRuntime(node) as NodeRuntime<typeof TestGraph, TestTraits> & HasTransform3DRuntime,
-  );
+  initTransform3DRuntimeTrait(getNodeRuntime(node) as NodeRuntime<TestTraits> & HasTransform3DRuntime);
   return node as TestNode;
 }
 
@@ -125,7 +122,7 @@ describe('ensureNodeWorldTransformMatrix4', () => {
     node.localMatrix.m[12] = 5;
     invalidateNodeLocalTransform(node);
     ensureNodeWorldTransformMatrix4(node);
-    const runtime = getNodeRuntime(node) as NodeRuntime<typeof TestGraph, TestTraits> & HasTransform3DRuntime;
+    const runtime = getNodeRuntime(node) as NodeRuntime<TestTraits> & HasTransform3DRuntime;
     expect(runtime.worldMatrix).not.toBeNull();
     expect(runtime.worldMatrix!.m[12]).toBeCloseTo(5);
   });
@@ -133,7 +130,7 @@ describe('ensureNodeWorldTransformMatrix4', () => {
   it('reuses a cached world matrix when no invalidation has occurred', () => {
     const node = createTestNode();
     ensureNodeWorldTransformMatrix4(node);
-    const runtime = getNodeRuntime(node) as NodeRuntime<typeof TestGraph, TestTraits> & HasTransform3DRuntime;
+    const runtime = getNodeRuntime(node) as NodeRuntime<TestTraits> & HasTransform3DRuntime;
     const first = runtime.worldMatrix;
     ensureNodeWorldTransformMatrix4(node);
     expect(runtime.worldMatrix).toBe(first);
@@ -165,7 +162,7 @@ describe('getNodeWorldTransformMatrix4', () => {
     const node = createTestNode();
     invalidateNodeLocalTransform(node);
     ensureNodeWorldTransformMatrix4(node);
-    const runtime = getNodeRuntime(node) as NodeRuntime<typeof TestGraph, TestTraits> & HasTransform3DRuntime;
+    const runtime = getNodeRuntime(node) as NodeRuntime<TestTraits> & HasTransform3DRuntime;
     const first = runtime.worldTransformID;
 
     node.localMatrix.m[12] = 99;
@@ -179,7 +176,7 @@ describe('getNodeWorldTransformMatrix4', () => {
   it('world matrix is cached when nothing changes', () => {
     const node = createTestNode();
     ensureNodeWorldTransformMatrix4(node);
-    const runtime = getNodeRuntime(node) as NodeRuntime<typeof TestGraph, TestTraits> & HasTransform3DRuntime;
+    const runtime = getNodeRuntime(node) as NodeRuntime<TestTraits> & HasTransform3DRuntime;
     const id1 = runtime.worldTransformID;
     ensureNodeWorldTransformMatrix4(node);
     const id2 = runtime.worldTransformID;

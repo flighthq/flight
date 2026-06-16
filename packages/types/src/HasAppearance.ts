@@ -1,5 +1,5 @@
 import type { BlendMode } from './BlendMode';
-import type { Node, NodeTraits, NullScene } from './Node';
+import type { Node, NodeTraits } from './Node';
 
 export interface HasAppearance {
   alpha: number;
@@ -7,8 +7,4 @@ export interface HasAppearance {
   visible: boolean;
 }
 
-export type GraphAppearanceNode<Kind extends symbol = typeof NullScene, Traits extends object = NodeTraits> = Node<
-  Kind,
-  Traits
-> &
-  HasAppearance;
+export type AppearanceNode<Traits extends object = NodeTraits> = Node<Traits> & HasAppearance;

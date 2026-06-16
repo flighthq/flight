@@ -1,11 +1,14 @@
 import type { HasTransform3D, HasTransform3DRuntime } from './HasTransform3D';
-import type { Node, NodeRuntime } from './Node';
+import type { Node, NodeRuntime, NodeTraitsKey } from './Node';
 
-export const WorldGraph: unique symbol = Symbol('WorldGraph');
 export const WorldNodeKind: unique symbol = Symbol('WorldNode');
 
 export interface WorldNodeTraits extends HasTransform3D {}
 
-export type WorldNode = Node<typeof WorldGraph, WorldNodeTraits> & WorldNodeTraits;
+export type WorldNode = Node<WorldNodeTraits> & WorldNodeTraits;
 
-export type WorldNodeRuntime = NodeRuntime<typeof WorldGraph, WorldNodeTraits> & HasTransform3DRuntime;
+export type WorldNodeRuntime = NodeRuntime<WorldNodeTraits> & HasTransform3DRuntime;
+
+export const WorldNodeTraitsKey: NodeTraitsKey<WorldNodeTraits> = Symbol(
+  'WorldNodeTraits',
+) as NodeTraitsKey<WorldNodeTraits>;
