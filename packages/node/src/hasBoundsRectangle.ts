@@ -1,7 +1,12 @@
-import type { BoundsNode, HasBoundsRectangle, HasBoundsRectangleRuntime, MethodsOf, Rectangle } from '@flighthq/types';
+import type {
+  BoundsNodeAny,
+  HasBoundsRectangle,
+  HasBoundsRectangleRuntime,
+  MethodsOf,
+  Rectangle,
+} from '@flighthq/types';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- unique symbol variance prevents a tighter type here
-export function defaultComputeLocalBoundsRectangle(_out: Rectangle, _source: Readonly<BoundsNode<any, any>>) {}
+export function defaultComputeLocalBoundsRectangle(_out: Rectangle, _source: Readonly<BoundsNodeAny>) {}
 
 export function initBoundsRectangleRuntimeTrait(
   target: HasBoundsRectangleRuntime,

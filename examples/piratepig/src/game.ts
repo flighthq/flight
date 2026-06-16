@@ -47,7 +47,7 @@ export class PiratePigGame {
   currentScale: number = 1;
   currentScore: number = 0;
 
-  private interaction: InteractionManager;
+  private interaction: InteractionManager<DisplayObject>;
   private interactionOptions: TileInteractionOptions | undefined;
   private tileContainer: DisplayObject;
   private scoreText: Text;
@@ -60,7 +60,7 @@ export class PiratePigGame {
 
   constructor(
     manager: TweenManager,
-    interactionManager: InteractionManager,
+    interactionManager: InteractionManager<DisplayObject>,
     tileImages: ImageSource[],
     logoImage: ImageSource,
     fontName: string,

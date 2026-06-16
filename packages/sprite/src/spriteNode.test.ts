@@ -1,9 +1,7 @@
-import { createNode } from '@flighthq/node';
-import type { Node, PartialNode, Rectangle, SpriteNode, SpriteNodeData } from '@flighthq/types';
-import { BlendMode, DisplayObjectKind, SpriteGraph } from '@flighthq/types';
+import type { BoundsNode, PartialNode, Rectangle, SpriteNode, SpriteNodeData } from '@flighthq/types';
+import { BlendMode, DisplayObjectKind, SpriteNodeTraitsKey } from '@flighthq/types';
 
-import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
-import { isSpriteNode } from './spriteNode';
+import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime, isSpriteNode } from './spriteNode';
 
 describe('createSpriteNode', () => {
   let spriteNode: SpriteNode;
@@ -43,11 +41,6 @@ describe('createSpriteNode', () => {
     expect(obj.y).toStrictEqual(base.y);
   });
 
-  it('uses SpriteGraph for runtime.graph', () => {
-    const runtime = getSpriteNodeRuntime(spriteNode);
-    expect(runtime.graph).toStrictEqual(SpriteGraph);
-  });
-
   it('allows creation of a type without a data field', () => {
     const spriteNode = createSpriteNode(SpriteNodeTestKind);
     expect(spriteNode).not.toBeNull();
@@ -80,8 +73,13 @@ describe('createSpriteNodeRuntime', () => {
     expect(runtime).not.toBeNull();
   });
 
+  it('sets traits to SpriteNodeTraitsKey', () => {
+    const runtime = createSpriteNodeRuntime();
+    expect(runtime.traits).toBe(SpriteNodeTraitsKey);
+  });
+
   it('allows a custom bounds calculation', () => {
-    const func = (_out: Rectangle, _source: Readonly<Node>) => {};
+    const func = (_out: Rectangle, _source: Readonly<BoundsNode<any>>) => {};
     const runtime = createSpriteNodeRuntime({ computeLocalBoundsRectangle: func });
     expect(runtime.computeLocalBoundsRectangle).toStrictEqual(func);
   });
@@ -101,15 +99,9 @@ describe('getSpriteNodeRuntime', () => {
 });
 
 describe('isSpriteNode', () => {
-  it('returns true for a sprite node', () => {
+  it('returns true for sprite nodes', () => {
     const node = createSpriteNode(SpriteNodeTestKind);
     expect(isSpriteNode(node)).toBe(true);
-  });
-
-  it('returns false for a different graph type', () => {
-    const TestGraph: unique symbol = Symbol('TestGraph');
-    const node = createNode(TestGraph, SpriteNodeTestKind);
-    expect(isSpriteNode(node)).toBe(false);
   });
 });
 

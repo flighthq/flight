@@ -19,16 +19,16 @@ test('can add sprite objects to sprite graph', () => {
   expect(out).not.toBeNull();
 });
 
-test('cannot add display objects to sprite graph', () => {
+test('adding display objects to sprite graph is blocked at the type level', () => {
   const parent = createSprite();
   const child = createDisplayObject();
-  // @ts-expect-error: parent and child have different graph types
+  // @ts-expect-error — traits phantom field makes DisplayObjectTraits incompatible with SpriteNodeTraits
   addNodeChild(parent, child);
 });
 
-test('cannot add sprite objects to standard display graph', () => {
+test('adding sprite objects to display graph is blocked at the type level', () => {
   const parent = createDisplayObject();
   const child = createSprite();
-  // @ts-expect-error: parent and child have different graph types
+  // @ts-expect-error — traits phantom field makes SpriteNodeTraits incompatible with DisplayObjectTraits
   addNodeChild(parent, child);
 });

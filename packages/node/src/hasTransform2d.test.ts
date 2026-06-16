@@ -4,10 +4,10 @@ import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransfor
 import { createNode, createNodeRuntime } from './node';
 
 describe('initTransform2DRuntimeTrait', () => {
-  let runtime: NodeRuntime<typeof NodeTestKind, HasTransform2D> & HasTransform2DRuntime;
+  let runtime: NodeRuntime<HasTransform2D> & HasTransform2DRuntime;
 
   beforeEach(() => {
-    runtime = createNodeRuntime() as NodeRuntime<typeof NodeTestKind, HasTransform2D> & HasTransform2DRuntime;
+    runtime = createNodeRuntime() as NodeRuntime<HasTransform2D> & HasTransform2DRuntime;
   });
 
   it('initializes default values', () => {
@@ -28,7 +28,7 @@ describe('initTransform2DTrait', () => {
   let node: HasTransform2D;
 
   beforeEach(() => {
-    node = createNode(NodeTestKind, NodeTestKind) as Node<typeof NodeTestKind, HasTransform2D> & HasTransform2D;
+    node = createNode(NodeTestKind) as Node<HasTransform2D> & HasTransform2D;
   });
 
   it('initializes default values', () => {

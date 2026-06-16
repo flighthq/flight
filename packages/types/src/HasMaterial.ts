@@ -1,5 +1,5 @@
 import type { Material, MaterialData } from './Material';
-import type { Node, NodeTraits, NullScene } from './Node';
+import type { Node, NodeTraits } from './Node';
 
 // Opt-in node trait. A freshly created node has no material (null → DefaultMaterialKind, the
 // standard pipeline). `materialData` holds per-node data the material consumes — e.g. a per-node
@@ -9,8 +9,4 @@ export interface HasMaterial {
   materialData: MaterialData | null;
 }
 
-export type GraphMaterialNode<Kind extends symbol = typeof NullScene, Traits extends object = NodeTraits> = Node<
-  Kind,
-  Traits
-> &
-  HasMaterial;
+export type MaterialNode<Traits extends object = NodeTraits> = Node<Traits> & HasMaterial;

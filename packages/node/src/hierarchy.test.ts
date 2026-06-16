@@ -21,22 +21,22 @@ import {
 } from './hierarchy';
 import { createNode, getNodeRuntime, getNodeSignals } from './node';
 
-let container: Node<typeof TestGraph, NodeTraits>;
-let childA: Node<typeof TestGraph, NodeTraits>;
-let childB: Node<typeof TestGraph, NodeTraits>;
+let container: Node<NodeTraits>;
+let childA: Node<NodeTraits>;
+let childB: Node<NodeTraits>;
 
 beforeEach(() => {
-  container = createNode(TestGraph, NodeKind);
-  childA = createNode(TestGraph, NodeKind);
-  childB = createNode(TestGraph, NodeKind);
+  container = createNode(NodeKind);
+  childA = createNode(NodeKind);
+  childB = createNode(NodeKind);
 });
 
-function getChildren(source: Node<typeof TestGraph>) {
-  return getNodeRuntime(source).children as Node<typeof TestGraph>[];
+function getChildren(source: Node) {
+  return getNodeRuntime(source).children as Node[];
 }
 
-function getEntityRuntime(source: Node<typeof TestGraph>) {
-  return getNodeRuntime(source) as NodeRuntime<typeof TestGraph>;
+function getEntityRuntime(source: Node) {
+  return getNodeRuntime(source) as NodeRuntime;
 }
 
 describe('addNodeChild', () => {
@@ -56,7 +56,7 @@ describe('addNodeChild', () => {
   });
 
   it('removes child from previous parent before adding', () => {
-    const other = createNode(TestGraph, NodeKind);
+    const other = createNode(NodeKind);
 
     addNodeChild(other, childA);
     expect(getNodeParent(childA)).toBe(other);
@@ -69,7 +69,7 @@ describe('addNodeChild', () => {
   });
 
   it('a child never has more than one parent', () => {
-    const other = createNode(TestGraph, NodeKind);
+    const other = createNode(NodeKind);
 
     addNodeChild(container, childA);
     addNodeChild(other, childA);
@@ -317,7 +317,7 @@ describe('removeNodeChild', () => {
   it('does nothing if child is not a child of target', () => {
     addNodeChild(container, childA);
 
-    const other = createNode(TestGraph, NodeKind);
+    const other = createNode(NodeKind);
     removeNodeChild(other, childA);
 
     expect(getNodeChildCount(container)).toBe(1);
@@ -421,7 +421,7 @@ describe('removeNodeChildren', () => {
   });
 
   it('removeChildren removes a range of children', () => {
-    const childC = createNode(TestGraph, NodeKind);
+    const childC = createNode(NodeKind);
 
     addNodeChild(container, childA);
     addNodeChild(container, childB);
@@ -485,7 +485,7 @@ describe('setNodeChildIndex', () => {
   });
 
   it('setChildIndex does nothing if child is not in container', () => {
-    const other = createNode(TestGraph, NodeKind);
+    const other = createNode(NodeKind);
 
     addNodeChild(other, childA);
     addNodeChild(container, childB);
@@ -529,7 +529,7 @@ describe('swapNodeChildren', () => {
   });
 
   it('swapNodeChildren does nothing if either child is not in container', () => {
-    const other = createNode(TestGraph, NodeKind);
+    const other = createNode(NodeKind);
 
     addNodeChild(container, childA);
     addNodeChild(other, childB);
@@ -581,5 +581,3 @@ describe('swapNodeChildrenAt', () => {
     expect(called).toBe(true);
   });
 });
-
-const TestGraph: unique symbol = Symbol('TestGraph');

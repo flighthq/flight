@@ -30,7 +30,6 @@ export * from './FontSource';
 export * from './HasAppearance';
 export * from './HasBoundsRectangle';
 export * from './HasColorTransform';
-export * from './HasHierarchy';
 export * from './HasMaterial';
 export * from './HasTransform2D';
 export * from './HasTransform3D';

@@ -1,14 +1,13 @@
 import { getEntityRuntime } from '@flighthq/entity';
-import { createNode } from '@flighthq/node';
 import type {
+  BoundsNode,
   DisplayObject,
   DisplayObjectData,
   DisplayObjectRuntime,
-  Node,
   PartialNode,
   Rectangle,
 } from '@flighthq/types';
-import { BlendMode, DisplayGraph, DisplayObjectKind } from '@flighthq/types';
+import { BlendMode, DisplayObjectKind, DisplayObjectTraitsKey } from '@flighthq/types';
 
 import {
   createDisplayObject,
@@ -66,11 +65,6 @@ describe('createDisplayObject', () => {
     expect(obj.y).toStrictEqual(base.y);
   });
 
-  it('uses DisplayGraph for runtime.graph', () => {
-    const runtime = getDisplayObjectRuntime(displayObject);
-    expect(runtime.graph).toStrictEqual(DisplayGraph);
-  });
-
   it('returns a new object for better hidden-class performance', () => {
     const base = {};
     const obj = createDisplayObject(base);
@@ -111,8 +105,13 @@ describe('createDisplayObjectRuntime', () => {
     expect(runtime).not.toBeNull();
   });
 
+  it('sets traits to DisplayObjectTraitsKey', () => {
+    const runtime = createDisplayObjectRuntime();
+    expect(runtime.traits).toBe(DisplayObjectTraitsKey);
+  });
+
   it('allows a custom bounds calculation', () => {
-    const func = (_out: Rectangle, _source: Readonly<Node>) => {};
+    const func = (_out: Rectangle, _source: Readonly<BoundsNode<any>>) => {};
     const runtime = createDisplayObjectRuntime({ computeLocalBoundsRectangle: func });
     expect(runtime.computeLocalBoundsRectangle).toStrictEqual(func);
   });
@@ -127,15 +126,8 @@ describe('getDisplayObjectRuntime', () => {
 });
 
 describe('isDisplayObject', () => {
-  it('returns true for a sprite node', () => {
-    const node = createDisplayObject();
-    expect(isDisplayObject(node)).toBe(true);
-  });
-
-  it('returns false for a different graph type', () => {
-    const TestGraph: unique symbol = Symbol('TestGraph');
-    const node = createNode(TestGraph, DisplayObjectKind);
-    expect(isDisplayObject(node)).toBe(false);
+  it('returns true for display objects', () => {
+    expect(isDisplayObject(createDisplayObject())).toBe(true);
   });
 });
 

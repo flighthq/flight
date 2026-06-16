@@ -11,7 +11,7 @@ import { createNode, createNodeRuntime } from './node';
 describe('defaultComputeLocalBoundsRectangle', () => {
   it('is a no-op that does not modify out', () => {
     const out = createRectangle(1, 2, 3, 4);
-    const node = createNode(NodeTestKind, NodeTestKind);
+    const node = createNode(NodeTestKind);
     defaultComputeLocalBoundsRectangle(out, node as unknown as Node);
     expect(out.x).toBe(1);
     expect(out.y).toBe(2);
@@ -24,7 +24,7 @@ describe('initBoundsRectangleRuntimeTrait', () => {
   let runtime: HasBoundsRectangleRuntime;
 
   beforeEach(() => {
-    runtime = createNodeRuntime() as NodeRuntime<typeof NodeTestKind, HasBoundsRectangle> & HasBoundsRectangleRuntime;
+    runtime = createNodeRuntime() as NodeRuntime<HasBoundsRectangle> & HasBoundsRectangleRuntime;
   });
 
   it('initializes default values', () => {
@@ -41,7 +41,7 @@ describe('initBoundsRectangleTrait', () => {
   let node: HasBoundsRectangle;
 
   beforeEach(() => {
-    node = createNode(NodeTestKind, NodeTestKind) as Node<typeof NodeTestKind, HasBoundsRectangle> & HasBoundsRectangle;
+    node = createNode(NodeTestKind) as Node<HasBoundsRectangle> & HasBoundsRectangle;
   });
 
   it('does nothing', () => {

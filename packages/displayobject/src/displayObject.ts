@@ -11,18 +11,17 @@ import {
   invalidateNodeAppearance,
 } from '@flighthq/node';
 import type {
-  DisplayGraphNodeDataFactory,
-  DisplayGraphNodeRuntimeFactory,
   DisplayObject,
+  DisplayObjectDataFactory,
   DisplayObjectRuntime,
+  DisplayObjectRuntimeFactory,
   MethodsOf,
-  Node,
+  NodeAny,
   NodeRuntimeFactory,
   PartialNode,
   Rectangle,
 } from '@flighthq/types';
-import { DisplayGraph } from '@flighthq/types';
-import { DisplayObjectKind } from '@flighthq/types';
+import { DisplayObjectKind, DisplayObjectTraitsKey } from '@flighthq/types';
 
 export function createDisplayObject(obj?: Readonly<PartialNode<DisplayObject>>): DisplayObject {
   return createDisplayObjectGeneric(DisplayObjectKind, obj);
@@ -31,11 +30,10 @@ export function createDisplayObject(obj?: Readonly<PartialNode<DisplayObject>>):
 export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   kind: symbol,
   obj?: Readonly<PartialNode<DisplayObject>>,
-  createData?: DisplayGraphNodeDataFactory,
-  createDisplayObjectRuntimeFactory?: DisplayGraphNodeRuntimeFactory<R>,
+  createData?: DisplayObjectDataFactory,
+  createDisplayObjectRuntimeFactory?: DisplayObjectRuntimeFactory<R>,
 ): DisplayObject {
   const out = createNode(
-    DisplayGraph,
     kind,
     obj,
     createData,
@@ -54,6 +52,7 @@ export function createDisplayObjectRuntime(
   methods?: Readonly<Partial<MethodsOf<DisplayObjectRuntime>>>,
 ): DisplayObjectRuntime {
   const out = createNodeRuntime(methods) as DisplayObjectRuntime;
+  out.traits = DisplayObjectTraitsKey;
   initTransform2DRuntimeTrait(out, methods);
   initBoundsRectangleRuntimeTrait(out, methods);
   return out;
@@ -63,9 +62,8 @@ export function getDisplayObjectRuntime(source: Readonly<DisplayObject>): Readon
   return getNodeRuntime(source) as DisplayObjectRuntime;
 }
 
-// eslint-disable-next-line
-export function isDisplayObject(source: Readonly<Node<any, any>>): boolean {
-  return getNodeRuntime(source).graph === DisplayGraph;
+export function isDisplayObject(node: NodeAny): node is DisplayObject {
+  return getNodeRuntime(node).traits === DisplayObjectTraitsKey;
 }
 
 export function setDisplayObjectClipRectangle(source: DisplayObject, value: Rectangle | null): void {

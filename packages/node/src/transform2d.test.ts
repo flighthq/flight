@@ -15,7 +15,7 @@ import {
 } from './transform2d';
 
 function createTestNode(): TestNode {
-  const node = createNode(TestKind, TestKind) as TestNode;
+  const node = createNode(TestKind) as TestNode;
   const runtime = getEntityRuntime(node);
   initTransform2DTrait(node);
   initTransform2DRuntimeTrait(runtime as HasTransform2DRuntime);
@@ -148,7 +148,7 @@ describe('ensureNodeLocalTransformMatrix', () => {
   });
 
   it('recomputes if the local transform ID has changed', () => {
-    const runtime = getEntityRuntime(node) as NodeRuntime<typeof TestKind, HasTransform2D> & HasTransform2DRuntime;
+    const runtime = getEntityRuntime(node) as NodeRuntime<HasTransform2D> & HasTransform2DRuntime;
     ensureNodeLocalTransformMatrix(node);
     const cache = cloneAndInvalidateMatrix(runtime.localTransform2D);
     runtime.localTransformID++;
@@ -159,7 +159,7 @@ describe('ensureNodeLocalTransformMatrix', () => {
 
 describe('ensureNodeWorldTransformMatrix', () => {
   it('computes world transform the first time', () => {
-    const runtime = getEntityRuntime(node) as NodeRuntime<typeof TestKind, HasTransform2D> & HasTransform2DRuntime;
+    const runtime = getEntityRuntime(node) as NodeRuntime<HasTransform2D> & HasTransform2DRuntime;
     expect(runtime.worldTransform2D).toBeNull();
     ensureNodeWorldTransformMatrix(node);
     expect(runtime.worldTransform2D).not.toBeNull();
@@ -175,7 +175,7 @@ describe('ensureNodeWorldTransformMatrix', () => {
   });
 
   it('recomputes if the local transform ID has changed', () => {
-    const runtime = getEntityRuntime(node) as NodeRuntime<typeof TestKind, HasTransform2D> & HasTransform2DRuntime;
+    const runtime = getEntityRuntime(node) as NodeRuntime<HasTransform2D> & HasTransform2DRuntime;
     ensureNodeWorldTransformMatrix(node);
     const cache = cloneAndInvalidateMatrix(runtime.worldTransform2D);
     runtime.localTransformID++;
@@ -187,8 +187,7 @@ describe('ensureNodeWorldTransformMatrix', () => {
     const parent = createTestNode();
     addNodeChild(parent, node);
     const runtime = getEntityRuntime(node) as HasTransform2DRuntime;
-    const parentState = getEntityRuntime(parent) as NodeRuntime<typeof TestKind, HasTransform2D> &
-      HasTransform2DRuntime;
+    const parentState = getEntityRuntime(parent) as NodeRuntime<HasTransform2D> & HasTransform2DRuntime;
     ensureNodeWorldTransformMatrix(node);
     const cache = cloneAndInvalidateMatrix(runtime.worldTransform2D);
     parentState.worldTransformID++;
@@ -232,6 +231,6 @@ function cloneAndInvalidateMatrix(matrix: Matrix | null): Matrix | null {
   return clone;
 }
 
-type TestNode = Node<typeof TestKind, HasTransform2D> & HasTransform2D;
+type TestNode = Node<HasTransform2D> & HasTransform2D;
 
 const TestKind: unique symbol = Symbol('Test');
