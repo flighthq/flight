@@ -1,6 +1,7 @@
 import type { HasAppearance } from './HasAppearance';
 import type { HasBoundsRectangle, HasBoundsRectangleRuntime } from './HasBoundsRectangle';
 import type { HasHierarchy } from './HasHierarchy';
+import type { HasMaterial } from './HasMaterial';
 import type { HasTransform2D, HasTransform2DRuntime } from './HasTransform2D';
 import type { Node, NodeData, NodeDataFactory, NodeRuntime, NodeRuntimeFactory } from './Node';
 
@@ -8,10 +9,9 @@ export const SpriteGraph = Symbol('SpriteGraph');
 
 export type SpriteNode = Node<typeof SpriteGraph, SpriteNodeTraits> & SpriteNodeTraits;
 
-export interface SpriteNodeTraits extends HasAppearance, HasBoundsRectangle, HasHierarchy, HasTransform2D {
+export interface SpriteNodeTraits extends HasAppearance, HasBoundsRectangle, HasHierarchy, HasMaterial, HasTransform2D {
   alphaEnabled: boolean;
   blendModeEnabled: boolean;
-  colorTransformEnabled: boolean;
   originX: number;
   originY: number;
 }
