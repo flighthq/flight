@@ -5,6 +5,7 @@ import {
   initAppearanceTrait,
   initBoundsRectangleRuntimeTrait,
   initBoundsRectangleTrait,
+  initMaterialTrait,
   initTransform2DRuntimeTrait,
   initTransform2DTrait,
   invalidateNodeAppearance,
@@ -43,6 +44,7 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   initTransform2DTrait(out, obj);
   initBoundsRectangleTrait(out, obj);
   initAppearanceTrait(out, obj);
+  initMaterialTrait(out, obj);
   out.mask = obj?.mask ?? null;
   out.clipRectangle = obj?.clipRectangle ?? null;
   return out;

@@ -1,5 +1,5 @@
 import { createParticleEmitter } from '@flighthq/sprite';
-import type { HasAppearance, HasTransform2D, TextureAtlas } from '@flighthq/types';
+import type { TextureAtlas } from '@flighthq/types';
 
 import { applyParticleForces, applyParticleObjectForces } from './applyParticleForces';
 import { createParticleEmitterConfig } from './particleEmitterConfig';
@@ -148,7 +148,7 @@ function makeObject(): ParticleObject {
     visible: false,
     x: 0,
     y: 0,
-  } as HasTransform2D & HasAppearance;
+  } as unknown as ParticleObject;
 }
 
 describe('applyParticleObjectForces', () => {

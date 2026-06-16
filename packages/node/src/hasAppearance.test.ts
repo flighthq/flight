@@ -18,7 +18,6 @@ describe('initAppearanceTrait', () => {
 
     expect(target.alpha).toBe(1);
     expect(target.blendMode).toBeNull();
-    expect(target.colorTransform).toBeNull();
     expect(target.visible).toBe(true);
   });
 
@@ -36,14 +35,6 @@ describe('initAppearanceTrait', () => {
     initAppearanceTrait(target, { blendMode: BlendMode.Add });
 
     expect(target.blendMode).toBe(BlendMode.Add);
-  });
-
-  it('applies colorTransform override', () => {
-    const ct = {} as any;
-    const target = makeTarget();
-    initAppearanceTrait(target, { colorTransform: ct });
-
-    expect(target.colorTransform).toBe(ct);
   });
 
   it('overwrites existing values', () => {

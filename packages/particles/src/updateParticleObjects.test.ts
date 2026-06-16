@@ -1,5 +1,3 @@
-import type { HasAppearance, HasTransform2D } from '@flighthq/types';
-
 import { createParticleEmitterConfig } from './particleEmitterConfig';
 import { createParticleObjectsState } from './particleObjectsState';
 import type { ParticleObject } from './updateParticleObjects';
@@ -16,7 +14,7 @@ function makeObject(): ParticleObject {
     visible: false,
     x: 0,
     y: 0,
-  } as HasTransform2D & HasAppearance;
+  } as unknown as ParticleObject;
 }
 
 describe('updateParticleObjects', () => {
