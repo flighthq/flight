@@ -22,6 +22,7 @@ export function createTilemapData(data?: Readonly<Partial<TilemapData>>): Tilema
   return {
     columns,
     rows,
+    materialData: data?.materialData ?? null,
     tiles: data?.tiles ?? new Int16Array(columns * rows).fill(-1),
     tileset: data?.tileset ?? null,
   };
