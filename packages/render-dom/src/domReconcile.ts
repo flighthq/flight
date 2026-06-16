@@ -2,7 +2,7 @@
 
 import type { DOMRenderStateInternal } from './internal';
 
-export function detectDOMStructureChange(
+export function hasDOMStructureChanged(
   internal: DOMRenderStateInternal,
   newLength: number,
   needsReconcile: boolean,
