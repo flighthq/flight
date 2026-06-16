@@ -1,5 +1,5 @@
 import { createParticleEmitter } from '@flighthq/sprite';
-import type { HasAppearance, HasTransform2D, TextureAtlas } from '@flighthq/types';
+import type { TextureAtlas } from '@flighthq/types';
 
 import { applyParticleCollisions, applyParticleObjectCollisions } from './applyParticleCollisions';
 import { createParticleEmitterConfig } from './particleEmitterConfig';
@@ -134,7 +134,7 @@ function makeObject(): ParticleObject {
     visible: true,
     x: 0,
     y: 0,
-  } as HasTransform2D & HasAppearance;
+  } as unknown as ParticleObject;
 }
 
 // Build an object-pool collision scenario: a single live object at (px,py) with
