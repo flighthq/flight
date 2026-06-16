@@ -27,8 +27,8 @@ export {
   applyWebGLTintPass,
 } from './tintShader';
 export {
-  getBlitShaderWebGL,
   getWebGLBlitOffsetShader,
+  getWebGLBlitShader,
   getWebGLInvertTintShader,
   getWebGLTintShader,
 } from './tintShader';

@@ -12,6 +12,7 @@
   },
   "references": [
     { "path": "../geometry" },
+    { "path": "../materials" },
     { "path": "../render-canvas" },
     { "path": "../render" },
     { "path": "../displayobject" },

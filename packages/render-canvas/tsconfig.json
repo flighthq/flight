@@ -11,6 +11,7 @@
   "references": [
     { "path": "../assets" },
     { "path": "../geometry" },
+    { "path": "../materials" },
     { "path": "../render" },
     { "path": "../displayobject" },
     { "path": "../text-input" },

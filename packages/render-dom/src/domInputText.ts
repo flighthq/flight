@@ -1,5 +1,5 @@
 ﻿import { getInputTextRuntime } from '@flighthq/displayobject';
-import { rgb24ToHexString } from '@flighthq/render';
+import { computeRGBHexString } from '@flighthq/materials';
 import {
   getInputTextCaretRectangle,
   getInputTextSelectionBeginIndex,
@@ -43,7 +43,7 @@ export function drawDOMInputText(state: DOMRenderState, renderNode: DisplayObjec
   const scrollYOffset =
     firstVisibleLine > 0 ? getRichTextScrollYOffset(runtime.textLayout.lineHeights, firstVisibleLine) : 0;
   const scrollXOffset = source.data.scrollH;
-  const selColor = rgb24ToHexString(source.data.selectionColor);
+  const selColor = computeRGBHexString(source.data.selectionColor);
   const selAlpha = source.data.selectionAlpha;
   let html = '';
 

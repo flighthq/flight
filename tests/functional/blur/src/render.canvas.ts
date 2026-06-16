@@ -1,4 +1,4 @@
-import { type BlurFilter, blurFilterToCSS } from '@flighthq/filters';
+import { type BlurFilter, computeBlurFilterCSS } from '@flighthq/filters';
 import type { Bitmap, DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
@@ -58,8 +58,8 @@ export function applyBlurFilters(list: { node: DisplayObject; filter: BlurFilter
     const ctx = target.context;
     ctx.clearRect(0, 0, target.canvas.width, target.canvas.height);
     ctx.imageSmoothingEnabled = true;
-    // blurFilterToCSS returns null for anisotropic blur (blurX !== blurY); fall back to no blur.
-    ctx.filter = blurFilterToCSS(filter) ?? 'none';
+    // computeBlurFilterCSS returns null for anisotropic blur (blurX !== blurY); fall back to no blur.
+    ctx.filter = computeBlurFilterCSS(filter) ?? 'none';
     ctx.drawImage(image.src, padding - _bounds.x, padding - _bounds.y);
     ctx.filter = 'none';
 

@@ -1,6 +1,7 @@
 ﻿import { getTextRuntime } from '@flighthq/displayobject';
 import { createEntity } from '@flighthq/entity';
-import { computeTextFormatFontString, rgb24ToHexString } from '@flighthq/render';
+import { computeRGBHexString } from '@flighthq/materials';
+import { computeTextFormatFontString } from '@flighthq/render';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
@@ -81,7 +82,7 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
     const y = group.offsetY;
 
     let style = `position:absolute;left:${x}px;top:${y}px;font:${computeTextFormatFontString(fmt)};`;
-    style += `color:${rgb24ToHexString(fmt.color ?? 0)};white-space:nowrap;`;
+    style += `color:${computeRGBHexString(fmt.color ?? 0)};white-space:nowrap;`;
     if (fmt.underline) style += 'text-decoration:underline;';
 
     html += `<div style="${style}">${slice}</div>`;

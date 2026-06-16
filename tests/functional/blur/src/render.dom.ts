@@ -1,4 +1,4 @@
-import { type BlurFilter, blurFilterToCSS } from '@flighthq/filters';
+import { type BlurFilter, computeBlurFilterCSS } from '@flighthq/filters';
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
@@ -27,8 +27,8 @@ export const height = 400;
 export function applyBlurFilters(list: { node: DisplayObject; filter: BlurFilter }[]): void {
   enableDOMCSSFilterSupport(state);
   for (const { node, filter } of list) {
-    // blurFilterToCSS returns null for anisotropic blur (blurX !== blurY), which clears the binding.
-    setDOMCSSFilter(state, node, blurFilterToCSS(filter));
+    // computeBlurFilterCSS returns null for anisotropic blur (blurX !== blurY), which clears the binding.
+    setDOMCSSFilter(state, node, computeBlurFilterCSS(filter));
   }
 }
 
