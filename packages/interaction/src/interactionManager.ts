@@ -13,7 +13,7 @@ import type {
   InteractionSignalName,
   InteractionSignals,
   KeyboardEventData,
-  Node,
+  NodeAny,
   NodeRuntime,
   PointerEventData,
   Signal,
@@ -23,17 +23,17 @@ import type {
 
 import { findGraphHitTarget } from './hitTests';
 
-export function captureInteractionPointer<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+export function captureInteractionPointer<N extends NodeAny>(
+  manager: InteractionManager<N>,
   pointerId: number,
-  target: Node<Kind, Traits>,
+  target: N,
 ): void {
   manager.pointerCaptures.set(pointerId, target);
 }
 
-export function connectInputToInteraction<Kind extends symbol, Traits extends object>(
+export function connectInputToInteraction<N extends NodeAny>(
   input: InteractionInputSource,
-  manager: InteractionManager<Kind, Traits>,
+  manager: InteractionManager<N>,
   coordScale: number = 1,
 ): () => void {
   const sx = (v: number) => v * coordScale;
@@ -71,13 +71,9 @@ export function connectInputToInteraction<Kind extends symbol, Traits extends ob
   };
 }
 
-export function connectInteractionSignal<
-  Kind extends symbol,
-  Traits extends object,
-  Name extends InteractionSignalName,
->(
-  manager: InteractionManager<Kind, Traits>,
-  target: Node<Kind, Traits>,
+export function connectInteractionSignal<N extends NodeAny, Name extends InteractionSignalName>(
+  manager: InteractionManager<N>,
+  target: N,
   name: Name,
   slot: InteractionSignalSlot<Name>,
   options?: Readonly<SignalConnectOptions>,
@@ -106,10 +102,10 @@ export function connectInteractionSignal<
   incrementInteractionSignalSubscriberCount(manager, name);
 }
 
-export function createInteractionManager<Kind extends symbol, Traits extends object>(
-  root: Node<Kind, Traits>,
+export function createInteractionManager<N extends NodeAny>(
+  root: N,
   options: Readonly<InteractionManagerOptions> = {},
-): InteractionManager<Kind, Traits> {
+): InteractionManager<N> {
   return {
     doubleClickDelay: 500,
     enabled: options.enabled ?? true,
@@ -142,13 +138,9 @@ export function createInteractionSignals(): InteractionSignals {
   };
 }
 
-export function disconnectInteractionSignal<
-  Kind extends symbol,
-  Traits extends object,
-  Name extends InteractionSignalName,
->(
-  manager: InteractionManager<Kind, Traits>,
-  target: Node<Kind, Traits>,
+export function disconnectInteractionSignal<N extends NodeAny, Name extends InteractionSignalName>(
+  manager: InteractionManager<N>,
+  target: N,
   name: Name,
   slot: InteractionSignalSlot<Name>,
 ): void {
@@ -164,8 +156,8 @@ export function disconnectInteractionSignal<
   decrementInteractionSignalSubscriberCount(manager, name);
 }
 
-export function dispatchInteractionContextMenu<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+export function dispatchInteractionContextMenu<N extends NodeAny>(
+  manager: InteractionManager<N>,
   x: number,
   y: number,
   button: number = 2,
@@ -174,8 +166,8 @@ export function dispatchInteractionContextMenu<Kind extends symbol, Traits exten
   dispatchPointerSignalAt(manager, 'onContextMenu', x, y, button, 0, 0, options);
 }
 
-export function dispatchInteractionKeyDown<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+export function dispatchInteractionKeyDown<N extends NodeAny>(
+  manager: InteractionManager<N>,
   key: string,
   keyCode: number = 0,
   modifiers?: Readonly<Partial<KeyboardEventData>>,
@@ -183,8 +175,8 @@ export function dispatchInteractionKeyDown<Kind extends symbol, Traits extends o
   dispatchKeyboardSignal(manager, 'onKeyDown', key, keyCode, modifiers);
 }
 
-export function dispatchInteractionKeyUp<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+export function dispatchInteractionKeyUp<N extends NodeAny>(
+  manager: InteractionManager<N>,
   key: string,
   keyCode: number = 0,
   modifiers?: Readonly<Partial<KeyboardEventData>>,
@@ -192,8 +184,8 @@ export function dispatchInteractionKeyUp<Kind extends symbol, Traits extends obj
   dispatchKeyboardSignal(manager, 'onKeyUp', key, keyCode, modifiers);
 }
 
-export function dispatchInteractionPointerCancel<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+export function dispatchInteractionPointerCancel<N extends NodeAny>(
+  manager: InteractionManager<N>,
   x: number,
   y: number,
   options?: Readonly<InteractionPointerOptions>,
@@ -218,8 +210,8 @@ export function dispatchInteractionPointerCancel<Kind extends symbol, Traits ext
   }
 }
 
-export function dispatchInteractionPointerDown<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+export function dispatchInteractionPointerDown<N extends NodeAny>(
+  manager: InteractionManager<N>,
   x: number,
   y: number,
   button: number = 0,
@@ -237,8 +229,8 @@ export function dispatchInteractionPointerDown<Kind extends symbol, Traits exten
   emitInteractionSignal(target, manager.root, 'onPointerDown', _pointerData);
 }
 
-export function dispatchInteractionPointerMove<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+export function dispatchInteractionPointerMove<N extends NodeAny>(
+  manager: InteractionManager<N>,
   x: number,
   y: number,
   button: number = 0,
@@ -264,8 +256,8 @@ export function dispatchInteractionPointerMove<Kind extends symbol, Traits exten
   }
 }
 
-export function dispatchInteractionPointerUp<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+export function dispatchInteractionPointerUp<N extends NodeAny>(
+  manager: InteractionManager<N>,
   x: number,
   y: number,
   button: number = 0,
@@ -302,8 +294,8 @@ export function dispatchInteractionPointerUp<Kind extends symbol, Traits extends
   }
 }
 
-export function dispatchInteractionWheel<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+export function dispatchInteractionWheel<N extends NodeAny>(
+  manager: InteractionManager<N>,
   x: number,
   y: number,
   deltaX: number = 0,
@@ -313,22 +305,17 @@ export function dispatchInteractionWheel<Kind extends symbol, Traits extends obj
   dispatchPointerSignalAt(manager, 'onWheel', x, y, 0, deltaX, deltaY, options);
 }
 
-export function getInteractionSignals<Kind extends symbol, Traits extends object>(
-  source: Node<Kind, Traits>,
-): InteractionSignals {
-  const runtime = getNodeRuntime(source) as NodeRuntime<Kind, Traits>;
+export function getInteractionSignals<N extends NodeAny>(source: N): InteractionSignals {
+  const runtime = getNodeRuntime(source) as NodeRuntime<NodeAny>;
   return (runtime.interactionSignals ??= createInteractionSignals());
 }
 
-export function releaseInteractionPointer<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
-  pointerId: number,
-): void {
+export function releaseInteractionPointer<N extends NodeAny>(manager: InteractionManager<N>, pointerId: number): void {
   manager.pointerCaptures.delete(pointerId);
 }
 
-function dispatchKeyboardSignal<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+function dispatchKeyboardSignal<N extends NodeAny>(
+  manager: InteractionManager<N>,
   name: KeyboardSignalName,
   key: string,
   keyCode: number,
@@ -339,10 +326,10 @@ function dispatchKeyboardSignal<Kind extends symbol, Traits extends object>(
   emitInteractionSignal(manager.root, manager.root, name, _keyboardData);
 }
 
-function dispatchPointerRolloverChange<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
-  oldTarget: Node<Kind, Traits> | null,
-  target: Node<Kind, Traits> | null,
+function dispatchPointerRolloverChange<N extends NodeAny>(
+  manager: InteractionManager<N>,
+  oldTarget: N | null,
+  target: N | null,
 ): void {
   if (oldTarget !== null) {
     emitInteractionSignal(oldTarget, manager.root, 'onPointerOut', _pointerData);
@@ -371,8 +358,8 @@ function dispatchPointerRolloverChange<Kind extends symbol, Traits extends objec
   }
 }
 
-function dispatchPointerSignalAt<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+function dispatchPointerSignalAt<N extends NodeAny>(
+  manager: InteractionManager<N>,
   name: PointerSignalName,
   x: number,
   y: number,
@@ -390,24 +377,24 @@ function dispatchPointerSignalAt<Kind extends symbol, Traits extends object>(
   emitInteractionSignal(target, manager.root, name, _pointerData);
 }
 
-function emitInteractionSignal<Kind extends symbol, Traits extends object, Name extends InteractionSignalName>(
-  target: Node<Kind, Traits>,
-  root: Node<Kind, Traits>,
+function emitInteractionSignal<N extends NodeAny, Name extends InteractionSignalName>(
+  target: N,
+  root: N,
   name: Name,
   data: InteractionSignalPayload<Name>,
 ): void {
-  let current: Node<Kind, Traits> | null = target;
+  let current: N | null = target;
   while (current !== null) {
     setInteractionSignalCurrentTarget(data, target, current);
     emitInteractionSignalDirect(current, name, data);
     if (isInteractionSignalCancelled(current, name)) break;
     if (current === root) break;
-    current = getNodeParent(current) as Node<Kind, Traits> | null;
+    current = getNodeParent(current) as N | null;
   }
 }
 
-function emitInteractionSignalDirect<Kind extends symbol, Traits extends object, Name extends InteractionSignalName>(
-  target: Node<Kind, Traits>,
+function emitInteractionSignalDirect<N extends NodeAny, Name extends InteractionSignalName>(
+  target: N,
   name: Name,
   data: InteractionSignalPayload<Name>,
 ): void {
@@ -415,8 +402,8 @@ function emitInteractionSignalDirect<Kind extends symbol, Traits extends object,
   if (signal !== null) emitSignal(signal as Signal<(value: InteractionSignalPayload<Name>) => void>, data);
 }
 
-function decrementInteractionSignalSubscriberCount<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+function decrementInteractionSignalSubscriberCount<N extends NodeAny>(
+  manager: InteractionManager<N>,
   name: InteractionSignalName,
 ): void {
   const count = manager.signalSubscriberCounts.get(name) ?? 0;
@@ -427,22 +414,22 @@ function decrementInteractionSignalSubscriberCount<Kind extends symbol, Traits e
   }
 }
 
-function findInteractionTarget<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+function findInteractionTarget<N extends NodeAny>(
+  manager: InteractionManager<N>,
   x: number,
   y: number,
   pointerId: number,
-): Node<Kind, Traits> | null {
+): N | null {
   if (!manager.enabled) return null;
   const captured = manager.pointerCaptures.get(pointerId);
   if (captured !== undefined) return captured;
-  return findGraphHitTarget(manager.root, x, y) as Node<Kind, Traits> | null;
+  return findGraphHitTarget(manager.root, x, y) as N | null;
 }
 
-function getInteractionPointerState<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+function getInteractionPointerState<N extends NodeAny>(
+  manager: InteractionManager<N>,
   pointerId: number,
-): InteractionPointerState<Kind, Traits> {
+): InteractionPointerState<N> {
   let state = manager.pointerStates.get(pointerId);
   if (state === undefined) {
     state = {
@@ -456,35 +443,28 @@ function getInteractionPointerState<Kind extends symbol, Traits extends object>(
   return state;
 }
 
-function getInteractionChain<Kind extends symbol, Traits extends object>(
-  target: Node<Kind, Traits>,
-  root: Node<Kind, Traits>,
-): Node<Kind, Traits>[] {
-  const out: Node<Kind, Traits>[] = [];
-  let current: Node<Kind, Traits> | null = target;
+function getInteractionChain<N extends NodeAny>(target: N, root: N): N[] {
+  const out: N[] = [];
+  let current: N | null = target;
   while (current !== null) {
     out.push(current);
     if (current === root) break;
-    current = getNodeParent(current) as Node<Kind, Traits> | null;
+    current = getNodeParent(current) as N | null;
   }
   return out;
 }
 
-function getInteractionSignal<Kind extends symbol, Traits extends object, Name extends InteractionSignalName>(
-  source: Readonly<Node<Kind, Traits>>,
+function getInteractionSignal<N extends NodeAny, Name extends InteractionSignalName>(
+  source: Readonly<N>,
   name: Name,
 ): InteractionSignals[Name] | null {
   const signals = getNodeRuntime(source).interactionSignals;
   return signals !== null ? signals[name] : null;
 }
 
-function getTrackedInteractionSignalSlot<
-  Kind extends symbol,
-  Traits extends object,
-  Name extends InteractionSignalName,
->(
-  manager: InteractionManager<Kind, Traits>,
-  target: Node<Kind, Traits>,
+function getTrackedInteractionSignalSlot<N extends NodeAny, Name extends InteractionSignalName>(
+  manager: InteractionManager<N>,
+  target: N,
   name: Name,
   slot: InteractionSignalSlot<Name>,
 ): AnyInteractionSignalSlot | null {
@@ -496,8 +476,8 @@ function getTrackedInteractionSignalSlot<
   );
 }
 
-function hasInteractionSignalSubscriber<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+function hasInteractionSignalSubscriber<N extends NodeAny>(
+  manager: InteractionManager<N>,
   name: InteractionSignalName,
 ): boolean {
   if ((manager.signalSubscriberCounts.get(name) ?? 0) > 0) return true;
@@ -505,8 +485,8 @@ function hasInteractionSignalSubscriber<Kind extends symbol, Traits extends obje
   return hasInteractionSignalSubscriberInGraph(manager.root, name);
 }
 
-function hasInteractionSignalSubscriberInGraph<Kind extends symbol, Traits extends object>(
-  source: Readonly<Node<Kind, Traits>>,
+function hasInteractionSignalSubscriberInGraph<N extends NodeAny>(
+  source: Readonly<N>,
   name: InteractionSignalName,
 ): boolean {
   const signal = getInteractionSignal(source, name);
@@ -515,29 +495,26 @@ function hasInteractionSignalSubscriberInGraph<Kind extends symbol, Traits exten
   const children = getNodeRuntime(source).children;
   if (children !== null) {
     for (const child of children) {
-      if (hasInteractionSignalSubscriberInGraph(child as Node<Kind, Traits>, name)) return true;
+      if (hasInteractionSignalSubscriberInGraph(child as N, name)) return true;
     }
   }
 
   return false;
 }
 
-function incrementInteractionSignalSubscriberCount<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+function incrementInteractionSignalSubscriberCount<N extends NodeAny>(
+  manager: InteractionManager<N>,
   name: InteractionSignalName,
 ): void {
   manager.signalSubscriberCounts.set(name, (manager.signalSubscriberCounts.get(name) ?? 0) + 1);
 }
 
-function isInteractionSignalCancelled<Kind extends symbol, Traits extends object>(
-  source: Readonly<Node<Kind, Traits>>,
-  name: InteractionSignalName,
-): boolean {
+function isInteractionSignalCancelled<N extends NodeAny>(source: Readonly<N>, name: InteractionSignalName): boolean {
   return getInteractionSignal(source, name)?.data?.cancelled === true;
 }
 
-function isPointerSignalNeeded<Kind extends symbol, Traits extends object>(
-  manager: InteractionManager<Kind, Traits>,
+function isPointerSignalNeeded<N extends NodeAny>(
+  manager: InteractionManager<N>,
   names: readonly InteractionSignalName[],
 ): boolean {
   if (!manager.enabled) return false;
@@ -547,13 +524,9 @@ function isPointerSignalNeeded<Kind extends symbol, Traits extends object>(
   return false;
 }
 
-function removeTrackedInteractionSignalSlot<
-  Kind extends symbol,
-  Traits extends object,
-  Name extends InteractionSignalName,
->(
-  manager: InteractionManager<Kind, Traits>,
-  target: Node<Kind, Traits>,
+function removeTrackedInteractionSignalSlot<N extends NodeAny, Name extends InteractionSignalName>(
+  manager: InteractionManager<N>,
+  target: N,
   name: Name,
   slot: InteractionSignalSlot<Name>,
 ): void {
@@ -581,8 +554,8 @@ function setKeyboardData(
 
 function setInteractionSignalCurrentTarget<Name extends InteractionSignalName>(
   data: InteractionSignalPayload<Name>,
-  target: Node<symbol, object>,
-  currentTarget: Node<symbol, object>,
+  target: NodeAny,
+  currentTarget: NodeAny,
 ): void {
   if ('currentTarget' in data) {
     const pointerData = data as PointerEventData;
@@ -593,8 +566,8 @@ function setInteractionSignalCurrentTarget<Name extends InteractionSignalName>(
 }
 
 function setPointerData(
-  target: Node<symbol, object> | null,
-  currentTarget: Node<symbol, object> | null,
+  target: NodeAny | null,
+  currentTarget: NodeAny | null,
   x: number,
   y: number,
   button: number,
@@ -623,13 +596,9 @@ function setPointerData(
   if (currentTarget !== null) setPointerDataLocalPosition(_pointerData, currentTarget);
 }
 
-function setTrackedInteractionSignalSlot<
-  Kind extends symbol,
-  Traits extends object,
-  Name extends InteractionSignalName,
->(
-  manager: InteractionManager<Kind, Traits>,
-  target: Node<Kind, Traits>,
+function setTrackedInteractionSignalSlot<N extends NodeAny, Name extends InteractionSignalName>(
+  manager: InteractionManager<N>,
+  target: N,
   name: Name,
   slot: InteractionSignalSlot<Name>,
   connectedSlot: InteractionSignalSlot<Name>,
@@ -649,7 +618,7 @@ function setTrackedInteractionSignalSlot<
   signalSlots.set(slot as AnyInteractionSignalSlot, connectedSlot as AnyInteractionSignalSlot);
 }
 
-function setPointerDataLocalPosition(data: PointerEventData, currentTarget: Node<symbol, object>): void {
+function setPointerDataLocalPosition(data: PointerEventData, currentTarget: NodeAny): void {
   if (!isTransform2DNode(currentTarget)) {
     data.localX = data.worldX;
     data.localY = data.worldY;
@@ -660,7 +629,7 @@ function setPointerDataLocalPosition(data: PointerEventData, currentTarget: Node
   data.localY = _localPoint.y;
 }
 
-function isTransform2DNode(source: Readonly<Node<symbol, object>>): source is Transform2DNode {
+function isTransform2DNode(source: Readonly<NodeAny>): source is Transform2DNode {
   const runtime = getNodeRuntime(source) as NodeRuntime & { worldTransform2D?: unknown };
   return 'worldTransform2D' in runtime;
 }

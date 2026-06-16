@@ -17,7 +17,7 @@ import {
 } from './revision';
 
 function createTestNode(): TestNode {
-  return createNode(TestGraph, TestKind) as TestNode;
+  return createNode(TestKind) as TestNode;
 }
 
 let node: TestNode;
@@ -26,7 +26,7 @@ beforeEach(() => {
 });
 
 function getEntityRuntime(source: TestNode) {
-  return getNodeRuntime(source) as NodeRuntime<typeof TestGraph>;
+  return getNodeRuntime(source) as NodeRuntime;
 }
 
 describe('computeNodeWorldTransformRevision', () => {
@@ -179,8 +179,6 @@ describe('invalidateNodeWorldBounds', () => {
   });
 });
 
-type TestNode = Node<typeof TestGraph>;
-
-const TestGraph: unique symbol = Symbol('TestGraph');
+type TestNode = Node;
 
 const TestKind: unique symbol = Symbol('Test');

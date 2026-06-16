@@ -12,14 +12,14 @@ import {
 import type { NodeRuntimeFactory } from '@flighthq/types';
 import type {
   MethodsOf,
-  Node,
+  NodeAny,
   PartialNode,
   SpriteNode,
   SpriteNodeDataFactory,
   SpriteNodeRuntime,
   SpriteNodeRuntimeFactory,
 } from '@flighthq/types';
-import { SpriteGraph } from '@flighthq/types';
+import { SpriteNodeTraitsKey } from '@flighthq/types';
 
 export function createSpriteNode<Runtime extends SpriteNodeRuntime>(
   kind: symbol,
@@ -28,7 +28,6 @@ export function createSpriteNode<Runtime extends SpriteNodeRuntime>(
   createSpriteNodeRuntimeFactory?: SpriteNodeRuntimeFactory<Runtime>,
 ): SpriteNode {
   const out = createNode(
-    SpriteGraph,
     kind,
     obj,
     createData,
@@ -47,6 +46,7 @@ export function createSpriteNode<Runtime extends SpriteNodeRuntime>(
 
 export function createSpriteNodeRuntime(methods?: Readonly<Partial<MethodsOf<SpriteNodeRuntime>>>): SpriteNodeRuntime {
   const out = createNodeRuntime(methods) as SpriteNodeRuntime;
+  out.traits = SpriteNodeTraitsKey;
   initTransform2DRuntimeTrait(out, methods);
   initBoundsRectangleRuntimeTrait(out, methods);
   return out;
@@ -56,7 +56,6 @@ export function getSpriteNodeRuntime(source: Readonly<SpriteNode>): Readonly<Spr
   return getNodeRuntime(source) as SpriteNodeRuntime;
 }
 
-// eslint-disable-next-line
-export function isSpriteNode(source: Readonly<Node<any, any>>): boolean {
-  return getNodeRuntime(source).graph === SpriteGraph;
+export function isSpriteNode(node: NodeAny): node is SpriteNode {
+  return getNodeRuntime(node).traits === SpriteNodeTraitsKey;
 }

@@ -11,11 +11,10 @@ import {
   createScene,
 } from './scene';
 
-const TestGraph: unique symbol = Symbol('TestGraph');
 const TestNodeKind: unique symbol = Symbol('TestNode');
 
 function makeNodeWithBounds(width: number, height: number) {
-  const node = createNode(TestGraph, TestNodeKind);
+  const node = createNode(TestNodeKind);
   const runtime = getNodeRuntime(node) as unknown as HasBoundsRectangleRuntime;
   runtime.computeLocalBoundsRectangle = (out) => {
     out.width = width;
@@ -104,7 +103,7 @@ describe('computeSceneRenderTransform', () => {
 
   it('sets identity when root has no bounds capability', () => {
     const m = createMatrix();
-    const root = createNode(TestGraph, TestNodeKind);
+    const root = createNode(TestNodeKind);
     computeSceneRenderTransform(m, createScene({ root }), 800, 600);
     expect(m.a).toBe(1);
     expect(m.d).toBe(1);
