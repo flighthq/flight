@@ -2,7 +2,12 @@ import { noopRendererData } from '@flighthq/render';
 import type { QuadBatch, RenderState, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { ensureWebGLQuadBatchShader, prepareWebGLSpriteBatchWrite } from './webglSpriteBatch';
+import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
+import {
+  ensureWebGLQuadBatchShader,
+  packWebGLSpriteBatchMaterialInstance,
+  prepareWebGLSpriteBatchWrite,
+} from './webglSpriteBatch';
 
 // Per-instance layout (13 floats = 52 bytes, world-space transforms + per-instance alpha):
 // [0-3]  a, b, c, d   — world-space 2D matrix
@@ -21,8 +26,19 @@ function submitWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNode): 
 
   ensureWebGLQuadBatchShader(internal);
 
-  const ct = quadBatch.useColorTransform ? quadBatch.colorTransform : null;
-  const base = prepareWebGLSpriteBatchWrite(internal, atlas.image.src, quadBatch.blendMode, ct, instanceCount);
+  const material = quadBatch.material;
+  const materialRenderer = resolveWebGLMaterialRenderer(internal, material);
+  const perQuadMaterialData = data.materialData;
+  const nodeMaterialData = quadBatch.materialData;
+  const startCount = internal.spriteBatchCount;
+  const base = prepareWebGLSpriteBatchWrite(
+    internal,
+    atlas.image.src,
+    quadBatch.blendMode,
+    material,
+    materialRenderer,
+    instanceCount,
+  );
 
   const regions = atlas.regions;
   const numRegions = regions.length;
@@ -78,6 +94,9 @@ function submitWebGLQuadBatch(state: RenderState, quadBatch: SpriteRenderNode): 
     instanceData[writeBase + 10] = (region.x + region.width) * iw;
     instanceData[writeBase + 11] = (region.y + region.height) * ih;
     instanceData[writeBase + 12] = alpha;
+    // Per-quad value overrides the node-level default (null → identity in the material).
+    const md = perQuadMaterialData?.[i] ?? nodeMaterialData;
+    packWebGLSpriteBatchMaterialInstance(internal, md, startCount + drawCount);
     writeBase += INSTANCE_FLOATS;
     drawCount++;
   }

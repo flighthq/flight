@@ -2,7 +2,12 @@ import { noopRendererData } from '@flighthq/render';
 import type { RenderState, Sprite, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { ensureWebGLQuadBatchShader, prepareWebGLSpriteBatchWrite } from './webglSpriteBatch';
+import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
+import {
+  ensureWebGLQuadBatchShader,
+  packWebGLSpriteBatchMaterialInstance,
+  prepareWebGLSpriteBatchWrite,
+} from './webglSpriteBatch';
 
 function submitWebGLSpriteNode(state: RenderState, spriteNode: SpriteRenderNode): void {
   const internal = state as WebGLRenderStateInternal;
@@ -22,8 +27,17 @@ function submitWebGLSpriteNode(state: RenderState, spriteNode: SpriteRenderNode)
   const ih = 1 / (atlas.image.height || 1);
   const t = spriteNode.transform2D;
 
-  const ct = spriteNode.useColorTransform ? spriteNode.colorTransform : null;
-  const base = prepareWebGLSpriteBatchWrite(internal, atlas.image.src, spriteNode.blendMode, ct, 1);
+  const material = spriteNode.material;
+  const materialRenderer = resolveWebGLMaterialRenderer(internal, material);
+  const base = prepareWebGLSpriteBatchWrite(
+    internal,
+    atlas.image.src,
+    spriteNode.blendMode,
+    material,
+    materialRenderer,
+    1,
+  );
+  const instanceIndex = internal.spriteBatchCount;
   const d = internal.spriteBatchInstanceData;
   d[base] = t.a;
   d[base + 1] = t.b;
@@ -38,6 +52,7 @@ function submitWebGLSpriteNode(state: RenderState, spriteNode: SpriteRenderNode)
   d[base + 10] = (region.x + region.width) * iw;
   d[base + 11] = (region.y + region.height) * ih;
   d[base + 12] = spriteNode.alpha;
+  packWebGLSpriteBatchMaterialInstance(internal, spriteNode.materialData, instanceIndex);
   internal.spriteBatchCount++;
 }
 

@@ -1,9 +1,35 @@
-import { flushWebGLSpriteBatch, prepareWebGLSpriteBatchWrite } from './webglSpriteBatch';
+import type { Material } from '@flighthq/types';
+
+import { defaultWebGLMaterialRenderer } from './webglMaterialRegistry';
+import {
+  bindWebGLQuadBatchBaseAttributes,
+  ensureWebGLQuadBatchShader,
+  flushWebGLSpriteBatch,
+  packWebGLSpriteBatchMaterialInstance,
+  prepareWebGLSpriteBatchWrite,
+  setWebGLQuadBatchWorldAndTexture,
+  useWebGLQuadBatchProgram,
+} from './webglSpriteBatch';
 import { makeWebGLState } from './webglTestHelper';
 
 function makeTexture(): HTMLImageElement {
   return document.createElement('img');
 }
+
+function makeMaterial(): Material {
+  return { kind: Symbol('TestMaterial') } as Material;
+}
+
+describe('bindWebGLQuadBatchBaseAttributes', () => {
+  it('sets up the corner and base instance attribute pointers', () => {
+    const { state, gl } = makeWebGLState();
+    const internal = state as any;
+    ensureWebGLQuadBatchShader(internal);
+    bindWebGLQuadBatchBaseAttributes(internal, 0);
+    expect(gl.vertexAttribPointer).toHaveBeenCalled();
+    expect(gl.vertexAttribDivisor).toHaveBeenCalled();
+  });
+});
 
 describe('flushWebGLSpriteBatch', () => {
   it('does nothing when batch count is zero', () => {
@@ -17,7 +43,7 @@ describe('flushWebGLSpriteBatch', () => {
     const internal = state as any;
     const tex = makeTexture();
 
-    prepareWebGLSpriteBatchWrite(internal, tex, null, null, 1);
+    prepareWebGLSpriteBatchWrite(internal, tex, null, null, defaultWebGLMaterialRenderer, 1);
     internal.spriteBatchCount = 1;
     flushWebGLSpriteBatch(internal);
 
@@ -25,6 +51,16 @@ describe('flushWebGLSpriteBatch', () => {
     expect(internal.spriteBatchCount).toBe(0);
     expect(internal.spriteBatchTexture).toBeNull();
     expect(internal.spriteBatchBlendMode).toBeNull();
+    expect(internal.spriteBatchMaterial).toBeNull();
+  });
+});
+
+describe('packWebGLSpriteBatchMaterialInstance', () => {
+  it('is a no-op when no per-instance material renderer is active', () => {
+    const { state } = makeWebGLState();
+    const internal = state as any;
+    internal.spriteBatchMaterialRenderer = null;
+    expect(() => packWebGLSpriteBatchMaterialInstance(internal, null, 0)).not.toThrow();
   });
 });
 
@@ -34,7 +70,7 @@ describe('prepareWebGLSpriteBatchWrite', () => {
     const internal = state as any;
     const tex = makeTexture();
 
-    const base = prepareWebGLSpriteBatchWrite(internal, tex, null, null, 2);
+    const base = prepareWebGLSpriteBatchWrite(internal, tex, null, null, defaultWebGLMaterialRenderer, 2);
     expect(base).toBe(0);
   });
 
@@ -44,37 +80,29 @@ describe('prepareWebGLSpriteBatchWrite', () => {
     const tex1 = makeTexture();
     const tex2 = makeTexture();
 
-    prepareWebGLSpriteBatchWrite(internal, tex1, null, null, 1);
+    prepareWebGLSpriteBatchWrite(internal, tex1, null, null, defaultWebGLMaterialRenderer, 1);
     internal.spriteBatchCount = 1;
 
-    prepareWebGLSpriteBatchWrite(internal, tex2, null, null, 1);
+    prepareWebGLSpriteBatchWrite(internal, tex2, null, null, defaultWebGLMaterialRenderer, 1);
 
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(internal.spriteBatchTexture).toBe(tex2);
   });
 
-  it('flushes when color transform changes', () => {
+  it('flushes when material changes', () => {
     const { state, gl } = makeWebGLState();
     const internal = state as any;
     const tex = makeTexture();
-    const ct = {
-      redMultiplier: 1,
-      greenMultiplier: 0.5,
-      blueMultiplier: 1,
-      alphaMultiplier: 1,
-      redOffset: 0,
-      greenOffset: 0,
-      blueOffset: 0,
-      alphaOffset: 0,
-    } as any;
+    const materialA = makeMaterial();
+    const materialB = makeMaterial();
 
-    prepareWebGLSpriteBatchWrite(internal, tex, null, ct, 1);
+    prepareWebGLSpriteBatchWrite(internal, tex, null, materialA, defaultWebGLMaterialRenderer, 1);
     internal.spriteBatchCount = 1;
 
-    prepareWebGLSpriteBatchWrite(internal, tex, null, null, 1);
+    prepareWebGLSpriteBatchWrite(internal, tex, null, materialB, defaultWebGLMaterialRenderer, 1);
 
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
-    expect(internal.spriteBatchColorTransform).toBeNull();
+    expect(internal.spriteBatchMaterial).toBe(materialB);
   });
 
   it('grows instance data when capacity is exceeded', () => {
@@ -83,8 +111,28 @@ describe('prepareWebGLSpriteBatchWrite', () => {
     const tex = makeTexture();
     const initialFloats = internal.spriteBatchInstanceData.length;
 
-    prepareWebGLSpriteBatchWrite(internal, tex, null, null, initialFloats + 100);
+    prepareWebGLSpriteBatchWrite(internal, tex, null, null, defaultWebGLMaterialRenderer, initialFloats + 100);
 
     expect(internal.spriteBatchInstanceData.length).toBeGreaterThan(initialFloats);
+  });
+});
+
+describe('setWebGLQuadBatchWorldAndTexture', () => {
+  it('uploads the world matrix and texture unit', () => {
+    const { state, gl } = makeWebGLState();
+    setWebGLQuadBatchWorldAndTexture(state as any, {} as WebGLUniformLocation, {} as WebGLUniformLocation);
+    expect(gl.uniformMatrix3fv).toHaveBeenCalled();
+    expect(gl.uniform1i).toHaveBeenCalled();
+  });
+});
+
+describe('useWebGLQuadBatchProgram', () => {
+  it('binds the program and records it as current', () => {
+    const { state, gl } = makeWebGLState();
+    const internal = state as any;
+    const program = {} as WebGLProgram;
+    useWebGLQuadBatchProgram(internal, program);
+    expect(gl.useProgram).toHaveBeenCalledWith(program);
+    expect(internal.currentProgram).toBe(program);
   });
 });

@@ -57,7 +57,11 @@ export function createWebGLRenderState(
   state.defaultBitmapShader = defaultBitmapShader;
   state.shaderLoc = shaderLoc;
   state.spriteBatchBlendMode = null;
-  state.spriteBatchColorTransform = null;
+  state.spriteBatchMaterial = null;
+  state.spriteBatchMaterialRenderer = null;
+  state.spriteBatchMaterialFloats = 0;
+  state.spriteBatchMaterialData = new Float32Array(8 * 256);
+  state.spriteBatchMaterialBuffer = null;
   state.spriteBatchCount = 0;
   state.spriteBatchInstanceBuffer = null;
   state.spriteBatchInstanceData = new Float32Array(13 * 256);

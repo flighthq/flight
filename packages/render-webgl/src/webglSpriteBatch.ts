@@ -1,23 +1,29 @@
-import type { BlendMode, ColorTransform } from '@flighthq/types';
+import type { BlendMode, Material, MaterialData, WebGLMaterialRenderer } from '@flighthq/types';
 
 import type { WebGLQuadBatchShader, WebGLRenderStateInternal } from './internal';
 import { bindWebGLTexture } from './webglDraw';
 
-// Per-instance layout (13 floats = 52 bytes, world-space transforms + per-instance alpha):
+// Base per-instance layout (13 floats = 52 bytes, world-space transforms + per-instance alpha):
 // [0-1]  a, b         — world-space 2D matrix column 1
 // [2-3]  c, d         — world-space 2D matrix column 2
 // [4-5]  tx, ty       — world-space translation
 // [6-7]  width, height — region size in pixels
 // [8-11] u0,v0,u1,v1  — atlas UV rect
 // [12]   alpha        — per-instance alpha
+// Attribute locations 0 (a_corner) and 1-6 are a fixed contract; material shaders extend from
+// location 7. The base buffer and a material's own per-instance buffer share only the instance
+// count and divisor convention.
 const SPRITE_INSTANCE_FLOATS = 13;
 const SPRITE_INSTANCE_STRIDE = SPRITE_INSTANCE_FLOATS * 4;
+
+// Highest per-instance attribute location any sprite-batch material may use. Divisors for
+// locations 1..this are reset after each flush so later non-instanced draws are not corrupted.
+const MAX_INSTANCE_ATTRIB_LOCATION = 8;
 
 const QUAD_BATCH_VS = `#version 300 es
 precision mediump float;
 
-in vec2 a_corner;
-
+layout(location = 0) in vec2 a_corner;
 layout(location = 1) in vec2 a_matAB;
 layout(location = 2) in vec2 a_matCD;
 layout(location = 3) in vec2 a_matTXTY;
@@ -77,7 +83,7 @@ function compileSpriteBatchShader(gl: WebGL2RenderingContext): WebGLQuadBatchSha
   gl.deleteShader(fs);
   return {
     program,
-    locCorner: gl.getAttribLocation(program, 'a_corner'),
+    locCorner: 0,
     locMatAB: 1,
     locMatCD: 2,
     locMatTXTY: 3,
@@ -90,6 +96,38 @@ function compileSpriteBatchShader(gl: WebGL2RenderingContext): WebGLQuadBatchSha
     locColorMultiplier: gl.getUniformLocation(program, 'u_ctMult'),
     locColorOffset: gl.getUniformLocation(program, 'u_ctOff'),
   };
+}
+
+// Binds the corner buffer (location `locCorner`, divisor 0) and the base instance attributes
+// (locations 1-6, divisor 1) from the active sprite-batch instance buffer. Shared by every
+// sprite-batch material renderer regardless of its program, since the base layout is fixed.
+export function bindWebGLQuadBatchBaseAttributes(state: WebGLRenderStateInternal, locCorner: number): void {
+  const gl = state.gl;
+  gl.bindBuffer(gl.ARRAY_BUFFER, state.quadBatchCornerBuffer!);
+  gl.enableVertexAttribArray(locCorner);
+  gl.vertexAttribPointer(locCorner, 2, gl.FLOAT, false, 8, 0);
+  gl.vertexAttribDivisor(locCorner, 0);
+
+  const stride = SPRITE_INSTANCE_STRIDE;
+  gl.bindBuffer(gl.ARRAY_BUFFER, state.spriteBatchInstanceBuffer!);
+  gl.enableVertexAttribArray(1);
+  gl.vertexAttribPointer(1, 2, gl.FLOAT, false, stride, 0);
+  gl.vertexAttribDivisor(1, 1);
+  gl.enableVertexAttribArray(2);
+  gl.vertexAttribPointer(2, 2, gl.FLOAT, false, stride, 8);
+  gl.vertexAttribDivisor(2, 1);
+  gl.enableVertexAttribArray(3);
+  gl.vertexAttribPointer(3, 2, gl.FLOAT, false, stride, 16);
+  gl.vertexAttribDivisor(3, 1);
+  gl.enableVertexAttribArray(4);
+  gl.vertexAttribPointer(4, 2, gl.FLOAT, false, stride, 24);
+  gl.vertexAttribDivisor(4, 1);
+  gl.enableVertexAttribArray(5);
+  gl.vertexAttribPointer(5, 4, gl.FLOAT, false, stride, 32);
+  gl.vertexAttribDivisor(5, 1);
+  gl.enableVertexAttribArray(6);
+  gl.vertexAttribPointer(6, 1, gl.FLOAT, false, stride, 48);
+  gl.vertexAttribDivisor(6, 1);
 }
 
 export function ensureWebGLQuadBatchShader(state: WebGLRenderStateInternal): WebGLQuadBatchShader {
@@ -113,13 +151,15 @@ export function flushWebGLSpriteBatch(state: WebGLRenderStateInternal): void {
 
   const texture = state.spriteBatchTexture!;
   const blendMode = state.spriteBatchBlendMode;
-  const colorTransform = state.spriteBatchColorTransform;
+  const material = state.spriteBatchMaterial;
+  const renderer = state.spriteBatchMaterialRenderer!;
+  const floats = state.spriteBatchMaterialFloats;
   state.spriteBatchCount = 0;
   state.spriteBatchTexture = null;
   state.spriteBatchBlendMode = null;
-  state.spriteBatchColorTransform = null;
-
-  ensureWebGLQuadBatchShader(state);
+  state.spriteBatchMaterial = null;
+  state.spriteBatchMaterialRenderer = null;
+  state.spriteBatchMaterialFloats = 0;
 
   const gl = state.gl;
 
@@ -130,18 +170,111 @@ export function flushWebGLSpriteBatch(state: WebGLRenderStateInternal): void {
   } else {
     gl.bindBuffer(gl.ARRAY_BUFFER, state.spriteBatchInstanceBuffer);
   }
-
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, state.spriteBatchInstanceData, 0, count * SPRITE_INSTANCE_FLOATS);
+
+  if (floats > 0) {
+    if (state.spriteBatchMaterialBuffer === null) {
+      state.spriteBatchMaterialBuffer = gl.createBuffer()!;
+      gl.bindBuffer(gl.ARRAY_BUFFER, state.spriteBatchMaterialBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, state.spriteBatchMaterialData.byteLength, gl.DYNAMIC_DRAW);
+    } else {
+      gl.bindBuffer(gl.ARRAY_BUFFER, state.spriteBatchMaterialBuffer);
+    }
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, state.spriteBatchMaterialData, 0, count * floats);
+  }
 
   state.applyBlendMode?.(state, blendMode);
   bindWebGLTexture(state, texture);
 
-  const shader = state.quadBatchShader!;
-  if (state.currentProgram !== shader.program) {
-    gl.useProgram(shader.program);
-    state.currentProgram = shader.program;
+  // Resolved renderer owns program selection, uniforms, and all attribute setup (base + its own).
+  renderer.bind(state, material);
+
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, state.quadIndexBuffer);
+  gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0, count);
+
+  for (let loc = 1; loc <= MAX_INSTANCE_ATTRIB_LOCATION; loc++) {
+    gl.vertexAttribDivisor(loc, 0);
+  }
+}
+
+// Writes one instance's per-instance material floats into the active material buffer at the given
+// instance index, converting the supplied per-instance materialData. No-op for uniform-only
+// materials (no packInstance / floats === 0).
+export function packWebGLSpriteBatchMaterialInstance(
+  state: WebGLRenderStateInternal,
+  materialData: MaterialData | null,
+  instanceIndex: number,
+): void {
+  const renderer = state.spriteBatchMaterialRenderer;
+  if (renderer === null || renderer.packInstance === undefined) return;
+  renderer.packInstance(
+    state,
+    materialData,
+    state.spriteBatchMaterialData,
+    instanceIndex * state.spriteBatchMaterialFloats,
+  );
+}
+
+// Ensures the sprite batch can accept up to `maxInstances` more instances for the given texture,
+// blend mode, and material. Flushes the current batch when any of the three changes (material is
+// compared by reference) or capacity is exceeded. Returns the float index in
+// spriteBatchInstanceData where the caller should begin writing base instance data; the caller
+// increments state.spriteBatchCount and calls packWebGLSpriteBatchMaterialInstance per instance.
+export function prepareWebGLSpriteBatchWrite(
+  state: WebGLRenderStateInternal,
+  texture: CanvasImageSource,
+  blendMode: BlendMode | null,
+  material: Material | null,
+  materialRenderer: WebGLMaterialRenderer,
+  maxInstances: number,
+): number {
+  if (
+    texture !== state.spriteBatchTexture ||
+    blendMode !== state.spriteBatchBlendMode ||
+    material !== state.spriteBatchMaterial
+  ) {
+    flushWebGLSpriteBatch(state);
+  }
+  state.spriteBatchTexture = texture;
+  state.spriteBatchBlendMode = blendMode;
+  state.spriteBatchMaterial = material;
+  state.spriteBatchMaterialRenderer = materialRenderer;
+  const floats = materialRenderer.instanceFloatCount;
+  state.spriteBatchMaterialFloats = floats;
+
+  const needed = (state.spriteBatchCount + maxInstances) * SPRITE_INSTANCE_FLOATS;
+  if (needed > state.spriteBatchInstanceData.length) {
+    const newSize = Math.max(needed, state.spriteBatchInstanceData.length * 2);
+    state.spriteBatchInstanceData = new Float32Array(newSize);
+    if (state.spriteBatchInstanceBuffer !== null) {
+      const gl = state.gl;
+      gl.bindBuffer(gl.ARRAY_BUFFER, state.spriteBatchInstanceBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, newSize * 4, gl.DYNAMIC_DRAW);
+    }
   }
 
+  if (floats > 0) {
+    const materialNeeded = (state.spriteBatchCount + maxInstances) * floats;
+    if (materialNeeded > state.spriteBatchMaterialData.length) {
+      const newSize = Math.max(materialNeeded, state.spriteBatchMaterialData.length * 2);
+      state.spriteBatchMaterialData = new Float32Array(newSize);
+      if (state.spriteBatchMaterialBuffer !== null) {
+        const gl = state.gl;
+        gl.bindBuffer(gl.ARRAY_BUFFER, state.spriteBatchMaterialBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, newSize * 4, gl.DYNAMIC_DRAW);
+      }
+    }
+  }
+
+  return state.spriteBatchCount * SPRITE_INSTANCE_FLOATS;
+}
+
+export function setWebGLQuadBatchWorldAndTexture(
+  state: WebGLRenderStateInternal,
+  locWorldMatrix: WebGLUniformLocation,
+  locTexture: WebGLUniformLocation,
+): void {
+  const gl = state.gl;
   const viewport = state.renderTargetViewport ?? state.canvas;
   const clipW = 2 / viewport.width;
   const clipH = 2 / viewport.height;
@@ -155,106 +288,13 @@ export function flushWebGLSpriteBatch(state: WebGLRenderStateInternal): void {
   m[6] = -1;
   m[7] = 1;
   m[8] = 1;
-  gl.uniformMatrix3fv(shader.locWorldMatrix, false, m);
-  gl.uniform1i(shader.locTexture, 0);
-
-  if (shader.locHasColorTransform !== null) {
-    if (colorTransform !== null) {
-      gl.uniform1i(shader.locHasColorTransform, 1);
-      gl.uniform4f(
-        shader.locColorMultiplier!,
-        colorTransform.redMultiplier,
-        colorTransform.greenMultiplier,
-        colorTransform.blueMultiplier,
-        colorTransform.alphaMultiplier,
-      );
-      gl.uniform4f(
-        shader.locColorOffset!,
-        colorTransform.redOffset / 255,
-        colorTransform.greenOffset / 255,
-        colorTransform.blueOffset / 255,
-        colorTransform.alphaOffset / 255,
-      );
-    } else {
-      gl.uniform1i(shader.locHasColorTransform, 0);
-    }
-  }
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, state.quadBatchCornerBuffer!);
-  gl.enableVertexAttribArray(shader.locCorner);
-  gl.vertexAttribPointer(shader.locCorner, 2, gl.FLOAT, false, 8, 0);
-  gl.vertexAttribDivisor(shader.locCorner, 0);
-
-  const stride = SPRITE_INSTANCE_STRIDE;
-  gl.bindBuffer(gl.ARRAY_BUFFER, state.spriteBatchInstanceBuffer!);
-
-  gl.enableVertexAttribArray(shader.locMatAB);
-  gl.vertexAttribPointer(shader.locMatAB, 2, gl.FLOAT, false, stride, 0);
-  gl.vertexAttribDivisor(shader.locMatAB, 1);
-
-  gl.enableVertexAttribArray(shader.locMatCD);
-  gl.vertexAttribPointer(shader.locMatCD, 2, gl.FLOAT, false, stride, 8);
-  gl.vertexAttribDivisor(shader.locMatCD, 1);
-
-  gl.enableVertexAttribArray(shader.locMatTXTY);
-  gl.vertexAttribPointer(shader.locMatTXTY, 2, gl.FLOAT, false, stride, 16);
-  gl.vertexAttribDivisor(shader.locMatTXTY, 1);
-
-  gl.enableVertexAttribArray(shader.locSize);
-  gl.vertexAttribPointer(shader.locSize, 2, gl.FLOAT, false, stride, 24);
-  gl.vertexAttribDivisor(shader.locSize, 1);
-
-  gl.enableVertexAttribArray(shader.locUVRect);
-  gl.vertexAttribPointer(shader.locUVRect, 4, gl.FLOAT, false, stride, 32);
-  gl.vertexAttribDivisor(shader.locUVRect, 1);
-
-  gl.enableVertexAttribArray(shader.locAlpha);
-  gl.vertexAttribPointer(shader.locAlpha, 1, gl.FLOAT, false, stride, 48);
-  gl.vertexAttribDivisor(shader.locAlpha, 1);
-
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, state.quadIndexBuffer);
-  gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0, count);
-
-  gl.vertexAttribDivisor(shader.locMatAB, 0);
-  gl.vertexAttribDivisor(shader.locMatCD, 0);
-  gl.vertexAttribDivisor(shader.locMatTXTY, 0);
-  gl.vertexAttribDivisor(shader.locSize, 0);
-  gl.vertexAttribDivisor(shader.locUVRect, 0);
-  gl.vertexAttribDivisor(shader.locAlpha, 0);
+  gl.uniformMatrix3fv(locWorldMatrix, false, m);
+  gl.uniform1i(locTexture, 0);
 }
 
-// Ensures the sprite batch can accept up to `maxInstances` additional instances for the given
-// texture, blend mode, and color transform. Flushes the current batch if the key changes or
-// capacity is exceeded. Returns the float index in spriteBatchInstanceData where the caller
-// should begin writing. Caller is responsible for incrementing state.spriteBatchCount.
-export function prepareWebGLSpriteBatchWrite(
-  state: WebGLRenderStateInternal,
-  texture: CanvasImageSource,
-  blendMode: BlendMode | null,
-  colorTransform: ColorTransform | null,
-  maxInstances: number,
-): number {
-  if (
-    texture !== state.spriteBatchTexture ||
-    blendMode !== state.spriteBatchBlendMode ||
-    colorTransform !== state.spriteBatchColorTransform
-  ) {
-    flushWebGLSpriteBatch(state);
+export function useWebGLQuadBatchProgram(state: WebGLRenderStateInternal, program: WebGLProgram): void {
+  if (state.currentProgram !== program) {
+    state.gl.useProgram(program);
+    state.currentProgram = program;
   }
-  state.spriteBatchTexture = texture;
-  state.spriteBatchBlendMode = blendMode;
-  state.spriteBatchColorTransform = colorTransform;
-
-  const needed = (state.spriteBatchCount + maxInstances) * SPRITE_INSTANCE_FLOATS;
-  if (needed > state.spriteBatchInstanceData.length) {
-    const newSize = Math.max(needed, state.spriteBatchInstanceData.length * 2);
-    state.spriteBatchInstanceData = new Float32Array(newSize);
-    if (state.spriteBatchInstanceBuffer !== null) {
-      const gl = state.gl;
-      gl.bindBuffer(gl.ARRAY_BUFFER, state.spriteBatchInstanceBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, newSize * 4, gl.DYNAMIC_DRAW);
-    }
-  }
-
-  return state.spriteBatchCount * SPRITE_INSTANCE_FLOATS;
 }
