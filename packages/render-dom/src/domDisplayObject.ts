@@ -2,7 +2,7 @@ import { getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { getDisplayObjectRenderNode, isRenderNodeVisible } from '@flighthq/render';
 import type { DisplayObject, DOMRenderState } from '@flighthq/types';
 
-import { detectDOMStructureChange, processDOMNode, reconcileDOMContainer, swapDOMOrderLists } from './domReconcile';
+import { hasDOMStructureChanged, processDOMNode, reconcileDOMContainer, swapDOMOrderLists } from './domReconcile';
 import type { DOMRenderStateInternal } from './internal';
 
 export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObject): void {
@@ -54,7 +54,7 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
 
   clipHooks?.finalize(state);
 
-  if (detectDOMStructureChange(internal, newLength, needsReconcile)) {
+  if (hasDOMStructureChanged(internal, newLength, needsReconcile)) {
     reconcileDOMContainer(container, internal, newLength);
   }
 
