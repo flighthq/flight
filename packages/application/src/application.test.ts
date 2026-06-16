@@ -42,7 +42,13 @@ describe('createApplication', () => {
     expect(app.onUpdate).toBeDefined();
     expect(app.onRender).toBeDefined();
     expect(app.onExit).toBeDefined();
-    expect(app.observers.size).toBe(0);
+
+    let exitCalled = false;
+    connectSignal(app.onExit, () => {
+      exitCalled = true;
+    });
+    window.dispatchEvent(new Event('beforeunload'));
+    expect(exitCalled).toBe(false);
   });
 });
 
@@ -81,7 +87,6 @@ describe('disposeApplication', () => {
     expect(caf).toHaveBeenCalledWith(99);
     window.dispatchEvent(new Event('beforeunload'));
     expect(exitCalled).toBe(false);
-    expect(app.observers.size).toBe(0);
 
     vi.unstubAllGlobals();
   });

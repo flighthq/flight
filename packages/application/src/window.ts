@@ -10,7 +10,8 @@ const kResize = Symbol();
 const kVisibility = Symbol();
 
 export function attachWindowDropFile(win: ApplicationWindow, element: HTMLElement): void {
-  win.observers.get(kDropFile)?.();
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kDropFile)?.();
   const onDragOver = (e: DragEvent) => e.preventDefault();
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
@@ -20,41 +21,45 @@ export function attachWindowDropFile(win: ApplicationWindow, element: HTMLElemen
   };
   element.addEventListener('dragover', onDragOver);
   element.addEventListener('drop', onDrop);
-  win.observers.set(kDropFile, () => {
+  observers.set(kDropFile, () => {
     element.removeEventListener('dragover', onDragOver);
     element.removeEventListener('drop', onDrop);
   });
 }
 
 export function attachWindowFocus(win: ApplicationWindow, element: HTMLElement): void {
-  win.observers.get(kFocus)?.();
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kFocus)?.();
   const onFocus = () => emitSignal(win.onFocusIn);
   const onBlur = () => emitSignal(win.onFocusOut);
   element.addEventListener('focus', onFocus);
   element.addEventListener('blur', onBlur);
-  win.observers.set(kFocus, () => {
+  observers.set(kFocus, () => {
     element.removeEventListener('focus', onFocus);
     element.removeEventListener('blur', onBlur);
   });
 }
 
 export function attachWindowFullscreen(win: ApplicationWindow): void {
-  win.observers.get(kFullscreen)?.();
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kFullscreen)?.();
   const handler = () => emitSignal(win.onFullscreenChanged);
   document.addEventListener('fullscreenchange', handler);
-  win.observers.set(kFullscreen, () => document.removeEventListener('fullscreenchange', handler));
+  observers.set(kFullscreen, () => document.removeEventListener('fullscreenchange', handler));
 }
 
 export function attachWindowOrientation(win: ApplicationWindow): void {
-  win.observers.get(kOrientation)?.();
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kOrientation)?.();
   if (!screen.orientation) return;
   const handler = () => emitSignal(win.onOrientationChanged);
   screen.orientation.addEventListener('change', handler);
-  win.observers.set(kOrientation, () => screen.orientation.removeEventListener('change', handler));
+  observers.set(kOrientation, () => screen.orientation.removeEventListener('change', handler));
 }
 
 export function attachWindowRenderContext(win: ApplicationWindow, canvas: HTMLCanvasElement): void {
-  win.observers.get(kRenderContext)?.();
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kRenderContext)?.();
   const onContextLost = (e: Event) => {
     e.preventDefault();
     emitSignal(win.onRenderContextLost);
@@ -62,14 +67,15 @@ export function attachWindowRenderContext(win: ApplicationWindow, canvas: HTMLCa
   const onContextRestored = () => emitSignal(win.onRenderContextRestored);
   canvas.addEventListener('webglcontextlost', onContextLost);
   canvas.addEventListener('webglcontextrestored', onContextRestored);
-  win.observers.set(kRenderContext, () => {
+  observers.set(kRenderContext, () => {
     canvas.removeEventListener('webglcontextlost', onContextLost);
     canvas.removeEventListener('webglcontextrestored', onContextRestored);
   });
 }
 
 export function attachWindowResize(win: ApplicationWindow, element: HTMLElement): void {
-  win.observers.get(kResize)?.();
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kResize)?.();
   const observer = new ResizeObserver((entries) => {
     for (const entry of entries) {
       win.width = Math.round(entry.contentRect.width);
@@ -79,11 +85,12 @@ export function attachWindowResize(win: ApplicationWindow, element: HTMLElement)
     }
   });
   observer.observe(element);
-  win.observers.set(kResize, () => observer.disconnect());
+  observers.set(kResize, () => observer.disconnect());
 }
 
 export function attachWindowVisibility(win: ApplicationWindow): void {
-  win.observers.get(kVisibility)?.();
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kVisibility)?.();
   const handler = () => {
     if (document.hidden) {
       emitSignal(win.onDeactivate);
@@ -92,14 +99,13 @@ export function attachWindowVisibility(win: ApplicationWindow): void {
     }
   };
   document.addEventListener('visibilitychange', handler);
-  win.observers.set(kVisibility, () => document.removeEventListener('visibilitychange', handler));
+  observers.set(kVisibility, () => document.removeEventListener('visibilitychange', handler));
 }
 
 export function createApplicationWindow(): ApplicationWindow {
   return {
     devicePixelRatio: 1,
     height: 0,
-    observers: new Map(),
     width: 0,
     onActivate: createSignal(),
     onClose: createSignal(),
@@ -120,43 +126,51 @@ export function createApplicationWindow(): ApplicationWindow {
 }
 
 export function detachWindowDropFile(win: ApplicationWindow): void {
-  win.observers.get(kDropFile)?.();
-  win.observers.delete(kDropFile);
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kDropFile)?.();
+  observers.delete(kDropFile);
 }
 
 export function detachWindowFocus(win: ApplicationWindow): void {
-  win.observers.get(kFocus)?.();
-  win.observers.delete(kFocus);
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kFocus)?.();
+  observers.delete(kFocus);
 }
 
 export function detachWindowFullscreen(win: ApplicationWindow): void {
-  win.observers.get(kFullscreen)?.();
-  win.observers.delete(kFullscreen);
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kFullscreen)?.();
+  observers.delete(kFullscreen);
 }
 
 export function detachWindowOrientation(win: ApplicationWindow): void {
-  win.observers.get(kOrientation)?.();
-  win.observers.delete(kOrientation);
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kOrientation)?.();
+  observers.delete(kOrientation);
 }
 
 export function detachWindowRenderContext(win: ApplicationWindow): void {
-  win.observers.get(kRenderContext)?.();
-  win.observers.delete(kRenderContext);
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kRenderContext)?.();
+  observers.delete(kRenderContext);
 }
 
 export function detachWindowResize(win: ApplicationWindow): void {
-  win.observers.get(kResize)?.();
-  win.observers.delete(kResize);
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kResize)?.();
+  observers.delete(kResize);
 }
 
 export function detachWindowVisibility(win: ApplicationWindow): void {
-  win.observers.get(kVisibility)?.();
-  win.observers.delete(kVisibility);
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kVisibility)?.();
+  observers.delete(kVisibility);
 }
 
 export function disposeApplicationWindow(win: ApplicationWindow): void {
-  for (const cleanup of win.observers.values()) cleanup();
-  win.observers.clear();
+  const observers = getApplicationWindowObservers(win);
+  for (const cleanup of observers.values()) cleanup();
+  observers.clear();
 }
 
 export function exitApplicationFullscreen(): Promise<void> {
@@ -175,4 +189,18 @@ export function lockApplicationPointer(element: HTMLElement): void {
 
 export function requestApplicationFullscreen(element: HTMLElement): Promise<void> {
   return element.requestFullscreen();
+}
+
+// Internal teardown registry, kept off the public ApplicationWindow entity (a side table like
+// input's binding map). attach/detach/dispose track cleanup closures internally so callers hold
+// nothing.
+const _applicationWindowObservers = new WeakMap<ApplicationWindow, Map<symbol, () => void>>();
+
+function getApplicationWindowObservers(win: ApplicationWindow): Map<symbol, () => void> {
+  let observers = _applicationWindowObservers.get(win);
+  if (observers === undefined) {
+    observers = new Map();
+    _applicationWindowObservers.set(win, observers);
+  }
+  return observers;
 }

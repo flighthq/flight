@@ -5,15 +5,15 @@ const kExit = Symbol();
 const kLoop = Symbol();
 
 export function attachApplicationExit(app: Application): void {
-  app.observers.get(kExit)?.();
+  const observers = getApplicationObservers(app);
+  observers.get(kExit)?.();
   const handler = () => emitSignal(app.onExit);
   window.addEventListener('beforeunload', handler);
-  app.observers.set(kExit, () => window.removeEventListener('beforeunload', handler));
+  observers.set(kExit, () => window.removeEventListener('beforeunload', handler));
 }
 
 export function createApplication(): Application {
   return {
-    observers: new Map(),
     onExit: createSignal(),
     onRender: createSignal(),
     onUpdate: createSignal(),
@@ -21,17 +21,20 @@ export function createApplication(): Application {
 }
 
 export function detachApplicationExit(app: Application): void {
-  app.observers.get(kExit)?.();
-  app.observers.delete(kExit);
+  const observers = getApplicationObservers(app);
+  observers.get(kExit)?.();
+  observers.delete(kExit);
 }
 
 export function disposeApplication(app: Application): void {
-  for (const cleanup of app.observers.values()) cleanup();
-  app.observers.clear();
+  const observers = getApplicationObservers(app);
+  for (const cleanup of observers.values()) cleanup();
+  observers.clear();
 }
 
 export function startApplicationLoop(app: Application): void {
-  app.observers.get(kLoop)?.();
+  const observers = getApplicationObservers(app);
+  observers.get(kLoop)?.();
   let lastTime = -1;
   let rafId = 0;
 
@@ -44,10 +47,24 @@ export function startApplicationLoop(app: Application): void {
   }
 
   rafId = requestAnimationFrame(tick);
-  app.observers.set(kLoop, () => cancelAnimationFrame(rafId));
+  observers.set(kLoop, () => cancelAnimationFrame(rafId));
 }
 
 export function stopApplicationLoop(app: Application): void {
-  app.observers.get(kLoop)?.();
-  app.observers.delete(kLoop);
+  const observers = getApplicationObservers(app);
+  observers.get(kLoop)?.();
+  observers.delete(kLoop);
+}
+
+// Internal teardown registry, kept off the public Application entity (a side table like input's
+// binding map). attach/detach/dispose track cleanup closures internally so callers hold nothing.
+const _applicationObservers = new WeakMap<Application, Map<symbol, () => void>>();
+
+function getApplicationObservers(app: Application): Map<symbol, () => void> {
+  let observers = _applicationObservers.get(app);
+  if (observers === undefined) {
+    observers = new Map();
+    _applicationObservers.set(app, observers);
+  }
+  return observers;
 }
