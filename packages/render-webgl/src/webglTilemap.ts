@@ -2,7 +2,12 @@ import { noopRendererData } from '@flighthq/render';
 import type { RenderState, SpriteRenderer, SpriteRenderNode, Tilemap } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { ensureWebGLQuadBatchShader, prepareWebGLSpriteBatchWrite } from './webglSpriteBatch';
+import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
+import {
+  ensureWebGLQuadBatchShader,
+  packWebGLSpriteBatchMaterialInstance,
+  prepareWebGLSpriteBatchWrite,
+} from './webglSpriteBatch';
 
 const INSTANCE_FLOATS = 13;
 
@@ -18,8 +23,19 @@ function submitWebGLTilemap(state: RenderState, tilemapNode: SpriteRenderNode): 
 
   ensureWebGLQuadBatchShader(internal);
 
-  const ct = tilemapNode.useColorTransform ? tilemapNode.colorTransform : null;
-  const base = prepareWebGLSpriteBatchWrite(internal, atlas.image.src, tilemapNode.blendMode, ct, columns * rows);
+  const material = tilemapNode.material;
+  const materialRenderer = resolveWebGLMaterialRenderer(internal, material);
+  const nodeMaterialData = tilemapNode.materialData;
+  const perTileMaterialData = source.data.materialData;
+  const startCount = internal.spriteBatchCount;
+  const base = prepareWebGLSpriteBatchWrite(
+    internal,
+    atlas.image.src,
+    tilemapNode.blendMode,
+    material,
+    materialRenderer,
+    columns * rows,
+  );
 
   const regions = atlas.regions;
   const numRegions = regions.length;
@@ -60,6 +76,8 @@ function submitWebGLTilemap(state: RenderState, tilemapNode: SpriteRenderNode): 
       instanceData[writeBase + 10] = (region.x + region.width) * iw;
       instanceData[writeBase + 11] = (region.y + region.height) * ih;
       instanceData[writeBase + 12] = alpha;
+      const md = perTileMaterialData?.[row * columns + col] ?? nodeMaterialData;
+      packWebGLSpriteBatchMaterialInstance(internal, md, startCount + drawCount);
       writeBase += INSTANCE_FLOATS;
       drawCount++;
     }

@@ -1,8 +1,17 @@
-import type { BlendMode, ColorTransform, WebGLRenderState } from '@flighthq/types';
+import type { BlendMode, Material, WebGLMaterialRenderer, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
 
 export type { WebGLBitmapShader, WebGLShaderLocations };
+
+// Per-instance color transform shader: the quad-batch base layout (locations 0-6) plus two
+// vec4 instance attributes (a_ctMult at location 7, a_ctOff at location 8) applied per-vertex.
+export interface WebGLColorTransformInstancedShader {
+  program: WebGLProgram;
+  locCorner: number;
+  locWorldMatrix: WebGLUniformLocation;
+  locTexture: WebGLUniformLocation;
+}
 
 export interface WebGLParticleShader {
   program: WebGLProgram;
@@ -44,8 +53,17 @@ export type WebGLRenderStateInternal = Omit<WebGLRenderState, 'canvas' | 'gl'> &
   particleInstanceData?: Float32Array;
   quadBatchShader?: WebGLQuadBatchShader;
   quadBatchCornerBuffer?: WebGLBuffer;
+  colorTransformInstancedShader?: WebGLColorTransformInstancedShader;
+  materialRendererMap?: Map<symbol, WebGLMaterialRenderer>;
   spriteBatchBlendMode: BlendMode | null;
-  spriteBatchColorTransform: ColorTransform | null;
+  // The active sprite-batch material (flush key, compared by reference) and its resolved
+  // renderer + per-instance float stride. spriteBatchMaterialData/Buffer hold the active
+  // material's per-instance attributes, parallel to the base spriteBatchInstanceData.
+  spriteBatchMaterial: Material | null;
+  spriteBatchMaterialRenderer: WebGLMaterialRenderer | null;
+  spriteBatchMaterialFloats: number;
+  spriteBatchMaterialData: Float32Array;
+  spriteBatchMaterialBuffer: WebGLBuffer | null;
   spriteBatchCount: number;
   spriteBatchInstanceBuffer: WebGLBuffer | null;
   spriteBatchInstanceData: Float32Array;
