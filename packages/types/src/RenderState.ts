@@ -1,8 +1,7 @@
 ﻿import type { BlendMode } from './BlendMode';
 import type { ColorTransform } from './ColorTransform';
-import type { AppearanceHooks, DisplayObjectClipHooks, DisplayObjectMaskRenderer } from './DisplayObjectRenderer';
+import type { DisplayObjectClipHooks, DisplayObjectMaskRenderer } from './DisplayObjectRenderer';
 import type { Entity } from './Entity';
-import type { MaterialHooks } from './MaterialHooks';
 import type { Matrix } from './Matrix';
 import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
@@ -21,7 +20,6 @@ export type SceneGraphSyncPolicy = 'refreshDerivedState' | 'requiresInvalidation
 
 export interface RenderState extends Entity {
   allowSmoothing: boolean;
-  appearanceHooks: AppearanceHooks | null;
   readonly backgroundColor: number;
   readonly backgroundColorRGBA: number[];
   readonly backgroundColorString: string;
@@ -31,7 +29,6 @@ export interface RenderState extends Entity {
   displayObjectClipHooks: DisplayObjectClipHooks | null;
   readonly displayObjectMaskRendererMap: Map<symbol, DisplayObjectMaskRenderer>;
   readonly displayObjectMaskRendererMapID: number;
-  materialHooks: MaterialHooks | null;
   pixelRatio: number;
   readonly renderNodeAdapterMap: WeakMap<Renderable, RenderNodeAdapter>;
   readonly renderNodeMap: WeakMap<Renderable, RenderNode>;

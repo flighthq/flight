@@ -1,5 +1,4 @@
 import type { BlendMode } from './BlendMode';
-import type { ColorTransform } from './ColorTransform';
 import type { Entity } from './Entity';
 import type { Material, MaterialData } from './Material';
 import type { Renderable } from './Renderable';
@@ -14,7 +13,6 @@ export interface RenderNode extends Entity {
   alpha: number;
   appearanceFrameID: number;
   blendMode: BlendMode | null;
-  colorTransform: ColorTransform | null;
   // Resolved material the backend renderer draws this node with, and its per-node data. Null →
   // default pipeline. Populated by the material hook during the render walk; the batcher keys on
   // `material` by reference, and material renderers read `materialData` (e.g. per-instance CT).
@@ -28,6 +26,5 @@ export interface RenderNode extends Entity {
   rendererDataSource: Renderable | null;
   rendererMapID: number;
   transformFrameID: number;
-  useColorTransform: boolean;
   visible: boolean;
 }

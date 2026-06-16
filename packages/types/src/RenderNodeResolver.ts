@@ -1,7 +1,7 @@
 import type { DisplayObject } from './DisplayObject';
-import type { DisplayObjectRenderNode } from './DisplayObjectRenderNode';
+import type { RenderNode2D } from './RenderNode2D';
 import type { RenderState } from './RenderState';
 
 export type RenderNodeResolver = {
-  resolve: (state: RenderState, source: DisplayObject, node: DisplayObjectRenderNode) => boolean | null;
+  resolve: (state: RenderState, source: DisplayObject, node: RenderNode2D) => boolean | null;
 };

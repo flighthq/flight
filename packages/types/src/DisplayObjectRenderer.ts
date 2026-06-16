@@ -1,32 +1,22 @@
 ﻿import type { DisplayObject } from './DisplayObject';
-import type { DisplayObjectRenderNode } from './DisplayObjectRenderNode';
 import type { Renderer } from './Renderer';
 import type { RendererData } from './RendererData';
-import type { RenderNode } from './RenderNode';
+import type { RenderNode2D } from './RenderNode2D';
 import type { RenderState } from './RenderState';
 
 export interface DisplayObjectRenderer extends Renderer {
   createData(state: RenderState, source: DisplayObject): RendererData | null;
-  submit(state: RenderState, node: DisplayObjectRenderNode): void;
+  submit(state: RenderState, node: RenderNode2D): void;
 }
 
 export interface DisplayObjectMaskRenderer {
-  drawMask(state: RenderState, node: DisplayObjectRenderNode): void;
-}
-
-export interface AppearanceHooks {
-  update(state: RenderState, data: RenderNode, parentData: RenderNode | undefined): void;
+  drawMask(state: RenderState, node: RenderNode2D): void;
 }
 
 export interface DisplayObjectClipHooks {
   finalize(state: RenderState): void;
-  popMask(state: RenderState, data: DisplayObjectRenderNode): void;
-  popClipRectangle(state: RenderState, data: DisplayObjectRenderNode): void;
+  popMask(state: RenderState, data: RenderNode2D): void;
+  popClipRectangle(state: RenderState, data: RenderNode2D): void;
   pushMask(state: RenderState, source: DisplayObject): void;
-  pushClipRectangle(
-    state: RenderState,
-    data: DisplayObjectRenderNode,
-    source: DisplayObject,
-    hasChildren: boolean,
-  ): void;
+  pushClipRectangle(state: RenderState, data: RenderNode2D, source: DisplayObject, hasChildren: boolean): void;
 }
