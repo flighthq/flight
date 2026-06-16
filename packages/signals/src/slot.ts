@@ -2,7 +2,7 @@
 
 import type { Signal, SignalConnectOptions, SignalData } from '@flighthq/types';
 
-import { nullSignalEmit } from './signal';
+import { nullSignalEmit } from './internal';
 
 export type { SignalConnectOptions } from '@flighthq/types';
 

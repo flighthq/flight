@@ -1,5 +1,6 @@
 ﻿import { getRichTextRuntime } from '@flighthq/displayobject';
-import { computeTextFormatFontString, noopRendererData, rgb24ToHexString } from '@flighthq/render';
+import { computeRGBHexString } from '@flighthq/materials';
+import { computeTextFormatFontString, noopRendererData } from '@flighthq/render';
 import {
   computeRichTextContent,
   computeTextLayout,
@@ -70,12 +71,12 @@ export function drawWebGLRichTextWithOverlay(
   offCtx.clearRect(0, 0, fieldW, fieldH);
 
   if (data.background) {
-    offCtx.fillStyle = rgb24ToHexString(data.backgroundColor);
+    offCtx.fillStyle = computeRGBHexString(data.backgroundColor);
     offCtx.fillRect(0, 0, fieldW, fieldH);
   }
 
   if (data.border) {
-    offCtx.strokeStyle = rgb24ToHexString(data.borderColor);
+    offCtx.strokeStyle = computeRGBHexString(data.borderColor);
     offCtx.lineWidth = 1;
     offCtx.strokeRect(0, 0, fieldW, fieldH);
   }
@@ -129,7 +130,7 @@ function drawRichTextToCanvas(
     if (group.lineIndex < firstVisibleLine) continue;
 
     context.font = computeTextFormatFontString(group.format);
-    context.fillStyle = rgb24ToHexString(group.format.color ?? data.textColor);
+    context.fillStyle = computeRGBHexString(group.format.color ?? data.textColor);
     const slice = text.substring(group.startIndex, group.endIndex);
     const x = group.offsetX - scrollXOffset;
     const y = group.offsetY + group.ascent - scrollYOffset;
@@ -137,7 +138,7 @@ function drawRichTextToCanvas(
 
     if (group.format.underline) {
       const lineY = y + group.descent;
-      context.strokeStyle = rgb24ToHexString(group.format.color ?? data.textColor);
+      context.strokeStyle = computeRGBHexString(group.format.color ?? data.textColor);
       context.lineWidth = Math.max(1, (group.format.size ?? 12) / 16);
       context.beginPath();
       context.moveTo(x, lineY);

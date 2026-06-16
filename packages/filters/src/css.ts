@@ -1,6 +1,6 @@
 import type { BevelFilter, BlurFilter, DropShadowFilter, InnerShadowFilter, OuterGlowFilter } from '@flighthq/types';
 
-export function blurFilterToCSS(filter: BlurFilter): string | null {
+export function computeBlurFilterCSS(filter: BlurFilter): string | null {
   const bx = filter.blurX ?? 4;
   const by = filter.blurY ?? 4;
   if (bx !== by) return null;
@@ -8,13 +8,21 @@ export function blurFilterToCSS(filter: BlurFilter): string | null {
   return `blur(${bx}px)`;
 }
 
-export function dropShadowFilterToCSS(filter: DropShadowFilter): string | null {
+export function computeDropShadowFilterCSS(filter: DropShadowFilter): string | null {
   if (filter.knockout) return null;
   const blurX = filter.blurX ?? 4;
   const blurY = filter.blurY ?? 4;
   if (blurX !== blurY) return null;
   const { dx, dy } = getShadowFilterOffset(filter);
   return `drop-shadow(${dx}px ${dy}px ${blurX}px ${rgbaFromInt(filter.color ?? 0, filter.alpha ?? 1)})`;
+}
+
+export function computeOuterGlowFilterCSS(filter: OuterGlowFilter): string | null {
+  if (filter.knockout) return null;
+  const blurX = filter.blurX ?? 6;
+  const blurY = filter.blurY ?? 6;
+  if (blurX !== blurY) return null;
+  return `drop-shadow(0px 0px ${blurX}px ${rgbaFromInt(filter.color ?? 0xff0000, filter.alpha ?? 1)})`;
 }
 
 /**
@@ -31,14 +39,6 @@ export function getShadowFilterOffset(filter: DropShadowFilter | InnerShadowFilt
     dx: Math.round(Math.cos(angle) * distance),
     dy: Math.round(Math.sin(angle) * distance),
   };
-}
-
-export function outerGlowFilterToCSS(filter: OuterGlowFilter): string | null {
-  if (filter.knockout) return null;
-  const blurX = filter.blurX ?? 6;
-  const blurY = filter.blurY ?? 6;
-  if (blurX !== blurY) return null;
-  return `drop-shadow(0px 0px ${blurX}px ${rgbaFromInt(filter.color ?? 0xff0000, filter.alpha ?? 1)})`;
 }
 
 function rgbaFromInt(color: number, alpha: number): string {

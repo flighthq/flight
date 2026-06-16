@@ -4,8 +4,8 @@ import {
   applyWebGLBlitPass,
   applyWebGLInvertTintPass,
   applyWebGLTintPass,
-  getBlitShaderWebGL,
   getWebGLBlitOffsetShader,
+  getWebGLBlitShader,
   getWebGLInvertTintShader,
   getWebGLTintShader,
 } from './tintShader';
@@ -50,20 +50,6 @@ describe('applyWebGLTintPass', () => {
   });
 });
 
-describe('getBlitShaderWebGL', () => {
-  it('returns shader locations', () => {
-    const { state } = makeFilterState();
-    const loc = getBlitShaderWebGL(state);
-    expect(loc).toBeDefined();
-    expect(loc.program).toBeDefined();
-  });
-
-  it('returns the same instance on repeated calls', () => {
-    const { state } = makeFilterState();
-    expect(getBlitShaderWebGL(state)).toBe(getBlitShaderWebGL(state));
-  });
-});
-
 describe('getWebGLBlitOffsetShader', () => {
   it('returns shader locations', () => {
     const { state } = makeFilterState();
@@ -75,6 +61,20 @@ describe('getWebGLBlitOffsetShader', () => {
   it('returns the same instance on repeated calls', () => {
     const { state } = makeFilterState();
     expect(getWebGLBlitOffsetShader(state)).toBe(getWebGLBlitOffsetShader(state));
+  });
+});
+
+describe('getWebGLBlitShader', () => {
+  it('returns shader locations', () => {
+    const { state } = makeFilterState();
+    const loc = getWebGLBlitShader(state);
+    expect(loc).toBeDefined();
+    expect(loc.program).toBeDefined();
+  });
+
+  it('returns the same instance on repeated calls', () => {
+    const { state } = makeFilterState();
+    expect(getWebGLBlitShader(state)).toBe(getWebGLBlitShader(state));
   });
 });
 

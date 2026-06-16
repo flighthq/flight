@@ -2,10 +2,10 @@
 
 import type { Signal } from '@flighthq/types';
 
+import { nullSignalEmit } from './internal';
+
 export type { Signal } from '@flighthq/types';
 
 export function createSignal<T extends (...args: any[]) => void>(): Signal<T> {
   return { emit: nullSignalEmit as unknown as T, data: null };
 }
-
-export const nullSignalEmit = (): void => {};

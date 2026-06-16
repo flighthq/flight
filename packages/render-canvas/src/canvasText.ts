@@ -1,5 +1,6 @@
 ﻿import { getTextRuntime } from '@flighthq/displayobject';
-import { computeTextFormatFontString, noopRendererData, rgb24ToHexString } from '@flighthq/render';
+import { computeRGBHexString } from '@flighthq/materials';
+import { computeTextFormatFontString, noopRendererData } from '@flighthq/render';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
   CanvasRenderState,
@@ -44,7 +45,7 @@ export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObje
 
   for (const group of result.groups) {
     context.font = computeTextFormatFontString(group.format);
-    context.fillStyle = rgb24ToHexString(group.format.color ?? 0);
+    context.fillStyle = computeRGBHexString(group.format.color ?? 0);
     const slice = text.substring(group.startIndex, group.endIndex);
     const x = group.offsetX;
     // group.ascent = font-size; CSS places the alphabetic baseline at ~80% of the em-size.
@@ -54,7 +55,7 @@ export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObje
 
     if (group.format.underline) {
       const lineY = y + group.descent;
-      context.strokeStyle = rgb24ToHexString(group.format.color ?? 0);
+      context.strokeStyle = computeRGBHexString(group.format.color ?? 0);
       context.lineWidth = Math.max(1, (group.format.size ?? 12) / 16);
       context.beginPath();
       context.moveTo(x, lineY);

@@ -2,13 +2,6 @@ import type { RenderState } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';
 
-// Takes a 24-bit RGB color (`0xRRGGBB`, e.g. a TextFormat color) and returns a
-// CSS `#RRGGBB` string. Any high-byte bits are masked off, so a 32-bit RGBA
-// value would keep `GGBBAA` — pass RGB, not RGBA.
-export function rgb24ToHexString(color: number): string {
-  return `#${(color & 0xffffff).toString(16).padStart(6, '0')}`;
-}
-
 export function setRenderStateBackgroundColor(state: RenderState, color: number): void {
   const _state = state as RenderStateInternal;
   const uint = color >>> 0;

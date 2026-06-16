@@ -43,7 +43,7 @@ export const height = 400;
 //
 // The composite applies the node's scene transform (which carries the stage's pixelRatio
 // scale), so a Gaussian σ in target pixels lands on screen as σ CSS pixels — matching the
-// canvas/DOM blurFilterToCSS paths.
+// canvas/DOM computeBlurFilterCSS paths.
 type BlurEntry = {
   node: DisplayObject;
   filter: Readonly<BlurFilter>;
