@@ -8,6 +8,7 @@ export * from './canvasDisplayObject';
 export * from './canvasElement';
 export * from './canvasInputText';
 export * from './canvasMask';
+export * from './canvasMaterialRegistry';
 export * from './canvasMaterials';
 export * from './canvasParticleEmitter';
 export * from './canvasQuadBatch';

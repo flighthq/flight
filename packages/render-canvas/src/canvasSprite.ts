@@ -2,6 +2,8 @@ import { getSpriteRenderNode, isRenderNodeVisible, noopRendererData } from '@fli
 import { getSpriteNodeRuntime } from '@flighthq/sprite';
 import type { CanvasRenderState, Sprite, SpriteNode, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
 
+import { applyCanvasMaterial } from './canvasMaterialRegistry';
+
 export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRenderNode): void {
   const source = spriteNode.source as Sprite;
   const { atlas, id } = source.data;
@@ -24,6 +26,8 @@ export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRen
     context.imageSmoothingEnabled = false;
   }
 
+  const restoreMaterial = applyCanvasMaterial(state, spriteNode.material);
+
   context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
   context.drawImage(
     atlas.image.src,
@@ -36,6 +40,8 @@ export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRen
     region.width,
     region.height,
   );
+
+  if (restoreMaterial) context.restore();
 
   if (!state.allowSmoothing) {
     context.imageSmoothingEnabled = true;
