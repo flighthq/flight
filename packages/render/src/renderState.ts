@@ -14,6 +14,7 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
     displayObjectClipHooks: obj?.displayObjectClipHooks ?? null,
     displayObjectMaskRendererMap: obj?.displayObjectMaskRendererMap ?? new Map(),
     displayObjectMaskRendererMapID: obj?.displayObjectMaskRendererMapID ?? 0,
+    materialHooks: obj?.materialHooks ?? null,
     pixelRatio: obj?.pixelRatio ?? 1,
     renderNodeAdapterMap: obj?.renderNodeAdapterMap ?? new WeakMap(),
     renderNodeMap: obj?.renderNodeMap ?? new WeakMap(),
