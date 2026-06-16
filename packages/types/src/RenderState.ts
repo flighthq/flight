@@ -2,6 +2,7 @@
 import type { ColorTransform } from './ColorTransform';
 import type { AppearanceHooks, DisplayObjectClipHooks, DisplayObjectMaskRenderer } from './DisplayObjectRenderer';
 import type { Entity } from './Entity';
+import type { MaterialHooks } from './MaterialHooks';
 import type { Matrix } from './Matrix';
 import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
@@ -30,6 +31,7 @@ export interface RenderState extends Entity {
   displayObjectClipHooks: DisplayObjectClipHooks | null;
   readonly displayObjectMaskRendererMap: Map<symbol, DisplayObjectMaskRenderer>;
   readonly displayObjectMaskRendererMapID: number;
+  materialHooks: MaterialHooks | null;
   pixelRatio: number;
   readonly renderNodeAdapterMap: WeakMap<Renderable, RenderNodeAdapter>;
   readonly renderNodeMap: WeakMap<Renderable, RenderNode>;
