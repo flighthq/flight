@@ -55,6 +55,7 @@ export function createWebGLCacheState(screenState: WebGLRenderState): WebGLRende
 
   copyAllRenderersFromRenderState(cacheState, screenState);
   cacheState.appearanceHooks = screenState.appearanceHooks;
+  cacheState.materialHooks = screenState.materialHooks;
 
   cacheState.applyBlendMode = screen.applyBlendMode;
   cacheState.canvas = screen.canvas;
@@ -67,6 +68,8 @@ export function createWebGLCacheState(screenState: WebGLRenderState): WebGLRende
   cacheState.particleInstanceData = screen.particleInstanceData;
   cacheState.quadBatchShader = screen.quadBatchShader;
   cacheState.quadBatchCornerBuffer = screen.quadBatchCornerBuffer;
+  cacheState.colorTransformInstancedShader = screen.colorTransformInstancedShader;
+  cacheState.materialRendererMap = screen.materialRendererMap;
   cacheState.shaderLoc = screen.shaderLoc;
   cacheState.textureCache = screen.textureCache;
   cacheState.quadVertexBuffer = screen.quadVertexBuffer;
@@ -83,7 +86,11 @@ export function createWebGLCacheState(screenState: WebGLRenderState): WebGLRende
   cacheState.renderTargetViewport = null;
   cacheState.scissorStack = [];
   cacheState.spriteBatchBlendMode = null;
-  cacheState.spriteBatchColorTransform = null;
+  cacheState.spriteBatchMaterial = null;
+  cacheState.spriteBatchMaterialRenderer = null;
+  cacheState.spriteBatchMaterialFloats = 0;
+  cacheState.spriteBatchMaterialData = new Float32Array(0);
+  cacheState.spriteBatchMaterialBuffer = null;
   cacheState.spriteBatchCount = 0;
   cacheState.spriteBatchInstanceBuffer = null;
   cacheState.spriteBatchInstanceData = new Float32Array(0);
