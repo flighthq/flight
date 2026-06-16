@@ -10,6 +10,12 @@ import {
   attachWheelInput,
   createInputManager,
   createInputSignals,
+  detachGamepadInput,
+  detachKeyboardInput,
+  detachPointerInput,
+  detachRelativePointerInput,
+  detachTextInput,
+  detachWheelInput,
   getKeyCodeFromDOMKeyboardEvent,
   getKeyModifierFromDOMKeyboardEvent,
   getMouseWheelModeFromDOMWheelEvent,
@@ -43,18 +49,6 @@ describe('attachGamepadInput', () => {
     expect(received).toEqual({ gamepad: 1 });
   });
 
-  it('returns a cleanup function that removes listeners', () => {
-    const manager = createInputManager();
-    const detach = attachGamepadInput(manager, window);
-
-    let fired = 0;
-    connectSignal(manager.onGamepadConnect, () => fired++);
-
-    detach();
-    window.dispatchEvent(createGamepadEvent('gamepadconnected', 0, 'Pad'));
-    expect(fired).toBe(0);
-  });
-
   it('respects the enabled flag', () => {
     const manager = createInputManager();
     attachGamepadInput(manager, window);
@@ -81,19 +75,6 @@ describe('attachKeyboardInput', () => {
 
     target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'A' }));
     expect(received).toBe(KeyCode.A);
-  });
-
-  it('returns a cleanup function that removes listeners', () => {
-    const manager = createInputManager();
-    const target = document.createElement('input');
-    const detach = attachKeyboardInput(manager, target);
-
-    let fired = 0;
-    connectSignal(manager.onKeyDown, () => fired++);
-
-    detach();
-    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'A' }));
-    expect(fired).toBe(0);
   });
 });
 
@@ -130,19 +111,6 @@ describe('attachPointerInput', () => {
     element.dispatchEvent(createPointerEvent('pointerdown'));
     expect(fired).toBe(0);
   });
-
-  it('returns a cleanup function that removes listeners', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    const detach = attachPointerInput(manager, element);
-
-    let fired = 0;
-    connectSignal(manager.onPointerDown, () => fired++);
-
-    detach();
-    element.dispatchEvent(createPointerEvent('pointerdown'));
-    expect(fired).toBe(0);
-  });
 });
 
 describe('attachRelativePointerInput', () => {
@@ -161,19 +129,6 @@ describe('attachRelativePointerInput', () => {
     element.ownerDocument.dispatchEvent(new MouseEvent('mousemove', { movementX: 5, movementY: -3 }));
     expect(receivedDeltaX).toBe(5);
     expect(receivedDeltaY).toBe(-3);
-  });
-
-  it('returns a cleanup that removes the listener', () => {
-    const manager = createInputManager();
-    const element = document.createElement('div');
-    const detach = attachRelativePointerInput(manager, element);
-
-    let fired = 0;
-    connectSignal(manager.onPointerMoveRelative, () => fired++);
-
-    detach();
-    element.ownerDocument.dispatchEvent(new MouseEvent('mousemove'));
-    expect(fired).toBe(0);
   });
 });
 
@@ -248,6 +203,117 @@ describe('createInputSignals', () => {
 
   it('returns a new object each call', () => {
     expect(createInputSignals()).not.toBe(createInputSignals());
+  });
+});
+
+describe('detachGamepadInput', () => {
+  it('removes listeners so signals stop firing', () => {
+    const manager = createInputManager();
+    attachGamepadInput(manager, window);
+
+    let fired = 0;
+    connectSignal(manager.onGamepadConnect, () => fired++);
+
+    detachGamepadInput(manager, window);
+    window.dispatchEvent(createGamepadEvent('gamepadconnected', 0, 'Pad'));
+    expect(fired).toBe(0);
+  });
+
+  it('is a no-op when nothing is attached', () => {
+    const manager = createInputManager();
+    expect(() => detachGamepadInput(manager, window)).not.toThrow();
+  });
+});
+
+describe('detachKeyboardInput', () => {
+  it('removes listeners so signals stop firing', () => {
+    const manager = createInputManager();
+    const target = document.createElement('input');
+    attachKeyboardInput(manager, target);
+
+    let fired = 0;
+    connectSignal(manager.onKeyDown, () => fired++);
+
+    detachKeyboardInput(manager, target);
+    target.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'A' }));
+    expect(fired).toBe(0);
+  });
+});
+
+describe('detachPointerInput', () => {
+  it('removes listeners so signals stop firing', () => {
+    const manager = createInputManager();
+    const element = document.createElement('div');
+    attachPointerInput(manager, element);
+
+    let fired = 0;
+    connectSignal(manager.onPointerDown, () => fired++);
+
+    detachPointerInput(manager, element);
+    element.dispatchEvent(createPointerEvent('pointerdown'));
+    expect(fired).toBe(0);
+  });
+
+  it('detaches one target without affecting another bound to the same manager', () => {
+    const manager = createInputManager();
+    const first = document.createElement('div');
+    const second = document.createElement('div');
+    attachPointerInput(manager, first);
+    attachPointerInput(manager, second);
+
+    let fired = 0;
+    connectSignal(manager.onPointerDown, () => fired++);
+
+    detachPointerInput(manager, first);
+    first.dispatchEvent(createPointerEvent('pointerdown'));
+    expect(fired).toBe(0);
+    second.dispatchEvent(createPointerEvent('pointerdown'));
+    expect(fired).toBe(1);
+  });
+});
+
+describe('detachRelativePointerInput', () => {
+  it('removes the listener so signals stop firing', () => {
+    const manager = createInputManager();
+    const element = document.createElement('div');
+    attachRelativePointerInput(manager, element);
+
+    let fired = 0;
+    connectSignal(manager.onPointerMoveRelative, () => fired++);
+
+    detachRelativePointerInput(manager, element);
+    element.ownerDocument.dispatchEvent(new MouseEvent('mousemove'));
+    expect(fired).toBe(0);
+  });
+});
+
+describe('detachTextInput', () => {
+  it('removes listeners so signals stop firing', () => {
+    const manager = createInputManager();
+    const element = document.createElement('div');
+    attachTextInput(manager, element);
+
+    let fired = 0;
+    connectSignal(manager.onTextInput, () => fired++);
+
+    detachTextInput(manager, element);
+    element.dispatchEvent(createInputEvent('beforeinput', 'x'));
+    expect(fired).toBe(0);
+  });
+});
+
+describe('detachWheelInput', () => {
+  it('removes listeners so signals stop firing', () => {
+    const manager = createInputManager();
+    const element = document.createElement('div');
+    attachWheelInput(manager, element);
+
+    let fired = 0;
+    connectSignal(manager.onWheel, () => fired++);
+
+    detachWheelInput(manager, element);
+    element.dispatchEvent(createWheelEvent({ deltaMode: WheelEvent.DOM_DELTA_LINE, deltaY: -3 }));
+    expect(fired).toBe(0);
   });
 });
 

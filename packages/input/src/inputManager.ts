@@ -13,7 +13,7 @@ import type {
 } from '@flighthq/types';
 import { KeyCode, KeyModifier } from '@flighthq/types';
 
-export function attachGamepadInput(manager: InputManager, target: Window): () => void {
+export function attachGamepadInput(manager: InputManager, target: Window): void {
   const onGamepadConnected = (e: Event) => {
     if (!manager.enabled) return;
     const pad = (e as GamepadEvent).gamepad;
@@ -49,18 +49,18 @@ export function attachGamepadInput(manager: InputManager, target: Window): () =>
   target.addEventListener('gamepaddisconnected', onGamepadDisconnected);
   rafId = requestAnimationFrame(loop);
 
-  return () => {
+  setInputBinding(manager, target, kGamepadInput, () => {
     target.removeEventListener('gamepadconnected', onGamepadConnected);
     target.removeEventListener('gamepaddisconnected', onGamepadDisconnected);
     cancelAnimationFrame(rafId);
-  };
+  });
 }
 
 export function attachKeyboardInput(
   manager: InputManager,
   target: EventTarget,
   options?: Readonly<AttachInputOptions>,
-): () => void {
+): void {
   const preventDefault = options?.preventDefault ?? true;
 
   const onKeyDown = (e: Event) => {
@@ -80,17 +80,17 @@ export function attachKeyboardInput(
 
   target.addEventListener('keydown', onKeyDown);
   target.addEventListener('keyup', onKeyUp);
-  return () => {
+  setInputBinding(manager, target, kKeyboardInput, () => {
     target.removeEventListener('keydown', onKeyDown);
     target.removeEventListener('keyup', onKeyUp);
-  };
+  });
 }
 
 export function attachPointerInput(
   manager: InputManager,
   element: HTMLElement,
   options?: Readonly<AttachInputOptions>,
-): () => void {
+): void {
   const preventDefault = options?.preventDefault ?? true;
 
   const onContextMenu = (e: Event) => {
@@ -127,16 +127,16 @@ export function attachPointerInput(
   element.addEventListener('pointermove', onPointerMove);
   element.addEventListener('pointerup', onPointerUp);
 
-  return () => {
+  setInputBinding(manager, element, kPointerInput, () => {
     element.removeEventListener('contextmenu', onContextMenu);
     element.removeEventListener('pointercancel', onPointerCancel);
     element.removeEventListener('pointerdown', onPointerDown);
     element.removeEventListener('pointermove', onPointerMove);
     element.removeEventListener('pointerup', onPointerUp);
-  };
+  });
 }
 
-export function attachRelativePointerInput(manager: InputManager, element: HTMLElement): () => void {
+export function attachRelativePointerInput(manager: InputManager, element: HTMLElement): void {
   const target = element.ownerDocument;
   const handler = (e: Event) => {
     if (!manager.enabled) return;
@@ -158,10 +158,10 @@ export function attachRelativePointerInput(manager: InputManager, element: HTMLE
     emitSignal(manager.onPointerMoveRelative, _pointerData);
   };
   target.addEventListener('mousemove', handler);
-  return () => target.removeEventListener('mousemove', handler);
+  setInputBinding(manager, element, kRelativePointerInput, () => target.removeEventListener('mousemove', handler));
 }
 
-export function attachTextInput(manager: InputManager, element: HTMLElement): () => void {
+export function attachTextInput(manager: InputManager, element: HTMLElement): void {
   const onBeforeInput = (e: Event) => {
     if (!manager.enabled) return;
     const text = (e as InputEvent).data ?? '';
@@ -177,17 +177,17 @@ export function attachTextInput(manager: InputManager, element: HTMLElement): ()
 
   element.addEventListener('beforeinput', onBeforeInput);
   element.addEventListener('compositionupdate', onCompositionUpdate);
-  return () => {
+  setInputBinding(manager, element, kTextInput, () => {
     element.removeEventListener('beforeinput', onBeforeInput);
     element.removeEventListener('compositionupdate', onCompositionUpdate);
-  };
+  });
 }
 
 export function attachWheelInput(
   manager: InputManager,
   element: HTMLElement,
   options?: Readonly<AttachInputOptions>,
-): () => void {
+): void {
   const preventDefault = options?.preventDefault ?? true;
   const handler = (e: Event) => {
     if (!manager.enabled) return;
@@ -198,7 +198,7 @@ export function attachWheelInput(
     emitSignal(manager.onWheel, _pointerData);
   };
   element.addEventListener('wheel', handler, { passive: !preventDefault });
-  return () => element.removeEventListener('wheel', handler);
+  setInputBinding(manager, element, kWheelInput, () => element.removeEventListener('wheel', handler));
 }
 
 export function createInputManager(): InputManager {
@@ -226,6 +226,30 @@ export function createInputSignals(): InputSignals {
     onTextInput: createSignal(),
     onWheel: createSignal(),
   };
+}
+
+export function detachGamepadInput(manager: InputManager, target: Window): void {
+  clearInputBinding(manager, target, kGamepadInput);
+}
+
+export function detachKeyboardInput(manager: InputManager, target: EventTarget): void {
+  clearInputBinding(manager, target, kKeyboardInput);
+}
+
+export function detachPointerInput(manager: InputManager, element: HTMLElement): void {
+  clearInputBinding(manager, element, kPointerInput);
+}
+
+export function detachRelativePointerInput(manager: InputManager, element: HTMLElement): void {
+  clearInputBinding(manager, element, kRelativePointerInput);
+}
+
+export function detachTextInput(manager: InputManager, element: HTMLElement): void {
+  clearInputBinding(manager, element, kTextInput);
+}
+
+export function detachWheelInput(manager: InputManager, element: HTMLElement): void {
+  clearInputBinding(manager, element, kWheelInput);
 }
 
 export function getKeyCodeFromDOMKeyboardEvent(event: Readonly<KeyboardEvent>): number {
@@ -492,3 +516,39 @@ function getOrCreateGamepadPollState(manager: InputManager): GamepadPollState {
 const _axisData: InputGamepadAxisData = { axis: 0, gamepad: 0, value: 0 };
 const _buttonData: InputGamepadButtonData = { button: 0, gamepad: 0, value: 0 };
 const _connectData: InputGamepadConnectData = { gamepad: 0, id: '' };
+
+// Internal teardown registry: maps a manager to its per-target, per-input-kind cleanup closures.
+// Kept off the public InputManager entity (a side table like `_gamepadPollStates`) so attach/detach
+// track bindings internally and callers hold nothing. The nested EventTarget key lets one manager
+// attach the same input kind to multiple elements and detach each precisely.
+const kGamepadInput = Symbol();
+const kKeyboardInput = Symbol();
+const kPointerInput = Symbol();
+const kRelativePointerInput = Symbol();
+const kTextInput = Symbol();
+const kWheelInput = Symbol();
+
+const _inputBindings = new WeakMap<InputManager, Map<EventTarget, Map<symbol, () => void>>>();
+
+function clearInputBinding(manager: InputManager, target: EventTarget, kind: symbol): void {
+  const byKind = _inputBindings.get(manager)?.get(target);
+  const cleanup = byKind?.get(kind);
+  if (cleanup === undefined) return;
+  cleanup();
+  byKind!.delete(kind);
+}
+
+function setInputBinding(manager: InputManager, target: EventTarget, kind: symbol, cleanup: () => void): void {
+  let byTarget = _inputBindings.get(manager);
+  if (byTarget === undefined) {
+    byTarget = new Map();
+    _inputBindings.set(manager, byTarget);
+  }
+  let byKind = byTarget.get(target);
+  if (byKind === undefined) {
+    byKind = new Map();
+    byTarget.set(target, byKind);
+  }
+  byKind.get(kind)?.();
+  byKind.set(kind, cleanup);
+}
