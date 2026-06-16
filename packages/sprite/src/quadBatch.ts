@@ -105,6 +105,7 @@ export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): Qu
     atlas: data?.atlas ?? null,
     ids: data?.ids ?? new Uint16Array(),
     instanceCount: data?.instanceCount ?? 0,
+    materialData: data?.materialData ?? null,
     transforms: data?.transforms ?? new Float32Array(),
     transformType: data?.transformType ?? 'vector2',
   };

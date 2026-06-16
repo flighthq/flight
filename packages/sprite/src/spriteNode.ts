@@ -5,6 +5,7 @@ import {
   initAppearanceTrait,
   initBoundsRectangleRuntimeTrait,
   initBoundsRectangleTrait,
+  initMaterialTrait,
   initTransform2DRuntimeTrait,
   initTransform2DTrait,
 } from '@flighthq/node';
@@ -36,9 +37,9 @@ export function createSpriteNode<Runtime extends SpriteNodeRuntime>(
   initTransform2DTrait(out, obj);
   initBoundsRectangleTrait(out, obj);
   initAppearanceTrait(out, obj);
+  initMaterialTrait(out, obj);
   out.alphaEnabled = obj?.alphaEnabled ?? true;
   out.blendModeEnabled = obj?.blendModeEnabled ?? true;
-  out.colorTransformEnabled = obj?.colorTransformEnabled ?? true;
   out.originX = obj?.originX ?? 1;
   out.originY = obj?.originY ?? 1;
   return out;

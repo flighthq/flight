@@ -140,6 +140,7 @@ describe('createQuadBatchData', () => {
     expect(data.atlas).toBeNull();
     expect(data.instanceCount).toBe(0);
     expect(data.ids).toBeInstanceOf(Uint16Array);
+    expect(data.materialData).toBeNull();
     expect(data.transforms).toBeInstanceOf(Float32Array);
     expect(data.transformType).toBe('vector2');
   });
