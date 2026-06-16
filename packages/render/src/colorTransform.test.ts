@@ -9,7 +9,7 @@ import { createRenderState } from './renderState';
 
 function makeSource(ct = createColorTransform()): HasAppearance {
   const obj = createDisplayObject() as any;
-  obj.colorTransform = ct;
+  obj.materialData = ct;
   return obj;
 }
 
@@ -27,7 +27,7 @@ describe('enableColorTransformSupport', () => {
     const source = createDisplayObject();
     const ct = createColorTransform();
     ct.redMultiplier = 0.5;
-    source.colorTransform = ct;
+    source.materialData = ct;
     const data = createRenderNode(state, source);
     updateRenderNodeAppearance(state, data);
     expect(data.useColorTransform).toBe(true);
@@ -39,7 +39,7 @@ describe('enableColorTransformSupport', () => {
     const source = createDisplayObject();
     const ct = createColorTransform();
     ct.redMultiplier = 0.5;
-    source.colorTransform = ct;
+    source.materialData = ct;
     const data = createRenderNode(state, source);
     updateRenderNodeAppearance(state, data);
     expect(data.useColorTransform).toBe(false);
@@ -53,13 +53,13 @@ describe('updateRenderNodeColorTransform', () => {
     const source = createDisplayObject();
     const sourceCT = createColorTransform();
     sourceCT.redMultiplier = 0.5;
-    source.colorTransform = sourceCT;
+    source.materialData = sourceCT;
     const data = createRenderNode(state, source);
 
     const parentSource = createDisplayObject();
     const parentCT = createColorTransform();
     parentCT.redMultiplier = 0.5;
-    parentSource.colorTransform = parentCT;
+    parentSource.materialData = parentCT;
     const parentData = createRenderNode(state, parentSource);
     parentData.useColorTransform = true;
     parentData.colorTransform = parentCT;
@@ -77,7 +77,7 @@ describe('updateRenderNodeColorTransform', () => {
     const parentSource = createDisplayObject();
     const parentCT = createColorTransform();
     parentCT.redMultiplier = 0.3;
-    parentSource.colorTransform = parentCT;
+    parentSource.materialData = parentCT;
     const parentData = createRenderNode(state, parentSource);
     parentData.useColorTransform = true;
     parentData.colorTransform = parentCT;
@@ -100,7 +100,7 @@ describe('updateRenderNodeColorTransform', () => {
     const source = createDisplayObject();
     const ct = createColorTransform();
     ct.redMultiplier = 0.5;
-    source.colorTransform = ct;
+    source.materialData = ct;
     const data = createRenderNode(state, source);
     updateRenderNodeColorTransform(state, data);
     expect(data.useColorTransform).toBe(true);

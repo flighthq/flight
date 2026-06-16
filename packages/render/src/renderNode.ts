@@ -45,6 +45,8 @@ export function createRenderNode(state: RenderState, source: Renderable): Render
     appearanceFrameID: -1,
     blendMode: BlendMode.Normal,
     colorTransform: null,
+    material: null,
+    materialData: null,
     lastAppearanceID: -1,
     lastLocalTransformID: -1,
     name: null,
@@ -238,6 +240,7 @@ export function prepareSpriteRender(state: RenderState, source: SpriteNode): boo
     if (isRenderNodeDirty(state, current, data, parentData)) {
       updateRenderNodeAppearance(state, data, parentData);
       updateRenderNode2DTransform(state, data, parentData);
+      state.materialHooks?.update(state, data, parentData);
       _adaptHook?.(state, current, data);
       treeDirty = true;
     }
