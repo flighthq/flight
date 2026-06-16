@@ -1,6 +1,7 @@
 ﻿import { getRichTextRuntime } from '@flighthq/displayobject';
 import { createEntity } from '@flighthq/entity';
-import { computeTextFormatFontString, rgb24ToHexString } from '@flighthq/render';
+import { computeRGBHexString } from '@flighthq/materials';
+import { computeTextFormatFontString } from '@flighthq/render';
 import {
   computeRichTextContent,
   computeTextLayout,
@@ -86,8 +87,8 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
   const div = data.div;
   div.style.width = `${fieldW}px`;
   div.style.height = `${fieldH}px`;
-  div.style.backgroundColor = background ? rgb24ToHexString(backgroundColor) : '';
-  div.style.border = border ? `1px solid ${rgb24ToHexString(borderColor)}` : '';
+  div.style.backgroundColor = background ? computeRGBHexString(backgroundColor) : '';
+  div.style.border = border ? `1px solid ${computeRGBHexString(borderColor)}` : '';
 
   if (text.length === 0) {
     div.innerHTML = '';
@@ -132,12 +133,12 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObject
       bulletLines.add(group.lineIndex);
       const bulletSize = fmt.size ?? 12;
       const bulletX = x - bulletSize * 0.7 - DOM_BULLET_GAP;
-      const bulletStyle = `position:absolute;left:${bulletX}px;top:${y}px;font:${fontStr};line-height:1;color:${rgb24ToHexString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
+      const bulletStyle = `position:absolute;left:${bulletX}px;top:${y}px;font:${fontStr};line-height:1;color:${computeRGBHexString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
       html += `<div style="${bulletStyle}">Ã¢â‚¬Â¢</div>`;
     }
 
     let style = `position:absolute;left:${x}px;top:${y}px;font:${fontStr};line-height:1;`;
-    style += `color:${rgb24ToHexString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
+    style += `color:${computeRGBHexString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
     if (fmt.underline || fmt.strikethrough) {
       const decorations = [];
       if (fmt.underline) decorations.push('underline');

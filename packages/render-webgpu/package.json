@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@flighthq/geometry": "*",
+    "@flighthq/materials": "*",
     "@flighthq/render": "*",
     "@flighthq/render-canvas": "*",
     "@flighthq/displayobject": "*",

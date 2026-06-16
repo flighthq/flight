@@ -1,5 +1,6 @@
 import { getTextRuntime } from '@flighthq/displayobject';
-import { computeTextFormatFontString, noopRendererData, rgb24ToHexString } from '@flighthq/render';
+import { computeRGBHexString } from '@flighthq/materials';
+import { computeTextFormatFontString, noopRendererData } from '@flighthq/render';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
@@ -78,7 +79,7 @@ export function drawWebGPUText(state: RenderState, renderNode: DisplayObjectRend
 
   for (const group of result.groups) {
     offCtx.font = computeTextFormatFontString(group.format);
-    offCtx.fillStyle = rgb24ToHexString(group.format.color ?? 0);
+    offCtx.fillStyle = computeRGBHexString(group.format.color ?? 0);
     const slice = text.substring(group.startIndex, group.endIndex);
     offCtx.fillText(slice, group.offsetX, group.offsetY + group.ascent * 0.815);
   }

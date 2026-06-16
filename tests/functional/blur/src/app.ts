@@ -3,9 +3,9 @@
 // 4 / 8 / 12 px). The abstract blur descriptor is created here once; each render layer then
 // realizes it with the strategy that suits its substrate — there is no central dispatcher,
 // the blur function is chosen per renderer by name:
-//   - DOM:    element CSS filter (blurFilterToCSS → setDOMCSSFilter); the browser compositor
+//   - DOM:    element CSS filter (computeBlurFilterCSS → setDOMCSSFilter); the browser compositor
 //             caches the result.
-//   - Canvas: blurFilterToCSS baked once into an offscreen canvas registered as the node's
+//   - Canvas: computeBlurFilterCSS baked once into an offscreen canvas registered as the node's
 //             image-render cache, so repeated frames blit the cached bitmap instead of
 //             re-running ctx.filter.
 //   - WebGL:  offscreen render target + applyBlurFilterToWebGL shader passes, composited back

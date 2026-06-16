@@ -95,7 +95,7 @@ export function applyWebGLBlitOffsetPass(
 
 /** Blits source directly into dest without modification. */
 export function applyWebGLBlitPass(state: WebGLRenderState, source: WebGLRenderTarget, dest: WebGLRenderTarget): void {
-  const loc = getBlitShaderWebGL(state);
+  const loc = getWebGLBlitShader(state);
   drawWebGLFilterPass(state, source, dest, loc, () => {});
 }
 
@@ -133,16 +133,6 @@ export function applyWebGLTintPass(
   });
 }
 
-export function getBlitShaderWebGL(state: WebGLRenderState): WebGLFilterLocations {
-  let loc = blitShaders.get(state);
-  if (loc === undefined) {
-    const gl = (state as WebGLRenderStateInternal).gl;
-    loc = compileWebGLFilterProgram(gl, BLIT_FRAGMENT_SRC);
-    blitShaders.set(state, loc);
-  }
-  return loc;
-}
-
 export function getWebGLBlitOffsetShader(state: WebGLRenderState): BlitOffsetShaderLocations {
   let loc = blitOffsetShaders.get(state);
   if (loc === undefined) {
@@ -150,6 +140,16 @@ export function getWebGLBlitOffsetShader(state: WebGLRenderState): BlitOffsetSha
     const base = compileWebGLFilterProgram(gl, BLIT_OFFSET_FRAGMENT_SRC);
     loc = { ...base, locOffset: gl.getUniformLocation(base.program, 'u_offset')! };
     blitOffsetShaders.set(state, loc);
+  }
+  return loc;
+}
+
+export function getWebGLBlitShader(state: WebGLRenderState): WebGLFilterLocations {
+  let loc = blitShaders.get(state);
+  if (loc === undefined) {
+    const gl = (state as WebGLRenderStateInternal).gl;
+    loc = compileWebGLFilterProgram(gl, BLIT_FRAGMENT_SRC);
+    blitShaders.set(state, loc);
   }
   return loc;
 }

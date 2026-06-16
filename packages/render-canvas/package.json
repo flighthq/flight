@@ -29,6 +29,7 @@
   "dependencies": {
     "@flighthq/assets": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/materials": "*",
     "@flighthq/render": "*",
     "@flighthq/node": "*",
     "@flighthq/displayobject": "*",
