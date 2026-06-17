@@ -3,6 +3,7 @@ import {
   createWebGPUCanvasElement,
   createWebGPURenderState,
   defaultWebGPUParticleEmitterRenderer,
+  enableWebGPUBlendModeSupport,
   ParticleEmitterKind,
   prepareSpriteRender,
   registerDefaultWebGPUMaterial,
@@ -22,6 +23,8 @@ export const state = await createWebGPURenderState(canvas, {
 });
 registerRenderer(state, ParticleEmitterKind, defaultWebGPUParticleEmitterRenderer);
 registerDefaultWebGPUMaterial(state);
+// Opt into per-node blend modes so the emitter's additive (glow) blend takes effect.
+enableWebGPUBlendModeSupport(state);
 export const scale = pixelRatio;
 
 export function render(root: SpriteNode): void {
