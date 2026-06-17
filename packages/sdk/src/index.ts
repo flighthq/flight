@@ -9,6 +9,7 @@ export * from '@flighthq/filters-webgpu';
 export * from '@flighthq/geometry';
 export * from '@flighthq/input';
 export * from '@flighthq/interaction';
+export * from '@flighthq/log';
 export * from '@flighthq/materials';
 export * from '@flighthq/media';
 export * from '@flighthq/node';

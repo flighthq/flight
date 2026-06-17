@@ -53,6 +53,7 @@ export * from './InteractionSignals';
 export * from './KeyboardEventData';
 export * from './KeyCode';
 export * from './KeyModifier';
+export * from './Log';
 export * from './Material';
 export * from './Matrix';
 export * from './Matrix3';
