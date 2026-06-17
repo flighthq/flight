@@ -13,21 +13,20 @@ import { RenderFeatures } from '@flighthq/types';
 import { enableRenderFeatures, registerRenderer } from './renderer';
 import {
   beginRenderNodeUpdate,
-  createDisplayObjectRenderNode,
   createRenderNode,
   createRenderNode2D,
-  createSpriteRenderNode,
-  getDisplayObjectRenderNode,
-  getOrCreateDisplayObjectRenderNode,
-  getOrCreateRenderNode,
-  getOrCreateSpriteRenderNode,
-  getSpriteRenderNode,
+  getOrCreateRenderNode2D,
+  getRenderNode2D,
   installRenderAdaptHook,
   isRenderNodeDirty,
   isRenderNodeVisible,
   prepareDisplayObjectRender,
+  prepareMasks,
   prepareSpriteRender,
+  updateNodeClipRectangle,
+  updateRenderNode2D,
   updateRenderNodeRenderer,
+  walkNode,
 } from './renderNode';
 import { createRenderState } from './renderState';
 
@@ -45,27 +44,8 @@ describe('beginRenderNodeUpdate', () => {
   it('is a no-op and does not throw', () => {
     const state = createRenderState();
     const source = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, source);
+    const data = createRenderNode2D(state, source);
     expect(() => beginRenderNodeUpdate(source, data)).not.toThrow();
-  });
-});
-
-describe('createDisplayObjectRenderNode', () => {
-  it('includes a transform2D matrix', () => {
-    const state = createRenderState();
-    const obj = createDisplayObject();
-    const node = createDisplayObjectRenderNode(state, obj);
-    expect(node.transform2D).toBeDefined();
-  });
-
-  it('initializes display-object-specific fields', () => {
-    const state = createRenderState();
-    const obj = createDisplayObject();
-    const node = createDisplayObjectRenderNode(state, obj);
-    expect(node.isMaskFrameID).toBe(-1);
-    expect(node.maskDepth).toBe(0);
-    expect(node.clipRectangleDepth).toBe(0);
-    expect(node.traverseChildren).toBe(true);
   });
 });
 
@@ -121,117 +101,63 @@ describe('createRenderNode2D', () => {
     const node = createRenderNode2D(state, obj);
     expect(node.source).toBe(obj);
   });
-});
 
-describe('createSpriteRenderNode', () => {
-  it('includes a transform2D matrix', () => {
+  it('initializes the 2D render-node fields the same way for sprites and display objects', () => {
     const state = createRenderState();
-    const sprite = createSprite();
-    const node = createSpriteRenderNode(state, sprite);
-    expect(node.transform2D).toBeDefined();
-  });
-
-  it('initializes traverseChildren to true', () => {
-    const state = createRenderState();
-    const sprite = createSprite();
-    const node = createSpriteRenderNode(state, sprite);
-    expect(node.traverseChildren).toBe(true);
+    const objNode = createRenderNode2D(state, createDisplayObject());
+    const spriteNode = createRenderNode2D(state, createSprite());
+    for (const node of [objNode, spriteNode]) {
+      expect(node.isMaskFrameID).toBe(-1);
+      expect(node.maskDepth).toBe(0);
+      expect(node.clipRectangleDepth).toBe(0);
+      expect(node.traverseChildren).toBe(true);
+    }
   });
 });
 
-describe('getDisplayObjectRenderNode', () => {
-  it('returns undefined when no node has been created', () => {
-    const state = createRenderState();
-    const obj = createDisplayObject();
-    expect(getDisplayObjectRenderNode(state, obj)).toBeUndefined();
-  });
-
-  it('returns the node after getOrCreateDisplayObjectRenderNode', () => {
-    const state = createRenderState();
-    const obj = createDisplayObject();
-    const created = getOrCreateDisplayObjectRenderNode(state, obj);
-    expect(getDisplayObjectRenderNode(state, obj)).toBe(created);
-  });
-});
-
-describe('getOrCreateDisplayObjectRenderNode', () => {
+describe('getOrCreateRenderNode2D', () => {
   it('creates a node on first call', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    const node = getOrCreateDisplayObjectRenderNode(state, obj);
+    const node = getOrCreateRenderNode2D(state, obj);
     expect(node.source).toBe(obj);
+    expect(node.traverseChildren).toBe(true);
   });
 
   it('returns the same node on subsequent calls', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    const a = getOrCreateDisplayObjectRenderNode(state, obj);
-    const b = getOrCreateDisplayObjectRenderNode(state, obj);
+    const a = getOrCreateRenderNode2D(state, obj);
+    const b = getOrCreateRenderNode2D(state, obj);
     expect(a).toBe(b);
-  });
-});
-
-describe('getOrCreateRenderNode', () => {
-  it('creates a new node on first call', () => {
-    const state = createRenderState();
-    const source = makeSource();
-    const node = getOrCreateRenderNode(state, source, createRenderNode);
-    expect(node).toBeDefined();
-    expect(node.source).toBe(source);
-  });
-
-  it('returns the same node on subsequent calls', () => {
-    const state = createRenderState();
-    const source = makeSource();
-    const node1 = getOrCreateRenderNode(state, source, createRenderNode);
-    const node2 = getOrCreateRenderNode(state, source, createRenderNode);
-    expect(node1).toBe(node2);
   });
 
   it('syncs renderer when rendererMapID has changed', () => {
     const state = createRenderState();
-    const source = makeSource();
-    const node = getOrCreateRenderNode(state, source, createRenderNode);
+    const source = createSprite();
+    const node = getOrCreateRenderNode2D(state, source);
     expect(node.renderer).toBeNull();
 
     const renderer = makeRenderer();
     registerRenderer(state, source.kind, renderer as any);
-    getOrCreateRenderNode(state, source, createRenderNode);
+    getOrCreateRenderNode2D(state, source);
 
     expect(node.renderer).toBe(renderer);
   });
 });
 
-describe('getOrCreateSpriteRenderNode', () => {
-  it('creates a sprite render node on first call', () => {
-    const state = createRenderState();
-    const sprite = createSprite();
-    const node = getOrCreateSpriteRenderNode(state, sprite);
-    expect(node.source).toBe(sprite);
-    expect(node.traverseChildren).toBe(true);
-  });
-
-  it('returns the same node on subsequent calls', () => {
-    const state = createRenderState();
-    const sprite = createSprite();
-    const a = getOrCreateSpriteRenderNode(state, sprite);
-    const b = getOrCreateSpriteRenderNode(state, sprite);
-    expect(a).toBe(b);
-  });
-});
-
-describe('getSpriteRenderNode', () => {
+describe('getRenderNode2D', () => {
   it('returns undefined when no node has been created', () => {
     const state = createRenderState();
-    const sprite = createSprite();
-    expect(getSpriteRenderNode(state, sprite)).toBeUndefined();
+    const obj = createDisplayObject();
+    expect(getRenderNode2D(state, obj)).toBeUndefined();
   });
 
-  it('returns the node after getOrCreateSpriteRenderNode', () => {
+  it('returns the node after getOrCreateRenderNode2D', () => {
     const state = createRenderState();
-    const sprite = createSprite();
-    const created = getOrCreateSpriteRenderNode(state, sprite);
-    expect(getSpriteRenderNode(state, sprite)).toBe(created);
+    const obj = createDisplayObject();
+    const created = getOrCreateRenderNode2D(state, obj);
+    expect(getRenderNode2D(state, obj)).toBe(created);
   });
 });
 
@@ -245,7 +171,7 @@ describe('isRenderNodeDirty', () => {
   it('returns false when source and parent are clean', () => {
     const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
     const source = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, source);
+    const data = createRenderNode2D(state, source);
     data.lastAppearanceID = getNodeAppearanceRevision(source);
     data.lastLocalTransformID = getNodeLocalTransformRevision(source);
 
@@ -255,7 +181,7 @@ describe('isRenderNodeDirty', () => {
   it('returns true when appearance changes', () => {
     const state = createRenderState();
     const source = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, source);
+    const data = createRenderNode2D(state, source);
     data.lastAppearanceID = getNodeAppearanceRevision(source);
     data.lastLocalTransformID = getNodeLocalTransformRevision(source);
     invalidateNodeAppearance(source);
@@ -266,10 +192,10 @@ describe('isRenderNodeDirty', () => {
   it('returns true when parent was updated this frame', () => {
     const state = createRenderState();
     const source = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, source);
+    const data = createRenderNode2D(state, source);
     data.lastAppearanceID = getNodeAppearanceRevision(source);
     data.lastLocalTransformID = getNodeLocalTransformRevision(source);
-    const parentData = createDisplayObjectRenderNode(state, createDisplayObject());
+    const parentData = createRenderNode2D(state, createDisplayObject());
     parentData.transformFrameID = state.currentFrameID;
 
     expect(isRenderNodeDirty(state, source, data, parentData)).toBe(true);
@@ -278,7 +204,7 @@ describe('isRenderNodeDirty', () => {
   it('returns true when transform changes', () => {
     const state = createRenderState();
     const source = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, source);
+    const data = createRenderNode2D(state, source);
     data.transform2D = createMatrix();
     data.lastAppearanceID = getNodeAppearanceRevision(source);
     data.lastLocalTransformID = getNodeLocalTransformRevision(source);
@@ -292,8 +218,7 @@ describe('isRenderNodeDirty', () => {
 describe('isRenderNodeVisible', () => {
   it('returns false when alpha is zero', () => {
     const state = createRenderState();
-    const obj = createDisplayObject();
-    const node = createDisplayObjectRenderNode(state, obj);
+    const node = createRenderNode2D(state, createDisplayObject());
     node.alpha = 0;
 
     expect(isRenderNodeVisible(node)).toBe(false);
@@ -301,8 +226,7 @@ describe('isRenderNodeVisible', () => {
 
   it('returns false when the node is hidden', () => {
     const state = createRenderState();
-    const obj = createDisplayObject();
-    const node = createDisplayObjectRenderNode(state, obj);
+    const node = createRenderNode2D(state, createDisplayObject());
     node.visible = false;
 
     expect(isRenderNodeVisible(node)).toBe(false);
@@ -310,8 +234,7 @@ describe('isRenderNodeVisible', () => {
 
   it('returns false when the transform collapses both axes', () => {
     const state = createRenderState();
-    const obj = createDisplayObject();
-    const node = createDisplayObjectRenderNode(state, obj);
+    const node = createRenderNode2D(state, createDisplayObject());
     node.transform2D.a = 0;
     node.transform2D.d = 0;
 
@@ -320,8 +243,7 @@ describe('isRenderNodeVisible', () => {
 
   it('returns true for a visible node with positive alpha and non-collapsed transform', () => {
     const state = createRenderState();
-    const obj = createDisplayObject();
-    const node = createDisplayObjectRenderNode(state, obj);
+    const node = createRenderNode2D(state, createDisplayObject());
 
     expect(isRenderNodeVisible(node)).toBe(true);
   });
@@ -383,6 +305,19 @@ describe('prepareDisplayObjectRender', () => {
   });
 });
 
+describe('prepareMasks', () => {
+  it('marks mask nodes for the current frame and sets mask depth on the masked node', () => {
+    const state = createRenderState();
+    const root = createDisplayObject();
+    const maskObj = createDisplayObject();
+    root.mask = maskObj;
+    prepareDisplayObjectRender(state, root);
+    const maskData = getOrCreateRenderNode2D(state, maskObj);
+    expect(maskData.isMaskFrameID).toBe(state.currentFrameID);
+    expect(getOrCreateRenderNode2D(state, root).maskDepth).toBe(1);
+  });
+});
+
 describe('prepareSpriteRender', () => {
   it('creates render nodes for all enabled nodes in the tree', () => {
     const state = createRenderState();
@@ -422,6 +357,53 @@ describe('prepareSpriteRender', () => {
     prepareSpriteRender(state, root);
 
     expect(prepareSpriteRender(state, root)).toBe(false);
+  });
+});
+
+describe('updateNodeClipRectangle', () => {
+  it('adds one to the parent depth when the node has a clip rectangle', () => {
+    const state = createRenderState();
+    const node = createDisplayObject();
+    node.clipRectangle = {} as any;
+    const data = getOrCreateRenderNode2D(state, node);
+    updateNodeClipRectangle(state, node, data, undefined);
+    expect(data.clipRectangleDepth).toBe(1);
+  });
+
+  it('inherits the parent depth when the node has no clip rectangle', () => {
+    const state = createRenderState();
+    const node = createDisplayObject();
+    const data = getOrCreateRenderNode2D(state, node);
+    const parentData = getOrCreateRenderNode2D(state, createDisplayObject());
+    parentData.clipRectangleDepth = 2;
+    updateNodeClipRectangle(state, node, data, parentData);
+    expect(data.clipRectangleDepth).toBe(2);
+  });
+
+  it('contributes no depth for a sprite node that lacks the clip-rectangle trait', () => {
+    const state = createRenderState();
+    const sprite = createSprite();
+    const data = getOrCreateRenderNode2D(state, sprite);
+    updateNodeClipRectangle(state, sprite, data, undefined);
+    expect(data.clipRectangleDepth).toBe(0);
+  });
+});
+
+describe('updateRenderNode2D', () => {
+  it('updates appearance on a display-object render node', () => {
+    const state = createRenderState();
+    const root = createDisplayObject();
+    const data = getOrCreateRenderNode2D(state, root);
+    updateRenderNode2D(state, root, data, undefined);
+    expect(data.alpha).toBe(1);
+  });
+
+  it('updates appearance on a sprite render node through the same visitor', () => {
+    const state = createRenderState();
+    const root = createSprite();
+    const data = getOrCreateRenderNode2D(state, root);
+    updateRenderNode2D(state, root, data, undefined);
+    expect(data.alpha).toBe(1);
   });
 });
 
@@ -465,5 +447,29 @@ describe('updateRenderNodeRenderer', () => {
     node.source = newSource;
     updateRenderNodeRenderer(state, node);
     expect(node.rendererDataSource).toBe(newSource);
+  });
+});
+
+describe('walkNode', () => {
+  it('calls the visitor for each enabled node and reports dirty', () => {
+    const state = createRenderState();
+    const root = createSprite();
+    const child = createSprite();
+    addNodeChild(root, child);
+    const visit = vi.fn();
+    const dirty = walkNode(state, root, visit);
+    expect(visit).toHaveBeenCalledTimes(2);
+    expect(dirty).toBe(true);
+  });
+
+  it('skips a node whose render node has traverseChildren false', () => {
+    const state = createRenderState();
+    const root = createSprite();
+    const child = createSprite();
+    addNodeChild(root, child);
+    getOrCreateRenderNode2D(state, root).traverseChildren = false;
+    const visit = vi.fn();
+    walkNode(state, root, visit);
+    expect(state.renderNodeMap.get(child)).toBeUndefined();
   });
 });

@@ -4,7 +4,6 @@ import { BlendMode, RenderFeatures, type RenderState } from '@flighthq/types';
 export function createRenderState(obj?: Partial<RenderState>): RenderState {
   return createEntity({
     allowSmoothing: obj?.allowSmoothing ?? true,
-    appearanceHooks: obj?.appearanceHooks ?? null,
     backgroundColor: obj?.backgroundColor ?? 0,
     backgroundColorRGBA: obj?.backgroundColorRGBA ?? [],
     backgroundColorString: obj?.backgroundColorString ?? '',
@@ -14,7 +13,6 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
     displayObjectClipHooks: obj?.displayObjectClipHooks ?? null,
     displayObjectMaskRendererMap: obj?.displayObjectMaskRendererMap ?? new Map(),
     displayObjectMaskRendererMapID: obj?.displayObjectMaskRendererMapID ?? 0,
-    materialHooks: obj?.materialHooks ?? null,
     pixelRatio: obj?.pixelRatio ?? 1,
     renderNodeAdapterMap: obj?.renderNodeAdapterMap ?? new WeakMap(),
     renderNodeMap: obj?.renderNodeMap ?? new WeakMap(),

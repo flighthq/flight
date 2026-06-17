@@ -2,7 +2,7 @@ import { createDisplayObject } from '@flighthq/displayobject';
 import { invalidateNodeLocalTransform } from '@flighthq/node';
 
 import type { RenderNodeStateInternal } from './internal';
-import { createDisplayObjectRenderNode } from './renderNode';
+import { createRenderNode2D } from './renderNode';
 import { createRenderState } from './renderState';
 import { updateDisplayObjectRenderTransform, updateRenderNode2DTransform } from './transform2d';
 
@@ -10,14 +10,14 @@ describe('updateDisplayObjectRenderTransform', () => {
   it('returns true and bakes transform on first call', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, obj);
+    const data = createRenderNode2D(state, obj);
     expect(updateDisplayObjectRenderTransform(state, data)).toBe(true);
   });
 
   it('returns false when local transform is unchanged', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, obj);
+    const data = createRenderNode2D(state, obj);
     updateDisplayObjectRenderTransform(state, data);
     expect(updateDisplayObjectRenderTransform(state, data)).toBe(false);
   });
@@ -25,7 +25,7 @@ describe('updateDisplayObjectRenderTransform', () => {
   it('returns true after transform changes', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, obj);
+    const data = createRenderNode2D(state, obj);
     updateDisplayObjectRenderTransform(state, data);
     obj.x = 10;
     invalidateNodeLocalTransform(obj);
@@ -36,7 +36,7 @@ describe('updateDisplayObjectRenderTransform', () => {
     const state = createRenderState();
     (state as RenderNodeStateInternal).currentFrameID = 3;
     const obj = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, obj);
+    const data = createRenderNode2D(state, obj);
     updateDisplayObjectRenderTransform(state, data);
     expect(data.transformFrameID).toBe(3);
   });
@@ -46,14 +46,14 @@ describe('updateRenderNode2DTransform', () => {
   it('returns true and updates transform on first call', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, obj);
+    const data = createRenderNode2D(state, obj);
     expect(updateRenderNode2DTransform(state, data)).toBe(true);
   });
 
   it('returns false when nothing changed', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, obj);
+    const data = createRenderNode2D(state, obj);
     updateRenderNode2DTransform(state, data);
     expect(updateRenderNode2DTransform(state, data)).toBe(false);
   });
@@ -62,11 +62,11 @@ describe('updateRenderNode2DTransform', () => {
     const state = createRenderState();
     (state as RenderNodeStateInternal).currentFrameID = 2;
     const parentObj = createDisplayObject();
-    const parentData = createDisplayObjectRenderNode(state, parentObj);
+    const parentData = createRenderNode2D(state, parentObj);
     parentData.transformFrameID = state.currentFrameID;
 
     const obj = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, obj);
+    const data = createRenderNode2D(state, obj);
     updateRenderNode2DTransform(state, data);
     expect(updateRenderNode2DTransform(state, data, parentData)).toBe(true);
   });
@@ -75,7 +75,7 @@ describe('updateRenderNode2DTransform', () => {
     const state = createRenderState();
     (state as RenderNodeStateInternal).currentFrameID = 5;
     const obj = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, obj);
+    const data = createRenderNode2D(state, obj);
     updateRenderNode2DTransform(state, data);
     expect(data.transformFrameID).toBe(5);
   });
@@ -84,13 +84,13 @@ describe('updateRenderNode2DTransform', () => {
     const state = createRenderState();
     const parentObj = createDisplayObject();
     parentObj.x = 10;
-    const parentData = createDisplayObjectRenderNode(state, parentObj);
+    const parentData = createRenderNode2D(state, parentObj);
     updateRenderNode2DTransform(state, parentData);
     parentData.transformFrameID = state.currentFrameID;
 
     const obj = createDisplayObject();
     obj.x = 5;
-    const data = createDisplayObjectRenderNode(state, obj);
+    const data = createRenderNode2D(state, obj);
     updateRenderNode2DTransform(state, data, parentData);
     expect(data.transform2D.tx).toBeCloseTo(15);
   });

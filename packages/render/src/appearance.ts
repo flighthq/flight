@@ -21,14 +21,12 @@ function recalculateAppearance(state: RenderState, data: RenderNode, parentData?
     if (!data.visible) return;
     data.alpha = source.alpha * parentData.alpha;
     if (data.alpha <= 0) return;
-    state.appearanceHooks?.update(state, data, parentData);
     data.blendMode = source.blendMode;
   } else {
     data.visible = source.visible;
     if (!data.visible) return;
     data.alpha = source.alpha * state.renderAlpha;
     if (data.alpha <= 0) return;
-    state.appearanceHooks?.update(state, data, undefined);
     data.blendMode = state.renderBlendMode !== null ? state.renderBlendMode : source.blendMode;
   }
   data.appearanceFrameID = state.currentFrameID;

@@ -1,11 +1,11 @@
 import { copyMatrix, multiplyMatrix } from '@flighthq/geometry';
 import { getNodeLocalTransformMatrix, getNodeLocalTransformRevision } from '@flighthq/node';
-import type { DisplayObjectRenderNode, HasTransform2D, Node, RenderNode2D, RenderState } from '@flighthq/types';
+import type { HasTransform2D, Node, RenderNode2D, RenderState } from '@flighthq/types';
 
 export function updateDisplayObjectRenderTransform(
   state: RenderState,
-  data: DisplayObjectRenderNode,
-  parentData?: DisplayObjectRenderNode,
+  data: RenderNode2D,
+  parentData?: RenderNode2D,
 ): boolean {
   return updateRenderNode2DTransform(state, data, parentData);
 }

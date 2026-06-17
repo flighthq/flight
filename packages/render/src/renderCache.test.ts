@@ -12,7 +12,7 @@ import {
   RenderCacheKind,
   useRenderCache,
 } from './renderCache';
-import { createDisplayObjectRenderNode } from './renderNode';
+import { createRenderNode2D } from './renderNode';
 import { getRenderNodeAdapter } from './renderNodeAdapter';
 import { createRenderState } from './renderState';
 
@@ -28,7 +28,7 @@ describe('createRenderCacheAdapter', () => {
   it('adapt returns null and renders normally when no cache is attached', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, obj);
+    const data = createRenderNode2D(state, obj);
     const adapter = createRenderCacheAdapter();
     expect(adapter.adapt(state, obj, data)).toBeNull();
   });
@@ -36,7 +36,7 @@ describe('createRenderCacheAdapter', () => {
   it('switches the render node to the cache kind and stops traversal, keeping the source node', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, obj);
+    const data = createRenderNode2D(state, obj);
     const cache = createRenderCache();
     cache.transform.tx = 7;
     const adapter = createRenderCacheAdapter(cache);
@@ -51,7 +51,7 @@ describe('createRenderCacheAdapter', () => {
   it('emits onPrepare when signals are enabled', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, obj);
+    const data = createRenderNode2D(state, obj);
     const adapter = createRenderCacheAdapter();
     enableRenderCacheAdapterSignals(adapter);
     const listener = vi.fn();
