@@ -4,6 +4,7 @@ import type { DisplayObject, DisplayObjectRenderer, RenderProxy2D, WebGLRenderSt
 
 import type { WebGLRenderStateInternal } from './internal';
 import { useWebGLProgram } from './webglDraw';
+import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 export function drawWebGLDisplayObject(_state: WebGLRenderState, _renderProxy: RenderProxy2D): void {
   // Plain display objects have no visual geometry of their own.
@@ -61,6 +62,7 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
     clipHooks?.pushClipRectangle(state, data, current, stackLength > prePushLength);
   }
 
+  flushWebGLSpriteBatch(internal);
   clipHooks?.finalize(state);
 }
 

@@ -7,6 +7,7 @@ import type { DisplayObjectRenderer, RenderProxy2D, RenderState, Text, TextForma
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';
 import { resolveWebGLShader } from './webglShaderBinding';
+import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 // Offscreen canvas for rasterising text
 let _offscreenCanvas: HTMLCanvasElement | null = null;
@@ -29,6 +30,7 @@ const _textureMap = new WeakMap<RenderProxy2D, WebGLTexture>();
 
 export function drawWebGLText(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
+  flushWebGLSpriteBatch(internal);
   const source = renderProxy.source as Text;
   const { text, textFormat } = source.data;
   if (text.length === 0) return;
