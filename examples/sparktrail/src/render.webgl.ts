@@ -3,6 +3,7 @@ import {
   createWebGLCanvasElement,
   createWebGLRenderState,
   defaultWebGLParticleEmitterRenderer,
+  enableWebGLBlendModeSupport,
   ParticleEmitterKind,
   prepareSpriteRender,
   registerDefaultWebGLMaterial,
@@ -21,6 +22,8 @@ export const state = createWebGLRenderState(canvas, {
 });
 registerRenderer(state, ParticleEmitterKind, defaultWebGLParticleEmitterRenderer);
 registerDefaultWebGLMaterial(state);
+// Opt into per-node blend modes so the emitter's additive (glow) blend takes effect.
+enableWebGLBlendModeSupport(state);
 export const scale = pixelRatio;
 
 export function render(root: SpriteNode): void {

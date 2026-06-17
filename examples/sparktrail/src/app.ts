@@ -8,6 +8,7 @@ import {
 } from '@flighthq/particles';
 import {
   addTextureAtlasRegion,
+  BlendMode,
   createImageSource,
   createParticleEmitter,
   createTextureAtlas,
@@ -26,10 +27,15 @@ const sparkCanvas = document.createElement('canvas');
 sparkCanvas.width = 16;
 sparkCanvas.height = 16;
 const ctx = sparkCanvas.getContext('2d')!;
+// Additive glow tuning: contribution is color × alpha, so keep the saturated warmth at HIGH alpha
+// (a small hot core, a vivid orange body that stays opaque, a strong red still carrying alpha)
+// and only fade to nothing at the rim. This reads as vivid embers under additive+premultiplied,
+// without relying on the old straight-alpha bug (colored pixels at alpha 0) to fake saturation.
 const grad = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
-grad.addColorStop(0, 'rgba(255, 255, 200, 1)');
-grad.addColorStop(0.3, 'rgba(255, 120, 0, 0.9)');
-grad.addColorStop(1, 'rgba(180, 0, 0, 0)');
+grad.addColorStop(0, 'rgba(255, 248, 170, 1)'); // hot warm-white core
+grad.addColorStop(0.25, 'rgba(255, 150, 20, 1)'); // vivid orange, full alpha
+grad.addColorStop(0.6, 'rgba(255, 55, 0, 0.7)'); // saturated red-orange, still carrying alpha
+grad.addColorStop(1, 'rgba(150, 0, 0, 0)'); // fade out at the rim
 ctx.fillStyle = grad;
 ctx.fillRect(0, 0, 16, 16);
 
@@ -38,6 +44,10 @@ addTextureAtlasRegion(atlas, 0, 0, 16, 16);
 
 const emitter = createParticleEmitter();
 emitter.data.atlas = atlas;
+// Sparks are a glow: add their (premultiplied) light onto the dark background so overlapping
+// embers brighten, instead of compositing normally. With premultiplied textures the warm,
+// low-alpha tail correctly contributes a soft additive falloff rather than a hard color edge.
+emitter.blendMode = BlendMode.Add;
 // World-space particles are rendered directly in physical pixels and ignore the
 // emitter node's transform, so the node stays unscaled and we author magnitudes
 // in physical px below (× scale).
