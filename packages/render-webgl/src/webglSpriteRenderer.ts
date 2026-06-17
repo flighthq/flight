@@ -1,5 +1,6 @@
 import { noopRendererData } from '@flighthq/render';
 import type { RenderProxy2D, RenderState, Sprite, SpriteRenderer } from '@flighthq/types';
+import { BatchFormat } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
@@ -58,6 +59,7 @@ function submitWebGLSpriteNode(state: RenderState, spriteNode: RenderProxy2D): v
 }
 
 export const defaultWebGLSpriteRenderer: SpriteRenderer = {
+  format: BatchFormat.Quad,
   createData: noopRendererData,
   submit: submitWebGLSpriteNode,
 };

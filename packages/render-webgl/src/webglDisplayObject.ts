@@ -3,7 +3,6 @@ import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@fligh
 import type { DisplayObject, DisplayObjectRenderer, RenderProxy2D, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import { useWebGLProgram } from './webglDraw';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 export function drawWebGLDisplayObject(_state: WebGLRenderState, _renderProxy: RenderProxy2D): void {
@@ -30,8 +29,6 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
 
   let stackLength = 1;
   tempStack[0] = source;
-
-  useWebGLProgram(internal);
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as DisplayObject;

@@ -1,5 +1,6 @@
 import { noopRendererData } from '@flighthq/render';
 import type { Bitmap, DisplayObjectRenderer, RenderProxy2D, RenderState } from '@flighthq/types';
+import { BatchFormat } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
@@ -79,6 +80,7 @@ export function drawWebGLBitmapMask(state: RenderState, data: RenderProxy2D): vo
 }
 
 export const defaultWebGLBitmapRenderer: DisplayObjectRenderer = {
+  format: BatchFormat.Quad,
   createData: noopRendererData,
   submit: drawWebGLBitmap,
 };
