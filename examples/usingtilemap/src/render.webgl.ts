@@ -4,6 +4,7 @@ import {
   createWebGLRenderState,
   defaultWebGLTilemapRenderer,
   prepareSpriteRender,
+  registerDefaultWebGLMaterial,
   registerRenderer,
   renderWebGLBackground,
   renderWebGLSprite,
@@ -20,6 +21,7 @@ export const state = createWebGLRenderState(canvas, {
   imageSmoothingEnabled: false,
 });
 registerRenderer(state, TilemapKind, defaultWebGLTilemapRenderer);
+registerDefaultWebGLMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: Tilemap): void {

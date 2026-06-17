@@ -20,6 +20,7 @@ import {
   getWebGLRenderCacheTarget,
   prepareDisplayObjectRender,
   refreshWebGLRenderCache,
+  registerDefaultWebGLMaterial,
   registerRenderer,
   registerWebGLShapeCommands,
   renderWebGLBackground,
@@ -46,6 +47,7 @@ registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
 registerRenderer(state, TextKind, defaultWebGLTextRenderer);
 registerWebGLShapeCommands(defaultWebGLShapeCommands);
+registerDefaultWebGLMaterial(state);
 enableWebGLRenderCache(state);
 export const scale = pixelRatio;
 

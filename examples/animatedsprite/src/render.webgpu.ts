@@ -4,6 +4,7 @@ import {
   createWebGPURenderState,
   defaultWebGPUSpriteRenderer,
   prepareSpriteRender,
+  registerDefaultWebGPUMaterial,
   registerRenderer,
   renderWebGPUBackground,
   renderWebGPUSprite,
@@ -21,6 +22,7 @@ export const state = await createWebGPURenderState(canvas, {
   imageSmoothingEnabled: false,
 });
 registerRenderer(state, SpriteKind, defaultWebGPUSpriteRenderer);
+registerDefaultWebGPUMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: Sprite): void {
