@@ -1,6 +1,5 @@
 export * from './appearance';
 export * from './color';
-export * from './colorTransform';
 export * from './material';
 export * from './renderCache';
 export * from './renderer';
