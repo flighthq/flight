@@ -66,7 +66,7 @@ describe('createWebGPUCacheState', () => {
     const cacheState = createWebGPUCacheState(screen);
     expect(cacheState.rendererMap.get(RenderCacheKind)).toBe(defaultWebGPURenderCacheRenderer);
     expect((cacheState as any).device).toBe((screen as any).device);
-    expect(cacheState.renderNodeMap).not.toBe(screen.renderNodeMap);
+    expect(cacheState.renderProxyMap).not.toBe(screen.renderProxyMap);
   });
 });
 

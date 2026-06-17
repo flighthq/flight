@@ -4,7 +4,7 @@ import type {
   DisplayObjectRenderer,
   Renderable,
   RendererData,
-  RenderNode2D,
+  RenderProxy2D,
   RenderState,
   Shape,
 } from '@flighthq/types';
@@ -32,14 +32,14 @@ function createWebGLShapeData(state: RenderState, _source: Renderable): Renderer
   return { canvas, ctx, texture, lastVersion: -1, lastW: 0, lastH: 0 } as unknown as RendererData;
 }
 
-export function drawWebGLShape(state: RenderState, renderNode: RenderNode2D): void {
+export function drawWebGLShape(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
-  const source = renderNode.source as Shape;
+  const source = renderProxy.source as Shape;
   const { commands, version } = source.data;
   if (commands.length === 0) return;
-  if (renderNode.rendererData === null) return;
+  if (renderProxy.rendererData === null) return;
 
-  const shapeData = renderNode.rendererData as unknown as WebGLShapeData;
+  const shapeData = renderProxy.rendererData as unknown as WebGLShapeData;
 
   const bounds = getNodeLocalBoundsRectangle(source);
   const w = Math.ceil(bounds.width);
@@ -71,9 +71,9 @@ export function drawWebGLShape(state: RenderState, renderNode: RenderNode2D): vo
   }
 
   const { shaderLoc, matrixArray } = internal;
-  setWebGLBaseUniforms(gl, shaderLoc, renderNode);
+  setWebGLBaseUniforms(gl, shaderLoc, renderProxy);
 
-  const t = renderNode.transform2D;
+  const t = renderProxy.transform2D;
   setWebGLMatrixFromValues(
     gl,
     shaderLoc,
@@ -90,7 +90,7 @@ export function drawWebGLShape(state: RenderState, renderNode: RenderNode2D): vo
   drawWebGLQuad(internal, 0, 0, w, h, 0, 0, 1, 1);
 }
 
-export function drawWebGLShapeMask(state: RenderState, data: RenderNode2D): void {
+export function drawWebGLShapeMask(state: RenderState, data: RenderProxy2D): void {
   drawWebGLShape(state, data);
 }
 

@@ -4,7 +4,7 @@ import type {
   DOMRenderState,
   Renderable,
   RendererData,
-  RenderNode2D,
+  RenderProxy2D,
   RenderState,
   Video,
 } from '@flighthq/types';
@@ -19,11 +19,11 @@ function createDOMVideoData(_state: RenderState, _source: Renderable): DOMVideoD
   return createEntity({ element: null });
 }
 
-export function drawDOMVideo(state: DOMRenderState, renderNode: RenderNode2D): void {
-  const data = renderNode.rendererData as DOMVideoData | null;
+export function drawDOMVideo(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+  const data = renderProxy.rendererData as DOMVideoData | null;
   if (data === null) return;
 
-  const source = renderNode.source as Video;
+  const source = renderProxy.source as Video;
   const element = source.data.source?.element ?? null;
   if (element === null || element.videoWidth === 0 || element.videoHeight === 0) return;
 
@@ -35,12 +35,12 @@ export function drawDOMVideo(state: DOMRenderState, renderNode: RenderNode2D): v
   element.style.width = `${element.videoWidth}px`;
   element.style.height = `${element.videoHeight}px`;
 
-  applyDOMStyle(state, element, renderNode);
+  applyDOMStyle(state, element, renderProxy);
   setDOMRendererElement(state, element);
 }
 
-export function drawDOMVideoMask(state: DOMRenderState, renderNode: RenderNode2D): void {
-  drawDOMVideo(state, renderNode);
+export function drawDOMVideoMask(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+  drawDOMVideo(state, renderProxy);
 }
 
 export const defaultDOMVideoRenderer: DisplayObjectRenderer = {

@@ -15,16 +15,16 @@ import type {
   InputText,
   InputTextRuntime,
   InputTextSelectionRectangle,
-  RenderNode2D,
+  RenderProxy2D,
 } from '@flighthq/types';
 
 import { drawCanvasRichText, drawCanvasRichTextMask } from './canvasRichText';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasInputText(state: CanvasRenderState, renderNode: RenderNode2D): void {
-  drawCanvasRichText(state, renderNode);
+export function drawCanvasInputText(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
+  drawCanvasRichText(state, renderProxy);
 
-  const source = renderNode.source as InputText;
+  const source = renderProxy.source as InputText;
   const runtime = getInputTextRuntime(source) as InputTextRuntime;
   if ((!runtime.focused && !source.data.alwaysShowSelection) || runtime.textLayout === null) return;
 
@@ -37,7 +37,7 @@ export function drawCanvasInputText(state: CanvasRenderState, renderNode: Render
   const context = state.context;
 
   context.save();
-  setCanvasTransform(state, context, renderNode.transform2D);
+  setCanvasTransform(state, context, renderProxy.transform2D);
   context.beginPath();
   context.rect(0, 0, fieldW, fieldH);
   context.clip();
@@ -45,7 +45,7 @@ export function drawCanvasInputText(state: CanvasRenderState, renderNode: Render
   getInputTextSelectionRectangles(selectionRectangles, source, runtime.textLayout);
   if (selectionRectangles.length > 0) {
     context.fillStyle = computeRGBHexString(source.data.selectionColor);
-    context.globalAlpha = Math.min(1, renderNode.alpha * source.data.selectionAlpha);
+    context.globalAlpha = Math.min(1, renderProxy.alpha * source.data.selectionAlpha);
     for (const rect of selectionRectangles) {
       context.fillRect(rect.x - scrollXOffset, rect.y - scrollYOffset, rect.width, rect.height);
     }
@@ -55,7 +55,7 @@ export function drawCanvasInputText(state: CanvasRenderState, renderNode: Render
     if (getCaretVisible(source, runtime.focused)) {
       getInputTextCaretRectangle(caretRectangle, source, runtime.textLayout);
       context.fillStyle = CARET_COLOR;
-      context.globalAlpha = renderNode.alpha;
+      context.globalAlpha = renderProxy.alpha;
       context.fillRect(
         caretRectangle.x - scrollXOffset,
         caretRectangle.y - scrollYOffset,
@@ -73,8 +73,8 @@ export const defaultCanvasInputTextRenderer: DisplayObjectRenderer = {
   submit: drawCanvasInputText,
 };
 
-function drawCanvasInputTextMask(state: CanvasRenderState, renderNode: RenderNode2D): void {
-  drawCanvasRichTextMask(state, renderNode);
+function drawCanvasInputTextMask(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
+  drawCanvasRichTextMask(state, renderProxy);
 }
 
 export const defaultCanvasInputTextMaskRenderer: DisplayObjectMaskRenderer = {

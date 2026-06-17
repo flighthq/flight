@@ -1,19 +1,19 @@
 import { copyMatrix, multiplyMatrix } from '@flighthq/geometry';
 import { getNodeLocalTransformMatrix, getNodeLocalTransformRevision } from '@flighthq/node';
-import type { HasTransform2D, Node, RenderNode2D, RenderState } from '@flighthq/types';
+import type { HasTransform2D, Node, RenderProxy2D, RenderState } from '@flighthq/types';
 
 export function updateDisplayObjectRenderTransform(
   state: RenderState,
-  data: RenderNode2D,
-  parentData?: RenderNode2D,
+  data: RenderProxy2D,
+  parentData?: RenderProxy2D,
 ): boolean {
-  return updateRenderNode2DTransform(state, data, parentData);
+  return updateRenderProxy2DTransform(state, data, parentData);
 }
 
-export function updateRenderNode2DTransform(
+export function updateRenderProxy2DTransform(
   state: RenderState,
-  data: RenderNode2D,
-  parentData?: RenderNode2D,
+  data: RenderProxy2D,
+  parentData?: RenderProxy2D,
 ): boolean {
   const localTransformID = getNodeLocalTransformRevision(data.source as Node);
   const parentDirty = parentData !== undefined && parentData.transformFrameID === state.currentFrameID;
@@ -27,7 +27,7 @@ export function updateRenderNode2DTransform(
   return false;
 }
 
-function recalculateRenderTransform2D(state: RenderState, data: RenderNode2D, parentData?: RenderNode2D): void {
+function recalculateRenderTransform2D(state: RenderState, data: RenderProxy2D, parentData?: RenderProxy2D): void {
   const transform2D = getNodeLocalTransformMatrix(data.source as Node & HasTransform2D);
   const parentTransform2D = parentData !== undefined ? parentData.transform2D : state.renderTransform2D;
   if (parentTransform2D !== null) {

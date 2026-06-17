@@ -1,23 +1,23 @@
 import { ColorTransformMaterialKind, UniformColorTransformMaterialKind } from '@flighthq/types';
 
-import { getWebGLRenderNodeColorTransform, registerWebGLColorTransformShader } from './webglMaterials';
+import { getWebGLRenderProxyColorTransform, registerWebGLColorTransformShader } from './webglMaterials';
 import { makeWebGLState } from './webglTestHelper';
 
-describe('getWebGLRenderNodeColorTransform', () => {
+describe('getWebGLRenderProxyColorTransform', () => {
   it('returns null when the node has no material', () => {
-    expect(getWebGLRenderNodeColorTransform({ material: null } as never)).toBeNull();
+    expect(getWebGLRenderProxyColorTransform({ material: null } as never)).toBeNull();
   });
 
   it('returns the value carried on a uniform color transform material', () => {
     const colorTransform = { redMultiplier: 0.5 };
     const node = { material: { kind: UniformColorTransformMaterialKind, colorTransform } } as never;
-    expect(getWebGLRenderNodeColorTransform(node)).toBe(colorTransform);
+    expect(getWebGLRenderProxyColorTransform(node)).toBe(colorTransform);
   });
 
   it('returns the per-node material data for a color transform material', () => {
     const colorTransform = { redMultiplier: 0.5 };
     const node = { material: { kind: ColorTransformMaterialKind }, materialData: colorTransform } as never;
-    expect(getWebGLRenderNodeColorTransform(node)).toBe(colorTransform);
+    expect(getWebGLRenderProxyColorTransform(node)).toBe(colorTransform);
   });
 });
 
@@ -50,7 +50,7 @@ describe('registerWebGLColorTransformShader', () => {
 
   it('binds color transform uniforms from the node material data', () => {
     const { state, gl } = makeWebGLState();
-    const renderNode = {
+    const renderProxy = {
       alpha: 0.75,
       material: { kind: ColorTransformMaterialKind },
       materialData: {
@@ -67,7 +67,7 @@ describe('registerWebGLColorTransformShader', () => {
     };
 
     registerWebGLColorTransformShader(state);
-    state.colorTransformBitmapShader!.bind(gl, state, renderNode as never);
+    state.colorTransformBitmapShader!.bind(gl, state, renderProxy as never);
 
     const loc = state.colorTransformBitmapShader!.locations;
     expect(gl.uniform1i).toHaveBeenCalledWith(loc.locHasColorTransform, 1);

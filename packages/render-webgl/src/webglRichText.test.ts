@@ -1,5 +1,5 @@
 ﻿import { createRichText } from '@flighthq/displayobject';
-import type { RenderNode2D, RichText } from '@flighthq/types';
+import type { RenderProxy2D, RichText } from '@flighthq/types';
 
 import {
   defaultWebGLRichTextRenderer,
@@ -9,7 +9,7 @@ import {
 } from './webglRichText';
 import { makeWebGLState } from './webglTestHelper';
 
-function makeRichTextNode(): RenderNode2D {
+function makeRichTextNode(): RenderProxy2D {
   const richText = createRichText();
   return {
     source: richText,
@@ -17,7 +17,7 @@ function makeRichTextNode(): RenderNode2D {
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     rendererData: null,
-  } as unknown as RenderNode2D;
+  } as unknown as RenderProxy2D;
 }
 
 describe('defaultWebGLRichTextRenderer', () => {
@@ -35,12 +35,12 @@ describe('defaultWebGLRichTextRenderer', () => {
 describe('drawWebGLRichText', () => {
   it('binds the active bitmap shader when drawing rich text', () => {
     const { state } = makeWebGLState();
-    const renderNode = makeRichTextNode();
-    (renderNode.source as RichText).data.text = 'hello';
+    const renderProxy = makeRichTextNode();
+    (renderProxy.source as RichText).data.text = 'hello';
 
-    drawWebGLRichText(state, renderNode);
+    drawWebGLRichText(state, renderProxy);
 
-    expect(state.defaultBitmapShader.bind).toHaveBeenCalledWith(state.gl, state, renderNode);
+    expect(state.defaultBitmapShader.bind).toHaveBeenCalledWith(state.gl, state, renderProxy);
   });
 
   it('returns early without drawing when text and chrome are empty', () => {
@@ -51,25 +51,25 @@ describe('drawWebGLRichText', () => {
 
   it('draws when text is non-empty', () => {
     const { state, gl } = makeWebGLState();
-    const renderNode = makeRichTextNode();
-    (renderNode.source as RichText).data.text = 'hello';
-    drawWebGLRichText(state, renderNode);
+    const renderProxy = makeRichTextNode();
+    (renderProxy.source as RichText).data.text = 'hello';
+    drawWebGLRichText(state, renderProxy);
     expect(gl.drawElements).toHaveBeenCalled();
   });
 
   it('draws resolved htmlText spans', () => {
     const { state, gl } = makeWebGLState();
-    const renderNode = makeRichTextNode();
-    (renderNode.source as RichText).data.htmlText = '<b>Bold</b><font color="#00ff00">Green</font>';
-    drawWebGLRichText(state, renderNode);
+    const renderProxy = makeRichTextNode();
+    (renderProxy.source as RichText).data.htmlText = '<b>Bold</b><font color="#00ff00">Green</font>';
+    drawWebGLRichText(state, renderProxy);
     expect(gl.drawElements).toHaveBeenCalled();
   });
 
   it('draws field chrome even when text is empty', () => {
     const { state, gl } = makeWebGLState();
-    const renderNode = makeRichTextNode();
-    (renderNode.source as RichText).data.background = true;
-    drawWebGLRichText(state, renderNode);
+    const renderProxy = makeRichTextNode();
+    (renderProxy.source as RichText).data.background = true;
+    drawWebGLRichText(state, renderProxy);
     expect(gl.drawElements).toHaveBeenCalled();
   });
 });
@@ -85,11 +85,11 @@ describe('drawWebGLRichTextMask', () => {
 describe('drawWebGLRichTextWithOverlay', () => {
   it('runs an optional canvas overlay after layout', () => {
     const { state } = makeWebGLState();
-    const renderNode = makeRichTextNode();
-    (renderNode.source as RichText).data.text = 'hello';
+    const renderProxy = makeRichTextNode();
+    (renderProxy.source as RichText).data.text = 'hello';
     const overlay = vi.fn();
 
-    drawWebGLRichTextWithOverlay(state, renderNode, overlay);
+    drawWebGLRichTextWithOverlay(state, renderProxy, overlay);
 
     expect(overlay).toHaveBeenCalled();
   });

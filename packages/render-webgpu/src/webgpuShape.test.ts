@@ -1,5 +1,5 @@
 import { createShape } from '@flighthq/displayobject';
-import { getOrCreateRenderNode2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
 import { defaultWebGPUShapeRenderer, drawWebGPUShape, drawWebGPUShapeMask } from './webgpuShape';
@@ -23,9 +23,9 @@ describe('drawWebGPUShape', () => {
 
     const shape = createShape();
     prepareDisplayObjectRender(state, shape);
-    const renderNode = getOrCreateRenderNode2D(state, shape);
+    const renderProxy = getOrCreateRenderProxy2D(state, shape);
 
-    expect(() => drawWebGPUShape(state, renderNode)).not.toThrow();
+    expect(() => drawWebGPUShape(state, renderProxy)).not.toThrow();
     submitWebGPURenderPass(state);
   });
 
@@ -33,9 +33,9 @@ describe('drawWebGPUShape', () => {
     const state = await createWebGPURenderStateForTest();
     const shape = createShape();
     prepareDisplayObjectRender(state, shape);
-    const renderNode = getOrCreateRenderNode2D(state, shape);
+    const renderProxy = getOrCreateRenderProxy2D(state, shape);
 
-    expect(() => drawWebGPUShape(state, renderNode)).not.toThrow();
+    expect(() => drawWebGPUShape(state, renderProxy)).not.toThrow();
   });
 });
 
@@ -45,8 +45,8 @@ describe('drawWebGPUShapeMask', () => {
     renderWebGPUBackground(state);
     const shape = createShape();
     prepareDisplayObjectRender(state, shape);
-    const renderNode = getOrCreateRenderNode2D(state, shape);
-    expect(() => drawWebGPUShapeMask(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, shape);
+    expect(() => drawWebGPUShapeMask(state, renderProxy)).not.toThrow();
     submitWebGPURenderPass(state);
   });
 });

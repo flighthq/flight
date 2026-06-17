@@ -1,5 +1,5 @@
 ﻿import { createText } from '@flighthq/displayobject';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { drawCanvasText, drawCanvasTextMask } from './canvasText';
@@ -16,17 +16,17 @@ describe('drawCanvasText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = '';
-    const renderNode = getOrCreateRenderNode2D(state, node);
-    expect(() => drawCanvasText(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+    expect(() => drawCanvasText(state, renderProxy)).not.toThrow();
   });
 
   it('calls fillText when the text field is non-empty', () => {
     const state = makeState();
     const node = createText();
     node.data.text = 'hello';
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
     const spy = vi.spyOn(state.context, 'fillText');
-    drawCanvasText(state, renderNode);
+    drawCanvasText(state, renderProxy);
     expect(spy).toHaveBeenCalled();
   });
 });
@@ -35,7 +35,7 @@ describe('drawCanvasTextMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const node = createText();
-    const renderNode = getOrCreateRenderNode2D(state, node);
-    expect(() => drawCanvasTextMask(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+    expect(() => drawCanvasTextMask(state, renderProxy)).not.toThrow();
   });
 });

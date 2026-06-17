@@ -1,5 +1,5 @@
 import { createBitmap } from '@flighthq/displayobject';
-import { getOrCreateRenderNode2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
 
 import type { WebGPURenderStateInternal } from './internal';
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
@@ -17,8 +17,8 @@ describe('drawWebGPUMask', () => {
     const internal = state as unknown as WebGPURenderStateInternal;
     const bitmap = createBitmap();
     prepareDisplayObjectRender(state, bitmap);
-    const renderNode = getOrCreateRenderNode2D(state, bitmap);
-    expect(() => drawWebGPUMask(internal, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
+    expect(() => drawWebGPUMask(internal, renderProxy)).not.toThrow();
     submitWebGPURenderPass(state);
   });
 });
@@ -31,9 +31,9 @@ describe('popWebGPUMask', () => {
 
     const bitmap = createBitmap();
     prepareDisplayObjectRender(state, bitmap);
-    const renderNode = getOrCreateRenderNode2D(state, bitmap);
+    const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
 
-    pushWebGPUMask(internal, renderNode);
+    pushWebGPUMask(internal, renderProxy);
     popWebGPUMask(internal);
     expect(internal.currentMaskDepth).toBe(0);
     submitWebGPURenderPass(state);
@@ -55,10 +55,10 @@ describe('pushWebGPUMask', () => {
 
     const bitmap = createBitmap();
     prepareDisplayObjectRender(state, bitmap);
-    const renderNode = getOrCreateRenderNode2D(state, bitmap);
+    const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
 
     expect(internal.currentMaskDepth).toBe(0);
-    pushWebGPUMask(internal, renderNode);
+    pushWebGPUMask(internal, renderProxy);
     expect(internal.currentMaskDepth).toBe(1);
     submitWebGPURenderPass(state);
   });

@@ -3,7 +3,7 @@ import { createMatrix } from '@flighthq/geometry';
 import { addNodeChild } from '@flighthq/node';
 import {
   enableRenderFeatures,
-  getOrCreateRenderNode2D,
+  getOrCreateRenderProxy2D,
   prepareDisplayObjectRender,
   registerDisplayObjectMaskRenderer,
   registerRenderer,
@@ -57,9 +57,9 @@ describe('drawWebGLDisplayObjectMask', () => {
     const renderer = makeRenderer();
     registerDisplayObjectMaskRenderer(state, DisplayObjectKind, renderer);
     addNodeChild(parent, child);
-    const childData = getOrCreateRenderNode2D(state, child);
+    const childData = getOrCreateRenderProxy2D(state, child);
 
-    drawWebGLDisplayObjectMask(state, getOrCreateRenderNode2D(state, parent));
+    drawWebGLDisplayObjectMask(state, getOrCreateRenderProxy2D(state, parent));
 
     expect(renderer.drawMask).toHaveBeenCalledWith(state, childData);
   });
@@ -78,7 +78,7 @@ describe('renderWebGLDisplayObject', () => {
     const renderer = makeRenderer();
     registerRenderer(state, DisplayObjectKind, renderer);
     const obj = createDisplayObject();
-    const data = getOrCreateRenderNode2D(state, obj);
+    const data = getOrCreateRenderProxy2D(state, obj);
     prepareDisplayObjectRender(state, obj);
 
     renderWebGLDisplayObject(state, obj);

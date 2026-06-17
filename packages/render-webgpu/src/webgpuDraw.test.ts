@@ -1,5 +1,5 @@
 import { createBitmap } from '@flighthq/displayobject';
-import { getOrCreateRenderNode2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
 import { hasRenderFeatures } from '@flighthq/render';
 import { BlendMode, RenderFeatures } from '@flighthq/types';
 
@@ -80,12 +80,12 @@ describe('drawWebGPUQuad', () => {
     const internal = state as unknown as WebGPURenderStateInternal;
     const bitmap = createBitmap();
     prepareDisplayObjectRender(state, bitmap);
-    const renderNode = getOrCreateRenderNode2D(state, bitmap);
+    const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
     const canvas = document.createElement('canvas');
     canvas.width = 4;
     canvas.height = 4;
     const entry = bindWebGPUTexture(internal, canvas);
-    expect(() => drawWebGPUQuad(internal, renderNode, entry, 0, 0, 4, 4, 0, 0, 1, 1)).not.toThrow();
+    expect(() => drawWebGPUQuad(internal, renderProxy, entry, 0, 0, 4, 4, 0, 0, 1, 1)).not.toThrow();
     submitWebGPURenderPass(state);
   });
 });
@@ -97,13 +97,13 @@ describe('drawWebGPUQuadWithTransform', () => {
     const internal = state as unknown as WebGPURenderStateInternal;
     const bitmap = createBitmap();
     prepareDisplayObjectRender(state, bitmap);
-    const renderNode = getOrCreateRenderNode2D(state, bitmap);
+    const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
     const canvas = document.createElement('canvas');
     canvas.width = 4;
     canvas.height = 4;
     const entry = bindWebGPUTexture(internal, canvas);
     const t = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
-    expect(() => drawWebGPUQuadWithTransform(internal, renderNode, t, entry, 0, 0, 4, 4, 0, 0, 1, 1)).not.toThrow();
+    expect(() => drawWebGPUQuadWithTransform(internal, renderProxy, t, entry, 0, 0, 4, 4, 0, 0, 1, 1)).not.toThrow();
     submitWebGPURenderPass(state);
   });
 });

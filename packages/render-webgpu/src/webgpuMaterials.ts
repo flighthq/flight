@@ -11,7 +11,7 @@ import { getActiveWebGPUPipeline, writeWebGPUQuadUniforms } from './webgpuShader
 
 export function drawWebGPUColorTransformBitmap(
   state: WebGPURenderStateInternal,
-  renderNode: {
+  renderProxy: {
     alpha: number;
     transform2D: { a: number; b: number; c: number; d: number; tx: number; ty: number };
     blendMode: BlendMode | null;
@@ -29,9 +29,9 @@ export function drawWebGPUColorTransformBitmap(
   const pass = state.renderPass;
   if (pass === null) return;
 
-  state.applyBlendMode?.(state, renderNode.blendMode);
+  state.applyBlendMode?.(state, renderProxy.blendMode);
   const textureEntry = bindWebGPUTexture(state, imageSource);
-  const uniformOffset = writeWebGPUQuadUniforms(state, renderNode, null, x0, y0, x1, y1, u0, v0, u1, v1);
+  const uniformOffset = writeWebGPUQuadUniforms(state, renderProxy, null, x0, y0, x1, y1, u0, v0, u1, v1);
   const pipeline = getActiveWebGPUPipeline(state);
 
   pass.setPipeline(pipeline);
@@ -50,11 +50,11 @@ export function registerWebGPUColorTransformShader(state: WebGPURenderState): vo
   // This function exists for API symmetry with registerWebGLColorTransformShader.
   const shader: WebGPUBitmapShader = {
     pipeline: null as never, // pipeline is resolved dynamically via getActiveWebGPUPipeline
-    bind(bindState: WebGPURenderStateInternal, renderNode: { alpha: number }): void {
+    bind(bindState: WebGPURenderStateInternal, renderProxy: { alpha: number }): void {
       // bind() is called by the user when customising draw; for color transform the default
       // pipeline handles everything automatically via the uniform buffer.
       void bindState;
-      void renderNode;
+      void renderProxy;
     },
   };
 

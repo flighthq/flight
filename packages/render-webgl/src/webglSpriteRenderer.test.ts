@@ -1,4 +1,4 @@
-import type { RenderNode2D } from '@flighthq/types';
+import type { RenderProxy2D } from '@flighthq/types';
 
 import { registerDefaultWebGLMaterial } from './webglDefaultMaterial';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
@@ -13,7 +13,7 @@ function makeAtlas(regionWidth = 32, regionHeight = 32) {
   };
 }
 
-function makeSpriteNode(data: Record<string, unknown> = {}): RenderNode2D {
+function makeSpriteNode(data: Record<string, unknown> = {}): RenderProxy2D {
   return {
     source: { data: { atlas: null, id: 0, ...data } },
     blendMode: 0,
@@ -23,7 +23,7 @@ function makeSpriteNode(data: Record<string, unknown> = {}): RenderNode2D {
     renderer: null,
     traverseChildren: false,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
-  } as unknown as RenderNode2D;
+  } as unknown as RenderProxy2D;
 }
 
 describe('defaultWebGLSpriteRenderer', () => {

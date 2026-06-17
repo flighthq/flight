@@ -17,7 +17,7 @@ import type {
   DOMRenderState,
   Renderable,
   RendererData,
-  RenderNode2D,
+  RenderProxy2D,
   RenderState,
   RichText,
   RichTextRuntime,
@@ -46,11 +46,11 @@ function getMeasureCtx(): CanvasRenderingContext2D | null {
   return _measureCtx;
 }
 
-export function drawDOMRichText(state: DOMRenderState, renderNode: RenderNode2D): void {
-  const data = renderNode.rendererData as DOMRichTextData | null;
+export function drawDOMRichText(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+  const data = renderProxy.rendererData as DOMRichTextData | null;
   if (data === null) return;
 
-  const source = renderNode.source as RichText;
+  const source = renderProxy.source as RichText;
   const { background, backgroundColor, border, borderColor, wordWrap, multiline, scrollH, scrollV } = source.data;
 
   if (data.div === null) {
@@ -92,7 +92,7 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: RenderNode2D)
 
   if (text.length === 0) {
     div.innerHTML = '';
-    applyDOMStyle(state, div, renderNode);
+    applyDOMStyle(state, div, renderProxy);
     setDOMRendererElement(state, div);
     return;
   }
@@ -167,7 +167,7 @@ export function drawDOMRichText(state: DOMRenderState, renderNode: RenderNode2D)
 
   div.innerHTML = html;
 
-  applyDOMStyle(state, div, renderNode);
+  applyDOMStyle(state, div, renderProxy);
   setDOMRendererElement(state, div);
 }
 
@@ -211,8 +211,8 @@ const DOM_SELECTION_ALPHA = 0.35;
 const DOM_SELECTION_COLOR = '#0078d7';
 const _richTextSelectionRectangles: { height: number; lineIndex: number; width: number; x: number; y: number }[] = [];
 
-export function drawDOMRichTextMask(state: DOMRenderState, renderNode: RenderNode2D): void {
-  drawDOMRichText(state, renderNode);
+export function drawDOMRichTextMask(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+  drawDOMRichText(state, renderProxy);
 }
 
 export const defaultDOMRichTextRenderer: DisplayObjectRenderer = {

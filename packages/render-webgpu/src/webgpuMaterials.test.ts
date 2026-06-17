@@ -1,5 +1,5 @@
 import { createBitmap } from '@flighthq/displayobject';
-import { getOrCreateRenderNode2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
 
 import type { WebGPURenderStateInternal } from './internal';
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
@@ -18,7 +18,7 @@ describe('drawWebGPUColorTransformBitmap', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 4;
     canvas.height = 4;
-    const fakeRenderNode = {
+    const fakeRenderProxy = {
       alpha: 1,
       useColorTransform: false,
       colorTransform: null,
@@ -26,7 +26,7 @@ describe('drawWebGPUColorTransformBitmap', () => {
       blendMode: null,
     };
     expect(() =>
-      drawWebGPUColorTransformBitmap(internal, fakeRenderNode, canvas, 0, 0, 4, 4, 0, 0, 1, 1),
+      drawWebGPUColorTransformBitmap(internal, fakeRenderProxy, canvas, 0, 0, 4, 4, 0, 0, 1, 1),
     ).not.toThrow();
     submitWebGPURenderPass(state);
   });

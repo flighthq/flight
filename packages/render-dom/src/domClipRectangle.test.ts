@@ -1,6 +1,6 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix, createRectangle } from '@flighthq/geometry';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import type { DOMStageRectangle } from '@flighthq/types';
 
 import {
@@ -20,7 +20,7 @@ describe('applyDOMClipRectangles', () => {
   it('clears clip styles when no rectangles are active', () => {
     const state = makeState();
     const source = createDisplayObject();
-    const data = getOrCreateRenderNode2D(state, source);
+    const data = getOrCreateRenderProxy2D(state, source);
     const element = document.createElement('div');
     element.style.clipPath = 'inset(0)';
     state.domElementMap.set(data, element);
@@ -33,7 +33,7 @@ describe('applyDOMClipRectangles', () => {
   it('sets a local polygon clip path from intersected stage rectangles', () => {
     const state = makeState();
     const source = createDisplayObject();
-    const data = getOrCreateRenderNode2D(state, source);
+    const data = getOrCreateRenderProxy2D(state, source);
     const element = document.createElement('div');
     element.style.transform = 'matrix(1,0,0,1,10,20)';
     state.domElementMap.set(data, element);

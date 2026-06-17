@@ -1,6 +1,6 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
-import { createRenderCache, getRenderNode2D, RenderCacheKind, useRenderCache } from '@flighthq/render';
+import { createRenderCache, getRenderProxy2D, RenderCacheKind, useRenderCache } from '@flighthq/render';
 
 import {
   createCanvasCacheState,
@@ -37,7 +37,7 @@ describe('createCanvasCacheState', () => {
     const cacheState = createCanvasCacheState(screen);
     expect(cacheState.pixelRatio).toBe(3);
     expect(cacheState.sceneGraphSyncPolicy).toBe('refreshDerivedState');
-    expect(cacheState.renderNodeMap).not.toBe(screen.renderNodeMap);
+    expect(cacheState.renderProxyMap).not.toBe(screen.renderProxyMap);
   });
 });
 
@@ -149,7 +149,7 @@ describe('refreshCanvasRenderCache', () => {
     const cache = createRenderCache();
     const obj = createDisplayObject();
     refreshCanvasRenderCache(cacheState, cache, obj);
-    expect(getRenderNode2D(screen, obj)).toBeUndefined();
+    expect(getRenderProxy2D(screen, obj)).toBeUndefined();
   });
 });
 

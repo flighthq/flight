@@ -1,5 +1,5 @@
 import { noopRendererData } from '@flighthq/render';
-import type { QuadBatch, RenderNode2D, RenderState, SpriteRenderer } from '@flighthq/types';
+import type { QuadBatch, RenderProxy2D, RenderState, SpriteRenderer } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
@@ -17,7 +17,7 @@ import {
 // [12]   alpha        — per-instance alpha
 const INSTANCE_FLOATS = 13;
 
-function submitWebGLQuadBatch(state: RenderState, quadBatch: RenderNode2D): void {
+function submitWebGLQuadBatch(state: RenderState, quadBatch: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
   const source = quadBatch.source as QuadBatch;
   const data = source.data;

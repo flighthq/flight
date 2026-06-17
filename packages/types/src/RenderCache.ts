@@ -1,5 +1,5 @@
+import type { Entity } from './Entity';
 import type { Matrix } from './Matrix';
-import type { RenderPrimitive } from './RenderPrimitive';
 
 /**
  * Backend-agnostic handle for a cached rendering. The user creates and holds a
@@ -12,7 +12,7 @@ import type { RenderPrimitive } from './RenderPrimitive';
  * `transform` places the cached content back at the source's scene position when
  * composited (it accounts for the bounds origin and any padding used while baking).
  */
-export interface RenderCache extends RenderPrimitive {
+export interface RenderCache extends Entity {
   kind: RenderCacheKind;
   transform: Matrix;
 }

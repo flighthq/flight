@@ -1,4 +1,4 @@
-﻿import type { RenderNode, RenderNode2D, WebGLRenderState } from '@flighthq/types';
+﻿import type { RenderProxy, RenderProxy2D, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
@@ -81,17 +81,17 @@ export function createDefaultWebGLBitmapShader(
   return {
     locations: shaderLoc,
     program: shaderLoc.program,
-    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: RenderNode2D): void {
+    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderProxy: RenderProxy2D): void {
       const internal = state as WebGLRenderStateInternal;
       setWebGLAttributes(gl, shaderLoc);
       setWebGLMatrixFromTransform(
         gl,
         shaderLoc,
         matrixArray,
-        renderNode.transform2D,
+        renderProxy.transform2D,
         internal.renderTargetViewport ?? state.canvas,
       );
-      setWebGLBaseUniforms(gl, shaderLoc, renderNode);
+      setWebGLBaseUniforms(gl, shaderLoc, renderProxy);
     },
   };
 }
@@ -106,24 +106,24 @@ export function createDefaultWebGLBitmapShader(
 export function createWebGLBitmapShader(
   gl: WebGL2RenderingContext,
   fragmentSrc: string,
-  onBind?: (gl: WebGL2RenderingContext, locations: WebGLShaderLocations, renderNode: RenderNode2D) => void,
+  onBind?: (gl: WebGL2RenderingContext, locations: WebGLShaderLocations, renderProxy: RenderProxy2D) => void,
 ): WebGLBitmapShader {
   const locations = compileWebGLBitmapProgram(gl, fragmentSrc);
   return {
     locations,
     program: locations.program,
-    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: RenderNode2D): void {
+    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderProxy: RenderProxy2D): void {
       const internal = state as WebGLRenderStateInternal;
       setWebGLAttributes(gl, locations);
       setWebGLMatrixFromTransform(
         gl,
         locations,
         internal.matrixArray,
-        renderNode.transform2D,
+        renderProxy.transform2D,
         internal.renderTargetViewport ?? state.canvas,
       );
-      setWebGLBaseUniforms(gl, locations, renderNode);
-      onBind?.(gl, locations, renderNode);
+      setWebGLBaseUniforms(gl, locations, renderProxy);
+      onBind?.(gl, locations, renderProxy);
     },
   };
 }
@@ -138,9 +138,9 @@ export function setWebGLAttributes(gl: WebGL2RenderingContext, loc: WebGLShaderL
 export function setWebGLBaseUniforms(
   gl: WebGL2RenderingContext,
   loc: WebGLShaderLocations,
-  renderNode: RenderNode,
+  renderProxy: RenderProxy,
 ): void {
-  gl.uniform1f(loc.locAlpha, renderNode.alpha);
+  gl.uniform1f(loc.locAlpha, renderProxy.alpha);
   gl.uniform1i(loc.locTexture, 0);
 }
 

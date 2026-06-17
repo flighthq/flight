@@ -5,7 +5,7 @@
   createTextureAtlas,
   createTileset,
 } from '@flighthq/assets';
-import { getOrCreateRenderNode2D, prepareSpriteRender } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareSpriteRender } from '@flighthq/render';
 import { createTilemap, setTilemapTile } from '@flighthq/sprite';
 
 import { createCanvasRenderState } from './canvasRenderState';
@@ -39,9 +39,9 @@ describe('drawCanvasTilemap', () => {
     const state = makeState();
     const tilemap = createTilemap();
     prepareSpriteRender(state, tilemap);
-    const renderNode = getOrCreateRenderNode2D(state, tilemap);
+    const renderProxy = getOrCreateRenderProxy2D(state, tilemap);
     const spy = vi.spyOn(state.context, 'drawImage');
-    drawCanvasTilemap(state, renderNode);
+    drawCanvasTilemap(state, renderProxy);
     expect(spy).not.toHaveBeenCalled();
   });
 
@@ -52,9 +52,9 @@ describe('drawCanvasTilemap', () => {
     setTilemapTile(tilemap, 0, 0, 0);
     setTilemapTile(tilemap, 1, 0, 1);
     prepareSpriteRender(state, tilemap);
-    const renderNode = getOrCreateRenderNode2D(state, tilemap);
+    const renderProxy = getOrCreateRenderProxy2D(state, tilemap);
     const spy = vi.spyOn(state.context, 'drawImage');
-    drawCanvasTilemap(state, renderNode);
+    drawCanvasTilemap(state, renderProxy);
     expect(spy).toHaveBeenCalledTimes(2);
   });
 
@@ -65,9 +65,9 @@ describe('drawCanvasTilemap', () => {
     setTilemapTile(tilemap, 0, 0, 0);
     // cell (1,0) remains -1
     prepareSpriteRender(state, tilemap);
-    const renderNode = getOrCreateRenderNode2D(state, tilemap);
+    const renderProxy = getOrCreateRenderProxy2D(state, tilemap);
     const spy = vi.spyOn(state.context, 'drawImage');
-    drawCanvasTilemap(state, renderNode);
+    drawCanvasTilemap(state, renderProxy);
     expect(spy).toHaveBeenCalledTimes(1);
   });
 });

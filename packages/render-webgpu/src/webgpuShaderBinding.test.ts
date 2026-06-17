@@ -1,5 +1,5 @@
 import { createBitmap } from '@flighthq/displayobject';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { hasRenderFeatures } from '@flighthq/render';
 import { RenderFeatures } from '@flighthq/types';
 
@@ -16,8 +16,8 @@ describe('getWebGPUShader', () => {
   it('returns undefined when no shader is bound', async () => {
     const state = await createWebGPURenderStateForTest();
     const bitmap = createBitmap();
-    const renderNode = getOrCreateRenderNode2D(state, bitmap);
-    expect(getWebGPUShader(renderNode)).toBeUndefined();
+    const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
+    expect(getWebGPUShader(renderProxy)).toBeUndefined();
   });
 });
 
@@ -25,9 +25,9 @@ describe('resolveWebGPUShader', () => {
   it('returns null when no shader feature is enabled', async () => {
     const state = await createWebGPURenderStateForTest();
     const bitmap = createBitmap();
-    const renderNode = getOrCreateRenderNode2D(state, bitmap);
+    const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
     const internal = state as unknown as WebGPURenderStateInternal;
-    expect(resolveWebGPUShader(internal, renderNode)).toBeNull();
+    expect(resolveWebGPUShader(internal, renderProxy)).toBeNull();
   });
 });
 
@@ -39,8 +39,8 @@ describe('setWebGPUShader', () => {
 
     setWebGPUShader(state, bitmap, fakeShader);
 
-    const renderNode = getOrCreateRenderNode2D(state, bitmap);
-    expect(getWebGPUShader(renderNode)).toBe(fakeShader);
+    const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
+    expect(getWebGPUShader(renderProxy)).toBe(fakeShader);
   });
 
   it('enables the Shaders feature flag', async () => {
@@ -57,7 +57,7 @@ describe('setWebGPUShader', () => {
     const fakeShader: WebGPUBitmapShader = { pipeline: {} as never, bind: () => {} };
     setWebGPUShader(state, bitmap, fakeShader);
     setWebGPUShader(state, bitmap, null);
-    const renderNode = getOrCreateRenderNode2D(state, bitmap);
-    expect(getWebGPUShader(renderNode)).toBeUndefined();
+    const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
+    expect(getWebGPUShader(renderProxy)).toBeUndefined();
   });
 });

@@ -5,15 +5,15 @@ import {
   createRenderCache,
   createRenderCacheAdapter,
   enableRenderCacheAdapterSignals,
-  getRenderNodeCache,
+  getRenderProxyCache,
   isRenderCache,
   isRenderCacheAdapter,
   registerRenderCacheRenderer,
   RenderCacheKind,
   useRenderCache,
 } from './renderCache';
-import { createRenderNode2D } from './renderNode';
-import { getRenderNodeAdapter } from './renderNodeAdapter';
+import { createRenderProxy2D } from './renderProxy';
+import { getRenderProxyAdapter } from './renderProxyAdapter';
 import { createRenderState } from './renderState';
 
 describe('createRenderCache', () => {
@@ -28,7 +28,7 @@ describe('createRenderCacheAdapter', () => {
   it('adapt returns null and renders normally when no cache is attached', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    const data = createRenderNode2D(state, obj);
+    const data = createRenderProxy2D(state, obj);
     const adapter = createRenderCacheAdapter();
     expect(adapter.adapt(state, obj, data)).toBeNull();
   });
@@ -36,7 +36,7 @@ describe('createRenderCacheAdapter', () => {
   it('switches the render node to the cache kind and stops traversal, keeping the source node', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    const data = createRenderNode2D(state, obj);
+    const data = createRenderProxy2D(state, obj);
     const cache = createRenderCache();
     cache.transform.tx = 7;
     const adapter = createRenderCacheAdapter(cache);
@@ -51,7 +51,7 @@ describe('createRenderCacheAdapter', () => {
   it('emits onPrepare when signals are enabled', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    const data = createRenderNode2D(state, obj);
+    const data = createRenderProxy2D(state, obj);
     const adapter = createRenderCacheAdapter();
     enableRenderCacheAdapterSignals(adapter);
     const listener = vi.fn();
@@ -78,14 +78,14 @@ describe('enableRenderCacheAdapterSignals', () => {
   });
 });
 
-describe('getRenderNodeCache', () => {
+describe('getRenderProxyCache', () => {
   it('returns the cache attached to a source, or null when none', () => {
     const state = createRenderState();
     const obj = createDisplayObject();
-    expect(getRenderNodeCache(state, obj as any)).toBeNull();
+    expect(getRenderProxyCache(state, obj as any)).toBeNull();
     const cache = createRenderCache();
     useRenderCache(state, obj as any, cache);
-    expect(getRenderNodeCache(state, obj as any)).toBe(cache);
+    expect(getRenderProxyCache(state, obj as any)).toBe(cache);
   });
 });
 
@@ -127,7 +127,7 @@ describe('useRenderCache', () => {
     const obj = createDisplayObject();
     const cache = createRenderCache();
     const adapter = useRenderCache(state, obj as any, cache);
-    expect(getRenderNodeAdapter(state, obj as any)).toBe(adapter);
+    expect(getRenderProxyAdapter(state, obj as any)).toBe(adapter);
     expect(adapter.cache).toBe(cache);
   });
 
@@ -146,6 +146,6 @@ describe('useRenderCache', () => {
     const stateB = createRenderState();
     const obj = createDisplayObject();
     useRenderCache(stateA, obj as any, createRenderCache());
-    expect(getRenderNodeAdapter(stateB, obj as any)).toBeNull();
+    expect(getRenderProxyAdapter(stateB, obj as any)).toBeNull();
   });
 });

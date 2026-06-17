@@ -12,7 +12,7 @@ import {
 } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
-  RenderNode2D,
+  RenderProxy2D,
   RenderState,
   RichText,
   RichTextRuntime,
@@ -42,25 +42,25 @@ interface WebGPURichTextData {
   h: number;
 }
 
-const _textureMap = new WeakMap<RenderNode2D, WebGPURichTextData>();
+const _textureMap = new WeakMap<RenderProxy2D, WebGPURichTextData>();
 
-export function drawWebGPURichText(state: RenderState, renderNode: RenderNode2D): void {
-  drawWebGPURichTextWithOverlay(state, renderNode);
+export function drawWebGPURichText(state: RenderState, renderProxy: RenderProxy2D): void {
+  drawWebGPURichTextWithOverlay(state, renderProxy);
 }
 
-export function drawWebGPURichTextMask(state: RenderState, renderNode: RenderNode2D): void {
-  drawWebGPURichText(state, renderNode);
+export function drawWebGPURichTextMask(state: RenderState, renderProxy: RenderProxy2D): void {
+  drawWebGPURichText(state, renderProxy);
 }
 
 export function drawWebGPURichTextWithOverlay(
   state: RenderState,
-  renderNode: RenderNode2D,
+  renderProxy: RenderProxy2D,
   overlay?: WebGPURichTextOverlay,
 ): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 
-  const source = renderNode.source as RichText;
+  const source = renderProxy.source as RichText;
   const data = source.data;
   const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
   const content = getRichTextContent(richTextRuntime);
@@ -95,21 +95,21 @@ export function drawWebGPURichTextWithOverlay(
   }
   overlay?.(offCtx, source, result, fieldW, fieldH, content.text);
 
-  internal.applyBlendMode?.(internal, renderNode.blendMode);
+  internal.applyBlendMode?.(internal, renderProxy.blendMode);
 
   const pw = _offscreenCanvas!.width;
   const ph = _offscreenCanvas!.height;
-  let richData = _textureMap.get(renderNode);
+  let richData = _textureMap.get(renderProxy);
   if (!richData || richData.w !== pw || richData.h !== ph) {
     richData?.entry.texture.destroy();
     const entry = createWebGPUTextureEntry(internal, pw, ph, _offscreenCanvas!);
     richData = { entry, h: ph, w: pw };
-    _textureMap.set(renderNode, richData);
+    _textureMap.set(renderProxy, richData);
   } else {
     updateWebGPUTextureEntry(internal, richData.entry, _offscreenCanvas!);
   }
 
-  drawWebGPUQuad(internal, renderNode, richData.entry, 0, 0, fieldW, fieldH, 0, 0, 1, 1);
+  drawWebGPUQuad(internal, renderProxy, richData.entry, 0, 0, fieldW, fieldH, 0, 0, 1, 1);
 }
 
 export const defaultWebGPURichTextRenderer: DisplayObjectRenderer = {

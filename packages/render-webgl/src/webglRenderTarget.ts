@@ -1,5 +1,5 @@
 import { acquireMatrix, copyMatrix, createMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry';
-import type { Matrix, RenderNode2D, WebGLRenderState, WebGLRenderTarget } from '@flighthq/types';
+import type { Matrix, RenderProxy2D, WebGLRenderState, WebGLRenderTarget } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { drawWebGLQuad, useWebGLProgram } from './webglDraw';
@@ -99,7 +99,7 @@ export function destroyWebGLRenderTarget(state: WebGLRenderState, target: WebGLR
 
 /**
  * Composites `target`'s texture onto the current framebuffer as a positioned quad, using
- * `renderNode`'s world transform and alpha. `transform` maps the target's pixel space into
+ * `renderProxy`'s world transform and alpha. `transform` maps the target's pixel space into
  * the node's local space (as produced by `computeRenderCacheTransform`). This mirrors
  * `drawWebGLImageCacheResult` but sources a GPU render-target texture directly instead of an
  * uploaded `CanvasImageSource`, closing the offscreen-filter loop: render a node into a
@@ -111,7 +111,7 @@ export function destroyWebGLRenderTarget(state: WebGLRenderState, target: WebGLR
  */
 export function drawWebGLRenderTargetResult(
   state: WebGLRenderState,
-  renderNode: RenderNode2D,
+  renderProxy: RenderProxy2D,
   target: Readonly<WebGLRenderTarget>,
   transform: Readonly<Matrix>,
 ): void {
@@ -119,7 +119,7 @@ export function drawWebGLRenderTargetResult(
 
   const internal = state as WebGLRenderStateInternal;
   useWebGLProgram(internal);
-  internal.applyBlendMode?.(internal, renderNode.blendMode);
+  internal.applyBlendMode?.(internal, renderProxy.blendMode);
 
   const { gl, shaderLoc, matrixArray } = internal;
   // The render target already owns a GPU texture — bind it directly rather than going through
@@ -128,7 +128,7 @@ export function drawWebGLRenderTargetResult(
   internal.currentTexture = target.texture;
 
   const quadTransform = acquireMatrix();
-  multiplyMatrix(quadTransform, renderNode.transform2D, transform);
+  multiplyMatrix(quadTransform, renderProxy.transform2D, transform);
   setWebGLAttributes(gl, shaderLoc);
   setWebGLMatrixFromTransform(
     gl,
@@ -137,7 +137,7 @@ export function drawWebGLRenderTargetResult(
     quadTransform,
     internal.renderTargetViewport ?? internal.canvas,
   );
-  setWebGLBaseUniforms(gl, shaderLoc, renderNode);
+  setWebGLBaseUniforms(gl, shaderLoc, renderProxy);
   releaseMatrix(quadTransform);
 
   drawWebGLQuad(internal, 0, 0, target.width, target.height, 0, 1, 1, 0);

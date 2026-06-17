@@ -1,6 +1,6 @@
 ﻿import { createVideo } from '@flighthq/displayobject';
 import { registerRenderer } from '@flighthq/render';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { VideoKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
@@ -24,8 +24,8 @@ describe('drawDOMVideo', () => {
   it('does not throw when source element is null', () => {
     const state = makeState();
     const video = createVideo();
-    const renderNode = getOrCreateRenderNode2D(state, video);
-    expect(() => drawDOMVideo(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, video);
+    expect(() => drawDOMVideo(state, renderProxy)).not.toThrow();
   });
 });
 
@@ -33,7 +33,7 @@ describe('drawDOMVideoMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const video = createVideo();
-    const renderNode = getOrCreateRenderNode2D(state, video);
-    expect(() => drawDOMVideoMask(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, video);
+    expect(() => drawDOMVideoMask(state, renderProxy)).not.toThrow();
   });
 });

@@ -1,18 +1,18 @@
-﻿import { getOrCreateRenderNode2D } from '@flighthq/render';
-import type { DisplayObject, RenderNode2D } from '@flighthq/types';
+﻿import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import type { DisplayObject, RenderProxy2D } from '@flighthq/types';
 
 import { defaultWebGLBitmapRenderer, drawWebGLBitmap, drawWebGLBitmapMask } from './webglBitmap';
 import { setWebGLShader } from './webglShaderBinding';
 import { makeWebGLState } from './webglTestHelper';
 
-function makeRenderNode(image: unknown = null): RenderNode2D {
+function makeRenderProxy(image: unknown = null): RenderProxy2D {
   return {
     source: { data: { image } },
     blendMode: 0,
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     rendererData: null,
-  } as unknown as RenderNode2D;
+  } as unknown as RenderProxy2D;
 }
 
 function makeImageSource(src: unknown = null, width = 32, height = 32) {
@@ -34,27 +34,27 @@ describe('defaultWebGLBitmapRenderer', () => {
 describe('drawWebGLBitmap', () => {
   it('returns early without drawing when image is null', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLBitmap(state, makeRenderNode(null));
+    drawWebGLBitmap(state, makeRenderProxy(null));
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when image.src is null', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLBitmap(state, makeRenderNode(makeImageSource(null)));
+    drawWebGLBitmap(state, makeRenderProxy(makeImageSource(null)));
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 
   it('calls drawElements when image source is valid', () => {
     const { state, gl } = makeWebGLState();
     const img = document.createElement('img');
-    drawWebGLBitmap(state, makeRenderNode(makeImageSource(img)));
+    drawWebGLBitmap(state, makeRenderProxy(makeImageSource(img)));
     expect(gl.drawElements).toHaveBeenCalled();
   });
 
   it('calls defaultBitmapShader.bind with the render node', () => {
     const { state } = makeWebGLState();
     const img = document.createElement('img');
-    const node = makeRenderNode(makeImageSource(img));
+    const node = makeRenderProxy(makeImageSource(img));
     drawWebGLBitmap(state, node);
     expect(state.defaultBitmapShader.bind).toHaveBeenCalledWith(state.gl, state, node);
   });
@@ -66,13 +66,13 @@ describe('drawWebGLBitmap', () => {
     const customShader = { locations: state.shaderLoc, program: state.shaderLoc.program, bind: vi.fn() };
     setWebGLShader(state, sceneNode, customShader);
 
-    const renderNode = getOrCreateRenderNode2D(state, sceneNode);
-    (renderNode as unknown as { source: unknown }).source = { data: { image: makeImageSource(img) } };
-    renderNode.alpha = 1;
-    renderNode.blendMode = 0;
+    const renderProxy = getOrCreateRenderProxy2D(state, sceneNode);
+    (renderProxy as unknown as { source: unknown }).source = { data: { image: makeImageSource(img) } };
+    renderProxy.alpha = 1;
+    renderProxy.blendMode = 0;
 
-    drawWebGLBitmap(state, renderNode);
-    expect(customShader.bind).toHaveBeenCalledWith(gl, state, renderNode);
+    drawWebGLBitmap(state, renderProxy);
+    expect(customShader.bind).toHaveBeenCalledWith(gl, state, renderProxy);
     expect(state.defaultBitmapShader.bind).not.toHaveBeenCalled();
   });
 });
@@ -80,7 +80,7 @@ describe('drawWebGLBitmap', () => {
 describe('drawWebGLBitmapMask', () => {
   it('uses the bitmap draw path', () => {
     const { state, gl } = makeWebGLState();
-    expect(() => drawWebGLBitmapMask(state, makeRenderNode(null))).not.toThrow();
+    expect(() => drawWebGLBitmapMask(state, makeRenderProxy(null))).not.toThrow();
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 });
