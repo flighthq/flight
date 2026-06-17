@@ -2,7 +2,7 @@ import { createDisplayObject } from '@flighthq/displayobject';
 import type { RenderNodeAdapter } from '@flighthq/types';
 
 import { registerRenderer } from './renderer';
-import { createDisplayObjectRenderNode } from './renderNode';
+import { createRenderNode2D } from './renderNode';
 import { applyRenderNodeAdapter, getRenderNodeAdapter, setRenderNodeAdapter } from './renderNodeAdapter';
 import { createRenderState } from './renderState';
 
@@ -10,7 +10,7 @@ describe('applyRenderNodeAdapter', () => {
   it('sets traverseChildren to true when no resolver is attached', () => {
     const state = createRenderState();
     const source = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, source);
+    const data = createRenderNode2D(state, source);
     data.traverseChildren = false;
 
     applyRenderNodeAdapter(state, source, data);
@@ -21,7 +21,7 @@ describe('applyRenderNodeAdapter', () => {
   it('sets traverseChildren from a non-null adapter result', () => {
     const state = createRenderState();
     const source = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, source);
+    const data = createRenderNode2D(state, source);
     const adapter: RenderNodeAdapter = {
       adapt: vi.fn().mockReturnValue(false),
     };
@@ -35,7 +35,7 @@ describe('applyRenderNodeAdapter', () => {
   it('syncs renderer when the adapter changes the node kind', () => {
     const state = createRenderState();
     const source = createDisplayObject();
-    const data = createDisplayObjectRenderNode(state, source);
+    const data = createRenderNode2D(state, source);
     const kind = Symbol('Adapted');
     const renderer = { createData: () => null, submit: vi.fn() };
     registerRenderer(state, kind, renderer);
