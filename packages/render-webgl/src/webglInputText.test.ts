@@ -1,11 +1,11 @@
 ﻿import { createInputText, getInputTextRuntime } from '@flighthq/displayobject';
 import { setInputTextSelection } from '@flighthq/text-input';
-import type { DisplayObjectRenderNode, InputText } from '@flighthq/types';
+import type { InputText, RenderNode2D } from '@flighthq/types';
 
 import { defaultWebGLInputTextRenderer, drawWebGLInputText } from './webglInputText';
 import { makeWebGLState } from './webglTestHelper';
 
-function makeInputTextNode(): DisplayObjectRenderNode {
+function makeInputTextNode(): RenderNode2D {
   const inputText = createInputText({ data: { height: 40, text: 'hello', width: 100 } });
   return {
     source: inputText,
@@ -13,7 +13,7 @@ function makeInputTextNode(): DisplayObjectRenderNode {
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     rendererData: null,
-  } as unknown as DisplayObjectRenderNode;
+  } as unknown as RenderNode2D;
 }
 
 describe('defaultWebGLInputTextRenderer', () => {

@@ -1,7 +1,7 @@
 ﻿import { createDisplayObject } from '@flighthq/displayobject';
 import { addNodeChild } from '@flighthq/node';
 import { registerDisplayObjectMaskRenderer } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import { getOrCreateRenderNode2D } from '@flighthq/render';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { drawWebGLMask, popWebGLMask, pushWebGLMask } from './webglMask';
@@ -20,7 +20,7 @@ describe('drawWebGLMask', () => {
     const source = createDisplayObject();
     const renderer = makeRenderer();
     registerDisplayObjectMaskRenderer(state, DisplayObjectKind, renderer);
-    const data = getOrCreateDisplayObjectRenderNode(state, source);
+    const data = getOrCreateRenderNode2D(state, source);
 
     drawWebGLMask(state, data);
 
@@ -34,8 +34,8 @@ describe('drawWebGLMask', () => {
     const renderer = makeRenderer();
     registerDisplayObjectMaskRenderer(state, DisplayObjectKind, renderer);
     addNodeChild(parent, child);
-    const parentData = getOrCreateDisplayObjectRenderNode(state, parent);
-    const childData = getOrCreateDisplayObjectRenderNode(state, child);
+    const parentData = getOrCreateRenderNode2D(state, parent);
+    const childData = getOrCreateRenderNode2D(state, child);
 
     drawWebGLMask(state, parentData);
 
@@ -62,7 +62,7 @@ describe('pushWebGLMask', () => {
     const source = createDisplayObject();
     const renderer = makeRenderer();
     registerDisplayObjectMaskRenderer(state, DisplayObjectKind, renderer);
-    const data = getOrCreateDisplayObjectRenderNode(state, source);
+    const data = getOrCreateRenderNode2D(state, source);
 
     pushWebGLMask(state, data);
 

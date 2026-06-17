@@ -1,12 +1,12 @@
 ﻿import { createText } from '@flighthq/displayobject';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import type { DisplayObject, DisplayObjectRenderNode } from '@flighthq/types';
+import { getOrCreateRenderNode2D } from '@flighthq/render';
+import type { DisplayObject, RenderNode2D } from '@flighthq/types';
 
 import { setWebGLShader } from './webglShaderBinding';
 import { makeWebGLState } from './webglTestHelper';
 import { defaultWebGLTextRenderer, drawWebGLText, drawWebGLTextMask } from './webglText';
 
-function makeTextNode(text = '', textFormat = {}): DisplayObjectRenderNode {
+function makeTextNode(text = '', textFormat = {}): RenderNode2D {
   const source = createText();
   source.data.text = text;
   source.data.textFormat = textFormat;
@@ -16,7 +16,7 @@ function makeTextNode(text = '', textFormat = {}): DisplayObjectRenderNode {
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     rendererData: null,
-  } as unknown as DisplayObjectRenderNode;
+  } as unknown as RenderNode2D;
 }
 
 describe('defaultWebGLTextRenderer', () => {
@@ -50,7 +50,7 @@ describe('drawWebGLText', () => {
     const customShader = { locations: state.shaderLoc, program: state.shaderLoc.program, bind: vi.fn() };
     setWebGLShader(state, node, customShader);
 
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
     renderNode.alpha = 1;
     renderNode.blendMode = 0;
 

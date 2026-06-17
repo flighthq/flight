@@ -1,11 +1,11 @@
 ﻿import { noopRendererData } from '@flighthq/render';
-import type { DisplayObjectRenderer, DisplayObjectRenderNode, RenderState, Video } from '@flighthq/types';
+import type { DisplayObjectRenderer, RenderNode2D, RenderState, Video } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, useWebGLProgram } from './webglDraw';
 import { resolveWebGLShader } from './webglShaderBinding';
 
-export function drawWebGLVideo(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawWebGLVideo(state: RenderState, renderNode: RenderNode2D): void {
   const internal = state as WebGLRenderStateInternal;
   const source = renderNode.source as Video;
   const element = source.data.source?.element;
@@ -38,7 +38,7 @@ export function drawWebGLVideo(state: RenderState, renderNode: DisplayObjectRend
   drawWebGLQuad(internal, 0, 0, vw, vh, 0, 0, 1, 1);
 }
 
-export function drawWebGLVideoMask(_state: RenderState, _renderNode: DisplayObjectRenderNode): void {
+export function drawWebGLVideoMask(_state: RenderState, _renderNode: RenderNode2D): void {
   drawWebGLVideo(_state, _renderNode);
 }
 

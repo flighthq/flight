@@ -14,10 +14,10 @@ import {
 import type {
   DisplayObject,
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
   Matrix,
   RenderCache,
   RenderCacheRefreshOptions,
+  RenderNode2D,
   RenderState,
   WebGLRenderState,
   WebGLRenderTarget,
@@ -54,8 +54,6 @@ export function createWebGLCacheState(screenState: WebGLRenderState): WebGLRende
   }) as WebGLRenderStateInternal;
 
   copyAllRenderersFromRenderState(cacheState, screenState);
-  cacheState.appearanceHooks = screenState.appearanceHooks;
-  cacheState.materialHooks = screenState.materialHooks;
 
   cacheState.applyBlendMode = screen.applyBlendMode;
   cacheState.canvas = screen.canvas;
@@ -69,7 +67,9 @@ export function createWebGLCacheState(screenState: WebGLRenderState): WebGLRende
   cacheState.quadBatchShader = screen.quadBatchShader;
   cacheState.quadBatchCornerBuffer = screen.quadBatchCornerBuffer;
   cacheState.colorTransformInstancedShader = screen.colorTransformInstancedShader;
+  cacheState.uniformColorTransformShader = screen.uniformColorTransformShader;
   cacheState.materialRendererMap = screen.materialRendererMap;
+  cacheState.materialBitmapShaderMap = screen.materialBitmapShaderMap;
   cacheState.shaderLoc = screen.shaderLoc;
   cacheState.textureCache = screen.textureCache;
   cacheState.quadVertexBuffer = screen.quadVertexBuffer;
@@ -193,7 +193,7 @@ export function releaseWebGLRenderCache(state: WebGLRenderState, cache: RenderCa
   targets.delete(cache);
 }
 
-function drawWebGLRenderCache(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+function drawWebGLRenderCache(state: RenderState, renderNode: RenderNode2D): void {
   const cache = getRenderNodeCache(state, renderNode.source);
   if (cache === null) return;
   const webglState = state as WebGLRenderState;

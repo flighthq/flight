@@ -2,9 +2,7 @@ import type { Material, WebGLMaterialRenderer } from '@flighthq/types';
 import { DefaultMaterialKind } from '@flighthq/types';
 
 import {
-  defaultWebGLMaterialRenderer,
   getWebGLMaterialRenderer,
-  registerDefaultWebGLMaterial,
   registerWebGLMaterialRenderer,
   resolveWebGLMaterialRenderer,
 } from './webglMaterialRegistry';
@@ -17,24 +15,10 @@ function makeMaterial(kind: symbol): Material {
   return { kind } as Material;
 }
 
-describe('defaultWebGLMaterialRenderer', () => {
-  it('declares no per-instance float data', () => {
-    expect(defaultWebGLMaterialRenderer.instanceFloatCount).toBe(0);
-  });
-});
-
 describe('getWebGLMaterialRenderer', () => {
   it('returns null when nothing is registered for the kind', () => {
     const { state } = makeWebGLState();
     expect(getWebGLMaterialRenderer(state, TestKind)).toBeNull();
-  });
-});
-
-describe('registerDefaultWebGLMaterial', () => {
-  it('registers the built-in default under DefaultMaterialKind', () => {
-    const { state } = makeWebGLState();
-    registerDefaultWebGLMaterial(state);
-    expect(getWebGLMaterialRenderer(state, DefaultMaterialKind)).toBe(defaultWebGLMaterialRenderer);
   });
 });
 
@@ -47,9 +31,10 @@ describe('registerWebGLMaterialRenderer', () => {
 });
 
 describe('resolveWebGLMaterialRenderer', () => {
-  it('falls back to the built-in default when nothing is registered', () => {
+  it('returns null when nothing is registered — no built-in fallback', () => {
     const { state } = makeWebGLState();
-    expect(resolveWebGLMaterialRenderer(state, null)).toBe(defaultWebGLMaterialRenderer);
+    expect(resolveWebGLMaterialRenderer(state, null)).toBeNull();
+    expect(resolveWebGLMaterialRenderer(state, makeMaterial(TestKind))).toBeNull();
   });
 
   it('returns the registered renderer for a material kind', () => {
@@ -58,9 +43,10 @@ describe('resolveWebGLMaterialRenderer', () => {
     expect(resolveWebGLMaterialRenderer(state, makeMaterial(TestKind))).toBe(testRenderer);
   });
 
-  it('falls back to the registered default for an unregistered kind', () => {
+  it('falls back to the renderer registered for DefaultMaterialKind', () => {
     const { state } = makeWebGLState();
-    registerDefaultWebGLMaterial(state);
-    expect(resolveWebGLMaterialRenderer(state, makeMaterial(Symbol('Other')))).toBe(defaultWebGLMaterialRenderer);
+    registerWebGLMaterialRenderer(state, DefaultMaterialKind, testRenderer);
+    expect(resolveWebGLMaterialRenderer(state, makeMaterial(Symbol('Other')))).toBe(testRenderer);
+    expect(resolveWebGLMaterialRenderer(state, null)).toBe(testRenderer);
   });
 });

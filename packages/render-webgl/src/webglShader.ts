@@ -1,4 +1,4 @@
-﻿import type { DisplayObjectRenderNode, RenderNode, WebGLRenderState } from '@flighthq/types';
+﻿import type { RenderNode, RenderNode2D, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
@@ -81,7 +81,7 @@ export function createDefaultWebGLBitmapShader(
   return {
     locations: shaderLoc,
     program: shaderLoc.program,
-    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: DisplayObjectRenderNode): void {
+    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: RenderNode2D): void {
       const internal = state as WebGLRenderStateInternal;
       setWebGLAttributes(gl, shaderLoc);
       setWebGLMatrixFromTransform(
@@ -106,13 +106,13 @@ export function createDefaultWebGLBitmapShader(
 export function createWebGLBitmapShader(
   gl: WebGL2RenderingContext,
   fragmentSrc: string,
-  onBind?: (gl: WebGL2RenderingContext, locations: WebGLShaderLocations, renderNode: DisplayObjectRenderNode) => void,
+  onBind?: (gl: WebGL2RenderingContext, locations: WebGLShaderLocations, renderNode: RenderNode2D) => void,
 ): WebGLBitmapShader {
   const locations = compileWebGLBitmapProgram(gl, fragmentSrc);
   return {
     locations,
     program: locations.program,
-    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: DisplayObjectRenderNode): void {
+    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: RenderNode2D): void {
       const internal = state as WebGLRenderStateInternal;
       setWebGLAttributes(gl, locations);
       setWebGLMatrixFromTransform(

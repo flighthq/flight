@@ -1,5 +1,6 @@
-import type { SpriteRenderNode } from '@flighthq/types';
+import type { RenderNode2D } from '@flighthq/types';
 
+import { registerDefaultWebGLMaterial } from './webglDefaultMaterial';
 import { defaultWebGLQuadBatchRenderer } from './webglQuadBatch';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 import { makeWebGLState } from './webglTestHelper';
@@ -12,7 +13,7 @@ function makeAtlas() {
   };
 }
 
-function makeQuadBatchNode(data: Record<string, unknown> = {}): SpriteRenderNode {
+function makeQuadBatchNode(data: Record<string, unknown> = {}): RenderNode2D {
   return {
     source: {
       data: {
@@ -26,10 +27,12 @@ function makeQuadBatchNode(data: Record<string, unknown> = {}): SpriteRenderNode
     },
     blendMode: 0,
     alpha: 1,
+    material: null,
+    materialData: null,
     renderer: null,
     traverseChildren: false,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
-  } as unknown as SpriteRenderNode;
+  } as unknown as RenderNode2D;
 }
 
 describe('defaultWebGLQuadBatchRenderer', () => {
@@ -45,6 +48,7 @@ describe('defaultWebGLQuadBatchRenderer', () => {
 describe('defaultWebGLQuadBatchRenderer.submit', () => {
   it('returns early without drawing when atlas is null', () => {
     const { state, gl } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
     defaultWebGLQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: null }));
     flushWebGLSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
@@ -52,6 +56,7 @@ describe('defaultWebGLQuadBatchRenderer.submit', () => {
 
   it('returns early without drawing when atlas.image is null', () => {
     const { state, gl } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
     defaultWebGLQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: { image: null, regions: [] } }));
     flushWebGLSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
@@ -59,6 +64,7 @@ describe('defaultWebGLQuadBatchRenderer.submit', () => {
 
   it('returns early without drawing when atlas.image.src is null', () => {
     const { state, gl } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
     defaultWebGLQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: { image: { src: null }, regions: [] } }));
     flushWebGLSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
@@ -66,6 +72,7 @@ describe('defaultWebGLQuadBatchRenderer.submit', () => {
 
   it('returns early without drawing when instanceCount is 0', () => {
     const { state, gl } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
     defaultWebGLQuadBatchRenderer.submit(state, makeQuadBatchNode({ instanceCount: 0 }));
     flushWebGLSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
@@ -73,6 +80,7 @@ describe('defaultWebGLQuadBatchRenderer.submit', () => {
 
   it('draws all valid instances in a single instanced call with vector2 transform type', () => {
     const { state, gl } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
     defaultWebGLQuadBatchRenderer.submit(
       state,
       makeQuadBatchNode({
@@ -89,6 +97,7 @@ describe('defaultWebGLQuadBatchRenderer.submit', () => {
 
   it('excludes out-of-range ids from the instanced draw count', () => {
     const { state, gl } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
     defaultWebGLQuadBatchRenderer.submit(
       state,
       makeQuadBatchNode({
@@ -105,6 +114,7 @@ describe('defaultWebGLQuadBatchRenderer.submit', () => {
 
   it('draws all valid instances in a single instanced call with full matrix transform type', () => {
     const { state, gl } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
     const transforms = new Float32Array([1, 0, 0, 1, 0, 0]);
     defaultWebGLQuadBatchRenderer.submit(
       state,
