@@ -1,5 +1,5 @@
 ﻿import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/displayobject';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import { getOrCreateRenderNode2D } from '@flighthq/render';
 
 import {
   createWebGLScale9ShapeData,
@@ -35,7 +35,7 @@ describe('drawWebGLScale9Shape', () => {
   it('returns early when commands are empty', () => {
     const { state, gl } = makeWebGLState();
     const shape = createScale9Shape(grid);
-    const data = getOrCreateDisplayObjectRenderNode(state, shape);
+    const data = getOrCreateRenderNode2D(state, shape);
 
     drawWebGLScale9Shape(state, data);
 
@@ -47,7 +47,7 @@ describe('drawWebGLScale9Shape', () => {
     const shape = createScale9Shape(grid);
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 100, 100);
-    const data = getOrCreateDisplayObjectRenderNode(state, shape);
+    const data = getOrCreateRenderNode2D(state, shape);
 
     drawWebGLScale9Shape(state, data);
 
@@ -59,7 +59,7 @@ describe('drawWebGLScale9ShapeMask', () => {
   it('uses the same draw path as normal Scale9 rendering', () => {
     const { state, gl } = makeWebGLState();
     const shape = createScale9Shape(grid);
-    const data = getOrCreateDisplayObjectRenderNode(state, shape);
+    const data = getOrCreateRenderNode2D(state, shape);
 
     drawWebGLScale9ShapeMask(state, data);
 

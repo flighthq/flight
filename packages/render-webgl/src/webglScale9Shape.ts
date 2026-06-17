@@ -2,10 +2,10 @@
 import { mapCanvasScale9ShapeCommands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
   MatrixLike,
   Renderable,
   RendererData,
+  RenderNode2D,
   RenderState,
   Scale9Shape,
 } from '@flighthq/types';
@@ -49,7 +49,7 @@ export function createWebGLScale9ShapeData(state: RenderState, _source: Renderab
   } as unknown as RendererData;
 }
 
-export function drawWebGLScale9Shape(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawWebGLScale9Shape(state: RenderState, renderNode: RenderNode2D): void {
   const internal = state as WebGLRenderStateInternal;
   const source = renderNode.source as Scale9Shape;
   const { commands, scale9Grid, version } = source.data;
@@ -117,7 +117,7 @@ export function drawWebGLScale9Shape(state: RenderState, renderNode: DisplayObje
   drawWebGLQuad(internal, 0, 0, w, h, 0, 0, 1, 1);
 }
 
-export function drawWebGLScale9ShapeMask(state: RenderState, data: DisplayObjectRenderNode): void {
+export function drawWebGLScale9ShapeMask(state: RenderState, data: RenderNode2D): void {
   drawWebGLScale9Shape(state, data);
 }
 

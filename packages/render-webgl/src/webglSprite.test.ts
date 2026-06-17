@@ -1,5 +1,5 @@
 import { addNodeChild } from '@flighthq/node';
-import { getOrCreateSpriteRenderNode, prepareSpriteRender, registerRenderer } from '@flighthq/render';
+import { getOrCreateRenderNode2D, prepareSpriteRender, registerRenderer } from '@flighthq/render';
 import { createSprite } from '@flighthq/sprite';
 import { SpriteKind } from '@flighthq/types';
 
@@ -26,7 +26,7 @@ describe('renderWebGLSprite', () => {
     registerRenderer(state, SpriteKind, renderer);
 
     const sprite = createSprite();
-    const data = getOrCreateSpriteRenderNode(state, sprite);
+    const data = getOrCreateRenderNode2D(state, sprite);
 
     prepareSpriteRender(state, sprite);
     renderWebGLSprite(state, sprite);

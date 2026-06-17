@@ -12,7 +12,7 @@ import {
 } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
+  RenderNode2D,
   RenderState,
   RichText,
   RichTextRuntime,
@@ -28,7 +28,7 @@ import { resolveWebGLShader } from './webglShaderBinding';
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
 
-const _textureMap = new WeakMap<DisplayObjectRenderNode, WebGLTexture>();
+const _textureMap = new WeakMap<RenderNode2D, WebGLTexture>();
 
 export type WebGLRichTextOverlay = (
   context: CanvasRenderingContext2D,
@@ -39,17 +39,17 @@ export type WebGLRichTextOverlay = (
   text: string,
 ) => void;
 
-export function drawWebGLRichText(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawWebGLRichText(state: RenderState, renderNode: RenderNode2D): void {
   drawWebGLRichTextWithOverlay(state, renderNode);
 }
 
-export function drawWebGLRichTextMask(state: RenderState, data: DisplayObjectRenderNode): void {
+export function drawWebGLRichTextMask(state: RenderState, data: RenderNode2D): void {
   drawWebGLRichText(state, data);
 }
 
 export function drawWebGLRichTextWithOverlay(
   state: RenderState,
-  renderNode: DisplayObjectRenderNode,
+  renderNode: RenderNode2D,
   overlay?: WebGLRichTextOverlay,
 ): void {
   const internal = state as WebGLRenderStateInternal;

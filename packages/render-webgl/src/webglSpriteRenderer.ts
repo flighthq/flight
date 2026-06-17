@@ -1,5 +1,5 @@
 import { noopRendererData } from '@flighthq/render';
-import type { RenderState, Sprite, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
+import type { RenderNode2D, RenderState, Sprite, SpriteRenderer } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
@@ -9,7 +9,7 @@ import {
   prepareWebGLSpriteBatchWrite,
 } from './webglSpriteBatch';
 
-function submitWebGLSpriteNode(state: RenderState, spriteNode: SpriteRenderNode): void {
+function submitWebGLSpriteNode(state: RenderState, spriteNode: RenderNode2D): void {
   const internal = state as WebGLRenderStateInternal;
   const source = spriteNode.source as Sprite;
   const { atlas, id } = source.data;
@@ -29,6 +29,7 @@ function submitWebGLSpriteNode(state: RenderState, spriteNode: SpriteRenderNode)
 
   const material = spriteNode.material;
   const materialRenderer = resolveWebGLMaterialRenderer(internal, material);
+  if (materialRenderer === null) return;
   const base = prepareWebGLSpriteBatchWrite(
     internal,
     atlas.image.src,

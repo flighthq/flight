@@ -1,5 +1,25 @@
-import { registerWebGLColorTransformShader } from './webglMaterials';
+import { ColorTransformMaterialKind, UniformColorTransformMaterialKind } from '@flighthq/types';
+
+import { getWebGLRenderNodeColorTransform, registerWebGLColorTransformShader } from './webglMaterials';
 import { makeWebGLState } from './webglTestHelper';
+
+describe('getWebGLRenderNodeColorTransform', () => {
+  it('returns null when the node has no material', () => {
+    expect(getWebGLRenderNodeColorTransform({ material: null } as never)).toBeNull();
+  });
+
+  it('returns the value carried on a uniform color transform material', () => {
+    const colorTransform = { redMultiplier: 0.5 };
+    const node = { material: { kind: UniformColorTransformMaterialKind, colorTransform } } as never;
+    expect(getWebGLRenderNodeColorTransform(node)).toBe(colorTransform);
+  });
+
+  it('returns the per-node material data for a color transform material', () => {
+    const colorTransform = { redMultiplier: 0.5 };
+    const node = { material: { kind: ColorTransformMaterialKind }, materialData: colorTransform } as never;
+    expect(getWebGLRenderNodeColorTransform(node)).toBe(colorTransform);
+  });
+});
 
 describe('registerWebGLColorTransformShader', () => {
   it('registers a color transform shader on the render state', () => {
@@ -10,12 +30,12 @@ describe('registerWebGLColorTransformShader', () => {
     expect(state.colorTransformBitmapShader).toBeDefined();
   });
 
-  it('uses the color transform shader as the state default shader after registration', () => {
+  it('does not make the color transform shader the state default shader', () => {
     const { state } = makeWebGLState();
 
     registerWebGLColorTransformShader(state);
 
-    expect(state.defaultBitmapShader).toBe(state.colorTransformBitmapShader);
+    expect(state.defaultBitmapShader).not.toBe(state.colorTransformBitmapShader);
   });
 
   it('includes color transform uniform locations', () => {
@@ -28,11 +48,12 @@ describe('registerWebGLColorTransformShader', () => {
     expect(state.colorTransformBitmapShader?.locations.locHasColorTransform).toBeDefined();
   });
 
-  it('binds color transform uniforms from the registered shader callback', () => {
+  it('binds color transform uniforms from the node material data', () => {
     const { state, gl } = makeWebGLState();
     const renderNode = {
       alpha: 0.75,
-      colorTransform: {
+      material: { kind: ColorTransformMaterialKind },
+      materialData: {
         redMultiplier: 0.5,
         greenMultiplier: 0.25,
         blueMultiplier: 1.5,
@@ -43,13 +64,12 @@ describe('registerWebGLColorTransformShader', () => {
         alphaOffset: 40,
       },
       transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
-      useColorTransform: true,
     };
 
     registerWebGLColorTransformShader(state);
-    state.defaultBitmapShader.bind(gl, state, renderNode as never);
+    state.colorTransformBitmapShader!.bind(gl, state, renderNode as never);
 
-    const loc = state.defaultBitmapShader.locations;
+    const loc = state.colorTransformBitmapShader!.locations;
     expect(gl.uniform1i).toHaveBeenCalledWith(loc.locHasColorTransform, 1);
     expect(gl.uniform4f).toHaveBeenCalledWith(loc.locColorMultiplier, 0.5, 0.25, 1.5, 0.8);
     expect(gl.uniform4f).toHaveBeenCalledWith(loc.locColorOffset, 10 / 255, 20 / 255, 30 / 255, 40 / 255);

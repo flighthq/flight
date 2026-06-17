@@ -1,5 +1,5 @@
 ﻿import { createRichText } from '@flighthq/displayobject';
-import type { DisplayObjectRenderNode, RichText } from '@flighthq/types';
+import type { RenderNode2D, RichText } from '@flighthq/types';
 
 import {
   defaultWebGLRichTextRenderer,
@@ -9,7 +9,7 @@ import {
 } from './webglRichText';
 import { makeWebGLState } from './webglTestHelper';
 
-function makeRichTextNode(): DisplayObjectRenderNode {
+function makeRichTextNode(): RenderNode2D {
   const richText = createRichText();
   return {
     source: richText,
@@ -17,7 +17,7 @@ function makeRichTextNode(): DisplayObjectRenderNode {
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     rendererData: null,
-  } as unknown as DisplayObjectRenderNode;
+  } as unknown as RenderNode2D;
 }
 
 describe('defaultWebGLRichTextRenderer', () => {

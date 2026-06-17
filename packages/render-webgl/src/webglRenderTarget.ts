@@ -1,5 +1,5 @@
 import { acquireMatrix, copyMatrix, createMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry';
-import type { DisplayObjectRenderNode, Matrix, WebGLRenderState, WebGLRenderTarget } from '@flighthq/types';
+import type { Matrix, RenderNode2D, WebGLRenderState, WebGLRenderTarget } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { drawWebGLQuad, useWebGLProgram } from './webglDraw';
@@ -111,7 +111,7 @@ export function destroyWebGLRenderTarget(state: WebGLRenderState, target: WebGLR
  */
 export function drawWebGLRenderTargetResult(
   state: WebGLRenderState,
-  renderNode: DisplayObjectRenderNode,
+  renderNode: RenderNode2D,
   target: Readonly<WebGLRenderTarget>,
   transform: Readonly<Matrix>,
 ): void {

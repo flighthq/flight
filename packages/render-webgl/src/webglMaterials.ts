@@ -1,17 +1,44 @@
-﻿import type { DisplayObjectRenderNode, RenderNode, WebGLRenderState } from '@flighthq/types';
+﻿import type {
+  ColorTransform,
+  RenderNode,
+  RenderNode2D,
+  UniformColorTransformMaterial,
+  WebGLRenderState,
+} from '@flighthq/types';
+import { ColorTransformMaterialKind, UniformColorTransformMaterialKind } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { setWebGLAttributes, setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
-import { registerWebGLBitmapShader } from './webglShaderRegistry';
+import { registerWebGLMaterialShader } from './webglShaderBinding';
 import type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
 
+// Effective color transform for a render node from its material: the value carried on a
+// UniformColorTransformMaterial, or the per-node materialData for a ColorTransformMaterial. Null
+// for any other (or no) material — display objects are tinted purely through the material system.
+export function getWebGLRenderNodeColorTransform(renderNode: Readonly<RenderNode>): ColorTransform | null {
+  const material = renderNode.material;
+  if (material === null) return null;
+  if (material.kind === UniformColorTransformMaterialKind) {
+    return (material as UniformColorTransformMaterial).colorTransform;
+  }
+  if (material.kind === ColorTransformMaterialKind) {
+    return renderNode.materialData as ColorTransform | null;
+  }
+  return null;
+}
+
+// Compiles the color-transform bitmap shader and stores it on the state. Unlike before, it does NOT
+// become the default shader — resolveWebGLShader selects it only for nodes whose material is a color
+// transform, so the standard pipeline pays nothing for it.
 export function registerWebGLColorTransformShader(state: WebGLRenderState): void {
   const internal = state as WebGLRenderStateInternal;
   if (internal.colorTransformBitmapShader !== undefined) return;
 
   const shaderLoc = compileWebGLColorTransformProgram(internal.gl);
-  internal.colorTransformBitmapShader = createWebGLColorTransformBitmapShader(shaderLoc, internal.matrixArray);
-  registerWebGLBitmapShader(state, internal.colorTransformBitmapShader);
+  const shader = createWebGLColorTransformBitmapShader(shaderLoc, internal.matrixArray);
+  internal.colorTransformBitmapShader = shader;
+  registerWebGLMaterialShader(state, ColorTransformMaterialKind, shader);
+  registerWebGLMaterialShader(state, UniformColorTransformMaterialKind, shader);
 }
 
 function compileShader(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader {
@@ -56,7 +83,7 @@ function createWebGLColorTransformBitmapShader(
   return {
     locations: shaderLoc,
     program: shaderLoc.program,
-    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: DisplayObjectRenderNode): void {
+    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: RenderNode2D): void {
       setWebGLAttributes(gl, shaderLoc);
       setWebGLMatrixFromTransform(
         gl,
@@ -76,11 +103,13 @@ function setWebGLColorTransformUniforms(
   loc: WebGLShaderLocations,
   renderNode: RenderNode,
 ): void {
-  gl.uniform1i(loc.locHasColorTransform!, renderNode.useColorTransform ? 1 : 0);
+  const colorTransform = getWebGLRenderNodeColorTransform(renderNode);
+  if (colorTransform === null) {
+    gl.uniform1i(loc.locHasColorTransform!, 0);
+    return;
+  }
 
-  if (!renderNode.useColorTransform) return;
-
-  const colorTransform = renderNode.colorTransform!;
+  gl.uniform1i(loc.locHasColorTransform!, 1);
   gl.uniform4f(
     loc.locColorMultiplier!,
     colorTransform.redMultiplier,

@@ -1,5 +1,6 @@
-import type { SpriteRenderNode } from '@flighthq/types';
+import type { RenderNode2D } from '@flighthq/types';
 
+import { registerDefaultWebGLMaterial } from './webglDefaultMaterial';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 import { defaultWebGLSpriteRenderer } from './webglSpriteRenderer';
 import { makeWebGLState } from './webglTestHelper';
@@ -12,15 +13,17 @@ function makeAtlas(regionWidth = 32, regionHeight = 32) {
   };
 }
 
-function makeSpriteNode(data: Record<string, unknown> = {}): SpriteRenderNode {
+function makeSpriteNode(data: Record<string, unknown> = {}): RenderNode2D {
   return {
     source: { data: { atlas: null, id: 0, ...data } },
     blendMode: 0,
     alpha: 1,
+    material: null,
+    materialData: null,
     renderer: null,
     traverseChildren: false,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
-  } as unknown as SpriteRenderNode;
+  } as unknown as RenderNode2D;
 }
 
 describe('defaultWebGLSpriteRenderer', () => {
@@ -64,6 +67,7 @@ describe('defaultWebGLSpriteRenderer.submit', () => {
 
   it('draws a quad when the atlas region is valid', () => {
     const { state, gl } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
     defaultWebGLSpriteRenderer.submit(state, makeSpriteNode({ atlas: makeAtlas(), id: 0 }));
     flushWebGLSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 1);
