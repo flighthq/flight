@@ -18,6 +18,7 @@ import {
   endWebGLRenderTarget,
   ensureWebGLRenderCacheTarget,
   getWebGLRenderCacheTarget,
+  invalidateNodeLocalTransform,
   prepareDisplayObjectRender,
   refreshWebGLRenderCache,
   registerDefaultWebGLMaterial,
@@ -90,6 +91,12 @@ export function applyBackgroundBlur(node: DisplayObject): () => void {
     endWebGLRenderTarget(state);
     destroyWebGLRenderTarget(state, temp);
     copyMatrix(blurred.transform, sharp.transform);
+    // The panel never invalidates on its own (its revisions do not change on resize), so the
+    // prepare/adapt pass would otherwise skip it and keep folding the previous layout's placement
+    // transform into the composite — leaving the blurred panel stale/offset from the re-laid-out
+    // scene. Force the adapt fold to re-run with the new transform on the next prepare. Mirrors the
+    // prepareBlurTransform()/invalidateNodeLocalTransform() step the WebGPU backend documents.
+    invalidateNodeLocalTransform(node);
   };
   refresh();
   return refresh;
