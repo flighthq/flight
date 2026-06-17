@@ -70,16 +70,20 @@ export type WebGPURenderStateInternal = Omit<WebGPURenderState, 'canvas' | 'devi
   spriteBatchMaterialRenderer: WebGPUMaterialRenderer | null;
   spriteBatchMaterialFloats: number;
   spriteBatchCount: number;
-  spriteBatchInstanceBuffer: GPUBuffer | null;
-  spriteBatchInstanceCapacity: number;
   spriteBatchInstanceData: Float32Array;
-  // Parallel per-instance material buffer (instanceFloatCount floats per instance), written by the
-  // active material's packInstance. Separate from the base instance buffer so the base layout carries
+  // Parallel per-instance material data (instanceFloatCount floats per instance), written by the
+  // active material's packInstance. Separate from the base instance data so the base layout carries
   // no material concern.
-  spriteBatchMaterialBuffer: GPUBuffer | null;
-  spriteBatchMaterialCapacity: number;
   spriteBatchMaterialData: Float32Array;
   spriteBatchTexture: CanvasImageSource | null;
+  // Per-frame pool of GPU storage buffers, one slot claimed per flush. The batch records draws into
+  // the canvas pass, but the pass is submitted once at end of frame, so every flush's draw reads its
+  // buffers at submit time. Reusing a single buffer across flushes would leave them all reading the
+  // last flush's data — the whole batch collapsing onto one position. Each flush claims a distinct
+  // slot instead; the cursor resets per frame and slots are reused across frames, which is safe
+  // because a frame's writeBuffer is queued after the previous frame's submit completes.
+  spriteBatchBufferPool: WebGPUSpriteBatchBufferSlot[];
+  spriteBatchBufferCursor: number;
   materialRendererMap?: Map<symbol, WebGPUMaterialRenderer>;
 
   // Frame state: command encoder and current render pass
@@ -116,6 +120,16 @@ export type WebGPURenderStateInternal = Omit<WebGPURenderState, 'canvas' | 'devi
   // Color transform shader (lazily compiled)
   colorTransformBitmapShader?: WebGPUBitmapShader;
 };
+
+// One pool slot's GPU buffers, sized lazily and grown by allocating a replacement (the superseded
+// buffer is released to GC, never destroyed mid-life, since a prior frame's submit may still
+// reference it). materialBuffer stays null until a flush with per-instance material data uses it.
+export interface WebGPUSpriteBatchBufferSlot {
+  instanceBuffer: GPUBuffer | null;
+  instanceCapacity: number;
+  materialBuffer: GPUBuffer | null;
+  materialCapacity: number;
+}
 
 export interface WebGPUSavedPassState {
   canvasTextureView: GPUTextureView | null;

@@ -33,6 +33,7 @@ import {
   endWebGPURenderTarget,
   resizeWebGPURenderTarget,
 } from './webgpuRenderTarget';
+import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 
 /**
  * Creates an offscreen render state for baking render caches consumed by `screenState`.
@@ -97,13 +98,13 @@ export function createWebGPUCacheState(screenState: WebGPURenderState): WebGPURe
   cacheState.spriteBatchMaterialRenderer = null;
   cacheState.spriteBatchMaterialFloats = 0;
   cacheState.spriteBatchCount = 0;
-  cacheState.spriteBatchInstanceBuffer = null;
-  cacheState.spriteBatchInstanceCapacity = 0;
   cacheState.spriteBatchInstanceData = new Float32Array(0);
-  cacheState.spriteBatchMaterialBuffer = null;
-  cacheState.spriteBatchMaterialCapacity = 0;
   cacheState.spriteBatchMaterialData = new Float32Array(0);
   cacheState.spriteBatchTexture = null;
+  // The bake state owns its own buffer pool (its flushes record into the same frame, so they must
+  // not share slots with the screen's batch either).
+  cacheState.spriteBatchBufferPool = [];
+  cacheState.spriteBatchBufferCursor = 0;
   cacheState.materialRendererMap = screen.materialRendererMap;
   cacheState.maskWriteMode = false;
   cacheState.currentScissorRect = null;
@@ -200,6 +201,9 @@ export function refreshWebGPURenderCache(
   _yInvert.ty = target.height;
   multiplyMatrix(_bakeTransform, _yInvert, _renderTransform);
 
+  // Reclaim the bake state's buffer pool from the start of this bake; the previous bake's submit
+  // has been queued, so its slots are safe to reuse.
+  cs.spriteBatchBufferCursor = 0;
   beginWebGPURenderTarget(cacheState, target, _bakeTransform);
   const dirty = prepareDisplayObjectRender(cacheState, source);
   if (dirty || resized) {
@@ -236,6 +240,11 @@ function drawWebGPURenderCache(state: RenderState, renderProxy: RenderProxy2D): 
   const webgpuState = state as WebGPURenderState;
   const target = getTargets(webgpuState).get(cache);
   if (target === undefined) return;
+  // Drain pending batched geometry before the immediate composite quad. Like every other
+  // immediate-draw renderer (RichText, Video), this bypasses the sprite batch; without the flush the
+  // immediate quad interleaves with the un-flushed batch's instance buffer and bind-group state,
+  // corrupting the pending batch rather than merely reordering it.
+  flushWebGPUSpriteBatch(webgpuState as WebGPURenderStateInternal);
   // renderProxy.transform2D already carries the cache placement transform (folded in by the
   // adapter), so the target composites with an identity offset.
   drawWebGPURenderTargetResult(webgpuState, renderProxy as never, target, _identity);
