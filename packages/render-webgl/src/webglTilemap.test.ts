@@ -1,4 +1,4 @@
-import type { RenderNode2D } from '@flighthq/types';
+import type { RenderProxy2D } from '@flighthq/types';
 
 import { registerDefaultWebGLMaterial } from './webglDefaultMaterial';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
@@ -21,7 +21,7 @@ function makeTileset(atlasOverride?: unknown) {
   };
 }
 
-function makeTilemapNode(data: Record<string, unknown> = {}): RenderNode2D {
+function makeTilemapNode(data: Record<string, unknown> = {}): RenderProxy2D {
   return {
     source: {
       data: {
@@ -39,7 +39,7 @@ function makeTilemapNode(data: Record<string, unknown> = {}): RenderNode2D {
     renderer: null,
     traverseChildren: false,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
-  } as unknown as RenderNode2D;
+  } as unknown as RenderProxy2D;
 }
 
 describe('defaultWebGLTilemapRenderer', () => {

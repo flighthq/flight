@@ -2,7 +2,7 @@
 import { computeRGBHexString } from '@flighthq/materials';
 import { computeTextFormatFontString, noopRendererData } from '@flighthq/render';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
-import type { DisplayObjectRenderer, RenderNode2D, RenderState, Text, TextFormat, TextRuntime } from '@flighthq/types';
+import type { DisplayObjectRenderer, RenderProxy2D, RenderState, Text, TextFormat, TextRuntime } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';
@@ -25,11 +25,11 @@ function getOffscreenCanvas(width: number, height: number, pixelRatio: number = 
 }
 
 // Per-render-node WebGL texture for text
-const _textureMap = new WeakMap<RenderNode2D, WebGLTexture>();
+const _textureMap = new WeakMap<RenderProxy2D, WebGLTexture>();
 
-export function drawWebGLText(state: RenderState, renderNode: RenderNode2D): void {
+export function drawWebGLText(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
-  const source = renderNode.source as Text;
+  const source = renderProxy.source as Text;
   const { text, textFormat } = source.data;
   if (text.length === 0) return;
 
@@ -82,23 +82,23 @@ export function drawWebGLText(state: RenderState, renderNode: RenderNode2D): voi
     offCtx.fillText(slice, x, y);
   }
 
-  const shader = resolveWebGLShader(internal, renderNode);
+  const shader = resolveWebGLShader(internal, renderProxy);
   useWebGLProgram(internal, shader);
 
   // Get or create a texture for this render node
-  let texture = _textureMap.get(renderNode);
+  let texture = _textureMap.get(renderProxy);
   if (!texture) {
     texture = createWebGLTexture(internal);
-    _textureMap.set(renderNode, texture);
+    _textureMap.set(renderProxy, texture);
   }
   updateWebGLTexture(internal, texture, _offscreenCanvas!);
 
-  shader.bind(internal.gl, internal, renderNode);
+  shader.bind(internal.gl, internal, renderProxy);
 
   drawWebGLQuad(internal, 0, 0, w, h, 0, 0, 1, 1);
 }
 
-export function drawWebGLTextMask(state: RenderState, data: RenderNode2D): void {
+export function drawWebGLTextMask(state: RenderState, data: RenderProxy2D): void {
   drawWebGLText(state, data);
 }
 

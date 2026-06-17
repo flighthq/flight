@@ -13,7 +13,7 @@ import type {
   InputText,
   InputTextRuntime,
   InputTextSelectionRectangle,
-  RenderNode2D,
+  RenderProxy2D,
   RenderState,
   RichText,
   TextLayoutResult,
@@ -21,8 +21,8 @@ import type {
 
 import { drawWebGLRichTextMask, drawWebGLRichTextWithOverlay } from './webglRichText';
 
-export function drawWebGLInputText(state: RenderState, renderNode: RenderNode2D): void {
-  drawWebGLRichTextWithOverlay(state, renderNode, drawWebGLInputTextOverlay);
+export function drawWebGLInputText(state: RenderState, renderProxy: RenderProxy2D): void {
+  drawWebGLRichTextWithOverlay(state, renderProxy, drawWebGLInputTextOverlay);
 }
 
 export const defaultWebGLInputTextRenderer: DisplayObjectRenderer = {
@@ -30,8 +30,8 @@ export const defaultWebGLInputTextRenderer: DisplayObjectRenderer = {
   submit: drawWebGLInputText,
 };
 
-function drawWebGLInputTextMask(state: RenderState, renderNode: RenderNode2D): void {
-  drawWebGLRichTextMask(state, renderNode);
+function drawWebGLInputTextMask(state: RenderState, renderProxy: RenderProxy2D): void {
+  drawWebGLRichTextMask(state, renderProxy);
 }
 
 export const defaultWebGLInputTextMaskRenderer: DisplayObjectMaskRenderer = {

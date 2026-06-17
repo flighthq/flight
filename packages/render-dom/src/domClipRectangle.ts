@@ -1,10 +1,10 @@
-import type { DOMStageRectangle, MatrixLike, RectangleLike, RenderNode2D } from '@flighthq/types';
+import type { DOMStageRectangle, MatrixLike, RectangleLike, RenderProxy2D } from '@flighthq/types';
 
 import type { DOMClipHooks, DOMRenderStateInternal } from './internal';
 
 export function applyDOMClipRectangles(
   state: DOMRenderStateInternal,
-  data: RenderNode2D,
+  data: RenderProxy2D,
   rectangles: readonly DOMStageRectangle[],
 ): void {
   const element = state.domElementMap.get(data);

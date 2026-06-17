@@ -4,7 +4,7 @@ import type {
   DisplayObjectRenderer,
   Renderable,
   RendererData,
-  RenderNode2D,
+  RenderProxy2D,
   RenderState,
   Shape,
 } from '@flighthq/types';
@@ -29,16 +29,16 @@ function createWebGPUShapeData(_state: RenderState, _source: Renderable): Render
   return { canvas, ctx, entry: null, lastVersion: -1, lastW: 0, lastH: 0 } as unknown as RendererData;
 }
 
-export function drawWebGPUShape(state: RenderState, renderNode: RenderNode2D): void {
+export function drawWebGPUShape(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 
-  const source = renderNode.source as Shape;
+  const source = renderProxy.source as Shape;
   const { commands, version } = source.data;
   if (commands.length === 0) return;
-  if (renderNode.rendererData === null) return;
+  if (renderProxy.rendererData === null) return;
 
-  const shapeData = renderNode.rendererData as unknown as WebGPUShapeData;
+  const shapeData = renderProxy.rendererData as unknown as WebGPUShapeData;
 
   const bounds = getNodeLocalBoundsRectangle(source);
   const w = Math.ceil(bounds.width);
@@ -68,11 +68,11 @@ export function drawWebGPUShape(state: RenderState, renderNode: RenderNode2D): v
 
   if (shapeData.entry === null) return;
 
-  internal.applyBlendMode?.(internal, renderNode.blendMode);
-  drawWebGPUQuad(internal, renderNode, shapeData.entry, bounds.x, bounds.y, bounds.x + w, bounds.y + h, 0, 0, 1, 1);
+  internal.applyBlendMode?.(internal, renderProxy.blendMode);
+  drawWebGPUQuad(internal, renderProxy, shapeData.entry, bounds.x, bounds.y, bounds.x + w, bounds.y + h, 0, 0, 1, 1);
 }
 
-export function drawWebGPUShapeMask(state: RenderState, data: RenderNode2D): void {
+export function drawWebGPUShapeMask(state: RenderState, data: RenderProxy2D): void {
   drawWebGPUShape(state, data);
 }
 

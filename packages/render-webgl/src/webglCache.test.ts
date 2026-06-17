@@ -62,7 +62,7 @@ describe('createWebGLCacheState', () => {
     const cacheState = createWebGLCacheState(screen);
     expect(cacheState.rendererMap.get(RenderCacheKind)).toBe(defaultWebGLRenderCacheRenderer);
     expect((cacheState as any).gl).toBe((screen as any).gl);
-    expect(cacheState.renderNodeMap).not.toBe(screen.renderNodeMap);
+    expect(cacheState.renderProxyMap).not.toBe(screen.renderProxyMap);
   });
 });
 

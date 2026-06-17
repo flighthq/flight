@@ -1,4 +1,4 @@
-import { getRenderNode2D, isRenderNodeVisible } from '@flighthq/render';
+import { getRenderProxy2D, isRenderProxyVisible } from '@flighthq/render';
 import { getSpriteNodeRuntime } from '@flighthq/sprite';
 import type { SpriteNode, WebGLRenderState } from '@flighthq/types';
 
@@ -14,8 +14,8 @@ export function renderWebGLSprite(state: WebGLRenderState, source: SpriteNode): 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as SpriteNode;
     if (!current.enabled) continue;
-    const data = getRenderNode2D(state, current);
-    if (data === undefined || !isRenderNodeVisible(data)) continue;
+    const data = getRenderProxy2D(state, current);
+    if (data === undefined || !isRenderProxyVisible(data)) continue;
 
     data.renderer?.submit(internal, data);
 

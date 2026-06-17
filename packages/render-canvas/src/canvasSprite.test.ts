@@ -1,6 +1,6 @@
 import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
 import { addNodeChild } from '@flighthq/node';
-import { getOrCreateRenderNode2D, prepareSpriteRender, registerRenderer } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareSpriteRender, registerRenderer } from '@flighthq/render';
 import { createSprite } from '@flighthq/sprite';
 import { SpriteKind } from '@flighthq/types';
 
@@ -32,9 +32,9 @@ describe('drawCanvasSprite', () => {
     sprite.data.atlas = atlas;
     sprite.data.id = 0;
     prepareSpriteRender(state, sprite);
-    const renderNode = getOrCreateRenderNode2D(state, sprite);
+    const renderProxy = getOrCreateRenderProxy2D(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
-    drawCanvasSprite(state, renderNode);
+    drawCanvasSprite(state, renderProxy);
     expect(spy).toHaveBeenCalled();
   });
 
@@ -42,9 +42,9 @@ describe('drawCanvasSprite', () => {
     const state = makeState();
     const sprite = createSprite();
     prepareSpriteRender(state, sprite);
-    const renderNode = getOrCreateRenderNode2D(state, sprite);
+    const renderProxy = getOrCreateRenderProxy2D(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
-    drawCanvasSprite(state, renderNode);
+    drawCanvasSprite(state, renderProxy);
     expect(spy).not.toHaveBeenCalled();
   });
 });

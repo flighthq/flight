@@ -1,19 +1,19 @@
 import { getDisplayObjectRuntime } from '@flighthq/displayobject';
-import { getRenderNode2D, isRenderNodeVisible, noopRendererData } from '@flighthq/render';
-import type { DisplayObject, DisplayObjectRenderer, RenderNode2D, WebGLRenderState } from '@flighthq/types';
+import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render';
+import type { DisplayObject, DisplayObjectRenderer, RenderProxy2D, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { useWebGLProgram } from './webglDraw';
 
-export function drawWebGLDisplayObject(_state: WebGLRenderState, _renderNode: RenderNode2D): void {
+export function drawWebGLDisplayObject(_state: WebGLRenderState, _renderProxy: RenderProxy2D): void {
   // Plain display objects have no visual geometry of their own.
 }
 
-export function drawWebGLDisplayObjectMask(state: WebGLRenderState, data: RenderNode2D): void {
+export function drawWebGLDisplayObjectMask(state: WebGLRenderState, data: RenderProxy2D): void {
   const children = getDisplayObjectRuntime(data.source as DisplayObject).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
-      const child = getRenderNode2D(state, children[i] as DisplayObject);
+      const child = getRenderProxy2D(state, children[i] as DisplayObject);
       if (child !== undefined) {
         state.displayObjectMaskRendererMap.get(child.source.kind)?.drawMask(state, child);
       }
@@ -36,13 +36,13 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
     const current = tempStack[--stackLength] as DisplayObject;
     if (!current.enabled) continue;
 
-    const data = getRenderNode2D(state, current);
+    const data = getRenderProxy2D(state, current);
     if (data === undefined || data.isMaskFrameID === frameID) continue;
 
     clipHooks?.popMask(state, data);
     clipHooks?.popClipRectangle(state, data);
 
-    if (!isRenderNodeVisible(data)) continue;
+    if (!isRenderProxyVisible(data)) continue;
 
     clipHooks?.pushMask(state, current);
 

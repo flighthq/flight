@@ -1,11 +1,11 @@
 ﻿import { createInputText, getInputTextRuntime } from '@flighthq/displayobject';
 import { setInputTextSelection } from '@flighthq/text-input';
-import type { InputText, RenderNode2D } from '@flighthq/types';
+import type { InputText, RenderProxy2D } from '@flighthq/types';
 
 import { defaultWebGLInputTextRenderer, drawWebGLInputText } from './webglInputText';
 import { makeWebGLState } from './webglTestHelper';
 
-function makeInputTextNode(): RenderNode2D {
+function makeInputTextNode(): RenderProxy2D {
   const inputText = createInputText({ data: { height: 40, text: 'hello', width: 100 } });
   return {
     source: inputText,
@@ -13,7 +13,7 @@ function makeInputTextNode(): RenderNode2D {
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     rendererData: null,
-  } as unknown as RenderNode2D;
+  } as unknown as RenderProxy2D;
 }
 
 describe('defaultWebGLInputTextRenderer', () => {
@@ -25,23 +25,23 @@ describe('defaultWebGLInputTextRenderer', () => {
 describe('drawWebGLInputText', () => {
   it('renders a focused collapsed selection without throwing', () => {
     const { state, gl } = makeWebGLState();
-    const renderNode = makeInputTextNode();
-    const source = renderNode.source as InputText;
+    const renderProxy = makeInputTextNode();
+    const source = renderProxy.source as InputText;
     (getInputTextRuntime(source) as ReturnType<typeof getInputTextRuntime> & { focused: boolean }).focused = true;
     setInputTextSelection(source, 2, 2);
 
-    expect(() => drawWebGLInputText(state, renderNode)).not.toThrow();
+    expect(() => drawWebGLInputText(state, renderProxy)).not.toThrow();
     expect(gl.drawElements).toHaveBeenCalled();
   });
 
   it('renders a focused expanded selection without throwing', () => {
     const { state, gl } = makeWebGLState();
-    const renderNode = makeInputTextNode();
-    const source = renderNode.source as InputText;
+    const renderProxy = makeInputTextNode();
+    const source = renderProxy.source as InputText;
     (getInputTextRuntime(source) as ReturnType<typeof getInputTextRuntime> & { focused: boolean }).focused = true;
     setInputTextSelection(source, 1, 4);
 
-    expect(() => drawWebGLInputText(state, renderNode)).not.toThrow();
+    expect(() => drawWebGLInputText(state, renderProxy)).not.toThrow();
     expect(gl.drawElements).toHaveBeenCalled();
   });
 });

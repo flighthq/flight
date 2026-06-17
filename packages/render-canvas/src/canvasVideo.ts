@@ -1,18 +1,18 @@
 ﻿import { noopRendererData } from '@flighthq/render';
-import type { CanvasRenderState, DisplayObjectRenderer, RenderNode2D, Video } from '@flighthq/types';
+import type { CanvasRenderState, DisplayObjectRenderer, RenderProxy2D, Video } from '@flighthq/types';
 
 import { drawCanvasDisplayObject, drawCanvasDisplayObjectMask } from './canvasDisplayObject';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasVideo(state: CanvasRenderState, renderNode: RenderNode2D): void {
-  drawCanvasDisplayObject(state, renderNode);
-  const source = renderNode.source as Video;
+export function drawCanvasVideo(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
+  drawCanvasDisplayObject(state, renderProxy);
+  const source = renderProxy.source as Video;
   const element = source.data.source?.element;
   if (element !== undefined && element !== null && element.readyState >= 2) {
     const context = state.context;
-    state.applyBlendMode?.(state, renderNode.blendMode);
-    context.globalAlpha = renderNode.alpha;
-    setCanvasTransform(state, context, renderNode.transform2D);
+    state.applyBlendMode?.(state, renderProxy.blendMode);
+    context.globalAlpha = renderProxy.alpha;
+    setCanvasTransform(state, context, renderProxy.transform2D);
     if (!state.allowSmoothing || !source.data.smoothing) {
       context.imageSmoothingEnabled = false;
     }
@@ -23,8 +23,8 @@ export function drawCanvasVideo(state: CanvasRenderState, renderNode: RenderNode
   }
 }
 
-export function drawCanvasVideoMask(state: CanvasRenderState, renderNode: RenderNode2D): void {
-  drawCanvasDisplayObjectMask(state, renderNode);
+export function drawCanvasVideoMask(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
+  drawCanvasDisplayObjectMask(state, renderProxy);
 }
 
 export const defaultCanvasVideoRenderer: DisplayObjectRenderer = {

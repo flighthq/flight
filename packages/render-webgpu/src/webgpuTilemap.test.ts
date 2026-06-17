@@ -1,4 +1,4 @@
-import { getRenderNode2D, prepareSpriteRender } from '@flighthq/render';
+import { getRenderProxy2D, prepareSpriteRender } from '@flighthq/render';
 import { createTilemap } from '@flighthq/sprite';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
@@ -27,10 +27,10 @@ describe('defaultWebGPUTilemapRenderer.submit', () => {
 
     const tilemap = createTilemap();
     prepareSpriteRender(state, tilemap);
-    const renderNode = getRenderNode2D(state, tilemap)!;
+    const renderProxy = getRenderProxy2D(state, tilemap)!;
 
     expect(() => {
-      defaultWebGPUTilemapRenderer.submit(state, renderNode);
+      defaultWebGPUTilemapRenderer.submit(state, renderProxy);
       flushWebGPUSpriteBatch(state as any);
     }).not.toThrow();
     submitWebGPURenderPass(state);
@@ -40,8 +40,8 @@ describe('defaultWebGPUTilemapRenderer.submit', () => {
     const state = await createWebGPURenderStateForTest();
     const tilemap = createTilemap();
     prepareSpriteRender(state, tilemap);
-    const renderNode = getRenderNode2D(state, tilemap)!;
+    const renderProxy = getRenderProxy2D(state, tilemap)!;
 
-    expect(() => defaultWebGPUTilemapRenderer.submit(state, renderNode)).not.toThrow();
+    expect(() => defaultWebGPUTilemapRenderer.submit(state, renderProxy)).not.toThrow();
   });
 });

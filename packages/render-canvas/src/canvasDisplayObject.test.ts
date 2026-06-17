@@ -1,6 +1,6 @@
 ﻿import { createDisplayObject } from '@flighthq/displayobject';
 import { addNodeChild } from '@flighthq/node';
-import { getOrCreateRenderNode2D, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { enableCanvasCSSFilterSupport, setCanvasCSSFilter } from './canvasCSSFilterBinding';
@@ -32,14 +32,14 @@ describe('drawCanvasDisplayObject', () => {
   it('does not throw', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const data = getOrCreateRenderNode2D(state, obj);
+    const data = getOrCreateRenderProxy2D(state, obj);
     expect(() => drawCanvasDisplayObject(state, data)).not.toThrow();
   });
 
   it('does not call fillRect (no visual geometry)', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const data = getOrCreateRenderNode2D(state, obj);
+    const data = getOrCreateRenderProxy2D(state, obj);
     const spy = vi.spyOn(state.context, 'fillRect');
 
     drawCanvasDisplayObject(state, data);
@@ -52,14 +52,14 @@ describe('drawCanvasDisplayObjectMask', () => {
   it('does not throw when no children', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const data = getOrCreateRenderNode2D(state, obj);
+    const data = getOrCreateRenderProxy2D(state, obj);
     expect(() => drawCanvasDisplayObjectMask(state, data)).not.toThrow();
   });
 
   it('does not call context.rect for a childless display object', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const data = getOrCreateRenderNode2D(state, obj);
+    const data = getOrCreateRenderProxy2D(state, obj);
     const rectSpy = vi.spyOn(state.context, 'rect');
 
     drawCanvasDisplayObjectMask(state, data);

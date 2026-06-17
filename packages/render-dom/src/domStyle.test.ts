@@ -1,6 +1,6 @@
 ﻿import { createDisplayObject } from '@flighthq/displayobject';
 import { setMatrix } from '@flighthq/geometry';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { BlendMode } from '@flighthq/types';
 
 import { enableDOMCSSFilterSupport, setDOMCSSFilter } from './domCSSFilterBinding';
@@ -19,7 +19,7 @@ describe('applyDOMStyle', () => {
     const state = makeState();
     const el = document.createElement('div');
     const obj = createDisplayObject();
-    const node = getOrCreateRenderNode2D(state, obj);
+    const node = getOrCreateRenderProxy2D(state, obj);
     setMatrix(node.transform2D, 1, 0, 0, 1, 10, 20);
 
     applyDOMStyle(state, el, node);
@@ -31,7 +31,7 @@ describe('applyDOMStyle', () => {
     const state = makeState();
     const el = document.createElement('div');
     const obj = createDisplayObject();
-    const node = getOrCreateRenderNode2D(state, obj);
+    const node = getOrCreateRenderProxy2D(state, obj);
     node.alpha = 0.5;
 
     applyDOMStyle(state, el, node);
@@ -44,7 +44,7 @@ describe('applyDOMStyle', () => {
     const el = document.createElement('div');
     el.style.opacity = '0.5';
     const obj = createDisplayObject();
-    const node = getOrCreateRenderNode2D(state, obj);
+    const node = getOrCreateRenderProxy2D(state, obj);
     node.alpha = 1;
 
     applyDOMStyle(state, el, node);
@@ -57,7 +57,7 @@ describe('applyDOMStyle', () => {
     enableDOMBlendModeSupport(state);
     const el = document.createElement('div');
     const obj = createDisplayObject();
-    const node = getOrCreateRenderNode2D(state, obj);
+    const node = getOrCreateRenderProxy2D(state, obj);
     node.blendMode = BlendMode.Multiply;
 
     applyDOMStyle(state, el, node);
@@ -69,7 +69,7 @@ describe('applyDOMStyle', () => {
     const state = makeState();
     const el = document.createElement('div');
     const obj = createDisplayObject();
-    const node = getOrCreateRenderNode2D(state, obj);
+    const node = getOrCreateRenderProxy2D(state, obj);
     node.blendMode = BlendMode.Multiply;
 
     applyDOMStyle(state, el, node);
@@ -83,7 +83,7 @@ describe('applyDOMStyle', () => {
     const obj = createDisplayObject();
     enableDOMCSSFilterSupport(state);
     setDOMCSSFilter(state, obj, 'blur(3px)');
-    const node = getOrCreateRenderNode2D(state, obj);
+    const node = getOrCreateRenderProxy2D(state, obj);
 
     applyDOMStyle(state, el, node);
 

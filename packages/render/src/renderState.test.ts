@@ -18,7 +18,7 @@ describe('createRenderState', () => {
     expect(state.backgroundColorString).toStrictEqual('');
     expect(state.currentFrameID).toStrictEqual(0);
     expect(state.pixelRatio).toStrictEqual(1);
-    expect(state.renderNodeMap).toStrictEqual(new WeakMap());
+    expect(state.renderProxyMap).toStrictEqual(new WeakMap());
     expect(state.renderAlpha).toStrictEqual(1);
     expect(state.renderBlendMode).toStrictEqual(BlendMode.Normal);
     expect(state.renderColorTransform).toStrictEqual(null);
@@ -36,7 +36,7 @@ describe('createRenderState', () => {
       backgroundColorString: '#FF000000',
       currentFrameID: 10,
       pixelRatio: 5,
-      renderNodeMap: new WeakMap(),
+      renderProxyMap: new WeakMap(),
       renderAlpha: 0.5,
       renderBlendMode: BlendMode.Multiply,
       renderColorTransform: createColorTransform(),
@@ -52,7 +52,7 @@ describe('createRenderState', () => {
     expect(obj.backgroundColorString).toStrictEqual(base.backgroundColorString);
     expect(obj.currentFrameID).toStrictEqual(base.currentFrameID);
     expect(obj.pixelRatio).toStrictEqual(base.pixelRatio);
-    expect(obj.renderNodeMap).toStrictEqual(base.renderNodeMap);
+    expect(obj.renderProxyMap).toStrictEqual(base.renderProxyMap);
     expect(obj.renderAlpha).toStrictEqual(base.renderAlpha);
     expect(obj.renderBlendMode).toStrictEqual(base.renderBlendMode);
     expect(obj.renderColorTransform).toStrictEqual(base.renderColorTransform);

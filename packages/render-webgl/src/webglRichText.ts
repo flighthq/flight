@@ -12,7 +12,7 @@ import {
 } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
-  RenderNode2D,
+  RenderProxy2D,
   RenderState,
   RichText,
   RichTextRuntime,
@@ -28,7 +28,7 @@ import { resolveWebGLShader } from './webglShaderBinding';
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
 
-const _textureMap = new WeakMap<RenderNode2D, WebGLTexture>();
+const _textureMap = new WeakMap<RenderProxy2D, WebGLTexture>();
 
 export type WebGLRichTextOverlay = (
   context: CanvasRenderingContext2D,
@@ -39,21 +39,21 @@ export type WebGLRichTextOverlay = (
   text: string,
 ) => void;
 
-export function drawWebGLRichText(state: RenderState, renderNode: RenderNode2D): void {
-  drawWebGLRichTextWithOverlay(state, renderNode);
+export function drawWebGLRichText(state: RenderState, renderProxy: RenderProxy2D): void {
+  drawWebGLRichTextWithOverlay(state, renderProxy);
 }
 
-export function drawWebGLRichTextMask(state: RenderState, data: RenderNode2D): void {
+export function drawWebGLRichTextMask(state: RenderState, data: RenderProxy2D): void {
   drawWebGLRichText(state, data);
 }
 
 export function drawWebGLRichTextWithOverlay(
   state: RenderState,
-  renderNode: RenderNode2D,
+  renderProxy: RenderProxy2D,
   overlay?: WebGLRichTextOverlay,
 ): void {
   const internal = state as WebGLRenderStateInternal;
-  const source = renderNode.source as RichText;
+  const source = renderProxy.source as RichText;
   const data = source.data;
   const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
   const content = getRichTextContent(richTextRuntime);
@@ -86,17 +86,17 @@ export function drawWebGLRichTextWithOverlay(
   }
   overlay?.(offCtx, source, result, fieldW, fieldH, content.text);
 
-  const shader = resolveWebGLShader(internal, renderNode);
+  const shader = resolveWebGLShader(internal, renderProxy);
   useWebGLProgram(internal, shader);
 
-  let texture = _textureMap.get(renderNode);
+  let texture = _textureMap.get(renderProxy);
   if (!texture) {
     texture = createWebGLTexture(internal);
-    _textureMap.set(renderNode, texture);
+    _textureMap.set(renderProxy, texture);
   }
   updateWebGLTexture(internal, texture, _offscreenCanvas!);
 
-  shader.bind(internal.gl, internal, renderNode);
+  shader.bind(internal.gl, internal, renderProxy);
 
   drawWebGLQuad(internal, 0, 0, fieldW, fieldH, 0, 0, 1, 1);
 }

@@ -1,11 +1,11 @@
 import { noopRendererData } from '@flighthq/render';
-import type { RenderNode2D, RenderState, Sprite, SpriteRenderer } from '@flighthq/types';
+import type { RenderProxy2D, RenderState, Sprite, SpriteRenderer } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
 import { resolveWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
 import { packWebGPUSpriteBatchMaterialInstance, prepareWebGPUSpriteBatchWrite } from './webgpuSpriteBatch';
 
-function submitWebGPUSpriteNode(state: RenderState, spriteNode: RenderNode2D): void {
+function submitWebGPUSpriteNode(state: RenderState, spriteNode: RenderProxy2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 

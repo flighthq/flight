@@ -15,7 +15,7 @@ import type {
   InputTextRuntime,
   InputTextSelectionRectangle,
   RendererData,
-  RenderNode2D,
+  RenderProxy2D,
 } from '@flighthq/types';
 
 import { defaultDOMRichTextRenderer, drawDOMRichText, drawDOMRichTextMask } from './domRichText';
@@ -26,16 +26,16 @@ interface DOMInputTextData extends RendererData {
   div: HTMLDivElement | null;
 }
 
-export function drawDOMInputText(state: DOMRenderState, renderNode: RenderNode2D): void {
+export function drawDOMInputText(state: DOMRenderState, renderProxy: RenderProxy2D): void {
   if (!_keyframesInjected) {
     injectCaretBlinkKeyframes();
     _keyframesInjected = true;
   }
-  drawDOMRichText(state, renderNode);
+  drawDOMRichText(state, renderProxy);
 
-  const source = renderNode.source as InputText;
+  const source = renderProxy.source as InputText;
   const runtime = getInputTextRuntime(source) as InputTextRuntime;
-  const data = renderNode.rendererData as DOMInputTextData | null;
+  const data = renderProxy.rendererData as DOMInputTextData | null;
   if ((!runtime.focused && !source.data.alwaysShowSelection) || runtime.textLayout === null || data?.div == null)
     return;
 
@@ -68,8 +68,8 @@ export const defaultDOMInputTextRenderer: DisplayObjectRenderer = {
   submit: drawDOMInputText,
 };
 
-function drawDOMInputTextMask(state: DOMRenderState, renderNode: RenderNode2D): void {
-  drawDOMRichTextMask(state, renderNode);
+function drawDOMInputTextMask(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+  drawDOMRichTextMask(state, renderProxy);
 }
 
 export const defaultDOMInputTextMaskRenderer: DisplayObjectMaskRenderer = {

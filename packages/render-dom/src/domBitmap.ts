@@ -5,7 +5,7 @@ import type {
   DOMRenderState,
   Renderable,
   RendererData,
-  RenderNode2D,
+  RenderProxy2D,
   RenderState,
 } from '@flighthq/types';
 
@@ -21,11 +21,11 @@ function createDOMBitmapData(_state: RenderState, _source: Renderable): DOMBitma
   return createEntity({ canvas: null, context: null, image: null });
 }
 
-export function drawDOMBitmap(state: DOMRenderState, renderNode: RenderNode2D): void {
-  const data = renderNode.rendererData as DOMBitmapData | null;
+export function drawDOMBitmap(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+  const data = renderProxy.rendererData as DOMBitmapData | null;
   if (data === null) return;
 
-  const source = renderNode.source as Bitmap;
+  const source = renderProxy.source as Bitmap;
   const imageSource = source.data.image;
   if (imageSource === null || imageSource.src === null) return;
 
@@ -33,15 +33,15 @@ export function drawDOMBitmap(state: DOMRenderState, renderNode: RenderNode2D): 
   const sr = source.data.sourceRectangle ?? null;
 
   if (sr === null && src instanceof HTMLImageElement) {
-    renderBitmapAsImage(state, renderNode, data, src);
+    renderBitmapAsImage(state, renderProxy, data, src);
   } else {
-    renderBitmapAsCanvas(state, renderNode, data, imageSource.width, imageSource.height, src, sr);
+    renderBitmapAsCanvas(state, renderProxy, data, imageSource.width, imageSource.height, src, sr);
   }
 }
 
 function renderBitmapAsImage(
   state: DOMRenderState,
-  renderNode: RenderNode2D,
+  renderProxy: RenderProxy2D,
   data: DOMBitmapData,
   src: HTMLImageElement,
 ): void {
@@ -60,13 +60,13 @@ function renderBitmapAsImage(
     data.image.src = src.src;
   }
 
-  applyDOMStyle(state, data.image, renderNode);
+  applyDOMStyle(state, data.image, renderProxy);
   setDOMRendererElement(state, data.image);
 }
 
 function renderBitmapAsCanvas(
   state: DOMRenderState,
-  renderNode: RenderNode2D,
+  renderProxy: RenderProxy2D,
   data: DOMBitmapData,
   width: number,
   height: number,
@@ -83,7 +83,7 @@ function renderBitmapAsCanvas(
     prepareDOMElement(data.canvas);
   }
 
-  const source = renderNode.source as Bitmap;
+  const source = renderProxy.source as Bitmap;
   const smoothing = source.data.smoothing && state.allowSmoothing;
 
   const drawWidth = sourceRectangle !== null ? sourceRectangle.width : width;
@@ -109,12 +109,12 @@ function renderBitmapAsCanvas(
     ctx.drawImage(src, 0, 0, width, height);
   }
 
-  applyDOMStyle(state, data.canvas, renderNode);
+  applyDOMStyle(state, data.canvas, renderProxy);
   setDOMRendererElement(state, data.canvas);
 }
 
-export function drawDOMBitmapMask(state: DOMRenderState, renderNode: RenderNode2D): void {
-  drawDOMBitmap(state, renderNode);
+export function drawDOMBitmapMask(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+  drawDOMBitmap(state, renderProxy);
 }
 
 export const defaultDOMBitmapRenderer: DisplayObjectRenderer = {

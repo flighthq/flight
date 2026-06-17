@@ -102,7 +102,7 @@ export function destroyWebGPURenderTarget(_state: WebGPURenderState, target: Web
 
 export function drawWebGPURenderTargetResult(
   state: WebGPURenderState,
-  renderNode: {
+  renderProxy: {
     alpha: number;
     material: Material | null;
     transform2D: { a: number; b: number; c: number; d: number; tx: number; ty: number };
@@ -116,7 +116,7 @@ export function drawWebGPURenderTargetResult(
   if (internal.renderPass === null) return;
 
   // Compose the render node's transform with the cache offset transform
-  const { a, b, c, d, tx, ty } = renderNode.transform2D;
+  const { a, b, c, d, tx, ty } = renderProxy.transform2D;
   const { a: ta, b: tb, c: tc, d: td, tx: ttx, ty: tty } = transform;
   const composedTransform = {
     a: a * ta + c * tb,
@@ -130,7 +130,7 @@ export function drawWebGPURenderTargetResult(
   // Render target textures are stored with Y flipped relative to canvas (bottom-left origin)
   drawWebGPUQuadWithTransform(
     internal,
-    renderNode as never,
+    renderProxy as never,
     composedTransform,
     { texture: target.texture, view: target.view, bindGroup: target.bindGroup },
     0,

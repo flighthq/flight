@@ -5,7 +5,7 @@ import {
   computeRenderCacheTransform,
   computeRenderTargetSize,
   copyAllRenderersFromRenderState,
-  getRenderNodeCache,
+  getRenderProxyCache,
   noopRendererData,
   prepareDisplayObjectRender,
   registerRenderCacheRenderer,
@@ -18,7 +18,7 @@ import type {
   Matrix,
   RenderCache,
   RenderCacheRefreshOptions,
-  RenderNode2D,
+  RenderProxy2D,
   RenderState,
 } from '@flighthq/types';
 
@@ -133,15 +133,15 @@ export function releaseCanvasRenderCache(state: CanvasRenderState, cache: Render
   getTargets(state).delete(cache);
 }
 
-function drawCanvasRenderCache(state: RenderState, renderNode: RenderNode2D): void {
-  const cache = getRenderNodeCache(state, renderNode.source);
+function drawCanvasRenderCache(state: RenderState, renderProxy: RenderProxy2D): void {
+  const cache = getRenderProxyCache(state, renderProxy.source);
   if (cache === null) return;
   const canvasState = state as CanvasRenderState;
   const target = getTargets(canvasState).get(cache);
   if (target === undefined) return;
-  // renderNode.transform2D already carries the cache placement transform (folded in by the
+  // renderProxy.transform2D already carries the cache placement transform (folded in by the
   // adapter), so the cached canvas composites at the origin.
-  setCanvasTransform(canvasState, canvasState.context, renderNode.transform2D);
+  setCanvasTransform(canvasState, canvasState.context, renderProxy.transform2D);
   canvasState.context.drawImage(target.canvas, 0, 0);
 }
 

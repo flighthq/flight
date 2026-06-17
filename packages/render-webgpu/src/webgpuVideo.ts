@@ -1,5 +1,5 @@
 import { noopRendererData } from '@flighthq/render';
-import type { DisplayObjectRenderer, RenderNode2D, RenderState, Video } from '@flighthq/types';
+import type { DisplayObjectRenderer, RenderProxy2D, RenderState, Video } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
 import { drawWebGPUQuad } from './webgpuDraw';
@@ -10,13 +10,13 @@ interface WebGPUVideoData {
   h: number;
 }
 
-const _videoMap = new WeakMap<RenderNode2D, WebGPUVideoData>();
+const _videoMap = new WeakMap<RenderProxy2D, WebGPUVideoData>();
 
-export function drawWebGPUVideo(state: RenderState, renderNode: RenderNode2D): void {
+export function drawWebGPUVideo(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 
-  const source = renderNode.source as Video;
+  const source = renderProxy.source as Video;
   const element = source.data.source?.element;
   if (element === undefined || element === null || element.readyState < 2) return;
 
@@ -24,9 +24,9 @@ export function drawWebGPUVideo(state: RenderState, renderNode: RenderNode2D): v
   const vh = element.videoHeight;
   if (vw === 0 || vh === 0) return;
 
-  internal.applyBlendMode?.(internal, renderNode.blendMode);
+  internal.applyBlendMode?.(internal, renderProxy.blendMode);
 
-  let videoData = _videoMap.get(renderNode);
+  let videoData = _videoMap.get(renderProxy);
   if (!videoData || videoData.w !== vw || videoData.h !== vh) {
     videoData?.entry.texture.destroy();
     const { device, textureBindGroupLayout, linearSampler } = internal;
@@ -44,7 +44,7 @@ export function drawWebGPUVideo(state: RenderState, renderNode: RenderNode2D): v
       layout: textureBindGroupLayout,
     });
     videoData = { entry: { bindGroup, texture, view }, h: vh, w: vw };
-    _videoMap.set(renderNode, videoData);
+    _videoMap.set(renderProxy, videoData);
   }
 
   internal.device.queue.copyExternalImageToTexture(
@@ -53,11 +53,11 @@ export function drawWebGPUVideo(state: RenderState, renderNode: RenderNode2D): v
     [vw, vh],
   );
 
-  drawWebGPUQuad(internal, renderNode, videoData.entry, 0, 0, vw, vh, 0, 0, 1, 1);
+  drawWebGPUQuad(internal, renderProxy, videoData.entry, 0, 0, vw, vh, 0, 0, 1, 1);
 }
 
-export function drawWebGPUVideoMask(state: RenderState, renderNode: RenderNode2D): void {
-  drawWebGPUVideo(state, renderNode);
+export function drawWebGPUVideoMask(state: RenderState, renderProxy: RenderProxy2D): void {
+  drawWebGPUVideo(state, renderProxy);
 }
 
 export const defaultWebGPUVideoRenderer: DisplayObjectRenderer = {

@@ -1,22 +1,22 @@
 ﻿import { noopRendererData } from '@flighthq/render';
-import type { Bitmap, DisplayObjectRenderer, RenderNode2D, RenderState } from '@flighthq/types';
+import type { Bitmap, DisplayObjectRenderer, RenderProxy2D, RenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { bindWebGLTexture, drawWebGLQuad, useWebGLProgram } from './webglDraw';
 import { resolveWebGLShader } from './webglShaderBinding';
 
-export function drawWebGLBitmap(state: RenderState, renderNode: RenderNode2D): void {
+export function drawWebGLBitmap(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
-  const source = renderNode.source as Bitmap;
+  const source = renderProxy.source as Bitmap;
   const imageSource = source.data.image;
   if (imageSource === null || imageSource.src === null) return;
 
-  const shader = resolveWebGLShader(internal, renderNode);
+  const shader = resolveWebGLShader(internal, renderProxy);
   useWebGLProgram(internal, shader);
-  internal.applyBlendMode?.(internal, renderNode.blendMode);
+  internal.applyBlendMode?.(internal, renderProxy.blendMode);
   bindWebGLTexture(internal, imageSource.src);
 
-  shader.bind(internal.gl, internal, renderNode);
+  shader.bind(internal.gl, internal, renderProxy);
 
   const sr = source.data.sourceRectangle ?? null;
   if (sr === null) {
@@ -30,7 +30,7 @@ export function drawWebGLBitmap(state: RenderState, renderNode: RenderNode2D): v
   }
 }
 
-export function drawWebGLBitmapMask(_state: RenderState, _data: RenderNode2D): void {
+export function drawWebGLBitmapMask(_state: RenderState, _data: RenderProxy2D): void {
   drawWebGLBitmap(_state, _data);
 }
 

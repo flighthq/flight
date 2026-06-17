@@ -1,5 +1,5 @@
 ﻿import { createInputText, getInputTextRuntime } from '@flighthq/displayobject';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { setInputTextSelection } from '@flighthq/text-input';
 
 import { defaultCanvasInputTextRenderer, drawCanvasInputText } from './canvasInputText';
@@ -24,10 +24,10 @@ describe('drawCanvasInputText', () => {
     const node = createInputText({ data: { text: 'hello', width: 100, height: 40 } });
     (getInputTextRuntime(node) as ReturnType<typeof getInputTextRuntime> & { focused: boolean }).focused = true;
     setInputTextSelection(node, 2, 2);
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
     const spy = vi.spyOn(state.context, 'fillRect');
 
-    drawCanvasInputText(state, renderNode);
+    drawCanvasInputText(state, renderProxy);
 
     expect(spy).toHaveBeenCalledWith(expect.any(Number), expect.any(Number), 1, expect.any(Number));
   });
@@ -37,10 +37,10 @@ describe('drawCanvasInputText', () => {
     const node = createInputText({ data: { text: 'hello', width: 100, height: 40 } });
     (getInputTextRuntime(node) as ReturnType<typeof getInputTextRuntime> & { focused: boolean }).focused = true;
     setInputTextSelection(node, 1, 4);
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
     const spy = vi.spyOn(state.context, 'fillRect');
 
-    drawCanvasInputText(state, renderNode);
+    drawCanvasInputText(state, renderProxy);
 
     expect(spy).toHaveBeenCalledWith(expect.any(Number), expect.any(Number), expect.any(Number), expect.any(Number));
   });

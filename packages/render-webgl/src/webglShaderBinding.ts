@@ -1,22 +1,22 @@
-import { enableRenderFeatures, getOrCreateRenderNode2D, hasRenderFeatures } from '@flighthq/render';
-import { type DisplayObject, RenderFeatures, type RenderNode2D, type WebGLRenderState } from '@flighthq/types';
+import { enableRenderFeatures, getOrCreateRenderProxy2D, hasRenderFeatures } from '@flighthq/render';
+import { type DisplayObject, RenderFeatures, type RenderProxy2D, type WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import type { WebGLBitmapShader } from './webglShaderTypes';
 
 // Per-state shader bindings, keyed by the render node. Because render nodes are
-// per-state (state.renderNodeMap), a module-level map keyed by render node is
+// per-state (state.renderProxyMap), a module-level map keyed by render node is
 // automatically isolated per state — a binding made for one render state's pass
 // is invisible to any other state that renders the same display object. This
 // mirrors the per-render-node texture maps in webglText / webglRichText.
-const _shaderBindings = new WeakMap<RenderNode2D, WebGLBitmapShader>();
+const _shaderBindings = new WeakMap<RenderProxy2D, WebGLBitmapShader>();
 
 export function getWebGLMaterialShader(state: WebGLRenderState, kind: symbol): WebGLBitmapShader | null {
   return (state as WebGLRenderStateInternal).materialBitmapShaderMap?.get(kind) ?? null;
 }
 
-export function getWebGLShader(renderNode: RenderNode2D): WebGLBitmapShader | undefined {
-  return _shaderBindings.get(renderNode);
+export function getWebGLShader(renderProxy: RenderProxy2D): WebGLBitmapShader | undefined {
+  return _shaderBindings.get(renderProxy);
 }
 
 // Registers the bitmap shader to draw nodes whose material has the given kind. Keeps the render path
@@ -28,17 +28,17 @@ export function registerWebGLMaterialShader(state: WebGLRenderState, kind: symbo
 }
 
 /**
- * Returns the shader to draw renderNode with: the per-node binding when one is
+ * Returns the shader to draw renderProxy with: the per-node binding when one is
  * set and shader support is enabled for the state, otherwise the state's default
  * bitmap shader. The feature gate keeps the binding lookup off the hot path until
  * at least one shader has been bound.
  */
-export function resolveWebGLShader(state: WebGLRenderStateInternal, renderNode: RenderNode2D): WebGLBitmapShader {
+export function resolveWebGLShader(state: WebGLRenderStateInternal, renderProxy: RenderProxy2D): WebGLBitmapShader {
   if (hasRenderFeatures(state, RenderFeatures.Shaders)) {
-    const shader = _shaderBindings.get(renderNode);
+    const shader = _shaderBindings.get(renderProxy);
     if (shader !== undefined) return shader;
   }
-  const material = renderNode.material;
+  const material = renderProxy.material;
   if (material !== null) {
     const shader = state.materialBitmapShaderMap?.get(material.kind);
     if (shader !== undefined) return shader;
@@ -54,11 +54,11 @@ export function resolveWebGLShader(state: WebGLRenderStateInternal, renderNode: 
  * that the standard renderer has no memory of.
  */
 export function setWebGLShader(state: WebGLRenderState, node: DisplayObject, shader: WebGLBitmapShader | null): void {
-  const renderNode = getOrCreateRenderNode2D(state, node);
+  const renderProxy = getOrCreateRenderProxy2D(state, node);
   if (shader === null) {
-    _shaderBindings.delete(renderNode);
+    _shaderBindings.delete(renderProxy);
     return;
   }
-  _shaderBindings.set(renderNode, shader);
+  _shaderBindings.set(renderProxy, shader);
   enableRenderFeatures(state, RenderFeatures.Shaders);
 }

@@ -16,7 +16,7 @@ import {
   defaultWebGPUBitmapRenderer,
   drawWebGPURenderTargetResult,
   endWebGPURenderTarget,
-  getDisplayObjectRenderNode,
+  getDisplayObjectRenderProxy,
   prepareDisplayObjectRender,
   registerRenderer,
   renderWebGPUBackground,
@@ -45,7 +45,7 @@ export const height = 400;
 // expecting render targets in WebGL's bottom-left UV origin — i.e. the visual top of the
 // content stored in the *last* texture rows. WebGPU textures are top-left origin, so we bake
 // a vertical flip directly into the node's render transform (d=-1, ty=h) when drawing into
-// the target. The flip must live in renderNode.transform2D, not in the renderTransform passed
+// the target. The flip must live in renderProxy.transform2D, not in the renderTransform passed
 // to beginWebGPURenderTarget: the WebGPU quad shader builds its matrix from transform2D alone
 // and ignores state.renderTransform2D at draw time.
 type BlurEntry = {
@@ -79,8 +79,8 @@ export function render(root: DisplayObject): void {
   // blurred node's scene transform before the offscreen pass overwrites transform2D.
   prepareDisplayObjectRender(state, root);
   for (const entry of _entries) {
-    const renderNode = getDisplayObjectRenderNode(state, entry.node);
-    if (renderNode !== undefined) copyMatrix(entry.sceneTransform, renderNode.transform2D);
+    const renderProxy = getDisplayObjectRenderProxy(state, entry.node);
+    if (renderProxy !== undefined) copyMatrix(entry.sceneTransform, renderProxy.transform2D);
   }
 
   // Unlike WebGL (immediate-mode, implicit submission), WebGPU records all GPU work into a
@@ -101,11 +101,11 @@ export function render(root: DisplayObject): void {
     const { height: h } = computeRenderTargetSize(_bounds, padding, 1, 1);
     computeRenderCacheTransform(entry.cacheTransform, _bounds, padding, padding);
 
-    const renderNode = getDisplayObjectRenderNode(state, node);
-    if (renderNode === undefined) continue;
+    const renderProxy = getDisplayObjectRenderProxy(state, node);
+    if (renderProxy === undefined) continue;
 
     // Map the node into target space with a baked vertical flip (see header note).
-    setFlippedTransform(renderNode.transform2D, padding - _bounds.x, padding - _bounds.y, h);
+    setFlippedTransform(renderProxy.transform2D, padding - _bounds.x, padding - _bounds.y, h);
 
     beginWebGPURenderTarget(state, source, _identity);
     renderWebGPUDisplayObject(state, node);
@@ -115,10 +115,10 @@ export function render(root: DisplayObject): void {
 
   // Composite blurred targets back onto the canvas (canvas pass is active again).
   for (const entry of _entries) {
-    const renderNode = getDisplayObjectRenderNode(state, entry.node);
-    if (renderNode === undefined) continue;
-    copyMatrix(renderNode.transform2D, entry.sceneTransform);
-    drawWebGPURenderTargetResult(state, renderNode, entry.blurred, entry.cacheTransform);
+    const renderProxy = getDisplayObjectRenderProxy(state, entry.node);
+    if (renderProxy === undefined) continue;
+    copyMatrix(renderProxy.transform2D, entry.sceneTransform);
+    drawWebGPURenderTargetResult(state, renderProxy, entry.blurred, entry.cacheTransform);
   }
 
   submitWebGPURenderPass(state);

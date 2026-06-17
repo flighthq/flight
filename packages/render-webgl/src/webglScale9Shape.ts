@@ -5,7 +5,7 @@ import type {
   MatrixLike,
   Renderable,
   RendererData,
-  RenderNode2D,
+  RenderProxy2D,
   RenderState,
   Scale9Shape,
 } from '@flighthq/types';
@@ -49,21 +49,21 @@ export function createWebGLScale9ShapeData(state: RenderState, _source: Renderab
   } as unknown as RendererData;
 }
 
-export function drawWebGLScale9Shape(state: RenderState, renderNode: RenderNode2D): void {
+export function drawWebGLScale9Shape(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
-  const source = renderNode.source as Scale9Shape;
+  const source = renderProxy.source as Scale9Shape;
   const { commands, scale9Grid, version } = source.data;
   if (commands.length === 0) return;
-  if (renderNode.rendererData === null) return;
+  if (renderProxy.rendererData === null) return;
 
   const bounds = getNodeLocalBoundsRectangle(source);
   const mapper = buildWebGLScale9Mapper(bounds, scale9Grid, source.scaleX, source.scaleY);
   if (mapper === null) {
-    drawWebGLShape(state, renderNode);
+    drawWebGLShape(state, renderProxy);
     return;
   }
 
-  const shapeData = renderNode.rendererData as unknown as WebGLScale9ShapeData;
+  const shapeData = renderProxy.rendererData as unknown as WebGLScale9ShapeData;
   const w = Math.ceil(bounds.width * source.scaleX);
   const h = Math.ceil(bounds.height * source.scaleY);
   if (w <= 0 || h <= 0) return;
@@ -101,9 +101,9 @@ export function drawWebGLScale9Shape(state: RenderState, renderNode: RenderNode2
   }
 
   const { shaderLoc, matrixArray } = internal;
-  setWebGLBaseUniforms(gl, shaderLoc, renderNode);
+  setWebGLBaseUniforms(gl, shaderLoc, renderProxy);
 
-  const t = renderNode.transform2D;
+  const t = renderProxy.transform2D;
   setStrippedWebGLMatrixFromValues(
     gl,
     shaderLoc,
@@ -117,7 +117,7 @@ export function drawWebGLScale9Shape(state: RenderState, renderNode: RenderNode2
   drawWebGLQuad(internal, 0, 0, w, h, 0, 0, 1, 1);
 }
 
-export function drawWebGLScale9ShapeMask(state: RenderState, data: RenderNode2D): void {
+export function drawWebGLScale9ShapeMask(state: RenderState, data: RenderProxy2D): void {
   drawWebGLScale9Shape(state, data);
 }
 

@@ -1,23 +1,23 @@
 import { noopRendererData } from '@flighthq/render';
-import type { CanvasRenderState, ParticleEmitter, RenderNode2D, SpriteRenderer } from '@flighthq/types';
+import type { CanvasRenderState, ParticleEmitter, RenderProxy2D, SpriteRenderer } from '@flighthq/types';
 
 // Canvas 2D does not support per-pixel color multiplication, so only alpha
 // and transform (position, rotation, scale) are applied. Color tint values
 // from the emitter config are silently ignored. Use the WebGL renderer for
 // full color-over-lifetime support.
-export function drawCanvasParticleEmitter(state: CanvasRenderState, renderNode: RenderNode2D): void {
-  const source = renderNode.source as ParticleEmitter;
+export function drawCanvasParticleEmitter(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
+  const source = renderProxy.source as ParticleEmitter;
   const { atlas, alphas, ids, particleCount, transforms } = source.data;
   if (atlas === null || atlas.image === null || atlas.image.src === null || particleCount === 0) return;
 
   const regions = atlas.regions;
   const numRegions = regions.length;
-  const nodeAlpha = renderNode.alpha;
-  const t = renderNode.transform2D;
+  const nodeAlpha = renderProxy.alpha;
+  const t = renderProxy.transform2D;
   const imageSource = atlas.image.src;
   const context = state.context;
 
-  state.applyBlendMode?.(state, renderNode.blendMode);
+  state.applyBlendMode?.(state, renderProxy.blendMode);
 
   if (!state.allowSmoothing) context.imageSmoothingEnabled = false;
 
