@@ -4,6 +4,7 @@ import {
   createWebGPURenderState,
   defaultWebGPUTilemapRenderer,
   prepareSpriteRender,
+  registerDefaultWebGPUMaterial,
   registerRenderer,
   renderWebGPUBackground,
   renderWebGPUSprite,
@@ -21,6 +22,7 @@ export const state = await createWebGPURenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 registerRenderer(state, TilemapKind, defaultWebGPUTilemapRenderer);
+registerDefaultWebGPUMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: Tilemap): void {

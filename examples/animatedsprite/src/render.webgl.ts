@@ -4,6 +4,7 @@ import {
   createWebGLRenderState,
   defaultWebGLSpriteRenderer,
   prepareSpriteRender,
+  registerDefaultWebGLMaterial,
   registerRenderer,
   renderWebGLBackground,
   renderWebGLSprite,
@@ -20,6 +21,7 @@ export const state = createWebGLRenderState(canvas, {
   imageSmoothingEnabled: false,
 });
 registerRenderer(state, SpriteKind, defaultWebGLSpriteRenderer);
+registerDefaultWebGLMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: Sprite): void {

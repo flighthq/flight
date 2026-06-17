@@ -5,6 +5,7 @@ import {
   createWebGPURenderState,
   defaultWebGPUBitmapRenderer,
   prepareDisplayObjectRender,
+  registerDefaultWebGPUMaterial,
   registerRenderer,
   renderWebGPUBackground,
   renderWebGPUDisplayObject,
@@ -21,6 +22,7 @@ export const state = await createWebGPURenderState(canvas, {
   imageSmoothingEnabled: false,
 });
 registerRenderer(state, BitmapKind, defaultWebGPUBitmapRenderer);
+registerDefaultWebGPUMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {

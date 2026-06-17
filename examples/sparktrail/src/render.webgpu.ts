@@ -5,6 +5,7 @@ import {
   defaultWebGPUParticleEmitterRenderer,
   ParticleEmitterKind,
   prepareSpriteRender,
+  registerDefaultWebGPUMaterial,
   registerRenderer,
   renderWebGPUBackground,
   renderWebGPUSprite,
@@ -20,7 +21,7 @@ export const state = await createWebGPURenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 registerRenderer(state, ParticleEmitterKind, defaultWebGPUParticleEmitterRenderer);
-
+registerDefaultWebGPUMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: SpriteNode): void {
