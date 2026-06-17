@@ -11,6 +11,7 @@ import type {
 
 import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
 import { createWebGPUTextureEntry, drawWebGPUQuad, updateWebGPUTextureEntry } from './webgpuDraw';
+import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 
 interface WebGPUShapeData {
   canvas: HTMLCanvasElement;
@@ -32,6 +33,7 @@ function createWebGPUShapeData(_state: RenderState, _source: Renderable): Render
 export function drawWebGPUShape(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
+  flushWebGPUSpriteBatch(internal);
 
   const source = renderProxy.source as Shape;
   const { commands, version } = source.data;
