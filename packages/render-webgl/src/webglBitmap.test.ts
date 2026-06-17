@@ -1,4 +1,5 @@
 import type { RenderProxy2D } from '@flighthq/types';
+import { BatchFormat } from '@flighthq/types';
 
 import { defaultWebGLBitmapRenderer, drawWebGLBitmap, drawWebGLBitmapMask } from './webglBitmap';
 import { registerDefaultWebGLMaterial } from './webglDefaultMaterial';
@@ -22,6 +23,10 @@ function makeImageSource(src: unknown = null, width = 32, height = 32) {
 }
 
 describe('defaultWebGLBitmapRenderer', () => {
+  it('declares BatchFormat.Quad', () => {
+    expect(defaultWebGLBitmapRenderer.format).toBe(BatchFormat.Quad);
+  });
+
   it('has a createData function', () => {
     expect(typeof defaultWebGLBitmapRenderer.createData).toBe('function');
   });

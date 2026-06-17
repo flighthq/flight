@@ -1,5 +1,6 @@
 import { noopRendererData } from '@flighthq/render';
 import type { RenderProxy2D, RenderState, SpriteRenderer, Tilemap } from '@flighthq/types';
+import { BatchFormat } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
@@ -88,6 +89,7 @@ function submitWebGLTilemap(state: RenderState, tilemapNode: RenderProxy2D): voi
 }
 
 export const defaultWebGLTilemapRenderer: SpriteRenderer = {
+  format: BatchFormat.Quad,
   createData: noopRendererData,
   submit: submitWebGLTilemap,
 };

@@ -1,5 +1,6 @@
 import { noopRendererData } from '@flighthq/render';
 import type { QuadBatch, RenderProxy2D, RenderState, SpriteRenderer } from '@flighthq/types';
+import { BatchFormat } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
@@ -106,6 +107,7 @@ function submitWebGLQuadBatch(state: RenderState, quadBatch: RenderProxy2D): voi
 }
 
 export const defaultWebGLQuadBatchRenderer: SpriteRenderer = {
+  format: BatchFormat.Quad,
   createData: noopRendererData,
   submit: submitWebGLQuadBatch,
 };
