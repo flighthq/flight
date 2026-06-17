@@ -1,5 +1,5 @@
 ﻿import { createText } from '@flighthq/displayobject';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import { getOrCreateRenderNode2D } from '@flighthq/render';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { drawCanvasText, drawCanvasTextMask } from './canvasText';
@@ -16,7 +16,7 @@ describe('drawCanvasText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = '';
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
     expect(() => drawCanvasText(state, renderNode)).not.toThrow();
   });
 
@@ -24,7 +24,7 @@ describe('drawCanvasText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = 'hello';
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
     const spy = vi.spyOn(state.context, 'fillText');
     drawCanvasText(state, renderNode);
     expect(spy).toHaveBeenCalled();
@@ -35,7 +35,7 @@ describe('drawCanvasTextMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const node = createText();
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
     expect(() => drawCanvasTextMask(state, renderNode)).not.toThrow();
   });
 });

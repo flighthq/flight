@@ -3,9 +3,9 @@ import { createCanvasRenderTarget, resizeCanvasRenderTarget } from '@flighthq/re
 import type {
   CanvasRenderTarget,
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
   DOMRenderState,
   RenderCache,
+  RenderNode2D,
   RenderState,
 } from '@flighthq/types';
 
@@ -50,7 +50,7 @@ export function releaseDOMRenderCache(state: DOMRenderState, cache: RenderCache)
   getTargets(state).delete(cache);
 }
 
-function drawDOMRenderCache(state: RenderState, data: DisplayObjectRenderNode): void {
+function drawDOMRenderCache(state: RenderState, data: RenderNode2D): void {
   const cache = getRenderNodeCache(state, data.source);
   if (cache === null) return;
   const domState = state as DOMRenderState;

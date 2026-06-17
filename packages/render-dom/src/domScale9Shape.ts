@@ -3,11 +3,11 @@ import { getNodeLocalBoundsRectangle } from '@flighthq/node';
 import { mapCanvasScale9ShapeCommands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
   DOMRenderState,
   MatrixLike,
   Renderable,
   RendererData,
+  RenderNode2D,
   RenderState,
   Scale9Shape,
 } from '@flighthq/types';
@@ -27,7 +27,7 @@ export function createDOMScale9ShapeData(_state: RenderState, _source: Renderabl
   return createEntity({ canvas: null, context: null });
 }
 
-export function drawDOMScale9Shape(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMScale9Shape(state: DOMRenderState, renderNode: RenderNode2D): void {
   const data = renderNode.rendererData as DOMScale9ShapeData | null;
   if (data === null) return;
 
@@ -68,7 +68,7 @@ export function drawDOMScale9Shape(state: DOMRenderState, renderNode: DisplayObj
   setDOMRendererElement(state, data.canvas);
 }
 
-export function drawDOMScale9ShapeMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMScale9ShapeMask(state: DOMRenderState, renderNode: RenderNode2D): void {
   drawDOMScale9Shape(state, renderNode);
 }
 

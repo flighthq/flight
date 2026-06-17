@@ -1,10 +1,10 @@
-import { getSpriteRenderNode, isRenderNodeVisible, noopRendererData } from '@flighthq/render';
+import { getRenderNode2D, isRenderNodeVisible, noopRendererData } from '@flighthq/render';
 import { getSpriteNodeRuntime } from '@flighthq/sprite';
-import type { CanvasRenderState, Sprite, SpriteNode, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
+import type { CanvasRenderState, RenderNode2D, Sprite, SpriteNode, SpriteRenderer } from '@flighthq/types';
 
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
 
-export function drawCanvasSprite(state: CanvasRenderState, spriteNode: SpriteRenderNode): void {
+export function drawCanvasSprite(state: CanvasRenderState, spriteNode: RenderNode2D): void {
   const source = spriteNode.source as Sprite;
   const { atlas, id } = source.data;
   if (atlas === null || atlas.image === null || atlas.image.src === null) return;
@@ -61,7 +61,7 @@ export function renderCanvasSprite(state: CanvasRenderState, source: SpriteNode)
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as SpriteNode;
     if (!current.enabled) continue;
-    const data = getSpriteRenderNode(state, current);
+    const data = getRenderNode2D(state, current);
     if (data === undefined || !isRenderNodeVisible(data)) continue;
 
     if (data.renderer !== null) data.renderer.submit(state, data);

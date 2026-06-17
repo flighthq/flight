@@ -3,7 +3,7 @@ import type {
   CanvasRenderState,
   CanvasShapeDrawState,
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
+  RenderNode2D,
   Shape,
 } from '@flighthq/types';
 
@@ -11,7 +11,7 @@ import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { getCanvasShapeCommand } from './canvasShapeRegistry';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasShape(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawCanvasShape(state: CanvasRenderState, renderNode: RenderNode2D): void {
   drawCanvasDisplayObject(state, renderNode);
 
   const source = renderNode.source as Shape;

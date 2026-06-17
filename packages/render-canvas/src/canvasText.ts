@@ -5,7 +5,7 @@ import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@
 import type {
   CanvasRenderState,
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
+  RenderNode2D,
   Text,
   TextFormat,
   TextRuntime,
@@ -14,7 +14,7 @@ import type {
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawCanvasText(state: CanvasRenderState, renderNode: RenderNode2D): void {
   drawCanvasDisplayObject(state, renderNode);
 
   const source = renderNode.source as Text;
@@ -65,7 +65,7 @@ export function drawCanvasText(state: CanvasRenderState, renderNode: DisplayObje
   }
 }
 
-export function drawCanvasTextMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
+export function drawCanvasTextMask(state: CanvasRenderState, data: RenderNode2D): void {
   drawCanvasDisplayObject(state, data);
 }
 

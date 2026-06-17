@@ -1,5 +1,5 @@
 ﻿import { createRichText } from '@flighthq/displayobject';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import { getOrCreateRenderNode2D } from '@flighthq/render';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { defaultCanvasRichTextRenderer, drawCanvasRichText, drawCanvasRichTextMask } from './canvasRichText';
@@ -16,7 +16,7 @@ describe('drawCanvasRichText', () => {
     const state = makeState();
     const node = createRichText();
     node.data.text = '';
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
     expect(() => drawCanvasRichText(state, renderNode)).not.toThrow();
   });
 
@@ -24,7 +24,7 @@ describe('drawCanvasRichText', () => {
     const state = makeState();
     const node = createRichText();
     node.data.text = 'hello';
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
     const spy = vi.spyOn(state.context, 'fillText');
     drawCanvasRichText(state, renderNode);
     expect(spy).toHaveBeenCalled();
@@ -34,7 +34,7 @@ describe('drawCanvasRichText', () => {
     const state = makeState();
     const node = createRichText();
     node.data.htmlText = '<font color="#ff0000">red</font><b>bold</b>';
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
     const spy = vi.spyOn(state.context, 'fillText');
 
     drawCanvasRichText(state, renderNode);
@@ -48,7 +48,7 @@ describe('drawCanvasRichTextMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const node = createRichText();
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
     expect(() => drawCanvasRichTextMask(state, renderNode)).not.toThrow();
   });
 });

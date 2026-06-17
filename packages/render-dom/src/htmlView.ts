@@ -1,10 +1,10 @@
 ﻿import { noopRendererData } from '@flighthq/render';
-import type { DisplayObjectRenderer, DisplayObjectRenderNode, DOMRenderState, HTMLView } from '@flighthq/types';
+import type { DisplayObjectRenderer, DOMRenderState, HTMLView, RenderNode2D } from '@flighthq/types';
 
 import { setDOMRendererElement } from './domStyle';
 import { setDOMTransform } from './domTransform';
 
-export function drawDOMHTMLView(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMHTMLView(state: DOMRenderState, renderNode: RenderNode2D): void {
   const source = renderNode.source as HTMLView;
   const data = source.data;
   const element = data.element;
@@ -27,7 +27,7 @@ export function drawDOMHTMLView(state: DOMRenderState, renderNode: DisplayObject
   setDOMRendererElement(state, element);
 }
 
-export function drawDOMHTMLViewMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {
+export function drawDOMHTMLViewMask(_state: DOMRenderState, _renderNode: RenderNode2D): void {
   // HTMLView content is not converted into mask geometry by the DOM renderer.
 }
 
