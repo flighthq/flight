@@ -6,7 +6,7 @@ import { createNode } from './node';
 const TestKind: unique symbol = Symbol('Test');
 
 function makeTarget(): HasMaterial {
-  return createNode(TestKind, TestKind) as unknown as HasMaterial;
+  return createNode(TestKind) as unknown as HasMaterial;
 }
 
 describe('initMaterialTrait', () => {
