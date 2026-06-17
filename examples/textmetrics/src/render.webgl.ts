@@ -5,6 +5,7 @@ import {
   defaultWebGLShapeCommands,
   defaultWebGLShapeRenderer,
   prepareDisplayObjectRender,
+  registerDefaultWebGLMaterial,
   registerRenderer,
   registerWebGLShapeCommands,
   renderWebGLBackground,
@@ -31,6 +32,7 @@ export const state = createWebGLRenderState(canvas, {
 registerRenderer(state, RichTextKind, defaultWebGLRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
 registerWebGLShapeCommands(defaultWebGLShapeCommands);
+registerDefaultWebGLMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {

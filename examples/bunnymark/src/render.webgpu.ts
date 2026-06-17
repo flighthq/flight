@@ -5,6 +5,7 @@ import {
   defaultWebGPUQuadBatchRenderer,
   prepareSpriteRender,
   QuadBatchKind,
+  registerDefaultWebGPUMaterial,
   registerRenderer,
   renderWebGPUBackground,
   renderWebGPUSprite,
@@ -20,6 +21,7 @@ export const state = await createWebGPURenderState(canvas, {
   backgroundColor: 0xeeddccff,
 });
 registerRenderer(state, QuadBatchKind, defaultWebGPUQuadBatchRenderer);
+registerDefaultWebGPUMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: QuadBatch): void {

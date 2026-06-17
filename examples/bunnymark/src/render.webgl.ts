@@ -5,6 +5,7 @@ import {
   defaultWebGLQuadBatchRenderer,
   prepareSpriteRender,
   QuadBatchKind,
+  registerDefaultWebGLMaterial,
   registerRenderer,
   renderWebGLBackground,
   renderWebGLSprite,
@@ -19,6 +20,7 @@ export const state = createWebGLRenderState(canvas, {
   backgroundColor: 0xeeddccff,
 });
 registerRenderer(state, QuadBatchKind, defaultWebGLQuadBatchRenderer);
+registerDefaultWebGLMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: QuadBatch): void {

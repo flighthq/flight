@@ -3,6 +3,7 @@ import {
   createWebGPURenderState,
   defaultWebGPUVideoRenderer,
   prepareDisplayObjectRender,
+  registerDefaultWebGPUMaterial,
   registerRenderer,
   renderWebGPUBackground,
   renderWebGPUDisplayObject,
@@ -27,6 +28,7 @@ export const state = await createWebGPURenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 registerRenderer(state, VideoKind, defaultWebGPUVideoRenderer);
+registerDefaultWebGPUMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {

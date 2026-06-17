@@ -22,6 +22,7 @@ import {
   invalidateNodeLocalTransform,
   prepareDisplayObjectRender,
   refreshWebGPURenderCache,
+  registerDefaultWebGPUMaterial,
   registerRenderer,
   registerWebGPUShapeCommands,
   renderWebGPUBackground,
@@ -55,6 +56,7 @@ registerRenderer(state, BitmapKind, defaultWebGPUBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultWebGPUShapeRenderer);
 registerRenderer(state, TextKind, defaultWebGPUTextRenderer);
 registerWebGPUShapeCommands(defaultWebGPUShapeCommands);
+registerDefaultWebGPUMaterial(state);
 enableWebGPURenderCache(state);
 export const scale = pixelRatio;
 
