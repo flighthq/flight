@@ -104,13 +104,11 @@ export async function createWebGPURenderState(
   state.spriteBatchMaterialRenderer = null;
   state.spriteBatchMaterialFloats = 0;
   state.spriteBatchCount = 0;
-  state.spriteBatchInstanceBuffer = null;
-  state.spriteBatchInstanceCapacity = 0;
   state.spriteBatchInstanceData = new Float32Array(13 * 256);
-  state.spriteBatchMaterialBuffer = null;
-  state.spriteBatchMaterialCapacity = 0;
   state.spriteBatchMaterialData = new Float32Array(8 * 256);
   state.spriteBatchTexture = null;
+  state.spriteBatchBufferPool = [];
+  state.spriteBatchBufferCursor = 0;
 
   state.commandEncoder = null;
   state.renderPass = null;

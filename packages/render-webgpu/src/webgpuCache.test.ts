@@ -16,6 +16,13 @@ import type * as WebGPUDisplayObjectModule from './webgpuDisplayObject';
 import { renderWebGPUDisplayObject } from './webgpuDisplayObject';
 import type * as WebGPURenderTargetModule from './webgpuRenderTarget';
 import { destroyWebGPURenderTarget, drawWebGPURenderTargetResult } from './webgpuRenderTarget';
+import type * as WebGPUSpriteBatchModule from './webgpuSpriteBatch';
+import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
+
+vi.mock('./webgpuSpriteBatch', async (importOriginal) => {
+  const actual = await importOriginal<typeof WebGPUSpriteBatchModule>();
+  return { ...actual, flushWebGPUSpriteBatch: vi.fn() };
+});
 
 vi.mock('./webgpuRenderTarget', async (importOriginal) => {
   const actual = await importOriginal<typeof WebGPURenderTargetModule>();
@@ -85,6 +92,22 @@ describe('defaultWebGPURenderCacheRenderer', () => {
     const target = ensureWebGPURenderCacheTarget(state, cache, 16, 16);
     defaultWebGPURenderCacheRenderer.submit(state, makeCacheNode(obj));
     expect(drawWebGPURenderTargetResult).toHaveBeenCalledWith(state, expect.anything(), target, expect.anything());
+  });
+
+  it('flushes pending batched geometry before the immediate composite', () => {
+    const state = fakeScreen();
+    const obj = createDisplayObject();
+    const cache = createRenderCache();
+    useRenderCache(state, obj, cache);
+    ensureWebGPURenderCacheTarget(state, cache, 16, 16);
+    defaultWebGPURenderCacheRenderer.submit(state, makeCacheNode(obj));
+    // The composite draws an immediate quad outside the sprite batch; geometry submitted earlier in
+    // the walk must be drained first, or the immediate quad interleaves with the un-flushed batch's
+    // instance buffer and bind-group state and corrupts it.
+    expect(flushWebGPUSpriteBatch).toHaveBeenCalledWith(state);
+    expect((flushWebGPUSpriteBatch as any).mock.invocationCallOrder[0]).toBeLessThan(
+      (drawWebGPURenderTargetResult as any).mock.invocationCallOrder[0],
+    );
   });
 });
 
