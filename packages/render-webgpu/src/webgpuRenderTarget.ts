@@ -1,5 +1,5 @@
 import { copyMatrix, createMatrix } from '@flighthq/geometry';
-import type { Matrix, WebGPURenderState, WebGPURenderTarget } from '@flighthq/types';
+import type { Material, Matrix, WebGPURenderState, WebGPURenderTarget } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
 import { buildWebGPURenderTargetBindGroup, drawWebGPUQuadWithTransform } from './webgpuDraw';
@@ -104,8 +104,7 @@ export function drawWebGPURenderTargetResult(
   state: WebGPURenderState,
   renderNode: {
     alpha: number;
-    useColorTransform: boolean;
-    colorTransform: null;
+    material: Material | null;
     transform2D: { a: number; b: number; c: number; d: number; tx: number; ty: number };
   },
   target: Readonly<WebGPURenderTarget>,
