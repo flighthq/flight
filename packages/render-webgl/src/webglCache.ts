@@ -33,6 +33,7 @@ import {
   endWebGLRenderTarget,
   resizeWebGLRenderTarget,
 } from './webglRenderTarget';
+import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 /**
  * Creates an offscreen render state for baking render caches consumed by `screenState`.
@@ -199,6 +200,11 @@ function drawWebGLRenderCache(state: RenderState, renderProxy: RenderProxy2D): v
   const webglState = state as WebGLRenderState;
   const target = getTargets(webglState).get(cache);
   if (target === undefined) return;
+  // Drain pending batched geometry before the immediate composite quad. Like every other
+  // immediate-draw renderer (RichText, Video, Scale9), this bypasses the sprite batch; without the
+  // flush the cached result draws ahead of geometry submitted earlier in the walk, which only
+  // flushes at the end — producing out-of-order replay (a doubled image on WebGL).
+  flushWebGLSpriteBatch(webglState as WebGLRenderStateInternal);
   // renderProxy.transform2D already carries the cache placement transform (folded in by the
   // adapter), so the target composites with an identity offset.
   drawWebGLRenderTargetResult(webglState, renderProxy, target, _identity);

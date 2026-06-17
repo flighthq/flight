@@ -16,6 +16,13 @@ import type * as WebGLDisplayObjectModule from './webglDisplayObject';
 import { renderWebGLDisplayObject } from './webglDisplayObject';
 import type * as WebGLRenderTargetModule from './webglRenderTarget';
 import { destroyWebGLRenderTarget, drawWebGLRenderTargetResult } from './webglRenderTarget';
+import type * as WebGLSpriteBatchModule from './webglSpriteBatch';
+import { flushWebGLSpriteBatch } from './webglSpriteBatch';
+
+vi.mock('./webglSpriteBatch', async (importOriginal) => {
+  const actual = await importOriginal<typeof WebGLSpriteBatchModule>();
+  return { ...actual, flushWebGLSpriteBatch: vi.fn() };
+});
 
 vi.mock('./webglRenderTarget', async (importOriginal) => {
   const actual = await importOriginal<typeof WebGLRenderTargetModule>();
@@ -81,6 +88,21 @@ describe('defaultWebGLRenderCacheRenderer', () => {
     const target = ensureWebGLRenderCacheTarget(state, cache, 16, 16);
     defaultWebGLRenderCacheRenderer.submit(state, makeCacheNode(obj));
     expect(drawWebGLRenderTargetResult).toHaveBeenCalledWith(state, expect.anything(), target, expect.anything());
+  });
+
+  it('flushes pending batched geometry before the immediate composite', () => {
+    const state = fakeScreen();
+    const obj = createDisplayObject();
+    const cache = createRenderCache();
+    useRenderCache(state, obj, cache);
+    ensureWebGLRenderCacheTarget(state, cache, 16, 16);
+    defaultWebGLRenderCacheRenderer.submit(state, makeCacheNode(obj));
+    // The composite draws an immediate quad outside the sprite batch; geometry submitted earlier in
+    // the walk must be drained first, or it replays after the cache result (a doubled image).
+    expect(flushWebGLSpriteBatch).toHaveBeenCalledWith(state);
+    expect((flushWebGLSpriteBatch as any).mock.invocationCallOrder[0]).toBeLessThan(
+      (drawWebGLRenderTargetResult as any).mock.invocationCallOrder[0],
+    );
   });
 });
 
