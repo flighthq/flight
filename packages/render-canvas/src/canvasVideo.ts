@@ -1,10 +1,10 @@
 ﻿import { noopRendererData } from '@flighthq/render';
-import type { CanvasRenderState, DisplayObjectRenderer, DisplayObjectRenderNode, Video } from '@flighthq/types';
+import type { CanvasRenderState, DisplayObjectRenderer, RenderNode2D, Video } from '@flighthq/types';
 
 import { drawCanvasDisplayObject, drawCanvasDisplayObjectMask } from './canvasDisplayObject';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasVideo(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawCanvasVideo(state: CanvasRenderState, renderNode: RenderNode2D): void {
   drawCanvasDisplayObject(state, renderNode);
   const source = renderNode.source as Video;
   const element = source.data.source?.element;
@@ -23,7 +23,7 @@ export function drawCanvasVideo(state: CanvasRenderState, renderNode: DisplayObj
   }
 }
 
-export function drawCanvasVideoMask(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawCanvasVideoMask(state: CanvasRenderState, renderNode: RenderNode2D): void {
   drawCanvasDisplayObjectMask(state, renderNode);
 }
 

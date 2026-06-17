@@ -4,10 +4,10 @@ import { hasRenderFeatures } from '@flighthq/render';
 import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
   DOMRenderState,
   Renderable,
   RendererData,
+  RenderNode2D,
   RenderState,
   Shape,
 } from '@flighthq/types';
@@ -26,7 +26,7 @@ function createDOMShapeData(_state: RenderState, _source: Renderable): DOMShapeD
   return createEntity({ canvas: null, context: null });
 }
 
-export function drawDOMShape(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMShape(state: DOMRenderState, renderNode: RenderNode2D): void {
   const data = renderNode.rendererData as DOMShapeData | null;
   if (data === null) return;
 
@@ -65,7 +65,7 @@ export function drawDOMShape(state: DOMRenderState, renderNode: DisplayObjectRen
   setDOMRendererElement(state, data.canvas);
 }
 
-export function drawDOMShapeMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMShapeMask(state: DOMRenderState, renderNode: RenderNode2D): void {
   drawDOMShape(state, renderNode);
 }
 

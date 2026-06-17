@@ -1,7 +1,7 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix, createRectangle } from '@flighthq/geometry';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
-import type { CanvasRenderState, DisplayObject, DisplayObjectRenderNode, Matrix, Rectangle } from '@flighthq/types';
+import { getOrCreateRenderNode2D } from '@flighthq/render';
+import type { CanvasRenderState, DisplayObject, Matrix, Rectangle, RenderNode2D } from '@flighthq/types';
 
 import { popCanvasClipRectangle, pushCanvasClipRectangle } from './canvasClipRectangle';
 import { createCanvasRenderState } from './canvasRenderState';
@@ -12,7 +12,7 @@ describe('Clip Rectangle Functions', () => {
   let rect: Rectangle;
   let transform2D: Matrix;
   let source: DisplayObject;
-  let data: DisplayObjectRenderNode;
+  let data: RenderNode2D;
 
   beforeEach(() => {
     canvas = document.createElement('canvas');
@@ -21,7 +21,7 @@ describe('Clip Rectangle Functions', () => {
     transform2D = createMatrix();
     source = createDisplayObject();
     source.clipRectangle = rect;
-    data = getOrCreateDisplayObjectRenderNode(state, source);
+    data = getOrCreateRenderNode2D(state, source);
     data.transform2D = transform2D;
   });
 

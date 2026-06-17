@@ -1,4 +1,4 @@
-import { enableRenderFeatures, getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import { enableRenderFeatures, getOrCreateRenderNode2D } from '@flighthq/render';
 import { type DisplayObject, type DOMRenderState, RenderFeatures, type RenderNode2D } from '@flighthq/types';
 
 // Per-state DOM CSS filter bindings, keyed by the render node. Render nodes are
@@ -29,7 +29,7 @@ export function getDOMCSSFilter(renderNode: RenderNode2D): string | undefined {
  * the element's `style.filter` while CSS filter support is enabled.
  */
 export function setDOMCSSFilter(state: DOMRenderState, node: DisplayObject, filter: string | null): void {
-  const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+  const renderNode = getOrCreateRenderNode2D(state, node);
   if (filter === null) {
     _cssFilterBindings.delete(renderNode);
     return;

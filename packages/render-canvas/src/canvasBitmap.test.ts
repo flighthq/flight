@@ -2,7 +2,7 @@
 import { createBitmap } from '@flighthq/displayobject';
 import { createRectangle } from '@flighthq/geometry';
 import { registerRenderer } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import { getOrCreateRenderNode2D } from '@flighthq/render';
 import { BitmapKind } from '@flighthq/types';
 
 import { defaultCanvasBitmapRenderer, drawCanvasBitmap, drawCanvasBitmapMask } from './canvasBitmap';
@@ -37,7 +37,7 @@ describe('drawCanvasBitmap', () => {
     const state = makeState();
     const bitmap = createBitmap();
     bitmap.data.image = makeImageSource();
-    const data = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const data = getOrCreateRenderNode2D(state, bitmap);
     const spy = vi.spyOn(state.context, 'drawImage');
 
     drawCanvasBitmap(state, data);
@@ -49,7 +49,7 @@ describe('drawCanvasBitmap', () => {
     const state = makeState();
     const bitmap = createBitmap();
     bitmap.data.image = null;
-    const data = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const data = getOrCreateRenderNode2D(state, bitmap);
     const spy = vi.spyOn(state.context, 'drawImage');
 
     drawCanvasBitmap(state, data);
@@ -62,7 +62,7 @@ describe('drawCanvasBitmap', () => {
     const bitmap = createBitmap();
     bitmap.data.image = makeImageSource();
     bitmap.data.sourceRectangle = createRectangle(10, 20, 32, 32);
-    const data = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const data = getOrCreateRenderNode2D(state, bitmap);
     const spy = vi.spyOn(state.context, 'drawImage');
 
     drawCanvasBitmap(state, data);
@@ -83,7 +83,7 @@ describe('drawCanvasBitmap', () => {
     const bitmap = createBitmap();
     bitmap.data.image = makeImageSource();
     bitmap.data.smoothing = false;
-    const data = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const data = getOrCreateRenderNode2D(state, bitmap);
 
     drawCanvasBitmap(state, data);
 
@@ -95,7 +95,7 @@ describe('drawCanvasBitmapMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const bitmap = createBitmap();
-    const data = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const data = getOrCreateRenderNode2D(state, bitmap);
 
     expect(() => drawCanvasBitmapMask(state, data)).not.toThrow();
   });

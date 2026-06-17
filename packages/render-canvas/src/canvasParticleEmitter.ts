@@ -1,11 +1,11 @@
 import { noopRendererData } from '@flighthq/render';
-import type { CanvasRenderState, ParticleEmitter, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
+import type { CanvasRenderState, ParticleEmitter, RenderNode2D, SpriteRenderer } from '@flighthq/types';
 
 // Canvas 2D does not support per-pixel color multiplication, so only alpha
 // and transform (position, rotation, scale) are applied. Color tint values
 // from the emitter config are silently ignored. Use the WebGL renderer for
 // full color-over-lifetime support.
-export function drawCanvasParticleEmitter(state: CanvasRenderState, renderNode: SpriteRenderNode): void {
+export function drawCanvasParticleEmitter(state: CanvasRenderState, renderNode: RenderNode2D): void {
   const source = renderNode.source as ParticleEmitter;
   const { atlas, alphas, ids, particleCount, transforms } = source.data;
   if (atlas === null || atlas.image === null || atlas.image.src === null || particleCount === 0) return;

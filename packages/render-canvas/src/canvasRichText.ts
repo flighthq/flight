@@ -15,7 +15,7 @@ import type { InputTextSelectionRectangle } from '@flighthq/types';
 import type {
   CanvasRenderState,
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
+  RenderNode2D,
   RichText,
   RichTextRuntime,
   TextFormat,
@@ -25,7 +25,7 @@ import type {
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasRichText(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawCanvasRichText(state: CanvasRenderState, renderNode: RenderNode2D): void {
   drawCanvasDisplayObject(state, renderNode);
 
   const source = renderNode.source as RichText;
@@ -140,7 +140,7 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: Display
   context.restore();
 }
 
-export function drawCanvasRichTextMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
+export function drawCanvasRichTextMask(state: CanvasRenderState, data: RenderNode2D): void {
   drawCanvasDisplayObject(state, data);
 }
 

@@ -5,10 +5,10 @@ import { computeTextFormatFontString } from '@flighthq/render';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
   DOMRenderState,
   Renderable,
   RendererData,
+  RenderNode2D,
   RenderState,
   Text,
   TextFormat,
@@ -35,7 +35,7 @@ function getMeasureCtx(): CanvasRenderingContext2D | null {
   return _measureCtx;
 }
 
-export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMText(state: DOMRenderState, renderNode: RenderNode2D): void {
   const data = renderNode.rendererData as DOMTextData | null;
   if (data === null) return;
 
@@ -94,7 +94,7 @@ export function drawDOMText(state: DOMRenderState, renderNode: DisplayObjectRend
   setDOMRendererElement(state, data.div);
 }
 
-export function drawDOMTextMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMTextMask(state: DOMRenderState, renderNode: RenderNode2D): void {
   drawDOMText(state, renderNode);
 }
 

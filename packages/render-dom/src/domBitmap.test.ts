@@ -1,7 +1,7 @@
 ﻿import { createImageSource, createImageSourceFromCanvas } from '@flighthq/assets';
 import { createBitmap } from '@flighthq/displayobject';
 import { registerRenderer } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import { getOrCreateRenderNode2D } from '@flighthq/render';
 import { BitmapKind } from '@flighthq/types';
 
 import { defaultDOMBitmapRenderer, drawDOMBitmap, drawDOMBitmapMask } from './domBitmap';
@@ -49,7 +49,7 @@ describe('drawDOMBitmap', () => {
     const state = makeState();
     const bitmap = createBitmap();
     bitmap.data.image = null;
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateRenderNode2D(state, bitmap);
 
     const el = drawGetEl(state, () => drawDOMBitmap(state, renderNode));
 
@@ -60,7 +60,7 @@ describe('drawDOMBitmap', () => {
     const state = makeState();
     const bitmap = createBitmap();
     bitmap.data.image = makeHTMLImageSource();
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateRenderNode2D(state, bitmap);
 
     const el = drawGetEl(state, () => drawDOMBitmap(state, renderNode));
 
@@ -72,7 +72,7 @@ describe('drawDOMBitmap', () => {
     const state = makeState();
     const bitmap = createBitmap();
     bitmap.data.image = makeCanvasImageSource();
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateRenderNode2D(state, bitmap);
 
     const el = drawGetEl(state, () => drawDOMBitmap(state, renderNode));
 
@@ -84,7 +84,7 @@ describe('drawDOMBitmap', () => {
     const state = makeState();
     const bitmap = createBitmap();
     bitmap.data.image = makeHTMLImageSource();
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateRenderNode2D(state, bitmap);
 
     const firstImg = drawGetEl(state, () => drawDOMBitmap(state, renderNode));
     const secondImg = drawGetEl(state, () => drawDOMBitmap(state, renderNode));
@@ -96,7 +96,7 @@ describe('drawDOMBitmap', () => {
     const state = makeState();
     const bitmap = createBitmap();
     bitmap.data.image = makeCanvasImageSource();
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateRenderNode2D(state, bitmap);
 
     const canvas = drawGetEl(state, () => drawDOMBitmap(state, renderNode)) as HTMLCanvasElement;
     expect(canvas.width).toBe(64);
@@ -108,7 +108,7 @@ describe('drawDOMBitmapMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const bitmap = createBitmap();
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateRenderNode2D(state, bitmap);
     expect(() => drawDOMBitmapMask(state, renderNode)).not.toThrow();
   });
 });

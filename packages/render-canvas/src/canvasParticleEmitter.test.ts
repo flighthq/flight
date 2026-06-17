@@ -1,4 +1,4 @@
-import type { SpriteRenderNode } from '@flighthq/types';
+import type { RenderNode2D } from '@flighthq/types';
 
 import { drawCanvasParticleEmitter } from './canvasParticleEmitter';
 import { createCanvasRenderState } from './canvasRenderState';
@@ -18,7 +18,7 @@ function makeState() {
   return createCanvasRenderState(canvas, {});
 }
 
-function makeRenderNode(data: Record<string, unknown> = {}): SpriteRenderNode {
+function makeRenderNode(data: Record<string, unknown> = {}): RenderNode2D {
   return {
     source: {
       data: {
@@ -34,7 +34,7 @@ function makeRenderNode(data: Record<string, unknown> = {}): SpriteRenderNode {
     blendMode: null,
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
-  } as unknown as SpriteRenderNode;
+  } as unknown as RenderNode2D;
 }
 
 describe('drawCanvasParticleEmitter', () => {
