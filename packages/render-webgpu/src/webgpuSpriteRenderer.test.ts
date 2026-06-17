@@ -1,4 +1,4 @@
-import { getRenderNode2D, prepareSpriteRender } from '@flighthq/render';
+import { getRenderProxy2D, prepareSpriteRender } from '@flighthq/render';
 import { createSprite } from '@flighthq/sprite';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
@@ -27,10 +27,10 @@ describe('defaultWebGPUSpriteRenderer.submit', () => {
 
     const sprite = createSprite();
     prepareSpriteRender(state, sprite);
-    const renderNode = getRenderNode2D(state, sprite)!;
+    const renderProxy = getRenderProxy2D(state, sprite)!;
 
     expect(() => {
-      defaultWebGPUSpriteRenderer.submit(state, renderNode);
+      defaultWebGPUSpriteRenderer.submit(state, renderProxy);
       flushWebGPUSpriteBatch(state as any);
     }).not.toThrow();
     submitWebGPURenderPass(state);

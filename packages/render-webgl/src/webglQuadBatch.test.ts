@@ -1,4 +1,4 @@
-import type { RenderNode2D } from '@flighthq/types';
+import type { RenderProxy2D } from '@flighthq/types';
 
 import { registerDefaultWebGLMaterial } from './webglDefaultMaterial';
 import { defaultWebGLQuadBatchRenderer } from './webglQuadBatch';
@@ -13,7 +13,7 @@ function makeAtlas() {
   };
 }
 
-function makeQuadBatchNode(data: Record<string, unknown> = {}): RenderNode2D {
+function makeQuadBatchNode(data: Record<string, unknown> = {}): RenderProxy2D {
   return {
     source: {
       data: {
@@ -32,7 +32,7 @@ function makeQuadBatchNode(data: Record<string, unknown> = {}): RenderNode2D {
     renderer: null,
     traverseChildren: false,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
-  } as unknown as RenderNode2D;
+  } as unknown as RenderProxy2D;
 }
 
 describe('defaultWebGLQuadBatchRenderer', () => {

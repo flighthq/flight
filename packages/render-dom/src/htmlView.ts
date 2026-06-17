@@ -1,11 +1,11 @@
 ﻿import { noopRendererData } from '@flighthq/render';
-import type { DisplayObjectRenderer, DOMRenderState, HTMLView, RenderNode2D } from '@flighthq/types';
+import type { DisplayObjectRenderer, DOMRenderState, HTMLView, RenderProxy2D } from '@flighthq/types';
 
 import { setDOMRendererElement } from './domStyle';
 import { setDOMTransform } from './domTransform';
 
-export function drawDOMHTMLView(state: DOMRenderState, renderNode: RenderNode2D): void {
-  const source = renderNode.source as HTMLView;
+export function drawDOMHTMLView(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+  const source = renderProxy.source as HTMLView;
   const data = source.data;
   const element = data.element;
   if (element === null) return;
@@ -20,14 +20,14 @@ export function drawDOMHTMLView(state: DOMRenderState, renderNode: RenderNode2D)
 
   element.style.width = `${data.width}px`;
   element.style.height = `${data.height}px`;
-  setDOMTransform(element, renderNode.transform2D, state.roundPixels);
-  element.style.opacity = renderNode.alpha < 1 ? String(renderNode.alpha) : '';
-  state.applyBlendMode?.(element, renderNode.blendMode);
+  setDOMTransform(element, renderProxy.transform2D, state.roundPixels);
+  element.style.opacity = renderProxy.alpha < 1 ? String(renderProxy.alpha) : '';
+  state.applyBlendMode?.(element, renderProxy.blendMode);
 
   setDOMRendererElement(state, element);
 }
 
-export function drawDOMHTMLViewMask(_state: DOMRenderState, _renderNode: RenderNode2D): void {
+export function drawDOMHTMLViewMask(_state: DOMRenderState, _renderProxy: RenderProxy2D): void {
   // HTMLView content is not converted into mask geometry by the DOM renderer.
 }
 

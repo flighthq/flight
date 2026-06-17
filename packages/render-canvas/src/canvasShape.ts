@@ -3,7 +3,7 @@ import type {
   CanvasRenderState,
   CanvasShapeDrawState,
   DisplayObjectRenderer,
-  RenderNode2D,
+  RenderProxy2D,
   Shape,
 } from '@flighthq/types';
 
@@ -11,17 +11,17 @@ import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { getCanvasShapeCommand } from './canvasShapeRegistry';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasShape(state: CanvasRenderState, renderNode: RenderNode2D): void {
-  drawCanvasDisplayObject(state, renderNode);
+export function drawCanvasShape(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
+  drawCanvasDisplayObject(state, renderProxy);
 
-  const source = renderNode.source as Shape;
+  const source = renderProxy.source as Shape;
   const { commands } = source.data;
   if (commands.length === 0) return;
 
   const context = state.context;
-  state.applyBlendMode?.(state, renderNode.blendMode);
-  context.globalAlpha = renderNode.alpha;
-  setCanvasTransform(state, context, renderNode.transform2D);
+  state.applyBlendMode?.(state, renderProxy.blendMode);
+  context.globalAlpha = renderProxy.alpha;
+  setCanvasTransform(state, context, renderProxy.transform2D);
 
   renderCanvasShapeCommands(context, commands);
 }

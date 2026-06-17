@@ -16,7 +16,7 @@ import {
   defaultWebGLBitmapRenderer,
   drawWebGLRenderTargetResult,
   endWebGLRenderTarget,
-  getDisplayObjectRenderNode,
+  getDisplayObjectRenderProxy,
   prepareDisplayObjectRender,
   registerRenderer,
   renderWebGLBackground,
@@ -75,8 +75,8 @@ export function render(root: DisplayObject): void {
   // node's scene transform now — the offscreen pass below overwrites transform2D in place.
   prepareDisplayObjectRender(state, root);
   for (const entry of _entries) {
-    const renderNode = getDisplayObjectRenderNode(state, entry.node);
-    if (renderNode !== undefined) copyMatrix(entry.sceneTransform, renderNode.transform2D);
+    const renderProxy = getDisplayObjectRenderProxy(state, entry.node);
+    if (renderProxy !== undefined) copyMatrix(entry.sceneTransform, renderProxy.transform2D);
   }
 
   // Offscreen: render + blur each node into its own target. We set the render node's transform
@@ -89,9 +89,9 @@ export function render(root: DisplayObject): void {
     computeNodeBoundsRectangle(_bounds, node, node);
     computeRenderCacheTransform(entry.cacheTransform, _bounds, padding, padding);
 
-    const renderNode = getDisplayObjectRenderNode(state, node);
-    if (renderNode === undefined) continue;
-    setTranslation(renderNode.transform2D, padding - _bounds.x, padding - _bounds.y);
+    const renderProxy = getDisplayObjectRenderProxy(state, node);
+    if (renderProxy === undefined) continue;
+    setTranslation(renderProxy.transform2D, padding - _bounds.x, padding - _bounds.y);
 
     beginWebGLRenderTarget(state, source, _identity);
     clearWebGLFilterTarget(state, source);
@@ -108,10 +108,10 @@ export function render(root: DisplayObject): void {
   // sharp originals. Instead clear the background and composite the blurred targets directly.
   renderWebGLBackground(state);
   for (const entry of _entries) {
-    const renderNode = getDisplayObjectRenderNode(state, entry.node);
-    if (renderNode === undefined) continue;
-    copyMatrix(renderNode.transform2D, entry.sceneTransform);
-    drawWebGLRenderTargetResult(state, renderNode, entry.blurred, entry.cacheTransform);
+    const renderProxy = getDisplayObjectRenderProxy(state, entry.node);
+    if (renderProxy === undefined) continue;
+    copyMatrix(renderProxy.transform2D, entry.sceneTransform);
+    drawWebGLRenderTargetResult(state, renderProxy, entry.blurred, entry.cacheTransform);
   }
 }
 

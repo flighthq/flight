@@ -1,5 +1,5 @@
 import { noopRendererData } from '@flighthq/render';
-import type { RenderNode2D, RenderState, Sprite, SpriteRenderer } from '@flighthq/types';
+import type { RenderProxy2D, RenderState, Sprite, SpriteRenderer } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
@@ -9,7 +9,7 @@ import {
   prepareWebGLSpriteBatchWrite,
 } from './webglSpriteBatch';
 
-function submitWebGLSpriteNode(state: RenderState, spriteNode: RenderNode2D): void {
+function submitWebGLSpriteNode(state: RenderState, spriteNode: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
   const source = spriteNode.source as Sprite;
   const { atlas, id } = source.data;

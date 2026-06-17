@@ -1,5 +1,5 @@
 import { noopRendererData } from '@flighthq/render';
-import type { RenderNode2D, RenderState, SpriteRenderer, Tilemap } from '@flighthq/types';
+import type { RenderProxy2D, RenderState, SpriteRenderer, Tilemap } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
 import { resolveWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
@@ -12,7 +12,7 @@ import {
 // Each tile writes the 13 base instance floats; any material packs its own per-instance data.
 const INSTANCE_STRIDE_FLOATS = SPRITE_INSTANCE_FLOATS;
 
-function submitWebGPUTilemap(state: RenderState, tilemapNode: RenderNode2D): void {
+function submitWebGPUTilemap(state: RenderState, tilemapNode: RenderProxy2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 

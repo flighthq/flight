@@ -1,5 +1,5 @@
 ﻿import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/displayobject';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 
 import { createDOMRenderState } from './domRenderState';
 import {
@@ -39,7 +39,7 @@ describe('drawDOMScale9Shape', () => {
   it('returns early when commands are empty', () => {
     const state = createDOMRenderState(document.createElement('div'));
     const shape = createScale9Shape(grid);
-    const data = getOrCreateRenderNode2D(state, shape);
+    const data = getOrCreateRenderProxy2D(state, shape);
     data.rendererData = createDOMScale9ShapeData(state, shape);
 
     drawDOMScale9Shape(state, data);
@@ -52,7 +52,7 @@ describe('drawDOMScale9Shape', () => {
     const shape = createScale9Shape(grid);
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 100, 100);
-    const data = getOrCreateRenderNode2D(state, shape);
+    const data = getOrCreateRenderProxy2D(state, shape);
 
     drawDOMScale9Shape(state, data);
 
@@ -66,7 +66,7 @@ describe('drawDOMScale9Shape', () => {
     shape.scaleY = 3;
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 100, 100);
-    const data = getOrCreateRenderNode2D(state, shape);
+    const data = getOrCreateRenderProxy2D(state, shape);
     data.rendererData = createDOMScale9ShapeData(state, shape);
     data.transform2D.a = 2;
     data.transform2D.d = 3;
@@ -85,7 +85,7 @@ describe('drawDOMScale9ShapeMask', () => {
   it('uses the Scale9 draw path', () => {
     const state = createDOMRenderState(document.createElement('div'));
     const shape = createScale9Shape(grid);
-    const data = getOrCreateRenderNode2D(state, shape);
+    const data = getOrCreateRenderProxy2D(state, shape);
     data.rendererData = createDOMScale9ShapeData(state, shape);
 
     drawDOMScale9ShapeMask(state, data);

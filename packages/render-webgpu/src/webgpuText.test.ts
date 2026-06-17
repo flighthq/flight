@@ -1,5 +1,5 @@
 import { createText } from '@flighthq/displayobject';
-import { getOrCreateRenderNode2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
@@ -23,9 +23,9 @@ describe('drawWebGPUText', () => {
 
     const text = createText();
     prepareDisplayObjectRender(state, text);
-    const renderNode = getOrCreateRenderNode2D(state, text);
+    const renderProxy = getOrCreateRenderProxy2D(state, text);
 
-    expect(() => drawWebGPUText(state, renderNode)).not.toThrow();
+    expect(() => drawWebGPUText(state, renderProxy)).not.toThrow();
     submitWebGPURenderPass(state);
   });
 });
@@ -36,8 +36,8 @@ describe('drawWebGPUTextMask', () => {
     renderWebGPUBackground(state);
     const text = createText();
     prepareDisplayObjectRender(state, text);
-    const renderNode = getOrCreateRenderNode2D(state, text);
-    expect(() => drawWebGPUTextMask(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, text);
+    expect(() => drawWebGPUTextMask(state, renderProxy)).not.toThrow();
     submitWebGPURenderPass(state);
   });
 });

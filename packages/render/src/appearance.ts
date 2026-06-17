@@ -1,7 +1,7 @@
 import { getNodeAppearanceRevision } from '@flighthq/node';
-import type { HasAppearance, Node, RenderNode, RenderState } from '@flighthq/types';
+import type { HasAppearance, Node, RenderProxy, RenderState } from '@flighthq/types';
 
-export function updateRenderNodeAppearance(state: RenderState, data: RenderNode, parentData?: RenderNode): boolean {
+export function updateRenderProxyAppearance(state: RenderState, data: RenderProxy, parentData?: RenderProxy): boolean {
   const appearanceID = getNodeAppearanceRevision(data.source as Node);
   if (
     (parentData !== undefined && parentData.appearanceFrameID === state.currentFrameID) ||
@@ -14,8 +14,8 @@ export function updateRenderNodeAppearance(state: RenderState, data: RenderNode,
   return false;
 }
 
-function recalculateAppearance(state: RenderState, data: RenderNode, parentData?: RenderNode) {
-  const source = data.source as HasAppearance;
+function recalculateAppearance(state: RenderState, data: RenderProxy, parentData?: RenderProxy) {
+  const source = data.source as unknown as HasAppearance;
   if (parentData !== undefined) {
     data.visible = source.visible && parentData.visible;
     if (!data.visible) return;

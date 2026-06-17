@@ -1,5 +1,5 @@
 import { createRichText } from '@flighthq/displayobject';
-import { getOrCreateRenderNode2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
 import {
@@ -28,9 +28,9 @@ describe('drawWebGPURichText', () => {
 
     const richText = createRichText();
     prepareDisplayObjectRender(state, richText);
-    const renderNode = getOrCreateRenderNode2D(state, richText);
+    const renderProxy = getOrCreateRenderProxy2D(state, richText);
 
-    expect(() => drawWebGPURichText(state, renderNode)).not.toThrow();
+    expect(() => drawWebGPURichText(state, renderProxy)).not.toThrow();
     submitWebGPURenderPass(state);
   });
 
@@ -38,9 +38,9 @@ describe('drawWebGPURichText', () => {
     const state = await createWebGPURenderStateForTest();
     const richText = createRichText();
     prepareDisplayObjectRender(state, richText);
-    const renderNode = getOrCreateRenderNode2D(state, richText);
+    const renderProxy = getOrCreateRenderProxy2D(state, richText);
 
-    expect(() => drawWebGPURichText(state, renderNode)).not.toThrow();
+    expect(() => drawWebGPURichText(state, renderProxy)).not.toThrow();
   });
 });
 
@@ -50,8 +50,8 @@ describe('drawWebGPURichTextMask', () => {
     renderWebGPUBackground(state);
     const richText = createRichText();
     prepareDisplayObjectRender(state, richText);
-    const renderNode = getOrCreateRenderNode2D(state, richText);
-    expect(() => drawWebGPURichTextMask(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, richText);
+    expect(() => drawWebGPURichTextMask(state, renderProxy)).not.toThrow();
     submitWebGPURenderPass(state);
   });
 });
@@ -62,8 +62,8 @@ describe('drawWebGPURichTextWithOverlay', () => {
     renderWebGPUBackground(state);
     const richText = createRichText();
     prepareDisplayObjectRender(state, richText);
-    const renderNode = getOrCreateRenderNode2D(state, richText);
-    expect(() => drawWebGPURichTextWithOverlay(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, richText);
+    expect(() => drawWebGPURichTextWithOverlay(state, renderProxy)).not.toThrow();
     submitWebGPURenderPass(state);
   });
 });

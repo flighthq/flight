@@ -17,7 +17,7 @@ export interface WebGPUBitmapShader {
   readonly pipeline: GPURenderPipeline;
   bind(
     state: WebGPURenderStateInternal,
-    renderNode: {
+    renderProxy: {
       alpha: number;
     },
   ): void;

@@ -15,7 +15,7 @@ import type { InputTextSelectionRectangle } from '@flighthq/types';
 import type {
   CanvasRenderState,
   DisplayObjectRenderer,
-  RenderNode2D,
+  RenderProxy2D,
   RichText,
   RichTextRuntime,
   TextFormat,
@@ -25,15 +25,15 @@ import type {
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasRichText(state: CanvasRenderState, renderNode: RenderNode2D): void {
-  drawCanvasDisplayObject(state, renderNode);
+export function drawCanvasRichText(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
+  drawCanvasDisplayObject(state, renderProxy);
 
-  const source = renderNode.source as RichText;
+  const source = renderProxy.source as RichText;
   const data = source.data;
   const context = state.context;
-  state.applyBlendMode?.(state, renderNode.blendMode);
-  context.globalAlpha = renderNode.alpha;
-  setCanvasTransform(state, context, renderNode.transform2D);
+  state.applyBlendMode?.(state, renderProxy.blendMode);
+  context.globalAlpha = renderProxy.alpha;
+  setCanvasTransform(state, context, renderProxy.transform2D);
 
   const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
   const content = getRichTextContent(richTextRuntime);
@@ -89,11 +89,11 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: RenderN
       result,
     );
     context.fillStyle = SELECTION_COLOR;
-    context.globalAlpha = Math.min(1, renderNode.alpha * SELECTION_ALPHA);
+    context.globalAlpha = Math.min(1, renderProxy.alpha * SELECTION_ALPHA);
     for (const rectangle of _richTextSelectionRectangles) {
       context.fillRect(rectangle.x - scrollXOffset, rectangle.y - scrollYOffset, rectangle.width, rectangle.height);
     }
-    context.globalAlpha = renderNode.alpha;
+    context.globalAlpha = renderProxy.alpha;
   }
 
   context.textBaseline = 'alphabetic';
@@ -140,7 +140,7 @@ export function drawCanvasRichText(state: CanvasRenderState, renderNode: RenderN
   context.restore();
 }
 
-export function drawCanvasRichTextMask(state: CanvasRenderState, data: RenderNode2D): void {
+export function drawCanvasRichTextMask(state: CanvasRenderState, data: RenderProxy2D): void {
   drawCanvasDisplayObject(state, data);
 }
 

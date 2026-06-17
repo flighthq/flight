@@ -1,5 +1,5 @@
 import { noopRendererData } from '@flighthq/render';
-import type { ParticleEmitter, RenderNode2D, RenderState, SpriteRenderer } from '@flighthq/types';
+import type { ParticleEmitter, RenderProxy2D, RenderState, SpriteRenderer } from '@flighthq/types';
 
 import type { WebGLParticleShader, WebGLRenderStateInternal } from './internal';
 import { bindWebGLTexture } from './webglDraw';
@@ -127,23 +127,23 @@ function ensureInstanceCapacity(internal: WebGLRenderStateInternal, count: numbe
   internal.gl.bufferData(internal.gl.ARRAY_BUFFER, newSize * 4, internal.gl.DYNAMIC_DRAW);
 }
 
-export function drawWebGLParticleEmitter(state: RenderState, renderNode: RenderNode2D): void {
+export function drawWebGLParticleEmitter(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
-  const source = renderNode.source as ParticleEmitter;
+  const source = renderProxy.source as ParticleEmitter;
   const { atlas, alphas, colors, ids, particleCount, transforms } = source.data;
   if (atlas === null || atlas.image === null || atlas.image.src === null || particleCount === 0) return;
 
   const shader = ensureParticleShader(internal);
   ensureInstanceCapacity(internal, particleCount);
 
-  internal.applyBlendMode?.(internal, renderNode.blendMode);
+  internal.applyBlendMode?.(internal, renderProxy.blendMode);
   bindWebGLTexture(internal, atlas.image.src);
 
   const gl = internal.gl;
   const regions = atlas.regions;
   const numRegions = regions.length;
-  const nodeAlpha = renderNode.alpha;
-  const t = renderNode.transform2D;
+  const nodeAlpha = renderProxy.alpha;
+  const t = renderProxy.transform2D;
   const viewport = internal.renderTargetViewport ?? internal.canvas;
   const iw = 1 / (atlas.image.width || 1);
   const ih = 1 / (atlas.image.height || 1);
@@ -285,7 +285,7 @@ export function drawWebGLParticleEmitter(state: RenderState, renderNode: RenderN
 
 export const defaultWebGLParticleEmitterRenderer: SpriteRenderer = {
   createData: noopRendererData,
-  submit(state: RenderState, node: RenderNode2D): void {
+  submit(state: RenderState, node: RenderProxy2D): void {
     flushWebGLSpriteBatch(state as WebGLRenderStateInternal);
     drawWebGLParticleEmitter(state, node);
   },

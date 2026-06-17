@@ -98,7 +98,7 @@ describe('createDefaultWebGLBitmapShader', () => {
     canvas.width = 100;
     canvas.height = 100;
     const shader = createDefaultWebGLBitmapShader(loc, m);
-    const renderNode = {
+    const renderProxy = {
       alpha: 0.75,
       colorTransform: {
         redMultiplier: 0.5,
@@ -114,7 +114,7 @@ describe('createDefaultWebGLBitmapShader', () => {
       useColorTransform: true,
     };
 
-    shader.bind(gl, { canvas } as never, renderNode as never);
+    shader.bind(gl, { canvas } as never, renderProxy as never);
 
     expect(gl.uniform4f).not.toHaveBeenCalled();
   });
@@ -136,15 +136,15 @@ describe('createWebGLBitmapShader', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 100;
     canvas.height = 100;
-    const renderNode = { alpha: 1, transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 } };
+    const renderProxy = { alpha: 1, transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 } };
 
     shader.bind(
       gl,
       { canvas, matrixArray: new Float32Array(9), renderTargetViewport: null } as never,
-      renderNode as never,
+      renderProxy as never,
     );
 
-    expect(onBind).toHaveBeenCalledWith(gl, shader.locations, renderNode);
+    expect(onBind).toHaveBeenCalledWith(gl, shader.locations, renderProxy);
   });
 });
 
@@ -196,11 +196,11 @@ describe('setWebGLBaseUniforms', () => {
   it('sets alpha and texture uniforms', () => {
     const gl = makeGL();
     const loc = makeShaderLoc();
-    const renderNode = {
+    const renderProxy = {
       alpha: 0.5,
     };
 
-    setWebGLBaseUniforms(gl, loc, renderNode as never);
+    setWebGLBaseUniforms(gl, loc, renderProxy as never);
 
     expect(gl.uniform1f).toHaveBeenCalledWith(loc.locAlpha, 0.5);
     expect(gl.uniform1i).toHaveBeenCalledWith(loc.locTexture, 0);
@@ -209,7 +209,7 @@ describe('setWebGLBaseUniforms', () => {
   it('does not bind feature-specific uniforms', () => {
     const gl = makeGL();
     const loc = makeShaderLoc();
-    const renderNode = {
+    const renderProxy = {
       alpha: 1,
       colorTransform: {
         redMultiplier: 0.2,
@@ -224,7 +224,7 @@ describe('setWebGLBaseUniforms', () => {
       useColorTransform: true,
     };
 
-    setWebGLBaseUniforms(gl, loc, renderNode as never);
+    setWebGLBaseUniforms(gl, loc, renderProxy as never);
 
     expect(gl.uniform4f).not.toHaveBeenCalled();
   });

@@ -1,6 +1,6 @@
 ﻿import { createHTMLView } from '@flighthq/displayobject';
 import { registerRenderer } from '@flighthq/render';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { HTMLViewKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
@@ -32,9 +32,9 @@ describe('drawDOMHTMLView', () => {
     const state = makeState();
     const node = createHTMLView();
     node.data.element = null;
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    const el = drawGetEl(state, () => drawDOMHTMLView(state, renderNode));
+    const el = drawGetEl(state, () => drawDOMHTMLView(state, renderProxy));
 
     expect(el).toBeNull();
   });
@@ -43,9 +43,9 @@ describe('drawDOMHTMLView', () => {
     const state = makeState();
     const inner = document.createElement('span');
     const node = createHTMLView({ data: { element: inner } });
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    const el = drawGetEl(state, () => drawDOMHTMLView(state, renderNode));
+    const el = drawGetEl(state, () => drawDOMHTMLView(state, renderProxy));
 
     expect(el).toBe(inner);
   });
@@ -54,9 +54,9 @@ describe('drawDOMHTMLView', () => {
     const state = makeState();
     const inner = document.createElement('div');
     const node = createHTMLView({ data: { element: inner } });
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    drawDOMHTMLView(state, renderNode);
+    drawDOMHTMLView(state, renderProxy);
 
     expect(inner.style.position).toBe('absolute');
     expect(inner.style.left).toBe('0px');
@@ -71,9 +71,9 @@ describe('drawDOMHTMLView', () => {
     inner.style.position = 'absolute';
     inner.style.left = '50px';
     const node = createHTMLView({ data: { element: inner } });
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    drawDOMHTMLView(state, renderNode);
+    drawDOMHTMLView(state, renderProxy);
 
     expect(inner.style.left).toBe('50px');
   });
@@ -82,9 +82,9 @@ describe('drawDOMHTMLView', () => {
     const state = makeState();
     const inner = document.createElement('div');
     const node = createHTMLView({ data: { element: inner, width: 320, height: 240 } });
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    drawDOMHTMLView(state, renderNode);
+    drawDOMHTMLView(state, renderProxy);
 
     expect(inner.style.width).toBe('320px');
     expect(inner.style.height).toBe('240px');
@@ -94,12 +94,12 @@ describe('drawDOMHTMLView', () => {
     const state = makeState();
     const inner = document.createElement('div');
     const node = createHTMLView({ data: { element: inner, width: 100, height: 100 } });
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    drawDOMHTMLView(state, renderNode);
+    drawDOMHTMLView(state, renderProxy);
     node.data.width = 640;
     node.data.height = 480;
-    drawDOMHTMLView(state, renderNode);
+    drawDOMHTMLView(state, renderProxy);
 
     expect(inner.style.width).toBe('640px');
     expect(inner.style.height).toBe('480px');
@@ -109,9 +109,9 @@ describe('drawDOMHTMLView', () => {
     const state = makeState();
     const inner = document.createElement('div');
     const node = createHTMLView({ data: { element: inner } });
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    drawDOMHTMLView(state, renderNode);
+    drawDOMHTMLView(state, renderProxy);
 
     expect(inner.style.transform).toMatch(/^matrix\(/);
   });
@@ -121,7 +121,7 @@ describe('drawDOMHTMLViewMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const node = createHTMLView();
-    const renderNode = getOrCreateRenderNode2D(state, node);
-    expect(() => drawDOMHTMLViewMask(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+    expect(() => drawDOMHTMLViewMask(state, renderProxy)).not.toThrow();
   });
 });

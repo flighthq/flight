@@ -1,12 +1,12 @@
-import { enableRenderFeatures, getOrCreateRenderNode2D, hasRenderFeatures } from '@flighthq/render';
-import { type CanvasRenderState, type DisplayObject, RenderFeatures, type RenderNode2D } from '@flighthq/types';
+import { enableRenderFeatures, getOrCreateRenderProxy2D, hasRenderFeatures } from '@flighthq/render';
+import { type CanvasRenderState, type DisplayObject, RenderFeatures, type RenderProxy2D } from '@flighthq/types';
 
 // Per-state canvas CSS filter bindings, keyed by the render node. Render nodes are
-// per-state (state.renderNodeMap), so a module-level map keyed by render node is
+// per-state (state.renderProxyMap), so a module-level map keyed by render node is
 // automatically isolated per state — a filter set for one render state is
 // invisible to any other state that renders the same display object. This mirrors
 // the per-state WebGL shader bindings.
-const _cssFilterBindings = new WeakMap<RenderNode2D, string>();
+const _cssFilterBindings = new WeakMap<RenderProxy2D, string>();
 
 /**
  * Enables CSS filter support for the render state. Bindings made via
@@ -17,18 +17,18 @@ export function enableCanvasCSSFilterSupport(state: CanvasRenderState): void {
   enableRenderFeatures(state, RenderFeatures.CSSFilter);
 }
 
-export function getCanvasCSSFilter(renderNode: RenderNode2D): string | undefined {
-  return _cssFilterBindings.get(renderNode);
+export function getCanvasCSSFilter(renderProxy: RenderProxy2D): string | undefined {
+  return _cssFilterBindings.get(renderProxy);
 }
 
 /**
- * Returns the CSS filter to draw renderNode with, or null when none is bound or
+ * Returns the CSS filter to draw renderProxy with, or null when none is bound or
  * CSS filter support is disabled for the state. The feature gate keeps the lookup
  * off the hot path until at least one filter has been bound.
  */
-export function resolveCanvasCSSFilter(state: CanvasRenderState, renderNode: RenderNode2D): string | null {
+export function resolveCanvasCSSFilter(state: CanvasRenderState, renderProxy: RenderProxy2D): string | null {
   if (hasRenderFeatures(state, RenderFeatures.CSSFilter)) {
-    const filter = _cssFilterBindings.get(renderNode);
+    const filter = _cssFilterBindings.get(renderProxy);
     if (filter !== undefined) return filter;
   }
   return null;
@@ -42,10 +42,10 @@ export function resolveCanvasCSSFilter(state: CanvasRenderState, renderNode: Ren
  * `context.filter` around the object's own draw.
  */
 export function setCanvasCSSFilter(state: CanvasRenderState, node: DisplayObject, filter: string | null): void {
-  const renderNode = getOrCreateRenderNode2D(state, node);
+  const renderProxy = getOrCreateRenderProxy2D(state, node);
   if (filter === null) {
-    _cssFilterBindings.delete(renderNode);
+    _cssFilterBindings.delete(renderProxy);
     return;
   }
-  _cssFilterBindings.set(renderNode, filter);
+  _cssFilterBindings.set(renderProxy, filter);
 }

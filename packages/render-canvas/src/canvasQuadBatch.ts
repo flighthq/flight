@@ -1,10 +1,10 @@
 ﻿import { acquireMatrix, multiplyMatrix, releaseMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry';
 import { noopRendererData } from '@flighthq/render';
-import type { CanvasRenderState, QuadBatch, RenderNode2D, SpriteRenderer } from '@flighthq/types';
+import type { CanvasRenderState, QuadBatch, RenderProxy2D, SpriteRenderer } from '@flighthq/types';
 
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
 
-export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderNode2D): void {
+export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderProxy2D): void {
   const source = quadBatch.source as QuadBatch;
   const data = source.data;
   const { atlas, instanceCount, ids, transforms } = data;

@@ -1,6 +1,6 @@
 ﻿import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/displayobject';
 import { registerRenderer } from '@flighthq/render';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/render-canvas';
 import { ShapeKind } from '@flighthq/types';
 
@@ -36,9 +36,9 @@ describe('drawDOMShape', () => {
   it('does not produce an element when commands array is empty', () => {
     const state = makeState();
     const shape = createShape();
-    const renderNode = getOrCreateRenderNode2D(state, shape);
+    const renderProxy = getOrCreateRenderProxy2D(state, shape);
 
-    const el = drawGetEl(state, () => drawDOMShape(state, renderNode));
+    const el = drawGetEl(state, () => drawDOMShape(state, renderProxy));
 
     expect(el).toBeNull();
   });
@@ -49,9 +49,9 @@ describe('drawDOMShape', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 50, 50);
     appendShapeEndFill(shape);
-    const renderNode = getOrCreateRenderNode2D(state, shape);
+    const renderProxy = getOrCreateRenderProxy2D(state, shape);
 
-    const el = drawGetEl(state, () => drawDOMShape(state, renderNode));
+    const el = drawGetEl(state, () => drawDOMShape(state, renderProxy));
 
     expect(el).not.toBeNull();
     expect(el!.tagName).toBe('CANVAS');
@@ -63,9 +63,9 @@ describe('drawDOMShape', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 0, 0);
     appendShapeEndFill(shape);
-    const renderNode = getOrCreateRenderNode2D(state, shape);
+    const renderProxy = getOrCreateRenderProxy2D(state, shape);
 
-    const canvas = drawGetEl(state, () => drawDOMShape(state, renderNode)) as HTMLCanvasElement;
+    const canvas = drawGetEl(state, () => drawDOMShape(state, renderProxy)) as HTMLCanvasElement;
     expect(canvas.width).toBeGreaterThanOrEqual(1);
     expect(canvas.height).toBeGreaterThanOrEqual(1);
   });
@@ -76,10 +76,10 @@ describe('drawDOMShape', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 40, 40);
     appendShapeEndFill(shape);
-    const renderNode = getOrCreateRenderNode2D(state, shape);
+    const renderProxy = getOrCreateRenderProxy2D(state, shape);
 
-    const firstCanvas = drawGetEl(state, () => drawDOMShape(state, renderNode));
-    const secondCanvas = drawGetEl(state, () => drawDOMShape(state, renderNode));
+    const firstCanvas = drawGetEl(state, () => drawDOMShape(state, renderProxy));
+    const secondCanvas = drawGetEl(state, () => drawDOMShape(state, renderProxy));
 
     expect(firstCanvas).toBe(secondCanvas);
   });
@@ -89,7 +89,7 @@ describe('drawDOMShapeMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const shape = createShape();
-    const renderNode = getOrCreateRenderNode2D(state, shape);
-    expect(() => drawDOMShapeMask(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, shape);
+    expect(() => drawDOMShapeMask(state, renderProxy)).not.toThrow();
   });
 });

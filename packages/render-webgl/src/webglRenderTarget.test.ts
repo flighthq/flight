@@ -1,6 +1,6 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 
 import type { WebGLRenderStateInternal } from './internal';
 import {
@@ -141,7 +141,7 @@ describe('destroyWebGLRenderTarget', () => {
 describe('drawWebGLRenderTargetResult', () => {
   it('is a no-op when target dimensions are zero', () => {
     const { state, gl } = makeState();
-    const node = getOrCreateRenderNode2D(state, createDisplayObject());
+    const node = getOrCreateRenderProxy2D(state, createDisplayObject());
     const target = createWebGLRenderTarget(state, 1, 1);
     target.width = 0;
     vi.clearAllMocks();
@@ -153,7 +153,7 @@ describe('drawWebGLRenderTargetResult', () => {
 
   it('composites a valid target without throwing', () => {
     const { state } = makeState();
-    const node = getOrCreateRenderNode2D(state, createDisplayObject());
+    const node = getOrCreateRenderProxy2D(state, createDisplayObject());
     node.alpha = 1;
     const target = createWebGLRenderTarget(state, 64, 48);
 
@@ -162,7 +162,7 @@ describe('drawWebGLRenderTargetResult', () => {
 
   it('binds the target texture', () => {
     const { state, gl } = makeState();
-    const node = getOrCreateRenderNode2D(state, createDisplayObject());
+    const node = getOrCreateRenderProxy2D(state, createDisplayObject());
     const target = createWebGLRenderTarget(state, 64, 48);
     vi.clearAllMocks();
 

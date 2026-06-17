@@ -1,6 +1,6 @@
 ﻿import { createVideo } from '@flighthq/displayobject';
 import { registerRenderer } from '@flighthq/render';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { VideoKind } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';
@@ -26,8 +26,8 @@ describe('drawCanvasVideo', () => {
   it('does not throw when source is null', () => {
     const state = makeState();
     const video = createVideo();
-    const renderNode = getOrCreateRenderNode2D(state, video);
-    expect(() => drawCanvasVideo(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, video);
+    expect(() => drawCanvasVideo(state, renderProxy)).not.toThrow();
   });
 
   it('skips drawImage when element has not loaded', () => {
@@ -35,9 +35,9 @@ describe('drawCanvasVideo', () => {
     const video = createVideo();
     const el = document.createElement('video');
     video.data.source = { element: el } as never;
-    const renderNode = getOrCreateRenderNode2D(state, video);
+    const renderProxy = getOrCreateRenderProxy2D(state, video);
     const spy = vi.spyOn(state.context, 'drawImage');
-    drawCanvasVideo(state, renderNode);
+    drawCanvasVideo(state, renderProxy);
     expect(spy).not.toHaveBeenCalled();
   });
 });
@@ -46,7 +46,7 @@ describe('drawCanvasVideoMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const video = createVideo();
-    const renderNode = getOrCreateRenderNode2D(state, video);
-    expect(() => drawCanvasVideoMask(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, video);
+    expect(() => drawCanvasVideoMask(state, renderProxy)).not.toThrow();
   });
 });

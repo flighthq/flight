@@ -2,7 +2,7 @@ import { getTextRuntime } from '@flighthq/displayobject';
 import { computeRGBHexString } from '@flighthq/materials';
 import { computeTextFormatFontString, noopRendererData } from '@flighthq/render';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
-import type { DisplayObjectRenderer, RenderNode2D, RenderState, Text, TextFormat, TextRuntime } from '@flighthq/types';
+import type { DisplayObjectRenderer, RenderProxy2D, RenderState, Text, TextFormat, TextRuntime } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
 import { createWebGPUTextureEntry, drawWebGPUQuad, updateWebGPUTextureEntry } from './webgpuDraw';
@@ -22,13 +22,13 @@ function getOffscreenCanvas(width: number, height: number, pixelRatio: number): 
   return _offscreenCtx!;
 }
 
-const _textureMap = new WeakMap<RenderNode2D, WebGPUTextureEntry>();
+const _textureMap = new WeakMap<RenderProxy2D, WebGPUTextureEntry>();
 
-export function drawWebGPUText(state: RenderState, renderNode: RenderNode2D): void {
+export function drawWebGPUText(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 
-  const source = renderNode.source as Text;
+  const source = renderProxy.source as Text;
   const { text, textFormat } = source.data;
   if (text.length === 0) return;
 
@@ -77,20 +77,20 @@ export function drawWebGPUText(state: RenderState, renderNode: RenderNode2D): vo
     offCtx.fillText(slice, group.offsetX, group.offsetY + group.ascent * 0.815);
   }
 
-  internal.applyBlendMode?.(internal, renderNode.blendMode);
+  internal.applyBlendMode?.(internal, renderProxy.blendMode);
 
-  let entry = _textureMap.get(renderNode);
+  let entry = _textureMap.get(renderProxy);
   if (!entry) {
     entry = createWebGPUTextureEntry(internal, _offscreenCanvas!.width, _offscreenCanvas!.height, _offscreenCanvas!);
-    _textureMap.set(renderNode, entry);
+    _textureMap.set(renderProxy, entry);
   } else {
     updateWebGPUTextureEntry(internal, entry, _offscreenCanvas!);
   }
 
-  drawWebGPUQuad(internal, renderNode, entry, 0, 0, w, h, 0, 0, 1, 1);
+  drawWebGPUQuad(internal, renderProxy, entry, 0, 0, w, h, 0, 0, 1, 1);
 }
 
-export function drawWebGPUTextMask(state: RenderState, data: RenderNode2D): void {
+export function drawWebGPUTextMask(state: RenderState, data: RenderProxy2D): void {
   drawWebGPUText(state, data);
 }
 

@@ -1,5 +1,5 @@
 import { getDisplayObjectRuntime } from '@flighthq/displayobject';
-import { getRenderNode2D, isRenderNodeVisible } from '@flighthq/render';
+import { getRenderProxy2D, isRenderProxyVisible } from '@flighthq/render';
 import type { DisplayObject, DOMRenderState } from '@flighthq/types';
 
 import { hasDOMStructureChanged, processDOMNode, reconcileDOMContainer, swapDOMOrderLists } from './domReconcile';
@@ -22,13 +22,13 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
     const current = tempStack[--stackLength] as DisplayObject;
     if (!current.enabled) continue;
 
-    const data = getRenderNode2D(state, current);
+    const data = getRenderProxy2D(state, current);
     if (data === undefined || data.isMaskFrameID === frameID) continue;
 
     clipHooks?.popMask(state, data);
     clipHooks?.popClipRectangle(state, data);
 
-    if (!isRenderNodeVisible(data)) continue;
+    if (!isRenderProxyVisible(data)) continue;
 
     clipHooks?.pushMask(state, current);
 

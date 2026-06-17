@@ -1,5 +1,5 @@
 import { noopRendererData } from '@flighthq/render';
-import type { RenderNode2D, RenderState, SpriteRenderer, Tilemap } from '@flighthq/types';
+import type { RenderProxy2D, RenderState, SpriteRenderer, Tilemap } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
@@ -11,7 +11,7 @@ import {
 
 const INSTANCE_FLOATS = 13;
 
-function submitWebGLTilemap(state: RenderState, tilemapNode: RenderNode2D): void {
+function submitWebGLTilemap(state: RenderState, tilemapNode: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
   const source = tilemapNode.source as Tilemap;
   const { tileset, columns, rows, tiles } = source.data;

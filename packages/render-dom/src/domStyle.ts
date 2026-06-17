@@ -1,11 +1,11 @@
 ﻿import { hasRenderFeatures } from '@flighthq/render';
-import { type DOMRenderState, RenderFeatures, type RenderNode2D } from '@flighthq/types';
+import { type DOMRenderState, RenderFeatures, type RenderProxy2D } from '@flighthq/types';
 
 import { getDOMCSSFilter } from './domCSSFilterBinding';
 import { setDOMTransform } from './domTransform';
 import type { DOMRenderStateInternal } from './internal';
 
-export function applyDOMStyle(state: DOMRenderState, element: HTMLElement, node: RenderNode2D): void {
+export function applyDOMStyle(state: DOMRenderState, element: HTMLElement, node: RenderProxy2D): void {
   setDOMTransform(element, node.transform2D, state.roundPixels);
   element.style.opacity = node.alpha < 1 ? String(node.alpha) : '';
   element.style.imageRendering = state.allowSmoothing ? '' : 'pixelated';

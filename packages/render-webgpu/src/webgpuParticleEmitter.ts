@@ -1,5 +1,5 @@
 import { noopRendererData } from '@flighthq/render';
-import type { ParticleEmitter, RenderNode2D, RenderState, SpriteRenderer } from '@flighthq/types';
+import type { ParticleEmitter, RenderProxy2D, RenderState, SpriteRenderer } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
 import { bindWebGPUTexture } from './webgpuDraw';
@@ -154,23 +154,23 @@ function ensureParticleInstanceBuffer(state: WebGPURenderStateInternal, count: n
   state.particleInstanceData = new Float32Array(newCapacity / 4);
 }
 
-export function drawWebGPUParticleEmitter(state: RenderState, renderNode: RenderNode2D): void {
+export function drawWebGPUParticleEmitter(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 
-  const source = renderNode.source as ParticleEmitter;
+  const source = renderProxy.source as ParticleEmitter;
   const { atlas, alphas, colors, ids, particleCount, transforms } = source.data;
   if (atlas === null || atlas.image === null || atlas.image.src === null || particleCount === 0) return;
 
   const resources = ensureParticleResources(internal);
   ensureParticleInstanceBuffer(internal, particleCount);
 
-  internal.applyBlendMode?.(internal, renderNode.blendMode);
+  internal.applyBlendMode?.(internal, renderProxy.blendMode);
   const textureEntry = bindWebGPUTexture(internal, atlas.image.src);
 
   const regions = atlas.regions;
   const numRegions = regions.length;
-  const nodeAlpha = renderNode.alpha;
+  const nodeAlpha = renderProxy.alpha;
   const iw = 1 / (atlas.image.width || 1);
   const ih = 1 / (atlas.image.height || 1);
   const instanceData = internal.particleInstanceData!;
@@ -223,7 +223,7 @@ export function drawWebGPUParticleEmitter(state: RenderState, renderNode: Render
   const floatBase = uniformOffset >> 2;
   const { uniformData, uniformDataU32, matrixArray } = internal;
   const viewport = internal.renderTargetViewport ?? internal.canvas;
-  const t = renderNode.transform2D;
+  const t = renderProxy.transform2D;
 
   let iw2: number, ih2: number;
   if (source.data.worldSpace) {
@@ -286,7 +286,7 @@ export function drawWebGPUParticleEmitter(state: RenderState, renderNode: Render
 
 export const defaultWebGPUParticleEmitterRenderer: SpriteRenderer = {
   createData: noopRendererData,
-  submit(state: RenderState, node: RenderNode2D): void {
+  submit(state: RenderState, node: RenderProxy2D): void {
     flushWebGPUSpriteBatch(state as WebGPURenderStateInternal);
     drawWebGPUParticleEmitter(state, node);
   },

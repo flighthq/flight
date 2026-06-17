@@ -1,6 +1,6 @@
 ﻿import { createRichText } from '@flighthq/displayobject';
 import { registerRenderer } from '@flighthq/render';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { RichTextKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
@@ -32,17 +32,17 @@ describe('drawDOMRichText', () => {
     const state = makeState();
     const node = createRichText();
     node.data.text = '';
-    const renderNode = getOrCreateRenderNode2D(state, node);
-    expect(() => drawDOMRichText(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+    expect(() => drawDOMRichText(state, renderProxy)).not.toThrow();
   });
 
   it('produces a div even when text is empty', () => {
     const state = makeState();
     const node = createRichText();
     node.data.text = '';
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    const el = drawGetEl(state, () => drawDOMRichText(state, renderNode));
+    const el = drawGetEl(state, () => drawDOMRichText(state, renderProxy));
 
     expect(el).not.toBeNull();
   });
@@ -51,11 +51,11 @@ describe('drawDOMRichText', () => {
     const state = makeState();
     const node = createRichText();
     node.data.text = 'hello';
-    const renderNode = getOrCreateRenderNode2D(state, node);
-    drawDOMRichText(state, renderNode);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+    drawDOMRichText(state, renderProxy);
 
     node.data.text = '';
-    const div = drawGetEl(state, () => drawDOMRichText(state, renderNode));
+    const div = drawGetEl(state, () => drawDOMRichText(state, renderProxy));
 
     expect(div!.innerHTML).toBe('');
   });
@@ -64,9 +64,9 @@ describe('drawDOMRichText', () => {
     const state = makeState();
     const node = createRichText();
     node.data.text = 'hello';
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    const el = drawGetEl(state, () => drawDOMRichText(state, renderNode));
+    const el = drawGetEl(state, () => drawDOMRichText(state, renderProxy));
 
     expect(el).not.toBeNull();
     expect(el!.tagName).toBe('DIV');
@@ -78,9 +78,9 @@ describe('drawDOMRichText', () => {
     node.data.text = 'hello';
     node.data.width = 200;
     node.data.height = 100;
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    const div = drawGetEl(state, () => drawDOMRichText(state, renderNode))!;
+    const div = drawGetEl(state, () => drawDOMRichText(state, renderProxy))!;
     expect(div.style.width).toBe('200px');
     expect(div.style.height).toBe('100px');
   });
@@ -89,9 +89,9 @@ describe('drawDOMRichText', () => {
     const state = makeState();
     const node = createRichText();
     node.data.text = 'world';
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    const div = drawGetEl(state, () => drawDOMRichText(state, renderNode))!;
+    const div = drawGetEl(state, () => drawDOMRichText(state, renderProxy))!;
     expect(div.innerHTML).toContain('world');
   });
 
@@ -99,9 +99,9 @@ describe('drawDOMRichText', () => {
     const state = makeState();
     const node = createRichText();
     node.data.htmlText = '<b>Bold</b><font color="#00ff00">Green</font>';
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    const div = drawGetEl(state, () => drawDOMRichText(state, renderNode))!;
+    const div = drawGetEl(state, () => drawDOMRichText(state, renderProxy))!;
     expect(div.innerHTML).toContain('Bold');
     expect(div.innerHTML).toContain('Green');
     expect(div.innerHTML).toContain('bold');
@@ -114,9 +114,9 @@ describe('drawDOMRichText', () => {
     node.data.text = 'hi';
     node.data.background = true;
     node.data.backgroundColor = 0xff0000;
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    const div = drawGetEl(state, () => drawDOMRichText(state, renderNode))!;
+    const div = drawGetEl(state, () => drawDOMRichText(state, renderProxy))!;
     expect(div.style.backgroundColor).not.toBe('');
   });
 
@@ -125,9 +125,9 @@ describe('drawDOMRichText', () => {
     const node = createRichText();
     node.data.text = 'hi';
     node.data.background = false;
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    const div = drawGetEl(state, () => drawDOMRichText(state, renderNode))!;
+    const div = drawGetEl(state, () => drawDOMRichText(state, renderProxy))!;
     expect(div.style.backgroundColor).toBe('');
   });
 });
@@ -136,7 +136,7 @@ describe('drawDOMRichTextMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const node = createRichText();
-    const renderNode = getOrCreateRenderNode2D(state, node);
-    expect(() => drawDOMRichTextMask(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+    expect(() => drawDOMRichTextMask(state, renderProxy)).not.toThrow();
   });
 });

@@ -1,12 +1,12 @@
 ﻿import { createText } from '@flighthq/displayobject';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
-import type { DisplayObject, RenderNode2D } from '@flighthq/types';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import type { DisplayObject, RenderProxy2D } from '@flighthq/types';
 
 import { setWebGLShader } from './webglShaderBinding';
 import { makeWebGLState } from './webglTestHelper';
 import { defaultWebGLTextRenderer, drawWebGLText, drawWebGLTextMask } from './webglText';
 
-function makeTextNode(text = '', textFormat = {}): RenderNode2D {
+function makeTextNode(text = '', textFormat = {}): RenderProxy2D {
   const source = createText();
   source.data.text = text;
   source.data.textFormat = textFormat;
@@ -16,7 +16,7 @@ function makeTextNode(text = '', textFormat = {}): RenderNode2D {
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     rendererData: null,
-  } as unknown as RenderNode2D;
+  } as unknown as RenderProxy2D;
 }
 
 describe('defaultWebGLTextRenderer', () => {
@@ -34,11 +34,11 @@ describe('defaultWebGLTextRenderer', () => {
 describe('drawWebGLText', () => {
   it('binds the active bitmap shader when drawing text', () => {
     const { state } = makeWebGLState();
-    const renderNode = makeTextNode('hello');
+    const renderProxy = makeTextNode('hello');
 
-    drawWebGLText(state, renderNode);
+    drawWebGLText(state, renderProxy);
 
-    expect(state.defaultBitmapShader.bind).toHaveBeenCalledWith(state.gl, state, renderNode);
+    expect(state.defaultBitmapShader.bind).toHaveBeenCalledWith(state.gl, state, renderProxy);
   });
 
   it('uses a per-node bound shader instead of the default', () => {
@@ -50,11 +50,11 @@ describe('drawWebGLText', () => {
     const customShader = { locations: state.shaderLoc, program: state.shaderLoc.program, bind: vi.fn() };
     setWebGLShader(state, node, customShader);
 
-    const renderNode = getOrCreateRenderNode2D(state, node);
-    renderNode.alpha = 1;
-    renderNode.blendMode = 0;
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+    renderProxy.alpha = 1;
+    renderProxy.blendMode = 0;
 
-    drawWebGLText(state, renderNode);
+    drawWebGLText(state, renderProxy);
 
     expect(customShader.bind).toHaveBeenCalled();
     expect(state.defaultBitmapShader.bind).not.toHaveBeenCalled();

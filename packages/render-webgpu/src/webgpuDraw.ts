@@ -1,9 +1,9 @@
 import { enableRenderFeatures } from '@flighthq/render';
-import type { RenderNode, RenderNode2D, WebGPURenderState } from '@flighthq/types';
+import type { RenderProxy, RenderProxy2D, WebGPURenderState } from '@flighthq/types';
 import { BlendMode, RenderFeatures } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
-import { getWebGPURenderNodeColorTransform } from './webgpuColorTransformMaterial';
+import { getWebGPURenderProxyColorTransform } from './webgpuColorTransformMaterial';
 import { getActiveWebGPUPipeline, getWebGPUPipeline, writeWebGPUQuadUniforms } from './webgpuShader';
 
 export function applyWebGPUBlendMode(state: WebGPURenderState, blendMode: BlendMode | null): void {
@@ -127,7 +127,7 @@ export function createWebGPUTextureEntry(
 
 export function drawWebGPUQuad(
   state: WebGPURenderStateInternal,
-  renderNode: RenderNode2D,
+  renderProxy: RenderProxy2D,
   textureEntry: WebGPUTextureEntry,
   x0: number,
   y0: number,
@@ -143,8 +143,8 @@ export function drawWebGPUQuad(
 
   const uniformOffset = writeWebGPUQuadUniforms(
     state,
-    renderNode,
-    getWebGPURenderNodeColorTransform(renderNode),
+    renderProxy,
+    getWebGPURenderProxyColorTransform(renderProxy),
     x0,
     y0,
     x1,
@@ -167,7 +167,7 @@ export function drawWebGPUQuad(
 
 export function drawWebGPUQuadWithTransform(
   state: WebGPURenderStateInternal,
-  renderNode: RenderNode,
+  renderProxy: RenderProxy,
   transform: { a: number; b: number; c: number; d: number; tx: number; ty: number },
   textureEntry: WebGPUTextureEntry,
   x0: number,
@@ -211,8 +211,8 @@ export function drawWebGPUQuadWithTransform(
   uniformData[floatBase + 9] = matrixArray[7];
   uniformData[floatBase + 10] = matrixArray[8];
   uniformData[floatBase + 11] = 0;
-  uniformData[floatBase + 12] = renderNode.alpha;
-  const ct = getWebGPURenderNodeColorTransform(renderNode);
+  uniformData[floatBase + 12] = renderProxy.alpha;
+  const ct = getWebGPURenderProxyColorTransform(renderProxy);
   uniformDataU32[floatBase + 13] = ct !== null ? 1 : 0;
   uniformData[floatBase + 14] = 0;
   uniformData[floatBase + 15] = 0;

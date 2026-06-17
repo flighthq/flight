@@ -6,7 +6,7 @@ import {
   computeRenderTargetSize,
   copyAllRenderersFromRenderState,
   createRenderState,
-  getRenderNodeCache,
+  getRenderProxyCache,
   noopRendererData,
   prepareDisplayObjectRender,
   registerRenderCacheRenderer,
@@ -17,7 +17,7 @@ import type {
   Matrix,
   RenderCache,
   RenderCacheRefreshOptions,
-  RenderNode2D,
+  RenderProxy2D,
   RenderState,
   WebGPURenderState,
   WebGPURenderTarget,
@@ -230,15 +230,15 @@ export function releaseWebGPURenderCache(state: WebGPURenderState, cache: Render
   targets.delete(cache);
 }
 
-function drawWebGPURenderCache(state: RenderState, renderNode: RenderNode2D): void {
-  const cache = getRenderNodeCache(state, renderNode.source);
+function drawWebGPURenderCache(state: RenderState, renderProxy: RenderProxy2D): void {
+  const cache = getRenderProxyCache(state, renderProxy.source);
   if (cache === null) return;
   const webgpuState = state as WebGPURenderState;
   const target = getTargets(webgpuState).get(cache);
   if (target === undefined) return;
-  // renderNode.transform2D already carries the cache placement transform (folded in by the
+  // renderProxy.transform2D already carries the cache placement transform (folded in by the
   // adapter), so the target composites with an identity offset.
-  drawWebGPURenderTargetResult(webgpuState, renderNode as never, target, _identity);
+  drawWebGPURenderTargetResult(webgpuState, renderProxy as never, target, _identity);
 }
 
 function getTargets(state: WebGPURenderState): WeakMap<RenderCache, WebGPURenderTarget> {

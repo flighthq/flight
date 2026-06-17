@@ -1,4 +1,4 @@
-import { getOrCreateRenderNode2D, hasRenderFeatures } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, hasRenderFeatures } from '@flighthq/render';
 import { type DisplayObject, RenderFeatures } from '@flighthq/types';
 
 import { enableDOMCSSFilterSupport, getDOMCSSFilter, setDOMCSSFilter } from './domCSSFilterBinding';
@@ -21,14 +21,14 @@ describe('getDOMCSSFilter', () => {
     const state = makeState();
     const node = {} as DisplayObject;
     setDOMCSSFilter(state, node, 'blur(4px)');
-    const renderNode = getOrCreateRenderNode2D(state, node);
-    expect(getDOMCSSFilter(renderNode)).toBe('blur(4px)');
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+    expect(getDOMCSSFilter(renderProxy)).toBe('blur(4px)');
   });
 
   it('returns undefined for a render node with no binding', () => {
     const state = makeState();
-    const renderNode = getOrCreateRenderNode2D(state, {} as DisplayObject);
-    expect(getDOMCSSFilter(renderNode)).toBeUndefined();
+    const renderProxy = getOrCreateRenderProxy2D(state, {} as DisplayObject);
+    expect(getDOMCSSFilter(renderProxy)).toBeUndefined();
   });
 });
 
@@ -37,8 +37,8 @@ describe('setDOMCSSFilter', () => {
     const state = makeState();
     const node = {} as DisplayObject;
     setDOMCSSFilter(state, node, 'blur(2px)');
-    const renderNode = getOrCreateRenderNode2D(state, node);
-    expect(getDOMCSSFilter(renderNode)).toBe('blur(2px)');
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+    expect(getDOMCSSFilter(renderProxy)).toBe('blur(2px)');
   });
 
   it('clears the binding when passed null', () => {
@@ -46,8 +46,8 @@ describe('setDOMCSSFilter', () => {
     const node = {} as DisplayObject;
     setDOMCSSFilter(state, node, 'blur(2px)');
     setDOMCSSFilter(state, node, null);
-    const renderNode = getOrCreateRenderNode2D(state, node);
-    expect(getDOMCSSFilter(renderNode)).toBeUndefined();
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+    expect(getDOMCSSFilter(renderProxy)).toBeUndefined();
   });
 
   it('does not leak a binding across render states', () => {
@@ -55,7 +55,7 @@ describe('setDOMCSSFilter', () => {
     const b = makeState();
     const node = {} as DisplayObject;
     setDOMCSSFilter(a, node, 'blur(2px)');
-    expect(getDOMCSSFilter(getOrCreateRenderNode2D(b, node))).toBeUndefined();
-    expect(getDOMCSSFilter(getOrCreateRenderNode2D(a, node))).toBe('blur(2px)');
+    expect(getDOMCSSFilter(getOrCreateRenderProxy2D(b, node))).toBeUndefined();
+    expect(getDOMCSSFilter(getOrCreateRenderProxy2D(a, node))).toBe('blur(2px)');
   });
 });

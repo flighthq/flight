@@ -1,11 +1,11 @@
-import type { Renderable, RenderNode, RenderState } from '@flighthq/types';
+import type { Renderable, RenderProxy, RenderState } from '@flighthq/types';
 
-export type RenderNodeStateInternal = Omit<
+export type RenderProxyStateInternal = Omit<
   RenderState,
-  'currentFrameID' | 'renderNodeMap' | 'rendererMapID' | 'tempStack'
+  'currentFrameID' | 'renderProxyMap' | 'rendererMapID' | 'tempStack'
 > & {
   currentFrameID: number;
-  renderNodeMap: WeakMap<Renderable, RenderNode>;
+  renderProxyMap: WeakMap<Renderable, RenderProxy>;
   rendererMapID: number;
   tempStack: Renderable[];
 };

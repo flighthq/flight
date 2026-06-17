@@ -6,8 +6,8 @@ import type { Matrix } from './Matrix';
 import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
 import type { RenderFeatures } from './RenderFeatures';
-import type { RenderNode } from './RenderNode';
-import type { RenderNodeAdapter } from './RenderNodeAdapter';
+import type { RenderProxy } from './RenderProxy';
+import type { RenderProxyAdapter } from './RenderProxyAdapter';
 
 /**
  * Controls whether a subsystem refreshes derived scene graph state from raw
@@ -30,8 +30,8 @@ export interface RenderState extends Entity {
   readonly displayObjectMaskRendererMap: Map<symbol, DisplayObjectMaskRenderer>;
   readonly displayObjectMaskRendererMapID: number;
   pixelRatio: number;
-  readonly renderNodeAdapterMap: WeakMap<Renderable, RenderNodeAdapter>;
-  readonly renderNodeMap: WeakMap<Renderable, RenderNode>;
+  readonly renderProxyAdapterMap: WeakMap<Renderable, RenderProxyAdapter>;
+  readonly renderProxyMap: WeakMap<Renderable, RenderProxy>;
   renderAlpha: number;
   renderBlendMode: BlendMode | null;
   renderColorTransform: ColorTransform | null;

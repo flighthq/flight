@@ -1,9 +1,9 @@
-﻿import type { RenderNode2D } from '@flighthq/types';
+﻿import type { RenderProxy2D } from '@flighthq/types';
 
 import { defaultWebGLShapeRenderer, drawWebGLShape, drawWebGLShapeMask } from './webglShape';
 import { makeWebGLState } from './webglTestHelper';
 
-function makeShapeNode(data: Record<string, unknown> = {}, rendererData: unknown = null): RenderNode2D {
+function makeShapeNode(data: Record<string, unknown> = {}, rendererData: unknown = null): RenderProxy2D {
   return {
     source: {
       data: {
@@ -17,7 +17,7 @@ function makeShapeNode(data: Record<string, unknown> = {}, rendererData: unknown
     blendMode: 0,
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
-  } as unknown as RenderNode2D;
+  } as unknown as RenderProxy2D;
 }
 
 describe('defaultWebGLShapeRenderer', () => {

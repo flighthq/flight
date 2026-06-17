@@ -3,7 +3,7 @@ import type {
   CanvasRenderState,
   DisplayObjectRenderer,
   MatrixLike,
-  RenderNode2D,
+  RenderProxy2D,
   Scale9Mapper,
   Scale9Shape,
 } from '@flighthq/types';
@@ -16,25 +16,25 @@ import { setCanvasTransform } from './canvasTransform';
 const _remappedCommands: unknown[] = [];
 const _remappedPathData: number[] = [];
 
-export function drawCanvasScale9Shape(state: CanvasRenderState, renderNode: RenderNode2D): void {
-  drawCanvasDisplayObject(state, renderNode);
+export function drawCanvasScale9Shape(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
+  drawCanvasDisplayObject(state, renderProxy);
 
-  const source = renderNode.source as Scale9Shape;
+  const source = renderProxy.source as Scale9Shape;
   const { commands, scale9Grid } = source.data;
   if (commands.length === 0) return;
 
   const context = state.context;
-  state.applyBlendMode?.(state, renderNode.blendMode);
-  context.globalAlpha = renderNode.alpha;
+  state.applyBlendMode?.(state, renderProxy.blendMode);
+  context.globalAlpha = renderProxy.alpha;
 
   const { scaleX, scaleY } = source;
   const mapper = buildScale9Mapper(commands, scale9Grid, scaleX, scaleY);
 
   if (mapper === null) {
-    setCanvasTransform(state, context, renderNode.transform2D);
+    setCanvasTransform(state, context, renderProxy.transform2D);
     renderCanvasShapeCommands(context, commands);
   } else {
-    applyStrippedTransform(state, context, renderNode.transform2D, scaleX, scaleY);
+    applyStrippedTransform(state, context, renderProxy.transform2D, scaleX, scaleY);
     mapCanvasScale9ShapeCommands(_remappedCommands, commands, mapper);
     renderCanvasShapeCommands(context, _remappedCommands);
   }

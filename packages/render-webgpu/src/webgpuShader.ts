@@ -1,4 +1,4 @@
-import type { ColorTransform, RenderNode } from '@flighthq/types';
+import type { ColorTransform, RenderProxy } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
@@ -282,7 +282,7 @@ export function setWebGPUMatrixFromTransform(
 
 export function writeWebGPUMatrixOnlyUniforms(
   state: WebGPURenderStateInternal,
-  renderNode: RenderNode,
+  renderProxy: RenderProxy,
   transform: { a: number; b: number; c: number; d: number; tx: number; ty: number },
   x0: number,
   y0: number,
@@ -312,7 +312,7 @@ export function writeWebGPUMatrixOnlyUniforms(
   uniformData[floatBase + 9] = matrixArray[7];
   uniformData[floatBase + 10] = matrixArray[8];
   uniformData[floatBase + 11] = 0;
-  uniformData[floatBase + 12] = renderNode.alpha;
+  uniformData[floatBase + 12] = renderProxy.alpha;
   uniformDataU32[floatBase + 13] = 0;
   uniformData[floatBase + 14] = 0;
   uniformData[floatBase + 15] = 0;
@@ -342,7 +342,7 @@ export function writeWebGPUMatrixOnlyUniforms(
 // Returns the byte offset of the slot just written (for use as the dynamic offset in setBindGroup).
 export function writeWebGPUQuadUniforms(
   state: WebGPURenderStateInternal,
-  renderNode: {
+  renderProxy: {
     alpha: number;
     transform2D: { a: number; b: number; c: number; d: number; tx: number; ty: number };
   },
@@ -361,7 +361,7 @@ export function writeWebGPUQuadUniforms(
   const { uniformData, uniformDataU32, matrixArray } = state;
 
   const viewport = state.renderTargetViewport ?? state.canvas;
-  setWebGPUMatrixFromTransform(matrixArray, renderNode.transform2D, viewport);
+  setWebGPUMatrixFromTransform(matrixArray, renderProxy.transform2D, viewport);
 
   // mat3x3 columns with per-column padding (4 floats each = 16 bytes):
   uniformData[floatBase + 0] = matrixArray[0];
@@ -377,7 +377,7 @@ export function writeWebGPUQuadUniforms(
   uniformData[floatBase + 10] = matrixArray[8];
   uniformData[floatBase + 11] = 0;
   // alpha at float 12 (byte 48)
-  uniformData[floatBase + 12] = renderNode.alpha;
+  uniformData[floatBase + 12] = renderProxy.alpha;
   // hasColorTransform at float 13 (byte 52) — written as u32. The color transform comes from the
   // node's material (resolved by the caller); null → identity.
   uniformDataU32[floatBase + 13] = colorTransform !== null ? 1 : 0;

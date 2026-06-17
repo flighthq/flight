@@ -5,7 +5,7 @@ import type { Renderable, RenderCache, RenderCacheAdapter, Renderer, RenderState
 import { RenderCacheKind } from '@flighthq/types';
 
 import { registerRenderer } from './renderer';
-import { getRenderNodeAdapter, setRenderNodeAdapter } from './renderNodeAdapter';
+import { getRenderProxyAdapter, setRenderProxyAdapter } from './renderProxyAdapter';
 
 export { RenderCacheKind };
 export type { RenderCache, RenderCacheAdapter };
@@ -36,7 +36,7 @@ export function createRenderCacheAdapter(cache: RenderCache | null = null): Rend
       // Switch the render node to the cache renderer and fold in the cache's placement
       // transform, but keep node.source as the original scene node — the appearance and
       // transform passes read node.source every (dirty) frame, and the handle is not a Node.
-      // The cache renderer resolves the handle from this adapter via getRenderNodeCache.
+      // The cache renderer resolves the handle from this adapter via getRenderProxyCache.
       node.kind = RenderCacheKind;
       multiplyMatrix(node.transform2D, node.transform2D, attached.transform);
       return false;
@@ -57,8 +57,8 @@ export function enableRenderCacheAdapterSignals(adapter: RenderCacheAdapter): vo
  * Resolves the cache handle a cache renderer should composite for a render node, by reading the
  * cache adapter attached to the node's source on this state. Returns null if none is attached.
  */
-export function getRenderNodeCache(state: RenderState, source: Renderable): RenderCache | null {
-  const adapter = getRenderNodeAdapter(state, source);
+export function getRenderProxyCache(state: RenderState, source: Renderable): RenderCache | null {
+  const adapter = getRenderProxyAdapter(state, source);
   return isRenderCacheAdapter(adapter) ? (adapter.cache ?? null) : null;
 }
 
@@ -85,12 +85,12 @@ export function registerRenderCacheRenderer(state: RenderState, renderer: Render
  * if present. The cache shows nothing until it is refreshed with content.
  */
 export function useRenderCache(state: RenderState, source: Renderable, cache: RenderCache): RenderCacheAdapter {
-  const existing = getRenderNodeAdapter(state, source);
+  const existing = getRenderProxyAdapter(state, source);
   if (isRenderCacheAdapter(existing)) {
     existing.cache = cache;
     return existing;
   }
   const adapter = createRenderCacheAdapter(cache);
-  setRenderNodeAdapter(state, source, adapter);
+  setRenderProxyAdapter(state, source, adapter);
   return adapter;
 }

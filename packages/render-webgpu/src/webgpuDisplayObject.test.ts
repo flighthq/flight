@@ -24,8 +24,8 @@ describe('drawWebGPUDisplayObject', () => {
   it('is a no-op (plain display objects have no geometry)', async () => {
     const state = await createWebGPURenderStateForTest();
     renderWebGPUBackground(state);
-    const renderNode = { source: createDisplayObject() } as never;
-    expect(() => drawWebGPUDisplayObject(state, renderNode)).not.toThrow();
+    const renderProxy = { source: createDisplayObject() } as never;
+    expect(() => drawWebGPUDisplayObject(state, renderProxy)).not.toThrow();
     submitWebGPURenderPass(state);
   });
 });
@@ -34,8 +34,8 @@ describe('drawWebGPUDisplayObjectMask', () => {
   it('does not throw for a plain display object', async () => {
     const state = await createWebGPURenderStateForTest();
     renderWebGPUBackground(state);
-    const renderNode = { source: createDisplayObject(), traverseChildren: false } as never;
-    expect(() => drawWebGPUDisplayObjectMask(state, renderNode)).not.toThrow();
+    const renderProxy = { source: createDisplayObject(), traverseChildren: false } as never;
+    expect(() => drawWebGPUDisplayObjectMask(state, renderProxy)).not.toThrow();
     submitWebGPURenderPass(state);
   });
 });

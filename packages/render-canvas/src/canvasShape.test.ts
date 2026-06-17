@@ -6,7 +6,7 @@
   createShape,
 } from '@flighthq/displayobject';
 import { registerRenderer } from '@flighthq/render';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { ShapeKind } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';
@@ -33,7 +33,7 @@ describe('drawCanvasShape', () => {
     const state = createCanvasRenderState(canvas);
     registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
     const shape = createShape();
-    const data = getOrCreateRenderNode2D(state, shape);
+    const data = getOrCreateRenderProxy2D(state, shape);
     expect(() => drawCanvasShape(state, data)).not.toThrow();
   });
 
@@ -47,7 +47,7 @@ describe('drawCanvasShape', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 50, 50);
     appendShapeEndFill(shape);
-    const data = getOrCreateRenderNode2D(state, shape);
+    const data = getOrCreateRenderProxy2D(state, shape);
     const spy = vi.spyOn(state.context, 'fill');
     drawCanvasShape(state, data);
     expect(spy).toHaveBeenCalled();

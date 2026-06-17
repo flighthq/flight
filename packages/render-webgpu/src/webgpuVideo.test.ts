@@ -1,5 +1,5 @@
 import { createVideo } from '@flighthq/displayobject';
-import { getOrCreateRenderNode2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
@@ -23,9 +23,9 @@ describe('drawWebGPUVideo', () => {
 
     const video = createVideo();
     prepareDisplayObjectRender(state, video);
-    const renderNode = getOrCreateRenderNode2D(state, video);
+    const renderProxy = getOrCreateRenderProxy2D(state, video);
 
-    expect(() => drawWebGPUVideo(state, renderNode)).not.toThrow();
+    expect(() => drawWebGPUVideo(state, renderProxy)).not.toThrow();
     submitWebGPURenderPass(state);
   });
 
@@ -33,9 +33,9 @@ describe('drawWebGPUVideo', () => {
     const state = await createWebGPURenderStateForTest();
     const video = createVideo();
     prepareDisplayObjectRender(state, video);
-    const renderNode = getOrCreateRenderNode2D(state, video);
+    const renderProxy = getOrCreateRenderProxy2D(state, video);
 
-    expect(() => drawWebGPUVideo(state, renderNode)).not.toThrow();
+    expect(() => drawWebGPUVideo(state, renderProxy)).not.toThrow();
   });
 });
 
@@ -45,8 +45,8 @@ describe('drawWebGPUVideoMask', () => {
     renderWebGPUBackground(state);
     const video = createVideo();
     prepareDisplayObjectRender(state, video);
-    const renderNode = getOrCreateRenderNode2D(state, video);
-    expect(() => drawWebGPUVideoMask(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, video);
+    expect(() => drawWebGPUVideoMask(state, renderProxy)).not.toThrow();
     submitWebGPURenderPass(state);
   });
 });

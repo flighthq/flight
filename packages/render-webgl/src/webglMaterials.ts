@@ -1,7 +1,7 @@
 ﻿import type {
   ColorTransform,
-  RenderNode,
-  RenderNode2D,
+  RenderProxy,
+  RenderProxy2D,
   UniformColorTransformMaterial,
   WebGLRenderState,
 } from '@flighthq/types';
@@ -15,14 +15,14 @@ import type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes
 // Effective color transform for a render node from its material: the value carried on a
 // UniformColorTransformMaterial, or the per-node materialData for a ColorTransformMaterial. Null
 // for any other (or no) material — display objects are tinted purely through the material system.
-export function getWebGLRenderNodeColorTransform(renderNode: Readonly<RenderNode>): ColorTransform | null {
-  const material = renderNode.material;
+export function getWebGLRenderProxyColorTransform(renderProxy: Readonly<RenderProxy>): ColorTransform | null {
+  const material = renderProxy.material;
   if (material === null) return null;
   if (material.kind === UniformColorTransformMaterialKind) {
     return (material as UniformColorTransformMaterial).colorTransform;
   }
   if (material.kind === ColorTransformMaterialKind) {
-    return renderNode.materialData as ColorTransform | null;
+    return renderProxy.materialData as ColorTransform | null;
   }
   return null;
 }
@@ -83,17 +83,17 @@ function createWebGLColorTransformBitmapShader(
   return {
     locations: shaderLoc,
     program: shaderLoc.program,
-    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderNode: RenderNode2D): void {
+    bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderProxy: RenderProxy2D): void {
       setWebGLAttributes(gl, shaderLoc);
       setWebGLMatrixFromTransform(
         gl,
         shaderLoc,
         matrixArray,
-        renderNode.transform2D,
+        renderProxy.transform2D,
         (state as WebGLRenderStateInternal).renderTargetViewport ?? state.canvas,
       );
-      setWebGLBaseUniforms(gl, shaderLoc, renderNode);
-      setWebGLColorTransformUniforms(gl, shaderLoc, renderNode);
+      setWebGLBaseUniforms(gl, shaderLoc, renderProxy);
+      setWebGLColorTransformUniforms(gl, shaderLoc, renderProxy);
     },
   };
 }
@@ -101,9 +101,9 @@ function createWebGLColorTransformBitmapShader(
 function setWebGLColorTransformUniforms(
   gl: WebGL2RenderingContext,
   loc: WebGLShaderLocations,
-  renderNode: RenderNode,
+  renderProxy: RenderProxy,
 ): void {
-  const colorTransform = getWebGLRenderNodeColorTransform(renderNode);
+  const colorTransform = getWebGLRenderProxyColorTransform(renderProxy);
   if (colorTransform === null) {
     gl.uniform1i(loc.locHasColorTransform!, 0);
     return;

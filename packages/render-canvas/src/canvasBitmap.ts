@@ -1,10 +1,10 @@
 ﻿import { noopRendererData } from '@flighthq/render';
-import type { Bitmap, CanvasRenderState, DisplayObjectRenderer, RenderNode2D } from '@flighthq/types';
+import type { Bitmap, CanvasRenderState, DisplayObjectRenderer, RenderProxy2D } from '@flighthq/types';
 
 import { drawCanvasDisplayObject, drawCanvasDisplayObjectMask } from './canvasDisplayObject';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasBitmap(state: CanvasRenderState, bitmap: RenderNode2D): void {
+export function drawCanvasBitmap(state: CanvasRenderState, bitmap: RenderProxy2D): void {
   drawCanvasDisplayObject(state, bitmap);
   const source = bitmap.source as Bitmap;
   const imageSource = source.data.image;
@@ -44,7 +44,7 @@ export function drawCanvasBitmap(state: CanvasRenderState, bitmap: RenderNode2D)
   }
 }
 
-export function drawCanvasBitmapMask(state: CanvasRenderState, data: RenderNode2D): void {
+export function drawCanvasBitmapMask(state: CanvasRenderState, data: RenderProxy2D): void {
   drawCanvasDisplayObjectMask(state, data);
 }
 

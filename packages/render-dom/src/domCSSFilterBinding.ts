@@ -1,12 +1,12 @@
-import { enableRenderFeatures, getOrCreateRenderNode2D } from '@flighthq/render';
-import { type DisplayObject, type DOMRenderState, RenderFeatures, type RenderNode2D } from '@flighthq/types';
+import { enableRenderFeatures, getOrCreateRenderProxy2D } from '@flighthq/render';
+import { type DisplayObject, type DOMRenderState, RenderFeatures, type RenderProxy2D } from '@flighthq/types';
 
 // Per-state DOM CSS filter bindings, keyed by the render node. Render nodes are
-// per-state (state.renderNodeMap), so a module-level map keyed by render node is
+// per-state (state.renderProxyMap), so a module-level map keyed by render node is
 // automatically isolated per state — a filter set for one render state is
 // invisible to any other state that renders the same display object. This mirrors
 // the per-state canvas CSS filter and WebGL shader bindings.
-const _cssFilterBindings = new WeakMap<RenderNode2D, string>();
+const _cssFilterBindings = new WeakMap<RenderProxy2D, string>();
 
 /**
  * Enables CSS filter support for the render state. Bindings made via
@@ -17,8 +17,8 @@ export function enableDOMCSSFilterSupport(state: DOMRenderState): void {
   enableRenderFeatures(state, RenderFeatures.CSSFilter);
 }
 
-export function getDOMCSSFilter(renderNode: RenderNode2D): string | undefined {
-  return _cssFilterBindings.get(renderNode);
+export function getDOMCSSFilter(renderProxy: RenderProxy2D): string | undefined {
+  return _cssFilterBindings.get(renderProxy);
 }
 
 /**
@@ -29,10 +29,10 @@ export function getDOMCSSFilter(renderNode: RenderNode2D): string | undefined {
  * the element's `style.filter` while CSS filter support is enabled.
  */
 export function setDOMCSSFilter(state: DOMRenderState, node: DisplayObject, filter: string | null): void {
-  const renderNode = getOrCreateRenderNode2D(state, node);
+  const renderProxy = getOrCreateRenderProxy2D(state, node);
   if (filter === null) {
-    _cssFilterBindings.delete(renderNode);
+    _cssFilterBindings.delete(renderProxy);
     return;
   }
-  _cssFilterBindings.set(renderNode, filter);
+  _cssFilterBindings.set(renderProxy, filter);
 }

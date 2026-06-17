@@ -7,7 +7,7 @@ import type {
   MatrixLike,
   Renderable,
   RendererData,
-  RenderNode2D,
+  RenderProxy2D,
   RenderState,
   Scale9Shape,
 } from '@flighthq/types';
@@ -27,18 +27,18 @@ export function createDOMScale9ShapeData(_state: RenderState, _source: Renderabl
   return createEntity({ canvas: null, context: null });
 }
 
-export function drawDOMScale9Shape(state: DOMRenderState, renderNode: RenderNode2D): void {
-  const data = renderNode.rendererData as DOMScale9ShapeData | null;
+export function drawDOMScale9Shape(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+  const data = renderProxy.rendererData as DOMScale9ShapeData | null;
   if (data === null) return;
 
-  const source = renderNode.source as Scale9Shape;
+  const source = renderProxy.source as Scale9Shape;
   const { commands, scale9Grid } = source.data;
   if (commands.length === 0) return;
 
   const bounds = getNodeLocalBoundsRectangle(source);
   const mapper = buildDOMScale9Mapper(bounds, scale9Grid, source.scaleX, source.scaleY);
   if (mapper === null) {
-    drawDOMShape(state, renderNode);
+    drawDOMShape(state, renderProxy);
     return;
   }
 
@@ -61,15 +61,15 @@ export function drawDOMScale9Shape(state: DOMRenderState, renderNode: RenderNode
   }
   renderCanvasShapeCommands(ctx, _remappedCommands);
 
-  data.canvas.style.opacity = renderNode.alpha < 1 ? String(renderNode.alpha) : '';
+  data.canvas.style.opacity = renderProxy.alpha < 1 ? String(renderProxy.alpha) : '';
   data.canvas.style.imageRendering = state.allowSmoothing ? '' : 'pixelated';
-  state.applyBlendMode?.(data.canvas, renderNode.blendMode);
-  setStrippedDOMTransform(data.canvas, renderNode.transform2D, source.scaleX, source.scaleY, state.roundPixels);
+  state.applyBlendMode?.(data.canvas, renderProxy.blendMode);
+  setStrippedDOMTransform(data.canvas, renderProxy.transform2D, source.scaleX, source.scaleY, state.roundPixels);
   setDOMRendererElement(state, data.canvas);
 }
 
-export function drawDOMScale9ShapeMask(state: DOMRenderState, renderNode: RenderNode2D): void {
-  drawDOMScale9Shape(state, renderNode);
+export function drawDOMScale9ShapeMask(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+  drawDOMScale9Shape(state, renderProxy);
 }
 
 export const defaultDOMScale9ShapeRenderer: DisplayObjectRenderer = {

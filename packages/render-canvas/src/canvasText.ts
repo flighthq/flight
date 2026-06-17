@@ -5,7 +5,7 @@ import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@
 import type {
   CanvasRenderState,
   DisplayObjectRenderer,
-  RenderNode2D,
+  RenderProxy2D,
   Text,
   TextFormat,
   TextRuntime,
@@ -14,17 +14,17 @@ import type {
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasText(state: CanvasRenderState, renderNode: RenderNode2D): void {
-  drawCanvasDisplayObject(state, renderNode);
+export function drawCanvasText(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
+  drawCanvasDisplayObject(state, renderProxy);
 
-  const source = renderNode.source as Text;
+  const source = renderProxy.source as Text;
   const { text, textFormat } = source.data;
   if (text.length === 0) return;
 
   const context = state.context;
-  state.applyBlendMode?.(state, renderNode.blendMode);
-  context.globalAlpha = renderNode.alpha;
-  setCanvasTransform(state, context, renderNode.transform2D);
+  state.applyBlendMode?.(state, renderProxy.blendMode);
+  context.globalAlpha = renderProxy.alpha;
+  setCanvasTransform(state, context, renderProxy.transform2D);
 
   const measure = (t: string, format: TextFormat): number => {
     context.font = computeTextFormatFontString(format);
@@ -65,7 +65,7 @@ export function drawCanvasText(state: CanvasRenderState, renderNode: RenderNode2
   }
 }
 
-export function drawCanvasTextMask(state: CanvasRenderState, data: RenderNode2D): void {
+export function drawCanvasTextMask(state: CanvasRenderState, data: RenderProxy2D): void {
   drawCanvasDisplayObject(state, data);
 }
 

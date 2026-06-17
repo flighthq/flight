@@ -1,10 +1,10 @@
 import { getDisplayObjectRuntime } from '@flighthq/displayobject';
-import { getRenderNode2D } from '@flighthq/render';
-import type { DisplayObject, RenderNode2D } from '@flighthq/types';
+import { getRenderProxy2D } from '@flighthq/render';
+import type { DisplayObject, RenderProxy2D } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 
-export function drawWebGLMask(state: WebGLRenderStateInternal, data: RenderNode2D): void {
+export function drawWebGLMask(state: WebGLRenderStateInternal, data: RenderProxy2D): void {
   state.displayObjectMaskRendererMap.get(data.source.kind)?.drawMask(state, data);
 
   if (!data.traverseChildren) return;
@@ -12,7 +12,7 @@ export function drawWebGLMask(state: WebGLRenderStateInternal, data: RenderNode2
   const children = getDisplayObjectRuntime(data.source as DisplayObject).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
-      const child = getRenderNode2D(state, children[i] as DisplayObject);
+      const child = getRenderProxy2D(state, children[i] as DisplayObject);
       if (child !== undefined) drawWebGLMask(state, child);
     }
   }
@@ -31,7 +31,7 @@ export function popWebGLMask(state: WebGLRenderStateInternal): void {
   }
 }
 
-export function pushWebGLMask(state: WebGLRenderStateInternal, data: RenderNode2D): void {
+export function pushWebGLMask(state: WebGLRenderStateInternal, data: RenderProxy2D): void {
   const gl = state.gl;
   const depth = state.currentMaskDepth ?? 0;
   const nextDepth = depth + 1;

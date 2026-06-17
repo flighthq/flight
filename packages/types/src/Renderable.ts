@@ -1,5 +1,4 @@
-import type { DisplayObject } from './DisplayObject';
-import type { RenderPrimitive } from './RenderPrimitive';
-import type { SpriteNode } from './SpriteNode';
+import type { NodeAny } from './Node';
+import type { RenderCache } from './RenderCache';
 
-export type Renderable = DisplayObject | RenderPrimitive | SpriteNode;
+export type Renderable = NodeAny | RenderCache;

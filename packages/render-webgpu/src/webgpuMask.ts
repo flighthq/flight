@@ -1,10 +1,10 @@
 import { getDisplayObjectRuntime } from '@flighthq/displayobject';
-import { getRenderNode2D } from '@flighthq/render';
-import type { DisplayObject, RenderNode2D } from '@flighthq/types';
+import { getRenderProxy2D } from '@flighthq/render';
+import type { DisplayObject, RenderProxy2D } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
 
-export function drawWebGPUMask(state: WebGPURenderStateInternal, data: RenderNode2D): void {
+export function drawWebGPUMask(state: WebGPURenderStateInternal, data: RenderProxy2D): void {
   state.displayObjectMaskRendererMap.get(data.source.kind)?.drawMask(state, data);
 
   if (!data.traverseChildren) return;
@@ -12,7 +12,7 @@ export function drawWebGPUMask(state: WebGPURenderStateInternal, data: RenderNod
   const children = getDisplayObjectRuntime(data.source as DisplayObject).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
-      const child = getRenderNode2D(state, children[i] as DisplayObject);
+      const child = getRenderProxy2D(state, children[i] as DisplayObject);
       if (child !== undefined) drawWebGPUMask(state, child);
     }
   }
@@ -24,7 +24,7 @@ export function popWebGPUMask(state: WebGPURenderStateInternal): void {
   state.maskWriteMode = false;
 }
 
-export function pushWebGPUMask(state: WebGPURenderStateInternal, data: RenderNode2D): void {
+export function pushWebGPUMask(state: WebGPURenderStateInternal, data: RenderProxy2D): void {
   state.maskWriteMode = true;
   // stencil reference is set in drawWebGPUQuad when maskWriteMode is active
   const nextDepth = state.currentMaskDepth + 1;

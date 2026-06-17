@@ -1,6 +1,6 @@
 ﻿import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/displayobject';
 import { registerRenderer } from '@flighthq/render';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { Scale9ShapeKind } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';
@@ -27,7 +27,7 @@ describe('drawCanvasScale9Shape', () => {
     const state = createCanvasRenderState(canvas);
     registerRenderer(state, Scale9ShapeKind, defaultCanvasScale9ShapeRenderer);
     const shape = createScale9Shape(grid);
-    const data = getOrCreateRenderNode2D(state, shape);
+    const data = getOrCreateRenderProxy2D(state, shape);
     expect(() => drawCanvasScale9Shape(state, data)).not.toThrow();
   });
 });

@@ -1,5 +1,5 @@
 import { noopRendererData } from '@flighthq/render';
-import type { QuadBatch, RenderNode2D, RenderState, SpriteRenderer } from '@flighthq/types';
+import type { QuadBatch, RenderProxy2D, RenderState, SpriteRenderer } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
 import { resolveWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
@@ -19,7 +19,7 @@ export { ensureWebGPUQuadBatchResources, getWebGPUQuadBatchPipeline };
 // parallel material buffer.
 const INSTANCE_STRIDE_FLOATS = SPRITE_INSTANCE_FLOATS;
 
-function submitWebGPUQuadBatch(state: RenderState, quadBatch: RenderNode2D): void {
+function submitWebGPUQuadBatch(state: RenderState, quadBatch: RenderProxy2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 

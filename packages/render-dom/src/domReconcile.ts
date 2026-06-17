@@ -1,4 +1,4 @@
-﻿import type { RenderNode2D } from '@flighthq/types';
+﻿import type { RenderProxy2D } from '@flighthq/types';
 
 import type { DOMRenderStateInternal } from './internal';
 
@@ -17,7 +17,7 @@ export function hasDOMStructureChanged(
 
 export function processDOMNode(
   internal: DOMRenderStateInternal,
-  data: RenderNode2D,
+  data: RenderProxy2D,
   currentFrameID: number,
   drawFn: () => void,
   newLength: number,

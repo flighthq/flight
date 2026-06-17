@@ -1,6 +1,6 @@
 import type {
   ColorTransform,
-  RenderNode,
+  RenderProxy,
   UniformColorTransformMaterial,
   WebGPUMaterialRenderer,
   WebGPURenderState,
@@ -16,14 +16,14 @@ const COLOR_TRANSFORM_INSTANCE_FLOATS = 8;
 // Effective color transform for a render node from its material — the value on a
 // UniformColorTransformMaterial or the per-node materialData for a ColorTransformMaterial. Used by
 // the immediate (display-object) draw path; the batch path packs it per-instance instead.
-export function getWebGPURenderNodeColorTransform(renderNode: Readonly<RenderNode>): ColorTransform | null {
-  const material = renderNode.material;
+export function getWebGPURenderProxyColorTransform(renderProxy: Readonly<RenderProxy>): ColorTransform | null {
+  const material = renderProxy.material;
   if (material === null) return null;
   if (material.kind === UniformColorTransformMaterialKind) {
     return (material as UniformColorTransformMaterial).colorTransform;
   }
   if (material.kind === ColorTransformMaterialKind) {
-    return renderNode.materialData as ColorTransform | null;
+    return renderProxy.materialData as ColorTransform | null;
   }
   return null;
 }

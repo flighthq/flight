@@ -8,7 +8,7 @@ import type {
   DOMRenderState,
   Renderable,
   RendererData,
-  RenderNode2D,
+  RenderProxy2D,
   RenderState,
   Text,
   TextFormat,
@@ -35,11 +35,11 @@ function getMeasureCtx(): CanvasRenderingContext2D | null {
   return _measureCtx;
 }
 
-export function drawDOMText(state: DOMRenderState, renderNode: RenderNode2D): void {
-  const data = renderNode.rendererData as DOMTextData | null;
+export function drawDOMText(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+  const data = renderProxy.rendererData as DOMTextData | null;
   if (data === null) return;
 
-  const source = renderNode.source as Text;
+  const source = renderProxy.source as Text;
   const { text, textFormat } = source.data;
   if (text.length === 0) return;
 
@@ -90,12 +90,12 @@ export function drawDOMText(state: DOMRenderState, renderNode: RenderNode2D): vo
 
   data.div.innerHTML = html;
 
-  applyDOMStyle(state, data.div, renderNode);
+  applyDOMStyle(state, data.div, renderProxy);
   setDOMRendererElement(state, data.div);
 }
 
-export function drawDOMTextMask(state: DOMRenderState, renderNode: RenderNode2D): void {
-  drawDOMText(state, renderNode);
+export function drawDOMTextMask(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+  drawDOMText(state, renderProxy);
 }
 
 export const defaultDOMTextRenderer: DisplayObjectRenderer = {

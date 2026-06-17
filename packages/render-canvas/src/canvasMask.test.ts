@@ -1,7 +1,7 @@
 ﻿import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
 import { registerDisplayObjectMaskRenderer } from '@flighthq/render';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { drawCanvasMask, popCanvasMask, pushCanvasMask } from './canvasMask';
@@ -21,7 +21,7 @@ describe('drawCanvasMask', () => {
     registerDisplayObjectMaskRenderer(state, DisplayObjectKind, { drawMask: drawMaskFn });
 
     const obj = createDisplayObject();
-    const data = getOrCreateRenderNode2D(state, obj);
+    const data = getOrCreateRenderProxy2D(state, obj);
 
     drawCanvasMask(state, data);
 
@@ -31,7 +31,7 @@ describe('drawCanvasMask', () => {
   it('does not throw when renderer is null', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const data = getOrCreateRenderNode2D(state, obj);
+    const data = getOrCreateRenderProxy2D(state, obj);
     data.renderer = null;
 
     expect(() => drawCanvasMask(state, data)).not.toThrow();
@@ -53,7 +53,7 @@ describe('pushCanvasMask', () => {
   it('calls save, beginPath, closePath, and clip', () => {
     const state = makeState();
     const obj = createDisplayObject();
-    const data = getOrCreateRenderNode2D(state, obj);
+    const data = getOrCreateRenderProxy2D(state, obj);
     data.transform2D = createMatrix();
 
     const saveSpy = vi.spyOn(state.context, 'save');
@@ -73,7 +73,7 @@ describe('pushCanvasMask', () => {
     registerDisplayObjectMaskRenderer(state, DisplayObjectKind, { drawMask: drawMaskFn });
 
     const obj = createDisplayObject();
-    const data = getOrCreateRenderNode2D(state, obj);
+    const data = getOrCreateRenderProxy2D(state, obj);
     data.transform2D = createMatrix();
 
     pushCanvasMask(state, data);

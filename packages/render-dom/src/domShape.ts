@@ -7,7 +7,7 @@ import type {
   DOMRenderState,
   Renderable,
   RendererData,
-  RenderNode2D,
+  RenderProxy2D,
   RenderState,
   Shape,
 } from '@flighthq/types';
@@ -26,11 +26,11 @@ function createDOMShapeData(_state: RenderState, _source: Renderable): DOMShapeD
   return createEntity({ canvas: null, context: null });
 }
 
-export function drawDOMShape(state: DOMRenderState, renderNode: RenderNode2D): void {
-  const data = renderNode.rendererData as DOMShapeData | null;
+export function drawDOMShape(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+  const data = renderProxy.rendererData as DOMShapeData | null;
   if (data === null) return;
 
-  const source = renderNode.source as Shape;
+  const source = renderProxy.source as Shape;
   const { commands } = source.data;
   if (commands.length === 0) return;
 
@@ -55,18 +55,18 @@ export function drawDOMShape(state: DOMRenderState, renderNode: RenderNode2D): v
 
   renderCanvasShapeCommands(ctx, commands);
 
-  data.canvas.style.opacity = renderNode.alpha < 1 ? String(renderNode.alpha) : '';
+  data.canvas.style.opacity = renderProxy.alpha < 1 ? String(renderProxy.alpha) : '';
   if (hasRenderFeatures(state, RenderFeatures.CSSFilter)) {
-    data.canvas.style.filter = getDOMCSSFilter(renderNode) ?? '';
+    data.canvas.style.filter = getDOMCSSFilter(renderProxy) ?? '';
   }
-  state.applyBlendMode?.(data.canvas, renderNode.blendMode);
-  setDOMTransformWithOffset(data.canvas, renderNode.transform2D, bounds.x, bounds.y, state.roundPixels);
+  state.applyBlendMode?.(data.canvas, renderProxy.blendMode);
+  setDOMTransformWithOffset(data.canvas, renderProxy.transform2D, bounds.x, bounds.y, state.roundPixels);
 
   setDOMRendererElement(state, data.canvas);
 }
 
-export function drawDOMShapeMask(state: DOMRenderState, renderNode: RenderNode2D): void {
-  drawDOMShape(state, renderNode);
+export function drawDOMShapeMask(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+  drawDOMShape(state, renderProxy);
 }
 
 export const defaultDOMShapeRenderer: DisplayObjectRenderer = {

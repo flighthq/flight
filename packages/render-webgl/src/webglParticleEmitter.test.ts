@@ -1,4 +1,4 @@
-import type { RenderNode2D } from '@flighthq/types';
+import type { RenderProxy2D } from '@flighthq/types';
 
 import { defaultWebGLParticleEmitterRenderer, drawWebGLParticleEmitter } from './webglParticleEmitter';
 import { makeWebGLState } from './webglTestHelper';
@@ -11,7 +11,7 @@ function makeAtlas() {
   };
 }
 
-function makeParticleEmitterNode(data: Record<string, unknown> = {}): RenderNode2D {
+function makeParticleEmitterNode(data: Record<string, unknown> = {}): RenderProxy2D {
   return {
     source: {
       data: {
@@ -27,7 +27,7 @@ function makeParticleEmitterNode(data: Record<string, unknown> = {}): RenderNode
     blendMode: 0,
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
-  } as unknown as RenderNode2D;
+  } as unknown as RenderProxy2D;
 }
 
 describe('defaultWebGLParticleEmitterRenderer', () => {

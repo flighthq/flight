@@ -1,6 +1,6 @@
 ﻿import { createText } from '@flighthq/displayobject';
 import { registerRenderer } from '@flighthq/render';
-import { getOrCreateRenderNode2D } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { TextKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
@@ -32,17 +32,17 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = '';
-    const renderNode = getOrCreateRenderNode2D(state, node);
-    expect(() => drawDOMText(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+    expect(() => drawDOMText(state, renderProxy)).not.toThrow();
   });
 
   it('produces no element when text is empty', () => {
     const state = makeState();
     const node = createText();
     node.data.text = '';
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    const el = drawGetEl(state, () => drawDOMText(state, renderNode));
+    const el = drawGetEl(state, () => drawDOMText(state, renderProxy));
 
     expect(el).toBeNull();
   });
@@ -51,9 +51,9 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = 'hello';
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    const el = drawGetEl(state, () => drawDOMText(state, renderNode));
+    const el = drawGetEl(state, () => drawDOMText(state, renderProxy));
 
     expect(el).not.toBeNull();
     expect(el!.tagName).toBe('DIV');
@@ -63,9 +63,9 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = 'hello';
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    const div = drawGetEl(state, () => drawDOMText(state, renderNode))!;
+    const div = drawGetEl(state, () => drawDOMText(state, renderProxy))!;
     expect(div.style.overflow).toBe('hidden');
   });
 
@@ -73,9 +73,9 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = 'world';
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    const div = drawGetEl(state, () => drawDOMText(state, renderNode))!;
+    const div = drawGetEl(state, () => drawDOMText(state, renderProxy))!;
     expect(div.innerHTML).toContain('world');
   });
 
@@ -83,10 +83,10 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = 'hello';
-    const renderNode = getOrCreateRenderNode2D(state, node);
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
 
-    const firstDiv = drawGetEl(state, () => drawDOMText(state, renderNode));
-    const secondDiv = drawGetEl(state, () => drawDOMText(state, renderNode));
+    const firstDiv = drawGetEl(state, () => drawDOMText(state, renderProxy));
+    const secondDiv = drawGetEl(state, () => drawDOMText(state, renderProxy));
 
     expect(firstDiv).toBe(secondDiv);
   });
@@ -96,7 +96,7 @@ describe('drawDOMTextMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const node = createText();
-    const renderNode = getOrCreateRenderNode2D(state, node);
-    expect(() => drawDOMTextMask(state, renderNode)).not.toThrow();
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+    expect(() => drawDOMTextMask(state, renderProxy)).not.toThrow();
   });
 });
