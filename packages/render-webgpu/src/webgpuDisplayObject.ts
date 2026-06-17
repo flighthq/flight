@@ -2,6 +2,9 @@ import { getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render';
 import type { DisplayObject, DisplayObjectRenderer, RenderProxy2D, WebGPURenderState } from '@flighthq/types';
 
+import type { WebGPURenderStateInternal } from './internal';
+import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
+
 export function drawWebGPUDisplayObject(_state: WebGPURenderState, _renderProxy: RenderProxy2D): void {
   // Plain display objects have no visual geometry of their own.
 }
@@ -55,6 +58,7 @@ export function renderWebGPUDisplayObject(state: WebGPURenderState, source: Disp
     clipHooks?.pushClipRectangle(state, data, current, stackLength > prePushLength);
   }
 
+  flushWebGPUSpriteBatch(state as WebGPURenderStateInternal);
   clipHooks?.finalize(state);
 }
 
