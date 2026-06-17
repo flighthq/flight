@@ -7,8 +7,6 @@ import type { Node, NodeData, NodeDataFactory, NodeRuntime, NodeRuntimeFactory, 
 export type SpriteNode = Node<SpriteNodeTraits> & SpriteNodeTraits;
 
 export interface SpriteNodeTraits extends HasAppearance, HasBoundsRectangle, HasMaterial, HasTransform2D {
-  alphaEnabled: boolean;
-  blendModeEnabled: boolean;
   originX: number;
   originY: number;
 }
