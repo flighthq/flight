@@ -31,6 +31,9 @@ export function renderWebGPUBackground(state: WebGPURenderState): void {
   }
 
   internal.uniformOffset = 0;
+  // Reclaim the sprite-batch buffer pool from the start of the frame; last frame's submit has been
+  // queued, so its slots are safe to overwrite.
+  internal.spriteBatchBufferCursor = 0;
   internal.currentBlendMode = null;
   internal.currentMaskDepth = 0;
   internal.maskWriteMode = false;

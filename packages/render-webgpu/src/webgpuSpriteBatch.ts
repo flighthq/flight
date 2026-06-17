@@ -1,7 +1,7 @@
 import type { Material, MaterialData, WebGPUMaterialRenderer } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
+import type { WebGPURenderStateInternal, WebGPUSpriteBatchBufferSlot } from './internal';
 import { bindWebGPUTexture } from './webgpuDraw';
 
 // Base per-instance layout (13 floats = 52 bytes). This is a fixed contract material shaders read
@@ -137,36 +137,28 @@ export function flushWebGPUSpriteBatch(state: WebGPURenderStateInternal): void {
   resetWebGPUSpriteBatch(state);
 
   const resources = ensureWebGPUQuadBatchResources(state);
-  state.spriteBatchInstanceBuffer = ensureWebGPUStorageBuffer(
-    state,
-    state.spriteBatchInstanceBuffer,
-    count * SPRITE_INSTANCE_STRIDE,
-    (buffer) => (state.spriteBatchInstanceBuffer = buffer),
-    'instance',
-  );
-  state.device.queue.writeBuffer(
-    state.spriteBatchInstanceBuffer!,
-    0,
-    state.spriteBatchInstanceData.buffer,
-    0,
-    count * SPRITE_INSTANCE_STRIDE,
-  );
+
+  // Claim a distinct pool slot for this flush. The canvas pass is submitted once at end of frame, so
+  // a buffer shared across flushes would be rewritten before any draw reads it, leaving every draw
+  // reading the last flush's data. A per-flush slot keeps each draw's instances intact until submit.
+  const slot = acquireWebGPUSpriteBatchBufferSlot(state);
+
+  const instanceBytes = count * SPRITE_INSTANCE_STRIDE;
+  if (slot.instanceBuffer === null || slot.instanceCapacity < instanceBytes) {
+    const capacity = Math.max(instanceBytes, slot.instanceCapacity * 2, SPRITE_INSTANCE_STRIDE * 256);
+    slot.instanceBuffer = createWebGPUSpriteBatchBuffer(state, capacity);
+    slot.instanceCapacity = capacity;
+  }
+  state.device.queue.writeBuffer(slot.instanceBuffer, 0, state.spriteBatchInstanceData.buffer, 0, instanceBytes);
 
   if (floats > 0) {
-    state.spriteBatchMaterialBuffer = ensureWebGPUStorageBuffer(
-      state,
-      state.spriteBatchMaterialBuffer,
-      count * floats * 4,
-      (buffer) => (state.spriteBatchMaterialBuffer = buffer),
-      'material',
-    );
-    state.device.queue.writeBuffer(
-      state.spriteBatchMaterialBuffer!,
-      0,
-      state.spriteBatchMaterialData.buffer,
-      0,
-      count * floats * 4,
-    );
+    const materialBytes = count * floats * 4;
+    if (slot.materialBuffer === null || slot.materialCapacity < materialBytes) {
+      const capacity = Math.max(materialBytes, slot.materialCapacity * 2, floats * 4 * 256);
+      slot.materialBuffer = createWebGPUSpriteBatchBuffer(state, capacity);
+      slot.materialCapacity = capacity;
+    }
+    state.device.queue.writeBuffer(slot.materialBuffer, 0, state.spriteBatchMaterialData.buffer, 0, materialBytes);
   }
 
   state.applyBlendMode?.(state, blendMode);
@@ -176,7 +168,7 @@ export function flushWebGPUSpriteBatch(state: WebGPURenderStateInternal): void {
 
   const instanceBindGroup = state.device.createBindGroup({
     layout: resources.instanceBindGroupLayout,
-    entries: [{ binding: 0, resource: { buffer: state.spriteBatchInstanceBuffer! } }],
+    entries: [{ binding: 0, resource: { buffer: slot.instanceBuffer } }],
   });
 
   const module = renderer.getShaderModule(state);
@@ -189,7 +181,7 @@ export function flushWebGPUSpriteBatch(state: WebGPURenderStateInternal): void {
   if (floats > 0) {
     const materialBindGroup = state.device.createBindGroup({
       layout: resources.materialBindGroupLayout,
-      entries: [{ binding: 0, resource: { buffer: state.spriteBatchMaterialBuffer! } }],
+      entries: [{ binding: 0, resource: { buffer: slot.materialBuffer! } }],
     });
     pass.setBindGroup(3, materialBindGroup);
   }
@@ -323,25 +315,28 @@ export function prepareWebGPUSpriteBatchWrite(
   return state.spriteBatchCount * SPRITE_INSTANCE_FLOATS;
 }
 
-function ensureWebGPUStorageBuffer(
-  state: WebGPURenderStateInternal,
-  buffer: GPUBuffer | null,
-  neededBytes: number,
-  setCapacity: (buffer: GPUBuffer) => void,
-  which: 'instance' | 'material',
-): GPUBuffer {
-  const capacity = which === 'instance' ? state.spriteBatchInstanceCapacity : state.spriteBatchMaterialCapacity;
-  if (buffer !== null && capacity >= neededBytes) return buffer;
-  buffer?.destroy();
-  const newCapacity = Math.max(neededBytes, capacity * 2, SPRITE_INSTANCE_STRIDE * 256);
-  const created = state.device.createBuffer({
-    size: newCapacity,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-  });
-  if (which === 'instance') state.spriteBatchInstanceCapacity = newCapacity;
-  else state.spriteBatchMaterialCapacity = newCapacity;
-  setCapacity(created);
-  return created;
+// Resets the per-frame buffer-pool cursor so the next frame reclaims slots from the start. Must be
+// called once at the start of each frame's batch work — the screen frame via renderWebGPUBackground,
+// and the offscreen cache bake via refreshWebGPURenderCache (the bake flushes on its own state).
+export function resetWebGPUSpriteBatchBufferPool(state: WebGPURenderStateInternal): void {
+  state.spriteBatchBufferCursor = 0;
+}
+
+// Claims the next per-frame pool slot, allocating one if the frame has more flushes than any prior
+// frame. The cursor is reset to 0 each frame by resetWebGPUSpriteBatchBufferPool.
+function acquireWebGPUSpriteBatchBufferSlot(state: WebGPURenderStateInternal): WebGPUSpriteBatchBufferSlot {
+  const pool = state.spriteBatchBufferPool;
+  let slot = pool[state.spriteBatchBufferCursor];
+  if (slot === undefined) {
+    slot = { instanceBuffer: null, instanceCapacity: 0, materialBuffer: null, materialCapacity: 0 };
+    pool[state.spriteBatchBufferCursor] = slot;
+  }
+  state.spriteBatchBufferCursor++;
+  return slot;
+}
+
+function createWebGPUSpriteBatchBuffer(state: WebGPURenderStateInternal, size: number): GPUBuffer {
+  return state.device.createBuffer({ size, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
 }
 
 function resetWebGPUSpriteBatch(state: WebGPURenderStateInternal): void {

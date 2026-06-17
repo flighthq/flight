@@ -45,20 +45,15 @@ export function bindWebGPUTexture(
     usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
   });
 
-  // Canvas2D and OffscreenCanvas store premultiplied data internally — pass it through
-  // as-is (premultipliedAlpha: false) to avoid a lossy 8-bit un-premultiply/re-premultiply
-  // round-trip. This mirrors WebGL's UNPACK_PREMULTIPLY_ALPHA_WEBGL = false for Canvas
-  // sources: "Canvas sources are already premultiplied by the 2D context."
-  // Image and ImageBitmap carry straight alpha and need premultipliedAlpha: true.
-  const premultipliedAlpha =
-    imageSource instanceof HTMLCanvasElement ||
-    (typeof OffscreenCanvas !== 'undefined' && imageSource instanceof OffscreenCanvas)
-      ? false
-      : true;
-
+  // Store every uploaded texture premultiplied, matching the premultiplied (ONE, ONE_MINUS_SRC_ALPHA)
+  // blend and the shaders, which expect premultiplied input (e.g. the particle shader tints
+  // tex.rgb assuming it is already alpha-multiplied). Canvas/OffscreenCanvas are premultiplied
+  // internally, so premultipliedAlpha: true is the lossless pass-through; Image/ImageBitmap carry
+  // straight alpha and get premultiplied on copy. (A straight-alpha texture under premultiplied
+  // blend blows RGB out — it turned the semi-transparent shape panel opaque white.)
   device.queue.copyExternalImageToTexture(
     { source: imageSource as GPUCopyExternalImageSource, flipY: false },
-    { texture, premultipliedAlpha },
+    { texture, premultipliedAlpha: true },
     [width, height],
   );
 
