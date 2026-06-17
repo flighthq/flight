@@ -20,6 +20,7 @@
     { "path": "../geometry" },
     { "path": "../input" },
     { "path": "../interaction" },
+    { "path": "../log" },
     { "path": "../materials" },
     { "path": "../media" },
     { "path": "../render" },
