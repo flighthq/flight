@@ -1,8 +1,10 @@
 import type { MatrixLike, RectangleLike } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal, WebGPUScissorRect } from './internal';
+import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 
 export function popWebGPUClipRectangle(state: WebGPURenderStateInternal): void {
+  flushWebGPUSpriteBatch(state);
   const stack = state.scissorStack;
   stack.pop();
   const previous = stack.length > 0 ? stack[stack.length - 1] : null;
@@ -24,6 +26,7 @@ export function pushWebGPUClipRectangle(
   rect: Readonly<RectangleLike>,
   transform: Readonly<MatrixLike>,
 ): void {
+  flushWebGPUSpriteBatch(state);
   const next = intersectWebGPUScissorRect(
     state.currentScissorRect ?? null,
     computeWebGPUScissorRect(state, rect, transform),

@@ -23,6 +23,7 @@ import type {
 
 import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
 import { createWebGPUTextureEntry, drawWebGPUQuad, updateWebGPUTextureEntry } from './webgpuDraw';
+import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 
 export type WebGPURichTextOverlay = (
   context: CanvasRenderingContext2D,
@@ -59,6 +60,7 @@ export function drawWebGPURichTextWithOverlay(
 ): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
+  flushWebGPUSpriteBatch(internal);
 
   const source = renderProxy.source as RichText;
   const data = source.data;

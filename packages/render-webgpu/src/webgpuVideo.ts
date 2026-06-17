@@ -3,6 +3,7 @@ import type { DisplayObjectRenderer, RenderProxy2D, RenderState, Video } from '@
 
 import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
 import { drawWebGPUQuad } from './webgpuDraw';
+import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 
 interface WebGPUVideoData {
   entry: WebGPUTextureEntry;
@@ -15,6 +16,7 @@ const _videoMap = new WeakMap<RenderProxy2D, WebGPUVideoData>();
 export function drawWebGPUVideo(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
+  flushWebGPUSpriteBatch(internal);
 
   const source = renderProxy.source as Video;
   const element = source.data.source?.element;

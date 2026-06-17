@@ -6,6 +6,7 @@ import type { DisplayObjectRenderer, RenderProxy2D, RenderState, Text, TextForma
 
 import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
 import { createWebGPUTextureEntry, drawWebGPUQuad, updateWebGPUTextureEntry } from './webgpuDraw';
+import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
@@ -27,6 +28,7 @@ const _textureMap = new WeakMap<RenderProxy2D, WebGPUTextureEntry>();
 export function drawWebGPUText(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
+  flushWebGPUSpriteBatch(internal);
 
   const source = renderProxy.source as Text;
   const { text, textFormat } = source.data;

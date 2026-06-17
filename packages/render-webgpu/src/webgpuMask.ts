@@ -3,6 +3,7 @@ import { getRenderProxy2D } from '@flighthq/render';
 import type { DisplayObject, RenderProxy2D } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
+import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 
 export function drawWebGPUMask(state: WebGPURenderStateInternal, data: RenderProxy2D): void {
   state.displayObjectMaskRendererMap.get(data.source.kind)?.drawMask(state, data);
@@ -19,12 +20,14 @@ export function drawWebGPUMask(state: WebGPURenderStateInternal, data: RenderPro
 }
 
 export function popWebGPUMask(state: WebGPURenderStateInternal): void {
+  flushWebGPUSpriteBatch(state);
   const nextDepth = Math.max(0, state.currentMaskDepth - 1);
   state.currentMaskDepth = nextDepth;
   state.maskWriteMode = false;
 }
 
 export function pushWebGPUMask(state: WebGPURenderStateInternal, data: RenderProxy2D): void {
+  flushWebGPUSpriteBatch(state);
   state.maskWriteMode = true;
   // stencil reference is set in drawWebGPUQuad when maskWriteMode is active
   const nextDepth = state.currentMaskDepth + 1;
@@ -34,6 +37,7 @@ export function pushWebGPUMask(state: WebGPURenderStateInternal, data: RenderPro
     state.renderPass.setStencilReference(nextDepth);
   }
   drawWebGPUMask(state, data);
+  flushWebGPUSpriteBatch(state);
 
   state.maskWriteMode = false;
   state.currentMaskDepth = nextDepth;
