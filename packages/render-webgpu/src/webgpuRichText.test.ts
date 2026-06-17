@@ -1,5 +1,5 @@
 import { createRichText } from '@flighthq/displayobject';
-import { getOrCreateDisplayObjectRenderNode, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderNode2D, prepareDisplayObjectRender } from '@flighthq/render';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
 import {
@@ -28,7 +28,7 @@ describe('drawWebGPURichText', () => {
 
     const richText = createRichText();
     prepareDisplayObjectRender(state, richText);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, richText);
+    const renderNode = getOrCreateRenderNode2D(state, richText);
 
     expect(() => drawWebGPURichText(state, renderNode)).not.toThrow();
     submitWebGPURenderPass(state);
@@ -38,7 +38,7 @@ describe('drawWebGPURichText', () => {
     const state = await createWebGPURenderStateForTest();
     const richText = createRichText();
     prepareDisplayObjectRender(state, richText);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, richText);
+    const renderNode = getOrCreateRenderNode2D(state, richText);
 
     expect(() => drawWebGPURichText(state, renderNode)).not.toThrow();
   });
@@ -50,7 +50,7 @@ describe('drawWebGPURichTextMask', () => {
     renderWebGPUBackground(state);
     const richText = createRichText();
     prepareDisplayObjectRender(state, richText);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, richText);
+    const renderNode = getOrCreateRenderNode2D(state, richText);
     expect(() => drawWebGPURichTextMask(state, renderNode)).not.toThrow();
     submitWebGPURenderPass(state);
   });
@@ -62,7 +62,7 @@ describe('drawWebGPURichTextWithOverlay', () => {
     renderWebGPUBackground(state);
     const richText = createRichText();
     prepareDisplayObjectRender(state, richText);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, richText);
+    const renderNode = getOrCreateRenderNode2D(state, richText);
     expect(() => drawWebGPURichTextWithOverlay(state, renderNode)).not.toThrow();
     submitWebGPURenderPass(state);
   });

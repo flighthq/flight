@@ -1,5 +1,5 @@
 import { createBitmap } from '@flighthq/displayobject';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import { getOrCreateRenderNode2D } from '@flighthq/render';
 import { hasRenderFeatures } from '@flighthq/render';
 import { RenderFeatures } from '@flighthq/types';
 
@@ -16,7 +16,7 @@ describe('getWebGPUShader', () => {
   it('returns undefined when no shader is bound', async () => {
     const state = await createWebGPURenderStateForTest();
     const bitmap = createBitmap();
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateRenderNode2D(state, bitmap);
     expect(getWebGPUShader(renderNode)).toBeUndefined();
   });
 });
@@ -25,7 +25,7 @@ describe('resolveWebGPUShader', () => {
   it('returns null when no shader feature is enabled', async () => {
     const state = await createWebGPURenderStateForTest();
     const bitmap = createBitmap();
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateRenderNode2D(state, bitmap);
     const internal = state as unknown as WebGPURenderStateInternal;
     expect(resolveWebGPUShader(internal, renderNode)).toBeNull();
   });
@@ -39,7 +39,7 @@ describe('setWebGPUShader', () => {
 
     setWebGPUShader(state, bitmap, fakeShader);
 
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateRenderNode2D(state, bitmap);
     expect(getWebGPUShader(renderNode)).toBe(fakeShader);
   });
 
@@ -57,7 +57,7 @@ describe('setWebGPUShader', () => {
     const fakeShader: WebGPUBitmapShader = { pipeline: {} as never, bind: () => {} };
     setWebGPUShader(state, bitmap, fakeShader);
     setWebGPUShader(state, bitmap, null);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateRenderNode2D(state, bitmap);
     expect(getWebGPUShader(renderNode)).toBeUndefined();
   });
 });

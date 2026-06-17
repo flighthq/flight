@@ -1,8 +1,9 @@
 import { enableRenderFeatures } from '@flighthq/render';
-import type { DisplayObjectRenderNode, RenderNode, WebGPURenderState } from '@flighthq/types';
+import type { RenderNode, RenderNode2D, WebGPURenderState } from '@flighthq/types';
 import { BlendMode, RenderFeatures } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
+import { getWebGPURenderNodeColorTransform } from './webgpuColorTransformMaterial';
 import { getActiveWebGPUPipeline, getWebGPUPipeline, writeWebGPUQuadUniforms } from './webgpuShader';
 
 export function applyWebGPUBlendMode(state: WebGPURenderState, blendMode: BlendMode | null): void {
@@ -126,7 +127,7 @@ export function createWebGPUTextureEntry(
 
 export function drawWebGPUQuad(
   state: WebGPURenderStateInternal,
-  renderNode: DisplayObjectRenderNode,
+  renderNode: RenderNode2D,
   textureEntry: WebGPUTextureEntry,
   x0: number,
   y0: number,
@@ -140,7 +141,19 @@ export function drawWebGPUQuad(
   const pass = state.renderPass;
   if (pass === null) return;
 
-  const uniformOffset = writeWebGPUQuadUniforms(state, renderNode, x0, y0, x1, y1, u0, v0, u1, v1);
+  const uniformOffset = writeWebGPUQuadUniforms(
+    state,
+    renderNode,
+    getWebGPURenderNodeColorTransform(renderNode),
+    x0,
+    y0,
+    x1,
+    y1,
+    u0,
+    v0,
+    u1,
+    v1,
+  );
   const pipeline = getActiveWebGPUPipeline(state);
 
   pass.setPipeline(pipeline);
@@ -199,17 +212,18 @@ export function drawWebGPUQuadWithTransform(
   uniformData[floatBase + 10] = matrixArray[8];
   uniformData[floatBase + 11] = 0;
   uniformData[floatBase + 12] = renderNode.alpha;
-  uniformDataU32[floatBase + 13] = 0;
+  const ct = getWebGPURenderNodeColorTransform(renderNode);
+  uniformDataU32[floatBase + 13] = ct !== null ? 1 : 0;
   uniformData[floatBase + 14] = 0;
   uniformData[floatBase + 15] = 0;
-  uniformData[floatBase + 16] = 1;
-  uniformData[floatBase + 17] = 1;
-  uniformData[floatBase + 18] = 1;
-  uniformData[floatBase + 19] = 1;
-  uniformData[floatBase + 20] = 0;
-  uniformData[floatBase + 21] = 0;
-  uniformData[floatBase + 22] = 0;
-  uniformData[floatBase + 23] = 0;
+  uniformData[floatBase + 16] = ct?.redMultiplier ?? 1;
+  uniformData[floatBase + 17] = ct?.greenMultiplier ?? 1;
+  uniformData[floatBase + 18] = ct?.blueMultiplier ?? 1;
+  uniformData[floatBase + 19] = ct?.alphaMultiplier ?? 1;
+  uniformData[floatBase + 20] = (ct?.redOffset ?? 0) / 255;
+  uniformData[floatBase + 21] = (ct?.greenOffset ?? 0) / 255;
+  uniformData[floatBase + 22] = (ct?.blueOffset ?? 0) / 255;
+  uniformData[floatBase + 23] = (ct?.alphaOffset ?? 0) / 255;
   uniformData[floatBase + 24] = x0;
   uniformData[floatBase + 25] = y0;
   uniformData[floatBase + 26] = x1;

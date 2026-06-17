@@ -106,7 +106,7 @@ describe('writeWebGPUQuadUniforms', () => {
       colorTransform: null,
       transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     };
-    writeWebGPUQuadUniforms(state, fakeNode, 0, 0, 100, 100, 0, 0, 1, 1);
+    writeWebGPUQuadUniforms(state, fakeNode, null, 0, 0, 100, 100, 0, 0, 1, 1);
     expect(state.uniformOffset).toBe(before + state.uniformStride);
   });
 
@@ -119,7 +119,7 @@ describe('writeWebGPUQuadUniforms', () => {
       colorTransform: null,
       transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     };
-    const offset = writeWebGPUQuadUniforms(state, fakeNode, 10, 20, 30, 40, 0.1, 0.2, 0.9, 0.8);
+    const offset = writeWebGPUQuadUniforms(state, fakeNode, null, 10, 20, 30, 40, 0.1, 0.2, 0.9, 0.8);
     const floatBase = offset >> 2;
     expect(state.uniformData[floatBase + 24]).toBeCloseTo(10);
     expect(state.uniformData[floatBase + 25]).toBeCloseTo(20);

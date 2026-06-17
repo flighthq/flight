@@ -1,5 +1,5 @@
 import { createBitmap } from '@flighthq/displayobject';
-import { getOrCreateDisplayObjectRenderNode, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderNode2D, prepareDisplayObjectRender } from '@flighthq/render';
 import { hasRenderFeatures } from '@flighthq/render';
 import { BlendMode, RenderFeatures } from '@flighthq/types';
 
@@ -80,7 +80,7 @@ describe('drawWebGPUQuad', () => {
     const internal = state as unknown as WebGPURenderStateInternal;
     const bitmap = createBitmap();
     prepareDisplayObjectRender(state, bitmap);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateRenderNode2D(state, bitmap);
     const canvas = document.createElement('canvas');
     canvas.width = 4;
     canvas.height = 4;
@@ -97,7 +97,7 @@ describe('drawWebGPUQuadWithTransform', () => {
     const internal = state as unknown as WebGPURenderStateInternal;
     const bitmap = createBitmap();
     prepareDisplayObjectRender(state, bitmap);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateRenderNode2D(state, bitmap);
     const canvas = document.createElement('canvas');
     canvas.width = 4;
     canvas.height = 4;

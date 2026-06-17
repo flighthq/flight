@@ -1,5 +1,5 @@
 import { noopRendererData } from '@flighthq/render';
-import type { ParticleEmitter, RenderState, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
+import type { ParticleEmitter, RenderNode2D, RenderState, SpriteRenderer } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
 import { bindWebGPUTexture } from './webgpuDraw';
@@ -154,7 +154,7 @@ function ensureParticleInstanceBuffer(state: WebGPURenderStateInternal, count: n
   state.particleInstanceData = new Float32Array(newCapacity / 4);
 }
 
-export function drawWebGPUParticleEmitter(state: RenderState, renderNode: SpriteRenderNode): void {
+export function drawWebGPUParticleEmitter(state: RenderState, renderNode: RenderNode2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 
@@ -286,7 +286,7 @@ export function drawWebGPUParticleEmitter(state: RenderState, renderNode: Sprite
 
 export const defaultWebGPUParticleEmitterRenderer: SpriteRenderer = {
   createData: noopRendererData,
-  submit(state: RenderState, node: SpriteRenderNode): void {
+  submit(state: RenderState, node: RenderNode2D): void {
     flushWebGPUSpriteBatch(state as WebGPURenderStateInternal);
     drawWebGPUParticleEmitter(state, node);
   },

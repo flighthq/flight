@@ -13,17 +13,6 @@ export function drawWebGPUColorTransformBitmap(
   state: WebGPURenderStateInternal,
   renderNode: {
     alpha: number;
-    useColorTransform: boolean;
-    colorTransform: {
-      redMultiplier: number;
-      greenMultiplier: number;
-      blueMultiplier: number;
-      alphaMultiplier: number;
-      redOffset: number;
-      greenOffset: number;
-      blueOffset: number;
-      alphaOffset: number;
-    } | null;
     transform2D: { a: number; b: number; c: number; d: number; tx: number; ty: number };
     blendMode: BlendMode | null;
   },
@@ -42,7 +31,7 @@ export function drawWebGPUColorTransformBitmap(
 
   state.applyBlendMode?.(state, renderNode.blendMode);
   const textureEntry = bindWebGPUTexture(state, imageSource);
-  const uniformOffset = writeWebGPUQuadUniforms(state, renderNode, x0, y0, x1, y1, u0, v0, u1, v1);
+  const uniformOffset = writeWebGPUQuadUniforms(state, renderNode, null, x0, y0, x1, y1, u0, v0, u1, v1);
   const pipeline = getActiveWebGPUPipeline(state);
 
   pass.setPipeline(pipeline);
@@ -61,23 +50,7 @@ export function registerWebGPUColorTransformShader(state: WebGPURenderState): vo
   // This function exists for API symmetry with registerWebGLColorTransformShader.
   const shader: WebGPUBitmapShader = {
     pipeline: null as never, // pipeline is resolved dynamically via getActiveWebGPUPipeline
-    bind(
-      bindState: WebGPURenderStateInternal,
-      renderNode: {
-        alpha: number;
-        useColorTransform: boolean;
-        colorTransform: {
-          redMultiplier: number;
-          greenMultiplier: number;
-          blueMultiplier: number;
-          alphaMultiplier: number;
-          redOffset: number;
-          greenOffset: number;
-          blueOffset: number;
-          alphaOffset: number;
-        } | null;
-      },
-    ): void {
+    bind(bindState: WebGPURenderStateInternal, renderNode: { alpha: number }): void {
       // bind() is called by the user when customising draw; for color transform the default
       // pipeline handles everything automatically via the uniform buffer.
       void bindState;

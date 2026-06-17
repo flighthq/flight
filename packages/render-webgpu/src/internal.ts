@@ -1,4 +1,4 @@
-import type { BlendMode, ColorTransform, Matrix, WebGPURenderState } from '@flighthq/types';
+import type { BlendMode, Material, Matrix, WebGPUMaterialRenderer, WebGPURenderState } from '@flighthq/types';
 
 export interface WebGPUTextureEntry {
   bindGroup: GPUBindGroup;
@@ -19,17 +19,6 @@ export interface WebGPUBitmapShader {
     state: WebGPURenderStateInternal,
     renderNode: {
       alpha: number;
-      useColorTransform: boolean;
-      colorTransform: {
-        redMultiplier: number;
-        greenMultiplier: number;
-        blueMultiplier: number;
-        alphaMultiplier: number;
-        redOffset: number;
-        greenOffset: number;
-        blueOffset: number;
-        alphaOffset: number;
-      } | null;
     },
   ): void;
 }
@@ -73,14 +62,25 @@ export type WebGPURenderStateInternal = Omit<WebGPURenderState, 'canvas' | 'devi
   particleInstanceData: Float32Array | null;
   particleInstanceCapacity: number;
 
-  // Universal sprite batch (cross-node batching for Sprite/QuadBatch/Tilemap)
+  // Universal sprite batch (cross-node batching for Sprite/QuadBatch/Tilemap). The flush key is the
+  // material (by reference); the resolved renderer appends its per-instance floats (e.g. color
+  // transform) into the single instance storage buffer.
   spriteBatchBlendMode: BlendMode | null;
-  spriteBatchColorTransform: ColorTransform | null;
+  spriteBatchMaterial: Material | null;
+  spriteBatchMaterialRenderer: WebGPUMaterialRenderer | null;
+  spriteBatchMaterialFloats: number;
   spriteBatchCount: number;
   spriteBatchInstanceBuffer: GPUBuffer | null;
   spriteBatchInstanceCapacity: number;
   spriteBatchInstanceData: Float32Array;
+  // Parallel per-instance material buffer (instanceFloatCount floats per instance), written by the
+  // active material's packInstance. Separate from the base instance buffer so the base layout carries
+  // no material concern.
+  spriteBatchMaterialBuffer: GPUBuffer | null;
+  spriteBatchMaterialCapacity: number;
+  spriteBatchMaterialData: Float32Array;
   spriteBatchTexture: CanvasImageSource | null;
+  materialRendererMap?: Map<symbol, WebGPUMaterialRenderer>;
 
   // Frame state: command encoder and current render pass
   commandEncoder: GPUCommandEncoder | null;

@@ -1,5 +1,5 @@
 import { createBitmap } from '@flighthq/displayobject';
-import { getOrCreateDisplayObjectRenderNode, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderNode2D, prepareDisplayObjectRender } from '@flighthq/render';
 
 import type { WebGPURenderStateInternal } from './internal';
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
