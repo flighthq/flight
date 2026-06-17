@@ -1,5 +1,6 @@
 import { noopRendererData } from '@flighthq/render';
 import type { RenderProxy2D, RenderState, SpriteRenderer, Tilemap } from '@flighthq/types';
+import { BatchFormat } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
 import { resolveWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
@@ -89,6 +90,7 @@ function submitWebGPUTilemap(state: RenderState, tilemapNode: RenderProxy2D): vo
 }
 
 export const defaultWebGPUTilemapRenderer: SpriteRenderer = {
+  format: BatchFormat.Quad,
   createData: noopRendererData,
   submit: submitWebGPUTilemap,
 };
