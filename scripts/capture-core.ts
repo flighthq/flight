@@ -3,7 +3,7 @@
 
 import type { BrowserContext } from '@playwright/test';
 import { chromium } from '@playwright/test';
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import { createHash } from 'crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
@@ -82,6 +82,20 @@ export function resolveServer(opts: { tool: Tool; root: string; externalUrl?: st
   const toolDir = join(root, 'tools', tool === 'explorer' ? 'explorer' : 'functional');
   const viteJs = join(root, 'node_modules', 'vite', 'bin', 'vite.js');
   const configPath = join(toolDir, 'vite.config.ts');
+
+  // Run predev (asset download) before starting the server, mirroring what
+  // npm run dev would do. npm_execpath is set by npm and points to the npm
+  // CLI script; fall back to shell npm for direct tsx invocations.
+  const toolPkg = JSON.parse(readFileSync(join(toolDir, 'package.json'), 'utf-8')) as {
+    scripts?: Record<string, string>;
+  };
+  if (toolPkg.scripts?.predev) {
+    const npmExecPath = process.env['npm_execpath'];
+    const result = npmExecPath
+      ? spawnSync(process.execPath, [npmExecPath, 'run', 'predev'], { cwd: toolDir, stdio: 'inherit' })
+      : spawnSync('npm', ['run', 'predev'], { cwd: toolDir, stdio: 'inherit', shell: true });
+    if (result.status !== 0) throw new Error(`predev failed for ${tool}`);
+  }
 
   return new Promise((resolve, reject) => {
     const proc = spawn(process.execPath, [viteJs, '--config', configPath], {
