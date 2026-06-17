@@ -88,13 +88,16 @@ describe('bindWebGLTexture', () => {
     expect((gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length).toBe(uploadCount);
   });
 
-  it('sets premultiply to false for HTMLCanvasElement sources', () => {
+  it('premultiplies alpha on upload for HTMLCanvasElement sources', () => {
+    // Canvas pixels reach texImage2D as straight alpha; premultiplying on upload keeps canvas-backed
+    // shapes/text consistent with the premultiplied (ONE, ONE_MINUS_SRC_ALPHA) blend. Without this a
+    // semi-transparent shape blows out to full opacity.
     const { state, gl } = makeWebGLState();
     const canvas = document.createElement('canvas');
     bindWebGLTexture(state, canvas);
     expect(gl.pixelStorei).toHaveBeenCalledWith(
       (gl as unknown as { UNPACK_PREMULTIPLY_ALPHA_WEBGL: number }).UNPACK_PREMULTIPLY_ALPHA_WEBGL,
-      false,
+      true,
     );
   });
 
