@@ -3,6 +3,8 @@ export * from './Application';
 export * from './ApplicationWindow';
 export * from './AssetLoader';
 export * from './AudioSource';
+export * from './BatchBarrier';
+export * from './BatchFormat';
 export * from './Bitmap';
 export * from './BitmapFilter';
 export * from './BlendMode';
