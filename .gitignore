@@ -146,6 +146,9 @@ tests/size/**/assets
 .test-assets
 public
 
+# Playwright capture output (screenshots, logs, diffs). tools/baselines/ is tracked.
+tools/output/
+
 # Guard against rogue compilation files
 *.map
 *.d.ts
