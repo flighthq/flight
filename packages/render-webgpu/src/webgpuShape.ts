@@ -2,9 +2,9 @@ import { getNodeLocalBoundsRectangle } from '@flighthq/node';
 import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
   Renderable,
   RendererData,
+  RenderNode2D,
   RenderState,
   Shape,
 } from '@flighthq/types';
@@ -29,7 +29,7 @@ function createWebGPUShapeData(_state: RenderState, _source: Renderable): Render
   return { canvas, ctx, entry: null, lastVersion: -1, lastW: 0, lastH: 0 } as unknown as RendererData;
 }
 
-export function drawWebGPUShape(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawWebGPUShape(state: RenderState, renderNode: RenderNode2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 
@@ -72,7 +72,7 @@ export function drawWebGPUShape(state: RenderState, renderNode: DisplayObjectRen
   drawWebGPUQuad(internal, renderNode, shapeData.entry, bounds.x, bounds.y, bounds.x + w, bounds.y + h, 0, 0, 1, 1);
 }
 
-export function drawWebGPUShapeMask(state: RenderState, data: DisplayObjectRenderNode): void {
+export function drawWebGPUShapeMask(state: RenderState, data: RenderNode2D): void {
   drawWebGPUShape(state, data);
 }
 

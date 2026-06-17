@@ -1,10 +1,11 @@
 import { noopRendererData } from '@flighthq/render';
-import type { RenderState, Sprite, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
+import type { RenderNode2D, RenderState, Sprite, SpriteRenderer } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
-import { prepareWebGPUSpriteBatchWrite } from './webgpuSpriteBatch';
+import { resolveWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
+import { packWebGPUSpriteBatchMaterialInstance, prepareWebGPUSpriteBatchWrite } from './webgpuSpriteBatch';
 
-function submitWebGPUSpriteNode(state: RenderState, spriteNode: SpriteRenderNode): void {
+function submitWebGPUSpriteNode(state: RenderState, spriteNode: RenderNode2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 
@@ -22,8 +23,18 @@ function submitWebGPUSpriteNode(state: RenderState, spriteNode: SpriteRenderNode
   const ih = 1 / (atlas.image.height || 1);
   const t = spriteNode.transform2D;
 
-  const ct = spriteNode.useColorTransform ? spriteNode.colorTransform : null;
-  const base = prepareWebGPUSpriteBatchWrite(internal, atlas.image.src, spriteNode.blendMode, ct, 1);
+  const material = spriteNode.material;
+  const materialRenderer = resolveWebGPUMaterialRenderer(internal, material);
+  if (materialRenderer === null) return;
+  const base = prepareWebGPUSpriteBatchWrite(
+    internal,
+    atlas.image.src,
+    spriteNode.blendMode,
+    material,
+    materialRenderer,
+    1,
+  );
+  const instanceIndex = internal.spriteBatchCount;
   const d = internal.spriteBatchInstanceData;
   d[base] = t.a;
   d[base + 1] = t.b;
@@ -38,6 +49,7 @@ function submitWebGPUSpriteNode(state: RenderState, spriteNode: SpriteRenderNode
   d[base + 10] = (region.x + region.width) * iw;
   d[base + 11] = (region.y + region.height) * ih;
   d[base + 12] = spriteNode.alpha;
+  packWebGPUSpriteBatchMaterialInstance(internal, spriteNode.materialData, instanceIndex);
   internal.spriteBatchCount++;
 }
 

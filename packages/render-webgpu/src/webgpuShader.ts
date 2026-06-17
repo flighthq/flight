@@ -1,4 +1,4 @@
-import type { RenderNode } from '@flighthq/types';
+import type { ColorTransform, RenderNode } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
@@ -344,19 +344,9 @@ export function writeWebGPUQuadUniforms(
   state: WebGPURenderStateInternal,
   renderNode: {
     alpha: number;
-    useColorTransform: boolean;
-    colorTransform: {
-      redMultiplier: number;
-      greenMultiplier: number;
-      blueMultiplier: number;
-      alphaMultiplier: number;
-      redOffset: number;
-      greenOffset: number;
-      blueOffset: number;
-      alphaOffset: number;
-    } | null;
     transform2D: { a: number; b: number; c: number; d: number; tx: number; ty: number };
   },
+  colorTransform: ColorTransform | null,
   x0: number,
   y0: number,
   x1: number,
@@ -388,22 +378,22 @@ export function writeWebGPUQuadUniforms(
   uniformData[floatBase + 11] = 0;
   // alpha at float 12 (byte 48)
   uniformData[floatBase + 12] = renderNode.alpha;
-  // hasColorTransform at float 13 (byte 52) — written as u32
-  uniformDataU32[floatBase + 13] = renderNode.useColorTransform ? 1 : 0;
+  // hasColorTransform at float 13 (byte 52) — written as u32. The color transform comes from the
+  // node's material (resolved by the caller); null → identity.
+  uniformDataU32[floatBase + 13] = colorTransform !== null ? 1 : 0;
   // padding floats 14–15
   uniformData[floatBase + 14] = 0;
   uniformData[floatBase + 15] = 0;
   // colorMultiplier at float 16–19 (byte 64–79)
-  const ct = renderNode.colorTransform;
-  uniformData[floatBase + 16] = ct?.redMultiplier ?? 1;
-  uniformData[floatBase + 17] = ct?.greenMultiplier ?? 1;
-  uniformData[floatBase + 18] = ct?.blueMultiplier ?? 1;
-  uniformData[floatBase + 19] = ct?.alphaMultiplier ?? 1;
+  uniformData[floatBase + 16] = colorTransform?.redMultiplier ?? 1;
+  uniformData[floatBase + 17] = colorTransform?.greenMultiplier ?? 1;
+  uniformData[floatBase + 18] = colorTransform?.blueMultiplier ?? 1;
+  uniformData[floatBase + 19] = colorTransform?.alphaMultiplier ?? 1;
   // colorOffset at float 20–23 (byte 80–95)
-  uniformData[floatBase + 20] = (ct?.redOffset ?? 0) / 255;
-  uniformData[floatBase + 21] = (ct?.greenOffset ?? 0) / 255;
-  uniformData[floatBase + 22] = (ct?.blueOffset ?? 0) / 255;
-  uniformData[floatBase + 23] = (ct?.alphaOffset ?? 0) / 255;
+  uniformData[floatBase + 20] = (colorTransform?.redOffset ?? 0) / 255;
+  uniformData[floatBase + 21] = (colorTransform?.greenOffset ?? 0) / 255;
+  uniformData[floatBase + 22] = (colorTransform?.blueOffset ?? 0) / 255;
+  uniformData[floatBase + 23] = (colorTransform?.alphaOffset ?? 0) / 255;
   // quad corners at float 24–31 (byte 96–127)
   uniformData[floatBase + 24] = x0;
   uniformData[floatBase + 25] = y0;

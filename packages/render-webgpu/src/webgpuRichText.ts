@@ -12,7 +12,7 @@ import {
 } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
+  RenderNode2D,
   RenderState,
   RichText,
   RichTextRuntime,
@@ -42,19 +42,19 @@ interface WebGPURichTextData {
   h: number;
 }
 
-const _textureMap = new WeakMap<DisplayObjectRenderNode, WebGPURichTextData>();
+const _textureMap = new WeakMap<RenderNode2D, WebGPURichTextData>();
 
-export function drawWebGPURichText(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawWebGPURichText(state: RenderState, renderNode: RenderNode2D): void {
   drawWebGPURichTextWithOverlay(state, renderNode);
 }
 
-export function drawWebGPURichTextMask(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawWebGPURichTextMask(state: RenderState, renderNode: RenderNode2D): void {
   drawWebGPURichText(state, renderNode);
 }
 
 export function drawWebGPURichTextWithOverlay(
   state: RenderState,
-  renderNode: DisplayObjectRenderNode,
+  renderNode: RenderNode2D,
   overlay?: WebGPURichTextOverlay,
 ): void {
   const internal = state as WebGPURenderStateInternal;

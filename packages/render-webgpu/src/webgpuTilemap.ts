@@ -1,12 +1,18 @@
 import { noopRendererData } from '@flighthq/render';
-import type { RenderState, SpriteRenderer, SpriteRenderNode, Tilemap } from '@flighthq/types';
+import type { RenderNode2D, RenderState, SpriteRenderer, Tilemap } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
-import { prepareWebGPUSpriteBatchWrite } from './webgpuSpriteBatch';
+import { resolveWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
+import {
+  packWebGPUSpriteBatchMaterialInstance,
+  prepareWebGPUSpriteBatchWrite,
+  SPRITE_INSTANCE_FLOATS,
+} from './webgpuSpriteBatch';
 
-const INSTANCE_FLOATS = 13;
+// Each tile writes the 13 base instance floats; any material packs its own per-instance data.
+const INSTANCE_STRIDE_FLOATS = SPRITE_INSTANCE_FLOATS;
 
-function submitWebGPUTilemap(state: RenderState, tilemapNode: SpriteRenderNode): void {
+function submitWebGPUTilemap(state: RenderState, tilemapNode: RenderNode2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 
@@ -18,8 +24,20 @@ function submitWebGPUTilemap(state: RenderState, tilemapNode: SpriteRenderNode):
   if (atlas === null || atlas.image === null || atlas.image.src === null) return;
   if (columns === 0 || rows === 0) return;
 
-  const ct = tilemapNode.useColorTransform ? tilemapNode.colorTransform : null;
-  const base = prepareWebGPUSpriteBatchWrite(internal, atlas.image.src, tilemapNode.blendMode, ct, columns * rows);
+  const material = tilemapNode.material;
+  const materialRenderer = resolveWebGPUMaterialRenderer(internal, material);
+  if (materialRenderer === null) return;
+  const nodeMaterialData = tilemapNode.materialData;
+  const perTileMaterialData = source.data.materialData;
+  const startCount = internal.spriteBatchCount;
+  const base = prepareWebGPUSpriteBatchWrite(
+    internal,
+    atlas.image.src,
+    tilemapNode.blendMode,
+    material,
+    materialRenderer,
+    columns * rows,
+  );
 
   const regions = atlas.regions;
   const numRegions = regions.length;
@@ -60,7 +78,9 @@ function submitWebGPUTilemap(state: RenderState, tilemapNode: SpriteRenderNode):
       instanceData[writeBase + 10] = (region.x + region.width) * iw;
       instanceData[writeBase + 11] = (region.y + region.height) * ih;
       instanceData[writeBase + 12] = alpha;
-      writeBase += INSTANCE_FLOATS;
+      const md = perTileMaterialData?.[row * columns + col] ?? nodeMaterialData;
+      packWebGPUSpriteBatchMaterialInstance(internal, md, startCount + drawCount);
+      writeBase += INSTANCE_STRIDE_FLOATS;
       drawCount++;
     }
   }

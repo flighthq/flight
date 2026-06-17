@@ -14,10 +14,10 @@ import {
 import type {
   DisplayObject,
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
   Matrix,
   RenderCache,
   RenderCacheRefreshOptions,
+  RenderNode2D,
   RenderState,
   WebGPURenderState,
   WebGPURenderTarget,
@@ -55,7 +55,6 @@ export function createWebGPUCacheState(screenState: WebGPURenderState): WebGPURe
   }) as WebGPURenderStateInternal;
 
   copyAllRenderersFromRenderState(cacheState, screenState);
-  cacheState.appearanceHooks = screenState.appearanceHooks;
 
   cacheState.applyBlendMode = screen.applyBlendMode;
   cacheState.canvas = screen.canvas;
@@ -94,12 +93,18 @@ export function createWebGPUCacheState(screenState: WebGPURenderState): WebGPURe
   cacheState.currentBlendMode = null;
   cacheState.currentMaskDepth = 0;
   cacheState.spriteBatchBlendMode = null;
-  cacheState.spriteBatchColorTransform = null;
+  cacheState.spriteBatchMaterial = null;
+  cacheState.spriteBatchMaterialRenderer = null;
+  cacheState.spriteBatchMaterialFloats = 0;
   cacheState.spriteBatchCount = 0;
   cacheState.spriteBatchInstanceBuffer = null;
   cacheState.spriteBatchInstanceCapacity = 0;
   cacheState.spriteBatchInstanceData = new Float32Array(0);
+  cacheState.spriteBatchMaterialBuffer = null;
+  cacheState.spriteBatchMaterialCapacity = 0;
+  cacheState.spriteBatchMaterialData = new Float32Array(0);
   cacheState.spriteBatchTexture = null;
+  cacheState.materialRendererMap = screen.materialRendererMap;
   cacheState.maskWriteMode = false;
   cacheState.currentScissorRect = null;
   cacheState.scissorStack = [];
@@ -225,7 +230,7 @@ export function releaseWebGPURenderCache(state: WebGPURenderState, cache: Render
   targets.delete(cache);
 }
 
-function drawWebGPURenderCache(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+function drawWebGPURenderCache(state: RenderState, renderNode: RenderNode2D): void {
   const cache = getRenderNodeCache(state, renderNode.source);
   if (cache === null) return;
   const webgpuState = state as WebGPURenderState;
