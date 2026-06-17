@@ -103,7 +103,14 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
             return `import ${JSON.stringify(appPath)};`;
           }
 
-          return `import '___ft___${name}:${render}';`;
+          // The harness is the listener app: install the console-capture sink, then dynamically
+          // import the flight test (dynamic so setFlightLogSink runs before the test's module-init
+          // logs). The test itself only imports the lightweight emit helpers.
+          return [
+            `import { createConsoleCaptureSink, setFlightLogSink } from '@flighthq/log';`,
+            `setFlightLogSink(createConsoleCaptureSink());`,
+            `import('___ft___${name}:${render}');`,
+          ].join('\n');
         }
       },
     },
@@ -197,6 +204,7 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
 export default defineConfig(() => {
   const tests = discoverTests();
 
+  // `@flighthq/log` resolves automatically via the workspace-package aliases above.
   const alias: Record<string, string> = {
     ...Object.fromEntries(workspacePackages.map((pkg) => [pkg.name, pkg.dir + '/src'])),
     openfl: join(projectRoot, 'node_modules', 'openfl', 'lib', 'openfl'),

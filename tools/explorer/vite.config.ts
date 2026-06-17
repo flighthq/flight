@@ -16,6 +16,19 @@ interface Example {
 const projectRoot = resolve(__dirname, '../..');
 const examplesDir = join(projectRoot, 'examples');
 
+// The explorer is the listener app: it installs @flighthq/log's console-capture sink, then loads the
+// example. The example is the emit app — it only ever imports the lightweight flightLog/log* helpers,
+// so its own build (e.g. under the size suite) tree-shakes the sink machinery away. The example is
+// imported dynamically so the synchronous setFlightLogSink call runs first — before the example's
+// module-init logs fire (a static import would hoist and run the example before this body).
+function entryWithLogCapture(name: string, render: string): string {
+  return [
+    `import { createConsoleCaptureSink, setFlightLogSink } from '@flighthq/log';`,
+    `setFlightLogSink(createConsoleCaptureSink());`,
+    `import('___app___${name}:${render}');`,
+  ].join('\n');
+}
+
 function discoverExamples(): Example[] {
   return readdirSync(examplesDir, { withFileTypes: true })
     .filter((d) => d.isDirectory() && existsSync(join(examplesDir, d.name, 'package.json')))
@@ -115,7 +128,7 @@ function explorerPlugin(examples: Example[]): Plugin[] {
       load(id) {
         if (id.startsWith('\0virtual-build-entry:')) {
           const [name, render] = id.slice('\0virtual-build-entry:'.length).split(':');
-          return `import '___app___${name}:${render}';`;
+          return entryWithLogCapture(name, render);
         }
 
         if (id === '\0virtual:explorer-examples') {
@@ -124,7 +137,7 @@ function explorerPlugin(examples: Example[]): Plugin[] {
 
         if (id.startsWith('\0virtual:entry:')) {
           const [name, render] = id.slice('\0virtual:entry:'.length).split(':');
-          return `import '___app___${name}:${render}';`;
+          return entryWithLogCapture(name, render);
         }
       },
 
@@ -232,9 +245,10 @@ function explorerPlugin(examples: Example[]): Plugin[] {
 export default defineConfig(() => {
   const examples = discoverExamples();
 
-  const alias: Record<string, string> = Object.fromEntries(
-    workspacePackages.map((pkg) => [pkg.name, pkg.dir + '/src']),
-  );
+  // `@flighthq/log` resolves automatically via the workspace-package aliases above.
+  const alias: Record<string, string> = {
+    ...Object.fromEntries(workspacePackages.map((pkg) => [pkg.name, pkg.dir + '/src'])),
+  };
 
   return {
     root: __dirname,
