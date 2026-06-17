@@ -15,6 +15,7 @@ import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram 
 import { buildWebGLScale9Mapper } from './webglScale9Mapper';
 import { setWebGLBaseUniforms, setWebGLMatrixFromValues } from './webglShader';
 import { drawWebGLShape } from './webglShape';
+import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 interface WebGLScale9ShapeData {
   canvas: HTMLCanvasElement;
@@ -51,6 +52,7 @@ export function createWebGLScale9ShapeData(state: RenderState, _source: Renderab
 
 export function drawWebGLScale9Shape(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
+  flushWebGLSpriteBatch(internal);
   const source = renderProxy.source as Scale9Shape;
   const { commands, scale9Grid, version } = source.data;
   if (commands.length === 0) return;

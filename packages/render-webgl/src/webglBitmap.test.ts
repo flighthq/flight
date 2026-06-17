@@ -1,8 +1,8 @@
-﻿import { getOrCreateRenderProxy2D } from '@flighthq/render';
-import type { DisplayObject, RenderProxy2D } from '@flighthq/types';
+import type { RenderProxy2D } from '@flighthq/types';
 
 import { defaultWebGLBitmapRenderer, drawWebGLBitmap, drawWebGLBitmapMask } from './webglBitmap';
-import { setWebGLShader } from './webglShaderBinding';
+import { registerDefaultWebGLMaterial } from './webglDefaultMaterial';
+import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 import { makeWebGLState } from './webglTestHelper';
 
 function makeRenderProxy(image: unknown = null): RenderProxy2D {
@@ -10,7 +10,9 @@ function makeRenderProxy(image: unknown = null): RenderProxy2D {
     source: { data: { image } },
     blendMode: 0,
     alpha: 1,
-    transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
+    material: null,
+    materialData: null,
+    transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 10, ty: 20 },
     rendererData: null,
   } as unknown as RenderProxy2D;
 }
@@ -27,60 +29,95 @@ describe('defaultWebGLBitmapRenderer', () => {
   it('has a submit function pointing to drawWebGLBitmap', () => {
     expect(defaultWebGLBitmapRenderer.submit).toBe(drawWebGLBitmap);
   });
-
-  it('has a drawMask function pointing to drawWebGLBitmapMask', () => {});
 });
 
 describe('drawWebGLBitmap', () => {
-  it('returns early without drawing when image is null', () => {
-    const { state, gl } = makeWebGLState();
+  it('returns early without writing to batch when image is null', () => {
+    const { state } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
     drawWebGLBitmap(state, makeRenderProxy(null));
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    expect(state.spriteBatchCount).toBe(0);
   });
 
-  it('returns early without drawing when image.src is null', () => {
-    const { state, gl } = makeWebGLState();
+  it('returns early without writing to batch when image.src is null', () => {
+    const { state } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
     drawWebGLBitmap(state, makeRenderProxy(makeImageSource(null)));
-    expect(gl.drawElements).not.toHaveBeenCalled();
+    expect(state.spriteBatchCount).toBe(0);
   });
 
-  it('calls drawElements when image source is valid', () => {
-    const { state, gl } = makeWebGLState();
-    const img = document.createElement('img');
-    drawWebGLBitmap(state, makeRenderProxy(makeImageSource(img)));
-    expect(gl.drawElements).toHaveBeenCalled();
-  });
-
-  it('calls defaultBitmapShader.bind with the render node', () => {
+  it('returns early when no material renderer is registered', () => {
     const { state } = makeWebGLState();
     const img = document.createElement('img');
-    const node = makeRenderProxy(makeImageSource(img));
-    drawWebGLBitmap(state, node);
-    expect(state.defaultBitmapShader.bind).toHaveBeenCalledWith(state.gl, state, node);
+    drawWebGLBitmap(state, makeRenderProxy(makeImageSource(img)));
+    expect(state.spriteBatchCount).toBe(0);
   });
 
-  it('uses a per-node bound shader instead of the default', () => {
-    const { state, gl } = makeWebGLState();
+  it('writes one instance to the sprite batch when image is valid', () => {
+    const { state } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
     const img = document.createElement('img');
-    const sceneNode = {} as DisplayObject;
-    const customShader = { locations: state.shaderLoc, program: state.shaderLoc.program, bind: vi.fn() };
-    setWebGLShader(state, sceneNode, customShader);
+    drawWebGLBitmap(state, makeRenderProxy(makeImageSource(img, 32, 32)));
+    expect(state.spriteBatchCount).toBe(1);
+  });
 
-    const renderProxy = getOrCreateRenderProxy2D(state, sceneNode);
-    (renderProxy as unknown as { source: unknown }).source = { data: { image: makeImageSource(img) } };
-    renderProxy.alpha = 1;
-    renderProxy.blendMode = 0;
+  it('draws via drawElementsInstanced after flush', () => {
+    const { state, gl } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
+    const img = document.createElement('img');
+    drawWebGLBitmap(state, makeRenderProxy(makeImageSource(img)));
+    flushWebGLSpriteBatch(state as any);
+    expect(gl.drawElementsInstanced).toHaveBeenCalled();
+  });
 
-    drawWebGLBitmap(state, renderProxy);
-    expect(customShader.bind).toHaveBeenCalledWith(gl, state, renderProxy);
-    expect(state.defaultBitmapShader.bind).not.toHaveBeenCalled();
+  it('writes correct transform and size into instance data', () => {
+    const { state } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
+    const img = document.createElement('img');
+    drawWebGLBitmap(state, makeRenderProxy(makeImageSource(img, 64, 48)));
+    const d = state.spriteBatchInstanceData;
+    expect(d[0]).toBe(1); // a
+    expect(d[1]).toBe(0); // b
+    expect(d[2]).toBe(0); // c
+    expect(d[3]).toBe(1); // d
+    expect(d[4]).toBe(10); // tx
+    expect(d[5]).toBe(20); // ty
+    expect(d[6]).toBe(64); // width
+    expect(d[7]).toBe(48); // height
+    expect(d[8]).toBeCloseTo(0); // u0
+    expect(d[9]).toBeCloseTo(0); // v0
+    expect(d[10]).toBeCloseTo(1); // u1
+    expect(d[11]).toBeCloseTo(1); // v1
+    expect(d[12]).toBe(1); // alpha
+  });
+
+  it('writes source-rectangle UVs when sourceRectangle is set', () => {
+    const { state } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
+    const img = document.createElement('img');
+    const proxy = {
+      ...makeRenderProxy({ src: img, width: 128, height: 64, sourceRectangle: { x: 16, y: 8, width: 32, height: 16 } }),
+      source: {
+        data: { image: { src: img, width: 128, height: 64 }, sourceRectangle: { x: 16, y: 8, width: 32, height: 16 } },
+      },
+    } as unknown as RenderProxy2D;
+    drawWebGLBitmap(state, proxy);
+    const d = state.spriteBatchInstanceData;
+    expect(d[6]).toBe(32); // width = sr.width
+    expect(d[7]).toBe(16); // height = sr.height
+    expect(d[8]).toBeCloseTo(16 / 128); // u0
+    expect(d[9]).toBeCloseTo(8 / 64); // v0
+    expect(d[10]).toBeCloseTo(48 / 128); // u1
+    expect(d[11]).toBeCloseTo(24 / 64); // v1
   });
 });
 
 describe('drawWebGLBitmapMask', () => {
-  it('uses the bitmap draw path', () => {
-    const { state, gl } = makeWebGLState();
-    expect(() => drawWebGLBitmapMask(state, makeRenderProxy(null))).not.toThrow();
-    expect(gl.drawElements).not.toHaveBeenCalled();
+  it('delegates to the same batch path as drawWebGLBitmap', () => {
+    const { state } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
+    const img = document.createElement('img');
+    drawWebGLBitmapMask(state, makeRenderProxy(makeImageSource(img)));
+    expect(state.spriteBatchCount).toBe(1);
   });
 });

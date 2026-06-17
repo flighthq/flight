@@ -24,6 +24,7 @@ import type {
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';
 import { resolveWebGLShader } from './webglShaderBinding';
+import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
@@ -53,6 +54,7 @@ export function drawWebGLRichTextWithOverlay(
   overlay?: WebGLRichTextOverlay,
 ): void {
   const internal = state as WebGLRenderStateInternal;
+  flushWebGLSpriteBatch(internal);
   const source = renderProxy.source as RichText;
   const data = source.data;
   const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;

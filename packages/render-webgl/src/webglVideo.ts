@@ -4,9 +4,11 @@ import type { DisplayObjectRenderer, RenderProxy2D, RenderState, Video } from '@
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, useWebGLProgram } from './webglDraw';
 import { resolveWebGLShader } from './webglShaderBinding';
+import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 export function drawWebGLVideo(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
+  flushWebGLSpriteBatch(internal);
   const source = renderProxy.source as Video;
   const element = source.data.source?.element;
   if (element === undefined || element === null || element.readyState < 2) return;

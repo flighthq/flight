@@ -1,12 +1,14 @@
 import type { MatrixLike, RectangleLike } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal, WebGLScissorRect } from './internal';
+import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 export function popWebGLClipRectangle(state: WebGLRenderStateInternal): void {
   const stack = getScissorStack(state);
   stack.pop();
   const previous = stack.length > 0 ? stack[stack.length - 1] : null;
   state.currentScissorRect = previous;
+  flushWebGLSpriteBatch(state);
 
   const gl = state.gl;
   if (previous === null) {
@@ -24,6 +26,7 @@ export function pushWebGLClipRectangle(
   const next = intersectScissorRect(state.currentScissorRect ?? null, computeScissorRect(state, rect, transform));
   state.currentScissorRect = next;
   getScissorStack(state).push(next);
+  flushWebGLSpriteBatch(state);
 
   const gl = state.gl;
   gl.enable(gl.SCISSOR_TEST);

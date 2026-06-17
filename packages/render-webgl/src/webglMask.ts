@@ -3,6 +3,7 @@ import { getRenderProxy2D } from '@flighthq/render';
 import type { DisplayObject, RenderProxy2D } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
+import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 export function drawWebGLMask(state: WebGLRenderStateInternal, data: RenderProxy2D): void {
   state.displayObjectMaskRendererMap.get(data.source.kind)?.drawMask(state, data);
@@ -19,6 +20,7 @@ export function drawWebGLMask(state: WebGLRenderStateInternal, data: RenderProxy
 }
 
 export function popWebGLMask(state: WebGLRenderStateInternal): void {
+  flushWebGLSpriteBatch(state);
   const gl = state.gl;
   const nextDepth = Math.max(0, (state.currentMaskDepth ?? 0) - 1);
   state.currentMaskDepth = nextDepth;
@@ -32,6 +34,7 @@ export function popWebGLMask(state: WebGLRenderStateInternal): void {
 }
 
 export function pushWebGLMask(state: WebGLRenderStateInternal, data: RenderProxy2D): void {
+  flushWebGLSpriteBatch(state);
   const gl = state.gl;
   const depth = state.currentMaskDepth ?? 0;
   const nextDepth = depth + 1;
@@ -47,6 +50,7 @@ export function pushWebGLMask(state: WebGLRenderStateInternal, data: RenderProxy
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
 
   drawWebGLMask(state, data);
+  flushWebGLSpriteBatch(state);
 
   gl.colorMask(true, true, true, true);
   gl.stencilMask(0x00);

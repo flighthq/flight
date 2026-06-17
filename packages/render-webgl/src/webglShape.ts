@@ -12,6 +12,7 @@ import type {
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';
 import { setWebGLBaseUniforms, setWebGLMatrixFromValues } from './webglShader';
+import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 interface WebGLShapeData {
   canvas: HTMLCanvasElement;
@@ -34,6 +35,7 @@ function createWebGLShapeData(state: RenderState, _source: Renderable): Renderer
 
 export function drawWebGLShape(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
+  flushWebGLSpriteBatch(internal);
   const source = renderProxy.source as Shape;
   const { commands, version } = source.data;
   if (commands.length === 0) return;
