@@ -1,5 +1,6 @@
 import { noopRendererData } from '@flighthq/render';
 import type { Bitmap, DisplayObjectRenderer, RenderProxy2D, RenderState } from '@flighthq/types';
+import { BatchFormat } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
 import { bindWebGPUTexture } from './webgpuDraw';
@@ -94,6 +95,7 @@ export function drawWebGPUBitmapMask(state: RenderState, data: RenderProxy2D): v
 }
 
 export const defaultWebGPUBitmapRenderer: DisplayObjectRenderer = {
+  format: BatchFormat.Quad,
   createData: noopRendererData,
   submit: drawWebGPUBitmap,
 };

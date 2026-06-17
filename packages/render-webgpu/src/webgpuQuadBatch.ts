@@ -1,5 +1,6 @@
 import { noopRendererData } from '@flighthq/render';
 import type { QuadBatch, RenderProxy2D, RenderState, SpriteRenderer } from '@flighthq/types';
+import { BatchFormat } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
 import { resolveWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
@@ -107,6 +108,7 @@ function submitWebGPUQuadBatch(state: RenderState, quadBatch: RenderProxy2D): vo
 }
 
 export const defaultWebGPUQuadBatchRenderer: SpriteRenderer = {
+  format: BatchFormat.Quad,
   createData: noopRendererData,
   submit: submitWebGPUQuadBatch,
 };
