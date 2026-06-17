@@ -148,6 +148,7 @@ public
 
 # Playwright capture output (screenshots, logs, diffs). tools/baselines/ is tracked.
 tools/output/
+tools/**/*.png
 
 # Guard against rogue compilation files
 *.map
