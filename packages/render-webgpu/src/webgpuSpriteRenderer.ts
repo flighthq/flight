@@ -1,5 +1,6 @@
 import { noopRendererData } from '@flighthq/render';
 import type { RenderProxy2D, RenderState, Sprite, SpriteRenderer } from '@flighthq/types';
+import { BatchFormat } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
 import { resolveWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
@@ -54,6 +55,7 @@ function submitWebGPUSpriteNode(state: RenderState, spriteNode: RenderProxy2D): 
 }
 
 export const defaultWebGPUSpriteRenderer: SpriteRenderer = {
+  format: BatchFormat.Quad,
   createData: noopRendererData,
   submit: submitWebGPUSpriteNode,
 };
