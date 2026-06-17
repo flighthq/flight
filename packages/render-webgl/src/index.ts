@@ -5,6 +5,7 @@ export * from './webglCache';
 export * from './webglClip';
 export * from './webglClipRectangle';
 export * from './webglColorTransformMaterial';
+export * from './webglDefaultMaterial';
 export * from './webglDisplayObject';
 export * from './webglDraw';
 export * from './webglElement';
@@ -25,6 +26,7 @@ export * from './webglSpriteBatch';
 export * from './webglSpriteRenderer';
 export * from './webglText';
 export * from './webglTilemap';
+export * from './webglUniformColorTransformMaterial';
 export * from './webglVideo';
 export type { WebGLRenderTarget } from '@flighthq/types';
 

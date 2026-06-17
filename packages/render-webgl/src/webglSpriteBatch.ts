@@ -20,7 +20,7 @@ const SPRITE_INSTANCE_STRIDE = SPRITE_INSTANCE_FLOATS * 4;
 // locations 1..this are reset after each flush so later non-instanced draws are not corrupted.
 const MAX_INSTANCE_ATTRIB_LOCATION = 8;
 
-const QUAD_BATCH_VS = `#version 300 es
+export const QUAD_BATCH_VS = `#version 300 es
 precision mediump float;
 
 layout(location = 0) in vec2 a_corner;
@@ -53,18 +53,10 @@ precision mediump float;
 in vec2 v_texCoord;
 in float v_alpha;
 uniform sampler2D u_texture;
-uniform bool u_hasCT;
-uniform vec4 u_ctMult;
-uniform vec4 u_ctOff;
 out vec4 fragColor;
 void main() {
   vec4 color = texture(u_texture, v_texCoord) * clamp(v_alpha, 0.0, 1.0);
   if (color.a <= 0.0) discard;
-  if (u_hasCT && color.a > 0.0) {
-    color = vec4(color.rgb / color.a, color.a);
-    color = clamp(color * u_ctMult + u_ctOff, vec4(0.0), vec4(1.0));
-    color = vec4(color.rgb * color.a, color.a);
-  }
   fragColor = color;
 }`;
 
@@ -92,9 +84,6 @@ function compileSpriteBatchShader(gl: WebGL2RenderingContext): WebGLQuadBatchSha
     locAlpha: 6,
     locWorldMatrix: gl.getUniformLocation(program, 'u_world')!,
     locTexture: gl.getUniformLocation(program, 'u_texture')!,
-    locHasColorTransform: gl.getUniformLocation(program, 'u_hasCT'),
-    locColorMultiplier: gl.getUniformLocation(program, 'u_ctMult'),
-    locColorOffset: gl.getUniformLocation(program, 'u_ctOff'),
   };
 }
 

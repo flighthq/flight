@@ -1,11 +1,11 @@
 ﻿import { noopRendererData } from '@flighthq/render';
-import type { Bitmap, DisplayObjectRenderer, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
+import type { Bitmap, DisplayObjectRenderer, RenderNode2D, RenderState } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { bindWebGLTexture, drawWebGLQuad, useWebGLProgram } from './webglDraw';
 import { resolveWebGLShader } from './webglShaderBinding';
 
-export function drawWebGLBitmap(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawWebGLBitmap(state: RenderState, renderNode: RenderNode2D): void {
   const internal = state as WebGLRenderStateInternal;
   const source = renderNode.source as Bitmap;
   const imageSource = source.data.image;
@@ -30,7 +30,7 @@ export function drawWebGLBitmap(state: RenderState, renderNode: DisplayObjectRen
   }
 }
 
-export function drawWebGLBitmapMask(_state: RenderState, _data: DisplayObjectRenderNode): void {
+export function drawWebGLBitmapMask(_state: RenderState, _data: RenderNode2D): void {
   drawWebGLBitmap(_state, _data);
 }
 

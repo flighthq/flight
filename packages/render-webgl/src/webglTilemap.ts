@@ -1,5 +1,5 @@
 import { noopRendererData } from '@flighthq/render';
-import type { RenderState, SpriteRenderer, SpriteRenderNode, Tilemap } from '@flighthq/types';
+import type { RenderNode2D, RenderState, SpriteRenderer, Tilemap } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
@@ -11,7 +11,7 @@ import {
 
 const INSTANCE_FLOATS = 13;
 
-function submitWebGLTilemap(state: RenderState, tilemapNode: SpriteRenderNode): void {
+function submitWebGLTilemap(state: RenderState, tilemapNode: RenderNode2D): void {
   const internal = state as WebGLRenderStateInternal;
   const source = tilemapNode.source as Tilemap;
   const { tileset, columns, rows, tiles } = source.data;
@@ -25,6 +25,7 @@ function submitWebGLTilemap(state: RenderState, tilemapNode: SpriteRenderNode): 
 
   const material = tilemapNode.material;
   const materialRenderer = resolveWebGLMaterialRenderer(internal, material);
+  if (materialRenderer === null) return;
   const nodeMaterialData = tilemapNode.materialData;
   const perTileMaterialData = source.data.materialData;
   const startCount = internal.spriteBatchCount;

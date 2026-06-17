@@ -1,9 +1,8 @@
-import { ColorTransformMaterialKind, UniformColorTransformMaterialKind } from '@flighthq/types';
+import { ColorTransformMaterialKind } from '@flighthq/types';
 
 import {
   colorTransformWebGLMaterialRenderer,
-  registerWebGLColorTransformMaterials,
-  uniformColorTransformWebGLMaterialRenderer,
+  registerWebGLColorTransformMaterial,
 } from './webglColorTransformMaterial';
 import { getWebGLMaterialRenderer } from './webglMaterialRegistry';
 import { makeWebGLState } from './webglTestHelper';
@@ -40,19 +39,10 @@ describe('colorTransformWebGLMaterialRenderer', () => {
   });
 });
 
-describe('registerWebGLColorTransformMaterials', () => {
-  it('registers both color transform material renderers', () => {
+describe('registerWebGLColorTransformMaterial', () => {
+  it('registers the per-instance color transform material renderer', () => {
     const { state } = makeWebGLState();
-    registerWebGLColorTransformMaterials(state);
-    expect(getWebGLMaterialRenderer(state, UniformColorTransformMaterialKind)).toBe(
-      uniformColorTransformWebGLMaterialRenderer,
-    );
+    registerWebGLColorTransformMaterial(state);
     expect(getWebGLMaterialRenderer(state, ColorTransformMaterialKind)).toBe(colorTransformWebGLMaterialRenderer);
-  });
-});
-
-describe('uniformColorTransformWebGLMaterialRenderer', () => {
-  it('declares no per-instance float data', () => {
-    expect(uniformColorTransformWebGLMaterialRenderer.instanceFloatCount).toBe(0);
   });
 });

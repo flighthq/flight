@@ -1,5 +1,5 @@
 import { noopRendererData } from '@flighthq/render';
-import type { ParticleEmitter, RenderState, SpriteRenderer, SpriteRenderNode } from '@flighthq/types';
+import type { ParticleEmitter, RenderNode2D, RenderState, SpriteRenderer } from '@flighthq/types';
 
 import type { WebGLParticleShader, WebGLRenderStateInternal } from './internal';
 import { bindWebGLTexture } from './webglDraw';
@@ -127,7 +127,7 @@ function ensureInstanceCapacity(internal: WebGLRenderStateInternal, count: numbe
   internal.gl.bufferData(internal.gl.ARRAY_BUFFER, newSize * 4, internal.gl.DYNAMIC_DRAW);
 }
 
-export function drawWebGLParticleEmitter(state: RenderState, renderNode: SpriteRenderNode): void {
+export function drawWebGLParticleEmitter(state: RenderState, renderNode: RenderNode2D): void {
   const internal = state as WebGLRenderStateInternal;
   const source = renderNode.source as ParticleEmitter;
   const { atlas, alphas, colors, ids, particleCount, transforms } = source.data;
@@ -285,7 +285,7 @@ export function drawWebGLParticleEmitter(state: RenderState, renderNode: SpriteR
 
 export const defaultWebGLParticleEmitterRenderer: SpriteRenderer = {
   createData: noopRendererData,
-  submit(state: RenderState, node: SpriteRenderNode): void {
+  submit(state: RenderState, node: RenderNode2D): void {
     flushWebGLSpriteBatch(state as WebGLRenderStateInternal);
     drawWebGLParticleEmitter(state, node);
   },

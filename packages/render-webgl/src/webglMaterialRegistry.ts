@@ -2,19 +2,9 @@ import type { Material, WebGLMaterialRenderer, WebGLRenderState } from '@flighth
 import { DefaultMaterialKind } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
-import {
-  bindWebGLQuadBatchBaseAttributes,
-  ensureWebGLQuadBatchShader,
-  setWebGLQuadBatchWorldAndTexture,
-  useWebGLQuadBatchProgram,
-} from './webglSpriteBatch';
 
 export function getWebGLMaterialRenderer(state: WebGLRenderState, kind: symbol): WebGLMaterialRenderer | null {
   return (state as WebGLRenderStateInternal).materialRendererMap?.get(kind) ?? null;
-}
-
-export function registerDefaultWebGLMaterial(state: WebGLRenderState): void {
-  registerWebGLMaterialRenderer(state, DefaultMaterialKind, defaultWebGLMaterialRenderer);
 }
 
 export function registerWebGLMaterialRenderer(
@@ -26,34 +16,19 @@ export function registerWebGLMaterialRenderer(
   (internal.materialRendererMap ??= new Map()).set(kind, renderer);
 }
 
-// Resolves a node's material to the renderer that draws it: its registered renderer, else the
-// registered default, else the built-in default. Never returns null, so an unregistered or
-// missing material degrades to the standard pipeline rather than erroring.
+// Resolves a node's material to its registered renderer: by the material's kind, else the renderer
+// registered for DefaultMaterialKind, else null. The render path knows nothing about which materials
+// exist — every material (including the default) enters only through user registration, and an
+// unresolved material is a no-op (the node does not render), never a built-in fallback.
 export function resolveWebGLMaterialRenderer(
   state: WebGLRenderState,
   material: Material | null,
-): WebGLMaterialRenderer {
+): WebGLMaterialRenderer | null {
   const map = (state as WebGLRenderStateInternal).materialRendererMap;
-  if (map !== undefined) {
-    if (material !== null) {
-      const renderer = map.get(material.kind);
-      if (renderer !== undefined) return renderer;
-    }
-    const fallback = map.get(DefaultMaterialKind);
-    if (fallback !== undefined) return fallback;
+  if (map === undefined) return null;
+  if (material !== null) {
+    const renderer = map.get(material.kind);
+    if (renderer !== undefined) return renderer;
   }
-  return defaultWebGLMaterialRenderer;
+  return map.get(DefaultMaterialKind) ?? null;
 }
-
-// The standard sprite-batch pipeline: no color transform, no per-instance material data.
-export const defaultWebGLMaterialRenderer: WebGLMaterialRenderer = {
-  instanceFloatCount: 0,
-  bind(state: WebGLRenderState): void {
-    const internal = state as WebGLRenderStateInternal;
-    const shader = ensureWebGLQuadBatchShader(internal);
-    useWebGLQuadBatchProgram(internal, shader.program);
-    setWebGLQuadBatchWorldAndTexture(internal, shader.locWorldMatrix, shader.locTexture);
-    if (shader.locHasColorTransform !== null) internal.gl.uniform1i(shader.locHasColorTransform, 0);
-    bindWebGLQuadBatchBaseAttributes(internal, shader.locCorner);
-  },
-};

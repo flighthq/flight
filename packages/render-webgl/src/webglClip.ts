@@ -1,8 +1,8 @@
-import { enableRenderFeatures, getDisplayObjectRenderNode } from '@flighthq/render';
+import { enableRenderFeatures, getRenderNode2D } from '@flighthq/render';
 import type {
   DisplayObject,
   DisplayObjectClipHooks,
-  DisplayObjectRenderNode,
+  RenderNode2D,
   RenderState,
   WebGLRenderState,
 } from '@flighthq/types';
@@ -31,11 +31,11 @@ const webglClipHooks: DisplayObjectClipHooks = {
       s.currentClipRectangleDepth--;
     }
   },
-  popMask(state: RenderState, data: DisplayObjectRenderNode): void {
+  popMask(state: RenderState, data: RenderNode2D): void {
     const s = state as WebGLRenderStateInternal;
     while (s.currentMaskDepth > data.maskDepth) popWebGLMask(s);
   },
-  popClipRectangle(state: RenderState, data: DisplayObjectRenderNode): void {
+  popClipRectangle(state: RenderState, data: RenderNode2D): void {
     const s = state as WebGLRenderStateInternal;
     while (s.currentClipRectangleDepth > data.clipRectangleDepth) {
       popWebGLClipRectangle(s);
@@ -44,16 +44,11 @@ const webglClipHooks: DisplayObjectClipHooks = {
   },
   pushMask(state: RenderState, source: DisplayObject): void {
     if (source.mask === null) return;
-    const maskData = getDisplayObjectRenderNode(state, source.mask);
+    const maskData = getRenderNode2D(state, source.mask);
     if (maskData === undefined) return;
     pushWebGLMask(state as WebGLRenderStateInternal, maskData);
   },
-  pushClipRectangle(
-    state: RenderState,
-    data: DisplayObjectRenderNode,
-    source: DisplayObject,
-    hasChildren: boolean,
-  ): void {
+  pushClipRectangle(state: RenderState, data: RenderNode2D, source: DisplayObject, hasChildren: boolean): void {
     if (!hasChildren || source.clipRectangle === null) return;
     pushWebGLClipRectangle(state as WebGLRenderStateInternal, source.clipRectangle, data.transform2D);
     state.currentClipRectangleDepth++;

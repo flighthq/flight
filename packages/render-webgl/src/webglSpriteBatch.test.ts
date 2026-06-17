@@ -1,6 +1,6 @@
 import type { Material } from '@flighthq/types';
 
-import { defaultWebGLMaterialRenderer } from './webglMaterialRegistry';
+import { defaultWebGLMaterialRenderer } from './webglDefaultMaterial';
 import {
   bindWebGLQuadBatchBaseAttributes,
   ensureWebGLQuadBatchShader,

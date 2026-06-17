@@ -1,18 +1,10 @@
-import type {
-  ColorTransform,
-  Material,
-  MaterialData,
-  UniformColorTransformMaterial,
-  WebGLMaterialRenderer,
-  WebGLRenderState,
-} from '@flighthq/types';
-import { ColorTransformMaterialKind, UniformColorTransformMaterialKind } from '@flighthq/types';
+import type { ColorTransform, MaterialData, WebGLMaterialRenderer, WebGLRenderState } from '@flighthq/types';
+import { ColorTransformMaterialKind } from '@flighthq/types';
 
 import type { WebGLColorTransformInstancedShader, WebGLRenderStateInternal } from './internal';
 import { registerWebGLMaterialRenderer } from './webglMaterialRegistry';
 import {
   bindWebGLQuadBatchBaseAttributes,
-  ensureWebGLQuadBatchShader,
   setWebGLQuadBatchWorldAndTexture,
   useWebGLQuadBatchProgram,
 } from './webglSpriteBatch';
@@ -96,13 +88,12 @@ function ensureWebGLColorTransformInstancedShader(state: WebGLRenderStateInterna
   return state.colorTransformInstancedShader;
 }
 
-export function registerWebGLColorTransformMaterials(state: WebGLRenderState): void {
-  registerWebGLMaterialRenderer(state, UniformColorTransformMaterialKind, uniformColorTransformWebGLMaterialRenderer);
+export function registerWebGLColorTransformMaterial(state: WebGLRenderState): void {
   registerWebGLMaterialRenderer(state, ColorTransformMaterialKind, colorTransformWebGLMaterialRenderer);
 }
 
-// Per-instance color transform: reads each node's resolved color transform and packs it as two
-// vec4 instance attributes, so independently-tinted nodes share one batch.
+// Per-instance color transform: reads each node's resolved color transform (materialData) and packs
+// it as two vec4 instance attributes, so independently-tinted nodes share one batch.
 export const colorTransformWebGLMaterialRenderer: WebGLMaterialRenderer = {
   instanceFloatCount: COLOR_TRANSFORM_INSTANCE_FLOATS,
   bind(state: WebGLRenderState): void {
@@ -142,38 +133,5 @@ export const colorTransformWebGLMaterialRenderer: WebGLMaterialRenderer = {
       out[offset + 6] = 0;
       out[offset + 7] = 0;
     }
-  },
-};
-
-// Per-batch color transform: the value lives on the material and uploads as a uniform shared by
-// the whole batch, reusing the default quad-batch program's color-transform path.
-export const uniformColorTransformWebGLMaterialRenderer: WebGLMaterialRenderer = {
-  instanceFloatCount: 0,
-  bind(state: WebGLRenderState, material: Readonly<Material> | null): void {
-    const internal = state as WebGLRenderStateInternal;
-    const shader = ensureWebGLQuadBatchShader(internal);
-    useWebGLQuadBatchProgram(internal, shader.program);
-    setWebGLQuadBatchWorldAndTexture(internal, shader.locWorldMatrix, shader.locTexture);
-
-    const gl = internal.gl;
-    const ct = (material as UniformColorTransformMaterial).colorTransform;
-    if (shader.locHasColorTransform !== null) {
-      gl.uniform1i(shader.locHasColorTransform, 1);
-      gl.uniform4f(
-        shader.locColorMultiplier!,
-        ct.redMultiplier,
-        ct.greenMultiplier,
-        ct.blueMultiplier,
-        ct.alphaMultiplier,
-      );
-      gl.uniform4f(
-        shader.locColorOffset!,
-        ct.redOffset / 255,
-        ct.greenOffset / 255,
-        ct.blueOffset / 255,
-        ct.alphaOffset / 255,
-      );
-    }
-    bindWebGLQuadBatchBaseAttributes(internal, shader.locCorner);
   },
 };

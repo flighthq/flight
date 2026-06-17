@@ -37,9 +37,18 @@ export interface WebGLQuadBatchShader {
   locAlpha: number;
   locWorldMatrix: WebGLUniformLocation;
   locTexture: WebGLUniformLocation;
-  locHasColorTransform: WebGLUniformLocation | null;
-  locColorMultiplier: WebGLUniformLocation | null;
-  locColorOffset: WebGLUniformLocation | null;
+}
+
+// Per-batch color transform shader for UniformColorTransformMaterial — the base quad-batch layout
+// plus color-transform uniforms applied in the fragment shader. Lives with the color transform
+// materials, not the base shader, so the default pipeline carries no color-transform record.
+export interface WebGLUniformColorTransformShader {
+  program: WebGLProgram;
+  locCorner: number;
+  locWorldMatrix: WebGLUniformLocation;
+  locTexture: WebGLUniformLocation;
+  locColorMultiplier: WebGLUniformLocation;
+  locColorOffset: WebGLUniformLocation;
 }
 
 export type WebGLRenderStateInternal = Omit<WebGLRenderState, 'canvas' | 'gl'> & {
@@ -54,7 +63,12 @@ export type WebGLRenderStateInternal = Omit<WebGLRenderState, 'canvas' | 'gl'> &
   quadBatchShader?: WebGLQuadBatchShader;
   quadBatchCornerBuffer?: WebGLBuffer;
   colorTransformInstancedShader?: WebGLColorTransformInstancedShader;
+  uniformColorTransformShader?: WebGLUniformColorTransformShader;
   materialRendererMap?: Map<symbol, WebGLMaterialRenderer>;
+  // Per-material-kind bitmap shader for the immediate (display-object) path. resolveWebGLShader
+  // looks a node's shader up here by its material kind — the render path has no color-transform (or
+  // any material-specific) knowledge; the material's shader and its registration own that.
+  materialBitmapShaderMap?: Map<symbol, WebGLBitmapShader>;
   spriteBatchBlendMode: BlendMode | null;
   // The active sprite-batch material (flush key, compared by reference) and its resolved
   // renderer + per-instance float stride. spriteBatchMaterialData/Buffer hold the active
