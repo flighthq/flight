@@ -1,4 +1,4 @@
-import { getSpriteRenderNode, isRenderNodeVisible } from '@flighthq/render';
+import { getRenderNode2D, isRenderNodeVisible } from '@flighthq/render';
 import { getSpriteNodeRuntime } from '@flighthq/sprite';
 import type { SpriteNode, WebGPURenderState } from '@flighthq/types';
 
@@ -14,7 +14,7 @@ export function renderWebGPUSprite(state: WebGPURenderState, source: SpriteNode)
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as SpriteNode;
     if (!current.enabled) continue;
-    const data = getSpriteRenderNode(state, current);
+    const data = getRenderNode2D(state, current);
     if (data === undefined || !isRenderNodeVisible(data)) continue;
 
     data.renderer?.submit(internal, data);

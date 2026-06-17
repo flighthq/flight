@@ -1,5 +1,5 @@
 import { noopRendererData } from '@flighthq/render';
-import type { DisplayObjectRenderer, DisplayObjectRenderNode, RenderState, Video } from '@flighthq/types';
+import type { DisplayObjectRenderer, RenderNode2D, RenderState, Video } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
 import { drawWebGPUQuad } from './webgpuDraw';
@@ -10,9 +10,9 @@ interface WebGPUVideoData {
   h: number;
 }
 
-const _videoMap = new WeakMap<DisplayObjectRenderNode, WebGPUVideoData>();
+const _videoMap = new WeakMap<RenderNode2D, WebGPUVideoData>();
 
-export function drawWebGPUVideo(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawWebGPUVideo(state: RenderState, renderNode: RenderNode2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 
@@ -56,7 +56,7 @@ export function drawWebGPUVideo(state: RenderState, renderNode: DisplayObjectRen
   drawWebGPUQuad(internal, renderNode, videoData.entry, 0, 0, vw, vh, 0, 0, 1, 1);
 }
 
-export function drawWebGPUVideoMask(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawWebGPUVideoMask(state: RenderState, renderNode: RenderNode2D): void {
   drawWebGPUVideo(state, renderNode);
 }
 

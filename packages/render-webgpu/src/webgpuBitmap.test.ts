@@ -1,5 +1,5 @@
 import { createBitmap } from '@flighthq/displayobject';
-import { getOrCreateDisplayObjectRenderNode, prepareDisplayObjectRender } from '@flighthq/render';
+import { getOrCreateRenderNode2D, prepareDisplayObjectRender } from '@flighthq/render';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
 import { defaultWebGPUBitmapRenderer, drawWebGPUBitmap, drawWebGPUBitmapMask } from './webgpuBitmap';
@@ -23,7 +23,7 @@ describe('drawWebGPUBitmap', () => {
 
     const bitmap = createBitmap();
     prepareDisplayObjectRender(state, bitmap);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateRenderNode2D(state, bitmap);
 
     expect(() => drawWebGPUBitmap(state, renderNode)).not.toThrow();
     submitWebGPURenderPass(state);
@@ -33,7 +33,7 @@ describe('drawWebGPUBitmap', () => {
     const state = await createWebGPURenderStateForTest();
     const bitmap = createBitmap();
     prepareDisplayObjectRender(state, bitmap);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateRenderNode2D(state, bitmap);
 
     expect(() => drawWebGPUBitmap(state, renderNode)).not.toThrow();
   });
@@ -45,7 +45,7 @@ describe('drawWebGPUBitmapMask', () => {
     renderWebGPUBackground(state);
     const bitmap = createBitmap();
     prepareDisplayObjectRender(state, bitmap);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, bitmap);
+    const renderNode = getOrCreateRenderNode2D(state, bitmap);
     expect(() => drawWebGPUBitmapMask(state, renderNode)).not.toThrow();
     submitWebGPURenderPass(state);
   });

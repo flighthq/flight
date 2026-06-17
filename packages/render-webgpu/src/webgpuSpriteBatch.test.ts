@@ -1,10 +1,17 @@
+import type { Material } from '@flighthq/types';
+
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
+import { defaultWebGPUMaterialRenderer } from './webgpuDefaultMaterial';
 import { flushWebGPUSpriteBatch, prepareWebGPUSpriteBatchWrite } from './webgpuSpriteBatch';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
 
 beforeAll(() => {
   installWebGPUMock();
 });
+
+function makeMaterial(): Material {
+  return { kind: Symbol('TestMaterial') } as Material;
+}
 
 describe('flushWebGPUSpriteBatch', () => {
   it('does nothing when batch count is zero', async () => {
@@ -21,13 +28,14 @@ describe('flushWebGPUSpriteBatch', () => {
     const internal = state as any;
     const tex = document.createElement('img');
 
-    prepareWebGPUSpriteBatchWrite(internal, tex, null, null, 1);
+    prepareWebGPUSpriteBatchWrite(internal, tex, null, null, defaultWebGPUMaterialRenderer, 1);
     internal.spriteBatchCount = 1;
     flushWebGPUSpriteBatch(internal);
 
     expect(internal.spriteBatchCount).toBe(0);
     expect(internal.spriteBatchTexture).toBeNull();
     expect(internal.spriteBatchBlendMode).toBeNull();
+    expect(internal.spriteBatchMaterial).toBeNull();
     submitWebGPURenderPass(state);
   });
 });
@@ -38,7 +46,7 @@ describe('prepareWebGPUSpriteBatchWrite', () => {
     const internal = state as any;
     const tex = document.createElement('img');
 
-    const base = prepareWebGPUSpriteBatchWrite(internal, tex, null, null, 1);
+    const base = prepareWebGPUSpriteBatchWrite(internal, tex, null, null, defaultWebGPUMaterialRenderer, 1);
     expect(base).toBe(0);
   });
 
@@ -49,36 +57,28 @@ describe('prepareWebGPUSpriteBatchWrite', () => {
     const tex1 = document.createElement('img');
     const tex2 = document.createElement('img');
 
-    prepareWebGPUSpriteBatchWrite(internal, tex1, null, null, 1);
+    prepareWebGPUSpriteBatchWrite(internal, tex1, null, null, defaultWebGPUMaterialRenderer, 1);
     internal.spriteBatchCount = 1;
-    prepareWebGPUSpriteBatchWrite(internal, tex2, null, null, 1);
+    prepareWebGPUSpriteBatchWrite(internal, tex2, null, null, defaultWebGPUMaterialRenderer, 1);
 
     expect(internal.spriteBatchTexture).toBe(tex2);
     expect(internal.spriteBatchCount).toBe(0);
     submitWebGPURenderPass(state);
   });
 
-  it('flushes when color transform changes', async () => {
+  it('flushes when material changes', async () => {
     const state = await createWebGPURenderStateForTest();
     renderWebGPUBackground(state);
     const internal = state as any;
     const tex = document.createElement('img');
-    const ct = {
-      redMultiplier: 1,
-      greenMultiplier: 0.5,
-      blueMultiplier: 1,
-      alphaMultiplier: 1,
-      redOffset: 0,
-      greenOffset: 0,
-      blueOffset: 0,
-      alphaOffset: 0,
-    } as any;
+    const materialA = makeMaterial();
+    const materialB = makeMaterial();
 
-    prepareWebGPUSpriteBatchWrite(internal, tex, null, ct, 1);
+    prepareWebGPUSpriteBatchWrite(internal, tex, null, materialA, defaultWebGPUMaterialRenderer, 1);
     internal.spriteBatchCount = 1;
-    prepareWebGPUSpriteBatchWrite(internal, tex, null, null, 1);
+    prepareWebGPUSpriteBatchWrite(internal, tex, null, materialB, defaultWebGPUMaterialRenderer, 1);
 
-    expect(internal.spriteBatchColorTransform).toBeNull();
+    expect(internal.spriteBatchMaterial).toBe(materialB);
     expect(internal.spriteBatchCount).toBe(0);
     submitWebGPURenderPass(state);
   });

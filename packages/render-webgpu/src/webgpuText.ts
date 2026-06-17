@@ -2,14 +2,7 @@ import { getTextRuntime } from '@flighthq/displayobject';
 import { computeRGBHexString } from '@flighthq/materials';
 import { computeTextFormatFontString, noopRendererData } from '@flighthq/render';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
-import type {
-  DisplayObjectRenderer,
-  DisplayObjectRenderNode,
-  RenderState,
-  Text,
-  TextFormat,
-  TextRuntime,
-} from '@flighthq/types';
+import type { DisplayObjectRenderer, RenderNode2D, RenderState, Text, TextFormat, TextRuntime } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
 import { createWebGPUTextureEntry, drawWebGPUQuad, updateWebGPUTextureEntry } from './webgpuDraw';
@@ -29,9 +22,9 @@ function getOffscreenCanvas(width: number, height: number, pixelRatio: number): 
   return _offscreenCtx!;
 }
 
-const _textureMap = new WeakMap<DisplayObjectRenderNode, WebGPUTextureEntry>();
+const _textureMap = new WeakMap<RenderNode2D, WebGPUTextureEntry>();
 
-export function drawWebGPUText(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawWebGPUText(state: RenderState, renderNode: RenderNode2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 
@@ -97,7 +90,7 @@ export function drawWebGPUText(state: RenderState, renderNode: DisplayObjectRend
   drawWebGPUQuad(internal, renderNode, entry, 0, 0, w, h, 0, 0, 1, 1);
 }
 
-export function drawWebGPUTextMask(state: RenderState, data: DisplayObjectRenderNode): void {
+export function drawWebGPUTextMask(state: RenderState, data: RenderNode2D): void {
   drawWebGPUText(state, data);
 }
 

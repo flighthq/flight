@@ -1,4 +1,4 @@
-import { getSpriteRenderNode, prepareSpriteRender } from '@flighthq/render';
+import { getRenderNode2D, prepareSpriteRender } from '@flighthq/render';
 import { createQuadBatch } from '@flighthq/sprite';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
@@ -27,7 +27,7 @@ describe('defaultWebGPUQuadBatchRenderer.submit', () => {
 
     const batch = createQuadBatch();
     prepareSpriteRender(state, batch);
-    const renderNode = getSpriteRenderNode(state, batch)!;
+    const renderNode = getRenderNode2D(state, batch)!;
 
     expect(() => {
       defaultWebGPUQuadBatchRenderer.submit(state, renderNode);

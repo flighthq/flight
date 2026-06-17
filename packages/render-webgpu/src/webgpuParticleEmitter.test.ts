@@ -1,4 +1,4 @@
-import { getSpriteRenderNode, prepareSpriteRender } from '@flighthq/render';
+import { getRenderNode2D, prepareSpriteRender } from '@flighthq/render';
 import { createParticleEmitter } from '@flighthq/sprite';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
@@ -26,7 +26,7 @@ describe('drawWebGPUParticleEmitter', () => {
 
     const emitter = createParticleEmitter();
     prepareSpriteRender(state, emitter);
-    const renderNode = getSpriteRenderNode(state, emitter)!;
+    const renderNode = getRenderNode2D(state, emitter)!;
 
     expect(() => drawWebGPUParticleEmitter(state, renderNode)).not.toThrow();
     submitWebGPURenderPass(state);

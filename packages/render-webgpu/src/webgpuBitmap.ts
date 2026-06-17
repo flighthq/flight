@@ -1,11 +1,11 @@
 import { noopRendererData } from '@flighthq/render';
-import type { Bitmap, DisplayObjectRenderer, DisplayObjectRenderNode, RenderState } from '@flighthq/types';
+import type { Bitmap, DisplayObjectRenderer, RenderNode2D, RenderState } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
 import { bindWebGPUTexture, drawWebGPUQuad } from './webgpuDraw';
 import { resolveWebGPUShader } from './webgpuShaderBinding';
 
-export function drawWebGPUBitmap(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawWebGPUBitmap(state: RenderState, renderNode: RenderNode2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 
@@ -35,7 +35,7 @@ export function drawWebGPUBitmap(state: RenderState, renderNode: DisplayObjectRe
   }
 }
 
-export function drawWebGPUBitmapMask(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawWebGPUBitmapMask(state: RenderState, renderNode: RenderNode2D): void {
   drawWebGPUBitmap(state, renderNode);
 }
 
