@@ -38,6 +38,8 @@
       "@flighthq/input/*": ["./packages/input/src/*"],
       "@flighthq/interaction": ["./packages/interaction/src/index.ts"],
       "@flighthq/interaction/*": ["./packages/interaction/src/*"],
+      "@flighthq/log": ["./packages/log/src/index.ts"],
+      "@flighthq/log/*": ["./packages/log/src/*"],
       "@flighthq/materials": ["./packages/materials/src/index.ts"],
       "@flighthq/materials/*": ["./packages/materials/src/*"],
       "@flighthq/particles": ["./packages/particles/src/index.ts"],

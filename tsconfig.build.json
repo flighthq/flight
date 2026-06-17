@@ -11,6 +11,7 @@
     { "path": "./packages/surface" },
     { "path": "./packages/surface-filters" },
     { "path": "./packages/interaction" },
+    { "path": "./packages/log" },
     { "path": "./packages/materials" },
     { "path": "./packages/media" },
     { "path": "./packages/render-canvas" },
