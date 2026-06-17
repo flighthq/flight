@@ -1,10 +1,10 @@
 ﻿import { createEntity } from '@flighthq/entity';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
   DOMRenderState,
   Renderable,
   RendererData,
+  RenderNode2D,
   RenderState,
   Video,
 } from '@flighthq/types';
@@ -19,7 +19,7 @@ function createDOMVideoData(_state: RenderState, _source: Renderable): DOMVideoD
   return createEntity({ element: null });
 }
 
-export function drawDOMVideo(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMVideo(state: DOMRenderState, renderNode: RenderNode2D): void {
   const data = renderNode.rendererData as DOMVideoData | null;
   if (data === null) return;
 
@@ -39,7 +39,7 @@ export function drawDOMVideo(state: DOMRenderState, renderNode: DisplayObjectRen
   setDOMRendererElement(state, element);
 }
 
-export function drawDOMVideoMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMVideoMask(state: DOMRenderState, renderNode: RenderNode2D): void {
   drawDOMVideo(state, renderNode);
 }
 

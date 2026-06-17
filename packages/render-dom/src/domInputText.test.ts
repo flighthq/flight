@@ -1,6 +1,6 @@
 ﻿import { createInputText, getInputTextRuntime } from '@flighthq/displayobject';
 import { registerRenderer } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import { getOrCreateRenderNode2D } from '@flighthq/render';
 import { setInputTextSelection } from '@flighthq/text-input';
 import { InputTextKind } from '@flighthq/types';
 
@@ -33,7 +33,7 @@ describe('drawDOMInputText', () => {
     const node = createInputText({ data: { text: 'hello', width: 100, height: 40 } });
     (getInputTextRuntime(node) as ReturnType<typeof getInputTextRuntime> & { focused: boolean }).focused = true;
     setInputTextSelection(node, 2, 2);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
 
     const div = drawGetEl(state, () => drawDOMInputText(state, renderNode));
     expect(div!.innerHTML).toContain('background:#000000');
@@ -44,7 +44,7 @@ describe('drawDOMInputText', () => {
     const node = createInputText({ data: { text: 'hello', width: 100, height: 40 } });
     (getInputTextRuntime(node) as ReturnType<typeof getInputTextRuntime> & { focused: boolean }).focused = true;
     setInputTextSelection(node, 1, 4);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
 
     const div = drawGetEl(state, () => drawDOMInputText(state, renderNode));
     expect(div!.innerHTML).toContain('background:#0078d7');

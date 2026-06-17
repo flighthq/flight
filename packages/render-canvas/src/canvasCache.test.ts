@@ -1,6 +1,6 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
-import { createRenderCache, getDisplayObjectRenderNode, RenderCacheKind, useRenderCache } from '@flighthq/render';
+import { createRenderCache, getRenderNode2D, RenderCacheKind, useRenderCache } from '@flighthq/render';
 
 import {
   createCanvasCacheState,
@@ -149,7 +149,7 @@ describe('refreshCanvasRenderCache', () => {
     const cache = createRenderCache();
     const obj = createDisplayObject();
     refreshCanvasRenderCache(cacheState, cache, obj);
-    expect(getDisplayObjectRenderNode(screen, obj)).toBeUndefined();
+    expect(getRenderNode2D(screen, obj)).toBeUndefined();
   });
 });
 

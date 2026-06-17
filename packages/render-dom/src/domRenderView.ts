@@ -1,9 +1,9 @@
 import { noopRendererData } from '@flighthq/render';
-import type { DisplayObjectRenderer, DisplayObjectRenderNode, DOMRenderState, RenderView } from '@flighthq/types';
+import type { DisplayObjectRenderer, DOMRenderState, RenderNode2D, RenderView } from '@flighthq/types';
 
 import { applyDOMStyle, setDOMRendererElement } from './domStyle';
 
-export function drawDOMRenderView(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMRenderView(state: DOMRenderState, renderNode: RenderNode2D): void {
   const source = renderNode.source as RenderView;
   const { renderer } = source.data;
   if (renderer === null) return;
@@ -23,7 +23,7 @@ export function drawDOMRenderView(state: DOMRenderState, renderNode: DisplayObje
   setDOMRendererElement(state, canvas);
 }
 
-export function drawDOMRenderViewMask(_state: DOMRenderState, _renderNode: DisplayObjectRenderNode): void {}
+export function drawDOMRenderViewMask(_state: DOMRenderState, _renderNode: RenderNode2D): void {}
 
 export const defaultDOMRenderViewRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,

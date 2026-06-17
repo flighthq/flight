@@ -1,17 +1,12 @@
-import { enableRenderFeatures, getOrCreateDisplayObjectRenderNode, hasRenderFeatures } from '@flighthq/render';
-import {
-  type CanvasRenderState,
-  type DisplayObject,
-  type DisplayObjectRenderNode,
-  RenderFeatures,
-} from '@flighthq/types';
+import { enableRenderFeatures, getOrCreateRenderNode2D, hasRenderFeatures } from '@flighthq/render';
+import { type CanvasRenderState, type DisplayObject, RenderFeatures, type RenderNode2D } from '@flighthq/types';
 
 // Per-state canvas CSS filter bindings, keyed by the render node. Render nodes are
 // per-state (state.renderNodeMap), so a module-level map keyed by render node is
 // automatically isolated per state — a filter set for one render state is
 // invisible to any other state that renders the same display object. This mirrors
 // the per-state WebGL shader bindings.
-const _cssFilterBindings = new WeakMap<DisplayObjectRenderNode, string>();
+const _cssFilterBindings = new WeakMap<RenderNode2D, string>();
 
 /**
  * Enables CSS filter support for the render state. Bindings made via
@@ -22,7 +17,7 @@ export function enableCanvasCSSFilterSupport(state: CanvasRenderState): void {
   enableRenderFeatures(state, RenderFeatures.CSSFilter);
 }
 
-export function getCanvasCSSFilter(renderNode: DisplayObjectRenderNode): string | undefined {
+export function getCanvasCSSFilter(renderNode: RenderNode2D): string | undefined {
   return _cssFilterBindings.get(renderNode);
 }
 
@@ -31,7 +26,7 @@ export function getCanvasCSSFilter(renderNode: DisplayObjectRenderNode): string 
  * CSS filter support is disabled for the state. The feature gate keeps the lookup
  * off the hot path until at least one filter has been bound.
  */
-export function resolveCanvasCSSFilter(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): string | null {
+export function resolveCanvasCSSFilter(state: CanvasRenderState, renderNode: RenderNode2D): string | null {
   if (hasRenderFeatures(state, RenderFeatures.CSSFilter)) {
     const filter = _cssFilterBindings.get(renderNode);
     if (filter !== undefined) return filter;
@@ -47,7 +42,7 @@ export function resolveCanvasCSSFilter(state: CanvasRenderState, renderNode: Dis
  * `context.filter` around the object's own draw.
  */
 export function setCanvasCSSFilter(state: CanvasRenderState, node: DisplayObject, filter: string | null): void {
-  const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+  const renderNode = getOrCreateRenderNode2D(state, node);
   if (filter === null) {
     _cssFilterBindings.delete(renderNode);
     return;

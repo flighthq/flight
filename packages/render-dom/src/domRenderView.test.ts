@@ -1,5 +1,5 @@
 import { createRenderView } from '@flighthq/displayobject';
-import { getOrCreateDisplayObjectRenderNode, registerRenderer } from '@flighthq/render';
+import { getOrCreateRenderNode2D, registerRenderer } from '@flighthq/render';
 import type { RenderViewRenderer } from '@flighthq/types';
 import { RenderViewKind } from '@flighthq/types';
 
@@ -33,7 +33,7 @@ describe('drawDOMRenderView', () => {
   it('returns no element when renderer is null', () => {
     const state = makeState();
     const view = createRenderView();
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, view);
+    const renderNode = getOrCreateRenderNode2D(state, view);
     const el = getElement(state, () => drawDOMRenderView(state, renderNode));
     expect(el).toBeNull();
   });
@@ -43,7 +43,7 @@ describe('drawDOMRenderView', () => {
     const renderer = makeRenderer();
     const renderSpy = vi.spyOn(renderer, 'render');
     const view = createRenderView({ data: { renderer, width: 100, height: 100 } });
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, view);
+    const renderNode = getOrCreateRenderNode2D(state, view);
     drawDOMRenderView(state, renderNode);
     expect(renderSpy).toHaveBeenCalledOnce();
   });
@@ -52,7 +52,7 @@ describe('drawDOMRenderView', () => {
     const state = makeState();
     const renderer = makeRenderer();
     const view = createRenderView({ data: { renderer, width: 100, height: 100 } });
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, view);
+    const renderNode = getOrCreateRenderNode2D(state, view);
     const el = getElement(state, () => drawDOMRenderView(state, renderNode));
     expect(el).toBe(renderer.canvas);
   });
@@ -61,7 +61,7 @@ describe('drawDOMRenderView', () => {
     const state = makeState();
     const renderer = makeRenderer();
     const view = createRenderView({ data: { renderer, width: 100, height: 100 } });
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, view);
+    const renderNode = getOrCreateRenderNode2D(state, view);
     drawDOMRenderView(state, renderNode);
     expect(renderer.canvas.style.position).toBe('absolute');
     expect(renderer.canvas.style.transformOrigin).toBe('0 0');
@@ -73,7 +73,7 @@ describe('drawDOMRenderViewMask', () => {
   it('is a no-op and does not throw', () => {
     const state = makeState();
     const view = createRenderView({ data: { renderer: makeRenderer(), width: 100, height: 100 } });
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, view);
+    const renderNode = getOrCreateRenderNode2D(state, view);
     expect(() => drawDOMRenderViewMask(state, renderNode)).not.toThrow();
   });
 });

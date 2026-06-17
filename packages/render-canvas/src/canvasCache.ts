@@ -15,10 +15,10 @@ import type {
   CanvasRenderTarget,
   DisplayObject,
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
   Matrix,
   RenderCache,
   RenderCacheRefreshOptions,
+  RenderNode2D,
   RenderState,
 } from '@flighthq/types';
 
@@ -45,7 +45,6 @@ export function createCanvasCacheState(screenState: CanvasRenderState): CanvasRe
     sceneGraphSyncPolicy: screenState.sceneGraphSyncPolicy,
   });
   copyAllRenderersFromRenderState(cacheState, screenState);
-  cacheState.appearanceHooks = screenState.appearanceHooks;
   _cacheStateScreen.set(cacheState, screenState);
   return cacheState;
 }
@@ -134,7 +133,7 @@ export function releaseCanvasRenderCache(state: CanvasRenderState, cache: Render
   getTargets(state).delete(cache);
 }
 
-function drawCanvasRenderCache(state: RenderState, renderNode: DisplayObjectRenderNode): void {
+function drawCanvasRenderCache(state: RenderState, renderNode: RenderNode2D): void {
   const cache = getRenderNodeCache(state, renderNode.source);
   if (cache === null) return;
   const canvasState = state as CanvasRenderState;

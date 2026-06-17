@@ -1,7 +1,7 @@
 import { appendShapeRectangle, createDisplayObject, createShape } from '@flighthq/displayobject';
 import { createRectangle } from '@flighthq/geometry';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
-import { getOrCreateDisplayObjectRenderNode, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
+import { getOrCreateRenderNode2D, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { enableDOMClipRectangleSupport, enableDOMMaskSupport } from './domClip';
@@ -22,7 +22,7 @@ function setupRenderedNode(
   obj: ReturnType<typeof createDisplayObject>,
   el: HTMLElement,
 ) {
-  const data = getOrCreateDisplayObjectRenderNode(state, obj);
+  const data = getOrCreateRenderNode2D(state, obj);
   data.visible = true;
   data.alpha = 1;
   data.transform2D.a = 1;

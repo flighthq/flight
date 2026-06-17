@@ -1,6 +1,6 @@
 ﻿import { createText } from '@flighthq/displayobject';
 import { registerRenderer } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import { getOrCreateRenderNode2D } from '@flighthq/render';
 import { TextKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
@@ -32,7 +32,7 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = '';
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
     expect(() => drawDOMText(state, renderNode)).not.toThrow();
   });
 
@@ -40,7 +40,7 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = '';
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
 
     const el = drawGetEl(state, () => drawDOMText(state, renderNode));
 
@@ -51,7 +51,7 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = 'hello';
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
 
     const el = drawGetEl(state, () => drawDOMText(state, renderNode));
 
@@ -63,7 +63,7 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = 'hello';
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
 
     const div = drawGetEl(state, () => drawDOMText(state, renderNode))!;
     expect(div.style.overflow).toBe('hidden');
@@ -73,7 +73,7 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = 'world';
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
 
     const div = drawGetEl(state, () => drawDOMText(state, renderNode))!;
     expect(div.innerHTML).toContain('world');
@@ -83,7 +83,7 @@ describe('drawDOMText', () => {
     const state = makeState();
     const node = createText();
     node.data.text = 'hello';
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
 
     const firstDiv = drawGetEl(state, () => drawDOMText(state, renderNode));
     const secondDiv = drawGetEl(state, () => drawDOMText(state, renderNode));
@@ -96,7 +96,7 @@ describe('drawDOMTextMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const node = createText();
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
     expect(() => drawDOMTextMask(state, renderNode)).not.toThrow();
   });
 });

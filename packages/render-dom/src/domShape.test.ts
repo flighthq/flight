@@ -1,6 +1,6 @@
 ﻿import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/displayobject';
 import { registerRenderer } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import { getOrCreateRenderNode2D } from '@flighthq/render';
 import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/render-canvas';
 import { ShapeKind } from '@flighthq/types';
 
@@ -36,7 +36,7 @@ describe('drawDOMShape', () => {
   it('does not produce an element when commands array is empty', () => {
     const state = makeState();
     const shape = createShape();
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, shape);
+    const renderNode = getOrCreateRenderNode2D(state, shape);
 
     const el = drawGetEl(state, () => drawDOMShape(state, renderNode));
 
@@ -49,7 +49,7 @@ describe('drawDOMShape', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 50, 50);
     appendShapeEndFill(shape);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, shape);
+    const renderNode = getOrCreateRenderNode2D(state, shape);
 
     const el = drawGetEl(state, () => drawDOMShape(state, renderNode));
 
@@ -63,7 +63,7 @@ describe('drawDOMShape', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 0, 0);
     appendShapeEndFill(shape);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, shape);
+    const renderNode = getOrCreateRenderNode2D(state, shape);
 
     const canvas = drawGetEl(state, () => drawDOMShape(state, renderNode)) as HTMLCanvasElement;
     expect(canvas.width).toBeGreaterThanOrEqual(1);
@@ -76,7 +76,7 @@ describe('drawDOMShape', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 40, 40);
     appendShapeEndFill(shape);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, shape);
+    const renderNode = getOrCreateRenderNode2D(state, shape);
 
     const firstCanvas = drawGetEl(state, () => drawDOMShape(state, renderNode));
     const secondCanvas = drawGetEl(state, () => drawDOMShape(state, renderNode));
@@ -89,7 +89,7 @@ describe('drawDOMShapeMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const shape = createShape();
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, shape);
+    const renderNode = getOrCreateRenderNode2D(state, shape);
     expect(() => drawDOMShapeMask(state, renderNode)).not.toThrow();
   });
 });

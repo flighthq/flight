@@ -12,16 +12,16 @@ import type {
   CanvasRenderState,
   DisplayObjectMaskRenderer,
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
   InputText,
   InputTextRuntime,
   InputTextSelectionRectangle,
+  RenderNode2D,
 } from '@flighthq/types';
 
 import { drawCanvasRichText, drawCanvasRichTextMask } from './canvasRichText';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasInputText(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawCanvasInputText(state: CanvasRenderState, renderNode: RenderNode2D): void {
   drawCanvasRichText(state, renderNode);
 
   const source = renderNode.source as InputText;
@@ -73,7 +73,7 @@ export const defaultCanvasInputTextRenderer: DisplayObjectRenderer = {
   submit: drawCanvasInputText,
 };
 
-function drawCanvasInputTextMask(state: CanvasRenderState, renderNode: DisplayObjectRenderNode): void {
+function drawCanvasInputTextMask(state: CanvasRenderState, renderNode: RenderNode2D): void {
   drawCanvasRichTextMask(state, renderNode);
 }
 

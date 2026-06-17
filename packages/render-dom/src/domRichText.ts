@@ -14,10 +14,10 @@ import {
 } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
   DOMRenderState,
   Renderable,
   RendererData,
+  RenderNode2D,
   RenderState,
   RichText,
   RichTextRuntime,
@@ -46,7 +46,7 @@ function getMeasureCtx(): CanvasRenderingContext2D | null {
   return _measureCtx;
 }
 
-export function drawDOMRichText(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMRichText(state: DOMRenderState, renderNode: RenderNode2D): void {
   const data = renderNode.rendererData as DOMRichTextData | null;
   if (data === null) return;
 
@@ -211,7 +211,7 @@ const DOM_SELECTION_ALPHA = 0.35;
 const DOM_SELECTION_COLOR = '#0078d7';
 const _richTextSelectionRectangles: { height: number; lineIndex: number; width: number; x: number; y: number }[] = [];
 
-export function drawDOMRichTextMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMRichTextMask(state: DOMRenderState, renderNode: RenderNode2D): void {
   drawDOMRichText(state, renderNode);
 }
 

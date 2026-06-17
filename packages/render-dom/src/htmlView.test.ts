@@ -1,6 +1,6 @@
 ﻿import { createHTMLView } from '@flighthq/displayobject';
 import { registerRenderer } from '@flighthq/render';
-import { getOrCreateDisplayObjectRenderNode } from '@flighthq/render';
+import { getOrCreateRenderNode2D } from '@flighthq/render';
 import { HTMLViewKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
@@ -32,7 +32,7 @@ describe('drawDOMHTMLView', () => {
     const state = makeState();
     const node = createHTMLView();
     node.data.element = null;
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
 
     const el = drawGetEl(state, () => drawDOMHTMLView(state, renderNode));
 
@@ -43,7 +43,7 @@ describe('drawDOMHTMLView', () => {
     const state = makeState();
     const inner = document.createElement('span');
     const node = createHTMLView({ data: { element: inner } });
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
 
     const el = drawGetEl(state, () => drawDOMHTMLView(state, renderNode));
 
@@ -54,7 +54,7 @@ describe('drawDOMHTMLView', () => {
     const state = makeState();
     const inner = document.createElement('div');
     const node = createHTMLView({ data: { element: inner } });
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
 
     drawDOMHTMLView(state, renderNode);
 
@@ -71,7 +71,7 @@ describe('drawDOMHTMLView', () => {
     inner.style.position = 'absolute';
     inner.style.left = '50px';
     const node = createHTMLView({ data: { element: inner } });
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
 
     drawDOMHTMLView(state, renderNode);
 
@@ -82,7 +82,7 @@ describe('drawDOMHTMLView', () => {
     const state = makeState();
     const inner = document.createElement('div');
     const node = createHTMLView({ data: { element: inner, width: 320, height: 240 } });
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
 
     drawDOMHTMLView(state, renderNode);
 
@@ -94,7 +94,7 @@ describe('drawDOMHTMLView', () => {
     const state = makeState();
     const inner = document.createElement('div');
     const node = createHTMLView({ data: { element: inner, width: 100, height: 100 } });
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
 
     drawDOMHTMLView(state, renderNode);
     node.data.width = 640;
@@ -109,7 +109,7 @@ describe('drawDOMHTMLView', () => {
     const state = makeState();
     const inner = document.createElement('div');
     const node = createHTMLView({ data: { element: inner } });
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
 
     drawDOMHTMLView(state, renderNode);
 
@@ -121,7 +121,7 @@ describe('drawDOMHTMLViewMask', () => {
   it('does not throw', () => {
     const state = makeState();
     const node = createHTMLView();
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
     expect(() => drawDOMHTMLViewMask(state, renderNode)).not.toThrow();
   });
 });

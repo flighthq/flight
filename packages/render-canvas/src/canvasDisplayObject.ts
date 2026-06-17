@@ -1,18 +1,18 @@
 import { getDisplayObjectRuntime } from '@flighthq/displayobject';
-import { getDisplayObjectRenderNode, isRenderNodeVisible, noopRendererData } from '@flighthq/render';
-import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, DisplayObjectRenderNode } from '@flighthq/types';
+import { getRenderNode2D, isRenderNodeVisible, noopRendererData } from '@flighthq/render';
+import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, RenderNode2D } from '@flighthq/types';
 
 import { resolveCanvasCSSFilter } from './canvasCSSFilterBinding';
 
-export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderNode: DisplayObjectRenderNode): void {
+export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderNode: RenderNode2D): void {
   // Plain display objects have no visual geometry of their own.
 }
 
-export function drawCanvasDisplayObjectMask(state: CanvasRenderState, data: DisplayObjectRenderNode): void {
+export function drawCanvasDisplayObjectMask(state: CanvasRenderState, data: RenderNode2D): void {
   const children = getDisplayObjectRuntime(data.source as DisplayObject).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
-      const child = getDisplayObjectRenderNode(state, children[i] as DisplayObject);
+      const child = getRenderNode2D(state, children[i] as DisplayObject);
       if (child !== undefined) state.displayObjectMaskRendererMap.get(child.source.kind)?.drawMask(state, child);
     }
   }
@@ -35,7 +35,7 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
     const current = tempStack[--stackLength] as DisplayObject;
     if (!current.enabled) continue;
 
-    const data = getDisplayObjectRenderNode(state, current);
+    const data = getRenderNode2D(state, current);
     if (data === undefined || data.isMaskFrameID === frameID) continue;
 
     clipHooks?.popMask(state, data);

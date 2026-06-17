@@ -1,4 +1,4 @@
-import { getOrCreateDisplayObjectRenderNode, hasRenderFeatures } from '@flighthq/render';
+import { getOrCreateRenderNode2D, hasRenderFeatures } from '@flighthq/render';
 import { type DisplayObject, RenderFeatures } from '@flighthq/types';
 
 import {
@@ -29,13 +29,13 @@ describe('getCanvasCSSFilter', () => {
     const state = makeState();
     const node = {} as DisplayObject;
     setCanvasCSSFilter(state, node, 'blur(4px)');
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
     expect(getCanvasCSSFilter(renderNode)).toBe('blur(4px)');
   });
 
   it('returns undefined for a render node with no binding', () => {
     const state = makeState();
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, {} as DisplayObject);
+    const renderNode = getOrCreateRenderNode2D(state, {} as DisplayObject);
     expect(getCanvasCSSFilter(renderNode)).toBeUndefined();
   });
 });
@@ -45,14 +45,14 @@ describe('resolveCanvasCSSFilter', () => {
     const state = makeState();
     const node = {} as DisplayObject;
     setCanvasCSSFilter(state, node, 'blur(2px)');
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
     expect(resolveCanvasCSSFilter(state, renderNode)).toBeNull();
   });
 
   it('returns null when support is enabled but no filter is set', () => {
     const state = makeState();
     enableCanvasCSSFilterSupport(state);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, {} as DisplayObject);
+    const renderNode = getOrCreateRenderNode2D(state, {} as DisplayObject);
     expect(resolveCanvasCSSFilter(state, renderNode)).toBeNull();
   });
 
@@ -61,7 +61,7 @@ describe('resolveCanvasCSSFilter', () => {
     enableCanvasCSSFilterSupport(state);
     const node = {} as DisplayObject;
     setCanvasCSSFilter(state, node, 'grayscale(1)');
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
     expect(resolveCanvasCSSFilter(state, renderNode)).toBe('grayscale(1)');
   });
 });
@@ -71,7 +71,7 @@ describe('setCanvasCSSFilter', () => {
     const state = makeState();
     const node = {} as DisplayObject;
     setCanvasCSSFilter(state, node, 'blur(2px)');
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
     expect(getCanvasCSSFilter(renderNode)).toBe('blur(2px)');
   });
 
@@ -80,7 +80,7 @@ describe('setCanvasCSSFilter', () => {
     const node = {} as DisplayObject;
     setCanvasCSSFilter(state, node, 'blur(2px)');
     setCanvasCSSFilter(state, node, null);
-    const renderNode = getOrCreateDisplayObjectRenderNode(state, node);
+    const renderNode = getOrCreateRenderNode2D(state, node);
     expect(getCanvasCSSFilter(renderNode)).toBeUndefined();
   });
 
@@ -89,7 +89,7 @@ describe('setCanvasCSSFilter', () => {
     const b = makeState();
     const node = {} as DisplayObject;
     setCanvasCSSFilter(a, node, 'blur(2px)');
-    expect(getCanvasCSSFilter(getOrCreateDisplayObjectRenderNode(b, node))).toBeUndefined();
-    expect(getCanvasCSSFilter(getOrCreateDisplayObjectRenderNode(a, node))).toBe('blur(2px)');
+    expect(getCanvasCSSFilter(getOrCreateRenderNode2D(b, node))).toBeUndefined();
+    expect(getCanvasCSSFilter(getOrCreateRenderNode2D(a, node))).toBe('blur(2px)');
   });
 });

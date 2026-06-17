@@ -1,7 +1,7 @@
-﻿import type { DisplayObjectRenderNode, DOMRenderState, DOMStageRectangle, RenderNode2D } from '@flighthq/types';
+﻿import type { DOMRenderState, DOMStageRectangle, RenderNode2D } from '@flighthq/types';
 
 export interface DOMClipHooks {
-  apply(state: DOMRenderState, data: DisplayObjectRenderNode): void;
+  apply(state: DOMRenderState, data: RenderNode2D): void;
 }
 
 export type DOMRenderStateInternal = Omit<DOMRenderState, 'element'> & {

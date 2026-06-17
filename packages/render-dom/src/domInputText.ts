@@ -10,12 +10,12 @@ import { getRichTextScrollYOffset } from '@flighthq/text-layout';
 import type {
   DisplayObjectMaskRenderer,
   DisplayObjectRenderer,
-  DisplayObjectRenderNode,
   DOMRenderState,
   InputText,
   InputTextRuntime,
   InputTextSelectionRectangle,
   RendererData,
+  RenderNode2D,
 } from '@flighthq/types';
 
 import { defaultDOMRichTextRenderer, drawDOMRichText, drawDOMRichTextMask } from './domRichText';
@@ -26,7 +26,7 @@ interface DOMInputTextData extends RendererData {
   div: HTMLDivElement | null;
 }
 
-export function drawDOMInputText(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+export function drawDOMInputText(state: DOMRenderState, renderNode: RenderNode2D): void {
   if (!_keyframesInjected) {
     injectCaretBlinkKeyframes();
     _keyframesInjected = true;
@@ -68,7 +68,7 @@ export const defaultDOMInputTextRenderer: DisplayObjectRenderer = {
   submit: drawDOMInputText,
 };
 
-function drawDOMInputTextMask(state: DOMRenderState, renderNode: DisplayObjectRenderNode): void {
+function drawDOMInputTextMask(state: DOMRenderState, renderNode: RenderNode2D): void {
   drawDOMRichTextMask(state, renderNode);
 }
 

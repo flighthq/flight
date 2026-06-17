@@ -1,9 +1,9 @@
 ﻿import { noopRendererData } from '@flighthq/render';
-import type { CanvasRenderState, SpriteRenderer, SpriteRenderNode, Tilemap } from '@flighthq/types';
+import type { CanvasRenderState, RenderNode2D, SpriteRenderer, Tilemap } from '@flighthq/types';
 
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
 
-export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: SpriteRenderNode): void {
+export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderNode2D): void {
   const source = tilemapNode.source as Tilemap;
   const { tileset, columns, rows, tiles } = source.data;
 
