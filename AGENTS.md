@@ -106,6 +106,191 @@ Run these at the points listed. Each check is fast; skipping them causes cascadi
 - `npm run test` runs the normal root Vitest workspace, excluding the heavier `size` project. This is usually faster than chaining package/API/integration test scripts separately.
 - `npm run size` builds matching examples and reports gzip output size against the baseline. It supports filtered runs, JSON reporting, and output file paths.
 - `npm run test:functional` launches the functional test tool in `tools/functional`, a browser dev server that runs each functional test across its renderers (Canvas/DOM/WebGL) for visual and behavioral checks you cannot get from jsdom unit tests.
+- `npm run test:visual` is the visual regression gate: captures all examples and functional tests, compares each against its committed baseline, and exits 1 if any screenshot has changed. Run after committing baselines. `test:visual:examples` and `test:visual:functional` run each tool independently.
+
+## Visual Capture and Agent Feedback
+
+Two scripts produce screenshot and log output from examples and functional tests. They require Playwright browsers (`npx playwright install chromium`) and a running Vite server.
+
+### One-shot capture
+
+```
+npm run capture:examples [-- --filter=name --renderer=webgl,canvas --wait=500]
+npm run capture:functional [-- --filter=name]
+```
+
+`capture` is an alias for `capture:examples`. Both auto-start the Vite server if `--url` is not given. Navigates to each matching entry, waits two animation frames, screenshots, collects logs, exits. Output lands in `tools/output/{tool}/{name}/{renderer}/`.
+
+### Watch capture (host only — requires Playwright)
+
+```
+npm run capture:watch:examples [-- --filter=name --renderer=webgl]
+npm run capture:watch:functional
+```
+
+`capture:watch` is an alias for `capture:watch:examples`. Auto-starts the Vite server. Does an initial capture of all matched entries, then watches source files and re-captures on change (800ms debounce). An agent inside a sandbox reads the output files directly — no polling, no watch loop in the agent.
+
+### Baselines
+
+```
+npm run capture:examples:baseline [-- --filter=name]
+npm run capture:baseline:functional [-- --filter=name]
+```
+
+`capture:baseline` is an alias for `capture:examples:baseline`. Writes the current screenshots to `tools/baselines/{tool}/{name}/{renderer}/screenshot.png` and commits the hash. Every subsequent capture compares against the baseline: `status.json` gains `changed: true/false` and a `diff.png` is written on mismatch. Run baseline capture once after a rendering change is intentional; commit `tools/baselines/` to git.
+
+### Output files
+
+Each captured entry writes three files:
+
+- `screenshot.png` — rendered frame. Read with the `Read` tool; Claude can view it directly.
+- `logs.jsonl` — one JSON object per line: `{ __flight, t, level, channel, data }`, where `level` is the severity name (`error`/`warn`/`info`/`debug`/`verbose`) and `channel` is the free tag (or null).
+- `status.json` — written last (the commit point). Shape:
+  ```json
+  { "state": "ready|error", "capturedAt": <unix ms>, "error": null|"message",
+    "hash": "<sha256>", "baselineHash": "<sha256>|null",
+    "changed": true|false|null, "diffPercent": 0.0|null }
+  ```
+  `changed: null` means no baseline exists yet. `changed: true` means the screenshot differs from the baseline; `diff.png` is written alongside `screenshot.png`. Check `capturedAt` against the time of your last source edit to confirm the output is fresh.
+
+### Emitting logs from examples and functional tests
+
+Logging lives in the `@flighthq/log` package, split so each consumer tree-shakes its half: examples and instrumentation import the lightweight **emit** side; the explorer and capture harness import the **listener** side. One package owns the contract.
+
+```typescript
+import { logInfo, logVerbose, flightLog, LogLevel } from '@flighthq/log';
+
+logInfo({ msg: 'world matrix', a: m[0], b: m[1], tx: m[4] }, 'render'); // 2nd arg is the channel
+logVerbose('capture-only detail', 'batch'); // below the default console threshold — capture only
+flightLog(LogLevel.Warn, { flushReason: 'material', instanceCount: 15 }, 'batch');
+```
+
+`logError`/`logWarn`/`logInfo`/`logDebug`/`logVerbose` are sugar over `flightLog(level, data, channel?)`. Emitting **no-ops until a sink is installed**, so the same calls are harmless in unit tests and in shipped/size builds (the emit side carries no console or formatting code — it tree-shakes to a forwarder). Levels gate visibility: the capture sink records **every** level; the console prints only levels at or above `setFlightLogConsoleLevel` (default `Info`). The harness installs the sink (`setFlightLogSink(createConsoleCaptureSink())`) before loading the example, so module-init logs are captured.
+
+### Agent workflow with capture:watch
+
+1. Start the watch on the host: `npm run capture:watch:examples -- --filter=myExample` (auto-starts the server).
+2. Edit source files. The watch detects changes and re-captures automatically.
+3. Read `tools/output/explorer/myExample/webgl/screenshot.png` with the `Read` tool to see the rendered frame.
+4. Read `tools/output/explorer/myExample/webgl/logs.jsonl` to see structured log output.
+5. Check `status.json` if you need to confirm the output post-dates your last edit.
+
+## Writing Functional Tests
+
+Functional tests live in `tests/functional/{testName}/`. Each test renders a scene across one or more backends and is validated visually — the screenshot is compared against a committed baseline, and `logs.jsonl` carries any structured log output. There is no programmatic assertion primitive yet; runtime failures surface as `pageerror` entries in `logs.jsonl` and as visual differences from the baseline.
+
+Write a functional test when:
+
+- The behavior involves rendering that jsdom unit tests cannot exercise (transforms, blending, clipping, filters, WebGL specifics, text layout).
+- You want a persistent visual record of how a feature looks across backends.
+- You want to detect rendering regressions automatically.
+
+Agents are expected to generate new functional tests when implementing or verifying visual rendering behavior.
+
+### Required file structure
+
+```
+tests/functional/{testName}/
+├── package.json
+└── src/
+    ├── app.ts              ← scene setup; imports { height, render, scale, width } from ./render
+    ├── render.ts           ← barrel: export * from './render.canvas'
+    ├── render.canvas.ts    ← Canvas2D setup + render()
+    ├── render.dom.ts       ← DOM setup + render()  (include when DOM renderer applies)
+    └── render.webgl.ts     ← WebGL setup + render()
+```
+
+`render.webgpu.ts` is optional. `discoverEntries()` includes a test only when `package.json` exists and at least one `src/render.*.ts` file exists. The vite harness routes `/tests/{name}/{renderer}/` requests to the matching renderer file. The `render.ts` barrel is required for TypeScript to resolve the `./render` import in `app.ts` even though the harness overrides it at runtime.
+
+### package.json
+
+```json
+{
+  "name": "functional-test-{testName}",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}
+```
+
+### app.ts
+
+`app.ts` is a top-level async module. Build the scene tree and call `render(root)` at the end. The vite harness resolves `./render` to the active backend file.
+
+```typescript
+import { addNodeChild, createDisplayContainer } from '@flighthq/sdk';
+import { height, render, scale, width } from './render';
+
+const root = createDisplayContainer();
+root.scaleX = scale;
+root.scaleY = scale;
+// build scene using (width / scale) and (height / scale) as logical dimensions
+render(root);
+```
+
+`app.ts` may be `async` — `await` freely for asset loading (e.g. `loadImageSourceFromURL`).
+
+### render.\*.ts
+
+Each renderer file must export four constants and one function. Copy the pattern from an existing test — `clip`, `fill`, and `blend-mode` are clean references. Register only the node kinds your test uses.
+
+```typescript
+import type { DisplayObject } from '@flighthq/sdk';
+import {
+  ShapeKind,
+  createWebGLCanvasElement,
+  createWebGLRenderState,
+  defaultWebGLShapeRenderer,
+  defaultWebGLShapeCommands,
+  prepareDisplayObjectRender,
+  registerRenderer,
+  registerWebGLShapeCommands,
+  renderWebGLBackground,
+  renderWebGLDisplayObject,
+} from '@flighthq/sdk';
+
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createWebGLCanvasElement(800, 600, pixelRatio);
+document.body.appendChild(canvas);
+
+export const state = createWebGLRenderState(canvas, { backgroundColor: 0xffffffff });
+registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
+registerWebGLShapeCommands(defaultWebGLShapeCommands);
+export const scale = pixelRatio;
+export const width = 800;
+export const height = 600;
+
+export function render(root: DisplayObject): void {
+  if (!prepareDisplayObjectRender(state, root)) return;
+  renderWebGLBackground(state);
+  renderWebGLDisplayObject(state, root);
+}
+```
+
+### render.ts barrel
+
+```typescript
+export * from './render.canvas';
+```
+
+### Logging from a test
+
+```typescript
+import { logInfo, logWarn } from '@flighthq/log';
+logInfo({ nodeCount: 42, pass: true }, 'test');
+```
+
+Logs appear in `logs.jsonl` after capture. The vite harness installs the capture sink before loading `app.ts`, so module-init logs are captured alongside render-time logs.
+
+### Validating a new test
+
+1. Run `npm run capture:functional -- --filter={testName}` (auto-starts the server).
+2. Read `tools/output/functional/{testName}/{renderer}/screenshot.png` with the `Read` tool.
+3. Read `tools/output/functional/{testName}/{renderer}/logs.jsonl` for structured output. Check for any `pageerror` entries.
+4. Once the output looks correct, set the baseline: `npm run capture:baseline:functional -- --filter={testName}`.
+5. Commit `tools/baselines/functional/{testName}/`. Future captures will report `changed` in `status.json` and write `diff.png` on mismatch.
 
 ## Core Patterns
 
