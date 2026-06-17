@@ -50,9 +50,12 @@ export function bindWebGLTexture(state: WebGLRenderStateInternal, imageSource: C
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    // Images have straight alpha — premultiply on upload.
-    // Canvas sources are already premultiplied by the 2D context — don't premultiply again.
-    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, !(imageSource instanceof HTMLCanvasElement));
+    // Both image and canvas sources present straight (un-premultiplied) alpha to texImage2D, so
+    // premultiply on upload to match the premultiplied (ONE, ONE_MINUS_SRC_ALPHA) blend used
+    // everywhere — uploaded images, canvas-backed shapes/text, and render-target composites. (A
+    // straight-alpha texture under premultiplied blend blows RGB out to full, turning a 40%-white
+    // shape opaque white.) Mirrors updateWebGLTexture, which already premultiplies canvas uploads.
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageSource as TexImageSource);
     textureCache.set(imageSource, texture);
     state.currentTexture = texture;
