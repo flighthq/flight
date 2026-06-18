@@ -60,10 +60,18 @@ export function discoverEntries(tool: Tool, root: string): Entry[] {
   return readdirSync(dir, { withFileTypes: true })
     .filter((d) => d.isDirectory() && existsSync(join(dir, d.name, 'package.json')))
     .sort((a, b) => a.name.localeCompare(b.name))
-    .map(({ name }) => ({
-      name,
-      renderers: (RENDERERS as readonly string[]).filter((r) => existsSync(join(dir, name, `src/render.${r}.ts`))),
-    }))
+    .map(({ name }) => {
+      const testDir = join(dir, name);
+      const customRenderers = (RENDERERS as readonly string[]).filter((r) =>
+        existsSync(join(testDir, `src/render.${r}.ts`)),
+      );
+      if (customRenderers.length > 0) return { name, renderers: customRenderers };
+      if (tool === 'functional' && existsSync(join(testDir, 'src', 'app.ts'))) {
+        const pkg = JSON.parse(readFileSync(join(testDir, 'package.json'), 'utf8')) as Record<string, unknown>;
+        return { name, renderers: (pkg.renderers as string[] | undefined) ?? ['canvas', 'dom', 'webgl'] };
+      }
+      return { name, renderers: [] };
+    })
     .filter((e) => e.renderers.length > 0);
 }
 

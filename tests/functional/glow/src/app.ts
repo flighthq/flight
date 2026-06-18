@@ -53,15 +53,16 @@ import {
   renderWebGLDisplayObject,
   RichTextKind,
   setDOMCSSFilter,
+  ShapeKind,
   useRenderCache,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
-const target = createFunctionalTarget({
+const target = await createFunctionalTarget({
   width: 800,
   height: 400,
   background: 0xffffffff,
-  kinds: [BitmapKind, RichTextKind],
+  kinds: [BitmapKind, RichTextKind, ShapeKind],
   cache: true,
 });
 const { scale } = target;
@@ -81,7 +82,10 @@ addNodeChild(root, bg);
 
 const image = await loadImageResourceFromURL('assets/wabbit_alpha.png');
 
-const colSpacing = image.width + 60;
+const IMAGE_SCALE = 4;
+const iw = image.width * IMAGE_SCALE;
+const ih = image.height * IMAGE_SCALE;
+const colSpacing = iw + 50;
 const startX = 50;
 const startY = 50;
 
@@ -102,6 +106,8 @@ for (let i = 0; i < variants.length; i++) {
   const bmp = createBitmap();
   bmp.data.image = image;
   bmp.data.smoothing = true;
+  bmp.scaleX = IMAGE_SCALE;
+  bmp.scaleY = IMAGE_SCALE;
   bmp.x = x;
   bmp.y = startY;
   addNodeChild(root, bmp);
@@ -110,7 +116,7 @@ for (let i = 0; i < variants.length; i++) {
   const lbl = createRichText();
   lbl.data.defaultTextFormat = { font: 'sans-serif', size: 12, color: 0x444444 };
   lbl.x = x;
-  lbl.y = startY + image.height + 4;
+  lbl.y = startY + ih + 4;
   lbl.data.width = colSpacing - 8;
   lbl.data.height = 20;
   lbl.data.text = label;
@@ -125,8 +131,10 @@ if (target.kind === 'canvas') {
   target.render(root);
 } else if (target.kind === 'webgl') {
   renderWebGLGlow(target.state, filtered, root);
-} else {
+} else if (target.kind === 'dom') {
   applyDOMGlow(target.state, filtered);
+  target.render(root);
+} else {
   target.render(root);
 }
 
@@ -136,7 +144,7 @@ function applyCanvasGlow(state: CanvasRenderState, list: FilterEntry[]): void {
     const css = computeOuterGlowFilterCSS(filter);
     if (css === null) continue;
     const img = (node as Bitmap).data.image;
-    if (img === null || img.src === null) continue;
+    if (img === null || img.source === null) continue;
     computeNodeBoundsRectangle(_bounds, node, node);
     const padding = glowPadding(filter);
     const { width: w, height: h } = computeRenderTargetSize(_bounds, padding, 1, 1);
@@ -147,7 +155,7 @@ function applyCanvasGlow(state: CanvasRenderState, list: FilterEntry[]): void {
     ctx.clearRect(0, 0, renderTarget.canvas.width, renderTarget.canvas.height);
     ctx.imageSmoothingEnabled = true;
     ctx.filter = css;
-    ctx.drawImage(img.src, padding - _bounds.x, padding - _bounds.y);
+    ctx.drawImage(img.source, padding - _bounds.x, padding - _bounds.y);
     ctx.filter = 'none';
     computeRenderCacheTransform(cache.transform, _bounds, padding, padding);
   }

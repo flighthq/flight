@@ -110,19 +110,21 @@ export function render(root: DisplayObject): void {
     endWebGLRenderTarget(state);
   }
 
-  // Main pass: restore the blurred nodes' scene transforms (the offscreen pass overwrote them), draw
-  // the full tree so the non-blurred content — the labels — appears, then composite each blurred
-  // target over its sharp original. The blurred composite is larger than the source (blur padding),
-  // so it covers the sharp bitmap drawn underneath; the labels are untouched.
+  // Main pass: restore scene transforms, hide the blurred source nodes so the sharp originals are
+  // not drawn into the scene (transparent images would otherwise show both sharp and blurred), draw
+  // the rest of the tree (labels, background), then composite each blurred target and restore.
   for (const entry of _entries) {
     const renderProxy = getRenderProxy2D(state, entry.node);
-    if (renderProxy !== undefined) copyMatrix(renderProxy.transform2D, entry.sceneTransform);
+    if (renderProxy === undefined) continue;
+    copyMatrix(renderProxy.transform2D, entry.sceneTransform);
+    renderProxy.visible = false;
   }
   renderWebGLBackground(state);
   renderWebGLDisplayObject(state, root);
   for (const entry of _entries) {
     const renderProxy = getRenderProxy2D(state, entry.node);
     if (renderProxy === undefined) continue;
+    renderProxy.visible = true;
     drawWebGLRenderTargetResult(state, renderProxy, entry.blurred, entry.cacheTransform);
   }
 }

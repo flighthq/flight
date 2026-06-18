@@ -46,20 +46,26 @@ const labels = ['normal', 'inner', 'knockout', 'inner + knockout', 'hideObject',
 (async () => {
   const bd = await loadBitmapData('assets/wabbit_alpha.png');
 
+  const SCALE = 3;
+  const bmpW = bd.width * SCALE;
+  const bmpH = bd.height * SCALE;
+
   for (let i = 0; i < 6; i++) {
     const bmp = new Bitmap(bd);
     bmp.smoothing = true;
-    bmp.x = 50 + i * (bd.width + 50);
+    bmp.scaleX = SCALE;
+    bmp.scaleY = SCALE;
+    bmp.x = 50 + i * (bmpW + 50);
     bmp.y = 50;
     const { inner, knockout, hideObject } = shadowConfigs[i];
     bmp.filters = [new DropShadowFilter(4, 45, 0x000000, 0.8, 8, 8, 1, 1, inner, knockout, hideObject)];
     root.addChild(bmp);
 
     const lbl = new TextField();
-    lbl.defaultTextFormat = new TextFormat('sans-serif', 12, 0x444444);
+    lbl.defaultTextFormat = new TextFormat('_sans', 12, 0x444444);
     lbl.x = bmp.x;
-    lbl.y = bmp.y + bd.height + 8;
-    lbl.width = bd.width + 40;
+    lbl.y = bmp.y + bmpH + 8;
+    lbl.width = bmpW + 60;
     lbl.height = 24;
     lbl.text = labels[i];
     root.addChild(lbl);

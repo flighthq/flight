@@ -20,7 +20,7 @@ import {
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
-const { height, render, width } = createFunctionalTarget({
+const { height, render, width } = await createFunctionalTarget({
   width: 800,
   height: 600,
   background: 0xff000000,
@@ -117,14 +117,18 @@ statusLabel.x = 0;
 statusLabel.y = 0;
 statusLabel.data.width = pos(400);
 statusLabel.data.height = pos(40);
-statusLabel.data.text = 'cacheAsBitmap → useRenderCache';
+statusLabel.data.text = 'render cache: OFF';
 addNodeChild(root, statusLabel);
 
 let menuX = 0;
 let menuXInc = pos(5);
 const maxX = pos(640);
+let cacheEnabled = false;
+let lastToggle = performance.now();
+const TOGGLE_MS = 3000;
 
 function enterFrame(): void {
+  const now = performance.now();
   menuX += menuXInc;
   if (menuX <= 0 || menuX >= maxX) menuXInc = -menuXInc;
 
@@ -137,6 +141,13 @@ function enterFrame(): void {
   invalidateNodeLocalTransform(menuGroup);
   invalidateNodeAppearance(menuGroup);
   invalidateNodeAppearance(posters);
+
+  if (now - lastToggle >= TOGGLE_MS) {
+    lastToggle = now;
+    cacheEnabled = !cacheEnabled;
+    statusLabel.data.text = cacheEnabled ? 'render cache: ON' : 'render cache: OFF';
+    invalidateNodeAppearance(statusLabel);
+  }
 
   render(root);
   requestAnimationFrame(enterFrame);

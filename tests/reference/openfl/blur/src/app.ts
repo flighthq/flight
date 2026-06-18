@@ -35,20 +35,26 @@ function loadBitmapData(url: string): Promise<BitmapData> {
 (async () => {
   const bd = await loadBitmapData('assets/wabbit_alpha.png');
 
+  const SCALE = 5;
+  const bmpW = bd.width * SCALE;
+  const bmpH = bd.height * SCALE;
+
   for (let i = 0; i < 3; i++) {
     const bmp = new Bitmap(bd);
     bmp.smoothing = true;
-    bmp.x = 50 + i * (bd.width + 50);
+    bmp.scaleX = SCALE;
+    bmp.scaleY = SCALE;
+    bmp.x = 50 + i * (bmpW + 50);
     bmp.y = 50;
     const blurAmount = 4 * (i + 1);
     bmp.filters = [new BlurFilter(blurAmount, blurAmount, i + 1)];
     root.addChild(bmp);
 
     const lbl = new TextField();
-    lbl.defaultTextFormat = new TextFormat('sans-serif', 14, 0x444444);
+    lbl.defaultTextFormat = new TextFormat('_sans', 14, 0x444444);
     lbl.x = bmp.x;
-    lbl.y = bmp.y + bd.height + 8;
-    lbl.width = bd.width;
+    lbl.y = bmp.y + bmpH + 8;
+    lbl.width = bmpW;
     lbl.height = 24;
     lbl.text = `quality ${i + 1}`;
     root.addChild(lbl);

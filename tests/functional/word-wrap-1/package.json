@@ -1,8 +1,8 @@
 {
-  "name": "reference-openfl-word-wrap",
+  "name": "functional-test-word-wrap-1",
   "private": true,
   "type": "module",
   "dependencies": {
-    "openfl": "^9.3.2"
+    "@flighthq/sdk": "*"
   }
 }

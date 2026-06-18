@@ -18,7 +18,7 @@ const sample =
   'mollit anim id est laborum.';
 
 const field = new TextField();
-field.defaultTextFormat = new TextFormat('sans-serif', 18, 0x222222);
+field.defaultTextFormat = new TextFormat('_sans', 18, 0x222222);
 field.x = 40;
 field.y = 80;
 field.height = HEIGHT - 120;
@@ -29,7 +29,7 @@ field.text = sample;
 root.addChild(field);
 
 const label = new TextField();
-label.defaultTextFormat = new TextFormat('sans-serif', 14, 0x555555);
+label.defaultTextFormat = new TextFormat('_sans', 14, 0x555555);
 label.x = 40;
 label.y = 40;
 label.width = WIDTH - 80;

@@ -16,6 +16,9 @@ export function popWebGPUClipRectangle(state: WebGPURenderStateInternal): void {
   if (previous === null) {
     const viewport = state.renderTargetViewport ?? state.canvas;
     pass.setScissorRect(0, 0, viewport.width, viewport.height);
+  } else if (previous.width <= 0 || previous.height <= 0) {
+    // Empty intersection stored during push — maintain degenerate scissor until fully popped.
+    pass.setScissorRect(0, 0, 1, 1);
   } else {
     pass.setScissorRect(previous.x, previous.y, previous.width, previous.height);
   }
@@ -36,7 +39,13 @@ export function pushWebGPUClipRectangle(
 
   const pass = state.renderPass;
   if (pass === null) return;
-  pass.setScissorRect(next.x, next.y, Math.max(1, next.width), Math.max(1, next.height));
+  if (next.width <= 0 || next.height <= 0) {
+    // Clip rect projects entirely outside the viewport — use a 1×1 degenerate scissor at
+    // the origin so the node is effectively invisible while the rect remains WebGPU-valid.
+    pass.setScissorRect(0, 0, 1, 1);
+  } else {
+    pass.setScissorRect(next.x, next.y, next.width, next.height);
+  }
 }
 
 function computeWebGPUScissorRect(

@@ -26,7 +26,7 @@ field.wordWrap = true;
 field.border = true;
 field.width = 500;
 field.height = HEIGHT - 20;
-field.defaultTextFormat = new TextFormat('sans-serif', 15, 0x000066);
+field.defaultTextFormat = new TextFormat('_sans', 15, 0x000066);
 field.styleSheet = ss;
 field.htmlText =
   '<h1><b>HTML</b> Text <i>(sample <u>header</u>)</i></h1>' +

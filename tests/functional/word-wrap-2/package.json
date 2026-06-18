@@ -1,10 +1,7 @@
 {
-  "name": "functional-test-drop-file",
+  "name": "functional-test-word-wrap-2",
   "private": true,
   "type": "module",
-  "renderers": [
-    "dom"
-  ],
   "dependencies": {
     "@flighthq/sdk": "*"
   }

@@ -65,7 +65,7 @@ function loadBitmapData(url: string): Promise<BitmapData> {
   const textValues = ['Text Field 1', 'Text Field 2', 'Text Field 3', 'Text Field 4'];
   for (let i = 0; i < 4; i++) {
     const tf = new TextField();
-    tf.defaultTextFormat = new TextFormat('sans-serif', 32, textColors[i]);
+    tf.defaultTextFormat = new TextFormat('_sans', 32, textColors[i]);
     tf.x = i * (WIDTH / 4);
     tf.y = HEIGHT / 2 + HEIGHT / 4;
     tf.width = 400;

@@ -9,13 +9,14 @@ import {
   createDisplayContainer,
   createRichText,
   createShape,
+  invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   RichTextKind,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
-const { height, render, width } = createFunctionalTarget({
+const { height, render, width } = await createFunctionalTarget({
   width: 800,
   height: 600,
   background: 0xff000000,
@@ -110,7 +111,7 @@ status.x = pos(10);
 status.y = pos(10);
 status.data.width = pos(1270);
 status.data.height = pos(40);
-status.data.text = 'cacheAsBitmap → useRenderCache';
+status.data.text = 'render cache: OFF';
 addNodeChild(root, status);
 
 const cx = pos(320);
@@ -118,6 +119,9 @@ const cy = pos(120);
 const radius = pos(120);
 let angle = 0;
 let lastTime = performance.now();
+let cacheEnabled = false;
+let lastToggle = performance.now();
+const TOGGLE_MS = 3000;
 
 function enterFrame(): void {
   const now = performance.now();
@@ -127,6 +131,14 @@ function enterFrame(): void {
   parent.x = cx + radius * Math.cos(angle);
   parent.y = cy + radius * Math.sin(angle);
   invalidateNodeLocalTransform(parent);
+
+  if (now - lastToggle >= TOGGLE_MS) {
+    lastToggle = now;
+    cacheEnabled = !cacheEnabled;
+    status.data.text = cacheEnabled ? 'render cache: ON' : 'render cache: OFF';
+    invalidateNodeAppearance(status);
+  }
+
   render(root);
   requestAnimationFrame(enterFrame);
 }

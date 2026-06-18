@@ -1,4 +1,4 @@
-import type { CanvasRenderState, DOMRenderState, WebGLRenderState } from '@flighthq/sdk';
+import type { CanvasRenderState, DOMRenderState, WebGLRenderState, WebGPURenderState } from '@flighthq/sdk';
 import type { DisplayObject, SceneGraphSyncPolicy } from '@flighthq/sdk';
 
 export interface FunctionalTargetOptions {
@@ -30,6 +30,15 @@ export interface FunctionalWebGLTarget {
   render(root: DisplayObject): void;
 }
 
+export interface FunctionalWebGPUTarget {
+  kind: 'webgpu';
+  state: WebGPURenderState;
+  width: number;
+  height: number;
+  scale: number;
+  render(root: DisplayObject): void;
+}
+
 export interface FunctionalDOMTarget {
   kind: 'dom';
   state: DOMRenderState;
@@ -39,4 +48,8 @@ export interface FunctionalDOMTarget {
   render(root: DisplayObject): void;
 }
 
-export type FunctionalTarget = FunctionalCanvasTarget | FunctionalWebGLTarget | FunctionalDOMTarget;
+export type FunctionalTarget =
+  | FunctionalCanvasTarget
+  | FunctionalWebGLTarget
+  | FunctionalWebGPUTarget
+  | FunctionalDOMTarget;

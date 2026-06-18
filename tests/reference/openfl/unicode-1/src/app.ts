@@ -19,8 +19,8 @@ const { root } = createReferenceStage(WIDTH, HEIGHT, 0xffffff);
   (document.fonts as any).add(ff);
 
   const charFmt = new TextFormat(FONT, 20, 0x000000);
-  const infoFmt = new TextFormat('sans-serif', 14, 0x444444);
-  const headerFmt = new TextFormat('sans-serif', 16, 0x000000, true);
+  const infoFmt = new TextFormat('_sans', 14, 0x444444);
+  const headerFmt = new TextFormat('_sans', 16, 0x000000, true);
 
   // Header
   const header = new TextField();

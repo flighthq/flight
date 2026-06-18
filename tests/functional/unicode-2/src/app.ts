@@ -11,7 +11,7 @@ import {
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
-const { height, render, width } = createFunctionalTarget({
+const { height, render, width } = await createFunctionalTarget({
   width: 1000,
   height: 400,
   background: 0xffffffff,
