@@ -1,4 +1,4 @@
-import { createWebGLRenderState } from './webglRenderState';
+import { createWebGLRenderState, destroyWebGLRenderState } from './webglRenderState';
 import { makeGL } from './webglTestHelper';
 
 function makeCanvas() {
@@ -88,5 +88,26 @@ describe('createWebGLRenderState', () => {
     const { canvas } = makeCanvas();
     const state = createWebGLRenderState(canvas, { roundPixels: true });
     expect(state.roundPixels).toBe(true);
+  });
+});
+
+describe('destroyWebGLRenderState', () => {
+  it('deletes the state-owned shader programs and buffers', () => {
+    const { canvas, gl } = makeCanvas();
+    const state = createWebGLRenderState(canvas);
+    const deleteProgram = vi.spyOn(gl, 'deleteProgram');
+    const deleteBuffer = vi.spyOn(gl, 'deleteBuffer');
+
+    destroyWebGLRenderState(state);
+
+    expect(deleteProgram).toHaveBeenCalled();
+    expect(deleteBuffer).toHaveBeenCalled();
+  });
+
+  it('is safe to call twice (WebGL deletes are no-ops on already-deleted resources)', () => {
+    const { canvas } = makeCanvas();
+    const state = createWebGLRenderState(canvas);
+    destroyWebGLRenderState(state);
+    expect(() => destroyWebGLRenderState(state)).not.toThrow();
   });
 });

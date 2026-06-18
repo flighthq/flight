@@ -1,8 +1,10 @@
 ﻿import { createRichText } from '@flighthq/displayobject';
-import type { RenderProxy2D, RichText } from '@flighthq/types';
+import type { RendererData, RenderProxy2D, RichText } from '@flighthq/types';
 
 import {
+  createWebGLRichTextData,
   defaultWebGLRichTextRenderer,
+  destroyWebGLRichTextData,
   drawWebGLRichText,
   drawWebGLRichTextMask,
   drawWebGLRichTextWithOverlay,
@@ -16,9 +18,17 @@ function makeRichTextNode(): RenderProxy2D {
     blendMode: 0,
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
-    rendererData: null,
+    rendererData: { texture: null },
   } as unknown as RenderProxy2D;
 }
+
+describe('createWebGLRichTextData', () => {
+  it('allocates per-node data with no texture yet', () => {
+    const { state } = makeWebGLState();
+    const data = createWebGLRichTextData(state, createRichText()) as unknown as { texture: WebGLTexture | null };
+    expect(data.texture).toBeNull();
+  });
+});
 
 describe('defaultWebGLRichTextRenderer', () => {
   it('has a createData function', () => {
@@ -30,6 +40,23 @@ describe('defaultWebGLRichTextRenderer', () => {
   });
 
   it('has a drawMask function pointing to drawWebGLRichTextMask', () => {});
+});
+
+describe('destroyWebGLRichTextData', () => {
+  it('deletes the GPU texture the node owns', () => {
+    const { state, gl } = makeWebGLState();
+    const texture = gl.createTexture();
+    const deleteSpy = vi.spyOn(gl, 'deleteTexture');
+    destroyWebGLRichTextData(state, { texture } as unknown as RendererData);
+    expect(deleteSpy).toHaveBeenCalledWith(texture);
+  });
+
+  it('is a no-op when no texture was allocated', () => {
+    const { state, gl } = makeWebGLState();
+    const deleteSpy = vi.spyOn(gl, 'deleteTexture');
+    destroyWebGLRichTextData(state, { texture: null } as unknown as RendererData);
+    expect(deleteSpy).not.toHaveBeenCalled();
+  });
 });
 
 describe('drawWebGLRichText', () => {
