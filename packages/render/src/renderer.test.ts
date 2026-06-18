@@ -1,16 +1,14 @@
-import { type DisplayObjectClipHooks, type Renderer, RenderFeatures, type RenderState } from '@flighthq/types';
+import type { DisplayObjectClipHooks, Renderer, RenderState } from '@flighthq/types';
 
 import {
   copyAllRenderersFromRenderState,
   copyMaskRenderersFromRenderState,
   copyRenderersFromRenderState,
-  disableRenderFeatures,
-  enableRenderFeatures,
-  hasRenderFeatures,
   noopRendererData,
   registerDisplayObjectMaskRenderer,
   registerRenderer,
 } from './renderer';
+import { prepareMasks } from './renderProxy';
 import { createRenderState } from './renderState';
 
 describe('copyAllRenderersFromRenderState', () => {
@@ -107,30 +105,6 @@ describe('copyRenderersFromRenderState', () => {
   });
 });
 
-describe('disableRenderFeatures', () => {
-  it('removes feature flags from the render state', () => {
-    const state = createRenderState({ renderFeatures: RenderFeatures.Masks | RenderFeatures.ClipRectangle });
-    disableRenderFeatures(state, RenderFeatures.Masks);
-    expect(state.renderFeatures).toBe(RenderFeatures.ClipRectangle);
-  });
-});
-
-describe('enableRenderFeatures', () => {
-  it('adds feature flags to the render state', () => {
-    const state = createRenderState();
-    enableRenderFeatures(state, RenderFeatures.Masks | RenderFeatures.ClipRectangle);
-    expect(state.renderFeatures).toBe(RenderFeatures.Masks | RenderFeatures.ClipRectangle);
-  });
-});
-
-describe('hasRenderFeatures', () => {
-  it('returns whether all requested features are enabled', () => {
-    const state = createRenderState({ renderFeatures: RenderFeatures.Masks });
-    expect(hasRenderFeatures(state, RenderFeatures.Masks)).toBe(true);
-    expect(hasRenderFeatures(state, RenderFeatures.Masks | RenderFeatures.ClipRectangle)).toBe(false);
-  });
-});
-
 describe('noopRendererData', () => {
   it('returns null', () => {
     const state = createRenderState();
@@ -139,7 +113,7 @@ describe('noopRendererData', () => {
 });
 
 describe('registerDisplayObjectMaskRenderer', () => {
-  it('registers a mask renderer and enables mask support', () => {
+  it('registers a mask renderer and installs the mask pass', () => {
     const state = createRenderState();
     const kind = Symbol('kind');
     const renderer = { drawMask: vi.fn() };
@@ -148,7 +122,7 @@ describe('registerDisplayObjectMaskRenderer', () => {
 
     expect(state.displayObjectMaskRendererMap.get(kind)).toBe(renderer);
     expect(state.displayObjectMaskRendererMapID).toBe(1);
-    expect(hasRenderFeatures(state, RenderFeatures.Masks)).toBe(true);
+    expect(state.displayObjectMaskPass).toBe(prepareMasks);
   });
 
   it('does not increment displayObjectMaskRendererMapID for the same renderer', () => {

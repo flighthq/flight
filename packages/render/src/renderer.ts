@@ -1,13 +1,7 @@
-import {
-  type DisplayObjectMaskRenderer,
-  type Renderable,
-  type Renderer,
-  type RendererData,
-  RenderFeatures,
-  type RenderState,
-} from '@flighthq/types';
+import type { DisplayObjectMaskRenderer, Renderable, Renderer, RendererData, RenderState } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';
+import { enableDisplayObjectMaskPass } from './renderProxy';
 
 export function copyAllRenderersFromRenderState(target: RenderState, source: RenderState): void {
   copyRenderersFromRenderState(target, source);
@@ -27,18 +21,6 @@ export function copyRenderersFromRenderState(target: RenderState, source: Render
   });
 }
 
-export function disableRenderFeatures(state: RenderState, features: RenderFeatures): void {
-  state.renderFeatures = RenderFeatures.remove(state.renderFeatures, features);
-}
-
-export function enableRenderFeatures(state: RenderState, features: RenderFeatures): void {
-  state.renderFeatures = RenderFeatures.add(state.renderFeatures, features);
-}
-
-export function hasRenderFeatures(state: RenderState, features: RenderFeatures): boolean {
-  return RenderFeatures.has(state.renderFeatures, features);
-}
-
 export function noopRendererData(_state: RenderState, _source: Renderable): RendererData | null {
   return null;
 }
@@ -48,7 +30,7 @@ export function registerDisplayObjectMaskRenderer(
   kind: symbol,
   renderer: DisplayObjectMaskRenderer,
 ): void {
-  enableRenderFeatures(state, RenderFeatures.Masks);
+  enableDisplayObjectMaskPass(state);
   if (state.displayObjectMaskRendererMap.get(kind) === renderer) return;
   (state as RenderStateInternal).displayObjectMaskRendererMapID = (state.displayObjectMaskRendererMapID + 1) >>> 0;
   state.displayObjectMaskRendererMap.set(kind, renderer);
