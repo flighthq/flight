@@ -1,4 +1,4 @@
-import { createDisplayObject } from '@flighthq/displayobject';
+import { createDisplayObject, createMaskGroup, setMaskGroupMask } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
 import {
   addNodeChild,
@@ -18,6 +18,7 @@ import {
   disposeDisplayObjectSubtree,
   disposeRenderProxy,
   enableDisplayObjectMaskPass,
+  getDisplayObjectMask,
   getOrCreateRenderProxy2D,
   getRenderProxy2D,
   installRenderAdaptHook,
@@ -137,9 +138,9 @@ describe('disposeDisplayObjectSubtree', () => {
 
   it('disposes the mask proxy on each node', () => {
     const state = createRenderState();
-    const root = createDisplayObject();
+    const root = createMaskGroup();
     const mask = createDisplayObject();
-    root.mask = mask;
+    setMaskGroupMask(root, mask);
     prepareDisplayObjectRender(state, root);
     getOrCreateRenderProxy2D(state, mask);
 
@@ -207,6 +208,18 @@ describe('enableDisplayObjectMaskPass', () => {
     expect(state.displayObjectMaskPass).toBeNull();
     enableDisplayObjectMaskPass(state);
     expect(state.displayObjectMaskPass).toBe(prepareMasks);
+  });
+});
+
+describe('getDisplayObjectMask', () => {
+  it('returns the mask for a MaskGroup and null for other display objects', () => {
+    const plain = createDisplayObject();
+    expect(getDisplayObjectMask(plain)).toBeNull();
+
+    const group = createMaskGroup();
+    const mask = createDisplayObject();
+    setMaskGroupMask(group, mask);
+    expect(getDisplayObjectMask(group)).toBe(mask);
   });
 });
 
@@ -389,9 +402,9 @@ describe('prepareDisplayObjectRender', () => {
   it('marks mask nodes with the current frame id', () => {
     const state = createRenderState();
     state.displayObjectMaskPass = prepareMasks;
-    const root = createDisplayObject();
+    const root = createMaskGroup();
     const mask = createDisplayObject();
-    root.mask = mask;
+    setMaskGroupMask(root, mask);
 
     prepareDisplayObjectRender(state, root);
 
@@ -405,9 +418,9 @@ describe('prepareMasks', () => {
   it('marks mask nodes for the current frame and sets mask depth on the masked node', () => {
     const state = createRenderState();
     state.displayObjectMaskPass = prepareMasks;
-    const root = createDisplayObject();
+    const root = createMaskGroup();
     const maskObj = createDisplayObject();
-    root.mask = maskObj;
+    setMaskGroupMask(root, maskObj);
     prepareDisplayObjectRender(state, root);
     const maskData = getOrCreateRenderProxy2D(state, maskObj);
     expect(maskData.isMaskFrameID).toBe(state.currentFrameID);

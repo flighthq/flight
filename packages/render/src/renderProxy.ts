@@ -12,6 +12,8 @@ import {
   type DisplayObject,
   type HasBoundsRectangle,
   type HasTransform2D,
+  type MaskGroup,
+  MaskGroupKind,
   type Node,
   type Renderable,
   type RenderProxy,
@@ -88,7 +90,8 @@ export function disposeDisplayObjectSubtree(state: RenderState, root: DisplayObj
 
   while (stackLength > 0) {
     const current = tempStack[--stackLength] as DisplayObject;
-    if (current.mask !== null) disposeRenderProxy(state, current.mask);
+    const mask = getDisplayObjectMask(current);
+    if (mask !== null) disposeRenderProxy(state, mask);
     disposeRenderProxy(state, current);
     const children = getNodeRuntime(current).children;
     if (children !== null) {
@@ -115,6 +118,13 @@ export function disposeRenderProxy(state: RenderState, source: Renderable): void
 // it, leaving the hook null so prepareMasks and its second tree walk tree-shake away.
 export function enableDisplayObjectMaskPass(state: RenderState): void {
   state.displayObjectMaskPass = prepareMasks;
+}
+
+// Resolves the clip mask of a display object: only MaskGroup nodes carry one, so every other kind
+// returns null. Centralizes the kind check the mask pass and the backend clip hooks both need now
+// that `mask` lives on the MaskGroup kind rather than on the universal display-object node.
+export function getDisplayObjectMask(source: Readonly<DisplayObject>): DisplayObject | null {
+  return source.kind === MaskGroupKind ? (source as MaskGroup).mask : null;
 }
 
 export function getOrCreateRenderProxy2D(state: RenderState, source: Renderable): RenderProxy2D {
@@ -199,7 +209,7 @@ export function prepareMasks(state: RenderState, source: DisplayObject): void {
     const data = getOrCreateRenderProxy2D(state, current);
     const parentMaskDepth = parentData !== undefined ? parentData.maskDepth : 0;
 
-    const mask = current.mask;
+    const mask = getDisplayObjectMask(current);
     if (mask !== null) {
       const maskParent = getNodeParent(mask);
       const maskParentData =
@@ -239,8 +249,9 @@ export function prepareSpriteRender(state: RenderState, source: Renderable): boo
 }
 
 // Sets a node's clip-rectangle nesting depth from its parent. Stateless (derived from the parent's
-// depth), so it composes as a trait update step. Nodes without the clip-rectangle trait (sprites)
-// carry no clipRectangle field and contribute no depth, so the same step is safe in every walk.
+// depth), so it composes as a trait update step. Both display objects and sprites carry the
+// HasClipRectangle trait; a null clipRectangle contributes no depth, so the same step is safe in
+// every walk. Render caches (the other Renderable) leave the field undefined, which is also null-ish.
 export function updateNodeClipRectangle(
   _state: RenderState,
   source: Renderable,
