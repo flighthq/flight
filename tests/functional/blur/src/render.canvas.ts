@@ -26,6 +26,7 @@ const canvas = createCanvasElement(800, 400, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createCanvasRenderState(canvas, {
+  pixelRatio,
   backgroundColor: 0xffffffff,
   contextAttributes: { alpha: false },
 });

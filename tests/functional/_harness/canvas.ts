@@ -8,6 +8,7 @@ import {
   defaultCanvasRichTextRenderer,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
+  enableCanvasClipRectangleSupport,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
@@ -27,6 +28,7 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   document.body.appendChild(canvas);
 
   const state = createCanvasRenderState(canvas, {
+    pixelRatio,
     backgroundColor: options.background,
     contextAttributes: options.contextAttributes ?? { alpha: false },
     sceneGraphSyncPolicy: options.syncPolicy,
@@ -46,6 +48,8 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
       registerRenderer(state, RichTextKind, defaultCanvasRichTextRenderer);
     }
   }
+
+  if (options.clip) enableCanvasClipRectangleSupport(state);
 
   return {
     state,
