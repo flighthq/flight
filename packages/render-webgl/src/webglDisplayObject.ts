@@ -38,15 +38,15 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
     if (data === undefined || data.isMaskFrameID === frameID) continue;
 
     clipHooks?.popMask(state, data);
-    clipHooks?.popClipRectangle(state, data);
+    clipHooks?.popClipRectangle(state, data, current);
 
     if (!isRenderProxyVisible(data)) continue;
 
     clipHooks?.pushMask(state, current);
 
-    data.renderer?.submit(internal, data);
+    clipHooks?.pushClipRectangle(state, data, current);
 
-    const prePushLength = stackLength;
+    data.renderer?.submit(internal, data);
     if (data.traverseChildren) {
       const children = getDisplayObjectRuntime(current).children;
       if (children !== null) {
@@ -55,8 +55,6 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
         }
       }
     }
-
-    clipHooks?.pushClipRectangle(state, data, current, stackLength > prePushLength);
   }
 
   flushWebGLSpriteBatch(internal);

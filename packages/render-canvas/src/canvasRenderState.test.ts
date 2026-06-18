@@ -40,7 +40,7 @@ it('should be instantiated with default options', () => {
     desynchronized: false,
   });
   expect(renderer.backgroundColor).toBe(0);
-  expect(renderer.pixelRatio).toBe(window.devicePixelRatio);
+  expect(renderer.pixelRatio).toBe(1);
   expect(renderer.roundPixels).toBe(false);
   expect(renderer.renderTransform2D).not.toBeNull();
 });
@@ -94,7 +94,7 @@ it('should correctly handle backgroundColor option', () => {
 
 it('should use default pixelRatio if not provided', () => {
   const renderer = createCanvasRenderState(canvas);
-  expect(renderer.pixelRatio).toBe(window.devicePixelRatio);
+  expect(renderer.pixelRatio).toBe(1);
 });
 
 it('should handle custom pixelRatio correctly', () => {

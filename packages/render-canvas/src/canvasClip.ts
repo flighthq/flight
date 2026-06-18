@@ -38,9 +38,10 @@ const canvasClipHooks: DisplayObjectClipHooks = {
       s.currentMaskDepth--;
     }
   },
-  popClipRectangle(state: RenderState, data: RenderProxy2D): void {
+  popClipRectangle(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
     const s = state as CanvasRenderState;
-    while (s.currentClipRectangleDepth > data.clipRectangleDepth) {
+    const clipTarget = data.clipRectangleDepth - (source.clipRectangle != null ? 1 : 0);
+    while (s.currentClipRectangleDepth > clipTarget) {
       popCanvasClipRectangle(s);
       s.currentClipRectangleDepth--;
     }
@@ -52,8 +53,8 @@ const canvasClipHooks: DisplayObjectClipHooks = {
     pushCanvasMask(state as CanvasRenderState, maskData);
     state.currentMaskDepth++;
   },
-  pushClipRectangle(state: RenderState, data: RenderProxy2D, source: DisplayObject, hasChildren: boolean): void {
-    if (!hasChildren || source.clipRectangle === null) return;
+  pushClipRectangle(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
+    if (source.clipRectangle === null) return;
     pushCanvasClipRectangle(state as CanvasRenderState, source.clipRectangle, data.transform2D);
     state.currentClipRectangleDepth++;
   },

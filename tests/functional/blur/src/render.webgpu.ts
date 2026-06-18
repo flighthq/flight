@@ -29,6 +29,7 @@ const canvas = createWebGPUCanvasElement(800, 400, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = await createWebGPURenderState(canvas, {
+  pixelRatio,
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, BitmapKind, defaultWebGPUBitmapRenderer);
