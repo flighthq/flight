@@ -37,15 +37,15 @@ export function renderWebGPUDisplayObject(state: WebGPURenderState, source: Disp
     if (data === undefined || data.isMaskFrameID === frameID) continue;
 
     clipHooks?.popMask(state, data);
-    clipHooks?.popClipRectangle(state, data);
+    clipHooks?.popClipRectangle(state, data, current);
 
     if (!isRenderProxyVisible(data)) continue;
 
     clipHooks?.pushMask(state, current);
 
-    data.renderer?.submit(state, data);
+    clipHooks?.pushClipRectangle(state, data, current);
 
-    const prePushLength = stackLength;
+    data.renderer?.submit(state, data);
     if (data.traverseChildren) {
       const children = getDisplayObjectRuntime(current).children;
       if (children !== null) {
@@ -54,8 +54,6 @@ export function renderWebGPUDisplayObject(state: WebGPURenderState, source: Disp
         }
       }
     }
-
-    clipHooks?.pushClipRectangle(state, data, current, stackLength > prePushLength);
   }
 
   flushWebGPUSpriteBatch(state as WebGPURenderStateInternal);

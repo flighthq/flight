@@ -50,9 +50,9 @@ describe('createDOMRenderState', () => {
     expect(state.pixelRatio).toBe(3);
   });
 
-  it('defaults pixelRatio to devicePixelRatio', () => {
+  it('defaults pixelRatio to 1', () => {
     const div = document.createElement('div');
     const state = createDOMRenderState(div);
-    expect(state.pixelRatio).toBe(window.devicePixelRatio | 1);
+    expect(state.pixelRatio).toBe(1);
   });
 });

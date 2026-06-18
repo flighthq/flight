@@ -64,7 +64,7 @@ export async function createWebGPURenderState(
 
   const state = _createRenderState({
     allowSmoothing: options.imageSmoothingEnabled ?? true,
-    pixelRatio: options.pixelRatio ?? (globalThis.devicePixelRatio || 1),
+    pixelRatio: options.pixelRatio ?? 1,
     renderTransform2D: createMatrix(),
     roundPixels: options.roundPixels ?? false,
     sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
