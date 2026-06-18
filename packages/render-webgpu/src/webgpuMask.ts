@@ -29,10 +29,11 @@ export function popWebGPUMask(state: WebGPURenderStateInternal): void {
 export function pushWebGPUMask(state: WebGPURenderStateInternal, data: RenderProxy2D): void {
   flushWebGPUSpriteBatch(state);
   state.maskWriteMode = true;
-  // stencil reference is set in drawWebGPUQuad when maskWriteMode is active
   const nextDepth = state.currentMaskDepth + 1;
 
-  // Draw the mask geometry using the stencil-write pipeline
+  // Draw the mask geometry into the stencil buffer. The reference is set explicitly here because
+  // currentMaskDepth is not advanced to nextDepth until after the mask draw; the batch flush below
+  // selects the stencil-write pipeline because maskWriteMode is true.
   if (state.renderPass !== null) {
     state.renderPass.setStencilReference(nextDepth);
   }
