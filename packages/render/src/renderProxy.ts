@@ -79,27 +79,16 @@ export function createRenderProxy2D(
   return node;
 }
 
-// Disposes render proxies for `root` and every descendant in the display object subtree. Also
-// disposes the immediate mask proxy on each node. Call after removeNodeChild to free GPU resources
-// for nodes that will never be rendered again. Unlike prepareDisplayObjectRender, this visits all
-// nodes regardless of enabled or visible state.
-export function disposeDisplayObjectSubtree(state: RenderState, root: DisplayObject): void {
-  const tempStack = state.tempStack;
-  let stackLength = 1;
-  tempStack[0] = root;
-
-  while (stackLength > 0) {
-    const current = tempStack[--stackLength] as DisplayObject;
-    const mask = getDisplayObjectMask(current);
-    if (mask !== null) disposeRenderProxy(state, mask);
-    disposeRenderProxy(state, current);
-    const children = getNodeRuntime(current).children;
-    if (children !== null) {
-      for (let i = children.length - 1; i >= 0; i--) {
-        tempStack[stackLength++] = children[i] as DisplayObject;
-      }
-    }
-  }
+// Teardown counterpart to prepareDisplayObjectRender: disposes the render of `root` and every
+// descendant — the render proxies that prepareDisplayObjectRender created — plus the immediate mask
+// proxy on each node. The mask step is the display-object-only addition on top of the shared
+// walkRenderSubtree, mirroring how prepareDisplayObjectRender adds the mask pass on top of the shared
+// walk. Each disposeRenderProxy cascades to the renderer's destroyData, so the GPU
+// textures/framebuffers are freed now while the proxies become GC-eligible. Call after
+// removeNodeChild for nodes that will never be rendered again. Unlike prepareDisplayObjectRender,
+// this visits all nodes regardless of enabled or visible state.
+export function disposeDisplayObjectRender(state: RenderState, root: DisplayObject): void {
+  walkRenderSubtree(state, root, disposeDisplayObjectNodeRender);
 }
 
 // Disposes the framework-side render proxy for `source`: drops it from the renderProxyMap (a
@@ -111,6 +100,14 @@ export function disposeRenderProxy(state: RenderState, source: Renderable): void
   if (node === undefined) return;
   if (node.rendererData !== null) node.renderer?.destroyData?.(state, node.rendererData);
   state.renderProxyMap.delete(source);
+}
+
+// Teardown counterpart to prepareSpriteRender: disposes the render of `root` and every descendant in
+// the sprite graph. Sprites carry no mask trait, so this is the bare shared walk + disposeRenderProxy,
+// mirroring how prepareSpriteRender is the bare walk without the display-object mask pass. Visits all
+// nodes regardless of enabled or visible state.
+export function disposeSpriteRender(state: RenderState, root: Renderable): void {
+  walkRenderSubtree(state, root, disposeRenderProxy);
 }
 
 // Installs the mask-resolution pass that prepareDisplayObjectRender runs. Called by the renderer
@@ -342,4 +339,39 @@ export function walkNode(state: RenderState, root: Renderable, visit: RenderProx
   }
 
   return treeDirty;
+}
+
+// Per-node teardown step for disposeDisplayObjectRender: disposes the node's render proxy and the
+// render proxy of its mask. Only MaskGroup nodes carry a mask (getDisplayObjectMask returns null for
+// every other kind), and a mask is not a child in the walk, so it must be disposed here rather than
+// visited by walkRenderSubtree.
+function disposeDisplayObjectNodeRender(state: RenderState, node: Renderable): void {
+  const mask = getDisplayObjectMask(node as DisplayObject);
+  if (mask !== null) disposeRenderProxy(state, mask);
+  disposeRenderProxy(state, node);
+}
+
+// Pre-order walk over `root` and its full graph subtree, calling `visit` once per node. Unlike
+// walkNode (the render-prepare walk), it advances no frame id and skips no nodes — disabled and
+// hidden nodes are visited too, since their render proxies still need teardown. Shared by the
+// dispose* render-teardown functions. Uses state.tempStack as scratch, so it must not run re-entrantly.
+function walkRenderSubtree(
+  state: RenderState,
+  root: Renderable,
+  visit: (state: RenderState, node: Renderable) => void,
+): void {
+  const tempStack = state.tempStack;
+  let stackLength = 1;
+  tempStack[0] = root;
+
+  while (stackLength > 0) {
+    const current = tempStack[--stackLength] as Renderable;
+    visit(state, current);
+    const children = getNodeRuntime(current as Node).children;
+    if (children !== null) {
+      for (let i = children.length - 1; i >= 0; i--) {
+        tempStack[stackLength++] = children[i] as unknown as Renderable;
+      }
+    }
+  }
 }
