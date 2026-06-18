@@ -1,4 +1,4 @@
-import { getNodeLocalBoundsRectangle } from '@flighthq/node';
+import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node';
 import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import type {
   DisplayObjectRenderer,
@@ -21,7 +21,7 @@ import {
 interface WebGLShapeData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  lastVersion: number;
+  lastContentID: number;
   lastW: number;
   lastH: number;
 }
@@ -31,13 +31,14 @@ function createWebGLShapeData(_state: RenderState, _source: Renderable): Rendere
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  return { canvas, ctx, lastVersion: -1, lastW: 0, lastH: 0 } as unknown as RendererData;
+  return { canvas, ctx, lastContentID: -1, lastW: 0, lastH: 0 } as unknown as RendererData;
 }
 
 export function drawWebGLShape(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
   const source = renderProxy.source as Shape;
-  const { commands, version } = source.data;
+  const { commands } = source.data;
+  const version = getNodeLocalContentRevision(source);
   if (commands.length === 0) return;
   if (renderProxy.rendererData === null) return;
 
@@ -51,7 +52,7 @@ export function drawWebGLShape(state: RenderState, renderProxy: RenderProxy2D): 
   const h = Math.ceil(bounds.height);
   if (w <= 0 || h <= 0) return;
 
-  if (version !== shapeData.lastVersion || w !== shapeData.lastW || h !== shapeData.lastH) {
+  if (version !== shapeData.lastContentID || w !== shapeData.lastW || h !== shapeData.lastH) {
     shapeData.canvas.width = w;
     shapeData.canvas.height = h;
     const ctx = shapeData.ctx;
@@ -62,7 +63,7 @@ export function drawWebGLShape(state: RenderState, renderProxy: RenderProxy2D): 
     ctx.restore();
     // Invalidate the cached GPU texture so the batch re-uploads from the updated canvas.
     internal.textureCache.delete(shapeData.canvas);
-    shapeData.lastVersion = version;
+    shapeData.lastContentID = version;
     shapeData.lastW = w;
     shapeData.lastH = h;
   }
