@@ -96,8 +96,9 @@ function recomputeLocalTransform2D<Traits extends object>(
   matrix.b = runtime.rotationSine * target.scaleX;
   matrix.c = -runtime.rotationSine * target.scaleY;
   matrix.d = runtime.rotationCosine * target.scaleY;
-  matrix.tx = target.x;
-  matrix.ty = target.y;
+  // Pivot: the local point (pivotX, pivotY) maps to (x, y). With pivot 0,0 this reduces to tx=x, ty=y.
+  matrix.tx = target.x - (matrix.a * target.pivotX + matrix.c * target.pivotY);
+  matrix.ty = target.y - (matrix.b * target.pivotX + matrix.d * target.pivotY);
   runtime.localTransformUsingLocalTransformID = runtime.localTransformID;
 }
 
