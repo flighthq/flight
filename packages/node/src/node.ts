@@ -49,6 +49,7 @@ export function createNodeRuntime<Traits extends object = NodeTraits>(
   out.interactionSignals = null;
   out.localBoundsID = 0;
   out.localBoundsUsingLocalBoundsID = -1;
+  out.localContentID = 0;
   out.localTransformID = 0;
   out.localTransformUsingLocalTransformID = -1;
   out.parent = null;
