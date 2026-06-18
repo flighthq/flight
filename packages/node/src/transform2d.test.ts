@@ -208,6 +208,26 @@ describe('getNodeLocalTransformMatrix', () => {
     const transform = getNodeLocalTransformMatrix(node);
     expect(transform).equals((getEntityRuntime(node) as HasTransform2DRuntime).localTransform2D);
   });
+
+  it('offsets translation by the pivot so the pivot point lands at (x, y)', () => {
+    node.x = 100;
+    node.y = 50;
+    node.pivotX = 10;
+    node.pivotY = 20;
+    const transform = getNodeLocalTransformMatrix(node);
+    expect(transform.tx).toBeCloseTo(90); // 100 - 1 * 10
+    expect(transform.ty).toBeCloseTo(30); // 50 - 1 * 20
+  });
+
+  it('scales the pivot offset with scaleX/scaleY', () => {
+    node.scaleX = 2;
+    node.scaleY = 3;
+    node.pivotX = 10;
+    node.pivotY = 10;
+    const transform = getNodeLocalTransformMatrix(node);
+    expect(transform.tx).toBeCloseTo(-20); // 0 - 2 * 10
+    expect(transform.ty).toBeCloseTo(-30); // 0 - 3 * 10
+  });
 });
 
 describe('getNodeWorldTransformMatrix', () => {
