@@ -1,3 +1,4 @@
+import { invalidateImageSource } from '@flighthq/assets';
 import type { SurfaceRegion } from '@flighthq/types';
 
 /**
@@ -88,6 +89,7 @@ export function dissolveSurfacePixels(
     destData[di + 3] = sourceData[si + 3];
   }
 
+  invalidateImageSource(dest.surface);
   return cursor;
 }
 

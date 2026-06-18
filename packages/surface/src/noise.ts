@@ -1,3 +1,4 @@
+import { invalidateImageSource } from '@flighthq/assets';
 import type { SurfaceRegion } from '@flighthq/types';
 
 /**
@@ -45,6 +46,7 @@ export function fillSurfaceNoise(
       data[i + 3] = 255;
     }
   }
+  invalidateImageSource(dest.surface);
 }
 
 /**
@@ -92,6 +94,7 @@ export function fillSurfacePerlinNoise(
       data[di + 3] = 255;
     }
   }
+  invalidateImageSource(dest.surface);
 }
 
 // Fractal sum of value noise: doubling frequency, halving amplitude per octave,

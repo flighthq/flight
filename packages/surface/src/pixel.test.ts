@@ -80,6 +80,13 @@ describe('setSurfacePixel', () => {
     setSurfacePixel(img, 1, 0, 0xadbeefde);
     expect(getSurfacePixel(img, 1, 0)).toBe(0xadbeefde);
   });
+
+  it('bumps the surface version (self-invalidation)', () => {
+    const img = createSurface(2, 2);
+    const before = img.version;
+    setSurfacePixel(img, 1, 0, 0xadbeefde);
+    expect(img.version).toBe(before + 1);
+  });
 });
 
 describe('setSurfacePixelRGB', () => {
