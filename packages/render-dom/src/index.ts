@@ -5,7 +5,7 @@ export * from './domClip';
 export * from './domClipRectangle';
 export * from './domCSSFilterBinding';
 export * from './domDisplayObject';
-export { invalidateDOMFontSource } from './domFontSource';
+export { invalidateDOMFontResource } from './domFontSource';
 export * from './domInputText';
 export * from './domMask';
 export * from './domMaterials';

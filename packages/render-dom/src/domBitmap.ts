@@ -27,9 +27,9 @@ export function drawDOMBitmap(state: DOMRenderState, renderProxy: RenderProxy2D)
 
   const source = renderProxy.source as Bitmap;
   const imageSource = source.data.image;
-  if (imageSource === null || imageSource.src === null) return;
+  if (imageSource === null || imageSource.source === null) return;
 
-  const src = imageSource.src;
+  const src = imageSource.source;
   const sr = source.data.sourceRectangle ?? null;
 
   if (sr === null && src instanceof HTMLImageElement) {

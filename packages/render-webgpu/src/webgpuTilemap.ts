@@ -22,7 +22,7 @@ function submitWebGPUTilemap(state: RenderState, tilemapNode: RenderProxy2D): vo
 
   if (tileset === null) return;
   const atlas = tileset.atlas;
-  if (atlas === null || atlas.image === null || atlas.image.src === null) return;
+  if (atlas === null || atlas.image === null || atlas.image.source === null) return;
   if (columns === 0 || rows === 0) return;
 
   const material = tilemapNode.material;
@@ -33,7 +33,7 @@ function submitWebGPUTilemap(state: RenderState, tilemapNode: RenderProxy2D): vo
   const startCount = internal.spriteBatchCount;
   const base = prepareWebGPUSpriteBatchWrite(
     internal,
-    atlas.image.src,
+    atlas.image.source,
     tilemapNode.blendMode,
     material,
     materialRenderer,

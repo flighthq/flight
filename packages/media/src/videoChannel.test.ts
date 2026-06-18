@@ -1,9 +1,9 @@
-import { createVideoSource } from '@flighthq/assets';
+import { createVideoResource } from '@flighthq/resources';
 
 import {
   getVideoChannelCurrentTime,
   pauseVideoChannel,
-  playVideoSource,
+  playVideoResource,
   resumeVideoChannel,
   setVideoChannelCurrentTime,
   setVideoChannelGain,
@@ -13,8 +13,8 @@ import {
 
 describe('getVideoChannelCurrentTime', () => {
   it('returns stored currentTime when not playing', () => {
-    const source = createVideoSource(createMockVideoElement());
-    const channel = playVideoSource(source, { currentTime: 500 });
+    const source = createVideoResource(createMockVideoElement());
+    const channel = playVideoResource(source, { currentTime: 500 });
     expect(channel).not.toBeNull();
     pauseVideoChannel(channel!);
     expect(getVideoChannelCurrentTime(channel!)).toBe(500);
@@ -24,7 +24,7 @@ describe('getVideoChannelCurrentTime', () => {
 describe('pauseVideoChannel', () => {
   it('marks the channel as paused and calls element.pause', () => {
     const element = createMockVideoElement();
-    const channel = playVideoSource(createVideoSource(element));
+    const channel = playVideoResource(createVideoResource(element));
     expect(channel).not.toBeNull();
     pauseVideoChannel(channel!);
     expect(channel!.state).toBe('paused');
@@ -32,13 +32,13 @@ describe('pauseVideoChannel', () => {
   });
 });
 
-describe('playVideoSource', () => {
+describe('playVideoResource', () => {
   it('returns null when element is null', () => {
-    expect(playVideoSource(createVideoSource())).toBeNull();
+    expect(playVideoResource(createVideoResource())).toBeNull();
   });
 
   it('returns a playing channel with applied options', () => {
-    const channel = playVideoSource(createVideoSource(createMockVideoElement()), { gain: 0.5 });
+    const channel = playVideoResource(createVideoResource(createMockVideoElement()), { gain: 0.5 });
     expect(channel).not.toBeNull();
     expect(channel!.gain).toBe(0.5);
     expect(channel!.state).toBe('playing');
@@ -47,7 +47,7 @@ describe('playVideoSource', () => {
 
 describe('resumeVideoChannel', () => {
   it('resumes a paused channel', () => {
-    const channel = playVideoSource(createVideoSource(createMockVideoElement()));
+    const channel = playVideoResource(createVideoResource(createMockVideoElement()));
     expect(channel).not.toBeNull();
     pauseVideoChannel(channel!);
     resumeVideoChannel(channel!);
@@ -58,7 +58,7 @@ describe('resumeVideoChannel', () => {
 describe('setVideoChannelCurrentTime', () => {
   it('clamps the value to channel length', () => {
     const element = createMockVideoElement(1);
-    const channel = playVideoSource(createVideoSource(element));
+    const channel = playVideoResource(createVideoResource(element));
     expect(channel).not.toBeNull();
     expect(setVideoChannelCurrentTime(channel!, 9999)).toBe(1000);
   });
@@ -67,7 +67,7 @@ describe('setVideoChannelCurrentTime', () => {
 describe('setVideoChannelGain', () => {
   it('updates channel gain and element volume', () => {
     const element = createMockVideoElement();
-    const channel = playVideoSource(createVideoSource(element));
+    const channel = playVideoResource(createVideoResource(element));
     expect(channel).not.toBeNull();
     expect(setVideoChannelGain(channel!, 0.3)).toBe(0.3);
     expect(element.volume).toBe(0.3);
@@ -77,7 +77,7 @@ describe('setVideoChannelGain', () => {
 describe('setVideoChannelPlaybackRate', () => {
   it('updates channel playback rate and element rate', () => {
     const element = createMockVideoElement();
-    const channel = playVideoSource(createVideoSource(element));
+    const channel = playVideoResource(createVideoResource(element));
     expect(channel).not.toBeNull();
     expect(setVideoChannelPlaybackRate(channel!, 2)).toBe(2);
     expect(element.playbackRate).toBe(2);
@@ -87,7 +87,7 @@ describe('setVideoChannelPlaybackRate', () => {
 describe('stopVideoChannel', () => {
   it('stops playback and resets currentTime', () => {
     const element = createMockVideoElement();
-    const channel = playVideoSource(createVideoSource(element), { currentTime: 400 });
+    const channel = playVideoResource(createVideoResource(element), { currentTime: 400 });
     expect(channel).not.toBeNull();
     stopVideoChannel(channel!);
     expect(channel!.currentTime).toBe(0);

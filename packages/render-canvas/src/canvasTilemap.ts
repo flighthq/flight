@@ -9,13 +9,13 @@ export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderP
 
   if (tileset === null) return;
   const atlas = tileset.atlas;
-  if (atlas === null || atlas.image === null || atlas.image.src === null) return;
+  if (atlas === null || atlas.image === null || atlas.image.source === null) return;
   if (columns === 0 || rows === 0) return;
 
   state.applyBlendMode?.(state, tilemapNode.blendMode);
 
   const context = state.context;
-  const image = atlas.image.src;
+  const image = atlas.image.source;
   const regions = atlas.regions;
   const numRegions = regions.length;
   const transform = tilemapNode.transform2D;

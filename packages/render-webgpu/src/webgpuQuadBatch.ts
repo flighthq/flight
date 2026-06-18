@@ -27,7 +27,7 @@ function submitWebGPUQuadBatch(state: RenderState, quadBatch: RenderProxy2D): vo
   const source = quadBatch.source as QuadBatch;
   const data = source.data;
   const { atlas, instanceCount, ids, transforms } = data;
-  if (atlas === null || atlas.image === null || atlas.image.src === null || instanceCount === 0) return;
+  if (atlas === null || atlas.image === null || atlas.image.source === null || instanceCount === 0) return;
 
   const material = quadBatch.material;
   const materialRenderer = resolveWebGPUMaterialRenderer(internal, material);
@@ -37,7 +37,7 @@ function submitWebGPUQuadBatch(state: RenderState, quadBatch: RenderProxy2D): vo
   const startCount = internal.spriteBatchCount;
   const base = prepareWebGPUSpriteBatchWrite(
     internal,
-    atlas.image.src,
+    atlas.image.source,
     quadBatch.blendMode,
     material,
     materialRenderer,

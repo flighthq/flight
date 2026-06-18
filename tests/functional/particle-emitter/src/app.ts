@@ -13,7 +13,7 @@ import type { Sprite } from '@flighthq/sdk';
 import {
   addNodeChild,
   addTextureAtlasRegion,
-  createImageSource,
+  createImageResource,
   createParticleEmitter,
   createSprite,
   createTextureAtlas,
@@ -42,7 +42,7 @@ function makeGlowCanvas(r: number, g: number, b: number): HTMLCanvasElement {
 }
 
 function makeAtlas(r: number, g: number, b: number) {
-  const atlas = createTextureAtlas({ image: createImageSource(makeGlowCanvas(r, g, b)) });
+  const atlas = createTextureAtlas({ image: createImageResource(makeGlowCanvas(r, g, b)) });
   addTextureAtlasRegion(atlas, 0, 0, 16, 16);
   return atlas;
 }

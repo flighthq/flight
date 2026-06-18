@@ -1,15 +1,15 @@
-import { createImageSourceFromCanvas } from '@flighthq/assets';
 import { createEntity } from '@flighthq/entity';
-import type { ImageSource, Surface } from '@flighthq/types';
+import { createImageResourceFromCanvas } from '@flighthq/resources';
+import type { ImageResource, Surface } from '@flighthq/types';
 
-export function createImageSourceFromSurface(source: Readonly<Surface>): ImageSource {
+export function createImageResourceFromSurface(surface: Readonly<Surface>): ImageResource {
   const canvas = document.createElement('canvas');
-  canvas.width = source.width;
-  canvas.height = source.height;
-  const domImageData = new globalThis.ImageData(source.width, source.height);
-  domImageData.data.set(source.data);
+  canvas.width = surface.width;
+  canvas.height = surface.height;
+  const domImageData = new globalThis.ImageData(surface.width, surface.height);
+  domImageData.data.set(surface.data);
   canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
-  return createImageSourceFromCanvas(canvas);
+  return createImageResourceFromCanvas(canvas);
 }
 
 export function createSurfaceFromCanvas(
@@ -27,35 +27,35 @@ export function createSurfaceFromCanvas(
     colorSpace: raw.colorSpace as 'srgb' | 'display-p3',
     data: raw.data,
     height: raw.height,
-    src: null,
+    source: null,
     version: 0,
     width: raw.width,
   });
 }
 
-export function createSurfaceFromImageSource(source: Readonly<ImageSource>): Surface {
+export function createSurfaceFromImageResource(resource: Readonly<ImageResource>): Surface {
   const canvas = document.createElement('canvas');
-  canvas.width = source.width;
-  canvas.height = source.height;
-  if (source.src === null) {
+  canvas.width = resource.width;
+  canvas.height = resource.height;
+  if (resource.source === null) {
     return createEntity({
       colorSpace: 'srgb' as const,
-      data: new Uint8ClampedArray(source.width * source.height * 4),
-      height: source.height,
-      src: null,
+      data: new Uint8ClampedArray(resource.width * resource.height * 4),
+      height: resource.height,
+      source: null,
       version: 0,
-      width: source.width,
+      width: resource.width,
     });
   }
   const ctx = canvas.getContext('2d')!;
-  ctx.drawImage(source.src, 0, 0);
-  const raw = ctx.getImageData(0, 0, source.width, source.height);
+  ctx.drawImage(resource.source, 0, 0);
+  const raw = ctx.getImageData(0, 0, resource.width, resource.height);
   return createEntity({
     colorSpace: raw.colorSpace as 'srgb' | 'display-p3',
     data: raw.data,
-    height: source.height,
-    src: null,
+    height: resource.height,
+    source: null,
     version: 0,
-    width: source.width,
+    width: resource.width,
   });
 }

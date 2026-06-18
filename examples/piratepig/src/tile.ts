@@ -1,4 +1,4 @@
-import type { DisplayObject, ImageSource, InteractionManager, TweenManager } from '@flighthq/sdk';
+import type { DisplayObject, ImageResource, InteractionManager, TweenManager } from '@flighthq/sdk';
 import {
   addNodeChild,
   addNodeChildAt,
@@ -81,7 +81,7 @@ export function connectTileInteraction(
   }
 }
 
-export function createTile(image: ImageSource, type: number): Tile {
+export function createTile(image: ImageResource, type: number): Tile {
   const obj = createDisplayObject();
   setRectangle(getNodeLocalBoundsRectangle(obj), 0, 0, TILE_SIZE, TILE_SIZE);
   const bitmap = createBitmap();

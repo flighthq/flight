@@ -1,6 +1,4 @@
 ﻿export * from '@flighthq/application';
-export * from '@flighthq/assets';
-export * from '@flighthq/assets-loader';
 export * from '@flighthq/displayobject';
 export * from '@flighthq/entity';
 export * from '@flighthq/filters';
@@ -20,6 +18,8 @@ export * from '@flighthq/render-canvas';
 export * from '@flighthq/render-dom';
 export * from '@flighthq/render-webgl';
 export * from '@flighthq/render-webgpu';
+export * from '@flighthq/resources';
+export * from '@flighthq/resources-loader';
 export * from '@flighthq/signals';
 export * from '@flighthq/sprite';
 export * from '@flighthq/spritesheet';

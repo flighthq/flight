@@ -1,4 +1,4 @@
-import { getDomFontAscentCached, invalidateDOMFontSource, setDomFontAscentCached } from './domFontSource';
+import { getDomFontAscentCached, invalidateDOMFontResource, setDomFontAscentCached } from './domFontSource';
 
 describe('getDomFontAscentCached', () => {
   it('returns undefined for an unknown font key', () => {
@@ -6,18 +6,18 @@ describe('getDomFontAscentCached', () => {
   });
 });
 
-describe('invalidateDOMFontSource', () => {
+describe('invalidateDOMFontResource', () => {
   it('removes cache entries that match the font family', () => {
     setDomFontAscentCached("16px 'MyFont'", 14);
     setDomFontAscentCached('16px "MyFont"', 14);
-    invalidateDOMFontSource({ family: 'MyFont', face: null });
+    invalidateDOMFontResource({ family: 'MyFont', face: null });
     expect(getDomFontAscentCached("16px 'MyFont'")).toBeUndefined();
     expect(getDomFontAscentCached('16px "MyFont"')).toBeUndefined();
   });
 
   it('does not remove cache entries for other families', () => {
     setDomFontAscentCached("16px 'OtherFont'", 13);
-    invalidateDOMFontSource({ family: 'MyFont', face: null });
+    invalidateDOMFontResource({ family: 'MyFont', face: null });
     expect(getDomFontAscentCached("16px 'OtherFont'")).toBe(13);
   });
 });

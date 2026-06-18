@@ -160,13 +160,13 @@ export function drawWebGPUParticleEmitter(state: RenderState, renderProxy: Rende
 
   const source = renderProxy.source as ParticleEmitter;
   const { atlas, alphas, colors, ids, particleCount, transforms } = source.data;
-  if (atlas === null || atlas.image === null || atlas.image.src === null || particleCount === 0) return;
+  if (atlas === null || atlas.image === null || atlas.image.source === null || particleCount === 0) return;
 
   const resources = ensureParticleResources(internal);
   ensureParticleInstanceBuffer(internal, particleCount);
 
   internal.applyBlendMode?.(internal, renderProxy.blendMode);
-  const textureEntry = bindWebGPUTexture(internal, atlas.image.src);
+  const textureEntry = bindWebGPUTexture(internal, atlas.image.source);
 
   const regions = atlas.regions;
   const numRegions = regions.length;

@@ -23,7 +23,7 @@ function submitWebGLQuadBatch(state: RenderState, quadBatch: RenderProxy2D): voi
   const source = quadBatch.source as QuadBatch;
   const data = source.data;
   const { atlas, instanceCount, ids, transforms } = data;
-  if (atlas === null || atlas.image === null || atlas.image.src === null || instanceCount === 0) return;
+  if (atlas === null || atlas.image === null || atlas.image.source === null || instanceCount === 0) return;
 
   ensureWebGLQuadBatchShader(internal);
 
@@ -35,7 +35,7 @@ function submitWebGLQuadBatch(state: RenderState, quadBatch: RenderProxy2D): voi
   const startCount = internal.spriteBatchCount;
   const base = prepareWebGLSpriteBatchWrite(
     internal,
-    atlas.image.src,
+    atlas.image.source,
     quadBatch.blendMode,
     material,
     materialRenderer,

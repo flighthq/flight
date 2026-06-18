@@ -1,5 +1,5 @@
 import { createMatrix, inverseMatrix } from '@flighthq/geometry';
-import type { CanvasShapeCommand, ImageSource, Matrix } from '@flighthq/types';
+import type { CanvasShapeCommand, ImageResource, Matrix } from '@flighthq/types';
 
 const _fillMatrixInverse: Matrix = createMatrix();
 
@@ -8,7 +8,7 @@ import { createBitmapPattern, createGradientPattern } from './canvasFillPattern'
 export const defaultCanvasBeginBitmapFill: CanvasShapeCommand<'beginBitmapFill'> = {
   key: 'beginBitmapFill',
   draw(context, state, buf, i) {
-    const bitmap = buf[i] as ImageSource;
+    const bitmap = buf[i] as ImageResource;
     const matrix = buf[i + 1] as Matrix | null;
     const repeat = buf[i + 2] as boolean;
     const smooth = buf[i + 3] as boolean;
@@ -23,7 +23,7 @@ export const defaultCanvasBeginBitmapFill: CanvasShapeCommand<'beginBitmapFill'>
     } else {
       state.fillMatrixInverse = null;
     }
-    state.bitmapSrc = bitmap.src;
+    state.bitmapSrc = bitmap.source;
     state.bitmapW = bitmap.width;
     state.bitmapH = bitmap.height;
   },
@@ -274,7 +274,7 @@ export const defaultCanvasEndFill: CanvasShapeCommand<'endFill'> = {
 export const defaultCanvasLineBitmapStyle: CanvasShapeCommand<'lineBitmapStyle'> = {
   key: 'lineBitmapStyle',
   draw(context, state, buf, i) {
-    const bitmap = buf[i] as ImageSource;
+    const bitmap = buf[i] as ImageResource;
     const repeat = buf[i + 2] as boolean;
     const smooth = buf[i + 3] as boolean;
     const pattern = createBitmapPattern(context, bitmap, repeat, smooth);

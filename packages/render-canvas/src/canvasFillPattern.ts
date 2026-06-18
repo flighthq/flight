@@ -1,18 +1,25 @@
 import { createMatrix } from '@flighthq/geometry';
-import type { GradientType, ImageSource, InterpolationMethod, Matrix, MatrixLike, SpreadMethod } from '@flighthq/types';
+import type {
+  GradientType,
+  ImageResource,
+  InterpolationMethod,
+  Matrix,
+  MatrixLike,
+  SpreadMethod,
+} from '@flighthq/types';
 
 // Flash's gradient box is normalized to ±819.2 units.
 const GRADIENT_HALF = 819.2;
 
 export function createBitmapPattern(
   context: CanvasRenderingContext2D,
-  bitmap: ImageSource,
+  bitmap: ImageResource,
   repeat: boolean,
   smooth = false,
 ): CanvasPattern | null {
-  if (bitmap.src === null) return null;
+  if (bitmap.source === null) return null;
   setSmoothing(context, smooth);
-  return context.createPattern(bitmap.src, repeat ? 'repeat' : 'no-repeat');
+  return context.createPattern(bitmap.source, repeat ? 'repeat' : 'no-repeat');
 }
 
 export function createGradientPattern(

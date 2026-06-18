@@ -14,7 +14,7 @@ export function drawWebGLBitmap(state: RenderState, renderProxy: RenderProxy2D):
   const internal = state as WebGLRenderStateInternal;
   const source = renderProxy.source as Bitmap;
   const imageSource = source.data.image;
-  if (imageSource === null || imageSource.src === null) return;
+  if (imageSource === null || imageSource.source === null) return;
 
   const material = renderProxy.material;
   const materialRenderer = resolveWebGLMaterialRenderer(internal, material);
@@ -50,7 +50,7 @@ export function drawWebGLBitmap(state: RenderState, renderProxy: RenderProxy2D):
   const startCount = internal.spriteBatchCount;
   const base = prepareWebGLSpriteBatchWrite(
     internal,
-    imageSource.src,
+    imageSource.source,
     renderProxy.blendMode,
     material,
     materialRenderer,

@@ -1,4 +1,4 @@
-import { invalidateImageSource } from '@flighthq/assets';
+import { invalidateImageResource } from '@flighthq/resources';
 import type { SurfaceRegion } from '@flighthq/types';
 
 /**
@@ -68,7 +68,7 @@ export function rotateSurface(
       }
     }
   }
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
 }
 
 /**
@@ -110,7 +110,7 @@ export function rotateSurface180(dest: Readonly<SurfaceRegion>, source: Readonly
       copyPixel(dd, (dy * dStride + dx) * 4, sd, (sy * sStride + sx) * 4);
     }
   }
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
 }
 
 /**
@@ -137,7 +137,7 @@ export function rotateSurfaceClockwise(dest: Readonly<SurfaceRegion>, source: Re
       copyPixel(dd, (dy * dStride + dx) * 4, sd, (sy * sStride + sx) * 4);
     }
   }
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
 }
 
 /**
@@ -165,7 +165,7 @@ export function rotateSurfaceCounterClockwise(dest: Readonly<SurfaceRegion>, sou
       copyPixel(dd, (dy * dStride + dx) * 4, sd, (sy * sStride + sx) * 4);
     }
   }
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
 }
 
 function copyPixel(dest: Uint8ClampedArray, di: number, source: Readonly<Uint8ClampedArray>, si: number): void {
