@@ -12,14 +12,12 @@ import {
   setDisplayObjectMask,
 } from '@flighthq/sdk';
 
-import { height, render, scale, width } from './render';
+import { height, render, width } from './render';
 
 const root = createDisplayContainer();
-root.scaleX = scale;
-root.scaleY = scale;
 
-const W = width / scale;
-const H = height / scale;
+const W = width;
+const H = height;
 
 const bg = createShape();
 appendShapeBeginFill(bg, 0xffffff);

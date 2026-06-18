@@ -1,14 +1,11 @@
 import Shape from 'openfl/display/Shape';
-import Sprite from 'openfl/display/Sprite';
-import Stage from 'openfl/display/Stage';
+
+import { createReferenceStage } from '../../_harness/stage';
 
 const WIDTH = 800;
 const HEIGHT = 600;
 
-const stage = new Stage(WIDTH, HEIGHT, 0xffffff);
-document.getElementById('app')!.appendChild((stage as any).element);
-const root = new Sprite();
-stage.addChild(root);
+const { root } = createReferenceStage(WIDTH, HEIGHT, 0xffffff);
 
 const ROWS = 9;
 const cellW = WIDTH / 4;

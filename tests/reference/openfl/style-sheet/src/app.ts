@@ -1,16 +1,13 @@
-import Sprite from 'openfl/display/Sprite';
-import Stage from 'openfl/display/Stage';
 import StyleSheet from 'openfl/text/StyleSheet';
 import TextField from 'openfl/text/TextField';
 import TextFormat from 'openfl/text/TextFormat';
 
+import { createReferenceStage } from '../../_harness/stage';
+
 const WIDTH = 800;
 const HEIGHT = 600;
 
-const stage = new Stage(WIDTH, HEIGHT, 0xffffff);
-document.getElementById('app')!.appendChild((stage as any).element);
-const root = new Sprite();
-stage.addChild(root);
+const { root } = createReferenceStage(WIDTH, HEIGHT, 0xffffff);
 
 const ss = new StyleSheet();
 ss.setStyle('body', { fontFamily: 'sans-serif', fontSize: '15', color: '#000066' });

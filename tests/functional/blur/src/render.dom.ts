@@ -4,11 +4,13 @@ import {
   BitmapKind,
   createDOMRenderState,
   defaultDOMBitmapRenderer,
+  defaultDOMRichTextRenderer,
   enableDOMCSSFilterSupport,
   prepareDisplayObjectRender,
   registerRenderer,
   renderDOMBackground,
   renderDOMDisplayObject,
+  RichTextKind,
   setDOMCSSFilter,
 } from '@flighthq/sdk';
 
@@ -20,6 +22,7 @@ document.body.appendChild(container);
 
 export const state = createDOMRenderState(container, { backgroundColor: 0xffffffff });
 registerRenderer(state, BitmapKind, defaultDOMBitmapRenderer);
+registerRenderer(state, RichTextKind, defaultDOMRichTextRenderer);
 export const scale = 1;
 export const width = 800;
 export const height = 400;

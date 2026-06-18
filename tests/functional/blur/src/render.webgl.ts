@@ -14,13 +14,16 @@ import {
   createWebGLRenderState,
   createWebGLRenderTarget,
   defaultWebGLBitmapRenderer,
+  defaultWebGLRichTextRenderer,
   drawWebGLRenderTargetResult,
   endWebGLRenderTarget,
-  getDisplayObjectRenderProxy,
+  getRenderProxy2D,
   prepareDisplayObjectRender,
+  registerDefaultWebGLMaterial,
   registerRenderer,
   renderWebGLBackground,
   renderWebGLDisplayObject,
+  RichTextKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -32,6 +35,8 @@ export const state = createWebGLRenderState(canvas, {
   contextAttributes: { alpha: false },
 });
 registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);
+registerRenderer(state, RichTextKind, defaultWebGLRichTextRenderer);
+registerDefaultWebGLMaterial(state);
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 400;
@@ -75,7 +80,7 @@ export function render(root: DisplayObject): void {
   // node's scene transform now — the offscreen pass below overwrites transform2D in place.
   prepareDisplayObjectRender(state, root);
   for (const entry of _entries) {
-    const renderProxy = getDisplayObjectRenderProxy(state, entry.node);
+    const renderProxy = getRenderProxy2D(state, entry.node);
     if (renderProxy !== undefined) copyMatrix(entry.sceneTransform, renderProxy.transform2D);
   }
 
@@ -89,7 +94,7 @@ export function render(root: DisplayObject): void {
     computeNodeBoundsRectangle(_bounds, node, node);
     computeRenderCacheTransform(entry.cacheTransform, _bounds, padding, padding);
 
-    const renderProxy = getDisplayObjectRenderProxy(state, node);
+    const renderProxy = getRenderProxy2D(state, node);
     if (renderProxy === undefined) continue;
     setTranslation(renderProxy.transform2D, padding - _bounds.x, padding - _bounds.y);
 
@@ -104,13 +109,19 @@ export function render(root: DisplayObject): void {
     endWebGLRenderTarget(state);
   }
 
-  // Main pass: only BitmapKind has a renderer in this column, so drawing the tree would show the
-  // sharp originals. Instead clear the background and composite the blurred targets directly.
-  renderWebGLBackground(state);
+  // Main pass: restore the blurred nodes' scene transforms (the offscreen pass overwrote them), draw
+  // the full tree so the non-blurred content — the labels — appears, then composite each blurred
+  // target over its sharp original. The blurred composite is larger than the source (blur padding),
+  // so it covers the sharp bitmap drawn underneath; the labels are untouched.
   for (const entry of _entries) {
-    const renderProxy = getDisplayObjectRenderProxy(state, entry.node);
+    const renderProxy = getRenderProxy2D(state, entry.node);
+    if (renderProxy !== undefined) copyMatrix(renderProxy.transform2D, entry.sceneTransform);
+  }
+  renderWebGLBackground(state);
+  renderWebGLDisplayObject(state, root);
+  for (const entry of _entries) {
+    const renderProxy = getRenderProxy2D(state, entry.node);
     if (renderProxy === undefined) continue;
-    copyMatrix(renderProxy.transform2D, entry.sceneTransform);
     drawWebGLRenderTargetResult(state, renderProxy, entry.blurred, entry.cacheTransform);
   }
 }
