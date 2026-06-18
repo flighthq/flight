@@ -1,5 +1,6 @@
 import { getTextRuntime } from '@flighthq/displayobject';
 import { computeRGBHexString } from '@flighthq/materials';
+import { getNodeLocalContentRevision } from '@flighthq/node';
 import { computeTextFormatFontString } from '@flighthq/render';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
@@ -26,7 +27,11 @@ import {
 interface WebGPUTextData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  lastHash: string;
+  // Content revision and pixel ratio at last rasterization. Re-rasterization is driven by the
+  // upstream Text content version (bumped by Text setters on layout-affecting changes), never by
+  // appearance-only changes such as alpha.
+  lastContentID: number;
+  lastPixelRatio: number;
   logW: number;
   logH: number;
   lastPW: number;
@@ -38,7 +43,16 @@ function createWebGPUTextData(_state: RenderState, _source: Renderable): Rendere
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  return { canvas, ctx, lastHash: '', logW: 0, logH: 0, lastPW: 0, lastPH: 0 } as unknown as RendererData;
+  return {
+    canvas,
+    ctx,
+    lastContentID: -1,
+    lastPixelRatio: 0,
+    logW: 0,
+    logH: 0,
+    lastPW: 0,
+    lastPH: 0,
+  } as unknown as RendererData;
 }
 
 export function drawWebGPUText(state: RenderState, renderProxy: RenderProxy2D): void {
@@ -57,9 +71,9 @@ export function drawWebGPUText(state: RenderState, renderProxy: RenderProxy2D): 
   const textData = renderProxy.rendererData as unknown as WebGPUTextData;
   const maxTexDim = internal.device.limits.maxTextureDimension2D;
   const pixelRatio = internal.pixelRatio;
-  const hash = `${text}\0${fieldWidth}\0${fieldHeight}\0${pixelRatio}\0${JSON.stringify(textFormat)}`;
+  const version = getNodeLocalContentRevision(source);
 
-  if (hash !== textData.lastHash) {
+  if (version !== textData.lastContentID || pixelRatio !== textData.lastPixelRatio) {
     const measure = (t: string, format: TextFormat): number => {
       textData.ctx.font = computeTextFormatFontString(format);
       return textData.ctx.measureText(t).width;
@@ -74,7 +88,8 @@ export function drawWebGPUText(state: RenderState, renderProxy: RenderProxy2D): 
       measure,
     });
 
-    textData.lastHash = hash;
+    textData.lastContentID = version;
+    textData.lastPixelRatio = pixelRatio;
     textData.logW = 0;
     textData.logH = 0;
 
