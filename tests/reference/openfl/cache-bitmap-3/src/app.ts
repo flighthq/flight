@@ -74,7 +74,7 @@ function loadBitmapData(url: string): Promise<BitmapData> {
   menuGroup.addChild(menuBg);
 
   const title = new TextField();
-  title.defaultTextFormat = new TextFormat('sans-serif', pos(44), 0xe8c343);
+  title.defaultTextFormat = new TextFormat('_sans', pos(44), 0xe8c343);
   title.x = pos(109);
   title.y = pos(186);
   title.width = pos(500);
@@ -95,7 +95,7 @@ function loadBitmapData(url: string): Promise<BitmapData> {
   ];
   for (let i = 0; i < menuItems.length; i++) {
     const item = new TextField();
-    item.defaultTextFormat = new TextFormat('sans-serif', pos(28), 0xffffff);
+    item.defaultTextFormat = new TextFormat('_sans', pos(28), 0xffffff);
     item.x = pos(109);
     item.y = pos(291 + i * 44);
     item.width = pos(1000);
@@ -106,19 +106,23 @@ function loadBitmapData(url: string): Promise<BitmapData> {
   root.addChild(menuGroup);
 
   const statusLabel = new TextField();
-  statusLabel.defaultTextFormat = new TextFormat('sans-serif', pos(28), 0xe8c343);
+  statusLabel.defaultTextFormat = new TextFormat('_sans', pos(28), 0xe8c343);
   statusLabel.x = 0;
   statusLabel.y = 0;
   statusLabel.width = pos(400);
   statusLabel.height = pos(40);
-  statusLabel.text = 'cacheAsBitmap: n/a';
+  statusLabel.text = 'render cache: OFF';
   root.addChild(statusLabel);
 
   let menuX = 0;
   let menuXInc = pos(5);
   const maxX = pos(640);
+  let cacheEnabled = false;
+  let lastToggle = performance.now();
+  const TOGGLE_MS = 3000;
 
   root.addEventListener(Event.ENTER_FRAME, () => {
+    const now = performance.now();
     menuX += menuXInc;
     if (menuX <= 0 || menuX >= maxX) menuXInc = -menuXInc;
 
@@ -127,5 +131,13 @@ function loadBitmapData(url: string): Promise<BitmapData> {
     menuGroup.x = menuX;
     menuGroup.alpha = alpha;
     posters.alpha = alpha;
+
+    if (now - lastToggle >= TOGGLE_MS) {
+      lastToggle = now;
+      cacheEnabled = !cacheEnabled;
+      posters.cacheAsBitmap = cacheEnabled;
+      menuGroup.cacheAsBitmap = cacheEnabled;
+      statusLabel.text = `render cache: ${cacheEnabled ? 'ON' : 'OFF'}`;
+    }
   });
 })();

@@ -18,7 +18,7 @@ import {
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
-const { height, render, width } = createFunctionalTarget({
+const { height, render, width } = await createFunctionalTarget({
   width: 1280,
   height: 720,
   background: 0xff000000,
@@ -88,7 +88,6 @@ textClip.x = pos(300);
 textClip.y = pos(350);
 
 const textContent = createDisplayContainer();
-addNodeChild(textClip, owlClip);
 addNodeChild(textClip, textContent);
 
 const textField = createRichText();
@@ -99,6 +98,7 @@ textField.data.multiline = true;
 textField.data.wordWrap = false;
 textField.data.text = movies.join('\n');
 addNodeChild(textContent, textField);
+addNodeChild(textContent, owlClip);
 
 // Border around text clip area
 const outerSprite = createDisplayContainer();

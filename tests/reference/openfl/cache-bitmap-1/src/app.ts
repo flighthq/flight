@@ -64,12 +64,12 @@ for (const { color, x, y, rx, ry } of roundedRects) {
 }
 
 const status = new TextField();
-status.defaultTextFormat = new TextFormat('sans-serif', pos(32), 0xffffff);
+status.defaultTextFormat = new TextFormat('_sans', pos(32), 0xffffff);
 status.x = pos(410);
 status.y = pos(10);
 status.width = pos(860);
 status.height = pos(40);
-status.text = 'cacheAsBitmap: n/a (not in openfl)';
+status.text = 'render cache: OFF';
 root.addChild(status);
 
 const cx = pos(527);
@@ -77,6 +77,9 @@ const cy = pos(255);
 const radius = pos(200);
 let angle = 0;
 let lastTime = performance.now();
+let cacheEnabled = false;
+let lastToggle = performance.now();
+const TOGGLE_MS = 3000;
 
 root.addEventListener(Event.ENTER_FRAME, () => {
   const now = performance.now();
@@ -85,4 +88,11 @@ root.addEventListener(Event.ENTER_FRAME, () => {
   angle += (dt / (60 / RPM)) * Math.PI * 2;
   group.x = cx + radius * Math.cos(angle);
   group.y = cy + radius * Math.sin(angle);
+
+  if (now - lastToggle >= TOGGLE_MS) {
+    lastToggle = now;
+    cacheEnabled = !cacheEnabled;
+    group.cacheAsBitmap = cacheEnabled;
+    status.text = `render cache: ${cacheEnabled ? 'ON' : 'OFF'}`;
+  }
 });

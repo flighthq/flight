@@ -80,7 +80,7 @@ function loadBitmapData(url: string): Promise<BitmapData> {
     root.addChild(circle);
 
     const lbl = new TextField();
-    lbl.defaultTextFormat = new TextFormat('sans-serif', 14, 0x222222, true);
+    lbl.defaultTextFormat = new TextFormat('_sans', 14, 0x222222, true);
     lbl.x = cx - squareBd.width / 2 - 30;
     lbl.y = cy + squareBd.height / 2 + 40;
     lbl.width = 200;

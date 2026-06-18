@@ -1,7 +1,7 @@
 import { addNodeChild, createDisplayContainer, createRichText, RichTextKind } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
-const { render } = createFunctionalTarget({
+const { render } = await createFunctionalTarget({
   width: 800,
   height: 600,
   background: 0xffffffff,

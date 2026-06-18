@@ -55,7 +55,7 @@ stageBg.graphics.endFill();
 root.addChild(stageBg);
 
 const label = new TextField();
-label.defaultTextFormat = new TextFormat('sans-serif', 44, 0xffffff, true);
+label.defaultTextFormat = new TextFormat('_sans', 44, 0xffffff, true);
 label.x = WIDTH / 2 - 100;
 label.y = 50;
 label.width = 400;
@@ -64,7 +64,7 @@ label.text = '0×100, 0×500, 0×1000';
 root.addChild(label);
 
 const instructions = new TextField();
-instructions.defaultTextFormat = new TextFormat('sans-serif', 16, 0xaaaaaa);
+instructions.defaultTextFormat = new TextFormat('_sans', 16, 0xaaaaaa);
 instructions.x = 20;
 instructions.y = HEIGHT - 60;
 instructions.width = WIDTH - 40;
