@@ -4,6 +4,7 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import {
   createWebGLScale9ShapeData,
   defaultWebGLScale9ShapeRenderer,
+  destroyWebGLScale9ShapeData,
   drawWebGLScale9Shape,
   drawWebGLScale9ShapeMask,
   remapWebGLScale9Commands,
@@ -28,6 +29,15 @@ describe('defaultWebGLScale9ShapeRenderer', () => {
   it('has submit and createData functions', () => {
     expect(defaultWebGLScale9ShapeRenderer.createData).toBe(createWebGLScale9ShapeData);
     expect(defaultWebGLScale9ShapeRenderer.submit).toBe(drawWebGLScale9Shape);
+  });
+});
+
+describe('destroyWebGLScale9ShapeData', () => {
+  it('deletes the texture it owns', () => {
+    const { state, gl } = makeWebGLState();
+    const data = createWebGLScale9ShapeData(state, createScale9Shape(grid))!;
+    destroyWebGLScale9ShapeData(state, data);
+    expect(gl.deleteTexture).toHaveBeenCalled();
   });
 });
 

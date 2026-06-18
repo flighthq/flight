@@ -50,6 +50,13 @@ export function createWebGLScale9ShapeData(state: RenderState, _source: Renderab
   } as unknown as RendererData;
 }
 
+// Scale9 owns its texture directly (allocated in createData), so free it on teardown.
+export function destroyWebGLScale9ShapeData(state: RenderState, data: RendererData): void {
+  const internal = state as WebGLRenderStateInternal;
+  const { texture } = data as unknown as WebGLScale9ShapeData;
+  internal.gl.deleteTexture(texture);
+}
+
 export function drawWebGLScale9Shape(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
   flushWebGLSpriteBatch(internal);
@@ -147,6 +154,7 @@ export function remapWebGLScale9Commands(
 
 export const defaultWebGLScale9ShapeRenderer: DisplayObjectRenderer = {
   createData: createWebGLScale9ShapeData,
+  destroyData: destroyWebGLScale9ShapeData,
   submit: drawWebGLScale9Shape,
 };
 
