@@ -2,6 +2,7 @@ import { createEntity } from '@flighthq/entity';
 import { createMatrix } from '@flighthq/geometry';
 import {
   getNodeAppearanceRevision,
+  getNodeLocalContentRevision,
   getNodeLocalTransformRevision,
   getNodeParent,
   getNodeRuntime,
@@ -48,6 +49,7 @@ export function createRenderProxy(state: RenderState, source: Renderable): Rende
     material: null,
     materialData: null,
     lastAppearanceID: -1,
+    lastLocalContentID: -1,
     lastLocalTransformID: -1,
     name: null,
     renderer: renderer,
@@ -115,7 +117,8 @@ export function isRenderProxyDirty(
   const localDirty =
     state.sceneGraphSyncPolicy === 'refreshDerivedState' ||
     data.lastLocalTransformID !== getNodeLocalTransformRevision(source as Node) ||
-    data.lastAppearanceID !== getNodeAppearanceRevision(source as Node);
+    data.lastAppearanceID !== getNodeAppearanceRevision(source as Node) ||
+    data.lastLocalContentID !== getNodeLocalContentRevision(source as Node);
   return parentDirty || localDirty;
 }
 
@@ -173,6 +176,7 @@ export function prepareMasks(state: RenderState, source: DisplayObject): void {
         updateRenderProxyAppearance(state, maskData, maskParentData);
         updateRenderProxy2DTransform(state, maskData, maskParentData);
         updateRenderProxyMaterial(state, maskData, maskParentData);
+        maskData.lastLocalContentID = getNodeLocalContentRevision(mask);
         _adaptHook?.(state, mask, maskData);
       }
       maskData.isMaskFrameID = frameID;
@@ -227,6 +231,8 @@ export function updateRenderProxy2D(
   updateRenderProxy2DTransform(state, data, parentData);
   updateRenderProxyMaterial(state, data, parentData);
   updateNodeClipRectangle(state, source, data, parentData);
+  // Record the content revision we synced at, so a later content-only change re-dirties the node.
+  data.lastLocalContentID = getNodeLocalContentRevision(source as Node);
   _adaptHook?.(state, source, data);
 }
 
