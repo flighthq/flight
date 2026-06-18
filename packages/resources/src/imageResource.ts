@@ -1,12 +1,15 @@
 import { createEntity } from '@flighthq/entity';
 import type { ImageResource } from '@flighthq/types';
 
-// Allocates a new resource identity over the SAME underlying element. The element (a DOM object or
-// ImageBitmap) is shared by reference, not duplicated — clone gives you an independent version
-// counter and entity identity over the same pixels, e.g. to upload one image into two render states
-// with separate invalidation. Use a Surface copy when you need the pixels themselves duplicated.
+// Allocates a new resource identity over the SAME underlying pixels. The element and the `data` array
+// are shared by reference, not duplicated — clone gives you an independent version counter and entity
+// identity over the same pixels, e.g. to upload one image into two render states with separate
+// invalidation. Use a Surface copy when you need the pixels themselves duplicated.
 export function cloneImageResource(resource: Readonly<ImageResource>): ImageResource {
   return createEntity({
+    alphaType: resource.alphaType,
+    data: resource.data,
+    format: resource.format,
     height: resource.height,
     source: resource.source,
     version: resource.version,
@@ -15,18 +18,31 @@ export function cloneImageResource(resource: Readonly<ImageResource>): ImageReso
 }
 
 export function createImageResource(image?: CanvasImageSource): ImageResource {
-  const resource: ImageResource = createEntity({ height: 0, source: image ?? null, version: 0, width: 0 });
+  const resource: ImageResource = createEntity({
+    alphaType: 'straight',
+    data: null,
+    format: 'rgba8unorm',
+    height: 0,
+    source: image ?? null,
+    version: 0,
+    width: 0,
+  });
   if (resource.source !== null) updateImageResourceSize(resource);
   return resource;
 }
 
-// Releases the element reference so it becomes eligible for GC and marks the resource changed. This
-// does NOT free the backend GPU texture (that is owned per render state — call the backend's
-// destroy*Texture) and does NOT close an owned ImageBitmap (ownership is ambiguous; close it
+// Releases the element and raw-data references so they become eligible for GC, and marks the resource
+// changed. This does NOT free the backend GPU texture (that is owned per render state — call the
+// backend's destroy*Texture) and does NOT close an owned ImageBitmap (ownership is ambiguous; close it
 // explicitly if you own it). Dimensions are left intact; setImageResourceSource repopulates the resource.
 export function disposeImageResource(resource: ImageResource): void {
+  resource.data = null;
   resource.source = null;
   invalidateImageResource(resource);
+}
+
+export function hasImageResourceData(resource: Readonly<ImageResource>): boolean {
+  return resource.data !== null;
 }
 
 export function hasImageResourceSource(resource: Readonly<ImageResource>): boolean {
