@@ -21,6 +21,10 @@ export function getNodeLocalBoundsRevision<Traits extends object>(source: Readon
   return getNodeRuntime(source).localBoundsID;
 }
 
+export function getNodeLocalContentRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
+  return getNodeRuntime(source).localContentID;
+}
+
 export function getNodeLocalTransformRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
   return getNodeRuntime(source).localTransformID;
 }
@@ -32,6 +36,7 @@ export function getNodeWorldTransformRevision<Traits extends object>(source: Nod
 export function invalidateNode<Traits extends object>(target: Node<Traits>): void {
   invalidateNodeAppearance(target);
   invalidateNodeLocalBounds(target);
+  invalidateNodeLocalContent(target);
   invalidateNodeLocalTransform(target);
   invalidateNodeParentReference(target);
   invalidateNodeWorldBounds(target);
@@ -51,6 +56,16 @@ export function invalidateNodeAppearance<Traits extends object>(target: Node<Tra
 export function invalidateNodeLocalBounds<Traits extends object>(target: Node<Traits>): void {
   const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
   runtime.localBoundsID = (runtime.localBoundsID + 1) >>> 0;
+}
+
+/**
+ * Target object's own drawable surface changed (the rasterizable payload — shape commands, text,
+ * pixels — not its children and not how it is composited). Renderers re-rasterize on this; the walk
+ * and render caches re-examine the node. Distinct from appearance (compositing) and bounds (extent).
+ */
+export function invalidateNodeLocalContent<Traits extends object>(target: Node<Traits>): void {
+  const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
+  runtime.localContentID = (runtime.localContentID + 1) >>> 0;
 }
 
 /**

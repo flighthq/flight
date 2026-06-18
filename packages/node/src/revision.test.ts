@@ -5,11 +5,13 @@ import {
   computeNodeWorldTransformRevision,
   getNodeAppearanceRevision,
   getNodeLocalBoundsRevision,
+  getNodeLocalContentRevision,
   getNodeLocalTransformRevision,
   getNodeWorldTransformRevision,
   invalidateNode,
   invalidateNodeAppearance,
   invalidateNodeLocalBounds,
+  invalidateNodeLocalContent,
   invalidateNodeLocalTransform,
   invalidateNodeParentReference,
   invalidateNodeRender,
@@ -64,6 +66,14 @@ describe('getNodeLocalBoundsRevision', () => {
   });
 });
 
+describe('getNodeLocalContentRevision', () => {
+  it('returns localContentID', () => {
+    const runtime = getEntityRuntime(node);
+    runtime.localContentID = 100;
+    expect(getNodeLocalContentRevision(node)).toStrictEqual(runtime.localContentID);
+  });
+});
+
 describe('getNodeLocalTransformRevision', () => {
   it('returns localTransformID', () => {
     const runtime = getEntityRuntime(node);
@@ -81,13 +91,15 @@ describe('getNodeWorldTransformRevision', () => {
 });
 
 describe('invalidateNode', () => {
-  it('increments appearanceID, localBoundsID, localTransformID', () => {
+  it('increments appearanceID, localBoundsID, localContentID, localTransformID', () => {
     const appearanceID = getEntityRuntime(node).appearanceID;
     const localBoundsID = getEntityRuntime(node).localBoundsID;
+    const localContentID = getEntityRuntime(node).localContentID;
     const localTransformID = getEntityRuntime(node).localTransformID;
     invalidateNode(node);
     expect(getEntityRuntime(node).appearanceID).toBe(appearanceID + 1);
     expect(getEntityRuntime(node).localBoundsID).toBe(localBoundsID + 1);
+    expect(getEntityRuntime(node).localContentID).toBe(localContentID + 1);
     expect(getEntityRuntime(node).localTransformID).toBe(localTransformID + 1);
   });
 
@@ -130,6 +142,21 @@ describe('invalidateNodeLocalBounds', () => {
     runtime.localBoundsID = 0xffffffff; // max 32-bit uint
     invalidateNodeLocalBounds(node);
     expect(getEntityRuntime(node).localBoundsID).toBe(0);
+  });
+});
+
+describe('invalidateNodeLocalContent', () => {
+  it('increments localContentID', () => {
+    const localContentID = getEntityRuntime(node).localContentID;
+    invalidateNodeLocalContent(node);
+    expect(getEntityRuntime(node).localContentID).toBe(localContentID + 1);
+  });
+
+  it('should wrap around localContentID correctly using >>> 0', () => {
+    const runtime = getEntityRuntime(node);
+    runtime.localContentID = 0xffffffff; // max 32-bit uint
+    invalidateNodeLocalContent(node);
+    expect(getEntityRuntime(node).localContentID).toBe(0);
   });
 });
 
