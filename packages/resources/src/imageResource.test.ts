@@ -2,6 +2,7 @@ import {
   cloneImageResource,
   createImageResource,
   disposeImageResource,
+  hasImageResourceData,
   hasImageResourceSource,
   invalidateImageResource,
   isImageResourceEmpty,
@@ -25,6 +26,19 @@ describe('cloneImageResource', () => {
     copy.version++;
     expect(resource.version).toStrictEqual(3);
   });
+
+  it('shares the data buffer by reference and copies the format and alphaType', () => {
+    const resource = createImageResource();
+    resource.data = new Uint8ClampedArray([1, 2, 3, 4]);
+    resource.format = 'bgra8unorm';
+    resource.alphaType = 'premultiplied';
+
+    const copy = cloneImageResource(resource);
+
+    expect(copy.data).toBe(resource.data);
+    expect(copy.format).toStrictEqual('bgra8unorm');
+    expect(copy.alphaType).toStrictEqual('premultiplied');
+  });
 });
 
 describe('createImageResource', () => {
@@ -44,17 +58,35 @@ describe('createImageResource', () => {
   it('starts at version 0', () => {
     expect(createImageResource().version).toBe(0);
   });
+
+  it('defaults to null data, rgba8unorm format, and straight alphaType', () => {
+    const resource = createImageResource();
+    expect(resource.data).toBeNull();
+    expect(resource.format).toStrictEqual('rgba8unorm');
+    expect(resource.alphaType).toStrictEqual('straight');
+  });
 });
 
 describe('disposeImageResource', () => {
-  it('releases the element and marks the resource changed', () => {
+  it('releases the element and data and marks the resource changed', () => {
     const resource = createImageResource({ width: 4, height: 5 } as HTMLImageElement);
+    resource.data = new Uint8ClampedArray(4 * 5 * 4);
     const before = resource.version;
 
     disposeImageResource(resource);
 
     expect(resource.source).toBeNull();
+    expect(resource.data).toBeNull();
     expect(resource.version).toStrictEqual(before + 1);
+  });
+});
+
+describe('hasImageResourceData', () => {
+  it('is false without data and true with it', () => {
+    const resource = createImageResource();
+    expect(hasImageResourceData(resource)).toStrictEqual(false);
+    resource.data = new Uint8ClampedArray(4);
+    expect(hasImageResourceData(resource)).toStrictEqual(true);
   });
 });
 
