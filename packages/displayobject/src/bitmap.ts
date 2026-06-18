@@ -1,4 +1,4 @@
-import { invalidateNodeAppearance, invalidateNodeLocalBounds } from '@flighthq/node';
+import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
 import type { Bitmap, BitmapData, BitmapRuntime, MethodsOf, Node, PartialNode, Rectangle } from '@flighthq/types';
 import { BitmapKind } from '@flighthq/types';
 
@@ -37,8 +37,10 @@ export function getBitmapRuntime(source: Readonly<Bitmap>): Readonly<BitmapRunti
 
 export function setBitmapImage(source: Bitmap, value: BitmapData['image']): void {
   source.data.image = value;
+  // A different image is new pixels (content) and possibly new dimensions (bounds) — not a
+  // compositing change, so this no longer bumps appearance.
+  invalidateNodeLocalContent(source);
   invalidateNodeLocalBounds(source);
-  invalidateNodeAppearance(source);
 }
 
 const defaultMethods: Partial<MethodsOf<BitmapRuntime>> = {

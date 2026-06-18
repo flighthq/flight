@@ -1,4 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
+import { getNodeLocalBoundsRevision, getNodeLocalContentRevision } from '@flighthq/node';
 import { ShapeKind } from '@flighthq/types';
 
 import {
@@ -9,14 +10,17 @@ import {
   createShapeData,
   createShapeRuntime,
   getShapeRuntime,
+  invalidateShapeGeometry,
 } from './shape';
 
 describe('clearShapeCommands', () => {
-  it('empties the commands array', () => {
-    const data = createShapeData();
-    data.commands.push({ key: 'endFill', args: [] });
-    clearShapeCommands(data);
-    expect(data.commands).toHaveLength(0);
+  it('empties the commands array and bumps the content revision', () => {
+    const shape = createShape();
+    shape.data.commands.push('endFill', 0);
+    const content = getNodeLocalContentRevision(shape);
+    clearShapeCommands(shape);
+    expect(shape.data.commands).toHaveLength(0);
+    expect(getNodeLocalContentRevision(shape)).toBe(content + 1);
   });
 });
 
@@ -56,29 +60,31 @@ describe('computeShapeLocalBoundsRectangle', () => {
 
 describe('copyShapeCommands', () => {
   it('copies commands from source to target', () => {
-    const source = createShapeData();
-    source.commands.push({ key: 'endFill', args: [] });
-    const target = createShapeData();
+    const source = createShape();
+    source.data.commands.push({ key: 'endFill', args: [] });
+    const target = createShape();
     copyShapeCommands(source, target);
-    expect(target.commands).toHaveLength(1);
-    expect(target.commands[0]).toEqual({ key: 'endFill', args: [] });
+    expect(target.data.commands).toHaveLength(1);
+    expect(target.data.commands[0]).toEqual({ key: 'endFill', args: [] });
   });
 
-  it('replaces existing target commands', () => {
-    const source = createShapeData();
-    source.commands.push({ key: 'endFill', args: [] });
-    const target = createShapeData();
-    target.commands.push({ key: 'endFill', args: [] });
-    target.commands.push({ key: 'endFill', args: [] });
+  it('replaces existing target commands and bumps the content revision', () => {
+    const source = createShape();
+    source.data.commands.push({ key: 'endFill', args: [] });
+    const target = createShape();
+    target.data.commands.push({ key: 'endFill', args: [] });
+    target.data.commands.push({ key: 'endFill', args: [] });
+    const content = getNodeLocalContentRevision(target);
     copyShapeCommands(source, target);
-    expect(target.commands).toHaveLength(1);
+    expect(target.data.commands).toHaveLength(1);
+    expect(getNodeLocalContentRevision(target)).toBe(content + 1);
   });
 
   it('does not share the same array reference', () => {
-    const source = createShapeData();
-    const target = createShapeData();
+    const source = createShape();
+    const target = createShape();
     copyShapeCommands(source, target);
-    expect(target.commands).not.toBe(source.commands);
+    expect(target.data.commands).not.toBe(source.data.commands);
   });
 });
 
@@ -123,5 +129,16 @@ describe('getShapeRuntime', () => {
     const shape = createShape();
     const runtime = getShapeRuntime(shape);
     expect(runtime).not.toBeNull();
+  });
+});
+
+describe('invalidateShapeGeometry', () => {
+  it('bumps both the content and local-bounds revisions', () => {
+    const shape = createShape();
+    const content = getNodeLocalContentRevision(shape);
+    const bounds = getNodeLocalBoundsRevision(shape);
+    invalidateShapeGeometry(shape);
+    expect(getNodeLocalContentRevision(shape)).toBe(content + 1);
+    expect(getNodeLocalBoundsRevision(shape)).toBe(bounds + 1);
   });
 });
