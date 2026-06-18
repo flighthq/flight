@@ -1,6 +1,5 @@
 ﻿import { createEntity } from '@flighthq/entity';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node';
-import { hasRenderFeatures } from '@flighthq/render';
 import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import type {
   DisplayObjectRenderer,
@@ -11,9 +10,7 @@ import type {
   RenderState,
   Shape,
 } from '@flighthq/types';
-import { RenderFeatures } from '@flighthq/types';
 
-import { getDOMCSSFilter } from './domCSSFilterBinding';
 import { prepareDOMElement, setDOMRendererElement } from './domStyle';
 import { setDOMTransformWithOffset } from './domTransform';
 
@@ -56,8 +53,8 @@ export function drawDOMShape(state: DOMRenderState, renderProxy: RenderProxy2D):
   renderCanvasShapeCommands(ctx, commands);
 
   data.canvas.style.opacity = renderProxy.alpha < 1 ? String(renderProxy.alpha) : '';
-  if (hasRenderFeatures(state, RenderFeatures.CSSFilter)) {
-    data.canvas.style.filter = getDOMCSSFilter(renderProxy) ?? '';
+  if (state.domCSSFilterResolver !== null) {
+    data.canvas.style.filter = state.domCSSFilterResolver(renderProxy) ?? '';
   }
   state.applyBlendMode?.(data.canvas, renderProxy.blendMode);
   setDOMTransformWithOffset(data.canvas, renderProxy.transform2D, bounds.x, bounds.y, state.roundPixels);
