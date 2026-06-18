@@ -43,6 +43,17 @@ function createWebGLTextData(_state: RenderState, _source: Renderable): Renderer
   return { canvas, ctx, lastContentID: -1, lastPixelRatio: 0, logW: 0, logH: 0 } as unknown as RendererData;
 }
 
+// Free the GPU texture the batch uploaded for this node's canvas when the text node is torn down.
+function destroyWebGLTextData(state: RenderState, data: RendererData): void {
+  const internal = state as WebGLRenderStateInternal;
+  const { canvas } = data as unknown as WebGLTextData;
+  const texture = internal.textureCache.get(canvas);
+  if (texture !== undefined) {
+    internal.gl.deleteTexture(texture);
+    internal.textureCache.delete(canvas);
+  }
+}
+
 export function drawWebGLText(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
   const source = renderProxy.source as Text;
@@ -155,5 +166,6 @@ export function drawWebGLTextMask(state: RenderState, data: RenderProxy2D): void
 export const defaultWebGLTextRenderer: DisplayObjectRenderer = {
   format: BatchFormat.Quad,
   createData: createWebGLTextData,
+  destroyData: destroyWebGLTextData,
   submit: drawWebGLText,
 };

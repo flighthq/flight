@@ -34,6 +34,18 @@ function createWebGLShapeData(_state: RenderState, _source: Renderable): Rendere
   return { canvas, ctx, lastContentID: -1, lastW: 0, lastH: 0 } as unknown as RendererData;
 }
 
+// The batch uploads this shape's canvas into the shared texture cache; free that GPU texture when
+// the shape is torn down so it does not leak past the canvas it was keyed on.
+function destroyWebGLShapeData(state: RenderState, data: RendererData): void {
+  const internal = state as WebGLRenderStateInternal;
+  const { canvas } = data as unknown as WebGLShapeData;
+  const texture = internal.textureCache.get(canvas);
+  if (texture !== undefined) {
+    internal.gl.deleteTexture(texture);
+    internal.textureCache.delete(canvas);
+  }
+}
+
 export function drawWebGLShape(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
   const source = renderProxy.source as Shape;
@@ -108,5 +120,6 @@ export function drawWebGLShapeMask(state: RenderState, data: RenderProxy2D): voi
 export const defaultWebGLShapeRenderer: DisplayObjectRenderer = {
   format: BatchFormat.Quad,
   createData: createWebGLShapeData,
+  destroyData: destroyWebGLShapeData,
   submit: drawWebGLShape,
 };
