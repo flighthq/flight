@@ -1,4 +1,11 @@
-import type { BlendMode, Material, Matrix, WebGPUMaterialRenderer, WebGPURenderState } from '@flighthq/types';
+import type {
+  BlendMode,
+  Material,
+  Matrix,
+  RenderProxy2D,
+  WebGPUMaterialRenderer,
+  WebGPURenderState,
+} from '@flighthq/types';
 
 export interface WebGPUTextureEntry {
   bindGroup: GPUBindGroup;
@@ -56,6 +63,10 @@ export type WebGPURenderStateInternal = Omit<WebGPURenderState, 'canvas' | 'devi
 
   // Custom shader (default bitmap shader; can be replaced via registerWebGPUBitmapShader)
   defaultBitmapShader: WebGPUBitmapShader | null;
+
+  // Optional per-node shader-binding resolver. Installed by setWebGPUShader; absent (and tree-shaken
+  // with the binding map) until a custom shader is bound to a node.
+  webgpuShaderBindingResolver?: (renderProxy: RenderProxy2D) => WebGPUBitmapShader | undefined;
 
   // Particle instance buffer (grown on demand)
   particleInstanceBuffer: GPUBuffer | null;

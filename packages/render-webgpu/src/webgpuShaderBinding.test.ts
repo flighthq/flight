@@ -1,7 +1,5 @@
 import { createBitmap } from '@flighthq/displayobject';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
-import { hasRenderFeatures } from '@flighthq/render';
-import { RenderFeatures } from '@flighthq/types';
 
 import type { WebGPUBitmapShader } from './internal';
 import type { WebGPURenderStateInternal } from './internal';
@@ -43,12 +41,13 @@ describe('setWebGPUShader', () => {
     expect(getWebGPUShader(renderProxy)).toBe(fakeShader);
   });
 
-  it('enables the Shaders feature flag', async () => {
-    const state = await createWebGPURenderStateForTest();
+  it('installs the per-node shader binding resolver', async () => {
+    const state = (await createWebGPURenderStateForTest()) as WebGPURenderStateInternal;
     const bitmap = createBitmap();
     const fakeShader: WebGPUBitmapShader = { pipeline: {} as never, bind: () => {} };
+    expect(state.webgpuShaderBindingResolver).toBeUndefined();
     setWebGPUShader(state, bitmap, fakeShader);
-    expect(hasRenderFeatures(state, RenderFeatures.Shaders)).toBe(true);
+    expect(state.webgpuShaderBindingResolver).toBe(getWebGPUShader);
   });
 
   it('removes the binding when shader is null', async () => {
