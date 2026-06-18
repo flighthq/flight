@@ -6,7 +6,15 @@ import { registerDefaultWebGLMaterial } from './webglDefaultMaterial';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 import { makeWebGLState } from './webglTestHelper';
 
-function makeRenderProxy(image: unknown = null): RenderProxy2D {
+function makeBitmapData() {
+  return { lastSrc: null, lastVersion: -1 };
+}
+
+function makeImageSource(src: unknown = null, width = 32, height = 32, version = 0) {
+  return { src, width, height, version };
+}
+
+function makeRenderProxy(image: unknown = null, rendererData: unknown = makeBitmapData()): RenderProxy2D {
   return {
     source: { data: { image } },
     blendMode: 0,
@@ -14,12 +22,8 @@ function makeRenderProxy(image: unknown = null): RenderProxy2D {
     material: null,
     materialData: null,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 10, ty: 20 },
-    rendererData: null,
+    rendererData,
   } as unknown as RenderProxy2D;
-}
-
-function makeImageSource(src: unknown = null, width = 32, height = 32) {
-  return { src, width, height };
 }
 
 describe('defaultWebGLBitmapRenderer', () => {
@@ -31,12 +35,78 @@ describe('defaultWebGLBitmapRenderer', () => {
     expect(typeof defaultWebGLBitmapRenderer.createData).toBe('function');
   });
 
+  it('has a destroyData function', () => {
+    expect(typeof defaultWebGLBitmapRenderer.destroyData).toBe('function');
+  });
+
   it('has a submit function pointing to drawWebGLBitmap', () => {
     expect(defaultWebGLBitmapRenderer.submit).toBe(drawWebGLBitmap);
   });
 });
 
 describe('drawWebGLBitmap', () => {
+  it('deletes old texture when src element is replaced', () => {
+    const { state, gl } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
+    const canvas1 = document.createElement('canvas');
+    const canvas2 = document.createElement('canvas');
+    const imageSource = makeImageSource(canvas1, 32, 32, 0);
+    const bitmapData = makeBitmapData();
+    const proxy = makeRenderProxy(imageSource, bitmapData);
+
+    drawWebGLBitmap(state, proxy);
+    flushWebGLSpriteBatch(state as any);
+
+    // Replace the underlying element
+    imageSource.src = canvas2;
+    imageSource.version = 1;
+
+    drawWebGLBitmap(state, proxy);
+    flushWebGLSpriteBatch(state as any);
+
+    // Old canvas should no longer have a cache entry
+    expect(state.textureCache.get(canvas1)).toBeUndefined();
+    expect((gl.deleteTexture as any).mock.calls.length).toBeGreaterThan(0);
+  });
+
+  it('deletes stale texture and re-uploads when image version changes', () => {
+    const { state, gl } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
+    const canvas = document.createElement('canvas');
+    const imageSource = makeImageSource(canvas, 32, 32, 0);
+    const bitmapData = makeBitmapData();
+    const proxy = makeRenderProxy(imageSource, bitmapData);
+
+    // First draw — uploads the texture
+    drawWebGLBitmap(state, proxy);
+    flushWebGLSpriteBatch(state as any);
+    const firstCallCount = (gl.texImage2D as any).mock.calls.length;
+
+    // Mutate version (simulate Surface edit)
+    imageSource.version = 1;
+
+    // Second draw — should detect stale version and delete + re-upload
+    drawWebGLBitmap(state, proxy);
+    flushWebGLSpriteBatch(state as any);
+    expect((gl.texImage2D as any).mock.calls.length).toBeGreaterThan(firstCallCount);
+  });
+
+  it('draws via drawElementsInstanced after flush', () => {
+    const { state, gl } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
+    const img = document.createElement('img');
+    drawWebGLBitmap(state, makeRenderProxy(makeImageSource(img)));
+    flushWebGLSpriteBatch(state as any);
+    expect(gl.drawElementsInstanced).toHaveBeenCalled();
+  });
+
+  it('returns early when no material renderer is registered', () => {
+    const { state } = makeWebGLState();
+    const img = document.createElement('img');
+    drawWebGLBitmap(state, makeRenderProxy(makeImageSource(img)));
+    expect(state.spriteBatchCount).toBe(0);
+  });
+
   it('returns early without writing to batch when image is null', () => {
     const { state } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
@@ -51,28 +121,12 @@ describe('drawWebGLBitmap', () => {
     expect(state.spriteBatchCount).toBe(0);
   });
 
-  it('returns early when no material renderer is registered', () => {
+  it('returns early without writing to batch when rendererData is null', () => {
     const { state } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
     const img = document.createElement('img');
-    drawWebGLBitmap(state, makeRenderProxy(makeImageSource(img)));
+    drawWebGLBitmap(state, makeRenderProxy(makeImageSource(img), null));
     expect(state.spriteBatchCount).toBe(0);
-  });
-
-  it('writes one instance to the sprite batch when image is valid', () => {
-    const { state } = makeWebGLState();
-    registerDefaultWebGLMaterial(state);
-    const img = document.createElement('img');
-    drawWebGLBitmap(state, makeRenderProxy(makeImageSource(img, 32, 32)));
-    expect(state.spriteBatchCount).toBe(1);
-  });
-
-  it('draws via drawElementsInstanced after flush', () => {
-    const { state, gl } = makeWebGLState();
-    registerDefaultWebGLMaterial(state);
-    const img = document.createElement('img');
-    drawWebGLBitmap(state, makeRenderProxy(makeImageSource(img)));
-    flushWebGLSpriteBatch(state as any);
-    expect(gl.drawElementsInstanced).toHaveBeenCalled();
   });
 
   it('writes correct transform and size into instance data', () => {
@@ -94,6 +148,14 @@ describe('drawWebGLBitmap', () => {
     expect(d[10]).toBeCloseTo(1); // u1
     expect(d[11]).toBeCloseTo(1); // v1
     expect(d[12]).toBe(1); // alpha
+  });
+
+  it('writes one instance to the sprite batch when image is valid', () => {
+    const { state } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
+    const img = document.createElement('img');
+    drawWebGLBitmap(state, makeRenderProxy(makeImageSource(img, 32, 32)));
+    expect(state.spriteBatchCount).toBe(1);
   });
 
   it('writes source-rectangle UVs when sourceRectangle is set', () => {
