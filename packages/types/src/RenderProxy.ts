@@ -19,6 +19,7 @@ export interface RenderProxy extends Entity {
   material: Material | null;
   materialData: MaterialData | null;
   lastAppearanceID: number;
+  lastLocalContentID: number;
   lastLocalTransformID: number;
   name: string | null;
   renderer: Renderer | null;
