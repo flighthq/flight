@@ -12,6 +12,8 @@ export function initTransform2DRuntimeTrait(
 }
 
 export function initTransform2DTrait(target: HasTransform2D, obj?: Readonly<Partial<HasTransform2D>>): void {
+  target.pivotX = obj?.pivotX ?? 0;
+  target.pivotY = obj?.pivotY ?? 0;
   target.rotation = obj?.rotation ?? 0;
   target.scaleX = obj?.scaleX ?? 1;
   target.scaleY = obj?.scaleY ?? 1;
