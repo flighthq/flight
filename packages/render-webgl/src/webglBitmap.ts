@@ -26,7 +26,7 @@ function createWebGLBitmapData(_state: RenderState, _source: Renderable): Render
 }
 
 // Deletes the cached GPU texture when this bitmap is torn down. Prevents textures from leaking when
-// a bitmap is removed from the scene via disposeDisplayObjectSubtree.
+// a bitmap is removed from the scene via disposeDisplayObjectRender.
 function destroyWebGLBitmapData(state: RenderState, data: RendererData): void {
   const internal = state as WebGLRenderStateInternal;
   const { lastSrc } = data as unknown as WebGLBitmapData;

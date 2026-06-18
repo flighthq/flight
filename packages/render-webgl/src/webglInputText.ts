@@ -1,5 +1,4 @@
 ﻿import { getInputTextRuntime } from '@flighthq/displayobject';
-import { noopRendererData } from '@flighthq/render';
 import {
   getInputTextCaretRectangle,
   getInputTextSelectionBeginIndex,
@@ -19,14 +18,20 @@ import type {
   TextLayoutResult,
 } from '@flighthq/types';
 
-import { drawWebGLRichTextMask, drawWebGLRichTextWithOverlay } from './webglRichText';
+import {
+  createWebGLRichTextData,
+  destroyWebGLRichTextData,
+  drawWebGLRichTextMask,
+  drawWebGLRichTextWithOverlay,
+} from './webglRichText';
 
 export function drawWebGLInputText(state: RenderState, renderProxy: RenderProxy2D): void {
   drawWebGLRichTextWithOverlay(state, renderProxy, drawWebGLInputTextOverlay);
 }
 
 export const defaultWebGLInputTextRenderer: DisplayObjectRenderer = {
-  createData: noopRendererData,
+  createData: createWebGLRichTextData,
+  destroyData: destroyWebGLRichTextData,
   submit: drawWebGLInputText,
 };
 

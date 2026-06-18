@@ -1,6 +1,6 @@
 ﻿import { getRichTextRuntime } from '@flighthq/displayobject';
 import { computeRGBHexString } from '@flighthq/materials';
-import { computeTextFormatFontString, noopRendererData } from '@flighthq/render';
+import { computeTextFormatFontString } from '@flighthq/render';
 import {
   computeRichTextContent,
   computeTextLayout,
@@ -12,6 +12,8 @@ import {
 } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
+  Renderable,
+  RendererData,
   RenderProxy2D,
   RenderState,
   RichText,
@@ -29,7 +31,23 @@ import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
 
-const _textureMap = new WeakMap<RenderProxy2D, WebGLTexture>();
+// Per-node GPU texture this rich text rasterizes into. Held on the node's RendererData (not a
+// module-level map keyed by render proxy) so destroyWebGLRichTextData can free it on teardown.
+interface WebGLRichTextData {
+  texture: WebGLTexture | null;
+}
+
+export function createWebGLRichTextData(_state: RenderState, _source: Renderable): RendererData {
+  return { texture: null } as unknown as RendererData;
+}
+
+// Frees the GPU texture this rich text node owns when it is torn down via disposeDisplayObjectRender.
+// Shared by InputText, which renders through the same texture path.
+export function destroyWebGLRichTextData(state: RenderState, data: RendererData): void {
+  const internal = state as WebGLRenderStateInternal;
+  const { texture } = data as unknown as WebGLRichTextData;
+  if (texture !== null) internal.gl.deleteTexture(texture);
+}
 
 export type WebGLRichTextOverlay = (
   context: CanvasRenderingContext2D,
@@ -91,10 +109,12 @@ export function drawWebGLRichTextWithOverlay(
   const shader = resolveWebGLShader(internal, renderProxy);
   useWebGLProgram(internal, shader);
 
-  let texture = _textureMap.get(renderProxy);
-  if (!texture) {
+  if (renderProxy.rendererData === null) return;
+  const richTextData = renderProxy.rendererData as unknown as WebGLRichTextData;
+  let texture = richTextData.texture;
+  if (texture === null) {
     texture = createWebGLTexture(internal);
-    _textureMap.set(renderProxy, texture);
+    richTextData.texture = texture;
   }
   updateWebGLTexture(internal, texture, _offscreenCanvas!);
 
@@ -104,7 +124,8 @@ export function drawWebGLRichTextWithOverlay(
 }
 
 export const defaultWebGLRichTextRenderer: DisplayObjectRenderer = {
-  createData: noopRendererData,
+  createData: createWebGLRichTextData,
+  destroyData: destroyWebGLRichTextData,
   submit: drawWebGLRichText,
 };
 

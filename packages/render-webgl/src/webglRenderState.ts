@@ -79,3 +79,40 @@ export function createWebGLRenderState(
 
   return state;
 }
+
+// Frees the GPU resources createWebGLRenderState and the lazy ensure* helpers allocated on `state`:
+// the compiled shader programs and the vertex/index/instance buffers. Call when the render state is
+// no longer needed. Pass the state returned by createWebGLRenderState — render-cache states derived
+// from it (createWebGLCacheState) alias these resources and become invalid too.
+//
+// Two things are intentionally NOT freed here:
+//   - User-registered material shaders (materialBitmapShaderMap and setWebGLShader bindings): their
+//     programs may be shared across states, so freeing them is the registrant's responsibility.
+//   - textureCache textures: textureCache is a WeakMap and cannot be enumerated. Those textures are
+//     freed per-node by the dispose* paths, or by the browser when the GL context is lost.
+//
+// Deleting an already-deleted WebGL program or buffer is a silent no-op, so destroying a screen
+// state whose resources a cache state still aliases is safe.
+export function destroyWebGLRenderState(state: WebGLRenderState): void {
+  const internal = state as WebGLRenderStateInternal;
+  const gl = internal.gl;
+
+  // Dedupe: several shader wrappers (e.g. defaultBitmapShader) share shaderLoc.program.
+  const programs = new Set<WebGLProgram>();
+  if (internal.shaderLoc) programs.add(internal.shaderLoc.program);
+  if (internal.defaultBitmapShader) programs.add(internal.defaultBitmapShader.program);
+  if (internal.colorTransformBitmapShader) programs.add(internal.colorTransformBitmapShader.program);
+  if (internal.particleShader) programs.add(internal.particleShader.program);
+  if (internal.quadBatchShader) programs.add(internal.quadBatchShader.program);
+  if (internal.colorTransformInstancedShader) programs.add(internal.colorTransformInstancedShader.program);
+  if (internal.uniformColorTransformShader) programs.add(internal.uniformColorTransformShader.program);
+  for (const program of programs) gl.deleteProgram(program);
+
+  gl.deleteBuffer(internal.quadVertexBuffer);
+  gl.deleteBuffer(internal.quadIndexBuffer);
+  if (internal.particleCornerBuffer) gl.deleteBuffer(internal.particleCornerBuffer);
+  if (internal.particleInstanceBuffer) gl.deleteBuffer(internal.particleInstanceBuffer);
+  if (internal.quadBatchCornerBuffer) gl.deleteBuffer(internal.quadBatchCornerBuffer);
+  if (internal.spriteBatchInstanceBuffer) gl.deleteBuffer(internal.spriteBatchInstanceBuffer);
+  if (internal.spriteBatchMaterialBuffer) gl.deleteBuffer(internal.spriteBatchMaterialBuffer);
+}
