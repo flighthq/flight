@@ -1,16 +1,13 @@
-import Sprite from 'openfl/display/Sprite';
-import Stage from 'openfl/display/Stage';
 import Event from 'openfl/events/Event';
 import TextField from 'openfl/text/TextField';
 import TextFormat from 'openfl/text/TextFormat';
 
+import { createReferenceStage } from '../../_harness/stage';
+
 const WIDTH = 800;
 const HEIGHT = 600;
 
-const stage = new Stage(WIDTH, HEIGHT, 0xffffff);
-document.getElementById('app')!.appendChild((stage as any).element);
-const root = new Sprite();
-stage.addChild(root);
+const { root } = createReferenceStage(WIDTH, HEIGHT, 0xffffff);
 
 const sample =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor ' +

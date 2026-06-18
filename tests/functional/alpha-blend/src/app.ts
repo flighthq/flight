@@ -7,7 +7,7 @@ import {
   createShape,
 } from '@flighthq/sdk';
 
-import { height, render, scale, width } from './render';
+import { height, render, width } from './render';
 
 // 9 rows, 4 columns. Each row is a different alpha level from 1.0 down to 0.0.
 // Column layout:
@@ -20,11 +20,9 @@ import { height, render, scale, width } from './render';
 
 const ROWS = 9;
 const root = createDisplayContainer();
-root.scaleX = scale;
-root.scaleY = scale;
 
-const W = width / scale;
-const H = height / scale;
+const W = width;
+const H = height;
 const cellW = W / 4;
 const cellH = H / ROWS;
 
