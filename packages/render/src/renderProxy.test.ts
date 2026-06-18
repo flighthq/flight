@@ -3,6 +3,7 @@ import { createMatrix } from '@flighthq/geometry';
 import {
   addNodeChild,
   getNodeAppearanceRevision,
+  getNodeLocalContentRevision,
   getNodeLocalTransformRevision,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
@@ -182,6 +183,7 @@ describe('isRenderProxyDirty', () => {
     const source = createDisplayObject();
     const data = createRenderProxy2D(state, source);
     data.lastAppearanceID = getNodeAppearanceRevision(source);
+    data.lastLocalContentID = getNodeLocalContentRevision(source);
     data.lastLocalTransformID = getNodeLocalTransformRevision(source);
 
     expect(isRenderProxyDirty(state, source, data)).toBe(false);
