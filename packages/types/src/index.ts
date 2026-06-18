@@ -90,7 +90,6 @@ export * from './RenderCacheAdapterSignals';
 export * from './RenderCacheRefreshOptions';
 export * from './Renderer';
 export * from './RendererData';
-export * from './RenderFeatures';
 export * from './RenderProxy';
 export * from './RenderProxy2D';
 export * from './RenderProxyAdapter';
