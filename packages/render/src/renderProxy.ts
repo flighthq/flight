@@ -77,6 +77,28 @@ export function createRenderProxy2D(
   return node;
 }
 
+// Disposes render proxies for `root` and every descendant in the display object subtree. Also
+// disposes the immediate mask proxy on each node. Call after removeNodeChild to free GPU resources
+// for nodes that will never be rendered again. Unlike prepareDisplayObjectRender, this visits all
+// nodes regardless of enabled or visible state.
+export function disposeDisplayObjectSubtree(state: RenderState, root: DisplayObject): void {
+  const tempStack = state.tempStack;
+  let stackLength = 1;
+  tempStack[0] = root;
+
+  while (stackLength > 0) {
+    const current = tempStack[--stackLength] as DisplayObject;
+    if (current.mask !== null) disposeRenderProxy(state, current.mask);
+    disposeRenderProxy(state, current);
+    const children = getNodeRuntime(current).children;
+    if (children !== null) {
+      for (let i = children.length - 1; i >= 0; i--) {
+        tempStack[stackLength++] = children[i] as DisplayObject;
+      }
+    }
+  }
+}
+
 // Disposes the framework-side render proxy for `source`: drops it from the renderProxyMap (a
 // WeakMap, so this just makes the GC-managed proxy collectable sooner) and cascades to the
 // renderer's destroyData to free the non-GC GPU resources it owns. Call when a node is removed from
