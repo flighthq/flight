@@ -39,18 +39,18 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
     if (data === undefined || data.isMaskFrameID === frameID) continue;
 
     clipHooks?.popMask(state, data);
-    clipHooks?.popClipRectangle(state, data);
+    clipHooks?.popClipRectangle(state, data, current);
 
     if (!isRenderProxyVisible(data)) continue;
 
     clipHooks?.pushMask(state, current);
 
+    clipHooks?.pushClipRectangle(state, data, current);
+
     const filter = resolveCanvasCSSFilter(state, data);
     if (filter !== null) state.context.filter = filter;
     if (data.renderer !== null) data.renderer.submit(state, data);
     if (filter !== null) state.context.filter = 'none';
-
-    const prePushLength = stackLength;
     if (data.traverseChildren) {
       const children = getDisplayObjectRuntime(current).children;
       if (children !== null) {
@@ -59,8 +59,6 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
         }
       }
     }
-
-    clipHooks?.pushClipRectangle(state, data, current, stackLength > prePushLength);
   }
 
   clipHooks?.finalize(state);

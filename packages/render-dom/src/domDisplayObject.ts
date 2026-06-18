@@ -26,11 +26,13 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
     if (data === undefined || data.isMaskFrameID === frameID) continue;
 
     clipHooks?.popMask(state, data);
-    clipHooks?.popClipRectangle(state, data);
+    clipHooks?.popClipRectangle(state, data, current);
 
     if (!isRenderProxyVisible(data)) continue;
 
     clipHooks?.pushMask(state, current);
+
+    clipHooks?.pushClipRectangle(state, data, current);
 
     if (data.renderer !== null) {
       const result = processDOMNode(internal, data, frameID, () => data.renderer!.submit(state, data), newLength);
@@ -38,8 +40,6 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
       if (result.needsReconcile) needsReconcile = true;
       applyClip?.apply(state, data);
     }
-
-    const prePushLength = stackLength;
     if (data.traverseChildren) {
       const children = getDisplayObjectRuntime(current).children;
       if (children !== null) {
@@ -48,8 +48,6 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
         }
       }
     }
-
-    clipHooks?.pushClipRectangle(state, data, current, stackLength > prePushLength);
   }
 
   clipHooks?.finalize(state);
