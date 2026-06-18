@@ -35,6 +35,17 @@ function createWebGPUShapeData(_state: RenderState, _source: Renderable): Render
   return { canvas, ctx, lastContentID: -1, lastW: 0, lastH: 0 } as unknown as RendererData;
 }
 
+// Destroy the GPU texture the batch uploaded for this shape's canvas when it is torn down.
+function destroyWebGPUShapeData(state: RenderState, data: RendererData): void {
+  const internal = state as WebGPURenderStateInternal;
+  const { canvas } = data as unknown as WebGPUShapeData;
+  const entry = internal.textureCache.get(canvas);
+  if (entry !== undefined) {
+    entry.texture.destroy();
+    internal.textureCache.delete(canvas);
+  }
+}
+
 export function drawWebGPUShape(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
@@ -122,5 +133,6 @@ export function drawWebGPUShapeMask(state: RenderState, data: RenderProxy2D): vo
 export const defaultWebGPUShapeRenderer: DisplayObjectRenderer = {
   format: BatchFormat.Quad,
   createData: createWebGPUShapeData,
+  destroyData: destroyWebGPUShapeData,
   submit: drawWebGPUShape,
 };
