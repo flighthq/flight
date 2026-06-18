@@ -1,6 +1,5 @@
-import { enableRenderFeatures, getOrCreateRenderProxy2D, hasRenderFeatures } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import type { DisplayObject, RenderProxy2D, WebGPURenderState } from '@flighthq/types';
-import { RenderFeatures } from '@flighthq/types';
 
 import type { WebGPUBitmapShader, WebGPURenderStateInternal } from './internal';
 
@@ -10,12 +9,15 @@ export function getWebGPUShader(renderProxy: RenderProxy2D): WebGPUBitmapShader 
   return _shaderBindings.get(renderProxy);
 }
 
+// Returns the per-node shader binding, or null when none is bound. The lookup is reached only
+// through the installed resolver, so it and the binding map tree-shake until setWebGPUShader is used.
 export function resolveWebGPUShader(
   state: WebGPURenderStateInternal,
   renderProxy: RenderProxy2D,
 ): WebGPUBitmapShader | null {
-  if (hasRenderFeatures(state, RenderFeatures.Shaders)) {
-    const shader = _shaderBindings.get(renderProxy);
+  const resolver = state.webgpuShaderBindingResolver;
+  if (resolver !== undefined) {
+    const shader = resolver(renderProxy);
     if (shader !== undefined) return shader;
   }
   return null;
@@ -32,5 +34,5 @@ export function setWebGPUShader(
     return;
   }
   _shaderBindings.set(renderProxy, shader);
-  enableRenderFeatures(state, RenderFeatures.Shaders);
+  (state as WebGPURenderStateInternal).webgpuShaderBindingResolver = getWebGPUShader;
 }
