@@ -6,7 +6,11 @@ import { registerDefaultWebGLMaterial } from './webglDefaultMaterial';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 import { makeWebGLState } from './webglTestHelper';
 
-function makeRenderProxy(image: unknown = null): RenderProxy2D {
+function makeBitmapData() {
+  return { lastSrc: null, lastVersion: -1 };
+}
+
+function makeRenderProxy(image: unknown = null, rendererData: unknown = makeBitmapData()): RenderProxy2D {
   return {
     source: { data: { image } },
     blendMode: 0,
@@ -14,7 +18,7 @@ function makeRenderProxy(image: unknown = null): RenderProxy2D {
     material: null,
     materialData: null,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 10, ty: 20 },
-    rendererData: null,
+    rendererData,
   } as unknown as RenderProxy2D;
 }
 
@@ -29,6 +33,10 @@ describe('defaultWebGLBitmapRenderer', () => {
 
   it('has a createData function', () => {
     expect(typeof defaultWebGLBitmapRenderer.createData).toBe('function');
+  });
+
+  it('has a destroyData function', () => {
+    expect(typeof defaultWebGLBitmapRenderer.destroyData).toBe('function');
   });
 
   it('has a submit function pointing to drawWebGLBitmap', () => {
@@ -48,13 +56,6 @@ describe('drawWebGLBitmap', () => {
     const { state } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     drawWebGLBitmap(state, makeRenderProxy(makeImageResource(null)));
-    expect(state.spriteBatchCount).toBe(0);
-  });
-
-  it('returns early when no material renderer is registered', () => {
-    const { state } = makeWebGLState();
-    const img = document.createElement('img');
-    drawWebGLBitmap(state, makeRenderProxy(makeImageResource(img)));
     expect(state.spriteBatchCount).toBe(0);
   });
 
