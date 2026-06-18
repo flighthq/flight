@@ -33,9 +33,10 @@ const webgpuClipHooks: DisplayObjectClipHooks = {
     const s = state as WebGPURenderStateInternal;
     while (s.currentMaskDepth > data.maskDepth) popWebGPUMask(s);
   },
-  popClipRectangle(state: RenderState, data: RenderProxy2D): void {
+  popClipRectangle(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
     const s = state as WebGPURenderStateInternal;
-    while (s.currentClipRectangleDepth > data.clipRectangleDepth) {
+    const clipTarget = data.clipRectangleDepth - (source.clipRectangle != null ? 1 : 0);
+    while (s.currentClipRectangleDepth > clipTarget) {
       popWebGPUClipRectangle(s);
       s.currentClipRectangleDepth--;
     }
@@ -46,8 +47,8 @@ const webgpuClipHooks: DisplayObjectClipHooks = {
     if (maskData === undefined) return;
     pushWebGPUMask(state as WebGPURenderStateInternal, maskData);
   },
-  pushClipRectangle(state: RenderState, data: RenderProxy2D, source: DisplayObject, hasChildren: boolean): void {
-    if (!hasChildren || source.clipRectangle === null) return;
+  pushClipRectangle(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
+    if (source.clipRectangle === null) return;
     pushWebGPUClipRectangle(state as WebGPURenderStateInternal, source.clipRectangle, data.transform2D);
     state.currentClipRectangleDepth++;
   },

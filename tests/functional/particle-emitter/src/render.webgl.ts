@@ -18,6 +18,7 @@ export const canvas = createWebGLCanvasElement(800, 450, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createWebGLRenderState(canvas, {
+  pixelRatio,
   backgroundColor: 0x111111ff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });

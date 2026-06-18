@@ -8,6 +8,7 @@ import {
   defaultWebGLRichTextRenderer,
   defaultWebGLShapeCommands,
   defaultWebGLShapeRenderer,
+  enableWebGLClipRectangleSupport,
   prepareDisplayObjectRender,
   registerDefaultWebGLMaterial,
   registerRenderer,
@@ -28,6 +29,7 @@ export function createWebGLTarget(options: Readonly<FunctionalTargetOptions>): F
   document.body.appendChild(canvas);
 
   const state = createWebGLRenderState(canvas, {
+    pixelRatio,
     backgroundColor: options.background,
     contextAttributes: options.contextAttributes ?? { alpha: false },
     sceneGraphSyncPolicy: options.syncPolicy,
@@ -48,6 +50,8 @@ export function createWebGLTarget(options: Readonly<FunctionalTargetOptions>): F
       registerRenderer(state, RichTextKind, defaultWebGLRichTextRenderer);
     }
   }
+
+  if (options.clip) enableWebGLClipRectangleSupport(state);
 
   return {
     state,

@@ -6,5 +6,6 @@ export const { height, render, width } = createWebGLTarget({
   width: 800,
   height: 600,
   background: 0xffffffff,
+  clip: true,
   kinds: [BitmapKind, RichTextKind, ShapeKind],
 });
