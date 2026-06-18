@@ -6,6 +6,7 @@ import {
   defaultWebGLSpriteRenderer,
   ParticleEmitterKind,
   prepareSpriteRender,
+  registerDefaultWebGLMaterial,
   registerRenderer,
   renderWebGLBackground,
   renderWebGLSprite,
@@ -23,6 +24,7 @@ export const state = createWebGLRenderState(canvas, {
 registerRenderer(state, ParticleEmitterKind, defaultWebGLParticleEmitterRenderer);
 registerRenderer(state, SpriteKind, defaultWebGLSpriteRenderer);
 
+registerDefaultWebGLMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: SpriteNode): void {

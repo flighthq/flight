@@ -10,25 +10,22 @@ import {
   createDisplayContainer,
   createRichText,
   createShape,
-  setTransformX,
-  setTransformY,
+  invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 
-import { height, render, scale, width } from './render';
+import { height, render, width } from './render';
 
 const RPM = 5;
 const COLORS = [0xff4cf0, 0xfff372, 0x85ff75, 0x59ddff];
 
 function pos(i: number): number {
-  return (i * height) / (720 * scale);
+  return (i * height) / 720;
 }
 
 const root = createDisplayContainer();
-root.scaleX = scale;
-root.scaleY = scale;
 
-const W = width / scale;
-const H = height / scale;
+const W = width;
+const H = height;
 
 // Black stage background
 const stageBg = createShape();
@@ -95,8 +92,9 @@ function enterFrame(): void {
   const dt = (now - lastTime) / 1000;
   lastTime = now;
   angle += (dt / (60 / RPM)) * Math.PI * 2;
-  setTransformX(group, cx + radius * Math.cos(angle));
-  setTransformY(group, cy + radius * Math.sin(angle));
+  group.x = cx + radius * Math.cos(angle);
+  group.y = cy + radius * Math.sin(angle);
+  invalidateNodeLocalTransform(group);
   render(root);
   requestAnimationFrame(enterFrame);
 }

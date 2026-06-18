@@ -1,33 +1,10 @@
-import type { DisplayObject } from '@flighthq/sdk';
-import {
-  createCanvasElement,
-  createCanvasRenderState,
-  defaultCanvasShapeCommands,
-  defaultCanvasShapeRenderer,
-  prepareDisplayObjectRender,
-  registerCanvasShapeCommands,
-  registerRenderer,
-  renderCanvasBackground,
-  renderCanvasDisplayObject,
-  ShapeKind,
-} from '@flighthq/sdk';
+import { ShapeKind } from '@flighthq/sdk';
 
-const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(800, 600, pixelRatio);
-document.body.appendChild(canvas);
+import { createCanvasTarget } from '../../_harness/canvas';
 
-export const state = createCanvasRenderState(canvas, {
-  backgroundColor: 0xff000000,
-  contextAttributes: { alpha: false },
+export const { height, render, width } = createCanvasTarget({
+  width: 800,
+  height: 600,
+  background: 0xff000000,
+  kinds: [ShapeKind],
 });
-registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
-export const scale = pixelRatio;
-export const width = 800;
-export const height = 600;
-
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
-  renderCanvasBackground(state);
-  renderCanvasDisplayObject(state, root);
-}

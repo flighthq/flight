@@ -1,7 +1,7 @@
+import { createReferenceStage } from '../../_harness/stage';
 // Port of CacheBitmapTest1. Tests alpha-blended rounded-rect shapes orbiting the screen.
 import Shape from 'openfl/display/Shape';
 import Sprite from 'openfl/display/Sprite';
-import Stage from 'openfl/display/Stage';
 import Event from 'openfl/events/Event';
 import TextField from 'openfl/text/TextField';
 import TextFormat from 'openfl/text/TextFormat';
@@ -15,10 +15,7 @@ function pos(i: number): number {
   return (i * HEIGHT) / 720;
 }
 
-const stage = new Stage(WIDTH, HEIGHT, 0x000000);
-document.getElementById('app')!.appendChild((stage as any).element);
-const root = new Sprite();
-stage.addChild(root);
+const { root } = createReferenceStage(WIDTH, HEIGHT, 0x000000);
 
 const W = WIDTH;
 const H = HEIGHT;

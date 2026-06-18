@@ -1,3 +1,4 @@
+import { createReferenceStage } from '../../_harness/stage';
 // Tests GPU surface allocation by creating/destroying bitmaps of varying sizes.
 // Arrow keys / number keys match the original OpenFL key bindings.
 // Up: add 100x100 bitmap   Down: remove oldest 100x100
@@ -7,8 +8,6 @@
 import Bitmap from 'openfl/display/Bitmap';
 import BitmapData from 'openfl/display/BitmapData';
 import Shape from 'openfl/display/Shape';
-import Sprite from 'openfl/display/Sprite';
-import Stage from 'openfl/display/Stage';
 import TextField from 'openfl/text/TextField';
 import TextFormat from 'openfl/text/TextFormat';
 
@@ -47,10 +46,7 @@ function makeColoredBitmap(size: number): Bitmap {
   return new Bitmap(bd);
 }
 
-const stage = new Stage(WIDTH, HEIGHT, 0x000000);
-document.getElementById('app')!.appendChild((stage as any).element);
-const root = new Sprite();
-stage.addChild(root);
+const { root } = createReferenceStage(WIDTH, HEIGHT, 0x000000);
 
 const stageBg = new Shape();
 stageBg.graphics.beginFill(0x000000);

@@ -1,7 +1,6 @@
+import { createReferenceStage } from '../../_harness/stage';
 // Requires: assets/unifont-8.0.01.ttf, assets/data.utf8
 // Displays raw UTF-8 file content in a large text field.
-import Sprite from 'openfl/display/Sprite';
-import Stage from 'openfl/display/Stage';
 import TextField from 'openfl/text/TextField';
 import TextFormat from 'openfl/text/TextFormat';
 
@@ -9,10 +8,7 @@ const WIDTH = 1000;
 const HEIGHT = 400;
 const FONT = 'Unifont';
 
-const stage = new Stage(WIDTH, HEIGHT, 0xffffff);
-document.getElementById('app')!.appendChild((stage as any).element);
-const root = new Sprite();
-stage.addChild(root);
+const { root } = createReferenceStage(WIDTH, HEIGHT, 0xffffff);
 
 (async () => {
   const ff = new FontFace(FONT, 'url(assets/unifont-8.0.01.ttf)');
