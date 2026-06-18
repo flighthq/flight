@@ -16,7 +16,6 @@ import {
   getDisplayObjectRuntime,
   isDisplayObject,
   setDisplayObjectClipRectangle,
-  setDisplayObjectMask,
 } from './displayObject';
 
 function getRuntime_(obj: DisplayObject): DisplayObjectRuntime {
@@ -33,7 +32,6 @@ describe('createDisplayObject', () => {
   it('initializes default values', () => {
     expect(displayObject.alpha).toBe(1);
     expect(displayObject.blendMode).toBeNull();
-    expect(displayObject.mask).toBeNull();
     expect(displayObject.name).toBeNull();
     expect(displayObject.visible).toBe(true);
     expect(displayObject.kind).toBe(DisplayObjectKind);
@@ -43,7 +41,6 @@ describe('createDisplayObject', () => {
     const base = {
       alpha: 2,
       blendMode: BlendMode.Darken,
-      mask: createDisplayObject(),
       name: 'foo',
       rotation: 45,
       scaleX: 2,
@@ -55,7 +52,6 @@ describe('createDisplayObject', () => {
     const obj = createDisplayObject(base);
     expect(obj.alpha).toStrictEqual(base.alpha);
     expect(obj.blendMode).toStrictEqual(base.blendMode);
-    expect(obj.mask).toStrictEqual(base.mask);
     expect(obj.name).toStrictEqual(base.name);
     expect(obj.rotation).toStrictEqual(base.rotation);
     expect(obj.scaleX).toStrictEqual(base.scaleX);
@@ -151,30 +147,6 @@ describe('setDisplayObjectClipRectangle', () => {
   it('invalidates appearance', () => {
     const idBefore = getRuntime_(obj).appearanceID;
     setDisplayObjectClipRectangle(obj, { x: 0, y: 0, width: 10, height: 10 } as Rectangle);
-    expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
-  });
-});
-
-describe('setDisplayObjectMask', () => {
-  let obj: DisplayObject;
-  beforeEach(() => {
-    obj = createDisplayObject();
-  });
-
-  it('sets mask', () => {
-    const mask = createDisplayObject();
-    setDisplayObjectMask(obj, mask);
-    expect(obj.mask).toBe(mask);
-  });
-
-  it('accepts null', () => {
-    setDisplayObjectMask(obj, null);
-    expect(obj.mask).toBeNull();
-  });
-
-  it('invalidates appearance', () => {
-    const idBefore = getRuntime_(obj).appearanceID;
-    setDisplayObjectMask(obj, createDisplayObject());
     expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
   });
 });

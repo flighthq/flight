@@ -3,6 +3,7 @@ export * from './displayContainer';
 export * from './displayObject';
 export * from './htmlView';
 export * from './inputText';
+export * from './maskGroup';
 export * from './movieClip';
 export * from './renderView';
 export * from './richText';

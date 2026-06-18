@@ -5,6 +5,7 @@ import {
   initAppearanceTrait,
   initBoundsRectangleRuntimeTrait,
   initBoundsRectangleTrait,
+  initClipRectangleTrait,
   initMaterialTrait,
   initTransform2DRuntimeTrait,
   initTransform2DTrait,
@@ -43,8 +44,7 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   initBoundsRectangleTrait(out, obj);
   initAppearanceTrait(out, obj);
   initMaterialTrait(out, obj);
-  out.mask = obj?.mask ?? null;
-  out.clipRectangle = obj?.clipRectangle ?? null;
+  initClipRectangleTrait(out, obj);
   return out;
 }
 
@@ -68,10 +68,5 @@ export function isDisplayObject(node: NodeAny): node is DisplayObject {
 
 export function setDisplayObjectClipRectangle(source: DisplayObject, value: Rectangle | null): void {
   source.clipRectangle = value;
-  invalidateNodeAppearance(source);
-}
-
-export function setDisplayObjectMask(source: DisplayObject, value: DisplayObject | null): void {
-  source.mask = value;
   invalidateNodeAppearance(source);
 }
