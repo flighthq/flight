@@ -1,4 +1,4 @@
-import { enableDisplayObjectMaskPass, getRenderProxy2D } from '@flighthq/render';
+import { enableDisplayObjectMaskPass, getDisplayObjectMask, getRenderProxy2D } from '@flighthq/render';
 import type {
   DisplayObject,
   DisplayObjectClipHooks,
@@ -42,8 +42,9 @@ const webglClipHooks: DisplayObjectClipHooks = {
     }
   },
   pushMask(state: RenderState, source: DisplayObject): void {
-    if (source.mask === null) return;
-    const maskData = getRenderProxy2D(state, source.mask);
+    const mask = getDisplayObjectMask(source);
+    if (mask === null) return;
+    const maskData = getRenderProxy2D(state, mask);
     if (maskData === undefined) return;
     pushWebGLMask(state as WebGLRenderStateInternal, maskData);
   },
