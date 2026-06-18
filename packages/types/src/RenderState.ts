@@ -1,11 +1,10 @@
 ﻿import type { BlendMode } from './BlendMode';
-import type { ColorTransform } from './ColorTransform';
+import type { DisplayObject } from './DisplayObject';
 import type { DisplayObjectClipHooks, DisplayObjectMaskRenderer } from './DisplayObjectRenderer';
 import type { Entity } from './Entity';
 import type { Matrix } from './Matrix';
 import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
-import type { RenderFeatures } from './RenderFeatures';
 import type { RenderProxy } from './RenderProxy';
 import type { RenderProxyAdapter } from './RenderProxyAdapter';
 
@@ -27,6 +26,10 @@ export interface RenderState extends Entity {
   currentMaskDepth: number;
   currentClipRectangleDepth: number;
   displayObjectClipHooks: DisplayObjectClipHooks | null;
+  // Optional mask-resolution pass run by prepareDisplayObjectRender. Installed by
+  // registerDisplayObjectMaskRenderer; left null (and tree-shaken away) when no mask renderer is
+  // registered, so mask-free scenes carry neither the pass code nor its per-frame walk.
+  displayObjectMaskPass: ((state: RenderState, source: DisplayObject) => void) | null;
   readonly displayObjectMaskRendererMap: Map<symbol, DisplayObjectMaskRenderer>;
   readonly displayObjectMaskRendererMapID: number;
   pixelRatio: number;
@@ -34,8 +37,6 @@ export interface RenderState extends Entity {
   readonly renderProxyMap: WeakMap<Renderable, RenderProxy>;
   renderAlpha: number;
   renderBlendMode: BlendMode | null;
-  renderColorTransform: ColorTransform | null;
-  renderFeatures: RenderFeatures;
   renderTransform2D: Matrix | null;
   readonly rendererMap: Map<symbol, Renderer>;
   sceneGraphSyncPolicy: SceneGraphSyncPolicy;
