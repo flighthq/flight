@@ -1,4 +1,10 @@
-import { appendShapeRectangle, createDisplayObject, createShape } from '@flighthq/displayobject';
+import {
+  appendShapeRectangle,
+  createDisplayObject,
+  createMaskGroup,
+  createShape,
+  setMaskGroupMask,
+} from '@flighthq/displayobject';
 import { createRectangle } from '@flighthq/geometry';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { getOrCreateRenderProxy2D, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
@@ -199,19 +205,21 @@ describe('renderDOMDisplayObject', () => {
     expect(el.style.clipPath).toBe('polygon(10px 20px, 40px 20px, 40px 60px, 10px 60px)');
   });
 
-  it('applies mask bounds clipping to masked elements', () => {
+  it('applies mask bounds clipping to mask group content', () => {
     const state = makeState();
     enableDOMMaskSupport(state);
-    const obj = createDisplayObject();
+    const group = createMaskGroup();
     const mask = createShape();
     appendShapeRectangle(mask, 5, 6, 20, 30);
-    obj.mask = mask;
+    setMaskGroupMask(group, mask);
+    const content = createDisplayObject();
+    addNodeChild(group, content);
 
     const el = document.createElement('div');
-    setupRenderedNode(state, obj, el);
+    setupRenderedNode(state, content, el);
 
-    prepareDisplayObjectRender(state, obj);
-    renderDOMDisplayObject(state, obj);
+    prepareDisplayObjectRender(state, group);
+    renderDOMDisplayObject(state, group);
 
     expect(el.style.clipPath).toBe('polygon(5px 6px, 25px 6px, 25px 36px, 5px 36px)');
   });
