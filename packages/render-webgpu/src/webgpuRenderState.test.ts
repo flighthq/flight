@@ -1,4 +1,4 @@
-import { isWebGPUSupported } from './webgpuRenderState';
+import { destroyWebGPURenderState, isWebGPUSupported } from './webgpuRenderState';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
 
 beforeAll(() => {
@@ -35,6 +35,23 @@ describe('createWebGPURenderState', () => {
     const internal = state as never as { renderPass: unknown; commandEncoder: unknown };
     expect(internal.renderPass).toBeNull();
     expect(internal.commandEncoder).toBeNull();
+  });
+});
+
+describe('destroyWebGPURenderState', () => {
+  it('destroys the state-owned uniform buffer', async () => {
+    const state = await createWebGPURenderStateForTest();
+    const internal = state as never as { uniformBuffer: GPUBuffer };
+    const destroy = vi.spyOn(internal.uniformBuffer, 'destroy');
+
+    destroyWebGPURenderState(state);
+
+    expect(destroy).toHaveBeenCalled();
+  });
+
+  it('does not throw on a fresh state with no lazily-created buffers', async () => {
+    const state = await createWebGPURenderStateForTest();
+    expect(() => destroyWebGPURenderState(state)).not.toThrow();
   });
 });
 

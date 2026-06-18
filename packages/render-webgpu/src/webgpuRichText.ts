@@ -1,6 +1,6 @@
 import { getRichTextRuntime } from '@flighthq/displayobject';
 import { computeRGBHexString } from '@flighthq/materials';
-import { computeTextFormatFontString, noopRendererData } from '@flighthq/render';
+import { computeTextFormatFontString } from '@flighthq/render';
 import {
   computeRichTextContent,
   computeTextLayout,
@@ -12,6 +12,8 @@ import {
 } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,
+  Renderable,
+  RendererData,
   RenderProxy2D,
   RenderState,
   RichText,
@@ -37,13 +39,23 @@ export type WebGPURichTextOverlay = (
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
 
+// Per-node GPU texture entry this rich text rasterizes into. Held on the node's RendererData (not a
+// module-level map keyed by render proxy) so destroyWebGPURichTextData can free it on teardown.
 interface WebGPURichTextData {
-  entry: WebGPUTextureEntry;
+  entry: WebGPUTextureEntry | null;
   w: number;
   h: number;
 }
 
-const _textureMap = new WeakMap<RenderProxy2D, WebGPURichTextData>();
+export function createWebGPURichTextData(_state: RenderState, _source: Renderable): RendererData {
+  return { entry: null, h: 0, w: 0 } as unknown as RendererData;
+}
+
+// Destroys the GPU texture this rich text node owns when it is torn down via disposeDisplayObjectRender.
+export function destroyWebGPURichTextData(_state: RenderState, data: RendererData): void {
+  const richData = data as unknown as WebGPURichTextData;
+  richData.entry?.texture.destroy();
+}
 
 export function drawWebGPURichText(state: RenderState, renderProxy: RenderProxy2D): void {
   drawWebGPURichTextWithOverlay(state, renderProxy);
@@ -99,23 +111,27 @@ export function drawWebGPURichTextWithOverlay(
 
   internal.applyBlendMode?.(internal, renderProxy.blendMode);
 
+  if (renderProxy.rendererData === null) return;
+  const richData = renderProxy.rendererData as unknown as WebGPURichTextData;
   const pw = _offscreenCanvas!.width;
   const ph = _offscreenCanvas!.height;
-  let richData = _textureMap.get(renderProxy);
-  if (!richData || richData.w !== pw || richData.h !== ph) {
-    richData?.entry.texture.destroy();
-    const entry = createWebGPUTextureEntry(internal, pw, ph, _offscreenCanvas!);
-    richData = { entry, h: ph, w: pw };
-    _textureMap.set(renderProxy, richData);
+  let entry = richData.entry;
+  if (entry === null || richData.w !== pw || richData.h !== ph) {
+    entry?.texture.destroy();
+    entry = createWebGPUTextureEntry(internal, pw, ph, _offscreenCanvas!);
+    richData.entry = entry;
+    richData.w = pw;
+    richData.h = ph;
   } else {
-    updateWebGPUTextureEntry(internal, richData.entry, _offscreenCanvas!);
+    updateWebGPUTextureEntry(internal, entry, _offscreenCanvas!);
   }
 
-  drawWebGPUQuad(internal, renderProxy, richData.entry, 0, 0, fieldW, fieldH, 0, 0, 1, 1);
+  drawWebGPUQuad(internal, renderProxy, entry, 0, 0, fieldW, fieldH, 0, 0, 1, 1);
 }
 
 export const defaultWebGPURichTextRenderer: DisplayObjectRenderer = {
-  createData: noopRendererData,
+  createData: createWebGPURichTextData,
+  destroyData: destroyWebGPURichTextData,
   submit: drawWebGPURichText,
 };
 
