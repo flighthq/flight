@@ -90,7 +90,7 @@ function play(fadeIn = 3000): void {
 
 function resize(w: number, h: number): void {
   setSize(w, h);
-  clearShapeCommands(background.data);
+  clearShapeCommands(background);
   appendShapeBeginFill(background, 0x24afc4);
   appendShapeRectangle(background, 0, 0, w, h);
   invalidateNodeRender(background);
