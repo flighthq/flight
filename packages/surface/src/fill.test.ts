@@ -20,6 +20,13 @@ describe('fillSurfaceRectangle', () => {
     expect(getSurfacePixel(img, 2, 2)).toBe(0xaabbccff);
   });
 
+  it('bumps the surface version (self-invalidation)', () => {
+    const img = createSurface(4, 4);
+    const before = img.version;
+    fillSurfaceRectangle(region(img, 1, 1, 2, 2), 0xaabbccff);
+    expect(img.version).toBe(before + 1);
+  });
+
   it('does not affect pixels outside the region', () => {
     const img = createSurface(4, 4);
     fillSurfaceRectangle(region(img, 1, 1, 2, 2), 0xaabbccff);
