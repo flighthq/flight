@@ -1,7 +1,7 @@
+import { createReferenceStage } from '../../_harness/stage';
 // Port of CacheBitmapTest2. Tests nested alpha-blended containers orbiting.
 import Shape from 'openfl/display/Shape';
 import Sprite from 'openfl/display/Sprite';
-import Stage from 'openfl/display/Stage';
 import Event from 'openfl/events/Event';
 import TextField from 'openfl/text/TextField';
 import TextFormat from 'openfl/text/TextFormat';
@@ -37,10 +37,7 @@ function makeChild(rects: { color: number; x: number; y: number }[]): Sprite {
   return c;
 }
 
-const stage = new Stage(WIDTH, HEIGHT, 0x000000);
-document.getElementById('app')!.appendChild((stage as any).element);
-const root = new Sprite();
-stage.addChild(root);
+const { root } = createReferenceStage(WIDTH, HEIGHT, 0x000000);
 
 const stageBg = new Shape();
 stageBg.graphics.beginFill(0x000000);

@@ -16,7 +16,7 @@ import {
   defaultWebGPUBitmapRenderer,
   drawWebGPURenderTargetResult,
   endWebGPURenderTarget,
-  getDisplayObjectRenderProxy,
+  getRenderProxy2D,
   prepareDisplayObjectRender,
   registerRenderer,
   renderWebGPUBackground,
@@ -79,7 +79,7 @@ export function render(root: DisplayObject): void {
   // blurred node's scene transform before the offscreen pass overwrites transform2D.
   prepareDisplayObjectRender(state, root);
   for (const entry of _entries) {
-    const renderProxy = getDisplayObjectRenderProxy(state, entry.node);
+    const renderProxy = getRenderProxy2D(state, entry.node);
     if (renderProxy !== undefined) copyMatrix(entry.sceneTransform, renderProxy.transform2D);
   }
 
@@ -101,7 +101,7 @@ export function render(root: DisplayObject): void {
     const { height: h } = computeRenderTargetSize(_bounds, padding, 1, 1);
     computeRenderCacheTransform(entry.cacheTransform, _bounds, padding, padding);
 
-    const renderProxy = getDisplayObjectRenderProxy(state, node);
+    const renderProxy = getRenderProxy2D(state, node);
     if (renderProxy === undefined) continue;
 
     // Map the node into target space with a baked vertical flip (see header note).
@@ -115,7 +115,7 @@ export function render(root: DisplayObject): void {
 
   // Composite blurred targets back onto the canvas (canvas pass is active again).
   for (const entry of _entries) {
-    const renderProxy = getDisplayObjectRenderProxy(state, entry.node);
+    const renderProxy = getRenderProxy2D(state, entry.node);
     if (renderProxy === undefined) continue;
     copyMatrix(renderProxy.transform2D, entry.sceneTransform);
     drawWebGPURenderTargetResult(state, renderProxy, entry.blurred, entry.cacheTransform);

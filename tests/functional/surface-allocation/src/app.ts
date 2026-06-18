@@ -17,7 +17,7 @@ import {
   removeNodeChild,
 } from '@flighthq/sdk';
 
-import { height, render, scale, width } from './render';
+import { height, render, width } from './render';
 
 // Seeded random (same algorithm as fill test)
 const RESIDUES = 4096;
@@ -60,11 +60,9 @@ function makeColoredBitmap(size: number): ReturnType<typeof createBitmap> {
 }
 
 const root = createDisplayContainer();
-root.scaleX = scale;
-root.scaleY = scale;
 
-const W = width / scale;
-const H = height / scale;
+const W = width;
+const H = height;
 
 const stageBg = createShape();
 appendShapeBeginFill(stageBg, 0x000000);

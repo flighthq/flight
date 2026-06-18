@@ -1,3 +1,4 @@
+import { createReferenceStage } from '../../_harness/stage';
 // Requires: assets/BlendSquare.png, assets/BlendCircle.png
 // Port of BlendModeTest1.
 import Bitmap from 'openfl/display/Bitmap';
@@ -5,8 +6,6 @@ import type BitmapData from 'openfl/display/BitmapData';
 import BlendMode from 'openfl/display/BlendMode';
 import Loader from 'openfl/display/Loader';
 import Shape from 'openfl/display/Shape';
-import Sprite from 'openfl/display/Sprite';
-import Stage from 'openfl/display/Stage';
 import Event from 'openfl/events/Event';
 import URLRequest from 'openfl/net/URLRequest';
 import TextField from 'openfl/text/TextField';
@@ -32,10 +31,7 @@ const BLEND_MODES: [BlendMode, string][] = [
   [BlendMode.HARDLIGHT, 'hardlight'],
 ];
 
-const stage = new Stage(WIDTH, HEIGHT, 0xffffff);
-document.getElementById('app')!.appendChild((stage as any).element);
-const root = new Sprite();
-stage.addChild(root);
+const { root } = createReferenceStage(WIDTH, HEIGHT, 0xffffff);
 
 const bg = new Shape();
 bg.graphics.beginFill(0xffffff);

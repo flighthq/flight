@@ -8,7 +8,7 @@ import {
   invalidateNodeAppearance,
 } from '@flighthq/sdk';
 
-import { height, render, scale, width } from './render';
+import { height, render, width } from './render';
 
 // Multiply-with-carry PRNG seeded at startup so results are deterministic per session.
 // Algorithm from https://en.wikipedia.org/wiki/Multiply-with-carry
@@ -37,17 +37,15 @@ function seededRandom(max: number): number {
 }
 
 function pos(i: number): number {
-  return (i * height) / (720 * scale);
+  return (i * height) / 720;
 }
 
 const root = createDisplayContainer();
-root.scaleX = scale;
-root.scaleY = scale;
 
 // Background + static rectangles drawn on the container background shape
 const bg = createShape();
 appendShapeBeginFill(bg, 0x000000);
-appendShapeRectangle(bg, 0, 0, width / scale, height / scale);
+appendShapeRectangle(bg, 0, 0, width, height);
 addNodeChild(root, bg);
 
 const redSquare = createShape();

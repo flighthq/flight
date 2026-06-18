@@ -10,12 +10,14 @@ import {
   createRectangle,
   createRenderCache,
   defaultCanvasBitmapRenderer,
+  defaultCanvasRichTextRenderer,
   enableCanvasRenderCache,
   ensureCanvasRenderCacheTarget,
   prepareDisplayObjectRender,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
+  RichTextKind,
   useRenderCache,
 } from '@flighthq/sdk';
 
@@ -28,6 +30,7 @@ export const state = createCanvasRenderState(canvas, {
   contextAttributes: { alpha: false },
 });
 registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
+registerRenderer(state, RichTextKind, defaultCanvasRichTextRenderer);
 enableCanvasRenderCache(state);
 export const scale = pixelRatio;
 export const width = 800;
