@@ -1,5 +1,5 @@
-import { getOrCreateRenderProxy2D, hasRenderFeatures } from '@flighthq/render';
-import { type DisplayObject, RenderFeatures } from '@flighthq/types';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import type { DisplayObject } from '@flighthq/types';
 
 import {
   enableCanvasCSSFilterSupport,
@@ -17,10 +17,11 @@ function makeState() {
 }
 
 describe('enableCanvasCSSFilterSupport', () => {
-  it('enables the CSSFilter render feature', () => {
+  it('installs the CSS filter resolver', () => {
     const state = makeState();
+    expect(state.canvasCSSFilterResolver).toBeNull();
     enableCanvasCSSFilterSupport(state);
-    expect(hasRenderFeatures(state, RenderFeatures.CSSFilter)).toBe(true);
+    expect(state.canvasCSSFilterResolver).toBe(resolveCanvasCSSFilter);
   });
 });
 
@@ -41,24 +42,14 @@ describe('getCanvasCSSFilter', () => {
 });
 
 describe('resolveCanvasCSSFilter', () => {
-  it('returns null when support is not enabled, even with a binding', () => {
+  it('returns null when no filter is set', () => {
     const state = makeState();
-    const node = {} as DisplayObject;
-    setCanvasCSSFilter(state, node, 'blur(2px)');
-    const renderProxy = getOrCreateRenderProxy2D(state, node);
-    expect(resolveCanvasCSSFilter(state, renderProxy)).toBeNull();
-  });
-
-  it('returns null when support is enabled but no filter is set', () => {
-    const state = makeState();
-    enableCanvasCSSFilterSupport(state);
     const renderProxy = getOrCreateRenderProxy2D(state, {} as DisplayObject);
     expect(resolveCanvasCSSFilter(state, renderProxy)).toBeNull();
   });
 
-  it('returns the bound filter when support is enabled', () => {
+  it('returns the bound filter', () => {
     const state = makeState();
-    enableCanvasCSSFilterSupport(state);
     const node = {} as DisplayObject;
     setCanvasCSSFilter(state, node, 'grayscale(1)');
     const renderProxy = getOrCreateRenderProxy2D(state, node);

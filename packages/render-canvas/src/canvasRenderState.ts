@@ -21,6 +21,7 @@ export function createCanvasRenderState(
   if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
 
   state.applyBlendMode = null;
+  state.canvasCSSFilterResolver = null;
   state.canvas = canvas;
   state.context = context;
   state.contextAttributes = context.getContextAttributes();

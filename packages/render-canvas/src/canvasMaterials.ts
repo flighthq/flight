@@ -1,6 +1,5 @@
-import { enableRenderFeatures } from '@flighthq/render';
 import type { CanvasRenderState } from '@flighthq/types';
-import { BlendMode, RenderFeatures } from '@flighthq/types';
+import { BlendMode } from '@flighthq/types';
 
 // Auditable map from a blend-mode intent to the Canvas2D globalCompositeOperation
 // that realizes it. `null` means there is no faithful Canvas2D equivalent, so the
@@ -31,5 +30,4 @@ export function applyCanvasBlendMode(state: CanvasRenderState, value: BlendMode 
 
 export function enableCanvasBlendModeSupport(state: CanvasRenderState): void {
   state.applyBlendMode = applyCanvasBlendMode;
-  enableRenderFeatures(state, RenderFeatures.BlendMode);
 }

@@ -1,4 +1,4 @@
-import { enableRenderFeatures, getRenderProxy2D } from '@flighthq/render';
+import { enableDisplayObjectMaskPass, getRenderProxy2D } from '@flighthq/render';
 import type {
   CanvasRenderState,
   DisplayObject,
@@ -6,19 +6,17 @@ import type {
   RenderProxy2D,
   RenderState,
 } from '@flighthq/types';
-import { RenderFeatures } from '@flighthq/types';
 
 import { popCanvasClipRectangle, pushCanvasClipRectangle } from './canvasClipRectangle';
 import { popCanvasMask, pushCanvasMask } from './canvasMask';
 
 export function enableCanvasClipRectangleSupport(state: CanvasRenderState): void {
   state.displayObjectClipHooks = canvasClipHooks;
-  enableRenderFeatures(state, RenderFeatures.ClipRectangle);
 }
 
 export function enableCanvasMaskSupport(state: CanvasRenderState): void {
   state.displayObjectClipHooks = canvasClipHooks;
-  enableRenderFeatures(state, RenderFeatures.Masks);
+  enableDisplayObjectMaskPass(state);
 }
 
 const canvasClipHooks: DisplayObjectClipHooks = {
