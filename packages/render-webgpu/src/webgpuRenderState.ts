@@ -133,6 +133,26 @@ export async function createWebGPURenderState(
   return state;
 }
 
+// Destroys the GPU buffers and textures createWebGPURenderState (and the lazy sprite-batch/particle
+// paths) allocated on `state`: the uniform buffer, particle instance buffer, depth-stencil texture,
+// and every sprite-batch pool slot's instance/material buffers. Call when the render state is no
+// longer needed.
+//
+// Intentionally NOT touched: the GPUDevice (app-owned and shared — destroying it would tear down
+// every state on it), and GC-managed WebGPU objects with no destroy() (pipelines, bind groups,
+// layouts, samplers, shader modules, texture views). textureCache is a WeakMap and cannot be
+// enumerated; its entries' textures are freed per-node by the dispose* paths.
+export function destroyWebGPURenderState(state: WebGPURenderState): void {
+  const internal = state as WebGPURenderStateInternal;
+  internal.uniformBuffer?.destroy();
+  internal.particleInstanceBuffer?.destroy();
+  internal.depthStencilTexture?.destroy();
+  for (const slot of internal.spriteBatchBufferPool) {
+    slot.instanceBuffer?.destroy();
+    slot.materialBuffer?.destroy();
+  }
+}
+
 export function isWebGPUSupported(): boolean {
   return typeof navigator !== 'undefined' && 'gpu' in navigator && navigator.gpu !== null;
 }
