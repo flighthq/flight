@@ -77,6 +77,17 @@ export function createRenderProxy2D(
   return node;
 }
 
+// Disposes the framework-side render proxy for `source`: drops it from the renderProxyMap (a
+// WeakMap, so this just makes the GC-managed proxy collectable sooner) and cascades to the
+// renderer's destroyData to free the non-GC GPU resources it owns. Call when a node is removed from
+// rendering for good — otherwise those GPU textures/framebuffers linger until the source is GC'd.
+export function disposeRenderProxy(state: RenderState, source: Renderable): void {
+  const node = state.renderProxyMap.get(source);
+  if (node === undefined) return;
+  if (node.rendererData !== null) node.renderer?.destroyData?.(state, node.rendererData);
+  state.renderProxyMap.delete(source);
+}
+
 // Installs the mask-resolution pass that prepareDisplayObjectRender runs. Called by the renderer
 // mask opt-ins (enable*MaskSupport, registerDisplayObjectMaskRenderer); mask-free states never call
 // it, leaving the hook null so prepareMasks and its second tree walk tree-shake away.
@@ -239,6 +250,8 @@ export function updateRenderProxy2D(
 export function updateRenderProxyRenderer(state: RenderState, node: RenderProxy): void {
   const renderer = state.rendererMap.get(node.kind) ?? null;
   if (node.renderer !== renderer || node.rendererDataSource !== node.source) {
+    // Free the outgoing renderer's GPU resources before replacing the data it owned.
+    if (node.rendererData !== null) node.renderer?.destroyData?.(state, node.rendererData);
     node.renderer = renderer;
     node.rendererData = renderer?.createData(state, node.source) ?? null;
     node.rendererDataSource = node.source;

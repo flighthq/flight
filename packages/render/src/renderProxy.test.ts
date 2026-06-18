@@ -15,6 +15,7 @@ import {
   beginRenderProxyUpdate,
   createRenderProxy,
   createRenderProxy2D,
+  disposeRenderProxy,
   enableDisplayObjectMaskPass,
   getOrCreateRenderProxy2D,
   getRenderProxy2D,
@@ -113,6 +114,27 @@ describe('createRenderProxy2D', () => {
       expect(node.clipRectangleDepth).toBe(0);
       expect(node.traverseChildren).toBe(true);
     }
+  });
+});
+
+describe('disposeRenderProxy', () => {
+  it('cascades to the renderer destroyData and removes the proxy', () => {
+    const state = createRenderState();
+    const source = createSprite();
+    const destroyData = vi.fn();
+    registerRenderer(state, source.kind, { createData: () => ({ tag: 'data' }), destroyData, submit: vi.fn() } as any);
+    const node = getOrCreateRenderProxy2D(state, source);
+    const data = node.rendererData;
+
+    disposeRenderProxy(state, source);
+
+    expect(destroyData).toHaveBeenCalledWith(state, data);
+    expect(getRenderProxy2D(state, source)).toBeUndefined();
+  });
+
+  it('is a no-op when no proxy exists', () => {
+    const state = createRenderState();
+    expect(() => disposeRenderProxy(state, createSprite())).not.toThrow();
   });
 });
 
