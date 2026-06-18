@@ -1,4 +1,5 @@
-﻿export * from './AppearanceFlags';
+﻿export * from './AlphaType';
+export * from './AppearanceFlags';
 export * from './Application';
 export * from './ApplicationWindow';
 export * from './AudioResource';
@@ -76,6 +77,7 @@ export * from './ParticleForce';
 export * from './ParticleObject';
 export * from './ParticleObjectsState';
 export * from './ParticleObjectsUpdateOptions';
+export * from './PixelFormat';
 export * from './PixelOrder';
 export * from './PointerEventData';
 export * from './QuadBatch';
