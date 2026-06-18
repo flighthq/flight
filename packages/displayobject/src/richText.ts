@@ -1,4 +1,4 @@
-import { invalidateNodeLocalContent } from '@flighthq/node';
+import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
 import type {
   MethodsOf,
   Node,
@@ -18,7 +18,7 @@ import { createTextData } from './text';
 
 export function clearRichTextFormatRanges(source: RichText): void {
   source.data.textFormatRanges.length = 0;
-  invalidateNodeLocalContent(source);
+  invalidateRichTextContent(source);
 }
 
 export function computeRichTextLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
@@ -79,7 +79,7 @@ export function setRichTextFormatRange(
   end = source.data.text.length,
 ): void {
   source.data.textFormatRanges.push({ end, format, start });
-  invalidateNodeLocalContent(source);
+  invalidateRichTextContent(source);
 }
 
 export function setRichTextScrollH(source: RichText, value: number, layout?: Readonly<TextLayoutResult>): void {
@@ -102,12 +102,19 @@ export function setRichTextScrollV(source: RichText, value: number, layout?: Rea
 
 export function setRichTextString(source: RichText, value: string): void {
   source.data.text = value;
-  invalidateNodeLocalContent(source);
+  invalidateRichTextContent(source);
 }
 
 const defaultMethods: Partial<MethodsOf<RichTextRuntime>> = {
   computeLocalBoundsRectangle: computeRichTextLocalBoundsRectangle,
 };
+
+// A content change always re-rasterizes the field. It only changes the field's bounds when autoSize
+// is active; a fixed field (autoSize 'none') keeps its user-set width/height, so bounds stay put.
+function invalidateRichTextContent(source: RichText): void {
+  invalidateNodeLocalContent(source);
+  if (source.data.autoSize !== 'none') invalidateNodeLocalBounds(source);
+}
 
 function getRichTextMaxScrollHFromLayout(data: Readonly<RichTextData>, layout: Readonly<TextLayoutResult>): number {
   const fieldW = data.autoSize === 'none' || data.wordWrap ? data.width : layout.textWidth + 4;
