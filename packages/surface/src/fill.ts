@@ -1,3 +1,4 @@
+import { invalidateImageSource } from '@flighthq/assets';
 import type { Surface, SurfaceRegion } from '@flighthq/types';
 
 let _floodFillVisited: Uint8Array | null = null;
@@ -24,6 +25,7 @@ export function fillSurfaceRectangle(dest: Readonly<SurfaceRegion>, color: numbe
       dest.surface.data[i + 3] = a;
     }
   }
+  invalidateImageSource(dest.surface);
 }
 
 /**
@@ -84,4 +86,5 @@ export function floodFillSurface(out: Surface, x: number, y: number, color: numb
     if (py > 0) stack.push(idx - out.width);
     if (py < out.height - 1) stack.push(idx + out.width);
   }
+  invalidateImageSource(out);
 }

@@ -1,3 +1,4 @@
+import { invalidateImageSource } from '@flighthq/assets';
 import type { SurfaceRegion, SurfaceResizeMode } from '@flighthq/types';
 
 export interface SurfaceResizeOptions {
@@ -167,6 +168,7 @@ export function resizeSurface(
       }
     }
   }
+  invalidateImageSource(dest.surface);
 }
 
 // Catmull-Rom weight for distance t (|t| in [0, 2]).

@@ -1,3 +1,4 @@
+import { invalidateImageSource } from '@flighthq/assets';
 import type { Surface } from '@flighthq/types';
 
 import type { ImageChannel } from './imageChannel';
@@ -32,6 +33,7 @@ export function setSurfacePixel(out: Surface, x: number, y: number, color: numbe
   out.data[i + 1] = (color >> 16) & 0xff;
   out.data[i + 2] = (color >> 8) & 0xff;
   out.data[i + 3] = color & 0xff;
+  invalidateImageSource(out);
 }
 
 export function setSurfacePixelRGB(out: Surface, x: number, y: number, color: number): void {
@@ -39,4 +41,5 @@ export function setSurfacePixelRGB(out: Surface, x: number, y: number, color: nu
   out.data[i] = (color >> 16) & 0xff;
   out.data[i + 1] = (color >> 8) & 0xff;
   out.data[i + 2] = color & 0xff;
+  invalidateImageSource(out);
 }
