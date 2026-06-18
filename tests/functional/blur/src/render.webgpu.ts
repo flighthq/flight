@@ -14,13 +14,20 @@ import {
   createWebGPURenderState,
   createWebGPURenderTarget,
   defaultWebGPUBitmapRenderer,
+  defaultWebGPURichTextRenderer,
+  defaultWebGPUShapeCommands,
+  defaultWebGPUShapeRenderer,
   drawWebGPURenderTargetResult,
   endWebGPURenderTarget,
   getRenderProxy2D,
   prepareDisplayObjectRender,
+  registerDefaultWebGPUMaterial,
   registerRenderer,
+  registerWebGPUShapeCommands,
   renderWebGPUBackground,
   renderWebGPUDisplayObject,
+  RichTextKind,
+  ShapeKind,
   submitWebGPURenderPass,
 } from '@flighthq/sdk';
 
@@ -33,6 +40,10 @@ export const state = await createWebGPURenderState(canvas, {
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, BitmapKind, defaultWebGPUBitmapRenderer);
+registerRenderer(state, ShapeKind, defaultWebGPUShapeRenderer);
+registerWebGPUShapeCommands(defaultWebGPUShapeCommands);
+registerRenderer(state, RichTextKind, defaultWebGPURichTextRenderer);
+registerDefaultWebGPUMaterial(state);
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 400;
@@ -114,11 +125,20 @@ export function render(root: DisplayObject): void {
     endWebGPURenderTarget(state);
   }
 
-  // Composite blurred targets back onto the canvas (canvas pass is active again).
+  // Main pass: restore scene transforms, hide the blurred source nodes so the sharp originals
+  // are not drawn (transparent images would show both sharp and blurred), render the full scene
+  // (background shape + labels), then composite each blurred target and restore visibility.
   for (const entry of _entries) {
     const renderProxy = getRenderProxy2D(state, entry.node);
     if (renderProxy === undefined) continue;
     copyMatrix(renderProxy.transform2D, entry.sceneTransform);
+    renderProxy.visible = false;
+  }
+  renderWebGPUDisplayObject(state, root);
+  for (const entry of _entries) {
+    const renderProxy = getRenderProxy2D(state, entry.node);
+    if (renderProxy === undefined) continue;
+    renderProxy.visible = true;
     drawWebGPURenderTargetResult(state, renderProxy, entry.blurred, entry.cacheTransform);
   }
 

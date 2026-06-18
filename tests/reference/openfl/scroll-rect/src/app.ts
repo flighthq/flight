@@ -47,7 +47,7 @@ function loadBitmapData(url: string): Promise<BitmapData> {
 
   // Text list
   const textSprite = new Sprite();
-  const textFmt = new TextFormat('sans-serif', 28, 0xe8c343);
+  const textFmt = new TextFormat('_sans', 28, 0xe8c343);
   const movies = [
     'The Shawshank Redemption (1994)',
     'The Godfather (1972)',

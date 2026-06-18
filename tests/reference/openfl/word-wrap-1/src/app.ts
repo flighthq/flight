@@ -1,36 +1,25 @@
-import {
-  addNodeChild,
-  createDisplayContainer,
-  createRichText,
-  invalidateNodeAppearance,
-  RichTextKind,
-} from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import Event from 'openfl/events/Event';
+import TextField from 'openfl/text/TextField';
+import TextFormat from 'openfl/text/TextFormat';
 
-const { height, render, width } = createFunctionalTarget({
-  width: 800,
-  height: 600,
-  background: 0xffffffff,
-  kinds: [RichTextKind],
-});
+import { createReferenceStage } from '../../_harness/stage';
 
-const root = createDisplayContainer();
+const WIDTH = 800;
+const HEIGHT = 600;
 
-const W = width;
-const H = height;
+const { root } = createReferenceStage(WIDTH, HEIGHT, 0xffffff);
 
-const field = createRichText();
-field.data.defaultTextFormat = { font: 'sans-serif', size: 28, bold: true };
-field.data.textColor = 0xe8c343;
-field.data.multiline = true;
-field.data.wordWrap = true;
-field.data.border = true;
-field.data.borderColor = 0xe8c343;
+const field = new TextField();
+field.defaultTextFormat = new TextFormat('_sans', 28, 0xe8c343, true);
 field.x = 100;
 field.y = 100;
-field.data.width = 300;
-field.data.height = H - 200;
-field.data.htmlText =
+field.width = 300;
+field.height = HEIGHT - 200;
+field.multiline = true;
+field.wordWrap = true;
+field.border = true;
+field.borderColor = 0xe8c343;
+field.htmlText =
   'Here is some text: angelo <i>Ephesi ecclesiae</i> scribe haec dicit qui tenet septem ' +
   '<b>stellas</b> in dextera sua qui ambulat in medio septem ' +
   'candelabrorum aureorum scio <u>opera tua et laborem</u> et ' +
@@ -46,20 +35,14 @@ field.data.htmlText =
   'unde excideris et age paenitentiam et prima opera fac sin ' +
   'autem venio tibi et movebo candelabrum tuum de loco suo nisi ' +
   'paenitentiam egeris.';
-addNodeChild(root, field);
+root.addChild(field);
 
-const maxWidth = W - field.x - 100;
+const maxWidth = WIDTH - field.x - 100;
 let textWidth = 300;
 let widthInc = 3;
 
-function enterFrame(): void {
+root.addEventListener(Event.ENTER_FRAME, () => {
   textWidth += widthInc;
   if (textWidth <= 5 || textWidth >= maxWidth) widthInc = -widthInc;
-  field.data.width = textWidth;
-  invalidateNodeAppearance(field);
-
-  render(root);
-  requestAnimationFrame(enterFrame);
-}
-
-enterFrame();
+  field.width = textWidth;
+});

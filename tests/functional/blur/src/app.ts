@@ -42,13 +42,19 @@ addNodeChild(root, bg);
 
 const image = await loadImageResourceFromURL('assets/wabbit_alpha.png');
 
+const IMAGE_SCALE = 5;
+const iw = image.width * IMAGE_SCALE;
+const ih = image.height * IMAGE_SCALE;
+
 const filtered: { node: DisplayObject; filter: BlurFilter }[] = [];
 
 for (let i = 0; i < 3; i++) {
   const bmp = createBitmap();
   bmp.data.image = image;
   bmp.data.smoothing = true;
-  bmp.x = 50 + i * (image.width + 50);
+  bmp.scaleX = IMAGE_SCALE;
+  bmp.scaleY = IMAGE_SCALE;
+  bmp.x = 50 + i * (iw + 50);
   bmp.y = 50;
   addNodeChild(root, bmp);
 
@@ -61,8 +67,8 @@ for (let i = 0; i < 3; i++) {
   const lbl = createRichText();
   lbl.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x444444 };
   lbl.x = bmp.x;
-  lbl.y = bmp.y + image.height + 8;
-  lbl.data.width = image.width;
+  lbl.y = bmp.y + ih + 8;
+  lbl.data.width = iw;
   lbl.data.height = 24;
   lbl.data.text = `blur σ=${sigma}px`;
   addNodeChild(root, lbl);

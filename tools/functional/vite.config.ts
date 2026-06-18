@@ -61,7 +61,7 @@ function discoverTests(): FunctionalTest[] {
         renderers = customRenderers;
       } else if (existsSync(join(testDir, 'src', 'app.ts'))) {
         const pkg = JSON.parse(readFileSync(join(testDir, 'package.json'), 'utf8')) as Record<string, unknown>;
-        renderers = (pkg.renderers as string[] | undefined) ?? ['canvas', 'dom', 'webgl'];
+        renderers = (pkg.renderers as string[] | undefined) ?? ['dom', 'canvas', 'webgl', 'webgpu'];
       } else {
         renderers = [];
       }
@@ -120,13 +120,28 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
           const renderer = id.slice('\0virtual:ft-render:'.length);
           const harnessDir = join(testsDir, '_harness');
           if (renderer === 'canvas') {
-            return `import { createCanvasTarget } from ${JSON.stringify(join(harnessDir, 'canvas.ts'))};\nexport { createCanvasTarget as createFunctionalTarget };`;
+            return [
+              `import { createCanvasTarget } from ${JSON.stringify(join(harnessDir, 'canvas.ts'))};`,
+              `export async function createFunctionalTarget(opts) { return createCanvasTarget(opts); }`,
+            ].join('\n');
           }
           if (renderer === 'webgl') {
-            return `import { createWebGLTarget } from ${JSON.stringify(join(harnessDir, 'webgl.ts'))};\nexport { createWebGLTarget as createFunctionalTarget };`;
+            return [
+              `import { createWebGLTarget } from ${JSON.stringify(join(harnessDir, 'webgl.ts'))};`,
+              `export async function createFunctionalTarget(opts) { return createWebGLTarget(opts); }`,
+            ].join('\n');
           }
           if (renderer === 'dom') {
-            return `import { createDOMTarget } from ${JSON.stringify(join(harnessDir, 'dom.ts'))};\nexport { createDOMTarget as createFunctionalTarget };`;
+            return [
+              `import { createDOMTarget } from ${JSON.stringify(join(harnessDir, 'dom.ts'))};`,
+              `export async function createFunctionalTarget(opts) { return createDOMTarget(opts); }`,
+            ].join('\n');
+          }
+          if (renderer === 'webgpu') {
+            return [
+              `import { createWebGPUTarget } from ${JSON.stringify(join(harnessDir, 'webgpu.ts'))};`,
+              `export const createFunctionalTarget = createWebGPUTarget;`,
+            ].join('\n');
           }
           return null;
         }
@@ -195,7 +210,7 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${name} · ${render}</title>
-  <style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { overflow: hidden; }</style>
+  <style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: sans-serif; font-size: 16px; overflow: hidden; }</style>
   <script>
     function __ftShowError(msg) {
       var el = document.getElementById('ft-error');
