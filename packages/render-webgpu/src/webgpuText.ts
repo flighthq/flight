@@ -55,6 +55,17 @@ function createWebGPUTextData(_state: RenderState, _source: Renderable): Rendere
   } as unknown as RendererData;
 }
 
+// Destroy the GPU texture the batch uploaded for this text node's canvas when it is torn down.
+function destroyWebGPUTextData(state: RenderState, data: RendererData): void {
+  const internal = state as WebGPURenderStateInternal;
+  const { canvas } = data as unknown as WebGPUTextData;
+  const entry = internal.textureCache.get(canvas);
+  if (entry !== undefined) {
+    entry.texture.destroy();
+    internal.textureCache.delete(canvas);
+  }
+}
+
 export function drawWebGPUText(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
@@ -185,5 +196,6 @@ export function drawWebGPUTextMask(state: RenderState, data: RenderProxy2D): voi
 export const defaultWebGPUTextRenderer: DisplayObjectRenderer = {
   format: BatchFormat.Quad,
   createData: createWebGPUTextData,
+  destroyData: destroyWebGPUTextData,
   submit: drawWebGPUText,
 };
