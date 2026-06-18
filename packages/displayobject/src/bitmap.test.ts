@@ -120,11 +120,11 @@ describe('setBitmapImage', () => {
     expect(runtime.localBoundsID).not.toBe(idBefore);
   });
 
-  it('invalidates appearance', () => {
+  it('invalidates local content', () => {
     const bitmap = createBitmap();
     const runtime = getEntityRuntime(bitmap) as BitmapRuntime;
-    const idBefore = runtime.appearanceID;
+    const idBefore = runtime.localContentID;
     setBitmapImage(bitmap, { width: 64, height: 64 } as ImageSource);
-    expect(runtime.appearanceID).not.toBe(idBefore);
+    expect(runtime.localContentID).not.toBe(idBefore);
   });
 });

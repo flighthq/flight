@@ -1,11 +1,12 @@
+import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
 import type { Node, PartialNode, Rectangle, Shape, ShapeData, ShapeRuntime } from '@flighthq/types';
 import { ShapeKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
 
-export function clearShapeCommands(data: ShapeData): void {
-  data.commands.length = 0;
-  data.version++;
+export function clearShapeCommands(shape: Shape): void {
+  shape.data.commands.length = 0;
+  invalidateShapeGeometry(shape);
 }
 
 export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
@@ -191,10 +192,10 @@ export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonl
   }
 }
 
-export function copyShapeCommands(source: ShapeData, target: ShapeData): void {
-  target.commands.length = 0;
-  target.commands.push(...source.commands);
-  target.version++;
+export function copyShapeCommands(source: Readonly<Shape>, target: Shape): void {
+  target.data.commands.length = 0;
+  target.data.commands.push(...source.data.commands);
+  invalidateShapeGeometry(target);
 }
 
 export function createShape(obj?: Readonly<PartialNode<Shape>>): Shape {
@@ -204,7 +205,6 @@ export function createShape(obj?: Readonly<PartialNode<Shape>>): Shape {
 export function createShapeData(data?: Readonly<Partial<ShapeData>>): ShapeData {
   return {
     commands: data?.commands ?? [],
-    version: data?.version ?? 0,
   };
 }
 
@@ -214,4 +214,12 @@ export function createShapeRuntime(): ShapeRuntime {
 
 export function getShapeRuntime(source: Readonly<Shape>): Readonly<ShapeRuntime> {
   return getDisplayObjectRuntime(source) as ShapeRuntime;
+}
+
+// A shape's payload defines both its drawn surface and its extent, so any command change bumps
+// content (re-rasterize) and local bounds (re-measure) together. Call after mutating
+// shape.data.commands directly; the append*/clear/copy helpers call it for you.
+export function invalidateShapeGeometry(shape: Shape): void {
+  invalidateNodeLocalContent(shape);
+  invalidateNodeLocalBounds(shape);
 }

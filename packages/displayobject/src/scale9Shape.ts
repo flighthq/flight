@@ -23,7 +23,6 @@ export function createScale9ShapeData(
   return {
     commands: data?.commands ?? [],
     scale9Grid,
-    version: data?.version ?? 0,
   };
 }
 

@@ -1,4 +1,4 @@
-import { invalidateNodeAppearance } from '@flighthq/node';
+import { invalidateNodeLocalContent } from '@flighthq/node';
 import type {
   MethodsOf,
   Node,
@@ -18,6 +18,7 @@ import { createTextData } from './text';
 
 export function clearRichTextFormatRanges(source: RichText): void {
   source.data.textFormatRanges.length = 0;
+  invalidateNodeLocalContent(source);
 }
 
 export function computeRichTextLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
@@ -78,6 +79,7 @@ export function setRichTextFormatRange(
   end = source.data.text.length,
 ): void {
   source.data.textFormatRanges.push({ end, format, start });
+  invalidateNodeLocalContent(source);
 }
 
 export function setRichTextScrollH(source: RichText, value: number, layout?: Readonly<TextLayoutResult>): void {
@@ -86,7 +88,7 @@ export function setRichTextScrollH(source: RichText, value: number, layout?: Rea
   const clamped = Math.max(0, Math.min(max, Math.round(value)));
   if (_data.scrollH === clamped) return;
   _data.scrollH = clamped;
-  invalidateNodeAppearance(source);
+  invalidateNodeLocalContent(source);
 }
 
 export function setRichTextScrollV(source: RichText, value: number, layout?: Readonly<TextLayoutResult>): void {
@@ -95,12 +97,12 @@ export function setRichTextScrollV(source: RichText, value: number, layout?: Rea
   const clamped = Math.max(1, Math.min(max, Math.round(value)));
   if (_data.scrollV === clamped) return;
   _data.scrollV = clamped;
-  invalidateNodeAppearance(source);
+  invalidateNodeLocalContent(source);
 }
 
 export function setRichTextString(source: RichText, value: string): void {
   source.data.text = value;
-  invalidateNodeAppearance(source);
+  invalidateNodeLocalContent(source);
 }
 
 const defaultMethods: Partial<MethodsOf<RichTextRuntime>> = {
