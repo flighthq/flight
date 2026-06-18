@@ -1,16 +1,15 @@
 import type { HasAppearance } from './HasAppearance';
 import type { HasBoundsRectangle, HasBoundsRectangleRuntime } from './HasBoundsRectangle';
+import type { HasClipRectangle } from './HasClipRectangle';
 import type { HasMaterial } from './HasMaterial';
 import type { HasTransform2D, HasTransform2DRuntime } from './HasTransform2D';
 import type { Node, NodeData, NodeDataFactory, NodeRuntime, NodeRuntimeFactory, NodeTraitsKey } from './Node';
-import type { Rectangle } from './Rectangle';
 
 export type DisplayObject = Node<DisplayObjectTraits> & DisplayObjectTraits;
 
-export interface DisplayObjectTraits extends HasAppearance, HasBoundsRectangle, HasMaterial, HasTransform2D {
+export interface DisplayObjectTraits
+  extends HasAppearance, HasBoundsRectangle, HasClipRectangle, HasMaterial, HasTransform2D {
   data: DisplayObjectData | null;
-  mask: DisplayObject | null;
-  clipRectangle: Rectangle | null;
 }
 
 export interface DisplayObjectData extends NodeData {}
