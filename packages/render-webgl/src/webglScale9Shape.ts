@@ -1,4 +1,4 @@
-﻿import { getNodeLocalBoundsRectangle } from '@flighthq/node';
+﻿import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node';
 import { mapCanvasScale9ShapeCommands, renderCanvasShapeCommands } from '@flighthq/render-canvas';
 import type {
   DisplayObjectRenderer,
@@ -23,7 +23,7 @@ interface WebGLScale9ShapeData {
   lastH: number;
   lastScaleX: number;
   lastScaleY: number;
-  lastVersion: number;
+  lastContentID: number;
   lastW: number;
   texture: WebGLTexture;
 }
@@ -44,7 +44,7 @@ export function createWebGLScale9ShapeData(state: RenderState, _source: Renderab
     lastH: 0,
     lastScaleX: -1,
     lastScaleY: -1,
-    lastVersion: -1,
+    lastContentID: -1,
     lastW: 0,
     texture,
   } as unknown as RendererData;
@@ -54,7 +54,8 @@ export function drawWebGLScale9Shape(state: RenderState, renderProxy: RenderProx
   const internal = state as WebGLRenderStateInternal;
   flushWebGLSpriteBatch(internal);
   const source = renderProxy.source as Scale9Shape;
-  const { commands, scale9Grid, version } = source.data;
+  const { commands, scale9Grid } = source.data;
+  const version = getNodeLocalContentRevision(source);
   if (commands.length === 0) return;
   if (renderProxy.rendererData === null) return;
 
@@ -71,7 +72,7 @@ export function drawWebGLScale9Shape(state: RenderState, renderProxy: RenderProx
   if (w <= 0 || h <= 0) return;
 
   if (
-    version !== shapeData.lastVersion ||
+    version !== shapeData.lastContentID ||
     w !== shapeData.lastW ||
     h !== shapeData.lastH ||
     source.scaleX !== shapeData.lastScaleX ||
@@ -90,7 +91,7 @@ export function drawWebGLScale9Shape(state: RenderState, renderProxy: RenderProx
     shapeData.lastH = h;
     shapeData.lastScaleX = source.scaleX;
     shapeData.lastScaleY = source.scaleY;
-    shapeData.lastVersion = version;
+    shapeData.lastContentID = version;
     shapeData.lastW = w;
   }
 

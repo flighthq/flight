@@ -8,6 +8,7 @@ import { makeWebGLState } from './webglTestHelper';
 
 vi.mock('@flighthq/node', () => ({
   getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
+  getNodeLocalContentRevision: (source: any) => source?.data?.version ?? 0,
 }));
 
 function makeShapeData() {
@@ -15,7 +16,7 @@ function makeShapeData() {
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  return { canvas, ctx, lastVersion: -1, lastW: 0, lastH: 0 };
+  return { canvas, ctx, lastContentID: -1, lastW: 0, lastH: 0 };
 }
 
 function makeShapeNode(data: Record<string, unknown> = {}, rendererData: unknown = null): RenderProxy2D {
