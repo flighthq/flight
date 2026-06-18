@@ -49,7 +49,7 @@ export const height = 400;
 export function applyBlurFilters(list: { node: DisplayObject; filter: BlurFilter }[]): void {
   for (const { node, filter } of list) {
     const image = (node as Bitmap).data.image;
-    if (image === null || image.src === null) continue;
+    if (image === null || image.source === null) continue;
 
     computeNodeBoundsRectangle(_bounds, node, node);
     const padding = blurPadding(filter);
@@ -64,7 +64,7 @@ export function applyBlurFilters(list: { node: DisplayObject; filter: BlurFilter
     ctx.imageSmoothingEnabled = true;
     // computeBlurFilterCSS returns null for anisotropic blur (blurX !== blurY); fall back to no blur.
     ctx.filter = computeBlurFilterCSS(filter) ?? 'none';
-    ctx.drawImage(image.src, padding - _bounds.x, padding - _bounds.y);
+    ctx.drawImage(image.source, padding - _bounds.x, padding - _bounds.y);
     ctx.filter = 'none';
 
     computeRenderCacheTransform(cache.transform, _bounds, padding, padding);
