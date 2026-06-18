@@ -1,5 +1,5 @@
-import { getOrCreateRenderProxy2D, hasRenderFeatures } from '@flighthq/render';
-import { type DisplayObject, RenderFeatures } from '@flighthq/types';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import type { DisplayObject } from '@flighthq/types';
 
 import { enableDOMCSSFilterSupport, getDOMCSSFilter, setDOMCSSFilter } from './domCSSFilterBinding';
 import { createDOMRenderState } from './domRenderState';
@@ -9,10 +9,11 @@ function makeState() {
 }
 
 describe('enableDOMCSSFilterSupport', () => {
-  it('enables the CSSFilter render feature', () => {
+  it('installs the CSS filter resolver', () => {
     const state = makeState();
+    expect(state.domCSSFilterResolver).toBeNull();
     enableDOMCSSFilterSupport(state);
-    expect(hasRenderFeatures(state, RenderFeatures.CSSFilter)).toBe(true);
+    expect(state.domCSSFilterResolver).toBe(getDOMCSSFilter);
   });
 });
 

@@ -1,4 +1,4 @@
-import { enableRenderFeatures, getRenderProxy2D } from '@flighthq/render';
+import { enableDisplayObjectMaskPass, getRenderProxy2D } from '@flighthq/render';
 import type {
   DisplayObject,
   DisplayObjectClipHooks,
@@ -6,7 +6,6 @@ import type {
   RenderProxy2D,
   RenderState,
 } from '@flighthq/types';
-import { RenderFeatures } from '@flighthq/types';
 
 import { pushDOMClipRectangle, setDOMClipHooks } from './domClipRectangle';
 import { pushDOMMaskRectangle } from './domMask';
@@ -14,13 +13,12 @@ import type { DOMRenderStateInternal } from './internal';
 
 export function enableDOMClipRectangleSupport(state: DOMRenderState): void {
   state.displayObjectClipHooks = domDisplayObjectClipHooks;
-  enableRenderFeatures(state, RenderFeatures.ClipRectangle);
   setDOMClipHooks(state as DOMRenderStateInternal);
 }
 
 export function enableDOMMaskSupport(state: DOMRenderState): void {
   state.displayObjectClipHooks = domDisplayObjectClipHooks;
-  enableRenderFeatures(state, RenderFeatures.Masks);
+  enableDisplayObjectMaskPass(state);
   setDOMClipHooks(state as DOMRenderStateInternal);
 }
 

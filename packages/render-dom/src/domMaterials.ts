@@ -1,6 +1,5 @@
-import { enableRenderFeatures } from '@flighthq/render';
 import type { DOMRenderState } from '@flighthq/types';
-import { BlendMode, RenderFeatures } from '@flighthq/types';
+import { BlendMode } from '@flighthq/types';
 
 // Auditable map from a blend-mode intent to the CSS mix-blend-mode value that realizes
 // it. `null` means there is no faithful CSS equivalent, so the mode degrades to normal
@@ -29,5 +28,4 @@ export function applyDOMBlendMode(element: HTMLElement, value: BlendMode | null)
 
 export function enableDOMBlendModeSupport(state: DOMRenderState): void {
   state.applyBlendMode = applyDOMBlendMode;
-  enableRenderFeatures(state, RenderFeatures.BlendMode);
 }
