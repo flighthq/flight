@@ -2,8 +2,6 @@ import { getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, RenderProxy2D } from '@flighthq/types';
 
-import { resolveCanvasCSSFilter } from './canvasCSSFilterBinding';
-
 export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderProxy: RenderProxy2D): void {
   // Plain display objects have no visual geometry of their own.
 }
@@ -45,7 +43,7 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
 
     clipHooks?.pushMask(state, current);
 
-    const filter = resolveCanvasCSSFilter(state, data);
+    const filter = state.canvasCSSFilterResolver !== null ? state.canvasCSSFilterResolver(state, data) : null;
     if (filter !== null) state.context.filter = filter;
     if (data.renderer !== null) data.renderer.submit(state, data);
     if (filter !== null) state.context.filter = 'none';

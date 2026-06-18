@@ -1,5 +1,5 @@
-import { enableRenderFeatures, getOrCreateRenderProxy2D, hasRenderFeatures } from '@flighthq/render';
-import { type CanvasRenderState, type DisplayObject, RenderFeatures, type RenderProxy2D } from '@flighthq/types';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import type { CanvasRenderState, DisplayObject, RenderProxy2D } from '@flighthq/types';
 
 // Per-state canvas CSS filter bindings, keyed by the render node. Render nodes are
 // per-state (state.renderProxyMap), so a module-level map keyed by render node is
@@ -9,12 +9,14 @@ import { type CanvasRenderState, type DisplayObject, RenderFeatures, type Render
 const _cssFilterBindings = new WeakMap<RenderProxy2D, string>();
 
 /**
- * Enables CSS filter support for the render state. Bindings made via
- * setCanvasCSSFilter are only applied while support is enabled — call this once
- * during setup, mirroring enableCanvasBlendModeSupport and the other opt-ins.
+ * Enables CSS filter support for the render state by installing the resolver the
+ * draw loop consults. Bindings made via setCanvasCSSFilter only apply once this is
+ * called — mirroring enableCanvasBlendModeSupport and the other opt-ins. Because
+ * the draw loop reaches the resolver only through this field, filter-free states
+ * leave it null and the binding module tree-shakes away entirely.
  */
 export function enableCanvasCSSFilterSupport(state: CanvasRenderState): void {
-  enableRenderFeatures(state, RenderFeatures.CSSFilter);
+  state.canvasCSSFilterResolver = resolveCanvasCSSFilter;
 }
 
 export function getCanvasCSSFilter(renderProxy: RenderProxy2D): string | undefined {
@@ -22,16 +24,11 @@ export function getCanvasCSSFilter(renderProxy: RenderProxy2D): string | undefin
 }
 
 /**
- * Returns the CSS filter to draw renderProxy with, or null when none is bound or
- * CSS filter support is disabled for the state. The feature gate keeps the lookup
- * off the hot path until at least one filter has been bound.
+ * Returns the CSS filter to draw renderProxy with, or null when none is bound.
+ * Installed as state.canvasCSSFilterResolver by enableCanvasCSSFilterSupport.
  */
-export function resolveCanvasCSSFilter(state: CanvasRenderState, renderProxy: RenderProxy2D): string | null {
-  if (hasRenderFeatures(state, RenderFeatures.CSSFilter)) {
-    const filter = _cssFilterBindings.get(renderProxy);
-    if (filter !== undefined) return filter;
-  }
-  return null;
+export function resolveCanvasCSSFilter(_state: CanvasRenderState, renderProxy: RenderProxy2D): string | null {
+  return _cssFilterBindings.get(renderProxy) ?? null;
 }
 
 /**
