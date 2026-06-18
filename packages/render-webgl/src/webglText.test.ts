@@ -1,5 +1,5 @@
-import { createText } from '@flighthq/displayobject';
-import type { RenderProxy2D } from '@flighthq/types';
+import { createText, setTextString } from '@flighthq/displayobject';
+import type { RenderProxy2D, Text } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import { registerDefaultWebGLMaterial } from './webglDefaultMaterial';
@@ -103,26 +103,38 @@ describe('drawWebGLText', () => {
     expect(gl.drawElementsInstanced).toHaveBeenCalled();
   });
 
-  it('skips layout and rasterization on repeated calls when hash matches', () => {
+  it('skips layout and rasterization on repeated calls when the content version is unchanged', () => {
     const { state } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
-    const data = makeTextData();
-    const proxy = makeTextProxy('hello', data);
+    const proxy = makeTextProxy('hello', makeTextData());
     const deleteSpy = vi.spyOn((state as any).textureCache, 'delete');
     drawWebGLText(state, proxy);
     drawWebGLText(state, proxy);
-    // textureCache.delete only called during rasterization (first call); skipped on second.
+    // textureCache.delete only happens during rasterization (first call); skipped on second.
     expect(deleteSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('re-rasterizes when text content changes', () => {
+  it('re-rasterizes when the content version is bumped', () => {
     const { state } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
-    const data = makeTextData();
+    const proxy = makeTextProxy('hello', makeTextData());
     const deleteSpy = vi.spyOn((state as any).textureCache, 'delete');
-    drawWebGLText(state, makeTextProxy('hello', data));
-    drawWebGLText(state, makeTextProxy('world', data));
+    drawWebGLText(state, proxy);
+    setTextString(proxy.source as Text, 'world');
+    drawWebGLText(state, proxy);
     expect(deleteSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not re-rasterize when only alpha changes (version unchanged)', () => {
+    const { state } = makeWebGLState();
+    registerDefaultWebGLMaterial(state);
+    const proxy = makeTextProxy('hello', makeTextData());
+    const deleteSpy = vi.spyOn((state as any).textureCache, 'delete');
+    drawWebGLText(state, proxy);
+    proxy.alpha = 0.5;
+    drawWebGLText(state, proxy);
+    // Alpha is applied per-instance in the batch; the expensive raster cache is untouched.
+    expect(deleteSpy).toHaveBeenCalledTimes(1);
   });
 });
 
