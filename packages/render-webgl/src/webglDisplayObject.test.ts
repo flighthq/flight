@@ -2,14 +2,13 @@
 import { createMatrix } from '@flighthq/geometry';
 import { addNodeChild } from '@flighthq/node';
 import {
-  enableRenderFeatures,
   getOrCreateRenderProxy2D,
   prepareDisplayObjectRender,
   registerDisplayObjectMaskRenderer,
   registerRenderer,
 } from '@flighthq/render';
 import type { WebGLRenderState } from '@flighthq/types';
-import { DisplayObjectKind, RenderFeatures } from '@flighthq/types';
+import { DisplayObjectKind } from '@flighthq/types';
 
 import { enableWebGLMaskSupport } from './webglClip';
 import {

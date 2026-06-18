@@ -1,4 +1,4 @@
-import type { BlendMode, Material, WebGLMaterialRenderer, WebGLRenderState } from '@flighthq/types';
+import type { BlendMode, Material, RenderProxy2D, WebGLMaterialRenderer, WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
 
@@ -69,6 +69,9 @@ export type WebGLRenderStateInternal = Omit<WebGLRenderState, 'canvas' | 'gl'> &
   // looks a node's shader up here by its material kind — the render path has no color-transform (or
   // any material-specific) knowledge; the material's shader and its registration own that.
   materialBitmapShaderMap?: Map<symbol, WebGLBitmapShader>;
+  // Optional per-node shader-binding resolver. Installed by setWebGLShader; absent (and tree-shaken
+  // with the binding map) until a custom shader is bound to a node.
+  webglShaderBindingResolver?: (renderProxy: RenderProxy2D) => WebGLBitmapShader | undefined;
   spriteBatchBlendMode: BlendMode | null;
   // The active sprite-batch material (flush key, compared by reference) and its resolved
   // renderer + per-instance float stride. spriteBatchMaterialData/Buffer hold the active

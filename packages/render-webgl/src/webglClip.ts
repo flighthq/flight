@@ -1,4 +1,4 @@
-import { enableRenderFeatures, getRenderProxy2D } from '@flighthq/render';
+import { enableDisplayObjectMaskPass, getRenderProxy2D } from '@flighthq/render';
 import type {
   DisplayObject,
   DisplayObjectClipHooks,
@@ -6,7 +6,6 @@ import type {
   RenderState,
   WebGLRenderState,
 } from '@flighthq/types';
-import { RenderFeatures } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { popWebGLClipRectangle, pushWebGLClipRectangle } from './webglClipRectangle';
@@ -14,12 +13,11 @@ import { popWebGLMask, pushWebGLMask } from './webglMask';
 
 export function enableWebGLClipRectangleSupport(state: WebGLRenderState): void {
   state.displayObjectClipHooks = webglClipHooks;
-  enableRenderFeatures(state, RenderFeatures.ClipRectangle);
 }
 
 export function enableWebGLMaskSupport(state: WebGLRenderState): void {
   state.displayObjectClipHooks = webglClipHooks;
-  enableRenderFeatures(state, RenderFeatures.Masks);
+  enableDisplayObjectMaskPass(state);
 }
 
 const webglClipHooks: DisplayObjectClipHooks = {
