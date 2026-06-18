@@ -16,6 +16,9 @@ export interface FunctionalTargetOptions {
   // Defaults to the render state default ('refreshDerivedState'); pass 'requiresInvalidation' for
   // tests that drive their own invalidation.
   syncPolicy?: SceneGraphSyncPolicy;
+  // Enable clip-rectangle support so setDisplayObjectClipRectangle actually clips. Opt-in (it adds a
+  // per-node clip pass); set it for tests that clip.
+  clip?: boolean;
 }
 
 export interface FunctionalTarget {
