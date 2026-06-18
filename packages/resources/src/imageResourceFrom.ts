@@ -3,6 +3,9 @@ import type { ImageResource } from '@flighthq/types';
 
 export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageResource {
   return createEntity({
+    alphaType: 'straight',
+    data: null,
+    format: 'rgba8unorm',
     height: canvas.height,
     source: canvas,
     version: 0,
@@ -12,6 +15,9 @@ export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageR
 
 export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageResource {
   return createEntity({
+    alphaType: 'straight',
+    data: null,
+    format: 'rgba8unorm',
     height: bitmap.height,
     source: bitmap,
     version: 0,
@@ -21,6 +27,9 @@ export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageRe
 
 export function createImageResourceFromImageElement(img: HTMLImageElement): ImageResource {
   return createEntity({
+    alphaType: 'straight',
+    data: null,
+    format: 'rgba8unorm',
     height: img.height,
     source: img,
     version: 0,
