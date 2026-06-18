@@ -70,7 +70,7 @@ function resize(w: number, h: number): void {
     videoNode.scaleX = fit;
     videoNode.scaleY = fit;
   }
-  clearShapeCommands(overlay.data);
+  clearShapeCommands(overlay);
   appendShapeBeginFill(overlay, 0x000000, 0.5);
   appendShapeRectangle(overlay, 0, 0, w, h);
   prompt.x = Math.round(w / 2 - 60);
