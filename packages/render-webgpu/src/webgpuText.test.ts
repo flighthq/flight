@@ -35,7 +35,7 @@ function makeTextData() {
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  return { canvas, ctx, lastHash: '', logW: 0, logH: 0, lastPW: 0, lastPH: 0 };
+  return { canvas, ctx, lastContentID: -1, lastPixelRatio: 0, logW: 0, logH: 0, lastPW: 0, lastPH: 0 };
 }
 
 function makeTextProxy(text = '', rendererData: unknown = null): RenderProxy2D {
@@ -85,17 +85,19 @@ describe('drawWebGPUText', () => {
     submitWebGPURenderPass(state);
   });
 
-  it('skips rasterization on repeated calls when hash matches', async () => {
+  it('does not re-rasterize when only alpha changes (content version unchanged)', async () => {
     const state = await createWebGPURenderStateForTest();
     renderWebGPUBackground(state);
     registerDefaultWebGPUMaterial(state);
-    const data = makeTextData();
-    const proxy = makeTextProxy('hello', data);
-    const deleteSpy = vi.spyOn((state as any).textureCache, 'delete');
+    const proxy = makeTextProxy('hello', makeTextData());
     drawWebGPUText(state, proxy);
+    const updateSpy = vi.spyOn((state as any).textureCache, 'get');
+    proxy.alpha = 0.5;
     drawWebGPUText(state, proxy);
-    expect(deleteSpy).toHaveBeenCalledTimes(0);
+    // Version is unchanged, so the rasterization block is skipped entirely on the second draw.
+    expect((proxy.rendererData as any).lastContentID).toBe(0);
     submitWebGPURenderPass(state);
+    updateSpy.mockRestore();
   });
 });
 
