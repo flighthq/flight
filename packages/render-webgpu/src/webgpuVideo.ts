@@ -1,17 +1,33 @@
-import { noopRendererData } from '@flighthq/render';
-import type { DisplayObjectRenderer, RenderProxy2D, RenderState, Video } from '@flighthq/types';
+import type {
+  DisplayObjectRenderer,
+  Renderable,
+  RendererData,
+  RenderProxy2D,
+  RenderState,
+  Video,
+} from '@flighthq/types';
 
 import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
 import { drawWebGPUQuad } from './webgpuDraw';
 import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 
+// Per-node GPU texture entry the current video frame is uploaded into. Held on the node's
+// RendererData (not a module-level map keyed by render proxy) so destroyWebGPUVideoData can free it.
 interface WebGPUVideoData {
-  entry: WebGPUTextureEntry;
+  entry: WebGPUTextureEntry | null;
   w: number;
   h: number;
 }
 
-const _videoMap = new WeakMap<RenderProxy2D, WebGPUVideoData>();
+export function createWebGPUVideoData(_state: RenderState, _source: Renderable): RendererData {
+  return { entry: null, h: 0, w: 0 } as unknown as RendererData;
+}
+
+// Destroys the GPU texture this video node owns when it is torn down via disposeDisplayObjectRender.
+export function destroyWebGPUVideoData(_state: RenderState, data: RendererData): void {
+  const videoData = data as unknown as WebGPUVideoData;
+  videoData.entry?.texture.destroy();
+}
 
 export function drawWebGPUVideo(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGPURenderStateInternal;
@@ -28,9 +44,11 @@ export function drawWebGPUVideo(state: RenderState, renderProxy: RenderProxy2D):
 
   internal.applyBlendMode?.(internal, renderProxy.blendMode);
 
-  let videoData = _videoMap.get(renderProxy);
-  if (!videoData || videoData.w !== vw || videoData.h !== vh) {
-    videoData?.entry.texture.destroy();
+  if (renderProxy.rendererData === null) return;
+  const videoData = renderProxy.rendererData as unknown as WebGPUVideoData;
+  let entry = videoData.entry;
+  if (entry === null || videoData.w !== vw || videoData.h !== vh) {
+    entry?.texture.destroy();
     const { device, textureBindGroupLayout, linearSampler } = internal;
     const texture = device.createTexture({
       format: 'rgba8unorm',
@@ -45,17 +63,19 @@ export function drawWebGPUVideo(state: RenderState, renderProxy: RenderProxy2D):
       ],
       layout: textureBindGroupLayout,
     });
-    videoData = { entry: { bindGroup, texture, view }, h: vh, w: vw };
-    _videoMap.set(renderProxy, videoData);
+    entry = { bindGroup, texture, view };
+    videoData.entry = entry;
+    videoData.w = vw;
+    videoData.h = vh;
   }
 
   internal.device.queue.copyExternalImageToTexture(
     { source: element, flipY: false },
-    { premultipliedAlpha: false, texture: videoData.entry.texture },
+    { premultipliedAlpha: false, texture: entry.texture },
     [vw, vh],
   );
 
-  drawWebGPUQuad(internal, renderProxy, videoData.entry, 0, 0, vw, vh, 0, 0, 1, 1);
+  drawWebGPUQuad(internal, renderProxy, entry, 0, 0, vw, vh, 0, 0, 1, 1);
 }
 
 export function drawWebGPUVideoMask(state: RenderState, renderProxy: RenderProxy2D): void {
@@ -63,6 +83,7 @@ export function drawWebGPUVideoMask(state: RenderState, renderProxy: RenderProxy
 }
 
 export const defaultWebGPUVideoRenderer: DisplayObjectRenderer = {
-  createData: noopRendererData,
+  createData: createWebGPUVideoData,
+  destroyData: destroyWebGPUVideoData,
   submit: drawWebGPUVideo,
 };

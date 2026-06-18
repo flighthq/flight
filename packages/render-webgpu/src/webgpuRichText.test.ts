@@ -3,7 +3,9 @@ import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
 import {
+  createWebGPURichTextData,
   defaultWebGPURichTextRenderer,
+  destroyWebGPURichTextData,
   drawWebGPURichText,
   drawWebGPURichTextMask,
   drawWebGPURichTextWithOverlay,
@@ -14,10 +16,29 @@ beforeAll(() => {
   installWebGPUMock();
 });
 
+describe('createWebGPURichTextData', () => {
+  it('allocates per-node data with no texture entry yet', () => {
+    const data = createWebGPURichTextData({} as never, {} as never) as unknown as { entry: unknown };
+    expect(data.entry).toBeNull();
+  });
+});
+
 describe('defaultWebGPURichTextRenderer', () => {
   it('has createData and draw functions', () => {
     expect(typeof defaultWebGPURichTextRenderer.createData).toBe('function');
     expect(typeof defaultWebGPURichTextRenderer.submit).toBe('function');
+  });
+});
+
+describe('destroyWebGPURichTextData', () => {
+  it('destroys the GPU texture the node owns', () => {
+    const destroy = vi.fn();
+    destroyWebGPURichTextData({} as never, { entry: { texture: { destroy } } } as never);
+    expect(destroy).toHaveBeenCalled();
+  });
+
+  it('is a no-op when no texture entry was allocated', () => {
+    expect(() => destroyWebGPURichTextData({} as never, { entry: null } as never)).not.toThrow();
   });
 });
 
