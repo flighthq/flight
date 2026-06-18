@@ -2,6 +2,9 @@
   "name": "functional-test-drop-file",
   "private": true,
   "type": "module",
+  "renderers": [
+    "dom"
+  ],
   "dependencies": {
     "@flighthq/sdk": "*"
   }

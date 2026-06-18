@@ -1,11 +1,13 @@
 // Requires: assets/wabbit_alpha.png
-// Port of CacheBitmapTest3. Tests bitmap + rich text sliding with alpha animation.
-// cacheAsBitmap toggle replaced with a simple on/off label (not applicable in flight).
+// Port of CacheBitmapTest3. Bitmap + rich text sliding with alpha animation.
+// Flight render cache: call createRenderCache() + useRenderCache(state, node, cache) to opt any
+// node into bitmap caching; see the blur functional test for the full bake-once pattern.
 import {
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
+  BitmapKind,
   createBitmap,
   createDisplayContainer,
   createRichText,
@@ -13,9 +15,17 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   loadImageResourceFromURL,
+  RichTextKind,
+  ShapeKind,
 } from '@flighthq/sdk';
+import { createFunctionalTarget } from '@ft/render';
 
-import { height, render, width } from './render';
+const { height, render, width } = createFunctionalTarget({
+  width: 800,
+  height: 600,
+  background: 0xff000000,
+  kinds: [BitmapKind, RichTextKind, ShapeKind],
+});
 
 function pos(i: number): number {
   return (i * height) / 720;
@@ -107,7 +117,7 @@ statusLabel.x = 0;
 statusLabel.y = 0;
 statusLabel.data.width = pos(400);
 statusLabel.data.height = pos(40);
-statusLabel.data.text = 'cacheAsBitmap: n/a';
+statusLabel.data.text = 'cacheAsBitmap → useRenderCache';
 addNodeChild(root, statusLabel);
 
 let menuX = 0;

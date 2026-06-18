@@ -53,13 +53,23 @@ function discoverTests(): FunctionalTest[] {
   return readdirSync(testsDir, { withFileTypes: true })
     .filter((d) => d.isDirectory() && existsSync(join(testsDir, d.name, 'package.json')))
     .sort((a, b) => a.name.localeCompare(b.name))
-    .map(({ name }) => ({
-      name,
-      renderers: [
-        ...(RENDERERS.filter((r) => existsSync(join(testsDir, name, `src/render.${r}.ts`))) as Renderer[]),
-        ...discoverReferenceRenderers(name),
-      ],
-    }))
+    .map(({ name }) => {
+      const testDir = join(testsDir, name);
+      const customRenderers = RENDERERS.filter((r) => existsSync(join(testDir, `src/render.${r}.ts`))) as Renderer[];
+      let renderers: string[];
+      if (customRenderers.length > 0) {
+        renderers = customRenderers;
+      } else if (existsSync(join(testDir, 'src', 'app.ts'))) {
+        const pkg = JSON.parse(readFileSync(join(testDir, 'package.json'), 'utf8')) as Record<string, unknown>;
+        renderers = (pkg.renderers as string[] | undefined) ?? ['canvas', 'dom', 'webgl'];
+      } else {
+        renderers = [];
+      }
+      return {
+        name,
+        renderers: [...renderers, ...discoverReferenceRenderers(name)],
+      };
+    })
     .filter((t) => t.renderers.length > 0);
 }
 
@@ -80,6 +90,18 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
           return appPath + '?render=' + render;
         }
 
+        if (source === '@ft/render' && importer) {
+          const match = importer.match(/\?render=([^&]+)/);
+          if (match) {
+            const renderer = match[1];
+            const testSrcDir = dirname(importer.split('?')[0]);
+            const customPath = resolve(testSrcDir, `render.${renderer}.ts`);
+            if (existsSync(customPath)) return customPath;
+            return `\0virtual:ft-render:${renderer}`;
+          }
+          return resolve(testsDir, '_harness/render.ts');
+        }
+
         if (source === './render' && importer) {
           const match = importer.match(/\?render=([^&]+)/);
           if (match) {
@@ -92,6 +114,21 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
       load(id) {
         if (id === '\0virtual:functional-test-list') {
           return `export const tests = ${JSON.stringify(tests)};`;
+        }
+
+        if (id.startsWith('\0virtual:ft-render:')) {
+          const renderer = id.slice('\0virtual:ft-render:'.length);
+          const harnessDir = join(testsDir, '_harness');
+          if (renderer === 'canvas') {
+            return `import { createCanvasTarget } from ${JSON.stringify(join(harnessDir, 'canvas.ts'))};\nexport { createCanvasTarget as createFunctionalTarget };`;
+          }
+          if (renderer === 'webgl') {
+            return `import { createWebGLTarget } from ${JSON.stringify(join(harnessDir, 'webgl.ts'))};\nexport { createWebGLTarget as createFunctionalTarget };`;
+          }
+          if (renderer === 'dom') {
+            return `import { createDOMTarget } from ${JSON.stringify(join(harnessDir, 'dom.ts'))};\nexport { createDOMTarget as createFunctionalTarget };`;
+          }
+          return null;
         }
 
         if (id.startsWith('\0virtual:ft-entry:')) {

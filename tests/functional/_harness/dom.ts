@@ -7,6 +7,7 @@ import {
   defaultDOMRichTextRenderer,
   defaultDOMShapeRenderer,
   enableDOMClipRectangleSupport,
+  enableDOMRenderCache,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
@@ -16,9 +17,9 @@ import {
   ShapeKind,
 } from '@flighthq/sdk';
 
-import type { FunctionalTarget, FunctionalTargetOptions } from './target';
+import type { FunctionalDOMTarget, FunctionalTargetOptions } from './target';
 
-export function createDOMTarget(options: Readonly<FunctionalTargetOptions>): FunctionalTarget {
+export function createDOMTarget(options: Readonly<FunctionalTargetOptions>): FunctionalDOMTarget {
   const { width, height } = options;
 
   // DOM has no backing store and needs no device transform — the browser rasterizes DOM elements at
@@ -47,11 +48,14 @@ export function createDOMTarget(options: Readonly<FunctionalTargetOptions>): Fun
   }
 
   if (options.clip) enableDOMClipRectangleSupport(state);
+  if (options.cache) enableDOMRenderCache(state);
 
   return {
+    kind: 'dom',
     state,
     width,
     height,
+    scale: 1,
     render(root: DisplayObject): void {
       if (!prepareDisplayObjectRender(state, root)) return;
       renderDOMBackground(state);

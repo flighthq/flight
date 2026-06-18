@@ -5,9 +5,16 @@ import {
   appendShapeRectangle,
   createDisplayContainer,
   createShape,
+  ShapeKind,
 } from '@flighthq/sdk';
+import { createFunctionalTarget } from '@ft/render';
 
-import { height, render, width } from './render';
+const { height, render, width } = createFunctionalTarget({
+  width: 800,
+  height: 600,
+  background: 0xffffffff,
+  kinds: [ShapeKind],
+});
 
 // 9 rows, 4 columns. Each row is a different alpha level from 1.0 down to 0.0.
 // Column layout:
