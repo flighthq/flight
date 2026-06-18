@@ -9,6 +9,7 @@ import {
   defaultWebGLShapeCommands,
   defaultWebGLShapeRenderer,
   enableWebGLClipRectangleSupport,
+  enableWebGLRenderCache,
   prepareDisplayObjectRender,
   registerDefaultWebGLMaterial,
   registerRenderer,
@@ -19,9 +20,9 @@ import {
   ShapeKind,
 } from '@flighthq/sdk';
 
-import type { FunctionalTarget, FunctionalTargetOptions } from './target';
+import type { FunctionalTargetOptions, FunctionalWebGLTarget } from './target';
 
-export function createWebGLTarget(options: Readonly<FunctionalTargetOptions>): FunctionalTarget {
+export function createWebGLTarget(options: Readonly<FunctionalTargetOptions>): FunctionalWebGLTarget {
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
@@ -52,11 +53,14 @@ export function createWebGLTarget(options: Readonly<FunctionalTargetOptions>): F
   }
 
   if (options.clip) enableWebGLClipRectangleSupport(state);
+  if (options.cache) enableWebGLRenderCache(state);
 
   return {
+    kind: 'webgl',
     state,
     width,
     height,
+    scale: pixelRatio,
     render(root: DisplayObject): void {
       if (!prepareDisplayObjectRender(state, root)) return;
       renderWebGLBackground(state);

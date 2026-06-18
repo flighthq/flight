@@ -14,6 +14,7 @@
     "composite": true,
     "noEmitOnError": true,
     "paths": {
+      "@ft/render": ["./tests/functional/_harness/render.ts"],
       "@flighthq/application": ["./packages/application/src/index.ts"],
       "@flighthq/application/*": ["./packages/application/src/*"],
       "@flighthq/filters": ["./packages/filters/src/index.ts"],

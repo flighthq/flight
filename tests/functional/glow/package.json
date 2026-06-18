@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@flighthq/filters": "*",
+    "@flighthq/filters-webgl": "*",
     "@flighthq/sdk": "*"
   }
 }

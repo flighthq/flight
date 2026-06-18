@@ -1,6 +1,12 @@
-import { addNodeChild, createDisplayContainer, createRichText } from '@flighthq/sdk';
+import { addNodeChild, createDisplayContainer, createRichText, RichTextKind } from '@flighthq/sdk';
+import { createFunctionalTarget } from '@ft/render';
 
-import { render } from './render';
+const { render } = createFunctionalTarget({
+  width: 800,
+  height: 600,
+  background: 0xffffffff,
+  kinds: [RichTextKind],
+});
 
 const root = createDisplayContainer();
 

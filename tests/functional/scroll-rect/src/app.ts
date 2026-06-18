@@ -5,16 +5,26 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
+  BitmapKind,
   createBitmap,
   createDisplayContainer,
   createRichText,
   createShape,
   invalidateNodeLocalTransform,
   loadImageResourceFromURL,
+  RichTextKind,
   setDisplayObjectClipRectangle,
+  ShapeKind,
 } from '@flighthq/sdk';
+import { createFunctionalTarget } from '@ft/render';
 
-import { height, render, width } from './render';
+const { height, render, width } = createFunctionalTarget({
+  width: 1280,
+  height: 720,
+  background: 0xff000000,
+  clip: true,
+  kinds: [BitmapKind, RichTextKind, ShapeKind],
+});
 
 const FRAMES_PER_ROTATION = 200;
 const RADIUS = 120;

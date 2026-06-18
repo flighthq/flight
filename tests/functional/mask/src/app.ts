@@ -5,14 +5,22 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
+  BitmapKind,
   createBitmap,
   createDisplayContainer,
   createShape,
   loadImageResourceFromURL,
   setDisplayObjectMask,
+  ShapeKind,
 } from '@flighthq/sdk';
+import { createFunctionalTarget } from '@ft/render';
 
-import { height, render, width } from './render';
+const { height, render, width } = createFunctionalTarget({
+  width: 800,
+  height: 600,
+  background: 0xffffffff,
+  kinds: [BitmapKind, ShapeKind],
+});
 
 const root = createDisplayContainer();
 

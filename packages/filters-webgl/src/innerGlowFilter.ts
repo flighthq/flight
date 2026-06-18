@@ -7,6 +7,11 @@ import type { WebGLDualSourceLocations } from './filterPass';
 import { clearWebGLFilterTarget, compileWebGLFilterProgram, drawWebGLDualSourcePass } from './filterPass';
 import { applyWebGLBlitPass, applyWebGLInvertTintPass } from './tintShader';
 
+// Why: all filter passes use ONE/ONE_MINUS_SRC_ALPHA premultiplied blending — they never
+// implicitly clear their destination. Reusing a scratch target without clearing first means
+// the previous pass's content bleeds through wherever the new pass's alpha is 0 (i.e. the
+// exterior of the shape). Clearing before each reuse gives clean replacement semantics.
+
 // Clips unit-0 (blurred inverted-alpha mask) to the source alpha from unit-1.
 // The blurred inverted alpha is highest near interior edges; clipping to
 // source alpha removes any glow that spilled outside the shape boundary.
@@ -60,8 +65,10 @@ export function applyInnerGlowFilterToWebGL(
   // Pass 2: blur → s1 (s2 is ping-pong temp)
   applyBoxBlurFilterToWebGL(state, s0, s1, s2, { blurX: filter.blurX ?? 6, blurY: filter.blurY ?? 6, passes: quality });
 
-  // Pass 3: clip blurred glow (s1) to source alpha, output to s0 (s1 no longer needed)
-  applyWebGPUInnerClipPass(state, s1, source, s0);
+  // Pass 3: clip blurred glow (s1) to source alpha, output to s0 (s1 no longer needed).
+  // s0 still holds pass-1 content; clear it so the blend doesn't retain the exterior red.
+  clearWebGLFilterTarget(state, s0);
+  applyWebGLInnerClipPass(state, s1, source, s0);
 
   // Final composite: source first, then clipped glow on top
   clearWebGLFilterTarget(state, dest);
@@ -69,7 +76,7 @@ export function applyInnerGlowFilterToWebGL(
   applyWebGLBlitPass(state, s0, dest);
 }
 
-function applyWebGPUInnerClipPass(
+function applyWebGLInnerClipPass(
   state: WebGLRenderState,
   glow: WebGLRenderTarget,
   source: WebGLRenderTarget,
