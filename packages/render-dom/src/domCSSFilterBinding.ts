@@ -1,5 +1,5 @@
-import { enableRenderFeatures, getOrCreateRenderProxy2D } from '@flighthq/render';
-import { type DisplayObject, type DOMRenderState, RenderFeatures, type RenderProxy2D } from '@flighthq/types';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import type { DisplayObject, DOMRenderState, RenderProxy2D } from '@flighthq/types';
 
 // Per-state DOM CSS filter bindings, keyed by the render node. Render nodes are
 // per-state (state.renderProxyMap), so a module-level map keyed by render node is
@@ -9,12 +9,14 @@ import { type DisplayObject, type DOMRenderState, RenderFeatures, type RenderPro
 const _cssFilterBindings = new WeakMap<RenderProxy2D, string>();
 
 /**
- * Enables CSS filter support for the render state. Bindings made via
- * setDOMCSSFilter are only applied while support is enabled — call this once
- * during setup, mirroring enableDOMBlendModeSupport and the other opt-ins.
+ * Enables CSS filter support for the render state by installing the resolver the
+ * draw path consults. Bindings made via setDOMCSSFilter only apply once this is
+ * called — mirroring enableDOMBlendModeSupport and the other opt-ins. The draw
+ * path reaches the resolver only through this field, so filter-free states leave
+ * it null and the binding module tree-shakes away entirely.
  */
 export function enableDOMCSSFilterSupport(state: DOMRenderState): void {
-  enableRenderFeatures(state, RenderFeatures.CSSFilter);
+  state.domCSSFilterResolver = getDOMCSSFilter;
 }
 
 export function getDOMCSSFilter(renderProxy: RenderProxy2D): string | undefined {
