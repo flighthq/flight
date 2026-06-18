@@ -75,7 +75,7 @@ const randomRect = createShape();
 addNodeChild(root, randomRect);
 
 function enterFrame(): void {
-  clearShapeCommands(randomRect.data);
+  clearShapeCommands(randomRect);
 
   const w = seededRandom(1279);
   const h = seededRandom(719);
