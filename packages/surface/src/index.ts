@@ -21,7 +21,9 @@ export * from './surface';
 export * from './surfaceFrom';
 export * from './transform';
 export type {
+  AlphaType,
   ImageFormat,
+  PixelFormat,
   PixelOrder,
   RectangleLike,
   Surface,

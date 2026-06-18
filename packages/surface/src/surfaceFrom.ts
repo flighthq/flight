@@ -24,8 +24,10 @@ export function createSurfaceFromCanvas(
   const ctx = canvas.getContext('2d')!;
   const raw = ctx.getImageData(x, y, w, h);
   return createEntity({
+    alphaType: 'straight',
     colorSpace: raw.colorSpace as 'srgb' | 'display-p3',
     data: raw.data,
+    format: 'rgba8unorm',
     height: raw.height,
     source: null,
     version: 0,
@@ -38,9 +40,15 @@ export function createSurfaceFromImageResource(resource: Readonly<ImageResource>
   canvas.width = resource.width;
   canvas.height = resource.height;
   if (resource.source === null) {
+    // Data-only resource: copy its existing pixels when present, otherwise allocate a transparent buffer.
     return createEntity({
+      alphaType: resource.alphaType,
       colorSpace: 'srgb' as const,
-      data: new Uint8ClampedArray(resource.width * resource.height * 4),
+      data:
+        resource.data !== null
+          ? new Uint8ClampedArray(resource.data)
+          : new Uint8ClampedArray(resource.width * resource.height * 4),
+      format: resource.format,
       height: resource.height,
       source: null,
       version: 0,
@@ -51,8 +59,10 @@ export function createSurfaceFromImageResource(resource: Readonly<ImageResource>
   ctx.drawImage(resource.source, 0, 0);
   const raw = ctx.getImageData(0, 0, resource.width, resource.height);
   return createEntity({
+    alphaType: 'straight',
     colorSpace: raw.colorSpace as 'srgb' | 'display-p3',
     data: raw.data,
+    format: 'rgba8unorm',
     height: resource.height,
     source: null,
     version: 0,

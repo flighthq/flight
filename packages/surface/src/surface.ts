@@ -3,8 +3,10 @@ import type { Surface } from '@flighthq/types';
 
 export function cloneSurface(source: Readonly<Surface>): Surface {
   return createEntity({
+    alphaType: source.alphaType,
     colorSpace: source.colorSpace,
     data: new Uint8ClampedArray(source.data),
+    format: source.format,
     height: source.height,
     source: null,
     version: 0,
@@ -27,8 +29,10 @@ export function createSurface(width: number, height: number, color: number = 0):
     }
   }
   return createEntity({
+    alphaType: 'straight',
     colorSpace: 'srgb' as const,
     data,
+    format: 'rgba8unorm',
     height,
     source: null,
     version: 0,

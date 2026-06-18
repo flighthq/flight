@@ -34,6 +34,9 @@ export function convertSurfacePixelOrder(
  * Converts straight-alpha pixels to premultiplied alpha in place or into
  * a separate buffer. RGB channels are multiplied by alpha/255.
  * Safe to pass the same buffer as both `out` and `source`.
+ *
+ * Operates on a raw buffer, not a Surface — if the buffer belongs to an
+ * ImageResource, set its `alphaType` to `premultiplied` to keep it truthful.
  */
 export function premultiplySurfacePixels(
   out: Uint8ClampedArray,
@@ -53,6 +56,9 @@ export function premultiplySurfacePixels(
  * Converts premultiplied-alpha pixels back to straight alpha in place or
  * into a separate buffer. Pixels with alpha=0 are written as (0,0,0,0).
  * Safe to pass the same buffer as both `out` and `source`.
+ *
+ * Operates on a raw buffer, not a Surface — if the buffer belongs to an
+ * ImageResource, set its `alphaType` to `straight` to keep it truthful.
  */
 export function unpremultiplySurfacePixels(
   out: Uint8ClampedArray,
