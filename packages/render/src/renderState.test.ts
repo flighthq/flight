@@ -1,6 +1,5 @@
 import { createMatrix } from '@flighthq/geometry';
-import { createColorTransform } from '@flighthq/materials';
-import { BlendMode, RenderFeatures, type RenderState } from '@flighthq/types';
+import { BlendMode, type RenderState } from '@flighthq/types';
 
 import { createRenderState } from './renderState';
 
@@ -21,8 +20,7 @@ describe('createRenderState', () => {
     expect(state.renderProxyMap).toStrictEqual(new WeakMap());
     expect(state.renderAlpha).toStrictEqual(1);
     expect(state.renderBlendMode).toStrictEqual(BlendMode.Normal);
-    expect(state.renderColorTransform).toStrictEqual(null);
-    expect(state.renderFeatures).toStrictEqual(RenderFeatures.None);
+    expect(state.displayObjectMaskPass).toStrictEqual(null);
     expect(state.renderTransform2D).toStrictEqual(null);
     expect(state.roundPixels).toStrictEqual(false);
     expect(state.tempStack).toStrictEqual([]);
@@ -39,8 +37,6 @@ describe('createRenderState', () => {
       renderProxyMap: new WeakMap(),
       renderAlpha: 0.5,
       renderBlendMode: BlendMode.Multiply,
-      renderColorTransform: createColorTransform(),
-      renderFeatures: RenderFeatures.Masks | RenderFeatures.ClipRectangle,
       renderTransform2D: createMatrix(),
       roundPixels: true,
       tempStack: [],
@@ -55,8 +51,6 @@ describe('createRenderState', () => {
     expect(obj.renderProxyMap).toStrictEqual(base.renderProxyMap);
     expect(obj.renderAlpha).toStrictEqual(base.renderAlpha);
     expect(obj.renderBlendMode).toStrictEqual(base.renderBlendMode);
-    expect(obj.renderColorTransform).toStrictEqual(base.renderColorTransform);
-    expect(obj.renderFeatures).toStrictEqual(base.renderFeatures);
     expect(obj.renderTransform2D).toStrictEqual(base.renderTransform2D);
     expect(obj.roundPixels).toStrictEqual(base.roundPixels);
     expect(obj.tempStack).toStrictEqual(base.tempStack);

@@ -75,6 +75,13 @@ export function createRenderProxy2D(
   return node;
 }
 
+// Installs the mask-resolution pass that prepareDisplayObjectRender runs. Called by the renderer
+// mask opt-ins (enable*MaskSupport, registerDisplayObjectMaskRenderer); mask-free states never call
+// it, leaving the hook null so prepareMasks and its second tree walk tree-shake away.
+export function enableDisplayObjectMaskPass(state: RenderState): void {
+  state.displayObjectMaskPass = prepareMasks;
+}
+
 export function getOrCreateRenderProxy2D(state: RenderState, source: Renderable): RenderProxy2D {
   const renderProxyMap = state.renderProxyMap;
   let node = renderProxyMap.get(source) as RenderProxy2D | undefined;
@@ -118,7 +125,9 @@ export function isRenderProxyVisible(data: RenderProxy2D): boolean {
 
 export function prepareDisplayObjectRender(state: RenderState, source: DisplayObject): boolean {
   const dirty = walkNode(state, source, updateRenderProxy2D);
-  prepareMasks(state, source);
+  // The mask pass is opt-in: registerDisplayObjectMaskRenderer installs it. Mask-free scenes leave
+  // the hook null, so prepareMasks and its second tree walk are tree-shaken out entirely.
+  state.displayObjectMaskPass?.(state, source);
   return dirty;
 }
 

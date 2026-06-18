@@ -8,13 +8,13 @@ import {
   invalidateNodeLocalTransform,
 } from '@flighthq/node';
 import { createSprite } from '@flighthq/sprite';
-import { RenderFeatures } from '@flighthq/types';
 
-import { enableRenderFeatures, registerRenderer } from './renderer';
+import { registerRenderer } from './renderer';
 import {
   beginRenderProxyUpdate,
   createRenderProxy,
   createRenderProxy2D,
+  enableDisplayObjectMaskPass,
   getOrCreateRenderProxy2D,
   getRenderProxy2D,
   installRenderAdaptHook,
@@ -112,6 +112,15 @@ describe('createRenderProxy2D', () => {
       expect(node.clipRectangleDepth).toBe(0);
       expect(node.traverseChildren).toBe(true);
     }
+  });
+});
+
+describe('enableDisplayObjectMaskPass', () => {
+  it('installs prepareMasks as the mask pass', () => {
+    const state = createRenderState();
+    expect(state.displayObjectMaskPass).toBeNull();
+    enableDisplayObjectMaskPass(state);
+    expect(state.displayObjectMaskPass).toBe(prepareMasks);
   });
 });
 
@@ -292,7 +301,7 @@ describe('prepareDisplayObjectRender', () => {
 
   it('marks mask nodes with the current frame id', () => {
     const state = createRenderState();
-    enableRenderFeatures(state, RenderFeatures.Masks);
+    state.displayObjectMaskPass = prepareMasks;
     const root = createDisplayObject();
     const mask = createDisplayObject();
     root.mask = mask;
@@ -308,6 +317,7 @@ describe('prepareDisplayObjectRender', () => {
 describe('prepareMasks', () => {
   it('marks mask nodes for the current frame and sets mask depth on the masked node', () => {
     const state = createRenderState();
+    state.displayObjectMaskPass = prepareMasks;
     const root = createDisplayObject();
     const maskObj = createDisplayObject();
     root.mask = maskObj;
