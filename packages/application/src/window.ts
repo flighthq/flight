@@ -1,11 +1,12 @@
-import { createSignal, emitSignal } from '@flighthq/signals';
-import type { ApplicationWindow } from '@flighthq/types';
+import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals';
+import type { ApplicationWindow, Matrix, RenderState } from '@flighthq/types';
 
 const kDropFile = Symbol();
 const kFocus = Symbol();
 const kFullscreen = Symbol();
 const kOrientation = Symbol();
 const kRenderContext = Symbol();
+const kRenderState = Symbol();
 const kResize = Symbol();
 const kVisibility = Symbol();
 
@@ -73,6 +74,25 @@ export function attachWindowRenderContext(win: ApplicationWindow, canvas: HTMLCa
   });
 }
 
+// Binds a canvas render state to the window's size and devicePixelRatio: sizes the canvas backing
+// store and writes the device transform (renderTransform2D), then keeps both in sync on every
+// onResize, so moving the window between displays or zooming is handled. Pair with attachWindowResize
+// — it is the source of the size/DPI updates this reacts to. The render state must have an
+// initialized renderTransform2D (every create*RenderState factory does). DOM render states need no
+// device transform (the browser rasterizes DOM at device resolution), so this is for canvas/WebGL.
+export function attachWindowRenderState(win: ApplicationWindow, state: RenderState, canvas: HTMLCanvasElement): void {
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kRenderState)?.();
+  const apply = (): void => {
+    canvas.width = Math.round(win.width * win.devicePixelRatio);
+    canvas.height = Math.round(win.height * win.devicePixelRatio);
+    if (state.renderTransform2D !== null) computeWindowDeviceTransform(win, state.renderTransform2D);
+  };
+  apply();
+  connectSignal(win.onResize, apply);
+  observers.set(kRenderState, () => disconnectSignal(win.onResize, apply));
+}
+
 export function attachWindowResize(win: ApplicationWindow, element: HTMLElement): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kResize)?.();
@@ -100,6 +120,20 @@ export function attachWindowVisibility(win: ApplicationWindow): void {
   };
   document.addEventListener('visibilitychange', handler);
   observers.set(kVisibility, () => document.removeEventListener('visibilitychange', handler));
+}
+
+// Writes the window's device transform — a uniform scale by devicePixelRatio — into out and returns
+// it. DPI is a device concern, so it belongs in a render state's device transform (renderTransform2D),
+// leaving the scene authored in logical units. Reads win before writing out, so out may alias an input.
+export function computeWindowDeviceTransform(win: Readonly<ApplicationWindow>, out: Matrix): Matrix {
+  const scale = win.devicePixelRatio;
+  out.a = scale;
+  out.b = 0;
+  out.c = 0;
+  out.d = scale;
+  out.tx = 0;
+  out.ty = 0;
+  return out;
 }
 
 export function createApplicationWindow(): ApplicationWindow {
@@ -153,6 +187,12 @@ export function detachWindowRenderContext(win: ApplicationWindow): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kRenderContext)?.();
   observers.delete(kRenderContext);
+}
+
+export function detachWindowRenderState(win: ApplicationWindow): void {
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kRenderState)?.();
+  observers.delete(kRenderState);
 }
 
 export function detachWindowResize(win: ApplicationWindow): void {

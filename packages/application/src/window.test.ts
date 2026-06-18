@@ -1,4 +1,5 @@
-import { connectSignal } from '@flighthq/signals';
+import { connectSignal, emitSignal } from '@flighthq/signals';
+import type { Matrix, RenderState } from '@flighthq/types';
 
 import {
   attachWindowDropFile,
@@ -6,14 +7,17 @@ import {
   attachWindowFullscreen,
   attachWindowOrientation,
   attachWindowRenderContext,
+  attachWindowRenderState,
   attachWindowResize,
   attachWindowVisibility,
+  computeWindowDeviceTransform,
   createApplicationWindow,
   detachWindowDropFile,
   detachWindowFocus,
   detachWindowFullscreen,
   detachWindowOrientation,
   detachWindowRenderContext,
+  detachWindowRenderState,
   detachWindowResize,
   detachWindowVisibility,
   disposeApplicationWindow,
@@ -21,6 +25,10 @@ import {
   lockApplicationPointer,
   requestApplicationFullscreen,
 } from './window';
+
+function makeRenderState(): RenderState {
+  return { renderTransform2D: { a: 0, b: 0, c: 0, d: 0, tx: 0, ty: 0 } } as unknown as RenderState;
+}
 
 describe('attachWindowDropFile', () => {
   it('emits onDropFile with file name', () => {
@@ -132,6 +140,37 @@ describe('attachWindowRenderContext', () => {
   });
 });
 
+describe('attachWindowRenderState', () => {
+  it('sizes the canvas backing store and writes the device transform from the window', () => {
+    const win = createApplicationWindow();
+    win.width = 800;
+    win.height = 600;
+    win.devicePixelRatio = 2;
+    const canvas = document.createElement('canvas');
+    const state = makeRenderState();
+    attachWindowRenderState(win, state, canvas);
+    expect(canvas.width).toBe(1600);
+    expect(canvas.height).toBe(1200);
+    expect(state.renderTransform2D?.a).toBe(2);
+    expect(state.renderTransform2D?.d).toBe(2);
+  });
+
+  it('reapplies the backing size and transform on window resize', () => {
+    const win = createApplicationWindow();
+    win.width = 800;
+    win.height = 600;
+    win.devicePixelRatio = 1;
+    const canvas = document.createElement('canvas');
+    const state = makeRenderState();
+    attachWindowRenderState(win, state, canvas);
+    win.width = 400;
+    win.devicePixelRatio = 2;
+    emitSignal(win.onResize);
+    expect(canvas.width).toBe(800);
+    expect(state.renderTransform2D?.a).toBe(2);
+  });
+});
+
 describe('attachWindowResize', () => {
   let resizeCallback: ResizeObserverCallback;
   let disconnectFn: ReturnType<typeof vi.fn>;
@@ -207,6 +246,22 @@ describe('attachWindowVisibility', () => {
     document.dispatchEvent(new Event('visibilitychange'));
 
     expect(called).toBe(true);
+  });
+});
+
+describe('computeWindowDeviceTransform', () => {
+  it('writes a uniform devicePixelRatio scale into out and returns it', () => {
+    const win = createApplicationWindow();
+    win.devicePixelRatio = 3;
+    const out = { a: 0, b: 0, c: 0, d: 0, tx: 9, ty: 9 } as unknown as Matrix;
+    const result = computeWindowDeviceTransform(win, out);
+    expect(result).toBe(out);
+    expect(out.a).toBe(3);
+    expect(out.d).toBe(3);
+    expect(out.b).toBe(0);
+    expect(out.c).toBe(0);
+    expect(out.tx).toBe(0);
+    expect(out.ty).toBe(0);
   });
 });
 
@@ -320,6 +375,22 @@ describe('detachWindowRenderContext', () => {
     detachWindowRenderContext(win);
     canvas.dispatchEvent(new Event('webglcontextlost'));
     expect(called).toBe(false);
+  });
+});
+
+describe('detachWindowRenderState', () => {
+  it('stops reacting to window resize', () => {
+    const win = createApplicationWindow();
+    win.width = 800;
+    win.height = 600;
+    win.devicePixelRatio = 1;
+    const canvas = document.createElement('canvas');
+    const state = makeRenderState();
+    attachWindowRenderState(win, state, canvas);
+    detachWindowRenderState(win);
+    win.width = 400;
+    emitSignal(win.onResize);
+    expect(canvas.width).toBe(800);
   });
 });
 
