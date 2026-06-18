@@ -8,7 +8,7 @@ import { makeWebGLState } from './webglTestHelper';
 function makeAtlas(regionWidth = 32, regionHeight = 32) {
   const img = document.createElement('img');
   return {
-    image: { src: img, width: 64, height: 64 },
+    image: { source: img, width: 64, height: 64 },
     regions: [{ x: 0, y: 0, width: regionWidth, height: regionHeight }],
   };
 }

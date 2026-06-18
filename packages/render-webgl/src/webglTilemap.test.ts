@@ -8,7 +8,7 @@ import { defaultWebGLTilemapRenderer } from './webglTilemap';
 function makeAtlas() {
   const img = document.createElement('img');
   return {
-    image: { src: img, width: 64, height: 64 },
+    image: { source: img, width: 64, height: 64 },
     regions: [{ x: 0, y: 0, width: 16, height: 16 }],
   };
 }
@@ -80,12 +80,12 @@ describe('defaultWebGLTilemapRenderer.submit', () => {
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
-  it('returns early without drawing when atlas.image.src is null', () => {
+  it('returns early without drawing when atlas.image.source is null', () => {
     const { state, gl } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     defaultWebGLTilemapRenderer.submit(
       state,
-      makeTilemapNode({ tileset: { atlas: { image: { src: null }, regions: [] }, tileWidth: 16, tileHeight: 16 } }),
+      makeTilemapNode({ tileset: { atlas: { image: { source: null }, regions: [] }, tileWidth: 16, tileHeight: 16 } }),
     );
     flushWebGLSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();

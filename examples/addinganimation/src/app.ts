@@ -8,7 +8,7 @@ import {
   createTweenManager,
   Elastic,
   invalidateNodeRender,
-  loadImageSourceFromURL,
+  loadImageResourceFromURL,
   startApplicationLoop,
   updateTweens,
 } from '@flighthq/sdk';
@@ -34,7 +34,7 @@ container.y = STAGE_HEIGHT / 2;
 addNodeChild(container, bitmap);
 addNodeChild(main, container);
 
-const image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
+const image = await loadImageResourceFromURL('assets/wabbit_alpha.png');
 bitmap.data.image = image;
 bitmap.x = -image.width / 2;
 bitmap.y = -image.height / 2;

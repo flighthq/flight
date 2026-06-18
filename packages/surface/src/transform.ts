@@ -1,4 +1,4 @@
-import { invalidateImageSource } from '@flighthq/assets';
+import { invalidateImageResource } from '@flighthq/resources';
 import type { ColorTransformLike, Surface, SurfaceRegion, ThresholdOperation } from '@flighthq/types';
 
 let _scrollScratch: Uint8ClampedArray | null = null;
@@ -36,7 +36,7 @@ export function applySurfaceColorTransform(
       dest.surface.data[di + 3] = Math.max(0, Math.min(255, Math.round(a * ct.alphaMultiplier + ct.alphaOffset)));
     }
   }
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
 }
 
 /**
@@ -91,7 +91,7 @@ export function applySurfaceThreshold(
       }
     }
   }
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
   return changed;
 }
 
@@ -134,7 +134,7 @@ export function mergeSurface(
       dd[di + 3] = Math.round(sd[si + 3] * alphaMultiplier + dd[di + 3] * (1 - alphaMultiplier));
     }
   }
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
 }
 
 /**
@@ -162,7 +162,7 @@ export function scrollSurface(out: Surface, dx: number, dy: number): void {
       out.data[di + 3] = _scrollScratch[si + 3];
     }
   }
-  invalidateImageSource(out);
+  invalidateImageResource(out);
 }
 
 function compare(a: number, op: ThresholdOperation, b: number): boolean {

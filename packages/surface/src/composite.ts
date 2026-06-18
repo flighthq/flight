@@ -1,4 +1,4 @@
-import { invalidateImageSource } from '@flighthq/assets';
+import { invalidateImageResource } from '@flighthq/resources';
 import type { SurfaceRegion } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
@@ -36,7 +36,7 @@ export function compositeSurfacePixels(
       );
     }
   }
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
 }
 
 /**
@@ -71,7 +71,7 @@ export function compositeSurfaceRegion(
       );
     }
   }
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
 }
 
 /**
@@ -148,7 +148,7 @@ export function writeSurfacePixels(dest: Readonly<SurfaceRegion>, pixels: Readon
       dest.surface.data[di + 3] = pixels[si + 3];
     }
   }
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
 }
 
 /**
@@ -172,7 +172,7 @@ export function writeSurfacePixels32(dest: Readonly<SurfaceRegion>, pixels: Read
       dest.surface.data[di + 3] = color & 0xff;
     }
   }
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
 }
 
 // Throws once, up front, for blend modes that have no surface-compositing meaning,

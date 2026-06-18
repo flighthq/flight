@@ -1,7 +1,7 @@
 import type {
-  AudioSource,
+  AudioResource,
   DisplayObject,
-  ImageSource,
+  ImageResource,
   InteractionManager,
   Shape,
   Text,
@@ -18,7 +18,7 @@ import {
   createText,
   createTween,
   invalidateNodeRender,
-  playAudioSource,
+  playAudioResource,
   Quad,
 } from '@flighthq/sdk';
 
@@ -53,18 +53,18 @@ export class PiratePigGame {
   private scoreText: Text;
   private tiles: (Tile | null)[][];
   private usedTiles: Tile[] = [];
-  private tileImages: ImageSource[];
-  private sounds: AudioSource[];
+  private tileImages: ImageResource[];
+  private sounds: AudioResource[];
   private manager: TweenManager;
   private needToCheckMatches: boolean = false;
 
   constructor(
     manager: TweenManager,
     interactionManager: InteractionManager<DisplayObject>,
-    tileImages: ImageSource[],
-    logoImage: ImageSource,
+    tileImages: ImageResource[],
+    logoImage: ImageResource,
     fontName: string,
-    sounds: AudioSource[],
+    sounds: AudioResource[],
     interactionOptions?: TileInteractionOptions,
   ) {
     this.manager = manager;
@@ -117,7 +117,7 @@ export class PiratePigGame {
       }
     }
 
-    playAudioSource(this.sounds[0]);
+    playAudioResource(this.sounds[0]);
     this.needToCheckMatches = true;
   }
 
@@ -248,9 +248,9 @@ export class PiratePigGame {
         if (run.length >= 3) {
           if (accumulateScore) {
             const n = run.length;
-            if (n > 4) playAudioSource(this.sounds[3]);
-            else if (n > 3) playAudioSource(this.sounds[2]);
-            else playAudioSource(this.sounds[1]);
+            if (n > 4) playAudioResource(this.sounds[3]);
+            else if (n > 3) playAudioResource(this.sounds[2]);
+            else playAudioResource(this.sounds[1]);
             this.currentScore += Math.round(Math.pow(n - 1, 2) * 50);
           }
           for (const t of run) matched.push(t);

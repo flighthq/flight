@@ -131,13 +131,13 @@ export function drawWebGLParticleEmitter(state: RenderState, renderProxy: Render
   const internal = state as WebGLRenderStateInternal;
   const source = renderProxy.source as ParticleEmitter;
   const { atlas, alphas, colors, ids, particleCount, transforms } = source.data;
-  if (atlas === null || atlas.image === null || atlas.image.src === null || particleCount === 0) return;
+  if (atlas === null || atlas.image === null || atlas.image.source === null || particleCount === 0) return;
 
   const shader = ensureParticleShader(internal);
   ensureInstanceCapacity(internal, particleCount);
 
   internal.applyBlendMode?.(internal, renderProxy.blendMode);
-  bindWebGLTexture(internal, atlas.image.src);
+  bindWebGLTexture(internal, atlas.image.source);
 
   const gl = internal.gl;
   const regions = atlas.regions;

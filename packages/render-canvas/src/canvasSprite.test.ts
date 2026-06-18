@@ -1,6 +1,6 @@
-import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
 import { addNodeChild } from '@flighthq/node';
 import { getOrCreateRenderProxy2D, prepareSpriteRender, registerRenderer } from '@flighthq/render';
+import { addTextureAtlasRegion, createImageResource, createTextureAtlas } from '@flighthq/resources';
 import { createSprite } from '@flighthq/sprite';
 import { SpriteKind } from '@flighthq/types';
 
@@ -9,7 +9,7 @@ import { defaultCanvasSpriteRenderer, drawCanvasSprite, renderCanvasSprite } fro
 
 function makeAtlas() {
   const img = document.createElement('img') as HTMLImageElement;
-  const source = createImageSource(img);
+  const source = createImageResource(img);
   const atlas = createTextureAtlas({ image: source });
   addTextureAtlasRegion(atlas, 0, 0, 32, 32);
   return atlas;

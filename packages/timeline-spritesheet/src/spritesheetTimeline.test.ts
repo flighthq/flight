@@ -1,13 +1,13 @@
-import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
 import { createMovieClip } from '@flighthq/displayobject';
 import { getDisplayObjectRuntime } from '@flighthq/displayobject';
+import { addTextureAtlasRegion, createImageResource, createTextureAtlas } from '@flighthq/resources';
 import { createSpritesheet, createSpritesheetAnimation, createSpritesheetFrame } from '@flighthq/spritesheet';
 
 import { attachSpritesheetTimeline } from './spritesheetTimeline';
 
 function makeAtlas(frameCount = 3) {
   const img = document.createElement('img') as HTMLImageElement;
-  const source = createImageSource(img);
+  const source = createImageResource(img);
   source.width = 128;
   source.height = 32;
   const atlas = createTextureAtlas({ image: source });

@@ -195,8 +195,8 @@ Library code should prefer the smallest package or subpath that provides the nee
 | Package | Purpose |
 | --- | --- |
 | `@flighthq/application` | Application loop and browser window/host lifecycle helpers |
-| `@flighthq/assets` | Image source, texture atlas, tileset, font, and audio utilities |
-| `@flighthq/assets-loader` | Group asset loading with progress and completion signals |
+| `@flighthq/resources` | Image, audio, video, and font resources plus texture atlas and tileset utilities |
+| `@flighthq/resources-loader` | Group resource loading with progress and completion signals |
 | `@flighthq/entity` | Entity, node, runtime, and binding primitives |
 | `@flighthq/filters` | Blur, glow, bevel, drop-shadow, color-matrix, and convolution filters with Canvas/CSS and WebGL backends |
 | `@flighthq/geometry` | Vectors, matrices, rectangles, typed-array helpers, and pools |

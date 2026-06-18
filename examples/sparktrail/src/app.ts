@@ -9,7 +9,7 @@ import {
 import {
   addTextureAtlasRegion,
   BlendMode,
-  createImageSource,
+  createImageResource,
   createParticleEmitter,
   createTextureAtlas,
   invalidateNodeAppearance,
@@ -39,7 +39,7 @@ grad.addColorStop(1, 'rgba(150, 0, 0, 0)'); // fade out at the rim
 ctx.fillStyle = grad;
 ctx.fillRect(0, 0, 16, 16);
 
-const atlas = createTextureAtlas({ image: createImageSource(sparkCanvas) });
+const atlas = createTextureAtlas({ image: createImageResource(sparkCanvas) });
 addTextureAtlasRegion(atlas, 0, 0, 16, 16);
 
 const emitter = createParticleEmitter();

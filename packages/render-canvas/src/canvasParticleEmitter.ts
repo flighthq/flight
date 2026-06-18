@@ -8,13 +8,13 @@ import type { CanvasRenderState, ParticleEmitter, RenderProxy2D, SpriteRenderer 
 export function drawCanvasParticleEmitter(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
   const source = renderProxy.source as ParticleEmitter;
   const { atlas, alphas, ids, particleCount, transforms } = source.data;
-  if (atlas === null || atlas.image === null || atlas.image.src === null || particleCount === 0) return;
+  if (atlas === null || atlas.image === null || atlas.image.source === null || particleCount === 0) return;
 
   const regions = atlas.regions;
   const numRegions = regions.length;
   const nodeAlpha = renderProxy.alpha;
   const t = renderProxy.transform2D;
-  const imageSource = atlas.image.src;
+  const imageSource = atlas.image.source;
   const context = state.context;
 
   state.applyBlendMode?.(state, renderProxy.blendMode);

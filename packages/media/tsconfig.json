@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../assets" }, { "path": "../signals" }, { "path": "../types" }],
+  "references": [{ "path": "../resources" }, { "path": "../signals" }, { "path": "../types" }],
   "include": ["src"]
 }

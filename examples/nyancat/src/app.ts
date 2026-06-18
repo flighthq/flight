@@ -8,7 +8,7 @@ import {
   createSpritesheetAnimation,
   createSpritesheetFrame,
   createTextureAtlas,
-  loadImageSourceFromURL,
+  loadImageResourceFromURL,
   startApplicationLoop,
   updateMovieClip,
 } from '@flighthq/sdk';
@@ -22,7 +22,7 @@ const GAP = 4;
 const COLS_PER_ROW = [5, 4];
 const FPS = 10;
 
-const source = await loadImageSourceFromURL('assets/nyancat.png');
+const source = await loadImageResourceFromURL('assets/nyancat.png');
 const atlas = createTextureAtlas({ image: source });
 
 const frames = [];

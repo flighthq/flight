@@ -33,7 +33,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/assets": "*",
+    "@flighthq/resources": "*",
     "@flighthq/spritesheet": "*",
     "typescript": "^5.3.0"
   },

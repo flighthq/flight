@@ -7,7 +7,7 @@ import {
   connectSignal,
   createApplication,
   createApplicationWindow,
-  createAudioSourceFromURLs,
+  createAudioResourceFromURLs,
   createBitmap,
   createDisplayObject,
   createInputManager,
@@ -16,9 +16,9 @@ import {
   DisplayObjectKind,
   hitTestGraphLocalBounds,
   invalidateNodeRender,
-  loadAudioSourceFromURLs,
+  loadAudioResourceFromURLs,
   loadFontFromURL,
-  loadImageSourceFromURL,
+  loadImageResourceFromURL,
   registerHitTestPoint,
   startApplicationLoop,
   stopApplicationLoop,
@@ -31,24 +31,24 @@ import { applyBackgroundBlur, container, render, scale, setSize } from './render
 // ── Assets ─────────────────────────────────────────────────────────────────
 
 const [bgImage, footerImage, logoImage, font, theme, ...tileImages] = await Promise.all([
-  loadImageSourceFromURL('assets/images/background_tile.png'),
-  loadImageSourceFromURL('assets/images/center_bottom.png'),
-  loadImageSourceFromURL('assets/images/logo.png'),
+  loadImageResourceFromURL('assets/images/background_tile.png'),
+  loadImageResourceFromURL('assets/images/center_bottom.png'),
+  loadImageResourceFromURL('assets/images/logo.png'),
   loadFontFromURL('assets/fonts/FreebooterUpdated.ttf', 'FreebooterUpdated'),
-  loadAudioSourceFromURLs([{ url: 'assets/sounds/theme.ogg' }, { url: 'assets/sounds/theme.mp3' }]),
-  loadImageSourceFromURL('assets/images/game_bear.png'),
-  loadImageSourceFromURL('assets/images/game_bunny_02.png'),
-  loadImageSourceFromURL('assets/images/game_carrot.png'),
-  loadImageSourceFromURL('assets/images/game_lemon.png'),
-  loadImageSourceFromURL('assets/images/game_panda.png'),
-  loadImageSourceFromURL('assets/images/game_piratePig.png'),
+  loadAudioResourceFromURLs([{ url: 'assets/sounds/theme.ogg' }, { url: 'assets/sounds/theme.mp3' }]),
+  loadImageResourceFromURL('assets/images/game_bear.png'),
+  loadImageResourceFromURL('assets/images/game_bunny_02.png'),
+  loadImageResourceFromURL('assets/images/game_carrot.png'),
+  loadImageResourceFromURL('assets/images/game_lemon.png'),
+  loadImageResourceFromURL('assets/images/game_panda.png'),
+  loadImageResourceFromURL('assets/images/game_piratePig.png'),
 ]);
 
 const sounds = [
   theme,
-  createAudioSourceFromURLs([{ url: 'assets/sounds/sound3.ogg' }, { url: 'assets/sounds/sound3.mp3' }]),
-  createAudioSourceFromURLs([{ url: 'assets/sounds/sound4.ogg' }, { url: 'assets/sounds/sound4.mp3' }]),
-  createAudioSourceFromURLs([{ url: 'assets/sounds/sound5.ogg' }, { url: 'assets/sounds/sound5.mp3' }]),
+  createAudioResourceFromURLs([{ url: 'assets/sounds/sound3.ogg' }, { url: 'assets/sounds/sound3.mp3' }]),
+  createAudioResourceFromURLs([{ url: 'assets/sounds/sound4.ogg' }, { url: 'assets/sounds/sound4.mp3' }]),
+  createAudioResourceFromURLs([{ url: 'assets/sounds/sound5.ogg' }, { url: 'assets/sounds/sound5.mp3' }]),
 ];
 
 // ── Scene ──────────────────────────────────────────────────────────────────

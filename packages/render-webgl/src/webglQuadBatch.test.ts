@@ -8,7 +8,7 @@ import { makeWebGLState } from './webglTestHelper';
 function makeAtlas() {
   const img = document.createElement('img');
   return {
-    image: { src: img, width: 64, height: 64 },
+    image: { source: img, width: 64, height: 64 },
     regions: [{ x: 0, y: 0, width: 32, height: 32 }],
   };
 }
@@ -62,10 +62,10 @@ describe('defaultWebGLQuadBatchRenderer.submit', () => {
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
-  it('returns early without drawing when atlas.image.src is null', () => {
+  it('returns early without drawing when atlas.image.source is null', () => {
     const { state, gl } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
-    defaultWebGLQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: { image: { src: null }, regions: [] } }));
+    defaultWebGLQuadBatchRenderer.submit(state, makeQuadBatchNode({ atlas: { image: { source: null }, regions: [] } }));
     flushWebGLSpriteBatch(state as any);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });

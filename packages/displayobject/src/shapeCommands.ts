@@ -2,7 +2,7 @@ import type {
   CapsStyle,
   GradientType,
   GraphicsPathWinding,
-  ImageSource,
+  ImageResource,
   InterpolationMethod,
   JointStyle,
   LineScaleMode,
@@ -25,7 +25,7 @@ export const GraphicsPathCommand = {
 
 export function appendShapeBeginBitmapFill(
   shape: Shape,
-  bitmap: ImageSource,
+  bitmap: ImageResource,
   matrix: Matrix | null = null,
   repeat = true,
   smooth = false,
@@ -106,7 +106,7 @@ export function appendShapeEndFill(shape: Shape): void {
 
 export function appendShapeLineBitmapStyle(
   shape: Shape,
-  bitmap: ImageSource,
+  bitmap: ImageResource,
   matrix: Matrix | null = null,
   repeat = true,
   smooth = false,

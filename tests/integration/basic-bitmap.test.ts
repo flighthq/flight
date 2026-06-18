@@ -1,6 +1,6 @@
-import { createImageSource } from '@flighthq/assets';
 import { createBitmap, createDisplayObject } from '@flighthq/displayobject';
 import { addNodeChild, getNodeParent } from '@flighthq/node';
+import { createImageResource } from '@flighthq/resources';
 
 export function loadImageAndDecode(): Promise<HTMLImageElement> {
   return new Promise((resolve) => {
@@ -22,7 +22,7 @@ export function loadImageAndDecode(): Promise<HTMLImageElement> {
 test('create basic bitmap and add to scene', async () => {
   const container = createDisplayObject();
   const bitmap = createBitmap();
-  bitmap.data.image = createImageSource(await loadImageAndDecode()); // <-- stub image
+  bitmap.data.image = createImageResource(await loadImageAndDecode()); // <-- stub image
   addNodeChild(container, bitmap);
   expect(getNodeParent(bitmap)).toBe(container);
 });

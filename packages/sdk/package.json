@@ -28,8 +28,8 @@
   },
   "dependencies": {
     "@flighthq/application": "*",
-    "@flighthq/assets": "*",
-    "@flighthq/assets-loader": "*",
+    "@flighthq/resources": "*",
+    "@flighthq/resources-loader": "*",
     "@flighthq/entity": "*",
     "@flighthq/filters": "*",
     "@flighthq/filters-webgl": "*",

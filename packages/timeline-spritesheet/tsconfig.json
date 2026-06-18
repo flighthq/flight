@@ -9,7 +9,7 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../assets" },
+    { "path": "../resources" },
     { "path": "../node" },
     { "path": "../displayobject" },
     { "path": "../spritesheet" },

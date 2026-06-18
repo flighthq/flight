@@ -6,7 +6,7 @@ import { createCanvasRenderState } from './canvasRenderState';
 function makeAtlas() {
   const img = document.createElement('img') as HTMLImageElement;
   return {
-    image: { src: img, width: 64, height: 64 },
+    image: { source: img, width: 64, height: 64 },
     regions: [{ id: 0, x: 0, y: 0, width: 32, height: 32 }],
   };
 }

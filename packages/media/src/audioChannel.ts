@@ -1,6 +1,6 @@
-import { getAudioContext } from '@flighthq/assets';
+import { getAudioContext } from '@flighthq/resources';
 import { createSignal, emitSignal } from '@flighthq/signals';
-import type { AudioChannel, AudioPlayOptions, AudioSource } from '@flighthq/types';
+import type { AudioChannel, AudioPlayOptions, AudioResource } from '@flighthq/types';
 
 export function getAudioChannelCurrentTime(channel: AudioChannel): number {
   const runtime = channelRuntime.get(channel);
@@ -15,7 +15,7 @@ export function pauseAudioChannel(channel: AudioChannel): void {
   stopActiveNode(channel, false);
 }
 
-export function playAudioSource(source: AudioSource, options?: Readonly<AudioPlayOptions>): AudioChannel | null {
+export function playAudioResource(source: AudioResource, options?: Readonly<AudioPlayOptions>): AudioChannel | null {
   if (source.buffer === null) return null;
 
   const context = getAudioContext();

@@ -1,4 +1,4 @@
-import { invalidateImageSource } from '@flighthq/assets';
+import { invalidateImageResource } from '@flighthq/resources';
 import type { SurfaceRegion } from '@flighthq/types';
 
 /**
@@ -27,7 +27,7 @@ export function flipSurfaceHorizontal(dest: Readonly<SurfaceRegion>, source: Rea
     return;
   }
   copyMirrored(dest, source, w, h, true, false);
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
 }
 
 /**
@@ -56,7 +56,7 @@ export function flipSurfaceVertical(dest: Readonly<SurfaceRegion>, source: Reado
     return;
   }
   copyMirrored(dest, source, w, h, false, true);
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
 }
 
 // Copies source -> dest with optional per-axis mirroring. Used for the

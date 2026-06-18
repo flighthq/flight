@@ -19,7 +19,7 @@ function submitWebGLTilemap(state: RenderState, tilemapNode: RenderProxy2D): voi
 
   if (tileset === null) return;
   const atlas = tileset.atlas;
-  if (atlas === null || atlas.image === null || atlas.image.src === null) return;
+  if (atlas === null || atlas.image === null || atlas.image.source === null) return;
   if (columns === 0 || rows === 0) return;
 
   ensureWebGLQuadBatchShader(internal);
@@ -32,7 +32,7 @@ function submitWebGLTilemap(state: RenderState, tilemapNode: RenderProxy2D): voi
   const startCount = internal.spriteBatchCount;
   const base = prepareWebGLSpriteBatchWrite(
     internal,
-    atlas.image.src,
+    atlas.image.source,
     tilemapNode.blendMode,
     material,
     materialRenderer,

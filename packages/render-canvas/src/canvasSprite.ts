@@ -7,7 +7,7 @@ import { applyCanvasMaterial } from './canvasMaterialRegistry';
 export function drawCanvasSprite(state: CanvasRenderState, spriteNode: RenderProxy2D): void {
   const source = spriteNode.source as Sprite;
   const { atlas, id } = source.data;
-  if (atlas === null || atlas.image === null || atlas.image.src === null) return;
+  if (atlas === null || atlas.image === null || atlas.image.source === null) return;
 
   const regions = atlas.regions;
   if (id < 0 || id >= regions.length) return;
@@ -30,7 +30,7 @@ export function drawCanvasSprite(state: CanvasRenderState, spriteNode: RenderPro
 
   context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
   context.drawImage(
-    atlas.image.src,
+    atlas.image.source,
     region.x,
     region.y,
     region.width,

@@ -1,5 +1,5 @@
 import { createSignal, emitSignal } from '@flighthq/signals';
-import type { VideoChannel, VideoPlayOptions, VideoSource } from '@flighthq/types';
+import type { VideoChannel, VideoPlayOptions, VideoResource } from '@flighthq/types';
 
 export function getVideoChannelCurrentTime(channel: VideoChannel): number {
   const element = channel.source.element;
@@ -16,7 +16,7 @@ export function pauseVideoChannel(channel: VideoChannel): void {
   element.pause();
 }
 
-export function playVideoSource(source: VideoSource, options?: Readonly<VideoPlayOptions>): VideoChannel | null {
+export function playVideoResource(source: VideoResource, options?: Readonly<VideoPlayOptions>): VideoChannel | null {
   const element = source.element;
   if (element === null) return null;
 

@@ -9,7 +9,7 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../assets" },
+    { "path": "../resources" },
     { "path": "../geometry" },
     { "path": "../materials" },
     { "path": "../render" },

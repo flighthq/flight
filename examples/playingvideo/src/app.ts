@@ -15,8 +15,8 @@ import {
   createText,
   createVideo,
   invalidateNodeRender,
-  loadVideoSourceFromURL,
-  playVideoSource,
+  loadVideoResourceFromURL,
+  playVideoResource,
   startApplicationLoop,
   stopVideoChannel,
 } from '@flighthq/sdk';
@@ -27,7 +27,7 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-const videoSource = await loadVideoSourceFromURL('assets/example.mp4');
+const videoSource = await loadVideoResourceFromURL('assets/example.mp4');
 
 const videoNode = createVideo();
 videoNode.data.source = videoSource;
@@ -48,7 +48,7 @@ function play(): void {
   prompt.visible = false;
   invalidateNodeRender(overlay);
   if (channel !== null) stopVideoChannel(channel);
-  channel = playVideoSource(videoSource);
+  channel = playVideoResource(videoSource);
   if (channel === null) return;
   connectSignal(channel.onComplete, () => {
     channel = null;

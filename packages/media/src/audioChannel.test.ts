@@ -1,9 +1,9 @@
-import { createAudioSource } from '@flighthq/assets';
+import { createAudioResource } from '@flighthq/resources';
 
 import {
   getAudioChannelCurrentTime,
   pauseAudioChannel,
-  playAudioSource,
+  playAudioResource,
   resumeAudioChannel,
   setAudioChannelCurrentTime,
   setAudioChannelGain,
@@ -13,7 +13,7 @@ import {
 
 describe('getAudioChannelCurrentTime', () => {
   it('returns the stored current time for an inactive channel', () => {
-    const channel = playAudioSource(createAudioSource(createMockAudioBuffer()), { currentTime: 250 });
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()), { currentTime: 250 });
     expect(channel).not.toBeNull();
     pauseAudioChannel(channel!);
     expect(getAudioChannelCurrentTime(channel!)).toBe(250);
@@ -22,7 +22,7 @@ describe('getAudioChannelCurrentTime', () => {
 
 describe('pauseAudioChannel', () => {
   it('preserves playback position and marks the channel as paused', () => {
-    const channel = playAudioSource(createAudioSource(createMockAudioBuffer()), { currentTime: 100 });
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()), { currentTime: 100 });
     expect(channel).not.toBeNull();
     pauseAudioChannel(channel!);
     expect(channel!.currentTime).toBe(100);
@@ -30,14 +30,14 @@ describe('pauseAudioChannel', () => {
   });
 });
 
-describe('playAudioSource', () => {
+describe('playAudioResource', () => {
   it('returns null when buffer is null', () => {
-    const source = createAudioSource();
-    expect(playAudioSource(source)).toBeNull();
+    const source = createAudioResource();
+    expect(playAudioResource(source)).toBeNull();
   });
 
   it('returns a playing channel when buffer is available', () => {
-    const channel = playAudioSource(createAudioSource(createMockAudioBuffer()), { gain: 0.5 });
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()), { gain: 0.5 });
     expect(channel).not.toBeNull();
     expect(channel!.gain).toBe(0.5);
     expect(channel!.state).toBe('playing');
@@ -46,7 +46,7 @@ describe('playAudioSource', () => {
 
 describe('resumeAudioChannel', () => {
   it('restarts playback from a paused channel', () => {
-    const channel = playAudioSource(createAudioSource(createMockAudioBuffer()));
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()));
     expect(channel).not.toBeNull();
     pauseAudioChannel(channel!);
     resumeAudioChannel(channel!);
@@ -56,7 +56,7 @@ describe('resumeAudioChannel', () => {
 
 describe('setAudioChannelCurrentTime', () => {
   it('updates and clamps the channel current time', () => {
-    const channel = playAudioSource(createAudioSource(createMockAudioBuffer()));
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()));
     expect(channel).not.toBeNull();
     expect(setAudioChannelCurrentTime(channel!, 2000)).toBe(1000);
   });
@@ -64,7 +64,7 @@ describe('setAudioChannelCurrentTime', () => {
 
 describe('setAudioChannelGain', () => {
   it('updates the channel gain', () => {
-    const channel = playAudioSource(createAudioSource(createMockAudioBuffer()));
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()));
     expect(channel).not.toBeNull();
     expect(setAudioChannelGain(channel!, 0.25)).toBe(0.25);
     expect(channel!.gain).toBe(0.25);
@@ -73,7 +73,7 @@ describe('setAudioChannelGain', () => {
 
 describe('setAudioChannelPlaybackRate', () => {
   it('updates the channel playback rate', () => {
-    const channel = playAudioSource(createAudioSource(createMockAudioBuffer()));
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()));
     expect(channel).not.toBeNull();
     expect(setAudioChannelPlaybackRate(channel!, 2)).toBe(2);
     expect(channel!.playbackRate).toBe(2);
@@ -82,7 +82,7 @@ describe('setAudioChannelPlaybackRate', () => {
 
 describe('stopAudioChannel', () => {
   it('stops playback and resets the current time', () => {
-    const channel = playAudioSource(createAudioSource(createMockAudioBuffer()), { currentTime: 500 });
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()), { currentTime: 500 });
     expect(channel).not.toBeNull();
     stopAudioChannel(channel!);
     expect(channel!.currentTime).toBe(0);

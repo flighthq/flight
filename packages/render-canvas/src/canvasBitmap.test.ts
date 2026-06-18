@@ -1,8 +1,8 @@
-﻿import { createImageSource } from '@flighthq/assets';
-import { createBitmap } from '@flighthq/displayobject';
+﻿import { createBitmap } from '@flighthq/displayobject';
 import { createRectangle } from '@flighthq/geometry';
 import { registerRenderer } from '@flighthq/render';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import { createImageResource } from '@flighthq/resources';
 import { BitmapKind } from '@flighthq/types';
 
 import { defaultCanvasBitmapRenderer, drawCanvasBitmap, drawCanvasBitmapMask } from './canvasBitmap';
@@ -19,7 +19,7 @@ function makeState() {
 
 function makeImageSource() {
   const img = document.createElement('img') as HTMLImageElement;
-  const source = createImageSource(img);
+  const source = createImageResource(img);
   source.width = 64;
   source.height = 64;
   return source;

@@ -1,5 +1,5 @@
-﻿import { addTextureAtlasRegion, createImageSource, createTextureAtlas } from '@flighthq/assets';
-import { getOrCreateRenderProxy2D, prepareSpriteRender, registerRenderer } from '@flighthq/render';
+﻿import { getOrCreateRenderProxy2D, prepareSpriteRender, registerRenderer } from '@flighthq/render';
+import { addTextureAtlasRegion, createImageResource, createTextureAtlas } from '@flighthq/resources';
 import { createQuadBatch, reserveQuadBatch } from '@flighthq/sprite';
 import { QuadBatchKind } from '@flighthq/types';
 
@@ -8,7 +8,7 @@ import { createCanvasRenderState } from './canvasRenderState';
 
 function makeAtlas(regionCount = 1) {
   const img = document.createElement('img') as HTMLImageElement;
-  const source = createImageSource(img);
+  const source = createImageResource(img);
   source.width = 128;
   source.height = 128;
   const atlas = createTextureAtlas({ image: source });
@@ -95,7 +95,7 @@ describe('drawCanvasQuadBatch', () => {
   it('skips instances with zero-size region', () => {
     const state = makeState();
     const img = document.createElement('img') as HTMLImageElement;
-    const source = createImageSource(img);
+    const source = createImageResource(img);
     source.width = 128;
     source.height = 128;
     const atlas = createTextureAtlas({ image: source });

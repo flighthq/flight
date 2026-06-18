@@ -1,7 +1,7 @@
-﻿import { createImageSource, createImageSourceFromCanvas } from '@flighthq/assets';
-import { createBitmap } from '@flighthq/displayobject';
+﻿import { createBitmap } from '@flighthq/displayobject';
 import { registerRenderer } from '@flighthq/render';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import { createImageResource, createImageResourceFromCanvas } from '@flighthq/resources';
 import { BitmapKind } from '@flighthq/types';
 
 import { defaultDOMBitmapRenderer, drawDOMBitmap, drawDOMBitmapMask } from './domBitmap';
@@ -24,7 +24,7 @@ function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTM
 function makeHTMLImageSource() {
   const img = document.createElement('img') as HTMLImageElement;
   img.src = 'test.png';
-  const source = createImageSource(img);
+  const source = createImageResource(img);
   source.width = 64;
   source.height = 64;
   return source;
@@ -34,7 +34,7 @@ function makeCanvasImageSource() {
   const canvas = document.createElement('canvas');
   canvas.width = 64;
   canvas.height = 64;
-  return createImageSourceFromCanvas(canvas);
+  return createImageResourceFromCanvas(canvas);
 }
 
 describe('defaultDOMBitmapRenderer', () => {

@@ -1,6 +1,6 @@
 import { getEntityRuntime } from '@flighthq/entity';
 import { createRectangle } from '@flighthq/geometry';
-import type { Bitmap, BitmapRuntime, ImageSource, Node } from '@flighthq/types';
+import type { Bitmap, BitmapRuntime, ImageResource, Node } from '@flighthq/types';
 import { BitmapKind } from '@flighthq/types';
 
 import {
@@ -14,7 +14,7 @@ import {
 
 describe('computeBitmapLocalBoundsRectangle', () => {
   it('sets out dimensions from image when image is present', () => {
-    const bitmap = createBitmap({ data: { image: { width: 100, height: 200 } as ImageSource } });
+    const bitmap = createBitmap({ data: { image: { width: 100, height: 200 } as ImageResource } });
     const out = createRectangle();
     computeBitmapLocalBoundsRectangle(out, bitmap as unknown as Node);
     expect(out.width).toBe(100);
@@ -44,7 +44,7 @@ describe('createBitmap', () => {
   });
 
   it('allows pre-defined values', () => {
-    const image = {} as ImageSource;
+    const image = {} as ImageResource;
     const base = {
       data: {
         image: image,
@@ -71,7 +71,7 @@ describe('createBitmapData', () => {
   });
 
   it('allows pre-defined values', () => {
-    const image = { width: 10, height: 10 } as ImageSource;
+    const image = { width: 10, height: 10 } as ImageResource;
     const data = createBitmapData({ image, smoothing: false });
     expect(data.image).toBe(image);
     expect(data.smoothing).toBe(false);
@@ -101,13 +101,13 @@ describe('getBitmapRuntime', () => {
 describe('setBitmapImage', () => {
   it('sets the image', () => {
     const bitmap = createBitmap();
-    const image = { width: 64, height: 64 } as ImageSource;
+    const image = { width: 64, height: 64 } as ImageResource;
     setBitmapImage(bitmap, image);
     expect(bitmap.data.image).toBe(image);
   });
 
   it('accepts null', () => {
-    const bitmap = createBitmap({ data: { image: { width: 1, height: 1 } as ImageSource } });
+    const bitmap = createBitmap({ data: { image: { width: 1, height: 1 } as ImageResource } });
     setBitmapImage(bitmap, null);
     expect(bitmap.data.image).toBeNull();
   });
@@ -116,7 +116,7 @@ describe('setBitmapImage', () => {
     const bitmap = createBitmap();
     const runtime = getEntityRuntime(bitmap) as BitmapRuntime;
     const idBefore = runtime.localBoundsID;
-    setBitmapImage(bitmap, { width: 64, height: 64 } as ImageSource);
+    setBitmapImage(bitmap, { width: 64, height: 64 } as ImageResource);
     expect(runtime.localBoundsID).not.toBe(idBefore);
   });
 
@@ -124,7 +124,7 @@ describe('setBitmapImage', () => {
     const bitmap = createBitmap();
     const runtime = getEntityRuntime(bitmap) as BitmapRuntime;
     const idBefore = runtime.localContentID;
-    setBitmapImage(bitmap, { width: 64, height: 64 } as ImageSource);
+    setBitmapImage(bitmap, { width: 64, height: 64 } as ImageResource);
     expect(runtime.localContentID).not.toBe(idBefore);
   });
 });

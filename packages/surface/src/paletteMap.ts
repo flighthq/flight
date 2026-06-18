@@ -1,4 +1,4 @@
-import { invalidateImageSource } from '@flighthq/assets';
+import { invalidateImageResource } from '@flighthq/resources';
 import type { SurfaceRegion } from '@flighthq/types';
 
 /**
@@ -47,5 +47,5 @@ export function applySurfacePaletteMap(
       dd[di + 3] = alphaMap ? alphaMap[a] : a;
     }
   }
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
 }

@@ -1,4 +1,4 @@
-import { invalidateImageSource } from '@flighthq/assets';
+import { invalidateImageResource } from '@flighthq/resources';
 import type { SurfaceHistogram, SurfaceRegion } from '@flighthq/types';
 
 import { applySurfacePaletteMap } from './paletteMap';
@@ -24,7 +24,7 @@ export function equalizeSurfaceHistogram(dest: Readonly<SurfaceRegion>, source: 
     buildEqualizeMap(histogram.blue, total),
     null,
   );
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
 }
 
 /**

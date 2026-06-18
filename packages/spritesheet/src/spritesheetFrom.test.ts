@@ -1,4 +1,4 @@
-import { buildTilesetRegions, createTextureAtlas, createTileset } from '@flighthq/assets';
+import { buildTilesetRegions, createTextureAtlas, createTileset } from '@flighthq/resources';
 
 import { createSpritesheetFromTileset } from './spritesheetFrom';
 

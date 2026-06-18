@@ -1,4 +1,4 @@
-import { invalidateImageSource } from '@flighthq/assets';
+import { invalidateImageResource } from '@flighthq/resources';
 import type { SurfaceRegion } from '@flighthq/types';
 
 import type { ImageChannel } from './imageChannel';
@@ -32,7 +32,7 @@ export function copySurfaceChannel(
       dest.surface.data[di + destChannel] = source.surface.data[si + sourceChannel];
     }
   }
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
 }
 
 /**
@@ -82,5 +82,5 @@ export function copySurfacePixels(
       }
     }
   }
-  invalidateImageSource(dest.surface);
+  invalidateImageResource(dest.surface);
 }

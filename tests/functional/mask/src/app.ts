@@ -8,7 +8,7 @@ import {
   createBitmap,
   createDisplayContainer,
   createShape,
-  loadImageSourceFromURL,
+  loadImageResourceFromURL,
   setDisplayObjectMask,
 } from '@flighthq/sdk';
 
@@ -25,7 +25,7 @@ appendShapeRectangle(bg, 0, 0, W, H);
 appendShapeEndFill(bg);
 addNodeChild(root, bg);
 
-const image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
+const image = await loadImageResourceFromURL('assets/wabbit_alpha.png');
 const iw = image.width;
 const ih = image.height;
 

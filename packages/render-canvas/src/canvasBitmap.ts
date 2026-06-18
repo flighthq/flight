@@ -8,7 +8,7 @@ export function drawCanvasBitmap(state: CanvasRenderState, bitmap: RenderProxy2D
   drawCanvasDisplayObject(state, bitmap);
   const source = bitmap.source as Bitmap;
   const imageSource = source.data.image;
-  if (imageSource !== null && imageSource.src !== null) {
+  if (imageSource !== null && imageSource.source !== null) {
     const context = state.context;
 
     state.applyBlendMode?.(state, bitmap.blendMode);
@@ -23,10 +23,10 @@ export function drawCanvasBitmap(state: CanvasRenderState, bitmap: RenderProxy2D
     }
 
     if (sourceRectangle === null) {
-      context.drawImage(imageSource.src, 0, 0, imageSource.width, imageSource.height);
+      context.drawImage(imageSource.source, 0, 0, imageSource.width, imageSource.height);
     } else {
       context.drawImage(
-        imageSource.src,
+        imageSource.source,
         sourceRectangle.x,
         sourceRectangle.y,
         sourceRectangle.width,

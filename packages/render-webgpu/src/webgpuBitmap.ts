@@ -19,14 +19,14 @@ export function drawWebGPUBitmap(state: RenderState, renderProxy: RenderProxy2D)
 
   const source = renderProxy.source as Bitmap;
   const imageSource = source.data.image;
-  if (imageSource === null || imageSource.src === null) return;
+  if (imageSource === null || imageSource.source === null) return;
 
   // Custom per-node shader: flush pending batch to preserve painter's order, then draw immediately.
   const shader = resolveWebGPUShader(internal, renderProxy);
   if (shader !== null) {
     flushWebGPUSpriteBatch(internal);
     internal.applyBlendMode?.(internal, renderProxy.blendMode);
-    bindWebGPUTexture(internal, imageSource.src);
+    bindWebGPUTexture(internal, imageSource.source);
     shader.bind(internal, renderProxy);
     return;
   }
@@ -65,7 +65,7 @@ export function drawWebGPUBitmap(state: RenderState, renderProxy: RenderProxy2D)
   const startCount = internal.spriteBatchCount;
   const base = prepareWebGPUSpriteBatchWrite(
     internal,
-    imageSource.src,
+    imageSource.source,
     renderProxy.blendMode,
     material,
     materialRenderer,

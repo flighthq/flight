@@ -22,7 +22,7 @@ import {
   createDisplayContainer,
   createRichText,
   createShape,
-  loadImageSourceFromURL,
+  loadImageResourceFromURL,
 } from '@flighthq/sdk';
 
 import { applyBlurFilters, height, render, scale, width } from './render';
@@ -40,7 +40,7 @@ appendShapeRectangle(bg, 0, 0, W, H);
 appendShapeEndFill(bg);
 addNodeChild(root, bg);
 
-const image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
+const image = await loadImageResourceFromURL('assets/wabbit_alpha.png');
 
 const filtered: { node: DisplayObject; filter: BlurFilter }[] = [];
 

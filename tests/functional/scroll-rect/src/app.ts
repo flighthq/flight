@@ -10,7 +10,7 @@ import {
   createRichText,
   createShape,
   invalidateNodeLocalTransform,
-  loadImageSourceFromURL,
+  loadImageResourceFromURL,
   setDisplayObjectClipRectangle,
 } from '@flighthq/sdk';
 
@@ -28,7 +28,7 @@ const root = createDisplayContainer();
 const W = width;
 const H = height;
 
-const owlImg = await loadImageSourceFromURL('assets/OwlAlpha.png');
+const owlImg = await loadImageResourceFromURL('assets/OwlAlpha.png');
 
 // Owl clip: container clips to the eyes region; content moves to pan across the image.
 const owlClip = createDisplayContainer();

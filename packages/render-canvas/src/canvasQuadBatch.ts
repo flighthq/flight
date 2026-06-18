@@ -8,12 +8,12 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderP
   const source = quadBatch.source as QuadBatch;
   const data = source.data;
   const { atlas, instanceCount, ids, transforms } = data;
-  if (atlas === null || atlas.image === null || atlas.image.src === null || instanceCount === 0) return;
+  if (atlas === null || atlas.image === null || atlas.image.source === null || instanceCount === 0) return;
 
   state.applyBlendMode?.(state, quadBatch.blendMode);
 
   const context = state.context;
-  const image = atlas.image.src;
+  const image = atlas.image.source;
   const regions = atlas.regions;
   const numRegions = regions.length;
   const transform = quadBatch.transform2D;

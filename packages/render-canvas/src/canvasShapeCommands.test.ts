@@ -42,7 +42,7 @@ function makeBitmapSource(w: number, h: number) {
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
-  return { src: canvas, width: w, height: h } as never;
+  return { source: canvas, width: w, height: h } as never;
 }
 
 describe('defaultCanvasBeginBitmapFill', () => {
