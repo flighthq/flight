@@ -12,7 +12,7 @@ import {
   createDisplayContainer,
   createRichText,
   createShape,
-  loadImageSourceFromURL,
+  loadImageResourceFromURL,
 } from '@flighthq/sdk';
 
 import { height, render, width } from './render';
@@ -28,7 +28,7 @@ appendShapeRectangle(bg, 0, 0, W, H);
 appendShapeEndFill(bg);
 addNodeChild(root, bg);
 
-const image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
+const image = await loadImageResourceFromURL('assets/wabbit_alpha.png');
 
 const labels = ['normal', 'inner', 'knockout', 'inner + knockout', 'hideObject', 'inner + hideObject'];
 for (let i = 0; i < 6; i++) {

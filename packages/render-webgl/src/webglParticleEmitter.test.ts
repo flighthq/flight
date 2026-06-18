@@ -6,7 +6,7 @@ import { makeWebGLState } from './webglTestHelper';
 function makeAtlas() {
   const img = document.createElement('img');
   return {
-    image: { src: img, width: 64, height: 64 },
+    image: { source: img, width: 64, height: 64 },
     regions: [{ id: 0, x: 0, y: 0, width: 32, height: 32 }],
   };
 }
@@ -53,9 +53,9 @@ describe('drawWebGLParticleEmitter', () => {
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 
-  it('returns early without drawing when atlas.image.src is null', () => {
+  it('returns early without drawing when atlas.image.source is null', () => {
     const { state, gl } = makeWebGLState();
-    drawWebGLParticleEmitter(state, makeParticleEmitterNode({ atlas: { image: { src: null }, regions: [] } }));
+    drawWebGLParticleEmitter(state, makeParticleEmitterNode({ atlas: { image: { source: null }, regions: [] } }));
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 

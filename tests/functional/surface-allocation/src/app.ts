@@ -11,7 +11,7 @@ import {
   appendShapeRectangle,
   createBitmap,
   createDisplayContainer,
-  createImageSourceFromCanvas,
+  createImageResourceFromCanvas,
   createRichText,
   createShape,
   removeNodeChild,
@@ -55,7 +55,7 @@ function makeColoredBitmap(size: number): ReturnType<typeof createBitmap> {
   ctx.fillStyle = `rgba(${r},${g},${b},${a / 255})`;
   ctx.fillRect(0, 0, size, size);
   const bmp = createBitmap();
-  bmp.data.image = createImageSourceFromCanvas(canvas);
+  bmp.data.image = createImageResourceFromCanvas(canvas);
   return bmp;
 }
 

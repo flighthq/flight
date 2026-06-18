@@ -1,4 +1,4 @@
-import type { ImageSource } from './ImageSource';
+import type { ImageResource } from './ImageResource';
 import type { Matrix } from './Matrix';
 
 export type CapsStyle = 'none' | 'round' | 'square';
@@ -17,7 +17,7 @@ export type SpreadMethod = 'pad' | 'reflect' | 'repeat';
 
 // Maps command key strings to their argument tuples. May be extended via declaration merging.
 export interface ShapeCommandRegistry {
-  beginBitmapFill: readonly [bitmap: ImageSource, matrix: Matrix | null, repeat: boolean, smooth: boolean];
+  beginBitmapFill: readonly [bitmap: ImageResource, matrix: Matrix | null, repeat: boolean, smooth: boolean];
   beginFill: readonly [color: number, alpha: number];
   beginGradientFill: readonly [
     gradientType: GradientType,
@@ -51,7 +51,7 @@ export interface ShapeCommandRegistry {
     ellipseHeight: number,
   ];
   endFill: readonly [];
-  lineBitmapStyle: readonly [bitmap: ImageSource, matrix: Matrix | null, repeat: boolean, smooth: boolean];
+  lineBitmapStyle: readonly [bitmap: ImageResource, matrix: Matrix | null, repeat: boolean, smooth: boolean];
   lineGradientStyle: readonly [
     gradientType: GradientType,
     colors: number[],

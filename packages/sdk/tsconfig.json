@@ -10,8 +10,8 @@
   },
   "references": [
     { "path": "../application" },
-    { "path": "../assets" },
-    { "path": "../assets-loader" },
+    { "path": "../resources" },
+    { "path": "../resources-loader" },
     { "path": "../surface" },
     { "path": "../entity" },
     { "path": "../filters" },

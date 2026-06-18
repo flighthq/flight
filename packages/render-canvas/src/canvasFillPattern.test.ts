@@ -11,13 +11,13 @@ function makeBitmap(w = 64, h = 64) {
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
-  return { src: canvas as CanvasImageSource, width: w, height: h };
+  return { source: canvas as CanvasImageSource, width: w, height: h };
 }
 
 describe('createBitmapPattern', () => {
-  it('returns null when bitmap.src is null', () => {
+  it('returns null when bitmap.source is null', () => {
     const context = makeContext();
-    expect(createBitmapPattern(context, { src: null, width: 64, height: 64 } as never, true)).toBeNull();
+    expect(createBitmapPattern(context, { source: null, width: 64, height: 64 } as never, true)).toBeNull();
   });
 
   it('returns a CanvasPattern when src is valid', () => {

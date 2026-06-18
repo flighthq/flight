@@ -6,7 +6,7 @@ export function cloneSurface(source: Readonly<Surface>): Surface {
     colorSpace: source.colorSpace,
     data: new Uint8ClampedArray(source.data),
     height: source.height,
-    src: null,
+    source: null,
     version: 0,
     width: source.width,
   });
@@ -30,7 +30,7 @@ export function createSurface(width: number, height: number, color: number = 0):
     colorSpace: 'srgb' as const,
     data,
     height,
-    src: null,
+    source: null,
     version: 0,
     width,
   });

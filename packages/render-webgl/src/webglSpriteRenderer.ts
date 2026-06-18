@@ -14,7 +14,7 @@ function submitWebGLSpriteNode(state: RenderState, spriteNode: RenderProxy2D): v
   const internal = state as WebGLRenderStateInternal;
   const source = spriteNode.source as Sprite;
   const { atlas, id } = source.data;
-  if (atlas === null || atlas.image === null || atlas.image.src === null) return;
+  if (atlas === null || atlas.image === null || atlas.image.source === null) return;
 
   const regions = atlas.regions;
   if (id < 0 || id >= regions.length) return;
@@ -33,7 +33,7 @@ function submitWebGLSpriteNode(state: RenderState, spriteNode: RenderProxy2D): v
   if (materialRenderer === null) return;
   const base = prepareWebGLSpriteBatchWrite(
     internal,
-    atlas.image.src,
+    atlas.image.source,
     spriteNode.blendMode,
     material,
     materialRenderer,

@@ -374,8 +374,8 @@ Packaging policy should be enforced by scripts and `npm run packages:check` rath
 - `@flighthq/interaction`: hit testing, pointer dispatch, and object overlap detection.
 - `@flighthq/materials`: color transform and shader-related utilities. A logical home for these concepts; 3D material support is planned as a future direction.
 - `@flighthq/signals`: strictly-typed signals and slots for event dispatching. Signals support multiple listeners, priority, and cancellation. The package is effectively always present in the SDK; specific signal groups are opt-in via `enable*` functions defined in the owning package. Signals is fundamental infrastructure and should have few dependencies.
-- `@flighthq/assets`: resource primitives and loading (may be renamed `resources` in the future).
-- `@flighthq/assets-loader`: batch queue for loading multiple resources in sequence or parallel.
+- `@flighthq/resources`: resource primitives and loading (image/audio/video/font resources, texture atlases, tilesets).
+- `@flighthq/resources-loader`: batch queue for loading multiple resources in sequence or parallel.
 - `@flighthq/spritesheet`: animation layer built on raw resources — a logical package providing sprite-based animation, analogous in structure to `particles`.
 - `@flighthq/timeline`: MovieClip-style keyframe and timeline support.
 - `@flighthq/timeline-spritesheet`: timeline implementation backed by spritesheet animation internally.

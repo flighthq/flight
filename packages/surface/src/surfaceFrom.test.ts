@@ -1,15 +1,15 @@
-import { createImageSource } from '@flighthq/assets';
+import { createImageResource } from '@flighthq/resources';
 
 import { createSurface } from './surface';
-import { createImageSourceFromSurface, createSurfaceFromCanvas, createSurfaceFromImageSource } from './surfaceFrom';
+import { createImageResourceFromSurface, createSurfaceFromCanvas, createSurfaceFromImageResource } from './surfaceFrom';
 
-describe('createImageSourceFromSurface', () => {
-  it('returns an ImageSource with matching dimensions', () => {
+describe('createImageResourceFromSurface', () => {
+  it('returns an ImageResource with matching dimensions', () => {
     const img = createSurface(4, 4, 0x112233ff);
-    const source = createImageSourceFromSurface(img);
-    expect(source.width).toBe(4);
-    expect(source.height).toBe(4);
-    expect(source.src).not.toBeNull();
+    const resource = createImageResourceFromSurface(img);
+    expect(resource.width).toBe(4);
+    expect(resource.height).toBe(4);
+    expect(resource.source).not.toBeNull();
   });
 });
 
@@ -32,13 +32,13 @@ describe('createSurfaceFromCanvas', () => {
   });
 });
 
-describe('createSurfaceFromImageSource', () => {
-  it('returns Surface matching the source dimensions', () => {
-    const source = createImageSource();
-    source.width = 4;
-    source.height = 4;
-    source.src = null;
-    const data = createSurfaceFromImageSource(source);
+describe('createSurfaceFromImageResource', () => {
+  it('returns Surface matching the resource dimensions', () => {
+    const resource = createImageResource();
+    resource.width = 4;
+    resource.height = 4;
+    resource.source = null;
+    const data = createSurfaceFromImageResource(resource);
     expect(data.width).toBe(4);
     expect(data.height).toBe(4);
   });

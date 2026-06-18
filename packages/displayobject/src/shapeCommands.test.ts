@@ -20,7 +20,7 @@ import {
   GraphicsPathCommand,
 } from './shapeCommands';
 
-const fakeImageSource = { id: 1, height: 10, src: null, width: 10 } as never;
+const fakeImageSource = { id: 1, height: 10, source: null, width: 10 } as never;
 const fakeMatrix = { id: 2, a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 } as never;
 
 describe('appendShapeBeginBitmapFill', () => {
