@@ -8,9 +8,10 @@ import {
   BitmapKind,
   createBitmap,
   createDisplayContainer,
+  createMaskGroup,
   createShape,
   loadImageResourceFromURL,
-  setDisplayObjectMask,
+  setMaskGroupMask,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -71,23 +72,25 @@ for (let i = 0; i < 4; i++) {
   ghostMask.y = cy + maskOffsets[i].dy;
   addNodeChild(root, ghostMask);
 
-  // Bitmap
+  // Mask group: the bitmap content is clipped to the mask bitmap.
+  const group = createMaskGroup();
+  addNodeChild(root, group);
+
+  // Bitmap (masked content)
   const bmp = createBitmap();
   bmp.data.image = image;
   bmp.data.smoothing = true;
   bmp.x = cx;
   bmp.y = cy;
-  addNodeChild(root, bmp);
+  addNodeChild(group, bmp);
 
-  // Mask bitmap
+  // Mask bitmap (drawn into the stencil/clip, not as content)
   const mask = createBitmap();
   mask.data.image = image;
   mask.data.smoothing = true;
   mask.x = cx + maskOffsets[i].dx;
   mask.y = cy + maskOffsets[i].dy;
-  addNodeChild(root, mask);
-
-  setDisplayObjectMask(bmp, mask);
+  setMaskGroupMask(group, mask);
 }
 
 render(root);
