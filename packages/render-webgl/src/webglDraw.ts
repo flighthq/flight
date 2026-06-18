@@ -1,6 +1,5 @@
-import { enableRenderFeatures } from '@flighthq/render';
 import type { WebGLRenderState } from '@flighthq/types';
-import { BlendMode, RenderFeatures } from '@flighthq/types';
+import { BlendMode } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { setWebGLAttributes, setWebGLMatrixFromValues } from './webglShader';
@@ -117,7 +116,6 @@ export function drawWebGLQuad(
 
 export function enableWebGLBlendModeSupport(state: WebGLRenderState): void {
   state.applyBlendMode = applyWebGLBlendMode;
-  enableRenderFeatures(state, RenderFeatures.BlendMode);
 }
 
 export function setWebGLQuadMatrixFromOffset(
