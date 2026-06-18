@@ -1,10 +1,39 @@
-﻿import { noopRendererData } from '@flighthq/render';
-import type { DisplayObjectRenderer, RenderProxy2D, RenderState, Video } from '@flighthq/types';
+﻿import type {
+  DisplayObjectRenderer,
+  Renderable,
+  RendererData,
+  RenderProxy2D,
+  RenderState,
+  Video,
+} from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, useWebGLProgram } from './webglDraw';
 import { resolveWebGLShader } from './webglShaderBinding';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
+
+// Records the video element whose GPU texture (held in the shared textureCache, keyed by element)
+// this node last uploaded, so destroyWebGLVideoData can free it on teardown.
+interface WebGLVideoData {
+  lastElement: HTMLVideoElement | null;
+}
+
+export function createWebGLVideoData(_state: RenderState, _source: Renderable): RendererData {
+  return { lastElement: null } as unknown as RendererData;
+}
+
+// Frees the GPU texture uploaded for this video's element when the node is torn down via
+// disposeDisplayObjectRender. The element-keyed textureCache entry would otherwise leak.
+export function destroyWebGLVideoData(state: RenderState, data: RendererData): void {
+  const internal = state as WebGLRenderStateInternal;
+  const { lastElement } = data as unknown as WebGLVideoData;
+  if (lastElement === null) return;
+  const texture = internal.textureCache.get(lastElement);
+  if (texture !== undefined) {
+    internal.gl.deleteTexture(texture);
+    internal.textureCache.delete(lastElement);
+  }
+}
 
 export function drawWebGLVideo(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
@@ -16,6 +45,10 @@ export function drawWebGLVideo(state: RenderState, renderProxy: RenderProxy2D): 
   const vw = element.videoWidth;
   const vh = element.videoHeight;
   if (vw === 0 || vh === 0) return;
+
+  if (renderProxy.rendererData !== null) {
+    (renderProxy.rendererData as unknown as WebGLVideoData).lastElement = element;
+  }
 
   const { gl, textureCache } = internal;
 
@@ -45,6 +78,7 @@ export function drawWebGLVideoMask(_state: RenderState, _renderProxy: RenderProx
 }
 
 export const defaultWebGLVideoRenderer: DisplayObjectRenderer = {
-  createData: noopRendererData,
+  createData: createWebGLVideoData,
+  destroyData: destroyWebGLVideoData,
   submit: drawWebGLVideo,
 };
