@@ -1,4 +1,4 @@
-import { enableDisplayObjectMaskPass, getRenderProxy2D } from '@flighthq/render';
+import { enableDisplayObjectMaskPass, getDisplayObjectMask, getRenderProxy2D } from '@flighthq/render';
 import type {
   CanvasRenderState,
   DisplayObject,
@@ -47,8 +47,9 @@ const canvasClipHooks: DisplayObjectClipHooks = {
     }
   },
   pushMask(state: RenderState, source: DisplayObject): void {
-    if (source.mask === null) return;
-    const maskData = getRenderProxy2D(state, source.mask);
+    const mask = getDisplayObjectMask(source);
+    if (mask === null) return;
+    const maskData = getRenderProxy2D(state, mask);
     if (maskData === undefined) return;
     pushCanvasMask(state as CanvasRenderState, maskData);
     state.currentMaskDepth++;
