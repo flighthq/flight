@@ -7,6 +7,11 @@ import type { WebGLDualSourceLocations } from './filterPass';
 import { clearWebGLFilterTarget, compileWebGLFilterProgram, drawWebGLDualSourcePass } from './filterPass';
 import { applyWebGLBlitOffsetPass, applyWebGLBlitPass, applyWebGLInvertTintPass } from './tintShader';
 
+// Why: all filter passes use ONE/ONE_MINUS_SRC_ALPHA premultiplied blending — they never
+// implicitly clear their destination. Reusing a scratch target without clearing first means
+// the previous pass's content bleeds through wherever the new pass's alpha is 0. Clearing
+// before each reuse gives clean replacement semantics.
+
 // Same clip shader as innerGlowFilter — clips unit-0 glow to unit-1 source alpha.
 const INNER_CLIP_FRAGMENT_SRC = `#version 300 es
 precision mediump float;
@@ -62,11 +67,15 @@ export function applyInnerShadowFilterToWebGL(
   // Pass 2: blur → s1 (s2 is ping-pong temp)
   applyBoxBlurFilterToWebGL(state, s0, s1, s2, { blurX: filter.blurX ?? 4, blurY: filter.blurY ?? 4, passes: quality });
 
-  // Pass 3: shift the blurred shadow by the offset → s0 (s1 no longer needed)
+  // Pass 3: shift the blurred shadow by the offset → s0 (s1 no longer needed).
+  // s0 still holds pass-1 content; clear it so the offset blit doesn't blend on top of it.
+  clearWebGLFilterTarget(state, s0);
   applyWebGLBlitOffsetPass(state, s1, s0, dx, dy);
 
-  // Pass 4: clip offset shadow (s0) to source alpha → s1
-  applyWebGPUInnerClipPass(state, s0, source, s1);
+  // Pass 4: clip offset shadow (s0) to source alpha → s1.
+  // s1 still holds pass-2 blur content; clear it before the clip blit.
+  clearWebGLFilterTarget(state, s1);
+  applyWebGLInnerClipPass(state, s0, source, s1);
 
   // Final composite: source first, then clipped shadow on top
   clearWebGLFilterTarget(state, dest);
@@ -74,7 +83,7 @@ export function applyInnerShadowFilterToWebGL(
   applyWebGLBlitPass(state, s1, dest);
 }
 
-function applyWebGPUInnerClipPass(
+function applyWebGLInnerClipPass(
   state: WebGLRenderState,
   shadow: WebGLRenderTarget,
   source: WebGLRenderTarget,

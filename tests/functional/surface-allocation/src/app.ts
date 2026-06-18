@@ -9,15 +9,24 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
+  BitmapKind,
   createBitmap,
   createDisplayContainer,
   createImageResourceFromCanvas,
   createRichText,
   createShape,
   removeNodeChild,
+  RichTextKind,
+  ShapeKind,
 } from '@flighthq/sdk';
+import { createFunctionalTarget } from '@ft/render';
 
-import { height, render, width } from './render';
+const { height, render, width } = createFunctionalTarget({
+  width: 800,
+  height: 600,
+  background: 0xff000000,
+  kinds: [BitmapKind, RichTextKind, ShapeKind],
+});
 
 // Seeded random (same algorithm as fill test)
 const RESIDUES = 4096;

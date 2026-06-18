@@ -6,9 +6,16 @@ import {
   createDisplayContainer,
   createShape,
   invalidateNodeAppearance,
+  ShapeKind,
 } from '@flighthq/sdk';
+import { createFunctionalTarget } from '@ft/render';
 
-import { height, render, width } from './render';
+const { height, render, width } = createFunctionalTarget({
+  width: 800,
+  height: 600,
+  background: 0xff000000,
+  kinds: [ShapeKind],
+});
 
 // Multiply-with-carry PRNG seeded at startup so results are deterministic per session.
 // Algorithm from https://en.wikipedia.org/wiki/Multiply-with-carry

@@ -7,9 +7,16 @@ import {
   createRichText,
   createShape,
   loadFontFromURL,
+  RichTextKind,
 } from '@flighthq/sdk';
+import { createFunctionalTarget } from '@ft/render';
 
-import { height, render, width } from './render';
+const { height, render, width } = createFunctionalTarget({
+  width: 1000,
+  height: 400,
+  background: 0xffffffff,
+  kinds: [RichTextKind],
+});
 
 const unifont = await loadFontFromURL('assets/unifont-8.0.01.ttf', 'Unifont');
 

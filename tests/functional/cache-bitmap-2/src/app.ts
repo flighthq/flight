@@ -1,5 +1,6 @@
-// Port of CacheBitmapTest2. cacheAsBitmap is not applicable in flight;
-// this tests that nested alpha-blended containers render correctly while orbiting.
+// Port of CacheBitmapTest2. Demonstrates nested alpha-blended containers orbiting the screen.
+// Flight render cache: call createRenderCache() + useRenderCache(state, node, cache) to opt any
+// node into bitmap caching; see the blur functional test for the full bake-once pattern.
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -9,9 +10,17 @@ import {
   createRichText,
   createShape,
   invalidateNodeLocalTransform,
+  RichTextKind,
+  ShapeKind,
 } from '@flighthq/sdk';
+import { createFunctionalTarget } from '@ft/render';
 
-import { height, render, width } from './render';
+const { height, render, width } = createFunctionalTarget({
+  width: 800,
+  height: 600,
+  background: 0xff000000,
+  kinds: [RichTextKind, ShapeKind],
+});
 
 const RPM = 20;
 const COLORS = [
@@ -101,7 +110,7 @@ status.x = pos(10);
 status.y = pos(10);
 status.data.width = pos(1270);
 status.data.height = pos(40);
-status.data.text = 'cacheAsBitmap: n/a (not in flight)';
+status.data.text = 'cacheAsBitmap → useRenderCache';
 addNodeChild(root, status);
 
 const cx = pos(320);

@@ -1,6 +1,6 @@
-// Port of CacheBitmapTest1. cacheAsBitmap is not applicable in flight;
-// this test verifies that alpha-blended rounded-rect shapes render correctly
-// while orbiting the screen.
+// Port of CacheBitmapTest1. Demonstrates alpha-blended rounded-rect shapes orbiting the screen.
+// Flight render cache: call createRenderCache() + useRenderCache(state, node, cache) to opt any
+// node into bitmap caching; see the blur functional test for the full bake-once pattern.
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -11,9 +11,17 @@ import {
   createRichText,
   createShape,
   invalidateNodeLocalTransform,
+  RichTextKind,
+  ShapeKind,
 } from '@flighthq/sdk';
+import { createFunctionalTarget } from '@ft/render';
 
-import { height, render, width } from './render';
+const { height, render, width } = createFunctionalTarget({
+  width: 800,
+  height: 600,
+  background: 0xff000000,
+  kinds: [RichTextKind, ShapeKind],
+});
 
 const RPM = 5;
 const COLORS = [0xff4cf0, 0xfff372, 0x85ff75, 0x59ddff];
@@ -78,7 +86,7 @@ status.x = pos(410);
 status.y = pos(10);
 status.data.width = pos(860);
 status.data.height = pos(40);
-status.data.text = 'cacheAsBitmap: n/a (not in flight)';
+status.data.text = 'cacheAsBitmap → useRenderCache';
 addNodeChild(root, status);
 
 const cx = pos(527);

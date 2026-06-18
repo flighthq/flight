@@ -9,6 +9,7 @@ import {
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   enableCanvasClipRectangleSupport,
+  enableCanvasRenderCache,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
@@ -18,9 +19,9 @@ import {
   ShapeKind,
 } from '@flighthq/sdk';
 
-import type { FunctionalTarget, FunctionalTargetOptions } from './target';
+import type { FunctionalCanvasTarget, FunctionalTargetOptions } from './target';
 
-export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): FunctionalTarget {
+export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): FunctionalCanvasTarget {
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
@@ -50,11 +51,14 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   }
 
   if (options.clip) enableCanvasClipRectangleSupport(state);
+  if (options.cache) enableCanvasRenderCache(state);
 
   return {
+    kind: 'canvas',
     state,
     width,
     height,
+    scale: pixelRatio,
     render(root: DisplayObject): void {
       if (!prepareDisplayObjectRender(state, root)) return;
       renderCanvasBackground(state);

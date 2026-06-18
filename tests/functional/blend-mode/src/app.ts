@@ -5,15 +5,24 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
+  BitmapKind,
   BlendMode,
   createBitmap,
   createDisplayContainer,
   createRichText,
   createShape,
   loadImageResourceFromURL,
+  RichTextKind,
+  ShapeKind,
 } from '@flighthq/sdk';
+import { createFunctionalTarget } from '@ft/render';
 
-import { height, render, width } from './render';
+const { height, render, width } = createFunctionalTarget({
+  width: 1100,
+  height: 700,
+  background: 0xffffffff,
+  kinds: [BitmapKind, RichTextKind, ShapeKind],
+});
 
 const BLEND_MODES: [BlendMode, string][] = [
   [BlendMode.Normal, 'normal'],

@@ -1,7 +1,13 @@
 // Tests file drop via HTML5 drag-and-drop. Drop a file onto the window to see its path/name.
-import { addNodeChild, createDisplayContainer, createRichText } from '@flighthq/sdk';
+import { addNodeChild, createDisplayContainer, createRichText, RichTextKind } from '@flighthq/sdk';
+import { createFunctionalTarget } from '@ft/render';
 
-import { height, render, width } from './render';
+const { height, render, width } = createFunctionalTarget({
+  width: 800,
+  height: 600,
+  background: 0xffffffff,
+  kinds: [RichTextKind],
+});
 
 const root = createDisplayContainer();
 
