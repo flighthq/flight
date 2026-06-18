@@ -2,7 +2,6 @@ import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime } from './D
 
 export interface ShapeData extends DisplayObjectData {
   commands: unknown[];
-  version: number;
 }
 
 export interface ShapeRuntime extends DisplayObjectRuntime {}
