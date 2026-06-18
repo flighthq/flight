@@ -1,7 +1,6 @@
+import { createReferenceStage } from '../../_harness/stage';
 // Requires: assets/unifont-8.0.01.ttf
 // Unicode character grid browser with arrow key navigation.
-import Sprite from 'openfl/display/Sprite';
-import Stage from 'openfl/display/Stage';
 import TextField from 'openfl/text/TextField';
 import TextFormat from 'openfl/text/TextFormat';
 
@@ -12,10 +11,7 @@ const ROWS = 16;
 const CELL_SIZE = 36;
 const FONT = 'Unifont';
 
-const stage = new Stage(WIDTH, HEIGHT, 0xffffff);
-document.getElementById('app')!.appendChild((stage as any).element);
-const root = new Sprite();
-stage.addChild(root);
+const { root } = createReferenceStage(WIDTH, HEIGHT, 0xffffff);
 
 (async () => {
   const ff = new FontFace(FONT, 'url(assets/unifont-8.0.01.ttf)');

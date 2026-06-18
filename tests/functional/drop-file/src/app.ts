@@ -1,14 +1,12 @@
 // Tests file drop via HTML5 drag-and-drop. Drop a file onto the window to see its path/name.
 import { addNodeChild, createDisplayContainer, createRichText } from '@flighthq/sdk';
 
-import { height, render, scale, width } from './render';
+import { height, render, width } from './render';
 
 const root = createDisplayContainer();
-root.scaleX = scale;
-root.scaleY = scale;
 
-const W = width / scale;
-const H = height / scale;
+const W = width;
+const H = height;
 
 const instructions = createRichText();
 instructions.data.defaultTextFormat = { font: 'sans-serif', size: 20, color: 0x333333 };

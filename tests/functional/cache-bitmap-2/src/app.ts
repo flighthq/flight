@@ -8,11 +8,10 @@ import {
   createDisplayContainer,
   createRichText,
   createShape,
-  setTransformX,
-  setTransformY,
+  invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 
-import { height, render, scale, width } from './render';
+import { height, render, width } from './render';
 
 const RPM = 20;
 const COLORS = [
@@ -21,7 +20,7 @@ const COLORS = [
 ];
 
 function pos(i: number): number {
-  return (i * height) / (720 * scale);
+  return (i * height) / 720;
 }
 
 function makeChild(rects: { color: number; x: number; y: number }[]): ReturnType<typeof createDisplayContainer> {
@@ -44,11 +43,9 @@ function makeChild(rects: { color: number; x: number; y: number }[]): ReturnType
 }
 
 const root = createDisplayContainer();
-root.scaleX = scale;
-root.scaleY = scale;
 
-const W = width / scale;
-const H = height / scale;
+const W = width;
+const H = height;
 
 const stageBg = createShape();
 appendShapeBeginFill(stageBg, 0x000000);
@@ -118,8 +115,9 @@ function enterFrame(): void {
   const dt = (now - lastTime) / 1000;
   lastTime = now;
   angle += (dt / (60 / RPM)) * Math.PI * 2;
-  setTransformX(parent, cx + radius * Math.cos(angle));
-  setTransformY(parent, cy + radius * Math.sin(angle));
+  parent.x = cx + radius * Math.cos(angle);
+  parent.y = cy + radius * Math.sin(angle);
+  invalidateNodeLocalTransform(parent);
   render(root);
   requestAnimationFrame(enterFrame);
 }

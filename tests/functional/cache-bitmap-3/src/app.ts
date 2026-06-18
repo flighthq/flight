@@ -10,23 +10,21 @@ import {
   createDisplayContainer,
   createRichText,
   createShape,
+  invalidateNodeAppearance,
+  invalidateNodeLocalTransform,
   loadImageSourceFromURL,
-  setAppearanceAlpha,
-  setTransformX,
 } from '@flighthq/sdk';
 
-import { height, render, scale, width } from './render';
+import { height, render, width } from './render';
 
 function pos(i: number): number {
-  return (i * height) / (720 * scale);
+  return (i * height) / 720;
 }
 
 const root = createDisplayContainer();
-root.scaleX = scale;
-root.scaleY = scale;
 
-const W = width / scale;
-const H = height / scale;
+const W = width;
+const H = height;
 
 const stageBg = createShape();
 appendShapeBeginFill(stageBg, 0x000000);
@@ -121,10 +119,14 @@ function enterFrame(): void {
   if (menuX <= 0 || menuX >= maxX) menuXInc = -menuXInc;
 
   const alpha = (maxX - menuX) / maxX;
-  setTransformX(posters, menuX);
-  setTransformX(menuGroup, menuX);
-  setAppearanceAlpha(menuGroup, alpha);
-  setAppearanceAlpha(posters, alpha);
+  posters.x = menuX;
+  menuGroup.x = menuX;
+  menuGroup.alpha = alpha;
+  posters.alpha = alpha;
+  invalidateNodeLocalTransform(posters);
+  invalidateNodeLocalTransform(menuGroup);
+  invalidateNodeAppearance(menuGroup);
+  invalidateNodeAppearance(posters);
 
   render(root);
   requestAnimationFrame(enterFrame);

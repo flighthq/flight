@@ -1,10 +1,8 @@
 import { addNodeChild, createDisplayContainer, createRichText } from '@flighthq/sdk';
 
-import { render, scale } from './render';
+import { render } from './render';
 
 const root = createDisplayContainer();
-root.scaleX = scale;
-root.scaleY = scale;
 
 const field = createRichText();
 field.data.multiline = true;

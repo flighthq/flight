@@ -1,3 +1,4 @@
+import { createReferenceStage } from '../../_harness/stage';
 // Requires: assets/wabbit_alpha.png
 // Port of CacheBitmapTest3. Tests bitmap + rich text sliding with alpha animation.
 import Bitmap from 'openfl/display/Bitmap';
@@ -5,7 +6,6 @@ import type BitmapData from 'openfl/display/BitmapData';
 import Loader from 'openfl/display/Loader';
 import Shape from 'openfl/display/Shape';
 import Sprite from 'openfl/display/Sprite';
-import Stage from 'openfl/display/Stage';
 import Event from 'openfl/events/Event';
 import URLRequest from 'openfl/net/URLRequest';
 import TextField from 'openfl/text/TextField';
@@ -18,10 +18,7 @@ function pos(i: number): number {
   return (i * HEIGHT) / 720;
 }
 
-const stage = new Stage(WIDTH, HEIGHT, 0x000000);
-document.getElementById('app')!.appendChild((stage as any).element);
-const root = new Sprite();
-stage.addChild(root);
+const { root } = createReferenceStage(WIDTH, HEIGHT, 0x000000);
 
 const stageBg = new Shape();
 stageBg.graphics.beginFill(0x000000);

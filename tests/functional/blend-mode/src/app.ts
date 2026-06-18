@@ -13,7 +13,7 @@ import {
   loadImageSourceFromURL,
 } from '@flighthq/sdk';
 
-import { height, render, scale, width } from './render';
+import { height, render, width } from './render';
 
 const BLEND_MODES: [BlendMode, string][] = [
   [BlendMode.Normal, 'normal'],
@@ -33,11 +33,9 @@ const BLEND_MODES: [BlendMode, string][] = [
 ];
 
 const root = createDisplayContainer();
-root.scaleX = scale;
-root.scaleY = scale;
 
-const W = width / scale;
-const H = height / scale;
+const W = width;
+const H = height;
 
 const bg = createShape();
 appendShapeBeginFill(bg, 0xffffff);
