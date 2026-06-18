@@ -2,8 +2,8 @@
   "files": [],
   "references": [
     { "path": "./packages/application" },
-    { "path": "./packages/assets" },
-    { "path": "./packages/assets-loader" },
+    { "path": "./packages/resources" },
+    { "path": "./packages/resources-loader" },
     { "path": "./packages/sdk" },
     { "path": "./packages/entity" },
     { "path": "./packages/geometry" },
