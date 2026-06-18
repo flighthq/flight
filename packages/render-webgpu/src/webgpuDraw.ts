@@ -1,6 +1,5 @@
-import { enableRenderFeatures } from '@flighthq/render';
 import type { RenderProxy, RenderProxy2D, WebGPURenderState } from '@flighthq/types';
-import { BlendMode, RenderFeatures } from '@flighthq/types';
+import { BlendMode } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
 import { getWebGPURenderProxyColorTransform } from './webgpuColorTransformMaterial';
@@ -240,7 +239,6 @@ export function drawWebGPUQuadWithTransform(
 
 export function enableWebGPUBlendModeSupport(state: WebGPURenderState): void {
   state.applyBlendMode = applyWebGPUBlendMode;
-  enableRenderFeatures(state, RenderFeatures.BlendMode);
 }
 
 export function updateWebGPUTextureEntry(

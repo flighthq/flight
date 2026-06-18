@@ -1,7 +1,6 @@
 import { createBitmap } from '@flighthq/displayobject';
 import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
-import { hasRenderFeatures } from '@flighthq/render';
-import { BlendMode, RenderFeatures } from '@flighthq/types';
+import { BlendMode } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
@@ -109,11 +108,10 @@ describe('drawWebGPUQuadWithTransform', () => {
 });
 
 describe('enableWebGPUBlendModeSupport', () => {
-  it('sets applyBlendMode and enables the feature flag', async () => {
+  it('sets applyBlendMode', async () => {
     const state = await createWebGPURenderStateForTest();
     enableWebGPUBlendModeSupport(state);
     expect(state.applyBlendMode).not.toBeNull();
-    expect(hasRenderFeatures(state, RenderFeatures.BlendMode)).toBe(true);
   });
 });
 

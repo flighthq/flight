@@ -1,4 +1,4 @@
-import { enableRenderFeatures, getRenderProxy2D } from '@flighthq/render';
+import { enableDisplayObjectMaskPass, getRenderProxy2D } from '@flighthq/render';
 import type {
   DisplayObject,
   DisplayObjectClipHooks,
@@ -6,7 +6,6 @@ import type {
   RenderState,
   WebGPURenderState,
 } from '@flighthq/types';
-import { RenderFeatures } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal } from './internal';
 import { popWebGPUClipRectangle, pushWebGPUClipRectangle } from './webgpuClipRectangle';
@@ -14,12 +13,11 @@ import { popWebGPUMask, pushWebGPUMask } from './webgpuMask';
 
 export function enableWebGPUClipRectangleSupport(state: WebGPURenderState): void {
   state.displayObjectClipHooks = webgpuClipHooks;
-  enableRenderFeatures(state, RenderFeatures.ClipRectangle);
 }
 
 export function enableWebGPUMaskSupport(state: WebGPURenderState): void {
   state.displayObjectClipHooks = webgpuClipHooks;
-  enableRenderFeatures(state, RenderFeatures.Masks);
+  enableDisplayObjectMaskPass(state);
 }
 
 const webgpuClipHooks: DisplayObjectClipHooks = {
