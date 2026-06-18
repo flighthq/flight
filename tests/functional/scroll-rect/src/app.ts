@@ -9,25 +9,24 @@ import {
   createDisplayContainer,
   createRichText,
   createShape,
+  invalidateNodeLocalTransform,
   loadImageSourceFromURL,
   setDisplayObjectClipRectangle,
 } from '@flighthq/sdk';
 
-import { height, render, scale, width } from './render';
+import { height, render, width } from './render';
 
 const FRAMES_PER_ROTATION = 200;
 const RADIUS = 120;
 
 function pos(i: number): number {
-  return (i * height) / (720 * scale);
+  return (i * height) / 720;
 }
 
 const root = createDisplayContainer();
-root.scaleX = scale;
-root.scaleY = scale;
 
-const W = width / scale;
-const H = height / scale;
+const W = width;
+const H = height;
 
 const owlImg = await loadImageSourceFromURL('assets/OwlAlpha.png');
 
@@ -137,10 +136,12 @@ function enterFrame(): void {
   if (textScrollY >= pos(550)) inc = -pos(5);
   else if (textScrollY <= 0) inc = pos(5);
   textContent.y = -textScrollY;
+  invalidateNodeLocalTransform(textContent);
 
   owlScrollX += owlInc;
   if (owlScrollX >= owlImg.width || owlScrollX <= 0) owlInc = -owlInc;
   owlContent.x = -owlScrollX;
+  invalidateNodeLocalTransform(owlContent);
 
   outerAngle += outerInc;
   if (outerAngle > 2 * Math.PI) outerAngle -= 2 * Math.PI;
@@ -148,6 +149,7 @@ function enterFrame(): void {
   const oy = RADIUS + RADIUS * Math.sin(outerAngle) + (720 - H) / 2;
   outerContent.x = -ox;
   outerContent.y = -oy;
+  invalidateNodeLocalTransform(outerContent);
 
   render(root);
   requestAnimationFrame(enterFrame);

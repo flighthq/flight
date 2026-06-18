@@ -1,41 +1,10 @@
-import type { DisplayObject } from '@flighthq/sdk';
-import {
-  BitmapKind,
-  createWebGLCanvasElement,
-  createWebGLRenderState,
-  defaultWebGLBitmapRenderer,
-  defaultWebGLRichTextRenderer,
-  defaultWebGLShapeCommands,
-  defaultWebGLShapeRenderer,
-  enableWebGLBlendModeSupport,
-  prepareDisplayObjectRender,
-  registerRenderer,
-  registerWebGLShapeCommands,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
-  RichTextKind,
-  ShapeKind,
-} from '@flighthq/sdk';
+import { BitmapKind, RichTextKind, ShapeKind } from '@flighthq/sdk';
 
-const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGLCanvasElement(1100, 700, pixelRatio);
-document.body.appendChild(canvas);
+import { createWebGLTarget } from '../../_harness/webgl';
 
-export const state = createWebGLRenderState(canvas, {
-  backgroundColor: 0xffffffff,
-  contextAttributes: { alpha: false },
+export const { height, render, width } = createWebGLTarget({
+  width: 1100,
+  height: 700,
+  background: 0xffffffff,
+  kinds: [BitmapKind, RichTextKind, ShapeKind],
 });
-enableWebGLBlendModeSupport(state);
-registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
-registerWebGLShapeCommands(defaultWebGLShapeCommands);
-registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);
-registerRenderer(state, RichTextKind, defaultWebGLRichTextRenderer);
-export const scale = pixelRatio;
-export const width = 1100;
-export const height = 700;
-
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
-}
