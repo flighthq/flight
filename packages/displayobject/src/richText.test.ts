@@ -210,11 +210,11 @@ describe('setRichTextString', () => {
     expect(richText.data.text).toBe('hello');
   });
 
-  it('invalidates appearance', () => {
+  it('invalidates local content', () => {
     const richText = createRichText();
     const runtime = getEntityRuntime(richText) as RichTextRuntime;
-    const idBefore = runtime.appearanceID;
+    const idBefore = runtime.localContentID;
     setRichTextString(richText, 'hello');
-    expect(runtime.appearanceID).not.toBe(idBefore);
+    expect(runtime.localContentID).not.toBe(idBefore);
   });
 });
