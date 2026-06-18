@@ -188,14 +188,40 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         const parsed: unknown = JSON.parse(text);
         if (parsed !== null && typeof parsed === 'object' && '__flight' in parsed) {
           logs.push(parsed);
+          return;
         }
       } catch {
-        // not a flight log entry
+        // not a flight log entry — fall through to raw-console handling below
+      }
+      // Surface raw browser console errors/warnings that are not flight logs (e.g. a library or the
+      // SDK calling console.error directly). Without this, such messages are dropped and logs.jsonl
+      // looks clean even though DevTools shows the error. Other console levels are intentionally
+      // ignored to avoid HMR/info noise.
+      const type = msg.type();
+      if (type === 'error' || type === 'warning') {
+        logs.push({
+          __flight: true,
+          t: -1,
+          level: type === 'error' ? 'error' : 'warn',
+          channel: 'console',
+          data: { msg: text },
+        });
       }
     });
 
     page.on('pageerror', (err) => {
       logs.push({ __flight: true, t: -1, level: 'pageerror', data: { msg: err.message } });
+    });
+
+    // A failed asset/network request never throws in-page, so it would otherwise be invisible here.
+    page.on('requestfailed', (req) => {
+      logs.push({
+        __flight: true,
+        t: -1,
+        level: 'error',
+        channel: 'network',
+        data: { msg: `request failed: ${req.url()} (${req.failure()?.errorText ?? 'unknown'})` },
+      });
     });
 
     try {
