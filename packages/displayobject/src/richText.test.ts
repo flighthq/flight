@@ -217,4 +217,20 @@ describe('setRichTextString', () => {
     setRichTextString(richText, 'hello');
     expect(runtime.localContentID).not.toBe(idBefore);
   });
+
+  it('does not invalidate bounds when the field is fixed (autoSize none)', () => {
+    const richText = createRichText({ data: { autoSize: 'none' } });
+    const runtime = getEntityRuntime(richText) as RichTextRuntime;
+    const boundsBefore = runtime.localBoundsID;
+    setRichTextString(richText, 'hello');
+    expect(runtime.localBoundsID).toBe(boundsBefore);
+  });
+
+  it('invalidates bounds when autoSize resizes the field', () => {
+    const richText = createRichText({ data: { autoSize: 'left' } });
+    const runtime = getEntityRuntime(richText) as RichTextRuntime;
+    const boundsBefore = runtime.localBoundsID;
+    setRichTextString(richText, 'hello');
+    expect(runtime.localBoundsID).not.toBe(boundsBefore);
+  });
 });
