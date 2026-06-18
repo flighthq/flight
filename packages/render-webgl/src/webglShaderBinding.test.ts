@@ -1,5 +1,5 @@
-import { getOrCreateRenderProxy2D, hasRenderFeatures } from '@flighthq/render';
-import { type DisplayObject, RenderFeatures } from '@flighthq/types';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import type { DisplayObject } from '@flighthq/types';
 
 import { getWebGLShader, resolveWebGLShader, setWebGLShader } from './webglShaderBinding';
 import { makeWebGLState } from './webglTestHelper';
@@ -41,10 +41,10 @@ describe('resolveWebGLShader', () => {
     expect(resolveWebGLShader(state, renderProxy)).toBe(shader);
   });
 
-  it('falls back to the default shader when the feature is disabled', () => {
+  it('falls back to the default shader when no binding resolver is installed', () => {
     const { state } = makeWebGLState();
     const renderProxy = getOrCreateRenderProxy2D(state, {} as DisplayObject);
-    // No binding was made, so RenderFeatures.Shaders is off — lookup is skipped.
+    // No binding was made, so the resolver is unset — the per-node lookup is skipped.
     expect(resolveWebGLShader(state, renderProxy)).toBe(state.defaultBitmapShader);
   });
 });
@@ -59,10 +59,11 @@ describe('setWebGLShader', () => {
     expect(getWebGLShader(renderProxy)).toBe(shader);
   });
 
-  it('enables the Shaders render feature', () => {
+  it('installs the per-node shader binding resolver', () => {
     const { state } = makeWebGLState();
+    expect(state.webglShaderBindingResolver).toBeUndefined();
     setWebGLShader(state, {} as DisplayObject, makeShader());
-    expect(hasRenderFeatures(state, RenderFeatures.Shaders)).toBe(true);
+    expect(state.webglShaderBindingResolver).toBe(getWebGLShader);
   });
 
   it('clears the binding when passed null', () => {
