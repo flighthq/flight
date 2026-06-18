@@ -15,6 +15,7 @@ import {
   beginRenderProxyUpdate,
   createRenderProxy,
   createRenderProxy2D,
+  disposeDisplayObjectSubtree,
   disposeRenderProxy,
   enableDisplayObjectMaskPass,
   getOrCreateRenderProxy2D,
@@ -114,6 +115,68 @@ describe('createRenderProxy2D', () => {
       expect(node.clipRectangleDepth).toBe(0);
       expect(node.traverseChildren).toBe(true);
     }
+  });
+});
+
+describe('disposeDisplayObjectSubtree', () => {
+  it('disposes the root and all descendants', () => {
+    const state = createRenderState();
+    const root = createDisplayObject();
+    const child = createDisplayObject();
+    const grandchild = createDisplayObject();
+    addNodeChild(root, child);
+    addNodeChild(child, grandchild);
+    prepareDisplayObjectRender(state, root);
+
+    disposeDisplayObjectSubtree(state, root);
+
+    expect(getRenderProxy2D(state, root)).toBeUndefined();
+    expect(getRenderProxy2D(state, child)).toBeUndefined();
+    expect(getRenderProxy2D(state, grandchild)).toBeUndefined();
+  });
+
+  it('disposes the mask proxy on each node', () => {
+    const state = createRenderState();
+    const root = createDisplayObject();
+    const mask = createDisplayObject();
+    root.mask = mask;
+    prepareDisplayObjectRender(state, root);
+    getOrCreateRenderProxy2D(state, mask);
+
+    disposeDisplayObjectSubtree(state, root);
+
+    expect(getRenderProxy2D(state, root)).toBeUndefined();
+    expect(getRenderProxy2D(state, mask)).toBeUndefined();
+  });
+
+  it('calls destroyData on renderer data for each disposed node', () => {
+    const state = createRenderState();
+    const root = createDisplayObject();
+    const child = createDisplayObject();
+    addNodeChild(root, child);
+    const destroyData = vi.fn();
+    registerRenderer(state, root.kind, { createData: () => ({ tag: 'data' }), destroyData, submit: vi.fn() } as any);
+    getOrCreateRenderProxy2D(state, root);
+    getOrCreateRenderProxy2D(state, child);
+
+    disposeDisplayObjectSubtree(state, root);
+
+    expect(destroyData).toHaveBeenCalledTimes(2);
+  });
+
+  it('visits disabled nodes that were never prepared', () => {
+    const state = createRenderState();
+    const root = createDisplayObject();
+    const child = createDisplayObject();
+    addNodeChild(root, child);
+    child.enabled = false;
+    prepareDisplayObjectRender(state, root);
+    // prepareDisplayObjectRender skips disabled nodes, but disposeDisplayObjectSubtree should not
+    getOrCreateRenderProxy2D(state, child);
+
+    disposeDisplayObjectSubtree(state, root);
+
+    expect(getRenderProxy2D(state, child)).toBeUndefined();
   });
 });
 
