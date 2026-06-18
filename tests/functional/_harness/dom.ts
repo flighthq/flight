@@ -6,6 +6,7 @@ import {
   defaultDOMBitmapRenderer,
   defaultDOMRichTextRenderer,
   defaultDOMShapeRenderer,
+  enableDOMClipRectangleSupport,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
@@ -44,6 +45,8 @@ export function createDOMTarget(options: Readonly<FunctionalTargetOptions>): Fun
       registerRenderer(state, RichTextKind, defaultDOMRichTextRenderer);
     }
   }
+
+  if (options.clip) enableDOMClipRectangleSupport(state);
 
   return {
     state,

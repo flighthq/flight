@@ -6,7 +6,7 @@ import type { DOMRenderStateInternal } from './internal';
 
 export function createDOMRenderState(element: HTMLElement, options: Partial<DOMRenderOptions> = {}): DOMRenderState {
   const state = _createRenderState({
-    pixelRatio: options.pixelRatio ?? window.devicePixelRatio | 1,
+    pixelRatio: options.pixelRatio ?? 1,
     renderTransform2D: createMatrix(),
     roundPixels: options.roundPixels ?? false,
     sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,

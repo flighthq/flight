@@ -31,6 +31,7 @@ const canvas = createWebGLCanvasElement(800, 400, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createWebGLRenderState(canvas, {
+  pixelRatio,
   backgroundColor: 0xffffffff,
   contextAttributes: { alpha: false },
 });

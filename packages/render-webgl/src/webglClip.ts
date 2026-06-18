@@ -33,9 +33,10 @@ const webglClipHooks: DisplayObjectClipHooks = {
     const s = state as WebGLRenderStateInternal;
     while (s.currentMaskDepth > data.maskDepth) popWebGLMask(s);
   },
-  popClipRectangle(state: RenderState, data: RenderProxy2D): void {
+  popClipRectangle(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
     const s = state as WebGLRenderStateInternal;
-    while (s.currentClipRectangleDepth > data.clipRectangleDepth) {
+    const clipTarget = data.clipRectangleDepth - (source.clipRectangle != null ? 1 : 0);
+    while (s.currentClipRectangleDepth > clipTarget) {
       popWebGLClipRectangle(s);
       s.currentClipRectangleDepth--;
     }
@@ -46,8 +47,8 @@ const webglClipHooks: DisplayObjectClipHooks = {
     if (maskData === undefined) return;
     pushWebGLMask(state as WebGLRenderStateInternal, maskData);
   },
-  pushClipRectangle(state: RenderState, data: RenderProxy2D, source: DisplayObject, hasChildren: boolean): void {
-    if (!hasChildren || source.clipRectangle === null) return;
+  pushClipRectangle(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
+    if (source.clipRectangle === null) return;
     pushWebGLClipRectangle(state as WebGLRenderStateInternal, source.clipRectangle, data.transform2D);
     state.currentClipRectangleDepth++;
   },

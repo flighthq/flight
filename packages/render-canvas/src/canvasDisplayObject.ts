@@ -2,6 +2,8 @@ import { getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, RenderProxy2D } from '@flighthq/types';
 
+import { resolveCanvasCSSFilter } from './canvasCSSFilterBinding';
+
 export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderProxy: RenderProxy2D): void {
   // Plain display objects have no visual geometry of their own.
 }
@@ -37,18 +39,18 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
     if (data === undefined || data.isMaskFrameID === frameID) continue;
 
     clipHooks?.popMask(state, data);
-    clipHooks?.popClipRectangle(state, data);
+    clipHooks?.popClipRectangle(state, data, current);
 
     if (!isRenderProxyVisible(data)) continue;
 
     clipHooks?.pushMask(state, current);
 
-    const filter = state.canvasCSSFilterResolver !== null ? state.canvasCSSFilterResolver(state, data) : null;
+    clipHooks?.pushClipRectangle(state, data, current);
+
+    const filter = resolveCanvasCSSFilter(state, data);
     if (filter !== null) state.context.filter = filter;
     if (data.renderer !== null) data.renderer.submit(state, data);
     if (filter !== null) state.context.filter = 'none';
-
-    const prePushLength = stackLength;
     if (data.traverseChildren) {
       const children = getDisplayObjectRuntime(current).children;
       if (children !== null) {
@@ -57,8 +59,6 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
         }
       }
     }
-
-    clipHooks?.pushClipRectangle(state, data, current, stackLength > prePushLength);
   }
 
   clipHooks?.finalize(state);

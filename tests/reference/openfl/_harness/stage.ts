@@ -13,7 +13,14 @@ export interface ReferenceStage {
 // ./README.md.
 export function createReferenceStage(width: number, height: number, color: number): ReferenceStage {
   const stage = new Stage(width, height, color, null, { allowHighDPI: true });
-  document.getElementById('app')!.appendChild((stage as unknown as { element: HTMLElement }).element);
+  // OpenFL's HTML5Window styles its element 100%×100% and resizes the canvas to that element, so a
+  // full-width / auto-height host stretches the canvas to the viewport while fixed-size content stays
+  // WIDTH×HEIGHT and no longer fills (and flickers with the ResizeObserver). Pin the host to the
+  // stage size so the canvas stays WIDTH×HEIGHT, matching the fixed Flight columns.
+  const host = document.getElementById('app')!;
+  host.style.width = `${width}px`;
+  host.style.height = `${height}px`;
+  host.appendChild((stage as unknown as { element: HTMLElement }).element);
   const root = new Sprite();
   stage.addChild(root);
   return { stage, root };
