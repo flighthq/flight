@@ -1,5 +1,5 @@
-import { createDisplayObject, createMaskGroup, setMaskGroupMask } from '@flighthq/displayobject';
-import { createMatrix } from '@flighthq/geometry';
+import { createDisplayObject, setDisplayObjectClip } from '@flighthq/displayobject';
+import { createMatrix, createRectangle } from '@flighthq/geometry';
 import {
   addNodeChild,
   getNodeAppearanceRevision,
@@ -9,6 +9,7 @@ import {
   invalidateNodeLocalTransform,
 } from '@flighthq/node';
 import { createSprite } from '@flighthq/sprite';
+import type { ClipRegion } from '@flighthq/types';
 
 import { registerRenderer } from './renderer';
 import {
@@ -17,18 +18,13 @@ import {
   createRenderProxy2D,
   disposeDisplayObjectRender,
   disposeRenderProxy,
-  disposeSpriteRender,
-  enableDisplayObjectMaskPass,
-  getDisplayObjectMask,
   getOrCreateRenderProxy2D,
   getRenderProxy2D,
   installRenderAdaptHook,
   isRenderProxyDirty,
   isRenderProxyVisible,
   prepareDisplayObjectRender,
-  prepareMasks,
-  prepareSpriteRender,
-  updateNodeClipRectangle,
+  updateNodeClip,
   updateRenderProxy2D,
   updateRenderProxyRenderer,
   walkNode,
@@ -43,6 +39,10 @@ function makeSource() {
 
 function makeRenderer() {
   return { createData: () => ({ tag: 'data' }), submit: vi.fn() };
+}
+
+function makeClipRegion(): ClipRegion {
+  return { contours: null, rect: createRectangle(0, 0, 10, 10), winding: 'nonZero', version: 0 };
 }
 
 describe('beginRenderProxyUpdate', () => {
@@ -112,9 +112,7 @@ describe('createRenderProxy2D', () => {
     const objNode = createRenderProxy2D(state, createDisplayObject());
     const spriteNode = createRenderProxy2D(state, createSprite());
     for (const node of [objNode, spriteNode]) {
-      expect(node.isMaskFrameID).toBe(-1);
-      expect(node.maskDepth).toBe(0);
-      expect(node.clipRectangleDepth).toBe(0);
+      expect(node.clipDepth).toBe(0);
       expect(node.traverseChildren).toBe(true);
     }
   });
@@ -137,18 +135,20 @@ describe('disposeDisplayObjectRender', () => {
     expect(getRenderProxy2D(state, grandchild)).toBeUndefined();
   });
 
-  it('disposes the mask proxy on each node', () => {
+  it('disposes a sprite subtree the same way', () => {
     const state = createRenderState();
-    const root = createMaskGroup();
-    const mask = createDisplayObject();
-    setMaskGroupMask(root, mask);
+    const root = createSprite();
+    const child = createSprite();
+    const grandchild = createSprite();
+    addNodeChild(root, child);
+    addNodeChild(child, grandchild);
     prepareDisplayObjectRender(state, root);
-    getOrCreateRenderProxy2D(state, mask);
 
     disposeDisplayObjectRender(state, root);
 
     expect(getRenderProxy2D(state, root)).toBeUndefined();
-    expect(getRenderProxy2D(state, mask)).toBeUndefined();
+    expect(getRenderProxy2D(state, child)).toBeUndefined();
+    expect(getRenderProxy2D(state, grandchild)).toBeUndefined();
   });
 
   it('calls destroyData on renderer data for each disposed node', () => {
@@ -200,74 +200,6 @@ describe('disposeRenderProxy', () => {
   it('is a no-op when no proxy exists', () => {
     const state = createRenderState();
     expect(() => disposeRenderProxy(state, createSprite())).not.toThrow();
-  });
-});
-
-describe('disposeSpriteRender', () => {
-  it('disposes the root and all descendants', () => {
-    const state = createRenderState();
-    const root = createSprite();
-    const child = createSprite();
-    const grandchild = createSprite();
-    addNodeChild(root, child);
-    addNodeChild(child, grandchild);
-    prepareSpriteRender(state, root);
-
-    disposeSpriteRender(state, root);
-
-    expect(getRenderProxy2D(state, root)).toBeUndefined();
-    expect(getRenderProxy2D(state, child)).toBeUndefined();
-    expect(getRenderProxy2D(state, grandchild)).toBeUndefined();
-  });
-
-  it('calls destroyData on renderer data for each disposed node', () => {
-    const state = createRenderState();
-    const root = createSprite();
-    const child = createSprite();
-    addNodeChild(root, child);
-    const destroyData = vi.fn();
-    registerRenderer(state, root.kind, { createData: () => ({ tag: 'data' }), destroyData, submit: vi.fn() } as any);
-    getOrCreateRenderProxy2D(state, root);
-    getOrCreateRenderProxy2D(state, child);
-
-    disposeSpriteRender(state, root);
-
-    expect(destroyData).toHaveBeenCalledTimes(2);
-  });
-
-  it('visits disabled nodes that were never prepared', () => {
-    const state = createRenderState();
-    const root = createSprite();
-    const child = createSprite();
-    addNodeChild(root, child);
-    child.enabled = false;
-    prepareSpriteRender(state, root);
-    getOrCreateRenderProxy2D(state, child);
-
-    disposeSpriteRender(state, root);
-
-    expect(getRenderProxy2D(state, child)).toBeUndefined();
-  });
-});
-
-describe('enableDisplayObjectMaskPass', () => {
-  it('installs prepareMasks as the mask pass', () => {
-    const state = createRenderState();
-    expect(state.displayObjectMaskPass).toBeNull();
-    enableDisplayObjectMaskPass(state);
-    expect(state.displayObjectMaskPass).toBe(prepareMasks);
-  });
-});
-
-describe('getDisplayObjectMask', () => {
-  it('returns the mask for a MaskGroup and null for other display objects', () => {
-    const plain = createDisplayObject();
-    expect(getDisplayObjectMask(plain)).toBeNull();
-
-    const group = createMaskGroup();
-    const mask = createDisplayObject();
-    setMaskGroupMask(group, mask);
-    expect(getDisplayObjectMask(group)).toBe(mask);
   });
 });
 
@@ -419,6 +351,18 @@ describe('prepareDisplayObjectRender', () => {
     expect(state.renderProxyMap.get(child)).toBeDefined();
   });
 
+  it('prepares a sprite tree the same way', () => {
+    const state = createRenderState();
+    const root = createSprite();
+    const child = createSprite();
+    addNodeChild(root, child);
+
+    prepareDisplayObjectRender(state, root);
+
+    expect(state.renderProxyMap.get(root)).toBeDefined();
+    expect(state.renderProxyMap.get(child)).toBeDefined();
+  });
+
   it('skips disabled nodes', () => {
     const state = createRenderState();
     const root = createDisplayObject();
@@ -447,103 +391,50 @@ describe('prepareDisplayObjectRender', () => {
     expect(prepareDisplayObjectRender(state, root)).toBe(false);
   });
 
-  it('marks mask nodes with the current frame id', () => {
+  it('accumulates clip depth down a clipped subtree', () => {
     const state = createRenderState();
-    state.displayObjectMaskPass = prepareMasks;
-    const root = createMaskGroup();
-    const mask = createDisplayObject();
-    setMaskGroupMask(root, mask);
+    const root = createDisplayObject();
+    const child = createDisplayObject();
+    const grandchild = createDisplayObject();
+    addNodeChild(root, child);
+    addNodeChild(child, grandchild);
+    setDisplayObjectClip(root, makeClipRegion());
+    setDisplayObjectClip(child, makeClipRegion());
 
     prepareDisplayObjectRender(state, root);
 
-    const maskNode = state.renderProxyMap.get(mask) as any;
-    expect(maskNode).toBeDefined();
-    expect(maskNode.isMaskFrameID).toBe(state.currentFrameID);
+    expect(getOrCreateRenderProxy2D(state, root).clipDepth).toBe(1);
+    expect(getOrCreateRenderProxy2D(state, child).clipDepth).toBe(2);
+    expect(getOrCreateRenderProxy2D(state, grandchild).clipDepth).toBe(2);
   });
 });
 
-describe('prepareMasks', () => {
-  it('marks mask nodes for the current frame and sets mask depth on the masked node', () => {
-    const state = createRenderState();
-    state.displayObjectMaskPass = prepareMasks;
-    const root = createMaskGroup();
-    const maskObj = createDisplayObject();
-    setMaskGroupMask(root, maskObj);
-    prepareDisplayObjectRender(state, root);
-    const maskData = getOrCreateRenderProxy2D(state, maskObj);
-    expect(maskData.isMaskFrameID).toBe(state.currentFrameID);
-    expect(getOrCreateRenderProxy2D(state, root).maskDepth).toBe(1);
-  });
-});
-
-describe('prepareSpriteRender', () => {
-  it('creates render nodes for all enabled nodes in the tree', () => {
-    const state = createRenderState();
-    const root = createSprite();
-    const child = createSprite();
-    addNodeChild(root, child);
-
-    prepareSpriteRender(state, root);
-
-    expect(state.renderProxyMap.get(root)).toBeDefined();
-    expect(state.renderProxyMap.get(child)).toBeDefined();
-  });
-
-  it('skips disabled nodes', () => {
-    const state = createRenderState();
-    const root = createSprite();
-    const child = createSprite();
-    addNodeChild(root, child);
-    child.enabled = false;
-
-    prepareSpriteRender(state, root);
-
-    expect(state.renderProxyMap.get(root)).toBeDefined();
-    expect(state.renderProxyMap.get(child)).toBeUndefined();
-  });
-
-  it('returns true when tree is dirty', () => {
-    const state = createRenderState();
-    const root = createSprite();
-
-    expect(prepareSpriteRender(state, root)).toBe(true);
-  });
-
-  it('returns false when tree is clean', () => {
-    const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
-    const root = createSprite();
-    prepareSpriteRender(state, root);
-
-    expect(prepareSpriteRender(state, root)).toBe(false);
-  });
-});
-
-describe('updateNodeClipRectangle', () => {
-  it('adds one to the parent depth when the node has a clip rectangle', () => {
+describe('updateNodeClip', () => {
+  it('adds one to the parent depth when the node has a clip', () => {
     const state = createRenderState();
     const node = createDisplayObject();
-    node.clipRectangle = {} as any;
+    setDisplayObjectClip(node, makeClipRegion());
     const data = getOrCreateRenderProxy2D(state, node);
-    updateNodeClipRectangle(state, node, data, undefined);
-    expect(data.clipRectangleDepth).toBe(1);
+    updateNodeClip(state, node, data, undefined);
+    expect(data.clipDepth).toBe(1);
   });
 
-  it('inherits the parent depth when the node has no clip rectangle', () => {
+  it('inherits the parent depth when the node has no clip', () => {
     const state = createRenderState();
     const node = createDisplayObject();
     const data = getOrCreateRenderProxy2D(state, node);
     const parentData = getOrCreateRenderProxy2D(state, createDisplayObject());
-    parentData.clipRectangleDepth = 2;
-    updateNodeClipRectangle(state, node, data, parentData);
-    expect(data.clipRectangleDepth).toBe(2);
+    parentData.clipDepth = 2;
+    updateNodeClip(state, node, data, parentData);
+    expect(data.clipDepth).toBe(2);
   });
 
-  it('contributes no depth for a sprite node that lacks the clip-rectangle trait', () => {
+  it('contributes no depth for a sprite node that lacks the clip trait', () => {
     const state = createRenderState();
     const sprite = createSprite();
     const data = getOrCreateRenderProxy2D(state, sprite);
-    updateNodeClipRectangle(state, sprite, data, undefined);
-    expect(data.clipRectangleDepth).toBe(0);
+    updateNodeClip(state, sprite, data, undefined);
+    expect(data.clipDepth).toBe(0);
   });
 });
 
@@ -562,6 +453,15 @@ describe('updateRenderProxy2D', () => {
     const data = getOrCreateRenderProxy2D(state, root);
     updateRenderProxy2D(state, root, data, undefined);
     expect(data.alpha).toBe(1);
+  });
+
+  it('sets clip depth from the parent through the same visitor', () => {
+    const state = createRenderState();
+    const root = createDisplayObject();
+    setDisplayObjectClip(root, makeClipRegion());
+    const data = getOrCreateRenderProxy2D(state, root);
+    updateRenderProxy2D(state, root, data, undefined);
+    expect(data.clipDepth).toBe(1);
   });
 });
 

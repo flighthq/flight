@@ -1,17 +1,11 @@
-import type { DisplayObjectMaskRenderer, Renderable, Renderer, RendererData, RenderState } from '@flighthq/types';
+import type { Renderable, Renderer, RendererData, RenderState } from '@flighthq/types';
 
 import type { RenderStateInternal } from './internal';
-import { enableDisplayObjectMaskPass } from './renderProxy';
 
+// Mask renderers were retired (a mask is now a path ClipRegion realized by the backend clip hooks), so
+// there is no mask-renderer registry to copy — only the kind→renderer map and the clip hooks.
 export function copyAllRenderersFromRenderState(target: RenderState, source: RenderState): void {
   copyRenderersFromRenderState(target, source);
-  copyMaskRenderersFromRenderState(target, source);
-}
-
-export function copyMaskRenderersFromRenderState(target: RenderState, source: RenderState): void {
-  source.displayObjectMaskRendererMap.forEach((renderer, kind) => {
-    registerDisplayObjectMaskRenderer(target, kind, renderer);
-  });
   if (source.displayObjectClipHooks !== null) target.displayObjectClipHooks = source.displayObjectClipHooks;
 }
 
@@ -23,17 +17,6 @@ export function copyRenderersFromRenderState(target: RenderState, source: Render
 
 export function noopRendererData(_state: RenderState, _source: Renderable): RendererData | null {
   return null;
-}
-
-export function registerDisplayObjectMaskRenderer(
-  state: RenderState,
-  kind: symbol,
-  renderer: DisplayObjectMaskRenderer,
-): void {
-  enableDisplayObjectMaskPass(state);
-  if (state.displayObjectMaskRendererMap.get(kind) === renderer) return;
-  (state as RenderStateInternal).displayObjectMaskRendererMapID = (state.displayObjectMaskRendererMapID + 1) >>> 0;
-  state.displayObjectMaskRendererMap.set(kind, renderer);
 }
 
 export function registerRenderer(state: RenderState, kind: symbol, renderer: Renderer): void {

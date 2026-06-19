@@ -16,11 +16,12 @@ describe('createRenderState', () => {
     expect(state.backgroundColorRGBA).toStrictEqual([]);
     expect(state.backgroundColorString).toStrictEqual('');
     expect(state.currentFrameID).toStrictEqual(0);
+    expect(state.currentClipDepth).toStrictEqual(0);
     expect(state.pixelRatio).toStrictEqual(1);
     expect(state.renderProxyMap).toStrictEqual(new WeakMap());
     expect(state.renderAlpha).toStrictEqual(1);
     expect(state.renderBlendMode).toStrictEqual(BlendMode.Normal);
-    expect(state.displayObjectMaskPass).toStrictEqual(null);
+    expect(state.displayObjectClipHooks).toStrictEqual(null);
     expect(state.renderTransform2D).toStrictEqual(null);
     expect(state.roundPixels).toStrictEqual(false);
     expect(state.tempStack).toStrictEqual([]);

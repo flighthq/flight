@@ -12,8 +12,6 @@ import {
   type DisplayObject,
   type HasBoundsRectangle,
   type HasTransform2D,
-  type MaskGroup,
-  MaskGroupKind,
   type Node,
   type Renderable,
   type RenderProxy,
@@ -65,7 +63,7 @@ export function createRenderProxy(state: RenderState, source: Renderable): Rende
 
 // The one render-node allocator for the 2D graph. Sprites and display objects produce the same
 // RenderProxy2D — there is no per-family render identity. What differs between them is the traits
-// their source carries (display objects add clip + mask), not the render node type.
+// their source carries (the clip trait), not the render node type.
 export function createRenderProxy2D(
   state: RenderState,
   source: Renderable & HasTransform2D & HasBoundsRectangle,
@@ -73,22 +71,19 @@ export function createRenderProxy2D(
   const node = createRenderProxy(state, source) as RenderProxy2D;
   node.transform2D = createMatrix();
   node.traverseChildren = true;
-  node.isMaskFrameID = -1;
-  node.maskDepth = 0;
-  node.clipRectangleDepth = 0;
+  node.clipDepth = 0;
   return node;
 }
 
-// Teardown counterpart to prepareDisplayObjectRender: disposes the render of `root` and every
-// descendant — the render proxies that prepareDisplayObjectRender created — plus the immediate mask
-// proxy on each node. The mask step is the display-object-only addition on top of the shared
-// walkRenderSubtree, mirroring how prepareDisplayObjectRender adds the mask pass on top of the shared
-// walk. Each disposeRenderProxy cascades to the renderer's destroyData, so the GPU
-// textures/framebuffers are freed now while the proxies become GC-eligible. Call after
-// removeNodeChild for nodes that will never be rendered again. Unlike prepareDisplayObjectRender,
-// this visits all nodes regardless of enabled or visible state.
-export function disposeDisplayObjectRender(state: RenderState, root: DisplayObject): void {
-  walkRenderSubtree(state, root, disposeDisplayObjectNodeRender);
+// Teardown counterpart to prepareDisplayObjectRender: disposes the render of `root` and every descendant —
+// the render proxies that prepareDisplayObjectRender created. Each disposeRenderProxy cascades to the
+// renderer's destroyData, so the GPU textures/framebuffers are freed now while the proxies become
+// GC-eligible. Sprites and display objects share one render proxy, so a single dispose serves both;
+// there is no mask proxy to dispose separately (masks were retired into clips). Call after
+// removeNodeChild for nodes that will never be rendered again. Unlike prepareDisplayObjectRender, this visits
+// all nodes regardless of enabled or visible state.
+export function disposeDisplayObjectRender(state: RenderState, root: Renderable): void {
+  walkRenderSubtree(state, root, disposeRenderProxy);
 }
 
 // Disposes the framework-side render proxy for `source`: drops it from the renderProxyMap (a
@@ -100,28 +95,6 @@ export function disposeRenderProxy(state: RenderState, source: Renderable): void
   if (node === undefined) return;
   if (node.rendererData !== null) node.renderer?.destroyData?.(state, node.rendererData);
   state.renderProxyMap.delete(source);
-}
-
-// Teardown counterpart to prepareSpriteRender: disposes the render of `root` and every descendant in
-// the sprite graph. Sprites carry no mask trait, so this is the bare shared walk + disposeRenderProxy,
-// mirroring how prepareSpriteRender is the bare walk without the display-object mask pass. Visits all
-// nodes regardless of enabled or visible state.
-export function disposeSpriteRender(state: RenderState, root: Renderable): void {
-  walkRenderSubtree(state, root, disposeRenderProxy);
-}
-
-// Installs the mask-resolution pass that prepareDisplayObjectRender runs. Called by the renderer
-// mask opt-ins (enable*MaskSupport, registerDisplayObjectMaskRenderer); mask-free states never call
-// it, leaving the hook null so prepareMasks and its second tree walk tree-shake away.
-export function enableDisplayObjectMaskPass(state: RenderState): void {
-  state.displayObjectMaskPass = prepareMasks;
-}
-
-// Resolves the clip mask of a display object: only MaskGroup nodes carry one, so every other kind
-// returns null. Centralizes the kind check the mask pass and the backend clip hooks both need now
-// that `mask` lives on the MaskGroup kind rather than on the universal display-object node.
-export function getDisplayObjectMask(source: Readonly<DisplayObject>): DisplayObject | null {
-  return source.kind === MaskGroupKind ? (source as MaskGroup).mask : null;
 }
 
 export function getOrCreateRenderProxy2D(state: RenderState, source: Renderable): RenderProxy2D {
@@ -166,102 +139,31 @@ export function isRenderProxyVisible(data: RenderProxy2D): boolean {
   return data.visible && data.alpha > 0 && !(data.transform2D.a === 0 && data.transform2D.d === 0);
 }
 
-export function prepareDisplayObjectRender(state: RenderState, source: DisplayObject): boolean {
-  const dirty = walkNode(state, source, updateRenderProxy2D);
-  // The mask pass is opt-in: registerDisplayObjectMaskRenderer installs it. Mask-free scenes leave
-  // the hook null, so prepareMasks and its second tree walk are tree-shaken out entirely.
-  state.displayObjectMaskPass?.(state, source);
-  return dirty;
-}
-
-// Separate pass for the mask trait — only meaningful for display objects, and only worth running
-// when masks are in use, which is exactly why it is its own pass rather than baked into the walk.
-// Reuses the frame id from the preceding walk (does not advance it) so mask nodes are marked for the
-// same frame the draw pass reads. Sets each node's mask nesting depth and resolves + marks the masks.
-export function prepareMasks(state: RenderState, source: DisplayObject): void {
-  const frameID = state.currentFrameID;
-
-  const tempStack = state.tempStack;
-  let stackLength = 1;
-  tempStack[0] = source;
-
-  let parentData: RenderProxy2D | undefined = undefined;
-  let lastParent: DisplayObject | null = null;
-
-  while (stackLength > 0) {
-    const current = tempStack[--stackLength] as DisplayObject;
-    if (!current.enabled) continue;
-
-    if (current !== source) {
-      const parent = getNodeParent(current);
-      if (parent === null) {
-        parentData = undefined;
-        lastParent = null;
-      } else if (parent !== lastParent) {
-        parentData = getOrCreateRenderProxy2D(state, parent as DisplayObject);
-        lastParent = parent as DisplayObject;
-      }
-    }
-
-    const data = getOrCreateRenderProxy2D(state, current);
-    const parentMaskDepth = parentData !== undefined ? parentData.maskDepth : 0;
-
-    const mask = getDisplayObjectMask(current);
-    if (mask !== null) {
-      const maskParent = getNodeParent(mask);
-      const maskParentData =
-        maskParent !== null ? getOrCreateRenderProxy2D(state, maskParent as DisplayObject) : undefined;
-      const maskData = getOrCreateRenderProxy2D(state, mask);
-      if (isRenderProxyDirty(state, mask, maskData, maskParentData)) {
-        updateRenderProxyAppearance(state, maskData, maskParentData);
-        updateRenderProxy2DTransform(state, maskData, maskParentData);
-        updateRenderProxyMaterial(state, maskData, maskParentData);
-        maskData.lastLocalContentID = getNodeLocalContentRevision(mask);
-        _adaptHook?.(state, mask, maskData);
-      }
-      maskData.isMaskFrameID = frameID;
-      maskData.maskDepth = parentMaskDepth;
-      data.maskDepth = parentMaskDepth + 1;
-    } else {
-      data.maskDepth = parentMaskDepth;
-    }
-
-    if (data.isMaskFrameID === frameID) continue;
-
-    if (!isRenderProxyVisible(data)) continue;
-
-    if (data.traverseChildren) {
-      const children = getNodeRuntime(current).children;
-      if (children !== null) {
-        for (let i = children.length - 1; i >= 0; i--) {
-          tempStack[stackLength++] = children[i] as DisplayObject;
-        }
-      }
-    }
-  }
-}
-
-export function prepareSpriteRender(state: RenderState, source: Renderable): boolean {
+// The pre-render update pass for the 2D graph. Sprites align onto DisplayObject — they share one
+// identical trait base — so there is a single prepare named for the trait-complete entity it readies
+// (Node + DisplayObject traits); the former per-graph prepares collapsed into this. Masks were retired
+// into clips, so there is no second tree pass; clips are realized by the backend clip hooks during the
+// draw walk, keyed off each node's `clip`.
+export function prepareDisplayObjectRender(state: RenderState, source: Renderable): boolean {
   return walkNode(state, source, updateRenderProxy2D);
 }
 
-// Sets a node's clip-rectangle nesting depth from its parent. Stateless (derived from the parent's
-// depth), so it composes as a trait update step. Both display objects and sprites carry the
-// HasClipRectangle trait; a null clipRectangle contributes no depth, so the same step is safe in
-// every walk. Render caches (the other Renderable) leave the field undefined, which is also null-ish.
-export function updateNodeClipRectangle(
+// Sets a node's clip nesting depth from its parent. Stateless (derived from the parent's depth), so it
+// composes as a trait update step. Both display objects and sprites carry the HasClip trait; a null
+// clip contributes no depth (rect and path clips both count), so the same step is safe in every walk.
+// Render caches (the other Renderable) leave the field undefined, which is also null-ish.
+export function updateNodeClip(
   _state: RenderState,
   source: Renderable,
   data: RenderProxy2D,
   parentData: RenderProxy2D | undefined,
 ): void {
-  const parentDepth = parentData !== undefined ? parentData.clipRectangleDepth : 0;
-  data.clipRectangleDepth = parentDepth + ((source as DisplayObject).clipRectangle != null ? 1 : 0);
+  const parentDepth = parentData !== undefined ? parentData.clipDepth : 0;
+  data.clipDepth = parentDepth + ((source as DisplayObject).clip != null ? 1 : 0);
 }
 
-// The one per-node update step for the 2D walk: appearance, transform, material, then the
-// clip-rectangle trait (a no-op for nodes that lack it). Masks are not handled here — they are the
-// separate prepareMasks pass. Sprites and display objects share this single visitor.
+// The one per-node update step for the 2D walk: appearance, transform, material, then the clip nesting
+// depth. Sprites and display objects share this single visitor.
 export function updateRenderProxy2D(
   state: RenderState,
   source: Renderable,
@@ -271,7 +173,7 @@ export function updateRenderProxy2D(
   updateRenderProxyAppearance(state, data, parentData);
   updateRenderProxy2DTransform(state, data, parentData);
   updateRenderProxyMaterial(state, data, parentData);
-  updateNodeClipRectangle(state, source, data, parentData);
+  updateNodeClip(state, source, data, parentData);
   // Record the content revision we synced at, so a later content-only change re-dirties the node.
   data.lastLocalContentID = getNodeLocalContentRevision(source as Node);
   _adaptHook?.(state, source, data);
@@ -291,8 +193,8 @@ export function updateRenderProxyRenderer(state: RenderState, node: RenderProxy)
 
 // One generic, dirty-checked pre-order walk over the 2D node graph. `visit` composes the trait
 // update* steps. Sprites and display objects share this single traversal and a single render-node
-// type — what differs is the traits they carry, not the path. Clip and mask are not handled here:
-// clip is a trait update step in the visitor, masks are the separate prepareMasks pass.
+// type — what differs is the traits they carry, not the path. Clip is not handled here: it is a
+// trait update step in the visitor (updateNodeClip), realized at draw time by the backend clip hooks.
 export function walkNode(state: RenderState, root: Renderable, visit: RenderProxyVisitor): boolean {
   ++(state as RenderProxyStateInternal).currentFrameID;
 
@@ -339,16 +241,6 @@ export function walkNode(state: RenderState, root: Renderable, visit: RenderProx
   }
 
   return treeDirty;
-}
-
-// Per-node teardown step for disposeDisplayObjectRender: disposes the node's render proxy and the
-// render proxy of its mask. Only MaskGroup nodes carry a mask (getDisplayObjectMask returns null for
-// every other kind), and a mask is not a child in the walk, so it must be disposed here rather than
-// visited by walkRenderSubtree.
-function disposeDisplayObjectNodeRender(state: RenderState, node: Renderable): void {
-  const mask = getDisplayObjectMask(node as DisplayObject);
-  if (mask !== null) disposeRenderProxy(state, mask);
-  disposeRenderProxy(state, node);
 }
 
 // Pre-order walk over `root` and its full graph subtree, calling `visit` once per node. Unlike
