@@ -1,3 +1,8 @@
+import {
+  createDisplayObjectGeneric,
+  createDisplayObjectRuntime,
+  getDisplayObjectRuntime,
+} from '@flighthq/displayobject';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
 import { invalidateNodeLocalBounds } from '@flighthq/node';
 import type {
@@ -13,10 +18,8 @@ import type {
 } from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
 
-import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
-
 function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
-  const runtime = getSpriteNodeRuntime(source as QuadBatch) as QuadBatchRuntime;
+  const runtime = getDisplayObjectRuntime(source as QuadBatch) as QuadBatchRuntime;
   if (runtime.localBoundsRectangle !== null) copyRectangle(out, runtime.localBoundsRectangle);
 }
 
@@ -97,7 +100,7 @@ export function computeQuadBatchLocalBoundsRectangle(out: Rectangle, source: Rea
 }
 
 export function createQuadBatch(obj?: Readonly<PartialNode<QuadBatch>>): QuadBatch {
-  return createSpriteNode(QuadBatchKind, obj, createQuadBatchData, createQuadBatchRuntime) as QuadBatch;
+  return createDisplayObjectGeneric(QuadBatchKind, obj, createQuadBatchData, createQuadBatchRuntime) as QuadBatch;
 }
 
 export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): QuadBatchData {
@@ -112,7 +115,7 @@ export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): Qu
 }
 
 export function createQuadBatchRuntime(): QuadBatchRuntime {
-  const runtime = createSpriteNodeRuntime(defaultMethods) as QuadBatchRuntime;
+  const runtime = createDisplayObjectRuntime(defaultMethods) as QuadBatchRuntime;
   runtime.localBoundsRectangle = null;
   return runtime;
 }
@@ -125,7 +128,7 @@ export function getQuadBatchCapacity(source: Readonly<QuadBatch>): number {
 }
 
 export function getQuadBatchRuntime(source: Readonly<QuadBatch>): Readonly<QuadBatchRuntime> {
-  return getSpriteNodeRuntime(source) as QuadBatchRuntime;
+  return getDisplayObjectRuntime(source) as QuadBatchRuntime;
 }
 
 export function getQuadTransformStride(transformType: QuadTransformType): number {
@@ -204,7 +207,7 @@ export function resizeQuadBatch(target: QuadBatch, instanceCount: number): void 
 }
 
 export function setQuadBatchLocalBoundsRectangle(target: QuadBatch, rect: Readonly<Rectangle>): void {
-  const runtime = getSpriteNodeRuntime(target) as unknown as QuadBatchRuntime;
+  const runtime = getDisplayObjectRuntime(target) as unknown as QuadBatchRuntime;
   if (runtime.localBoundsRectangle === null) runtime.localBoundsRectangle = createRectangle();
   copyRectangle(runtime.localBoundsRectangle, rect);
   invalidateNodeLocalBounds(target);
