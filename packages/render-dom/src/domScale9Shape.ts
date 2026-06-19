@@ -68,10 +68,6 @@ export function drawDOMScale9Shape(state: DOMRenderState, renderProxy: RenderPro
   setDOMRendererElement(state, data.canvas);
 }
 
-export function drawDOMScale9ShapeMask(state: DOMRenderState, renderProxy: RenderProxy2D): void {
-  drawDOMScale9Shape(state, renderProxy);
-}
-
 export const defaultDOMScale9ShapeRenderer: DisplayObjectRenderer = {
   createData: createDOMScale9ShapeData,
   submit: drawDOMScale9Shape,

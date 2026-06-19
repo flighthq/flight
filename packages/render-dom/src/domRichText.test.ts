@@ -4,7 +4,7 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { RichTextKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
-import { defaultDOMRichTextRenderer, drawDOMRichText, drawDOMRichTextMask } from './domRichText';
+import { defaultDOMRichTextRenderer, drawDOMRichText } from './domRichText';
 import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
@@ -129,14 +129,5 @@ describe('drawDOMRichText', () => {
 
     const div = drawGetEl(state, () => drawDOMRichText(state, renderProxy))!;
     expect(div.style.backgroundColor).toBe('');
-  });
-});
-
-describe('drawDOMRichTextMask', () => {
-  it('does not throw', () => {
-    const state = makeState();
-    const node = createRichText();
-    const renderProxy = getOrCreateRenderProxy2D(state, node);
-    expect(() => drawDOMRichTextMask(state, renderProxy)).not.toThrow();
   });
 });

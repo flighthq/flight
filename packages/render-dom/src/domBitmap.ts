@@ -113,10 +113,6 @@ function renderBitmapAsCanvas(
   setDOMRendererElement(state, data.canvas);
 }
 
-export function drawDOMBitmapMask(state: DOMRenderState, renderProxy: RenderProxy2D): void {
-  drawDOMBitmap(state, renderProxy);
-}
-
 export const defaultDOMBitmapRenderer: DisplayObjectRenderer = {
   createData: createDOMBitmapData,
   submit: drawDOMBitmap,

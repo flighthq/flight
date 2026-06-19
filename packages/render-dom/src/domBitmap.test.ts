@@ -4,7 +4,7 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { createImageResource, createImageResourceFromCanvas } from '@flighthq/resources';
 import { BitmapKind } from '@flighthq/types';
 
-import { defaultDOMBitmapRenderer, drawDOMBitmap, drawDOMBitmapMask } from './domBitmap';
+import { defaultDOMBitmapRenderer, drawDOMBitmap } from './domBitmap';
 import { createDOMRenderState } from './domRenderState';
 import type { DOMRenderStateInternal } from './internal';
 
@@ -101,14 +101,5 @@ describe('drawDOMBitmap', () => {
     const canvas = drawGetEl(state, () => drawDOMBitmap(state, renderProxy)) as HTMLCanvasElement;
     expect(canvas.width).toBe(64);
     expect(canvas.height).toBe(64);
-  });
-});
-
-describe('drawDOMBitmapMask', () => {
-  it('does not throw', () => {
-    const state = makeState();
-    const bitmap = createBitmap();
-    const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
-    expect(() => drawDOMBitmapMask(state, renderProxy)).not.toThrow();
   });
 });

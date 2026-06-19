@@ -1,4 +1,3 @@
-import { enableDisplayObjectMaskPass, getDisplayObjectMask, getRenderProxy2D } from '@flighthq/render';
 import type {
   DisplayObject,
   DisplayObjectClipHooks,
@@ -7,55 +6,39 @@ import type {
   RenderState,
 } from '@flighthq/types';
 
+import { pushDOMClipContours } from './domClipContours';
 import { pushDOMClipRectangle, setDOMClipHooks } from './domClipRectangle';
-import { pushDOMMaskRectangle } from './domMask';
 import type { DOMRenderStateInternal } from './internal';
 
-export function enableDOMClipRectangleSupport(state: DOMRenderState): void {
+// Masks RETIRED — a former mask is a path ClipRegion realized as a CSS clip-path. The DOM clip stack now
+// holds rect entries (DOMStageRectangle) and contour entries (DOMClipContourEntry); applyDOMClipRectangles
+// must emit a clip-path for either (RECONCILE — see domClipContours.ts). Unwind by truncating the stack.
+export function enableDOMClipSupport(state: DOMRenderState): void {
   state.displayObjectClipHooks = domDisplayObjectClipHooks;
-  setDOMClipHooks(state as DOMRenderStateInternal);
-}
-
-export function enableDOMMaskSupport(state: DOMRenderState): void {
-  state.displayObjectClipHooks = domDisplayObjectClipHooks;
-  enableDisplayObjectMaskPass(state);
   setDOMClipHooks(state as DOMRenderStateInternal);
 }
 
 const domDisplayObjectClipHooks: DisplayObjectClipHooks = {
   finalize(state: RenderState): void {
     const internal = state as DOMRenderStateInternal;
-    const total = state.currentMaskDepth + state.currentClipRectangleDepth;
-    internal.domClipStack.length -= total;
-    state.currentMaskDepth = 0;
-    state.currentClipRectangleDepth = 0;
+    internal.domClipStack.length = 0;
+    state.currentClipDepth = 0;
   },
-  popMask(state: RenderState, data: RenderProxy2D): void {
+  popClip(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
     const internal = state as DOMRenderStateInternal;
-    while (state.currentMaskDepth > data.maskDepth) {
-      internal.domClipStack.length--;
-      state.currentMaskDepth--;
-    }
+    const target = data.clipDepth - (source.clip != null ? 1 : 0);
+    if (internal.domClipStack.length > target) internal.domClipStack.length = target;
+    state.currentClipDepth = internal.domClipStack.length;
   },
-  popClipRectangle(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
+  pushClip(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
     const internal = state as DOMRenderStateInternal;
-    const clipTarget = data.clipRectangleDepth - (source.clipRectangle != null ? 1 : 0);
-    while (state.currentClipRectangleDepth > clipTarget) {
-      internal.domClipStack.length--;
-      state.currentClipRectangleDepth--;
+    const clip = source.clip;
+    if (clip === null) return;
+    if (clip.contours === null) {
+      pushDOMClipRectangle(internal.domClipStack, clip.rect, data.transform2D);
+    } else {
+      pushDOMClipContours(internal.domClipStack, clip.contours, clip.winding, data.transform2D);
     }
-  },
-  pushMask(state: RenderState, source: DisplayObject): void {
-    const mask = getDisplayObjectMask(source);
-    if (mask === null) return;
-    const maskData = getRenderProxy2D(state, mask);
-    if (maskData === undefined) return;
-    pushDOMMaskRectangle((state as DOMRenderStateInternal).domClipStack, maskData);
-    state.currentMaskDepth++;
-  },
-  pushClipRectangle(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
-    if (source.clipRectangle === null) return;
-    pushDOMClipRectangle((state as DOMRenderStateInternal).domClipStack, source.clipRectangle, data.transform2D);
-    state.currentClipRectangleDepth++;
+    state.currentClipDepth++;
   },
 };

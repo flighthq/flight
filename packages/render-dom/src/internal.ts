@@ -1,8 +1,15 @@
 ﻿import type { DOMRenderState, DOMStageRectangle, RenderProxy2D } from '@flighthq/types';
 
+import type { DOMClipContourEntry } from './domClipContours';
+
 export interface DOMClipHooks {
   apply(state: DOMRenderState, data: RenderProxy2D): void;
 }
+
+// A clip stack entry is either a stage-space rectangle (scissor/scroll-rect clip) or a contour entry
+// (path clip). applyDOMClipRectangles emits a clip-path for whichever is present (RECONCILE: tag rects
+// or treat a bare DOMStageRectangle as the rect case).
+export type DOMClipEntry = DOMStageRectangle | DOMClipContourEntry;
 
 export type DOMRenderStateInternal = Omit<DOMRenderState, 'element'> & {
   element: HTMLElement;
@@ -16,8 +23,8 @@ export type DOMRenderStateInternal = Omit<DOMRenderState, 'element'> & {
   domOrderList: RenderProxy2D[];
   domOrderLength: number;
   domNextOrderList: RenderProxy2D[];
-  // Clip hooks: set when enableDOMClipRectangleSupport or enableDOMMaskSupport is called.
+  // Clip hooks: set when enableDOMClipSupport is called.
   domClipHooks: DOMClipHooks | null;
-  // Clip rectangle stack shared between scroll rect and mask clip effects.
-  domClipStack: DOMStageRectangle[];
+  // Clip stack shared across all clip effects (rect + path entries).
+  domClipStack: DOMClipEntry[];
 };

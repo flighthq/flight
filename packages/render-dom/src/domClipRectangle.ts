@@ -1,16 +1,37 @@
 import type { DOMStageRectangle, MatrixLike, RectangleLike, RenderProxy2D } from '@flighthq/types';
 
-import type { DOMClipHooks, DOMRenderStateInternal } from './internal';
+import type { DOMClipContourEntry } from './domClipContours';
+import { buildDOMContourClipPath } from './domClipContours';
+import type { DOMClipEntry, DOMClipHooks, DOMRenderStateInternal } from './internal';
 
 export function applyDOMClipRectangles(
   state: DOMRenderStateInternal,
   data: RenderProxy2D,
-  rectangles: readonly DOMStageRectangle[],
+  entries: readonly DOMClipEntry[],
 ): void {
   const element = state.domElementMap.get(data);
   if (element === undefined) return;
 
-  const rect = intersectDOMStageRectangles(rectangles);
+  // CSS cannot intersect a path clip with other clips in one property. When a contour clip is active,
+  // apply the deepest contour as the element's clip-path and ignore stacked rects for this element
+  // (documented v1 limitation). Discriminate by the contour entry's `kind` tag; rects have none.
+  let contour: DOMClipContourEntry | null = null;
+  for (let i = entries.length - 1; i >= 0; i--) {
+    const entry = entries[i];
+    if ('kind' in entry) {
+      contour = entry;
+      break;
+    }
+  }
+  if (contour !== null) {
+    const mapPoint = createStageToElementPointMapper(element);
+    const clipPath = buildDOMContourClipPath(contour, mapPoint);
+    element.style.clipPath = clipPath;
+    (element.style as CSSStyleDeclaration & { webkitClipPath: string }).webkitClipPath = clipPath;
+    return;
+  }
+
+  const rect = intersectDOMStageRectangles(entries as readonly DOMStageRectangle[]);
   if (rect === null) {
     element.style.clipPath = '';
     (element.style as CSSStyleDeclaration & { webkitClipPath: string }).webkitClipPath = '';
@@ -51,15 +72,33 @@ export function createDOMStageRectangle(
 }
 
 export function pushDOMClipRectangle(
-  rectangles: DOMStageRectangle[],
+  stack: DOMClipEntry[],
   rect: Readonly<RectangleLike>,
   transform: Readonly<MatrixLike>,
 ): void {
-  rectangles.push(createDOMStageRectangle(rect, transform));
+  stack.push(createDOMStageRectangle(rect, transform));
 }
 
 export function setDOMClipHooks(state: DOMRenderStateInternal): void {
   if (state.domClipHooks === null) state.domClipHooks = domClipHooksImpl;
+}
+
+// Returns a closure mapping a stage-space point into `element`'s local space (the inverse of the
+// element's CSS matrix), for placing contour clip-path points. Mirrors mapStageRectangleToElement's
+// inverse but per-point, which contour clips need.
+function createStageToElementPointMapper(element: HTMLElement): (x: number, y: number) => readonly [number, number] {
+  const matrix = getElementMatrix(element);
+  const det = matrix.a * matrix.d - matrix.b * matrix.c;
+  if (det === 0) return () => [0, 0] as const;
+
+  const invA = matrix.d / det;
+  const invB = -matrix.b / det;
+  const invC = -matrix.c / det;
+  const invD = matrix.a / det;
+  const invTx = (matrix.c * matrix.ty - matrix.d * matrix.tx) / det;
+  const invTy = (matrix.b * matrix.tx - matrix.a * matrix.ty) / det;
+
+  return (x, y) => [invA * x + invC * y + invTx, invB * x + invD * y + invTy] as const;
 }
 
 function getElementMatrix(element: HTMLElement): MatrixLike {

@@ -7,7 +7,6 @@ export * from './domCSSFilterBinding';
 export * from './domDisplayObject';
 export { invalidateDOMFontResource } from './domFontSource';
 export * from './domInputText';
-export * from './domMask';
 export * from './domMaterials';
 export * from './domRenderState';
 export * from './domRenderView';
