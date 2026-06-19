@@ -1,7 +1,8 @@
-import type { Timeline } from '@flighthq/types';
+import type { DisplayObject, Timeline } from '@flighthq/types';
 
 import {
   createTimeline,
+  createTimelineSource,
   findTimelineLabel,
   gotoAndPlayTimeline,
   gotoAndStopTimeline,
@@ -12,8 +13,29 @@ import {
   updateTimeline,
 } from './timeline';
 
-function make(overrides?: Partial<Timeline>): Timeline {
-  return createTimeline({ totalFrames: 4, frameRate: 10, ...overrides });
+interface MakeOptions {
+  totalFrames?: number;
+  frameRate?: number | null;
+  labels?: { name: string; frame: number }[];
+  constructFrame?: (frame: number) => void;
+  currentFrame?: number;
+  isPlaying?: boolean;
+}
+
+// Builds a timeline backed by a source (totalFrames/frameRate/labels/constructFrame) with a mock target
+// so constructFrame fires. Test callbacks take just the frame; the source adapts to (target, frame).
+function make(o: MakeOptions = {}): Timeline {
+  return createTimeline({
+    source: createTimelineSource({
+      totalFrames: o.totalFrames ?? 4,
+      frameRate: o.frameRate === undefined ? 10 : o.frameRate,
+      labels: o.labels,
+      constructFrame: o.constructFrame ? (_target, frame) => o.constructFrame!(frame) : undefined,
+    }),
+    target: {} as DisplayObject,
+    currentFrame: o.currentFrame,
+    isPlaying: o.isPlaying,
+  });
 }
 
 describe('createTimeline', () => {
@@ -27,7 +49,31 @@ describe('createTimeline', () => {
   it('applies overrides', () => {
     const t = make({ currentFrame: 3, frameRate: 24 });
     expect(t.currentFrame).toBe(3);
-    expect(t.frameRate).toBe(24);
+    expect(t.source?.frameRate).toBe(24);
+  });
+});
+
+describe('createTimelineSource', () => {
+  it('builds a source with defaults', () => {
+    const s = createTimelineSource({});
+    expect(s.totalFrames).toBe(1);
+    expect(s.frameRate).toBeNull();
+    expect(s.labels).toEqual([]);
+  });
+
+  it('carries provided fields and invokes constructFrame with (target, frame)', () => {
+    const seen: number[] = [];
+    const s = createTimelineSource({
+      totalFrames: 3,
+      frameRate: 12,
+      labels: [{ name: 'a', frame: 2 }],
+      constructFrame: (_target, frame) => seen.push(frame),
+    });
+    expect(s.totalFrames).toBe(3);
+    expect(s.frameRate).toBe(12);
+    expect(s.labels).toEqual([{ name: 'a', frame: 2 }]);
+    s.constructFrame({} as unknown as DisplayObject, 2);
+    expect(seen).toEqual([2]);
   });
 });
 
@@ -119,7 +165,7 @@ describe('playTimeline', () => {
   });
 
   it('does nothing when totalFrames < 2', () => {
-    const t = createTimeline({ totalFrames: 1 });
+    const t = createTimeline({ source: createTimelineSource({ totalFrames: 1 }) });
     playTimeline(t);
     expect(t.isPlaying).toBe(false);
   });
