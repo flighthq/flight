@@ -1,10 +1,10 @@
+import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime } from './DisplayObject';
 import type { MaterialData } from './Material';
 import type { QuadTransformType } from './QuadTransformType';
 import type { Rectangle } from './Rectangle';
-import type { SpriteNode, SpriteNodeData, SpriteNodeRuntime } from './SpriteNode';
 import type { TextureAtlas } from './TextureAtlas';
 
-export interface QuadBatchData extends SpriteNodeData {
+export interface QuadBatchData extends DisplayObjectData {
   atlas: TextureAtlas | null;
   ids: Uint16Array;
   instanceCount: number;
@@ -16,11 +16,11 @@ export interface QuadBatchData extends SpriteNodeData {
   transformType: QuadTransformType;
 }
 
-export interface QuadBatchRuntime extends SpriteNodeRuntime {
+export interface QuadBatchRuntime extends DisplayObjectRuntime {
   localBoundsRectangle: Rectangle | null;
 }
 
-export interface QuadBatch extends SpriteNode {
+export interface QuadBatch extends DisplayObject {
   data: QuadBatchData;
 }
 
