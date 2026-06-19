@@ -1,4 +1,4 @@
-﻿import { getTextRuntime } from '@flighthq/displayobject';
+﻿import { getTextLabelRuntime } from '@flighthq/displayobject';
 import { createEntity } from '@flighthq/entity';
 import { computeRGBHexString } from '@flighthq/materials';
 import { computeTextFormatFontString } from '@flighthq/render';
@@ -10,9 +10,9 @@ import type {
   RendererData,
   RenderProxy2D,
   RenderState,
-  Text,
   TextFormat,
-  TextRuntime,
+  TextLabel,
+  TextLabelRuntime,
 } from '@flighthq/types';
 
 import { applyDOMStyle, prepareDOMElement, setDOMRendererElement } from './domStyle';
@@ -35,11 +35,11 @@ function getMeasureCtx(): CanvasRenderingContext2D | null {
   return _measureCtx;
 }
 
-export function drawDOMText(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+export function drawDOMTextLabel(state: DOMRenderState, renderProxy: RenderProxy2D): void {
   const data = renderProxy.rendererData as DOMTextData | null;
   if (data === null) return;
 
-  const source = renderProxy.source as Text;
+  const source = renderProxy.source as TextLabel;
   const { text, textFormat } = source.data;
   if (text.length === 0) return;
 
@@ -57,7 +57,7 @@ export function drawDOMText(state: DOMRenderState, renderProxy: RenderProxy2D): 
     return ctx.measureText(t).width;
   };
 
-  const result = getTextLayoutResult(getTextRuntime(source) as TextRuntime);
+  const result = getTextLayoutResult(getTextLabelRuntime(source) as TextLabelRuntime);
   computeTextLayout(result, {
     text,
     formatRanges: [createTextFormatRange(textFormat, 0, text.length)],
@@ -94,7 +94,7 @@ export function drawDOMText(state: DOMRenderState, renderProxy: RenderProxy2D): 
   setDOMRendererElement(state, data.div);
 }
 
-export const defaultDOMTextRenderer: DisplayObjectRenderer = {
+export const defaultDOMTextLabelRenderer: DisplayObjectRenderer = {
   createData: createDOMTextData,
-  submit: drawDOMText,
+  submit: drawDOMTextLabel,
 };
