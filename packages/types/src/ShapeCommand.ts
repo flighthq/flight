@@ -5,7 +5,7 @@ export type CapsStyle = 'none' | 'round' | 'square';
 
 export type GradientType = 'linear' | 'radial';
 
-export type GraphicsPathWinding = 'evenOdd' | 'nonZero';
+export type PathWinding = 'evenOdd' | 'nonZero';
 
 export type InterpolationMethod = 'linearRGB' | 'rgb';
 
@@ -40,7 +40,7 @@ export interface ShapeCommandRegistry {
   curveTo: readonly [controlX: number, controlY: number, anchorX: number, anchorY: number];
   drawCircle: readonly [x: number, y: number, radius: number];
   drawEllipse: readonly [x: number, y: number, width: number, height: number];
-  drawPath: readonly [commands: number[], data: number[], winding: GraphicsPathWinding];
+  drawPath: readonly [commands: number[], data: number[], winding: PathWinding];
   drawRectangle: readonly [x: number, y: number, width: number, height: number];
   drawRoundRectangle: readonly [
     x: number,
