@@ -73,6 +73,8 @@
       "@flighthq/clip/*": ["./packages/clip/src/*"],
       "@flighthq/filters": ["./packages/filters/src/index.ts"],
       "@flighthq/filters/*": ["./packages/filters/src/*"],
+      "@flighthq/filters-canvas": ["./packages/filters-canvas/src/index.ts"],
+      "@flighthq/filters-canvas/*": ["./packages/filters-canvas/src/*"],
       "@flighthq/filters-webgl": ["./packages/filters-webgl/src/index.ts"],
       "@flighthq/filters-webgl/*": ["./packages/filters-webgl/src/*"],
       "@flighthq/filters-webgpu": ["./packages/filters-webgpu/src/index.ts"],
