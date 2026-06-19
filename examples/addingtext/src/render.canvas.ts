@@ -2,12 +2,12 @@
 import {
   createCanvasElement,
   createCanvasRenderState,
-  defaultCanvasTextRenderer,
+  defaultCanvasTextLabelRenderer,
   prepareDisplayObjectRender,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
-  TextKind,
+  TextLabelKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -18,7 +18,7 @@ export const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerRenderer(state, TextKind, defaultCanvasTextRenderer);
+registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {

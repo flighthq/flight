@@ -12,7 +12,7 @@ import {
   defaultWebGLBitmapRenderer,
   defaultWebGLShapeCommands,
   defaultWebGLShapeRenderer,
-  defaultWebGLTextRenderer,
+  defaultWebGLTextLabelRenderer,
   destroyWebGLRenderTarget,
   enableWebGLRenderCache,
   endWebGLRenderTarget,
@@ -27,7 +27,7 @@ import {
   renderWebGLBackground,
   renderWebGLDisplayObject,
   ShapeKind,
-  TextKind,
+  TextLabelKind,
   useRenderCache,
 } from '@flighthq/sdk';
 
@@ -46,7 +46,7 @@ export const state = createWebGLRenderState(canvas, {
 });
 registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
-registerRenderer(state, TextKind, defaultWebGLTextRenderer);
+registerRenderer(state, TextLabelKind, defaultWebGLTextLabelRenderer);
 registerWebGLShapeCommands(defaultWebGLShapeCommands);
 registerDefaultWebGLMaterial(state);
 enableWebGLRenderCache(state);

@@ -30,7 +30,7 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-// ---- Text format (matches original: serif, 120px, centered, 20px leading) ----
+// ---- TextLabel format (matches original: serif, 120px, centered, 20px leading) ----
 
 const format: TextFormat = {
   align: 'center',

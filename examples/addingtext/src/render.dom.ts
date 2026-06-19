@@ -1,12 +1,12 @@
 ﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   createDOMRenderState,
-  defaultDOMTextRenderer,
+  defaultDOMTextLabelRenderer,
   prepareDisplayObjectRender,
   registerRenderer,
   renderDOMBackground,
   renderDOMDisplayObject,
-  TextKind,
+  TextLabelKind,
 } from '@flighthq/sdk';
 
 const container = document.createElement('div');
@@ -19,7 +19,7 @@ export const state = createDOMRenderState(container, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerRenderer(state, TextKind, defaultDOMTextRenderer);
+registerRenderer(state, TextLabelKind, defaultDOMTextLabelRenderer);
 export const scale = 1;
 
 export function render(root: DisplayObject): void {
