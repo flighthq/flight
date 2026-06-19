@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-native-text",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}
