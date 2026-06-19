@@ -10,6 +10,8 @@
   },
   "references": [
     { "path": "../application" },
+    { "path": "../clip" },
+    { "path": "../path" },
     { "path": "../resources" },
     { "path": "../resources-loader" },
     { "path": "../surface" },
@@ -30,6 +32,7 @@
     { "path": "../render-webgpu" },
     { "path": "../node" },
     { "path": "../displayobject" },
+    { "path": "../shape" },
     { "path": "../particles" },
     { "path": "../particles-formats" },
     { "path": "../sprite" },
@@ -41,7 +44,6 @@
     { "path": "../text-input" },
     { "path": "../text-layout" },
     { "path": "../timeline" },
-    { "path": "../timeline-spritesheet" },
     { "path": "../tween" },
     { "path": "../tween-easing" },
     { "path": "../types" }
