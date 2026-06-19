@@ -13,7 +13,14 @@ import { join, resolve } from 'path';
 // ---------------------------------------------------------------------------
 
 export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
-export type Tool = 'explorer' | 'functional';
+export type Tool = 'explorer' | 'functional' | 'landing';
+
+// The root npm script that starts each tool's dev server, used in the manual-start tip.
+const DEV_SCRIPT: Record<Tool, string> = {
+  explorer: 'explorer',
+  functional: 'functional',
+  landing: 'landing',
+};
 
 export interface Entry {
   name: string;
@@ -25,10 +32,10 @@ export interface CaptureStatus {
   capturedAt: number;
   error: string | null;
   hash: string | null;
+  /** The committed baseline sha256, or null when no baseline exists yet. */
   baselineHash: string | null;
-  /** null = no baseline exists yet; false = matches baseline; true = visual change detected */
+  /** null = no baseline exists yet; false = hash matches baseline; true = hash differs from baseline */
   changed: boolean | null;
-  diffPercent: number | null;
 }
 
 export interface Server {
@@ -48,6 +55,13 @@ export interface CaptureEntryOptions {
   /** When true, writes the current screenshot as the new baseline instead of comparing. */
   updateBaseline?: boolean;
   extraWait?: number;
+  /**
+   * When set (≥1), run the page's animation loop exactly this many frames, halt it on that frame,
+   * and screenshot it — a deterministic "capture the Nth frame" mode. Omit for the default behavior
+   * (render two frames and shoot, letting self-freezing pages like the landing hold their frame).
+   * Must match the value passed to launchBrowser, which installs the frame-halt in the page.
+   */
+  captureFrames?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -55,6 +69,10 @@ export interface CaptureEntryOptions {
 // ---------------------------------------------------------------------------
 
 export function discoverEntries(tool: Tool, root: string): Entry[] {
+  // The landing page is a single document rendered with Flight (one WebGL canvas), with no
+  // per-name or per-renderer routing, so it presents as one fixed entry.
+  if (tool === 'landing') return [{ name: 'landing', renderers: ['webgl'] }];
+
   const dir = tool === 'explorer' ? join(root, 'examples') : join(root, 'tests', 'functional');
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { withFileTypes: true })
@@ -87,7 +105,7 @@ export function resolveServer(opts: { tool: Tool; root: string; externalUrl?: st
     return Promise.resolve({ url, kill: () => {} });
   }
 
-  const toolDir = join(root, 'tools', tool === 'explorer' ? 'explorer' : 'functional');
+  const toolDir = join(root, 'tools', tool);
   const viteJs = join(root, 'node_modules', 'vite', 'bin', 'vite.js');
   const configPath = join(toolDir, 'vite.config.ts');
 
@@ -121,7 +139,7 @@ export function resolveServer(opts: { tool: Tool; root: string; externalUrl?: st
         reject(
           new Error(
             `Server did not start within 60s.\nCaptured output:\n${output}\n\n` +
-              `Tip: start the server manually with "npm run ${tool === 'explorer' ? 'explorer' : 'test:functional'}" ` +
+              `Tip: start the server manually with "npm run ${DEV_SCRIPT[tool]}" ` +
               `and pass --url=http://localhost:5173`,
           ),
         );
@@ -149,9 +167,56 @@ export function resolveServer(opts: { tool: Tool; root: string; externalUrl?: st
 // Browser
 // ---------------------------------------------------------------------------
 
-export async function launchBrowser() {
+export async function launchBrowser(options: { captureFrames?: number } = {}) {
   const browser = await chromium.launch();
   const context = await browser.newContext({ viewport: { width: 800, height: 600 } });
+
+  // Always signal capture mode before any page script runs. A page whose render advances over time
+  // holds a fixed, self-seeded frame in this mode (the landing backgrounds do), so its screenshot —
+  // and thus its baseline hash — is byte-identical run to run. Pages that ignore the flag animate.
+  //
+  // Optionally also install a frame-halt (the --frames=N mode): count the page's animation frames,
+  // and on the Nth one stop invoking its callback so the scene halts on a fixed frame, then flag it
+  // for the screenshot. This captures "frame N" deterministically for pages that animate but do not
+  // self-freeze. N=1 is the robust common case (frame 1 always completes before the screenshot, with
+  // no settle-timing race). It does not seed Math.random or pin the clock: only frames whose Nth
+  // frame is already deterministic produce a stable hash — the caller decides which to trust.
+  const captureFrames = options.captureFrames ?? 0;
+  await context.addInitScript((frames: number) => {
+    const flags = window as unknown as { __flightCapture?: boolean; __captureFramesReached?: boolean };
+    flags.__flightCapture = true;
+    if (frames < 1) return;
+    flags.__captureFramesReached = false;
+
+    // Force preserveDrawingBuffer so the halted WebGL frame survives in the buffer for the screenshot
+    // (the default clears it once composited, which would shoot blank once the loop stops).
+    const realGetContext = HTMLCanvasElement.prototype.getContext as (
+      this: HTMLCanvasElement,
+      type: string,
+      attrs?: Record<string, unknown>,
+    ) => RenderingContext | null;
+    HTMLCanvasElement.prototype.getContext = function (
+      this: HTMLCanvasElement,
+      type: string,
+      attrs?: Record<string, unknown>,
+    ) {
+      if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') {
+        return realGetContext.call(this, type, { ...attrs, preserveDrawingBuffer: true });
+      }
+      return realGetContext.call(this, type, attrs);
+    } as typeof HTMLCanvasElement.prototype.getContext;
+
+    let count = 0;
+    const realRequestAnimationFrame = window.requestAnimationFrame.bind(window);
+    window.requestAnimationFrame = (callback: FrameRequestCallback): number =>
+      realRequestAnimationFrame((time) => {
+        if (count >= frames) return; // halt: scene stops advancing on frame N
+        count++;
+        if (count >= frames) flags.__captureFramesReached = true;
+        callback(time);
+      });
+  }, captureFrames);
+
   return { browser, context };
 }
 
@@ -170,12 +235,18 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
     baselineBase,
     updateBaseline = false,
     extraWait = 0,
+    captureFrames = 0,
   } = opts;
   let anyFailed = false;
   let anyChanged = false;
 
   for (const renderer of renderers) {
-    const urlPath = tool === 'explorer' ? `examples/${entry.name}/${renderer}/` : `tests/${entry.name}/${renderer}/`;
+    const urlPath =
+      tool === 'explorer'
+        ? `examples/${entry.name}/${renderer}/`
+        : tool === 'functional'
+          ? `tests/${entry.name}/${renderer}/`
+          : ''; // landing: the single page is served at the server root
 
     const url = `${baseUrl}/${urlPath}`;
     const outDir = join(resolve(outBase), tool, entry.name, renderer);
@@ -235,9 +306,27 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
     try {
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15_000 });
       await page.waitForSelector('canvas', { timeout: 8_000 }).catch(() => {});
-      await page.evaluate(
-        () => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))),
-      );
+      if (captureFrames && captureFrames > 0) {
+        // --frames=N mode: wait until the page has rendered N frames and the halt has frozen it
+        // (see launchBrowser). waitForFunction polls until the page reaches N — no fixed short
+        // timeout that could shoot a varying earlier frame — so frame N is captured deterministically.
+        await page
+          .waitForFunction(
+            () => (window as unknown as { __captureFramesReached?: boolean }).__captureFramesReached === true,
+            null,
+            {
+              timeout: 15_000,
+            },
+          )
+          .catch(() => {});
+      } else {
+        // Default: two animation frames so the page's own rAF callback has run and drawn before the
+        // screenshot. A frozen page (the landing backgrounds in capture mode) renders the same frame
+        // each tick, so this is enough for a stable shot; the optional --wait covers slower loads.
+        await page.evaluate(
+          () => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))),
+        );
+      }
       if (extraWait > 0) await page.waitForTimeout(extraWait);
 
       const screenshotBuffer = await page.screenshot();
@@ -249,48 +338,30 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       renameSync(tmpScreenshot, finalScreenshot);
       renameSync(tmpLogs, finalLogs);
 
-      // Baseline update or comparison.
+      // Baseline update or comparison. The baseline is a committed sha256 hash, not a screenshot:
+      // capture mode renders a deterministic frame (see launchBrowser), so the hash alone detects
+      // change and keeps the tracked baseline a small text file instead of a binary PNG. The fresh
+      // screenshot is still written to the output dir above for human inspection on a mismatch.
       let baselineHash: string | null = null;
       let changed: boolean | null = null;
-      let diffPercent: number | null = null;
 
       if (baselineBase) {
         const blDir = join(resolve(baselineBase), tool, entry.name, renderer);
-        const blPath = join(blDir, 'screenshot.png');
+        const blPath = join(blDir, 'baseline.sha256');
 
         if (updateBaseline) {
           mkdirSync(blDir, { recursive: true });
-          writeFileSync(blPath, screenshotBuffer);
+          writeFileSync(blPath, `${hash}\n`);
           baselineHash = hash;
           changed = false;
         } else if (existsSync(blPath)) {
-          const blBuffer = readFileSync(blPath);
-          baselineHash = createHash('sha256').update(blBuffer).digest('hex');
-
-          if (hash === baselineHash) {
-            changed = false;
-          } else {
-            const { PNG } = await import('pngjs');
-            const { default: pixelmatch } = await import('pixelmatch');
-            const current = PNG.sync.read(screenshotBuffer);
-            const baseline = PNG.sync.read(blBuffer);
-            const { width, height } = current;
-
-            if (width === baseline.width && height === baseline.height) {
-              const diff = new PNG({ width, height });
-              const diffPixels = pixelmatch(current.data, baseline.data, diff.data, width, height, { threshold: 0.1 });
-              diffPercent = (diffPixels / (width * height)) * 100;
-              writeFileSync(join(outDir, 'diff.png'), PNG.sync.write(diff));
-            } else {
-              diffPercent = 100;
-            }
-            changed = true;
-          }
+          baselineHash = readFileSync(blPath, 'utf8').trim();
+          changed = hash !== baselineHash;
         }
       }
 
       if (changed === true) anyChanged = true;
-      const changeNote = changed === true ? `  ⚠  changed (${(diffPercent ?? 100).toFixed(2)}%)` : '';
+      const changeNote = changed === true ? '  ⚠  changed (hash differs from baseline)' : '';
       console.log(`  ✓  ${entry.name}/${renderer}${changeNote}`);
 
       const status: CaptureStatus = {
@@ -300,7 +371,6 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         hash,
         baselineHash,
         changed,
-        diffPercent,
       };
       writeFileSync(statusPath, JSON.stringify(status, null, 2));
     } catch (err) {
@@ -315,7 +385,6 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         hash: null,
         baselineHash: null,
         changed: null,
-        diffPercent: null,
       };
       writeFileSync(statusPath, JSON.stringify(status, null, 2));
 
