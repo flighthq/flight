@@ -1,5 +1,5 @@
 import { addNodeChild } from '@flighthq/node';
-import { getOrCreateRenderProxy2D, prepareSpriteRender, registerRenderer } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
 import { addTextureAtlasRegion, createImageResource, createTextureAtlas } from '@flighthq/resources';
 import { createSprite } from '@flighthq/sprite';
 import { SpriteKind } from '@flighthq/types';
@@ -31,7 +31,7 @@ describe('drawCanvasSprite', () => {
     const sprite = createSprite();
     sprite.data.atlas = atlas;
     sprite.data.id = 0;
-    prepareSpriteRender(state, sprite);
+    prepareDisplayObjectRender(state, sprite);
     const renderProxy = getOrCreateRenderProxy2D(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasSprite(state, renderProxy);
@@ -41,7 +41,7 @@ describe('drawCanvasSprite', () => {
   it('skips draw when atlas is null', () => {
     const state = makeState();
     const sprite = createSprite();
-    prepareSpriteRender(state, sprite);
+    prepareDisplayObjectRender(state, sprite);
     const renderProxy = getOrCreateRenderProxy2D(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasSprite(state, renderProxy);
@@ -53,7 +53,7 @@ describe('renderCanvasSprite', () => {
   it('does not throw for an empty sprite', () => {
     const state = makeState();
     const sprite = createSprite();
-    prepareSpriteRender(state, sprite);
+    prepareDisplayObjectRender(state, sprite);
     expect(() => renderCanvasSprite(state, sprite)).not.toThrow();
   });
 
@@ -63,7 +63,7 @@ describe('renderCanvasSprite', () => {
     const sprite = createSprite();
     sprite.data.atlas = atlas;
     sprite.data.id = 0;
-    prepareSpriteRender(state, sprite);
+    prepareDisplayObjectRender(state, sprite);
     const spy = vi.spyOn(state.context, 'drawImage');
 
     renderCanvasSprite(state, sprite);
@@ -79,7 +79,7 @@ describe('renderCanvasSprite', () => {
     child.data.atlas = atlas;
     child.data.id = 0;
     addNodeChild(parent, child);
-    prepareSpriteRender(state, parent);
+    prepareDisplayObjectRender(state, parent);
     const spy = vi.spyOn(state.context, 'drawImage');
 
     renderCanvasSprite(state, parent);

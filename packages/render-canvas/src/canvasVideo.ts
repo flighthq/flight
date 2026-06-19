@@ -1,7 +1,7 @@
 ﻿import { noopRendererData } from '@flighthq/render';
 import type { CanvasRenderState, DisplayObjectRenderer, RenderProxy2D, Video } from '@flighthq/types';
 
-import { drawCanvasDisplayObject, drawCanvasDisplayObjectMask } from './canvasDisplayObject';
+import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasVideo(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
@@ -21,10 +21,6 @@ export function drawCanvasVideo(state: CanvasRenderState, renderProxy: RenderPro
       context.imageSmoothingEnabled = true;
     }
   }
-}
-
-export function drawCanvasVideoMask(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
-  drawCanvasDisplayObjectMask(state, renderProxy);
 }
 
 export const defaultCanvasVideoRenderer: DisplayObjectRenderer = {

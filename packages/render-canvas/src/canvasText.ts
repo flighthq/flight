@@ -65,10 +65,6 @@ export function drawCanvasText(state: CanvasRenderState, renderProxy: RenderProx
   }
 }
 
-export function drawCanvasTextMask(state: CanvasRenderState, data: RenderProxy2D): void {
-  drawCanvasDisplayObject(state, data);
-}
-
 export const defaultCanvasTextRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
   submit: drawCanvasText,

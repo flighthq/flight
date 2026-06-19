@@ -2,7 +2,7 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
 
 import { createCanvasRenderState } from './canvasRenderState';
-import { drawCanvasText, drawCanvasTextMask } from './canvasText';
+import { drawCanvasText } from './canvasText';
 
 function makeState() {
   const canvas = document.createElement('canvas');
@@ -28,14 +28,5 @@ describe('drawCanvasText', () => {
     const spy = vi.spyOn(state.context, 'fillText');
     drawCanvasText(state, renderProxy);
     expect(spy).toHaveBeenCalled();
-  });
-});
-
-describe('drawCanvasTextMask', () => {
-  it('does not throw', () => {
-    const state = makeState();
-    const node = createText();
-    const renderProxy = getOrCreateRenderProxy2D(state, node);
-    expect(() => drawCanvasTextMask(state, renderProxy)).not.toThrow();
   });
 });
