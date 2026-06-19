@@ -140,19 +140,17 @@ describe('computeRichTextContent', () => {
     expect(content.formatRanges[content.formatRanges.length - 1].end).toBe(7);
   });
 
-  it('uses password characters for input text display', () => {
+  it('masks every character when a password character is supplied', () => {
     const content = createRichTextContent();
-    computeRichTextContent(
-      content,
-      createData({
-        displayAsPassword: true,
-        htmlText: '<b>ignored</b>',
-        passwordCharacter: '*',
-        text: 'secret',
-      } as Partial<RichTextData>),
-    );
+    computeRichTextContent(content, createData({ htmlText: '<b>ignored</b>', text: 'secret' }), '*');
     expect(content.text).toBe('******');
     expect(content.formatRanges[0].format.bold).toBeUndefined();
+  });
+
+  it('falls back to the bullet mask when the password character is empty', () => {
+    const content = createRichTextContent();
+    computeRichTextContent(content, createData({ text: 'ab' }), '');
+    expect(content.text).toBe('••');
   });
 
   it('applies serialized text format ranges over plain text', () => {

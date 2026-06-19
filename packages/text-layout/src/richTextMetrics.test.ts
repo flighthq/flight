@@ -2,8 +2,6 @@ import type { RichTextData, TextLayoutResult } from '@flighthq/types';
 
 import {
   getRichTextBottomScrollV,
-  getRichTextFieldHeight,
-  getRichTextFieldWidth,
   getRichTextLineCount,
   getRichTextMaxScrollH,
   getRichTextMaxScrollV,
@@ -66,32 +64,6 @@ describe('getRichTextBottomScrollV', () => {
     const data = createData({ height: 80, scrollV: 2 });
     const layout = createLayout({ lineHeights: [10, 10, 10], numLines: 3 });
     expect(getRichTextBottomScrollV(data, layout)).toBe(3);
-  });
-});
-
-describe('getRichTextFieldHeight', () => {
-  it('uses data height when autoSize is none', () => {
-    expect(getRichTextFieldHeight(createData({ autoSize: 'none', height: 80 }), createLayout())).toBe(80);
-  });
-
-  it('uses text height plus gutters when autoSize is enabled', () => {
-    expect(getRichTextFieldHeight(createData({ autoSize: 'left' }), createLayout({ textHeight: 18 }))).toBe(22);
-  });
-});
-
-describe('getRichTextFieldWidth', () => {
-  it('uses data width when autoSize is none', () => {
-    expect(getRichTextFieldWidth(createData({ autoSize: 'none', width: 120 }), createLayout())).toBe(120);
-  });
-
-  it('uses data width when wordWrap is enabled', () => {
-    expect(getRichTextFieldWidth(createData({ autoSize: 'left', width: 120, wordWrap: true }), createLayout())).toBe(
-      120,
-    );
-  });
-
-  it('uses text width plus gutters when autoSize is enabled', () => {
-    expect(getRichTextFieldWidth(createData({ autoSize: 'left' }), createLayout({ textWidth: 30 }))).toBe(34);
   });
 });
 
