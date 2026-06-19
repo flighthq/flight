@@ -14,7 +14,7 @@ import {
   defaultWebGPUBitmapRenderer,
   defaultWebGPUShapeCommands,
   defaultWebGPUShapeRenderer,
-  defaultWebGPUTextRenderer,
+  defaultWebGPUTextLabelRenderer,
   enableWebGPURenderCache,
   endWebGPURenderTarget,
   ensureWebGPURenderCacheTarget,
@@ -30,7 +30,7 @@ import {
   resizeWebGPURenderTarget,
   ShapeKind,
   submitWebGPURenderPass,
-  TextKind,
+  TextLabelKind,
   useRenderCache,
 } from '@flighthq/sdk';
 
@@ -54,7 +54,7 @@ export const state = await createWebGPURenderState(canvas, {
 });
 registerRenderer(state, BitmapKind, defaultWebGPUBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultWebGPUShapeRenderer);
-registerRenderer(state, TextKind, defaultWebGPUTextRenderer);
+registerRenderer(state, TextLabelKind, defaultWebGPUTextLabelRenderer);
 registerWebGPUShapeCommands(defaultWebGPUShapeCommands);
 registerDefaultWebGPUMaterial(state);
 enableWebGPURenderCache(state);

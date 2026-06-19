@@ -2,13 +2,13 @@
 import {
   createWebGLCanvasElement,
   createWebGLRenderState,
-  defaultWebGLTextRenderer,
+  defaultWebGLTextLabelRenderer,
   prepareDisplayObjectRender,
   registerDefaultWebGLMaterial,
   registerRenderer,
   renderWebGLBackground,
   renderWebGLDisplayObject,
-  TextKind,
+  TextLabelKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -19,7 +19,7 @@ export const state = createWebGLRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerRenderer(state, TextKind, defaultWebGLTextRenderer);
+registerRenderer(state, TextLabelKind, defaultWebGLTextLabelRenderer);
 registerDefaultWebGLMaterial(state);
 export const scale = pixelRatio;
 

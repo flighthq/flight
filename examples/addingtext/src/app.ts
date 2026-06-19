@@ -1,4 +1,4 @@
-import { addNodeChild, createDisplayObject, createText, loadFontFromURL } from '@flighthq/sdk';
+import { addNodeChild, createDisplayObject, createTextLabel, loadFontFromURL } from '@flighthq/sdk';
 
 import { render, scale } from './render';
 
@@ -8,7 +8,7 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-const textField = createText();
+const textField = createTextLabel();
 textField.data.text = 'Hello World';
 textField.data.textFormat = { font: font.name, size: 30, color: 0x7a0026 };
 textField.x = 50;

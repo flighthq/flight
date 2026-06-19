@@ -2,14 +2,14 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   createWebGPUCanvasElement,
   createWebGPURenderState,
-  defaultWebGPUTextRenderer,
+  defaultWebGPUTextLabelRenderer,
   prepareDisplayObjectRender,
   registerDefaultWebGPUMaterial,
   registerRenderer,
   renderWebGPUBackground,
   renderWebGPUDisplayObject,
   submitWebGPURenderPass,
-  TextKind,
+  TextLabelKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -20,7 +20,7 @@ export const state = await createWebGPURenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerRenderer(state, TextKind, defaultWebGPUTextRenderer);
+registerRenderer(state, TextLabelKind, defaultWebGPUTextLabelRenderer);
 registerDefaultWebGPUMaterial(state);
 export const scale = pixelRatio;
 

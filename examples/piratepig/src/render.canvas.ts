@@ -6,7 +6,7 @@ import {
   defaultCanvasBitmapRenderer,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
-  defaultCanvasTextRenderer,
+  defaultCanvasTextLabelRenderer,
   enableCanvasCSSFilterSupport,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
@@ -15,7 +15,7 @@ import {
   renderCanvasDisplayObject,
   setCanvasCSSFilter,
   ShapeKind,
-  TextKind,
+  TextLabelKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -33,7 +33,7 @@ export const state = createCanvasRenderState(canvas, {
 });
 registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerRenderer(state, TextKind, defaultCanvasTextRenderer);
+registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
 enableCanvasCSSFilterSupport(state);
 export const scale = pixelRatio;
