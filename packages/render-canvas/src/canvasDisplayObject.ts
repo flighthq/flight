@@ -8,16 +8,6 @@ export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderProxy:
   // Plain display objects have no visual geometry of their own.
 }
 
-export function drawCanvasDisplayObjectMask(state: CanvasRenderState, data: RenderProxy2D): void {
-  const children = getDisplayObjectRuntime(data.source as DisplayObject).children;
-  if (children !== null) {
-    for (let i = 0; i < children.length; i++) {
-      const child = getRenderProxy2D(state, children[i] as DisplayObject);
-      if (child !== undefined) state.displayObjectMaskRendererMap.get(child.source.kind)?.drawMask(state, child);
-    }
-  }
-}
-
 export const defaultCanvasDisplayObjectRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
   submit: drawCanvasDisplayObject,
@@ -25,7 +15,6 @@ export const defaultCanvasDisplayObjectRenderer: DisplayObjectRenderer = {
 
 export function renderCanvasDisplayObject(state: CanvasRenderState, source: DisplayObject): void {
   const tempStack = state.tempStack;
-  const frameID = state.currentFrameID;
   const clipHooks = state.displayObjectClipHooks;
 
   let stackLength = 1;
@@ -36,16 +25,13 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
     if (!current.enabled) continue;
 
     const data = getRenderProxy2D(state, current);
-    if (data === undefined || data.isMaskFrameID === frameID) continue;
+    if (data === undefined) continue;
 
-    clipHooks?.popMask(state, data);
-    clipHooks?.popClipRectangle(state, data, current);
+    clipHooks?.popClip(state, data, current);
 
     if (!isRenderProxyVisible(data)) continue;
 
-    clipHooks?.pushMask(state, current);
-
-    clipHooks?.pushClipRectangle(state, data, current);
+    clipHooks?.pushClip(state, data, current);
 
     const filter = resolveCanvasCSSFilter(state, data);
     if (filter !== null) state.context.filter = filter;

@@ -1,7 +1,7 @@
 ﻿import { noopRendererData } from '@flighthq/render';
 import type { Bitmap, CanvasRenderState, DisplayObjectRenderer, RenderProxy2D } from '@flighthq/types';
 
-import { drawCanvasDisplayObject, drawCanvasDisplayObjectMask } from './canvasDisplayObject';
+import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasBitmap(state: CanvasRenderState, bitmap: RenderProxy2D): void {
@@ -42,10 +42,6 @@ export function drawCanvasBitmap(state: CanvasRenderState, bitmap: RenderProxy2D
       context.imageSmoothingEnabled = true;
     }
   }
-}
-
-export function drawCanvasBitmapMask(state: CanvasRenderState, data: RenderProxy2D): void {
-  drawCanvasDisplayObjectMask(state, data);
 }
 
 export const defaultCanvasBitmapRenderer: DisplayObjectRenderer = {

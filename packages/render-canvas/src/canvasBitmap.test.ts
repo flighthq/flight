@@ -5,7 +5,7 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { createImageResource } from '@flighthq/resources';
 import { BitmapKind } from '@flighthq/types';
 
-import { defaultCanvasBitmapRenderer, drawCanvasBitmap, drawCanvasBitmapMask } from './canvasBitmap';
+import { defaultCanvasBitmapRenderer, drawCanvasBitmap } from './canvasBitmap';
 import { createCanvasRenderState } from './canvasRenderState';
 
 function makeState() {
@@ -88,15 +88,5 @@ describe('drawCanvasBitmap', () => {
     drawCanvasBitmap(state, data);
 
     expect(state.context.imageSmoothingEnabled).toBe(true); // restored after draw
-  });
-});
-
-describe('drawCanvasBitmapMask', () => {
-  it('does not throw', () => {
-    const state = makeState();
-    const bitmap = createBitmap();
-    const data = getOrCreateRenderProxy2D(state, bitmap);
-
-    expect(() => drawCanvasBitmapMask(state, data)).not.toThrow();
   });
 });

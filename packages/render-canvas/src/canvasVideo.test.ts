@@ -4,7 +4,7 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { VideoKind } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';
-import { defaultCanvasVideoRenderer, drawCanvasVideo, drawCanvasVideoMask } from './canvasVideo';
+import { defaultCanvasVideoRenderer, drawCanvasVideo } from './canvasVideo';
 
 function makeState() {
   const canvas = document.createElement('canvas');
@@ -39,14 +39,5 @@ describe('drawCanvasVideo', () => {
     const spy = vi.spyOn(state.context, 'drawImage');
     drawCanvasVideo(state, renderProxy);
     expect(spy).not.toHaveBeenCalled();
-  });
-});
-
-describe('drawCanvasVideoMask', () => {
-  it('does not throw', () => {
-    const state = makeState();
-    const video = createVideo();
-    const renderProxy = getOrCreateRenderProxy2D(state, video);
-    expect(() => drawCanvasVideoMask(state, renderProxy)).not.toThrow();
   });
 });
