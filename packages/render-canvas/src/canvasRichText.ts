@@ -1,17 +1,17 @@
-﻿import { getRichTextRuntime } from '@flighthq/displayobject';
+﻿import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/displayobject';
 import { computeRGBHexString } from '@flighthq/materials';
 import { computeTextFormatFontString, noopRendererData } from '@flighthq/render';
 import {
   computeRichTextContent,
+  computeTextBoundsHeight,
+  computeTextBoundsWidth,
   computeTextLayout,
   getRichTextContent,
-  getRichTextFieldHeight,
-  getRichTextFieldWidth,
   getRichTextScrollYOffset,
   getRichTextSelectionRectangles,
   getTextLayoutResult,
 } from '@flighthq/text-layout';
-import type { InputTextSelectionRectangle } from '@flighthq/types';
+import type { TextSelectionRectangle } from '@flighthq/types';
 import type {
   CanvasRenderState,
   DisplayObjectRenderer,
@@ -19,13 +19,30 @@ import type {
   RichText,
   RichTextRuntime,
   TextFormat,
-  TextRuntime,
+  TextLabelRuntime,
 } from '@flighthq/types';
 
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasRichText(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
+  drawCanvasRichTextField(state, renderProxy);
+  // The editable-input overlay (caret/selection) draws on top of the field, in its own coordinate
+  // space, and must run even when the text is empty — so it is invoked after the field, keyed off the
+  // input slot. registerCanvasTextInputOverlay (enableCanvasTextInput) is what installs it; a static
+  // RichText leaves the slot null and pulls no text-input code.
+  if (_canvasTextInputOverlay !== null && getRichTextRuntime(renderProxy.source as RichText).input !== null) {
+    _canvasTextInputOverlay(state, renderProxy);
+  }
+}
+
+export type CanvasTextInputOverlay = (state: CanvasRenderState, renderProxy: RenderProxy2D) => void;
+
+export function drawCanvasRichTextMask(state: CanvasRenderState, data: RenderProxy2D): void {
+  drawCanvasDisplayObject(state, data);
+}
+
+function drawCanvasRichTextField(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
   drawCanvasDisplayObject(state, renderProxy);
 
   const source = renderProxy.source as RichText;
@@ -37,7 +54,7 @@ export function drawCanvasRichText(state: CanvasRenderState, renderProxy: Render
 
   const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
   const content = getRichTextContent(richTextRuntime);
-  computeRichTextContent(content, data);
+  computeRichTextContent(content, data, getRichTextPasswordCharacter(source));
   const { text } = content;
 
   const measure = (t: string, fmt: TextFormat): number => {
@@ -45,7 +62,7 @@ export function drawCanvasRichText(state: CanvasRenderState, renderProxy: Render
     return context.measureText(t).width;
   };
 
-  const result = getTextLayoutResult(richTextRuntime as TextRuntime);
+  const result = getTextLayoutResult(richTextRuntime as TextLabelRuntime);
   computeTextLayout(result, {
     text,
     formatRanges: content.formatRanges,
@@ -55,8 +72,8 @@ export function drawCanvasRichText(state: CanvasRenderState, renderProxy: Render
     multiline: data.multiline,
     wordWrap: data.wordWrap,
   });
-  const fieldW = getRichTextFieldWidth(data, result);
-  const fieldH = getRichTextFieldHeight(data, result);
+  const fieldW = computeTextBoundsWidth(data, result);
+  const fieldH = computeTextBoundsHeight(data, result);
 
   if (data.background) {
     context.fillStyle = computeRGBHexString(data.backgroundColor);
@@ -140,11 +157,16 @@ export function drawCanvasRichText(state: CanvasRenderState, renderProxy: Render
   context.restore();
 }
 
+export function registerCanvasTextInputOverlay(overlay: CanvasTextInputOverlay): void {
+  _canvasTextInputOverlay = overlay;
+}
+
 const BULLET_CHAR = 'Ã¢â‚¬Â¢';
 const BULLET_GAP = 4;
 const SELECTION_ALPHA = 0.35;
 const SELECTION_COLOR = '#0078d7';
-const _richTextSelectionRectangles: InputTextSelectionRectangle[] = [];
+const _richTextSelectionRectangles: TextSelectionRectangle[] = [];
+let _canvasTextInputOverlay: CanvasTextInputOverlay | null = null;
 
 export const defaultCanvasRichTextRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
