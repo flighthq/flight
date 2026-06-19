@@ -10,7 +10,6 @@ export * from './webgpuDisplayObject';
 export * from './webgpuDraw';
 export * from './webgpuElement';
 export * from './webgpuInputText';
-export * from './webgpuMask';
 export * from './webgpuMaterialRegistry';
 export * from './webgpuMaterials';
 export * from './webgpuParticleEmitter';

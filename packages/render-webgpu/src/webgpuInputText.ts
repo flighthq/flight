@@ -17,19 +17,10 @@ import type {
   TextLayoutResult,
 } from '@flighthq/types';
 
-import {
-  createWebGPURichTextData,
-  destroyWebGPURichTextData,
-  drawWebGPURichTextMask,
-  drawWebGPURichTextWithOverlay,
-} from './webgpuRichText';
+import { createWebGPURichTextData, destroyWebGPURichTextData, drawWebGPURichTextWithOverlay } from './webgpuRichText';
 
 export function drawWebGPUInputText(state: RenderState, renderProxy: RenderProxy2D): void {
   drawWebGPURichTextWithOverlay(state, renderProxy, drawWebGPUInputTextOverlay);
-}
-
-export function drawWebGPUInputTextMask(state: RenderState, renderProxy: RenderProxy2D): void {
-  drawWebGPURichTextMask(state, renderProxy);
 }
 
 export const defaultWebGPUInputTextRenderer: DisplayObjectRenderer = {

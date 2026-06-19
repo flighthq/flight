@@ -111,9 +111,21 @@ export type WebGPURenderStateInternal = Omit<WebGPURenderState, 'canvas' | 'devi
   depthStencilWidth: number;
   depthStencilHeight: number;
 
-  // Mask state
+  // Clip state. Masks were retired into clips (a mask is a path ClipRegion). `clipForms` is the
+  // per-clip unwind stack (scissor vs stencil contour).
+  clipForms: ('rect' | 'contour')[];
+  // Active stencil nesting depth, driven by contour clips (formerly by masks). The GPU draw path reads
+  // this to know when a stencil test is live and as the 'masked'-mode stencil reference.
   currentMaskDepth: number;
   maskWriteMode: boolean;
+  // Lazily-built contour-clip stencil pipelines (increment/decrement) and the per-active-clip undo stack
+  // (the geometry + uniform a pop redraws to decrement its stencil region). See webgpuClipContours.ts.
+  clipContourPipelines: WebGPUClipContourPipelines | null;
+  clipContourStack: WebGPUClipContourEntry[];
+
+  // Lazily-built flat-color pipeline for the GPU tessellated solid-fill shape path (webgpuShapeMesh.ts).
+  // Null until the first solid-fill shape draws; shared across every shape on this device.
+  shapeMeshPipeline: WebGPUShapeMeshPipeline | null;
 
   // Clip rectangle scissor stack
   scissorStack: WebGPUScissorRect[];
@@ -148,4 +160,42 @@ export interface WebGPUSavedPassState {
   depthStencilView: GPUTextureView | null;
   renderTargetViewport: { width: number; height: number } | null;
   renderTransform2D: Matrix | null;
+}
+
+// Cached stencil pipelines for contour clips: `write` increments covered pixels (open a clip), `erase`
+// decrements them (pop). Both are color-less, position-only, and share one uniform bind-group layout.
+export interface WebGPUClipContourPipelines {
+  write: GPURenderPipeline;
+  erase: GPURenderPipeline;
+  bindGroupLayout: GPUBindGroupLayout;
+}
+
+// One active contour clip's GPU resources. Kept on a stack so popWebGPUClipContours can redraw the same
+// geometry/uniform to decrement its stencil region, then destroy the buffers.
+export interface WebGPUClipContourEntry {
+  vertexBuffer: GPUBuffer;
+  vertexCount: number;
+  uniformBuffer: GPUBuffer;
+  bindGroup: GPUBindGroup;
+  depth: number;
+}
+
+// Cached flat-color pipeline for the GPU tessellated solid-fill shape path. Position-only vertex
+// (@location(0) vec2f), a uniform bind group carrying mat3x3f matrix + vec4f color. Stencil compares
+// 'equal' (gated by any active contour clip) and writes nothing, so the fill never disturbs the stencil.
+export interface WebGPUShapeMeshPipeline {
+  pipeline: GPURenderPipeline;
+  bindGroupLayout: GPUBindGroupLayout;
+}
+
+// Per-shape reusable GPU buffers for the tessellated solid-fill path, cached on the shape's rendererData.
+// Grown by recreating when a mesh needs more room; uploaded each draw via writeBuffer; destroyed in
+// destroyData. Avoids per-frame create/destroy churn and the buffer-lifetime hazards it brings.
+export interface WebGPUShapeMeshBuffers {
+  vertexBuffer: GPUBuffer | null;
+  vertexCapacity: number;
+  indexBuffer: GPUBuffer | null;
+  indexCapacity: number;
+  uniformBuffer: GPUBuffer | null;
+  bindGroup: GPUBindGroup | null;
 }

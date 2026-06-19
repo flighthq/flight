@@ -7,7 +7,6 @@ import {
   defaultWebGPURichTextRenderer,
   destroyWebGPURichTextData,
   drawWebGPURichText,
-  drawWebGPURichTextMask,
   drawWebGPURichTextWithOverlay,
 } from './webgpuRichText';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
@@ -62,18 +61,6 @@ describe('drawWebGPURichText', () => {
     const renderProxy = getOrCreateRenderProxy2D(state, richText);
 
     expect(() => drawWebGPURichText(state, renderProxy)).not.toThrow();
-  });
-});
-
-describe('drawWebGPURichTextMask', () => {
-  it('delegates to drawWebGPURichText', async () => {
-    const state = await createWebGPURenderStateForTest();
-    renderWebGPUBackground(state);
-    const richText = createRichText();
-    prepareDisplayObjectRender(state, richText);
-    const renderProxy = getOrCreateRenderProxy2D(state, richText);
-    expect(() => drawWebGPURichTextMask(state, renderProxy)).not.toThrow();
-    submitWebGPURenderPass(state);
   });
 });
 
