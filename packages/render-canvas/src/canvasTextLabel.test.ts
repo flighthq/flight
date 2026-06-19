@@ -1,8 +1,8 @@
-﻿import { createText } from '@flighthq/displayobject';
+﻿import { createTextLabel } from '@flighthq/displayobject';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
 
 import { createCanvasRenderState } from './canvasRenderState';
-import { drawCanvasText } from './canvasText';
+import { drawCanvasTextLabel } from './canvasTextLabel';
 
 function makeState() {
   const canvas = document.createElement('canvas');
@@ -11,22 +11,22 @@ function makeState() {
   return createCanvasRenderState(canvas);
 }
 
-describe('drawCanvasText', () => {
+describe('drawCanvasTextLabel', () => {
   it('does not throw when text is empty', () => {
     const state = makeState();
-    const node = createText();
+    const node = createTextLabel();
     node.data.text = '';
     const renderProxy = getOrCreateRenderProxy2D(state, node);
-    expect(() => drawCanvasText(state, renderProxy)).not.toThrow();
+    expect(() => drawCanvasTextLabel(state, renderProxy)).not.toThrow();
   });
 
   it('calls fillText when the text field is non-empty', () => {
     const state = makeState();
-    const node = createText();
+    const node = createTextLabel();
     node.data.text = 'hello';
     const renderProxy = getOrCreateRenderProxy2D(state, node);
     const spy = vi.spyOn(state.context, 'fillText');
-    drawCanvasText(state, renderProxy);
+    drawCanvasTextLabel(state, renderProxy);
     expect(spy).toHaveBeenCalled();
   });
 });

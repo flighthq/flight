@@ -1,8 +1,9 @@
 ﻿import { createRichText } from '@flighthq/displayobject';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import { enableTextInput } from '@flighthq/text-input';
 
 import { createCanvasRenderState } from './canvasRenderState';
-import { defaultCanvasRichTextRenderer, drawCanvasRichText } from './canvasRichText';
+import { defaultCanvasRichTextRenderer, drawCanvasRichText, registerCanvasTextInputOverlay } from './canvasRichText';
 
 function makeState() {
   const canvas = document.createElement('canvas');
@@ -41,5 +42,22 @@ describe('drawCanvasRichText', () => {
 
     expect(spy).toHaveBeenCalledWith('red', expect.any(Number), expect.any(Number));
     expect(spy).toHaveBeenCalledWith('bold', expect.any(Number), expect.any(Number));
+  });
+});
+
+describe('registerCanvasTextInputOverlay', () => {
+  it('invokes the registered overlay only for a RichText with an input slot', () => {
+    const overlay = vi.fn();
+    registerCanvasTextInputOverlay(overlay);
+    const state = makeState();
+
+    const plain = createRichText({ data: { text: 'x' } });
+    drawCanvasRichText(state, getOrCreateRenderProxy2D(state, plain));
+    expect(overlay).not.toHaveBeenCalled();
+
+    const editable = createRichText({ data: { text: 'x' } });
+    enableTextInput(editable);
+    drawCanvasRichText(state, getOrCreateRenderProxy2D(state, editable));
+    expect(overlay).toHaveBeenCalled();
   });
 });

@@ -1,4 +1,4 @@
-﻿import { getTextRuntime } from '@flighthq/displayobject';
+﻿import { getTextLabelRuntime } from '@flighthq/displayobject';
 import { computeRGBHexString } from '@flighthq/materials';
 import { computeTextFormatFontString, noopRendererData } from '@flighthq/render';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
@@ -6,18 +6,18 @@ import type {
   CanvasRenderState,
   DisplayObjectRenderer,
   RenderProxy2D,
-  Text,
   TextFormat,
-  TextRuntime,
+  TextLabel,
+  TextLabelRuntime,
 } from '@flighthq/types';
 
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
 import { setCanvasTransform } from './canvasTransform';
 
-export function drawCanvasText(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
+export function drawCanvasTextLabel(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
   drawCanvasDisplayObject(state, renderProxy);
 
-  const source = renderProxy.source as Text;
+  const source = renderProxy.source as TextLabel;
   const { text, textFormat } = source.data;
   if (text.length === 0) return;
 
@@ -31,7 +31,7 @@ export function drawCanvasText(state: CanvasRenderState, renderProxy: RenderProx
     return context.measureText(t).width;
   };
 
-  const result = getTextLayoutResult(getTextRuntime(source) as TextRuntime);
+  const result = getTextLayoutResult(getTextLabelRuntime(source) as TextLabelRuntime);
   computeTextLayout(result, {
     text,
     formatRanges: [createTextFormatRange(textFormat, 0, text.length)],
@@ -65,7 +65,7 @@ export function drawCanvasText(state: CanvasRenderState, renderProxy: RenderProx
   }
 }
 
-export const defaultCanvasTextRenderer: DisplayObjectRenderer = {
+export const defaultCanvasTextLabelRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
-  submit: drawCanvasText,
+  submit: drawCanvasTextLabel,
 };
