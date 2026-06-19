@@ -105,8 +105,8 @@ Run these at the points listed. Each check is fast; skipping them causes cascadi
 - `npm run order` reports exported functions and test `describe` blocks that are not alphabetized. `npm run order:check` runs the same check in failing mode once a package or area has been cleaned up. `npm run order:fix` rewrites files in place to apply the correct order; comments immediately preceding a declaration (with no blank line between them) are treated as attached and move with it.
 - `npm run test` runs the normal root Vitest workspace, excluding the heavier `size` project. This is usually faster than chaining package/API/integration test scripts separately.
 - `npm run size` builds matching examples and reports gzip output size against the baseline. It supports filtered runs, JSON reporting, and output file paths.
-- `npm run test:functional` launches the functional test tool in `tools/functional`, a browser dev server that runs each functional test across its renderers (Canvas/DOM/WebGL) for visual and behavioral checks you cannot get from jsdom unit tests.
-- `npm run test:visual` is the visual regression gate: captures all examples and functional tests, compares each against its committed baseline, and exits 1 if any screenshot has changed. Run after committing baselines. `test:visual:examples` and `test:visual:functional` run each tool independently.
+- `npm run functional` launches the functional test tool in `tools/functional`, a browser dev server that runs each functional test across its renderers (Canvas/DOM/WebGL) for visual and behavioral checks you cannot get from jsdom unit tests.
+- `npm run capture:check` is the visual regression gate: captures every tool, compares each screenshot against its committed baseline, and exits 1 if any has changed. Run after committing baselines. `capture:explorer:check`, `capture:functional:check`, and `capture:landing:check` run each tool independently.
 
 ## Visual Capture and Agent Feedback
 
@@ -115,29 +115,32 @@ Two scripts produce screenshot and log output from examples and functional tests
 ### One-shot capture
 
 ```
-npm run capture:examples [-- --filter=name --renderer=webgl,canvas --wait=500]
+npm run capture:explorer [-- --filter=name --renderer=webgl,canvas --wait=500]
 npm run capture:functional [-- --filter=name]
+npm run capture:landing [-- --filter=name]
 ```
 
-`capture` is an alias for `capture:examples`. Both auto-start the Vite server if `--url` is not given. Navigates to each matching entry, waits two animation frames, screenshots, collects logs, exits. Output lands in `tools/output/{tool}/{name}/{renderer}/`.
+`capture:<tool>` captures one tool (`explorer`, `functional`, or `landing`), auto-starting the Vite server if `--url` is not given. It navigates to each matching entry, waits two animation frames, screenshots, collects logs, and exits. Output lands in `tools/output/{tool}/{name}/{renderer}/`.
 
 ### Watch capture (host only — requires Playwright)
 
 ```
-npm run capture:watch:examples [-- --filter=name --renderer=webgl]
-npm run capture:watch:functional
+npm run capture:explorer:watch [-- --filter=name --renderer=webgl]
+npm run capture:functional:watch
+npm run capture:landing:watch
 ```
 
-`capture:watch` is an alias for `capture:watch:examples`. Auto-starts the Vite server. Does an initial capture of all matched entries, then watches source files and re-captures on change (800ms debounce). An agent inside a sandbox reads the output files directly — no polling, no watch loop in the agent.
+`capture:<tool>:watch` auto-starts the Vite server, does an initial capture of all matched entries, then watches source files and re-captures on change (800ms debounce). An agent inside a sandbox reads the output files directly — no polling, no watch loop in the agent.
 
 ### Baselines
 
 ```
-npm run capture:examples:baseline [-- --filter=name]
-npm run capture:baseline:functional [-- --filter=name]
+npm run capture:explorer:baseline [-- --filter=name]
+npm run capture:functional:baseline [-- --filter=name]
+npm run capture:landing:baseline [-- --filter=name]
 ```
 
-`capture:baseline` is an alias for `capture:examples:baseline`. Writes the current screenshots to `tools/baselines/{tool}/{name}/{renderer}/screenshot.png` and commits the hash. Every subsequent capture compares against the baseline: `status.json` gains `changed: true/false` and a `diff.png` is written on mismatch. Run baseline capture once after a rendering change is intentional; commit `tools/baselines/` to git.
+`capture:<tool>:baseline` writes the current screenshot's sha256 to `tools/baselines/{tool}/{name}/{renderer}/baseline.sha256`; `capture:baseline` (no tool) updates every tool at once. The committed baseline is the hash text, not a PNG — `tools/baselines/` stays small and git-diffable, and screenshots never enter git (`tools/**/*.png` is ignored). Every subsequent capture re-hashes its screenshot and sets `status.json`'s `changed` from whether the hash matches. This requires a deterministic render: the capture harness sets `window.__flightCapture` before page scripts run, so an animated entry (the landing hero) can hold a fixed frame and stay byte-identical. Run baseline capture once after a rendering change is intentional; commit `tools/baselines/` to git.
 
 ### Output files
 
@@ -148,10 +151,9 @@ Each captured entry writes three files:
 - `status.json` — written last (the commit point). Shape:
   ```json
   { "state": "ready|error", "capturedAt": <unix ms>, "error": null|"message",
-    "hash": "<sha256>", "baselineHash": "<sha256>|null",
-    "changed": true|false|null, "diffPercent": 0.0|null }
+    "hash": "<sha256>", "baselineHash": "<sha256>|null", "changed": true|false|null }
   ```
-  `changed: null` means no baseline exists yet. `changed: true` means the screenshot differs from the baseline; `diff.png` is written alongside `screenshot.png`. Check `capturedAt` against the time of your last source edit to confirm the output is fresh.
+  `changed: null` means no baseline exists yet. `changed: true` means the screenshot hash differs from the committed baseline hash; read `screenshot.png` in the output dir to see what changed. Check `capturedAt` against the time of your last source edit to confirm the output is fresh.
 
 ### Emitting logs from examples and functional tests
 
@@ -167,9 +169,9 @@ flightLog(LogLevel.Warn, { flushReason: 'material', instanceCount: 15 }, 'batch'
 
 `logError`/`logWarn`/`logInfo`/`logDebug`/`logVerbose` are sugar over `flightLog(level, data, channel?)`. Emitting **no-ops until a sink is installed**, so the same calls are harmless in unit tests and in shipped/size builds (the emit side carries no console or formatting code — it tree-shakes to a forwarder). Levels gate visibility: the capture sink records **every** level; the console prints only levels at or above `setFlightLogConsoleLevel` (default `Info`). The harness installs the sink (`setFlightLogSink(createConsoleCaptureSink())`) before loading the example, so module-init logs are captured.
 
-### Agent workflow with capture:watch
+### Agent workflow with capture watch
 
-1. Start the watch on the host: `npm run capture:watch:examples -- --filter=myExample` (auto-starts the server).
+1. Start the watch on the host: `npm run capture:explorer:watch -- --filter=myExample` (auto-starts the server).
 2. Edit source files. The watch detects changes and re-captures automatically.
 3. Read `tools/output/explorer/myExample/webgl/screenshot.png` with the `Read` tool to see the rendered frame.
 4. Read `tools/output/explorer/myExample/webgl/logs.jsonl` to see structured log output.
@@ -289,8 +291,8 @@ Logs appear in `logs.jsonl` after capture. The vite harness installs the capture
 1. Run `npm run capture:functional -- --filter={testName}` (auto-starts the server).
 2. Read `tools/output/functional/{testName}/{renderer}/screenshot.png` with the `Read` tool.
 3. Read `tools/output/functional/{testName}/{renderer}/logs.jsonl` for structured output. Check for any `pageerror` entries.
-4. Once the output looks correct, set the baseline: `npm run capture:baseline:functional -- --filter={testName}`.
-5. Commit `tools/baselines/functional/{testName}/`. Future captures will report `changed` in `status.json` and write `diff.png` on mismatch.
+4. Once the output looks correct, set the baseline: `npm run capture:functional:baseline -- --filter={testName}`.
+5. Commit `tools/baselines/functional/{testName}/` (the `baseline.sha256` hash files). Future captures will report `changed` in `status.json` when a screenshot hash no longer matches its baseline.
 
 ## Core Patterns
 
