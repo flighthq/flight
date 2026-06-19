@@ -1,21 +1,38 @@
 import { getEntityRuntime } from '@flighthq/entity';
 import { createRectangle } from '@flighthq/geometry';
+import { setTextLayoutMeasureProvider } from '@flighthq/text-layout';
 import type { Node, RichText, RichTextRuntime } from '@flighthq/types';
 import { RichTextKind } from '@flighthq/types';
 
 import {
+  buildRichTextLayoutParams,
   clearRichTextFormatRanges,
   computeRichTextLocalBoundsRectangle,
   createRichText,
   createRichTextData,
   createRichTextRuntime,
   dispatchRichTextWheel,
+  getRichTextPasswordCharacter,
   getRichTextRuntime,
   setRichTextFormatRange,
   setRichTextScrollH,
   setRichTextScrollV,
   setRichTextString,
 } from './richText';
+
+describe('buildRichTextLayoutParams', () => {
+  it('assembles content and wrap/multiline constraints for the layout engine', () => {
+    const richText = createRichText({ data: { multiline: true, width: 120, wordWrap: true } });
+    setRichTextString(richText, 'hello');
+    const measure = (text: string) => text.length * 7;
+    const params = buildRichTextLayoutParams(richText, measure);
+    expect(params.text).toBe('hello');
+    expect(params.formatRanges.length).toBeGreaterThan(0);
+    expect(params.measure).toBe(measure);
+    expect(params.wordWrap).toBe(true);
+    expect(params.width).toBe(120);
+  });
+});
 
 describe('clearRichTextFormatRanges', () => {
   it('removes serialized format ranges', () => {
@@ -27,12 +44,46 @@ describe('clearRichTextFormatRanges', () => {
 });
 
 describe('computeRichTextLocalBoundsRectangle', () => {
-  it('sets out.width and out.height from data dimensions', () => {
+  afterEach(() => {
+    setTextLayoutMeasureProvider(null);
+  });
+
+  it('sets out.width and out.height from data dimensions when autoSize is none', () => {
     const richText = createRichText({ data: { width: 200, height: 150 } });
+    const out = createRectangle();
+    computeRichTextLocalBoundsRectangle(out, richText as unknown as Node);
+    expect(out.x).toBe(0);
+    expect(out.width).toBe(200);
+    expect(out.height).toBe(150);
+  });
+
+  it('falls back to the fixed field box when autoSize is set but no measure provider exists', () => {
+    const richText = createRichText({ data: { autoSize: 'left', width: 200, height: 150 } });
+    setRichTextString(richText, 'hello');
     const out = createRectangle();
     computeRichTextLocalBoundsRectangle(out, richText as unknown as Node);
     expect(out.width).toBe(200);
     expect(out.height).toBe(150);
+  });
+
+  it('shrinks to the measured content under autoSize left, anchored at the origin', () => {
+    setTextLayoutMeasureProvider((text) => text.length * 7);
+    const richText = createRichText({ data: { autoSize: 'left', width: 200, height: 150 } });
+    setRichTextString(richText, 'hi');
+    const out = createRectangle();
+    computeRichTextLocalBoundsRectangle(out, richText as unknown as Node);
+    expect(out.x).toBe(0);
+    expect(out.width).toBeGreaterThan(0);
+    expect(out.width).toBeLessThan(200);
+  });
+
+  it('keeps the right edge fixed under autoSize right (x = width - fieldWidth)', () => {
+    setTextLayoutMeasureProvider((text) => text.length * 7);
+    const richText = createRichText({ data: { autoSize: 'right', width: 200, height: 150 } });
+    setRichTextString(richText, 'hi');
+    const out = createRectangle();
+    computeRichTextLocalBoundsRectangle(out, richText as unknown as Node);
+    expect(out.x).toBe(200 - out.width);
   });
 });
 
@@ -156,6 +207,44 @@ describe('dispatchRichTextWheel', () => {
     expect(richText.data.scrollV).toBe(1);
     dispatchRichTextWheel(richText, 2);
     expect(richText.data.scrollV).toBe(3);
+  });
+});
+
+describe('getRichTextPasswordCharacter', () => {
+  it('returns null for a static RichText with no input slot', () => {
+    expect(getRichTextPasswordCharacter(createRichText())).toBeNull();
+  });
+
+  it('returns the mask character when the input slot enables password display', () => {
+    const richText = createRichText();
+    (getRichTextRuntime(richText) as RichTextRuntime).input = {
+      alwaysShowSelection: false,
+      caretIndex: 0,
+      displayAsPassword: true,
+      focused: false,
+      passwordCharacter: '*',
+      restrict: '',
+      selectionAlpha: 0.35,
+      selectionColor: 0,
+      selectionIndex: 0,
+    };
+    expect(getRichTextPasswordCharacter(richText)).toBe('*');
+  });
+
+  it('returns null when the input slot has password display off', () => {
+    const richText = createRichText();
+    (getRichTextRuntime(richText) as RichTextRuntime).input = {
+      alwaysShowSelection: false,
+      caretIndex: 0,
+      displayAsPassword: false,
+      focused: false,
+      passwordCharacter: '*',
+      restrict: '',
+      selectionAlpha: 0.35,
+      selectionColor: 0,
+      selectionIndex: 0,
+    };
+    expect(getRichTextPasswordCharacter(richText)).toBeNull();
   });
 });
 
