@@ -3,7 +3,7 @@ import {
   createWebGPUCanvasElement,
   createWebGPURenderState,
   defaultWebGPUSpriteRenderer,
-  prepareSpriteRender,
+  prepareDisplayObjectRender,
   registerDefaultWebGPUMaterial,
   registerRenderer,
   renderWebGPUBackground,
@@ -26,7 +26,7 @@ registerDefaultWebGPUMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: Sprite): void {
-  if (!prepareSpriteRender(state, root)) return;
+  if (!prepareDisplayObjectRender(state, root)) return;
   renderWebGPUBackground(state);
   renderWebGPUSprite(state, root);
   submitWebGPURenderPass(state);

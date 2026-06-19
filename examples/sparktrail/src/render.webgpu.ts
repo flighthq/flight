@@ -1,11 +1,11 @@
-import type { SpriteNode } from '@flighthq/sdk';
+import type { DisplayObject } from '@flighthq/sdk';
 import {
   createWebGPUCanvasElement,
   createWebGPURenderState,
   defaultWebGPUParticleEmitterRenderer,
   enableWebGPUBlendModeSupport,
   ParticleEmitterKind,
-  prepareSpriteRender,
+  prepareDisplayObjectRender,
   registerDefaultWebGPUMaterial,
   registerRenderer,
   renderWebGPUBackground,
@@ -27,8 +27,8 @@ registerDefaultWebGPUMaterial(state);
 enableWebGPUBlendModeSupport(state);
 export const scale = pixelRatio;
 
-export function render(root: SpriteNode): void {
-  if (!prepareSpriteRender(state, root)) return;
+export function render(root: DisplayObject): void {
+  if (!prepareDisplayObjectRender(state, root)) return;
   renderWebGPUBackground(state);
   renderWebGPUSprite(state, root);
   submitWebGPURenderPass(state);

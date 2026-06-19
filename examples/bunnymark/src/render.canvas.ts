@@ -3,7 +3,7 @@ import {
   createCanvasElement,
   createCanvasRenderState,
   defaultCanvasQuadBatchRenderer,
-  prepareSpriteRender,
+  prepareDisplayObjectRender,
   QuadBatchKind,
   registerRenderer,
   renderCanvasBackground,
@@ -22,7 +22,7 @@ registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
 export const scale = pixelRatio;
 
 export function render(root: QuadBatch): void {
-  if (!prepareSpriteRender(state, root)) return;
+  if (!prepareDisplayObjectRender(state, root)) return;
   renderCanvasBackground(state);
   renderCanvasSprite(state, root);
 }

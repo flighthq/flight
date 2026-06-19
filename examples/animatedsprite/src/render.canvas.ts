@@ -3,7 +3,7 @@ import {
   createCanvasElement,
   createCanvasRenderState,
   defaultCanvasSpriteRenderer,
-  prepareSpriteRender,
+  prepareDisplayObjectRender,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasSprite,
@@ -23,7 +23,7 @@ registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
 export const scale = pixelRatio;
 
 export function render(root: Sprite): void {
-  if (!prepareSpriteRender(state, root)) return;
+  if (!prepareDisplayObjectRender(state, root)) return;
   renderCanvasBackground(state);
   renderCanvasSprite(state, root);
 }

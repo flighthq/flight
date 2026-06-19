@@ -3,7 +3,7 @@ import {
   createWebGLCanvasElement,
   createWebGLRenderState,
   defaultWebGLQuadBatchRenderer,
-  prepareSpriteRender,
+  prepareDisplayObjectRender,
   QuadBatchKind,
   registerDefaultWebGLMaterial,
   registerRenderer,
@@ -24,7 +24,7 @@ registerDefaultWebGLMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: QuadBatch): void {
-  if (!prepareSpriteRender(state, root)) return;
+  if (!prepareDisplayObjectRender(state, root)) return;
   renderWebGLBackground(state);
   renderWebGLSprite(state, root);
 }

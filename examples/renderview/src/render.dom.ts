@@ -7,7 +7,6 @@ import {
   defaultCanvasSpriteRenderer,
   defaultDOMRenderViewRenderer,
   prepareDisplayObjectRender,
-  prepareSpriteRender,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasSprite,
@@ -37,7 +36,7 @@ const renderView = createRenderView({
       canvas: spriteCanvas,
       render() {
         if (spriteRoot === null) return;
-        if (!prepareSpriteRender(spriteState, spriteRoot)) return;
+        if (!prepareDisplayObjectRender(spriteState, spriteRoot)) return;
         renderCanvasBackground(spriteState);
         renderCanvasSprite(spriteState, spriteRoot);
       },

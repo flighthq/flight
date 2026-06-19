@@ -3,7 +3,7 @@ import {
   createCanvasElement,
   createCanvasRenderState,
   defaultCanvasTilemapRenderer,
-  prepareSpriteRender,
+  prepareDisplayObjectRender,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasSprite,
@@ -23,7 +23,7 @@ registerRenderer(state, TilemapKind, defaultCanvasTilemapRenderer);
 export const scale = pixelRatio;
 
 export function render(root: Tilemap): void {
-  if (!prepareSpriteRender(state, root)) return;
+  if (!prepareDisplayObjectRender(state, root)) return;
   renderCanvasBackground(state);
   renderCanvasSprite(state, root);
 }

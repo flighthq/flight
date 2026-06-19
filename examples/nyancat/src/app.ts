@@ -1,14 +1,16 @@
 import {
   addTextureAtlasRegion,
-  attachSpritesheetTimeline,
   connectSignal,
   createApplication,
   createMovieClip,
   createSpritesheet,
   createSpritesheetAnimation,
   createSpritesheetFrame,
+  createSpritesheetTimelineSource,
   createTextureAtlas,
   loadImageResourceFromURL,
+  playMovieClip,
+  setMovieClipSource,
   startApplicationLoop,
   updateMovieClip,
 } from '@flighthq/sdk';
@@ -47,7 +49,8 @@ const spritesheet = createSpritesheet({
 });
 
 const clip = createMovieClip();
-attachSpritesheetTimeline(clip, spritesheet, animation);
+setMovieClipSource(clip, createSpritesheetTimelineSource(spritesheet, animation));
+playMovieClip(clip);
 clip.scaleX = scale;
 clip.scaleY = scale;
 
