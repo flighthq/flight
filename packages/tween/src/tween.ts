@@ -169,10 +169,30 @@ export function resumeTweens(manager: TweenManager, target: object): void {
   for (const tween of list) tween.paused = false;
 }
 
-export function stopAllTweens(manager: TweenManager): void {
+export function stopAllTweens(manager: TweenManager, options?: Readonly<StopTweenOptions>): void {
   for (const list of manager.tweens.values()) {
-    for (const tween of list) tween.complete = true;
+    for (const tween of list) stopTween(tween, options);
   }
+}
+
+export function stopTween(tween: Tween<any>, options?: Readonly<StopTweenOptions>): void {
+  const doComplete = options?.complete ?? false;
+  const doSendEvent = options?.sendEvent ?? true;
+
+  if (doComplete) {
+    if (!tween.initialized) initializeTween(tween);
+    const effectiveT = tween.reverse ? 0 : 1;
+    const easedT = tween.ease(effectiveT);
+    const t = tween.target as Record<string, number>;
+    for (const detail of tween.properties) {
+      let value = detail.start + detail.change * easedT;
+      if (tween.snapping) value = Math.round(value);
+      t[detail.key] = value;
+    }
+    if (doSendEvent) emitSignal(tween.onComplete);
+  }
+
+  tween.complete = true;
 }
 
 export function stopTweens(
@@ -183,9 +203,6 @@ export function stopTweens(
 ): void {
   const list = manager.tweens.get(target);
   if (list === undefined) return;
-
-  const doComplete = options?.complete ?? false;
-  const doSendEvent = options?.sendEvent ?? true;
 
   for (const tween of list) {
     if (propertyMap !== undefined) {
@@ -201,19 +218,6 @@ export function stopTweens(
       if (!overlaps) continue;
     }
 
-    if (doComplete) {
-      if (!tween.initialized) initializeTween(tween);
-      const effectiveT = tween.reverse ? 0 : 1;
-      const easedT = tween.ease(effectiveT);
-      const t = tween.target as Record<string, number>;
-      for (const detail of tween.properties) {
-        let value = detail.start + detail.change * easedT;
-        if (tween.snapping) value = Math.round(value);
-        t[detail.key] = value;
-      }
-      if (doSendEvent) emitSignal(tween.onComplete);
-    }
-
-    tween.complete = true;
+    stopTween(tween, options);
   }
 }
