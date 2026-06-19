@@ -9,6 +9,8 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../displayobject" },
+    { "path": "../node" },
     { "path": "../resources" },
     { "path": "../geometry" },
     { "path": "../signals" },
