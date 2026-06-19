@@ -6,7 +6,7 @@
 //
 // Options:
 //   --url=http://localhost:5173   Use a server that is already running (skips auto-start)
-//   --tool=explorer|functional    Which tool's sources to watch (default: explorer)
+//   --tool=explorer|functional|landing  Which tool's sources to watch (default: explorer)
 //   --filter=name                 Only watch entries whose name contains this string
 //   --renderer=webgl,canvas       Comma-separated renderer filter (default: all)
 //   --out=tools/output            Output base directory (default: tools/output)
@@ -59,6 +59,9 @@ const root = process.cwd();
 // ---------------------------------------------------------------------------
 
 function entryNameFromPath(filePath: string, tool: Tool): string | null {
+  // The landing tool is a single fixed entry, so any change under its directory maps to it.
+  if (tool === 'landing') return 'landing';
+
   const parts = filePath.split(sep);
   const marker = tool === 'explorer' ? 'examples' : 'functional';
   const idx = parts.lastIndexOf(marker);
@@ -136,7 +139,12 @@ async function main(): Promise<void> {
   // Per-entry debounce timers.
   const debounce = new Map<string, ReturnType<typeof setTimeout>>();
 
-  const watchDir = tool === 'explorer' ? `${root}/examples` : `${root}/tests/functional`;
+  const watchDir =
+    tool === 'explorer'
+      ? `${root}/examples`
+      : tool === 'functional'
+        ? `${root}/tests/functional`
+        : `${root}/tools/landing`;
 
   const watcher = chokidar.watch(watchDir, {
     ignored: /(node_modules|dist|\.git)/,
