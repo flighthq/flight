@@ -160,14 +160,14 @@ Each captured entry writes three files:
 Logging lives in the `@flighthq/log` package, split so each consumer tree-shakes its half: examples and instrumentation import the lightweight **emit** side; the explorer and capture harness import the **listener** side. One package owns the contract.
 
 ```typescript
-import { logInfo, logVerbose, flightLog, LogLevel } from '@flighthq/log';
+import { logInfo, logVerbose, log, LogLevel } from '@flighthq/log';
 
 logInfo({ msg: 'world matrix', a: m[0], b: m[1], tx: m[4] }, 'render'); // 2nd arg is the channel
 logVerbose('capture-only detail', 'batch'); // below the default console threshold — capture only
-flightLog(LogLevel.Warn, { flushReason: 'material', instanceCount: 15 }, 'batch');
+log(LogLevel.Warn, { flushReason: 'material', instanceCount: 15 }, 'batch');
 ```
 
-`logError`/`logWarn`/`logInfo`/`logDebug`/`logVerbose` are sugar over `flightLog(level, data, channel?)`. Emitting **no-ops until a sink is installed**, so the same calls are harmless in unit tests and in shipped/size builds (the emit side carries no console or formatting code — it tree-shakes to a forwarder). Levels gate visibility: the capture sink records **every** level; the console prints only levels at or above `setFlightLogConsoleLevel` (default `Info`). The harness installs the sink (`setFlightLogSink(createConsoleCaptureSink())`) before loading the example, so module-init logs are captured.
+`logError`/`logWarn`/`logInfo`/`logDebug`/`logVerbose` are sugar over `log(level, data, channel?)`. Emitting **no-ops until a sink is installed**, so the same calls are harmless in unit tests and in shipped/size builds (the emit side carries no console or formatting code — it tree-shakes to a forwarder). Levels gate visibility: the capture sink records **every** level; the console prints only levels at or above `setLogConsoleLevel` (default `Info`). The harness installs the sink (`setLogSink(createConsoleCaptureSink())`) before loading the example, so module-init logs are captured.
 
 ### Agent workflow with capture watch
 

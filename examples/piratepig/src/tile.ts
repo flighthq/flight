@@ -7,7 +7,7 @@ import {
   createBitmap,
   createDisplayObject,
   createTween,
-  getInteractionSignals,
+  enableInteractionSignals,
   getNodeLocalBoundsRectangle,
   getNodeParent,
   invalidateNodeRender,
@@ -43,7 +43,7 @@ export function connectTileInteraction(
   const coordScale = options?.coordScale ?? 1;
   const cursorElement = options?.cursorElement ?? null;
   const dragThreshold = 10 * coordScale;
-  const signals = getInteractionSignals(tile.obj);
+  const signals = enableInteractionSignals(tile.obj);
   let startX = 0;
   let startY = 0;
   let isDragging = false;

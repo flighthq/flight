@@ -59,12 +59,14 @@ export function addNodeChildAt<Traits extends object>(
   }
 
   children!.splice(index, 0, child);
-  emitSignal(targetRuntime.nodeSignals.onChildrenChanged);
+  const targetSignals = targetRuntime.nodeSignals;
+  if (targetSignals !== null) emitSignal(targetSignals.onChildrenChanged);
 
   if (parent !== target) {
     childRuntime.parent = target;
-    emitSignal(targetRuntime.nodeSignals.onChildAdded, child);
-    emitSignal(childRuntime.nodeSignals.onParentChanged);
+    if (targetSignals !== null) emitSignal(targetSignals.onChildAdded, child);
+    const childSignals = childRuntime.nodeSignals;
+    if (childSignals !== null) emitSignal(childSignals.onParentChanged);
     invalidateNodeParentReference(child);
   }
 
@@ -173,14 +175,18 @@ export function removeNodeChild<Traits extends object>(target: Node<Traits>, chi
   const children = targetRuntime.children;
   if (children !== null && childRuntime.parent === target) {
     childRuntime.parent = null;
-    emitSignal(childRuntime.nodeSignals.onParentChanged);
+    const childSignals = childRuntime.nodeSignals;
+    if (childSignals !== null) emitSignal(childSignals.onParentChanged);
     invalidateNodeParentReference(child);
     const i = children.indexOf(child);
     if (i !== -1) {
       children.splice(i, 1);
     }
-    emitSignal(targetRuntime.nodeSignals.onChildRemoved, child);
-    emitSignal(targetRuntime.nodeSignals.onChildrenChanged);
+    const targetSignals = targetRuntime.nodeSignals;
+    if (targetSignals !== null) {
+      emitSignal(targetSignals.onChildRemoved, child);
+      emitSignal(targetSignals.onChildrenChanged);
+    }
   }
   return child as NodeOf<Traits>;
 }
@@ -247,7 +253,8 @@ export function setNodeChildIndex<Traits extends object>(
     if (i !== -1 && i !== index) {
       children.splice(i, 1);
       children.splice(index, 0, child);
-      emitSignal(targetRuntime.nodeSignals.onChildrenOrderChanged);
+      const targetSignals = targetRuntime.nodeSignals;
+      if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged);
     }
   }
 }
@@ -274,7 +281,8 @@ export function swapNodeChildren<Traits extends object>(
     const index2 = children.indexOf(child2);
     children[index1] = child2;
     children[index2] = child1;
-    emitSignal((getNodeRuntime(target) as NodeRuntime<Traits>).nodeSignals.onChildrenOrderChanged);
+    const targetSignals = (getNodeRuntime(target) as NodeRuntime<Traits>).nodeSignals;
+    if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged);
   }
 }
 
@@ -294,7 +302,8 @@ export function swapNodeChildrenAt<Traits extends object>(target: Node<Traits>, 
   const swap = children[index1] as Node<Traits>;
   children[index1] = children[index2];
   children[index2] = swap;
-  emitSignal(targetRuntime.nodeSignals.onChildrenOrderChanged);
+  const targetSignals = targetRuntime.nodeSignals;
+  if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged);
 }
 
 function throwOutOfBoundsError(): void {
