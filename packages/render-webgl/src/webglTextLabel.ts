@@ -1,4 +1,4 @@
-import { getTextRuntime } from '@flighthq/displayobject';
+import { getTextLabelRuntime } from '@flighthq/displayobject';
 import { computeRGBHexString } from '@flighthq/materials';
 import { getNodeLocalContentRevision } from '@flighthq/node';
 import { computeTextFormatFontString } from '@flighthq/render';
@@ -9,9 +9,9 @@ import type {
   RendererData,
   RenderProxy2D,
   RenderState,
-  Text,
   TextFormat,
-  TextRuntime,
+  TextLabel,
+  TextLabelRuntime,
 } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
@@ -23,11 +23,11 @@ import {
   prepareWebGLSpriteBatchWrite,
 } from './webglSpriteBatch';
 
-interface WebGLTextData {
+interface WebGLTextLabelData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   // Content revision and pixel ratio at last rasterization. Re-rasterization is driven by the
-  // upstream Text content version (bumped by Text setters on layout-affecting changes), never by
+  // upstream TextLabel content version (bumped by TextLabel setters on layout-affecting changes), never by
   // appearance-only changes such as alpha.
   lastContentID: number;
   lastPixelRatio: number;
@@ -35,7 +35,7 @@ interface WebGLTextData {
   logH: number;
 }
 
-function createWebGLTextData(_state: RenderState, _source: Renderable): RendererData {
+function createWebGLTextLabelData(_state: RenderState, _source: Renderable): RendererData {
   const canvas = document.createElement('canvas');
   canvas.width = 1;
   canvas.height = 1;
@@ -44,9 +44,9 @@ function createWebGLTextData(_state: RenderState, _source: Renderable): Renderer
 }
 
 // Free the GPU texture the batch uploaded for this node's canvas when the text node is torn down.
-function destroyWebGLTextData(state: RenderState, data: RendererData): void {
+function destroyWebGLTextLabelData(state: RenderState, data: RendererData): void {
   const internal = state as WebGLRenderStateInternal;
-  const { canvas } = data as unknown as WebGLTextData;
+  const { canvas } = data as unknown as WebGLTextLabelData;
   const texture = internal.textureCache.get(canvas);
   if (texture !== undefined) {
     internal.gl.deleteTexture(texture);
@@ -54,9 +54,9 @@ function destroyWebGLTextData(state: RenderState, data: RendererData): void {
   }
 }
 
-export function drawWebGLText(state: RenderState, renderProxy: RenderProxy2D): void {
+export function drawWebGLTextLabel(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGLRenderStateInternal;
-  const source = renderProxy.source as Text;
+  const source = renderProxy.source as TextLabel;
   const { text, textFormat, width: fieldWidth, height: fieldHeight } = source.data;
   if (text.length === 0) return;
   if (renderProxy.rendererData === null) return;
@@ -65,7 +65,7 @@ export function drawWebGLText(state: RenderState, renderProxy: RenderProxy2D): v
   const materialRenderer = resolveWebGLMaterialRenderer(internal, material);
   if (materialRenderer === null) return;
 
-  const textData = renderProxy.rendererData as unknown as WebGLTextData;
+  const textData = renderProxy.rendererData as unknown as WebGLTextLabelData;
   const pixelRatio = internal.pixelRatio;
   const version = getNodeLocalContentRevision(source);
 
@@ -75,7 +75,7 @@ export function drawWebGLText(state: RenderState, renderProxy: RenderProxy2D): v
       return textData.ctx.measureText(t).width;
     };
 
-    const result = getTextLayoutResult(getTextRuntime(source) as TextRuntime);
+    const result = getTextLayoutResult(getTextLabelRuntime(source) as TextLabelRuntime);
     computeTextLayout(result, {
       text,
       formatRanges: [createTextFormatRange(textFormat, 0, text.length)],
@@ -159,9 +159,9 @@ export function drawWebGLText(state: RenderState, renderProxy: RenderProxy2D): v
   internal.spriteBatchCount++;
 }
 
-export const defaultWebGLTextRenderer: DisplayObjectRenderer = {
+export const defaultWebGLTextLabelRenderer: DisplayObjectRenderer = {
   format: BatchFormat.Quad,
-  createData: createWebGLTextData,
-  destroyData: destroyWebGLTextData,
-  submit: drawWebGLText,
+  createData: createWebGLTextLabelData,
+  destroyData: destroyWebGLTextLabelData,
+  submit: drawWebGLTextLabel,
 };

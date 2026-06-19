@@ -1,4 +1,5 @@
 ﻿import { createRichText } from '@flighthq/displayobject';
+import { enableTextInput } from '@flighthq/text-input';
 import type { RendererData, RenderProxy2D, RichText } from '@flighthq/types';
 
 import {
@@ -7,6 +8,7 @@ import {
   destroyWebGLRichTextData,
   drawWebGLRichText,
   drawWebGLRichTextWithOverlay,
+  registerWebGLTextInputOverlay,
 } from './webglRichText';
 import { makeWebGLState } from './webglTestHelper';
 
@@ -107,6 +109,25 @@ describe('drawWebGLRichTextWithOverlay', () => {
 
     drawWebGLRichTextWithOverlay(state, renderProxy, overlay);
 
+    expect(overlay).toHaveBeenCalled();
+  });
+});
+
+describe('registerWebGLTextInputOverlay', () => {
+  it('invokes the registered overlay only for a RichText with an input slot', () => {
+    const overlay = vi.fn();
+    registerWebGLTextInputOverlay(overlay);
+    const { state } = makeWebGLState();
+
+    const plain = makeRichTextNode();
+    (plain.source as RichText).data.text = 'x';
+    drawWebGLRichText(state, plain);
+    expect(overlay).not.toHaveBeenCalled();
+
+    const editable = makeRichTextNode();
+    (editable.source as RichText).data.text = 'x';
+    enableTextInput(editable.source as RichText);
+    drawWebGLRichText(state, editable);
     expect(overlay).toHaveBeenCalled();
   });
 });

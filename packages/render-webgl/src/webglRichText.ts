@@ -1,12 +1,13 @@
-﻿import { getRichTextRuntime } from '@flighthq/displayobject';
+﻿import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/displayobject';
 import { computeRGBHexString } from '@flighthq/materials';
 import { computeTextFormatFontString } from '@flighthq/render';
 import {
   computeRichTextContent,
+  computeTextBoundsHeight,
+  computeTextBoundsOffsetX,
+  computeTextBoundsWidth,
   computeTextLayout,
   getRichTextContent,
-  getRichTextFieldHeight,
-  getRichTextFieldWidth,
   getRichTextScrollYOffset,
   getTextLayoutResult,
 } from '@flighthq/text-layout';
@@ -19,8 +20,8 @@ import type {
   RichText,
   RichTextRuntime,
   TextFormat,
+  TextLabelRuntime,
   TextLayoutResult,
-  TextRuntime,
 } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
@@ -30,6 +31,7 @@ import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
+let _webglTextInputOverlay: WebGLRichTextOverlay | null = null;
 
 // Per-node GPU texture this rich text rasterizes into. Held on the node's RendererData (not a
 // module-level map keyed by render proxy) so destroyWebGLRichTextData can free it on teardown.
@@ -42,7 +44,6 @@ export function createWebGLRichTextData(_state: RenderState, _source: Renderable
 }
 
 // Frees the GPU texture this rich text node owns when it is torn down via disposeDisplayObjectRender.
-// Shared by InputText, which renders through the same texture path.
 export function destroyWebGLRichTextData(state: RenderState, data: RendererData): void {
   const internal = state as WebGLRenderStateInternal;
   const { texture } = data as unknown as WebGLRichTextData;
@@ -59,7 +60,14 @@ export type WebGLRichTextOverlay = (
 ) => void;
 
 export function drawWebGLRichText(state: RenderState, renderProxy: RenderProxy2D): void {
-  drawWebGLRichTextWithOverlay(state, renderProxy);
+  // The editable-input overlay rasterizes onto the offscreen field texture, so it is passed into the
+  // rasterization pass — only when the input slot is present. registerWebGLTextInputOverlay
+  // (enableWebGLTextInput) installs it; a static RichText leaves the slot null and pulls no text-input code.
+  const overlay =
+    _webglTextInputOverlay !== null && getRichTextRuntime(renderProxy.source as RichText).input !== null
+      ? _webglTextInputOverlay
+      : undefined;
+  drawWebGLRichTextWithOverlay(state, renderProxy, overlay);
 }
 
 export function drawWebGLRichTextWithOverlay(
@@ -73,12 +81,12 @@ export function drawWebGLRichTextWithOverlay(
   const data = source.data;
   const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
   const content = getRichTextContent(richTextRuntime);
-  computeRichTextContent(content, data);
+  computeRichTextContent(content, data, getRichTextPasswordCharacter(source));
   if (content.text.length === 0 && !data.background && !data.border) return;
 
   const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges);
-  const fieldW = Math.ceil(getRichTextFieldWidth(data, result));
-  const fieldH = Math.ceil(getRichTextFieldHeight(data, result));
+  const fieldW = Math.ceil(computeTextBoundsWidth(data, result));
+  const fieldH = Math.ceil(computeTextBoundsHeight(data, result));
   if (fieldW <= 0 || fieldH <= 0) return;
 
   const pixelRatio = internal.pixelRatio;
@@ -116,7 +124,14 @@ export function drawWebGLRichTextWithOverlay(
 
   shader.bind(internal.gl, internal, renderProxy);
 
-  drawWebGLQuad(internal, 0, 0, fieldW, fieldH, 0, 0, 1, 1);
+  // Anchor the field box for autoSize 'right'/'center' so the rendered quad lines up with the local
+  // bounds (computeRichTextLocalBoundsRectangle applies the same offset). Zero for 'none'/'left'.
+  const offsetX = computeTextBoundsOffsetX(data, result);
+  drawWebGLQuad(internal, offsetX, 0, offsetX + fieldW, fieldH, 0, 0, 1, 1);
+}
+
+export function registerWebGLTextInputOverlay(overlay: WebGLRichTextOverlay): void {
+  _webglTextInputOverlay = overlay;
 }
 
 export const defaultWebGLRichTextRenderer: DisplayObjectRenderer = {
@@ -182,7 +197,7 @@ function layoutRichText(
     return context.measureText(value).width;
   };
 
-  const result = getTextLayoutResult(richTextRuntime as TextRuntime);
+  const result = getTextLayoutResult(richTextRuntime as TextLabelRuntime);
   computeTextLayout(result, {
     text,
     formatRanges,
