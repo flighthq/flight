@@ -1,37 +1,37 @@
-import type { FlightLogEntry } from '@flighthq/types';
+import type { LogEntry } from '@flighthq/types';
 import { LogLevel } from '@flighthq/types';
 
 import {
   createConsoleCaptureSink,
-  flightLog,
-  getFlightLogConsoleLevel,
+  getLogConsoleLevel,
+  log,
   logDebug,
   logError,
   logInfo,
   logVerbose,
   logWarn,
-  setFlightLogConsoleLevel,
-  setFlightLogSink,
+  setLogConsoleLevel,
+  setLogSink,
 } from './log';
 
-function recordingSink(): { entries: FlightLogEntry[] } {
-  const entries: FlightLogEntry[] = [];
-  setFlightLogSink((entry) => entries.push({ ...entry }));
+function recordingSink(): { entries: LogEntry[] } {
+  const entries: LogEntry[] = [];
+  setLogSink((entry) => entries.push({ ...entry }));
   return { entries };
 }
 
 beforeEach(() => {
-  setFlightLogSink(null);
-  setFlightLogConsoleLevel(LogLevel.Info);
+  setLogSink(null);
+  setLogConsoleLevel(LogLevel.Info);
   vi.restoreAllMocks();
 });
 
 describe('createConsoleCaptureSink', () => {
   it('records every level as a tagged JSON envelope on console.debug', () => {
     const debug = vi.spyOn(console, 'debug').mockImplementation(() => {});
-    setFlightLogConsoleLevel(LogLevel.None);
-    setFlightLogSink(createConsoleCaptureSink());
-    flightLog(LogLevel.Verbose, { n: 1 }, 'batch');
+    setLogConsoleLevel(LogLevel.None);
+    setLogSink(createConsoleCaptureSink());
+    log(LogLevel.Verbose, { n: 1 }, 'batch');
     expect(debug).toHaveBeenCalledTimes(1);
     const parsed = JSON.parse((debug.mock.calls[0] as string[])[0]);
     expect(parsed).toMatchObject({ __flight: true, level: 'verbose', channel: 'batch', data: { n: 1 } });
@@ -40,47 +40,47 @@ describe('createConsoleCaptureSink', () => {
   it('also prints a human line only for levels at or above the console threshold', () => {
     vi.spyOn(console, 'debug').mockImplementation(() => {});
     const info = vi.spyOn(console, 'info').mockImplementation(() => {});
-    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
-    setFlightLogConsoleLevel(LogLevel.Info);
-    setFlightLogSink(createConsoleCaptureSink());
-    flightLog(LogLevel.Info, 'shown');
-    flightLog(LogLevel.Verbose, 'hidden');
+    const log2 = vi.spyOn(console, 'log').mockImplementation(() => {});
+    setLogConsoleLevel(LogLevel.Info);
+    setLogSink(createConsoleCaptureSink());
+    log(LogLevel.Info, 'shown');
+    log(LogLevel.Verbose, 'hidden');
     expect(info).toHaveBeenCalledTimes(1);
-    expect(log).not.toHaveBeenCalled(); // Verbose uses console.log and is above the threshold
+    expect(log2).not.toHaveBeenCalled(); // Verbose uses console.log and is above the threshold
   });
 
   it('wraps a string payload as { msg } in the envelope', () => {
     const debug = vi.spyOn(console, 'debug').mockImplementation(() => {});
-    setFlightLogSink(createConsoleCaptureSink());
-    flightLog(LogLevel.Error, 'boom');
+    setLogSink(createConsoleCaptureSink());
+    log(LogLevel.Error, 'boom');
     expect(JSON.parse((debug.mock.calls[0] as string[])[0]).data).toEqual({ msg: 'boom' });
   });
 });
 
-describe('flightLog', () => {
+describe('getLogConsoleLevel', () => {
+  it('returns the current threshold', () => {
+    setLogConsoleLevel(LogLevel.Verbose);
+    expect(getLogConsoleLevel()).toBe(LogLevel.Verbose);
+  });
+});
+
+describe('log', () => {
   it('forwards level, channel, and data to the sink', () => {
     const { entries } = recordingSink();
-    flightLog(LogLevel.Warn, { k: 1 }, 'shader');
+    log(LogLevel.Warn, { k: 1 }, 'shader');
     expect(entries[0]).toEqual({ level: LogLevel.Warn, channel: 'shader', data: { k: 1 } });
   });
 
   it('defaults the channel to null', () => {
     const { entries } = recordingSink();
-    flightLog(LogLevel.Info, 'x');
+    log(LogLevel.Info, 'x');
     expect(entries[0].channel).toBeNull();
   });
 
   it('does nothing when no sink is installed', () => {
     const debug = vi.spyOn(console, 'debug').mockImplementation(() => {});
-    expect(() => flightLog(LogLevel.Info, 'x')).not.toThrow();
+    expect(() => log(LogLevel.Info, 'x')).not.toThrow();
     expect(debug).not.toHaveBeenCalled();
-  });
-});
-
-describe('getFlightLogConsoleLevel', () => {
-  it('returns the current threshold', () => {
-    setFlightLogConsoleLevel(LogLevel.Verbose);
-    expect(getFlightLogConsoleLevel()).toBe(LogLevel.Verbose);
   });
 });
 
@@ -124,22 +124,22 @@ describe('logWarn', () => {
   });
 });
 
-describe('setFlightLogConsoleLevel', () => {
+describe('setLogConsoleLevel', () => {
   it('raises the threshold so finer levels print a human line', () => {
     vi.spyOn(console, 'debug').mockImplementation(() => {});
-    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
-    setFlightLogConsoleLevel(LogLevel.Verbose);
-    setFlightLogSink(createConsoleCaptureSink());
-    flightLog(LogLevel.Verbose, 'now shown');
-    expect(log).toHaveBeenCalledTimes(1);
+    const log2 = vi.spyOn(console, 'log').mockImplementation(() => {});
+    setLogConsoleLevel(LogLevel.Verbose);
+    setLogSink(createConsoleCaptureSink());
+    log(LogLevel.Verbose, 'now shown');
+    expect(log2).toHaveBeenCalledTimes(1);
   });
 });
 
-describe('setFlightLogSink', () => {
+describe('setLogSink', () => {
   it('clears the sink when passed null', () => {
     const { entries } = recordingSink();
-    setFlightLogSink(null);
-    flightLog(LogLevel.Info, 'x');
+    setLogSink(null);
+    log(LogLevel.Info, 'x');
     expect(entries).toHaveLength(0);
   });
 });
