@@ -8,7 +8,6 @@ import {
 } from '@flighthq/text-input';
 import { getRichTextScrollYOffset } from '@flighthq/text-layout';
 import type {
-  DisplayObjectMaskRenderer,
   DisplayObjectRenderer,
   DOMRenderState,
   InputText,
@@ -18,7 +17,7 @@ import type {
   RenderProxy2D,
 } from '@flighthq/types';
 
-import { defaultDOMRichTextRenderer, drawDOMRichText, drawDOMRichTextMask } from './domRichText';
+import { defaultDOMRichTextRenderer, drawDOMRichText } from './domRichText';
 
 let _keyframesInjected = false;
 
@@ -66,14 +65,6 @@ export function drawDOMInputText(state: DOMRenderState, renderProxy: RenderProxy
 export const defaultDOMInputTextRenderer: DisplayObjectRenderer = {
   createData: defaultDOMRichTextRenderer.createData,
   submit: drawDOMInputText,
-};
-
-function drawDOMInputTextMask(state: DOMRenderState, renderProxy: RenderProxy2D): void {
-  drawDOMRichTextMask(state, renderProxy);
-}
-
-export const defaultDOMInputTextMaskRenderer: DisplayObjectMaskRenderer = {
-  drawMask: drawDOMInputTextMask,
 };
 
 function injectCaretBlinkKeyframes(): void {

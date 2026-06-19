@@ -4,7 +4,7 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { HTMLViewKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
-import { defaultHTMLViewRenderer, drawDOMHTMLView, drawDOMHTMLViewMask } from './htmlView';
+import { defaultHTMLViewRenderer, drawDOMHTMLView } from './htmlView';
 import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
@@ -114,14 +114,5 @@ describe('drawDOMHTMLView', () => {
     drawDOMHTMLView(state, renderProxy);
 
     expect(inner.style.transform).toMatch(/^matrix\(/);
-  });
-});
-
-describe('drawDOMHTMLViewMask', () => {
-  it('does not throw', () => {
-    const state = makeState();
-    const node = createHTMLView();
-    const renderProxy = getOrCreateRenderProxy2D(state, node);
-    expect(() => drawDOMHTMLViewMask(state, renderProxy)).not.toThrow();
   });
 });

@@ -1,11 +1,11 @@
-﻿import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/displayobject';
-import { registerRenderer } from '@flighthq/render';
+﻿import { registerRenderer } from '@flighthq/render';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/render-canvas';
+import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
 import { ShapeKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
-import { defaultDOMShapeRenderer, drawDOMShape, drawDOMShapeMask } from './domShape';
+import { defaultDOMShapeRenderer, drawDOMShape } from './domShape';
 import type { DOMRenderStateInternal } from './internal';
 
 beforeAll(() => {
@@ -82,14 +82,5 @@ describe('drawDOMShape', () => {
     const secondCanvas = drawGetEl(state, () => drawDOMShape(state, renderProxy));
 
     expect(firstCanvas).toBe(secondCanvas);
-  });
-});
-
-describe('drawDOMShapeMask', () => {
-  it('does not throw', () => {
-    const state = makeState();
-    const shape = createShape();
-    const renderProxy = getOrCreateRenderProxy2D(state, shape);
-    expect(() => drawDOMShapeMask(state, renderProxy)).not.toThrow();
   });
 });

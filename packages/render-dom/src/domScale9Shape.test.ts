@@ -1,13 +1,8 @@
-﻿import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/displayobject';
-import { getOrCreateRenderProxy2D } from '@flighthq/render';
+﻿import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
 
 import { createDOMRenderState } from './domRenderState';
-import {
-  createDOMScale9ShapeData,
-  defaultDOMScale9ShapeRenderer,
-  drawDOMScale9Shape,
-  drawDOMScale9ShapeMask,
-} from './domScale9Shape';
+import { createDOMScale9ShapeData, defaultDOMScale9ShapeRenderer, drawDOMScale9Shape } from './domScale9Shape';
 import type { DOMRenderStateInternal } from './internal';
 
 const grid = { height: 80, width: 80, x: 10, y: 10 };
@@ -78,18 +73,5 @@ describe('drawDOMScale9Shape', () => {
     expect(element.width).toBe(200);
     expect(element.height).toBe(300);
     expect(element.style.transform).toBe('matrix(1,0,0,1,0,0)');
-  });
-});
-
-describe('drawDOMScale9ShapeMask', () => {
-  it('uses the Scale9 draw path', () => {
-    const state = createDOMRenderState(document.createElement('div'));
-    const shape = createScale9Shape(grid);
-    const data = getOrCreateRenderProxy2D(state, shape);
-    data.rendererData = createDOMScale9ShapeData(state, shape);
-
-    drawDOMScale9ShapeMask(state, data);
-
-    expect(getCurrentElement(state)).toBeNull();
   });
 });

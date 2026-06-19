@@ -23,16 +23,13 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
     if (!current.enabled) continue;
 
     const data = getRenderProxy2D(state, current);
-    if (data === undefined || data.isMaskFrameID === frameID) continue;
+    if (data === undefined) continue;
 
-    clipHooks?.popMask(state, data);
-    clipHooks?.popClipRectangle(state, data, current);
+    clipHooks?.popClip(state, data, current);
 
     if (!isRenderProxyVisible(data)) continue;
 
-    clipHooks?.pushMask(state, current);
-
-    clipHooks?.pushClipRectangle(state, data, current);
+    clipHooks?.pushClip(state, data, current);
 
     if (data.renderer !== null) {
       const result = processDOMNode(internal, data, frameID, () => data.renderer!.submit(state, data), newLength);
