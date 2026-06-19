@@ -1,12 +1,14 @@
 import type { CanvasRenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
+import { getCanvasRenderStateRuntime } from './canvasRenderState';
+
 export function renderCanvasBackground(state: CanvasRenderState): void {
   // Reset to normal compositing directly. This deliberately bypasses the blend-mode
   // map so the background path never pulls blend-mode support into the bundle; each
   // display object re-applies its own mode through state.applyBlendMode when drawn.
   state.context.globalCompositeOperation = 'source-over';
-  state.currentBlendMode = BlendMode.Normal;
+  getCanvasRenderStateRuntime(state).currentBlendMode = BlendMode.Normal;
 
   state.context.setTransform(1, 0, 0, 1, 0, 0);
   state.context.globalAlpha = 1;

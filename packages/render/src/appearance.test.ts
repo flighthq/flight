@@ -3,9 +3,8 @@ import { invalidateNodeAppearance } from '@flighthq/node';
 import { BlendMode } from '@flighthq/types';
 
 import { updateRenderProxyAppearance } from './appearance';
-import type { RenderProxyStateInternal } from './internal';
 import { createRenderProxy } from './renderProxy';
-import { createRenderState } from './renderState';
+import { createRenderState, getRenderStateRuntime } from './renderState';
 
 describe('updateRenderProxyAppearance', () => {
   it('returns true on first call (lastAppearanceID starts at -1)', () => {
@@ -34,33 +33,33 @@ describe('updateRenderProxyAppearance', () => {
 
   it('returns true when parent appearanceFrameID matches currentFrameID', () => {
     const state = createRenderState();
-    (state as RenderProxyStateInternal).currentFrameID = 5;
+    getRenderStateRuntime(state).currentFrameID = 5;
     const obj = createDisplayObject();
     const parentObj = createDisplayObject();
     const data = createRenderProxy(state, obj);
     const parentData = createRenderProxy(state, parentObj);
     updateRenderProxyAppearance(state, data);
-    parentData.appearanceFrameID = state.currentFrameID;
+    parentData.appearanceFrameID = getRenderStateRuntime(state).currentFrameID;
     expect(updateRenderProxyAppearance(state, data, parentData)).toBe(true);
   });
 
   it('propagates parent visibility: invisible parent makes child invisible', () => {
     const state = createRenderState();
-    (state as RenderProxyStateInternal).currentFrameID = 1;
+    getRenderStateRuntime(state).currentFrameID = 1;
     const obj = createDisplayObject();
     obj.visible = true;
     const parentObj = createDisplayObject();
     const data = createRenderProxy(state, obj);
     const parentData = createRenderProxy(state, parentObj);
     parentData.visible = false;
-    parentData.appearanceFrameID = state.currentFrameID;
+    parentData.appearanceFrameID = getRenderStateRuntime(state).currentFrameID;
     updateRenderProxyAppearance(state, data, parentData);
     expect(data.visible).toBe(false);
   });
 
   it('multiplies alpha with parent alpha', () => {
     const state = createRenderState();
-    (state as RenderProxyStateInternal).currentFrameID = 1;
+    getRenderStateRuntime(state).currentFrameID = 1;
     const obj = createDisplayObject();
     obj.alpha = 0.5;
     const parentObj = createDisplayObject();
@@ -68,7 +67,7 @@ describe('updateRenderProxyAppearance', () => {
     const parentData = createRenderProxy(state, parentObj);
     parentData.visible = true;
     parentData.alpha = 0.4;
-    parentData.appearanceFrameID = state.currentFrameID;
+    parentData.appearanceFrameID = getRenderStateRuntime(state).currentFrameID;
     updateRenderProxyAppearance(state, data, parentData);
     expect(data.alpha).toBeCloseTo(0.2);
   });
@@ -85,7 +84,7 @@ describe('updateRenderProxyAppearance', () => {
 
   it('sets appearanceFrameID to currentFrameID after update', () => {
     const state = createRenderState();
-    (state as RenderProxyStateInternal).currentFrameID = 7;
+    getRenderStateRuntime(state).currentFrameID = 7;
     const obj = createDisplayObject();
     const data = createRenderProxy(state, obj);
     updateRenderProxyAppearance(state, data);
@@ -94,7 +93,7 @@ describe('updateRenderProxyAppearance', () => {
 
   it("uses the node's own blend mode and does not inherit from the parent", () => {
     const state = createRenderState();
-    (state as RenderProxyStateInternal).currentFrameID = 1;
+    getRenderStateRuntime(state).currentFrameID = 1;
     const obj = createDisplayObject();
     obj.blendMode = BlendMode.Screen;
     const parentObj = createDisplayObject();
@@ -103,7 +102,7 @@ describe('updateRenderProxyAppearance', () => {
     parentData.blendMode = BlendMode.Multiply;
     parentData.visible = true;
     parentData.alpha = 1;
-    parentData.appearanceFrameID = state.currentFrameID;
+    parentData.appearanceFrameID = getRenderStateRuntime(state).currentFrameID;
     updateRenderProxyAppearance(state, data, parentData);
     expect(data.blendMode).toBe(BlendMode.Screen);
   });

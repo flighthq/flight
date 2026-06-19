@@ -9,7 +9,7 @@ import {
   getDOMRenderCacheTarget,
   releaseDOMRenderCache,
 } from './domCache';
-import { createDOMRenderState } from './domRenderState';
+import { createDOMRenderState, getDOMRenderStateRuntime } from './domRenderState';
 
 function makeState() {
   return createDOMRenderState(document.createElement('div'));
@@ -40,7 +40,7 @@ describe('enableDOMRenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = makeState();
     enableDOMRenderCache(state);
-    expect(state.rendererMap.get(RenderCacheKind)).toBe(defaultDOMRenderCacheRenderer);
+    expect(getDOMRenderStateRuntime(state).rendererMap.get(RenderCacheKind)).toBe(defaultDOMRenderCacheRenderer);
   });
 });
 

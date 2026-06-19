@@ -57,7 +57,7 @@ describe('defaultWebGLTilemapRenderer.submit', () => {
     const { state, gl } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     defaultWebGLTilemapRenderer.submit(state, makeTilemapNode({ tileset: null }));
-    flushWebGLSpriteBatch(state as any);
+    flushWebGLSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -65,7 +65,7 @@ describe('defaultWebGLTilemapRenderer.submit', () => {
     const { state, gl } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     defaultWebGLTilemapRenderer.submit(state, makeTilemapNode({ tileset: makeTileset(null) }));
-    flushWebGLSpriteBatch(state as any);
+    flushWebGLSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -76,7 +76,7 @@ describe('defaultWebGLTilemapRenderer.submit', () => {
       state,
       makeTilemapNode({ tileset: { atlas: { image: null, regions: [] }, tileWidth: 16, tileHeight: 16 } }),
     );
-    flushWebGLSpriteBatch(state as any);
+    flushWebGLSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -87,7 +87,7 @@ describe('defaultWebGLTilemapRenderer.submit', () => {
       state,
       makeTilemapNode({ tileset: { atlas: { image: { source: null }, regions: [] }, tileWidth: 16, tileHeight: 16 } }),
     );
-    flushWebGLSpriteBatch(state as any);
+    flushWebGLSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -95,7 +95,7 @@ describe('defaultWebGLTilemapRenderer.submit', () => {
     const { state, gl } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     defaultWebGLTilemapRenderer.submit(state, makeTilemapNode({ columns: 0 }));
-    flushWebGLSpriteBatch(state as any);
+    flushWebGLSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -103,7 +103,7 @@ describe('defaultWebGLTilemapRenderer.submit', () => {
     const { state, gl } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     defaultWebGLTilemapRenderer.submit(state, makeTilemapNode({ rows: 0 }));
-    flushWebGLSpriteBatch(state as any);
+    flushWebGLSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -111,7 +111,7 @@ describe('defaultWebGLTilemapRenderer.submit', () => {
     const { state, gl } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     defaultWebGLTilemapRenderer.submit(state, makeTilemapNode());
-    flushWebGLSpriteBatch(state as any);
+    flushWebGLSpriteBatch(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 4);
   });
@@ -120,7 +120,7 @@ describe('defaultWebGLTilemapRenderer.submit', () => {
     const { state, gl } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     defaultWebGLTilemapRenderer.submit(state, makeTilemapNode({ tiles: [0, 99, 99, 0] }));
-    flushWebGLSpriteBatch(state as any);
+    flushWebGLSpriteBatch(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
   });

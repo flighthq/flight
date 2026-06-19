@@ -7,13 +7,11 @@ import { DisplayObjectKind } from '@flighthq/types';
 
 import { enableDOMClipSupport } from './domClip';
 import { renderDOMDisplayObject } from './domDisplayObject';
-import { createDOMRenderState } from './domRenderState';
+import { createDOMRenderState, getDOMRenderStateRuntime } from './domRenderState';
 
 function makeRectangleClip(rect: Rectangle): ClipRegion {
   return { contours: null, rect, version: 0, winding: 'nonZero' };
 }
-
-type ManagedState = ReturnType<typeof makeState> & { domCurrentElement: HTMLElement | null };
 
 function makeState() {
   const container = document.createElement('div');
@@ -35,10 +33,10 @@ function setupRenderedNode(
   data.renderer = {
     createData: vi.fn(),
     submit: vi.fn().mockImplementation(() => {
-      (state as ManagedState).domCurrentElement = el;
+      getDOMRenderStateRuntime(state).domCurrentElement = el;
     }),
   };
-  data.rendererMapID = state.rendererMapID;
+  data.rendererMapID = getDOMRenderStateRuntime(state).rendererMapID;
   return data;
 }
 

@@ -1,4 +1,5 @@
-import { ColorTransformMaterialKind, UniformColorTransformMaterialKind } from '@flighthq/types';
+import type { WebGPURenderState } from '@flighthq/types';
+import { ColorTransformMaterialKind, EntityRuntimeKey, UniformColorTransformMaterialKind } from '@flighthq/types';
 
 import {
   colorTransformWebGPUMaterialRenderer,
@@ -6,6 +7,7 @@ import {
   uniformColorTransformWebGPUMaterialRenderer,
 } from './webgpuColorTransformMaterial';
 import { getWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
+import { createWebGPURenderStateRuntime } from './webgpuRenderState';
 
 function makeColorTransform(redMultiplier: number) {
   return {
@@ -40,7 +42,8 @@ describe('colorTransformWebGPUMaterialRenderer', () => {
 
 describe('registerWebGPUColorTransformMaterials', () => {
   it('registers both color transform material renderers', () => {
-    const state = {} as never;
+    const state = {} as WebGPURenderState;
+    state[EntityRuntimeKey] = createWebGPURenderStateRuntime();
     registerWebGPUColorTransformMaterials(state);
     expect(getWebGPUMaterialRenderer(state, UniformColorTransformMaterialKind)).toBe(
       uniformColorTransformWebGPUMaterialRenderer,

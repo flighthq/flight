@@ -1,7 +1,7 @@
 import { createMatrix } from '@flighthq/geometry';
-import type { RenderProxy2D } from '@flighthq/types';
+import type { RenderProxy2D, WebGPURenderState, WebGPUShapeMeshBuffers } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal, WebGPUShapeMeshBuffers } from './internal';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import type { WebGPUShapeMesh } from './webgpuShapeMesh';
 import { drawWebGPUShapeMeshes } from './webgpuShapeMesh';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
@@ -44,16 +44,17 @@ function makeProxy(matrix = createMatrix(), alpha = 1): RenderProxy2D {
   return { alpha, blendMode: null, transform2D: matrix } as unknown as RenderProxy2D;
 }
 
-async function makeState(): Promise<WebGPURenderStateInternal> {
-  const state = (await createWebGPURenderStateForTest()) as unknown as WebGPURenderStateInternal;
-  state.renderPass = makePassSpy();
+async function makeState(): Promise<WebGPURenderState> {
+  const state = await createWebGPURenderStateForTest();
+  getWebGPURenderStateRuntime(state).renderPass = makePassSpy();
   return state;
 }
 
 describe('drawWebGPUShapeMeshes', () => {
   it('sets the shape-mesh pipeline and draws each mesh', async () => {
     const state = await makeState();
-    const pass = state.renderPass as unknown as {
+    const runtime = getWebGPURenderStateRuntime(state);
+    const pass = runtime.renderPass as unknown as {
       setPipeline: ReturnType<typeof vi.fn>;
       drawIndexed: ReturnType<typeof vi.fn>;
     };
@@ -61,15 +62,16 @@ describe('drawWebGPUShapeMeshes', () => {
     drawWebGPUShapeMeshes(state, makeProxy(), [TRIANGLE, TRIANGLE], makeBuffers());
 
     expect(pass.setPipeline).toHaveBeenCalled();
-    expect(state.shapeMeshPipeline).not.toBeNull();
+    expect(runtime.shapeMeshPipeline).not.toBeNull();
     expect(pass.drawIndexed).toHaveBeenCalledTimes(2);
     expect(pass.drawIndexed).toHaveBeenCalledWith(3);
   });
 
   it('gates the fill by the active contour-clip stencil reference', async () => {
     const state = await makeState();
-    state.currentMaskDepth = 2;
-    const pass = state.renderPass as unknown as { setStencilReference: ReturnType<typeof vi.fn> };
+    const runtime = getWebGPURenderStateRuntime(state);
+    runtime.currentMaskDepth = 2;
+    const pass = runtime.renderPass as unknown as { setStencilReference: ReturnType<typeof vi.fn> };
 
     drawWebGPUShapeMeshes(state, makeProxy(), [TRIANGLE], makeBuffers());
 
@@ -102,7 +104,7 @@ describe('drawWebGPUShapeMeshes', () => {
 
   it('skips fully transparent meshes', async () => {
     const state = await makeState();
-    const pass = state.renderPass as unknown as { drawIndexed: ReturnType<typeof vi.fn> };
+    const pass = getWebGPURenderStateRuntime(state).renderPass as unknown as { drawIndexed: ReturnType<typeof vi.fn> };
 
     drawWebGPUShapeMeshes(state, makeProxy(), [{ ...TRIANGLE, alpha: 0 }], makeBuffers());
 
@@ -111,11 +113,12 @@ describe('drawWebGPUShapeMeshes', () => {
 
   it('is a no-op for an empty mesh list', async () => {
     const state = await makeState();
-    const pass = state.renderPass as unknown as { setPipeline: ReturnType<typeof vi.fn> };
+    const runtime = getWebGPURenderStateRuntime(state);
+    const pass = runtime.renderPass as unknown as { setPipeline: ReturnType<typeof vi.fn> };
 
     drawWebGPUShapeMeshes(state, makeProxy(), [], makeBuffers());
 
     expect(pass.setPipeline).not.toHaveBeenCalled();
-    expect(state.shapeMeshPipeline).toBeNull();
+    expect(runtime.shapeMeshPipeline).toBeNull();
   });
 });

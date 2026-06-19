@@ -3,6 +3,7 @@ import { createMatrix, createRectangle } from '@flighthq/geometry';
 import type { ClipRegion, DisplayObject, RenderProxy2D } from '@flighthq/types';
 
 import { enableWebGLClipSupport } from './webglClip';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { makeWebGLState } from './webglTestHelper';
 
 function makeRectClip(): ClipRegion {
@@ -43,7 +44,7 @@ describe('enableWebGLClipSupport', () => {
     state.displayObjectClipHooks?.pushClip(state, makeProxy(source, 1), source);
 
     expect(gl.enable).toHaveBeenLastCalledWith(gl.SCISSOR_TEST);
-    expect(state.clipForms).toEqual(['rect']);
+    expect(getWebGLRenderStateRuntime(state).clipForms).toEqual(['rect']);
   });
 
   it('pushClip enables the stencil test for a contour clip', () => {
@@ -55,8 +56,9 @@ describe('enableWebGLClipSupport', () => {
     state.displayObjectClipHooks?.pushClip(state, makeProxy(source, 1), source);
 
     expect(gl.enable).toHaveBeenCalledWith(gl.STENCIL_TEST);
-    expect(state.clipForms).toEqual(['contour']);
-    expect(state.currentMaskDepth).toBe(1);
+    const runtime = getWebGLRenderStateRuntime(state);
+    expect(runtime.clipForms).toEqual(['contour']);
+    expect(runtime.currentMaskDepth).toBe(1);
   });
 
   it('pushClip does nothing when the source has no clip', () => {
@@ -66,7 +68,7 @@ describe('enableWebGLClipSupport', () => {
 
     state.displayObjectClipHooks?.pushClip(state, makeProxy(source, 0), source);
 
-    expect(state.clipForms).toEqual([]);
+    expect(getWebGLRenderStateRuntime(state).clipForms).toEqual([]);
   });
 
   it('popClip unwinds forms down to the source parent depth', () => {
@@ -79,7 +81,7 @@ describe('enableWebGLClipSupport', () => {
     // A sibling at the same depth carrying its own clip pops the previous one first.
     state.displayObjectClipHooks?.popClip(state, makeProxy(source, 1), source);
 
-    expect(state.clipForms).toEqual([]);
+    expect(getWebGLRenderStateRuntime(state).clipForms).toEqual([]);
   });
 
   it('finalize pops every remaining clip form', () => {
@@ -94,6 +96,6 @@ describe('enableWebGLClipSupport', () => {
 
     state.displayObjectClipHooks?.finalize(state);
 
-    expect(state.clipForms).toEqual([]);
+    expect(getWebGLRenderStateRuntime(state).clipForms).toEqual([]);
   });
 });

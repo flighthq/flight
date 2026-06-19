@@ -1,18 +1,19 @@
 import { copyMatrix, createMatrix } from '@flighthq/geometry';
 import type { Material, Matrix, WebGPURenderState, WebGPURenderTarget } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
 import { buildWebGPURenderTargetBindGroup, drawWebGPUQuadWithTransform } from './webgpuDraw';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 
 function beginWebGPURenderPass(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   colorView: GPUTextureView,
   depthStencilView: GPUTextureView,
   width: number,
   height: number,
   loadOp: GPULoadOp,
 ): GPURenderPassEncoder {
-  const pass = state.commandEncoder!.beginRenderPass({
+  const runtime = getWebGPURenderStateRuntime(state);
+  const pass = runtime.commandEncoder!.beginRenderPass({
     colorAttachments: [{ view: colorView, loadOp, storeOp: 'store', clearValue: { r: 0, g: 0, b: 0, a: 0 } }],
     depthStencilAttachment: {
       view: depthStencilView,
@@ -33,36 +34,36 @@ export function beginWebGPURenderTarget(
   target: WebGPURenderTarget,
   renderTransform: Readonly<Matrix>,
 ): void {
-  const internal = state as WebGPURenderStateInternal;
+  const runtime = getWebGPURenderStateRuntime(state);
 
   // End the current render pass before beginning the new one
-  if (internal.renderPass !== null) {
-    internal.renderPass.end();
-    internal.renderPass = null;
+  if (runtime.renderPass !== null) {
+    runtime.renderPass.end();
+    runtime.renderPass = null;
   }
 
-  internal.renderTargetStack.push({
-    canvasTextureView: internal.canvasTextureView,
-    canvasViewCleared: internal.canvasViewCleared,
-    depthStencilView: internal.depthStencilView,
-    renderTargetViewport: internal.renderTargetViewport,
-    renderTransform2D: internal.renderTransform2D,
+  runtime.renderTargetStack.push({
+    canvasTextureView: runtime.canvasTextureView,
+    canvasViewCleared: runtime.canvasViewCleared,
+    depthStencilView: runtime.depthStencilView,
+    renderTargetViewport: runtime.renderTargetViewport,
+    renderTransform2D: state.renderTransform2D,
   });
 
-  internal.renderTargetViewport = { width: target.width, height: target.height };
+  runtime.renderTargetViewport = { width: target.width, height: target.height };
 
   const newTransform = createMatrix();
   copyMatrix(newTransform, renderTransform);
-  internal.renderTransform2D = newTransform;
+  state.renderTransform2D = newTransform;
 
   // Reset mask/clip state for the new pass
-  internal.currentMaskDepth = 0;
-  internal.maskWriteMode = false;
-  internal.currentScissorRect = null;
-  internal.scissorStack = [];
+  runtime.currentMaskDepth = 0;
+  runtime.maskWriteMode = false;
+  runtime.currentScissorRect = null;
+  runtime.scissorStack = [];
 
-  internal.renderPass = beginWebGPURenderPass(
-    internal,
+  runtime.renderPass = beginWebGPURenderPass(
+    state,
     target.view,
     target.depthStencilView,
     target.width,
@@ -72,8 +73,8 @@ export function beginWebGPURenderTarget(
 }
 
 export function createWebGPURenderTarget(state: WebGPURenderState, width: number, height: number): WebGPURenderTarget {
-  const internal = state as WebGPURenderStateInternal;
-  const { device, format } = internal;
+  const device = state.device;
+  const format = state.format;
   const w = Math.max(1, Math.ceil(width));
   const h = Math.max(1, Math.ceil(height));
 
@@ -83,7 +84,7 @@ export function createWebGPURenderTarget(state: WebGPURenderState, width: number
     usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
   });
   const view = texture.createView();
-  const bindGroup = buildWebGPURenderTargetBindGroup(internal, view);
+  const bindGroup = buildWebGPURenderTargetBindGroup(state, view);
 
   const depthStencilTexture = device.createTexture({
     size: [w, h, 1],
@@ -112,8 +113,8 @@ export function drawWebGPURenderTargetResult(
 ): void {
   if (target.width <= 0 || target.height <= 0) return;
 
-  const internal = state as WebGPURenderStateInternal;
-  if (internal.renderPass === null) return;
+  const runtime = getWebGPURenderStateRuntime(state);
+  if (runtime.renderPass === null) return;
 
   // Compose the render node's transform with the cache offset transform
   const { a, b, c, d, tx, ty } = renderProxy.transform2D;
@@ -129,7 +130,7 @@ export function drawWebGPURenderTargetResult(
 
   // Render target textures are stored with Y flipped relative to canvas (bottom-left origin)
   drawWebGPUQuadWithTransform(
-    internal,
+    state,
     renderProxy as never,
     composedTransform,
     { texture: target.texture, view: target.view, bindGroup: target.bindGroup },
@@ -145,34 +146,34 @@ export function drawWebGPURenderTargetResult(
 }
 
 export function endWebGPURenderTarget(state: WebGPURenderState): void {
-  const internal = state as WebGPURenderStateInternal;
+  const runtime = getWebGPURenderStateRuntime(state);
 
-  if (internal.renderPass !== null) {
-    internal.renderPass.end();
-    internal.renderPass = null;
+  if (runtime.renderPass !== null) {
+    runtime.renderPass.end();
+    runtime.renderPass = null;
   }
 
-  const saved = internal.renderTargetStack.pop();
+  const saved = runtime.renderTargetStack.pop();
   if (saved === undefined) return;
 
-  internal.canvasTextureView = saved.canvasTextureView;
-  internal.canvasViewCleared = saved.canvasViewCleared;
-  internal.renderTargetViewport = saved.renderTargetViewport;
-  internal.renderTransform2D = saved.renderTransform2D;
+  runtime.canvasTextureView = saved.canvasTextureView;
+  runtime.canvasViewCleared = saved.canvasViewCleared;
+  runtime.renderTargetViewport = saved.renderTargetViewport;
+  state.renderTransform2D = saved.renderTransform2D;
 
   // Reset mask/clip state when returning to the enclosing pass
-  internal.currentMaskDepth = 0;
-  internal.maskWriteMode = false;
-  internal.currentScissorRect = null;
-  internal.scissorStack = [];
+  runtime.currentMaskDepth = 0;
+  runtime.maskWriteMode = false;
+  runtime.currentScissorRect = null;
+  runtime.scissorStack = [];
 
   if (saved.canvasTextureView !== null) {
-    internal.renderPass = beginWebGPURenderPass(
-      internal,
+    runtime.renderPass = beginWebGPURenderPass(
+      state,
       saved.canvasTextureView,
-      saved.depthStencilView ?? internal.depthStencilView!,
-      internal.renderTargetViewport?.width ?? internal.canvas.width,
-      internal.renderTargetViewport?.height ?? internal.canvas.height,
+      saved.depthStencilView ?? runtime.depthStencilView!,
+      runtime.renderTargetViewport?.width ?? state.canvas.width,
+      runtime.renderTargetViewport?.height ?? state.canvas.height,
       'load',
     );
   }
@@ -184,7 +185,8 @@ export function resizeWebGPURenderTarget(
   width: number,
   height: number,
 ): void {
-  const internal = state as WebGPURenderStateInternal;
+  const device = state.device;
+  const format = state.format;
   const w = Math.max(1, Math.ceil(width));
   const h = Math.max(1, Math.ceil(height));
   target.width = w;
@@ -193,8 +195,6 @@ export function resizeWebGPURenderTarget(
   target.texture.destroy();
   target.depthStencilTexture.destroy();
 
-  const { device, format } = internal;
-
   const newTexture = device.createTexture({
     size: [w, h, 1],
     format,
@@ -202,7 +202,7 @@ export function resizeWebGPURenderTarget(
   });
   target.texture = newTexture;
   target.view = newTexture.createView();
-  target.bindGroup = buildWebGPURenderTargetBindGroup(internal, target.view);
+  target.bindGroup = buildWebGPURenderTargetBindGroup(state, target.view);
 
   const newDepth = device.createTexture({
     size: [w, h, 1],

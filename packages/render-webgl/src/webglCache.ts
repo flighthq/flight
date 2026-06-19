@@ -18,13 +18,13 @@ import type {
   RenderCache,
   RenderCacheRefreshOptions,
   RenderProxy2D,
-  RenderState,
   WebGLRenderState,
   WebGLRenderTarget,
 } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
 import { renderWebGLDisplayObject } from './webglDisplayObject';
+import { createWebGLRenderStateRuntime, getWebGLRenderStateRuntime } from './webglRenderState';
 import {
   beginWebGLRenderTarget,
   createWebGLRenderTarget,
@@ -45,63 +45,68 @@ import { flushWebGLSpriteBatch } from './webglSpriteBatch';
  * neither substitutes a cache into itself nor disturbs the screen state's nodes.
  */
 export function createWebGLCacheState(screenState: WebGLRenderState): WebGLRenderState {
-  const screen = screenState as WebGLRenderStateInternal;
+  const screenRuntime = getWebGLRenderStateRuntime(screenState);
   const cacheState = createRenderState({
     allowSmoothing: screenState.allowSmoothing,
     pixelRatio: screenState.pixelRatio,
     renderTransform2D: createMatrix(),
     roundPixels: screenState.roundPixels,
     sceneGraphSyncPolicy: screenState.sceneGraphSyncPolicy,
-  }) as WebGLRenderStateInternal;
+  }) as WebGLRenderState;
+
+  // Attach the cache runtime before copying renderers: copyAllRenderersFromRenderState registers
+  // into the runtime's rendererMap, so the backend runtime must already be installed.
+  const cacheRuntime = createWebGLRenderStateRuntime();
+  cacheState[EntityRuntimeKey] = cacheRuntime;
 
   copyAllRenderersFromRenderState(cacheState, screenState);
 
-  cacheState.applyBlendMode = screen.applyBlendMode;
-  cacheState.canvas = screen.canvas;
-  cacheState.gl = screen.gl;
-  cacheState.defaultBitmapShader = screen.defaultBitmapShader;
-  cacheState.colorTransformBitmapShader = screen.colorTransformBitmapShader;
-  cacheState.particleShader = screen.particleShader;
-  cacheState.particleCornerBuffer = screen.particleCornerBuffer;
-  cacheState.particleInstanceBuffer = screen.particleInstanceBuffer;
-  cacheState.particleInstanceData = screen.particleInstanceData;
-  cacheState.quadBatchShader = screen.quadBatchShader;
-  cacheState.quadBatchCornerBuffer = screen.quadBatchCornerBuffer;
-  cacheState.colorTransformInstancedShader = screen.colorTransformInstancedShader;
-  cacheState.uniformColorTransformShader = screen.uniformColorTransformShader;
-  cacheState.materialRendererMap = screen.materialRendererMap;
-  cacheState.materialBitmapShaderMap = screen.materialBitmapShaderMap;
-  cacheState.shaderLoc = screen.shaderLoc;
-  cacheState.textureCache = screen.textureCache;
-  cacheState.quadVertexBuffer = screen.quadVertexBuffer;
-  cacheState.quadIndexBuffer = screen.quadIndexBuffer;
-  cacheState.quadVertexData = screen.quadVertexData;
-  cacheState.matrixArray = screen.matrixArray;
+  cacheState.applyBlendMode = screenState.applyBlendMode;
+  (cacheState as { canvas: HTMLCanvasElement }).canvas = screenState.canvas;
+  (cacheState as { gl: WebGL2RenderingContext }).gl = screenState.gl;
+  cacheRuntime.defaultBitmapShader = screenRuntime.defaultBitmapShader;
+  cacheRuntime.colorTransformBitmapShader = screenRuntime.colorTransformBitmapShader;
+  cacheRuntime.particleShader = screenRuntime.particleShader;
+  cacheRuntime.particleCornerBuffer = screenRuntime.particleCornerBuffer;
+  cacheRuntime.particleInstanceBuffer = screenRuntime.particleInstanceBuffer;
+  cacheRuntime.particleInstanceData = screenRuntime.particleInstanceData;
+  cacheRuntime.quadBatchShader = screenRuntime.quadBatchShader;
+  cacheRuntime.quadBatchCornerBuffer = screenRuntime.quadBatchCornerBuffer;
+  cacheRuntime.colorTransformInstancedShader = screenRuntime.colorTransformInstancedShader;
+  cacheRuntime.uniformColorTransformShader = screenRuntime.uniformColorTransformShader;
+  cacheRuntime.materialRendererMap = screenRuntime.materialRendererMap;
+  cacheRuntime.materialBitmapShaderMap = screenRuntime.materialBitmapShaderMap;
+  cacheRuntime.shaderLoc = screenRuntime.shaderLoc;
+  cacheRuntime.textureCache = screenRuntime.textureCache;
+  cacheRuntime.quadVertexBuffer = screenRuntime.quadVertexBuffer;
+  cacheRuntime.quadIndexBuffer = screenRuntime.quadIndexBuffer;
+  cacheRuntime.quadVertexData = screenRuntime.quadVertexData;
+  cacheRuntime.matrixArray = screenRuntime.matrixArray;
 
-  cacheState.currentBlendMode = null;
-  cacheState.currentFramebuffer = null;
-  cacheState.currentMaskDepth = 0;
-  cacheState.currentProgram = null;
-  cacheState.currentScissorRect = null;
-  cacheState.currentTexture = null;
-  cacheState.renderTargetViewport = null;
-  cacheState.scissorStack = [];
-  cacheState.spriteBatchBlendMode = null;
-  cacheState.spriteBatchMaterial = null;
-  cacheState.spriteBatchMaterialRenderer = null;
-  cacheState.spriteBatchMaterialFloats = 0;
-  cacheState.spriteBatchMaterialData = new Float32Array(0);
-  cacheState.spriteBatchMaterialBuffer = null;
-  cacheState.spriteBatchCount = 0;
-  cacheState.spriteBatchInstanceBuffer = null;
-  cacheState.spriteBatchInstanceData = new Float32Array(0);
-  cacheState.spriteBatchTexture = null;
+  cacheRuntime.currentBlendMode = null;
+  cacheRuntime.currentFramebuffer = null;
+  cacheRuntime.currentMaskDepth = 0;
+  cacheRuntime.currentProgram = null;
+  cacheRuntime.currentScissorRect = null;
+  cacheRuntime.currentTexture = null;
+  cacheRuntime.renderTargetViewport = null;
+  cacheRuntime.scissorStack = [];
+  cacheRuntime.spriteBatchBlendMode = null;
+  cacheRuntime.spriteBatchMaterial = null;
+  cacheRuntime.spriteBatchMaterialRenderer = null;
+  cacheRuntime.spriteBatchMaterialFloats = 0;
+  cacheRuntime.spriteBatchMaterialData = new Float32Array(0);
+  cacheRuntime.spriteBatchMaterialBuffer = null;
+  cacheRuntime.spriteBatchCount = 0;
+  cacheRuntime.spriteBatchInstanceBuffer = null;
+  cacheRuntime.spriteBatchInstanceData = new Float32Array(0);
+  cacheRuntime.spriteBatchTexture = null;
 
   _cacheStateScreen.set(cacheState, screenState);
   return cacheState;
 }
 
-export function enableWebGLRenderCache(state: RenderState): void {
+export function enableWebGLRenderCache(state: WebGLRenderState): void {
   registerRenderCacheRenderer(state, defaultWebGLRenderCacheRenderer);
 }
 
@@ -162,26 +167,26 @@ export function refreshWebGLRenderCache(
   beginWebGLRenderTarget(cacheState, target, _renderTransform);
   const dirty = prepareDisplayObjectRender(cacheState, source);
   if (dirty || resized) {
-    const internal = cacheState as WebGLRenderStateInternal;
+    const cacheRuntime = getWebGLRenderStateRuntime(cacheState);
     // The cache state shares the screen's GL context, so the actual GL program/blend/scissor are
     // whatever the screen render (or a prior blur pass) last left — state this cache state does not
     // track. Reset its cached GL state so the bake re-establishes everything instead of skipping a
     // rebind and setting uniforms on the wrong program.
-    internal.currentProgram = null;
-    internal.currentTexture = null;
-    internal.currentBlendMode = null;
-    internal.currentScissorRect = null;
-    internal.gl.clearColor(0, 0, 0, 0);
-    internal.gl.clear(internal.gl.COLOR_BUFFER_BIT);
+    cacheRuntime.currentProgram = null;
+    cacheRuntime.currentTexture = null;
+    cacheRuntime.currentBlendMode = null;
+    cacheRuntime.currentScissorRect = null;
+    cacheState.gl.clearColor(0, 0, 0, 0);
+    cacheState.gl.clear(cacheState.gl.COLOR_BUFFER_BIT);
     renderWebGLDisplayObject(cacheState, source);
   }
   endWebGLRenderTarget(cacheState);
 
-  const screen = screenState as WebGLRenderStateInternal;
-  screen.currentBlendMode = null;
-  screen.currentProgram = null;
-  screen.currentScissorRect = null;
-  screen.currentTexture = null;
+  const screenRuntime = getWebGLRenderStateRuntime(screenState);
+  screenRuntime.currentBlendMode = null;
+  screenRuntime.currentProgram = null;
+  screenRuntime.currentScissorRect = null;
+  screenRuntime.currentTexture = null;
   return dirty || resized;
 }
 
@@ -194,20 +199,19 @@ export function releaseWebGLRenderCache(state: WebGLRenderState, cache: RenderCa
   targets.delete(cache);
 }
 
-function drawWebGLRenderCache(state: RenderState, renderProxy: RenderProxy2D): void {
+function drawWebGLRenderCache(state: WebGLRenderState, renderProxy: RenderProxy2D): void {
   const cache = getRenderProxyCache(state, renderProxy.source);
   if (cache === null) return;
-  const webglState = state as WebGLRenderState;
-  const target = getTargets(webglState).get(cache);
+  const target = getTargets(state).get(cache);
   if (target === undefined) return;
   // Drain pending batched geometry before the immediate composite quad. Like every other
   // immediate-draw renderer (RichText, Video, Scale9), this bypasses the sprite batch; without the
   // flush the cached result draws ahead of geometry submitted earlier in the walk, which only
   // flushes at the end — producing out-of-order replay (a doubled image on WebGL).
-  flushWebGLSpriteBatch(webglState as WebGLRenderStateInternal);
+  flushWebGLSpriteBatch(state);
   // renderProxy.transform2D already carries the cache placement transform (folded in by the
   // adapter), so the target composites with an identity offset.
-  drawWebGLRenderTargetResult(webglState, renderProxy, target, _identity);
+  drawWebGLRenderTargetResult(state, renderProxy, target, _identity);
 }
 
 function getTargets(state: WebGLRenderState): WeakMap<RenderCache, WebGLRenderTarget> {

@@ -1,5 +1,4 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
-import type { WebGLRenderStateInternal } from '@flighthq/render-webgl';
 import type { ColorMatrixFilter } from '@flighthq/types';
 import type { WebGLRenderState } from '@flighthq/types';
 
@@ -68,7 +67,7 @@ export function applyColorMatrixFilterToWebGL(
 function getShader(state: WebGLRenderState): ColorMatrixShaderLocations {
   let loc = shaders.get(state);
   if (loc === undefined) {
-    const gl = (state as WebGLRenderStateInternal).gl;
+    const gl = state.gl;
     const base = compileWebGLFilterProgram(gl, COLOR_MATRIX_FRAGMENT_SRC);
     loc = {
       ...base,

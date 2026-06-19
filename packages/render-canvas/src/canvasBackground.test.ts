@@ -3,7 +3,7 @@ import type { CanvasRenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { renderCanvasBackground } from './canvasBackground';
-import { createCanvasRenderState } from './canvasRenderState';
+import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasRenderState';
 
 function makeState(): { canvas: HTMLCanvasElement; state: CanvasRenderState } {
   const canvas = document.createElement('canvas');
@@ -54,12 +54,12 @@ describe('renderCanvasBackground', () => {
 
   it('resets to normal compositing directly, without using the blend-mode map', () => {
     const { state } = makeState();
-    state.currentBlendMode = BlendMode.Multiply;
+    getCanvasRenderStateRuntime(state).currentBlendMode = BlendMode.Multiply;
     state.context.globalCompositeOperation = 'multiply';
 
     renderCanvasBackground(state);
 
-    expect(state.currentBlendMode).toBe(BlendMode.Normal);
+    expect(getCanvasRenderStateRuntime(state).currentBlendMode).toBe(BlendMode.Normal);
     expect(state.context.globalCompositeOperation).toBe('source-over');
   });
 });

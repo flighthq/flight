@@ -1,5 +1,5 @@
-import type { WebGPURenderStateInternal } from './internal';
 import { renderWebGPUBackground } from './webgpuBackground';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import {
   createWebGPUBindGroupLayouts,
   createWebGPUPipelineLayout,
@@ -18,7 +18,7 @@ beforeAll(() => {
 
 describe('createWebGPUBindGroupLayouts', () => {
   it('returns uniformBindGroupLayout and textureBindGroupLayout', async () => {
-    const state = (await createWebGPURenderStateForTest()) as unknown as WebGPURenderStateInternal;
+    const state = await createWebGPURenderStateForTest();
     const layouts = createWebGPUBindGroupLayouts(state.device);
     expect(layouts.uniformBindGroupLayout).toBeDefined();
     expect(layouts.textureBindGroupLayout).toBeDefined();
@@ -27,17 +27,23 @@ describe('createWebGPUBindGroupLayouts', () => {
 
 describe('createWebGPUPipelineLayout', () => {
   it('returns a pipeline layout', async () => {
-    const state = (await createWebGPURenderStateForTest()) as unknown as WebGPURenderStateInternal;
-    const layout = createWebGPUPipelineLayout(state.device, state.uniformBindGroupLayout, state.textureBindGroupLayout);
+    const state = await createWebGPURenderStateForTest();
+    const runtime = getWebGPURenderStateRuntime(state);
+    const layout = createWebGPUPipelineLayout(
+      state.device,
+      runtime.uniformBindGroupLayout,
+      runtime.textureBindGroupLayout,
+    );
     expect(layout).toBeDefined();
   });
 });
 
 describe('getActiveWebGPUPipeline', () => {
   it('returns the normal pipeline when no mask is active', async () => {
-    const state = (await createWebGPURenderStateForTest()) as unknown as WebGPURenderStateInternal;
-    state.currentMaskDepth = 0;
-    state.maskWriteMode = false;
+    const state = await createWebGPURenderStateForTest();
+    const runtime = getWebGPURenderStateRuntime(state);
+    runtime.currentMaskDepth = 0;
+    runtime.maskWriteMode = false;
     const pipeline = getActiveWebGPUPipeline(state);
     expect(pipeline).toBeDefined();
   });
@@ -45,14 +51,14 @@ describe('getActiveWebGPUPipeline', () => {
 
 describe('getWebGPUPipeline', () => {
   it('returns a cached pipeline on second call', async () => {
-    const state = (await createWebGPURenderStateForTest()) as unknown as WebGPURenderStateInternal;
+    const state = await createWebGPURenderStateForTest();
     const p1 = getWebGPUPipeline(state, null, 'normal');
     const p2 = getWebGPUPipeline(state, null, 'normal');
     expect(p1).toBe(p2);
   });
 
   it('returns different pipelines for different stencil modes', async () => {
-    const state = (await createWebGPURenderStateForTest()) as unknown as WebGPURenderStateInternal;
+    const state = await createWebGPURenderStateForTest();
     const normal = getWebGPUPipeline(state, null, 'normal');
     const maskwrite = getWebGPUPipeline(state, null, 'maskwrite');
     expect(normal).not.toBe(maskwrite);
@@ -85,21 +91,23 @@ describe('UNIFORM_BYTE_SIZE', () => {
 
 describe('writeWebGPUMatrixOnlyUniforms', () => {
   it('advances uniformOffset', async () => {
-    const state = (await createWebGPURenderStateForTest()) as unknown as WebGPURenderStateInternal;
-    renderWebGPUBackground(state as never);
-    const before = state.uniformOffset;
+    const state = await createWebGPURenderStateForTest();
+    const runtime = getWebGPURenderStateRuntime(state);
+    renderWebGPUBackground(state);
+    const before = runtime.uniformOffset;
     const fakeNode = { alpha: 1, useColorTransform: false, colorTransform: null };
     const t = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
     writeWebGPUMatrixOnlyUniforms(state, fakeNode as never, t, 0, 0, 10, 10, 0, 0, 1, 1);
-    expect(state.uniformOffset).toBe(before + state.uniformStride);
+    expect(runtime.uniformOffset).toBe(before + runtime.uniformStride);
   });
 });
 
 describe('writeWebGPUQuadUniforms', () => {
   it('advances uniformOffset by uniformStride', async () => {
-    const state = (await createWebGPURenderStateForTest()) as unknown as WebGPURenderStateInternal;
-    renderWebGPUBackground(state as never);
-    const before = state.uniformOffset;
+    const state = await createWebGPURenderStateForTest();
+    const runtime = getWebGPURenderStateRuntime(state);
+    renderWebGPUBackground(state);
+    const before = runtime.uniformOffset;
     const fakeNode = {
       alpha: 1,
       useColorTransform: false,
@@ -107,12 +115,13 @@ describe('writeWebGPUQuadUniforms', () => {
       transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
     };
     writeWebGPUQuadUniforms(state, fakeNode, null, 0, 0, 100, 100, 0, 0, 1, 1);
-    expect(state.uniformOffset).toBe(before + state.uniformStride);
+    expect(runtime.uniformOffset).toBe(before + runtime.uniformStride);
   });
 
   it('writes quad coordinates into uniform data at float offset 24', async () => {
-    const state = (await createWebGPURenderStateForTest()) as unknown as WebGPURenderStateInternal;
-    renderWebGPUBackground(state as never);
+    const state = await createWebGPURenderStateForTest();
+    const runtime = getWebGPURenderStateRuntime(state);
+    renderWebGPUBackground(state);
     const fakeNode = {
       alpha: 0.5,
       useColorTransform: false,
@@ -121,11 +130,11 @@ describe('writeWebGPUQuadUniforms', () => {
     };
     const offset = writeWebGPUQuadUniforms(state, fakeNode, null, 10, 20, 30, 40, 0.1, 0.2, 0.9, 0.8);
     const floatBase = offset >> 2;
-    expect(state.uniformData[floatBase + 24]).toBeCloseTo(10);
-    expect(state.uniformData[floatBase + 25]).toBeCloseTo(20);
-    expect(state.uniformData[floatBase + 26]).toBeCloseTo(30);
-    expect(state.uniformData[floatBase + 27]).toBeCloseTo(40);
-    expect(state.uniformData[floatBase + 28]).toBeCloseTo(0.1);
-    expect(state.uniformData[floatBase + 12]).toBeCloseTo(0.5); // alpha
+    expect(runtime.uniformData[floatBase + 24]).toBeCloseTo(10);
+    expect(runtime.uniformData[floatBase + 25]).toBeCloseTo(20);
+    expect(runtime.uniformData[floatBase + 26]).toBeCloseTo(30);
+    expect(runtime.uniformData[floatBase + 27]).toBeCloseTo(40);
+    expect(runtime.uniformData[floatBase + 28]).toBeCloseTo(0.1);
+    expect(runtime.uniformData[floatBase + 12]).toBeCloseTo(0.5); // alpha
   });
 });

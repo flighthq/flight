@@ -5,9 +5,8 @@ import { BlendMode } from '@flighthq/types';
 
 import { enableDOMCSSFilterSupport, setDOMCSSFilter } from './domCSSFilterBinding';
 import { enableDOMBlendModeSupport } from './domMaterials';
-import { createDOMRenderState } from './domRenderState';
+import { createDOMRenderState, getDOMRenderStateRuntime } from './domRenderState';
 import { applyDOMStyle, prepareDOMElement, setDOMRendererElement } from './domStyle';
-import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
   const container = document.createElement('div');
@@ -126,6 +125,6 @@ describe('setDOMRendererElement', () => {
 
     setDOMRendererElement(state, el);
 
-    expect((state as unknown as DOMRenderStateInternal).domCurrentElement).toBe(el);
+    expect(getDOMRenderStateRuntime(state).domCurrentElement).toBe(el);
   });
 });

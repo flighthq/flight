@@ -1,7 +1,15 @@
 import { copyMatrix, createMatrix } from '@flighthq/geometry';
 import type { CanvasRenderState, CanvasRenderTarget, Matrix } from '@flighthq/types';
 
-import type { CanvasRenderStateInternal } from './internal';
+import { getCanvasRenderStateRuntime } from './canvasRenderState';
+
+// Writable view of the readonly canvas/context handles. The render-target redirection deliberately
+// swaps these handles, so this narrow cast is the redirection boundary — mirrors the construction
+// boundary in createCanvasRenderState.
+type CanvasRenderStateHandles = CanvasRenderState & {
+  canvas: HTMLCanvasElement;
+  context: CanvasRenderingContext2D;
+};
 
 type SavedCanvasState = {
   canvas: HTMLCanvasElement;
@@ -21,7 +29,8 @@ export function beginCanvasRenderTarget(
   target: CanvasRenderTarget,
   renderTransform: Readonly<Matrix>,
 ): void {
-  const internal = state as CanvasRenderStateInternal;
+  const handles = state as CanvasRenderStateHandles;
+  const runtime = getCanvasRenderStateRuntime(state);
 
   let stack = _targetStack.get(state);
   if (stack === undefined) {
@@ -30,21 +39,21 @@ export function beginCanvasRenderTarget(
   }
 
   stack.push({
-    canvas: internal.canvas,
-    context: internal.context,
-    renderTransform2D: internal.renderTransform2D,
+    canvas: handles.canvas,
+    context: handles.context,
+    renderTransform2D: handles.renderTransform2D,
   });
 
-  internal.canvas = target.canvas;
-  internal.context = target.context;
-  internal.context.imageSmoothingEnabled = internal.imageSmoothingEnabled;
-  internal.context.imageSmoothingQuality = internal.imageSmoothingQuality;
+  handles.canvas = target.canvas;
+  handles.context = target.context;
+  handles.context.imageSmoothingEnabled = runtime.imageSmoothingEnabled;
+  handles.context.imageSmoothingQuality = runtime.imageSmoothingQuality;
 
   // Always create a new matrix for this target so restoring the saved reference
   // on end leaves the outer renderTransform2D unmodified.
   const newTransform = createMatrix();
   copyMatrix(newTransform, renderTransform);
-  internal.renderTransform2D = newTransform;
+  handles.renderTransform2D = newTransform;
 }
 
 export function createCanvasRenderTarget(width: number, height: number): CanvasRenderTarget {
@@ -60,12 +69,12 @@ export function createCanvasRenderTarget(width: number, height: number): CanvasR
  * `beginCanvasRenderTarget` call.
  */
 export function endCanvasRenderTarget(state: CanvasRenderState): void {
-  const internal = state as CanvasRenderStateInternal;
+  const handles = state as CanvasRenderStateHandles;
   const saved = _targetStack.get(state)?.pop();
   if (saved === undefined) return;
-  internal.canvas = saved.canvas;
-  internal.context = saved.context;
-  internal.renderTransform2D = saved.renderTransform2D;
+  handles.canvas = saved.canvas;
+  handles.context = saved.context;
+  handles.renderTransform2D = saved.renderTransform2D;
 }
 
 export function resizeCanvasRenderTarget(target: CanvasRenderTarget, width: number, height: number): void {

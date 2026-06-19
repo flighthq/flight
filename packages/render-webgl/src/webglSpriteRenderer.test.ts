@@ -40,28 +40,28 @@ describe('defaultWebGLSpriteRenderer.submit', () => {
   it('returns early without drawing when atlas is null', () => {
     const { state, gl } = makeWebGLState();
     defaultWebGLSpriteRenderer.submit(state, makeSpriteNode({ atlas: null }));
-    flushWebGLSpriteBatch(state as any);
+    flushWebGLSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when atlas.image is null', () => {
     const { state, gl } = makeWebGLState();
     defaultWebGLSpriteRenderer.submit(state, makeSpriteNode({ atlas: { image: null, regions: [] } }));
-    flushWebGLSpriteBatch(state as any);
+    flushWebGLSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when id is negative', () => {
     const { state, gl } = makeWebGLState();
     defaultWebGLSpriteRenderer.submit(state, makeSpriteNode({ atlas: makeAtlas(), id: -1 }));
-    flushWebGLSpriteBatch(state as any);
+    flushWebGLSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when region width is zero', () => {
     const { state, gl } = makeWebGLState();
     defaultWebGLSpriteRenderer.submit(state, makeSpriteNode({ atlas: makeAtlas(0, 32), id: 0 }));
-    flushWebGLSpriteBatch(state as any);
+    flushWebGLSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
@@ -69,7 +69,7 @@ describe('defaultWebGLSpriteRenderer.submit', () => {
     const { state, gl } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     defaultWebGLSpriteRenderer.submit(state, makeSpriteNode({ atlas: makeAtlas(), id: 0 }));
-    flushWebGLSpriteBatch(state as any);
+    flushWebGLSpriteBatch(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 1);
   });
 });

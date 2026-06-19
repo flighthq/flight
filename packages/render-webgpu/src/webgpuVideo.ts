@@ -5,10 +5,12 @@ import type {
   RenderProxy2D,
   RenderState,
   Video,
+  WebGPURenderState,
+  WebGPUTextureEntry,
 } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
 import { drawWebGPUQuad } from './webgpuDraw';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 
 // Per-node GPU texture entry the current video frame is uploaded into. Held on the node's
@@ -29,10 +31,10 @@ export function destroyWebGPUVideoData(_state: RenderState, data: RendererData):
   videoData.entry?.texture.destroy();
 }
 
-export function drawWebGPUVideo(state: RenderState, renderProxy: RenderProxy2D): void {
-  const internal = state as WebGPURenderStateInternal;
-  if (internal.renderPass === null) return;
-  flushWebGPUSpriteBatch(internal);
+export function drawWebGPUVideo(state: WebGPURenderState, renderProxy: RenderProxy2D): void {
+  const runtime = getWebGPURenderStateRuntime(state);
+  if (runtime.renderPass === null) return;
+  flushWebGPUSpriteBatch(state);
 
   const source = renderProxy.source as Video;
   const element = source.data.source?.element;
@@ -42,14 +44,15 @@ export function drawWebGPUVideo(state: RenderState, renderProxy: RenderProxy2D):
   const vh = element.videoHeight;
   if (vw === 0 || vh === 0) return;
 
-  internal.applyBlendMode?.(internal, renderProxy.blendMode);
+  state.applyBlendMode?.(state, renderProxy.blendMode);
 
   if (renderProxy.rendererData === null) return;
   const videoData = renderProxy.rendererData as unknown as WebGPUVideoData;
   let entry = videoData.entry;
   if (entry === null || videoData.w !== vw || videoData.h !== vh) {
     entry?.texture.destroy();
-    const { device, textureBindGroupLayout, linearSampler } = internal;
+    const device = state.device;
+    const { textureBindGroupLayout, linearSampler } = runtime;
     const texture = device.createTexture({
       format: 'rgba8unorm',
       size: [vw, vh, 1],
@@ -69,13 +72,13 @@ export function drawWebGPUVideo(state: RenderState, renderProxy: RenderProxy2D):
     videoData.h = vh;
   }
 
-  internal.device.queue.copyExternalImageToTexture(
+  state.device.queue.copyExternalImageToTexture(
     { source: element, flipY: false },
     { premultipliedAlpha: false, texture: entry.texture },
     [vw, vh],
   );
 
-  drawWebGPUQuad(internal, renderProxy, entry, 0, 0, vw, vh, 0, 0, 1, 1);
+  drawWebGPUQuad(state, renderProxy, entry, 0, 0, vw, vh, 0, 0, 1, 1);
 }
 
 export const defaultWebGPUVideoRenderer: DisplayObjectRenderer = {

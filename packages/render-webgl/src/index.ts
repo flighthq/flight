@@ -1,4 +1,3 @@
-export type { WebGLRenderStateInternal } from './internal';
 export * from './webglBackground';
 export * from './webglBitmap';
 export * from './webglCache';

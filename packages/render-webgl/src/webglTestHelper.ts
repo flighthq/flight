@@ -1,6 +1,8 @@
 import { createRenderState } from '@flighthq/render';
+import type { WebGLRenderState, WebGLRenderStateRuntime } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
+import { createWebGLRenderStateRuntime } from './webglRenderState';
 import type { WebGLShaderLocations } from './webglShaderTypes';
 
 // makeGL returns a fresh isolated mock for unit tests that call GL functions
@@ -26,7 +28,7 @@ export function makeShaderLoc(): WebGLShaderLocations {
 }
 
 export function makeWebGLState(options?: { allowSmoothing?: boolean; backgroundColorRGBA?: number[] }): {
-  state: WebGLRenderStateInternal;
+  state: WebGLRenderState;
   gl: WebGL2RenderingContext;
   canvas: HTMLCanvasElement;
   shaderLoc: WebGLShaderLocations;
@@ -39,12 +41,19 @@ export function makeWebGLState(options?: { allowSmoothing?: boolean; backgroundC
   const state = createRenderState({
     allowSmoothing: options?.allowSmoothing ?? true,
     backgroundColorRGBA: options?.backgroundColorRGBA ?? [0, 0, 0, 0],
-  }) as WebGLRenderStateInternal;
+  }) as WebGLRenderState;
 
+  // Entity fields live directly on the state.
   Object.assign(state, {
     canvas,
     gl,
     applyBlendMode: null,
+  });
+
+  // Runtime (package-private GPU) fields live on the runtime object stored under EntityRuntimeKey,
+  // mirroring what createWebGLRenderState does in production.
+  const runtime = createWebGLRenderStateRuntime();
+  Object.assign(runtime, {
     currentBlendMode: null,
     currentFramebuffer: null,
     currentMaskDepth: 0,
@@ -66,6 +75,8 @@ export function makeWebGLState(options?: { allowSmoothing?: boolean; backgroundC
     spriteBatchInstanceBuffer: null,
     spriteBatchInstanceData: new Float32Array(13 * 256),
     spriteBatchTexture: null,
-  });
+  } satisfies Partial<WebGLRenderStateRuntime>);
+  state[EntityRuntimeKey] = runtime;
+
   return { state, gl, canvas, shaderLoc };
 }

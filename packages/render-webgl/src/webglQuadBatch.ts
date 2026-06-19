@@ -1,9 +1,9 @@
 import { noopRendererData } from '@flighthq/render';
-import type { QuadBatch, RenderProxy2D, RenderState, SpriteRenderer } from '@flighthq/types';
+import type { QuadBatch, RenderProxy2D, SpriteRenderer, WebGLRenderState } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
 import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import {
   ensureWebGLQuadBatchShader,
   packWebGLSpriteBatchMaterialInstance,
@@ -18,23 +18,23 @@ import {
 // [12]   alpha        — per-instance alpha
 const INSTANCE_FLOATS = 13;
 
-function submitWebGLQuadBatch(state: RenderState, quadBatch: RenderProxy2D): void {
-  const internal = state as WebGLRenderStateInternal;
+function submitWebGLQuadBatch(state: WebGLRenderState, quadBatch: RenderProxy2D): void {
+  const runtime = getWebGLRenderStateRuntime(state);
   const source = quadBatch.source as QuadBatch;
   const data = source.data;
   const { atlas, instanceCount, ids, transforms } = data;
   if (atlas === null || atlas.image === null || atlas.image.source === null || instanceCount === 0) return;
 
-  ensureWebGLQuadBatchShader(internal);
+  ensureWebGLQuadBatchShader(state);
 
   const material = quadBatch.material;
-  const materialRenderer = resolveWebGLMaterialRenderer(internal, material);
+  const materialRenderer = resolveWebGLMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const perQuadMaterialData = data.materialData;
   const nodeMaterialData = quadBatch.materialData;
-  const startCount = internal.spriteBatchCount;
+  const startCount = runtime.spriteBatchCount;
   const base = prepareWebGLSpriteBatchWrite(
-    internal,
+    state,
     atlas.image.source,
     quadBatch.blendMode,
     material,
@@ -46,7 +46,7 @@ function submitWebGLQuadBatch(state: RenderState, quadBatch: RenderProxy2D): voi
   const numRegions = regions.length;
   const iw = 1 / (atlas.image.width || 1);
   const ih = 1 / (atlas.image.height || 1);
-  const instanceData = internal.spriteBatchInstanceData;
+  const instanceData = runtime.spriteBatchInstanceData;
   const isVector2 = data.transformType === 'vector2';
   const pt = quadBatch.transform2D;
   const pa = pt.a,
@@ -98,12 +98,12 @@ function submitWebGLQuadBatch(state: RenderState, quadBatch: RenderProxy2D): voi
     instanceData[writeBase + 12] = alpha;
     // Per-quad value overrides the node-level default (null → identity in the material).
     const md = perQuadMaterialData?.[i] ?? nodeMaterialData;
-    packWebGLSpriteBatchMaterialInstance(internal, md, startCount + drawCount);
+    packWebGLSpriteBatchMaterialInstance(state, md, startCount + drawCount);
     writeBase += INSTANCE_FLOATS;
     drawCount++;
   }
 
-  internal.spriteBatchCount += drawCount;
+  runtime.spriteBatchCount += drawCount;
 }
 
 export const defaultWebGLQuadBatchRenderer: SpriteRenderer = {

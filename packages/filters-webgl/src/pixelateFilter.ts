@@ -1,4 +1,4 @@
-import type { WebGLRenderStateInternal, WebGLRenderTarget } from '@flighthq/render-webgl';
+import type { WebGLRenderTarget } from '@flighthq/render-webgl';
 import type { PixelateFilter } from '@flighthq/types';
 import type { WebGLRenderState } from '@flighthq/types';
 
@@ -43,7 +43,7 @@ export function applyPixelateFilterToWebGL(
 function getShader(state: WebGLRenderState): PixelateShaderLocations {
   let loc = shaders.get(state);
   if (loc === undefined) {
-    const gl = (state as WebGLRenderStateInternal).gl;
+    const gl = state.gl;
     const base = compileWebGLFilterProgram(gl, PIXELATE_FRAGMENT_SRC);
     loc = { ...base, locBlockTexelSize: gl.getUniformLocation(base.program, 'u_blockTexelSize')! };
     shaders.set(state, loc);

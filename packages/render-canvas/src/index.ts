@@ -24,4 +24,3 @@ export * from './canvasTextMeasure';
 export * from './canvasTilemap';
 export * from './canvasTransform';
 export * from './canvasVideo';
-export type { CanvasRenderStateInternal } from './internal';

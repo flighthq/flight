@@ -9,12 +9,14 @@ import type {
   RenderProxy2D,
   RenderState,
   Shape,
+  WebGPURenderState,
+  WebGPUShapeMeshBuffers,
 } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal, WebGPUShapeMeshBuffers } from './internal';
 import { updateWebGPUTextureEntry } from './webgpuDraw';
 import { resolveWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import type { WebGPUShapeMesh } from './webgpuShapeMesh';
 import { drawWebGPUShapeMeshes } from './webgpuShapeMesh';
 import {
@@ -63,14 +65,14 @@ function createWebGPUShapeData(_state: RenderState, _source: Renderable): Render
 
 // Destroy the GPU texture the batch uploaded for this shape's canvas, plus the mesh path's per-shape
 // vertex/index/uniform buffers, when the shape is torn down.
-function destroyWebGPUShapeData(state: RenderState, data: RendererData): void {
-  const internal = state as WebGPURenderStateInternal;
+function destroyWebGPUShapeData(state: WebGPURenderState, data: RendererData): void {
+  const runtime = getWebGPURenderStateRuntime(state);
   const shapeData = data as unknown as WebGPUShapeData;
   const { canvas } = shapeData;
-  const entry = internal.textureCache.get(canvas);
+  const entry = runtime.textureCache.get(canvas);
   if (entry !== undefined) {
     entry.texture.destroy();
-    internal.textureCache.delete(canvas);
+    runtime.textureCache.delete(canvas);
   }
   const b = shapeData.meshBuffers;
   b.vertexBuffer?.destroy();
@@ -82,9 +84,9 @@ function destroyWebGPUShapeData(state: RenderState, data: RendererData): void {
   b.bindGroup = null;
 }
 
-export function drawWebGPUShape(state: RenderState, renderProxy: RenderProxy2D): void {
-  const internal = state as WebGPURenderStateInternal;
-  if (internal.renderPass === null) return;
+export function drawWebGPUShape(state: WebGPURenderState, renderProxy: RenderProxy2D): void {
+  const runtime = getWebGPURenderStateRuntime(state);
+  if (runtime.renderPass === null) return;
 
   const source = renderProxy.source as Shape;
   const { commands } = source.data;
@@ -109,12 +111,12 @@ export function drawWebGPUShape(state: RenderState, renderProxy: RenderProxy2D):
       });
       meshData.meshVersion = version;
     }
-    drawWebGPUShapeMeshes(internal, renderProxy, meshData.meshes ?? [], meshData.meshBuffers);
+    drawWebGPUShapeMeshes(state, renderProxy, meshData.meshes ?? [], meshData.meshBuffers);
     return;
   }
 
   const material = renderProxy.material;
-  const materialRenderer = resolveWebGPUMaterialRenderer(internal, material);
+  const materialRenderer = resolveWebGPUMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
   const shapeData = renderProxy.rendererData as unknown as WebGPUShapeData;
@@ -134,15 +136,15 @@ export function drawWebGPUShape(state: RenderState, renderProxy: RenderProxy2D):
     renderCanvasShapeCommands(ctx, commands);
     ctx.restore();
 
-    const cached = internal.textureCache.get(shapeData.canvas);
+    const cached = runtime.textureCache.get(shapeData.canvas);
     if (cached !== undefined) {
       if (sizeChanged) {
         // Physical size changed: destroy old GPU texture, let the batch create a new one.
         cached.texture.destroy();
-        internal.textureCache.delete(shapeData.canvas);
+        runtime.textureCache.delete(shapeData.canvas);
       } else {
         // Same size: update content in-place.
-        updateWebGPUTextureEntry(internal, cached, shapeData.canvas);
+        updateWebGPUTextureEntry(state, cached, shapeData.canvas);
       }
     }
     shapeData.lastContentID = version;
@@ -150,22 +152,22 @@ export function drawWebGPUShape(state: RenderState, renderProxy: RenderProxy2D):
     shapeData.lastH = h;
   }
 
-  ensureWebGPUQuadBatchResources(internal);
+  ensureWebGPUQuadBatchResources(state);
 
   const t = renderProxy.transform2D;
   const tx = t.tx + t.a * bounds.x + t.c * bounds.y;
   const ty = t.ty + t.b * bounds.x + t.d * bounds.y;
 
-  const startCount = internal.spriteBatchCount;
+  const startCount = runtime.spriteBatchCount;
   const base = prepareWebGPUSpriteBatchWrite(
-    internal,
+    state,
     shapeData.canvas,
     renderProxy.blendMode,
     material,
     materialRenderer,
     1,
   );
-  const d = internal.spriteBatchInstanceData;
+  const d = runtime.spriteBatchInstanceData;
   d[base] = t.a;
   d[base + 1] = t.b;
   d[base + 2] = t.c;
@@ -179,8 +181,8 @@ export function drawWebGPUShape(state: RenderState, renderProxy: RenderProxy2D):
   d[base + 10] = 1;
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
-  packWebGPUSpriteBatchMaterialInstance(internal, renderProxy.materialData, startCount);
-  internal.spriteBatchCount++;
+  packWebGPUSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
+  runtime.spriteBatchCount++;
 }
 
 export const defaultWebGPUShapeRenderer: DisplayObjectRenderer = {

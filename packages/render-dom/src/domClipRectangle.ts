@@ -1,15 +1,23 @@
-import type { DOMStageRectangle, MatrixLike, RectangleLike, RenderProxy2D } from '@flighthq/types';
+import type {
+  DOMClipContourEntry,
+  DOMClipEntry,
+  DOMClipHooks,
+  DOMRenderState,
+  DOMStageRectangle,
+  MatrixLike,
+  RectangleLike,
+  RenderProxy2D,
+} from '@flighthq/types';
 
-import type { DOMClipContourEntry } from './domClipContours';
 import { buildDOMContourClipPath } from './domClipContours';
-import type { DOMClipEntry, DOMClipHooks, DOMRenderStateInternal } from './internal';
+import { getDOMRenderStateRuntime } from './domRenderState';
 
 export function applyDOMClipRectangles(
-  state: DOMRenderStateInternal,
+  state: DOMRenderState,
   data: RenderProxy2D,
   entries: readonly DOMClipEntry[],
 ): void {
-  const element = state.domElementMap.get(data);
+  const element = getDOMRenderStateRuntime(state).domElementMap.get(data);
   if (element === undefined) return;
 
   // CSS cannot intersect a path clip with other clips in one property. When a contour clip is active,
@@ -79,8 +87,9 @@ export function pushDOMClipRectangle(
   stack.push(createDOMStageRectangle(rect, transform));
 }
 
-export function setDOMClipHooks(state: DOMRenderStateInternal): void {
-  if (state.domClipHooks === null) state.domClipHooks = domClipHooksImpl;
+export function setDOMClipHooks(state: DOMRenderState): void {
+  const runtime = getDOMRenderStateRuntime(state);
+  if (runtime.domClipHooks === null) runtime.domClipHooks = domClipHooksImpl;
 }
 
 // Returns a closure mapping a stage-space point into `element`'s local space (the inverse of the
@@ -170,6 +179,6 @@ const EMPTY_CLIP_PATH = 'inset(0 100% 100% 0)';
 
 const domClipHooksImpl: DOMClipHooks = {
   apply(state, data): void {
-    applyDOMClipRectangles(state as DOMRenderStateInternal, data, (state as DOMRenderStateInternal).domClipStack);
+    applyDOMClipRectangles(state, data, getDOMRenderStateRuntime(state).domClipStack);
   },
 };

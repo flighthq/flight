@@ -1,6 +1,6 @@
-﻿import type { BlendMode } from './BlendMode';
+import type { BlendMode } from './BlendMode';
 import type { DisplayObjectClipHooks } from './DisplayObjectRenderer';
-import type { Entity } from './Entity';
+import type { Entity, EntityRuntime } from './Entity';
 import type { Matrix } from './Matrix';
 import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
@@ -21,20 +21,28 @@ export interface RenderState extends Entity {
   readonly backgroundColor: number;
   readonly backgroundColorRGBA: number[];
   readonly backgroundColorString: string;
-  readonly currentFrameID: number;
   // Active clip nesting depth (rect + path). Masks were retired into clips, so the mask pass / renderer
   // map / currentMaskDepth are gone. Backends additionally keep their own per-form unwind stack.
   currentClipDepth: number;
   displayObjectClipHooks: DisplayObjectClipHooks | null;
   pixelRatio: number;
-  readonly renderProxyAdapterMap: WeakMap<Renderable, RenderProxyAdapter>;
-  readonly renderProxyMap: WeakMap<Renderable, RenderProxy>;
   renderAlpha: number;
   renderBlendMode: BlendMode | null;
   renderTransform2D: Matrix | null;
-  readonly rendererMap: Map<symbol, Renderer>;
   sceneGraphSyncPolicy: SceneGraphSyncPolicy;
-  readonly rendererMapID: number;
   roundPixels: boolean;
-  readonly tempStack: Renderable[];
+}
+
+// Package-private machinery for a RenderState entity. Lives in the runtime tier (not on the entity)
+// so the public RenderState surface stays minimal; the render path resolves it via
+// getRenderStateRuntime. The four backend render-state runtimes extend this base, so the frame
+// counter, proxy maps, and renderer registry are shared across every backend. Defined in
+// @flighthq/types — the header layer — so out-of-package code can reach the same state.
+export interface RenderStateRuntime extends EntityRuntime {
+  currentFrameID: number;
+  renderProxyAdapterMap: WeakMap<Renderable, RenderProxyAdapter>;
+  renderProxyMap: WeakMap<Renderable, RenderProxy>;
+  rendererMap: Map<symbol, Renderer>;
+  rendererMapID: number;
+  tempStack: Renderable[];
 }

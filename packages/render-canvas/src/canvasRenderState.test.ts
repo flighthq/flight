@@ -1,7 +1,12 @@
 import { createMatrix } from '@flighthq/geometry';
 import type { CanvasRenderOptions } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
-import { createCanvasRenderState } from './canvasRenderState';
+import {
+  createCanvasRenderState,
+  createCanvasRenderStateRuntime,
+  getCanvasRenderStateRuntime,
+} from './canvasRenderState';
 
 describe('createCanvasRenderState', () => {
   it('creates state with a valid context and canvas', () => {
@@ -9,6 +14,29 @@ describe('createCanvasRenderState', () => {
     const state = createCanvasRenderState(c);
     expect(state).not.toBeNull();
     expect(state.canvas).toBe(c);
+  });
+
+  it('attaches a runtime under EntityRuntimeKey', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    expect(state[EntityRuntimeKey]).not.toBeUndefined();
+    expect(getCanvasRenderStateRuntime(state)).toBe(state[EntityRuntimeKey]);
+  });
+});
+
+describe('createCanvasRenderStateRuntime', () => {
+  it('allocates an entity runtime', () => {
+    const runtime = createCanvasRenderStateRuntime();
+    expect(runtime).not.toBeNull();
+    expect(runtime.binding).toBeNull();
+  });
+});
+
+describe('getCanvasRenderStateRuntime', () => {
+  it('returns the mutable runtime attached to the state', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    const runtime = getCanvasRenderStateRuntime(state);
+    runtime.currentBlendMode = null;
+    expect(getCanvasRenderStateRuntime(state).currentBlendMode).toBeNull();
   });
 });
 

@@ -1,20 +1,21 @@
-import type { MatrixLike, RectangleLike } from '@flighthq/types';
+import type { MatrixLike, RectangleLike, WebGPURenderState, WebGPUScissorRect } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal, WebGPUScissorRect } from './internal';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 
-export function popWebGPUClipRectangle(state: WebGPURenderStateInternal): void {
+export function popWebGPUClipRectangle(state: WebGPURenderState): void {
+  const runtime = getWebGPURenderStateRuntime(state);
   flushWebGPUSpriteBatch(state);
-  const stack = state.scissorStack;
+  const stack = runtime.scissorStack;
   stack.pop();
   const previous = stack.length > 0 ? stack[stack.length - 1] : null;
-  state.currentScissorRect = previous;
+  runtime.currentScissorRect = previous;
 
-  const pass = state.renderPass;
+  const pass = runtime.renderPass;
   if (pass === null) return;
 
   if (previous === null) {
-    const viewport = state.renderTargetViewport ?? state.canvas;
+    const viewport = runtime.renderTargetViewport ?? state.canvas;
     pass.setScissorRect(0, 0, viewport.width, viewport.height);
   } else if (previous.width <= 0 || previous.height <= 0) {
     // Empty intersection stored during push — maintain degenerate scissor until fully popped.
@@ -25,19 +26,20 @@ export function popWebGPUClipRectangle(state: WebGPURenderStateInternal): void {
 }
 
 export function pushWebGPUClipRectangle(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   rect: Readonly<RectangleLike>,
   transform: Readonly<MatrixLike>,
 ): void {
+  const runtime = getWebGPURenderStateRuntime(state);
   flushWebGPUSpriteBatch(state);
   const next = intersectWebGPUScissorRect(
-    state.currentScissorRect ?? null,
+    runtime.currentScissorRect ?? null,
     computeWebGPUScissorRect(state, rect, transform),
   );
-  state.currentScissorRect = next;
-  state.scissorStack.push(next);
+  runtime.currentScissorRect = next;
+  runtime.scissorStack.push(next);
 
-  const pass = state.renderPass;
+  const pass = runtime.renderPass;
   if (pass === null) return;
   if (next.width <= 0 || next.height <= 0) {
     // Clip rect projects entirely outside the viewport — use a 1×1 degenerate scissor at
@@ -49,10 +51,11 @@ export function pushWebGPUClipRectangle(
 }
 
 function computeWebGPUScissorRect(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   rect: Readonly<RectangleLike>,
   transform: Readonly<MatrixLike>,
 ): WebGPUScissorRect {
+  const runtime = getWebGPURenderStateRuntime(state);
   const x0 = transform.a * rect.x + transform.c * rect.y + transform.tx;
   const y0 = transform.b * rect.x + transform.d * rect.y + transform.ty;
   const x1 = transform.a * (rect.x + rect.width) + transform.c * rect.y + transform.tx;
@@ -62,7 +65,7 @@ function computeWebGPUScissorRect(
   const x3 = transform.a * (rect.x + rect.width) + transform.c * (rect.y + rect.height) + transform.tx;
   const y3 = transform.b * (rect.x + rect.width) + transform.d * (rect.y + rect.height) + transform.ty;
 
-  const viewport = state.renderTargetViewport ?? state.canvas;
+  const viewport = runtime.renderTargetViewport ?? state.canvas;
   const minX = Math.max(0, Math.floor(Math.min(x0, x1, x2, x3)));
   const maxX = Math.min(viewport.width, Math.ceil(Math.max(x0, x1, x2, x3)));
   const minY = Math.max(0, Math.floor(Math.min(y0, y1, y2, y3)));

@@ -1,7 +1,7 @@
 import type { CanvasMaterialRenderer, CanvasRenderState, Material } from '@flighthq/types';
 import { DefaultMaterialKind } from '@flighthq/types';
 
-import type { CanvasRenderStateInternal } from './internal';
+import { getCanvasRenderStateRuntime } from './canvasRenderState';
 
 // Applies a node's material draw-state delta before a canvas draw, bracketed with ctx.save().
 // Returns true when it saved and the caller must ctx.restore() after drawing; false (no save) when
@@ -19,7 +19,7 @@ export function applyCanvasMaterial(state: CanvasRenderState, material: Material
 }
 
 export function getCanvasMaterialRenderer(state: CanvasRenderState, kind: symbol): CanvasMaterialRenderer | null {
-  return (state as CanvasRenderStateInternal).materialRendererMap?.get(kind) ?? null;
+  return getCanvasRenderStateRuntime(state).materialRendererMap?.get(kind) ?? null;
 }
 
 export function registerCanvasMaterialRenderer(
@@ -27,8 +27,8 @@ export function registerCanvasMaterialRenderer(
   kind: symbol,
   renderer: CanvasMaterialRenderer,
 ): void {
-  const internal = state as CanvasRenderStateInternal;
-  (internal.materialRendererMap ??= new Map()).set(kind, renderer);
+  const runtime = getCanvasRenderStateRuntime(state);
+  (runtime.materialRendererMap ??= new Map()).set(kind, renderer);
 }
 
 // Resolves a node's material to its Canvas renderer, else the registered default, else null.
@@ -38,7 +38,7 @@ export function resolveCanvasMaterialRenderer(
   state: CanvasRenderState,
   material: Material | null,
 ): CanvasMaterialRenderer | null {
-  const map = (state as CanvasRenderStateInternal).materialRendererMap;
+  const map = getCanvasRenderStateRuntime(state).materialRendererMap;
   if (map === undefined) return null;
   if (material !== null) {
     const renderer = map.get(material.kind);

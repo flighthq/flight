@@ -4,6 +4,7 @@ import { BatchFormat } from '@flighthq/types';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
 import { registerDefaultWebGPUMaterial } from './webgpuDefaultMaterial';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
 import { defaultWebGPUTextLabelRenderer, drawWebGPUTextLabel } from './webgpuTextLabel';
 
@@ -72,7 +73,7 @@ describe('drawWebGPUTextLabel', () => {
     renderWebGPUBackground(state);
     registerDefaultWebGPUMaterial(state);
     expect(() => drawWebGPUTextLabel(state, makeTextProxy('', makeTextData()))).not.toThrow();
-    expect((state as any).spriteBatchCount).toBe(0);
+    expect(getWebGPURenderStateRuntime(state).spriteBatchCount).toBe(0);
     submitWebGPURenderPass(state);
   });
 
@@ -81,7 +82,7 @@ describe('drawWebGPUTextLabel', () => {
     renderWebGPUBackground(state);
     registerDefaultWebGPUMaterial(state);
     drawWebGPUTextLabel(state, makeTextProxy('hello', makeTextData()));
-    expect((state as any).spriteBatchCount).toBe(1);
+    expect(getWebGPURenderStateRuntime(state).spriteBatchCount).toBe(1);
     submitWebGPURenderPass(state);
   });
 
@@ -91,7 +92,7 @@ describe('drawWebGPUTextLabel', () => {
     registerDefaultWebGPUMaterial(state);
     const proxy = makeTextProxy('hello', makeTextData());
     drawWebGPUTextLabel(state, proxy);
-    const updateSpy = vi.spyOn((state as any).textureCache, 'get');
+    const updateSpy = vi.spyOn(getWebGPURenderStateRuntime(state).textureCache, 'get');
     proxy.alpha = 0.5;
     drawWebGPUTextLabel(state, proxy);
     // Version is unchanged, so the rasterization block is skipped entirely on the second draw.

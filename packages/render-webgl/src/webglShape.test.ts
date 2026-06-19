@@ -2,6 +2,7 @@ import type { RenderProxy2D } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import { registerDefaultWebGLMaterial } from './webglDefaultMaterial';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { defaultWebGLShapeRenderer, drawWebGLShape } from './webglShape';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 import { makeWebGLState } from './webglTestHelper';
@@ -56,34 +57,34 @@ describe('drawWebGLShape', () => {
     const { state } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     drawWebGLShape(state, makeShapeNode({ commands: [] }, makeShapeData()));
-    expect(state.spriteBatchCount).toBe(0);
+    expect(getWebGLRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('returns early without writing to batch when rendererData is null', () => {
     const { state } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     drawWebGLShape(state, makeShapeNode({ commands: [{}] }, null));
-    expect(state.spriteBatchCount).toBe(0);
+    expect(getWebGLRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('returns early without writing to batch when no material renderer is registered', () => {
     const { state } = makeWebGLState();
     drawWebGLShape(state, makeShapeNode({ commands: [{}] }, makeShapeData()));
-    expect(state.spriteBatchCount).toBe(0);
+    expect(getWebGLRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('writes one instance to the sprite batch when shape has valid commands and bounds', () => {
     const { state } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     drawWebGLShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
-    expect(state.spriteBatchCount).toBe(1);
+    expect(getWebGLRenderStateRuntime(state).spriteBatchCount).toBe(1);
   });
 
   it('draws via drawElementsInstanced after flush', () => {
     const { state, gl } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     drawWebGLShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
-    flushWebGLSpriteBatch(state as any);
+    flushWebGLSpriteBatch(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalled();
   });
 
@@ -91,7 +92,7 @@ describe('drawWebGLShape', () => {
     const { state } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     drawWebGLShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
-    const d = state.spriteBatchInstanceData;
+    const d = getWebGLRenderStateRuntime(state).spriteBatchInstanceData;
     expect(d[6]).toBe(64); // width from mocked bounds
     expect(d[7]).toBe(48); // height from mocked bounds
   });

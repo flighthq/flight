@@ -3,9 +3,8 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { createTextLabel } from '@flighthq/text';
 import { TextLabelKind } from '@flighthq/types';
 
-import { createDOMRenderState } from './domRenderState';
+import { createDOMRenderState, getDOMRenderStateRuntime } from './domRenderState';
 import { defaultDOMTextLabelRenderer, drawDOMTextLabel } from './domTextLabel';
-import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
   const container = document.createElement('div');
@@ -15,9 +14,9 @@ function makeState() {
 }
 
 function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTMLElement | null {
-  (state as unknown as DOMRenderStateInternal).domCurrentElement = null;
+  getDOMRenderStateRuntime(state).domCurrentElement = null;
   drawFn();
-  return (state as unknown as DOMRenderStateInternal).domCurrentElement;
+  return getDOMRenderStateRuntime(state).domCurrentElement;
 }
 
 describe('defaultDOMTextLabelRenderer', () => {

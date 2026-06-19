@@ -1,6 +1,7 @@
 import { createMatrix } from '@flighthq/geometry';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import {
   beginWebGPURenderTarget,
   createWebGPURenderTarget,
@@ -21,7 +22,7 @@ describe('beginWebGPURenderTarget', () => {
     renderWebGPUBackground(state);
     const target = createWebGPURenderTarget(state, 64, 64);
     beginWebGPURenderTarget(state, target, createMatrix());
-    expect((state as never as { renderTargetViewport: { width: number } }).renderTargetViewport?.width).toBe(64);
+    expect(getWebGPURenderStateRuntime(state).renderTargetViewport?.width).toBe(64);
     endWebGPURenderTarget(state);
     submitWebGPURenderPass(state);
   });
@@ -36,11 +37,11 @@ describe('beginWebGPURenderTarget / endWebGPURenderTarget', () => {
     const transform = createMatrix();
     beginWebGPURenderTarget(state, target, transform);
 
-    const internal = state as never as { renderTargetViewport: { width: number; height: number } | null };
-    expect(internal.renderTargetViewport?.width).toBe(128);
+    const runtime = getWebGPURenderStateRuntime(state);
+    expect(runtime.renderTargetViewport?.width).toBe(128);
 
     endWebGPURenderTarget(state);
-    expect(internal.renderTargetViewport).toBeNull();
+    expect(runtime.renderTargetViewport).toBeNull();
 
     submitWebGPURenderPass(state);
   });
@@ -100,7 +101,7 @@ describe('endWebGPURenderTarget', () => {
     const target = createWebGPURenderTarget(state, 32, 32);
     beginWebGPURenderTarget(state, target, createMatrix());
     endWebGPURenderTarget(state);
-    expect((state as never as { renderTargetViewport: null }).renderTargetViewport).toBeNull();
+    expect(getWebGPURenderStateRuntime(state).renderTargetViewport).toBeNull();
     submitWebGPURenderPass(state);
   });
 });

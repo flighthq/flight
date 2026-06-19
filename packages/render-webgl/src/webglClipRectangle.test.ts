@@ -1,6 +1,7 @@
 import { createMatrix, createRectangle } from '@flighthq/geometry';
 
 import { popWebGLClipRectangle, pushWebGLClipRectangle } from './webglClipRectangle';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { makeWebGLState } from './webglTestHelper';
 
 describe('popWebGLClipRectangle', () => {
@@ -21,7 +22,7 @@ describe('popWebGLClipRectangle', () => {
     popWebGLClipRectangle(state);
 
     expect(gl.disable).toHaveBeenLastCalledWith(gl.SCISSOR_TEST);
-    expect(state.currentScissorRect).toBeNull();
+    expect(getWebGLRenderStateRuntime(state).currentScissorRect).toBeNull();
   });
 });
 

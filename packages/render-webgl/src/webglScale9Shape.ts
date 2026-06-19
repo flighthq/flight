@@ -6,12 +6,12 @@ import type {
   Renderable,
   RendererData,
   RenderProxy2D,
-  RenderState,
   Scale9Shape,
+  WebGLRenderState,
 } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { buildWebGLScale9Mapper } from './webglScale9Mapper';
 import { setWebGLBaseUniforms, setWebGLMatrixFromValues } from './webglShader';
 import { drawWebGLShape } from './webglShape';
@@ -31,13 +31,12 @@ interface WebGLScale9ShapeData {
 const _remappedCommands: unknown[] = [];
 const _remappedPathData: number[] = [];
 
-export function createWebGLScale9ShapeData(state: RenderState, _source: Renderable): RendererData | null {
-  const internal = state as WebGLRenderStateInternal;
+export function createWebGLScale9ShapeData(state: WebGLRenderState, _source: Renderable): RendererData | null {
   const canvas = document.createElement('canvas');
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  const texture = createWebGLTexture(internal);
+  const texture = createWebGLTexture(state);
   return {
     canvas,
     ctx,
@@ -51,15 +50,14 @@ export function createWebGLScale9ShapeData(state: RenderState, _source: Renderab
 }
 
 // Scale9 owns its texture directly (allocated in createData), so free it on teardown.
-export function destroyWebGLScale9ShapeData(state: RenderState, data: RendererData): void {
-  const internal = state as WebGLRenderStateInternal;
+export function destroyWebGLScale9ShapeData(state: WebGLRenderState, data: RendererData): void {
   const { texture } = data as unknown as WebGLScale9ShapeData;
-  internal.gl.deleteTexture(texture);
+  state.gl.deleteTexture(texture);
 }
 
-export function drawWebGLScale9Shape(state: RenderState, renderProxy: RenderProxy2D): void {
-  const internal = state as WebGLRenderStateInternal;
-  flushWebGLSpriteBatch(internal);
+export function drawWebGLScale9Shape(state: WebGLRenderState, renderProxy: RenderProxy2D): void {
+  const runtime = getWebGLRenderStateRuntime(state);
+  flushWebGLSpriteBatch(state);
   const source = renderProxy.source as Scale9Shape;
   const { commands, scale9Grid } = source.data;
   const version = getNodeLocalContentRevision(source);
@@ -94,7 +92,7 @@ export function drawWebGLScale9Shape(state: RenderState, renderProxy: RenderProx
     ctx.translate(-bounds.x, -bounds.y);
     renderCanvasShapeCommands(ctx, _remappedCommands);
     ctx.restore();
-    updateWebGLTexture(internal, shapeData.texture, shapeData.canvas);
+    updateWebGLTexture(state, shapeData.texture, shapeData.canvas);
     shapeData.lastH = h;
     shapeData.lastScaleX = source.scaleX;
     shapeData.lastScaleY = source.scaleY;
@@ -102,15 +100,15 @@ export function drawWebGLScale9Shape(state: RenderState, renderProxy: RenderProx
     shapeData.lastW = w;
   }
 
-  useWebGLProgram(internal);
+  useWebGLProgram(state);
 
-  const gl = internal.gl;
-  if (internal.currentTexture !== shapeData.texture) {
+  const gl = state.gl;
+  if (runtime.currentTexture !== shapeData.texture) {
     gl.bindTexture(gl.TEXTURE_2D, shapeData.texture);
-    internal.currentTexture = shapeData.texture;
+    runtime.currentTexture = shapeData.texture;
   }
 
-  const { shaderLoc, matrixArray } = internal;
+  const { shaderLoc, matrixArray } = runtime;
   setWebGLBaseUniforms(gl, shaderLoc, renderProxy);
 
   const t = renderProxy.transform2D;
@@ -121,13 +119,13 @@ export function drawWebGLScale9Shape(state: RenderState, renderProxy: RenderProx
     t,
     source.scaleX,
     source.scaleY,
-    internal.renderTargetViewport ?? internal.canvas,
+    runtime.renderTargetViewport ?? state.canvas,
   );
 
-  drawWebGLQuad(internal, 0, 0, w, h, 0, 0, 1, 1);
+  drawWebGLQuad(state, 0, 0, w, h, 0, 0, 1, 1);
 }
 
-export function drawWebGLScale9ShapeMask(state: RenderState, data: RenderProxy2D): void {
+export function drawWebGLScale9ShapeMask(state: WebGLRenderState, data: RenderProxy2D): void {
   drawWebGLScale9Shape(state, data);
 }
 

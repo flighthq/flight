@@ -1,47 +1,42 @@
-import type {
-  DisplayObject,
-  DisplayObjectClipHooks,
-  RenderProxy2D,
-  RenderState,
-  WebGPURenderState,
-} from '@flighthq/types';
+import type { DisplayObject, DisplayObjectClipHooks, RenderProxy2D, WebGPURenderState } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
 import { popWebGPUClipContours, pushWebGPUClipContours } from './webgpuClipContours';
 import { popWebGPUClipRectangle, pushWebGPUClipRectangle } from './webgpuClipRectangle';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 
 // Masks RETIRED — a former mask is a path ClipRegion. Clip = scissor (rect) or stencil-then-cover
-// (contour); independent gates that AND when nested. `s.clipForms` records each clip's form for unwind.
+// (contour); independent gates that AND when nested. `runtime.clipForms` records each clip's form for unwind.
 export function enableWebGPUClipSupport(state: WebGPURenderState): void {
   state.displayObjectClipHooks = webgpuClipHooks;
 }
 
-function popOneWebGPUClip(s: WebGPURenderStateInternal): void {
-  const form = s.clipForms.pop();
-  if (form === 'contour') popWebGPUClipContours(s);
-  else popWebGPUClipRectangle(s); // pops its own scissor stack; clipForms tracks the count
+function popOneWebGPUClip(state: WebGPURenderState): void {
+  const runtime = getWebGPURenderStateRuntime(state);
+  const form = runtime.clipForms.pop();
+  if (form === 'contour') popWebGPUClipContours(state);
+  else popWebGPUClipRectangle(state); // pops its own scissor stack; clipForms tracks the count
 }
 
 const webgpuClipHooks: DisplayObjectClipHooks = {
-  finalize(state: RenderState): void {
-    const s = state as WebGPURenderStateInternal;
-    while (s.clipForms.length > 0) popOneWebGPUClip(s);
+  finalize(state: WebGPURenderState): void {
+    const runtime = getWebGPURenderStateRuntime(state);
+    while (runtime.clipForms.length > 0) popOneWebGPUClip(state);
   },
-  popClip(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
-    const s = state as WebGPURenderStateInternal;
+  popClip(state: WebGPURenderState, data: RenderProxy2D, source: DisplayObject): void {
+    const runtime = getWebGPURenderStateRuntime(state);
     const target = data.clipDepth - (source.clip != null ? 1 : 0);
-    while (s.clipForms.length > target) popOneWebGPUClip(s);
+    while (runtime.clipForms.length > target) popOneWebGPUClip(state);
   },
-  pushClip(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
-    const s = state as WebGPURenderStateInternal;
+  pushClip(state: WebGPURenderState, data: RenderProxy2D, source: DisplayObject): void {
+    const runtime = getWebGPURenderStateRuntime(state);
     const clip = source.clip;
     if (clip === null) return;
     if (clip.contours === null) {
-      pushWebGPUClipRectangle(s, clip.rect, data.transform2D);
-      s.clipForms.push('rect');
+      pushWebGPUClipRectangle(state, clip.rect, data.transform2D);
+      runtime.clipForms.push('rect');
     } else {
-      pushWebGPUClipContours(s, clip.contours, clip.winding, data.transform2D);
-      s.clipForms.push('contour');
+      pushWebGPUClipContours(state, clip.contours, clip.winding, data.transform2D);
+      runtime.clipForms.push('contour');
     }
   },
 };

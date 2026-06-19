@@ -1,10 +1,11 @@
 import type { Material, WebGPUMaterialRenderer, WebGPURenderState } from '@flighthq/types';
 import { DefaultMaterialKind } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 
 export function getWebGPUMaterialRenderer(state: WebGPURenderState, kind: symbol): WebGPUMaterialRenderer | null {
-  return (state as WebGPURenderStateInternal).materialRendererMap?.get(kind) ?? null;
+  const runtime = getWebGPURenderStateRuntime(state);
+  return runtime.materialRendererMap?.get(kind) ?? null;
 }
 
 export function registerWebGPUMaterialRenderer(
@@ -12,8 +13,8 @@ export function registerWebGPUMaterialRenderer(
   kind: symbol,
   renderer: WebGPUMaterialRenderer,
 ): void {
-  const internal = state as WebGPURenderStateInternal;
-  (internal.materialRendererMap ??= new Map()).set(kind, renderer);
+  const runtime = getWebGPURenderStateRuntime(state);
+  (runtime.materialRendererMap ??= new Map()).set(kind, renderer);
 }
 
 // Resolves a node's material to its registered renderer: by the material's kind, else the renderer
@@ -24,7 +25,8 @@ export function resolveWebGPUMaterialRenderer(
   state: WebGPURenderState,
   material: Material | null,
 ): WebGPUMaterialRenderer | null {
-  const map = (state as WebGPURenderStateInternal).materialRendererMap;
+  const runtime = getWebGPURenderStateRuntime(state);
+  const map = runtime.materialRendererMap;
   if (map === undefined) return null;
   if (material !== null) {
     const renderer = map.get(material.kind);

@@ -2,7 +2,7 @@ import { getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render';
 import type { DisplayObject, DisplayObjectRenderer, RenderProxy2D, WebGLRenderState } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 export function drawWebGLDisplayObject(_state: WebGLRenderState, _renderProxy: RenderProxy2D): void {
@@ -10,8 +10,7 @@ export function drawWebGLDisplayObject(_state: WebGLRenderState, _renderProxy: R
 }
 
 export function renderWebGLDisplayObject(state: WebGLRenderState, source: DisplayObject): void {
-  const internal = state as WebGLRenderStateInternal;
-  const tempStack = state.tempStack;
+  const tempStack = getWebGLRenderStateRuntime(state).tempStack;
   const clipHooks = state.displayObjectClipHooks;
 
   let stackLength = 1;
@@ -30,7 +29,7 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
 
     clipHooks?.pushClip(state, data, current);
 
-    data.renderer?.submit(internal, data);
+    data.renderer?.submit(state, data);
     if (data.traverseChildren) {
       const children = getDisplayObjectRuntime(current).children;
       if (children !== null) {
@@ -41,7 +40,7 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
     }
   }
 
-  flushWebGLSpriteBatch(internal);
+  flushWebGLSpriteBatch(state);
   clipHooks?.finalize(state);
 }
 

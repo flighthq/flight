@@ -1,9 +1,8 @@
-import type { WebGLRenderState } from '@flighthq/types';
+import type { WebGLBitmapShader, WebGLRenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { setWebGLAttributes, setWebGLMatrixFromValues } from './webglShader';
-import type { WebGLBitmapShader } from './webglShaderTypes';
 
 type WebGLBlendFactor = 'ONE' | 'ONE_MINUS_SRC_ALPHA';
 
@@ -32,14 +31,17 @@ const WEBGL_BLEND_MODE: Record<BlendMode, readonly [WebGLBlendFactor, WebGLBlend
 };
 
 export function applyWebGLBlendMode(state: WebGLRenderState, blendMode: BlendMode | null): void {
-  if (blendMode === state.currentBlendMode) return;
-  state.currentBlendMode = blendMode;
+  const runtime = getWebGLRenderStateRuntime(state);
+  if (blendMode === runtime.currentBlendMode) return;
+  runtime.currentBlendMode = blendMode;
   const [src, dst] = (blendMode !== null ? WEBGL_BLEND_MODE[blendMode] : null) ?? NORMAL_BLEND;
   state.gl.blendFunc(state.gl[src], state.gl[dst]);
 }
 
-export function bindWebGLTexture(state: WebGLRenderStateInternal, imageSource: CanvasImageSource): WebGLTexture {
-  const { gl, textureCache } = state;
+export function bindWebGLTexture(state: WebGLRenderState, imageSource: CanvasImageSource): WebGLTexture {
+  const runtime = getWebGLRenderStateRuntime(state);
+  const gl = state.gl;
+  const textureCache = runtime.textureCache;
   let texture = textureCache.get(imageSource);
   if (!texture) {
     const filter = state.allowSmoothing ? gl.LINEAR : gl.NEAREST;
@@ -57,16 +59,17 @@ export function bindWebGLTexture(state: WebGLRenderStateInternal, imageSource: C
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageSource as TexImageSource);
     textureCache.set(imageSource, texture);
-    state.currentTexture = texture;
-  } else if (state.currentTexture !== texture) {
+    runtime.currentTexture = texture;
+  } else if (runtime.currentTexture !== texture) {
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    state.currentTexture = texture;
+    runtime.currentTexture = texture;
   }
   return texture;
 }
 
-export function createWebGLTexture(state: WebGLRenderStateInternal): WebGLTexture {
-  const { gl } = state;
+export function createWebGLTexture(state: WebGLRenderState): WebGLTexture {
+  const runtime = getWebGLRenderStateRuntime(state);
+  const gl = state.gl;
   const filter = state.allowSmoothing ? gl.LINEAR : gl.NEAREST;
   const texture = gl.createTexture()!;
   gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -74,12 +77,12 @@ export function createWebGLTexture(state: WebGLRenderStateInternal): WebGLTextur
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  state.currentTexture = texture;
+  runtime.currentTexture = texture;
   return texture;
 }
 
 export function drawWebGLQuad(
-  state: WebGLRenderStateInternal,
+  state: WebGLRenderState,
   x0: number,
   y0: number,
   x1: number,
@@ -89,7 +92,9 @@ export function drawWebGLQuad(
   u1: number,
   v1: number,
 ): void {
-  const { gl, quadVertexData, quadVertexBuffer, quadIndexBuffer, shaderLoc } = state;
+  const runtime = getWebGLRenderStateRuntime(state);
+  const gl = state.gl;
+  const { quadVertexData, quadVertexBuffer, quadIndexBuffer, shaderLoc } = runtime;
   const v = quadVertexData;
   v[0] = x0;
   v[1] = y0;
@@ -119,7 +124,7 @@ export function enableWebGLBlendModeSupport(state: WebGLRenderState): void {
 }
 
 export function setWebGLQuadMatrixFromOffset(
-  state: WebGLRenderStateInternal,
+  state: WebGLRenderState,
   a: number,
   b: number,
   c: number,
@@ -129,29 +134,27 @@ export function setWebGLQuadMatrixFromOffset(
   dx: number,
   dy: number,
 ): void {
+  const runtime = getWebGLRenderStateRuntime(state);
   setWebGLMatrixFromValues(
     state.gl,
-    state.shaderLoc,
-    state.matrixArray,
+    runtime.shaderLoc,
+    runtime.matrixArray,
     a,
     b,
     c,
     d,
     tx + a * dx + c * dy,
     ty + b * dx + d * dy,
-    state.renderTargetViewport ?? state.canvas,
+    runtime.renderTargetViewport ?? state.canvas,
   );
 }
 
-export function updateWebGLTexture(
-  state: WebGLRenderStateInternal,
-  texture: WebGLTexture,
-  canvas: HTMLCanvasElement,
-): void {
-  const { gl } = state;
-  if (state.currentTexture !== texture) {
+export function updateWebGLTexture(state: WebGLRenderState, texture: WebGLTexture, canvas: HTMLCanvasElement): void {
+  const runtime = getWebGLRenderStateRuntime(state);
+  const gl = state.gl;
+  if (runtime.currentTexture !== texture) {
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    state.currentTexture = texture;
+    runtime.currentTexture = texture;
   }
   // Browsers pass canvas pixel data to WebGL as straight (unmultiplied) alpha.
   // Premultiply on upload so the texture matches the (ONE, ONE_MINUS_SRC_ALPHA) blend mode.
@@ -159,14 +162,13 @@ export function updateWebGLTexture(
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
 }
 
-export function useWebGLProgram(
-  state: WebGLRenderStateInternal,
-  shader: WebGLBitmapShader = state.defaultBitmapShader,
-): void {
-  state.shaderLoc = shader.locations;
-  const program = shader.program;
-  if (state.currentProgram !== program) {
+export function useWebGLProgram(state: WebGLRenderState, shader?: WebGLBitmapShader): void {
+  const runtime = getWebGLRenderStateRuntime(state);
+  const resolved = shader ?? runtime.defaultBitmapShader;
+  runtime.shaderLoc = resolved.locations;
+  const program = resolved.program;
+  if (runtime.currentProgram !== program) {
     state.gl.useProgram(program);
-    state.currentProgram = program;
+    runtime.currentProgram = program;
   }
 }

@@ -1,4 +1,4 @@
-import type { WebGLRenderStateInternal, WebGLRenderTarget } from '@flighthq/render-webgl';
+import type { WebGLRenderTarget } from '@flighthq/render-webgl';
 import type { GradientGlowFilter } from '@flighthq/types';
 import type { WebGLRenderState } from '@flighthq/types';
 
@@ -50,8 +50,7 @@ export function applyGradientGlowFilterToWebGL(
   const strength = filter.strength ?? 1;
 
   const [s0, s1, s2] = scratch;
-  const internal = state as WebGLRenderStateInternal;
-  const { gl } = internal;
+  const gl = state.gl;
 
   // Extract alpha as a neutral (white) mask, then blur → s1
   applyWebGLTintPass(state, source, s0, 0xffffff, 1, Math.min(1, strength));
@@ -85,7 +84,7 @@ function applyGradientLookupPass(
 function getLookupShader(state: WebGLRenderState): GradientLookupLocations {
   let loc = lookupShaders.get(state);
   if (loc === undefined) {
-    const gl = (state as WebGLRenderStateInternal).gl;
+    const gl = state.gl;
     const base = compileWebGLFilterProgram(gl, GRADIENT_LOOKUP_FRAGMENT_SRC);
     loc = { ...base, locRamp: gl.getUniformLocation(base.program, 'u_ramp')! };
     lookupShaders.set(state, loc);

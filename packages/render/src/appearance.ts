@@ -1,10 +1,12 @@
 import { getNodeAppearanceRevision } from '@flighthq/node';
 import type { HasAppearance, Node, RenderProxy, RenderState } from '@flighthq/types';
 
+import { getRenderStateRuntime } from './renderState';
+
 export function updateRenderProxyAppearance(state: RenderState, data: RenderProxy, parentData?: RenderProxy): boolean {
   const appearanceID = getNodeAppearanceRevision(data.source as Node);
   if (
-    (parentData !== undefined && parentData.appearanceFrameID === state.currentFrameID) ||
+    (parentData !== undefined && parentData.appearanceFrameID === getRenderStateRuntime(state).currentFrameID) ||
     data.lastAppearanceID !== appearanceID
   ) {
     recalculateAppearance(state, data, parentData);
@@ -29,5 +31,5 @@ function recalculateAppearance(state: RenderState, data: RenderProxy, parentData
     if (data.alpha <= 0) return;
     data.blendMode = state.renderBlendMode !== null ? state.renderBlendMode : source.blendMode;
   }
-  data.appearanceFrameID = state.currentFrameID;
+  data.appearanceFrameID = getRenderStateRuntime(state).currentFrameID;
 }

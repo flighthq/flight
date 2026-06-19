@@ -1,10 +1,10 @@
 import { noopRendererData } from '@flighthq/render';
-import type { Bitmap, DisplayObjectRenderer, RenderProxy2D, RenderState } from '@flighthq/types';
+import type { Bitmap, DisplayObjectRenderer, RenderProxy2D, WebGPURenderState } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
 import { bindWebGPUTexture } from './webgpuDraw';
 import { resolveWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import { resolveWebGPUShader } from './webgpuShaderBinding';
 import {
   ensureWebGPUQuadBatchResources,
@@ -13,29 +13,29 @@ import {
   prepareWebGPUSpriteBatchWrite,
 } from './webgpuSpriteBatch';
 
-export function drawWebGPUBitmap(state: RenderState, renderProxy: RenderProxy2D): void {
-  const internal = state as WebGPURenderStateInternal;
-  if (internal.renderPass === null) return;
+export function drawWebGPUBitmap(state: WebGPURenderState, renderProxy: RenderProxy2D): void {
+  const runtime = getWebGPURenderStateRuntime(state);
+  if (runtime.renderPass === null) return;
 
   const source = renderProxy.source as Bitmap;
   const imageSource = source.data.image;
   if (imageSource === null || imageSource.source === null) return;
 
   // Custom per-node shader: flush pending batch to preserve painter's order, then draw immediately.
-  const shader = resolveWebGPUShader(internal, renderProxy);
+  const shader = resolveWebGPUShader(state, renderProxy);
   if (shader !== null) {
-    flushWebGPUSpriteBatch(internal);
-    internal.applyBlendMode?.(internal, renderProxy.blendMode);
-    bindWebGPUTexture(internal, imageSource.source);
-    shader.bind(internal, renderProxy);
+    flushWebGPUSpriteBatch(state);
+    state.applyBlendMode?.(state, renderProxy.blendMode);
+    bindWebGPUTexture(state, imageSource.source);
+    shader.bind(state, renderProxy);
     return;
   }
 
   const material = renderProxy.material;
-  const materialRenderer = resolveWebGPUMaterialRenderer(internal, material);
+  const materialRenderer = resolveWebGPUMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
-  ensureWebGPUQuadBatchResources(internal);
+  ensureWebGPUQuadBatchResources(state);
 
   const sr = source.data.sourceRectangle ?? null;
   const iw = 1 / (imageSource.width || 1);
@@ -62,16 +62,16 @@ export function drawWebGPUBitmap(state: RenderState, renderProxy: RenderProxy2D)
     v1 = (sr.y + sr.height) * ih;
   }
 
-  const startCount = internal.spriteBatchCount;
+  const startCount = runtime.spriteBatchCount;
   const base = prepareWebGPUSpriteBatchWrite(
-    internal,
+    state,
     imageSource.source,
     renderProxy.blendMode,
     material,
     materialRenderer,
     1,
   );
-  const d = internal.spriteBatchInstanceData;
+  const d = runtime.spriteBatchInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;
   d[base + 1] = t.b;
@@ -86,8 +86,8 @@ export function drawWebGPUBitmap(state: RenderState, renderProxy: RenderProxy2D)
   d[base + 10] = u1;
   d[base + 11] = v1;
   d[base + 12] = renderProxy.alpha;
-  packWebGPUSpriteBatchMaterialInstance(internal, renderProxy.materialData, startCount);
-  internal.spriteBatchCount++;
+  packWebGPUSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
+  runtime.spriteBatchCount++;
 }
 
 export const defaultWebGPUBitmapRenderer: DisplayObjectRenderer = {

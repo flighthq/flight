@@ -20,8 +20,8 @@ import {
 } from '@flighthq/types';
 
 import { updateRenderProxyAppearance } from './appearance';
-import type { RenderProxyStateInternal } from './internal';
 import { updateRenderProxyMaterial } from './material';
+import { getRenderStateRuntime } from './renderState';
 import { updateRenderProxy2DTransform } from './transform2d';
 
 type AdaptHook = (state: RenderState, source: Renderable, data: RenderProxy2D) => void;
@@ -38,7 +38,8 @@ export type RenderProxyVisitor = (
 ) => void;
 
 export function createRenderProxy(state: RenderState, source: Renderable): RenderProxy {
-  const renderer = state.rendererMap.get(source.kind) ?? null;
+  const runtime = getRenderStateRuntime(state);
+  const renderer = runtime.rendererMap.get(source.kind) ?? null;
   return createEntity({
     source: source,
     kind: source.kind,
@@ -55,7 +56,7 @@ export function createRenderProxy(state: RenderState, source: Renderable): Rende
     renderer: renderer,
     rendererData: renderer?.createData(state, source) ?? null,
     rendererDataSource: source,
-    rendererMapID: state.rendererMapID,
+    rendererMapID: runtime.rendererMapID,
     transformFrameID: -1,
     visible: true,
   });
@@ -91,27 +92,29 @@ export function disposeDisplayObjectRender(state: RenderState, root: Renderable)
 // renderer's destroyData to free the non-GC GPU resources it owns. Call when a node is removed from
 // rendering for good — otherwise those GPU textures/framebuffers linger until the source is GC'd.
 export function disposeRenderProxy(state: RenderState, source: Renderable): void {
-  const node = state.renderProxyMap.get(source);
+  const renderProxyMap = getRenderStateRuntime(state).renderProxyMap;
+  const node = renderProxyMap.get(source);
   if (node === undefined) return;
   if (node.rendererData !== null) node.renderer?.destroyData?.(state, node.rendererData);
-  state.renderProxyMap.delete(source);
+  renderProxyMap.delete(source);
 }
 
 export function getOrCreateRenderProxy2D(state: RenderState, source: Renderable): RenderProxy2D {
-  const renderProxyMap = state.renderProxyMap;
+  const runtime = getRenderStateRuntime(state);
+  const renderProxyMap = runtime.renderProxyMap;
   let node = renderProxyMap.get(source) as RenderProxy2D | undefined;
   if (!node) {
     node = createRenderProxy2D(state, source as Renderable & HasTransform2D & HasBoundsRectangle);
     renderProxyMap.set(source, node);
   }
-  if (node.rendererMapID !== state.rendererMapID) {
+  if (node.rendererMapID !== runtime.rendererMapID) {
     updateRenderProxyRenderer(state, node);
   }
   return node;
 }
 
 export function getRenderProxy2D(state: RenderState, source: Renderable): RenderProxy2D | undefined {
-  return state.renderProxyMap.get(source) as RenderProxy2D | undefined;
+  return getRenderStateRuntime(state).renderProxyMap.get(source) as RenderProxy2D | undefined;
 }
 
 export function installRenderAdaptHook(fn: AdaptHook): void {
@@ -124,9 +127,10 @@ export function isRenderProxyDirty(
   data: RenderProxy,
   parentData?: RenderProxy,
 ): boolean {
+  const currentFrameID = getRenderStateRuntime(state).currentFrameID;
   const parentDirty =
     parentData !== undefined &&
-    (parentData.transformFrameID === state.currentFrameID || parentData.appearanceFrameID === state.currentFrameID);
+    (parentData.transformFrameID === currentFrameID || parentData.appearanceFrameID === currentFrameID);
   const localDirty =
     state.sceneGraphSyncPolicy === 'refreshDerivedState' ||
     data.lastLocalTransformID !== getNodeLocalTransformRevision(source as Node) ||
@@ -180,7 +184,8 @@ export function updateRenderProxy2D(
 }
 
 export function updateRenderProxyRenderer(state: RenderState, node: RenderProxy): void {
-  const renderer = state.rendererMap.get(node.kind) ?? null;
+  const runtime = getRenderStateRuntime(state);
+  const renderer = runtime.rendererMap.get(node.kind) ?? null;
   if (node.renderer !== renderer || node.rendererDataSource !== node.source) {
     // Free the outgoing renderer's GPU resources before replacing the data it owned.
     if (node.rendererData !== null) node.renderer?.destroyData?.(state, node.rendererData);
@@ -188,7 +193,7 @@ export function updateRenderProxyRenderer(state: RenderState, node: RenderProxy)
     node.rendererData = renderer?.createData(state, node.source) ?? null;
     node.rendererDataSource = node.source;
   }
-  node.rendererMapID = state.rendererMapID;
+  node.rendererMapID = runtime.rendererMapID;
 }
 
 // One generic, dirty-checked pre-order walk over the 2D node graph. `visit` composes the trait
@@ -196,9 +201,10 @@ export function updateRenderProxyRenderer(state: RenderState, node: RenderProxy)
 // type — what differs is the traits they carry, not the path. Clip is not handled here: it is a
 // trait update step in the visitor (updateNodeClip), realized at draw time by the backend clip hooks.
 export function walkNode(state: RenderState, root: Renderable, visit: RenderProxyVisitor): boolean {
-  ++(state as RenderProxyStateInternal).currentFrameID;
+  const runtime = getRenderStateRuntime(state);
+  ++runtime.currentFrameID;
 
-  const tempStack = state.tempStack;
+  const tempStack = runtime.tempStack;
   let stackLength = 1;
   tempStack[0] = root;
 
@@ -252,7 +258,7 @@ function walkRenderSubtree(
   root: Renderable,
   visit: (state: RenderState, node: Renderable) => void,
 ): void {
-  const tempStack = state.tempStack;
+  const tempStack = getRenderStateRuntime(state).tempStack;
   let stackLength = 1;
   tempStack[0] = root;
 

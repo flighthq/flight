@@ -1,7 +1,7 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix, createRectangle } from '@flighthq/geometry';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
-import type { DOMStageRectangle } from '@flighthq/types';
+import type { DOMRenderState, DOMStageRectangle } from '@flighthq/types';
 
 import {
   applyDOMClipRectangles,
@@ -9,11 +9,10 @@ import {
   pushDOMClipRectangle,
   setDOMClipHooks,
 } from './domClipRectangle';
-import { createDOMRenderState } from './domRenderState';
-import type { DOMRenderStateInternal } from './internal';
+import { createDOMRenderState, getDOMRenderStateRuntime } from './domRenderState';
 
-function makeState(): DOMRenderStateInternal {
-  return createDOMRenderState(document.createElement('div')) as DOMRenderStateInternal;
+function makeState(): DOMRenderState {
+  return createDOMRenderState(document.createElement('div'));
 }
 
 describe('applyDOMClipRectangles', () => {
@@ -23,7 +22,7 @@ describe('applyDOMClipRectangles', () => {
     const data = getOrCreateRenderProxy2D(state, source);
     const element = document.createElement('div');
     element.style.clipPath = 'inset(0)';
-    state.domElementMap.set(data, element);
+    getDOMRenderStateRuntime(state).domElementMap.set(data, element);
 
     applyDOMClipRectangles(state, data, []);
 
@@ -36,7 +35,7 @@ describe('applyDOMClipRectangles', () => {
     const data = getOrCreateRenderProxy2D(state, source);
     const element = document.createElement('div');
     element.style.transform = 'matrix(1,0,0,1,10,20)';
-    state.domElementMap.set(data, element);
+    getDOMRenderStateRuntime(state).domElementMap.set(data, element);
 
     applyDOMClipRectangles(state, data, [
       { bottom: 100, left: 0, right: 100, top: 0 },
@@ -69,14 +68,14 @@ describe('setDOMClipHooks', () => {
   it('sets DOM clip hooks on the render state', () => {
     const state = makeState();
     setDOMClipHooks(state);
-    expect(state.domClipHooks).not.toBeNull();
+    expect(getDOMRenderStateRuntime(state).domClipHooks).not.toBeNull();
   });
 
   it('is idempotent', () => {
     const state = makeState();
     setDOMClipHooks(state);
-    const first = state.domClipHooks;
+    const first = getDOMRenderStateRuntime(state).domClipHooks;
     setDOMClipHooks(state);
-    expect(state.domClipHooks).toBe(first);
+    expect(getDOMRenderStateRuntime(state).domClipHooks).toBe(first);
   });
 });
