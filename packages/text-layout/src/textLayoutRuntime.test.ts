@@ -1,9 +1,9 @@
-import type { TextRuntime } from '@flighthq/types';
+import type { TextLabelRuntime } from '@flighthq/types';
 
 import { clearTextLayoutResult, getTextLayoutResult } from './textLayoutRuntime';
 
-function createRuntime(): TextRuntime {
-  return { textLayout: null } as TextRuntime;
+function createRuntime(): TextLabelRuntime {
+  return { textLayout: null } as TextLabelRuntime;
 }
 
 describe('clearTextLayoutResult', () => {

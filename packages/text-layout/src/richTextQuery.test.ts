@@ -1,4 +1,4 @@
-import type { InputTextSelectionRectangle, TextLayoutResult } from '@flighthq/types';
+import type { TextLayoutResult, TextSelectionRectangle } from '@flighthq/types';
 
 import {
   getRichTextCharBoundaries,
@@ -181,7 +181,7 @@ describe('getRichTextParagraphLength', () => {
 
 describe('getRichTextSelectionRectangles', () => {
   it('fills out with one rectangle per intersected group', () => {
-    const out: InputTextSelectionRectangle[] = [];
+    const out: TextSelectionRectangle[] = [];
     getRichTextSelectionRectangles(out, 1, 5, createLayout());
     expect(out).toHaveLength(2);
     expect(out[0].lineIndex).toBe(0);
@@ -189,7 +189,7 @@ describe('getRichTextSelectionRectangles', () => {
   });
 
   it('returns empty for a collapsed selection', () => {
-    const out: InputTextSelectionRectangle[] = [];
+    const out: TextSelectionRectangle[] = [];
     getRichTextSelectionRectangles(out, 2, 2, createLayout());
     expect(out).toHaveLength(0);
   });

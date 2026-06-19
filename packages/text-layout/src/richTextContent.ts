@@ -6,15 +6,23 @@ export function clearRichTextContent(runtime: RichTextRuntime): void {
   runtime.richTextContent = null;
 }
 
-export function computeRichTextContent(out: RichTextContent, data: Readonly<RichTextData>): void {
+// `passwordCharacter` drives masking: null leaves the text visible; a string masks every character
+// with it (an empty string falls back to the bullet default). The caller — buildRichTextLayoutParams —
+// reads it from the RichText's editable-input slot, so password state lives on the input capability,
+// not on RichTextData.
+export function computeRichTextContent(
+  out: RichTextContent,
+  data: Readonly<RichTextData>,
+  passwordCharacter: string | null = null,
+): void {
   out.text = '';
   out.formatRanges.length = 0;
 
   const baseFormat = createBaseFormat(data);
-  const source = getRenderableSource(data);
+  const source = getRenderableSource(data, passwordCharacter);
   if (source.length === 0) return;
 
-  if (data.htmlText.length === 0 || isPasswordText(data)) {
+  if (data.htmlText.length === 0 || passwordCharacter !== null) {
     appendText(out, source, baseFormat, data.condenseWhite, data.maxChars);
   } else {
     parseHTMLText(out, source, data, baseFormat);
@@ -307,18 +315,10 @@ function handleHTMLTag(out: RichTextContent, token: string, data: Readonly<RichT
   if (!selfClosing) stack.push(format);
 }
 
-function getPasswordCharacter(data: Readonly<RichTextData>): string {
-  const value = (data as { passwordCharacter?: string }).passwordCharacter;
-  return value !== undefined && value.length > 0 ? value.charAt(0) : '\u2022';
-}
-
-function getRenderableSource(data: Readonly<RichTextData>): string {
-  if (!isPasswordText(data)) return data.htmlText.length > 0 ? data.htmlText : data.text;
-  return getPasswordCharacter(data).repeat(data.text.length);
-}
-
-function isPasswordText(data: Readonly<RichTextData>): boolean {
-  return (data as { displayAsPassword?: boolean }).displayAsPassword === true;
+function getRenderableSource(data: Readonly<RichTextData>, passwordCharacter: string | null): string {
+  if (passwordCharacter === null) return data.htmlText.length > 0 ? data.htmlText : data.text;
+  const mask = passwordCharacter.length > 0 ? passwordCharacter.charAt(0) : '\u2022';
+  return mask.repeat(data.text.length);
 }
 
 function isTextAlign(value: string): value is NonNullable<TextFormat['align']> {

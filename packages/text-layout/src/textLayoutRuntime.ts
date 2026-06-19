@@ -1,12 +1,12 @@
-import type { TextLayoutResult, TextRuntime } from '@flighthq/types';
+import type { TextLabelRuntime, TextLayoutResult } from '@flighthq/types';
 
 import { createTextLayoutResult } from './textLayout';
 
-export function clearTextLayoutResult(runtime: TextRuntime): void {
+export function clearTextLayoutResult(runtime: TextLabelRuntime): void {
   runtime.textLayout = null;
 }
 
-export function getTextLayoutResult(runtime: TextRuntime): TextLayoutResult {
+export function getTextLayoutResult(runtime: TextLabelRuntime): TextLayoutResult {
   if (runtime.textLayout === null) {
     runtime.textLayout = createTextLayoutResult();
   }
