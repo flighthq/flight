@@ -367,7 +367,8 @@ Packaging policy should be enforced by scripts and `npm run packages:check` rath
 - `@flighthq/entity`: entity/runtime primitives used by higher-level packages.
 - `@flighthq/geometry`: rectangles, vectors, matrices, typed-array capacity helpers, and pools.
 - `@flighthq/node`: graph hierarchy, transforms, bounds, appearance, and invalidation.
-- `@flighthq/displayobject`: Flash/OpenFL-style display objects such as bitmaps, shapes, text, containers, masks, stages, and videos.
+- `@flighthq/displayobject`: Flash/OpenFL-style display objects such as bitmaps, shapes, containers, masks, stages, and videos.
+- `@flighthq/text`: text display objects — single-format `TextLabel` and multi-format `RichText` (built on the text-layout spine, with a lazily-ensured layout cache), plus `NativeText`, the platform-rendered text field measured outside the spine by the host engine. ("native-rendered text" is a property of the display object, not a package boundary — the `native` namespace is reserved for the platform/OS-integration suite below.)
 - `@flighthq/sprite`: sprite/tilemap/quad-batch graph for atlas-based batch rendering.
 - `@flighthq/world`: 3D world graph for spatial scene management. A doorway for future development; the road is mostly untaken and the package is not yet built out.
 - `@flighthq/render`: renderer registration, render state/queue, render node data, update pipeline, transform/color propagation. Image render caching lives in the renderer packages (`imageRenderCache`, `canvasRenderCache`, `webglRenderCache`, `domRenderCache`), not in a standalone package.
@@ -386,7 +387,43 @@ Packaging policy should be enforced by scripts and `npm run packages:check` rath
 - `@flighthq/input`: maps raw system inputs to a normalized internal representation, feeding into interactions, signals, and other consumers.
 - `@flighthq/text-input`: supports user input editing within a text primitive.
 - `@flighthq/text-layout`: renderer-agnostic glyph layout for rich text composition.
-- `@flighthq/application`: optional package providing a main loop and responses to application lifecycle events.
+- `@flighthq/application`: optional package providing a main loop, application lifecycle events, and the **windowing API** — `ApplicationWindow` (size/position/state + signals), web event wiring (`attach*`/`detach*`), and window-control commands (title, position, size, minimize/maximize/restore, fullscreen, always-on-top, constraints, `openWindow`, close-with-veto via `onCloseRequest`) over a swappable `WindowBackend` (web default; native hosts register their own), matching the platform suite's backend-seam pattern.
 - `@flighthq/media`: audio and video playback channels.
 - `@flighthq/surface`: pixel-level manipulation of `ImageSource` values — read from or generate image data. Not used internally by renderers; user-facing.
 - `@flighthq/sdk`: convenience barrel for applications and examples.
+
+### Platform Integration Suite
+
+Host/OS integration so applications need no escape hatch out of the SDK. Each capability is a self-contained cell: flat free functions over a swappable `*Backend` (defined in `@flighthq/types`). A web/DOM backend is always lazily available, so every function works on the web; a native host (Electron, Tauri, Capacitor, a C/C++ shell) replaces it via the capability's `set*Backend`. "Electron support" is one backend, not a coupling. Two shapes: **command** capabilities expose flat functions + `get*Backend`/`set*Backend`/`createWeb*Backend`; **event** capabilities expose an entity of signals with `create*`/`attach*`/`detach*`/`dispose*` (mirroring `@flighthq/application`'s window wiring). Web backends guard every API and return sentinels (`null`/`false`/`-1`/`''`/`[]`/no-op) when unavailable rather than throwing.
+
+- `@flighthq/platform`: root identification seam — OS name, desktop/mobile/web kind, arch, locale, touch.
+- `@flighthq/clipboard`: system clipboard read/write (text, HTML).
+- `@flighthq/dialog`: file open/save and message/confirm/prompt dialogs.
+- `@flighthq/filesystem`: file read/write/list/stat and standard directory paths (web backend over OPFS).
+- `@flighthq/notification`: OS notifications and permission.
+- `@flighthq/shell`: open external URLs/paths, reveal in folder, move to trash, beep.
+- `@flighthq/menu`: native application-menu and context-menu descriptors (native host required to realize).
+- `@flighthq/tray`: system tray / menu-bar icon (icon, tooltip, title, context menu, click events). The application/dock badge lives in `@flighthq/app`, not here.
+- `@flighthq/shortcut`: global OS hotkeys (native host required).
+- `@flighthq/screen`: display enumeration, work area, scale factor.
+- `@flighthq/storage`: synchronous persistent key/value (web backend over localStorage).
+- `@flighthq/device`: static device/OS identity — model, manufacturer, OS, memory, safe-area insets. Battery is _not_ here; it is a live concern owned by `@flighthq/power`.
+- `@flighthq/share`: native share sheet.
+- `@flighthq/haptics`: vibration and impact/notification/selection feedback.
+- `@flighthq/geolocation`: current position and position watches.
+- `@flighthq/camera`: take photo / pick image.
+- `@flighthq/statusbar`: mobile status-bar style, visibility, color.
+- `@flighthq/network` (event): connectivity status and online/offline signals.
+- `@flighthq/power` (event): battery/charging status, low-power and keep-awake.
+- `@flighthq/lifecycle` (event): app active/inactive/background, resume/pause, back button.
+- `@flighthq/keyboard` (event): on-screen keyboard visibility/height (type `SoftKeyboard`, avoiding the DOM `Keyboard`).
+- `@flighthq/sensors` (event): accelerometer, gyroscope, device orientation.
+
+Application/process layer (host shell integration beyond a single window):
+
+- `@flighthq/app`: application identity (name/version/locale), control (quit/relaunch/focus), single-instance lock + `onSecondInstance`, the canonical app badge (`setAppBadgeCount`) + dock badge/menu/bounce, and app events (`onActivate`, `onOpenFile`).
+- `@flighthq/protocol`: custom URI-scheme / deep-link registration plus an `onOpenURL` handler entity.
+- `@flighthq/updater` (event): auto-update lifecycle — checking/available/progress/downloaded/error signals plus check/download/quit-and-install commands.
+- `@flighthq/ipc`: inter-process messaging — `sendIpcMessage`, `invokeIpc`, `onIpcMessage` over a host channel backend (for split-process hosts like Electron main↔renderer).
+
+Inbound host events are delivered through the same seam: command-style capabilities that also receive events expose a flat `on*(listener): () => void` over a backend `subscribe*` method — `onMenuSelect`, `onTrayEvent` (+ `setTrayContextMenu`), `onNotificationClick`/`onNotificationAction`, `onScreenChange`, power `onSuspend`/`onResume`. The window backend delivers OS-originated changes by mutating the `ApplicationWindow` and emitting its signals directly (it owns the `win`↔OS-window mapping from `openWindow`); native window backends additionally implement icon/opacity/progress/attention/skip-taskbar/menu-bar/parent controls.

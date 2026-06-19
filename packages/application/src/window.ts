@@ -1,6 +1,14 @@
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals';
-import type { ApplicationWindow, Matrix, RenderState } from '@flighthq/types';
+import type {
+  ApplicationWindow,
+  Matrix,
+  RenderState,
+  WindowBackend,
+  WindowBounds,
+  WindowOptions,
+} from '@flighthq/types';
 
+const kClose = Symbol();
 const kDropFile = Symbol();
 const kFocus = Symbol();
 const kFullscreen = Symbol();
@@ -9,6 +17,29 @@ const kRenderContext = Symbol();
 const kRenderState = Symbol();
 const kResize = Symbol();
 const kVisibility = Symbol();
+
+// Wires the browser's beforeunload/pagehide to the window's close signals: beforeunload emits
+// onCloseRequest and, if a listener vetoes (cancelSignal), prompts the user via the native unload
+// dialog; pagehide emits onClose once the page is actually going away. Idempotent.
+export function attachWindowClose(win: ApplicationWindow): void {
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kClose)?.();
+  if (typeof window === 'undefined') return;
+  const onBeforeUnload = (e: BeforeUnloadEvent) => {
+    emitSignal(win.onCloseRequest);
+    if (win.onCloseRequest.data?.cancelled === true) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  };
+  const onPageHide = () => emitSignal(win.onClose);
+  window.addEventListener('beforeunload', onBeforeUnload);
+  window.addEventListener('pagehide', onPageHide);
+  observers.set(kClose, () => {
+    window.removeEventListener('beforeunload', onBeforeUnload);
+    window.removeEventListener('pagehide', onPageHide);
+  });
+}
 
 export function attachWindowDropFile(win: ApplicationWindow, element: HTMLElement): void {
   const observers = getApplicationWindowObservers(win);
@@ -122,6 +153,21 @@ export function attachWindowVisibility(win: ApplicationWindow): void {
   observers.set(kVisibility, () => document.removeEventListener('visibilitychange', handler));
 }
 
+// Centers the window on its current display via the backend.
+export function centerWindow(win: ApplicationWindow): void {
+  getWindowBackend().center(win);
+}
+
+// Closes the window. First emits onCloseRequest; if a listener vetoes (cancelSignal), the close is
+// aborted and this returns false. Otherwise the backend closes the window, onClose fires, and it
+// returns true.
+export function closeWindow(win: ApplicationWindow): boolean {
+  if (!requestWindowClose(win)) return false;
+  getWindowBackend().close(win);
+  emitSignal(win.onClose);
+  return true;
+}
+
 // Writes the window's device transform — a uniform scale by devicePixelRatio — into out and returns
 // it. DPI is a device concern, so it belongs in a render state's device transform (renderTransform2D),
 // leaving the scene authored in logical units. Reads win before writing out, so out may alias an input.
@@ -138,11 +184,29 @@ export function computeWindowDeviceTransform(win: Readonly<ApplicationWindow>, o
 
 export function createApplicationWindow(): ApplicationWindow {
   return {
+    alwaysOnTop: false,
     devicePixelRatio: 1,
+    focused: false,
+    fullscreen: false,
     height: 0,
+    icon: '',
+    maxHeight: -1,
+    maximized: false,
+    maxWidth: -1,
+    minHeight: 0,
+    minimized: false,
+    minWidth: 0,
+    opacity: 1,
+    resizable: true,
+    skipTaskbar: false,
+    title: '',
+    visible: true,
     width: 0,
+    x: 0,
+    y: 0,
     onActivate: createSignal(),
     onClose: createSignal(),
+    onCloseRequest: createSignal(),
     onDeactivate: createSignal(),
     onDropFile: createSignal(),
     onFocusIn: createSignal(),
@@ -157,6 +221,117 @@ export function createApplicationWindow(): ApplicationWindow {
     onResize: createSignal(),
     onRestore: createSignal(),
   };
+}
+
+// Builds the default web window backend over the browser page-window. Covers what a browser can do
+// (title via document.title, fullscreen, focus, popup move/resize/close); minimize/maximize/restore,
+// always-on-top, and size constraints have no browser equivalent and are no-ops — the window command
+// functions still update the entity state and emit signals, and native hosts implement the rest.
+export function createWebWindowBackend(): WindowBackend {
+  return {
+    open() {
+      return typeof window !== 'undefined';
+    },
+    close() {
+      if (typeof window !== 'undefined' && typeof window.close === 'function') {
+        try {
+          window.close();
+        } catch {
+          /* a non-script-opened window cannot be closed by script */
+        }
+      }
+    },
+    setTitle(_win, title) {
+      if (typeof document !== 'undefined') document.title = title;
+    },
+    setPosition(_win, x, y) {
+      if (typeof window !== 'undefined' && typeof window.moveTo === 'function') {
+        try {
+          window.moveTo(x, y);
+        } catch {
+          /* blocked outside a script-opened window */
+        }
+      }
+    },
+    setSize(_win, width, height) {
+      if (typeof window !== 'undefined' && typeof window.resizeTo === 'function') {
+        try {
+          window.resizeTo(width, height);
+        } catch {
+          /* blocked outside a script-opened window */
+        }
+      }
+    },
+    getBounds(win, out) {
+      if (typeof window === 'undefined') {
+        out.x = win.x;
+        out.y = win.y;
+        out.width = win.width;
+        out.height = win.height;
+        return out;
+      }
+      out.x = window.screenX ?? win.x;
+      out.y = window.screenY ?? win.y;
+      out.width = window.innerWidth ?? win.width;
+      out.height = window.innerHeight ?? win.height;
+      return out;
+    },
+    minimize() {},
+    maximize() {},
+    restore() {},
+    focus() {
+      if (typeof window !== 'undefined' && typeof window.focus === 'function') window.focus();
+    },
+    show() {},
+    hide() {},
+    center(win) {
+      if (typeof window === 'undefined' || typeof window.moveTo !== 'function' || typeof screen === 'undefined') return;
+      try {
+        window.moveTo(
+          Math.round((screen.availWidth - win.width) / 2),
+          Math.round((screen.availHeight - win.height) / 2),
+        );
+      } catch {
+        /* blocked outside a script-opened window */
+      }
+    },
+    setResizable() {},
+    setAlwaysOnTop() {},
+    setMinimumSize() {},
+    setMaximumSize() {},
+    setFullscreen(_win, fullscreen) {
+      if (typeof document === 'undefined') return;
+      try {
+        if (fullscreen) void document.documentElement.requestFullscreen?.();
+        else void document.exitFullscreen?.();
+      } catch {
+        /* fullscreen requires a user gesture; ignore rejection */
+      }
+    },
+    setIcon(_win, icon) {
+      // The browser equivalent of a window icon is the page favicon; native hosts set the real icon.
+      if (typeof document === 'undefined') return;
+      let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+      if (link === null) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = icon;
+    },
+    setOpacity() {},
+    setSkipTaskbar() {},
+    setMenuBarVisible() {},
+    setParent() {},
+    setProgress() {},
+    requestAttention() {},
+  };
+}
+
+export function detachWindowClose(win: ApplicationWindow): void {
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kClose)?.();
+  observers.delete(kClose);
 }
 
 export function detachWindowDropFile(win: ApplicationWindow): void {
@@ -217,6 +392,30 @@ export function exitApplicationFullscreen(): Promise<void> {
   return document.exitFullscreen();
 }
 
+// Brings the window to the foreground and marks it focused.
+export function focusWindow(win: ApplicationWindow): void {
+  win.focused = true;
+  getWindowBackend().focus(win);
+}
+
+// The active window backend, or a lazily-created web default. There is always a backend.
+export function getWindowBackend(): WindowBackend {
+  if (_windowBackend === null) _windowBackend = createWebWindowBackend();
+  return _windowBackend;
+}
+
+// Fills `out` with the window's current screen bounds and returns it.
+export function getWindowBounds(win: Readonly<ApplicationWindow>, out: WindowBounds): WindowBounds {
+  return getWindowBackend().getBounds(win as ApplicationWindow, out);
+}
+
+// Hides the window without closing it.
+export function hideWindow(win: ApplicationWindow): void {
+  if (!win.visible) return;
+  win.visible = false;
+  getWindowBackend().hide(win);
+}
+
 export function lockApplicationPointer(element: HTMLElement): void {
   element.style.touchAction = 'none';
   element.style.userSelect = 'none';
@@ -227,14 +426,176 @@ export function lockApplicationPointer(element: HTMLElement): void {
   }
 }
 
+// Maximizes the window. Updates state and emits onMaximize when the state changes.
+export function maximizeWindow(win: ApplicationWindow): void {
+  if (win.maximized) return;
+  win.maximized = true;
+  getWindowBackend().maximize(win);
+  emitSignal(win.onMaximize);
+}
+
+// Minimizes the window. Updates state and emits onMinimize when the state changes.
+export function minimizeWindow(win: ApplicationWindow): void {
+  if (win.minimized) return;
+  win.minimized = true;
+  getWindowBackend().minimize(win);
+  emitSignal(win.onMinimize);
+}
+
+// Opens (or configures) the window from options, applying each provided field to the entity and
+// delegating to the backend. Returns whether the host opened a window. On web this configures the
+// existing page-window; native hosts create a real OS window.
+export function openWindow(win: ApplicationWindow, options: Readonly<WindowOptions> = {}): boolean {
+  if (options.title !== undefined) win.title = options.title;
+  if (options.x !== undefined) win.x = options.x;
+  if (options.y !== undefined) win.y = options.y;
+  if (options.width !== undefined) win.width = options.width;
+  if (options.height !== undefined) win.height = options.height;
+  if (options.resizable !== undefined) win.resizable = options.resizable;
+  if (options.alwaysOnTop !== undefined) win.alwaysOnTop = options.alwaysOnTop;
+  if (options.fullscreen !== undefined) win.fullscreen = options.fullscreen;
+  if (options.minimized !== undefined) win.minimized = options.minimized;
+  if (options.maximized !== undefined) win.maximized = options.maximized;
+  if (options.visible !== undefined) win.visible = options.visible;
+  if (options.minWidth !== undefined) win.minWidth = options.minWidth;
+  if (options.minHeight !== undefined) win.minHeight = options.minHeight;
+  if (options.maxWidth !== undefined) win.maxWidth = options.maxWidth;
+  if (options.maxHeight !== undefined) win.maxHeight = options.maxHeight;
+  return getWindowBackend().open(win, options);
+}
+
 export function requestApplicationFullscreen(element: HTMLElement): Promise<void> {
   return element.requestFullscreen();
+}
+
+// Requests user attention on the window (taskbar flash / dock bounce); pass false to stop.
+export function requestWindowAttention(win: ApplicationWindow, attention: boolean): void {
+  getWindowBackend().requestAttention(win, attention);
+}
+
+// Emits onCloseRequest and returns whether the close may proceed (false when a listener vetoed by
+// calling cancelSignal(win.onCloseRequest)). Use to gate an app-driven close without closing.
+export function requestWindowClose(win: ApplicationWindow): boolean {
+  emitSignal(win.onCloseRequest);
+  return win.onCloseRequest.data?.cancelled !== true;
+}
+
+// Restores the window from a minimized/maximized state. Emits onRestore when state changed.
+export function restoreWindow(win: ApplicationWindow): void {
+  if (!win.minimized && !win.maximized) return;
+  win.minimized = false;
+  win.maximized = false;
+  getWindowBackend().restore(win);
+  emitSignal(win.onRestore);
+}
+
+// Sets whether the window floats above others.
+export function setWindowAlwaysOnTop(win: ApplicationWindow, alwaysOnTop: boolean): void {
+  win.alwaysOnTop = alwaysOnTop;
+  getWindowBackend().setAlwaysOnTop(win, alwaysOnTop);
+}
+
+// Installs a native host window backend; pass null to fall back to the web default.
+export function setWindowBackend(backend: WindowBackend | null): void {
+  _windowBackend = backend;
+}
+
+// Sets fullscreen state. Updates state and emits onFullscreenChanged when the state changes.
+export function setWindowFullscreen(win: ApplicationWindow, fullscreen: boolean): void {
+  if (win.fullscreen === fullscreen) return;
+  win.fullscreen = fullscreen;
+  getWindowBackend().setFullscreen(win, fullscreen);
+  emitSignal(win.onFullscreenChanged);
+}
+
+// Sets the window icon (path/URL). On web this updates the page favicon.
+export function setWindowIcon(win: ApplicationWindow, icon: string): void {
+  win.icon = icon;
+  getWindowBackend().setIcon(win, icon);
+}
+
+// Sets the maximum window size in logical pixels (-1 for unbounded).
+export function setWindowMaximumSize(win: ApplicationWindow, width: number, height: number): void {
+  win.maxWidth = width;
+  win.maxHeight = height;
+  getWindowBackend().setMaximumSize(win, width, height);
+}
+
+// Shows or hides the window's menu bar (native hosts; no-op on web).
+export function setWindowMenuBarVisible(win: ApplicationWindow, visible: boolean): void {
+  getWindowBackend().setMenuBarVisible(win, visible);
+}
+
+// Sets the minimum window size in logical pixels.
+export function setWindowMinimumSize(win: ApplicationWindow, width: number, height: number): void {
+  win.minWidth = width;
+  win.minHeight = height;
+  getWindowBackend().setMinimumSize(win, width, height);
+}
+
+// Sets the window opacity in [0, 1].
+export function setWindowOpacity(win: ApplicationWindow, opacity: number): void {
+  win.opacity = opacity;
+  getWindowBackend().setOpacity(win, opacity);
+}
+
+// Sets the window's parent (for modal/child relationships); pass null to detach. Native hosts only.
+export function setWindowParent(win: ApplicationWindow, parent: ApplicationWindow | null): void {
+  getWindowBackend().setParent(win, parent);
+}
+
+// Moves the window's top-left to (x, y) in screen coordinates. Updates state and emits onMove.
+export function setWindowPosition(win: ApplicationWindow, x: number, y: number): void {
+  win.x = x;
+  win.y = y;
+  getWindowBackend().setPosition(win, x, y);
+  emitSignal(win.onMove);
+}
+
+// Sets the taskbar/dock progress indicator in [0, 1]; a negative value clears it.
+export function setWindowProgress(win: ApplicationWindow, progress: number): void {
+  getWindowBackend().setProgress(win, progress);
+}
+
+// Sets whether the user can resize the window.
+export function setWindowResizable(win: ApplicationWindow, resizable: boolean): void {
+  win.resizable = resizable;
+  getWindowBackend().setResizable(win, resizable);
+}
+
+// Resizes the window to width x height (logical pixels). Updates state and emits onResize.
+export function setWindowSize(win: ApplicationWindow, width: number, height: number): void {
+  win.width = width;
+  win.height = height;
+  getWindowBackend().setSize(win, width, height);
+  emitSignal(win.onResize);
+}
+
+// Sets whether the window is hidden from the taskbar/dock switcher.
+export function setWindowSkipTaskbar(win: ApplicationWindow, skip: boolean): void {
+  win.skipTaskbar = skip;
+  getWindowBackend().setSkipTaskbar(win, skip);
+}
+
+// Sets the window title text.
+export function setWindowTitle(win: ApplicationWindow, title: string): void {
+  win.title = title;
+  getWindowBackend().setTitle(win, title);
+}
+
+// Shows a hidden window.
+export function showWindow(win: ApplicationWindow): void {
+  if (win.visible) return;
+  win.visible = true;
+  getWindowBackend().show(win);
 }
 
 // Internal teardown registry, kept off the public ApplicationWindow entity (a side table like
 // input's binding map). attach/detach/dispose track cleanup closures internally so callers hold
 // nothing.
 const _applicationWindowObservers = new WeakMap<ApplicationWindow, Map<symbol, () => void>>();
+
+let _windowBackend: WindowBackend | null = null;
 
 function getApplicationWindowObservers(win: ApplicationWindow): Map<symbol, () => void> {
   let observers = _applicationWindowObservers.get(win);
