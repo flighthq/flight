@@ -3,7 +3,7 @@ import {
   createWebGPUCanvasElement,
   createWebGPURenderState,
   defaultWebGPUQuadBatchRenderer,
-  prepareSpriteRender,
+  prepareDisplayObjectRender,
   QuadBatchKind,
   registerDefaultWebGPUMaterial,
   registerRenderer,
@@ -25,7 +25,7 @@ registerDefaultWebGPUMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: QuadBatch): void {
-  if (!prepareSpriteRender(state, root)) return;
+  if (!prepareDisplayObjectRender(state, root)) return;
   renderWebGPUBackground(state);
   renderWebGPUSprite(state, root);
   submitWebGPURenderPass(state);
