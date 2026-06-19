@@ -1,4 +1,4 @@
-import { getTextRuntime } from '@flighthq/displayobject';
+import { getTextLabelRuntime } from '@flighthq/displayobject';
 import { computeRGBHexString } from '@flighthq/materials';
 import { getNodeLocalContentRevision } from '@flighthq/node';
 import { computeTextFormatFontString } from '@flighthq/render';
@@ -9,9 +9,9 @@ import type {
   RendererData,
   RenderProxy2D,
   RenderState,
-  Text,
   TextFormat,
-  TextRuntime,
+  TextLabel,
+  TextLabelRuntime,
 } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
@@ -24,11 +24,11 @@ import {
   prepareWebGPUSpriteBatchWrite,
 } from './webgpuSpriteBatch';
 
-interface WebGPUTextData {
+interface WebGPUTextLabelData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   // Content revision and pixel ratio at last rasterization. Re-rasterization is driven by the
-  // upstream Text content version (bumped by Text setters on layout-affecting changes), never by
+  // upstream TextLabel content version (bumped by TextLabel setters on layout-affecting changes), never by
   // appearance-only changes such as alpha.
   lastContentID: number;
   lastPixelRatio: number;
@@ -38,7 +38,7 @@ interface WebGPUTextData {
   lastPH: number;
 }
 
-function createWebGPUTextData(_state: RenderState, _source: Renderable): RendererData {
+function createWebGPUTextLabelData(_state: RenderState, _source: Renderable): RendererData {
   const canvas = document.createElement('canvas');
   canvas.width = 1;
   canvas.height = 1;
@@ -56,9 +56,9 @@ function createWebGPUTextData(_state: RenderState, _source: Renderable): Rendere
 }
 
 // Destroy the GPU texture the batch uploaded for this text node's canvas when it is torn down.
-function destroyWebGPUTextData(state: RenderState, data: RendererData): void {
+function destroyWebGPUTextLabelData(state: RenderState, data: RendererData): void {
   const internal = state as WebGPURenderStateInternal;
-  const { canvas } = data as unknown as WebGPUTextData;
+  const { canvas } = data as unknown as WebGPUTextLabelData;
   const entry = internal.textureCache.get(canvas);
   if (entry !== undefined) {
     entry.texture.destroy();
@@ -66,11 +66,11 @@ function destroyWebGPUTextData(state: RenderState, data: RendererData): void {
   }
 }
 
-export function drawWebGPUText(state: RenderState, renderProxy: RenderProxy2D): void {
+export function drawWebGPUTextLabel(state: RenderState, renderProxy: RenderProxy2D): void {
   const internal = state as WebGPURenderStateInternal;
   if (internal.renderPass === null) return;
 
-  const source = renderProxy.source as Text;
+  const source = renderProxy.source as TextLabel;
   const { text, textFormat, width: fieldWidth, height: fieldHeight } = source.data;
   if (text.length === 0) return;
   if (renderProxy.rendererData === null) return;
@@ -79,7 +79,7 @@ export function drawWebGPUText(state: RenderState, renderProxy: RenderProxy2D): 
   const materialRenderer = resolveWebGPUMaterialRenderer(internal, material);
   if (materialRenderer === null) return;
 
-  const textData = renderProxy.rendererData as unknown as WebGPUTextData;
+  const textData = renderProxy.rendererData as unknown as WebGPUTextLabelData;
   const maxTexDim = internal.device.limits.maxTextureDimension2D;
   const pixelRatio = internal.pixelRatio;
   const version = getNodeLocalContentRevision(source);
@@ -90,7 +90,7 @@ export function drawWebGPUText(state: RenderState, renderProxy: RenderProxy2D): 
       return textData.ctx.measureText(t).width;
     };
 
-    const result = getTextLayoutResult(getTextRuntime(source) as TextRuntime);
+    const result = getTextLayoutResult(getTextLabelRuntime(source) as TextLabelRuntime);
     computeTextLayout(result, {
       text,
       formatRanges: [createTextFormatRange(textFormat, 0, text.length)],
@@ -189,9 +189,9 @@ export function drawWebGPUText(state: RenderState, renderProxy: RenderProxy2D): 
   internal.spriteBatchCount++;
 }
 
-export const defaultWebGPUTextRenderer: DisplayObjectRenderer = {
+export const defaultWebGPUTextLabelRenderer: DisplayObjectRenderer = {
   format: BatchFormat.Quad,
-  createData: createWebGPUTextData,
-  destroyData: destroyWebGPUTextData,
-  submit: drawWebGPUText,
+  createData: createWebGPUTextLabelData,
+  destroyData: destroyWebGPUTextLabelData,
+  submit: drawWebGPUTextLabel,
 };

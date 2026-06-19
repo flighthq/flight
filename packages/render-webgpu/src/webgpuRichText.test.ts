@@ -1,5 +1,6 @@
 import { createRichText } from '@flighthq/displayobject';
 import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { enableTextInput } from '@flighthq/text-input';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
 import {
@@ -8,6 +9,7 @@ import {
   destroyWebGPURichTextData,
   drawWebGPURichText,
   drawWebGPURichTextWithOverlay,
+  registerWebGPUTextInputOverlay,
 } from './webgpuRichText';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
 
@@ -72,6 +74,27 @@ describe('drawWebGPURichTextWithOverlay', () => {
     prepareDisplayObjectRender(state, richText);
     const renderProxy = getOrCreateRenderProxy2D(state, richText);
     expect(() => drawWebGPURichTextWithOverlay(state, renderProxy)).not.toThrow();
+    submitWebGPURenderPass(state);
+  });
+});
+
+describe('registerWebGPUTextInputOverlay', () => {
+  it('invokes the registered overlay only for a RichText with an input slot', async () => {
+    const overlay = vi.fn();
+    registerWebGPUTextInputOverlay(overlay);
+    const state = await createWebGPURenderStateForTest();
+    renderWebGPUBackground(state);
+
+    const plain = createRichText({ data: { height: 40, text: 'x', width: 100 } });
+    prepareDisplayObjectRender(state, plain);
+    drawWebGPURichText(state, getOrCreateRenderProxy2D(state, plain));
+    expect(overlay).not.toHaveBeenCalled();
+
+    const editable = createRichText({ data: { height: 40, text: 'x', width: 100 } });
+    enableTextInput(editable);
+    prepareDisplayObjectRender(state, editable);
+    drawWebGPURichText(state, getOrCreateRenderProxy2D(state, editable));
+    expect(overlay).toHaveBeenCalled();
     submitWebGPURenderPass(state);
   });
 });

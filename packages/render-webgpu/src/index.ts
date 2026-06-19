@@ -9,7 +9,6 @@ export * from './webgpuDefaultMaterial';
 export * from './webgpuDisplayObject';
 export * from './webgpuDraw';
 export * from './webgpuElement';
-export * from './webgpuInputText';
 export * from './webgpuMaterialRegistry';
 export * from './webgpuMaterials';
 export * from './webgpuParticleEmitter';
@@ -26,7 +25,8 @@ export * from './webgpuSprite';
 export * from './webgpuSpriteBatch';
 export * from './webgpuSpriteRenderer';
 export { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
-export * from './webgpuText';
+export * from './webgpuTextInput';
+export * from './webgpuTextLabel';
 export * from './webgpuTilemap';
 export * from './webgpuVideo';
 export {

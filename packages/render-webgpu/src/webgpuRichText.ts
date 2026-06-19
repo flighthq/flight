@@ -1,12 +1,13 @@
-import { getRichTextRuntime } from '@flighthq/displayobject';
+import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/displayobject';
 import { computeRGBHexString } from '@flighthq/materials';
 import { computeTextFormatFontString } from '@flighthq/render';
 import {
   computeRichTextContent,
+  computeTextBoundsHeight,
+  computeTextBoundsOffsetX,
+  computeTextBoundsWidth,
   computeTextLayout,
   getRichTextContent,
-  getRichTextFieldHeight,
-  getRichTextFieldWidth,
   getRichTextScrollYOffset,
   getTextLayoutResult,
 } from '@flighthq/text-layout';
@@ -19,8 +20,8 @@ import type {
   RichText,
   RichTextRuntime,
   TextFormat,
+  TextLabelRuntime,
   TextLayoutResult,
-  TextRuntime,
 } from '@flighthq/types';
 
 import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
@@ -38,6 +39,7 @@ export type WebGPURichTextOverlay = (
 
 let _offscreenCanvas: HTMLCanvasElement | null = null;
 let _offscreenCtx: CanvasRenderingContext2D | null = null;
+let _webgpuTextInputOverlay: WebGPURichTextOverlay | null = null;
 
 // Per-node GPU texture entry this rich text rasterizes into. Held on the node's RendererData (not a
 // module-level map keyed by render proxy) so destroyWebGPURichTextData can free it on teardown.
@@ -58,7 +60,14 @@ export function destroyWebGPURichTextData(_state: RenderState, data: RendererDat
 }
 
 export function drawWebGPURichText(state: RenderState, renderProxy: RenderProxy2D): void {
-  drawWebGPURichTextWithOverlay(state, renderProxy);
+  // The editable-input overlay rasterizes onto the offscreen field texture, so it is passed into the
+  // rasterization pass — only when the input slot is present. registerWebGPUTextInputOverlay
+  // (enableWebGPUTextInput) installs it; a static RichText leaves the slot null and pulls no text-input code.
+  const overlay =
+    _webgpuTextInputOverlay !== null && getRichTextRuntime(renderProxy.source as RichText).input !== null
+      ? _webgpuTextInputOverlay
+      : undefined;
+  drawWebGPURichTextWithOverlay(state, renderProxy, overlay);
 }
 
 export function drawWebGPURichTextWithOverlay(
@@ -74,15 +83,15 @@ export function drawWebGPURichTextWithOverlay(
   const data = source.data;
   const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
   const content = getRichTextContent(richTextRuntime);
-  computeRichTextContent(content, data);
+  computeRichTextContent(content, data, getRichTextPasswordCharacter(source));
   if (content.text.length === 0 && !data.background && !data.border) return;
 
   const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges, internal);
   const maxTexDim = internal.device.limits.maxTextureDimension2D;
   const pixelRatio = internal.pixelRatio;
   const maxLogical = Math.floor(maxTexDim / pixelRatio);
-  const fieldW = Math.min(Math.ceil(getRichTextFieldWidth(data, result)), maxLogical);
-  const fieldH = Math.min(Math.ceil(getRichTextFieldHeight(data, result)), maxLogical);
+  const fieldW = Math.min(Math.ceil(computeTextBoundsWidth(data, result)), maxLogical);
+  const fieldH = Math.min(Math.ceil(computeTextBoundsHeight(data, result)), maxLogical);
   if (fieldW <= 0 || fieldH <= 0) return;
 
   const offCtx = getOffscreenCanvas(fieldW, fieldH, pixelRatio);
@@ -122,7 +131,14 @@ export function drawWebGPURichTextWithOverlay(
     updateWebGPUTextureEntry(internal, entry, _offscreenCanvas!);
   }
 
-  drawWebGPUQuad(internal, renderProxy, entry, 0, 0, fieldW, fieldH, 0, 0, 1, 1);
+  // Anchor the field box for autoSize 'right'/'center' so the rendered quad lines up with the local
+  // bounds (computeRichTextLocalBoundsRectangle applies the same offset). Zero for 'none'/'left'.
+  const offsetX = computeTextBoundsOffsetX(data, result);
+  drawWebGPUQuad(internal, renderProxy, entry, offsetX, 0, offsetX + fieldW, fieldH, 0, 0, 1, 1);
+}
+
+export function registerWebGPUTextInputOverlay(overlay: WebGPURichTextOverlay): void {
+  _webgpuTextInputOverlay = overlay;
 }
 
 export const defaultWebGPURichTextRenderer: DisplayObjectRenderer = {
@@ -204,7 +220,7 @@ function layoutRichText(
     return context.measureText(value).width;
   };
 
-  const result = getTextLayoutResult(richTextRuntime as TextRuntime);
+  const result = getTextLayoutResult(richTextRuntime as TextLabelRuntime);
   computeTextLayout(result, {
     formatRanges,
     height: Math.min(data.height, maxLogical),
