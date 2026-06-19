@@ -1,11 +1,11 @@
-import { createText } from '@flighthq/displayobject';
+import { createTextLabel } from '@flighthq/displayobject';
 import type { RenderProxy2D } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
 import { registerDefaultWebGPUMaterial } from './webgpuDefaultMaterial';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
-import { defaultWebGPUTextRenderer, drawWebGPUText } from './webgpuText';
+import { defaultWebGPUTextLabelRenderer, drawWebGPUTextLabel } from './webgpuTextLabel';
 
 vi.mock('@flighthq/text-layout', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
@@ -39,7 +39,7 @@ function makeTextData() {
 }
 
 function makeTextProxy(text = '', rendererData: unknown = null): RenderProxy2D {
-  const source = createText();
+  const source = createTextLabel();
   source.data.text = text;
   source.data.textFormat = {};
   source.data.width = 200;
@@ -55,23 +55,23 @@ function makeTextProxy(text = '', rendererData: unknown = null): RenderProxy2D {
   } as unknown as RenderProxy2D;
 }
 
-describe('defaultWebGPUTextRenderer', () => {
+describe('defaultWebGPUTextLabelRenderer', () => {
   it('declares BatchFormat.Quad', () => {
-    expect(defaultWebGPUTextRenderer.format).toBe(BatchFormat.Quad);
+    expect(defaultWebGPUTextLabelRenderer.format).toBe(BatchFormat.Quad);
   });
 
   it('has createData and submit functions', () => {
-    expect(typeof defaultWebGPUTextRenderer.createData).toBe('function');
-    expect(typeof defaultWebGPUTextRenderer.submit).toBe('function');
+    expect(typeof defaultWebGPUTextLabelRenderer.createData).toBe('function');
+    expect(typeof defaultWebGPUTextLabelRenderer.submit).toBe('function');
   });
 });
 
-describe('drawWebGPUText', () => {
+describe('drawWebGPUTextLabel', () => {
   it('returns early when text is empty', async () => {
     const state = await createWebGPURenderStateForTest();
     renderWebGPUBackground(state);
     registerDefaultWebGPUMaterial(state);
-    expect(() => drawWebGPUText(state, makeTextProxy('', makeTextData()))).not.toThrow();
+    expect(() => drawWebGPUTextLabel(state, makeTextProxy('', makeTextData()))).not.toThrow();
     expect((state as any).spriteBatchCount).toBe(0);
     submitWebGPURenderPass(state);
   });
@@ -80,7 +80,7 @@ describe('drawWebGPUText', () => {
     const state = await createWebGPURenderStateForTest();
     renderWebGPUBackground(state);
     registerDefaultWebGPUMaterial(state);
-    drawWebGPUText(state, makeTextProxy('hello', makeTextData()));
+    drawWebGPUTextLabel(state, makeTextProxy('hello', makeTextData()));
     expect((state as any).spriteBatchCount).toBe(1);
     submitWebGPURenderPass(state);
   });
@@ -90,10 +90,10 @@ describe('drawWebGPUText', () => {
     renderWebGPUBackground(state);
     registerDefaultWebGPUMaterial(state);
     const proxy = makeTextProxy('hello', makeTextData());
-    drawWebGPUText(state, proxy);
+    drawWebGPUTextLabel(state, proxy);
     const updateSpy = vi.spyOn((state as any).textureCache, 'get');
     proxy.alpha = 0.5;
-    drawWebGPUText(state, proxy);
+    drawWebGPUTextLabel(state, proxy);
     // Version is unchanged, so the rasterization block is skipped entirely on the second draw.
     expect((proxy.rendererData as any).lastContentID).toBe(0);
     submitWebGPURenderPass(state);
