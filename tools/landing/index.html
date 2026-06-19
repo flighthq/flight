@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flight</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+        background: #0e0e0e;
+        color: #ccc;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 13px;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* The drifting orb field behind the content is rendered with Flight (see src/hero.ts);
+         the WebGL canvas is inserted as a fixed, full-bleed background at z-index 0. */
+      body {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 56px 24px;
+        gap: 44px;
+        overflow: hidden;
+      }
+
+      header,
+      main,
+      footer {
+        position: relative;
+        z-index: 1;
+      }
+
+      header {
+        text-align: center;
+      }
+
+      h1 {
+        font-size: 40px;
+        font-weight: 650;
+        letter-spacing: 0.04em;
+        color: #f4f4f4;
+      }
+
+      .tagline {
+        margin-top: 10px;
+        color: #888;
+        font-size: 14px;
+      }
+
+      .renderers {
+        margin-top: 18px;
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .renderer {
+        padding: 3px 11px;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 999px;
+        color: #888;
+        font-size: 11px;
+        font-family: ui-monospace, monospace;
+        letter-spacing: 0.04em;
+      }
+
+      .tools {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 16px;
+        width: 100%;
+        max-width: 580px;
+      }
+
+      .tool {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 22px 22px 20px;
+        background: rgba(22, 22, 22, 0.72);
+        backdrop-filter: blur(8px);
+        border: 1px solid #252525;
+        border-left: 2px solid transparent;
+        border-radius: 10px;
+        color: inherit;
+        text-decoration: none;
+        transition:
+          background 0.14s,
+          border-left-color 0.14s,
+          transform 0.14s;
+      }
+
+      .tool:hover {
+        background: rgba(26, 39, 64, 0.78);
+        border-left-color: #3d7fff;
+        transform: translateY(-2px);
+      }
+
+      .tool-name {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #7ab8ff;
+      }
+
+      .tool-name svg {
+        width: 17px;
+        height: 17px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.6;
+        opacity: 0.85;
+      }
+
+      .tool-desc {
+        color: #888;
+        line-height: 1.5;
+      }
+
+      .capabilities {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 7px;
+        justify-content: center;
+        max-width: 560px;
+        color: #5a5a5a;
+        font-size: 11px;
+        letter-spacing: 0.02em;
+      }
+
+      .capabilities span::after {
+        content: '·';
+        margin-left: 7px;
+        color: #333;
+      }
+
+      .capabilities span:last-child::after {
+        content: '';
+      }
+
+      footer {
+        color: #444;
+        font-size: 11px;
+        font-family: ui-monospace, monospace;
+        letter-spacing: 0.03em;
+      }
+
+      footer a {
+        color: #555;
+        text-decoration: none;
+      }
+
+      footer a:hover {
+        color: #7ab8ff;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Flight</h1>
+      <p class="tagline">A tree-shakable 2D rendering SDK</p>
+      <div class="renderers">
+        <span class="renderer">DOM</span>
+        <span class="renderer">Canvas</span>
+        <span class="renderer">WebGL</span>
+        <span class="renderer">WebGPU</span>
+      </div>
+    </header>
+
+    <main class="tools">
+      <a class="tool" data-tool="examples" href="examples/">
+        <div class="tool-name">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <path d="M3 9h18" />
+            <path d="M9 9v11" />
+          </svg>
+          Examples
+        </div>
+        <p class="tool-desc">
+          Browse the example gallery and flip each scene between the DOM, Canvas, WebGL, and WebGPU renderers.
+        </p>
+      </a>
+      <a class="tool" data-tool="tests" href="tests/">
+        <div class="tool-name">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 3v6l-5 9a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-9V3" />
+            <path d="M7 3h10" />
+            <path d="M8 14h8" />
+          </svg>
+          Functional Tests
+        </div>
+        <p class="tool-desc">
+          Per-feature rendering tests, each shown side by side with its OpenFL reference to catch visual regressions.
+        </p>
+      </a>
+    </main>
+
+    <div class="capabilities">
+      <span>Display objects</span>
+      <span>Shapes</span>
+      <span>Bitmaps</span>
+      <span>Text</span>
+      <span>Filters</span>
+      <span>Blend modes</span>
+      <span>Masks</span>
+      <span>Tilemaps</span>
+      <span>Particles</span>
+      <span>Tweens</span>
+      <span>Timelines</span>
+    </div>
+
+    <footer>
+      <a href="https://github.com/flighthq/flight">github.com/flighthq/flight</a>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
