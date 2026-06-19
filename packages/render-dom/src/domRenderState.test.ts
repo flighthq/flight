@@ -1,4 +1,6 @@
-import { createDOMRenderState } from './domRenderState';
+import { EntityRuntimeKey } from '@flighthq/types';
+
+import { createDOMRenderState, createDOMRenderStateRuntime, getDOMRenderStateRuntime } from './domRenderState';
 
 describe('createDOMRenderState', () => {
   it('returns a state with the provided element', () => {
@@ -26,10 +28,22 @@ describe('createDOMRenderState', () => {
     expect(state.roundPixels).toBe(true);
   });
 
-  it('defaults currentBlendMode to null', () => {
+  it('defaults the runtime currentBlendMode to null', () => {
     const div = document.createElement('div');
     const state = createDOMRenderState(div);
-    expect(state.currentBlendMode).toBeNull();
+    expect(getDOMRenderStateRuntime(state).currentBlendMode).toBeNull();
+  });
+
+  it('attaches a populated runtime under EntityRuntimeKey', () => {
+    const div = document.createElement('div');
+    const state = createDOMRenderState(div);
+    const runtime = getDOMRenderStateRuntime(state);
+    expect(runtime.domClipHooks).toBeNull();
+    expect(runtime.domCurrentElement).toBeNull();
+    expect(runtime.domOrderLength).toBe(-1);
+    expect(runtime.domClipStack).toEqual([]);
+    expect(runtime.domOrderList).toEqual([]);
+    expect(runtime.domNextOrderList).toEqual([]);
   });
 
   it('defaults backgroundColor to 0', () => {
@@ -54,5 +68,20 @@ describe('createDOMRenderState', () => {
     const div = document.createElement('div');
     const state = createDOMRenderState(div);
     expect(state.pixelRatio).toBe(1);
+  });
+});
+
+describe('createDOMRenderStateRuntime', () => {
+  it('allocates an entity runtime with a null binding', () => {
+    const runtime = createDOMRenderStateRuntime();
+    expect(runtime.binding).toBeNull();
+  });
+});
+
+describe('getDOMRenderStateRuntime', () => {
+  it('returns the runtime attached under EntityRuntimeKey', () => {
+    const div = document.createElement('div');
+    const state = createDOMRenderState(div);
+    expect(getDOMRenderStateRuntime(state)).toBe(state[EntityRuntimeKey]);
   });
 });

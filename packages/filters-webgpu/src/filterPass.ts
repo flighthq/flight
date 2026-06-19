@@ -1,4 +1,4 @@
-import type { WebGPURenderStateInternal } from '@flighthq/render-webgpu';
+import { getWebGPURenderStateRuntime } from '@flighthq/render-webgpu';
 import type { WebGPURenderState, WebGPURenderTarget } from '@flighthq/types';
 
 // Shared vertex shader: full-screen quad via vertex_index, no vertex buffer needed.
@@ -63,8 +63,7 @@ function getOrCreateFilterState(state: WebGPURenderState): WebGPUFilterState {
   let fs = filterStates.get(state);
   if (fs !== undefined) return fs;
 
-  const internal = state as WebGPURenderStateInternal;
-  const { device, format } = internal;
+  const { device, format } = state;
 
   // 512 slots × 256 bytes = 128 KB ring buffer for filter uniforms.
   // 256 bytes/slot is enough for the largest filter (convolution: ~244 bytes).
@@ -155,7 +154,7 @@ function acquireUniformSlot(fs: WebGPUFilterState): number {
 }
 
 function writeUniformSlot(
-  internal: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   fs: WebGPUFilterState,
   slotOffset: number,
   setUniforms: (f32: Float32Array, i32: Int32Array) => void,
@@ -164,29 +163,29 @@ function writeUniformSlot(
   const slotF32 = fs.uniformData.subarray(f32Start, f32Start + fs.uniformStride / 4);
   const slotI32 = fs.uniformDataI32.subarray(f32Start, f32Start + fs.uniformStride / 4);
   setUniforms(slotF32, slotI32);
-  internal.device.queue.writeBuffer(fs.uniformBuffer, slotOffset, fs.uniformData.buffer, slotOffset, fs.uniformStride);
+  state.device.queue.writeBuffer(fs.uniformBuffer, slotOffset, fs.uniformData.buffer, slotOffset, fs.uniformStride);
 }
 
 function beginFilterPass(
-  internal: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   dest: WebGPURenderTarget | null,
   loadOp: GPULoadOp,
 ): GPURenderPassEncoder {
-  if (internal.commandEncoder === null)
-    throw new Error('No active command encoder — call renderWebGPUBackground first');
-  if (internal.renderPass !== null) {
-    internal.renderPass.end();
-    internal.renderPass = null;
+  const runtime = getWebGPURenderStateRuntime(state);
+  if (runtime.commandEncoder === null) throw new Error('No active command encoder — call renderWebGPUBackground first');
+  if (runtime.renderPass !== null) {
+    runtime.renderPass.end();
+    runtime.renderPass = null;
   }
-  const view = dest !== null ? dest.view : internal.canvasTextureView!;
-  const pass = internal.commandEncoder.beginRenderPass({
+  const view = dest !== null ? dest.view : runtime.canvasTextureView!;
+  const pass = runtime.commandEncoder.beginRenderPass({
     colorAttachments: [{ view, loadOp, storeOp: 'store', clearValue: { r: 0, g: 0, b: 0, a: 0 } }],
   });
   if (dest !== null) {
     pass.setViewport(0, 0, dest.width, dest.height, 0, 1);
   } else {
-    const w = internal.renderTargetViewport?.width ?? internal.canvas.width;
-    const h = internal.renderTargetViewport?.height ?? internal.canvas.height;
+    const w = runtime.renderTargetViewport?.width ?? state.canvas.width;
+    const h = runtime.renderTargetViewport?.height ?? state.canvas.height;
     pass.setViewport(0, 0, w, h, 0, 1);
   }
   return pass;
@@ -194,8 +193,7 @@ function beginFilterPass(
 
 /** Clears a render target to fully transparent. Ends any active render pass. */
 export function clearWebGPUFilterTarget(state: WebGPURenderState, target: WebGPURenderTarget): void {
-  const internal = state as WebGPURenderStateInternal;
-  const pass = beginFilterPass(internal, target, 'clear');
+  const pass = beginFilterPass(state, target, 'clear');
   pass.end();
 }
 
@@ -206,8 +204,7 @@ export function createWebGPUDualSourcePipeline(
   blend: 'premul' | 'replace' = 'premul',
 ): WebGPUDualSourcePipeline {
   const fs = getOrCreateFilterState(state);
-  const internal = state as WebGPURenderStateInternal;
-  const { device } = internal;
+  const { device } = state;
 
   const shaderModule = device.createShaderModule({ code: FILTER_VERTEX_WGSL + fragmentWGSL });
   const pipelineLayout = device.createPipelineLayout({
@@ -235,8 +232,7 @@ export function createWebGPUFilterPipeline(
   blend: 'premul' | 'replace' = 'premul',
 ): WebGPUFilterPipeline {
   const fs = getOrCreateFilterState(state);
-  const internal = state as WebGPURenderStateInternal;
-  const { device } = internal;
+  const { device } = state;
 
   const shaderModule = device.createShaderModule({ code: FILTER_VERTEX_WGSL + fragmentWGSL });
   const pipelineLayout = device.createPipelineLayout({
@@ -264,8 +260,7 @@ export function createWebGPUTripleSourcePipeline(
   blend: 'premul' | 'replace' = 'premul',
 ): WebGPUFilterPipeline {
   const filterState = getOrCreateFilterState(state);
-  const internal = state as WebGPURenderStateInternal;
-  const { device } = internal;
+  const { device } = state;
 
   const shaderModule = device.createShaderModule({ code: FILTER_VERTEX_WGSL + fragmentWGSL });
   const pipelineLayout = device.createPipelineLayout({
@@ -303,17 +298,16 @@ export function drawWebGPUDualSourcePass(
   pipeline: WebGPUDualSourcePipeline,
   setUniforms: (f32: Float32Array, i32: Int32Array) => void,
 ): void {
-  const internal = state as WebGPURenderStateInternal;
   const fs = getOrCreateFilterState(state);
-  const { device } = internal;
+  const { device } = state;
 
   const slotOffset = acquireUniformSlot(fs);
-  writeUniformSlot(internal, fs, slotOffset, setUniforms);
+  writeUniformSlot(state, fs, slotOffset, setUniforms);
 
   const source0BG = getOrCreateTextureBG(fs, device, source0.view);
   const source1BG = getOrCreateTextureBG(fs, device, source1.view);
 
-  const pass = beginFilterPass(internal, dest, 'load');
+  const pass = beginFilterPass(state, dest, 'load');
   pass.setPipeline(pipeline.pipeline);
   pass.setBindGroup(0, fs.uniformBG, [slotOffset]);
   pass.setBindGroup(1, source0BG);
@@ -335,16 +329,15 @@ export function drawWebGPUFilterPass(
   pipeline: WebGPUFilterPipeline,
   setUniforms: (f32: Float32Array, i32: Int32Array) => void,
 ): void {
-  const internal = state as WebGPURenderStateInternal;
   const fs = getOrCreateFilterState(state);
-  const { device } = internal;
+  const { device } = state;
 
   const slotOffset = acquireUniformSlot(fs);
-  writeUniformSlot(internal, fs, slotOffset, setUniforms);
+  writeUniformSlot(state, fs, slotOffset, setUniforms);
 
   const sourceBG = getOrCreateTextureBG(fs, device, source.view);
 
-  const pass = beginFilterPass(internal, dest, 'load');
+  const pass = beginFilterPass(state, dest, 'load');
   pass.setPipeline(pipeline.pipeline);
   pass.setBindGroup(0, fs.uniformBG, [slotOffset]);
   pass.setBindGroup(1, sourceBG);
@@ -365,18 +358,17 @@ export function drawWebGPUTripleSourcePass(
   pipeline: WebGPUFilterPipeline,
   setUniforms: (f32: Float32Array, i32: Int32Array) => void,
 ): void {
-  const internal = state as WebGPURenderStateInternal;
   const fs = getOrCreateFilterState(state);
-  const { device } = internal;
+  const { device } = state;
 
   const slotOffset = acquireUniformSlot(fs);
-  writeUniformSlot(internal, fs, slotOffset, setUniforms);
+  writeUniformSlot(state, fs, slotOffset, setUniforms);
 
   const source0BG = getOrCreateTextureBG(fs, device, source0.view);
   const source1BG = getOrCreateTextureBG(fs, device, source1.view);
   const source2BG = getOrCreateTextureBG(fs, device, source2.view);
 
-  const pass = beginFilterPass(internal, dest, 'load');
+  const pass = beginFilterPass(state, dest, 'load');
   pass.setPipeline(pipeline.pipeline);
   pass.setBindGroup(0, fs.uniformBG, [slotOffset]);
   pass.setBindGroup(1, source0BG);
@@ -400,14 +392,13 @@ export function getWebGPUFilterState(state: WebGPURenderState): {
   beginPass: (dest: WebGPURenderTarget | null, loadOp: GPULoadOp) => GPURenderPassEncoder;
 } {
   const fs = getOrCreateFilterState(state);
-  const internal = state as WebGPURenderStateInternal;
   return {
     uniformBG: fs.uniformBG,
     textureBGLayout: fs.textureBGLayout,
     uniformBGLayout: fs.uniformBGLayout,
     sampler: fs.sampler,
     acquireSlot: () => acquireUniformSlot(fs),
-    writeSlot: (offset, fn) => writeUniformSlot(internal, fs, offset, fn),
-    beginPass: (dest, loadOp) => beginFilterPass(internal, dest, loadOp),
+    writeSlot: (offset, fn) => writeUniformSlot(state, fs, offset, fn),
+    beginPass: (dest, loadOp) => beginFilterPass(state, dest, loadOp),
   };
 }

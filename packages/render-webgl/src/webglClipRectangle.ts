@@ -1,13 +1,15 @@
-import type { MatrixLike, RectangleLike } from '@flighthq/types';
+import type { MatrixLike, RectangleLike, WebGLRenderState } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal, WebGLScissorRect } from './internal';
+import type { WebGLScissorRect } from './internal';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
-export function popWebGLClipRectangle(state: WebGLRenderStateInternal): void {
+export function popWebGLClipRectangle(state: WebGLRenderState): void {
+  const runtime = getWebGLRenderStateRuntime(state);
   const stack = getScissorStack(state);
   stack.pop();
   const previous = stack.length > 0 ? stack[stack.length - 1] : null;
-  state.currentScissorRect = previous;
+  runtime.currentScissorRect = previous;
   flushWebGLSpriteBatch(state);
 
   const gl = state.gl;
@@ -19,12 +21,13 @@ export function popWebGLClipRectangle(state: WebGLRenderStateInternal): void {
 }
 
 export function pushWebGLClipRectangle(
-  state: WebGLRenderStateInternal,
+  state: WebGLRenderState,
   rect: Readonly<RectangleLike>,
   transform: Readonly<MatrixLike>,
 ): void {
-  const next = intersectScissorRect(state.currentScissorRect ?? null, computeScissorRect(state, rect, transform));
-  state.currentScissorRect = next;
+  const runtime = getWebGLRenderStateRuntime(state);
+  const next = intersectScissorRect(runtime.currentScissorRect ?? null, computeScissorRect(state, rect, transform));
+  runtime.currentScissorRect = next;
   getScissorStack(state).push(next);
   flushWebGLSpriteBatch(state);
 
@@ -34,7 +37,7 @@ export function pushWebGLClipRectangle(
 }
 
 function computeScissorRect(
-  state: WebGLRenderStateInternal,
+  state: WebGLRenderState,
   rect: Readonly<RectangleLike>,
   transform: Readonly<MatrixLike>,
 ): WebGLScissorRect {
@@ -47,7 +50,7 @@ function computeScissorRect(
   const x3 = transform.a * (rect.x + rect.width) + transform.c * (rect.y + rect.height) + transform.tx;
   const y3 = transform.b * (rect.x + rect.width) + transform.d * (rect.y + rect.height) + transform.ty;
 
-  const viewport = state.renderTargetViewport ?? state.canvas;
+  const viewport = getWebGLRenderStateRuntime(state).renderTargetViewport ?? state.canvas;
   const minX = Math.max(0, Math.floor(Math.min(x0, x1, x2, x3)));
   const maxX = Math.min(viewport.width, Math.ceil(Math.max(x0, x1, x2, x3)));
   const minY = Math.max(0, Math.floor(Math.min(y0, y1, y2, y3)));
@@ -61,9 +64,10 @@ function computeScissorRect(
   };
 }
 
-function getScissorStack(state: WebGLRenderStateInternal): WebGLScissorRect[] {
-  state.scissorStack ??= [];
-  return state.scissorStack;
+function getScissorStack(state: WebGLRenderState): WebGLScissorRect[] {
+  const runtime = getWebGLRenderStateRuntime(state);
+  runtime.scissorStack ??= [];
+  return runtime.scissorStack;
 }
 
 function intersectScissorRect(a: Readonly<WebGLScissorRect> | null, b: Readonly<WebGLScissorRect>): WebGLScissorRect {

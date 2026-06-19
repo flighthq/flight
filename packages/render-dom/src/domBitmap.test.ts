@@ -5,8 +5,7 @@ import { createImageResource, createImageResourceFromCanvas } from '@flighthq/re
 import { BitmapKind } from '@flighthq/types';
 
 import { defaultDOMBitmapRenderer, drawDOMBitmap } from './domBitmap';
-import { createDOMRenderState } from './domRenderState';
-import type { DOMRenderStateInternal } from './internal';
+import { createDOMRenderState, getDOMRenderStateRuntime } from './domRenderState';
 
 function makeState() {
   const container = document.createElement('div');
@@ -16,9 +15,9 @@ function makeState() {
 }
 
 function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTMLElement | null {
-  (state as unknown as DOMRenderStateInternal).domCurrentElement = null;
+  getDOMRenderStateRuntime(state).domCurrentElement = null;
   drawFn();
-  return (state as unknown as DOMRenderStateInternal).domCurrentElement;
+  return getDOMRenderStateRuntime(state).domCurrentElement;
 }
 
 function makeHTMLImageSource() {

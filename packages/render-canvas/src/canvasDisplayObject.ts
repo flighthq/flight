@@ -3,6 +3,7 @@ import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@fligh
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, RenderProxy2D } from '@flighthq/types';
 
 import { resolveCanvasCSSFilter } from './canvasCSSFilterBinding';
+import { getCanvasRenderStateRuntime } from './canvasRenderState';
 
 export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderProxy: RenderProxy2D): void {
   // Plain display objects have no visual geometry of their own.
@@ -14,7 +15,7 @@ export const defaultCanvasDisplayObjectRenderer: DisplayObjectRenderer = {
 };
 
 export function renderCanvasDisplayObject(state: CanvasRenderState, source: DisplayObject): void {
-  const tempStack = state.tempStack;
+  const tempStack = getCanvasRenderStateRuntime(state).tempStack;
   const clipHooks = state.displayObjectClipHooks;
 
   let stackLength = 1;

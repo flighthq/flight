@@ -2,6 +2,7 @@ import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
 import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache } from '@flighthq/render';
 import type { WebGPURenderState, WebGPURenderTarget } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
 import {
   createWebGPUCacheState,
@@ -14,6 +15,7 @@ import {
 } from './webgpuCache';
 import type * as WebGPUDisplayObjectModule from './webgpuDisplayObject';
 import { renderWebGPUDisplayObject } from './webgpuDisplayObject';
+import { createWebGPURenderStateRuntime, getWebGPURenderStateRuntime } from './webgpuRenderState';
 import type * as WebGPURenderTargetModule from './webgpuRenderTarget';
 import { destroyWebGPURenderTarget, drawWebGPURenderTargetResult } from './webgpuRenderTarget';
 import type * as WebGPUSpriteBatchModule from './webgpuSpriteBatch';
@@ -58,7 +60,8 @@ vi.mock('./webgpuDisplayObject', async (importOriginal) => {
 function fakeScreen(options = {}): WebGPURenderState {
   const state = createRenderState(options) as unknown as WebGPURenderState;
   (state as any).device = {} as GPUDevice;
-  (state as any).currentBlendMode = null;
+  state[EntityRuntimeKey] = createWebGPURenderStateRuntime();
+  getWebGPURenderStateRuntime(state).currentBlendMode = null;
   return state;
 }
 
@@ -71,9 +74,13 @@ describe('createWebGPUCacheState', () => {
     const screen = fakeScreen();
     enableWebGPURenderCache(screen);
     const cacheState = createWebGPUCacheState(screen);
-    expect(cacheState.rendererMap.get(RenderCacheKind)).toBe(defaultWebGPURenderCacheRenderer);
+    expect(getWebGPURenderStateRuntime(cacheState).rendererMap.get(RenderCacheKind)).toBe(
+      defaultWebGPURenderCacheRenderer,
+    );
     expect((cacheState as any).device).toBe((screen as any).device);
-    expect(cacheState.renderProxyMap).not.toBe(screen.renderProxyMap);
+    expect(getWebGPURenderStateRuntime(cacheState).renderProxyMap).not.toBe(
+      getWebGPURenderStateRuntime(screen).renderProxyMap,
+    );
   });
 });
 
@@ -115,7 +122,7 @@ describe('enableWebGPURenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = fakeScreen();
     enableWebGPURenderCache(state);
-    expect(state.rendererMap.get(RenderCacheKind)).toBe(defaultWebGPURenderCacheRenderer);
+    expect(getWebGPURenderStateRuntime(state).rendererMap.get(RenderCacheKind)).toBe(defaultWebGPURenderCacheRenderer);
   });
 });
 

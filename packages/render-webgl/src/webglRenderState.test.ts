@@ -1,4 +1,9 @@
-import { createWebGLRenderState, destroyWebGLRenderState } from './webglRenderState';
+import {
+  createWebGLRenderState,
+  createWebGLRenderStateRuntime,
+  destroyWebGLRenderState,
+  getWebGLRenderStateRuntime,
+} from './webglRenderState';
 import { makeGL } from './webglTestHelper';
 
 function makeCanvas() {
@@ -29,22 +34,22 @@ describe('createWebGLRenderState', () => {
     expect(state.gl).toBe(gl);
   });
 
-  it('initializes currentBlendMode to null', () => {
+  it('initializes runtime currentBlendMode to null', () => {
     const { canvas } = makeCanvas();
     const state = createWebGLRenderState(canvas);
-    expect(state.currentBlendMode).toBeNull();
+    expect(getWebGLRenderStateRuntime(state).currentBlendMode).toBeNull();
   });
 
-  it('initializes currentProgram to null', () => {
+  it('initializes runtime currentProgram to null', () => {
     const { canvas } = makeCanvas();
     const state = createWebGLRenderState(canvas);
-    expect(state.currentProgram).toBeNull();
+    expect(getWebGLRenderStateRuntime(state).currentProgram).toBeNull();
   });
 
-  it('initializes currentTexture to null', () => {
+  it('initializes runtime currentTexture to null', () => {
     const { canvas } = makeCanvas();
     const state = createWebGLRenderState(canvas);
-    expect(state.currentTexture).toBeNull();
+    expect(getWebGLRenderStateRuntime(state).currentTexture).toBeNull();
   });
 
   it('enables blending during initialization', () => {
@@ -91,6 +96,13 @@ describe('createWebGLRenderState', () => {
   });
 });
 
+describe('createWebGLRenderStateRuntime', () => {
+  it('returns a runtime carrying the base entity-runtime binding slot', () => {
+    const runtime = createWebGLRenderStateRuntime();
+    expect(runtime.binding).toBeNull();
+  });
+});
+
 describe('destroyWebGLRenderState', () => {
   it('deletes the state-owned shader programs and buffers', () => {
     const { canvas, gl } = makeCanvas();
@@ -109,5 +121,21 @@ describe('destroyWebGLRenderState', () => {
     const state = createWebGLRenderState(canvas);
     destroyWebGLRenderState(state);
     expect(() => destroyWebGLRenderState(state)).not.toThrow();
+  });
+});
+
+describe('getWebGLRenderStateRuntime', () => {
+  it('returns the runtime attached by createWebGLRenderState', () => {
+    const { canvas } = makeCanvas();
+    const state = createWebGLRenderState(canvas);
+    const runtime = getWebGLRenderStateRuntime(state);
+    expect(runtime).toBeDefined();
+    expect(runtime.defaultBitmapShader).toBeDefined();
+  });
+
+  it('resolves the same runtime object on repeated calls', () => {
+    const { canvas } = makeCanvas();
+    const state = createWebGLRenderState(canvas);
+    expect(getWebGLRenderStateRuntime(state)).toBe(getWebGLRenderStateRuntime(state));
   });
 });

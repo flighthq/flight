@@ -22,10 +22,12 @@ import type {
   TextFormat,
   TextLabelRuntime,
   TextLayoutResult,
+  WebGPURenderState,
+  WebGPUTextureEntry,
 } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
 import { createWebGPUTextureEntry, drawWebGPUQuad, updateWebGPUTextureEntry } from './webgpuDraw';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 
 export type WebGPURichTextOverlay = (
@@ -59,7 +61,7 @@ export function destroyWebGPURichTextData(_state: RenderState, data: RendererDat
   richData.entry?.texture.destroy();
 }
 
-export function drawWebGPURichText(state: RenderState, renderProxy: RenderProxy2D): void {
+export function drawWebGPURichText(state: WebGPURenderState, renderProxy: RenderProxy2D): void {
   // The editable-input overlay rasterizes onto the offscreen field texture, so it is passed into the
   // rasterization pass — only when the input slot is present. registerWebGPUTextInputOverlay
   // (enableWebGPUTextInput) installs it; a static RichText leaves the slot null and pulls no text-input code.
@@ -71,13 +73,13 @@ export function drawWebGPURichText(state: RenderState, renderProxy: RenderProxy2
 }
 
 export function drawWebGPURichTextWithOverlay(
-  state: RenderState,
+  state: WebGPURenderState,
   renderProxy: RenderProxy2D,
   overlay?: WebGPURichTextOverlay,
 ): void {
-  const internal = state as WebGPURenderStateInternal;
-  if (internal.renderPass === null) return;
-  flushWebGPUSpriteBatch(internal);
+  const runtime = getWebGPURenderStateRuntime(state);
+  if (runtime.renderPass === null) return;
+  flushWebGPUSpriteBatch(state);
 
   const source = renderProxy.source as RichText;
   const data = source.data;
@@ -86,9 +88,9 @@ export function drawWebGPURichTextWithOverlay(
   computeRichTextContent(content, data, getRichTextPasswordCharacter(source));
   if (content.text.length === 0 && !data.background && !data.border) return;
 
-  const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges, internal);
-  const maxTexDim = internal.device.limits.maxTextureDimension2D;
-  const pixelRatio = internal.pixelRatio;
+  const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges, state);
+  const maxTexDim = state.device.limits.maxTextureDimension2D;
+  const pixelRatio = state.pixelRatio;
   const maxLogical = Math.floor(maxTexDim / pixelRatio);
   const fieldW = Math.min(Math.ceil(computeTextBoundsWidth(data, result)), maxLogical);
   const fieldH = Math.min(Math.ceil(computeTextBoundsHeight(data, result)), maxLogical);
@@ -114,7 +116,7 @@ export function drawWebGPURichTextWithOverlay(
   }
   overlay?.(offCtx, source, result, fieldW, fieldH, content.text);
 
-  internal.applyBlendMode?.(internal, renderProxy.blendMode);
+  state.applyBlendMode?.(state, renderProxy.blendMode);
 
   if (renderProxy.rendererData === null) return;
   const richData = renderProxy.rendererData as unknown as WebGPURichTextData;
@@ -123,18 +125,18 @@ export function drawWebGPURichTextWithOverlay(
   let entry = richData.entry;
   if (entry === null || richData.w !== pw || richData.h !== ph) {
     entry?.texture.destroy();
-    entry = createWebGPUTextureEntry(internal, pw, ph, _offscreenCanvas!);
+    entry = createWebGPUTextureEntry(state, pw, ph, _offscreenCanvas!);
     richData.entry = entry;
     richData.w = pw;
     richData.h = ph;
   } else {
-    updateWebGPUTextureEntry(internal, entry, _offscreenCanvas!);
+    updateWebGPUTextureEntry(state, entry, _offscreenCanvas!);
   }
 
   // Anchor the field box for autoSize 'right'/'center' so the rendered quad lines up with the local
   // bounds (computeRichTextLocalBoundsRectangle applies the same offset). Zero for 'none'/'left'.
   const offsetX = computeTextBoundsOffsetX(data, result);
-  drawWebGPUQuad(internal, renderProxy, entry, offsetX, 0, offsetX + fieldW, fieldH, 0, 0, 1, 1);
+  drawWebGPUQuad(state, renderProxy, entry, offsetX, 0, offsetX + fieldW, fieldH, 0, 0, 1, 1);
 }
 
 export function registerWebGPUTextInputOverlay(overlay: WebGPURichTextOverlay): void {
@@ -208,11 +210,11 @@ function layoutRichText(
   richTextRuntime: RichTextRuntime,
   text: string,
   formatRanges: Parameters<typeof computeTextLayout>[1]['formatRanges'],
-  internal: WebGPURenderStateInternal,
+  state: WebGPURenderState,
 ): ReturnType<typeof getTextLayoutResult> {
   const data = source.data;
-  const maxTexDim = internal.device.limits.maxTextureDimension2D;
-  const maxLogical = Math.floor(maxTexDim / internal.pixelRatio);
+  const maxTexDim = state.device.limits.maxTextureDimension2D;
+  const maxLogical = Math.floor(maxTexDim / state.pixelRatio);
 
   const measure = (value: string, format: TextFormat): number => {
     const context = getOffscreenCanvas(1, 1);

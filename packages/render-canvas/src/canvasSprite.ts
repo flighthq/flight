@@ -3,6 +3,7 @@ import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@fligh
 import type { CanvasRenderState, DisplayObject, RenderProxy2D, Sprite, SpriteRenderer } from '@flighthq/types';
 
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
+import { getCanvasRenderStateRuntime } from './canvasRenderState';
 
 export function drawCanvasSprite(state: CanvasRenderState, spriteNode: RenderProxy2D): void {
   const source = spriteNode.source as Sprite;
@@ -54,7 +55,7 @@ export const defaultCanvasSpriteRenderer: SpriteRenderer = {
 };
 
 export function renderCanvasSprite(state: CanvasRenderState, source: DisplayObject): void {
-  const tempStack = state.tempStack;
+  const tempStack = getCanvasRenderStateRuntime(state).tempStack;
   let stackLength = 1;
   tempStack[0] = source;
 

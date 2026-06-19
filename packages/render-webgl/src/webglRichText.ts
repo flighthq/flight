@@ -16,15 +16,14 @@ import type {
   Renderable,
   RendererData,
   RenderProxy2D,
-  RenderState,
   RichText,
   RichTextRuntime,
   TextFormat,
   TextLabelRuntime,
   TextLayoutResult,
+  WebGLRenderState,
 } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
 import { createWebGLTexture, drawWebGLQuad, updateWebGLTexture, useWebGLProgram } from './webglDraw';
 import { resolveWebGLShader } from './webglShaderBinding';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
@@ -39,15 +38,14 @@ interface WebGLRichTextData {
   texture: WebGLTexture | null;
 }
 
-export function createWebGLRichTextData(_state: RenderState, _source: Renderable): RendererData {
+export function createWebGLRichTextData(_state: WebGLRenderState, _source: Renderable): RendererData {
   return { texture: null } as unknown as RendererData;
 }
 
 // Frees the GPU texture this rich text node owns when it is torn down via disposeDisplayObjectRender.
-export function destroyWebGLRichTextData(state: RenderState, data: RendererData): void {
-  const internal = state as WebGLRenderStateInternal;
+export function destroyWebGLRichTextData(state: WebGLRenderState, data: RendererData): void {
   const { texture } = data as unknown as WebGLRichTextData;
-  if (texture !== null) internal.gl.deleteTexture(texture);
+  if (texture !== null) state.gl.deleteTexture(texture);
 }
 
 export type WebGLRichTextOverlay = (
@@ -59,7 +57,7 @@ export type WebGLRichTextOverlay = (
   text: string,
 ) => void;
 
-export function drawWebGLRichText(state: RenderState, renderProxy: RenderProxy2D): void {
+export function drawWebGLRichText(state: WebGLRenderState, renderProxy: RenderProxy2D): void {
   // The editable-input overlay rasterizes onto the offscreen field texture, so it is passed into the
   // rasterization pass — only when the input slot is present. registerWebGLTextInputOverlay
   // (enableWebGLTextInput) installs it; a static RichText leaves the slot null and pulls no text-input code.
@@ -71,12 +69,11 @@ export function drawWebGLRichText(state: RenderState, renderProxy: RenderProxy2D
 }
 
 export function drawWebGLRichTextWithOverlay(
-  state: RenderState,
+  state: WebGLRenderState,
   renderProxy: RenderProxy2D,
   overlay?: WebGLRichTextOverlay,
 ): void {
-  const internal = state as WebGLRenderStateInternal;
-  flushWebGLSpriteBatch(internal);
+  flushWebGLSpriteBatch(state);
   const source = renderProxy.source as RichText;
   const data = source.data;
   const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
@@ -89,7 +86,7 @@ export function drawWebGLRichTextWithOverlay(
   const fieldH = Math.ceil(computeTextBoundsHeight(data, result));
   if (fieldW <= 0 || fieldH <= 0) return;
 
-  const pixelRatio = internal.pixelRatio;
+  const pixelRatio = state.pixelRatio;
   const offCtx = getOffscreenCanvas(fieldW, fieldH, pixelRatio);
   offCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   offCtx.clearRect(0, 0, fieldW, fieldH);
@@ -110,24 +107,24 @@ export function drawWebGLRichTextWithOverlay(
   }
   overlay?.(offCtx, source, result, fieldW, fieldH, content.text);
 
-  const shader = resolveWebGLShader(internal, renderProxy);
-  useWebGLProgram(internal, shader);
+  const shader = resolveWebGLShader(state, renderProxy);
+  useWebGLProgram(state, shader);
 
   if (renderProxy.rendererData === null) return;
   const richTextData = renderProxy.rendererData as unknown as WebGLRichTextData;
   let texture = richTextData.texture;
   if (texture === null) {
-    texture = createWebGLTexture(internal);
+    texture = createWebGLTexture(state);
     richTextData.texture = texture;
   }
-  updateWebGLTexture(internal, texture, _offscreenCanvas!);
+  updateWebGLTexture(state, texture, _offscreenCanvas!);
 
-  shader.bind(internal.gl, internal, renderProxy);
+  shader.bind(state.gl, state, renderProxy);
 
   // Anchor the field box for autoSize 'right'/'center' so the rendered quad lines up with the local
   // bounds (computeRichTextLocalBoundsRectangle applies the same offset). Zero for 'none'/'left'.
   const offsetX = computeTextBoundsOffsetX(data, result);
-  drawWebGLQuad(internal, offsetX, 0, offsetX + fieldW, fieldH, 0, 0, 1, 1);
+  drawWebGLQuad(state, offsetX, 0, offsetX + fieldW, fieldH, 0, 0, 1, 1);
 }
 
 export function registerWebGLTextInputOverlay(overlay: WebGLRichTextOverlay): void {

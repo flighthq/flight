@@ -1,7 +1,7 @@
 ﻿import type { DOMRenderState, RenderProxy2D } from '@flighthq/types';
 
+import { getDOMRenderStateRuntime } from './domRenderState';
 import { setDOMTransform } from './domTransform';
-import type { DOMRenderStateInternal } from './internal';
 
 export function applyDOMStyle(state: DOMRenderState, element: HTMLElement, node: RenderProxy2D): void {
   setDOMTransform(element, node.transform2D, state.roundPixels);
@@ -24,5 +24,5 @@ export function prepareDOMElement(element: HTMLElement): void {
  * Placement into the container is always handled by the render loop, never by individual draw functions.
  */
 export function setDOMRendererElement(state: DOMRenderState, element: HTMLElement): void {
-  (state as DOMRenderStateInternal).domCurrentElement = element;
+  getDOMRenderStateRuntime(state).domCurrentElement = element;
 }

@@ -1,4 +1,4 @@
-import type { WebGLRenderStateInternal, WebGLRenderTarget } from '@flighthq/render-webgl';
+import type { WebGLRenderTarget } from '@flighthq/render-webgl';
 import type { InnerGlowFilter } from '@flighthq/types';
 import type { WebGLRenderState } from '@flighthq/types';
 
@@ -89,7 +89,7 @@ function applyWebGLInnerClipPass(
 function getClipShader(state: WebGLRenderState): InnerClipLocations {
   let loc = clipShaders.get(state);
   if (loc === undefined) {
-    const gl = (state as WebGLRenderStateInternal).gl;
+    const gl = state.gl;
     const base = compileWebGLFilterProgram(gl, INNER_CLIP_FRAGMENT_SRC);
     loc = { ...base, locTexture2: gl.getUniformLocation(base.program, 'u_texture2')! };
     clipShaders.set(state, loc);

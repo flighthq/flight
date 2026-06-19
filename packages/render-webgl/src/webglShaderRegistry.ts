@@ -1,11 +1,11 @@
 import type { WebGLRenderState } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import type { WebGLBitmapShader } from './webglShaderTypes';
 
 export type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
 
 export function registerWebGLBitmapShader(state: WebGLRenderState, shader: WebGLBitmapShader): void {
-  const internal = state as WebGLRenderStateInternal;
-  internal.defaultBitmapShader = shader;
+  const runtime = getWebGLRenderStateRuntime(state);
+  runtime.defaultBitmapShader = shader;
 }

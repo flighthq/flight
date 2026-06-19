@@ -7,10 +7,12 @@ import type {
   RenderProxy2D,
   RenderState,
   Scale9Shape,
+  WebGPURenderState,
+  WebGPUTextureEntry,
 } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
 import { createWebGPUTextureEntry, drawWebGPUQuadWithTransform, updateWebGPUTextureEntry } from './webgpuDraw';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import { buildWebGPUScale9Mapper } from './webgpuScale9Mapper';
 import { drawWebGPUShape } from './webgpuShape';
 import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
@@ -53,10 +55,10 @@ export function destroyWebGPUScale9ShapeData(_state: RenderState, data: Renderer
   shapeData.entry?.texture.destroy();
 }
 
-export function drawWebGPUScale9Shape(state: RenderState, renderProxy: RenderProxy2D): void {
-  const internal = state as WebGPURenderStateInternal;
-  if (internal.renderPass === null) return;
-  flushWebGPUSpriteBatch(internal);
+export function drawWebGPUScale9Shape(state: WebGPURenderState, renderProxy: RenderProxy2D): void {
+  const runtime = getWebGPURenderStateRuntime(state);
+  if (runtime.renderPass === null) return;
+  flushWebGPUSpriteBatch(state);
 
   const source = renderProxy.source as Scale9Shape;
   const { commands, scale9Grid } = source.data;
@@ -97,9 +99,9 @@ export function drawWebGPUScale9Shape(state: RenderState, renderProxy: RenderPro
     // the canvas pixels into the existing entry.
     if (shapeData.entry === null || shapeData.lastW !== w || shapeData.lastH !== h) {
       shapeData.entry?.texture.destroy();
-      shapeData.entry = createWebGPUTextureEntry(internal, w, h, shapeData.canvas);
+      shapeData.entry = createWebGPUTextureEntry(state, w, h, shapeData.canvas);
     } else {
-      updateWebGPUTextureEntry(internal, shapeData.entry, shapeData.canvas);
+      updateWebGPUTextureEntry(state, shapeData.entry, shapeData.canvas);
     }
 
     shapeData.lastH = h;
@@ -119,7 +121,7 @@ export function drawWebGPUScale9Shape(state: RenderState, renderProxy: RenderPro
   const c = source.scaleY !== 0 ? t.c / source.scaleY : t.c;
   const d = source.scaleY !== 0 ? t.d / source.scaleY : t.d;
   drawWebGPUQuadWithTransform(
-    internal,
+    state,
     renderProxy,
     { a, b, c, d, tx: t.tx, ty: t.ty },
     shapeData.entry,
@@ -134,7 +136,7 @@ export function drawWebGPUScale9Shape(state: RenderState, renderProxy: RenderPro
   );
 }
 
-export function drawWebGPUScale9ShapeMask(state: RenderState, data: RenderProxy2D): void {
+export function drawWebGPUScale9ShapeMask(state: WebGPURenderState, data: RenderProxy2D): void {
   drawWebGPUScale9Shape(state, data);
 }
 

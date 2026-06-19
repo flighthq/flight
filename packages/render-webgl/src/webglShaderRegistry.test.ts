@@ -1,3 +1,4 @@
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { registerWebGLBitmapShader } from './webglShaderRegistry';
 import { makeShaderLoc, makeWebGLState } from './webglTestHelper';
 
@@ -13,6 +14,6 @@ describe('registerWebGLBitmapShader', () => {
 
     registerWebGLBitmapShader(state, shader);
 
-    expect(state.defaultBitmapShader).toBe(shader);
+    expect(getWebGLRenderStateRuntime(state).defaultBitmapShader).toBe(shader);
   });
 });

@@ -1,6 +1,6 @@
-import type { Matrix, PathWinding } from '@flighthq/types';
+import type { Matrix, PathWinding, WebGPUClipContourPipelines, WebGPURenderState } from '@flighthq/types';
 
-import type { WebGPUClipContourPipelines, WebGPURenderStateInternal } from './internal';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 
 // WebGPU contour clip via stencil nesting — the WebGPU counterpart to webglClipContours. A path
@@ -37,12 +37,13 @@ struct ClipUniforms { matrix : mat3x3f }
 // mat3x3f in a uniform buffer has a 16-byte column stride (each column is a vec3 padded to vec4): 48 bytes.
 const CLIP_UNIFORM_BYTES = 48;
 
-export function popWebGPUClipContours(state: WebGPURenderStateInternal): void {
+export function popWebGPUClipContours(state: WebGPURenderState): void {
+  const runtime = getWebGPURenderStateRuntime(state);
   flushWebGPUSpriteBatch(state);
-  const entry = state.clipContourStack.pop();
-  state.currentMaskDepth = Math.max(0, state.currentMaskDepth - 1);
+  const entry = runtime.clipContourStack.pop();
+  runtime.currentMaskDepth = Math.max(0, runtime.currentMaskDepth - 1);
 
-  const pass = state.renderPass;
+  const pass = runtime.renderPass;
   if (pass !== null && entry !== undefined) {
     const pipelines = ensureClipContourPipelines(state);
     // Decrement this clip's covered pixels from (entry.depth + 1) back to entry.depth, restoring the
@@ -60,17 +61,18 @@ export function popWebGPUClipContours(state: WebGPURenderStateInternal): void {
 }
 
 export function pushWebGPUClipContours(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   contours: readonly (readonly number[])[],
   winding: PathWinding,
   worldTransform: Readonly<Matrix>,
 ): void {
+  const runtime = getWebGPURenderStateRuntime(state);
   flushWebGPUSpriteBatch(state);
   // Coverage-based; winding (even-odd vs non-zero, holes) is not yet applied — see file header.
   void winding;
 
   const device = state.device;
-  const depth = state.currentMaskDepth;
+  const depth = runtime.currentMaskDepth;
   const pipelines = ensureClipContourPipelines(state);
   const { vertexBuffer, vertexCount } = createClipContourVertexBuffer(state, contours);
   const uniformBuffer = createClipContourUniformBuffer(state, worldTransform);
@@ -79,7 +81,7 @@ export function pushWebGPUClipContours(
     entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
   });
 
-  const pass = state.renderPass;
+  const pass = runtime.renderPass;
   if (pass !== null) {
     // Increment the polygon's covered pixels from the parent depth to depth + 1. The 'equal' compare on
     // the parent depth keeps the increment confined to the parent clip's interior (or the whole cleared
@@ -91,13 +93,14 @@ export function pushWebGPUClipContours(
     if (vertexCount > 0) pass.draw(vertexCount);
   }
 
-  state.clipContourStack.push({ vertexBuffer, vertexCount, uniformBuffer, bindGroup, depth });
+  runtime.clipContourStack.push({ vertexBuffer, vertexCount, uniformBuffer, bindGroup, depth });
   // Content drawn now tests stencil == currentMaskDepth (webgpuDraw/webgpuShader select 'masked' mode).
-  state.currentMaskDepth = depth + 1;
+  runtime.currentMaskDepth = depth + 1;
 }
 
-function createClipContourUniformBuffer(state: WebGPURenderStateInternal, t: Readonly<Matrix>): GPUBuffer {
-  const viewport = state.renderTargetViewport ?? state.canvas;
+function createClipContourUniformBuffer(state: WebGPURenderState, t: Readonly<Matrix>): GPUBuffer {
+  const runtime = getWebGPURenderStateRuntime(state);
+  const viewport = runtime.renderTargetViewport ?? state.canvas;
   const iw = 2 / viewport.width;
   const ih = 2 / viewport.height;
   // Column-major mat3x3f = projection · worldTransform, mapping clip-local points to clip space exactly
@@ -124,7 +127,7 @@ function createClipContourUniformBuffer(state: WebGPURenderStateInternal, t: Rea
 // Expands each contour's triangle fan (origin, i, i+1) into a triangle-list vertex buffer — WebGPU has
 // no TRIANGLE_FAN topology. Color writes are masked off in the pipeline, so only the stencil moves.
 function createClipContourVertexBuffer(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   contours: readonly (readonly number[])[],
 ): { vertexBuffer: GPUBuffer; vertexCount: number } {
   const tris: number[] = [];
@@ -153,8 +156,9 @@ function createClipContourVertexBuffer(
   return { vertexBuffer, vertexCount };
 }
 
-function ensureClipContourPipelines(state: WebGPURenderStateInternal): WebGPUClipContourPipelines {
-  const existing = state.clipContourPipelines;
+function ensureClipContourPipelines(state: WebGPURenderState): WebGPUClipContourPipelines {
+  const runtime = getWebGPURenderStateRuntime(state);
+  const existing = runtime.clipContourPipelines;
   if (existing !== null) return existing;
 
   const device = state.device;
@@ -189,6 +193,6 @@ function ensureClipContourPipelines(state: WebGPURenderStateInternal): WebGPUCli
     erase: make('decrement-clamp'),
     bindGroupLayout,
   };
-  state.clipContourPipelines = pipelines;
+  runtime.clipContourPipelines = pipelines;
   return pipelines;
 }

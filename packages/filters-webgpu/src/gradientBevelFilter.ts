@@ -1,4 +1,3 @@
-import type { WebGPURenderStateInternal } from '@flighthq/render-webgpu';
 import type { GradientBevelFilter } from '@flighthq/types';
 import type { WebGPURenderState, WebGPURenderTarget } from '@flighthq/types';
 
@@ -62,8 +61,7 @@ function getEncodePipeline(state: WebGPURenderState): WebGPUFilterPipeline {
   let p = encodePipelines.get(state);
   if (p === undefined) {
     const fs = getWebGPUFilterState(state);
-    const internal = state as WebGPURenderStateInternal;
-    const { device, format } = internal;
+    const { device, format } = state;
     const shaderModule = device.createShaderModule({ code: FILTER_VERTEX_WGSL + BEVEL_ENCODE_FRAGMENT_WGSL });
     const pipelineLayout = device.createPipelineLayout({
       bindGroupLayouts: [fs.uniformBGLayout, fs.textureBGLayout],
@@ -84,8 +82,7 @@ function getApplyPipeline(state: WebGPURenderState): WebGPUFilterPipeline {
   let p = applyPipelines.get(state);
   if (p === undefined) {
     const fs = getWebGPUFilterState(state);
-    const internal = state as WebGPURenderStateInternal;
-    const { device, format } = internal;
+    const { device, format } = state;
     const shaderModule = device.createShaderModule({ code: FILTER_VERTEX_WGSL + BEVEL_APPLY_FRAGMENT_WGSL });
     const pipelineLayout = device.createPipelineLayout({
       bindGroupLayouts: [fs.uniformBGLayout, fs.textureBGLayout, fs.textureBGLayout, fs.textureBGLayout],
@@ -125,8 +122,7 @@ export function applyGradientBevelFilterToWebGPU(
   const strength = filter.strength ?? 1;
 
   const [s0, s1, s2] = scratch;
-  const internal = state as WebGPURenderStateInternal;
-  const { device } = internal;
+  const { device } = state;
   const fs = getWebGPUFilterState(state);
 
   // Build blur basis → s1

@@ -1,6 +1,11 @@
-import type { RenderProxy2D } from '@flighthq/types';
+import type {
+  RenderProxy2D,
+  WebGPURenderState,
+  WebGPUShapeMeshBuffers,
+  WebGPUShapeMeshPipeline,
+} from '@flighthq/types';
 
-import type { WebGPURenderStateInternal, WebGPUShapeMeshBuffers, WebGPUShapeMeshPipeline } from './internal';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 
 // WebGPU tessellated solid-fill path for Shape — the counterpart to webglShapeMesh, replacing the
@@ -33,15 +38,16 @@ export interface WebGPUShapeMesh {
 // by the active contour-clip stencil. The shared `matrix` (projection · worldTransform) is identical for
 // every mesh, so it is uploaded once into a single uniform region per mesh alongside that mesh's color.
 export function drawWebGPUShapeMeshes(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   renderProxy: RenderProxy2D,
   meshes: readonly WebGPUShapeMesh[],
   buffers: WebGPUShapeMeshBuffers,
 ): void {
   if (meshes.length === 0) return;
+  const runtime = getWebGPURenderStateRuntime(state);
   flushWebGPUSpriteBatch(state);
 
-  const pass = state.renderPass;
+  const pass = runtime.renderPass;
   if (pass === null) return;
 
   const pipelineEntry = ensureShapeMeshPipeline(state);
@@ -57,7 +63,7 @@ export function drawWebGPUShapeMeshes(
   pass.setBindGroup(0, buffers.bindGroup!);
   // The cleared stencil is 0, so at depth 0 'equal 0' passes everywhere; inside a contour clip only its
   // stamped region equals currentMaskDepth, so the fill is confined to the clip.
-  pass.setStencilReference(state.currentMaskDepth);
+  pass.setStencilReference(runtime.currentMaskDepth);
 
   const nodeAlpha = renderProxy.alpha;
   for (let i = 0; i < meshes.length; i++) {
@@ -102,7 +108,7 @@ const SHAPE_MESH_UNIFORM_BYTES = 64;
 const SHAPE_MESH_UNIFORM_FLOATS = SHAPE_MESH_UNIFORM_BYTES / 4;
 
 function ensureShapeMeshIndexBuffer(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   buffers: WebGPUShapeMeshBuffers,
   byteLength: number,
 ): GPUBuffer {
@@ -123,7 +129,7 @@ function ensureShapeMeshIndexBuffer(
 // caller fills with the matrix (uploaded once) and per-mesh color. The matrix columns are written here so
 // every draw shares them; only color (floats 12..15) changes per mesh.
 function ensureShapeMeshUniform(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   pipelineEntry: WebGPUShapeMeshPipeline,
   buffers: WebGPUShapeMeshBuffers,
 ): Float32Array {
@@ -140,8 +146,9 @@ function ensureShapeMeshUniform(
   return _shapeMeshUniformScratch;
 }
 
-function ensureShapeMeshPipeline(state: WebGPURenderStateInternal): WebGPUShapeMeshPipeline {
-  const existing = state.shapeMeshPipeline;
+function ensureShapeMeshPipeline(state: WebGPURenderState): WebGPUShapeMeshPipeline {
+  const runtime = getWebGPURenderStateRuntime(state);
+  const existing = runtime.shapeMeshPipeline;
   if (existing !== null) return existing;
 
   const device = state.device;
@@ -185,12 +192,12 @@ function ensureShapeMeshPipeline(state: WebGPURenderStateInternal): WebGPUShapeM
   });
 
   const entry: WebGPUShapeMeshPipeline = { pipeline, bindGroupLayout };
-  state.shapeMeshPipeline = entry;
+  runtime.shapeMeshPipeline = entry;
   return entry;
 }
 
 function ensureShapeMeshVertexBuffer(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   buffers: WebGPUShapeMeshBuffers,
   byteLength: number,
 ): GPUBuffer {
@@ -210,8 +217,9 @@ function ensureShapeMeshVertexBuffer(
 // webgpuClipContours/webgpuDraw build it (so the fill lands in identical clip space). Each column is
 // padded to 4 floats (vec3 -> vec4 std140-style layout). Writes into the shared scratch view; the color
 // (floats 12..15) is filled per mesh by the caller.
-function shapeMeshMatrix(state: WebGPURenderStateInternal, renderProxy: RenderProxy2D): Float32Array {
-  const viewport = state.renderTargetViewport ?? state.canvas;
+function shapeMeshMatrix(state: WebGPURenderState, renderProxy: RenderProxy2D): Float32Array {
+  const runtime = getWebGPURenderStateRuntime(state);
+  const viewport = runtime.renderTargetViewport ?? state.canvas;
   const iw = 2 / (viewport.width || 1);
   const ih = 2 / (viewport.height || 1);
   const t = renderProxy.transform2D;

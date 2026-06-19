@@ -14,7 +14,7 @@ import {
 } from './renderCache';
 import { createRenderProxy2D } from './renderProxy';
 import { getRenderProxyAdapter } from './renderProxyAdapter';
-import { createRenderState } from './renderState';
+import { createRenderState, getRenderStateRuntime } from './renderState';
 
 describe('createRenderCache', () => {
   it('creates a handle with the render cache kind and a transform', () => {
@@ -117,7 +117,7 @@ describe('registerRenderCacheRenderer', () => {
     const state = createRenderState();
     const renderer = { createData: () => null, submit: vi.fn() };
     registerRenderCacheRenderer(state, renderer as any);
-    expect(state.rendererMap.get(RenderCacheKind)).toBe(renderer);
+    expect(getRenderStateRuntime(state).rendererMap.get(RenderCacheKind)).toBe(renderer);
   });
 });
 

@@ -1,4 +1,4 @@
-import type { WebGLRenderStateInternal, WebGLRenderTarget } from '@flighthq/render-webgl';
+import type { WebGLRenderTarget } from '@flighthq/render-webgl';
 import type { GradientBevelFilter } from '@flighthq/types';
 import type { WebGLRenderState } from '@flighthq/types';
 
@@ -72,8 +72,7 @@ export function applyGradientBevelFilterToWebGL(
   const strength = filter.strength ?? 1;
 
   const [s0, s1, s2] = scratch;
-  const internal = state as WebGLRenderStateInternal;
-  const { gl } = internal;
+  const gl = state.gl;
 
   // Build blur basis → s1
   applyWebGLTintPass(state, source, s0, 0xffffff, 1, Math.min(1, strength));
@@ -131,7 +130,7 @@ function applyBevelApplyPass(
 function getEncodeShader(state: WebGLRenderState): BevelEncodeLocations {
   let loc = encodeShaders.get(state);
   if (loc === undefined) {
-    const gl = (state as WebGLRenderStateInternal).gl;
+    const gl = state.gl;
     const base = compileWebGLFilterProgram(gl, BEVEL_ENCODE_FRAGMENT_SRC);
     loc = { ...base, locOffset: gl.getUniformLocation(base.program, 'u_offset')! };
     encodeShaders.set(state, loc);
@@ -142,7 +141,7 @@ function getEncodeShader(state: WebGLRenderState): BevelEncodeLocations {
 function getApplyShader(state: WebGLRenderState): BevelApplyLocations {
   let loc = applyShaders.get(state);
   if (loc === undefined) {
-    const gl = (state as WebGLRenderStateInternal).gl;
+    const gl = state.gl;
     const base = compileWebGLFilterProgram(gl, BEVEL_APPLY_FRAGMENT_SRC);
     loc = {
       ...base,

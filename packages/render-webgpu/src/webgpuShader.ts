@@ -1,9 +1,9 @@
-import type { ColorTransform, RenderProxy } from '@flighthq/types';
+import type { ColorTransform, RenderProxy, WebGPURenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 
-export type { WebGPUBitmapShader } from './internal';
+export type { WebGPUBitmapShader } from '@flighthq/types';
 
 // ---- WGSL source ----
 
@@ -201,18 +201,24 @@ function buildStencilFaceState(stencilMode: StencilMode): GPUStencilFaceState {
   return { compare: 'always', passOp: 'keep', failOp: 'keep', depthFailOp: 'keep' };
 }
 
-export function getActiveWebGPUPipeline(state: WebGPURenderStateInternal): GPURenderPipeline {
-  const stencilMode: StencilMode = state.maskWriteMode ? 'maskwrite' : state.currentMaskDepth > 0 ? 'masked' : 'normal';
-  return getWebGPUPipeline(state, state.currentBlendMode, stencilMode);
+export function getActiveWebGPUPipeline(state: WebGPURenderState): GPURenderPipeline {
+  const runtime = getWebGPURenderStateRuntime(state);
+  const stencilMode: StencilMode = runtime.maskWriteMode
+    ? 'maskwrite'
+    : runtime.currentMaskDepth > 0
+      ? 'masked'
+      : 'normal';
+  return getWebGPUPipeline(state, runtime.currentBlendMode, stencilMode);
 }
 
 export function getWebGPUPipeline(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   blendMode: BlendMode | null,
   stencilMode: StencilMode,
 ): GPURenderPipeline {
+  const runtime = getWebGPURenderStateRuntime(state);
   const key = `${blendMode ?? 'null'}-${stencilMode}`;
-  const cached = state.pipelineCache.get(key);
+  const cached = runtime.pipelineCache.get(key);
   if (cached !== undefined) return cached;
 
   const blend = (blendMode !== null ? BLEND_MODES[blendMode] : null) ?? NORMAL_BLEND;
@@ -222,7 +228,7 @@ export function getWebGPUPipeline(
   const { device, format } = state;
   const shaderSrc = isMaskWrite ? MASK_FRAGMENT_SRC : BITMAP_SHADER_SRC;
   const module = device.createShaderModule({ code: shaderSrc });
-  const layout = createWebGPUPipelineLayout(device, state.uniformBindGroupLayout, state.textureBindGroupLayout);
+  const layout = createWebGPUPipelineLayout(device, runtime.uniformBindGroupLayout, runtime.textureBindGroupLayout);
 
   const pipeline = device.createRenderPipeline({
     layout,
@@ -250,7 +256,7 @@ export function getWebGPUPipeline(
     primitive: { topology: 'triangle-list' },
   });
 
-  state.pipelineCache.set(key, pipeline);
+  runtime.pipelineCache.set(key, pipeline);
   return pipeline;
 }
 
@@ -281,7 +287,7 @@ export function setWebGPUMatrixFromTransform(
 // ---- Uniform slot writing ----
 
 export function writeWebGPUMatrixOnlyUniforms(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   renderProxy: RenderProxy,
   transform: { a: number; b: number; c: number; d: number; tx: number; ty: number },
   x0: number,
@@ -293,11 +299,12 @@ export function writeWebGPUMatrixOnlyUniforms(
   u1: number,
   v1: number,
 ): number {
-  const byteOffset = state.uniformOffset;
+  const runtime = getWebGPURenderStateRuntime(state);
+  const byteOffset = runtime.uniformOffset;
   const floatBase = byteOffset >> 2;
-  const { uniformData, uniformDataU32, matrixArray } = state;
+  const { uniformData, uniformDataU32, matrixArray } = runtime;
 
-  const viewport = state.renderTargetViewport ?? state.canvas;
+  const viewport = runtime.renderTargetViewport ?? state.canvas;
   setWebGPUMatrixFromTransform(matrixArray, transform, viewport);
 
   uniformData[floatBase + 0] = matrixArray[0];
@@ -333,7 +340,7 @@ export function writeWebGPUMatrixOnlyUniforms(
   uniformData[floatBase + 30] = u1;
   uniformData[floatBase + 31] = v1;
 
-  state.uniformOffset += state.uniformStride;
+  runtime.uniformOffset += runtime.uniformStride;
   return byteOffset;
 }
 
@@ -341,7 +348,7 @@ export function writeWebGPUMatrixOnlyUniforms(
 // the ring buffer at the current uniformOffset, then advances the offset by uniformStride.
 // Returns the byte offset of the slot just written (for use as the dynamic offset in setBindGroup).
 export function writeWebGPUQuadUniforms(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   renderProxy: {
     alpha: number;
     transform2D: { a: number; b: number; c: number; d: number; tx: number; ty: number };
@@ -356,11 +363,12 @@ export function writeWebGPUQuadUniforms(
   u1: number,
   v1: number,
 ): number {
-  const byteOffset = state.uniformOffset;
+  const runtime = getWebGPURenderStateRuntime(state);
+  const byteOffset = runtime.uniformOffset;
   const floatBase = byteOffset >> 2; // divide by 4
-  const { uniformData, uniformDataU32, matrixArray } = state;
+  const { uniformData, uniformDataU32, matrixArray } = runtime;
 
-  const viewport = state.renderTargetViewport ?? state.canvas;
+  const viewport = runtime.renderTargetViewport ?? state.canvas;
   setWebGPUMatrixFromTransform(matrixArray, renderProxy.transform2D, viewport);
 
   // mat3x3 columns with per-column padding (4 floats each = 16 bytes):
@@ -404,6 +412,6 @@ export function writeWebGPUQuadUniforms(
   uniformData[floatBase + 30] = u1;
   uniformData[floatBase + 31] = v1;
 
-  state.uniformOffset += state.uniformStride;
+  runtime.uniformOffset += runtime.uniformStride;
   return byteOffset;
 }

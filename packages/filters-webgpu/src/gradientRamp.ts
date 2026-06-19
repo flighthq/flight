@@ -1,4 +1,3 @@
-import type { WebGPURenderStateInternal } from '@flighthq/render-webgpu';
 import type { WebGPURenderState } from '@flighthq/types';
 
 /**
@@ -15,8 +14,7 @@ export function createWebGPUGradientRampTexture(
   ratios: ReadonlyArray<number>,
 ): GPUTexture {
   const data = buildRampData(colors, alphas, ratios);
-  const internal = state as WebGPURenderStateInternal;
-  const { device } = internal;
+  const { device } = state;
 
   const texture = device.createTexture({
     size: [256, 1, 1],

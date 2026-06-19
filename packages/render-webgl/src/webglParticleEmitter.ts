@@ -1,8 +1,9 @@
 import { noopRendererData } from '@flighthq/render';
-import type { ParticleEmitter, RenderProxy2D, RenderState, SpriteRenderer } from '@flighthq/types';
+import type { ParticleEmitter, RenderProxy2D, SpriteRenderer, WebGLRenderState } from '@flighthq/types';
 
-import type { WebGLParticleShader, WebGLRenderStateInternal } from './internal';
+import type { WebGLParticleShader } from './internal';
 import { bindWebGLTexture } from './webglDraw';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 // Per-instance layout (14 floats = 56 bytes):
@@ -96,58 +97,61 @@ function compileParticleShader(gl: WebGL2RenderingContext): WebGLParticleShader 
   };
 }
 
-function ensureParticleShader(internal: WebGLRenderStateInternal): WebGLParticleShader {
-  if (internal.particleShader) return internal.particleShader;
+function ensureParticleShader(state: WebGLRenderState): WebGLParticleShader {
+  const runtime = getWebGLRenderStateRuntime(state);
+  if (runtime.particleShader) return runtime.particleShader;
 
-  const gl = internal.gl;
-  internal.particleShader = compileParticleShader(gl);
+  const gl = state.gl;
+  runtime.particleShader = compileParticleShader(gl);
 
   // Static corner buffer: (0,0),(1,0),(1,1),(0,1)
   const cornerData = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
   const cornerBuf = gl.createBuffer()!;
   gl.bindBuffer(gl.ARRAY_BUFFER, cornerBuf);
   gl.bufferData(gl.ARRAY_BUFFER, cornerData, gl.STATIC_DRAW);
-  internal.particleCornerBuffer = cornerBuf;
+  runtime.particleCornerBuffer = cornerBuf;
 
   // Dynamic instance buffer — starts empty, grows as needed
-  internal.particleInstanceBuffer = gl.createBuffer()!;
-  internal.particleInstanceData = new Float32Array(0);
+  runtime.particleInstanceBuffer = gl.createBuffer()!;
+  runtime.particleInstanceData = new Float32Array(0);
 
-  return internal.particleShader;
+  return runtime.particleShader;
 }
 
-function ensureInstanceCapacity(internal: WebGLRenderStateInternal, count: number): void {
+function ensureInstanceCapacity(state: WebGLRenderState, count: number): void {
+  const runtime = getWebGLRenderStateRuntime(state);
+  const gl = state.gl;
   const needed = count * INSTANCE_FLOATS;
-  if ((internal.particleInstanceData?.length ?? 0) >= needed) return;
+  if ((runtime.particleInstanceData?.length ?? 0) >= needed) return;
   // Double capacity each time.
-  const newSize = Math.max(needed, (internal.particleInstanceData?.length ?? 0) * 2);
-  internal.particleInstanceData = new Float32Array(newSize);
+  const newSize = Math.max(needed, (runtime.particleInstanceData?.length ?? 0) * 2);
+  runtime.particleInstanceData = new Float32Array(newSize);
   // Resize GPU buffer to match.
-  internal.gl.bindBuffer(internal.gl.ARRAY_BUFFER, internal.particleInstanceBuffer!);
-  internal.gl.bufferData(internal.gl.ARRAY_BUFFER, newSize * 4, internal.gl.DYNAMIC_DRAW);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.particleInstanceBuffer!);
+  gl.bufferData(gl.ARRAY_BUFFER, newSize * 4, gl.DYNAMIC_DRAW);
 }
 
-export function drawWebGLParticleEmitter(state: RenderState, renderProxy: RenderProxy2D): void {
-  const internal = state as WebGLRenderStateInternal;
+export function drawWebGLParticleEmitter(state: WebGLRenderState, renderProxy: RenderProxy2D): void {
+  const runtime = getWebGLRenderStateRuntime(state);
   const source = renderProxy.source as ParticleEmitter;
   const { atlas, alphas, colors, ids, particleCount, transforms } = source.data;
   if (atlas === null || atlas.image === null || atlas.image.source === null || particleCount === 0) return;
 
-  const shader = ensureParticleShader(internal);
-  ensureInstanceCapacity(internal, particleCount);
+  const shader = ensureParticleShader(state);
+  ensureInstanceCapacity(state, particleCount);
 
-  internal.applyBlendMode?.(internal, renderProxy.blendMode);
-  bindWebGLTexture(internal, atlas.image.source);
+  state.applyBlendMode?.(state, renderProxy.blendMode);
+  bindWebGLTexture(state, atlas.image.source);
 
-  const gl = internal.gl;
+  const gl = state.gl;
   const regions = atlas.regions;
   const numRegions = regions.length;
   const nodeAlpha = renderProxy.alpha;
   const t = renderProxy.transform2D;
-  const viewport = internal.renderTargetViewport ?? internal.canvas;
+  const viewport = runtime.renderTargetViewport ?? state.canvas;
   const iw = 1 / (atlas.image.width || 1);
   const ih = 1 / (atlas.image.height || 1);
-  const instanceData = internal.particleInstanceData!;
+  const instanceData = runtime.particleInstanceData!;
 
   // Build per-instance CPU buffer.
   let base = 0;
@@ -198,13 +202,13 @@ export function drawWebGLParticleEmitter(state: RenderState, renderProxy: Render
   if (drawCount === 0) return;
 
   // Upload instance data.
-  gl.bindBuffer(gl.ARRAY_BUFFER, internal.particleInstanceBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.particleInstanceBuffer!);
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, instanceData, 0, drawCount * INSTANCE_FLOATS);
 
   // Activate particle shader program.
-  if (internal.currentProgram !== shader.program) {
+  if (runtime.currentProgram !== shader.program) {
     gl.useProgram(shader.program);
-    internal.currentProgram = shader.program;
+    runtime.currentProgram = shader.program;
   }
 
   // Compute and upload the emitter node → clip-space world matrix.
@@ -212,7 +216,7 @@ export function drawWebGLParticleEmitter(state: RenderState, renderProxy: Render
   // so we skip the node transform and map directly through the viewport.
   const clipW = 2 / viewport.width;
   const clipH = 2 / viewport.height;
-  const m = internal.matrixArray;
+  const m = runtime.matrixArray;
   if (source.data.worldSpace) {
     m[0] = clipW;
     m[1] = 0;
@@ -238,13 +242,13 @@ export function drawWebGLParticleEmitter(state: RenderState, renderProxy: Render
   gl.uniform1i(shader.locTexture, 0);
 
   // Per-vertex: corner buffer.
-  gl.bindBuffer(gl.ARRAY_BUFFER, internal.particleCornerBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.particleCornerBuffer!);
   gl.enableVertexAttribArray(shader.locCorner);
   gl.vertexAttribPointer(shader.locCorner, 2, gl.FLOAT, false, 8, 0);
   gl.vertexAttribDivisor(shader.locCorner, 0);
 
   // Per-instance: instance buffer.
-  gl.bindBuffer(gl.ARRAY_BUFFER, internal.particleInstanceBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.particleInstanceBuffer!);
 
   gl.enableVertexAttribArray(shader.locPos);
   gl.vertexAttribPointer(shader.locPos, 2, gl.FLOAT, false, INSTANCE_STRIDE, 0);
@@ -271,7 +275,7 @@ export function drawWebGLParticleEmitter(state: RenderState, renderProxy: Render
   gl.vertexAttribDivisor(shader.locSize, 1);
 
   // Single draw call for all particles.
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, internal.quadIndexBuffer);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, runtime.quadIndexBuffer);
   gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0, drawCount);
 
   // Reset divisors so other renderers are not affected.
@@ -285,8 +289,8 @@ export function drawWebGLParticleEmitter(state: RenderState, renderProxy: Render
 
 export const defaultWebGLParticleEmitterRenderer: SpriteRenderer = {
   createData: noopRendererData,
-  submit(state: RenderState, node: RenderProxy2D): void {
-    flushWebGLSpriteBatch(state as WebGLRenderStateInternal);
+  submit(state: WebGLRenderState, node: RenderProxy2D): void {
+    flushWebGLSpriteBatch(state);
     drawWebGLParticleEmitter(state, node);
   },
 };

@@ -3,6 +3,7 @@ import { BatchFormat } from '@flighthq/types';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
 import { registerDefaultWebGPUMaterial } from './webgpuDefaultMaterial';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import { defaultWebGPUShapeRenderer, drawWebGPUShape } from './webgpuShape';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
 
@@ -52,7 +53,7 @@ describe('drawWebGPUShape', () => {
     renderWebGPUBackground(state);
     registerDefaultWebGPUMaterial(state);
     drawWebGPUShape(state, makeShapeProxy({ commands: [] }, makeShapeData()));
-    expect((state as any).spriteBatchCount).toBe(0);
+    expect(getWebGPURenderStateRuntime(state).spriteBatchCount).toBe(0);
     submitWebGPURenderPass(state);
   });
 
@@ -61,7 +62,7 @@ describe('drawWebGPUShape', () => {
     renderWebGPUBackground(state);
     registerDefaultWebGPUMaterial(state);
     drawWebGPUShape(state, makeShapeProxy({ commands: [{}] }, null));
-    expect((state as any).spriteBatchCount).toBe(0);
+    expect(getWebGPURenderStateRuntime(state).spriteBatchCount).toBe(0);
     submitWebGPURenderPass(state);
   });
 
@@ -75,7 +76,7 @@ describe('drawWebGPUShape', () => {
     renderWebGPUBackground(state);
     registerDefaultWebGPUMaterial(state);
     drawWebGPUShape(state, makeShapeProxy({ commands: [{}], version: 1 }, makeShapeData()));
-    expect((state as any).spriteBatchCount).toBe(1);
+    expect(getWebGPURenderStateRuntime(state).spriteBatchCount).toBe(1);
     submitWebGPURenderPass(state);
   });
 });

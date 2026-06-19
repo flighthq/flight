@@ -1,13 +1,18 @@
 import type { WebGPURenderState } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 
-function ensureWebGPUDepthStencil(state: WebGPURenderStateInternal, width: number, height: number): void {
-  if (state.depthStencilTexture !== null && state.depthStencilWidth === width && state.depthStencilHeight === height) {
+function ensureWebGPUDepthStencil(state: WebGPURenderState, width: number, height: number): void {
+  const runtime = getWebGPURenderStateRuntime(state);
+  if (
+    runtime.depthStencilTexture !== null &&
+    runtime.depthStencilWidth === width &&
+    runtime.depthStencilHeight === height
+  ) {
     return;
   }
 
-  state.depthStencilTexture?.destroy();
+  runtime.depthStencilTexture?.destroy();
 
   const texture = state.device.createTexture({
     size: [Math.max(1, width), Math.max(1, height), 1],
@@ -15,49 +20,51 @@ function ensureWebGPUDepthStencil(state: WebGPURenderStateInternal, width: numbe
     usage: GPUTextureUsage.RENDER_ATTACHMENT,
   });
 
-  state.depthStencilTexture = texture;
-  state.depthStencilView = texture.createView();
-  state.depthStencilWidth = width;
-  state.depthStencilHeight = height;
+  runtime.depthStencilTexture = texture;
+  runtime.depthStencilView = texture.createView();
+  runtime.depthStencilWidth = width;
+  runtime.depthStencilHeight = height;
 }
 
 export function renderWebGPUBackground(state: WebGPURenderState): void {
-  const internal = state as WebGPURenderStateInternal;
+  const runtime = getWebGPURenderStateRuntime(state);
 
   // End any previous open pass (safety guard)
-  if (internal.renderPass !== null) {
-    internal.renderPass.end();
-    internal.renderPass = null;
+  if (runtime.renderPass !== null) {
+    runtime.renderPass.end();
+    runtime.renderPass = null;
   }
 
-  internal.uniformOffset = 0;
+  runtime.uniformOffset = 0;
   // Reclaim the sprite-batch buffer pool from the start of the frame; last frame's submit has been
   // queued, so its slots are safe to overwrite.
-  internal.spriteBatchBufferCursor = 0;
-  internal.currentBlendMode = null;
-  internal.currentMaskDepth = 0;
-  internal.maskWriteMode = false;
-  internal.currentScissorRect = null;
-  internal.scissorStack = [];
+  runtime.spriteBatchBufferCursor = 0;
+  runtime.currentBlendMode = null;
+  runtime.currentMaskDepth = 0;
+  runtime.maskWriteMode = false;
+  runtime.currentScissorRect = null;
+  runtime.scissorStack = [];
 
-  const { device, canvas, context } = internal;
+  const device = state.device;
+  const canvas = state.canvas;
+  const context = state.context;
   const width = canvas.width;
   const height = canvas.height;
 
-  ensureWebGPUDepthStencil(internal, width, height);
+  ensureWebGPUDepthStencil(state, width, height);
 
   const canvasTexture = context.getCurrentTexture();
   const canvasView = canvasTexture.createView();
-  internal.canvasTextureView = canvasView;
-  internal.canvasViewCleared = true;
-  internal.renderTargetViewport = null;
+  runtime.canvasTextureView = canvasView;
+  runtime.canvasViewCleared = true;
+  runtime.renderTargetViewport = null;
 
   const rgba = state.backgroundColorRGBA;
   const clearValue: GPUColor =
     rgba.length >= 4 && rgba[3] > 0 ? { r: rgba[0], g: rgba[1], b: rgba[2], a: rgba[3] } : { r: 0, g: 0, b: 0, a: 0 };
 
   const commandEncoder = device.createCommandEncoder();
-  internal.commandEncoder = commandEncoder;
+  runtime.commandEncoder = commandEncoder;
 
   const renderPass = commandEncoder.beginRenderPass({
     colorAttachments: [
@@ -69,7 +76,7 @@ export function renderWebGPUBackground(state: WebGPURenderState): void {
       },
     ],
     depthStencilAttachment: {
-      view: internal.depthStencilView!,
+      view: runtime.depthStencilView!,
       depthClearValue: 1.0,
       depthLoadOp: 'clear',
       depthStoreOp: 'discard',
@@ -80,16 +87,17 @@ export function renderWebGPUBackground(state: WebGPURenderState): void {
   });
 
   renderPass.setViewport(0, 0, width, height, 0, 1);
-  internal.renderPass = renderPass;
+  runtime.renderPass = renderPass;
 }
 
 export function submitWebGPURenderPass(state: WebGPURenderState): void {
-  const internal = state as WebGPURenderStateInternal;
-  const { renderPass, commandEncoder, device, uniformBuffer, uniformData, uniformOffset } = internal;
+  const runtime = getWebGPURenderStateRuntime(state);
+  const { renderPass, commandEncoder, uniformBuffer, uniformData, uniformOffset } = runtime;
+  const device = state.device;
 
   if (renderPass !== null) {
     renderPass.end();
-    internal.renderPass = null;
+    runtime.renderPass = null;
   }
 
   if (commandEncoder !== null) {
@@ -99,9 +107,9 @@ export function submitWebGPURenderPass(state: WebGPURenderState): void {
       device.queue.writeBuffer(uniformBuffer, 0, uniformData.buffer, 0, uniformOffset);
     }
     device.queue.submit([commandEncoder.finish()]);
-    internal.commandEncoder = null;
+    runtime.commandEncoder = null;
   }
 
-  internal.canvasTextureView = null;
-  internal.canvasViewCleared = false;
+  runtime.canvasTextureView = null;
+  runtime.canvasViewCleared = false;
 }

@@ -1,8 +1,12 @@
 import { createMatrix } from '@flighthq/geometry';
-import { createRenderState as _createRenderState, setRenderStateBackgroundColor } from '@flighthq/render';
-import type { WebGPURenderOptions, WebGPURenderState } from '@flighthq/types';
+import {
+  createRenderState as _createRenderState,
+  createRenderStateRuntime,
+  setRenderStateBackgroundColor,
+} from '@flighthq/render';
+import type { WebGPURenderOptions, WebGPURenderState, WebGPURenderStateRuntime } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
 import { warmWebGPUPipelines } from './webgpuDraw';
 import { createWebGPUBindGroupLayouts, UNIFORM_BYTE_SIZE } from './webgpuShader';
 
@@ -68,72 +72,84 @@ export async function createWebGPURenderState(
     renderTransform2D: createMatrix(),
     roundPixels: options.roundPixels ?? false,
     sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
-  }) as WebGPURenderStateInternal;
+  }) as WebGPURenderState;
 
   if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
 
   state.applyBlendMode = null;
-  state.canvas = canvas;
-  state.context = context;
-  state.device = device;
-  state.format = format;
-  state.currentBlendMode = null;
+  (state as { canvas: HTMLCanvasElement }).canvas = canvas;
+  (state as { context: GPUCanvasContext }).context = context;
+  (state as { device: GPUDevice }).device = device;
+  (state as { format: GPUTextureFormat }).format = format;
 
-  state.uniformBindGroupLayout = uniformBindGroupLayout;
-  state.textureBindGroupLayout = textureBindGroupLayout;
-  state.uniformBuffer = uniformBuffer;
-  state.uniformData = uniformData;
-  state.uniformDataU32 = uniformDataU32;
-  state.uniformOffset = 0;
-  state.uniformStride = uniformStride;
-  state.uniformBindGroup = uniformBindGroup;
-  state.matrixArray = new Float32Array(9);
+  const runtime = createWebGPURenderStateRuntime();
+  state[EntityRuntimeKey] = runtime;
+  runtime.currentBlendMode = null;
 
-  state.pipelineCache = new Map();
-  state.linearSampler = linearSampler;
-  state.nearestSampler = nearestSampler;
-  state.textureCache = new WeakMap();
-  state.defaultBitmapShader = null;
+  runtime.uniformBindGroupLayout = uniformBindGroupLayout;
+  runtime.textureBindGroupLayout = textureBindGroupLayout;
+  runtime.uniformBuffer = uniformBuffer;
+  runtime.uniformData = uniformData;
+  runtime.uniformDataU32 = uniformDataU32;
+  runtime.uniformOffset = 0;
+  runtime.uniformStride = uniformStride;
+  runtime.uniformBindGroup = uniformBindGroup;
+  runtime.matrixArray = new Float32Array(9);
 
-  state.particleInstanceBuffer = null;
-  state.particleInstanceData = null;
-  state.particleInstanceCapacity = 0;
+  runtime.pipelineCache = new Map();
+  runtime.linearSampler = linearSampler;
+  runtime.nearestSampler = nearestSampler;
+  runtime.textureCache = new WeakMap();
+  runtime.defaultBitmapShader = null;
 
-  state.spriteBatchBlendMode = null;
-  state.spriteBatchMaterial = null;
-  state.spriteBatchMaterialRenderer = null;
-  state.spriteBatchMaterialFloats = 0;
-  state.spriteBatchCount = 0;
-  state.spriteBatchInstanceData = new Float32Array(13 * 256);
-  state.spriteBatchMaterialData = new Float32Array(8 * 256);
-  state.spriteBatchTexture = null;
-  state.spriteBatchBufferPool = [];
-  state.spriteBatchBufferCursor = 0;
+  runtime.particleInstanceBuffer = null;
+  runtime.particleInstanceData = null;
+  runtime.particleInstanceCapacity = 0;
 
-  state.commandEncoder = null;
-  state.renderPass = null;
-  state.canvasTextureView = null;
-  state.canvasViewCleared = false;
+  runtime.spriteBatchBlendMode = null;
+  runtime.spriteBatchMaterial = null;
+  runtime.spriteBatchMaterialRenderer = null;
+  runtime.spriteBatchMaterialFloats = 0;
+  runtime.spriteBatchCount = 0;
+  runtime.spriteBatchInstanceData = new Float32Array(13 * 256);
+  runtime.spriteBatchMaterialData = new Float32Array(8 * 256);
+  runtime.spriteBatchTexture = null;
+  runtime.spriteBatchBufferPool = [];
+  runtime.spriteBatchBufferCursor = 0;
 
-  state.depthStencilTexture = null;
-  state.depthStencilView = null;
-  state.depthStencilWidth = 0;
-  state.depthStencilHeight = 0;
+  runtime.commandEncoder = null;
+  runtime.renderPass = null;
+  runtime.canvasTextureView = null;
+  runtime.canvasViewCleared = false;
 
-  state.currentMaskDepth = 0;
-  state.maskWriteMode = false;
-  state.clipContourPipelines = null;
-  state.clipContourStack = [];
-  state.shapeMeshPipeline = null;
+  runtime.depthStencilTexture = null;
+  runtime.depthStencilView = null;
+  runtime.depthStencilWidth = 0;
+  runtime.depthStencilHeight = 0;
 
-  state.scissorStack = [];
-  state.currentScissorRect = null;
-  state.renderTargetViewport = null;
-  state.renderTargetStack = [];
+  runtime.currentMaskDepth = 0;
+  runtime.maskWriteMode = false;
+  runtime.clipContourPipelines = null;
+  runtime.clipContourStack = [];
+  runtime.shapeMeshPipeline = null;
+  runtime.clipForms = [];
+
+  runtime.scissorStack = [];
+  runtime.currentScissorRect = null;
+  runtime.renderTargetViewport = null;
+  runtime.renderTargetStack = [];
 
   warmWebGPUPipelines(state);
 
   return state;
+}
+
+// Allocates the package-private GPU runtime for a WebGPURenderState. createWebGPURenderState attaches
+// one to each state under EntityRuntimeKey and populates its fields; getWebGPURenderStateRuntime reads
+// it back. The render path writes the returned object every frame, so the return is intentionally
+// mutable (not Readonly).
+export function createWebGPURenderStateRuntime(): WebGPURenderStateRuntime {
+  return createRenderStateRuntime() as WebGPURenderStateRuntime;
 }
 
 // Destroys the GPU buffers and textures createWebGPURenderState (and the lazy sprite-batch/particle
@@ -146,14 +162,20 @@ export async function createWebGPURenderState(
 // layouts, samplers, shader modules, texture views). textureCache is a WeakMap and cannot be
 // enumerated; its entries' textures are freed per-node by the dispose* paths.
 export function destroyWebGPURenderState(state: WebGPURenderState): void {
-  const internal = state as WebGPURenderStateInternal;
-  internal.uniformBuffer?.destroy();
-  internal.particleInstanceBuffer?.destroy();
-  internal.depthStencilTexture?.destroy();
-  for (const slot of internal.spriteBatchBufferPool) {
+  const runtime = getWebGPURenderStateRuntime(state);
+  runtime.uniformBuffer?.destroy();
+  runtime.particleInstanceBuffer?.destroy();
+  runtime.depthStencilTexture?.destroy();
+  for (const slot of runtime.spriteBatchBufferPool) {
     slot.instanceBuffer?.destroy();
     slot.materialBuffer?.destroy();
   }
+}
+
+// Resolves the package-private GPU runtime attached to a WebGPURenderState. Mutable by design: the
+// render path writes its fields every frame.
+export function getWebGPURenderStateRuntime(state: WebGPURenderState): WebGPURenderStateRuntime {
+  return state[EntityRuntimeKey] as WebGPURenderStateRuntime;
 }
 
 export function isWebGPUSupported(): boolean {

@@ -2,12 +2,11 @@ import { getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { getRenderProxy2D, isRenderProxyVisible } from '@flighthq/render';
 import type { DisplayObject, WebGLRenderState } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 export function renderWebGLSprite(state: WebGLRenderState, source: DisplayObject): void {
-  const internal = state as WebGLRenderStateInternal;
-  const tempStack = state.tempStack;
+  const tempStack = getWebGLRenderStateRuntime(state).tempStack;
   let stackLength = 1;
   tempStack[0] = source;
 
@@ -17,7 +16,7 @@ export function renderWebGLSprite(state: WebGLRenderState, source: DisplayObject
     const data = getRenderProxy2D(state, current);
     if (data === undefined || !isRenderProxyVisible(data)) continue;
 
-    data.renderer?.submit(internal, data);
+    data.renderer?.submit(state, data);
 
     if (data.traverseChildren) {
       const children = getDisplayObjectRuntime(current).children;
@@ -29,5 +28,5 @@ export function renderWebGLSprite(state: WebGLRenderState, source: DisplayObject
     }
   }
 
-  flushWebGLSpriteBatch(internal);
+  flushWebGLSpriteBatch(state);
 }

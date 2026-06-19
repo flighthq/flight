@@ -1,8 +1,9 @@
 import type { Material, UniformColorTransformMaterial, WebGLMaterialRenderer, WebGLRenderState } from '@flighthq/types';
 import { UniformColorTransformMaterialKind } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal, WebGLUniformColorTransformShader } from './internal';
+import type { WebGLUniformColorTransformShader } from './internal';
 import { registerWebGLMaterialRenderer } from './webglMaterialRegistry';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import {
   bindWebGLQuadBatchBaseAttributes,
   QUAD_BATCH_VS,
@@ -26,8 +27,9 @@ void main() {
   fragColor = vec4(color.rgb * color.a, color.a);
 }`;
 
-function ensureWebGLUniformColorTransformShader(state: WebGLRenderStateInternal): WebGLUniformColorTransformShader {
-  if (state.uniformColorTransformShader) return state.uniformColorTransformShader;
+function ensureWebGLUniformColorTransformShader(state: WebGLRenderState): WebGLUniformColorTransformShader {
+  const runtime = getWebGLRenderStateRuntime(state);
+  if (runtime.uniformColorTransformShader) return runtime.uniformColorTransformShader;
 
   const gl = state.gl;
   const vs = gl.createShader(gl.VERTEX_SHADER)!;
@@ -43,7 +45,7 @@ function ensureWebGLUniformColorTransformShader(state: WebGLRenderStateInternal)
   gl.deleteShader(vs);
   gl.deleteShader(fs);
 
-  state.uniformColorTransformShader = {
+  runtime.uniformColorTransformShader = {
     program,
     locCorner: 0,
     locWorldMatrix: gl.getUniformLocation(program, 'u_world')!,
@@ -51,7 +53,7 @@ function ensureWebGLUniformColorTransformShader(state: WebGLRenderStateInternal)
     locColorMultiplier: gl.getUniformLocation(program, 'u_ctMult')!,
     locColorOffset: gl.getUniformLocation(program, 'u_ctOff')!,
   };
-  return state.uniformColorTransformShader;
+  return runtime.uniformColorTransformShader;
 }
 
 export function registerWebGLUniformColorTransformMaterial(state: WebGLRenderState): void {
@@ -64,12 +66,11 @@ export function registerWebGLUniformColorTransformMaterial(state: WebGLRenderSta
 export const uniformColorTransformWebGLMaterialRenderer: WebGLMaterialRenderer = {
   instanceFloatCount: 0,
   bind(state: WebGLRenderState, material: Readonly<Material> | null): void {
-    const internal = state as WebGLRenderStateInternal;
-    const shader = ensureWebGLUniformColorTransformShader(internal);
-    useWebGLQuadBatchProgram(internal, shader.program);
-    setWebGLQuadBatchWorldAndTexture(internal, shader.locWorldMatrix, shader.locTexture);
+    const shader = ensureWebGLUniformColorTransformShader(state);
+    useWebGLQuadBatchProgram(state, shader.program);
+    setWebGLQuadBatchWorldAndTexture(state, shader.locWorldMatrix, shader.locTexture);
 
-    const gl = internal.gl;
+    const gl = state.gl;
     const ct = (material as UniformColorTransformMaterial).colorTransform;
     gl.uniform4f(
       shader.locColorMultiplier,
@@ -85,6 +86,6 @@ export const uniformColorTransformWebGLMaterialRenderer: WebGLMaterialRenderer =
       ct.blueOffset / 255,
       ct.alphaOffset / 255,
     );
-    bindWebGLQuadBatchBaseAttributes(internal, shader.locCorner);
+    bindWebGLQuadBatchBaseAttributes(state, shader.locCorner);
   },
 };

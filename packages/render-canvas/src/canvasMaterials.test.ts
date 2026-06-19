@@ -2,7 +2,7 @@ import type { CanvasRenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { applyCanvasBlendMode, enableCanvasBlendModeSupport } from './canvasMaterials';
-import { createCanvasRenderState } from './canvasRenderState';
+import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasRenderState';
 
 describe('applyCanvasBlendMode', () => {
   let canvas: HTMLCanvasElement;
@@ -14,7 +14,7 @@ describe('applyCanvasBlendMode', () => {
   });
 
   it('should not change globalCompositeOperation if blend mode is the same', () => {
-    state.currentBlendMode = BlendMode.Lighten;
+    getCanvasRenderStateRuntime(state).currentBlendMode = BlendMode.Lighten;
     state.context.globalCompositeOperation = 'lighter'; // Pre-set value
     applyCanvasBlendMode(state, BlendMode.Add);
     expect(state.context.globalCompositeOperation).toBe('lighter');

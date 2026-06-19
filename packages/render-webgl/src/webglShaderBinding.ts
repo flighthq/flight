@@ -1,7 +1,7 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import type { DisplayObject, RenderProxy2D, WebGLRenderState } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import type { WebGLBitmapShader } from './webglShaderTypes';
 
 // Per-state shader bindings, keyed by the render node. Because render nodes are
@@ -12,7 +12,7 @@ import type { WebGLBitmapShader } from './webglShaderTypes';
 const _shaderBindings = new WeakMap<RenderProxy2D, WebGLBitmapShader>();
 
 export function getWebGLMaterialShader(state: WebGLRenderState, kind: symbol): WebGLBitmapShader | null {
-  return (state as WebGLRenderStateInternal).materialBitmapShaderMap?.get(kind) ?? null;
+  return getWebGLRenderStateRuntime(state).materialBitmapShaderMap?.get(kind) ?? null;
 }
 
 export function getWebGLShader(renderProxy: RenderProxy2D): WebGLBitmapShader | undefined {
@@ -23,8 +23,8 @@ export function getWebGLShader(renderProxy: RenderProxy2D): WebGLBitmapShader | 
 // generic: resolveWebGLShader looks shaders up by material kind and knows nothing about which kinds
 // mean what. Material-specific knowledge (e.g. color transform) lives in the shader + this call.
 export function registerWebGLMaterialShader(state: WebGLRenderState, kind: symbol, shader: WebGLBitmapShader): void {
-  const internal = state as WebGLRenderStateInternal;
-  (internal.materialBitmapShaderMap ??= new Map()).set(kind, shader);
+  const runtime = getWebGLRenderStateRuntime(state);
+  (runtime.materialBitmapShaderMap ??= new Map()).set(kind, shader);
 }
 
 /**
@@ -33,18 +33,19 @@ export function registerWebGLMaterialShader(state: WebGLRenderState, kind: symbo
  * The per-node lookup is reached only through the installed resolver, so it (and
  * the binding map) stay off the hot path and tree-shake until setWebGLShader is used.
  */
-export function resolveWebGLShader(state: WebGLRenderStateInternal, renderProxy: RenderProxy2D): WebGLBitmapShader {
-  const resolver = state.webglShaderBindingResolver;
+export function resolveWebGLShader(state: WebGLRenderState, renderProxy: RenderProxy2D): WebGLBitmapShader {
+  const runtime = getWebGLRenderStateRuntime(state);
+  const resolver = runtime.webglShaderBindingResolver;
   if (resolver !== undefined) {
     const shader = resolver(renderProxy);
     if (shader !== undefined) return shader;
   }
   const material = renderProxy.material;
   if (material !== null) {
-    const shader = state.materialBitmapShaderMap?.get(material.kind);
+    const shader = runtime.materialBitmapShaderMap?.get(material.kind);
     if (shader !== undefined) return shader;
   }
-  return state.defaultBitmapShader;
+  return runtime.defaultBitmapShader;
 }
 
 /**
@@ -61,5 +62,5 @@ export function setWebGLShader(state: WebGLRenderState, node: DisplayObject, sha
     return;
   }
   _shaderBindings.set(renderProxy, shader);
-  (state as WebGLRenderStateInternal).webglShaderBindingResolver = getWebGLShader;
+  getWebGLRenderStateRuntime(state).webglShaderBindingResolver = getWebGLShader;
 }

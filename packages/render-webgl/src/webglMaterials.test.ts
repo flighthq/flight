@@ -1,6 +1,7 @@
 import { ColorTransformMaterialKind, UniformColorTransformMaterialKind } from '@flighthq/types';
 
 import { getWebGLRenderProxyColorTransform, registerWebGLColorTransformShader } from './webglMaterials';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { makeWebGLState } from './webglTestHelper';
 
 describe('getWebGLRenderProxyColorTransform', () => {
@@ -27,7 +28,7 @@ describe('registerWebGLColorTransformShader', () => {
 
     registerWebGLColorTransformShader(state);
 
-    expect(state.colorTransformBitmapShader).toBeDefined();
+    expect(getWebGLRenderStateRuntime(state).colorTransformBitmapShader).toBeDefined();
   });
 
   it('does not make the color transform shader the state default shader', () => {
@@ -35,7 +36,8 @@ describe('registerWebGLColorTransformShader', () => {
 
     registerWebGLColorTransformShader(state);
 
-    expect(state.defaultBitmapShader).not.toBe(state.colorTransformBitmapShader);
+    const runtime = getWebGLRenderStateRuntime(state);
+    expect(runtime.defaultBitmapShader).not.toBe(runtime.colorTransformBitmapShader);
   });
 
   it('includes color transform uniform locations', () => {
@@ -43,9 +45,10 @@ describe('registerWebGLColorTransformShader', () => {
 
     registerWebGLColorTransformShader(state);
 
-    expect(state.colorTransformBitmapShader?.locations.locColorMultiplier).toBeDefined();
-    expect(state.colorTransformBitmapShader?.locations.locColorOffset).toBeDefined();
-    expect(state.colorTransformBitmapShader?.locations.locHasColorTransform).toBeDefined();
+    const runtime = getWebGLRenderStateRuntime(state);
+    expect(runtime.colorTransformBitmapShader?.locations.locColorMultiplier).toBeDefined();
+    expect(runtime.colorTransformBitmapShader?.locations.locColorOffset).toBeDefined();
+    expect(runtime.colorTransformBitmapShader?.locations.locHasColorTransform).toBeDefined();
   });
 
   it('binds color transform uniforms from the node material data', () => {
@@ -67,9 +70,10 @@ describe('registerWebGLColorTransformShader', () => {
     };
 
     registerWebGLColorTransformShader(state);
-    state.colorTransformBitmapShader!.bind(gl, state, renderProxy as never);
+    const runtime = getWebGLRenderStateRuntime(state);
+    runtime.colorTransformBitmapShader!.bind(gl, state, renderProxy as never);
 
-    const loc = state.colorTransformBitmapShader!.locations;
+    const loc = runtime.colorTransformBitmapShader!.locations;
     expect(gl.uniform1i).toHaveBeenCalledWith(loc.locHasColorTransform, 1);
     expect(gl.uniform4f).toHaveBeenCalledWith(loc.locColorMultiplier, 0.5, 0.25, 1.5, 0.8);
     expect(gl.uniform4f).toHaveBeenCalledWith(loc.locColorOffset, 10 / 255, 20 / 255, 30 / 255, 40 / 255);
@@ -79,9 +83,9 @@ describe('registerWebGLColorTransformShader', () => {
     const { state } = makeWebGLState();
 
     registerWebGLColorTransformShader(state);
-    const first = state.colorTransformBitmapShader;
+    const first = getWebGLRenderStateRuntime(state).colorTransformBitmapShader;
     registerWebGLColorTransformShader(state);
 
-    expect(state.colorTransformBitmapShader).toBe(first);
+    expect(getWebGLRenderStateRuntime(state).colorTransformBitmapShader).toBe(first);
   });
 });

@@ -1,6 +1,6 @@
-import type { RenderProxy2D } from '@flighthq/types';
+import type { RenderProxy2D, WebGLRenderState } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 // GPU tessellated solid-fill path for Shape — the replacement for the canvas-raster-to-texture shortcut
@@ -21,17 +21,18 @@ export interface WebGLShapeMesh {
 // by the clip hooks is left untouched). Records the mesh program as currentProgram so the next content
 // draw re-binds its own program (same hazard the clip path guards against).
 export function drawWebGLShapeMeshes(
-  state: WebGLRenderStateInternal,
+  state: WebGLRenderState,
   renderProxy: RenderProxy2D,
   meshes: readonly WebGLShapeMesh[],
 ): void {
   if (meshes.length === 0) return;
+  const runtime = getWebGLRenderStateRuntime(state);
   flushWebGLSpriteBatch(state);
 
   const gl = state.gl;
   const program = ensureShapeMeshProgram(state);
   gl.useProgram(program.program);
-  state.currentProgram = program.program;
+  runtime.currentProgram = program.program;
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
   gl.uniformMatrix3fv(program.matrixLocation, false, shapeMeshMatrix(state, renderProxy));
@@ -86,7 +87,7 @@ void main() { gl_FragColor = u_color; }
 
 const shapeMeshPrograms = new WeakMap<WebGLRenderingContext, ShapeMeshProgram>();
 
-function ensureShapeMeshProgram(state: WebGLRenderStateInternal): ShapeMeshProgram {
+function ensureShapeMeshProgram(state: WebGLRenderState): ShapeMeshProgram {
   const gl = state.gl;
   const existing = shapeMeshPrograms.get(gl);
   if (existing !== undefined) return existing;
@@ -120,8 +121,8 @@ function compileShapeMeshProgram(gl: WebGLRenderingContext): WebGLProgram {
 
 // Column-major mat3 = projection · world transform, mapping shape-local points to clip space — identical
 // to the sprite batch's projection so the mesh aligns with everything else.
-function shapeMeshMatrix(state: WebGLRenderStateInternal, renderProxy: RenderProxy2D): Float32Array {
-  const viewport = state.renderTargetViewport ?? state.canvas;
+function shapeMeshMatrix(state: WebGLRenderState, renderProxy: RenderProxy2D): Float32Array {
+  const viewport = getWebGLRenderStateRuntime(state).renderTargetViewport ?? state.canvas;
   const iw = 2 / (viewport.width || 1);
   const ih = 2 / (viewport.height || 1);
   const t = renderProxy.transform2D;

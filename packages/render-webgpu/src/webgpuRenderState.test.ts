@@ -1,4 +1,9 @@
-import { destroyWebGPURenderState, isWebGPUSupported } from './webgpuRenderState';
+import {
+  createWebGPURenderStateRuntime,
+  destroyWebGPURenderState,
+  getWebGPURenderStateRuntime,
+  isWebGPUSupported,
+} from './webgpuRenderState';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
 
 beforeAll(() => {
@@ -8,8 +13,8 @@ beforeAll(() => {
 describe('createWebGPURenderState', () => {
   it('returns a render state with device and context', async () => {
     const state = await createWebGPURenderStateForTest();
-    expect((state as never as { device: unknown }).device).toBeDefined();
-    expect((state as never as { context: unknown }).context).toBeDefined();
+    expect(state.device).toBeDefined();
+    expect(state.context).toBeDefined();
   });
 
   it('sets allowSmoothing to true by default', async () => {
@@ -19,10 +24,10 @@ describe('createWebGPURenderState', () => {
 
   it('initialises uniform ring buffer', async () => {
     const state = await createWebGPURenderStateForTest();
-    const internal = state as never as { uniformBuffer: unknown; uniformData: Float32Array; uniformOffset: number };
-    expect(internal.uniformBuffer).toBeDefined();
-    expect(internal.uniformData).toBeInstanceOf(Float32Array);
-    expect(internal.uniformOffset).toBe(0);
+    const runtime = getWebGPURenderStateRuntime(state);
+    expect(runtime.uniformBuffer).toBeDefined();
+    expect(runtime.uniformData).toBeInstanceOf(Float32Array);
+    expect(runtime.uniformOffset).toBe(0);
   });
 
   it('stores the canvas', async () => {
@@ -32,17 +37,24 @@ describe('createWebGPURenderState', () => {
 
   it('starts with null renderPass and commandEncoder', async () => {
     const state = await createWebGPURenderStateForTest();
-    const internal = state as never as { renderPass: unknown; commandEncoder: unknown };
-    expect(internal.renderPass).toBeNull();
-    expect(internal.commandEncoder).toBeNull();
+    const runtime = getWebGPURenderStateRuntime(state);
+    expect(runtime.renderPass).toBeNull();
+    expect(runtime.commandEncoder).toBeNull();
+  });
+});
+
+describe('createWebGPURenderStateRuntime', () => {
+  it('returns a runtime carrying the base entity-runtime binding slot', () => {
+    const runtime = createWebGPURenderStateRuntime();
+    expect(runtime.binding).toBeNull();
   });
 });
 
 describe('destroyWebGPURenderState', () => {
   it('destroys the state-owned uniform buffer', async () => {
     const state = await createWebGPURenderStateForTest();
-    const internal = state as never as { uniformBuffer: GPUBuffer };
-    const destroy = vi.spyOn(internal.uniformBuffer, 'destroy');
+    const runtime = getWebGPURenderStateRuntime(state);
+    const destroy = vi.spyOn(runtime.uniformBuffer, 'destroy');
 
     destroyWebGPURenderState(state);
 
@@ -52,6 +64,20 @@ describe('destroyWebGPURenderState', () => {
   it('does not throw on a fresh state with no lazily-created buffers', async () => {
     const state = await createWebGPURenderStateForTest();
     expect(() => destroyWebGPURenderState(state)).not.toThrow();
+  });
+});
+
+describe('getWebGPURenderStateRuntime', () => {
+  it('returns the runtime attached by createWebGPURenderState', async () => {
+    const state = await createWebGPURenderStateForTest();
+    const runtime = getWebGPURenderStateRuntime(state);
+    expect(runtime).toBeDefined();
+    expect(runtime.uniformBuffer).toBeDefined();
+  });
+
+  it('resolves the same runtime object on repeated calls', async () => {
+    const state = await createWebGPURenderStateForTest();
+    expect(getWebGPURenderStateRuntime(state)).toBe(getWebGPURenderStateRuntime(state));
   });
 });
 

@@ -1,4 +1,4 @@
-import type { WebGLRenderStateInternal, WebGLRenderTarget } from '@flighthq/render-webgl';
+import type { WebGLRenderTarget } from '@flighthq/render-webgl';
 import type { MedianFilter } from '@flighthq/types';
 import type { WebGLRenderState } from '@flighthq/types';
 
@@ -94,7 +94,7 @@ export function applyMedianFilterToWebGL(
 function getShader(state: WebGLRenderState): MedianShaderLocations {
   let loc = shaders.get(state);
   if (loc === undefined) {
-    const gl = (state as WebGLRenderStateInternal).gl;
+    const gl = state.gl;
     const base = compileWebGLFilterProgram(gl, MEDIAN_FRAGMENT_SRC);
     loc = {
       ...base,

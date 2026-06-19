@@ -3,6 +3,7 @@ import { BatchFormat } from '@flighthq/types';
 
 import { defaultWebGLBitmapRenderer, drawWebGLBitmap } from './webglBitmap';
 import { registerDefaultWebGLMaterial } from './webglDefaultMaterial';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 import { makeWebGLState } from './webglTestHelper';
 
@@ -49,14 +50,14 @@ describe('drawWebGLBitmap', () => {
     const { state } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     drawWebGLBitmap(state, makeRenderProxy(null));
-    expect(state.spriteBatchCount).toBe(0);
+    expect(getWebGLRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('returns early without writing to batch when image.source is null', () => {
     const { state } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     drawWebGLBitmap(state, makeRenderProxy(makeImageResource(null)));
-    expect(state.spriteBatchCount).toBe(0);
+    expect(getWebGLRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('writes one instance to the sprite batch when image is valid', () => {
@@ -64,7 +65,7 @@ describe('drawWebGLBitmap', () => {
     registerDefaultWebGLMaterial(state);
     const img = document.createElement('img');
     drawWebGLBitmap(state, makeRenderProxy(makeImageResource(img, 32, 32)));
-    expect(state.spriteBatchCount).toBe(1);
+    expect(getWebGLRenderStateRuntime(state).spriteBatchCount).toBe(1);
   });
 
   it('draws via drawElementsInstanced after flush', () => {
@@ -81,7 +82,7 @@ describe('drawWebGLBitmap', () => {
     registerDefaultWebGLMaterial(state);
     const img = document.createElement('img');
     drawWebGLBitmap(state, makeRenderProxy(makeImageResource(img, 64, 48)));
-    const d = state.spriteBatchInstanceData;
+    const d = getWebGLRenderStateRuntime(state).spriteBatchInstanceData;
     expect(d[0]).toBe(1); // a
     expect(d[1]).toBe(0); // b
     expect(d[2]).toBe(0); // c
@@ -116,7 +117,7 @@ describe('drawWebGLBitmap', () => {
       },
     } as unknown as RenderProxy2D;
     drawWebGLBitmap(state, proxy);
-    const d = state.spriteBatchInstanceData;
+    const d = getWebGLRenderStateRuntime(state).spriteBatchInstanceData;
     expect(d[6]).toBe(32); // width = sr.width
     expect(d[7]).toBe(16); // height = sr.height
     expect(d[8]).toBeCloseTo(16 / 128); // u0

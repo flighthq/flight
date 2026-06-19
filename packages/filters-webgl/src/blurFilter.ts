@@ -1,5 +1,5 @@
 import { computeBoxBlurPassRadius } from '@flighthq/filters';
-import type { WebGLRenderStateInternal, WebGLRenderTarget } from '@flighthq/render-webgl';
+import type { WebGLRenderTarget } from '@flighthq/render-webgl';
 import type { WebGLRenderState } from '@flighthq/types';
 
 import type { WebGLFilterLocations } from './filterPass';
@@ -200,7 +200,7 @@ function applyGaussianBlurPass(
 function getBoxBlurShader(state: WebGLRenderState): BoxBlurShaderLocations {
   let loc = boxBlurShaders.get(state);
   if (loc === undefined) {
-    const gl = (state as WebGLRenderStateInternal).gl;
+    const gl = state.gl;
     const base = compileWebGLFilterProgram(gl, BOX_BLUR_FRAGMENT_SRC);
     loc = {
       ...base,
@@ -216,7 +216,7 @@ function getBoxBlurShader(state: WebGLRenderState): BoxBlurShaderLocations {
 function getGaussianBlurShader(state: WebGLRenderState): GaussianBlurShaderLocations {
   let loc = gaussianBlurShaders.get(state);
   if (loc === undefined) {
-    const gl = (state as WebGLRenderStateInternal).gl;
+    const gl = state.gl;
     const base = compileWebGLFilterProgram(gl, GAUSSIAN_BLUR_FRAGMENT_SRC);
     loc = {
       ...base,

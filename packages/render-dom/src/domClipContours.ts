@@ -1,25 +1,13 @@
-import type { Matrix, PathWinding } from '@flighthq/types';
+import type { DOMClipContourEntry, Matrix, PathWinding } from '@flighthq/types';
 
 // DOM contour clip via CSS clip-path. Unlike WebGL/WebGPU stencil, the DOM realizes a path clip as a
 // `clip-path` on the masked element(s). Crisp (vector), honors winding via `clip-rule`. Replaces the
-// former domMask bounding-rectangle approximation for path clips.
-//
-// MODEL: the existing DOM clip stack (`domClipStack`) holds stage-space rectangles intersected into one
-// clip-path polygon per element. A contour clip is a new stack entry kind. RECONCILE: change the stack
-// element type to a tagged union { kind:'rect', ... } | { kind:'contour', points, winding }, and have
-// applyDOMClipRectangles emit `polygon()`/`path()` for contour entries.
+// former domMask bounding-rectangle approximation for path clips. DOMClipContourEntry is the stack
+// entry kind; applyDOMClipRectangles emits `polygon()`/`path()` for it.
 //
 // LIMITATION (documented): CSS cannot intersect a path clip with other clips in one property. When a
 // contour clip is active, apply it directly and ignore stacked rects for that element (v1), or nest one
-// clip-path per clipping wrapper element (preferred, more DOM churn). UNVERIFIED — authored during a
-// tooling outage.
-
-export interface DOMClipContourEntry {
-  kind: 'contour';
-  // Contour points already transformed to stage space (apply() then maps to each element's local space).
-  contours: number[][];
-  winding: PathWinding;
-}
+// clip-path per clipping wrapper element (preferred, more DOM churn).
 
 // Builds a CSS clip-path value from stage-space contours mapped into one element's local space.
 // `elementInverse` maps stage space -> element local (reuse getElementMatrix + invert from

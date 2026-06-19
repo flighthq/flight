@@ -7,7 +7,7 @@
 } from '@flighthq/types';
 import { ColorTransformMaterialKind, UniformColorTransformMaterialKind } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { setWebGLAttributes, setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
 import { registerWebGLMaterialShader } from './webglShaderBinding';
 import type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
@@ -31,12 +31,12 @@ export function getWebGLRenderProxyColorTransform(renderProxy: Readonly<RenderPr
 // become the default shader — resolveWebGLShader selects it only for nodes whose material is a color
 // transform, so the standard pipeline pays nothing for it.
 export function registerWebGLColorTransformShader(state: WebGLRenderState): void {
-  const internal = state as WebGLRenderStateInternal;
-  if (internal.colorTransformBitmapShader !== undefined) return;
+  const runtime = getWebGLRenderStateRuntime(state);
+  if (runtime.colorTransformBitmapShader !== undefined) return;
 
-  const shaderLoc = compileWebGLColorTransformProgram(internal.gl);
-  const shader = createWebGLColorTransformBitmapShader(shaderLoc, internal.matrixArray);
-  internal.colorTransformBitmapShader = shader;
+  const shaderLoc = compileWebGLColorTransformProgram(state.gl);
+  const shader = createWebGLColorTransformBitmapShader(shaderLoc, runtime.matrixArray);
+  runtime.colorTransformBitmapShader = shader;
   registerWebGLMaterialShader(state, ColorTransformMaterialKind, shader);
   registerWebGLMaterialShader(state, UniformColorTransformMaterialKind, shader);
 }
@@ -90,7 +90,7 @@ function createWebGLColorTransformBitmapShader(
         shaderLoc,
         matrixArray,
         renderProxy.transform2D,
-        (state as WebGLRenderStateInternal).renderTargetViewport ?? state.canvas,
+        getWebGLRenderStateRuntime(state).renderTargetViewport ?? state.canvas,
       );
       setWebGLBaseUniforms(gl, shaderLoc, renderProxy);
       setWebGLColorTransformUniforms(gl, shaderLoc, renderProxy);

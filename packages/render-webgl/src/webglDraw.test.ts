@@ -10,13 +10,14 @@ import {
   updateWebGLTexture,
   useWebGLProgram,
 } from './webglDraw';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { registerWebGLBitmapShader } from './webglShaderRegistry';
 import { makeWebGLState } from './webglTestHelper';
 
 describe('applyWebGLBlendMode', () => {
   it('does not call blendFunc when blend mode has not changed', () => {
     const { state, gl } = makeWebGLState();
-    state.currentBlendMode = BlendMode.Normal;
+    getWebGLRenderStateRuntime(state).currentBlendMode = BlendMode.Normal;
     applyWebGLBlendMode(state, BlendMode.Normal);
     expect(gl.blendFunc).not.toHaveBeenCalled();
   });
@@ -45,7 +46,7 @@ describe('applyWebGLBlendMode', () => {
   it('updates currentBlendMode after the change', () => {
     const { state } = makeWebGLState();
     applyWebGLBlendMode(state, BlendMode.Add);
-    expect(state.currentBlendMode).toBe(BlendMode.Add);
+    expect(getWebGLRenderStateRuntime(state).currentBlendMode).toBe(BlendMode.Add);
   });
 
   it('calls blendFunc again when mode switches', () => {
@@ -115,10 +116,11 @@ describe('bindWebGLTexture', () => {
     const { state, gl } = makeWebGLState();
     const img = document.createElement('img');
     const texture = bindWebGLTexture(state, img);
-    state.currentTexture = null;
+    const runtime = getWebGLRenderStateRuntime(state);
+    runtime.currentTexture = null;
     bindWebGLTexture(state, img);
     expect(gl.bindTexture).toHaveBeenCalledWith((gl as unknown as { TEXTURE_2D: number }).TEXTURE_2D, texture);
-    expect(state.currentTexture).toBe(texture);
+    expect(runtime.currentTexture).toBe(texture);
   });
 });
 
@@ -177,7 +179,7 @@ describe('createWebGLTexture', () => {
   it('stores the new texture as currentTexture on state', () => {
     const { state } = makeWebGLState();
     const texture = createWebGLTexture(state);
-    expect(state.currentTexture).toBe(texture);
+    expect(getWebGLRenderStateRuntime(state).currentTexture).toBe(texture);
   });
 });
 
@@ -185,7 +187,7 @@ describe('drawWebGLQuad', () => {
   it('writes vertex positions and UVs into quadVertexData', () => {
     const { state } = makeWebGLState();
     drawWebGLQuad(state, 0, 0, 100, 50, 0, 0, 1, 1);
-    const v = state.quadVertexData;
+    const v = getWebGLRenderStateRuntime(state).quadVertexData;
     // Bottom-left
     expect(v[0]).toBe(0);
     expect(v[1]).toBe(0);
@@ -214,7 +216,7 @@ describe('drawWebGLQuad', () => {
     expect(gl.bufferSubData).toHaveBeenCalledWith(
       (gl as unknown as { ARRAY_BUFFER: number }).ARRAY_BUFFER,
       0,
-      state.quadVertexData,
+      getWebGLRenderStateRuntime(state).quadVertexData,
     );
   });
 
@@ -246,12 +248,13 @@ describe('setWebGLQuadMatrixFromOffset', () => {
   it('bakes the offset into the translation before setting the matrix', () => {
     const { state, gl } = makeWebGLState();
     // Identity transform + offset (dx=10, dy=20): effective tx = 0 + 1*10 + 0*20 = 10
+    const runtime = getWebGLRenderStateRuntime(state);
     setWebGLQuadMatrixFromOffset(state, 1, 0, 0, 1, 0, 0, 10, 20);
-    expect(gl.uniformMatrix3fv).toHaveBeenCalledWith(state.shaderLoc.locMatrix, false, state.matrixArray);
+    expect(gl.uniformMatrix3fv).toHaveBeenCalledWith(runtime.shaderLoc.locMatrix, false, runtime.matrixArray);
     // tx * 2/200 - 1 = 10 * 0.01 - 1 = -0.9
-    expect(state.matrixArray[6]).toBeCloseTo(-0.9);
+    expect(runtime.matrixArray[6]).toBeCloseTo(-0.9);
     // -ty * 2/100 + 1 = -20 * 0.02 + 1 = 0.6
-    expect(state.matrixArray[7]).toBeCloseTo(0.6);
+    expect(runtime.matrixArray[7]).toBeCloseTo(0.6);
   });
 
   it('applies the offset through the transform matrix components', () => {
@@ -259,7 +262,7 @@ describe('setWebGLQuadMatrixFromOffset', () => {
     // Scale-2 transform with offset (dx=5, dy=0): effective tx = 0 + 2*5 + 0*0 = 10
     setWebGLQuadMatrixFromOffset(state, 2, 0, 0, 2, 0, 0, 5, 0);
     // tx * 2/200 - 1 = 10 * 0.01 - 1 = -0.9
-    expect(state.matrixArray[6]).toBeCloseTo(-0.9);
+    expect(getWebGLRenderStateRuntime(state).matrixArray[6]).toBeCloseTo(-0.9);
   });
 });
 
@@ -268,7 +271,7 @@ describe('updateWebGLTexture', () => {
     const { state, gl } = makeWebGLState();
     const texture = {} as WebGLTexture;
     const canvas = document.createElement('canvas');
-    state.currentTexture = null;
+    getWebGLRenderStateRuntime(state).currentTexture = null;
     updateWebGLTexture(state, texture, canvas);
     expect(gl.bindTexture).toHaveBeenCalledWith((gl as unknown as { TEXTURE_2D: number }).TEXTURE_2D, texture);
   });
@@ -276,17 +279,18 @@ describe('updateWebGLTexture', () => {
   it('updates currentTexture after binding', () => {
     const { state } = makeWebGLState();
     const texture = {} as WebGLTexture;
-    state.currentTexture = null;
+    const runtime = getWebGLRenderStateRuntime(state);
+    runtime.currentTexture = null;
     updateWebGLTexture(state, {} as WebGLTexture, document.createElement('canvas'));
     updateWebGLTexture(state, texture, document.createElement('canvas'));
     // The last call should have updated currentTexture
-    expect(state.currentTexture).toBe(texture);
+    expect(runtime.currentTexture).toBe(texture);
   });
 
   it('skips bindTexture when texture is already current', () => {
     const { state, gl } = makeWebGLState();
     const texture = {} as WebGLTexture;
-    state.currentTexture = texture;
+    getWebGLRenderStateRuntime(state).currentTexture = texture;
     updateWebGLTexture(state, texture, document.createElement('canvas'));
     expect(gl.bindTexture).not.toHaveBeenCalled();
   });
@@ -294,7 +298,7 @@ describe('updateWebGLTexture', () => {
   it('always calls texImage2D to upload canvas data', () => {
     const { state, gl } = makeWebGLState();
     const texture = {} as WebGLTexture;
-    state.currentTexture = texture;
+    getWebGLRenderStateRuntime(state).currentTexture = texture;
     updateWebGLTexture(state, texture, document.createElement('canvas'));
     expect(gl.texImage2D).toHaveBeenCalled();
   });
@@ -302,7 +306,7 @@ describe('updateWebGLTexture', () => {
   it('sets premultiply alpha before uploading', () => {
     const { state, gl } = makeWebGLState();
     const texture = {} as WebGLTexture;
-    state.currentTexture = texture;
+    getWebGLRenderStateRuntime(state).currentTexture = texture;
     updateWebGLTexture(state, texture, document.createElement('canvas'));
     expect(gl.pixelStorei).toHaveBeenCalledWith(
       (gl as unknown as { UNPACK_PREMULTIPLY_ALPHA_WEBGL: number }).UNPACK_PREMULTIPLY_ALPHA_WEBGL,
@@ -314,30 +318,34 @@ describe('updateWebGLTexture', () => {
 describe('useWebGLProgram', () => {
   it('calls useProgram when no program is active', () => {
     const { state, gl } = makeWebGLState();
-    state.currentProgram = null;
+    const runtime = getWebGLRenderStateRuntime(state);
+    runtime.currentProgram = null;
     useWebGLProgram(state);
-    expect(gl.useProgram).toHaveBeenCalledWith(state.shaderLoc.program);
+    expect(gl.useProgram).toHaveBeenCalledWith(runtime.shaderLoc.program);
   });
 
   it('does not call useProgram when program is already active', () => {
     const { state, gl } = makeWebGLState();
-    state.currentProgram = state.shaderLoc.program;
+    const runtime = getWebGLRenderStateRuntime(state);
+    runtime.currentProgram = runtime.shaderLoc.program;
     useWebGLProgram(state);
     expect(gl.useProgram).not.toHaveBeenCalled();
   });
 
   it('stores the program as currentProgram after activation', () => {
     const { state } = makeWebGLState();
-    state.currentProgram = null;
+    const runtime = getWebGLRenderStateRuntime(state);
+    runtime.currentProgram = null;
     useWebGLProgram(state);
-    expect(state.currentProgram).toBe(state.shaderLoc.program);
+    expect(runtime.currentProgram).toBe(runtime.shaderLoc.program);
   });
 
   it('uses the registered bitmap shader program and locations', () => {
     const { state, gl } = makeWebGLState();
+    const runtime = getWebGLRenderStateRuntime(state);
     const shader = {
       bind: vi.fn(),
-      locations: { ...state.shaderLoc, program: {} as WebGLProgram },
+      locations: { ...runtime.shaderLoc, program: {} as WebGLProgram },
       program: {} as WebGLProgram,
     };
     shader.locations.program = shader.program;
@@ -346,7 +354,7 @@ describe('useWebGLProgram', () => {
     useWebGLProgram(state);
 
     expect(gl.useProgram).toHaveBeenCalledWith(shader.program);
-    expect(state.shaderLoc).toBe(shader.locations);
-    expect(state.currentProgram).toBe(shader.program);
+    expect(runtime.shaderLoc).toBe(shader.locations);
+    expect(runtime.currentProgram).toBe(shader.program);
   });
 });

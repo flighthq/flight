@@ -1,7 +1,8 @@
-import type { BlendMode, Material, MaterialData, WebGLMaterialRenderer } from '@flighthq/types';
+import type { BlendMode, Material, MaterialData, WebGLMaterialRenderer, WebGLRenderState } from '@flighthq/types';
 
-import type { WebGLQuadBatchShader, WebGLRenderStateInternal } from './internal';
+import type { WebGLQuadBatchShader } from './internal';
 import { bindWebGLTexture } from './webglDraw';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 
 // Base per-instance layout (13 floats = 52 bytes, world-space transforms + per-instance alpha):
 // [0-1]  a, b         — world-space 2D matrix column 1
@@ -90,15 +91,16 @@ function compileSpriteBatchShader(gl: WebGL2RenderingContext): WebGLQuadBatchSha
 // Binds the corner buffer (location `locCorner`, divisor 0) and the base instance attributes
 // (locations 1-6, divisor 1) from the active sprite-batch instance buffer. Shared by every
 // sprite-batch material renderer regardless of its program, since the base layout is fixed.
-export function bindWebGLQuadBatchBaseAttributes(state: WebGLRenderStateInternal, locCorner: number): void {
+export function bindWebGLQuadBatchBaseAttributes(state: WebGLRenderState, locCorner: number): void {
+  const runtime = getWebGLRenderStateRuntime(state);
   const gl = state.gl;
-  gl.bindBuffer(gl.ARRAY_BUFFER, state.quadBatchCornerBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchCornerBuffer!);
   gl.enableVertexAttribArray(locCorner);
   gl.vertexAttribPointer(locCorner, 2, gl.FLOAT, false, 8, 0);
   gl.vertexAttribDivisor(locCorner, 0);
 
   const stride = SPRITE_INSTANCE_STRIDE;
-  gl.bindBuffer(gl.ARRAY_BUFFER, state.spriteBatchInstanceBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchInstanceBuffer!);
   gl.enableVertexAttribArray(1);
   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, stride, 0);
   gl.vertexAttribDivisor(1, 1);
@@ -119,57 +121,59 @@ export function bindWebGLQuadBatchBaseAttributes(state: WebGLRenderStateInternal
   gl.vertexAttribDivisor(6, 1);
 }
 
-export function ensureWebGLQuadBatchShader(state: WebGLRenderStateInternal): WebGLQuadBatchShader {
-  if (state.quadBatchShader) return state.quadBatchShader;
+export function ensureWebGLQuadBatchShader(state: WebGLRenderState): WebGLQuadBatchShader {
+  const runtime = getWebGLRenderStateRuntime(state);
+  if (runtime.quadBatchShader) return runtime.quadBatchShader;
 
   const gl = state.gl;
-  state.quadBatchShader = compileSpriteBatchShader(gl);
+  runtime.quadBatchShader = compileSpriteBatchShader(gl);
 
   const cornerData = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
   const cornerBuf = gl.createBuffer()!;
   gl.bindBuffer(gl.ARRAY_BUFFER, cornerBuf);
   gl.bufferData(gl.ARRAY_BUFFER, cornerData, gl.STATIC_DRAW);
-  state.quadBatchCornerBuffer = cornerBuf;
+  runtime.quadBatchCornerBuffer = cornerBuf;
 
-  return state.quadBatchShader;
+  return runtime.quadBatchShader;
 }
 
-export function flushWebGLSpriteBatch(state: WebGLRenderStateInternal): void {
-  const count = state.spriteBatchCount;
+export function flushWebGLSpriteBatch(state: WebGLRenderState): void {
+  const runtime = getWebGLRenderStateRuntime(state);
+  const count = runtime.spriteBatchCount;
   if (count === 0) return;
 
-  const texture = state.spriteBatchTexture!;
-  const blendMode = state.spriteBatchBlendMode;
-  const material = state.spriteBatchMaterial;
-  const renderer = state.spriteBatchMaterialRenderer!;
-  const floats = state.spriteBatchMaterialFloats;
-  state.spriteBatchCount = 0;
-  state.spriteBatchTexture = null;
-  state.spriteBatchBlendMode = null;
-  state.spriteBatchMaterial = null;
-  state.spriteBatchMaterialRenderer = null;
-  state.spriteBatchMaterialFloats = 0;
+  const texture = runtime.spriteBatchTexture!;
+  const blendMode = runtime.spriteBatchBlendMode;
+  const material = runtime.spriteBatchMaterial;
+  const renderer = runtime.spriteBatchMaterialRenderer!;
+  const floats = runtime.spriteBatchMaterialFloats;
+  runtime.spriteBatchCount = 0;
+  runtime.spriteBatchTexture = null;
+  runtime.spriteBatchBlendMode = null;
+  runtime.spriteBatchMaterial = null;
+  runtime.spriteBatchMaterialRenderer = null;
+  runtime.spriteBatchMaterialFloats = 0;
 
   const gl = state.gl;
 
-  if (state.spriteBatchInstanceBuffer === null) {
-    state.spriteBatchInstanceBuffer = gl.createBuffer()!;
-    gl.bindBuffer(gl.ARRAY_BUFFER, state.spriteBatchInstanceBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, state.spriteBatchInstanceData.byteLength, gl.DYNAMIC_DRAW);
+  if (runtime.spriteBatchInstanceBuffer === null) {
+    runtime.spriteBatchInstanceBuffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchInstanceBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, runtime.spriteBatchInstanceData.byteLength, gl.DYNAMIC_DRAW);
   } else {
-    gl.bindBuffer(gl.ARRAY_BUFFER, state.spriteBatchInstanceBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchInstanceBuffer);
   }
-  gl.bufferSubData(gl.ARRAY_BUFFER, 0, state.spriteBatchInstanceData, 0, count * SPRITE_INSTANCE_FLOATS);
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, runtime.spriteBatchInstanceData, 0, count * SPRITE_INSTANCE_FLOATS);
 
   if (floats > 0) {
-    if (state.spriteBatchMaterialBuffer === null) {
-      state.spriteBatchMaterialBuffer = gl.createBuffer()!;
-      gl.bindBuffer(gl.ARRAY_BUFFER, state.spriteBatchMaterialBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, state.spriteBatchMaterialData.byteLength, gl.DYNAMIC_DRAW);
+    if (runtime.spriteBatchMaterialBuffer === null) {
+      runtime.spriteBatchMaterialBuffer = gl.createBuffer()!;
+      gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchMaterialBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, runtime.spriteBatchMaterialData.byteLength, gl.DYNAMIC_DRAW);
     } else {
-      gl.bindBuffer(gl.ARRAY_BUFFER, state.spriteBatchMaterialBuffer);
+      gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchMaterialBuffer);
     }
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, state.spriteBatchMaterialData, 0, count * floats);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, runtime.spriteBatchMaterialData, 0, count * floats);
   }
 
   state.applyBlendMode?.(state, blendMode);
@@ -178,7 +182,7 @@ export function flushWebGLSpriteBatch(state: WebGLRenderStateInternal): void {
   // Resolved renderer owns program selection, uniforms, and all attribute setup (base + its own).
   renderer.bind(state, material);
 
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, state.quadIndexBuffer);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, runtime.quadIndexBuffer);
   gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0, count);
 
   for (let loc = 1; loc <= MAX_INSTANCE_ATTRIB_LOCATION; loc++) {
@@ -190,17 +194,18 @@ export function flushWebGLSpriteBatch(state: WebGLRenderStateInternal): void {
 // instance index, converting the supplied per-instance materialData. No-op for uniform-only
 // materials (no packInstance / floats === 0).
 export function packWebGLSpriteBatchMaterialInstance(
-  state: WebGLRenderStateInternal,
+  state: WebGLRenderState,
   materialData: MaterialData | null,
   instanceIndex: number,
 ): void {
-  const renderer = state.spriteBatchMaterialRenderer;
+  const runtime = getWebGLRenderStateRuntime(state);
+  const renderer = runtime.spriteBatchMaterialRenderer;
   if (renderer === null || renderer.packInstance === undefined) return;
   renderer.packInstance(
     state,
     materialData,
-    state.spriteBatchMaterialData,
-    instanceIndex * state.spriteBatchMaterialFloats,
+    runtime.spriteBatchMaterialData,
+    instanceIndex * runtime.spriteBatchMaterialFloats,
   );
 }
 
@@ -210,64 +215,66 @@ export function packWebGLSpriteBatchMaterialInstance(
 // spriteBatchInstanceData where the caller should begin writing base instance data; the caller
 // increments state.spriteBatchCount and calls packWebGLSpriteBatchMaterialInstance per instance.
 export function prepareWebGLSpriteBatchWrite(
-  state: WebGLRenderStateInternal,
+  state: WebGLRenderState,
   texture: CanvasImageSource,
   blendMode: BlendMode | null,
   material: Material | null,
   materialRenderer: WebGLMaterialRenderer,
   maxInstances: number,
 ): number {
+  const runtime = getWebGLRenderStateRuntime(state);
   if (
-    texture !== state.spriteBatchTexture ||
-    blendMode !== state.spriteBatchBlendMode ||
-    material !== state.spriteBatchMaterial
+    texture !== runtime.spriteBatchTexture ||
+    blendMode !== runtime.spriteBatchBlendMode ||
+    material !== runtime.spriteBatchMaterial
   ) {
     flushWebGLSpriteBatch(state);
   }
-  state.spriteBatchTexture = texture;
-  state.spriteBatchBlendMode = blendMode;
-  state.spriteBatchMaterial = material;
-  state.spriteBatchMaterialRenderer = materialRenderer;
+  runtime.spriteBatchTexture = texture;
+  runtime.spriteBatchBlendMode = blendMode;
+  runtime.spriteBatchMaterial = material;
+  runtime.spriteBatchMaterialRenderer = materialRenderer;
   const floats = materialRenderer.instanceFloatCount;
-  state.spriteBatchMaterialFloats = floats;
+  runtime.spriteBatchMaterialFloats = floats;
 
-  const needed = (state.spriteBatchCount + maxInstances) * SPRITE_INSTANCE_FLOATS;
-  if (needed > state.spriteBatchInstanceData.length) {
-    const newSize = Math.max(needed, state.spriteBatchInstanceData.length * 2);
-    state.spriteBatchInstanceData = new Float32Array(newSize);
-    if (state.spriteBatchInstanceBuffer !== null) {
+  const needed = (runtime.spriteBatchCount + maxInstances) * SPRITE_INSTANCE_FLOATS;
+  if (needed > runtime.spriteBatchInstanceData.length) {
+    const newSize = Math.max(needed, runtime.spriteBatchInstanceData.length * 2);
+    runtime.spriteBatchInstanceData = new Float32Array(newSize);
+    if (runtime.spriteBatchInstanceBuffer !== null) {
       const gl = state.gl;
-      gl.bindBuffer(gl.ARRAY_BUFFER, state.spriteBatchInstanceBuffer);
+      gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchInstanceBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, newSize * 4, gl.DYNAMIC_DRAW);
     }
   }
 
   if (floats > 0) {
-    const materialNeeded = (state.spriteBatchCount + maxInstances) * floats;
-    if (materialNeeded > state.spriteBatchMaterialData.length) {
-      const newSize = Math.max(materialNeeded, state.spriteBatchMaterialData.length * 2);
-      state.spriteBatchMaterialData = new Float32Array(newSize);
-      if (state.spriteBatchMaterialBuffer !== null) {
+    const materialNeeded = (runtime.spriteBatchCount + maxInstances) * floats;
+    if (materialNeeded > runtime.spriteBatchMaterialData.length) {
+      const newSize = Math.max(materialNeeded, runtime.spriteBatchMaterialData.length * 2);
+      runtime.spriteBatchMaterialData = new Float32Array(newSize);
+      if (runtime.spriteBatchMaterialBuffer !== null) {
         const gl = state.gl;
-        gl.bindBuffer(gl.ARRAY_BUFFER, state.spriteBatchMaterialBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchMaterialBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, newSize * 4, gl.DYNAMIC_DRAW);
       }
     }
   }
 
-  return state.spriteBatchCount * SPRITE_INSTANCE_FLOATS;
+  return runtime.spriteBatchCount * SPRITE_INSTANCE_FLOATS;
 }
 
 export function setWebGLQuadBatchWorldAndTexture(
-  state: WebGLRenderStateInternal,
+  state: WebGLRenderState,
   locWorldMatrix: WebGLUniformLocation,
   locTexture: WebGLUniformLocation,
 ): void {
+  const runtime = getWebGLRenderStateRuntime(state);
   const gl = state.gl;
-  const viewport = state.renderTargetViewport ?? state.canvas;
+  const viewport = runtime.renderTargetViewport ?? state.canvas;
   const clipW = 2 / viewport.width;
   const clipH = 2 / viewport.height;
-  const m = state.matrixArray;
+  const m = runtime.matrixArray;
   m[0] = clipW;
   m[1] = 0;
   m[2] = 0;
@@ -281,9 +288,10 @@ export function setWebGLQuadBatchWorldAndTexture(
   gl.uniform1i(locTexture, 0);
 }
 
-export function useWebGLQuadBatchProgram(state: WebGLRenderStateInternal, program: WebGLProgram): void {
-  if (state.currentProgram !== program) {
+export function useWebGLQuadBatchProgram(state: WebGLRenderState, program: WebGLProgram): void {
+  const runtime = getWebGLRenderStateRuntime(state);
+  if (runtime.currentProgram !== program) {
     state.gl.useProgram(program);
-    state.currentProgram = program;
+    runtime.currentProgram = program;
   }
 }

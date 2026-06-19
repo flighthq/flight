@@ -18,13 +18,13 @@ import type {
   RenderCache,
   RenderCacheRefreshOptions,
   RenderProxy2D,
-  RenderState,
   WebGPURenderState,
   WebGPURenderTarget,
 } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
 import { renderWebGPUDisplayObject } from './webgpuDisplayObject';
+import { createWebGPURenderStateRuntime, getWebGPURenderStateRuntime } from './webgpuRenderState';
 import {
   beginWebGPURenderTarget,
   createWebGPURenderTarget,
@@ -46,83 +46,90 @@ import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
  * disturbs the screen state's nodes.
  */
 export function createWebGPUCacheState(screenState: WebGPURenderState): WebGPURenderState {
-  const screen = screenState as WebGPURenderStateInternal;
+  const screenRuntime = getWebGPURenderStateRuntime(screenState);
   const cacheState = createRenderState({
     allowSmoothing: screenState.allowSmoothing,
     pixelRatio: screenState.pixelRatio,
     renderTransform2D: createMatrix(),
     roundPixels: screenState.roundPixels,
     sceneGraphSyncPolicy: screenState.sceneGraphSyncPolicy,
-  }) as WebGPURenderStateInternal;
+  }) as WebGPURenderState;
+
+  // Attach the cache runtime before copying renderers: copyAllRenderersFromRenderState registers
+  // into the runtime's rendererMap, so the backend runtime must already be installed.
+  const cacheRuntime = createWebGPURenderStateRuntime();
+  cacheState[EntityRuntimeKey] = cacheRuntime;
 
   copyAllRenderersFromRenderState(cacheState, screenState);
 
-  cacheState.applyBlendMode = screen.applyBlendMode;
-  cacheState.canvas = screen.canvas;
-  cacheState.context = screen.context;
-  cacheState.device = screen.device;
-  cacheState.format = screen.format;
-  cacheState.uniformBindGroupLayout = screen.uniformBindGroupLayout;
-  cacheState.textureBindGroupLayout = screen.textureBindGroupLayout;
-  cacheState.uniformBuffer = screen.uniformBuffer;
-  cacheState.uniformData = screen.uniformData;
-  cacheState.uniformDataU32 = screen.uniformDataU32;
-  cacheState.uniformStride = screen.uniformStride;
-  cacheState.uniformBindGroup = screen.uniformBindGroup;
-  cacheState.matrixArray = screen.matrixArray;
-  cacheState.pipelineCache = screen.pipelineCache;
-  cacheState.linearSampler = screen.linearSampler;
-  cacheState.nearestSampler = screen.nearestSampler;
-  cacheState.textureCache = screen.textureCache;
-  cacheState.defaultBitmapShader = screen.defaultBitmapShader;
-  cacheState.colorTransformBitmapShader = screen.colorTransformBitmapShader;
-  cacheState.particleInstanceBuffer = screen.particleInstanceBuffer;
-  cacheState.particleInstanceData = screen.particleInstanceData;
-  cacheState.particleInstanceCapacity = screen.particleInstanceCapacity;
+  cacheState.applyBlendMode = screenState.applyBlendMode;
+  (cacheState as { canvas: HTMLCanvasElement }).canvas = screenState.canvas;
+  (cacheState as { context: GPUCanvasContext }).context = screenState.context;
+  (cacheState as { device: GPUDevice }).device = screenState.device;
+  (cacheState as { format: GPUTextureFormat }).format = screenState.format;
+
+  cacheRuntime.uniformBindGroupLayout = screenRuntime.uniformBindGroupLayout;
+  cacheRuntime.textureBindGroupLayout = screenRuntime.textureBindGroupLayout;
+  cacheRuntime.uniformBuffer = screenRuntime.uniformBuffer;
+  cacheRuntime.uniformData = screenRuntime.uniformData;
+  cacheRuntime.uniformDataU32 = screenRuntime.uniformDataU32;
+  cacheRuntime.uniformStride = screenRuntime.uniformStride;
+  cacheRuntime.uniformBindGroup = screenRuntime.uniformBindGroup;
+  cacheRuntime.matrixArray = screenRuntime.matrixArray;
+  cacheRuntime.pipelineCache = screenRuntime.pipelineCache;
+  cacheRuntime.linearSampler = screenRuntime.linearSampler;
+  cacheRuntime.nearestSampler = screenRuntime.nearestSampler;
+  cacheRuntime.textureCache = screenRuntime.textureCache;
+  cacheRuntime.defaultBitmapShader = screenRuntime.defaultBitmapShader;
+  cacheRuntime.colorTransformBitmapShader = screenRuntime.colorTransformBitmapShader;
+  cacheRuntime.particleInstanceBuffer = screenRuntime.particleInstanceBuffer;
+  cacheRuntime.particleInstanceData = screenRuntime.particleInstanceData;
+  cacheRuntime.particleInstanceCapacity = screenRuntime.particleInstanceCapacity;
   // The baked subtree is recorded into the screen state's command encoder, so the cache
   // state must share the live per-frame encoder/pass surfaces rather than its own.
-  cacheState.commandEncoder = screen.commandEncoder;
-  cacheState.renderPass = screen.renderPass;
-  cacheState.canvasTextureView = screen.canvasTextureView;
-  cacheState.canvasViewCleared = screen.canvasViewCleared;
-  cacheState.depthStencilTexture = screen.depthStencilTexture;
-  cacheState.depthStencilView = screen.depthStencilView;
-  cacheState.depthStencilWidth = screen.depthStencilWidth;
-  cacheState.depthStencilHeight = screen.depthStencilHeight;
+  cacheRuntime.commandEncoder = screenRuntime.commandEncoder;
+  cacheRuntime.renderPass = screenRuntime.renderPass;
+  cacheRuntime.canvasTextureView = screenRuntime.canvasTextureView;
+  cacheRuntime.canvasViewCleared = screenRuntime.canvasViewCleared;
+  cacheRuntime.depthStencilTexture = screenRuntime.depthStencilTexture;
+  cacheRuntime.depthStencilView = screenRuntime.depthStencilView;
+  cacheRuntime.depthStencilWidth = screenRuntime.depthStencilWidth;
+  cacheRuntime.depthStencilHeight = screenRuntime.depthStencilHeight;
+  cacheRuntime.materialRendererMap = screenRuntime.materialRendererMap;
 
-  cacheState.uniformOffset = 0;
-  cacheState.currentBlendMode = null;
-  cacheState.currentMaskDepth = 0;
+  cacheRuntime.uniformOffset = 0;
+  cacheRuntime.currentBlendMode = null;
+  cacheRuntime.currentMaskDepth = 0;
   // Contour-clip pipelines can be lazily rebuilt against the cache's device; the active-clip stack must
   // start empty so a cached subtree's clips don't reference the screen state's GPU buffers.
-  cacheState.clipContourPipelines = null;
-  cacheState.clipContourStack = [];
+  cacheRuntime.clipContourPipelines = null;
+  cacheRuntime.clipContourStack = [];
+  cacheRuntime.clipForms = [];
   // The flat-color shape-fill pipeline can be lazily rebuilt against the (shared) device on first use.
-  cacheState.shapeMeshPipeline = null;
-  cacheState.spriteBatchBlendMode = null;
-  cacheState.spriteBatchMaterial = null;
-  cacheState.spriteBatchMaterialRenderer = null;
-  cacheState.spriteBatchMaterialFloats = 0;
-  cacheState.spriteBatchCount = 0;
-  cacheState.spriteBatchInstanceData = new Float32Array(0);
-  cacheState.spriteBatchMaterialData = new Float32Array(0);
-  cacheState.spriteBatchTexture = null;
+  cacheRuntime.shapeMeshPipeline = null;
+  cacheRuntime.spriteBatchBlendMode = null;
+  cacheRuntime.spriteBatchMaterial = null;
+  cacheRuntime.spriteBatchMaterialRenderer = null;
+  cacheRuntime.spriteBatchMaterialFloats = 0;
+  cacheRuntime.spriteBatchCount = 0;
+  cacheRuntime.spriteBatchInstanceData = new Float32Array(0);
+  cacheRuntime.spriteBatchMaterialData = new Float32Array(0);
+  cacheRuntime.spriteBatchTexture = null;
   // The bake state owns its own buffer pool (its flushes record into the same frame, so they must
   // not share slots with the screen's batch either).
-  cacheState.spriteBatchBufferPool = [];
-  cacheState.spriteBatchBufferCursor = 0;
-  cacheState.materialRendererMap = screen.materialRendererMap;
-  cacheState.maskWriteMode = false;
-  cacheState.currentScissorRect = null;
-  cacheState.scissorStack = [];
-  cacheState.renderTargetViewport = null;
-  cacheState.renderTargetStack = [];
+  cacheRuntime.spriteBatchBufferPool = [];
+  cacheRuntime.spriteBatchBufferCursor = 0;
+  cacheRuntime.maskWriteMode = false;
+  cacheRuntime.currentScissorRect = null;
+  cacheRuntime.scissorStack = [];
+  cacheRuntime.renderTargetViewport = null;
+  cacheRuntime.renderTargetStack = [];
 
   _cacheStateScreen.set(cacheState, screenState);
   return cacheState;
 }
 
-export function enableWebGPURenderCache(state: RenderState): void {
+export function enableWebGPURenderCache(state: WebGPURenderState): void {
   registerRenderCacheRenderer(state, defaultWebGPURenderCacheRenderer);
 }
 
@@ -166,25 +173,25 @@ export function refreshWebGPURenderCache(
   options?: Readonly<RenderCacheRefreshOptions>,
 ): boolean {
   const screenState = _cacheStateScreen.get(cacheState) ?? cacheState;
-  const cs = cacheState as WebGPURenderStateInternal;
-  const ss = screenState as WebGPURenderStateInternal;
+  const cacheRuntime = getWebGPURenderStateRuntime(cacheState);
+  const screenRuntime = getWebGPURenderStateRuntime(screenState);
   // The bake records into the screen state's live, per-frame command encoder and render pass.
   // createWebGPUCacheState captured those once at setup — stale now, since webgpu rebuilds them
   // every frame — so sync them here. This requires refresh to run within a frame (after the
   // encoder/pass have begun), unlike the immediate-mode WebGL backend.
-  cs.commandEncoder = ss.commandEncoder;
-  cs.renderPass = ss.renderPass;
-  cs.canvasTextureView = ss.canvasTextureView;
-  cs.canvasViewCleared = ss.canvasViewCleared;
-  cs.depthStencilTexture = ss.depthStencilTexture;
-  cs.depthStencilView = ss.depthStencilView;
-  cs.depthStencilWidth = ss.depthStencilWidth;
-  cs.depthStencilHeight = ss.depthStencilHeight;
+  cacheRuntime.commandEncoder = screenRuntime.commandEncoder;
+  cacheRuntime.renderPass = screenRuntime.renderPass;
+  cacheRuntime.canvasTextureView = screenRuntime.canvasTextureView;
+  cacheRuntime.canvasViewCleared = screenRuntime.canvasViewCleared;
+  cacheRuntime.depthStencilTexture = screenRuntime.depthStencilTexture;
+  cacheRuntime.depthStencilView = screenRuntime.depthStencilView;
+  cacheRuntime.depthStencilWidth = screenRuntime.depthStencilWidth;
+  cacheRuntime.depthStencilHeight = screenRuntime.depthStencilHeight;
   // The cache state shares the screen state's uniform ring buffer (createWebGPUCacheState aliases
   // uniformBuffer/uniformData). Continue from the screen's current cursor so the bake's draws claim
   // a region the screen render won't overwrite — otherwise both start at 0, the later screen writes
   // clobber the bake's uniforms, and the baked subtree draws with corrupted transforms.
-  cs.uniformOffset = ss.uniformOffset;
+  cacheRuntime.uniformOffset = screenRuntime.uniformOffset;
 
   const padding = options?.padding ?? 0;
   const minWidth = options?.minWidth ?? 1;
@@ -209,7 +216,7 @@ export function refreshWebGPURenderCache(
 
   // Reclaim the bake state's buffer pool from the start of this bake; the previous bake's submit
   // has been queued, so its slots are safe to reuse.
-  cs.spriteBatchBufferCursor = 0;
+  cacheRuntime.spriteBatchBufferCursor = 0;
   beginWebGPURenderTarget(cacheState, target, _bakeTransform);
   const dirty = prepareDisplayObjectRender(cacheState, source);
   if (dirty || resized) {
@@ -220,14 +227,14 @@ export function refreshWebGPURenderCache(
 
   // endWebGPURenderTarget reopened a fresh canvas pass on the cache state — hand the live encoder
   // and pass back to the screen state so its subsequent draws continue in the same frame.
-  ss.commandEncoder = cs.commandEncoder;
-  ss.renderPass = cs.renderPass;
-  ss.canvasTextureView = cs.canvasTextureView;
-  ss.canvasViewCleared = cs.canvasViewCleared;
-  ss.currentBlendMode = null;
+  screenRuntime.commandEncoder = cacheRuntime.commandEncoder;
+  screenRuntime.renderPass = cacheRuntime.renderPass;
+  screenRuntime.canvasTextureView = cacheRuntime.canvasTextureView;
+  screenRuntime.canvasViewCleared = cacheRuntime.canvasViewCleared;
+  screenRuntime.currentBlendMode = null;
   // Advance the screen's cursor past the bake's uniform writes so its subsequent draws don't
   // overwrite them in the shared ring buffer.
-  ss.uniformOffset = cs.uniformOffset;
+  screenRuntime.uniformOffset = cacheRuntime.uniformOffset;
   return dirty || resized;
 }
 
@@ -240,20 +247,19 @@ export function releaseWebGPURenderCache(state: WebGPURenderState, cache: Render
   targets.delete(cache);
 }
 
-function drawWebGPURenderCache(state: RenderState, renderProxy: RenderProxy2D): void {
+function drawWebGPURenderCache(state: WebGPURenderState, renderProxy: RenderProxy2D): void {
   const cache = getRenderProxyCache(state, renderProxy.source);
   if (cache === null) return;
-  const webgpuState = state as WebGPURenderState;
-  const target = getTargets(webgpuState).get(cache);
+  const target = getTargets(state).get(cache);
   if (target === undefined) return;
   // Drain pending batched geometry before the immediate composite quad. Like every other
   // immediate-draw renderer (RichText, Video), this bypasses the sprite batch; without the flush the
   // immediate quad interleaves with the un-flushed batch's instance buffer and bind-group state,
   // corrupting the pending batch rather than merely reordering it.
-  flushWebGPUSpriteBatch(webgpuState as WebGPURenderStateInternal);
+  flushWebGPUSpriteBatch(state);
   // renderProxy.transform2D already carries the cache placement transform (folded in by the
   // adapter), so the target composites with an identity offset.
-  drawWebGPURenderTargetResult(webgpuState, renderProxy as never, target, _identity);
+  drawWebGPURenderTargetResult(state, renderProxy, target, _identity);
 }
 
 function getTargets(state: WebGPURenderState): WeakMap<RenderCache, WebGPURenderTarget> {

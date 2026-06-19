@@ -8,15 +8,15 @@ import type {
   Renderable,
   RendererData,
   RenderProxy2D,
-  RenderState,
   TextFormat,
   TextLabel,
   TextLabelRuntime,
+  WebGLRenderState,
 } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
 import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import {
   ensureWebGLQuadBatchShader,
   packWebGLSpriteBatchMaterialInstance,
@@ -35,7 +35,7 @@ interface WebGLTextLabelData {
   logH: number;
 }
 
-function createWebGLTextLabelData(_state: RenderState, _source: Renderable): RendererData {
+function createWebGLTextLabelData(_state: WebGLRenderState, _source: Renderable): RendererData {
   const canvas = document.createElement('canvas');
   canvas.width = 1;
   canvas.height = 1;
@@ -44,29 +44,29 @@ function createWebGLTextLabelData(_state: RenderState, _source: Renderable): Ren
 }
 
 // Free the GPU texture the batch uploaded for this node's canvas when the text node is torn down.
-function destroyWebGLTextLabelData(state: RenderState, data: RendererData): void {
-  const internal = state as WebGLRenderStateInternal;
+function destroyWebGLTextLabelData(state: WebGLRenderState, data: RendererData): void {
+  const runtime = getWebGLRenderStateRuntime(state);
   const { canvas } = data as unknown as WebGLTextLabelData;
-  const texture = internal.textureCache.get(canvas);
+  const texture = runtime.textureCache.get(canvas);
   if (texture !== undefined) {
-    internal.gl.deleteTexture(texture);
-    internal.textureCache.delete(canvas);
+    state.gl.deleteTexture(texture);
+    runtime.textureCache.delete(canvas);
   }
 }
 
-export function drawWebGLTextLabel(state: RenderState, renderProxy: RenderProxy2D): void {
-  const internal = state as WebGLRenderStateInternal;
+export function drawWebGLTextLabel(state: WebGLRenderState, renderProxy: RenderProxy2D): void {
+  const runtime = getWebGLRenderStateRuntime(state);
   const source = renderProxy.source as TextLabel;
   const { text, textFormat, width: fieldWidth, height: fieldHeight } = source.data;
   if (text.length === 0) return;
   if (renderProxy.rendererData === null) return;
 
   const material = renderProxy.material;
-  const materialRenderer = resolveWebGLMaterialRenderer(internal, material);
+  const materialRenderer = resolveWebGLMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
   const textData = renderProxy.rendererData as unknown as WebGLTextLabelData;
-  const pixelRatio = internal.pixelRatio;
+  const pixelRatio = state.pixelRatio;
   const version = getNodeLocalContentRevision(source);
 
   if (version !== textData.lastContentID || pixelRatio !== textData.lastPixelRatio) {
@@ -122,25 +122,25 @@ export function drawWebGLTextLabel(state: RenderState, renderProxy: RenderProxy2
     }
 
     // Invalidate cached GPU texture so the batch re-uploads from the updated canvas.
-    internal.textureCache.delete(textData.canvas);
+    runtime.textureCache.delete(textData.canvas);
     textData.logW = w;
     textData.logH = h;
   }
 
   if (textData.logW <= 0 || textData.logH <= 0) return;
 
-  ensureWebGLQuadBatchShader(internal);
+  ensureWebGLQuadBatchShader(state);
 
-  const startCount = internal.spriteBatchCount;
+  const startCount = runtime.spriteBatchCount;
   const base = prepareWebGLSpriteBatchWrite(
-    internal,
+    state,
     textData.canvas,
     renderProxy.blendMode,
     material,
     materialRenderer,
     1,
   );
-  const d = internal.spriteBatchInstanceData;
+  const d = runtime.spriteBatchInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;
   d[base + 1] = t.b;
@@ -155,8 +155,8 @@ export function drawWebGLTextLabel(state: RenderState, renderProxy: RenderProxy2
   d[base + 10] = 1;
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
-  packWebGLSpriteBatchMaterialInstance(internal, renderProxy.materialData, startCount);
-  internal.spriteBatchCount++;
+  packWebGLSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
+  runtime.spriteBatchCount++;
 }
 
 export const defaultWebGLTextLabelRenderer: DisplayObjectRenderer = {

@@ -1,8 +1,8 @@
 import { createBitmap } from '@flighthq/displayobject';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import type { WebGPUBitmapShader } from '@flighthq/types';
 
-import type { WebGPUBitmapShader } from './internal';
-import type { WebGPURenderStateInternal } from './internal';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import { getWebGPUShader, resolveWebGPUShader, setWebGPUShader } from './webgpuShaderBinding';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
 
@@ -24,8 +24,7 @@ describe('resolveWebGPUShader', () => {
     const state = await createWebGPURenderStateForTest();
     const bitmap = createBitmap();
     const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
-    const internal = state as unknown as WebGPURenderStateInternal;
-    expect(resolveWebGPUShader(internal, renderProxy)).toBeNull();
+    expect(resolveWebGPUShader(state, renderProxy)).toBeNull();
   });
 });
 
@@ -42,12 +41,13 @@ describe('setWebGPUShader', () => {
   });
 
   it('installs the per-node shader binding resolver', async () => {
-    const state = (await createWebGPURenderStateForTest()) as WebGPURenderStateInternal;
+    const state = await createWebGPURenderStateForTest();
+    const runtime = getWebGPURenderStateRuntime(state);
     const bitmap = createBitmap();
     const fakeShader: WebGPUBitmapShader = { pipeline: {} as never, bind: () => {} };
-    expect(state.webgpuShaderBindingResolver).toBeUndefined();
+    expect(runtime.webgpuShaderBindingResolver).toBeUndefined();
     setWebGPUShader(state, bitmap, fakeShader);
-    expect(state.webgpuShaderBindingResolver).toBe(getWebGPUShader);
+    expect(runtime.webgpuShaderBindingResolver).toBe(getWebGPUShader);
   });
 
   it('removes the binding when shader is null', async () => {

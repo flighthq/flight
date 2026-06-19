@@ -1,9 +1,9 @@
 import type { RenderState } from '@flighthq/types';
 
-import type { RenderStateInternal } from './internal';
-
 export function setRenderStateBackgroundColor(state: RenderState, color: number): void {
-  const _state = state as RenderStateInternal;
+  // backgroundColor/RGBA/String are readonly on the entity but owned and written here; narrow
+  // writable cast at this one call site avoids reintroducing a broad internal-cast type.
+  const _state = state as { backgroundColor: number; backgroundColorRGBA: number[]; backgroundColorString: string };
   const uint = color >>> 0;
   _state.backgroundColor = uint;
   const r = (uint & 0xff000000) >>> 24;

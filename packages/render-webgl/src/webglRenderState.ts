@@ -1,8 +1,12 @@
 import { createMatrix } from '@flighthq/geometry';
-import { createRenderState as _createRenderState, setRenderStateBackgroundColor } from '@flighthq/render';
-import type { WebGLRenderOptions, WebGLRenderState } from '@flighthq/types';
+import {
+  createRenderState as _createRenderState,
+  createRenderStateRuntime,
+  setRenderStateBackgroundColor,
+} from '@flighthq/render';
+import type { WebGLRenderOptions, WebGLRenderState, WebGLRenderStateRuntime } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
 import { compileDefaultWebGLProgram, createDefaultWebGLBitmapShader } from './webglShader';
 
 export function createWebGLRenderState(
@@ -40,39 +44,42 @@ export function createWebGLRenderState(
     renderTransform2D: createMatrix(),
     roundPixels: options.roundPixels ?? false,
     sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
-  }) as WebGLRenderStateInternal;
+  }) as WebGLRenderState;
+
+  state.applyBlendMode = null;
+  (state as { canvas: HTMLCanvasElement }).canvas = canvas;
+  (state as { gl: WebGL2RenderingContext }).gl = gl;
 
   if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
 
-  state.applyBlendMode = null;
-  state.canvas = canvas;
-  state.gl = gl;
-  state.currentBlendMode = null;
-  state.currentFramebuffer = null;
-  state.currentMaskDepth = 0;
-  state.currentProgram = null;
-  state.currentScissorRect = null;
-  state.currentTexture = null;
-  state.renderTargetViewport = null;
-  state.defaultBitmapShader = defaultBitmapShader;
-  state.shaderLoc = shaderLoc;
-  state.spriteBatchBlendMode = null;
-  state.spriteBatchMaterial = null;
-  state.spriteBatchMaterialRenderer = null;
-  state.spriteBatchMaterialFloats = 0;
-  state.spriteBatchMaterialData = new Float32Array(8 * 256);
-  state.spriteBatchMaterialBuffer = null;
-  state.spriteBatchCount = 0;
-  state.spriteBatchInstanceBuffer = null;
-  state.spriteBatchInstanceData = new Float32Array(13 * 256);
-  state.spriteBatchTexture = null;
-  state.textureCache = new WeakMap();
-  state.quadVertexBuffer = quadVertexBuffer;
-  state.quadIndexBuffer = quadIndexBuffer;
-  state.quadVertexData = new Float32Array(16);
-  state.matrixArray = matrixArray;
-  state.scissorStack = [];
-  state.clipForms = [];
+  const runtime = createWebGLRenderStateRuntime();
+  state[EntityRuntimeKey] = runtime;
+  runtime.currentBlendMode = null;
+  runtime.currentFramebuffer = null;
+  runtime.currentMaskDepth = 0;
+  runtime.currentProgram = null;
+  runtime.currentScissorRect = null;
+  runtime.currentTexture = null;
+  runtime.renderTargetViewport = null;
+  runtime.defaultBitmapShader = defaultBitmapShader;
+  runtime.shaderLoc = shaderLoc;
+  runtime.spriteBatchBlendMode = null;
+  runtime.spriteBatchMaterial = null;
+  runtime.spriteBatchMaterialRenderer = null;
+  runtime.spriteBatchMaterialFloats = 0;
+  runtime.spriteBatchMaterialData = new Float32Array(8 * 256);
+  runtime.spriteBatchMaterialBuffer = null;
+  runtime.spriteBatchCount = 0;
+  runtime.spriteBatchInstanceBuffer = null;
+  runtime.spriteBatchInstanceData = new Float32Array(13 * 256);
+  runtime.spriteBatchTexture = null;
+  runtime.textureCache = new WeakMap();
+  runtime.quadVertexBuffer = quadVertexBuffer;
+  runtime.quadIndexBuffer = quadIndexBuffer;
+  runtime.quadVertexData = new Float32Array(16);
+  runtime.matrixArray = matrixArray;
+  runtime.scissorStack = [];
+  runtime.clipForms = [];
 
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -81,10 +88,18 @@ export function createWebGLRenderState(
   return state;
 }
 
-// Frees the GPU resources createWebGLRenderState and the lazy ensure* helpers allocated on `state`:
-// the compiled shader programs and the vertex/index/instance buffers. Call when the render state is
-// no longer needed. Pass the state returned by createWebGLRenderState — render-cache states derived
-// from it (createWebGLCacheState) alias these resources and become invalid too.
+// Allocates the package-private GPU runtime for a WebGLRenderState. createWebGLRenderState attaches
+// one to each state under EntityRuntimeKey and populates its fields; getWebGLRenderStateRuntime reads
+// it back. The render path writes the returned object every frame, so the return is intentionally
+// mutable (not Readonly).
+export function createWebGLRenderStateRuntime(): WebGLRenderStateRuntime {
+  return createRenderStateRuntime() as WebGLRenderStateRuntime;
+}
+
+// Frees the GPU resources createWebGLRenderState and the lazy ensure* helpers allocated on the
+// state's runtime: the compiled shader programs and the vertex/index/instance buffers. Call when the
+// render state is no longer needed. Pass the state returned by createWebGLRenderState — render-cache
+// states derived from it (createWebGLCacheState) alias these resources and become invalid too.
 //
 // Two things are intentionally NOT freed here:
 //   - User-registered material shaders (materialBitmapShaderMap and setWebGLShader bindings): their
@@ -95,25 +110,31 @@ export function createWebGLRenderState(
 // Deleting an already-deleted WebGL program or buffer is a silent no-op, so destroying a screen
 // state whose resources a cache state still aliases is safe.
 export function destroyWebGLRenderState(state: WebGLRenderState): void {
-  const internal = state as WebGLRenderStateInternal;
-  const gl = internal.gl;
+  const runtime = getWebGLRenderStateRuntime(state);
+  const gl = state.gl;
 
   // Dedupe: several shader wrappers (e.g. defaultBitmapShader) share shaderLoc.program.
   const programs = new Set<WebGLProgram>();
-  if (internal.shaderLoc) programs.add(internal.shaderLoc.program);
-  if (internal.defaultBitmapShader) programs.add(internal.defaultBitmapShader.program);
-  if (internal.colorTransformBitmapShader) programs.add(internal.colorTransformBitmapShader.program);
-  if (internal.particleShader) programs.add(internal.particleShader.program);
-  if (internal.quadBatchShader) programs.add(internal.quadBatchShader.program);
-  if (internal.colorTransformInstancedShader) programs.add(internal.colorTransformInstancedShader.program);
-  if (internal.uniformColorTransformShader) programs.add(internal.uniformColorTransformShader.program);
+  if (runtime.shaderLoc) programs.add(runtime.shaderLoc.program);
+  if (runtime.defaultBitmapShader) programs.add(runtime.defaultBitmapShader.program);
+  if (runtime.colorTransformBitmapShader) programs.add(runtime.colorTransformBitmapShader.program);
+  if (runtime.particleShader) programs.add(runtime.particleShader.program);
+  if (runtime.quadBatchShader) programs.add(runtime.quadBatchShader.program);
+  if (runtime.colorTransformInstancedShader) programs.add(runtime.colorTransformInstancedShader.program);
+  if (runtime.uniformColorTransformShader) programs.add(runtime.uniformColorTransformShader.program);
   for (const program of programs) gl.deleteProgram(program);
 
-  gl.deleteBuffer(internal.quadVertexBuffer);
-  gl.deleteBuffer(internal.quadIndexBuffer);
-  if (internal.particleCornerBuffer) gl.deleteBuffer(internal.particleCornerBuffer);
-  if (internal.particleInstanceBuffer) gl.deleteBuffer(internal.particleInstanceBuffer);
-  if (internal.quadBatchCornerBuffer) gl.deleteBuffer(internal.quadBatchCornerBuffer);
-  if (internal.spriteBatchInstanceBuffer) gl.deleteBuffer(internal.spriteBatchInstanceBuffer);
-  if (internal.spriteBatchMaterialBuffer) gl.deleteBuffer(internal.spriteBatchMaterialBuffer);
+  gl.deleteBuffer(runtime.quadVertexBuffer);
+  gl.deleteBuffer(runtime.quadIndexBuffer);
+  if (runtime.particleCornerBuffer) gl.deleteBuffer(runtime.particleCornerBuffer);
+  if (runtime.particleInstanceBuffer) gl.deleteBuffer(runtime.particleInstanceBuffer);
+  if (runtime.quadBatchCornerBuffer) gl.deleteBuffer(runtime.quadBatchCornerBuffer);
+  if (runtime.spriteBatchInstanceBuffer) gl.deleteBuffer(runtime.spriteBatchInstanceBuffer);
+  if (runtime.spriteBatchMaterialBuffer) gl.deleteBuffer(runtime.spriteBatchMaterialBuffer);
+}
+
+// Resolves the package-private GPU runtime attached to a WebGLRenderState. Mutable by design: the
+// render path writes its fields every frame.
+export function getWebGLRenderStateRuntime(state: WebGLRenderState): WebGLRenderStateRuntime {
+  return state[EntityRuntimeKey] as WebGLRenderStateRuntime;
 }

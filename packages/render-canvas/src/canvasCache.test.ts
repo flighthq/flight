@@ -11,7 +11,7 @@ import {
   refreshCanvasRenderCache,
   releaseCanvasRenderCache,
 } from './canvasCache';
-import { createCanvasRenderState } from './canvasRenderState';
+import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasRenderState';
 
 function makeCanvasState(options = {}) {
   const canvas = document.createElement('canvas');
@@ -29,7 +29,9 @@ describe('createCanvasCacheState', () => {
     const screen = makeCanvasState();
     enableCanvasRenderCache(screen);
     const cacheState = createCanvasCacheState(screen);
-    expect(cacheState.rendererMap.get(RenderCacheKind)).toBe(defaultCanvasRenderCacheRenderer);
+    expect(getCanvasRenderStateRuntime(cacheState).rendererMap.get(RenderCacheKind)).toBe(
+      defaultCanvasRenderCacheRenderer,
+    );
   });
 
   it('propagates pixel ratio and scene graph sync policy without sharing node maps', () => {
@@ -37,7 +39,9 @@ describe('createCanvasCacheState', () => {
     const cacheState = createCanvasCacheState(screen);
     expect(cacheState.pixelRatio).toBe(3);
     expect(cacheState.sceneGraphSyncPolicy).toBe('refreshDerivedState');
-    expect(cacheState.renderProxyMap).not.toBe(screen.renderProxyMap);
+    expect(getCanvasRenderStateRuntime(cacheState).renderProxyMap).not.toBe(
+      getCanvasRenderStateRuntime(screen).renderProxyMap,
+    );
   });
 });
 
@@ -65,7 +69,7 @@ describe('enableCanvasRenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = makeCanvasState();
     enableCanvasRenderCache(state);
-    expect(state.rendererMap.get(RenderCacheKind)).toBe(defaultCanvasRenderCacheRenderer);
+    expect(getCanvasRenderStateRuntime(state).rendererMap.get(RenderCacheKind)).toBe(defaultCanvasRenderCacheRenderer);
   });
 });
 

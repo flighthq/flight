@@ -1,9 +1,9 @@
 import { noopRendererData } from '@flighthq/render';
-import type { QuadBatch, RenderProxy2D, RenderState, SpriteRenderer } from '@flighthq/types';
+import type { QuadBatch, RenderProxy2D, SpriteRenderer, WebGPURenderState } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
 import { resolveWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import {
   ensureWebGPUQuadBatchResources,
   getWebGPUQuadBatchPipeline,
@@ -20,9 +20,9 @@ export { ensureWebGPUQuadBatchResources, getWebGPUQuadBatchPipeline };
 // parallel material buffer.
 const INSTANCE_STRIDE_FLOATS = SPRITE_INSTANCE_FLOATS;
 
-function submitWebGPUQuadBatch(state: RenderState, quadBatch: RenderProxy2D): void {
-  const internal = state as WebGPURenderStateInternal;
-  if (internal.renderPass === null) return;
+function submitWebGPUQuadBatch(state: WebGPURenderState, quadBatch: RenderProxy2D): void {
+  const runtime = getWebGPURenderStateRuntime(state);
+  if (runtime.renderPass === null) return;
 
   const source = quadBatch.source as QuadBatch;
   const data = source.data;
@@ -30,13 +30,13 @@ function submitWebGPUQuadBatch(state: RenderState, quadBatch: RenderProxy2D): vo
   if (atlas === null || atlas.image === null || atlas.image.source === null || instanceCount === 0) return;
 
   const material = quadBatch.material;
-  const materialRenderer = resolveWebGPUMaterialRenderer(internal, material);
+  const materialRenderer = resolveWebGPUMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const perQuadMaterialData = data.materialData;
   const nodeMaterialData = quadBatch.materialData;
-  const startCount = internal.spriteBatchCount;
+  const startCount = runtime.spriteBatchCount;
   const base = prepareWebGPUSpriteBatchWrite(
-    internal,
+    state,
     atlas.image.source,
     quadBatch.blendMode,
     material,
@@ -48,7 +48,7 @@ function submitWebGPUQuadBatch(state: RenderState, quadBatch: RenderProxy2D): vo
   const numRegions = regions.length;
   const iw = 1 / (atlas.image.width || 1);
   const ih = 1 / (atlas.image.height || 1);
-  const instanceData = internal.spriteBatchInstanceData;
+  const instanceData = runtime.spriteBatchInstanceData;
   const isVector2 = data.transformType === 'vector2';
   const pt = quadBatch.transform2D;
   const pa = pt.a,
@@ -99,12 +99,12 @@ function submitWebGPUQuadBatch(state: RenderState, quadBatch: RenderProxy2D): vo
     instanceData[writeBase + 11] = (region.y + region.height) * ih;
     instanceData[writeBase + 12] = alpha;
     const md = perQuadMaterialData?.[i] ?? nodeMaterialData;
-    packWebGPUSpriteBatchMaterialInstance(internal, md, startCount + drawCount);
+    packWebGPUSpriteBatchMaterialInstance(state, md, startCount + drawCount);
     writeBase += INSTANCE_STRIDE_FLOATS;
     drawCount++;
   }
 
-  internal.spriteBatchCount += drawCount;
+  runtime.spriteBatchCount += drawCount;
 }
 
 export const defaultWebGPUQuadBatchRenderer: SpriteRenderer = {

@@ -1,4 +1,3 @@
-export type { WebGPURenderStateInternal } from './internal';
 export * from './webgpuBackground';
 export * from './webgpuBitmap';
 export * from './webgpuCache';

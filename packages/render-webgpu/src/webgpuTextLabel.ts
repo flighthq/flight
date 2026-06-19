@@ -12,12 +12,13 @@ import type {
   TextFormat,
   TextLabel,
   TextLabelRuntime,
+  WebGPURenderState,
 } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
 import { updateWebGPUTextureEntry } from './webgpuDraw';
 import { resolveWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import {
   ensureWebGPUQuadBatchResources,
   packWebGPUSpriteBatchMaterialInstance,
@@ -56,19 +57,19 @@ function createWebGPUTextLabelData(_state: RenderState, _source: Renderable): Re
 }
 
 // Destroy the GPU texture the batch uploaded for this text node's canvas when it is torn down.
-function destroyWebGPUTextLabelData(state: RenderState, data: RendererData): void {
-  const internal = state as WebGPURenderStateInternal;
+function destroyWebGPUTextLabelData(state: WebGPURenderState, data: RendererData): void {
+  const runtime = getWebGPURenderStateRuntime(state);
   const { canvas } = data as unknown as WebGPUTextLabelData;
-  const entry = internal.textureCache.get(canvas);
+  const entry = runtime.textureCache.get(canvas);
   if (entry !== undefined) {
     entry.texture.destroy();
-    internal.textureCache.delete(canvas);
+    runtime.textureCache.delete(canvas);
   }
 }
 
-export function drawWebGPUTextLabel(state: RenderState, renderProxy: RenderProxy2D): void {
-  const internal = state as WebGPURenderStateInternal;
-  if (internal.renderPass === null) return;
+export function drawWebGPUTextLabel(state: WebGPURenderState, renderProxy: RenderProxy2D): void {
+  const runtime = getWebGPURenderStateRuntime(state);
+  if (runtime.renderPass === null) return;
 
   const source = renderProxy.source as TextLabel;
   const { text, textFormat, width: fieldWidth, height: fieldHeight } = source.data;
@@ -76,12 +77,12 @@ export function drawWebGPUTextLabel(state: RenderState, renderProxy: RenderProxy
   if (renderProxy.rendererData === null) return;
 
   const material = renderProxy.material;
-  const materialRenderer = resolveWebGPUMaterialRenderer(internal, material);
+  const materialRenderer = resolveWebGPUMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
   const textData = renderProxy.rendererData as unknown as WebGPUTextLabelData;
-  const maxTexDim = internal.device.limits.maxTextureDimension2D;
-  const pixelRatio = internal.pixelRatio;
+  const maxTexDim = state.device.limits.maxTextureDimension2D;
+  const pixelRatio = state.pixelRatio;
   const version = getNodeLocalContentRevision(source);
 
   if (version !== textData.lastContentID || pixelRatio !== textData.lastPixelRatio) {
@@ -139,15 +140,15 @@ export function drawWebGPUTextLabel(state: RenderState, renderProxy: RenderProxy
     }
 
     // Update or invalidate the GPU texture.
-    const cached = internal.textureCache.get(textData.canvas);
+    const cached = runtime.textureCache.get(textData.canvas);
     if (cached !== undefined) {
       if (pw === textData.lastPW && ph === textData.lastPH) {
         // Same physical size: update content in-place.
-        updateWebGPUTextureEntry(internal, cached, textData.canvas);
+        updateWebGPUTextureEntry(state, cached, textData.canvas);
       } else {
         // Physical size changed: destroy old GPU texture, let the batch create a new one.
         cached.texture.destroy();
-        internal.textureCache.delete(textData.canvas);
+        runtime.textureCache.delete(textData.canvas);
       }
     }
 
@@ -159,18 +160,18 @@ export function drawWebGPUTextLabel(state: RenderState, renderProxy: RenderProxy
 
   if (textData.logW <= 0 || textData.logH <= 0) return;
 
-  ensureWebGPUQuadBatchResources(internal);
+  ensureWebGPUQuadBatchResources(state);
 
-  const startCount = internal.spriteBatchCount;
+  const startCount = runtime.spriteBatchCount;
   const base = prepareWebGPUSpriteBatchWrite(
-    internal,
+    state,
     textData.canvas,
     renderProxy.blendMode,
     material,
     materialRenderer,
     1,
   );
-  const d = internal.spriteBatchInstanceData;
+  const d = runtime.spriteBatchInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;
   d[base + 1] = t.b;
@@ -185,8 +186,8 @@ export function drawWebGPUTextLabel(state: RenderState, renderProxy: RenderProxy
   d[base + 10] = 1;
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
-  packWebGPUSpriteBatchMaterialInstance(internal, renderProxy.materialData, startCount);
-  internal.spriteBatchCount++;
+  packWebGPUSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
+  runtime.spriteBatchCount++;
 }
 
 export const defaultWebGPUTextLabelRenderer: DisplayObjectRenderer = {

@@ -1,6 +1,7 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import type { DisplayObject } from '@flighthq/types';
 
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { getWebGLShader, resolveWebGLShader, setWebGLShader } from './webglShaderBinding';
 import { makeWebGLState } from './webglTestHelper';
 
@@ -29,7 +30,7 @@ describe('resolveWebGLShader', () => {
   it('returns the default bitmap shader when no binding is set', () => {
     const { state } = makeWebGLState();
     const renderProxy = getOrCreateRenderProxy2D(state, {} as DisplayObject);
-    expect(resolveWebGLShader(state, renderProxy)).toBe(state.defaultBitmapShader);
+    expect(resolveWebGLShader(state, renderProxy)).toBe(getWebGLRenderStateRuntime(state).defaultBitmapShader);
   });
 
   it('returns the bound shader when shader support is enabled', () => {
@@ -45,7 +46,7 @@ describe('resolveWebGLShader', () => {
     const { state } = makeWebGLState();
     const renderProxy = getOrCreateRenderProxy2D(state, {} as DisplayObject);
     // No binding was made, so the resolver is unset — the per-node lookup is skipped.
-    expect(resolveWebGLShader(state, renderProxy)).toBe(state.defaultBitmapShader);
+    expect(resolveWebGLShader(state, renderProxy)).toBe(getWebGLRenderStateRuntime(state).defaultBitmapShader);
   });
 });
 
@@ -61,9 +62,10 @@ describe('setWebGLShader', () => {
 
   it('installs the per-node shader binding resolver', () => {
     const { state } = makeWebGLState();
-    expect(state.webglShaderBindingResolver).toBeUndefined();
+    const runtime = getWebGLRenderStateRuntime(state);
+    expect(runtime.webglShaderBindingResolver).toBeUndefined();
     setWebGLShader(state, {} as DisplayObject, makeShader());
-    expect(state.webglShaderBindingResolver).toBe(getWebGLShader);
+    expect(runtime.webglShaderBindingResolver).toBe(getWebGLShader);
   });
 
   it('clears the binding when passed null', () => {

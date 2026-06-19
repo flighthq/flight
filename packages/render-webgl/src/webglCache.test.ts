@@ -2,6 +2,7 @@ import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
 import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache } from '@flighthq/render';
 import type { WebGLRenderState, WebGLRenderTarget } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
 import {
   createWebGLCacheState,
@@ -14,6 +15,7 @@ import {
 } from './webglCache';
 import type * as WebGLDisplayObjectModule from './webglDisplayObject';
 import { renderWebGLDisplayObject } from './webglDisplayObject';
+import { createWebGLRenderStateRuntime, getWebGLRenderStateRuntime } from './webglRenderState';
 import type * as WebGLRenderTargetModule from './webglRenderTarget';
 import { destroyWebGLRenderTarget, drawWebGLRenderTargetResult } from './webglRenderTarget';
 import type * as WebGLSpriteBatchModule from './webglSpriteBatch';
@@ -55,6 +57,7 @@ vi.mock('./webglDisplayObject', async (importOriginal) => {
 function fakeScreen(options = {}): WebGLRenderState {
   const state = createRenderState(options) as unknown as WebGLRenderState;
   (state as any).gl = { clear: vi.fn(), clearColor: vi.fn(), COLOR_BUFFER_BIT: 0x4000 };
+  state[EntityRuntimeKey] = createWebGLRenderStateRuntime();
   return state;
 }
 
@@ -67,9 +70,13 @@ describe('createWebGLCacheState', () => {
     const screen = fakeScreen();
     enableWebGLRenderCache(screen);
     const cacheState = createWebGLCacheState(screen);
-    expect(cacheState.rendererMap.get(RenderCacheKind)).toBe(defaultWebGLRenderCacheRenderer);
+    expect(getWebGLRenderStateRuntime(cacheState).rendererMap.get(RenderCacheKind)).toBe(
+      defaultWebGLRenderCacheRenderer,
+    );
     expect((cacheState as any).gl).toBe((screen as any).gl);
-    expect(cacheState.renderProxyMap).not.toBe(screen.renderProxyMap);
+    expect(getWebGLRenderStateRuntime(cacheState).renderProxyMap).not.toBe(
+      getWebGLRenderStateRuntime(screen).renderProxyMap,
+    );
   });
 });
 
@@ -110,7 +117,7 @@ describe('enableWebGLRenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = fakeScreen();
     enableWebGLRenderCache(state);
-    expect(state.rendererMap.get(RenderCacheKind)).toBe(defaultWebGLRenderCacheRenderer);
+    expect(getWebGLRenderStateRuntime(state).rendererMap.get(RenderCacheKind)).toBe(defaultWebGLRenderCacheRenderer);
   });
 });
 

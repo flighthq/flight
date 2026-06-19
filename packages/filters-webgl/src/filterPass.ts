@@ -1,5 +1,5 @@
-import type { WebGLRenderStateInternal } from '@flighthq/render-webgl';
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
+import { getWebGLRenderStateRuntime } from '@flighthq/render-webgl';
 import type { WebGLRenderState } from '@flighthq/types';
 
 // Filter vertex shader uses clip-space positions directly (no matrix transform).
@@ -26,18 +26,18 @@ export type WebGLDualSourceLocations = WebGLFilterLocations & {
 
 /** Clears a render target to fully transparent. */
 export function clearWebGLFilterTarget(state: WebGLRenderState, target: WebGLRenderTarget): void {
-  const internal = state as WebGLRenderStateInternal;
-  const { gl } = internal;
-  if (internal.currentFramebuffer !== target.framebuffer) {
+  const runtime = getWebGLRenderStateRuntime(state);
+  const gl = state.gl;
+  if (runtime.currentFramebuffer !== target.framebuffer) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, target.framebuffer);
-    internal.currentFramebuffer = target.framebuffer;
+    runtime.currentFramebuffer = target.framebuffer;
   }
   gl.viewport(0, 0, target.width, target.height);
-  internal.renderTargetViewport = { width: target.width, height: target.height };
+  runtime.renderTargetViewport = { width: target.width, height: target.height };
   gl.clearColor(0, 0, 0, 0);
   gl.clear(gl.COLOR_BUFFER_BIT);
-  state.currentTexture = null;
-  state.currentBlendMode = null;
+  runtime.currentTexture = null;
+  runtime.currentBlendMode = null;
 }
 
 export function compileWebGLFilterProgram(gl: WebGL2RenderingContext, fragmentSrc: string): WebGLFilterLocations {
@@ -73,28 +73,28 @@ export function drawWebGLDualSourcePass(
   locations: WebGLDualSourceLocations,
   setUniforms: (gl: WebGL2RenderingContext) => void,
 ): void {
-  const internal = state as WebGLRenderStateInternal;
-  const { gl } = internal;
+  const runtime = getWebGLRenderStateRuntime(state);
+  const gl = state.gl;
 
-  if (state.currentProgram !== locations.program) {
+  if (runtime.currentProgram !== locations.program) {
     gl.useProgram(locations.program);
-    state.currentProgram = locations.program;
+    runtime.currentProgram = locations.program;
   }
 
   const destFramebuffer = dest?.framebuffer ?? null;
-  if (internal.currentFramebuffer !== destFramebuffer) {
+  if (runtime.currentFramebuffer !== destFramebuffer) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, destFramebuffer);
-    internal.currentFramebuffer = destFramebuffer;
+    runtime.currentFramebuffer = destFramebuffer;
   }
   const destWidth = dest?.width ?? state.canvas.width;
   const destHeight = dest?.height ?? state.canvas.height;
   gl.viewport(0, 0, destWidth, destHeight);
-  internal.renderTargetViewport = dest ? { width: destWidth, height: destHeight } : null;
+  runtime.renderTargetViewport = dest ? { width: destWidth, height: destHeight } : null;
 
   gl.activeTexture(gl.TEXTURE0);
-  if (state.currentTexture !== source0.texture) {
+  if (runtime.currentTexture !== source0.texture) {
     gl.bindTexture(gl.TEXTURE_2D, source0.texture);
-    state.currentTexture = source0.texture;
+    runtime.currentTexture = source0.texture;
   }
   gl.uniform1i(locations.locTexture, 0);
 
@@ -104,11 +104,11 @@ export function drawWebGLDualSourcePass(
   gl.activeTexture(gl.TEXTURE0);
 
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-  state.currentBlendMode = null;
+  runtime.currentBlendMode = null;
 
   setUniforms(gl);
 
-  drawFilterQuad(internal, locations);
+  drawFilterQuad(state, locations);
 }
 
 /**
@@ -123,42 +123,43 @@ export function drawWebGLFilterPass(
   locations: WebGLFilterLocations,
   setUniforms: (gl: WebGL2RenderingContext) => void,
 ): void {
-  const internal = state as WebGLRenderStateInternal;
-  const { gl } = internal;
+  const runtime = getWebGLRenderStateRuntime(state);
+  const gl = state.gl;
 
-  if (state.currentProgram !== locations.program) {
+  if (runtime.currentProgram !== locations.program) {
     gl.useProgram(locations.program);
-    state.currentProgram = locations.program;
+    runtime.currentProgram = locations.program;
   }
 
   const destFramebuffer = dest?.framebuffer ?? null;
-  if (internal.currentFramebuffer !== destFramebuffer) {
+  if (runtime.currentFramebuffer !== destFramebuffer) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, destFramebuffer);
-    internal.currentFramebuffer = destFramebuffer;
+    runtime.currentFramebuffer = destFramebuffer;
   }
   const destWidth = dest?.width ?? state.canvas.width;
   const destHeight = dest?.height ?? state.canvas.height;
   gl.viewport(0, 0, destWidth, destHeight);
-  internal.renderTargetViewport = dest ? { width: destWidth, height: destHeight } : null;
+  runtime.renderTargetViewport = dest ? { width: destWidth, height: destHeight } : null;
 
   gl.activeTexture(gl.TEXTURE0);
-  if (state.currentTexture !== source.texture) {
+  if (runtime.currentTexture !== source.texture) {
     gl.bindTexture(gl.TEXTURE_2D, source.texture);
-    state.currentTexture = source.texture;
+    runtime.currentTexture = source.texture;
   }
   gl.uniform1i(locations.locTexture, 0);
 
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-  state.currentBlendMode = null;
+  runtime.currentBlendMode = null;
 
   setUniforms(gl);
 
-  drawFilterQuad(internal, locations);
+  drawFilterQuad(state, locations);
 }
 
-function drawFilterQuad(internal: WebGLRenderStateInternal, locations: WebGLFilterLocations): void {
-  const { gl } = internal;
-  const v = internal.quadVertexData;
+function drawFilterQuad(state: WebGLRenderState, locations: WebGLFilterLocations): void {
+  const runtime = getWebGLRenderStateRuntime(state);
+  const gl = state.gl;
+  const v = runtime.quadVertexData;
   v[0] = -1;
   v[1] = -1;
   v[2] = 0;
@@ -176,9 +177,9 @@ function drawFilterQuad(internal: WebGLRenderStateInternal, locations: WebGLFilt
   v[14] = 0;
   v[15] = 1;
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, internal.quadVertexBuffer);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadVertexBuffer);
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, v);
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, internal.quadIndexBuffer);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, runtime.quadIndexBuffer);
 
   gl.enableVertexAttribArray(locations.locPosition);
   gl.enableVertexAttribArray(locations.locTexCoord);
@@ -187,7 +188,7 @@ function drawFilterQuad(internal: WebGLRenderStateInternal, locations: WebGLFilt
 
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
-  internal.shaderLoc = internal.defaultBitmapShader.locations;
+  runtime.shaderLoc = runtime.defaultBitmapShader.locations;
 }
 
 function compileShader(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader {

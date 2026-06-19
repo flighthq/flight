@@ -1,17 +1,17 @@
 import { noopRendererData } from '@flighthq/render';
-import type { RenderProxy2D, RenderState, Sprite, SpriteRenderer } from '@flighthq/types';
+import type { RenderProxy2D, Sprite, SpriteRenderer, WebGLRenderState } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
 import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import {
   ensureWebGLQuadBatchShader,
   packWebGLSpriteBatchMaterialInstance,
   prepareWebGLSpriteBatchWrite,
 } from './webglSpriteBatch';
 
-function submitWebGLSpriteNode(state: RenderState, spriteNode: RenderProxy2D): void {
-  const internal = state as WebGLRenderStateInternal;
+function submitWebGLSpriteNode(state: WebGLRenderState, spriteNode: RenderProxy2D): void {
+  const runtime = getWebGLRenderStateRuntime(state);
   const source = spriteNode.source as Sprite;
   const { atlas, id } = source.data;
   if (atlas === null || atlas.image === null || atlas.image.source === null) return;
@@ -22,25 +22,25 @@ function submitWebGLSpriteNode(state: RenderState, spriteNode: RenderProxy2D): v
   const region = regions[id];
   if (region.width <= 0 || region.height <= 0) return;
 
-  ensureWebGLQuadBatchShader(internal);
+  ensureWebGLQuadBatchShader(state);
 
   const iw = 1 / (atlas.image.width || 1);
   const ih = 1 / (atlas.image.height || 1);
   const t = spriteNode.transform2D;
 
   const material = spriteNode.material;
-  const materialRenderer = resolveWebGLMaterialRenderer(internal, material);
+  const materialRenderer = resolveWebGLMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const base = prepareWebGLSpriteBatchWrite(
-    internal,
+    state,
     atlas.image.source,
     spriteNode.blendMode,
     material,
     materialRenderer,
     1,
   );
-  const instanceIndex = internal.spriteBatchCount;
-  const d = internal.spriteBatchInstanceData;
+  const instanceIndex = runtime.spriteBatchCount;
+  const d = runtime.spriteBatchInstanceData;
   d[base] = t.a;
   d[base + 1] = t.b;
   d[base + 2] = t.c;
@@ -54,8 +54,8 @@ function submitWebGLSpriteNode(state: RenderState, spriteNode: RenderProxy2D): v
   d[base + 10] = (region.x + region.width) * iw;
   d[base + 11] = (region.y + region.height) * ih;
   d[base + 12] = spriteNode.alpha;
-  packWebGLSpriteBatchMaterialInstance(internal, spriteNode.materialData, instanceIndex);
-  internal.spriteBatchCount++;
+  packWebGLSpriteBatchMaterialInstance(state, spriteNode.materialData, instanceIndex);
+  runtime.spriteBatchCount++;
 }
 
 export const defaultWebGLSpriteRenderer: SpriteRenderer = {

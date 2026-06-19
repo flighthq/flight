@@ -2,7 +2,7 @@ import { getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render';
 import type { DisplayObject, DisplayObjectRenderer, RenderProxy2D, WebGPURenderState } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 
 export function drawWebGPUDisplayObject(_state: WebGPURenderState, _renderProxy: RenderProxy2D): void {
@@ -10,7 +10,7 @@ export function drawWebGPUDisplayObject(_state: WebGPURenderState, _renderProxy:
 }
 
 export function renderWebGPUDisplayObject(state: WebGPURenderState, source: DisplayObject): void {
-  const tempStack = state.tempStack;
+  const tempStack = getWebGPURenderStateRuntime(state).tempStack;
   const clipHooks = state.displayObjectClipHooks;
 
   let stackLength = 1;
@@ -40,7 +40,7 @@ export function renderWebGPUDisplayObject(state: WebGPURenderState, source: Disp
     }
   }
 
-  flushWebGPUSpriteBatch(state as WebGPURenderStateInternal);
+  flushWebGPUSpriteBatch(state);
   clipHooks?.finalize(state);
 }
 

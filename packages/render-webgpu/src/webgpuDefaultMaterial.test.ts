@@ -1,7 +1,9 @@
-import { DefaultMaterialKind } from '@flighthq/types';
+import type { WebGPURenderState } from '@flighthq/types';
+import { DefaultMaterialKind, EntityRuntimeKey } from '@flighthq/types';
 
 import { defaultWebGPUMaterialRenderer, registerDefaultWebGPUMaterial } from './webgpuDefaultMaterial';
 import { getWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
+import { createWebGPURenderStateRuntime } from './webgpuRenderState';
 
 describe('defaultWebGPUMaterialRenderer', () => {
   it('declares no per-instance float data', () => {
@@ -11,7 +13,8 @@ describe('defaultWebGPUMaterialRenderer', () => {
 
 describe('registerDefaultWebGPUMaterial', () => {
   it('registers the default renderer under DefaultMaterialKind', () => {
-    const state = {} as never;
+    const state = {} as WebGPURenderState;
+    state[EntityRuntimeKey] = createWebGPURenderStateRuntime();
     registerDefaultWebGPUMaterial(state);
     expect(getWebGPUMaterialRenderer(state, DefaultMaterialKind)).toBe(defaultWebGPUMaterialRenderer);
   });

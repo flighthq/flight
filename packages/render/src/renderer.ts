@@ -1,6 +1,6 @@
 import type { Renderable, Renderer, RendererData, RenderState } from '@flighthq/types';
 
-import type { RenderStateInternal } from './internal';
+import { getRenderStateRuntime } from './renderState';
 
 // Mask renderers were retired (a mask is now a path ClipRegion realized by the backend clip hooks), so
 // there is no mask-renderer registry to copy — only the kind→renderer map and the clip hooks.
@@ -10,7 +10,7 @@ export function copyAllRenderersFromRenderState(target: RenderState, source: Ren
 }
 
 export function copyRenderersFromRenderState(target: RenderState, source: RenderState): void {
-  source.rendererMap.forEach((renderer, kind) => {
+  getRenderStateRuntime(source).rendererMap.forEach((renderer, kind) => {
     registerRenderer(target, kind, renderer);
   });
 }
@@ -20,7 +20,8 @@ export function noopRendererData(_state: RenderState, _source: Renderable): Rend
 }
 
 export function registerRenderer(state: RenderState, kind: symbol, renderer: Renderer): void {
-  if (state.rendererMap.get(kind) === renderer) return;
-  (state as RenderStateInternal).rendererMapID = (state.rendererMapID + 1) >>> 0;
-  state.rendererMap.set(kind, renderer);
+  const runtime = getRenderStateRuntime(state);
+  if (runtime.rendererMap.get(kind) === renderer) return;
+  runtime.rendererMapID = (runtime.rendererMapID + 1) >>> 0;
+  runtime.rendererMap.set(kind, renderer);
 }

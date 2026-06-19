@@ -7,13 +7,13 @@ import type {
   Renderable,
   RendererData,
   RenderProxy2D,
-  RenderState,
   Shape,
+  WebGLRenderState,
 } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
 import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import type { WebGLShapeMesh } from './webglShapeMesh';
 import { drawWebGLShapeMeshes } from './webglShapeMesh';
 import {
@@ -34,7 +34,7 @@ interface WebGLShapeData {
   meshes: WebGLShapeMesh[] | null;
 }
 
-function createWebGLShapeData(_state: RenderState, _source: Renderable): RendererData | null {
+function createWebGLShapeData(_state: WebGLRenderState, _source: Renderable): RendererData | null {
   const canvas = document.createElement('canvas');
   canvas.width = 1;
   canvas.height = 1;
@@ -52,18 +52,18 @@ function createWebGLShapeData(_state: RenderState, _source: Renderable): Rendere
 
 // The batch uploads this shape's canvas into the shared texture cache; free that GPU texture when
 // the shape is torn down so it does not leak past the canvas it was keyed on.
-function destroyWebGLShapeData(state: RenderState, data: RendererData): void {
-  const internal = state as WebGLRenderStateInternal;
+function destroyWebGLShapeData(state: WebGLRenderState, data: RendererData): void {
+  const runtime = getWebGLRenderStateRuntime(state);
   const { canvas } = data as unknown as WebGLShapeData;
-  const texture = internal.textureCache.get(canvas);
+  const texture = runtime.textureCache.get(canvas);
   if (texture !== undefined) {
-    internal.gl.deleteTexture(texture);
-    internal.textureCache.delete(canvas);
+    state.gl.deleteTexture(texture);
+    runtime.textureCache.delete(canvas);
   }
 }
 
-export function drawWebGLShape(state: RenderState, renderProxy: RenderProxy2D): void {
-  const internal = state as WebGLRenderStateInternal;
+export function drawWebGLShape(state: WebGLRenderState, renderProxy: RenderProxy2D): void {
+  const runtime = getWebGLRenderStateRuntime(state);
   const source = renderProxy.source as Shape;
   const { commands } = source.data;
   const version = getNodeLocalContentRevision(source);
@@ -87,12 +87,12 @@ export function drawWebGLShape(state: RenderState, renderProxy: RenderProxy2D): 
       });
       meshData.meshVersion = version;
     }
-    drawWebGLShapeMeshes(internal, renderProxy, meshData.meshes ?? []);
+    drawWebGLShapeMeshes(state, renderProxy, meshData.meshes ?? []);
     return;
   }
 
   const material = renderProxy.material;
-  const materialRenderer = resolveWebGLMaterialRenderer(internal, material);
+  const materialRenderer = resolveWebGLMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
   const shapeData = renderProxy.rendererData as unknown as WebGLShapeData;
@@ -111,28 +111,28 @@ export function drawWebGLShape(state: RenderState, renderProxy: RenderProxy2D): 
     renderCanvasShapeCommands(ctx, commands);
     ctx.restore();
     // Invalidate the cached GPU texture so the batch re-uploads from the updated canvas.
-    internal.textureCache.delete(shapeData.canvas);
+    runtime.textureCache.delete(shapeData.canvas);
     shapeData.lastContentID = version;
     shapeData.lastW = w;
     shapeData.lastH = h;
   }
 
-  ensureWebGLQuadBatchShader(internal);
+  ensureWebGLQuadBatchShader(state);
 
   const t = renderProxy.transform2D;
   const tx = t.tx + t.a * bounds.x + t.c * bounds.y;
   const ty = t.ty + t.b * bounds.x + t.d * bounds.y;
 
-  const startCount = internal.spriteBatchCount;
+  const startCount = runtime.spriteBatchCount;
   const base = prepareWebGLSpriteBatchWrite(
-    internal,
+    state,
     shapeData.canvas,
     renderProxy.blendMode,
     material,
     materialRenderer,
     1,
   );
-  const d = internal.spriteBatchInstanceData;
+  const d = runtime.spriteBatchInstanceData;
   d[base] = t.a;
   d[base + 1] = t.b;
   d[base + 2] = t.c;
@@ -146,8 +146,8 @@ export function drawWebGLShape(state: RenderState, renderProxy: RenderProxy2D): 
   d[base + 10] = 1;
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
-  packWebGLSpriteBatchMaterialInstance(internal, renderProxy.materialData, startCount);
-  internal.spriteBatchCount++;
+  packWebGLSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
+  runtime.spriteBatchCount++;
 }
 
 export const defaultWebGLShapeRenderer: DisplayObjectRenderer = {

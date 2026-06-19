@@ -1,9 +1,8 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { invalidateNodeLocalTransform } from '@flighthq/node';
 
-import type { RenderProxyStateInternal } from './internal';
 import { createRenderProxy2D } from './renderProxy';
-import { createRenderState } from './renderState';
+import { createRenderState, getRenderStateRuntime } from './renderState';
 import { updateDisplayObjectRenderTransform, updateRenderProxy2DTransform } from './transform2d';
 
 describe('updateDisplayObjectRenderTransform', () => {
@@ -34,7 +33,7 @@ describe('updateDisplayObjectRenderTransform', () => {
 
   it('sets transformFrameID to currentFrameID when dirty', () => {
     const state = createRenderState();
-    (state as RenderProxyStateInternal).currentFrameID = 3;
+    getRenderStateRuntime(state).currentFrameID = 3;
     const obj = createDisplayObject();
     const data = createRenderProxy2D(state, obj);
     updateDisplayObjectRenderTransform(state, data);
@@ -60,10 +59,10 @@ describe('updateRenderProxy2DTransform', () => {
 
   it('returns true when parent was updated this frame', () => {
     const state = createRenderState();
-    (state as RenderProxyStateInternal).currentFrameID = 2;
+    getRenderStateRuntime(state).currentFrameID = 2;
     const parentObj = createDisplayObject();
     const parentData = createRenderProxy2D(state, parentObj);
-    parentData.transformFrameID = state.currentFrameID;
+    parentData.transformFrameID = getRenderStateRuntime(state).currentFrameID;
 
     const obj = createDisplayObject();
     const data = createRenderProxy2D(state, obj);
@@ -73,7 +72,7 @@ describe('updateRenderProxy2DTransform', () => {
 
   it('sets transformFrameID to currentFrameID on update', () => {
     const state = createRenderState();
-    (state as RenderProxyStateInternal).currentFrameID = 5;
+    getRenderStateRuntime(state).currentFrameID = 5;
     const obj = createDisplayObject();
     const data = createRenderProxy2D(state, obj);
     updateRenderProxy2DTransform(state, data);
@@ -86,7 +85,7 @@ describe('updateRenderProxy2DTransform', () => {
     parentObj.x = 10;
     const parentData = createRenderProxy2D(state, parentObj);
     updateRenderProxy2DTransform(state, parentData);
-    parentData.transformFrameID = state.currentFrameID;
+    parentData.transformFrameID = getRenderStateRuntime(state).currentFrameID;
 
     const obj = createDisplayObject();
     obj.x = 5;

@@ -19,4 +19,3 @@ export * from './domTextLabel';
 export * from './domTransform';
 export * from './domVideo';
 export * from './htmlView';
-export type { DOMRenderStateInternal } from './internal';

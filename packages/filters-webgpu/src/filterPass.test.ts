@@ -1,3 +1,4 @@
+import { getWebGPURenderStateRuntime } from '@flighthq/render-webgpu';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -48,8 +49,8 @@ describe('clearWebGPUFilterTarget', () => {
   it('begins and ends a render pass with loadOp clear', async () => {
     const state = await makeFilterState();
     const target = makeRenderTarget();
-    const internal = state as never as { commandEncoder: { beginRenderPass: ReturnType<typeof vi.fn> } };
-    const beginSpy = vi.spyOn(internal.commandEncoder, 'beginRenderPass');
+    const runtime = getWebGPURenderStateRuntime(state);
+    const beginSpy = vi.spyOn(runtime.commandEncoder!, 'beginRenderPass');
     clearWebGPUFilterTarget(state, target);
     expect(beginSpy).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -103,21 +104,13 @@ describe('drawWebGPUDualSourcePass', () => {
     const pipeline = createWebGPUDualSourcePipeline(state, DUAL_FRAGMENT_WGSL);
 
     const drawCalls: number[] = [];
-    const internal = state as never as {
-      commandEncoder: {
-        beginRenderPass: () => {
-          setPipeline: () => void;
-          setBindGroup: () => void;
-          draw: (n: number) => void;
-          end: () => void;
-          setViewport: () => void;
-        };
-      };
-    };
-    const origBegin = internal.commandEncoder.beginRenderPass.bind(internal.commandEncoder);
-    vi.spyOn(internal.commandEncoder, 'beginRenderPass').mockImplementation((...args) => {
+    const commandEncoder = getWebGPURenderStateRuntime(state).commandEncoder!;
+    const origBegin = commandEncoder.beginRenderPass.bind(commandEncoder);
+    vi.spyOn(commandEncoder, 'beginRenderPass').mockImplementation((...args) => {
       const pass = origBegin(...args);
-      vi.spyOn(pass, 'draw').mockImplementation((n) => drawCalls.push(n));
+      vi.spyOn(pass, 'draw').mockImplementation((n) => {
+        drawCalls.push(n);
+      });
       return pass;
     });
 
@@ -147,8 +140,7 @@ describe('drawWebGPUFilterPass', () => {
 
   it('throws when no command encoder is active', async () => {
     const state = await makeFilterState();
-    const internalState = state as never as { commandEncoder: null };
-    internalState.commandEncoder = null;
+    getWebGPURenderStateRuntime(state).commandEncoder = null;
     const pipeline = createWebGPUFilterPipeline(state, MINIMAL_FRAGMENT_WGSL);
     const source = makeRenderTarget();
     expect(() => drawWebGPUFilterPass(state, source, null, pipeline, () => {})).toThrow();

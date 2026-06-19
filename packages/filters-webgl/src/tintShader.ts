@@ -1,4 +1,3 @@
-import type { WebGLRenderStateInternal } from '@flighthq/render-webgl';
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
 import type { WebGLRenderState } from '@flighthq/types';
 
@@ -136,7 +135,7 @@ export function applyWebGLTintPass(
 export function getWebGLBlitOffsetShader(state: WebGLRenderState): BlitOffsetShaderLocations {
   let loc = blitOffsetShaders.get(state);
   if (loc === undefined) {
-    const gl = (state as WebGLRenderStateInternal).gl;
+    const gl = state.gl;
     const base = compileWebGLFilterProgram(gl, BLIT_OFFSET_FRAGMENT_SRC);
     loc = { ...base, locOffset: gl.getUniformLocation(base.program, 'u_offset')! };
     blitOffsetShaders.set(state, loc);
@@ -147,7 +146,7 @@ export function getWebGLBlitOffsetShader(state: WebGLRenderState): BlitOffsetSha
 export function getWebGLBlitShader(state: WebGLRenderState): WebGLFilterLocations {
   let loc = blitShaders.get(state);
   if (loc === undefined) {
-    const gl = (state as WebGLRenderStateInternal).gl;
+    const gl = state.gl;
     loc = compileWebGLFilterProgram(gl, BLIT_FRAGMENT_SRC);
     blitShaders.set(state, loc);
   }
@@ -157,7 +156,7 @@ export function getWebGLBlitShader(state: WebGLRenderState): WebGLFilterLocation
 export function getWebGLInvertTintShader(state: WebGLRenderState): TintShaderLocations {
   let loc = invertTintShaders.get(state);
   if (loc === undefined) {
-    const gl = (state as WebGLRenderStateInternal).gl;
+    const gl = state.gl;
     const base = compileWebGLFilterProgram(gl, INVERT_TINT_FRAGMENT_SRC);
     loc = {
       ...base,
@@ -173,7 +172,7 @@ export function getWebGLInvertTintShader(state: WebGLRenderState): TintShaderLoc
 export function getWebGLTintShader(state: WebGLRenderState): TintShaderLocations {
   let loc = tintShaders.get(state);
   if (loc === undefined) {
-    const gl = (state as WebGLRenderStateInternal).gl;
+    const gl = state.gl;
     const base = compileWebGLFilterProgram(gl, TINT_FRAGMENT_SRC);
     loc = {
       ...base,

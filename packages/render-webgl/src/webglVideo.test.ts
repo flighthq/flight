@@ -1,5 +1,6 @@
 ﻿import type { RendererData, RenderProxy2D } from '@flighthq/types';
 
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { makeWebGLState } from './webglTestHelper';
 import { createWebGLVideoData, defaultWebGLVideoRenderer, destroyWebGLVideoData, drawWebGLVideo } from './webglVideo';
 
@@ -31,13 +32,14 @@ describe('defaultWebGLVideoRenderer', () => {
 describe('destroyWebGLVideoData', () => {
   it('deletes the cached GPU texture for the recorded element', () => {
     const { state, gl } = makeWebGLState();
+    const runtime = getWebGLRenderStateRuntime(state);
     const element = document.createElement('video');
     const texture = gl.createTexture();
-    state.textureCache.set(element, texture as WebGLTexture);
+    runtime.textureCache.set(element, texture as WebGLTexture);
     const deleteSpy = vi.spyOn(gl, 'deleteTexture');
     destroyWebGLVideoData(state, { lastElement: element } as unknown as RendererData);
     expect(deleteSpy).toHaveBeenCalledWith(texture);
-    expect(state.textureCache.has(element)).toBe(false);
+    expect(runtime.textureCache.has(element)).toBe(false);
   });
 
   it('is a no-op when no element was recorded', () => {

@@ -3,6 +3,7 @@ import type { RenderProxy2D, TextLabel } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import { registerDefaultWebGLMaterial } from './webglDefaultMaterial';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 import { makeWebGLState } from './webglTestHelper';
 import { defaultWebGLTextLabelRenderer, drawWebGLTextLabel } from './webglTextLabel';
@@ -70,34 +71,34 @@ describe('drawWebGLTextLabel', () => {
     const { state } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     drawWebGLTextLabel(state, makeTextProxy('', makeTextData()));
-    expect(state.spriteBatchCount).toBe(0);
+    expect(getWebGLRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('returns early without writing to batch when rendererData is null', () => {
     const { state } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     drawWebGLTextLabel(state, makeTextProxy('hello', null));
-    expect(state.spriteBatchCount).toBe(0);
+    expect(getWebGLRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('returns early without writing to batch when no material renderer is registered', () => {
     const { state } = makeWebGLState();
     drawWebGLTextLabel(state, makeTextProxy('hello', makeTextData()));
-    expect(state.spriteBatchCount).toBe(0);
+    expect(getWebGLRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('writes one instance to the sprite batch when text has content', () => {
     const { state } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     drawWebGLTextLabel(state, makeTextProxy('hello', makeTextData()));
-    expect(state.spriteBatchCount).toBe(1);
+    expect(getWebGLRenderStateRuntime(state).spriteBatchCount).toBe(1);
   });
 
   it('draws via drawElementsInstanced after flush', () => {
     const { state, gl } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     drawWebGLTextLabel(state, makeTextProxy('hello', makeTextData()));
-    flushWebGLSpriteBatch(state as any);
+    flushWebGLSpriteBatch(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalled();
   });
 
@@ -105,7 +106,7 @@ describe('drawWebGLTextLabel', () => {
     const { state } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     const proxy = makeTextProxy('hello', makeTextData());
-    const deleteSpy = vi.spyOn((state as any).textureCache, 'delete');
+    const deleteSpy = vi.spyOn(getWebGLRenderStateRuntime(state).textureCache, 'delete');
     drawWebGLTextLabel(state, proxy);
     drawWebGLTextLabel(state, proxy);
     // textureCache.delete only happens during rasterization (first call); skipped on second.
@@ -116,7 +117,7 @@ describe('drawWebGLTextLabel', () => {
     const { state } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     const proxy = makeTextProxy('hello', makeTextData());
-    const deleteSpy = vi.spyOn((state as any).textureCache, 'delete');
+    const deleteSpy = vi.spyOn(getWebGLRenderStateRuntime(state).textureCache, 'delete');
     drawWebGLTextLabel(state, proxy);
     setTextLabelString(proxy.source as TextLabel, 'world');
     drawWebGLTextLabel(state, proxy);
@@ -127,7 +128,7 @@ describe('drawWebGLTextLabel', () => {
     const { state } = makeWebGLState();
     registerDefaultWebGLMaterial(state);
     const proxy = makeTextProxy('hello', makeTextData());
-    const deleteSpy = vi.spyOn((state as any).textureCache, 'delete');
+    const deleteSpy = vi.spyOn(getWebGLRenderStateRuntime(state).textureCache, 'delete');
     drawWebGLTextLabel(state, proxy);
     proxy.alpha = 0.5;
     drawWebGLTextLabel(state, proxy);

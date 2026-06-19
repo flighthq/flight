@@ -23,10 +23,17 @@ import type {
 } from '@flighthq/types';
 
 import { renderCanvasDisplayObject } from './canvasDisplayObject';
-import { createCanvasRenderState } from './canvasRenderState';
+import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasRenderState';
 import { createCanvasRenderTarget, resizeCanvasRenderTarget } from './canvasRenderTarget';
 import { setCanvasTransform } from './canvasTransform';
-import type { CanvasRenderStateInternal } from './internal';
+
+// Writable view of the readonly canvas/context handles. refreshCanvasRenderCache redirects the
+// offscreen cache state's handles at the cache target, mirroring the redirection boundary in
+// canvasRenderTarget.
+type CanvasRenderStateHandles = CanvasRenderState & {
+  canvas: HTMLCanvasElement;
+  context: CanvasRenderingContext2D;
+};
 
 /**
  * Creates a dedicated offscreen render state for baking render caches consumed by
@@ -36,7 +43,7 @@ import type { CanvasRenderStateInternal } from './internal';
  * node map, adapter map, and frame counter, so baking never touches the screen state.
  */
 export function createCanvasCacheState(screenState: CanvasRenderState): CanvasRenderState {
-  const screen = screenState as CanvasRenderStateInternal;
+  const screen = getCanvasRenderStateRuntime(screenState);
   const cacheState = createCanvasRenderState(document.createElement('canvas'), {
     imageSmoothingEnabled: screen.imageSmoothingEnabled,
     imageSmoothingQuality: screen.imageSmoothingQuality,
@@ -113,16 +120,17 @@ export function refreshCanvasRenderCache(
   computeDisplayObjectRenderTargetTransform(_renderTransform, source, _bounds, padding, padding);
   computeRenderCacheTransform(cache.transform, _bounds, padding, padding);
 
-  const internal = cacheState as CanvasRenderStateInternal;
-  internal.canvas = target.canvas;
-  internal.context = target.context;
-  internal.context.imageSmoothingEnabled = internal.imageSmoothingEnabled;
-  internal.context.imageSmoothingQuality = internal.imageSmoothingQuality;
-  copyMatrix(internal.renderTransform2D as Matrix, _renderTransform);
+  const handles = cacheState as CanvasRenderStateHandles;
+  const runtime = getCanvasRenderStateRuntime(cacheState);
+  handles.canvas = target.canvas;
+  handles.context = target.context;
+  handles.context.imageSmoothingEnabled = runtime.imageSmoothingEnabled;
+  handles.context.imageSmoothingQuality = runtime.imageSmoothingQuality;
+  copyMatrix(handles.renderTransform2D as Matrix, _renderTransform);
 
   const dirty = prepareDisplayObjectRender(cacheState, source);
   if (dirty || resized) {
-    internal.context.clearRect(0, 0, target.canvas.width, target.canvas.height);
+    handles.context.clearRect(0, 0, target.canvas.width, target.canvas.height);
     renderCanvasDisplayObject(cacheState, source);
   }
   return dirty || resized;

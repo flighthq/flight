@@ -1,14 +1,13 @@
 ﻿import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
 
-import { createDOMRenderState } from './domRenderState';
+import { createDOMRenderState, getDOMRenderStateRuntime } from './domRenderState';
 import { createDOMScale9ShapeData, defaultDOMScale9ShapeRenderer, drawDOMScale9Shape } from './domScale9Shape';
-import type { DOMRenderStateInternal } from './internal';
 
 const grid = { height: 80, width: 80, x: 10, y: 10 };
 
 function getCurrentElement(state: ReturnType<typeof createDOMRenderState>): HTMLElement | null {
-  return (state as DOMRenderStateInternal).domCurrentElement;
+  return getDOMRenderStateRuntime(state).domCurrentElement;
 }
 
 describe('createDOMScale9ShapeData', () => {

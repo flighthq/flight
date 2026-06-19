@@ -1,4 +1,5 @@
 import { renderWebGLBackground } from './webglBackground';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { makeWebGLState } from './webglTestHelper';
 
 describe('renderWebGLBackground', () => {
@@ -28,9 +29,10 @@ describe('renderWebGLBackground', () => {
 
   it('resets currentBlendMode to null', () => {
     const { state } = makeWebGLState();
-    state.currentBlendMode = 0;
+    const runtime = getWebGLRenderStateRuntime(state);
+    runtime.currentBlendMode = 0;
     renderWebGLBackground(state);
-    expect(state.currentBlendMode).toBeNull();
+    expect(runtime.currentBlendMode).toBeNull();
   });
 
   it('passes fractional RGBA values through unchanged', () => {

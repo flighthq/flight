@@ -1,9 +1,9 @@
 import { noopRendererData } from '@flighthq/render';
-import type { RenderProxy2D, RenderState, SpriteRenderer, Tilemap } from '@flighthq/types';
+import type { RenderProxy2D, SpriteRenderer, Tilemap, WebGLRenderState } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
 import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import {
   ensureWebGLQuadBatchShader,
   packWebGLSpriteBatchMaterialInstance,
@@ -12,8 +12,8 @@ import {
 
 const INSTANCE_FLOATS = 13;
 
-function submitWebGLTilemap(state: RenderState, tilemapNode: RenderProxy2D): void {
-  const internal = state as WebGLRenderStateInternal;
+function submitWebGLTilemap(state: WebGLRenderState, tilemapNode: RenderProxy2D): void {
+  const runtime = getWebGLRenderStateRuntime(state);
   const source = tilemapNode.source as Tilemap;
   const { tileset, columns, rows, tiles } = source.data;
 
@@ -22,16 +22,16 @@ function submitWebGLTilemap(state: RenderState, tilemapNode: RenderProxy2D): voi
   if (atlas === null || atlas.image === null || atlas.image.source === null) return;
   if (columns === 0 || rows === 0) return;
 
-  ensureWebGLQuadBatchShader(internal);
+  ensureWebGLQuadBatchShader(state);
 
   const material = tilemapNode.material;
-  const materialRenderer = resolveWebGLMaterialRenderer(internal, material);
+  const materialRenderer = resolveWebGLMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const nodeMaterialData = tilemapNode.materialData;
   const perTileMaterialData = source.data.materialData;
-  const startCount = internal.spriteBatchCount;
+  const startCount = runtime.spriteBatchCount;
   const base = prepareWebGLSpriteBatchWrite(
-    internal,
+    state,
     atlas.image.source,
     tilemapNode.blendMode,
     material,
@@ -44,7 +44,7 @@ function submitWebGLTilemap(state: RenderState, tilemapNode: RenderProxy2D): voi
   const { tileWidth, tileHeight } = tileset;
   const iw = 1 / (atlas.image.width || 1);
   const ih = 1 / (atlas.image.height || 1);
-  const instanceData = internal.spriteBatchInstanceData;
+  const instanceData = runtime.spriteBatchInstanceData;
   const pt = tilemapNode.transform2D;
   const pa = pt.a,
     pb = pt.b,
@@ -79,13 +79,13 @@ function submitWebGLTilemap(state: RenderState, tilemapNode: RenderProxy2D): voi
       instanceData[writeBase + 11] = (region.y + region.height) * ih;
       instanceData[writeBase + 12] = alpha;
       const md = perTileMaterialData?.[row * columns + col] ?? nodeMaterialData;
-      packWebGLSpriteBatchMaterialInstance(internal, md, startCount + drawCount);
+      packWebGLSpriteBatchMaterialInstance(state, md, startCount + drawCount);
       writeBase += INSTANCE_FLOATS;
       drawCount++;
     }
   }
 
-  internal.spriteBatchCount += drawCount;
+  runtime.spriteBatchCount += drawCount;
 }
 
 export const defaultWebGLTilemapRenderer: SpriteRenderer = {
