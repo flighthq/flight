@@ -93,6 +93,12 @@ export function createWebGPUCacheState(screenState: WebGPURenderState): WebGPURe
   cacheState.uniformOffset = 0;
   cacheState.currentBlendMode = null;
   cacheState.currentMaskDepth = 0;
+  // Contour-clip pipelines can be lazily rebuilt against the cache's device; the active-clip stack must
+  // start empty so a cached subtree's clips don't reference the screen state's GPU buffers.
+  cacheState.clipContourPipelines = null;
+  cacheState.clipContourStack = [];
+  // The flat-color shape-fill pipeline can be lazily rebuilt against the (shared) device on first use.
+  cacheState.shapeMeshPipeline = null;
   cacheState.spriteBatchBlendMode = null;
   cacheState.spriteBatchMaterial = null;
   cacheState.spriteBatchMaterialRenderer = null;

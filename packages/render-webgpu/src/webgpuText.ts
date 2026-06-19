@@ -189,10 +189,6 @@ export function drawWebGPUText(state: RenderState, renderProxy: RenderProxy2D): 
   internal.spriteBatchCount++;
 }
 
-export function drawWebGPUTextMask(state: RenderState, data: RenderProxy2D): void {
-  drawWebGPUText(state, data);
-}
-
 export const defaultWebGPUTextRenderer: DisplayObjectRenderer = {
   format: BatchFormat.Quad,
   createData: createWebGPUTextData,

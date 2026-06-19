@@ -122,6 +122,9 @@ export async function createWebGPURenderState(
 
   state.currentMaskDepth = 0;
   state.maskWriteMode = false;
+  state.clipContourPipelines = null;
+  state.clipContourStack = [];
+  state.shapeMeshPipeline = null;
 
   state.scissorStack = [];
   state.currentScissorRect = null;

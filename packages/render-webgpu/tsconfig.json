@@ -13,9 +13,11 @@
   "references": [
     { "path": "../geometry" },
     { "path": "../materials" },
+    { "path": "../path" },
     { "path": "../render-canvas" },
     { "path": "../render" },
     { "path": "../displayobject" },
+    { "path": "../shape" },
     { "path": "../sprite" },
     { "path": "../text-input" },
     { "path": "../text-layout" },

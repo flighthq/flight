@@ -78,10 +78,6 @@ export function drawWebGPUVideo(state: RenderState, renderProxy: RenderProxy2D):
   drawWebGPUQuad(internal, renderProxy, entry, 0, 0, vw, vh, 0, 0, 1, 1);
 }
 
-export function drawWebGPUVideoMask(state: RenderState, renderProxy: RenderProxy2D): void {
-  drawWebGPUVideo(state, renderProxy);
-}
-
 export const defaultWebGPUVideoRenderer: DisplayObjectRenderer = {
   createData: createWebGPUVideoData,
   destroyData: destroyWebGPUVideoData,

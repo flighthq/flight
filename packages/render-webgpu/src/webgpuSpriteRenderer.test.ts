@@ -1,4 +1,4 @@
-import { getRenderProxy2D, prepareSpriteRender } from '@flighthq/render';
+import { getRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
 import { createSprite } from '@flighthq/sprite';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
@@ -26,7 +26,7 @@ describe('defaultWebGPUSpriteRenderer.submit', () => {
     renderWebGPUBackground(state);
 
     const sprite = createSprite();
-    prepareSpriteRender(state, sprite);
+    prepareDisplayObjectRender(state, sprite);
     const renderProxy = getRenderProxy2D(state, sprite)!;
 
     expect(() => {

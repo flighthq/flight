@@ -1,22 +1,14 @@
-import { enableWebGPUClipRectangleSupport, enableWebGPUMaskSupport } from './webgpuClip';
+import { enableWebGPUClipSupport } from './webgpuClip';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
 
 beforeAll(() => {
   installWebGPUMock();
 });
 
-describe('enableWebGPUClipRectangleSupport', () => {
+describe('enableWebGPUClipSupport', () => {
   it('sets displayObjectClipHooks', async () => {
     const state = await createWebGPURenderStateForTest();
-    enableWebGPUClipRectangleSupport(state);
-    expect(state.displayObjectClipHooks).not.toBeNull();
-  });
-});
-
-describe('enableWebGPUMaskSupport', () => {
-  it('sets displayObjectClipHooks', async () => {
-    const state = await createWebGPURenderStateForTest();
-    enableWebGPUMaskSupport(state);
+    enableWebGPUClipSupport(state);
     expect(state.displayObjectClipHooks).not.toBeNull();
   });
 });

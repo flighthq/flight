@@ -5,7 +5,7 @@ import { BatchFormat } from '@flighthq/types';
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
 import { registerDefaultWebGPUMaterial } from './webgpuDefaultMaterial';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
-import { defaultWebGPUTextRenderer, drawWebGPUText, drawWebGPUTextMask } from './webgpuText';
+import { defaultWebGPUTextRenderer, drawWebGPUText } from './webgpuText';
 
 vi.mock('@flighthq/text-layout', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
@@ -98,14 +98,5 @@ describe('drawWebGPUText', () => {
     expect((proxy.rendererData as any).lastContentID).toBe(0);
     submitWebGPURenderPass(state);
     updateSpy.mockRestore();
-  });
-});
-
-describe('drawWebGPUTextMask', () => {
-  it('delegates to drawWebGPUText', async () => {
-    const state = await createWebGPURenderStateForTest();
-    renderWebGPUBackground(state);
-    expect(() => drawWebGPUTextMask(state, makeTextProxy('', makeTextData()))).not.toThrow();
-    submitWebGPURenderPass(state);
   });
 });

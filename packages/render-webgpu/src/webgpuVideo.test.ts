@@ -8,7 +8,6 @@ import {
   defaultWebGPUVideoRenderer,
   destroyWebGPUVideoData,
   drawWebGPUVideo,
-  drawWebGPUVideoMask,
 } from './webgpuVideo';
 
 beforeAll(() => {
@@ -61,17 +60,5 @@ describe('drawWebGPUVideo', () => {
     const renderProxy = getOrCreateRenderProxy2D(state, video);
 
     expect(() => drawWebGPUVideo(state, renderProxy)).not.toThrow();
-  });
-});
-
-describe('drawWebGPUVideoMask', () => {
-  it('delegates to drawWebGPUVideo', async () => {
-    const state = await createWebGPURenderStateForTest();
-    renderWebGPUBackground(state);
-    const video = createVideo();
-    prepareDisplayObjectRender(state, video);
-    const renderProxy = getOrCreateRenderProxy2D(state, video);
-    expect(() => drawWebGPUVideoMask(state, renderProxy)).not.toThrow();
-    submitWebGPURenderPass(state);
   });
 });

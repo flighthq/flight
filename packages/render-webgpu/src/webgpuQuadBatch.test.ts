@@ -1,4 +1,4 @@
-import { getRenderProxy2D, prepareSpriteRender } from '@flighthq/render';
+import { getRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
 import { createQuadBatch } from '@flighthq/sprite';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
@@ -26,7 +26,7 @@ describe('defaultWebGPUQuadBatchRenderer.submit', () => {
     renderWebGPUBackground(state);
 
     const batch = createQuadBatch();
-    prepareSpriteRender(state, batch);
+    prepareDisplayObjectRender(state, batch);
     const renderProxy = getRenderProxy2D(state, batch)!;
 
     expect(() => {

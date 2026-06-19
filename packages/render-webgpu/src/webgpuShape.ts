@@ -1,5 +1,7 @@
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node';
+import { tessellatePath } from '@flighthq/path';
 import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
+import { getShapeFillRegions } from '@flighthq/shape';
 import type {
   DisplayObjectRenderer,
   Renderable,
@@ -10,9 +12,11 @@ import type {
 } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
+import type { WebGPURenderStateInternal, WebGPUShapeMeshBuffers } from './internal';
 import { updateWebGPUTextureEntry } from './webgpuDraw';
 import { resolveWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
+import type { WebGPUShapeMesh } from './webgpuShapeMesh';
+import { drawWebGPUShapeMeshes } from './webgpuShapeMesh';
 import {
   ensureWebGPUQuadBatchResources,
   packWebGPUSpriteBatchMaterialInstance,
@@ -25,6 +29,12 @@ interface WebGPUShapeData {
   lastContentID: number;
   lastW: number;
   lastH: number;
+  // GPU tessellated-fill cache, rebuilt when the content revision changes. Null until first resolved;
+  // populated only for solid-fill shapes (getShapeFillRegions != null), otherwise the raster path runs.
+  meshVersion: number;
+  meshes: WebGPUShapeMesh[] | null;
+  // Reusable per-shape GPU buffers for the mesh path, grown on demand and destroyed in destroyData.
+  meshBuffers: WebGPUShapeMeshBuffers;
 }
 
 function createWebGPUShapeData(_state: RenderState, _source: Renderable): RendererData {
@@ -32,18 +42,44 @@ function createWebGPUShapeData(_state: RenderState, _source: Renderable): Render
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  return { canvas, ctx, lastContentID: -1, lastW: 0, lastH: 0 } as unknown as RendererData;
+  return {
+    canvas,
+    ctx,
+    lastContentID: -1,
+    lastW: 0,
+    lastH: 0,
+    meshVersion: -1,
+    meshes: null,
+    meshBuffers: {
+      vertexBuffer: null,
+      vertexCapacity: 0,
+      indexBuffer: null,
+      indexCapacity: 0,
+      uniformBuffer: null,
+      bindGroup: null,
+    },
+  } as unknown as RendererData;
 }
 
-// Destroy the GPU texture the batch uploaded for this shape's canvas when it is torn down.
+// Destroy the GPU texture the batch uploaded for this shape's canvas, plus the mesh path's per-shape
+// vertex/index/uniform buffers, when the shape is torn down.
 function destroyWebGPUShapeData(state: RenderState, data: RendererData): void {
   const internal = state as WebGPURenderStateInternal;
-  const { canvas } = data as unknown as WebGPUShapeData;
+  const shapeData = data as unknown as WebGPUShapeData;
+  const { canvas } = shapeData;
   const entry = internal.textureCache.get(canvas);
   if (entry !== undefined) {
     entry.texture.destroy();
     internal.textureCache.delete(canvas);
   }
+  const b = shapeData.meshBuffers;
+  b.vertexBuffer?.destroy();
+  b.indexBuffer?.destroy();
+  b.uniformBuffer?.destroy();
+  b.vertexBuffer = null;
+  b.indexBuffer = null;
+  b.uniformBuffer = null;
+  b.bindGroup = null;
 }
 
 export function drawWebGPUShape(state: RenderState, renderProxy: RenderProxy2D): void {
@@ -55,6 +91,27 @@ export function drawWebGPUShape(state: RenderState, renderProxy: RenderProxy2D):
   const version = getNodeLocalContentRevision(source);
   if (commands.length === 0) return;
   if (renderProxy.rendererData === null) return;
+
+  // GPU fill path: solid-fill shapes tessellate to colored meshes (crisp at any zoom). Falls through to
+  // the canvas-raster path for gradient/bitmap fills and strokes (getShapeFillRegions returns null).
+  const regions = getShapeFillRegions(commands);
+  if (regions !== null && regions.length > 0) {
+    const meshData = renderProxy.rendererData as unknown as WebGPUShapeData;
+    if (meshData.meshVersion !== version) {
+      meshData.meshes = regions.map((region) => {
+        const mesh = tessellatePath(region.path);
+        return {
+          vertices: new Float32Array(mesh.vertices),
+          indices: new Uint16Array(mesh.indices),
+          color: region.color,
+          alpha: region.alpha,
+        };
+      });
+      meshData.meshVersion = version;
+    }
+    drawWebGPUShapeMeshes(internal, renderProxy, meshData.meshes ?? [], meshData.meshBuffers);
+    return;
+  }
 
   const material = renderProxy.material;
   const materialRenderer = resolveWebGPUMaterialRenderer(internal, material);
@@ -124,10 +181,6 @@ export function drawWebGPUShape(state: RenderState, renderProxy: RenderProxy2D):
   d[base + 12] = renderProxy.alpha;
   packWebGPUSpriteBatchMaterialInstance(internal, renderProxy.materialData, startCount);
   internal.spriteBatchCount++;
-}
-
-export function drawWebGPUShapeMask(state: RenderState, data: RenderProxy2D): void {
-  drawWebGPUShape(state, data);
 }
 
 export const defaultWebGPUShapeRenderer: DisplayObjectRenderer = {

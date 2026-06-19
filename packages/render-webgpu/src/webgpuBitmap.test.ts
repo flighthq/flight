@@ -2,7 +2,7 @@ import { createBitmap } from '@flighthq/displayobject';
 import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
-import { defaultWebGPUBitmapRenderer, drawWebGPUBitmap, drawWebGPUBitmapMask } from './webgpuBitmap';
+import { defaultWebGPUBitmapRenderer, drawWebGPUBitmap } from './webgpuBitmap';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
 
 beforeAll(() => {
@@ -36,17 +36,5 @@ describe('drawWebGPUBitmap', () => {
     const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
 
     expect(() => drawWebGPUBitmap(state, renderProxy)).not.toThrow();
-  });
-});
-
-describe('drawWebGPUBitmapMask', () => {
-  it('delegates to drawWebGPUBitmap', async () => {
-    const state = await createWebGPURenderStateForTest();
-    renderWebGPUBackground(state);
-    const bitmap = createBitmap();
-    prepareDisplayObjectRender(state, bitmap);
-    const renderProxy = getOrCreateRenderProxy2D(state, bitmap);
-    expect(() => drawWebGPUBitmapMask(state, renderProxy)).not.toThrow();
-    submitWebGPURenderPass(state);
   });
 });

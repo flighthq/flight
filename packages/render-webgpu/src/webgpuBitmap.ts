@@ -90,10 +90,6 @@ export function drawWebGPUBitmap(state: RenderState, renderProxy: RenderProxy2D)
   internal.spriteBatchCount++;
 }
 
-export function drawWebGPUBitmapMask(state: RenderState, data: RenderProxy2D): void {
-  drawWebGPUBitmap(state, data);
-}
-
 export const defaultWebGPUBitmapRenderer: DisplayObjectRenderer = {
   format: BatchFormat.Quad,
   createData: noopRendererData,

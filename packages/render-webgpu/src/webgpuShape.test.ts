@@ -3,7 +3,7 @@ import { BatchFormat } from '@flighthq/types';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
 import { registerDefaultWebGPUMaterial } from './webgpuDefaultMaterial';
-import { defaultWebGPUShapeRenderer, drawWebGPUShape, drawWebGPUShapeMask } from './webgpuShape';
+import { defaultWebGPUShapeRenderer, drawWebGPUShape } from './webgpuShape';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
 
 vi.mock('@flighthq/node', () => ({
@@ -76,15 +76,6 @@ describe('drawWebGPUShape', () => {
     registerDefaultWebGPUMaterial(state);
     drawWebGPUShape(state, makeShapeProxy({ commands: [{}], version: 1 }, makeShapeData()));
     expect((state as any).spriteBatchCount).toBe(1);
-    submitWebGPURenderPass(state);
-  });
-});
-
-describe('drawWebGPUShapeMask', () => {
-  it('delegates to drawWebGPUShape', async () => {
-    const state = await createWebGPURenderStateForTest();
-    renderWebGPUBackground(state);
-    expect(() => drawWebGPUShapeMask(state, makeShapeProxy({ commands: [] }, makeShapeData()))).not.toThrow();
     submitWebGPURenderPass(state);
   });
 });
