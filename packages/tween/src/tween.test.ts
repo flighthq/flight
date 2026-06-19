@@ -11,6 +11,7 @@ import {
   resumeTween,
   resumeTweens,
   stopAllTweens,
+  stopTween,
   stopTweens,
 } from './tween';
 import { createTweenManager } from './tweenManager';
@@ -168,6 +169,54 @@ describe('stopAllTweens', () => {
     const a = createTween(manager, { x: 0 }, 1000, { x: 100 });
     stopAllTweens(manager);
     expect(a.complete).toBe(true);
+  });
+});
+
+describe('stopTween', () => {
+  it('marks a single tween as complete', () => {
+    const manager = createTweenManager();
+    const tween = createTween(manager, { x: 0 }, 1000, { x: 100 });
+    stopTween(tween);
+    expect(tween.complete).toBe(true);
+  });
+
+  it('leaves the target value at its current position, does not jump to end', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t });
+    updateTweens(manager, 500);
+    expect(target.x).toBeCloseTo(50);
+    stopTween(tween);
+    expect(target.x).toBeCloseTo(50); // unchanged — pass { complete: true } to jump to end instead
+  });
+
+  it('complete: true jumps to end values before stopping', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t });
+    updateTweens(manager, 500);
+    stopTween(tween, { complete: true });
+    expect(target.x).toBe(100);
+  });
+
+  it('complete: true fires onComplete by default', () => {
+    const manager = createTweenManager();
+    const tween = createTween(manager, { x: 0 }, 1000, { x: 100 });
+    let fired = 0;
+    connectSignal(tween.onComplete, () => fired++);
+    stopTween(tween, { complete: true });
+    expect(fired).toBe(1);
+  });
+
+  it('complete: true with sendEvent: false suppresses onComplete', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    const tween = createTween(manager, target, 1000, { x: 100 });
+    let fired = 0;
+    connectSignal(tween.onComplete, () => fired++);
+    stopTween(tween, { complete: true, sendEvent: false });
+    expect(fired).toBe(0);
+    expect(target.x).toBe(100); // values still applied
   });
 });
 
