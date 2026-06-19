@@ -61,10 +61,6 @@ export function drawWebGPURichText(state: RenderState, renderProxy: RenderProxy2
   drawWebGPURichTextWithOverlay(state, renderProxy);
 }
 
-export function drawWebGPURichTextMask(state: RenderState, renderProxy: RenderProxy2D): void {
-  drawWebGPURichText(state, renderProxy);
-}
-
 export function drawWebGPURichTextWithOverlay(
   state: RenderState,
   renderProxy: RenderProxy2D,

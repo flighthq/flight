@@ -4,7 +4,6 @@ import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackgrou
 import {
   defaultWebGPUDisplayObjectRenderer,
   drawWebGPUDisplayObject,
-  drawWebGPUDisplayObjectMask,
   renderWebGPUDisplayObject,
 } from './webgpuDisplayObject';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
@@ -26,16 +25,6 @@ describe('drawWebGPUDisplayObject', () => {
     renderWebGPUBackground(state);
     const renderProxy = { source: createDisplayObject() } as never;
     expect(() => drawWebGPUDisplayObject(state, renderProxy)).not.toThrow();
-    submitWebGPURenderPass(state);
-  });
-});
-
-describe('drawWebGPUDisplayObjectMask', () => {
-  it('does not throw for a plain display object', async () => {
-    const state = await createWebGPURenderStateForTest();
-    renderWebGPUBackground(state);
-    const renderProxy = { source: createDisplayObject(), traverseChildren: false } as never;
-    expect(() => drawWebGPUDisplayObjectMask(state, renderProxy)).not.toThrow();
     submitWebGPURenderPass(state);
   });
 });

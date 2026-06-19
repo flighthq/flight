@@ -2,7 +2,7 @@ import { createInputText } from '@flighthq/displayobject';
 import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
-import { defaultWebGPUInputTextRenderer, drawWebGPUInputText, drawWebGPUInputTextMask } from './webgpuInputText';
+import { defaultWebGPUInputTextRenderer, drawWebGPUInputText } from './webgpuInputText';
 import { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
 
 beforeAll(() => {
@@ -36,18 +36,5 @@ describe('drawWebGPUInputText', () => {
     const renderProxy = getOrCreateRenderProxy2D(state, input);
 
     expect(() => drawWebGPUInputText(state, renderProxy)).not.toThrow();
-  });
-});
-
-describe('drawWebGPUInputTextMask', () => {
-  it('delegates to the rich text mask path', async () => {
-    const state = await createWebGPURenderStateForTest();
-    renderWebGPUBackground(state);
-    const input = createInputText();
-    prepareDisplayObjectRender(state, input);
-    const renderProxy = getOrCreateRenderProxy2D(state, input);
-
-    expect(() => drawWebGPUInputTextMask(state, renderProxy)).not.toThrow();
-    submitWebGPURenderPass(state);
   });
 });

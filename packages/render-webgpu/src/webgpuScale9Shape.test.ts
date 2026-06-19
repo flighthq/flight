@@ -1,5 +1,5 @@
-import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/displayobject';
 import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
+import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
 
 import { renderWebGPUBackground, submitWebGPURenderPass } from './webgpuBackground';
 import {
