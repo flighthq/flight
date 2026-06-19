@@ -1,17 +1,9 @@
 import type { RichTextData, TextLayoutResult } from '@flighthq/types';
 
+import { computeTextBoundsHeight, computeTextBoundsWidth, TEXT_BOUNDS_GUTTER } from './textBounds';
+
 export function getRichTextBottomScrollV(data: Readonly<RichTextData>, layout: Readonly<TextLayoutResult>): number {
   return Math.min(layout.numLines, data.scrollV + getVisibleLineCount(data, layout) - 1);
-}
-
-export function getRichTextFieldHeight(data: Readonly<RichTextData>, layout: Readonly<TextLayoutResult>): number {
-  if (data.autoSize === 'none') return data.height;
-  return Math.ceil(layout.textHeight + TEXT_FIELD_GUTTER * 2);
-}
-
-export function getRichTextFieldWidth(data: Readonly<RichTextData>, layout: Readonly<TextLayoutResult>): number {
-  if (data.autoSize === 'none' || data.wordWrap) return data.width;
-  return Math.ceil(layout.textWidth + TEXT_FIELD_GUTTER * 2);
 }
 
 export function getRichTextLineCount(layout: Readonly<TextLayoutResult>): number {
@@ -19,7 +11,7 @@ export function getRichTextLineCount(layout: Readonly<TextLayoutResult>): number
 }
 
 export function getRichTextMaxScrollH(data: Readonly<RichTextData>, layout: Readonly<TextLayoutResult>): number {
-  const visibleWidth = Math.max(0, getRichTextFieldWidth(data, layout) - TEXT_FIELD_GUTTER * 2);
+  const visibleWidth = Math.max(0, computeTextBoundsWidth(data, layout) - TEXT_BOUNDS_GUTTER * 2);
   return Math.max(0, Math.ceil(layout.textWidth - visibleWidth));
 }
 
@@ -44,7 +36,7 @@ export function getRichTextTextWidth(layout: Readonly<TextLayoutResult>): number
 }
 
 function getVisibleLineCount(data: Readonly<RichTextData>, layout: Readonly<TextLayoutResult>): number {
-  const visibleHeight = Math.max(0, getRichTextFieldHeight(data, layout) - TEXT_FIELD_GUTTER * 2);
+  const visibleHeight = Math.max(0, computeTextBoundsHeight(data, layout) - TEXT_BOUNDS_GUTTER * 2);
   if (visibleHeight === 0) return 1;
 
   let total = 0;
@@ -56,5 +48,3 @@ function getVisibleLineCount(data: Readonly<RichTextData>, layout: Readonly<Text
   }
   return Math.max(1, count);
 }
-
-const TEXT_FIELD_GUTTER = 2;

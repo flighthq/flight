@@ -1,9 +1,9 @@
 import type {
-  InputTextSelectionRectangle,
   Rectangle,
   TextLayoutGroup,
   TextLayoutResult,
   TextLineMetrics,
+  TextSelectionRectangle,
 } from '@flighthq/types';
 
 export function getRichTextCharBoundaries(
@@ -187,7 +187,7 @@ export function getRichTextParagraphLength(text: string, charIndex: number): num
 }
 
 export function getRichTextSelectionRectangles(
-  out: InputTextSelectionRectangle[],
+  out: TextSelectionRectangle[],
   beginIndex: number,
   endIndex: number,
   layout: Readonly<TextLayoutResult>,

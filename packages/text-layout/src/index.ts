@@ -6,8 +6,6 @@ export {
 } from './richTextContent';
 export {
   getRichTextBottomScrollV,
-  getRichTextFieldHeight,
-  getRichTextFieldWidth,
   getRichTextLineCount,
   getRichTextMaxScrollH,
   getRichTextMaxScrollV,
@@ -30,6 +28,12 @@ export {
   getRichTextSelectionRectangles,
 } from './richTextQuery';
 export {
+  computeTextBoundsHeight,
+  computeTextBoundsOffsetX,
+  computeTextBoundsRectangle,
+  computeTextBoundsWidth,
+} from './textBounds';
+export {
   getTextFormatAscent,
   getTextFormatDescent,
   getTextFormatHeight,
@@ -39,5 +43,7 @@ export {
 export { createTextFormatRange } from './textFormatRange';
 export { computeTextLayout, createTextLayoutResult } from './textLayout';
 export { createTextLayoutGroup } from './textLayoutGroup';
+export { getTextLayoutMeasureProvider, setTextLayoutMeasureProvider } from './textLayoutMeasure';
 export { clearTextLayoutResult, getTextLayoutResult } from './textLayoutRuntime';
 export { getTextLineBreakIndex, getTextLineBreaks } from './textLineBreaks';
+export { createTextMetrics, getTextMetrics } from './textMetrics';
