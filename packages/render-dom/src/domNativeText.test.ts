@@ -1,5 +1,5 @@
-import { createNativeText } from '@flighthq/displayobject';
 import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render';
+import { createNativeText } from '@flighthq/text';
 import { NativeTextKind } from '@flighthq/types';
 
 import { defaultDOMNativeTextRenderer, drawDOMNativeText, drawDOMNativeTextMask } from './domNativeText';

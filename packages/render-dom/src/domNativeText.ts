@@ -1,5 +1,5 @@
-import { getNativeTextRuntime } from '@flighthq/displayobject';
 import { computeRGBHexString } from '@flighthq/materials';
+import { getNativeTextRuntime } from '@flighthq/text';
 import type {
   DisplayObjectRenderer,
   DOMRenderState,

@@ -34,6 +34,7 @@
     "@flighthq/render": "*",
     "@flighthq/resources": "*",
     "@flighthq/shape": "*",
+    "@flighthq/text": "*",
     "@flighthq/text-input": "*",
     "@flighthq/text-layout": "*",
     "@flighthq/types": "*"

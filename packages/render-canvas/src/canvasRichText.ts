@@ -1,6 +1,6 @@
-﻿import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/displayobject';
-import { computeRGBHexString } from '@flighthq/materials';
+﻿import { computeRGBHexString } from '@flighthq/materials';
 import { computeTextFormatFontString, noopRendererData } from '@flighthq/render';
+import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text';
 import {
   computeRichTextContent,
   computeTextBoundsHeight,

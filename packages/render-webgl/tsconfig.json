@@ -15,6 +15,7 @@
     { "path": "../render-canvas" },
     { "path": "../render" },
     { "path": "../displayobject" },
+    { "path": "../text" },
     { "path": "../shape" },
     { "path": "../sprite" },
     { "path": "../text-input" },

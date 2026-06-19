@@ -1,4 +1,4 @@
-import { createTextLabel } from '@flighthq/displayobject';
+import { createTextLabel } from '@flighthq/text';
 import type { RenderProxy2D } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 

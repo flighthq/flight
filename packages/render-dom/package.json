@@ -35,6 +35,7 @@
     "@flighthq/render": "*",
     "@flighthq/render-canvas": "*",
     "@flighthq/shape": "*",
+    "@flighthq/text": "*",
     "@flighthq/text-input": "*",
     "@flighthq/text-layout": "*",
     "@flighthq/types": "*"

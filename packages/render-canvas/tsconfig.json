@@ -14,6 +14,7 @@
     { "path": "../materials" },
     { "path": "../render" },
     { "path": "../displayobject" },
+    { "path": "../text" },
     { "path": "../shape" },
     { "path": "../text-input" },
     { "path": "../text-layout" },

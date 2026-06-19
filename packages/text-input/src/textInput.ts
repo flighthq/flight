@@ -1,4 +1,4 @@
-import { getRichTextRuntime } from '@flighthq/displayobject';
+import { getRichTextRuntime } from '@flighthq/text';
 import type { RichText, RichTextRuntime, TextInputOptions, TextInputState } from '@flighthq/types';
 
 // The opt-in seam that turns a static RichText into an editable field. Importing it is what pulls

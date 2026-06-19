@@ -1,5 +1,5 @@
-import { createRichText } from '@flighthq/displayobject';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import { createRichText } from '@flighthq/text';
 import { enableTextInput, setTextInputSelection } from '@flighthq/text-input';
 import type { RichText } from '@flighthq/types';
 

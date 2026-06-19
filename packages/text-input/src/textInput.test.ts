@@ -1,4 +1,4 @@
-import { createRichText } from '@flighthq/displayobject';
+import { createRichText } from '@flighthq/text';
 
 import { disableTextInput, enableTextInput, getTextInputState, hasTextInput } from './textInput';
 

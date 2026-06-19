@@ -1,7 +1,7 @@
-﻿import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/displayobject';
-import { createEntity } from '@flighthq/entity';
+﻿import { createEntity } from '@flighthq/entity';
 import { computeRGBHexString } from '@flighthq/materials';
 import { computeTextFormatFontString } from '@flighthq/render';
+import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text';
 import {
   computeRichTextContent,
   computeTextBoundsHeight,

@@ -1,5 +1,5 @@
-import { getRichTextRuntime } from '@flighthq/displayobject';
 import { computeRGBHexString } from '@flighthq/materials';
+import { getRichTextRuntime } from '@flighthq/text';
 import {
   getTextInputCaretRectangle,
   getTextInputSelectionBeginIndex,
