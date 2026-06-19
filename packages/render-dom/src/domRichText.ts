@@ -1,13 +1,13 @@
-﻿import { getRichTextRuntime } from '@flighthq/displayobject';
+﻿import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/displayobject';
 import { createEntity } from '@flighthq/entity';
 import { computeRGBHexString } from '@flighthq/materials';
 import { computeTextFormatFontString } from '@flighthq/render';
 import {
   computeRichTextContent,
+  computeTextBoundsHeight,
+  computeTextBoundsWidth,
   computeTextLayout,
   getRichTextContent,
-  getRichTextFieldHeight,
-  getRichTextFieldWidth,
   getRichTextScrollYOffset,
   getRichTextSelectionRectangles,
   getTextLayoutResult,
@@ -22,7 +22,7 @@ import type {
   RichText,
   RichTextRuntime,
   TextFormat,
-  TextRuntime,
+  TextLabelRuntime,
 } from '@flighthq/types';
 
 import { getDomFontAscentCached, setDomFontAscentCached } from './domFontSource';
@@ -47,6 +47,22 @@ function getMeasureCtx(): CanvasRenderingContext2D | null {
 }
 
 export function drawDOMRichText(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+  drawDOMRichTextField(state, renderProxy);
+  // The editable-input overlay (caret/selection) appends into the field div and must run even when the
+  // text is empty, so it is invoked after the field, keyed off the input slot. registerDOMTextInputOverlay
+  // (enableDOMTextInput) installs it; a static RichText leaves the slot null and pulls no text-input code.
+  if (_domTextInputOverlay !== null && getRichTextRuntime(renderProxy.source as RichText).input !== null) {
+    _domTextInputOverlay(state, renderProxy);
+  }
+}
+
+export type DOMTextInputOverlay = (state: DOMRenderState, renderProxy: RenderProxy2D) => void;
+
+export function drawDOMRichTextMask(state: DOMRenderState, renderProxy: RenderProxy2D): void {
+  drawDOMRichText(state, renderProxy);
+}
+
+function drawDOMRichTextField(state: DOMRenderState, renderProxy: RenderProxy2D): void {
   const data = renderProxy.rendererData as DOMRichTextData | null;
   if (data === null) return;
 
@@ -61,7 +77,7 @@ export function drawDOMRichText(state: DOMRenderState, renderProxy: RenderProxy2
 
   const richTextRuntime = getRichTextRuntime(source) as RichTextRuntime;
   const content = getRichTextContent(richTextRuntime);
-  computeRichTextContent(content, source.data);
+  computeRichTextContent(content, source.data, getRichTextPasswordCharacter(source));
   const { text } = content;
 
   const ctx = getMeasureCtx();
@@ -72,7 +88,7 @@ export function drawDOMRichText(state: DOMRenderState, renderProxy: RenderProxy2
     return ctx.measureText(t).width;
   };
 
-  const result = getTextLayoutResult(richTextRuntime as TextRuntime);
+  const result = getTextLayoutResult(richTextRuntime as TextLabelRuntime);
   computeTextLayout(result, {
     text,
     formatRanges: content.formatRanges,
@@ -82,8 +98,8 @@ export function drawDOMRichText(state: DOMRenderState, renderProxy: RenderProxy2
     multiline,
     wordWrap,
   });
-  const fieldW = getRichTextFieldWidth(source.data, result);
-  const fieldH = getRichTextFieldHeight(source.data, result);
+  const fieldW = computeTextBoundsWidth(source.data, result);
+  const fieldH = computeTextBoundsHeight(source.data, result);
   const div = data.div;
   div.style.width = `${fieldW}px`;
   div.style.height = `${fieldH}px`;
@@ -210,6 +226,11 @@ function canvasFontAscentFallback(ctx: CanvasRenderingContext2D, font: string): 
 const DOM_SELECTION_ALPHA = 0.35;
 const DOM_SELECTION_COLOR = '#0078d7';
 const _richTextSelectionRectangles: { height: number; lineIndex: number; width: number; x: number; y: number }[] = [];
+let _domTextInputOverlay: DOMTextInputOverlay | null = null;
+
+export function registerDOMTextInputOverlay(overlay: DOMTextInputOverlay): void {
+  _domTextInputOverlay = overlay;
+}
 
 export const defaultDOMRichTextRenderer: DisplayObjectRenderer = {
   createData: createDOMRichTextData,

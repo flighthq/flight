@@ -1,10 +1,11 @@
 ﻿import { createRichText } from '@flighthq/displayobject';
 import { registerRenderer } from '@flighthq/render';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import { enableTextInput } from '@flighthq/text-input';
 import { RichTextKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
-import { defaultDOMRichTextRenderer, drawDOMRichText } from './domRichText';
+import { defaultDOMRichTextRenderer, drawDOMRichText, registerDOMTextInputOverlay } from './domRichText';
 import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
@@ -129,5 +130,22 @@ describe('drawDOMRichText', () => {
 
     const div = drawGetEl(state, () => drawDOMRichText(state, renderProxy))!;
     expect(div.style.backgroundColor).toBe('');
+  });
+});
+
+describe('registerDOMTextInputOverlay', () => {
+  it('invokes the registered overlay only for a RichText with an input slot', () => {
+    const overlay = vi.fn();
+    registerDOMTextInputOverlay(overlay);
+    const state = makeState();
+
+    const plain = createRichText({ data: { text: 'x' } });
+    drawDOMRichText(state, getOrCreateRenderProxy2D(state, plain));
+    expect(overlay).not.toHaveBeenCalled();
+
+    const editable = createRichText({ data: { text: 'x' } });
+    enableTextInput(editable);
+    drawDOMRichText(state, getOrCreateRenderProxy2D(state, editable));
+    expect(overlay).toHaveBeenCalled();
   });
 });
