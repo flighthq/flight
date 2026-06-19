@@ -1,8 +1,8 @@
-export interface HandleInputTextKeyboardOptions {
+export interface HandleTextInputKeyboardOptions {
   clipboardText?: string;
   onCopy?: (text: string) => void;
 }
 
-export interface ReplaceInputTextOptions {
+export interface ReplaceTextInputOptions {
   applyInputRules?: boolean;
 }
