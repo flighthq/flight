@@ -20,6 +20,7 @@
     { "path": "../entity" },
     { "path": "../filesystem" },
     { "path": "../filters" },
+    { "path": "../filters-canvas" },
     { "path": "../filters-webgl" },
     { "path": "../filters-webgpu" },
     { "path": "../geolocation" },
