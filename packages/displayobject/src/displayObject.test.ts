@@ -15,7 +15,7 @@ import {
   createDisplayObjectRuntime,
   getDisplayObjectRuntime,
   isDisplayObject,
-  setDisplayObjectClipRectangle,
+  setDisplayObjectClip,
 } from './displayObject';
 
 function getRuntime_(obj: DisplayObject): DisplayObjectRuntime {
@@ -127,26 +127,36 @@ describe('isDisplayObject', () => {
   });
 });
 
-describe('setDisplayObjectClipRectangle', () => {
+describe('setDisplayObjectClip', () => {
   let obj: DisplayObject;
   beforeEach(() => {
     obj = createDisplayObject();
   });
 
-  it('sets clipRectangle', () => {
-    const rect = { x: 0, y: 0, width: 100, height: 50 } as Rectangle;
-    setDisplayObjectClipRectangle(obj, rect);
-    expect(obj.clipRectangle).toBe(rect);
+  it('sets clip', () => {
+    const clip = {
+      contours: null,
+      rect: { x: 0, y: 0, width: 100, height: 50 } as Rectangle,
+      winding: 'nonZero' as const,
+      version: 0,
+    };
+    setDisplayObjectClip(obj, clip);
+    expect(obj.clip).toBe(clip);
   });
 
   it('accepts null', () => {
-    setDisplayObjectClipRectangle(obj, null);
-    expect(obj.clipRectangle).toBeNull();
+    setDisplayObjectClip(obj, null);
+    expect(obj.clip).toBeNull();
   });
 
   it('invalidates appearance', () => {
     const idBefore = getRuntime_(obj).appearanceID;
-    setDisplayObjectClipRectangle(obj, { x: 0, y: 0, width: 10, height: 10 } as Rectangle);
+    setDisplayObjectClip(obj, {
+      contours: null,
+      rect: { x: 0, y: 0, width: 10, height: 10 } as Rectangle,
+      winding: 'nonZero',
+      version: 0,
+    });
     expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
   });
 });
