@@ -1,7 +1,10 @@
+import {
+  createDisplayObjectGeneric,
+  createDisplayObjectRuntime,
+  getDisplayObjectRuntime,
+} from '@flighthq/displayobject';
 import type { MethodsOf, Node, PartialNode, Rectangle, Sprite, SpriteData, SpriteRuntime } from '@flighthq/types';
 import { SpriteKind } from '@flighthq/types';
-
-import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
 
 export function computeSpriteLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const data = (source as Sprite).data;
@@ -20,7 +23,7 @@ export function computeSpriteLocalBoundsRectangle(out: Rectangle, source: Readon
 }
 
 export function createSprite(obj?: Readonly<PartialNode<Sprite>>): Sprite {
-  return createSpriteNode(SpriteKind, obj, createSpriteData, createSpriteRuntime) as Sprite;
+  return createDisplayObjectGeneric(SpriteKind, obj, createSpriteData, createSpriteRuntime) as Sprite;
 }
 
 export function createSpriteData(data?: Readonly<Partial<SpriteData>>): SpriteData {
@@ -32,11 +35,11 @@ export function createSpriteData(data?: Readonly<Partial<SpriteData>>): SpriteDa
 }
 
 export function createSpriteRuntime(): SpriteRuntime {
-  return createSpriteNodeRuntime(defaultMethods) as SpriteRuntime;
+  return createDisplayObjectRuntime(defaultMethods) as SpriteRuntime;
 }
 
 export function getSpriteRuntime(source: Readonly<Sprite>): Readonly<SpriteRuntime> {
-  return getSpriteNodeRuntime(source) as SpriteRuntime;
+  return getDisplayObjectRuntime(source) as SpriteRuntime;
 }
 
 const defaultMethods: Partial<MethodsOf<SpriteRuntime>> = {

@@ -1,7 +1,10 @@
+import {
+  createDisplayObjectGeneric,
+  createDisplayObjectRuntime,
+  getDisplayObjectRuntime,
+} from '@flighthq/displayobject';
 import type { MethodsOf, Node, PartialNode, Rectangle, Tilemap, TilemapData, TilemapRuntime } from '@flighthq/types';
 import { TilemapKind } from '@flighthq/types';
-
-import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
 
 export function computeTilemapLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const tilemap = source as Tilemap;
@@ -13,7 +16,7 @@ export function computeTilemapLocalBoundsRectangle(out: Rectangle, source: Reado
 }
 
 export function createTilemap(obj?: Readonly<PartialNode<Tilemap>>): Tilemap {
-  return createSpriteNode(TilemapKind, obj, createTilemapData, createTilemapRuntime) as Tilemap;
+  return createDisplayObjectGeneric(TilemapKind, obj, createTilemapData, createTilemapRuntime) as Tilemap;
 }
 
 export function createTilemapData(data?: Readonly<Partial<TilemapData>>): TilemapData {
@@ -29,7 +32,7 @@ export function createTilemapData(data?: Readonly<Partial<TilemapData>>): Tilema
 }
 
 export function createTilemapRuntime(): TilemapRuntime {
-  return createSpriteNodeRuntime(defaultMethods) as TilemapRuntime;
+  return createDisplayObjectRuntime(defaultMethods) as TilemapRuntime;
 }
 
 export function fillTilemapTiles(tilemap: Tilemap, id: number): void {
@@ -37,7 +40,7 @@ export function fillTilemapTiles(tilemap: Tilemap, id: number): void {
 }
 
 export function getTilemapRuntime(source: Readonly<Tilemap>): Readonly<TilemapRuntime> {
-  return getSpriteNodeRuntime(source) as TilemapRuntime;
+  return getDisplayObjectRuntime(source) as TilemapRuntime;
 }
 
 export function getTilemapTile(tilemap: Readonly<Tilemap>, column: number, row: number): number {

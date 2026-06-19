@@ -1,6 +1,12 @@
+import {
+  createDisplayObjectGeneric,
+  createDisplayObjectRuntime,
+  getDisplayObjectRuntime,
+} from '@flighthq/displayobject';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
 import { invalidateNodeLocalBounds } from '@flighthq/node';
 import type {
+  DisplayObject,
   MethodsOf,
   Node,
   PartialNode,
@@ -8,16 +14,13 @@ import type {
   ParticleEmitterData,
   ParticleEmitterRuntime,
   Rectangle,
-  SpriteNode,
 } from '@flighthq/types';
 import { ParticleEmitterKind } from '@flighthq/types';
-
-import { createSpriteNode, createSpriteNodeRuntime, getSpriteNodeRuntime } from './spriteNode';
 
 const PARTICLE_TRANSFORM_STRIDE = 4; // [x, y, rotation, scale] per particle
 
 function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
-  const runtime = getSpriteNodeRuntime(source as SpriteNode) as ParticleEmitterRuntime;
+  const runtime = getDisplayObjectRuntime(source as DisplayObject) as ParticleEmitterRuntime;
   if (runtime.localBoundsRectangle !== null) copyRectangle(out, runtime.localBoundsRectangle);
 }
 
@@ -82,7 +85,7 @@ export function computeParticleEmitterLocalBoundsRectangle(out: Rectangle, sourc
 }
 
 export function createParticleEmitter(obj?: Readonly<PartialNode<ParticleEmitter>>): ParticleEmitter {
-  return createSpriteNode(
+  return createDisplayObjectGeneric(
     ParticleEmitterKind,
     obj,
     createParticleEmitterData,
@@ -103,7 +106,7 @@ export function createParticleEmitterData(data?: Readonly<Partial<ParticleEmitte
 }
 
 export function createParticleEmitterRuntime(): ParticleEmitterRuntime {
-  const runtime = createSpriteNodeRuntime(defaultMethods) as ParticleEmitterRuntime;
+  const runtime = createDisplayObjectRuntime(defaultMethods) as ParticleEmitterRuntime;
   runtime.localBoundsRectangle = null;
   return runtime;
 }
@@ -115,7 +118,7 @@ export function getParticleEmitterCapacity(source: Readonly<ParticleEmitter>): n
 }
 
 export function getParticleEmitterRuntime(source: Readonly<ParticleEmitter>): Readonly<ParticleEmitterRuntime> {
-  return getSpriteNodeRuntime(source) as ParticleEmitterRuntime;
+  return getDisplayObjectRuntime(source) as ParticleEmitterRuntime;
 }
 
 export function reserveParticleEmitter(target: ParticleEmitter, capacity: number): void {
@@ -128,7 +131,7 @@ export function reserveParticleEmitter(target: ParticleEmitter, capacity: number
 }
 
 export function setParticleEmitterLocalBoundsRectangle(target: ParticleEmitter, rect: Readonly<Rectangle>): void {
-  const runtime = getSpriteNodeRuntime(target) as ParticleEmitterRuntime;
+  const runtime = getDisplayObjectRuntime(target) as ParticleEmitterRuntime;
   if (runtime.localBoundsRectangle === null) runtime.localBoundsRectangle = createRectangle();
   copyRectangle(runtime.localBoundsRectangle, rect);
   invalidateNodeLocalBounds(target);
