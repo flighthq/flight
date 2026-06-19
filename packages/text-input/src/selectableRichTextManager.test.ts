@@ -1,4 +1,4 @@
-import { createRichText, getRichTextRuntime } from '@flighthq/displayobject';
+import { createRichText, getRichTextRuntime } from '@flighthq/text';
 import type { InputKeyboardData, RichTextRuntime } from '@flighthq/types';
 import { KeyCode } from '@flighthq/types';
 

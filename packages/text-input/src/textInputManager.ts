@@ -1,5 +1,5 @@
-import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/displayobject';
 import { connectSignal, disconnectSignal } from '@flighthq/signals';
+import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/text';
 import type {
   InputKeyboardData,
   RichText,

@@ -11,6 +11,7 @@
   "references": [
     { "path": "../node" },
     { "path": "../displayobject" },
+    { "path": "../text" },
     { "path": "../signals" },
     { "path": "../text-layout" },
     { "path": "../types" }

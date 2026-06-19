@@ -1,7 +1,7 @@
-﻿import { getTextLabelRuntime } from '@flighthq/displayobject';
-import { createEntity } from '@flighthq/entity';
+﻿import { createEntity } from '@flighthq/entity';
 import { computeRGBHexString } from '@flighthq/materials';
 import { computeTextFormatFontString } from '@flighthq/render';
+import { getTextLabelRuntime } from '@flighthq/text';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
   DisplayObjectRenderer,

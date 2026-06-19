@@ -1,6 +1,6 @@
-﻿import { getTextLabelRuntime } from '@flighthq/displayobject';
-import { computeRGBHexString } from '@flighthq/materials';
+﻿import { computeRGBHexString } from '@flighthq/materials';
 import { computeTextFormatFontString, noopRendererData } from '@flighthq/render';
+import { getTextLabelRuntime } from '@flighthq/text';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
 import type {
   CanvasRenderState,

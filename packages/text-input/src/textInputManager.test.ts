@@ -1,5 +1,5 @@
-import { createRichText } from '@flighthq/displayobject';
 import { createSignal, emitSignal } from '@flighthq/signals';
+import { createRichText } from '@flighthq/text';
 import type { RichText, RichTextData } from '@flighthq/types';
 import { KeyCode } from '@flighthq/types';
 

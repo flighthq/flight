@@ -1,5 +1,5 @@
-﻿import { createTextLabel } from '@flighthq/displayobject';
-import { getOrCreateRenderProxy2D } from '@flighthq/render';
+﻿import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import { createTextLabel } from '@flighthq/text';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { drawCanvasTextLabel } from './canvasTextLabel';
