@@ -20,10 +20,6 @@ export function defaultHTMLViewHitTestPoint(_source: NodeAny, _x: number, _y: nu
   return false;
 }
 
-export function defaultInputTextHitTestPoint(source: NodeAny, x: number, y: number, _shapeFlag: boolean): boolean {
-  return hitTestGraphLocalBounds(source, x, y);
-}
-
 export function defaultMovieClipHitTestPoint(_source: NodeAny, _x: number, _y: number, _shapeFlag: boolean): boolean {
   // Containers have no self hit area — findGraphHitTarget traverses children separately.
   return false;
@@ -47,6 +43,10 @@ export function defaultStageHitTestPoint(_source: NodeAny, _x: number, _y: numbe
 }
 
 export function defaultTextHitTestPoint(source: NodeAny, x: number, y: number, _shapeFlag: boolean): boolean {
+  return hitTestGraphLocalBounds(source, x, y);
+}
+
+export function defaultTextInputHitTestPoint(source: NodeAny, x: number, y: number, _shapeFlag: boolean): boolean {
   return hitTestGraphLocalBounds(source, x, y);
 }
 
