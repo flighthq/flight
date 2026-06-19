@@ -15,7 +15,6 @@ import type {
   SharpenFilter,
 } from '@flighthq/types';
 
-export { applyBlurFilterToCanvas, applyDropShadowFilterToCanvas, applyOuterGlowFilterToCanvas } from './canvas';
 export {
   computeBlurFilterCSS,
   computeDropShadowFilterCSS,
