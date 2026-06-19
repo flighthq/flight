@@ -9,6 +9,7 @@ export * from '@flighthq/displayobject';
 export * from '@flighthq/entity';
 export * from '@flighthq/filesystem';
 export * from '@flighthq/filters';
+export * from '@flighthq/filters-canvas';
 export * from '@flighthq/filters-webgl';
 export * from '@flighthq/filters-webgpu';
 export * from '@flighthq/geolocation';

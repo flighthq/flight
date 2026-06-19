@@ -38,6 +38,7 @@
     "@flighthq/entity": "*",
     "@flighthq/filesystem": "*",
     "@flighthq/filters": "*",
+    "@flighthq/filters-canvas": "*",
     "@flighthq/filters-webgl": "*",
     "@flighthq/filters-webgpu": "*",
     "@flighthq/geolocation": "*",
