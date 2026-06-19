@@ -1,4 +1,3 @@
-import { startOrbBackground } from './background-orbs';
 import { startParticleBackground } from './background-particles';
 
 // Rewrite the tool links to base-absolute URLs (`/flight/explorer/` in production, `/explorer/`
@@ -11,14 +10,9 @@ for (const link of document.querySelectorAll<HTMLAnchorElement>('a[data-tool]'))
   link.href = `${base}${link.dataset.tool}/`;
 }
 
-// Two Flight-rendered backgrounds, layered by default: the particle field fills the screen and the
-// orbs drift over it (the orb canvas clears to transparent — see background-orbs.ts — so the
-// particles show through). Append `?bg=orbs` or `?bg=particles` to isolate one for comparison.
-// Orbs are started first so the later-prepended particle canvas sits behind them in the DOM.
-// Backgrounds are progressive enhancement: the page is fully readable over the static dark
-// background without them, so this is deliberately not wrapped in try/catch — if WebGL is
-// unavailable (old hardware, headless capture) the error surfaces in the console and the static
-// background simply remains.
-const background = new URLSearchParams(window.location.search).get('bg');
-if (background !== 'particles') startOrbBackground();
-if (background !== 'orbs') startParticleBackground();
+// A single Flight-rendered background: a drifting particle field fills the screen, so the page
+// dogfoods the SDK instead of faking motion with CSS. It is progressive enhancement — the page is
+// fully readable over the static dark background without it, so this is deliberately not wrapped in
+// try/catch: if WebGL is unavailable (old hardware, headless capture) the error surfaces in the
+// console and the static background simply remains.
+startParticleBackground();
