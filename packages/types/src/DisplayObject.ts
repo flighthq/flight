@@ -1,14 +1,13 @@
 import type { HasAppearance } from './HasAppearance';
 import type { HasBoundsRectangle, HasBoundsRectangleRuntime } from './HasBoundsRectangle';
-import type { HasClipRectangle } from './HasClipRectangle';
+import type { HasClip } from './HasClip';
 import type { HasMaterial } from './HasMaterial';
 import type { HasTransform2D, HasTransform2DRuntime } from './HasTransform2D';
 import type { Node, NodeData, NodeDataFactory, NodeRuntime, NodeRuntimeFactory, NodeTraitsKey } from './Node';
 
 export type DisplayObject = Node<DisplayObjectTraits> & DisplayObjectTraits;
 
-export interface DisplayObjectTraits
-  extends HasAppearance, HasBoundsRectangle, HasClipRectangle, HasMaterial, HasTransform2D {
+export interface DisplayObjectTraits extends HasAppearance, HasBoundsRectangle, HasClip, HasMaterial, HasTransform2D {
   data: DisplayObjectData | null;
 }
 

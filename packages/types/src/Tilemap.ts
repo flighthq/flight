@@ -1,8 +1,8 @@
+import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime } from './DisplayObject';
 import type { MaterialData } from './Material';
-import type { SpriteNode, SpriteNodeData, SpriteNodeRuntime } from './SpriteNode';
 import type { Tileset } from './Tileset';
 
-export interface TilemapData extends SpriteNodeData {
+export interface TilemapData extends DisplayObjectData {
   tileset: Tileset | null;
   columns: number;
   rows: number;
@@ -12,9 +12,9 @@ export interface TilemapData extends SpriteNodeData {
   materialData: (MaterialData | null)[] | null;
 }
 
-export interface TilemapRuntime extends SpriteNodeRuntime {}
+export interface TilemapRuntime extends DisplayObjectRuntime {}
 
-export interface Tilemap extends SpriteNode {
+export interface Tilemap extends DisplayObject {
   data: TilemapData;
 }
 
