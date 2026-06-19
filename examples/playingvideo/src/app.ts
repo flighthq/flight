@@ -12,7 +12,7 @@ import {
   createDisplayObject,
   createInputManager,
   createShape,
-  createText,
+  createTextLabel,
   createVideo,
   invalidateNodeRender,
   loadVideoResourceFromURL,
@@ -34,7 +34,7 @@ videoNode.data.source = videoSource;
 addNodeChild(root, videoNode);
 
 const overlay = createShape();
-const prompt = createText();
+const prompt = createTextLabel();
 prompt.data.text = 'Click to play';
 prompt.data.textFormat.color = 0xffffffff;
 prompt.data.textFormat.size = 24;

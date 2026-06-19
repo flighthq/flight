@@ -6,7 +6,7 @@ import {
   defaultCanvasShapeCommands,
   defaultDOMBitmapRenderer,
   defaultDOMShapeRenderer,
-  defaultDOMTextRenderer,
+  defaultDOMTextLabelRenderer,
   enableDOMCSSFilterSupport,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
@@ -15,7 +15,7 @@ import {
   renderDOMDisplayObject,
   setDOMCSSFilter,
   ShapeKind,
-  TextKind,
+  TextLabelKind,
 } from '@flighthq/sdk';
 
 export const container = document.createElement('div');
@@ -27,7 +27,7 @@ export const state = createDOMRenderState(container, {
 });
 registerRenderer(state, BitmapKind, defaultDOMBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultDOMShapeRenderer);
-registerRenderer(state, TextKind, defaultDOMTextRenderer);
+registerRenderer(state, TextLabelKind, defaultDOMTextLabelRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
 enableDOMCSSFilterSupport(state);
 export const scale = 1;

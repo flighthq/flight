@@ -4,7 +4,7 @@ import type {
   ImageResource,
   InteractionManager,
   Shape,
-  Text,
+  TextLabel,
   TweenManager,
 } from '@flighthq/sdk';
 import {
@@ -15,7 +15,7 @@ import {
   connectSignal,
   createDisplayObject,
   createShape,
-  createText,
+  createTextLabel,
   createTween,
   invalidateNodeRender,
   playAudioResource,
@@ -50,7 +50,7 @@ export class PiratePigGame {
   private interaction: InteractionManager<DisplayObject>;
   private interactionOptions: TileInteractionOptions | undefined;
   private tileContainer: DisplayObject;
-  private scoreText: Text;
+  private scoreText: TextLabel;
   private tiles: (Tile | null)[][];
   private usedTiles: Tile[] = [];
   private tileImages: ImageResource[];
@@ -74,7 +74,7 @@ export class PiratePigGame {
     this.sounds = sounds;
     this.obj = createDisplayObject();
 
-    const scoreText = createText();
+    const scoreText = createTextLabel();
     scoreText.data.text = '0';
     scoreText.data.width = 200;
     scoreText.data.textFormat = { font: fontName, size: 60, color: 0x000000, align: 'right' };
