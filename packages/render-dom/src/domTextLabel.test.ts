@@ -1,6 +1,6 @@
-﻿import { createTextLabel } from '@flighthq/displayobject';
-import { registerRenderer } from '@flighthq/render';
+﻿import { registerRenderer } from '@flighthq/render';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import { createTextLabel } from '@flighthq/text';
 import { TextLabelKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';

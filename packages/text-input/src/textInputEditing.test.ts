@@ -1,5 +1,5 @@
-import { createRichText, setRichTextFormatRange } from '@flighthq/displayobject';
 import { getNodeAppearanceRevision } from '@flighthq/node';
+import { createRichText, setRichTextFormatRange } from '@flighthq/text';
 import type { KeyboardEventData, RichText, RichTextData, TextInputOptions, TextLayoutResult } from '@flighthq/types';
 import { KeyCode } from '@flighthq/types';
 
