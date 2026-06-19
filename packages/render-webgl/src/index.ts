@@ -10,7 +10,6 @@ export * from './webglDisplayObject';
 export * from './webglDraw';
 export * from './webglElement';
 export * from './webglInputText';
-export * from './webglMask';
 export * from './webglMaterialRegistry';
 export * from './webglMaterials';
 export * from './webglParticleEmitter';

@@ -1,7 +1,7 @@
 import type { RenderProxy2D } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import { defaultWebGLBitmapRenderer, drawWebGLBitmap, drawWebGLBitmapMask } from './webglBitmap';
+import { defaultWebGLBitmapRenderer, drawWebGLBitmap } from './webglBitmap';
 import { registerDefaultWebGLMaterial } from './webglDefaultMaterial';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 import { makeWebGLState } from './webglTestHelper';
@@ -123,15 +123,5 @@ describe('drawWebGLBitmap', () => {
     expect(d[9]).toBeCloseTo(8 / 64); // v0
     expect(d[10]).toBeCloseTo(48 / 128); // u1
     expect(d[11]).toBeCloseTo(24 / 64); // v1
-  });
-});
-
-describe('drawWebGLBitmapMask', () => {
-  it('delegates to the same batch path as drawWebGLBitmap', () => {
-    const { state } = makeWebGLState();
-    registerDefaultWebGLMaterial(state);
-    const img = document.createElement('img');
-    drawWebGLBitmapMask(state, makeRenderProxy(makeImageResource(img)));
-    expect(state.spriteBatchCount).toBe(1);
   });
 });

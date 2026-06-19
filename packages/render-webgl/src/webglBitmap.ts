@@ -127,10 +127,6 @@ export function drawWebGLBitmap(state: RenderState, renderProxy: RenderProxy2D):
   internal.spriteBatchCount++;
 }
 
-export function drawWebGLBitmapMask(state: RenderState, data: RenderProxy2D): void {
-  drawWebGLBitmap(state, data);
-}
-
 export const defaultWebGLBitmapRenderer: DisplayObjectRenderer = {
   format: BatchFormat.Quad,
   createData: createWebGLBitmapData,

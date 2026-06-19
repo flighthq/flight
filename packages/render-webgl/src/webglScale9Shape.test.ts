@@ -1,5 +1,5 @@
-﻿import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/displayobject';
-import { getOrCreateRenderProxy2D } from '@flighthq/render';
+﻿import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
 
 import {
   createWebGLScale9ShapeData,

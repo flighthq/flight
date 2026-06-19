@@ -10,10 +10,12 @@
   },
   "references": [
     { "path": "../geometry" },
+    { "path": "../path" },
     { "path": "../materials" },
     { "path": "../render-canvas" },
     { "path": "../render" },
     { "path": "../displayobject" },
+    { "path": "../shape" },
     { "path": "../sprite" },
     { "path": "../text-input" },
     { "path": "../text-layout" },

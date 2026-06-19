@@ -62,10 +62,6 @@ export function drawWebGLRichText(state: RenderState, renderProxy: RenderProxy2D
   drawWebGLRichTextWithOverlay(state, renderProxy);
 }
 
-export function drawWebGLRichTextMask(state: RenderState, data: RenderProxy2D): void {
-  drawWebGLRichText(state, data);
-}
-
 export function drawWebGLRichTextWithOverlay(
   state: RenderState,
   renderProxy: RenderProxy2D,

@@ -5,7 +5,7 @@ import { BatchFormat } from '@flighthq/types';
 import { registerDefaultWebGLMaterial } from './webglDefaultMaterial';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 import { makeWebGLState } from './webglTestHelper';
-import { defaultWebGLTextRenderer, drawWebGLText, drawWebGLTextMask } from './webglText';
+import { defaultWebGLTextRenderer, drawWebGLText } from './webglText';
 
 vi.mock('@flighthq/text-layout', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
@@ -63,8 +63,6 @@ describe('defaultWebGLTextRenderer', () => {
   it('has a submit function pointing to drawWebGLText', () => {
     expect(defaultWebGLTextRenderer.submit).toBe(drawWebGLText);
   });
-
-  it('has a drawMask function pointing to drawWebGLTextMask', () => {});
 });
 
 describe('drawWebGLText', () => {
@@ -135,13 +133,5 @@ describe('drawWebGLText', () => {
     drawWebGLText(state, proxy);
     // Alpha is applied per-instance in the batch; the expensive raster cache is untouched.
     expect(deleteSpy).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('drawWebGLTextMask', () => {
-  it('uses the text draw path', () => {
-    const { state } = makeWebGLState();
-    expect(() => drawWebGLTextMask(state, makeTextProxy('', makeTextData()))).not.toThrow();
-    expect(state.spriteBatchCount).toBe(0);
   });
 });

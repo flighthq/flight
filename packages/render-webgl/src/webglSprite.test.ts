@@ -1,5 +1,5 @@
 import { addNodeChild } from '@flighthq/node';
-import { getOrCreateRenderProxy2D, prepareSpriteRender, registerRenderer } from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
 import { createSprite } from '@flighthq/sprite';
 import { SpriteKind } from '@flighthq/types';
 
@@ -15,7 +15,7 @@ describe('renderWebGLSprite', () => {
     const { state } = makeWebGLState();
     const sprite = createSprite();
     expect(() => {
-      prepareSpriteRender(state, sprite);
+      prepareDisplayObjectRender(state, sprite);
       renderWebGLSprite(state, sprite);
     }).not.toThrow();
   });
@@ -28,7 +28,7 @@ describe('renderWebGLSprite', () => {
     const sprite = createSprite();
     const data = getOrCreateRenderProxy2D(state, sprite);
 
-    prepareSpriteRender(state, sprite);
+    prepareDisplayObjectRender(state, sprite);
     renderWebGLSprite(state, sprite);
 
     expect(renderer.submit).toHaveBeenCalledWith(state, data);
@@ -42,7 +42,7 @@ describe('renderWebGLSprite', () => {
     const sprite = createSprite();
     sprite.visible = false;
 
-    prepareSpriteRender(state, sprite);
+    prepareDisplayObjectRender(state, sprite);
     renderWebGLSprite(state, sprite);
 
     expect(renderer.submit).not.toHaveBeenCalled();
@@ -56,7 +56,7 @@ describe('renderWebGLSprite', () => {
     const sprite = createSprite();
     sprite.alpha = 0;
 
-    prepareSpriteRender(state, sprite);
+    prepareDisplayObjectRender(state, sprite);
     renderWebGLSprite(state, sprite);
 
     expect(renderer.submit).not.toHaveBeenCalled();
@@ -71,7 +71,7 @@ describe('renderWebGLSprite', () => {
     const child = createSprite();
     addNodeChild(parent, child);
 
-    prepareSpriteRender(state, parent);
+    prepareDisplayObjectRender(state, parent);
     renderWebGLSprite(state, parent);
 
     expect(renderer.submit).toHaveBeenCalledTimes(2);

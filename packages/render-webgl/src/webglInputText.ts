@@ -7,7 +7,6 @@ import {
 } from '@flighthq/text-input';
 import { getRichTextScrollYOffset } from '@flighthq/text-layout';
 import type {
-  DisplayObjectMaskRenderer,
   DisplayObjectRenderer,
   InputText,
   InputTextRuntime,
@@ -18,12 +17,7 @@ import type {
   TextLayoutResult,
 } from '@flighthq/types';
 
-import {
-  createWebGLRichTextData,
-  destroyWebGLRichTextData,
-  drawWebGLRichTextMask,
-  drawWebGLRichTextWithOverlay,
-} from './webglRichText';
+import { createWebGLRichTextData, destroyWebGLRichTextData, drawWebGLRichTextWithOverlay } from './webglRichText';
 
 export function drawWebGLInputText(state: RenderState, renderProxy: RenderProxy2D): void {
   drawWebGLRichTextWithOverlay(state, renderProxy, drawWebGLInputTextOverlay);
@@ -33,14 +27,6 @@ export const defaultWebGLInputTextRenderer: DisplayObjectRenderer = {
   createData: createWebGLRichTextData,
   destroyData: destroyWebGLRichTextData,
   submit: drawWebGLInputText,
-};
-
-function drawWebGLInputTextMask(state: RenderState, renderProxy: RenderProxy2D): void {
-  drawWebGLRichTextMask(state, renderProxy);
-}
-
-export const defaultWebGLInputTextMaskRenderer: DisplayObjectMaskRenderer = {
-  drawMask: drawWebGLInputTextMask,
 };
 
 function drawWebGLInputTextOverlay(

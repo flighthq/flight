@@ -85,6 +85,11 @@ export type WebGLRenderStateInternal = Omit<WebGLRenderState, 'canvas' | 'gl'> &
   spriteBatchInstanceBuffer: WebGLBuffer | null;
   spriteBatchInstanceData: Float32Array;
   spriteBatchTexture: CanvasImageSource | null;
+  // Per-clip unwind stack: the form of each pushed clip (scissor vs stencil contour) so popClip
+  // un-installs the right gate.
+  clipForms: ('rect' | 'contour')[];
+  // Active stencil nesting depth, now driven by contour clips (formerly by masks). The GPU draw path
+  // reads this to know when a stencil test is live. Rect clips use the scissor and do not touch it.
   currentMaskDepth?: number;
   currentScissorRect?: WebGLScissorRect | null;
   /**

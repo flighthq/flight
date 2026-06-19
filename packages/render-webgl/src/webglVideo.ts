@@ -73,10 +73,6 @@ export function drawWebGLVideo(state: RenderState, renderProxy: RenderProxy2D): 
   drawWebGLQuad(internal, 0, 0, vw, vh, 0, 0, 1, 1);
 }
 
-export function drawWebGLVideoMask(_state: RenderState, _renderProxy: RenderProxy2D): void {
-  drawWebGLVideo(_state, _renderProxy);
-}
-
 export const defaultWebGLVideoRenderer: DisplayObjectRenderer = {
   createData: createWebGLVideoData,
   destroyData: destroyWebGLVideoData,

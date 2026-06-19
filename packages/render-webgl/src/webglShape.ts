@@ -1,5 +1,7 @@
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node';
+import { tessellatePath } from '@flighthq/path';
 import { renderCanvasShapeCommands } from '@flighthq/render-canvas';
+import { getShapeFillRegions } from '@flighthq/shape';
 import type {
   DisplayObjectRenderer,
   Renderable,
@@ -12,6 +14,8 @@ import { BatchFormat } from '@flighthq/types';
 
 import type { WebGLRenderStateInternal } from './internal';
 import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
+import type { WebGLShapeMesh } from './webglShapeMesh';
+import { drawWebGLShapeMeshes } from './webglShapeMesh';
 import {
   ensureWebGLQuadBatchShader,
   packWebGLSpriteBatchMaterialInstance,
@@ -24,6 +28,10 @@ interface WebGLShapeData {
   lastContentID: number;
   lastW: number;
   lastH: number;
+  // GPU tessellated-fill cache, rebuilt when the content revision changes. Null until first resolved;
+  // populated only for solid-fill shapes (getShapeFillRegions != null), otherwise the raster path runs.
+  meshVersion: number;
+  meshes: WebGLShapeMesh[] | null;
 }
 
 function createWebGLShapeData(_state: RenderState, _source: Renderable): RendererData | null {
@@ -31,7 +39,15 @@ function createWebGLShapeData(_state: RenderState, _source: Renderable): Rendere
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  return { canvas, ctx, lastContentID: -1, lastW: 0, lastH: 0 } as unknown as RendererData;
+  return {
+    canvas,
+    ctx,
+    lastContentID: -1,
+    lastW: 0,
+    lastH: 0,
+    meshVersion: -1,
+    meshes: null,
+  } as unknown as RendererData;
 }
 
 // The batch uploads this shape's canvas into the shared texture cache; free that GPU texture when
@@ -53,6 +69,27 @@ export function drawWebGLShape(state: RenderState, renderProxy: RenderProxy2D): 
   const version = getNodeLocalContentRevision(source);
   if (commands.length === 0) return;
   if (renderProxy.rendererData === null) return;
+
+  // GPU fill path: solid-fill shapes tessellate to colored meshes (crisp at any zoom). Falls through to
+  // the canvas-raster path for gradient/bitmap fills and strokes (getShapeFillRegions returns null).
+  const regions = getShapeFillRegions(commands);
+  if (regions !== null && regions.length > 0) {
+    const meshData = renderProxy.rendererData as unknown as WebGLShapeData;
+    if (meshData.meshVersion !== version) {
+      meshData.meshes = regions.map((region) => {
+        const mesh = tessellatePath(region.path);
+        return {
+          vertices: new Float32Array(mesh.vertices),
+          indices: new Uint16Array(mesh.indices),
+          color: region.color,
+          alpha: region.alpha,
+        };
+      });
+      meshData.meshVersion = version;
+    }
+    drawWebGLShapeMeshes(internal, renderProxy, meshData.meshes ?? []);
+    return;
+  }
 
   const material = renderProxy.material;
   const materialRenderer = resolveWebGLMaterialRenderer(internal, material);
@@ -111,10 +148,6 @@ export function drawWebGLShape(state: RenderState, renderProxy: RenderProxy2D): 
   d[base + 12] = renderProxy.alpha;
   packWebGLSpriteBatchMaterialInstance(internal, renderProxy.materialData, startCount);
   internal.spriteBatchCount++;
-}
-
-export function drawWebGLShapeMask(state: RenderState, data: RenderProxy2D): void {
-  drawWebGLShape(state, data);
 }
 
 export const defaultWebGLShapeRenderer: DisplayObjectRenderer = {
