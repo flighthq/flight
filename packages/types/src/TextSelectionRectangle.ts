@@ -1,4 +1,4 @@
-export interface InputTextSelectionRectangle {
+export interface TextSelectionRectangle {
   height: number;
   lineIndex: number;
   width: number;
