@@ -1,4 +1,5 @@
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
+import { computeRichTextContent, computeTextBoundsRectangle, getRichTextContent } from '@flighthq/text-layout';
 import type {
   MethodsOf,
   Node,
@@ -8,23 +9,71 @@ import type {
   RichTextData,
   RichTextRuntime,
   TextFormat,
+  TextLabel,
+  TextLayoutParams,
   TextLayoutResult,
+  TextMeasureFunction,
 } from '@flighthq/types';
 import { RichTextKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
 import type { RichTextDataInternal } from './internal';
-import { createTextData } from './text';
+import { createTextLabelData } from './textLabel';
+import { ensureTextLayout, getTextLayout } from './textLayout';
+
+// Per-kind layout-params hook for ensureTextLayout: assembles RichText's multi-format/html content
+// (cached on the runtime) plus the wrap/multiline constraints. Password masking, when the editable-input
+// slot enables it, is applied by computeRichTextContent via getRichTextPasswordCharacter.
+export function buildRichTextLayoutParams(source: Readonly<TextLabel>, measure: TextMeasureFunction): TextLayoutParams {
+  const richText = source as Readonly<RichText>;
+  const data = richText.data;
+  const runtime = getDisplayObjectRuntime(richText) as RichTextRuntime;
+  const content = getRichTextContent(runtime);
+  computeRichTextContent(content, data, getRichTextPasswordCharacter(richText));
+  return {
+    formatRanges: content.formatRanges,
+    height: data.height,
+    measure,
+    multiline: data.multiline,
+    text: content.text,
+    width: data.wordWrap ? data.width : 10000,
+    wordWrap: data.wordWrap,
+  };
+}
 
 export function clearRichTextFormatRanges(source: RichText): void {
   source.data.textFormatRanges.length = 0;
   invalidateRichTextContent(source);
 }
 
+// The field-box bounds in local space. A fixed field (autoSize 'none') is exactly the user width/
+// height at the origin. Under autoSize, the box is the measured field size (textWidth/textHeight +
+// gutter), positioned by the left/right/center anchor relative to the original width — so 'right'
+// grows leftward and 'center' splits the difference. The layout is ensured on demand here, which is
+// what lets autoSize bounds be queried before the text is ever rendered. Before any measure provider
+// is registered the layout is unavailable, so it falls back to the fixed field box.
 export function computeRichTextLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
-  const data = (source as RichText).data;
-  out.width = data.width;
-  out.height = data.height;
+  const richText = source as RichText;
+  const data = richText.data;
+  if (data.autoSize === 'none') {
+    out.x = 0;
+    out.y = 0;
+    out.width = data.width;
+    out.height = data.height;
+    return;
+  }
+
+  ensureTextLayout(richText);
+  const layout = getTextLayout(richText);
+  if (layout === null) {
+    out.x = 0;
+    out.y = 0;
+    out.width = data.width;
+    out.height = data.height;
+    return;
+  }
+
+  computeTextBoundsRectangle(out, data, layout);
 }
 
 export function createRichText(obj?: Readonly<PartialNode<RichText>>): RichText {
@@ -32,7 +81,7 @@ export function createRichText(obj?: Readonly<PartialNode<RichText>>): RichText 
 }
 
 export function createRichTextData(data?: Readonly<Partial<RichTextData>>): RichTextData {
-  const _data = createTextData(data) as RichTextData;
+  const _data = createTextLabelData(data) as RichTextData;
   _data.background = data?.background ?? false;
   _data.backgroundColor = data?.backgroundColor ?? 0xffffff;
   _data.border = data?.border ?? false;
@@ -57,15 +106,30 @@ export function createRichTextData(data?: Readonly<Partial<RichTextData>>): Rich
 
 export function createRichTextRuntime(): RichTextRuntime {
   const out = createDisplayObjectRuntime(defaultMethods) as RichTextRuntime;
+  // buildTextLayoutParams is a text-specific per-kind seam, not a display-object trait, so no
+  // trait-init copies it off defaultMethods — assign it onto the runtime directly.
+  out.buildTextLayoutParams = buildRichTextLayoutParams;
   out.textLayout = null;
+  out.textLayoutUsingContentID = -1;
   out.richTextContent = null;
   out.selectionBeginIndex = 0;
   out.selectionEndIndex = 0;
+  // null until enableTextInput(node) opts this field into editing (docs/text-architecture-handoff.md,
+  // Track A). A static RichText leaves it null and pulls no input code.
+  out.input = null;
   return out;
 }
 
 export function dispatchRichTextWheel(source: RichText, deltaLines: number, layout?: Readonly<TextLayoutResult>): void {
   setRichTextScrollV(source, source.data.scrollV + Math.round(deltaLines), layout);
+}
+
+// The character a field masks its text with, or null when not masking. Password state lives on the
+// editable-input slot (enableTextInput), not on RichTextData, so a static RichText is never masked.
+// Shared by buildRichTextLayoutParams and every RichText renderer that self-measures its content.
+export function getRichTextPasswordCharacter(source: Readonly<RichText>): string | null {
+  const input = (getDisplayObjectRuntime(source) as RichTextRuntime).input;
+  return input !== null && input.displayAsPassword ? input.passwordCharacter : null;
 }
 
 export function getRichTextRuntime(source: Readonly<RichText>): Readonly<RichTextRuntime> {
