@@ -22,6 +22,7 @@ import {
   dispatchInteractionPointerMove,
   dispatchInteractionPointerUp,
   dispatchInteractionWheel,
+  enableInteractionSignals,
   getInteractionSignals,
   releaseInteractionPointer,
 } from './interactionManager';
@@ -34,7 +35,7 @@ describe('captureInteractionPointer', () => {
   it('routes pointer events to the captured target', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
-    connectSignal(getInteractionSignals(child).onPointerMove, () => fired++);
+    connectSignal(enableInteractionSignals(child).onPointerMove, () => fired++);
 
     captureInteractionPointer(manager, 3, child);
     dispatchInteractionPointerMove(manager, 500, 500, 0, { pointerId: 3 });
@@ -47,7 +48,7 @@ describe('connectInputToInteraction', () => {
     const input = createInputSource();
     const { child, manager } = createHitScene();
     let fired = 0;
-    connectSignal(getInteractionSignals(child).onPointerDown, () => fired++);
+    connectSignal(enableInteractionSignals(child).onPointerDown, () => fired++);
 
     const disconnect = connectInputToInteraction(input, manager);
     emitSignal(input.onPointerDown, createInputPointerData(50, 50));
@@ -61,7 +62,7 @@ describe('connectInputToInteraction', () => {
     const root = createDisplayObject();
     const manager = createInteractionManager(root);
     let received = '';
-    connectSignal(getInteractionSignals(root).onKeyDown, (data) => {
+    connectSignal(enableInteractionSignals(root).onKeyDown, (data) => {
       received = data.key;
     });
 
@@ -83,7 +84,7 @@ describe('connectInteractionSignal', () => {
       return true;
     });
 
-    connectSignal(getInteractionSignals(root).onPointerDown, () => fired++);
+    connectSignal(enableInteractionSignals(root).onPointerDown, () => fired++);
     dispatchInteractionPointerDown(manager, 50, 50);
     expect(fired).toBe(0);
     expect(hitTests).toBe(0);
@@ -188,7 +189,7 @@ describe('dispatchInteractionContextMenu', () => {
   it('fires onContextMenu on a hit target', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
-    connectSignal(getInteractionSignals(child).onContextMenu, () => fired++);
+    connectSignal(enableInteractionSignals(child).onContextMenu, () => fired++);
 
     dispatchInteractionContextMenu(manager, 50, 50);
     expect(fired).toBe(1);
@@ -200,7 +201,7 @@ describe('dispatchInteractionKeyDown', () => {
     const root = createDisplayObject();
     const manager = createInteractionManager(root);
     let received = '';
-    connectSignal(getInteractionSignals(root).onKeyDown, (data) => {
+    connectSignal(enableInteractionSignals(root).onKeyDown, (data) => {
       received = data.key;
     });
 
@@ -214,7 +215,7 @@ describe('dispatchInteractionKeyUp', () => {
     const root = createDisplayObject();
     const manager = createInteractionManager(root);
     let received = 0;
-    connectSignal(getInteractionSignals(root).onKeyUp, (data) => {
+    connectSignal(enableInteractionSignals(root).onKeyUp, (data) => {
       received = data.keyCode;
     });
 
@@ -227,7 +228,7 @@ describe('dispatchInteractionPointerCancel', () => {
   it('fires onPointerCancel on the active pointer target', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
-    connectSignal(getInteractionSignals(child).onPointerCancel, () => fired++);
+    connectSignal(enableInteractionSignals(child).onPointerCancel, () => fired++);
 
     dispatchInteractionPointerDown(manager, 50, 50);
     dispatchInteractionPointerCancel(manager, 60, 60);
@@ -237,8 +238,8 @@ describe('dispatchInteractionPointerCancel', () => {
   it('clears pointer capture', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
-    connectSignal(getInteractionSignals(child).onPointerCancel, () => fired++);
-    connectSignal(getInteractionSignals(child).onPointerMove, () => fired++);
+    connectSignal(enableInteractionSignals(child).onPointerCancel, () => fired++);
+    connectSignal(enableInteractionSignals(child).onPointerMove, () => fired++);
 
     captureInteractionPointer(manager, 3, child);
     dispatchInteractionPointerCancel(manager, 500, 500, { pointerId: 3 });
@@ -271,7 +272,7 @@ describe('dispatchInteractionPointerDown', () => {
       hitTests++;
       return true;
     });
-    connectSignal(getInteractionSignals(root).onWheel, () => {});
+    connectSignal(enableInteractionSignals(root).onWheel, () => {});
 
     dispatchInteractionPointerDown(manager, 50, 50);
     expect(hitTests).toBe(0);
@@ -289,7 +290,7 @@ describe('dispatchInteractionPointerDown', () => {
     setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
     addNodeChild(root, child);
 
-    const signals = getInteractionSignals(child);
+    const signals = enableInteractionSignals(child);
     const manager = createInteractionManager(root, { enabled: false });
     let fired = 0;
     connectSignal(signals.onPointerDown, () => fired++);
@@ -304,7 +305,7 @@ describe('dispatchInteractionPointerDown', () => {
     setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
     addNodeChild(root, child);
 
-    const signals = getInteractionSignals(child);
+    const signals = enableInteractionSignals(child);
     const manager = createInteractionManager(root);
     let fired = 0;
     connectSignal(signals.onPointerDown, () => fired++);
@@ -319,7 +320,7 @@ describe('dispatchInteractionPointerDown', () => {
     setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
     addNodeChild(root, child);
 
-    const signals = getInteractionSignals(child);
+    const signals = enableInteractionSignals(child);
     const manager = createInteractionManager(root);
     let receivedX = 0;
     let receivedY = 0;
@@ -349,7 +350,7 @@ describe('dispatchInteractionPointerDown', () => {
     let receivedPointerId = 0;
     let receivedPointerType = '';
     let receivedTarget = null;
-    connectSignal(getInteractionSignals(child).onPointerDown, (data) => {
+    connectSignal(enableInteractionSignals(child).onPointerDown, (data) => {
       receivedCurrentTarget = data.currentTarget;
       receivedLocalX = data.localX;
       receivedLocalY = data.localY;
@@ -386,7 +387,7 @@ describe('dispatchInteractionPointerDown', () => {
     let receivedLocalX = 0;
     let receivedLocalY = 0;
     let receivedTarget = null;
-    connectSignal(getInteractionSignals(parent).onPointerDown, (data) => {
+    connectSignal(enableInteractionSignals(parent).onPointerDown, (data) => {
       receivedCurrentTarget = data.currentTarget;
       receivedLocalX = data.localX;
       receivedLocalY = data.localY;
@@ -403,7 +404,7 @@ describe('dispatchInteractionPointerDown', () => {
   it('tracks a click target when only onClick is connected', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
-    connectSignal(getInteractionSignals(child).onClick, () => fired++);
+    connectSignal(enableInteractionSignals(child).onClick, () => fired++);
 
     dispatchInteractionPointerDown(manager, 50, 50);
     dispatchInteractionPointerUp(manager, 50, 50);
@@ -415,7 +416,7 @@ describe('dispatchInteractionPointerMove', () => {
   it('fires onPointerMove on a hit target', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
-    connectSignal(getInteractionSignals(child).onPointerMove, () => fired++);
+    connectSignal(enableInteractionSignals(child).onPointerMove, () => fired++);
 
     dispatchInteractionPointerMove(manager, 50, 50);
     expect(fired).toBe(1);
@@ -424,7 +425,7 @@ describe('dispatchInteractionPointerMove', () => {
   it('fires over and roll over when entering a target', () => {
     const { child, manager } = createHitScene();
     const order: string[] = [];
-    const signals = getInteractionSignals(child);
+    const signals = enableInteractionSignals(child);
     connectSignal(signals.onPointerOver, () => order.push('over'));
     connectSignal(signals.onPointerRollOver, () => order.push('rollOver'));
 
@@ -435,7 +436,7 @@ describe('dispatchInteractionPointerMove', () => {
   it('fires out and roll out when leaving a target', () => {
     const { child, manager } = createHitScene();
     const order: string[] = [];
-    const signals = getInteractionSignals(child);
+    const signals = enableInteractionSignals(child);
     connectSignal(signals.onPointerOut, () => order.push('out'));
     connectSignal(signals.onPointerRollOut, () => order.push('rollOut'));
 
@@ -449,7 +450,7 @@ describe('dispatchInteractionPointerUp', () => {
   it('fires onPointerUp on a hit target', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
-    connectSignal(getInteractionSignals(child).onPointerUp, () => fired++);
+    connectSignal(enableInteractionSignals(child).onPointerUp, () => fired++);
 
     dispatchInteractionPointerUp(manager, 50, 50);
     expect(fired).toBe(1);
@@ -458,7 +459,7 @@ describe('dispatchInteractionPointerUp', () => {
   it('fires onClick after down and up on the same target', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
-    connectSignal(getInteractionSignals(child).onClick, () => fired++);
+    connectSignal(enableInteractionSignals(child).onClick, () => fired++);
 
     dispatchInteractionPointerDown(manager, 50, 50);
     dispatchInteractionPointerUp(manager, 50, 50);
@@ -468,7 +469,7 @@ describe('dispatchInteractionPointerUp', () => {
   it('fires onDoubleClick for two clicks within the manager delay', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
-    connectSignal(getInteractionSignals(child).onDoubleClick, () => fired++);
+    connectSignal(enableInteractionSignals(child).onDoubleClick, () => fired++);
 
     dispatchInteractionPointerDown(manager, 50, 50);
     dispatchInteractionPointerUp(manager, 50, 50, 0, 1000);
@@ -480,7 +481,7 @@ describe('dispatchInteractionPointerUp', () => {
   it('tracks double clicks independently by pointer id', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
-    connectSignal(getInteractionSignals(child).onDoubleClick, () => fired++);
+    connectSignal(enableInteractionSignals(child).onDoubleClick, () => fired++);
 
     dispatchInteractionPointerDown(manager, 50, 50, 0, { pointerId: 1 });
     dispatchInteractionPointerUp(manager, 50, 50, 0, 1000, { pointerId: 1 });
@@ -494,7 +495,7 @@ describe('dispatchInteractionPointerUp', () => {
   it('fires onReleaseOutside on the original down target', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
-    connectSignal(getInteractionSignals(child).onReleaseOutside, () => fired++);
+    connectSignal(enableInteractionSignals(child).onReleaseOutside, () => fired++);
 
     dispatchInteractionPointerDown(manager, 50, 50);
     dispatchInteractionPointerUp(manager, 500, 500);
@@ -506,7 +507,7 @@ describe('dispatchInteractionWheel', () => {
   it('fires onWheel with delta values', () => {
     const { child, manager } = createHitScene();
     let receivedDeltaY = 0;
-    connectSignal(getInteractionSignals(child).onWheel, (data) => {
+    connectSignal(enableInteractionSignals(child).onWheel, (data) => {
       receivedDeltaY = data.deltaY;
     });
 
@@ -515,17 +516,36 @@ describe('dispatchInteractionWheel', () => {
   });
 });
 
-describe('getInteractionSignals', () => {
-  it('lazily creates interaction signals on the runtime', () => {
+describe('enableInteractionSignals', () => {
+  it('creates and returns interaction signals on first call', () => {
     const obj = createDisplayObject();
-    const signals = getInteractionSignals(obj);
+    const signals = enableInteractionSignals(obj);
     expect(signals).toBeDefined();
     expect(signals.onPointerDown).toBeDefined();
   });
 
   it('returns the same object on subsequent calls', () => {
     const obj = createDisplayObject();
-    expect(getInteractionSignals(obj)).toBe(getInteractionSignals(obj));
+    expect(enableInteractionSignals(obj)).toBe(enableInteractionSignals(obj));
+  });
+
+  it('makes getInteractionSignals return the enabled object', () => {
+    const obj = createDisplayObject();
+    const signals = enableInteractionSignals(obj);
+    expect(getInteractionSignals(obj)).toBe(signals);
+  });
+});
+
+describe('getInteractionSignals', () => {
+  it('returns null before signals are enabled', () => {
+    const obj = createDisplayObject();
+    expect(getInteractionSignals(obj)).toBeNull();
+  });
+
+  it('returns the signals after enableInteractionSignals', () => {
+    const obj = createDisplayObject();
+    const signals = enableInteractionSignals(obj);
+    expect(getInteractionSignals(obj)).toBe(signals);
   });
 });
 
@@ -533,7 +553,7 @@ describe('releaseInteractionPointer', () => {
   it('stops routing pointer events to the captured target', () => {
     const { child, manager } = createHitScene();
     let fired = 0;
-    connectSignal(getInteractionSignals(child).onPointerMove, () => fired++);
+    connectSignal(enableInteractionSignals(child).onPointerMove, () => fired++);
 
     captureInteractionPointer(manager, 3, child);
     releaseInteractionPointer(manager, 3);

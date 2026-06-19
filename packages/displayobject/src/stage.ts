@@ -47,6 +47,11 @@ export function createStageSignals(): StageSignals {
   };
 }
 
+export function enableStageSignals(source: Stage): StageSignals {
+  const runtime = source[EntityRuntimeKey] as StageRuntime;
+  return (runtime.stageSignals ??= createStageSignals());
+}
+
 export function getDisplayObjectStage(source: Readonly<DisplayObject>): Stage | null {
   const root = getNodeRoot(source);
   return root.kind === StageKind ? (root as Stage) : null;
@@ -56,9 +61,8 @@ export function getStageRuntime(source: Readonly<Stage>): Readonly<StageRuntime>
   return getDisplayObjectRuntime(source) as StageRuntime;
 }
 
-export function getStageSignals(source: Stage): StageSignals {
-  const runtime = source[EntityRuntimeKey] as StageRuntime;
-  return (runtime.stageSignals ??= createStageSignals());
+export function getStageSignals(source: Readonly<Stage>): StageSignals | null {
+  return (source[EntityRuntimeKey] as StageRuntime).stageSignals;
 }
 
 export function setStageSize(source: Stage, width: number, height: number): void {

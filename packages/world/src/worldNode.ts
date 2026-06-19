@@ -1,5 +1,5 @@
 import { createMatrix4 } from '@flighthq/geometry';
-import { createNode, createNodeRuntime, getNodeRuntime, getNodeSignals } from '@flighthq/node';
+import { createNode, createNodeRuntime, enableNodeSignals, getNodeRuntime, getNodeSignals } from '@flighthq/node';
 import type { NodeSignals, WorldNode, WorldNodeRuntime, WorldNodeTraits } from '@flighthq/types';
 import { WorldNodeKind, WorldNodeTraitsKey } from '@flighthq/types';
 
@@ -22,10 +22,14 @@ export function createWorldNodeRuntime(): WorldNodeRuntime {
   return out;
 }
 
+export function enableWorldNodeSignals(source: WorldNode): NodeSignals {
+  return enableNodeSignals(source);
+}
+
 export function getWorldNodeRuntime(source: Readonly<WorldNode>): WorldNodeRuntime {
   return getNodeRuntime(source) as WorldNodeRuntime;
 }
 
-export function getWorldNodeSignals(source: WorldNode): NodeSignals {
+export function getWorldNodeSignals(source: WorldNode): NodeSignals | null {
   return getNodeSignals(source);
 }

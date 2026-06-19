@@ -11,6 +11,7 @@ import {
   createStageData,
   createStageRuntime,
   createStageSignals,
+  enableStageSignals,
   getDisplayObjectStage,
   getStageRuntime,
   getStageSignals,
@@ -99,6 +100,26 @@ describe('createStageSignals', () => {
   });
 });
 
+describe('enableStageSignals', () => {
+  it('creates and returns signals on first call', () => {
+    const stage = createStage();
+    const signals = enableStageSignals(stage);
+    expect(signals).toBeDefined();
+    expect(signals.onResize).toBeDefined();
+  });
+
+  it('returns the same object on subsequent calls', () => {
+    const stage = createStage();
+    expect(enableStageSignals(stage)).toBe(enableStageSignals(stage));
+  });
+
+  it('makes getStageSignals return the enabled object', () => {
+    const stage = createStage();
+    const signals = enableStageSignals(stage);
+    expect(getStageSignals(stage)).toBe(signals);
+  });
+});
+
 describe('getDisplayObjectStage', () => {
   it('returns null when the node has no parent', () => {
     const obj = createDisplayObject();
@@ -143,16 +164,15 @@ describe('getStageRuntime', () => {
 });
 
 describe('getStageSignals', () => {
-  it('lazily creates and returns signals', () => {
+  it('returns null before signals are enabled', () => {
     const stage = createStage();
-    const signals = getStageSignals(stage);
-    expect(signals).toBeDefined();
-    expect(signals.onResize).toBeDefined();
+    expect(getStageSignals(stage)).toBeNull();
   });
 
-  it('returns the same object on subsequent calls', () => {
+  it('returns the signals after enableStageSignals', () => {
     const stage = createStage();
-    expect(getStageSignals(stage)).toBe(getStageSignals(stage));
+    const signals = enableStageSignals(stage);
+    expect(getStageSignals(stage)).toBe(signals);
   });
 });
 
@@ -167,7 +187,7 @@ describe('setStageSize', () => {
   it('emits onResize when dimensions change', () => {
     const stage = createStage();
     let called = false;
-    connectSignal(getStageSignals(stage).onResize, () => {
+    connectSignal(enableStageSignals(stage).onResize, () => {
       called = true;
     });
     setStageSize(stage, 1280, 720);
@@ -177,7 +197,7 @@ describe('setStageSize', () => {
   it('does not emit onResize when dimensions are unchanged', () => {
     const stage = createStage({ data: { stageWidth: 400, stageHeight: 300 } });
     let called = false;
-    connectSignal(getStageSignals(stage).onResize, () => {
+    connectSignal(enableStageSignals(stage).onResize, () => {
       called = true;
     });
     setStageSize(stage, 400, 300);

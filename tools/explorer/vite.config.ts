@@ -18,14 +18,14 @@ const projectRoot = resolve(__dirname, '../..');
 const examplesDir = join(projectRoot, 'examples');
 
 // The explorer is the listener app: it installs @flighthq/log's console-capture sink, then loads the
-// example. The example is the emit app — it only ever imports the lightweight flightLog/log* helpers,
+// example. The example is the emit app — it only ever imports the lightweight log/log* helpers,
 // so its own build (e.g. under the size suite) tree-shakes the sink machinery away. The example is
-// imported dynamically so the synchronous setFlightLogSink call runs first — before the example's
+// imported dynamically so the synchronous setLogSink call runs first — before the example's
 // module-init logs fire (a static import would hoist and run the example before this body).
 function entryWithLogCapture(name: string, render: string): string {
   return [
-    `import { createConsoleCaptureSink, setFlightLogSink } from '@flighthq/log';`,
-    `setFlightLogSink(createConsoleCaptureSink());`,
+    `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
+    `setLogSink(createConsoleCaptureSink());`,
     `import('___app___${name}:${render}');`,
   ].join('\n');
 }

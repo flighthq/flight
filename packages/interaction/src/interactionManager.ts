@@ -78,7 +78,7 @@ export function connectInteractionSignal<N extends NodeAny, Name extends Interac
   slot: InteractionSignalSlot<Name>,
   options?: Readonly<SignalConnectOptions>,
 ): void {
-  const signal = getInteractionSignals(target)[name] as Signal<InteractionSignalSlot<Name>>;
+  const signal = enableInteractionSignals(target)[name] as Signal<InteractionSignalSlot<Name>>;
   const trackedSlot = getTrackedInteractionSignalSlot(manager, target, name, slot);
   if (trackedSlot !== null && isSlotConnected(signal, trackedSlot as InteractionSignalSlot<Name>)) return;
 
@@ -305,9 +305,13 @@ export function dispatchInteractionWheel<N extends NodeAny>(
   dispatchPointerSignalAt(manager, 'onWheel', x, y, 0, deltaX, deltaY, options);
 }
 
-export function getInteractionSignals<N extends NodeAny>(source: N): InteractionSignals {
+export function enableInteractionSignals<N extends NodeAny>(source: N): InteractionSignals {
   const runtime = getNodeRuntime(source) as NodeRuntime<NodeAny>;
   return (runtime.interactionSignals ??= createInteractionSignals());
+}
+
+export function getInteractionSignals<N extends NodeAny>(source: N): InteractionSignals | null {
+  return (getNodeRuntime(source) as NodeRuntime<NodeAny>).interactionSignals;
 }
 
 export function releaseInteractionPointer<N extends NodeAny>(manager: InteractionManager<N>, pointerId: number): void {

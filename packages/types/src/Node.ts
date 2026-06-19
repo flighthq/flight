@@ -36,7 +36,7 @@ export interface NodeRuntime<Traits extends object = NodeTraits> extends EntityR
   localContentID: number;
   localTransformID: number;
   localTransformUsingLocalTransformID: number;
-  nodeSignals: NodeSignals;
+  nodeSignals: NodeSignals | null;
   parent: Node<Traits> | null;
   worldBoundsUsingLocalBoundsID: number;
   worldBoundsUsingWorldTransformID: number;

@@ -240,11 +240,11 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
           }
 
           // The harness is the listener app: install the console-capture sink, then dynamically
-          // import the flight test (dynamic so setFlightLogSink runs before the test's module-init
+          // import the flight test (dynamic so setLogSink runs before the test's module-init
           // logs). The test itself only imports the lightweight emit helpers.
           return [
-            `import { createConsoleCaptureSink, setFlightLogSink } from '@flighthq/log';`,
-            `setFlightLogSink(createConsoleCaptureSink());`,
+            `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
+            `setLogSink(createConsoleCaptureSink());`,
             `import('___ft___${name}:${render}');`,
           ].join('\n');
         }

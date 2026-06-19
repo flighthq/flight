@@ -13,18 +13,18 @@ export enum LogLevel {
 }
 
 // A log payload: a plain message string, or a structured record for machine-readable capture.
-export type FlightLogData = string | Readonly<Record<string, unknown>>;
+export type LogData = string | Readonly<Record<string, unknown>>;
 
 // One emitted log entry. `channel` is a free categorization tag (for example 'batch', 'shader',
 // 'user') used to filter captured output; null when uncategorized.
-export interface FlightLogEntry {
+export interface LogEntry {
   level: LogLevel;
   channel: string | null;
-  data: FlightLogData;
+  data: LogData;
 }
 
 // Receives every emitted entry regardless of the console verbosity threshold. The capture harness
 // installs one to record structured output; tests install one to assert. A free function (not a
-// class) so it stays trivially swappable and portable. Installed via setFlightLogSink in
+// class) so it stays trivially swappable and portable. Installed via setLogSink in
 // @flighthq/log.
-export type FlightLogSink = (entry: Readonly<FlightLogEntry>) => void;
+export type LogSink = (entry: Readonly<LogEntry>) => void;

@@ -45,7 +45,7 @@ export function createNodeRuntime<Traits extends object = NodeTraits>(
   out.boundsUsingLocalTransformID = -1;
   out.canAddChild = methods?.canAddChild ?? defaultNodeRuntimeCanAddChild;
   out.children = null;
-  out.nodeSignals = createNodeSignals();
+  out.nodeSignals = null;
   out.interactionSignals = null;
   out.localBoundsID = 0;
   out.localBoundsUsingLocalBoundsID = -1;
@@ -78,13 +78,18 @@ export function defaultNodeRuntimeCanAddChild<Traits extends object>(
   return true;
 }
 
+export function enableNodeSignals<Traits extends object = NodeTraits>(source: Node<Traits>): NodeSignals {
+  const runtime = getEntityRuntime(source) as NodeRuntime<Traits>;
+  return (runtime.nodeSignals ??= createNodeSignals());
+}
+
 export function getNodeRuntime<Traits extends object = NodeTraits>(
   source: Readonly<Node<Traits>>,
 ): Readonly<NodeRuntime<Traits>> {
   return getEntityRuntime(source) as NodeRuntime<Traits>;
 }
 
-export function getNodeSignals<Traits extends object = NodeTraits>(source: Node<Traits>): NodeSignals {
+export function getNodeSignals<Traits extends object = NodeTraits>(source: Node<Traits>): NodeSignals | null {
   return (getEntityRuntime(source) as NodeRuntime<Traits>).nodeSignals;
 }
 
