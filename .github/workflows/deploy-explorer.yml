@@ -1,4 +1,6 @@
-name: Deploy Explorer
+# NOTE: rename this file to deploy-pages.yml (`git mv`) — it now deploys the whole site
+# (landing + explorer + functional), not just the explorer.
+name: Deploy Pages
 
 on:
   push:
@@ -19,7 +21,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build explorer
+    name: Build site
     runs-on: ubuntu-latest
 
     steps:
@@ -29,12 +31,12 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run build:explorer
+      - run: npm run build:site
         env:
-          VITE_BASE: /flight/
+          PAGES_BASE: /flight/
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: tools/explorer/dist
+          path: tools/site
 
   deploy:
     name: Deploy to GitHub Pages
