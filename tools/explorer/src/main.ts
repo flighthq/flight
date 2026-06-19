@@ -121,8 +121,19 @@ function navigateTo(url: string): void {
   next.src = url;
 }
 
+function updateUrl(): void {
+  history.replaceState(
+    {
+      exampleIndex,
+      renderer,
+    },
+    '',
+    `#${hashForCurrent()}`,
+  );
+}
+
 function hashForCurrent(): string {
-  return `/explorer/${currentExample().name}/${renderer}`;
+  return `/${currentExample().name}/${renderer}/`;
 }
 
 function showCurrent(): void {
@@ -136,7 +147,7 @@ function selectExample(i: number): void {
   exampleIndex = Math.max(0, Math.min(examples.length - 1, i));
   renderer = resolveRenderer(renderer);
   showCurrent();
-  location.hash = hashForCurrent();
+  updateUrl();
 }
 
 function selectRenderer(r: Renderer): void {
@@ -144,19 +155,27 @@ function selectRenderer(r: Renderer): void {
   renderer = r;
   buildRendererBar();
   sessionStorage.setItem(STORAGE_KEY, hashForCurrent());
-  location.hash = hashForCurrent();
+  updateUrl();
   navigateTo(`${import.meta.env.BASE_URL}examples/${currentExample().name}/${renderer}/`);
 }
 
-function stateFromHash(hash: string): { exampleIndex: number; renderer: Renderer } | null {
+function stateFromHash(hash: string): {
+  exampleIndex: number;
+  renderer: Renderer;
+} | null {
   const parts = hash.replace(/^\//, '').split('/');
-  if (parts[0] !== 'explorer' || !parts[1]) return null;
-  const name = parts[1];
-  const r = parts[2] as Renderer | undefined;
+
+  const name = parts[0];
+  const r = parts[1] as Renderer | undefined;
+
+  if (!name) return null;
+
   const i = examples.findIndex((e) => e.name === name);
   if (i < 0) return null;
+
   const ex = examples[i];
   const resolved = r && (ex.renderers as string[]).includes(r) ? r : (ex.renderers[0] as Renderer);
+
   return { exampleIndex: i, renderer: resolved };
 }
 
@@ -188,7 +207,7 @@ document.addEventListener('keydown', (e) => {
       exampleIndex = (exampleIndex + 1) % examples.length;
       renderer = currentExample().renderers[0] as Renderer;
       showCurrent();
-      location.hash = hashForCurrent();
+      updateUrl();
     }
   }
 });

@@ -1,8 +1,9 @@
-import { cpSync, existsSync, readdirSync, readFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import { dirname, extname, join, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 
+import { copyDirectoryContents } from '../../scripts/copy-dir';
 import { workspacePackages } from '../../scripts/workspaces';
 
 const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
@@ -160,6 +161,9 @@ function explorerPlugin(examples: Example[]): Plugin[] {
                 '<html lang="en">',
                 '<head>',
                 '  <meta charset="UTF-8" />',
+                // Document-relative `assets/...` fetches resolve into the shared pool (see
+                // writeBundle). The script src below is base-absolute, so <base> never touches it.
+                `  <base href="${viteBase}example-assets/" />`,
                 '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
                 `  <title>${example.name} \xB7 ${render}</title>`,
                 '  <style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { overflow: hidden; }</style>',
@@ -177,14 +181,17 @@ function explorerPlugin(examples: Example[]): Plugin[] {
       },
 
       writeBundle() {
+        // One flat pool for all example assets, shared by every renderer of every example. Example
+        // asset paths are globally unique by content, so merging the per-example public/ trees
+        // stores each file once (wabbit_alpha.png and tileset.png are each used by several examples)
+        // instead of copying every example's assets into all four {name}/{render}/ directories. Each
+        // built render page's <base href> points here (see generateBundle). Examples stay
+        // independently buildable: each keeps its own public/assets and loads document-relative
+        // `assets/...` paths; only the explorer pools them across the gallery.
+        const pool = join(outDir, 'example-assets');
         for (const example of examples) {
           const publicDir = join(examplesDir, example.name, 'public');
-          if (!existsSync(publicDir)) continue;
-
-          for (const render of example.renderers) {
-            const destDir = join(outDir, 'examples', example.name, render);
-            cpSync(publicDir, destDir, { recursive: true });
-          }
+          if (existsSync(publicDir)) copyDirectoryContents(publicDir, pool);
         }
       },
     },
