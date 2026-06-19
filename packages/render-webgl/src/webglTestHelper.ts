@@ -60,6 +60,7 @@ export function makeWebGLState(options?: { allowSmoothing?: boolean; backgroundC
     quadVertexData: new Float32Array(16),
     matrixArray: new Float32Array(9),
     scissorStack: [],
+    clipForms: [],
     spriteBatchBlendMode: null,
     spriteBatchCount: 0,
     spriteBatchInstanceBuffer: null,

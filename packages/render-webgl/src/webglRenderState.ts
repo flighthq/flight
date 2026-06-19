@@ -72,6 +72,7 @@ export function createWebGLRenderState(
   state.quadVertexData = new Float32Array(16);
   state.matrixArray = matrixArray;
   state.scissorStack = [];
+  state.clipForms = [];
 
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);

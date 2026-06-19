@@ -159,10 +159,6 @@ export function drawWebGLText(state: RenderState, renderProxy: RenderProxy2D): v
   internal.spriteBatchCount++;
 }
 
-export function drawWebGLTextMask(state: RenderState, data: RenderProxy2D): void {
-  drawWebGLText(state, data);
-}
-
 export const defaultWebGLTextRenderer: DisplayObjectRenderer = {
   format: BatchFormat.Quad,
   createData: createWebGLTextData,

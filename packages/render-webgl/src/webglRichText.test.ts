@@ -6,7 +6,6 @@ import {
   defaultWebGLRichTextRenderer,
   destroyWebGLRichTextData,
   drawWebGLRichText,
-  drawWebGLRichTextMask,
   drawWebGLRichTextWithOverlay,
 } from './webglRichText';
 import { makeWebGLState } from './webglTestHelper';
@@ -38,8 +37,6 @@ describe('defaultWebGLRichTextRenderer', () => {
   it('has a submit function pointing to drawWebGLRichText', () => {
     expect(defaultWebGLRichTextRenderer.submit).toBe(drawWebGLRichText);
   });
-
-  it('has a drawMask function pointing to drawWebGLRichTextMask', () => {});
 });
 
 describe('destroyWebGLRichTextData', () => {
@@ -98,14 +95,6 @@ describe('drawWebGLRichText', () => {
     (renderProxy.source as RichText).data.background = true;
     drawWebGLRichText(state, renderProxy);
     expect(gl.drawElements).toHaveBeenCalled();
-  });
-});
-
-describe('drawWebGLRichTextMask', () => {
-  it('uses the rich text draw path', () => {
-    const { state, gl } = makeWebGLState();
-    expect(() => drawWebGLRichTextMask(state, makeRichTextNode())).not.toThrow();
-    expect(gl.drawElements).not.toHaveBeenCalled();
   });
 });
 
