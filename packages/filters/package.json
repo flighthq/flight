@@ -34,6 +34,6 @@
     "@flighthq/surface": "*",
     "typescript": "^5.3.0"
   },
-  "description": "Visual filter effects for bitmap surfaces, canvas, and WebGL",
+  "description": "Bitmap filter descriptors, CSS serialization, and bitmap-surface implementations",
   "sideEffects": false
 }
