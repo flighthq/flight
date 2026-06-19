@@ -3,7 +3,7 @@ import {
   createWebGLCanvasElement,
   createWebGLRenderState,
   defaultWebGLSpriteRenderer,
-  prepareSpriteRender,
+  prepareDisplayObjectRender,
   registerDefaultWebGLMaterial,
   registerRenderer,
   renderWebGLBackground,
@@ -25,7 +25,7 @@ registerDefaultWebGLMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: Sprite): void {
-  if (!prepareSpriteRender(state, root)) return;
+  if (!prepareDisplayObjectRender(state, root)) return;
   renderWebGLBackground(state);
   renderWebGLSprite(state, root);
 }
