@@ -1,28 +1,30 @@
-import { getInputTextRuntime } from '@flighthq/displayobject';
 import { invalidateNodeAppearance } from '@flighthq/node';
 import { getRichTextSelectionRectangles } from '@flighthq/text-layout';
 import type {
-  HandleInputTextKeyboardOptions,
-  InputText,
-  InputTextData,
-  InputTextRuntime,
-  InputTextSelectionRectangle,
+  HandleTextInputKeyboardOptions,
   KeyboardEventData,
-  ReplaceInputTextOptions,
+  ReplaceTextInputOptions,
+  RichText,
+  RichTextData,
   TextFormatRange,
+  TextInputState,
   TextLayoutGroup,
   TextLayoutResult,
+  TextSelectionRectangle,
 } from '@flighthq/types';
 import { KeyCode } from '@flighthq/types';
 
-export function appendInputText(source: InputText, text: string): void {
-  replaceInputText(source, source.data.text.length, source.data.text.length, text);
+import { getTextInputState } from './textInput';
+
+export function appendTextInput(source: RichText, text: string): void {
+  replaceTextInput(source, source.data.text.length, source.data.text.length, text);
 }
 
-export function applyInputTextRestriction(data: Readonly<InputTextData>, text: string, replaceLength = 0): string {
+export function applyTextInputRestriction(source: Readonly<RichText>, text: string, replaceLength = 0): string {
+  const data = source.data;
   let value = text;
   if (!data.multiline) value = value.replace(/[\n\r]+/g, '');
-  value = restrictInputText(value, data.restrict);
+  value = restrictTextInput(value, getInputState(source).restrict);
 
   if (data.maxChars > 0) {
     const maxLength = data.maxChars - data.text.length + replaceLength;
@@ -33,42 +35,42 @@ export function applyInputTextRestriction(data: Readonly<InputTextData>, text: s
   return value;
 }
 
-export function deleteInputTextBackward(source: InputText): void {
-  const runtime = getMutableRuntime(source);
-  const start = getInputTextSelectionBeginIndex(source);
-  const end = getInputTextSelectionEndIndex(source);
+export function deleteTextInputBackward(source: RichText): void {
+  const state = getInputState(source);
+  const start = getTextInputSelectionBeginIndex(source);
+  const end = getTextInputSelectionEndIndex(source);
   if (start !== end) {
-    replaceInputText(source, start, end, '');
+    replaceTextInput(source, start, end, '');
   } else if (start > 0) {
-    replaceInputText(source, start - 1, start, '');
+    replaceTextInput(source, start - 1, start, '');
   }
-  runtime.selectionIndex = runtime.caretIndex;
+  state.selectionIndex = state.caretIndex;
 }
 
-export function deleteInputTextForward(source: InputText): void {
-  const start = getInputTextSelectionBeginIndex(source);
-  const end = getInputTextSelectionEndIndex(source);
+export function deleteTextInputForward(source: RichText): void {
+  const start = getTextInputSelectionBeginIndex(source);
+  const end = getTextInputSelectionEndIndex(source);
   if (start !== end) {
-    replaceInputText(source, start, end, '');
+    replaceTextInput(source, start, end, '');
   } else if (start < source.data.text.length) {
-    replaceInputText(source, start, start + 1, '');
+    replaceTextInput(source, start, start + 1, '');
   }
 }
 
-export function getInputTextCaretIndex(source: Readonly<InputText>): number {
-  return clampIndex(getInputTextRuntime(source).caretIndex, source.data.text.length);
+export function getTextInputCaretIndex(source: Readonly<RichText>): number {
+  return clampIndex(getInputState(source).caretIndex, source.data.text.length);
 }
 
-export function getInputTextCaretRectangle(
-  out: InputTextSelectionRectangle,
-  source: Readonly<InputText>,
+export function getTextInputCaretRectangle(
+  out: TextSelectionRectangle,
+  source: Readonly<RichText>,
   layout: Readonly<TextLayoutResult>,
 ): void {
-  const caretIndex = getInputTextCaretIndex(source);
+  const caretIndex = getTextInputCaretIndex(source);
   const group = getTextLayoutGroupAtIndex(layout, caretIndex);
   if (group === null) {
-    out.x = TEXT_FIELD_GUTTER;
-    out.y = TEXT_FIELD_GUTTER;
+    out.x = TEXT_BOUNDS_GUTTER;
+    out.y = TEXT_BOUNDS_GUTTER;
     out.width = 1;
     out.height = getFallbackLineHeight(layout);
     out.lineIndex = 0;
@@ -82,8 +84,8 @@ export function getInputTextCaretRectangle(
   out.lineIndex = group.lineIndex;
 }
 
-export function getInputTextCharacterIndexAtPoint(
-  source: Readonly<InputText>,
+export function getTextInputCharacterIndexAtPoint(
+  source: Readonly<RichText>,
   layout: Readonly<TextLayoutResult>,
   x: number,
   y: number,
@@ -115,117 +117,131 @@ export function getInputTextCharacterIndexAtPoint(
   return lineEnd > 0 ? lineEnd : lineStart;
 }
 
-export function getInputTextDisplayText(source: Readonly<InputText>): string {
-  if (!source.data.displayAsPassword) return source.data.text;
-  const passwordCharacter =
-    source.data.passwordCharacter.length > 0 ? source.data.passwordCharacter.charAt(0) : '\u2022';
+export function getTextInputDisplayText(source: Readonly<RichText>): string {
+  const state = getInputState(source);
+  if (!state.displayAsPassword) return source.data.text;
+  const passwordCharacter = state.passwordCharacter.length > 0 ? state.passwordCharacter.charAt(0) : '•';
   return passwordCharacter.repeat(source.data.text.length);
 }
 
-export function getInputTextSelectionBeginIndex(source: Readonly<InputText>): number {
-  const runtime = getInputTextRuntime(source);
+export function getTextInputSelectionBeginIndex(source: Readonly<RichText>): number {
+  const state = getInputState(source);
   return Math.min(
-    clampIndex(runtime.caretIndex, source.data.text.length),
-    clampIndex(runtime.selectionIndex, source.data.text.length),
+    clampIndex(state.caretIndex, source.data.text.length),
+    clampIndex(state.selectionIndex, source.data.text.length),
   );
 }
 
-export function getInputTextSelectionEndIndex(source: Readonly<InputText>): number {
-  const runtime = getInputTextRuntime(source);
+export function getTextInputSelectionEndIndex(source: Readonly<RichText>): number {
+  const state = getInputState(source);
   return Math.max(
-    clampIndex(runtime.caretIndex, source.data.text.length),
-    clampIndex(runtime.selectionIndex, source.data.text.length),
+    clampIndex(state.caretIndex, source.data.text.length),
+    clampIndex(state.selectionIndex, source.data.text.length),
   );
 }
 
-export function getInputTextSelectionRectangles(
-  out: InputTextSelectionRectangle[],
-  source: Readonly<InputText>,
+export function getTextInputSelectionRectangles(
+  out: TextSelectionRectangle[],
+  source: Readonly<RichText>,
   layout: Readonly<TextLayoutResult>,
 ): void {
   getRichTextSelectionRectangles(
     out,
-    getInputTextSelectionBeginIndex(source),
-    getInputTextSelectionEndIndex(source),
+    getTextInputSelectionBeginIndex(source),
+    getTextInputSelectionEndIndex(source),
     layout,
   );
 }
 
-export function getInputTextSelectionText(source: Readonly<InputText>): string {
-  return source.data.text.slice(getInputTextSelectionBeginIndex(source), getInputTextSelectionEndIndex(source));
+export function getTextInputSelectionText(source: Readonly<RichText>): string {
+  return source.data.text.slice(getTextInputSelectionBeginIndex(source), getTextInputSelectionEndIndex(source));
 }
 
-export function handleInputTextKeyboard(
-  source: InputText,
+export function handleTextInputKeyboard(
+  source: RichText,
   data: Readonly<KeyboardEventData>,
-  options?: Readonly<HandleInputTextKeyboardOptions>,
+  options?: Readonly<HandleTextInputKeyboardOptions>,
 ): boolean {
   const command = getKeyboardCommand(data);
   if (command === 'none') return false;
 
   switch (command) {
     case 'backspace':
-      deleteInputTextBackward(source);
+      deleteTextInputBackward(source);
       return true;
     case 'copy': {
-      const copyText = getInputTextSelectionText(source);
+      const copyText = getTextInputSelectionText(source);
       if (copyText.length > 0) options?.onCopy?.(copyText);
       return true;
     }
     case 'cut': {
-      const cutText = getInputTextSelectionText(source);
+      const cutText = getTextInputSelectionText(source);
       if (cutText.length > 0) {
         options?.onCopy?.(cutText);
-        replaceSelectedInputText(source, '');
+        replaceSelectedTextInput(source, '');
       }
       return true;
     }
     case 'delete':
-      deleteInputTextForward(source);
+      deleteTextInputForward(source);
       return true;
     case 'end':
-      moveInputTextCaret(source, source.data.text.length, data.shiftKey);
+      moveTextInputCaret(source, source.data.text.length, data.shiftKey);
       return true;
     case 'home':
-      moveInputTextCaret(source, 0, data.shiftKey);
+      moveTextInputCaret(source, 0, data.shiftKey);
       return true;
     case 'left':
-      moveInputTextCaret(source, getInputTextCaretIndex(source) - 1, data.shiftKey);
+      moveTextInputCaret(source, getTextInputCaretIndex(source) - 1, data.shiftKey);
       return true;
     case 'paste':
-      insertInputText(source, options?.clipboardText ?? '');
+      insertTextInput(source, options?.clipboardText ?? '');
       return true;
     case 'return':
       if (!source.data.multiline) return false;
-      insertInputText(source, '\n');
+      insertTextInput(source, '\n');
       return true;
     case 'right':
-      moveInputTextCaret(source, getInputTextCaretIndex(source) + 1, data.shiftKey);
+      moveTextInputCaret(source, getTextInputCaretIndex(source) + 1, data.shiftKey);
       return true;
     case 'selectAll':
-      selectAllInputText(source);
+      selectAllTextInput(source);
       return true;
   }
 }
 
-export function insertInputText(source: InputText, text: string): void {
-  replaceSelectedInputText(source, text, { applyInputRules: true });
+export function insertTextInput(source: RichText, text: string): void {
+  replaceSelectedTextInput(source, text, { applyInputRules: true });
 }
 
-export function moveInputTextCaret(source: InputText, index: number, extendSelection = false): void {
+export function moveTextInputCaret(source: RichText, index: number, extendSelection = false): void {
   const caret = clampIndex(index, source.data.text.length);
-  const runtime = getMutableRuntime(source);
-  runtime.caretIndex = caret;
-  if (!extendSelection) runtime.selectionIndex = caret;
+  const state = getInputState(source);
+  state.caretIndex = caret;
+  if (!extendSelection) state.selectionIndex = caret;
   invalidateNodeAppearance(source);
 }
 
-export function replaceInputText(
-  source: InputText,
+export function replaceSelectedTextInput(
+  source: RichText,
+  text: string,
+  options?: Readonly<ReplaceTextInputOptions>,
+): void {
+  replaceTextInput(
+    source,
+    getTextInputSelectionBeginIndex(source),
+    getTextInputSelectionEndIndex(source),
+    text,
+    options,
+  );
+}
+
+export function replaceTextInput(
+  source: RichText,
   beginIndex: number,
   endIndex: number,
   text: string,
-  options?: Readonly<ReplaceInputTextOptions>,
+  options?: Readonly<ReplaceTextInputOptions>,
 ): void {
   const data = source.data;
   let start = clampIndex(beginIndex, data.text.length);
@@ -236,44 +252,30 @@ export function replaceInputText(
     end = swap;
   }
 
-  const value = options?.applyInputRules === true ? applyInputTextRestriction(data, text, end - start) : text;
+  const value = options?.applyInputRules === true ? applyTextInputRestriction(source, text, end - start) : text;
   if (value.length === 0 && start === end) return;
 
   data.text = data.text.slice(0, start) + value + data.text.slice(end);
   adjustTextFormatRanges(data.textFormatRanges, data.defaultTextFormat, start, end, value.length);
-  setInputTextSelection(source, start + value.length, start + value.length);
+  setTextInputSelection(source, start + value.length, start + value.length);
   invalidateNodeAppearance(source);
 }
 
-export function replaceSelectedInputText(
-  source: InputText,
-  text: string,
-  options?: Readonly<ReplaceInputTextOptions>,
-): void {
-  replaceInputText(
-    source,
-    getInputTextSelectionBeginIndex(source),
-    getInputTextSelectionEndIndex(source),
-    text,
-    options,
-  );
+export function selectAllTextInput(source: RichText): void {
+  setTextInputSelection(source, 0, source.data.text.length);
 }
 
-export function selectAllInputText(source: InputText): void {
-  setInputTextSelection(source, 0, source.data.text.length);
-}
-
-export function selectLineAtInputTextIndex(source: InputText, index: number): void {
+export function selectLineAtTextInputIndex(source: RichText, index: number): void {
   const text = source.data.text;
   const clamped = Math.max(0, Math.min(text.length, index));
   let start = clamped;
   let end = clamped;
   while (start > 0 && text.charAt(start - 1) !== '\n') start--;
   while (end < text.length && text.charAt(end) !== '\n') end++;
-  setInputTextSelection(source, start, end);
+  setTextInputSelection(source, start, end);
 }
 
-export function selectWordAtInputTextIndex(source: InputText, index: number): void {
+export function selectWordAtTextInputIndex(source: RichText, index: number): void {
   const text = source.data.text;
   const clamped = Math.max(0, Math.min(text.length, index));
   let start = clamped;
@@ -284,19 +286,19 @@ export function selectWordAtInputTextIndex(source: InputText, index: number): vo
     while (start > 0 && !isWordChar(text.charAt(start - 1))) start--;
     while (end < text.length && !isWordChar(text.charAt(end))) end++;
   }
-  setInputTextSelection(source, start, end);
+  setTextInputSelection(source, start, end);
 }
 
-export function setInputTextSelection(source: InputText, beginIndex: number, endIndex: number): void {
-  const runtime = getMutableRuntime(source);
-  runtime.selectionIndex = clampIndex(beginIndex, source.data.text.length);
-  runtime.caretIndex = clampIndex(endIndex, source.data.text.length);
+export function setTextInputSelection(source: RichText, beginIndex: number, endIndex: number): void {
+  const state = getInputState(source);
+  state.selectionIndex = clampIndex(beginIndex, source.data.text.length);
+  state.caretIndex = clampIndex(endIndex, source.data.text.length);
   invalidateNodeAppearance(source);
 }
 
 function adjustTextFormatRanges(
   ranges: TextFormatRange[],
-  defaultFormat: InputTextData['defaultTextFormat'],
+  defaultFormat: RichTextData['defaultTextFormat'],
   beginIndex: number,
   endIndex: number,
   insertLength: number,
@@ -350,6 +352,14 @@ function getFallbackLineHeight(layout: Readonly<TextLayoutResult>): number {
   return layout.lineHeights[0] ?? 12;
 }
 
+// Editing operates on the editable-input slot enableTextInput attaches; calling an editing function on
+// a RichText that never enabled input is API misuse, so this throws rather than returning a sentinel.
+function getInputState(source: Readonly<RichText>): TextInputState {
+  const state = getTextInputState(source);
+  if (state === null) throw new Error('text input is not enabled on this RichText; call enableTextInput first');
+  return state;
+}
+
 function getKeyboardCommand(data: Readonly<KeyboardEventData>): KeyboardCommand {
   if (data.ctrlKey || data.metaKey) {
     const key = data.key.toLowerCase();
@@ -373,7 +383,7 @@ function getLineOffsetY(layout: Readonly<TextLayoutResult>, lineIndex: number): 
   for (const group of layout.groups) {
     if (group.lineIndex === lineIndex) return group.offsetY;
   }
-  let y = TEXT_FIELD_GUTTER;
+  let y = TEXT_BOUNDS_GUTTER;
   for (let i = 0; i < lineIndex; i++) y += layout.lineHeights[i] ?? 0;
   return y;
 }
@@ -405,11 +415,7 @@ function getTextLayoutGroupCharacterIndexAtX(group: Readonly<TextLayoutGroup>, x
   return group.endIndex;
 }
 
-function getMutableRuntime(source: Readonly<InputText>) {
-  return getInputTextRuntime(source) as InputTextRuntime;
-}
-
-function restrictInputText(text: string, restrict: string): string {
+function restrictTextInput(text: string, restrict: string): string {
   if (restrict.length === 0 || text.length === 0) return text;
 
   const { accepted, declined } = splitRestrictRanges(restrict);
@@ -482,4 +488,4 @@ function isWordChar(char: string): boolean {
   return /\w/.test(char);
 }
 
-const TEXT_FIELD_GUTTER = 2;
+const TEXT_BOUNDS_GUTTER = 2;
