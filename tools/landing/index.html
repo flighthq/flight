@@ -26,8 +26,9 @@
         -webkit-font-smoothing: antialiased;
       }
 
-      /* The drifting orb field behind the content is rendered with Flight (see src/hero.ts);
-         the WebGL canvas is inserted as a fixed, full-bleed background at z-index 0. */
+      /* The drifting particle field behind the content is rendered with Flight (see
+         src/background-particles.ts); the WebGL canvas is inserted as a fixed, full-bleed
+         background at z-index 0. */
       body {
         position: relative;
         display: flex;
@@ -44,7 +45,24 @@
       main,
       footer {
         position: relative;
+        z-index: 2;
+      }
+
+      /* Legibility scrim between the particle canvas (z-index 0) and the content (z-index 2): a soft
+         dark veil, strongest over the centred reading column and easing toward the edges so the bokeh
+         still glows at the periphery. It never fully clears, so the dim header/footer text stays
+         readable as bright motes drift behind it. Tune the alphas to trade legibility for vibrancy. */
+      .scrim {
+        position: fixed;
+        inset: 0;
         z-index: 1;
+        pointer-events: none;
+        background: radial-gradient(
+          ellipse 85% 80% at 50% 50%,
+          rgba(14, 14, 14, 0.78) 0%,
+          rgba(14, 14, 14, 0.42) 68%,
+          rgba(14, 14, 14, 0.3) 100%
+        );
       }
 
       header {
@@ -52,15 +70,31 @@
       }
 
       h1 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
         font-size: 40px;
         font-weight: 650;
         letter-spacing: 0.04em;
         color: #f4f4f4;
       }
 
+      /* Paper-plane wordmark, in the line-art style of the tool icons. stroke: #7ab8ff ties it to the
+         accent/bokeh blue; change to currentColor to match the white title instead. */
+      h1 svg {
+        width: 0.8em;
+        height: 0.8em;
+        stroke: #7ab8ff;
+        fill: none;
+        stroke-width: 2;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+
       .tagline {
         margin-top: 10px;
-        color: #888;
+        color: #97a0b0;
         font-size: 14px;
       }
 
@@ -76,7 +110,7 @@
         padding: 3px 11px;
         border: 1px solid rgba(255, 255, 255, 0.09);
         border-radius: 999px;
-        color: #888;
+        color: #97a0b0;
         font-size: 11px;
         font-family: ui-monospace, monospace;
         letter-spacing: 0.04em;
@@ -133,7 +167,7 @@
       }
 
       .tool-desc {
-        color: #888;
+        color: #8b93a3;
         line-height: 1.5;
       }
 
@@ -143,7 +177,7 @@
         gap: 6px 7px;
         justify-content: center;
         max-width: 560px;
-        color: #5a5a5a;
+        color: #79828f;
         font-size: 11px;
         letter-spacing: 0.02em;
       }
@@ -151,7 +185,7 @@
       .capabilities span::after {
         content: '·';
         margin-left: 7px;
-        color: #333;
+        color: #454f5e;
       }
 
       .capabilities span:last-child::after {
@@ -159,14 +193,14 @@
       }
 
       footer {
-        color: #444;
+        color: #4c5563;
         font-size: 11px;
         font-family: ui-monospace, monospace;
         letter-spacing: 0.03em;
       }
 
       footer a {
-        color: #555;
+        color: #5e6878;
         text-decoration: none;
       }
 
@@ -176,8 +210,15 @@
     </style>
   </head>
   <body>
+    <div class="scrim"></div>
     <header>
-      <h1>Flight</h1>
+      <h1>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <line x1="22" y1="2" x2="11" y2="13" />
+          <polygon points="22 2 15 22 11 13 2 9 22 2" />
+        </svg>
+        Flight
+      </h1>
       <p class="tagline">A tree-shakable 2D rendering SDK</p>
       <div class="renderers">
         <span class="renderer">DOM</span>
