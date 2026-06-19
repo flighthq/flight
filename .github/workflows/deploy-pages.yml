@@ -1,5 +1,3 @@
-# NOTE: rename this file to deploy-pages.yml (`git mv`) — it now deploys the whole site
-# (landing + explorer + functional), not just the explorer.
 name: Deploy Pages
 
 on:
@@ -33,7 +31,11 @@ jobs:
       - run: npm ci
       - run: npm run build:site
         env:
-          PAGES_BASE: /flight/
+          # Custom domain (flighthq.ai) serves at the root, so the site builds with base "/" and emits
+          # a CNAME into the artifact. For a project-page deploy instead, use PAGES_BASE: /<repo>/ and
+          # drop PAGES_CNAME.
+          PAGES_BASE: /
+          PAGES_CNAME: flighthq.ai
       - uses: actions/upload-pages-artifact@v3
         with:
           path: tools/site

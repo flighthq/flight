@@ -6,16 +6,21 @@
 //   tools/site/functional/   ← functional   (base <PAGES_BASE>functional/)
 //
 // Usage:
-//   PAGES_BASE=/flight/ tsx ./scripts/build-site.ts
+//   PAGES_BASE=/ PAGES_CNAME=flighthq.ai tsx ./scripts/build-site.ts
 //
-// PAGES_BASE defaults to "/flight/" (the project's Pages path) and must start and end with "/".
-// Each tool's build reads VITE_BASE, so its emitted asset and script URLs resolve under its subpath.
+// PAGES_BASE defaults to "/" (the custom-domain root, flighthq.ai) and must start and end with "/".
+// Set it to "/<repo>/" only for a project-page deploy with no custom domain. Each tool's build reads
+// VITE_BASE, so its emitted asset and script URLs resolve under its subpath.
+//
+// PAGES_CNAME, when set, is written to tools/site/CNAME so GitHub Pages serves the artifact under that
+// custom domain. Leave it unset for project-page or local preview builds.
+//
 // A tool with no "build" script is skipped with a warning rather than failing the assembly — its
 // route will 404 on the live site until a static build mode is added. (All three tools build today;
 // the skip path remains for a future tool added before its static build mode exists.)
 
 import { spawnSync } from 'child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
 import { copyDirectoryContents } from './copy-dir';
@@ -27,7 +32,7 @@ interface SiteTool {
 }
 
 const root = process.cwd();
-const pagesBase = process.env['PAGES_BASE'] ?? '/flight/';
+const pagesBase = process.env['PAGES_BASE'] ?? '/';
 const siteDir = join(root, 'tools', 'site');
 
 // Order matters only for readability: the root tool is listed first. Subpaths never collide.
@@ -96,9 +101,15 @@ function main(): void {
     built.push(tool.name);
   }
 
+  // Written last so a tool's dist copy (landing copies into the site root) can't clobber it. GitHub
+  // Pages reads this CNAME from the artifact to serve the site under the custom domain.
+  const cnameDomain = process.env['PAGES_CNAME'];
+  if (cnameDomain) writeFileSync(join(siteDir, 'CNAME'), `${cnameDomain}\n`);
+
   console.log(
     `\n[build:site] assembled ${siteDir}\n` +
       `  base:    ${pagesBase}\n` +
+      `  cname:   ${cnameDomain ?? 'none'}\n` +
       `  built:   ${built.join(', ') || 'none'}\n` +
       `  skipped: ${skipped.join(', ') || 'none'}`,
   );
