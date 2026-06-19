@@ -18,6 +18,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createWorldNode,
   createWorldNodeRuntime,
+  enableWorldNodeSignals,
   getWorldNodeRuntime,
   getWorldNodeSignals,
   WorldNodeKind,
@@ -71,6 +72,26 @@ describe('createWorldNodeRuntime', () => {
   });
 });
 
+describe('enableWorldNodeSignals', () => {
+  it('creates and returns the signal bag on first call', () => {
+    const node = createWorldNode();
+    const signals = enableWorldNodeSignals(node);
+    expect(signals.onChildAdded).toBeDefined();
+    expect(signals.onParentChanged).toBeDefined();
+  });
+
+  it('returns the same object on subsequent calls', () => {
+    const node = createWorldNode();
+    expect(enableWorldNodeSignals(node)).toBe(enableWorldNodeSignals(node));
+  });
+
+  it('stores the signals on the runtime nodeSignals slot', () => {
+    const node = createWorldNode();
+    const signals = enableWorldNodeSignals(node);
+    expect(getWorldNodeRuntime(node).nodeSignals).toBe(signals);
+  });
+});
+
 describe('getWorldNodeRuntime', () => {
   it('returns a runtime with the expected initial state', () => {
     const node = createWorldNode();
@@ -81,18 +102,15 @@ describe('getWorldNodeRuntime', () => {
 });
 
 describe('getWorldNodeSignals', () => {
-  it('returns the runtime signal bag for the node', () => {
+  it('returns null before signals are enabled', () => {
     const node = createWorldNode();
-    const signals = getWorldNodeSignals(node);
-    expect(signals.onChildAdded).toBeDefined();
-    expect(signals.onChildRemoved).toBeDefined();
-    expect(signals.onChildrenChanged).toBeDefined();
-    expect(signals.onChildrenOrderChanged).toBeDefined();
-    expect(signals.onParentChanged).toBeDefined();
+    expect(getWorldNodeSignals(node)).toBeNull();
   });
 
-  it('returns the nodeSignals from the runtime', () => {
+  it('returns the runtime nodeSignals after enableWorldNodeSignals', () => {
     const node = createWorldNode();
+    const signals = enableWorldNodeSignals(node);
+    expect(getWorldNodeSignals(node)).toBe(signals);
     expect(getWorldNodeSignals(node)).toBe(getWorldNodeRuntime(node).nodeSignals);
   });
 });

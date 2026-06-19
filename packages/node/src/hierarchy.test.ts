@@ -19,7 +19,7 @@ import {
   swapNodeChildren,
   swapNodeChildrenAt,
 } from './hierarchy';
-import { createNode, getNodeRuntime, getNodeSignals } from './node';
+import { createNode, enableNodeSignals, getNodeRuntime } from './node';
 
 let container: Node<NodeTraits>;
 let childA: Node<NodeTraits>;
@@ -81,7 +81,7 @@ describe('addNodeChild', () => {
 
   it('calls onParentChanged on the child', () => {
     let called = false;
-    connectSignal(getNodeSignals(childA).onParentChanged, () => {
+    connectSignal(enableNodeSignals(childA).onParentChanged, () => {
       called = true;
     });
     addNodeChild(container, childA);
@@ -90,7 +90,7 @@ describe('addNodeChild', () => {
 
   it('calls onChildrenChanged on the parent', () => {
     let called = false;
-    connectSignal(getNodeSignals(container).onChildrenChanged, () => {
+    connectSignal(enableNodeSignals(container).onChildrenChanged, () => {
       called = true;
     });
     addNodeChild(container, childA);
@@ -99,7 +99,7 @@ describe('addNodeChild', () => {
 
   it('calls onChildAdded on the parent with the child', () => {
     let added: unknown;
-    connectSignal(getNodeSignals(container).onChildAdded, (child) => {
+    connectSignal(enableNodeSignals(container).onChildAdded, (child) => {
       added = child;
     });
     addNodeChild(container, childA);
@@ -110,7 +110,7 @@ describe('addNodeChild', () => {
     addNodeChild(container, childA);
     addNodeChild(container, childB);
     let called = false;
-    connectSignal(getNodeSignals(container).onChildAdded, () => {
+    connectSignal(enableNodeSignals(container).onChildAdded, () => {
       called = true;
     });
     addNodeChildAt(container, childA, 1);
@@ -157,7 +157,7 @@ describe('addNodeChildAt', () => {
 
   it('calls onParentChanged on the child', () => {
     let called = false;
-    connectSignal(getNodeSignals(childA).onParentChanged, () => {
+    connectSignal(enableNodeSignals(childA).onParentChanged, () => {
       called = true;
     });
     addNodeChildAt(container, childA, 0);
@@ -166,7 +166,7 @@ describe('addNodeChildAt', () => {
 
   it('calls onChildrenChanged on the parent', () => {
     let called = false;
-    connectSignal(getNodeSignals(container).onChildrenChanged, () => {
+    connectSignal(enableNodeSignals(container).onChildrenChanged, () => {
       called = true;
     });
     addNodeChildAt(container, childA, 0);
@@ -175,7 +175,7 @@ describe('addNodeChildAt', () => {
 
   it('calls onChildAdded on the parent with the child', () => {
     let added: unknown;
-    connectSignal(getNodeSignals(container).onChildAdded, (child) => {
+    connectSignal(enableNodeSignals(container).onChildAdded, (child) => {
       added = child;
     });
     addNodeChildAt(container, childA, 0);
@@ -338,7 +338,7 @@ describe('removeNodeChild', () => {
   it('calls onParentChanged on the child', () => {
     addNodeChild(container, childA);
     let called = false;
-    connectSignal(getNodeSignals(childA).onParentChanged, () => {
+    connectSignal(enableNodeSignals(childA).onParentChanged, () => {
       called = true;
     });
     removeNodeChild(container, childA);
@@ -348,7 +348,7 @@ describe('removeNodeChild', () => {
   it('calls onChildrenChanged on the parent', () => {
     addNodeChild(container, childA);
     let called = false;
-    connectSignal(getNodeSignals(container).onChildrenChanged, () => {
+    connectSignal(enableNodeSignals(container).onChildrenChanged, () => {
       called = true;
     });
     removeNodeChild(container, childA);
@@ -358,7 +358,7 @@ describe('removeNodeChild', () => {
   it('calls onChildRemoved on the parent with the child', () => {
     addNodeChild(container, childA);
     let removed: unknown;
-    connectSignal(getNodeSignals(container).onChildRemoved, (child) => {
+    connectSignal(enableNodeSignals(container).onChildRemoved, (child) => {
       removed = child;
     });
     removeNodeChild(container, childA);
@@ -388,7 +388,7 @@ describe('removeNodeChildAt', () => {
     addNodeChild(container, childB);
 
     let called = false;
-    connectSignal(getNodeSignals(childA).onParentChanged, () => {
+    connectSignal(enableNodeSignals(childA).onParentChanged, () => {
       called = true;
     });
     removeNodeChildAt(container, 0);
@@ -400,7 +400,7 @@ describe('removeNodeChildAt', () => {
     addNodeChild(container, childB);
 
     let called = false;
-    connectSignal(getNodeSignals(container).onChildrenChanged, () => {
+    connectSignal(enableNodeSignals(container).onChildrenChanged, () => {
       called = true;
     });
     removeNodeChildAt(container, 0);
@@ -454,7 +454,7 @@ describe('removeNodeChildren', () => {
     addNodeChild(container, childA);
 
     let called = false;
-    connectSignal(getNodeSignals(childA).onParentChanged, () => {
+    connectSignal(enableNodeSignals(childA).onParentChanged, () => {
       called = true;
     });
     removeNodeChildren(container);
@@ -465,7 +465,7 @@ describe('removeNodeChildren', () => {
     addNodeChild(container, childA);
 
     let called = false;
-    connectSignal(getNodeSignals(container).onChildrenChanged, () => {
+    connectSignal(enableNodeSignals(container).onChildrenChanged, () => {
       called = true;
     });
     removeNodeChildren(container);
@@ -509,7 +509,7 @@ describe('setNodeChildIndex', () => {
     addNodeChild(container, childB);
 
     let called = false;
-    connectSignal(getNodeSignals(container).onChildrenOrderChanged, () => {
+    connectSignal(enableNodeSignals(container).onChildrenOrderChanged, () => {
       called = true;
     });
     setNodeChildIndex(container, childA, 1);
@@ -544,7 +544,7 @@ describe('swapNodeChildren', () => {
     addNodeChild(container, childB);
 
     let called = false;
-    connectSignal(getNodeSignals(container).onChildrenOrderChanged, () => {
+    connectSignal(enableNodeSignals(container).onChildrenOrderChanged, () => {
       called = true;
     });
     swapNodeChildren(container, childA, childB);
@@ -574,7 +574,7 @@ describe('swapNodeChildrenAt', () => {
     addNodeChild(container, childB);
 
     let called = false;
-    connectSignal(getNodeSignals(container).onChildrenOrderChanged, () => {
+    connectSignal(enableNodeSignals(container).onChildrenOrderChanged, () => {
       called = true;
     });
     swapNodeChildrenAt(container, 0, 1);

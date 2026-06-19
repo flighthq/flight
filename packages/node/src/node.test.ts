@@ -5,6 +5,7 @@ import {
   createNodeRuntime,
   createNodeSignals,
   defaultNodeRuntimeCanAddChild,
+  enableNodeSignals,
   getNodeRuntime,
   getNodeSignals,
   setNodeEnabled,
@@ -85,7 +86,7 @@ describe('createNodeRuntime', () => {
     expect(runtime.boundsUsingLocalBoundsID).toStrictEqual(-1);
     expect(runtime.boundsUsingLocalTransformID).toStrictEqual(-1);
     expect(runtime.children).toBeNull();
-    expect(runtime.nodeSignals).toBeDefined();
+    expect(runtime.nodeSignals).toBeNull();
     expect(runtime.localBoundsID).toStrictEqual(0);
     expect(runtime.localBoundsUsingLocalBoundsID).toStrictEqual(-1);
     expect(runtime.localTransformID).toStrictEqual(0);
@@ -131,6 +132,26 @@ describe('defaultNodeRuntimeCanAddChild', () => {
   });
 });
 
+describe('enableNodeSignals', () => {
+  it('creates and returns signals on first call', () => {
+    const node = createNode(NodeTestKind);
+    const signals = enableNodeSignals(node);
+    expect(signals).toBeDefined();
+    expect(signals.onChildrenChanged).toBeDefined();
+  });
+
+  it('returns the same object on subsequent calls', () => {
+    const node = createNode(NodeTestKind);
+    expect(enableNodeSignals(node)).toBe(enableNodeSignals(node));
+  });
+
+  it('makes getNodeSignals return the enabled object', () => {
+    const node = createNode(NodeTestKind);
+    const signals = enableNodeSignals(node);
+    expect(getNodeSignals(node)).toBe(signals);
+  });
+});
+
 describe('getNodeRuntime', () => {
   it('assumes runtime is defined', () => {
     const node = { kind: NodeTestKind };
@@ -146,16 +167,15 @@ describe('getNodeRuntime', () => {
 });
 
 describe('getNodeSignals', () => {
-  it('returns the signals object', () => {
+  it('returns null before signals are enabled', () => {
     const node = createNode(NodeTestKind);
-    const signals = getNodeSignals(node);
-    expect(signals).toBeDefined();
-    expect(signals.onChildrenChanged).toBeDefined();
+    expect(getNodeSignals(node)).toBeNull();
   });
 
-  it('returns the same object on subsequent calls', () => {
+  it('returns the signals after enableNodeSignals', () => {
     const node = createNode(NodeTestKind);
-    expect(getNodeSignals(node)).toBe(getNodeSignals(node));
+    const signals = enableNodeSignals(node);
+    expect(getNodeSignals(node)).toBe(signals);
   });
 });
 
