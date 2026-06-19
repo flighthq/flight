@@ -16,7 +16,7 @@ import {
   invalidateNodeLocalTransform,
   particleColorCurveFromKeyframes,
   ParticleEmitterKind,
-  prepareSpriteRender,
+  prepareDisplayObjectRender,
   prewarmParticleEmitter,
   registerDefaultWebGLMaterial,
   registerRenderer,
@@ -149,7 +149,7 @@ export function startParticleBackground(): void {
       invalidateNodeAppearance(emitter);
     }
 
-    if (prepareSpriteRender(state, emitter)) {
+    if (prepareDisplayObjectRender(state, emitter)) {
       renderWebGLBackground(state);
       renderWebGLSprite(state, emitter);
     }
