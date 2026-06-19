@@ -6,13 +6,13 @@ import {
   defaultBitmapHitTestPoint,
   defaultDisplayObjectHitTestPoint,
   defaultHTMLViewHitTestPoint,
-  defaultInputTextHitTestPoint,
   defaultMovieClipHitTestPoint,
   defaultRenderViewHitTestPoint,
   defaultRichTextHitTestPoint,
   defaultShapeHitTestPoint,
   defaultStageHitTestPoint,
   defaultTextHitTestPoint,
+  defaultTextInputHitTestPoint,
   defaultVideoHitTestPoint,
 } from './displayHitTests';
 
@@ -47,18 +47,6 @@ describe('defaultHTMLViewHitTestPoint', () => {
   it('always returns false â€” browser manages HTMLView hit testing', () => {
     const obj = makeDisplayObject();
     expect(defaultHTMLViewHitTestPoint(obj, 50, 50, false)).toBe(false);
-  });
-});
-
-describe('defaultInputTextHitTestPoint', () => {
-  it('returns true when point is within local bounds', () => {
-    const obj = makeDisplayObject();
-    expect(defaultInputTextHitTestPoint(obj, 50, 50, false)).toBe(true);
-  });
-
-  it('returns false when point is outside local bounds', () => {
-    const obj = makeDisplayObject();
-    expect(defaultInputTextHitTestPoint(obj, 200, 200, false)).toBe(false);
   });
 });
 
@@ -121,6 +109,18 @@ describe('defaultTextHitTestPoint', () => {
   it('returns false when point is outside local bounds', () => {
     const obj = makeDisplayObject();
     expect(defaultTextHitTestPoint(obj, 200, 200, false)).toBe(false);
+  });
+});
+
+describe('defaultTextInputHitTestPoint', () => {
+  it('returns true when point is within local bounds', () => {
+    const obj = makeDisplayObject();
+    expect(defaultTextInputHitTestPoint(obj, 50, 50, false)).toBe(true);
+  });
+
+  it('returns false when point is outside local bounds', () => {
+    const obj = makeDisplayObject();
+    expect(defaultTextInputHitTestPoint(obj, 200, 200, false)).toBe(false);
   });
 });
 
