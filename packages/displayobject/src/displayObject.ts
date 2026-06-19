@@ -5,13 +5,14 @@ import {
   initAppearanceTrait,
   initBoundsRectangleRuntimeTrait,
   initBoundsRectangleTrait,
-  initClipRectangleTrait,
+  initClipTrait,
   initMaterialTrait,
   initTransform2DRuntimeTrait,
   initTransform2DTrait,
   invalidateNodeAppearance,
 } from '@flighthq/node';
 import type {
+  ClipRegion,
   DisplayObject,
   DisplayObjectDataFactory,
   DisplayObjectRuntime,
@@ -20,7 +21,6 @@ import type {
   NodeAny,
   NodeRuntimeFactory,
   PartialNode,
-  Rectangle,
 } from '@flighthq/types';
 import { DisplayObjectKind, DisplayObjectTraitsKey } from '@flighthq/types';
 
@@ -44,7 +44,7 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   initBoundsRectangleTrait(out, obj);
   initAppearanceTrait(out, obj);
   initMaterialTrait(out, obj);
-  initClipRectangleTrait(out, obj);
+  initClipTrait(out, obj);
   return out;
 }
 
@@ -66,7 +66,7 @@ export function isDisplayObject(node: NodeAny): node is DisplayObject {
   return getNodeRuntime(node).traits === DisplayObjectTraitsKey;
 }
 
-export function setDisplayObjectClipRectangle(source: DisplayObject, value: Rectangle | null): void {
-  source.clipRectangle = value;
+export function setDisplayObjectClip(source: DisplayObject, value: ClipRegion | null): void {
+  source.clip = value;
   invalidateNodeAppearance(source);
 }
