@@ -1,20 +1,12 @@
 ﻿import { createDisplayObject } from '@flighthq/displayobject';
-import { createMatrix } from '@flighthq/geometry';
 import { addNodeChild } from '@flighthq/node';
-import {
-  getOrCreateRenderProxy2D,
-  prepareDisplayObjectRender,
-  registerDisplayObjectMaskRenderer,
-  registerRenderer,
-} from '@flighthq/render';
+import { getOrCreateRenderProxy2D, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
 import type { WebGLRenderState } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { enableWebGLMaskSupport } from './webglClip';
 import {
   defaultWebGLDisplayObjectRenderer,
   drawWebGLDisplayObject,
-  drawWebGLDisplayObjectMask,
   renderWebGLDisplayObject,
 } from './webglDisplayObject';
 import { createWebGLRenderState } from './webglRenderState';
@@ -30,7 +22,6 @@ function makeRenderer() {
   return {
     createData: () => null,
     submit: vi.fn(),
-    drawMask: vi.fn(),
   } as any;
 }
 
@@ -45,22 +36,6 @@ describe('drawWebGLDisplayObject', () => {
   it('does not draw plain display object geometry', () => {
     const state = makeState();
     expect(() => drawWebGLDisplayObject(state, {} as any)).not.toThrow();
-  });
-});
-
-describe('drawWebGLDisplayObjectMask', () => {
-  it('applies child mask renderers', () => {
-    const state = makeState();
-    const parent = createDisplayObject();
-    const child = createDisplayObject();
-    const renderer = makeRenderer();
-    registerDisplayObjectMaskRenderer(state, DisplayObjectKind, renderer);
-    addNodeChild(parent, child);
-    const childData = getOrCreateRenderProxy2D(state, child);
-
-    drawWebGLDisplayObjectMask(state, getOrCreateRenderProxy2D(state, parent));
-
-    expect(renderer.drawMask).toHaveBeenCalledWith(state, childData);
   });
 });
 

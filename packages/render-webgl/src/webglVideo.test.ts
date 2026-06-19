@@ -1,13 +1,7 @@
 ﻿import type { RendererData, RenderProxy2D } from '@flighthq/types';
 
 import { makeWebGLState } from './webglTestHelper';
-import {
-  createWebGLVideoData,
-  defaultWebGLVideoRenderer,
-  destroyWebGLVideoData,
-  drawWebGLVideo,
-  drawWebGLVideoMask,
-} from './webglVideo';
+import { createWebGLVideoData, defaultWebGLVideoRenderer, destroyWebGLVideoData, drawWebGLVideo } from './webglVideo';
 
 function makeVideoNode(element: HTMLVideoElement | null = null): RenderProxy2D {
   return {
@@ -64,14 +58,6 @@ describe('drawWebGLVideo', () => {
   it('returns early when element has not loaded', () => {
     const { state, gl } = makeWebGLState();
     drawWebGLVideo(state, makeVideoNode(document.createElement('video')));
-    expect(gl.drawElements).not.toHaveBeenCalled();
-  });
-});
-
-describe('drawWebGLVideoMask', () => {
-  it('uses the video draw path', () => {
-    const { state, gl } = makeWebGLState();
-    expect(() => drawWebGLVideoMask(state, makeVideoNode(null))).not.toThrow();
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 });

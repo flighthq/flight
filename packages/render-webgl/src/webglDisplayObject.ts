@@ -9,21 +9,8 @@ export function drawWebGLDisplayObject(_state: WebGLRenderState, _renderProxy: R
   // Plain display objects have no visual geometry of their own.
 }
 
-export function drawWebGLDisplayObjectMask(state: WebGLRenderState, data: RenderProxy2D): void {
-  const children = getDisplayObjectRuntime(data.source as DisplayObject).children;
-  if (children !== null) {
-    for (let i = 0; i < children.length; i++) {
-      const child = getRenderProxy2D(state, children[i] as DisplayObject);
-      if (child !== undefined) {
-        state.displayObjectMaskRendererMap.get(child.source.kind)?.drawMask(state, child);
-      }
-    }
-  }
-}
-
 export function renderWebGLDisplayObject(state: WebGLRenderState, source: DisplayObject): void {
   const internal = state as WebGLRenderStateInternal;
-  const frameID = state.currentFrameID;
   const tempStack = state.tempStack;
   const clipHooks = state.displayObjectClipHooks;
 
@@ -35,16 +22,13 @@ export function renderWebGLDisplayObject(state: WebGLRenderState, source: Displa
     if (!current.enabled) continue;
 
     const data = getRenderProxy2D(state, current);
-    if (data === undefined || data.isMaskFrameID === frameID) continue;
+    if (data === undefined) continue;
 
-    clipHooks?.popMask(state, data);
-    clipHooks?.popClipRectangle(state, data, current);
+    clipHooks?.popClip(state, data, current);
 
     if (!isRenderProxyVisible(data)) continue;
 
-    clipHooks?.pushMask(state, current);
-
-    clipHooks?.pushClipRectangle(state, data, current);
+    clipHooks?.pushClip(state, data, current);
 
     data.renderer?.submit(internal, data);
     if (data.traverseChildren) {

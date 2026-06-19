@@ -2,7 +2,7 @@ import type { RenderProxy2D } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import { registerDefaultWebGLMaterial } from './webglDefaultMaterial';
-import { defaultWebGLShapeRenderer, drawWebGLShape, drawWebGLShapeMask } from './webglShape';
+import { defaultWebGLShapeRenderer, drawWebGLShape } from './webglShape';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 import { makeWebGLState } from './webglTestHelper';
 
@@ -49,8 +49,6 @@ describe('defaultWebGLShapeRenderer', () => {
   it('has a submit function pointing to drawWebGLShape', () => {
     expect(defaultWebGLShapeRenderer.submit).toBe(drawWebGLShape);
   });
-
-  it('has a drawMask function pointing to drawWebGLShapeMask', () => {});
 });
 
 describe('drawWebGLShape', () => {
@@ -96,13 +94,5 @@ describe('drawWebGLShape', () => {
     const d = state.spriteBatchInstanceData;
     expect(d[6]).toBe(64); // width from mocked bounds
     expect(d[7]).toBe(48); // height from mocked bounds
-  });
-});
-
-describe('drawWebGLShapeMask', () => {
-  it('uses the shape draw path', () => {
-    const { state } = makeWebGLState();
-    expect(() => drawWebGLShapeMask(state, makeShapeNode({ commands: [] }, makeShapeData()))).not.toThrow();
-    expect(state.spriteBatchCount).toBe(0);
   });
 });
