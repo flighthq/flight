@@ -2,7 +2,7 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
 
 import { createCanvasRenderState } from './canvasRenderState';
-import { defaultCanvasRichTextRenderer, drawCanvasRichText, drawCanvasRichTextMask } from './canvasRichText';
+import { defaultCanvasRichTextRenderer, drawCanvasRichText } from './canvasRichText';
 
 function makeState() {
   const canvas = document.createElement('canvas');
@@ -41,14 +41,5 @@ describe('drawCanvasRichText', () => {
 
     expect(spy).toHaveBeenCalledWith('red', expect.any(Number), expect.any(Number));
     expect(spy).toHaveBeenCalledWith('bold', expect.any(Number), expect.any(Number));
-  });
-});
-
-describe('drawCanvasRichTextMask', () => {
-  it('does not throw', () => {
-    const state = makeState();
-    const node = createRichText();
-    const renderProxy = getOrCreateRenderProxy2D(state, node);
-    expect(() => drawCanvasRichTextMask(state, renderProxy)).not.toThrow();
   });
 });

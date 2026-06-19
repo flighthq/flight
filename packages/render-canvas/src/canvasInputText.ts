@@ -10,7 +10,6 @@ import {
 import { getRichTextFieldHeight, getRichTextFieldWidth, getRichTextScrollYOffset } from '@flighthq/text-layout';
 import type {
   CanvasRenderState,
-  DisplayObjectMaskRenderer,
   DisplayObjectRenderer,
   InputText,
   InputTextRuntime,
@@ -18,7 +17,7 @@ import type {
   RenderProxy2D,
 } from '@flighthq/types';
 
-import { drawCanvasRichText, drawCanvasRichTextMask } from './canvasRichText';
+import { drawCanvasRichText } from './canvasRichText';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasInputText(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
@@ -71,14 +70,6 @@ export function drawCanvasInputText(state: CanvasRenderState, renderProxy: Rende
 export const defaultCanvasInputTextRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
   submit: drawCanvasInputText,
-};
-
-function drawCanvasInputTextMask(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
-  drawCanvasRichTextMask(state, renderProxy);
-}
-
-export const defaultCanvasInputTextMaskRenderer: DisplayObjectMaskRenderer = {
-  drawMask: drawCanvasInputTextMask,
 };
 
 const CARET_BLINK_MS = 530;

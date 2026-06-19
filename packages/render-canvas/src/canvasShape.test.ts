@@ -1,12 +1,12 @@
-﻿import {
+﻿import { registerRenderer } from '@flighthq/render';
+import { getOrCreateRenderProxy2D } from '@flighthq/render';
+import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeLineStyle,
   appendShapeRectangle,
   createShape,
-} from '@flighthq/displayobject';
-import { registerRenderer } from '@flighthq/render';
-import { getOrCreateRenderProxy2D } from '@flighthq/render';
+} from '@flighthq/shape';
 import { ShapeKind } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';

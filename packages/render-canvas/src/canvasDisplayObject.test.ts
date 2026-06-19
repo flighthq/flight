@@ -7,7 +7,6 @@ import { enableCanvasCSSFilterSupport, setCanvasCSSFilter } from './canvasCSSFil
 import {
   defaultCanvasDisplayObjectRenderer,
   drawCanvasDisplayObject,
-  drawCanvasDisplayObjectMask,
   renderCanvasDisplayObject,
 } from './canvasDisplayObject';
 import { createCanvasRenderState } from './canvasRenderState';
@@ -45,26 +44,6 @@ describe('drawCanvasDisplayObject', () => {
     drawCanvasDisplayObject(state, data);
 
     expect(spy).not.toHaveBeenCalled();
-  });
-});
-
-describe('drawCanvasDisplayObjectMask', () => {
-  it('does not throw when no children', () => {
-    const state = makeState();
-    const obj = createDisplayObject();
-    const data = getOrCreateRenderProxy2D(state, obj);
-    expect(() => drawCanvasDisplayObjectMask(state, data)).not.toThrow();
-  });
-
-  it('does not call context.rect for a childless display object', () => {
-    const state = makeState();
-    const obj = createDisplayObject();
-    const data = getOrCreateRenderProxy2D(state, obj);
-    const rectSpy = vi.spyOn(state.context, 'rect');
-
-    drawCanvasDisplayObjectMask(state, data);
-
-    expect(rectSpy).not.toHaveBeenCalled();
   });
 });
 

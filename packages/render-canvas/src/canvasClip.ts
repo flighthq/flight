@@ -1,4 +1,3 @@
-import { enableDisplayObjectMaskPass, getDisplayObjectMask, getRenderProxy2D } from '@flighthq/render';
 import type {
   CanvasRenderState,
   DisplayObject,
@@ -7,56 +6,40 @@ import type {
   RenderState,
 } from '@flighthq/types';
 
-import { popCanvasClipRectangle, pushCanvasClipRectangle } from './canvasClipRectangle';
-import { popCanvasMask, pushCanvasMask } from './canvasMask';
+import { popCanvasClipRectangle, pushCanvasClipContours, pushCanvasClipRectangle } from './canvasClipRectangle';
 
-export function enableCanvasClipRectangleSupport(state: CanvasRenderState): void {
+// Masks RETIRED — a former mask is a path ClipRegion. Canvas realizes both clip forms with the native
+// context clip (rect path or contour path), so push/pop is a uniform ctx.save()/ctx.restore() bracket
+// and pop needs no per-form dispatch.
+export function enableCanvasClipSupport(state: CanvasRenderState): void {
   state.displayObjectClipHooks = canvasClipHooks;
-}
-
-export function enableCanvasMaskSupport(state: CanvasRenderState): void {
-  state.displayObjectClipHooks = canvasClipHooks;
-  enableDisplayObjectMaskPass(state);
 }
 
 const canvasClipHooks: DisplayObjectClipHooks = {
   finalize(state: RenderState): void {
     const s = state as CanvasRenderState;
-    while (s.currentMaskDepth > 0) {
-      popCanvasMask(s);
-      s.currentMaskDepth--;
-    }
-    while (s.currentClipRectangleDepth > 0) {
+    while (s.currentClipDepth > 0) {
       popCanvasClipRectangle(s);
-      s.currentClipRectangleDepth--;
+      s.currentClipDepth--;
     }
   },
-  popMask(state: RenderState, data: RenderProxy2D): void {
+  popClip(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
     const s = state as CanvasRenderState;
-    while (s.currentMaskDepth > data.maskDepth) {
-      popCanvasMask(s);
-      s.currentMaskDepth--;
-    }
-  },
-  popClipRectangle(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
-    const s = state as CanvasRenderState;
-    const clipTarget = data.clipRectangleDepth - (source.clipRectangle != null ? 1 : 0);
-    while (s.currentClipRectangleDepth > clipTarget) {
+    const target = data.clipDepth - (source.clip != null ? 1 : 0);
+    while (s.currentClipDepth > target) {
       popCanvasClipRectangle(s);
-      s.currentClipRectangleDepth--;
+      s.currentClipDepth--;
     }
   },
-  pushMask(state: RenderState, source: DisplayObject): void {
-    const mask = getDisplayObjectMask(source);
-    if (mask === null) return;
-    const maskData = getRenderProxy2D(state, mask);
-    if (maskData === undefined) return;
-    pushCanvasMask(state as CanvasRenderState, maskData);
-    state.currentMaskDepth++;
-  },
-  pushClipRectangle(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
-    if (source.clipRectangle === null) return;
-    pushCanvasClipRectangle(state as CanvasRenderState, source.clipRectangle, data.transform2D);
-    state.currentClipRectangleDepth++;
+  pushClip(state: RenderState, data: RenderProxy2D, source: DisplayObject): void {
+    const s = state as CanvasRenderState;
+    const clip = source.clip;
+    if (clip === null) return;
+    if (clip.contours === null) {
+      pushCanvasClipRectangle(s, clip.rect, data.transform2D);
+    } else {
+      pushCanvasClipContours(s, clip.contours, clip.winding, data.transform2D);
+    }
+    s.currentClipDepth++;
   },
 };

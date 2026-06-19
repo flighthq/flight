@@ -140,10 +140,6 @@ export function drawCanvasRichText(state: CanvasRenderState, renderProxy: Render
   context.restore();
 }
 
-export function drawCanvasRichTextMask(state: CanvasRenderState, data: RenderProxy2D): void {
-  drawCanvasDisplayObject(state, data);
-}
-
 const BULLET_CHAR = 'Ã¢â‚¬Â¢';
 const BULLET_GAP = 4;
 const SELECTION_ALPHA = 0.35;
