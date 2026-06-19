@@ -185,6 +185,23 @@ export function normalizeVector4(out: Vector4Like, source: Readonly<Vector4Like>
 }
 
 /**
+ * Offsets each component of the current Vector4Like object by a scalar per axis.
+ **/
+export function offsetVector4(
+  out: Vector4Like,
+  source: Readonly<Vector4Like>,
+  dx: number,
+  dy: number,
+  dz: number,
+  dw: number,
+): void {
+  out.x = source.x + dx;
+  out.y = source.y + dy;
+  out.z = source.z + dz;
+  out.w = source.w + dw;
+}
+
+/**
  * Divides the value of the `x`, `y`, and `z` properties of the current Vector4Like
  * object by the value of its `w` property.
  **/
