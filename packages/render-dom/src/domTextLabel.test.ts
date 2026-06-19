@@ -91,15 +91,3 @@ describe('drawDOMTextLabel', () => {
     expect(firstDiv).toBe(secondDiv);
   });
 });
-<<<<<<< HEAD:packages/render-dom/src/domText.test.ts
-=======
-
-describe('drawDOMTextLabelMask', () => {
-  it('does not throw', () => {
-    const state = makeState();
-    const node = createTextLabel();
-    const renderProxy = getOrCreateRenderProxy2D(state, node);
-    expect(() => drawDOMTextLabelMask(state, renderProxy)).not.toThrow();
-  });
-});
->>>>>>> a77e301d (feat(render-dom): native text support, updated textlabel and richtext support):packages/render-dom/src/domTextLabel.test.ts

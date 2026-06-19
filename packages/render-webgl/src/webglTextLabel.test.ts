@@ -63,11 +63,6 @@ describe('defaultWebGLTextLabelRenderer', () => {
   it('has a submit function pointing to drawWebGLTextLabel', () => {
     expect(defaultWebGLTextLabelRenderer.submit).toBe(drawWebGLTextLabel);
   });
-<<<<<<< HEAD:packages/render-webgl/src/webglText.test.ts
-=======
-
-  it('has a drawMask function pointing to drawWebGLTextLabelMask', () => {});
->>>>>>> cf3c8a01 (feat(render-webgl): updated textlabel and richtext support):packages/render-webgl/src/webglTextLabel.test.ts
 });
 
 describe('drawWebGLTextLabel', () => {
