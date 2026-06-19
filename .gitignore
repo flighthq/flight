@@ -146,7 +146,11 @@ tests/size/**/assets
 .test-assets
 public
 
-# Playwright capture output (screenshots, logs, diffs). tools/baselines/ is tracked.
+# Assembled GitHub Pages site (landing + explorer + functional). Built by scripts/build-site.ts.
+tools/site/
+
+# Playwright capture output (screenshots, logs). tools/baselines/ is tracked — it holds committed
+# baseline.sha256 hashes, not PNGs; the tools/**/*.png rule keeps screenshots out of git entirely.
 tools/output/
 tools/**/*.png
 
