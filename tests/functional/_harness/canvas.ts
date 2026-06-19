@@ -8,7 +8,7 @@ import {
   defaultCanvasRichTextRenderer,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
-  enableCanvasClipRectangleSupport,
+  enableCanvasClipSupport,
   enableCanvasRenderCache,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
@@ -50,7 +50,7 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
     }
   }
 
-  if (options.clip) enableCanvasClipRectangleSupport(state);
+  if (options.clip) enableCanvasClipSupport(state);
   if (options.cache) enableCanvasRenderCache(state);
 
   return {

@@ -8,7 +8,7 @@ import {
   defaultWebGPURichTextRenderer,
   defaultWebGPUShapeCommands,
   defaultWebGPUShapeRenderer,
-  enableWebGPUClipRectangleSupport,
+  enableWebGPUClipSupport,
   enableWebGPURenderCache,
   prepareDisplayObjectRender,
   registerDefaultWebGPUMaterial,
@@ -50,7 +50,7 @@ export async function createWebGPUTarget(options: Readonly<FunctionalTargetOptio
     }
   }
 
-  if (options.clip) enableWebGPUClipRectangleSupport(state);
+  if (options.clip) enableWebGPUClipSupport(state);
   if (options.cache) enableWebGPURenderCache(state);
 
   return {

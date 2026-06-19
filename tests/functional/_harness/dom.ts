@@ -6,7 +6,7 @@ import {
   defaultDOMBitmapRenderer,
   defaultDOMRichTextRenderer,
   defaultDOMShapeRenderer,
-  enableDOMClipRectangleSupport,
+  enableDOMClipSupport,
   enableDOMRenderCache,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
@@ -47,7 +47,7 @@ export function createDOMTarget(options: Readonly<FunctionalTargetOptions>): Fun
     }
   }
 
-  if (options.clip) enableDOMClipRectangleSupport(state);
+  if (options.clip) enableDOMClipSupport(state);
   if (options.cache) enableDOMRenderCache(state);
 
   return {

@@ -1,11 +1,11 @@
-import type { SpriteNode } from '@flighthq/sdk';
+import type { DisplayObject } from '@flighthq/sdk';
 import {
   createWebGLCanvasElement,
   createWebGLRenderState,
   defaultWebGLParticleEmitterRenderer,
   defaultWebGLSpriteRenderer,
   ParticleEmitterKind,
-  prepareSpriteRender,
+  prepareDisplayObjectRender,
   registerDefaultWebGLMaterial,
   registerRenderer,
   renderWebGLBackground,
@@ -28,8 +28,8 @@ registerRenderer(state, SpriteKind, defaultWebGLSpriteRenderer);
 registerDefaultWebGLMaterial(state);
 export const scale = pixelRatio;
 
-export function render(root: SpriteNode): void {
-  if (!prepareSpriteRender(state, root)) return;
+export function render(root: DisplayObject): void {
+  if (!prepareDisplayObjectRender(state, root)) return;
   renderWebGLBackground(state);
   renderWebGLSprite(state, root);
 }
