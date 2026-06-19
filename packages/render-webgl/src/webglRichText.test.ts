@@ -2,6 +2,7 @@
 import { enableTextInput } from '@flighthq/text-input';
 import type { RendererData, RenderProxy2D, RichText } from '@flighthq/types';
 
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import {
   createWebGLRichTextData,
   defaultWebGLRichTextRenderer,
@@ -66,7 +67,11 @@ describe('drawWebGLRichText', () => {
 
     drawWebGLRichText(state, renderProxy);
 
-    expect(state.defaultBitmapShader.bind).toHaveBeenCalledWith(state.gl, state, renderProxy);
+    expect(getWebGLRenderStateRuntime(state).defaultBitmapShader.bind).toHaveBeenCalledWith(
+      state.gl,
+      state,
+      renderProxy,
+    );
   });
 
   it('returns early without drawing when text and chrome are empty', () => {

@@ -2,12 +2,11 @@ import { getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { getRenderProxy2D, isRenderProxyVisible } from '@flighthq/render';
 import type { DisplayObject, WebGPURenderState } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 
 export function renderWebGPUSprite(state: WebGPURenderState, source: DisplayObject): void {
-  const internal = state as WebGPURenderStateInternal;
-  const tempStack = state.tempStack;
+  const tempStack = getWebGPURenderStateRuntime(state).tempStack;
   let stackLength = 1;
   tempStack[0] = source;
 
@@ -17,7 +16,7 @@ export function renderWebGPUSprite(state: WebGPURenderState, source: DisplayObje
     const data = getRenderProxy2D(state, current);
     if (data === undefined || !isRenderProxyVisible(data)) continue;
 
-    data.renderer?.submit(internal, data);
+    data.renderer?.submit(state, data);
 
     if (data.traverseChildren) {
       const children = getDisplayObjectRuntime(current).children;
@@ -29,5 +28,5 @@ export function renderWebGPUSprite(state: WebGPURenderState, source: DisplayObje
     }
   }
 
-  flushWebGPUSpriteBatch(internal);
+  flushWebGPUSpriteBatch(state);
 }

@@ -1,5 +1,6 @@
 import type { RenderProxy2D } from '@flighthq/types';
 
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { drawWebGLShapeMeshes } from './webglShapeMesh';
 import { makeWebGLState } from './webglTestHelper';
 
@@ -30,11 +31,11 @@ describe('drawWebGLShapeMeshes', () => {
 
   it('records the mesh program as currentProgram so content draws re-bind', () => {
     const { state } = makeWebGLState();
-    expect(state.currentProgram).toBeNull();
+    expect(getWebGLRenderStateRuntime(state).currentProgram).toBeNull();
 
     drawWebGLShapeMeshes(state, makeProxy(), [TRIANGLE]);
 
-    expect(state.currentProgram).not.toBeNull();
+    expect(getWebGLRenderStateRuntime(state).currentProgram).not.toBeNull();
   });
 
   it('uploads premultiplied color (color * alpha) for the standard blend', () => {

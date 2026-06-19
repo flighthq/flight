@@ -4,10 +4,9 @@ import { enableTextInput, setTextInputSelection } from '@flighthq/text-input';
 import type { RichText } from '@flighthq/types';
 import { RichTextKind } from '@flighthq/types';
 
-import { createDOMRenderState } from './domRenderState';
+import { createDOMRenderState, getDOMRenderStateRuntime } from './domRenderState';
 import { defaultDOMRichTextRenderer, drawDOMRichText } from './domRichText';
 import { drawDOMTextInputOverlay, enableDOMTextInput } from './domTextInput';
-import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
   const state = createDOMRenderState(document.createElement('div'));
@@ -22,9 +21,9 @@ function makeFocusedInput(text: string): RichText {
 }
 
 function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTMLElement | null {
-  (state as unknown as DOMRenderStateInternal).domCurrentElement = null;
+  getDOMRenderStateRuntime(state).domCurrentElement = null;
   drawFn();
-  return (state as unknown as DOMRenderStateInternal).domCurrentElement;
+  return getDOMRenderStateRuntime(state).domCurrentElement;
 }
 
 describe('drawDOMTextInputOverlay', () => {

@@ -2,6 +2,8 @@ import { copyMatrix, multiplyMatrix } from '@flighthq/geometry';
 import { getNodeLocalTransformMatrix, getNodeLocalTransformRevision } from '@flighthq/node';
 import type { HasTransform2D, Node, RenderProxy2D, RenderState } from '@flighthq/types';
 
+import { getRenderStateRuntime } from './renderState';
+
 export function updateDisplayObjectRenderTransform(
   state: RenderState,
   data: RenderProxy2D,
@@ -16,7 +18,8 @@ export function updateRenderProxy2DTransform(
   parentData?: RenderProxy2D,
 ): boolean {
   const localTransformID = getNodeLocalTransformRevision(data.source as Node);
-  const parentDirty = parentData !== undefined && parentData.transformFrameID === state.currentFrameID;
+  const parentDirty =
+    parentData !== undefined && parentData.transformFrameID === getRenderStateRuntime(state).currentFrameID;
   const localDirty = data.lastLocalTransformID !== localTransformID;
 
   if (parentDirty || localDirty) {
@@ -35,5 +38,5 @@ function recalculateRenderTransform2D(state: RenderState, data: RenderProxy2D, p
   } else {
     copyMatrix(data.transform2D, transform2D);
   }
-  data.transformFrameID = state.currentFrameID;
+  data.transformFrameID = getRenderStateRuntime(state).currentFrameID;
 }

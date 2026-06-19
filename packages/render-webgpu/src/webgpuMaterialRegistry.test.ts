@@ -1,17 +1,20 @@
-import type { Material, WebGPUMaterialRenderer } from '@flighthq/types';
-import { DefaultMaterialKind } from '@flighthq/types';
+import type { Material, WebGPUMaterialRenderer, WebGPURenderState } from '@flighthq/types';
+import { DefaultMaterialKind, EntityRuntimeKey } from '@flighthq/types';
 
 import {
   getWebGPUMaterialRenderer,
   registerWebGPUMaterialRenderer,
   resolveWebGPUMaterialRenderer,
 } from './webgpuMaterialRegistry';
+import { createWebGPURenderStateRuntime } from './webgpuRenderState';
 
 const TestKind: unique symbol = Symbol('TestMaterial');
 const testRenderer: WebGPUMaterialRenderer = { instanceFloatCount: 0, getShaderModule: () => ({}) as GPUShaderModule };
 
-function makeState() {
-  return {} as never;
+function makeState(): WebGPURenderState {
+  const state = {} as WebGPURenderState;
+  state[EntityRuntimeKey] = createWebGPURenderStateRuntime();
+  return state;
 }
 
 function makeMaterial(kind: symbol): Material {

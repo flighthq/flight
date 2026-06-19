@@ -29,7 +29,7 @@ import {
   updateRenderProxyRenderer,
   walkNode,
 } from './renderProxy';
-import { createRenderState } from './renderState';
+import { createRenderState, getRenderStateRuntime } from './renderState';
 
 const DisplayObjectKind = Symbol('DisplayObject');
 
@@ -285,7 +285,7 @@ describe('isRenderProxyDirty', () => {
     data.lastAppearanceID = getNodeAppearanceRevision(source);
     data.lastLocalTransformID = getNodeLocalTransformRevision(source);
     const parentData = createRenderProxy2D(state, createDisplayObject());
-    parentData.transformFrameID = state.currentFrameID;
+    parentData.transformFrameID = getRenderStateRuntime(state).currentFrameID;
 
     expect(isRenderProxyDirty(state, source, data, parentData)).toBe(true);
   });
@@ -347,8 +347,8 @@ describe('prepareDisplayObjectRender', () => {
 
     prepareDisplayObjectRender(state, root);
 
-    expect(state.renderProxyMap.get(root)).toBeDefined();
-    expect(state.renderProxyMap.get(child)).toBeDefined();
+    expect(getRenderStateRuntime(state).renderProxyMap.get(root)).toBeDefined();
+    expect(getRenderStateRuntime(state).renderProxyMap.get(child)).toBeDefined();
   });
 
   it('prepares a sprite tree the same way', () => {
@@ -359,8 +359,8 @@ describe('prepareDisplayObjectRender', () => {
 
     prepareDisplayObjectRender(state, root);
 
-    expect(state.renderProxyMap.get(root)).toBeDefined();
-    expect(state.renderProxyMap.get(child)).toBeDefined();
+    expect(getRenderStateRuntime(state).renderProxyMap.get(root)).toBeDefined();
+    expect(getRenderStateRuntime(state).renderProxyMap.get(child)).toBeDefined();
   });
 
   it('skips disabled nodes', () => {
@@ -372,8 +372,8 @@ describe('prepareDisplayObjectRender', () => {
 
     prepareDisplayObjectRender(state, root);
 
-    expect(state.renderProxyMap.get(root)).toBeDefined();
-    expect(state.renderProxyMap.get(child)).toBeUndefined();
+    expect(getRenderStateRuntime(state).renderProxyMap.get(root)).toBeDefined();
+    expect(getRenderStateRuntime(state).renderProxyMap.get(child)).toBeUndefined();
   });
 
   it('returns true when tree is dirty', () => {
@@ -492,7 +492,7 @@ describe('updateRenderProxyRenderer', () => {
     const node = createRenderProxy(state, source);
     node.rendererMapID = -1;
     updateRenderProxyRenderer(state, node);
-    expect(node.rendererMapID).toBe(state.rendererMapID);
+    expect(node.rendererMapID).toBe(getRenderStateRuntime(state).rendererMapID);
   });
 
   it('updates rendererData when source changes', () => {
@@ -528,6 +528,6 @@ describe('walkNode', () => {
     getOrCreateRenderProxy2D(state, root).traverseChildren = false;
     const visit = vi.fn();
     walkNode(state, root, visit);
-    expect(state.renderProxyMap.get(child)).toBeUndefined();
+    expect(getRenderStateRuntime(state).renderProxyMap.get(child)).toBeUndefined();
   });
 });

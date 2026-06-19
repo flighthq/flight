@@ -1,22 +1,21 @@
-import type { RenderProxy, RenderProxy2D, WebGPURenderState } from '@flighthq/types';
+import type { RenderProxy, RenderProxy2D, WebGPURenderState, WebGPUTextureEntry } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal, WebGPUTextureEntry } from './internal';
 import { getWebGPURenderProxyColorTransform } from './webgpuColorTransformMaterial';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import { getActiveWebGPUPipeline, getWebGPUPipeline, writeWebGPUQuadUniforms } from './webgpuShader';
 
 export function applyWebGPUBlendMode(state: WebGPURenderState, blendMode: BlendMode | null): void {
-  state.currentBlendMode = blendMode;
+  getWebGPURenderStateRuntime(state).currentBlendMode = blendMode;
 }
 
-export function bindWebGPUTexture(
-  state: WebGPURenderStateInternal,
-  imageSource: CanvasImageSource,
-): WebGPUTextureEntry {
-  const cached = state.textureCache.get(imageSource);
+export function bindWebGPUTexture(state: WebGPURenderState, imageSource: CanvasImageSource): WebGPUTextureEntry {
+  const runtime = getWebGPURenderStateRuntime(state);
+  const cached = runtime.textureCache.get(imageSource);
   if (cached !== undefined) return cached;
 
-  const { device, textureBindGroupLayout } = state;
+  const { device } = state;
+  const { textureBindGroupLayout } = runtime;
 
   // Determine pixel dimensions from the image source type
   let width = 1;
@@ -57,7 +56,7 @@ export function bindWebGPUTexture(
   );
 
   const view = texture.createView();
-  const sampler = state.allowSmoothing ? state.linearSampler : state.nearestSampler;
+  const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
 
   const bindGroup = device.createBindGroup({
     layout: textureBindGroupLayout,
@@ -68,14 +67,15 @@ export function bindWebGPUTexture(
   });
 
   const entry: WebGPUTextureEntry = { texture, view, bindGroup };
-  state.textureCache.set(imageSource, entry);
+  runtime.textureCache.set(imageSource, entry);
   return entry;
 }
 
-export function buildWebGPURenderTargetBindGroup(state: WebGPURenderStateInternal, view: GPUTextureView): GPUBindGroup {
-  const sampler = state.allowSmoothing ? state.linearSampler : state.nearestSampler;
+export function buildWebGPURenderTargetBindGroup(state: WebGPURenderState, view: GPUTextureView): GPUBindGroup {
+  const runtime = getWebGPURenderStateRuntime(state);
+  const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
   return state.device.createBindGroup({
-    layout: state.textureBindGroupLayout,
+    layout: runtime.textureBindGroupLayout,
     entries: [
       { binding: 0, resource: view },
       { binding: 1, resource: sampler },
@@ -84,12 +84,14 @@ export function buildWebGPURenderTargetBindGroup(state: WebGPURenderStateInterna
 }
 
 export function createWebGPUTextureEntry(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   width: number,
   height: number,
   canvas: HTMLCanvasElement,
 ): WebGPUTextureEntry {
-  const { device, textureBindGroupLayout } = state;
+  const runtime = getWebGPURenderStateRuntime(state);
+  const { device } = state;
+  const { textureBindGroupLayout } = runtime;
   const w = Math.max(1, width);
   const h = Math.max(1, height);
 
@@ -106,7 +108,7 @@ export function createWebGPUTextureEntry(
   );
 
   const view = texture.createView();
-  const sampler = state.allowSmoothing ? state.linearSampler : state.nearestSampler;
+  const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
 
   const bindGroup = device.createBindGroup({
     layout: textureBindGroupLayout,
@@ -120,7 +122,7 @@ export function createWebGPUTextureEntry(
 }
 
 export function drawWebGPUQuad(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   renderProxy: RenderProxy2D,
   textureEntry: WebGPUTextureEntry,
   x0: number,
@@ -132,7 +134,8 @@ export function drawWebGPUQuad(
   u1: number,
   v1: number,
 ): void {
-  const pass = state.renderPass;
+  const runtime = getWebGPURenderStateRuntime(state);
+  const pass = runtime.renderPass;
   if (pass === null) return;
 
   const uniformOffset = writeWebGPUQuadUniforms(
@@ -151,16 +154,16 @@ export function drawWebGPUQuad(
   const pipeline = getActiveWebGPUPipeline(state);
 
   pass.setPipeline(pipeline);
-  pass.setBindGroup(0, state.uniformBindGroup, [uniformOffset]);
+  pass.setBindGroup(0, runtime.uniformBindGroup, [uniformOffset]);
   pass.setBindGroup(1, textureEntry.bindGroup);
-  if (state.currentMaskDepth > 0) {
-    pass.setStencilReference(state.currentMaskDepth);
+  if (runtime.currentMaskDepth > 0) {
+    pass.setStencilReference(runtime.currentMaskDepth);
   }
   pass.draw(6);
 }
 
 export function drawWebGPUQuadWithTransform(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   renderProxy: RenderProxy,
   transform: { a: number; b: number; c: number; d: number; tx: number; ty: number },
   textureEntry: WebGPUTextureEntry,
@@ -173,14 +176,15 @@ export function drawWebGPUQuadWithTransform(
   u1: number,
   v1: number,
 ): void {
-  const pass = state.renderPass;
+  const runtime = getWebGPURenderStateRuntime(state);
+  const pass = runtime.renderPass;
   if (pass === null) return;
 
-  const byteOffset = state.uniformOffset;
+  const byteOffset = runtime.uniformOffset;
   const floatBase = byteOffset >> 2;
-  const { uniformData, uniformDataU32, matrixArray } = state;
+  const { uniformData, uniformDataU32, matrixArray } = runtime;
 
-  const viewport = state.renderTargetViewport ?? state.canvas;
+  const viewport = runtime.renderTargetViewport ?? state.canvas;
   const iw = 2 / viewport.width;
   const ih = 2 / viewport.height;
   matrixArray[0] = transform.a * iw;
@@ -227,13 +231,13 @@ export function drawWebGPUQuadWithTransform(
   uniformData[floatBase + 30] = u1;
   uniformData[floatBase + 31] = v1;
 
-  state.uniformOffset += state.uniformStride;
+  runtime.uniformOffset += runtime.uniformStride;
 
   const pipeline = getActiveWebGPUPipeline(state);
   pass.setPipeline(pipeline);
-  pass.setBindGroup(0, state.uniformBindGroup, [byteOffset]);
+  pass.setBindGroup(0, runtime.uniformBindGroup, [byteOffset]);
   pass.setBindGroup(1, textureEntry.bindGroup);
-  if (state.currentMaskDepth > 0) pass.setStencilReference(state.currentMaskDepth);
+  if (runtime.currentMaskDepth > 0) pass.setStencilReference(runtime.currentMaskDepth);
   pass.draw(6);
 }
 
@@ -242,7 +246,7 @@ export function enableWebGPUBlendModeSupport(state: WebGPURenderState): void {
 }
 
 export function updateWebGPUTextureEntry(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   entry: WebGPUTextureEntry,
   canvas: HTMLCanvasElement,
 ): void {
@@ -258,7 +262,7 @@ export function updateWebGPUTextureEntry(
 }
 
 // Pre-warm the normal + blend pipelines so the first frame doesn't stall.
-export function warmWebGPUPipelines(state: WebGPURenderStateInternal): void {
+export function warmWebGPUPipelines(state: WebGPURenderState): void {
   getWebGPUPipeline(state, BlendMode.Normal, 'normal');
   getWebGPUPipeline(state, BlendMode.Add, 'normal');
 }

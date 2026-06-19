@@ -1,8 +1,8 @@
 import { noopRendererData } from '@flighthq/render';
-import type { ParticleEmitter, RenderProxy2D, RenderState, SpriteRenderer } from '@flighthq/types';
+import type { ParticleEmitter, RenderProxy2D, SpriteRenderer, WebGPURenderState } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
 import { bindWebGPUTexture } from './webgpuDraw';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import { flushWebGPUSpriteBatch } from './webgpuSpriteBatch';
 
 // Per-instance layout in the instance buffer (14 floats = 56 bytes):
@@ -85,11 +85,13 @@ interface WebGPUParticleResources {
 
 const _particleResources = new WeakMap<GPUDevice, WebGPUParticleResources>();
 
-function ensureParticleResources(state: WebGPURenderStateInternal): WebGPUParticleResources {
+function ensureParticleResources(state: WebGPURenderState): WebGPUParticleResources {
   const existing = _particleResources.get(state.device);
   if (existing !== undefined) return existing;
 
-  const { device, format, uniformBindGroupLayout, textureBindGroupLayout } = state;
+  const runtime = getWebGPURenderStateRuntime(state);
+  const { device, format } = state;
+  const { uniformBindGroupLayout, textureBindGroupLayout } = runtime;
 
   const instanceBindGroupLayout = device.createBindGroupLayout({
     entries: [
@@ -140,40 +142,41 @@ function ensureParticleResources(state: WebGPURenderStateInternal): WebGPUPartic
   return resources;
 }
 
-function ensureParticleInstanceBuffer(state: WebGPURenderStateInternal, count: number): void {
+function ensureParticleInstanceBuffer(state: WebGPURenderState, count: number): void {
+  const runtime = getWebGPURenderStateRuntime(state);
   const needed = count * INSTANCE_STRIDE;
-  if (state.particleInstanceCapacity >= needed && state.particleInstanceBuffer !== null) return;
+  if (runtime.particleInstanceCapacity >= needed && runtime.particleInstanceBuffer !== null) return;
 
-  state.particleInstanceBuffer?.destroy();
-  const newCapacity = Math.max(needed, (state.particleInstanceCapacity || 0) * 2);
-  state.particleInstanceBuffer = state.device.createBuffer({
+  runtime.particleInstanceBuffer?.destroy();
+  const newCapacity = Math.max(needed, (runtime.particleInstanceCapacity || 0) * 2);
+  runtime.particleInstanceBuffer = state.device.createBuffer({
     size: Math.max(newCapacity, INSTANCE_STRIDE),
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
   });
-  state.particleInstanceCapacity = newCapacity;
-  state.particleInstanceData = new Float32Array(newCapacity / 4);
+  runtime.particleInstanceCapacity = newCapacity;
+  runtime.particleInstanceData = new Float32Array(newCapacity / 4);
 }
 
-export function drawWebGPUParticleEmitter(state: RenderState, renderProxy: RenderProxy2D): void {
-  const internal = state as WebGPURenderStateInternal;
-  if (internal.renderPass === null) return;
+export function drawWebGPUParticleEmitter(state: WebGPURenderState, renderProxy: RenderProxy2D): void {
+  const runtime = getWebGPURenderStateRuntime(state);
+  if (runtime.renderPass === null) return;
 
   const source = renderProxy.source as ParticleEmitter;
   const { atlas, alphas, colors, ids, particleCount, transforms } = source.data;
   if (atlas === null || atlas.image === null || atlas.image.source === null || particleCount === 0) return;
 
-  const resources = ensureParticleResources(internal);
-  ensureParticleInstanceBuffer(internal, particleCount);
+  const resources = ensureParticleResources(state);
+  ensureParticleInstanceBuffer(state, particleCount);
 
-  internal.applyBlendMode?.(internal, renderProxy.blendMode);
-  const textureEntry = bindWebGPUTexture(internal, atlas.image.source);
+  state.applyBlendMode?.(state, renderProxy.blendMode);
+  const textureEntry = bindWebGPUTexture(state, atlas.image.source);
 
   const regions = atlas.regions;
   const numRegions = regions.length;
   const nodeAlpha = renderProxy.alpha;
   const iw = 1 / (atlas.image.width || 1);
   const ih = 1 / (atlas.image.height || 1);
-  const instanceData = internal.particleInstanceData!;
+  const instanceData = runtime.particleInstanceData!;
 
   let drawCount = 0;
   let base = 0;
@@ -213,16 +216,16 @@ export function drawWebGPUParticleEmitter(state: RenderState, renderProxy: Rende
 
   if (drawCount === 0) return;
 
-  const { device } = internal;
+  const { device } = state;
 
   // Upload instance data
-  device.queue.writeBuffer(internal.particleInstanceBuffer!, 0, instanceData.buffer, 0, drawCount * INSTANCE_STRIDE);
+  device.queue.writeBuffer(runtime.particleInstanceBuffer!, 0, instanceData.buffer, 0, drawCount * INSTANCE_STRIDE);
 
   // Write uniform slot for this emitter (world transform → clip space; quad coords are unused)
-  const uniformOffset = internal.uniformOffset;
+  const uniformOffset = runtime.uniformOffset;
   const floatBase = uniformOffset >> 2;
-  const { uniformData, uniformDataU32, matrixArray } = internal;
-  const viewport = internal.renderTargetViewport ?? internal.canvas;
+  const { uniformData, uniformDataU32, matrixArray } = runtime;
+  const viewport = runtime.renderTargetViewport ?? state.canvas;
   const t = renderProxy.transform2D;
 
   let iw2: number, ih2: number;
@@ -268,17 +271,17 @@ export function drawWebGPUParticleEmitter(state: RenderState, renderProxy: Rende
   uniformData[floatBase + 12] = 1; // alpha = 1 (per-instance handles alpha)
   uniformDataU32[floatBase + 13] = 0;
   for (let k = 14; k < 32; k++) uniformData[floatBase + k] = 0;
-  internal.uniformOffset += internal.uniformStride;
+  runtime.uniformOffset += runtime.uniformStride;
 
   // Create per-frame instance bind group
   const instanceBindGroup = device.createBindGroup({
     layout: resources.instanceBindGroupLayout,
-    entries: [{ binding: 0, resource: { buffer: internal.particleInstanceBuffer! } }],
+    entries: [{ binding: 0, resource: { buffer: runtime.particleInstanceBuffer! } }],
   });
 
-  const pass = internal.renderPass!;
+  const pass = runtime.renderPass!;
   pass.setPipeline(resources.pipeline);
-  pass.setBindGroup(0, internal.uniformBindGroup, [uniformOffset]);
+  pass.setBindGroup(0, runtime.uniformBindGroup, [uniformOffset]);
   pass.setBindGroup(1, textureEntry.bindGroup);
   pass.setBindGroup(2, instanceBindGroup);
   pass.draw(6, drawCount, 0, 0);
@@ -286,8 +289,8 @@ export function drawWebGPUParticleEmitter(state: RenderState, renderProxy: Rende
 
 export const defaultWebGPUParticleEmitterRenderer: SpriteRenderer = {
   createData: noopRendererData,
-  submit(state: RenderState, node: RenderProxy2D): void {
-    flushWebGPUSpriteBatch(state as WebGPURenderStateInternal);
+  submit(state: WebGPURenderState, node: RenderProxy2D): void {
+    flushWebGPUSpriteBatch(state);
     drawWebGPUParticleEmitter(state, node);
   },
 };

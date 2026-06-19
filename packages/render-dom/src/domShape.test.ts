@@ -4,9 +4,8 @@ import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flight
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
 import { ShapeKind } from '@flighthq/types';
 
-import { createDOMRenderState } from './domRenderState';
+import { createDOMRenderState, getDOMRenderStateRuntime } from './domRenderState';
 import { defaultDOMShapeRenderer, drawDOMShape } from './domShape';
-import type { DOMRenderStateInternal } from './internal';
 
 beforeAll(() => {
   registerCanvasShapeCommands(defaultCanvasShapeCommands);
@@ -20,9 +19,9 @@ function makeState() {
 }
 
 function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTMLElement | null {
-  (state as unknown as DOMRenderStateInternal).domCurrentElement = null;
+  getDOMRenderStateRuntime(state).domCurrentElement = null;
   drawFn();
-  return (state as unknown as DOMRenderStateInternal).domCurrentElement;
+  return getDOMRenderStateRuntime(state).domCurrentElement;
 }
 
 describe('defaultDOMShapeRenderer', () => {

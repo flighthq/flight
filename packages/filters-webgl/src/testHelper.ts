@@ -1,6 +1,8 @@
-import type { WebGLRenderStateInternal, WebGLRenderTarget, WebGLShaderLocations } from '@flighthq/render-webgl';
+import type { WebGLRenderTarget, WebGLShaderLocations } from '@flighthq/render-webgl';
+import type { WebGLRenderState, WebGLRenderStateRuntime } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
-export function makeFilterState(): { state: WebGLRenderStateInternal; gl: WebGL2RenderingContext } {
+export function makeFilterState(): { state: WebGLRenderState; gl: WebGL2RenderingContext } {
   const canvas = document.createElement('canvas');
   canvas.width = 64;
   canvas.height = 64;
@@ -16,10 +18,7 @@ export function makeFilterState(): { state: WebGLRenderStateInternal; gl: WebGL2
     locHasColorTransform: {} as WebGLUniformLocation,
     locTexture: {} as WebGLUniformLocation,
   };
-  const state = {
-    gl,
-    canvas,
-    allowSmoothing: true,
+  const runtime = {
     currentFramebuffer: null,
     renderTargetViewport: null,
     currentTexture: null,
@@ -33,11 +32,17 @@ export function makeFilterState(): { state: WebGLRenderStateInternal; gl: WebGL2
     defaultBitmapShader: { locations: shaderLoc },
     scissorStack: [],
     textureCache: new WeakMap(),
-    applyBlendMode: null,
     currentMaskDepth: 0,
     currentScissorRect: null,
+  } as unknown as WebGLRenderStateRuntime;
+  const state = {
+    gl,
+    canvas,
+    allowSmoothing: true,
+    applyBlendMode: null,
     renderTransform2D: null,
-  } as unknown as WebGLRenderStateInternal;
+    [EntityRuntimeKey]: runtime,
+  } as unknown as WebGLRenderState;
   return { state, gl };
 }
 

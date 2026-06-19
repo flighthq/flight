@@ -1,5 +1,4 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
-import type { WebGLRenderStateInternal } from '@flighthq/render-webgl';
 import type { ConvolutionFilter } from '@flighthq/types';
 import type { WebGLRenderState } from '@flighthq/types';
 
@@ -124,7 +123,7 @@ function getAutoDiv(matrix: ReadonlyArray<number>, length: number): number {
 function getShader(state: WebGLRenderState): ConvolutionShaderLocations {
   let loc = shaders.get(state);
   if (loc === undefined) {
-    const gl = (state as WebGLRenderStateInternal).gl;
+    const gl = state.gl;
     const base = compileWebGLFilterProgram(gl, CONVOLUTION_FRAGMENT_SRC);
     loc = {
       ...base,

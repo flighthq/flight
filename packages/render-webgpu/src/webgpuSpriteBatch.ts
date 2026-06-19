@@ -1,8 +1,14 @@
-import type { Material, MaterialData, WebGPUMaterialRenderer } from '@flighthq/types';
+import type {
+  Material,
+  MaterialData,
+  WebGPUMaterialRenderer,
+  WebGPURenderState,
+  WebGPUSpriteBatchBufferSlot,
+} from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal, WebGPUSpriteBatchBufferSlot } from './internal';
 import { bindWebGPUTexture } from './webgpuDraw';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 
 // Base per-instance layout (13 floats = 52 bytes). This is a fixed contract material shaders read
 // from the instance storage buffer; it carries no material concern (no color transform). A material
@@ -62,11 +68,13 @@ fn quadBaseVertex(vi : u32, ii : u32) -> BaseVertex {
 }
 `;
 
-export function ensureWebGPUQuadBatchResources(state: WebGPURenderStateInternal): WebGPUQuadBatchResources {
+export function ensureWebGPUQuadBatchResources(state: WebGPURenderState): WebGPUQuadBatchResources {
+  const runtime = getWebGPURenderStateRuntime(state);
   const existing = _quadBatchResources.get(state.device);
   if (existing !== undefined) return existing;
 
-  const { device, uniformBindGroupLayout, textureBindGroupLayout } = state;
+  const { device } = state;
+  const { uniformBindGroupLayout, textureBindGroupLayout } = runtime;
 
   const instanceBindGroupLayout = device.createBindGroupLayout({
     entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'read-only-storage' } }],
@@ -123,17 +131,18 @@ const ADD_BLEND: GPUBlendState = {
   alpha: { srcFactor: 'one', dstFactor: 'one', operation: 'add' },
 };
 
-export function flushWebGPUSpriteBatch(state: WebGPURenderStateInternal): void {
-  const count = state.spriteBatchCount;
-  if (count === 0 || state.renderPass === null) {
+export function flushWebGPUSpriteBatch(state: WebGPURenderState): void {
+  const runtime = getWebGPURenderStateRuntime(state);
+  const count = runtime.spriteBatchCount;
+  if (count === 0 || runtime.renderPass === null) {
     resetWebGPUSpriteBatch(state);
     return;
   }
 
-  const texture = state.spriteBatchTexture!;
-  const blendMode = state.spriteBatchBlendMode;
-  const renderer = state.spriteBatchMaterialRenderer!;
-  const floats = state.spriteBatchMaterialFloats;
+  const texture = runtime.spriteBatchTexture!;
+  const blendMode = runtime.spriteBatchBlendMode;
+  const renderer = runtime.spriteBatchMaterialRenderer!;
+  const floats = runtime.spriteBatchMaterialFloats;
   resetWebGPUSpriteBatch(state);
 
   const resources = ensureWebGPUQuadBatchResources(state);
@@ -149,7 +158,7 @@ export function flushWebGPUSpriteBatch(state: WebGPURenderStateInternal): void {
     slot.instanceBuffer = createWebGPUSpriteBatchBuffer(state, capacity);
     slot.instanceCapacity = capacity;
   }
-  state.device.queue.writeBuffer(slot.instanceBuffer, 0, state.spriteBatchInstanceData.buffer, 0, instanceBytes);
+  state.device.queue.writeBuffer(slot.instanceBuffer, 0, runtime.spriteBatchInstanceData.buffer, 0, instanceBytes);
 
   if (floats > 0) {
     const materialBytes = count * floats * 4;
@@ -158,7 +167,7 @@ export function flushWebGPUSpriteBatch(state: WebGPURenderStateInternal): void {
       slot.materialBuffer = createWebGPUSpriteBatchBuffer(state, capacity);
       slot.materialCapacity = capacity;
     }
-    state.device.queue.writeBuffer(slot.materialBuffer, 0, state.spriteBatchMaterialData.buffer, 0, materialBytes);
+    state.device.queue.writeBuffer(slot.materialBuffer, 0, runtime.spriteBatchMaterialData.buffer, 0, materialBytes);
   }
 
   state.applyBlendMode?.(state, blendMode);
@@ -173,9 +182,9 @@ export function flushWebGPUSpriteBatch(state: WebGPURenderStateInternal): void {
 
   const module = renderer.getShaderModule(state);
   const pipeline = getWebGPUQuadBatchPipeline(state, resources, module, floats > 0, blendMode);
-  const pass = state.renderPass!;
+  const pass = runtime.renderPass!;
   pass.setPipeline(pipeline);
-  pass.setBindGroup(0, state.uniformBindGroup, [uniformOffset]);
+  pass.setBindGroup(0, runtime.uniformBindGroup, [uniformOffset]);
   pass.setBindGroup(1, textureEntry.bindGroup);
   pass.setBindGroup(2, instanceBindGroup);
   if (floats > 0) {
@@ -185,23 +194,24 @@ export function flushWebGPUSpriteBatch(state: WebGPURenderStateInternal): void {
     });
     pass.setBindGroup(3, materialBindGroup);
   }
-  if (state.currentMaskDepth > 0) pass.setStencilReference(state.currentMaskDepth);
+  if (runtime.currentMaskDepth > 0) pass.setStencilReference(runtime.currentMaskDepth);
   pass.draw(6, count, 0, 0);
 }
 
 export function getWebGPUQuadBatchPipeline(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   resources: WebGPUQuadBatchResources,
   module: GPUShaderModule,
   hasMaterialData: boolean,
   blendMode: BlendMode | null,
 ): GPURenderPipeline {
+  const runtime = getWebGPURenderStateRuntime(state);
   let perModule = resources.pipelines.get(module);
   if (perModule === undefined) {
     perModule = new Map();
     resources.pipelines.set(module, perModule);
   }
-  const stencilMode = state.maskWriteMode ? 'maskwrite' : state.currentMaskDepth > 0 ? 'masked' : 'normal';
+  const stencilMode = runtime.maskWriteMode ? 'maskwrite' : runtime.currentMaskDepth > 0 ? 'masked' : 'normal';
   const key = `${blendMode ?? 'null'}-${stencilMode}`;
   const cached = perModule.get(key);
   if (cached !== undefined) return cached;
@@ -254,19 +264,20 @@ export function getWebGPUQuadBatchPreludeWGSL(): string {
 // instance's slot. No-op for materials with no per-instance data (floats === 0 / no packInstance),
 // so the base path never assumes any particular material contributes here.
 export function packWebGPUSpriteBatchMaterialInstance(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   materialData: MaterialData | null,
   instanceIndex: number,
 ): void {
-  const floats = state.spriteBatchMaterialFloats;
+  const runtime = getWebGPURenderStateRuntime(state);
+  const floats = runtime.spriteBatchMaterialFloats;
   if (floats === 0) return;
-  const renderer = state.spriteBatchMaterialRenderer;
+  const renderer = runtime.spriteBatchMaterialRenderer;
   if (renderer === null || renderer.packInstance === undefined) return;
   renderer.packInstance(
     state,
-    state.spriteBatchMaterial,
+    runtime.spriteBatchMaterial,
     materialData,
-    state.spriteBatchMaterialData,
+    runtime.spriteBatchMaterialData,
     instanceIndex * floats,
   );
 }
@@ -274,87 +285,91 @@ export function packWebGPUSpriteBatchMaterialInstance(
 // Ensures the sprite batch can accept up to `maxInstances` more instances for the given texture,
 // blend mode, and material. Flushes when any of the three changes (material by reference) or
 // capacity is exceeded. Returns the float index in spriteBatchInstanceData where the caller writes
-// base instance data; the caller increments state.spriteBatchCount and calls
+// base instance data; the caller increments the runtime's spriteBatchCount and calls
 // packWebGPUSpriteBatchMaterialInstance per instance.
 export function prepareWebGPUSpriteBatchWrite(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   texture: CanvasImageSource,
   blendMode: BlendMode | null,
   material: Material | null,
   materialRenderer: WebGPUMaterialRenderer,
   maxInstances: number,
 ): number {
+  const runtime = getWebGPURenderStateRuntime(state);
   if (
-    texture !== state.spriteBatchTexture ||
-    blendMode !== state.spriteBatchBlendMode ||
-    material !== state.spriteBatchMaterial
+    texture !== runtime.spriteBatchTexture ||
+    blendMode !== runtime.spriteBatchBlendMode ||
+    material !== runtime.spriteBatchMaterial
   ) {
     flushWebGPUSpriteBatch(state);
   }
-  state.spriteBatchTexture = texture;
-  state.spriteBatchBlendMode = blendMode;
-  state.spriteBatchMaterial = material;
-  state.spriteBatchMaterialRenderer = materialRenderer;
+  runtime.spriteBatchTexture = texture;
+  runtime.spriteBatchBlendMode = blendMode;
+  runtime.spriteBatchMaterial = material;
+  runtime.spriteBatchMaterialRenderer = materialRenderer;
   const floats = materialRenderer.instanceFloatCount;
-  state.spriteBatchMaterialFloats = floats;
+  runtime.spriteBatchMaterialFloats = floats;
 
-  const needed = (state.spriteBatchCount + maxInstances) * SPRITE_INSTANCE_FLOATS;
-  if (needed > state.spriteBatchInstanceData.length) {
-    const newSize = Math.max(needed, state.spriteBatchInstanceData.length * 2, SPRITE_INSTANCE_FLOATS * 256);
-    state.spriteBatchInstanceData = new Float32Array(newSize);
+  const needed = (runtime.spriteBatchCount + maxInstances) * SPRITE_INSTANCE_FLOATS;
+  if (needed > runtime.spriteBatchInstanceData.length) {
+    const newSize = Math.max(needed, runtime.spriteBatchInstanceData.length * 2, SPRITE_INSTANCE_FLOATS * 256);
+    runtime.spriteBatchInstanceData = new Float32Array(newSize);
   }
 
   if (floats > 0) {
-    const materialNeeded = (state.spriteBatchCount + maxInstances) * floats;
-    if (materialNeeded > state.spriteBatchMaterialData.length) {
-      const newSize = Math.max(materialNeeded, state.spriteBatchMaterialData.length * 2, floats * 256);
-      state.spriteBatchMaterialData = new Float32Array(newSize);
+    const materialNeeded = (runtime.spriteBatchCount + maxInstances) * floats;
+    if (materialNeeded > runtime.spriteBatchMaterialData.length) {
+      const newSize = Math.max(materialNeeded, runtime.spriteBatchMaterialData.length * 2, floats * 256);
+      runtime.spriteBatchMaterialData = new Float32Array(newSize);
     }
   }
 
-  return state.spriteBatchCount * SPRITE_INSTANCE_FLOATS;
+  return runtime.spriteBatchCount * SPRITE_INSTANCE_FLOATS;
 }
 
 // Resets the per-frame buffer-pool cursor so the next frame reclaims slots from the start. Must be
 // called once at the start of each frame's batch work — the screen frame via renderWebGPUBackground,
 // and the offscreen cache bake via refreshWebGPURenderCache (the bake flushes on its own state).
-export function resetWebGPUSpriteBatchBufferPool(state: WebGPURenderStateInternal): void {
-  state.spriteBatchBufferCursor = 0;
+export function resetWebGPUSpriteBatchBufferPool(state: WebGPURenderState): void {
+  getWebGPURenderStateRuntime(state).spriteBatchBufferCursor = 0;
 }
 
 // Claims the next per-frame pool slot, allocating one if the frame has more flushes than any prior
 // frame. The cursor is reset to 0 each frame by resetWebGPUSpriteBatchBufferPool.
-function acquireWebGPUSpriteBatchBufferSlot(state: WebGPURenderStateInternal): WebGPUSpriteBatchBufferSlot {
-  const pool = state.spriteBatchBufferPool;
-  let slot = pool[state.spriteBatchBufferCursor];
+function acquireWebGPUSpriteBatchBufferSlot(state: WebGPURenderState): WebGPUSpriteBatchBufferSlot {
+  const runtime = getWebGPURenderStateRuntime(state);
+  const pool = runtime.spriteBatchBufferPool;
+  let slot = pool[runtime.spriteBatchBufferCursor];
   if (slot === undefined) {
     slot = { instanceBuffer: null, instanceCapacity: 0, materialBuffer: null, materialCapacity: 0 };
-    pool[state.spriteBatchBufferCursor] = slot;
+    pool[runtime.spriteBatchBufferCursor] = slot;
   }
-  state.spriteBatchBufferCursor++;
+  runtime.spriteBatchBufferCursor++;
   return slot;
 }
 
-function createWebGPUSpriteBatchBuffer(state: WebGPURenderStateInternal, size: number): GPUBuffer {
+function createWebGPUSpriteBatchBuffer(state: WebGPURenderState, size: number): GPUBuffer {
   return state.device.createBuffer({ size, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
 }
 
-function resetWebGPUSpriteBatch(state: WebGPURenderStateInternal): void {
-  state.spriteBatchCount = 0;
-  state.spriteBatchTexture = null;
-  state.spriteBatchBlendMode = null;
-  state.spriteBatchMaterial = null;
-  state.spriteBatchMaterialRenderer = null;
-  state.spriteBatchMaterialFloats = 0;
+function resetWebGPUSpriteBatch(state: WebGPURenderState): void {
+  const runtime = getWebGPURenderStateRuntime(state);
+  runtime.spriteBatchCount = 0;
+  runtime.spriteBatchTexture = null;
+  runtime.spriteBatchBlendMode = null;
+  runtime.spriteBatchMaterial = null;
+  runtime.spriteBatchMaterialRenderer = null;
+  runtime.spriteBatchMaterialFloats = 0;
 }
 
 // Writes the NDC viewport matrix into the uniform ring (the only uniform the batch shader reads) and
 // advances the ring offset. Returns the byte offset for the dynamic bind-group binding.
-function writeWebGPUSpriteBatchUniforms(state: WebGPURenderStateInternal): number {
-  const uniformOffset = state.uniformOffset;
+function writeWebGPUSpriteBatchUniforms(state: WebGPURenderState): number {
+  const runtime = getWebGPURenderStateRuntime(state);
+  const uniformOffset = runtime.uniformOffset;
   const floatBase = uniformOffset >> 2;
-  const { uniformData } = state;
-  const viewport = state.renderTargetViewport ?? state.canvas;
+  const { uniformData } = runtime;
+  const viewport = runtime.renderTargetViewport ?? state.canvas;
   const iw = 2 / viewport.width;
   const ih = 2 / viewport.height;
 
@@ -370,6 +385,6 @@ function writeWebGPUSpriteBatchUniforms(state: WebGPURenderStateInternal): numbe
   uniformData[floatBase + 9] = 1;
   uniformData[floatBase + 10] = 1;
   uniformData[floatBase + 11] = 0;
-  state.uniformOffset += state.uniformStride;
+  runtime.uniformOffset += runtime.uniformStride;
   return uniformOffset;
 }

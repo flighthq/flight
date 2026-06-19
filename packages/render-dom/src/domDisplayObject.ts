@@ -3,15 +3,15 @@ import { getRenderProxy2D, isRenderProxyVisible } from '@flighthq/render';
 import type { DisplayObject, DOMRenderState } from '@flighthq/types';
 
 import { hasDOMStructureChanged, processDOMNode, reconcileDOMContainer, swapDOMOrderLists } from './domReconcile';
-import type { DOMRenderStateInternal } from './internal';
+import { getDOMRenderStateRuntime } from './domRenderState';
 
 export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObject): void {
-  const internal = state as DOMRenderStateInternal;
+  const runtime = getDOMRenderStateRuntime(state);
   const container = state.element;
   const clipHooks = state.displayObjectClipHooks;
-  const applyClip = internal.domClipHooks;
-  const frameID = state.currentFrameID;
-  const tempStack = state.tempStack;
+  const applyClip = runtime.domClipHooks;
+  const frameID = runtime.currentFrameID;
+  const tempStack = runtime.tempStack;
 
   let stackLength = 1;
   tempStack[0] = source;
@@ -32,7 +32,7 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
     clipHooks?.pushClip(state, data, current);
 
     if (data.renderer !== null) {
-      const result = processDOMNode(internal, data, frameID, () => data.renderer!.submit(state, data), newLength);
+      const result = processDOMNode(runtime, data, frameID, () => data.renderer!.submit(state, data), newLength);
       newLength = result.newLength;
       if (result.needsReconcile) needsReconcile = true;
       applyClip?.apply(state, data);
@@ -49,9 +49,9 @@ export function renderDOMDisplayObject(state: DOMRenderState, source: DisplayObj
 
   clipHooks?.finalize(state);
 
-  if (hasDOMStructureChanged(internal, newLength, needsReconcile)) {
-    reconcileDOMContainer(container, internal, newLength);
+  if (hasDOMStructureChanged(runtime, newLength, needsReconcile)) {
+    reconcileDOMContainer(container, runtime, newLength);
   }
 
-  swapDOMOrderLists(internal, newLength);
+  swapDOMOrderLists(runtime, newLength);
 }

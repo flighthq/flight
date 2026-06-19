@@ -1,14 +1,14 @@
 import { noopRendererData } from '@flighthq/render';
-import type { RenderProxy2D, RenderState, Sprite, SpriteRenderer } from '@flighthq/types';
+import type { RenderProxy2D, Sprite, SpriteRenderer, WebGPURenderState } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
 import { resolveWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import { packWebGPUSpriteBatchMaterialInstance, prepareWebGPUSpriteBatchWrite } from './webgpuSpriteBatch';
 
-function submitWebGPUSpriteNode(state: RenderState, spriteNode: RenderProxy2D): void {
-  const internal = state as WebGPURenderStateInternal;
-  if (internal.renderPass === null) return;
+function submitWebGPUSpriteNode(state: WebGPURenderState, spriteNode: RenderProxy2D): void {
+  const runtime = getWebGPURenderStateRuntime(state);
+  if (runtime.renderPass === null) return;
 
   const source = spriteNode.source as Sprite;
   const { atlas, id } = source.data;
@@ -25,18 +25,18 @@ function submitWebGPUSpriteNode(state: RenderState, spriteNode: RenderProxy2D): 
   const t = spriteNode.transform2D;
 
   const material = spriteNode.material;
-  const materialRenderer = resolveWebGPUMaterialRenderer(internal, material);
+  const materialRenderer = resolveWebGPUMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const base = prepareWebGPUSpriteBatchWrite(
-    internal,
+    state,
     atlas.image.source,
     spriteNode.blendMode,
     material,
     materialRenderer,
     1,
   );
-  const instanceIndex = internal.spriteBatchCount;
-  const d = internal.spriteBatchInstanceData;
+  const instanceIndex = runtime.spriteBatchCount;
+  const d = runtime.spriteBatchInstanceData;
   d[base] = t.a;
   d[base + 1] = t.b;
   d[base + 2] = t.c;
@@ -50,8 +50,8 @@ function submitWebGPUSpriteNode(state: RenderState, spriteNode: RenderProxy2D): 
   d[base + 10] = (region.x + region.width) * iw;
   d[base + 11] = (region.y + region.height) * ih;
   d[base + 12] = spriteNode.alpha;
-  packWebGPUSpriteBatchMaterialInstance(internal, spriteNode.materialData, instanceIndex);
-  internal.spriteBatchCount++;
+  packWebGPUSpriteBatchMaterialInstance(state, spriteNode.materialData, instanceIndex);
+  runtime.spriteBatchCount++;
 }
 
 export const defaultWebGPUSpriteRenderer: SpriteRenderer = {

@@ -1,7 +1,7 @@
-import type { BlendMode, WebGPURenderState } from '@flighthq/types';
+import type { BlendMode, WebGPUBitmapShader, WebGPURenderState } from '@flighthq/types';
 
-import type { WebGPUBitmapShader, WebGPURenderStateInternal } from './internal';
 import { bindWebGPUTexture } from './webgpuDraw';
+import { getWebGPURenderStateRuntime } from './webgpuRenderState';
 import { getActiveWebGPUPipeline, writeWebGPUQuadUniforms } from './webgpuShader';
 
 // The color transform shader is the same WGSL as the bitmap shader since color transform
@@ -10,7 +10,7 @@ import { getActiveWebGPUPipeline, writeWebGPUQuadUniforms } from './webgpuShader
 // that have a color transform, which the existing uniform upload already handles.
 
 export function drawWebGPUColorTransformBitmap(
-  state: WebGPURenderStateInternal,
+  state: WebGPURenderState,
   renderProxy: {
     alpha: number;
     transform2D: { a: number; b: number; c: number; d: number; tx: number; ty: number };
@@ -26,7 +26,8 @@ export function drawWebGPUColorTransformBitmap(
   u1: number,
   v1: number,
 ): void {
-  const pass = state.renderPass;
+  const runtime = getWebGPURenderStateRuntime(state);
+  const pass = runtime.renderPass;
   if (pass === null) return;
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
@@ -35,22 +36,22 @@ export function drawWebGPUColorTransformBitmap(
   const pipeline = getActiveWebGPUPipeline(state);
 
   pass.setPipeline(pipeline);
-  pass.setBindGroup(0, state.uniformBindGroup, [uniformOffset]);
+  pass.setBindGroup(0, runtime.uniformBindGroup, [uniformOffset]);
   pass.setBindGroup(1, textureEntry.bindGroup);
-  if (state.currentMaskDepth > 0) pass.setStencilReference(state.currentMaskDepth);
+  if (runtime.currentMaskDepth > 0) pass.setStencilReference(runtime.currentMaskDepth);
   pass.draw(6);
 }
 
 export function registerWebGPUColorTransformShader(state: WebGPURenderState): void {
-  const internal = state as WebGPURenderStateInternal;
-  if (internal.colorTransformBitmapShader !== undefined) return;
+  const runtime = getWebGPURenderStateRuntime(state);
+  if (runtime.colorTransformBitmapShader !== undefined) return;
 
   // The color transform shader is the default pipeline — color transform data is
   // already baked into the uniform buffer and handled by the WGSL fragment shader.
   // This function exists for API symmetry with registerWebGLColorTransformShader.
   const shader: WebGPUBitmapShader = {
     pipeline: null as never, // pipeline is resolved dynamically via getActiveWebGPUPipeline
-    bind(bindState: WebGPURenderStateInternal, renderProxy: { alpha: number }): void {
+    bind(bindState: WebGPURenderState, renderProxy: { alpha: number }): void {
       // bind() is called by the user when customising draw; for color transform the default
       // pipeline handles everything automatically via the uniform buffer.
       void bindState;
@@ -58,5 +59,5 @@ export function registerWebGPUColorTransformShader(state: WebGPURenderState): vo
     },
   };
 
-  internal.colorTransformBitmapShader = shader;
+  runtime.colorTransformBitmapShader = shader;
 }

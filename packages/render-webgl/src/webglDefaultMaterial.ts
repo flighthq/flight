@@ -1,7 +1,6 @@
 import type { WebGLMaterialRenderer, WebGLRenderState } from '@flighthq/types';
 import { DefaultMaterialKind } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
 import { registerWebGLMaterialRenderer } from './webglMaterialRegistry';
 import {
   bindWebGLQuadBatchBaseAttributes,
@@ -21,10 +20,9 @@ export function registerDefaultWebGLMaterial(state: WebGLRenderState): void {
 export const defaultWebGLMaterialRenderer: WebGLMaterialRenderer = {
   instanceFloatCount: 0,
   bind(state: WebGLRenderState): void {
-    const internal = state as WebGLRenderStateInternal;
-    const shader = ensureWebGLQuadBatchShader(internal);
-    useWebGLQuadBatchProgram(internal, shader.program);
-    setWebGLQuadBatchWorldAndTexture(internal, shader.locWorldMatrix, shader.locTexture);
-    bindWebGLQuadBatchBaseAttributes(internal, shader.locCorner);
+    const shader = ensureWebGLQuadBatchShader(state);
+    useWebGLQuadBatchProgram(state, shader.program);
+    setWebGLQuadBatchWorldAndTexture(state, shader.locWorldMatrix, shader.locTexture);
+    bindWebGLQuadBatchBaseAttributes(state, shader.locCorner);
   },
 };

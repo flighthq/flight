@@ -1,6 +1,6 @@
-import type { Matrix, PathWinding } from '@flighthq/types';
+import type { Matrix, PathWinding, WebGLRenderState } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { flushWebGLSpriteBatch } from './webglSpriteBatch';
 
 // Stencil-then-cover fill of arbitrary flattened contours, used to realize a *path* ClipRegion exactly
@@ -37,11 +37,12 @@ precision mediump float;
 void main() { gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0); }
 `;
 
-export function popWebGLClipContours(state: WebGLRenderStateInternal): void {
+export function popWebGLClipContours(state: WebGLRenderState): void {
   flushWebGLSpriteBatch(state);
+  const runtime = getWebGLRenderStateRuntime(state);
   const gl = state.gl;
-  const nextDepth = Math.max(0, (state.currentMaskDepth ?? 0) - 1);
-  state.currentMaskDepth = nextDepth;
+  const nextDepth = Math.max(0, (runtime.currentMaskDepth ?? 0) - 1);
+  runtime.currentMaskDepth = nextDepth;
   // Single-level contour clips are the common case; the outermost pop turns the stencil gate off. Nested
   // contour clips share one stencil buffer and are not re-derived on pop (a documented limitation — nest
   // a contour inside a rect/scissor clip instead, which composes independently).
@@ -52,14 +53,15 @@ export function popWebGLClipContours(state: WebGLRenderStateInternal): void {
 }
 
 export function pushWebGLClipContours(
-  state: WebGLRenderStateInternal,
+  state: WebGLRenderState,
   contours: readonly (readonly number[])[],
   winding: PathWinding,
   worldTransform: Readonly<Matrix>,
 ): void {
   flushWebGLSpriteBatch(state);
+  const runtime = getWebGLRenderStateRuntime(state);
   const gl = state.gl;
-  const depth = state.currentMaskDepth ?? 0;
+  const depth = runtime.currentMaskDepth ?? 0;
 
   if (depth === 0) {
     gl.enable(gl.STENCIL_TEST);
@@ -73,7 +75,7 @@ export function pushWebGLClipContours(
   // Content draws skip gl.useProgram when state.currentProgram already matches their program. Record the
   // clip program here so the next content draw detects the change and re-binds — otherwise it would set
   // its uniforms against the clip program (INVALID_OPERATION: location not from the associated program).
-  state.currentProgram = program.program;
+  runtime.currentProgram = program.program;
   uploadClipUniforms(state, program, worldTransform);
 
   // PHASE 1 — accumulate the polygon's winding into the stencil with color writes off. Non-zero uses
@@ -103,7 +105,7 @@ export function pushWebGLClipContours(
     gl.stencilFunc(gl.NOTEQUAL, 0x0, 0xff);
   }
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
-  state.currentMaskDepth = depth + 1;
+  runtime.currentMaskDepth = depth + 1;
 }
 
 // --- program / buffer management (reconcile uniform sources with the real render-state infra) ---
@@ -118,11 +120,11 @@ interface ClipProgram {
 
 const clipPrograms = new WeakMap<WebGLRenderingContext, ClipProgram>();
 
-function clipProgramFor(state: WebGLRenderStateInternal): ClipProgram {
+function clipProgramFor(state: WebGLRenderState): ClipProgram {
   return clipPrograms.get(state.gl)!;
 }
 
-function ensureClipProgram(state: WebGLRenderStateInternal): void {
+function ensureClipProgram(state: WebGLRenderState): void {
   const gl = state.gl;
   if (clipPrograms.has(gl)) return;
   const program = compileProgram(gl, VERTEX_SOURCE, FRAGMENT_SOURCE);
@@ -149,7 +151,7 @@ function compileProgram(gl: WebGLRenderingContext, vertex: string, fragment: str
   return program;
 }
 
-function uploadClipUniforms(state: WebGLRenderStateInternal, program: ClipProgram, m: Readonly<Matrix>): void {
+function uploadClipUniforms(state: WebGLRenderState, program: ClipProgram, m: Readonly<Matrix>): void {
   const gl = state.gl;
   // mat3 column-major from Matrix(a,b,c,d,tx,ty).
   // prettier-ignore
@@ -158,7 +160,7 @@ function uploadClipUniforms(state: WebGLRenderStateInternal, program: ClipProgra
 }
 
 function drawClipContours(
-  state: WebGLRenderStateInternal,
+  state: WebGLRenderState,
   program: ClipProgram,
   contours: readonly (readonly number[])[],
 ): void {
@@ -178,9 +180,10 @@ function drawClipContours(
 // Device pixels -> clip space for the current viewport / render target. This is the same column-major
 // mat3 the sprite/shape batch builds in setWebGLQuadBatchWorldAndTexture, so a clip's contours and the
 // content it clips land in identical clip space (the clip stays pixel-exact under the node transform).
-function getProjectionMat3(state: WebGLRenderStateInternal): Float32Array {
-  const w = (state.renderTargetViewport ?? state.canvas).width || 1;
-  const h = (state.renderTargetViewport ?? state.canvas).height || 1;
+function getProjectionMat3(state: WebGLRenderState): Float32Array {
+  const runtime = getWebGLRenderStateRuntime(state);
+  const w = (runtime.renderTargetViewport ?? state.canvas).width || 1;
+  const h = (runtime.renderTargetViewport ?? state.canvas).height || 1;
   // pixels (origin top-left, y down) -> clip space (-1..1, y up)
   // prettier-ignore
   return new Float32Array([2 / w, 0, 0, 0, -2 / h, 0, -1, 1, 1]);

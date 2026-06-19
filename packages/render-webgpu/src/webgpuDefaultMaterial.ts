@@ -1,7 +1,6 @@
 import type { WebGPUMaterialRenderer, WebGPURenderState } from '@flighthq/types';
 import { DefaultMaterialKind } from '@flighthq/types';
 
-import type { WebGPURenderStateInternal } from './internal';
 import { registerWebGPUMaterialRenderer } from './webgpuMaterialRegistry';
 import { getWebGPUQuadBatchPreludeWGSL } from './webgpuSpriteBatch';
 
@@ -17,13 +16,12 @@ export function registerDefaultWebGPUMaterial(state: WebGPURenderState): void {
 export const defaultWebGPUMaterialRenderer: WebGPUMaterialRenderer = {
   instanceFloatCount: 0,
   getShaderModule(state: WebGPURenderState): GPUShaderModule {
-    const internal = state as WebGPURenderStateInternal;
-    const cached = _modules.get(internal.device);
+    const cached = _modules.get(state.device);
     if (cached !== undefined) return cached;
-    const module = internal.device.createShaderModule({
+    const module = state.device.createShaderModule({
       code: getWebGPUQuadBatchPreludeWGSL() + DEFAULT_MATERIAL_WGSL,
     });
-    _modules.set(internal.device, module);
+    _modules.set(state.device, module);
     return module;
   },
 };

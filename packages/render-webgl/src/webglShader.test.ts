@@ -1,3 +1,5 @@
+import { EntityRuntimeKey } from '@flighthq/types';
+
 import {
   compileDefaultWebGLProgram,
   compileWebGLBitmapProgram,
@@ -114,7 +116,7 @@ describe('createDefaultWebGLBitmapShader', () => {
       useColorTransform: true,
     };
 
-    shader.bind(gl, { canvas } as never, renderProxy as never);
+    shader.bind(gl, { canvas, [EntityRuntimeKey]: { renderTargetViewport: null } } as never, renderProxy as never);
 
     expect(gl.uniform4f).not.toHaveBeenCalled();
   });
@@ -140,7 +142,7 @@ describe('createWebGLBitmapShader', () => {
 
     shader.bind(
       gl,
-      { canvas, matrixArray: new Float32Array(9), renderTargetViewport: null } as never,
+      { canvas, [EntityRuntimeKey]: { matrixArray: new Float32Array(9), renderTargetViewport: null } } as never,
       renderProxy as never,
     );
 

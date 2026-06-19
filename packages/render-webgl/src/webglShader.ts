@@ -1,6 +1,6 @@
 ﻿import type { RenderProxy, RenderProxy2D, WebGLRenderState } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
 
 export type { WebGLBitmapShader, WebGLShaderLocations } from './webglShaderTypes';
@@ -82,14 +82,14 @@ export function createDefaultWebGLBitmapShader(
     locations: shaderLoc,
     program: shaderLoc.program,
     bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderProxy: RenderProxy2D): void {
-      const internal = state as WebGLRenderStateInternal;
+      const runtime = getWebGLRenderStateRuntime(state);
       setWebGLAttributes(gl, shaderLoc);
       setWebGLMatrixFromTransform(
         gl,
         shaderLoc,
         matrixArray,
         renderProxy.transform2D,
-        internal.renderTargetViewport ?? state.canvas,
+        runtime.renderTargetViewport ?? state.canvas,
       );
       setWebGLBaseUniforms(gl, shaderLoc, renderProxy);
     },
@@ -113,14 +113,14 @@ export function createWebGLBitmapShader(
     locations,
     program: locations.program,
     bind(gl: WebGL2RenderingContext, state: WebGLRenderState, renderProxy: RenderProxy2D): void {
-      const internal = state as WebGLRenderStateInternal;
+      const runtime = getWebGLRenderStateRuntime(state);
       setWebGLAttributes(gl, locations);
       setWebGLMatrixFromTransform(
         gl,
         locations,
-        internal.matrixArray,
+        runtime.matrixArray,
         renderProxy.transform2D,
-        internal.renderTargetViewport ?? state.canvas,
+        runtime.renderTargetViewport ?? state.canvas,
       );
       setWebGLBaseUniforms(gl, locations, renderProxy);
       onBind?.(gl, locations, renderProxy);

@@ -3,9 +3,8 @@ import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render';
 import type { RenderViewRenderer } from '@flighthq/types';
 import { RenderViewKind } from '@flighthq/types';
 
-import { createDOMRenderState } from './domRenderState';
+import { createDOMRenderState, getDOMRenderStateRuntime } from './domRenderState';
 import { defaultDOMRenderViewRenderer, drawDOMRenderView } from './domRenderView';
-import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
   const container = document.createElement('div');
@@ -24,9 +23,9 @@ function makeRenderer(width = 100, height = 100): RenderViewRenderer {
 }
 
 function getElement(state: ReturnType<typeof makeState>, drawFn: () => void): HTMLElement | null {
-  (state as unknown as DOMRenderStateInternal).domCurrentElement = null;
+  getDOMRenderStateRuntime(state).domCurrentElement = null;
   drawFn();
-  return (state as unknown as DOMRenderStateInternal).domCurrentElement;
+  return getDOMRenderStateRuntime(state).domCurrentElement;
 }
 
 describe('drawDOMRenderView', () => {

@@ -1,4 +1,3 @@
-import type { WebGPURenderStateInternal } from '@flighthq/render-webgpu';
 import type { GradientGlowFilter } from '@flighthq/types';
 import type { WebGPURenderState, WebGPURenderTarget } from '@flighthq/types';
 
@@ -29,8 +28,7 @@ function getLookupPipeline(state: WebGPURenderState): WebGPUFilterPipeline {
   let p = lookupPipelines.get(state);
   if (p === undefined) {
     const fs = getWebGPUFilterState(state);
-    const internal = state as WebGPURenderStateInternal;
-    const { device, format } = internal;
+    const { device, format } = state;
     const shaderModule = device.createShaderModule({ code: FILTER_VERTEX_WGSL + GRADIENT_LOOKUP_FRAGMENT_WGSL });
     const pipelineLayout = device.createPipelineLayout({
       bindGroupLayouts: [fs.uniformBGLayout, fs.textureBGLayout, fs.textureBGLayout],
@@ -66,8 +64,7 @@ export function applyGradientGlowFilterToWebGPU(
   const strength = filter.strength ?? 1;
 
   const [s0, s1, s2] = scratch;
-  const internal = state as WebGPURenderStateInternal;
-  const { device } = internal;
+  const { device } = state;
   const fs = getWebGPUFilterState(state);
 
   applyWebGPUTintPass(state, source, s0, 0xffffff, 1, Math.min(1, strength));

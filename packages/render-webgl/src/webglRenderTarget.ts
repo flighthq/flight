@@ -1,8 +1,8 @@
 import { acquireMatrix, copyMatrix, createMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry';
 import type { Matrix, RenderProxy2D, WebGLRenderState, WebGLRenderTarget } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
 import { drawWebGLQuad, useWebGLProgram } from './webglDraw';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import { setWebGLAttributes, setWebGLBaseUniforms, setWebGLMatrixFromTransform } from './webglShader';
 
 type SavedWebGLState = {
@@ -26,8 +26,8 @@ export function beginWebGLRenderTarget(
   target: WebGLRenderTarget,
   renderTransform: Readonly<Matrix>,
 ): void {
-  const internal = state as WebGLRenderStateInternal;
-  const gl = internal.gl;
+  const runtime = getWebGLRenderStateRuntime(state);
+  const gl = state.gl;
 
   let stack = _targetStack.get(state);
   if (stack === undefined) {
@@ -36,23 +36,23 @@ export function beginWebGLRenderTarget(
   }
 
   stack.push({
-    framebuffer: internal.currentFramebuffer,
-    renderTargetViewport: internal.renderTargetViewport,
-    renderTransform2D: internal.renderTransform2D,
+    framebuffer: runtime.currentFramebuffer,
+    renderTargetViewport: runtime.renderTargetViewport,
+    renderTransform2D: state.renderTransform2D,
   });
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, target.framebuffer);
   gl.viewport(0, 0, target.width, target.height);
 
-  internal.currentFramebuffer = target.framebuffer;
-  internal.renderTargetViewport = { width: target.width, height: target.height };
+  runtime.currentFramebuffer = target.framebuffer;
+  runtime.renderTargetViewport = { width: target.width, height: target.height };
   // Force rebind on next draw — the framebuffer switch invalidates GL state assumptions.
-  internal.currentTexture = null;
-  internal.currentBlendMode = null;
+  runtime.currentTexture = null;
+  runtime.currentBlendMode = null;
 
   const newTransform = createMatrix();
   copyMatrix(newTransform, renderTransform);
-  internal.renderTransform2D = newTransform;
+  state.renderTransform2D = newTransform;
 }
 
 /**
@@ -61,8 +61,8 @@ export function beginWebGLRenderTarget(
  * restored before returning.
  */
 export function createWebGLRenderTarget(state: WebGLRenderState, width: number, height: number): WebGLRenderTarget {
-  const internal = state as WebGLRenderStateInternal;
-  const gl = internal.gl;
+  const runtime = getWebGLRenderStateRuntime(state);
+  const gl = state.gl;
 
   const w = Math.max(1, Math.ceil(width));
   const h = Math.max(1, Math.ceil(height));
@@ -79,9 +79,9 @@ export function createWebGLRenderTarget(state: WebGLRenderState, width: number, 
   gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
 
-  gl.bindFramebuffer(gl.FRAMEBUFFER, internal.currentFramebuffer);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, runtime.currentFramebuffer);
   gl.bindTexture(gl.TEXTURE_2D, null);
-  internal.currentTexture = null;
+  runtime.currentTexture = null;
 
   return { framebuffer, texture, width: w, height: h };
 }
@@ -91,8 +91,7 @@ export function createWebGLRenderTarget(state: WebGLRenderState, width: number, 
  * used after this call.
  */
 export function destroyWebGLRenderTarget(state: WebGLRenderState, target: WebGLRenderTarget): void {
-  const internal = state as WebGLRenderStateInternal;
-  const gl = internal.gl;
+  const gl = state.gl;
   gl.deleteFramebuffer(target.framebuffer);
   gl.deleteTexture(target.texture);
 }
@@ -117,30 +116,25 @@ export function drawWebGLRenderTargetResult(
 ): void {
   if (target.width <= 0 || target.height <= 0) return;
 
-  const internal = state as WebGLRenderStateInternal;
-  useWebGLProgram(internal);
-  internal.applyBlendMode?.(internal, renderProxy.blendMode);
+  const runtime = getWebGLRenderStateRuntime(state);
+  useWebGLProgram(state);
+  state.applyBlendMode?.(state, renderProxy.blendMode);
 
-  const { gl, shaderLoc, matrixArray } = internal;
+  const gl = state.gl;
+  const { shaderLoc, matrixArray } = runtime;
   // The render target already owns a GPU texture — bind it directly rather than going through
   // bindWebGLTexture, which uploads a CanvasImageSource.
   gl.bindTexture(gl.TEXTURE_2D, target.texture);
-  internal.currentTexture = target.texture;
+  runtime.currentTexture = target.texture;
 
   const quadTransform = acquireMatrix();
   multiplyMatrix(quadTransform, renderProxy.transform2D, transform);
   setWebGLAttributes(gl, shaderLoc);
-  setWebGLMatrixFromTransform(
-    gl,
-    shaderLoc,
-    matrixArray,
-    quadTransform,
-    internal.renderTargetViewport ?? internal.canvas,
-  );
+  setWebGLMatrixFromTransform(gl, shaderLoc, matrixArray, quadTransform, runtime.renderTargetViewport ?? state.canvas);
   setWebGLBaseUniforms(gl, shaderLoc, renderProxy);
   releaseMatrix(quadTransform);
 
-  drawWebGLQuad(internal, 0, 0, target.width, target.height, 0, 1, 1, 0);
+  drawWebGLQuad(state, 0, 0, target.width, target.height, 0, 1, 1, 0);
 }
 
 /**
@@ -148,21 +142,21 @@ export function drawWebGLRenderTargetResult(
  * saved by the matching `beginWebGLRenderTarget` call.
  */
 export function endWebGLRenderTarget(state: WebGLRenderState): void {
-  const internal = state as WebGLRenderStateInternal;
-  const gl = internal.gl;
+  const runtime = getWebGLRenderStateRuntime(state);
+  const gl = state.gl;
 
   const saved = _targetStack.get(state)?.pop();
   if (saved === undefined) return;
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, saved.framebuffer);
-  const viewport = saved.renderTargetViewport ?? internal.canvas;
+  const viewport = saved.renderTargetViewport ?? state.canvas;
   gl.viewport(0, 0, viewport.width, viewport.height);
 
-  internal.currentFramebuffer = saved.framebuffer;
-  internal.renderTargetViewport = saved.renderTargetViewport;
-  internal.renderTransform2D = saved.renderTransform2D;
-  internal.currentTexture = null;
-  internal.currentBlendMode = null;
+  runtime.currentFramebuffer = saved.framebuffer;
+  runtime.renderTargetViewport = saved.renderTargetViewport;
+  state.renderTransform2D = saved.renderTransform2D;
+  runtime.currentTexture = null;
+  runtime.currentBlendMode = null;
 }
 
 /**
@@ -175,8 +169,8 @@ export function resizeWebGLRenderTarget(
   width: number,
   height: number,
 ): void {
-  const internal = state as WebGLRenderStateInternal;
-  const gl = internal.gl;
+  const runtime = getWebGLRenderStateRuntime(state);
+  const gl = state.gl;
 
   const w = Math.max(1, Math.ceil(width));
   const h = Math.max(1, Math.ceil(height));
@@ -186,5 +180,5 @@ export function resizeWebGLRenderTarget(
   gl.bindTexture(gl.TEXTURE_2D, target.texture);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
   gl.bindTexture(gl.TEXTURE_2D, null);
-  internal.currentTexture = null;
+  runtime.currentTexture = null;
 }

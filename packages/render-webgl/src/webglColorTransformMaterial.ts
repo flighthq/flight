@@ -1,8 +1,9 @@
 import type { ColorTransform, MaterialData, WebGLMaterialRenderer, WebGLRenderState } from '@flighthq/types';
 import { ColorTransformMaterialKind } from '@flighthq/types';
 
-import type { WebGLColorTransformInstancedShader, WebGLRenderStateInternal } from './internal';
+import type { WebGLColorTransformInstancedShader } from './internal';
 import { registerWebGLMaterialRenderer } from './webglMaterialRegistry';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import {
   bindWebGLQuadBatchBaseAttributes,
   setWebGLQuadBatchWorldAndTexture,
@@ -62,8 +63,9 @@ void main() {
   fragColor = vec4(color.rgb * color.a, color.a);
 }`;
 
-function ensureWebGLColorTransformInstancedShader(state: WebGLRenderStateInternal): WebGLColorTransformInstancedShader {
-  if (state.colorTransformInstancedShader) return state.colorTransformInstancedShader;
+function ensureWebGLColorTransformInstancedShader(state: WebGLRenderState): WebGLColorTransformInstancedShader {
+  const runtime = getWebGLRenderStateRuntime(state);
+  if (runtime.colorTransformInstancedShader) return runtime.colorTransformInstancedShader;
 
   const gl = state.gl;
   const vs = gl.createShader(gl.VERTEX_SHADER)!;
@@ -79,13 +81,13 @@ function ensureWebGLColorTransformInstancedShader(state: WebGLRenderStateInterna
   gl.deleteShader(vs);
   gl.deleteShader(fs);
 
-  state.colorTransformInstancedShader = {
+  runtime.colorTransformInstancedShader = {
     program,
     locCorner: 0,
     locWorldMatrix: gl.getUniformLocation(program, 'u_world')!,
     locTexture: gl.getUniformLocation(program, 'u_texture')!,
   };
-  return state.colorTransformInstancedShader;
+  return runtime.colorTransformInstancedShader;
 }
 
 export function registerWebGLColorTransformMaterial(state: WebGLRenderState): void {
@@ -97,14 +99,14 @@ export function registerWebGLColorTransformMaterial(state: WebGLRenderState): vo
 export const colorTransformWebGLMaterialRenderer: WebGLMaterialRenderer = {
   instanceFloatCount: COLOR_TRANSFORM_INSTANCE_FLOATS,
   bind(state: WebGLRenderState): void {
-    const internal = state as WebGLRenderStateInternal;
-    const shader = ensureWebGLColorTransformInstancedShader(internal);
-    useWebGLQuadBatchProgram(internal, shader.program);
-    setWebGLQuadBatchWorldAndTexture(internal, shader.locWorldMatrix, shader.locTexture);
-    bindWebGLQuadBatchBaseAttributes(internal, shader.locCorner);
+    const runtime = getWebGLRenderStateRuntime(state);
+    const shader = ensureWebGLColorTransformInstancedShader(state);
+    useWebGLQuadBatchProgram(state, shader.program);
+    setWebGLQuadBatchWorldAndTexture(state, shader.locWorldMatrix, shader.locTexture);
+    bindWebGLQuadBatchBaseAttributes(state, shader.locCorner);
 
-    const gl = internal.gl;
-    gl.bindBuffer(gl.ARRAY_BUFFER, internal.spriteBatchMaterialBuffer!);
+    const gl = state.gl;
+    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.spriteBatchMaterialBuffer!);
     gl.enableVertexAttribArray(7);
     gl.vertexAttribPointer(7, 4, gl.FLOAT, false, COLOR_TRANSFORM_INSTANCE_STRIDE, 0);
     gl.vertexAttribDivisor(7, 1);

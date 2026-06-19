@@ -4,12 +4,12 @@ import type {
   Renderable,
   RendererData,
   RenderProxy2D,
-  RenderState,
+  WebGLRenderState,
 } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import type { WebGLRenderStateInternal } from './internal';
 import { resolveWebGLMaterialRenderer } from './webglMaterialRegistry';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import {
   ensureWebGLQuadBatchShader,
   packWebGLSpriteBatchMaterialInstance,
@@ -21,25 +21,25 @@ interface WebGLBitmapData {
   lastVersion: number;
 }
 
-function createWebGLBitmapData(_state: RenderState, _source: Renderable): RendererData | null {
+function createWebGLBitmapData(_state: WebGLRenderState, _source: Renderable): RendererData | null {
   return { lastSrc: null, lastVersion: -1 } as unknown as RendererData;
 }
 
 // Deletes the cached GPU texture when this bitmap is torn down. Prevents textures from leaking when
 // a bitmap is removed from the scene via disposeDisplayObjectRender.
-function destroyWebGLBitmapData(state: RenderState, data: RendererData): void {
-  const internal = state as WebGLRenderStateInternal;
+function destroyWebGLBitmapData(state: WebGLRenderState, data: RendererData): void {
+  const runtime = getWebGLRenderStateRuntime(state);
   const { lastSrc } = data as unknown as WebGLBitmapData;
   if (lastSrc === null) return;
-  const texture = internal.textureCache.get(lastSrc);
+  const texture = runtime.textureCache.get(lastSrc);
   if (texture !== undefined) {
-    internal.gl.deleteTexture(texture);
-    internal.textureCache.delete(lastSrc);
+    state.gl.deleteTexture(texture);
+    runtime.textureCache.delete(lastSrc);
   }
 }
 
-export function drawWebGLBitmap(state: RenderState, renderProxy: RenderProxy2D): void {
-  const internal = state as WebGLRenderStateInternal;
+export function drawWebGLBitmap(state: WebGLRenderState, renderProxy: RenderProxy2D): void {
+  const runtime = getWebGLRenderStateRuntime(state);
   const source = renderProxy.source as Bitmap;
   const imageSource = source.data.image;
   if (imageSource === null || imageSource.source === null) return;
@@ -53,26 +53,26 @@ export function drawWebGLBitmap(state: RenderState, renderProxy: RenderProxy2D):
   // when the element reference is replaced (setBitmapImage). Both cases bump imageSource.version.
   if (bitmapData.lastVersion !== version || bitmapData.lastSrc !== src) {
     if (bitmapData.lastSrc !== null && bitmapData.lastSrc !== src) {
-      const oldTexture = internal.textureCache.get(bitmapData.lastSrc);
+      const oldTexture = runtime.textureCache.get(bitmapData.lastSrc);
       if (oldTexture !== undefined) {
-        internal.gl.deleteTexture(oldTexture);
-        internal.textureCache.delete(bitmapData.lastSrc);
+        state.gl.deleteTexture(oldTexture);
+        runtime.textureCache.delete(bitmapData.lastSrc);
       }
     }
-    const staleTexture = internal.textureCache.get(src);
+    const staleTexture = runtime.textureCache.get(src);
     if (staleTexture !== undefined) {
-      internal.gl.deleteTexture(staleTexture);
-      internal.textureCache.delete(src);
+      state.gl.deleteTexture(staleTexture);
+      runtime.textureCache.delete(src);
     }
     bitmapData.lastSrc = src;
     bitmapData.lastVersion = version;
   }
 
   const material = renderProxy.material;
-  const materialRenderer = resolveWebGLMaterialRenderer(internal, material);
+  const materialRenderer = resolveWebGLMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
-  ensureWebGLQuadBatchShader(internal);
+  ensureWebGLQuadBatchShader(state);
 
   const sr = source.data.sourceRectangle ?? null;
   const iw = 1 / (imageSource.width || 1);
@@ -99,16 +99,16 @@ export function drawWebGLBitmap(state: RenderState, renderProxy: RenderProxy2D):
     v1 = (sr.y + sr.height) * ih;
   }
 
-  const startCount = internal.spriteBatchCount;
+  const startCount = runtime.spriteBatchCount;
   const base = prepareWebGLSpriteBatchWrite(
-    internal,
+    state,
     imageSource.source,
     renderProxy.blendMode,
     material,
     materialRenderer,
     1,
   );
-  const d = internal.spriteBatchInstanceData;
+  const d = runtime.spriteBatchInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;
   d[base + 1] = t.b;
@@ -123,8 +123,8 @@ export function drawWebGLBitmap(state: RenderState, renderProxy: RenderProxy2D):
   d[base + 10] = u1;
   d[base + 11] = v1;
   d[base + 12] = renderProxy.alpha;
-  packWebGLSpriteBatchMaterialInstance(internal, renderProxy.materialData, startCount);
-  internal.spriteBatchCount++;
+  packWebGLSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
+  runtime.spriteBatchCount++;
 }
 
 export const defaultWebGLBitmapRenderer: DisplayObjectRenderer = {

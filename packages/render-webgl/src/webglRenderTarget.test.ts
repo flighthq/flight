@@ -2,7 +2,7 @@ import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
 
-import type { WebGLRenderStateInternal } from './internal';
+import { getWebGLRenderStateRuntime } from './webglRenderState';
 import {
   beginWebGLRenderTarget,
   createWebGLRenderTarget,
@@ -30,9 +30,10 @@ function makeState() {
     createTexture: vi.fn(() => mockTexture),
   }) as unknown as WebGL2RenderingContext;
 
-  const state = _state as WebGLRenderStateInternal;
-  state.currentFramebuffer = null;
-  state.renderTargetViewport = null;
+  const state = _state;
+  const runtime = getWebGLRenderStateRuntime(state);
+  runtime.currentFramebuffer = null;
+  runtime.renderTargetViewport = null;
 
   return { state, gl };
 }
@@ -57,7 +58,7 @@ describe('beginWebGLRenderTarget', () => {
 
     beginWebGLRenderTarget(state, target, createMatrix());
 
-    expect(state.renderTargetViewport).toEqual({ width: 64, height: 48 });
+    expect(getWebGLRenderStateRuntime(state).renderTargetViewport).toEqual({ width: 64, height: 48 });
   });
 
   it('sets renderTransform2D to the provided transform', () => {
@@ -81,10 +82,10 @@ describe('beginWebGLRenderTarget', () => {
     beginWebGLRenderTarget(state, targetA, createMatrix());
     beginWebGLRenderTarget(state, targetB, createMatrix());
 
-    expect(state.renderTargetViewport).toEqual({ width: 32, height: 32 });
+    expect(getWebGLRenderStateRuntime(state).renderTargetViewport).toEqual({ width: 32, height: 32 });
 
     endWebGLRenderTarget(state);
-    expect(state.renderTargetViewport).toEqual({ width: 64, height: 48 });
+    expect(getWebGLRenderStateRuntime(state).renderTargetViewport).toEqual({ width: 64, height: 48 });
   });
 });
 
@@ -119,9 +120,10 @@ describe('createWebGLRenderTarget', () => {
 
   it('resets currentTexture to null after creation', () => {
     const { state } = makeState();
-    state.currentTexture = {} as WebGLTexture;
+    const runtime = getWebGLRenderStateRuntime(state);
+    runtime.currentTexture = {} as WebGLTexture;
     createWebGLRenderTarget(state, 32, 32);
-    expect(state.currentTexture).toBeNull();
+    expect(runtime.currentTexture).toBeNull();
   });
 });
 
@@ -197,7 +199,7 @@ describe('endWebGLRenderTarget', () => {
     beginWebGLRenderTarget(state, target, createMatrix());
     endWebGLRenderTarget(state);
 
-    expect(state.renderTargetViewport).toBeNull();
+    expect(getWebGLRenderStateRuntime(state).renderTargetViewport).toBeNull();
   });
 
   it('restores the original renderTransform2D', () => {
