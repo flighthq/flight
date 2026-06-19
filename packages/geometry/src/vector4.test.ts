@@ -14,6 +14,7 @@ import {
   nearEqualsVector4,
   negateVector4,
   normalizeVector4,
+  offsetVector4,
   projectVector4,
   scaleVector4,
   setVector4,
@@ -302,6 +303,37 @@ describe('normalizeVector4', () => {
     expect(result.z).toBe(0);
     expect(result.w).toBe(0);
     expect(length).toBe(0);
+  });
+});
+
+describe('offsetVector4', () => {
+  it('offsets each component by a scalar per axis', () => {
+    const v = createVector4(1, 2, 3, 4);
+    const result = createVector4();
+    offsetVector4(result, v, 10, 20, 30, 40);
+    expect(result.x).toBe(11);
+    expect(result.y).toBe(22);
+    expect(result.z).toBe(33);
+    expect(result.w).toBe(44);
+  });
+
+  it('works with negative deltas', () => {
+    const v = createVector4(1, 2, 3, 4);
+    const result = createVector4();
+    offsetVector4(result, v, -5, -10, -15, -20);
+    expect(result.x).toBe(-4);
+    expect(result.y).toBe(-8);
+    expect(result.z).toBe(-12);
+    expect(result.w).toBe(-16);
+  });
+
+  it('supports out === source', () => {
+    const v = createVector4(1, 2, 3, 4);
+    offsetVector4(v, v, 3, 4, 5, 6);
+    expect(v.x).toBe(4);
+    expect(v.y).toBe(6);
+    expect(v.z).toBe(8);
+    expect(v.w).toBe(10);
   });
 });
 

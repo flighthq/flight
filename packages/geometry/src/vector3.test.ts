@@ -14,6 +14,7 @@ import {
   nearEqualsVector3,
   negateVector3,
   normalizeVector3,
+  offsetVector3,
   projectVector3,
   scaleVector3,
   setVector3,
@@ -319,6 +320,34 @@ describe('normalizeVector3', () => {
     expect(result.y).toBe(0);
     expect(result.z).toBe(0);
     expect(length).toBe(0);
+  });
+});
+
+describe('offsetVector3', () => {
+  it('offsets each component by a scalar per axis', () => {
+    const v = createVector3(1, 2, 3);
+    const result = createVector3();
+    offsetVector3(result, v, 10, 20, 30);
+    expect(result.x).toBe(11);
+    expect(result.y).toBe(22);
+    expect(result.z).toBe(33);
+  });
+
+  it('works with negative deltas', () => {
+    const v = createVector3(1, 2, 3);
+    const result = createVector3();
+    offsetVector3(result, v, -5, -10, -15);
+    expect(result.x).toBe(-4);
+    expect(result.y).toBe(-8);
+    expect(result.z).toBe(-12);
+  });
+
+  it('supports out === source', () => {
+    const v = createVector3(1, 2, 3);
+    offsetVector3(v, v, 3, 4, 5);
+    expect(v.x).toBe(4);
+    expect(v.y).toBe(6);
+    expect(v.z).toBe(8);
   });
 });
 
