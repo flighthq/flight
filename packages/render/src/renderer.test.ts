@@ -2,37 +2,29 @@ import type { DisplayObjectClipHooks, Renderer, RenderState } from '@flighthq/ty
 
 import {
   copyAllRenderersFromRenderState,
-  copyMaskRenderersFromRenderState,
   copyRenderersFromRenderState,
   noopRendererData,
-  registerDisplayObjectMaskRenderer,
   registerRenderer,
 } from './renderer';
-import { prepareMasks } from './renderProxy';
 import { createRenderState } from './renderState';
 
 describe('copyAllRenderersFromRenderState', () => {
-  it('copies all registrations from source to target', () => {
+  it('copies all registrations and the clip hooks from source to target', () => {
     const source = createRenderState();
     const target = createRenderState();
     const kind = Symbol('kind');
     const renderer = { createData: vi.fn(), submit: vi.fn() } as unknown as Renderer;
-    const maskRenderer = { drawMask: vi.fn() };
     const hooks = {
       finalize: vi.fn(),
-      popMask: vi.fn(),
-      popClipRectangle: vi.fn(),
-      pushMask: vi.fn(),
-      pushClipRectangle: vi.fn(),
+      popClip: vi.fn(),
+      pushClip: vi.fn(),
     } as unknown as DisplayObjectClipHooks;
     registerRenderer(source, kind, renderer);
-    registerDisplayObjectMaskRenderer(source, kind, maskRenderer);
     source.displayObjectClipHooks = hooks;
 
     copyAllRenderersFromRenderState(target, source);
 
     expect(target.rendererMap.get(kind)).toBe(renderer);
-    expect(target.displayObjectMaskRendererMap.get(kind)).toBe(maskRenderer);
     expect(target.displayObjectClipHooks).toBe(hooks);
   });
 
@@ -41,36 +33,6 @@ describe('copyAllRenderersFromRenderState', () => {
     const target = createRenderState();
     copyAllRenderersFromRenderState(target, source);
     expect(target.rendererMap.size).toBe(0);
-  });
-});
-
-describe('copyMaskRenderersFromRenderState', () => {
-  it('copies mask renderer registrations and clip hooks from source to target', () => {
-    const source = createRenderState();
-    const target = createRenderState();
-    const kind = Symbol('kind');
-    const maskRenderer = { drawMask: vi.fn() };
-    const hooks = {
-      finalize: vi.fn(),
-      popMask: vi.fn(),
-      popClipRectangle: vi.fn(),
-      pushMask: vi.fn(),
-      pushClipRectangle: vi.fn(),
-    } as unknown as DisplayObjectClipHooks;
-    registerDisplayObjectMaskRenderer(source, kind, maskRenderer);
-    source.displayObjectClipHooks = hooks;
-
-    copyMaskRenderersFromRenderState(target, source);
-
-    expect(target.displayObjectMaskRendererMap.get(kind)).toBe(maskRenderer);
-    expect(target.displayObjectClipHooks).toBe(hooks);
-  });
-
-  it('is a no-op when source has no mask registrations', () => {
-    const source = createRenderState();
-    const target = createRenderState();
-    copyMaskRenderersFromRenderState(target, source);
-    expect(target.displayObjectMaskRendererMap.size).toBe(0);
     expect(target.displayObjectClipHooks).toBeNull();
   });
 });
@@ -109,32 +71,6 @@ describe('noopRendererData', () => {
   it('returns null', () => {
     const state = createRenderState();
     expect(noopRendererData(state, {} as any)).toBeNull();
-  });
-});
-
-describe('registerDisplayObjectMaskRenderer', () => {
-  it('registers a mask renderer and installs the mask pass', () => {
-    const state = createRenderState();
-    const kind = Symbol('kind');
-    const renderer = { drawMask: vi.fn() };
-
-    registerDisplayObjectMaskRenderer(state, kind, renderer);
-
-    expect(state.displayObjectMaskRendererMap.get(kind)).toBe(renderer);
-    expect(state.displayObjectMaskRendererMapID).toBe(1);
-    expect(state.displayObjectMaskPass).toBe(prepareMasks);
-  });
-
-  it('does not increment displayObjectMaskRendererMapID for the same renderer', () => {
-    const state = createRenderState();
-    const kind = Symbol('kind');
-    const renderer = { drawMask: vi.fn() };
-    registerDisplayObjectMaskRenderer(state, kind, renderer);
-    const id = state.displayObjectMaskRendererMapID;
-
-    registerDisplayObjectMaskRenderer(state, kind, renderer);
-
-    expect(state.displayObjectMaskRendererMapID).toBe(id);
   });
 });
 
