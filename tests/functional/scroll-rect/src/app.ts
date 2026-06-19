@@ -7,13 +7,14 @@ import {
   appendShapeRectangle,
   BitmapKind,
   createBitmap,
+  createClipRegionFromRectangle,
   createDisplayContainer,
   createRichText,
   createShape,
   invalidateNodeLocalTransform,
   loadImageResourceFromURL,
   RichTextKind,
-  setDisplayObjectClipRectangle,
+  setDisplayObjectClip,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -42,7 +43,7 @@ const owlImg = await loadImageResourceFromURL('assets/OwlAlpha.png');
 
 // Owl clip: container clips to the eyes region; content moves to pan across the image.
 const owlClip = createDisplayContainer();
-setDisplayObjectClipRectangle(owlClip, { x: 0, y: 0, width: 200, height: 250 });
+setDisplayObjectClip(owlClip, createClipRegionFromRectangle({ x: 0, y: 0, width: 200, height: 250 }));
 owlClip.x = 100;
 owlClip.y = 630;
 
@@ -83,7 +84,7 @@ const CLIP_W = 400;
 const CLIP_H = 300;
 
 const textClip = createDisplayContainer();
-setDisplayObjectClipRectangle(textClip, { x: 0, y: 0, width: CLIP_W, height: CLIP_H });
+setDisplayObjectClip(textClip, createClipRegionFromRectangle({ x: 0, y: 0, width: CLIP_W, height: CLIP_H }));
 textClip.x = pos(300);
 textClip.y = pos(350);
 
@@ -118,7 +119,7 @@ addNodeChild(outerSprite, textClip);
 
 // Outer clip: orbits by moving the content while the clip window stays fixed.
 const outerClip = createDisplayContainer();
-setDisplayObjectClipRectangle(outerClip, { x: 0, y: 0, width: W, height: H });
+setDisplayObjectClip(outerClip, createClipRegionFromRectangle({ x: 0, y: 0, width: W, height: H }));
 const outerContent = createDisplayContainer();
 addNodeChild(outerContent, outerSprite);
 addNodeChild(outerClip, outerContent);

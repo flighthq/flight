@@ -8,7 +8,7 @@ import {
   defaultWebGLRichTextRenderer,
   defaultWebGLShapeCommands,
   defaultWebGLShapeRenderer,
-  enableWebGLClipRectangleSupport,
+  enableWebGLClipSupport,
   enableWebGLRenderCache,
   prepareDisplayObjectRender,
   registerDefaultWebGLMaterial,
@@ -52,7 +52,7 @@ export function createWebGLTarget(options: Readonly<FunctionalTargetOptions>): F
     }
   }
 
-  if (options.clip) enableWebGLClipRectangleSupport(state);
+  if (options.clip) enableWebGLClipSupport(state);
   if (options.cache) enableWebGLRenderCache(state);
 
   return {
