@@ -3,6 +3,12 @@ import { tests } from 'virtual:functional-test-list';
 const STORAGE_KEY = 'functional-selected';
 const FADE_MS = 250;
 
+// A renderer id (e.g. `reference:openfl`) is the logical key; its colon is not URL/path safe, so the
+// route to the rendered page uses this hyphenated segment. Mirrors routeSegment in vite.config.ts.
+function routeSegment(renderer: string): string {
+  return renderer.replace(':', '-');
+}
+
 let testIndex = 0;
 let renderer = '';
 
@@ -107,22 +113,33 @@ function navigateTo(url: string): void {
   next.src = url;
 }
 
+function updateUrl(): void {
+  history.replaceState(
+    {
+      testIndex,
+      renderer,
+    },
+    '',
+    `#${hashForCurrent()}`,
+  );
+}
+
 function hashForCurrent(): string {
-  return `/functional/${currentTest().name}/${renderer}`;
+  return `/${currentTest().name}/${renderer}/`;
 }
 
 function showCurrent(): void {
   buildSidebar();
   buildRendererBar();
   sessionStorage.setItem(STORAGE_KEY, hashForCurrent());
-  navigateTo(`/tests/${currentTest().name}/${renderer}/`);
+  navigateTo(`${import.meta.env.BASE_URL}tests/${currentTest().name}/${routeSegment(renderer)}/`);
 }
 
 function selectTest(i: number): void {
   testIndex = Math.max(0, Math.min(tests.length - 1, i));
   renderer = resolveRenderer(renderer);
   showCurrent();
-  location.hash = hashForCurrent();
+  updateUrl();
 }
 
 function selectRenderer(r: string): void {
@@ -130,19 +147,24 @@ function selectRenderer(r: string): void {
   renderer = r;
   buildRendererBar();
   sessionStorage.setItem(STORAGE_KEY, hashForCurrent());
-  location.hash = hashForCurrent();
-  navigateTo(`/tests/${currentTest().name}/${renderer}/`);
+  updateUrl();
+  navigateTo(`${import.meta.env.BASE_URL}tests/${currentTest().name}/${routeSegment(renderer)}/`);
 }
 
 function stateFromHash(hash: string): { testIndex: number; renderer: string } | null {
   const parts = hash.replace(/^\//, '').split('/');
-  if (parts[0] !== 'functional' || !parts[1]) return null;
-  const name = parts[1];
-  const r = parts[2] ?? '';
+
+  const name = parts[0];
+  const r = parts[1] ?? '';
+
+  if (!name) return null;
+
   const i = tests.findIndex((t) => t.name === name);
   if (i < 0) return null;
+
   const t = tests[i];
   const resolved = r && t.renderers.includes(r) ? r : (t.renderers[0] ?? '');
+
   return { testIndex: i, renderer: resolved };
 }
 
@@ -173,7 +195,7 @@ document.addEventListener('keydown', (e) => {
       testIndex = (testIndex + 1) % tests.length;
       renderer = currentTest().renderers[0] ?? '';
       showCurrent();
-      location.hash = hashForCurrent();
+      updateUrl();
     }
   }
 });

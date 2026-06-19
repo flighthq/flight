@@ -3,6 +3,7 @@ import { dirname, extname, join, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 
+import { copyDirectoryContents } from '../../scripts/copy-dir';
 import { workspacePackages } from '../../scripts/workspaces';
 
 const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
@@ -40,6 +41,14 @@ function splitFirst(str: string, sep: string): [string, string] {
   return [str.slice(0, i), str.slice(i + sep.length)];
 }
 
+// A renderer id is the logical key (`canvas`, `webgl`, `reference:openfl`). Its colon-bearing form is
+// not safe as a URL or directory segment, so the route path uses this hyphenated form instead
+// (`reference-openfl`). Flight renderers have no colon and pass through unchanged. The id is never
+// reconstructed from the segment; callers that need the id carry it alongside.
+function routeSegment(renderer: string): string {
+  return renderer.replace(':', '-');
+}
+
 function discoverReferenceRenderers(testName: string): string[] {
   if (!existsSync(referenceBaseDir)) return [];
   return readdirSync(referenceBaseDir, { withFileTypes: true })
@@ -73,11 +82,86 @@ function discoverTests(): FunctionalTest[] {
     .filter((t) => t.renderers.length > 0);
 }
 
+// assetBase points at one global pool (test-assets/) shared by every renderer of every test.
+// Functional assets have globally unique names and are loaded through a shared manifest, so a
+// single flat pool has no collisions and stores each file once. The script src is absolute and ES
+// module imports resolve against the module URL, so neither is affected by <base>; only
+// document-relative asset fetches are redirected into the pool, which is the intent.
+function buildEntryHtml(name: string, render: string, scriptSrc: string, assetBase: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <base href="${assetBase}" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${name} · ${render}</title>
+  <style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: sans-serif; font-size: 16px; overflow: hidden; }</style>
+  <script>
+    window.addEventListener('pagehide', function() {
+      document.querySelectorAll('canvas').forEach(function(c) {
+        var gl = c.getContext('webgl2') || c.getContext('webgl');
+        if (gl) { var ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); }
+      });
+    });
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="${scriptSrc}"></script>
+</body>
+</html>`;
+}
+
 function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
+  // The static build serves every renderer the dev tool does, including the openfl reference
+  // renderers (reference:*), so the deployed site keeps the side-by-side comparison. A renderer id
+  // is not URL/filesystem safe (reference:openfl carries a colon), so routeSegment maps it to a safe
+  // path segment for emitted files and routes; the id stays intact as the renderer's logical key.
+  const buildTests: FunctionalTest[] = tests;
+
+  let viteBase = '/';
+  let outDir = resolve(__dirname, 'dist');
+
   return [
     {
       name: 'functional-tests:modules',
       enforce: 'pre',
+
+      config(_, { command }) {
+        if (command !== 'build') return;
+
+        const input: Record<string, string> = {
+          main: resolve(__dirname, 'index.html'),
+        };
+        for (const test of buildTests) {
+          for (const render of test.renderers) {
+            input[`tests/${test.name}/${routeSegment(render)}/index`] = `virtual:ft-entry:${test.name}:${render}`;
+          }
+        }
+
+        return {
+          build: {
+            rollupOptions: {
+              input,
+              output: {
+                entryFileNames(chunk) {
+                  const id = chunk.facadeModuleId;
+                  if (id?.startsWith('\0virtual:ft-entry:')) {
+                    const [name, render] = splitFirst(id.slice('\0virtual:ft-entry:'.length), ':');
+                    return `tests/${name}/${routeSegment(render)}/index.js`;
+                  }
+                  return 'assets/[name]-[hash].js';
+                },
+              },
+            },
+          },
+        };
+      },
+
+      configResolved(config) {
+        viteBase = config.base;
+        outDir = resolve(config.root, config.build.outDir);
+      },
 
       resolveId(source, importer) {
         if (source === 'virtual:functional-test-list') return '\0virtual:functional-test-list';
@@ -165,6 +249,37 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
           ].join('\n');
         }
       },
+
+      generateBundle(_, bundle) {
+        for (const test of buildTests) {
+          for (const render of test.renderers) {
+            const entryId = `\0virtual:ft-entry:${test.name}:${render}`;
+            const chunk = Object.values(bundle).find(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (c) => c.type === 'chunk' && (c as any).facadeModuleId === entryId,
+            ) as { fileName: string } | undefined;
+
+            if (!chunk) continue;
+
+            this.emitFile({
+              type: 'asset',
+              fileName: `tests/${test.name}/${routeSegment(render)}/index.html`,
+              source: buildEntryHtml(test.name, render, `${viteBase}${chunk.fileName}`, `${viteBase}test-assets/`),
+            });
+          }
+        }
+      },
+
+      writeBundle() {
+        // One flat pool for all functional assets. Every render page's <base href> points here, so
+        // identical files used across renderers and tests (including the shared manifest) are stored
+        // exactly once. Safe to merge because asset file names are globally unique.
+        const pool = join(outDir, 'test-assets');
+        const sources = [join(testsDir, 'public'), ...buildTests.map((t) => join(testsDir, t.name, 'public'))];
+        for (const src of sources) {
+          if (existsSync(src)) copyDirectoryContents(src, pool);
+        }
+      },
     },
 
     {
@@ -176,10 +291,13 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
           const parts = urlPath.split('/').filter(Boolean);
 
           if (parts[0] !== 'tests' || parts.length < 3) return next();
-          const [, name, render, ...assetParts] = parts;
+          const [, name, segment, ...assetParts] = parts;
 
-          const test = tests.find((t) => t.name === name && t.renderers.includes(render));
+          // The URL carries the safe route segment; recover the renderer id (with any colon) for
+          // reference-folder lookup and the virtual entry module below. Routes match dev and build.
+          const test = tests.find((t) => t.name === name && t.renderers.some((r) => routeSegment(r) === segment));
           if (!test) return next();
+          const render = test.renderers.find((r) => routeSegment(r) === segment)!;
 
           if (assetParts.length > 0) {
             const assetRel = assetParts.join('/');
@@ -264,6 +382,7 @@ export default defineConfig(() => {
 
   return {
     root: __dirname,
+    base: process.env.VITE_BASE ?? '/',
 
     plugins: functionalTestsPlugin(tests),
 
