@@ -23,8 +23,6 @@ export function drawDOMRenderView(state: DOMRenderState, renderProxy: RenderProx
   setDOMRendererElement(state, canvas);
 }
 
-export function drawDOMRenderViewMask(_state: DOMRenderState, _renderProxy: RenderProxy2D): void {}
-
 export const defaultDOMRenderViewRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
   submit: drawDOMRenderView,

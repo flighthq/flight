@@ -211,10 +211,6 @@ const DOM_SELECTION_ALPHA = 0.35;
 const DOM_SELECTION_COLOR = '#0078d7';
 const _richTextSelectionRectangles: { height: number; lineIndex: number; width: number; x: number; y: number }[] = [];
 
-export function drawDOMRichTextMask(state: DOMRenderState, renderProxy: RenderProxy2D): void {
-  drawDOMRichText(state, renderProxy);
-}
-
 export const defaultDOMRichTextRenderer: DisplayObjectRenderer = {
   createData: createDOMRichTextData,
   submit: drawDOMRichText,

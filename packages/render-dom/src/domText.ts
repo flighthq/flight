@@ -94,10 +94,6 @@ export function drawDOMText(state: DOMRenderState, renderProxy: RenderProxy2D): 
   setDOMRendererElement(state, data.div);
 }
 
-export function drawDOMTextMask(state: DOMRenderState, renderProxy: RenderProxy2D): void {
-  drawDOMText(state, renderProxy);
-}
-
 export const defaultDOMTextRenderer: DisplayObjectRenderer = {
   createData: createDOMTextData,
   submit: drawDOMText,

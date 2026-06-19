@@ -16,6 +16,7 @@
     { "path": "../render" },
     { "path": "../node" },
     { "path": "../displayobject" },
+    { "path": "../shape" },
     { "path": "../text-input" },
     { "path": "../text-layout" },
     { "path": "../types" }

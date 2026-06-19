@@ -27,13 +27,14 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/displayobject": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/materials": "*",
-    "@flighthq/render-canvas": "*",
-    "@flighthq/render": "*",
     "@flighthq/node": "*",
-    "@flighthq/displayobject": "*",
+    "@flighthq/render": "*",
+    "@flighthq/render-canvas": "*",
+    "@flighthq/shape": "*",
     "@flighthq/text-input": "*",
     "@flighthq/text-layout": "*",
     "@flighthq/types": "*"

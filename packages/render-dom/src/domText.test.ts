@@ -4,7 +4,7 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { TextKind } from '@flighthq/types';
 
 import { createDOMRenderState } from './domRenderState';
-import { defaultDOMTextRenderer, drawDOMText, drawDOMTextMask } from './domText';
+import { defaultDOMTextRenderer, drawDOMText } from './domText';
 import type { DOMRenderStateInternal } from './internal';
 
 function makeState() {
@@ -89,14 +89,5 @@ describe('drawDOMText', () => {
     const secondDiv = drawGetEl(state, () => drawDOMText(state, renderProxy));
 
     expect(firstDiv).toBe(secondDiv);
-  });
-});
-
-describe('drawDOMTextMask', () => {
-  it('does not throw', () => {
-    const state = makeState();
-    const node = createText();
-    const renderProxy = getOrCreateRenderProxy2D(state, node);
-    expect(() => drawDOMTextMask(state, renderProxy)).not.toThrow();
   });
 });

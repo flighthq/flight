@@ -62,10 +62,6 @@ export function drawDOMShape(state: DOMRenderState, renderProxy: RenderProxy2D):
   setDOMRendererElement(state, data.canvas);
 }
 
-export function drawDOMShapeMask(state: DOMRenderState, renderProxy: RenderProxy2D): void {
-  drawDOMShape(state, renderProxy);
-}
-
 export const defaultDOMShapeRenderer: DisplayObjectRenderer = {
   createData: createDOMShapeData,
   submit: drawDOMShape,

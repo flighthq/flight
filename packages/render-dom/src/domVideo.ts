@@ -39,10 +39,6 @@ export function drawDOMVideo(state: DOMRenderState, renderProxy: RenderProxy2D):
   setDOMRendererElement(state, element);
 }
 
-export function drawDOMVideoMask(state: DOMRenderState, renderProxy: RenderProxy2D): void {
-  drawDOMVideo(state, renderProxy);
-}
-
 export const defaultDOMVideoRenderer: DisplayObjectRenderer = {
   createData: createDOMVideoData,
   submit: drawDOMVideo,

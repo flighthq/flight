@@ -1,18 +1,17 @@
-import {
-  appendShapeRectangle,
-  createDisplayObject,
-  createMaskGroup,
-  createShape,
-  setMaskGroupMask,
-} from '@flighthq/displayobject';
+import { createDisplayObject, setDisplayObjectClip } from '@flighthq/displayobject';
 import { createRectangle } from '@flighthq/geometry';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { getOrCreateRenderProxy2D, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
+import type { ClipRegion, Rectangle } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { enableDOMClipRectangleSupport, enableDOMMaskSupport } from './domClip';
+import { enableDOMClipSupport } from './domClip';
 import { renderDOMDisplayObject } from './domDisplayObject';
 import { createDOMRenderState } from './domRenderState';
+
+function makeRectangleClip(rect: Rectangle): ClipRegion {
+  return { contours: null, rect, version: 0, winding: 'nonZero' };
+}
 
 type ManagedState = ReturnType<typeof makeState> & { domCurrentElement: HTMLElement | null };
 
@@ -188,11 +187,11 @@ describe('renderDOMDisplayObject', () => {
     expect(state.element.contains(elB)).toBe(false);
   });
 
-  it('applies inherited clipRectangle clipping to child elements', () => {
+  it('applies an inherited rectangle clip to child elements', () => {
     const state = makeState();
-    enableDOMClipRectangleSupport(state);
+    enableDOMClipSupport(state);
     const parent = createDisplayObject();
-    parent.clipRectangle = createRectangle(10, 20, 30, 40);
+    setDisplayObjectClip(parent, makeRectangleClip(createRectangle(10, 20, 30, 40)));
     const child = createDisplayObject();
     addNodeChild(parent, child);
 
@@ -205,21 +204,19 @@ describe('renderDOMDisplayObject', () => {
     expect(el.style.clipPath).toBe('polygon(10px 20px, 40px 20px, 40px 60px, 10px 60px)');
   });
 
-  it('applies mask bounds clipping to mask group content', () => {
+  it('applies a rectangle clip set directly on the clipping node to its content', () => {
     const state = makeState();
-    enableDOMMaskSupport(state);
-    const group = createMaskGroup();
-    const mask = createShape();
-    appendShapeRectangle(mask, 5, 6, 20, 30);
-    setMaskGroupMask(group, mask);
+    enableDOMClipSupport(state);
+    const parent = createDisplayObject();
+    setDisplayObjectClip(parent, makeRectangleClip(createRectangle(5, 6, 20, 30)));
     const content = createDisplayObject();
-    addNodeChild(group, content);
+    addNodeChild(parent, content);
 
     const el = document.createElement('div');
     setupRenderedNode(state, content, el);
 
-    prepareDisplayObjectRender(state, group);
-    renderDOMDisplayObject(state, group);
+    prepareDisplayObjectRender(state, parent);
+    renderDOMDisplayObject(state, parent);
 
     expect(el.style.clipPath).toBe('polygon(5px 6px, 25px 6px, 25px 36px, 5px 36px)');
   });

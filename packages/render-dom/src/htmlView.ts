@@ -27,10 +27,6 @@ export function drawDOMHTMLView(state: DOMRenderState, renderProxy: RenderProxy2
   setDOMRendererElement(state, element);
 }
 
-export function drawDOMHTMLViewMask(_state: DOMRenderState, _renderProxy: RenderProxy2D): void {
-  // HTMLView content is not converted into mask geometry by the DOM renderer.
-}
-
 export const defaultHTMLViewRenderer: DisplayObjectRenderer = {
   createData: noopRendererData,
   submit: drawDOMHTMLView,
