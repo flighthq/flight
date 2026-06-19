@@ -46,10 +46,48 @@ export function equalsVector2(
   return a === b || (a.x === b.x && a.y === b.y);
 }
 
+/**
+ * Returns the angle in radians between two vectors. The returned angle is the
+ * smallest radian the first Vector2Like object rotates until it aligns with the
+ * second Vector2Like object.
+ **/
+export function getVector2AngleBetween(a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): number {
+  const la = getVector2Length(a);
+  const lb = getVector2Length(b);
+
+  if (la === 0 || lb === 0) return NaN; // undefined angle
+
+  const _dot = getVector2Dot(a, b) / (la * lb);
+  // clamp dot to [-1, 1] to avoid floating point errors
+  return Math.acos(Math.min(1, Math.max(-1, _dot)));
+}
+
 export function getVector2Distance(a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): number {
   const dx = a.x - b.x;
   const dy = a.y - b.y;
   return Math.sqrt(dx * dx + dy * dy);
+}
+
+/**
+ * Returns the distance (squared) between two Vector2Like objects.
+ *
+ * This avoids Math.sqrt for better performance.
+ **/
+export function getVector2DistanceSquared(a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): number {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return dx ** 2 + dy ** 2;
+}
+
+/**
+ * If the current Vector2Like object and the one specified as the parameter are unit
+ * vertices, this method returns the cosine of the angle between the two vertices.
+ * Unit vertices are vertices that point to the same direction but their length is
+ * one. They remove the length of the vector as a factor in the result. You can use
+ * the `normalize()` method to convert a vector to a unit vector.
+ **/
+export function getVector2Dot(a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): number {
+  return a.x * b.x + a.y * b.y;
 }
 
 export function getVector2Length(source: Readonly<Vector2Like>): number {
@@ -74,6 +112,31 @@ export function interpolateVector2(
 }
 
 /**
+ * Compares the elements of the current Vector2Like object with the elements of a
+ * specified Vector2Like object to determine whether they are nearly equal.
+ *
+ * The two Vector2Like objects are nearly equal if the value of all the elements of the two
+ * vertices are equal, or the result of the comparison is within the tolerance range.
+ **/
+export function nearEqualsVector2(
+  a: Readonly<Vector2Like>,
+  b: Readonly<Vector2Like>,
+  tolerance: number = 1e-6,
+): boolean {
+  return Math.abs(a.x - b.x) < tolerance && Math.abs(a.y - b.y) < tolerance;
+}
+
+/**
+ * Sets the current Vector2Like object to its inverse. The inverse object is also
+ * considered the opposite of the original object. The value of the `x` and `y`
+ * properties of the current Vector2Like object is changed to -x and -y.
+ **/
+export function negateVector2(out: Vector2Like, source: Readonly<Vector2Like>): void {
+  out.x = source.x * -1;
+  out.y = source.y * -1;
+}
+
+/**
  * Writes a point representing this vector scaled to a given length.
  *
  * The direction of the vector is preserved. If the original vector has zero length,
@@ -94,6 +157,15 @@ export function normalizeVector2(out: Vector2Like, source: Readonly<Vector2Like>
 export function offsetVector2(out: Vector2Like, source: Readonly<Vector2Like>, dx: number, dy: number): void {
   out.x = source.x + dx;
   out.y = source.y + dy;
+}
+
+/**
+ * Scales the current Vector2Like object by a scalar, a magnitude. The Vector2Like object's
+ * x and y elements are multiplied by the provided scalar number.
+ **/
+export function scaleVector2(out: Vector2Like, source: Readonly<Vector2Like>, scalar: number): void {
+  out.x = source.x * scalar;
+  out.y = source.y * scalar;
 }
 
 export function setVector2(out: Vector2Like, x: number, y: number): void {

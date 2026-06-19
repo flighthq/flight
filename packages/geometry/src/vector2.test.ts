@@ -5,12 +5,18 @@ import {
   createVector2,
   createVector2FromPolar,
   equalsVector2,
+  getVector2AngleBetween,
   getVector2Distance,
+  getVector2DistanceSquared,
+  getVector2Dot,
   getVector2Length,
   getVector2LengthSquared,
   interpolateVector2,
+  nearEqualsVector2,
+  negateVector2,
   normalizeVector2,
   offsetVector2,
+  scaleVector2,
   setVector2,
   setVector2FromFloat32Array,
   setVector2FromPolar,
@@ -170,6 +176,31 @@ describe('equalsVector2', () => {
   });
 });
 
+describe('getVector2AngleBetween', () => {
+  it('returns 0 for identical vectors', () => {
+    const a = createVector2(1, 0);
+    expect(getVector2AngleBetween(a, a)).toBeCloseTo(0);
+  });
+
+  it('returns PI/2 for perpendicular vectors', () => {
+    const a = createVector2(1, 0);
+    const b = createVector2(0, 1);
+    expect(getVector2AngleBetween(a, b)).toBeCloseTo(Math.PI / 2);
+  });
+
+  it('returns PI for opposite vectors', () => {
+    const a = createVector2(1, 0);
+    const b = createVector2(-1, 0);
+    expect(getVector2AngleBetween(a, b)).toBeCloseTo(Math.PI);
+  });
+
+  it('returns NaN for a zero-length vector', () => {
+    const a = createVector2(0, 0);
+    const b = createVector2(1, 0);
+    expect(getVector2AngleBetween(a, b)).toBeNaN();
+  });
+});
+
 describe('getVector2Distance', () => {
   const testCases = [
     { a: [100, 0], b: [0, 0], expected: 100 },
@@ -195,6 +226,34 @@ describe('getVector2Distance', () => {
       const pt2 = { x: b[0], y: b[1] };
       expect(getVector2Distance(pt, pt2)).toBe(expected);
     }
+  });
+});
+
+describe('getVector2DistanceSquared', () => {
+  it('returns the squared distance between two vectors', () => {
+    const a = createVector2(1, 1);
+    const b = createVector2(4, 5);
+    expect(getVector2DistanceSquared(a, b)).toBe(25); // 3^2 + 4^2
+  });
+
+  it('allows a vector-like object', () => {
+    const a = { x: 1, y: 1 };
+    const b = { x: 4, y: 5 };
+    expect(getVector2DistanceSquared(a, b)).toBe(25);
+  });
+});
+
+describe('getVector2Dot', () => {
+  it('returns the dot product of two vectors', () => {
+    const a = createVector2(1, 2);
+    const b = createVector2(4, 5);
+    expect(getVector2Dot(a, b)).toBe(14); // 1*4 + 2*5
+  });
+
+  it('allows a vector-like object', () => {
+    const a = { x: 1, y: 2 };
+    const b = { x: 4, y: 5 };
+    expect(getVector2Dot(a, b)).toBe(14);
   });
 });
 
@@ -326,6 +385,49 @@ describe('interpolateVector2', () => {
   });
 });
 
+describe('nearEqualsVector2', () => {
+  it('returns true for identical vectors', () => {
+    const a = createVector2(1, 2);
+    expect(nearEqualsVector2(a, a)).toBe(true);
+  });
+
+  it('returns true when difference is within default tolerance', () => {
+    const a = createVector2(1, 2);
+    const b = createVector2(1 + 1e-7, 2);
+    expect(nearEqualsVector2(a, b)).toBe(true);
+  });
+
+  it('returns false when difference exceeds default tolerance', () => {
+    const a = createVector2(1, 2);
+    const b = createVector2(1 + 1e-5, 2);
+    expect(nearEqualsVector2(a, b)).toBe(false);
+  });
+
+  it('respects a custom tolerance', () => {
+    const a = createVector2(1, 2);
+    const b = createVector2(1.05, 2);
+    expect(nearEqualsVector2(a, b, 0.1)).toBe(true);
+    expect(nearEqualsVector2(a, b, 0.01)).toBe(false);
+  });
+});
+
+describe('negateVector2', () => {
+  it('inverts the values of the vector components', () => {
+    const v = createVector2(1, -2);
+    const result = createVector2();
+    negateVector2(result, v);
+    expect(result.x).toBe(-1);
+    expect(result.y).toBe(2);
+  });
+
+  it('supports out === source', () => {
+    const v = createVector2(1, -2);
+    negateVector2(v, v);
+    expect(v.x).toBe(-1);
+    expect(v.y).toBe(2);
+  });
+});
+
 describe('normalizeVector2', () => {
   it('scales a vector to the specified length', () => {
     const pt = createVector2(3, 4);
@@ -428,6 +530,23 @@ describe('offsetVector2', () => {
     offsetVector2(result, pt, 10, 100);
     expect(result.x).toBe(10);
     expect(result.y).toBe(100);
+  });
+});
+
+describe('scaleVector2', () => {
+  it('scales the vector by a scalar', () => {
+    const v = createVector2(1, 2);
+    const result = createVector2();
+    scaleVector2(result, v, 3);
+    expect(result.x).toBe(3);
+    expect(result.y).toBe(6);
+  });
+
+  it('supports out === source', () => {
+    const v = createVector2(1, 2);
+    scaleVector2(v, v, 3);
+    expect(v.x).toBe(3);
+    expect(v.y).toBe(6);
   });
 });
 

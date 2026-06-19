@@ -190,6 +190,21 @@ export function normalizeVector3(out: Vector3Like, source: Readonly<Vector3Like>
 }
 
 /**
+ * Offsets each component of the current Vector3Like object by a scalar per axis.
+ **/
+export function offsetVector3(
+  out: Vector3Like,
+  source: Readonly<Vector3Like>,
+  dx: number,
+  dy: number,
+  dz: number,
+): void {
+  out.x = source.x + dx;
+  out.y = source.y + dy;
+  out.z = source.z + dz;
+}
+
+/**
  * Divides the value of the `x` and `y` properties of the current Vector3Like
  * object by the value of its `z` property.
  **/
