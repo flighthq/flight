@@ -17,9 +17,9 @@ export type Tool = 'explorer' | 'functional' | 'landing';
 
 // The root npm script that starts each tool's dev server, used in the manual-start tip.
 const DEV_SCRIPT: Record<Tool, string> = {
-  explorer: 'explorer',
-  functional: 'functional',
-  landing: 'landing',
+  explorer: 'dev:explorer',
+  functional: 'dev:functional',
+  landing: 'dev:landing',
 };
 
 export interface Entry {
