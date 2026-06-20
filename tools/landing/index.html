@@ -583,19 +583,31 @@
       <div class="principles">
         <div class="principle">
           <h3>Explicit, not magic</h3>
-          <p>Rendering, allocation, and update passes are all invoked by name. No hidden state, no eager side effects on import.</p>
+          <p>
+            Rendering, allocation, and update passes are all invoked by name. No hidden state, no eager side effects on
+            import.
+          </p>
         </div>
         <div class="principle">
           <h3>Plain data</h3>
-          <p>Colors are packed integers, filters are descriptors, transforms write to out-params. Free functions over deep class hierarchies.</p>
+          <p>
+            Colors are packed integers, filters are descriptors, transforms write to out-params. Free functions over
+            deep class hierarchies.
+          </p>
         </div>
         <div class="principle">
           <h3>Self-identifying names</h3>
-          <p>Every exported name carries the full type it operates on, so a symbol leads straight to its domain — grepable by design.</p>
+          <p>
+            Every exported name carries the full type it operates on, so a symbol leads straight to its domain —
+            grepable by design.
+          </p>
         </div>
         <div class="principle">
           <h3>Bounded &amp; owned</h3>
-          <p>Tree-shakable packages with explicit ownership and clear contracts — import one in isolation and understand it in full.</p>
+          <p>
+            Tree-shakable packages with explicit ownership and clear contracts — import one in isolation and understand
+            it in full.
+          </p>
         </div>
       </div>
     </section>
@@ -606,8 +618,8 @@
       <h2 class="eyebrow">Everything available. Only what's needed.</h2>
       <div class="panel size">
         <p class="size-lead">
-          Every package is <strong>tree-shakable</strong> and side-effect-free, so a build ships only
-          what it draws — a shape and a renderer, not an entire engine.
+          Every package is <strong>tree-shakable</strong> and side-effect-free, so a build ships only what it draws — a
+          shape and a renderer, not an entire engine.
         </p>
         <div class="size-row" data-size="displayingabitmap:canvas">
           <span class="label">Bitmap · Canvas</span>
