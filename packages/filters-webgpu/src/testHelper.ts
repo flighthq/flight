@@ -19,6 +19,7 @@ export function makeRenderTarget(width = 64, height = 64): WebGPURenderTarget {
     view: {} as GPUTextureView,
     depthStencilTexture: { destroy: () => {} } as unknown as GPUTexture,
     depthStencilView: {} as GPUTextureView,
+    format: 'bgra8unorm',
     width,
     height,
   };
