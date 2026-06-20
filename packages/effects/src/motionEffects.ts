@@ -1,0 +1,21 @@
+import type { CameraMotionBlurEffect, DirectionalBlurEffect, RadialBlurEffect } from '@flighthq/types';
+
+// Motion-blur effect intents. Plain data with a `type` discriminant; per-backend recipes register a
+// runner against that `type`. Camera motion blur is tagged [MOTION] — a true implementation needs
+// motion vectors; the WebGL recipe approximates it as a zoom/radial blur scaled by intensity.
+
+export function createCameraMotionBlurEffect(
+  options: Readonly<Omit<CameraMotionBlurEffect, 'type'>> = {},
+): CameraMotionBlurEffect {
+  return { type: 'cameraMotionBlur', ...options };
+}
+
+export function createDirectionalBlurEffect(
+  options: Readonly<Omit<DirectionalBlurEffect, 'type'>> = {},
+): DirectionalBlurEffect {
+  return { type: 'directionalBlur', ...options };
+}
+
+export function createRadialBlurEffect(options: Readonly<Omit<RadialBlurEffect, 'type'>> = {}): RadialBlurEffect {
+  return { type: 'radialBlur', ...options };
+}
