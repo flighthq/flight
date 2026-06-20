@@ -1,4 +1,9 @@
-import { createCameraMotionBlurEffect, createDirectionalBlurEffect, createRadialBlurEffect } from './motionEffects';
+import {
+  createCameraMotionBlurEffect,
+  createDirectionalBlurEffect,
+  createMotionBlurEffect,
+  createRadialBlurEffect,
+} from './motionEffects';
 
 describe('createCameraMotionBlurEffect', () => {
   it('tags the intent type', () => {
@@ -20,6 +25,16 @@ describe('createDirectionalBlurEffect', () => {
 
   it('carries options', () => {
     expect(createDirectionalBlurEffect({ angle: 1, length: 8 })).toMatchObject({ angle: 1, length: 8 });
+  });
+});
+
+describe('createMotionBlurEffect', () => {
+  it('tags the intent type', () => {
+    expect(createMotionBlurEffect().type).toBe('motionBlur');
+  });
+
+  it('carries options', () => {
+    expect(createMotionBlurEffect({ intensity: 0.8, samples: 12 })).toMatchObject({ intensity: 0.8, samples: 12 });
   });
 });
 
