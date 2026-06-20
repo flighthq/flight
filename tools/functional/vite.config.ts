@@ -241,11 +241,16 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
 
           // The harness is the listener app: install the console-capture sink, then dynamically
           // import the flight test (dynamic so setLogSink runs before the test's module-init
-          // logs). The test itself only imports the lightweight emit helpers.
+          // logs). The test itself only imports the lightweight emit helpers. Once the test module
+          // has finished rendering (its top-level await resolves), run the in-page verifier so a
+          // blank or wrong render fails as a page error — turning "the page loaded" into "the
+          // renderer actually drew". The test module may export assertRender / minCoverage.
           return [
             `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
             `setLogSink(createConsoleCaptureSink());`,
-            `import('___ft___${name}:${render}');`,
+            `const __testModule = await import('___ft___${name}:${render}');`,
+            `const { runFunctionalVerification } = await import(${JSON.stringify(join(testsDir, '_harness', 'verify.ts'))});`,
+            `await runFunctionalVerification(__testModule, ${JSON.stringify(render)});`,
           ].join('\n');
         }
       },
