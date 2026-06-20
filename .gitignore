@@ -153,6 +153,9 @@ tools/site/
 # baseline.sha256 hashes, not PNGs; the tools/**/*.png rule keeps screenshots out of git entirely.
 tools/output/
 tools/**/*.png
+# …except the committed brand icons in the landing public dir (apple-touch / PWA / avatar source),
+# which are deliberate assets the Pages build must publish, not capture screenshots.
+!tools/landing/public/*.png
 
 # Guard against rogue compilation files
 *.map

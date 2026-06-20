@@ -3,6 +3,7 @@
   "compilerOptions": {
     "composite": false,
     "noEmit": true,
+    "resolveJsonModule": true,
     "types": ["vite/client", "@webgpu/types"]
   },
   "include": ["src", "vite.config.ts"]
