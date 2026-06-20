@@ -35,6 +35,7 @@
     { "path": "../lifecycle" },
     { "path": "../log" },
     { "path": "../materials" },
+    { "path": "../math" },
     { "path": "../media" },
     { "path": "../menu" },
     { "path": "../network" },

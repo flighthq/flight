@@ -53,6 +53,7 @@
     "@flighthq/lifecycle": "*",
     "@flighthq/log": "*",
     "@flighthq/materials": "*",
+    "@flighthq/math": "*",
     "@flighthq/media": "*",
     "@flighthq/menu": "*",
     "@flighthq/network": "*",
