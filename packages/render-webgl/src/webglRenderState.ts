@@ -15,7 +15,7 @@ export function createWebGLRenderState(
 ): WebGLRenderState {
   const contextAttribs: WebGLContextAttributes = {
     alpha: true,
-    antialias: options.antialias ?? false,
+    antialias: options.antialias ?? true,
     powerPreference: options.powerPreference ?? 'default',
     stencil: true,
     ...options.contextAttributes,
