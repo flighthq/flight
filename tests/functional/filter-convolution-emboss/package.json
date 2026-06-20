@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-filter-convolution-emboss",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

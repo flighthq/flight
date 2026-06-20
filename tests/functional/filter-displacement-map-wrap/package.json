@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-filter-displacement-map-wrap",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

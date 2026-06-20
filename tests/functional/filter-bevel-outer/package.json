@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-filter-bevel-outer",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

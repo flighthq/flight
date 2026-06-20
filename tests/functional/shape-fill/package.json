@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-shape-fill",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

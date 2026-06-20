@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-word-wrap-1",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

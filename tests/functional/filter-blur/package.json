@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-filter-blur",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}
