@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@flighthq/geometry": "*",
+    "@flighthq/math": "*",
     "@flighthq/node": "*",
     "@flighthq/sprite": "*",
     "@flighthq/types": "*"

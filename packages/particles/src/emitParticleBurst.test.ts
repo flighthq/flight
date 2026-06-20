@@ -1,10 +1,10 @@
+import { createRandomSource } from '@flighthq/math';
 import { createParticleEmitter } from '@flighthq/sprite';
 import type { TextureAtlas } from '@flighthq/types';
 
 import { emitParticleBurst } from './emitParticleBurst';
 import { createParticleEmitterConfig } from './particleEmitterConfig';
 import { createParticleEmitterState } from './particleEmitterState';
-import { createSeededRandomSource } from './random';
 import { updateParticleEmitter } from './updateParticleEmitter';
 
 function makeAtlas(): TextureAtlas {
@@ -58,7 +58,7 @@ describe('emitParticleBurst', () => {
   it('is deterministic with a seeded state', () => {
     const run = (): number[] => {
       const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
-      const state = createParticleEmitterState(createSeededRandomSource(99));
+      const state = createParticleEmitterState(createRandomSource(99));
       const config = createParticleEmitterConfig({
         speedMin: 10,
         speedMax: 200,
