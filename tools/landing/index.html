@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Flight</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <style>
       *,
       *::before,
@@ -34,18 +37,25 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
         min-height: 100vh;
-        padding: 56px 24px;
-        gap: 44px;
-        overflow: hidden;
+        padding: 64px 24px 48px;
+        gap: 48px;
+        overflow-x: hidden;
       }
 
       header,
       main,
+      section,
       footer {
         position: relative;
         z-index: 2;
+        width: 100%;
+        max-width: 640px;
+      }
+
+      /* The live-demo section runs a little wider so the full code lines fit without a scrollbar. */
+      .wide {
+        max-width: 760px;
       }
 
       /* Legibility scrim between the particle canvas (z-index 0) and the content (z-index 2): a soft
@@ -80,22 +90,26 @@
         color: #f4f4f4;
       }
 
-      /* Paper-plane wordmark, in the line-art style of the tool icons. stroke: #7ab8ff ties it to the
-         accent/bokeh blue; change to currentColor to match the white title instead. */
+      /* Paper-plane logo mark, matching the favicon/app icon: a filled two-tone plane (lighter wing,
+         darker body) with the fold cut to the page background. Colours live on the SVG so the mark
+         reads as a logo rather than a thin line icon. */
       h1 svg {
-        width: 0.8em;
-        height: 0.8em;
-        stroke: #7ab8ff;
-        fill: none;
-        stroke-width: 2;
-        stroke-linejoin: round;
-        stroke-linecap: round;
+        width: 0.92em;
+        height: 0.92em;
       }
 
       .tagline {
-        margin-top: 10px;
+        margin-top: 12px;
         color: #97a0b0;
-        font-size: 14px;
+        font-size: 15px;
+      }
+
+      .subtag {
+        margin-top: 7px;
+        color: #828d9c;
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        letter-spacing: 0.06em;
       }
 
       .renderers {
@@ -116,50 +130,219 @@
         letter-spacing: 0.04em;
       }
 
-      .tools {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-        gap: 16px;
-        width: 100%;
-        max-width: 580px;
+      /* Section eyebrow heading shared across the lower sections. */
+      .eyebrow {
+        margin-bottom: 14px;
+        color: #79828f;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        text-align: center;
       }
 
-      .tool {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        padding: 22px 22px 20px;
+      /* The shared translucent panel used by the demo, size, and tool cards. */
+      .panel {
         background: rgba(22, 22, 22, 0.72);
         backdrop-filter: blur(8px);
         border: 1px solid #252525;
-        border-left: 2px solid transparent;
-        border-radius: 10px;
+        border-radius: 12px;
+      }
+
+      /* ── Live code → render demo ─────────────────────────────────────────── */
+      .demo-grid {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 0;
+        overflow: hidden;
+      }
+
+      .demo-code {
+        padding: 18px 20px;
+        overflow-x: auto;
+        border-right: 1px solid #252525;
+        scrollbar-width: thin;
+        scrollbar-color: #2c3340 transparent;
+      }
+
+      .demo-code::-webkit-scrollbar {
+        height: 7px;
+      }
+
+      .demo-code::-webkit-scrollbar-thumb {
+        background: #2c3340;
+        border-radius: 4px;
+      }
+
+      .demo-code::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .demo-code pre {
+        margin: 0;
+        font-family: ui-monospace, monospace;
+        font-size: 11.5px;
+        line-height: 1.65;
+        color: #c4ccd6;
+        white-space: pre;
+      }
+
+      .demo-code .cm {
+        color: #5b6b7a;
+      }
+
+      .demo-code .fn {
+        color: #7ab8ff;
+      }
+
+      .demo-code .k {
+        color: #9aa6c4;
+      }
+
+      .demo-code .s {
+        color: #8fce9b;
+      }
+
+      .demo-code .n {
+        color: #d6b07a;
+      }
+
+      .demo-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-bottom: 14px;
+      }
+
+      .demo-tab {
+        padding: 4px 11px;
+        border: 1px solid transparent;
+        border-radius: 7px;
+        background: transparent;
+        color: #79828f;
+        font-family: ui-monospace, monospace;
+        font-size: 11.5px;
+        cursor: pointer;
+        transition:
+          color 0.14s,
+          background 0.14s,
+          border-color 0.14s;
+      }
+
+      .demo-tab:hover {
+        color: #aab3c0;
+      }
+
+      .demo-tab.is-active {
+        color: #cfe1ff;
+        background: rgba(61, 127, 255, 0.12);
+        border-color: rgba(61, 127, 255, 0.35);
+      }
+
+      .demo-code pre {
+        min-height: 318px;
+      }
+
+      .demo-stage {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        background:
+          radial-gradient(ellipse 70% 70% at 50% 50%, rgba(61, 127, 255, 0.08), transparent 70%),
+          repeating-linear-gradient(0deg, transparent 0 13px, rgba(255, 255, 255, 0.02) 13px 14px),
+          repeating-linear-gradient(90deg, transparent 0 13px, rgba(255, 255, 255, 0.02) 13px 14px);
+      }
+
+      .demo-stage canvas {
+        max-width: 100%;
+        height: auto;
+      }
+
+      .demo-stat {
+        position: absolute;
+        right: 10px;
+        bottom: 8px;
+        display: none;
+        padding: 2px 7px;
+        border-radius: 6px;
+        background: rgba(14, 14, 14, 0.55);
+        color: #9fd0ff;
+        font-family: ui-monospace, monospace;
+        font-size: 10px;
+        letter-spacing: 0.02em;
+      }
+
+      .demo-note {
+        margin-top: 12px;
+        text-align: center;
+        color: #79828f;
+        font-size: 11.5px;
+        line-height: 1.5;
+      }
+
+      .demo-note a {
+        color: #7ab8ff;
+        text-decoration: none;
+      }
+
+      @media (max-width: 560px) {
+        .demo-grid {
+          grid-template-columns: 1fr;
+        }
+        .demo-code {
+          border-right: none;
+          border-bottom: 1px solid #252525;
+        }
+      }
+
+      /* ── Tool cards ──────────────────────────────────────────────────────── */
+      .tools {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      /* Examples: the prominent, centred primary link. */
+      .tool {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 26px 24px 24px;
+        text-align: center;
+        background: rgba(22, 22, 22, 0.72);
+        backdrop-filter: blur(8px);
+        border: 1px solid #252525;
+        border-radius: 12px;
         color: inherit;
         text-decoration: none;
         transition:
           background 0.14s,
-          border-left-color 0.14s,
+          border-color 0.14s,
           transform 0.14s;
       }
 
       .tool:hover {
         background: rgba(26, 39, 64, 0.78);
-        border-left-color: #3d7fff;
+        border-color: #3d7fff;
         transform: translateY(-2px);
       }
 
       .tool-name {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 9px;
-        font-size: 16px;
+        font-size: 17px;
         font-weight: 600;
         color: #7ab8ff;
       }
 
       .tool-name svg {
-        width: 17px;
-        height: 17px;
+        width: 18px;
+        height: 18px;
         stroke: currentColor;
         fill: none;
         stroke-width: 1.6;
@@ -167,32 +350,172 @@
       }
 
       .tool-desc {
+        max-width: 400px;
         color: #8b93a3;
         line-height: 1.5;
       }
 
-      .capabilities {
+      /* Functional tests: a compact, de-emphasised row below Examples — useful, but secondary for now. */
+      .tool-compact {
         display: flex;
-        flex-wrap: wrap;
-        gap: 6px 7px;
-        justify-content: center;
-        max-width: 560px;
+        align-items: center;
+        gap: 9px;
+        padding: 11px 15px;
+        background: rgba(22, 22, 22, 0.5);
+        border: 1px solid #222;
+        border-radius: 9px;
         color: #79828f;
+        font-size: 12.5px;
+        line-height: 1.4;
+        text-decoration: none;
+        transition:
+          color 0.14s,
+          border-color 0.14s,
+          background 0.14s;
+      }
+
+      .tool-compact:hover {
+        color: #aab3c0;
+        border-color: #3d7fff;
+        background: rgba(26, 39, 64, 0.5);
+      }
+
+      .tool-compact svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.6;
+        opacity: 0.7;
+      }
+
+      .tool-compact strong {
+        color: #97a0b0;
+        font-weight: 600;
+      }
+
+      /* ── Capability grid ─────────────────────────────────────────────────── */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 8px;
+      }
+
+      .cap {
+        padding: 12px 14px;
+        background: rgba(22, 22, 22, 0.55);
+        border: 1px solid #222;
+        border-radius: 9px;
+        color: #aab3c0;
+        font-size: 12.5px;
+        text-decoration: none;
+        transition:
+          color 0.14s,
+          border-color 0.14s,
+          background 0.14s;
+      }
+
+      .cap:hover {
+        color: #cfe1ff;
+        border-color: #3d7fff;
+        background: rgba(26, 39, 64, 0.6);
+      }
+
+      /* ── Bundle-size story ───────────────────────────────────────────────── */
+      .size {
+        padding: 22px 24px 24px;
+      }
+
+      .size-lead {
+        margin-bottom: 18px;
+        text-align: center;
+        color: #8b93a3;
+        line-height: 1.6;
+      }
+
+      .size-lead strong {
+        color: #cfe1ff;
+        font-weight: 600;
+      }
+
+      .size-row {
+        display: grid;
+        grid-template-columns: 150px 1fr 56px;
+        align-items: center;
+        gap: 12px;
+        margin-top: 10px;
+      }
+
+      .size-row .label {
+        color: #aab3c0;
+        font-size: 12px;
+      }
+
+      .size-row .track {
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        overflow: hidden;
+      }
+
+      .size-row .fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #3d7fff, #7ab8ff);
+      }
+
+      .size-row .kb {
+        text-align: right;
+        color: #7ab8ff;
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+      }
+
+      .size-note {
+        margin-top: 16px;
+        color: #5e6878;
         font-size: 11px;
-        letter-spacing: 0.02em;
+        text-align: center;
       }
 
-      .capabilities span::after {
-        content: '·';
-        margin-left: 7px;
-        color: #454f5e;
+      .size-note code {
+        font-family: ui-monospace, monospace;
+        color: #79828f;
       }
 
-      .capabilities span:last-child::after {
-        content: '';
+      /* ── Principles ──────────────────────────────────────────────────────── */
+      /* Two columns at full width, so the four claims settle into a clean 2×2 instead of 3-plus-orphan;
+         collapses to one column on narrow screens. */
+      .principles {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 14px;
       }
 
+      .principle {
+        padding: 16px 18px;
+        background: rgba(22, 22, 22, 0.55);
+        border: 1px solid #222;
+        border-radius: 10px;
+      }
+
+      .principle h3 {
+        margin-bottom: 6px;
+        color: #7ab8ff;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .principle p {
+        color: #8b93a3;
+        font-size: 12.5px;
+        line-height: 1.55;
+      }
+
+      /* ── Footer ──────────────────────────────────────────────────────────── */
       footer {
+        text-align: center;
         color: #4c5563;
         font-size: 11px;
         font-family: ui-monospace, monospace;
@@ -211,15 +534,18 @@
   </head>
   <body>
     <div class="scrim"></div>
+
     <header>
       <h1>
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <line x1="22" y1="2" x2="11" y2="13" />
-          <polygon points="22 2 15 22 11 13 2 9 22 2" />
+          <polygon points="22,2 15,22 11,13 2,9" fill="#7ab8ff" />
+          <polygon points="22,2 15,22 11,13" fill="#548ee8" />
+          <line x1="23.56" y1="0.44" x2="9.44" y2="14.56" stroke="#0e0e0e" stroke-width="1.1" stroke-linecap="butt" />
         </svg>
         Flight
       </h1>
-      <p class="tagline">A tree-shakable 2D rendering SDK</p>
+      <p class="tagline">A 2D rendering SDK designed for AI agents</p>
+      <p class="subtag">explicit · grepable · nothing hidden</p>
       <div class="renderers">
         <span class="renderer">DOM</span>
         <span class="renderer">Canvas</span>
@@ -228,6 +554,105 @@
       </div>
     </header>
 
+    <!-- Live code → render: the page dogfoods Flight, and the snippet is the actual render path. -->
+    <section class="wide" aria-label="Live example">
+      <div class="panel demo-grid">
+        <div class="demo-code">
+          <div class="demo-tabs" role="tablist">
+            <button class="demo-tab is-active" type="button" data-demo="shapes">Shapes</button>
+            <button class="demo-tab" type="button" data-demo="tween">Tweens</button>
+            <button class="demo-tab" type="button" data-demo="group">Scene graph</button>
+            <button class="demo-tab" type="button" data-demo="batch">Batching</button>
+            <button class="demo-tab" type="button" data-demo="particles">Particles</button>
+          </div>
+          <pre id="demo-source"></pre>
+        </div>
+        <div class="demo-stage" id="demo-stage" aria-hidden="true">
+          <span class="demo-stat" id="demo-stat"></span>
+        </div>
+      </div>
+      <p class="demo-note">
+        Rendered live with Flight's Canvas renderer. The same scene runs on
+        <a href="tests/">every backend</a> — Canvas, DOM, WebGL, WebGPU — through one API.
+      </p>
+    </section>
+
+    <!-- Principles: the "why", paired with the demo above — here's the explicit code, here's why. -->
+    <section aria-label="Principles">
+      <h2 class="eyebrow">Designed to be read and written by machines</h2>
+      <div class="principles">
+        <div class="principle">
+          <h3>Explicit, not magic</h3>
+          <p>Rendering, allocation, and update passes are all invoked by name. No hidden state, no eager side effects on import.</p>
+        </div>
+        <div class="principle">
+          <h3>Plain data</h3>
+          <p>Colors are packed integers, filters are descriptors, transforms write to out-params. Free functions over deep class hierarchies.</p>
+        </div>
+        <div class="principle">
+          <h3>Self-identifying names</h3>
+          <p>Every exported name carries the full type it operates on, so a symbol leads straight to its domain — grepable by design.</p>
+        </div>
+        <div class="principle">
+          <h3>Bounded &amp; owned</h3>
+          <p>Tree-shakable packages with explicit ownership and clear contracts — import one in isolation and understand it in full.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bundle-size story. The KB labels and bar widths are filled at build time by src/size-figures.ts
+         from tests/size/size.baseline.json (via each row's data-size key); the static values are fallbacks. -->
+    <section aria-label="Bundle size">
+      <h2 class="eyebrow">Everything available. Only what's needed.</h2>
+      <div class="panel size">
+        <p class="size-lead">
+          Every package is <strong>tree-shakable</strong> and side-effect-free, so a build ships only
+          what it draws — a shape and a renderer, not an entire engine.
+        </p>
+        <div class="size-row" data-size="displayingabitmap:canvas">
+          <span class="label">Bitmap · Canvas</span>
+          <span class="track"><span class="fill" style="width: 15%"></span></span>
+          <span class="kb">3.5 KB</span>
+        </div>
+        <div class="size-row" data-size="drawingshapes:canvas">
+          <span class="label">Shape · Canvas</span>
+          <span class="track"><span class="fill" style="width: 27%"></span></span>
+          <span class="kb">6.3 KB</span>
+        </div>
+        <div class="size-row" data-size="sparktrail:webgl">
+          <span class="label">Particles · WebGL</span>
+          <span class="track"><span class="fill" style="width: 47%"></span></span>
+          <span class="kb">11.0 KB</span>
+        </div>
+        <div class="size-row" data-size="piratepig:webgl">
+          <span class="label">PiratePig · WebGL</span>
+          <span class="track"><span class="fill" style="width: 100%"></span></span>
+          <span class="kb">23.6 KB</span>
+        </div>
+        <p class="size-note">gzipped · measured from the project's size baseline</p>
+      </div>
+    </section>
+
+    <!-- Capability grid: each tile deep-links into the matching example or functional test. -->
+    <section aria-label="Capabilities">
+      <h2 class="eyebrow">A complete 2D feature set</h2>
+      <div class="grid">
+        <a class="cap" href="examples/">Display objects</a>
+        <a class="cap" href="examples/drawingshapes/canvas/">Shapes</a>
+        <a class="cap" href="examples/displayingabitmap/canvas/">Bitmaps</a>
+        <a class="cap" href="examples/addingtext/canvas/">Text</a>
+        <a class="cap" href="tests/blur/canvas/">Filters</a>
+        <a class="cap" href="tests/">Blend modes</a>
+        <a class="cap" href="tests/">Masks</a>
+        <a class="cap" href="examples/usingtilemap/canvas/">Tilemaps</a>
+        <a class="cap" href="examples/sparktrail/webgl/">Particles</a>
+        <a class="cap" href="examples/tweenexample/canvas/">Tweens</a>
+        <a class="cap" href="examples/animatedsprite/canvas/">Timelines</a>
+        <a class="cap" href="examples/nyancat/canvas/">Spritesheets</a>
+      </div>
+    </section>
+
+    <!-- Examples & functional tests: the "go explore" exit, placed last once the case is made. -->
     <main class="tools">
       <a class="tool" data-tool="examples" href="examples/">
         <div class="tool-name">
@@ -242,34 +667,15 @@
           Browse the example gallery and flip each scene between the DOM, Canvas, WebGL, and WebGPU renderers.
         </p>
       </a>
-      <a class="tool" data-tool="tests" href="tests/">
-        <div class="tool-name">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M9 3v6l-5 9a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-9V3" />
-            <path d="M7 3h10" />
-            <path d="M8 14h8" />
-          </svg>
-          Functional Tests
-        </div>
-        <p class="tool-desc">
-          Per-feature rendering tests, each shown side by side with its OpenFL reference to catch visual regressions.
-        </p>
+      <a class="tool-compact" data-tool="tests" href="tests/">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 3v6l-5 9a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-9V3" />
+          <path d="M7 3h10" />
+          <path d="M8 14h8" />
+        </svg>
+        <span><strong>Functional Tests</strong> — per-feature rendering checks against reference implementations</span>
       </a>
     </main>
-
-    <div class="capabilities">
-      <span>Display objects</span>
-      <span>Shapes</span>
-      <span>Bitmaps</span>
-      <span>Text</span>
-      <span>Filters</span>
-      <span>Blend modes</span>
-      <span>Masks</span>
-      <span>Tilemaps</span>
-      <span>Particles</span>
-      <span>Tweens</span>
-      <span>Timelines</span>
-    </div>
 
     <footer>
       <a href="https://github.com/flighthq/flight">github.com/flighthq/flight</a>

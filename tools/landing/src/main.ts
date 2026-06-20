@@ -1,4 +1,6 @@
 import { startParticleBackground } from './background-particles';
+import { startHeroDemo } from './hero-demo';
+import { fillSizeFigures } from './size-figures';
 
 // Rewrite the tool links to base-absolute URLs (`/flight/explorer/` in production, `/explorer/`
 // in dev) so they resolve from the site root rather than the current path. Relative hrefs compound
@@ -16,3 +18,11 @@ for (const link of document.querySelectorAll<HTMLAnchorElement>('a[data-tool]'))
 // try/catch: if WebGL is unavailable (old hardware, headless capture) the error surfaces in the
 // console and the static background simply remains.
 startParticleBackground();
+
+// The hero "live code" panel renders small scenes with the Canvas renderer (no extra WebGL context),
+// dogfooding the same explicit API printed beside it. Tabs swap both the scene and the snippet. It
+// returns early if its mount elements are absent, so it never blocks the rest of the page.
+startHeroDemo();
+
+// Fill the bundle-size figures from the committed size baseline (real gzip numbers, build-time).
+fillSizeFigures();
