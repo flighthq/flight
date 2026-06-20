@@ -117,6 +117,7 @@ export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): Qu
 export function createQuadBatchRuntime(): QuadBatchRuntime {
   const runtime = createDisplayObjectRuntime(defaultMethods) as QuadBatchRuntime;
   runtime.localBoundsRectangle = null;
+  runtime.instanceVelocities = null;
   return runtime;
 }
 
