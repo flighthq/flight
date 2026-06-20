@@ -1,9 +1,11 @@
 import {
   applyCameraMotionBlurEffectToWebGL,
   applyDirectionalBlurEffectToWebGL,
+  applyMotionBlurEffectToWebGL,
   applyRadialBlurEffectToWebGL,
   defaultWebGLCameraMotionBlurEffectRunner,
   defaultWebGLDirectionalBlurEffectRunner,
+  defaultWebGLMotionBlurEffectRunner,
   defaultWebGLRadialBlurEffectRunner,
 } from './motionEffects';
 
@@ -16,6 +18,12 @@ describe('applyCameraMotionBlurEffectToWebGL', () => {
 describe('applyDirectionalBlurEffectToWebGL', () => {
   it('is a function', () => {
     expect(typeof applyDirectionalBlurEffectToWebGL).toBe('function');
+  });
+});
+
+describe('applyMotionBlurEffectToWebGL', () => {
+  it('is a function', () => {
+    expect(typeof applyMotionBlurEffectToWebGL).toBe('function');
   });
 });
 
@@ -34,6 +42,12 @@ describe('defaultWebGLCameraMotionBlurEffectRunner', () => {
 describe('defaultWebGLDirectionalBlurEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultWebGLDirectionalBlurEffectRunner).toBe('function');
+  });
+});
+
+describe('defaultWebGLMotionBlurEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof defaultWebGLMotionBlurEffectRunner).toBe('function');
   });
 });
 
