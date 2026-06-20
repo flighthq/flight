@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-filter-inner-glow",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

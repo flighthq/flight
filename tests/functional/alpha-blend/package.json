@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-alpha-blend",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}
