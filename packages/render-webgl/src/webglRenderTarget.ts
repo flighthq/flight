@@ -228,6 +228,10 @@ export function resolveWebGLRenderTarget(state: WebGLRenderState, target: WebGLR
   }
   gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
   gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, runtime.currentFramebuffer);
+  // Flush so the resolved texels are visible to the next sample of `target.texture`. The blit→sample
+  // dependency is implicit in conformant GL, but some drivers (notably headless SwiftShader) sample a
+  // stale resolve texture without this; the cost is one flush per frame, only when MSAA is enabled.
+  gl.flush();
   runtime.currentTexture = null;
 }
 
@@ -243,6 +247,13 @@ function allocateWebGLRenderTargetStorage(
   const gl = state.gl;
   const { width: w, height: h, sampleCount } = target;
   const multisampled = sampleCount > 1;
+
+  // Float color attachments (rgba16f/rgba32f) are not color-renderable in WebGL2 until
+  // EXT_color_buffer_float is enabled; without it the framebuffer is incomplete and every draw/clear
+  // into an HDR target silently no-ops. getExtension is idempotent and cached, so enabling per-alloc is free.
+  let usesFloat = isFloatRenderTargetFormat(target.format);
+  if (colorFormats) for (const f of colorFormats) usesFloat = usesFloat || isFloatRenderTargetFormat(f);
+  if (usesFloat) gl.getExtension('EXT_color_buffer_float');
 
   // Resolve/sample textures (always single-sample).
   const resolveFramebuffer = multisampled ? gl.createFramebuffer()! : target.framebuffer;
@@ -315,6 +326,10 @@ function buildSingleDrawBuffer(gl: WebGL2RenderingContext, index: number, count:
   const buffers: number[] = [];
   for (let i = 0; i < count; i++) buffers.push(i === index ? gl.COLOR_ATTACHMENT0 + i : gl.NONE);
   return buffers;
+}
+
+function isFloatRenderTargetFormat(format: RenderTargetFormat): boolean {
+  return format === 'rgba16f' || format === 'rgba32f';
 }
 
 function mapWebGLFormat(

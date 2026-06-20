@@ -10,6 +10,7 @@
   },
   "references": [
     { "path": "../geometry" },
+    { "path": "../node" },
     { "path": "../path" },
     { "path": "../materials" },
     { "path": "../render-canvas" },
@@ -20,7 +21,8 @@
     { "path": "../sprite" },
     { "path": "../text-input" },
     { "path": "../text-layout" },
-    { "path": "../types" }
+    { "path": "../types" },
+    { "path": "../velocity" }
   ],
   "include": ["src"]
 }
