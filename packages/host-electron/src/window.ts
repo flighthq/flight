@@ -1,5 +1,5 @@
 import { emitSignal } from '@flighthq/signals';
-import type { ApplicationWindow, WindowBackend, WindowBounds, WindowOptions } from '@flighthq/types';
+import type { ApplicationWindow, WindowBackend } from '@flighthq/types';
 
 import type { ElectronApi, ElectronBrowserWindow } from './electronModule';
 

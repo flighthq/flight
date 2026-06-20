@@ -1,6 +1,6 @@
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 
-import { workspacePackages } from '../../scripts/workspaces';
+import { workspacePackages } from '../../scripts/workspaces'; // eslint-disable-line
 
 // Resolve every @flighthq/* package to its TypeScript source (same trick the example Vite config
 // uses), so the harness runs against current source without a prior build step. Everything else

@@ -1,5 +1,5 @@
-import { readClipboardText, setClipboardBackend } from '@flighthq/clipboard';
 import { getAppName, setAppBackend } from '@flighthq/app';
+import { readClipboardText, setClipboardBackend } from '@flighthq/clipboard';
 
 import type { ElectronApi } from './electronModule';
 import { registerElectronBackends } from './register';
