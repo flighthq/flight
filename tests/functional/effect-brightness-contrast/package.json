@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-effect-brightness-contrast",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

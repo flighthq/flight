@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-effect-taa",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

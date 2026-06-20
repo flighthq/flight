@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-effect-lens-flare",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

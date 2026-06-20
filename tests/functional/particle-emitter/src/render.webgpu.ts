@@ -14,6 +14,8 @@ import {
   submitWebGPURenderPass,
 } from '@flighthq/sdk';
 
+import { registerWebGPUFunctionalTarget } from '../../_harness/verify';
+
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWebGPUCanvasElement(800, 450, pixelRatio);
 document.body.appendChild(canvas);
@@ -35,3 +37,5 @@ export function render(root: DisplayObject): void {
   renderWebGPUSprite(state, root);
   submitWebGPURenderPass(state);
 }
+
+registerWebGPUFunctionalTarget(state, scale);

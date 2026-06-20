@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-effect-tilt-shift",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

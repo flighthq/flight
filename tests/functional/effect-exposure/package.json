@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-effect-exposure",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}
