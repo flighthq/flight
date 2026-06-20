@@ -129,7 +129,7 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
     return;
   }
 
-  const surface = snapshotFunctionalRender();
+  const surface = await snapshotFunctionalRender();
   if (surface === null) return; // no canvas (e.g. WebGPU unavailable) — Tier 1 (page errors) gates it
 
   // Not-blank: how much of the frame differs from the background. The background is the top-left pixel
