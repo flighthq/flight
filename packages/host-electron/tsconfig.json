@@ -1,0 +1,31 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "references": [
+    { "path": "../app" },
+    { "path": "../application" },
+    { "path": "../clipboard" },
+    { "path": "../dialog" },
+    { "path": "../ipc" },
+    { "path": "../menu" },
+    { "path": "../notification" },
+    { "path": "../platform" },
+    { "path": "../power" },
+    { "path": "../protocol" },
+    { "path": "../screen" },
+    { "path": "../shell" },
+    { "path": "../shortcut" },
+    { "path": "../signals" },
+    { "path": "../tray" },
+    { "path": "../types" },
+    { "path": "../updater" }
+  ],
+  "include": ["src"]
+}
