@@ -1,8 +1,9 @@
-﻿import { applyGaussianBlurFilterToWebGL, clearWebGLFilterTarget } from '@flighthq/filters-webgl';
+﻿import { applyGaussianBlurFilterToWebGL } from '@flighthq/filters-webgl';
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   beginWebGLRenderTarget,
   BitmapKind,
+  clearWebGLRenderTarget,
   copyMatrix,
   createMatrix,
   createRenderCache,
@@ -86,7 +87,7 @@ export function applyBackgroundBlur(node: DisplayObject): () => void {
     // Run inside a render-target bracket so endWebGLRenderTarget rebinds the screen framebuffer the
     // next render() draws into; clear the output first since the blur composites over it.
     beginWebGLRenderTarget(state, out, createMatrix());
-    clearWebGLFilterTarget(state, out);
+    clearWebGLRenderTarget(state, out);
     applyGaussianBlurFilterToWebGL(state, src, out, temp, { blurX: 10, blurY: 10 });
     endWebGLRenderTarget(state);
     destroyWebGLRenderTarget(state, temp);
