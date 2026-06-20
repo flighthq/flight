@@ -6,7 +6,7 @@ import {
   createParticleEmitter,
   createParticleEmitterConfig,
   createParticleEmitterState,
-  createSeededRandomSource,
+  createRandomSource,
   createTextureAtlas,
   createWebGLCanvasElement,
   createWebGLRenderState,
@@ -160,7 +160,7 @@ export function startParticleBackground(): void {
     maxParticles: 120,
   });
 
-  const simState = createParticleEmitterState(createSeededRandomSource(PARTICLE_SEED));
+  const simState = createParticleEmitterState(createRandomSource(PARTICLE_SEED));
 
   // Emitter world matrix: translation only (magnitudes are already physical px).
   const worldTransform = { a: 1, b: 0, c: 0, d: 1, tx: emitter.x, ty: emitter.y };

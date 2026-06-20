@@ -15,7 +15,7 @@ import {
   createParticleEmitterConfig,
   createParticleEmitterState,
   createQuadBatch,
-  createSeededRandomSource,
+  createRandomSource,
   createShape,
   createTextureAtlas,
   createTween,
@@ -419,7 +419,7 @@ emitter.data.atlas = atlas;
         maxParticles: 160,
       });
 
-      const sim = createParticleEmitterState(createSeededRandomSource(0x71a));
+      const sim = createParticleEmitterState(createRandomSource(0x71a));
       const worldTransform = { a: 1, b: 0, c: 0, d: 1, tx: emitter.x, ty: emitter.y };
       prewarmParticleEmitter(emitter, sim, config, config.lifetimeMax, 1 / 60, undefined, worldTransform);
       invalidateNodeAppearance(emitter);
