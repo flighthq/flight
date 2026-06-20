@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-REPLACE_ME",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}
