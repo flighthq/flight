@@ -10,7 +10,9 @@
     { "path": "./packages/dialog" },
     { "path": "./packages/displayobject" },
     { "path": "./packages/effects" },
+    { "path": "./packages/effects-canvas" },
     { "path": "./packages/effects-webgl" },
+    { "path": "./packages/effects-webgpu" },
     { "path": "./packages/entity" },
     { "path": "./packages/filesystem" },
     { "path": "./packages/filters" },
@@ -71,6 +73,7 @@
     { "path": "./packages/tween-easing" },
     { "path": "./packages/types" },
     { "path": "./packages/updater" },
+    { "path": "./packages/velocity" },
     { "path": "./packages/world" }
   ]
 }

@@ -36,7 +36,9 @@
     "@flighthq/dialog": "*",
     "@flighthq/displayobject": "*",
     "@flighthq/effects": "*",
+    "@flighthq/effects-canvas": "*",
     "@flighthq/effects-webgl": "*",
+    "@flighthq/effects-webgpu": "*",
     "@flighthq/entity": "*",
     "@flighthq/filesystem": "*",
     "@flighthq/filters": "*",
@@ -95,6 +97,7 @@
     "@flighthq/tween-easing": "*",
     "@flighthq/types": "*",
     "@flighthq/updater": "*",
+    "@flighthq/velocity": "*",
     "@flighthq/world": "*"
   },
   "devDependencies": {

@@ -18,7 +18,9 @@
     { "path": "../dialog" },
     { "path": "../displayobject" },
     { "path": "../effects" },
+    { "path": "../effects-canvas" },
     { "path": "../effects-webgl" },
+    { "path": "../effects-webgpu" },
     { "path": "../entity" },
     { "path": "../filesystem" },
     { "path": "../filters" },
@@ -77,6 +79,7 @@
     { "path": "../tween-easing" },
     { "path": "../types" },
     { "path": "../updater" },
+    { "path": "../velocity" },
     { "path": "../world" }
   ],
   "include": ["src"]
