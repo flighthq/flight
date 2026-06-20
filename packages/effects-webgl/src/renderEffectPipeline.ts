@@ -45,7 +45,7 @@ export function createWebGLRenderEffectPipeline(
   _state: WebGLRenderState,
   options: Readonly<RenderEffectPipelineOptions> = {},
 ): WebGLRenderEffectPipeline {
-  return { options: { ...options }, sceneTarget: null, pool: createWebGLRenderTargetPool() };
+  return { options: { ...options }, sceneTarget: null, pool: createWebGLRenderTargetPool(), velocityTexture: null };
 }
 
 export function destroyWebGLRenderEffectPipeline(state: WebGLRenderState, pipeline: WebGLRenderEffectPipeline): void {
@@ -87,7 +87,7 @@ export function endWebGLRenderEffectPipeline(
         dest,
         pool: pipeline.pool,
         sceneDepthTexture: scene.depthTexture,
-        sceneVelocityTexture: null,
+        sceneVelocityTexture: pipeline.velocityTexture,
       },
       effect,
     );
@@ -98,6 +98,15 @@ export function endWebGLRenderEffectPipeline(
 
   if (scratchA !== null) releaseWebGLRenderTarget(pipeline.pool, scratchA);
   if (scratchB !== null) releaseWebGLRenderTarget(pipeline.pool, scratchB);
+}
+
+// Sets the velocity G-buffer the pipeline feeds to velocity-driven effects this frame. Pass the texture
+// produced by renderWebGLVelocity (e.g. `velocityTarget.texture`), or null to clear it.
+export function setWebGLRenderEffectVelocityTexture(
+  pipeline: WebGLRenderEffectPipeline,
+  texture: WebGLTexture | null,
+): void {
+  pipeline.velocityTexture = texture;
 }
 
 // Blits the final effect result to the canvas (GL→GL, no orientation flip).
