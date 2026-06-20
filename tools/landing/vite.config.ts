@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 
 import { workspacePackages } from '../../scripts/workspaces';
 
-// The landing page is deployed at the Pages site root (`/flight/`). It links to the explorer and
+// The landing page is deployed at the site root (flighthq.ai, base `/`). It links to the explorer and
 // functional tools with relative URLs, so they resolve under any base without threading VITE_BASE
 // into the markup. The hero is rendered with Flight itself, so workspace packages resolve to source
 // (matching the explorer/functional configs) for fast iteration and tree-shaken dev builds.
