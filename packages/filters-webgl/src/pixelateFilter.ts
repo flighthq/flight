@@ -1,9 +1,7 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
+import { compileWebGLFullscreenProgram, drawWebGLFullscreenPass } from '@flighthq/render-webgl';
 import type { PixelateFilter } from '@flighthq/types';
-import type { WebGLRenderState } from '@flighthq/types';
-
-import type { WebGLFilterLocations } from './filterPass';
-import { compileWebGLFilterProgram, drawWebGLFilterPass } from './filterPass';
+import type { WebGLFullscreenProgram, WebGLRenderState } from '@flighthq/types';
 
 const PIXELATE_FRAGMENT_SRC = `#version 300 es
 precision mediump float;
@@ -17,7 +15,7 @@ void main() {
   fragColor = texture(u_texture, clamp(center, vec2(0.0), vec2(1.0)));
 }`;
 
-type PixelateShaderLocations = WebGLFilterLocations & {
+type PixelateShaderLocations = WebGLFullscreenProgram & {
   locBlockTexelSize: WebGLUniformLocation;
 };
 
@@ -35,7 +33,7 @@ export function applyPixelateFilterToWebGL(
 ): void {
   const blockSize = Math.max(1, filter.blockSize ?? 8);
   const loc = getShader(state);
-  drawWebGLFilterPass(state, source, dest, loc, (gl) => {
+  drawWebGLFullscreenPass(state, loc, [source.texture], dest, (gl) => {
     gl.uniform2f(loc.locBlockTexelSize, blockSize / source.width, blockSize / source.height);
   });
 }
@@ -44,7 +42,7 @@ function getShader(state: WebGLRenderState): PixelateShaderLocations {
   let loc = shaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    const base = compileWebGLFilterProgram(gl, PIXELATE_FRAGMENT_SRC);
+    const base = compileWebGLFullscreenProgram(gl, PIXELATE_FRAGMENT_SRC);
     loc = { ...base, locBlockTexelSize: gl.getUniformLocation(base.program, 'u_blockTexelSize')! };
     shaders.set(state, loc);
   }

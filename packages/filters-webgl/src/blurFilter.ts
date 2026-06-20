@@ -1,9 +1,7 @@
 import { computeBoxBlurPassRadius } from '@flighthq/filters';
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
-import type { WebGLRenderState } from '@flighthq/types';
-
-import type { WebGLFilterLocations } from './filterPass';
-import { compileWebGLFilterProgram, drawWebGLFilterPass } from './filterPass';
+import { compileWebGLFullscreenProgram, drawWebGLFullscreenPass } from '@flighthq/render-webgl';
+import type { WebGLFullscreenProgram, WebGLRenderState } from '@flighthq/types';
 
 const BOX_BLUR_FRAGMENT_SRC = `#version 300 es
 precision mediump float;
@@ -53,7 +51,7 @@ void main() {
   fragColor = sum / weightSum;
 }`;
 
-type BoxBlurShaderLocations = WebGLFilterLocations & {
+type BoxBlurShaderLocations = WebGLFullscreenProgram & {
   locTexelSize: WebGLUniformLocation;
   locRadius: WebGLUniformLocation;
   locDirection: WebGLUniformLocation;
@@ -156,7 +154,7 @@ export function applyGaussianBlurFilterToWebGL(
 
 function applyBlurBlit(state: WebGLRenderState, source: WebGLRenderTarget, dest: WebGLRenderTarget): void {
   const loc = getBoxBlurShader(state);
-  drawWebGLFilterPass(state, source, dest, loc, (gl) => {
+  drawWebGLFullscreenPass(state, loc, [source.texture], dest, (gl) => {
     gl.uniform2f(loc.locTexelSize, 0, 0);
     gl.uniform1f(loc.locRadius, 0);
     gl.uniform2f(loc.locDirection, 0, 0);
@@ -172,7 +170,7 @@ function applyBoxBlurPass(
   dirX: number,
   dirY: number,
 ): void {
-  drawWebGLFilterPass(state, source, dest, loc, (gl) => {
+  drawWebGLFullscreenPass(state, loc, [source.texture], dest, (gl) => {
     gl.uniform2f(loc.locTexelSize, 1 / source.width, 1 / source.height);
     gl.uniform1f(loc.locRadius, radius);
     gl.uniform2f(loc.locDirection, dirX, dirY);
@@ -189,7 +187,7 @@ function applyGaussianBlurPass(
   dirX: number,
   dirY: number,
 ): void {
-  drawWebGLFilterPass(state, source, dest, loc, (gl) => {
+  drawWebGLFullscreenPass(state, loc, [source.texture], dest, (gl) => {
     gl.uniform2f(loc.locTexelSize, 1 / source.width, 1 / source.height);
     gl.uniform1f(loc.locSigma, sigma);
     gl.uniform1f(loc.locRadius, radius);
@@ -201,7 +199,7 @@ function getBoxBlurShader(state: WebGLRenderState): BoxBlurShaderLocations {
   let loc = boxBlurShaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    const base = compileWebGLFilterProgram(gl, BOX_BLUR_FRAGMENT_SRC);
+    const base = compileWebGLFullscreenProgram(gl, BOX_BLUR_FRAGMENT_SRC);
     loc = {
       ...base,
       locTexelSize: gl.getUniformLocation(base.program, 'u_texelSize')!,
@@ -217,7 +215,7 @@ function getGaussianBlurShader(state: WebGLRenderState): GaussianBlurShaderLocat
   let loc = gaussianBlurShaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    const base = compileWebGLFilterProgram(gl, GAUSSIAN_BLUR_FRAGMENT_SRC);
+    const base = compileWebGLFullscreenProgram(gl, GAUSSIAN_BLUR_FRAGMENT_SRC);
     loc = {
       ...base,
       locTexelSize: gl.getUniformLocation(base.program, 'u_texelSize')!,

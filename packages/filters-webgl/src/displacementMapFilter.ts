@@ -1,9 +1,6 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
-import type { DisplacementMapFilter } from '@flighthq/types';
-import type { WebGLRenderState } from '@flighthq/types';
-
-import type { WebGLDualSourceLocations } from './filterPass';
-import { compileWebGLFilterProgram, drawWebGLDualSourcePass } from './filterPass';
+import { compileWebGLFullscreenProgram, drawWebGLFullscreenPass } from '@flighthq/render-webgl';
+import type { DisplacementMapFilter, WebGLFullscreenProgram, WebGLRenderState } from '@flighthq/types';
 
 // Samples the map (unit 1) to compute per-pixel UV displacement, then samples
 // the source (unit 0) at the displaced coordinate. Map value 0.5 (128/255)
@@ -11,8 +8,8 @@ import { compileWebGLFilterProgram, drawWebGLDualSourcePass } from './filterPass
 const DISPLACEMENT_MAP_FRAGMENT_SRC = `#version 300 es
 precision mediump float;
 in vec2 v_texCoord;
-uniform sampler2D u_texture;
-uniform sampler2D u_texture2;
+uniform sampler2D u_texture0;
+uniform sampler2D u_texture1;
 uniform vec2 u_texelSize;
 uniform int u_componentX;
 uniform int u_componentY;
@@ -32,31 +29,31 @@ float getChannel(vec4 color, int comp) {
 vec4 sampleSource(vec2 uv) {
   if (u_mode == 0) {
     // wrap
-    return texture(u_texture, fract(uv));
+    return texture(u_texture0, fract(uv));
   }
   if (u_mode == 1) {
     // clamp
-    return texture(u_texture, clamp(uv, vec2(0.0), vec2(1.0)));
+    return texture(u_texture0, clamp(uv, vec2(0.0), vec2(1.0)));
   }
   if (u_mode == 2) {
     // ignore — return transparent if out-of-bounds
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return vec4(0.0);
-    return texture(u_texture, uv);
+    return texture(u_texture0, uv);
   }
   // color
   if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return u_edgeColor;
-  return texture(u_texture, uv);
+  return texture(u_texture0, uv);
 }
 
 void main() {
-  vec4 mapSample = texture(u_texture2, v_texCoord);
+  vec4 mapSample = texture(u_texture1, v_texCoord);
   float mx = getChannel(mapSample, u_componentX);
   float my = getChannel(mapSample, u_componentY);
   vec2 offset = vec2((mx - 0.5) * u_scaleX, (my - 0.5) * u_scaleY) * u_texelSize;
   fragColor = sampleSource(v_texCoord + offset);
 }`;
 
-type DisplacementMapShaderLocations = WebGLDualSourceLocations & {
+type DisplacementMapShaderLocations = WebGLFullscreenProgram & {
   locTexelSize: WebGLUniformLocation;
   locComponentX: WebGLUniformLocation;
   locComponentY: WebGLUniformLocation;
@@ -88,7 +85,7 @@ export function applyDisplacementMapFilterToWebGL(
   const edgeAlpha = filter.alpha ?? 0;
 
   const loc = getShader(state);
-  drawWebGLDualSourcePass(state, source, map, dest, loc, (gl) => {
+  drawWebGLFullscreenPass(state, loc, [source.texture, map.texture], dest, (gl) => {
     gl.uniform2f(loc.locTexelSize, 1 / source.width, 1 / source.height);
     gl.uniform1i(loc.locComponentX, filter.componentX ?? 0);
     gl.uniform1i(loc.locComponentY, filter.componentY ?? 1);
@@ -109,10 +106,9 @@ function getShader(state: WebGLRenderState): DisplacementMapShaderLocations {
   let loc = shaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    const base = compileWebGLFilterProgram(gl, DISPLACEMENT_MAP_FRAGMENT_SRC);
+    const base = compileWebGLFullscreenProgram(gl, DISPLACEMENT_MAP_FRAGMENT_SRC);
     loc = {
       ...base,
-      locTexture2: gl.getUniformLocation(base.program, 'u_texture2')!,
       locTexelSize: gl.getUniformLocation(base.program, 'u_texelSize')!,
       locComponentX: gl.getUniformLocation(base.program, 'u_componentX')!,
       locComponentY: gl.getUniformLocation(base.program, 'u_componentY')!,

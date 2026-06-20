@@ -1,10 +1,8 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
-import type { InnerGlowFilter } from '@flighthq/types';
-import type { WebGLRenderState } from '@flighthq/types';
+import { clearWebGLRenderTarget, compileWebGLFullscreenProgram, drawWebGLFullscreenPass } from '@flighthq/render-webgl';
+import type { InnerGlowFilter, WebGLFullscreenProgram, WebGLRenderState } from '@flighthq/types';
 
 import { applyBoxBlurFilterToWebGL } from './blurFilter';
-import type { WebGLDualSourceLocations } from './filterPass';
-import { clearWebGLFilterTarget, compileWebGLFilterProgram, drawWebGLDualSourcePass } from './filterPass';
 import { applyWebGLBlitPass, applyWebGLInvertTintPass } from './tintShader';
 
 // Why: all filter passes use ONE/ONE_MINUS_SRC_ALPHA premultiplied blending — they never
@@ -18,16 +16,16 @@ import { applyWebGLBlitPass, applyWebGLInvertTintPass } from './tintShader';
 const INNER_CLIP_FRAGMENT_SRC = `#version 300 es
 precision mediump float;
 in vec2 v_texCoord;
-uniform sampler2D u_texture;
-uniform sampler2D u_texture2;
+uniform sampler2D u_texture0;
+uniform sampler2D u_texture1;
 out vec4 fragColor;
 void main() {
-  vec4 glow = texture(u_texture, v_texCoord);
-  float srcAlpha = texture(u_texture2, v_texCoord).a;
+  vec4 glow = texture(u_texture0, v_texCoord);
+  float srcAlpha = texture(u_texture1, v_texCoord).a;
   fragColor = glow * srcAlpha;
 }`;
 
-type InnerClipLocations = WebGLDualSourceLocations;
+type InnerClipLocations = WebGLFullscreenProgram;
 
 const clipShaders = new WeakMap<WebGLRenderState, InnerClipLocations>();
 
@@ -67,11 +65,11 @@ export function applyInnerGlowFilterToWebGL(
 
   // Pass 3: clip blurred glow (s1) to source alpha, output to s0 (s1 no longer needed).
   // s0 still holds pass-1 content; clear it so the blend doesn't retain the exterior red.
-  clearWebGLFilterTarget(state, s0);
+  clearWebGLRenderTarget(state, s0);
   applyWebGLInnerClipPass(state, s1, source, s0);
 
   // Final composite: source first, then clipped glow on top
-  clearWebGLFilterTarget(state, dest);
+  clearWebGLRenderTarget(state, dest);
   applyWebGLBlitPass(state, source, dest);
   applyWebGLBlitPass(state, s0, dest);
 }
@@ -83,15 +81,15 @@ function applyWebGLInnerClipPass(
   dest: WebGLRenderTarget,
 ): void {
   const loc = getClipShader(state);
-  drawWebGLDualSourcePass(state, glow, source, dest, loc, () => {});
+  drawWebGLFullscreenPass(state, loc, [glow.texture, source.texture], dest, () => {});
 }
 
 function getClipShader(state: WebGLRenderState): InnerClipLocations {
   let loc = clipShaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    const base = compileWebGLFilterProgram(gl, INNER_CLIP_FRAGMENT_SRC);
-    loc = { ...base, locTexture2: gl.getUniformLocation(base.program, 'u_texture2')! };
+    const base = compileWebGLFullscreenProgram(gl, INNER_CLIP_FRAGMENT_SRC);
+    loc = { ...base };
     clipShaders.set(state, loc);
   }
   return loc;
