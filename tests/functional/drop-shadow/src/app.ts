@@ -186,12 +186,12 @@ function renderWebGLDropShadow(state: WebGLRenderState, list: FilterEntry[], roo
     entries.push({
       node,
       filter,
-      source: createWebGLRenderTarget(state, w, h),
-      dest: createWebGLRenderTarget(state, w, h),
+      source: createWebGLRenderTarget(state, { width: w, height: h }),
+      dest: createWebGLRenderTarget(state, { width: w, height: h }),
       scratch: [
-        createWebGLRenderTarget(state, w, h),
-        createWebGLRenderTarget(state, w, h),
-        createWebGLRenderTarget(state, w, h),
+        createWebGLRenderTarget(state, { width: w, height: h }),
+        createWebGLRenderTarget(state, { width: w, height: h }),
+        createWebGLRenderTarget(state, { width: w, height: h }),
       ],
       cacheTransform: createMatrix(),
       sceneTransform: createMatrix(),
