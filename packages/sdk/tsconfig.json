@@ -17,6 +17,8 @@
     { "path": "../device" },
     { "path": "../dialog" },
     { "path": "../displayobject" },
+    { "path": "../effects" },
+    { "path": "../effects-webgl" },
     { "path": "../entity" },
     { "path": "../filesystem" },
     { "path": "../filters" },
