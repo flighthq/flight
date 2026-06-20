@@ -22,6 +22,7 @@ import {
 } from '@flighthq/sdk';
 
 import type { FunctionalTargetOptions, FunctionalWebGPUTarget } from './target';
+import { registerFunctionalTarget } from './verify';
 
 export async function createWebGPUTarget(options: Readonly<FunctionalTargetOptions>): Promise<FunctionalWebGPUTarget> {
   const { width, height } = options;
@@ -53,7 +54,7 @@ export async function createWebGPUTarget(options: Readonly<FunctionalTargetOptio
   if (options.clip) enableWebGPUClipSupport(state);
   if (options.cache) enableWebGPURenderCache(state);
 
-  return {
+  return registerFunctionalTarget({
     kind: 'webgpu',
     state,
     width,
@@ -65,5 +66,5 @@ export async function createWebGPUTarget(options: Readonly<FunctionalTargetOptio
       renderWebGPUDisplayObject(state, root);
       submitWebGPURenderPass(state);
     },
-  };
+  });
 }

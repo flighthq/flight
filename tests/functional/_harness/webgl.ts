@@ -21,6 +21,7 @@ import {
 } from '@flighthq/sdk';
 
 import type { FunctionalTargetOptions, FunctionalWebGLTarget } from './target';
+import { registerFunctionalTarget } from './verify';
 
 export function createWebGLTarget(options: Readonly<FunctionalTargetOptions>): FunctionalWebGLTarget {
   const { width, height } = options;
@@ -32,7 +33,9 @@ export function createWebGLTarget(options: Readonly<FunctionalTargetOptions>): F
   const state = createWebGLRenderState(canvas, {
     pixelRatio,
     backgroundColor: options.background,
-    contextAttributes: options.contextAttributes ?? { alpha: false },
+    // preserveDrawingBuffer so the verifier (and the differential/fingerprint runner) can read the
+    // frame back after rendering — harmless for tests, where throughput does not matter.
+    contextAttributes: { alpha: false, preserveDrawingBuffer: true, ...options.contextAttributes },
     sceneGraphSyncPolicy: options.syncPolicy,
   });
 
@@ -55,7 +58,7 @@ export function createWebGLTarget(options: Readonly<FunctionalTargetOptions>): F
   if (options.clip) enableWebGLClipSupport(state);
   if (options.cache) enableWebGLRenderCache(state);
 
-  return {
+  return registerFunctionalTarget({
     kind: 'webgl',
     state,
     width,
@@ -66,5 +69,5 @@ export function createWebGLTarget(options: Readonly<FunctionalTargetOptions>): F
       renderWebGLBackground(state);
       renderWebGLDisplayObject(state, root);
     },
-  };
+  });
 }
