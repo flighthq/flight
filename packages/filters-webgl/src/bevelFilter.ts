@@ -1,9 +1,9 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
+import { clearWebGLRenderTarget } from '@flighthq/render-webgl';
 import type { BevelFilter } from '@flighthq/types';
 import type { WebGLRenderState } from '@flighthq/types';
 
 import { applyBoxBlurFilterToWebGL } from './blurFilter';
-import { clearWebGLFilterTarget } from './filterPass';
 import { applyWebGLBlitOffsetPass, applyWebGLBlitPass, applyWebGLTintPass } from './tintShader';
 
 /**
@@ -52,7 +52,7 @@ export function applyBevelFilterToWebGL(
     passes: quality,
   });
 
-  clearWebGLFilterTarget(state, dest);
+  clearWebGLRenderTarget(state, dest);
 
   if (bevelType === 'full' || bevelType === 'outer') {
     // Shadow at +offset

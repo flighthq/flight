@@ -1,10 +1,9 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
+import { clearWebGLRenderTarget, compileWebGLFullscreenProgram, drawWebGLFullscreenPass } from '@flighthq/render-webgl';
 import type { GradientBevelFilter } from '@flighthq/types';
-import type { WebGLRenderState } from '@flighthq/types';
+import type { WebGLFullscreenProgram, WebGLRenderState } from '@flighthq/types';
 
 import { applyBoxBlurFilterToWebGL } from './blurFilter';
-import type { WebGLFilterLocations } from './filterPass';
-import { clearWebGLFilterTarget, compileWebGLFilterProgram, drawWebGLFilterPass } from './filterPass';
 import { createWebGLGradientRampTexture } from './gradientRamp';
 import { applyWebGLBlitPass, applyWebGLTintPass } from './tintShader';
 
@@ -40,11 +39,11 @@ void main() {
   fragColor = color * srcAlpha;
 }`;
 
-type BevelEncodeLocations = WebGLFilterLocations & {
+type BevelEncodeLocations = WebGLFullscreenProgram & {
   locOffset: WebGLUniformLocation;
 };
 
-type BevelApplyLocations = WebGLFilterLocations & {
+type BevelApplyLocations = WebGLFullscreenProgram & {
   locRamp: WebGLUniformLocation;
   locSource: WebGLUniformLocation;
 };
@@ -88,7 +87,7 @@ export function applyGradientBevelFilterToWebGL(
   applyBevelApplyPass(state, s0, ramp, source, s1);
   gl.deleteTexture(ramp);
 
-  clearWebGLFilterTarget(state, dest);
+  clearWebGLRenderTarget(state, dest);
   if (!(filter.bevelType && filter.bevelType !== 'full')) {
     applyWebGLBlitPass(state, source, dest);
   }
@@ -103,7 +102,7 @@ function applyBevelEncodePass(
   dy: number,
 ): void {
   const loc = getEncodeShader(state);
-  drawWebGLFilterPass(state, blurred, dest, loc, (gl) => {
+  drawWebGLFullscreenPass(state, loc, [blurred.texture], dest, (gl) => {
     gl.uniform2f(loc.locOffset, dx, dy);
   });
 }
@@ -116,7 +115,7 @@ function applyBevelApplyPass(
   dest: WebGLRenderTarget,
 ): void {
   const loc = getApplyShader(state);
-  drawWebGLFilterPass(state, encoded, dest, loc, (gl) => {
+  drawWebGLFullscreenPass(state, loc, [encoded.texture], dest, (gl) => {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, ramp);
     gl.uniform1i(loc.locRamp, 1);
@@ -131,7 +130,7 @@ function getEncodeShader(state: WebGLRenderState): BevelEncodeLocations {
   let loc = encodeShaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    const base = compileWebGLFilterProgram(gl, BEVEL_ENCODE_FRAGMENT_SRC);
+    const base = compileWebGLFullscreenProgram(gl, BEVEL_ENCODE_FRAGMENT_SRC);
     loc = { ...base, locOffset: gl.getUniformLocation(base.program, 'u_offset')! };
     encodeShaders.set(state, loc);
   }
@@ -142,7 +141,7 @@ function getApplyShader(state: WebGLRenderState): BevelApplyLocations {
   let loc = applyShaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    const base = compileWebGLFilterProgram(gl, BEVEL_APPLY_FRAGMENT_SRC);
+    const base = compileWebGLFullscreenProgram(gl, BEVEL_APPLY_FRAGMENT_SRC);
     loc = {
       ...base,
       locRamp: gl.getUniformLocation(base.program, 'u_ramp')!,

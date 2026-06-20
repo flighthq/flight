@@ -1,27 +1,25 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
-import type { SharpenFilter } from '@flighthq/types';
-import type { WebGLRenderState } from '@flighthq/types';
+import { compileWebGLFullscreenProgram, drawWebGLFullscreenPass } from '@flighthq/render-webgl';
+import type { SharpenFilter, WebGLFullscreenProgram, WebGLRenderState } from '@flighthq/types';
 
 import { applyBoxBlurFilterToWebGL } from './blurFilter';
-import type { WebGLDualSourceLocations } from './filterPass';
-import { compileWebGLFilterProgram, drawWebGLDualSourcePass } from './filterPass';
 
 // Unsharp mask: sharpened = source + (source - blurred) * amount.
 // source0 = original source (unit 0), source1 = blurred (unit 1).
 const SHARPEN_FRAGMENT_SRC = `#version 300 es
 precision mediump float;
 in vec2 v_texCoord;
-uniform sampler2D u_texture;
-uniform sampler2D u_texture2;
+uniform sampler2D u_texture0;
+uniform sampler2D u_texture1;
 uniform float u_amount;
 out vec4 fragColor;
 void main() {
-  vec4 src = texture(u_texture, v_texCoord);
-  vec4 blurred = texture(u_texture2, v_texCoord);
+  vec4 src = texture(u_texture0, v_texCoord);
+  vec4 blurred = texture(u_texture1, v_texCoord);
   fragColor = clamp(src + (src - blurred) * u_amount, 0.0, 1.0);
 }`;
 
-type SharpenShaderLocations = WebGLDualSourceLocations & {
+type SharpenShaderLocations = WebGLFullscreenProgram & {
   locAmount: WebGLUniformLocation;
 };
 
@@ -54,7 +52,7 @@ export function applySharpenFilterToWebGL(
 
   const loc = getShader(state);
   // source is unit 0, blurred is unit 1
-  drawWebGLDualSourcePass(state, source, blurred, dest, loc, (gl) => {
+  drawWebGLFullscreenPass(state, loc, [source.texture, blurred.texture], dest, (gl) => {
     gl.uniform1f(loc.locAmount, amount);
   });
 }
@@ -63,10 +61,9 @@ function getShader(state: WebGLRenderState): SharpenShaderLocations {
   let loc = shaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    const base = compileWebGLFilterProgram(gl, SHARPEN_FRAGMENT_SRC);
+    const base = compileWebGLFullscreenProgram(gl, SHARPEN_FRAGMENT_SRC);
     loc = {
       ...base,
-      locTexture2: gl.getUniformLocation(base.program, 'u_texture2')!,
       locAmount: gl.getUniformLocation(base.program, 'u_amount')!,
     };
     shaders.set(state, loc);

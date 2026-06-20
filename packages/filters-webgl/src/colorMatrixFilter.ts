@@ -1,9 +1,7 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
+import { compileWebGLFullscreenProgram, drawWebGLFullscreenPass } from '@flighthq/render-webgl';
 import type { ColorMatrixFilter } from '@flighthq/types';
-import type { WebGLRenderState } from '@flighthq/types';
-
-import type { WebGLFilterLocations } from './filterPass';
-import { compileWebGLFilterProgram, drawWebGLFilterPass } from './filterPass';
+import type { WebGLFullscreenProgram, WebGLRenderState } from '@flighthq/types';
 
 // 20-element matrix in OpenFL/Flash order: 4 rows × 5 columns.
 // Offsets (column 5) are in byte scale [0,255], divided by 255 before upload.
@@ -30,7 +28,7 @@ void main() {
   fragColor = out_c;
 }`;
 
-type ColorMatrixShaderLocations = WebGLFilterLocations & {
+type ColorMatrixShaderLocations = WebGLFullscreenProgram & {
   locM0: WebGLUniformLocation;
   locM1: WebGLUniformLocation;
   locM2: WebGLUniformLocation;
@@ -55,7 +53,7 @@ export function applyColorMatrixFilterToWebGL(
   if (matrix.length < 20) throw new Error('ColorMatrixFilter requires 20 values');
 
   const loc = getShader(state);
-  drawWebGLFilterPass(state, source, dest, loc, (gl) => {
+  drawWebGLFullscreenPass(state, loc, [source.texture], dest, (gl) => {
     gl.uniform4f(loc.locM0, matrix[0], matrix[1], matrix[2], matrix[3]);
     gl.uniform4f(loc.locM1, matrix[5], matrix[6], matrix[7], matrix[8]);
     gl.uniform4f(loc.locM2, matrix[10], matrix[11], matrix[12], matrix[13]);
@@ -68,7 +66,7 @@ function getShader(state: WebGLRenderState): ColorMatrixShaderLocations {
   let loc = shaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    const base = compileWebGLFilterProgram(gl, COLOR_MATRIX_FRAGMENT_SRC);
+    const base = compileWebGLFullscreenProgram(gl, COLOR_MATRIX_FRAGMENT_SRC);
     loc = {
       ...base,
       locM0: gl.getUniformLocation(base.program, 'u_m0')!,
