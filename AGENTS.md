@@ -70,15 +70,7 @@ When a feature exists in OpenFL but the natural OpenFL API would require hidden 
 
 ## Bundle Size Discipline
 
-This SDK should behave like a hardware store: users can import one small tool without pulling in the whole building.
-
-- `npm run size` is the direct size-reporting command and the preferred command for agents.
-- `npm run size piratepig` filters by example name.
-- `npm run size piratepig report=json` prints machine-readable JSON for easier agent parsing.
-- `npm run size piratepig output=size-report.json` writes a JSON report file and prints `SIZE_REPORT_PATH:<path>`.
-- `npm run size render=canvas` filters by renderer. Filters can be combined, for example `npm run size piratepig render=webgl report=json`.
-- Prefer small package imports in examples when the example is intentionally demonstrating low-level or tree-shaken usage. Use `@flighthq/sdk` in examples that are meant to demonstrate application-level convenience.
-- Do not add convenience exports, eager registration, shared top-level mutable state, or new dependencies that make small examples larger unless the size tradeoff is intentional and measured.
+This SDK should behave like a hardware store: a user can import one small tool without pulling in the whole building. Do not add convenience exports, eager registration, shared top-level mutable state, or new dependencies that make small examples larger unless the size tradeoff is intentional and measured. Verify with `npm run size` after changes to examples, exports, barrels, renderer registration, or dependencies — the command surface (filters, JSON output, baselines) and the full rule are in [bundle size](docs/bundle-size.md).
 
 ## Checkpoints
 
@@ -105,194 +97,24 @@ Run these at the points listed. Each check is fast; skipping them causes cascadi
 - `npm run order` reports exported functions and test `describe` blocks that are not alphabetized. `npm run order:check` runs the same check in failing mode once a package or area has been cleaned up. `npm run order:fix` rewrites files in place to apply the correct order; comments immediately preceding a declaration (with no blank line between them) are treated as attached and move with it.
 - `npm run test` runs the normal root Vitest workspace, excluding the heavier `size` project. This is usually faster than chaining package/API/integration test scripts separately.
 - `npm run size` builds matching examples and reports gzip output size against the baseline. It supports filtered runs, JSON reporting, and output file paths.
-- `npm run functional` launches the functional test tool in `tools/functional`, a browser dev server that runs each functional test across its renderers (Canvas/DOM/WebGL) for visual and behavioral checks you cannot get from jsdom unit tests.
+- `npm run dev:functional` launches the functional test tool in `tools/functional`, a browser dev server that runs each functional test across its renderers (Canvas/DOM/WebGL) for visual and behavioral checks you cannot get from jsdom unit tests. (`dev:explorer` and `dev:landing` are the equivalent live servers for the other tools.)
+- `npm run test:functional` is the headless render gate for those same tests, returning pass/fail. It is an umbrella over three checks, each runnable on its own: `test:functional:smoke` (builds, runs, no error, not blank), `test:functional:parity` (the raster backends agree with each other — consistency), and `test:functional:regression` (each backend matches its committed fingerprint baseline — `:regression:baseline` rewrites them). `test:explorer:*` mirrors all of this for examples. The per-check collapse aliases `test:smoke` / `test:parity` / `test:regression` run that one check across both subjects. Smoke and parity are environment-independent (CI gates every PR); regression is coupled to where its baselines were captured.
 - `npm run capture:check` is the visual regression gate: captures every tool, compares each screenshot against its committed baseline, and exits 1 if any has changed. Run after committing baselines. `capture:explorer:check`, `capture:functional:check`, and `capture:landing:check` run each tool independently.
 
-## Visual Capture and Agent Feedback
+## Domain Conventions
 
-Two scripts produce screenshot and log output from examples and functional tests. They require Playwright browsers (`npx playwright install chromium`) and a running Vite server.
+Decisions and procedures that are easy to violate and only matter inside one domain live outside this map, so it stays a map. Consult the relevant one when a task enters that domain, not every session.
 
-### One-shot capture
+**Reference docs** (`docs/`) — declarative knowledge, read to _know_:
 
-```
-npm run capture:explorer [-- --filter=name --renderer=webgl,canvas --wait=500]
-npm run capture:functional [-- --filter=name]
-npm run capture:landing [-- --filter=name]
-```
+- [npm script naming](docs/conventions/npm-scripts.md) — before adding, renaming, or removing a `package.json` script. The `action:subject:modifier` grammar, why no word may crowd the subject slot, collapse aliases (omit subject → fan over subjects; bare name → `dev:`), `:baseline` as write-mode, and the `smoke` / `parity` / `regression` render-test vocabulary.
+- [packaging & publishing](docs/packaging.md) — the published package shape. Policy is enforced by `npm run packages:check`, not memory.
+- [bundle size](docs/bundle-size.md) — the `npm run size` command surface and the import-size rules.
 
-`capture:<tool>` captures one tool (`explorer`, `functional`, or `landing`), auto-starting the Vite server if `--url` is not given. It navigates to each matching entry, waits two animation frames, screenshots, collects logs, and exits. Output lands in `tools/output/{tool}/{name}/{renderer}/`.
+**Skills** (`.claude/skills/`) — procedures, _invoked to do_. Claude Code surfaces these by intent; each `SKILL.md` doubles as a plain-markdown procedure for tools that do not load skills, so follow the link directly if needed.
 
-### Watch capture (host only — requires Playwright)
-
-```
-npm run capture:explorer:watch [-- --filter=name --renderer=webgl]
-npm run capture:functional:watch
-npm run capture:landing:watch
-```
-
-`capture:<tool>:watch` auto-starts the Vite server, does an initial capture of all matched entries, then watches source files and re-captures on change (800ms debounce). An agent inside a sandbox reads the output files directly — no polling, no watch loop in the agent.
-
-### Baselines
-
-```
-npm run capture:explorer:baseline [-- --filter=name]
-npm run capture:functional:baseline [-- --filter=name]
-npm run capture:landing:baseline [-- --filter=name]
-```
-
-`capture:<tool>:baseline` writes the current screenshot's sha256 to `tools/baselines/{tool}/{name}/{renderer}/baseline.sha256`; `capture:baseline` (no tool) updates every tool at once. The committed baseline is the hash text, not a PNG — `tools/baselines/` stays small and git-diffable, and screenshots never enter git (`tools/**/*.png` is ignored). Every subsequent capture re-hashes its screenshot and sets `status.json`'s `changed` from whether the hash matches. This requires a deterministic render: the capture harness sets `window.__flightCapture` before page scripts run, so an animated entry (the landing hero) can hold a fixed frame and stay byte-identical. Run baseline capture once after a rendering change is intentional; commit `tools/baselines/` to git.
-
-### Output files
-
-Each captured entry writes three files:
-
-- `screenshot.png` — rendered frame. Read with the `Read` tool; Claude can view it directly.
-- `logs.jsonl` — one JSON object per line: `{ __flight, t, level, channel, data }`, where `level` is the severity name (`error`/`warn`/`info`/`debug`/`verbose`) and `channel` is the free tag (or null).
-- `status.json` — written last (the commit point). Shape:
-  ```json
-  { "state": "ready|error", "capturedAt": <unix ms>, "error": null|"message",
-    "hash": "<sha256>", "baselineHash": "<sha256>|null", "changed": true|false|null }
-  ```
-  `changed: null` means no baseline exists yet. `changed: true` means the screenshot hash differs from the committed baseline hash; read `screenshot.png` in the output dir to see what changed. Check `capturedAt` against the time of your last source edit to confirm the output is fresh.
-
-### Emitting logs from examples and functional tests
-
-Logging lives in the `@flighthq/log` package, split so each consumer tree-shakes its half: examples and instrumentation import the lightweight **emit** side; the explorer and capture harness import the **listener** side. One package owns the contract.
-
-```typescript
-import { logInfo, logVerbose, log, LogLevel } from '@flighthq/log';
-
-logInfo({ msg: 'world matrix', a: m[0], b: m[1], tx: m[4] }, 'render'); // 2nd arg is the channel
-logVerbose('capture-only detail', 'batch'); // below the default console threshold — capture only
-log(LogLevel.Warn, { flushReason: 'material', instanceCount: 15 }, 'batch');
-```
-
-`logError`/`logWarn`/`logInfo`/`logDebug`/`logVerbose` are sugar over `log(level, data, channel?)`. Emitting **no-ops until a sink is installed**, so the same calls are harmless in unit tests and in shipped/size builds (the emit side carries no console or formatting code — it tree-shakes to a forwarder). Levels gate visibility: the capture sink records **every** level; the console prints only levels at or above `setLogConsoleLevel` (default `Info`). The harness installs the sink (`setLogSink(createConsoleCaptureSink())`) before loading the example, so module-init logs are captured.
-
-### Agent workflow with capture watch
-
-1. Start the watch on the host: `npm run capture:explorer:watch -- --filter=myExample` (auto-starts the server).
-2. Edit source files. The watch detects changes and re-captures automatically.
-3. Read `tools/output/explorer/myExample/webgl/screenshot.png` with the `Read` tool to see the rendered frame.
-4. Read `tools/output/explorer/myExample/webgl/logs.jsonl` to see structured log output.
-5. Check `status.json` if you need to confirm the output post-dates your last edit.
-
-## Writing Functional Tests
-
-Functional tests live in `tests/functional/{testName}/`. Each test renders a scene across one or more backends and is validated visually — the screenshot is compared against a committed baseline, and `logs.jsonl` carries any structured log output. There is no programmatic assertion primitive yet; runtime failures surface as `pageerror` entries in `logs.jsonl` and as visual differences from the baseline.
-
-Write a functional test when:
-
-- The behavior involves rendering that jsdom unit tests cannot exercise (transforms, blending, clipping, filters, WebGL specifics, text layout).
-- You want a persistent visual record of how a feature looks across backends.
-- You want to detect rendering regressions automatically.
-
-Agents are expected to generate new functional tests when implementing or verifying visual rendering behavior.
-
-### Required file structure
-
-```
-tests/functional/{testName}/
-├── package.json
-└── src/
-    ├── app.ts              ← scene setup; imports { height, render, scale, width } from ./render
-    ├── render.ts           ← barrel: export * from './render.canvas'
-    ├── render.canvas.ts    ← Canvas2D setup + render()
-    ├── render.dom.ts       ← DOM setup + render()  (include when DOM renderer applies)
-    └── render.webgl.ts     ← WebGL setup + render()
-```
-
-`render.webgpu.ts` is optional. `discoverEntries()` includes a test only when `package.json` exists and at least one `src/render.*.ts` file exists. The vite harness routes `/tests/{name}/{renderer}/` requests to the matching renderer file. The `render.ts` barrel is required for TypeScript to resolve the `./render` import in `app.ts` even though the harness overrides it at runtime.
-
-### package.json
-
-```json
-{
-  "name": "functional-test-{testName}",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}
-```
-
-### app.ts
-
-`app.ts` is a top-level async module. Build the scene tree and call `render(root)` at the end. The vite harness resolves `./render` to the active backend file.
-
-```typescript
-import { addNodeChild, createDisplayContainer } from '@flighthq/sdk';
-import { height, render, scale, width } from './render';
-
-const root = createDisplayContainer();
-root.scaleX = scale;
-root.scaleY = scale;
-// build scene using (width / scale) and (height / scale) as logical dimensions
-render(root);
-```
-
-`app.ts` may be `async` — `await` freely for asset loading (e.g. `loadImageSourceFromURL`).
-
-### render.\*.ts
-
-Each renderer file must export four constants and one function. Copy the pattern from an existing test — `clip`, `fill`, and `blend-mode` are clean references. Register only the node kinds your test uses.
-
-```typescript
-import type { DisplayObject } from '@flighthq/sdk';
-import {
-  ShapeKind,
-  createWebGLCanvasElement,
-  createWebGLRenderState,
-  defaultWebGLShapeRenderer,
-  defaultWebGLShapeCommands,
-  prepareDisplayObjectRender,
-  registerRenderer,
-  registerWebGLShapeCommands,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
-} from '@flighthq/sdk';
-
-const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGLCanvasElement(800, 600, pixelRatio);
-document.body.appendChild(canvas);
-
-export const state = createWebGLRenderState(canvas, { backgroundColor: 0xffffffff });
-registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
-registerWebGLShapeCommands(defaultWebGLShapeCommands);
-export const scale = pixelRatio;
-export const width = 800;
-export const height = 600;
-
-export function render(root: DisplayObject): void {
-  if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
-}
-```
-
-### render.ts barrel
-
-```typescript
-export * from './render.canvas';
-```
-
-### Logging from a test
-
-```typescript
-import { logInfo, logWarn } from '@flighthq/log';
-logInfo({ nodeCount: 42, pass: true }, 'test');
-```
-
-Logs appear in `logs.jsonl` after capture. The vite harness installs the capture sink before loading `app.ts`, so module-init logs are captured alongside render-time logs.
-
-### Validating a new test
-
-1. Run `npm run capture:functional -- --filter={testName}` (auto-starts the server).
-2. Read `tools/output/functional/{testName}/{renderer}/screenshot.png` with the `Read` tool.
-3. Read `tools/output/functional/{testName}/{renderer}/logs.jsonl` for structured output. Check for any `pageerror` entries.
-4. Once the output looks correct, set the baseline: `npm run capture:functional:baseline -- --filter={testName}`.
-5. Commit `tools/baselines/functional/{testName}/` (the `baseline.sha256` hash files). Future captures will report `changed` in `status.json` when a screenshot hash no longer matches its baseline.
+- [`functional-test`](.claude/skills/functional-test/SKILL.md) — author or modify a functional rendering test: the current `createFunctionalTarget` single-`app.ts` pattern, the `kinds` declaration, the optional pixel oracle, and the capture→baseline loop.
+- [`visual-capture`](.claude/skills/visual-capture/SKILL.md) — capture screenshots and logs from examples, functional tests, and the landing page; watch mode; screenshot baselines; and reading the `screenshot.png` / `logs.jsonl` / `status.json` output.
 
 ## Core Patterns
 
@@ -351,15 +173,6 @@ Geometry types (rectangles, vectors, matrices) follow explicit allocation and ow
 - Run a package's tests with `npm run test --workspace=packages/<name>`.
 - When changing an `out`-parameter function, test both a distinct output object and the aliased case where `out` is also an input.
 - Root API and integration tests are for cross-package behavior that is awkward or less meaningful in one package's colocated unit tests. Prefer adding colocated unit tests first, then add API/integration coverage when the behavior crosses package boundaries, validates public SDK import paths, or demonstrates a complete user-facing flow.
-
-## Packaging and Publishing
-
-Packaging policy should be enforced by scripts and `npm run packages:check` rather than by memory. Treat this section as orientation for the current package shape, not as the source of truth.
-
-- Packages currently publish `dist` plus colocated source `*.test.ts` files. Tests are intentionally included as examples and AI-readable documentation.
-- Compiled test outputs are excluded from published packages.
-- `prepack` cleans TypeScript state, removes package `dist` via `clean:dist`, and rebuilds so stale renamed files are not published.
-- Prefer changing shared scripts and validation when package publishing policy changes, rather than hand-tuning individual package manifests.
 
 ## Package Map
 
