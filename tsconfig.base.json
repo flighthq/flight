@@ -14,8 +14,6 @@
     "composite": true,
     "noEmitOnError": true,
     "paths": {
-      "@flighthq/host-electron": ["./packages/host-electron/src/index.ts"],
-      "@flighthq/host-electron/*": ["./packages/host-electron/src/*"],
       "@flighthq/app": ["./packages/app/src/index.ts"],
       "@flighthq/app/*": ["./packages/app/src/*"],
       "@flighthq/protocol": ["./packages/protocol/src/index.ts"],
