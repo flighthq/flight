@@ -30,6 +30,7 @@
     "@flighthq/displayobject": "*",
     "@flighthq/geometry": "*",
     "@flighthq/materials": "*",
+    "@flighthq/node": "*",
     "@flighthq/path": "*",
     "@flighthq/render": "*",
     "@flighthq/render-canvas": "*",
@@ -38,7 +39,8 @@
     "@flighthq/text": "*",
     "@flighthq/text-input": "*",
     "@flighthq/text-layout": "*",
-    "@flighthq/types": "*"
+    "@flighthq/types": "*",
+    "@flighthq/velocity": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"

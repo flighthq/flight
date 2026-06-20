@@ -27,6 +27,7 @@ export * from './webglTextInput';
 export * from './webglTextLabel';
 export * from './webglTilemap';
 export * from './webglUniformColorTransformMaterial';
+export * from './webglVelocity';
 export * from './webglVideo';
 export type { WebGLRenderTarget } from '@flighthq/types';
 
