@@ -22,12 +22,35 @@ const examplesDir = join(projectRoot, 'examples');
 // so its own build (e.g. under the size suite) tree-shakes the sink machinery away. The example is
 // imported dynamically so the synchronous setLogSink call runs first — before the example's
 // module-init logs fire (a static import would hoist and run the example before this body).
+// Examples with no meaningful rendered output to gate for not-blankness — they produce sound, not
+// pixels. They still get the Tier 1 error gate (a thrown/console error fails capture --fail-on-error);
+// only the not-blank/fingerprint verification is skipped. Keyed by example name (all renderers).
+const VERIFY_SKIP = new Set<string>(['playingsound']);
+
 function entryWithLogCapture(name: string, render: string): string {
-  return [
+  // The shared in-page render verifier (also used by the functional harness). Reused here so examples
+  // get the same not-blank / error / fingerprint checks with no per-example code. It is dynamically
+  // imported and run ONLY under capture mode (window.__flightCapture, set by the verify harness), so
+  // it never executes — and its chunk never loads — in the deployed gallery a visitor browses.
+  const verifyPath = join(projectRoot, 'tests', 'functional', '_harness', 'verify.ts');
+  const lines = [
     `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
     `setLogSink(createConsoleCaptureSink());`,
-    `import('___app___${name}:${render}');`,
-  ].join('\n');
+    `const __example = await import('___app___${name}:${render}');`,
+  ];
+  if (!VERIFY_SKIP.has(name)) {
+    lines.push(
+      `if (window['__flightCapture']) {`,
+      // Many examples render in a requestAnimationFrame loop, so the canvas is blank right after the
+      // module resolves. Wait for the first frame to draw — the --frames halt flags __captureFramesReached
+      // once it has — polling via setTimeout (rAF is halted by then), capped so one-shot renders proceed.
+      `  await new Promise((resolve) => { let n = 0; const poll = () => (window['__captureFramesReached'] || ++n > 140) ? resolve() : setTimeout(poll, 15); poll(); });`,
+      `  const { runRenderVerification } = await import(${JSON.stringify(verifyPath)});`,
+      `  await runRenderVerification(__example, ${JSON.stringify(render)});`,
+      `}`,
+    );
+  }
+  return lines.join('\n');
 }
 
 function discoverExamples(): Example[] {
