@@ -1,10 +1,10 @@
 # Flight
 
-Flight is a 2D graphics library designed for AI agents. Its API is cellular — every function is self-contained, legible in isolation, and free of hidden state. Explicit inputs, explicit outputs, no globals to trace, no implicit runtime behavior. An agent reading one function understands and applies it without context from anywhere else in the codebase.
+Flight is a graphics and application SDK designed for AI agents. Its API is cellular — every function is self-contained, legible in isolation, and free of hidden state. Explicit inputs, explicit outputs, no globals to trace, no implicit runtime behavior. An agent reading one function understands and applies it without context from anywhere else in the codebase.
 
 The same design properties that make Flight easy to reason over also make bundles small. Nothing runs at import time: renderers, update loops, and event listeners are all opt-in. A minimal bitmap display gzips to 3.9 KB. A full match-3 game with tweens, audio, text, and input gzips to 14.9 KB.
 
-It provides a scene graph, three interchangeable renderers (Canvas 2D, DOM, and WebGL2), and everything needed for a complete interactive application — animation, input, audio, video, text, filters, and effects. Build a scene once; choose a backend by registering it.
+It provides a scene graph, four interchangeable renderers (Canvas 2D, DOM, WebGL 2, and WebGPU), offscreen image processing, and everything needed for a complete interactive application — animation, input, audio, video, text, filters, and effects. Build a scene once; choose a backend by registering it.
 
 ## Try It
 
