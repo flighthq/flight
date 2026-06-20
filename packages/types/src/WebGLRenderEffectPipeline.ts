@@ -40,4 +40,9 @@ export interface WebGLRenderEffectPipeline {
   readonly options: Readonly<RenderEffectPipelineOptions>;
   sceneTarget: WebGLRenderTarget | null;
   readonly pool: WebGLRenderTargetPool;
+  // Per-frame velocity G-buffer fed into ctx.sceneVelocityTexture for velocity-driven effects (motion
+  // blur, TAA). Produced separately by renderWebGLVelocity and set via setWebGLRenderEffectVelocityTexture;
+  // null when no velocity pass ran (velocity-driven effects then sentinel-fall-back). Depth, by contrast,
+  // comes from the scene target directly.
+  velocityTexture: WebGLTexture | null;
 }
