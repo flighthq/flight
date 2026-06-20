@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-effect-screen-space-fog",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

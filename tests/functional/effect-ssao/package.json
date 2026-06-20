@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-effect-ssao",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

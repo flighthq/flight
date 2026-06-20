@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-effect-sketch",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

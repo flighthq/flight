@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-effect-film-grain",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

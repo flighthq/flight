@@ -9,6 +9,7 @@ import {
   defaultWebGPUShapeCommands,
   defaultWebGPUShapeRenderer,
   enableWebGPUClipSupport,
+  enableWebGPUFrameCapture,
   enableWebGPURenderCache,
   prepareDisplayObjectRender,
   registerDefaultWebGPUMaterial,
@@ -40,6 +41,9 @@ export async function createWebGPUTarget(options: Readonly<FunctionalTargetOptio
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
   registerDefaultWebGPUMaterial(state);
+  // Frame capture lets the verifier read the rendered frame back from the GPU; canvas presentation is
+  // unavailable on the headless/software adapter, so this is the only path to the pixels.
+  enableWebGPUFrameCapture(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultWebGPUShapeRenderer);

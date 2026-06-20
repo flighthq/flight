@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-effect-lift-gamma-gain",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

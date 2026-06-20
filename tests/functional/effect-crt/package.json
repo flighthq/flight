@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-effect-crt",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

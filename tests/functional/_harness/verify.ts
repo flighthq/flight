@@ -1,7 +1,9 @@
-import type { Surface } from '@flighthq/sdk';
+import type { Surface, WebGPURenderState } from '@flighthq/sdk';
 import {
   createSurfaceFingerprint,
   createSurfaceFromImageSource,
+  createSurfaceFromWebGPURenderState,
+  enableWebGPUFrameCapture,
   formatSurfaceFingerprint,
   getSurfaceCoverage,
   getSurfacePixel,
@@ -43,7 +45,21 @@ interface FunctionalVerification {
 type VerificationWindow = typeof window & {
   __ftTarget?: FunctionalTarget;
   __ftVerification?: FunctionalVerification;
+  // PNG data URL of the GPU-read-back frame, set for WebGPU so the capture harness can save it as the
+  // screenshot (the browser cannot screenshot the un-presented WebGPU swapchain).
+  __ftRenderImage?: string;
 };
+
+// Encodes a Surface to a PNG data URL via a 2D canvas (RGBA bytes → ImageData → toDataURL).
+function encodeSurfaceToDataURL(surface: Readonly<Surface>): string {
+  const canvas = document.createElement('canvas');
+  canvas.width = surface.width;
+  canvas.height = surface.height;
+  const ctx = canvas.getContext('2d');
+  if (ctx === null) return '';
+  ctx.putImageData(new ImageData(new Uint8ClampedArray(surface.data), surface.width, surface.height), 0, 0);
+  return canvas.toDataURL('image/png');
+}
 
 /**
  * Records the target a test created so the verifier can read its kind and state after rendering. Each
@@ -55,11 +71,36 @@ export function registerFunctionalTarget<T extends FunctionalTarget>(target: T):
   return target;
 }
 
-/** Reads the rendered frame as a Surface, or null for a DOM target / when no canvas is present. */
-export function snapshotFunctionalRender(): Surface | null {
+/**
+ * Wires a custom-render WebGPU test for verification: enables frame capture (so the frame is rendered
+ * into a readable offscreen texture — the swapchain is never presented on the headless/software adapter)
+ * and registers the state as the functional target so the verifier reads it back from the GPU. Call once
+ * after creating the state, before the first render. Inline-state tests need this; factory targets get it
+ * automatically.
+ */
+export function registerWebGPUFunctionalTarget(state: WebGPURenderState, scale = 1): void {
+  enableWebGPUFrameCapture(state);
+  registerFunctionalTarget({
+    kind: 'webgpu',
+    state,
+    width: state.canvas.width,
+    height: state.canvas.height,
+    scale,
+    render: () => {},
+  });
+}
+
+/**
+ * Reads the rendered frame as a Surface, or null for a DOM target / when no canvas is present. WebGPU
+ * is read back from the GPU (copyTextureToBuffer) rather than the canvas element: headless/software
+ * adapters render correctly but never present the swapchain to the compositor, so a canvas drawImage
+ * reads transparent. This requires a registered WebGPU target (the harness factory registers one).
+ */
+export async function snapshotFunctionalRender(): Promise<Surface | null> {
   const target = (window as VerificationWindow).__ftTarget;
   if (target?.kind === 'dom') return null;
-  const canvas = target && target.kind !== 'dom' ? target.state.canvas : findRenderCanvas();
+  if (target?.kind === 'webgpu') return createSurfaceFromWebGPURenderState(target.state);
+  const canvas = target ? target.state.canvas : findRenderCanvas();
   if (canvas === null || canvas.width === 0 || canvas.height === 0) return null;
   return createSurfaceFromImageSource(canvas, canvas.width, canvas.height);
 }
@@ -98,6 +139,13 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
   const coverage = getSurfaceCoverage(surface, background, BACKGROUND_CHANNEL_TOLERANCE);
   result.coverage = coverage;
   result.fingerprint = formatSurfaceFingerprint(createSurfaceFingerprint(surface, FINGERPRINT_GRID));
+
+  // WebGPU cannot be screenshotted by the browser (the swapchain is never presented on the headless/
+  // software adapter), so expose the GPU-read-back surface as a PNG data URL for the capture harness to
+  // save as screenshot.png. Canvas/WebGL screenshot normally, so this is WebGPU-only.
+  if (render === 'webgpu') {
+    (window as VerificationWindow).__ftRenderImage = encodeSurfaceToDataURL(surface);
+  }
 
   const minCoverage = testModule.minCoverage ?? DEFAULT_MIN_COVERAGE;
   if (coverage < minCoverage) {

@@ -415,7 +415,10 @@ export default defineConfig(() => {
     },
 
     optimizeDeps: {
-      include: workspacePackages.map((p) => p.name),
+      // Serve the workspace @flighthq/* packages as live source (they are aliased to each package's
+      // src/ above), never pre-bundled into .vite/deps. Pre-bundling (include) caches them, which both
+      // breaks HMR and lets a stale cache silently run old code — a real capture-correctness hazard.
+      exclude: workspacePackages.map((p) => p.name),
     },
 
     server: {

@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-effect-vignette",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

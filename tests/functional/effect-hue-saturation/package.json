@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-effect-hue-saturation",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

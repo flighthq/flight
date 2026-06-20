@@ -175,7 +175,14 @@ export function resolveServer(opts: { tool: Tool; root: string; externalUrl?: st
 // ---------------------------------------------------------------------------
 
 export async function launchBrowser(options: { captureFrames?: number } = {}) {
-  const browser = await chromium.launch();
+  // Headless Chromium exposes navigator.gpu but withholds a WebGPU adapter on a software-only,
+  // "untrusted" config unless --enable-unsafe-webgpu is set; with it, Dawn falls back to the
+  // SwiftShader Vulkan ICD bundled inside Playwright's Chromium (no host GPU / driver needed).
+  // --use-webgpu-adapter=swiftshader pins that software adapter so output is identical on a dev
+  // machine with a real GPU and in CI — required for stable cross-backend baselines.
+  const browser = await chromium.launch({
+    args: ['--enable-unsafe-webgpu', '--use-webgpu-adapter=swiftshader'],
+  });
   const context = await browser.newContext({ viewport: { width: 800, height: 600 } });
 
   // Always signal capture mode before any page script runs. A page whose render advances over time
@@ -357,7 +364,20 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       }
       if (extraWait > 0) await page.waitForTimeout(extraWait);
 
-      const screenshotBuffer = await page.screenshot();
+      // WebGPU is not presentable on the headless/software adapter, so the browser screenshots a blank
+      // canvas. The functional verifier reads the frame back from the GPU and exposes it as a PNG data
+      // URL (window.__ftRenderImage); use that as the screenshot when present. All other renderers (and
+      // the explorer/landing tools, which do not run the verifier) screenshot the page normally.
+      let screenshotBuffer = await page.screenshot();
+      if (renderer === 'webgpu') {
+        const dataUrl = await page
+          .waitForFunction(() => (window as { __ftRenderImage?: string }).__ftRenderImage ?? null, null, {
+            timeout: 15_000,
+          })
+          .then((handle) => handle.jsonValue() as Promise<string>)
+          .catch(() => null);
+        if (dataUrl) screenshotBuffer = Buffer.from(dataUrl.split(',')[1], 'base64');
+      }
       const hash = createHash('sha256').update(screenshotBuffer).digest('hex');
 
       // Atomic write: tmp files renamed into place, status.json written last.
