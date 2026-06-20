@@ -1,30 +1,29 @@
 import { join } from 'node:path';
 
-import electron from 'electron';
-
+import type { ElectronApi } from '@flighthq/host-electron';
+import { getElectronBrowserWindow, registerElectronBackends } from '@flighthq/host-electron';
+import type { ApplicationWindow, MenuItemTemplate, ScreenInfo } from '@flighthq/sdk';
 import {
   createApplicationWindow,
   createMenuItemTemplate,
   createTrayIcon,
-  getScreens,
   getAppLocale,
   getAppName,
   getAppVersion,
+  getScreens,
   onMenuSelect,
   onTrayEvent,
   openWindow,
   readClipboardText,
   registerGlobalShortcut,
-  setApplicationMenu,
   setAppBadgeCount,
+  setApplicationMenu,
   setTrayIconTooltip,
   showNotification,
   showOpenFileDialog,
   writeClipboardText,
 } from '@flighthq/sdk';
-import type { ApplicationWindow, MenuItemTemplate, ScreenInfo } from '@flighthq/sdk';
-import { getElectronBrowserWindow, registerElectronBackends } from '@flighthq/host-electron';
-import type { ElectronApi } from '@flighthq/host-electron';
+import electron from 'electron';
 
 const { app, ipcMain } = electron;
 
@@ -36,7 +35,7 @@ let mainWindow: ApplicationWindow | null = null;
 function loadRenderer(win: ApplicationWindow): void {
   const bw = getElectronBrowserWindow(win);
   if (bw === null) {
-    console.error('[harness] no BrowserWindow for the Flight window');
+    console.error('[harness] no BrowserWindow for the Flight window'); // eslint-disable-line
     return;
   }
   const devURL = process.env['ELECTRON_RENDERER_URL'];
@@ -62,11 +61,11 @@ function installIpcBridge(): void {
 // One-shot demonstration of the OS-integration seams, logged to the terminal so a run visibly proves
 // the Electron backends are wired.
 function runOsIntegrationDemo(): void {
-  console.log('[harness] app:', getAppName(), getAppVersion(), getAppLocale());
+  console.log('[harness] app:', getAppName(), getAppVersion(), getAppLocale()); // eslint-disable-line
 
   const screens: ScreenInfo[] = [];
   getScreens(screens);
-  console.log('[harness] screens:', screens.length);
+  console.log('[harness] screens:', screens.length); // eslint-disable-line
 
   setAppBadgeCount(3);
 
@@ -81,24 +80,24 @@ function runOsIntegrationDemo(): void {
     }),
   ];
   setApplicationMenu(menu);
-  onMenuSelect((id) => console.log('[harness] menu select:', id));
+  onMenuSelect((id) => console.log('[harness] menu select:', id)); // eslint-disable-line
 
-  registerGlobalShortcut('CommandOrControl+Shift+F', () => console.log('[harness] global shortcut fired'));
+  registerGlobalShortcut('CommandOrControl+Shift+F', () => console.log('[harness] global shortcut fired')); // eslint-disable-line
 
   void (async () => {
     await writeClipboardText('Hello from Flight via Electron');
-    console.log('[harness] clipboard round-trip:', await readClipboardText());
+    console.log('[harness] clipboard round-trip:', await readClipboardText()); // eslint-disable-line
   })();
 
   try {
     const tray = createTrayIcon({ tooltip: 'Flight Harness' });
     if (tray !== null) {
       setTrayIconTooltip(tray, 'Flight Harness (ready)');
-      onTrayEvent((id, event) => console.log('[harness] tray event:', id, event));
+      onTrayEvent((id, event) => console.log('[harness] tray event:', id, event)); // eslint-disable-line
     }
   } catch (error) {
     // Electron's Tray needs a valid icon image; without bundling one this can throw. Non-fatal here.
-    console.warn('[harness] tray unavailable (needs an icon asset):', error);
+    console.warn('[harness] tray unavailable (needs an icon asset):', error); // eslint-disable-line
   }
 }
 

@@ -1,10 +1,10 @@
+import { createElectronDialogBackend } from './dialog';
 import type {
   ElectronApi,
   ElectronMessageBoxOptions,
   ElectronOpenDialogOptions,
   ElectronSaveDialogOptions,
 } from './electronModule';
-import { createElectronDialogBackend } from './dialog';
 
 function fakeElectron(overrides: {
   open?: { canceled: boolean; filePaths: string[] };

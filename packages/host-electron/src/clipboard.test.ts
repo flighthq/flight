@@ -1,5 +1,5 @@
-import type { ElectronApi, ElectronNativeImage } from './electronModule';
 import { createElectronClipboardBackend } from './clipboard';
+import type { ElectronApi, ElectronNativeImage } from './electronModule';
 
 function fakeElectron(): ElectronApi {
   const store = { text: '', html: '', rtf: '', imageDataURL: '', bookmarkTitle: '', bookmarkUrl: '' };

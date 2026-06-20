@@ -1,5 +1,5 @@
-import { connectSignal } from '@flighthq/signals';
 import { createApplicationWindow } from '@flighthq/application';
+import { connectSignal } from '@flighthq/signals';
 
 import type { ElectronApi, ElectronBrowserWindowOptions, ElectronRectangle } from './electronModule';
 import { createElectronWindowBackend, getElectronBrowserWindow } from './window';
