@@ -71,6 +71,20 @@ describe('createWebGLRenderState', () => {
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_ALPHA);
   });
 
+  it('requests an anti-aliased context by default', () => {
+    const { canvas } = makeCanvas();
+    createWebGLRenderState(canvas);
+    const attribs = (canvas.getContext as ReturnType<typeof vi.fn>).mock.calls[0][1] as WebGLContextAttributes;
+    expect(attribs.antialias).toBe(true);
+  });
+
+  it('disables the anti-aliased context when antialias is false', () => {
+    const { canvas } = makeCanvas();
+    createWebGLRenderState(canvas, { antialias: false });
+    const attribs = (canvas.getContext as ReturnType<typeof vi.fn>).mock.calls[0][1] as WebGLContextAttributes;
+    expect(attribs.antialias).toBe(false);
+  });
+
   it('applies the backgroundColor option', () => {
     const { canvas } = makeCanvas();
     const state = createWebGLRenderState(canvas, { backgroundColor: 0xff0000ff });
