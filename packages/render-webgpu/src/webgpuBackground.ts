@@ -1,6 +1,7 @@
 import type { WebGPURenderState } from '@flighthq/types';
 
 import { getWebGPURenderStateRuntime } from './webgpuRenderState';
+import { acquireWebGPUFrameCaptureTexture, encodeWebGPUFrameCapture } from './webgpuSurface';
 
 function ensureWebGPUDepthStencil(state: WebGPURenderState, width: number, height: number): void {
   const runtime = getWebGPURenderStateRuntime(state);
@@ -53,7 +54,10 @@ export function renderWebGPUBackground(state: WebGPURenderState): void {
 
   ensureWebGPUDepthStencil(state, width, height);
 
-  const canvasTexture = context.getCurrentTexture();
+  // With frame capture on, render into an offscreen COPY_SRC texture instead of the swapchain: software/
+  // headless adapters never present the swapchain and its texture reads back as zeros, so the readable
+  // copy must be the render target itself.
+  const canvasTexture = acquireWebGPUFrameCaptureTexture(state) ?? context.getCurrentTexture();
   const canvasView = canvasTexture.createView();
   runtime.canvasTextureView = canvasView;
   runtime.canvasViewCleared = true;
@@ -106,6 +110,9 @@ export function submitWebGPURenderPass(state: WebGPURenderState): void {
     if (uniformOffset > 0) {
       device.queue.writeBuffer(uniformBuffer, 0, uniformData.buffer, 0, uniformOffset);
     }
+    // Copy the offscreen capture texture into the readback buffer within this frame's encoder; on the
+    // adapters capture exists for, GPU work queued in a later task does not land.
+    encodeWebGPUFrameCapture(state, commandEncoder);
     device.queue.submit([commandEncoder.finish()]);
     runtime.commandEncoder = null;
   }

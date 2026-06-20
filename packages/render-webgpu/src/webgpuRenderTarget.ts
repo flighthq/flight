@@ -72,9 +72,15 @@ export function beginWebGPURenderTarget(
   );
 }
 
-export function createWebGPURenderTarget(state: WebGPURenderState, width: number, height: number): WebGPURenderTarget {
+// `format` defaults to the canvas format. Pass 'rgba16float' for an HDR effect target (bloom, tone
+// mapping). The chosen format is recorded on the target so the effect-target pool matches on it.
+export function createWebGPURenderTarget(
+  state: WebGPURenderState,
+  width: number,
+  height: number,
+  format: GPUTextureFormat = state.format,
+): WebGPURenderTarget {
   const device = state.device;
-  const format = state.format;
   const w = Math.max(1, Math.ceil(width));
   const h = Math.max(1, Math.ceil(height));
 
@@ -93,7 +99,7 @@ export function createWebGPURenderTarget(state: WebGPURenderState, width: number
   });
   const depthStencilView = depthStencilTexture.createView();
 
-  return { bindGroup, texture, view, depthStencilTexture, depthStencilView, width: w, height: h };
+  return { bindGroup, texture, view, depthStencilTexture, depthStencilView, format, width: w, height: h };
 }
 
 export function destroyWebGPURenderTarget(_state: WebGPURenderState, target: WebGPURenderTarget): void {
@@ -186,7 +192,7 @@ export function resizeWebGPURenderTarget(
   height: number,
 ): void {
   const device = state.device;
-  const format = state.format;
+  const format = target.format;
   const w = Math.max(1, Math.ceil(width));
   const h = Math.max(1, Math.ceil(height));
   target.width = w;

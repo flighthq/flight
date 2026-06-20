@@ -20,6 +20,7 @@
     { "path": "../text" },
     { "path": "../shape" },
     { "path": "../sprite" },
+    { "path": "../surface" },
     { "path": "../text-input" },
     { "path": "../text-layout" },
     { "path": "../types" }

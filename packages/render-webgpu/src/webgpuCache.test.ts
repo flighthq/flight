@@ -38,6 +38,7 @@ vi.mock('./webgpuRenderTarget', async (importOriginal) => {
         depthStencilView: {} as GPUTextureView,
         texture: {} as GPUTexture,
         view: {} as GPUTextureView,
+        format: 'bgra8unorm',
         width,
         height,
       }),
