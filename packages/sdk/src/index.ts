@@ -6,6 +6,8 @@ export * from '@flighthq/clipboard';
 export * from '@flighthq/device';
 export * from '@flighthq/dialog';
 export * from '@flighthq/displayobject';
+export * from '@flighthq/effects';
+export * from '@flighthq/effects-webgl';
 export * from '@flighthq/entity';
 export * from '@flighthq/filesystem';
 export * from '@flighthq/filters';

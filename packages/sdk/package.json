@@ -35,6 +35,8 @@
     "@flighthq/device": "*",
     "@flighthq/dialog": "*",
     "@flighthq/displayobject": "*",
+    "@flighthq/effects": "*",
+    "@flighthq/effects-webgl": "*",
     "@flighthq/entity": "*",
     "@flighthq/filesystem": "*",
     "@flighthq/filters": "*",

@@ -9,6 +9,8 @@
     { "path": "./packages/device" },
     { "path": "./packages/dialog" },
     { "path": "./packages/displayobject" },
+    { "path": "./packages/effects" },
+    { "path": "./packages/effects-webgl" },
     { "path": "./packages/entity" },
     { "path": "./packages/filesystem" },
     { "path": "./packages/filters" },
