@@ -82,7 +82,7 @@ export function applyBackgroundBlur(node: DisplayObject): () => void {
     const src = getWebGLRenderCacheTarget(state, sharp);
     if (src === null) return;
     const out = ensureWebGLRenderCacheTarget(state, blurred, src.width, src.height);
-    const temp = createWebGLRenderTarget(state, src.width, src.height);
+    const temp = createWebGLRenderTarget(state, { width: src.width, height: src.height });
     // Run inside a render-target bracket so endWebGLRenderTarget rebinds the screen framebuffer the
     // next render() draws into; clear the output first since the blur composites over it.
     beginWebGLRenderTarget(state, out, createMatrix());
