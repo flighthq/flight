@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-effect-bokeh-dof",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

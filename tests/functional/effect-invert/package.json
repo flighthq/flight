@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-effect-invert",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}
