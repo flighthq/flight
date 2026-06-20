@@ -25,6 +25,7 @@
     { "path": "./packages/ipc" },
     { "path": "./packages/keyboard" },
     { "path": "./packages/lifecycle" },
+    { "path": "./packages/math" },
     { "path": "./packages/log" },
     { "path": "./packages/materials" },
     { "path": "./packages/media" },

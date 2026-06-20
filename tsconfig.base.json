@@ -95,6 +95,8 @@
       "@flighthq/geometry/*": ["./packages/geometry/src/*"],
       "@flighthq/input": ["./packages/input/src/index.ts"],
       "@flighthq/input/*": ["./packages/input/src/*"],
+      "@flighthq/math": ["./packages/math/src/index.ts"],
+      "@flighthq/math/*": ["./packages/math/src/*"],
       "@flighthq/interaction": ["./packages/interaction/src/index.ts"],
       "@flighthq/interaction/*": ["./packages/interaction/src/*"],
       "@flighthq/log": ["./packages/log/src/index.ts"],

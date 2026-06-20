@@ -113,10 +113,13 @@ export default [
   },
 
   {
-    // Allow console in scripts
+    // Build/verification scripts may log, and legitimately import workspace packages (e.g. the SDK
+    // surface primitives) — the resolver maps those to package source, which the parent-import rule
+    // would otherwise flag.
     files: ['scripts/**'],
     rules: {
       'no-console': 'off',
+      'import/no-relative-parent-imports': 'off',
     },
   },
 
