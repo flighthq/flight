@@ -31,7 +31,15 @@ export async function createWebGPURenderState(
   const context = canvas.getContext('webgpu') as GPUCanvasContext | null;
   if (!context) throw new Error('Failed to get WebGPU canvas context.');
 
-  context.configure({ device, format, alphaMode: 'premultiplied' });
+  // COPY_SRC lets the canvas texture be read back via copyTextureToBuffer (createSurfaceFromWebGPURenderState).
+  // It is the only reliable way to read a WebGPU frame in headless/software contexts, where canvas
+  // presentation does not surface the swapchain; it also backs user-facing screenshot/save-pixels needs.
+  context.configure({
+    device,
+    format,
+    alphaMode: 'premultiplied',
+    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+  });
 
   // Align uniform ring buffer slots to device limits
   const uniformStride = Math.max(256, device.limits.minUniformBufferOffsetAlignment, UNIFORM_BYTE_SIZE);
