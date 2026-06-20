@@ -14,6 +14,7 @@ export * from './webgpuParticleEmitter';
 export * from './webgpuQuadBatch';
 export * from './webgpuRenderState';
 export * from './webgpuRenderTarget';
+export * from './webgpuRenderTargetPool';
 export * from './webgpuRichText';
 export * from './webgpuScale9Mapper';
 export * from './webgpuScale9Shape';
@@ -23,6 +24,7 @@ export * from './webgpuShape';
 export * from './webgpuSprite';
 export * from './webgpuSpriteBatch';
 export * from './webgpuSpriteRenderer';
+export * from './webgpuSurface';
 export { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestHelper';
 export * from './webgpuTextInput';
 export * from './webgpuTextLabel';
@@ -45,4 +47,4 @@ export {
   defaultCanvasShapeCommands as defaultWebGPUShapeCommands,
   registerCanvasShapeCommands as registerWebGPUShapeCommands,
 } from '@flighthq/render-canvas';
-export type { WebGPURenderTarget } from '@flighthq/types';
+export type { WebGPURenderTarget, WebGPURenderTargetPool } from '@flighthq/types';
