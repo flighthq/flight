@@ -1,0 +1,324 @@
+import { drawWebGLFullscreenPass } from '@flighthq/render-webgl';
+import type {
+  BokehDepthOfFieldEffect,
+  ChromaticAberrationEffect,
+  LensDistortionEffect,
+  LensFlareEffect,
+  TiltShiftEffect,
+  VignetteEffect,
+  WebGLRenderEffectRunner,
+  WebGLRenderState,
+  WebGLRenderTarget,
+} from '@flighthq/types';
+
+import { getWebGLEffectProgram } from './effectProgramCache';
+
+// Lens-camera effect recipes. Each is a single-pass fragment shader keyed and compiled once per state
+// via getWebGLEffectProgram, then drawn with drawWebGLFullscreenPass. Shaders work in centered
+// coordinates (v_texCoord - 0.5) so radial math measures distance from the optical center. Packed RGBA
+// color ints are unpacked to normalized vec4 uniforms in JS before upload.
+
+// Bokeh depth-of-field: a disc-shaped blur. When the scene supplied a sampleable depth texture
+// (ctx.sceneDepthTexture), it computes a per-pixel circle of confusion from focusDistance/focusRange and
+// scales the disc radius by it (the real DoF). When depth is absent it falls back to a uniform disc blur
+// of radius maxBlur. The second real consumer of the depth seam, alongside screen-space fog.
+export function applyBokehDepthOfFieldEffectToWebGL(
+  state: WebGLRenderState,
+  source: Readonly<WebGLRenderTarget>,
+  dest: Readonly<WebGLRenderTarget>,
+  depthTexture: WebGLTexture | null,
+  effect: Readonly<BokehDepthOfFieldEffect>,
+): void {
+  const maxBlur = effect.maxBlur ?? 4;
+  const focusDistance = effect.focusDistance ?? 0.5;
+  const focusRange = effect.focusRange ?? 0.2;
+  const program = getWebGLEffectProgram(state, 'lens.bokehDoF', BOKEH_DOF_FRAGMENT_SRC);
+  const inputs = depthTexture ? [source.texture, depthTexture] : [source.texture];
+  drawWebGLFullscreenPass(state, program, inputs, dest, (gl, p) => {
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_maxBlur'), maxBlur);
+    gl.uniform2f(gl.getUniformLocation(p.program, 'u_resolution'), source.width, source.height);
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_focusDistance'), focusDistance);
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_focusRange'), focusRange);
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_hasDepth'), depthTexture ? 1 : 0);
+  });
+}
+
+// Chromatic aberration: sample the R/G/B channels at progressively larger offsets so colors fringe
+// apart. When radial, the offset scales with distance from the optical center (true lens behavior);
+// otherwise it is a uniform horizontal split.
+export function applyChromaticAberrationEffectToWebGL(
+  state: WebGLRenderState,
+  source: Readonly<WebGLRenderTarget>,
+  dest: Readonly<WebGLRenderTarget>,
+  effect: Readonly<ChromaticAberrationEffect>,
+): void {
+  const intensity = effect.intensity ?? 0.005;
+  const radial = effect.radial ?? true;
+  const program = getWebGLEffectProgram(state, 'lens.chromaticAberration', CHROMATIC_ABERRATION_FRAGMENT_SRC);
+  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_radial'), radial ? 1 : 0);
+  });
+}
+
+// Lens distortion: remap uv by a radial polynomial. Positive amount bulges outward (barrel), negative
+// pinches inward (pincushion); scale re-frames the result so corners stay in view.
+export function applyLensDistortionEffectToWebGL(
+  state: WebGLRenderState,
+  source: Readonly<WebGLRenderTarget>,
+  dest: Readonly<WebGLRenderTarget>,
+  effect: Readonly<LensDistortionEffect>,
+): void {
+  const amount = effect.amount ?? 0.2;
+  const scale = effect.scale ?? 1;
+  const program = getWebGLEffectProgram(state, 'lens.lensDistortion', LENS_DISTORTION_FRAGMENT_SRC);
+  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_amount'), amount);
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_scale'), scale);
+  });
+}
+
+// Lens flare: a single-pass approximation. A true flare is a multi-pass recipe (downsample a bright
+// pass, then accumulate ghosts and a halo from it). Here, on each fragment, we sample the source's
+// bright spots along the vector from the pixel toward the center, adding `ghosts` evenly spaced ghost
+// samples plus a halo ring, scaled by threshold/intensity. It previews the look without the bright-pass
+// buffer.
+export function applyLensFlareEffectToWebGL(
+  state: WebGLRenderState,
+  source: Readonly<WebGLRenderTarget>,
+  dest: Readonly<WebGLRenderTarget>,
+  effect: Readonly<LensFlareEffect>,
+): void {
+  const threshold = effect.threshold ?? 0.8;
+  const intensity = effect.intensity ?? 1;
+  const ghosts = effect.ghosts ?? 4;
+  const halo = effect.halo ?? 0.5;
+  const program = getWebGLEffectProgram(state, 'lens.lensFlare', LENS_FLARE_FRAGMENT_SRC);
+  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_threshold'), threshold);
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_ghosts'), ghosts);
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_halo'), halo);
+  });
+}
+
+// Tilt-shift: keep a horizontal focus band sharp and blur above and below it. The band is centered at
+// `center` on Y with height `width`; blur strength ramps with distance outside the band. Blur is
+// approximated by averaging a few neighbor taps using the pixel size from u_resolution.
+export function applyTiltShiftEffectToWebGL(
+  state: WebGLRenderState,
+  source: Readonly<WebGLRenderTarget>,
+  dest: Readonly<WebGLRenderTarget>,
+  effect: Readonly<TiltShiftEffect>,
+): void {
+  const center = effect.center ?? 0.5;
+  const width = effect.width ?? 0.3;
+  const blur = effect.blur ?? 4;
+  const program = getWebGLEffectProgram(state, 'lens.tiltShift', TILT_SHIFT_FRAGMENT_SRC);
+  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_center'), center);
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_width'), width);
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_blur'), blur);
+    gl.uniform2f(gl.getUniformLocation(p.program, 'u_resolution'), source.width, source.height);
+  });
+}
+
+// Vignette: darken toward the edges. Pixels inside `radius` stay full bright; beyond it, brightness
+// falls off over `softness` and the color is blended toward the (unpacked) vignette color by intensity.
+export function applyVignetteEffectToWebGL(
+  state: WebGLRenderState,
+  source: Readonly<WebGLRenderTarget>,
+  dest: Readonly<WebGLRenderTarget>,
+  effect: Readonly<VignetteEffect>,
+): void {
+  const intensity = effect.intensity ?? 1;
+  const radius = effect.radius ?? 0.75;
+  const softness = effect.softness ?? 0.45;
+  const color = effect.color ?? 0x000000ff;
+  const r = ((color >>> 24) & 0xff) / 255;
+  const g = ((color >>> 16) & 0xff) / 255;
+  const b = ((color >>> 8) & 0xff) / 255;
+  const a = (color & 0xff) / 255;
+  const program = getWebGLEffectProgram(state, 'lens.vignette', VIGNETTE_FRAGMENT_SRC);
+  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_radius'), radius);
+    gl.uniform1f(gl.getUniformLocation(p.program, 'u_softness'), softness);
+    gl.uniform4f(gl.getUniformLocation(p.program, 'u_color'), r, g, b, a);
+  });
+}
+
+export const defaultWebGLBokehDepthOfFieldEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
+  applyBokehDepthOfFieldEffectToWebGL(
+    ctx.state,
+    ctx.source,
+    ctx.dest,
+    ctx.sceneDepthTexture,
+    effect as BokehDepthOfFieldEffect,
+  );
+};
+
+export const defaultWebGLChromaticAberrationEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
+  applyChromaticAberrationEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as ChromaticAberrationEffect);
+};
+
+export const defaultWebGLLensDistortionEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
+  applyLensDistortionEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as LensDistortionEffect);
+};
+
+export const defaultWebGLLensFlareEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
+  applyLensFlareEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as LensFlareEffect);
+};
+
+export const defaultWebGLTiltShiftEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
+  applyTiltShiftEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as TiltShiftEffect);
+};
+
+export const defaultWebGLVignetteEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
+  applyVignetteEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as VignetteEffect);
+};
+
+const BOKEH_DOF_FRAGMENT_SRC = `#version 300 es
+precision highp float;
+in vec2 v_texCoord;
+uniform sampler2D u_texture0;
+uniform sampler2D u_texture1;
+uniform float u_maxBlur;
+uniform vec2 u_resolution;
+uniform float u_focusDistance;
+uniform float u_focusRange;
+uniform float u_hasDepth;
+out vec4 o_color;
+void main() {
+  vec2 texel = 1.0 / u_resolution;
+  // Circle of confusion: with depth, blur scales by distance from the focus plane; without, full blur.
+  float coc = 1.0;
+  if (u_hasDepth > 0.5) {
+    float depth = texture(u_texture1, v_texCoord).r;
+    coc = clamp(abs(depth - u_focusDistance) / max(u_focusRange, 1e-4), 0.0, 1.0);
+  }
+  float blur = u_maxBlur * coc;
+  vec4 sum = vec4(0.0);
+  float total = 0.0;
+  for (int i = 0; i < 16; i++) {
+    float a = float(i) * 0.39269908; // golden-ish angular step over the disc
+    float r = (float(i % 4) + 1.0) * 0.25;
+    vec2 offset = vec2(cos(a), sin(a)) * r * blur * texel;
+    sum += texture(u_texture0, v_texCoord + offset);
+    total += 1.0;
+  }
+  o_color = sum / total;
+}`;
+
+const CHROMATIC_ABERRATION_FRAGMENT_SRC = `#version 300 es
+precision highp float;
+in vec2 v_texCoord;
+uniform sampler2D u_texture0;
+uniform float u_intensity;
+uniform float u_radial;
+out vec4 o_color;
+void main() {
+  vec2 centered = v_texCoord - 0.5;
+  float scale = mix(1.0, length(centered) * 2.0, u_radial);
+  vec2 dir = mix(vec2(1.0, 0.0), normalize(centered + vec2(1e-5)), u_radial);
+  vec2 offset = dir * u_intensity * scale;
+  float r = texture(u_texture0, v_texCoord + offset).r;
+  float g = texture(u_texture0, v_texCoord).g;
+  float b = texture(u_texture0, v_texCoord - offset).b;
+  float a = texture(u_texture0, v_texCoord).a;
+  o_color = vec4(r, g, b, a);
+}`;
+
+const LENS_DISTORTION_FRAGMENT_SRC = `#version 300 es
+precision highp float;
+in vec2 v_texCoord;
+uniform sampler2D u_texture0;
+uniform float u_amount;
+uniform float u_scale;
+out vec4 o_color;
+void main() {
+  vec2 centered = (v_texCoord - 0.5) / u_scale;
+  float r2 = dot(centered, centered);
+  vec2 distorted = centered * (1.0 + u_amount * r2) + 0.5;
+  if (distorted.x < 0.0 || distorted.x > 1.0 || distorted.y < 0.0 || distorted.y > 1.0) {
+    o_color = vec4(0.0, 0.0, 0.0, 1.0);
+  } else {
+    o_color = texture(u_texture0, distorted);
+  }
+}`;
+
+const LENS_FLARE_FRAGMENT_SRC = `#version 300 es
+precision highp float;
+in vec2 v_texCoord;
+uniform sampler2D u_texture0;
+uniform float u_threshold;
+uniform float u_intensity;
+uniform float u_ghosts;
+uniform float u_halo;
+out vec4 o_color;
+vec3 brightPass(vec2 uv) {
+  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return vec3(0.0);
+  vec3 c = texture(u_texture0, uv).rgb;
+  float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+  return c * max(0.0, l - u_threshold);
+}
+void main() {
+  vec4 scene = texture(u_texture0, v_texCoord);
+  // Single-pass approximation of a flare: walk ghost samples along the vector toward the optical
+  // center and add a halo ring, all from the bright pass of the scene itself (no separate buffer).
+  vec2 toCenter = (vec2(0.5) - v_texCoord);
+  vec3 flare = vec3(0.0);
+  int count = int(clamp(u_ghosts, 0.0, 8.0));
+  for (int i = 0; i < 8; i++) {
+    if (i >= count) break;
+    float t = (float(i) + 1.0) / (float(count) + 1.0);
+    vec2 uv = v_texCoord + toCenter * (2.0 * t);
+    flare += brightPass(uv);
+  }
+  vec2 haloDir = normalize(toCenter + vec2(1e-5));
+  flare += brightPass(v_texCoord + haloDir * u_halo) * u_halo;
+  o_color = vec4(scene.rgb + flare * u_intensity, scene.a);
+}`;
+
+const TILT_SHIFT_FRAGMENT_SRC = `#version 300 es
+precision highp float;
+in vec2 v_texCoord;
+uniform sampler2D u_texture0;
+uniform float u_center;
+uniform float u_width;
+uniform float u_blur;
+uniform vec2 u_resolution;
+out vec4 o_color;
+void main() {
+  vec2 texel = 1.0 / u_resolution;
+  float dist = abs(v_texCoord.y - u_center);
+  float edge = u_width * 0.5;
+  float amount = smoothstep(edge, edge + u_width, dist);
+  float radius = amount * u_blur;
+  vec4 sum = vec4(0.0);
+  float total = 0.0;
+  for (int i = -3; i <= 3; i++) {
+    vec2 offset = vec2(0.0, float(i)) * radius * texel;
+    sum += texture(u_texture0, v_texCoord + offset);
+    total += 1.0;
+  }
+  o_color = sum / total;
+}`;
+
+const VIGNETTE_FRAGMENT_SRC = `#version 300 es
+precision highp float;
+in vec2 v_texCoord;
+uniform sampler2D u_texture0;
+uniform float u_intensity;
+uniform float u_radius;
+uniform float u_softness;
+uniform vec4 u_color;
+out vec4 o_color;
+void main() {
+  vec4 c = texture(u_texture0, v_texCoord);
+  vec2 centered = v_texCoord - 0.5;
+  float dist = length(centered) * 1.41421356;
+  float vig = smoothstep(u_radius, u_radius - u_softness, dist);
+  float darken = (1.0 - vig) * u_intensity * u_color.a;
+  o_color = vec4(mix(c.rgb, u_color.rgb, darken), c.a);
+}`;
