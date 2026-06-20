@@ -24,6 +24,7 @@ export * from '@flighthq/keyboard';
 export * from '@flighthq/lifecycle';
 export * from '@flighthq/log';
 export * from '@flighthq/materials';
+export * from '@flighthq/math';
 export * from '@flighthq/media';
 export * from '@flighthq/menu';
 export * from '@flighthq/network';
