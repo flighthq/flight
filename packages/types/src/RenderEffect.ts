@@ -175,6 +175,12 @@ export interface DirectionalBlurEffect {
   samples?: number;
 }
 
+export interface MotionBlurEffect {
+  type: 'motionBlur'; // [MOTION] per-object motion blur from the scene velocity buffer.
+  intensity?: number;
+  samples?: number;
+}
+
 export interface RadialBlurEffect {
   type: 'radialBlur';
   centerX?: number; // 0..1.
@@ -304,6 +310,7 @@ export type RenderEffect =
   | LensFlareEffect
   | LiftGammaGainEffect
   | LookupTableGradeEffect
+  | MotionBlurEffect
   | OutlineEffect
   | PixelateEffect
   | PosterizeEffect

@@ -18,6 +18,13 @@ export interface QuadBatchData extends DisplayObjectData {
 
 export interface QuadBatchRuntime extends DisplayObjectRuntime {
   localBoundsRectangle: Rectangle | null;
+  // Per-instance velocity, interleaved as (x, y) in node units per instance: index 2*i is instance i's
+  // x velocity, 2*i+1 its y. This is a batch-owned array — NOT an entry in the per-entity VelocityField —
+  // because an individual quad instance is not a stable object key the field can index. Whatever drives the
+  // instances (physics, tween, manual update) fills this so the velocity pass can emit per-instance motion
+  // vectors instead of one coarse velocity over the whole batch. Null when no per-instance velocity is
+  // tracked, in which case the velocity writer falls back to the batch's coarse world-bounds velocity.
+  instanceVelocities: Float32Array | null;
 }
 
 export interface QuadBatch extends DisplayObject {
