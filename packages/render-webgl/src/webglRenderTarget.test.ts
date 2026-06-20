@@ -41,7 +41,7 @@ function makeState() {
 describe('beginWebGLRenderTarget', () => {
   it('binds the target framebuffer', () => {
     const { state, gl } = makeState();
-    const target = createWebGLRenderTarget(state, 64, 48);
+    const target = createWebGLRenderTarget(state, { width: 64, height: 48 });
     vi.clearAllMocks();
 
     beginWebGLRenderTarget(state, target, createMatrix());
@@ -54,7 +54,7 @@ describe('beginWebGLRenderTarget', () => {
 
   it('sets renderTargetViewport to the target dimensions', () => {
     const { state } = makeState();
-    const target = createWebGLRenderTarget(state, 64, 48);
+    const target = createWebGLRenderTarget(state, { width: 64, height: 48 });
 
     beginWebGLRenderTarget(state, target, createMatrix());
 
@@ -63,7 +63,7 @@ describe('beginWebGLRenderTarget', () => {
 
   it('sets renderTransform2D to the provided transform', () => {
     const { state } = makeState();
-    const target = createWebGLRenderTarget(state, 64, 48);
+    const target = createWebGLRenderTarget(state, { width: 64, height: 48 });
     const renderTransform = createMatrix();
     renderTransform.tx = 10;
     renderTransform.ty = 20;
@@ -76,8 +76,8 @@ describe('beginWebGLRenderTarget', () => {
 
   it('supports nested begin calls', () => {
     const { state } = makeState();
-    const targetA = createWebGLRenderTarget(state, 64, 48);
-    const targetB = createWebGLRenderTarget(state, 32, 32);
+    const targetA = createWebGLRenderTarget(state, { width: 64, height: 48 });
+    const targetB = createWebGLRenderTarget(state, { width: 32, height: 32 });
 
     beginWebGLRenderTarget(state, targetA, createMatrix());
     beginWebGLRenderTarget(state, targetB, createMatrix());
@@ -92,28 +92,28 @@ describe('beginWebGLRenderTarget', () => {
 describe('createWebGLRenderTarget', () => {
   it('returns a render target with the requested dimensions', () => {
     const { state } = makeState();
-    const target = createWebGLRenderTarget(state, 128, 64);
+    const target = createWebGLRenderTarget(state, { width: 128, height: 64 });
     expect(target.width).toBe(128);
     expect(target.height).toBe(64);
   });
 
   it('enforces a minimum size of 1', () => {
     const { state } = makeState();
-    const target = createWebGLRenderTarget(state, 0, 0);
+    const target = createWebGLRenderTarget(state, { width: 0, height: 0 });
     expect(target.width).toBe(1);
     expect(target.height).toBe(1);
   });
 
   it('ceils fractional dimensions', () => {
     const { state } = makeState();
-    const target = createWebGLRenderTarget(state, 10.3, 20.9);
+    const target = createWebGLRenderTarget(state, { width: 10.3, height: 20.9 });
     expect(target.width).toBe(11);
     expect(target.height).toBe(21);
   });
 
   it('calls createFramebuffer and createTexture', () => {
     const { state, gl } = makeState();
-    createWebGLRenderTarget(state, 64, 64);
+    createWebGLRenderTarget(state, { width: 64, height: 64 });
     expect(vi.mocked(gl.createFramebuffer)).toHaveBeenCalled();
     expect(vi.mocked(gl.createTexture)).toHaveBeenCalled();
   });
@@ -122,7 +122,7 @@ describe('createWebGLRenderTarget', () => {
     const { state } = makeState();
     const runtime = getWebGLRenderStateRuntime(state);
     runtime.currentTexture = {} as WebGLTexture;
-    createWebGLRenderTarget(state, 32, 32);
+    createWebGLRenderTarget(state, { width: 32, height: 32 });
     expect(runtime.currentTexture).toBeNull();
   });
 });
@@ -130,7 +130,7 @@ describe('createWebGLRenderTarget', () => {
 describe('destroyWebGLRenderTarget', () => {
   it('deletes the framebuffer and texture', () => {
     const { state, gl } = makeState();
-    const target = createWebGLRenderTarget(state, 32, 32);
+    const target = createWebGLRenderTarget(state, { width: 32, height: 32 });
     const { framebuffer, texture } = target;
 
     destroyWebGLRenderTarget(state, target);
@@ -144,7 +144,7 @@ describe('drawWebGLRenderTargetResult', () => {
   it('is a no-op when target dimensions are zero', () => {
     const { state, gl } = makeState();
     const node = getOrCreateRenderProxy2D(state, createDisplayObject());
-    const target = createWebGLRenderTarget(state, 1, 1);
+    const target = createWebGLRenderTarget(state, { width: 1, height: 1 });
     target.width = 0;
     vi.clearAllMocks();
 
@@ -157,7 +157,7 @@ describe('drawWebGLRenderTargetResult', () => {
     const { state } = makeState();
     const node = getOrCreateRenderProxy2D(state, createDisplayObject());
     node.alpha = 1;
-    const target = createWebGLRenderTarget(state, 64, 48);
+    const target = createWebGLRenderTarget(state, { width: 64, height: 48 });
 
     expect(() => drawWebGLRenderTargetResult(state, node, target, createMatrix())).not.toThrow();
   });
@@ -165,7 +165,7 @@ describe('drawWebGLRenderTargetResult', () => {
   it('binds the target texture', () => {
     const { state, gl } = makeState();
     const node = getOrCreateRenderProxy2D(state, createDisplayObject());
-    const target = createWebGLRenderTarget(state, 64, 48);
+    const target = createWebGLRenderTarget(state, { width: 64, height: 48 });
     vi.clearAllMocks();
 
     drawWebGLRenderTargetResult(state, node, target, createMatrix());
@@ -180,7 +180,7 @@ describe('drawWebGLRenderTargetResult', () => {
 describe('endWebGLRenderTarget', () => {
   it('restores the previous framebuffer', () => {
     const { state, gl } = makeState();
-    const target = createWebGLRenderTarget(state, 64, 48);
+    const target = createWebGLRenderTarget(state, { width: 64, height: 48 });
 
     beginWebGLRenderTarget(state, target, createMatrix());
     vi.clearAllMocks();
@@ -194,7 +194,7 @@ describe('endWebGLRenderTarget', () => {
 
   it('restores renderTargetViewport to null', () => {
     const { state } = makeState();
-    const target = createWebGLRenderTarget(state, 64, 48);
+    const target = createWebGLRenderTarget(state, { width: 64, height: 48 });
 
     beginWebGLRenderTarget(state, target, createMatrix());
     endWebGLRenderTarget(state);
@@ -205,7 +205,7 @@ describe('endWebGLRenderTarget', () => {
   it('restores the original renderTransform2D', () => {
     const { state } = makeState();
     const originalTransform = state.renderTransform2D;
-    const target = createWebGLRenderTarget(state, 64, 48);
+    const target = createWebGLRenderTarget(state, { width: 64, height: 48 });
     const renderTransform = createMatrix();
     renderTransform.tx = 99;
 
@@ -225,7 +225,7 @@ describe('endWebGLRenderTarget', () => {
 describe('resizeWebGLRenderTarget', () => {
   it('updates the target dimensions', () => {
     const { state } = makeState();
-    const target = createWebGLRenderTarget(state, 64, 64);
+    const target = createWebGLRenderTarget(state, { width: 64, height: 64 });
 
     resizeWebGLRenderTarget(state, target, 256, 128);
 
@@ -235,7 +235,7 @@ describe('resizeWebGLRenderTarget', () => {
 
   it('enforces a minimum size of 1', () => {
     const { state } = makeState();
-    const target = createWebGLRenderTarget(state, 64, 64);
+    const target = createWebGLRenderTarget(state, { width: 64, height: 64 });
 
     resizeWebGLRenderTarget(state, target, 0, 0);
 
@@ -245,7 +245,7 @@ describe('resizeWebGLRenderTarget', () => {
 
   it('reallocates the texture storage', () => {
     const { state, gl } = makeState();
-    const target = createWebGLRenderTarget(state, 64, 64);
+    const target = createWebGLRenderTarget(state, { width: 64, height: 64 });
     vi.clearAllMocks();
 
     resizeWebGLRenderTarget(state, target, 128, 128);

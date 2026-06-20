@@ -1,5 +1,12 @@
 import { acquireMatrix, copyMatrix, createMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry';
-import type { Matrix, RenderProxy2D, WebGLRenderState, WebGLRenderTarget } from '@flighthq/types';
+import type {
+  Matrix,
+  RenderProxy2D,
+  RenderTargetDescriptor,
+  RenderTargetFormat,
+  WebGLRenderState,
+  WebGLRenderTarget,
+} from '@flighthq/types';
 
 import { drawWebGLQuad, useWebGLProgram } from './webglDraw';
 import { getWebGLRenderStateRuntime } from './webglRenderState';
@@ -11,15 +18,13 @@ type SavedWebGLState = {
   renderTransform2D: Matrix | null;
 };
 
-const _targetStack = new WeakMap<WebGLRenderState, SavedWebGLState[]>();
-
 /**
- * Redirects subsequent WebGL rendering into `target`'s framebuffer. Saves
- * the current framebuffer binding, renderTargetViewport, and renderTransform2D
- * so they can be fully restored by `endWebGLRenderTarget`. Supports nesting.
+ * Redirects subsequent WebGL rendering into `target`'s framebuffer. Saves the current framebuffer
+ * binding, renderTargetViewport, and renderTransform2D so they can be fully restored by
+ * `endWebGLRenderTarget`. Supports nesting.
  *
- * The caller must set the desired `renderTransform` (via this function) before
- * rendering into the target to ensure the render tree's transform2D values are correct.
+ * The caller must set the desired `renderTransform` (via this function) before rendering into the
+ * target to ensure the render tree's transform2D values are correct.
  */
 export function beginWebGLRenderTarget(
   state: WebGLRenderState,
@@ -56,57 +61,65 @@ export function beginWebGLRenderTarget(
 }
 
 /**
- * Allocates a framebuffer-backed texture of the given pixel dimensions.
- * The framebuffer is bound during creation but the default framebuffer is
+ * Allocates a render target realizing `descriptor`'s axes (format, MSAA sampleCount, MRT
+ * colorAttachments, depth). The framebuffer is bound during creation but the previous binding is
  * restored before returning.
  */
-export function createWebGLRenderTarget(state: WebGLRenderState, width: number, height: number): WebGLRenderTarget {
+export function createWebGLRenderTarget(
+  state: WebGLRenderState,
+  descriptor: Readonly<RenderTargetDescriptor>,
+): WebGLRenderTarget {
   const runtime = getWebGLRenderStateRuntime(state);
   const gl = state.gl;
 
-  const w = Math.max(1, Math.ceil(width));
-  const h = Math.max(1, Math.ceil(height));
+  const w = Math.max(1, Math.ceil(descriptor.width));
+  const h = Math.max(1, Math.ceil(descriptor.height));
+  const format = descriptor.format ?? 'rgba8';
+  const attachments = Math.max(1, descriptor.colorAttachments ?? 1);
+  const sampleCount = Math.max(1, descriptor.sampleCount ?? 1);
+  const depth = descriptor.depth ?? 'none';
+  const maxSamples = sampleCount > 1 ? Math.min(sampleCount, gl.getParameter(gl.MAX_SAMPLES) as number) : 1;
 
-  const texture = gl.createTexture()!;
-  gl.bindTexture(gl.TEXTURE_2D, texture);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, state.allowSmoothing ? gl.LINEAR : gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, state.allowSmoothing ? gl.LINEAR : gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  const target: WebGLRenderTarget = {
+    width: w,
+    height: h,
+    format,
+    sampleCount: maxSamples,
+    framebuffer: gl.createFramebuffer()!,
+    resolveFramebuffer: null,
+    textures: [],
+    texture: null as unknown as WebGLTexture,
+    depthTexture: null,
+    colorRenderbuffers: [],
+    depthStencilRenderbuffer: null,
+  };
 
-  const framebuffer = gl.createFramebuffer()!;
-  gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+  allocateWebGLRenderTargetStorage(state, target, descriptor.colorFormats, attachments, depth);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, runtime.currentFramebuffer);
   gl.bindTexture(gl.TEXTURE_2D, null);
   runtime.currentTexture = null;
-
-  return { framebuffer, texture, width: w, height: h };
+  return target;
 }
 
-/**
- * Deletes the GL resources owned by `target`. The target object must not be
- * used after this call.
- */
+/** Deletes the GL resources owned by `target`. The target object must not be used after this call. */
 export function destroyWebGLRenderTarget(state: WebGLRenderState, target: WebGLRenderTarget): void {
   const gl = state.gl;
   gl.deleteFramebuffer(target.framebuffer);
-  gl.deleteTexture(target.texture);
+  if (target.resolveFramebuffer) gl.deleteFramebuffer(target.resolveFramebuffer);
+  for (const texture of target.textures) gl.deleteTexture(texture);
+  for (const rb of target.colorRenderbuffers) gl.deleteRenderbuffer(rb);
+  if (target.depthTexture) gl.deleteTexture(target.depthTexture);
+  if (target.depthStencilRenderbuffer) gl.deleteRenderbuffer(target.depthStencilRenderbuffer);
 }
 
 /**
  * Composites `target`'s texture onto the current framebuffer as a positioned quad, using
- * `renderProxy`'s world transform and alpha. `transform` maps the target's pixel space into
- * the node's local space (as produced by `computeRenderCacheTransform`). This mirrors
- * `drawWebGLImageCacheResult` but sources a GPU render-target texture directly instead of an
- * uploaded `CanvasImageSource`, closing the offscreen-filter loop: render a node into a
- * target, run a filter pass (target → target), then composite the result back here.
+ * `renderProxy`'s world transform and alpha. `transform` maps the target's pixel space into the
+ * node's local space (as produced by `computeRenderCacheTransform`).
  *
- * Render-target textures are stored with GL's bottom-left origin, so the rendered content's
- * visual top sits at texture `v=1` — the opposite of uploaded canvas images. The quad's V
- * coordinates are flipped (`v0=1, v1=0`) so the result composites upright.
+ * Render-target textures are stored with GL's bottom-left origin, so the quad's V coordinates are
+ * flipped (`v0=1, v1=0`) so the result composites upright.
  */
 export function drawWebGLRenderTargetResult(
   state: WebGLRenderState,
@@ -122,8 +135,6 @@ export function drawWebGLRenderTargetResult(
 
   const gl = state.gl;
   const { shaderLoc, matrixArray } = runtime;
-  // The render target already owns a GPU texture — bind it directly rather than going through
-  // bindWebGLTexture, which uploads a CanvasImageSource.
   gl.bindTexture(gl.TEXTURE_2D, target.texture);
   runtime.currentTexture = target.texture;
 
@@ -138,8 +149,8 @@ export function drawWebGLRenderTargetResult(
 }
 
 /**
- * Restores the framebuffer, viewport, renderTargetViewport, and renderTransform2D
- * saved by the matching `beginWebGLRenderTarget` call.
+ * Restores the framebuffer, viewport, renderTargetViewport, and renderTransform2D saved by the
+ * matching `beginWebGLRenderTarget` call.
  */
 export function endWebGLRenderTarget(state: WebGLRenderState): void {
   const runtime = getWebGLRenderStateRuntime(state);
@@ -159,26 +170,165 @@ export function endWebGLRenderTarget(state: WebGLRenderState): void {
   runtime.currentBlendMode = null;
 }
 
-/**
- * Reallocates the texture backing `target` to the new pixel dimensions.
- * Preserves the existing framebuffer object — only the texture storage changes.
- */
+/** Reallocates the storage backing `target` to the new pixel dimensions, preserving its axes. */
 export function resizeWebGLRenderTarget(
   state: WebGLRenderState,
   target: WebGLRenderTarget,
   width: number,
   height: number,
 ): void {
-  const runtime = getWebGLRenderStateRuntime(state);
-  const gl = state.gl;
-
   const w = Math.max(1, Math.ceil(width));
   const h = Math.max(1, Math.ceil(height));
+  if (w === target.width && h === target.height) return;
+
+  const gl = state.gl;
+  for (const texture of target.textures) gl.deleteTexture(texture);
+  for (const rb of target.colorRenderbuffers) gl.deleteRenderbuffer(rb);
+  if (target.depthTexture) gl.deleteTexture(target.depthTexture);
+  if (target.depthStencilRenderbuffer) gl.deleteRenderbuffer(target.depthStencilRenderbuffer);
+  target.textures = [];
+  target.colorRenderbuffers = [];
+  target.depthTexture = null;
+  target.depthStencilRenderbuffer = null;
   target.width = w;
   target.height = h;
 
-  gl.bindTexture(gl.TEXTURE_2D, target.texture);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-  gl.bindTexture(gl.TEXTURE_2D, null);
+  const depth = target.depthStencilRenderbuffer || target.depthTexture ? 'depth-stencil' : 'none';
+  allocateWebGLRenderTargetStorage(state, target, undefined, Math.max(1, target.textures.length || 1), depth);
+  getWebGLRenderStateRuntime(state).currentTexture = null;
+}
+
+/**
+ * Resolves an MSAA target's multisample framebuffer into its single-sample resolve texture(s) via
+ * blitFramebuffer. No-op when sampleCount === 1. Call after the scene is drawn into the target and
+ * before sampling `target.texture`/`target.textures`.
+ */
+export function resolveWebGLRenderTarget(state: WebGLRenderState, target: WebGLRenderTarget): void {
+  if (target.sampleCount <= 1 || target.resolveFramebuffer === null) return;
+  const runtime = getWebGLRenderStateRuntime(state);
+  const gl = state.gl;
+
+  gl.bindFramebuffer(gl.READ_FRAMEBUFFER, target.framebuffer);
+  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, target.resolveFramebuffer);
+  for (let i = 0; i < target.textures.length; i++) {
+    gl.readBuffer(gl.COLOR_ATTACHMENT0 + i);
+    gl.drawBuffers(buildSingleDrawBuffer(gl, i, target.textures.length));
+    gl.blitFramebuffer(
+      0,
+      0,
+      target.width,
+      target.height,
+      0,
+      0,
+      target.width,
+      target.height,
+      gl.COLOR_BUFFER_BIT,
+      gl.NEAREST,
+    );
+  }
+  gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
+  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, runtime.currentFramebuffer);
   runtime.currentTexture = null;
 }
+
+// Allocates color textures/renderbuffers (and the resolve FBO for MSAA) plus optional depth into the
+// already-created `target.framebuffer`. Shared by create and resize.
+function allocateWebGLRenderTargetStorage(
+  state: WebGLRenderState,
+  target: WebGLRenderTarget,
+  colorFormats: ReadonlyArray<RenderTargetFormat> | undefined,
+  attachments: number,
+  depth: 'none' | 'depth-stencil' | 'depth-stencil-sampled',
+): void {
+  const gl = state.gl;
+  const { width: w, height: h, sampleCount } = target;
+  const multisampled = sampleCount > 1;
+
+  // Resolve/sample textures (always single-sample).
+  const resolveFramebuffer = multisampled ? gl.createFramebuffer()! : target.framebuffer;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, resolveFramebuffer);
+  for (let i = 0; i < attachments; i++) {
+    const fmt = colorFormats?.[i] ?? target.format;
+    const gf = mapWebGLFormat(gl, fmt);
+    const texture = gl.createTexture()!;
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gf.internalFormat, w, h, 0, gf.format, gf.type, null);
+    const filter = state.allowSmoothing ? gl.LINEAR : gl.NEAREST;
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, texture, 0);
+    target.textures.push(texture);
+  }
+  target.texture = target.textures[0];
+  if (attachments > 1) gl.drawBuffers(buildDrawBuffers(gl, attachments));
+
+  // MSAA color renderbuffers go on the draw framebuffer; resolve FBO holds the textures above.
+  if (multisampled) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, target.framebuffer);
+    for (let i = 0; i < attachments; i++) {
+      const fmt = colorFormats?.[i] ?? target.format;
+      const rb = gl.createRenderbuffer()!;
+      gl.bindRenderbuffer(gl.RENDERBUFFER, rb);
+      gl.renderbufferStorageMultisample(gl.RENDERBUFFER, sampleCount, mapWebGLFormat(gl, fmt).internalFormat, w, h);
+      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.RENDERBUFFER, rb);
+      target.colorRenderbuffers.push(rb);
+    }
+    if (attachments > 1) gl.drawBuffers(buildDrawBuffers(gl, attachments));
+    target.resolveFramebuffer = resolveFramebuffer;
+  }
+
+  if (depth !== 'none') {
+    const sampled = depth === 'depth-stencil-sampled' && !multisampled;
+    if (sampled) {
+      const depthTexture = gl.createTexture()!;
+      gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH24_STENCIL8, w, h, 0, gl.DEPTH_STENCIL, gl.UNSIGNED_INT_24_8, null);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, target.framebuffer);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.TEXTURE_2D, depthTexture, 0);
+      target.depthTexture = depthTexture;
+    } else {
+      const rb = gl.createRenderbuffer()!;
+      gl.bindRenderbuffer(gl.RENDERBUFFER, rb);
+      if (multisampled) gl.renderbufferStorageMultisample(gl.RENDERBUFFER, sampleCount, gl.DEPTH24_STENCIL8, w, h);
+      else gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, w, h);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, target.framebuffer);
+      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, rb);
+      target.depthStencilRenderbuffer = rb;
+    }
+  }
+
+  gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+}
+
+function buildDrawBuffers(gl: WebGL2RenderingContext, count: number): number[] {
+  const buffers: number[] = [];
+  for (let i = 0; i < count; i++) buffers.push(gl.COLOR_ATTACHMENT0 + i);
+  return buffers;
+}
+
+function buildSingleDrawBuffer(gl: WebGL2RenderingContext, index: number, count: number): number[] {
+  const buffers: number[] = [];
+  for (let i = 0; i < count; i++) buffers.push(i === index ? gl.COLOR_ATTACHMENT0 + i : gl.NONE);
+  return buffers;
+}
+
+function mapWebGLFormat(
+  gl: WebGL2RenderingContext,
+  format: RenderTargetFormat,
+): { internalFormat: number; format: number; type: number } {
+  switch (format) {
+    case 'rgba16f':
+      return { internalFormat: gl.RGBA16F, format: gl.RGBA, type: gl.HALF_FLOAT };
+    case 'rgba32f':
+      return { internalFormat: gl.RGBA32F, format: gl.RGBA, type: gl.FLOAT };
+    default:
+      return { internalFormat: gl.RGBA8, format: gl.RGBA, type: gl.UNSIGNED_BYTE };
+  }
+}
+
+const _targetStack = new WeakMap<WebGLRenderState, SavedWebGLState[]>();
