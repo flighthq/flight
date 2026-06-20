@@ -37,6 +37,7 @@
     "capture:explorer:baseline": "tsx ./scripts/capture.ts --tool=explorer --update-baseline",
     "capture:explorer:check": "tsx ./scripts/capture.ts --tool=explorer --fail-on-changed",
     "capture:functional": "tsx ./scripts/capture.ts --tool=functional",
+    "verify:functional": "tsx ./scripts/capture.ts --tool=functional --frames=1 --fail-on-error",
     "capture:functional:watch": "tsx ./scripts/watch-capture.ts --tool=functional",
     "capture:functional:baseline": "tsx ./scripts/capture.ts --tool=functional --update-baseline",
     "capture:functional:check": "tsx ./scripts/capture.ts --tool=functional --fail-on-changed",
