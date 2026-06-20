@@ -62,6 +62,13 @@ export interface CaptureEntryOptions {
    * Must match the value passed to launchBrowser, which installs the frame-halt in the page.
    */
   captureFrames?: number;
+  /**
+   * When true, an entry whose page logged an error or page error (a thrown exception, a failed
+   * request, or a render-verification failure from the functional harness) counts as a failure. This
+   * is the render smoke/not-blank gate: "CI green" then means every entry loaded and drew without
+   * error on every backend.
+   */
+  failOnError?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -236,6 +243,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
     updateBaseline = false,
     extraWait = 0,
     captureFrames = 0,
+    failOnError = false,
   } = opts;
   let anyFailed = false;
   let anyChanged = false;
@@ -373,6 +381,29 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         changed,
       };
       writeFileSync(statusPath, JSON.stringify(status, null, 2));
+
+      if (failOnError) {
+        // Let any in-flight error events (a verification throw surfaces as a page error / console
+        // error) flush to the listeners, then fail the entry if the page reported any error.
+        await page.waitForTimeout(120);
+        const errorLog = logs.find((l) => {
+          const level = (l as { level?: string }).level;
+          return level === 'pageerror' || level === 'error';
+        });
+        if (errorLog) {
+          const detail = (errorLog as { data?: { msg?: string } }).data?.msg ?? 'error logged';
+          // A backend the environment cannot provide (notably WebGPU in headless Chromium, which has
+          // no adapter/device) is skipped, not failed — the gate verifies backends where they exist
+          // and stays green on machines without them. A real render error (after the device is
+          // acquired) does not match this and still fails.
+          if (/WebGPU adapter|WebGPU device|requestAdapter|requestDevice|GPUAdapter/i.test(detail)) {
+            console.log(`  ⊘  ${entry.name}/${renderer}: skipped — backend unavailable (${detail})`);
+          } else {
+            console.error(`  ✗  ${entry.name}/${renderer}: ${detail}`);
+            anyFailed = true;
+          }
+        }
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       logs.push({ __flight: true, t: -1, level: 'capture-error', data: { msg: message } });

@@ -17,6 +17,9 @@
 //                                captures several frames per entry; today it takes a single number.
 //   --update-baseline            Write current screenshot hashes as new baselines (tools/baselines/)
 //   --fail-on-changed            Exit 1 if any screenshot hash differs from its baseline (for CI)
+//   --fail-on-error              Exit 1 if any entry's page logged an error / page error — including a
+//                                render-verification failure from the functional harness (not-blank /
+//                                oracle). The render smoke gate. Pair with --frames=1 for a stable frame.
 //
 // Output per entry:
 //   {out}/{tool}/{name}/{renderer}/screenshot.png
@@ -55,6 +58,7 @@ const captureFrames =
     .filter((n) => Number.isFinite(n) && n >= 1)[0] ?? 0;
 const updateBaseline = argv.includes('--update-baseline');
 const failOnChanged = argv.includes('--fail-on-changed');
+const failOnError = argv.includes('--fail-on-error');
 const baselineBase = resolve(process.cwd(), 'tools/baselines');
 
 const root = process.cwd();
@@ -104,6 +108,7 @@ async function main(): Promise<void> {
         updateBaseline,
         extraWait,
         captureFrames,
+        failOnError,
       });
 
       if (result === 'ok') captured += renderers.length;
