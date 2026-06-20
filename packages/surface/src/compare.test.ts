@@ -1,6 +1,6 @@
 import type { Surface } from '@flighthq/types';
 
-import { compareSurface } from './compare';
+import { compareSurface, getSurfaceMismatch } from './compare';
 import { setSurfacePixel } from './pixel';
 import { cloneSurface, createSurface } from './surface';
 
@@ -54,5 +54,39 @@ describe('compareSurface', () => {
     const result = compareSurface(a, b) as Surface;
     expect(result.data[3]).toBe(0);
     expect(result.data[7]).toBe(255);
+  });
+});
+
+describe('getSurfaceMismatch', () => {
+  it('throws when dimensions differ', () => {
+    expect(() => getSurfaceMismatch(createSurface(4, 4), createSurface(4, 8))).toThrow();
+  });
+
+  it('reports zero mismatch for identical surfaces', () => {
+    const a = createSurface(4, 4, 0x0000ffff);
+    const result = getSurfaceMismatch(a, cloneSurface(a));
+    expect(result.mismatchedPixels).toBe(0);
+    expect(result.totalPixels).toBe(16);
+    expect(result.fraction).toBe(0);
+    expect(result.maxChannelDelta).toBe(0);
+  });
+
+  it('counts pixels whose max channel delta exceeds the tolerance', () => {
+    const a = createSurface(2, 1, 0x000000ff);
+    const b = createSurface(2, 1, 0x000000ff);
+    setSurfacePixel(b, 0, 0, 0x0a0000ff); // delta 10 on one channel
+    expect(getSurfaceMismatch(a, b, 0).mismatchedPixels).toBe(1);
+    expect(getSurfaceMismatch(a, b, 9).mismatchedPixels).toBe(1);
+    expect(getSurfaceMismatch(a, b, 10).mismatchedPixels).toBe(0); // within tolerance
+  });
+
+  it('reports the largest channel delta and the mismatch fraction', () => {
+    const a = createSurface(2, 1, 0x000000ff);
+    const b = createSurface(2, 1, 0x000000ff);
+    setSurfacePixel(b, 1, 0, 0x804020ff); // max delta 0x80 = 128
+    const result = getSurfaceMismatch(a, b);
+    expect(result.maxChannelDelta).toBe(128);
+    expect(result.mismatchedPixels).toBe(1);
+    expect(result.fraction).toBe(0.5);
   });
 });
