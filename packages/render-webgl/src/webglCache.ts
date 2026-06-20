@@ -124,7 +124,7 @@ export function ensureWebGLRenderCacheTarget(
   const targets = getTargets(state);
   let target = targets.get(cache);
   if (target === undefined) {
-    target = createWebGLRenderTarget(state, width, height);
+    target = createWebGLRenderTarget(state, { width, height });
     targets.set(cache, target);
   } else {
     resizeWebGLRenderTarget(state, target, width, height);

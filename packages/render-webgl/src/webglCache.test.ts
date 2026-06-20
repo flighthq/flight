@@ -32,12 +32,22 @@ vi.mock('./webglRenderTarget', async (importOriginal) => {
     ...actual,
     beginWebGLRenderTarget: vi.fn(),
     createWebGLRenderTarget: vi.fn(
-      (_state: unknown, width: number, height: number): WebGLRenderTarget => ({
-        framebuffer: {} as WebGLFramebuffer,
-        texture: {} as WebGLTexture,
-        width,
-        height,
-      }),
+      (_state: unknown, descriptor: { width: number; height: number }): WebGLRenderTarget => {
+        const texture = {} as WebGLTexture;
+        return {
+          framebuffer: {} as WebGLFramebuffer,
+          resolveFramebuffer: null,
+          texture,
+          textures: [texture],
+          depthTexture: null,
+          colorRenderbuffers: [],
+          depthStencilRenderbuffer: null,
+          format: 'rgba8',
+          sampleCount: 1,
+          width: descriptor.width,
+          height: descriptor.height,
+        };
+      },
     ),
     destroyWebGLRenderTarget: vi.fn(),
     drawWebGLRenderTargetResult: vi.fn(),
