@@ -1,9 +1,10 @@
-// Differential + regression render verification (Tiers 3 and 5), complementing the in-page not-blank
-// gate (capture --fail-on-error, Tiers 1/2/4). It drives the functional dev server, reads each
-// backend's coarse render fingerprint (stashed on window.__ftVerification by the harness verifier),
-// and compares them with the SDK's tolerant fingerprint metric:
+// Parity + regression render verification (Tiers 3 and 5), complementing the in-page smoke gate
+// (capture --fail-on-error, Tiers 1/2/4). It drives the functional or explorer dev server
+// (--tool, default functional), reads each backend's coarse render fingerprint (stashed on
+// window.__ftVerification by the harness/explorer verifier), and compares them with the SDK's tolerant
+// fingerprint metric:
 //
-//   - Tier 3 (differential): the raster backends of one test (canvas/webgl/webgpu) must agree within a
+//   - Tier 3 (parity): the raster backends of one test (canvas/webgl/webgpu) must agree within a
 //     tolerance — they render the same scene, so a backend that diverges has a bug. No committed image.
 //   - Tier 5 (regression): each backend's fingerprint must match a committed text baseline within a
 //     tolerance — catches gross visual regressions. The baseline is ~1 KB of hex, not a PNG, and the
@@ -12,22 +13,30 @@
 // Only deterministic tests are gated. When (re)baselining, each backend's fingerprint is captured
 // twice and a baseline is written only if the two agree (self-stable); a test that animates over real
 // time (fill) is not byte-reproducible across loads, so it gets no baseline and is skipped from both
-// tiers — it is still covered by the not-blank / error gate. Regression and differential run only for
+// tiers — it is still covered by the smoke gate. Regression and parity run only for
 // backends that have a committed baseline, i.e. ones already proven stable.
 //
-// Usage:
-//   tsx ./scripts/verify-render.ts [--filter=name] [--renderer=canvas,webgl] [--frames=1]
-//                                  [--report]                 print all distances, gate nothing
-//                                  [--update-fingerprints]    rewrite baselines for self-stable tests
-//                                  [--differential-tolerance=N] [--regression-tolerance=N]
+// Run via the npm scripts: `test:{functional,explorer}:parity` (cross-backend) and `:regression`
+// (vs committed baseline), `:regression:baseline` to rewrite fingerprints. The sibling `:smoke`
+// script is the separate builds-and-runs / not-blank gate (capture --fail-on-error); the
+// `test:{functional,explorer}` umbrella runs smoke then this script (both tiers).
 //
-// Fingerprint baselines live at tools/baselines/functional/{name}/{renderer}/fingerprint.txt (tracked).
+// Usage:
+//   tsx ./scripts/compare-render.ts [--tool=functional|explorer] [--filter=name] [--renderer=canvas,webgl]
+//                                   [--frames=N]                 frame to capture (explorer: 30)
+//                                   [--report]                   print all distances, gate nothing
+//                                   [--update-fingerprints]      rewrite baselines for self-stable entries
+//                                   [--no-regression] [--no-parity]
+//                                   [--parity-tolerance=N] [--regression-tolerance=N]
+//
+// Baselines live at tools/baselines/{tool}/{name}/{renderer}/fingerprint.txt (tracked).
 
 import { compareSurfaceFingerprints, parseSurfaceFingerprint } from '@flighthq/surface';
 import type { BrowserContext } from '@playwright/test';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 
+import type { Tool } from './capture-core.js';
 import { discoverEntries, launchBrowser, resolveServer } from './capture-core.js';
 
 const argv = process.argv.slice(2);
@@ -37,26 +46,36 @@ function arg(key: string, fallback: string): string {
   return hit ? hit.slice(key.length + 3) : fallback;
 }
 
+// 'functional' tests render their scene at frame 1; explorer examples often animate, so they are
+// captured at a later frame (pass --frames=30). Each backend's verifier stashes window.__ftVerification
+// with the fingerprint, and routes are /tests/… vs /examples/…; everything else is identical.
+const tool = arg('tool', 'functional') as Tool;
+const routePrefix = tool === 'explorer' ? 'examples' : 'tests';
 const filter = arg('filter', '');
 const rendererFilter = arg('renderer', '').split(',').filter(Boolean);
 const captureFrames = Math.max(1, parseInt(arg('frames', '1'), 10) || 1);
 const report = argv.includes('--report');
 const updateFingerprints = argv.includes('--update-fingerprints');
-// Tier selection. Differential (Tier 3) compares two backends in the same run, so it is environment
+// Tier selection. Parity (Tier 3) compares two backends in the same run, so it is environment
 // independent and safe to gate in any CI. Regression (Tier 5) compares against a committed baseline
 // captured in one environment, so across a different GPU/driver it can drift — gate it only where the
 // baseline was captured, and pass --no-regression elsewhere (the cross-environment CI gate).
 const gateRegression = !argv.includes('--no-regression');
-const gateDifferential = !argv.includes('--no-differential');
+const gateParity = !argv.includes('--no-parity');
 // Calibrated from a full run: same-backend run-to-run distance is ≤ ~1.2 for stable tests and ~30+ for
 // an animated one; cross-backend agreement is ≤ ~6.5 even for the antialiasing-heavy filters. So a test
 // is "self-stable" well under 4, regression noise is well under 5, and real divergence is well over 15.
 const stabilityEpsilon = parseFloat(arg('stability-epsilon', '4'));
 const regressionTolerance = parseFloat(arg('regression-tolerance', '5'));
-const differentialTolerance = parseFloat(arg('differential-tolerance', '15'));
+const parityTolerance = parseFloat(arg('parity-tolerance', '15'));
 
 const root = process.cwd();
-const baselineBase = resolve(root, 'tools', 'baselines', 'functional');
+const baselineBase = resolve(root, 'tools', 'baselines', tool);
+
+// Entries excluded from the cross-backend parity check because their backends render genuinely
+// different content (video decodes to a different frame per backend) — not a renderer bug. They are
+// still regression-gated per backend.
+const PARITY_SKIP = new Set<string>(['playingvideo']);
 
 interface Verification {
   render: string;
@@ -87,11 +106,18 @@ async function loadFingerprint(
   let pageError = '';
   page.on('pageerror', (e) => (pageError ||= e.message));
   try {
-    await page.goto(`${baseUrl}/tests/${name}/${renderer}/`, { waitUntil: 'domcontentloaded', timeout: 15_000 });
+    await page.goto(`${baseUrl}/${routePrefix}/${name}/${renderer}/`, {
+      waitUntil: 'domcontentloaded',
+      timeout: 15_000,
+    });
     await page.waitForSelector('canvas', { timeout: 8_000 }).catch(() => {});
     const verification = await page
+      // Poll on a timer, not the default requestAnimationFrame: the capture harness halts rAF after the
+      // target frame, and the verifier sets __ftVerification just after that, so an rAF poll would stop
+      // before ever seeing it.
       .waitForFunction(() => (window as unknown as { __ftVerification?: Verification }).__ftVerification, null, {
         timeout: 15_000,
+        polling: 100,
       })
       .then((handle) => handle.jsonValue() as Promise<Verification>)
       .catch(() => null);
@@ -105,20 +131,20 @@ async function loadFingerprint(
 }
 
 async function main(): Promise<void> {
-  let entries = discoverEntries('functional', root);
+  let entries = discoverEntries(tool, root);
   if (filter) entries = entries.filter((e) => e.name.includes(filter));
   if (entries.length === 0) {
-    console.error(`No functional tests found  filter="${filter}"`);
+    console.error(`No ${tool} entries found  filter="${filter}"`);
     process.exit(1);
   }
 
-  console.log('Starting functional server…');
-  const server = await resolveServer({ tool: 'functional', root });
+  console.log(`Starting ${tool} server…`);
+  const server = await resolveServer({ tool, root });
   console.log(`Ready at ${server.url}\n`);
   const { browser, context } = await launchBrowser({ captureFrames });
 
   let regressionFailures = 0;
-  let differentialFailures = 0;
+  let parityFailures = 0;
   let updated = 0;
   let skipped = 0;
 
@@ -180,20 +206,21 @@ async function main(): Promise<void> {
         }
       }
 
-      // Tier 3: cross-backend agreement among the eligible (baselined / self-stable) raster backends.
-      const present = [...eligible.keys()];
+      // Tier 3 (parity): cross-backend agreement among the eligible (baselined / self-stable) raster
+      // backends. Skipped for entries whose backends legitimately render different content — a <video>
+      // decodes to a different frame per backend/load, so the divergence is decode timing, not a bug.
+      // (Regression still gates them: each backend is reproducible against its own baseline.)
+      const present = PARITY_SKIP.has(entry.name) ? [] : [...eligible.keys()];
       for (let i = 0; i < present.length; i++) {
         for (let j = i + 1; j < present.length; j++) {
           const [a, b] = [present[i], present[j]];
           const dist = distance(eligible.get(a)!, eligible.get(b)!);
           if (dist === null) continue;
           if (report) {
-            console.log(`  ~  ${entry.name}: ${a} vs ${b} differential ${dist.toFixed(2)}`);
-          } else if (gateDifferential && dist > differentialTolerance) {
-            console.error(
-              `  ✗  ${entry.name}: ${a} vs ${b} differential ${dist.toFixed(2)} > ${differentialTolerance}`,
-            );
-            differentialFailures++;
+            console.log(`  ~  ${entry.name}: ${a} vs ${b} parity ${dist.toFixed(2)}`);
+          } else if (gateParity && dist > parityTolerance) {
+            console.error(`  ✗  ${entry.name}: ${a} vs ${b} parity ${dist.toFixed(2)} > ${parityTolerance}`);
+            parityFailures++;
           }
         }
       }
@@ -211,10 +238,8 @@ async function main(): Promise<void> {
     console.log(`\nReport only — nothing gated  (${skipped} skipped).`);
     return;
   }
-  console.log(
-    `\nRegression failures: ${regressionFailures}  Differential failures: ${differentialFailures}  Skipped: ${skipped}`,
-  );
-  if (regressionFailures > 0 || differentialFailures > 0) process.exit(1);
+  console.log(`\nRegression failures: ${regressionFailures}  Parity failures: ${parityFailures}  Skipped: ${skipped}`);
+  if (regressionFailures > 0 || parityFailures > 0) process.exit(1);
 }
 
 main().catch((err: unknown) => {
