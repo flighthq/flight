@@ -1,10 +1,12 @@
 export * from './compare';
 export * from './composite';
 export * from './copy';
+export * from './coverage';
 export * from './dissolve';
 export * from './draw';
 export * from './encode';
 export * from './fill';
+export * from './fingerprint';
 export * from './flip';
 export * from './format';
 export * from './histogram';
@@ -27,7 +29,9 @@ export type {
   PixelOrder,
   RectangleLike,
   Surface,
+  SurfaceFingerprint,
   SurfaceHistogram,
+  SurfaceMismatch,
   SurfaceRegion,
   SurfaceResizeMode,
   ThresholdOperation,
