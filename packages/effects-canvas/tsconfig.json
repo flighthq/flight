@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "references": [
+    { "path": "../effects" },
+    { "path": "../filters" },
+    { "path": "../filters-canvas" },
+    { "path": "../render-canvas" },
+    { "path": "../types" }
+  ],
+  "include": ["src"]
+}
