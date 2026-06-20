@@ -20,6 +20,7 @@ import {
 } from '@flighthq/sdk';
 
 import type { FunctionalCanvasTarget, FunctionalTargetOptions } from './target';
+import { registerFunctionalTarget } from './verify';
 
 export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): FunctionalCanvasTarget {
   const { width, height } = options;
@@ -53,7 +54,7 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   if (options.clip) enableCanvasClipSupport(state);
   if (options.cache) enableCanvasRenderCache(state);
 
-  return {
+  return registerFunctionalTarget({
     kind: 'canvas',
     state,
     width,
@@ -64,5 +65,5 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
       renderCanvasBackground(state);
       renderCanvasDisplayObject(state, root);
     },
-  };
+  });
 }

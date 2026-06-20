@@ -18,6 +18,7 @@ import {
 } from '@flighthq/sdk';
 
 import type { FunctionalDOMTarget, FunctionalTargetOptions } from './target';
+import { registerFunctionalTarget } from './verify';
 
 export function createDOMTarget(options: Readonly<FunctionalTargetOptions>): FunctionalDOMTarget {
   const { width, height } = options;
@@ -50,7 +51,7 @@ export function createDOMTarget(options: Readonly<FunctionalTargetOptions>): Fun
   if (options.clip) enableDOMClipSupport(state);
   if (options.cache) enableDOMRenderCache(state);
 
-  return {
+  return registerFunctionalTarget({
     kind: 'dom',
     state,
     width,
@@ -61,5 +62,5 @@ export function createDOMTarget(options: Readonly<FunctionalTargetOptions>): Fun
       renderDOMBackground(state);
       renderDOMDisplayObject(state, root);
     },
-  };
+  });
 }
