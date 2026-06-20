@@ -88,3 +88,23 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run size
+
+  render-verify:
+    name: Render verification
+    needs: build-check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      # The verifier imports the SDK from built dist (@flighthq/surface, @flighthq/math).
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      # Environment-independent render gate: errors + not-blank (Tier 1/2) and cross-backend
+      # differential (Tier 3). Tier 5 fingerprint regression is environment-coupled and excluded here
+      # (--no-regression); run `npm run verify:render` where the baselines were captured.
+      - run: npm run verify
