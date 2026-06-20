@@ -89,10 +89,23 @@ jobs:
       - run: npm ci
       - run: npm run size
 
-  render-verify:
-    name: Render verification
+  render-test:
+    # One leg per (subject × check) so a failure isolates both which tool and which kind of failure —
+    # e.g. parity failing while smoke passes means the backends disagree, not that rendering is broken.
+    # Environment-independent checks only: smoke (Tiers 1/2/4) and parity (cross-backend, Tier 3). The
+    # regression check (Tier 5) is environment-coupled to its committed fingerprint baselines, so it is
+    # excluded here; run `npm run test:regression` where the baselines were captured.
+    name: Render test (${{ matrix.check }})
     needs: build-check
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        check:
+          - test:functional:smoke
+          - test:functional:parity
+          - test:explorer:smoke
+          - test:explorer:parity
 
     steps:
       - uses: actions/checkout@v4
@@ -101,10 +114,8 @@ jobs:
           node-version: 20
           cache: 'npm'
       - run: npm ci
-      # The verifier imports the SDK from built dist (@flighthq/surface, @flighthq/math).
+      # The parity check imports the SDK from built dist (@flighthq/surface); building is harmless
+      # for the smoke check (which resolves packages from source via the dev server).
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      # Environment-independent render gate: errors + not-blank (Tier 1/2) and cross-backend
-      # differential (Tier 3). Tier 5 fingerprint regression is environment-coupled and excluded here
-      # (--no-regression); run `npm run verify:render` where the baselines were captured.
-      - run: npm run verify
+      - run: npm run ${{ matrix.check }}
