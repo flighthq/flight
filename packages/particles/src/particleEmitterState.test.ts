@@ -1,6 +1,48 @@
+import { createRandomSource } from '@flighthq/math';
+import { createParticleEmitter } from '@flighthq/sprite';
+import type { TextureAtlas } from '@flighthq/types';
+
+import { createParticleEmitterConfig } from './particleEmitterConfig';
 import { createParticleEmitterState, ensureParticleEmitterStateCapacity } from './particleEmitterState';
+import { updateParticleEmitter } from './updateParticleEmitter';
+
+// Runs a short emitter simulation seeded from `seed` and returns the live particle transforms, so a
+// seeded state can be shown to simulate reproducibly (the seeded RNG now lives in @flighthq/math).
+function simulate(seed: number): number[] {
+  const emitter = createParticleEmitter({
+    data: {
+      atlas: {
+        image: null,
+        regions: [{ id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null }],
+      } as TextureAtlas,
+    },
+  });
+  const state = createParticleEmitterState(createRandomSource(seed));
+  const config = createParticleEmitterConfig({
+    spawnRate: 20,
+    maxParticles: 100,
+    lifetimeMin: 0.5,
+    lifetimeMax: 1.5,
+    speedMin: 10,
+    speedMax: 200,
+    spread: Math.PI,
+    emitterShape: 'circle',
+    emitterRadius: 25,
+    colorStartVarianceR: 0.5,
+  });
+  for (let f = 0; f < 30; f++) updateParticleEmitter(emitter, state, config, 1 / 60);
+  return Array.from(emitter.data.transforms.slice(0, emitter.data.particleCount * 4));
+}
 
 describe('createParticleEmitterState', () => {
+  it('seeded identically, two states simulate bit-for-bit identically', () => {
+    expect(simulate(42)).toEqual(simulate(42));
+  });
+
+  it('diverges under different seeds', () => {
+    expect(simulate(42)).not.toEqual(simulate(43));
+  });
+
   it('returns empty arrays, zero accumulator, burstTimer=0, and NaN prev position', () => {
     const state = createParticleEmitterState();
     expect(state.lifetimes).toBeInstanceOf(Float32Array);
