@@ -197,7 +197,9 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
 
       load(id) {
         if (id === '\0virtual:functional-test-list') {
-          return `export const tests = ${JSON.stringify(tests)};`;
+          // Re-scan on each load so a newly added test folder appears after an HMR reload, not only
+          // after a server restart. The captured `tests` is still used for the build input map.
+          return `export const tests = ${JSON.stringify(discoverTests())};`;
         }
 
         if (id.startsWith('\0virtual:ft-render:')) {
@@ -249,8 +251,8 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
             `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
             `setLogSink(createConsoleCaptureSink());`,
             `const __testModule = await import('___ft___${name}:${render}');`,
-            `const { runFunctionalVerification } = await import(${JSON.stringify(join(testsDir, '_harness', 'verify.ts'))});`,
-            `await runFunctionalVerification(__testModule, ${JSON.stringify(render)});`,
+            `const { runRenderVerification } = await import(${JSON.stringify(join(testsDir, '_harness', 'verify.ts'))});`,
+            `await runRenderVerification(__testModule, ${JSON.stringify(render)});`,
           ].join('\n');
         }
       },
@@ -291,6 +293,19 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
       name: 'functional-tests:routes',
 
       configureServer(server) {
+        // Re-scan when a test folder is added or removed so new tests appear without a server restart.
+        const refreshTestList = (): void => {
+          const mod = server.moduleGraph.getModuleById('\0virtual:functional-test-list');
+          if (mod) server.moduleGraph.invalidateModule(mod);
+          server.ws.send({ type: 'full-reload' });
+        };
+        server.watcher.add(testsDir);
+        server.watcher.on('addDir', refreshTestList);
+        server.watcher.on('unlinkDir', refreshTestList);
+        server.watcher.on('add', (file) => {
+          if (file.endsWith('app.ts') || file.endsWith('package.json')) refreshTestList();
+        });
+
         server.middlewares.use((req, res, next) => {
           const urlPath = (req.url ?? '/').split('?')[0];
           const parts = urlPath.split('/').filter(Boolean);
@@ -300,7 +315,10 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
 
           // The URL carries the safe route segment; recover the renderer id (with any colon) for
           // reference-folder lookup and the virtual entry module below. Routes match dev and build.
-          const test = tests.find((t) => t.name === name && t.renderers.some((r) => routeSegment(r) === segment));
+          // Re-scan so a folder added since startup resolves without a restart.
+          const test = discoverTests().find(
+            (t) => t.name === name && t.renderers.some((r) => routeSegment(r) === segment),
+          );
           if (!test) return next();
           const render = test.renderers.find((r) => routeSegment(r) === segment)!;
 
