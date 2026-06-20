@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flight Electron Harness</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: #1d1f23;
+        color: #e6e6e6;
+      }
+      #panel {
+        padding: 10px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      button {
+        padding: 6px 12px;
+        cursor: pointer;
+      }
+      #log {
+        white-space: pre-wrap;
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+        padding: 10px;
+        color: #9fe6a0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="panel">
+      <button id="open">Open File Dialog</button>
+      <button id="read">Read Clipboard</button>
+      <button id="write">Write Clipboard</button>
+      <button id="notify">Notify</button>
+    </div>
+    <div id="log"></div>
+    <script type="module" src="./renderer.ts"></script>
+  </body>
+</html>
