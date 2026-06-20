@@ -1,7 +1,12 @@
 import { createImageResource } from '@flighthq/resources';
 
 import { createSurface } from './surface';
-import { createImageResourceFromSurface, createSurfaceFromCanvas, createSurfaceFromImageResource } from './surfaceFrom';
+import {
+  createImageResourceFromSurface,
+  createSurfaceFromCanvas,
+  createSurfaceFromImageResource,
+  createSurfaceFromImageSource,
+} from './surfaceFrom';
 
 describe('createImageResourceFromSurface', () => {
   it('returns an ImageResource with matching dimensions', () => {
@@ -41,5 +46,17 @@ describe('createSurfaceFromImageResource', () => {
     const data = createSurfaceFromImageResource(resource);
     expect(data.width).toBe(4);
     expect(data.height).toBe(4);
+  });
+});
+
+describe('createSurfaceFromImageSource', () => {
+  it('captures a canvas image source at the given device size', () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 8;
+    canvas.height = 4;
+    const surface = createSurfaceFromImageSource(canvas, 8, 4);
+    expect(surface.width).toBe(8);
+    expect(surface.height).toBe(4);
+    expect(surface.data.length).toBe(8 * 4 * 4);
   });
 });
