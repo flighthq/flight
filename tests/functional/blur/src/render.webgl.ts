@@ -67,9 +67,9 @@ export function applyBlurFilters(list: { node: DisplayObject; filter: BlurFilter
     _entries.push({
       node,
       filter,
-      source: createWebGLRenderTarget(state, w, h),
-      blurred: createWebGLRenderTarget(state, w, h),
-      scratch: createWebGLRenderTarget(state, w, h),
+      source: createWebGLRenderTarget(state, { width: w, height: h }),
+      blurred: createWebGLRenderTarget(state, { width: w, height: h }),
+      scratch: createWebGLRenderTarget(state, { width: w, height: h }),
       cacheTransform: createMatrix(),
       sceneTransform: createMatrix(),
     });
