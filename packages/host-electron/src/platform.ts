@@ -1,4 +1,4 @@
-import type { PlatformBackend, PlatformInfo, PlatformName } from '@flighthq/types';
+import type { PlatformBackend, PlatformName } from '@flighthq/types';
 
 import type { ElectronApi } from './electronModule';
 
