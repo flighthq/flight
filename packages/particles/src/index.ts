@@ -6,7 +6,6 @@ export * from './particleEmitterConfig';
 export * from './particleEmitterState';
 export * from './particleObjectsState';
 export * from './prewarmParticleEmitter';
-export * from './random';
 export * from './updateParticleEmitter';
 export * from './updateParticleObjects';
 export * from './validateParticleEmitterConfig';

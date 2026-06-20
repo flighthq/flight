@@ -1,3 +1,5 @@
+import { createRandomSource } from '@flighthq/math';
+
 import { createParticleEmitterConfig } from './particleEmitterConfig';
 import { createParticleObjectsState } from './particleObjectsState';
 import type { ParticleObject } from './updateParticleObjects';
@@ -327,18 +329,9 @@ describe('updateParticleObjects', () => {
       speedMax: 200,
       spread: Math.PI,
     });
-    const seeded = () => {
-      let a = 12345;
-      return () => {
-        a = (a + 0x6d2b79f5) | 0;
-        let t = Math.imul(a ^ (a >>> 15), 1 | a);
-        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-      };
-    };
     const run = (): number[] => {
       const objects = Array.from({ length: 20 }, makeObject);
-      const state = createParticleObjectsState(20, seeded());
+      const state = createParticleObjectsState(20, createRandomSource(12345));
       updateParticleObjects(objects, state, config, 1);
       return objects.map((o) => o.rotation);
     };
