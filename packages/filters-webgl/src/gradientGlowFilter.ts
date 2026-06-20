@@ -1,10 +1,9 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
+import { clearWebGLRenderTarget, compileWebGLFullscreenProgram, drawWebGLFullscreenPass } from '@flighthq/render-webgl';
 import type { GradientGlowFilter } from '@flighthq/types';
-import type { WebGLRenderState } from '@flighthq/types';
+import type { WebGLFullscreenProgram, WebGLRenderState } from '@flighthq/types';
 
 import { applyBoxBlurFilterToWebGL } from './blurFilter';
-import type { WebGLFilterLocations } from './filterPass';
-import { clearWebGLFilterTarget, compileWebGLFilterProgram, drawWebGLFilterPass } from './filterPass';
 import { createWebGLGradientRampTexture } from './gradientRamp';
 import { applyWebGLBlitPass, applyWebGLTintPass } from './tintShader';
 
@@ -21,7 +20,7 @@ void main() {
   fragColor = texture(u_ramp, vec2(alpha, 0.5));
 }`;
 
-type GradientLookupLocations = WebGLFilterLocations & {
+type GradientLookupLocations = WebGLFullscreenProgram & {
   locRamp: WebGLUniformLocation;
 };
 
@@ -61,7 +60,7 @@ export function applyGradientGlowFilterToWebGL(
   applyGradientLookupPass(state, s1, ramp, s0);
   gl.deleteTexture(ramp);
 
-  clearWebGLFilterTarget(state, dest);
+  clearWebGLRenderTarget(state, dest);
   applyWebGLBlitPass(state, s0, dest);
   applyWebGLBlitPass(state, source, dest);
 }
@@ -73,7 +72,7 @@ function applyGradientLookupPass(
   dest: WebGLRenderTarget,
 ): void {
   const loc = getLookupShader(state);
-  drawWebGLFilterPass(state, blurred, dest, loc, (gl) => {
+  drawWebGLFullscreenPass(state, loc, [blurred.texture], dest, (gl) => {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, ramp);
     gl.uniform1i(loc.locRamp, 1);
@@ -85,7 +84,7 @@ function getLookupShader(state: WebGLRenderState): GradientLookupLocations {
   let loc = lookupShaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    const base = compileWebGLFilterProgram(gl, GRADIENT_LOOKUP_FRAGMENT_SRC);
+    const base = compileWebGLFullscreenProgram(gl, GRADIENT_LOOKUP_FRAGMENT_SRC);
     loc = { ...base, locRamp: gl.getUniformLocation(base.program, 'u_ramp')! };
     lookupShaders.set(state, loc);
   }

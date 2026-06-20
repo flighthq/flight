@@ -1,8 +1,6 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
-import type { WebGLRenderState } from '@flighthq/types';
-
-import type { WebGLFilterLocations } from './filterPass';
-import { compileWebGLFilterProgram, drawWebGLFilterPass } from './filterPass';
+import { compileWebGLFullscreenProgram, drawWebGLFullscreenPass } from '@flighthq/render-webgl';
+import type { WebGLFullscreenProgram, WebGLRenderState } from '@flighthq/types';
 
 // Extracts the source alpha, tints it with a solid color, and outputs a
 // premultiplied RGBA texture.
@@ -60,20 +58,20 @@ void main() {
   fragColor = texture(u_texture, v_texCoord);
 }`;
 
-type TintShaderLocations = WebGLFilterLocations & {
+type TintShaderLocations = WebGLFullscreenProgram & {
   locColor: WebGLUniformLocation;
   locAlpha: WebGLUniformLocation;
   locStrength: WebGLUniformLocation;
 };
 
-type BlitOffsetShaderLocations = WebGLFilterLocations & {
+type BlitOffsetShaderLocations = WebGLFullscreenProgram & {
   locOffset: WebGLUniformLocation;
 };
 
 const tintShaders = new WeakMap<WebGLRenderState, TintShaderLocations>();
 const invertTintShaders = new WeakMap<WebGLRenderState, TintShaderLocations>();
 const blitOffsetShaders = new WeakMap<WebGLRenderState, BlitOffsetShaderLocations>();
-const blitShaders = new WeakMap<WebGLRenderState, WebGLFilterLocations>();
+const blitShaders = new WeakMap<WebGLRenderState, WebGLFullscreenProgram>();
 
 /**
  * Blits source into dest at a pixel offset (dx, dy in screen-space Y-down).
@@ -87,7 +85,7 @@ export function applyWebGLBlitOffsetPass(
   dy: number,
 ): void {
   const loc = getWebGLBlitOffsetShader(state);
-  drawWebGLFilterPass(state, source, dest, loc, (gl) => {
+  drawWebGLFullscreenPass(state, loc, [source.texture], dest, (gl) => {
     gl.uniform2f(loc.locOffset, -dx / source.width, dy / source.height);
   });
 }
@@ -95,7 +93,7 @@ export function applyWebGLBlitOffsetPass(
 /** Blits source directly into dest without modification. */
 export function applyWebGLBlitPass(state: WebGLRenderState, source: WebGLRenderTarget, dest: WebGLRenderTarget): void {
   const loc = getWebGLBlitShader(state);
-  drawWebGLFilterPass(state, source, dest, loc, () => {});
+  drawWebGLFullscreenPass(state, loc, [source.texture], dest, () => {});
 }
 
 /** Tints the INVERTED source alpha with color, outputs a premultiplied mask. Used for inner effects. */
@@ -108,7 +106,7 @@ export function applyWebGLInvertTintPass(
   strength: number,
 ): void {
   const loc = getWebGLInvertTintShader(state);
-  drawWebGLFilterPass(state, source, dest, loc, (gl) => {
+  drawWebGLFullscreenPass(state, loc, [source.texture], dest, (gl) => {
     gl.uniform3f(loc.locColor, ((color >> 16) & 0xff) / 255, ((color >> 8) & 0xff) / 255, (color & 0xff) / 255);
     gl.uniform1f(loc.locAlpha, alpha);
     gl.uniform1f(loc.locStrength, strength);
@@ -125,7 +123,7 @@ export function applyWebGLTintPass(
   strength: number,
 ): void {
   const loc = getWebGLTintShader(state);
-  drawWebGLFilterPass(state, source, dest, loc, (gl) => {
+  drawWebGLFullscreenPass(state, loc, [source.texture], dest, (gl) => {
     gl.uniform3f(loc.locColor, ((color >> 16) & 0xff) / 255, ((color >> 8) & 0xff) / 255, (color & 0xff) / 255);
     gl.uniform1f(loc.locAlpha, alpha);
     gl.uniform1f(loc.locStrength, strength);
@@ -136,18 +134,18 @@ export function getWebGLBlitOffsetShader(state: WebGLRenderState): BlitOffsetSha
   let loc = blitOffsetShaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    const base = compileWebGLFilterProgram(gl, BLIT_OFFSET_FRAGMENT_SRC);
+    const base = compileWebGLFullscreenProgram(gl, BLIT_OFFSET_FRAGMENT_SRC);
     loc = { ...base, locOffset: gl.getUniformLocation(base.program, 'u_offset')! };
     blitOffsetShaders.set(state, loc);
   }
   return loc;
 }
 
-export function getWebGLBlitShader(state: WebGLRenderState): WebGLFilterLocations {
+export function getWebGLBlitShader(state: WebGLRenderState): WebGLFullscreenProgram {
   let loc = blitShaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    loc = compileWebGLFilterProgram(gl, BLIT_FRAGMENT_SRC);
+    loc = compileWebGLFullscreenProgram(gl, BLIT_FRAGMENT_SRC);
     blitShaders.set(state, loc);
   }
   return loc;
@@ -157,7 +155,7 @@ export function getWebGLInvertTintShader(state: WebGLRenderState): TintShaderLoc
   let loc = invertTintShaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    const base = compileWebGLFilterProgram(gl, INVERT_TINT_FRAGMENT_SRC);
+    const base = compileWebGLFullscreenProgram(gl, INVERT_TINT_FRAGMENT_SRC);
     loc = {
       ...base,
       locColor: gl.getUniformLocation(base.program, 'u_color')!,
@@ -173,7 +171,7 @@ export function getWebGLTintShader(state: WebGLRenderState): TintShaderLocations
   let loc = tintShaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    const base = compileWebGLFilterProgram(gl, TINT_FRAGMENT_SRC);
+    const base = compileWebGLFullscreenProgram(gl, TINT_FRAGMENT_SRC);
     loc = {
       ...base,
       locColor: gl.getUniformLocation(base.program, 'u_color')!,

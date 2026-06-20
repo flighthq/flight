@@ -1,9 +1,9 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
+import { clearWebGLRenderTarget } from '@flighthq/render-webgl';
 import type { OuterGlowFilter } from '@flighthq/types';
 import type { WebGLRenderState } from '@flighthq/types';
 
 import { applyBoxBlurFilterToWebGL } from './blurFilter';
-import { clearWebGLFilterTarget } from './filterPass';
 import { applyWebGLBlitPass, applyWebGLTintPass } from './tintShader';
 
 /**
@@ -39,7 +39,7 @@ export function applyOuterGlowFilterToWebGL(
     passes: quality,
   });
 
-  clearWebGLFilterTarget(state, dest);
+  clearWebGLRenderTarget(state, dest);
   for (let i = 0; i < glowPasses; i++) {
     applyWebGLBlitPass(state, blurred, dest);
   }

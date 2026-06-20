@@ -4,13 +4,6 @@ export { applyColorMatrixFilterToWebGL } from './colorMatrixFilter';
 export { applyConvolutionFilterToWebGL } from './convolutionFilter';
 export { applyDisplacementMapFilterToWebGL } from './displacementMapFilter';
 export { applyDropShadowFilterToWebGL } from './dropShadowFilter';
-export type { WebGLDualSourceLocations, WebGLFilterLocations } from './filterPass';
-export {
-  clearWebGLFilterTarget,
-  compileWebGLFilterProgram,
-  drawWebGLDualSourcePass,
-  drawWebGLFilterPass,
-} from './filterPass';
 export { applyGradientBevelFilterToWebGL } from './gradientBevelFilter';
 export { applyGradientGlowFilterToWebGL } from './gradientGlowFilter';
 export { createWebGLGradientRampTexture } from './gradientRamp';

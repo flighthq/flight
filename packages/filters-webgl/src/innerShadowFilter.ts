@@ -1,10 +1,8 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
-import type { InnerShadowFilter } from '@flighthq/types';
-import type { WebGLRenderState } from '@flighthq/types';
+import { clearWebGLRenderTarget, compileWebGLFullscreenProgram, drawWebGLFullscreenPass } from '@flighthq/render-webgl';
+import type { InnerShadowFilter, WebGLFullscreenProgram, WebGLRenderState } from '@flighthq/types';
 
 import { applyBoxBlurFilterToWebGL } from './blurFilter';
-import type { WebGLDualSourceLocations } from './filterPass';
-import { clearWebGLFilterTarget, compileWebGLFilterProgram, drawWebGLDualSourcePass } from './filterPass';
 import { applyWebGLBlitOffsetPass, applyWebGLBlitPass, applyWebGLInvertTintPass } from './tintShader';
 
 // Why: all filter passes use ONE/ONE_MINUS_SRC_ALPHA premultiplied blending — they never
@@ -16,16 +14,16 @@ import { applyWebGLBlitOffsetPass, applyWebGLBlitPass, applyWebGLInvertTintPass 
 const INNER_CLIP_FRAGMENT_SRC = `#version 300 es
 precision mediump float;
 in vec2 v_texCoord;
-uniform sampler2D u_texture;
-uniform sampler2D u_texture2;
+uniform sampler2D u_texture0;
+uniform sampler2D u_texture1;
 out vec4 fragColor;
 void main() {
-  vec4 shadow = texture(u_texture, v_texCoord);
-  float srcAlpha = texture(u_texture2, v_texCoord).a;
+  vec4 shadow = texture(u_texture0, v_texCoord);
+  float srcAlpha = texture(u_texture1, v_texCoord).a;
   fragColor = shadow * srcAlpha;
 }`;
 
-type InnerClipLocations = WebGLDualSourceLocations;
+type InnerClipLocations = WebGLFullscreenProgram;
 
 const clipShaders = new WeakMap<WebGLRenderState, InnerClipLocations>();
 
@@ -69,16 +67,16 @@ export function applyInnerShadowFilterToWebGL(
 
   // Pass 3: shift the blurred shadow by the offset → s0 (s1 no longer needed).
   // s0 still holds pass-1 content; clear it so the offset blit doesn't blend on top of it.
-  clearWebGLFilterTarget(state, s0);
+  clearWebGLRenderTarget(state, s0);
   applyWebGLBlitOffsetPass(state, s1, s0, dx, dy);
 
   // Pass 4: clip offset shadow (s0) to source alpha → s1.
   // s1 still holds pass-2 blur content; clear it before the clip blit.
-  clearWebGLFilterTarget(state, s1);
+  clearWebGLRenderTarget(state, s1);
   applyWebGLInnerClipPass(state, s0, source, s1);
 
   // Final composite: source first, then clipped shadow on top
-  clearWebGLFilterTarget(state, dest);
+  clearWebGLRenderTarget(state, dest);
   applyWebGLBlitPass(state, source, dest);
   applyWebGLBlitPass(state, s1, dest);
 }
@@ -90,15 +88,15 @@ function applyWebGLInnerClipPass(
   dest: WebGLRenderTarget,
 ): void {
   const loc = getClipShader(state);
-  drawWebGLDualSourcePass(state, shadow, source, dest, loc, () => {});
+  drawWebGLFullscreenPass(state, loc, [shadow.texture, source.texture], dest, () => {});
 }
 
 function getClipShader(state: WebGLRenderState): InnerClipLocations {
   let loc = clipShaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    const base = compileWebGLFilterProgram(gl, INNER_CLIP_FRAGMENT_SRC);
-    loc = { ...base, locTexture2: gl.getUniformLocation(base.program, 'u_texture2')! };
+    const base = compileWebGLFullscreenProgram(gl, INNER_CLIP_FRAGMENT_SRC);
+    loc = { ...base };
     clipShaders.set(state, loc);
   }
   return loc;

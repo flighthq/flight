@@ -1,9 +1,7 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
+import { compileWebGLFullscreenProgram, drawWebGLFullscreenPass } from '@flighthq/render-webgl';
 import type { MedianFilter } from '@flighthq/types';
-import type { WebGLRenderState } from '@flighthq/types';
-
-import type { WebGLFilterLocations } from './filterPass';
-import { compileWebGLFilterProgram, drawWebGLFilterPass } from './filterPass';
+import type { WebGLFullscreenProgram, WebGLRenderState } from '@flighthq/types';
 
 // Supports radius up to 2 (5×5 = 25 samples). For larger radii use the
 // surface path. Sorts per-channel independently using insertion sort.
@@ -64,7 +62,7 @@ void main() {
   fragColor = vec4(rv[mid], gv[mid], bv[mid], av[mid]);
 }`;
 
-type MedianShaderLocations = WebGLFilterLocations & {
+type MedianShaderLocations = WebGLFullscreenProgram & {
   locTexelSize: WebGLUniformLocation;
   locRadius: WebGLUniformLocation;
 };
@@ -85,7 +83,7 @@ export function applyMedianFilterToWebGL(
 ): void {
   const radius = Math.min(MAX_RADIUS, Math.max(0, Math.round(filter.radius ?? 1)));
   const loc = getShader(state);
-  drawWebGLFilterPass(state, source, dest, loc, (gl) => {
+  drawWebGLFullscreenPass(state, loc, [source.texture], dest, (gl) => {
     gl.uniform2f(loc.locTexelSize, 1 / source.width, 1 / source.height);
     gl.uniform1i(loc.locRadius, radius);
   });
@@ -95,7 +93,7 @@ function getShader(state: WebGLRenderState): MedianShaderLocations {
   let loc = shaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    const base = compileWebGLFilterProgram(gl, MEDIAN_FRAGMENT_SRC);
+    const base = compileWebGLFullscreenProgram(gl, MEDIAN_FRAGMENT_SRC);
     loc = {
       ...base,
       locTexelSize: gl.getUniformLocation(base.program, 'u_texelSize')!,

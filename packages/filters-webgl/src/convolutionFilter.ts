@@ -1,9 +1,7 @@
 import type { WebGLRenderTarget } from '@flighthq/render-webgl';
+import { compileWebGLFullscreenProgram, drawWebGLFullscreenPass } from '@flighthq/render-webgl';
 import type { ConvolutionFilter } from '@flighthq/types';
-import type { WebGLRenderState } from '@flighthq/types';
-
-import type { WebGLFilterLocations } from './filterPass';
-import { compileWebGLFilterProgram, drawWebGLFilterPass } from './filterPass';
+import type { WebGLFullscreenProgram, WebGLRenderState } from '@flighthq/types';
 
 // Max supported kernel: 7×7. Use the surface path for larger kernels.
 const MAX_KERNEL = 49;
@@ -55,7 +53,7 @@ void main() {
   fragColor = sum;
 }`;
 
-type ConvolutionShaderLocations = WebGLFilterLocations & {
+type ConvolutionShaderLocations = WebGLFullscreenProgram & {
   locTexelSize: WebGLUniformLocation;
   locMatrix: WebGLUniformLocation;
   locMatrixX: WebGLUniformLocation;
@@ -95,7 +93,7 @@ export function applyConvolutionFilterToWebGL(
   for (let i = 0; i < matrixX * matrixY; i++) matrixData[i] = matrix[i];
 
   const loc = getShader(state);
-  drawWebGLFilterPass(state, source, dest, loc, (gl) => {
+  drawWebGLFullscreenPass(state, loc, [source.texture], dest, (gl) => {
     gl.uniform2f(loc.locTexelSize, 1 / source.width, 1 / source.height);
     gl.uniform1fv(loc.locMatrix, matrixData);
     gl.uniform1i(loc.locMatrixX, matrixX);
@@ -124,7 +122,7 @@ function getShader(state: WebGLRenderState): ConvolutionShaderLocations {
   let loc = shaders.get(state);
   if (loc === undefined) {
     const gl = state.gl;
-    const base = compileWebGLFilterProgram(gl, CONVOLUTION_FRAGMENT_SRC);
+    const base = compileWebGLFullscreenProgram(gl, CONVOLUTION_FRAGMENT_SRC);
     loc = {
       ...base,
       locTexelSize: gl.getUniformLocation(base.program, 'u_texelSize')!,

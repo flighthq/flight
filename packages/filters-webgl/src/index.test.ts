@@ -18,11 +18,7 @@ import {
   applyWebGLBlitPass,
   applyWebGLInvertTintPass,
   applyWebGLTintPass,
-  clearWebGLFilterTarget,
-  compileWebGLFilterProgram,
   createWebGLGradientRampTexture,
-  drawWebGLDualSourcePass,
-  drawWebGLFilterPass,
 } from './index';
 
 describe('index', () => {
@@ -45,10 +41,6 @@ describe('index', () => {
   });
 
   it('exports infrastructure primitives', () => {
-    expect(clearWebGLFilterTarget).toBeDefined();
-    expect(compileWebGLFilterProgram).toBeDefined();
-    expect(drawWebGLDualSourcePass).toBeDefined();
-    expect(drawWebGLFilterPass).toBeDefined();
     expect(applyWebGLBlitOffsetPass).toBeDefined();
     expect(applyWebGLBlitPass).toBeDefined();
     expect(applyWebGLInvertTintPass).toBeDefined();
