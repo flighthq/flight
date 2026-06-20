@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-filter-color-matrix-brightness",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

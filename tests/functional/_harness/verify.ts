@@ -9,9 +9,10 @@ import {
 
 import type { FunctionalTarget } from './target';
 
-// In-page render verification, run by the functional entry after a test has rendered. It uses the
-// SDK's surface primitives (the same functions a test author could call) so "CI is green" means the
-// renderers actually produced pixels, not merely that the page loaded:
+// In-page render verification, run by the functional entry after a test renders — and reused by the
+// explorer entry for examples (gated on capture mode there, so it never runs in the deployed gallery).
+// It uses the SDK's surface primitives (the same functions a test author could call) so "CI is green"
+// means the renderers actually produced pixels, not merely that the page loaded:
 //   - Tier 2 (not-blank): assert the frame is not still the clear colour (canvas/WebGL/WebGPU) or that
 //     the DOM backend emitted elements. Throws on failure so the capture --fail-on-error gate catches
 //     it; runs for every test with no per-test code.
@@ -64,20 +65,20 @@ export function snapshotFunctionalRender(): Surface | null {
 }
 
 /**
- * Verifies a functional test's render: not-blank for every backend, then the test's optional oracle.
- * Throws on failure (caught by the capture --fail-on-error gate). Reference (openfl) renderers do not
- * call this — it asserts Flight rendered correctly, not the reference.
+ * Verifies a render: not-blank (and an optional oracle / DOM-target check), then records a fingerprint.
+ * Throws on failure (caught by the capture --fail-on-error gate). Used for functional tests and, via
+ * findRenderCanvas, for explorer examples that never register a target. Reference (openfl) renderers do
+ * not call this — it asserts Flight rendered correctly, not the reference.
  */
-export async function runFunctionalVerification(testModule: FunctionalTestModule, render: string): Promise<void> {
+export async function runRenderVerification(testModule: FunctionalTestModule, render: string): Promise<void> {
   const result: FunctionalVerification = { render, coverage: null, fingerprint: null };
   (window as VerificationWindow).__ftVerification = result;
 
-  const surface = snapshotFunctionalRender();
-  if (surface === null) {
-    // No canvas to read. Only assert not-blank for a registered DOM target, whose container we know
-    // for certain: "not blank" means the renderer emitted child elements or text. A custom-render test
-    // that builds its own DOM (no registered target) can't be located reliably, so its not-blank check
-    // is skipped here — Tier 1 (page errors) still gates it.
+  if (render === 'dom') {
+    // DOM renders to elements, not a canvas — never snapshot one (an example's stray bitmap canvas
+    // would read blank). A registered DOM target (functional harness) lets us confirm it emitted child
+    // elements or text; an explorer DOM example registers nothing, so its not-blank is skipped here —
+    // Tier 1 (page errors) still gates it.
     const target = (window as VerificationWindow).__ftTarget;
     if (target?.kind === 'dom') {
       const element = target.state.element;
@@ -86,6 +87,9 @@ export async function runFunctionalVerification(testModule: FunctionalTestModule
     }
     return;
   }
+
+  const surface = snapshotFunctionalRender();
+  if (surface === null) return; // no canvas (e.g. WebGPU unavailable) — Tier 1 (page errors) gates it
 
   // Not-blank: how much of the frame differs from the background. The background is the top-left pixel
   // (effectively always the clear colour), which sidesteps opaque-vs-transparent ambiguity in the

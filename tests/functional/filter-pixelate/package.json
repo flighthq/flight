@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-filter-pixelate",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

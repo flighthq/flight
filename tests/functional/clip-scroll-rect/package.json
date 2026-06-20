@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-clip-scroll-rect",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

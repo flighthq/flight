@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-filter-gradient-bevel",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

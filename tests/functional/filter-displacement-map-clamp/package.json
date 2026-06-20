@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-filter-displacement-map-clamp",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

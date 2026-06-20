@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-text-unicode-1",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

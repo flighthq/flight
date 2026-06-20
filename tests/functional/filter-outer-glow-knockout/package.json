@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-filter-outer-glow-knockout",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

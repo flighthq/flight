@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-filter-median",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}
