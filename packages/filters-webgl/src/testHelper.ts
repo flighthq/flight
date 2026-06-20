@@ -47,9 +47,17 @@ export function makeFilterState(): { state: WebGLRenderState; gl: WebGL2Renderin
 }
 
 export function makeRenderTarget(width = 64, height = 64): WebGLRenderTarget {
+  const texture = {} as WebGLTexture;
   return {
     framebuffer: {} as WebGLFramebuffer,
-    texture: {} as WebGLTexture,
+    resolveFramebuffer: null,
+    texture,
+    textures: [texture],
+    depthTexture: null,
+    colorRenderbuffers: [],
+    depthStencilRenderbuffer: null,
+    format: 'rgba8',
+    sampleCount: 1,
     width,
     height,
   };
