@@ -85,7 +85,7 @@ This SDK should behave like a hardware store: users can import one small tool wi
 Run these at the points listed. Each check is fast; skipping them causes cascading failures that are slower to debug than the check itself.
 
 - Run `npm run packages:check` after package-level changes: manifests, workspace references, exports, build targets, or side-effect behavior. Fix everything it reports before moving on — it catches stale subpaths, missing `tsconfig.json` references, workspace dependency mismatches, packaging drift, and top-level side-effect statements.
-- Run `npm run test:completeness` after adding, removing, or renaming exported functions to confirm every export has a colocated test.
+- Run `npm run exports:check` after adding, removing, or renaming exported functions to confirm every export has a colocated test.
 - Run `npm run order` after adding, removing, or renaming exported functions or test `describe` blocks. Use `npm run order:fix` to rewrite order automatically.
 - Run `npm run api` after public API changes to scan signatures and naming symmetry across packages.
 - Run `npm run size` after changes to examples, package exports, barrel files, renderer registration, dependencies, or anything that may affect tree-shaking.
@@ -99,9 +99,9 @@ Run these at the points listed. Each check is fast; skipping them causes cascadi
 - `npm run api` prints compact exported function signatures for all packages.
 - `npm run api <query>` filters packages and exported functions by the given query. Example: `npm run api application` or `npm run api --function register`.
 - `npm run api:json` prints the same API data as JSON for tools and agents.
-- `npm run check` is the default non-fixing quality sweep for agents and contributors. It runs `packages:check`, `typecheck`, `lint`, `format:check`, `order:check`, and `test:completeness`.
+- `npm run check` is the default non-fixing quality sweep for agents and contributors. It runs `packages:check`, `typecheck`, `lint`, `format:check`, `order:check`, and `exports:check`.
 - `npm run packages:check` checks monorepo shape, package references, workspace dependency conventions, package export targets, packaging shape, and side-effect-free source invariants.
-- `npm run test:completeness` checks for missing test files and missing tests for exported functions.
+- `npm run exports:check` checks for missing test files and missing tests for exported functions.
 - `npm run order` reports exported functions and test `describe` blocks that are not alphabetized. `npm run order:check` runs the same check in failing mode once a package or area has been cleaned up. `npm run order:fix` rewrites files in place to apply the correct order; comments immediately preceding a declaration (with no blank line between them) are treated as attached and move with it.
 - `npm run test` runs the normal root Vitest workspace, excluding the heavier `size` project. This is usually faster than chaining package/API/integration test scripts separately.
 - `npm run size` builds matching examples and reports gzip output size against the baseline. It supports filtered runs, JSON reporting, and output file paths.
