@@ -29,7 +29,7 @@ export interface NativeGlowSpec {
 }
 
 export interface ParityTarget {
-  kind: 'canvas' | 'dom' | 'webgl';
+  kind: 'canvas' | 'dom' | 'webgl' | 'webgpu';
   width: number;
   height: number;
   // Device-pixel scale: the backing store is width × scale (1 for DOM, devicePixelRatio otherwise).

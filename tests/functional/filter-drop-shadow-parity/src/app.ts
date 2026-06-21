@@ -82,7 +82,7 @@ const referenceData = composeReferenceTile();
 const referenceSurface = createSurface(TILE, TILE);
 referenceSurface.data.set(referenceData);
 
-const target = createParityTarget(WIDTH, HEIGHT, BACKGROUND);
+const target = await createParityTarget(WIDTH, HEIGHT, BACKGROUND);
 const TOP = (HEIGHT - TILE) / 2;
 const root = createDisplayContainer();
 
