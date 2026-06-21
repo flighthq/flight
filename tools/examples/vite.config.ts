@@ -17,7 +17,7 @@ interface Example {
 const projectRoot = resolve(__dirname, '../..');
 const examplesDir = join(projectRoot, 'examples');
 
-// The explorer is the listener app: it installs @flighthq/log's console-capture sink, then loads the
+// The examples is the listener app: it installs @flighthq/log's console-capture sink, then loads the
 // example. The example is the emit app — it only ever imports the lightweight log/log* helpers,
 // so its own build (e.g. under the size suite) tree-shakes the sink machinery away. The example is
 // imported dynamically so the synchronous setLogSink call runs first — before the example's
@@ -77,13 +77,13 @@ const MIME: Record<string, string> = {
   '.json': 'application/json',
 };
 
-function explorerPlugin(examples: Example[]): Plugin[] {
+function examplesPlugin(examples: Example[]): Plugin[] {
   let viteBase = '/';
   let outDir = resolve(__dirname, 'dist');
 
   return [
     {
-      name: 'explorer:modules',
+      name: 'examples:modules',
       enforce: 'pre',
 
       config(_, { command }) {
@@ -126,7 +126,7 @@ function explorerPlugin(examples: Example[]): Plugin[] {
         if (source.startsWith('virtual-build-entry:')) return '\0' + source;
 
         // Virtual examples list
-        if (source === 'virtual:explorer-examples') return '\0virtual:explorer-examples';
+        if (source === 'virtual:examples-examples') return '\0virtual:examples-examples';
 
         // Virtual per-example entry points
         if (source.startsWith('virtual:entry:')) return '\0' + source;
@@ -155,7 +155,7 @@ function explorerPlugin(examples: Example[]): Plugin[] {
           return entryWithLogCapture(name, render);
         }
 
-        if (id === '\0virtual:explorer-examples') {
+        if (id === '\0virtual:examples-examples') {
           return `export const examples = ${JSON.stringify(examples)};`;
         }
 
@@ -210,7 +210,7 @@ function explorerPlugin(examples: Example[]): Plugin[] {
         // instead of copying every example's assets into all four {name}/{render}/ directories. Each
         // built render page's <base href> points here (see generateBundle). Examples stay
         // independently buildable: each keeps its own public/assets and loads document-relative
-        // `assets/...` paths; only the explorer pools them across the gallery.
+        // `assets/...` paths; only the examples pools them across the gallery.
         const pool = join(outDir, 'example-assets');
         for (const example of examples) {
           const publicDir = join(examplesDir, example.name, 'public');
@@ -220,7 +220,7 @@ function explorerPlugin(examples: Example[]): Plugin[] {
     },
 
     {
-      name: 'explorer:routes',
+      name: 'examples:routes',
 
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
@@ -284,7 +284,7 @@ export default defineConfig(() => {
     root: __dirname,
     base: process.env.VITE_BASE ?? '/',
 
-    plugins: explorerPlugin(examples),
+    plugins: examplesPlugin(examples),
 
     resolve: {
       alias,
