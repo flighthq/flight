@@ -150,7 +150,9 @@ export function discoverEntries(tool: Tool, root: string): Entry[] {
       if (customRenderers.length > 0) return { name, renderers: customRenderers };
       if (tool === 'functional' && existsSync(join(testDir, 'src', 'app.ts'))) {
         const pkg = JSON.parse(readFileSync(join(testDir, 'package.json'), 'utf8')) as Record<string, unknown>;
-        return { name, renderers: (pkg.renderers as string[] | undefined) ?? ['canvas', 'dom', 'webgl'] };
+        // Matches the vite harness default (tools/functional/vite.config.ts): app.ts tests run on every
+        // backend, webgpu included (the harness routes createFunctionalTarget → createWebGPUTarget).
+        return { name, renderers: (pkg.renderers as string[] | undefined) ?? ['canvas', 'dom', 'webgl', 'webgpu'] };
       }
       return { name, renderers: [] };
     })
