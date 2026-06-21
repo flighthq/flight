@@ -1,9 +1,9 @@
-import { examples } from 'virtual:explorer-examples';
+import { examples } from 'virtual:examples-examples';
 
 type Renderer = 'dom' | 'canvas' | 'webgl' | 'webgpu';
 
 const ALL_RENDERERS: Renderer[] = ['dom', 'canvas', 'webgl', 'webgpu'];
-const STORAGE_KEY = 'explorer-selected';
+const STORAGE_KEY = 'examples-selected';
 const FADE_MS = 250;
 
 let exampleIndex = 0;
