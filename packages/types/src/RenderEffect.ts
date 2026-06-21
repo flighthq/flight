@@ -146,6 +146,24 @@ export interface LensFlareEffect {
   halo?: number;
 }
 
+// Lens dirt: smudges/dust on the lens that catch the light — procedural soft blobs brighten where the
+// scene is bright, a cheap bloom-dirt overlay. `seed` varies the smudge layout.
+export interface LensDirtEffect {
+  type: 'lensDirt';
+  intensity?: number; // brightness added through the dirt. Default 1.
+  threshold?: number; // scene luminance above which dirt catches light. Default 0.55.
+  seed?: number; // smudge layout.
+}
+
+// Heat-haze / shimmer: warp the sample position by an animated sine field for a refractive-air or
+// underwater wobble. `seed` animates it frame to frame.
+export interface DisplacementEffect {
+  type: 'displacement';
+  intensity?: number; // max warp in pixels. Default 8.
+  frequency?: number; // wave count across the frame. Default 12.
+  seed?: number; // animate frame to frame.
+}
+
 export interface BokehDepthOfFieldEffect {
   type: 'bokehDoF'; // [DEPTH]
   focusDistance?: number;
@@ -234,6 +252,16 @@ export interface FilmGrainEffect {
   seed?: number;
 }
 
+// Digital glitch: horizontal block tears (rows displaced by a per-block hash), RGB channel separation,
+// and occasional bright scanline corruption. `seed` animates it frame to frame (data-moshing look).
+export interface GlitchEffect {
+  type: 'glitch';
+  intensity?: number; // overall strength 0..1; scales tear displacement + corruption frequency.
+  blockSize?: number; // height in pixels of a tear block (smaller = finer tearing). Default 24.
+  colorShift?: number; // RGB channel separation in pixels at full tear. Default 8.
+  seed?: number; // animate frame to frame.
+}
+
 export interface ScanlinesEffect {
   type: 'scanlines';
   count?: number;
@@ -296,16 +324,19 @@ export type RenderEffect =
   | ChromaticAberrationEffect
   | ColorGradeEffect
   | DirectionalBlurEffect
+  | DisplacementEffect
   | DitherEffect
   | ExposureEffect
   | FXAAEffect
   | FilmGrainEffect
+  | GlitchEffect
   | GodRaysEffect
   | GrayscaleEffect
   | HalftoneEffect
   | HueSaturationEffect
   | InvertEffect
   | KuwaharaEffect
+  | LensDirtEffect
   | LensDistortionEffect
   | LensFlareEffect
   | LiftGammaGainEffect

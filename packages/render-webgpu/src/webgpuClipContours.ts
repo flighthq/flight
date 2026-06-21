@@ -57,10 +57,7 @@ export function popWebGPUClipContours(state: WebGPURenderState): void {
   if (entry !== undefined) {
     // The erase draw just recorded references these buffers; the frame's submit is deferred to
     // submitWebGPURenderPass, so defer their destruction until after that submit.
-    (runtime.clipContourRetiredBuffers ?? (runtime.clipContourRetiredBuffers = [])).push(
-      entry.vertexBuffer,
-      entry.uniformBuffer,
-    );
+    (runtime.retiredBuffers ?? (runtime.retiredBuffers = [])).push(entry.vertexBuffer, entry.uniformBuffer);
   }
 }
 

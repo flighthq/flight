@@ -124,10 +124,11 @@ export interface WebGPURenderStateRuntime extends RenderStateRuntime {
   // own variant.
   clipContourPipelines?: Map<GPUTextureFormat, WebGPUClipContourPipelines>;
   clipContourStack: WebGPUClipContourEntry[];
-  // Per-clip GPU buffers retired by a clip pop but still referenced by recorded draws in the open command
-  // encoder; destroyed only after submitWebGPURenderPass submits (destroying them earlier — the frame's
-  // submit is deferred — invalidates the command buffer).
-  clipContourRetiredBuffers?: GPUBuffer[];
+  // GPU buffers replaced/retired mid-frame (a clip pop's per-clip buffers, a grown particle instance
+  // buffer) but still referenced by recorded draws in the open command encoder; destroyed only after
+  // submitWebGPURenderPass submits, since the frame's submit is deferred and destroying them earlier
+  // invalidates the command buffer.
+  retiredBuffers?: GPUBuffer[];
 
   // Lazily-built flat-color pipeline for the GPU tessellated solid-fill shape path (webgpuShapeMesh.ts).
   // Null until the first solid-fill shape draws; shared across every shape on this device.

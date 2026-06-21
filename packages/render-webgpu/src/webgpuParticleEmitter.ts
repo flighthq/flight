@@ -79,7 +79,11 @@ fn fs_main(in : VertexOut) -> @location(0) vec4f {
 `;
 
 interface WebGPUParticleResources {
-  pipeline: GPURenderPipeline;
+  // Per color-attachment format, since a render pipeline bakes its target format (rgba16float inside an
+  // HDR effect target vs the canvas format). The layout/module are format-independent and shared.
+  pipelines: Map<GPUTextureFormat, GPURenderPipeline>;
+  pipelineLayout: GPUPipelineLayout;
+  module: GPUShaderModule;
   instanceBindGroupLayout: GPUBindGroupLayout;
 }
 
@@ -90,7 +94,7 @@ function ensureParticleResources(state: WebGPURenderState): WebGPUParticleResour
   if (existing !== undefined) return existing;
 
   const runtime = getWebGPURenderStateRuntime(state);
-  const { device, format } = state;
+  const { device } = state;
   const { uniformBindGroupLayout, textureBindGroupLayout } = runtime;
 
   const instanceBindGroupLayout = device.createBindGroupLayout({
@@ -109,11 +113,27 @@ function ensureParticleResources(state: WebGPURenderState): WebGPUParticleResour
 
   const module = device.createShaderModule({ code: PARTICLE_SHADER_SRC });
 
-  const pipeline = device.createRenderPipeline({
-    layout: pipelineLayout,
-    vertex: { module, entryPoint: 'vs_main' },
+  const resources: WebGPUParticleResources = {
+    pipelines: new Map(),
+    pipelineLayout,
+    module,
+    instanceBindGroupLayout,
+  };
+  _particleResources.set(device, resources);
+  return resources;
+}
+
+// Returns the particle pipeline for the current target's color format, building and caching it on demand.
+function getParticlePipeline(state: WebGPURenderState, resources: WebGPUParticleResources): GPURenderPipeline {
+  const format = getWebGPURenderStateRuntime(state).currentColorFormat ?? state.format;
+  const existing = resources.pipelines.get(format);
+  if (existing !== undefined) return existing;
+
+  const pipeline = state.device.createRenderPipeline({
+    layout: resources.pipelineLayout,
+    vertex: { module: resources.module, entryPoint: 'vs_main' },
     fragment: {
-      module,
+      module: resources.module,
       entryPoint: 'fs_main',
       targets: [
         {
@@ -137,9 +157,8 @@ function ensureParticleResources(state: WebGPURenderState): WebGPUParticleResour
     primitive: { topology: 'triangle-list' },
   });
 
-  const resources: WebGPUParticleResources = { pipeline, instanceBindGroupLayout };
-  _particleResources.set(device, resources);
-  return resources;
+  resources.pipelines.set(format, pipeline);
+  return pipeline;
 }
 
 function ensureParticleInstanceBuffer(state: WebGPURenderState, count: number): void {
@@ -147,7 +166,11 @@ function ensureParticleInstanceBuffer(state: WebGPURenderState, count: number): 
   const needed = count * INSTANCE_STRIDE;
   if (runtime.particleInstanceCapacity >= needed && runtime.particleInstanceBuffer !== null) return;
 
-  runtime.particleInstanceBuffer?.destroy();
+  // Defer the old buffer's destruction: another emitter earlier this frame may have recorded a draw
+  // referencing it, and the frame's submit is deferred to submitWebGPURenderPass.
+  if (runtime.particleInstanceBuffer !== null) {
+    (runtime.retiredBuffers ?? (runtime.retiredBuffers = [])).push(runtime.particleInstanceBuffer);
+  }
   const newCapacity = Math.max(needed, (runtime.particleInstanceCapacity || 0) * 2);
   runtime.particleInstanceBuffer = state.device.createBuffer({
     size: Math.max(newCapacity, INSTANCE_STRIDE),
@@ -280,7 +303,7 @@ export function drawWebGPUParticleEmitter(state: WebGPURenderState, renderProxy:
   });
 
   const pass = runtime.renderPass!;
-  pass.setPipeline(resources.pipeline);
+  pass.setPipeline(getParticlePipeline(state, resources));
   pass.setBindGroup(0, runtime.uniformBindGroup, [uniformOffset]);
   pass.setBindGroup(1, textureEntry.bindGroup);
   pass.setBindGroup(2, instanceBindGroup);
