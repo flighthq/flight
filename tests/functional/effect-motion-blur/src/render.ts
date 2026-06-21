@@ -1,4 +1,5 @@
-// WebGL-only: the velocity producer this test relies on (renderWebGLVelocity, the screen-space
-// velocity G-buffer pass) has no Canvas or WebGPU counterpart yet, so motion blur has no parity
-// column. Add render.canvas.ts / render.webgpu.ts once a cross-backend velocity pass exists.
+// WebGL + WebGPU: both have a screen-space velocity G-buffer producer (renderWebGLVelocity /
+// renderWebGPUVelocity), so motion blur has a parity column on each. Canvas has no velocity producer
+// yet. The harness routes each backend to its own render.<backend>.ts; this barrel only needs to
+// resolve ./render for TypeScript.
 export * from './render.webgl';
