@@ -1,8 +1,0 @@
-{
-  "name": "reference-openfl-drop-shadow",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "openfl": "^9.3.2"
-  }
-}

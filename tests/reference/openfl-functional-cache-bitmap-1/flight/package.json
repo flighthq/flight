@@ -1,0 +1,8 @@
+{
+  "name": "openfl-functional-cache-bitmap-1-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}
