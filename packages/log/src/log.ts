@@ -8,7 +8,7 @@ import { LogLevel } from '@flighthq/types';
 //                example measured by the size suite, a production bundle) carries only the forwarder
 //                and the LogLevel enum; everything below tree-shakes away.
 //   Listener side — createConsoleCaptureSink and the threshold setters. Imported by tools (the
-//                explorer, the capture harness). This is where levels gate output: the sink records
+//                examples, the capture harness). This is where levels gate output: the sink records
 //                EVERY level (the machine record is complete) and additionally prints a human console
 //                line for levels at or above the configured threshold.
 
