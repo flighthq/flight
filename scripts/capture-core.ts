@@ -8,19 +8,28 @@ import { createHash } from 'crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 
+import { getBaselineField, setBaselineField } from './baseline-store.js';
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
-export type Tool = 'explorer' | 'functional' | 'landing';
+export type Tool = 'examples' | 'functional' | 'reference' | 'site';
 
 // The root npm script that starts each tool's dev server, used in the manual-start tip.
 const DEV_SCRIPT: Record<Tool, string> = {
-  explorer: 'dev:explorer',
+  examples: 'dev:examples',
   functional: 'dev:functional',
-  landing: 'dev:landing',
+  reference: 'dev:reference',
+  site: 'dev:landing',
 };
+
+// A column id may carry a `<library>:<renderer>` colon (the reference tool); map it to a URL/dir-safe
+// segment. Colon-free ids (canvas, webgl, …) pass through unchanged.
+function routeSegment(renderer: string): string {
+  return renderer.replace(':', '-');
+}
 
 export interface Entry {
   name: string;
@@ -50,9 +59,9 @@ export interface CaptureEntryOptions {
   baseUrl: string;
   tool: Tool;
   outBase: string;
-  /** Absolute path to the baselines root (e.g. <root>/tools/baselines). Omit to skip comparison. */
-  baselineBase?: string;
-  /** When true, writes the current screenshot as the new baseline instead of comparing. */
+  /** Repo root — committed baselines live at tests/<tool>/baselines/<name>.json. */
+  root: string;
+  /** When true, writes the current screenshot hash as the new baseline instead of comparing. */
   updateBaseline?: boolean;
   extraWait?: number;
   /**
@@ -75,12 +84,60 @@ export interface CaptureEntryOptions {
 // Discovery
 // ---------------------------------------------------------------------------
 
+// Columns of a reference test, mirroring tools/reference/vite.config's discovery: each library subdir
+// contributes `<lib>:<r>` from app.<r>.ts (explicit), render.<r>.ts (custom), or a bare app.ts (default
+// backends); reference libraries lead, `flight` last.
+function referenceColumns(testDir: string): string[] {
+  const libs = readdirSync(testDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name);
+  const ordered = [...libs.filter((l) => l !== 'flight').sort(), ...(libs.includes('flight') ? ['flight'] : [])];
+  const columns: string[] = [];
+  for (const lib of ordered) {
+    const srcDir = join(testDir, lib, 'src');
+    if (!existsSync(srcDir)) continue;
+    const files = readdirSync(srcDir);
+    const appR = files
+      .map((f) => /^app\.([a-z0-9]+)\.ts$/.exec(f))
+      .filter((m): m is RegExpExecArray => m !== null)
+      .map((m) => m[1]);
+    if (appR.length > 0) {
+      columns.push(...appR.sort().map((r) => `${lib}:${r}`));
+      continue;
+    }
+    const customR = (RENDERERS as readonly string[]).filter((r) => existsSync(join(srcDir, `render.${r}.ts`)));
+    if (customR.length > 0) {
+      columns.push(...customR.map((r) => `${lib}:${r}`));
+      continue;
+    }
+    if (existsSync(join(srcDir, 'app.ts'))) {
+      const pkgPath = join(testDir, lib, 'package.json');
+      const pkg = existsSync(pkgPath) ? (JSON.parse(readFileSync(pkgPath, 'utf8')) as Record<string, unknown>) : {};
+      const renderers = (pkg.renderers as string[] | undefined) ?? [...RENDERERS];
+      columns.push(...renderers.map((r) => `${lib}:${r}`));
+    }
+  }
+  return columns;
+}
+
 export function discoverEntries(tool: Tool, root: string): Entry[] {
   // The landing page is a single document rendered with Flight (one WebGL canvas), with no
   // per-name or per-renderer routing, so it presents as one fixed entry.
-  if (tool === 'landing') return [{ name: 'landing', renderers: ['webgl'] }];
+  if (tool === 'site') return [{ name: 'landing', renderers: ['webgl'] }];
 
-  const dir = tool === 'explorer' ? join(root, 'examples') : join(root, 'tests', 'functional');
+  // Reference comparison tests: each holds library subdirs (openfl/, flight/) and contributes
+  // `<library>:<renderer>` columns, the same discovery the reference tool serves.
+  if (tool === 'reference') {
+    const refDir = join(root, 'tests', 'reference');
+    if (!existsSync(refDir)) return [];
+    return readdirSync(refDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && d.name !== '_harness')
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(({ name }) => ({ name, renderers: referenceColumns(join(refDir, name)) }))
+      .filter((e) => e.renderers.length > 0);
+  }
+
+  const dir = tool === 'examples' ? join(root, 'examples') : join(root, 'tests', 'functional');
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { withFileTypes: true })
     .filter((d) => d.isDirectory() && existsSync(join(dir, d.name, 'package.json')))
@@ -266,7 +323,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
     baseUrl,
     tool,
     outBase,
-    baselineBase,
+    root,
     updateBaseline = false,
     extraWait = 0,
     captureFrames = 0,
@@ -277,14 +334,14 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
 
   for (const renderer of renderers) {
     const urlPath =
-      tool === 'explorer'
-        ? `examples/${entry.name}/${renderer}/`
-        : tool === 'functional'
-          ? `tests/${entry.name}/${renderer}/`
+      tool === 'examples'
+        ? `examples/${entry.name}/${routeSegment(renderer)}/`
+        : tool === 'functional' || tool === 'reference'
+          ? `tests/${entry.name}/${routeSegment(renderer)}/`
           : ''; // landing: the single page is served at the server root
 
     const url = `${baseUrl}/${urlPath}`;
-    const outDir = join(resolve(outBase), tool, entry.name, renderer);
+    const outDir = join(resolve(outBase), tool, entry.name, routeSegment(renderer));
     mkdirSync(outDir, { recursive: true });
 
     const tmpScreenshot = join(outDir, 'screenshot.tmp.png');
@@ -367,7 +424,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       // WebGPU is not presentable on the headless/software adapter, so the browser screenshots a blank
       // canvas. The functional verifier reads the frame back from the GPU and exposes it as a PNG data
       // URL (window.__ftRenderImage); use that as the screenshot when present. All other renderers (and
-      // the explorer/landing tools, which do not run the verifier) screenshot the page normally.
+      // the examples/landing tools, which do not run the verifier) screenshot the page normally.
       let screenshotBuffer = await page.screenshot();
       if (renderer === 'webgpu') {
         const dataUrl = await page
@@ -393,19 +450,13 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       let baselineHash: string | null = null;
       let changed: boolean | null = null;
 
-      if (baselineBase) {
-        const blDir = join(resolve(baselineBase), tool, entry.name, renderer);
-        const blPath = join(blDir, 'baseline.sha256');
-
-        if (updateBaseline) {
-          mkdirSync(blDir, { recursive: true });
-          writeFileSync(blPath, `${hash}\n`);
-          baselineHash = hash;
-          changed = false;
-        } else if (existsSync(blPath)) {
-          baselineHash = readFileSync(blPath, 'utf8').trim();
-          changed = hash !== baselineHash;
-        }
+      if (updateBaseline) {
+        setBaselineField(root, tool, entry.name, renderer, 'sha256', hash);
+        baselineHash = hash;
+        changed = false;
+      } else {
+        baselineHash = getBaselineField(root, tool, entry.name, renderer, 'sha256');
+        if (baselineHash !== null) changed = hash !== baselineHash;
       }
 
       if (changed === true) anyChanged = true;
