@@ -44,7 +44,13 @@ export function beginWebGPURenderEffectPipeline(state: WebGPURenderState, pipeli
   } else {
     resizeWebGPURenderTarget(state, pipeline.sceneTarget, w, h);
   }
-  beginWebGPURenderTarget(state, pipeline.sceneTarget, state.renderTransform2D ?? createMatrix());
+  // Clear the scene target to the background colour (not transparent) so the background is part of the
+  // image the effects process and the replace-blend present composites — mirroring the WebGL pipeline,
+  // where renderWebGLBackground draws into the scene target. Without this the present overwrites the bg.
+  const rgba = state.backgroundColorRGBA;
+  const clearColor =
+    rgba !== undefined && rgba.length >= 4 ? { r: rgba[0], g: rgba[1], b: rgba[2], a: rgba[3] } : undefined;
+  beginWebGPURenderTarget(state, pipeline.sceneTarget, state.renderTransform2D ?? createMatrix(), clearColor);
 }
 
 export function createWebGPURenderEffectPipeline(
