@@ -8,11 +8,11 @@ It provides a scene graph, four interchangeable renderers (Canvas 2D, DOM, WebGL
 
 ## Try It
 
-Browse the live example explorer at [flighthq.github.io/flight](https://flighthq.github.io/flight), or run it locally:
+Browse the live examples gallery at [flighthq.github.io/flight](https://flighthq.github.io/flight), or run it locally:
 
 ```sh
 npm install
-npm run explorer
+npm run examples
 ```
 
 ## Getting Started
@@ -236,6 +236,6 @@ npm install
 packages/      Workspace packages published as @flighthq/*
 examples/      Standalone Vite example apps
 tests/         Integration, API, browser API, and size tests
-tools/         Development tools, including the example explorer
+tools/         Development tools, including the examples gallery
 scripts/       Validation, API, coverage, ordering, size, and build scripts
 ```

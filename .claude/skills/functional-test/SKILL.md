@@ -120,5 +120,5 @@ so module-init logs are captured too. (Full logging contract: the `visual-captur
 
 The headless pass/fail gate that CI runs for these tests is `npm run test:functional` (its `smoke` /
 `parity` / `regression` legs) — your new test is discovered automatically. See
-`docs/conventions/npm-scripts.md` for that vocabulary, and the `visual-capture` skill for capture/watch
+`tools/agents/docs/conventions/npm-scripts.md` for that vocabulary, and the `visual-capture` skill for capture/watch
 detail.

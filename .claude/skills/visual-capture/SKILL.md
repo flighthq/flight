@@ -7,13 +7,13 @@ description: Capture screenshots and structured logs from Flight examples, funct
 
 Two scripts turn examples and functional tests into screenshot + log output an agent can read directly.
 They require Playwright browsers (`npx playwright install chromium`) and a running Vite server (the
-scripts auto-start one unless `--url` is given). The tool name is one of `explorer`, `functional`, or
+scripts auto-start one unless `--url` is given). The tool name is one of `examples`, `functional`, or
 `landing`.
 
 ## One-shot capture
 
 ```
-npm run capture:explorer   [-- --filter=name --renderer=webgl,canvas --wait=500]
+npm run capture:examples   [-- --filter=name --renderer=webgl,canvas --wait=500]
 npm run capture:functional [-- --filter=name]
 npm run capture:landing    [-- --filter=name]
 ```
@@ -24,7 +24,7 @@ logs, and exits. Output lands in `tools/output/{tool}/{name}/{renderer}/`.
 ## Watch capture (host only — requires Playwright)
 
 ```
-npm run capture:explorer:watch [-- --filter=name --renderer=webgl]
+npm run capture:examples:watch [-- --filter=name --renderer=webgl]
 npm run capture:functional:watch
 npm run capture:landing:watch
 ```
@@ -36,7 +36,7 @@ re-captures on change (800 ms debounce). An agent in a sandbox just reads the ou
 ## Baselines
 
 ```
-npm run capture:explorer:baseline   [-- --filter=name]
+npm run capture:examples:baseline   [-- --filter=name]
 npm run capture:functional:baseline [-- --filter=name]
 npm run capture:landing:baseline    [-- --filter=name]
 ```
@@ -72,7 +72,7 @@ Each captured entry writes three files into `tools/output/{tool}/{name}/{rendere
 ## Emitting logs from a scene
 
 Logging lives in `@flighthq/log`, split so each consumer tree-shakes its half: examples/instrumentation
-import the lightweight **emit** side; the explorer and capture harness import the **listener** side.
+import the lightweight **emit** side; the examples and capture harness import the **listener** side.
 
 ```typescript
 import { log, logInfo, logVerbose, LogLevel } from '@flighthq/log';
@@ -90,8 +90,8 @@ capture sink records **every** level; the console prints only levels at or above
 
 ## Typical loop
 
-1. Start a watch on the host: `npm run capture:explorer:watch -- --filter=myExample`.
+1. Start a watch on the host: `npm run capture:examples:watch -- --filter=myExample`.
 2. Edit source. The watch re-captures automatically.
-3. Read `tools/output/explorer/myExample/webgl/screenshot.png` to see the frame.
-4. Read `tools/output/explorer/myExample/webgl/logs.jsonl` for structured output.
+3. Read `tools/output/examples/myExample/webgl/screenshot.png` to see the frame.
+4. Read `tools/output/examples/myExample/webgl/logs.jsonl` for structured output.
 5. Check `status.json` if you need to confirm the output post-dates your last edit.

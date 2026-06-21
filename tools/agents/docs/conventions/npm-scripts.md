@@ -11,18 +11,18 @@ action : subject : modifier…
 ```
 
 - **action** — the verb: what you do. `build`, `test`, `dev`, `capture`, `size`, `order`, `lint`, …
-- **subject** — what it acts on, sitting _immediately_ after the action: a tool (`functional`, `explorer`, `landing`), a layer (`unit`, `integration`, `api`), or a measured thing (`size`). The subject is the parity axis — `build:explorer`, `test:explorer`, and `dev:explorer` all name the same subject under different actions.
+- **subject** — what it acts on, sitting _immediately_ after the action: a tool (`functional`, `examples`, `landing`), a layer (`unit`, `integration`, `api`), or a measured thing (`size`). The subject is the parity axis — `build:examples`, `test:examples`, and `dev:examples` all name the same subject under different actions.
 - **modifier(s)** — narrow the action: a check (`smoke`, `parity`, `regression`), a mode (`baseline`, `watch`, `check`, `fix`), or a tolerance.
 
-**Never let a non-subject word take the subject slot.** `verify:render:explorer` is wrong: `render` is fighting `explorer` for the slot, and the write variant then stacks to `verify:render:explorer:baseline`. When a distinction needs a new word, make it a **modifier after the subject** or a **different action** — not a second subject. (This is why the cross-backend render check is `test:*:parity`, a modifier, and the fingerprint comparison is the `test` action rather than a separate verb crowding the subject.)
+**Never let a non-subject word take the subject slot.** `verify:render:examples` is wrong: `render` is fighting `examples` for the slot, and the write variant then stacks to `verify:render:examples:baseline`. When a distinction needs a new word, make it a **modifier after the subject** or a **different action** — not a second subject. (This is why the cross-backend render check is `test:*:parity`, a modifier, and the fingerprint comparison is the `test` action rather than a separate verb crowding the subject.)
 
 ## Collapsing (aliases)
 
 Omitting a segment yields a **collapse alias** that fans over the omitted axis. Aliases only chain leaf scripts — the real command always lives in the leaf, never duplicated into the alias.
 
-- **Omit the subject** → run that modifier across every subject. `test:parity` = `test:functional:parity && test:explorer:parity`.
+- **Omit the subject** → run that modifier across every subject. `test:parity` = `test:functional:parity && test:examples:parity`.
 - **Omit the modifier** → the umbrella for that subject (all of its checks). `test:functional` = smoke + parity + regression for functional.
-- **Omit the action** (bare name) → the implied action is _run_. For a dev tool, "run" is most valuable as the dev server (build-and-run buys little for an interactive tool), so the bare name aliases `dev:`. `explorer` → `dev:explorer`.
+- **Omit the action** (bare name) → the implied action is _run_. For a dev tool, "run" is most valuable as the dev server (build-and-run buys little for an interactive tool), so the bare name aliases `dev:`. `examples` → `dev:examples`.
 
 Every meaningful collapse should exist, so the obvious thing to type works. Including the fully-collapsed one: `test:baseline` (omit both subject and check, keep the write mode) rewrites every render-test baseline.
 
@@ -43,16 +43,16 @@ Two subjects × three checks; `regression` additionally has a write mode. Smoke 
 |  | smoke | parity | regression | regression (write) |
 | --- | --- | --- | --- | --- |
 | **functional** | `test:functional:smoke` | `test:functional:parity` | `test:functional:regression` | `test:functional:regression:baseline` |
-| **explorer** | `test:explorer:smoke` | `test:explorer:parity` | `test:explorer:regression` | `test:explorer:regression:baseline` |
+| **examples** | `test:examples:smoke` | `test:examples:parity` | `test:examples:regression` | `test:examples:regression:baseline` |
 
 Collapses over these leaves:
 
 | alias                                            | expands to                                                     |
 | ------------------------------------------------ | -------------------------------------------------------------- |
-| `test:functional` / `test:explorer`              | that subject's smoke + parity + regression (umbrella)          |
+| `test:functional` / `test:examples`              | that subject's smoke + parity + regression (umbrella)          |
 | `test:smoke` / `test:parity` / `test:regression` | that check across both subjects                                |
 | `test:regression:baseline`                       | both subjects' regression baseline writes                      |
 | `test:baseline`                                  | every render-test baseline (today: `test:regression:baseline`) |
-| `functional` / `explorer` / `landing`            | the matching `dev:*` server                                    |
+| `functional` / `examples` / `landing`            | the matching `dev:*` server                                    |
 
 The mechanics behind these scripts live in `scripts/capture.ts` (smoke, via `--fail-on-error`) and `scripts/compare-render.ts` (parity = `--no-regression`, regression = `--no-parity`, write = `--update-fingerprints`).
