@@ -2,6 +2,7 @@ import {
   applyCRTEffectToCanvas,
   applyDitherEffectToCanvas,
   applyFilmGrainEffectToCanvas,
+  applyGlitchEffectToCanvas,
   applyHalftoneEffectToCanvas,
   applyKuwaharaEffectToCanvas,
   applyOutlineEffectToCanvas,
@@ -12,6 +13,7 @@ import {
   defaultCanvasCRTEffectRunner,
   defaultCanvasDitherEffectRunner,
   defaultCanvasFilmGrainEffectRunner,
+  defaultCanvasGlitchEffectRunner,
   defaultCanvasHalftoneEffectRunner,
   defaultCanvasKuwaharaEffectRunner,
   defaultCanvasOutlineEffectRunner,
@@ -36,6 +38,12 @@ describe('applyDitherEffectToCanvas', () => {
 describe('applyFilmGrainEffectToCanvas', () => {
   it('is a function', () => {
     expect(typeof applyFilmGrainEffectToCanvas).toBe('function');
+  });
+});
+
+describe('applyGlitchEffectToCanvas', () => {
+  it('is a function', () => {
+    expect(typeof applyGlitchEffectToCanvas).toBe('function');
   });
 });
 
@@ -96,6 +104,12 @@ describe('defaultCanvasDitherEffectRunner', () => {
 describe('defaultCanvasFilmGrainEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultCanvasFilmGrainEffectRunner).toBe('function');
+  });
+});
+
+describe('defaultCanvasGlitchEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof defaultCanvasGlitchEffectRunner).toBe('function');
   });
 });
 

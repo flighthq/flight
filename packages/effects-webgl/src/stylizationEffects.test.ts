@@ -2,6 +2,7 @@ import {
   applyCRTEffectToWebGL,
   applyDitherEffectToWebGL,
   applyFilmGrainEffectToWebGL,
+  applyGlitchEffectToWebGL,
   applyHalftoneEffectToWebGL,
   applyKuwaharaEffectToWebGL,
   applyOutlineEffectToWebGL,
@@ -12,6 +13,7 @@ import {
   defaultWebGLCRTEffectRunner,
   defaultWebGLDitherEffectRunner,
   defaultWebGLFilmGrainEffectRunner,
+  defaultWebGLGlitchEffectRunner,
   defaultWebGLHalftoneEffectRunner,
   defaultWebGLKuwaharaEffectRunner,
   defaultWebGLOutlineEffectRunner,
@@ -36,6 +38,12 @@ describe('applyDitherEffectToWebGL', () => {
 describe('applyFilmGrainEffectToWebGL', () => {
   it('is a function', () => {
     expect(typeof applyFilmGrainEffectToWebGL).toBe('function');
+  });
+});
+
+describe('applyGlitchEffectToWebGL', () => {
+  it('is a function', () => {
+    expect(typeof applyGlitchEffectToWebGL).toBe('function');
   });
 });
 
@@ -96,6 +104,12 @@ describe('defaultWebGLDitherEffectRunner', () => {
 describe('defaultWebGLFilmGrainEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultWebGLFilmGrainEffectRunner).toBe('function');
+  });
+});
+
+describe('defaultWebGLGlitchEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof defaultWebGLGlitchEffectRunner).toBe('function');
   });
 });
 
