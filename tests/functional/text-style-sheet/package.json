@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-text-style-sheet",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

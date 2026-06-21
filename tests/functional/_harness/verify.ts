@@ -12,7 +12,7 @@ import {
 import type { FunctionalTarget } from './target';
 
 // In-page render verification, run by the functional entry after a test renders — and reused by the
-// explorer entry for examples (gated on capture mode there, so it never runs in the deployed gallery).
+// examples entry for examples (gated on capture mode there, so it never runs in the deployed gallery).
 // It uses the SDK's surface primitives (the same functions a test author could call) so "CI is green"
 // means the renderers actually produced pixels, not merely that the page loaded:
 //   - Tier 2 (not-blank): assert the frame is not still the clear colour (canvas/WebGL/WebGPU) or that
@@ -108,7 +108,7 @@ export async function snapshotFunctionalRender(): Promise<Surface | null> {
 /**
  * Verifies a render: not-blank (and an optional oracle / DOM-target check), then records a fingerprint.
  * Throws on failure (caught by the capture --fail-on-error gate). Used for functional tests and, via
- * findRenderCanvas, for explorer examples that never register a target. Reference (openfl) renderers do
+ * findRenderCanvas, for examples that never register a target. Reference (openfl) renderers do
  * not call this — it asserts Flight rendered correctly, not the reference.
  */
 export async function runRenderVerification(testModule: FunctionalTestModule, render: string): Promise<void> {
@@ -118,7 +118,7 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
   if (render === 'dom') {
     // DOM renders to elements, not a canvas — never snapshot one (an example's stray bitmap canvas
     // would read blank). A registered DOM target (functional harness) lets us confirm it emitted child
-    // elements or text; an explorer DOM example registers nothing, so its not-blank is skipped here —
+    // elements or text; an examples DOM example registers nothing, so its not-blank is skipped here —
     // Tier 1 (page errors) still gates it.
     const target = (window as VerificationWindow).__ftTarget;
     if (target?.kind === 'dom') {
