@@ -2,7 +2,7 @@ import { startParticleBackground } from './background-particles';
 import { startHeroDemo } from './hero-demo';
 import { fillSizeFigures } from './size-figures';
 
-// Rewrite the tool links to base-absolute URLs (`/flight/explorer/` in production, `/explorer/`
+// Rewrite the tool links to base-absolute URLs (`/flight/examples/` in production, `/examples/`
 // in dev) so they resolve from the site root rather than the current path. Relative hrefs compound
 // when the dev server falls back to serving this page for an unknown `/functional/` path — each
 // click would append another segment. Base-absolute links never stack and stay correct under the
