@@ -4,12 +4,12 @@ on:
   pull_request:
     paths-ignore:
       - '**/*.md'
-      - 'docs/**'
+      - 'tools/agents/docs/**'
   push:
     branches: [main, develop]
     paths-ignore:
       - '**/*.md'
-      - 'docs/**'
+      - 'tools/agents/docs/**'
 
 jobs:
   build-check:
@@ -104,8 +104,10 @@ jobs:
         check:
           - test:functional:smoke
           - test:functional:parity
-          - test:explorer:smoke
-          - test:explorer:parity
+          - test:examples:smoke
+          - test:examples:parity
+          - test:reference:smoke
+          - test:reference:parity
 
     steps:
       - uses: actions/checkout@v4
