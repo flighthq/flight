@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-filter-bevel-parity",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-filter-color-matrix-parity",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

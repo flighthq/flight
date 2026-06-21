@@ -1,0 +1,184 @@
+// WebGL backend of the gradient-bevel-parity test.
+//
+// Native path: the real WebGL gradient bevel is a multi-pass shader (applyGradientBevelFilterToWebGL) —
+// a tint/box-blur basis, a bevel-encode pass that samples the blurred alpha at ±offset, and an apply
+// pass that looks the encoded bevel value up in a GPU gradient-ramp texture and clips to source alpha.
+// The applier builds that ramp texture INTERNALLY from filter.colors/alphas/ratios (via
+// createWebGLGradientRampTexture), so this test does not pre-create the ramp — passing the ramp arrays
+// through the filter descriptor is the complete, correct wiring. We run the passes over offscreen
+// render targets, then composite the result onto the screen as a positioned quad, mirroring the
+// engine's own render-cache flow (packages/render-webgl/src/webglCache.ts).
+//
+// Signature differs from the blur applier:
+//   applyGradientBevelFilterToWebGL(state, source, dest, scratch[3], filter)
+// `scratch` is an ARRAY of three same-size targets (the filter ping-pongs through them), not a single
+// `temp`. There is no separate CSS path. The applier allocates one temporary WebGLTexture per call and
+// deletes it internally; the three scratch targets + source + dest are owned and destroyed here.
+//
+// Flow per drawNativeGradientBevel():
+//   1. Render the source bitmap into a TILE-sized `source` target (identity render transform → the
+//      origin-placed bitmap fills the target's 0..TILE viewport). The source must carry its alpha edges
+//      (a transparent field with an opaque square), since the bevel reads the alpha channel.
+//   2. applyGradientBevelFilterToWebGL(state, source, dest, [s0, s1, s2], filter) — the shader bevel.
+//   3. Rebind the screen framebuffer + full-canvas viewport (the fullscreen passes leave a target bound),
+//      then drawWebGLRenderTargetResult at the native tile position via a placement node's transform
+//      (the composite V-flips, matching how step 1 wrote the target — same convention the render cache
+//      relies on, so the result lands upright).
+//
+// Targets are sized in LOGICAL pixels (TILE), so the GPU bevel runs at the same resolution the
+// CPU/surface reference filters at; the composite upscales by the device transform exactly as the
+// reference bitmap tile does, keeping the two tiles at matching effective resolution.
+import type { Bitmap, DisplayObject, WebGLRenderState, WebGLRenderTarget } from '@flighthq/sdk';
+import {
+  applyGradientBevelFilterToWebGL,
+  beginWebGLRenderTarget,
+  BitmapKind,
+  createBitmap,
+  createMatrix,
+  createWebGLCanvasElement,
+  createWebGLRenderState,
+  createWebGLRenderTarget,
+  defaultWebGLBitmapRenderer,
+  destroyWebGLRenderTarget,
+  drawWebGLRenderTargetResult,
+  endWebGLRenderTarget,
+  getOrCreateRenderProxy2D,
+  getWebGLRenderStateRuntime,
+  prepareDisplayObjectRender,
+  registerDefaultWebGLMaterial,
+  registerRenderer,
+  renderWebGLBackground,
+  renderWebGLDisplayObject,
+} from '@flighthq/sdk';
+
+import { registerFunctionalTarget } from '../../_harness/verify';
+import type { NativeGradientBevelSpec, ParityTarget } from './parity';
+
+export function createParityTarget(width: number, height: number, background: number): ParityTarget {
+  const pixelRatio = window.devicePixelRatio || 1;
+  const canvas = createWebGLCanvasElement(width, height, pixelRatio);
+  document.body.appendChild(canvas);
+
+  const state = createWebGLRenderState(canvas, {
+    pixelRatio,
+    backgroundColor: background,
+    // preserveDrawingBuffer so the verifier can read the frame back after rendering.
+    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+  });
+  // Device transform carries DPI: the scene is authored in logical units, scaled to the backing store.
+  state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+  registerDefaultWebGLMaterial(state);
+  registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);
+
+  registerFunctionalTarget({
+    kind: 'webgl',
+    state,
+    width,
+    height,
+    scale: pixelRatio,
+    render: (root: DisplayObject) => renderParity(state, root),
+  });
+
+  // Pending GPU bevels, applied after the scene draws (so the composite lands over the background/tiles).
+  const pending: NativeGradientBevelSpec[] = [];
+
+  return {
+    kind: 'webgl',
+    width,
+    height,
+    scale: pixelRatio,
+    drawNativeGradientBevel(spec: Readonly<NativeGradientBevelSpec>): void {
+      pending.push({ ...spec });
+    },
+    render(root: DisplayObject): void {
+      renderParity(state, root);
+      for (const spec of pending) compositeNativeGradientBevel(state, spec);
+      pending.length = 0;
+    },
+  };
+}
+
+// Renders `source` into `target` filling its 0..size viewport, via an identity render transform.
+function renderSourceIntoTarget(state: WebGLRenderState, source: Bitmap, target: WebGLRenderTarget): void {
+  beginWebGLRenderTarget(state, target, _identity);
+  state.gl.clearColor(0, 0, 0, 0);
+  state.gl.clear(state.gl.COLOR_BUFFER_BIT);
+  prepareDisplayObjectRender(state, source);
+  renderWebGLDisplayObject(state, source);
+  endWebGLRenderTarget(state);
+}
+
+function compositeNativeGradientBevel(state: WebGLRenderState, spec: Readonly<NativeGradientBevelSpec>): void {
+  const size = spec.tile;
+
+  // The source bitmap drawn at origin, sized to one logical tile. Its transparent field + opaque
+  // square give the bevel the alpha edges it reads.
+  const sourceBitmap = createBitmap();
+  sourceBitmap.data.image = spec.source;
+  sourceBitmap.data.smoothing = false;
+  sourceBitmap.x = 0;
+  sourceBitmap.y = 0;
+
+  const sourceTarget = createWebGLRenderTarget(state, { width: size, height: size });
+  const destTarget = createWebGLRenderTarget(state, { width: size, height: size });
+  // The applier ping-pongs through THREE scratch targets (not a single temp like blur).
+  const scratch0 = createWebGLRenderTarget(state, { width: size, height: size });
+  const scratch1 = createWebGLRenderTarget(state, { width: size, height: size });
+  const scratch2 = createWebGLRenderTarget(state, { width: size, height: size });
+
+  renderSourceIntoTarget(state, sourceBitmap, sourceTarget);
+
+  // The real WebGL gradient bevel. The applier builds the gradient ramp texture internally from
+  // filter.colors/alphas/ratios, so the ramp arrays travel inside the filter descriptor — there is no
+  // separate ramp argument to pass.
+  applyGradientBevelFilterToWebGL(state, sourceTarget, destTarget, [scratch0, scratch1, scratch2], spec.filter);
+
+  // The fullscreen passes leave a render-target framebuffer bound and a tile-sized viewport — they do
+  // not restore the screen. Rebind the default framebuffer + full-canvas viewport before compositing,
+  // or the result would draw into a bevel target, not the screen.
+  bindScreenFramebuffer(state);
+
+  // Placement node carries the world×device transform that positions the TILE×TILE result at the native
+  // tile. It is NOT part of the rendered scene tree (it would double-draw); we prepare it only to
+  // harvest its render proxy's transform2D, then composite the dest target through that transform.
+  const placement = createBitmap();
+  placement.x = spec.x;
+  placement.y = spec.y;
+  prepareDisplayObjectRender(state, placement);
+  const proxy = getOrCreateRenderProxy2D(state, placement);
+
+  // dest is composited as a (0,0,size,size) quad through proxy.transform2D; identity inner transform,
+  // exactly like the render-cache composite (drawWebGLRenderCache passes _identity).
+  drawWebGLRenderTargetResult(state, proxy, destTarget, _identity);
+
+  // The render targets own framebuffers/textures the GC will not free.
+  destroyWebGLRenderTarget(state, sourceTarget);
+  destroyWebGLRenderTarget(state, destTarget);
+  destroyWebGLRenderTarget(state, scratch0);
+  destroyWebGLRenderTarget(state, scratch1);
+  destroyWebGLRenderTarget(state, scratch2);
+}
+
+// Rebinds the default (screen) framebuffer and the full-canvas viewport, and resets the runtime's
+// cached framebuffer/viewport so subsequent draws target the screen. Mirrors the state the screen walk
+// runs under (framebuffer null, renderTargetViewport null → viewport = canvas).
+function bindScreenFramebuffer(state: WebGLRenderState): void {
+  const runtime = getWebGLRenderStateRuntime(state);
+  const gl = state.gl;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, state.canvas.width, state.canvas.height);
+  runtime.currentFramebuffer = null;
+  runtime.renderTargetViewport = null;
+  runtime.currentTexture = null;
+  runtime.currentBlendMode = null;
+  runtime.currentProgram = null;
+}
+
+function renderParity(state: WebGLRenderState, root: DisplayObject): void {
+  if (!prepareDisplayObjectRender(state, root)) return;
+  renderWebGLBackground(state);
+  renderWebGLDisplayObject(state, root);
+}
+
+const _identity = createMatrix();
