@@ -101,6 +101,7 @@ export function createParticleEmitterData(data?: Readonly<Partial<ParticleEmitte
     ids: data?.ids ?? new Uint16Array(),
     particleCount: data?.particleCount ?? 0,
     transforms: data?.transforms ?? new Float32Array(),
+    velocities: data?.velocities ?? new Float32Array(),
     worldSpace: data?.worldSpace ?? false,
   };
 }
@@ -128,6 +129,7 @@ export function reserveParticleEmitter(target: ParticleEmitter, capacity: number
   data.colors = reserveFloat32Array(data.colors, capacity * 3);
   data.ids = reserveUint16Array(data.ids, capacity);
   data.transforms = reserveFloat32Array(data.transforms, capacity * PARTICLE_TRANSFORM_STRIDE);
+  data.velocities = reserveFloat32Array(data.velocities, capacity * 2);
 }
 
 export function setParticleEmitterLocalBoundsRectangle(target: ParticleEmitter, rect: Readonly<Rectangle>): void {
