@@ -34,8 +34,15 @@ const REPLACE_BLEND: GPUBlendState = {
 };
 
 export type WebGPUFilterPipeline = {
+  // The default variant, compiled for the canvas format (state.format).
   pipeline: GPURenderPipeline;
   blendMode: 'premul' | 'replace';
+  // Compiles a variant of this pipeline targeting `format`. A render pipeline's color target format must
+  // match the attachment it draws into, so drawing a filter into a non-canvas-format target (an HDR
+  // rgba16float effect target) needs a matching variant; the draw path resolves and caches it per format.
+  // Optional so externally-constructed WebGPUFilterPipeline values (e.g. the gradient filters) still type.
+  compileForFormat?: (format: GPUTextureFormat) => GPURenderPipeline;
+  variants?: Map<GPUTextureFormat, GPURenderPipeline>;
 };
 
 export type WebGPUDualSourcePipeline = WebGPUFilterPipeline;
@@ -197,6 +204,27 @@ export function clearWebGPUFilterTarget(state: WebGPURenderState, target: WebGPU
   pass.end();
 }
 
+// Returns the GPURenderPipeline whose color target format matches `dest` (the canvas format when dest is
+// null). Compiles and caches a per-format variant on demand so a filter built for the canvas format can
+// still draw into an HDR (rgba16float) effect target without an attachment-format mismatch.
+function resolveFilterPipeline(
+  state: WebGPURenderState,
+  pipeline: Readonly<WebGPUFilterPipeline>,
+  dest: WebGPURenderTarget | null,
+): GPURenderPipeline {
+  const canvasFormat = getOrCreateFilterState(state).format;
+  const targetFormat = dest !== null ? dest.format : canvasFormat;
+  if (pipeline.compileForFormat === undefined || pipeline.variants === undefined || targetFormat === canvasFormat) {
+    return pipeline.pipeline;
+  }
+  let variant = pipeline.variants.get(targetFormat);
+  if (variant === undefined) {
+    variant = pipeline.compileForFormat(targetFormat);
+    pipeline.variants.set(targetFormat, variant);
+  }
+  return variant;
+}
+
 /** Compiles a dual-source WGSL filter pipeline (source0 = group 1, source1 = group 2). */
 export function createWebGPUDualSourcePipeline(
   state: WebGPURenderState,
@@ -211,18 +239,19 @@ export function createWebGPUDualSourcePipeline(
     bindGroupLayouts: [fs.uniformBGLayout, fs.textureBGLayout, fs.textureBGLayout],
   });
 
-  const pipeline = device.createRenderPipeline({
-    layout: pipelineLayout,
-    vertex: { module: shaderModule, entryPoint: 'vs_main' },
-    fragment: {
-      module: shaderModule,
-      entryPoint: 'fs_main',
-      targets: [{ format: fs.format, blend: blend === 'premul' ? PREMUL_BLEND : REPLACE_BLEND }],
-    },
-    primitive: { topology: 'triangle-list' },
-  });
+  const compileForFormat = (format: GPUTextureFormat): GPURenderPipeline =>
+    device.createRenderPipeline({
+      layout: pipelineLayout,
+      vertex: { module: shaderModule, entryPoint: 'vs_main' },
+      fragment: {
+        module: shaderModule,
+        entryPoint: 'fs_main',
+        targets: [{ format, blend: blend === 'premul' ? PREMUL_BLEND : REPLACE_BLEND }],
+      },
+      primitive: { topology: 'triangle-list' },
+    });
 
-  return { pipeline, blendMode: blend };
+  return { pipeline: compileForFormat(fs.format), blendMode: blend, compileForFormat, variants: new Map() };
 }
 
 /** Compiles a WGSL filter pipeline, creating the combined vertex+fragment shader module. */
@@ -239,18 +268,19 @@ export function createWebGPUFilterPipeline(
     bindGroupLayouts: [fs.uniformBGLayout, fs.textureBGLayout],
   });
 
-  const pipeline = device.createRenderPipeline({
-    layout: pipelineLayout,
-    vertex: { module: shaderModule, entryPoint: 'vs_main' },
-    fragment: {
-      module: shaderModule,
-      entryPoint: 'fs_main',
-      targets: [{ format: fs.format, blend: blend === 'premul' ? PREMUL_BLEND : REPLACE_BLEND }],
-    },
-    primitive: { topology: 'triangle-list' },
-  });
+  const compileForFormat = (format: GPUTextureFormat): GPURenderPipeline =>
+    device.createRenderPipeline({
+      layout: pipelineLayout,
+      vertex: { module: shaderModule, entryPoint: 'vs_main' },
+      fragment: {
+        module: shaderModule,
+        entryPoint: 'fs_main',
+        targets: [{ format, blend: blend === 'premul' ? PREMUL_BLEND : REPLACE_BLEND }],
+      },
+      primitive: { topology: 'triangle-list' },
+    });
 
-  return { pipeline, blendMode: blend };
+  return { pipeline: compileForFormat(fs.format), blendMode: blend, compileForFormat, variants: new Map() };
 }
 
 /** Compiles a triple-source WGSL filter pipeline (source0 = group 1, source1 = group 2, source2 = group 3). */
@@ -272,18 +302,19 @@ export function createWebGPUTripleSourcePipeline(
     ],
   });
 
-  const pipeline = device.createRenderPipeline({
-    layout: pipelineLayout,
-    vertex: { module: shaderModule, entryPoint: 'vs_main' },
-    fragment: {
-      module: shaderModule,
-      entryPoint: 'fs_main',
-      targets: [{ format: filterState.format, blend: blend === 'premul' ? PREMUL_BLEND : REPLACE_BLEND }],
-    },
-    primitive: { topology: 'triangle-list' },
-  });
+  const compileForFormat = (format: GPUTextureFormat): GPURenderPipeline =>
+    device.createRenderPipeline({
+      layout: pipelineLayout,
+      vertex: { module: shaderModule, entryPoint: 'vs_main' },
+      fragment: {
+        module: shaderModule,
+        entryPoint: 'fs_main',
+        targets: [{ format, blend: blend === 'premul' ? PREMUL_BLEND : REPLACE_BLEND }],
+      },
+      primitive: { topology: 'triangle-list' },
+    });
 
-  return { pipeline, blendMode: blend };
+  return { pipeline: compileForFormat(filterState.format), blendMode: blend, compileForFormat, variants: new Map() };
 }
 
 /**
@@ -308,7 +339,7 @@ export function drawWebGPUDualSourcePass(
   const source1BG = getOrCreateTextureBG(fs, device, source1.view);
 
   const pass = beginFilterPass(state, dest, 'load');
-  pass.setPipeline(pipeline.pipeline);
+  pass.setPipeline(resolveFilterPipeline(state, pipeline, dest));
   pass.setBindGroup(0, fs.uniformBG, [slotOffset]);
   pass.setBindGroup(1, source0BG);
   pass.setBindGroup(2, source1BG);
@@ -338,7 +369,7 @@ export function drawWebGPUFilterPass(
   const sourceBG = getOrCreateTextureBG(fs, device, source.view);
 
   const pass = beginFilterPass(state, dest, 'load');
-  pass.setPipeline(pipeline.pipeline);
+  pass.setPipeline(resolveFilterPipeline(state, pipeline, dest));
   pass.setBindGroup(0, fs.uniformBG, [slotOffset]);
   pass.setBindGroup(1, sourceBG);
   pass.draw(6);
@@ -369,7 +400,7 @@ export function drawWebGPUTripleSourcePass(
   const source2BG = getOrCreateTextureBG(fs, device, source2.view);
 
   const pass = beginFilterPass(state, dest, 'load');
-  pass.setPipeline(pipeline.pipeline);
+  pass.setPipeline(resolveFilterPipeline(state, pipeline, dest));
   pass.setBindGroup(0, fs.uniformBG, [slotOffset]);
   pass.setBindGroup(1, source0BG);
   pass.setBindGroup(2, source1BG);
