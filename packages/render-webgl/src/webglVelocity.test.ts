@@ -1,5 +1,5 @@
 import { createDisplayObject } from '@flighthq/displayobject';
-import { createQuadBatch, getQuadBatchRuntime } from '@flighthq/sprite';
+import { createParticleEmitter, createQuadBatch, getQuadBatchRuntime, reserveParticleEmitter } from '@flighthq/sprite';
 import type { QuadBatchRuntime, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
 import { beginVelocityFrame, contributeVelocity, createVelocityField } from '@flighthq/velocity';
@@ -8,6 +8,7 @@ import { makeWebGLState } from './webglTestHelper';
 import {
   createWebGLVelocityTarget,
   defaultWebGLDisplayObjectVelocityWriter,
+  defaultWebGLParticleEmitterVelocityWriter,
   defaultWebGLQuadBatchVelocityWriter,
   drawWebGLVelocityQuad,
   getWebGLVelocityWriter,
@@ -28,6 +29,33 @@ describe('createWebGLVelocityTarget', () => {
 describe('defaultWebGLDisplayObjectVelocityWriter', () => {
   it('is a velocity writer function', () => {
     expect(typeof defaultWebGLDisplayObjectVelocityWriter).toBe('function');
+  });
+});
+
+describe('defaultWebGLParticleEmitterVelocityWriter', () => {
+  it('is a velocity writer function', () => {
+    expect(typeof defaultWebGLParticleEmitterVelocityWriter).toBe('function');
+  });
+
+  it('emits per-particle velocity for an emitter with a velocities array without throwing', () => {
+    const { state } = makeWebGLState();
+    const target = createWebGLVelocityTarget(state, 128, 64);
+    const region = { id: 0, x: 0, y: 0, width: 16, height: 16, pivotX: null, pivotY: null } as TextureAtlasRegion;
+    const atlas = { image: null, regions: [region] } as TextureAtlas;
+    const emitter = createParticleEmitter();
+    reserveParticleEmitter(emitter, 2);
+    emitter.data.atlas = atlas;
+    emitter.data.particleCount = 2;
+    emitter.data.ids[0] = 0;
+    emitter.data.ids[1] = 0;
+    emitter.data.transforms.set([10, 10, 0, 1, 40, 20, 0, 1]);
+    emitter.data.velocities.set([3, -2, -1, 4]);
+
+    registerWebGLVelocityWriter(state, emitter.kind, defaultWebGLParticleEmitterVelocityWriter);
+    const field = createVelocityField();
+    beginVelocityFrame(field);
+
+    expect(() => renderWebGLVelocity(state, emitter, field, target)).not.toThrow();
   });
 });
 
