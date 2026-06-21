@@ -9,6 +9,10 @@ export interface ParticleEmitterData extends DisplayObjectData {
   ids: Uint16Array;
   particleCount: number;
   transforms: Float32Array; // [x, y, rotation, scale] × capacity — 4 floats/particle
+  // [vx, vy] × capacity — per-particle velocity in the same space/units as transforms positions, kept
+  // aligned with transforms by updateParticleEmitter so the velocity G-buffer writer can smear each
+  // particle by its own vector. Empty until the emitter is reserved.
+  velocities: Float32Array;
   worldSpace: boolean; // when true, particle positions are world-space; renderers skip node transform
 }
 
