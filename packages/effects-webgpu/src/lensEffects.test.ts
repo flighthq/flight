@@ -1,12 +1,16 @@
 import {
   applyBokehDepthOfFieldEffectToWebGPU,
   applyChromaticAberrationEffectToWebGPU,
+  applyDisplacementEffectToWebGPU,
+  applyLensDirtEffectToWebGPU,
   applyLensDistortionEffectToWebGPU,
   applyLensFlareEffectToWebGPU,
   applyTiltShiftEffectToWebGPU,
   applyVignetteEffectToWebGPU,
   defaultWebGPUBokehDepthOfFieldEffectRunner,
   defaultWebGPUChromaticAberrationEffectRunner,
+  defaultWebGPUDisplacementEffectRunner,
+  defaultWebGPULensDirtEffectRunner,
   defaultWebGPULensDistortionEffectRunner,
   defaultWebGPULensFlareEffectRunner,
   defaultWebGPUTiltShiftEffectRunner,
@@ -22,6 +26,18 @@ describe('applyBokehDepthOfFieldEffectToWebGPU', () => {
 describe('applyChromaticAberrationEffectToWebGPU', () => {
   it('is a function', () => {
     expect(typeof applyChromaticAberrationEffectToWebGPU).toBe('function');
+  });
+});
+
+describe('applyDisplacementEffectToWebGPU', () => {
+  it('is a function', () => {
+    expect(typeof applyDisplacementEffectToWebGPU).toBe('function');
+  });
+});
+
+describe('applyLensDirtEffectToWebGPU', () => {
+  it('is a function', () => {
+    expect(typeof applyLensDirtEffectToWebGPU).toBe('function');
   });
 });
 
@@ -58,6 +74,18 @@ describe('defaultWebGPUBokehDepthOfFieldEffectRunner', () => {
 describe('defaultWebGPUChromaticAberrationEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultWebGPUChromaticAberrationEffectRunner).toBe('function');
+  });
+});
+
+describe('defaultWebGPUDisplacementEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof defaultWebGPUDisplacementEffectRunner).toBe('function');
+  });
+});
+
+describe('defaultWebGPULensDirtEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof defaultWebGPULensDirtEffectRunner).toBe('function');
   });
 });
 

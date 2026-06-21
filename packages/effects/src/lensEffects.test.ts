@@ -1,6 +1,8 @@
 import {
   createBokehDepthOfFieldEffect,
   createChromaticAberrationEffect,
+  createDisplacementEffect,
+  createLensDirtEffect,
   createLensDistortionEffect,
   createLensFlareEffect,
   createTiltShiftEffect,
@@ -30,6 +32,34 @@ describe('createChromaticAberrationEffect', () => {
     expect(createChromaticAberrationEffect({ intensity: 0.01, radial: false })).toMatchObject({
       intensity: 0.01,
       radial: false,
+    });
+  });
+});
+
+describe('createDisplacementEffect', () => {
+  it('tags the intent type', () => {
+    expect(createDisplacementEffect().type).toBe('displacement');
+  });
+
+  it('carries options', () => {
+    expect(createDisplacementEffect({ intensity: 10, frequency: 14, seed: 2 })).toMatchObject({
+      intensity: 10,
+      frequency: 14,
+      seed: 2,
+    });
+  });
+});
+
+describe('createLensDirtEffect', () => {
+  it('tags the intent type', () => {
+    expect(createLensDirtEffect().type).toBe('lensDirt');
+  });
+
+  it('carries options', () => {
+    expect(createLensDirtEffect({ intensity: 1.5, threshold: 0.45, seed: 4 })).toMatchObject({
+      intensity: 1.5,
+      threshold: 0.45,
+      seed: 4,
     });
   });
 });

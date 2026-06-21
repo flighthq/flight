@@ -1,6 +1,8 @@
 import type {
   BokehDepthOfFieldEffect,
   ChromaticAberrationEffect,
+  DisplacementEffect,
+  LensDirtEffect,
   LensDistortionEffect,
   LensFlareEffect,
   TiltShiftEffect,
@@ -21,6 +23,14 @@ export function createChromaticAberrationEffect(
   options: Readonly<Omit<ChromaticAberrationEffect, 'type'>> = {},
 ): ChromaticAberrationEffect {
   return { type: 'chromaticAberration', ...options };
+}
+
+export function createDisplacementEffect(options: Readonly<Omit<DisplacementEffect, 'type'>> = {}): DisplacementEffect {
+  return { type: 'displacement', ...options };
+}
+
+export function createLensDirtEffect(options: Readonly<Omit<LensDirtEffect, 'type'>> = {}): LensDirtEffect {
+  return { type: 'lensDirt', ...options };
 }
 
 export function createLensDistortionEffect(

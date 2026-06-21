@@ -5,6 +5,7 @@ import type {
   CRTEffect,
   DitherEffect,
   FilmGrainEffect,
+  GlitchEffect,
   HalftoneEffect,
   KuwaharaEffect,
   OutlineEffect,
@@ -95,6 +96,16 @@ export function applyFilmGrainEffectToCanvas(
   ctx.restore();
 
   releaseCanvasRenderTarget(pool, noise);
+}
+
+// Glitch (PASSTHROUGH): per-pixel RGB channel separation and hashed block tears have no 2D draw-op
+// equivalent (like chromaticAberration). Shader-only.
+export function applyGlitchEffectToCanvas(
+  source: Readonly<CanvasRenderTarget>,
+  dest: Readonly<CanvasRenderTarget>,
+  _effect: Readonly<GlitchEffect>,
+): void {
+  passthroughCanvasEffectPass(dest, source);
 }
 
 // Halftone (PASSTHROUGH): a rotated dot grid carved by per-pixel luminance has no 2D draw-op path.
@@ -228,6 +239,10 @@ export const defaultCanvasDitherEffectRunner: CanvasRenderEffectRunner = (ctx, e
 
 export const defaultCanvasFilmGrainEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
   applyFilmGrainEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as FilmGrainEffect);
+};
+
+export const defaultCanvasGlitchEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+  applyGlitchEffectToCanvas(ctx.source, ctx.dest, effect as GlitchEffect);
 };
 
 export const defaultCanvasHalftoneEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
