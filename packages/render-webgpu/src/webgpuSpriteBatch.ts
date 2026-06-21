@@ -212,11 +212,14 @@ export function getWebGPUQuadBatchPipeline(
     resources.pipelines.set(module, perModule);
   }
   const stencilMode = runtime.maskWriteMode ? 'maskwrite' : runtime.currentMaskDepth > 0 ? 'masked' : 'normal';
-  const key = `${blendMode ?? 'null'}-${stencilMode}`;
+  // The pipeline bakes its color-attachment format, so key on the current target format too (rgba16float
+  // inside an HDR effect target vs the canvas format).
+  const format = runtime.currentColorFormat ?? state.format;
+  const key = `${blendMode ?? 'null'}-${stencilMode}-${format}`;
   const cached = perModule.get(key);
   if (cached !== undefined) return cached;
 
-  const { device, format } = state;
+  const { device } = state;
   const blend = blendMode === BlendMode.Add ? ADD_BLEND : NORMAL_BLEND;
   const isMaskWrite = stencilMode === 'maskwrite';
 
