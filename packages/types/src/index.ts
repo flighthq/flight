@@ -208,4 +208,5 @@ export * from './WebGPURenderEffectPipeline';
 export * from './WebGPURenderOptions';
 export * from './WebGPURenderState';
 export * from './WebGPURenderTarget';
+export * from './WebGPUVelocityWriter';
 export * from './WorldNode';
