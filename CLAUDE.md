@@ -1,1 +1,1 @@
-@AGENTS.md
+@tools/agents/docs/index.md
