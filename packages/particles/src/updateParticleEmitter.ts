@@ -339,6 +339,14 @@ export function updateParticleEmitter(
   state.prevX = trackX;
   state.prevY = trackY;
 
+  // Mirror the live per-particle velocities into the render data so the velocity G-buffer writer can
+  // smear each particle by its own vector. state.velocities is kept aligned with data.transforms by the
+  // compaction above, so the leading particleCount entries are the live particles in render order.
+  const liveVelocityCount = data.particleCount * 2;
+  if (data.velocities.length >= liveVelocityCount) {
+    data.velocities.set(state.velocities.subarray(0, liveVelocityCount));
+  }
+
   invalidateNodeLocalBounds(emitter);
 }
 
