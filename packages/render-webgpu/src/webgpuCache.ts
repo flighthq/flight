@@ -105,8 +105,8 @@ export function createWebGPUCacheState(screenState: WebGPURenderState): WebGPURe
   cacheRuntime.clipContourPipelines = null;
   cacheRuntime.clipContourStack = [];
   cacheRuntime.clipForms = [];
-  // The flat-color shape-fill pipeline can be lazily rebuilt against the (shared) device on first use.
-  cacheRuntime.shapeMeshPipeline = null;
+  // The flat-color shape-fill pipelines can be lazily rebuilt against the (shared) device on first use.
+  cacheRuntime.shapeMeshPipelines = undefined;
   cacheRuntime.spriteBatchBlendMode = null;
   cacheRuntime.spriteBatchMaterial = null;
   cacheRuntime.spriteBatchMaterialRenderer = null;
