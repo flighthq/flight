@@ -118,9 +118,9 @@ export function submitWebGPURenderPass(state: WebGPURenderState): void {
     device.queue.submit([commandEncoder.finish()]);
     runtime.commandEncoder = null;
 
-    // Now that the frame is submitted, free the per-clip buffers retired by clip pops this frame — they
-    // were kept alive because the submitted command buffer referenced them.
-    const retired = runtime.clipContourRetiredBuffers;
+    // Now that the frame is submitted, free the buffers retired mid-frame (clip pops, grown particle
+    // instance buffers) — they were kept alive because the submitted command buffer referenced them.
+    const retired = runtime.retiredBuffers;
     if (retired !== undefined && retired.length > 0) {
       for (let i = 0; i < retired.length; i++) retired[i].destroy();
       retired.length = 0;

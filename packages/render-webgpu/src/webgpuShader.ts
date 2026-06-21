@@ -217,7 +217,10 @@ export function getWebGPUPipeline(
   stencilMode: StencilMode,
 ): GPURenderPipeline {
   const runtime = getWebGPURenderStateRuntime(state);
-  const key = `${blendMode ?? 'null'}-${stencilMode}`;
+  // The pipeline bakes its color-attachment format, so key on the current target format too (rgba16float
+  // inside an HDR effect target vs the canvas format).
+  const format = runtime.currentColorFormat ?? state.format;
+  const key = `${blendMode ?? 'null'}-${stencilMode}-${format}`;
   const cached = runtime.pipelineCache.get(key);
   if (cached !== undefined) return cached;
 
@@ -225,7 +228,7 @@ export function getWebGPUPipeline(
   const isMaskWrite = stencilMode === 'maskwrite';
   const stencilFace = buildStencilFaceState(stencilMode);
 
-  const { device, format } = state;
+  const { device } = state;
   const shaderSrc = isMaskWrite ? MASK_FRAGMENT_SRC : BITMAP_SHADER_SRC;
   const module = device.createShaderModule({ code: shaderSrc });
   const layout = createWebGPUPipelineLayout(device, runtime.uniformBindGroupLayout, runtime.textureBindGroupLayout);
