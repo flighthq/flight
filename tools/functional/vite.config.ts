@@ -16,7 +16,6 @@ interface FunctionalTest {
 
 const projectRoot = resolve(__dirname, '../..');
 const testsDir = join(projectRoot, 'tests/functional');
-const referenceBaseDir = join(projectRoot, 'tests/reference');
 
 const MIME: Record<string, string> = {
   '.png': 'image/png',
@@ -41,20 +40,12 @@ function splitFirst(str: string, sep: string): [string, string] {
   return [str.slice(0, i), str.slice(i + sep.length)];
 }
 
-// A renderer id is the logical key (`canvas`, `webgl`, `reference:openfl`). Its colon-bearing form is
-// not safe as a URL or directory segment, so the route path uses this hyphenated form instead
-// (`reference-openfl`). Flight renderers have no colon and pass through unchanged. The id is never
-// reconstructed from the segment; callers that need the id carry it alongside.
+// A renderer id is the logical key (`canvas`, `webgl`, `webgpu`). Should an id ever carry a colon
+// (not safe as a URL or directory segment), this maps it to a hyphenated route segment; colon-free
+// ids pass through unchanged. The id is never reconstructed from the segment; callers that need the
+// id carry it alongside.
 function routeSegment(renderer: string): string {
   return renderer.replace(':', '-');
-}
-
-function discoverReferenceRenderers(testName: string): string[] {
-  if (!existsSync(referenceBaseDir)) return [];
-  return readdirSync(referenceBaseDir, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && existsSync(join(referenceBaseDir, d.name, testName, 'src', 'app.ts')))
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map((d) => `reference:${d.name}`);
 }
 
 function discoverTests(): FunctionalTest[] {
@@ -74,10 +65,7 @@ function discoverTests(): FunctionalTest[] {
       } else {
         renderers = [];
       }
-      return {
-        name,
-        renderers: [...renderers, ...discoverReferenceRenderers(name)],
-      };
+      return { name, renderers };
     })
     .filter((t) => t.renderers.length > 0);
 }
@@ -113,10 +101,8 @@ function buildEntryHtml(name: string, render: string, scriptSrc: string, assetBa
 }
 
 function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
-  // The static build serves every renderer the dev tool does, including the openfl reference
-  // renderers (reference:*), so the deployed site keeps the side-by-side comparison. A renderer id
-  // is not URL/filesystem safe (reference:openfl carries a colon), so routeSegment maps it to a safe
-  // path segment for emitted files and routes; the id stays intact as the renderer's logical key.
+  // routeSegment maps each renderer id to a URL/filesystem-safe path segment for emitted files and
+  // routes; the id stays intact as the renderer's logical key.
   const buildTests: FunctionalTest[] = tests;
 
   let viteBase = '/';
@@ -235,12 +221,6 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
         if (id.startsWith('\0virtual:ft-entry:')) {
           const [name, render] = splitFirst(id.slice('\0virtual:ft-entry:'.length), ':');
 
-          if (render.startsWith('reference:')) {
-            const refFolder = render.slice('reference:'.length);
-            const appPath = join(referenceBaseDir, refFolder, name, 'src', 'app.ts');
-            return `import ${JSON.stringify(appPath)};`;
-          }
-
           // The harness is the listener app: install the console-capture sink, then dynamically
           // import the flight test (dynamic so setLogSink runs before the test's module-init
           // logs). The test itself only imports the lightweight emit helpers. Once the test module
@@ -313,8 +293,7 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
           if (parts[0] !== 'tests' || parts.length < 3) return next();
           const [, name, segment, ...assetParts] = parts;
 
-          // The URL carries the safe route segment; recover the renderer id (with any colon) for
-          // reference-folder lookup and the virtual entry module below. Routes match dev and build.
+          // The URL carries the safe route segment; recover the renderer id (with any colon) for the virtual entry module below. Routes match dev and build.
           // Re-scan so a folder added since startup resolves without a restart.
           const test = discoverTests().find(
             (t) => t.name === name && t.renderers.some((r) => routeSegment(r) === segment),
@@ -325,13 +304,7 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
           if (assetParts.length > 0) {
             const assetRel = assetParts.join('/');
             const candidates: string[] = [];
-
-            if (render.startsWith('reference:')) {
-              const refFolder = render.slice('reference:'.length);
-              candidates.push(join(referenceBaseDir, refFolder, name, 'public', assetRel));
-            } else {
-              candidates.push(join(testsDir, name, 'public', assetRel));
-            }
+            candidates.push(join(testsDir, name, 'public', assetRel));
             candidates.push(join(testsDir, 'public', assetRel));
 
             for (const candidate of candidates) {
@@ -400,7 +373,6 @@ export default defineConfig(() => {
   // `@flighthq/log` resolves automatically via the workspace-package aliases above.
   const alias: Record<string, string> = {
     ...Object.fromEntries(workspacePackages.map((pkg) => [pkg.name, pkg.dir + '/src'])),
-    openfl: join(projectRoot, 'node_modules', 'openfl', 'lib', 'openfl'),
   };
 
   return {
