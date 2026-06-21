@@ -13,6 +13,7 @@
   "references": [
     { "path": "../geometry" },
     { "path": "../materials" },
+    { "path": "../node" },
     { "path": "../path" },
     { "path": "../render-canvas" },
     { "path": "../render" },
@@ -23,7 +24,8 @@
     { "path": "../surface" },
     { "path": "../text-input" },
     { "path": "../text-layout" },
-    { "path": "../types" }
+    { "path": "../types" },
+    { "path": "../velocity" }
   ],
   "include": ["src"]
 }
