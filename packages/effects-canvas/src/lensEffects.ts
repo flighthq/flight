@@ -3,6 +3,8 @@ import type {
   CanvasRenderEffectRunner,
   CanvasRenderTarget,
   ChromaticAberrationEffect,
+  DisplacementEffect,
+  LensDirtEffect,
   LensDistortionEffect,
   LensFlareEffect,
   TiltShiftEffect,
@@ -31,6 +33,25 @@ export function applyChromaticAberrationEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,
   _effect: Readonly<ChromaticAberrationEffect>,
+): void {
+  passthroughCanvasEffectPass(dest, source);
+}
+
+// Displacement / heat-haze (PASSTHROUGH): a per-pixel uv warp has no 2D draw-op equivalent. Shader-only.
+export function applyDisplacementEffectToCanvas(
+  source: Readonly<CanvasRenderTarget>,
+  dest: Readonly<CanvasRenderTarget>,
+  _effect: Readonly<DisplacementEffect>,
+): void {
+  passthroughCanvasEffectPass(dest, source);
+}
+
+// Lens dirt (PASSTHROUGH): procedural per-pixel smudge blobs gated by scene brightness have no 2D
+// draw-op equivalent. Shader-only.
+export function applyLensDirtEffectToCanvas(
+  source: Readonly<CanvasRenderTarget>,
+  dest: Readonly<CanvasRenderTarget>,
+  _effect: Readonly<LensDirtEffect>,
 ): void {
   passthroughCanvasEffectPass(dest, source);
 }
@@ -116,6 +137,14 @@ export const defaultCanvasBokehDepthOfFieldEffectRunner: CanvasRenderEffectRunne
 
 export const defaultCanvasChromaticAberrationEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
   applyChromaticAberrationEffectToCanvas(ctx.source, ctx.dest, effect as ChromaticAberrationEffect);
+};
+
+export const defaultCanvasDisplacementEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+  applyDisplacementEffectToCanvas(ctx.source, ctx.dest, effect as DisplacementEffect);
+};
+
+export const defaultCanvasLensDirtEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+  applyLensDirtEffectToCanvas(ctx.source, ctx.dest, effect as LensDirtEffect);
 };
 
 export const defaultCanvasLensDistortionEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {

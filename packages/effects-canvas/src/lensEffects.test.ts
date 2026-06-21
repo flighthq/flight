@@ -1,12 +1,16 @@
 import {
   applyBokehDepthOfFieldEffectToCanvas,
   applyChromaticAberrationEffectToCanvas,
+  applyDisplacementEffectToCanvas,
+  applyLensDirtEffectToCanvas,
   applyLensDistortionEffectToCanvas,
   applyLensFlareEffectToCanvas,
   applyTiltShiftEffectToCanvas,
   applyVignetteEffectToCanvas,
   defaultCanvasBokehDepthOfFieldEffectRunner,
   defaultCanvasChromaticAberrationEffectRunner,
+  defaultCanvasDisplacementEffectRunner,
+  defaultCanvasLensDirtEffectRunner,
   defaultCanvasLensDistortionEffectRunner,
   defaultCanvasLensFlareEffectRunner,
   defaultCanvasTiltShiftEffectRunner,
@@ -22,6 +26,18 @@ describe('applyBokehDepthOfFieldEffectToCanvas', () => {
 describe('applyChromaticAberrationEffectToCanvas', () => {
   it('is a function', () => {
     expect(typeof applyChromaticAberrationEffectToCanvas).toBe('function');
+  });
+});
+
+describe('applyDisplacementEffectToCanvas', () => {
+  it('is a function', () => {
+    expect(typeof applyDisplacementEffectToCanvas).toBe('function');
+  });
+});
+
+describe('applyLensDirtEffectToCanvas', () => {
+  it('is a function', () => {
+    expect(typeof applyLensDirtEffectToCanvas).toBe('function');
   });
 });
 
@@ -58,6 +74,18 @@ describe('defaultCanvasBokehDepthOfFieldEffectRunner', () => {
 describe('defaultCanvasChromaticAberrationEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultCanvasChromaticAberrationEffectRunner).toBe('function');
+  });
+});
+
+describe('defaultCanvasDisplacementEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof defaultCanvasDisplacementEffectRunner).toBe('function');
+  });
+});
+
+describe('defaultCanvasLensDirtEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof defaultCanvasLensDirtEffectRunner).toBe('function');
   });
 });
 

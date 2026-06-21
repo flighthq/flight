@@ -2,6 +2,7 @@ import {
   createCRTEffect,
   createDitherEffect,
   createFilmGrainEffect,
+  createGlitchEffect,
   createHalftoneEffect,
   createKuwaharaEffect,
   createOutlineEffect,
@@ -46,6 +47,21 @@ describe('createFilmGrainEffect', () => {
       intensity: 0.3,
       size: 2,
       seed: 7,
+    });
+  });
+});
+
+describe('createGlitchEffect', () => {
+  it('tags the intent type', () => {
+    expect(createGlitchEffect().type).toBe('glitch');
+  });
+
+  it('carries options', () => {
+    expect(createGlitchEffect({ intensity: 0.7, blockSize: 22, colorShift: 12, seed: 3 })).toMatchObject({
+      intensity: 0.7,
+      blockSize: 22,
+      colorShift: 12,
+      seed: 3,
     });
   });
 });

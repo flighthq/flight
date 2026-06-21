@@ -2,6 +2,7 @@ import type {
   CRTEffect,
   DitherEffect,
   FilmGrainEffect,
+  GlitchEffect,
   HalftoneEffect,
   KuwaharaEffect,
   OutlineEffect,
@@ -25,6 +26,10 @@ export function createDitherEffect(options: Readonly<Omit<DitherEffect, 'type'>>
 
 export function createFilmGrainEffect(options: Readonly<Omit<FilmGrainEffect, 'type'>> = {}): FilmGrainEffect {
   return { type: 'filmGrain', ...options };
+}
+
+export function createGlitchEffect(options: Readonly<Omit<GlitchEffect, 'type'>> = {}): GlitchEffect {
+  return { type: 'glitch', ...options };
 }
 
 export function createHalftoneEffect(options: Readonly<Omit<HalftoneEffect, 'type'>> = {}): HalftoneEffect {
