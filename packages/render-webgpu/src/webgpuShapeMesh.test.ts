@@ -62,7 +62,7 @@ describe('drawWebGPUShapeMeshes', () => {
     drawWebGPUShapeMeshes(state, makeProxy(), [TRIANGLE, TRIANGLE], makeBuffers());
 
     expect(pass.setPipeline).toHaveBeenCalled();
-    expect(runtime.shapeMeshPipeline).not.toBeNull();
+    expect(runtime.shapeMeshPipelines?.size ?? 0).toBeGreaterThan(0);
     expect(pass.drawIndexed).toHaveBeenCalledTimes(2);
     expect(pass.drawIndexed).toHaveBeenCalledWith(3);
   });
@@ -119,6 +119,6 @@ describe('drawWebGPUShapeMeshes', () => {
     drawWebGPUShapeMeshes(state, makeProxy(), [], makeBuffers());
 
     expect(pass.setPipeline).not.toHaveBeenCalled();
-    expect(runtime.shapeMeshPipeline).toBeNull();
+    expect(runtime.shapeMeshPipelines?.size ?? 0).toBe(0);
   });
 });
