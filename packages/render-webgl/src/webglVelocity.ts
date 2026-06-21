@@ -7,6 +7,7 @@ import {
   getNodeWorldTransformMatrix,
 } from '@flighthq/node';
 import type {
+  ParticleEmitter,
   QuadBatch,
   QuadBatchRuntime,
   Spatial2DNode,
@@ -50,6 +51,78 @@ export const defaultWebGLDisplayObjectVelocityWriter: WebGLVelocityWriter = (ctx
   ensureNodeWorldBoundsRectangle(spatial);
   const bounds = getNodeWorldBoundsRectangle(spatial);
   drawWebGLVelocityQuad(ctx, bounds.x, bounds.y, bounds.width, bounds.height, _scratchVelocity.x, _scratchVelocity.y);
+};
+
+// The ParticleEmitter writer emits PER-PARTICLE velocity: each particle moves on its own vector (a
+// fountain fans outward), so one emitter-wide vector would be wrong — a user who wants the whole emitter
+// to share a velocity attaches it to a parent node instead, which the DisplayObject writer covers. The
+// per-particle world rect is reconstructed exactly as the particle renderer composes its quad: a [0,1]
+// corner scaled by the atlas region, rotated/scaled by the particle's (cos,sin)·scale and offset by its
+// position, then mapped by the emitter world transform (skipped when worldSpace puts particles in world
+// space already). Velocity stays in node units; drawWebGLVelocityQuad applies pixelRatio (matching the
+// other writers; a non-unit emitter scale or worldSpace under hiDPI is the same approximation as
+// QuadBatch). Skips particles with zero velocity and emitters without a populated velocities array.
+export const defaultWebGLParticleEmitterVelocityWriter: WebGLVelocityWriter = (ctx, node) => {
+  const emitter = node as unknown as ParticleEmitter;
+  const { atlas, ids, particleCount, transforms, velocities, worldSpace } = emitter.data;
+  if (atlas === null || particleCount === 0 || velocities.length < particleCount * 2) return;
+  const regions = atlas.regions;
+  const numRegions = regions.length;
+
+  let wa = 1;
+  let wb = 0;
+  let wc = 0;
+  let wd = 1;
+  let wtx = 0;
+  let wty = 0;
+  if (!worldSpace) {
+    ensureNodeWorldTransformMatrix(node as unknown as Transform2DNode);
+    const transform = getNodeWorldTransformMatrix(node as unknown as Transform2DNode);
+    wa = transform.a;
+    wb = transform.b;
+    wc = transform.c;
+    wd = transform.d;
+    wtx = transform.tx;
+    wty = transform.ty;
+  }
+
+  for (let i = 0; i < particleCount; i++) {
+    const velocityX = velocities[i * 2];
+    const velocityY = velocities[i * 2 + 1];
+    if (velocityX === 0 && velocityY === 0) continue;
+    const id = ids[i];
+    if (id < 0 || id >= numRegions) continue;
+    const region = regions[id];
+    const rw = region.width;
+    const rh = region.height;
+    if (rw <= 0 || rh <= 0) continue;
+
+    const tt = i * 4;
+    const px = transforms[tt];
+    const py = transforms[tt + 1];
+    const rotation = transforms[tt + 2];
+    const scale = transforms[tt + 3];
+    const cosScale = Math.cos(rotation) * scale;
+    const sinScale = Math.sin(rotation) * scale;
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (let c = 0; c < 4; c++) {
+      const lx = (c & 1) * rw;
+      const ly = (c >> 1) * rh;
+      const rx = cosScale * lx - sinScale * ly + px;
+      const ry = sinScale * lx + cosScale * ly + py;
+      const wx = worldSpace ? rx : wa * rx + wc * ry + wtx;
+      const wy = worldSpace ? ry : wb * rx + wd * ry + wty;
+      if (wx < minX) minX = wx;
+      if (wx > maxX) maxX = wx;
+      if (wy < minY) minY = wy;
+      if (wy > maxY) maxY = wy;
+    }
+    drawWebGLVelocityQuad(ctx, minX, minY, maxX - minX, maxY - minY, velocityX, velocityY);
+  }
 };
 
 // The QuadBatch writer emits PER-INSTANCE velocity: a batch's quads move independently and are not nodes,
