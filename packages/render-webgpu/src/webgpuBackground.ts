@@ -61,6 +61,8 @@ export function renderWebGPUBackground(state: WebGPURenderState): void {
   const canvasView = canvasTexture.createView();
   runtime.canvasTextureView = canvasView;
   runtime.canvasViewCleared = true;
+  // The canvas (and the capture texture, when capture is on) is the canvas format; scene pipelines key on this.
+  runtime.currentColorFormat = state.format;
   runtime.renderTargetViewport = null;
 
   const rgba = state.backgroundColorRGBA;

@@ -148,8 +148,10 @@ function ensureShapeMeshUniform(
 
 function ensureShapeMeshPipeline(state: WebGPURenderState): WebGPUShapeMeshPipeline {
   const runtime = getWebGPURenderStateRuntime(state);
-  const existing = runtime.shapeMeshPipeline;
-  if (existing !== null) return existing;
+  const format = runtime.currentColorFormat ?? state.format;
+  const cache = runtime.shapeMeshPipelines ?? (runtime.shapeMeshPipelines = new Map());
+  const existing = cache.get(format);
+  if (existing !== undefined) return existing;
 
   const device = state.device;
   const module = device.createShaderModule({ code: SHAPE_MESH_WGSL });
@@ -169,7 +171,7 @@ function ensureShapeMeshPipeline(state: WebGPURenderState): WebGPUShapeMeshPipel
       entryPoint: 'fs_main',
       targets: [
         {
-          format: state.format,
+          format,
           // Premultiplied alpha — the geometry already carries premultiplied color.
           blend: {
             color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
@@ -192,7 +194,7 @@ function ensureShapeMeshPipeline(state: WebGPURenderState): WebGPUShapeMeshPipel
   });
 
   const entry: WebGPUShapeMeshPipeline = { pipeline, bindGroupLayout };
-  runtime.shapeMeshPipeline = entry;
+  cache.set(format, entry);
   return entry;
 }
 

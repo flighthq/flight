@@ -11,10 +11,11 @@ function beginWebGPURenderPass(
   width: number,
   height: number,
   loadOp: GPULoadOp,
+  clearColor: GPUColor = { r: 0, g: 0, b: 0, a: 0 },
 ): GPURenderPassEncoder {
   const runtime = getWebGPURenderStateRuntime(state);
   const pass = runtime.commandEncoder!.beginRenderPass({
-    colorAttachments: [{ view: colorView, loadOp, storeOp: 'store', clearValue: { r: 0, g: 0, b: 0, a: 0 } }],
+    colorAttachments: [{ view: colorView, loadOp, storeOp: 'store', clearValue: clearColor }],
     depthStencilAttachment: {
       view: depthStencilView,
       depthClearValue: 1.0,
@@ -33,6 +34,7 @@ export function beginWebGPURenderTarget(
   state: WebGPURenderState,
   target: WebGPURenderTarget,
   renderTransform: Readonly<Matrix>,
+  clearColor?: GPUColor,
 ): void {
   const runtime = getWebGPURenderStateRuntime(state);
 
@@ -48,9 +50,12 @@ export function beginWebGPURenderTarget(
     depthStencilView: runtime.depthStencilView,
     renderTargetViewport: runtime.renderTargetViewport,
     renderTransform2D: state.renderTransform2D,
+    colorFormat: runtime.currentColorFormat,
   });
 
   runtime.renderTargetViewport = { width: target.width, height: target.height };
+  // Scene pipelines drawn into this target must match its color format (e.g. rgba16float for HDR).
+  runtime.currentColorFormat = target.format;
 
   const newTransform = createMatrix();
   copyMatrix(newTransform, renderTransform);
@@ -69,6 +74,7 @@ export function beginWebGPURenderTarget(
     target.width,
     target.height,
     'clear',
+    clearColor,
   );
 }
 
@@ -165,6 +171,7 @@ export function endWebGPURenderTarget(state: WebGPURenderState): void {
   runtime.canvasTextureView = saved.canvasTextureView;
   runtime.canvasViewCleared = saved.canvasViewCleared;
   runtime.renderTargetViewport = saved.renderTargetViewport;
+  runtime.currentColorFormat = saved.colorFormat;
   state.renderTransform2D = saved.renderTransform2D;
 
   // Reset mask/clip state when returning to the enclosing pass
