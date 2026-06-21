@@ -137,7 +137,7 @@ export async function createWebGPURenderState(
 
   runtime.currentMaskDepth = 0;
   runtime.maskWriteMode = false;
-  runtime.clipContourPipelines = null;
+  runtime.clipContourPipelines = undefined;
   runtime.clipContourStack = [];
   runtime.shapeMeshPipelines = undefined;
   runtime.clipForms = [];
