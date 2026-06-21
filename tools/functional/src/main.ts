@@ -3,8 +3,9 @@ import { tests } from 'virtual:functional-test-list';
 const STORAGE_KEY = 'functional-selected';
 const FADE_MS = 250;
 
-// A renderer id (e.g. `reference:openfl`) is the logical key; its colon is not URL/path safe, so the
-// route to the rendered page uses this hyphenated segment. Mirrors routeSegment in vite.config.ts.
+// A renderer id (`canvas`, `webgl`, `reference`) is the logical key; should one ever carry a colon
+// (not URL/path safe), the route to the rendered page uses this hyphenated segment. Mirrors
+// routeSegment in vite.config.ts.
 function routeSegment(renderer: string): string {
   return renderer.replace(':', '-');
 }

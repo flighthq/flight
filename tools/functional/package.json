@@ -4,14 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "tsx ../../scripts/openfl-shims.ts && tsx ../../scripts/download-assets.ts ../../tests/functional",
+    "predev": "tsx ../../scripts/download-assets.ts ../../tests/functional",
     "dev": "vite --config vite.config.ts",
-    "prebuild": "tsx ../../scripts/openfl-shims.ts && tsx ../../scripts/download-assets.ts ../../tests/functional",
+    "prebuild": "tsx ../../scripts/download-assets.ts ../../tests/functional",
     "build": "vite build --config vite.config.ts",
     "test": "tsc -p tsconfig.json --noEmit"
-  },
-  "dependencies": {
-    "openfl": "^9.3.2"
   },
   "devDependencies": {
     "vite": "*"
