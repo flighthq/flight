@@ -1,7 +1,7 @@
 // Parity + regression render verification (Tiers 3 and 5), complementing the in-page smoke gate
-// (capture --fail-on-error, Tiers 1/2/4). It drives the functional or explorer dev server
+// (capture --fail-on-error, Tiers 1/2/4). It drives the functional or examples dev server
 // (--tool, default functional), reads each backend's coarse render fingerprint (stashed on
-// window.__ftVerification by the harness/explorer verifier), and compares them with the SDK's tolerant
+// window.__ftVerification by the harness/examples verifier), and compares them with the SDK's tolerant
 // fingerprint metric:
 //
 //   - Tier 3 (parity): the raster backends of one test (canvas/webgl/webgpu) must agree within a
@@ -16,26 +16,25 @@
 // tiers — it is still covered by the smoke gate. Regression and parity run only for
 // backends that have a committed baseline, i.e. ones already proven stable.
 //
-// Run via the npm scripts: `test:{functional,explorer}:parity` (cross-backend) and `:regression`
+// Run via the npm scripts: `test:{functional,examples}:parity` (cross-backend) and `:regression`
 // (vs committed baseline), `:regression:baseline` to rewrite fingerprints. The sibling `:smoke`
 // script is the separate builds-and-runs / not-blank gate (capture --fail-on-error); the
-// `test:{functional,explorer}` umbrella runs smoke then this script (both tiers).
+// `test:{functional,examples}` umbrella runs smoke then this script (both tiers).
 //
 // Usage:
-//   tsx ./scripts/compare-render.ts [--tool=functional|explorer] [--filter=name] [--renderer=canvas,webgl]
-//                                   [--frames=N]                 frame to capture (explorer: 30)
+//   tsx ./scripts/compare-render.ts [--tool=functional|examples] [--filter=name] [--renderer=canvas,webgl]
+//                                   [--frames=N]                 frame to capture (examples: 30)
 //                                   [--report]                   print all distances, gate nothing
 //                                   [--update-fingerprints]      rewrite baselines for self-stable entries
 //                                   [--no-regression] [--no-parity]
 //                                   [--parity-tolerance=N] [--regression-tolerance=N]
 //
-// Baselines live at tools/baselines/{tool}/{name}/{renderer}/fingerprint.txt (tracked).
+// Baselines live at tests/{tool}/baselines/{name}.json (tracked), keyed by column id.
 
 import { compareSurfaceFingerprints, parseSurfaceFingerprint } from '@flighthq/surface';
 import type { BrowserContext } from '@playwright/test';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { join, resolve } from 'path';
 
+import { getBaselineField, setBaselineField } from './baseline-store.js';
 import type { Tool } from './capture-core.js';
 import { discoverEntries, launchBrowser, resolveServer } from './capture-core.js';
 
@@ -46,11 +45,11 @@ function arg(key: string, fallback: string): string {
   return hit ? hit.slice(key.length + 3) : fallback;
 }
 
-// 'functional' tests render their scene at frame 1; explorer examples often animate, so they are
+// 'functional' tests render their scene at frame 1; examples often animate, so they are
 // captured at a later frame (pass --frames=30). Each backend's verifier stashes window.__ftVerification
 // with the fingerprint, and routes are /tests/… vs /examples/…; everything else is identical.
 const tool = arg('tool', 'functional') as Tool;
-const routePrefix = tool === 'explorer' ? 'examples' : 'tests';
+const routePrefix = tool === 'examples' ? 'examples' : 'tests';
 const filter = arg('filter', '');
 const rendererFilter = arg('renderer', '').split(',').filter(Boolean);
 const captureFrames = Math.max(1, parseInt(arg('frames', '1'), 10) || 1);
@@ -70,7 +69,12 @@ const regressionTolerance = parseFloat(arg('regression-tolerance', '5'));
 const parityTolerance = parseFloat(arg('parity-tolerance', '15'));
 
 const root = process.cwd();
-const baselineBase = resolve(root, 'tools', 'baselines', tool);
+
+// A reference column id carries a `<library>:<renderer>` colon; map it to the URL/dir-safe segment the
+// tools serve under. Colon-free ids pass through unchanged.
+function routeSegment(renderer: string): string {
+  return renderer.replace(':', '-');
+}
 
 // Entries excluded from the cross-backend parity check because their backends render genuinely
 // different content (video decodes to a different frame per backend) — not a renderer bug. They are
@@ -81,10 +85,6 @@ interface Verification {
   render: string;
   coverage: number | null;
   fingerprint: string | null;
-}
-
-function fingerprintBaselinePath(name: string, renderer: string): string {
-  return join(baselineBase, name, renderer, 'fingerprint.txt');
 }
 
 function distance(a: string, b: string): number | null {
@@ -106,7 +106,7 @@ async function loadFingerprint(
   let pageError = '';
   page.on('pageerror', (e) => (pageError ||= e.message));
   try {
-    await page.goto(`${baseUrl}/${routePrefix}/${name}/${renderer}/`, {
+    await page.goto(`${baseUrl}/${routePrefix}/${name}/${routeSegment(renderer)}/`, {
       waitUntil: 'domcontentloaded',
       timeout: 15_000,
     });
@@ -150,11 +150,18 @@ async function main(): Promise<void> {
 
   try {
     for (const entry of entries) {
-      // Only raster backends produce a fingerprint; DOM has none, WebGPU is absent in headless.
-      const renderers = entry.renderers.filter(
-        (r) =>
-          !r.startsWith('reference:') && r !== 'dom' && (rendererFilter.length === 0 || rendererFilter.includes(r)),
-      );
+      // Only Flight raster columns are fingerprint-gated. DOM has no fingerprint; reference-library
+      // columns (openfl, …) render a different engine, so they are captured (sha256) but not parity/
+      // regression-gated against Flight. For a reference test this leaves flight:canvas/flight:webgl,
+      // which are the same engine and so legitimately compared by parity.
+      const renderers = entry.renderers.filter((r) => {
+        const i = r.indexOf(':');
+        const lib = i === -1 ? null : r.slice(0, i);
+        const renderer = i === -1 ? r : r.slice(i + 1);
+        if (renderer === 'dom') return false;
+        if (lib !== null && lib !== 'flight') return false;
+        return rendererFilter.length === 0 || rendererFilter.includes(r);
+      });
       // Fingerprints of backends eligible for gating (self-stable / baselined).
       const eligible = new Map<string, string>();
 
@@ -166,7 +173,6 @@ async function main(): Promise<void> {
           continue;
         }
         const fingerprint = first.fingerprint;
-        const blPath = fingerprintBaselinePath(entry.name, renderer);
 
         if (updateFingerprints) {
           // Self-stability: a second independent load must reproduce the frame, or the test animates
@@ -180,20 +186,20 @@ async function main(): Promise<void> {
             skipped++;
             continue;
           }
-          mkdirSync(join(baselineBase, entry.name, renderer), { recursive: true });
-          writeFileSync(blPath, `${fingerprint}\n`);
+          setBaselineField(root, tool, entry.name, renderer, 'fingerprint', fingerprint);
           updated++;
           eligible.set(renderer, fingerprint);
           continue;
         }
 
         // Gate / report: only backends with a committed (proven-stable) baseline participate.
-        if (!existsSync(blPath)) {
+        const committed = getBaselineField(root, tool, entry.name, renderer, 'fingerprint');
+        if (committed === null) {
           console.log(`  ·  ${entry.name}/${renderer}: no fingerprint baseline — skipped`);
           skipped++;
           continue;
         }
-        const dist = distance(fingerprint, readFileSync(blPath, 'utf8').trim());
+        const dist = distance(fingerprint, committed);
         eligible.set(renderer, fingerprint);
         if (dist === null) {
           console.error(`  ✗  ${entry.name}/${renderer}: unreadable fingerprint baseline`);

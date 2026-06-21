@@ -1,10 +1,10 @@
-// One-shot screenshot and log capture for the explorer, functional, or landing tool.
+// One-shot screenshot and log capture for the examples, functional, or site tool.
 //
 // Usage:
 //   tsx ./scripts/capture.ts [options]
 //
 // Options:
-//   --tool=explorer|functional|landing  Which server to use (default: explorer)
+//   --tool=examples|functional|site  Which server to use (default: examples)
 //   --url=http://localhost:5173   Use a server that is already running (skips auto-start)
 //   --filter=name                Only run entries whose name contains this string
 //   --renderer=webgl,canvas      Comma-separated renderer filter (default: all)
@@ -43,11 +43,11 @@ function arg(key: string, fallback: string): string {
   return hit ? hit.slice(key.length + 3) : fallback;
 }
 
-const tool = arg('tool', 'explorer') as 'explorer' | 'functional' | 'landing';
+const tool = arg('tool', 'examples') as 'examples' | 'functional' | 'site';
 const externalUrl = arg('url', '');
 const filter = arg('filter', '');
 const rendererFilter = arg('renderer', '').split(',').filter(Boolean);
-const outBase = resolve(process.cwd(), arg('out', 'tools/output'));
+const outBase = resolve(process.cwd(), arg('out', '.artifacts'));
 const extraWait = parseInt(arg('wait', '0'), 10);
 // A single frame number today; the comma parse and plural flag leave room for a future
 // `--frames=1,30,100` that captures several frames per entry. For now the first value is used.
@@ -59,7 +59,6 @@ const captureFrames =
 const updateBaseline = argv.includes('--update-baseline');
 const failOnChanged = argv.includes('--fail-on-changed');
 const failOnError = argv.includes('--fail-on-error');
-const baselineBase = resolve(process.cwd(), 'tools/baselines');
 
 const root = process.cwd();
 
@@ -104,7 +103,7 @@ async function main(): Promise<void> {
         baseUrl: server.url,
         tool,
         outBase,
-        baselineBase,
+        root,
         updateBaseline,
         extraWait,
         captureFrames,

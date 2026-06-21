@@ -2,7 +2,7 @@
 // build under its own base path, merged into one directory for a single Pages artifact:
 //
 //   tools/site/              ← landing      (base <PAGES_BASE>)
-//   tools/site/explorer/     ← explorer     (base <PAGES_BASE>explorer/)
+//   tools/site/examples/     ← examples     (base <PAGES_BASE>examples/)
 //   tools/site/functional/   ← functional   (base <PAGES_BASE>functional/)
 //
 // Usage:
@@ -27,6 +27,8 @@ import { copyDirectoryContents } from './copy-dir';
 
 interface SiteTool {
   name: string;
+  // Workspace directory of the tool's package, relative to the repo root.
+  dir: string;
   // Destination relative to the site root; "." places the tool at the site root.
   dest: string;
 }
@@ -37,18 +39,19 @@ const siteDir = join(root, 'tools', 'site');
 
 // Order matters only for readability: the root tool is listed first. Subpaths never collide.
 const TOOLS: readonly SiteTool[] = [
-  { name: 'landing', dest: '.' },
-  { name: 'explorer', dest: 'examples' },
-  { name: 'functional', dest: 'tests' },
+  { name: 'landing', dir: 'apps/site/landing', dest: '.' },
+  { name: 'examples', dir: 'tools/examples', dest: 'examples' },
+  { name: 'functional', dir: 'tools/functional', dest: 'tests' },
+  { name: 'reference', dir: 'tools/reference', dest: 'reference' },
 ];
 
 function baseFor(dest: string): string {
   return dest === '.' ? pagesBase : `${pagesBase}${dest}/`;
 }
 
-function runToolBuild(name: string, base: string): boolean {
+function runToolBuild(workspace: string, base: string): boolean {
   const npmExecPath = process.env['npm_execpath'];
-  const args = ['run', 'build', '--workspace', `tools/${name}`];
+  const args = ['run', 'build', '--workspace', workspace];
   const env = { ...process.env, VITE_BASE: base };
   const result = npmExecPath
     ? spawnSync(process.execPath, [npmExecPath, ...args], { cwd: root, stdio: 'inherit', env })
@@ -69,7 +72,7 @@ function main(): void {
   const skipped: string[] = [];
 
   for (const tool of TOOLS) {
-    const toolDir = join(root, 'tools', tool.name);
+    const toolDir = join(root, tool.dir);
     const pkg = JSON.parse(readFileSync(join(toolDir, 'package.json'), 'utf8')) as {
       scripts?: Record<string, string>;
     };
@@ -85,7 +88,7 @@ function main(): void {
 
     const base = baseFor(tool.dest);
     console.log(`[build:site] building ${tool.name}  base=${base}`);
-    if (!runToolBuild(tool.name, base)) {
+    if (!runToolBuild(tool.dir, base)) {
       console.error(`[build:site] ${tool.name} build failed`);
       process.exit(1);
     }

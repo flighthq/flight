@@ -6,7 +6,7 @@
 //
 // Options:
 //   --url=http://localhost:5173   Use a server that is already running (skips auto-start)
-//   --tool=explorer|functional|landing  Which tool's sources to watch (default: explorer)
+//   --tool=examples|functional|site  Which tool's sources to watch (default: examples)
 //   --filter=name                 Only watch entries whose name contains this string
 //   --renderer=webgl,canvas       Comma-separated renderer filter (default: all)
 //   --out=tools/output            Output base directory (default: tools/output)
@@ -45,12 +45,11 @@ function arg(key: string, fallback: string): string {
 }
 
 const externalUrl = arg('url', '');
-const tool = arg('tool', 'explorer') as Tool;
+const tool = arg('tool', 'examples') as Tool;
 const filter = arg('filter', '');
 const rendererFilter = arg('renderer', '').split(',').filter(Boolean);
-const outBase = resolve(process.cwd(), arg('out', 'tools/output'));
+const outBase = resolve(process.cwd(), arg('out', '.artifacts'));
 const extraWait = parseInt(arg('wait', '0'), 10);
-const baselineBase = resolve(process.cwd(), 'tools/baselines');
 
 const root = process.cwd();
 
@@ -60,10 +59,10 @@ const root = process.cwd();
 
 function entryNameFromPath(filePath: string, tool: Tool): string | null {
   // The landing tool is a single fixed entry, so any change under its directory maps to it.
-  if (tool === 'landing') return 'landing';
+  if (tool === 'site') return 'landing';
 
   const parts = filePath.split(sep);
-  const marker = tool === 'explorer' ? 'examples' : 'functional';
+  const marker = tool === 'examples' ? 'examples' : 'functional';
   const idx = parts.lastIndexOf(marker);
   return idx >= 0 && parts[idx + 1] ? parts[idx + 1] : null;
 }
@@ -125,7 +124,7 @@ async function main(): Promise<void> {
       baseUrl: server.url,
       tool,
       outBase,
-      baselineBase,
+      root,
       extraWait,
     }).then(() => {});
 
@@ -140,11 +139,11 @@ async function main(): Promise<void> {
   const debounce = new Map<string, ReturnType<typeof setTimeout>>();
 
   const watchDir =
-    tool === 'explorer'
+    tool === 'examples'
       ? `${root}/examples`
       : tool === 'functional'
         ? `${root}/tests/functional`
-        : `${root}/tools/landing`;
+        : `${root}/apps/site/landing`;
 
   const watcher = chokidar.watch(watchDir, {
     ignored: /(node_modules|dist|\.git)/,
