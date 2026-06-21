@@ -55,8 +55,12 @@ export function popWebGPUClipContours(state: WebGPURenderState): void {
     if (entry.vertexCount > 0) pass.draw(entry.vertexCount);
   }
   if (entry !== undefined) {
-    entry.vertexBuffer.destroy();
-    entry.uniformBuffer.destroy();
+    // The erase draw just recorded references these buffers; the frame's submit is deferred to
+    // submitWebGPURenderPass, so defer their destruction until after that submit.
+    (runtime.clipContourRetiredBuffers ?? (runtime.clipContourRetiredBuffers = [])).push(
+      entry.vertexBuffer,
+      entry.uniformBuffer,
+    );
   }
 }
 
@@ -158,8 +162,10 @@ function createClipContourVertexBuffer(
 
 function ensureClipContourPipelines(state: WebGPURenderState): WebGPUClipContourPipelines {
   const runtime = getWebGPURenderStateRuntime(state);
-  const existing = runtime.clipContourPipelines;
-  if (existing !== null) return existing;
+  const format = runtime.currentColorFormat ?? state.format;
+  const cache = runtime.clipContourPipelines ?? (runtime.clipContourPipelines = new Map());
+  const existing = cache.get(format);
+  if (existing !== undefined) return existing;
 
   const device = state.device;
   const module = device.createShaderModule({ code: CLIP_WGSL });
@@ -175,7 +181,7 @@ function ensureClipContourPipelines(state: WebGPURenderState): WebGPUClipContour
     device.createRenderPipeline({
       layout,
       vertex: { module, entryPoint: 'vs_main', buffers: vertexBuffers },
-      fragment: { module, entryPoint: 'fs_main', targets: [{ format: state.format, writeMask: 0 }] },
+      fragment: { module, entryPoint: 'fs_main', targets: [{ format, writeMask: 0 }] },
       primitive: { topology: 'triangle-list', cullMode: 'none' },
       depthStencil: {
         format: 'depth24plus-stencil8',
@@ -193,6 +199,6 @@ function ensureClipContourPipelines(state: WebGPURenderState): WebGPUClipContour
     erase: make('decrement-clamp'),
     bindGroupLayout,
   };
-  runtime.clipContourPipelines = pipelines;
+  cache.set(format, pipelines);
   return pipelines;
 }

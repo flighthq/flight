@@ -29,6 +29,7 @@ export { createWebGPURenderStateForTest, installWebGPUMock } from './webgpuTestH
 export * from './webgpuTextInput';
 export * from './webgpuTextLabel';
 export * from './webgpuTilemap';
+export * from './webgpuVelocity';
 export * from './webgpuVideo';
 export {
   defaultCanvasBeginBitmapFill as defaultWebGPUBeginBitmapFill,
