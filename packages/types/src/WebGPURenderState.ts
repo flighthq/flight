@@ -124,7 +124,9 @@ export interface WebGPURenderStateRuntime extends RenderStateRuntime {
 
   // Lazily-built flat-color pipeline for the GPU tessellated solid-fill shape path (webgpuShapeMesh.ts).
   // Null until the first solid-fill shape draws; shared across every shape on this device.
-  shapeMeshPipeline: WebGPUShapeMeshPipeline | null;
+  // Flat-color tessellated-shape fill pipelines, one per color-attachment format (the canvas format and
+  // any HDR effect-target format), since a WebGPU pipeline bakes its target format. Lazily populated.
+  shapeMeshPipelines?: Map<GPUTextureFormat, WebGPUShapeMeshPipeline>;
 
   // Clip rectangle scissor stack
   scissorStack: WebGPUScissorRect[];
@@ -132,6 +134,11 @@ export interface WebGPURenderStateRuntime extends RenderStateRuntime {
 
   // Render target viewport override (null = use canvas dimensions)
   renderTargetViewport: { width: number; height: number } | null;
+
+  // Color format of the render target currently being drawn into (the canvas format outside a pushed
+  // target, the target's format inside one). A WebGPU render pipeline bakes its color attachment format,
+  // so scene pipelines key their compiled variant on this to draw into HDR (rgba16float) effect targets.
+  currentColorFormat?: GPUTextureFormat;
 
   // Saved render pass state for render target push/pop
   renderTargetStack: WebGPUSavedPassState[];
@@ -180,6 +187,7 @@ export interface WebGPUSavedPassState {
   depthStencilView: GPUTextureView | null;
   renderTargetViewport: { width: number; height: number } | null;
   renderTransform2D: Matrix | null;
+  colorFormat: GPUTextureFormat | undefined;
 }
 
 // A pixel-space scissor rectangle pushed onto the WebGPURenderState runtime's scissor stack for
