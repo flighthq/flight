@@ -1,0 +1,28 @@
+{
+  "assets": [
+    {
+      "path": "wabbit_alpha.png",
+      "url": "https://github.com/flighthq/example-assets/releases/download/v5/wabbit_alpha.png"
+    },
+    {
+      "path": "OwlAlpha.png",
+      "url": "https://github.com/flighthq/example-assets/releases/download/v5/OwlAlpha.png"
+    },
+    {
+      "path": "BlendSquare.png",
+      "url": "https://github.com/flighthq/example-assets/releases/download/v5/BlendSquare.png"
+    },
+    {
+      "path": "BlendCircle.png",
+      "url": "https://github.com/flighthq/example-assets/releases/download/v5/BlendCircle.png"
+    },
+    {
+      "path": "data.utf8",
+      "url": "https://github.com/flighthq/example-assets/releases/download/v5/data.utf8"
+    },
+    {
+      "path": "unifont-8.0.01.ttf",
+      "url": "https://github.com/flighthq/example-assets/releases/download/v5/unifont-8.0.01.ttf"
+    }
+  ]
+}

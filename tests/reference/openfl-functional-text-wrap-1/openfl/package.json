@@ -1,0 +1,8 @@
+{
+  "name": "openfl-functional-text-wrap-1-openfl",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "openfl": "^9.3.2"
+  }
+}

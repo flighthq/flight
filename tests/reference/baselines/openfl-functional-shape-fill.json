@@ -1,0 +1,11 @@
+{
+  "flight:canvas": {
+    "sha256": "5658f04369cfeec6d5c262c87765a13eeca301ba0178282b72fd8806e265d8ec"
+  },
+  "flight:dom": {
+    "sha256": "dc7b868cea411fbb83170b1faed4483a149997c986a9df2a2b34c0388b9c86eb"
+  },
+  "flight:webgl": {
+    "sha256": "585f6beceba2c635194f677d05e02fbf9194f0918f94379a9de343798245f972"
+  }
+}
