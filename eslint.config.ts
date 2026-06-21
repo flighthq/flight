@@ -134,8 +134,8 @@ export default [
   },
 
   {
-    // examples, tools, and tests are allowed to import from the engine barrel
-    files: ['examples/**/*.{ts,tsx}', 'tools/**/*.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
+    // apps, examples, tools, and tests are allowed to import from the engine barrel
+    files: ['apps/**/*.{ts,tsx}', 'examples/**/*.{ts,tsx}', 'tools/**/*.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': 'off',
     },
