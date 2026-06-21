@@ -146,16 +146,12 @@ tests/size/**/assets
 .test-assets
 public
 
-# Assembled GitHub Pages site (landing + explorer + functional). Built by scripts/build-site.ts.
+# Assembled GitHub Pages site (landing + examples + functional). Built by scripts/build-site.ts.
 tools/site/
 
-# Playwright capture output (screenshots, logs). tools/baselines/ is tracked — it holds committed
-# baseline.sha256 hashes, not PNGs; the tools/**/*.png rule keeps screenshots out of git entirely.
-tools/output/
-tools/**/*.png
-# …except the committed brand icons in the landing public dir (apple-touch / PWA / avatar source),
-# which are deliberate assets the Pages build must publish, not capture screenshots.
-!tools/landing/public/*.png
+# Transient capture output (screenshots, logs, status.json). Committed baselines instead live in
+# tests/<subject>/baselines/<name>.json — small tracked JSON keyed by column id, not PNGs.
+.artifacts/
 
 # Guard against rogue compilation files
 *.map
