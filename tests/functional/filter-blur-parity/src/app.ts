@@ -68,7 +68,9 @@ applyBlurFilterToSurface(
 const referenceSurface = createSurface(TILE, TILE);
 referenceSurface.data.set(referenceData);
 
-const target = createParityTarget(WIDTH, HEIGHT, BACKGROUND);
+// Awaited because the WebGPU column creates its render state asynchronously; the sync backends return a
+// plain target and await passes it through unchanged.
+const target = await createParityTarget(WIDTH, HEIGHT, BACKGROUND);
 const TOP = (HEIGHT - TILE) / 2;
 const root = createDisplayContainer();
 
