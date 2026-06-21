@@ -119,7 +119,10 @@ export interface WebGPURenderStateRuntime extends RenderStateRuntime {
   maskWriteMode: boolean;
   // Lazily-built contour-clip stencil pipelines (increment/decrement) and the per-active-clip undo stack
   // (the geometry + uniform a pop redraws to decrement its stencil region). See webgpuClipContours.ts.
-  clipContourPipelines: WebGPUClipContourPipelines | null;
+  // Keyed per color-attachment format: the stencil pipelines declare a (write-masked) color target whose
+  // format must match the pass attachment, so a clip inside an HDR (rgba16float) effect target needs its
+  // own variant.
+  clipContourPipelines?: Map<GPUTextureFormat, WebGPUClipContourPipelines>;
   clipContourStack: WebGPUClipContourEntry[];
 
   // Lazily-built flat-color pipeline for the GPU tessellated solid-fill shape path (webgpuShapeMesh.ts).
