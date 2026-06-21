@@ -1,0 +1,8 @@
+{
+  "name": "openfl-functional-shape-fill-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

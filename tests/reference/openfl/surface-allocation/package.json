@@ -1,8 +1,0 @@
-{
-  "name": "reference-openfl-surface-allocation",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "openfl": "^9.3.2"
-  }
-}

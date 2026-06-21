@@ -1,0 +1,8 @@
+{
+  "name": "openfl-functional-blend-alpha-openfl",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "openfl": "^9.3.2"
+  }
+}

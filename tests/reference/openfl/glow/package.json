@@ -1,8 +1,0 @@
-{
-  "name": "reference-openfl-glow",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "openfl": "^9.3.2"
-  }
-}
