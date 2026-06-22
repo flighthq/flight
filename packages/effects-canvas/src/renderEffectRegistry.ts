@@ -1,7 +1,7 @@
 import type { CanvasRenderEffectRunner, CanvasRenderState } from '@flighthq/types';
 
 // Per-state registry mapping an effect `type` string to its Canvas 2D runner — the material-renderer
-// pattern one tier up, and the Canvas parallel of registerWebGLRenderEffect. Registration is opt-in
+// pattern one tier up, and the Canvas parallel of registerGlRenderEffect. Registration is opt-in
 // (import a runner only to register it) and dispatch is a Map lookup, so there is no monolithic switch
 // and unused effect recipes tree-shake away. Register an alternative runner under the same key to swap
 // algorithms.

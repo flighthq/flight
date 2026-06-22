@@ -108,7 +108,7 @@ export function applyVignetteEffectToCanvas(
   const h = dest.height;
   const cx = w * 0.5;
   const cy = h * 0.5;
-  // The vignette math measures distance to the corner as 1.0 (matching the WebGL recipe's diagonal
+  // The vignette math measures distance to the corner as 1.0 (matching the Gl recipe's diagonal
   // normalization), so the gradient's outer radius is half the diagonal.
   const outer = Math.sqrt(cx * cx + cy * cy);
   const inner = Math.max(0, Math.min(radius, 1)) * outer;
