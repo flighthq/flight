@@ -6,7 +6,9 @@
 // output. The filter math runs on the surface in JS, so every backend draws identical bytes (exact
 // cross-backend parity) and the oracle checks the defining behaviour: a red shadow appears at the offset,
 // and the square's own footprint is no longer white because the object is hidden.
-import { applyDropShadowFilterToSurface, createDropShadowFilter, getShadowFilterOffset } from '@flighthq/filters';
+import { createDropShadowFilter } from '@flighthq/filters';
+import { getShadowFilterOffset } from '@flighthq/filters-css';
+import { applyDropShadowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

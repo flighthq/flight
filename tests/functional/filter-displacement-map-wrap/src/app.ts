@@ -8,7 +8,8 @@
 // at  rawSampleX = px + (mapVx/255 − 0.5)·scaleX. RED=255 (left map half) ⇒ output px reads source px+12;
 // RED=0 (right map half) ⇒ output px reads source px−12. The single white source line at x=128 therefore
 // lands at output x=116 in the left region and output x=140 in the right region — column 128 goes black.
-import { applyDisplacementMapFilterToSurface, createDisplacementMapFilter } from '@flighthq/filters';
+import { createDisplacementMapFilter } from '@flighthq/filters';
+import { applyDisplacementMapFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

@@ -27,7 +27,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/tween-easing": "*",
+    "@flighthq/easing": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },

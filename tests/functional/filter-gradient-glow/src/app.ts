@@ -9,7 +9,8 @@
 // (ratio 255), so the soft glow ring outside the square edges is magenta. To complete the effect we
 // composite the glow mask first, then composite the original source on top. The result tile shows a
 // magenta glow ring spilling outside the square's edges with the white square sitting on top.
-import { applyGradientGlowFilterToSurface, createGradientGlowFilter } from '@flighthq/filters';
+import { createGradientGlowFilter } from '@flighthq/filters';
+import { applyGradientGlowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

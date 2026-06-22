@@ -5,7 +5,8 @@
 // surface in JS, so every backend draws identical bytes — exact cross-backend parity — and the oracle
 // checks the defining behavior on pixels we chose: each 16×16 block flattens to a single color, so all
 // pixels inside one block are equal while an adjacent block steps to a different value.
-import { applyPixelateFilterToSurface, createPixelateFilter } from '@flighthq/filters';
+import { createPixelateFilter } from '@flighthq/filters';
+import { applyPixelateFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

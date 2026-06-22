@@ -20,8 +20,8 @@
     { "path": "../shape" },
     { "path": "../sprite" },
     { "path": "../text" },
-    { "path": "../text-input" },
-    { "path": "../text-layout" },
+    { "path": "../textinput" },
+    { "path": "../textlayout" },
     { "path": "../types" },
     { "path": "../velocity" }
   ],

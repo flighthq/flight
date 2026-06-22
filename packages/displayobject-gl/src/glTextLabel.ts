@@ -4,7 +4,7 @@ import { computeTextFormatFontString } from '@flighthq/render';
 import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import { getTextLabelRuntime } from '@flighthq/text';
-import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
+import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout';
 import type {
   DisplayObjectRenderer,
   GlRenderState,

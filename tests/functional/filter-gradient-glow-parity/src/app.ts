@@ -20,7 +20,8 @@
 // app.ts is backend-agnostic: each render.<backend>.ts implements the ParityTarget contract (see
 // ./parity.ts). It imports createParityTarget from ./render (the local barrel); the functional vite
 // harness routes ./render to the active backend's render.<renderer>.ts at runtime.
-import { applyGradientGlowFilterToSurface, createGradientGlowFilter } from '@flighthq/filters';
+import { createGradientGlowFilter } from '@flighthq/filters';
+import { applyGradientGlowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

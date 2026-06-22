@@ -4,7 +4,8 @@
 // apply*FilterToSurface, then blit source | result 1:1 as bitmaps. The filter math runs on the surface in
 // JS, so every backend draws identical bytes — exact cross-backend parity — and the oracle checks the
 // filter's defining transform on pixels we chose, instead of eyeballing a busy scene.
-import { applyConvolutionFilterToSurface, createConvolutionFilter } from '@flighthq/filters';
+import { createConvolutionFilter } from '@flighthq/filters';
+import { applyConvolutionFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

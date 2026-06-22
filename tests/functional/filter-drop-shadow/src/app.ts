@@ -5,7 +5,9 @@
 // the surface in JS, so every backend draws identical bytes — exact cross-backend parity. drop shadow
 // WRITES A TINTED BLURRED ALPHA MASK; the effect is completed here by compositing that mask onto the
 // result at the shadow offset (down-right for angle 45) and then drawing the original source on top.
-import { applyDropShadowFilterToSurface, createDropShadowFilter, getShadowFilterOffset } from '@flighthq/filters';
+import { createDropShadowFilter } from '@flighthq/filters';
+import { getShadowFilterOffset } from '@flighthq/filters-css';
+import { applyDropShadowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

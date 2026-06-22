@@ -4,7 +4,7 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "references": [{ "path": "../../packages/sdk" }, { "path": "../../packages/text-layout" }],
+  "references": [{ "path": "../../packages/sdk" }, { "path": "../../packages/textlayout" }],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

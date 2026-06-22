@@ -21,7 +21,8 @@
 // and drawNativeInnerShadow (the Gl shader path) unconditionally. It imports createParityTarget from
 // ./render (the local barrel); the functional vite harness routes ./render to the active backend's
 // render.<renderer>.ts at runtime.
-import { applyInnerShadowFilterToSurface, createInnerShadowFilter } from '@flighthq/filters';
+import { createInnerShadowFilter } from '@flighthq/filters';
+import { applyInnerShadowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

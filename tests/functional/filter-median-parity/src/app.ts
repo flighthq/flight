@@ -20,7 +20,8 @@
 // pass on Gl, a no-op on Canvas/DOM) unconditionally. It imports createParityTarget from ./render
 // (the local barrel); the functional vite harness routes ./render to the active backend's
 // render.<renderer>.ts at runtime.
-import { applyMedianFilterToSurface, createMedianFilter } from '@flighthq/filters';
+import { createMedianFilter } from '@flighthq/filters';
+import { applyMedianFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

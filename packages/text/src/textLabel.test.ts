@@ -1,6 +1,6 @@
 import { createRectangle } from '@flighthq/geometry';
 import { getNodeLocalBoundsRevision, getNodeLocalContentRevision } from '@flighthq/node';
-import { setTextLayoutMeasureProvider } from '@flighthq/text-layout';
+import { setTextLayoutMeasureProvider } from '@flighthq/textlayout';
 import type { Node, PartialNode, TextLabel } from '@flighthq/types';
 import { TextLabelKind } from '@flighthq/types';
 

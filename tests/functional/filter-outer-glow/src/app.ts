@@ -7,7 +7,8 @@
 // outerGlow writes a tinted, blurred alpha MASK of the source silhouette. To complete the effect we
 // composite the glow mask first, then composite the original source on top. The result tile shows a
 // green glow ring spilling outside the square's edges with the white square sitting on top.
-import { applyOuterGlowFilterToSurface, createOuterGlowFilter } from '@flighthq/filters';
+import { createOuterGlowFilter } from '@flighthq/filters';
+import { applyOuterGlowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

@@ -8,7 +8,7 @@ import { BatchFormat } from '@flighthq/types';
 import { registerDefaultWgpuMaterial } from './wgpuDefaultMaterial';
 import { defaultWgpuTextLabelRenderer, drawWgpuTextLabel } from './wgpuTextLabel';
 
-vi.mock('@flighthq/text-layout', async (importOriginal) => {
+vi.mock('@flighthq/textlayout', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,

@@ -18,7 +18,8 @@
 // white line at x=128, a map whose RED channel is 255 on the left half / 0 on the right half driving X
 // displacement (componentX=0, scaleX=24). The line lands at output x=116 in the left region and x=140 in
 // the right region; column 128 goes black.
-import { applyDisplacementMapFilterToSurface, createDisplacementMapFilter } from '@flighthq/filters';
+import { createDisplacementMapFilter } from '@flighthq/filters';
+import { applyDisplacementMapFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

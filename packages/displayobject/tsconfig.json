@@ -8,11 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [
-    { "path": "../geometry" },
-    { "path": "../node" },
-    { "path": "../text-layout" },
-    { "path": "../types" }
-  ],
+  "references": [{ "path": "../geometry" }, { "path": "../node" }, { "path": "../textlayout" }, { "path": "../types" }],
   "include": ["src"]
 }

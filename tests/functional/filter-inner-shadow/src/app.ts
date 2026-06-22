@@ -7,7 +7,8 @@
 // cross-backend parity — and the oracle checks the defining effect: a dark band appears just inside
 // the shape's edges while the center stays bright. (The surface path centers the shadow on the
 // boundary; `angle`/`distance` are not yet applied, so the shadow rings all four inner edges.)
-import { applyInnerShadowFilterToSurface, createInnerShadowFilter } from '@flighthq/filters';
+import { createInnerShadowFilter } from '@flighthq/filters';
+import { applyInnerShadowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

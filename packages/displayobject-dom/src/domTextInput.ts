@@ -6,8 +6,8 @@ import {
   getTextInputSelectionEndIndex,
   getTextInputSelectionRectangles,
   getTextInputState,
-} from '@flighthq/text-input';
-import { getRichTextScrollYOffset } from '@flighthq/text-layout';
+} from '@flighthq/textinput';
+import { getRichTextScrollYOffset } from '@flighthq/textlayout';
 import type { DomRenderState, RendererData, RenderProxy2D, RichText, TextSelectionRectangle } from '@flighthq/types';
 
 import { registerDomTextInputOverlay } from './domRichText';

@@ -20,7 +20,8 @@
 // native tile is drawn from the reference bytes instead. It imports createParityTarget from ./render
 // (the local barrel); the functional vite harness routes ./render to the active backend's
 // render.<renderer>.ts at runtime.
-import { applyInnerGlowFilterToSurface, createInnerGlowFilter } from '@flighthq/filters';
+import { createInnerGlowFilter } from '@flighthq/filters';
+import { applyInnerGlowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

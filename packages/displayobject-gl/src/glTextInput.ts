@@ -5,8 +5,8 @@ import {
   getTextInputSelectionEndIndex,
   getTextInputSelectionRectangles,
   getTextInputState,
-} from '@flighthq/text-input';
-import { getRichTextScrollYOffset } from '@flighthq/text-layout';
+} from '@flighthq/textinput';
+import { getRichTextScrollYOffset } from '@flighthq/textlayout';
 import type { RichText, TextLayoutResult, TextSelectionRectangle } from '@flighthq/types';
 
 import { registerGlTextInputOverlay } from './glRichText';

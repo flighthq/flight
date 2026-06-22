@@ -19,7 +19,8 @@
 // SOURCE image; otherwise (Canvas/DOM) it blits the CPU reference bytes as the native tile. It imports
 // createParityTarget from ./render (the local barrel); the functional vite harness routes ./render to
 // the active backend's render.<renderer>.ts at runtime.
-import { applySharpenFilterToSurface, createSharpenFilter } from '@flighthq/filters';
+import { createSharpenFilter } from '@flighthq/filters';
+import { applySharpenFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

@@ -1,6 +1,6 @@
 ﻿import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import { createRichText } from '@flighthq/text';
-import { enableTextInput } from '@flighthq/text-input';
+import { enableTextInput } from '@flighthq/textinput';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { defaultCanvasRichTextRenderer, drawCanvasRichText, registerCanvasTextInputOverlay } from './canvasRichText';

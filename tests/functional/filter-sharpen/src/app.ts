@@ -9,7 +9,8 @@
 // 8px linear ramp centred on the seam so the transition is gradual rather than a hard edge. Sharpen
 // (unsharp mask) increases edge contrast: it overshoots near the seam — the darker side dips below 0x80
 // and the lighter side rises above 0xb0 — while the flat interiors stay ~unchanged.
-import { applySharpenFilterToSurface, createSharpenFilter } from '@flighthq/filters';
+import { createSharpenFilter } from '@flighthq/filters';
+import { applySharpenFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

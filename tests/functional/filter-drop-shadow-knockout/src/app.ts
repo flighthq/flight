@@ -6,7 +6,9 @@
 // knockout: true. The filter math runs on the surface in JS, so every backend draws identical bytes.
 // The oracle checks knockout's defining behavior: the red shadow is present down-right outside the
 // square, and the square's own footprint is NOT the white source (knocked out).
-import { applyDropShadowFilterToSurface, createDropShadowFilter, getShadowFilterOffset } from '@flighthq/filters';
+import { createDropShadowFilter } from '@flighthq/filters';
+import { getShadowFilterOffset } from '@flighthq/filters-css';
+import { applyDropShadowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

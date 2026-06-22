@@ -5,7 +5,7 @@ import {
   getTextLayoutMeasureProvider,
   getTextLayoutResult,
   getTextMetrics,
-} from '@flighthq/text-layout';
+} from '@flighthq/textlayout';
 import type { TextLabel, TextLabelRuntime, TextLayoutResult, TextMetrics } from '@flighthq/types';
 
 // Lazily refreshes the cached text layout for `source` — TextLabel or RichText alike —

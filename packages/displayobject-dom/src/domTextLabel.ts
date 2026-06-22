@@ -2,7 +2,7 @@
 import { computeRgbHexString } from '@flighthq/materials';
 import { computeTextFormatFontString } from '@flighthq/render';
 import { getTextLabelRuntime } from '@flighthq/text';
-import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/text-layout';
+import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout';
 import type {
   DisplayObjectRenderer,
   DomRenderState,

@@ -9,7 +9,8 @@
 // erases the effect entirely. The light vector is (cos angle, sin angle) * distance; with angle 45 the
 // white highlight lands toward the BOTTOM-RIGHT and the black shadow toward the TOP-LEFT, so the oracle
 // checks the bottom-right highlight lifts the black background while the top-left shadow stays at it.
-import { applyBevelFilterToSurface, createBevelFilter } from '@flighthq/filters';
+import { createBevelFilter } from '@flighthq/filters';
+import { applyBevelFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

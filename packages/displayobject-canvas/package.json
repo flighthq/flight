@@ -35,8 +35,8 @@
     "@flighthq/resources": "*",
     "@flighthq/shape": "*",
     "@flighthq/text": "*",
-    "@flighthq/text-input": "*",
-    "@flighthq/text-layout": "*",
+    "@flighthq/textinput": "*",
+    "@flighthq/textlayout": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

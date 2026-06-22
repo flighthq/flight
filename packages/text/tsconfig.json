@@ -13,7 +13,7 @@
     { "path": "../entity" },
     { "path": "../geometry" },
     { "path": "../node" },
-    { "path": "../text-layout" },
+    { "path": "../textlayout" },
     { "path": "../types" }
   ],
   "include": ["src"]

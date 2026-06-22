@@ -19,7 +19,8 @@
 // ./parity.ts). app.ts calls drawNativeColorMatrix unconditionally — it is a no-op on Canvas/DOM and the
 // real GPU pass on Gl. It imports createParityTarget from ./render (the local barrel); the functional
 // vite harness routes ./render to the active backend's render.<renderer>.ts at runtime.
-import { applyColorMatrixFilterToSurface, createColorMatrixFilter } from '@flighthq/filters';
+import { createColorMatrixFilter } from '@flighthq/filters';
+import { applyColorMatrixFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

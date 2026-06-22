@@ -20,7 +20,8 @@
 // unconditionally — the inactive one is a no-op on each backend. It imports createParityTarget from
 // ./render (the local barrel); the functional vite harness routes ./render to the active backend's
 // render.<renderer>.ts at runtime, the same way filter-blur-parity does.
-import { applyOuterGlowFilterToSurface, createOuterGlowFilter } from '@flighthq/filters';
+import { createOuterGlowFilter } from '@flighthq/filters';
+import { applyOuterGlowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

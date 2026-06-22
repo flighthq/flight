@@ -20,7 +20,8 @@
 // ./parity.ts) and app.ts calls drawNativeGradientBevel unconditionally — it is a no-op on Canvas/DOM.
 // It imports createParityTarget from ./render (the local barrel); the functional vite harness routes
 // ./render to the active backend's render.<renderer>.ts at runtime.
-import { applyGradientBevelFilterToSurface, createGradientBevelFilter } from '@flighthq/filters';
+import { createGradientBevelFilter } from '@flighthq/filters';
+import { applyGradientBevelFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
