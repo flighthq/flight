@@ -1,4 +1,4 @@
-// Functional test scene. Runs unchanged on Canvas, DOM, and WebGL — the harness (@ft/render) provides
+// Functional test scene. Runs unchanged on Canvas, DOM, and Gl — the harness (@ft/render) provides
 // the backend-specific wiring at runtime. Build the scene in fixed logical coordinates (width × height);
 // do not divide by scale. Declare every node kind you construct in `kinds`.
 import { addNodeChild, createDisplayContainer, createShape, ShapeKind } from '@flighthq/sdk';
