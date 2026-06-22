@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-material-depth",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}
