@@ -3,8 +3,8 @@ import type {
   CanvasRenderTarget,
   GodRaysEffect,
   ScreenSpaceFogEffect,
-  SSAOEffect,
-  SSREffect,
+  SsaoEffect,
+  SsrEffect,
 } from '@flighthq/types';
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
@@ -35,20 +35,20 @@ export function applyScreenSpaceFogEffectToCanvas(
 
 // SSAO (PASSTHROUGH): ambient occlusion reconstructs view-space position/normals from a depth buffer
 // and accumulates a sampling kernel — none of which exists on Canvas 2D. Shader-only / depth-only.
-export function applySSAOEffectToCanvas(
+export function applySsaoEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,
-  _effect: Readonly<SSAOEffect>,
+  _effect: Readonly<SsaoEffect>,
 ): void {
   passthroughCanvasEffectPass(dest, source);
 }
 
 // SSR (PASSTHROUGH): screen-space reflections ray-march against depth using view-space normals; neither
 // buffer exists on Canvas 2D. Shader-only / depth-only.
-export function applySSREffectToCanvas(
+export function applySsrEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,
-  _effect: Readonly<SSREffect>,
+  _effect: Readonly<SsrEffect>,
 ): void {
   passthroughCanvasEffectPass(dest, source);
 }
@@ -61,10 +61,10 @@ export const defaultCanvasScreenSpaceFogEffectRunner: CanvasRenderEffectRunner =
   applyScreenSpaceFogEffectToCanvas(ctx.source, ctx.dest, effect as ScreenSpaceFogEffect);
 };
 
-export const defaultCanvasSSAOEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
-  applySSAOEffectToCanvas(ctx.source, ctx.dest, effect as SSAOEffect);
+export const defaultCanvasSsaoEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+  applySsaoEffectToCanvas(ctx.source, ctx.dest, effect as SsaoEffect);
 };
 
-export const defaultCanvasSSREffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
-  applySSREffectToCanvas(ctx.source, ctx.dest, effect as SSREffect);
+export const defaultCanvasSsrEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+  applySsrEffectToCanvas(ctx.source, ctx.dest, effect as SsrEffect);
 };

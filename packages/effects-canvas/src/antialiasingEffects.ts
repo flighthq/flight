@@ -1,4 +1,4 @@
-import type { CanvasRenderEffectRunner, CanvasRenderTarget, FXAAEffect, SMAAEffect, TAAEffect } from '@flighthq/types';
+import type { CanvasRenderEffectRunner, CanvasRenderTarget, FxaaEffect, SmaaEffect, TaaEffect } from '@flighthq/types';
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
@@ -9,42 +9,42 @@ import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
 // FXAA (PASSTHROUGH): luminance edge detection + directional blend is per-pixel neighbor sampling with
 // no CSS/draw-op equivalent. Shader-only.
-export function applyFXAAEffectToCanvas(
+export function applyFxaaEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,
-  _effect: Readonly<FXAAEffect>,
+  _effect: Readonly<FxaaEffect>,
 ): void {
   passthroughCanvasEffectPass(dest, source);
 }
 
 // SMAA (PASSTHROUGH): edge-aware blend weights against lookup textures are per-pixel shader work with
 // no 2D draw-op path. Shader-only.
-export function applySMAAEffectToCanvas(
+export function applySmaaEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,
-  _effect: Readonly<SMAAEffect>,
+  _effect: Readonly<SmaaEffect>,
 ): void {
   passthroughCanvasEffectPass(dest, source);
 }
 
 // TAA (PASSTHROUGH): temporal accumulation needs a history buffer and motion vectors absent from the
 // single-frame Canvas context. Shader-only / temporal-only.
-export function applyTAAEffectToCanvas(
+export function applyTaaEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,
-  _effect: Readonly<TAAEffect>,
+  _effect: Readonly<TaaEffect>,
 ): void {
   passthroughCanvasEffectPass(dest, source);
 }
 
-export const defaultCanvasFXAAEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
-  applyFXAAEffectToCanvas(ctx.source, ctx.dest, effect as FXAAEffect);
+export const defaultCanvasFxaaEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+  applyFxaaEffectToCanvas(ctx.source, ctx.dest, effect as FxaaEffect);
 };
 
-export const defaultCanvasSMAAEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
-  applySMAAEffectToCanvas(ctx.source, ctx.dest, effect as SMAAEffect);
+export const defaultCanvasSmaaEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+  applySmaaEffectToCanvas(ctx.source, ctx.dest, effect as SmaaEffect);
 };
 
-export const defaultCanvasTAAEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
-  applyTAAEffectToCanvas(ctx.source, ctx.dest, effect as TAAEffect);
+export const defaultCanvasTaaEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+  applyTaaEffectToCanvas(ctx.source, ctx.dest, effect as TaaEffect);
 };

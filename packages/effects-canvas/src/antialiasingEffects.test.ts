@@ -1,44 +1,44 @@
 import {
-  applyFXAAEffectToCanvas,
-  applySMAAEffectToCanvas,
-  applyTAAEffectToCanvas,
-  defaultCanvasFXAAEffectRunner,
-  defaultCanvasSMAAEffectRunner,
-  defaultCanvasTAAEffectRunner,
+  applyFxaaEffectToCanvas,
+  applySmaaEffectToCanvas,
+  applyTaaEffectToCanvas,
+  defaultCanvasFxaaEffectRunner,
+  defaultCanvasSmaaEffectRunner,
+  defaultCanvasTaaEffectRunner,
 } from './antialiasingEffects';
 
-describe('applyFXAAEffectToCanvas', () => {
+describe('applyFxaaEffectToCanvas', () => {
   it('is a function', () => {
-    expect(typeof applyFXAAEffectToCanvas).toBe('function');
+    expect(typeof applyFxaaEffectToCanvas).toBe('function');
   });
 });
 
-describe('applySMAAEffectToCanvas', () => {
+describe('applySmaaEffectToCanvas', () => {
   it('is a function', () => {
-    expect(typeof applySMAAEffectToCanvas).toBe('function');
+    expect(typeof applySmaaEffectToCanvas).toBe('function');
   });
 });
 
-describe('applyTAAEffectToCanvas', () => {
+describe('applyTaaEffectToCanvas', () => {
   it('is a function', () => {
-    expect(typeof applyTAAEffectToCanvas).toBe('function');
+    expect(typeof applyTaaEffectToCanvas).toBe('function');
   });
 });
 
-describe('defaultCanvasFXAAEffectRunner', () => {
+describe('defaultCanvasFxaaEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultCanvasFXAAEffectRunner).toBe('function');
+    expect(typeof defaultCanvasFxaaEffectRunner).toBe('function');
   });
 });
 
-describe('defaultCanvasSMAAEffectRunner', () => {
+describe('defaultCanvasSmaaEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultCanvasSMAAEffectRunner).toBe('function');
+    expect(typeof defaultCanvasSmaaEffectRunner).toBe('function');
   });
 });
 
-describe('defaultCanvasTAAEffectRunner', () => {
+describe('defaultCanvasTaaEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultCanvasTAAEffectRunner).toBe('function');
+    expect(typeof defaultCanvasTaaEffectRunner).toBe('function');
   });
 });

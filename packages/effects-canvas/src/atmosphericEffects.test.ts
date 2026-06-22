@@ -1,12 +1,12 @@
 import {
   applyGodRaysEffectToCanvas,
   applyScreenSpaceFogEffectToCanvas,
-  applySSAOEffectToCanvas,
-  applySSREffectToCanvas,
+  applySsaoEffectToCanvas,
+  applySsrEffectToCanvas,
   defaultCanvasGodRaysEffectRunner,
   defaultCanvasScreenSpaceFogEffectRunner,
-  defaultCanvasSSAOEffectRunner,
-  defaultCanvasSSREffectRunner,
+  defaultCanvasSsaoEffectRunner,
+  defaultCanvasSsrEffectRunner,
 } from './atmosphericEffects';
 
 describe('applyGodRaysEffectToCanvas', () => {
@@ -21,15 +21,15 @@ describe('applyScreenSpaceFogEffectToCanvas', () => {
   });
 });
 
-describe('applySSAOEffectToCanvas', () => {
+describe('applySsaoEffectToCanvas', () => {
   it('is a function', () => {
-    expect(typeof applySSAOEffectToCanvas).toBe('function');
+    expect(typeof applySsaoEffectToCanvas).toBe('function');
   });
 });
 
-describe('applySSREffectToCanvas', () => {
+describe('applySsrEffectToCanvas', () => {
   it('is a function', () => {
-    expect(typeof applySSREffectToCanvas).toBe('function');
+    expect(typeof applySsrEffectToCanvas).toBe('function');
   });
 });
 
@@ -45,14 +45,14 @@ describe('defaultCanvasScreenSpaceFogEffectRunner', () => {
   });
 });
 
-describe('defaultCanvasSSAOEffectRunner', () => {
+describe('defaultCanvasSsaoEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultCanvasSSAOEffectRunner).toBe('function');
+    expect(typeof defaultCanvasSsaoEffectRunner).toBe('function');
   });
 });
 
-describe('defaultCanvasSSREffectRunner', () => {
+describe('defaultCanvasSsrEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultCanvasSSREffectRunner).toBe('function');
+    expect(typeof defaultCanvasSsrEffectRunner).toBe('function');
   });
 });

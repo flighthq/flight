@@ -1,10 +1,10 @@
-import { createMatrix } from '@flighthq/geometry';
 import {
   beginCanvasRenderTarget,
   createCanvasRenderTarget,
   endCanvasRenderTarget,
   resizeCanvasRenderTarget,
-} from '@flighthq/render-canvas';
+} from '@flighthq/displayobject-canvas';
+import { createMatrix } from '@flighthq/geometry';
 import type {
   CanvasRenderEffectPipeline,
   CanvasRenderState,
@@ -16,12 +16,12 @@ import type {
 
 import { getCanvasRenderEffectRunner } from './renderEffectRegistry';
 
-// Opt-in Canvas 2D post-process pipeline — the parallel of the WebGL effect pipeline. The scene renders
+// Opt-in Canvas 2D post-process pipeline — the parallel of the Gl effect pipeline. The scene renders
 // into the pipeline's offscreen canvas between begin/end; end runs the agnostic effect list through the
 // per-state registry, ping-ponging pooled offscreen canvases via ctx.filter / draw-op compositing, then
 // presents the result to the main canvas. The default render loop imports none of this. The effect list
 // is per-frame data; only the scene target and pool are retained. `options.sampleCount`/`format`/`depth`
-// are accepted for parity with the WebGL pipeline but have no Canvas 2D realization and are ignored.
+// are accepted for parity with the Gl pipeline but have no Canvas 2D realization and are ignored.
 
 // Acquires a scratch offscreen canvas from the pool sized to (width, height), or allocates one if none
 // are free. Multi-pass effect recipes (bloom) borrow scratch canvases with this and return them with
