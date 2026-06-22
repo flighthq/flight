@@ -1,0 +1,51 @@
+{
+  "name": "@flighthq/displayobject-gl",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src/**/*.test.ts",
+    "!dist/**/*.test.js",
+    "!dist/**/*.test.d.ts",
+    "!dist/**/*.test.js.map",
+    "!dist/**/*.test.d.ts.map"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --watch --config vitest.config.ts",
+    "prepack": "npm run clean && npm run clean:dist && npm run build",
+    "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
+  },
+  "dependencies": {
+    "@flighthq/displayobject": "*",
+    "@flighthq/displayobject-canvas": "*",
+    "@flighthq/geometry": "*",
+    "@flighthq/materials": "*",
+    "@flighthq/node": "*",
+    "@flighthq/path": "*",
+    "@flighthq/render": "*",
+    "@flighthq/render-gl": "*",
+    "@flighthq/shape": "*",
+    "@flighthq/sprite": "*",
+    "@flighthq/text": "*",
+    "@flighthq/text-input": "*",
+    "@flighthq/text-layout": "*",
+    "@flighthq/types": "*",
+    "@flighthq/velocity": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  },
+  "description": "WebGL2 display-object renderers (bitmap, shape, sprite, text, tilemap, particles)",
+  "sideEffects": false
+}
