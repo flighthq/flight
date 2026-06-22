@@ -1,4 +1,4 @@
-import { computeRGBHexString } from '@flighthq/materials';
+import { computeRgbHexString } from '@flighthq/materials';
 import { getRichTextRuntime } from '@flighthq/text';
 import {
   getTextInputCaretRectangle,
@@ -37,7 +37,7 @@ export function drawCanvasTextInputOverlay(state: CanvasRenderState, renderProxy
 
   getTextInputSelectionRectangles(selectionRectangles, source, layout);
   if (selectionRectangles.length > 0) {
-    context.fillStyle = computeRGBHexString(input.selectionColor);
+    context.fillStyle = computeRgbHexString(input.selectionColor);
     context.globalAlpha = Math.min(1, renderProxy.alpha * input.selectionAlpha);
     for (const rect of selectionRectangles) {
       context.fillRect(rect.x - scrollXOffset, rect.y - scrollYOffset, rect.width, rect.height);

@@ -32,7 +32,7 @@ export function registerCanvasMaterialRenderer(
 }
 
 // Resolves a node's material to its Canvas renderer, else the registered default, else null.
-// Unlike WebGL there is no built-in fallback: a null result means "draw normally", since the
+// Unlike Gl there is no built-in fallback: a null result means "draw normally", since the
 // canvas renderer already performs the draw and a material only contributes extra draw state.
 export function resolveCanvasMaterialRenderer(
   state: CanvasRenderState,
