@@ -1,19 +1,20 @@
 import type { GlMeshMaterialRenderer, GlRenderState, GlRenderStateRuntime, Kind, MeshGeometry } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
-import type { GlPbrProgram } from './glPbrProgramCache';
+import type { GlMeshProgram } from './glMeshProgram';
 
-// scene-gl's per-GlRenderState private state: the 3D mesh-material registry, the StandardPbr
-// program cache (keyed by define key), and the per-state geometry GPU-upload cache. These are
-// scene-gl-owned, distinct from the 2D renderer's materialRendererMap/textureCache — a material
+// scene-gl's per-GlRenderState private state: the 3D mesh-material registry, the shared mesh-material
+// program cache (keyed by family + define key), and the per-state geometry GPU-upload cache. These
+// are scene-gl-owned, distinct from the 2D renderer's materialRendererMap/textureCache — a material
 // kind is either 2D or 3D, never both. The registry and upload cache are surfaced through the
-// header's GlRenderStateRuntime.sceneMeshMaterialRegistry / sceneMeshUploadCache slots (kept
-// opaque there), and the program cache lives only here (scene-gl never needs to name it in the
-// header). One GlSceneRuntime is created lazily per state by getGlSceneRuntime.
+// header's GlRenderStateRuntime.sceneMeshMaterialRegistry / sceneMeshUploadCache slots (kept opaque
+// there), and the program cache lives only here (scene-gl never needs to name it in the header).
+// `activeMeshProgram` is the bind()→draw() handoff: bind selects a family's program and stores it
+// here; draw reads it back. One GlSceneRuntime is created lazily per state by getGlSceneRuntime.
 export interface GlSceneRuntime {
-  activePbrProgram: GlPbrProgram | null;
+  activeMeshProgram: GlMeshProgram | null;
   materialRegistry: Map<Kind, GlMeshMaterialRenderer>;
-  pbrProgramCache: Map<string, GlPbrProgram>;
+  programCache: Map<string, GlMeshProgram>;
   uploadCache: WeakMap<MeshGeometry, GlMeshUpload>;
 }
 
@@ -38,9 +39,9 @@ export function getGlSceneRuntime(state: GlRenderState): GlSceneRuntime {
   let scene = sceneRuntimes.get(state);
   if (scene === undefined) {
     scene = {
-      activePbrProgram: null,
+      activeMeshProgram: null,
       materialRegistry: new Map(),
-      pbrProgramCache: new Map(),
+      programCache: new Map(),
       uploadCache: new WeakMap(),
     };
     sceneRuntimes.set(state, scene);

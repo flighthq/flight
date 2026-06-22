@@ -1,11 +1,13 @@
 import { createCamera } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
-import { createStandardPbrMaterial } from '@flighthq/materials';
+import { createToonMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import type { Camera, Matrix3, Matrix4, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import { ToonMaterialKind } from '@flighthq/types';
 
+import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { makeGlSceneState } from './glSceneTestHelper';
-import { standardPbrGlMeshMaterialRenderer } from './standardPbrGlMeshMaterialRenderer';
+import { registerToonGlMaterial, toonGlMeshMaterialRenderer } from './toonGlMeshMaterialRenderer';
 
 function makeCamera(): Camera {
   return createCamera({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
@@ -29,31 +31,43 @@ function makeLights(): SceneLightBlock {
 function makeProxy(): SceneRenderProxy {
   const geometry = createBoxMeshGeometry();
   return {
-    material: createStandardPbrMaterial(),
+    material: createToonMaterial(),
     normalMatrix: createMatrix3() as Matrix3,
     subset: geometry.subsets[0],
     worldMatrix: createMatrix4() as Matrix4,
   };
 }
 
-describe('standardPbrGlMeshMaterialRenderer', () => {
-  it('bind selects a program, sets depth/cull state, and uploads camera + light + material uniforms', () => {
+describe('registerToonGlMaterial', () => {
+  it('installs the renderer for ToonMaterialKind', () => {
+    const { state } = makeGlSceneState();
+    registerToonGlMaterial(state);
+    expect(getGlMeshMaterialRenderer(state, ToonMaterialKind)).toBe(toonGlMeshMaterialRenderer);
+  });
+});
+
+describe('toonGlMeshMaterialRenderer', () => {
+  it('bind selects a program, sets depth/cull state, and uploads camera + light block + base color', () => {
     const { state, gl } = makeGlSceneState();
-    standardPbrGlMeshMaterialRenderer.bind(state, createStandardPbrMaterial(), makeLights(), makeCamera());
+    toonGlMeshMaterialRenderer.bind(state, createToonMaterial(), makeLights(), makeCamera());
 
     expect(gl.calls.some((c) => c.name === 'useProgram')).toBe(true);
     expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === gl.DEPTH_TEST)).toBe(true);
     expect(gl.calls.some((c) => c.name === 'depthFunc' && c.args[0] === gl.LESS)).toBe(true);
     expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === gl.CULL_FACE)).toBe(true);
     expect(gl.calls.some((c) => c.name === 'uniformMatrix4fv')).toBe(true);
-    expect(gl.calls.some((c) => c.name === 'uniform4f')).toBe(true);
+    // Light block: directional + directional-radiance (uniform4f x2), ambient (uniform3f + camera
+    // position uniform3f), the two count gates (uniform1f), plus the base color (uniform4f).
+    expect(gl.calls.filter((c) => c.name === 'uniform4f').length).toBeGreaterThanOrEqual(3);
+    expect(gl.calls.filter((c) => c.name === 'uniform3f').length).toBeGreaterThanOrEqual(2);
+    expect(gl.calls.filter((c) => c.name === 'uniform1f').length).toBeGreaterThanOrEqual(2);
   });
 
   it('bind disables back-face culling for a double-sided material', () => {
     const { state, gl } = makeGlSceneState();
-    const material = createStandardPbrMaterial();
+    const material = createToonMaterial();
     material.doubleSided = true;
-    standardPbrGlMeshMaterialRenderer.bind(state, material, makeLights(), makeCamera());
+    toonGlMeshMaterialRenderer.bind(state, material, makeLights(), makeCamera());
     expect(gl.calls.some((c) => c.name === 'disable' && c.args[0] === gl.CULL_FACE)).toBe(true);
   });
 
@@ -61,8 +75,8 @@ describe('standardPbrGlMeshMaterialRenderer', () => {
     const { state, gl } = makeGlSceneState();
     const proxy = makeProxy();
     const geometry = createBoxMeshGeometry();
-    standardPbrGlMeshMaterialRenderer.bind(state, proxy.material, makeLights(), makeCamera());
-    standardPbrGlMeshMaterialRenderer.draw(state, proxy, geometry);
+    toonGlMeshMaterialRenderer.bind(state, proxy.material, makeLights(), makeCamera());
+    toonGlMeshMaterialRenderer.draw(state, proxy, geometry);
 
     const drawCall = gl.calls.find((c) => c.name === 'drawElements');
     expect(drawCall).toBeDefined();
@@ -72,17 +86,7 @@ describe('standardPbrGlMeshMaterialRenderer', () => {
 
   it('draw is a no-op when bind has not selected a program', () => {
     const { state, gl } = makeGlSceneState();
-    standardPbrGlMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
+    toonGlMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
-  });
-
-  it('bind uploads the full standard block including occlusion strength and emissive', () => {
-    const { state, gl } = makeGlSceneState();
-    const material = createStandardPbrMaterial({ metallic: 0.25, occlusionStrength: 0.7, roughness: 0.4 });
-    standardPbrGlMeshMaterialRenderer.bind(state, material, makeLights(), makeCamera());
-    // The standard block uploads metallic + roughness + normalScale + emissiveStrength +
-    // occlusionStrength as uniform1f, so at least five scalar uploads land.
-    expect(gl.calls.filter((c) => c.name === 'uniform1f').length).toBeGreaterThanOrEqual(5);
-    expect(gl.calls.some((c) => c.name === 'uniform3f')).toBe(true);
   });
 });

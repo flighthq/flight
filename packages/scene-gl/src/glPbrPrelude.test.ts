@@ -1,3 +1,4 @@
+import type { GlPbrDefineKey } from './glPbrPrelude';
 import {
   buildGlPbrDefineKey,
   buildGlPbrDefineSource,
@@ -7,18 +8,56 @@ import {
   getGlPbrVertexSourceForKey,
 } from './glPbrPrelude';
 
-const NONE = { alphaMaskEnabled: false, hasBaseColorMap: false, hasNormalMap: false };
-const ALL = { alphaMaskEnabled: true, hasBaseColorMap: true, hasNormalMap: true };
+function makeKey(overrides?: Partial<GlPbrDefineKey>): GlPbrDefineKey {
+  return {
+    alphaMaskEnabled: false,
+    anisotropyEnabled: false,
+    clearcoatEnabled: false,
+    hasBaseColorMap: false,
+    hasEmissiveMap: false,
+    hasMetallicRoughnessMap: false,
+    hasNormalMap: false,
+    hasOcclusionMap: false,
+    iridescenceEnabled: false,
+    sheenEnabled: false,
+    specularEnabled: false,
+    subsurfaceEnabled: false,
+    transmissionEnabled: false,
+    ...overrides,
+  };
+}
+
+const NONE = makeKey();
+const STANDARD_ALL = makeKey({
+  alphaMaskEnabled: true,
+  hasBaseColorMap: true,
+  hasEmissiveMap: true,
+  hasMetallicRoughnessMap: true,
+  hasNormalMap: true,
+  hasOcclusionMap: true,
+});
+const ALL = makeKey({
+  ...STANDARD_ALL,
+  anisotropyEnabled: true,
+  clearcoatEnabled: true,
+  iridescenceEnabled: true,
+  sheenEnabled: true,
+  specularEnabled: true,
+  subsurfaceEnabled: true,
+  transmissionEnabled: true,
+});
 
 describe('buildGlPbrDefineKey', () => {
   it('produces a stable, distinct string per flag set', () => {
-    expect(buildGlPbrDefineKey(NONE)).toBe('---');
-    expect(buildGlPbrDefineKey(ALL)).toBe('mbn');
-    expect(buildGlPbrDefineKey({ alphaMaskEnabled: false, hasBaseColorMap: true, hasNormalMap: false })).toBe('-b-');
+    expect(buildGlPbrDefineKey(NONE)).toBe('------:-------');
+    expect(buildGlPbrDefineKey(STANDARD_ALL)).toBe('mbnroe:-------');
+    expect(buildGlPbrDefineKey(ALL)).toBe('mbnroe:CSAIPUT');
+    expect(buildGlPbrDefineKey(makeKey({ hasBaseColorMap: true }))).toBe('-b----:-------');
+    expect(buildGlPbrDefineKey(makeKey({ clearcoatEnabled: true }))).toBe('------:C------');
   });
 
   it('is identical for equal flag sets', () => {
-    expect(buildGlPbrDefineKey({ ...ALL })).toBe(buildGlPbrDefineKey({ ...ALL }));
+    expect(buildGlPbrDefineKey(makeKey(ALL))).toBe(buildGlPbrDefineKey(makeKey(ALL)));
   });
 });
 
@@ -32,11 +71,21 @@ describe('buildGlPbrDefineSource', () => {
     expect(all).toContain('#define ALPHA_MASK');
     expect(all).toContain('#define HAS_BASE_COLOR_MAP');
     expect(all).toContain('#define HAS_NORMAL_MAP');
+    expect(all).toContain('#define HAS_METALLIC_ROUGHNESS_MAP');
+    expect(all).toContain('#define HAS_OCCLUSION_MAP');
+    expect(all).toContain('#define HAS_EMISSIVE_MAP');
+    expect(all).toContain('#define CLEARCOAT');
+    expect(all).toContain('#define SHEEN');
+    expect(all).toContain('#define ANISOTROPY');
+    expect(all).toContain('#define IRIDESCENCE');
+    expect(all).toContain('#define SPECULAR_EXT');
+    expect(all).toContain('#define SUBSURFACE');
+    expect(all).toContain('#define TRANSMISSION');
 
     const none = buildGlPbrDefineSource(NONE);
     expect(none).not.toContain('#define ALPHA_MASK');
     expect(none).not.toContain('#define HAS_BASE_COLOR_MAP');
-    expect(none).not.toContain('#define HAS_NORMAL_MAP');
+    expect(none).not.toContain('#define CLEARCOAT');
   });
 });
 
@@ -56,7 +105,7 @@ describe('getGlPbrFragmentSource', () => {
 
 describe('getGlPbrFragmentSourceForKey', () => {
   it('prepends the define block to the fragment body', () => {
-    const src = getGlPbrFragmentSourceForKey(ALL);
+    const src = getGlPbrFragmentSourceForKey(STANDARD_ALL);
     expect(src.startsWith('#version 300 es')).toBe(true);
     expect(src).toContain('#define HAS_NORMAL_MAP');
     expect(src).toContain('out vec4 fragColor');
