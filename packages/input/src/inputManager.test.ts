@@ -16,9 +16,9 @@ import {
   detachRelativePointerInput,
   detachTextInput,
   detachWheelInput,
-  getKeyCodeFromDOMKeyboardEvent,
-  getKeyModifierFromDOMKeyboardEvent,
-  getMouseWheelModeFromDOMWheelEvent,
+  getKeyCodeFromDomKeyboardEvent,
+  getKeyModifierFromDomKeyboardEvent,
+  getMouseWheelModeFromDomWheelEvent,
   pollGamepadInput,
 } from './inputManager';
 
@@ -317,20 +317,20 @@ describe('detachWheelInput', () => {
   });
 });
 
-describe('getKeyCodeFromDOMKeyboardEvent', () => {
+describe('getKeyCodeFromDomKeyboardEvent', () => {
   it('maps printable keys to SDL-compatible lower-case codes', () => {
-    expect(getKeyCodeFromDOMKeyboardEvent(createKeyboardEvent('keydown', { key: 'A' }))).toBe(KeyCode.A);
+    expect(getKeyCodeFromDomKeyboardEvent(createKeyboardEvent('keydown', { key: 'A' }))).toBe(KeyCode.A);
   });
 
   it('maps named keys', () => {
     expect(
-      getKeyCodeFromDOMKeyboardEvent(createKeyboardEvent('keydown', { code: 'ArrowLeft', key: 'ArrowLeft' })),
+      getKeyCodeFromDomKeyboardEvent(createKeyboardEvent('keydown', { code: 'ArrowLeft', key: 'ArrowLeft' })),
     ).toBe(KeyCode.LEFT);
   });
 
   it('maps numpad keys by location', () => {
     expect(
-      getKeyCodeFromDOMKeyboardEvent(
+      getKeyCodeFromDomKeyboardEvent(
         createKeyboardEvent('keydown', {
           code: 'Numpad1',
           key: '1',
@@ -341,9 +341,9 @@ describe('getKeyCodeFromDOMKeyboardEvent', () => {
   });
 });
 
-describe('getKeyModifierFromDOMKeyboardEvent', () => {
+describe('getKeyModifierFromDomKeyboardEvent', () => {
   it('maps DOM modifier flags to Lime-compatible bit flags', () => {
-    const modifier = getKeyModifierFromDOMKeyboardEvent(
+    const modifier = getKeyModifierFromDomKeyboardEvent(
       createKeyboardEvent('keydown', { ctrlKey: true, shiftKey: true }),
     );
     expect((modifier & KeyModifier.CTRL) !== 0).toBe(true);
@@ -351,12 +351,12 @@ describe('getKeyModifierFromDOMKeyboardEvent', () => {
   });
 });
 
-describe('getMouseWheelModeFromDOMWheelEvent', () => {
+describe('getMouseWheelModeFromDomWheelEvent', () => {
   it('maps DOM wheel delta modes', () => {
-    expect(getMouseWheelModeFromDOMWheelEvent(createWheelEvent({ deltaMode: WheelEvent.DOM_DELTA_PIXEL }))).toBe(
+    expect(getMouseWheelModeFromDomWheelEvent(createWheelEvent({ deltaMode: WheelEvent.DOM_DELTA_PIXEL }))).toBe(
       'pixels',
     );
-    expect(getMouseWheelModeFromDOMWheelEvent(createWheelEvent({ deltaMode: WheelEvent.DOM_DELTA_PAGE }))).toBe(
+    expect(getMouseWheelModeFromDomWheelEvent(createWheelEvent({ deltaMode: WheelEvent.DOM_DELTA_PAGE }))).toBe(
       'pages',
     );
   });

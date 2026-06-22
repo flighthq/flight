@@ -15,8 +15,8 @@ export function defaultDisplayObjectHitTestPoint(
   return false;
 }
 
-export function defaultHTMLViewHitTestPoint(_source: NodeAny, _x: number, _y: number, _shapeFlag: boolean): boolean {
-  // HTMLView elements handle pointer events through the browser — not the canvas interaction system.
+export function defaultHtmlViewHitTestPoint(_source: NodeAny, _x: number, _y: number, _shapeFlag: boolean): boolean {
+  // HtmlView elements handle pointer events through the browser — not the canvas interaction system.
   return false;
 }
 

@@ -114,7 +114,7 @@ export function createRichTextRuntime(): RichTextRuntime {
   // trait-init copies it off defaultMethods — assign it onto the runtime directly.
   out.buildTextLayoutParams = buildRichTextLayoutParams;
   out.textLayout = null;
-  out.textLayoutUsingContentID = -1;
+  out.textLayoutUsingContentId = -1;
   out.richTextContent = null;
   out.selectionBeginIndex = 0;
   out.selectionEndIndex = 0;

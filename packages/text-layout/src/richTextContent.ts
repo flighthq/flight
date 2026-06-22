@@ -25,7 +25,7 @@ export function computeRichTextContent(
   if (data.htmlText.length === 0 || passwordCharacter !== null) {
     appendText(out, source, baseFormat, data.condenseWhite, data.maxChars);
   } else {
-    parseHTMLText(out, source, data, baseFormat);
+    parseHtmlText(out, source, data, baseFormat);
   }
 
   clampRanges(out.formatRanges, out.text.length);
@@ -55,7 +55,7 @@ function appendText(
   condenseWhite: boolean,
   maxChars: number,
 ): void {
-  let value = decodeHTMLEntities(text);
+  let value = decodeHtmlEntities(text);
   if (condenseWhite) {
     value = value.replace(/[ \f\n\r\t\v]+/g, ' ');
     if (out.text.length === 0) value = value.trimStart();
@@ -112,7 +112,7 @@ function applyAttributeFormat(format: TextFormat, name: string, value: string): 
   }
 }
 
-function applyCSSFormat(format: TextFormat, property: string, value: string): void {
+function applyCssFormat(format: TextFormat, property: string, value: string): void {
   switch (property) {
     case 'color':
       format.color = parseColor(value);
@@ -163,7 +163,7 @@ function applyInlineStyle(format: TextFormat, style: string): void {
       .slice(separator + 1)
       .trim()
       .toLowerCase();
-    if (property.length > 0 && value.length > 0) applyCSSFormat(format, property, value);
+    if (property.length > 0 && value.length > 0) applyCssFormat(format, property, value);
   }
 }
 
@@ -273,7 +273,7 @@ function createBaseFormat(data: Readonly<RichTextData>): TextFormat {
   return format;
 }
 
-function decodeHTMLEntities(value: string): string {
+function decodeHtmlEntities(value: string): string {
   return value.replace(/&(#x[0-9a-f]+|#[0-9]+|[a-z]+);/gi, (_match, entity: string) => {
     const lower = entity.toLowerCase();
     if (lower.startsWith('#x')) return String.fromCodePoint(Number.parseInt(lower.slice(2), 16));
@@ -282,7 +282,7 @@ function decodeHTMLEntities(value: string): string {
   });
 }
 
-function handleHTMLTag(out: RichTextContent, token: string, data: Readonly<RichTextData>, stack: TextFormat[]): void {
+function handleHtmlTag(out: RichTextContent, token: string, data: Readonly<RichTextData>, stack: TextFormat[]): void {
   const content = token.slice(1, -1).trim();
   if (content.length === 0 || content.startsWith('!')) return;
 
@@ -366,7 +366,7 @@ function parseColor(value: string): number {
   return namedColors[color] ?? 0;
 }
 
-function parseHTMLText(
+function parseHtmlText(
   out: RichTextContent,
   source: string,
   data: Readonly<RichTextData>,
@@ -379,7 +379,7 @@ function parseHTMLText(
 
   while ((match = pattern.exec(source)) !== null) {
     appendText(out, source.slice(index, match.index), stack[stack.length - 1], data.condenseWhite, data.maxChars);
-    handleHTMLTag(out, match[0], data, stack);
+    handleHtmlTag(out, match[0], data, stack);
     index = match.index + match[0].length;
   }
 

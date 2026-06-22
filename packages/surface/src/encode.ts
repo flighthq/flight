@@ -12,8 +12,8 @@ export function encodeSurface(
   domImageData.data.set(source.data);
   canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
   const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-  const dataURL = canvas.toDataURL(mimeType, quality);
-  const base64 = dataURL.slice(dataURL.indexOf(',') + 1);
+  const dataUrl = canvas.toDataURL(mimeType, quality);
+  const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {

@@ -38,7 +38,7 @@ export function isPlatformDesktop(): boolean {
   return getPlatformKind() === 'desktop';
 }
 
-// True on a mobile host (iOS/Android via Capacitor or a native shell).
+// True on a mobile host (iOs/Android via Capacitor or a native shell).
 export function isPlatformMobile(): boolean {
   return getPlatformKind() === 'mobile';
 }

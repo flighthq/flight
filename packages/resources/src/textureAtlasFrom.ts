@@ -7,7 +7,7 @@ import {
   loadImageResourceFromArrayBuffer,
   loadImageResourceFromBase64,
   loadImageResourceFromBlob,
-  loadImageResourceFromURL,
+  loadImageResourceFromUrl,
 } from './imageResourceFrom';
 import { createTextureAtlas } from './textureAtlas';
 
@@ -39,6 +39,6 @@ export async function loadTextureAtlasFromBlob(blob: Blob): Promise<TextureAtlas
   return createTextureAtlasFromImageResource(await loadImageResourceFromBlob(blob));
 }
 
-export async function loadTextureAtlasFromURL(url: string, crossOrigin?: string): Promise<TextureAtlas> {
-  return createTextureAtlasFromImageResource(await loadImageResourceFromURL(url, crossOrigin));
+export async function loadTextureAtlasFromUrl(url: string, crossOrigin?: string): Promise<TextureAtlas> {
+  return createTextureAtlasFromImageResource(await loadImageResourceFromUrl(url, crossOrigin));
 }

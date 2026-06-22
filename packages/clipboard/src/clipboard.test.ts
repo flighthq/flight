@@ -7,13 +7,13 @@ import {
   hasClipboardImage,
   hasClipboardText,
   readClipboardBookmark,
-  readClipboardHTML,
+  readClipboardHtml,
   readClipboardImage,
   readClipboardRTF,
   readClipboardText,
   setClipboardBackend,
   writeClipboardBookmark,
-  writeClipboardHTML,
+  writeClipboardHtml,
   writeClipboardImage,
   writeClipboardRTF,
   writeClipboardText,
@@ -39,10 +39,10 @@ function fakeBackend(): ClipboardBackend & {
       this.text = text;
       return true;
     },
-    async readHTML() {
+    async readHtml() {
       return this.html;
     },
-    async writeHTML(html) {
+    async writeHtml(html) {
       this.html = html;
       return true;
     },
@@ -52,8 +52,8 @@ function fakeBackend(): ClipboardBackend & {
     async readImage() {
       return this.image;
     },
-    async writeImage(dataURL) {
-      this.image = dataURL;
+    async writeImage(dataUrl) {
+      this.image = dataUrl;
       return true;
     },
     async hasImage() {
@@ -100,7 +100,7 @@ describe('createWebClipboardBackend', () => {
   it('returns a backend whose reads yield strings without throwing', async () => {
     const backend = createWebClipboardBackend();
     expect(typeof (await backend.readText())).toBe('string');
-    expect(typeof (await backend.readHTML())).toBe('string');
+    expect(typeof (await backend.readHtml())).toBe('string');
   });
 });
 
@@ -152,11 +152,11 @@ describe('readClipboardBookmark', () => {
   });
 });
 
-describe('readClipboardHTML', () => {
+describe('readClipboardHtml', () => {
   it('round-trips through the backend', async () => {
     setClipboardBackend(fakeBackend());
-    await writeClipboardHTML('<b>x</b>');
-    expect(await readClipboardHTML()).toBe('<b>x</b>');
+    await writeClipboardHtml('<b>x</b>');
+    expect(await readClipboardHtml()).toBe('<b>x</b>');
   });
 });
 
@@ -213,11 +213,11 @@ describe('writeClipboardBookmark', () => {
   });
 });
 
-describe('writeClipboardHTML', () => {
+describe('writeClipboardHtml', () => {
   it('writes via the active backend', async () => {
     const backend = fakeBackend();
     setClipboardBackend(backend);
-    expect(await writeClipboardHTML('<i>y</i>')).toBe(true);
+    expect(await writeClipboardHtml('<i>y</i>')).toBe(true);
     expect(backend.html).toBe('<i>y</i>');
   });
 });

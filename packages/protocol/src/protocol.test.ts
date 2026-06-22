@@ -54,12 +54,12 @@ function fakeBackend(): ProtocolBackend & {
 afterEach(() => setProtocolBackend(null));
 
 describe('attachProtocolHandler', () => {
-  it('emits onOpenURL when the backend delivers a deep link', () => {
+  it('emits onOpenUrl when the backend delivers a deep link', () => {
     const backend = fakeBackend();
     setProtocolBackend(backend);
     const handler = createProtocolHandler();
     let opened = '';
-    connectSignal(handler.onOpenURL, (url) => (opened = url));
+    connectSignal(handler.onOpenUrl, (url) => (opened = url));
     attachProtocolHandler(handler);
     backend.fire('myapp://open/123');
     expect(opened).toBe('myapp://open/123');
@@ -69,7 +69,7 @@ describe('attachProtocolHandler', () => {
 describe('createProtocolHandler', () => {
   it('creates an entity with the open-URL signal', () => {
     const handler = createProtocolHandler();
-    expect(handler.onOpenURL).toBeDefined();
+    expect(handler.onOpenUrl).toBeDefined();
   });
 });
 
@@ -88,7 +88,7 @@ describe('detachProtocolHandler', () => {
     setProtocolBackend(backend);
     const handler = createProtocolHandler();
     let opened = 0;
-    connectSignal(handler.onOpenURL, () => opened++);
+    connectSignal(handler.onOpenUrl, () => opened++);
     attachProtocolHandler(handler);
     detachProtocolHandler(handler);
     backend.fire('myapp://x');

@@ -6,7 +6,7 @@ import {
   loadTilesetFromArrayBuffer,
   loadTilesetFromBase64,
   loadTilesetFromBlob,
-  loadTilesetFromURL,
+  loadTilesetFromUrl,
 } from './tilesetFrom';
 
 function makeAtlas(width: number, height: number) {
@@ -111,9 +111,9 @@ describe('loadTilesetFromBlob', () => {
   });
 });
 
-describe('loadTilesetFromURL', () => {
+describe('loadTilesetFromUrl', () => {
   it('resolves to a Tileset with the correct tile dimensions', async () => {
-    const tileset = await loadTilesetFromURL('data:image/png;base64,abc', 32, 32);
+    const tileset = await loadTilesetFromUrl('data:image/png;base64,abc', 32, 32);
     expect(tileset.tileWidth).toBe(32);
     expect(tileset.tileHeight).toBe(32);
     expect(tileset.atlas?.image?.source).toBeInstanceOf(HTMLImageElement);
