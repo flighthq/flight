@@ -1,34 +1,34 @@
 import { computeBloomBlurRadius } from '@flighthq/effects';
-import type { WebGPUDualSourcePipeline } from '@flighthq/filters-webgpu';
+import type { WgpuDualSourcePipeline } from '@flighthq/filters-wgpu';
 import {
-  applyGaussianBlurFilterToWebGPU,
-  createWebGPUDualSourcePipeline,
-  drawWebGPUDualSourcePass,
-  drawWebGPUFilterPass,
-} from '@flighthq/filters-webgpu';
-import { acquireWebGPURenderTarget, releaseWebGPURenderTarget } from '@flighthq/render-webgpu';
+  applyGaussianBlurFilterToWgpu,
+  createWgpuDualSourcePipeline,
+  drawWgpuDualSourcePass,
+  drawWgpuFilterPass,
+} from '@flighthq/filters-wgpu';
+import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu';
 import type {
   BloomEffect,
   ExposureEffect,
   ToneMapEffect,
-  WebGPURenderEffectRunner,
-  WebGPURenderState,
-  WebGPURenderTarget,
-  WebGPURenderTargetPool,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuRenderTarget,
+  WgpuRenderTargetPool,
 } from '@flighthq/types';
 
-import { getWebGPUEffectPipeline } from './effectProgramCache';
+import { getWgpuEffectPipeline } from './effectProgramCache';
 
 // Bloom: bright-pass → blur the bright branch (reusing the Tier-1 gaussian blur filter) → additively
 // composite back. The multi-pass reference recipe — it acquires intermediate targets from the pool and
 // releases them, branches, and reuses a filter, which is what makes it an effect and not a filter.
-// The WebGPU mirror of effects-webgl's applyBloomEffectToWebGL; identical parameters come from the
+// The Wgpu mirror of effects-gl's applyBloomEffectToGl; identical parameters come from the
 // shared computeBloomBlurRadius.
-export function applyBloomEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
-  pool: WebGPURenderTargetPool,
+export function applyBloomEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
+  pool: WgpuRenderTargetPool,
   effect: Readonly<BloomEffect>,
 ): void {
   const threshold = effect.threshold ?? 0.8;
@@ -36,87 +36,87 @@ export function applyBloomEffectToWebGPU(
   const radius = computeBloomBlurRadius(effect);
   const descriptor = { width: source.width, height: source.height, format: source.format };
 
-  const bright = acquireWebGPURenderTarget(state, pool, descriptor);
-  const blurred = acquireWebGPURenderTarget(state, pool, descriptor);
-  const temp = acquireWebGPURenderTarget(state, pool, descriptor);
+  const bright = acquireWgpuRenderTarget(state, pool, descriptor);
+  const blurred = acquireWgpuRenderTarget(state, pool, descriptor);
+  const temp = acquireWgpuRenderTarget(state, pool, descriptor);
 
-  const brightPipeline = getWebGPUEffectPipeline(state, 'bloom.bright', BLOOM_BRIGHT_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, bright, brightPipeline, (f32) => {
+  const brightPipeline = getWgpuEffectPipeline(state, 'bloom.bright', BLOOM_BRIGHT_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, bright, brightPipeline, (f32) => {
     f32[0] = threshold;
   });
 
-  applyGaussianBlurFilterToWebGPU(state, bright, blurred, temp, { blurX: radius, blurY: radius });
+  applyGaussianBlurFilterToWgpu(state, bright, blurred, temp, { blurX: radius, blurY: radius });
 
   const compositePipeline = getBloomCompositePipeline(state);
-  drawWebGPUDualSourcePass(
+  drawWgpuDualSourcePass(
     state,
-    source as WebGPURenderTarget,
+    source as WgpuRenderTarget,
     blurred,
-    dest as WebGPURenderTarget,
+    dest as WgpuRenderTarget,
     compositePipeline,
     (f32) => {
       f32[0] = intensity;
     },
   );
 
-  releaseWebGPURenderTarget(pool, bright);
-  releaseWebGPURenderTarget(pool, blurred);
-  releaseWebGPURenderTarget(pool, temp);
+  releaseWgpuRenderTarget(pool, bright);
+  releaseWgpuRenderTarget(pool, blurred);
+  releaseWgpuRenderTarget(pool, temp);
 }
 
-// Exposure: scale linear color by 2^stops. Single-pass reference recipe, the WebGPU mirror of
-// effects-webgl's applyExposureEffectToWebGL. The stops are converted to a linear multiplier in JS.
-export function applyExposureEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+// Exposure: scale linear color by 2^stops. Single-pass reference recipe, the Wgpu mirror of
+// effects-gl's applyExposureEffectToGl. The stops are converted to a linear multiplier in JS.
+export function applyExposureEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<ExposureEffect>,
 ): void {
   const exposure = effect.exposure ?? 0;
   const multiplier = Math.pow(2, exposure);
-  const pipeline = getWebGPUEffectPipeline(state, 'exposure', EXPOSURE_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'exposure', EXPOSURE_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = multiplier;
   });
 }
 
 // Tone map: compress HDR to displayable range via the selected operator. Single-pass reference recipe,
-// the WebGPU mirror of effects-webgl's applyToneMapEffectToWebGL. The operator selects a tonemap body
+// the Wgpu mirror of effects-gl's applyToneMapEffectToGl. The operator selects a tonemap body
 // that is compiled into the fragment once per state, keyed by operator name.
-export function applyToneMapEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyToneMapEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<ToneMapEffect>,
 ): void {
   const operator = effect.operator ?? 'aces';
   const exposure = effect.exposure ?? 1;
   const white = effect.white ?? 1;
-  const pipeline = getWebGPUEffectPipeline(state, `toneMap.${operator}`, buildToneMapFragment(operator), 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, `toneMap.${operator}`, buildToneMapFragment(operator), 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = exposure;
     f32[1] = white;
   });
 }
 
-export const defaultWebGPUBloomEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyBloomEffectToWebGPU(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as BloomEffect);
+export const defaultWgpuBloomEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyBloomEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as BloomEffect);
 };
 
-export const defaultWebGPUExposureEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyExposureEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as ExposureEffect);
+export const defaultWgpuExposureEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyExposureEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ExposureEffect);
 };
 
-export const defaultWebGPUToneMapEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyToneMapEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as ToneMapEffect);
+export const defaultWgpuToneMapEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyToneMapEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ToneMapEffect);
 };
 
 // The composite pipeline reads two textures (scene = group 1, blurred = group 2) so it uses the
 // dual-source filter primitive; cached per state alongside the single-source pipelines.
-function getBloomCompositePipeline(state: WebGPURenderState): WebGPUDualSourcePipeline {
+function getBloomCompositePipeline(state: WgpuRenderState): WgpuDualSourcePipeline {
   let pipeline = _compositePipelines.get(state);
   if (pipeline === undefined) {
-    pipeline = createWebGPUDualSourcePipeline(state, BLOOM_COMPOSITE_FRAGMENT_WGSL, 'replace');
+    pipeline = createWgpuDualSourcePipeline(state, BLOOM_COMPOSITE_FRAGMENT_WGSL, 'replace');
     _compositePipelines.set(state, pipeline);
   }
   return pipeline;
@@ -126,7 +126,7 @@ function buildToneMapFragment(operator: string): string {
   return TONEMAP_FRAGMENT_HEAD + (TONEMAP_OPERATORS[operator] ?? TONEMAP_OPERATORS.aces) + TONEMAP_FRAGMENT_TAIL;
 }
 
-const _compositePipelines = new WeakMap<WebGPURenderState, WebGPUDualSourcePipeline>();
+const _compositePipelines = new WeakMap<WgpuRenderState, WgpuDualSourcePipeline>();
 
 const BLOOM_BRIGHT_FRAGMENT_WGSL = /* wgsl */ `
 struct Uniforms { u_threshold : f32, _pad0 : f32, _pad1 : f32, _pad2 : f32, }

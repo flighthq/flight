@@ -1,34 +1,34 @@
-import { drawWebGPUFilterPass } from '@flighthq/filters-webgpu';
+import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type {
-  FXAAEffect,
-  SMAAEffect,
-  TAAEffect,
-  WebGPURenderEffectRunner,
-  WebGPURenderState,
-  WebGPURenderTarget,
+  FxaaEffect,
+  SmaaEffect,
+  TaaEffect,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuRenderTarget,
 } from '@flighthq/types';
 
-import { getWebGPUEffectPipeline } from './effectProgramCache';
+import { getWgpuEffectPipeline } from './effectProgramCache';
 
-// Anti-aliasing recipes, the WebGPU mirror of effects-webgl's antialiasingEffects. FXAA is a full
+// Anti-aliasing recipes, the Wgpu mirror of effects-gl's antialiasingEffects. FXAA is a full
 // luminance-based single-pass implementation; SMAA is a single-pass edge-aware approximation; TAA is a
 // passthrough placeholder. Each samples `tex` and, where it reads neighbors, takes the source
 // dimensions in `u_resolution` to size the texel step (textureDimensions would also work, but passing
-// the resolution keeps the texel math explicit and matches the WebGL recipe).
+// the resolution keeps the texel math explicit and matches the Gl recipe).
 
 // FXAA: luminance edge detection + directional blend along the detected edge. Single-pass reference
 // recipe. Reads `tex`; u_resolution gives the texel size; u_edgeThreshold gates edge detection.
-export function applyFXAAEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
-  effect: Readonly<FXAAEffect>,
+export function applyFxaaEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
+  effect: Readonly<FxaaEffect>,
 ): void {
   const edgeThreshold = effect.edgeThreshold ?? 0.0312;
   const width = source.width;
   const height = source.height;
-  const pipeline = getWebGPUEffectPipeline(state, 'antialiasing.fxaa', FXAA_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'antialiasing.fxaa', FXAA_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = width;
     f32[1] = height;
     f32[2] = edgeThreshold;
@@ -38,17 +38,17 @@ export function applyFXAAEffectToWebGPU(
 // SMAA: a single-pass edge-aware blur approximation. Full SMAA needs separate edge-detection and
 // blend-weight passes against precomputed area/search lookup textures; this single-pass approximation
 // softens detected edges only and is acceptable until the multi-pass recipe lands.
-export function applySMAAEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
-  effect: Readonly<SMAAEffect>,
+export function applySmaaEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
+  effect: Readonly<SmaaEffect>,
 ): void {
   const threshold = effect.threshold ?? 0.1;
   const width = source.width;
   const height = source.height;
-  const pipeline = getWebGPUEffectPipeline(state, 'antialiasing.smaa', SMAA_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'antialiasing.smaa', SMAA_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = width;
     f32[1] = height;
     f32[2] = threshold;
@@ -58,26 +58,26 @@ export function applySMAAEffectToWebGPU(
 // TAA: passthrough copy of source → dest. Real temporal AA needs a history buffer + motion vectors to
 // reproject and accumulate prior frames; neither is available in the single-frame effect context, so
 // this is a placeholder that preserves the pipeline stage without altering the image.
-export function applyTAAEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
-  _effect: Readonly<TAAEffect>,
+export function applyTaaEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
+  _effect: Readonly<TaaEffect>,
 ): void {
-  const pipeline = getWebGPUEffectPipeline(state, 'antialiasing.taa', TAA_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, _noopSetUniforms);
+  const pipeline = getWgpuEffectPipeline(state, 'antialiasing.taa', TAA_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, _noopSetUniforms);
 }
 
-export const defaultWebGPUFXAAEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyFXAAEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as FXAAEffect);
+export const defaultWgpuFxaaEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyFxaaEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as FxaaEffect);
 };
 
-export const defaultWebGPUSMAAEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applySMAAEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as SMAAEffect);
+export const defaultWgpuSmaaEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applySmaaEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as SmaaEffect);
 };
 
-export const defaultWebGPUTAAEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyTAAEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as TAAEffect);
+export const defaultWgpuTaaEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyTaaEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as TaaEffect);
 };
 
 function _noopSetUniforms(): void {}

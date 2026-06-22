@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/effects-webgpu",
+  "name": "@flighthq/effects-wgpu",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -29,9 +29,9 @@
   "dependencies": {
     "@flighthq/effects": "*",
     "@flighthq/filters": "*",
-    "@flighthq/filters-webgpu": "*",
+    "@flighthq/filters-wgpu": "*",
     "@flighthq/geometry": "*",
-    "@flighthq/render-webgpu": "*",
+    "@flighthq/render-wgpu": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

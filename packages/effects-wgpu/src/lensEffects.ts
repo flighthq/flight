@@ -1,4 +1,4 @@
-import { drawWebGPUFilterPass } from '@flighthq/filters-webgpu';
+import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type {
   BokehDepthOfFieldEffect,
   ChromaticAberrationEffect,
@@ -8,37 +8,37 @@ import type {
   LensFlareEffect,
   TiltShiftEffect,
   VignetteEffect,
-  WebGPURenderEffectRunner,
-  WebGPURenderState,
-  WebGPURenderTarget,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuRenderTarget,
 } from '@flighthq/types';
 
-import { getWebGPUEffectPipeline } from './effectProgramCache';
+import { getWgpuEffectPipeline } from './effectProgramCache';
 
-// Lens-camera effect recipes — the WebGPU mirrors of effects-webgl's lensEffects, ported to WGSL. Each
-// is a single-pass fragment shader keyed and compiled once per state via getWebGPUEffectPipeline, then
-// drawn with drawWebGPUFilterPass. Shaders work in centered coordinates (uv - 0.5) so radial math
+// Lens-camera effect recipes — the Wgpu mirrors of effects-gl's lensEffects, ported to WGSL. Each
+// is a single-pass fragment shader keyed and compiled once per state via getWgpuEffectPipeline, then
+// drawn with drawWgpuFilterPass. Shaders work in centered coordinates (uv - 0.5) so radial math
 // measures distance from the optical center; packed RGBA color ints are unpacked to normalized
 // components in JS before upload. Each Uniforms struct is std140-aligned, so vec-aligned fields land on
 // 16-byte boundaries and the setUniforms callback skips padding slots accordingly.
 
 // Bokeh depth-of-field: a disc-shaped blur. The real DoF computes a per-pixel circle of confusion from a
-// sampleable depth texture (focusDistance/focusRange) and scales the disc radius by it — but WebGPU does
+// sampleable depth texture (focusDistance/focusRange) and scales the disc radius by it — but Wgpu does
 // not produce a scene depth texture yet (ctx.sceneDepthTexture is null), so there is no second source to
 // bind here. This recipe always falls back to a uniform disc blur of radius maxBlur. When the depth seam
 // lands it can take a depth source as group 2 and recover the true circle of confusion, matching
-// effects-webgl's applyBokehDepthOfFieldEffectToWebGL.
-export function applyBokehDepthOfFieldEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+// effects-gl's applyBokehDepthOfFieldEffectToGl.
+export function applyBokehDepthOfFieldEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<BokehDepthOfFieldEffect>,
 ): void {
   const maxBlur = effect.maxBlur ?? 4;
   const width = source.width;
   const height = source.height;
-  const pipeline = getWebGPUEffectPipeline(state, 'lens.bokehDoF', BOKEH_DOF_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'lens.bokehDoF', BOKEH_DOF_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = maxBlur;
     f32[2] = width;
     f32[3] = height;
@@ -48,38 +48,38 @@ export function applyBokehDepthOfFieldEffectToWebGPU(
 // Chromatic aberration: sample the R/G/B channels at progressively larger offsets so colors fringe
 // apart. When radial, the offset scales with distance from the optical center (true lens behavior);
 // otherwise it is a uniform horizontal split.
-export function applyChromaticAberrationEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyChromaticAberrationEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<ChromaticAberrationEffect>,
 ): void {
   const intensity = effect.intensity ?? 0.005;
   const radial = effect.radial ?? true;
-  const pipeline = getWebGPUEffectPipeline(
+  const pipeline = getWgpuEffectPipeline(
     state,
     'lens.chromaticAberration',
     CHROMATIC_ABERRATION_FRAGMENT_WGSL,
     'replace',
   );
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = radial ? 1 : 0;
   });
 }
 
 // Displacement / heat-haze: warp the sample uv by an animated sine field for a refractive wobble.
-export function applyDisplacementEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyDisplacementEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<DisplacementEffect>,
 ): void {
   const intensity = effect.intensity ?? 8;
   const frequency = effect.frequency ?? 12;
   const seed = effect.seed ?? 0;
-  const pipeline = getWebGPUEffectPipeline(state, 'lens.displacement', DISPLACEMENT_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'lens.displacement', DISPLACEMENT_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = frequency;
     f32[2] = seed;
@@ -90,17 +90,17 @@ export function applyDisplacementEffectToWebGPU(
 }
 
 // Lens dirt: procedural soft smudges that brighten where the scene is bright — a cheap bloom-dirt overlay.
-export function applyLensDirtEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyLensDirtEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<LensDirtEffect>,
 ): void {
   const intensity = effect.intensity ?? 1;
   const threshold = effect.threshold ?? 0.55;
   const seed = effect.seed ?? 0;
-  const pipeline = getWebGPUEffectPipeline(state, 'lens.lensDirt', LENS_DIRT_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'lens.lensDirt', LENS_DIRT_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = threshold;
     f32[2] = seed;
@@ -109,16 +109,16 @@ export function applyLensDirtEffectToWebGPU(
 
 // Lens distortion: remap uv by a radial polynomial. Positive amount bulges outward (barrel), negative
 // pinches inward (pincushion); scale re-frames the result so corners stay in view.
-export function applyLensDistortionEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyLensDistortionEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<LensDistortionEffect>,
 ): void {
   const amount = effect.amount ?? 0.2;
   const scale = effect.scale ?? 1;
-  const pipeline = getWebGPUEffectPipeline(state, 'lens.lensDistortion', LENS_DISTORTION_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'lens.lensDistortion', LENS_DISTORTION_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = amount;
     f32[1] = scale;
   });
@@ -129,18 +129,18 @@ export function applyLensDistortionEffectToWebGPU(
 // bright spots along the vector from the pixel toward the center, adding `ghosts` evenly spaced ghost
 // samples plus a halo ring, scaled by threshold/intensity. It previews the look without the bright-pass
 // buffer.
-export function applyLensFlareEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyLensFlareEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<LensFlareEffect>,
 ): void {
   const threshold = effect.threshold ?? 0.8;
   const intensity = effect.intensity ?? 1;
   const ghosts = effect.ghosts ?? 4;
   const halo = effect.halo ?? 0.5;
-  const pipeline = getWebGPUEffectPipeline(state, 'lens.lensFlare', LENS_FLARE_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'lens.lensFlare', LENS_FLARE_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = threshold;
     f32[1] = intensity;
     f32[2] = ghosts;
@@ -151,17 +151,17 @@ export function applyLensFlareEffectToWebGPU(
 // Tilt-shift: keep a horizontal focus band sharp and blur above and below it. The band is centered at
 // `center` on Y with height `width`; blur strength ramps with distance outside the band. Blur is
 // approximated by averaging a few neighbor taps using the pixel size from the resolution uniform.
-export function applyTiltShiftEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyTiltShiftEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<TiltShiftEffect>,
 ): void {
   const center = effect.center ?? 0.5;
   const width = effect.width ?? 0.3;
   const blur = effect.blur ?? 4;
-  const pipeline = getWebGPUEffectPipeline(state, 'lens.tiltShift', TILT_SHIFT_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'lens.tiltShift', TILT_SHIFT_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = center;
     f32[1] = width;
     f32[2] = blur;
@@ -172,13 +172,13 @@ export function applyTiltShiftEffectToWebGPU(
 
 // Vignette: darken toward the edges. Pixels inside `radius` stay full bright; beyond it, brightness
 // falls off over `softness` and the color is blended toward the (unpacked) vignette color by intensity.
-// Single-pass reference recipe, the WebGPU mirror of effects-webgl's applyVignetteEffectToWebGL. The
+// Single-pass reference recipe, the Wgpu mirror of effects-gl's applyVignetteEffectToGl. The
 // fragment works in centered coordinates (uv - 0.5) so radial math measures distance from the center;
 // the packed RGBA color int is unpacked to normalized components in JS before upload.
-export function applyVignetteEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyVignetteEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<VignetteEffect>,
 ): void {
   const intensity = effect.intensity ?? 1;
@@ -189,8 +189,8 @@ export function applyVignetteEffectToWebGPU(
   const g = ((color >>> 16) & 0xff) / 255;
   const b = ((color >>> 8) & 0xff) / 255;
   const a = (color & 0xff) / 255;
-  const pipeline = getWebGPUEffectPipeline(state, 'lens.vignette', VIGNETTE_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'lens.vignette', VIGNETTE_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = radius;
     f32[2] = softness;
@@ -201,36 +201,36 @@ export function applyVignetteEffectToWebGPU(
   });
 }
 
-export const defaultWebGPUBokehDepthOfFieldEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyBokehDepthOfFieldEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as BokehDepthOfFieldEffect);
+export const defaultWgpuBokehDepthOfFieldEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyBokehDepthOfFieldEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as BokehDepthOfFieldEffect);
 };
 
-export const defaultWebGPUChromaticAberrationEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyChromaticAberrationEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as ChromaticAberrationEffect);
+export const defaultWgpuChromaticAberrationEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyChromaticAberrationEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ChromaticAberrationEffect);
 };
 
-export const defaultWebGPUDisplacementEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyDisplacementEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as DisplacementEffect);
+export const defaultWgpuDisplacementEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyDisplacementEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as DisplacementEffect);
 };
 
-export const defaultWebGPULensDirtEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyLensDirtEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as LensDirtEffect);
+export const defaultWgpuLensDirtEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyLensDirtEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as LensDirtEffect);
 };
 
-export const defaultWebGPULensDistortionEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyLensDistortionEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as LensDistortionEffect);
+export const defaultWgpuLensDistortionEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyLensDistortionEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as LensDistortionEffect);
 };
 
-export const defaultWebGPULensFlareEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyLensFlareEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as LensFlareEffect);
+export const defaultWgpuLensFlareEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyLensFlareEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as LensFlareEffect);
 };
 
-export const defaultWebGPUTiltShiftEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyTiltShiftEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as TiltShiftEffect);
+export const defaultWgpuTiltShiftEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyTiltShiftEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as TiltShiftEffect);
 };
 
-export const defaultWebGPUVignetteEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyVignetteEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as VignetteEffect);
+export const defaultWgpuVignetteEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyVignetteEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as VignetteEffect);
 };
 
 // Slot layout: [0]=maxBlur, [1]=pad, [2..3]=resolution (vec2 aligned to 8 bytes). With no depth source

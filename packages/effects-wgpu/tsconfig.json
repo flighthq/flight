@@ -11,9 +11,9 @@
   "references": [
     { "path": "../effects" },
     { "path": "../filters" },
-    { "path": "../filters-webgpu" },
+    { "path": "../filters-wgpu" },
     { "path": "../geometry" },
-    { "path": "../render-webgpu" },
+    { "path": "../render-wgpu" },
     { "path": "../types" }
   ],
   "include": ["src"]
