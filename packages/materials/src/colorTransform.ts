@@ -89,13 +89,13 @@ export function equalsColorTransformOffsets(
   );
 }
 
-export function getColorTransformOffsetRGB(source: Readonly<ColorTransformLike>): number {
+export function getColorTransformOffsetRgb(source: Readonly<ColorTransformLike>): number {
   return (
     (Math.fround(source.redOffset) << 16) | (Math.fround(source.greenOffset) << 8) | Math.fround(source.blueOffset)
   );
 }
 
-export function getColorTransformOffsetRGBA(source: Readonly<ColorTransformLike>): number {
+export function getColorTransformOffsetRgba(source: Readonly<ColorTransformLike>): number {
   return (
     (Math.fround(source.redOffset) << 24) |
     (Math.fround(source.greenOffset) << 16) |
@@ -150,7 +150,7 @@ export function setColorTransformIdentity(out: ColorTransform): void {
   setColorTransform(out, 1, 1, 1, 1, 0, 0, 0, 0);
 }
 
-export function setColorTransformOffsetRGB(out: ColorTransformLike, value: number): void {
+export function setColorTransformOffsetRgb(out: ColorTransformLike, value: number): void {
   out.redOffset = (value >> 16) & 0xff;
   out.greenOffset = (value >> 8) & 0xff;
   out.blueOffset = value & 0xff;
@@ -161,7 +161,7 @@ export function setColorTransformOffsetRGB(out: ColorTransformLike, value: numbe
   out.alphaMultiplier = 1;
 }
 
-export function setColorTransformOffsetRGBA(out: ColorTransformLike, value: number): void {
+export function setColorTransformOffsetRgba(out: ColorTransformLike, value: number): void {
   out.redOffset = (value >> 24) & 0xff;
   out.greenOffset = (value >> 16) & 0xff;
   out.blueOffset = (value >> 8) & 0xff;
