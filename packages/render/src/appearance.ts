@@ -4,13 +4,13 @@ import type { HasAppearance, Node, RenderProxy, RenderState } from '@flighthq/ty
 import { getRenderStateRuntime } from './renderState';
 
 export function updateRenderProxyAppearance(state: RenderState, data: RenderProxy, parentData?: RenderProxy): boolean {
-  const appearanceID = getNodeAppearanceRevision(data.source as Node);
+  const appearanceId = getNodeAppearanceRevision(data.source as Node);
   if (
-    (parentData !== undefined && parentData.appearanceFrameID === getRenderStateRuntime(state).currentFrameID) ||
-    data.lastAppearanceID !== appearanceID
+    (parentData !== undefined && parentData.appearanceFrameId === getRenderStateRuntime(state).currentFrameId) ||
+    data.lastAppearanceId !== appearanceId
   ) {
     recalculateAppearance(state, data, parentData);
-    data.lastAppearanceID = appearanceID;
+    data.lastAppearanceId = appearanceId;
     return true;
   }
   return false;
@@ -31,5 +31,5 @@ function recalculateAppearance(state: RenderState, data: RenderProxy, parentData
     if (data.alpha <= 0) return;
     data.blendMode = state.renderBlendMode !== null ? state.renderBlendMode : source.blendMode;
   }
-  data.appearanceFrameID = getRenderStateRuntime(state).currentFrameID;
+  data.appearanceFrameId = getRenderStateRuntime(state).currentFrameId;
 }

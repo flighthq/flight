@@ -13,7 +13,7 @@ describe('createRenderState', () => {
   it('initializes default values', () => {
     expect(state.allowSmoothing).toStrictEqual(true);
     expect(state.backgroundColor).toStrictEqual(0);
-    expect(state.backgroundColorRGBA).toStrictEqual([]);
+    expect(state.backgroundColorRgba).toStrictEqual([]);
     expect(state.backgroundColorString).toStrictEqual('');
     expect(state.currentClipDepth).toStrictEqual(0);
     expect(state.pixelRatio).toStrictEqual(1);
@@ -26,11 +26,11 @@ describe('createRenderState', () => {
 
   it('attaches a render state runtime with the machinery fields', () => {
     const runtime = getRenderStateRuntime(state);
-    expect(runtime.currentFrameID).toStrictEqual(0);
+    expect(runtime.currentFrameId).toStrictEqual(0);
     expect(runtime.renderProxyMap).toStrictEqual(new WeakMap());
     expect(runtime.renderProxyAdapterMap).toStrictEqual(new WeakMap());
     expect(runtime.rendererMap).toStrictEqual(new Map());
-    expect(runtime.rendererMapID).toStrictEqual(0);
+    expect(runtime.rendererMapId).toStrictEqual(0);
     expect(runtime.tempStack).toStrictEqual([]);
   });
 
@@ -38,7 +38,7 @@ describe('createRenderState', () => {
     const base = {
       allowSmoothing: false,
       backgroundColor: 0xff,
-      backgroundColorRGBA: [1, 0, 0, 0],
+      backgroundColorRgba: [1, 0, 0, 0],
       backgroundColorString: '#FF000000',
       pixelRatio: 5,
       renderAlpha: 0.5,
@@ -49,7 +49,7 @@ describe('createRenderState', () => {
     const obj = createRenderState(base);
     expect(obj.allowSmoothing).toStrictEqual(base.allowSmoothing);
     expect(obj.backgroundColor).toStrictEqual(base.backgroundColor);
-    expect(obj.backgroundColorRGBA).toStrictEqual(base.backgroundColorRGBA);
+    expect(obj.backgroundColorRgba).toStrictEqual(base.backgroundColorRgba);
     expect(obj.backgroundColorString).toStrictEqual(base.backgroundColorString);
     expect(obj.pixelRatio).toStrictEqual(base.pixelRatio);
     expect(obj.renderAlpha).toStrictEqual(base.renderAlpha);
@@ -68,11 +68,11 @@ describe('createRenderState', () => {
 describe('createRenderStateRuntime', () => {
   it('initializes the machinery fields', () => {
     const runtime = createRenderStateRuntime();
-    expect(runtime.currentFrameID).toStrictEqual(0);
+    expect(runtime.currentFrameId).toStrictEqual(0);
     expect(runtime.renderProxyMap).toStrictEqual(new WeakMap());
     expect(runtime.renderProxyAdapterMap).toStrictEqual(new WeakMap());
     expect(runtime.rendererMap).toStrictEqual(new Map());
-    expect(runtime.rendererMapID).toStrictEqual(0);
+    expect(runtime.rendererMapId).toStrictEqual(0);
     expect(runtime.tempStack).toStrictEqual([]);
   });
 

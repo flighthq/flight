@@ -55,15 +55,15 @@ describe('copyRenderersFromRenderState', () => {
     expect(getRenderStateRuntime(target).rendererMap.size).toBe(0);
   });
 
-  it('does not affect source rendererMapID', () => {
+  it('does not affect source rendererMapId', () => {
     const source = createRenderState();
     const target = createRenderState();
     const kind = Symbol('kind');
     const renderer = { createData: vi.fn(), submit: vi.fn() } as unknown as Renderer;
     registerRenderer(source, kind, renderer);
-    const sourceIDBeforeCopy = getRenderStateRuntime(source).rendererMapID;
+    const sourceIdBeforeCopy = getRenderStateRuntime(source).rendererMapId;
     copyRenderersFromRenderState(target, source);
-    expect(getRenderStateRuntime(source).rendererMapID).toBe(sourceIDBeforeCopy);
+    expect(getRenderStateRuntime(source).rendererMapId).toBe(sourceIdBeforeCopy);
   });
 });
 
@@ -93,36 +93,36 @@ describe('registerRenderer', () => {
     expect(getRenderStateRuntime(state).rendererMap.has(kindA)).toBe(false);
     registerRenderer(state, kindA, renderer1);
     expect(getRenderStateRuntime(state).rendererMap.get(kindA)).toBe(renderer1);
-    expect(getRenderStateRuntime(state).rendererMapID).toBe(1);
+    expect(getRenderStateRuntime(state).rendererMapId).toBe(1);
   });
 
-  it('should increment rendererMapID for each new renderer', () => {
+  it('should increment rendererMapId for each new renderer', () => {
     registerRenderer(state, kindA, renderer1);
-    const idAfterFirst = getRenderStateRuntime(state).rendererMapID;
+    const idAfterFirst = getRenderStateRuntime(state).rendererMapId;
     registerRenderer(state, kindB, renderer2);
     expect(getRenderStateRuntime(state).rendererMap.get(kindB)).toBe(renderer2);
-    expect(getRenderStateRuntime(state).rendererMapID).toBe(idAfterFirst + 1);
+    expect(getRenderStateRuntime(state).rendererMapId).toBe(idAfterFirst + 1);
   });
 
-  it('should not increment rendererMapID if the same renderer is registered', () => {
+  it('should not increment rendererMapId if the same renderer is registered', () => {
     registerRenderer(state, kindA, renderer1);
-    const idBefore = getRenderStateRuntime(state).rendererMapID;
+    const idBefore = getRenderStateRuntime(state).rendererMapId;
     registerRenderer(state, kindA, renderer1);
     expect(getRenderStateRuntime(state).rendererMap.get(kindA)).toBe(renderer1);
-    expect(getRenderStateRuntime(state).rendererMapID).toBe(idBefore);
+    expect(getRenderStateRuntime(state).rendererMapId).toBe(idBefore);
   });
 
-  it('should update renderer and increment rendererMapID if different renderer is registered', () => {
+  it('should update renderer and increment rendererMapId if different renderer is registered', () => {
     registerRenderer(state, kindA, renderer1);
-    const idBefore = getRenderStateRuntime(state).rendererMapID;
+    const idBefore = getRenderStateRuntime(state).rendererMapId;
     registerRenderer(state, kindA, renderer2);
     expect(getRenderStateRuntime(state).rendererMap.get(kindA)).toBe(renderer2);
-    expect(getRenderStateRuntime(state).rendererMapID).toBe(idBefore + 1);
+    expect(getRenderStateRuntime(state).rendererMapId).toBe(idBefore + 1);
   });
 
-  it('should wrap around rendererMapID correctly using >>> 0', () => {
-    getRenderStateRuntime(state).rendererMapID = 0xffffffff;
+  it('should wrap around rendererMapId correctly using >>> 0', () => {
+    getRenderStateRuntime(state).rendererMapId = 0xffffffff;
     registerRenderer(state, kindA, renderer1);
-    expect(getRenderStateRuntime(state).rendererMapID).toBe(0);
+    expect(getRenderStateRuntime(state).rendererMapId).toBe(0);
   });
 });

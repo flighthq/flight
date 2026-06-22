@@ -45,19 +45,19 @@ export function createRenderProxy(state: RenderState, source: Renderable): Rende
     kind: source.kind,
     next: null,
     alpha: 1,
-    appearanceFrameID: -1,
+    appearanceFrameId: -1,
     blendMode: BlendMode.Normal,
     material: null,
     materialData: null,
-    lastAppearanceID: -1,
-    lastLocalContentID: -1,
-    lastLocalTransformID: -1,
+    lastAppearanceId: -1,
+    lastLocalContentId: -1,
+    lastLocalTransformId: -1,
     name: null,
     renderer: renderer,
     rendererData: renderer?.createData(state, source) ?? null,
     rendererDataSource: source,
-    rendererMapID: runtime.rendererMapID,
-    transformFrameID: -1,
+    rendererMapId: runtime.rendererMapId,
+    transformFrameId: -1,
     visible: true,
   });
 }
@@ -107,7 +107,7 @@ export function getOrCreateRenderProxy2D(state: RenderState, source: Renderable)
     node = createRenderProxy2D(state, source as Renderable & HasTransform2D & HasBoundsRectangle);
     renderProxyMap.set(source, node);
   }
-  if (node.rendererMapID !== runtime.rendererMapID) {
+  if (node.rendererMapId !== runtime.rendererMapId) {
     updateRenderProxyRenderer(state, node);
   }
   return node;
@@ -127,15 +127,15 @@ export function isRenderProxyDirty(
   data: RenderProxy,
   parentData?: RenderProxy,
 ): boolean {
-  const currentFrameID = getRenderStateRuntime(state).currentFrameID;
+  const currentFrameId = getRenderStateRuntime(state).currentFrameId;
   const parentDirty =
     parentData !== undefined &&
-    (parentData.transformFrameID === currentFrameID || parentData.appearanceFrameID === currentFrameID);
+    (parentData.transformFrameId === currentFrameId || parentData.appearanceFrameId === currentFrameId);
   const localDirty =
     state.sceneGraphSyncPolicy === 'refreshDerivedState' ||
-    data.lastLocalTransformID !== getNodeLocalTransformRevision(source as Node) ||
-    data.lastAppearanceID !== getNodeAppearanceRevision(source as Node) ||
-    data.lastLocalContentID !== getNodeLocalContentRevision(source as Node);
+    data.lastLocalTransformId !== getNodeLocalTransformRevision(source as Node) ||
+    data.lastAppearanceId !== getNodeAppearanceRevision(source as Node) ||
+    data.lastLocalContentId !== getNodeLocalContentRevision(source as Node);
   return parentDirty || localDirty;
 }
 
@@ -179,7 +179,7 @@ export function updateRenderProxy2D(
   updateRenderProxyMaterial(state, data, parentData);
   updateNodeClip(state, source, data, parentData);
   // Record the content revision we synced at, so a later content-only change re-dirties the node.
-  data.lastLocalContentID = getNodeLocalContentRevision(source as Node);
+  data.lastLocalContentId = getNodeLocalContentRevision(source as Node);
   _adaptHook?.(state, source, data);
 }
 
@@ -193,7 +193,7 @@ export function updateRenderProxyRenderer(state: RenderState, node: RenderProxy)
     node.rendererData = renderer?.createData(state, node.source) ?? null;
     node.rendererDataSource = node.source;
   }
-  node.rendererMapID = runtime.rendererMapID;
+  node.rendererMapId = runtime.rendererMapId;
 }
 
 // One generic, dirty-checked pre-order walk over the 2D node graph. `visit` composes the trait
@@ -202,7 +202,7 @@ export function updateRenderProxyRenderer(state: RenderState, node: RenderProxy)
 // trait update step in the visitor (updateNodeClip), realized at draw time by the backend clip hooks.
 export function walkNode(state: RenderState, root: Renderable, visit: RenderProxyVisitor): boolean {
   const runtime = getRenderStateRuntime(state);
-  ++runtime.currentFrameID;
+  ++runtime.currentFrameId;
 
   const tempStack = runtime.tempStack;
   let stackLength = 1;
