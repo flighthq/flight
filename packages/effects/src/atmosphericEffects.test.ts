@@ -1,8 +1,8 @@
 import {
   createGodRaysEffect,
   createScreenSpaceFogEffect,
-  createSSAOEffect,
-  createSSREffect,
+  createSsaoEffect,
+  createSsrEffect,
 } from './atmosphericEffects';
 
 describe('createGodRaysEffect', () => {
@@ -32,22 +32,22 @@ describe('createScreenSpaceFogEffect', () => {
   });
 });
 
-describe('createSSAOEffect', () => {
+describe('createSsaoEffect', () => {
   it('tags the intent type', () => {
-    expect(createSSAOEffect().type).toBe('ssao');
+    expect(createSsaoEffect().type).toBe('ssao');
   });
 
   it('carries options', () => {
-    expect(createSSAOEffect({ radius: 4, intensity: 1.5 })).toMatchObject({ radius: 4, intensity: 1.5 });
+    expect(createSsaoEffect({ radius: 4, intensity: 1.5 })).toMatchObject({ radius: 4, intensity: 1.5 });
   });
 });
 
-describe('createSSREffect', () => {
+describe('createSsrEffect', () => {
   it('tags the intent type', () => {
-    expect(createSSREffect().type).toBe('ssr');
+    expect(createSsrEffect().type).toBe('ssr');
   });
 
   it('carries options', () => {
-    expect(createSSREffect({ maxDistance: 10, steps: 32 })).toMatchObject({ maxDistance: 10, steps: 32 });
+    expect(createSsrEffect({ maxDistance: 10, steps: 32 })).toMatchObject({ maxDistance: 10, steps: 32 });
   });
 });

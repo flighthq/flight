@@ -1,7 +1,7 @@
 import type { BloomEffect, ExposureEffect, ToneMapEffect } from '@flighthq/types';
 
 // HDR / tone-mapping effect intents and shared recipe math. The math here is substrate-agnostic so
-// the WebGL and WebGPU bloom recipes derive identical parameters from the same intent.
+// the Gl and Wgpu bloom recipes derive identical parameters from the same intent.
 
 export function computeBloomBlurRadius(effect: Readonly<BloomEffect>): number {
   return Math.max(0, effect.radius ?? 8);
