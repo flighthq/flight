@@ -1,9 +1,13 @@
 // The shared Wgpu PBR prelude: the WGSL vertex + fragment uber-shader for the StandardPbr forward-lit
-// path — the WGSL mirror of scene-gl's glPbrPrelude. One module source is specialized per material at
-// compile time by prepending a const-flag block (see WgpuPbrDefineKey / buildWgpuPbrDefineSource):
-// WGSL has no preprocessor, so each feature flag is emitted as `const FLAG : bool = …;` and the shader
-// branches on it (the dead branch is folded away by the pipeline compiler). The maps-present /
-// double-sided / alpha-mask variants are flag branches of one module, never separate files.
+// path AND every PBR-extension variant — the WGSL mirror of scene-gl's glPbrPrelude. One module source
+// is specialized per material at compile time by prepending a const-flag block (see WgpuPbrDefineKey /
+// buildWgpuPbrDefineSource): WGSL has no preprocessor, so each feature flag is emitted as
+// `const FLAG : bool = …;` and the shader branches on it (the dead branch is folded away by the
+// pipeline compiler). The maps-present / double-sided / alpha-mask variants AND the extension lobes
+// (clearcoat, sheen, anisotropy, iridescence, specular, subsurface, transmission) are all const-flag
+// branches of one module, never separate files. An extension renderer sets exactly one extension flag
+// on top of the standard map flags drawn from `material.standard`, so the base StandardPbr path is
+// byte-for-byte unchanged when no extension flag is set.
 //
 // The lighting model is Cook-Torrance: GGX normal distribution, Smith height-correlated visibility,
 // and a Fresnel-Schlick approximation, evaluated over the interpolated world-space normal/tangent/uv
@@ -19,30 +23,54 @@
 // Bind groups (must match standardPbrWgpuMeshMaterialRenderer):
 //   group(0) Frame    : viewProjection, cameraPosition, directional + ambient light — uniform.
 //   group(1) Draw     : world + normalMatrix — uniform (dynamic offset per draw).
-//   group(2) Material : baseColor/emissive/factors/flags uniform + sampler + 5 optional maps.
+//   group(2) Material : the 48-float MaterialBlock (base + extension factors) uniform + sampler + 5
+//                       optional maps. Extension factors ride in the one MaterialBlock; the lobe that
+//                       reads them runs only when its const flag is set.
 
-// The feature flags that select an uber-shader variant. Each toggles a `const … : bool` in the
-// prelude and is hashed into the pipeline-cache key (buildWgpuPbrDefineKey), so distinct flag sets
-// compile and cache as distinct pipelines. `hasBaseColorMap` / `hasNormalMap` enable the textured
-// paths; `alphaMaskEnabled` enables the alpha-cutoff discard for 'mask' materials; `doubleSided`
-// flips the normal toward the viewer on back faces (paired with the pipeline's cull-none state).
+// The feature flags that select an uber-shader variant. Each toggles a `const … : bool` in the prelude
+// and is hashed into the pipeline-cache key (buildWgpuPbrDefineKey), so distinct flag sets compile and
+// cache as distinct pipelines. The `has*Map` flags enable the textured paths of the standard block;
+// `alphaMaskEnabled` enables the alpha-cutoff discard for 'mask' materials; `doubleSided` flips the
+// normal toward the viewer on back faces (paired with the pipeline's cull-none state). The extension
+// flags (`clearcoatEnabled` … `transmissionEnabled`) each enable one extension lobe; an extension
+// renderer sets exactly one. Maps inside an extension's own textures are not part of the key today —
+// extension maps are not sampled on wgpu yet and the lobe reads a uniform fallback.
 export interface WgpuPbrDefineKey {
   alphaMaskEnabled: boolean;
+  anisotropyEnabled: boolean;
+  clearcoatEnabled: boolean;
   doubleSided: boolean;
   hasBaseColorMap: boolean;
   hasNormalMap: boolean;
+  iridescenceEnabled: boolean;
+  sheenEnabled: boolean;
+  specularEnabled: boolean;
+  subsurfaceEnabled: boolean;
+  transmissionEnabled: boolean;
 }
 
 // A short, stable, order-independent string identity for a define key, used as the pipeline-cache map
 // key (combined with the color-attachment format). Two keys with the same flags produce the same
-// string and so share a compiled pipeline.
+// string and so share a compiled pipeline. Standard map/alpha/double-sided flags first, then one slot
+// per extension lobe past the `:` (mirroring scene-gl's `mbnroe:CSAIPUT` layout, trimmed to the two
+// standard map flags wgpu samples today).
 export function buildWgpuPbrDefineKey(key: Readonly<WgpuPbrDefineKey>): string {
-  return `${key.alphaMaskEnabled ? 'm' : '-'}${key.doubleSided ? 'd' : '-'}${key.hasBaseColorMap ? 'b' : '-'}${
-    key.hasNormalMap ? 'n' : '-'
-  }`;
+  return (
+    `${key.alphaMaskEnabled ? 'm' : '-'}` +
+    `${key.doubleSided ? 'd' : '-'}` +
+    `${key.hasBaseColorMap ? 'b' : '-'}` +
+    `${key.hasNormalMap ? 'n' : '-'}` +
+    `:${key.clearcoatEnabled ? 'C' : '-'}` +
+    `${key.sheenEnabled ? 'S' : '-'}` +
+    `${key.anisotropyEnabled ? 'A' : '-'}` +
+    `${key.iridescenceEnabled ? 'I' : '-'}` +
+    `${key.specularEnabled ? 'P' : '-'}` +
+    `${key.subsurfaceEnabled ? 'U' : '-'}` +
+    `${key.transmissionEnabled ? 'T' : '-'}`
+  );
 }
 
-// Builds the leading `const USE_… : bool = …;` block for a define key, prepended to the module body
+// Builds the leading `const FLAG : bool = …;` block for a define key, prepended to the module body
 // before compile. Pure string assembly; the same key always yields the same source, which is what
 // makes the pipeline cache by define key sound.
 export function buildWgpuPbrDefineSource(key: Readonly<WgpuPbrDefineKey>): string {
@@ -50,13 +78,20 @@ export function buildWgpuPbrDefineSource(key: Readonly<WgpuPbrDefineKey>): strin
     `const ALPHA_MASK : bool = ${key.alphaMaskEnabled ? 'true' : 'false'};\n` +
     `const DOUBLE_SIDED : bool = ${key.doubleSided ? 'true' : 'false'};\n` +
     `const HAS_BASE_COLOR_MAP : bool = ${key.hasBaseColorMap ? 'true' : 'false'};\n` +
-    `const HAS_NORMAL_MAP : bool = ${key.hasNormalMap ? 'true' : 'false'};\n`
+    `const HAS_NORMAL_MAP : bool = ${key.hasNormalMap ? 'true' : 'false'};\n` +
+    `const CLEARCOAT : bool = ${key.clearcoatEnabled ? 'true' : 'false'};\n` +
+    `const SHEEN : bool = ${key.sheenEnabled ? 'true' : 'false'};\n` +
+    `const ANISOTROPY : bool = ${key.anisotropyEnabled ? 'true' : 'false'};\n` +
+    `const IRIDESCENCE : bool = ${key.iridescenceEnabled ? 'true' : 'false'};\n` +
+    `const SPECULAR_EXT : bool = ${key.specularEnabled ? 'true' : 'false'};\n` +
+    `const SUBSURFACE : bool = ${key.subsurfaceEnabled ? 'true' : 'false'};\n` +
+    `const TRANSMISSION : bool = ${key.transmissionEnabled ? 'true' : 'false'};\n`
   );
 }
 
 // The static WGSL module body (everything after the const-flag block): bind-group structs, the
-// Cook-Torrance BRDF, and the vs_main/fs_main entry points. Toggled by the const flags emitted ahead
-// of it; the compiler folds the dead branch away.
+// Cook-Torrance BRDF + the extension-lobe helpers, and the vs_main/fs_main entry points. Toggled by
+// the const flags emitted ahead of it; the compiler folds the dead branch away.
 export function getWgpuPbrModuleBody(): string {
   return PBR_WGSL_BODY;
 }
@@ -83,11 +118,33 @@ struct Draw {
   normalMatrix : mat3x3f,
 };
 
+// The 48-float MaterialBlock: the base StandardPbr block (vec4 0..3) plus one vec4 slot per extension
+// lobe (matching the CPU packers in standardPbrWgpuMeshMaterialRenderer + the extension renderers).
+//   base0 : baseColor.rgba (linear)
+//   base1 : emissive.rgb * strength; w unused
+//   base2 : metallic, roughness, normalScale, occlusionStrength
+//   base3 : alphaCutoff, _, _, _
+//   clearcoat   : clearcoat, clearcoatRoughness, _, _
+//   sheen       : sheenColor.rgb, sheenRoughness
+//   anisotropy  : anisotropyStrength, anisotropyRotation, _, _
+//   iridescence : iridescence, iridescenceIor, iridescenceThickness (nm), _
+//   specular    : specular, specularColor.rgb
+//   subsurface  : subsurface, subsurfaceColor.rgb
+//   thickness   : thickness, _, _, _
+//   transmission: transmission, attenuationColor.rgb
 struct MaterialBlock {
-  baseColor : vec4f,   // linear rgba
-  emissive : vec4f,    // linear rgb * strength; a unused
-  factors : vec4f,     // metallic, roughness, normalScale, occlusionStrength
-  flags : vec4f,       // alphaCutoff, _, _, _
+  baseColor : vec4f,
+  emissive : vec4f,
+  factors : vec4f,
+  flags : vec4f,
+  clearcoat : vec4f,
+  sheen : vec4f,
+  anisotropy : vec4f,
+  iridescence : vec4f,
+  specular : vec4f,
+  subsurface : vec4f,
+  thickness : vec4f,
+  transmission : vec4f,
 };
 
 @group(0) @binding(0) var<uniform> frame : Frame;
@@ -150,6 +207,39 @@ fn fresnelSchlick(cosTheta : f32, f0 : vec3f) -> vec3f {
   return f0 + (vec3f(1.0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+// Anisotropic GGX distribution (Burley): an elliptical lobe along the tangent (at) vs bitangent (ab)
+// roughness axes. tDotH/bDotH are the half-vector projections onto the rotated tangent frame.
+fn distributionGgxAnisotropic(nDotH : f32, tDotH : f32, bDotH : f32, at : f32, ab : f32) -> f32 {
+  let d = tDotH * tDotH / (at * at) + bDotH * bDotH / (ab * ab) + nDotH * nDotH;
+  return 1.0 / max(PI * at * ab * d * d, 1e-7);
+}
+
+// Charlie ("inverted GGX") sheen distribution from Estevez & Kulla — a soft retroreflective lobe for
+// cloth. Approximated visibility keeps the lobe energy-plausible without a lookup table.
+fn distributionCharlie(nDotH : f32, roughness : f32) -> f32 {
+  let r = clamp(roughness, 0.07, 1.0);
+  let invR = 1.0 / r;
+  let cos2h = nDotH * nDotH;
+  let sin2h = max(1.0 - cos2h, 1e-4);
+  return (2.0 + invR) * pow(sin2h, invR * 0.5) / (2.0 * PI);
+}
+
+fn visibilitySheen(nDotV : f32, nDotL : f32) -> f32 {
+  return 1.0 / max(4.0 * (nDotL + nDotV - nDotL * nDotV), 1e-4);
+}
+
+// Thin-film interference: shift F0 toward a view-/thickness-dependent hue. A compact sinusoidal
+// approximation of the optical-path-difference phase per RGB band (sample-viewer style), enough to
+// produce a plausible soap-bubble rainbow without the full Airy summation.
+fn iridescentFresnel(cosTheta : f32, f0 : vec3f, thicknessNm : f32, filmIor : f32) -> vec3f {
+  let opd = 2.0 * filmIor * thicknessNm * cosTheta;
+  let bands = vec3f(580.0, 540.0, 460.0); // approximate R/G/B wavelengths (nm)
+  let phase = 2.0 * PI * opd / bands;
+  let shift = vec3f(0.5) + vec3f(0.5) * cos(phase);
+  let base = fresnelSchlick(cosTheta, f0);
+  return mix(base, shift, clamp(thicknessNm / 1000.0, 0.0, 1.0));
+}
+
 @fragment fn fs_main(in : VertexOutput, @builtin(front_facing) isFront : bool) -> @location(0) vec4f {
   var baseColor = material.baseColor;
   if (HAS_BASE_COLOR_MAP) {
@@ -167,10 +257,11 @@ fn fresnelSchlick(cosTheta : f32, f0 : vec3f) -> vec3f {
     geometricNormal = -geometricNormal;
   }
 
+  let tangent = normalize(in.worldTangent.xyz - geometricNormal * dot(in.worldTangent.xyz, geometricNormal));
+  let bitangent = cross(geometricNormal, tangent) * in.worldTangent.w;
+
   var normal = geometricNormal;
   if (HAS_NORMAL_MAP) {
-    let tangent = normalize(in.worldTangent.xyz);
-    let bitangent = cross(geometricNormal, tangent) * in.worldTangent.w;
     var tangentNormal = textureSample(normalTexture, materialSampler, in.uv).xyz * 2.0 - vec3f(1.0);
     tangentNormal = vec3f(tangentNormal.xy * material.factors.z, tangentNormal.z);
     let tbn = mat3x3f(tangent, bitangent, geometricNormal);
@@ -182,9 +273,33 @@ fn fresnelSchlick(cosTheta : f32, f0 : vec3f) -> vec3f {
 
   let roughness = clamp(material.factors.y, 0.04, 1.0);
   let metallic = clamp(material.factors.x, 0.0, 1.0);
+  let occlusion = clamp(material.factors.w, 0.0, 1.0);
+
   let albedo = baseColor.rgb;
-  let f0 = mix(vec3f(0.04), albedo, metallic);
+  var f0 = mix(vec3f(0.04), albedo, metallic);
+
+  if (SPECULAR_EXT) {
+    // KHR_materials_specular: scale and tint the dielectric F0 (metals keep their albedo F0).
+    let dielectricF0 = min(0.04 * material.specular.yzw, vec3f(1.0)) * material.specular.x;
+    f0 = mix(dielectricF0, albedo, metallic);
+  }
+
+  if (IRIDESCENCE) {
+    let irid = iridescentFresnel(nDotV, f0, material.iridescence.z, material.iridescence.y);
+    f0 = mix(f0, irid, material.iridescence.x);
+  }
+
   let diffuseColor = albedo * (1.0 - metallic);
+
+  // Anisotropy: rotate the tangent frame, then split roughness into along-/across-tangent axes
+  // (Burley). Higher strength stretches the highlight along the tangent direction.
+  let anisoStrength = clamp(material.anisotropy.x, 0.0, 1.0);
+  let cosR = cos(material.anisotropy.y);
+  let sinR = sin(material.anisotropy.y);
+  let anisoT = normalize(cosR * tangent + sinR * bitangent);
+  let anisoB = normalize(cross(normal, anisoT));
+  let at = max(roughness * roughness * (1.0 + anisoStrength), 1e-3);
+  let ab = max(roughness * roughness * (1.0 - anisoStrength), 1e-3);
 
   var radiance = vec3f(0.0);
 
@@ -196,23 +311,65 @@ fn fresnelSchlick(cosTheta : f32, f0 : vec3f) -> vec3f {
     let nDotH = max(dot(normal, halfVec), 0.0);
     let vDotH = max(dot(viewDir, halfVec), 0.0);
 
-    let d = distributionGgx(nDotH, roughness);
+    var d = distributionGgx(nDotH, roughness);
+    if (ANISOTROPY) {
+      let tDotH = dot(anisoT, halfVec);
+      let bDotH = dot(anisoB, halfVec);
+      d = distributionGgxAnisotropic(nDotH, tDotH, bDotH, at, ab);
+    }
     let vis = visibilitySmith(nDotV, nDotL, roughness);
     let fresnel = fresnelSchlick(vDotH, f0);
 
     let specular = d * vis * fresnel;
     let kd = (vec3f(1.0) - fresnel) * (1.0 - metallic);
     let brdf = kd * diffuseColor / PI + specular;
-    radiance = radiance + brdf * frame.directionalRadiance.rgb * nDotL;
+    var direct = brdf * frame.directionalRadiance.rgb * nDotL;
+
+    if (SUBSURFACE) {
+      // Wrapped-diffuse subsurface approximation (non-interop): a soft back-/side-lit wrap term tinted
+      // by the subsurface color, scaled by thickness (thinner = more translucency).
+      let wrap = clamp((dot(normal, lightDir) + 0.5) / 2.25, 0.0, 1.0);
+      let translucency = material.subsurface.x / (1.0 + material.thickness.x);
+      direct = direct + translucency * wrap * material.subsurface.yzw * diffuseColor * frame.directionalRadiance.rgb;
+    }
+
+    if (SHEEN) {
+      // Charlie sheen lobe added on top of the base specular for cloth/fabric retroreflection.
+      let sheenD = distributionCharlie(nDotH, material.sheen.w);
+      let sheenV = visibilitySheen(nDotV, nDotL);
+      direct = direct + material.sheen.rgb * sheenD * sheenV * frame.directionalRadiance.rgb * nDotL;
+    }
+
+    if (CLEARCOAT) {
+      // A second, always-dielectric GGX lobe (F0 = 0.04) over the base layer, with its own roughness.
+      // Energy from the clearcoat reflection attenuates the layers beneath it.
+      let ccRough = clamp(material.clearcoat.y, 0.04, 1.0);
+      let ccD = distributionGgx(nDotH, ccRough);
+      let ccVis = visibilitySmith(nDotV, nDotL, ccRough);
+      let ccF = fresnelSchlick(vDotH, vec3f(0.04)) * material.clearcoat.x;
+      let ccSpec = ccD * ccVis * ccF * frame.directionalRadiance.rgb * nDotL;
+      direct = direct * (vec3f(1.0) - ccF) + ccSpec;
+    }
+
+    radiance = radiance + direct;
   }
 
-  // Ambient term: flat irradiance over the diffuse albedo (no IBL specular yet).
+  // Ambient term: flat irradiance over the diffuse albedo (no IBL specular yet), attenuated by AO.
   if (frame.ambientRadiance.w > 0.5) {
-    radiance = radiance + diffuseColor * frame.ambientRadiance.rgb;
+    radiance = radiance + diffuseColor * frame.ambientRadiance.rgb * occlusion;
   }
 
   radiance = radiance + material.emissive.rgb;
 
-  return vec4f(radiance, baseColor.a);
+  var alpha = baseColor.a;
+  if (TRANSMISSION) {
+    // Phase-5 approximation: a true refractive path needs the opaque-scene-color capture pass to
+    // sample what lies behind the surface. Until then, model transmission as added translucency —
+    // attenuate coverage by the transmission factor and tint the surface by the attenuation color.
+    radiance = radiance * mix(vec3f(1.0), material.transmission.yzw, material.transmission.x);
+    alpha = alpha * (1.0 - material.transmission.x);
+  }
+
+  return vec4f(radiance, alpha);
 }
 `;

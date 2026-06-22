@@ -1,33 +1,30 @@
-import type {
-  Kind,
-  StandardPbrMaterial,
-  WgpuMeshMaterialRenderer,
-  WgpuRenderState,
-  WgpuRenderStateRuntime,
-} from '@flighthq/types';
+import type { Kind, WgpuMeshMaterialRenderer, WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
-import type { WgpuPbrPipeline } from './wgpuPbrPipelineCache';
+import type { WgpuMeshPipeline } from './wgpuMeshPipeline';
 
 // scene-wgpu's per-WgpuRenderState private state — the WGSL mirror of GlSceneRuntime. Holds the 3D
-// mesh-material registry, the StandardPbr pipeline cache (keyed by define key + color-attachment
-// format), the per-state geometry GPU-upload cache, and the shared GPU resources the StandardPbr path
-// reuses every frame (the Frame uniform buffer + its bind group, the dynamic-offset Draw bind group,
-// the 1x1 placeholder map texture, and a per-material bind-group cache). All scene-wgpu-owned and
-// distinct from the 2D renderer's materialRendererMap/textureCache — a material kind is either 2D or
-// 3D, never both. The registry and upload cache are surfaced through the header's
-// WgpuRenderStateRuntime.sceneMeshMaterialRegistry / sceneMeshUploadCache slots (kept opaque there);
-// everything else lives only here. One WgpuSceneRuntime is created lazily per state by
-// getWgpuSceneRuntime.
+// mesh-material registry, the shared mesh-material pipeline cache (keyed by family + define key +
+// color-attachment format), the per-state geometry GPU-upload cache, the shared group(0)/group(1)
+// Frame + Draw bind-group layouts (every family pipeline targets these), and the shared GPU resources
+// the draw path reuses every frame (the Frame uniform buffer + its bind group, the dynamic-offset Draw
+// bind group, the 1x1 placeholder map texture, and a per-material bind-group cache). `activeMeshPipeline`
+// is the bind()→draw() handoff. All scene-wgpu-owned and distinct from the 2D renderer's
+// materialRendererMap/textureCache — a material kind is either 2D or 3D, never both. The registry and
+// upload cache are surfaced through the header's WgpuRenderStateRuntime.sceneMeshMaterialRegistry /
+// sceneMeshUploadCache slots (kept opaque there); everything else lives only here. One WgpuSceneRuntime
+// is created lazily per state by getWgpuSceneRuntime.
 export interface WgpuSceneRuntime {
-  activePipeline: WgpuPbrPipeline | null;
+  activeMeshPipeline: WgpuMeshPipeline | null;
   drawBindGroup: GPUBindGroup | null;
+  drawBindGroupLayout: GPUBindGroupLayout | null;
   frameBindGroup: GPUBindGroup | null;
+  frameBindGroupLayout: GPUBindGroupLayout | null;
   frameBuffer: GPUBuffer | null;
-  materialBindGroups: WeakMap<Readonly<StandardPbrMaterial>, WgpuMaterialBinding>;
+  materialBindGroups: WeakMap<object, WgpuMaterialBinding>;
   materialRegistry: Map<Kind, WgpuMeshMaterialRenderer>;
   pendingDrawOffset: number;
-  pipelineCache: Map<string, WgpuPbrPipeline>;
+  pipelineCache: Map<string, WgpuMeshPipeline>;
   placeholderView: GPUTextureView | null;
   uploadCache: WeakMap<object, WgpuMeshUpload>;
 }
@@ -60,9 +57,11 @@ export function getWgpuSceneRuntime(state: WgpuRenderState): WgpuSceneRuntime {
   let scene = sceneRuntimes.get(state);
   if (scene === undefined) {
     scene = {
-      activePipeline: null,
+      activeMeshPipeline: null,
       drawBindGroup: null,
+      drawBindGroupLayout: null,
       frameBindGroup: null,
+      frameBindGroupLayout: null,
       frameBuffer: null,
       materialBindGroups: new WeakMap(),
       materialRegistry: new Map(),

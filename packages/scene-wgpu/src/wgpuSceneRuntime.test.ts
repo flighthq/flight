@@ -12,7 +12,7 @@ describe('getWgpuSceneRuntime', () => {
     expect(a).toBe(b);
     expect(a.materialRegistry).toBeInstanceOf(Map);
     expect(a.pipelineCache).toBeInstanceOf(Map);
-    expect(a.activePipeline).toBeNull();
+    expect(a.activeMeshPipeline).toBeNull();
   });
 
   it('surfaces the registry and upload cache through the header runtime slots', () => {

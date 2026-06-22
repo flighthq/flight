@@ -4,7 +4,16 @@ import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import type { Camera, Matrix3, Matrix4, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
 
-import { standardPbrWgpuMeshMaterialRenderer } from './standardPbrWgpuMeshMaterialRenderer';
+import {
+  buildWgpuPbrStandardDefineKey,
+  ensureWgpuPbrMaterialBindGroup,
+  getWgpuPbrMaterialScratch,
+  standardPbrWgpuMeshMaterialRenderer,
+  uploadWgpuPbrMaterialUniform,
+  WGPU_PBR_MATERIAL_UNIFORM_FLOATS,
+  writeWgpuPbrStandardBlock,
+} from './standardPbrWgpuMeshMaterialRenderer';
+import { ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 
 function makeCamera(): Camera {
@@ -34,6 +43,44 @@ function makeProxy(): SceneRenderProxy {
     worldMatrix: createMatrix4() as Matrix4,
   };
 }
+
+describe('buildWgpuPbrStandardDefineKey', () => {
+  it('reads the alpha mode + double-sidedness and leaves every extension flag off', () => {
+    const material = createStandardPbrMaterial();
+    material.alphaMode = 'mask';
+    material.doubleSided = true;
+    const key = buildWgpuPbrStandardDefineKey(material);
+    expect(key.alphaMaskEnabled).toBe(true);
+    expect(key.doubleSided).toBe(true);
+    expect(key.clearcoatEnabled).toBe(false);
+    expect(key.transmissionEnabled).toBe(false);
+  });
+
+  it('returns all-false flags for a null surface', () => {
+    const key = buildWgpuPbrStandardDefineKey(null);
+    expect(key.alphaMaskEnabled).toBe(false);
+    expect(key.hasBaseColorMap).toBe(false);
+  });
+});
+
+describe('ensureWgpuPbrMaterialBindGroup', () => {
+  it('creates a material bind group once per key and reuses it', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const pipeline = ensureWgpuPbrPipeline(state, buildWgpuPbrStandardDefineKey(null), 'bgra8unorm');
+    const cacheKey = {};
+    const a = ensureWgpuPbrMaterialBindGroup(state, pipeline, cacheKey);
+    const groups = fake.calls.filter((c) => c.name === 'createBindGroup').length;
+    const b = ensureWgpuPbrMaterialBindGroup(state, pipeline, cacheKey);
+    expect(b).toBe(a);
+    expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(groups);
+  });
+});
+
+describe('getWgpuPbrMaterialScratch', () => {
+  it('returns the shared 48-float MaterialBlock scratch', () => {
+    expect(getWgpuPbrMaterialScratch().length).toBe(WGPU_PBR_MATERIAL_UNIFORM_FLOATS);
+  });
+});
 
 describe('standardPbrWgpuMeshMaterialRenderer', () => {
   it('bind selects a pipeline and binds frame + material groups + uploads uniforms', () => {
@@ -75,5 +122,36 @@ describe('standardPbrWgpuMeshMaterialRenderer', () => {
     const { fake, state } = makeWgpuSceneState();
     standardPbrWgpuMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
     expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(false);
+  });
+});
+
+describe('uploadWgpuPbrMaterialUniform', () => {
+  it('writes the scratch into the binding buffer', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const pipeline = ensureWgpuPbrPipeline(state, buildWgpuPbrStandardDefineKey(null), 'bgra8unorm');
+    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, {});
+    const writes = fake.calls.filter((c) => c.name === 'writeBuffer').length;
+    uploadWgpuPbrMaterialUniform(state, binding);
+    expect(fake.calls.filter((c) => c.name === 'writeBuffer').length).toBe(writes + 1);
+  });
+});
+
+describe('WGPU_PBR_MATERIAL_UNIFORM_FLOATS', () => {
+  it('is the 48-float (192-byte) MaterialBlock size', () => {
+    expect(WGPU_PBR_MATERIAL_UNIFORM_FLOATS).toBe(48);
+  });
+});
+
+describe('writeWgpuPbrStandardBlock', () => {
+  it('packs the base color + alpha cutoff, and uses neutral defaults for a null block', () => {
+    const out = new Float32Array(WGPU_PBR_MATERIAL_UNIFORM_FLOATS);
+    writeWgpuPbrStandardBlock(out, createStandardPbrMaterial({ baseColor: 0xff0000ff }), 0.25);
+    expect(out[0]).toBeGreaterThan(0.9); // red channel ~1 in linear
+    expect(out[12]).toBe(0.25); // alphaCutoff
+
+    const neutral = new Float32Array(WGPU_PBR_MATERIAL_UNIFORM_FLOATS);
+    writeWgpuPbrStandardBlock(neutral, null, 0.5);
+    expect(neutral[0]).toBe(1);
+    expect(neutral[9]).toBe(1); // roughness default
   });
 });

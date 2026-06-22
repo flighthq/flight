@@ -6,19 +6,25 @@ import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 function key(overrides?: Partial<WgpuPbrDefineKey>): WgpuPbrDefineKey {
   return {
     alphaMaskEnabled: false,
+    anisotropyEnabled: false,
+    clearcoatEnabled: false,
     doubleSided: false,
     hasBaseColorMap: false,
     hasNormalMap: false,
+    iridescenceEnabled: false,
+    sheenEnabled: false,
+    specularEnabled: false,
+    subsurfaceEnabled: false,
+    transmissionEnabled: false,
     ...overrides,
   };
 }
 
 describe('compileWgpuPbrPipeline', () => {
-  it('compiles a module and builds the pipeline + bind-group layouts', () => {
+  it('compiles a module and builds the pipeline + material bind-group layout', () => {
     const { fake, state } = makeWgpuSceneState();
     const pipeline = compileWgpuPbrPipeline(state, key(), 'rgba16float');
     expect(pipeline.pipeline).toBeDefined();
-    expect(pipeline.frameBindGroupLayout).toBeDefined();
     expect(pipeline.materialBindGroupLayout).toBeDefined();
     expect(fake.calls.some((c) => c.name === 'createShaderModule')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'createRenderPipeline')).toBe(true);
@@ -45,11 +51,12 @@ describe('ensureWgpuPbrPipeline', () => {
     expect(getWgpuSceneRuntime(state).pipelineCache.size).toBe(1);
   });
 
-  it('compiles distinct variants for distinct format or defines', () => {
+  it('compiles distinct variants for distinct format, standard, or extension defines', () => {
     const { state } = makeWgpuSceneState();
     ensureWgpuPbrPipeline(state, key(), 'rgba16float');
     ensureWgpuPbrPipeline(state, key(), 'bgra8unorm');
     ensureWgpuPbrPipeline(state, key({ doubleSided: true }), 'rgba16float');
-    expect(getWgpuSceneRuntime(state).pipelineCache.size).toBe(3);
+    ensureWgpuPbrPipeline(state, key({ clearcoatEnabled: true }), 'rgba16float');
+    expect(getWgpuSceneRuntime(state).pipelineCache.size).toBe(4);
   });
 });
