@@ -65,7 +65,7 @@ export function computeNodeBoundsRectangle<Traits extends object>(
 
 export function ensureNodeLocalBoundsRectangle<Traits extends object>(target: BoundsNode<Traits>): void {
   const runtime = getEntityRuntime(target) as NodeRuntime<Traits> & HasBoundsRectangleRuntime;
-  if (runtime.localBoundsUsingLocalBoundsID !== runtime.localBoundsID) {
+  if (runtime.localBoundsUsingLocalBoundsId !== runtime.localBoundsId) {
     recomputeLocalBoundsRectangle(target, runtime);
   }
 }
@@ -73,8 +73,8 @@ export function ensureNodeLocalBoundsRectangle<Traits extends object>(target: Bo
 export function ensureNodeParentBoundsRectangle<Traits extends object>(target: Spatial2DNode<Traits>): void {
   const runtime = getEntityRuntime(target) as NodeRuntime<Traits> & HasBoundsRectangleRuntime;
   if (
-    runtime.boundsUsingLocalBoundsID !== runtime.localBoundsID ||
-    runtime.boundsUsingLocalTransformID !== runtime.localTransformID
+    runtime.boundsUsingLocalBoundsId !== runtime.localBoundsId ||
+    runtime.boundsUsingLocalTransformId !== runtime.localTransformId
   ) {
     recomputeNodeBoundsRectangle(target, runtime);
   }
@@ -82,7 +82,7 @@ export function ensureNodeParentBoundsRectangle<Traits extends object>(target: S
 
 export function ensureNodeWorldBoundsRectangle<Traits extends object>(target: Spatial2DNode<Traits>): void {
   const runtime = getEntityRuntime(target) as NodeRuntime<Traits> & HasBoundsRectangleRuntime & HasTransform2DRuntime;
-  const localBoundsInvalid = runtime.worldBoundsUsingLocalBoundsID !== runtime.localBoundsID;
+  const localBoundsInvalid = runtime.worldBoundsUsingLocalBoundsId !== runtime.localBoundsId;
   const hasChildren = getNodeChildCount(target) !== 0;
   let forceRecompute = false;
   if (!hasChildren && !localBoundsInvalid) {
@@ -90,7 +90,7 @@ export function ensureNodeWorldBoundsRectangle<Traits extends object>(target: Sp
     forceRecompute = true;
   }
   ensureNodeWorldTransformMatrix(target);
-  if (forceRecompute || localBoundsInvalid || runtime.worldBoundsUsingWorldTransformID !== runtime.worldTransformID) {
+  if (forceRecompute || localBoundsInvalid || runtime.worldBoundsUsingWorldTransformId !== runtime.worldTransformId) {
     recomputeWorldBoundsRectangle(target, runtime);
   }
 }
@@ -161,8 +161,8 @@ function recomputeNodeBoundsRectangle<Traits extends object>(
     getNodeLocalTransformMatrix(target),
     getNodeLocalBoundsRectangle(target),
   );
-  runtime.boundsUsingLocalBoundsID = runtime.localBoundsID;
-  runtime.boundsUsingLocalTransformID = runtime.localTransformID;
+  runtime.boundsUsingLocalBoundsId = runtime.localBoundsId;
+  runtime.boundsUsingLocalTransformId = runtime.localTransformId;
 }
 
 function recomputeLocalBoundsRectangle<Traits extends object>(
@@ -171,7 +171,7 @@ function recomputeLocalBoundsRectangle<Traits extends object>(
 ): void {
   if (runtime.localBoundsRectangle === null) runtime.localBoundsRectangle = createRectangle();
   runtime.computeLocalBoundsRectangle(runtime.localBoundsRectangle, target);
-  runtime.localBoundsUsingLocalBoundsID = runtime.localBoundsID;
+  runtime.localBoundsUsingLocalBoundsId = runtime.localBoundsId;
 }
 
 function recomputeWorldBoundsRectangle<Traits extends object>(
@@ -194,8 +194,8 @@ function recomputeWorldBoundsRectangle<Traits extends object>(
       }
     }
   }
-  runtime.worldBoundsUsingWorldTransformID = runtime.worldTransformID;
-  runtime.worldBoundsUsingLocalBoundsID = runtime.localBoundsID;
+  runtime.worldBoundsUsingWorldTransformId = runtime.worldTransformId;
+  runtime.worldBoundsUsingLocalBoundsId = runtime.localBoundsId;
 }
 
 function tryFastRecomputeWorldBoundsRectangle<Traits extends object>(

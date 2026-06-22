@@ -6,31 +6,31 @@ export function computeNodeWorldTransformRevision<Traits extends object>(
   runtime: NodeRuntime<Traits>,
   parentRuntime?: Readonly<NodeRuntime<Traits>>,
 ): void {
-  const localTransformID = runtime.localTransformID;
-  const parentWorldTransformID = parentRuntime ? parentRuntime.worldTransformID : 0;
-  runtime.worldTransformUsingLocalTransformID = localTransformID;
-  runtime.worldTransformUsingParentTransformID = parentWorldTransformID;
-  runtime.worldTransformID = (localTransformID << 16) | (parentWorldTransformID & 0xffff);
+  const localTransformId = runtime.localTransformId;
+  const parentWorldTransformId = parentRuntime ? parentRuntime.worldTransformId : 0;
+  runtime.worldTransformUsingLocalTransformId = localTransformId;
+  runtime.worldTransformUsingParentTransformId = parentWorldTransformId;
+  runtime.worldTransformId = (localTransformId << 16) | (parentWorldTransformId & 0xffff);
 }
 
 export function getNodeAppearanceRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
-  return getNodeRuntime(source).appearanceID;
+  return getNodeRuntime(source).appearanceId;
 }
 
 export function getNodeLocalBoundsRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
-  return getNodeRuntime(source).localBoundsID;
+  return getNodeRuntime(source).localBoundsId;
 }
 
 export function getNodeLocalContentRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
-  return getNodeRuntime(source).localContentID;
+  return getNodeRuntime(source).localContentId;
 }
 
 export function getNodeLocalTransformRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
-  return getNodeRuntime(source).localTransformID;
+  return getNodeRuntime(source).localTransformId;
 }
 
 export function getNodeWorldTransformRevision<Traits extends object>(source: Node<Traits>): number {
-  return getNodeRuntime(source).worldTransformID;
+  return getNodeRuntime(source).worldTransformId;
 }
 
 export function invalidateNode<Traits extends object>(target: Node<Traits>): void {
@@ -47,7 +47,7 @@ export function invalidateNode<Traits extends object>(target: Node<Traits>): voi
  */
 export function invalidateNodeAppearance<Traits extends object>(target: Node<Traits>): void {
   const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
-  runtime.appearanceID = (runtime.appearanceID + 1) >>> 0;
+  runtime.appearanceId = (runtime.appearanceId + 1) >>> 0;
 }
 
 /**
@@ -55,7 +55,7 @@ export function invalidateNodeAppearance<Traits extends object>(target: Node<Tra
  */
 export function invalidateNodeLocalBounds<Traits extends object>(target: Node<Traits>): void {
   const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
-  runtime.localBoundsID = (runtime.localBoundsID + 1) >>> 0;
+  runtime.localBoundsId = (runtime.localBoundsId + 1) >>> 0;
 }
 
 /**
@@ -65,7 +65,7 @@ export function invalidateNodeLocalBounds<Traits extends object>(target: Node<Tr
  */
 export function invalidateNodeLocalContent<Traits extends object>(target: Node<Traits>): void {
   const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
-  runtime.localContentID = (runtime.localContentID + 1) >>> 0;
+  runtime.localContentId = (runtime.localContentId + 1) >>> 0;
 }
 
 /**
@@ -73,7 +73,7 @@ export function invalidateNodeLocalContent<Traits extends object>(target: Node<T
  */
 export function invalidateNodeLocalTransform<Traits extends object>(target: Node<Traits>): void {
   const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
-  runtime.localTransformID = (runtime.localTransformID + 1) >>> 0;
+  runtime.localTransformId = (runtime.localTransformId + 1) >>> 0;
 }
 
 /**
@@ -81,7 +81,7 @@ export function invalidateNodeLocalTransform<Traits extends object>(target: Node
  */
 export function invalidateNodeParentReference<Traits extends object>(target: Node<Traits>): void {
   const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
-  runtime.worldTransformUsingParentTransformID = -1;
+  runtime.worldTransformUsingParentTransformId = -1;
 }
 
 /**
@@ -98,6 +98,6 @@ export function invalidateNodeRender<Traits extends object>(target: Node<Traits>
  */
 export function invalidateNodeWorldBounds<Traits extends object>(target: Node<Traits>): void {
   const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
-  runtime.worldBoundsUsingWorldTransformID = -1;
-  runtime.worldBoundsUsingLocalBoundsID = -1;
+  runtime.worldBoundsUsingWorldTransformId = -1;
+  runtime.worldBoundsUsingLocalBoundsId = -1;
 }
