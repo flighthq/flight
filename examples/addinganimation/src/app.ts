@@ -6,7 +6,7 @@ import {
   createDisplayObject,
   createTween,
   createTweenManager,
-  Elastic,
+  easeOutElastic,
   invalidateNodeRender,
   loadImageResourceFromUrl,
   startApplicationLoop,
@@ -44,7 +44,7 @@ const tween = createTween(
   container,
   3000,
   { alpha: 1, scaleX: 2, scaleY: 2 },
-  { ease: Elastic.easeOut, repeat: -1, reflect: true },
+  { ease: easeOutElastic, repeat: -1, reflect: true },
 );
 connectSignal(tween.onUpdate, () => invalidateNodeRender(container));
 
