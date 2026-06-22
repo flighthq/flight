@@ -7,14 +7,14 @@ import {
   equalsColorTransform,
   equalsColorTransformMultipliers,
   equalsColorTransformOffsets,
-  getColorTransformOffsetRGB,
-  getColorTransformOffsetRGBA,
+  getColorTransformOffsetRgb,
+  getColorTransformOffsetRgba,
   invertColorTransform,
   isIdentityColorTransform,
   setColorTransform,
   setColorTransformIdentity,
-  setColorTransformOffsetRGB,
-  setColorTransformOffsetRGBA,
+  setColorTransformOffsetRgb,
+  setColorTransformOffsetRgba,
 } from '@flighthq/materials';
 
 describe('cloneColorTransform', () => {
@@ -224,24 +224,24 @@ describe('equalsColorTransformOffsets', () => {
   });
 });
 
-describe('getColorTransformOffsetRGB', () => {
+describe('getColorTransformOffsetRgb', () => {
   it('packs red, green, blue offsets into a single integer', () => {
     const ct = createColorTransform({ redOffset: 0xff, greenOffset: 0x80, blueOffset: 0x10 });
-    const packed = getColorTransformOffsetRGB(ct);
+    const packed = getColorTransformOffsetRgb(ct);
     expect((packed >> 16) & 0xff).toBe(0xff);
     expect((packed >> 8) & 0xff).toBe(0x80);
     expect(packed & 0xff).toBe(0x10);
   });
 
   it('returns 0 when all offsets are 0', () => {
-    expect(getColorTransformOffsetRGB(createColorTransform())).toBe(0);
+    expect(getColorTransformOffsetRgb(createColorTransform())).toBe(0);
   });
 });
 
-describe('getColorTransformOffsetRGBA', () => {
+describe('getColorTransformOffsetRgba', () => {
   it('packs red, green, blue, alpha offsets into a single integer', () => {
     const ct = createColorTransform({ redOffset: 0x10, greenOffset: 0x20, blueOffset: 0x30, alphaOffset: 0x40 });
-    const packed = getColorTransformOffsetRGBA(ct);
+    const packed = getColorTransformOffsetRgba(ct);
     expect((packed >> 24) & 0xff).toBe(0x10);
     expect((packed >> 16) & 0xff).toBe(0x20);
     expect((packed >> 8) & 0xff).toBe(0x30);
@@ -249,7 +249,7 @@ describe('getColorTransformOffsetRGBA', () => {
   });
 
   it('returns 0 when all offsets are 0', () => {
-    expect(getColorTransformOffsetRGBA(createColorTransform())).toBe(0);
+    expect(getColorTransformOffsetRgba(createColorTransform())).toBe(0);
   });
 });
 
@@ -343,10 +343,10 @@ describe('setColorTransformIdentity', () => {
   });
 });
 
-describe('setColorTransformOffsetRGB', () => {
+describe('setColorTransformOffsetRgb', () => {
   it('unpacks red, green, blue from a packed integer', () => {
     const ct = createColorTransform();
-    setColorTransformOffsetRGB(ct, (0xab << 16) | (0xcd << 8) | 0xef);
+    setColorTransformOffsetRgb(ct, (0xab << 16) | (0xcd << 8) | 0xef);
     expect(ct.redOffset).toBe(0xab);
     expect(ct.greenOffset).toBe(0xcd);
     expect(ct.blueOffset).toBe(0xef);
@@ -355,7 +355,7 @@ describe('setColorTransformOffsetRGB', () => {
 
   it('zeroes RGB multipliers and keeps alphaMultiplier at 1', () => {
     const ct = createColorTransform();
-    setColorTransformOffsetRGB(ct, 0xffffff);
+    setColorTransformOffsetRgb(ct, 0xffffff);
     expect(ct.redMultiplier).toBe(0);
     expect(ct.greenMultiplier).toBe(0);
     expect(ct.blueMultiplier).toBe(0);
@@ -363,10 +363,10 @@ describe('setColorTransformOffsetRGB', () => {
   });
 });
 
-describe('setColorTransformOffsetRGBA', () => {
+describe('setColorTransformOffsetRgba', () => {
   it('unpacks red, green, blue, alpha from a packed integer', () => {
     const ct = createColorTransform();
-    setColorTransformOffsetRGBA(ct, (0x10 << 24) | (0x20 << 16) | (0x30 << 8) | 0x40);
+    setColorTransformOffsetRgba(ct, (0x10 << 24) | (0x20 << 16) | (0x30 << 8) | 0x40);
     expect(ct.redOffset).toBe(0x10);
     expect(ct.greenOffset).toBe(0x20);
     expect(ct.blueOffset).toBe(0x30);
@@ -375,7 +375,7 @@ describe('setColorTransformOffsetRGBA', () => {
 
   it('zeroes all multipliers including alpha', () => {
     const ct = createColorTransform();
-    setColorTransformOffsetRGBA(ct, 0xffffffff);
+    setColorTransformOffsetRgba(ct, 0xffffffff);
     expect(ct.redMultiplier).toBe(0);
     expect(ct.greenMultiplier).toBe(0);
     expect(ct.blueMultiplier).toBe(0);
