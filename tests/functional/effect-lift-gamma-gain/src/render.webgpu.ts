@@ -1,42 +1,42 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  beginWebGPURenderEffectPipeline,
+  beginWgpuRenderEffectPipeline,
   createLiftGammaGainEffect,
-  createWebGPUCanvasElement,
-  createWebGPURenderEffectPipeline,
-  createWebGPURenderState,
-  defaultWebGPULiftGammaGainEffectRunner,
-  defaultWebGPUShapeCommands,
-  defaultWebGPUShapeRenderer,
-  endWebGPURenderEffectPipeline,
+  createWgpuCanvasElement,
+  createWgpuRenderEffectPipeline,
+  createWgpuRenderState,
+  defaultWgpuLiftGammaGainEffectRunner,
+  defaultWgpuShapeCommands,
+  defaultWgpuShapeRenderer,
+  endWgpuRenderEffectPipeline,
   prepareDisplayObjectRender,
-  registerDefaultWebGPUMaterial,
+  registerDefaultWgpuMaterial,
   registerRenderer,
-  registerWebGPURenderEffect,
-  registerWebGPUShapeCommands,
-  renderWebGPUBackground,
-  renderWebGPUDisplayObject,
+  registerWgpuRenderEffect,
+  registerWgpuShapeCommands,
+  renderWgpuBackground,
+  renderWgpuDisplayObject,
   ShapeKind,
-  submitWebGPURenderPass,
+  submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWebGPUFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '../../_harness/verify';
 
-// WebGPU parity column for the same full-frame liftGammaGain grade as render.webgl.ts: applies a warm lift and cool gain for a cinematic split-tone.
-// WebGPU render-state init is async (createWebGPURenderState returns a Promise). The effect pipeline
-// runs between renderWebGPUBackground (opens the encoder + canvas pass) and submitWebGPURenderPass
+// Wgpu parity column for the same full-frame liftGammaGain grade as render.webgl.ts: applies a warm lift and cool gain for a cinematic split-tone.
+// Wgpu render-state init is async (createWgpuRenderState returns a Promise). The effect pipeline
+// runs between renderWgpuBackground (opens the encoder + canvas pass) and submitWgpuRenderPass
 // (flushes it), grading the rgba8 scene target.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGPUCanvasElement(800, 600, pixelRatio);
+const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWebGPURenderState(canvas, { pixelRatio, backgroundColor: 0x202830ff });
-registerRenderer(state, ShapeKind, defaultWebGPUShapeRenderer);
-registerWebGPUShapeCommands(defaultWebGPUShapeCommands);
-registerDefaultWebGPUMaterial(state);
-registerWebGPURenderEffect(state, 'liftGammaGain', defaultWebGPULiftGammaGainEffectRunner);
+export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x202830ff });
+registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerWgpuShapeCommands(defaultWgpuShapeCommands);
+registerDefaultWgpuMaterial(state);
+registerWgpuRenderEffect(state, 'liftGammaGain', defaultWgpuLiftGammaGainEffectRunner);
 
-const pipeline = createWebGPURenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -44,13 +44,13 @@ export const height = 600;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGPUBackground(state);
-  beginWebGPURenderEffectPipeline(state, pipeline);
-  renderWebGPUDisplayObject(state, root);
-  endWebGPURenderEffectPipeline(state, pipeline, [
+  renderWgpuBackground(state);
+  beginWgpuRenderEffectPipeline(state, pipeline);
+  renderWgpuDisplayObject(state, root);
+  endWgpuRenderEffectPipeline(state, pipeline, [
     createLiftGammaGainEffect({ lift: 0x8a7860ff, gamma: 0x808080ff, gain: 0x7088a0ff }),
   ]);
-  submitWebGPURenderPass(state);
+  submitWgpuRenderPass(state);
 }
 
-registerWebGPUFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, scale);

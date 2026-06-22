@@ -16,7 +16,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -113,7 +113,7 @@ export function assertRender(frame: Readonly<Surface>): void {
 
   const shadowPx = Math.round((RESULT_X + SHADOW_X) * s);
   const shadowPy = Math.round((TOP + SHADOW_Y) * s);
-  const shadow = getSurfacePixelRGB(frame, shadowPx, shadowPy);
+  const shadow = getSurfacePixelRgb(frame, shadowPx, shadowPy);
   const sr = (shadow >> 16) & 255;
   const sg = (shadow >> 8) & 255;
   const sb = shadow & 255;
@@ -123,7 +123,7 @@ export function assertRender(frame: Readonly<Surface>): void {
 
   const emptyPx = Math.round((RESULT_X + EMPTY_X) * s);
   const emptyPy = Math.round((TOP + EMPTY_Y) * s);
-  const empty = getSurfacePixelRGB(frame, emptyPx, emptyPy);
+  const empty = getSurfacePixelRgb(frame, emptyPx, emptyPy);
   if (!channelsClose(empty, 0x000000)) {
     throw new Error(`[filter-drop-shadow] expected no shadow up-left of the square, got #${hex(empty)}`);
   }

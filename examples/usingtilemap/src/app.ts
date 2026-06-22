@@ -1,4 +1,4 @@
-import { createTilemap, invalidateNodeLocalTransform, loadTilesetFromURL, setTilemapTile } from '@flighthq/sdk';
+import { createTilemap, invalidateNodeLocalTransform, loadTilesetFromUrl, setTilemapTile } from '@flighthq/sdk';
 
 import { render, scale } from './render';
 
@@ -9,7 +9,7 @@ const ROWS = 8;
 const SCALE = 2;
 const PAD = 40;
 
-const tileset = await loadTilesetFromURL('assets/tileset.png', TILE_W, TILE_H);
+const tileset = await loadTilesetFromUrl('assets/tileset.png', TILE_W, TILE_H);
 
 const tilemap = createTilemap({ data: { columns: COLS, rows: ROWS, tileset } });
 tilemap.scaleX = SCALE * scale;

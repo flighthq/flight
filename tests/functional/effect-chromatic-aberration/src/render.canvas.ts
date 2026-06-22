@@ -21,7 +21,7 @@ import {
 // Canvas parity column for the same chromatic-aberration intent as render.webgl.ts. Canvas realizes
 // chromatic aberration as a PASSTHROUGH (per effects-canvas's documented real-vs-passthrough list):
 // the per-channel radial sample offset has no Canvas 2D equivalent, so this column renders the scene
-// unchanged. The Canvas column is therefore expected to differ from WebGL/WebGPU here — that is the
+// unchanged. The Canvas column is therefore expected to differ from Gl/Wgpu here — that is the
 // point of the parity gate.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);

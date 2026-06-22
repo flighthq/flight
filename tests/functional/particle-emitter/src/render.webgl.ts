@@ -1,35 +1,35 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  createWebGLCanvasElement,
-  createWebGLRenderState,
-  defaultWebGLParticleEmitterRenderer,
-  defaultWebGLSpriteRenderer,
+  createGlCanvasElement,
+  createGlRenderState,
+  defaultGlParticleEmitterRenderer,
+  defaultGlSpriteRenderer,
   ParticleEmitterKind,
   prepareDisplayObjectRender,
-  registerDefaultWebGLMaterial,
+  registerDefaultGlMaterial,
   registerRenderer,
-  renderWebGLBackground,
-  renderWebGLSprite,
+  renderGlBackground,
+  renderGlSprite,
   SpriteKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-export const canvas = createWebGLCanvasElement(800, 450, pixelRatio);
+export const canvas = createGlCanvasElement(800, 450, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createWebGLRenderState(canvas, {
+export const state = createGlRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x111111ff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
-registerRenderer(state, ParticleEmitterKind, defaultWebGLParticleEmitterRenderer);
-registerRenderer(state, SpriteKind, defaultWebGLSpriteRenderer);
+registerRenderer(state, ParticleEmitterKind, defaultGlParticleEmitterRenderer);
+registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 
-registerDefaultWebGLMaterial(state);
+registerDefaultGlMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGLBackground(state);
-  renderWebGLSprite(state, root);
+  renderGlBackground(state);
+  renderGlSprite(state, root);
 }

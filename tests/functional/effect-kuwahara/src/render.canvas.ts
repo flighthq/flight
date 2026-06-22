@@ -21,7 +21,7 @@ import {
 // Canvas parity column for the same kuwahara intent as render.webgl.ts.
 // Kuwahara (PASSTHROUGH on Canvas): the painterly neighbor-region variance filter is per-pixel
 // sampling the CSS filter grammar cannot express, so the Canvas runner copies the scene through
-// unchanged. The WebGL/WebGPU columns realize the full effect.
+// unchanged. The Gl/Wgpu columns realize the full effect.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

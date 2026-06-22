@@ -17,8 +17,8 @@ import {
   hitTestGraphLocalBounds,
   invalidateNodeRender,
   loadAudioResourceFromURLs,
-  loadFontFromURL,
-  loadImageResourceFromURL,
+  loadFontFromUrl,
+  loadImageResourceFromUrl,
   registerHitTestPoint,
   startApplicationLoop,
   stopApplicationLoop,
@@ -31,17 +31,17 @@ import { applyBackgroundBlur, container, render, scale, setSize } from './render
 // ── Assets ─────────────────────────────────────────────────────────────────
 
 const [bgImage, footerImage, logoImage, font, theme, ...tileImages] = await Promise.all([
-  loadImageResourceFromURL('assets/images/background_tile.png'),
-  loadImageResourceFromURL('assets/images/center_bottom.png'),
-  loadImageResourceFromURL('assets/images/logo.png'),
-  loadFontFromURL('assets/fonts/FreebooterUpdated.ttf', 'FreebooterUpdated'),
+  loadImageResourceFromUrl('assets/images/background_tile.png'),
+  loadImageResourceFromUrl('assets/images/center_bottom.png'),
+  loadImageResourceFromUrl('assets/images/logo.png'),
+  loadFontFromUrl('assets/fonts/FreebooterUpdated.ttf', 'FreebooterUpdated'),
   loadAudioResourceFromURLs([{ url: 'assets/sounds/theme.ogg' }, { url: 'assets/sounds/theme.mp3' }]),
-  loadImageResourceFromURL('assets/images/game_bear.png'),
-  loadImageResourceFromURL('assets/images/game_bunny_02.png'),
-  loadImageResourceFromURL('assets/images/game_carrot.png'),
-  loadImageResourceFromURL('assets/images/game_lemon.png'),
-  loadImageResourceFromURL('assets/images/game_panda.png'),
-  loadImageResourceFromURL('assets/images/game_piratePig.png'),
+  loadImageResourceFromUrl('assets/images/game_bear.png'),
+  loadImageResourceFromUrl('assets/images/game_bunny_02.png'),
+  loadImageResourceFromUrl('assets/images/game_carrot.png'),
+  loadImageResourceFromUrl('assets/images/game_lemon.png'),
+  loadImageResourceFromUrl('assets/images/game_panda.png'),
+  loadImageResourceFromUrl('assets/images/game_piratePig.png'),
 ]);
 
 const sounds = [

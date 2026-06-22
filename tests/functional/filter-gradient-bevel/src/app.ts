@@ -19,7 +19,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -134,7 +134,7 @@ function scanReddest(frame: Readonly<Surface>, s: number, cx: number, cy: number
   let best = 0;
   let bestScore = -Infinity;
   for (let d = -6; d <= 6; d++) {
-    const rgb = getSurfacePixelRGB(frame, Math.round((cx + d) * s), Math.round((cy + d) * s));
+    const rgb = getSurfacePixelRgb(frame, Math.round((cx + d) * s), Math.round((cy + d) * s));
     const score = ((rgb >> 16) & 255) - (rgb & 255);
     if (score > bestScore) {
       bestScore = score;
@@ -148,7 +148,7 @@ function scanBluest(frame: Readonly<Surface>, s: number, cx: number, cy: number)
   let best = 0;
   let bestScore = -Infinity;
   for (let d = -6; d <= 6; d++) {
-    const rgb = getSurfacePixelRGB(frame, Math.round((cx + d) * s), Math.round((cy + d) * s));
+    const rgb = getSurfacePixelRgb(frame, Math.round((cx + d) * s), Math.round((cy + d) * s));
     const score = (rgb & 255) - ((rgb >> 16) & 255);
     if (score > bestScore) {
       bestScore = score;

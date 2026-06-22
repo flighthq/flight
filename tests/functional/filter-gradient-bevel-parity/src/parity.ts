@@ -10,7 +10,7 @@
 //   - DOM / Canvas: there is no native CSS gradient-bevel, so the "native" tile is the SAME composited
 //     surface bitmap as the reference tile. Parity holds by construction. drawNativeGradientBevel is a
 //     no-op; the bitmap is drawn by the normal render. (app.ts supplies both bitmaps.)
-//   - WebGL: the native gradient bevel is a multi-pass shader (applyGradientBevelFilterToWebGL) into
+//   - Gl: the native gradient bevel is a multi-pass shader (applyGradientBevelFilterToGl) into
 //     offscreen render targets, composited onto the screen after the scene. drawNativeGradientBevel
 //     runs that GPU pass; it is a no-op on DOM/Canvas.
 // A backend implements whichever path is real for it and leaves the other a no-op, so app.ts can call
@@ -35,7 +35,7 @@ export interface ParityTarget {
   height: number;
   // Device-pixel scale: the backing store is width × scale (1 for DOM, devicePixelRatio otherwise).
   scale: number;
-  // Shader backends (WebGL): run the offscreen multi-pass gradient bevel and composite it at the
+  // Shader backends (Gl): run the offscreen multi-pass gradient bevel and composite it at the
   // native tile. No-op on DOM/Canvas (their native tile is the reference bitmap, drawn by render()).
   drawNativeGradientBevel?(spec: Readonly<NativeGradientBevelSpec>): void;
   render(root: DisplayObject): void;

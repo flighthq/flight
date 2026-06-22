@@ -11,7 +11,7 @@ import {
   createDisplayContainer,
   createRichText,
   createShape,
-  loadImageResourceFromURL,
+  loadImageResourceFromUrl,
   RichTextKind,
   setDisplayObjectClip,
   ShapeKind,
@@ -37,7 +37,7 @@ appendShapeRectangle(bg, 0, 0, W, H);
 appendShapeEndFill(bg);
 addNodeChild(root, bg);
 
-const image = await loadImageResourceFromURL('assets/wabbit_alpha.png');
+const image = await loadImageResourceFromUrl('assets/wabbit_alpha.png');
 const iw = image.width;
 const ih = image.height;
 

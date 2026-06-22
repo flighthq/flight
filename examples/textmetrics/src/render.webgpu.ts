@@ -1,18 +1,18 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  createWebGPURenderState,
-  defaultWebGPURichTextRenderer,
-  defaultWebGPUShapeCommands,
-  defaultWebGPUShapeRenderer,
+  createWgpuRenderState,
+  defaultWgpuRichTextRenderer,
+  defaultWgpuShapeCommands,
+  defaultWgpuShapeRenderer,
   prepareDisplayObjectRender,
-  registerDefaultWebGPUMaterial,
+  registerDefaultWgpuMaterial,
   registerRenderer,
-  registerWebGPUShapeCommands,
-  renderWebGPUBackground,
-  renderWebGPUDisplayObject,
+  registerWgpuShapeCommands,
+  renderWgpuBackground,
+  renderWgpuDisplayObject,
   RichTextKind,
   ShapeKind,
-  submitWebGPURenderPass,
+  submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -26,21 +26,21 @@ document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
 export const container = canvas;
-export const state = await createWebGPURenderState(canvas, {
+export const state = await createWgpuRenderState(canvas, {
   backgroundColor: 0xa0a0a0ff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
-registerRenderer(state, RichTextKind, defaultWebGPURichTextRenderer);
-registerRenderer(state, ShapeKind, defaultWebGPUShapeRenderer);
-registerWebGPUShapeCommands(defaultWebGPUShapeCommands);
-registerDefaultWebGPUMaterial(state);
+registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);
+registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerWgpuShapeCommands(defaultWgpuShapeCommands);
+registerDefaultWgpuMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGPUBackground(state);
-  renderWebGPUDisplayObject(state, root);
-  submitWebGPURenderPass(state);
+  renderWgpuBackground(state);
+  renderWgpuDisplayObject(state, root);
+  submitWgpuRenderPass(state);
 }
 
 export function setSize(w: number, h: number): void {

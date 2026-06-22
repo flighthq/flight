@@ -27,7 +27,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -113,7 +113,7 @@ export function assertRender(frame: Readonly<Surface>): void {
 }
 
 function sampleResult(frame: Readonly<Surface>, s: number, tx: number, ty: number): number {
-  return getSurfacePixelRGB(frame, Math.round((RESULT_X + tx) * s), Math.round((TOP + ty) * s));
+  return getSurfacePixelRgb(frame, Math.round((RESULT_X + tx) * s), Math.round((TOP + ty) * s));
 }
 
 function channelsAbove(value: number, threshold: number): boolean {

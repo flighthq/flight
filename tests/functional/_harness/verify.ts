@@ -1,9 +1,9 @@
-import type { Surface, WebGPURenderState } from '@flighthq/sdk';
+import type { Surface, WgpuRenderState } from '@flighthq/sdk';
 import {
   createSurfaceFingerprint,
   createSurfaceFromImageSource,
-  createSurfaceFromWebGPURenderState,
-  enableWebGPUFrameCapture,
+  createSurfaceFromWgpuRenderState,
+  enableWgpuFrameCapture,
   formatSurfaceFingerprint,
   getSurfaceCoverage,
   getSurfacePixel,
@@ -15,7 +15,7 @@ import type { FunctionalTarget } from './target';
 // examples entry for examples (gated on capture mode there, so it never runs in the deployed gallery).
 // It uses the SDK's surface primitives (the same functions a test author could call) so "CI is green"
 // means the renderers actually produced pixels, not merely that the page loaded:
-//   - Tier 2 (not-blank): assert the frame is not still the clear colour (canvas/WebGL/WebGPU) or that
+//   - Tier 2 (not-blank): assert the frame is not still the clear colour (canvas/Gl/Wgpu) or that
 //     the DOM backend emitted elements. Throws on failure so the capture --fail-on-error gate catches
 //     it; runs for every test with no per-test code.
 //   - Tier 4 (oracle): run the test's optional assertRender(surface) for precise per-test checks.
@@ -45,13 +45,13 @@ interface FunctionalVerification {
 type VerificationWindow = typeof window & {
   __ftTarget?: FunctionalTarget;
   __ftVerification?: FunctionalVerification;
-  // PNG data URL of the GPU-read-back frame, set for WebGPU so the capture harness can save it as the
-  // screenshot (the browser cannot screenshot the un-presented WebGPU swapchain).
+  // PNG data URL of the GPU-read-back frame, set for Wgpu so the capture harness can save it as the
+  // screenshot (the browser cannot screenshot the un-presented Wgpu swapchain).
   __ftRenderImage?: string;
 };
 
 // Encodes a Surface to a PNG data URL via a 2D canvas (RGBA bytes → ImageData → toDataURL).
-function encodeSurfaceToDataURL(surface: Readonly<Surface>): string {
+function encodeSurfaceToDataUrl(surface: Readonly<Surface>): string {
   const canvas = document.createElement('canvas');
   canvas.width = surface.width;
   canvas.height = surface.height;
@@ -72,14 +72,14 @@ export function registerFunctionalTarget<T extends FunctionalTarget>(target: T):
 }
 
 /**
- * Wires a custom-render WebGPU test for verification: enables frame capture (so the frame is rendered
+ * Wires a custom-render Wgpu test for verification: enables frame capture (so the frame is rendered
  * into a readable offscreen texture — the swapchain is never presented on the headless/software adapter)
  * and registers the state as the functional target so the verifier reads it back from the GPU. Call once
  * after creating the state, before the first render. Inline-state tests need this; factory targets get it
  * automatically.
  */
-export function registerWebGPUFunctionalTarget(state: WebGPURenderState, scale = 1): void {
-  enableWebGPUFrameCapture(state);
+export function registerWgpuFunctionalTarget(state: WgpuRenderState, scale = 1): void {
+  enableWgpuFrameCapture(state);
   registerFunctionalTarget({
     kind: 'webgpu',
     state,
@@ -91,15 +91,15 @@ export function registerWebGPUFunctionalTarget(state: WebGPURenderState, scale =
 }
 
 /**
- * Reads the rendered frame as a Surface, or null for a DOM target / when no canvas is present. WebGPU
+ * Reads the rendered frame as a Surface, or null for a DOM target / when no canvas is present. Wgpu
  * is read back from the GPU (copyTextureToBuffer) rather than the canvas element: headless/software
  * adapters render correctly but never present the swapchain to the compositor, so a canvas drawImage
- * reads transparent. This requires a registered WebGPU target (the harness factory registers one).
+ * reads transparent. This requires a registered Wgpu target (the harness factory registers one).
  */
 export async function snapshotFunctionalRender(): Promise<Surface | null> {
   const target = (window as VerificationWindow).__ftTarget;
   if (target?.kind === 'dom') return null;
-  if (target?.kind === 'webgpu') return createSurfaceFromWebGPURenderState(target.state);
+  if (target?.kind === 'webgpu') return createSurfaceFromWgpuRenderState(target.state);
   const canvas = target ? target.state.canvas : findRenderCanvas();
   if (canvas === null || canvas.width === 0 || canvas.height === 0) return null;
   return createSurfaceFromImageSource(canvas, canvas.width, canvas.height);
@@ -130,7 +130,7 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
   }
 
   const surface = await snapshotFunctionalRender();
-  if (surface === null) return; // no canvas (e.g. WebGPU unavailable) — Tier 1 (page errors) gates it
+  if (surface === null) return; // no canvas (e.g. Wgpu unavailable) — Tier 1 (page errors) gates it
 
   // Not-blank: how much of the frame differs from the background. The background is the top-left pixel
   // (effectively always the clear colour), which sidesteps opaque-vs-transparent ambiguity in the
@@ -140,11 +140,11 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
   result.coverage = coverage;
   result.fingerprint = formatSurfaceFingerprint(createSurfaceFingerprint(surface, FINGERPRINT_GRID));
 
-  // WebGPU cannot be screenshotted by the browser (the swapchain is never presented on the headless/
+  // Wgpu cannot be screenshotted by the browser (the swapchain is never presented on the headless/
   // software adapter), so expose the GPU-read-back surface as a PNG data URL for the capture harness to
-  // save as screenshot.png. Canvas/WebGL screenshot normally, so this is WebGPU-only.
+  // save as screenshot.png. Canvas/Gl screenshot normally, so this is Wgpu-only.
   if (render === 'webgpu') {
-    (window as VerificationWindow).__ftRenderImage = encodeSurfaceToDataURL(surface);
+    (window as VerificationWindow).__ftRenderImage = encodeSurfaceToDataUrl(surface);
   }
 
   const minCoverage = testModule.minCoverage ?? DEFAULT_MIN_COVERAGE;

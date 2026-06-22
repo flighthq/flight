@@ -2,13 +2,13 @@
 //
 // Reference template for a whole filter-"parity" suite. A filter has a CPU reference impl
 // (apply*FilterToSurface) and native per-backend impls (CSS for DOM/Canvas, a multi-pass shader for
-// WebGL). This test draws two tiles side by side:
+// Gl). This test draws two tiles side by side:
 //   REFERENCE tile — the source blurred on the CPU via applyBlurFilterToSurface, blitted as a plain
 //     bitmap. Identical bytes on every backend; it is the oracle's ground truth.
 //   NATIVE tile    — the same source pushed through THIS backend's real filter path (CSS blur on
-//     DOM/Canvas, the Gaussian shader on WebGL).
+//     DOM/Canvas, the Gaussian shader on Gl).
 // The oracle compares the NATIVE tile region against the CPU reference with getSurfaceMismatch and
-// asserts the mismatch fraction is below a calibrated tolerance — so on WebGL it proves the shader
+// asserts the mismatch fraction is below a calibrated tolerance — so on Gl it proves the shader
 // blur ≈ the CPU blur, and on Canvas it proves the CSS blur ≈ the CPU blur. It also asserts the native
 // tile is not blank and is actually blurred, so a silently no-op native path fails the test.
 //
@@ -29,7 +29,7 @@ import {
   createSurfaceRegion,
   fillSurfaceRectangle,
   getSurfaceMismatch,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 
 import { createParityTarget } from './render';
@@ -40,7 +40,7 @@ const SQUARE_MIN = (TILE - SQUARE) / 2; // 64
 const SQUARE_MAX = SQUARE_MIN + SQUARE; // 192
 const REFERENCE_X = 120;
 const NATIVE_X = 424;
-// Symmetric blur — computeBlurFilterCSS returns null for anisotropic blur, so the CSS backends require
+// Symmetric blur — computeBlurFilterCss returns null for anisotropic blur, so the CSS backends require
 // blurX === blurY. 6px keeps the bleed well inside the tile (3σ = 18px < the 64px margin).
 const BLUR = 6;
 
@@ -68,7 +68,7 @@ applyBlurFilterToSurface(
 const referenceSurface = createSurface(TILE, TILE);
 referenceSurface.data.set(referenceData);
 
-// Awaited because the WebGPU column creates its render state asynchronously; the sync backends return a
+// Awaited because the Wgpu column creates its render state asynchronously; the sync backends return a
 // plain target and await passes it through unchanged.
 const target = await createParityTarget(WIDTH, HEIGHT, BACKGROUND);
 const TOP = (HEIGHT - TILE) / 2;
@@ -111,14 +111,14 @@ export function assertRender(frame: Readonly<Surface>): void {
   const nativeTile = cropFrameTile(frame, NATIVE_X * s, TOP * s, TILE * s, TILE * s, TILE);
 
   // 1) Not blank: the tile must carry the square, not just the background.
-  const centre = green(getSurfacePixelRGB(nativeTile, TILE / 2, TILE / 2));
+  const centre = green(getSurfacePixelRgb(nativeTile, TILE / 2, TILE / 2));
   if (centre <= 120) {
     throw new Error(`[filter-blur-parity:${render()}] native tile blank/dark at centre — got green ${centre}`);
   }
 
   // 2) Actually blurred: the former hard edge (x = SQUARE_MAX) is now an intermediate gradient value,
   // not the source's hard black/white step. A no-op native path would leave it ~0 or ~255.
-  const edge = green(getSurfacePixelRGB(nativeTile, SQUARE_MAX, TILE / 2));
+  const edge = green(getSurfacePixelRgb(nativeTile, SQUARE_MAX, TILE / 2));
   if (edge < 30 || edge > 225) {
     throw new Error(`[filter-blur-parity:${render()}] native edge not blurred — green ${edge} (expected 30..225)`);
   }

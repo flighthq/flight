@@ -1,35 +1,35 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  createWebGPUCanvasElement,
-  createWebGPURenderState,
-  defaultWebGPUParticleEmitterRenderer,
-  enableWebGPUBlendModeSupport,
+  createWgpuCanvasElement,
+  createWgpuRenderState,
+  defaultWgpuParticleEmitterRenderer,
+  enableWgpuBlendModeSupport,
   ParticleEmitterKind,
   prepareDisplayObjectRender,
-  registerDefaultWebGPUMaterial,
+  registerDefaultWgpuMaterial,
   registerRenderer,
-  renderWebGPUBackground,
-  renderWebGPUSprite,
-  submitWebGPURenderPass,
+  renderWgpuBackground,
+  renderWgpuSprite,
+  submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-export const canvas = createWebGPUCanvasElement(800, 400, pixelRatio);
+export const canvas = createWgpuCanvasElement(800, 400, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWebGPURenderState(canvas, {
+export const state = await createWgpuRenderState(canvas, {
   backgroundColor: 0x0a0a0aff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
-registerRenderer(state, ParticleEmitterKind, defaultWebGPUParticleEmitterRenderer);
-registerDefaultWebGPUMaterial(state);
+registerRenderer(state, ParticleEmitterKind, defaultWgpuParticleEmitterRenderer);
+registerDefaultWgpuMaterial(state);
 // Opt into per-node blend modes so the emitter's additive (glow) blend takes effect.
-enableWebGPUBlendModeSupport(state);
+enableWgpuBlendModeSupport(state);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGPUBackground(state);
-  renderWebGPUSprite(state, root);
-  submitWebGPURenderPass(state);
+  renderWgpuBackground(state);
+  renderWgpuSprite(state, root);
+  submitWgpuRenderPass(state);
 }

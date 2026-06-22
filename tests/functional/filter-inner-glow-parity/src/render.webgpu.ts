@@ -1,31 +1,31 @@
-// WebGPU backend of the filter-inner-glow-parity test. Mechanical port of render.webgl.ts to the WebGPU offscreen-filter
+// Wgpu backend of the filter-inner-glow-parity test. Mechanical port of render.webgl.ts to the Wgpu offscreen-filter
 // flow (see filter-blur-parity/render.webgl.ts for the annotated reference): render the source into an
-// offscreen target with a baked vertical flip, run applyInnerGlowFilterToWebGPU over offscreen targets, then composite the
-// result at the native tile via drawWebGPURenderTargetResult. All GPU work runs inside the single frame
-// encoder (renderWebGPUBackground → submitWebGPURenderPass); the offscreen targets are destroyed only
+// offscreen target with a baked vertical flip, run applyInnerGlowFilterToWgpu over offscreen targets, then composite the
+// result at the native tile via drawWgpuRenderTargetResult. All GPU work runs inside the single frame
+// encoder (renderWgpuBackground → submitWgpuRenderPass); the offscreen targets are destroyed only
 // AFTER submit (the encoder still references them). NOTE: generated without capture validation.
-import type { DisplayObject, Matrix, WebGPURenderState, WebGPURenderTarget } from '@flighthq/sdk';
+import type { DisplayObject, Matrix, WgpuRenderState, WgpuRenderTarget } from '@flighthq/sdk';
 import {
-  applyInnerGlowFilterToWebGPU,
-  beginWebGPURenderTarget,
+  applyInnerGlowFilterToWgpu,
+  beginWgpuRenderTarget,
   BitmapKind,
   createBitmap,
   createMatrix,
-  createWebGPUCanvasElement,
-  createWebGPURenderState,
-  createWebGPURenderTarget,
-  defaultWebGPUBitmapRenderer,
-  destroyWebGPURenderTarget,
-  drawWebGPURenderTargetResult,
-  enableWebGPUFrameCapture,
-  endWebGPURenderTarget,
+  createWgpuCanvasElement,
+  createWgpuRenderState,
+  createWgpuRenderTarget,
+  defaultWgpuBitmapRenderer,
+  destroyWgpuRenderTarget,
+  drawWgpuRenderTargetResult,
+  enableWgpuFrameCapture,
+  endWgpuRenderTarget,
   getRenderProxy2D,
   prepareDisplayObjectRender,
-  registerDefaultWebGPUMaterial,
+  registerDefaultWgpuMaterial,
   registerRenderer,
-  renderWebGPUBackground,
-  renderWebGPUDisplayObject,
-  submitWebGPURenderPass,
+  renderWgpuBackground,
+  renderWgpuDisplayObject,
+  submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
 import { registerFunctionalTarget } from '../../_harness/verify';
@@ -33,14 +33,14 @@ import type { NativeGlowSpec, ParityTarget } from './parity';
 
 export async function createParityTarget(width: number, height: number, background: number): Promise<ParityTarget> {
   const pixelRatio = window.devicePixelRatio || 1;
-  const canvas = createWebGPUCanvasElement(width, height, pixelRatio);
+  const canvas = createWgpuCanvasElement(width, height, pixelRatio);
   document.body.appendChild(canvas);
 
-  const state = await createWebGPURenderState(canvas, { pixelRatio, backgroundColor: background });
+  const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: background });
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
-  registerDefaultWebGPUMaterial(state);
-  registerRenderer(state, BitmapKind, defaultWebGPUBitmapRenderer);
-  enableWebGPUFrameCapture(state);
+  registerDefaultWgpuMaterial(state);
+  registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
+  enableWgpuFrameCapture(state);
 
   registerFunctionalTarget({
     kind: 'webgpu',
@@ -69,21 +69,17 @@ export async function createParityTarget(width: number, height: number, backgrou
   };
 }
 
-function renderFrame(state: WebGPURenderState, root: DisplayObject, specs: readonly NativeGlowSpec[]): void {
+function renderFrame(state: WgpuRenderState, root: DisplayObject, specs: readonly NativeGlowSpec[]): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGPUBackground(state);
-  renderWebGPUDisplayObject(state, root);
-  const toDestroy: WebGPURenderTarget[] = [];
+  renderWgpuBackground(state);
+  renderWgpuDisplayObject(state, root);
+  const toDestroy: WgpuRenderTarget[] = [];
   for (const spec of specs) compositeNative(state, spec, toDestroy);
-  submitWebGPURenderPass(state);
-  for (const target of toDestroy) destroyWebGPURenderTarget(state, target);
+  submitWgpuRenderPass(state);
+  for (const target of toDestroy) destroyWgpuRenderTarget(state, target);
 }
 
-function compositeNative(
-  state: WebGPURenderState,
-  spec: Readonly<NativeGlowSpec>,
-  toDestroy: WebGPURenderTarget[],
-): void {
+function compositeNative(state: WgpuRenderState, spec: Readonly<NativeGlowSpec>, toDestroy: WgpuRenderTarget[]): void {
   const size = spec.tile;
 
   const sourceBitmap = createBitmap();
@@ -92,27 +88,27 @@ function compositeNative(
   sourceBitmap.x = 0;
   sourceBitmap.y = 0;
 
-  const sourceTarget = createWebGPURenderTarget(state, size, size);
-  const destTarget = createWebGPURenderTarget(state, size, size);
-  const scratch0 = createWebGPURenderTarget(state, size, size);
-  const scratch1 = createWebGPURenderTarget(state, size, size);
-  const scratch2 = createWebGPURenderTarget(state, size, size);
+  const sourceTarget = createWgpuRenderTarget(state, size, size);
+  const destTarget = createWgpuRenderTarget(state, size, size);
+  const scratch0 = createWgpuRenderTarget(state, size, size);
+  const scratch1 = createWgpuRenderTarget(state, size, size);
+  const scratch2 = createWgpuRenderTarget(state, size, size);
 
   prepareDisplayObjectRender(state, sourceBitmap);
   const sourceProxy = getRenderProxy2D(state, sourceBitmap);
   if (sourceProxy !== undefined) setFlippedTransform(sourceProxy.transform2D, size);
 
-  beginWebGPURenderTarget(state, sourceTarget, _identity);
-  renderWebGPUDisplayObject(state, sourceBitmap);
-  applyInnerGlowFilterToWebGPU(state, sourceTarget, destTarget, [scratch0, scratch1, scratch2], spec.filter);
-  endWebGPURenderTarget(state);
+  beginWgpuRenderTarget(state, sourceTarget, _identity);
+  renderWgpuDisplayObject(state, sourceBitmap);
+  applyInnerGlowFilterToWgpu(state, sourceTarget, destTarget, [scratch0, scratch1, scratch2], spec.filter);
+  endWgpuRenderTarget(state);
 
   const placement = createBitmap();
   placement.x = spec.x;
   placement.y = spec.y;
   prepareDisplayObjectRender(state, placement);
   const placementProxy = getRenderProxy2D(state, placement);
-  if (placementProxy !== undefined) drawWebGPURenderTargetResult(state, placementProxy, destTarget, _identity);
+  if (placementProxy !== undefined) drawWgpuRenderTargetResult(state, placementProxy, destTarget, _identity);
 
   toDestroy.push(sourceTarget, destTarget, scratch0, scratch1, scratch2);
 }

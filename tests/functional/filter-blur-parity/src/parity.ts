@@ -8,7 +8,7 @@
 // The two filter shapes differ by backend and this contract absorbs that difference:
 //   - DOM / Canvas: the native blur is a CSS filter string bound to a scene node; the normal render
 //     draws it. `applyNativeBlur(node, filter)` binds the filter; the node must already be in `root`.
-//   - WebGL: the native blur is a multi-pass shader into offscreen render targets, composited onto the
+//   - Gl: the native blur is a multi-pass shader into offscreen render targets, composited onto the
 //     screen after the scene. `drawNativeBlur(spec)` runs that GPU pass; it is a no-op on DOM/Canvas.
 // A backend implements whichever path is real for it and leaves the other a no-op, so app.ts can call
 // both unconditionally.
@@ -33,9 +33,9 @@ export interface ParityTarget {
   // Device-pixel scale: the backing store is width × scale (1 for DOM, devicePixelRatio otherwise).
   scale: number;
   // CSS-filter backends (DOM/Canvas): bind the native blur to a scene node drawn by the normal render.
-  // No-op on WebGL. `node` must already be attached under the root passed to render().
+  // No-op on Gl. `node` must already be attached under the root passed to render().
   applyNativeBlur(node: Bitmap, filter: Readonly<BlurFilter>): void;
-  // Shader backends (WebGL): run the offscreen multi-pass blur and composite it at the native tile.
+  // Shader backends (Gl): run the offscreen multi-pass blur and composite it at the native tile.
   // No-op on DOM/Canvas. Called after applyNativeBlur, immediately before/around render().
   drawNativeBlur?(spec: Readonly<NativeBlurSpec>): void;
   render(root: DisplayObject): void;

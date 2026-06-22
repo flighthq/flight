@@ -18,7 +18,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
   setSurfacePixel,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -116,7 +116,7 @@ export function assertRender(frame: Readonly<Surface>): void {
 function sampleResult(frame: Readonly<Surface>, s: number, col: number, row: number): number {
   const px = Math.round((RESULT_X + col) * s);
   const py = Math.round((TOP + row) * s);
-  return getSurfacePixelRGB(frame, px, py);
+  return getSurfacePixelRgb(frame, px, py);
 }
 
 function channelsClose(a: number, b: number, tol = 32): boolean {

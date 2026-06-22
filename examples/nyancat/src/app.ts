@@ -8,7 +8,7 @@ import {
   createSpritesheetFrame,
   createSpritesheetTimelineSource,
   createTextureAtlas,
-  loadImageResourceFromURL,
+  loadImageResourceFromUrl,
   playMovieClip,
   setMovieClipSource,
   startApplicationLoop,
@@ -24,7 +24,7 @@ const GAP = 4;
 const COLS_PER_ROW = [5, 4];
 const FPS = 10;
 
-const source = await loadImageResourceFromURL('assets/nyancat.png');
+const source = await loadImageResourceFromUrl('assets/nyancat.png');
 const atlas = createTextureAtlas({ image: source });
 
 const frames = [];

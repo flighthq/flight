@@ -4,8 +4,8 @@ import {
   createCanvasElement,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
-  createFXAAEffect,
-  defaultCanvasFXAAEffectRunner,
+  createFxaaEffect,
+  defaultCanvasFxaaEffectRunner,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
@@ -27,7 +27,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'fxaa', defaultCanvasFXAAEffectRunner);
+registerCanvasRenderEffect(state, 'fxaa', defaultCanvasFxaaEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 
@@ -40,5 +40,5 @@ export function render(root: DisplayObject): void {
   beginCanvasRenderEffectPipeline(state, pipeline);
   renderCanvasBackground(state);
   renderCanvasDisplayObject(state, root);
-  endCanvasRenderEffectPipeline(state, pipeline, [createFXAAEffect({ edgeThreshold: 0.0312, subpixel: 0.75 })]);
+  endCanvasRenderEffectPipeline(state, pipeline, [createFxaaEffect({ edgeThreshold: 0.0312, subpixel: 0.75 })]);
 }

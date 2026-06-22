@@ -18,7 +18,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -96,7 +96,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   // Center of the square (within the RESULT tile) must still be white.
   const cx = Math.round((RESULT_X + TILE / 2) * s);
   const cy = Math.round((TOP + TILE / 2) * s);
-  const center = getSurfacePixelRGB(frame, cx, cy);
+  const center = getSurfacePixelRgb(frame, cx, cy);
   if (!channelsClose(center, 0xffffff, 24)) {
     throw new Error(`[filter-outer-glow] square center expected white, got #${hex(center)}`);
   }
@@ -113,7 +113,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   for (const [lx, ly] of edges) {
     const px = Math.round((RESULT_X + lx) * s);
     const py = Math.round((TOP + ly) * s);
-    const got = getSurfacePixelRGB(frame, px, py);
+    const got = getSurfacePixelRgb(frame, px, py);
     const r = (got >> 16) & 255;
     const g = (got >> 8) & 255;
     const b = got & 255;
@@ -125,7 +125,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   // Far background (tile corner) stays black — the glow does not reach it.
   const bx = Math.round((RESULT_X + 8) * s);
   const by = Math.round((TOP + 8) * s);
-  const bg = getSurfacePixelRGB(frame, bx, by);
+  const bg = getSurfacePixelRgb(frame, bx, by);
   if (!channelsClose(bg, 0x000000, 24)) {
     throw new Error(`[filter-outer-glow] far background expected black, got #${hex(bg)}`);
   }

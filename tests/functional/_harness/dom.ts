@@ -1,26 +1,26 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
-  createDOMRenderState,
+  createDomRenderState,
   defaultCanvasShapeCommands,
-  defaultDOMBitmapRenderer,
-  defaultDOMRichTextRenderer,
-  defaultDOMShapeRenderer,
-  enableDOMClipSupport,
-  enableDOMRenderCache,
+  defaultDomBitmapRenderer,
+  defaultDomRichTextRenderer,
+  defaultDomShapeRenderer,
+  enableDomClipSupport,
+  enableDomRenderCache,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
-  renderDOMBackground,
-  renderDOMDisplayObject,
+  renderDomBackground,
+  renderDomDisplayObject,
   RichTextKind,
   ShapeKind,
 } from '@flighthq/sdk';
 
-import type { FunctionalDOMTarget, FunctionalTargetOptions } from './target';
+import type { FunctionalDomTarget, FunctionalTargetOptions } from './target';
 import { registerFunctionalTarget } from './verify';
 
-export function createDOMTarget(options: Readonly<FunctionalTargetOptions>): FunctionalDOMTarget {
+export function createDomTarget(options: Readonly<FunctionalTargetOptions>): FunctionalDomTarget {
   const { width, height } = options;
 
   // DOM has no backing store and needs no device transform — the browser rasterizes DOM elements at
@@ -31,25 +31,25 @@ export function createDOMTarget(options: Readonly<FunctionalTargetOptions>): Fun
   container.style.height = `${height}px`;
   document.body.appendChild(container);
 
-  const state = createDOMRenderState(container, {
+  const state = createDomRenderState(container, {
     backgroundColor: options.background,
     sceneGraphSyncPolicy: options.syncPolicy,
   });
 
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
-      registerRenderer(state, ShapeKind, defaultDOMShapeRenderer);
+      registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
       // The DOM shape renderer rasterizes paths through the canvas shape commands.
       registerCanvasShapeCommands(defaultCanvasShapeCommands);
     } else if (kind === BitmapKind) {
-      registerRenderer(state, BitmapKind, defaultDOMBitmapRenderer);
+      registerRenderer(state, BitmapKind, defaultDomBitmapRenderer);
     } else if (kind === RichTextKind) {
-      registerRenderer(state, RichTextKind, defaultDOMRichTextRenderer);
+      registerRenderer(state, RichTextKind, defaultDomRichTextRenderer);
     }
   }
 
-  if (options.clip) enableDOMClipSupport(state);
-  if (options.cache) enableDOMRenderCache(state);
+  if (options.clip) enableDomClipSupport(state);
+  if (options.cache) enableDomRenderCache(state);
 
   return registerFunctionalTarget({
     kind: 'dom',
@@ -59,8 +59,8 @@ export function createDOMTarget(options: Readonly<FunctionalTargetOptions>): Fun
     scale: 1,
     render(root: DisplayObject): void {
       if (!prepareDisplayObjectRender(state, root)) return;
-      renderDOMBackground(state);
-      renderDOMDisplayObject(state, root);
+      renderDomBackground(state);
+      renderDomDisplayObject(state, root);
     },
   });
 }

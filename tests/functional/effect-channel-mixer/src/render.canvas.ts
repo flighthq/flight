@@ -20,7 +20,7 @@ import {
 
 // Canvas note: channelMixer is a documented Canvas passthrough — the Canvas 2D backend cannot express
 // this color op, so its runner copies the scene through unchanged. The scene renders as-is here for
-// parity with the WebGL/WebGPU columns.
+// parity with the Gl/Wgpu columns.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

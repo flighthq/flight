@@ -2,16 +2,16 @@
 // surface (CPU) inner glow.
 //
 // Reference template adapted from filter-blur-parity. An inner-glow filter has a CPU reference impl
-// (applyInnerGlowFilterToSurface) and a native WebGL impl (a multi-pass shader). Unlike blur, inner
-// glow has NO CSS form, so only WebGL has a real native path; on Canvas/DOM the native tile is the
+// (applyInnerGlowFilterToSurface) and a native Gl impl (a multi-pass shader). Unlike blur, inner
+// glow has NO CSS form, so only Gl has a real native path; on Canvas/DOM the native tile is the
 // surface reference itself (parity by construction). This test draws two tiles side by side:
 //   REFERENCE tile — the source inner-glowed on the CPU via applyInnerGlowFilterToSurface, composited
 //     source-first then mask-on-top, blitted as a plain bitmap. Identical bytes on every backend; the
 //     oracle's ground truth.
 //   NATIVE tile    — the same source pushed through THIS backend's real filter path (the inner-glow
-//     shader on WebGL; the same surface-composited bytes on Canvas/DOM).
+//     shader on Gl; the same surface-composited bytes on Canvas/DOM).
 // The oracle compares the NATIVE tile region against the CPU reference with getSurfaceMismatch and
-// asserts the mismatch fraction is below a calibrated tolerance — so on WebGL it proves the shader
+// asserts the mismatch fraction is below a calibrated tolerance — so on Gl it proves the shader
 // inner glow ≈ the CPU inner glow. It also asserts the native tile is not blank and is actually
 // filtered (the interior edge carries the cyan tint), so a silently no-op native path fails the test.
 //
@@ -32,7 +32,7 @@ import {
   createSurfaceRegion,
   fillSurfaceRectangle,
   getSurfaceMismatch,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 
 import { createParityTarget } from './render';
@@ -96,7 +96,7 @@ const root = createDisplayContainer();
 addNodeChild(root, makeBitmap(referenceData, REFERENCE_X, TOP));
 
 // NATIVE tile.
-//   WebGL: a placeholder bitmap is NOT added — drawNativeGlow composites the GPU result over the scene.
+//   Gl: a placeholder bitmap is NOT added — drawNativeGlow composites the GPU result over the scene.
 //   Canvas/DOM: there is no native CSS inner glow, so the native tile is the same reference bytes
 //     drawn as a plain bitmap; parity holds by construction. drawNativeGlow is a no-op there.
 if (target.kind === 'webgl') {
@@ -134,7 +134,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   const nativeTile = cropFrameTile(frame, NATIVE_X * s, TOP * s, TILE * s, TILE * s, TILE);
 
   // 1) Not blank: the square center must be near-white (the shape itself, not the background).
-  const center = getSurfacePixelRGB(nativeTile, TILE / 2, TILE / 2);
+  const center = getSurfacePixelRgb(nativeTile, TILE / 2, TILE / 2);
   if (green(center) <= 120) {
     throw new Error(`[filter-inner-glow-parity:${render()}] native tile blank/dark at centre — got #${hex(center)}`);
   }
@@ -142,7 +142,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   // 2) Actually filtered: a band ~6px inside the square's left edge carries the cyan tint — B and G
   // high, R lower than the white center. A no-op native path would leave this band plain white.
   const EDGE_INSET = 6;
-  const edge = getSurfacePixelRGB(nativeTile, SQUARE_MIN + EDGE_INSET, TILE / 2);
+  const edge = getSurfacePixelRgb(nativeTile, SQUARE_MIN + EDGE_INSET, TILE / 2);
   const er = (edge >> 16) & 255;
   const eg = (edge >> 8) & 255;
   const eb = edge & 255;

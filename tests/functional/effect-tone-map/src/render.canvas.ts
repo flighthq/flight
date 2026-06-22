@@ -21,7 +21,7 @@ import {
 // Canvas parity column for the same tone-map intent as render.webgl.ts. Canvas realizes tone mapping
 // as a PASSTHROUGH (per effects-canvas's documented real-vs-passthrough list): there is no HDR
 // rgba16f scene buffer on Canvas 2D, so there is no over-range signal to compress and this column
-// renders the scene unchanged. The Canvas column is therefore expected to differ from WebGL/WebGPU.
+// renders the scene unchanged. The Canvas column is therefore expected to differ from Gl/Wgpu.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

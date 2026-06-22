@@ -1,45 +1,45 @@
-import type { DisplayObject, WebGLRenderEffectPipeline, WebGLRenderTarget } from '@flighthq/sdk';
+import type { DisplayObject, GlRenderEffectPipeline, GlRenderTarget } from '@flighthq/sdk';
 import {
+  beginGlRenderEffectPipeline,
   beginVelocityFrame,
-  beginWebGLRenderEffectPipeline,
+  createGlCanvasElement,
+  createGlRenderEffectPipeline,
+  createGlRenderState,
+  createGlVelocityTarget,
   createMotionBlurEffect,
   createVelocityField,
-  createWebGLCanvasElement,
-  createWebGLRenderEffectPipeline,
-  createWebGLRenderState,
-  createWebGLVelocityTarget,
-  defaultWebGLMotionBlurEffectRunner,
-  defaultWebGLParticleEmitterRenderer,
-  defaultWebGLParticleEmitterVelocityWriter,
-  endWebGLRenderEffectPipeline,
+  defaultGlMotionBlurEffectRunner,
+  defaultGlParticleEmitterRenderer,
+  defaultGlParticleEmitterVelocityWriter,
+  endGlRenderEffectPipeline,
   ParticleEmitterKind,
   prepareDisplayObjectRender,
+  registerGlRenderEffect,
+  registerGlVelocityWriter,
   registerRenderer,
-  registerWebGLRenderEffect,
-  registerWebGLVelocityWriter,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
-  renderWebGLVelocity,
-  setWebGLRenderEffectVelocityTexture,
+  renderGlBackground,
+  renderGlDisplayObject,
+  renderGlVelocity,
+  setGlRenderEffectVelocityTexture,
 } from '@flighthq/sdk';
 
-// The particle emitter writes per-particle velocity into the G-buffer (registerWebGLVelocityWriter with
+// The particle emitter writes per-particle velocity into the G-buffer (registerGlVelocityWriter with
 // the particle writer); the motion-blur effect then smears each particle along its own ring-radial vector.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGLCanvasElement(800, 600, pixelRatio);
+const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createWebGLRenderState(canvas, {
+export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   pixelRatio,
   backgroundColor: 0x101014ff,
 });
-registerRenderer(state, ParticleEmitterKind, defaultWebGLParticleEmitterRenderer);
-registerWebGLRenderEffect(state, 'motionBlur', defaultWebGLMotionBlurEffectRunner);
-registerWebGLVelocityWriter(state, ParticleEmitterKind, defaultWebGLParticleEmitterVelocityWriter);
+registerRenderer(state, ParticleEmitterKind, defaultGlParticleEmitterRenderer);
+registerGlRenderEffect(state, 'motionBlur', defaultGlMotionBlurEffectRunner);
+registerGlVelocityWriter(state, ParticleEmitterKind, defaultGlParticleEmitterVelocityWriter);
 
-const pipeline: WebGLRenderEffectPipeline = createWebGLRenderEffectPipeline(state, { sampleCount: 1 });
-const velocityTarget: WebGLRenderTarget = createWebGLVelocityTarget(state, canvas.width, canvas.height);
+const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
+const velocityTarget: GlRenderTarget = createGlVelocityTarget(state, canvas.width, canvas.height);
 const velocityField = createVelocityField();
 
 export const scale = pixelRatio;
@@ -52,11 +52,11 @@ export function render(root: DisplayObject): void {
   // The particle writer reads each particle's velocity from emitter.data.velocities, so no per-frame field
   // contribution is needed here; the field is passed for the (unused) display-object writer path.
   beginVelocityFrame(velocityField);
-  renderWebGLVelocity(state, root, velocityField, velocityTarget);
-  setWebGLRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
+  renderGlVelocity(state, root, velocityField, velocityTarget);
+  setGlRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
-  beginWebGLRenderEffectPipeline(state, pipeline);
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
-  endWebGLRenderEffectPipeline(state, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
+  beginGlRenderEffectPipeline(state, pipeline);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
+  endGlRenderEffectPipeline(state, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
 }

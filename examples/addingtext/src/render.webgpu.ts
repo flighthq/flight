@@ -1,32 +1,32 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  createWebGPUCanvasElement,
-  createWebGPURenderState,
-  defaultWebGPUTextLabelRenderer,
+  createWgpuCanvasElement,
+  createWgpuRenderState,
+  defaultWgpuTextLabelRenderer,
   prepareDisplayObjectRender,
-  registerDefaultWebGPUMaterial,
+  registerDefaultWgpuMaterial,
   registerRenderer,
-  renderWebGPUBackground,
-  renderWebGPUDisplayObject,
-  submitWebGPURenderPass,
+  renderWgpuBackground,
+  renderWgpuDisplayObject,
+  submitWgpuRenderPass,
   TextLabelKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGPUCanvasElement(400, 200, pixelRatio);
+const canvas = createWgpuCanvasElement(400, 200, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWebGPURenderState(canvas, {
+export const state = await createWgpuRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerRenderer(state, TextLabelKind, defaultWebGPUTextLabelRenderer);
-registerDefaultWebGPUMaterial(state);
+registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
+registerDefaultWgpuMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGPUBackground(state);
-  renderWebGPUDisplayObject(state, root);
-  submitWebGPURenderPass(state);
+  renderWgpuBackground(state);
+  renderWgpuDisplayObject(state, root);
+  submitWgpuRenderPass(state);
 }

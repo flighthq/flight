@@ -1,31 +1,31 @@
-import type { DisplayObject, WebGLRenderEffectPipeline, WebGLRenderTarget } from '@flighthq/sdk';
+import type { DisplayObject, GlRenderEffectPipeline, GlRenderTarget } from '@flighthq/sdk';
 import {
+  beginGlRenderEffectPipeline,
   beginVelocityFrame,
-  beginWebGLRenderEffectPipeline,
   contributeVelocity,
+  createGlCanvasElement,
+  createGlRenderEffectPipeline,
+  createGlRenderState,
+  createGlVelocityTarget,
   createMotionBlurEffect,
   createVelocityField,
-  createWebGLCanvasElement,
-  createWebGLRenderEffectPipeline,
-  createWebGLRenderState,
-  createWebGLVelocityTarget,
-  defaultWebGLDisplayObjectVelocityWriter,
-  defaultWebGLMotionBlurEffectRunner,
-  defaultWebGLShapeCommands,
-  defaultWebGLShapeRenderer,
-  endWebGLRenderEffectPipeline,
+  defaultGlDisplayObjectVelocityWriter,
+  defaultGlMotionBlurEffectRunner,
+  defaultGlShapeCommands,
+  defaultGlShapeRenderer,
+  endGlRenderEffectPipeline,
   getNodeChildAt,
   getNodeChildCount,
   prepareDisplayObjectRender,
-  registerDefaultWebGLMaterial,
+  registerDefaultGlMaterial,
+  registerGlRenderEffect,
+  registerGlShapeCommands,
+  registerGlVelocityWriter,
   registerRenderer,
-  registerWebGLRenderEffect,
-  registerWebGLShapeCommands,
-  registerWebGLVelocityWriter,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
-  renderWebGLVelocity,
-  setWebGLRenderEffectVelocityTexture,
+  renderGlBackground,
+  renderGlDisplayObject,
+  renderGlVelocity,
+  setGlRenderEffectVelocityTexture,
   ShapeKind,
 } from '@flighthq/sdk';
 
@@ -34,25 +34,25 @@ import {
 // contribute a screen-space velocity to each shape before rendering the velocity pass. That makes the
 // blur visible in a single deterministic capture instead of requiring real motion across frames.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGLCanvasElement(800, 600, pixelRatio);
+const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createWebGLRenderState(canvas, {
+export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   pixelRatio,
   backgroundColor: 0x101014ff,
 });
-registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
-registerWebGLShapeCommands(defaultWebGLShapeCommands);
-registerDefaultWebGLMaterial(state);
-registerWebGLRenderEffect(state, 'motionBlur', defaultWebGLMotionBlurEffectRunner);
+registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerGlShapeCommands(defaultGlShapeCommands);
+registerDefaultGlMaterial(state);
+registerGlRenderEffect(state, 'motionBlur', defaultGlMotionBlurEffectRunner);
 // The velocity writer rasterizes each shape's contributed velocity into the velocity target.
-registerWebGLVelocityWriter(state, ShapeKind, defaultWebGLDisplayObjectVelocityWriter);
+registerGlVelocityWriter(state, ShapeKind, defaultGlDisplayObjectVelocityWriter);
 
-const pipeline: WebGLRenderEffectPipeline = createWebGLRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
 
 // Velocity target is sized to the canvas backing store (logical size * pixelRatio).
-const velocityTarget: WebGLRenderTarget = createWebGLVelocityTarget(state, canvas.width, canvas.height);
+const velocityTarget: GlRenderTarget = createGlVelocityTarget(state, canvas.width, canvas.height);
 const velocityField = createVelocityField();
 
 export const scale = pixelRatio;
@@ -70,11 +70,11 @@ export function render(root: DisplayObject): void {
     const child = getNodeChildAt(root, i);
     if (child !== null) contributeVelocity(velocityField, child, 40 * pixelRatio, 0);
   }
-  renderWebGLVelocity(state, root, velocityField, velocityTarget);
-  setWebGLRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
+  renderGlVelocity(state, root, velocityField, velocityTarget);
+  setGlRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
-  beginWebGLRenderEffectPipeline(state, pipeline);
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
-  endWebGLRenderEffectPipeline(state, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
+  beginGlRenderEffectPipeline(state, pipeline);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
+  endGlRenderEffectPipeline(state, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
 }

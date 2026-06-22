@@ -2,16 +2,16 @@ import type { Sprite } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
-  createDOMRenderState,
+  createDomRenderState,
   createRenderView,
   defaultCanvasSpriteRenderer,
-  defaultDOMRenderViewRenderer,
+  defaultDomRenderViewRenderer,
   prepareDisplayObjectRender,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasSprite,
-  renderDOMBackground,
-  renderDOMDisplayObject,
+  renderDomBackground,
+  renderDomDisplayObject,
   RenderViewKind,
   SpriteKind,
 } from '@flighthq/sdk';
@@ -50,16 +50,16 @@ container.style.width = `${WIDTH}px`;
 container.style.height = `${HEIGHT}px`;
 document.body.appendChild(container);
 
-export const state = createDOMRenderState(container, {
+export const state = createDomRenderState(container, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xeeddccff,
 });
-registerRenderer(state, RenderViewKind, defaultDOMRenderViewRenderer);
+registerRenderer(state, RenderViewKind, defaultDomRenderViewRenderer);
 export const scale = 1;
 
 export function render(root: Sprite): void {
   spriteRoot = root;
   if (!prepareDisplayObjectRender(state, renderView)) return;
-  renderDOMBackground(state);
-  renderDOMDisplayObject(state, renderView);
+  renderDomBackground(state);
+  renderDomDisplayObject(state, renderView);
 }
