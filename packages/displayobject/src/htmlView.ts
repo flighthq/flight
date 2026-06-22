@@ -1,20 +1,20 @@
 import { invalidateNodeLocalBounds } from '@flighthq/node';
-import type { HTMLView, HTMLViewData, HTMLViewRuntime, MethodsOf, Node, PartialNode, Rectangle } from '@flighthq/types';
-import { HTMLViewKind } from '@flighthq/types';
+import type { HtmlView, HtmlViewData, HtmlViewRuntime, MethodsOf, Node, PartialNode, Rectangle } from '@flighthq/types';
+import { HtmlViewKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
 
-export function computeHTMLViewLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
-  const data = (source as HTMLView).data;
+export function computeHtmlViewLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
+  const data = (source as HtmlView).data;
   out.width = data.width;
   out.height = data.height;
 }
 
-export function createHTMLView(obj?: Readonly<PartialNode<HTMLView>>): HTMLView {
-  return createDisplayObjectGeneric(HTMLViewKind, obj, createHTMLViewData, createHTMLViewRuntime) as HTMLView;
+export function createHtmlView(obj?: Readonly<PartialNode<HtmlView>>): HtmlView {
+  return createDisplayObjectGeneric(HtmlViewKind, obj, createHtmlViewData, createHtmlViewRuntime) as HtmlView;
 }
 
-export function createHTMLViewData(data?: Readonly<Partial<HTMLViewData>>): HTMLViewData {
+export function createHtmlViewData(data?: Readonly<Partial<HtmlViewData>>): HtmlViewData {
   return {
     element: data?.element ?? null,
     height: data?.height ?? 100,
@@ -22,21 +22,21 @@ export function createHTMLViewData(data?: Readonly<Partial<HTMLViewData>>): HTML
   };
 }
 
-export function createHTMLViewRuntime(): HTMLViewRuntime {
-  return createDisplayObjectRuntime(defaultMethods) as HTMLViewRuntime;
+export function createHtmlViewRuntime(): HtmlViewRuntime {
+  return createDisplayObjectRuntime(defaultMethods) as HtmlViewRuntime;
 }
 
-export function getHTMLViewRuntime(source: Readonly<HTMLView>): Readonly<HTMLViewRuntime> {
-  return getDisplayObjectRuntime(source) as HTMLViewRuntime;
+export function getHtmlViewRuntime(source: Readonly<HtmlView>): Readonly<HtmlViewRuntime> {
+  return getDisplayObjectRuntime(source) as HtmlViewRuntime;
 }
 
-export function setHTMLViewSize(source: HTMLView, width: number, height: number): void {
+export function setHtmlViewSize(source: HtmlView, width: number, height: number): void {
   if (source.data.width === width && source.data.height === height) return;
   source.data.width = width;
   source.data.height = height;
   invalidateNodeLocalBounds(source);
 }
 
-const defaultMethods: Partial<MethodsOf<HTMLViewRuntime>> = {
-  computeLocalBoundsRectangle: computeHTMLViewLocalBoundsRectangle,
+const defaultMethods: Partial<MethodsOf<HtmlViewRuntime>> = {
+  computeLocalBoundsRectangle: computeHtmlViewLocalBoundsRectangle,
 };

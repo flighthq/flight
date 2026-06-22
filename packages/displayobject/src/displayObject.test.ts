@@ -150,14 +150,14 @@ describe('setDisplayObjectClip', () => {
   });
 
   it('invalidates appearance', () => {
-    const idBefore = getRuntime_(obj).appearanceID;
+    const idBefore = getRuntime_(obj).appearanceId;
     setDisplayObjectClip(obj, {
       contours: null,
       rect: { x: 0, y: 0, width: 10, height: 10 } as Rectangle,
       winding: 'nonZero',
       version: 0,
     });
-    expect(getRuntime_(obj).appearanceID).not.toBe(idBefore);
+    expect(getRuntime_(obj).appearanceId).not.toBe(idBefore);
   });
 });
 
