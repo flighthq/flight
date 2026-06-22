@@ -1,0 +1,6 @@
+[package]
+name = "flighthq-math"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "General math utilities: seeded random and power-of-two rounding"

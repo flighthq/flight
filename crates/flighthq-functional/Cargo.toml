@@ -1,0 +1,24 @@
+[package]
+name = "flighthq-functional"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "Flight Rust functional/visual harness: render scenes headlessly and gate them for regression (vs committed fingerprints) and parity (vs TS baselines)"
+
+[dependencies]
+flighthq-capture = { workspace = true }
+flighthq-effects = { workspace = true }
+flighthq-effects-wgpu = { workspace = true }
+flighthq-render = { workspace = true }
+flighthq-render-wgpu = { workspace = true }
+flighthq-shape = { workspace = true }
+flighthq-path = { workspace = true }
+flighthq-surface = { workspace = true }
+flighthq-types = { workspace = true }
+serde_json = "1"
+wgpu = { workspace = true }
+
+[[bin]]
+name = "flighthq-functional"
+path = "src/main.rs"

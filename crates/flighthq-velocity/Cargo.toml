@@ -1,0 +1,12 @@
+[package]
+name = "flighthq-velocity"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Generic per-node velocity field and contributors (transform-delta baseline + explicit overrides)"
+
+[dependencies]
+flighthq-geometry = { workspace = true }
+flighthq-node = { workspace = true }
+flighthq-types = { workspace = true }
+slotmap = { workspace = true }

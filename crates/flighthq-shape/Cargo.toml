@@ -1,0 +1,13 @@
+[package]
+name = "flighthq-shape"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Vector Shape display node: drawing commands, scale-9 shapes, and shape hit testing"
+
+[dependencies]
+flighthq-clip = { workspace = true }
+flighthq-geometry = { workspace = true }
+flighthq-node = { workspace = true }
+flighthq-path = { workspace = true }
+flighthq-types = { workspace = true }

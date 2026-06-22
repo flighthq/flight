@@ -1,0 +1,9 @@
+[package]
+name = "flighthq-storage"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Synchronous key/value persistence over a swappable web/native backend (localStorage by default)"
+
+[dependencies]
+flighthq-types = { workspace = true }

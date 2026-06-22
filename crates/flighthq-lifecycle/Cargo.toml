@@ -1,0 +1,13 @@
+[package]
+name = "flighthq-lifecycle"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Application foreground/background lifecycle state and resume/pause/back signals over a swappable web/native backend"
+
+[dependencies]
+flighthq-types = { workspace = true }
+flighthq-signals = { workspace = true }
+
+[dev-dependencies]
+serial_test = { workspace = true }

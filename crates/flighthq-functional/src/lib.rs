@@ -1,0 +1,233 @@
+//! `flighthq-functional` — Flight Rust functional/visual parity harness.
+//!
+//! Renders declarative scenes headlessly through `flighthq-capture` and gates
+//! them two ways:
+//!
+//! - **Regression**: the fresh fingerprint must match a committed
+//!   `crates/flighthq-functional/baselines/<name>.fp` line within a tolerance
+//!   (default `5.0`), catching gross visual drift in the Rust render path.
+//! - **Parity**: when a scene maps to a TS functional scene (`Scene.ts_baseline`
+//!   `Some`), the fresh fingerprint is compared to that scene's TS baseline
+//!   (`tests/functional/baselines/<stem>.json`) within a wider tolerance
+//!   (default `15.0`), confirming the Rust render matches the TS reference.
+//!
+//! The fingerprint is the same `"16:<hex>"` 16×16×3 averaged-RGB form
+//! `flighthq-surface` produces and the TS baselines store, so a Rust capture is
+//! directly comparable to a TS baseline string.
+//!
+//! All paths return sentinels (`None`) rather than panicking when no wgpu
+//! adapter is present, so a GPU-less CI box degrades gracefully.
+
+mod scene;
+
+use std::path::{Path, PathBuf};
+
+use flighthq_surface::{
+    compare_surface_fingerprints, create_surface_fingerprint, format_surface_fingerprint,
+    parse_surface_fingerprint,
+};
+use flighthq_types::AlphaType;
+use flighthq_types::{ColorSpace, PixelFormat, Surface};
+
+pub use scene::{RectFill, Scene, render_scene_to_rgba, scenes};
+
+/// Grid resolution of the visual fingerprint. 16×16×3 cells, matching the TS
+/// functional baselines' `"16:<hex>"` form.
+pub const FINGERPRINT_GRID_SIZE: u32 = 16;
+
+/// Default regression tolerance (mean abs per-channel diff, 0..255). Matches the
+/// TS `compare-render` regression tolerance.
+pub const DEFAULT_REGRESSION_TOLERANCE: f32 = 5.0;
+
+/// Default parity tolerance (mean abs per-channel diff, 0..255). Matches the TS
+/// `compare-render` parity tolerance.
+pub const DEFAULT_PARITY_TOLERANCE: f32 = 15.0;
+
+/// Outcome of one fingerprint comparison.
+#[derive(Clone, Debug)]
+pub struct CheckResult {
+    /// The freshly rendered fingerprint, `"16:<hex>"`.
+    pub fingerprint: String,
+    /// The baseline fingerprint compared against, `"16:<hex>"`.
+    pub baseline: String,
+    /// Mean abs per-channel difference (0..255).
+    pub diff: f32,
+    /// The tolerance the diff was gated against.
+    pub tolerance: f32,
+    /// `true` when `diff <= tolerance`.
+    pub pass: bool,
+}
+
+/// Renders a scene and reduces it to a `"16:<hex>"` fingerprint. Returns `None`
+/// when no wgpu adapter is available.
+pub fn render_scene_fingerprint(scene: &Scene) -> Option<String> {
+    let pixels = render_scene_to_rgba(scene)?;
+    let surface = Surface {
+        alpha_type: AlphaType::Straight,
+        data: pixels,
+        format: PixelFormat::Rgba8Unorm,
+        height: scene.height,
+        version: 0,
+        width: scene.width,
+        color_space: ColorSpace::Srgb,
+    };
+    let fingerprint = create_surface_fingerprint(&surface, FINGERPRINT_GRID_SIZE);
+    Some(format_surface_fingerprint(&fingerprint))
+}
+
+/// Compares a scene's fresh fingerprint to its committed regression baseline.
+///
+/// Returns `None` when no adapter is available (nothing rendered) or when the
+/// committed baseline file is missing or malformed. A missing baseline is the
+/// signal to run the bless path (`write_regression_baseline`).
+pub fn check_regression(scene: &Scene, tolerance: f32) -> Option<CheckResult> {
+    let fingerprint = render_scene_fingerprint(scene)?;
+    let baseline = read_regression_baseline(scene)?;
+    compare_fingerprint_strings(&fingerprint, &baseline, tolerance)
+}
+
+/// Compares a scene's fresh fingerprint to the TS functional baseline it maps to.
+///
+/// Returns `None` when the scene has no `ts_baseline` mapping (the common case
+/// today), when no adapter is available, or when the TS `webgpu` baseline carries
+/// no `fingerprint` string. A `None` from a scene that *does* map a baseline and
+/// *does* render is the "deferred — no wgpu baseline" signal: the runner reports
+/// it as deferred rather than grading the wgpu output against a different
+/// backend's algorithm. Compares only against the TS `webgpu` fingerprint (see
+/// [`read_ts_baseline_fingerprint`]).
+pub fn check_parity(scene: &Scene, tolerance: f32) -> Option<CheckResult> {
+    let stem = scene.ts_baseline?;
+    let fingerprint = render_scene_fingerprint(scene)?;
+    let baseline = read_ts_baseline_fingerprint(stem)?;
+    compare_fingerprint_strings(&fingerprint, &baseline, tolerance)
+}
+
+/// Writes a scene's fresh fingerprint to its committed regression baseline file,
+/// creating the `baselines/` directory if needed. Returns the written
+/// fingerprint, or `None` when no adapter is available (nothing to write).
+pub fn write_regression_baseline(scene: &Scene) -> Option<String> {
+    let fingerprint = render_scene_fingerprint(scene)?;
+    let path = regression_baseline_path(scene.name);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).ok()?;
+    }
+    std::fs::write(&path, format!("{fingerprint}\n")).ok()?;
+    Some(fingerprint)
+}
+
+/// The committed regression baseline path for a scene name:
+/// `crates/flighthq-functional/baselines/<name>.fp`.
+pub fn regression_baseline_path(name: &str) -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("baselines")
+        .join(format!("{name}.fp"))
+}
+
+/// Reads and trims a scene's committed regression baseline line, or `None` if
+/// the file is missing or empty.
+pub fn read_regression_baseline(scene: &Scene) -> Option<String> {
+    let text = std::fs::read_to_string(regression_baseline_path(scene.name)).ok()?;
+    let line = text.trim();
+    if line.is_empty() {
+        None
+    } else {
+        Some(line.to_string())
+    }
+}
+
+/// Loads the TS `webgpu` functional baseline fingerprint string from the
+/// baseline JSON identified by its stem (`tests/functional/baselines/<stem>.json`).
+///
+/// Only the `webgpu` backend is read. The Rust port renders through wgpu, so its
+/// WebGPU sibling is the one apples-to-apples reference: the wgpu effect shaders
+/// here are byte-identical to the TS wgpu shaders. The `canvas` and `webgl`
+/// baselines are deliberately *not* a fallback — those backends implement some
+/// effects with a different algorithm (e.g. canvas hue/saturation is a CSS
+/// `hue-rotate`/`saturate` matrix in YIQ space, not the wgpu HSL convert-rotate-
+/// convert path), so comparing wgpu output against them measures an algorithm
+/// difference, not a port regression. Returns `None` when the file is missing or
+/// the `webgpu` node carries no `fingerprint` string (some TS baselines committed
+/// only a `sha256`); callers treat that as "deferred — no wgpu baseline" rather
+/// than failing against a different backend.
+pub fn read_ts_baseline_fingerprint(stem: &str) -> Option<String> {
+    let path = ts_baseline_path(stem);
+    let text = std::fs::read_to_string(path).ok()?;
+    let json: serde_json::Value = serde_json::from_str(&text).ok()?;
+    json.get("webgpu")
+        .and_then(|b| b.get("fingerprint"))
+        .and_then(|f| f.as_str())
+        .map(|s| s.to_string())
+}
+
+/// The TS functional baseline path for a stem:
+/// `<repo>/tests/functional/baselines/<stem>.json`. Resolved relative to this
+/// crate's manifest (`crates/flighthq-functional`), two levels up to the repo
+/// root.
+pub fn ts_baseline_path(stem: &str) -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join("tests/functional/baselines")
+        .join(format!("{stem}.json"))
+}
+
+/// Parses two `"16:<hex>"` fingerprint strings and compares them within
+/// `tolerance`. Returns `None` if either string is malformed or the grid sizes
+/// differ.
+pub fn compare_fingerprint_strings(
+    fingerprint: &str,
+    baseline: &str,
+    tolerance: f32,
+) -> Option<CheckResult> {
+    let fresh = parse_surface_fingerprint(fingerprint)?;
+    let base = parse_surface_fingerprint(baseline)?;
+    if fresh.grid_size != base.grid_size {
+        return None;
+    }
+    let diff = compare_surface_fingerprints(&fresh, &base);
+    Some(CheckResult {
+        fingerprint: fingerprint.to_string(),
+        baseline: baseline.to_string(),
+        diff,
+        tolerance,
+        pass: diff <= tolerance,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn compare_fingerprint_strings_identical_passes() {
+        let fp = "16:".to_string() + &"00".repeat(16 * 16 * 3);
+        let result = compare_fingerprint_strings(&fp, &fp, DEFAULT_REGRESSION_TOLERANCE).unwrap();
+        assert_eq!(result.diff, 0.0);
+        assert!(result.pass);
+    }
+
+    #[test]
+    fn compare_fingerprint_strings_malformed_returns_none() {
+        assert!(compare_fingerprint_strings("not-a-fingerprint", "16:00", 5.0).is_none());
+    }
+
+    #[test]
+    fn read_ts_baseline_fingerprint_defers_when_webgpu_node_lacks_fingerprint() {
+        // `effect-hue-saturation` committed a `webgpu` node with only a sha256
+        // (no fingerprint), so parity must defer rather than fall back to the
+        // canvas baseline, whose CSS hue-rotate is a different algorithm.
+        assert!(read_ts_baseline_fingerprint("effect-hue-saturation").is_none());
+    }
+
+    #[test]
+    fn read_ts_baseline_fingerprint_reads_webgpu_when_present() {
+        // `effect-grayscale` carries a real `webgpu` fingerprint string.
+        let fp = read_ts_baseline_fingerprint("effect-grayscale").expect("webgpu fingerprint");
+        assert!(fp.starts_with("16:"));
+    }
+
+    #[test]
+    fn regression_baseline_path_targets_crate_baselines_dir() {
+        let path = regression_baseline_path("solid-red");
+        assert!(path.ends_with("baselines/solid-red.fp"));
+    }
+}

@@ -1,0 +1,13 @@
+[package]
+name = "flighthq-render-gl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "WebGL2 renderer implementation"
+
+[dependencies]
+flighthq-types = { workspace = true }
+flighthq-render = { workspace = true }
+flighthq-node = { workspace = true }
+flighthq-path = { workspace = true }
+glow = { workspace = true }

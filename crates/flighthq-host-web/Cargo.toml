@@ -1,0 +1,137 @@
+[package]
+name = "flighthq-host-web"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Browser (wasm) host: canvas + wgpu surface frame loop and DOM input for the Flight SDK"
+
+[dependencies]
+# Core render + input + types the host frame loop already depends on.
+flighthq-types = { workspace = true }
+flighthq-input = { workspace = true }
+flighthq-render = { workspace = true }
+flighthq-render-wgpu = { workspace = true }
+flighthq-displayobject = { workspace = true }
+flighthq-application = { workspace = true }
+flighthq-resources = { workspace = true }
+
+# Platform capability crates. host-web fills each crate's `*Backend` seam with a
+# browser implementation and installs it through that crate's `set_*_backend`.
+flighthq-clipboard = { workspace = true }
+flighthq-storage = { workspace = true }
+flighthq-filesystem = { workspace = true }
+flighthq-shell = { workspace = true }
+flighthq-dialog = { workspace = true }
+flighthq-notification = { workspace = true }
+flighthq-network = { workspace = true }
+flighthq-power = { workspace = true }
+flighthq-lifecycle = { workspace = true }
+flighthq-ipc = { workspace = true }
+flighthq-menu = { workspace = true }
+flighthq-app = { workspace = true }
+flighthq-device = { workspace = true }
+flighthq-keyboard = { workspace = true }
+flighthq-platform = { workspace = true }
+flighthq-protocol = { workspace = true }
+flighthq-screen = { workspace = true }
+flighthq-sensors = { workspace = true }
+flighthq-shortcut = { workspace = true }
+flighthq-tray = { workspace = true }
+flighthq-media = { workspace = true }
+
+# Host-coupled external deps live here, not in [workspace.dependencies]. This crate is
+# a runtime adapter and is not tree-shakable.
+log = { workspace = true }
+
+# wgpu needs a web backend feature when targeting wasm. webgl is the broadest baseline;
+# webgpu is added so browsers that support it can use the native-fidelity path.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { version = "22", default-features = false, features = ["wgsl", "webgl", "webgpu"] }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+console_error_panic_hook = "0.1"
+# Comprehensive feature list spanning every web-relocated capability. Capability
+# agents fill modules without editing the manifest; the verify phase appends any
+# still-missing features they flag. Keep alphabetized within groups for scanning.
+web-sys = { version = "0.3", features = [
+    # Core window / document / DOM tree.
+    "Window",
+    "Document",
+    "Navigator",
+    "History",
+    "Location",
+    "Performance",
+    "VisualViewport",
+    "Screen",
+    "MediaQueryList",
+    # Elements.
+    "Element",
+    "HtmlElement",
+    "HtmlCanvasElement",
+    "HtmlInputElement",
+    "HtmlVideoElement",
+    "CssStyleDeclaration",
+    "DomRect",
+    # Events.
+    "Event",
+    "EventTarget",
+    "CustomEvent",
+    "KeyboardEvent",
+    "MouseEvent",
+    "PointerEvent",
+    "WheelEvent",
+    "TouchEvent",
+    "FocusEvent",
+    "DeviceOrientationEvent",
+    "DeviceMotionEvent",
+    # Clipboard.
+    "Clipboard",
+    "ClipboardEvent",
+    # Storage.
+    "Storage",
+    "StorageManager",
+    # Filesystem (OPFS).
+    "FileSystemDirectoryHandle",
+    "FileSystemFileHandle",
+    "FileSystemGetFileOptions",
+    "FileSystemSyncAccessHandle",
+    # Files / blobs / URLs.
+    "Blob",
+    "File",
+    "FileReader",
+    "Url",
+    "ImageBitmap",
+    # Notifications & permissions.
+    "Notification",
+    "NotificationPermission",
+    "Permissions",
+    # Power.
+    "BatteryManager",
+    # Sensors / input devices.
+    "Gamepad",
+    "GamepadButton",
+    "MediaDevices",
+    "Geolocation",
+    "Position",
+    "Coordinates",
+    # Fonts.
+    "FontFace",
+    "FontFaceSet",
+    # Audio (media playback).
+    "AudioContext",
+    "AudioBuffer",
+    "AudioBufferSourceNode",
+    "AudioDestinationNode",
+    "GainNode",
+    # IPC / messaging.
+    "MessageChannel",
+    "MessagePort",
+    "BroadcastChannel",
+] }
+
+# On native targets the crate compiles as a thin, mostly-cfg-gated shell so the workspace
+# `cargo check` / `cargo test` pass without the wasm toolchain. wgpu is pulled from the
+# workspace to keep the version aligned with the rest of the SDK.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+wgpu = { workspace = true }

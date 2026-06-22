@@ -1,0 +1,18 @@
+[package]
+name = "flighthq-capture"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Headless wgpu scene capture: render a scene to an offscreen texture and read it back to a PNG, the long-term GPU regression gate"
+
+[dependencies]
+flighthq-types = { workspace = true }
+flighthq-geometry = { workspace = true }
+flighthq-node = { workspace = true }
+flighthq-displayobject = { workspace = true }
+flighthq-render = { workspace = true }
+flighthq-render-wgpu = { workspace = true }
+flighthq-shape = { workspace = true }
+wgpu = { workspace = true }
+pollster = "0.3"
+image = { version = "0.25", default-features = false, features = ["png"] }

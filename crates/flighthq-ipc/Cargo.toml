@@ -1,0 +1,13 @@
+[package]
+name = "flighthq-ipc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Inter-process messaging (send, invoke, per-channel subscribe) over a swappable web/native backend"
+
+[dependencies]
+flighthq-types = { workspace = true }
+flighthq-signals = { workspace = true }
+
+[dev-dependencies]
+serial_test = { workspace = true }

@@ -13,6 +13,8 @@
     "api": "tsx ./scripts/api.ts",
     "api:json": "tsx ./scripts/api.ts --json",
     "build": "tsc -b tsconfig.build.json",
+    "parity": "tsx ./scripts/parity.ts",
+    "parity:json": "tsx ./scripts/parity.ts --json",
     "build:check": "npm run packages:check && npm run typecheck",
     "build:clean": "npm run clean && npm run build",
     "build:examples": "npm run build --workspace=examples/**",

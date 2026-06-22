@@ -1,0 +1,13 @@
+[package]
+name = "flighthq-sensors"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Device motion and orientation sensor readings and signals over a swappable web/native backend"
+
+[dependencies]
+flighthq-types = { workspace = true }
+flighthq-signals = { workspace = true }
+
+[dev-dependencies]
+serial_test = { workspace = true }

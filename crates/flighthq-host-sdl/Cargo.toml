@@ -1,0 +1,24 @@
+[package]
+name = "flighthq-host-sdl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "SDL2 host: window, event loop, wgpu surface, and input seam for the Flight scene graph"
+
+[dependencies]
+flighthq-types = { workspace = true }
+flighthq-render-wgpu = { workspace = true }
+flighthq-input = { workspace = true }
+
+# Host-specific external deps live here, not in the workspace dependency table.
+# `wgpu` is taken from the workspace but with native backend features enabled so
+# a real adapter/surface can be created at runtime (the workspace default has
+# backends off). `sdl2` uses the bundled feature so the crate compiles and links
+# without a preinstalled system SDL2.
+# On Windows/Linux/Android the Vulkan and GLES backends are always enabled by
+# wgpu; dx12 (Windows) and metal (macOS/iOS) are opted into here so a native
+# surface can be created on every desktop target.
+wgpu = { workspace = true, features = ["metal", "dx12"] }
+sdl2 = { version = "0.37", features = ["raw-window-handle", "bundled", "static-link"] }
+raw-window-handle = "0.6"
+pollster = "0.3"

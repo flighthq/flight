@@ -1,0 +1,87 @@
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+authors = ["FlightHQ Contributors"]
+
+[workspace.dependencies]
+# Internal crates
+flighthq-types = { path = "crates/flighthq-types" }
+flighthq-entity = { path = "crates/flighthq-entity" }
+flighthq-math = { path = "crates/flighthq-math" }
+flighthq-geometry = { path = "crates/flighthq-geometry" }
+flighthq-node = { path = "crates/flighthq-node" }
+flighthq-signals = { path = "crates/flighthq-signals" }
+flighthq-log = { path = "crates/flighthq-log" }
+flighthq-clip = { path = "crates/flighthq-clip" }
+flighthq-path = { path = "crates/flighthq-path" }
+flighthq-shape = { path = "crates/flighthq-shape" }
+flighthq-displayobject = { path = "crates/flighthq-displayobject" }
+flighthq-sprite = { path = "crates/flighthq-sprite" }
+flighthq-world = { path = "crates/flighthq-world" }
+flighthq-velocity = { path = "crates/flighthq-velocity" }
+flighthq-render = { path = "crates/flighthq-render" }
+flighthq-render-gl = { path = "crates/flighthq-render-gl" }
+flighthq-render-wgpu = { path = "crates/flighthq-render-wgpu" }
+flighthq-filters = { path = "crates/flighthq-filters" }
+flighthq-filters-gl = { path = "crates/flighthq-filters-gl" }
+flighthq-filters-wgpu = { path = "crates/flighthq-filters-wgpu" }
+flighthq-effects = { path = "crates/flighthq-effects" }
+flighthq-effects-gl = { path = "crates/flighthq-effects-gl" }
+flighthq-effects-wgpu = { path = "crates/flighthq-effects-wgpu" }
+flighthq-surface = { path = "crates/flighthq-surface" }
+flighthq-surface-filters = { path = "crates/flighthq-surface-filters" }
+flighthq-materials = { path = "crates/flighthq-materials" }
+flighthq-text = { path = "crates/flighthq-text" }
+flighthq-text-layout = { path = "crates/flighthq-text-layout" }
+flighthq-text-input = { path = "crates/flighthq-text-input" }
+flighthq-resources = { path = "crates/flighthq-resources" }
+flighthq-resources-loader = { path = "crates/flighthq-resources-loader" }
+flighthq-tween = { path = "crates/flighthq-tween" }
+flighthq-tween-easing = { path = "crates/flighthq-tween-easing" }
+flighthq-timeline = { path = "crates/flighthq-timeline" }
+flighthq-spritesheet = { path = "crates/flighthq-spritesheet" }
+flighthq-spritesheet-formats = { path = "crates/flighthq-spritesheet-formats" }
+flighthq-particles = { path = "crates/flighthq-particles" }
+flighthq-particles-formats = { path = "crates/flighthq-particles-formats" }
+flighthq-input = { path = "crates/flighthq-input" }
+flighthq-interaction = { path = "crates/flighthq-interaction" }
+flighthq-application = { path = "crates/flighthq-application" }
+flighthq-media = { path = "crates/flighthq-media" }
+flighthq-platform = { path = "crates/flighthq-platform" }
+flighthq-filesystem = { path = "crates/flighthq-filesystem" }
+flighthq-storage = { path = "crates/flighthq-storage" }
+flighthq-shell = { path = "crates/flighthq-shell" }
+flighthq-screen = { path = "crates/flighthq-screen" }
+flighthq-dialog = { path = "crates/flighthq-dialog" }
+flighthq-clipboard = { path = "crates/flighthq-clipboard" }
+flighthq-notification = { path = "crates/flighthq-notification" }
+flighthq-shortcut = { path = "crates/flighthq-shortcut" }
+flighthq-menu = { path = "crates/flighthq-menu" }
+flighthq-tray = { path = "crates/flighthq-tray" }
+flighthq-app = { path = "crates/flighthq-app" }
+flighthq-protocol = { path = "crates/flighthq-protocol" }
+flighthq-updater = { path = "crates/flighthq-updater" }
+flighthq-ipc = { path = "crates/flighthq-ipc" }
+flighthq-network = { path = "crates/flighthq-network" }
+flighthq-power = { path = "crates/flighthq-power" }
+flighthq-lifecycle = { path = "crates/flighthq-lifecycle" }
+flighthq-keyboard = { path = "crates/flighthq-keyboard" }
+flighthq-sensors = { path = "crates/flighthq-sensors" }
+flighthq-device = { path = "crates/flighthq-device" }
+flighthq-sdk = { path = "crates/flighthq-sdk" }
+flighthq-capture = { path = "crates/flighthq-capture" }
+
+# External crates
+slotmap = "1"
+glow = "0.14"
+wgpu = { version = "22", default-features = false, features = ["wgsl"] }
+bitflags = "2"
+log = "0.4"
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+serial_test = "3"

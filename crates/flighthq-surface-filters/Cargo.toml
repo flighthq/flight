@@ -1,0 +1,10 @@
+[package]
+name = "flighthq-surface-filters"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Filter-effect operations on surfaces: blur, glow, drop shadow, color matrix, convolution"
+
+[dependencies]
+flighthq-surface = { workspace = true }
+flighthq-types = { workspace = true }

@@ -1,0 +1,15 @@
+[package]
+name = "flighthq-interaction"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Hit testing: point-in-node tests and object overlap detection"
+
+[dependencies]
+flighthq-displayobject = { workspace = true }
+flighthq-geometry = { workspace = true }
+flighthq-input = { workspace = true }
+flighthq-node = { workspace = true }
+flighthq-signals = { workspace = true }
+flighthq-types = { workspace = true }
+slotmap = { workspace = true }
