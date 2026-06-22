@@ -1,110 +1,11 @@
-import { extractSurfacePixels } from '@flighthq/surface';
 import type { SurfaceRegion } from '@flighthq/types';
 
-export interface SurfaceBoxBlurFilterOptions {
+import { extractSurfacePixels } from './surfaceComposite';
+
+export interface SurfaceBoxBlurOptions {
   radiusX?: number;
   radiusY?: number;
   passes?: number;
-}
-
-/**
- * Applies a box blur to `source` and writes the result into `out`.
- * `scratch` is a ping-pong buffer; its contents are undefined after the
- * call. Both must be at least `source.width * source.height * 4` bytes.
- *
- * `radiusX` and `radiusY` are the blur radius in pixels (default 2). `passes`
- * repeats the H+V pass pair (default 1); multiple passes approximate a Gaussian.
- *
- * Safe to pass `source.surface.data` as `out` when the region covers the
- * full surface.
- */
-export function applySurfaceBoxBlurFilter(
-  out: Uint8ClampedArray,
-  scratch: Uint8ClampedArray,
-  source: Readonly<SurfaceRegion>,
-  options: Readonly<SurfaceBoxBlurFilterOptions> = {},
-): void {
-  const radiusX = Math.max(0, Math.round(options.radiusX ?? 2));
-  const radiusY = Math.max(0, Math.round(options.radiusY ?? 2));
-  const passes = Math.max(1, Math.round(options.passes ?? 1));
-
-  extractSurfacePixels(out, source);
-
-  let a = out;
-  let b = scratch;
-
-  for (let pass = 0; pass < passes; pass++) {
-    if (radiusX > 0) {
-      blurSurfacePixelsHorizontal(b, a, source.width, source.height, radiusX);
-      const t = a;
-      a = b;
-      b = t;
-    }
-    if (radiusY > 0) {
-      blurSurfacePixelsVertical(b, a, source.width, source.height, radiusY);
-      const t = a;
-      a = b;
-      b = t;
-    }
-  }
-
-  if (a !== out) {
-    out.set(a.subarray(0, source.width * source.height * 4));
-  }
-}
-
-/**
- * Applies a Gaussian blur to `source` and writes the result into `out`.
- * `scratch` is a ping-pong buffer; its contents are undefined after the
- * call. Both must be at least `source.width * source.height * 4` bytes.
- *
- * `sigmaX` and `sigmaY` are the standard deviation of the Gaussian (CSS
- * `blur(Xpx)` uses sigma = X). `sigmaY` defaults to `sigmaX`. `passes`
- * repeats the H+V pass pair (default 1).
- *
- * Safe to pass `source.surface.data` as `out` when the region covers the
- * full surface.
- */
-export function applySurfaceGaussianBlurFilter(
-  out: Uint8ClampedArray,
-  scratch: Uint8ClampedArray,
-  source: Readonly<SurfaceRegion>,
-  sigmaX: number,
-  sigmaY: number = sigmaX,
-  passes: number = 1,
-): void {
-  const passCount = Math.max(1, Math.round(passes));
-
-  const radiusX = Math.max(0, Math.ceil(sigmaX * 3));
-  const radiusY = Math.max(0, Math.ceil(sigmaY * 3));
-  const kernelX = radiusX > 0 ? new Float32Array(2 * radiusX + 1) : null;
-  const kernelY = radiusY > 0 ? new Float32Array(2 * radiusY + 1) : null;
-  if (kernelX) computeGaussianKernel(kernelX, radiusX, sigmaX);
-  if (kernelY) computeGaussianKernel(kernelY, radiusY, sigmaY);
-
-  extractSurfacePixels(out, source);
-
-  let a = out;
-  let b = scratch;
-
-  for (let pass = 0; pass < passCount; pass++) {
-    if (kernelX) {
-      blurSurfacePixelsHorizontalWeighted(b, a, source.width, source.height, kernelX);
-      const t = a;
-      a = b;
-      b = t;
-    }
-    if (kernelY) {
-      blurSurfacePixelsVerticalWeighted(b, a, source.width, source.height, kernelY);
-      const t = a;
-      a = b;
-      b = t;
-    }
-  }
-
-  if (a !== out) {
-    out.set(a.subarray(0, source.width * source.height * 4));
-  }
 }
 
 /**
@@ -293,6 +194,52 @@ export function blurSurfacePixelsVerticalWeighted(
 }
 
 /**
+ * Applies a box blur to `source` and writes the result into `out`.
+ * `scratch` is a ping-pong buffer; its contents are undefined after the
+ * call. Both must be at least `source.width * source.height * 4` bytes.
+ *
+ * `radiusX` and `radiusY` are the blur radius in pixels (default 2). `passes`
+ * repeats the H+V pass pair (default 1); multiple passes approximate a Gaussian.
+ *
+ * Safe to pass `source.surface.data` as `out` when the region covers the
+ * full surface.
+ */
+export function boxBlurSurface(
+  out: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
+  source: Readonly<SurfaceRegion>,
+  options: Readonly<SurfaceBoxBlurOptions> = {},
+): void {
+  const radiusX = Math.max(0, Math.round(options.radiusX ?? 2));
+  const radiusY = Math.max(0, Math.round(options.radiusY ?? 2));
+  const passes = Math.max(1, Math.round(options.passes ?? 1));
+
+  extractSurfacePixels(out, source);
+
+  let a = out;
+  let b = scratch;
+
+  for (let pass = 0; pass < passes; pass++) {
+    if (radiusX > 0) {
+      blurSurfacePixelsHorizontal(b, a, source.width, source.height, radiusX);
+      const t = a;
+      a = b;
+      b = t;
+    }
+    if (radiusY > 0) {
+      blurSurfacePixelsVertical(b, a, source.width, source.height, radiusY);
+      const t = a;
+      a = b;
+      b = t;
+    }
+  }
+
+  if (a !== out) {
+    out.set(a.subarray(0, source.width * source.height * 4));
+  }
+}
+
+/**
  * Fills `out` with a normalized 1-D Gaussian kernel of length `2 * radius + 1`.
  * `out` must be a `Float32Array` of exactly that length. Caller allocates once
  * and reuses across frames.
@@ -315,5 +262,59 @@ export function computeGaussianKernel(out: Float32Array, radius: number, sigma: 
   }
   for (let i = 0; i < len; i++) {
     out[i] /= sum;
+  }
+}
+
+/**
+ * Applies a Gaussian blur to `source` and writes the result into `out`.
+ * `scratch` is a ping-pong buffer; its contents are undefined after the
+ * call. Both must be at least `source.width * source.height * 4` bytes.
+ *
+ * `sigmaX` and `sigmaY` are the standard deviation of the Gaussian (CSS
+ * `blur(Xpx)` uses sigma = X). `sigmaY` defaults to `sigmaX`. `passes`
+ * repeats the H+V pass pair (default 1).
+ *
+ * Safe to pass `source.surface.data` as `out` when the region covers the
+ * full surface.
+ */
+export function gaussianBlurSurface(
+  out: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
+  source: Readonly<SurfaceRegion>,
+  sigmaX: number,
+  sigmaY: number = sigmaX,
+  passes: number = 1,
+): void {
+  const passCount = Math.max(1, Math.round(passes));
+
+  const radiusX = Math.max(0, Math.ceil(sigmaX * 3));
+  const radiusY = Math.max(0, Math.ceil(sigmaY * 3));
+  const kernelX = radiusX > 0 ? new Float32Array(2 * radiusX + 1) : null;
+  const kernelY = radiusY > 0 ? new Float32Array(2 * radiusY + 1) : null;
+  if (kernelX) computeGaussianKernel(kernelX, radiusX, sigmaX);
+  if (kernelY) computeGaussianKernel(kernelY, radiusY, sigmaY);
+
+  extractSurfacePixels(out, source);
+
+  let a = out;
+  let b = scratch;
+
+  for (let pass = 0; pass < passCount; pass++) {
+    if (kernelX) {
+      blurSurfacePixelsHorizontalWeighted(b, a, source.width, source.height, kernelX);
+      const t = a;
+      a = b;
+      b = t;
+    }
+    if (kernelY) {
+      blurSurfacePixelsVerticalWeighted(b, a, source.width, source.height, kernelY);
+      const t = a;
+      a = b;
+      b = t;
+    }
+  }
+
+  if (a !== out) {
+    out.set(a.subarray(0, source.width * source.height * 4));
   }
 }

@@ -1,6 +1,5 @@
-import { createSurface } from '@flighthq/surface';
-
-import { applySurfaceBevelFilter } from './bevel';
+import { createSurface } from './surface';
+import { bevelSurface } from './surfaceBevel';
 
 function region(
   surface: ReturnType<typeof createSurface>,
@@ -19,7 +18,7 @@ function edgeStrip() {
   return s;
 }
 
-describe('applySurfaceBevelFilter', () => {
+describe('bevelSurface', () => {
   it('highlights the light-facing edge and shades the opposite edge', () => {
     // Light from the left (angle π). With radiusX=1 the blurred alpha is
     // [0, 85, 170, 255, 255]; the gradient highlights the left edge of the
@@ -27,7 +26,7 @@ describe('applySurfaceBevelFilter', () => {
     const source = edgeStrip();
     const out = new Uint8ClampedArray(5 * 4);
     const scratch = new Uint8ClampedArray(5 * 4);
-    applySurfaceBevelFilter(out, scratch, region(source), {
+    bevelSurface(out, scratch, region(source), {
       angle: Math.PI,
       distance: 1,
       radiusX: 1,
@@ -52,7 +51,7 @@ describe('applySurfaceBevelFilter', () => {
     const source = edgeStrip();
     const out = new Uint8ClampedArray(5 * 4);
     const scratch = new Uint8ClampedArray(5 * 4);
-    applySurfaceBevelFilter(out, scratch, region(source), {
+    bevelSurface(out, scratch, region(source), {
       angle: Math.PI,
       distance: 1,
       radiusX: 1,

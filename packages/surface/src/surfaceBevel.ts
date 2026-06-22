@@ -1,10 +1,10 @@
 import type { SurfaceRegion } from '@flighthq/types';
 
-import { blurSurfacePixelsHorizontal, blurSurfacePixelsVertical } from './blur';
+import { blurSurfacePixelsHorizontal, blurSurfacePixelsVertical } from './surfaceBlur';
 
 export type SurfaceBevelType = 'both' | 'inner' | 'outer';
 
-export interface SurfaceBevelFilterOptions {
+export interface SurfaceBevelOptions {
   /** Light direction in radians, pointing toward the light source. Default π/4. */
   angle?: number;
   /** Sampling offset along the light axis, in pixels. Default 4. */
@@ -43,11 +43,11 @@ export interface SurfaceBevelFilterOptions {
  * `out` must NOT alias `source.surface.data`: `out` is used as the blur scratch,
  * and the source alpha is read again afterward for `inner`/`outer` clipping.
  */
-export function applySurfaceBevelFilter(
+export function bevelSurface(
   out: Uint8ClampedArray,
   scratch: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
-  options: Readonly<SurfaceBevelFilterOptions> = {},
+  options: Readonly<SurfaceBevelOptions> = {},
 ): void {
   const w = source.width;
   const h = source.height;

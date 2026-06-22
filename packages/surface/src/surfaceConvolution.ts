@@ -2,7 +2,7 @@ import type { SurfaceRegion } from '@flighthq/types';
 
 export type SurfaceConvolutionEdge = 'clamp' | 'fill' | 'wrap';
 
-export interface SurfaceConvolutionFilterOptions {
+export interface SurfaceConvolutionOptions {
   bias?: number;
   /** How to handle kernel samples outside the surface. Default 'clamp'. */
   edge?: SurfaceConvolutionEdge;
@@ -19,7 +19,7 @@ export interface SurfaceConvolutionFilterOptions {
 }
 
 /**
- * Applies a convolution filter to `source` and writes into `out`.
+ * Applies a convolution kernel to `source` and writes into `out`.
  * `out` must be at least `source.width * source.height * 4` bytes.
  *
  * `out` must not alias `source.surface.data` — convolution reads neighboring
@@ -31,10 +31,10 @@ export interface SurfaceConvolutionFilterOptions {
  *   - `'fill'`: use `fillColor` for out-of-bounds samples
  *   - `'wrap'`: tile the surface toroidally
  */
-export function applySurfaceConvolutionFilter(
+export function convolveSurface(
   out: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
-  options: Readonly<SurfaceConvolutionFilterOptions>,
+  options: Readonly<SurfaceConvolutionOptions>,
 ): void {
   const { matrix, matrixX, matrixY } = options;
   if (matrixX <= 0 || matrixY <= 0) throw new Error('Convolution filter matrix dimensions must be positive');

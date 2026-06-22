@@ -1,35 +1,35 @@
 import type { SurfaceRegion } from '@flighthq/types';
 
-import { blurSurfacePixelsHorizontal, blurSurfacePixelsVertical } from './blur';
+import { blurSurfacePixelsHorizontal, blurSurfacePixelsVertical } from './surfaceBlur';
 
-export interface SurfaceBlurOptions {
+export interface SurfaceShadowBlurOptions {
   radiusX?: number;
   radiusY?: number;
   passes?: number;
 }
 
-export interface SurfaceDropShadowFilterOptions extends SurfaceBlurOptions {
+export interface SurfaceDropShadowOptions extends SurfaceShadowBlurOptions {
   /** Packed 0xRRGGBBAA shadow color. Default 0x000000ff (opaque black). */
   color?: number;
   /** Overall intensity multiplier applied to the shadow alpha. Default 1. */
   intensity?: number;
 }
 
-export interface SurfaceGlowFilterOptions extends SurfaceBlurOptions {
+export interface SurfaceGlowOptions extends SurfaceShadowBlurOptions {
   /** Packed 0xRRGGBBAA glow color. Default 0xff0000ff (opaque red). */
   color?: number;
   /** Overall intensity multiplier applied to the glow alpha. Default 1. */
   intensity?: number;
 }
 
-export interface SurfaceInnerGlowFilterOptions extends SurfaceBlurOptions {
+export interface SurfaceInnerGlowOptions extends SurfaceShadowBlurOptions {
   /** Packed 0xRRGGBBAA inner glow color. Default 0xff0000ff (opaque red). */
   color?: number;
   /** Overall intensity multiplier applied to the glow alpha. Default 1. */
   intensity?: number;
 }
 
-export interface SurfaceInnerShadowFilterOptions extends SurfaceBlurOptions {
+export interface SurfaceInnerShadowOptions extends SurfaceShadowBlurOptions {
   /** Packed 0xRRGGBBAA inner shadow color. Default 0x000000ff (opaque black). */
   color?: number;
   /** Overall intensity multiplier applied to the shadow alpha. Default 1. */
@@ -52,11 +52,11 @@ export interface SurfaceInnerShadowFilterOptions extends SurfaceBlurOptions {
  * Safe to pass `source.surface.data` as `out` when the region covers the
  * full surface.
  */
-export function applySurfaceDropShadowFilter(
+export function dropShadowSurface(
   out: Uint8ClampedArray,
   scratch: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
-  options: Readonly<SurfaceDropShadowFilterOptions> = {},
+  options: Readonly<SurfaceDropShadowOptions> = {},
 ): void {
   tintSurfaceAlphaMask(out, source, options.color ?? 0x000000ff, options.intensity ?? 1);
   applyBlurPasses(out, scratch, source.width, source.height, options);
@@ -78,11 +78,11 @@ export function applySurfaceDropShadowFilter(
  * Safe to pass `source.surface.data` as `out` when the region covers the
  * full surface.
  */
-export function applySurfaceGlowFilter(
+export function glowSurface(
   out: Uint8ClampedArray,
   scratch: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
-  options: Readonly<SurfaceGlowFilterOptions> = {},
+  options: Readonly<SurfaceGlowOptions> = {},
 ): void {
   tintSurfaceAlphaMask(out, source, options.color ?? 0xff0000ff, options.intensity ?? 1);
   applyBlurPasses(out, scratch, source.width, source.height, options);
@@ -105,19 +105,19 @@ export function applySurfaceGlowFilter(
  * `out` must NOT alias `source.surface.data`: the original source alpha is read
  * again after blurring, so overwriting the source destroys the clip mask.
  */
-export function applySurfaceInnerGlowFilter(
+export function innerGlowSurface(
   out: Uint8ClampedArray,
   scratch: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
-  options: Readonly<SurfaceInnerGlowFilterOptions> = {},
+  options: Readonly<SurfaceInnerGlowOptions> = {},
 ): void {
   applyInnerEffect(out, scratch, source, options.color ?? 0xff0000ff, options);
 }
 
 /**
  * Produces the inner shadow mask for a shadow that hugs the inside of the
- * source's alpha boundary, writing into `out`. Identical to
- * `applySurfaceInnerGlowFilter` except for the default color (opaque black).
+ * source's alpha boundary, writing into `out`. Identical to `innerGlowSurface`
+ * except for the default color (opaque black).
  *
  * To complete the effect, composite `out` over the original source.
  *
@@ -127,13 +127,47 @@ export function applySurfaceInnerGlowFilter(
  * `out` must NOT alias `source.surface.data` — the original source alpha is read
  * again after blurring to clip the result.
  */
-export function applySurfaceInnerShadowFilter(
+export function innerShadowSurface(
   out: Uint8ClampedArray,
   scratch: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
-  options: Readonly<SurfaceInnerShadowFilterOptions> = {},
+  options: Readonly<SurfaceInnerShadowOptions> = {},
 ): void {
   applyInnerEffect(out, scratch, source, options.color ?? 0x000000ff, options);
+}
+
+function applyBlurPasses(
+  out: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
+  width: number,
+  height: number,
+  options: Readonly<SurfaceShadowBlurOptions>,
+): void {
+  const radiusX = Math.max(0, Math.round(options.radiusX ?? 2));
+  const radiusY = Math.max(0, Math.round(options.radiusY ?? 2));
+  const passes = Math.max(1, Math.round(options.passes ?? 1));
+
+  let a = out;
+  let b = scratch;
+
+  for (let pass = 0; pass < passes; pass++) {
+    if (radiusX > 0) {
+      blurSurfacePixelsHorizontal(b, a, width, height, radiusX);
+      const t = a;
+      a = b;
+      b = t;
+    }
+    if (radiusY > 0) {
+      blurSurfacePixelsVertical(b, a, width, height, radiusY);
+      const t = a;
+      a = b;
+      b = t;
+    }
+  }
+
+  if (a !== out) {
+    out.set(a.subarray(0, width * height * 4));
+  }
 }
 
 function applyInnerEffect(
@@ -141,7 +175,7 @@ function applyInnerEffect(
   scratch: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
   color: number,
-  options: Readonly<SurfaceBlurOptions & { intensity?: number }>,
+  options: Readonly<SurfaceShadowBlurOptions & { intensity?: number }>,
 ): void {
   const w = source.width;
   const h = source.height;
@@ -180,40 +214,6 @@ function applyInnerEffect(
   }
 }
 
-function applyBlurPasses(
-  out: Uint8ClampedArray,
-  scratch: Uint8ClampedArray,
-  width: number,
-  height: number,
-  options: Readonly<SurfaceBlurOptions>,
-): void {
-  const radiusX = Math.max(0, Math.round(options.radiusX ?? 2));
-  const radiusY = Math.max(0, Math.round(options.radiusY ?? 2));
-  const passes = Math.max(1, Math.round(options.passes ?? 1));
-
-  let a = out;
-  let b = scratch;
-
-  for (let pass = 0; pass < passes; pass++) {
-    if (radiusX > 0) {
-      blurSurfacePixelsHorizontal(b, a, width, height, radiusX);
-      const t = a;
-      a = b;
-      b = t;
-    }
-    if (radiusY > 0) {
-      blurSurfacePixelsVertical(b, a, width, height, radiusY);
-      const t = a;
-      a = b;
-      b = t;
-    }
-  }
-
-  if (a !== out) {
-    out.set(a.subarray(0, width * height * 4));
-  }
-}
-
 function readSourceAlpha(source: Readonly<SurfaceRegion>, px: number, py: number): number {
   const sx = source.x + px;
   const sy = source.y + py;
@@ -221,7 +221,7 @@ function readSourceAlpha(source: Readonly<SurfaceRegion>, px: number, py: number
   return source.surface.data[(sy * source.surface.width + sx) * 4 + 3];
 }
 
-// Used internally by drop-shadow and glow filters.
+// Used internally by drop-shadow and glow effects.
 function tintSurfaceAlphaMask(
   out: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
