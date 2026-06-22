@@ -13,7 +13,7 @@ export interface DisplayObjectTraits extends HasAppearance, HasBoundsRectangle, 
 
 export interface DisplayObjectData extends NodeData {}
 
-export const DisplayObjectKind: unique symbol = Symbol('DisplayObject');
+export const DisplayObjectKind = 'DisplayObject';
 export const DisplayObjectTraitsKey: NodeTraitsKey<DisplayObjectTraits> = Symbol(
   'DisplayObjectTraits',
 ) as NodeTraitsKey<DisplayObjectTraits>;

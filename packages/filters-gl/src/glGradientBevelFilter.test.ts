@@ -1,0 +1,34 @@
+import { applyGradientBevelFilterToGl } from './glGradientBevelFilter';
+import { makeFilterState, makeRenderTarget, makeScratch } from './glTestHelper';
+
+const RAMP_COLORS = [0x000000, 0xffffff];
+const RAMP_ALPHAS = [1, 1];
+const RAMP_RATIOS = [0, 255];
+
+describe('applyGradientBevelFilterToGl', () => {
+  it('applies without throwing', () => {
+    const { state } = makeFilterState();
+    expect(() =>
+      applyGradientBevelFilterToGl(state, makeRenderTarget(), makeRenderTarget(), makeScratch(), {
+        colors: RAMP_COLORS,
+        alphas: RAMP_ALPHAS,
+        ratios: RAMP_RATIOS,
+      }),
+    ).not.toThrow();
+  });
+
+  it('applies with custom angle and distance without throwing', () => {
+    const { state } = makeFilterState();
+    expect(() =>
+      applyGradientBevelFilterToGl(state, makeRenderTarget(), makeRenderTarget(), makeScratch(), {
+        colors: RAMP_COLORS,
+        alphas: RAMP_ALPHAS,
+        ratios: RAMP_RATIOS,
+        angle: 90,
+        distance: 6,
+        blurX: 4,
+        blurY: 4,
+      }),
+    ).not.toThrow();
+  });
+});

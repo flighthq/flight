@@ -74,7 +74,7 @@ describe('connectInputToInteraction', () => {
 
 describe('connectInteractionSignal', () => {
   it('can use tracked subscribers without scanning for direct signal connections', () => {
-    const kind = Symbol('TrackedSubscriberHitTest');
+    const kind = 'TrackedSubscriberHitTest';
     const root = createNode(kind);
     const manager = createInteractionManager(root, { trackedSubscribersOnly: true });
     let fired = 0;
@@ -96,7 +96,7 @@ describe('connectInteractionSignal', () => {
   });
 
   it('clears tracked once subscribers after dispatch', () => {
-    const kind = Symbol('TrackedOnceHitTest');
+    const kind = 'TrackedOnceHitTest';
     const root = createNode(kind);
     const manager = createInteractionManager(root, { trackedSubscribersOnly: true });
     let fired = 0;
@@ -166,7 +166,7 @@ describe('createInteractionSignals', () => {
 
 describe('disconnectInteractionSignal', () => {
   it('disconnects a tracked subscriber and removes the dispatch cost', () => {
-    const kind = Symbol('DisconnectTrackedHitTest');
+    const kind = 'DisconnectTrackedHitTest';
     const root = createNode(kind);
     const manager = createInteractionManager(root, { trackedSubscribersOnly: true });
     let fired = 0;
@@ -250,7 +250,7 @@ describe('dispatchInteractionPointerCancel', () => {
 
 describe('dispatchInteractionPointerDown', () => {
   it('does not hit test when no dependent signal has subscribers', () => {
-    const kind = Symbol('NoSubscriberHitTest');
+    const kind = 'NoSubscriberHitTest';
     const root = createNode(kind);
     const manager = createInteractionManager(root);
     let hitTests = 0;
@@ -264,7 +264,7 @@ describe('dispatchInteractionPointerDown', () => {
   });
 
   it('does not hit test when only unrelated signals have subscribers', () => {
-    const kind = Symbol('UnrelatedSubscriberHitTest');
+    const kind = 'UnrelatedSubscriberHitTest';
     const root = createNode(kind);
     const manager = createInteractionManager(root);
     let hitTests = 0;

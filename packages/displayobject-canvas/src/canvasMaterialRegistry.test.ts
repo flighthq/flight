@@ -9,7 +9,7 @@ import {
 } from './canvasMaterialRegistry';
 import { createCanvasRenderState } from './canvasRenderState';
 
-const TestKind: unique symbol = Symbol('TestMaterial');
+const TestKind = 'TestMaterial';
 const testRenderer: CanvasMaterialRenderer = { getState: () => ({ composite: 'lighter' }) };
 
 function makeState() {
@@ -19,7 +19,7 @@ function makeState() {
   return createCanvasRenderState(canvas);
 }
 
-function makeMaterial(kind: symbol = TestKind): Material {
+function makeMaterial(kind: string = TestKind): Material {
   return { kind } as Material;
 }
 
@@ -64,6 +64,6 @@ describe('resolveCanvasMaterialRenderer', () => {
   it('falls back to the registered default for an unregistered kind', () => {
     const state = makeState();
     registerCanvasMaterialRenderer(state, DefaultMaterialKind, testRenderer);
-    expect(resolveCanvasMaterialRenderer(state, makeMaterial(Symbol('Other')))).toBe(testRenderer);
+    expect(resolveCanvasMaterialRenderer(state, makeMaterial('Other'))).toBe(testRenderer);
   });
 });

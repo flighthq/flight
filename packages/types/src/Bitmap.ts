@@ -14,4 +14,4 @@ export interface Bitmap extends DisplayObject {
   data: BitmapData;
 }
 
-export const BitmapKind: unique symbol = Symbol('Bitmap');
+export const BitmapKind = 'Bitmap';

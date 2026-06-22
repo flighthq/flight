@@ -78,16 +78,16 @@ function accumulateForces(
 ): void {
   for (let f = 0; f < forces.length; f++) {
     const force = forces[f];
-    switch (force.type) {
-      case 'wind':
+    switch (force.kind) {
+      case 'WindForce':
         out[0] += force.x;
         out[1] += force.y;
         break;
-      case 'drag':
+      case 'DragForce':
         out[0] -= force.strength * vx;
         out[1] -= force.strength * vy;
         break;
-      case 'attractor': {
+      case 'AttractorForce': {
         const dx = force.x - px;
         const dy = force.y - py;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -98,7 +98,7 @@ function accumulateForces(
         out[1] += (dy / dist) * mag;
         break;
       }
-      case 'vortex': {
+      case 'VortexForce': {
         const dx = px - force.x;
         const dy = py - force.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -110,7 +110,7 @@ function accumulateForces(
         out[1] += (dx / dist) * mag;
         break;
       }
-      case 'turbulence': {
+      case 'TurbulenceForce': {
         const s = force.scale;
         out[0] += (valueNoise(px * s, py * s, 0) * 2 - 1) * force.strength;
         out[1] += (valueNoise(px * s, py * s, 1) * 2 - 1) * force.strength;

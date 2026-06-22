@@ -2,8 +2,8 @@ import { StandardPbrMaterialKind } from '@flighthq/types';
 
 import { registerStandardPbrWgpuMaterial } from './registerStandardPbrWgpuMaterial';
 import { standardPbrWgpuMeshMaterialRenderer } from './standardPbrWgpuMeshMaterialRenderer';
-import { getWgpuMeshMaterialRenderer } from './webgpuMeshMaterialRegistry';
-import { makeWgpuSceneState } from './webgpuSceneTestHelper';
+import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
+import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 
 describe('registerStandardPbrWgpuMaterial', () => {
   it('registers the StandardPbr renderer for StandardPbrMaterialKind', () => {

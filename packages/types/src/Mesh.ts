@@ -17,4 +17,4 @@ export interface Mesh extends SceneNode {
 
 export type MeshRuntime = SceneNodeRuntime;
 
-export const MeshKind: unique symbol = Symbol('Mesh');
+export const MeshKind = 'Mesh';

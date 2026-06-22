@@ -24,4 +24,4 @@ export interface ParticleEmitter extends DisplayObject {
   data: ParticleEmitterData;
 }
 
-export const ParticleEmitterKind: unique symbol = Symbol('ParticleEmitter');
+export const ParticleEmitterKind = 'ParticleEmitter';

@@ -208,4 +208,4 @@ describe('invalidateNodeWorldBounds', () => {
 
 type TestNode = Node;
 
-const TestKind: unique symbol = Symbol('Test');
+const TestKind = 'Test';

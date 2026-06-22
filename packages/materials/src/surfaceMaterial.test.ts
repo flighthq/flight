@@ -2,7 +2,7 @@ import { BlendMode } from '@flighthq/types';
 
 import { createSurfaceMaterial } from './surfaceMaterial';
 
-const TestSurfaceMaterialKind: unique symbol = Symbol('TestSurfaceMaterial');
+const TestSurfaceMaterialKind = 'TestSurfaceMaterial';
 
 describe('createSurfaceMaterial', () => {
   it('carries the given kind', () => {

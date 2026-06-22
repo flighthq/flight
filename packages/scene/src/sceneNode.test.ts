@@ -39,7 +39,7 @@ describe('createSceneNode', () => {
   });
 
   it('accepts a custom kind', () => {
-    const MyKind: unique symbol = Symbol('MyKind');
+    const MyKind = 'MyKind';
     const node = createSceneNode(MyKind);
     expect(node.kind).toBe(MyKind);
   });

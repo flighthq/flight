@@ -17,4 +17,4 @@ export interface RenderView extends DisplayObject {
   data: RenderViewData;
 }
 
-export const RenderViewKind: unique symbol = Symbol('RenderView');
+export const RenderViewKind = 'RenderView';

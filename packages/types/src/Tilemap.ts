@@ -18,4 +18,4 @@ export interface Tilemap extends DisplayObject {
   data: TilemapData;
 }
 
-export const TilemapKind: unique symbol = Symbol('Tilemap');
+export const TilemapKind = 'Tilemap';

@@ -9,4 +9,4 @@ export interface MatcapMaterial extends SurfaceMaterial {
   tint: number;
 }
 
-export const MatcapMaterialKind: unique symbol = Symbol('MatcapMaterial');
+export const MatcapMaterialKind = 'MatcapMaterial';

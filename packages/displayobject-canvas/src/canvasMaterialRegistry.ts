@@ -1,4 +1,4 @@
-import type { CanvasMaterialRenderer, CanvasRenderState, Material } from '@flighthq/types';
+import type { CanvasMaterialRenderer, CanvasRenderState, Kind, Material } from '@flighthq/types';
 import { DefaultMaterialKind } from '@flighthq/types';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
@@ -18,13 +18,13 @@ export function applyCanvasMaterial(state: CanvasRenderState, material: Material
   return true;
 }
 
-export function getCanvasMaterialRenderer(state: CanvasRenderState, kind: symbol): CanvasMaterialRenderer | null {
+export function getCanvasMaterialRenderer(state: CanvasRenderState, kind: Kind): CanvasMaterialRenderer | null {
   return getCanvasRenderStateRuntime(state).materialRendererMap?.get(kind) ?? null;
 }
 
 export function registerCanvasMaterialRenderer(
   state: CanvasRenderState,
-  kind: symbol,
+  kind: Kind,
   renderer: CanvasMaterialRenderer,
 ): void {
   const runtime = getCanvasRenderStateRuntime(state);

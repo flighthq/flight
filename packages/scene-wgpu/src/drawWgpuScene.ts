@@ -14,7 +14,7 @@ import type {
 } from '@flighthq/types';
 import { DefaultMaterialKind } from '@flighthq/types';
 
-import { resolveWgpuMeshMaterialRenderer } from './webgpuMeshMaterialRegistry';
+import { resolveWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 
 // Draws a prepared 3D scene on the Wgpu backend — the WGSL mirror of scene-gl's drawWgpuScene. The app
 // runs prepareSceneRender(state, scene, camera, lights) first (resolving world matrices, the camera

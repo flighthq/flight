@@ -23,7 +23,7 @@ import { RichTextKind } from '@flighthq/types';
 
 import type { RichTextDataInternal } from './internal';
 import { createTextLabelData } from './textLabel';
-import { ensureTextLayout, getTextLayout } from './textLayout';
+import { ensureTextLayout, getTextLayout } from './textLabelLayout';
 
 // Per-kind layout-params hook for ensureTextLayout: assembles RichText's multi-format/html content
 // (cached on the runtime) plus the wrap/multiline constraints. Password masking, when the editable-input

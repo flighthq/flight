@@ -9,7 +9,7 @@ import type { Camera, SceneLights } from '@flighthq/types';
 
 import { drawWgpuScene } from './drawWgpuScene';
 import { registerStandardPbrWgpuMaterial } from './registerStandardPbrWgpuMaterial';
-import { makeWgpuSceneState } from './webgpuSceneTestHelper';
+import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 
 function makeCamera(): Camera {
   const camera = createCamera({

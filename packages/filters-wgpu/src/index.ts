@@ -1,10 +1,16 @@
-export { applyBevelFilterToWgpu } from './bevelFilter';
-export { applyBoxBlurFilterToWgpu, applyGaussianBlurFilterToWgpu } from './blurFilter';
-export { applyColorMatrixFilterToWgpu } from './colorMatrixFilter';
-export { applyConvolutionFilterToWgpu } from './convolutionFilter';
-export { applyDisplacementMapFilterToWgpu } from './displacementMapFilter';
-export { applyDropShadowFilterToWgpu } from './dropShadowFilter';
-export type { WgpuDualSourcePipeline, WgpuFilterPipeline } from './filterPass';
+export { applyBevelFilterToWgpu } from './wgpuBevelFilter';
+export {
+  applyWgpuBlitOffsetPass,
+  applyWgpuBlitPass,
+  getWgpuBlitOffsetShader,
+  getWgpuBlitShader,
+} from './wgpuBlitShader';
+export { applyBoxBlurFilterToWgpu, applyGaussianBlurFilterToWgpu } from './wgpuBlurFilter';
+export { applyColorMatrixFilterToWgpu } from './wgpuColorMatrixFilter';
+export { applyConvolutionFilterToWgpu } from './wgpuConvolutionFilter';
+export { applyDisplacementMapFilterToWgpu } from './wgpuDisplacementMapFilter';
+export { applyDropShadowFilterToWgpu } from './wgpuDropShadowFilter';
+export type { WgpuDualSourcePipeline, WgpuFilterPipeline } from './wgpuFilterPass';
 export {
   clearWgpuFilterTarget,
   createWgpuDualSourcePipeline,
@@ -13,25 +19,21 @@ export {
   drawWgpuDualSourcePass,
   drawWgpuFilterPass,
   drawWgpuTripleSourcePass,
-} from './filterPass';
-export { applyGradientBevelFilterToWgpu } from './gradientBevelFilter';
-export { applyGradientGlowFilterToWgpu } from './gradientGlowFilter';
-export { createWgpuGradientRampTexture } from './gradientRamp';
-export { applyInnerGlowFilterToWgpu } from './innerGlowFilter';
-export { applyInnerShadowFilterToWgpu } from './innerShadowFilter';
-export { applyMedianFilterToWgpu } from './medianFilter';
-export { applyOuterGlowFilterToWgpu } from './outerGlowFilter';
-export { applyPixelateFilterToWgpu } from './pixelateFilter';
-export { applySharpenFilterToWgpu } from './sharpenFilter';
+} from './wgpuFilterPass';
+export { applyGradientBevelFilterToWgpu } from './wgpuGradientBevelFilter';
+export { applyGradientGlowFilterToWgpu } from './wgpuGradientGlowFilter';
+export { createWgpuGradientRampTexture } from './wgpuGradientRamp';
+export { applyInnerGlowFilterToWgpu } from './wgpuInnerGlowFilter';
+export { applyInnerShadowFilterToWgpu } from './wgpuInnerShadowFilter';
+export { applyMedianFilterToWgpu } from './wgpuMedianFilter';
+export { applyOuterGlowFilterToWgpu } from './wgpuOuterGlowFilter';
+export { applyPixelateFilterToWgpu } from './wgpuPixelateFilter';
+export { applySharpenFilterToWgpu } from './wgpuSharpenFilter';
 export {
-  applyWgpuBlitOffsetPass,
-  applyWgpuBlitPass,
   applyWgpuInnerClipPass,
   applyWgpuInvertTintPass,
   applyWgpuTintPass,
-  getWgpuBlitOffsetShader,
-  getWgpuBlitShader,
   getWgpuInnerClipShader,
   getWgpuInvertTintShader,
   getWgpuTintShader,
-} from './tintShader';
+} from './wgpuTintShader';

@@ -1,4 +1,4 @@
-import type { GlMeshMaterialRenderer, GlRenderState, GlRenderStateRuntime, MeshGeometry } from '@flighthq/types';
+import type { GlMeshMaterialRenderer, GlRenderState, GlRenderStateRuntime, Kind, MeshGeometry } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import type { GlPbrProgram } from './glPbrProgramCache';
@@ -12,7 +12,7 @@ import type { GlPbrProgram } from './glPbrProgramCache';
 // header). One GlSceneRuntime is created lazily per state by getGlSceneRuntime.
 export interface GlSceneRuntime {
   activePbrProgram: GlPbrProgram | null;
-  materialRegistry: Map<symbol, GlMeshMaterialRenderer>;
+  materialRegistry: Map<Kind, GlMeshMaterialRenderer>;
   pbrProgramCache: Map<string, GlPbrProgram>;
   uploadCache: WeakMap<MeshGeometry, GlMeshUpload>;
 }

@@ -1,6 +1,7 @@
 import { createEntityRuntime, getEntityRuntime } from '@flighthq/entity';
 import { createSignal } from '@flighthq/signals';
 import type {
+  Kind,
   MethodsOf,
   Node,
   NodeData,
@@ -20,7 +21,7 @@ export function createNode<
   Data extends NodeData = NodeData,
   Runtime extends NodeRuntime<Traits> = NodeRuntime<Traits>,
 >(
-  nodeKind: symbol,
+  nodeKind: Kind,
   obj?: Readonly<PartialNode<Node<Traits>>>,
   createData?: NodeDataFactory<Data>,
   createNodeRuntimeFactory?: NodeRuntimeFactory<Runtime>,

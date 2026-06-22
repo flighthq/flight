@@ -95,7 +95,7 @@ describe('isRenderCache', () => {
   });
 
   it('returns false for other kinds and null', () => {
-    expect(isRenderCache({ kind: Symbol('other') })).toBe(false);
+    expect(isRenderCache({ kind: 'other' })).toBe(false);
     expect(isRenderCache(null)).toBe(false);
   });
 });

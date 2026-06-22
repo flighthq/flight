@@ -36,14 +36,14 @@ describe('applyParticleForces', () => {
     const { emitter, state } = oneParticle();
     emitter.data.transforms[0] = 0;
     emitter.data.transforms[1] = 0;
-    applyParticleForces(emitter, state, [{ type: 'attractor', x: 100, y: 0, strength: 50 }], 1);
+    applyParticleForces(emitter, state, [{ kind: 'AttractorForce', x: 100, y: 0, strength: 50 }], 1);
     expect(state.velocities[0]).toBeCloseTo(50); // accelerated +x toward (100,0)
     expect(state.velocities[1]).toBeCloseTo(0);
   });
 
   it('negative-strength attractor repels', () => {
     const { emitter, state } = oneParticle();
-    applyParticleForces(emitter, state, [{ type: 'attractor', x: 100, y: 0, strength: -50 }], 1);
+    applyParticleForces(emitter, state, [{ kind: 'AttractorForce', x: 100, y: 0, strength: -50 }], 1);
     expect(state.velocities[0]).toBeLessThan(0);
   });
 
@@ -53,7 +53,7 @@ describe('applyParticleForces', () => {
     emitter.data.transforms[1] = 0;
     state.velocities[0] = 42; // known baseline; an out-of-range force must not change it
     state.velocities[1] = 7;
-    applyParticleForces(emitter, state, [{ type: 'attractor', x: 1000, y: 0, strength: 50, radius: 50 }], 1);
+    applyParticleForces(emitter, state, [{ kind: 'AttractorForce', x: 1000, y: 0, strength: 50, radius: 50 }], 1);
     expect(state.velocities[0]).toBe(42); // 1000 px away, outside 50px radius
     expect(state.velocities[1]).toBe(7);
   });
@@ -62,7 +62,7 @@ describe('applyParticleForces', () => {
     const { emitter, state } = oneParticle();
     emitter.data.transforms[0] = 10;
     emitter.data.transforms[1] = 0;
-    applyParticleForces(emitter, state, [{ type: 'vortex', x: 0, y: 0, strength: 20 }], 1);
+    applyParticleForces(emitter, state, [{ kind: 'VortexForce', x: 0, y: 0, strength: 20 }], 1);
     expect(state.velocities[0]).toBeCloseTo(0);
     expect(state.velocities[1]).toBeCloseTo(20); // perpendicular swirl
   });
@@ -71,13 +71,13 @@ describe('applyParticleForces', () => {
     const { emitter, state } = oneParticle();
     state.velocities[0] = 100;
     state.velocities[1] = 0;
-    applyParticleForces(emitter, state, [{ type: 'drag', strength: 0.5 }], 1);
+    applyParticleForces(emitter, state, [{ kind: 'DragForce', strength: 0.5 }], 1);
     expect(state.velocities[0]).toBeCloseTo(50); // 100 - 0.5*100
   });
 
   it('wind adds constant acceleration', () => {
     const { emitter, state } = oneParticle();
-    applyParticleForces(emitter, state, [{ type: 'wind', x: 5, y: -3 }], 2);
+    applyParticleForces(emitter, state, [{ kind: 'WindForce', x: 5, y: -3 }], 2);
     expect(state.velocities[0]).toBeCloseTo(10); // 5 * deltaTime(2)
     expect(state.velocities[1]).toBeCloseTo(-6);
   });
@@ -86,11 +86,11 @@ describe('applyParticleForces', () => {
     const a = oneParticle();
     a.emitter.data.transforms[0] = 12.5;
     a.emitter.data.transforms[1] = -7.5;
-    applyParticleForces(a.emitter, a.state, [{ type: 'turbulence', strength: 100, scale: 0.1 }], 1);
+    applyParticleForces(a.emitter, a.state, [{ kind: 'TurbulenceForce', strength: 100, scale: 0.1 }], 1);
     const b = oneParticle();
     b.emitter.data.transforms[0] = 12.5;
     b.emitter.data.transforms[1] = -7.5;
-    applyParticleForces(b.emitter, b.state, [{ type: 'turbulence', strength: 100, scale: 0.1 }], 1);
+    applyParticleForces(b.emitter, b.state, [{ kind: 'TurbulenceForce', strength: 100, scale: 0.1 }], 1);
     expect(Number.isFinite(a.state.velocities[0])).toBe(true);
     expect(a.state.velocities[0]).toBe(b.state.velocities[0]); // deterministic
     expect(a.state.velocities[1]).toBe(b.state.velocities[1]);
@@ -102,8 +102,8 @@ describe('applyParticleForces', () => {
       emitter,
       state,
       [
-        { type: 'wind', x: 10, y: 0 },
-        { type: 'wind', x: 5, y: 0 },
+        { kind: 'WindForce', x: 10, y: 0 },
+        { kind: 'WindForce', x: 5, y: 0 },
       ],
       1,
     );
@@ -114,7 +114,7 @@ describe('applyParticleForces', () => {
     const { emitter, state } = oneParticle();
     state.velocities[0] = 42;
     applyParticleForces(emitter, state, [], 1);
-    applyParticleForces(emitter, state, [{ type: 'wind', x: 5, y: 0 }], 0);
+    applyParticleForces(emitter, state, [{ kind: 'WindForce', x: 5, y: 0 }], 0);
     expect(state.velocities[0]).toBe(42); // unchanged by either no-op call
   });
 
@@ -127,7 +127,7 @@ describe('applyParticleForces', () => {
       lifetimeMin: 100,
       lifetimeMax: 100,
     });
-    const forces = [{ type: 'attractor' as const, x: 100, y: 0, strength: 200 }];
+    const forces = [{ kind: 'AttractorForce' as const, x: 100, y: 0, strength: 200 }];
     const startX = emitter.data.transforms[0];
     for (let i = 0; i < 10; i++) {
       applyParticleForces(emitter, state, forces, 1 / 60);
@@ -167,7 +167,7 @@ describe('applyParticleObjectForces', () => {
     const deadIndex = liveIndex === 0 ? 1 : 0;
     objects[liveIndex].x = 0;
     objects[liveIndex].y = 0;
-    applyParticleObjectForces(objects, state, [{ type: 'wind', x: 7, y: 0 }], 1);
+    applyParticleObjectForces(objects, state, [{ kind: 'WindForce', x: 7, y: 0 }], 1);
     expect(state.velocities[liveIndex * 2]).toBeCloseTo(7);
     expect(state.velocities[deadIndex * 2]).toBe(0); // dead slot untouched
   });

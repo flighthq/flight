@@ -11,4 +11,4 @@ import type { Material } from './Material';
 // per-instance cost is not warranted.
 export interface ColorTransformMaterial extends Material {}
 
-export const ColorTransformMaterialKind: unique symbol = Symbol('ColorTransformMaterial');
+export const ColorTransformMaterialKind = 'ColorTransformMaterial';

@@ -1,5 +1,5 @@
 import type { BlendMode } from './BlendMode';
-import type { Entity } from './Entity';
+import type { Entity, Kind } from './Entity';
 import type { Material, MaterialData } from './Material';
 import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
@@ -7,7 +7,7 @@ import type { RendererData } from './RendererData';
 
 export interface RenderProxy extends Entity {
   source: Renderable;
-  kind: symbol;
+  kind: Kind;
   next: RenderProxy | null;
 
   alpha: number;
