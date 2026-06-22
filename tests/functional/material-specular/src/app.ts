@@ -1,4 +1,4 @@
-// scene-lit-mesh — proves a 3D StandardPbr mesh renders WITH directional lighting on the Gl and Wgpu
+// material-specular — proves a 3D SpecularPbrMaterial mesh renders WITH directional lighting on the Gl and Wgpu
 // forward renderers (scene-gl / scene-wgpu). A single mid-gray sphere sits at the origin under one
 // white directional light (angled so its travel direction points down-left-into-screen) plus a dim
 // ambient fill. The camera looks straight at the sphere from +z.
@@ -25,8 +25,9 @@ import {
   createDirectionalLight,
   createMesh,
   createPerspectiveProjection,
+  createSpecularPbrMaterial,
   createSphereMeshGeometry,
-  createStandardPbrMaterial,
+  createStandardPbrMaterialProperties,
   createVector3,
   getSurfacePixelLuminance,
   normalizeVector3,
@@ -41,12 +42,12 @@ const logicalHeight = height / scale;
 // A smooth unit sphere at the origin. Many segments so the shading gradient is clean, not faceted.
 const geometry = createSphereMeshGeometry(0.5, 48, 32);
 
-// Mid-gray dielectric: metallic 0, roughness ~0.5 gives a broad diffuse falloff that reads clearly as
-// a light/dark gradient across the sphere rather than a tight specular dot.
-const material = createStandardPbrMaterial({
-  baseColor: 0x808080ff,
-  metallic: 0,
-  roughness: 0.5,
+// Mid-gray dielectric base (metallic 0, roughness ~0.5) gives a broad diffuse falloff that reads
+// clearly as a light/dark gradient across the sphere, with the extension factors set strongly active.
+const material = createSpecularPbrMaterial({
+  standard: createStandardPbrMaterialProperties({ baseColor: 0x808080ff, metallic: 0, roughness: 0.5 }),
+  specular: 1,
+  specularColor: 0xffffffff,
 });
 
 const scene = createScene();
@@ -92,11 +93,11 @@ export function assertRender(surface: Readonly<Surface>): void {
   const shadowLuminance = getSurfacePixelLuminance(surface, cx - offset, cy);
 
   if (litLuminance <= 24) {
-    throw new Error(`[scene-lit-mesh] lit side is blank (luminance ${litLuminance}) — mesh did not render`);
+    throw new Error(`[material-specular] lit side is blank (luminance ${litLuminance}) — mesh did not render`);
   }
   if (litLuminance <= shadowLuminance + 24) {
     throw new Error(
-      `[scene-lit-mesh] no directional shading: lit side (${litLuminance}) is not clearly brighter than shadow side (${shadowLuminance})`,
+      `[material-specular] no directional shading: lit side (${litLuminance}) is not clearly brighter than shadow side (${shadowLuminance})`,
     );
   }
 }

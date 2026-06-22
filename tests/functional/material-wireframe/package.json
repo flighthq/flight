@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-material-wireframe",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}
