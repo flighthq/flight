@@ -197,7 +197,7 @@ export function setAppDockBadge(text: string): void {
   getAppBackend().setDockBadge(text);
 }
 
-// Sets the macOS dock menu (shown when right-clicking the dock icon). No-op where there is no dock.
+// Sets the macOs dock menu (shown when right-clicking the dock icon). No-op where there is no dock.
 export function setAppDockMenu(items: readonly MenuItemTemplate[]): void {
   getAppBackend().setDockMenu(items);
 }

@@ -4,7 +4,7 @@ import {
   loadImageResourceFromArrayBuffer,
   loadImageResourceFromBase64,
   loadImageResourceFromBlob,
-  loadImageResourceFromURL,
+  loadImageResourceFromUrl,
 } from './imageResourceFrom';
 import { createTextureAtlas } from './textureAtlas';
 import { buildTilesetRegions, createTileset } from './tileset';
@@ -52,11 +52,11 @@ export async function loadTilesetFromBlob(blob: Blob, tileWidth: number, tileHei
   return createTilesetFromImageResource(await loadImageResourceFromBlob(blob), tileWidth, tileHeight);
 }
 
-export async function loadTilesetFromURL(
+export async function loadTilesetFromUrl(
   url: string,
   tileWidth: number,
   tileHeight: number,
   crossOrigin?: string,
 ): Promise<Tileset> {
-  return createTilesetFromImageResource(await loadImageResourceFromURL(url, crossOrigin), tileWidth, tileHeight);
+  return createTilesetFromImageResource(await loadImageResourceFromUrl(url, crossOrigin), tileWidth, tileHeight);
 }

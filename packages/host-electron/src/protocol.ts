@@ -3,7 +3,7 @@ import type { ProtocolBackend } from '@flighthq/types';
 import type { ElectronApi } from './electronModule';
 
 // Maps Flight's ProtocolBackend onto Electron's `app` protocol-client methods. Deep links arrive via
-// the 'open-url' event (macOS); the subscribe wrapper adapts Electron's (event, url) argument shape to
+// the 'open-url' event (macOs); the subscribe wrapper adapts Electron's (event, url) argument shape to
 // Flight's (url) listener and returns an unsubscribe that removes that exact handler.
 export function createElectronProtocolBackend(electron: ElectronApi): ProtocolBackend {
   const app = electron.app;

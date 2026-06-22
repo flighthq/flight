@@ -22,7 +22,7 @@ export function getSurfacePixelLuminance(source: Readonly<Surface>, x: number, y
   return Math.round(source.data[i] * LUMA_R + source.data[i + 1] * LUMA_G + source.data[i + 2] * LUMA_B);
 }
 
-export function getSurfacePixelRGB(source: Readonly<Surface>, x: number, y: number): number {
+export function getSurfacePixelRgb(source: Readonly<Surface>, x: number, y: number): number {
   const i = (y * source.width + x) * 4;
   return ((source.data[i] << 16) | (source.data[i + 1] << 8) | source.data[i + 2]) >>> 0;
 }
@@ -36,7 +36,7 @@ export function setSurfacePixel(out: Surface, x: number, y: number, color: numbe
   invalidateImageResource(out);
 }
 
-export function setSurfacePixelRGB(out: Surface, x: number, y: number, color: number): void {
+export function setSurfacePixelRgb(out: Surface, x: number, y: number, color: number): void {
   const i = (y * out.width + x) * 4;
   out.data[i] = (color >> 16) & 0xff;
   out.data[i + 1] = (color >> 8) & 0xff;

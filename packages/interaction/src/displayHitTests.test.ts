@@ -5,7 +5,7 @@ import { getNodeLocalBoundsRectangle } from '@flighthq/node';
 import {
   defaultBitmapHitTestPoint,
   defaultDisplayObjectHitTestPoint,
-  defaultHTMLViewHitTestPoint,
+  defaultHtmlViewHitTestPoint,
   defaultMovieClipHitTestPoint,
   defaultRenderViewHitTestPoint,
   defaultRichTextHitTestPoint,
@@ -43,10 +43,10 @@ describe('defaultDisplayObjectHitTestPoint', () => {
   });
 });
 
-describe('defaultHTMLViewHitTestPoint', () => {
-  it('always returns false â€” browser manages HTMLView hit testing', () => {
+describe('defaultHtmlViewHitTestPoint', () => {
+  it('always returns false â€” browser manages HtmlView hit testing', () => {
     const obj = makeDisplayObject();
-    expect(defaultHTMLViewHitTestPoint(obj, 50, 50, false)).toBe(false);
+    expect(defaultHtmlViewHitTestPoint(obj, 50, 50, false)).toBe(false);
   });
 });
 

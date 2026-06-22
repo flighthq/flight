@@ -32,7 +32,7 @@
     "@flighthq/displayobject": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*",
-    "@flighthq/world": "*"
+    "@flighthq/scene": "*"
   },
   "devDependencies": {
     "@flighthq/sprite": "*",

@@ -1,13 +1,13 @@
 import {
-  createAudioResourceFromURL,
+  createAudioResourceFromUrl,
   createAudioResourceFromURLs,
-  loadAudioResourceFromURL,
+  loadAudioResourceFromUrl,
   loadAudioResourceFromURLs,
 } from './audioResourceFrom';
 
-describe('createAudioResourceFromURL', () => {
+describe('createAudioResourceFromUrl', () => {
   it('returns an AudioResource object with a buffer property', () => {
-    const resource = createAudioResourceFromURL('test.mp3');
+    const resource = createAudioResourceFromUrl('test.mp3');
     expect(resource).toHaveProperty('buffer');
   });
 });
@@ -19,9 +19,9 @@ describe('createAudioResourceFromURLs', () => {
   });
 });
 
-describe('loadAudioResourceFromURL', () => {
+describe('loadAudioResourceFromUrl', () => {
   it('returns a Promise', () => {
-    const result = loadAudioResourceFromURL('test.mp3');
+    const result = loadAudioResourceFromUrl('test.mp3');
     result.catch(() => {});
     expect(result).toBeInstanceOf(Promise);
   });

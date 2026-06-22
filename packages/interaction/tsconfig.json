@@ -14,7 +14,7 @@
     { "path": "../node" },
     { "path": "../displayobject" },
     { "path": "../sprite" },
-    { "path": "../world" },
+    { "path": "../scene" },
     { "path": "../types" }
   ],
   "include": ["src"]

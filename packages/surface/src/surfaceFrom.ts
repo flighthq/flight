@@ -73,9 +73,9 @@ export function createSurfaceFromImageResource(resource: Readonly<ImageResource>
 /**
  * Reads a surface out of any `CanvasImageSource` by drawing it into a scratch 2D canvas. Unlike
  * createSurfaceFromCanvas — which calls getContext('2d') and so only works on a 2D-rendered canvas —
- * this captures a WebGL or WebGPU canvas too, giving one readback path for every render backend.
+ * this captures a Gl or Wgpu canvas too, giving one readback path for every render backend.
  * `width`/`height` are the device-pixel dimensions to capture (pass the render state's canvas size).
- * For a WebGL/WebGPU source, draw before the browser composites the frame away (in tests, enable the
+ * For a Gl/Wgpu source, draw before the browser composites the frame away (in tests, enable the
  * context's preserveDrawingBuffer, or read immediately after rendering).
  */
 export function createSurfaceFromImageSource(source: CanvasImageSource, width: number, height: number): Surface {

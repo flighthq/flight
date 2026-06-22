@@ -7,7 +7,7 @@ import {
   loadTextureAtlasFromArrayBuffer,
   loadTextureAtlasFromBase64,
   loadTextureAtlasFromBlob,
-  loadTextureAtlasFromURL,
+  loadTextureAtlasFromUrl,
 } from './textureAtlasFrom';
 
 // Stub img.decode() so async load functions resolve immediately in jsdom.
@@ -135,9 +135,9 @@ describe('loadTextureAtlasFromBlob', () => {
   });
 });
 
-describe('loadTextureAtlasFromURL', () => {
+describe('loadTextureAtlasFromUrl', () => {
   it('resolves to a TextureAtlas whose image src is an HTMLImageElement', async () => {
-    const atlas = await loadTextureAtlasFromURL('data:image/png;base64,abc');
+    const atlas = await loadTextureAtlasFromUrl('data:image/png;base64,abc');
     expect(atlas.image?.source).toBeInstanceOf(HTMLImageElement);
   });
 });

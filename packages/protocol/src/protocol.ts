@@ -2,19 +2,19 @@ import { createSignal, emitSignal } from '@flighthq/signals';
 import type { ProtocolBackend, ProtocolHandler } from '@flighthq/types';
 
 // Begins delivering deep-link opens to `handler`'s signal by subscribing to the active backend. Wires
-// subscribe→onOpenURL. Idempotent: a prior subscription is torn down first. Pair with
+// subscribe→onOpenUrl. Idempotent: a prior subscription is torn down first. Pair with
 // detachProtocolHandler/disposeProtocolHandler.
 export function attachProtocolHandler(handler: ProtocolHandler): void {
   detachProtocolHandler(handler);
   const backend = getProtocolBackend();
-  const unsubscribe = backend.subscribe((url) => emitSignal(handler.onOpenURL, url));
+  const unsubscribe = backend.subscribe((url) => emitSignal(handler.onOpenUrl, url));
   _subscriptions.set(handler, unsubscribe);
 }
 
 // Allocates a ProtocolHandler event entity with an inert signal; call attachProtocolHandler to start
 // delivery.
 export function createProtocolHandler(): ProtocolHandler {
-  return { onOpenURL: createSignal() };
+  return { onOpenUrl: createSignal() };
 }
 
 // Builds the default web backend over navigator.registerProtocolHandler. Registration degrades to

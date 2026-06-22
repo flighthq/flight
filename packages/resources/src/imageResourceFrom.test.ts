@@ -7,7 +7,7 @@ import {
   loadImageResourceFromArrayBuffer,
   loadImageResourceFromBase64,
   loadImageResourceFromBlob,
-  loadImageResourceFromURL,
+  loadImageResourceFromUrl,
 } from './imageResourceFrom';
 
 // Stub img.decode() so async load functions resolve immediately in jsdom.
@@ -226,9 +226,9 @@ describe('loadImageResourceFromBlob', () => {
   });
 });
 
-describe('loadImageResourceFromURL', () => {
+describe('loadImageResourceFromUrl', () => {
   it('resolves to an ImageResource whose source is an HTMLImageElement', async () => {
-    const resource = await loadImageResourceFromURL('data:image/png;base64,abc');
+    const resource = await loadImageResourceFromUrl('data:image/png;base64,abc');
     expect(resource.source).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -243,7 +243,7 @@ describe('loadImageResourceFromURL', () => {
       },
     }) as typeof Image;
 
-    await loadImageResourceFromURL('https://cdn.other-domain.com/image.png', 'anonymous');
+    await loadImageResourceFromUrl('https://cdn.other-domain.com/image.png', 'anonymous');
     expect(capturedImg?.crossOrigin).toBe('anonymous');
 
     globalThis.Image = origImage;
@@ -260,7 +260,7 @@ describe('loadImageResourceFromURL', () => {
       },
     }) as typeof Image;
 
-    await loadImageResourceFromURL('/images/logo.png');
+    await loadImageResourceFromUrl('/images/logo.png');
     expect(capturedImg?.crossOrigin).toBeNull();
 
     globalThis.Image = origImage;

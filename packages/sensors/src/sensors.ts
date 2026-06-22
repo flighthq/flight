@@ -75,7 +75,7 @@ export function createWebSensorsBackend(): SensorsBackend {
         _orientation.beta = event.beta ?? 0;
         _orientation.gamma = event.gamma ?? 0;
         _orientation.absolute = event.absolute ?? false;
-        // webkitCompassHeading is iOS-only; elsewhere the web exposes no compass heading, so report -1.
+        // webkitCompassHeading is iOs-only; elsewhere the web exposes no compass heading, so report -1.
         const heading = (event as { webkitCompassHeading?: number }).webkitCompassHeading;
         _orientation.heading = typeof heading === 'number' ? heading : -1;
         listener(_orientation);
@@ -142,7 +142,7 @@ export function getSensorsBackend(): SensorsBackend {
   return _backend;
 }
 
-// Requests sensor permission where the host gates it (iOS); resolves true when granted or ungated.
+// Requests sensor permission where the host gates it (iOs); resolves true when granted or ungated.
 export function requestSensorsPermission(): Promise<boolean> {
   return getSensorsBackend().requestPermission();
 }

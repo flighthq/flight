@@ -1,4 +1,4 @@
-import { loadFontFromArrayBuffer, loadFontFromName, loadFontFromURL, loadFontFromURLs } from './fontFrom';
+import { loadFontFromArrayBuffer, loadFontFromName, loadFontFromUrl, loadFontFromURLs } from './fontFrom';
 
 class MockFontFace {
   load = vi.fn().mockResolvedValue(undefined);
@@ -26,9 +26,9 @@ describe('loadFontFromName', () => {
   });
 });
 
-describe('loadFontFromURL', () => {
+describe('loadFontFromUrl', () => {
   it('returns a font with the given family name', async () => {
-    const font = await loadFontFromURL('font.woff2', 'MyFont');
+    const font = await loadFontFromUrl('font.woff2', 'MyFont');
     expect(font.name).toBe('MyFont');
   });
 });

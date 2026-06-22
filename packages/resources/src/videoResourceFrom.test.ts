@@ -1,13 +1,13 @@
 import {
-  createVideoResourceFromURL,
+  createVideoResourceFromUrl,
   createVideoResourceFromURLs,
-  loadVideoResourceFromURL,
+  loadVideoResourceFromUrl,
   loadVideoResourceFromURLs,
 } from './videoResourceFrom';
 
-describe('createVideoResourceFromURL', () => {
+describe('createVideoResourceFromUrl', () => {
   it('returns a VideoResource with a non-null element', () => {
-    const resource = createVideoResourceFromURL('test.mp4');
+    const resource = createVideoResourceFromUrl('test.mp4');
     expect(resource.element).not.toBeNull();
   });
 });
@@ -19,9 +19,9 @@ describe('createVideoResourceFromURLs', () => {
   });
 });
 
-describe('loadVideoResourceFromURL', () => {
+describe('loadVideoResourceFromUrl', () => {
   it('returns a Promise', () => {
-    const result = loadVideoResourceFromURL('test.mp4');
+    const result = loadVideoResourceFromUrl('test.mp4');
     result.catch(() => {});
     expect(result).toBeInstanceOf(Promise);
   });

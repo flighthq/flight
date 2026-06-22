@@ -43,7 +43,7 @@ export function createAppUpdater(): AppUpdater {
 // subscribe* returns an inert unsubscribe — the browser has no application updater to drive.
 export function createWebUpdaterBackend(): UpdaterBackend {
   return {
-    setFeedURL() {},
+    setFeedUrl() {},
     checkForUpdates() {},
     downloadUpdate() {},
     quitAndInstall() {},
@@ -106,8 +106,8 @@ export function setUpdaterBackend(backend: UpdaterBackend | null): void {
 }
 
 // Points the active backend at an update feed URL.
-export function setUpdaterFeedURL(url: string): void {
-  getUpdaterBackend().setFeedURL(url);
+export function setUpdaterFeedUrl(url: string): void {
+  getUpdaterBackend().setFeedUrl(url);
 }
 
 let _backend: UpdaterBackend | null = null;

@@ -1,1 +1,1 @@
-export { createApplication as createHTML5Application } from './application';
+export { createApplication as createHtml5Application } from './application';

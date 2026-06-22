@@ -28,7 +28,7 @@ export function createWebDeviceBackend(): DeviceBackend {
       const ua = nav?.userAgent ?? '';
       out.model = '';
       out.manufacturer = '';
-      out.osName = detectWebOSName(ua);
+      out.osName = detectWebOsName(ua);
       out.osVersion = '';
       out.platform = ua;
       out.isVirtual = false;
@@ -70,7 +70,7 @@ export function setDeviceBackend(backend: DeviceBackend | null): void {
 
 let _backend: DeviceBackend | null = null;
 
-function detectWebOSName(ua: string): string {
+function detectWebOsName(ua: string): string {
   if (/android/i.test(ua)) return 'Android';
   if (/iphone|ipad|ipod/i.test(ua)) return 'iOS';
   if (/win/i.test(ua)) return 'Windows';
