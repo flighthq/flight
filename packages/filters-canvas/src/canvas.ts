@@ -1,4 +1,4 @@
-import { computeBlurFilterCSS, computeDropShadowFilterCSS, computeOuterGlowFilterCSS } from '@flighthq/filters';
+import { computeBlurFilterCss, computeDropShadowFilterCss, computeOuterGlowFilterCss } from '@flighthq/filters';
 import type { BlurFilter, DropShadowFilter, OuterGlowFilter } from '@flighthq/types';
 
 /**
@@ -13,7 +13,7 @@ export function applyBlurFilterToCanvas(
   dy: number,
   filter: BlurFilter,
 ): boolean {
-  const css = computeBlurFilterCSS(filter);
+  const css = computeBlurFilterCss(filter);
   if (css === null) return false;
   dest.save();
   dest.filter = css;
@@ -34,7 +34,7 @@ export function applyDropShadowFilterToCanvas(
   dy: number,
   filter: DropShadowFilter,
 ): boolean {
-  const css = computeDropShadowFilterCSS(filter);
+  const css = computeDropShadowFilterCss(filter);
   if (css === null) return false;
   dest.save();
   dest.filter = css;
@@ -55,7 +55,7 @@ export function applyOuterGlowFilterToCanvas(
   dy: number,
   filter: OuterGlowFilter,
 ): boolean {
-  const css = computeOuterGlowFilterCSS(filter);
+  const css = computeOuterGlowFilterCss(filter);
   if (css === null) return false;
   dest.save();
   dest.filter = css;
