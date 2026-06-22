@@ -1,4 +1,4 @@
-import { computeDropShadowFilterCss } from '@flighthq/filters';
+import { computeDropShadowFilterCss } from '@flighthq/filters-css';
 import type { DropShadowFilter } from '@flighthq/types';
 
 /**

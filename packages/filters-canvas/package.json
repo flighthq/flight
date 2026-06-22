@@ -27,7 +27,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/filters": "*",
+    "@flighthq/filters-css": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

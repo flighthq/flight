@@ -1,4 +1,4 @@
-import { computeOuterGlowFilterCss } from '@flighthq/filters';
+import { computeOuterGlowFilterCss } from '@flighthq/filters-css';
 import type { OuterGlowFilter } from '@flighthq/types';
 
 /**

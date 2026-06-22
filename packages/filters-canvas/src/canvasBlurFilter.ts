@@ -1,4 +1,4 @@
-import { computeBlurFilterCss } from '@flighthq/filters';
+import { computeBlurFilterCss } from '@flighthq/filters-css';
 import type { BlurFilter } from '@flighthq/types';
 
 /**
