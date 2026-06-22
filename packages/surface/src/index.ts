@@ -1,8 +1,13 @@
 export * from './surface';
+export * from './surfaceBevel';
+export * from './surfaceBlur';
+export * from './surfaceColorMatrix';
 export * from './surfaceCompare';
 export * from './surfaceComposite';
+export * from './surfaceConvolution';
 export * from './surfaceCopy';
 export * from './surfaceCoverage';
+export * from './surfaceDisplacement';
 export * from './surfaceDissolve';
 export * from './surfaceDraw';
 export * from './surfaceEncode';
@@ -11,16 +16,21 @@ export * from './surfaceFingerprint';
 export * from './surfaceFlip';
 export * from './surfaceFormat';
 export * from './surfaceFrom';
+export * from './surfaceGradient';
 export * from './surfaceHistogram';
 export * from './surfaceImageChannel';
+export * from './surfaceMedian';
 export * from './surfaceMorphological';
 export * from './surfaceNoise';
 export * from './surfacePaletteMap';
 export * from './surfacePixel';
+export * from './surfacePixelate';
 export * from './surfaceQuery';
 export * from './surfaceRegion';
 export * from './surfaceResize';
 export * from './surfaceRotate';
+export * from './surfaceShadow';
+export * from './surfaceSharpen';
 export * from './surfaceTransform';
 export type {
   AlphaType,
