@@ -3,9 +3,9 @@ import {
   getSurfacePixel,
   getSurfacePixelChannel,
   getSurfacePixelLuminance,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
   setSurfacePixel,
-  setSurfacePixelRGB,
+  setSurfacePixelRgb,
 } from './pixel';
 import { createSurface } from './surface';
 
@@ -60,17 +60,17 @@ describe('getSurfacePixelLuminance', () => {
   });
 });
 
-describe('getSurfacePixelRGB', () => {
+describe('getSurfacePixelRgb', () => {
   it('reads back a 0xRRGGBB value without alpha', () => {
     const img = createSurface(2, 2);
-    setSurfacePixelRGB(img, 0, 0, 0xaabbcc);
-    expect(getSurfacePixelRGB(img, 0, 0)).toBe(0xaabbcc);
+    setSurfacePixelRgb(img, 0, 0, 0xaabbcc);
+    expect(getSurfacePixelRgb(img, 0, 0)).toBe(0xaabbcc);
   });
 
   it('round-trips an RGB value', () => {
     const img = createSurface(4, 4);
-    setSurfacePixelRGB(img, 1, 2, 0x112233);
-    expect(getSurfacePixelRGB(img, 1, 2)).toBe(0x112233);
+    setSurfacePixelRgb(img, 1, 2, 0x112233);
+    expect(getSurfacePixelRgb(img, 1, 2)).toBe(0x112233);
   });
 });
 
@@ -89,11 +89,11 @@ describe('setSurfacePixel', () => {
   });
 });
 
-describe('setSurfacePixelRGB', () => {
+describe('setSurfacePixelRgb', () => {
   it('writes RGB channels without touching alpha', () => {
     const img = createSurface(2, 2, 0x000000ff);
-    setSurfacePixelRGB(img, 0, 0, 0x112233);
+    setSurfacePixelRgb(img, 0, 0, 0x112233);
     expect(img.data[3]).toBe(0xff);
-    expect(getSurfacePixelRGB(img, 0, 0)).toBe(0x112233);
+    expect(getSurfacePixelRgb(img, 0, 0)).toBe(0x112233);
   });
 });

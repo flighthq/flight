@@ -2,7 +2,7 @@ import { createFontResource } from './fontResource';
 import {
   loadFontResourceFromArrayBuffer,
   loadFontResourceFromName,
-  loadFontResourceFromURL,
+  loadFontResourceFromUrl,
   loadFontResourceFromURLs,
 } from './fontResourceFrom';
 
@@ -57,10 +57,10 @@ describe('loadFontResourceFromName', () => {
   });
 });
 
-describe('loadFontResourceFromURL', () => {
+describe('loadFontResourceFromUrl', () => {
   it('loads the face from a URL and attaches it to the resource', async () => {
     const resource = createFontResource('TestFont');
-    const result = await loadFontResourceFromURL(resource, 'https://example.com/font.woff2');
+    const result = await loadFontResourceFromUrl(resource, 'https://example.com/font.woff2');
     expect(result).toBe(resource);
     expect(resource.face).toBe(mockFace);
     expect(document.fonts.add).toHaveBeenCalledWith(mockFace);

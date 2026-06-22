@@ -43,7 +43,7 @@ export function moveItemToTrash(path: string): Promise<boolean> {
 }
 
 // Opens a URL in the user's default browser / external handler. Returns false when blocked.
-export function openExternalURL(url: string): Promise<boolean> {
+export function openExternalUrl(url: string): Promise<boolean> {
   return getShellBackend().openExternal(url);
 }
 

@@ -88,19 +88,19 @@ export async function loadImageResourceFromArrayBuffer(buffer: ArrayBuffer, mime
 }
 
 export async function loadImageResourceFromBase64(base64: string, mimeType: string): Promise<ImageResource> {
-  return loadImageResourceFromURL(`data:${mimeType};base64,${base64}`);
+  return loadImageResourceFromUrl(`data:${mimeType};base64,${base64}`);
 }
 
 export async function loadImageResourceFromBlob(blob: Blob): Promise<ImageResource> {
   const url = URL.createObjectURL(blob);
   try {
-    return await loadImageResourceFromURL(url);
+    return await loadImageResourceFromUrl(url);
   } finally {
     URL.revokeObjectURL(url);
   }
 }
 
-export async function loadImageResourceFromURL(url: string, crossOrigin?: string): Promise<ImageResource> {
+export async function loadImageResourceFromUrl(url: string, crossOrigin?: string): Promise<ImageResource> {
   const img = new Image();
   if (crossOrigin !== undefined) img.crossOrigin = crossOrigin;
   img.src = url;

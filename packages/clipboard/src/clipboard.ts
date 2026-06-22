@@ -28,7 +28,7 @@ export function createWebClipboardBackend(): ClipboardBackend {
         return false;
       }
     },
-    async readHTML() {
+    async readHtml() {
       const cb = getWebClipboard();
       if (cb === null || typeof cb.read !== 'function') return '';
       try {
@@ -44,7 +44,7 @@ export function createWebClipboardBackend(): ClipboardBackend {
       }
       return '';
     },
-    async writeHTML(html) {
+    async writeHtml(html) {
       const cb = getWebClipboard();
       if (cb === null || typeof cb.write !== 'function' || typeof ClipboardItem === 'undefined') return false;
       try {
@@ -67,7 +67,7 @@ export function createWebClipboardBackend(): ClipboardBackend {
           const type = item.types.find((t) => t.startsWith('image/'));
           if (type !== undefined) {
             const blob = await item.getType(type);
-            return await readBlobAsDataURL(blob);
+            return await readBlobAsDataUrl(blob);
           }
         }
       } catch {
@@ -75,11 +75,11 @@ export function createWebClipboardBackend(): ClipboardBackend {
       }
       return '';
     },
-    async writeImage(dataURL) {
+    async writeImage(dataUrl) {
       const cb = getWebClipboard();
       if (cb === null || typeof cb.write !== 'function' || typeof ClipboardItem === 'undefined') return false;
       try {
-        const response = await fetch(dataURL);
+        const response = await fetch(dataUrl);
         const blob = await response.blob();
         await cb.write([new ClipboardItem({ [blob.type]: blob })]);
         return true;
@@ -153,8 +153,8 @@ export function readClipboardBookmark(): Promise<ClipboardBookmark | null> {
 }
 
 // Reads HTML from the clipboard, or '' when none is present or access is denied.
-export function readClipboardHTML(): Promise<string> {
-  return getClipboardBackend().readHTML();
+export function readClipboardHtml(): Promise<string> {
+  return getClipboardBackend().readHtml();
 }
 
 // Reads an image from the clipboard as a data URL, or '' when none is present or access is denied.
@@ -183,13 +183,13 @@ export function writeClipboardBookmark(title: string, url: string): Promise<bool
 }
 
 // Writes HTML to the clipboard. Returns false when the host denies access.
-export function writeClipboardHTML(html: string): Promise<boolean> {
-  return getClipboardBackend().writeHTML(html);
+export function writeClipboardHtml(html: string): Promise<boolean> {
+  return getClipboardBackend().writeHtml(html);
 }
 
 // Writes an image (given as a data URL) to the clipboard. Returns false when the host denies access.
-export function writeClipboardImage(dataURL: string): Promise<boolean> {
-  return getClipboardBackend().writeImage(dataURL);
+export function writeClipboardImage(dataUrl: string): Promise<boolean> {
+  return getClipboardBackend().writeImage(dataUrl);
 }
 
 // Writes RTF (Rich Text Format) markup to the clipboard. Returns false when the host denies access.
@@ -210,7 +210,7 @@ function getWebClipboard(): Clipboard | null {
 }
 
 // Reads a Blob into a data URL via FileReader, resolving '' when reading fails.
-function readBlobAsDataURL(blob: Blob): Promise<string> {
+function readBlobAsDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve) => {
     if (typeof FileReader === 'undefined') {
       resolve('');

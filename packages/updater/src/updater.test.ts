@@ -12,11 +12,11 @@ import {
   getUpdaterBackend,
   quitAndInstallUpdate,
   setUpdaterBackend,
-  setUpdaterFeedURL,
+  setUpdaterFeedUrl,
 } from './updater';
 
 interface FakeUpdaterBackend extends UpdaterBackend {
-  feedURL: string;
+  feedUrl: string;
   checked: number;
   downloaded: number;
   quit: number;
@@ -36,12 +36,12 @@ function fakeBackend(): FakeUpdaterBackend {
   let updateDownloaded: ((info: Readonly<UpdateInfo>) => void) | null = null;
   let error: ((message: string) => void) | null = null;
   return {
-    feedURL: '',
+    feedUrl: '',
     checked: 0,
     downloaded: 0,
     quit: 0,
-    setFeedURL(url) {
-      this.feedURL = url;
+    setFeedUrl(url) {
+      this.feedUrl = url;
     },
     checkForUpdates() {
       this.checked++;
@@ -172,7 +172,7 @@ describe('createWebUpdaterBackend', () => {
   it('no-ops commands and returns inert unsubscribes without throwing', () => {
     const backend = createWebUpdaterBackend();
     expect(() => {
-      backend.setFeedURL('https://example.com/feed');
+      backend.setFeedUrl('https://example.com/feed');
       backend.checkForUpdates();
       backend.downloadUpdate();
       backend.quitAndInstall();
@@ -238,11 +238,11 @@ describe('setUpdaterBackend', () => {
   });
 });
 
-describe('setUpdaterFeedURL', () => {
+describe('setUpdaterFeedUrl', () => {
   it('forwards the URL to the active backend', () => {
     const backend = fakeBackend();
     setUpdaterBackend(backend);
-    setUpdaterFeedURL('https://example.com/feed');
-    expect(backend.feedURL).toBe('https://example.com/feed');
+    setUpdaterFeedUrl('https://example.com/feed');
+    expect(backend.feedUrl).toBe('https://example.com/feed');
   });
 });

@@ -22,7 +22,7 @@ export function createWebStatusBarBackend(): StatusBarBackend {
         meta.setAttribute('name', 'theme-color');
         head.appendChild(meta);
       }
-      meta.setAttribute('content', packedRGBAToHexColor(color));
+      meta.setAttribute('content', packedRgbaToHexColor(color));
     },
     setOverlaysContent(_overlay: boolean): void {
       // No web status bar; a native host is required to control content overlay.
@@ -64,7 +64,7 @@ export function setStatusBarVisible(visible: boolean): void {
 
 let _backend: StatusBarBackend | null = null;
 
-function packedRGBAToHexColor(color: number): string {
+function packedRgbaToHexColor(color: number): string {
   const rgb = (color >>> 8) & 0xffffff;
   return '#' + rgb.toString(16).padStart(6, '0');
 }

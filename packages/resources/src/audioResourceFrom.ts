@@ -1,8 +1,8 @@
-import type { AudioResource, AudioResourceURL } from '@flighthq/types';
+import type { AudioResource, AudioResourceUrl } from '@flighthq/types';
 
 import { createAudioResource, getAudioContext } from './audioResource';
 
-export function createAudioResourceFromURL(url: string): AudioResource {
+export function createAudioResourceFromUrl(url: string): AudioResource {
   const resource = createAudioResource();
   fetch(url)
     .then((r) => r.arrayBuffer())
@@ -14,25 +14,25 @@ export function createAudioResourceFromURL(url: string): AudioResource {
   return resource;
 }
 
-export function createAudioResourceFromURLs(sources: AudioResourceURL[]): AudioResource {
+export function createAudioResourceFromURLs(sources: AudioResourceUrl[]): AudioResource {
   const probe = new Audio();
   const selected = sources.find(({ url, type }) => probe.canPlayType(type ?? inferAudioType(url) ?? '') !== '');
   if (selected === undefined) return createAudioResource();
-  return createAudioResourceFromURL(selected.url);
+  return createAudioResourceFromUrl(selected.url);
 }
 
-export async function loadAudioResourceFromURL(url: string): Promise<AudioResource> {
+export async function loadAudioResourceFromUrl(url: string): Promise<AudioResource> {
   const response = await fetch(url);
   const arrayBuffer = await response.arrayBuffer();
   const audioBuffer = await getAudioContext().decodeAudioData(arrayBuffer);
   return createAudioResource(audioBuffer);
 }
 
-export async function loadAudioResourceFromURLs(sources: AudioResourceURL[]): Promise<AudioResource> {
+export async function loadAudioResourceFromURLs(sources: AudioResourceUrl[]): Promise<AudioResource> {
   const probe = new Audio();
   const selected = sources.find(({ url, type }) => probe.canPlayType(type ?? inferAudioType(url) ?? '') !== '');
   if (selected === undefined) return createAudioResource();
-  return loadAudioResourceFromURL(selected.url);
+  return loadAudioResourceFromUrl(selected.url);
 }
 
 function inferAudioType(url: string): string | null {

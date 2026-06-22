@@ -4,7 +4,7 @@ import {
   createWebShellBackend,
   getShellBackend,
   moveItemToTrash,
-  openExternalURL,
+  openExternalUrl,
   openShellPath,
   setShellBackend,
   shellBeep,
@@ -72,11 +72,11 @@ describe('moveItemToTrash', () => {
   });
 });
 
-describe('openExternalURL', () => {
+describe('openExternalUrl', () => {
   it('opens via the active backend', async () => {
     const backend = fakeBackend();
     setShellBackend(backend);
-    expect(await openExternalURL('https://example.com')).toBe(true);
+    expect(await openExternalUrl('https://example.com')).toBe(true);
     expect(backend.opened).toBe('https://example.com');
   });
 });

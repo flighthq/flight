@@ -194,7 +194,7 @@ export function attachWheelInput(
     const we = e as WheelEvent;
     if (preventDefault) we.preventDefault();
     setInputPointerData(_pointerData, we, we.deltaX, we.deltaY);
-    _pointerData.wheelMode = getMouseWheelModeFromDOMWheelEvent(we);
+    _pointerData.wheelMode = getMouseWheelModeFromDomWheelEvent(we);
     emitSignal(manager.onWheel, _pointerData);
   };
   element.addEventListener('wheel', handler, { passive: !preventDefault });
@@ -252,14 +252,14 @@ export function detachWheelInput(manager: InputManager, element: HTMLElement): v
   clearInputBinding(manager, element, kWheelInput);
 }
 
-export function getKeyCodeFromDOMKeyboardEvent(event: Readonly<KeyboardEvent>): number {
-  const code = getKeyCodeFromDOMKeyboardCode(event.code, event.location);
+export function getKeyCodeFromDomKeyboardEvent(event: Readonly<KeyboardEvent>): number {
+  const code = getKeyCodeFromDomKeyboardCode(event.code, event.location);
   if (code !== KeyCode.UNKNOWN) return code;
   if (event.key.length === 1) return event.key.toLowerCase().charCodeAt(0);
   return keyCodesByKey[event.key] ?? KeyCode.UNKNOWN;
 }
 
-export function getKeyModifierFromDOMKeyboardEvent(event: Readonly<KeyboardEvent>): number {
+export function getKeyModifierFromDomKeyboardEvent(event: Readonly<KeyboardEvent>): number {
   let modifier = KeyModifier.NONE;
   if (event.altKey)
     modifier |= event.location === KeyboardEvent.DOM_KEY_LOCATION_RIGHT ? KeyModifier.RIGHT_ALT : KeyModifier.LEFT_ALT;
@@ -277,7 +277,7 @@ export function getKeyModifierFromDOMKeyboardEvent(event: Readonly<KeyboardEvent
   return modifier;
 }
 
-export function getMouseWheelModeFromDOMWheelEvent(event: Readonly<WheelEvent>): MouseWheelMode {
+export function getMouseWheelModeFromDomWheelEvent(event: Readonly<WheelEvent>): MouseWheelMode {
   if (event.deltaMode === WheelEvent.DOM_DELTA_PIXEL) return 'pixels';
   if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) return 'lines';
   if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) return 'pages';
@@ -322,27 +322,27 @@ export function pollGamepadInput(manager: InputManager): void {
   }
 }
 
-function getKeyCodeFromDOMKeyboardCode(code: string, location: number): number {
+function getKeyCodeFromDomKeyboardCode(code: string, location: number): number {
   if (location === KeyboardEvent.DOM_KEY_LOCATION_NUMPAD && code in numpadKeyCodesByCode) {
     return numpadKeyCodesByCode[code]!;
   }
   return keyCodesByCode[code] ?? KeyCode.UNKNOWN;
 }
 
-function getPointerTypeFromDOMPointerEvent(event: Readonly<PointerEvent>): InputPointerData['pointerType'] {
+function getPointerTypeFromDomPointerEvent(event: Readonly<PointerEvent>): InputPointerData['pointerType'] {
   return event.pointerType === 'mouse' || event.pointerType === 'pen' || event.pointerType === 'touch'
     ? event.pointerType
     : 'unknown';
 }
 
 function setInputKeyboardData(out: InputKeyboardData, event: KeyboardEvent): void {
-  const modifier = getKeyModifierFromDOMKeyboardEvent(event);
+  const modifier = getKeyModifierFromDomKeyboardEvent(event);
   out.altKey = event.altKey;
   out.capsLock = (modifier & KeyModifier.CAPS_LOCK) !== 0;
   out.code = event.code;
   out.ctrlKey = event.ctrlKey;
   out.key = event.key;
-  out.keyCode = getKeyCodeFromDOMKeyboardEvent(event);
+  out.keyCode = getKeyCodeFromDomKeyboardEvent(event);
   out.location = event.location;
   out.metaKey = event.metaKey;
   out.modifier = modifier;
@@ -366,7 +366,7 @@ function setInputPointerData(
   out.isPrimary = 'isPrimary' in event ? event.isPrimary : true;
   out.metaKey = event.metaKey;
   out.pointerId = 'pointerId' in event ? event.pointerId : 0;
-  out.pointerType = 'pointerType' in event ? getPointerTypeFromDOMPointerEvent(event) : 'mouse';
+  out.pointerType = 'pointerType' in event ? getPointerTypeFromDomPointerEvent(event) : 'mouse';
   out.shiftKey = event.shiftKey;
   out.wheelMode = 'unknown';
   out.x = event.clientX;

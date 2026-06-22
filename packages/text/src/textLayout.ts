@@ -19,8 +19,8 @@ import type { TextLabel, TextLabelRuntime, TextLayoutResult, TextMetrics } from 
 // refreshes it.
 export function ensureTextLayout(source: Readonly<TextLabel>): void {
   const runtime = getDisplayObjectRuntime(source) as TextLabelRuntime;
-  const contentID = getNodeLocalContentRevision(source);
-  if (runtime.textLayout !== null && runtime.textLayoutUsingContentID === contentID) return;
+  const contentId = getNodeLocalContentRevision(source);
+  if (runtime.textLayout !== null && runtime.textLayoutUsingContentId === contentId) return;
 
   const measure = getTextLayoutMeasureProvider();
   if (measure === null) return;
@@ -28,7 +28,7 @@ export function ensureTextLayout(source: Readonly<TextLabel>): void {
   const params = runtime.buildTextLayoutParams(source, measure);
   const result = getTextLayoutResult(runtime);
   computeTextLayout(result, params);
-  runtime.textLayoutUsingContentID = contentID;
+  runtime.textLayoutUsingContentId = contentId;
 }
 
 // Ensures the layout is current and returns it, or null if no measure provider has been registered

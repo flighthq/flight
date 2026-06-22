@@ -4,14 +4,14 @@ import { createElectronUpdaterBackend } from './updater';
 function fakeElectron(): {
   electron: ElectronApi;
   listeners: Map<string, Set<(...args: unknown[]) => void>>;
-  calls: { feedURL?: string; checks: number; quit: number };
+  calls: { feedUrl?: string; checks: number; quit: number };
 } {
   const listeners = new Map<string, Set<(...args: unknown[]) => void>>();
-  const calls = { feedURL: undefined as string | undefined, checks: 0, quit: 0 };
+  const calls = { feedUrl: undefined as string | undefined, checks: 0, quit: 0 };
   const electron = {
     autoUpdater: {
-      setFeedURL: (options: { url: string }) => {
-        calls.feedURL = options.url;
+      setFeedUrl: (options: { url: string }) => {
+        calls.feedUrl = options.url;
       },
       checkForUpdates: () => {
         calls.checks++;
@@ -39,8 +39,8 @@ describe('createElectronUpdaterBackend', () => {
   it('drives feed URL, checks, auto-download, and quit commands', () => {
     const { electron, calls } = fakeElectron();
     const backend = createElectronUpdaterBackend(electron);
-    backend.setFeedURL('https://feed.test');
-    expect(calls.feedURL).toBe('https://feed.test');
+    backend.setFeedUrl('https://feed.test');
+    expect(calls.feedUrl).toBe('https://feed.test');
     backend.checkForUpdates();
     backend.downloadUpdate();
     expect(calls.checks).toBe(2);

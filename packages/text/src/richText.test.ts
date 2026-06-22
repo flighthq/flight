@@ -302,24 +302,24 @@ describe('setRichTextString', () => {
   it('invalidates local content', () => {
     const richText = createRichText();
     const runtime = getEntityRuntime(richText) as RichTextRuntime;
-    const idBefore = runtime.localContentID;
+    const idBefore = runtime.localContentId;
     setRichTextString(richText, 'hello');
-    expect(runtime.localContentID).not.toBe(idBefore);
+    expect(runtime.localContentId).not.toBe(idBefore);
   });
 
   it('does not invalidate bounds when the field is fixed (autoSize none)', () => {
     const richText = createRichText({ data: { autoSize: 'none' } });
     const runtime = getEntityRuntime(richText) as RichTextRuntime;
-    const boundsBefore = runtime.localBoundsID;
+    const boundsBefore = runtime.localBoundsId;
     setRichTextString(richText, 'hello');
-    expect(runtime.localBoundsID).toBe(boundsBefore);
+    expect(runtime.localBoundsId).toBe(boundsBefore);
   });
 
   it('invalidates bounds when autoSize resizes the field', () => {
     const richText = createRichText({ data: { autoSize: 'left' } });
     const runtime = getEntityRuntime(richText) as RichTextRuntime;
-    const boundsBefore = runtime.localBoundsID;
+    const boundsBefore = runtime.localBoundsId;
     setRichTextString(richText, 'hello');
-    expect(runtime.localBoundsID).not.toBe(boundsBefore);
+    expect(runtime.localBoundsId).not.toBe(boundsBefore);
   });
 });

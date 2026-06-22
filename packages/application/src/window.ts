@@ -110,7 +110,7 @@ export function attachWindowRenderContext(win: ApplicationWindow, canvas: HTMLCa
 // onResize, so moving the window between displays or zooming is handled. Pair with attachWindowResize
 // — it is the source of the size/DPI updates this reacts to. The render state must have an
 // initialized renderTransform2D (every create*RenderState factory does). DOM render states need no
-// device transform (the browser rasterizes DOM at device resolution), so this is for canvas/WebGL.
+// device transform (the browser rasterizes DOM at device resolution), so this is for canvas/Gl.
 export function attachWindowRenderState(win: ApplicationWindow, state: RenderState, canvas: HTMLCanvasElement): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kRenderState)?.();

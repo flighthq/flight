@@ -1,4 +1,4 @@
-import type { FontResource, FontURL } from '@flighthq/types';
+import type { FontResource, FontUrl } from '@flighthq/types';
 
 function inferFontFormat(url: string): string | null {
   const ext = url.split('?')[0].split('.').pop()?.toLowerCase();
@@ -35,7 +35,7 @@ export async function loadFontResourceFromName(out: FontResource): Promise<FontR
   return out;
 }
 
-export async function loadFontResourceFromURL(out: FontResource, url: string): Promise<FontResource> {
+export async function loadFontResourceFromUrl(out: FontResource, url: string): Promise<FontResource> {
   const face = new FontFace(out.family, `url(${url})`);
   await face.load();
   document.fonts.add(face);
@@ -44,7 +44,7 @@ export async function loadFontResourceFromURL(out: FontResource, url: string): P
 }
 
 // Loads from multiple URL sources with format hints; the browser picks the best format.
-export async function loadFontResourceFromURLs(out: FontResource, sources: FontURL[]): Promise<FontResource> {
+export async function loadFontResourceFromURLs(out: FontResource, sources: FontUrl[]): Promise<FontResource> {
   const src = sources
     .map(({ url, format }) => {
       const fmt = format ?? inferFontFormat(url);

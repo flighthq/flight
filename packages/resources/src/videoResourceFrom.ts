@@ -1,22 +1,22 @@
-import type { VideoResource, VideoResourceURL } from '@flighthq/types';
+import type { VideoResource, VideoResourceUrl } from '@flighthq/types';
 
 import { createVideoResource } from './videoResource';
 
-export function createVideoResourceFromURL(url: string): VideoResource {
+export function createVideoResourceFromUrl(url: string): VideoResource {
   const element = document.createElement('video');
   element.preload = 'auto';
   element.src = url;
   return createVideoResource(element);
 }
 
-export function createVideoResourceFromURLs(sources: VideoResourceURL[]): VideoResource {
+export function createVideoResourceFromURLs(sources: VideoResourceUrl[]): VideoResource {
   const probe = document.createElement('video');
   const selected = sources.find(({ url, type }) => probe.canPlayType(type ?? inferVideoType(url) ?? '') !== '');
   if (selected === undefined) return createVideoResource();
-  return createVideoResourceFromURL(selected.url);
+  return createVideoResourceFromUrl(selected.url);
 }
 
-export function loadVideoResourceFromURL(url: string): Promise<VideoResource> {
+export function loadVideoResourceFromUrl(url: string): Promise<VideoResource> {
   return new Promise((resolve, reject) => {
     const element = document.createElement('video');
     element.preload = 'auto';
@@ -26,11 +26,11 @@ export function loadVideoResourceFromURL(url: string): Promise<VideoResource> {
   });
 }
 
-export function loadVideoResourceFromURLs(sources: VideoResourceURL[]): Promise<VideoResource> {
+export function loadVideoResourceFromURLs(sources: VideoResourceUrl[]): Promise<VideoResource> {
   const probe = document.createElement('video');
   const selected = sources.find(({ url, type }) => probe.canPlayType(type ?? inferVideoType(url) ?? '') !== '');
   if (selected === undefined) return Promise.resolve(createVideoResource());
-  return loadVideoResourceFromURL(selected.url);
+  return loadVideoResourceFromUrl(selected.url);
 }
 
 function inferVideoType(url: string): string | null {

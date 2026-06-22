@@ -2,10 +2,10 @@ import { createElectronClipboardBackend } from './clipboard';
 import type { ElectronApi, ElectronNativeImage } from './electronModule';
 
 function fakeElectron(): ElectronApi {
-  const store = { text: '', html: '', rtf: '', imageDataURL: '', bookmarkTitle: '', bookmarkUrl: '' };
-  const image = (dataURL: string): ElectronNativeImage => ({
-    toDataURL: () => dataURL,
-    isEmpty: () => dataURL === '',
+  const store = { text: '', html: '', rtf: '', imageDataUrl: '', bookmarkTitle: '', bookmarkUrl: '' };
+  const image = (dataUrl: string): ElectronNativeImage => ({
+    toDataUrl: () => dataUrl,
+    isEmpty: () => dataUrl === '',
   });
   return {
     clipboard: {
@@ -13,8 +13,8 @@ function fakeElectron(): ElectronApi {
       writeText: (t: string) => {
         store.text = t;
       },
-      readHTML: () => store.html,
-      writeHTML: (h: string) => {
+      readHtml: () => store.html,
+      writeHtml: (h: string) => {
         store.html = h;
       },
       readRTF: () => store.rtf,
@@ -26,21 +26,21 @@ function fakeElectron(): ElectronApi {
         store.bookmarkTitle = title;
         store.bookmarkUrl = url;
       },
-      readImage: () => image(store.imageDataURL),
+      readImage: () => image(store.imageDataUrl),
       writeImage: (img: ElectronNativeImage) => {
-        store.imageDataURL = img.toDataURL();
+        store.imageDataUrl = img.toDataUrl();
       },
       clear: () => {
         store.text = '';
         store.html = '';
         store.rtf = '';
-        store.imageDataURL = '';
+        store.imageDataUrl = '';
         store.bookmarkTitle = '';
         store.bookmarkUrl = '';
       },
     },
     nativeImage: {
-      createFromDataURL: (dataURL: string) => image(dataURL),
+      createFromDataUrl: (dataUrl: string) => image(dataUrl),
       createFromPath: () => image(''),
     },
   } as unknown as ElectronApi;
@@ -56,9 +56,9 @@ describe('createElectronClipboardBackend', () => {
 
   it('round-trips HTML and RTF', async () => {
     const backend = createElectronClipboardBackend(fakeElectron());
-    await backend.writeHTML('<b>x</b>');
+    await backend.writeHtml('<b>x</b>');
     await backend.writeRTF('{\\rtf1 x}');
-    expect(await backend.readHTML()).toBe('<b>x</b>');
+    expect(await backend.readHtml()).toBe('<b>x</b>');
     expect(await backend.readRTF()).toBe('{\\rtf1 x}');
   });
 

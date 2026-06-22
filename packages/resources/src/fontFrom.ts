@@ -1,4 +1,4 @@
-import type { Font, FontURL } from '@flighthq/types';
+import type { Font, FontUrl } from '@flighthq/types';
 
 import { createFont } from './font';
 
@@ -34,7 +34,7 @@ export async function loadFontFromName(name: string): Promise<Font> {
   return createFont(name);
 }
 
-export async function loadFontFromURL(url: string, family: string): Promise<Font> {
+export async function loadFontFromUrl(url: string, family: string): Promise<Font> {
   const face = new FontFace(family, `url(${url})`);
   await face.load();
   document.fonts.add(face);
@@ -43,7 +43,7 @@ export async function loadFontFromURL(url: string, family: string): Promise<Font
 
 // Loads a font from multiple URL sources with format hints, letting the browser
 // pick the best supported format without fetching the others.
-export async function loadFontFromURLs(sources: FontURL[], family: string): Promise<Font> {
+export async function loadFontFromURLs(sources: FontUrl[], family: string): Promise<Font> {
   const src = sources
     .map(({ url, format }) => {
       const fmt = format ?? inferFontFormat(url);

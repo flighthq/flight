@@ -44,7 +44,7 @@ export interface ElectronApp {
   isDefaultProtocolClient(scheme: string): boolean;
   on(event: string, listener: (...args: unknown[]) => void): void;
   removeListener(event: string, listener: (...args: unknown[]) => void): void;
-  // Present on macOS only.
+  // Present on macOs only.
   dock?: ElectronDock;
 }
 
@@ -58,8 +58,8 @@ export interface ElectronDock {
 export interface ElectronClipboard {
   readText(): string;
   writeText(text: string): void;
-  readHTML(): string;
-  writeHTML(markup: string): void;
+  readHtml(): string;
+  writeHtml(markup: string): void;
   readRTF(): string;
   writeRTF(text: string): void;
   readBookmark(): { title: string; url: string };
@@ -151,12 +151,12 @@ export interface ElectronPowerSaveBlocker {
 }
 
 export interface ElectronNativeImageModule {
-  createFromDataURL(dataURL: string): ElectronNativeImage;
+  createFromDataUrl(dataUrl: string): ElectronNativeImage;
   createFromPath(path: string): ElectronNativeImage;
 }
 
 export interface ElectronNativeImage {
-  toDataURL(): string;
+  toDataUrl(): string;
   isEmpty(): boolean;
 }
 
@@ -168,7 +168,7 @@ export interface ElectronIpcMain {
 }
 
 export interface ElectronAutoUpdater {
-  setFeedURL(options: { url: string }): void;
+  setFeedUrl(options: { url: string }): void;
   checkForUpdates(): void;
   quitAndInstall(): void;
   on(event: string, listener: (...args: unknown[]) => void): void;
@@ -210,7 +210,7 @@ export interface ElectronBrowserWindow {
   id: number;
   // Content loading — not used by the window backend itself, but the escape hatch a host app needs
   // to put a page into the window (returned via getElectronBrowserWindow).
-  loadURL(url: string): Promise<void>;
+  loadUrl(url: string): Promise<void>;
   loadFile(filePath: string): Promise<void>;
   setTitle(title: string): void;
   getTitle(): string;

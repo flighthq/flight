@@ -8,8 +8,8 @@ import type { ElectronApi } from './electronModule';
 export function createElectronUpdaterBackend(electron: ElectronApi): UpdaterBackend {
   const autoUpdater = electron.autoUpdater;
   return {
-    setFeedURL(url) {
-      autoUpdater.setFeedURL({ url });
+    setFeedUrl(url) {
+      autoUpdater.setFeedUrl({ url });
     },
     checkForUpdates() {
       autoUpdater.checkForUpdates();
