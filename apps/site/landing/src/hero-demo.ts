@@ -24,12 +24,12 @@ import {
   defaultCanvasQuadBatchRenderer,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
+  easeInOutQuadratic,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   ParticleEmitterKind,
   prepareDisplayObjectRender,
   prewarmParticleEmitter,
-  Quad,
   QuadBatchKind,
   registerCanvasShapeCommands,
   registerRenderer,
@@ -221,7 +221,7 @@ const EXAMPLES: Example[] = [
 box.y = 95;
 <span class="fn">addNodeChild</span>(root, box);
 
-<span class="k">const</span> tween = <span class="fn">createTween</span>(manager, box, 1000, { x: 232 }, { ease: Quad.easeInOut });
+<span class="k">const</span> tween = <span class="fn">createTween</span>(manager, box, 1000, { x: 232 }, { ease: easeInOutQuadratic });
 <span class="fn">connectSignal</span>(tween.onUpdate, () =&gt; <span class="fn">invalidateNodeLocalTransform</span>(box));
 
 <span class="k">function</span> frame(time, delta) {
@@ -242,7 +242,7 @@ box.y = 95;
       addNodeChild(root, box);
 
       function slide(toX: number): void {
-        const tween = createTween(manager, box, 1000, { x: toX }, { ease: Quad.easeInOut });
+        const tween = createTween(manager, box, 1000, { x: toX }, { ease: easeInOutQuadratic });
         connectSignal(tween.onUpdate, () => invalidateNodeLocalTransform(box));
         connectSignal(tween.onComplete, () => slide(toX > 150 ? 68 : 232));
       }

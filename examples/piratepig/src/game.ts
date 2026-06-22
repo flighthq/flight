@@ -17,9 +17,9 @@ import {
   createShape,
   createTextLabel,
   createTween,
+  easeOutQuadratic,
   invalidateNodeRender,
   playAudioResource,
-  Quad,
 } from '@flighthq/sdk';
 
 import type { Tile, TileInteractionOptions } from './tile';
@@ -197,7 +197,7 @@ export class PiratePigGame {
         { alpha: 1 },
         {
           delay: Math.max(0, 150 * (row - 2)),
-          ease: Quad.easeOut,
+          ease: easeOutQuadratic,
         },
       );
       connectSignal(alphaTween.onUpdate, () => invalidateNodeRender(tile.obj));
