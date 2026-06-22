@@ -1,15 +1,15 @@
-import { drawWebGLFullscreenPass } from '@flighthq/render-webgl';
+import { drawGlFullscreenPass } from '@flighthq/render-gl';
 import type {
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlRenderTarget,
   GodRaysEffect,
   ScreenSpaceFogEffect,
-  SSAOEffect,
-  SSREffect,
-  WebGLRenderEffectRunner,
-  WebGLRenderState,
-  WebGLRenderTarget,
+  SsaoEffect,
+  SsrEffect,
 } from '@flighthq/types';
 
-import { getWebGLEffectProgram } from './effectProgramCache';
+import { getGlEffectProgram } from './effectProgramCache';
 
 // Atmospheric / depth recipes. Fog reads the scene's sampleable depth via ctx.sceneDepthTexture when the
 // scene produced one (the real depth-driven recipe) and falls back to a screen-space proxy when null —
@@ -22,10 +22,10 @@ import { getWebGLEffectProgram } from './effectProgramCache';
 // SAMPLES steps along the ray from each fragment toward the light, accumulating color with per-step
 // decay and weight, then scales by exposure. A true single-pass recipe — no depth needed. Reads
 // u_texture0; u_resolution is set so the light direction is computed in a consistent space.
-export function applyGodRaysEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyGodRaysEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<GodRaysEffect>,
 ): void {
   const centerX = effect.centerX ?? 0.5;
@@ -35,8 +35,8 @@ export function applyGodRaysEffectToWebGL(
   const weight = effect.weight ?? 0.4;
   const exposure = effect.exposure ?? 0.6;
   const samples = Math.max(1, Math.round(effect.samples ?? 64));
-  const program = getWebGLEffectProgram(state, `atmospheric.godRays.${samples}`, buildGodRaysFragment(samples));
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, `atmospheric.godRays.${samples}`, buildGodRaysFragment(samples));
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform2f(gl.getUniformLocation(p.program, 'u_resolution'), source.width, source.height);
     gl.uniform2f(gl.getUniformLocation(p.program, 'u_lightPosition'), centerX, centerY);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_density'), density);
@@ -52,10 +52,10 @@ export function applyGodRaysEffectToWebGL(
 // not write depth), it falls back to the screen-Y gradient as a depth proxy (bottom of frame reads as
 // "far"). color is a packed RGBA int unpacked to 0..1 floats on the JS side. Demonstrates the
 // ctx.sceneDepthTexture seam: real depth path when present, sentinel proxy when null.
-export function applyScreenSpaceFogEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyScreenSpaceFogEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   depthTexture: WebGLTexture | null,
   effect: Readonly<ScreenSpaceFogEffect>,
 ): void {
@@ -66,9 +66,9 @@ export function applyScreenSpaceFogEffectToWebGL(
   const density = effect.density ?? 1;
   const near = effect.near ?? 0;
   const far = effect.far ?? 1;
-  const program = getWebGLEffectProgram(state, 'atmospheric.screenSpaceFog', SCREEN_SPACE_FOG_FRAGMENT_SRC);
+  const program = getGlEffectProgram(state, 'atmospheric.screenSpaceFog', SCREEN_SPACE_FOG_FRAGMENT_SRC);
   const inputs = depthTexture ? [source.texture, depthTexture] : [source.texture];
-  drawWebGLFullscreenPass(state, program, inputs, dest, (gl, p) => {
+  drawGlFullscreenPass(state, program, inputs, dest, (gl, p) => {
     gl.uniform3f(gl.getUniformLocation(p.program, 'u_fogColor'), r, g, b);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_density'), density);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_near'), near);
@@ -82,16 +82,16 @@ export function applyScreenSpaceFogEffectToWebGL(
 // gated by `bias`; none of that depth data exists in the color-only context. This stand-in darkens
 // fragments by local luminance variation (high-contrast neighborhoods read as creases/contact) scaled
 // by intensity, sampling neighbors via u_resolution-derived texel steps.
-export function applySSAOEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
-  effect: Readonly<SSAOEffect>,
+export function applySsaoEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
+  effect: Readonly<SsaoEffect>,
 ): void {
   const radius = effect.radius ?? 1;
   const intensity = effect.intensity ?? 1;
-  const program = getWebGLEffectProgram(state, 'atmospheric.ssao', SSAO_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'atmospheric.ssao', SSAO_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform2f(gl.getUniformLocation(p.program, 'u_resolution'), source.width, source.height);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_radius'), radius);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
@@ -102,37 +102,31 @@ export function applySSAOEffectToWebGL(
 // buffer using view-space normals, walking `steps` increments up to `maxDistance` at the given
 // `resolution`; depth and normals are absent in the color-only context, so this is a passthrough copy
 // that preserves the pipeline stage. maxDistance/resolution/steps are reserved for the depth-driven recipe.
-export function applySSREffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applySsrEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  effect: Readonly<SSREffect>,
+  effect: Readonly<SsrEffect>,
 ): void {
-  const program = getWebGLEffectProgram(state, 'atmospheric.ssr', SSR_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, () => {});
+  const program = getGlEffectProgram(state, 'atmospheric.ssr', SSR_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, () => {});
 }
 
-export const defaultWebGLGodRaysEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyGodRaysEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as GodRaysEffect);
+export const defaultGlGodRaysEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyGodRaysEffectToGl(ctx.state, ctx.source, ctx.dest, effect as GodRaysEffect);
 };
 
-export const defaultWebGLScreenSpaceFogEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyScreenSpaceFogEffectToWebGL(
-    ctx.state,
-    ctx.source,
-    ctx.dest,
-    ctx.sceneDepthTexture,
-    effect as ScreenSpaceFogEffect,
-  );
+export const defaultGlScreenSpaceFogEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyScreenSpaceFogEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.sceneDepthTexture, effect as ScreenSpaceFogEffect);
 };
 
-export const defaultWebGLSSAOEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applySSAOEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as SSAOEffect);
+export const defaultGlSsaoEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applySsaoEffectToGl(ctx.state, ctx.source, ctx.dest, effect as SsaoEffect);
 };
 
-export const defaultWebGLSSREffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applySSREffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as SSREffect);
+export const defaultGlSsrEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applySsrEffectToGl(ctx.state, ctx.source, ctx.dest, effect as SsrEffect);
 };
 
 function buildGodRaysFragment(samples: number): string {
