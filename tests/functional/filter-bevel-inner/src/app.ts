@@ -7,7 +7,8 @@
 // faces the light, shadow on the opposite edge), which we composite over the original source per
 // the surface JSDoc. Light points down-right (angle 45°), so the inner edge gradient lights the
 // bottom-right edge (highlight) and shades the top-left edge (shadow) of the square.
-import { applyBevelFilterToSurface, createBevelFilter } from '@flighthq/filters';
+import { createBevelFilter } from '@flighthq/filters';
+import { applyBevelFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

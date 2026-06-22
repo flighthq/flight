@@ -196,7 +196,7 @@ Library code should prefer the smallest package or subpath that provides the nee
 | --- | --- |
 | `@flighthq/application` | Application loop and browser window/host lifecycle helpers |
 | `@flighthq/resources` | Image, audio, video, and font resources plus texture atlas and tileset utilities |
-| `@flighthq/resources-loader` | Group resource loading with progress and completion signals |
+| `@flighthq/loader` | Group resource loading with progress and completion signals |
 | `@flighthq/entity` | Entity, node, runtime, and binding primitives |
 | `@flighthq/filters` | Blur, glow, bevel, drop-shadow, color-matrix, and convolution filters with Canvas/CSS and WebGL backends |
 | `@flighthq/geometry` | Vectors, matrices, rectangles, typed-array helpers, and pools |
@@ -216,12 +216,12 @@ Library code should prefer the smallest package or subpath that provides the nee
 | `@flighthq/signals` | Strictly typed signals and slots |
 | `@flighthq/spritesheet` | Spritesheet frame animation playback |
 | `@flighthq/surface` | Pixel-level image manipulation using browser `ImageData` |
-| `@flighthq/text-input` | Editable text helpers: selection, replacement, and input restriction |
-| `@flighthq/text-layout` | Renderer-agnostic glyph measuring and text layout |
+| `@flighthq/textinput` | Editable text helpers: selection, replacement, and input restriction |
+| `@flighthq/textlayout` | Renderer-agnostic glyph measuring and text layout |
 | `@flighthq/timeline` | Timeline-based animation sequencing |
 | `@flighthq/timeline-spritesheet` | Spritesheet animation driven by timelines |
 | `@flighthq/tween` | Tween managers, tweens, and timers |
-| `@flighthq/tween-easing` | Easing functions for animation |
+| `@flighthq/easing` | Easing functions for animation |
 | `@flighthq/types` | Shared interfaces, kind symbols, and cross-package contracts |
 
 ## Contributing

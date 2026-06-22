@@ -4,7 +4,7 @@
   "type": "module",
   "dependencies": {
     "@flighthq/sdk": "*",
-    "@flighthq/text-layout": "*"
+    "@flighthq/textlayout": "*"
   },
   "scripts": {
     "dev": "npm run dev:canvas",

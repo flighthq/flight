@@ -31,7 +31,7 @@
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/node": "*",
-    "@flighthq/text-layout": "*",
+    "@flighthq/textlayout": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

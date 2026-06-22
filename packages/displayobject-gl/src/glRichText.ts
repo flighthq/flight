@@ -12,7 +12,7 @@ import {
   getRichTextContent,
   getRichTextScrollYOffset,
   getTextLayoutResult,
-} from '@flighthq/text-layout';
+} from '@flighthq/textlayout';
 import type {
   DisplayObjectRenderer,
   GlRenderState,

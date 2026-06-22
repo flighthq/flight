@@ -11,7 +11,7 @@ import {
   getRichTextScrollYOffset,
   getRichTextSelectionRectangles,
   getTextLayoutResult,
-} from '@flighthq/text-layout';
+} from '@flighthq/textlayout';
 import type {
   DisplayObjectRenderer,
   DomRenderState,

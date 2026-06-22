@@ -6,8 +6,8 @@ import {
   getTextInputSelectionEndIndex,
   getTextInputSelectionRectangles,
   getTextInputState,
-} from '@flighthq/text-input';
-import { computeTextBoundsHeight, computeTextBoundsWidth, getRichTextScrollYOffset } from '@flighthq/text-layout';
+} from '@flighthq/textinput';
+import { computeTextBoundsHeight, computeTextBoundsWidth, getRichTextScrollYOffset } from '@flighthq/textlayout';
 import type { CanvasRenderState, RenderProxy2D, RichText, TextSelectionRectangle } from '@flighthq/types';
 
 import { registerCanvasTextInputOverlay } from './canvasRichText';

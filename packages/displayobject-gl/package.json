@@ -38,8 +38,8 @@
     "@flighthq/shape": "*",
     "@flighthq/sprite": "*",
     "@flighthq/text": "*",
-    "@flighthq/text-input": "*",
-    "@flighthq/text-layout": "*",
+    "@flighthq/textinput": "*",
+    "@flighthq/textlayout": "*",
     "@flighthq/types": "*",
     "@flighthq/velocity": "*"
   },

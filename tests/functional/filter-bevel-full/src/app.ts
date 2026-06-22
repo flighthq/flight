@@ -11,7 +11,8 @@
 // down, so angle 45° aims L down-right: the highlight lands on the BOTTOM-RIGHT edge and the shadow on
 // the TOP-LEFT edge. The result tile shows a beveled gray square: dark along its top-left rim, bright
 // along its bottom-right rim.
-import { applyBevelFilterToSurface, createBevelFilter } from '@flighthq/filters';
+import { createBevelFilter } from '@flighthq/filters';
+import { applyBevelFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

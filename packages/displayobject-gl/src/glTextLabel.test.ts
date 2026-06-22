@@ -8,7 +8,7 @@ import { registerDefaultGlMaterial } from './glDefaultMaterial';
 import { flushGlSpriteBatch } from './glSpriteBatch';
 import { defaultGlTextLabelRenderer, drawGlTextLabel } from './glTextLabel';
 
-vi.mock('@flighthq/text-layout', async (importOriginal) => {
+vi.mock('@flighthq/textlayout', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,
