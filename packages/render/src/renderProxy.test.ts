@@ -63,10 +63,10 @@ describe('createRenderProxy', () => {
     expect(node.kind).toBe(source.kind);
     expect(node.next).toBeNull();
     expect(node.alpha).toBe(1);
-    expect(node.appearanceFrameID).toBe(-1);
-    expect(node.lastAppearanceID).toBe(-1);
-    expect(node.lastLocalTransformID).toBe(-1);
-    expect(node.transformFrameID).toBe(-1);
+    expect(node.appearanceFrameId).toBe(-1);
+    expect(node.lastAppearanceId).toBe(-1);
+    expect(node.lastLocalTransformId).toBe(-1);
+    expect(node.transformFrameId).toBe(-1);
     expect(node.renderer).toBeNull();
     expect(node.rendererData).toBeNull();
     expect(node.rendererDataSource).toBe(source);
@@ -220,7 +220,7 @@ describe('getOrCreateRenderProxy2D', () => {
     expect(a).toBe(b);
   });
 
-  it('syncs renderer when rendererMapID has changed', () => {
+  it('syncs renderer when rendererMapId has changed', () => {
     const state = createRenderState();
     const source = createSprite();
     const node = getOrCreateRenderProxy2D(state, source);
@@ -260,9 +260,9 @@ describe('isRenderProxyDirty', () => {
     const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
     const source = createDisplayObject();
     const data = createRenderProxy2D(state, source);
-    data.lastAppearanceID = getNodeAppearanceRevision(source);
-    data.lastLocalContentID = getNodeLocalContentRevision(source);
-    data.lastLocalTransformID = getNodeLocalTransformRevision(source);
+    data.lastAppearanceId = getNodeAppearanceRevision(source);
+    data.lastLocalContentId = getNodeLocalContentRevision(source);
+    data.lastLocalTransformId = getNodeLocalTransformRevision(source);
 
     expect(isRenderProxyDirty(state, source, data)).toBe(false);
   });
@@ -271,8 +271,8 @@ describe('isRenderProxyDirty', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     const data = createRenderProxy2D(state, source);
-    data.lastAppearanceID = getNodeAppearanceRevision(source);
-    data.lastLocalTransformID = getNodeLocalTransformRevision(source);
+    data.lastAppearanceId = getNodeAppearanceRevision(source);
+    data.lastLocalTransformId = getNodeLocalTransformRevision(source);
     invalidateNodeAppearance(source);
 
     expect(isRenderProxyDirty(state, source, data)).toBe(true);
@@ -282,10 +282,10 @@ describe('isRenderProxyDirty', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     const data = createRenderProxy2D(state, source);
-    data.lastAppearanceID = getNodeAppearanceRevision(source);
-    data.lastLocalTransformID = getNodeLocalTransformRevision(source);
+    data.lastAppearanceId = getNodeAppearanceRevision(source);
+    data.lastLocalTransformId = getNodeLocalTransformRevision(source);
     const parentData = createRenderProxy2D(state, createDisplayObject());
-    parentData.transformFrameID = getRenderStateRuntime(state).currentFrameID;
+    parentData.transformFrameId = getRenderStateRuntime(state).currentFrameId;
 
     expect(isRenderProxyDirty(state, source, data, parentData)).toBe(true);
   });
@@ -295,8 +295,8 @@ describe('isRenderProxyDirty', () => {
     const source = createDisplayObject();
     const data = createRenderProxy2D(state, source);
     data.transform2D = createMatrix();
-    data.lastAppearanceID = getNodeAppearanceRevision(source);
-    data.lastLocalTransformID = getNodeLocalTransformRevision(source);
+    data.lastAppearanceId = getNodeAppearanceRevision(source);
+    data.lastLocalTransformId = getNodeLocalTransformRevision(source);
     source.x = 10;
     invalidateNodeLocalTransform(source);
 
@@ -486,13 +486,13 @@ describe('updateRenderProxyRenderer', () => {
     expect(node.renderer).toBeNull();
   });
 
-  it('updates rendererMapID to current state value', () => {
+  it('updates rendererMapId to current state value', () => {
     const state = createRenderState();
     const source = makeSource();
     const node = createRenderProxy(state, source);
-    node.rendererMapID = -1;
+    node.rendererMapId = -1;
     updateRenderProxyRenderer(state, node);
-    expect(node.rendererMapID).toBe(getRenderStateRuntime(state).rendererMapID);
+    expect(node.rendererMapId).toBe(getRenderStateRuntime(state).rendererMapId);
   });
 
   it('updates rendererData when source changes', () => {

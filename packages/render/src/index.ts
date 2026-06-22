@@ -7,5 +7,6 @@ export * from './renderProxy';
 export * from './renderProxyAdapter';
 export * from './renderState';
 export * from './renderTarget';
+export * from './sceneRender';
 export * from './textFormat';
 export * from './transform2d';

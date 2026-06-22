@@ -22,6 +22,6 @@ export function noopRendererData(_state: RenderState, _source: Renderable): Rend
 export function registerRenderer(state: RenderState, kind: symbol, renderer: Renderer): void {
   const runtime = getRenderStateRuntime(state);
   if (runtime.rendererMap.get(kind) === renderer) return;
-  runtime.rendererMapID = (runtime.rendererMapID + 1) >>> 0;
+  runtime.rendererMapId = (runtime.rendererMapId + 1) >>> 0;
   runtime.rendererMap.set(kind, renderer);
 }
