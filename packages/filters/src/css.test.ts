@@ -1,31 +1,31 @@
 import {
-  computeBlurFilterCSS,
-  computeDropShadowFilterCSS,
-  computeOuterGlowFilterCSS,
+  computeBlurFilterCss,
+  computeDropShadowFilterCss,
+  computeOuterGlowFilterCss,
   getShadowFilterOffset,
 } from './css';
 
-describe('computeBlurFilterCSS', () => {
+describe('computeBlurFilterCss', () => {
   it('returns blur(Xpx) for isotropic blur', () => {
-    expect(computeBlurFilterCSS({ type: 'blur', blurX: 4, blurY: 4 })).toBe('blur(4px)');
+    expect(computeBlurFilterCss({ type: 'blur', blurX: 4, blurY: 4 })).toBe('blur(4px)');
   });
 
   it('returns null for anisotropic blur', () => {
-    expect(computeBlurFilterCSS({ type: 'blur', blurX: 4, blurY: 8 })).toBeNull();
+    expect(computeBlurFilterCss({ type: 'blur', blurX: 4, blurY: 8 })).toBeNull();
   });
 
   it('returns null for zero blur', () => {
-    expect(computeBlurFilterCSS({ type: 'blur', blurX: 0, blurY: 0 })).toBeNull();
+    expect(computeBlurFilterCss({ type: 'blur', blurX: 0, blurY: 0 })).toBeNull();
   });
 
   it('uses default blurX=4 blurY=4', () => {
-    expect(computeBlurFilterCSS({ type: 'blur' })).toBe('blur(4px)');
+    expect(computeBlurFilterCss({ type: 'blur' })).toBe('blur(4px)');
   });
 });
 
-describe('computeDropShadowFilterCSS', () => {
+describe('computeDropShadowFilterCss', () => {
   it('returns drop-shadow CSS for a basic shadow', () => {
-    const result = computeDropShadowFilterCSS({
+    const result = computeDropShadowFilterCss({
       type: 'dropShadow',
       angle: 0,
       distance: 4,
@@ -38,15 +38,15 @@ describe('computeDropShadowFilterCSS', () => {
   });
 
   it('returns null for anisotropic blur', () => {
-    expect(computeDropShadowFilterCSS({ type: 'dropShadow', blurX: 2, blurY: 8 })).toBeNull();
+    expect(computeDropShadowFilterCss({ type: 'dropShadow', blurX: 2, blurY: 8 })).toBeNull();
   });
 
   it('returns null when knockout is true', () => {
-    expect(computeDropShadowFilterCSS({ type: 'dropShadow', knockout: true })).toBeNull();
+    expect(computeDropShadowFilterCss({ type: 'dropShadow', knockout: true })).toBeNull();
   });
 
   it('encodes color correctly', () => {
-    const result = computeDropShadowFilterCSS({
+    const result = computeDropShadowFilterCss({
       type: 'dropShadow',
       angle: 0,
       distance: 0,
@@ -57,22 +57,22 @@ describe('computeDropShadowFilterCSS', () => {
   });
 });
 
-describe('computeOuterGlowFilterCSS', () => {
+describe('computeOuterGlowFilterCss', () => {
   it('returns drop-shadow at 0,0 for basic glow', () => {
-    const result = computeOuterGlowFilterCSS({ type: 'outerGlow', blurX: 6, blurY: 6, color: 0xff0000, alpha: 1 });
+    const result = computeOuterGlowFilterCss({ type: 'outerGlow', blurX: 6, blurY: 6, color: 0xff0000, alpha: 1 });
     expect(result).toBe('drop-shadow(0px 0px 6px rgba(255,0,0,1.000))');
   });
 
   it('returns null for anisotropic blur', () => {
-    expect(computeOuterGlowFilterCSS({ type: 'outerGlow', blurX: 4, blurY: 8 })).toBeNull();
+    expect(computeOuterGlowFilterCss({ type: 'outerGlow', blurX: 4, blurY: 8 })).toBeNull();
   });
 
   it('returns null when knockout is true', () => {
-    expect(computeOuterGlowFilterCSS({ type: 'outerGlow', knockout: true })).toBeNull();
+    expect(computeOuterGlowFilterCss({ type: 'outerGlow', knockout: true })).toBeNull();
   });
 
   it('uses default blurX=6 blurY=6', () => {
-    const result = computeOuterGlowFilterCSS({ type: 'outerGlow' });
+    const result = computeOuterGlowFilterCss({ type: 'outerGlow' });
     expect(result).toContain('drop-shadow(0px 0px 6px');
   });
 });
