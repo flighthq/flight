@@ -7,6 +7,7 @@ import {
   copyMatrix3RowToVector3,
   createMatrix,
   createMatrix3,
+  createMatrix4,
   createVector3,
   equalsMatrix3,
   getMatrix3Element,
@@ -20,7 +21,9 @@ import {
   setMatrix3FromMatrix,
   setMatrix3FromMatrix4,
   setMatrix3Identity,
+  setMatrix3NormalFromMatrix4,
   translateMatrix3,
+  transposeMatrix3,
 } from '@flighthq/geometry';
 import type { Matrix3 } from '@flighthq/types';
 
@@ -628,6 +631,33 @@ describe('setMatrix3Identity', () => {
   });
 });
 
+describe('setMatrix3NormalFromMatrix4', () => {
+  it('equals the rotation basis for an orthonormal matrix', () => {
+    // A 90-degree rotation about z (column-major Matrix4): +x -> +y.
+    const m4 = createMatrix4(0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+    const out = createMatrix3();
+    setMatrix3NormalFromMatrix4(out, m4);
+    // For a pure rotation, normal matrix == rotation. Row-major matrix3 of R (+x -> +y):
+    // [[0,-1,0],[1,0,0],[0,0,1]].
+    expect(out.m[0]).toBeCloseTo(0, 5);
+    expect(out.m[1]).toBeCloseTo(-1, 5);
+    expect(out.m[3]).toBeCloseTo(1, 5);
+    expect(out.m[4]).toBeCloseTo(0, 5);
+    expect(out.m[8]).toBeCloseTo(1, 5);
+  });
+
+  it('keeps a normal perpendicular under non-uniform scale', () => {
+    // Scale x by 2, y by 1: a surface normal (1,1,0) on a plane should stay perpendicular.
+    const m4 = createMatrix4(2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+    const normalMatrix = createMatrix3();
+    setMatrix3NormalFromMatrix4(normalMatrix, m4);
+    // Inverse-transpose of diag(2,1,1) = diag(0.5,1,1).
+    expect(normalMatrix.m[0]).toBeCloseTo(0.5, 5);
+    expect(normalMatrix.m[4]).toBeCloseTo(1, 5);
+    expect(normalMatrix.m[8]).toBeCloseTo(1, 5);
+  });
+});
+
 describe('translateMatrix3', () => {
   it('should translate the matrix correctly', () => {
     const m = createMatrix3();
@@ -643,5 +673,27 @@ describe('translateMatrix3', () => {
     translateMatrix3(out, m, 2, 3);
     expect(out.m[2]).toBe(2); // tx
     expect(out.m[5]).toBe(3); // ty
+  });
+});
+
+describe('transposeMatrix3', () => {
+  it('swaps rows and columns', () => {
+    const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const out = createMatrix3();
+    transposeMatrix3(out, m);
+    expect(Array.from(out.m)).toEqual([1, 4, 7, 2, 5, 8, 3, 6, 9]);
+  });
+
+  it('supports out === source', () => {
+    const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    transposeMatrix3(m, m);
+    expect(Array.from(m.m)).toEqual([1, 4, 7, 2, 5, 8, 3, 6, 9]);
+  });
+
+  it('transpose of identity is identity', () => {
+    const m = createMatrix3();
+    const out = createMatrix3();
+    transposeMatrix3(out, m);
+    expect(Array.from(out.m)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
   });
 });

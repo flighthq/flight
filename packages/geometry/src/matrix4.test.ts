@@ -4,6 +4,7 @@ import {
   appendScaleMatrix4,
   appendTranslationMatrix4,
   cloneMatrix4,
+  composeMatrix4,
   copyMatrix4,
   copyMatrix4ColumnFromVector4,
   copyMatrix4ColumnToVector4,
@@ -15,6 +16,9 @@ import {
   createMatrix4From2D,
   createOrthographicMatrix4,
   createPerspectiveMatrix4,
+  createQuaternion,
+  createVector3,
+  decomposeMatrix4,
   equalsMatrix4,
   getMatrix4Determinant,
   getMatrix4Element,
@@ -37,10 +41,13 @@ import {
   setMatrix4From2D,
   setMatrix4FromMatrix,
   setMatrix4FromMatrix3,
+  setMatrix4FromQuaternion,
   setMatrix4Identity,
+  setMatrix4LookAt,
   setMatrix4Position,
   setOrthographicMatrix4,
   setPerspectiveMatrix4,
+  setQuaternionFromAxisAngle,
   translateMatrix4,
   transposeMatrix4,
 } from '@flighthq/geometry';
@@ -208,6 +215,46 @@ describe('cloneMatrix4', () => {
 
     expect(source.m[5]).toBe(1);
     expect(clone.m[5]).toBe(42);
+  });
+});
+
+describe('composeMatrix4', () => {
+  it('composes translation, identity rotation and scale', () => {
+    const out = createMatrix4();
+    composeMatrix4(out, createVector3(10, 20, 30), createQuaternion(), createVector3(2, 3, 4));
+
+    // Column-major: diagonal carries scale, last column carries translation.
+    expect(out.m[0]).toBeCloseTo(2, 6);
+    expect(out.m[5]).toBeCloseTo(3, 6);
+    expect(out.m[10]).toBeCloseTo(4, 6);
+    expect(out.m[12]).toBeCloseTo(10, 6);
+    expect(out.m[13]).toBeCloseTo(20, 6);
+    expect(out.m[14]).toBeCloseTo(30, 6);
+    expect(out.m[15]).toBeCloseTo(1, 6);
+  });
+
+  it('round-trips with decomposeMatrix4', () => {
+    const position = createVector3(1, -2, 3);
+    const rotation = createQuaternion();
+    setQuaternionFromAxisAngle(rotation, createVector3(0, 1, 0), Math.PI / 5);
+    const scale = createVector3(2, 2, 2);
+
+    const m = createMatrix4();
+    composeMatrix4(m, position, rotation, scale);
+
+    const p = createVector3();
+    const r = createQuaternion();
+    const s = createVector3();
+    decomposeMatrix4(p, r, s, m);
+
+    expect(p.x).toBeCloseTo(1, 5);
+    expect(p.y).toBeCloseTo(-2, 5);
+    expect(p.z).toBeCloseTo(3, 5);
+    expect(s.x).toBeCloseTo(2, 5);
+    expect(s.y).toBeCloseTo(2, 5);
+    expect(s.z).toBeCloseTo(2, 5);
+    const dot = r.x * rotation.x + r.y * rotation.y + r.z * rotation.z + r.w * rotation.w;
+    expect(Math.abs(dot)).toBeCloseTo(1, 5);
   });
 });
 
@@ -431,6 +478,44 @@ describe('createPerspectiveMatrix4', () => {
     const m2 = createMatrix4();
     setPerspectiveMatrix4(m2, 0.5, 1.6, 0.1, 1000);
     expect(equalsMatrix4(m1, m2)).toBe(true);
+  });
+});
+
+describe('decomposeMatrix4', () => {
+  it('extracts translation, rotation and scale from a TRS matrix', () => {
+    const m = createMatrix4();
+    const rotation = createQuaternion();
+    setQuaternionFromAxisAngle(rotation, createVector3(0, 0, 1), Math.PI / 2);
+    composeMatrix4(m, createVector3(5, 6, 7), rotation, createVector3(2, 3, 4));
+
+    const p = createVector3();
+    const r = createQuaternion();
+    const s = createVector3();
+    decomposeMatrix4(p, r, s, m);
+
+    expect(p.x).toBeCloseTo(5, 5);
+    expect(p.y).toBeCloseTo(6, 5);
+    expect(p.z).toBeCloseTo(7, 5);
+    expect(s.x).toBeCloseTo(2, 5);
+    expect(s.y).toBeCloseTo(3, 5);
+    expect(s.z).toBeCloseTo(4, 5);
+    const dot = r.x * rotation.x + r.y * rotation.y + r.z * rotation.z + r.w * rotation.w;
+    expect(Math.abs(dot)).toBeCloseTo(1, 5);
+  });
+
+  it('identity matrix decomposes to origin, identity rotation, unit scale', () => {
+    const p = createVector3();
+    const r = createQuaternion();
+    const s = createVector3();
+    decomposeMatrix4(p, r, s, createMatrix4());
+
+    expect(p.x).toBeCloseTo(0, 6);
+    expect(p.y).toBeCloseTo(0, 6);
+    expect(p.z).toBeCloseTo(0, 6);
+    expect(s.x).toBeCloseTo(1, 6);
+    expect(s.y).toBeCloseTo(1, 6);
+    expect(s.z).toBeCloseTo(1, 6);
+    expect(r.w).toBeCloseTo(1, 6);
   });
 });
 
@@ -1259,6 +1344,26 @@ describe('setMatrix4FromMatrix3', () => {
   });
 });
 
+describe('setMatrix4FromQuaternion', () => {
+  it('identity quaternion writes the identity matrix', () => {
+    const m = createMatrix4(2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2);
+    setMatrix4FromQuaternion(m, createQuaternion());
+    expect(Array.from(m.m)).toEqual([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+  });
+
+  it('a 90-degree z rotation maps +x to +y', () => {
+    const q = createQuaternion();
+    setQuaternionFromAxisAngle(q, createVector3(0, 0, 1), Math.PI / 2);
+    const m = createMatrix4();
+    setMatrix4FromQuaternion(m, q);
+    const out = createVector3();
+    matrix4TransformPoint(out, m, createVector3(1, 0, 0));
+    expect(out.x).toBeCloseTo(0, 6);
+    expect(out.y).toBeCloseTo(1, 6);
+    expect(out.z).toBeCloseTo(0, 6);
+  });
+});
+
 describe('setMatrix4Identity', () => {
   it('resets a matrix to identity', () => {
     const m = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
@@ -1266,6 +1371,30 @@ describe('setMatrix4Identity', () => {
     setMatrix4Identity(m);
 
     expect(Array.from(m.m)).toEqual([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+  });
+});
+
+describe('setMatrix4LookAt', () => {
+  it('places the eye at the origin of view space', () => {
+    const m = createMatrix4();
+    const eye = createVector3(0, 0, 5);
+    setMatrix4LookAt(m, eye, createVector3(0, 0, 0), createVector3(0, 1, 0));
+
+    const out = createVector3();
+    matrix4TransformPoint(out, m, eye);
+    expect(out.x).toBeCloseTo(0, 6);
+    expect(out.y).toBeCloseTo(0, 6);
+    expect(out.z).toBeCloseTo(0, 6);
+  });
+
+  it('looks down -z so the target lands in front of the camera', () => {
+    const m = createMatrix4();
+    setMatrix4LookAt(m, createVector3(0, 0, 5), createVector3(0, 0, 0), createVector3(0, 1, 0));
+
+    const out = createVector3();
+    matrix4TransformPoint(out, m, createVector3(0, 0, 0));
+    // Target is 5 units in front of the eye => view-space z = -5 (RH).
+    expect(out.z).toBeCloseTo(-5, 6);
   });
 });
 
