@@ -8,6 +8,6 @@ export * from './hasTransform3d';
 export * from './hierarchy';
 export * from './node';
 export * from './revision';
-export * from './scene';
 export * from './transform2d';
 export * from './transform3d';
+export * from './viewport';

@@ -151,7 +151,7 @@ describe('ensureNodeLocalTransformMatrix', () => {
     const runtime = getEntityRuntime(node) as NodeRuntime<HasTransform2D> & HasTransform2DRuntime;
     ensureNodeLocalTransformMatrix(node);
     const cache = cloneAndInvalidateMatrix(runtime.localTransform2D);
-    runtime.localTransformID++;
+    runtime.localTransformId++;
     ensureNodeLocalTransformMatrix(node);
     expect(equalsMatrix(runtime.localTransform2D, cache)).toBe(true);
   });
@@ -178,7 +178,7 @@ describe('ensureNodeWorldTransformMatrix', () => {
     const runtime = getEntityRuntime(node) as NodeRuntime<HasTransform2D> & HasTransform2DRuntime;
     ensureNodeWorldTransformMatrix(node);
     const cache = cloneAndInvalidateMatrix(runtime.worldTransform2D);
-    runtime.localTransformID++;
+    runtime.localTransformId++;
     ensureNodeWorldTransformMatrix(node);
     expect(equalsMatrix(runtime.worldTransform2D, cache)).toBe(true);
   });
@@ -190,7 +190,7 @@ describe('ensureNodeWorldTransformMatrix', () => {
     const parentState = getEntityRuntime(parent) as NodeRuntime<HasTransform2D> & HasTransform2DRuntime;
     ensureNodeWorldTransformMatrix(node);
     const cache = cloneAndInvalidateMatrix(runtime.worldTransform2D);
-    parentState.worldTransformID++;
+    parentState.worldTransformId++;
     ensureNodeWorldTransformMatrix(node);
     expect(equalsMatrix(runtime.worldTransform2D, cache)).toBe(true);
   });

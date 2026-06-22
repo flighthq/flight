@@ -1,21 +1,28 @@
 import { createRectangle } from '@flighthq/geometry';
-import type { HasBoundsRectangleRuntime, MatrixLike, NodeTraits, Rectangle, Scene, SceneAlign } from '@flighthq/types';
+import type {
+  HasBoundsRectangleRuntime,
+  MatrixLike,
+  NodeTraits,
+  Rectangle,
+  Viewport,
+  ViewportAlign,
+} from '@flighthq/types';
 
 import { getNodeRuntime } from './node';
 
-export function computeSceneAlignX(scaledContentWidth: number, viewWidth: number, align: SceneAlign): number {
+export function computeViewportAlignX(scaledContentWidth: number, viewWidth: number, align: ViewportAlign): number {
   if (align.includes('left')) return 0;
   if (align.includes('right')) return viewWidth - scaledContentWidth;
   return (viewWidth - scaledContentWidth) / 2;
 }
 
-export function computeSceneAlignY(scaledContentHeight: number, viewHeight: number, align: SceneAlign): number {
+export function computeViewportAlignY(scaledContentHeight: number, viewHeight: number, align: ViewportAlign): number {
   if (align.includes('top')) return 0;
   if (align.includes('bottom')) return viewHeight - scaledContentHeight;
   return (viewHeight - scaledContentHeight) / 2;
 }
 
-export function computeSceneFillScale(
+export function computeViewportFillScale(
   contentWidth: number,
   contentHeight: number,
   viewWidth: number,
@@ -24,7 +31,7 @@ export function computeSceneFillScale(
   return Math.max(viewWidth / contentWidth, viewHeight / contentHeight);
 }
 
-export function computeSceneFitScale(
+export function computeViewportFitScale(
   contentWidth: number,
   contentHeight: number,
   viewWidth: number,
@@ -33,9 +40,9 @@ export function computeSceneFitScale(
   return Math.min(viewWidth / contentWidth, viewHeight / contentHeight);
 }
 
-export function computeSceneRenderTransform<Traits extends object = NodeTraits>(
+export function computeViewportRenderTransform<Traits extends object = NodeTraits>(
   out: MatrixLike,
-  scene: Scene<Traits>,
+  scene: Viewport<Traits>,
   viewWidth: number,
   viewHeight: number,
 ): void {
@@ -74,20 +81,22 @@ export function computeSceneRenderTransform<Traits extends object = NodeTraits>(
     sx = viewWidth / contentWidth;
     sy = viewHeight / contentHeight;
   } else if (scene.scaleMode === 'showall') {
-    sx = sy = computeSceneFitScale(contentWidth, contentHeight, viewWidth, viewHeight);
+    sx = sy = computeViewportFitScale(contentWidth, contentHeight, viewWidth, viewHeight);
   } else {
-    sx = sy = computeSceneFillScale(contentWidth, contentHeight, viewWidth, viewHeight);
+    sx = sy = computeViewportFillScale(contentWidth, contentHeight, viewWidth, viewHeight);
   }
 
   out.a = sx;
   out.b = 0;
   out.c = 0;
   out.d = sy;
-  out.tx = computeSceneAlignX(contentWidth * sx, viewWidth, scene.align);
-  out.ty = computeSceneAlignY(contentHeight * sy, viewHeight, scene.align);
+  out.tx = computeViewportAlignX(contentWidth * sx, viewWidth, scene.align);
+  out.ty = computeViewportAlignY(contentHeight * sy, viewHeight, scene.align);
 }
 
-export function createScene<Traits extends object = NodeTraits>(obj?: Readonly<Partial<Scene<Traits>>>): Scene<Traits> {
+export function createViewport<Traits extends object = NodeTraits>(
+  obj?: Readonly<Partial<Viewport<Traits>>>,
+): Viewport<Traits> {
   return {
     align: obj?.align ?? 'topleft',
     root: obj?.root ?? null,

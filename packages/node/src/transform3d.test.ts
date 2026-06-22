@@ -163,12 +163,12 @@ describe('getNodeWorldTransformMatrix4', () => {
     invalidateNodeLocalTransform(node);
     ensureNodeWorldTransformMatrix4(node);
     const runtime = getNodeRuntime(node) as NodeRuntime<TestTraits> & HasTransform3DRuntime;
-    const first = runtime.worldTransformID;
+    const first = runtime.worldTransformId;
 
     node.localMatrix.m[12] = 99;
     invalidateNodeLocalTransform(node);
     ensureNodeWorldTransformMatrix4(node);
-    const second = runtime.worldTransformID;
+    const second = runtime.worldTransformId;
 
     expect(second).not.toBe(first);
   });
@@ -177,9 +177,9 @@ describe('getNodeWorldTransformMatrix4', () => {
     const node = createTestNode();
     ensureNodeWorldTransformMatrix4(node);
     const runtime = getNodeRuntime(node) as NodeRuntime<TestTraits> & HasTransform3DRuntime;
-    const id1 = runtime.worldTransformID;
+    const id1 = runtime.worldTransformId;
     ensureNodeWorldTransformMatrix4(node);
-    const id2 = runtime.worldTransformID;
+    const id2 = runtime.worldTransformId;
     expect(id1).toBe(id2);
   });
 

@@ -27,17 +27,17 @@ export function ensureNodeWorldTransformMatrix4<Traits extends object>(target: T
   const parent = runtime.parent as Transform3DNode<Traits> | null;
 
   let parentRuntime: (NodeRuntime<Traits> & HasTransform3DRuntime) | undefined;
-  let parentWorldTransformID = 0;
+  let parentWorldTransformId = 0;
 
   if (parent !== null) {
     ensureNodeWorldTransformMatrix4(parent);
     parentRuntime = getEntityRuntime(parent) as NodeRuntime<Traits> & HasTransform3DRuntime;
-    parentWorldTransformID = parentRuntime.worldTransformID;
+    parentWorldTransformId = parentRuntime.worldTransformId;
   }
 
   if (
-    runtime.worldTransformUsingLocalTransformID !== runtime.localTransformID ||
-    runtime.worldTransformUsingParentTransformID !== parentWorldTransformID
+    runtime.worldTransformUsingLocalTransformId !== runtime.localTransformId ||
+    runtime.worldTransformUsingParentTransformId !== parentWorldTransformId
   ) {
     recomputeWorldTransform3D(target, runtime, parentRuntime);
   }

@@ -20,7 +20,7 @@ describe('initTransform2DRuntimeTrait', () => {
     expect(runtime.worldTransform2D).toBeNull();
 
     // inherited graph runtime fields
-    expect(runtime.appearanceID).toStrictEqual(0);
+    expect(runtime.appearanceId).toStrictEqual(0);
   });
 });
 
