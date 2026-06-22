@@ -6,6 +6,7 @@
   },
   "references": [
     { "path": "../../packages/filters" },
+    { "path": "../../packages/filters-css" },
     { "path": "../../packages/filters-gl" },
     { "path": "../../packages/filters-wgpu" },
     { "path": "../../packages/sdk" }

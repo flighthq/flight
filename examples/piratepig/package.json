@@ -4,6 +4,7 @@
   "type": "module",
   "dependencies": {
     "@flighthq/filters": "*",
+    "@flighthq/filters-css": "*",
     "@flighthq/filters-gl": "*",
     "@flighthq/filters-wgpu": "*",
     "@flighthq/sdk": "*"

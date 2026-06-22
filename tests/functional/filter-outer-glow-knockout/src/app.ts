@@ -8,7 +8,8 @@
 // mask first then the source on top; with knockout: true the source is OMITTED, so the result is the
 // glow mask alone. The result tile shows a green glow ring spilling outside the square's edges, and
 // the square area is filled by the glow's tinted core — green, NOT the white of the source.
-import { applyOuterGlowFilterToSurface, createOuterGlowFilter } from '@flighthq/filters';
+import { createOuterGlowFilter } from '@flighthq/filters';
+import { applyOuterGlowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

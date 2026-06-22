@@ -2,7 +2,7 @@ import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 import { createRichText } from '@flighthq/text';
-import { enableTextInput } from '@flighthq/text-input';
+import { enableTextInput } from '@flighthq/textinput';
 
 import {
   createWgpuRichTextData,

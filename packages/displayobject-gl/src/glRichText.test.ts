@@ -1,7 +1,7 @@
 ﻿import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import { makeGlState } from '@flighthq/render-gl';
 import { createRichText } from '@flighthq/text';
-import { enableTextInput } from '@flighthq/text-input';
+import { enableTextInput } from '@flighthq/textinput';
 import type { RendererData, RenderProxy2D, RichText } from '@flighthq/types';
 
 import {

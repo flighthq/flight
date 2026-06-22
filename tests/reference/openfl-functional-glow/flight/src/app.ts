@@ -8,7 +8,8 @@
 //             applyInnerGlowFilterToGl shader passes
 // CSS only covers non-knockout outer glow; inner glow and knockout are Gl-only.
 import type { InnerGlowFilter, OuterGlowFilter } from '@flighthq/filters';
-import { computeOuterGlowFilterCss, createInnerGlowFilter, createOuterGlowFilter } from '@flighthq/filters';
+import { createInnerGlowFilter, createOuterGlowFilter } from '@flighthq/filters';
+import { computeOuterGlowFilterCss } from '@flighthq/filters-css';
 import { applyInnerGlowFilterToGl, applyOuterGlowFilterToGl } from '@flighthq/filters-gl';
 import type {
   Bitmap,

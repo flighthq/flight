@@ -8,7 +8,8 @@
 // composite over the original source per the surface JSDoc. The ramp runs red → gray → blue, so
 // with light down-right (angle 45°) the gradient endpoints land on opposite inner edges: red near
 // the top-left edge and blue near the bottom-right edge.
-import { applyGradientBevelFilterToSurface, createGradientBevelFilter } from '@flighthq/filters';
+import { createGradientBevelFilter } from '@flighthq/filters';
+import { applyGradientBevelFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

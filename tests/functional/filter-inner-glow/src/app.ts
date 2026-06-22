@@ -5,7 +5,8 @@
 // shape boundary), then blit source | result 1:1 as bitmaps. The filter math runs on the surface in
 // JS, so every backend draws identical bytes — exact cross-backend parity — and the oracle samples a
 // band a few pixels inside the square's edge for the cyan tint, with the center staying near white.
-import { applyInnerGlowFilterToSurface, createInnerGlowFilter } from '@flighthq/filters';
+import { createInnerGlowFilter } from '@flighthq/filters';
+import { applyInnerGlowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

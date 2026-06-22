@@ -18,8 +18,8 @@
     { "path": "../displayobject" },
     { "path": "../text" },
     { "path": "../shape" },
-    { "path": "../text-input" },
-    { "path": "../text-layout" },
+    { "path": "../textinput" },
+    { "path": "../textlayout" },
     { "path": "../types" }
   ],
   "include": ["src"]

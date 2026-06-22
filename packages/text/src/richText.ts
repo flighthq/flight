@@ -4,7 +4,7 @@ import {
   getDisplayObjectRuntime,
 } from '@flighthq/displayobject';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
-import { computeRichTextContent, computeTextBoundsRectangle, getRichTextContent } from '@flighthq/text-layout';
+import { computeRichTextContent, computeTextBoundsRectangle, getRichTextContent } from '@flighthq/textlayout';
 import type {
   MethodsOf,
   Node,

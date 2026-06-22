@@ -1,6 +1,6 @@
 import { getEntityRuntime } from '@flighthq/entity';
 import { createRectangle } from '@flighthq/geometry';
-import { setTextLayoutMeasureProvider } from '@flighthq/text-layout';
+import { setTextLayoutMeasureProvider } from '@flighthq/textlayout';
 import type { Node, RichText, RichTextRuntime } from '@flighthq/types';
 import { RichTextKind } from '@flighthq/types';
 

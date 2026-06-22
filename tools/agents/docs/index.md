@@ -83,7 +83,7 @@ Run these at the points listed. Each check is fast; skipping them causes cascadi
 - Run `npm run size` after changes to examples, package exports, barrel files, renderer registration, dependencies, or anything that may affect tree-shaking.
 - Run the closest meaningful tests while iterating: a touched test file, a package workspace, or a Vitest project filter. Broaden once the local behavior is understood.
 - Run `npm run check` for narrower completed changes. Run `npm run ci` before calling broad refactors, public API reshapes, example changes, packaging changes, or tree-shaking-sensitive work done.
-- When adding a new package, copy the package shape from a nearby package, then run `npm run packages:check`. A package may spawn focused neighbor packages using a `-subpackage` suffix (for example `@flighthq/tween-easing` alongside `@flighthq/tween`) when the scope is clearly bounded and the split keeps both packages tree-shakable.
+- When adding a new package, copy the package shape from a nearby package, then run `npm run packages:check`. A package may spawn focused neighbor packages using a `-subpackage` suffix (for example `@flighthq/spritesheet-formats` alongside `@flighthq/spritesheet`) when the scope is clearly bounded and the split keeps both packages tree-shakable.
 
 ## Orientation Commands
 
@@ -193,15 +193,15 @@ Geometry types (rectangles, vectors, matrices) follow explicit allocation and ow
 - `@flighthq/materials`: color transform and shader-related utilities. A logical home for these concepts; 3D material support is planned as a future direction.
 - `@flighthq/signals`: strictly-typed signals and slots for event dispatching. Signals support multiple listeners, priority, and cancellation. The package is effectively always present in the SDK; specific signal groups are opt-in via `enable*` functions defined in the owning package. Signals is fundamental infrastructure and should have few dependencies.
 - `@flighthq/resources`: resource primitives and loading (image/audio/video/font resources, texture atlases, tilesets).
-- `@flighthq/resources-loader`: batch queue for loading multiple resources in sequence or parallel.
+- `@flighthq/loader`: batch queue for loading multiple resources in sequence or parallel.
 - `@flighthq/spritesheet`: animation layer built on raw resources — a logical package providing sprite-based animation, analogous in structure to `particles`.
 - `@flighthq/timeline`: MovieClip-style keyframe and timeline support.
 - `@flighthq/timeline-spritesheet`: timeline implementation backed by spritesheet animation internally.
 - `@flighthq/tween`: tween managers, tweens, and timers.
-- `@flighthq/tween-easing`: easing functions for use with tween or any animation system.
+- `@flighthq/easing`: easing functions for use with tween or any animation system.
 - `@flighthq/input`: maps raw system inputs to a normalized internal representation, feeding into interactions, signals, and other consumers.
-- `@flighthq/text-input`: supports user input editing within a text primitive.
-- `@flighthq/text-layout`: renderer-agnostic glyph layout for rich text composition.
+- `@flighthq/textinput`: supports user input editing within a text primitive.
+- `@flighthq/textlayout`: renderer-agnostic glyph layout for rich text composition.
 - `@flighthq/text-shaping` _(designed, not yet built — 2026-06-22)_: the text **shaper seam** — `registerTextShaper` over a swappable `TextShaper` backend that turns a text run into shaped glyphs (ids, advances, offsets, clusters). Generalizes (and replaces) the string→width measure provider `text-layout` consumes today: width is `Σ advances`. Two backend tiers — a measure-only default (`measureText`) that supports layout + Canvas-rendered text, and a full-glyph shaper (HarfBuzz, opt-in as a ~1MB wasm backend so it stays off the default bundle) required for any GPU/WebGPU text. Correct international text (Arabic/Indic/kerning/ligatures) needs the full-glyph tier. This seam is what lets every non-Canvas backend render text, in TS and in the Rust port alike; the Rust port mirrors it with `flighthq-text-shaping` (rustybuzz backend). See [rust/text](rust/text.md) for the full stack design.
 - `@flighthq/application`: optional package providing a main loop, application lifecycle events, and the **windowing API** — `ApplicationWindow` (size/position/state + signals), web event wiring (`attach*`/`detach*`), and window-control commands (title, position, size, minimize/maximize/restore, fullscreen, always-on-top, constraints, `openWindow`, close-with-veto via `onCloseRequest`) over a swappable `WindowBackend` (web default; native hosts register their own), matching the platform suite's backend-seam pattern.
 - `@flighthq/media`: audio and video playback channels.

@@ -6,7 +6,8 @@
 // extremes push samples PAST the source on the left and right; with mode 'color' those out-of-bounds
 // samples are filled with the packed fill colour (red) instead of wrapped content. The oracle checks the
 // displaced edge bands show the fill colour and the centre still shows the undisplaced white square.
-import { applyDisplacementMapFilterToSurface, createDisplacementMapFilter } from '@flighthq/filters';
+import { createDisplacementMapFilter } from '@flighthq/filters';
+import { applyDisplacementMapFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

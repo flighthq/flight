@@ -22,7 +22,8 @@
 // (see ./parity.ts) and app.ts calls applyNativeBevel (a no-op everywhere) and drawNativeBevel (Gl
 // only) unconditionally. It imports createParityTarget from ./render (the local barrel); the functional
 // vite harness routes ./render to the active backend's render.<renderer>.ts at runtime.
-import { applyBevelFilterToSurface, createBevelFilter } from '@flighthq/filters';
+import { createBevelFilter } from '@flighthq/filters';
+import { applyBevelFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

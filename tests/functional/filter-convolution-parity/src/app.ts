@@ -19,7 +19,8 @@
 // drawNativeConvolution (shader backends) unconditionally — the inactive one is a no-op. It imports
 // createParityTarget from ./render (the local barrel); the functional vite harness routes ./render to the
 // active backend's render.<renderer>.ts at runtime, the same way blur-parity does.
-import { applyConvolutionFilterToSurface, createConvolutionFilter } from '@flighthq/filters';
+import { createConvolutionFilter } from '@flighthq/filters';
+import { applyConvolutionFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

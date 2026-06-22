@@ -9,7 +9,8 @@
 // source pixel is retained (not the 'color' fill). The map drives every pixel +20px to the right
 // (componentX=0, scaleX=40, map R=255). The right-edge band's samples land off the right edge, so under
 // 'ignore' those output pixels keep their original colour — distinct from the black fill 'color' would write.
-import { applyDisplacementMapFilterToSurface, createDisplacementMapFilter } from '@flighthq/filters';
+import { createDisplacementMapFilter } from '@flighthq/filters';
+import { applyDisplacementMapFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

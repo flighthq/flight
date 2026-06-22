@@ -18,7 +18,8 @@
 // (see ./parity.ts) and app.ts calls drawNativePixelate unconditionally — it is a no-op on Canvas/DOM.
 // It imports createParityTarget from ./render (the local barrel); the functional vite harness routes
 // ./render to the active backend's render.<renderer>.ts at runtime, the same way particle-emitter does.
-import { applyPixelateFilterToSurface, createPixelateFilter } from '@flighthq/filters';
+import { createPixelateFilter } from '@flighthq/filters';
+import { applyPixelateFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

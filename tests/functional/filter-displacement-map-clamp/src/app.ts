@@ -7,7 +7,8 @@
 // is a red ramp 0..255 left→right, so dx = (red/255 − 0.5) × 30: the left edge shifts −15px and the right
 // edge +15px. Two oracle facts: a stripe edge moves (a column that was black becomes white), and at the
 // right edge out-of-range samples CLAMP to the border column (black) instead of wrapping to white garbage.
-import { applyDisplacementMapFilterToSurface, createDisplacementMapFilter } from '@flighthq/filters';
+import { createDisplacementMapFilter } from '@flighthq/filters';
+import { applyDisplacementMapFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

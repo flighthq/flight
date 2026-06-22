@@ -6,7 +6,8 @@
 // cross-backend parity. A median of radius 2 (a 5×5 neighborhood) is dominated by the surrounding blue,
 // so each isolated red speck is replaced by blue; the oracle checks a former speck coordinate and a
 // clean blue region on the result tile.
-import { applyMedianFilterToSurface, createMedianFilter } from '@flighthq/filters';
+import { createMedianFilter } from '@flighthq/filters';
+import { applyMedianFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

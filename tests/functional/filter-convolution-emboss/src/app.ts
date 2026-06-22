@@ -16,7 +16,8 @@
 // OUTSIDE the square: along the top/left edges a black pixel sees the square's white through the
 // positive bottom-right weights → lighter than 128; along the bottom/right edges a black pixel sees
 // the white through the negative top-left weights → darker than 128.
-import { applyConvolutionFilterToSurface, createConvolutionFilter } from '@flighthq/filters';
+import { createConvolutionFilter } from '@flighthq/filters';
+import { applyConvolutionFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

@@ -1,4 +1,4 @@
-import { createTextMetrics, setTextLayoutMeasureProvider } from '@flighthq/text-layout';
+import { createTextMetrics, setTextLayoutMeasureProvider } from '@flighthq/textlayout';
 
 import { createRichText, setRichTextString } from './richText';
 import { createTextLabel, setTextLabelString } from './textLabel';

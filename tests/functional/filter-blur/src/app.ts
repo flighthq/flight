@@ -5,7 +5,8 @@
 // JS, so every backend draws identical bytes — exact cross-backend parity. The oracle checks the defining
 // property of a Gaussian blur on pixels we chose: the hard step from black→white becomes a gradient that
 // bleeds outside the original square while the centre stays bright.
-import { applyBlurFilterToSurface, createBlurFilter } from '@flighthq/filters';
+import { createBlurFilter } from '@flighthq/filters';
+import { applyBlurFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

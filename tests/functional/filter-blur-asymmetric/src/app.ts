@@ -5,7 +5,8 @@
 // in JS, so every backend draws identical bytes. The oracle checks the defining property of an
 // asymmetric blur: pixels bleed horizontally past the square's left/right edges, while the top edge —
 // untouched by a zero vertical blur — stays sharp.
-import { applyBlurFilterToSurface, createBlurFilter } from '@flighthq/filters';
+import { createBlurFilter } from '@flighthq/filters';
+import { applyBlurFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

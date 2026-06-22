@@ -1,4 +1,5 @@
-﻿import { computeBlurFilterCss, createBlurFilter } from '@flighthq/filters';
+﻿import { createBlurFilter } from '@flighthq/filters';
+import { computeBlurFilterCss } from '@flighthq/filters-css';
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,

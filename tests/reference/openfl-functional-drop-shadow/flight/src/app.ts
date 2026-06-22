@@ -8,7 +8,8 @@
 //             applyInnerShadowFilterToGl shader passes
 // CSS only covers non-knockout outer variants; inner shadow is Gl-only.
 import type { DropShadowFilter, InnerShadowFilter } from '@flighthq/filters';
-import { computeDropShadowFilterCss, createDropShadowFilter, createInnerShadowFilter } from '@flighthq/filters';
+import { createDropShadowFilter, createInnerShadowFilter } from '@flighthq/filters';
+import { computeDropShadowFilterCss } from '@flighthq/filters-css';
 import { applyDropShadowFilterToGl, applyInnerShadowFilterToGl } from '@flighthq/filters-gl';
 import type {
   Bitmap,
