@@ -69,7 +69,7 @@ export function applyBevelFilterToSurface(
 /**
  * Applies a true Gaussian blur to `source`, writing the blurred result into `out`. `blurX` and
  * `blurY` on the filter are the Gaussian standard deviations in pixels (matching CSS `blur()`),
- * so the BlurFilter intent renders the same on the surface, CSS, and WebGL Gaussian paths. For a
+ * so the BlurFilter intent renders the same on the surface, CSS, and Gl Gaussian paths. For a
  * cheaper box approximation, call `applySurfaceBoxBlurFilter` from `@flighthq/surface-filters`
  * directly.
  *

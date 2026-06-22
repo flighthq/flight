@@ -5,7 +5,7 @@
  * passes use the next odd width up; this avoids the overshoot that repeating a
  * single rounded radius `passes` times accumulates. Radii are non-decreasing in
  * `pass`. Use this for backends that can vary the radius per pass (such as the
- * WebGL separable passes); `computeBoxBlurRadius` covers backends that apply one
+ * Gl separable passes); `computeBoxBlurRadius` covers backends that apply one
  * uniform radius across every pass.
  */
 export function computeBoxBlurPassRadius(sigma: number, passes: number, pass: number): number {

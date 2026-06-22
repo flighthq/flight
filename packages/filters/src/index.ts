@@ -16,9 +16,9 @@ import type {
 } from '@flighthq/types';
 
 export {
-  computeBlurFilterCSS,
-  computeDropShadowFilterCSS,
-  computeOuterGlowFilterCSS,
+  computeBlurFilterCss,
+  computeDropShadowFilterCss,
+  computeOuterGlowFilterCss,
   getShadowFilterOffset,
 } from './css';
 export { computeBoxBlurPassRadius, computeBoxBlurRadius } from './math';
