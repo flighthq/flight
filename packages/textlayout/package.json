@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/text-layout",
+  "name": "@flighthq/textlayout",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -27,6 +27,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/textshaper": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
