@@ -17,14 +17,14 @@ export function updateRenderProxy2DTransform(
   data: RenderProxy2D,
   parentData?: RenderProxy2D,
 ): boolean {
-  const localTransformID = getNodeLocalTransformRevision(data.source as Node);
+  const localTransformId = getNodeLocalTransformRevision(data.source as Node);
   const parentDirty =
-    parentData !== undefined && parentData.transformFrameID === getRenderStateRuntime(state).currentFrameID;
-  const localDirty = data.lastLocalTransformID !== localTransformID;
+    parentData !== undefined && parentData.transformFrameId === getRenderStateRuntime(state).currentFrameId;
+  const localDirty = data.lastLocalTransformId !== localTransformId;
 
   if (parentDirty || localDirty) {
     recalculateRenderTransform2D(state, data, parentData);
-    data.lastLocalTransformID = localTransformID;
+    data.lastLocalTransformId = localTransformId;
     return true;
   }
   return false;
@@ -38,5 +38,5 @@ function recalculateRenderTransform2D(state: RenderState, data: RenderProxy2D, p
   } else {
     copyMatrix(data.transform2D, transform2D);
   }
-  data.transformFrameID = getRenderStateRuntime(state).currentFrameID;
+  data.transformFrameId = getRenderStateRuntime(state).currentFrameId;
 }

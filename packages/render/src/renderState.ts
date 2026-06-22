@@ -6,7 +6,7 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
   const state = createEntity({
     allowSmoothing: obj?.allowSmoothing ?? true,
     backgroundColor: obj?.backgroundColor ?? 0,
-    backgroundColorRGBA: obj?.backgroundColorRGBA ?? [],
+    backgroundColorRgba: obj?.backgroundColorRgba ?? [],
     backgroundColorString: obj?.backgroundColorString ?? '',
     currentClipDepth: obj?.currentClipDepth ?? 0,
     displayObjectClipHooks: obj?.displayObjectClipHooks ?? null,
@@ -28,11 +28,11 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
 // intentionally mutable (not Readonly).
 export function createRenderStateRuntime(): RenderStateRuntime {
   const runtime = createEntityRuntime() as RenderStateRuntime;
-  runtime.currentFrameID = 0;
+  runtime.currentFrameId = 0;
   runtime.renderProxyAdapterMap = new WeakMap();
   runtime.renderProxyMap = new WeakMap();
   runtime.rendererMap = new Map();
-  runtime.rendererMapID = 0;
+  runtime.rendererMapId = 0;
   runtime.tempStack = [];
   return runtime;
 }
