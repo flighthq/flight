@@ -1,13 +1,11 @@
-import type { BevelFilter, BlurFilter, DropShadowFilter, InnerShadowFilter, OuterGlowFilter } from '@flighthq/types';
+import type { BevelFilter, DropShadowFilter, InnerShadowFilter } from '@flighthq/types';
 
-export function computeBlurFilterCss(filter: BlurFilter): string | null {
-  const bx = filter.blurX ?? 4;
-  const by = filter.blurY ?? 4;
-  if (bx !== by) return null;
-  if (bx <= 0) return null;
-  return `blur(${bx}px)`;
-}
-
+/**
+ * Computes the CSS `filter` string for a drop shadow filter, or `null` when the
+ * filter has no CSS equivalent. A knockout shadow or an anisotropic blur
+ * (`blurX !== blurY`) cannot be expressed with CSS `drop-shadow()` and returns
+ * `null`.
+ */
 export function computeDropShadowFilterCss(filter: DropShadowFilter): string | null {
   if (filter.knockout) return null;
   const blurX = filter.blurX ?? 4;
@@ -15,14 +13,6 @@ export function computeDropShadowFilterCss(filter: DropShadowFilter): string | n
   if (blurX !== blurY) return null;
   const { dx, dy } = getShadowFilterOffset(filter);
   return `drop-shadow(${dx}px ${dy}px ${blurX}px ${rgbaFromInt(filter.color ?? 0, filter.alpha ?? 1)})`;
-}
-
-export function computeOuterGlowFilterCss(filter: OuterGlowFilter): string | null {
-  if (filter.knockout) return null;
-  const blurX = filter.blurX ?? 6;
-  const blurY = filter.blurY ?? 6;
-  if (blurX !== blurY) return null;
-  return `drop-shadow(0px 0px ${blurX}px ${rgbaFromInt(filter.color ?? 0xff0000, filter.alpha ?? 1)})`;
 }
 
 /**
