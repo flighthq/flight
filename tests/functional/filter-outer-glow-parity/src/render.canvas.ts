@@ -2,22 +2,22 @@
 //
 // Native path: the canvas renderer applies a CSS filter string around a node's own draw (via
 // state.filter), so the "native glow" is the source bitmap with a `drop-shadow(0 0 Npx color)` CSS
-// filter bound to it. computeOuterGlowFilterCSS produces the string; setCanvasCSSFilter binds it; the
+// filter bound to it. computeOuterGlowFilterCss produces the string; setCanvasCssFilter binds it; the
 // normal render draws it. No extra render pass — the backend rasterizes the glow itself.
 import type { Bitmap, DisplayObject, OuterGlowFilter } from '@flighthq/sdk';
 import {
   BitmapKind,
-  computeOuterGlowFilterCSS,
+  computeOuterGlowFilterCss,
   createCanvasElement,
   createCanvasRenderState,
   createMatrix,
   defaultCanvasBitmapRenderer,
-  enableCanvasCSSFilterSupport,
+  enableCanvasCssFilterSupport,
   prepareDisplayObjectRender,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
-  setCanvasCSSFilter,
+  setCanvasCssFilter,
 } from '@flighthq/sdk';
 
 import { registerFunctionalTarget } from '../../_harness/verify';
@@ -38,7 +38,7 @@ export function createParityTarget(width: number, height: number, background: nu
 
   registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
   // The native glow is a CSS filter bound per node; the resolver must be installed to honor it.
-  enableCanvasCSSFilterSupport(state);
+  enableCanvasCssFilterSupport(state);
 
   registerFunctionalTarget({
     kind: 'canvas',
@@ -55,8 +55,8 @@ export function createParityTarget(width: number, height: number, background: nu
     height,
     scale: pixelRatio,
     applyNativeGlow(node: Bitmap, filter: Readonly<OuterGlowFilter>): void {
-      const css = computeOuterGlowFilterCSS(filter);
-      if (css !== null) setCanvasCSSFilter(state, node, css);
+      const css = computeOuterGlowFilterCss(filter);
+      if (css !== null) setCanvasCssFilter(state, node, css);
     },
     render(root: DisplayObject): void {
       renderParity(state, root);

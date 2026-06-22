@@ -4,10 +4,10 @@ import {
   createCanvasElement,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
-  createSMAAEffect,
+  createSmaaEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
-  defaultCanvasSMAAEffectRunner,
+  defaultCanvasSmaaEffectRunner,
   endCanvasRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerCanvasRenderEffect,
@@ -27,7 +27,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'smaa', defaultCanvasSMAAEffectRunner);
+registerCanvasRenderEffect(state, 'smaa', defaultCanvasSmaaEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 
@@ -40,5 +40,5 @@ export function render(root: DisplayObject): void {
   beginCanvasRenderEffectPipeline(state, pipeline);
   renderCanvasBackground(state);
   renderCanvasDisplayObject(state, root);
-  endCanvasRenderEffectPipeline(state, pipeline, [createSMAAEffect({ threshold: 0.1 })]);
+  endCanvasRenderEffectPipeline(state, pipeline, [createSmaaEffect({ threshold: 0.1 })]);
 }

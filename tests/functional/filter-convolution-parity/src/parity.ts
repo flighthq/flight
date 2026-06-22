@@ -9,7 +9,7 @@
 //   - Canvas / DOM: there is no native convolution. The "native" tile IS the surface reference bytes
 //     (drawn as a plain bitmap), so parity holds by construction; these backends only confirm the tile
 //     was emitted and is the filtered (not source) image. `applyNativeConvolution` is a no-op.
-//   - WebGL: the native convolution is a single-pass shader (applyConvolutionFilterToWebGL) run over an
+//   - Gl: the native convolution is a single-pass shader (applyConvolutionFilterToGl) run over an
 //     offscreen render target, then composited onto the screen. `drawNativeConvolution(spec)` runs that
 //     GPU pass; it is a no-op on Canvas/DOM. This is the meaningful cross-impl comparison.
 // A backend implements whichever path is real for it and leaves the other a no-op, so app.ts can call
@@ -37,7 +37,7 @@ export interface ParityTarget {
   // Reserved for a hypothetical CSS-filter convolution. No backend implements one today; every backend
   // leaves this a no-op. Kept to mirror the blur-parity contract shape.
   applyNativeConvolution(): void;
-  // Shader backends (WebGL): run the offscreen single-pass convolution and composite it at the native
+  // Shader backends (Gl): run the offscreen single-pass convolution and composite it at the native
   // tile. No-op on DOM/Canvas. Called immediately before/around render().
   drawNativeConvolution?(spec: Readonly<NativeConvolutionSpec>): void;
   render(root: DisplayObject): void;

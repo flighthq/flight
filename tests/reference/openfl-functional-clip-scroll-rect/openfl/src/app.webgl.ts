@@ -8,7 +8,7 @@ import Shape from 'openfl/display/Shape';
 import Sprite from 'openfl/display/Sprite';
 import Event from 'openfl/events/Event';
 import Rectangle from 'openfl/geom/Rectangle';
-import URLRequest from 'openfl/net/URLRequest';
+import UrlRequest from 'openfl/net/URLRequest';
 import TextField from 'openfl/text/TextField';
 import TextFormat from 'openfl/text/TextFormat';
 
@@ -29,7 +29,7 @@ function loadBitmapData(url: string): Promise<BitmapData> {
     loader.contentLoaderInfo.addEventListener(Event.COMPLETE, () => {
       resolve((loader.content as Bitmap).bitmapData!);
     });
-    loader.load(new URLRequest(url));
+    loader.load(new UrlRequest(url));
   });
 }
 

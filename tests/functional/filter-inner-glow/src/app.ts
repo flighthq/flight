@@ -16,7 +16,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -91,7 +91,7 @@ const CENTER = TILE / 2;
 export function assertRender(frame: Readonly<Surface>): void {
   const s = frame.width / width; // device-pixel scale (canvas may be width × devicePixelRatio)
 
-  const edge = getSurfacePixelRGB(frame, Math.round((RESULT_X + EDGE_X) * s), Math.round((TOP + EDGE_Y) * s));
+  const edge = getSurfacePixelRgb(frame, Math.round((RESULT_X + EDGE_X) * s), Math.round((TOP + EDGE_Y) * s));
   const er = (edge >> 16) & 255;
   const eg = (edge >> 8) & 255;
   const eb = edge & 255;
@@ -102,7 +102,7 @@ export function assertRender(frame: Readonly<Surface>): void {
     throw new Error(`[filter-inner-glow] edge band expected R below cyan G/B, got #${hex(edge)}`);
   }
 
-  const center = getSurfacePixelRGB(frame, Math.round((RESULT_X + CENTER) * s), Math.round((TOP + CENTER) * s));
+  const center = getSurfacePixelRgb(frame, Math.round((RESULT_X + CENTER) * s), Math.round((TOP + CENTER) * s));
   if (!channelsClose(center, 0xffffff, 40)) {
     throw new Error(`[filter-inner-glow] square center expected near-white, got #${hex(center)}`);
   }

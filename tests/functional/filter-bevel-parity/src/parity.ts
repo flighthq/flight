@@ -7,10 +7,10 @@
 //
 // Unlike blur, the bevel filter has NO CSS native path — Canvas/DOM cannot express a directional
 // inner-bevel edge mask with a CSS filter string. So on Canvas/DOM the "native" tile is the surface
-// reference itself (parity holds by construction there), and only WebGL runs a real native path:
-//   - WebGL: the native bevel is a multi-pass shader (tint + box blur + offset blits) into offscreen
+// reference itself (parity holds by construction there), and only Gl runs a real native path:
+//   - Gl: the native bevel is a multi-pass shader (tint + box blur + offset blits) into offscreen
 //     render targets, composited onto the screen after the scene. `drawNativeBevel(spec)` runs that GPU
-//     pass; it is a no-op on Canvas/DOM. WebGL is the meaningful comparison.
+//     pass; it is a no-op on Canvas/DOM. Gl is the meaningful comparison.
 import type { BevelFilter, Bitmap, DisplayObject, ImageResource } from '@flighthq/sdk';
 
 export interface NativeBevelSpec {
@@ -34,7 +34,7 @@ export interface ParityTarget {
   // CSS-filter backends (Canvas/DOM) have no native bevel; `node` is the reference bitmap they draw as
   // the native tile. This hook is a no-op on every backend (kept for contract symmetry with blur).
   applyNativeBevel(node: Bitmap): void;
-  // Shader backends (WebGL): run the offscreen multi-pass bevel and composite it at the native tile.
+  // Shader backends (Gl): run the offscreen multi-pass bevel and composite it at the native tile.
   // No-op on Canvas/DOM. Called after applyNativeBevel, immediately before/around render().
   drawNativeBevel?(spec: Readonly<NativeBevelSpec>): void;
   render(root: DisplayObject): void;

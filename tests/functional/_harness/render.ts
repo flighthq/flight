@@ -4,10 +4,10 @@ import type { FunctionalTarget, FunctionalTargetOptions } from './target';
 
 export type {
   FunctionalCanvasTarget,
-  FunctionalDOMTarget,
+  FunctionalDomTarget,
+  FunctionalGlTarget,
   FunctionalTarget,
-  FunctionalWebGLTarget,
-  FunctionalWebGPUTarget,
+  FunctionalWgpuTarget,
 } from './target';
 export type { FunctionalTargetOptions };
 

@@ -15,7 +15,7 @@ import {
   createImageResourceFromCanvas,
   createSurface,
   createSurfaceRegion,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
   setSurfacePixel,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -99,7 +99,7 @@ export function assertRender(frame: Readonly<Surface>): void {
 function sampleResult(frame: Readonly<Surface>, s: number, localX: number, localY: number): number {
   const px = Math.round((RESULT_X + localX) * s);
   const py = Math.round((TOP + localY) * s);
-  return getSurfacePixelRGB(frame, px, py);
+  return getSurfacePixelRgb(frame, px, py);
 }
 
 function channelsClose(a: number, b: number, tol = 16): boolean {

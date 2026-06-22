@@ -8,10 +8,10 @@
 // Color-matrix has NO CSS-filter form, so the per-backend split here differs from blur:
 //   - DOM / Canvas: there is no native CSS color-matrix path, so the "native" tile is the CPU/surface
 //     result drawn as a plain bitmap — parity holds by construction. drawNativeColorMatrix is a no-op.
-//   - WebGL: the native filter is a single-pass shader into an offscreen render target, composited onto
+//   - Gl: the native filter is a single-pass shader into an offscreen render target, composited onto
 //     the screen after the scene. drawNativeColorMatrix(spec) runs that GPU pass.
 // A backend implements whichever path is real for it and leaves the other a no-op, so app.ts can call
-// both unconditionally. The WebGL tile is the meaningful comparison.
+// both unconditionally. The Gl tile is the meaningful comparison.
 import type { ColorMatrixFilter, DisplayObject, ImageResource } from '@flighthq/sdk';
 
 export interface NativeColorMatrixSpec {
@@ -32,7 +32,7 @@ export interface ParityTarget {
   height: number;
   // Device-pixel scale: the backing store is width × scale (1 for DOM, devicePixelRatio otherwise).
   scale: number;
-  // Shader backends (WebGL): run the offscreen single-pass color-matrix and composite it at the native
+  // Shader backends (Gl): run the offscreen single-pass color-matrix and composite it at the native
   // tile. No-op on DOM/Canvas (where the native tile is drawn as the CPU result bitmap instead).
   drawNativeColorMatrix?(spec: Readonly<NativeColorMatrixSpec>): void;
   render(root: DisplayObject): void;

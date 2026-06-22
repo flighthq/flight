@@ -2,15 +2,15 @@
 // surface (CPU) outer glow. Modeled exactly on filter-blur-parity.
 //
 // A filter has a CPU reference impl (applyOuterGlowFilterToSurface) and native per-backend impls (a CSS
-// drop-shadow for DOM/Canvas, a tint+box-blur shader chain for WebGL). This test draws two tiles side
+// drop-shadow for DOM/Canvas, a tint+box-blur shader chain for Gl). This test draws two tiles side
 // by side:
 //   REFERENCE tile — the source glowed on the CPU via applyOuterGlowFilterToSurface, then composited
 //     with the source on top (glow mask under, source over), blitted as a plain bitmap. Identical bytes
 //     on every backend; it is the oracle's ground truth.
 //   NATIVE tile    — the same source pushed through THIS backend's real filter path (CSS drop-shadow on
-//     DOM/Canvas, the tint+blur+composite shader chain on WebGL).
+//     DOM/Canvas, the tint+blur+composite shader chain on Gl).
 // The oracle compares the NATIVE tile region against the CPU reference with getSurfaceMismatch and
-// asserts the mismatch fraction is below a calibrated tolerance — so on WebGL it proves the shader glow
+// asserts the mismatch fraction is below a calibrated tolerance — so on Gl it proves the shader glow
 // ≈ the CPU glow, and on Canvas it proves the CSS glow ≈ the CPU glow. It also asserts the native tile's
 // square center is still white and a green glow ring spills outside the edges, so a silently no-op
 // native path fails the test.
@@ -32,7 +32,7 @@ import {
   createSurfaceRegion,
   fillSurfaceRectangle,
   getSurfaceMismatch,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 
 import { createParityTarget } from './render';
@@ -46,7 +46,7 @@ const SQUARE_MAX_Y = SQUARE_Y + SQUARE; // 176
 const REFERENCE_X = 120;
 const NATIVE_X = 424;
 
-// Outer-glow params (reused from filter-outer-glow). Symmetric blur — computeOuterGlowFilterCSS returns
+// Outer-glow params (reused from filter-outer-glow). Symmetric blur — computeOuterGlowFilterCss returns
 // null for anisotropic blur, so the CSS backends require blurX === blurY. 8px keeps the glow well inside
 // the tile. Green glow on transparent so the ring is unambiguous to sample.
 const GLOW_COLOR = 0x00ff00;
@@ -79,7 +79,7 @@ const sourceImage = createImageResourceFromCanvas(sourceCanvas);
 // To complete the effect we composite the glow mask first, then the original source over it (straight-
 // alpha over). This is the oracle's ground truth and the bytes drawn into the REFERENCE tile on every
 // backend — and it mirrors what the native paths produce (CSS drop-shadow draws the glow behind the
-// node; the WebGL chain composites source over glow in dest).
+// node; the Gl chain composites source over glow in dest).
 const mask = new Uint8ClampedArray(TILE * TILE * 4);
 const blurScratch = new Uint8ClampedArray(TILE * TILE * 4);
 applyOuterGlowFilterToSurface(mask, blurScratch, createSurfaceRegion(source), glowFilter());
@@ -130,7 +130,7 @@ target.render(root);
 //
 // MISMATCH_FRACTION/CHANNEL_TOLERANCE are calibrated for an 8px symmetric green glow on a hard silhouette
 // edge. This is a blurry/glow effect, so the tolerance is loose (~0.30), matching filter-blur-parity:
-// the CSS drop-shadow (no strength multiplier), the WebGL tint+box-blur chain, and the CPU Gaussian glow
+// the CSS drop-shadow (no strength multiplier), the Gl tint+box-blur chain, and the CPU Gaussian glow
 // disagree in the soft ring band around the silhouette, a minority of the tile. The square center
 // (white) and far corners (black) agree exactly, anchoring parity; the ring's brightness/falloff is
 // where the kernels diverge. Tighten once real captures pin down actual divergence; loosen only with a
@@ -146,7 +146,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   const nativeTile = cropFrameTile(frame, NATIVE_X * s, TOP * s, TILE * s, TILE * s, TILE);
 
   // 1) Square center still white: the source sits on top of the glow, unobscured.
-  const center = getSurfacePixelRGB(nativeTile, TILE / 2, TILE / 2);
+  const center = getSurfacePixelRgb(nativeTile, TILE / 2, TILE / 2);
   if (!channelsClose(center, 0xffffff, 32)) {
     throw new Error(`[filter-outer-glow-parity:${render()}] square center expected white, got #${hex(center)}`);
   }
@@ -161,7 +161,7 @@ export function assertRender(frame: Readonly<Surface>): void {
     [SQUARE_MAX_X + off, TILE / 2], // right of right edge
   ];
   for (const [lx, ly] of ringSamples) {
-    const got = getSurfacePixelRGB(nativeTile, lx, ly);
+    const got = getSurfacePixelRgb(nativeTile, lx, ly);
     const r = (got >> 16) & 255;
     const g = (got >> 8) & 255;
     const b = got & 255;

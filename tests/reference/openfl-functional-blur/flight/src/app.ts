@@ -8,14 +8,14 @@ import {
   createBitmap,
   createDisplayContainer,
   createRichText,
-  loadImageResourceFromURL,
+  loadImageResourceFromUrl,
 } from '@flighthq/sdk';
 
 import { applyBlurFilters, render } from './render';
 
 const root = createDisplayContainer();
 
-const image = await loadImageResourceFromURL('assets/wabbit_alpha.png');
+const image = await loadImageResourceFromUrl('assets/wabbit_alpha.png');
 const SCALE = 5;
 const bmpW = image.width * SCALE;
 const bmpH = image.height * SCALE;

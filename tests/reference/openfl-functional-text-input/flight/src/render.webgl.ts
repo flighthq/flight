@@ -1,36 +1,36 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  createWebGLCanvasElement,
-  createWebGLRenderState,
-  defaultWebGLRichTextRenderer,
-  enableWebGLTextInput,
+  createGlCanvasElement,
+  createGlRenderState,
+  defaultGlRichTextRenderer,
+  enableGlTextInput,
   prepareDisplayObjectRender,
-  registerDefaultWebGLMaterial,
+  registerDefaultGlMaterial,
   registerRenderer,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
+  renderGlBackground,
+  renderGlDisplayObject,
   RichTextKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGLCanvasElement(800, 300, pixelRatio);
+const canvas = createGlCanvasElement(800, 300, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createWebGLRenderState(canvas, {
+export const state = createGlRenderState(canvas, {
   backgroundColor: 0xffffffff,
   pixelRatio,
   contextAttributes: { preserveDrawingBuffer: true },
 });
-registerRenderer(state, RichTextKind, defaultWebGLRichTextRenderer);
-registerDefaultWebGLMaterial(state);
+registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
+registerDefaultGlMaterial(state);
 // Opt the RichText renderer into rasterizing the editable-input caret/selection overlay.
-enableWebGLTextInput();
+enableGlTextInput();
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 300;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
 }

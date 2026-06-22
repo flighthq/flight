@@ -20,7 +20,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -148,5 +148,5 @@ function luminance(rgb: number): number {
 function sample(frame: Readonly<Surface>, tileX: number, tileY: number, s: number): number {
   const px = Math.round((RESULT_X + tileX) * s);
   const py = Math.round((TOP + tileY) * s);
-  return getSurfacePixelRGB(frame, px, py);
+  return getSurfacePixelRgb(frame, px, py);
 }

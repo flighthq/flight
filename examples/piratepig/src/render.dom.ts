@@ -1,19 +1,19 @@
-﻿import { computeBlurFilterCSS, createBlurFilter } from '@flighthq/filters';
+﻿import { computeBlurFilterCss, createBlurFilter } from '@flighthq/filters';
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
-  createDOMRenderState,
+  createDomRenderState,
   defaultCanvasShapeCommands,
-  defaultDOMBitmapRenderer,
-  defaultDOMShapeRenderer,
-  defaultDOMTextLabelRenderer,
-  enableDOMCSSFilterSupport,
+  defaultDomBitmapRenderer,
+  defaultDomShapeRenderer,
+  defaultDomTextLabelRenderer,
+  enableDomCssFilterSupport,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
-  renderDOMBackground,
-  renderDOMDisplayObject,
-  setDOMCSSFilter,
+  renderDomBackground,
+  renderDomDisplayObject,
+  setDomCssFilter,
   ShapeKind,
   TextLabelKind,
 } from '@flighthq/sdk';
@@ -21,15 +21,15 @@ import {
 export const container = document.createElement('div');
 document.body.appendChild(container);
 
-export const state = createDOMRenderState(container, {
+export const state = createDomRenderState(container, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0x000000ff,
 });
-registerRenderer(state, BitmapKind, defaultDOMBitmapRenderer);
-registerRenderer(state, ShapeKind, defaultDOMShapeRenderer);
-registerRenderer(state, TextLabelKind, defaultDOMTextLabelRenderer);
+registerRenderer(state, BitmapKind, defaultDomBitmapRenderer);
+registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
+registerRenderer(state, TextLabelKind, defaultDomTextLabelRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-enableDOMCSSFilterSupport(state);
+enableDomCssFilterSupport(state);
 export const scale = 1;
 
 export function setSize(w: number, h: number): void {
@@ -39,13 +39,13 @@ export function setSize(w: number, h: number): void {
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderDOMBackground(state);
-  renderDOMDisplayObject(state, root);
+  renderDomBackground(state);
+  renderDomDisplayObject(state, root);
 }
 
 // OpenFL: Background.filters = [new BlurFilter(10, 10)] — a CSS filter applied at draw. The
 // returned callback is a no-op: the filter re-applies on every draw, so resizes need no re-bake.
 export function applyBackgroundBlur(node: DisplayObject): () => void {
-  setDOMCSSFilter(state, node, computeBlurFilterCSS(createBlurFilter({ blurX: 10, blurY: 10 })));
+  setDomCssFilter(state, node, computeBlurFilterCss(createBlurFilter({ blurX: 10, blurY: 10 })));
   return () => {};
 }

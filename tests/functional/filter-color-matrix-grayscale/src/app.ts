@@ -15,7 +15,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -77,7 +77,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   for (const { qx, qy } of QUADRANTS) {
     const px = Math.round((RESULT_X + qx * HALF + HALF / 2) * s);
     const py = Math.round((TOP + qy * HALF + HALF / 2) * s);
-    const got = getSurfacePixelRGB(frame, px, py);
+    const got = getSurfacePixelRgb(frame, px, py);
     const r = (got >> 16) & 255;
     const g = (got >> 8) & 255;
     const b = got & 255;
@@ -88,7 +88,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   // Red quadrant specifically lands on its luma value.
   const rpx = Math.round((RESULT_X + HALF / 2) * s);
   const rpy = Math.round((TOP + HALF / 2) * s);
-  const red = getSurfacePixelRGB(frame, rpx, rpy);
+  const red = getSurfacePixelRgb(frame, rpx, rpy);
   if (!channelsClose(red, (RED_LUMA << 16) | (RED_LUMA << 8) | RED_LUMA)) {
     throw new Error(`[filter-color-matrix-grayscale] red quadrant expected gray ~${RED_LUMA}, got #${hex(red)}`);
   }

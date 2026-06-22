@@ -7,16 +7,16 @@
 // The DOM backend renders to elements, not a canvas, so the verifier's canvas-readback oracle does NOT
 // run for DOM (snapshotFunctionalRender returns null for a DOM target → assertRender is skipped). DOM
 // parity is therefore best-effort: the not-blank check confirms the element tree was emitted, and the
-// canvas/WebGL oracles carry the precise pixel parity assertion.
+// canvas/Gl oracles carry the precise pixel parity assertion.
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
-  createDOMRenderState,
-  defaultDOMBitmapRenderer,
+  createDomRenderState,
+  defaultDomBitmapRenderer,
   prepareDisplayObjectRender,
   registerRenderer,
-  renderDOMBackground,
-  renderDOMDisplayObject,
+  renderDomBackground,
+  renderDomDisplayObject,
 } from '@flighthq/sdk';
 
 import { registerFunctionalTarget } from '../../_harness/verify';
@@ -31,9 +31,9 @@ export function createParityTarget(width: number, height: number, background: nu
   container.style.height = `${height}px`;
   document.body.appendChild(container);
 
-  const state = createDOMRenderState(container, { backgroundColor: background });
+  const state = createDomRenderState(container, { backgroundColor: background });
 
-  registerRenderer(state, BitmapKind, defaultDOMBitmapRenderer);
+  registerRenderer(state, BitmapKind, defaultDomBitmapRenderer);
 
   registerFunctionalTarget({
     kind: 'dom',
@@ -55,8 +55,8 @@ export function createParityTarget(width: number, height: number, background: nu
   };
 }
 
-function renderParity(state: ReturnType<typeof createDOMRenderState>, root: DisplayObject): void {
+function renderParity(state: ReturnType<typeof createDomRenderState>, root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderDOMBackground(state);
-  renderDOMDisplayObject(state, root);
+  renderDomBackground(state);
+  renderDomDisplayObject(state, root);
 }

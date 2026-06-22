@@ -1,41 +1,41 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  createWebGPUCanvasElement,
-  createWebGPURenderState,
-  defaultWebGPUParticleEmitterRenderer,
-  defaultWebGPUSpriteRenderer,
+  createWgpuCanvasElement,
+  createWgpuRenderState,
+  defaultWgpuParticleEmitterRenderer,
+  defaultWgpuSpriteRenderer,
   ParticleEmitterKind,
   prepareDisplayObjectRender,
-  registerDefaultWebGPUMaterial,
+  registerDefaultWgpuMaterial,
   registerRenderer,
-  renderWebGPUBackground,
-  renderWebGPUSprite,
+  renderWgpuBackground,
+  renderWgpuSprite,
   SpriteKind,
-  submitWebGPURenderPass,
+  submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWebGPUFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '../../_harness/verify';
 
 const pixelRatio = window.devicePixelRatio || 1;
-export const canvas = createWebGPUCanvasElement(800, 450, pixelRatio);
+export const canvas = createWgpuCanvasElement(800, 450, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWebGPURenderState(canvas, {
+export const state = await createWgpuRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x111111ff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
-registerRenderer(state, ParticleEmitterKind, defaultWebGPUParticleEmitterRenderer);
-registerRenderer(state, SpriteKind, defaultWebGPUSpriteRenderer);
+registerRenderer(state, ParticleEmitterKind, defaultWgpuParticleEmitterRenderer);
+registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 
-registerDefaultWebGPUMaterial(state);
+registerDefaultWgpuMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGPUBackground(state);
-  renderWebGPUSprite(state, root);
-  submitWebGPURenderPass(state);
+  renderWgpuBackground(state);
+  renderWgpuSprite(state, root);
+  submitWgpuRenderPass(state);
 }
 
-registerWebGPUFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, scale);

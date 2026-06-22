@@ -6,8 +6,8 @@
   },
   "references": [
     { "path": "../../packages/filters" },
-    { "path": "../../packages/filters-webgl" },
-    { "path": "../../packages/filters-webgpu" },
+    { "path": "../../packages/filters-gl" },
+    { "path": "../../packages/filters-wgpu" },
     { "path": "../../packages/sdk" }
   ],
   "include": ["src/**/*"],

@@ -1,35 +1,35 @@
-// WebGPU backend of the blur-parity test.
+// Wgpu backend of the blur-parity test.
 //
-// Native path: the real WebGPU blur is the separable Gaussian shader (applyGaussianBlurFilterToWebGPU)
-// run over offscreen WebGPURenderTargets, then composited onto the screen via drawWebGPURenderTargetResult
-// — the WebGPU mirror of render.webgl.ts. Two WebGPU-specific concerns:
+// Native path: the real Wgpu blur is the separable Gaussian shader (applyGaussianBlurFilterToWgpu)
+// run over offscreen WgpuRenderTargets, then composited onto the screen via drawWgpuRenderTargetResult
+// — the Wgpu mirror of render.webgl.ts. Two Wgpu-specific concerns:
 //   1. Single command encoder: all GPU work (the offscreen target passes + the final composite) must run
-//      between renderWebGPUBackground (opens the frame's encoder) and submitWebGPURenderPass (submits it).
-//   2. Y-flip: drawWebGPURenderTargetResult composites with a V-flip (expects WebGL bottom-left UV
+//      between renderWgpuBackground (opens the frame's encoder) and submitWgpuRenderPass (submits it).
+//   2. Y-flip: drawWgpuRenderTargetResult composites with a V-flip (expects Gl bottom-left UV
 //      origin), so the source is rendered into its target with a baked vertical flip (d=-1, ty=size) on
 //      the node's render-proxy transform, exactly as the reference openfl-functional-blur webgpu column.
-import type { Bitmap, BlurFilter, DisplayObject, Matrix, WebGPURenderState, WebGPURenderTarget } from '@flighthq/sdk';
+import type { Bitmap, BlurFilter, DisplayObject, Matrix, WgpuRenderState, WgpuRenderTarget } from '@flighthq/sdk';
 import {
-  applyGaussianBlurFilterToWebGPU,
-  beginWebGPURenderTarget,
+  applyGaussianBlurFilterToWgpu,
+  beginWgpuRenderTarget,
   BitmapKind,
   createBitmap,
   createMatrix,
-  createWebGPUCanvasElement,
-  createWebGPURenderState,
-  createWebGPURenderTarget,
-  defaultWebGPUBitmapRenderer,
-  destroyWebGPURenderTarget,
-  drawWebGPURenderTargetResult,
-  enableWebGPUFrameCapture,
-  endWebGPURenderTarget,
+  createWgpuCanvasElement,
+  createWgpuRenderState,
+  createWgpuRenderTarget,
+  defaultWgpuBitmapRenderer,
+  destroyWgpuRenderTarget,
+  drawWgpuRenderTargetResult,
+  enableWgpuFrameCapture,
+  endWgpuRenderTarget,
   getRenderProxy2D,
   prepareDisplayObjectRender,
-  registerDefaultWebGPUMaterial,
+  registerDefaultWgpuMaterial,
   registerRenderer,
-  renderWebGPUBackground,
-  renderWebGPUDisplayObject,
-  submitWebGPURenderPass,
+  renderWgpuBackground,
+  renderWgpuDisplayObject,
+  submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
 import { registerFunctionalTarget } from '../../_harness/verify';
@@ -37,15 +37,15 @@ import type { NativeBlurSpec, ParityTarget } from './parity';
 
 export async function createParityTarget(width: number, height: number, background: number): Promise<ParityTarget> {
   const pixelRatio = window.devicePixelRatio || 1;
-  const canvas = createWebGPUCanvasElement(width, height, pixelRatio);
+  const canvas = createWgpuCanvasElement(width, height, pixelRatio);
   document.body.appendChild(canvas);
 
-  const state = await createWebGPURenderState(canvas, { pixelRatio, backgroundColor: background });
+  const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: background });
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
-  registerDefaultWebGPUMaterial(state);
-  registerRenderer(state, BitmapKind, defaultWebGPUBitmapRenderer);
+  registerDefaultWgpuMaterial(state);
+  registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
   // Frame capture lets the verifier read the rendered frame back from the GPU (no canvas presentation).
-  enableWebGPUFrameCapture(state);
+  enableWgpuFrameCapture(state);
 
   registerFunctionalTarget({
     kind: 'webgpu',
@@ -63,7 +63,7 @@ export async function createParityTarget(width: number, height: number, backgrou
     width,
     height,
     scale: pixelRatio,
-    // No CSS-filter path on WebGPU — the blur is the GPU shader pass below.
+    // No CSS-filter path on Wgpu — the blur is the GPU shader pass below.
     applyNativeBlur(_node: Bitmap, _filter: Readonly<BlurFilter>): void {},
     drawNativeBlur(spec: Readonly<NativeBlurSpec>): void {
       pending.push({ ...spec });
@@ -75,24 +75,24 @@ export async function createParityTarget(width: number, height: number, backgrou
   };
 }
 
-// One WebGPU frame: open the encoder, draw the scene (reference + native bitmaps), composite each native
+// One Wgpu frame: open the encoder, draw the scene (reference + native bitmaps), composite each native
 // blur (offscreen render → blur → composite), then submit. All passes share the one encoder.
-function renderFrame(state: WebGPURenderState, root: DisplayObject, specs: readonly NativeBlurSpec[]): void {
+function renderFrame(state: WgpuRenderState, root: DisplayObject, specs: readonly NativeBlurSpec[]): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGPUBackground(state);
-  renderWebGPUDisplayObject(state, root);
+  renderWgpuBackground(state);
+  renderWgpuDisplayObject(state, root);
   // The offscreen targets are referenced by recorded passes in the frame's encoder, so they can only be
-  // destroyed after submitWebGPURenderPass submits — WebGPU defers submission to the end of the frame.
-  const toDestroy: WebGPURenderTarget[] = [];
+  // destroyed after submitWgpuRenderPass submits — Wgpu defers submission to the end of the frame.
+  const toDestroy: WgpuRenderTarget[] = [];
   for (const spec of specs) compositeNativeBlur(state, spec, toDestroy);
-  submitWebGPURenderPass(state);
-  for (const target of toDestroy) destroyWebGPURenderTarget(state, target);
+  submitWgpuRenderPass(state);
+  for (const target of toDestroy) destroyWgpuRenderTarget(state, target);
 }
 
 function compositeNativeBlur(
-  state: WebGPURenderState,
+  state: WgpuRenderState,
   spec: Readonly<NativeBlurSpec>,
-  toDestroy: WebGPURenderTarget[],
+  toDestroy: WgpuRenderTarget[],
 ): void {
   const size = spec.tile;
 
@@ -102,31 +102,31 @@ function compositeNativeBlur(
   sourceBitmap.x = 0;
   sourceBitmap.y = 0;
 
-  const sourceTarget = createWebGPURenderTarget(state, size, size);
-  const destTarget = createWebGPURenderTarget(state, size, size);
-  const tempTarget = createWebGPURenderTarget(state, size, size);
+  const sourceTarget = createWgpuRenderTarget(state, size, size);
+  const destTarget = createWgpuRenderTarget(state, size, size);
+  const tempTarget = createWgpuRenderTarget(state, size, size);
 
   // Render the source into its target with a baked vertical flip (bottom-left origin for the composite).
   prepareDisplayObjectRender(state, sourceBitmap);
   const sourceProxy = getRenderProxy2D(state, sourceBitmap);
   if (sourceProxy !== undefined) setFlippedTransform(sourceProxy.transform2D, 0, 0, size);
 
-  beginWebGPURenderTarget(state, sourceTarget, _identity);
-  renderWebGPUDisplayObject(state, sourceBitmap);
-  applyGaussianBlurFilterToWebGPU(state, sourceTarget, destTarget, tempTarget, {
+  beginWgpuRenderTarget(state, sourceTarget, _identity);
+  renderWgpuDisplayObject(state, sourceBitmap);
+  applyGaussianBlurFilterToWgpu(state, sourceTarget, destTarget, tempTarget, {
     blurX: spec.blurX,
     blurY: spec.blurY,
   });
-  endWebGPURenderTarget(state);
+  endWgpuRenderTarget(state);
 
   // Composite the blurred TILE×TILE target at the native tile position. The placement node carries the
-  // world×device transform; drawWebGPURenderTargetResult V-flips back to upright.
+  // world×device transform; drawWgpuRenderTargetResult V-flips back to upright.
   const placement = createBitmap();
   placement.x = spec.x;
   placement.y = spec.y;
   prepareDisplayObjectRender(state, placement);
   const placementProxy = getRenderProxy2D(state, placement);
-  if (placementProxy !== undefined) drawWebGPURenderTargetResult(state, placementProxy, destTarget, _identity);
+  if (placementProxy !== undefined) drawWgpuRenderTargetResult(state, placementProxy, destTarget, _identity);
 
   toDestroy.push(sourceTarget, destTarget, tempTarget);
 }

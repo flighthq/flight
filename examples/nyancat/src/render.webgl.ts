@@ -1,31 +1,31 @@
 ﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
-  createWebGLCanvasElement,
-  createWebGLRenderState,
-  defaultWebGLBitmapRenderer,
+  createGlCanvasElement,
+  createGlRenderState,
+  defaultGlBitmapRenderer,
   prepareDisplayObjectRender,
-  registerDefaultWebGLMaterial,
+  registerDefaultGlMaterial,
   registerRenderer,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
+  renderGlBackground,
+  renderGlDisplayObject,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGLCanvasElement(220, 220, pixelRatio);
+const canvas = createGlCanvasElement(220, 220, pixelRatio);
 document.getElementById('app')!.appendChild(canvas);
 
-export const state = createWebGLRenderState(canvas, {
+export const state = createGlRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0x000000ff,
   imageSmoothingEnabled: false,
 });
-registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);
-registerDefaultWebGLMaterial(state);
+registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerDefaultGlMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
 }

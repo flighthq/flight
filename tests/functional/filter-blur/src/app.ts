@@ -16,7 +16,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -74,17 +74,17 @@ const OUTSIDE = SQUARE_MAX + 6; // 198, just outside the original square where Ï
 export function assertRender(frame: Readonly<Surface>): void {
   const s = frame.width / width; // device-pixel scale (canvas may be width Ã— devicePixelRatio)
 
-  const centre = green(getSurfacePixelRGB(frame, sx(CENTRE, s), sy(CENTRE, s)));
+  const centre = green(getSurfacePixelRgb(frame, sx(CENTRE, s), sy(CENTRE, s)));
   if (centre <= 200) {
     throw new Error(`[filter-blur] centre expected bright (>200), got ${centre}`);
   }
 
-  const edge = green(getSurfacePixelRGB(frame, sx(EDGE, s), sy(CENTRE, s)));
+  const edge = green(getSurfacePixelRgb(frame, sx(EDGE, s), sy(CENTRE, s)));
   if (edge < 40 || edge > 220) {
     throw new Error(`[filter-blur] former edge expected intermediate (40..220), got ${edge}`);
   }
 
-  const outside = green(getSurfacePixelRGB(frame, sx(OUTSIDE, s), sy(CENTRE, s)));
+  const outside = green(getSurfacePixelRgb(frame, sx(OUTSIDE, s), sy(CENTRE, s)));
   if (outside <= 20) {
     throw new Error(`[filter-blur] outside-edge expected bleed (>20), got ${outside}`);
   }

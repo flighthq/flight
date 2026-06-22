@@ -20,7 +20,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -84,7 +84,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   for (const { lx, ly, rgb } of EXPECT) {
     const px = Math.round((RESULT_X + lx) * s);
     const py = Math.round((TOP + ly) * s);
-    const got = getSurfacePixelRGB(frame, px, py);
+    const got = getSurfacePixelRgb(frame, px, py);
     if (!channelsClose(got, rgb)) {
       throw new Error(`[filter-displacement-map-ignore] sample (${lx},${ly}) expected #${hex(rgb)}, got #${hex(got)}`);
     }

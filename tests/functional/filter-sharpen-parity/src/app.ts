@@ -3,19 +3,19 @@
 //
 // Sibling of filter-blur-parity, same two-tile layout and oracle shape. A filter has a CPU reference
 // impl (apply*FilterToSurface) and native per-backend impls. Sharpen (unsharp mask) has no CSS form, so
-// only WebGL has a real native path here; on Canvas/DOM the "native" tile is the surface result itself
+// only Gl has a real native path here; on Canvas/DOM the "native" tile is the surface result itself
 // (parity by construction). This test draws two tiles side by side:
 //   REFERENCE tile — the source sharpened on the CPU via applySharpenFilterToSurface, blitted as a plain
 //     bitmap. Identical bytes on every backend; it is the oracle's ground truth.
 //   NATIVE tile    — the same source pushed through THIS backend's real filter path: the unsharp-mask
-//     shader on WebGL; the CPU reference bytes on Canvas/DOM (no native sharpen path exists there).
+//     shader on Gl; the CPU reference bytes on Canvas/DOM (no native sharpen path exists there).
 // The oracle compares the NATIVE tile region against the CPU reference with getSurfaceMismatch and
-// asserts the mismatch fraction is below a calibrated tolerance — so on WebGL it proves the shader
+// asserts the mismatch fraction is below a calibrated tolerance — so on Gl it proves the shader
 // sharpen ≈ the CPU sharpen. It also asserts the native tile is not blank and is actually sharpened
 // (the seam overshoots), so a silently no-op native path fails the test.
 //
 // app.ts is backend-agnostic: each render.<backend>.ts implements the ParityTarget contract (see
-// ./parity.ts). When a backend provides drawNativeSharpen (WebGL) app.ts runs the GPU pass over the
+// ./parity.ts). When a backend provides drawNativeSharpen (Gl) app.ts runs the GPU pass over the
 // SOURCE image; otherwise (Canvas/DOM) it blits the CPU reference bytes as the native tile. It imports
 // createParityTarget from ./render (the local barrel); the functional vite harness routes ./render to
 // the active backend's render.<renderer>.ts at runtime.
@@ -31,7 +31,7 @@ import {
   createSurfaceRegion,
   fillSurfaceRectangle,
   getSurfaceMismatch,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
   setSurfacePixel,
 } from '@flighthq/sdk';
 
@@ -92,7 +92,7 @@ const root = createDisplayContainer();
 addNodeChild(root, makeBitmap(referenceData, REFERENCE_X, TOP));
 
 if (target.drawNativeSharpen) {
-  // Shader backend (WebGL): the native tile is the SOURCE bitmap, sharpened by the GPU pass and
+  // Shader backend (Gl): the native tile is the SOURCE bitmap, sharpened by the GPU pass and
   // composited at NATIVE_X. The placement bitmap stays out of the scene tree (the composite draws it).
   target.drawNativeSharpen({
     source: sourceImage,
@@ -105,7 +105,7 @@ if (target.drawNativeSharpen) {
   });
 } else {
   // No native sharpen on Canvas/DOM — there is no CSS sharpen primitive. The native tile is the CPU
-  // reference bytes, so parity holds by construction; the WebGL leg carries the meaningful comparison.
+  // reference bytes, so parity holds by construction; the Gl leg carries the meaningful comparison.
   addNodeChild(root, makeBitmap(referenceData, NATIVE_X, TOP));
 }
 
@@ -130,7 +130,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   const nativeTile = cropFrameTile(frame, NATIVE_X * s, TOP * s, TILE * s, TILE * s, TILE);
 
   // 1) Not blank: the flat light interior must carry the source value, not the background.
-  const flatLight = channel(getSurfacePixelRGB(nativeTile, TILE - 32, HALF));
+  const flatLight = channel(getSurfacePixelRgb(nativeTile, TILE - 32, HALF));
   if (flatLight < LIGHT - 16) {
     throw new Error(
       `[filter-sharpen-parity:${render()}] native tile blank/dark — flat-light interior ${flatLight} (expected ~${LIGHT})`,
@@ -139,8 +139,8 @@ export function assertRender(frame: Readonly<Surface>): void {
 
   // 2) Actually sharpened: the seam overshoots. Just left of the ramp the dark side dips below DARK; just
   // right of the ramp the light side rises above LIGHT. A no-op native path would leave both unchanged.
-  const darkEdge = channel(getSurfacePixelRGB(nativeTile, RAMP_X0 - 2, HALF));
-  const lightEdge = channel(getSurfacePixelRGB(nativeTile, HALF + RAMP / 2 + 2, HALF));
+  const darkEdge = channel(getSurfacePixelRgb(nativeTile, RAMP_X0 - 2, HALF));
+  const lightEdge = channel(getSurfacePixelRgb(nativeTile, HALF + RAMP / 2 + 2, HALF));
   if (darkEdge >= DARK) {
     throw new Error(
       `[filter-sharpen-parity:${render()}] dark side did not undershoot — got ${darkEdge} (expected < ${DARK})`,

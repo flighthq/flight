@@ -18,7 +18,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -95,8 +95,8 @@ export function assertRender(frame: Readonly<Surface>): void {
   }
 
   const s = frame.width / width; // device-pixel scale (canvas may be width × devicePixelRatio)
-  const center = getSurfacePixelRGB(frame, sx(CENTER_X, s), sy(CENTER_Y, s));
-  const edge = getSurfacePixelRGB(frame, sx(EDGE_X, s), sy(EDGE_Y, s));
+  const center = getSurfacePixelRgb(frame, sx(CENTER_X, s), sy(CENTER_Y, s));
+  const edge = getSurfacePixelRgb(frame, sx(EDGE_X, s), sy(EDGE_Y, s));
 
   // The center stays bright (near white).
   if (!channelsClose(center, 0xffffff, 40)) {

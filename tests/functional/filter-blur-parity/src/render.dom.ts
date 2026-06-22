@@ -1,25 +1,25 @@
 // DOM backend of the blur-parity test.
 //
 // Native path: the DOM renderer applies a CSS filter via the element's style.filter, so the "native
-// blur" is the source bitmap with a `blur(Npx)` CSS filter bound to it. computeBlurFilterCSS produces
-// the string; setDOMCSSFilter binds it; the normal render emits it. The browser rasterizes the blur.
+// blur" is the source bitmap with a `blur(Npx)` CSS filter bound to it. computeBlurFilterCss produces
+// the string; setDomCssFilter binds it; the normal render emits it. The browser rasterizes the blur.
 //
 // The DOM backend renders to elements, not a canvas, so the verifier's canvas-readback oracle does NOT
 // run for DOM (snapshotFunctionalRender returns null for a DOM target → assertRender is skipped). DOM
 // parity is therefore best-effort: the not-blank check confirms the element tree was emitted, and the
-// canvas/WebGL oracles carry the precise pixel parity assertion.
+// canvas/Gl oracles carry the precise pixel parity assertion.
 import type { Bitmap, BlurFilter, DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
-  computeBlurFilterCSS,
-  createDOMRenderState,
-  defaultDOMBitmapRenderer,
-  enableDOMCSSFilterSupport,
+  computeBlurFilterCss,
+  createDomRenderState,
+  defaultDomBitmapRenderer,
+  enableDomCssFilterSupport,
   prepareDisplayObjectRender,
   registerRenderer,
-  renderDOMBackground,
-  renderDOMDisplayObject,
-  setDOMCSSFilter,
+  renderDomBackground,
+  renderDomDisplayObject,
+  setDomCssFilter,
 } from '@flighthq/sdk';
 
 import { registerFunctionalTarget } from '../../_harness/verify';
@@ -34,10 +34,10 @@ export function createParityTarget(width: number, height: number, background: nu
   container.style.height = `${height}px`;
   document.body.appendChild(container);
 
-  const state = createDOMRenderState(container, { backgroundColor: background });
+  const state = createDomRenderState(container, { backgroundColor: background });
 
-  registerRenderer(state, BitmapKind, defaultDOMBitmapRenderer);
-  enableDOMCSSFilterSupport(state);
+  registerRenderer(state, BitmapKind, defaultDomBitmapRenderer);
+  enableDomCssFilterSupport(state);
 
   registerFunctionalTarget({
     kind: 'dom',
@@ -54,8 +54,8 @@ export function createParityTarget(width: number, height: number, background: nu
     height,
     scale: 1,
     applyNativeBlur(node: Bitmap, filter: Readonly<BlurFilter>): void {
-      const css = computeBlurFilterCSS(filter);
-      if (css !== null) setDOMCSSFilter(state, node, css);
+      const css = computeBlurFilterCss(filter);
+      if (css !== null) setDomCssFilter(state, node, css);
     },
     render(root: DisplayObject): void {
       renderParity(state, root);
@@ -63,8 +63,8 @@ export function createParityTarget(width: number, height: number, background: nu
   };
 }
 
-function renderParity(state: ReturnType<typeof createDOMRenderState>, root: DisplayObject): void {
+function renderParity(state: ReturnType<typeof createDomRenderState>, root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderDOMBackground(state);
-  renderDOMDisplayObject(state, root);
+  renderDomBackground(state);
+  renderDomDisplayObject(state, root);
 }

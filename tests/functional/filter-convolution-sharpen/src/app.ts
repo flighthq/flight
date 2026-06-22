@@ -15,7 +15,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -73,7 +73,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   const at = (tileX: number): number => {
     const px = Math.round((RESULT_X + tileX) * s);
     const py = Math.round((TOP + SAMPLE_Y) * s);
-    return getSurfacePixelRGB(frame, px, py);
+    return getSurfacePixelRgb(frame, px, py);
   };
 
   // Flat interiors are ~unchanged: deep inside the dark half stays ~0x80, deep inside the light half ~0xc0.

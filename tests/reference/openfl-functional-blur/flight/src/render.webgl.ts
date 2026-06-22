@@ -1,62 +1,62 @@
 import type { BlurFilter } from '@flighthq/filters';
-import { applyGaussianBlurFilterToWebGL } from '@flighthq/filters-webgl';
-import type { DisplayObject, Matrix, WebGLRenderTarget } from '@flighthq/sdk';
+import { applyGaussianBlurFilterToGl } from '@flighthq/filters-gl';
+import type { DisplayObject, Matrix, GlRenderTarget } from '@flighthq/sdk';
 import {
-  beginWebGLRenderTarget,
+  beginGlRenderTarget,
   BitmapKind,
-  clearWebGLRenderTarget,
+  clearGlRenderTarget,
   computeNodeBoundsRectangle,
   computeRenderCacheTransform,
   computeRenderTargetSize,
   copyMatrix,
   createMatrix,
   createRectangle,
-  createWebGLCanvasElement,
-  createWebGLRenderState,
-  createWebGLRenderTarget,
-  defaultWebGLBitmapRenderer,
-  defaultWebGLRichTextRenderer,
-  drawWebGLRenderTargetResult,
-  endWebGLRenderTarget,
+  createGlCanvasElement,
+  createGlRenderState,
+  createGlRenderTarget,
+  defaultGlBitmapRenderer,
+  defaultGlRichTextRenderer,
+  drawGlRenderTargetResult,
+  endGlRenderTarget,
   getRenderProxy2D,
   prepareDisplayObjectRender,
-  registerDefaultWebGLMaterial,
+  registerDefaultGlMaterial,
   registerRenderer,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
+  renderGlBackground,
+  renderGlDisplayObject,
   RichTextKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGLCanvasElement(800, 400, pixelRatio);
+const canvas = createGlCanvasElement(800, 400, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createWebGLRenderState(canvas, {
+export const state = createGlRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0xffffffff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);
-registerRenderer(state, RichTextKind, defaultWebGLRichTextRenderer);
-registerDefaultWebGLMaterial(state);
+registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
+registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
+registerDefaultGlMaterial(state);
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 400;
 
-// WebGL has no CSS filter binding, so it realizes the blur with the offscreen filter path:
-// render each node into a WebGLRenderTarget at its logical size, run the separable box-blur
-// passes (applyBlurFilterToWebGL, target → target), then composite the blurred target back
-// onto the screen with drawWebGLRenderTargetResult. Targets are allocated once and reused.
+// Gl has no CSS filter binding, so it realizes the blur with the offscreen filter path:
+// render each node into a GlRenderTarget at its logical size, run the separable box-blur
+// passes (applyBlurFilterToGl, target → target), then composite the blurred target back
+// onto the screen with drawGlRenderTargetResult. Targets are allocated once and reused.
 //
 // The composite applies the node's scene transform (which carries the stage's pixelRatio
 // scale), so a Gaussian σ in target pixels lands on screen as σ CSS pixels — matching the
-// canvas/DOM computeBlurFilterCSS paths.
+// canvas/DOM computeBlurFilterCss paths.
 type BlurEntry = {
   node: DisplayObject;
   filter: Readonly<BlurFilter>;
-  source: WebGLRenderTarget;
-  blurred: WebGLRenderTarget;
-  scratch: WebGLRenderTarget;
+  source: GlRenderTarget;
+  blurred: GlRenderTarget;
+  scratch: GlRenderTarget;
   cacheTransform: Matrix;
   sceneTransform: Matrix;
 };
@@ -68,9 +68,9 @@ export function applyBlurFilters(list: { node: DisplayObject; filter: BlurFilter
     _entries.push({
       node,
       filter,
-      source: createWebGLRenderTarget(state, { width: w, height: h }),
-      blurred: createWebGLRenderTarget(state, { width: w, height: h }),
-      scratch: createWebGLRenderTarget(state, { width: w, height: h }),
+      source: createGlRenderTarget(state, { width: w, height: h }),
+      blurred: createGlRenderTarget(state, { width: w, height: h }),
+      scratch: createGlRenderTarget(state, { width: w, height: h }),
       cacheTransform: createMatrix(),
       sceneTransform: createMatrix(),
     });
@@ -100,15 +100,15 @@ export function render(root: DisplayObject): void {
     if (renderProxy === undefined) continue;
     setTranslation(renderProxy.transform2D, padding - _bounds.x, padding - _bounds.y);
 
-    beginWebGLRenderTarget(state, source, _identity);
-    clearWebGLRenderTarget(state, source);
-    renderWebGLDisplayObject(state, node);
+    beginGlRenderTarget(state, source, _identity);
+    clearGlRenderTarget(state, source);
+    renderGlDisplayObject(state, node);
     // The BlurFilter intent maps to a true Gaussian, matching the CSS blur() the DOM and Canvas
     // columns use. Run it while the render target is still active: the filter passes bind their
-    // own framebuffers and never restore the previous one, so endWebGLRenderTarget must run after
+    // own framebuffers and never restore the previous one, so endGlRenderTarget must run after
     // them — it rebinds the screen framebuffer that the composite draws into.
-    applyGaussianBlurFilterToWebGL(state, source, blurred, scratch, filter);
-    endWebGLRenderTarget(state);
+    applyGaussianBlurFilterToGl(state, source, blurred, scratch, filter);
+    endGlRenderTarget(state);
   }
 
   // Main pass: restore scene transforms, hide the blurred source nodes so the sharp originals are
@@ -120,13 +120,13 @@ export function render(root: DisplayObject): void {
     copyMatrix(renderProxy.transform2D, entry.sceneTransform);
     renderProxy.visible = false;
   }
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
   for (const entry of _entries) {
     const renderProxy = getRenderProxy2D(state, entry.node);
     if (renderProxy === undefined) continue;
     renderProxy.visible = true;
-    drawWebGLRenderTargetResult(state, renderProxy, entry.blurred, entry.cacheTransform);
+    drawGlRenderTargetResult(state, renderProxy, entry.blurred, entry.cacheTransform);
   }
 }
 

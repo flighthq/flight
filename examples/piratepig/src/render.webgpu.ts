@@ -1,35 +1,35 @@
-import { applyGaussianBlurFilterToWebGPU, clearWebGPUFilterTarget } from '@flighthq/filters-webgpu';
-import type { DisplayObject, RenderCache, WebGPURenderState, WebGPURenderTarget } from '@flighthq/sdk';
+import { applyGaussianBlurFilterToWgpu, clearWgpuFilterTarget } from '@flighthq/filters-wgpu';
+import type { DisplayObject, RenderCache, WgpuRenderState, WgpuRenderTarget } from '@flighthq/sdk';
 import {
-  beginWebGPURenderTarget,
+  beginWgpuRenderTarget,
   BitmapKind,
   computeNodeBoundsRectangle,
   computeRenderCacheTransform,
   createMatrix,
   createRectangle,
   createRenderCache,
-  createWebGPUCacheState,
-  createWebGPURenderState,
-  createWebGPURenderTarget,
-  defaultWebGPUBitmapRenderer,
-  defaultWebGPUShapeCommands,
-  defaultWebGPUShapeRenderer,
-  defaultWebGPUTextLabelRenderer,
-  enableWebGPURenderCache,
-  endWebGPURenderTarget,
-  ensureWebGPURenderCacheTarget,
-  getWebGPURenderCacheTarget,
+  createWgpuCacheState,
+  createWgpuRenderState,
+  createWgpuRenderTarget,
+  defaultWgpuBitmapRenderer,
+  defaultWgpuShapeCommands,
+  defaultWgpuShapeRenderer,
+  defaultWgpuTextLabelRenderer,
+  enableWgpuRenderCache,
+  endWgpuRenderTarget,
+  ensureWgpuRenderCacheTarget,
+  getWgpuRenderCacheTarget,
   invalidateNodeLocalTransform,
   prepareDisplayObjectRender,
-  refreshWebGPURenderCache,
-  registerDefaultWebGPUMaterial,
+  refreshWgpuRenderCache,
+  registerDefaultWgpuMaterial,
   registerRenderer,
-  registerWebGPUShapeCommands,
-  renderWebGPUBackground,
-  renderWebGPUDisplayObject,
-  resizeWebGPURenderTarget,
+  registerWgpuShapeCommands,
+  renderWgpuBackground,
+  renderWgpuDisplayObject,
+  resizeWgpuRenderTarget,
   ShapeKind,
-  submitWebGPURenderPass,
+  submitWgpuRenderPass,
   TextLabelKind,
   useRenderCache,
 } from '@flighthq/sdk';
@@ -48,16 +48,16 @@ canvas.style.height = `${window.innerHeight}px`;
 document.body.appendChild(canvas);
 
 export const container = canvas;
-export const state = await createWebGPURenderState(canvas, {
+export const state = await createWgpuRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0x000000ff,
 });
-registerRenderer(state, BitmapKind, defaultWebGPUBitmapRenderer);
-registerRenderer(state, ShapeKind, defaultWebGPUShapeRenderer);
-registerRenderer(state, TextLabelKind, defaultWebGPUTextLabelRenderer);
-registerWebGPUShapeCommands(defaultWebGPUShapeCommands);
-registerDefaultWebGPUMaterial(state);
-enableWebGPURenderCache(state);
+registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
+registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
+registerWgpuShapeCommands(defaultWgpuShapeCommands);
+registerDefaultWgpuMaterial(state);
+enableWgpuRenderCache(state);
 export const scale = pixelRatio;
 
 export function setSize(w: number, h: number): void {
@@ -76,12 +76,12 @@ export function render(root: DisplayObject): void {
   // the panel so this frame's adapt re-folds the current value.
   prepareBlurTransform();
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGPUBackground(state);
-  // WebGPU records into a per-frame command encoder, so — unlike WebGL — the pixels must be baked
-  // inside the frame (after renderWebGPUBackground opens the encoder), not at setup.
+  renderWgpuBackground(state);
+  // Wgpu records into a per-frame command encoder, so — unlike Gl — the pixels must be baked
+  // inside the frame (after renderWgpuBackground opens the encoder), not at setup.
   bakeBackgroundBlur();
-  renderWebGPUDisplayObject(state, root);
-  submitWebGPURenderPass(state);
+  renderWgpuDisplayObject(state, root);
+  submitWgpuRenderPass(state);
 }
 
 // Mirrors render.webgl.ts (sharp cache blurred into the composited cache), but defers the bake to
@@ -91,7 +91,7 @@ export function applyBackgroundBlur(node: DisplayObject): () => void {
   _blurredCache = createRenderCache();
   useRenderCache(state, node, _blurredCache);
   _sharpCache = createRenderCache();
-  _blurCacheState = createWebGPUCacheState(state);
+  _blurCacheState = createWgpuCacheState(state);
   // Force a full re-bake on every refresh — the panel's own revisions do not change on resize.
   _blurCacheState.sceneGraphSyncPolicy = 'refreshDerivedState';
   _needsBlurBake = true;
@@ -125,36 +125,36 @@ function bakeBackgroundBlur(): void {
   _needsBlurBake = false;
 
   // Bake the panel into the sharp cache, then blur it into the composited cache. The blur runs
-  // after refreshWebGPURenderCache returns: refresh hands the live encoder and the resumed canvas
+  // after refreshWgpuRenderCache returns: refresh hands the live encoder and the resumed canvas
   // pass back to the screen state, and leaves the sharp target readable. We only blur when the
   // refresh actually re-baked (its return value), and wrap the blur in a render-target bracket —
   // the blur functions leave no active pass, so the bracket restores the canvas pass that the
-  // subsequent renderWebGPUDisplayObject draws into. The cache's placement transform is set
+  // subsequent renderWgpuDisplayObject draws into. The cache's placement transform is set
   // earlier by prepareBlurTransform().
-  if (!refreshWebGPURenderCache(_blurCacheState, _sharpCache, _blurNode, { padding: BLUR_PADDING })) return;
+  if (!refreshWgpuRenderCache(_blurCacheState, _sharpCache, _blurNode, { padding: BLUR_PADDING })) return;
 
-  const src = getWebGPURenderCacheTarget(state, _sharpCache);
+  const src = getWgpuRenderCacheTarget(state, _sharpCache);
   if (src === null) return;
-  const out = ensureWebGPURenderCacheTarget(state, _blurredCache, src.width, src.height);
+  const out = ensureWgpuRenderCacheTarget(state, _blurredCache, src.width, src.height);
   // Reuse one persistent scratch target — destroying it would free a texture still referenced by
   // the not-yet-submitted command encoder ("destroyed texture used in a submit").
   if (_blurTemp === null) {
-    _blurTemp = createWebGPURenderTarget(state, src.width, src.height);
+    _blurTemp = createWgpuRenderTarget(state, src.width, src.height);
   } else if (_blurTemp.width !== src.width || _blurTemp.height !== src.height) {
-    resizeWebGPURenderTarget(state, _blurTemp, src.width, src.height);
+    resizeWgpuRenderTarget(state, _blurTemp, src.width, src.height);
   }
 
-  beginWebGPURenderTarget(state, out, _identity);
-  clearWebGPUFilterTarget(state, out);
-  applyGaussianBlurFilterToWebGPU(state, src, out, _blurTemp, { blurX: 10, blurY: 10 });
-  endWebGPURenderTarget(state);
+  beginWgpuRenderTarget(state, out, _identity);
+  clearWgpuFilterTarget(state, out);
+  applyGaussianBlurFilterToWgpu(state, src, out, _blurTemp, { blurX: 10, blurY: 10 });
+  endWgpuRenderTarget(state);
 }
 
 let _blurNode: DisplayObject | null = null;
 let _blurredCache: RenderCache | null = null;
 let _sharpCache: RenderCache | null = null;
-let _blurCacheState: WebGPURenderState | null = null;
-let _blurTemp: WebGPURenderTarget | null = null;
+let _blurCacheState: WgpuRenderState | null = null;
+let _blurTemp: WgpuRenderTarget | null = null;
 let _needsBlurBake = false;
 const _bounds = createRectangle();
 const _identity = createMatrix();

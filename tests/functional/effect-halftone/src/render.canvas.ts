@@ -20,7 +20,7 @@ import {
 
 // Canvas parity column for the same halftone intent as render.webgl.ts.
 // Halftone (PASSTHROUGH on Canvas): per-pixel dot-screen sampling has no CSS/draw-op equivalent, so
-// the Canvas runner copies the scene through unchanged. The WebGL/WebGPU columns realize the full
+// the Canvas runner copies the scene through unchanged. The Gl/Wgpu columns realize the full
 // effect.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);

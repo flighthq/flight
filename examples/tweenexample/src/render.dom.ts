@@ -1,15 +1,15 @@
 ﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
-  createDOMRenderState,
+  createDomRenderState,
   defaultCanvasBeginFill,
   defaultCanvasDrawCircle,
   defaultCanvasEndFill,
-  defaultDOMShapeRenderer,
+  defaultDomShapeRenderer,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
-  renderDOMBackground,
-  renderDOMDisplayObject,
+  renderDomBackground,
+  renderDomDisplayObject,
   ShapeKind,
 } from '@flighthq/sdk';
 
@@ -19,16 +19,16 @@ container.style.width = '550px';
 container.style.height = '400px';
 document.body.appendChild(container);
 
-export const state = createDOMRenderState(container, {
+export const state = createDomRenderState(container, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xeeddccff,
 });
-registerRenderer(state, ShapeKind, defaultDOMShapeRenderer);
+registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
 registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasEndFill, defaultCanvasDrawCircle]);
 export const scale = 1;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderDOMBackground(state);
-  renderDOMDisplayObject(state, root);
+  renderDomBackground(state);
+  renderDomDisplayObject(state, root);
 }

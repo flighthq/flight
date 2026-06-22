@@ -15,7 +15,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -80,12 +80,12 @@ const EDGE_Y = TILE / 2;
 export function assertRender(frame: Readonly<Surface>): void {
   const s = frame.width / width; // device-pixel scale (canvas may be width × devicePixelRatio)
 
-  const interior = getSurfacePixelRGB(
+  const interior = getSurfacePixelRgb(
     frame,
     Math.round((RESULT_X + INTERIOR_X) * s),
     Math.round((TOP + INTERIOR_Y) * s),
   );
-  const edge = getSurfacePixelRGB(frame, Math.round((RESULT_X + EDGE_X) * s), Math.round((TOP + EDGE_Y) * s));
+  const edge = getSurfacePixelRgb(frame, Math.round((RESULT_X + EDGE_X) * s), Math.round((TOP + EDGE_Y) * s));
 
   const interiorMax = maxChannel(interior);
   if (interiorMax >= 60) {

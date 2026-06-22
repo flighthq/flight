@@ -9,8 +9,8 @@
 // expressible as a `filter:` string), so unlike filter-blur-parity there is no Canvas/DOM native path:
 //   - DOM / Canvas: there is no native filter pass. The "native" tile is the SAME CPU/surface reference
 //     bitmap (drawNativeGradientGlow is a no-op; app.ts draws the reference bytes as the native tile).
-//     Parity holds by construction there; the WebGL comparison is the meaningful one.
-//   - WebGL: the native glow is a multi-pass shader into offscreen render targets (a tint pass, a box
+//     Parity holds by construction there; the Gl comparison is the meaningful one.
+//   - Gl: the native glow is a multi-pass shader into offscreen render targets (a tint pass, a box
 //     blur, and a gradient-ramp lookup), composited onto the screen after the scene.
 //     `drawNativeGradientGlow(spec)` runs that GPU pass; it is a no-op on DOM/Canvas.
 import type { DisplayObject, GradientGlowFilter, ImageResource } from '@flighthq/sdk';
@@ -33,7 +33,7 @@ export interface ParityTarget {
   height: number;
   // Device-pixel scale: the backing store is width × scale (1 for DOM, devicePixelRatio otherwise).
   scale: number;
-  // Shader backends (WebGL): run the offscreen multi-pass glow and composite it at the native tile.
+  // Shader backends (Gl): run the offscreen multi-pass glow and composite it at the native tile.
   // No-op on DOM/Canvas (their native tile is the reference bitmap drawn by app.ts). Called immediately
   // before/around render().
   drawNativeGradientGlow?(spec: Readonly<NativeGradientGlowSpec>): void;

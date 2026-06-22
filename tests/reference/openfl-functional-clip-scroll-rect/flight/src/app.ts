@@ -12,7 +12,7 @@ import {
   createRichText,
   createShape,
   invalidateNodeLocalTransform,
-  loadImageResourceFromURL,
+  loadImageResourceFromUrl,
   RichTextKind,
   setDisplayObjectClip,
   ShapeKind,
@@ -39,7 +39,7 @@ const root = createDisplayContainer();
 const W = width;
 const H = height;
 
-const owlImg = await loadImageResourceFromURL('assets/OwlAlpha.png');
+const owlImg = await loadImageResourceFromUrl('assets/OwlAlpha.png');
 
 // Owl clip: container clips to the eyes region; content moves to pan across the image.
 const owlClip = createDisplayContainer();

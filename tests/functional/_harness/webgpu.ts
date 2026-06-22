@@ -2,37 +2,37 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
   createMatrix,
-  createWebGPUCanvasElement,
-  createWebGPURenderState,
-  defaultWebGPUBitmapRenderer,
-  defaultWebGPURichTextRenderer,
-  defaultWebGPUShapeCommands,
-  defaultWebGPUShapeRenderer,
-  enableWebGPUClipSupport,
-  enableWebGPUFrameCapture,
-  enableWebGPURenderCache,
+  createWgpuCanvasElement,
+  createWgpuRenderState,
+  defaultWgpuBitmapRenderer,
+  defaultWgpuRichTextRenderer,
+  defaultWgpuShapeCommands,
+  defaultWgpuShapeRenderer,
+  enableWgpuClipSupport,
+  enableWgpuFrameCapture,
+  enableWgpuRenderCache,
   prepareDisplayObjectRender,
-  registerDefaultWebGPUMaterial,
+  registerDefaultWgpuMaterial,
   registerRenderer,
-  registerWebGPUShapeCommands,
-  renderWebGPUBackground,
-  renderWebGPUDisplayObject,
+  registerWgpuShapeCommands,
+  renderWgpuBackground,
+  renderWgpuDisplayObject,
   RichTextKind,
   ShapeKind,
-  submitWebGPURenderPass,
+  submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import type { FunctionalTargetOptions, FunctionalWebGPUTarget } from './target';
+import type { FunctionalTargetOptions, FunctionalWgpuTarget } from './target';
 import { registerFunctionalTarget } from './verify';
 
-export async function createWebGPUTarget(options: Readonly<FunctionalTargetOptions>): Promise<FunctionalWebGPUTarget> {
+export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions>): Promise<FunctionalWgpuTarget> {
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
-  const canvas = createWebGPUCanvasElement(width, height, pixelRatio);
+  const canvas = createWgpuCanvasElement(width, height, pixelRatio);
   document.body.appendChild(canvas);
 
-  const state = await createWebGPURenderState(canvas, {
+  const state = await createWgpuRenderState(canvas, {
     pixelRatio,
     backgroundColor: options.background,
     sceneGraphSyncPolicy: options.syncPolicy,
@@ -40,23 +40,23 @@ export async function createWebGPUTarget(options: Readonly<FunctionalTargetOptio
 
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
-  registerDefaultWebGPUMaterial(state);
+  registerDefaultWgpuMaterial(state);
   // Frame capture lets the verifier read the rendered frame back from the GPU; canvas presentation is
   // unavailable on the headless/software adapter, so this is the only path to the pixels.
-  enableWebGPUFrameCapture(state);
+  enableWgpuFrameCapture(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
-      registerRenderer(state, ShapeKind, defaultWebGPUShapeRenderer);
-      registerWebGPUShapeCommands(defaultWebGPUShapeCommands);
+      registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+      registerWgpuShapeCommands(defaultWgpuShapeCommands);
     } else if (kind === BitmapKind) {
-      registerRenderer(state, BitmapKind, defaultWebGPUBitmapRenderer);
+      registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
     } else if (kind === RichTextKind) {
-      registerRenderer(state, RichTextKind, defaultWebGPURichTextRenderer);
+      registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);
     }
   }
 
-  if (options.clip) enableWebGPUClipSupport(state);
-  if (options.cache) enableWebGPURenderCache(state);
+  if (options.clip) enableWgpuClipSupport(state);
+  if (options.cache) enableWgpuRenderCache(state);
 
   return registerFunctionalTarget({
     kind: 'webgpu',
@@ -66,9 +66,9 @@ export async function createWebGPUTarget(options: Readonly<FunctionalTargetOptio
     scale: pixelRatio,
     render(root: DisplayObject): void {
       if (!prepareDisplayObjectRender(state, root)) return;
-      renderWebGPUBackground(state);
-      renderWebGPUDisplayObject(state, root);
-      submitWebGPURenderPass(state);
+      renderWgpuBackground(state);
+      renderWgpuDisplayObject(state, root);
+      submitWgpuRenderPass(state);
     },
   });
 }

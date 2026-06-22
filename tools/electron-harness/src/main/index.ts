@@ -38,9 +38,9 @@ function loadRenderer(win: ApplicationWindow): void {
     console.error('[harness] no BrowserWindow for the Flight window'); // eslint-disable-line
     return;
   }
-  const devURL = process.env['ELECTRON_RENDERER_URL'];
-  if (devURL !== undefined) {
-    void bw.loadURL(devURL);
+  const devUrl = process.env['ELECTRON_RENDERER_URL'];
+  if (devUrl !== undefined) {
+    void bw.loadUrl(devUrl);
   } else {
     void bw.loadFile(join(__dirname, '../renderer/index.html'));
   }

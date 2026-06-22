@@ -1,11 +1,11 @@
 ﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
-  createDOMRenderState,
-  defaultDOMTextLabelRenderer,
+  createDomRenderState,
+  defaultDomTextLabelRenderer,
   prepareDisplayObjectRender,
   registerRenderer,
-  renderDOMBackground,
-  renderDOMDisplayObject,
+  renderDomBackground,
+  renderDomDisplayObject,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -15,15 +15,15 @@ container.style.width = '400px';
 container.style.height = '200px';
 document.body.appendChild(container);
 
-export const state = createDOMRenderState(container, {
+export const state = createDomRenderState(container, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xffffffff,
 });
-registerRenderer(state, TextLabelKind, defaultDOMTextLabelRenderer);
+registerRenderer(state, TextLabelKind, defaultDomTextLabelRenderer);
 export const scale = 1;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderDOMBackground(state);
-  renderDOMDisplayObject(state, root);
+  renderDomBackground(state);
+  renderDomDisplayObject(state, root);
 }

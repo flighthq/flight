@@ -2,7 +2,7 @@
 //
 // Inner shadow has no CSS form, so there is no native Canvas filter path: the NATIVE tile is the SAME
 // surface-reference bitmap app.ts already drew (parity holds by construction). applyNativeInnerShadow is
-// a no-op and there is no drawNativeInnerShadow. This backend exists to prove the harness wiring; WebGL
+// a no-op and there is no drawNativeInnerShadow. This backend exists to prove the harness wiring; Gl
 // carries the real shader-vs-CPU comparison.
 import type { Bitmap, DisplayObject, InnerShadowFilter } from '@flighthq/sdk';
 import {

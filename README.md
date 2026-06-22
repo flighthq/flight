@@ -211,7 +211,7 @@ Library code should prefer the smallest package or subpath that provides the nee
 | `@flighthq/node` | Shared hierarchy, transforms, bounds, appearance, and invalidation |
 | `@flighthq/displayobject` | Display-object graph: bitmaps, shapes, text, containers, masks, and video |
 | `@flighthq/sprite` | Sprite graph: sprites, quad batches, and tilemaps |
-| `@flighthq/world` | Experimental 3D world graph |
+| `@flighthq/scene` | Experimental 3D world graph |
 | `@flighthq/sdk` | Application-level convenience barrel |
 | `@flighthq/signals` | Strictly typed signals and slots |
 | `@flighthq/spritesheet` | Spritesheet frame animation playback |

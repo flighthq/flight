@@ -1,17 +1,17 @@
-import type { DOMRenderState } from '@flighthq/sdk';
+import type { DomRenderState } from '@flighthq/sdk';
 import {
   createDisplayObject,
-  createDOMRenderState,
+  createDomRenderState,
   prepareDisplayObjectRender,
   registerRenderer,
-  renderDOMDisplayObject,
-  setDOMRendererElement,
+  renderDomDisplayObject,
+  setDomRendererElement,
 } from '@flighthq/sdk';
 import { DisplayObjectKind } from '@flighthq/sdk';
 
 test('sdk browser barrel can render a display object to the DOM', () => {
   const container = document.createElement('div');
-  const state = createDOMRenderState(container);
+  const state = createDomRenderState(container);
   const obj = createDisplayObject();
 
   const el = document.createElement('div');
@@ -21,14 +21,14 @@ test('sdk browser barrel can render a display object to the DOM', () => {
     createData() {
       return null;
     },
-    submit(s: DOMRenderState) {
-      setDOMRendererElement(s, el);
+    submit(s: DomRenderState) {
+      setDomRendererElement(s, el);
     },
   };
 
   registerRenderer(state, DisplayObjectKind, renderer as any);
   prepareDisplayObjectRender(state, obj);
-  renderDOMDisplayObject(state, obj);
+  renderDomDisplayObject(state, obj);
 
   expect(container.firstChild).not.toBeNull();
   expect((container.firstChild as HTMLElement).textContent).toBe('rendered');
