@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-scene-lit-mesh",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}
