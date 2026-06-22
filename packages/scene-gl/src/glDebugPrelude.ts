@@ -166,10 +166,10 @@ out vec4 fragColor;
 
 void main() {
 #ifdef DEPTH_MODE
-  // Linearize the perspective-encoded window-space depth (z in [0, 1]) into eye-space distance using
-  // the camera's near/far, then map that distance across [u_near, u_far] to grayscale [0, 1].
-  float z = gl_FragCoord.z * 2.0 - 1.0;
-  float eyeDepth = (2.0 * u_near * u_far) / (u_far + u_near - z * (u_far - u_near));
+  // Linear view-space distance is the perspective w: 1.0 / gl_FragCoord.w == w_clip == eye distance.
+  // This is camera-agnostic (no camera near/far needed); map it across the material's [u_near, u_far]
+  // visualization window to grayscale [0, 1].
+  float eyeDepth = 1.0 / gl_FragCoord.w;
   float d = clamp((eyeDepth - u_near) / max(u_far - u_near, 1e-6), 0.0, 1.0);
   fragColor = vec4(vec3(d), 1.0);
 #endif

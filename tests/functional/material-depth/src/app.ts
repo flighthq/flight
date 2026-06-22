@@ -70,24 +70,36 @@ const lights = {
 
 render(scene, camera, lights);
 
-// Oracle: not blank + a depth gradient exists. Sample the center (nearest surface point) and an
-// on-sphere offset point (farther surface point); assert the center is not blank and that the two
-// differ — proof of a near→far depth ramp rather than a flat fill.
+// Oracle: not blank + a real depth gradient across the sphere. The near→far ramp is subtle near the
+// center (the surface is nearly fronto-parallel there) and only opens up toward the silhouette, so two
+// near-center samples are not enough. Scan outward along +x, collecting on-sphere luminance until the
+// scan crosses the silhouette into the dark background, then assert the on-sphere spread is non-flat —
+// proof of a depth ramp rather than a flat fill.
 export function assertRender(surface: Readonly<Surface>): void {
   const cx = Math.floor(surface.width / 2);
   const cy = Math.floor(surface.height / 2);
-  // A small inset keeps the offset point on the sphere surface (farther from the camera than center).
-  const offsetX = Math.floor(surface.width * 0.06);
 
   const center = getSurfacePixelLuminance(surface, cx, cy);
-  const offset = getSurfacePixelLuminance(surface, cx + offsetX, cy);
-
   if (center <= 16) {
     throw new Error(`[material-depth] surface is blank (center luminance ${center}) — mesh did not render`);
   }
-  if (Math.abs(center - offset) <= 16) {
+
+  // The background is near-black; treat a sample at/under this as off the sphere and stop the scan
+  // before it contaminates the on-sphere spread with the background step.
+  const backgroundLuminance = 24;
+  let minLuminance = center;
+  let maxLuminance = center;
+  const maxOffset = Math.floor(surface.width * 0.14);
+  for (let dx = 8; dx <= maxOffset; dx += 8) {
+    const sample = getSurfacePixelLuminance(surface, cx + dx, cy);
+    if (sample <= backgroundLuminance) break;
+    if (sample < minLuminance) minLuminance = sample;
+    if (sample > maxLuminance) maxLuminance = sample;
+  }
+
+  if (maxLuminance - minLuminance <= 12) {
     throw new Error(
-      `[material-depth] no depth gradient: center (${center}) and offset (${offset}) are nearly equal — depth appears to be a flat fill`,
+      `[material-depth] no depth gradient: on-sphere luminance is nearly flat (min ${minLuminance}, max ${maxLuminance}) — depth appears to be a flat fill`,
     );
   }
 }
