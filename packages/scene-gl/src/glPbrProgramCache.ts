@@ -1,34 +1,49 @@
 import type { GlRenderState } from '@flighthq/types';
 
+import type { GlLitProgram } from './glLitProgram';
+import { resolveGlLitLocations } from './glLitProgram';
+import { ensureGlSceneProgram, linkGlProgram } from './glMeshProgram';
 import type { GlPbrDefineKey } from './glPbrPrelude';
 import { buildGlPbrDefineKey, getGlPbrFragmentSourceForKey, getGlPbrVertexSourceForKey } from './glPbrPrelude';
-import { getGlSceneRuntime } from './glSceneRuntime';
 
-// A compiled StandardPbr uber-shader variant plus its resolved uniform locations. One of these
-// exists per distinct GlPbrDefineKey (maps-present / alpha-mask combination), built once and cached
-// on the GlRenderState (see ensureGlPbrProgram). The vertex attribute locations are fixed by the
-// shader's `layout(location = …)` qualifiers (0 position, 1 normal, 2 tangent, 3 uv0), so they are
-// not stored here — the draw path binds them by constant.
-export interface GlPbrProgram {
-  program: WebGLProgram;
-  locViewProjection: WebGLUniformLocation | null;
-  locModel: WebGLUniformLocation | null;
-  locNormalMatrix: WebGLUniformLocation | null;
-  locBaseColor: WebGLUniformLocation | null;
-  locMetallic: WebGLUniformLocation | null;
-  locRoughness: WebGLUniformLocation | null;
-  locNormalScale: WebGLUniformLocation | null;
-  locEmissive: WebGLUniformLocation | null;
-  locEmissiveStrength: WebGLUniformLocation | null;
+// A compiled PBR uber-shader variant plus its resolved uniform locations. One of these exists per
+// distinct GlPbrDefineKey (maps-present / alpha-mask + extension-lobe combination), built once and
+// cached on the GlRenderState (see ensureGlPbrProgram). The vertex attribute locations are fixed by
+// the shader's `layout(location = …)` qualifiers (0 position, 1 normal, 2 tangent, 3 uv0), so they
+// are not stored here — the draw path binds them by constant. Extends GlLitProgram (model/normal/
+// view-projection + the standard light/camera uniforms) with the full standard-block material
+// uniforms plus the extension-lobe uniforms (each resolves to null in variants that omit its
+// define, which is harmless — its renderer only runs when the define is set).
+export interface GlPbrProgram extends GlLitProgram {
   locAlphaCutoff: WebGLUniformLocation | null;
-  locCameraPosition: WebGLUniformLocation | null;
-  locDirectional: WebGLUniformLocation | null;
-  locDirectionalRadiance: WebGLUniformLocation | null;
-  locAmbientRadiance: WebGLUniformLocation | null;
-  locDirectionalCount: WebGLUniformLocation | null;
-  locAmbientCount: WebGLUniformLocation | null;
+  locAnisotropyRotation: WebGLUniformLocation | null;
+  locAnisotropyStrength: WebGLUniformLocation | null;
+  locAttenuationColor: WebGLUniformLocation | null;
+  locBaseColor: WebGLUniformLocation | null;
   locBaseColorMap: WebGLUniformLocation | null;
+  locClearcoat: WebGLUniformLocation | null;
+  locClearcoatRoughness: WebGLUniformLocation | null;
+  locEmissive: WebGLUniformLocation | null;
+  locEmissiveMap: WebGLUniformLocation | null;
+  locEmissiveStrength: WebGLUniformLocation | null;
+  locIridescence: WebGLUniformLocation | null;
+  locIridescenceIor: WebGLUniformLocation | null;
+  locIridescenceThickness: WebGLUniformLocation | null;
+  locMetallic: WebGLUniformLocation | null;
+  locMetallicRoughnessMap: WebGLUniformLocation | null;
   locNormalMap: WebGLUniformLocation | null;
+  locNormalScale: WebGLUniformLocation | null;
+  locOcclusionMap: WebGLUniformLocation | null;
+  locOcclusionStrength: WebGLUniformLocation | null;
+  locRoughness: WebGLUniformLocation | null;
+  locSheenColor: WebGLUniformLocation | null;
+  locSheenRoughness: WebGLUniformLocation | null;
+  locSpecular: WebGLUniformLocation | null;
+  locSpecularColor: WebGLUniformLocation | null;
+  locSubsurface: WebGLUniformLocation | null;
+  locSubsurfaceColor: WebGLUniformLocation | null;
+  locThickness: WebGLUniformLocation | null;
+  locTransmission: WebGLUniformLocation | null;
 }
 
 // Compiles the StandardPbr uber-shader for a define key, links it, and resolves its uniform
@@ -37,65 +52,48 @@ export interface GlPbrProgram {
 export function compileGlPbrProgram(gl: WebGL2RenderingContext, key: Readonly<GlPbrDefineKey>): GlPbrProgram {
   const vertexSource = getGlPbrVertexSourceForKey(key);
   const fragmentSource = getGlPbrFragmentSourceForKey(key);
-  const program = linkGlPbrProgram(gl, vertexSource, fragmentSource);
+  const program = linkGlProgram(gl, vertexSource, fragmentSource);
   return {
+    ...resolveGlLitLocations(gl, program),
     program,
-    locViewProjection: gl.getUniformLocation(program, 'u_viewProjection'),
-    locModel: gl.getUniformLocation(program, 'u_model'),
-    locNormalMatrix: gl.getUniformLocation(program, 'u_normalMatrix'),
-    locBaseColor: gl.getUniformLocation(program, 'u_baseColor'),
-    locMetallic: gl.getUniformLocation(program, 'u_metallic'),
-    locRoughness: gl.getUniformLocation(program, 'u_roughness'),
-    locNormalScale: gl.getUniformLocation(program, 'u_normalScale'),
-    locEmissive: gl.getUniformLocation(program, 'u_emissive'),
-    locEmissiveStrength: gl.getUniformLocation(program, 'u_emissiveStrength'),
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),
-    locCameraPosition: gl.getUniformLocation(program, 'u_cameraPosition'),
-    locDirectional: gl.getUniformLocation(program, 'u_directional'),
-    locDirectionalRadiance: gl.getUniformLocation(program, 'u_directionalRadiance'),
-    locAmbientRadiance: gl.getUniformLocation(program, 'u_ambientRadiance'),
-    locDirectionalCount: gl.getUniformLocation(program, 'u_directionalCount'),
-    locAmbientCount: gl.getUniformLocation(program, 'u_ambientCount'),
+    locAnisotropyRotation: gl.getUniformLocation(program, 'u_anisotropyRotation'),
+    locAnisotropyStrength: gl.getUniformLocation(program, 'u_anisotropyStrength'),
+    locAttenuationColor: gl.getUniformLocation(program, 'u_attenuationColor'),
+    locBaseColor: gl.getUniformLocation(program, 'u_baseColor'),
     locBaseColorMap: gl.getUniformLocation(program, 'u_baseColorMap'),
+    locClearcoat: gl.getUniformLocation(program, 'u_clearcoat'),
+    locClearcoatRoughness: gl.getUniformLocation(program, 'u_clearcoatRoughness'),
+    locEmissive: gl.getUniformLocation(program, 'u_emissive'),
+    locEmissiveMap: gl.getUniformLocation(program, 'u_emissiveMap'),
+    locEmissiveStrength: gl.getUniformLocation(program, 'u_emissiveStrength'),
+    locIridescence: gl.getUniformLocation(program, 'u_iridescence'),
+    locIridescenceIor: gl.getUniformLocation(program, 'u_iridescenceIor'),
+    locIridescenceThickness: gl.getUniformLocation(program, 'u_iridescenceThickness'),
+    locMetallic: gl.getUniformLocation(program, 'u_metallic'),
+    locMetallicRoughnessMap: gl.getUniformLocation(program, 'u_metallicRoughnessMap'),
+    locModel: gl.getUniformLocation(program, 'u_model'),
     locNormalMap: gl.getUniformLocation(program, 'u_normalMap'),
+    locNormalMatrix: gl.getUniformLocation(program, 'u_normalMatrix'),
+    locNormalScale: gl.getUniformLocation(program, 'u_normalScale'),
+    locOcclusionMap: gl.getUniformLocation(program, 'u_occlusionMap'),
+    locOcclusionStrength: gl.getUniformLocation(program, 'u_occlusionStrength'),
+    locRoughness: gl.getUniformLocation(program, 'u_roughness'),
+    locSheenColor: gl.getUniformLocation(program, 'u_sheenColor'),
+    locSheenRoughness: gl.getUniformLocation(program, 'u_sheenRoughness'),
+    locSpecular: gl.getUniformLocation(program, 'u_specular'),
+    locSpecularColor: gl.getUniformLocation(program, 'u_specularColor'),
+    locSubsurface: gl.getUniformLocation(program, 'u_subsurface'),
+    locSubsurfaceColor: gl.getUniformLocation(program, 'u_subsurfaceColor'),
+    locThickness: gl.getUniformLocation(program, 'u_thickness'),
+    locTransmission: gl.getUniformLocation(program, 'u_transmission'),
+    locViewProjection: gl.getUniformLocation(program, 'u_viewProjection'),
   };
 }
 
-// Resolves the StandardPbr program for a define key, compiling and caching it on first use. The
-// cache is the scene-gl runtime's pbrProgramCache (a per-GlRenderState Map keyed by the define
-// key's stable string), so each variant is compiled at most once per state and reused every frame.
+// Resolves the StandardPbr program for a define key, compiling and caching it on first use through
+// the shared scene program cache under the `pbr:` family namespace, so each variant is compiled at
+// most once per state and reused every frame.
 export function ensureGlPbrProgram(state: GlRenderState, key: Readonly<GlPbrDefineKey>): GlPbrProgram {
-  const runtime = getGlSceneRuntime(state);
-  const cacheKey = buildGlPbrDefineKey(key);
-  let program = runtime.pbrProgramCache.get(cacheKey);
-  if (program === undefined) {
-    program = compileGlPbrProgram(state.gl, key);
-    runtime.pbrProgramCache.set(cacheKey, program);
-  }
-  return program;
-}
-
-function compileGlPbrShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
-  const shader = gl.createShader(type)!;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    throw new Error(`PBR shader compile error: ${gl.getShaderInfoLog(shader)}`);
-  }
-  return shader;
-}
-
-function linkGlPbrProgram(gl: WebGL2RenderingContext, vertexSource: string, fragmentSource: string): WebGLProgram {
-  const vertexShader = compileGlPbrShader(gl, gl.VERTEX_SHADER, vertexSource);
-  const fragmentShader = compileGlPbrShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
-  const program = gl.createProgram()!;
-  gl.attachShader(program, vertexShader);
-  gl.attachShader(program, fragmentShader);
-  gl.linkProgram(program);
-  gl.deleteShader(vertexShader);
-  gl.deleteShader(fragmentShader);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(`PBR program link error: ${gl.getProgramInfoLog(program)}`);
-  }
-  return program;
+  return ensureGlSceneProgram(state, `pbr:${buildGlPbrDefineKey(key)}`, (gl) => compileGlPbrProgram(gl, key));
 }
