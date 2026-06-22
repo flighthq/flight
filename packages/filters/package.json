@@ -27,13 +27,11 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/surface-filters": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/surface": "*",
     "typescript": "^5.3.0"
   },
-  "description": "Bitmap filter descriptors, CSS serialization, and bitmap-surface implementations",
+  "description": "Bitmap filter descriptors and shared cross-substrate blur math",
   "sideEffects": false
 }

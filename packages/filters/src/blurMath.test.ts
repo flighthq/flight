@@ -1,4 +1,4 @@
-import { computeBoxBlurPassRadius, computeBoxBlurRadius } from './math';
+import { computeBoxBlurPassRadius, computeBoxBlurRadius } from './blurMath';
 
 describe('computeBoxBlurPassRadius', () => {
   // Combined variance of n box passes of radius rᵢ is Σ (rᵢ² + rᵢ) / 3; the effective σ is its
