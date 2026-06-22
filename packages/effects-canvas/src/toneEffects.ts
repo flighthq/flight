@@ -13,9 +13,9 @@ import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './renderEf
 
 // HDR / tone recipes on Canvas 2D. Bloom is a real multi-pass draw-op realization (bright-pass to a
 // scratch canvas via brightness/contrast, blur it, then composite back additively with
-// globalCompositeOperation='lighter') — the Canvas analog of the WebGL bloom reference recipe. Exposure
+// globalCompositeOperation='lighter') — the Canvas analog of the Gl bloom reference recipe. Exposure
 // and tone mapping are inherently HDR (they operate on linear light beyond 0..1); Canvas 2D clamps to
-// 8-bit sRGB, so neither has a faithful realization and both ship as passthrough copies.
+// 8-bit sRgb, so neither has a faithful realization and both ship as passthrough copies.
 
 // Bloom (REAL): bright-pass → blur the bright branch → additively composite back. Multi-pass: it
 // acquires a scratch canvas from the pool, isolates bright pixels by pushing contrast hard so dim
@@ -73,7 +73,7 @@ export function applyExposureEffectToCanvas(
 }
 
 // Tone map (PASSTHROUGH): tone-mapping operators compress HDR linear light to displayable range; the
-// source on Canvas 2D is already clamped 8-bit sRGB with no HDR to compress. Shader-only / HDR-only.
+// source on Canvas 2D is already clamped 8-bit sRgb with no HDR to compress. Shader-only / HDR-only.
 export function applyToneMapEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

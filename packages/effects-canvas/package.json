@@ -30,7 +30,7 @@
     "@flighthq/effects": "*",
     "@flighthq/filters": "*",
     "@flighthq/filters-canvas": "*",
-    "@flighthq/render-canvas": "*",
+    "@flighthq/displayobject-canvas": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

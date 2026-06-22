@@ -12,7 +12,7 @@
     { "path": "../effects" },
     { "path": "../filters" },
     { "path": "../filters-canvas" },
-    { "path": "../render-canvas" },
+    { "path": "../displayobject-canvas" },
     { "path": "../types" }
   ],
   "include": ["src"]
