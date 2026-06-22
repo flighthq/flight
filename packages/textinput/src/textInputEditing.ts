@@ -1,5 +1,5 @@
 import { invalidateNodeAppearance } from '@flighthq/node';
-import { getRichTextSelectionRectangles } from '@flighthq/text-layout';
+import { getRichTextSelectionRectangles } from '@flighthq/textlayout';
 import type {
   HandleTextInputKeyboardOptions,
   KeyboardEventData,

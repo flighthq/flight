@@ -13,7 +13,7 @@
     { "path": "../displayobject" },
     { "path": "../text" },
     { "path": "../signals" },
-    { "path": "../text-layout" },
+    { "path": "../textlayout" },
     { "path": "../types" }
   ],
   "include": ["src"]
