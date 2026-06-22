@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "references": [
+    { "path": "../camera" },
+    { "path": "../geometry" },
+    { "path": "../lighting" },
+    { "path": "../materials" },
+    { "path": "../mesh" },
+    { "path": "../node" },
+    { "path": "../render" },
+    { "path": "../render-wgpu" },
+    { "path": "../scene" },
+    { "path": "../types" }
+  ],
+  "include": ["src"]
+}
