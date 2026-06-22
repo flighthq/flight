@@ -1,0 +1,71 @@
+[package]
+name = "flighthq-sdk"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Single entry point re-exporting all packages"
+
+[dependencies]
+flighthq-types = { workspace = true }
+flighthq-math = { workspace = true }
+flighthq-log = { workspace = true }
+flighthq-entity = { workspace = true }
+flighthq-geometry = { workspace = true }
+flighthq-node = { workspace = true }
+flighthq-signals = { workspace = true }
+flighthq-clip = { workspace = true }
+flighthq-path = { workspace = true }
+flighthq-shape = { workspace = true }
+flighthq-displayobject = { workspace = true }
+flighthq-sprite = { workspace = true }
+flighthq-world = { workspace = true }
+flighthq-velocity = { workspace = true }
+flighthq-render = { workspace = true }
+flighthq-render-gl = { workspace = true }
+flighthq-render-wgpu = { workspace = true }
+flighthq-filters = { workspace = true }
+flighthq-filters-gl = { workspace = true }
+flighthq-filters-wgpu = { workspace = true }
+flighthq-effects = { workspace = true }
+flighthq-effects-gl = { workspace = true }
+flighthq-effects-wgpu = { workspace = true }
+flighthq-surface = { workspace = true }
+flighthq-surface-filters = { workspace = true }
+flighthq-materials = { workspace = true }
+flighthq-text = { workspace = true }
+flighthq-text-layout = { workspace = true }
+flighthq-text-input = { workspace = true }
+flighthq-resources = { workspace = true }
+flighthq-resources-loader = { workspace = true }
+flighthq-tween = { workspace = true }
+flighthq-tween-easing = { workspace = true }
+flighthq-timeline = { workspace = true }
+flighthq-spritesheet = { workspace = true }
+flighthq-spritesheet-formats = { workspace = true }
+flighthq-particles = { workspace = true }
+flighthq-particles-formats = { workspace = true }
+flighthq-input = { workspace = true }
+flighthq-interaction = { workspace = true }
+flighthq-application = { workspace = true }
+flighthq-media = { workspace = true }
+flighthq-platform = { workspace = true }
+flighthq-filesystem = { workspace = true }
+flighthq-storage = { workspace = true }
+flighthq-shell = { workspace = true }
+flighthq-screen = { workspace = true }
+flighthq-dialog = { workspace = true }
+flighthq-clipboard = { workspace = true }
+flighthq-notification = { workspace = true }
+flighthq-shortcut = { workspace = true }
+flighthq-menu = { workspace = true }
+flighthq-tray = { workspace = true }
+flighthq-app = { workspace = true }
+flighthq-protocol = { workspace = true }
+flighthq-updater = { workspace = true }
+flighthq-ipc = { workspace = true }
+flighthq-network = { workspace = true }
+flighthq-power = { workspace = true }
+flighthq-lifecycle = { workspace = true }
+flighthq-keyboard = { workspace = true }
+flighthq-sensors = { workspace = true }
+flighthq-device = { workspace = true }

@@ -1,0 +1,11 @@
+[package]
+name = "flighthq-filters-gl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "WebGL shader implementations for bitmap filter effects"
+
+[dependencies]
+flighthq-filters = { workspace = true }
+flighthq-render-gl = { workspace = true }
+glow = { workspace = true }

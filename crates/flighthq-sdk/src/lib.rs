@@ -1,0 +1,106 @@
+//! Flight SDK — the convenience re-export barrel.
+//!
+//! This crate is a single entry point that re-exports the public API of every
+//! other Flight crate, so an application can depend on `flighthq-sdk` alone and
+//! reach the whole SDK through one `use` path:
+//!
+//! ```ignore
+//! use flighthq_sdk::*;
+//! ```
+//!
+//! It contains no logic of its own. Every name here is owned by the crate it
+//! comes from; this file only forwards them. Flight's globally-unique naming
+//! discipline means these wildcard re-exports do not collide, so the barrel
+//! tree-shakes (links) identically to depending on the individual crates
+//! directly — depending on `flighthq-sdk` is a convenience, not a cost.
+//!
+//! Library authors and size-sensitive consumers should depend on the specific
+//! crates they need (`flighthq-node`, `flighthq-render`, …) rather than this
+//! barrel, so their public surface and dependency graph stay narrow.
+
+// Foundation: shared types, math, logging, entity/runtime primitives, geometry.
+pub use flighthq_entity::*;
+pub use flighthq_geometry::*;
+pub use flighthq_log::*;
+pub use flighthq_math::*;
+pub use flighthq_signals::*;
+pub use flighthq_types::*;
+
+// Scene graph and graph families.
+pub use flighthq_clip::*;
+pub use flighthq_displayobject::*;
+pub use flighthq_node::*;
+pub use flighthq_path::*;
+pub use flighthq_shape::*;
+pub use flighthq_sprite::*;
+pub use flighthq_velocity::*;
+pub use flighthq_world::*;
+
+// Rendering: registration/pipeline and concrete backends.
+pub use flighthq_render::*;
+pub use flighthq_render_gl::*;
+pub use flighthq_render_wgpu::*;
+
+// Filters and effects: descriptors plus per-backend implementations.
+pub use flighthq_effects::*;
+pub use flighthq_effects_gl::*;
+pub use flighthq_effects_wgpu::*;
+pub use flighthq_filters::*;
+pub use flighthq_filters_gl::*;
+pub use flighthq_filters_wgpu::*;
+
+// Materials and offscreen pixel surfaces.
+pub use flighthq_materials::*;
+pub use flighthq_surface::*;
+pub use flighthq_surface_filters::*;
+
+// Text.
+pub use flighthq_text::*;
+pub use flighthq_text_input::*;
+pub use flighthq_text_layout::*;
+
+// Resources and loading.
+pub use flighthq_resources::*;
+pub use flighthq_resources_loader::*;
+
+// Animation: tweens, timelines, spritesheets, particles.
+pub use flighthq_particles::*;
+pub use flighthq_particles_formats::*;
+pub use flighthq_spritesheet::*;
+pub use flighthq_spritesheet_formats::*;
+pub use flighthq_timeline::*;
+pub use flighthq_tween::*;
+pub use flighthq_tween_easing::*;
+
+// Input and interaction.
+pub use flighthq_input::*;
+pub use flighthq_interaction::*;
+
+// Application, windowing, and media.
+pub use flighthq_application::*;
+pub use flighthq_media::*;
+
+// Platform integration suite: OS/host capabilities behind swappable backends.
+pub use flighthq_clipboard::*;
+pub use flighthq_device::*;
+pub use flighthq_dialog::*;
+pub use flighthq_filesystem::*;
+pub use flighthq_keyboard::*;
+pub use flighthq_lifecycle::*;
+pub use flighthq_menu::*;
+pub use flighthq_network::*;
+pub use flighthq_notification::*;
+pub use flighthq_platform::*;
+pub use flighthq_power::*;
+pub use flighthq_screen::*;
+pub use flighthq_sensors::*;
+pub use flighthq_shell::*;
+pub use flighthq_shortcut::*;
+pub use flighthq_storage::*;
+pub use flighthq_tray::*;
+
+// Application/process layer: host shell integration beyond a single window.
+pub use flighthq_app::*;
+pub use flighthq_ipc::*;
+pub use flighthq_protocol::*;
+pub use flighthq_updater::*;

@@ -1,0 +1,13 @@
+[package]
+name = "flighthq-menu"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Native application and context menus over a swappable web/native backend"
+
+[dependencies]
+flighthq-types = { workspace = true }
+flighthq-signals = { workspace = true }
+
+[dev-dependencies]
+serial_test = { workspace = true }

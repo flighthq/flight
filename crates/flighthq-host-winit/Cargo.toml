@@ -1,0 +1,34 @@
+[package]
+name = "flighthq-host-winit"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "winit + wgpu host backend: event loop, window/GPU surface, and the render frame protocol for the Flight scene graph"
+
+[dependencies]
+# Internal crates: workspace-pinned, version-unified across the SDK.
+flighthq-types = { workspace = true }
+flighthq-geometry = { workspace = true }
+flighthq-node = { workspace = true }
+flighthq-displayobject = { workspace = true }
+flighthq-render = { workspace = true }
+flighthq-render-wgpu = { workspace = true }
+flighthq-application = { workspace = true }
+flighthq-input = { workspace = true }
+flighthq-screen = { workspace = true }
+
+# Host-specific external deps live here, not in [workspace.dependencies]:
+# this crate is the runtime-coupled, non-tree-shakable adapter that owns them.
+# wgpu reuses the workspace version (one wgpu in the graph) but additively enables
+# the macOS/Windows native backends; Vulkan/GLES are already pulled in by target cfg.
+wgpu = { workspace = true, features = ["metal", "dx12"] }
+winit = "0.30"
+pollster = "0.3"
+raw-window-handle = "0.6"
+
+[dev-dependencies]
+# Examples build a display-object scene, animate it with tweens, and wire input.
+flighthq-signals = { workspace = true }
+flighthq-shape = { workspace = true }
+flighthq-tween = { workspace = true }
+flighthq-tween-easing = { workspace = true }

@@ -1,0 +1,11 @@
+[package]
+name = "flighthq-filters-wgpu"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "WebGPU shader implementations for bitmap filter effects"
+
+[dependencies]
+flighthq-filters = { workspace = true }
+flighthq-render-wgpu = { workspace = true }
+wgpu = { workspace = true }

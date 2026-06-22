@@ -1,0 +1,9 @@
+[package]
+name = "flighthq-geometry"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "2D/3D math primitives: vectors, matrices, rectangles, and object pools"
+
+[dependencies]
+flighthq-types = { workspace = true }

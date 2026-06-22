@@ -1,0 +1,9 @@
+[package]
+name = "flighthq-filesystem"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Read/write files and directories over a swappable web (OPFS) / native backend"
+
+[dependencies]
+flighthq-types = { workspace = true }

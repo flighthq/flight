@@ -1,0 +1,9 @@
+[package]
+name = "flighthq-resources"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Resource types and utilities: image resources, texture atlases, tilesets"
+
+[dependencies]
+flighthq-types = { workspace = true }
