@@ -6,7 +6,7 @@ Conformance is a **property**, not a tool: the Rust crates faithfully implement 
 
 Because Rust is a production target (see [intent](index.md#intent)), conformance means **the behavior and the rendered output match**, not merely that a Rust test exists.
 
-- **Floor — coverage.** Every TS exported function has a Rust test that exercises the corresponding function. This is what `scripts/parity.ts` tracks today by name-match (a Rust test whose name contains the snake_case function token). It proves a test _mentions_ the symbol, not that it agrees with TS. Useful as a tracker; insufficient as a gate.
+- **Floor — coverage.** Every TS exported function has a Rust test that exercises the corresponding function. This is what `scripts/parity.ts` tracks today by name-match (a Rust test whose name contains the snake*case function token). It proves a test \_mentions* the symbol, not that it agrees with TS. Useful as a tracker; insufficient as a gate.
 - **Definition of done — assertion + visual.** The Rust unit test ports the TS test's _assertions_ (same inputs, same expected outputs), and the rendered output matches TS within the declared [parity](parity.md) tolerance for the relevant `gl` / `wgpu` cells. Name-match parity reaching 100% is not conformance; it is the point at which the real conformance work (porting assertions, closing visual diffs) is fully scoped.
 
 ## How conformance is measured
