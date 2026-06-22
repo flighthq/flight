@@ -1,0 +1,10 @@
+[package]
+name = "flighthq-timeline"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Timeline-based animation sequencing"
+
+[dependencies]
+flighthq-signals = { workspace = true }
+flighthq-types = { workspace = true }

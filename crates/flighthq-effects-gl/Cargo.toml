@@ -1,0 +1,12 @@
+[package]
+name = "flighthq-effects-gl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "WebGL shader recipes for render effects (MSAA-aware post-process pipeline)"
+
+[dependencies]
+flighthq-effects = { workspace = true }
+flighthq-render-gl = { workspace = true }
+flighthq-types = { workspace = true }
+glow = { workspace = true }

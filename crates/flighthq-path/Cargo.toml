@@ -1,0 +1,10 @@
+[package]
+name = "flighthq-path"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Vector path geometry: curve flattening and tessellation of GraphicsPath outlines"
+
+[dependencies]
+flighthq-geometry = { workspace = true }
+flighthq-types = { workspace = true }

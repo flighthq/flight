@@ -1,0 +1,11 @@
+[package]
+name = "flighthq-text-input"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Editable text helpers for InputText selection, replacement, restrictions, and password display"
+
+[dependencies]
+flighthq-text = { workspace = true }
+flighthq-text-layout = { workspace = true }
+flighthq-types = { workspace = true }

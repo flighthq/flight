@@ -1,0 +1,9 @@
+[package]
+name = "flighthq-clip"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "ClipRegion: hard geometric clip product built from rectangles or paths"
+
+[dependencies]
+flighthq-types = { workspace = true }

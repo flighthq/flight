@@ -1,0 +1,11 @@
+[package]
+name = "flighthq-particles"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Particle system: emitter simulation and typed-array-backed particle primitives"
+
+[dependencies]
+flighthq-types = { workspace = true }
+flighthq-geometry = { workspace = true }
+flighthq-node = { workspace = true }

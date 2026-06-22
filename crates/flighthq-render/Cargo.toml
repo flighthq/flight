@@ -1,0 +1,11 @@
+[package]
+name = "flighthq-render"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Renderer registration, render state, render queue, and backend draw contracts"
+
+[dependencies]
+flighthq-types = { workspace = true }
+flighthq-geometry = { workspace = true }
+flighthq-signals = { workspace = true }
