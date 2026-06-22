@@ -43,7 +43,7 @@ export interface RichTextData extends TextLabelData {
 
 export interface RichTextRuntime extends TextLabelRuntime {
   // The editable-field capability slot: null on a static RichText, allocated by enableTextInput(node)
-  // in @flighthq/text-input. A nullable slot (rather than a separate entity) is what lets selection/
+  // in @flighthq/textinput. A nullable slot (rather than a separate entity) is what lets selection/
   // caret/input be an opt-in mode of RichText with zero cost when unused. Renderers draw the caret/
   // selection overlay only when this is non-null.
   input: TextInputState | null;

@@ -1,8 +1,8 @@
 // The opt-in editable-field state for RichText. Editing is a mode of a rich field, not a separate entity
 // (OpenFL TextField type=INPUT), so this consolidates the password/restrict/selection-style fields and
 // the caret/focus/selection runtime state into a single runtime slot attached by enableTextInput
-// (@flighthq/text-input). A static RichText that never calls enableTextInput carries none of this — and
-// never pulls @flighthq/text-input into its bundle.
+// (@flighthq/textinput). A static RichText that never calls enableTextInput carries none of this — and
+// never pulls @flighthq/textinput into its bundle.
 export interface TextInputState {
   alwaysShowSelection: boolean;
   caretIndex: number;
