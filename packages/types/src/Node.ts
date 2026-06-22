@@ -24,25 +24,25 @@ export interface Node<Traits extends object = NodeTraits> extends NodeTraits, En
 }
 
 export interface NodeRuntime<Traits extends object = NodeTraits> extends EntityRuntime {
-  appearanceID: number;
-  boundsUsingLocalBoundsID: number;
-  boundsUsingLocalTransformID: number;
+  appearanceId: number;
+  boundsUsingLocalBoundsId: number;
+  boundsUsingLocalTransformId: number;
   canAddChild: (target: Node<Traits>, child: Node<Traits>) => boolean;
   children: Node<Traits>[] | null;
   traits?: NodeTraitsKey<Traits>;
   interactionSignals: InteractionSignals | null;
-  localBoundsID: number;
-  localBoundsUsingLocalBoundsID: number;
-  localContentID: number;
-  localTransformID: number;
-  localTransformUsingLocalTransformID: number;
+  localBoundsId: number;
+  localBoundsUsingLocalBoundsId: number;
+  localContentId: number;
+  localTransformId: number;
+  localTransformUsingLocalTransformId: number;
   nodeSignals: NodeSignals | null;
   parent: Node<Traits> | null;
-  worldBoundsUsingLocalBoundsID: number;
-  worldBoundsUsingWorldTransformID: number;
-  worldTransformID: number;
-  worldTransformUsingLocalTransformID: number;
-  worldTransformUsingParentTransformID: number;
+  worldBoundsUsingLocalBoundsId: number;
+  worldBoundsUsingWorldTransformId: number;
+  worldTransformId: number;
+  worldTransformUsingLocalTransformId: number;
+  worldTransformUsingParentTransformId: number;
 }
 
 export const NodeKind: unique symbol = Symbol('Node');

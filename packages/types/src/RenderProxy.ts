@@ -11,21 +11,21 @@ export interface RenderProxy extends Entity {
   next: RenderProxy | null;
 
   alpha: number;
-  appearanceFrameID: number;
+  appearanceFrameId: number;
   blendMode: BlendMode | null;
   // Resolved material the backend renderer draws this node with, and its per-node data. Null →
   // default pipeline. Populated by the material hook during the render walk; the batcher keys on
   // `material` by reference, and material renderers read `materialData` (e.g. per-instance CT).
   material: Material | null;
   materialData: MaterialData | null;
-  lastAppearanceID: number;
-  lastLocalContentID: number;
-  lastLocalTransformID: number;
+  lastAppearanceId: number;
+  lastLocalContentId: number;
+  lastLocalTransformId: number;
   name: string | null;
   renderer: Renderer | null;
   rendererData: RendererData | null;
   rendererDataSource: Renderable | null;
-  rendererMapID: number;
-  transformFrameID: number;
+  rendererMapId: number;
+  transformFrameId: number;
   visible: boolean;
 }

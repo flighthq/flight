@@ -24,7 +24,7 @@ export interface AppBackend {
   // Sets the numeric app badge (taskbar overlay / dock / PWA navigator.setAppBadge). Returns false
   // when unsupported. This is the canonical home for the app badge (it is not on the tray).
   setBadgeCount(count: number): boolean;
-  // Sets the macOS dock menu (right-click the dock icon). No-op where there is no dock.
+  // Sets the macOs dock menu (right-click the dock icon). No-op where there is no dock.
   setDockMenu(items: readonly MenuItemTemplate[]): void;
   // Starts a dock bounce; returns a request id usable with cancelDockBounce, or -1 when unsupported.
   bounceDock(): number;

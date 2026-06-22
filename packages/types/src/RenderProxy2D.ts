@@ -8,6 +8,6 @@ export interface RenderProxy2D extends RenderProxy {
   transform2D: Matrix;
   traverseChildren: boolean;
   // Clip nesting depth at this node (rect + path clips); the backend unwinds its clip gates to this on
-  // exit. Masks were retired into clips, so the former isMaskFrameID/maskDepth fields are gone.
+  // exit. Masks were retired into clips, so the former isMaskFrameId/maskDepth fields are gone.
   clipDepth: number;
 }

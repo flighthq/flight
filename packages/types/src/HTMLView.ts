@@ -1,15 +1,15 @@
 import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime } from './DisplayObject';
 
-export interface HTMLViewData extends DisplayObjectData {
+export interface HtmlViewData extends DisplayObjectData {
   element: HTMLElement | null;
   height: number;
   width: number;
 }
 
-export interface HTMLViewRuntime extends DisplayObjectRuntime {}
+export interface HtmlViewRuntime extends DisplayObjectRuntime {}
 
-export interface HTMLView extends DisplayObject {
-  data: HTMLViewData;
+export interface HtmlView extends DisplayObject {
+  data: HtmlViewData;
 }
 
-export const HTMLViewKind: unique symbol = Symbol('HTMLView');
+export const HtmlViewKind: unique symbol = Symbol('HtmlView');
