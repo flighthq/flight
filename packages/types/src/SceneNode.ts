@@ -1,7 +1,7 @@
 import type { HasTransform3D, HasTransform3DRuntime } from './HasTransform3D';
 import type { Node, NodeRuntime, NodeTraitsKey } from './Node';
 
-export const SceneNodeKind: unique symbol = Symbol('SceneNode');
+export const SceneNodeKind = 'SceneNode';
 
 export interface SceneNodeTraits extends HasTransform3D {}
 

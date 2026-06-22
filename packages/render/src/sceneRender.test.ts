@@ -178,7 +178,7 @@ describe('prepareSceneRender', () => {
   it('honors a positional material on a mesh', () => {
     const state = createRenderState();
     const scene = createScene();
-    const material = { kind: Symbol('TestMaterial') } as unknown as Material;
+    const material = { kind: 'TestMaterial' } as unknown as Material;
     const mesh = createMesh(boundedBox(), [material]);
     addNodeChild(scene, mesh);
     const list = prepareSceneRender(state, scene, frontCamera(), emptyLights());

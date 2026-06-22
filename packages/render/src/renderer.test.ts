@@ -12,7 +12,7 @@ describe('copyAllRenderersFromRenderState', () => {
   it('copies all registrations and the clip hooks from source to target', () => {
     const source = createRenderState();
     const target = createRenderState();
-    const kind = Symbol('kind');
+    const kind = 'kind';
     const renderer = { createData: vi.fn(), submit: vi.fn() } as unknown as Renderer;
     const hooks = {
       finalize: vi.fn(),
@@ -41,7 +41,7 @@ describe('copyRenderersFromRenderState', () => {
   it('copies all renderer registrations from source to target', () => {
     const source = createRenderState();
     const target = createRenderState();
-    const kind = Symbol('kind');
+    const kind = 'kind';
     const renderer = { createData: vi.fn(), submit: vi.fn() } as unknown as Renderer;
     registerRenderer(source, kind, renderer);
     copyRenderersFromRenderState(target, source);
@@ -58,7 +58,7 @@ describe('copyRenderersFromRenderState', () => {
   it('does not affect source rendererMapId', () => {
     const source = createRenderState();
     const target = createRenderState();
-    const kind = Symbol('kind');
+    const kind = 'kind';
     const renderer = { createData: vi.fn(), submit: vi.fn() } as unknown as Renderer;
     registerRenderer(source, kind, renderer);
     const sourceIdBeforeCopy = getRenderStateRuntime(source).rendererMapId;
@@ -76,14 +76,14 @@ describe('noopRendererData', () => {
 
 describe('registerRenderer', () => {
   let state: RenderState;
-  let kindA: symbol;
-  let kindB: symbol;
+  let kindA: string;
+  let kindB: string;
   let renderer1: Renderer;
   let renderer2: Renderer;
 
   beforeEach(() => {
-    kindA = Symbol('kindA');
-    kindB = Symbol('kindB');
+    kindA = 'kindA';
+    kindB = 'kindB';
     renderer1 = { render: vi.fn() } as unknown as Renderer;
     renderer2 = { render: vi.fn() } as unknown as Renderer;
     state = createRenderState();

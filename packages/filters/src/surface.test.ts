@@ -32,7 +32,7 @@ describe('applyBevelFilterToSurface', () => {
     const out = makeOut(4, 4);
     const blurBuffer = makeOut(4, 4);
     expect(() =>
-      applyBevelFilterToSurface(out, blurBuffer, region(source), { type: 'bevel', blurX: 0, blurY: 0 }),
+      applyBevelFilterToSurface(out, blurBuffer, region(source), { kind: 'BevelFilter', blurX: 0, blurY: 0 }),
     ).not.toThrow();
   });
 
@@ -42,7 +42,7 @@ describe('applyBevelFilterToSurface', () => {
     const blurBuffer = makeOut(4, 4);
     expect(() =>
       applyBevelFilterToSurface(out, blurBuffer, region(source), {
-        type: 'bevel',
+        kind: 'BevelFilter',
         bevelType: 'outer',
         blurX: 0,
         blurY: 0,
@@ -57,7 +57,7 @@ describe('applyBlurFilterToSurface', () => {
     const out = makeOut(4, 4);
     const blurBuffer = makeOut(4, 4);
     expect(() =>
-      applyBlurFilterToSurface(out, blurBuffer, region(source), { type: 'blur', blurX: 4, blurY: 4 }),
+      applyBlurFilterToSurface(out, blurBuffer, region(source), { kind: 'BlurFilter', blurX: 4, blurY: 4 }),
     ).not.toThrow();
   });
 
@@ -65,7 +65,7 @@ describe('applyBlurFilterToSurface', () => {
     const source = createSurface(2, 2, 0x336699ff);
     const out = makeOut(2, 2);
     const blurBuffer = makeOut(2, 2);
-    applyBlurFilterToSurface(out, blurBuffer, region(source), { type: 'blur', blurX: 0, blurY: 0 });
+    applyBlurFilterToSurface(out, blurBuffer, region(source), { kind: 'BlurFilter', blurX: 0, blurY: 0 });
     expect(out[0]).toBe(0x33);
     expect(out[3]).toBe(0xff);
   });
@@ -76,7 +76,7 @@ describe('applyColorMatrixFilterToSurface', () => {
     const source = createSurface(2, 2, 0x336699ff);
     const out = makeOut(2, 2);
     const identity = [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
-    applyColorMatrixFilterToSurface(out, region(source), { type: 'colorMatrix', matrix: identity });
+    applyColorMatrixFilterToSurface(out, region(source), { kind: 'ColorMatrixFilter', matrix: identity });
     expect(out[0]).toBe(0x33);
     expect(out[1]).toBe(0x66);
     expect(out[2]).toBe(0x99);
@@ -89,7 +89,7 @@ describe('applyConvolutionFilterToSurface', () => {
     const source = createSurface(3, 3, 0x336699ff);
     const out = makeOut(3, 3);
     applyConvolutionFilterToSurface(out, region(source), {
-      type: 'convolution',
+      kind: 'ConvolutionFilter',
       matrix: [0, 0, 0, 0, 1, 0, 0, 0, 0],
       matrixX: 3,
       matrixY: 3,
@@ -105,7 +105,7 @@ describe('applyDisplacementMapFilterToSurface', () => {
     const out = makeOut(4, 4);
     expect(() =>
       applyDisplacementMapFilterToSurface(out, region(source), region(map), {
-        type: 'displacementMap',
+        kind: 'DisplacementMapFilter',
         scaleX: 0,
         scaleY: 0,
       }),
@@ -119,7 +119,7 @@ describe('applyDropShadowFilterToSurface', () => {
     const out = makeOut(4, 4);
     const blurBuffer = makeOut(4, 4);
     expect(() =>
-      applyDropShadowFilterToSurface(out, blurBuffer, region(source), { type: 'dropShadow', blurX: 0, blurY: 0 }),
+      applyDropShadowFilterToSurface(out, blurBuffer, region(source), { kind: 'DropShadowFilter', blurX: 0, blurY: 0 }),
     ).not.toThrow();
   });
 });
@@ -131,7 +131,7 @@ describe('applyGradientBevelFilterToSurface', () => {
     const blurBuffer = makeOut(4, 4);
     expect(() =>
       applyGradientBevelFilterToSurface(out, blurBuffer, region(source), {
-        type: 'gradientBevel',
+        kind: 'GradientBevelFilter',
         colors: [0xffffff, 0x000000],
         alphas: [1, 1],
         ratios: [0, 255],
@@ -149,7 +149,7 @@ describe('applyGradientGlowFilterToSurface', () => {
     const blurBuffer = makeOut(4, 4);
     expect(() =>
       applyGradientGlowFilterToSurface(out, blurBuffer, region(source), {
-        type: 'gradientGlow',
+        kind: 'GradientGlowFilter',
         colors: [0xff0000, 0x000000],
         alphas: [1, 0],
         ratios: [0, 255],
@@ -166,7 +166,7 @@ describe('applyInnerGlowFilterToSurface', () => {
     const out = makeOut(4, 4);
     const blurBuffer = makeOut(4, 4);
     expect(() =>
-      applyInnerGlowFilterToSurface(out, blurBuffer, region(source), { type: 'innerGlow', blurX: 0, blurY: 0 }),
+      applyInnerGlowFilterToSurface(out, blurBuffer, region(source), { kind: 'InnerGlowFilter', blurX: 0, blurY: 0 }),
     ).not.toThrow();
   });
 });
@@ -177,7 +177,11 @@ describe('applyInnerShadowFilterToSurface', () => {
     const out = makeOut(4, 4);
     const blurBuffer = makeOut(4, 4);
     expect(() =>
-      applyInnerShadowFilterToSurface(out, blurBuffer, region(source), { type: 'innerShadow', blurX: 0, blurY: 0 }),
+      applyInnerShadowFilterToSurface(out, blurBuffer, region(source), {
+        kind: 'InnerShadowFilter',
+        blurX: 0,
+        blurY: 0,
+      }),
     ).not.toThrow();
   });
 });
@@ -186,7 +190,7 @@ describe('applyMedianFilterToSurface', () => {
   it('writes to out without throwing', () => {
     const source = createSurface(4, 4, 0xff0000ff);
     const out = makeOut(4, 4);
-    expect(() => applyMedianFilterToSurface(out, region(source), { type: 'median', radius: 1 })).not.toThrow();
+    expect(() => applyMedianFilterToSurface(out, region(source), { kind: 'MedianFilter', radius: 1 })).not.toThrow();
   });
 });
 
@@ -196,7 +200,7 @@ describe('applyOuterGlowFilterToSurface', () => {
     const out = makeOut(4, 4);
     const blurBuffer = makeOut(4, 4);
     expect(() =>
-      applyOuterGlowFilterToSurface(out, blurBuffer, region(source), { type: 'outerGlow', blurX: 0, blurY: 0 }),
+      applyOuterGlowFilterToSurface(out, blurBuffer, region(source), { kind: 'OuterGlowFilter', blurX: 0, blurY: 0 }),
     ).not.toThrow();
   });
 });
@@ -205,7 +209,9 @@ describe('applyPixelateFilterToSurface', () => {
   it('writes to out without throwing', () => {
     const source = createSurface(4, 4, 0xff0000ff);
     const out = makeOut(4, 4);
-    expect(() => applyPixelateFilterToSurface(out, region(source), { type: 'pixelate', blockSize: 2 })).not.toThrow();
+    expect(() =>
+      applyPixelateFilterToSurface(out, region(source), { kind: 'PixelateFilter', blockSize: 2 }),
+    ).not.toThrow();
   });
 });
 
@@ -215,7 +221,7 @@ describe('applySharpenFilterToSurface', () => {
     const out = makeOut(4, 4);
     const blurBuffer = makeOut(4, 4);
     expect(() =>
-      applySharpenFilterToSurface(out, blurBuffer, region(source), { type: 'sharpen', blurX: 0, blurY: 0 }),
+      applySharpenFilterToSurface(out, blurBuffer, region(source), { kind: 'SharpenFilter', blurX: 0, blurY: 0 }),
     ).not.toThrow();
   });
 });

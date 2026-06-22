@@ -11,7 +11,7 @@ import {
   createViewport,
 } from './viewport';
 
-const TestNodeKind: unique symbol = Symbol('TestNode');
+const TestNodeKind = 'TestNode';
 
 function makeNodeWithBounds(width: number, height: number) {
   const node = createNode(TestNodeKind);

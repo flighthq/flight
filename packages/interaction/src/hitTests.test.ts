@@ -188,7 +188,7 @@ describe('hitTestGraphPoint', () => {
   });
 
   it('uses a registered handler for a custom kind', () => {
-    const CustomKind = Symbol('CustomKind');
+    const CustomKind = 'CustomKind';
     registerHitTestPoint(CustomKind, () => true);
     const custom = createDisplayObjectGeneric(CustomKind);
 
@@ -198,7 +198,7 @@ describe('hitTestGraphPoint', () => {
 
 describe('registerHitTestPoint', () => {
   it('registers a handler that hitTestGraphPoint will use', () => {
-    const kind = Symbol('RegisterTest');
+    const kind = 'RegisterTest';
     registerHitTestPoint(kind, () => true);
     const node = createDisplayObjectGeneric(kind);
     expect(hitTestGraphPoint(node, 0, 0)).toBe(true);

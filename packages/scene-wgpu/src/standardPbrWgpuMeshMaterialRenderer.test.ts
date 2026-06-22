@@ -5,7 +5,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh';
 import type { Camera, Matrix3, Matrix4, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
 
 import { standardPbrWgpuMeshMaterialRenderer } from './standardPbrWgpuMeshMaterialRenderer';
-import { makeWgpuSceneState } from './webgpuSceneTestHelper';
+import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 
 function makeCamera(): Camera {
   return createCamera({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });

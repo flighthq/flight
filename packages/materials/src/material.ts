@@ -1,10 +1,10 @@
 import { createEntity } from '@flighthq/entity';
-import type { Material, UniformColorTransformMaterial } from '@flighthq/types';
+import type { Kind, Material, UniformColorTransformMaterial } from '@flighthq/types';
 import { UniformColorTransformMaterialKind } from '@flighthq/types';
 
 import { equalsColorTransform } from './colorTransform';
 
-export function createMaterial(kind: symbol): Material {
+export function createMaterial(kind: Kind): Material {
   return createEntity({ kind });
 }
 

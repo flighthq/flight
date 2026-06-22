@@ -1,5 +1,5 @@
 import { enableNodeSignals, getNodeSignals } from '@flighthq/node';
-import type { Material, Mesh, MeshGeometry, MeshRuntime, NodeSignals, SceneNode } from '@flighthq/types';
+import type { Kind, Material, Mesh, MeshGeometry, MeshRuntime, NodeSignals, SceneNode } from '@flighthq/types';
 import { MeshKind } from '@flighthq/types';
 
 import { createSceneNode, getSceneNodeRuntime } from './sceneNode';
@@ -15,7 +15,7 @@ export { MeshKind } from '@flighthq/types';
 export function createMesh(
   geometry: MeshGeometry,
   materials: (Material | null)[],
-  kind: symbol = MeshKind,
+  kind: Kind = MeshKind,
   obj?: Readonly<Partial<Pick<Mesh, 'enabled' | 'name'>>>,
 ): Mesh {
   const mesh = createSceneNode(kind, obj) as Mesh;

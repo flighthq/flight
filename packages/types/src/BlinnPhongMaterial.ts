@@ -15,4 +15,4 @@ export interface BlinnPhongMaterial extends SurfaceMaterial {
   specularMap: Texture | null;
 }
 
-export const BlinnPhongMaterialKind: unique symbol = Symbol('BlinnPhongMaterial');
+export const BlinnPhongMaterialKind = 'BlinnPhongMaterial';

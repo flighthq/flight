@@ -4,7 +4,7 @@ import { BlendMode } from '@flighthq/types';
 import { initAppearanceTrait } from './hasAppearance';
 import { createNode } from './node';
 
-const TestKind: unique symbol = Symbol('Test');
+const TestKind = 'Test';
 
 function makeTarget(): HasAppearance {
   const node = createNode(TestKind) as unknown as HasAppearance;

@@ -118,8 +118,8 @@ const configPressed = createParticleEmitterConfig({
 // Opt-in force pass: light air drag so sparks decelerate, plus gentle turbulence
 // so the trail shimmers instead of moving in clean arcs.
 const forces = [
-  { type: 'drag', strength: 0.9 },
-  { type: 'turbulence', strength: 90 * scale, scale: 0.01 },
+  { kind: 'DragForce', strength: 0.9 },
+  { kind: 'TurbulenceForce', strength: 90 * scale, scale: 0.01 },
 ] as const;
 
 const simState = createParticleEmitterState();

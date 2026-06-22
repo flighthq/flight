@@ -8,4 +8,4 @@ export interface UnlitMaterial extends SurfaceMaterial {
   baseColorMap: Texture | null;
 }
 
-export const UnlitMaterialKind: unique symbol = Symbol('UnlitMaterial');
+export const UnlitMaterialKind = 'UnlitMaterial';

@@ -253,4 +253,4 @@ function cloneAndInvalidateMatrix(matrix: Matrix | null): Matrix | null {
 
 type TestNode = Node<HasTransform2D> & HasTransform2D;
 
-const TestKind: unique symbol = Symbol('Test');
+const TestKind = 'Test';

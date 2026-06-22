@@ -1,5 +1,6 @@
 import type { BlendMode } from './BlendMode';
 import type { CanvasMaterialRenderer } from './CanvasMaterialRenderer';
+import type { Kind } from './Entity';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 
@@ -26,5 +27,5 @@ export interface CanvasRenderStateRuntime extends RenderStateRuntime {
   imageSmoothingQuality: ImageSmoothingQuality;
   // Per-material-kind canvas renderer registry. Absent (and tree-shaken) until a material renderer
   // is registered.
-  materialRendererMap?: Map<symbol, CanvasMaterialRenderer>;
+  materialRendererMap?: Map<Kind, CanvasMaterialRenderer>;
 }

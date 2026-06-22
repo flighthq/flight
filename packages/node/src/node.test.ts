@@ -194,7 +194,7 @@ describe('setNodeEnabled', () => {
   });
 });
 
-const NodeTestKind: unique symbol = Symbol('NodeTest');
+const NodeTestKind = 'NodeTest';
 
 interface NodeTest extends Node {
   data: NodeTestData;

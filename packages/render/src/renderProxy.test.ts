@@ -31,7 +31,7 @@ import {
 } from './renderProxy';
 import { createRenderState, getRenderStateRuntime } from './renderState';
 
-const DisplayObjectKind = Symbol('DisplayObject');
+const DisplayObjectKind = 'DisplayObject';
 
 function makeSource() {
   return { kind: DisplayObjectKind } as any;

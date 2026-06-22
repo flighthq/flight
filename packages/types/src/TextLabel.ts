@@ -28,4 +28,4 @@ export interface TextLabel extends DisplayObject {
   data: TextLabelData;
 }
 
-export const TextLabelKind: unique symbol = Symbol('TextLabel');
+export const TextLabelKind = 'TextLabel';

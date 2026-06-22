@@ -19,10 +19,10 @@ import {
   type RenderState,
 } from '@flighthq/types';
 
-import { updateRenderProxyAppearance } from './appearance';
-import { updateRenderProxyMaterial } from './material';
+import { updateRenderProxyAppearance } from './renderAppearance';
+import { updateRenderProxyMaterial } from './renderMaterial';
 import { getRenderStateRuntime } from './renderState';
-import { updateRenderProxy2DTransform } from './transform2d';
+import { updateRenderProxy2DTransform } from './renderTransform2d';
 
 type AdaptHook = (state: RenderState, source: Renderable, data: RenderProxy2D) => void;
 let _adaptHook: AdaptHook | null = null;

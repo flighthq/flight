@@ -1,4 +1,4 @@
-import type { Aabb } from './AABB';
+import type { Aabb } from './Aabb';
 import type { Entity, EntityRuntime } from './Entity';
 
 // Handedness is pinned across the 3D suite: right-handed coordinates, CCW front-face, and the

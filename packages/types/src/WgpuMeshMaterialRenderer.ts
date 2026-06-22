@@ -3,7 +3,7 @@ import type { Material } from './Material';
 import type { MeshGeometry } from './MeshGeometry';
 import type { SceneLightBlock } from './SceneLightBlock';
 import type { SceneRenderProxy } from './SceneRenderProxy';
-import type { WgpuRenderState } from './WebGPURenderState';
+import type { WgpuRenderState } from './WgpuRenderState';
 
 // Per-backend 3D draw behavior for a material kind on Wgpu, registered against the kind via
 // registerWgpuMeshMaterialRenderer. This is the scene (3D) analog of WgpuMaterialRenderer (the 2D
