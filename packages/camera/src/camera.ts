@@ -1,125 +1,87 @@
-import type { CameraBackend, CameraCaptureOptions, CameraPhoto, CameraVideo } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity';
+import { createMatrix4, createVector2, inverseMatrix4, multiplyMatrix4, setMatrix4LookAt } from '@flighthq/geometry';
+import type { Camera, Matrix4Like, Projection, Vector3Like } from '@flighthq/types';
 
-// Builds the default web backend over a transient <input type="file">. capture resolves to null when
-// the document is absent (jsdom), the user cancels, or the file cannot be read — capture is not
-// guaranteed. Real pixel dimensions are not decoded; width/height resolve to 0.
-export function createWebCameraBackend(): CameraBackend {
-  return {
-    capture(options) {
-      return new Promise((resolve) => {
-        if (typeof document === 'undefined' || typeof document.createElement !== 'function') {
-          resolve(null);
-          return;
-        }
-        try {
-          const input = document.createElement('input');
-          input.type = 'file';
-          input.accept = 'image/*';
-          if (options.source === 'camera') input.capture = 'environment';
-          input.onchange = () => {
-            const file = input.files?.[0] ?? null;
-            if (file === null) {
-              resolve(null);
-              return;
-            }
-            const reader = new FileReader();
-            reader.onload = () => {
-              resolve({
-                dataURL: typeof reader.result === 'string' ? reader.result : '',
-                width: 0,
-                height: 0,
-                format: file.type,
-              });
-            };
-            reader.onerror = () => resolve(null);
-            reader.readAsDataURL(file);
-          };
-          input.click();
-        } catch {
-          resolve(null);
-        }
-      });
-    },
-    captureVideo(options) {
-      return new Promise((resolve) => {
-        if (typeof document === 'undefined' || typeof document.createElement !== 'function') {
-          resolve(null);
-          return;
-        }
-        try {
-          const input = document.createElement('input');
-          input.type = 'file';
-          input.accept = 'video/*';
-          if (options.source === 'camera') input.capture = 'environment';
-          input.onchange = () => {
-            const file = input.files?.[0] ?? null;
-            if (file === null) {
-              resolve(null);
-              return;
-            }
-            const reader = new FileReader();
-            reader.onload = () => {
-              resolve({
-                dataURL: typeof reader.result === 'string' ? reader.result : '',
-                // The web file input cannot decode the clip; native hosts report a real duration.
-                duration: 0,
-                format: file.type,
-              });
-            };
-            reader.onerror = () => resolve(null);
-            reader.readAsDataURL(file);
-          };
-          input.click();
-        } catch {
-          resolve(null);
-        }
-      });
-    },
-    async requestPermission() {
-      // The Permissions API only reports state; it does not prompt. A native host performs a real
-      // permission request. Returns false when the API is absent (jsdom, older browsers) or denied.
-      if (typeof navigator === 'undefined') return false;
-      try {
-        const permissions = navigator.permissions;
-        if (permissions === undefined || typeof permissions.query !== 'function') return false;
-        const status = await permissions.query({ name: 'camera' as PermissionName });
-        return status.state === 'granted';
-      } catch {
-        return false;
-      }
-    },
-  };
+import { setProjectionMatrix4 } from './projection';
+
+// Allocates a 3D camera. The camera stores its projection descriptor, a world->view Matrix4
+// (`view`, initialized to identity), the clip-plane distances `near`/`far`, the per-frame
+// sub-pixel NDC `jitter` (consumed by TAA, initialized to zero), and a cached
+// `inverseViewProjection` (consumed by TAA / velocity / fog / depth-of-field, initialized to
+// identity). The view matrix is canonical: the camera has no separate Transform3D — a Matrix4 is
+// the only world->view representation.
+export function createCamera(opts: Readonly<CameraOptions>): Camera {
+  return createEntity({
+    far: opts.far,
+    inverseViewProjection: createMatrix4(),
+    jitter: createVector2(0, 0),
+    near: opts.near,
+    projection: opts.projection,
+    view: createMatrix4(),
+  });
 }
 
-// The active camera backend, or a lazily-created web default. There is always a backend.
-export function getCameraBackend(): CameraBackend {
-  if (_backend === null) _backend = createWebCameraBackend();
-  return _backend;
+// Writes the inverse of the camera's view-projection matrix into `out` and returns true, or
+// returns false (leaving `out` untouched) when the view-projection is non-invertible. `aspect`
+// is the viewport width / height. This is the matrix the existing TAA / velocity / fog /
+// depth-of-field effects consume to reconstruct world position from NDC.
+//
+// Reads camera fields into a scratch matrix before writing `out`, so it is safe even if `out`
+// aliases the camera's own `inverseViewProjection` or `view`.
+export function getCameraInverseViewProjectionMatrix4(
+  out: Matrix4Like,
+  camera: Readonly<Camera>,
+  aspect: number,
+): boolean {
+  getCameraViewProjectionMatrix4(__scratchViewProjection, camera, aspect);
+  return inverseMatrix4(out, __scratchViewProjection);
 }
 
-// Picks an existing image from the photo library. Resolves null when cancelled or unavailable.
-export function pickCameraImage(options?: Readonly<CameraCaptureOptions>): Promise<CameraPhoto | null> {
-  return getCameraBackend().capture({ ...options, source: 'photos' });
+// Writes the camera's view-projection matrix (projection × view) into `out`. `aspect` is the
+// viewport width / height, applied to a perspective projection. `near`/`far` are taken from the
+// camera.
+//
+// Reads camera fields into a scratch matrix before writing `out`, so it is safe even if `out`
+// aliases the camera's own `view`.
+export function getCameraViewProjectionMatrix4(out: Matrix4Like, camera: Readonly<Camera>, aspect: number): void {
+  setProjectionMatrix4(__scratchProjection, camera.projection, aspect, camera.near, camera.far);
+  multiplyMatrix4(out, __scratchProjection, camera.view);
 }
 
-// Records a video from the device camera. Resolves null when cancelled, denied, or unavailable.
-export function recordCameraVideo(options?: Readonly<CameraCaptureOptions>): Promise<CameraVideo | null> {
-  return getCameraBackend().captureVideo({ ...options, source: 'camera' });
+// Sets the camera's per-frame sub-pixel jitter offset (in NDC), in place. TAA reads this when
+// building the jittered projection matrix.
+export function setCameraJitter(camera: Camera, x: number, y: number): void {
+  camera.jitter.x = x;
+  camera.jitter.y = y;
 }
 
-// Requests camera access permission. Resolves false when denied or when the host cannot prompt.
-export function requestCameraPermission(): Promise<boolean> {
-  return getCameraBackend().requestPermission();
+// Builds the camera's world->view matrix in place from an eye position, a look-at target, and an
+// up vector (right-handed look-at). This is the common path for positioning a camera without an
+// explicit world transform.
+//
+// Reads all vector inputs before writing, so it is safe when the vectors alias one another.
+export function setCameraViewMatrix4FromLookAt(
+  camera: Camera,
+  eye: Readonly<Vector3Like>,
+  target: Readonly<Vector3Like>,
+  up: Readonly<Vector3Like>,
+): void {
+  setMatrix4LookAt(camera.view, eye, target, up);
 }
 
-// Installs a native host camera backend; pass null to fall back to the web default.
-export function setCameraBackend(backend: CameraBackend | null): void {
-  _backend = backend;
+// Copies a precomputed world->view matrix into the camera in place. Use this when the view matrix
+// is derived elsewhere (for example, the inverse of a scene node's world transform).
+export function setCameraViewMatrix4FromMatrix4(camera: Camera, view: Readonly<Matrix4Like>): void {
+  camera.view.m.set(view.m);
 }
 
-// Captures a photo from the device camera. Resolves null when cancelled, denied, or unavailable.
-export function takeCameraPhoto(options?: Readonly<CameraCaptureOptions>): Promise<CameraPhoto | null> {
-  return getCameraBackend().capture({ ...options, source: 'camera' });
+// Structural inputs for createCamera.
+export interface CameraOptions {
+  far: number;
+  near: number;
+  projection: Projection;
 }
 
-let _backend: CameraBackend | null = null;
+// Scratch matrices reused by the view-projection helpers. Single-threaded; not re-entrant.
+const __scratchProjection = createMatrix4();
+const __scratchViewProjection = createMatrix4();

@@ -1,103 +1,154 @@
-import type { CameraBackend, CameraCaptureOptions } from '@flighthq/types';
+import { createMatrix4, createVector3, inverseMatrix4, multiplyMatrix4, setMatrix4LookAt } from '@flighthq/geometry';
 
 import {
-  createWebCameraBackend,
-  getCameraBackend,
-  pickCameraImage,
-  recordCameraVideo,
-  requestCameraPermission,
-  setCameraBackend,
-  takeCameraPhoto,
+  createCamera,
+  getCameraInverseViewProjectionMatrix4,
+  getCameraViewProjectionMatrix4,
+  setCameraJitter,
+  setCameraViewMatrix4FromLookAt,
+  setCameraViewMatrix4FromMatrix4,
 } from './camera';
+import { createPerspectiveProjection, setProjectionMatrix4 } from './projection';
 
-function fakeBackend(): CameraBackend & { lastOptions: CameraCaptureOptions | null } {
-  return {
-    lastOptions: null,
-    async capture(options) {
-      this.lastOptions = { ...options };
-      return { dataURL: 'data:image/png;base64,xx', width: 0, height: 0, format: 'image/png' };
-    },
-    async captureVideo(options) {
-      this.lastOptions = { ...options };
-      return { dataURL: 'data:video/mp4;base64,xx', duration: 0, format: 'video/mp4' };
-    },
-    async requestPermission() {
-      return true;
-    },
-  };
-}
+describe('createCamera', () => {
+  it('stores projection, near, far and identity view/inverse with zero jitter', () => {
+    const projection = createPerspectiveProjection({ aspect: 1, fovY: 1 });
+    const camera = createCamera({ far: 100, near: 0.1, projection });
 
-afterEach(() => setCameraBackend(null));
-
-describe('createWebCameraBackend', () => {
-  it('returns a backend whose capture yields a Promise without throwing synchronously', () => {
-    const backend = createWebCameraBackend();
-    expect(backend.capture({}) instanceof Promise).toBe(true);
+    expect(camera.projection).toBe(projection);
+    expect(camera.near).toBe(0.1);
+    expect(camera.far).toBe(100);
+    expect(camera.jitter.x).toBe(0);
+    expect(camera.jitter.y).toBe(0);
+    expect(camera.view.m[0]).toBe(1);
+    expect(camera.view.m[5]).toBe(1);
+    expect(camera.inverseViewProjection.m[10]).toBe(1);
   });
 });
 
-describe('getCameraBackend', () => {
-  it('falls back to a web backend', () => {
-    expect(getCameraBackend()).not.toBeNull();
+describe('getCameraInverseViewProjectionMatrix4', () => {
+  it('writes the inverse of the view-projection into a distinct out', () => {
+    const projection = createPerspectiveProjection({ aspect: 1, fovY: 1 });
+    const camera = createCamera({ far: 100, near: 0.1, projection });
+    setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 5), createVector3(0, 0, 0), createVector3(0, 1, 0));
+
+    const viewProjection = createMatrix4();
+    getCameraViewProjectionMatrix4(viewProjection, camera, 1.5);
+
+    const expected = createMatrix4();
+    inverseMatrix4(expected, viewProjection);
+
+    const out = createMatrix4();
+    expect(getCameraInverseViewProjectionMatrix4(out, camera, 1.5)).toBe(true);
+    for (let i = 0; i < 16; i++) {
+      expect(out.m[i]).toBeCloseTo(expected.m[i]);
+    }
   });
 
-  it('returns the registered backend', () => {
-    const backend = fakeBackend();
-    setCameraBackend(backend);
-    expect(getCameraBackend()).toBe(backend);
-  });
-});
+  it('is safe when out aliases the camera inverseViewProjection', () => {
+    const projection = createPerspectiveProjection({ aspect: 1, fovY: 1 });
+    const camera = createCamera({ far: 100, near: 0.1, projection });
+    setCameraViewMatrix4FromLookAt(camera, createVector3(2, 1, 5), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
-describe('pickCameraImage', () => {
-  it('captures with the photos source', async () => {
-    const backend = fakeBackend();
-    setCameraBackend(backend);
-    const photo = await pickCameraImage({ quality: 0.5 });
-    expect(photo).not.toBeNull();
-    expect(backend.lastOptions).toEqual({ quality: 0.5, source: 'photos' });
-  });
-});
+    const viewProjection = createMatrix4();
+    getCameraViewProjectionMatrix4(viewProjection, camera, 1.3);
+    const expected = createMatrix4();
+    inverseMatrix4(expected, viewProjection);
 
-describe('recordCameraVideo', () => {
-  it('captures video with the camera source', async () => {
-    const backend = fakeBackend();
-    setCameraBackend(backend);
-    const video = await recordCameraVideo({ maxDurationMs: 5000 });
-    expect(video).not.toBeNull();
-    expect(backend.lastOptions).toEqual({ maxDurationMs: 5000, source: 'camera' });
-  });
-
-  it('returns a Promise from the web backend without throwing', () => {
-    const backend = createWebCameraBackend();
-    expect(backend.captureVideo({}) instanceof Promise).toBe(true);
-  });
-});
-
-describe('requestCameraPermission', () => {
-  it('delegates to the active backend', async () => {
-    setCameraBackend(fakeBackend());
-    expect(await requestCameraPermission()).toBe(true);
-  });
-
-  it('returns a boolean from the web backend without throwing', async () => {
-    expect(typeof (await requestCameraPermission())).toBe('boolean');
+    expect(getCameraInverseViewProjectionMatrix4(camera.inverseViewProjection, camera, 1.3)).toBe(true);
+    for (let i = 0; i < 16; i++) {
+      expect(camera.inverseViewProjection.m[i]).toBeCloseTo(expected.m[i]);
+    }
   });
 });
 
-describe('setCameraBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
-    setCameraBackend(fakeBackend());
-    setCameraBackend(null);
-    expect(getCameraBackend()).not.toBeNull();
+describe('getCameraViewProjectionMatrix4', () => {
+  it('writes projection times view into a distinct out', () => {
+    const projection = createPerspectiveProjection({ aspect: 1, fovY: 1 });
+    const camera = createCamera({ far: 100, near: 0.1, projection });
+    setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 5), createVector3(0, 0, 0), createVector3(0, 1, 0));
+
+    const out = createMatrix4();
+    getCameraViewProjectionMatrix4(out, camera, 2);
+
+    const projectionMatrix = createMatrix4();
+    setProjectionMatrix4(projectionMatrix, projection, 2, camera.near, camera.far);
+    const expected = createMatrix4();
+    multiplyMatrix4(expected, projectionMatrix, camera.view);
+
+    for (let i = 0; i < 16; i++) {
+      expect(out.m[i]).toBeCloseTo(expected.m[i]);
+    }
+  });
+
+  it('is safe when out aliases the camera view', () => {
+    const projection = createPerspectiveProjection({ aspect: 1, fovY: 1 });
+    const camera = createCamera({ far: 100, near: 0.1, projection });
+    setCameraViewMatrix4FromLookAt(camera, createVector3(1, 2, 4), createVector3(0, 0, 0), createVector3(0, 1, 0));
+
+    const projectionMatrix = createMatrix4();
+    setProjectionMatrix4(projectionMatrix, projection, 1.7, camera.near, camera.far);
+    const expected = createMatrix4();
+    multiplyMatrix4(expected, projectionMatrix, camera.view);
+
+    getCameraViewProjectionMatrix4(camera.view, camera, 1.7);
+    for (let i = 0; i < 16; i++) {
+      expect(camera.view.m[i]).toBeCloseTo(expected.m[i]);
+    }
   });
 });
 
-describe('takeCameraPhoto', () => {
-  it('captures with the camera source', async () => {
-    const backend = fakeBackend();
-    setCameraBackend(backend);
-    const photo = await takeCameraPhoto({ allowEditing: true });
-    expect(photo).not.toBeNull();
-    expect(backend.lastOptions).toEqual({ allowEditing: true, source: 'camera' });
+describe('setCameraJitter', () => {
+  it('sets the jitter offset in place', () => {
+    const camera = createCamera({
+      far: 100,
+      near: 0.1,
+      projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
+    });
+    const jitter = camera.jitter;
+    setCameraJitter(camera, 0.25, -0.5);
+    expect(camera.jitter).toBe(jitter);
+    expect(camera.jitter.x).toBe(0.25);
+    expect(camera.jitter.y).toBe(-0.5);
+  });
+});
+
+describe('setCameraViewMatrix4FromLookAt', () => {
+  it('builds the view matrix from eye-target-up', () => {
+    const camera = createCamera({
+      far: 100,
+      near: 0.1,
+      projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
+    });
+    const eye = createVector3(0, 0, 10);
+    const target = createVector3(0, 0, 0);
+    const up = createVector3(0, 1, 0);
+    setCameraViewMatrix4FromLookAt(camera, eye, target, up);
+
+    const expected = createMatrix4();
+    setMatrix4LookAt(expected, eye, target, up);
+    for (let i = 0; i < 16; i++) {
+      expect(camera.view.m[i]).toBeCloseTo(expected.m[i]);
+    }
+  });
+});
+
+describe('setCameraViewMatrix4FromMatrix4', () => {
+  it('copies a precomputed view matrix into the camera', () => {
+    const camera = createCamera({
+      far: 100,
+      near: 0.1,
+      projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
+    });
+    const view = createMatrix4();
+    setMatrix4LookAt(view, createVector3(3, 3, 3), createVector3(0, 0, 0), createVector3(0, 1, 0));
+
+    const target = camera.view;
+    setCameraViewMatrix4FromMatrix4(camera, view);
+    // Copied in place: the camera's own view matrix instance is retained.
+    expect(camera.view).toBe(target);
+    for (let i = 0; i < 16; i++) {
+      expect(camera.view.m[i]).toBeCloseTo(view.m[i]);
+    }
   });
 });
