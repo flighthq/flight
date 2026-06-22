@@ -1,5 +1,5 @@
 import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/text';
-import { getRichTextCharIndexAtPoint } from '@flighthq/text-layout';
+import { getRichTextCharIndexAtPoint } from '@flighthq/textlayout';
 import type { InputKeyboardData, RichText, RichTextRuntime, SelectableRichTextManager } from '@flighthq/types';
 import { KeyCode } from '@flighthq/types';
 

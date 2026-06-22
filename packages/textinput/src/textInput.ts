@@ -2,7 +2,7 @@ import { getRichTextRuntime } from '@flighthq/text';
 import type { RichText, RichTextRuntime, TextInputOptions, TextInputState } from '@flighthq/types';
 
 // The opt-in seam that turns a static RichText into an editable field. Importing it is what pulls
-// @flighthq/text-input into an app's bundle; a RichText that never calls enableTextInput stays free of
+// @flighthq/textinput into an app's bundle; a RichText that never calls enableTextInput stays free of
 // selection/caret/input code. The editing/manager functions in textInputEditing.ts and
 // textInputManager.ts read the input state through getTextInputState.
 

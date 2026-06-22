@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/text-input",
+  "name": "@flighthq/textinput",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -31,7 +31,7 @@
     "@flighthq/node": "*",
     "@flighthq/signals": "*",
     "@flighthq/text": "*",
-    "@flighthq/text-layout": "*",
+    "@flighthq/textlayout": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
