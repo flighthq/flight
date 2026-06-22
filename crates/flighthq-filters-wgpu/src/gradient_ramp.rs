@@ -62,7 +62,12 @@ pub fn create_wgpu_gradient_ramp_texture(
 /// a gradient ramp as raw bytes. Positions before the first ratio hold the first
 /// color; positions past the last ratio hold the last color; positions between
 /// adjacent ratios linearly interpolate RGB and alpha.
-pub fn build_gradient_ramp_data(out: &mut [u8; 1024], colors: &[u32], alphas: &[f32], ratios: &[u8]) {
+pub fn build_gradient_ramp_data(
+    out: &mut [u8; 1024],
+    colors: &[u32],
+    alphas: &[f32],
+    ratios: &[u8],
+) {
     out.fill(0);
     if colors.is_empty() {
         return;
@@ -99,7 +104,8 @@ pub fn build_gradient_ramp_data(out: &mut [u8; 1024], colors: &[u32], alphas: &[
                     r = lerp_channel((c0 >> 16) & 0xff, (c1 >> 16) & 0xff, blend);
                     g = lerp_channel((c0 >> 8) & 0xff, (c1 >> 8) & 0xff, blend);
                     b = lerp_channel(c0 & 0xff, c1 & 0xff, blend);
-                    a = (alphas[j] * 255.0 * (1.0 - blend) + alphas[j + 1] * 255.0 * blend).round() as u8;
+                    a = (alphas[j] * 255.0 * (1.0 - blend) + alphas[j + 1] * 255.0 * blend).round()
+                        as u8;
                     break;
                 }
             }

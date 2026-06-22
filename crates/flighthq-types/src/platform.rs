@@ -892,12 +892,13 @@ pub trait GeolocationBackend: Send + Sync {
 }
 
 // ---------------------------------------------------------------------------
-// Camera
+// Webcam (device photo/video capture seam — formerly `Camera`; the `Camera`
+// name now belongs to the 3D scene camera in `camera.rs`).
 // ---------------------------------------------------------------------------
 
 #[repr(u8)]
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
-pub enum CameraSource {
+pub enum WebcamSource {
     #[default]
     Camera,
     Photos,
@@ -905,15 +906,15 @@ pub enum CameraSource {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct CameraCaptureOptions {
-    pub source: CameraSource,
+pub struct WebcamCaptureOptions {
+    pub source: WebcamSource,
     pub quality: Option<f32>,
     pub allow_editing: bool,
     pub max_duration_ms: Option<u32>,
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct CameraPhoto {
+pub struct WebcamPhoto {
     pub data_url: String,
     pub width: u32,
     pub height: u32,
@@ -921,21 +922,21 @@ pub struct CameraPhoto {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct CameraVideo {
+pub struct WebcamVideo {
     pub data_url: String,
     pub duration: f64,
     pub format: String,
 }
 
-pub trait CameraBackend: Send + Sync {
+pub trait WebcamBackend: Send + Sync {
     fn capture(
         &self,
-        options: &CameraCaptureOptions,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Option<CameraPhoto>> + Send>>;
+        options: &WebcamCaptureOptions,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Option<WebcamPhoto>> + Send>>;
     fn capture_video(
         &self,
-        options: &CameraCaptureOptions,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Option<CameraVideo>> + Send>>;
+        options: &WebcamCaptureOptions,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Option<WebcamVideo>> + Send>>;
     fn request_permission(
         &self,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = bool> + Send>>;

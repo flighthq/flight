@@ -72,12 +72,7 @@ mod tests {
         }
     }
 
-    fn packed_after(
-        m: &mut TweenManager,
-        ptr: u64,
-        from: u32,
-        delta: f32,
-    ) -> u32 {
+    fn packed_after(m: &mut TweenManager, ptr: u64, from: u32, delta: f32) -> u32 {
         let mut first = true;
         let applied = update_tweens(m, delta, &mut |_, _| {
             if first {

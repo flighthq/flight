@@ -85,13 +85,21 @@ pub fn apply_box_blur_filter_to_gl(
         if radius_x > 0 {
             apply_box_blur_pass(state, program, read, write, radius_x as f32, 1.0, 0.0);
             read = write;
-            write = if std::ptr::eq(write, temp) { dest } else { temp };
+            write = if std::ptr::eq(write, temp) {
+                dest
+            } else {
+                temp
+            };
         }
         let radius_y = compute_box_blur_pass_radius(blur_y, passes, pass);
         if radius_y > 0 {
             apply_box_blur_pass(state, program, read, write, radius_y as f32, 0.0, 1.0);
             read = write;
-            write = if std::ptr::eq(write, temp) { dest } else { temp };
+            write = if std::ptr::eq(write, temp) {
+                dest
+            } else {
+                temp
+            };
         }
     }
 
@@ -114,8 +122,16 @@ pub fn apply_gaussian_blur_filter_to_gl(
     blur_x: f32,
     blur_y: f32,
 ) {
-    let radius_x = if blur_x > 0.0 { (blur_x * 3.0).ceil() as u32 } else { 0 };
-    let radius_y = if blur_y > 0.0 { (blur_y * 3.0).ceil() as u32 } else { 0 };
+    let radius_x = if blur_x > 0.0 {
+        (blur_x * 3.0).ceil() as u32
+    } else {
+        0
+    };
+    let radius_y = if blur_y > 0.0 {
+        (blur_y * 3.0).ceil() as u32
+    } else {
+        0
+    };
 
     if radius_x == 0 && radius_y == 0 {
         apply_gl_blit_pass(state, source, dest);
@@ -127,12 +143,34 @@ pub fn apply_gaussian_blur_filter_to_gl(
     let mut write: &GlRenderTarget = temp;
 
     if radius_x > 0 {
-        apply_gaussian_blur_pass(state, program, read, write, blur_x, radius_x as f32, 1.0, 0.0);
+        apply_gaussian_blur_pass(
+            state,
+            program,
+            read,
+            write,
+            blur_x,
+            radius_x as f32,
+            1.0,
+            0.0,
+        );
         read = write;
-        write = if std::ptr::eq(write, temp) { dest } else { temp };
+        write = if std::ptr::eq(write, temp) {
+            dest
+        } else {
+            temp
+        };
     }
     if radius_y > 0 {
-        apply_gaussian_blur_pass(state, program, read, write, blur_y, radius_y as f32, 0.0, 1.0);
+        apply_gaussian_blur_pass(
+            state,
+            program,
+            read,
+            write,
+            blur_y,
+            radius_y as f32,
+            0.0,
+            1.0,
+        );
         read = write;
     }
 
@@ -161,11 +199,21 @@ fn apply_box_blur_pass(
     dir_y: f32,
 ) {
     let (tx, ty) = (1.0 / source.width as f32, 1.0 / source.height as f32);
-    draw_gl_fullscreen_pass(state, program, &[source.texture], Some(dest), move |gl, p| unsafe {
-        gl.uniform_2_f32(gl.get_uniform_location(p, "u_texelSize").as_ref(), tx, ty);
-        gl.uniform_1_f32(gl.get_uniform_location(p, "u_radius").as_ref(), radius);
-        gl.uniform_2_f32(gl.get_uniform_location(p, "u_direction").as_ref(), dir_x, dir_y);
-    });
+    draw_gl_fullscreen_pass(
+        state,
+        program,
+        &[source.texture],
+        Some(dest),
+        move |gl, p| unsafe {
+            gl.uniform_2_f32(gl.get_uniform_location(p, "u_texelSize").as_ref(), tx, ty);
+            gl.uniform_1_f32(gl.get_uniform_location(p, "u_radius").as_ref(), radius);
+            gl.uniform_2_f32(
+                gl.get_uniform_location(p, "u_direction").as_ref(),
+                dir_x,
+                dir_y,
+            );
+        },
+    );
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -180,12 +228,22 @@ fn apply_gaussian_blur_pass(
     dir_y: f32,
 ) {
     let (tx, ty) = (1.0 / source.width as f32, 1.0 / source.height as f32);
-    draw_gl_fullscreen_pass(state, program, &[source.texture], Some(dest), move |gl, p| unsafe {
-        gl.uniform_2_f32(gl.get_uniform_location(p, "u_texelSize").as_ref(), tx, ty);
-        gl.uniform_1_f32(gl.get_uniform_location(p, "u_sigma").as_ref(), sigma);
-        gl.uniform_1_f32(gl.get_uniform_location(p, "u_radius").as_ref(), radius);
-        gl.uniform_2_f32(gl.get_uniform_location(p, "u_direction").as_ref(), dir_x, dir_y);
-    });
+    draw_gl_fullscreen_pass(
+        state,
+        program,
+        &[source.texture],
+        Some(dest),
+        move |gl, p| unsafe {
+            gl.uniform_2_f32(gl.get_uniform_location(p, "u_texelSize").as_ref(), tx, ty);
+            gl.uniform_1_f32(gl.get_uniform_location(p, "u_sigma").as_ref(), sigma);
+            gl.uniform_1_f32(gl.get_uniform_location(p, "u_radius").as_ref(), radius);
+            gl.uniform_2_f32(
+                gl.get_uniform_location(p, "u_direction").as_ref(),
+                dir_x,
+                dir_y,
+            );
+        },
+    );
 }
 
 #[cfg(test)]

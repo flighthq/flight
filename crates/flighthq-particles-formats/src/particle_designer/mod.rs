@@ -325,7 +325,11 @@ fn parse_plist_raw_dict(xml: &str) -> RawDict {
         } else {
             // Closing tag.
             if name == "key" && in_tag.as_deref() == Some("key") {
-                current_key = if text.is_empty() { None } else { Some(text.clone()) };
+                current_key = if text.is_empty() {
+                    None
+                } else {
+                    Some(text.clone())
+                };
                 in_tag = None;
             } else if let Some(key) = current_key.clone() {
                 if name == "integer" && in_tag.as_deref() == Some("integer") {
@@ -347,7 +351,10 @@ fn parse_plist_raw_dict(xml: &str) -> RawDict {
 
 fn parse_int(text: &str) -> f32 {
     // An empty or malformed tag yields NaN so `num` falls back to its default.
-    text.trim().parse::<i64>().map(|v| v as f32).unwrap_or(f32::NAN)
+    text.trim()
+        .parse::<i64>()
+        .map(|v| v as f32)
+        .unwrap_or(f32::NAN)
 }
 
 fn parse_real(text: &str) -> f32 {
@@ -363,7 +370,9 @@ fn unescape_xml(s: &str) -> String {
 }
 
 fn escape_xml(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
 }
 
 // ---------------------------------------------------------------------------
@@ -394,7 +403,11 @@ fn raw_dict_to_config(d: &RawDict, texture_size: f32) -> ParticleEmitterConfig {
     let rot_end_var = num(d, "rotationEndVariance", 0.0);
     // `|| 1` in the TS guards a zero midpoint; replicate by falling back to 1.
     let lifetime_mid_raw = lifespan + lifespan_var * 0.5;
-    let lifetime_mid = if lifetime_mid_raw == 0.0 { 1.0 } else { lifetime_mid_raw };
+    let lifetime_mid = if lifetime_mid_raw == 0.0 {
+        1.0
+    } else {
+        lifetime_mid_raw
+    };
     let rot_speed_mid = (rot_start + rot_end) * 0.5 * DEG2RAD / lifetime_mid;
     let rot_speed_var = rot_start_var.max(rot_end_var) * DEG2RAD / lifetime_mid;
 
@@ -414,12 +427,28 @@ fn raw_dict_to_config(d: &RawDict, texture_size: f32) -> ParticleEmitterConfig {
         gravity_x: num(d, "gravityx", 0.0),
         gravity_y: num(d, "gravityy", 0.0),
         emitter_shape,
-        emitter_radius: if emitter_shape == ParticleEmitterShape::Circle { vx } else { 0.0 },
-        emitter_width: if emitter_shape == ParticleEmitterShape::Rect { vx * 2.0 } else { 0.0 },
-        emitter_height: if emitter_shape == ParticleEmitterShape::Rect { vy * 2.0 } else { 0.0 },
+        emitter_radius: if emitter_shape == ParticleEmitterShape::Circle {
+            vx
+        } else {
+            0.0
+        },
+        emitter_width: if emitter_shape == ParticleEmitterShape::Rect {
+            vx * 2.0
+        } else {
+            0.0
+        },
+        emitter_height: if emitter_shape == ParticleEmitterShape::Rect {
+            vy * 2.0
+        } else {
+            0.0
+        },
         scale_min: (start_size - start_var).max(0.0),
         scale_max: start_size + start_var,
-        scale_end: if start_size > 0.0 { finish_size / start_size } else { 1.0 },
+        scale_end: if start_size > 0.0 {
+            finish_size / start_size
+        } else {
+            1.0
+        },
         color_start_r: num(d, "startColorRed", 1.0),
         color_start_g: num(d, "startColorGreen", 1.0),
         color_start_b: num(d, "startColorBlue", 1.0),
@@ -468,7 +497,8 @@ fn collect_particle_designer_warnings(d: &RawDict) -> Vec<String> {
     if num(d, "radialAcceleration", 0.0) != 0.0 || num(d, "radialAccelVariance", 0.0) != 0.0 {
         warnings.push("radialAcceleration is not supported and was ignored".to_string());
     }
-    if num(d, "tangentialAcceleration", 0.0) != 0.0 || num(d, "tangentialAccelVariance", 0.0) != 0.0 {
+    if num(d, "tangentialAcceleration", 0.0) != 0.0 || num(d, "tangentialAccelVariance", 0.0) != 0.0
+    {
         warnings.push("tangentialAcceleration is not supported and was ignored".to_string());
     }
     warnings
@@ -536,7 +566,9 @@ fn config_to_document(
         start_particle_size: start_size,
         start_particle_size_variance: start_var,
         finish_particle_size: finish_size,
-        finish_particle_size_variance: existing.map(|e| e.finish_particle_size_variance).unwrap_or(0.0),
+        finish_particle_size_variance: existing
+            .map(|e| e.finish_particle_size_variance)
+            .unwrap_or(0.0),
         start_color_red: config.color_start_r,
         start_color_green: config.color_start_g,
         start_color_blue: config.color_start_b,
@@ -547,13 +579,17 @@ fn config_to_document(
         ),
         start_color_variance_green: pick_var(
             config.color_start_variance_g,
-            existing.map(|e| e.start_color_variance_green).unwrap_or(0.0),
+            existing
+                .map(|e| e.start_color_variance_green)
+                .unwrap_or(0.0),
         ),
         start_color_variance_blue: pick_var(
             config.color_start_variance_b,
             existing.map(|e| e.start_color_variance_blue).unwrap_or(0.0),
         ),
-        start_color_variance_alpha: existing.map(|e| e.start_color_variance_alpha).unwrap_or(0.0),
+        start_color_variance_alpha: existing
+            .map(|e| e.start_color_variance_alpha)
+            .unwrap_or(0.0),
         finish_color_red: config.color_end_r,
         finish_color_green: config.color_end_g,
         finish_color_blue: config.color_end_b,
@@ -564,13 +600,19 @@ fn config_to_document(
         ),
         finish_color_variance_green: pick_var(
             config.color_end_variance_g,
-            existing.map(|e| e.finish_color_variance_green).unwrap_or(0.0),
+            existing
+                .map(|e| e.finish_color_variance_green)
+                .unwrap_or(0.0),
         ),
         finish_color_variance_blue: pick_var(
             config.color_end_variance_b,
-            existing.map(|e| e.finish_color_variance_blue).unwrap_or(0.0),
+            existing
+                .map(|e| e.finish_color_variance_blue)
+                .unwrap_or(0.0),
         ),
-        finish_color_variance_alpha: existing.map(|e| e.finish_color_variance_alpha).unwrap_or(0.0),
+        finish_color_variance_alpha: existing
+            .map(|e| e.finish_color_variance_alpha)
+            .unwrap_or(0.0),
         rotation_start: rot_start,
         rotation_start_variance: rot_var,
         rotation_end: rot_start,
@@ -580,7 +622,9 @@ fn config_to_document(
         min_radius: existing.map(|e| e.min_radius).unwrap_or(0.0),
         min_radius_variance: existing.map(|e| e.min_radius_variance).unwrap_or(0.0),
         rotate_per_second: existing.map(|e| e.rotate_per_second).unwrap_or(0.0),
-        rotate_per_second_variance: existing.map(|e| e.rotate_per_second_variance).unwrap_or(0.0),
+        rotate_per_second_variance: existing
+            .map(|e| e.rotate_per_second_variance)
+            .unwrap_or(0.0),
         blend_func_source: blend_mode_to_src(
             config.blend_mode,
             existing.map(|e| e.blend_func_source).unwrap_or(770),
@@ -589,7 +633,9 @@ fn config_to_document(
             config.blend_mode,
             existing.map(|e| e.blend_func_destination).unwrap_or(771),
         ),
-        texture_file_name: existing.map(|e| e.texture_file_name.clone()).unwrap_or_default(),
+        texture_file_name: existing
+            .map(|e| e.texture_file_name.clone())
+            .unwrap_or_default(),
     }
 }
 
@@ -603,7 +649,7 @@ fn blend_mode_to_src(mode: Option<ParticleBlendMode>, fallback: u32) -> u32 {
 
 fn blend_mode_to_dst(mode: Option<ParticleBlendMode>, fallback: u32) -> u32 {
     match mode {
-        Some(ParticleBlendMode::Add) => 1, // GL_ONE
+        Some(ParticleBlendMode::Add) => 1,      // GL_ONE
         Some(ParticleBlendMode::Normal) => 771, // GL_ONE_MINUS_SRC_ALPHA
         _ => fallback,
     }
@@ -639,37 +685,93 @@ fn document_to_plist(doc: &ParticleDesignerDocument) -> String {
     push_int(&mut lines, "emitterType", doc.emitter_type as u32);
     push_num(&mut lines, "duration", doc.duration);
     push_num(&mut lines, "particleLifespan", doc.particle_lifespan);
-    push_num(&mut lines, "particleLifespanVariance", doc.particle_lifespan_variance);
+    push_num(
+        &mut lines,
+        "particleLifespanVariance",
+        doc.particle_lifespan_variance,
+    );
     push_num(&mut lines, "speed", doc.speed);
     push_num(&mut lines, "speedVariance", doc.speed_variance);
     push_num(&mut lines, "angle", doc.angle);
     push_num(&mut lines, "angleVariance", doc.angle_variance);
     push_num(&mut lines, "gravityx", doc.gravityx);
     push_num(&mut lines, "gravityy", doc.gravityy);
-    push_num(&mut lines, "sourcePositionVariancex", doc.source_position_variance_x);
-    push_num(&mut lines, "sourcePositionVariancey", doc.source_position_variance_y);
+    push_num(
+        &mut lines,
+        "sourcePositionVariancex",
+        doc.source_position_variance_x,
+    );
+    push_num(
+        &mut lines,
+        "sourcePositionVariancey",
+        doc.source_position_variance_y,
+    );
     push_num(&mut lines, "startParticleSize", doc.start_particle_size);
-    push_num(&mut lines, "startParticleSizeVariance", doc.start_particle_size_variance);
+    push_num(
+        &mut lines,
+        "startParticleSizeVariance",
+        doc.start_particle_size_variance,
+    );
     push_num(&mut lines, "finishParticleSize", doc.finish_particle_size);
-    push_num(&mut lines, "finishParticleSizeVariance", doc.finish_particle_size_variance);
+    push_num(
+        &mut lines,
+        "finishParticleSizeVariance",
+        doc.finish_particle_size_variance,
+    );
     push_num(&mut lines, "startColorRed", doc.start_color_red);
     push_num(&mut lines, "startColorGreen", doc.start_color_green);
     push_num(&mut lines, "startColorBlue", doc.start_color_blue);
     push_num(&mut lines, "startColorAlpha", doc.start_color_alpha);
-    push_num(&mut lines, "startColorVarianceRed", doc.start_color_variance_red);
-    push_num(&mut lines, "startColorVarianceGreen", doc.start_color_variance_green);
-    push_num(&mut lines, "startColorVarianceBlue", doc.start_color_variance_blue);
-    push_num(&mut lines, "startColorVarianceAlpha", doc.start_color_variance_alpha);
+    push_num(
+        &mut lines,
+        "startColorVarianceRed",
+        doc.start_color_variance_red,
+    );
+    push_num(
+        &mut lines,
+        "startColorVarianceGreen",
+        doc.start_color_variance_green,
+    );
+    push_num(
+        &mut lines,
+        "startColorVarianceBlue",
+        doc.start_color_variance_blue,
+    );
+    push_num(
+        &mut lines,
+        "startColorVarianceAlpha",
+        doc.start_color_variance_alpha,
+    );
     push_num(&mut lines, "finishColorRed", doc.finish_color_red);
     push_num(&mut lines, "finishColorGreen", doc.finish_color_green);
     push_num(&mut lines, "finishColorBlue", doc.finish_color_blue);
     push_num(&mut lines, "finishColorAlpha", doc.finish_color_alpha);
-    push_num(&mut lines, "finishColorVarianceRed", doc.finish_color_variance_red);
-    push_num(&mut lines, "finishColorVarianceGreen", doc.finish_color_variance_green);
-    push_num(&mut lines, "finishColorVarianceBlue", doc.finish_color_variance_blue);
-    push_num(&mut lines, "finishColorVarianceAlpha", doc.finish_color_variance_alpha);
+    push_num(
+        &mut lines,
+        "finishColorVarianceRed",
+        doc.finish_color_variance_red,
+    );
+    push_num(
+        &mut lines,
+        "finishColorVarianceGreen",
+        doc.finish_color_variance_green,
+    );
+    push_num(
+        &mut lines,
+        "finishColorVarianceBlue",
+        doc.finish_color_variance_blue,
+    );
+    push_num(
+        &mut lines,
+        "finishColorVarianceAlpha",
+        doc.finish_color_variance_alpha,
+    );
     push_num(&mut lines, "rotationStart", doc.rotation_start);
-    push_num(&mut lines, "rotationStartVariance", doc.rotation_start_variance);
+    push_num(
+        &mut lines,
+        "rotationStartVariance",
+        doc.rotation_start_variance,
+    );
     push_num(&mut lines, "rotationEnd", doc.rotation_end);
     push_num(&mut lines, "rotationEndVariance", doc.rotation_end_variance);
     push_num(&mut lines, "maxRadius", doc.max_radius);
@@ -677,9 +779,17 @@ fn document_to_plist(doc: &ParticleDesignerDocument) -> String {
     push_num(&mut lines, "minRadius", doc.min_radius);
     push_num(&mut lines, "minRadiusVariance", doc.min_radius_variance);
     push_num(&mut lines, "rotatePerSecond", doc.rotate_per_second);
-    push_num(&mut lines, "rotatePerSecondVariance", doc.rotate_per_second_variance);
+    push_num(
+        &mut lines,
+        "rotatePerSecondVariance",
+        doc.rotate_per_second_variance,
+    );
     push_int(&mut lines, "blendFuncSource", doc.blend_func_source);
-    push_int(&mut lines, "blendFuncDestination", doc.blend_func_destination);
+    push_int(
+        &mut lines,
+        "blendFuncDestination",
+        doc.blend_func_destination,
+    );
     push_str(&mut lines, "textureFileName", &doc.texture_file_name);
 
     lines.push("</dict>".to_string());
@@ -810,7 +920,9 @@ mod tests {
 
     #[test]
     fn parse_particle_designer_plist_normalises_scale_by_texture_size() {
-        let opts = ParticleDesignerParseOptions { texture_size: Some(32.0) };
+        let opts = ParticleDesignerParseOptions {
+            texture_size: Some(32.0),
+        };
         let c = parse_particle_designer_plist(FIRE_PLIST, Some(&opts));
         assert!(close(c.scale_min, 0.75, 1e-4));
         assert!(close(c.scale_max, 1.25, 1e-4));
@@ -823,7 +935,10 @@ mod tests {
         assert!(c.loop_);
         assert_eq!(c.duration, 0.0);
 
-        let plist = FIRE_PLIST.replace("<key>duration</key><real>-1</real>", "<key>duration</key><real>2.5</real>");
+        let plist = FIRE_PLIST.replace(
+            "<key>duration</key><real>-1</real>",
+            "<key>duration</key><real>2.5</real>",
+        );
         let c2 = parse_particle_designer_plist(&plist, None);
         assert!(!c2.loop_);
         assert!(close(c2.duration, 2.5, 1e-4));
@@ -855,7 +970,9 @@ mod tests {
 
     #[test]
     fn parse_particle_designer_plist_document_round_trips() {
-        let opts = ParticleDesignerParseOptions { texture_size: Some(32.0) };
+        let opts = ParticleDesignerParseOptions {
+            texture_size: Some(32.0),
+        };
         let config = parse_particle_designer_plist(FIRE_PLIST, Some(&opts));
         let parsed = parse_particle_designer_plist_document(FIRE_PLIST, Some(&opts));
         assert_eq!(parsed.config.max_particles, config.max_particles);
@@ -870,7 +987,11 @@ mod tests {
 
     #[test]
     fn parse_particle_designer_plist_no_warnings_for_gravity() {
-        assert!(parse_particle_designer_plist_document(FIRE_PLIST, None).warnings.is_empty());
+        assert!(
+            parse_particle_designer_plist_document(FIRE_PLIST, None)
+                .warnings
+                .is_empty()
+        );
     }
 
     #[test]
@@ -897,8 +1018,12 @@ mod tests {
 
     #[test]
     fn serialize_particle_designer_plist_round_trips_fields() {
-        let opts = ParticleDesignerParseOptions { texture_size: Some(32.0) };
-        let ser_opts = ParticleDesignerSerializeOptions { texture_size: Some(32.0) };
+        let opts = ParticleDesignerParseOptions {
+            texture_size: Some(32.0),
+        };
+        let ser_opts = ParticleDesignerSerializeOptions {
+            texture_size: Some(32.0),
+        };
         let config = parse_particle_designer_plist(FIRE_PLIST, Some(&opts));
         let document = parse_particle_designer_plist_document(FIRE_PLIST, Some(&opts)).document;
         let xml = serialize_particle_designer_plist(&config, Some(&document), Some(&ser_opts));
@@ -937,7 +1062,9 @@ mod tests {
         assert!(!xml.contains("a&b<c>"));
         assert!(xml.contains("&amp;"));
         assert_eq!(
-            parse_particle_designer_plist_document(&xml, None).document.texture_file_name,
+            parse_particle_designer_plist_document(&xml, None)
+                .document
+                .texture_file_name,
             "a&b<c>.png"
         );
     }

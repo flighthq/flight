@@ -237,7 +237,10 @@ pub fn init_transform2d_runtime_trait(target: &mut Transform2DRuntimeTrait) {
 }
 
 /// Writes the 2D transform defaults into `target`, applying supplied overrides.
-pub fn init_transform2d_trait(target: &mut Transform2DTrait, obj: Option<&Transform2DTraitOptions>) {
+pub fn init_transform2d_trait(
+    target: &mut Transform2DTrait,
+    obj: Option<&Transform2DTraitOptions>,
+) {
     target.pivot_x = obj.and_then(|o| o.pivot_x).unwrap_or(0.0);
     target.pivot_y = obj.and_then(|o| o.pivot_y).unwrap_or(0.0);
     target.rotation = obj.and_then(|o| o.rotation).unwrap_or(0.0);
@@ -283,7 +286,10 @@ pub fn init_transform3d_runtime_trait(target: &mut Transform3DRuntimeTrait) {
 }
 
 /// Sets `local_matrix` to a fresh identity by default, or to a supplied matrix.
-pub fn init_transform3d_trait(target: &mut Transform3DTrait, obj: Option<&Transform3DTraitOptions>) {
+pub fn init_transform3d_trait(
+    target: &mut Transform3DTrait,
+    obj: Option<&Transform3DTraitOptions>,
+) {
     target.local_matrix = match obj.and_then(|o| o.local_matrix.clone()) {
         Some(m) => m,
         None => create_matrix4_identity(),

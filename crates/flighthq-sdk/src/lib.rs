@@ -31,15 +31,26 @@ pub use flighthq_clip::*;
 pub use flighthq_displayobject::*;
 pub use flighthq_node::*;
 pub use flighthq_path::*;
+pub use flighthq_scene::*;
 pub use flighthq_shape::*;
 pub use flighthq_sprite::*;
 pub use flighthq_velocity::*;
-pub use flighthq_world::*;
 
-// Rendering: registration/pipeline and concrete backends.
+// 3D pipeline: mesh/light/texture/camera value crates.
+pub use flighthq_camera::*;
+pub use flighthq_lighting::*;
+pub use flighthq_mesh::*;
+pub use flighthq_texture::*;
+
+// Rendering: registration/pipeline, backend cores, and per-subject leaves.
+pub use flighthq_displayobject_gl::*;
+pub use flighthq_displayobject_skia::*;
+pub use flighthq_displayobject_wgpu::*;
 pub use flighthq_render::*;
 pub use flighthq_render_gl::*;
 pub use flighthq_render_wgpu::*;
+pub use flighthq_scene_gl::*;
+pub use flighthq_scene_wgpu::*;
 
 // Filters and effects: descriptors plus per-backend implementations.
 pub use flighthq_effects::*;
@@ -85,6 +96,8 @@ pub use flighthq_clipboard::*;
 pub use flighthq_device::*;
 pub use flighthq_dialog::*;
 pub use flighthq_filesystem::*;
+pub use flighthq_geolocation::*;
+pub use flighthq_haptics::*;
 pub use flighthq_keyboard::*;
 pub use flighthq_lifecycle::*;
 pub use flighthq_menu::*;
@@ -94,10 +107,13 @@ pub use flighthq_platform::*;
 pub use flighthq_power::*;
 pub use flighthq_screen::*;
 pub use flighthq_sensors::*;
+pub use flighthq_share::*;
 pub use flighthq_shell::*;
 pub use flighthq_shortcut::*;
+pub use flighthq_statusbar::*;
 pub use flighthq_storage::*;
 pub use flighthq_tray::*;
+pub use flighthq_webcam::*;
 
 // Application/process layer: host shell integration beyond a single window.
 pub use flighthq_app::*;

@@ -13,14 +13,14 @@ pub mod video_channel;
 
 // audio_channel
 pub use audio_channel::{
-    complete_audio_channel, get_audio_channel_current_time, pause_audio_channel,
+    AudioBackend, complete_audio_channel, get_audio_channel_current_time, pause_audio_channel,
     play_audio_resource, resume_audio_channel, set_audio_backend, set_audio_channel_current_time,
-    set_audio_channel_gain, set_audio_channel_playback_rate, stop_audio_channel, AudioBackend,
+    set_audio_channel_gain, set_audio_channel_playback_rate, stop_audio_channel,
 };
 
 // video_channel
 pub use video_channel::{
-    complete_video_channel, get_video_channel_current_time, pause_video_channel,
+    VideoBackend, complete_video_channel, get_video_channel_current_time, pause_video_channel,
     play_video_resource, resume_video_channel, set_video_backend, set_video_channel_current_time,
-    set_video_channel_gain, set_video_channel_playback_rate, stop_video_channel, VideoBackend,
+    set_video_channel_gain, set_video_channel_playback_rate, stop_video_channel,
 };

@@ -59,6 +59,21 @@ pub struct Vector4Like {
 }
 
 // ---------------------------------------------------------------------------
+// Aabb (axis-aligned bounding box, 3D)
+// ---------------------------------------------------------------------------
+
+/// Axis-aligned 3D bounding box, defined by its `min` and `max` corners in a
+/// single coordinate space (local-space for `MeshGeometry::bounds`). A box with
+/// `min` greater than `max` on any axis is considered empty.
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
+pub struct Aabb {
+    pub min: Vector3,
+    pub max: Vector3,
+}
+
+impl Entity for Aabb {}
+
+// ---------------------------------------------------------------------------
 // Rectangle
 // ---------------------------------------------------------------------------
 

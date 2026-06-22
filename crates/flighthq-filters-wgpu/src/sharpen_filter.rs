@@ -53,16 +53,38 @@ pub fn apply_sharpen_filter_to_wgpu(
 
     let [blurred, blur_temp] = *scratch;
 
-    apply_box_blur_filter_to_wgpu(state, filter_state, source, blurred, blur_temp, blur_x, blur_y, quality);
+    apply_box_blur_filter_to_wgpu(
+        state,
+        filter_state,
+        source,
+        blurred,
+        blur_temp,
+        blur_x,
+        blur_y,
+        quality,
+    );
 
     if filter_state.sharpen_pipeline.is_none() {
-        let p = create_wgpu_dual_source_pipeline(state, filter_state, SHARPEN_WGSL, WgpuBlendMode::Replace);
+        let p = create_wgpu_dual_source_pipeline(
+            state,
+            filter_state,
+            SHARPEN_WGSL,
+            WgpuBlendMode::Replace,
+        );
         filter_state.sharpen_pipeline = Some(p);
     }
     let mut pipeline = filter_state.sharpen_pipeline.take().unwrap();
-    draw_wgpu_dual_source_pass(state, filter_state, source, blurred, Some(dest), &mut pipeline, |u| {
-        u.set_f32(0, amount);
-    });
+    draw_wgpu_dual_source_pass(
+        state,
+        filter_state,
+        source,
+        blurred,
+        Some(dest),
+        &mut pipeline,
+        |u| {
+            u.set_f32(0, amount);
+        },
+    );
     filter_state.sharpen_pipeline = Some(pipeline);
 }
 

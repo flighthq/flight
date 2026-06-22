@@ -304,7 +304,13 @@ mod tests {
             z: 3.0,
         };
         let mut global = Vector3Like::default();
-        convert_node_vector3_local_to_global(&mut global, &mut t_arena, &h_arena, node_t, &original);
+        convert_node_vector3_local_to_global(
+            &mut global,
+            &mut t_arena,
+            &h_arena,
+            node_t,
+            &original,
+        );
         let mut back = Vector3Like::default();
         convert_node_vector3_global_to_local(&mut back, &mut t_arena, &h_arena, node_t, &global);
         assert!((back.x - original.x).abs() < 1e-3, "x={}", back.x);

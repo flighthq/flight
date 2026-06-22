@@ -6,8 +6,7 @@
 //! slots for new spawns without allocating.
 
 use flighthq_types::{
-    ParticleEmitterConfig, ParticleEmitterShape, ParticleObjectsState,
-    ParticleObjectsUpdateOptions,
+    ParticleEmitterConfig, ParticleEmitterShape, ParticleObjectsState, ParticleObjectsUpdateOptions,
 };
 
 use crate::curve::sample_particle_curve;
@@ -186,8 +185,8 @@ pub fn update_particle_objects<T: ParticleObject>(
             state.lifetimes[lt] = 0.0;
             state.lifetimes[lt + 1] = lifetime;
 
-            let angle = base_angle
-                + (next_random(&mut state.random_state) - 0.5) * 2.0 * config.spread;
+            let angle =
+                base_angle + (next_random(&mut state.random_state) - 0.5) * 2.0 * config.spread;
             let speed = config.speed_min
                 + next_random(&mut state.random_state) * (config.speed_max - config.speed_min);
             let vt = i * 2;
@@ -266,8 +265,8 @@ pub fn update_particle_objects<T: ParticleObject>(
 mod tests {
     use super::*;
     use crate::state::{create_particle_emitter_config, create_particle_objects_state};
-    use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicU32, Ordering};
 
     #[derive(Default, Clone)]
     struct TestObject {

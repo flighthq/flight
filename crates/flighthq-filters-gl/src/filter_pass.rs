@@ -70,7 +70,10 @@ pub fn clear_gl_render_target(state: &GlRenderState, target: &GlRenderTarget) {
 /// # Panics
 /// Panics if shader compilation or program linking fails — a build-time
 /// programmer error in the shader source, not a recoverable runtime condition.
-pub fn compile_gl_fullscreen_program(gl: &glow::Context, fragment_src: &str) -> GlFullscreenProgram {
+pub fn compile_gl_fullscreen_program(
+    gl: &glow::Context,
+    fragment_src: &str,
+) -> GlFullscreenProgram {
     unsafe {
         let vs = compile_shader(gl, glow::VERTEX_SHADER, FULLSCREEN_VERTEX_SRC);
         let fs = compile_shader(gl, glow::FRAGMENT_SHADER, fragment_src);
@@ -257,7 +260,10 @@ pub fn get_gl_filter_program<'a>(
         let programs = cache.entry(key).or_default();
         let slot = select(programs);
         if slot.is_none() {
-            *slot = Some(Box::new(compile_gl_fullscreen_program(&state.gl, fragment_src)));
+            *slot = Some(Box::new(compile_gl_fullscreen_program(
+                &state.gl,
+                fragment_src,
+            )));
         }
         slot.as_deref().expect("just compiled") as *const GlFullscreenProgram
     });

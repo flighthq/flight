@@ -70,13 +70,7 @@ pub fn apply_particle_object_forces<T: ParticleObject>(
     }
 }
 
-fn accumulate_forces(
-    forces: &[ParticleForce],
-    px: f32,
-    py: f32,
-    vx: f32,
-    vy: f32,
-) -> (f32, f32) {
+fn accumulate_forces(forces: &[ParticleForce], px: f32, py: f32, vx: f32, vy: f32) -> (f32, f32) {
     let mut ax = 0.0;
     let mut ay = 0.0;
     for force in forces {

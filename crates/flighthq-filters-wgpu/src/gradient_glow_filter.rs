@@ -51,7 +51,15 @@ pub fn apply_gradient_glow_filter_to_wgpu(
 
     let [s0, s1, s2] = *scratch;
 
-    apply_wgpu_tint_pass(state, filter_state, source, s0, 0xffffff, 1.0, strength.min(1.0));
+    apply_wgpu_tint_pass(
+        state,
+        filter_state,
+        source,
+        s0,
+        0xffffff,
+        1.0,
+        strength.min(1.0),
+    );
     apply_box_blur_filter_to_wgpu(
         state,
         filter_state,
@@ -63,17 +71,33 @@ pub fn apply_gradient_glow_filter_to_wgpu(
         quality,
     );
 
-    let ratios: Vec<u8> = filter.ratios.iter().map(|&r| r.round().clamp(0.0, 255.0) as u8).collect();
+    let ratios: Vec<u8> = filter
+        .ratios
+        .iter()
+        .map(|&r| r.round().clamp(0.0, 255.0) as u8)
+        .collect();
     let ramp = create_wgpu_gradient_ramp_texture(state, &filter.colors, &filter.alphas, &ratios);
     let ramp_view = ramp.create_view(&wgpu::TextureViewDescriptor::default());
 
     if filter_state.gradient_lookup_pipeline.is_none() {
-        let p = create_wgpu_dual_source_pipeline(state, filter_state, GRADIENT_LOOKUP_WGSL, WgpuBlendMode::Premul);
+        let p = create_wgpu_dual_source_pipeline(
+            state,
+            filter_state,
+            GRADIENT_LOOKUP_WGSL,
+            WgpuBlendMode::Premul,
+        );
         filter_state.gradient_lookup_pipeline = Some(p);
     }
     let mut pipeline = filter_state.gradient_lookup_pipeline.take().unwrap();
     // blurred alpha (group 1) + gradient ramp (group 2) -> gradient glow into s0.
-    draw_wgpu_views_pass(state, filter_state, &[&s1.view, &ramp_view], Some(s0), &mut pipeline, |_| {});
+    draw_wgpu_views_pass(
+        state,
+        filter_state,
+        &[&s1.view, &ramp_view],
+        Some(s0),
+        &mut pipeline,
+        |_| {},
+    );
     filter_state.gradient_lookup_pipeline = Some(pipeline);
 
     // Destroy before submit (deferred by wgpu until the encoder's work completes).
@@ -92,7 +116,13 @@ mod tests {
 
     #[test]
     fn gradient_lookup_wgsl_indexes_ramp_by_blurred_alpha() {
-        assert!(GRADIENT_LOOKUP_WGSL.contains("let alpha = textureSampleLevel(texBlurred, smp, uv, 0.0).a"));
-        assert!(GRADIENT_LOOKUP_WGSL.contains("textureSampleLevel(texRamp, smp2, vec2f(alpha, 0.5), 0.0)"));
+        assert!(
+            GRADIENT_LOOKUP_WGSL
+                .contains("let alpha = textureSampleLevel(texBlurred, smp, uv, 0.0).a")
+        );
+        assert!(
+            GRADIENT_LOOKUP_WGSL
+                .contains("textureSampleLevel(texRamp, smp2, vec2f(alpha, 0.5), 0.0)")
+        );
     }
 }

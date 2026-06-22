@@ -278,7 +278,9 @@ pub fn parse_unity_particle(
     json: &str,
     options: Option<&UnityParseOptions>,
 ) -> Result<ParticleEmitterConfig, String> {
-    let ppu = options.and_then(|o| o.pixels_per_unit).unwrap_or(DEFAULT_PPU);
+    let ppu = options
+        .and_then(|o| o.pixels_per_unit)
+        .unwrap_or(DEFAULT_PPU);
     Ok(raw_to_config(&parse_unity_json(json)?, ppu))
 }
 
@@ -290,7 +292,9 @@ pub fn parse_unity_particle_document(
     json: &str,
     options: Option<&UnityParseOptions>,
 ) -> Result<UnityParsed, String> {
-    let ppu = options.and_then(|o| o.pixels_per_unit).unwrap_or(DEFAULT_PPU);
+    let ppu = options
+        .and_then(|o| o.pixels_per_unit)
+        .unwrap_or(DEFAULT_PPU);
     let raw = parse_unity_json(json)?;
     Ok(UnityParsed {
         config: raw_to_config(&raw, ppu),
@@ -310,7 +314,9 @@ pub fn serialize_unity_particle(
     existing: Option<&UnityParticleDocument>,
     options: Option<&UnitySerializeOptions>,
 ) -> String {
-    let ppu = options.and_then(|o| o.pixels_per_unit).unwrap_or(DEFAULT_PPU);
+    let ppu = options
+        .and_then(|o| o.pixels_per_unit)
+        .unwrap_or(DEFAULT_PPU);
     document_to_json(&config_to_document(config, existing, ppu))
 }
 
@@ -339,7 +345,9 @@ fn parse_unity_json(json: &str) -> Result<JsonValue, String> {
 }
 
 fn rn(obj: Option<&JsonValue>, def: f32) -> f32 {
-    obj.and_then(JsonValue::as_number).map(|n| n as f32).unwrap_or(def)
+    obj.and_then(JsonValue::as_number)
+        .map(|n| n as f32)
+        .unwrap_or(def)
 }
 
 fn rb(obj: Option<&JsonValue>, def: bool) -> bool {
@@ -404,9 +412,13 @@ fn raw_to_config(raw: &JsonValue, ppu: f32) -> ParticleEmitterConfig {
     let spawn_rate = (mm_low(em_raw.and_then(|e| e.get("rateOverTime")), 10.0)
         + mm_high(em_raw.and_then(|e| e.get("rateOverTime")), 10.0))
         * 0.5;
-    let bursts = em_raw.and_then(|e| e.get("bursts")).and_then(JsonValue::as_array);
+    let bursts = em_raw
+        .and_then(|e| e.get("bursts"))
+        .and_then(JsonValue::as_array);
     let burst0 = bursts.and_then(|b| b.first());
-    let burst_count = burst0.map(|b| rn(b.get("count"), 0.0) as i64 as u32).unwrap_or(0);
+    let burst_count = burst0
+        .map(|b| rn(b.get("count"), 0.0) as i64 as u32)
+        .unwrap_or(0);
     let burst_interval = match burst0 {
         Some(b) if rn(b.get("cycleCount"), 1.0) != 1.0 => rn(b.get("repeatInterval"), 0.0),
         _ => 0.0,
@@ -451,15 +463,26 @@ fn raw_to_config(raw: &JsonValue, ppu: f32) -> ParticleEmitterConfig {
     let sol_raw = raw.get("sizeOverLifetime");
     let sol_enabled = rb(sol_raw.and_then(|s| s.get("enabled")), false);
     let scale_end = if sol_enabled {
-        rn(sol_raw.and_then(|s| s.get("sizeEnd")), 1.0) / (0.001f32).max((scale_low + scale_high) * 0.5)
+        rn(sol_raw.and_then(|s| s.get("sizeEnd")), 1.0)
+            / (0.001f32).max((scale_low + scale_high) * 0.5)
     } else {
         1.0
     };
 
     let col_raw = raw.get("colorOverLifetime");
     let col_enabled = rb(col_raw.and_then(|c| c.get("enabled")), false);
-    let white = UnityColor { r: 1.0, g: 1.0, b: 1.0, a: 1.0 };
-    let fade = UnityColor { r: 1.0, g: 1.0, b: 1.0, a: 0.0 };
+    let white = UnityColor {
+        r: 1.0,
+        g: 1.0,
+        b: 1.0,
+        a: 1.0,
+    };
+    let fade = UnityColor {
+        r: 1.0,
+        g: 1.0,
+        b: 1.0,
+        a: 0.0,
+    };
     let start_color = if col_enabled {
         color_at(col_raw.and_then(|c| c.get("colorStart")), white)
     } else {
@@ -470,7 +493,11 @@ fn raw_to_config(raw: &JsonValue, ppu: f32) -> ParticleEmitterConfig {
     } else {
         color_at(raw.get("startColor"), white)
     };
-    let gradient = if col_enabled { col_raw.and_then(|c| c.get("gradient")) } else { None };
+    let gradient = if col_enabled {
+        col_raw.and_then(|c| c.get("gradient"))
+    } else {
+        None
+    };
     let color_curve = color_keys_to_curve(gradient.and_then(|g| g.get("colorKeys")));
     let alpha_curve = alpha_keys_to_curve(gradient.and_then(|g| g.get("alphaKeys")));
     let scale_curve = if sol_enabled {
@@ -498,7 +525,11 @@ fn raw_to_config(raw: &JsonValue, ppu: f32) -> ParticleEmitterConfig {
         max_particles: rn(raw.get("maxParticles"), 1000.0) as i64 as u32,
         spawn_rate,
         loop_: looping,
-        duration: if looping { 0.0 } else { rn(raw.get("duration"), 5.0).max(0.0) },
+        duration: if looping {
+            0.0
+        } else {
+            rn(raw.get("duration"), 5.0).max(0.0)
+        },
         lifetime_min: mm_low(raw.get("startLifetime"), 1.0),
         lifetime_max: mm_high(raw.get("startLifetime"), 1.0),
         speed_min: mm_low(raw.get("startSpeed"), 5.0) * ppu,
@@ -540,7 +571,9 @@ fn collect_unity_warnings(raw: &JsonValue) -> Vec<String> {
     for (key, label) in UNSUPPORTED_UNITY_MODULES {
         if let Some(module) = raw.get(key) {
             if module.is_object() && rb(module.get("enabled"), false) {
-                warnings.push(format!("Unity {label} module is not supported and was ignored"));
+                warnings.push(format!(
+                    "Unity {label} module is not supported and was ignored"
+                ));
             }
         }
     }
@@ -551,7 +584,9 @@ fn collect_unity_warnings(raw: &JsonValue) -> Vec<String> {
         .map(<[JsonValue]>::len)
         .unwrap_or(0);
     if bursts > 1 {
-        warnings.push(format!("Only the first of {bursts} emission bursts was imported"));
+        warnings.push(format!(
+            "Only the first of {bursts} emission bursts was imported"
+        ));
     }
     warnings
 }
@@ -613,7 +648,10 @@ fn size_keys_to_curve(curve: Option<&JsonValue>) -> Option<ParticleCurve> {
 }
 
 fn unity_blend_mode(raw: &JsonValue) -> Option<ParticleBlendMode> {
-    let mode = raw.get("blendMode").and_then(JsonValue::as_text).map(str::to_lowercase);
+    let mode = raw
+        .get("blendMode")
+        .and_then(JsonValue::as_text)
+        .map(str::to_lowercase);
     match mode.as_deref() {
         Some("additive") | Some("add") => Some(ParticleBlendMode::Add),
         Some("multiply") => Some(ParticleBlendMode::Multiply),
@@ -674,7 +712,10 @@ fn read_emission(obj: Option<&JsonValue>) -> UnityEmission {
                     .collect(),
                 None => Vec::new(),
             };
-            UnityEmission { rate_over_time: read_min_max(o.get("rateOverTime"), 10.0), bursts }
+            UnityEmission {
+                rate_over_time: read_min_max(o.get("rateOverTime"), 10.0),
+                bursts,
+            }
         }
         _ => UnityEmission {
             rate_over_time: UnityMinMaxValue {
@@ -708,7 +749,11 @@ fn read_shape(obj: Option<&JsonValue>) -> UnityShape {
         shape_type: UnityParticleShapeType::Cone,
         radius: 1.0,
         angle: 25.0,
-        scale: UnityVec3 { x: 1.0, y: 1.0, z: 1.0 },
+        scale: UnityVec3 {
+            x: 1.0,
+            y: 1.0,
+            z: 1.0,
+        },
     };
     match obj {
         Some(o) if o.is_object() => {
@@ -730,8 +775,18 @@ fn read_shape(obj: Option<&JsonValue>) -> UnityShape {
 }
 
 fn read_color_lifetime(obj: Option<&JsonValue>) -> UnityColorOverLifetime {
-    let def_start = UnityColor { r: 1.0, g: 1.0, b: 1.0, a: 1.0 };
-    let def_end = UnityColor { r: 1.0, g: 1.0, b: 1.0, a: 0.0 };
+    let def_start = UnityColor {
+        r: 1.0,
+        g: 1.0,
+        b: 1.0,
+        a: 1.0,
+    };
+    let def_end = UnityColor {
+        r: 1.0,
+        g: 1.0,
+        b: 1.0,
+        a: 0.0,
+    };
     match obj {
         Some(o) if o.is_object() => UnityColorOverLifetime {
             enabled: rb(o.get("enabled"), false),
@@ -756,7 +811,12 @@ fn read_size_lifetime(obj: Option<&JsonValue>) -> UnitySizeOverLifetime {
             size_end: rn(o.get("sizeEnd"), 1.0),
             curve: None,
         },
-        _ => UnitySizeOverLifetime { enabled: false, size_start: 1.0, size_end: 1.0, curve: None },
+        _ => UnitySizeOverLifetime {
+            enabled: false,
+            size_start: 1.0,
+            size_end: 1.0,
+            curve: None,
+        },
     }
 }
 
@@ -789,7 +849,15 @@ fn raw_to_document(raw: &JsonValue) -> UnityParticleDocument {
         start_speed: read_min_max(raw.get("startSpeed"), 5.0),
         start_size: read_min_max(raw.get("startSize"), 1.0),
         start_rotation: read_min_max(raw.get("startRotation"), 0.0),
-        start_color: color_at(raw.get("startColor"), UnityColor { r: 1.0, g: 1.0, b: 1.0, a: 1.0 }),
+        start_color: color_at(
+            raw.get("startColor"),
+            UnityColor {
+                r: 1.0,
+                g: 1.0,
+                b: 1.0,
+                a: 1.0,
+            },
+        ),
         gravity_modifier: rn(raw.get("gravityModifier"), 0.0),
         physics_gravity: rn(raw.get("physicsGravity"), DEFAULT_GRAVITY),
         emission: read_emission(raw.get("emission")),
@@ -842,7 +910,11 @@ fn config_to_document(
 
     let grav_world = config.gravity_y / ppu;
     let physics_gravity = existing.map(|e| e.physics_gravity).unwrap_or(9.81);
-    let grav_modifier = if physics_gravity != 0.0 { grav_world / physics_gravity } else { 0.0 };
+    let grav_modifier = if physics_gravity != 0.0 {
+        grav_world / physics_gravity
+    } else {
+        0.0
+    };
 
     let mut shape_type = UnityParticleShapeType::Cone;
     let mut radius = 0.0;
@@ -940,7 +1012,11 @@ fn config_to_document(
         },
         rotation_over_lifetime: UnityRotationOverLifetime {
             enabled: has_rotation,
-            angular_velocity: if has_rotation { two_const(rot_low, rot_high) } else { constant(0.0) },
+            angular_velocity: if has_rotation {
+                two_const(rot_low, rot_high)
+            } else {
+                constant(0.0)
+            },
         },
     }
 }
@@ -951,7 +1027,11 @@ fn build_gradient(config: &ParticleEmitterConfig) -> UnityGradient {
             .into_iter()
             .map(|k| UnityGradientColorKey {
                 time: k.time,
-                color: UnityColorRgb { r: k.r, g: k.g, b: k.b },
+                color: UnityColorRgb {
+                    r: k.r,
+                    g: k.g,
+                    b: k.b,
+                },
             })
             .collect(),
         None => vec![
@@ -976,21 +1056,36 @@ fn build_gradient(config: &ParticleEmitterConfig) -> UnityGradient {
     let alpha_keys = match &config.alpha_curve {
         Some(curve) => particle_curve_to_keyframes(curve)
             .into_iter()
-            .map(|k| UnityGradientAlphaKey { time: k.time, alpha: k.value })
+            .map(|k| UnityGradientAlphaKey {
+                time: k.time,
+                alpha: k.value,
+            })
             .collect(),
         None => vec![
-            UnityGradientAlphaKey { time: 0.0, alpha: config.alpha_start },
-            UnityGradientAlphaKey { time: 1.0, alpha: config.alpha_end },
+            UnityGradientAlphaKey {
+                time: 0.0,
+                alpha: config.alpha_start,
+            },
+            UnityGradientAlphaKey {
+                time: 1.0,
+                alpha: config.alpha_end,
+            },
         ],
     };
-    UnityGradient { color_keys, alpha_keys }
+    UnityGradient {
+        color_keys,
+        alpha_keys,
+    }
 }
 
 fn build_size_curve(scale_curve: &[f32]) -> UnityAnimationCurve {
     UnityAnimationCurve {
         keys: particle_curve_to_keyframes(scale_curve)
             .into_iter()
-            .map(|k| UnityCurveKey { time: k.time, value: k.value })
+            .map(|k| UnityCurveKey {
+                time: k.time,
+                value: k.value,
+            })
             .collect(),
     }
 }
@@ -1209,9 +1304,18 @@ fn document_to_json(doc: &UnityParticleDocument) -> String {
     w.field_number("physicsGravity", doc.physics_gravity);
     w.field_raw("emission", &emission_json(&doc.emission));
     w.field_raw("shape", &shape_json(&doc.shape));
-    w.field_raw("colorOverLifetime", &color_lifetime_json(&doc.color_over_lifetime));
-    w.field_raw("sizeOverLifetime", &size_lifetime_json(&doc.size_over_lifetime));
-    w.field_raw("rotationOverLifetime", &rotation_lifetime_json(&doc.rotation_over_lifetime));
+    w.field_raw(
+        "colorOverLifetime",
+        &color_lifetime_json(&doc.color_over_lifetime),
+    );
+    w.field_raw(
+        "sizeOverLifetime",
+        &size_lifetime_json(&doc.size_over_lifetime),
+    );
+    w.field_raw(
+        "rotationOverLifetime",
+        &rotation_lifetime_json(&doc.rotation_over_lifetime),
+    );
     w.finish()
 }
 
@@ -1244,7 +1348,9 @@ mod tests {
     const PPU: f32 = 100.0;
 
     fn opts() -> UnityParseOptions {
-        UnityParseOptions { pixels_per_unit: Some(PPU) }
+        UnityParseOptions {
+            pixels_per_unit: Some(PPU),
+        }
     }
 
     fn close(a: f32, b: f32, eps: f32) -> bool {
@@ -1294,7 +1400,11 @@ mod tests {
             "\"colorOverLifetime\": { \"enabled\": true, \"gradient\": { \"colorKeys\": [ { \"time\": 0, \"color\": { \"r\": 1, \"g\": 1, \"b\": 1 } }, { \"time\": 0.5, \"color\": { \"r\": 0.5, \"g\": 0.5, \"b\": 0.5 } }, { \"time\": 1, \"color\": { \"r\": 0, \"g\": 0, \"b\": 0 } } ] } }",
         );
         let warnings = parse_unity_particle_document(&json, None).unwrap().warnings;
-        assert!(!warnings.iter().any(|w| w.to_lowercase().contains("gradient")));
+        assert!(
+            !warnings
+                .iter()
+                .any(|w| w.to_lowercase().contains("gradient"))
+        );
     }
 
     // ── lightweight ──
@@ -1322,7 +1432,9 @@ mod tests {
 
     #[test]
     fn parse_unity_particle_non_looping_duration() {
-        let json = SMOKE_JSON.replace("\"looping\": true", "\"looping\": false").replace("\"duration\": 5.0", "\"duration\": 3");
+        let json = SMOKE_JSON
+            .replace("\"looping\": true", "\"looping\": false")
+            .replace("\"duration\": 5.0", "\"duration\": 3");
         let c = parse_unity_particle(&json, Some(&opts())).unwrap();
         assert!(!c.loop_);
         assert!(close(c.duration, 3.0, 1e-4));
@@ -1343,10 +1455,26 @@ mod tests {
 
     #[test]
     fn parse_unity_particle_invalid_json_errors() {
-        assert!(parse_unity_particle("{not valid", None).unwrap_err().contains("Invalid Unity particle JSON"));
-        assert!(parse_unity_particle("null", None).unwrap_err().contains("expected a JSON object"));
-        assert!(parse_unity_particle("42", None).unwrap_err().contains("expected a JSON object"));
-        assert!(parse_unity_particle("[]", None).unwrap_err().contains("expected a JSON object"));
+        assert!(
+            parse_unity_particle("{not valid", None)
+                .unwrap_err()
+                .contains("Invalid Unity particle JSON")
+        );
+        assert!(
+            parse_unity_particle("null", None)
+                .unwrap_err()
+                .contains("expected a JSON object")
+        );
+        assert!(
+            parse_unity_particle("42", None)
+                .unwrap_err()
+                .contains("expected a JSON object")
+        );
+        assert!(
+            parse_unity_particle("[]", None)
+                .unwrap_err()
+                .contains("expected a JSON object")
+        );
     }
 
     #[test]
@@ -1374,7 +1502,12 @@ mod tests {
 
     #[test]
     fn parse_unity_particle_no_warnings_representable() {
-        assert!(parse_unity_particle_document(SMOKE_JSON, Some(&opts())).unwrap().warnings.is_empty());
+        assert!(
+            parse_unity_particle_document(SMOKE_JSON, Some(&opts()))
+                .unwrap()
+                .warnings
+                .is_empty()
+        );
     }
 
     #[test]
@@ -1383,7 +1516,9 @@ mod tests {
             "\"name\": \"smoke\",",
             "\"name\": \"smoke\", \"noise\": { \"enabled\": true }, \"collision\": { \"enabled\": true }, \"trails\": { \"enabled\": false },",
         );
-        let warnings = parse_unity_particle_document(&json, Some(&opts())).unwrap().warnings;
+        let warnings = parse_unity_particle_document(&json, Some(&opts()))
+            .unwrap()
+            .warnings;
         assert!(warnings.iter().any(|w| w.contains("noise")));
         assert!(warnings.iter().any(|w| w.contains("collision")));
         assert!(!warnings.iter().any(|w| w.contains("trails")));
@@ -1403,9 +1538,13 @@ mod tests {
 
     #[test]
     fn serialize_unity_particle_round_trips_fields() {
-        let ser_opts = UnitySerializeOptions { pixels_per_unit: Some(PPU) };
+        let ser_opts = UnitySerializeOptions {
+            pixels_per_unit: Some(PPU),
+        };
         let config = parse_unity_particle(SMOKE_JSON, Some(&opts())).unwrap();
-        let document = parse_unity_particle_document(SMOKE_JSON, Some(&opts())).unwrap().document;
+        let document = parse_unity_particle_document(SMOKE_JSON, Some(&opts()))
+            .unwrap()
+            .document;
         let json = serialize_unity_particle(&config, Some(&document), Some(&ser_opts));
         let config2 = parse_unity_particle(&json, Some(&opts())).unwrap();
         assert_eq!(config2.max_particles, config.max_particles);
@@ -1426,25 +1565,58 @@ mod tests {
     fn serialize_unity_particle_bakes_curves() {
         let color_curve = particle_color_curve_from_keyframes(
             &[
-                ColorKeyframe { time: 0.0, r: 1.0, g: 0.0, b: 0.0 },
-                ColorKeyframe { time: 0.5, r: 0.0, g: 1.0, b: 0.0 },
-                ColorKeyframe { time: 1.0, r: 0.0, g: 0.0, b: 1.0 },
+                ColorKeyframe {
+                    time: 0.0,
+                    r: 1.0,
+                    g: 0.0,
+                    b: 0.0,
+                },
+                ColorKeyframe {
+                    time: 0.5,
+                    r: 0.0,
+                    g: 1.0,
+                    b: 0.0,
+                },
+                ColorKeyframe {
+                    time: 1.0,
+                    r: 0.0,
+                    g: 0.0,
+                    b: 1.0,
+                },
             ],
             CURVE_SAMPLES,
         );
         let alpha_curve = particle_curve_from_keyframes(
             &[
-                CurveKeyframe { time: 0.0, value: 0.0 },
-                CurveKeyframe { time: 0.5, value: 1.0 },
-                CurveKeyframe { time: 1.0, value: 0.0 },
+                CurveKeyframe {
+                    time: 0.0,
+                    value: 0.0,
+                },
+                CurveKeyframe {
+                    time: 0.5,
+                    value: 1.0,
+                },
+                CurveKeyframe {
+                    time: 1.0,
+                    value: 0.0,
+                },
             ],
             CURVE_SAMPLES,
         );
         let scale_curve = particle_curve_from_keyframes(
             &[
-                CurveKeyframe { time: 0.0, value: 0.0 },
-                CurveKeyframe { time: 0.5, value: 1.0 },
-                CurveKeyframe { time: 1.0, value: 0.0 },
+                CurveKeyframe {
+                    time: 0.0,
+                    value: 0.0,
+                },
+                CurveKeyframe {
+                    time: 0.5,
+                    value: 1.0,
+                },
+                CurveKeyframe {
+                    time: 1.0,
+                    value: 0.0,
+                },
             ],
             CURVE_SAMPLES,
         );
@@ -1454,10 +1626,24 @@ mod tests {
             scale_curve: Some(scale_curve),
             ..ParticleEmitterConfig::default()
         }));
-        let json = serialize_unity_particle(&config, None, Some(&UnitySerializeOptions { pixels_per_unit: Some(PPU) }));
+        let json = serialize_unity_particle(
+            &config,
+            None,
+            Some(&UnitySerializeOptions {
+                pixels_per_unit: Some(PPU),
+            }),
+        );
         let doc = parse_json(&json).unwrap();
-        assert!(doc.get("colorOverLifetime").and_then(|c| c.get("gradient")).is_some());
-        assert!(doc.get("sizeOverLifetime").and_then(|s| s.get("curve")).is_some());
+        assert!(
+            doc.get("colorOverLifetime")
+                .and_then(|c| c.get("gradient"))
+                .is_some()
+        );
+        assert!(
+            doc.get("sizeOverLifetime")
+                .and_then(|s| s.get("curve"))
+                .is_some()
+        );
 
         let c2 = parse_unity_particle(&json, Some(&opts())).unwrap();
         let cc = c2.color_curve.expect("color curve");

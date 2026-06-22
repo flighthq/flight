@@ -50,19 +50,49 @@ pub fn apply_color_matrix_filter_to_gl(
     let m: [f32; 20] = std::array::from_fn(|i| m[i]);
 
     let program = get_color_matrix_shader(state);
-    draw_gl_fullscreen_pass(state, program, &[source.texture], Some(dest), move |gl, p| unsafe {
-        gl.uniform_4_f32(gl.get_uniform_location(p, "u_m0").as_ref(), m[0], m[1], m[2], m[3]);
-        gl.uniform_4_f32(gl.get_uniform_location(p, "u_m1").as_ref(), m[5], m[6], m[7], m[8]);
-        gl.uniform_4_f32(gl.get_uniform_location(p, "u_m2").as_ref(), m[10], m[11], m[12], m[13]);
-        gl.uniform_4_f32(gl.get_uniform_location(p, "u_m3").as_ref(), m[15], m[16], m[17], m[18]);
-        gl.uniform_4_f32(
-            gl.get_uniform_location(p, "u_offsets").as_ref(),
-            m[4] / 255.0,
-            m[9] / 255.0,
-            m[14] / 255.0,
-            m[19] / 255.0,
-        );
-    });
+    draw_gl_fullscreen_pass(
+        state,
+        program,
+        &[source.texture],
+        Some(dest),
+        move |gl, p| unsafe {
+            gl.uniform_4_f32(
+                gl.get_uniform_location(p, "u_m0").as_ref(),
+                m[0],
+                m[1],
+                m[2],
+                m[3],
+            );
+            gl.uniform_4_f32(
+                gl.get_uniform_location(p, "u_m1").as_ref(),
+                m[5],
+                m[6],
+                m[7],
+                m[8],
+            );
+            gl.uniform_4_f32(
+                gl.get_uniform_location(p, "u_m2").as_ref(),
+                m[10],
+                m[11],
+                m[12],
+                m[13],
+            );
+            gl.uniform_4_f32(
+                gl.get_uniform_location(p, "u_m3").as_ref(),
+                m[15],
+                m[16],
+                m[17],
+                m[18],
+            );
+            gl.uniform_4_f32(
+                gl.get_uniform_location(p, "u_offsets").as_ref(),
+                m[4] / 255.0,
+                m[9] / 255.0,
+                m[14] / 255.0,
+                m[19] / 255.0,
+            );
+        },
+    );
 }
 
 /// Returns the color-matrix shader program for `state`, compiling on first use.

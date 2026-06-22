@@ -220,9 +220,18 @@ fn numeric_fields_mut<'a>(
         (&mut config.color_end_b, defaults.color_end_b),
         (&mut config.color_end_g, defaults.color_end_g),
         (&mut config.color_end_r, defaults.color_end_r),
-        (&mut config.color_end_variance_b, defaults.color_end_variance_b),
-        (&mut config.color_end_variance_g, defaults.color_end_variance_g),
-        (&mut config.color_end_variance_r, defaults.color_end_variance_r),
+        (
+            &mut config.color_end_variance_b,
+            defaults.color_end_variance_b,
+        ),
+        (
+            &mut config.color_end_variance_g,
+            defaults.color_end_variance_g,
+        ),
+        (
+            &mut config.color_end_variance_r,
+            defaults.color_end_variance_r,
+        ),
         (&mut config.color_start_b, defaults.color_start_b),
         (&mut config.color_start_g, defaults.color_start_g),
         (&mut config.color_start_r, defaults.color_start_r),
@@ -457,10 +466,12 @@ mod tests {
         let mut config = create_particle_emitter_config(None);
         config.spawn_rate = -5.0;
         let issues = validate_particle_emitter_config(&config);
-        assert!(issues
-            .iter()
-            .any(|i| i.field == "spawnRate"
-                && i.severity == ParticleConfigIssueSeverity::Warning));
+        assert!(
+            issues
+                .iter()
+                .any(|i| i.field == "spawnRate"
+                    && i.severity == ParticleConfigIssueSeverity::Warning)
+        );
     }
 
     #[test]
@@ -476,9 +487,10 @@ mod tests {
         let mut config = create_particle_emitter_config(None);
         config.alpha_curve = Some(vec![0.0, f32::NAN, 1.0]);
         let issues = validate_particle_emitter_config(&config);
-        assert!(issues
-            .iter()
-            .any(|i| i.field == "alphaCurve"
-                && i.severity == ParticleConfigIssueSeverity::Error));
+        assert!(
+            issues.iter().any(
+                |i| i.field == "alphaCurve" && i.severity == ParticleConfigIssueSeverity::Error
+            )
+        );
     }
 }

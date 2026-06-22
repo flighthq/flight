@@ -1,0 +1,11 @@
+[package]
+name = "flighthq-scene"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "3D scene graph and spatial node hierarchy"
+
+[dependencies]
+flighthq-geometry = { workspace = true }
+flighthq-node = { workspace = true }
+flighthq-types = { workspace = true }
