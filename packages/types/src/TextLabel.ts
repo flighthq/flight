@@ -19,9 +19,9 @@ export interface TextLabelRuntime extends DisplayObjectRuntime {
   buildTextLayoutParams: (source: Readonly<TextLabel>, measure: TextMeasureFunction) => TextLayoutParams;
   textLayout: TextLayoutResult | null;
   // The local-content revision the cached textLayout was computed at, mirroring the node graph's
-  // *UsingID stamps (e.g. localBoundsUsingLocalBoundsID). ensureTextLayout recomputes the layout
+  // *UsingId stamps (e.g. localBoundsUsingLocalBoundsId). ensureTextLayout recomputes the layout
   // when this differs from getNodeLocalContentRevision. -1 until first computed.
-  textLayoutUsingContentID: number;
+  textLayoutUsingContentId: number;
 }
 
 export interface TextLabel extends DisplayObject {

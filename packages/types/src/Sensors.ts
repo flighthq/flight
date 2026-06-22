@@ -28,7 +28,7 @@ export interface SensorsBackend {
   subscribeOrientation(listener: (orientation: Readonly<OrientationReading>) => void): () => void;
   // Registers a listener invoked with magnetometer readings (x/y/z in microtesla); returns unsubscribe.
   subscribeMagnetometer(listener: (reading: Readonly<MotionReading>) => void): () => void;
-  // Requests sensor permission where the host gates it (iOS); resolves true when granted.
+  // Requests sensor permission where the host gates it (iOs); resolves true when granted.
   requestPermission(): Promise<boolean>;
 }
 

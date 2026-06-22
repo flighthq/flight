@@ -10,13 +10,13 @@ export interface ClipboardBookmark {
 export interface ClipboardBackend {
   readText(): Promise<string>;
   writeText(text: string): Promise<boolean>;
-  readHTML(): Promise<string>;
-  writeHTML(html: string): Promise<boolean>;
+  readHtml(): Promise<string>;
+  writeHtml(html: string): Promise<boolean>;
   hasText(): Promise<boolean>;
   // Reads an image from the clipboard as a data URL, or '' when none is present or access is denied.
   readImage(): Promise<string>;
   // Writes an image (given as a data URL) to the clipboard. Returns false when access is denied.
-  writeImage(dataURL: string): Promise<boolean>;
+  writeImage(dataUrl: string): Promise<boolean>;
   hasImage(): Promise<boolean>;
   // Reads RTF (Rich Text Format) markup from the clipboard, or '' when none is present or access is denied.
   readRTF(): Promise<string>;

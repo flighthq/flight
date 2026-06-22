@@ -1,4 +1,4 @@
-export type WebGPURenderTarget = {
+export type WgpuRenderTarget = {
   bindGroup: GPUBindGroup;
   depthStencilTexture: GPUTexture;
   depthStencilView: GPUTextureView;
@@ -12,7 +12,7 @@ export type WebGPURenderTarget = {
 };
 
 // A free-list of reusable targets. The effect pipeline owns one and lends intermediate targets to
-// multi-pass recipes via acquireWebGPURenderTarget / releaseWebGPURenderTarget.
-export type WebGPURenderTargetPool = {
-  free: WebGPURenderTarget[];
+// multi-pass recipes via acquireWgpuRenderTarget / releaseWgpuRenderTarget.
+export type WgpuRenderTargetPool = {
+  free: WgpuRenderTarget[];
 };

@@ -1,6 +1,6 @@
 import type { SceneGraphSyncPolicy } from './RenderState';
 
-export interface DOMRenderOptions {
+export interface DomRenderOptions {
   backgroundColor?: number | null;
   imageSmoothingEnabled?: boolean;
   pixelRatio?: number;
