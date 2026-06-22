@@ -1,5 +1,5 @@
 {
-  "name": "functional-test-scene-lit-mesh",
+  "name": "functional-test-material-subsurface",
   "private": true,
   "type": "module",
   "dependencies": {

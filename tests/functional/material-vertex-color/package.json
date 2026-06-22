@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-material-vertex-color",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

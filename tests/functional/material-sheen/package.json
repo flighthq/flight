@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-material-sheen",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}
