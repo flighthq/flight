@@ -163,14 +163,13 @@ struct DebugMaterial {
 
 @fragment fn fs_main(in : VertexOutput, @builtin(front_facing) frontFacing : bool) -> @location(0) vec4f {
   if (MODE == DEPTH_MODE) {
-    // Linearize the perspective-encoded window-space depth (in.clipPosition.z is in WebGPU's [0, 1] NDC
-    // depth convention after rasterization) back into eye-space distance using the camera near/far, then
-    // map that distance across [near, far] to grayscale [0, 1]. Unlike GL (depthGlMeshMaterialRenderer),
-    // there is no z*2-1 remap because WebGPU depth is already [0, 1].
+    // Linear view-space distance is the perspective w: in.clipPosition is the @builtin(position), whose
+    // .w in the fragment stage is 1 / w_clip, so 1 / in.clipPosition.w == w_clip == eye distance. This
+    // is camera-agnostic (no camera near/far needed); map it across the material's [near, far]
+    // visualization window to grayscale [0, 1].
     let near = material.params.x;
     let far = material.params.y;
-    let z = in.clipPosition.z;
-    let eyeDepth = (near * far) / (far - z * (far - near));
+    let eyeDepth = 1.0 / in.clipPosition.w;
     let d = clamp((eyeDepth - near) / max(far - near, 1e-6), 0.0, 1.0);
     return vec4f(vec3f(d), 1.0);
   }
