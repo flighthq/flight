@@ -24,7 +24,7 @@ export interface VideoResource {
   element: HTMLVideoElement | null;
 }
 
-export interface VideoResourceURL {
+export interface VideoResourceUrl {
   url: string;
   type?: string;
 }

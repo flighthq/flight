@@ -5,9 +5,9 @@ import type { RenderState, RenderStateRuntime } from './RenderState';
 
 export interface CanvasRenderState extends RenderState {
   applyBlendMode: ((state: CanvasRenderState, blendMode: BlendMode | null) => void) | null;
-  // Optional CSS-filter resolver. Installed by enableCanvasCSSFilterSupport; null (and tree-shaken)
+  // Optional CSS-filter resolver. Installed by enableCanvasCssFilterSupport; null (and tree-shaken)
   // until then, keeping the binding lookup and its module out of filter-free bundles.
-  canvasCSSFilterResolver: ((state: CanvasRenderState, renderProxy: RenderProxy2D) => string | null) | null;
+  canvasCssFilterResolver: ((state: CanvasRenderState, renderProxy: RenderProxy2D) => string | null) | null;
   readonly canvas: HTMLCanvasElement;
   readonly context: CanvasRenderingContext2D;
   readonly contextAttributes: CanvasRenderingContext2DSettings;
@@ -15,7 +15,7 @@ export interface CanvasRenderState extends RenderState {
 
 // Package-private 2D-canvas state for a CanvasRenderState entity. Lives in the runtime tier (not on
 // the entity) so the public CanvasRenderState surface stays minimal — only the canvas/context
-// handles and the applyBlendMode/canvasCSSFilterResolver hooks remain on the entity. The render path
+// handles and the applyBlendMode/canvasCssFilterResolver hooks remain on the entity. The render path
 // resolves this each frame via getCanvasRenderStateRuntime. Defined in @flighthq/types — the header
 // layer — so out-of-package custom renderers can reach the same state.
 export interface CanvasRenderStateRuntime extends RenderStateRuntime {

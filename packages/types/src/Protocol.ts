@@ -2,7 +2,7 @@ import type { Signal } from './Signal';
 
 // Deep-link event entity. Enable delivery with attachProtocolHandler; the signal stays inert until then.
 export interface ProtocolHandler {
-  onOpenURL: Signal<(url: string) => void>;
+  onOpenUrl: Signal<(url: string) => void>;
 }
 
 // Event and control seam for custom URI scheme registration and deep-link delivery. The web backend

@@ -3,10 +3,10 @@ import type { Entity, EntityWithoutRuntime } from './Entity';
 // Serializable per-node rendering intent. Plain data only — named fields, no GPU
 // handles and no function references — so a material round-trips through scene
 // serialization. Behavior is supplied by a per-backend material renderer registered
-// against `kind` on the render state (see WebGLMaterialRenderer, CanvasMaterialRenderer).
+// against `kind` on the render state (see GlMaterialRenderer, CanvasMaterialRenderer).
 //
 // A material `kind` is a shared registry key, not a backend-specific resource. Not every
-// backend registers a renderer for every kind: a WebGL-only material has no Canvas
+// backend registers a renderer for every kind: a Gl-only material has no Canvas
 // renderer and degrades to DefaultMaterialKind there rather than erroring.
 //
 // Batching keys on the material by reference — sharing one material instance across nodes

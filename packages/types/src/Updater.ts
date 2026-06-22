@@ -20,7 +20,7 @@ export interface AppUpdater {
 // methods register listeners. The web default no-ops every command and returns inert unsubscribes;
 // a native host wires these to its own updater (electron-updater, Sparkle, etc.).
 export interface UpdaterBackend {
-  setFeedURL(url: string): void;
+  setFeedUrl(url: string): void;
   checkForUpdates(): void;
   downloadUpdate(): void;
   quitAndInstall(): void;

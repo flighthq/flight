@@ -5,7 +5,7 @@ import type { Matrix } from './Matrix';
  * Backend-agnostic handle for a cached rendering. The user creates and holds a
  * RenderCache, attaches it to a scene node, and refreshes it when the cached
  * content changes. The actual backend resource (a CanvasRenderTarget,
- * WebGLRenderTarget, etc.) is owned by the render state and keyed by this handle,
+ * GlRenderTarget, etc.) is owned by the render state and keyed by this handle,
  * never stored on the handle itself — so one handle can back its own resource on
  * each state it is used with, and a handle with no resource composites to nothing.
  *

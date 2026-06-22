@@ -1,24 +1,24 @@
 // Substrate-agnostic render-effect intents. Each is plain data with a `type` discriminant; per-backend
-// recipes register a runner against that `type` (registerWebGLRenderEffect) and the effect pipeline
+// recipes register a runner against that `type` (registerGlRenderEffect) and the effect pipeline
 // dispatches an agnostic RenderEffect[] through the registry, so one intent list drives every backend.
 // Colors are packed RGBA integers (e.g. 0x000000ff). Tags in comments mark inputs a recipe needs
 // beyond color: [HDR] float target, [DEPTH] sampleable depth, [MOTION] motion vectors, [TEMPORAL] history.
 
 // --- Anti-aliasing ---
 
-export interface FXAAEffect {
+export interface FxaaEffect {
   type: 'fxaa';
   // Edge contrast threshold; lower catches more edges. Default 0.0312.
   edgeThreshold?: number;
   subpixel?: number;
 }
 
-export interface SMAAEffect {
+export interface SmaaEffect {
   type: 'smaa';
   threshold?: number;
 }
 
-export interface TAAEffect {
+export interface TaaEffect {
   type: 'taa'; // [TEMPORAL] needs a history buffer + motion vectors.
   feedback?: number;
 }
@@ -228,7 +228,7 @@ export interface GodRaysEffect {
   samples?: number;
 }
 
-export interface SSAOEffect {
+export interface SsaoEffect {
   type: 'ssao'; // [DEPTH]
   radius?: number;
   intensity?: number;
@@ -236,7 +236,7 @@ export interface SSAOEffect {
   samples?: number;
 }
 
-export interface SSREffect {
+export interface SsrEffect {
   type: 'ssr'; // [DEPTH]
   maxDistance?: number;
   resolution?: number;
@@ -327,7 +327,7 @@ export type RenderEffect =
   | DisplacementEffect
   | DitherEffect
   | ExposureEffect
-  | FXAAEffect
+  | FxaaEffect
   | FilmGrainEffect
   | GlitchEffect
   | GodRaysEffect
@@ -346,15 +346,15 @@ export type RenderEffect =
   | PixelateEffect
   | PosterizeEffect
   | RadialBlurEffect
-  | SMAAEffect
-  | SSAOEffect
-  | SSREffect
+  | SmaaEffect
+  | SsaoEffect
+  | SsrEffect
   | ScanlinesEffect
   | ScreenSpaceFogEffect
   | SepiaEffect
   | SharpenEffect
   | SketchEffect
-  | TAAEffect
+  | TaaEffect
   | TiltShiftEffect
   | ToneMapEffect
   | VignetteEffect

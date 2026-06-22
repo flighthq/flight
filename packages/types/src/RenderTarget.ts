@@ -1,7 +1,7 @@
 // Substrate-agnostic render-target description. A target carries axes, not booleans: `format`/
 // `colorFormats` unlock HDR and the G-buffer, `colorAttachments` is MRT/deferred, `sampleCount` is
 // MSAA, `depth` carries target-scope stencil and (for '-sampled') a readable depth texture. The
-// per-backend target types (WebGLRenderTarget, WebGPURenderTarget) realize these axes.
+// per-backend target types (GlRenderTarget, WgpuRenderTarget) realize these axes.
 
 export type RenderTargetFormat = 'rgba8' | 'rgba16f' | 'rgba32f';
 

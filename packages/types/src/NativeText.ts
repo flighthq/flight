@@ -29,9 +29,9 @@ export interface NativeTextData extends DisplayObjectData {
 }
 
 export interface NativeTextRuntime extends DisplayObjectRuntime {
-  // The backing platform element, created and owned by the platform renderer (render-dom). null until
+  // The backing platform element, created and owned by the platform renderer (displayobject-dom). null until
   // the node is first drawn, and on backends that do not composite a real element. displayobject only
-  // holds the slot and never touches the DOM, mirroring HTMLViewData.element.
+  // holds the slot and never touches the DOM, mirroring HtmlViewData.element.
   element: HTMLElement | null;
   // Measured content size the platform renderer writes back after laying the element out, so autoSize
   // bounds stay DOM-free: computeNativeTextLocalBoundsRectangle reads these numbers instead of calling

@@ -1,33 +1,40 @@
-// Camera seam. Free functions in @flighthq/camera delegate to the active CameraBackend (web default
-// over a transient file input, or a native host's). capture resolves to null when the host denies,
-// the user cancels, or the capability is absent rather than throwing — image capture is an
-// expected-failure surface, not a programmer error.
+import type { Entity, EntityWithoutRuntime } from './Entity';
+import type { Matrix4 } from './Matrix4';
+import type { Vector2 } from './Vector2';
 
-export type CameraSource = 'camera' | 'photos' | 'prompt';
-
-export interface CameraCaptureOptions {
-  source?: CameraSource;
-  quality?: number;
-  allowEditing?: boolean;
-  // Maximum recording length for video capture, in milliseconds; native hosts honor it.
-  maxDurationMs?: number;
+// 3D camera. (The device/photo seam is `Webcam`, freeing this name for the scene camera.)
+// `view` is the world->view Matrix4 (the inverse of the camera's world transform); `projection`
+// is the discriminated perspective/orthographic descriptor. `near`/`far` are the clip-plane
+// distances. `jitter` is the per-frame sub-pixel NDC offset TAA applies to projection.
+// `inverseViewProjection` is the cached inverse of projection×view, consumed by the existing
+// TAA / velocity / fog / depth-of-field effects; it is recomputed whenever view or projection
+// changes.
+export interface Camera extends Entity {
+  far: number;
+  inverseViewProjection: Matrix4;
+  jitter: Vector2;
+  near: number;
+  projection: Projection;
+  view: Matrix4;
 }
 
-export interface CameraPhoto {
-  dataURL: string;
-  width: number;
-  height: number;
-  format: string;
+export type CameraLike = EntityWithoutRuntime<Camera>;
+
+// Discriminated union of the supported projection models. Switch on `kind`.
+export type Projection = OrthographicProjection | PerspectiveProjection;
+
+// Perspective projection: a vertical field of view in radians and a viewport aspect ratio
+// (width / height). The clip-plane distances live on the owning Camera (near/far).
+export interface PerspectiveProjection {
+  aspect: number;
+  fovY: number;
+  kind: 'perspective';
 }
 
-export interface CameraVideo {
-  dataURL: string;
-  duration: number;
-  format: string;
-}
-
-export interface CameraBackend {
-  capture(options: Readonly<CameraCaptureOptions>): Promise<CameraPhoto | null>;
-  captureVideo(options: Readonly<CameraCaptureOptions>): Promise<CameraVideo | null>;
-  requestPermission(): Promise<boolean>;
+// Orthographic projection: the half-extents of the view volume in view-space units. The full
+// visible width is 2*halfWidth and height 2*halfHeight. Clip-plane distances live on the Camera.
+export interface OrthographicProjection {
+  halfHeight: number;
+  halfWidth: number;
+  kind: 'orthographic';
 }

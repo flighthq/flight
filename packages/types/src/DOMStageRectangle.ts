@@ -1,4 +1,4 @@
-export interface DOMStageRectangle {
+export interface DomStageRectangle {
   bottom: number;
   left: number;
   right: number;

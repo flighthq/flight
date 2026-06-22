@@ -1,51 +1,60 @@
 import type { BlendMode } from './BlendMode';
+import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
 import type { Material } from './Material';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
-import type { WebGLMaterialRenderer } from './WebGLMaterialRenderer';
-import type { WebGLBitmapShader, WebGLShaderLocations } from './WebGLShaderLocations';
+import type { GlMaterialRenderer } from './WebGLMaterialRenderer';
+import type { GlBitmapShader, GlShaderLocations } from './WebGLShaderLocations';
 
-export interface WebGLRenderState extends RenderState {
-  applyBlendMode: ((state: WebGLRenderState, blendMode: BlendMode | null) => void) | null;
+export interface GlRenderState extends RenderState {
+  applyBlendMode: ((state: GlRenderState, blendMode: BlendMode | null) => void) | null;
   readonly canvas: HTMLCanvasElement;
   readonly gl: WebGL2RenderingContext;
 }
 
-// Package-private GPU state for a WebGLRenderState entity. Lives in the runtime tier (not on the
-// entity) so the public WebGLRenderState surface stays minimal; the render path resolves it each
-// frame via getWebGLRenderStateRuntime. Defined in @flighthq/types — the header layer — so
+// Package-private GPU state for a GlRenderState entity. Lives in the runtime tier (not on the
+// entity) so the public GlRenderState surface stays minimal; the render path resolves it each
+// frame via getGlRenderStateRuntime. Defined in @flighthq/types — the header layer — so
 // out-of-package custom renderers can reach the same state.
-export interface WebGLRenderStateRuntime extends RenderStateRuntime {
+export interface GlRenderStateRuntime extends RenderStateRuntime {
   // Active GPU bindings tracked to avoid redundant state changes. Internal — formerly public on the
-  // WebGLRenderState entity.
+  // GlRenderState entity.
   currentBlendMode: BlendMode | null;
   currentProgram: WebGLProgram | null;
   currentTexture: WebGLTexture | null;
 
-  colorTransformBitmapShader?: WebGLBitmapShader;
-  defaultBitmapShader: WebGLBitmapShader;
-  particleShader?: WebGLParticleShader;
+  colorTransformBitmapShader?: GlBitmapShader;
+  defaultBitmapShader: GlBitmapShader;
+  particleShader?: GlParticleShader;
   particleCornerBuffer?: WebGLBuffer;
   particleInstanceBuffer?: WebGLBuffer;
   particleInstanceData?: Float32Array;
-  quadBatchShader?: WebGLQuadBatchShader;
+  quadBatchShader?: GlQuadBatchShader;
   quadBatchCornerBuffer?: WebGLBuffer;
-  colorTransformInstancedShader?: WebGLColorTransformInstancedShader;
-  uniformColorTransformShader?: WebGLUniformColorTransformShader;
-  materialRendererMap?: Map<symbol, WebGLMaterialRenderer>;
-  // Per-material-kind bitmap shader for the immediate (display-object) path. resolveWebGLShader
+  colorTransformInstancedShader?: GlColorTransformInstancedShader;
+  uniformColorTransformShader?: GlUniformColorTransformShader;
+  materialRendererMap?: Map<symbol, GlMaterialRenderer>;
+  // 3D scene mesh-material seam, owned by scene-gl (filled lazily by registerGlMeshMaterialRenderer).
+  // The per-material-kind 3D draw behavior registry, kept separate from the 2D materialRendererMap
+  // because a material kind is either 2D or 3D, never both. sceneMeshUploadCache is the per-state
+  // cache of lazily uploaded MeshGeometry GPU data, keyed by the geometry entity (parallel to
+  // MeshGeometryRuntime.webglData; scene-gl owns and casts the concrete value shape). Both stay null
+  // until the first 3D registration / mesh draw on this render state.
+  sceneMeshMaterialRegistry?: Map<symbol, GlMeshMaterialRenderer> | null;
+  sceneMeshUploadCache?: WeakMap<object, object> | null;
+  // Per-material-kind bitmap shader for the immediate (display-object) path. resolveGlShader
   // looks a node's shader up here by its material kind — the render path has no color-transform (or
   // any material-specific) knowledge; the material's shader and its registration own that.
-  materialBitmapShaderMap?: Map<symbol, WebGLBitmapShader>;
-  // Optional per-node shader-binding resolver. Installed by setWebGLShader; absent (and tree-shaken
+  materialBitmapShaderMap?: Map<symbol, GlBitmapShader>;
+  // Optional per-node shader-binding resolver. Installed by setGlShader; absent (and tree-shaken
   // with the binding map) until a custom shader is bound to a node.
-  webglShaderBindingResolver?: (renderProxy: RenderProxy2D) => WebGLBitmapShader | undefined;
+  webglShaderBindingResolver?: (renderProxy: RenderProxy2D) => GlBitmapShader | undefined;
   spriteBatchBlendMode: BlendMode | null;
   // The active sprite-batch material (flush key, compared by reference) and its resolved
   // renderer + per-instance float stride. spriteBatchMaterialData/Buffer hold the active
   // material's per-instance attributes, parallel to the base spriteBatchInstanceData.
   spriteBatchMaterial: Material | null;
-  spriteBatchMaterialRenderer: WebGLMaterialRenderer | null;
+  spriteBatchMaterialRenderer: GlMaterialRenderer | null;
   spriteBatchMaterialFloats: number;
   spriteBatchMaterialData: Float32Array;
   spriteBatchMaterialBuffer: WebGLBuffer | null;
@@ -59,7 +68,7 @@ export interface WebGLRenderStateRuntime extends RenderStateRuntime {
   // Active stencil nesting depth, now driven by contour clips (formerly by masks). The GPU draw path
   // reads this to know when a stencil test is live. Rect clips use the scissor and do not touch it.
   currentMaskDepth?: number;
-  currentScissorRect?: WebGLScissorRect | null;
+  currentScissorRect?: GlScissorRect | null;
   /**
    * The framebuffer currently bound for rendering. Null means the default
    * (screen) framebuffer. Maintained internally so begin/end render target
@@ -67,41 +76,41 @@ export interface WebGLRenderStateRuntime extends RenderStateRuntime {
    */
   currentFramebuffer: WebGLFramebuffer | null;
   /**
-   * When rendering into a WebGLRenderTarget, overrides the canvas dimensions
+   * When rendering into a GlRenderTarget, overrides the canvas dimensions
    * used for clip-space projection and scissor rect computation. Null means
    * use canvas.width / canvas.height (normal on-screen rendering).
    */
   renderTargetViewport: { width: number; height: number } | null;
-  shaderLoc: WebGLShaderLocations;
+  shaderLoc: GlShaderLocations;
   textureCache: WeakMap<CanvasImageSource, WebGLTexture>;
   quadVertexBuffer: WebGLBuffer;
   quadIndexBuffer: WebGLBuffer;
   quadVertexData: Float32Array;
   matrixArray: Float32Array;
-  scissorStack?: WebGLScissorRect[];
+  scissorStack?: GlScissorRect[];
 }
 
-export interface WebGLParticleShader {
+export interface GlParticleShader {
   program: WebGLProgram;
   locCorner: number;
   locPos: number;
   locCosScale: number;
   locSinScale: number;
   locColor: number;
-  locUVRect: number;
+  locUvRect: number;
   locSize: number;
   locWorldMatrix: WebGLUniformLocation;
   locTexture: WebGLUniformLocation;
 }
 
-export interface WebGLQuadBatchShader {
+export interface GlQuadBatchShader {
   program: WebGLProgram;
   locCorner: number;
   locMatAB: number;
   locMatCD: number;
   locMatTXTY: number;
   locSize: number;
-  locUVRect: number;
+  locUvRect: number;
   locAlpha: number;
   locWorldMatrix: WebGLUniformLocation;
   locTexture: WebGLUniformLocation;
@@ -109,7 +118,7 @@ export interface WebGLQuadBatchShader {
 
 // Per-instance color transform shader: the quad-batch base layout (locations 0-6) plus two
 // vec4 instance attributes (a_ctMult at location 7, a_ctOff at location 8) applied per-vertex.
-export interface WebGLColorTransformInstancedShader {
+export interface GlColorTransformInstancedShader {
   program: WebGLProgram;
   locCorner: number;
   locWorldMatrix: WebGLUniformLocation;
@@ -119,7 +128,7 @@ export interface WebGLColorTransformInstancedShader {
 // Per-batch color transform shader for UniformColorTransformMaterial — the base quad-batch layout
 // plus color-transform uniforms applied in the fragment shader. Lives with the color transform
 // materials, not the base shader, so the default pipeline carries no color-transform record.
-export interface WebGLUniformColorTransformShader {
+export interface GlUniformColorTransformShader {
   program: WebGLProgram;
   locCorner: number;
   locWorldMatrix: WebGLUniformLocation;
@@ -128,7 +137,7 @@ export interface WebGLUniformColorTransformShader {
   locColorOffset: WebGLUniformLocation;
 }
 
-export interface WebGLScissorRect {
+export interface GlScissorRect {
   height: number;
   width: number;
   x: number;

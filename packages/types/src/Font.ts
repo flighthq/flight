@@ -4,7 +4,7 @@ export interface Font extends Entity {
   name: string;
 }
 
-export interface FontURL {
+export interface FontUrl {
   format?: string;
   url: string;
 }

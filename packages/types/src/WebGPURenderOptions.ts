@@ -1,6 +1,6 @@
 import type { SceneGraphSyncPolicy } from './RenderState';
 
-export interface WebGPURenderOptions {
+export interface WgpuRenderOptions {
   antialias?: boolean;
   backgroundColor?: number;
   format?: GPUTextureFormat;

@@ -6,7 +6,7 @@ import type { RenderEffectPipelineOptions } from './WebGLRenderEffectPipeline';
 // What a Canvas 2D effect runner is handed: the state, the offscreen scene canvas it reads, the
 // offscreen canvas it writes, and a scratch pool it borrows intermediate canvases from. `source` and
 // `dest` are distinct offscreen CanvasRenderTargets the pipeline ping-pongs between stages. Unlike the
-// WebGL context there are no depth/velocity G-buffer attachments: Canvas 2D produces only color, so
+// Gl context there are no depth/velocity G-buffer attachments: Canvas 2D produces only color, so
 // depth-, velocity-, and HDR-dependent effects have no realization here and ship as passthrough copies.
 // A runner reads `source.context` (or `source.canvas` as a CanvasImageSource) and draws into
 // `dest.context`; multi-pass recipes acquire and release additional canvases from `pool`.
@@ -27,7 +27,7 @@ export type CanvasRenderEffectRunner = (
 ) => void;
 
 // A reusable pool of offscreen CanvasRenderTargets. Multi-pass effect recipes (bloom) acquire scratch
-// canvases for branch/blur stages and release them when done — the Canvas analog of the WebGL render
+// canvases for branch/blur stages and release them when done — the Canvas analog of the Gl render
 // target pool. Each acquire returns a canvas sized to the requested descriptor; each must be matched by
 // a release so the canvas can be reused next frame without reallocating.
 export interface CanvasRenderTargetPool {
@@ -38,7 +38,7 @@ export interface CanvasRenderTargetPool {
 // Retains the offscreen canvases an effect pass needs across frames: the scene target the pipeline
 // renders into and the intermediate-target pool. The per-frame effect list is data passed to
 // endCanvasRenderEffectPipeline, not retained here. `options.sampleCount`, `format`, and `depth` are
-// accepted for parity with the WebGL pipeline but have no Canvas 2D realization and are ignored.
+// accepted for parity with the Gl pipeline but have no Canvas 2D realization and are ignored.
 export interface CanvasRenderEffectPipeline {
   readonly options: Readonly<RenderEffectPipelineOptions>;
   sceneTarget: CanvasRenderTarget | null;

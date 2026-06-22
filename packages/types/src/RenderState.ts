@@ -19,7 +19,7 @@ export type SceneGraphSyncPolicy = 'refreshDerivedState' | 'requiresInvalidation
 export interface RenderState extends Entity {
   allowSmoothing: boolean;
   readonly backgroundColor: number;
-  readonly backgroundColorRGBA: number[];
+  readonly backgroundColorRgba: number[];
   readonly backgroundColorString: string;
   // Active clip nesting depth (rect + path). Masks were retired into clips, so the mask pass / renderer
   // map / currentMaskDepth are gone. Backends additionally keep their own per-form unwind stack.
@@ -39,10 +39,10 @@ export interface RenderState extends Entity {
 // counter, proxy maps, and renderer registry are shared across every backend. Defined in
 // @flighthq/types — the header layer — so out-of-package code can reach the same state.
 export interface RenderStateRuntime extends EntityRuntime {
-  currentFrameID: number;
+  currentFrameId: number;
   renderProxyAdapterMap: WeakMap<Renderable, RenderProxyAdapter>;
   renderProxyMap: WeakMap<Renderable, RenderProxy>;
   rendererMap: Map<symbol, Renderer>;
-  rendererMapID: number;
+  rendererMapId: number;
   tempStack: Renderable[];
 }

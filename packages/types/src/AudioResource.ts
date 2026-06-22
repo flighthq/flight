@@ -24,7 +24,7 @@ export interface AudioResource {
   buffer: AudioBuffer | null;
 }
 
-export interface AudioResourceURL {
+export interface AudioResourceUrl {
   url: string;
   type?: string;
 }

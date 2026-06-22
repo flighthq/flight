@@ -1,6 +1,6 @@
-import type { WebGLShader } from './WebGLShader';
+import type { GlShader } from './WebGLShader';
 
-export interface WebGLShaderLocations {
+export interface GlShaderLocations {
   program: WebGLProgram;
   locPosition: number;
   locTexCoord: number;
@@ -12,6 +12,6 @@ export interface WebGLShaderLocations {
   locTexture: WebGLUniformLocation;
 }
 
-export type WebGLBitmapShader = WebGLShader & {
-  readonly locations: WebGLShaderLocations;
+export type GlBitmapShader = GlShader & {
+  readonly locations: GlShaderLocations;
 };

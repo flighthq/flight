@@ -2,7 +2,7 @@
 // with its attribute and sampler uniform locations resolved. The substrate-level primitive that
 // filter and effect recipes draw through. `textures` holds the `u_texture0..N-1` sampler locations
 // for the N-input pass; `texture` aliases textures[0] for the common single-input case.
-export interface WebGLFullscreenProgram {
+export interface GlFullscreenProgram {
   readonly program: WebGLProgram;
   readonly locPosition: number;
   readonly locTexCoord: number;
