@@ -277,6 +277,7 @@ export * from './TextLineMetrics';
 export * from './TextMetrics';
 export * from './TextSelectionRange';
 export * from './TextSelectionRectangle';
+export * from './TextShaper';
 export * from './Texture';
 export * from './TextureAtlas';
 export * from './TextureAtlasRegion';
