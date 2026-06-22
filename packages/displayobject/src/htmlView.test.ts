@@ -1,38 +1,38 @@
 import { createRectangle } from '@flighthq/geometry';
-import type { HTMLView, Node } from '@flighthq/types';
-import { HTMLViewKind } from '@flighthq/types';
+import type { HtmlView, Node } from '@flighthq/types';
+import { HtmlViewKind } from '@flighthq/types';
 
 import {
-  computeHTMLViewLocalBoundsRectangle,
-  createHTMLView,
-  createHTMLViewData,
-  createHTMLViewRuntime,
-  getHTMLViewRuntime,
-  setHTMLViewSize,
+  computeHtmlViewLocalBoundsRectangle,
+  createHtmlView,
+  createHtmlViewData,
+  createHtmlViewRuntime,
+  getHtmlViewRuntime,
+  setHtmlViewSize,
 } from './htmlView';
 
-describe('computeHTMLViewLocalBoundsRectangle', () => {
+describe('computeHtmlViewLocalBoundsRectangle', () => {
   it('sets out dimensions from data width and height', () => {
-    const htmlView = createHTMLView({ data: { width: 320, height: 240 } });
+    const htmlView = createHtmlView({ data: { width: 320, height: 240 } });
     const out = createRectangle();
-    computeHTMLViewLocalBoundsRectangle(out, htmlView as unknown as Node);
+    computeHtmlViewLocalBoundsRectangle(out, htmlView as unknown as Node);
     expect(out.width).toBe(320);
     expect(out.height).toBe(240);
   });
 });
 
-describe('createHTMLView', () => {
-  let htmlView: HTMLView;
+describe('createHtmlView', () => {
+  let htmlView: HtmlView;
 
   beforeEach(() => {
-    htmlView = createHTMLView();
+    htmlView = createHtmlView();
   });
 
   it('initializes default values', () => {
     expect(htmlView.data.element).toBeNull();
     expect(htmlView.data.width).toBe(100);
     expect(htmlView.data.height).toBe(100);
-    expect(htmlView.kind).toStrictEqual(HTMLViewKind);
+    expect(htmlView.kind).toStrictEqual(HtmlViewKind);
   });
 
   it('allows pre-defined values', () => {
@@ -44,7 +44,7 @@ describe('createHTMLView', () => {
         height: 480,
       },
     };
-    const obj = createHTMLView(base);
+    const obj = createHtmlView(base);
     expect(obj.data.element).toStrictEqual(element);
     expect(obj.data.width).toBe(640);
     expect(obj.data.height).toBe(480);
@@ -52,14 +52,14 @@ describe('createHTMLView', () => {
 
   it('returns a new object for better hidden-class performance', () => {
     const base = {};
-    const obj = createHTMLView(base);
+    const obj = createHtmlView(base);
     expect(obj).not.toStrictEqual(base);
   });
 });
 
-describe('createHTMLViewData', () => {
+describe('createHtmlViewData', () => {
   it('returns default values', () => {
-    const data = createHTMLViewData();
+    const data = createHtmlViewData();
     expect(data.element).toBeNull();
     expect(data.width).toBe(100);
     expect(data.height).toBe(100);
@@ -67,44 +67,44 @@ describe('createHTMLViewData', () => {
 
   it('allows pre-defined values', () => {
     const element = {} as HTMLImageElement;
-    const data = createHTMLViewData({ element, width: 200, height: 150 });
+    const data = createHtmlViewData({ element, width: 200, height: 150 });
     expect(data.element).toBe(element);
     expect(data.width).toBe(200);
     expect(data.height).toBe(150);
   });
 });
 
-describe('createHTMLViewRuntime', () => {
+describe('createHtmlViewRuntime', () => {
   it('returns a non-null runtime', () => {
-    const runtime = createHTMLViewRuntime();
+    const runtime = createHtmlViewRuntime();
     expect(runtime).not.toBeNull();
   });
 
-  it('uses computeHTMLViewLocalBoundsRectangle', () => {
-    const runtime = createHTMLViewRuntime();
-    expect(runtime.computeLocalBoundsRectangle).toStrictEqual(computeHTMLViewLocalBoundsRectangle);
+  it('uses computeHtmlViewLocalBoundsRectangle', () => {
+    const runtime = createHtmlViewRuntime();
+    expect(runtime.computeLocalBoundsRectangle).toStrictEqual(computeHtmlViewLocalBoundsRectangle);
   });
 });
 
-describe('getHTMLViewRuntime', () => {
-  it('returns the runtime for an HTMLView', () => {
-    const htmlView = createHTMLView();
-    const runtime = getHTMLViewRuntime(htmlView);
+describe('getHtmlViewRuntime', () => {
+  it('returns the runtime for an HtmlView', () => {
+    const htmlView = createHtmlView();
+    const runtime = getHtmlViewRuntime(htmlView);
     expect(runtime).not.toBeNull();
   });
 });
 
-describe('setHTMLViewSize', () => {
+describe('setHtmlViewSize', () => {
   it('updates width and height', () => {
-    const htmlView = createHTMLView();
-    setHTMLViewSize(htmlView, 320, 240);
+    const htmlView = createHtmlView();
+    setHtmlViewSize(htmlView, 320, 240);
     expect(htmlView.data.width).toBe(320);
     expect(htmlView.data.height).toBe(240);
   });
 
   it('is a no-op when dimensions are unchanged', () => {
-    const htmlView = createHTMLView({ data: { width: 200, height: 150 } });
-    setHTMLViewSize(htmlView, 200, 150);
+    const htmlView = createHtmlView({ data: { width: 200, height: 150 } });
+    setHtmlViewSize(htmlView, 200, 150);
     expect(htmlView.data.width).toBe(200);
     expect(htmlView.data.height).toBe(150);
   });
