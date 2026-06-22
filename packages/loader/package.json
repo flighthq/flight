@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/resources-loader",
+  "name": "@flighthq/loader",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
