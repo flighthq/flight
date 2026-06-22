@@ -1,8 +1,8 @@
 //! Displacement-map wgpu filter pass.
 
 use flighthq_filters::DisplacementMapFilter;
-use flighthq_render_wgpu::{WgpuRenderState, WgpuRenderTarget};
 use flighthq_filters::DisplacementMapMode;
+use flighthq_render_wgpu::{WgpuRenderState, WgpuRenderTarget};
 
 use crate::filter_pass::{
     WgpuBlendMode, WgpuFilterState, create_wgpu_dual_source_pipeline, draw_wgpu_dual_source_pass,
@@ -87,25 +87,38 @@ pub fn apply_displacement_map_filter_to_wgpu(
     let (sw, sh) = (source.width as f32, source.height as f32);
 
     if filter_state.displacement_map_pipeline.is_none() {
-        let p = create_wgpu_dual_source_pipeline(state, filter_state, DISPLACEMENT_MAP_WGSL, WgpuBlendMode::Replace);
+        let p = create_wgpu_dual_source_pipeline(
+            state,
+            filter_state,
+            DISPLACEMENT_MAP_WGSL,
+            WgpuBlendMode::Replace,
+        );
         filter_state.displacement_map_pipeline = Some(p);
     }
     let mut pipeline = filter_state.displacement_map_pipeline.take().unwrap();
-    draw_wgpu_dual_source_pass(state, filter_state, source, map, Some(dest), &mut pipeline, |u| {
-        u.set_f32(0, 1.0 / sw);
-        u.set_f32(1, 1.0 / sh);
-        u.set_f32(2, scale_x);
-        // Negate Y scale: wgpu UV y=0 is top (Y-down matches screen), WebGL UV y=0 is bottom.
-        u.set_f32(3, -scale_y);
-        u.set_i32(4, component_x);
-        u.set_i32(5, component_y);
-        u.set_i32(6, mode);
-        // element 7 is padding
-        u.set_f32(8, ((edge_color >> 16) & 0xff) as f32 / 255.0);
-        u.set_f32(9, ((edge_color >> 8) & 0xff) as f32 / 255.0);
-        u.set_f32(10, (edge_color & 0xff) as f32 / 255.0);
-        u.set_f32(11, edge_alpha);
-    });
+    draw_wgpu_dual_source_pass(
+        state,
+        filter_state,
+        source,
+        map,
+        Some(dest),
+        &mut pipeline,
+        |u| {
+            u.set_f32(0, 1.0 / sw);
+            u.set_f32(1, 1.0 / sh);
+            u.set_f32(2, scale_x);
+            // Negate Y scale: wgpu UV y=0 is top (Y-down matches screen), WebGL UV y=0 is bottom.
+            u.set_f32(3, -scale_y);
+            u.set_i32(4, component_x);
+            u.set_i32(5, component_y);
+            u.set_i32(6, mode);
+            // element 7 is padding
+            u.set_f32(8, ((edge_color >> 16) & 0xff) as f32 / 255.0);
+            u.set_f32(9, ((edge_color >> 8) & 0xff) as f32 / 255.0);
+            u.set_f32(10, (edge_color & 0xff) as f32 / 255.0);
+            u.set_f32(11, edge_alpha);
+        },
+    );
     filter_state.displacement_map_pipeline = Some(pipeline);
 }
 

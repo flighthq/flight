@@ -101,7 +101,9 @@ fn visit_transform_velocity(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::velocity_field::{begin_velocity_frame, contribute_velocity, create_velocity_field, get_velocity};
+    use crate::velocity_field::{
+        begin_velocity_frame, contribute_velocity, create_velocity_field, get_velocity,
+    };
     use flighthq_node::{HierarchyArena, Transform2DArena, add_node_child, set_node_transform2d};
     use flighthq_types::Velocity2D;
 

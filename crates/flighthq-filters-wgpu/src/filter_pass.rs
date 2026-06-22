@@ -154,7 +154,11 @@ pub struct WgpuFilterState {
 
 /// Clears a render target to fully transparent black. Ends any active render pass.
 pub fn clear_wgpu_filter_target(state: &mut WgpuRenderState, target: &WgpuRenderTarget) {
-    begin_filter_pass(state, Some(target), wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT));
+    begin_filter_pass(
+        state,
+        Some(target),
+        wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),
+    );
     end_filter_pass(state);
 }
 
@@ -341,7 +345,14 @@ pub fn draw_wgpu_filter_pass(
     pipeline: &mut WgpuFilterPipeline,
     set_uniforms: impl FnOnce(&mut WgpuUniformSlot),
 ) {
-    draw_wgpu_views_pass(state, filter_state, &[&source.view], dest, pipeline, set_uniforms);
+    draw_wgpu_views_pass(
+        state,
+        filter_state,
+        &[&source.view],
+        dest,
+        pipeline,
+        set_uniforms,
+    );
 }
 
 /// Draws a full-screen pass reading from three source textures.
@@ -396,7 +407,10 @@ pub(crate) fn draw_wgpu_views_pass(
     let target_format = dest.map(|d| d.format).unwrap_or(filter_state.format);
     begin_filter_pass(state, dest, wgpu::LoadOp::Load);
     let pipeline_handle = pipeline_for_format(pipeline, filter_state.format, target_format);
-    if let Some(pass) = get_wgpu_render_state_runtime_mut(state).render_pass.as_mut() {
+    if let Some(pass) = get_wgpu_render_state_runtime_mut(state)
+        .render_pass
+        .as_mut()
+    {
         pass.set_pipeline(pipeline_handle);
         pass.set_bind_group(0, &filter_state.uniform_bind_group, &[slot_offset as u32]);
         for (i, id) in ids.iter().enumerate() {
@@ -575,8 +589,8 @@ fn pipeline_for_format<'p>(
 // Acquires the next ring-buffer slot offset, wrapping back to 0 after the last slot.
 fn acquire_uniform_slot(filter_state: &mut WgpuFilterState) -> u64 {
     let offset = filter_state.uniform_offset;
-    filter_state.uniform_offset =
-        (offset + filter_state.uniform_stride) % (filter_state.uniform_slots * filter_state.uniform_stride);
+    filter_state.uniform_offset = (offset + filter_state.uniform_stride)
+        % (filter_state.uniform_slots * filter_state.uniform_stride);
     offset
 }
 

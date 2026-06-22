@@ -58,7 +58,11 @@ pub fn apply_gradient_glow_filter_to_gl(
     );
 
     // Build the gradient ramp texture and look up the blurred alpha → s0.
-    let ratios: Vec<u8> = filter.ratios.iter().map(|&r| r.round().clamp(0.0, 255.0) as u8).collect();
+    let ratios: Vec<u8> = filter
+        .ratios
+        .iter()
+        .map(|&r| r.round().clamp(0.0, 255.0) as u8)
+        .collect();
     let ramp = create_gl_gradient_ramp_texture(state, &filter.colors, &filter.alphas, &ratios);
     apply_gradient_lookup_pass(state, s1, ramp, s0);
     unsafe {
@@ -72,7 +76,9 @@ pub fn apply_gradient_glow_filter_to_gl(
 
 /// Returns the gradient-lookup shader program for `state`, compiling on first use.
 pub fn get_gradient_lookup_shader(state: &GlRenderState) -> &GlFullscreenProgram {
-    get_gl_filter_program(state, GRADIENT_LOOKUP_FRAGMENT_SRC, |p| &mut p.gradient_lookup)
+    get_gl_filter_program(state, GRADIENT_LOOKUP_FRAGMENT_SRC, |p| {
+        &mut p.gradient_lookup
+    })
 }
 
 // Looks up the blurred alpha (unit 0) in the gradient ramp bound to unit 1.
@@ -83,12 +89,18 @@ fn apply_gradient_lookup_pass(
     dest: &GlRenderTarget,
 ) {
     let program = get_gradient_lookup_shader(state);
-    draw_gl_fullscreen_pass(state, program, &[blurred.texture], Some(dest), move |gl, p| unsafe {
-        gl.active_texture(glow::TEXTURE1);
-        gl.bind_texture(glow::TEXTURE_2D, Some(ramp));
-        gl.uniform_1_i32(gl.get_uniform_location(p, "u_ramp").as_ref(), 1);
-        gl.active_texture(glow::TEXTURE0);
-    });
+    draw_gl_fullscreen_pass(
+        state,
+        program,
+        &[blurred.texture],
+        Some(dest),
+        move |gl, p| unsafe {
+            gl.active_texture(glow::TEXTURE1);
+            gl.bind_texture(glow::TEXTURE_2D, Some(ramp));
+            gl.uniform_1_i32(gl.get_uniform_location(p, "u_ramp").as_ref(), 1);
+            gl.active_texture(glow::TEXTURE0);
+        },
+    );
 }
 
 #[cfg(test)]

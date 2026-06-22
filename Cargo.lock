@@ -481,10 +481,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "flighthq-camera"
+version = "0.1.0"
+dependencies = [
+ "flighthq-geometry",
+ "flighthq-types",
+]
+
+[[package]]
 name = "flighthq-capture"
 version = "0.1.0"
 dependencies = [
  "flighthq-displayobject",
+ "flighthq-displayobject-wgpu",
  "flighthq-geometry",
  "flighthq-node",
  "flighthq-render",
@@ -537,6 +546,69 @@ dependencies = [
  "flighthq-signals",
  "flighthq-types",
  "slotmap",
+]
+
+[[package]]
+name = "flighthq-displayobject-gl"
+version = "0.1.0"
+dependencies = [
+ "flighthq-displayobject",
+ "flighthq-geometry",
+ "flighthq-materials",
+ "flighthq-node",
+ "flighthq-path",
+ "flighthq-render",
+ "flighthq-render-gl",
+ "flighthq-shape",
+ "flighthq-sprite",
+ "flighthq-text",
+ "flighthq-text-input",
+ "flighthq-text-layout",
+ "flighthq-types",
+ "flighthq-velocity",
+ "glow 0.14.2",
+]
+
+[[package]]
+name = "flighthq-displayobject-skia"
+version = "0.1.0"
+dependencies = [
+ "flighthq-displayobject",
+ "flighthq-geometry",
+ "flighthq-materials",
+ "flighthq-node",
+ "flighthq-path",
+ "flighthq-render",
+ "flighthq-shape",
+ "flighthq-sprite",
+ "flighthq-surface",
+ "flighthq-text",
+ "flighthq-text-input",
+ "flighthq-text-layout",
+ "flighthq-types",
+ "tiny-skia",
+ "ttf-parser 0.20.0",
+]
+
+[[package]]
+name = "flighthq-displayobject-wgpu"
+version = "0.1.0"
+dependencies = [
+ "flighthq-displayobject",
+ "flighthq-geometry",
+ "flighthq-materials",
+ "flighthq-node",
+ "flighthq-path",
+ "flighthq-render",
+ "flighthq-render-wgpu",
+ "flighthq-shape",
+ "flighthq-sprite",
+ "flighthq-text",
+ "flighthq-text-input",
+ "flighthq-text-layout",
+ "flighthq-types",
+ "flighthq-velocity",
+ "wgpu",
 ]
 
 [[package]]
@@ -615,6 +687,7 @@ name = "flighthq-functional"
 version = "0.1.0"
 dependencies = [
  "flighthq-capture",
+ "flighthq-displayobject-wgpu",
  "flighthq-effects",
  "flighthq-effects-wgpu",
  "flighthq-path",
@@ -628,10 +701,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "flighthq-geolocation"
+version = "0.1.0"
+dependencies = [
+ "flighthq-types",
+ "pollster",
+ "serial_test",
+]
+
+[[package]]
 name = "flighthq-geometry"
 version = "0.1.0"
 dependencies = [
  "flighthq-types",
+]
+
+[[package]]
+name = "flighthq-haptics"
+version = "0.1.0"
+dependencies = [
+ "flighthq-types",
+ "serial_test",
 ]
 
 [[package]]
@@ -694,6 +784,7 @@ version = "0.1.0"
 dependencies = [
  "flighthq-application",
  "flighthq-displayobject",
+ "flighthq-displayobject-wgpu",
  "flighthq-geometry",
  "flighthq-input",
  "flighthq-node",
@@ -760,6 +851,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "flighthq-lighting"
+version = "0.1.0"
+dependencies = [
+ "flighthq-entity",
+ "flighthq-geometry",
+ "flighthq-types",
+]
+
+[[package]]
 name = "flighthq-log"
 version = "0.1.0"
 
@@ -790,6 +890,14 @@ dependencies = [
  "flighthq-signals",
  "flighthq-types",
  "serial_test",
+]
+
+[[package]]
+name = "flighthq-mesh"
+version = "0.1.0"
+dependencies = [
+ "flighthq-geometry",
+ "flighthq-types",
 ]
 
 [[package]]
@@ -883,8 +991,6 @@ dependencies = [
 name = "flighthq-render-gl"
 version = "0.1.0"
 dependencies = [
- "flighthq-node",
- "flighthq-path",
  "flighthq-render",
  "flighthq-types",
  "glow 0.14.2",
@@ -918,6 +1024,49 @@ dependencies = [
 ]
 
 [[package]]
+name = "flighthq-scene"
+version = "0.1.0"
+dependencies = [
+ "flighthq-geometry",
+ "flighthq-node",
+ "flighthq-types",
+]
+
+[[package]]
+name = "flighthq-scene-gl"
+version = "0.1.0"
+dependencies = [
+ "flighthq-camera",
+ "flighthq-geometry",
+ "flighthq-lighting",
+ "flighthq-materials",
+ "flighthq-mesh",
+ "flighthq-node",
+ "flighthq-render",
+ "flighthq-render-gl",
+ "flighthq-scene",
+ "flighthq-types",
+ "glow 0.14.2",
+]
+
+[[package]]
+name = "flighthq-scene-wgpu"
+version = "0.1.0"
+dependencies = [
+ "flighthq-camera",
+ "flighthq-geometry",
+ "flighthq-lighting",
+ "flighthq-materials",
+ "flighthq-mesh",
+ "flighthq-node",
+ "flighthq-render",
+ "flighthq-render-wgpu",
+ "flighthq-scene",
+ "flighthq-types",
+ "wgpu",
+]
+
+[[package]]
 name = "flighthq-screen"
 version = "0.1.0"
 dependencies = [
@@ -932,11 +1081,15 @@ version = "0.1.0"
 dependencies = [
  "flighthq-app",
  "flighthq-application",
+ "flighthq-camera",
  "flighthq-clip",
  "flighthq-clipboard",
  "flighthq-device",
  "flighthq-dialog",
  "flighthq-displayobject",
+ "flighthq-displayobject-gl",
+ "flighthq-displayobject-skia",
+ "flighthq-displayobject-wgpu",
  "flighthq-effects",
  "flighthq-effects-gl",
  "flighthq-effects-wgpu",
@@ -945,17 +1098,21 @@ dependencies = [
  "flighthq-filters",
  "flighthq-filters-gl",
  "flighthq-filters-wgpu",
+ "flighthq-geolocation",
  "flighthq-geometry",
+ "flighthq-haptics",
  "flighthq-input",
  "flighthq-interaction",
  "flighthq-ipc",
  "flighthq-keyboard",
  "flighthq-lifecycle",
+ "flighthq-lighting",
  "flighthq-log",
  "flighthq-materials",
  "flighthq-math",
  "flighthq-media",
  "flighthq-menu",
+ "flighthq-mesh",
  "flighthq-network",
  "flighthq-node",
  "flighthq-notification",
@@ -970,21 +1127,27 @@ dependencies = [
  "flighthq-render-wgpu",
  "flighthq-resources",
  "flighthq-resources-loader",
+ "flighthq-scene",
+ "flighthq-scene-gl",
+ "flighthq-scene-wgpu",
  "flighthq-screen",
  "flighthq-sensors",
  "flighthq-shape",
+ "flighthq-share",
  "flighthq-shell",
  "flighthq-shortcut",
  "flighthq-signals",
  "flighthq-sprite",
  "flighthq-spritesheet",
  "flighthq-spritesheet-formats",
+ "flighthq-statusbar",
  "flighthq-storage",
  "flighthq-surface",
  "flighthq-surface-filters",
  "flighthq-text",
  "flighthq-text-input",
  "flighthq-text-layout",
+ "flighthq-texture",
  "flighthq-timeline",
  "flighthq-tray",
  "flighthq-tween",
@@ -992,7 +1155,7 @@ dependencies = [
  "flighthq-types",
  "flighthq-updater",
  "flighthq-velocity",
- "flighthq-world",
+ "flighthq-webcam",
 ]
 
 [[package]]
@@ -1013,6 +1176,15 @@ dependencies = [
  "flighthq-node",
  "flighthq-path",
  "flighthq-types",
+]
+
+[[package]]
+name = "flighthq-share"
+version = "0.1.0"
+dependencies = [
+ "flighthq-types",
+ "serial_test",
+ "tokio",
 ]
 
 [[package]]
@@ -1063,6 +1235,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "flighthq-statusbar"
+version = "0.1.0"
+dependencies = [
+ "flighthq-types",
+ "serial_test",
+]
+
+[[package]]
 name = "flighthq-storage"
 version = "0.1.0"
 dependencies = [
@@ -1109,6 +1289,15 @@ name = "flighthq-text-layout"
 version = "0.1.0"
 dependencies = [
  "flighthq-geometry",
+ "flighthq-types",
+]
+
+[[package]]
+name = "flighthq-texture"
+version = "0.1.0"
+dependencies = [
+ "flighthq-geometry",
+ "flighthq-resources",
  "flighthq-types",
 ]
 
@@ -1174,12 +1363,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "flighthq-world"
+name = "flighthq-webcam"
 version = "0.1.0"
 dependencies = [
- "flighthq-geometry",
- "flighthq-node",
  "flighthq-types",
+ "serial_test",
 ]
 
 [[package]]
@@ -1420,7 +1608,7 @@ dependencies = [
  "byteorder-lite",
  "moxcms",
  "num-traits",
- "png",
+ "png 0.18.1",
 ]
 
 [[package]]
@@ -1649,6 +1837,17 @@ checksum = "1fa76a2c86f704bdb222d66965fb3d63269ce38518b83cb0575fca855ebb6316"
 dependencies = [
  "adler2",
  "simd-adler32",
+]
+
+[[package]]
+name = "mio"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "02bd0af71c67b473010cbbc60715ee815645a4dc942899111f494b4b737d6fda"
+dependencies = [
+ "libc",
+ "wasi",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1986,7 +2185,7 @@ version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "36820e9051aca1014ddc75770aab4d68bc1e9e632f0f5627c4086bc216fb583b"
 dependencies = [
- "ttf-parser",
+ "ttf-parser 0.25.1",
 ]
 
 [[package]]
@@ -2061,6 +2260,19 @@ name = "plain"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4596b6d070b27117e987119b4dac604f3c58cfb0b191112e24771b2faeac1a6"
+
+[[package]]
+name = "png"
+version = "0.17.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "82151a2fc869e011c153adc57cf2789ccb8d9906ce52c0b39a6b5697749d7526"
+dependencies = [
+ "bitflags 1.3.2",
+ "crc32fast",
+ "fdeflate",
+ "flate2",
+ "miniz_oxide",
+]
 
 [[package]]
 name = "png"
@@ -2386,6 +2598,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 
 [[package]]
+name = "signal-hook-registry"
+version = "1.4.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c4db69cba1110affc0e9f7bcd48bbf87b3f4fc7c61fc9155afd4c469eb3d6c1b"
+dependencies = [
+ "errno",
+ "libc",
+]
+
+[[package]]
 name = "simd-adler32"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2460,6 +2682,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd538fb6910ac1099850255cf94a94df6551fbdd602454387d0adb2d1ca6dead"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "socket2"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52d1cfed4120b4d927bf7c0f86d2087a4a7d6027c906d9f9d525a80573b9be51"
+dependencies = [
+ "libc",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2565,6 +2797,7 @@ dependencies = [
  "bytemuck",
  "cfg-if",
  "log",
+ "png 0.17.16",
  "tiny-skia-path",
 ]
 
@@ -2577,6 +2810,34 @@ dependencies = [
  "arrayref",
  "bytemuck",
  "strict-num",
+]
+
+[[package]]
+name = "tokio"
+version = "1.52.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8fc7f01b389ac15039e4dc9531aa973a135d7a4135281b12d7c1bc79fd57fffe"
+dependencies = [
+ "bytes",
+ "libc",
+ "mio",
+ "parking_lot",
+ "pin-project-lite",
+ "signal-hook-registry",
+ "socket2",
+ "tokio-macros",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "2.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "385a6cb71ab9ab790c5fe8d67f1645e6c450a7ce006a33de03daa956cf70a496"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.118",
 ]
 
 [[package]]
@@ -2624,6 +2885,12 @@ name = "tracing-core"
 version = "0.1.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a"
+
+[[package]]
+name = "ttf-parser"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "17f77d76d837a7830fe1d4f12b7b4ba4192c1888001c7164257e4bc6d21d96b4"
 
 [[package]]
 name = "ttf-parser"
@@ -2676,6 +2943,12 @@ dependencies = [
  "same-file",
  "winapi-util",
 ]
+
+[[package]]
+name = "wasi"
+version = "0.11.1+wasi-snapshot-preview1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
 
 [[package]]
 name = "wasip2"

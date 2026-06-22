@@ -11,6 +11,7 @@ flighthq-types = { workspace = true }
 flighthq-geometry = { workspace = true }
 flighthq-node = { workspace = true }
 flighthq-displayobject = { workspace = true }
+flighthq-displayobject-wgpu = { workspace = true }
 flighthq-render = { workspace = true }
 flighthq-render-wgpu = { workspace = true }
 flighthq-application = { workspace = true }

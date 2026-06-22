@@ -36,7 +36,10 @@ mod tests {
 
     #[test]
     fn compute_bloom_blur_radius_returns_non_negative() {
-        assert_eq!(compute_bloom_blur_radius(&create_bloom_effect(BloomEffect::default())), 8.0);
+        assert_eq!(
+            compute_bloom_blur_radius(&create_bloom_effect(BloomEffect::default())),
+            8.0
+        );
         assert_eq!(
             compute_bloom_blur_radius(&create_bloom_effect(BloomEffect {
                 radius: Some(-4.0),

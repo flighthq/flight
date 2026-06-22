@@ -16,3 +16,8 @@ flighthq-shape = { workspace = true }
 wgpu = { workspace = true }
 pollster = "0.3"
 image = { version = "0.25", default-features = false, features = ["png"] }
+
+[dev-dependencies]
+# Tests and examples register and walk the relocated display-object wgpu renderer;
+# the core capture path in src/ uses only the backend-core symbols.
+flighthq-displayobject-wgpu = { workspace = true }

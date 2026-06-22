@@ -26,7 +26,10 @@ impl<T> Signal<T> {
 
     /// Returns `true` if at least one slot is currently connected.
     pub fn has_listeners(&self) -> bool {
-        self.emitter.lock().map(|e| e.slot_count() > 0).unwrap_or(false)
+        self.emitter
+            .lock()
+            .map(|e| e.slot_count() > 0)
+            .unwrap_or(false)
     }
 }
 

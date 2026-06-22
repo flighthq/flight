@@ -75,7 +75,10 @@ pub fn apply_convolution_filter_to_gl(
 ) {
     let matrix_x = filter.matrix_x as usize;
     let matrix_y = filter.matrix_y as usize;
-    assert!(matrix_x > 0 && matrix_y > 0, "Convolution matrix dimensions must be positive");
+    assert!(
+        matrix_x > 0 && matrix_y > 0,
+        "Convolution matrix dimensions must be positive"
+    );
     assert!(
         matrix_x * matrix_y <= MAX_KERNEL,
         "Convolution kernel exceeds the GL maximum of 7×7"
@@ -98,26 +101,44 @@ pub fn apply_convolution_filter_to_gl(
 
     let (tx, ty) = (1.0 / source.width as f32, 1.0 / source.height as f32);
     let program = get_convolution_shader(state);
-    draw_gl_fullscreen_pass(state, program, &[source.texture], Some(dest), move |gl, p| unsafe {
-        gl.uniform_2_f32(gl.get_uniform_location(p, "u_texelSize").as_ref(), tx, ty);
-        gl.uniform_1_f32_slice(gl.get_uniform_location(p, "u_matrix[0]").as_ref(), &matrix_data);
-        gl.uniform_1_i32(gl.get_uniform_location(p, "u_matrixX").as_ref(), matrix_x as i32);
-        gl.uniform_1_i32(gl.get_uniform_location(p, "u_matrixY").as_ref(), matrix_y as i32);
-        gl.uniform_1_f32(gl.get_uniform_location(p, "u_divisor").as_ref(), divisor);
-        gl.uniform_1_f32(gl.get_uniform_location(p, "u_bias").as_ref(), bias);
-        gl.uniform_1_i32(gl.get_uniform_location(p, "u_clamp").as_ref(), clamp_edge as i32);
-        gl.uniform_1_i32(
-            gl.get_uniform_location(p, "u_preserveAlpha").as_ref(),
-            preserve_alpha as i32,
-        );
-        gl.uniform_4_f32(
-            gl.get_uniform_location(p, "u_edgeColor").as_ref(),
-            ((edge_color >> 16) & 0xff) as f32 / 255.0,
-            ((edge_color >> 8) & 0xff) as f32 / 255.0,
-            (edge_color & 0xff) as f32 / 255.0,
-            ((edge_color >> 24) & 0xff) as f32 / 255.0,
-        );
-    });
+    draw_gl_fullscreen_pass(
+        state,
+        program,
+        &[source.texture],
+        Some(dest),
+        move |gl, p| unsafe {
+            gl.uniform_2_f32(gl.get_uniform_location(p, "u_texelSize").as_ref(), tx, ty);
+            gl.uniform_1_f32_slice(
+                gl.get_uniform_location(p, "u_matrix[0]").as_ref(),
+                &matrix_data,
+            );
+            gl.uniform_1_i32(
+                gl.get_uniform_location(p, "u_matrixX").as_ref(),
+                matrix_x as i32,
+            );
+            gl.uniform_1_i32(
+                gl.get_uniform_location(p, "u_matrixY").as_ref(),
+                matrix_y as i32,
+            );
+            gl.uniform_1_f32(gl.get_uniform_location(p, "u_divisor").as_ref(), divisor);
+            gl.uniform_1_f32(gl.get_uniform_location(p, "u_bias").as_ref(), bias);
+            gl.uniform_1_i32(
+                gl.get_uniform_location(p, "u_clamp").as_ref(),
+                clamp_edge as i32,
+            );
+            gl.uniform_1_i32(
+                gl.get_uniform_location(p, "u_preserveAlpha").as_ref(),
+                preserve_alpha as i32,
+            );
+            gl.uniform_4_f32(
+                gl.get_uniform_location(p, "u_edgeColor").as_ref(),
+                ((edge_color >> 16) & 0xff) as f32 / 255.0,
+                ((edge_color >> 8) & 0xff) as f32 / 255.0,
+                (edge_color & 0xff) as f32 / 255.0,
+                ((edge_color >> 24) & 0xff) as f32 / 255.0,
+            );
+        },
+    );
 }
 
 /// Returns the convolution shader program for `state`, compiling on first use.

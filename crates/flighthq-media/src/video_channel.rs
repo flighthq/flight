@@ -30,7 +30,9 @@ pub fn get_video_channel_current_time(channel: &VideoChannel) -> f64 {
     if channel.state != VideoChannelState::Playing {
         return channel.current_time;
     }
-    video_backend().live_position_ms(channel).unwrap_or(channel.current_time)
+    video_backend()
+        .live_position_ms(channel)
+        .unwrap_or(channel.current_time)
 }
 
 /// Pauses a playing channel. Snapshots `current_time` and pauses the
@@ -77,7 +79,11 @@ pub fn play_video_resource(
 /// when already playing or when the source has no backend handle.
 pub fn resume_video_channel(channel: &mut VideoChannel) {
     if channel.state == VideoChannelState::Playing
-        || channel.source.as_ref().map(|s| s.path.is_none()).unwrap_or(true)
+        || channel
+            .source
+            .as_ref()
+            .map(|s| s.path.is_none())
+            .unwrap_or(true)
     {
         return;
     }
@@ -214,7 +220,12 @@ fn clamp(value: f64, min: f64, max: f64) -> f64 {
 }
 
 fn start_video_channel(channel: &mut VideoChannel) {
-    if channel.source.as_ref().map(|s| s.path.is_none()).unwrap_or(true) {
+    if channel
+        .source
+        .as_ref()
+        .map(|s| s.path.is_none())
+        .unwrap_or(true)
+    {
         return;
     }
     channel.state = VideoChannelState::Playing;
@@ -236,18 +247,23 @@ impl VideoBackend for NoopVideoBackend {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flighthq_signals::connect_signal;
     use flighthq_signals::SignalConnectOptions;
+    use flighthq_signals::connect_signal;
     use serial_test::serial;
     use std::sync::atomic::AtomicUsize;
     use std::sync::atomic::Ordering;
 
     fn source() -> VideoResource {
-        VideoResource { path: Some("clip.mp4".into()) }
+        VideoResource {
+            path: Some("clip.mp4".into()),
+        }
     }
 
     fn opts(current_time: Option<f64>) -> VideoPlayOptions {
-        VideoPlayOptions { current_time, ..Default::default() }
+        VideoPlayOptions {
+            current_time,
+            ..Default::default()
+        }
     }
 
     /// A backend reporting a fixed duration and a frozen clock, mirroring the
@@ -271,7 +287,10 @@ mod tests {
     }
 
     fn install_backend(duration_ms: f64) {
-        set_video_backend(Arc::new(TestBackend { duration_ms, started_position_ms: Mutex::new(0.0) }));
+        set_video_backend(Arc::new(TestBackend {
+            duration_ms,
+            started_position_ms: Mutex::new(0.0),
+        }));
     }
 
     fn reset_backend() {
@@ -300,7 +319,10 @@ mod tests {
         // play_video_resource: playing channel with applied options.
         let channel = play_video_resource(
             &source(),
-            Some(&VideoPlayOptions { gain: Some(0.5), ..Default::default() }),
+            Some(&VideoPlayOptions {
+                gain: Some(0.5),
+                ..Default::default()
+            }),
         )
         .unwrap();
         assert_eq!(channel.gain, 0.5);
@@ -342,7 +364,10 @@ mod tests {
         install_backend(1000.0);
         let mut channel = play_video_resource(
             &source(),
-            Some(&VideoPlayOptions { loops: Some(1), ..Default::default() }),
+            Some(&VideoPlayOptions {
+                loops: Some(1),
+                ..Default::default()
+            }),
         )
         .unwrap();
 

@@ -1,7 +1,7 @@
 //! WgpuRenderState — creation, runtime access, and teardown.
 
+use crate::runtime_types::WgpuSpriteBatchRuntime;
 use crate::shader::{UNIFORM_BYTE_SIZE, create_wgpu_bind_group_layouts, warm_wgpu_pipelines};
-use crate::sprite_batch::WgpuSpriteBatchRuntime;
 
 // Ring buffer: 4096 draw slots per frame. Stride is clamped to at least 256 by the spec.
 const RING_SLOT_COUNT: u64 = 4096;
@@ -156,14 +156,14 @@ pub struct WgpuRenderStateRuntime {
     // Per-kind velocity writers dispatched by the velocity pass.
     pub velocity_writers: std::collections::HashMap<
         flighthq_types::kind::KindId,
-        Box<dyn crate::velocity::WgpuVelocityWriter>,
+        Box<dyn crate::runtime_types::WgpuVelocityWriter>,
     >,
 
     // Registered text-input overlay hook (caret/selection over rich text).
-    pub text_input_overlay: Option<crate::rich_text::WgpuRichTextOverlay>,
+    pub text_input_overlay: Option<crate::runtime_types::WgpuRichTextOverlay>,
 
     // Lazily-built velocity pipeline resources (rgba16float velocity pass).
-    pub velocity_pipeline: Option<crate::velocity::WgpuVelocityPipeline>,
+    pub velocity_pipeline: Option<crate::runtime_types::WgpuVelocityPipeline>,
 
     // Solid-fill shape mesh path. The fill pipeline draws colored triangles
     // from a vec2 vertex buffer (keyed by blend/stencil/format like the bitmap
@@ -171,7 +171,7 @@ pub struct WgpuRenderStateRuntime {
     // shape node id, rebuilt when the node's content revision changes.
     pub shape_fill_pipeline_cache: std::collections::HashMap<String, wgpu::RenderPipeline>,
     pub shape_fill_mesh_cache:
-        std::collections::HashMap<u64, crate::shape_mesh::WgpuShapeMeshCacheEntry>,
+        std::collections::HashMap<u64, crate::runtime_types::WgpuShapeMeshCacheEntry>,
 }
 
 /// Identifies which built-in renderer handles a node kind. Mirrors
@@ -242,7 +242,10 @@ pub struct WgpuRenderState {
     /// Surface configuration height (pixels).
     pub surface_height: u32,
     /// Mutable per-frame render path state.
-    pub(crate) runtime: WgpuRenderStateRuntime,
+    ///
+    /// Public so the per-subject leaf renderers in `flighthq-displayobject-wgpu`
+    /// can read and write their runtime slots; treat as backend-internal.
+    pub runtime: WgpuRenderStateRuntime,
 }
 
 // ---------------------------------------------------------------------------
@@ -461,7 +464,7 @@ pub fn destroy_wgpu_render_state(state: &mut WgpuRenderState) {
     if let Some(pipeline) = state.runtime.velocity_pipeline.take() {
         pipeline.uniform_buffer.destroy();
     }
-    let shape_meshes: Vec<crate::shape_mesh::WgpuShapeMeshCacheEntry> = state
+    let shape_meshes: Vec<crate::runtime_types::WgpuShapeMeshCacheEntry> = state
         .runtime
         .shape_fill_mesh_cache
         .drain()

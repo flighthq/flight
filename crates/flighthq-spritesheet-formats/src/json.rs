@@ -91,12 +91,18 @@ impl JsonValue {
 /// message on malformed input.
 pub fn parse_json(input: &str) -> Result<JsonValue, String> {
     let chars: Vec<char> = input.chars().collect();
-    let mut parser = JsonParser { chars: &chars, pos: 0 };
+    let mut parser = JsonParser {
+        chars: &chars,
+        pos: 0,
+    };
     parser.skip_whitespace();
     let value = parser.parse_value()?;
     parser.skip_whitespace();
     if parser.pos != parser.chars.len() {
-        return Err(format!("unexpected trailing characters at position {}", parser.pos));
+        return Err(format!(
+            "unexpected trailing characters at position {}",
+            parser.pos
+        ));
     }
     Ok(value)
 }
@@ -129,7 +135,10 @@ impl JsonParser<'_> {
             Some('t') | Some('f') => self.parse_bool(),
             Some('n') => self.parse_null(),
             Some(c) if c == '-' || c.is_ascii_digit() => self.parse_number(),
-            Some(c) => Err(format!("unexpected character '{c}' at position {}", self.pos)),
+            Some(c) => Err(format!(
+                "unexpected character '{c}' at position {}",
+                self.pos
+            )),
             None => Err("unexpected end of input".to_string()),
         }
     }
@@ -426,7 +435,10 @@ mod tests {
         assert_eq!(v.get("b").and_then(JsonValue::as_bool), Some(true));
         assert_eq!(v.get("c").and_then(JsonValue::as_text), Some("x"));
         assert_eq!(v.get("d"), Some(&JsonValue::Null));
-        assert_eq!(v.get("e").and_then(JsonValue::as_array).map(|a| a.len()), Some(2));
+        assert_eq!(
+            v.get("e").and_then(JsonValue::as_array).map(|a| a.len()),
+            Some(2)
+        );
     }
 
     #[test]

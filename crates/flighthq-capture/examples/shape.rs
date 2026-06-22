@@ -11,7 +11,7 @@ use flighthq_render::{
     RenderStateStore, create_render_state, get_render_proxy_2d, get_render_state,
     prepare_display_object_render,
 };
-use flighthq_render_wgpu::{
+use flighthq_displayobject_wgpu::{
     WgpuShapeGeometry, register_wgpu_display_object_renderer, render_wgpu_display_object,
 };
 use flighthq_shape::{

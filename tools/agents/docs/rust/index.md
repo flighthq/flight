@@ -42,23 +42,31 @@ These are Rust-port-specific and locked in:
 - **`KindId`: a `u64` newtype.** `KindId::of::<T>()` (hashes `TypeId`) for compile-time kinds; `KindId::new()` (an `AtomicU64`) for runtime kinds. The renderer registry is `HashMap<KindId, _>`; insert replaces. This is the Rust form of the TS `*Kind` `Symbol()`.
 - **Signals: `Signal<T>` parameterized by payload** (not by a function type). The internal callback is `Arc<dyn Fn(&T) + Send + Sync>`; one generic `emit_signal(&Signal<T>, &T)`; `()` payload for bare notifications, named payload structs for built-ins. Lives in `flighthq-signals`, re-exported from `flighthq-types`.
 - **Color convention: sRGB pass-through.** Targets are non-sRGB `Rgba8Unorm`; packed `0xRRGGBBAA` maps 1:1 with no gamma conversion, matching the TS renderers (RGBA8 non-sRGB, premultiplied alpha). Hosts prefer a non-sRGB surface format. Linear-internal was rejected — it would break cross-backend and Rust↔TS conformance for ~zero perceptible gain.
-- **Renderer scope: GPU + portable software** (see [renderer taxonomy](#renderer-scope-gpu--portable-software) below). There is no Canvas2D or DOM renderer in Rust — their substrate (the Canvas2D context, the DOM tree) does not exist in the box, and building them would be an emulator. The software-render capability is instead provided by `render-skia`. Decided by the [crate existence rule](conformance.md#the-crate-existence-rule).
+- **Renderer scope: GPU + portable software** (see [renderer taxonomy](#renderer-scope-gpu--portable-software) below). There is no Canvas2D or DOM renderer in Rust — their substrate (the Canvas2D context, the DOM tree) does not exist in the box, and building them would be an emulator. The software-render capability is instead provided by `displayobject-skia`. Decided by the [crate existence rule](conformance.md#the-crate-existence-rule).
 
 ## Renderer scope: GPU + portable software
 
-> **Naming follows the upstream refactor.** A render-package reorg is landing upstream toward a `<subject>-<backend>` convention (e.g. `render-canvas → displayobject-canvas`). The Rust crate names below are **provisional working names**; when the refactor merges, the renderer crates are renamed to match the upstream subjects — `render-gl → displayobject-gl`, `render-wgpu → displayobject-wgpu`, and the software renderer as `displayobject-skia` — and the [rename table](conformance.md#renames) becomes the authoritative mapping. Treat `render-*` here as "the renderer for the corresponding upstream subject/backend."
+The upstream render reorg **landed 2026-06-22**, in a `<subject>-<backend>` layering. Rendering is three layers (see [the render layering](conformance.md#the-render-layering)):
 
-Renderers are named by implementation technology (like `render-gl` / `render-wgpu`, never `render-gpu`), and fall in three tiers:
+- **`render`** — backend-agnostic core (registration, render state/queue, update pipeline, backend draw contracts).
+- **`render-gl` / `render-wgpu`** — backend **cores** (state, targets, shaders, draw, fullscreen/surface). Subject-agnostic GPU plumbing, named by technology (never `render-gpu`).
+- **`<subject>-<backend>`** — per-subject leaf renderers over a core: `displayobject-<backend>` (2D leaves: bitmap, shape, sprite, text, tilemap, particles) and `scene-<backend>` (3D scene).
+
+The display-object backends fall in three tiers:
 
 | Tier | Crates | Runs |
 | --- | --- | --- |
-| Portable GPU | `render-gl` (glow), `render-wgpu` (wgpu) | native + wasm |
-| Portable software | `render-skia` (tiny-skia); optional `render-cairo` | native + wasm — rasterizes into a `flighthq-surface` buffer; on the web, one `putImageData`/frame, no per-primitive boundary crossings |
-| Host-web only (browser-API-bound) | `render-canvas`, `render-dom` | TS/JS in `host-web`; **not** Rust crates |
+| Portable GPU | `displayobject-gl` (over `render-gl`/glow), `displayobject-wgpu` (over `render-wgpu`/wgpu) | native + wasm |
+| Portable software | `displayobject-skia` (tiny-skia); optional `displayobject-cairo` | native + wasm — rasterizes into a `flighthq-surface` buffer; on the web, one `putImageData`/frame, no per-primitive boundary crossings |
+| Host-web only (browser-API-bound) | `displayobject-canvas`, `displayobject-dom` | TS/JS in `host-web`; **not** Rust crates |
 
-`render-skia` is the in-box software-render path — the "Cairo 2.0" that restores software-render parity without emulating Canvas2D. Its `Pixmap` layout matches `flighthq-surface`'s RGBA buffer 1:1, so capture reads it with no GPU readback, and its output is **bit-deterministic across machines** — making it the conformance _reference_ the GPU backends are checked against, and the universal web no-GPU fallback. tiny-skia shares Skia's raster heritage with Chrome's Canvas2D, giving `rust:skia ~ ts:canvas` the best shot at structural conformance. CPU filters/effects reuse the existing `surface-filters` / `effects` / `filters` crates — no `filters-skia` / `effects-skia` needed; only shape/path/text rasterization goes through Skia.
+`displayobject-skia` is the in-box software-render path — the "Cairo 2.0" that restores software-render parity without emulating Canvas2D. Its `Pixmap` layout matches `flighthq-surface`'s RGBA buffer 1:1, so capture reads it with no GPU readback, and its output is **bit-deterministic across machines** — making it the conformance _reference_ the GPU backends are checked against, and the universal web no-GPU fallback. tiny-skia shares Skia's raster heritage with Chrome's Canvas2D, giving `rust:skia ~ ts:canvas` the best shot at structural conformance. CPU filters/effects reuse the existing `surface-filters` / `effects` / `filters` crates — no `filters-skia` / `effects-skia` needed; only shape/path/text rasterization goes through Skia.
 
-`render-canvas` (Canvas2D, immediate-mode) and `render-dom` (DOM elements) are **not** ported: their substrate does not exist in the box (see the [existence rule](conformance.md#the-crate-existence-rule)). DOM rendering is never worth wasm (pure DOM management, no compute to accelerate, and a wasm version is strictly worse). A browser-Canvas2D path, if ever wanted, is a `host-web` JS concern (command-buffer + shim), and is largely obviated by `render-skia` + `putImageData`.
+`displayobject-canvas` (Canvas2D, immediate-mode) and `displayobject-dom` (DOM elements) are **not** ported: their substrate does not exist in the box (see the [existence rule](conformance.md#the-crate-existence-rule)). DOM rendering is never worth wasm (pure DOM management, no compute to accelerate, and a wasm version is strictly worse). A browser-Canvas2D path, if ever wanted, is a `host-web` JS concern (command-buffer + shim), and is largely obviated by `displayobject-skia` + `putImageData`.
+
+### 3D pipeline
+
+The refactor added a 3D subject family alongside display objects: **`scene`** (3D scene graph, renamed from `world`), **`mesh`** (vertex layouts, primitive builders, normals/tangents/bounds), **`lighting`** (light descriptors), **`texture`** (textures/samplers/cubemaps), and **`camera`** (3D camera: projections/view-projection — _not_ photo capture, which is now `webcam`). These are value/math + GPU crates with a substrate in the box, rendered by `scene-gl` / `scene-wgpu`. All are crates to add; see the [crates-to-add list](conformance.md#crates-to-add).
 
 ## Text
 

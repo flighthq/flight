@@ -126,7 +126,12 @@ mod tests {
             }),
             SignalConnectOptions::default(),
         );
-        let data = InputPointerData { x: 20.0, y: 30.0, pointer_id: 4, ..Default::default() };
+        let data = InputPointerData {
+            x: 20.0,
+            y: 30.0,
+            pointer_id: 4,
+            ..Default::default()
+        };
         dispatch_pointer_down_event(&mut m, data);
         assert_eq!(x.load(Ordering::SeqCst), 20);
         assert_eq!(id.load(Ordering::SeqCst), 4);

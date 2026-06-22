@@ -273,10 +273,8 @@ pub fn update_particle_emitter(
                     + (state.color_death[ct + 2] - state.color_birth[ct + 2]) * life_fraction;
             } else {
                 data.colors[ct] = color_start_r + (color_end_r - color_start_r) * life_fraction;
-                data.colors[ct + 1] =
-                    color_start_g + (color_end_g - color_start_g) * life_fraction;
-                data.colors[ct + 2] =
-                    color_start_b + (color_end_b - color_start_b) * life_fraction;
+                data.colors[ct + 1] = color_start_g + (color_end_g - color_start_g) * life_fraction;
+                data.colors[ct + 2] = color_start_b + (color_end_b - color_start_b) * life_fraction;
             }
         }
 
@@ -294,8 +292,8 @@ pub fn update_particle_emitter(
         }
 
         if has_flipbook {
-            let frame =
-                (state.lifetimes[lt] * config.frame_rate).floor() as i64 % config.frame_count as i64;
+            let frame = (state.lifetimes[lt] * config.frame_rate).floor() as i64
+                % config.frame_count as i64;
             data.ids[i] = (config.region_id_min as i64 + frame) as u16;
         }
 
@@ -362,8 +360,8 @@ pub fn update_particle_emitter(
             state.lifetimes[lt + 1] = lifetime;
 
             // Velocity direction in local/emitter space
-            let angle = base_angle
-                + (next_random(&mut state.random_state) - 0.5) * 2.0 * config.spread;
+            let angle =
+                base_angle + (next_random(&mut state.random_state) - 0.5) * 2.0 * config.spread;
             let speed = config.speed_min
                 + next_random(&mut state.random_state) * (config.speed_max - config.speed_min);
             let mut vx = angle.cos() * speed;
@@ -602,8 +600,7 @@ fn spawn_particle(
     state.lifetimes[lt] = 0.0;
     state.lifetimes[lt + 1] = lifetime;
 
-    let angle =
-        base_angle + (next_random(&mut state.random_state) - 0.5) * 2.0 * config.spread;
+    let angle = base_angle + (next_random(&mut state.random_state) - 0.5) * 2.0 * config.spread;
     let speed = config.speed_min
         + next_random(&mut state.random_state) * (config.speed_max - config.speed_min);
     state.velocities[idx * 2] = angle.cos() * speed;
@@ -618,9 +615,7 @@ fn spawn_particle(
             spawn_x += a.cos() * r;
             spawn_y += a.sin() * r;
         }
-        ParticleEmitterShape::Rect
-            if config.emitter_width > 0.0 || config.emitter_height > 0.0 =>
-        {
+        ParticleEmitterShape::Rect if config.emitter_width > 0.0 || config.emitter_height > 0.0 => {
             spawn_x += (next_random(&mut state.random_state) - 0.5) * config.emitter_width;
             spawn_y += (next_random(&mut state.random_state) - 0.5) * config.emitter_height;
         }
@@ -657,15 +652,21 @@ fn spawn_particle(
     } else if has_color_variance {
         let r0 = clamp01(
             config.color_start_r
-                + (next_random(&mut state.random_state) - 0.5) * 2.0 * config.color_start_variance_r,
+                + (next_random(&mut state.random_state) - 0.5)
+                    * 2.0
+                    * config.color_start_variance_r,
         );
         let g0 = clamp01(
             config.color_start_g
-                + (next_random(&mut state.random_state) - 0.5) * 2.0 * config.color_start_variance_g,
+                + (next_random(&mut state.random_state) - 0.5)
+                    * 2.0
+                    * config.color_start_variance_g,
         );
         let b0 = clamp01(
             config.color_start_b
-                + (next_random(&mut state.random_state) - 0.5) * 2.0 * config.color_start_variance_b,
+                + (next_random(&mut state.random_state) - 0.5)
+                    * 2.0
+                    * config.color_start_variance_b,
         );
         let r1 = clamp01(
             config.color_end_r
@@ -713,8 +714,8 @@ fn spawn_particle(
 mod tests {
     use super::*;
     use crate::state::{create_particle_emitter_config, create_particle_emitter_state};
-    use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicU32, Ordering};
 
     fn config_with(f: impl FnOnce(&mut ParticleEmitterConfig)) -> ParticleEmitterConfig {
         let mut config = create_particle_emitter_config(None);
@@ -731,7 +732,10 @@ mod tests {
             c.lifetime_min = 10.0;
             c.lifetime_max = 10.0;
         });
-        assert_eq!(emit_particle_burst(&mut data, &mut state, &config, 100, 0.0, 0.0), 5);
+        assert_eq!(
+            emit_particle_burst(&mut data, &mut state, &config, 100, 0.0, 0.0),
+            5
+        );
         assert_eq!(data.particle_count, 5);
     }
 
@@ -1264,10 +1268,7 @@ mod tests {
         update_particle_emitter(&mut data, &mut state, &config, 1.0 / 60.0, None, Some(&wt0));
         // Move the emitter and re-arm a burst.
         state.burst_timer = 0.0;
-        let wt1 = WorldTransform2D {
-            tx: 100.0,
-            ..wt0
-        };
+        let wt1 = WorldTransform2D { tx: 100.0, ..wt0 };
         update_particle_emitter(&mut data, &mut state, &config, 1.0 / 60.0, None, Some(&wt1));
         let vx = state.velocities[(data.particle_count as usize - 1) * 2];
         assert!(vx > 100.0);

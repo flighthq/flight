@@ -40,14 +40,22 @@ pub fn apply_pixelate_filter_to_wgpu(
     let (sw, sh) = (source.width as f32, source.height as f32);
 
     if filter_state.pixelate_pipeline.is_none() {
-        let p = create_wgpu_filter_pipeline(state, filter_state, PIXELATE_WGSL, WgpuBlendMode::Replace);
+        let p =
+            create_wgpu_filter_pipeline(state, filter_state, PIXELATE_WGSL, WgpuBlendMode::Replace);
         filter_state.pixelate_pipeline = Some(p);
     }
     let mut pipeline = filter_state.pixelate_pipeline.take().unwrap();
-    draw_wgpu_filter_pass(state, filter_state, source, Some(dest), &mut pipeline, |u| {
-        u.set_f32(0, block_size / sw);
-        u.set_f32(1, block_size / sh);
-    });
+    draw_wgpu_filter_pass(
+        state,
+        filter_state,
+        source,
+        Some(dest),
+        &mut pipeline,
+        |u| {
+            u.set_f32(0, block_size / sw);
+            u.set_f32(1, block_size / sh);
+        },
+    );
     filter_state.pixelate_pipeline = Some(pipeline);
 }
 

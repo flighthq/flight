@@ -274,7 +274,10 @@ mod tests {
         // Self is its own root => world-bounds branch, world == local at identity.
         let mut out = RectangleLike::default();
         compute_node_bounds_rectangle(&mut out, &arena, node, Some(node));
-        assert_eq!((out.x, out.y, out.width, out.height), (0.0, 0.0, 100.0, 50.0));
+        assert_eq!(
+            (out.x, out.y, out.width, out.height),
+            (0.0, 0.0, 100.0, 50.0)
+        );
     }
 
     #[test]
@@ -288,7 +291,10 @@ mod tests {
         let mut out = RectangleLike::default();
         compute_node_bounds_rectangle(&mut out, &arena, child, Some(parent));
         // local (0,0,10,10) scaled 2x and translated to (100,50).
-        assert_eq!((out.x, out.y, out.width, out.height), (100.0, 50.0, 20.0, 20.0));
+        assert_eq!(
+            (out.x, out.y, out.width, out.height),
+            (100.0, 50.0, 20.0, 20.0)
+        );
     }
 
     // ensure_node_local_bounds_rectangle
@@ -453,5 +459,4 @@ mod tests {
         set_node_width(&mut arena, node, 40.0);
         assert_eq!(arena[node].transform.scale_x, 0.0);
     }
-
 }

@@ -78,10 +78,16 @@ pub fn apply_median_filter_to_gl(
     let radius = (filter.radius.unwrap_or(1.0).round() as i32).clamp(0, MAX_RADIUS);
     let (tx, ty) = (1.0 / source.width as f32, 1.0 / source.height as f32);
     let program = get_median_shader(state);
-    draw_gl_fullscreen_pass(state, program, &[source.texture], Some(dest), move |gl, p| unsafe {
-        gl.uniform_2_f32(gl.get_uniform_location(p, "u_texelSize").as_ref(), tx, ty);
-        gl.uniform_1_i32(gl.get_uniform_location(p, "u_radius").as_ref(), radius);
-    });
+    draw_gl_fullscreen_pass(
+        state,
+        program,
+        &[source.texture],
+        Some(dest),
+        move |gl, p| unsafe {
+            gl.uniform_2_f32(gl.get_uniform_location(p, "u_texelSize").as_ref(), tx, ty);
+            gl.uniform_1_i32(gl.get_uniform_location(p, "u_radius").as_ref(), radius);
+        },
+    );
 }
 
 /// Returns the median shader program for `state`, compiling on first use.
@@ -98,6 +104,8 @@ mod tests {
     #[test]
     fn median_fragment_src_sorts_each_channel() {
         assert!(MEDIAN_FRAGMENT_SRC.contains("void sortFloat"));
-        assert!(MEDIAN_FRAGMENT_SRC.contains("fragColor = vec4(rv[mid], gv[mid], bv[mid], av[mid])"));
+        assert!(
+            MEDIAN_FRAGMENT_SRC.contains("fragColor = vec4(rv[mid], gv[mid], bv[mid], av[mid])")
+        );
     }
 }

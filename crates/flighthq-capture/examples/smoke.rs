@@ -12,7 +12,7 @@ use flighthq_capture::{capture_scene_to_png, capture_scene_to_rgba, request_wgpu
 use flighthq_displayobject::{
     DisplayObjectArena, create_stage, prepare_display_object_render, set_stage_color,
 };
-use flighthq_render_wgpu::register_wgpu_display_object_renderer;
+use flighthq_displayobject_wgpu::register_wgpu_display_object_renderer;
 
 fn main() {
     const SIZE: u32 = 16;

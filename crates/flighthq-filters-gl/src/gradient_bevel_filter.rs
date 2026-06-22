@@ -84,7 +84,11 @@ pub fn apply_gradient_bevel_filter_to_gl(
     apply_bevel_encode_pass(state, s1, s0, dx / s1.width as f32, dy / s1.height as f32);
 
     // Build gradient ramp, apply to the encoded bevel clipped to source alpha → s1.
-    let ratios: Vec<u8> = filter.ratios.iter().map(|&r| r.round().clamp(0.0, 255.0) as u8).collect();
+    let ratios: Vec<u8> = filter
+        .ratios
+        .iter()
+        .map(|&r| r.round().clamp(0.0, 255.0) as u8)
+        .collect();
     let ramp = create_gl_gradient_ramp_texture(state, &filter.colors, &filter.alphas, &ratios);
     apply_bevel_apply_pass(state, s0, ramp, source, s1);
     unsafe {
@@ -101,12 +105,16 @@ pub fn apply_gradient_bevel_filter_to_gl(
 
 /// Returns the bevel-apply shader program for `state`, compiling on first use.
 pub fn get_gradient_bevel_apply_shader(state: &GlRenderState) -> &GlFullscreenProgram {
-    get_gl_filter_program(state, BEVEL_APPLY_FRAGMENT_SRC, |p| &mut p.gradient_bevel_apply)
+    get_gl_filter_program(state, BEVEL_APPLY_FRAGMENT_SRC, |p| {
+        &mut p.gradient_bevel_apply
+    })
 }
 
 /// Returns the bevel-encode shader program for `state`, compiling on first use.
 pub fn get_gradient_bevel_encode_shader(state: &GlRenderState) -> &GlFullscreenProgram {
-    get_gl_filter_program(state, BEVEL_ENCODE_FRAGMENT_SRC, |p| &mut p.gradient_bevel_encode)
+    get_gl_filter_program(state, BEVEL_ENCODE_FRAGMENT_SRC, |p| {
+        &mut p.gradient_bevel_encode
+    })
 }
 
 // Encodes the bevel value from offset alpha samples of the blurred basis.
@@ -118,9 +126,15 @@ fn apply_bevel_encode_pass(
     dy: f32,
 ) {
     let program = get_gradient_bevel_encode_shader(state);
-    draw_gl_fullscreen_pass(state, program, &[blurred.texture], Some(dest), move |gl, p| unsafe {
-        gl.uniform_2_f32(gl.get_uniform_location(p, "u_offset").as_ref(), dx, dy);
-    });
+    draw_gl_fullscreen_pass(
+        state,
+        program,
+        &[blurred.texture],
+        Some(dest),
+        move |gl, p| unsafe {
+            gl.uniform_2_f32(gl.get_uniform_location(p, "u_offset").as_ref(), dx, dy);
+        },
+    );
 }
 
 // Looks up the encoded bevel (unit 0) in the ramp (unit 1), clipped to source
@@ -134,15 +148,21 @@ fn apply_bevel_apply_pass(
 ) {
     let source_texture = source.texture;
     let program = get_gradient_bevel_apply_shader(state);
-    draw_gl_fullscreen_pass(state, program, &[encoded.texture], Some(dest), move |gl, p| unsafe {
-        gl.active_texture(glow::TEXTURE1);
-        gl.bind_texture(glow::TEXTURE_2D, Some(ramp));
-        gl.uniform_1_i32(gl.get_uniform_location(p, "u_ramp").as_ref(), 1);
-        gl.active_texture(glow::TEXTURE2);
-        gl.bind_texture(glow::TEXTURE_2D, Some(source_texture));
-        gl.uniform_1_i32(gl.get_uniform_location(p, "u_source").as_ref(), 2);
-        gl.active_texture(glow::TEXTURE0);
-    });
+    draw_gl_fullscreen_pass(
+        state,
+        program,
+        &[encoded.texture],
+        Some(dest),
+        move |gl, p| unsafe {
+            gl.active_texture(glow::TEXTURE1);
+            gl.bind_texture(glow::TEXTURE_2D, Some(ramp));
+            gl.uniform_1_i32(gl.get_uniform_location(p, "u_ramp").as_ref(), 1);
+            gl.active_texture(glow::TEXTURE2);
+            gl.bind_texture(glow::TEXTURE_2D, Some(source_texture));
+            gl.uniform_1_i32(gl.get_uniform_location(p, "u_source").as_ref(), 2);
+            gl.active_texture(glow::TEXTURE0);
+        },
+    );
 }
 
 #[cfg(test)]

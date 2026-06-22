@@ -406,7 +406,9 @@ pub fn write_wgpu_matrix_only_uniforms(
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-pub(crate) fn wgpu_pipeline_cache_key(
+/// Builds the blend/stencil/format pipeline-cache key string. Shared with the
+/// leaf renderers in `flighthq-displayobject-wgpu` (sprite batch, shape mesh).
+pub fn wgpu_pipeline_cache_key(
     blend_mode: Option<BlendMode>,
     stencil_mode: WgpuStencilMode,
     format: wgpu::TextureFormat,
@@ -526,7 +528,7 @@ fn current_wgpu_viewport(state: &WgpuRenderState) -> (u32, u32) {
 
 /// Maps a `BlendMode` to a `wgpu::BlendState`. Returns `None` for modes that have no
 /// fixed-function blend equivalent (they fall back to normal blending at the call site).
-pub(crate) fn wgpu_blend_state(blend_mode: BlendMode) -> Option<wgpu::BlendState> {
+pub fn wgpu_blend_state(blend_mode: BlendMode) -> Option<wgpu::BlendState> {
     match blend_mode {
         BlendMode::Add => Some(wgpu::BlendState {
             color: wgpu::BlendComponent {
@@ -545,7 +547,8 @@ pub(crate) fn wgpu_blend_state(blend_mode: BlendMode) -> Option<wgpu::BlendState
     }
 }
 
-pub(crate) fn normal_wgpu_blend_state() -> wgpu::BlendState {
+/// The premultiplied-over normal blend state. Shared with the leaf renderers.
+pub fn normal_wgpu_blend_state() -> wgpu::BlendState {
     wgpu::BlendState {
         color: wgpu::BlendComponent {
             src_factor: wgpu::BlendFactor::One,

@@ -11,6 +11,7 @@ pub mod alpha;
 pub mod animation;
 pub mod appearance;
 pub mod blend;
+pub mod camera;
 pub mod display;
 pub mod entity;
 pub mod geometry;
@@ -18,7 +19,9 @@ pub mod image;
 pub mod input;
 pub mod interaction;
 pub mod kind;
+pub mod lighting;
 pub mod material;
+pub mod mesh;
 pub mod misc;
 pub mod node;
 pub mod node_types;
@@ -27,6 +30,7 @@ pub mod platform;
 pub mod render;
 pub mod resource;
 pub mod text;
+pub mod texture;
 
 // ---------------------------------------------------------------------------
 // Re-exports — bring the entire public surface to the crate root
@@ -48,6 +52,27 @@ pub use appearance::{AppearanceFlags, HasAppearance};
 // blend
 pub use blend::BlendMode;
 
+// camera
+pub use camera::{Camera, OrthographicProjection, PerspectiveProjection, Projection};
+
+// lighting
+pub use lighting::{
+    AMBIENT_LIGHT_KIND_NAME, AREA_LIGHT_KIND_NAME, AmbientLight, AreaLight,
+    DIRECTIONAL_LIGHT_KIND_NAME, DirectionalLight, ENVIRONMENT_KIND_NAME, Environment,
+    HEMISPHERE_LIGHT_KIND_NAME, HemisphereLight, Light, LightColorSpace, POINT_LIGHT_KIND_NAME,
+    PointLight, SPOT_LIGHT_KIND_NAME, SpotLight,
+};
+
+// mesh
+pub use mesh::{
+    MESH_KIND_NAME, MeshGeometry, MeshGeometryGlData, MeshGeometryRuntime, MeshGeometryWgpuData,
+    MeshIndices, MeshSubset, PrimitiveTopology, VertexAttribute, VertexAttributeLayout,
+    VertexFormat, VertexSemantic,
+};
+
+// texture
+pub use texture::{CubeTexture, Sampler, Texture, TextureColorSpace, TextureFilter, TextureWrap};
+
 // display
 pub use display::{
     BitmapData, HtmlViewData, MovieClipData, MovieClipSignals, QuadBatchData, QuadTransformType,
@@ -63,7 +88,7 @@ pub use entity::{BaseRuntime, Entity, EntityRuntime};
 
 // geometry
 pub use geometry::{
-    Matrix, Matrix3, Matrix3Like, Matrix4, Matrix4Like, MatrixLike, Rectangle, RectangleLike,
+    Aabb, Matrix, Matrix3, Matrix3Like, Matrix4, Matrix4Like, MatrixLike, Rectangle, RectangleLike,
     Vector2, Vector2Like, Vector3, Vector3Like, Vector4, Vector4Like,
 };
 
@@ -134,8 +159,7 @@ pub use particle::{
 
 // platform
 pub use platform::{
-    App, AppBackend, AppLifecycle, AppLifecycleState, AppUpdater, CameraBackend,
-    CameraCaptureOptions, CameraPhoto, CameraSource, CameraVideo, ClipboardBackend,
+    App, AppBackend, AppLifecycle, AppLifecycleState, AppUpdater, ClipboardBackend,
     ClipboardBookmark, DeviceBackend, DeviceInfo, DialogBackend, FileDialogFilter, FileEntry,
     FileStat, FileSystemBackend, FileSystemPathKind, FileWatchEvent, FileWatchEventType,
     GeoPosition, GeolocationBackend, GeolocationRequestOptions, HapticImpactStyle,
@@ -148,7 +172,8 @@ pub use platform::{
     SafeAreaInsets, SaveFileDialogOptions, ScreenBackend, ScreenInfo, Sensors, SensorsBackend,
     ShareBackend, ShareContent, ShellBackend, ShortcutBackend, SoftKeyboard, SoftKeyboardBackend,
     SoftKeyboardInfo, StatusBarBackend, StatusBarStyle, StorageBackend, TrayBackend, TrayEventType,
-    TrayIconOptions, UpdateInfo, UpdaterBackend,
+    TrayIconOptions, UpdateInfo, UpdaterBackend, WebcamBackend, WebcamCaptureOptions, WebcamPhoto,
+    WebcamSource, WebcamVideo,
 };
 
 // render

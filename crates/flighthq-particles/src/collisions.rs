@@ -57,7 +57,12 @@ pub fn apply_particle_object_collisions<T: ParticleObject>(
             continue; // dead slot
         }
         let vt = i * 2;
-        let mut s = [obj.x(), obj.y(), state.velocities[vt], state.velocities[vt + 1]];
+        let mut s = [
+            obj.x(),
+            obj.y(),
+            state.velocities[vt],
+            state.velocities[vt + 1],
+        ];
         if resolve_colliders(colliders, &mut s) {
             obj.set_x(s[0]);
             obj.set_y(s[1]);
@@ -372,9 +377,8 @@ mod tests {
                 },
             })],
         );
-        let d = (data.transforms[0] * data.transforms[0]
-            + data.transforms[1] * data.transforms[1])
-        .sqrt();
+        let d = (data.transforms[0] * data.transforms[0] + data.transforms[1] * data.transforms[1])
+            .sqrt();
         assert!((d - 10.0).abs() < 1e-3); // pushed to surface
         assert!((state.velocities[0] - 10.0).abs() < 1e-3); // bounced outward
     }
@@ -393,9 +397,8 @@ mod tests {
                 response: no_response(),
             })],
         );
-        let d = (data.transforms[0] * data.transforms[0]
-            + data.transforms[1] * data.transforms[1])
-        .sqrt();
+        let d = (data.transforms[0] * data.transforms[0] + data.transforms[1] * data.transforms[1])
+            .sqrt();
         assert!((d - 10.0).abs() < 1e-3);
     }
 

@@ -11,7 +11,7 @@ This is a TS-authoritative design: the shaper seam is a change to the upstream a
 | Itemize / bidi | split text into runs by script, direction, font | `unicode-bidi` + a script-itemization step | absent |
 | **Shape** | run → positioned glyphs (ids, advances, offsets, clusters) | the **shaper seam** (`text-shaping`) | absent |
 | **Layout** | glyphs → lines, alignment, wrapping, selection | `flighthq-text-layout` — **owned by Flight** | present (algorithm), but fed by an unfilled seam |
-| Rasterize | glyph outline → coverage bitmap / atlas | `tiny-skia` (shared with `render-skia` shapes) | absent |
+| Rasterize | glyph outline → coverage bitmap / atlas | `tiny-skia` (shared with `displayobject-skia` shapes) | absent |
 
 Because Flight owns layout, **do not adopt a crate that also does layout** (`cosmic-text`, `parley`, `fontdue`'s layout) — it would duplicate and fight `flighthq-text-layout`. Use crates that fill only the shape / metrics / raster seams.
 
@@ -56,7 +56,7 @@ You cannot do text _correctly_ without a full-glyph shaper: without GSUB/GPOS, A
 | Classic stack | Rust crate | Role |
 | --- | --- | --- |
 | HarfBuzz | **rustybuzz** | Pure-Rust HarfBuzz port (GSUB/GPOS, most scripts). Deterministic, no FFI. The full-glyph shaper backend. |
-| Cairo | **tiny-skia** | Software rasterizer; fills glyph outlines. Shared with `render-skia` shape rendering. |
+| Cairo | **tiny-skia** | Software rasterizer; fills glyph outlines. Shared with `displayobject-skia` shape rendering. |
 | (font access) | **ttf-parser** | Metrics + outlines; rustybuzz is built on it. Also backs the lightweight default shaper. |
 | (bidi) | **unicode-bidi** + script itemization | Split into runs before shaping. |
 

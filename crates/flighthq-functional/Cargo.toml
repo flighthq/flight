@@ -8,6 +8,7 @@ description = "Flight Rust functional/visual harness: render scenes headlessly a
 
 [dependencies]
 flighthq-capture = { workspace = true }
+flighthq-displayobject-wgpu = { workspace = true }
 flighthq-effects = { workspace = true }
 flighthq-effects-wgpu = { workspace = true }
 flighthq-render = { workspace = true }
