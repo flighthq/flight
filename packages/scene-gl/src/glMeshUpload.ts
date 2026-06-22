@@ -3,11 +3,14 @@ import type { GlRenderState, MeshGeometry, VertexAttribute } from '@flighthq/typ
 import type { GlMeshUpload } from './glSceneRuntime';
 import { getGlSceneRuntime } from './glSceneRuntime';
 
-// Vertex attribute locations the PBR vertex shader fixes with layout(location = …); the upload's
-// VAO wires the interleaved buffer to these by semantic.
+// Vertex attribute locations the mesh vertex shaders fix with layout(location = …); the upload's
+// VAO wires the interleaved buffer to these by semantic. Locations 0–3 are the canonical PBR record
+// (position/normal/tangent/uv0); `color0` (location 4) is bound only when a geometry's layout carries
+// it (the VertexColor path), and is otherwise simply absent from the layout and left unbound.
 const ATTRIBUTE_LOCATION: Readonly<Record<string, number>> = {
-  position: 0,
+  color0: 4,
   normal: 1,
+  position: 0,
   tangent: 2,
   uv0: 3,
 };

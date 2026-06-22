@@ -1,8 +1,28 @@
+import type { GlPbrDefineKey } from './glPbrPrelude';
 import { compileGlPbrProgram, ensureGlPbrProgram } from './glPbrProgramCache';
 import { getGlSceneRuntime } from './glSceneRuntime';
 import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
 
-const KEY = { alphaMaskEnabled: false, hasBaseColorMap: false, hasNormalMap: false };
+function makeKey(overrides?: Partial<GlPbrDefineKey>): GlPbrDefineKey {
+  return {
+    alphaMaskEnabled: false,
+    anisotropyEnabled: false,
+    clearcoatEnabled: false,
+    hasBaseColorMap: false,
+    hasEmissiveMap: false,
+    hasMetallicRoughnessMap: false,
+    hasNormalMap: false,
+    hasOcclusionMap: false,
+    iridescenceEnabled: false,
+    sheenEnabled: false,
+    specularEnabled: false,
+    subsurfaceEnabled: false,
+    transmissionEnabled: false,
+    ...overrides,
+  };
+}
+
+const KEY = makeKey();
 
 describe('compileGlPbrProgram', () => {
   it('compiles, links, and resolves the PBR uniform locations', () => {
@@ -13,6 +33,28 @@ describe('compileGlPbrProgram', () => {
     expect(program.locBaseColor).not.toBeNull();
     expect(program.locDirectionalRadiance).not.toBeNull();
     expect(gl.calls.some((c) => c.name === 'linkProgram')).toBe(true);
+  });
+
+  it('resolves the full standard-block map uniforms', () => {
+    const gl = makeFakeGl2();
+    const program = compileGlPbrProgram(gl, KEY);
+    expect(program.locMetallicRoughnessMap).not.toBeNull();
+    expect(program.locOcclusionMap).not.toBeNull();
+    expect(program.locOcclusionStrength).not.toBeNull();
+    expect(program.locEmissiveMap).not.toBeNull();
+  });
+
+  it('resolves every extension uniform', () => {
+    const gl = makeFakeGl2();
+    const program = compileGlPbrProgram(gl, KEY);
+    expect(program.locClearcoat).not.toBeNull();
+    expect(program.locSheenColor).not.toBeNull();
+    expect(program.locAnisotropyStrength).not.toBeNull();
+    expect(program.locIridescence).not.toBeNull();
+    expect(program.locSpecular).not.toBeNull();
+    expect(program.locSubsurface).not.toBeNull();
+    expect(program.locTransmission).not.toBeNull();
+    expect(program.locAttenuationColor).not.toBeNull();
   });
 
   it('throws on a shader compile failure', () => {
@@ -34,13 +76,27 @@ describe('ensureGlPbrProgram', () => {
     const second = ensureGlPbrProgram(state, KEY);
     expect(second).toBe(first);
     expect(gl.calls.filter((c) => c.name === 'linkProgram').length).toBe(linkCount);
-    expect(getGlSceneRuntime(state).pbrProgramCache.size).toBe(1);
+    expect(getGlSceneRuntime(state).programCache.size).toBe(1);
   });
 
-  it('compiles a distinct program for a different define key', () => {
+  it('compiles a distinct program for a different standard map flag', () => {
     const { state } = makeGlSceneState();
     ensureGlPbrProgram(state, KEY);
-    ensureGlPbrProgram(state, { alphaMaskEnabled: false, hasBaseColorMap: true, hasNormalMap: false });
-    expect(getGlSceneRuntime(state).pbrProgramCache.size).toBe(2);
+    ensureGlPbrProgram(state, makeKey({ hasBaseColorMap: true }));
+    expect(getGlSceneRuntime(state).programCache.size).toBe(2);
+  });
+
+  it('caches a distinct entry per extension define under the pbr: namespace', () => {
+    const { state } = makeGlSceneState();
+    ensureGlPbrProgram(state, makeKey({ clearcoatEnabled: true }));
+    ensureGlPbrProgram(state, makeKey({ sheenEnabled: true }));
+    ensureGlPbrProgram(state, makeKey({ anisotropyEnabled: true }));
+    ensureGlPbrProgram(state, makeKey({ iridescenceEnabled: true }));
+    ensureGlPbrProgram(state, makeKey({ specularEnabled: true }));
+    ensureGlPbrProgram(state, makeKey({ subsurfaceEnabled: true }));
+    ensureGlPbrProgram(state, makeKey({ transmissionEnabled: true }));
+    const cache = getGlSceneRuntime(state).programCache;
+    expect(cache.size).toBe(7);
+    for (const key of cache.keys()) expect(key.startsWith('pbr:')).toBe(true);
   });
 });

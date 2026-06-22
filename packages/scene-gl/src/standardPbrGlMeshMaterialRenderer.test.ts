@@ -75,4 +75,14 @@ describe('standardPbrGlMeshMaterialRenderer', () => {
     standardPbrGlMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
   });
+
+  it('bind uploads the full standard block including occlusion strength and emissive', () => {
+    const { state, gl } = makeGlSceneState();
+    const material = createStandardPbrMaterial({ metallic: 0.25, occlusionStrength: 0.7, roughness: 0.4 });
+    standardPbrGlMeshMaterialRenderer.bind(state, material, makeLights(), makeCamera());
+    // The standard block uploads metallic + roughness + normalScale + emissiveStrength +
+    // occlusionStrength as uniform1f, so at least five scalar uploads land.
+    expect(gl.calls.filter((c) => c.name === 'uniform1f').length).toBeGreaterThanOrEqual(5);
+    expect(gl.calls.some((c) => c.name === 'uniform3f')).toBe(true);
+  });
 });

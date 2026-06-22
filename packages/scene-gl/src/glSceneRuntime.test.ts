@@ -9,8 +9,8 @@ describe('getGlSceneRuntime', () => {
     const { state } = makeGlSceneState();
     const first = getGlSceneRuntime(state);
     expect(first.materialRegistry).toBeInstanceOf(Map);
-    expect(first.pbrProgramCache).toBeInstanceOf(Map);
-    expect(first.activePbrProgram).toBeNull();
+    expect(first.programCache).toBeInstanceOf(Map);
+    expect(first.activeMeshProgram).toBeNull();
     expect(getGlSceneRuntime(state)).toBe(first);
   });
 
