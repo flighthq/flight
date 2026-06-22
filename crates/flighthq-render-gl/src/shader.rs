@@ -269,7 +269,7 @@ unsafe fn compile_shader(gl: &glow::Context, shader_type: u32, src: &str) -> glo
 /// Returns the active viewport dimensions for matrix construction: the off-screen
 /// render-target viewport if one is bound, otherwise the default framebuffer size
 /// tracked on the runtime.
-pub(crate) fn viewport_dimensions(state: &GlRenderState) -> (u32, u32) {
+pub fn viewport_dimensions(state: &GlRenderState) -> (u32, u32) {
     match state.runtime.render_target_viewport {
         Some(vp) => (vp.width.max(1), vp.height.max(1)),
         None => (

@@ -92,13 +92,21 @@ pub fn apply_box_blur_filter_to_wgpu(
         if radius_x > 0 {
             apply_box_blur_pass(state, filter_state, read, write, radius_x as f32, 1.0, 0.0);
             read = write;
-            write = if std::ptr::eq(write, temp) { dest } else { temp };
+            write = if std::ptr::eq(write, temp) {
+                dest
+            } else {
+                temp
+            };
         }
         let radius_y = compute_box_blur_pass_radius(blur_y, passes, pass);
         if radius_y > 0 {
             apply_box_blur_pass(state, filter_state, read, write, radius_y as f32, 0.0, 1.0);
             read = write;
-            write = if std::ptr::eq(write, temp) { dest } else { temp };
+            write = if std::ptr::eq(write, temp) {
+                dest
+            } else {
+                temp
+            };
         }
     }
 
@@ -122,8 +130,16 @@ pub fn apply_gaussian_blur_filter_to_wgpu(
     blur_x: f32,
     blur_y: f32,
 ) {
-    let radius_x = if blur_x > 0.0 { (blur_x * 3.0).ceil() as u32 } else { 0 };
-    let radius_y = if blur_y > 0.0 { (blur_y * 3.0).ceil() as u32 } else { 0 };
+    let radius_x = if blur_x > 0.0 {
+        (blur_x * 3.0).ceil() as u32
+    } else {
+        0
+    };
+    let radius_y = if blur_y > 0.0 {
+        (blur_y * 3.0).ceil() as u32
+    } else {
+        0
+    };
 
     if radius_x == 0 && radius_y == 0 {
         apply_wgpu_blit_pass(state, filter_state, source, dest);
@@ -134,12 +150,34 @@ pub fn apply_gaussian_blur_filter_to_wgpu(
     let mut write: &WgpuRenderTarget = temp;
 
     if radius_x > 0 {
-        apply_gaussian_blur_pass(state, filter_state, read, write, blur_x, radius_x as f32, 1.0, 0.0);
+        apply_gaussian_blur_pass(
+            state,
+            filter_state,
+            read,
+            write,
+            blur_x,
+            radius_x as f32,
+            1.0,
+            0.0,
+        );
         read = write;
-        write = if std::ptr::eq(write, temp) { dest } else { temp };
+        write = if std::ptr::eq(write, temp) {
+            dest
+        } else {
+            temp
+        };
     }
     if radius_y > 0 {
-        apply_gaussian_blur_pass(state, filter_state, read, write, blur_y, radius_y as f32, 0.0, 1.0);
+        apply_gaussian_blur_pass(
+            state,
+            filter_state,
+            read,
+            write,
+            blur_y,
+            radius_y as f32,
+            0.0,
+            1.0,
+        );
         read = write;
     }
 
@@ -164,17 +202,25 @@ fn apply_box_blur_pass(
 ) {
     let (sw, sh) = (source.width as f32, source.height as f32);
     if filter_state.box_blur_pipeline.is_none() {
-        let p = create_wgpu_filter_pipeline(state, filter_state, BOX_BLUR_WGSL, WgpuBlendMode::Replace);
+        let p =
+            create_wgpu_filter_pipeline(state, filter_state, BOX_BLUR_WGSL, WgpuBlendMode::Replace);
         filter_state.box_blur_pipeline = Some(p);
     }
     let mut pipeline = filter_state.box_blur_pipeline.take().unwrap();
-    draw_wgpu_filter_pass(state, filter_state, source, Some(dest), &mut pipeline, |u| {
-        u.set_f32(0, 1.0 / sw);
-        u.set_f32(1, 1.0 / sh);
-        u.set_f32(2, dir_x);
-        u.set_f32(3, dir_y);
-        u.set_f32(4, radius);
-    });
+    draw_wgpu_filter_pass(
+        state,
+        filter_state,
+        source,
+        Some(dest),
+        &mut pipeline,
+        |u| {
+            u.set_f32(0, 1.0 / sw);
+            u.set_f32(1, 1.0 / sh);
+            u.set_f32(2, dir_x);
+            u.set_f32(3, dir_y);
+            u.set_f32(4, radius);
+        },
+    );
     filter_state.box_blur_pipeline = Some(pipeline);
 }
 
@@ -191,18 +237,30 @@ fn apply_gaussian_blur_pass(
 ) {
     let (sw, sh) = (source.width as f32, source.height as f32);
     if filter_state.gaussian_blur_pipeline.is_none() {
-        let p = create_wgpu_filter_pipeline(state, filter_state, GAUSSIAN_BLUR_WGSL, WgpuBlendMode::Replace);
+        let p = create_wgpu_filter_pipeline(
+            state,
+            filter_state,
+            GAUSSIAN_BLUR_WGSL,
+            WgpuBlendMode::Replace,
+        );
         filter_state.gaussian_blur_pipeline = Some(p);
     }
     let mut pipeline = filter_state.gaussian_blur_pipeline.take().unwrap();
-    draw_wgpu_filter_pass(state, filter_state, source, Some(dest), &mut pipeline, |u| {
-        u.set_f32(0, 1.0 / sw);
-        u.set_f32(1, 1.0 / sh);
-        u.set_f32(2, dir_x);
-        u.set_f32(3, dir_y);
-        u.set_f32(4, radius);
-        u.set_f32(5, sigma);
-    });
+    draw_wgpu_filter_pass(
+        state,
+        filter_state,
+        source,
+        Some(dest),
+        &mut pipeline,
+        |u| {
+            u.set_f32(0, 1.0 / sw);
+            u.set_f32(1, 1.0 / sh);
+            u.set_f32(2, dir_x);
+            u.set_f32(3, dir_y);
+            u.set_f32(4, radius);
+            u.set_f32(5, sigma);
+        },
+    );
     filter_state.gaussian_blur_pipeline = Some(pipeline);
 }
 

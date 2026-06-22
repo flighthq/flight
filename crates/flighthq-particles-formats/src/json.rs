@@ -75,12 +75,18 @@ impl JsonValue {
 /// reference produces).
 pub fn parse_json(input: &str) -> Result<JsonValue, String> {
     let chars: Vec<char> = input.chars().collect();
-    let mut parser = JsonParser { chars: &chars, pos: 0 };
+    let mut parser = JsonParser {
+        chars: &chars,
+        pos: 0,
+    };
     parser.skip_whitespace();
     let value = parser.parse_value()?;
     parser.skip_whitespace();
     if parser.pos != parser.chars.len() {
-        return Err(format!("unexpected trailing characters at position {}", parser.pos));
+        return Err(format!(
+            "unexpected trailing characters at position {}",
+            parser.pos
+        ));
     }
     Ok(value)
 }
@@ -113,7 +119,10 @@ impl JsonParser<'_> {
             Some('t') | Some('f') => self.parse_bool(),
             Some('n') => self.parse_null(),
             Some(c) if c == '-' || c.is_ascii_digit() => self.parse_number(),
-            Some(c) => Err(format!("unexpected character '{c}' at position {}", self.pos)),
+            Some(c) => Err(format!(
+                "unexpected character '{c}' at position {}",
+                self.pos
+            )),
             None => Err("unexpected end of input".to_string()),
         }
     }
@@ -428,12 +437,16 @@ mod tests {
 
     #[test]
     fn parse_json_object_round_trips_basic_types() {
-        let v = parse_json("{\"a\": 1, \"b\": true, \"c\": \"x\", \"d\": null, \"e\": [1,2]}").unwrap();
+        let v =
+            parse_json("{\"a\": 1, \"b\": true, \"c\": \"x\", \"d\": null, \"e\": [1,2]}").unwrap();
         assert_eq!(v.get("a").and_then(JsonValue::as_number), Some(1.0));
         assert_eq!(v.get("b").and_then(JsonValue::as_bool), Some(true));
         assert_eq!(v.get("c").and_then(JsonValue::as_text), Some("x"));
         assert_eq!(v.get("d"), Some(&JsonValue::Null));
-        assert_eq!(v.get("e").and_then(JsonValue::as_array).map(|a| a.len()), Some(2));
+        assert_eq!(
+            v.get("e").and_then(JsonValue::as_array).map(|a| a.len()),
+            Some(2)
+        );
     }
 
     #[test]
@@ -445,8 +458,14 @@ mod tests {
     #[test]
     fn parse_json_non_object_roots() {
         assert_eq!(parse_json("null").unwrap(), JsonValue::Null);
-        assert_eq!(parse_json("\"a string\"").unwrap(), JsonValue::Text("a string".to_string()));
-        assert!(matches!(parse_json("[1,2,3]").unwrap(), JsonValue::Array(_)));
+        assert_eq!(
+            parse_json("\"a string\"").unwrap(),
+            JsonValue::Text("a string".to_string())
+        );
+        assert!(matches!(
+            parse_json("[1,2,3]").unwrap(),
+            JsonValue::Array(_)
+        ));
         assert_eq!(parse_json("42").unwrap(), JsonValue::Number(42.0));
     }
 
@@ -465,7 +484,10 @@ mod tests {
         let s = w.finish();
         let parsed = parse_json(&s).unwrap();
         assert_eq!(parsed.get("name").and_then(JsonValue::as_text), Some("x"));
-        assert_eq!(parsed.get("count").and_then(JsonValue::as_number), Some(3.0));
+        assert_eq!(
+            parsed.get("count").and_then(JsonValue::as_number),
+            Some(3.0)
+        );
         assert_eq!(parsed.get("on").and_then(JsonValue::as_bool), Some(true));
     }
 }

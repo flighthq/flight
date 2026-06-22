@@ -27,8 +27,8 @@ mod tests {
     use crate::tween_manager::create_tween_manager;
     use crate::update_tweens::update_tweens;
     use flighthq_signals::connect_signal;
-    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
     #[test]
     fn create_tween_timer_inserts_into_manager() {

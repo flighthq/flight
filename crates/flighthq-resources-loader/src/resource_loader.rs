@@ -223,7 +223,11 @@ mod tests {
     fn create_resource_loader_has_all_signals() {
         let handle = create_resource_loader();
         // Signals are present and connectable.
-        let _a = connect_signal(&handle.loader.on_complete, Arc::new(|_: &()| {}), Default::default());
+        let _a = connect_signal(
+            &handle.loader.on_complete,
+            Arc::new(|_: &()| {}),
+            Default::default(),
+        );
         let _b = connect_signal(
             &handle.loader.on_error,
             Arc::new(|_: &LoadError| {}),
@@ -269,15 +273,17 @@ mod tests {
         let mut loader = create_resource_loader();
         let handle = queue_resource_load(&mut loader, || Ok::<_, LoadError>("hello".to_string()));
         start_resource_load(&mut loader);
-        assert_eq!(get_resource_loader_result(&handle).unwrap().unwrap(), "hello");
+        assert_eq!(
+            get_resource_loader_result(&handle).unwrap().unwrap(),
+            "hello"
+        );
     }
 
     #[test]
     fn queue_resource_load_rejects_when_factory_errs() {
         let mut loader = create_resource_loader();
-        let handle = queue_resource_load(&mut loader, || {
-            Err::<i32, LoadError>("load failed".into())
-        });
+        let handle =
+            queue_resource_load(&mut loader, || Err::<i32, LoadError>("load failed".into()));
         start_resource_load(&mut loader);
         let result = get_resource_loader_result(&handle).unwrap();
         assert_eq!(result.unwrap_err().to_string(), "load failed");

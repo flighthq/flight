@@ -6,9 +6,9 @@
 //! This function allocates a temporary gradient ramp texture internally on each
 //! call; it is destroyed before the function returns.
 
+use flighthq_filters::BevelType;
 use flighthq_filters::GradientBevelFilter;
 use flighthq_render_wgpu::{WgpuRenderState, WgpuRenderTarget};
-use flighthq_filters::BevelType;
 
 use crate::blur_filter::apply_box_blur_filter_to_wgpu;
 use crate::filter_pass::{
@@ -84,7 +84,15 @@ pub fn apply_gradient_bevel_filter_to_wgpu(
     let [s0, s1, s2] = *scratch;
 
     // Build blur basis -> s1.
-    apply_wgpu_tint_pass(state, filter_state, source, s0, 0xffffff, 1.0, strength.min(1.0));
+    apply_wgpu_tint_pass(
+        state,
+        filter_state,
+        source,
+        s0,
+        0xffffff,
+        1.0,
+        strength.min(1.0),
+    );
     apply_box_blur_filter_to_wgpu(
         state,
         filter_state,
@@ -102,23 +110,44 @@ pub fn apply_gradient_bevel_filter_to_wgpu(
     let dy = -((angle.sin() * distance) / s1.height as f32);
 
     if filter_state.gradient_bevel_encode_pipeline.is_none() {
-        let p = create_wgpu_filter_pipeline(state, filter_state, BEVEL_ENCODE_WGSL, WgpuBlendMode::Replace);
+        let p = create_wgpu_filter_pipeline(
+            state,
+            filter_state,
+            BEVEL_ENCODE_WGSL,
+            WgpuBlendMode::Replace,
+        );
         filter_state.gradient_bevel_encode_pipeline = Some(p);
     }
     let mut encode = filter_state.gradient_bevel_encode_pipeline.take().unwrap();
-    draw_wgpu_views_pass(state, filter_state, &[&s1.view], Some(s0), &mut encode, |u| {
-        u.set_f32(0, dx);
-        u.set_f32(1, dy);
-    });
+    draw_wgpu_views_pass(
+        state,
+        filter_state,
+        &[&s1.view],
+        Some(s0),
+        &mut encode,
+        |u| {
+            u.set_f32(0, dx);
+            u.set_f32(1, dy);
+        },
+    );
     filter_state.gradient_bevel_encode_pipeline = Some(encode);
 
     // Apply: gradient-ramp lookup from encoded bevel, clipped to source alpha -> s1.
-    let ratios: Vec<u8> = filter.ratios.iter().map(|&r| r.round().clamp(0.0, 255.0) as u8).collect();
+    let ratios: Vec<u8> = filter
+        .ratios
+        .iter()
+        .map(|&r| r.round().clamp(0.0, 255.0) as u8)
+        .collect();
     let ramp = create_wgpu_gradient_ramp_texture(state, &filter.colors, &filter.alphas, &ratios);
     let ramp_view = ramp.create_view(&wgpu::TextureViewDescriptor::default());
 
     if filter_state.gradient_bevel_apply_pipeline.is_none() {
-        let p = create_wgpu_triple_source_pipeline(state, filter_state, BEVEL_APPLY_WGSL, WgpuBlendMode::Premul);
+        let p = create_wgpu_triple_source_pipeline(
+            state,
+            filter_state,
+            BEVEL_APPLY_WGSL,
+            WgpuBlendMode::Premul,
+        );
         filter_state.gradient_bevel_apply_pipeline = Some(p);
     }
     let mut apply = filter_state.gradient_bevel_apply_pipeline.take().unwrap();

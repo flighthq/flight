@@ -83,7 +83,10 @@ pub fn apply_convolution_filter_to_wgpu(
 ) {
     let matrix_x = filter.matrix_x;
     let matrix_y = filter.matrix_y;
-    assert!(matrix_x > 0 && matrix_y > 0, "Convolution matrix dimensions must be positive");
+    assert!(
+        matrix_x > 0 && matrix_y > 0,
+        "Convolution matrix dimensions must be positive"
+    );
     let count = matrix_x * matrix_y;
     assert!(
         count <= MAX_KERNEL,
@@ -98,35 +101,49 @@ pub fn apply_convolution_filter_to_wgpu(
     let clamp_edge = filter.clamp.unwrap_or(true);
     let preserve_alpha = filter.preserve_alpha.unwrap_or(true);
     let edge_color = filter.color.unwrap_or(0);
-    let divisor = filter.divisor.unwrap_or_else(|| auto_divisor(&filter.matrix, count as usize));
+    let divisor = filter
+        .divisor
+        .unwrap_or_else(|| auto_divisor(&filter.matrix, count as usize));
 
     let (sw, sh) = (source.width as f32, source.height as f32);
     let matrix = filter.matrix.clone();
 
     if filter_state.convolution_pipeline.is_none() {
-        let p = create_wgpu_filter_pipeline(state, filter_state, CONVOLUTION_WGSL, WgpuBlendMode::Replace);
+        let p = create_wgpu_filter_pipeline(
+            state,
+            filter_state,
+            CONVOLUTION_WGSL,
+            WgpuBlendMode::Replace,
+        );
         filter_state.convolution_pipeline = Some(p);
     }
     let mut pipeline = filter_state.convolution_pipeline.take().unwrap();
-    draw_wgpu_filter_pass(state, filter_state, source, Some(dest), &mut pipeline, |u| {
-        u.set_f32(0, 1.0 / sw);
-        u.set_f32(1, 1.0 / sh);
-        u.set_i32(2, matrix_x as i32);
-        u.set_i32(3, matrix_y as i32);
-        u.set_f32(4, divisor);
-        u.set_f32(5, bias);
-        u.set_i32(6, if clamp_edge { 1 } else { 0 });
-        u.set_i32(7, if preserve_alpha { 1 } else { 0 });
-        // edgeColor at element 8..11 (offset 32). Alpha is the high byte (0xAARRGGBB).
-        u.set_f32(8, ((edge_color >> 16) & 0xff) as f32 / 255.0);
-        u.set_f32(9, ((edge_color >> 8) & 0xff) as f32 / 255.0);
-        u.set_f32(10, (edge_color & 0xff) as f32 / 255.0);
-        u.set_f32(11, ((edge_color >> 24) & 0xff) as f32 / 255.0);
-        // matrix at element 12.. (offset 48).
-        for (i, &w) in matrix.iter().take(count as usize).enumerate() {
-            u.set_f32(12 + i, w);
-        }
-    });
+    draw_wgpu_filter_pass(
+        state,
+        filter_state,
+        source,
+        Some(dest),
+        &mut pipeline,
+        |u| {
+            u.set_f32(0, 1.0 / sw);
+            u.set_f32(1, 1.0 / sh);
+            u.set_i32(2, matrix_x as i32);
+            u.set_i32(3, matrix_y as i32);
+            u.set_f32(4, divisor);
+            u.set_f32(5, bias);
+            u.set_i32(6, if clamp_edge { 1 } else { 0 });
+            u.set_i32(7, if preserve_alpha { 1 } else { 0 });
+            // edgeColor at element 8..11 (offset 32). Alpha is the high byte (0xAARRGGBB).
+            u.set_f32(8, ((edge_color >> 16) & 0xff) as f32 / 255.0);
+            u.set_f32(9, ((edge_color >> 8) & 0xff) as f32 / 255.0);
+            u.set_f32(10, (edge_color & 0xff) as f32 / 255.0);
+            u.set_f32(11, ((edge_color >> 24) & 0xff) as f32 / 255.0);
+            // matrix at element 12.. (offset 48).
+            for (i, &w) in matrix.iter().take(count as usize).enumerate() {
+                u.set_f32(12 + i, w);
+            }
+        },
+    );
     filter_state.convolution_pipeline = Some(pipeline);
 }
 

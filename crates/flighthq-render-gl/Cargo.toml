@@ -8,6 +8,4 @@ description = "WebGL2 renderer implementation"
 [dependencies]
 flighthq-types = { workspace = true }
 flighthq-render = { workspace = true }
-flighthq-node = { workspace = true }
-flighthq-path = { workspace = true }
 glow = { workspace = true }

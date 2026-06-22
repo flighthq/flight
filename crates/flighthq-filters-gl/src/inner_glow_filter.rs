@@ -48,7 +48,13 @@ pub fn apply_gl_inner_clip_pass(
     dest: &GlRenderTarget,
 ) {
     let program = get_gl_inner_clip_shader(state);
-    draw_gl_fullscreen_pass(state, program, &[glow.texture, source.texture], Some(dest), |_, _| {});
+    draw_gl_fullscreen_pass(
+        state,
+        program,
+        &[glow.texture, source.texture],
+        Some(dest),
+        |_, _| {},
+    );
 }
 
 /// Applies an inner glow filter to `source`, writing the result to `dest`.

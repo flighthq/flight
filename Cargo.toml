@@ -22,11 +22,20 @@ flighthq-path = { path = "crates/flighthq-path" }
 flighthq-shape = { path = "crates/flighthq-shape" }
 flighthq-displayobject = { path = "crates/flighthq-displayobject" }
 flighthq-sprite = { path = "crates/flighthq-sprite" }
-flighthq-world = { path = "crates/flighthq-world" }
+flighthq-scene = { path = "crates/flighthq-scene" }
+flighthq-mesh = { path = "crates/flighthq-mesh" }
+flighthq-lighting = { path = "crates/flighthq-lighting" }
+flighthq-texture = { path = "crates/flighthq-texture" }
+flighthq-camera = { path = "crates/flighthq-camera" }
+flighthq-scene-gl = { path = "crates/flighthq-scene-gl" }
+flighthq-scene-wgpu = { path = "crates/flighthq-scene-wgpu" }
 flighthq-velocity = { path = "crates/flighthq-velocity" }
 flighthq-render = { path = "crates/flighthq-render" }
 flighthq-render-gl = { path = "crates/flighthq-render-gl" }
 flighthq-render-wgpu = { path = "crates/flighthq-render-wgpu" }
+flighthq-displayobject-gl = { path = "crates/flighthq-displayobject-gl" }
+flighthq-displayobject-wgpu = { path = "crates/flighthq-displayobject-wgpu" }
+flighthq-displayobject-skia = { path = "crates/flighthq-displayobject-skia" }
 flighthq-filters = { path = "crates/flighthq-filters" }
 flighthq-filters-gl = { path = "crates/flighthq-filters-gl" }
 flighthq-filters-wgpu = { path = "crates/flighthq-filters-wgpu" }
@@ -73,6 +82,11 @@ flighthq-lifecycle = { path = "crates/flighthq-lifecycle" }
 flighthq-keyboard = { path = "crates/flighthq-keyboard" }
 flighthq-sensors = { path = "crates/flighthq-sensors" }
 flighthq-device = { path = "crates/flighthq-device" }
+flighthq-webcam = { path = "crates/flighthq-webcam" }
+flighthq-geolocation = { path = "crates/flighthq-geolocation" }
+flighthq-haptics = { path = "crates/flighthq-haptics" }
+flighthq-share = { path = "crates/flighthq-share" }
+flighthq-statusbar = { path = "crates/flighthq-statusbar" }
 flighthq-sdk = { path = "crates/flighthq-sdk" }
 flighthq-capture = { path = "crates/flighthq-capture" }
 
@@ -80,6 +94,8 @@ flighthq-capture = { path = "crates/flighthq-capture" }
 slotmap = "1"
 glow = "0.14"
 wgpu = { version = "22", default-features = false, features = ["wgsl"] }
+tiny-skia = "0.11"
+ttf-parser = "0.20"
 bitflags = "2"
 log = "0.4"
 thiserror = "2"

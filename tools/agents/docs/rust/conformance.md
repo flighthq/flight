@@ -19,20 +19,30 @@ Because Rust is a production target (see [intent](index.md#intent)), conformance
 
 The intentional TS↔Rust divergences. This is the auditable registry of what "1:1" deliberately is _not_ — every entry is a reviewed decision with a rationale, not drift. It currently lives as hardcoded sets in `scripts/parity.ts`; it should be promoted to a committed machine-readable manifest that both this doc and the tooling read. Until then, this table and `parity.ts` must be kept in sync.
 
-### Renames
+### Renames (Rust catching up to the landed refactor)
 
-GPU backend crates are renamed from the TS `-webgl` / `-webgpu` suffixes to the Rust `-gl` / `-wgpu` suffixes (glow / wgpu).
+The upstream render reorg **landed 2026-06-22** and changed the baseline:
 
-| TS package       | Rust crate     |
-| ---------------- | -------------- |
-| `render-webgl`   | `render-gl`    |
-| `render-webgpu`  | `render-wgpu`  |
-| `filters-webgl`  | `filters-gl`   |
-| `filters-webgpu` | `filters-wgpu` |
-| `effects-webgl`  | `effects-gl`   |
-| `effects-webgpu` | `effects-wgpu` |
+- It adopted the `-gl` / `-wgpu` suffixes **natively**, so the former `-webgl`→`-gl` / `-webgpu`→`-wgpu` divergence is **gone** — TS and Rust now share backend suffixes. `render-gl`/`render-wgpu`, `filters-gl`/`filters-wgpu`, `effects-gl`/`effects-wgpu` map by identical name.
+- It **split** the monolithic renderers (see [The render layering](#the-render-layering)): `render-gl`/`render-wgpu` are now subject-agnostic backend **cores**, and the per-subject leaf renderers moved to `displayobject-<backend>` and `scene-<backend>`.
 
-> **Pending the upstream refactor.** A render-package reorg toward a `<subject>-<backend>` convention is landing upstream (`render-canvas → displayobject-canvas`, and likely `render-webgl → displayobject-webgl`, etc.). When it merges, this table is the place to record the new mapping — the Rust GPU/software renderers rename to follow the upstream subjects (`render-gl → displayobject-gl`, `render-wgpu → displayobject-wgpu`, software renderer as `displayobject-skia`). Until then the `render-*` names above are current. Keep this table the single source of truth for the mapping; `scripts/parity.ts` should read it, not hardcode it.
+Rust crates that must be renamed to match the new authoritative names:
+
+| Current Rust crate | New name (TS authoritative) | Reason |
+| --- | --- | --- |
+| `world` | `scene` | TS renamed `world` → `scene` — the 3D scene graph. Drags in the 3D pipeline (`mesh`, `lighting`, `texture`, `camera`, `scene-gl`, `scene-wgpu`). |
+
+Semantic trap (not a Rust rename — Rust had neither): TS's old `camera` (photo capture) is now **`webcam`**; the new **`camera`** package is the **3D camera** (projections / view-projection). Both are crates to add — `webcam` as a platform seam, `camera` as a 3D-pipeline crate. Do not conflate.
+
+Every other crate now maps by identical name (modulo the [excluded](#excluded--no-substrate-in-the-box) and [Rust-only](#rust-only-no-ts-counterpart) sets). Keep this section the single source of truth; `scripts/parity.ts` should read it, not hardcode it.
+
+### The render layering
+
+The refactor separates rendering into three layers; the Rust crates mirror it:
+
+- **`render`** — backend-agnostic core: renderer registration, render state/queue, render-node data, the update pipeline, and the **backend draw contracts**.
+- **`render-gl` / `render-wgpu`** — backend **cores**: render state, targets, shaders, draw, fullscreen/surface passes. Subject-agnostic GPU plumbing. (Rust's current `render-gl`/`render-wgpu` are monolithic and must be split so the leaf renderers move out.)
+- **`displayobject-<backend>` / `scene-<backend>`** — per-subject **leaf renderers** that use a core. `displayobject-gl`/`displayobject-wgpu` draw the 2D leaves (bitmap, shape, sprite, text, tilemap, particles); `scene-gl`/`scene-wgpu` draw the 3D scene. `displayobject-canvas`/`displayobject-dom` are the browser-substrate backends — [excluded](#excluded--no-substrate-in-the-box); `displayobject-skia` is the Rust software backend.
 
 ### The crate existence rule
 
@@ -49,12 +59,12 @@ These are the _only_ TS packages without a Rust crate. Each is excluded by the e
 
 | TS package | Substrate absent from the box | Capability gap? |
 | --- | --- | --- |
-| `render-canvas` | the Canvas2D context (a browser API) | None — software rendering is covered by `render-skia`. |
-| `render-dom` | the DOM tree | None — genuinely N/A; there is no DOM in the box to render to. |
+| `displayobject-canvas` | the Canvas2D context (a browser API) | None — software rendering is covered by `displayobject-skia`. |
+| `displayobject-dom` | the DOM tree | None — genuinely N/A; there is no DOM in the box to render to. |
 | `filters-canvas`, `effects-canvas` | Canvas2D / CSS-filter strings | None — CPU filters/effects are covered by `surface-filters` / `effects` / `filters`. |
 | `host-electron` | the Electron main process | None — every capability it backed exists as its own Rust crate seam; Rust hosts are `host-winit` / `host-sdl` / `host-web`. |
 
-Everything else in the TS package set has a Rust crate. In particular `camera`, `geolocation`, `haptics`, `share`, and `statusbar` are **in scope** (real device capabilities with a substrate in the box) and must exist as seam-plus-sentinel crates like the rest of the platform suite — they were previously dropped on effort grounds, which the existence rule forbids. They are crates **to add**.
+Everything else in the TS package set has a Rust crate. In particular `webcam`, `geolocation`, `haptics`, `share`, and `statusbar` are **in scope** (real device capabilities with a substrate in the box) and must exist as seam-plus-sentinel crates like the rest of the platform suite — they were previously dropped on effort grounds, which the existence rule forbids. They are crates **to add**. (`camera` is now the 3D-camera package, not photo capture — also in scope, in the 3D pipeline.)
 
 ### Rust-only (no TS counterpart)
 
@@ -65,7 +75,7 @@ Everything else in the TS package set has a Rust crate. In particular `camera`, 
 | `host-web` | Wasm conformance instrument (canvas + wgpu + web backends). |
 | `capture` | Headless offscreen render → PNG / fingerprint; the native conformance gate. |
 | `functional` | Conformance scene registry; the Rust analogue of `tests/functional/`. |
-| `render-skia` | Portable software renderer (tiny-skia). The in-box software-render path that replaces the role of `render-canvas`; the deterministic conformance reference and the web no-GPU fallback. (Optional sibling `render-cairo` if literal Cairo output is ever wanted.) |
+| `displayobject-skia` | Portable software display-object renderer (tiny-skia). The in-box software backend that replaces the role of `displayobject-canvas`; the deterministic conformance reference and the web no-GPU fallback. (Optional sibling `displayobject-cairo` if literal Cairo output is ever wanted.) |
 
 ### Validated functionally, not by unit name-match
 
@@ -79,17 +89,44 @@ Functions whose only implementation is a browser API live in `host-web`, not in 
 
 Both prior open decisions are settled by the [crate existence rule](#the-crate-existence-rule):
 
-- **Renderers.** Not "GPU-only" — **GPU + portable software.** `render-gl` / `render-wgpu` (GPU) plus `render-skia` (software, the in-box substitute for the Canvas2D rendering capability). `render-canvas` / `render-dom` stay excluded because their _substrate_ is absent from the box, not because of effort, and the software capability is covered by `render-skia`. DOM-tree rendering is genuinely N/A in the box.
-- **Mobile capabilities.** In scope. `camera` / `geolocation` / `haptics` / `share` / `statusbar` exist as seam-plus-sentinel crates (substrate exists on native devices; a future mobile host fills the backends). Omitting them would be an effort-based exclusion, which the rule forbids.
+- **Renderers.** Not "GPU-only" — **GPU + portable software.** `displayobject-gl` / `displayobject-wgpu` (GPU) plus `displayobject-skia` (software, the in-box substitute for the Canvas2D rendering capability), over the `render-gl` / `render-wgpu` backend cores. `displayobject-canvas` / `displayobject-dom` stay excluded because their _substrate_ is absent from the box, not because of effort, and the software capability is covered by `displayobject-skia`. DOM-tree rendering is genuinely N/A in the box.
+- **Mobile capabilities.** In scope. `webcam` / `geolocation` / `haptics` / `share` / `statusbar` exist as seam-plus-sentinel crates (substrate exists on native devices; a future mobile host fills the backends). Omitting them would be an effort-based exclusion, which the rule forbids.
 
 ## Crates to add
 
-Implied by the rules and decisions, not yet present in `crates/`:
+The landed refactor opened a large alignment delta. Grouped, in rough dependency order:
 
-- `render-skia` — portable software renderer (tiny-skia). Provisional name; follows the upstream `<subject>-<backend>` rename (likely `displayobject-skia`). See the [renderer taxonomy](index.md#renderer-scope-gpu--portable-software).
-- `text-shaping` — the shaper seam (`set_text_shaper`), shaped-run header types (in `flighthq-types`), and the lightweight default shaper; plus a registerable full-glyph shaper backend (rustybuzz) kept out of the base bundle. **TS-authoritative** — lands in TS (`@flighthq/text-shaping`) first, then ports. See [text](text.md).
-- `camera`, `geolocation`, `haptics`, `share`, `statusbar` — platform-suite seams (sentinel defaults; host fills later).
+**Rename first (mechanical):**
+
+- `world` → `scene` — the 3D scene graph. Do this first; it unblocks the `scene-*` renderer names.
+
+**Refactor existing (split, mirroring TS):**
+
+- `render-gl` / `render-wgpu` — re-scope to subject-agnostic backend **cores**; move the 2D leaf renderers out into `displayobject-gl` / `displayobject-wgpu`. See [The render layering](#the-render-layering).
+
+**3D pipeline (new subjects — value/math + GPU; mostly headlessly portable):**
+
+- `mesh` — vertex layouts, primitive builders, normals/tangents/bounds.
+- `lighting` — light descriptors (ambient/directional/point/spot/hemisphere/area + environment).
+- `texture` — textures/samplers, image-backed bindings, cubemaps.
+- `camera` — 3D camera: projections, view-projection helpers.
+- `scene-gl`, `scene-wgpu` — 3D scene renderers (depend on `scene` + the render cores + mesh/lighting/texture/camera).
+
+**Display-object renderers:**
+
+- `displayobject-gl`, `displayobject-wgpu` — 2D leaf renderers split out of the current monoliths.
+- `displayobject-skia` — Rust software backend (tiny-skia); deterministic conformance reference + web no-GPU fallback. (Optional `displayobject-cairo`.) See the [renderer taxonomy](index.md#renderer-scope-gpu--portable-software).
+
+**Text:**
+
+- `text-shaping` — the shaper seam (`set_text_shaper`), shaped-run header types (in `flighthq-types`), the lightweight default shaper, and a registerable full-glyph shaper backend (rustybuzz) kept out of the base bundle. **TS-authoritative** — lands in TS (`@flighthq/text-shaping`) first, then ports. See [text](text.md).
+
+**Platform seams (sentinel defaults; host fills later):**
+
+- `webcam` (old `camera` capability), `geolocation`, `haptics`, `share`, `statusbar`.
 
 New direct dependencies these pull in (all native, no system libs): `tiny-skia`, `ttf-parser`, `rustybuzz`, `unicode-bidi`. `tiny-skia` and `ab_glyph` already build transitively in the workspace.
 
-`scripts/parity.ts`'s `TS_ONLY` set is now stale (it still lists the five platform crates and the canvas/dom renderers together); align it with the [excluded set](#excluded--no-substrate-in-the-box) when the tooling is repointed at this map.
+**Excluded** (no substrate in the box): `displayobject-canvas`, `displayobject-dom`, `filters-canvas`, `effects-canvas`, `host-electron`.
+
+`scripts/parity.ts`'s `RENAMES`/`TS_ONLY`/`RUST_ONLY` sets are now stale (they still encode `-webgl`→`-gl`, list `render-canvas`/`render-dom`, and predate the 3D pipeline); align them with this map when the tooling is repointed.

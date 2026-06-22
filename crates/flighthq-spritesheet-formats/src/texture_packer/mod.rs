@@ -76,7 +76,10 @@ pub fn parse_texture_packer_spritesheet(json: &str) -> SpritesheetData {
 pub fn parse_texture_packer_spritesheet_document(json: &str) -> TexturePackerParsed {
     let value = parse_json(json).expect("invalid Texture Packer JSON");
     let document = parse_document(&value);
-    TexturePackerParsed { data: document_to_data(&document), document }
+    TexturePackerParsed {
+        data: document_to_data(&document),
+        document,
+    }
 }
 
 /// Serialises a [`SpritesheetData`] to a Texture Packer JSON string.
@@ -91,11 +94,13 @@ pub fn serialize_texture_packer_spritesheet(
     options: Option<&TexturePackerSerializeOptions>,
 ) -> String {
     let existing_is_array = matches!(existing, Some(TexturePackerDocument::Array(_)));
-    let variant = options.and_then(|o| o.variant).unwrap_or(if existing_is_array {
-        TexturePackerSerializeVariant::Array
-    } else {
-        TexturePackerSerializeVariant::Hash
-    });
+    let variant = options
+        .and_then(|o| o.variant)
+        .unwrap_or(if existing_is_array {
+            TexturePackerSerializeVariant::Array
+        } else {
+            TexturePackerSerializeVariant::Hash
+        });
 
     let existing_meta = existing.map(document_meta);
 
@@ -121,7 +126,11 @@ fn animations_from_frame_tags(
         .map(|tag| {
             let from = tag.from as usize;
             let to = (tag.to as usize + 1).min(frame_names.len());
-            let names = if from <= to { frame_names[from..to].to_vec() } else { Vec::new() };
+            let names = if from <= to {
+                frame_names[from..to].to_vec()
+            } else {
+                Vec::new()
+            };
             create_spritesheet_animation_data(SpritesheetAnimationData {
                 direction: tag.direction,
                 frame_duration: 100.0,
@@ -249,10 +258,16 @@ fn parse_document(value: &JsonValue) -> TexturePackerDocument {
                     filename: text_field(entry, "filename").unwrap_or_default(),
                     frame: parse_rect(entry.get("frame")),
                     pivot: parse_pivot(entry.get("pivot")),
-                    rotated: entry.get("rotated").and_then(JsonValue::as_bool).unwrap_or(false),
+                    rotated: entry
+                        .get("rotated")
+                        .and_then(JsonValue::as_bool)
+                        .unwrap_or(false),
                     source_size: parse_size(entry.get("sourceSize")),
                     sprite_source_size: parse_rect(entry.get("spriteSourceSize")),
-                    trimmed: entry.get("trimmed").and_then(JsonValue::as_bool).unwrap_or(false),
+                    trimmed: entry
+                        .get("trimmed")
+                        .and_then(JsonValue::as_bool)
+                        .unwrap_or(false),
                 })
                 .collect();
             TexturePackerDocument::Array(TexturePackerArrayDocument { frames, meta })
@@ -264,12 +279,17 @@ fn parse_document(value: &JsonValue) -> TexturePackerDocument {
                 .collect();
             TexturePackerDocument::Hash(TexturePackerHashDocument { frames, meta })
         }
-        _ => TexturePackerDocument::Hash(TexturePackerHashDocument { frames: Vec::new(), meta }),
+        _ => TexturePackerDocument::Hash(TexturePackerHashDocument {
+            frames: Vec::new(),
+            meta,
+        }),
     }
 }
 
 fn parse_frame_tags(value: Option<&JsonValue>) -> Option<Vec<TexturePackerFrameTag>> {
-    let JsonValue::Array(tags) = value? else { return None };
+    let JsonValue::Array(tags) = value? else {
+        return None;
+    };
     Some(
         tags.iter()
             .map(|tag| TexturePackerFrameTag {
@@ -286,15 +306,23 @@ fn parse_hash_frame(value: &JsonValue) -> TexturePackerHashFrame {
     TexturePackerHashFrame {
         frame: parse_rect(value.get("frame")),
         pivot: parse_pivot(value.get("pivot")),
-        rotated: value.get("rotated").and_then(JsonValue::as_bool).unwrap_or(false),
+        rotated: value
+            .get("rotated")
+            .and_then(JsonValue::as_bool)
+            .unwrap_or(false),
         source_size: parse_size(value.get("sourceSize")),
         sprite_source_size: parse_rect(value.get("spriteSourceSize")),
-        trimmed: value.get("trimmed").and_then(JsonValue::as_bool).unwrap_or(false),
+        trimmed: value
+            .get("trimmed")
+            .and_then(JsonValue::as_bool)
+            .unwrap_or(false),
     }
 }
 
 fn parse_meta(value: Option<&JsonValue>) -> TexturePackerMeta {
-    let Some(value) = value else { return TexturePackerMeta::default() };
+    let Some(value) = value else {
+        return TexturePackerMeta::default();
+    };
     let scale = match value.get("scale") {
         Some(JsonValue::Number(n)) => *n as f32,
         Some(JsonValue::Text(s)) => s.parse::<f32>().ok().filter(|v| *v != 0.0).unwrap_or(1.0),
@@ -324,7 +352,9 @@ fn parse_pivot(value: Option<&JsonValue>) -> Option<TexturePackerPivot> {
 }
 
 fn parse_rect(value: Option<&JsonValue>) -> TexturePackerRect {
-    let Some(value) = value else { return TexturePackerRect::default() };
+    let Some(value) = value else {
+        return TexturePackerRect::default();
+    };
     TexturePackerRect {
         h: number_field(value, "h").unwrap_or(0.0) as u32,
         w: number_field(value, "w").unwrap_or(0.0) as u32,
@@ -334,7 +364,9 @@ fn parse_rect(value: Option<&JsonValue>) -> TexturePackerRect {
 }
 
 fn parse_size(value: Option<&JsonValue>) -> TexturePackerSize {
-    let Some(value) = value else { return TexturePackerSize::default() };
+    let Some(value) = value else {
+        return TexturePackerSize::default();
+    };
     TexturePackerSize {
         h: number_field(value, "h").unwrap_or(0.0) as u32,
         w: number_field(value, "w").unwrap_or(0.0) as u32,
@@ -342,7 +374,10 @@ fn parse_size(value: Option<&JsonValue>) -> TexturePackerSize {
 }
 
 fn text_field(value: &JsonValue, key: &str) -> Option<String> {
-    value.get(key).and_then(JsonValue::as_text).map(str::to_string)
+    value
+        .get(key)
+        .and_then(JsonValue::as_text)
+        .map(str::to_string)
 }
 
 // ---------------------------------------------------------------------------
@@ -368,8 +403,11 @@ fn data_to_array_value(data: &SpritesheetData, existing: Option<&TexturePackerMe
 }
 
 fn data_to_hash_value(data: &SpritesheetData, existing: Option<&TexturePackerMeta>) -> JsonValue {
-    let frames: Vec<(String, JsonValue)> =
-        data.frames.iter().map(|frame| (frame.name.clone(), frame_to_value(frame))).collect();
+    let frames: Vec<(String, JsonValue)> = data
+        .frames
+        .iter()
+        .map(|frame| (frame.name.clone(), frame_to_value(frame)))
+        .collect();
     JsonValue::Object(vec![
         ("frames".to_string(), JsonValue::Object(frames)),
         ("meta".to_string(), meta_to_value(data, existing)),
@@ -390,8 +428,10 @@ fn frame_to_value(frame: &SpritesheetFrameData) -> JsonValue {
         || frame.offset_y != 0.0
         || frame.source_width != frame.width
         || frame.source_height != frame.height;
-    let mut entries =
-        vec![("frame".to_string(), rect_value(frame.x, frame.y, frame.width, frame.height))];
+    let mut entries = vec![(
+        "frame".to_string(),
+        rect_value(frame.x, frame.y, frame.width, frame.height),
+    )];
     if let (Some(px), Some(py)) = (frame.pivot_x, frame.pivot_y) {
         entries.push((
             "pivot".to_string(),
@@ -402,7 +442,10 @@ fn frame_to_value(frame: &SpritesheetFrameData) -> JsonValue {
         ));
     }
     entries.push(("rotated".to_string(), JsonValue::Bool(frame.rotated)));
-    entries.push(("sourceSize".to_string(), size_value(frame.source_width, frame.source_height)));
+    entries.push((
+        "sourceSize".to_string(),
+        size_value(frame.source_width, frame.source_height),
+    ));
     entries.push((
         "spriteSourceSize".to_string(),
         rect_value(frame.offset_x, frame.offset_y, frame.width, frame.height),
@@ -417,8 +460,11 @@ fn meta_to_value(data: &SpritesheetData, existing: Option<&TexturePackerMeta>) -
     } else {
         existing.map(|m| m.image.clone()).unwrap_or_default()
     };
-    let scale =
-        if data.scale != 1.0 { data.scale } else { existing.map(|m| m.scale).unwrap_or(1.0) };
+    let scale = if data.scale != 1.0 {
+        data.scale
+    } else {
+        existing.map(|m| m.scale).unwrap_or(1.0)
+    };
 
     let mut entries = vec![
         (
@@ -432,7 +478,9 @@ fn meta_to_value(data: &SpritesheetData, existing: Option<&TexturePackerMeta>) -
         (
             "format".to_string(),
             JsonValue::Text(
-                existing.map(|m| m.format.clone()).unwrap_or_else(|| "RGBA8888".to_string()),
+                existing
+                    .map(|m| m.format.clone())
+                    .unwrap_or_else(|| "RGBA8888".to_string()),
             ),
         ),
     ];
@@ -444,7 +492,11 @@ fn meta_to_value(data: &SpritesheetData, existing: Option<&TexturePackerMeta>) -
             .map(|anim| {
                 let first = anim.frame_names.first().map(String::as_str).unwrap_or("");
                 let last = anim.frame_names.last().map(String::as_str).unwrap_or("");
-                let from = data.frames.iter().position(|f| f.name == first).unwrap_or(0);
+                let from = data
+                    .frames
+                    .iter()
+                    .position(|f| f.name == first)
+                    .unwrap_or(0);
                 let to = data.frames.iter().position(|f| f.name == last).unwrap_or(0);
                 JsonValue::Object(vec![
                     (
@@ -462,10 +514,17 @@ fn meta_to_value(data: &SpritesheetData, existing: Option<&TexturePackerMeta>) -
 
     entries.push(("image".to_string(), JsonValue::Text(image)));
     entries.push(("scale".to_string(), JsonValue::Number(scale as f64)));
-    entries.push(("size".to_string(), size_value(data.image_width, data.image_height)));
+    entries.push((
+        "size".to_string(),
+        size_value(data.image_width, data.image_height),
+    ));
     entries.push((
         "version".to_string(),
-        JsonValue::Text(existing.map(|m| m.version.clone()).unwrap_or_else(|| "1.0".to_string())),
+        JsonValue::Text(
+            existing
+                .map(|m| m.version.clone())
+                .unwrap_or_else(|| "1.0".to_string()),
+        ),
     ));
 
     JsonValue::Object(entries)
@@ -561,8 +620,14 @@ mod tests {
 
         assert_eq!(data.animations.len(), 1);
         assert_eq!(data.animations[0].name, "idle");
-        assert_eq!(data.animations[0].direction, SpritesheetAnimationDirection::Forward);
-        assert_eq!(data.animations[0].frame_names, vec!["hero/idle_0.png", "hero/idle_1.png"]);
+        assert_eq!(
+            data.animations[0].direction,
+            SpritesheetAnimationDirection::Forward
+        );
+        assert_eq!(
+            data.animations[0].frame_names,
+            vec!["hero/idle_0.png", "hero/idle_1.png"]
+        );
     }
 
     #[test]
@@ -580,7 +645,12 @@ mod tests {
 
     #[test]
     fn parse_texture_packer_spritesheet_no_frame_tags_has_no_animations() {
-        assert_eq!(parse_texture_packer_spritesheet(MINIMAL_HASH_JSON).animations.len(), 0);
+        assert_eq!(
+            parse_texture_packer_spritesheet(MINIMAL_HASH_JSON)
+                .animations
+                .len(),
+            0
+        );
     }
 
     // parse_texture_packer_spritesheet_document
@@ -600,7 +670,10 @@ mod tests {
         }
 
         let array_parsed = parse_texture_packer_spritesheet_document(ARRAY_JSON);
-        assert!(matches!(array_parsed.document, TexturePackerDocument::Array(_)));
+        assert!(matches!(
+            array_parsed.document,
+            TexturePackerDocument::Array(_)
+        ));
     }
 
     // serialize_texture_packer_spritesheet
@@ -646,8 +719,9 @@ mod tests {
     #[test]
     fn serialize_texture_packer_spritesheet_variant_override() {
         let parsed = parse_texture_packer_spritesheet_document(HASH_JSON);
-        let options =
-            TexturePackerSerializeOptions { variant: Some(TexturePackerSerializeVariant::Array) };
+        let options = TexturePackerSerializeOptions {
+            variant: Some(TexturePackerSerializeVariant::Array),
+        };
         let json = serialize_texture_packer_spritesheet(
             &parsed.data,
             Some(&parsed.document),

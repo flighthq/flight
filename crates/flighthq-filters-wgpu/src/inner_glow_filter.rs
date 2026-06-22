@@ -16,7 +16,9 @@ use flighthq_render_wgpu::{WgpuRenderState, WgpuRenderTarget};
 
 use crate::blur_filter::apply_box_blur_filter_to_wgpu;
 use crate::filter_pass::{WgpuFilterState, clear_wgpu_filter_target};
-use crate::tint_shader::{apply_wgpu_blit_pass, apply_wgpu_inner_clip_pass, apply_wgpu_invert_tint_pass};
+use crate::tint_shader::{
+    apply_wgpu_blit_pass, apply_wgpu_inner_clip_pass, apply_wgpu_invert_tint_pass,
+};
 
 /// Applies an inner glow filter to `source`, writing the result to `dest`.
 pub fn apply_inner_glow_filter_to_wgpu(

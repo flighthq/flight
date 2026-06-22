@@ -270,8 +270,8 @@ mod tests {
     use super::*;
     use crate::tween_manager::create_tween_manager;
     use crate::update_tweens::update_tweens;
-    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
     use flighthq_signals::connect_signal;
 
@@ -345,7 +345,13 @@ mod tests {
     #[test]
     fn create_tween_preallocates_properties() {
         let mut m = create_tween_manager(None);
-        let idx = create_tween(&mut m, 1, 1.0, vec![("x".into(), 100.0), ("y".into(), 200.0)], None);
+        let idx = create_tween(
+            &mut m,
+            1,
+            1.0,
+            vec![("x".into(), 100.0), ("y".into(), 200.0)],
+            None,
+        );
         let keys: Vec<&str> = m.tweens[&1][idx]
             .properties
             .iter()
@@ -442,7 +448,13 @@ mod tests {
     #[test]
     fn stop_tween_does_not_jump_to_end_by_default() {
         let mut m = create_tween_manager(None);
-        create_tween(&mut m, 1, 1.0, vec![("x".into(), 100.0)], Some(linear_opts()));
+        create_tween(
+            &mut m,
+            1,
+            1.0,
+            vec![("x".into(), 100.0)],
+            Some(linear_opts()),
+        );
         let deltas = update_tweens(&mut m, 0.5, &mut |_, _| vec![("x".into(), 0.0)]);
         let x = deltas.iter().find(|(_, k, _)| k == "x").unwrap().2;
         assert!((x - 50.0).abs() < 1e-3);
@@ -454,7 +466,13 @@ mod tests {
     #[test]
     fn stop_tween_complete_jumps_to_end() {
         let mut m = create_tween_manager(None);
-        create_tween(&mut m, 1, 1.0, vec![("x".into(), 100.0)], Some(linear_opts()));
+        create_tween(
+            &mut m,
+            1,
+            1.0,
+            vec![("x".into(), 100.0)],
+            Some(linear_opts()),
+        );
         update_tweens(&mut m, 0.5, &mut |_, _| vec![("x".into(), 0.0)]);
         let opts = StopTweenOptions {
             complete: true,

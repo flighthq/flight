@@ -1,0 +1,19 @@
+[package]
+name = "flighthq-scene-gl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "WebGL2 3D scene renderer"
+
+[dependencies]
+flighthq-camera = { workspace = true }
+flighthq-geometry = { workspace = true }
+flighthq-lighting = { workspace = true }
+flighthq-materials = { workspace = true }
+flighthq-mesh = { workspace = true }
+flighthq-node = { workspace = true }
+flighthq-render = { workspace = true }
+flighthq-render-gl = { workspace = true }
+flighthq-scene = { workspace = true }
+flighthq-types = { workspace = true }
+glow = { workspace = true }

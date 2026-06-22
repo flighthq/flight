@@ -1,0 +1,11 @@
+[package]
+name = "flighthq-texture"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Textures and samplers: image-backed material texture bindings and cubemaps"
+
+[dependencies]
+flighthq-geometry = { workspace = true }
+flighthq-resources = { workspace = true }
+flighthq-types = { workspace = true }

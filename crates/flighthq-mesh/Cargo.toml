@@ -1,0 +1,10 @@
+[package]
+name = "flighthq-mesh"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Mesh geometry: vertex layouts, primitive builders, and normals/tangents/bounds"
+
+[dependencies]
+flighthq-geometry = { workspace = true }
+flighthq-types = { workspace = true }

@@ -57,34 +57,46 @@ pub fn apply_color_matrix_filter_to_wgpu(
     let m: [f32; 20] = std::array::from_fn(|i| m[i]);
 
     if filter_state.color_matrix_pipeline.is_none() {
-        let p = create_wgpu_filter_pipeline(state, filter_state, COLOR_MATRIX_WGSL, WgpuBlendMode::Replace);
+        let p = create_wgpu_filter_pipeline(
+            state,
+            filter_state,
+            COLOR_MATRIX_WGSL,
+            WgpuBlendMode::Replace,
+        );
         filter_state.color_matrix_pipeline = Some(p);
     }
     let mut pipeline = filter_state.color_matrix_pipeline.take().unwrap();
-    draw_wgpu_filter_pass(state, filter_state, source, Some(dest), &mut pipeline, |u| {
-        // Rows 0..3: RGBA weights (matrix columns 0..3).
-        u.set_f32(0, m[0]);
-        u.set_f32(1, m[1]);
-        u.set_f32(2, m[2]);
-        u.set_f32(3, m[3]);
-        u.set_f32(4, m[5]);
-        u.set_f32(5, m[6]);
-        u.set_f32(6, m[7]);
-        u.set_f32(7, m[8]);
-        u.set_f32(8, m[10]);
-        u.set_f32(9, m[11]);
-        u.set_f32(10, m[12]);
-        u.set_f32(11, m[13]);
-        u.set_f32(12, m[15]);
-        u.set_f32(13, m[16]);
-        u.set_f32(14, m[17]);
-        u.set_f32(15, m[18]);
-        // Offsets (matrix column 5), byte scale -> [0, 1].
-        u.set_f32(16, m[4] / 255.0);
-        u.set_f32(17, m[9] / 255.0);
-        u.set_f32(18, m[14] / 255.0);
-        u.set_f32(19, m[19] / 255.0);
-    });
+    draw_wgpu_filter_pass(
+        state,
+        filter_state,
+        source,
+        Some(dest),
+        &mut pipeline,
+        |u| {
+            // Rows 0..3: RGBA weights (matrix columns 0..3).
+            u.set_f32(0, m[0]);
+            u.set_f32(1, m[1]);
+            u.set_f32(2, m[2]);
+            u.set_f32(3, m[3]);
+            u.set_f32(4, m[5]);
+            u.set_f32(5, m[6]);
+            u.set_f32(6, m[7]);
+            u.set_f32(7, m[8]);
+            u.set_f32(8, m[10]);
+            u.set_f32(9, m[11]);
+            u.set_f32(10, m[12]);
+            u.set_f32(11, m[13]);
+            u.set_f32(12, m[15]);
+            u.set_f32(13, m[16]);
+            u.set_f32(14, m[17]);
+            u.set_f32(15, m[18]);
+            // Offsets (matrix column 5), byte scale -> [0, 1].
+            u.set_f32(16, m[4] / 255.0);
+            u.set_f32(17, m[9] / 255.0);
+            u.set_f32(18, m[14] / 255.0);
+            u.set_f32(19, m[19] / 255.0);
+        },
+    );
     filter_state.color_matrix_pipeline = Some(pipeline);
 }
 

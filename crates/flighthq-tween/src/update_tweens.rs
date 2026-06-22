@@ -71,7 +71,13 @@ pub fn update_tweens(
             if list[i].complete {
                 list.remove(i);
             } else {
-                update_tween(*target, &mut list[i], delta_time, current_values_fn, &mut applied);
+                update_tween(
+                    *target,
+                    &mut list[i],
+                    delta_time,
+                    current_values_fn,
+                    &mut applied,
+                );
             }
         }
         if list.is_empty() {
@@ -148,8 +154,8 @@ mod tests {
     use crate::tween_manager::create_tween_manager;
     use flighthq_signals::connect_signal;
     use flighthq_types::TweenOptions;
-    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
     fn linear() -> TweenOptions {
         TweenOptions {
@@ -159,7 +165,11 @@ mod tests {
     }
 
     fn value_of(applied: &[(u64, String, f32)], key: &str) -> Option<f32> {
-        applied.iter().rev().find(|(_, k, _)| k == key).map(|(_, _, v)| *v)
+        applied
+            .iter()
+            .rev()
+            .find(|(_, k, _)| k == key)
+            .map(|(_, _, v)| *v)
     }
 
     #[test]
@@ -241,7 +251,13 @@ mod tests {
             smart_rotation: true,
             ..Default::default()
         };
-        create_tween(&mut m, 1, 1.0, vec![("rotation".into(), -350.0)], Some(opts));
+        create_tween(
+            &mut m,
+            1,
+            1.0,
+            vec![("rotation".into(), -350.0)],
+            Some(opts),
+        );
         let applied = update_tweens(&mut m, 0.5, &mut |_, _| vec![("rotation".into(), 0.0)]);
         assert!((value_of(&applied, "rotation").unwrap() - 5.0).abs() < 1e-3);
     }
@@ -300,8 +316,16 @@ mod tests {
     #[test]
     fn update_tweens_multiple_properties() {
         let mut m = create_tween_manager(None);
-        create_tween(&mut m, 1, 1.0, vec![("x".into(), 100.0), ("y".into(), 200.0)], Some(linear()));
-        let a = update_tweens(&mut m, 1.0, &mut |_, _| vec![("x".into(), 0.0), ("y".into(), 0.0)]);
+        create_tween(
+            &mut m,
+            1,
+            1.0,
+            vec![("x".into(), 100.0), ("y".into(), 200.0)],
+            Some(linear()),
+        );
+        let a = update_tweens(&mut m, 1.0, &mut |_, _| {
+            vec![("x".into(), 0.0), ("y".into(), 0.0)]
+        });
         assert_eq!(value_of(&a, "x").unwrap(), 100.0);
         assert_eq!(value_of(&a, "y").unwrap(), 200.0);
     }

@@ -83,8 +83,14 @@ pub fn apply_displacement_map_filter_to_gl(
         Some(dest),
         move |gl, p| unsafe {
             gl.uniform_2_f32(gl.get_uniform_location(p, "u_texelSize").as_ref(), tx, ty);
-            gl.uniform_1_i32(gl.get_uniform_location(p, "u_componentX").as_ref(), component_x);
-            gl.uniform_1_i32(gl.get_uniform_location(p, "u_componentY").as_ref(), component_y);
+            gl.uniform_1_i32(
+                gl.get_uniform_location(p, "u_componentX").as_ref(),
+                component_x,
+            );
+            gl.uniform_1_i32(
+                gl.get_uniform_location(p, "u_componentY").as_ref(),
+                component_y,
+            );
             gl.uniform_1_f32(gl.get_uniform_location(p, "u_scaleX").as_ref(), scale_x);
             gl.uniform_1_f32(gl.get_uniform_location(p, "u_scaleY").as_ref(), scale_y);
             gl.uniform_1_i32(gl.get_uniform_location(p, "u_mode").as_ref(), mode);
@@ -101,7 +107,9 @@ pub fn apply_displacement_map_filter_to_gl(
 
 /// Returns the displacement-map shader program for `state`, compiling on first use.
 pub fn get_displacement_map_shader(state: &GlRenderState) -> &GlFullscreenProgram {
-    get_gl_filter_program(state, DISPLACEMENT_MAP_FRAGMENT_SRC, |p| &mut p.displacement_map)
+    get_gl_filter_program(state, DISPLACEMENT_MAP_FRAGMENT_SRC, |p| {
+        &mut p.displacement_map
+    })
 }
 
 // Maps a `DisplacementMapMode` to the integer mode constant the shader expects.

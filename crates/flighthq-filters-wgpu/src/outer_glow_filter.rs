@@ -32,7 +32,15 @@ pub fn apply_outer_glow_filter_to_wgpu(
 
     let [mask, blurred, blur_temp] = *scratch;
 
-    apply_wgpu_tint_pass(state, filter_state, source, mask, color, alpha, tint_strength);
+    apply_wgpu_tint_pass(
+        state,
+        filter_state,
+        source,
+        mask,
+        color,
+        alpha,
+        tint_strength,
+    );
     apply_box_blur_filter_to_wgpu(
         state,
         filter_state,

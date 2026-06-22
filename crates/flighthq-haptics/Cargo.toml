@@ -1,0 +1,12 @@
+[package]
+name = "flighthq-haptics"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Haptic feedback (vibrate, impact, notification, selection) over a swappable web/native backend"
+
+[dependencies]
+flighthq-types = { workspace = true }
+
+[dev-dependencies]
+serial_test = { workspace = true }

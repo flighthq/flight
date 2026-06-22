@@ -117,10 +117,17 @@ pub fn apply_wgpu_blit_offset_pass(
 ) {
     let (sw, sh) = (source.width as f32, source.height as f32);
     let mut pipeline = take_blit_offset_shader(state, filter_state);
-    draw_wgpu_filter_pass(state, filter_state, source, Some(dest), &mut pipeline, |u| {
-        u.set_f32(0, -dx / sw);
-        u.set_f32(1, -dy / sh);
-    });
+    draw_wgpu_filter_pass(
+        state,
+        filter_state,
+        source,
+        Some(dest),
+        &mut pipeline,
+        |u| {
+            u.set_f32(0, -dx / sw);
+            u.set_f32(1, -dy / sh);
+        },
+    );
     filter_state.blit_offset_pipeline = Some(pipeline);
 }
 
@@ -132,7 +139,14 @@ pub fn apply_wgpu_blit_pass(
     dest: &WgpuRenderTarget,
 ) {
     let mut pipeline = take_blit_shader(state, filter_state);
-    draw_wgpu_filter_pass(state, filter_state, source, Some(dest), &mut pipeline, |_| {});
+    draw_wgpu_filter_pass(
+        state,
+        filter_state,
+        source,
+        Some(dest),
+        &mut pipeline,
+        |_| {},
+    );
     filter_state.blit_pipeline = Some(pipeline);
 }
 
@@ -171,13 +185,20 @@ pub fn apply_wgpu_invert_tint_pass(
 ) {
     let (r, g, b) = unpack_color(color);
     let mut pipeline = take_invert_tint_shader(state, filter_state);
-    draw_wgpu_filter_pass(state, filter_state, source, Some(dest), &mut pipeline, |u| {
-        u.set_f32(0, r);
-        u.set_f32(1, g);
-        u.set_f32(2, b);
-        u.set_f32(3, alpha);
-        u.set_f32(4, strength);
-    });
+    draw_wgpu_filter_pass(
+        state,
+        filter_state,
+        source,
+        Some(dest),
+        &mut pipeline,
+        |u| {
+            u.set_f32(0, r);
+            u.set_f32(1, g);
+            u.set_f32(2, b);
+            u.set_f32(3, alpha);
+            u.set_f32(4, strength);
+        },
+    );
     filter_state.invert_tint_pipeline = Some(pipeline);
 }
 
@@ -193,13 +214,20 @@ pub fn apply_wgpu_tint_pass(
 ) {
     let (r, g, b) = unpack_color(color);
     let mut pipeline = take_tint_shader(state, filter_state);
-    draw_wgpu_filter_pass(state, filter_state, source, Some(dest), &mut pipeline, |u| {
-        u.set_f32(0, r);
-        u.set_f32(1, g);
-        u.set_f32(2, b);
-        u.set_f32(3, alpha);
-        u.set_f32(4, strength);
-    });
+    draw_wgpu_filter_pass(
+        state,
+        filter_state,
+        source,
+        Some(dest),
+        &mut pipeline,
+        |u| {
+            u.set_f32(0, r);
+            u.set_f32(1, g);
+            u.set_f32(2, b);
+            u.set_f32(3, alpha);
+            u.set_f32(4, strength);
+        },
+    );
     filter_state.tint_pipeline = Some(pipeline);
 }
 
@@ -213,7 +241,12 @@ pub fn get_wgpu_blit_offset_shader<'a>(
     filter_state: &'a mut WgpuFilterState,
 ) -> &'a mut WgpuFilterPipeline {
     if filter_state.blit_offset_pipeline.is_none() {
-        let p = create_wgpu_filter_pipeline(state, filter_state, BLIT_OFFSET_WGSL, WgpuBlendMode::Premul);
+        let p = create_wgpu_filter_pipeline(
+            state,
+            filter_state,
+            BLIT_OFFSET_WGSL,
+            WgpuBlendMode::Premul,
+        );
         filter_state.blit_offset_pipeline = Some(p);
     }
     filter_state.blit_offset_pipeline.as_mut().unwrap()
@@ -237,7 +270,12 @@ pub fn get_wgpu_inner_clip_shader<'a>(
     filter_state: &'a mut WgpuFilterState,
 ) -> &'a mut WgpuDualSourcePipeline {
     if filter_state.inner_clip_pipeline.is_none() {
-        let p = create_wgpu_dual_source_pipeline(state, filter_state, INNER_CLIP_WGSL, WgpuBlendMode::Premul);
+        let p = create_wgpu_dual_source_pipeline(
+            state,
+            filter_state,
+            INNER_CLIP_WGSL,
+            WgpuBlendMode::Premul,
+        );
         filter_state.inner_clip_pipeline = Some(p);
     }
     filter_state.inner_clip_pipeline.as_mut().unwrap()
@@ -249,7 +287,12 @@ pub fn get_wgpu_invert_tint_shader<'a>(
     filter_state: &'a mut WgpuFilterState,
 ) -> &'a mut WgpuFilterPipeline {
     if filter_state.invert_tint_pipeline.is_none() {
-        let p = create_wgpu_filter_pipeline(state, filter_state, INVERT_TINT_WGSL, WgpuBlendMode::Premul);
+        let p = create_wgpu_filter_pipeline(
+            state,
+            filter_state,
+            INVERT_TINT_WGSL,
+            WgpuBlendMode::Premul,
+        );
         filter_state.invert_tint_pipeline = Some(p);
     }
     filter_state.invert_tint_pipeline.as_mut().unwrap()
@@ -284,27 +327,42 @@ fn unpack_color(color: u32) -> (f32, f32, f32) {
 // be passed to a draw call alongside the `&mut WgpuFilterState` (a pipeline that is itself a field
 // of the filter state cannot be borrowed at the same time). Each `apply_*` puts the pipeline back.
 
-fn take_blit_offset_shader(state: &WgpuRenderState, filter_state: &mut WgpuFilterState) -> WgpuFilterPipeline {
+fn take_blit_offset_shader(
+    state: &WgpuRenderState,
+    filter_state: &mut WgpuFilterState,
+) -> WgpuFilterPipeline {
     get_wgpu_blit_offset_shader(state, filter_state);
     filter_state.blit_offset_pipeline.take().unwrap()
 }
 
-fn take_blit_shader(state: &WgpuRenderState, filter_state: &mut WgpuFilterState) -> WgpuFilterPipeline {
+fn take_blit_shader(
+    state: &WgpuRenderState,
+    filter_state: &mut WgpuFilterState,
+) -> WgpuFilterPipeline {
     get_wgpu_blit_shader(state, filter_state);
     filter_state.blit_pipeline.take().unwrap()
 }
 
-fn take_inner_clip_shader(state: &WgpuRenderState, filter_state: &mut WgpuFilterState) -> WgpuDualSourcePipeline {
+fn take_inner_clip_shader(
+    state: &WgpuRenderState,
+    filter_state: &mut WgpuFilterState,
+) -> WgpuDualSourcePipeline {
     get_wgpu_inner_clip_shader(state, filter_state);
     filter_state.inner_clip_pipeline.take().unwrap()
 }
 
-fn take_invert_tint_shader(state: &WgpuRenderState, filter_state: &mut WgpuFilterState) -> WgpuFilterPipeline {
+fn take_invert_tint_shader(
+    state: &WgpuRenderState,
+    filter_state: &mut WgpuFilterState,
+) -> WgpuFilterPipeline {
     get_wgpu_invert_tint_shader(state, filter_state);
     filter_state.invert_tint_pipeline.take().unwrap()
 }
 
-fn take_tint_shader(state: &WgpuRenderState, filter_state: &mut WgpuFilterState) -> WgpuFilterPipeline {
+fn take_tint_shader(
+    state: &WgpuRenderState,
+    filter_state: &mut WgpuFilterState,
+) -> WgpuFilterPipeline {
     get_wgpu_tint_shader(state, filter_state);
     filter_state.tint_pipeline.take().unwrap()
 }

@@ -68,7 +68,14 @@ pub fn apply_bevel_filter_to_gl(
 
     apply_gl_tint_pass(state, blurred, tinted, shadow_color, shadow_alpha, 1.0);
     apply_gl_blit_offset_pass(state, tinted, dest, shadow_dx, shadow_dy);
-    apply_gl_tint_pass(state, blurred, tinted, highlight_color, highlight_alpha, 1.0);
+    apply_gl_tint_pass(
+        state,
+        blurred,
+        tinted,
+        highlight_color,
+        highlight_alpha,
+        1.0,
+    );
     apply_gl_blit_offset_pass(state, tinted, dest, highlight_dx, highlight_dy);
 
     if !knockout {

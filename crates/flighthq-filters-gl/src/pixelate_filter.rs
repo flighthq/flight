@@ -29,11 +29,24 @@ pub fn apply_pixelate_filter_to_gl(
     filter: &PixelateFilter,
 ) {
     let block_size = filter.block_size.unwrap_or(8.0).max(1.0);
-    let (bx, by) = (block_size / source.width as f32, block_size / source.height as f32);
+    let (bx, by) = (
+        block_size / source.width as f32,
+        block_size / source.height as f32,
+    );
     let program = get_pixelate_shader(state);
-    draw_gl_fullscreen_pass(state, program, &[source.texture], Some(dest), move |gl, p| unsafe {
-        gl.uniform_2_f32(gl.get_uniform_location(p, "u_blockTexelSize").as_ref(), bx, by);
-    });
+    draw_gl_fullscreen_pass(
+        state,
+        program,
+        &[source.texture],
+        Some(dest),
+        move |gl, p| unsafe {
+            gl.uniform_2_f32(
+                gl.get_uniform_location(p, "u_blockTexelSize").as_ref(),
+                bx,
+                by,
+            );
+        },
+    );
 }
 
 /// Returns the pixelate shader program for `state`, compiling on first use.

@@ -23,7 +23,7 @@ use flighthq_render::{
     RenderStateStore, create_render_state, get_render_proxy_2d, get_render_state,
     prepare_display_object_render,
 };
-use flighthq_render_wgpu::{
+use flighthq_displayobject_wgpu::{
     WgpuShapeGeometry, register_wgpu_display_object_renderer, render_wgpu_display_object,
 };
 use flighthq_shape::{
@@ -322,9 +322,9 @@ pub fn render_scene_to_rgba(scene: &Scene) -> Option<Vec<u8>> {
                 // Shape scenes carry no bitmaps or clips, so these resolvers
                 // always return None.
                 let get_bitmap_texture =
-                    |_id: u64| -> Option<flighthq_render_wgpu::WgpuBitmapTexture> { None };
+                    |_id: u64| -> Option<flighthq_displayobject_wgpu::WgpuBitmapTexture> { None };
                 let get_clip_rectangle =
-                    |_id: u64| -> Option<flighthq_render_wgpu::WgpuClipRectangle> { None };
+                    |_id: u64| -> Option<flighthq_displayobject_wgpu::WgpuClipRectangle> { None };
 
                 if effects.is_empty() {
                     // Pure-shape frame: walk straight into the open capture pass.

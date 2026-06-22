@@ -24,10 +24,11 @@ use flighthq_input::{
     dispatch_pointer_move_event, dispatch_pointer_up_event, dispatch_wheel_event,
     get_key_code_from_key_name, get_key_modifier_from_flags,
 };
-use flighthq_render_wgpu::{
-    WgpuRenderOptions, WgpuRenderState, register_wgpu_color_transform_materials,
-    register_wgpu_display_object_renderer, register_wgpu_sprite_renderer,
+use flighthq_displayobject_wgpu::{
+    register_wgpu_color_transform_materials, register_wgpu_display_object_renderer,
+    register_wgpu_sprite_renderer,
 };
+use flighthq_render_wgpu::{WgpuRenderOptions, WgpuRenderState};
 
 use winit::application::ApplicationHandler;
 use winit::event::{Modifiers, WindowEvent};

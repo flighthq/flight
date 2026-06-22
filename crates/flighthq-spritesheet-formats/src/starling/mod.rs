@@ -47,7 +47,9 @@ pub struct StarlingParseOptions {
 
 impl Default for StarlingParseOptions {
     fn default() -> Self {
-        Self { frame_duration: 100.0 }
+        Self {
+            frame_duration: 100.0,
+        }
     }
 }
 
@@ -78,7 +80,10 @@ pub fn parse_starling_spritesheet_document(
 ) -> StarlingParsed {
     let frame_duration = options.map(|o| o.frame_duration).unwrap_or(100.0);
     let document = parse_starling_xml(xml);
-    StarlingParsed { data: document_to_data(&document, frame_duration), document }
+    StarlingParsed {
+        data: document_to_data(&document, frame_duration),
+        document,
+    }
 }
 
 /// Serialises a [`SpritesheetData`] to a Starling / Sparrow XML atlas string.
@@ -130,7 +135,9 @@ fn infer_animations(frame_names: &[String], frame_duration: f32) -> Vec<Spritesh
     let mut groups: Vec<(String, Vec<(i64, String)>)> = Vec::new();
 
     for name in frame_names {
-        let Some((base, index)) = split_base_and_index(name) else { continue };
+        let Some((base, index)) = split_base_and_index(name) else {
+            continue;
+        };
         if let Some(pos) = order.iter().position(|b| *b == base) {
             groups[pos].1.push((index, name.clone()));
         } else {
@@ -145,13 +152,15 @@ fn infer_animations(frame_names: &[String], frame_duration: f32) -> Vec<Spritesh
             continue;
         }
         entries.sort_by_key(|(index, _)| *index);
-        animations.push(create_spritesheet_animation_data(SpritesheetAnimationData {
-            frame_duration,
-            frame_names: entries.into_iter().map(|(_, name)| name).collect(),
-            loop_: true,
-            name: base,
-            ..Default::default()
-        }));
+        animations.push(create_spritesheet_animation_data(
+            SpritesheetAnimationData {
+                frame_duration,
+                frame_names: entries.into_iter().map(|(_, name)| name).collect(),
+                loop_: true,
+                name: base,
+                ..Default::default()
+            },
+        ));
     }
     animations
 }
@@ -273,11 +282,17 @@ fn parse_attrs(attrs: &str) -> Vec<(String, String)> {
 }
 
 fn attr_float(attrs: &[(String, String)], key: &str) -> Option<f32> {
-    attrs.iter().find(|(k, _)| k == key).and_then(|(_, v)| v.parse::<f32>().ok())
+    attrs
+        .iter()
+        .find(|(k, _)| k == key)
+        .and_then(|(_, v)| v.parse::<f32>().ok())
 }
 
 fn attr_text<'a>(attrs: &'a [(String, String)], key: &str) -> Option<&'a str> {
-    attrs.iter().find(|(k, _)| k == key).map(|(_, v)| v.as_str())
+    attrs
+        .iter()
+        .find(|(k, _)| k == key)
+        .map(|(_, v)| v.as_str())
 }
 
 fn parse_starling_xml(xml: &str) -> StarlingDocument {
@@ -288,7 +303,9 @@ fn parse_starling_xml(xml: &str) -> StarlingDocument {
     let mut sub_textures = Vec::new();
     for raw in iter_sub_texture_attrs(xml) {
         let attrs = parse_attrs(&raw);
-        let Some(name) = attr_text(&attrs, "name").filter(|s| !s.is_empty()) else { continue };
+        let Some(name) = attr_text(&attrs, "name").filter(|s| !s.is_empty()) else {
+            continue;
+        };
         let st = StarlingSubTexture {
             frame_height: attr_float(&attrs, "frameHeight"),
             frame_width: attr_float(&attrs, "frameWidth"),
@@ -306,7 +323,10 @@ fn parse_starling_xml(xml: &str) -> StarlingDocument {
         sub_textures.push(st);
     }
 
-    StarlingDocument { image_path, sub_textures }
+    StarlingDocument {
+        image_path,
+        sub_textures,
+    }
 }
 
 /// Returns the attribute text inside the first `<TextureAtlas ...>` open tag,
@@ -326,8 +346,7 @@ fn iter_sub_texture_attrs(xml: &str) -> Vec<String> {
     while let Some(idx) = rest.find("<SubTexture") {
         let after = &rest[idx + "<SubTexture".len()..];
         // `[^/]*` — attribute run ends at the first '/' (or '>').
-        let attr_end =
-            after.find(|c| c == '/' || c == '>').unwrap_or(after.len());
+        let attr_end = after.find(|c| c == '/' || c == '>').unwrap_or(after.len());
         out.push(after[..attr_end].to_string());
         rest = &after[attr_end..];
     }
@@ -496,7 +515,10 @@ mod tests {
         assert!(!spark.rotated);
 
         assert_eq!(data.image_file, "atlas.png");
-        assert_eq!(parse_starling_spritesheet(MINIMAL_XML, None).image_file, "mini.png");
+        assert_eq!(
+            parse_starling_spritesheet(MINIMAL_XML, None).image_file,
+            "mini.png"
+        );
     }
 
     #[test]
@@ -509,7 +531,11 @@ mod tests {
     #[test]
     fn parse_starling_spritesheet_infers_animations() {
         let data = parse_starling_spritesheet(ATLAS_XML, None);
-        let hero = data.animations.iter().find(|a| a.name == "hero_idle").unwrap();
+        let hero = data
+            .animations
+            .iter()
+            .find(|a| a.name == "hero_idle")
+            .unwrap();
         assert_eq!(hero.frame_names.len(), 3);
         assert_eq!(hero.frame_names[0], "hero_idle_0001");
         assert_eq!(hero.frame_names[1], "hero_idle_0002");
@@ -520,7 +546,9 @@ mod tests {
 
         let custom = parse_starling_spritesheet(
             ATLAS_XML,
-            Some(&StarlingParseOptions { frame_duration: 200.0 }),
+            Some(&StarlingParseOptions {
+                frame_duration: 200.0,
+            }),
         );
         assert_eq!(custom.animations[0].frame_duration, 200.0);
 
@@ -568,10 +596,22 @@ mod tests {
         assert_eq!(data2.frames[0].width, parsed.data.frames[0].width);
         assert_eq!(data2.frames[0].offset_x, parsed.data.frames[0].offset_x);
         assert_eq!(data2.frames[0].offset_y, parsed.data.frames[0].offset_y);
-        assert_eq!(data2.frames[0].source_width, parsed.data.frames[0].source_width);
-        assert_eq!(data2.frames[0].source_height, parsed.data.frames[0].source_height);
-        assert!((data2.frames[0].pivot_x.unwrap() - parsed.data.frames[0].pivot_x.unwrap()).abs() < 1e-6);
-        assert!((data2.frames[0].pivot_y.unwrap() - parsed.data.frames[0].pivot_y.unwrap()).abs() < 1e-6);
+        assert_eq!(
+            data2.frames[0].source_width,
+            parsed.data.frames[0].source_width
+        );
+        assert_eq!(
+            data2.frames[0].source_height,
+            parsed.data.frames[0].source_height
+        );
+        assert!(
+            (data2.frames[0].pivot_x.unwrap() - parsed.data.frames[0].pivot_x.unwrap()).abs()
+                < 1e-6
+        );
+        assert!(
+            (data2.frames[0].pivot_y.unwrap() - parsed.data.frames[0].pivot_y.unwrap()).abs()
+                < 1e-6
+        );
         assert_eq!(data2.image_file, "atlas.png");
 
         let rotated = parse_starling_spritesheet_document(ROTATED_XML, None);

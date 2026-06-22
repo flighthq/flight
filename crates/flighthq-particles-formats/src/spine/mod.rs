@@ -199,8 +199,16 @@ fn parse_spine_json(json: &str) -> Result<JsonValue, String> {
 fn range_mid(obj: Option<&JsonValue>, def: f32) -> f32 {
     match obj {
         Some(o) if o.is_object() => {
-            let lo = o.get("low").and_then(JsonValue::as_number).map(|n| n as f32).unwrap_or(def);
-            let hi = o.get("high").and_then(JsonValue::as_number).map(|n| n as f32).unwrap_or(def);
+            let lo = o
+                .get("low")
+                .and_then(JsonValue::as_number)
+                .map(|n| n as f32)
+                .unwrap_or(def);
+            let hi = o
+                .get("high")
+                .and_then(JsonValue::as_number)
+                .map(|n| n as f32)
+                .unwrap_or(def);
             (lo + hi) * 0.5
         }
         _ => def,
@@ -209,18 +217,22 @@ fn range_mid(obj: Option<&JsonValue>, def: f32) -> f32 {
 
 fn range_low(obj: Option<&JsonValue>, def: f32) -> f32 {
     match obj {
-        Some(o) if o.is_object() => {
-            o.get("low").and_then(JsonValue::as_number).map(|n| n as f32).unwrap_or(def)
-        }
+        Some(o) if o.is_object() => o
+            .get("low")
+            .and_then(JsonValue::as_number)
+            .map(|n| n as f32)
+            .unwrap_or(def),
         _ => def,
     }
 }
 
 fn range_high(obj: Option<&JsonValue>, def: f32) -> f32 {
     match obj {
-        Some(o) if o.is_object() => {
-            o.get("high").and_then(JsonValue::as_number).map(|n| n as f32).unwrap_or(def)
-        }
+        Some(o) if o.is_object() => o
+            .get("high")
+            .and_then(JsonValue::as_number)
+            .map(|n| n as f32)
+            .unwrap_or(def),
         _ => def,
     }
 }
@@ -261,7 +273,10 @@ fn first_tint_color(arr: Option<&JsonValue>) -> (f32, f32, f32) {
 fn last_tint_color(arr: Option<&JsonValue>) -> (f32, f32, f32) {
     match arr.and_then(JsonValue::as_array) {
         Some(a) if !a.is_empty() => hex_to_rgb(
-            a[a.len() - 1].get("color").and_then(JsonValue::as_text).unwrap_or("ffffff"),
+            a[a.len() - 1]
+                .get("color")
+                .and_then(JsonValue::as_text)
+                .unwrap_or("ffffff"),
         ),
         _ => (1.0, 1.0, 1.0),
     }
@@ -298,7 +313,10 @@ fn raw_to_config(raw: &JsonValue) -> ParticleEmitterConfig {
     let angle_high = range_high(raw.get("angle"), 120.0);
     let angle_mid = (angle_low + angle_high) * 0.5 * DEG2RAD;
     let spread = (angle_high - angle_low) * 0.5 * DEG2RAD;
-    let spawn_shape = raw.get("spawnShape").and_then(JsonValue::as_text).unwrap_or("point");
+    let spawn_shape = raw
+        .get("spawnShape")
+        .and_then(JsonValue::as_text)
+        .unwrap_or("point");
     let sx = range_mid(raw.get("spawnWidth"), 0.0);
     let sy = range_mid(raw.get("spawnHeight"), 0.0);
     let emitter_shape = if spawn_shape == "ellipse" {
@@ -316,8 +334,15 @@ fn raw_to_config(raw: &JsonValue) -> ParticleEmitterConfig {
     let (end_r, end_g, end_b) = last_tint_color(raw.get("tint"));
     let color_curve = tint_keyframes_to_curve(raw.get("tint"));
     let alpha_curve = alpha_keyframes_to_curve(raw.get("alpha"));
-    let continuous = raw.get("continuous").and_then(JsonValue::as_bool).unwrap_or(true);
-    let duration_ms = raw.get("duration").and_then(JsonValue::as_number).map(|n| n as f32).unwrap_or(-1.0);
+    let continuous = raw
+        .get("continuous")
+        .and_then(JsonValue::as_bool)
+        .unwrap_or(true);
+    let duration_ms = raw
+        .get("duration")
+        .and_then(JsonValue::as_number)
+        .map(|n| n as f32)
+        .unwrap_or(-1.0);
 
     create_particle_emitter_config(Some(ParticleEmitterConfig {
         max_particles: raw
@@ -344,12 +369,28 @@ fn raw_to_config(raw: &JsonValue) -> ParticleEmitterConfig {
         gravity_x: range_mid(raw.get("wind"), 0.0),
         gravity_y: range_mid(raw.get("gravity"), 0.0),
         emitter_shape,
-        emitter_radius: if emitter_shape == ParticleEmitterShape::Circle { sx * 0.5 } else { 0.0 },
-        emitter_width: if emitter_shape == ParticleEmitterShape::Rect { sx } else { 0.0 },
-        emitter_height: if emitter_shape == ParticleEmitterShape::Rect { sy } else { 0.0 },
+        emitter_radius: if emitter_shape == ParticleEmitterShape::Circle {
+            sx * 0.5
+        } else {
+            0.0
+        },
+        emitter_width: if emitter_shape == ParticleEmitterShape::Rect {
+            sx
+        } else {
+            0.0
+        },
+        emitter_height: if emitter_shape == ParticleEmitterShape::Rect {
+            sy
+        } else {
+            0.0
+        },
         scale_min: range_low(raw.get("scale"), 1.0),
         scale_max: range_high(raw.get("scale"), 1.0),
-        scale_end: if spawn_scale_mid > 0.0 { end_scale_mid / spawn_scale_mid } else { 0.0 },
+        scale_end: if spawn_scale_mid > 0.0 {
+            end_scale_mid / spawn_scale_mid
+        } else {
+            0.0
+        },
         color_start_r: start_r,
         color_start_g: start_g,
         color_start_b: start_b,
@@ -360,7 +401,11 @@ fn raw_to_config(raw: &JsonValue) -> ParticleEmitterConfig {
         alpha_end: last_alpha(raw.get("alpha")),
         rotation_speed_min: range_low(raw.get("rotation"), 0.0) * DEG2RAD,
         rotation_speed_max: range_high(raw.get("rotation"), 0.0) * DEG2RAD,
-        blend_mode: spine_blend_mode(raw.get("blendMode").and_then(JsonValue::as_text).unwrap_or("normal")),
+        blend_mode: spine_blend_mode(
+            raw.get("blendMode")
+                .and_then(JsonValue::as_text)
+                .unwrap_or("normal"),
+        ),
         ..ParticleEmitterConfig::default()
     }))
 }
@@ -381,7 +426,9 @@ fn collect_spine_warnings(raw: &JsonValue) -> Vec<String> {
         warnings.push("Spine lifeOffset is not supported and was ignored".to_string());
     }
     if non_zero_range("x") || non_zero_range("y") {
-        warnings.push("Spine emitter x/y position ranges are not supported and were ignored".to_string());
+        warnings.push(
+            "Spine emitter x/y position ranges are not supported and were ignored".to_string(),
+        );
     }
     warnings
 }
@@ -395,7 +442,11 @@ fn tint_keyframes_to_curve(arr: Option<&JsonValue>) -> Option<ParticleCurve> {
     }
     let mut keys: Vec<ColorKeyframe> = Vec::with_capacity(a.len());
     for (i, k) in a.iter().enumerate() {
-        let (r, g, b) = hex_to_rgb(k.get("color").and_then(JsonValue::as_text).unwrap_or("ffffff"));
+        let (r, g, b) = hex_to_rgb(
+            k.get("color")
+                .and_then(JsonValue::as_text)
+                .unwrap_or("ffffff"),
+        );
         keys.push(ColorKeyframe {
             time: k
                 .get("time")
@@ -423,7 +474,11 @@ fn alpha_keyframes_to_curve(arr: Option<&JsonValue>) -> Option<ParticleCurve> {
                 .and_then(JsonValue::as_number)
                 .map(|n| n as f32)
                 .unwrap_or(i as f32 / (a.len() - 1) as f32),
-            value: k.get("alpha").and_then(JsonValue::as_number).map(|n| n as f32).unwrap_or(1.0),
+            value: k
+                .get("alpha")
+                .and_then(JsonValue::as_number)
+                .map(|n| n as f32)
+                .unwrap_or(1.0),
         });
     }
     Some(particle_curve_from_keyframes(&keys, CURVE_SAMPLES))
@@ -446,15 +501,19 @@ fn spine_blend_mode(mode: &str) -> Option<ParticleBlendMode> {
 fn read_range(obj: Option<&JsonValue>, lo: f32, hi: f32) -> SpineRangeValue {
     SpineRangeValue {
         low: match obj {
-            Some(o) if o.is_object() => {
-                o.get("low").and_then(JsonValue::as_number).map(|n| n as f32).unwrap_or(lo)
-            }
+            Some(o) if o.is_object() => o
+                .get("low")
+                .and_then(JsonValue::as_number)
+                .map(|n| n as f32)
+                .unwrap_or(lo),
             _ => lo,
         },
         high: match obj {
-            Some(o) if o.is_object() => {
-                o.get("high").and_then(JsonValue::as_number).map(|n| n as f32).unwrap_or(hi)
-            }
+            Some(o) if o.is_object() => o
+                .get("high")
+                .and_then(JsonValue::as_number)
+                .map(|n| n as f32)
+                .unwrap_or(hi),
             _ => hi,
         },
     }
@@ -473,42 +532,80 @@ fn raw_to_document(raw: &JsonValue) -> SpineParticleDocument {
         Some(a) => a
             .iter()
             .map(|k| SpineTintKeyframe {
-                time: k.get("time").and_then(JsonValue::as_number).map(|n| n as f32).unwrap_or(0.0),
-                color: k.get("color").and_then(JsonValue::as_text).unwrap_or("ffffff").to_string(),
+                time: k
+                    .get("time")
+                    .and_then(JsonValue::as_number)
+                    .map(|n| n as f32)
+                    .unwrap_or(0.0),
+                color: k
+                    .get("color")
+                    .and_then(JsonValue::as_text)
+                    .unwrap_or("ffffff")
+                    .to_string(),
             })
             .collect(),
-        None => vec![SpineTintKeyframe { time: 0.0, color: "ffffff".to_string() }],
+        None => vec![SpineTintKeyframe {
+            time: 0.0,
+            color: "ffffff".to_string(),
+        }],
     };
     let alpha_kfs = match raw.get("alpha").and_then(JsonValue::as_array) {
         Some(a) => a
             .iter()
             .map(|k| SpineAlphaKeyframe {
-                time: k.get("time").and_then(JsonValue::as_number).map(|n| n as f32).unwrap_or(0.0),
-                alpha: k.get("alpha").and_then(JsonValue::as_number).map(|n| n as f32).unwrap_or(1.0),
+                time: k
+                    .get("time")
+                    .and_then(JsonValue::as_number)
+                    .map(|n| n as f32)
+                    .unwrap_or(0.0),
+                alpha: k
+                    .get("alpha")
+                    .and_then(JsonValue::as_number)
+                    .map(|n| n as f32)
+                    .unwrap_or(1.0),
             })
             .collect(),
         None => vec![
-            SpineAlphaKeyframe { time: 0.0, alpha: 1.0 },
-            SpineAlphaKeyframe { time: 1.0, alpha: 0.0 },
+            SpineAlphaKeyframe {
+                time: 0.0,
+                alpha: 1.0,
+            },
+            SpineAlphaKeyframe {
+                time: 1.0,
+                alpha: 0.0,
+            },
         ],
     };
 
     SpineParticleDocument {
-        name: raw.get("name").and_then(JsonValue::as_text).unwrap_or("").to_string(),
+        name: raw
+            .get("name")
+            .and_then(JsonValue::as_text)
+            .unwrap_or("")
+            .to_string(),
         max_particles: raw
             .get("maxParticles")
             .and_then(JsonValue::as_number)
             .map(|n| n as i64 as u32)
             .unwrap_or(500),
-        continuous: raw.get("continuous").and_then(JsonValue::as_bool).unwrap_or(true),
-        duration: raw.get("duration").and_then(JsonValue::as_number).map(|n| n as f32).unwrap_or(-1.0),
+        continuous: raw
+            .get("continuous")
+            .and_then(JsonValue::as_bool)
+            .unwrap_or(true),
+        duration: raw
+            .get("duration")
+            .and_then(JsonValue::as_number)
+            .map(|n| n as f32)
+            .unwrap_or(-1.0),
         emission: read_range(raw.get("emission"), 10.0, 30.0),
         life: read_range(raw.get("life"), 500.0, 1500.0),
         life_offset: read_range(raw.get("lifeOffset"), 0.0, 0.0),
         x: read_range(raw.get("x"), 0.0, 0.0),
         y: read_range(raw.get("y"), 0.0, 0.0),
         spawn_shape: spawn_shape_from_str(
-            raw.get("spawnShape").and_then(JsonValue::as_text).unwrap_or("point"),
+            raw.get("spawnShape")
+                .and_then(JsonValue::as_text)
+                .unwrap_or("point"),
         ),
         spawn_width: read_range(raw.get("spawnWidth"), 0.0, 0.0),
         spawn_height: read_range(raw.get("spawnHeight"), 0.0, 0.0),
@@ -522,11 +619,19 @@ fn raw_to_document(raw: &JsonValue) -> SpineParticleDocument {
         tint: tint_kfs,
         alpha: alpha_kfs,
         blend_mode: spine_blend_mode_enum(
-            raw.get("blendMode").and_then(JsonValue::as_text).unwrap_or("normal"),
+            raw.get("blendMode")
+                .and_then(JsonValue::as_text)
+                .unwrap_or("normal"),
         ),
-        premultiplied: raw.get("premultiplied").and_then(JsonValue::as_bool).unwrap_or(false),
+        premultiplied: raw
+            .get("premultiplied")
+            .and_then(JsonValue::as_bool)
+            .unwrap_or(false),
         images: match raw.get("images").and_then(JsonValue::as_array) {
-            Some(a) => a.iter().filter_map(|v| v.as_text().map(str::to_string)).collect(),
+            Some(a) => a
+                .iter()
+                .filter_map(|v| v.as_text().map(str::to_string))
+                .collect(),
             None => Vec::new(),
         },
     }
@@ -587,20 +692,33 @@ fn config_to_document(
                 low: config.emitter_radius * 2.0,
                 high: config.emitter_radius * 2.0,
             },
-            ParticleEmitterShape::Rect => SpineRangeValue { low: dim, high: dim },
-            ParticleEmitterShape::Point => SpineRangeValue { low: 0.0, high: 0.0 },
+            ParticleEmitterShape::Rect => SpineRangeValue {
+                low: dim,
+                high: dim,
+            },
+            ParticleEmitterShape::Point => SpineRangeValue {
+                low: 0.0,
+                high: 0.0,
+            },
         }
     };
 
     let tint = match &config.color_curve {
         Some(curve) => particle_color_curve_to_keyframes(curve)
             .into_iter()
-            .map(|k| SpineTintKeyframe { time: k.time, color: rgb_to_hex(k.r, k.g, k.b) })
+            .map(|k| SpineTintKeyframe {
+                time: k.time,
+                color: rgb_to_hex(k.r, k.g, k.b),
+            })
             .collect(),
         None => vec![
             SpineTintKeyframe {
                 time: 0.0,
-                color: rgb_to_hex(config.color_start_r, config.color_start_g, config.color_start_b),
+                color: rgb_to_hex(
+                    config.color_start_r,
+                    config.color_start_g,
+                    config.color_start_b,
+                ),
             },
             SpineTintKeyframe {
                 time: 1.0,
@@ -611,11 +729,20 @@ fn config_to_document(
     let alpha = match &config.alpha_curve {
         Some(curve) => particle_curve_to_keyframes(curve)
             .into_iter()
-            .map(|k| SpineAlphaKeyframe { time: k.time, alpha: k.value })
+            .map(|k| SpineAlphaKeyframe {
+                time: k.time,
+                alpha: k.value,
+            })
             .collect(),
         None => vec![
-            SpineAlphaKeyframe { time: 0.0, alpha: config.alpha_start },
-            SpineAlphaKeyframe { time: 1.0, alpha: config.alpha_end },
+            SpineAlphaKeyframe {
+                time: 0.0,
+                alpha: config.alpha_start,
+            },
+            SpineAlphaKeyframe {
+                time: 1.0,
+                alpha: config.alpha_end,
+            },
         ],
     };
 
@@ -632,24 +759,45 @@ fn config_to_document(
         } else {
             existing.map(|e| e.duration).unwrap_or(-1.0)
         },
-        emission: SpineRangeValue { low: config.spawn_rate * 0.8, high: config.spawn_rate * 1.2 },
-        life: SpineRangeValue { low: config.lifetime_min * 1000.0, high: config.lifetime_max * 1000.0 },
+        emission: SpineRangeValue {
+            low: config.spawn_rate * 0.8,
+            high: config.spawn_rate * 1.2,
+        },
+        life: SpineRangeValue {
+            low: config.lifetime_min * 1000.0,
+            high: config.lifetime_max * 1000.0,
+        },
         life_offset: existing.map(|e| e.life_offset).unwrap_or_default(),
         x: existing.map(|e| e.x).unwrap_or_default(),
         y: existing.map(|e| e.y).unwrap_or_default(),
         spawn_shape,
         spawn_width: spawn_dim(config.emitter_width),
         spawn_height: spawn_dim(config.emitter_height),
-        velocity: SpineRangeValue { low: config.speed_min, high: config.speed_max },
-        angle: SpineRangeValue { low: angle_mid - spread_deg, high: angle_mid + spread_deg },
+        velocity: SpineRangeValue {
+            low: config.speed_min,
+            high: config.speed_max,
+        },
+        angle: SpineRangeValue {
+            low: angle_mid - spread_deg,
+            high: angle_mid + spread_deg,
+        },
         rotation: SpineRangeValue {
             low: config.rotation_speed_min * RAD2DEG,
             high: config.rotation_speed_max * RAD2DEG,
         },
         // gravityX is not representable as a Spine wind range.
-        wind: SpineRangeValue { low: 0.0, high: 0.0 },
-        gravity: SpineRangeValue { low: config.gravity_y, high: config.gravity_y },
-        scale: SpineRangeValue { low: config.scale_min, high: config.scale_max },
+        wind: SpineRangeValue {
+            low: 0.0,
+            high: 0.0,
+        },
+        gravity: SpineRangeValue {
+            low: config.gravity_y,
+            high: config.gravity_y,
+        },
+        scale: SpineRangeValue {
+            low: config.scale_min,
+            high: config.scale_max,
+        },
         scale_end: SpineRangeValue {
             low: config.scale_min * config.scale_end,
             high: config.scale_max * config.scale_end,
@@ -718,7 +866,10 @@ fn images_array_json(images: &[String]) -> String {
     if images.is_empty() {
         return "[]".to_string();
     }
-    let items: Vec<String> = images.iter().map(|s| format!("\"{}\"", escape_json_string(s))).collect();
+    let items: Vec<String> = images
+        .iter()
+        .map(|s| format!("\"{}\"", escape_json_string(s)))
+        .collect();
     format!("[\n      {}\n    ]", items.join(",\n      "))
 }
 
@@ -792,13 +943,20 @@ mod tests {
 
     #[test]
     fn parse_spine_particle_blend_mode() {
-        assert_eq!(parse_spine_particle(SPARK_JSON).unwrap().blend_mode, Some(ParticleBlendMode::Add));
+        assert_eq!(
+            parse_spine_particle(SPARK_JSON).unwrap().blend_mode,
+            Some(ParticleBlendMode::Add)
+        );
         let normal = SPARK_JSON.replace("\"additive\"", "\"normal\"");
-        assert_eq!(parse_spine_particle(&normal).unwrap().blend_mode, Some(ParticleBlendMode::Normal));
+        assert_eq!(
+            parse_spine_particle(&normal).unwrap().blend_mode,
+            Some(ParticleBlendMode::Normal)
+        );
         // Round-trip.
         let config = parse_spine_particle(SPARK_JSON).unwrap();
         let document = parse_spine_particle_document(SPARK_JSON).unwrap().document;
-        let config2 = parse_spine_particle(&serialize_spine_particle(&config, Some(&document))).unwrap();
+        let config2 =
+            parse_spine_particle(&serialize_spine_particle(&config, Some(&document))).unwrap();
         assert_eq!(config2.blend_mode, Some(ParticleBlendMode::Add));
     }
 
@@ -831,7 +989,9 @@ mod tests {
 
     #[test]
     fn parse_spine_particle_finite_duration() {
-        let json = SPARK_JSON.replace("\"continuous\": true", "\"continuous\": false").replace("\"duration\": -1", "\"duration\": 2000");
+        let json = SPARK_JSON
+            .replace("\"continuous\": true", "\"continuous\": false")
+            .replace("\"duration\": -1", "\"duration\": 2000");
         let c = parse_spine_particle(&json).unwrap();
         assert!(!c.loop_);
         assert!(close(c.duration, 2.0, 1e-4));
@@ -843,14 +1003,27 @@ mod tests {
     fn parse_spine_particle_invalid_json_errors() {
         let e = parse_spine_particle("{not valid").unwrap_err();
         assert!(e.contains("Invalid Spine particle JSON"));
-        assert!(parse_spine_particle("null").unwrap_err().contains("expected a JSON object"));
-        assert!(parse_spine_particle("\"a string\"").unwrap_err().contains("expected a JSON object"));
-        assert!(parse_spine_particle("[1,2,3]").unwrap_err().contains("expected a JSON object"));
+        assert!(
+            parse_spine_particle("null")
+                .unwrap_err()
+                .contains("expected a JSON object")
+        );
+        assert!(
+            parse_spine_particle("\"a string\"")
+                .unwrap_err()
+                .contains("expected a JSON object")
+        );
+        assert!(
+            parse_spine_particle("[1,2,3]")
+                .unwrap_err()
+                .contains("expected a JSON object")
+        );
     }
 
     #[test]
     fn parse_spine_particle_safe_for_bad_color() {
-        let c = parse_spine_particle("{\"tint\": [{ \"time\": 0, \"color\": \"zzzzzz\" }]}").unwrap();
+        let c =
+            parse_spine_particle("{\"tint\": [{ \"time\": 0, \"color\": \"zzzzzz\" }]}").unwrap();
         assert!(c.color_start_r.is_finite());
         assert!(c.color_start_g.is_finite());
         assert!(c.color_start_b.is_finite());
@@ -916,7 +1089,12 @@ mod tests {
 
     #[test]
     fn parse_spine_particle_no_warnings_two_keyframe() {
-        assert!(parse_spine_particle_document(SPARK_JSON).unwrap().warnings.is_empty());
+        assert!(
+            parse_spine_particle_document(SPARK_JSON)
+                .unwrap()
+                .warnings
+                .is_empty()
+        );
     }
 
     #[test]
@@ -945,7 +1123,8 @@ mod tests {
     fn serialize_spine_particle_round_trips_fields() {
         let config = parse_spine_particle(SPARK_JSON).unwrap();
         let document = parse_spine_particle_document(SPARK_JSON).unwrap().document;
-        let config2 = parse_spine_particle(&serialize_spine_particle(&config, Some(&document))).unwrap();
+        let config2 =
+            parse_spine_particle(&serialize_spine_particle(&config, Some(&document))).unwrap();
         assert_eq!(config2.max_particles, config.max_particles);
         assert!(close(config2.lifetime_min, config.lifetime_min, 1e-3));
         assert!(close(config2.speed_max, config.speed_max, 1e-2));
@@ -958,7 +1137,10 @@ mod tests {
         let document = parse_spine_particle_document(SPARK_JSON).unwrap().document;
         let xml = serialize_spine_particle(&config, Some(&document));
         assert_eq!(
-            parse_spine_particle_document(&xml).unwrap().document.blend_mode,
+            parse_spine_particle_document(&xml)
+                .unwrap()
+                .document
+                .blend_mode,
             SpineBlendMode::Additive
         );
     }
@@ -974,17 +1156,41 @@ mod tests {
     fn serialize_spine_particle_bakes_curves() {
         let color_curve = particle_color_curve_from_keyframes(
             &[
-                ColorKeyframe { time: 0.0, r: 1.0, g: 0.0, b: 0.0 },
-                ColorKeyframe { time: 0.5, r: 0.0, g: 1.0, b: 0.0 },
-                ColorKeyframe { time: 1.0, r: 0.0, g: 0.0, b: 1.0 },
+                ColorKeyframe {
+                    time: 0.0,
+                    r: 1.0,
+                    g: 0.0,
+                    b: 0.0,
+                },
+                ColorKeyframe {
+                    time: 0.5,
+                    r: 0.0,
+                    g: 1.0,
+                    b: 0.0,
+                },
+                ColorKeyframe {
+                    time: 1.0,
+                    r: 0.0,
+                    g: 0.0,
+                    b: 1.0,
+                },
             ],
             CURVE_SAMPLES,
         );
         let alpha_curve = particle_curve_from_keyframes(
             &[
-                CurveKeyframe { time: 0.0, value: 0.0 },
-                CurveKeyframe { time: 0.5, value: 1.0 },
-                CurveKeyframe { time: 1.0, value: 0.0 },
+                CurveKeyframe {
+                    time: 0.0,
+                    value: 0.0,
+                },
+                CurveKeyframe {
+                    time: 0.5,
+                    value: 1.0,
+                },
+                CurveKeyframe {
+                    time: 1.0,
+                    value: 0.0,
+                },
             ],
             CURVE_SAMPLES,
         );

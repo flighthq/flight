@@ -441,7 +441,13 @@ mod tests {
         set_node_transform2d(&mut t_arena, node_t, 30.0, -15.0, 90.0, 2.0, 2.0, 0.0, 0.0);
         let original = Vector2Like { x: 7.0, y: 11.0 };
         let mut global = Vector2Like::default();
-        convert_node_vector2_local_to_global(&mut global, &mut t_arena, &h_arena, node_t, &original);
+        convert_node_vector2_local_to_global(
+            &mut global,
+            &mut t_arena,
+            &h_arena,
+            node_t,
+            &original,
+        );
         let mut back = Vector2Like::default();
         convert_node_vector2_global_to_local(&mut back, &mut t_arena, &h_arena, node_t, &global);
         assert!((back.x - original.x).abs() < 1e-3, "x={}", back.x);

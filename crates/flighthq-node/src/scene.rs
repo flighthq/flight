@@ -131,7 +131,8 @@ pub fn compute_scene_render_transform(
             (s, s)
         }
         SceneScaleMode::NoBorder => {
-            let s = compute_scene_fill_scale(content_width, content_height, view_width, view_height);
+            let s =
+                compute_scene_fill_scale(content_width, content_height, view_width, view_height);
             (s, s)
         }
     };
@@ -180,7 +181,10 @@ mod tests {
     #[test]
     fn compute_scene_align_x_left_anchored_returns_zero() {
         assert_eq!(compute_scene_align_x(400.0, 800.0, SceneAlign::Left), 0.0);
-        assert_eq!(compute_scene_align_x(400.0, 800.0, SceneAlign::TopLeft), 0.0);
+        assert_eq!(
+            compute_scene_align_x(400.0, 800.0, SceneAlign::TopLeft),
+            0.0
+        );
         assert_eq!(
             compute_scene_align_x(400.0, 800.0, SceneAlign::BottomLeft),
             0.0
@@ -189,7 +193,10 @@ mod tests {
 
     #[test]
     fn compute_scene_align_x_right_anchored_returns_remainder() {
-        assert_eq!(compute_scene_align_x(400.0, 800.0, SceneAlign::Right), 400.0);
+        assert_eq!(
+            compute_scene_align_x(400.0, 800.0, SceneAlign::Right),
+            400.0
+        );
         assert_eq!(
             compute_scene_align_x(400.0, 800.0, SceneAlign::TopRight),
             400.0
@@ -214,7 +221,10 @@ mod tests {
     #[test]
     fn compute_scene_align_y_top_anchored_returns_zero() {
         assert_eq!(compute_scene_align_y(300.0, 600.0, SceneAlign::Top), 0.0);
-        assert_eq!(compute_scene_align_y(300.0, 600.0, SceneAlign::TopLeft), 0.0);
+        assert_eq!(
+            compute_scene_align_y(300.0, 600.0, SceneAlign::TopLeft),
+            0.0
+        );
         assert_eq!(
             compute_scene_align_y(300.0, 600.0, SceneAlign::TopRight),
             0.0
@@ -240,7 +250,10 @@ mod tests {
     #[test]
     fn compute_scene_align_y_centers_for_left_and_right() {
         assert_eq!(compute_scene_align_y(300.0, 600.0, SceneAlign::Left), 150.0);
-        assert_eq!(compute_scene_align_y(300.0, 600.0, SceneAlign::Right), 150.0);
+        assert_eq!(
+            compute_scene_align_y(300.0, 600.0, SceneAlign::Right),
+            150.0
+        );
     }
 
     // compute_scene_fill_scale
@@ -271,19 +284,16 @@ mod tests {
     fn compute_scene_render_transform_identity_when_no_content() {
         let mut m = identity_matrix();
         compute_scene_render_transform(&mut m, &create_scene(None), None, 800.0, 600.0);
-        assert_eq!((m.a, m.b, m.c, m.d, m.tx, m.ty), (1.0, 0.0, 0.0, 1.0, 0.0, 0.0));
+        assert_eq!(
+            (m.a, m.b, m.c, m.d, m.tx, m.ty),
+            (1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+        );
     }
 
     #[test]
     fn compute_scene_render_transform_identity_when_zero_size() {
         let mut m = identity_matrix();
-        compute_scene_render_transform(
-            &mut m,
-            &create_scene(None),
-            Some((0.0, 0.0)),
-            800.0,
-            600.0,
-        );
+        compute_scene_render_transform(&mut m, &create_scene(None), Some((0.0, 0.0)), 800.0, 600.0);
         assert_eq!(m.a, 1.0);
         assert_eq!(m.d, 1.0);
     }

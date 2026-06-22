@@ -18,7 +18,9 @@ use flighthq_filters::InnerShadowFilter;
 use crate::blur_filter::apply_box_blur_filter_to_gl;
 use crate::filter_pass::clear_gl_render_target;
 use crate::inner_glow_filter::apply_gl_inner_clip_pass;
-use crate::tint_shader::{apply_gl_blit_offset_pass, apply_gl_blit_pass, apply_gl_invert_tint_pass};
+use crate::tint_shader::{
+    apply_gl_blit_offset_pass, apply_gl_blit_pass, apply_gl_invert_tint_pass,
+};
 use crate::{GlRenderState, GlRenderTarget};
 
 /// Applies an inner shadow filter to `source`, writing the result to `dest`.

@@ -165,7 +165,10 @@ mod tests {
             Arc::new(move |d: &InputKeyboardData| seen2.store(d.key_code, Ordering::SeqCst)),
             SignalConnectOptions::default(),
         );
-        let data = InputKeyboardData { key_code: key_code::A, ..Default::default() };
+        let data = InputKeyboardData {
+            key_code: key_code::A,
+            ..Default::default()
+        };
         dispatch_keyboard_event(&mut m, data, true);
         assert_eq!(seen.load(Ordering::SeqCst), key_code::A);
     }

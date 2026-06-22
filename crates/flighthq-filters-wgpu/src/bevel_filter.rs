@@ -12,8 +12,8 @@
 //! This function allocates nothing itself.
 
 use flighthq_filters::BevelFilter;
-use flighthq_render_wgpu::{WgpuRenderState, WgpuRenderTarget};
 use flighthq_filters::BevelType;
+use flighthq_render_wgpu::{WgpuRenderState, WgpuRenderTarget};
 
 use crate::blur_filter::apply_box_blur_filter_to_wgpu;
 use crate::filter_pass::{WgpuFilterState, clear_wgpu_filter_target};
@@ -64,10 +64,33 @@ pub fn apply_bevel_filter_to_wgpu(
         (dx, dy, -dx, -dy)
     };
 
-    apply_wgpu_tint_pass(state, filter_state, blurred, tinted, shadow_color, shadow_alpha, 1.0);
+    apply_wgpu_tint_pass(
+        state,
+        filter_state,
+        blurred,
+        tinted,
+        shadow_color,
+        shadow_alpha,
+        1.0,
+    );
     apply_wgpu_blit_offset_pass(state, filter_state, tinted, dest, shadow_dx, shadow_dy);
-    apply_wgpu_tint_pass(state, filter_state, blurred, tinted, highlight_color, highlight_alpha, 1.0);
-    apply_wgpu_blit_offset_pass(state, filter_state, tinted, dest, highlight_dx, highlight_dy);
+    apply_wgpu_tint_pass(
+        state,
+        filter_state,
+        blurred,
+        tinted,
+        highlight_color,
+        highlight_alpha,
+        1.0,
+    );
+    apply_wgpu_blit_offset_pass(
+        state,
+        filter_state,
+        tinted,
+        dest,
+        highlight_dx,
+        highlight_dy,
+    );
 
     if !knockout {
         apply_wgpu_blit_pass(state, filter_state, source, dest);

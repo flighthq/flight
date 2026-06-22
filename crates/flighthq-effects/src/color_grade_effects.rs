@@ -8,8 +8,8 @@
 
 use crate::types::{
     BrightnessContrastEffect, ChannelMixerEffect, ColorGradeEffect, GrayscaleEffect,
-    HueSaturationEffect, InvertEffect, LiftGammaGainEffect, LookupTableGradeEffect, PosterizeEffect,
-    SepiaEffect, WhiteBalanceEffect,
+    HueSaturationEffect, InvertEffect, LiftGammaGainEffect, LookupTableGradeEffect,
+    PosterizeEffect, SepiaEffect, WhiteBalanceEffect,
 };
 
 /// Returns a new [`BrightnessContrastEffect`] with the given options.
@@ -88,9 +88,7 @@ mod tests {
 
     #[test]
     fn create_channel_mixer_effect_returns_descriptor() {
-        let matrix = [
-            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-        ];
+        let matrix = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0];
         let effect = create_channel_mixer_effect(ChannelMixerEffect { matrix });
         assert_eq!(effect.matrix, matrix);
     }

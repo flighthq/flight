@@ -127,7 +127,11 @@ pub fn poll_gamepad_snapshots(
                 }
                 emit_signal(
                     &manager.signals.on_gamepad_axis_move,
-                    &InputGamepadAxisData { axis: i as u32, gamepad: pad.index, value },
+                    &InputGamepadAxisData {
+                        axis: i as u32,
+                        gamepad: pad.index,
+                        value,
+                    },
                 );
             }
         }
@@ -141,8 +145,11 @@ pub fn poll_gamepad_snapshots(
                     prev_buttons.resize(i + 1, false);
                     prev_buttons[i] = btn.pressed;
                 }
-                let data =
-                    InputGamepadButtonData { button: i as u32, gamepad: pad.index, value: btn.value };
+                let data = InputGamepadButtonData {
+                    button: i as u32,
+                    gamepad: pad.index,
+                    value: btn.value,
+                };
                 if btn.pressed {
                     emit_signal(&manager.signals.on_gamepad_button_down, &data);
                 } else {
@@ -201,7 +208,11 @@ mod tests {
         );
         dispatch_gamepad_axis_event(
             &mut m,
-            InputGamepadAxisData { axis: 2, gamepad: 0, value: 0.5 },
+            InputGamepadAxisData {
+                axis: 2,
+                gamepad: 0,
+                value: 0.5,
+            },
         );
         assert_eq!(seen.load(Ordering::SeqCst), 2);
     }
@@ -218,7 +229,10 @@ mod tests {
         );
         dispatch_gamepad_connect_event(
             &mut m,
-            InputGamepadConnectData { gamepad: 3, id: "Xbox Controller".into() },
+            InputGamepadConnectData {
+                gamepad: 3,
+                id: "Xbox Controller".into(),
+            },
         );
         assert_eq!(fired.load(Ordering::SeqCst), 3);
     }
@@ -238,7 +252,10 @@ mod tests {
         );
         dispatch_gamepad_connect_event(
             &mut m,
-            InputGamepadConnectData { gamepad: 0, id: "Pad".into() },
+            InputGamepadConnectData {
+                gamepad: 0,
+                id: "Pad".into(),
+            },
         );
         assert_eq!(fired.load(Ordering::SeqCst), 0);
     }
@@ -257,7 +274,10 @@ mod tests {
         let snapshot = vec![GamepadSnapshot {
             index: 0,
             axes: vec![],
-            buttons: vec![GamepadButtonSnapshot { pressed: true, value: 1.0 }],
+            buttons: vec![GamepadButtonSnapshot {
+                pressed: true,
+                value: 1.0,
+            }],
         }];
 
         let button = Arc::new(AtomicU32::new(u32::MAX));
@@ -279,7 +299,10 @@ mod tests {
         let snapshot = vec![GamepadSnapshot {
             index: 0,
             axes: vec![],
-            buttons: vec![GamepadButtonSnapshot { pressed: true, value: 1.0 }],
+            buttons: vec![GamepadButtonSnapshot {
+                pressed: true,
+                value: 1.0,
+            }],
         }];
 
         poll_gamepad_snapshots(&mut m, &mut state, &snapshot);

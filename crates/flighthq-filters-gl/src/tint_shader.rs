@@ -79,9 +79,15 @@ pub fn apply_gl_blit_offset_pass(
 ) {
     let program = get_gl_blit_offset_shader(state);
     let (ox, oy) = (-dx / source.width as f32, dy / source.height as f32);
-    draw_gl_fullscreen_pass(state, program, &[source.texture], Some(dest), move |gl, p| unsafe {
-        gl.uniform_2_f32(gl.get_uniform_location(p, "u_offset").as_ref(), ox, oy);
-    });
+    draw_gl_fullscreen_pass(
+        state,
+        program,
+        &[source.texture],
+        Some(dest),
+        move |gl, p| unsafe {
+            gl.uniform_2_f32(gl.get_uniform_location(p, "u_offset").as_ref(), ox, oy);
+        },
+    );
 }
 
 /// Blits `source` directly into `dest` without modification.
@@ -149,11 +155,17 @@ fn apply_tint(
     strength: f32,
 ) {
     let (r, g, b) = unpack_color(color);
-    draw_gl_fullscreen_pass(state, program, &[source.texture], Some(dest), move |gl, p| unsafe {
-        gl.uniform_3_f32(gl.get_uniform_location(p, "u_color").as_ref(), r, g, b);
-        gl.uniform_1_f32(gl.get_uniform_location(p, "u_alpha").as_ref(), alpha);
-        gl.uniform_1_f32(gl.get_uniform_location(p, "u_strength").as_ref(), strength);
-    });
+    draw_gl_fullscreen_pass(
+        state,
+        program,
+        &[source.texture],
+        Some(dest),
+        move |gl, p| unsafe {
+            gl.uniform_3_f32(gl.get_uniform_location(p, "u_color").as_ref(), r, g, b);
+            gl.uniform_1_f32(gl.get_uniform_location(p, "u_alpha").as_ref(), alpha);
+            gl.uniform_1_f32(gl.get_uniform_location(p, "u_strength").as_ref(), strength);
+        },
+    );
 }
 
 // Unpacks a packed-RGB integer (0xRRGGBB) into straight float channels in [0, 1].

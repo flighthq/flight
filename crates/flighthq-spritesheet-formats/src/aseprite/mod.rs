@@ -83,7 +83,10 @@ pub fn parse_aseprite_spritesheet(json: &str) -> SpritesheetData {
 pub fn parse_aseprite_spritesheet_document(json: &str) -> AsepriteParsed {
     let value = parse_json(json).expect("invalid Aseprite JSON");
     let document = parse_document(&value);
-    AsepriteParsed { data: document_to_data(&document), document }
+    AsepriteParsed {
+        data: document_to_data(&document),
+        document,
+    }
 }
 
 /// Serialises a [`SpritesheetData`] to an Aseprite JSON string.
@@ -99,16 +102,20 @@ pub fn serialize_aseprite_spritesheet(
     options: Option<&AsepriteSerializeOptions>,
 ) -> String {
     let existing_is_array = matches!(existing, Some(AsepriteDocument::Array(_)));
-    let variant = options.and_then(|o| o.variant).unwrap_or(if existing_is_array {
-        AsepriteSerializeVariant::Array
-    } else {
-        AsepriteSerializeVariant::Hash
-    });
+    let variant = options
+        .and_then(|o| o.variant)
+        .unwrap_or(if existing_is_array {
+            AsepriteSerializeVariant::Array
+        } else {
+            AsepriteSerializeVariant::Hash
+        });
 
     let existing_meta = existing.map(document_meta);
 
     match variant {
-        AsepriteSerializeVariant::Array => data_to_array_value(data, existing_meta).to_json_string(),
+        AsepriteSerializeVariant::Array => {
+            data_to_array_value(data, existing_meta).to_json_string()
+        }
         AsepriteSerializeVariant::Hash => data_to_hash_value(data, existing_meta).to_json_string(),
     }
 }
@@ -124,8 +131,11 @@ fn animation_from_tag(
 ) -> SpritesheetAnimationData {
     let from = tag.from as usize;
     let to = (tag.to as usize + 1).min(frame_names.len());
-    let tag_frame_names: Vec<String> =
-        if from <= to { frame_names[from..to].to_vec() } else { Vec::new() };
+    let tag_frame_names: Vec<String> = if from <= to {
+        frame_names[from..to].to_vec()
+    } else {
+        Vec::new()
+    };
 
     let durations: Vec<f32> = tag_frame_names
         .iter()
@@ -212,7 +222,11 @@ fn frame_from_entry(name: &str, entry: &AsepriteBaseFrame) -> SpritesheetFrameDa
 }
 
 fn meta_scale(meta: &AsepriteMeta) -> f32 {
-    meta.scale.parse::<f32>().ok().filter(|v| *v != 0.0).unwrap_or(1.0)
+    meta.scale
+        .parse::<f32>()
+        .ok()
+        .filter(|v| *v != 0.0)
+        .unwrap_or(1.0)
 }
 
 // ---------------------------------------------------------------------------
@@ -227,10 +241,16 @@ fn parse_base_frame(value: &JsonValue) -> AsepriteBaseFrame {
     AsepriteBaseFrame {
         duration: number_field(value, "duration").unwrap_or(0.0) as u32,
         frame: parse_rect(value.get("frame")),
-        rotated: value.get("rotated").and_then(JsonValue::as_bool).unwrap_or(false),
+        rotated: value
+            .get("rotated")
+            .and_then(JsonValue::as_bool)
+            .unwrap_or(false),
         source_size: parse_size(value.get("sourceSize")),
         sprite_source_size: parse_rect(value.get("spriteSourceSize")),
-        trimmed: value.get("trimmed").and_then(JsonValue::as_bool).unwrap_or(false),
+        trimmed: value
+            .get("trimmed")
+            .and_then(JsonValue::as_bool)
+            .unwrap_or(false),
     }
 }
 
@@ -257,16 +277,23 @@ fn parse_document(value: &JsonValue) -> AsepriteDocument {
             AsepriteDocument::Array(AsepriteArrayDocument { frames, meta })
         }
         Some(JsonValue::Object(entries)) => {
-            let frames =
-                entries.iter().map(|(name, entry)| (name.clone(), parse_base_frame(entry))).collect();
+            let frames = entries
+                .iter()
+                .map(|(name, entry)| (name.clone(), parse_base_frame(entry)))
+                .collect();
             AsepriteDocument::Hash(AsepriteHashDocument { frames, meta })
         }
-        _ => AsepriteDocument::Hash(AsepriteHashDocument { frames: Vec::new(), meta }),
+        _ => AsepriteDocument::Hash(AsepriteHashDocument {
+            frames: Vec::new(),
+            meta,
+        }),
     }
 }
 
 fn parse_frame_tags(value: Option<&JsonValue>) -> Vec<AsepriteFrameTag> {
-    let Some(JsonValue::Array(tags)) = value else { return Vec::new() };
+    let Some(JsonValue::Array(tags)) = value else {
+        return Vec::new();
+    };
     tags.iter()
         .map(|tag| AsepriteFrameTag {
             direction: parse_direction(tag.get("direction")),
@@ -279,7 +306,9 @@ fn parse_frame_tags(value: Option<&JsonValue>) -> Vec<AsepriteFrameTag> {
 }
 
 fn parse_layers(value: Option<&JsonValue>) -> Option<Vec<AsepriteLayer>> {
-    let JsonValue::Array(layers) = value? else { return None };
+    let JsonValue::Array(layers) = value? else {
+        return None;
+    };
     Some(
         layers
             .iter()
@@ -293,7 +322,9 @@ fn parse_layers(value: Option<&JsonValue>) -> Option<Vec<AsepriteLayer>> {
 }
 
 fn parse_meta(value: Option<&JsonValue>) -> AsepriteMeta {
-    let Some(value) = value else { return AsepriteMeta::default() };
+    let Some(value) = value else {
+        return AsepriteMeta::default();
+    };
     let scale = match value.get("scale") {
         Some(JsonValue::Text(s)) => s.clone(),
         Some(JsonValue::Number(n)) => format_json_number(*n),
@@ -312,7 +343,9 @@ fn parse_meta(value: Option<&JsonValue>) -> AsepriteMeta {
 }
 
 fn parse_rect(value: Option<&JsonValue>) -> AsepriteRect {
-    let Some(value) = value else { return AsepriteRect::default() };
+    let Some(value) = value else {
+        return AsepriteRect::default();
+    };
     AsepriteRect {
         h: number_field(value, "h").unwrap_or(0.0) as u32,
         w: number_field(value, "w").unwrap_or(0.0) as u32,
@@ -322,7 +355,9 @@ fn parse_rect(value: Option<&JsonValue>) -> AsepriteRect {
 }
 
 fn parse_size(value: Option<&JsonValue>) -> AsepriteSize {
-    let Some(value) = value else { return AsepriteSize::default() };
+    let Some(value) = value else {
+        return AsepriteSize::default();
+    };
     AsepriteSize {
         h: number_field(value, "h").unwrap_or(0.0) as u32,
         w: number_field(value, "w").unwrap_or(0.0) as u32,
@@ -330,7 +365,10 @@ fn parse_size(value: Option<&JsonValue>) -> AsepriteSize {
 }
 
 fn text_field(value: &JsonValue, key: &str) -> Option<String> {
-    value.get(key).and_then(JsonValue::as_text).map(str::to_string)
+    value
+        .get(key)
+        .and_then(JsonValue::as_text)
+        .map(str::to_string)
 }
 
 // ---------------------------------------------------------------------------
@@ -362,7 +400,10 @@ fn data_to_hash_value(data: &SpritesheetData, existing: Option<&AsepriteMeta>) -
         .frames
         .iter()
         .map(|frame| {
-            (frame.name.clone(), frame_to_value(frame, resolve_frame_duration(data, &frame.name)))
+            (
+                frame.name.clone(),
+                frame_to_value(frame, resolve_frame_duration(data, &frame.name)),
+            )
         })
         .collect();
     JsonValue::Object(vec![
@@ -386,10 +427,19 @@ fn frame_to_value(frame: &SpritesheetFrameData, duration_ms: f32) -> JsonValue {
         || frame.source_width != frame.width
         || frame.source_height != frame.height;
     JsonValue::Object(vec![
-        ("duration".to_string(), JsonValue::Number(duration_ms as f64)),
-        ("frame".to_string(), rect_value(frame.x, frame.y, frame.width, frame.height)),
+        (
+            "duration".to_string(),
+            JsonValue::Number(duration_ms as f64),
+        ),
+        (
+            "frame".to_string(),
+            rect_value(frame.x, frame.y, frame.width, frame.height),
+        ),
         ("rotated".to_string(), JsonValue::Bool(frame.rotated)),
-        ("sourceSize".to_string(), size_value(frame.source_width, frame.source_height)),
+        (
+            "sourceSize".to_string(),
+            size_value(frame.source_width, frame.source_height),
+        ),
         (
             "spriteSourceSize".to_string(),
             rect_value(frame.offset_x, frame.offset_y, frame.width, frame.height),
@@ -406,7 +456,11 @@ fn meta_to_value(data: &SpritesheetData, existing: Option<&AsepriteMeta>) -> Jso
         .map(|(i, anim)| {
             let first = anim.frame_names.first().map(String::as_str).unwrap_or("");
             let last = anim.frame_names.last().map(String::as_str).unwrap_or("");
-            let from = data.frames.iter().position(|f| f.name == first).unwrap_or(0);
+            let from = data
+                .frames
+                .iter()
+                .position(|f| f.name == first)
+                .unwrap_or(0);
             let to = data.frames.iter().position(|f| f.name == last).unwrap_or(0);
             let mut entry = vec![
                 (
@@ -417,8 +471,9 @@ fn meta_to_value(data: &SpritesheetData, existing: Option<&AsepriteMeta>) -> Jso
                 ("name".to_string(), JsonValue::Text(anim.name.clone())),
                 ("to".to_string(), JsonValue::Number(to as f64)),
             ];
-            if let Some(color) =
-                existing.and_then(|m| m.frame_tags.get(i)).and_then(|t| t.color.clone())
+            if let Some(color) = existing
+                .and_then(|m| m.frame_tags.get(i))
+                .and_then(|t| t.color.clone())
             {
                 entry.push(("color".to_string(), JsonValue::Text(color)));
             }
@@ -434,7 +489,9 @@ fn meta_to_value(data: &SpritesheetData, existing: Option<&AsepriteMeta>) -> Jso
     let scale = if data.scale != 1.0 {
         format_json_number(data.scale as f64)
     } else {
-        existing.map(|m| m.scale.clone()).unwrap_or_else(|| "1".to_string())
+        existing
+            .map(|m| m.scale.clone())
+            .unwrap_or_else(|| "1".to_string())
     };
 
     let mut entries = vec![
@@ -449,7 +506,9 @@ fn meta_to_value(data: &SpritesheetData, existing: Option<&AsepriteMeta>) -> Jso
         (
             "format".to_string(),
             JsonValue::Text(
-                existing.map(|m| m.format.clone()).unwrap_or_else(|| "RGBA8888".to_string()),
+                existing
+                    .map(|m| m.format.clone())
+                    .unwrap_or_else(|| "RGBA8888".to_string()),
             ),
         ),
         ("frameTags".to_string(), JsonValue::Array(tags)),
@@ -461,9 +520,15 @@ fn meta_to_value(data: &SpritesheetData, existing: Option<&AsepriteMeta>) -> Jso
             .iter()
             .map(|layer| {
                 JsonValue::Object(vec![
-                    ("blendMode".to_string(), JsonValue::Text(layer.blend_mode.clone())),
+                    (
+                        "blendMode".to_string(),
+                        JsonValue::Text(layer.blend_mode.clone()),
+                    ),
                     ("name".to_string(), JsonValue::Text(layer.name.clone())),
-                    ("opacity".to_string(), JsonValue::Number(layer.opacity as f64)),
+                    (
+                        "opacity".to_string(),
+                        JsonValue::Number(layer.opacity as f64),
+                    ),
                 ])
             })
             .collect();
@@ -471,10 +536,17 @@ fn meta_to_value(data: &SpritesheetData, existing: Option<&AsepriteMeta>) -> Jso
     }
 
     entries.push(("scale".to_string(), JsonValue::Text(scale)));
-    entries.push(("size".to_string(), size_value(data.image_width, data.image_height)));
+    entries.push((
+        "size".to_string(),
+        size_value(data.image_width, data.image_height),
+    ));
     entries.push((
         "version".to_string(),
-        JsonValue::Text(existing.map(|m| m.version.clone()).unwrap_or_else(|| "1.3".to_string())),
+        JsonValue::Text(
+            existing
+                .map(|m| m.version.clone())
+                .unwrap_or_else(|| "1.3".to_string()),
+        ),
     ));
 
     JsonValue::Object(entries)
@@ -491,7 +563,9 @@ fn rect_value(x: f32, y: f32, w: f32, h: f32) -> JsonValue {
 
 fn resolve_frame_duration(data: &SpritesheetData, frame_name: &str) -> f32 {
     for anim in &data.animations {
-        let Some(idx) = anim.frame_names.iter().position(|n| n == frame_name) else { continue };
+        let Some(idx) = anim.frame_names.iter().position(|n| n == frame_name) else {
+            continue;
+        };
         return match &anim.frame_durations {
             Some(durations) => durations.get(idx).copied().unwrap_or(anim.frame_duration),
             None => anim.frame_duration,
@@ -583,10 +657,22 @@ mod tests {
         assert_eq!(data.animations.len(), 2);
         assert_eq!(data.animations[0].name, "run");
         assert_eq!(data.animations[1].name, "jump");
-        assert_eq!(data.animations[0].direction, SpritesheetAnimationDirection::Forward);
-        assert_eq!(data.animations[1].direction, SpritesheetAnimationDirection::Reverse);
-        assert_eq!(data.animations[0].frame_names, vec!["sprite 0.aseprite", "sprite 1.aseprite"]);
-        assert_eq!(data.animations[1].frame_names, vec!["sprite 2.aseprite", "sprite 3.aseprite"]);
+        assert_eq!(
+            data.animations[0].direction,
+            SpritesheetAnimationDirection::Forward
+        );
+        assert_eq!(
+            data.animations[1].direction,
+            SpritesheetAnimationDirection::Reverse
+        );
+        assert_eq!(
+            data.animations[0].frame_names,
+            vec!["sprite 0.aseprite", "sprite 1.aseprite"]
+        );
+        assert_eq!(
+            data.animations[1].frame_names,
+            vec!["sprite 2.aseprite", "sprite 3.aseprite"]
+        );
         assert_eq!(data.animations[0].frame_durations, Some(vec![100.0, 150.0]));
         assert_eq!(data.animations[0].frame_duration, 100.0);
     }
@@ -640,9 +726,15 @@ mod tests {
         assert_eq!(names, orig_names);
         assert_eq!(data2.frames[0].x, parsed.data.frames[0].x);
         assert_eq!(frame_named(&data2, "sprite 2.aseprite").offset_x, 1.0);
-        assert_eq!(data2.animations[0].frame_durations, Some(vec![100.0, 150.0]));
+        assert_eq!(
+            data2.animations[0].frame_durations,
+            Some(vec![100.0, 150.0])
+        );
         assert_eq!(data2.animations[1].name, "jump");
-        assert_eq!(data2.animations[1].direction, SpritesheetAnimationDirection::Reverse);
+        assert_eq!(
+            data2.animations[1].direction,
+            SpritesheetAnimationDirection::Reverse
+        );
 
         let doc2 = parse_aseprite_spritesheet_document(&json);
         match &doc2.document {
@@ -666,13 +758,21 @@ mod tests {
     #[test]
     fn serialize_aseprite_spritesheet_variant_override() {
         let parsed = parse_aseprite_spritesheet_document(HASH_JSON);
-        let options = AsepriteSerializeOptions { variant: Some(AsepriteSerializeVariant::Array) };
+        let options = AsepriteSerializeOptions {
+            variant: Some(AsepriteSerializeVariant::Array),
+        };
         let json =
             serialize_aseprite_spritesheet(&parsed.data, Some(&parsed.document), Some(&options));
         assert!(parse_json(&json).unwrap().get("frames").unwrap().is_array());
 
         let no_existing = serialize_aseprite_spritesheet(&parsed.data, None, None);
-        assert!(!parse_json(&no_existing).unwrap().get("frames").unwrap().is_array());
+        assert!(
+            !parse_json(&no_existing)
+                .unwrap()
+                .get("frames")
+                .unwrap()
+                .is_array()
+        );
 
         let solo = parse_aseprite_spritesheet(NO_TAGS_JSON);
         assert!(parse_json(&serialize_aseprite_spritesheet(&solo, None, None)).is_ok());

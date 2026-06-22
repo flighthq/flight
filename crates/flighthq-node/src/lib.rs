@@ -73,7 +73,7 @@ pub use transform2d::{
 pub use transform3d::{
     Transform3DNode, convert_node_vector3_global_to_local, convert_node_vector3_local_to_global,
     ensure_node_world_transform_matrix4, get_node_local_transform3d_revision,
-    get_node_world_transform3d_revision, get_node_world_transform_matrix4,
+    get_node_world_transform_matrix4, get_node_world_transform3d_revision,
     invalidate_node_transform3d, propagate_node_transforms3d, set_node_transform3d,
 };
 
@@ -88,8 +88,8 @@ pub use spatial2d::{
 
 // scene
 pub use scene::{
-    compute_scene_align_x, compute_scene_align_y, compute_scene_fill_scale, compute_scene_fit_scale,
-    compute_scene_render_transform, create_scene,
+    compute_scene_align_x, compute_scene_align_y, compute_scene_fill_scale,
+    compute_scene_fit_scale, compute_scene_render_transform, create_scene,
 };
 
 // bounds_rectangle (coordinate-space bounds over Spatial2DArena)

@@ -35,10 +35,26 @@ pub fn create_gl_gradient_ramp_texture(
             glow::UNSIGNED_BYTE,
             Some(&data),
         );
-        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, glow::LINEAR as i32);
-        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, glow::LINEAR as i32);
-        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_S, glow::CLAMP_TO_EDGE as i32);
-        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_T, glow::CLAMP_TO_EDGE as i32);
+        gl.tex_parameter_i32(
+            glow::TEXTURE_2D,
+            glow::TEXTURE_MIN_FILTER,
+            glow::LINEAR as i32,
+        );
+        gl.tex_parameter_i32(
+            glow::TEXTURE_2D,
+            glow::TEXTURE_MAG_FILTER,
+            glow::LINEAR as i32,
+        );
+        gl.tex_parameter_i32(
+            glow::TEXTURE_2D,
+            glow::TEXTURE_WRAP_S,
+            glow::CLAMP_TO_EDGE as i32,
+        );
+        gl.tex_parameter_i32(
+            glow::TEXTURE_2D,
+            glow::TEXTURE_WRAP_T,
+            glow::CLAMP_TO_EDGE as i32,
+        );
         gl.bind_texture(glow::TEXTURE_2D, None);
         texture
     }
@@ -47,7 +63,12 @@ pub fn create_gl_gradient_ramp_texture(
 /// Fills a 256×4-byte buffer with the interpolated gradient RGBA data.
 /// Shared by `create_gl_gradient_ramp_texture` and any CPU-side path that
 /// needs a gradient ramp as raw bytes.
-pub fn build_gradient_ramp_data(out: &mut [u8; 1024], colors: &[u32], alphas: &[f32], ratios: &[u8]) {
+pub fn build_gradient_ramp_data(
+    out: &mut [u8; 1024],
+    colors: &[u32],
+    alphas: &[f32],
+    ratios: &[u8],
+) {
     out.fill(0);
     if colors.is_empty() {
         return;
@@ -79,7 +100,11 @@ pub fn build_gradient_ramp_data(out: &mut [u8; 1024], colors: &[u32], alphas: &[
                 let r0 = ratios[j] as i32;
                 let r1 = ratios[j + 1] as i32;
                 if t >= r0 && t <= r1 {
-                    let blend = if r1 > r0 { (t - r0) as f32 / (r1 - r0) as f32 } else { 0.0 };
+                    let blend = if r1 > r0 {
+                        (t - r0) as f32 / (r1 - r0) as f32
+                    } else {
+                        0.0
+                    };
                     let c0 = colors[j];
                     let c1 = colors[j + 1];
                     rr = lerp_channel((c0 >> 16) & 0xff, (c1 >> 16) & 0xff, blend);

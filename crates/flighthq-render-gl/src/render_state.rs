@@ -6,7 +6,6 @@ use glow::HasContext;
 
 use crate::material_registry::GlMaterialRenderer;
 use crate::shader::{GlBitmapShader, GlShaderLocations, compile_default_gl_program};
-use crate::sprite_batch::GlSpriteBatchRuntime;
 
 // ---------------------------------------------------------------------------
 // GlRenderOptions
@@ -71,6 +70,82 @@ pub enum GlRenderTargetFormat {
 }
 
 // ---------------------------------------------------------------------------
+// GPU-state slot types
+//
+// These plain handle/data types are embedded in `GlRenderStateRuntime` and
+// filled by the per-subject leaf renderers in `flighthq-displayobject-gl`. They
+// live in the core because the runtime struct owns them by value and
+// `destroy_gl_render_state` frees their GPU resources. This mirrors the TS
+// design, where the equivalent types live in `@flighthq/types` (the header
+// layer) so out-of-package renderers can reach the same state. (glow handles
+// cannot live in the Rust `flighthq-types` header, so the core crate is the
+// header tier for them.)
+// ---------------------------------------------------------------------------
+
+/// Per-state sprite batch runtime fields. Embedded in `GlRenderStateRuntime`,
+/// written by `flighthq-displayobject-gl`'s sprite-batch path.
+#[derive(Default)]
+pub struct GlSpriteBatchRuntime {
+    pub blend_mode: Option<flighthq_types::blend::BlendMode>,
+    /// Currently bound texture key (id used as opaque identity).
+    pub texture_key: u64,
+    pub material_id: u64,
+    pub material_renderer_id: u64,
+    pub material_floats: u32,
+    pub count: u32,
+    pub instance_data: Vec<f32>,
+    pub material_data: Vec<f32>,
+    pub instance_buffer: Option<glow::Buffer>,
+    pub material_buffer: Option<glow::Buffer>,
+    /// Corner buffer (loc 0, divisor 0) for instanced draw.
+    pub corner_buffer: Option<glow::Buffer>,
+    /// Compiled instanced quad-batch shader.
+    pub quad_batch_shader: Option<GlQuadBatchShader>,
+}
+
+/// Locations for the instanced quad-batch program.
+#[derive(Debug)]
+pub struct GlQuadBatchShader {
+    pub program: glow::Program,
+    pub loc_corner: u32,
+    pub loc_mat_ab: u32,
+    pub loc_mat_cd: u32,
+    pub loc_mat_txty: u32,
+    pub loc_size: u32,
+    pub loc_uv_rect: u32,
+    pub loc_alpha: u32,
+    pub loc_world_matrix: Option<glow::UniformLocation>,
+    pub loc_texture: Option<glow::UniformLocation>,
+}
+
+/// A compiled, cached solid-fill program and its uniform/attribute locations.
+#[derive(Clone, Debug)]
+pub struct GlShapeFillProgram {
+    pub program: glow::Program,
+    pub loc_position: u32,
+    pub loc_matrix: Option<glow::UniformLocation>,
+    pub loc_color: Option<glow::UniformLocation>,
+}
+
+/// A GPU triangle mesh for one solid-color fill region of a vector shape.
+#[derive(Debug)]
+pub struct GlShapeFillMesh {
+    pub vertex_buffer: glow::Buffer,
+    pub index_buffer: glow::Buffer,
+    pub index_count: u32,
+    /// Packed `0xRRGGBBaa` fill color (alpha already folded with the region alpha).
+    pub color: u32,
+}
+
+/// Cached, uploaded meshes for one shape node, tagged with the source
+/// `content_revision` so the cache is invalidated when geometry changes.
+#[derive(Debug)]
+pub struct GlShapeFillMeshCacheEntry {
+    pub content_revision: u32,
+    pub meshes: Vec<GlShapeFillMesh>,
+}
+
+// ---------------------------------------------------------------------------
 // GlRenderStateRuntime
 // ---------------------------------------------------------------------------
 
@@ -123,11 +198,11 @@ pub struct GlRenderStateRuntime {
     pub renderers: HashMap<flighthq_types::kind::KindId, GlRendererSlot>,
     /// Compiled solid-fill program for tessellated `Shape` nodes, lazily built
     /// on first shape draw. Mirrors the wgpu shape-fill pipeline cache.
-    pub shape_fill_program: Option<crate::shape_fill::GlShapeFillProgram>,
+    pub shape_fill_program: Option<GlShapeFillProgram>,
     /// Per-node tessellated fill mesh cache, keyed by shape node id and
     /// invalidated by `content_revision`. Mirrors `shape_fill_mesh_cache` in
     /// render-wgpu.
-    pub shape_fill_mesh_cache: HashMap<u64, crate::shape_fill::GlShapeFillMeshCacheEntry>,
+    pub shape_fill_mesh_cache: HashMap<u64, GlShapeFillMeshCacheEntry>,
     /// Stack of saved target state for nested `begin/end_gl_render_target`.
     pub(crate) render_target_stack: Vec<GlRenderTargetSave>,
     /// Framebuffer-backed cache targets, keyed by cache id. Owned by the state
@@ -184,7 +259,13 @@ pub struct GlRenderState {
     /// Live GL context (glow HAL, supports OpenGL 3.3 core and OpenGL ES 3.0).
     pub gl: glow::Context,
     /// Mutable per-frame render path state.
-    pub(crate) runtime: GlRenderStateRuntime,
+    ///
+    /// Public so the per-subject leaf renderers in `flighthq-displayobject-gl`
+    /// can read and write the runtime slots they own (sprite batch, shape fill,
+    /// material renderers, clip). Mirrors the TS design where
+    /// `GlRenderStateRuntime` lives in the shared header (`@flighthq/types`) and
+    /// out-of-package custom renderers reach the same state.
+    pub runtime: GlRenderStateRuntime,
 }
 
 // ---------------------------------------------------------------------------
@@ -351,18 +432,18 @@ pub fn get_gl_render_state_runtime_mut(state: &mut GlRenderState) -> &mut GlRend
 // ---------------------------------------------------------------------------
 
 /// Reinterprets a `u16` slice as raw little-endian bytes for buffer upload.
-pub(crate) fn bytemuck_u16(data: &[u16]) -> &[u8] {
+pub fn bytemuck_u16(data: &[u16]) -> &[u8] {
     // Safe: u16 has no padding and any bit pattern is valid as bytes.
     unsafe { std::slice::from_raw_parts(data.as_ptr() as *const u8, std::mem::size_of_val(data)) }
 }
 
 /// Reinterprets an `f32` slice as raw little-endian bytes for buffer upload.
-pub(crate) fn bytemuck_f32(data: &[f32]) -> &[u8] {
+pub fn bytemuck_f32(data: &[f32]) -> &[u8] {
     unsafe { std::slice::from_raw_parts(data.as_ptr() as *const u8, std::mem::size_of_val(data)) }
 }
 
 /// Reinterprets a `u32` slice as raw little-endian bytes for buffer upload.
-pub(crate) fn bytemuck_u32(data: &[u32]) -> &[u8] {
+pub fn bytemuck_u32(data: &[u32]) -> &[u8] {
     // Safe: u32 has no padding and any bit pattern is valid as bytes.
     unsafe { std::slice::from_raw_parts(data.as_ptr() as *const u8, std::mem::size_of_val(data)) }
 }

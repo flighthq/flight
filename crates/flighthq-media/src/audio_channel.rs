@@ -81,7 +81,11 @@ pub fn play_audio_resource(
 /// when already playing or when the source has no buffer.
 pub fn resume_audio_channel(channel: &mut AudioChannel) {
     if channel.state == AudioChannelState::Playing
-        || channel.source.as_ref().map(|s| s.buffer.is_none()).unwrap_or(true)
+        || channel
+            .source
+            .as_ref()
+            .map(|s| s.buffer.is_none())
+            .unwrap_or(true)
     {
         return;
     }
@@ -213,7 +217,12 @@ fn clamp(value: f64, min: f64, max: f64) -> f64 {
 }
 
 fn start_audio_channel(channel: &mut AudioChannel) {
-    if channel.source.as_ref().map(|s| s.buffer.is_none()).unwrap_or(true) {
+    if channel
+        .source
+        .as_ref()
+        .map(|s| s.buffer.is_none())
+        .unwrap_or(true)
+    {
         return;
     }
     channel.current_time = clamp(channel.current_time, 0.0, channel.length);
@@ -232,8 +241,8 @@ impl AudioBackend for NoopAudioBackend {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flighthq_signals::connect_signal;
     use flighthq_signals::SignalConnectOptions;
+    use flighthq_signals::connect_signal;
     use flighthq_types::AudioResource;
     use serial_test::serial;
     use std::sync::atomic::AtomicBool;
@@ -241,11 +250,16 @@ mod tests {
     use std::sync::atomic::Ordering;
 
     fn buffered_resource() -> AudioResource {
-        AudioResource { buffer: Some(vec![0u8; 8]) }
+        AudioResource {
+            buffer: Some(vec![0u8; 8]),
+        }
     }
 
     fn opts(current_time: Option<f64>) -> AudioPlayOptions {
-        AudioPlayOptions { current_time, ..Default::default() }
+        AudioPlayOptions {
+            current_time,
+            ..Default::default()
+        }
     }
 
     /// A backend that reports a fixed 1000ms duration and a frozen clock,
@@ -295,12 +309,14 @@ mod tests {
     fn audio_channel_behavior_with_backend() {
         // get_audio_channel_current_time: stored time for an inactive channel.
         let _b = install_test_backend();
-        let mut channel = play_audio_resource(&buffered_resource(), Some(&opts(Some(250.0)))).unwrap();
+        let mut channel =
+            play_audio_resource(&buffered_resource(), Some(&opts(Some(250.0)))).unwrap();
         pause_audio_channel(&mut channel);
         assert_eq!(get_audio_channel_current_time(&channel), 250.0);
 
         // pause_audio_channel: preserves position and marks paused.
-        let mut channel = play_audio_resource(&buffered_resource(), Some(&opts(Some(100.0)))).unwrap();
+        let mut channel =
+            play_audio_resource(&buffered_resource(), Some(&opts(Some(100.0)))).unwrap();
         pause_audio_channel(&mut channel);
         assert_eq!(channel.current_time, 100.0);
         assert_eq!(channel.state, AudioChannelState::Paused);
@@ -311,7 +327,10 @@ mod tests {
         // play_audio_resource: playing channel with applied options.
         let channel = play_audio_resource(
             &buffered_resource(),
-            Some(&AudioPlayOptions { gain: Some(0.5), ..Default::default() }),
+            Some(&AudioPlayOptions {
+                gain: Some(0.5),
+                ..Default::default()
+            }),
         )
         .unwrap();
         assert_eq!(channel.gain, 0.5);
@@ -338,7 +357,8 @@ mod tests {
         assert_eq!(channel.playback_rate, 2.0);
 
         // stop_audio_channel: resets and marks stopped.
-        let mut channel = play_audio_resource(&buffered_resource(), Some(&opts(Some(500.0)))).unwrap();
+        let mut channel =
+            play_audio_resource(&buffered_resource(), Some(&opts(Some(500.0)))).unwrap();
         stop_audio_channel(&mut channel);
         assert_eq!(channel.current_time, 0.0);
         assert_eq!(channel.state, AudioChannelState::Stopped);
@@ -352,7 +372,10 @@ mod tests {
         let _b = install_test_backend();
         let mut channel = play_audio_resource(
             &buffered_resource(),
-            Some(&AudioPlayOptions { loops: Some(1), ..Default::default() }),
+            Some(&AudioPlayOptions {
+                loops: Some(1),
+                ..Default::default()
+            }),
         )
         .unwrap();
 

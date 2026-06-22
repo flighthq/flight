@@ -80,15 +80,23 @@ pub fn apply_median_filter_to_wgpu(
     let (sw, sh) = (source.width as f32, source.height as f32);
 
     if filter_state.median_pipeline.is_none() {
-        let p = create_wgpu_filter_pipeline(state, filter_state, MEDIAN_WGSL, WgpuBlendMode::Replace);
+        let p =
+            create_wgpu_filter_pipeline(state, filter_state, MEDIAN_WGSL, WgpuBlendMode::Replace);
         filter_state.median_pipeline = Some(p);
     }
     let mut pipeline = filter_state.median_pipeline.take().unwrap();
-    draw_wgpu_filter_pass(state, filter_state, source, Some(dest), &mut pipeline, |u| {
-        u.set_f32(0, 1.0 / sw);
-        u.set_f32(1, 1.0 / sh);
-        u.set_i32(2, radius);
-    });
+    draw_wgpu_filter_pass(
+        state,
+        filter_state,
+        source,
+        Some(dest),
+        &mut pipeline,
+        |u| {
+            u.set_f32(0, 1.0 / sw);
+            u.set_f32(1, 1.0 / sh);
+            u.set_i32(2, radius);
+        },
+    );
     filter_state.median_pipeline = Some(pipeline);
 }
 
