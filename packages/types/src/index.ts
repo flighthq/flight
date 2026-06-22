@@ -254,6 +254,7 @@ export * from './StageScaleMode';
 export * from './StageSignals';
 export * from './StandardPbrMaterial';
 export * from './StatusBar';
+export * from './StepPosition';
 export * from './StopTweenOptions';
 export * from './Storage';
 export * from './SubsurfacePbrMaterial';
