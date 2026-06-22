@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/effects-webgl",
+  "name": "@flighthq/effects-gl",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -29,9 +29,9 @@
   "dependencies": {
     "@flighthq/effects": "*",
     "@flighthq/filters": "*",
-    "@flighthq/filters-webgl": "*",
+    "@flighthq/filters-gl": "*",
     "@flighthq/geometry": "*",
-    "@flighthq/render-webgl": "*",
+    "@flighthq/render-gl": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
