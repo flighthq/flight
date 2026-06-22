@@ -2,7 +2,7 @@ import { getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render';
 import type { CanvasRenderState, DisplayObject, DisplayObjectRenderer, RenderProxy2D } from '@flighthq/types';
 
-import { resolveCanvasCSSFilter } from './canvasCSSFilterBinding';
+import { resolveCanvasCssFilter } from './canvasCSSFilterBinding';
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
 
 export function drawCanvasDisplayObject(_state: CanvasRenderState, _renderProxy: RenderProxy2D): void {
@@ -34,7 +34,7 @@ export function renderCanvasDisplayObject(state: CanvasRenderState, source: Disp
 
     clipHooks?.pushClip(state, data, current);
 
-    const filter = resolveCanvasCSSFilter(state, data);
+    const filter = resolveCanvasCssFilter(state, data);
     if (filter !== null) state.context.filter = filter;
     if (data.renderer !== null) data.renderer.submit(state, data);
     if (filter !== null) state.context.filter = 'none';

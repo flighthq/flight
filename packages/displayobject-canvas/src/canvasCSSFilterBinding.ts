@@ -5,29 +5,29 @@ import type { CanvasRenderState, DisplayObject, RenderProxy2D } from '@flighthq/
 // per-state (state.renderProxyMap), so a module-level map keyed by render node is
 // automatically isolated per state — a filter set for one render state is
 // invisible to any other state that renders the same display object. This mirrors
-// the per-state WebGL shader bindings.
+// the per-state Gl shader bindings.
 const _cssFilterBindings = new WeakMap<RenderProxy2D, string>();
 
 /**
  * Enables CSS filter support for the render state by installing the resolver the
- * draw loop consults. Bindings made via setCanvasCSSFilter only apply once this is
+ * draw loop consults. Bindings made via setCanvasCssFilter only apply once this is
  * called — mirroring enableCanvasBlendModeSupport and the other opt-ins. Because
  * the draw loop reaches the resolver only through this field, filter-free states
  * leave it null and the binding module tree-shakes away entirely.
  */
-export function enableCanvasCSSFilterSupport(state: CanvasRenderState): void {
-  state.canvasCSSFilterResolver = resolveCanvasCSSFilter;
+export function enableCanvasCssFilterSupport(state: CanvasRenderState): void {
+  state.canvasCssFilterResolver = resolveCanvasCssFilter;
 }
 
-export function getCanvasCSSFilter(renderProxy: RenderProxy2D): string | undefined {
+export function getCanvasCssFilter(renderProxy: RenderProxy2D): string | undefined {
   return _cssFilterBindings.get(renderProxy);
 }
 
 /**
  * Returns the CSS filter to draw renderProxy with, or null when none is bound.
- * Installed as state.canvasCSSFilterResolver by enableCanvasCSSFilterSupport.
+ * Installed as state.canvasCssFilterResolver by enableCanvasCssFilterSupport.
  */
-export function resolveCanvasCSSFilter(_state: CanvasRenderState, renderProxy: RenderProxy2D): string | null {
+export function resolveCanvasCssFilter(_state: CanvasRenderState, renderProxy: RenderProxy2D): string | null {
   return _cssFilterBindings.get(renderProxy) ?? null;
 }
 
@@ -38,7 +38,7 @@ export function resolveCanvasCSSFilter(_state: CanvasRenderState, renderProxy: R
  * different filter (or none) in different render states. The filter is applied via
  * `context.filter` around the object's own draw.
  */
-export function setCanvasCSSFilter(state: CanvasRenderState, node: DisplayObject, filter: string | null): void {
+export function setCanvasCssFilter(state: CanvasRenderState, node: DisplayObject, filter: string | null): void {
   const renderProxy = getOrCreateRenderProxy2D(state, node);
   if (filter === null) {
     _cssFilterBindings.delete(renderProxy);

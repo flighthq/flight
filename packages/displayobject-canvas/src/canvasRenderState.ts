@@ -26,7 +26,7 @@ export function createCanvasRenderState(
   // canvas/context/contextAttributes are readonly handles on the entity; written once here at the
   // construction boundary.
   state.applyBlendMode = null;
-  state.canvasCSSFilterResolver = null;
+  state.canvasCssFilterResolver = null;
   (state as { canvas: HTMLCanvasElement }).canvas = canvas;
   (state as { context: CanvasRenderingContext2D }).context = context;
   (state as { contextAttributes: CanvasRenderingContext2DSettings }).contextAttributes = context.getContextAttributes();

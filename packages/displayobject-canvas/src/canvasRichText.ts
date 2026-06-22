@@ -1,4 +1,4 @@
-﻿import { computeRGBHexString } from '@flighthq/materials';
+﻿import { computeRgbHexString } from '@flighthq/materials';
 import { computeTextFormatFontString, noopRendererData } from '@flighthq/render';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text';
 import {
@@ -76,12 +76,12 @@ function drawCanvasRichTextField(state: CanvasRenderState, renderProxy: RenderPr
   const fieldH = computeTextBoundsHeight(data, result);
 
   if (data.background) {
-    context.fillStyle = computeRGBHexString(data.backgroundColor);
+    context.fillStyle = computeRgbHexString(data.backgroundColor);
     context.fillRect(0, 0, fieldW, fieldH);
   }
 
   if (data.border) {
-    context.strokeStyle = computeRGBHexString(data.borderColor);
+    context.strokeStyle = computeRgbHexString(data.borderColor);
     context.lineWidth = 1;
     context.strokeRect(0, 0, fieldW, fieldH);
   }
@@ -121,7 +121,7 @@ function drawCanvasRichTextField(state: CanvasRenderState, renderProxy: RenderPr
     if (group.lineIndex < firstVisibleLine) continue;
 
     context.font = computeTextFormatFontString(group.format);
-    context.fillStyle = computeRGBHexString(group.format.color ?? data.textColor);
+    context.fillStyle = computeRgbHexString(group.format.color ?? data.textColor);
     const slice = text.substring(group.startIndex, group.endIndex);
     const x = group.offsetX - scrollXOffset;
     const y = group.offsetY + group.ascent - scrollYOffset;
@@ -134,7 +134,7 @@ function drawCanvasRichTextField(state: CanvasRenderState, renderProxy: RenderPr
 
     context.fillText(slice, x, y);
 
-    const lineColor = computeRGBHexString(group.format.color ?? data.textColor);
+    const lineColor = computeRgbHexString(group.format.color ?? data.textColor);
     const lineWidth = Math.max(1, (group.format.size ?? 12) / 16);
     if (group.format.underline || group.format.strikethrough) {
       context.strokeStyle = lineColor;

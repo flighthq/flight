@@ -3,7 +3,7 @@ import type { CanvasRenderState, ParticleEmitter, RenderProxy2D, SpriteRenderer 
 
 // Canvas 2D does not support per-pixel color multiplication, so only alpha
 // and transform (position, rotation, scale) are applied. Color tint values
-// from the emitter config are silently ignored. Use the WebGL renderer for
+// from the emitter config are silently ignored. Use the Gl renderer for
 // full color-over-lifetime support.
 export function drawCanvasParticleEmitter(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
   const source = renderProxy.source as ParticleEmitter;
